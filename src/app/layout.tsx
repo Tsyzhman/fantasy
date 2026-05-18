@@ -24,7 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <ModeBrand />
               <nav className="flex items-center gap-2 text-sm font-medium text-slate-600">
                 <Link className="rounded px-3 py-2 hover:bg-slate-100" href="/baltika/leagues">
-                  Baltika
+                  Leagues
                 </Link>
                 <ModePlayersLink />
                 <ModeSwitchLink />
