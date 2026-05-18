@@ -8,6 +8,9 @@ import { MacheteTeamCard } from "@/components/machete/MacheteTeamCard";
 import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
 import { prisma } from "@/lib/db";
 import { formatDate, formatNumber, formatScore } from "@/lib/format";
+import { leagueSeeds } from "@/lib/leagues/seed-data";
+import { leagueSubtitle } from "@/lib/leagues/display";
+import { leagueFlag } from "@/lib/leagues/flags";
 
 export const dynamic = "force-dynamic";
 
@@ -57,6 +60,13 @@ export default async function MacheteLeaguePage({ params }: PageProps) {
   const expectedFantasyPoints = leagueFantasyScores.length
     ? leagueFantasyScores.reduce((total, score) => total + score, 0) / leagueFantasyScores.length
     : null;
+  const seedLeague = leagueSeeds.find((item) => item.fotMobLeagueId === league.providerLeagueId);
+  const flagInput = {
+    id: seedLeague?.id ?? league.id,
+    name: league.name,
+    code: seedLeague?.code,
+    country: seedLeague?.country ?? league.country
+  };
 
   return (
     <MacheteShell>
@@ -75,11 +85,16 @@ export default async function MacheteLeaguePage({ params }: PageProps) {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-3">
+              <div className="grid h-11 w-11 place-items-center rounded bg-ink text-white">
+                <span aria-hidden="true" className="text-2xl leading-none">
+                  {leagueFlag(flagInput)}
+                </span>
+              </div>
               <h2 className="text-2xl font-bold text-ink">{league.name}</h2>
               <MacheteStatusBadge status={league.status} />
             </div>
             <p className="mt-2 text-sm text-slate-600">
-              {[league.country, league.season, "Provider FOTMOB"].filter(Boolean).join(" / ")}
+              {[leagueSubtitle(flagInput, league.season), "Provider FOTMOB"].filter(Boolean).join(" / ")}
             </p>
           </div>
           <dl className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-5">

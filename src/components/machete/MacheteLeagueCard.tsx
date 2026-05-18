@@ -1,12 +1,16 @@
-import { ArrowRight, CalendarDays, ShieldCheck } from "lucide-react";
+import { ArrowRight, CalendarDays } from "lucide-react";
 import Link from "next/link";
 
 import { formatDate, formatNumber, formatScore } from "@/lib/format";
+import { leagueSeeds } from "@/lib/leagues/seed-data";
+import { leagueSubtitle } from "@/lib/leagues/display";
+import { leagueFlag } from "@/lib/leagues/flags";
 
 import { MacheteStatusBadge } from "./MacheteStatusBadge";
 
 export type MacheteLeagueCardDto = {
   id: string;
+  providerLeagueId: string | null;
   name: string;
   country: string | null;
   season: string | null;
@@ -19,6 +23,14 @@ export type MacheteLeagueCardDto = {
 };
 
 export function MacheteLeagueCard({ league }: { league: MacheteLeagueCardDto }) {
+  const seedLeague = leagueSeeds.find((item) => item.fotMobLeagueId === league.providerLeagueId);
+  const flagInput = {
+    id: seedLeague?.id ?? league.id,
+    name: league.name,
+    code: seedLeague?.code,
+    country: seedLeague?.country ?? league.country
+  };
+
   return (
     <Link
       href={`/machete/leagues/${league.id}`}
@@ -27,12 +39,14 @@ export function MacheteLeagueCard({ league }: { league: MacheteLeagueCardDto }) 
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">
           <div className="grid h-11 w-11 place-items-center rounded bg-ink text-white">
-            <ShieldCheck className="h-5 w-5" />
+            <span aria-hidden="true" className="text-2xl leading-none">
+              {leagueFlag(flagInput)}
+            </span>
           </div>
           <div>
             <h2 className="font-semibold text-ink">{league.name}</h2>
             <p className="text-sm text-slate-500">
-              {[league.country, league.season].filter(Boolean).join(" / ") || "FotMob league"}
+              {leagueSubtitle(flagInput, league.season) || "FotMob league"}
             </p>
           </div>
         </div>

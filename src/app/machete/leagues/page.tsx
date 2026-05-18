@@ -60,6 +60,7 @@ export default async function MacheteLeaguesPage() {
               key={league.id}
               league={{
                 id: league.id,
+                providerLeagueId: league.providerLeagueId,
                 name: league.name,
                 country: league.country,
                 season: league.season,

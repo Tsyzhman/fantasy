@@ -105,11 +105,14 @@ async function executeJob(prisma: PrismaClient, input: RunJobInput) {
 }
 
 async function syncMacheteLeagueFull(prisma: PrismaClient, leagueId: string) {
+  const metadata = await syncMacheteLeagueMetadata(prisma, leagueId);
   const teams = await syncMacheteTeams(prisma, leagueId);
   const fixtures = await syncMacheteFixtures(prisma, leagueId);
   const playerStats = await syncMacheteLeaguePlayerStats(prisma, leagueId, { syncFixtures: false });
 
   return {
+    leagueId: metadata.id,
+    leagueName: metadata.name,
     teamsSynced: teams.length,
     fixturesSynced: fixtures.length,
     ...playerStats
@@ -118,25 +121,29 @@ async function syncMacheteLeagueFull(prisma: PrismaClient, leagueId: string) {
 
 async function syncAllMacheteLeagues(prisma: PrismaClient) {
   const leagues = await prisma.macheteLeague.findMany({
-    orderBy: { name: "asc" },
+    orderBy: { createdAt: "asc" },
     select: {
       id: true,
-      name: true
+      name: true,
+      providerLeagueId: true
     }
   });
+  const orderedLeagues = [...leagues].sort((a, b) => leagueSyncRank(a.providerLeagueId) - leagueSyncRank(b.providerLeagueId));
 
   const results = [];
-  for (const league of leagues) {
+  for (const league of orderedLeagues) {
     const result = await syncMacheteLeagueFull(prisma, league.id);
-    results.push({
-      leagueId: league.id,
-      leagueName: league.name,
-      ...result
-    });
+    results.push(result);
   }
 
   return {
     leaguesSynced: results.length,
     results
   };
+}
+
+function leagueSyncRank(providerLeagueId: string | null) {
+  const order = ["48", "47", "54", "53", "55", "61", "57", "71", "63", "77"];
+  const index = providerLeagueId ? order.indexOf(providerLeagueId) : -1;
+  return index === -1 ? Number.MAX_SAFE_INTEGER : index;
 }
