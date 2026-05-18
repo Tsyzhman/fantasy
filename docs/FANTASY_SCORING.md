@@ -22,8 +22,8 @@ fantasy_score = sum(transformed_metric_value * rule_weight)
 
 Rules can be `DEFAULT` for all positions or specific to `GK`, `DEF`, `MID`, and `FWD`.
 
-Admins can also enable a custom formula on `/admin/models`. When enabled, the custom formula is used instead of the
-default rule set for new imports.
+Admins can also enable custom formulas on `/admin/models`. Custom formulas are position-specific: GK, DEF, MID, and FWD
+can each have their own formula. If a position formula is empty, that position uses the default rule set.
 
 Custom formula syntax:
 

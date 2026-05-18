@@ -3,6 +3,13 @@ import { redirect } from "next/navigation";
 
 import { prisma } from "@/lib/db";
 import { formatPositionPoints, scoringFieldGuide } from "@/lib/scoring/field-guide";
+import {
+  customFormulaFields,
+  customFormulaForPosition,
+  defaultFormulaByPosition,
+  formulaModeLabel,
+  hasAnyCustomFormula
+} from "@/lib/scoring/formula-display";
 import { validateCustomFormula } from "@/lib/scoring/formula";
 import { seedRules } from "@/lib/scoring/rules";
 
@@ -18,13 +25,19 @@ export const dynamic = "force-dynamic";
 async function saveCustomFormula(formData: FormData) {
   "use server";
 
-  const formula = String(formData.get("customFormula") ?? "").trim();
+  const formulas = Object.fromEntries(
+    customFormulaFields.map((field) => [field.key, String(formData.get(field.key) ?? "").trim()])
+  ) as Record<(typeof customFormulaFields)[number]["key"], string>;
   const enabled = formData.get("customFormulaEnabled") === "on";
 
-  const validation = validateCustomFormula(formula);
-  if (!validation.ok) {
-    redirect(`/admin/models?error=${encodeURIComponent(validation.message)}`);
+  for (const field of customFormulaFields) {
+    const validation = validateCustomFormula(formulas[field.key]);
+    if (!validation.ok) {
+      redirect(`/admin/models?error=${encodeURIComponent(`${field.position}: ${validation.message}`)}`);
+    }
   }
+
+  const hasFormula = Object.values(formulas).some((formula) => formula.length > 0);
 
   const model = await prisma.fantasyModel.findFirst({
     where: { isDefault: true, isActive: true }
@@ -34,8 +47,12 @@ async function saveCustomFormula(formData: FormData) {
     await prisma.fantasyModel.update({
       where: { id: model.id },
       data: {
-        customFormula: formula || null,
-        customFormulaEnabled: enabled && formula.length > 0
+        customFormula: null,
+        customFormulaGk: formulas.customFormulaGk || null,
+        customFormulaDef: formulas.customFormulaDef || null,
+        customFormulaMid: formulas.customFormulaMid || null,
+        customFormulaFwd: formulas.customFormulaFwd || null,
+        customFormulaEnabled: enabled && hasFormula
       }
     });
   } else {
@@ -45,8 +62,12 @@ async function saveCustomFormula(formData: FormData) {
         description: "Position-aware fantasy scoring based on the 2025/26 rules table.",
         isDefault: true,
         isActive: true,
-        customFormula: formula || null,
-        customFormulaEnabled: enabled && formula.length > 0,
+        customFormula: null,
+        customFormulaGk: formulas.customFormulaGk || null,
+        customFormulaDef: formulas.customFormulaDef || null,
+        customFormulaMid: formulas.customFormulaMid || null,
+        customFormulaFwd: formulas.customFormulaFwd || null,
+        customFormulaEnabled: enabled && hasFormula,
         rules: {
           create: seedRules
         }
@@ -99,16 +120,65 @@ export default async function AdminModelsPage({ searchParams }: PageProps) {
         ) : null}
 
         <form action={saveCustomFormula} className="mt-6 space-y-4">
-          <label className="block">
-            <span className="text-sm font-semibold text-ink">Custom fantasy score formula</span>
-            <textarea
-              name="customFormula"
-              defaultValue={model?.customFormula ?? ""}
-              rows={5}
-              placeholder="4*{xG/per90} + 3*{Assists} + 0.5*{Shots per 90} - {Yellow cards}"
-              className="mt-2 w-full rounded border border-slate-200 px-3 py-2 font-mono text-sm text-ink outline-none transition focus:border-slate-400"
-            />
-          </label>
+          <div className="rounded border border-slate-200 bg-slate-50 p-4">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm font-semibold text-ink">Текущая формула</p>
+              <span className="rounded bg-white px-2 py-1 text-xs font-semibold text-slate-600">
+                {formulaModeLabel(model)}
+              </span>
+            </div>
+
+            {model?.customFormulaEnabled && hasAnyCustomFormula(model) ? (
+              <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
+                {customFormulaFields.map((entry) => {
+                  const formula = customFormulaForPosition(model, entry.key);
+
+                  return (
+                    <div key={entry.position} className="rounded bg-white p-3">
+                      <p className="text-xs font-semibold uppercase text-slate-500">{entry.position}</p>
+                      <pre className="mt-2 whitespace-pre-wrap break-words font-mono text-xs leading-5 text-slate-700">
+                        {formula || "Default rules for this position"}
+                      </pre>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
+                {defaultFormulaByPosition.map((entry) => (
+                  <div key={entry.position} className="rounded bg-white p-3">
+                    <p className="text-xs font-semibold uppercase text-slate-500">{entry.position}</p>
+                    <pre className="mt-2 whitespace-pre-wrap break-words font-mono text-xs leading-5 text-slate-700">
+                      {entry.formula}
+                    </pre>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            <p className="mt-3 text-xs text-slate-500">
+              `appearances_60` = floor(minutes / 60), `full_matches` = floor(minutes / 90), оба ограничиваются количеством
+              matches_played. `floor(x/N)` означает целые бонусы за каждые N действий.
+            </p>
+          </div>
+
+          <div>
+            <span className="text-sm font-semibold text-ink">Custom fantasy score formulas by position</span>
+            <div className="mt-2 grid grid-cols-1 gap-3 lg:grid-cols-2">
+              {customFormulaFields.map((field) => (
+                <label key={field.key} className="block">
+                  <span className="mb-1 block text-xs font-semibold uppercase text-slate-500">{field.position}</span>
+                  <textarea
+                    name={field.key}
+                    defaultValue={customFormulaForPosition(model, field.key)}
+                    rows={5}
+                    placeholder={field.placeholder}
+                    className="w-full rounded border border-slate-200 px-3 py-2 font-mono text-sm text-ink outline-none transition focus:border-slate-400"
+                  />
+                </label>
+              ))}
+            </div>
+          </div>
 
           <div className="rounded border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
             <p className="font-semibold text-ink">How to write it</p>
@@ -122,6 +192,7 @@ export default async function AdminModelsPage({ searchParams }: PageProps) {
             <p className="mt-2">
               Missing fields count as 0. Example:
               <span className="font-mono"> 4*{"{Goals}"} + 2*{"{xG/per90}"} + 3*{"{Assists}"} - {"{Yellow cards}"}</span>.
+              Leave a position empty to use the default rules for that position.
             </p>
           </div>
 

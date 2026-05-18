@@ -204,6 +204,10 @@ model FantasyModel {
   isDefault            Boolean            @default(false)
   isActive             Boolean            @default(true)
   customFormula        String?
+  customFormulaGk      String?
+  customFormulaDef     String?
+  customFormulaMid     String?
+  customFormulaFwd     String?
   customFormulaEnabled Boolean            @default(false)
   rules                FantasyModelRule[]
   createdAt            DateTime           @default(now())

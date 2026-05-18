@@ -5,7 +5,10 @@ import { calculateCustomFormulaScore } from "@/lib/scoring/formula";
 import { seedRules } from "@/lib/scoring/rules";
 
 export type ScoringRule = Pick<FantasyModelRule, "positionGroup" | "metricKey" | "weight" | "transform" | "enabled">;
-export type ActiveScoringModel = Pick<FantasyModel, "customFormula" | "customFormulaEnabled"> & {
+export type ActiveScoringModel = Pick<
+  FantasyModel,
+  "customFormula" | "customFormulaGk" | "customFormulaDef" | "customFormulaMid" | "customFormulaFwd" | "customFormulaEnabled"
+> & {
   rules: ScoringRule[];
 };
 
@@ -22,6 +25,10 @@ export async function getActiveScoringModel(): Promise<ActiveScoringModel> {
   if (model) {
     return {
       customFormula: model.customFormula,
+      customFormulaGk: model.customFormulaGk,
+      customFormulaDef: model.customFormulaDef,
+      customFormulaMid: model.customFormulaMid,
+      customFormulaFwd: model.customFormulaFwd,
       customFormulaEnabled: model.customFormulaEnabled,
       rules: model.rules.length ? model.rules : seedScoringRules()
     };
@@ -29,6 +36,10 @@ export async function getActiveScoringModel(): Promise<ActiveScoringModel> {
 
   return {
     customFormula: null,
+    customFormulaGk: null,
+    customFormulaDef: null,
+    customFormulaMid: null,
+    customFormulaFwd: null,
     customFormulaEnabled: false,
     rules: seedScoringRules()
   };
@@ -54,8 +65,9 @@ export function calculateFantasyScore(
   positionGroup: string | null | undefined,
   modelOrRules: ActiveScoringModel | ScoringRule[]
 ) {
-  if (!Array.isArray(modelOrRules) && modelOrRules.customFormulaEnabled && modelOrRules.customFormula?.trim()) {
-    return round(calculateCustomFormulaScore(modelOrRules.customFormula, rawMetrics));
+  if (!Array.isArray(modelOrRules) && modelOrRules.customFormulaEnabled) {
+    const customFormula = selectCustomFormula(modelOrRules, positionGroup);
+    if (customFormula) return round(calculateCustomFormulaScore(customFormula, rawMetrics));
   }
 
   const rules = Array.isArray(modelOrRules) ? modelOrRules : modelOrRules.rules;
@@ -69,6 +81,21 @@ export function calculateFantasyScore(
   }, 0);
 
   return round(score);
+}
+
+function selectCustomFormula(model: ActiveScoringModel, positionGroup: string | null | undefined) {
+  const formula =
+    positionGroup === "GK"
+      ? model.customFormulaGk
+      : positionGroup === "DEF"
+        ? model.customFormulaDef
+        : positionGroup === "MID"
+          ? model.customFormulaMid
+          : positionGroup === "FWD"
+            ? model.customFormulaFwd
+            : null;
+
+  return formula?.trim() || model.customFormula?.trim() || null;
 }
 
 export function calculateValueScore(fantasyScore: number | null, marketValue: number | null) {

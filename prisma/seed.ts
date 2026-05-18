@@ -91,6 +91,10 @@ async function main() {
       isDefault: true,
       isActive: true,
       customFormula: null,
+      customFormulaGk: null,
+      customFormulaDef: null,
+      customFormulaMid: null,
+      customFormulaFwd: null,
       customFormulaEnabled: false,
       rules: {
         create: seedRules
