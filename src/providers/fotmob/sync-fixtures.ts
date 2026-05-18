@@ -13,6 +13,7 @@ export async function syncMacheteFixtures(prisma: PrismaClient, leagueId: string
 
   const client = createFotMobClient();
   const fixtures = await client.getFixtures(league.providerLeagueId ?? league.id, league.season ?? undefined);
+  const providerFixtureIds = fixtures.map((fixture) => fixture.id);
   const teamIdsByProviderId = new Map(
     league.teams
       .filter((team) => team.providerTeamId)
@@ -25,6 +26,19 @@ export async function syncMacheteFixtures(prisma: PrismaClient, leagueId: string
     endpoint: "getFixtures",
     payload: fixtures
   });
+
+  if (providerFixtureIds.length > 0) {
+    await prisma.macheteFixture.deleteMany({
+      where: {
+        leagueId: league.id,
+        provider: "FOTMOB",
+        status: { not: "SEASON_AGGREGATE" },
+        providerFixtureId: {
+          notIn: providerFixtureIds
+        }
+      }
+    });
+  }
 
   const syncedFixtures = [];
   for (const fixture of fixtures) {
