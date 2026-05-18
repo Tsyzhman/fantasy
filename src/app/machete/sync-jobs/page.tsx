@@ -2,6 +2,7 @@ import { MacheteShell } from "@/components/machete/MacheteShell";
 import { MacheteSyncJobList } from "@/components/machete/MacheteSyncJobList";
 import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
 import { prisma } from "@/lib/db";
+import { macheteLeagueDisplayName } from "@/lib/leagues/display";
 
 export const dynamic = "force-dynamic";
 
@@ -33,7 +34,7 @@ export default async function MacheteSyncJobsPage() {
             id: job.id,
             type: job.type,
             status: job.status,
-            leagueName: job.league?.name ?? null,
+            leagueName: job.league ? macheteLeagueDisplayName(job.league) : null,
             teamName: job.team?.name ?? null,
             createdAt: job.createdAt,
             startedAt: job.startedAt,

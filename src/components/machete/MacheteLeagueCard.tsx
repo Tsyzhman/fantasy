@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import { formatDate, formatNumber, formatScore } from "@/lib/format";
 import { leagueSeeds } from "@/lib/leagues/seed-data";
-import { leagueSubtitle } from "@/lib/leagues/display";
+import { leagueSubtitle, macheteLeagueDisplayName } from "@/lib/leagues/display";
 import { leagueFlag } from "@/lib/leagues/flags";
 
 import { MacheteStatusBadge } from "./MacheteStatusBadge";
@@ -30,6 +30,7 @@ export function MacheteLeagueCard({ league }: { league: MacheteLeagueCardDto }) 
     code: seedLeague?.code,
     country: seedLeague?.country ?? league.country
   };
+  const displayName = macheteLeagueDisplayName({ ...flagInput, providerLeagueId: league.providerLeagueId });
 
   return (
     <Link
@@ -44,7 +45,7 @@ export function MacheteLeagueCard({ league }: { league: MacheteLeagueCardDto }) 
             </span>
           </div>
           <div>
-            <h2 className="font-semibold text-ink">{league.name}</h2>
+            <h2 className="font-semibold text-ink">{displayName}</h2>
             <p className="text-sm text-slate-500">
               {leagueSubtitle(flagInput, league.season) || "FotMob league"}
             </p>

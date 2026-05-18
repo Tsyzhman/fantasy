@@ -2,6 +2,7 @@ import { MacheteLeagueCard } from "@/components/machete/MacheteLeagueCard";
 import { MacheteShell } from "@/components/machete/MacheteShell";
 import { MacheteSyncButton } from "@/components/machete/MacheteSyncButton";
 import { prisma } from "@/lib/db";
+import { macheteLeagueDisplayName } from "@/lib/leagues/display";
 
 export const dynamic = "force-dynamic";
 
@@ -36,6 +37,9 @@ export default async function MacheteLeaguesPage() {
         : null
     );
   }
+  const sortedLeagues = [...leagues].sort((left, right) =>
+    macheteLeagueDisplayName(left).localeCompare(macheteLeagueDisplayName(right))
+  );
 
   return (
     <MacheteShell>
@@ -52,7 +56,7 @@ export default async function MacheteLeaguesPage() {
       </section>
 
       <section className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {leagues.map((league) => {
+        {sortedLeagues.map((league) => {
           const fixturesSynced = league.fixtures.filter(isMatchFixture).length;
 
           return (

@@ -5,6 +5,7 @@ import { MachetePlayerTable } from "@/components/machete/MachetePlayerTable";
 import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
 import { AutoSubmitForm } from "@/components/players/auto-submit-form";
 import { prisma } from "@/lib/db";
+import { macheteLeagueDisplayName } from "@/lib/leagues/display";
 
 export const dynamic = "force-dynamic";
 
@@ -29,6 +30,9 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
       }
     }
   });
+  const sortedLeagues = [...leagues].sort((left, right) =>
+    macheteLeagueDisplayName(left).localeCompare(macheteLeagueDisplayName(right))
+  );
 
   const where: Prisma.MachetePlayerSnapshotWhereInput = {};
   if (searchParams.leagueId) where.leagueId = searchParams.leagueId;
@@ -70,7 +74,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
     id: snapshot.id,
     name: snapshot.player.name,
     teamName: snapshot.player.team?.name ?? null,
-    leagueName: snapshot.player.team?.league.name ?? null,
+    leagueName: snapshot.player.team?.league ? macheteLeagueDisplayName(snapshot.player.team.league) : null,
     position: snapshot.position,
     age: snapshot.player.age,
     nationality: snapshot.player.nationality,
@@ -114,9 +118,9 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
           <span className="mb-1 block font-medium text-slate-600">League</span>
           <select name="leagueId" defaultValue={searchParams.leagueId ?? ""} className="w-full rounded border border-slate-200 px-3 py-2">
             <option value="">All leagues</option>
-            {leagues.map((league) => (
+            {sortedLeagues.map((league) => (
               <option key={league.id} value={league.id}>
-                {league.name}
+                {macheteLeagueDisplayName(league)}
               </option>
             ))}
           </select>
@@ -125,10 +129,10 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
           <span className="mb-1 block font-medium text-slate-600">Team</span>
           <select name="teamId" defaultValue={searchParams.teamId ?? ""} className="w-full rounded border border-slate-200 px-3 py-2">
             <option value="">All teams</option>
-            {leagues.flatMap((league) =>
+            {sortedLeagues.flatMap((league) =>
               league.teams.map((team) => (
                 <option key={team.id} value={team.id}>
-                  {team.name}
+                  {team.name} - {macheteLeagueDisplayName(league)}
                 </option>
               ))
             )}

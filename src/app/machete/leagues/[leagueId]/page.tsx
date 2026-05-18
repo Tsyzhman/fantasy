@@ -9,7 +9,7 @@ import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
 import { prisma } from "@/lib/db";
 import { formatDate, formatNumber, formatScore } from "@/lib/format";
 import { leagueSeeds } from "@/lib/leagues/seed-data";
-import { leagueSubtitle } from "@/lib/leagues/display";
+import { leagueSubtitle, macheteLeagueDisplayName } from "@/lib/leagues/display";
 import { leagueFlag } from "@/lib/leagues/flags";
 
 export const dynamic = "force-dynamic";
@@ -67,6 +67,7 @@ export default async function MacheteLeaguePage({ params }: PageProps) {
     code: seedLeague?.code,
     country: seedLeague?.country ?? league.country
   };
+  const displayName = macheteLeagueDisplayName({ ...flagInput, providerLeagueId: league.providerLeagueId });
 
   return (
     <MacheteShell>
@@ -77,7 +78,7 @@ export default async function MacheteLeaguePage({ params }: PageProps) {
           items={[
             { label: "Machete", href: "/machete" },
             { label: "Leagues", href: "/machete/leagues" },
-            { label: league.name, href: `/machete/leagues/${league.id}` }
+            { label: displayName, href: `/machete/leagues/${league.id}` }
           ]}
         />
       </div>
@@ -90,7 +91,7 @@ export default async function MacheteLeaguePage({ params }: PageProps) {
                   {leagueFlag(flagInput)}
                 </span>
               </div>
-              <h2 className="text-2xl font-bold text-ink">{league.name}</h2>
+              <h2 className="text-2xl font-bold text-ink">{displayName}</h2>
               <MacheteStatusBadge status={league.status} />
             </div>
             <p className="mt-2 text-sm text-slate-600">
@@ -169,7 +170,7 @@ export default async function MacheteLeaguePage({ params }: PageProps) {
                 leagueId: league.id,
                 name: team.name,
                 country: team.country,
-                leagueName: league.name,
+                leagueName: displayName,
                 providerTeamId: team.providerTeamId,
                 logoUrl: team.logoUrl,
                 status: team.status,

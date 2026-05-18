@@ -8,6 +8,7 @@ import { MacheteSyncButton } from "@/components/machete/MacheteSyncButton";
 import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
 import { prisma } from "@/lib/db";
 import { formatDate, formatNumber, formatScore } from "@/lib/format";
+import { macheteLeagueDisplayName } from "@/lib/leagues/display";
 
 export const dynamic = "force-dynamic";
 
@@ -45,6 +46,7 @@ export default async function MacheteTeamPage({ params }: PageProps) {
   });
 
   if (!team || team.leagueId !== params.leagueId) notFound();
+  const leagueDisplayName = macheteLeagueDisplayName(team.league);
 
   const teamFixtures = [...team.fixturesHome, ...team.fixturesAway].filter(isMatchFixture);
   const providerIds = [
@@ -116,7 +118,7 @@ export default async function MacheteTeamPage({ params }: PageProps) {
         items={[
           { label: "Machete", href: "/machete" },
           { label: "Leagues", href: "/machete/leagues" },
-          { label: team.league.name, href: `/machete/leagues/${team.leagueId}` },
+          { label: leagueDisplayName, href: `/machete/leagues/${team.leagueId}` },
           { label: team.name, href: `/machete/leagues/${team.leagueId}/teams/${team.id}` }
         ]}
       />
@@ -125,7 +127,7 @@ export default async function MacheteTeamPage({ params }: PageProps) {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-              {team.league.name} / FOTMOB
+              {leagueDisplayName} / FOTMOB
             </p>
             <div className="mt-2 flex flex-wrap items-center gap-3">
               <h1 className="text-3xl font-bold text-ink">{team.name}</h1>
