@@ -3,6 +3,7 @@ export type LeagueSeed = {
   name: string;
   country: string;
   code: string;
+  fotMobLeagueId?: string;
   teams: TeamSeed[];
 };
 
@@ -19,6 +20,7 @@ export const leagueSeeds: LeagueSeed[] = [
     name: "Premier League",
     country: "England",
     code: "EPL",
+    fotMobLeagueId: "47",
     teams: [
       { name: "Arsenal", aliases: ["Arsenal FC"] },
       { name: "Aston Villa", aliases: ["Aston Villa FC"] },
@@ -47,6 +49,7 @@ export const leagueSeeds: LeagueSeed[] = [
     name: "Championship",
     country: "England",
     code: "CHA",
+    fotMobLeagueId: "48",
     teams: [
       { name: "Birmingham City", aliases: ["Birmingham"] },
       { name: "Blackburn Rovers", aliases: ["Blackburn"] },
@@ -79,6 +82,7 @@ export const leagueSeeds: LeagueSeed[] = [
     name: "Bundesliga",
     country: "Germany",
     code: "BUN",
+    fotMobLeagueId: "54",
     teams: [
       { name: "Augsburg", aliases: ["FC Augsburg"] },
       { name: "Bayer Leverkusen", aliases: ["Bayer 04 Leverkusen"] },
@@ -105,6 +109,7 @@ export const leagueSeeds: LeagueSeed[] = [
     name: "Ligue 1",
     country: "France",
     code: "L1",
+    fotMobLeagueId: "53",
     teams: [
       { name: "Angers", aliases: ["Angers SCO"] },
       { name: "Auxerre", aliases: ["AJ Auxerre"] },
@@ -131,6 +136,7 @@ export const leagueSeeds: LeagueSeed[] = [
     name: "Serie A",
     country: "Italy",
     code: "SA",
+    fotMobLeagueId: "55",
     teams: [
       { name: "AC Milan", aliases: ["Milan"] },
       { name: "Atalanta", aliases: ["Atalanta BC"] },
@@ -187,6 +193,7 @@ export const leagueSeeds: LeagueSeed[] = [
     name: "Primeira Liga",
     country: "Portugal",
     code: "POR",
+    fotMobLeagueId: "61",
     teams: [
       { name: "Alverca", aliases: ["FC Alverca"] },
       { name: "Arouca", aliases: ["FC Arouca"] },
@@ -213,6 +220,7 @@ export const leagueSeeds: LeagueSeed[] = [
     name: "Eredivisie",
     country: "Netherlands",
     code: "ERE",
+    fotMobLeagueId: "57",
     teams: [
       { name: "Ajax", aliases: ["AFC Ajax"] },
       { name: "AZ", aliases: ["AZ Alkmaar"] },
@@ -239,6 +247,7 @@ export const leagueSeeds: LeagueSeed[] = [
     name: "Russian Premier League",
     country: "Russia",
     code: "RPL",
+    fotMobLeagueId: "63",
     teams: [
       { name: "Akhmat Grozny", aliases: ["Akhmat"] },
       { name: "Akron Tolyatti", aliases: ["Akron"] },
@@ -263,6 +272,7 @@ export const leagueSeeds: LeagueSeed[] = [
     name: "World Cup 2026",
     country: "International",
     code: "WC26",
+    fotMobLeagueId: "77",
     teams: [
       { name: "Algeria" },
       { name: "Argentina" },
@@ -319,6 +329,7 @@ export const leagueSeeds: LeagueSeed[] = [
     name: "Turkish Super Lig",
     country: "Turkey",
     code: "TSL",
+    fotMobLeagueId: "71",
     teams: [
       { name: "Alanyaspor" },
       { name: "Antalyaspor" },

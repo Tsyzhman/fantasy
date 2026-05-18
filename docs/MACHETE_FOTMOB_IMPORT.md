@@ -25,6 +25,23 @@ GET /api/data/fixtures?id={leagueId}&season={YYYY/YYYY}
 GET /api/data/match?id={matchId}
 ```
 
+## Seeded League IDs
+
+Machete seeds these FotMob league IDs:
+
+| League | FotMob ID |
+| --- | ---: |
+| Championship | `48` |
+| Premier League | `47` |
+| Bundesliga | `54` |
+| Ligue 1 | `53` |
+| Serie A | `55` |
+| Primeira Liga / Liga Portugal | `61` |
+| Eredivisie | `57` |
+| Turkish Super Lig | `71` |
+| Russian Premier League | `63` |
+| World Cup 2026 | `77` |
+
 Machete stores raw provider payloads through `MacheteRawPayload` in the existing sync jobs, then normalizes them into:
 
 ```text

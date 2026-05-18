@@ -4,10 +4,6 @@ import { leagueSeeds, seasonName } from "../src/lib/leagues/seed-data";
 import { seedRules } from "../src/lib/scoring/rules";
 import { teamLogoUrlForSlug } from "../src/lib/teams/logo-assets";
 import { slugify } from "../src/lib/text";
-import { runMacheteEntityMatching } from "../src/providers/fotmob/entity-matcher";
-import { syncMacheteFixtures } from "../src/providers/fotmob/sync-fixtures";
-import { syncMacheteLeaguePlayerStats } from "../src/providers/fotmob/sync-player-stats";
-import { syncMacheteTeams } from "../src/providers/fotmob/sync-teams";
 
 const prisma = new PrismaClient();
 
@@ -131,29 +127,50 @@ async function main() {
     }
   });
 
-  const macheteLeague = await prisma.macheteLeague.upsert({
-    where: { providerLeagueId: "championship-2025" },
-    update: {
-      provider: "FOTMOB",
-      name: "Championship",
-      country: "England",
-      season: "2025/26",
-      status: "READY"
-    },
-    create: {
-      provider: "FOTMOB",
-      providerLeagueId: "championship-2025",
-      name: "Championship",
-      country: "England",
-      season: "2025/26",
-      status: "READY"
-    }
+  await seedMacheteLeagues();
+}
+
+async function seedMacheteLeagues() {
+  const legacyChampionship = await prisma.macheteLeague.findUnique({
+    where: { providerLeagueId: "championship-2025" }
+  });
+  const numericChampionship = await prisma.macheteLeague.findUnique({
+    where: { providerLeagueId: "48" }
   });
 
-  await syncMacheteTeams(prisma, macheteLeague.id);
-  await syncMacheteFixtures(prisma, macheteLeague.id);
-  await syncMacheteLeaguePlayerStats(prisma, macheteLeague.id);
-  await runMacheteEntityMatching(prisma, macheteLeague.id);
+  if (legacyChampionship && !numericChampionship) {
+    await prisma.macheteLeague.update({
+      where: { id: legacyChampionship.id },
+      data: {
+        providerLeagueId: "48",
+        name: "Championship",
+        country: "England",
+        season: seasonName,
+        status: "READY"
+      }
+    });
+  }
+
+  for (const leagueSeed of leagueSeeds.filter((league) => league.fotMobLeagueId)) {
+    await prisma.macheteLeague.upsert({
+      where: { providerLeagueId: leagueSeed.fotMobLeagueId },
+      update: {
+        provider: "FOTMOB",
+        name: leagueSeed.name,
+        country: leagueSeed.country,
+        season: seasonName,
+        status: "READY"
+      },
+      create: {
+        provider: "FOTMOB",
+        providerLeagueId: leagueSeed.fotMobLeagueId,
+        name: leagueSeed.name,
+        country: leagueSeed.country,
+        season: seasonName,
+        status: "READY"
+      }
+    });
+  }
 }
 
 main()
