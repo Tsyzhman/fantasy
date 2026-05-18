@@ -29,6 +29,32 @@ export default async function BaltikaLeaguePage({ params }: PageProps) {
       teams: {
         orderBy: { name: "asc" },
         include: {
+          baltikaFixturesHome: {
+            where: { source: "WYSCOUT_TEAM_STATS" },
+            select: {
+              id: true,
+              homeTeamId: true,
+              awayTeamId: true,
+              homeTeamName: true,
+              awayTeamName: true,
+              kickoffAt: true,
+              homeScore: true,
+              awayScore: true
+            }
+          },
+          baltikaFixturesAway: {
+            where: { source: "WYSCOUT_TEAM_STATS" },
+            select: {
+              id: true,
+              homeTeamId: true,
+              awayTeamId: true,
+              homeTeamName: true,
+              awayTeamName: true,
+              kickoffAt: true,
+              homeScore: true,
+              awayScore: true
+            }
+          },
           baltikaTeamStatsImports: {
             where: { status: "PUBLISHED" },
             orderBy: { updatedAt: "desc" },
@@ -66,7 +92,7 @@ export default async function BaltikaLeaguePage({ params }: PageProps) {
       lastUploadAt: latestImport?.createdAt.toISOString() ?? null,
       playersPublishedAt: publishedImport?.publishedAt?.toISOString() ?? null,
       latestImportId: latestImport?.id ?? null,
-      fixturesCount: team.baltikaTeamStatsImports[0]?.fixturesCount ?? 0,
+      fixturesCount: uniqueTeamFixturesCount([...team.baltikaFixturesHome, ...team.baltikaFixturesAway]),
       teamStatsPublishedAt: team.baltikaTeamStatsImports[0]?.updatedAt.toISOString() ?? null,
       errors: Array.isArray(latestImport?.errorsJson) ? latestImport.errorsJson : [],
       warnings: Array.isArray(latestImport?.warningsJson) ? latestImport.warningsJson : []
@@ -145,4 +171,32 @@ export default async function BaltikaLeaguePage({ params }: PageProps) {
       </section>
     </main>
   );
+}
+
+type TeamFixtureForCount = {
+  id: string;
+  homeTeamId: string | null;
+  awayTeamId: string | null;
+  homeTeamName: string;
+  awayTeamName: string | null;
+  kickoffAt: Date | null;
+  homeScore: number | null;
+  awayScore: number | null;
+};
+
+function uniqueTeamFixturesCount(fixtures: TeamFixtureForCount[]) {
+  const keys = new Set(fixtures.map(teamFixtureKey));
+  return keys.size;
+}
+
+function teamFixtureKey(fixture: TeamFixtureForCount) {
+  const teams = [
+    fixture.homeTeamId ?? fixture.homeTeamName,
+    fixture.awayTeamId ?? fixture.awayTeamName ?? "TBD"
+  ].sort();
+
+  const date = fixture.kickoffAt ? fixture.kickoffAt.toISOString().slice(0, 10) : "no-date";
+  const score = [fixture.homeScore ?? "x", fixture.awayScore ?? "x"].sort().join("-");
+
+  return `${date}|${teams.join("|")}|${score}`;
 }
