@@ -6,9 +6,11 @@ import { createFotMobClient } from "./client";
 import { normalizeMacheteMatchStat, normalizeMachetePlayer } from "./normalizers";
 import { storeMacheteRawPayload } from "./raw-payloads";
 import { syncMacheteFixtures } from "./sync-fixtures";
+import type { FotMobTeam } from "./types";
 
 type SyncPlayerStatsOptions = {
   syncFixtures?: boolean;
+  providerTeams?: FotMobTeam[];
 };
 
 export async function syncMacheteTeamPlayerStats(prisma: PrismaClient, teamId: string, options: SyncPlayerStatsOptions = {}) {
@@ -24,7 +26,7 @@ export async function syncMacheteTeamPlayerStats(prisma: PrismaClient, teamId: s
     await syncMacheteFixtures(prisma, team.leagueId);
   }
 
-  const providerTeams = await client.getTeams(team.league.providerLeagueId ?? team.leagueId, team.league.season ?? undefined);
+  const providerTeams = options.providerTeams ?? await client.getTeams(team.league.providerLeagueId ?? team.leagueId, team.league.season ?? undefined);
   const providerTeam = providerTeams.find((item) => item.id === team.providerTeamId);
   if (!providerTeam) throw new Error("Provider team not found in mock FotMob dataset.");
 
@@ -224,6 +226,15 @@ export async function syncMacheteTeamPlayerStats(prisma: PrismaClient, teamId: s
 }
 
 export async function syncMacheteLeaguePlayerStats(prisma: PrismaClient, leagueId: string, options: SyncPlayerStatsOptions = {}) {
+  const league = await prisma.macheteLeague.findUnique({ where: { id: leagueId } });
+  if (!league) throw new Error("Machete league not found.");
+
+  const client = createFotMobClient();
+  if (options.syncFixtures ?? true) {
+    await syncMacheteFixtures(prisma, leagueId);
+  }
+
+  const providerTeams = options.providerTeams ?? await client.getTeams(league.providerLeagueId ?? league.id, league.season ?? undefined);
   const teams = await prisma.macheteTeam.findMany({
     where: { leagueId },
     orderBy: { name: "asc" }
@@ -232,7 +243,11 @@ export async function syncMacheteLeaguePlayerStats(prisma: PrismaClient, leagueI
   let statsCount = 0;
   let snapshotsCount = 0;
   for (const team of teams) {
-    const result = await syncMacheteTeamPlayerStats(prisma, team.id, options);
+    const result = await syncMacheteTeamPlayerStats(prisma, team.id, {
+      ...options,
+      syncFixtures: false,
+      providerTeams
+    });
     statsCount += result.statsCount;
     snapshotsCount += result.snapshotsCount;
   }
