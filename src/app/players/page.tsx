@@ -57,9 +57,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
 
   const sort = searchParams.sort ?? "fantasyScore";
   const orderBy: Prisma.PlayerSnapshotOrderByWithRelationInput =
-    sort === "valueScore"
-      ? { valueScore: { sort: "desc", nulls: "last" } }
-      : sort === "minutesPlayed"
+    sort === "minutesPlayed"
         ? { minutesPlayed: { sort: "desc", nulls: "last" } }
         : sort === "playerName"
           ? { playerName: "asc" }
@@ -145,7 +143,6 @@ export default async function PlayersPage({ searchParams }: PageProps) {
           <span className="mb-1 block font-medium text-slate-600">Sort</span>
           <select name="sort" defaultValue={sort} className="w-full rounded border border-slate-200 px-3 py-2">
             <option value="fantasyScore">Fantasy score</option>
-            <option value="valueScore">Value score</option>
             <option value="minutesPlayed">Minutes</option>
             <option value="playerName">Player name</option>
           </select>
@@ -183,7 +180,6 @@ export default async function PlayersPage({ searchParams }: PageProps) {
                 <th className="px-4 py-3 text-right">xA</th>
                 <th className="px-4 py-3 text-right">Market</th>
                 <th className="px-4 py-3 text-right">Fantasy</th>
-                <th className="px-4 py-3 text-right">Value</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -200,12 +196,11 @@ export default async function PlayersPage({ searchParams }: PageProps) {
                   <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatScore(player.xa)}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatCurrency(player.marketValue)}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-right font-semibold text-ink">{formatScore(player.fantasyScore)}</td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right font-semibold text-ink">{formatScore(player.valueScore)}</td>
                 </tr>
               ))}
               {players.length === 0 ? (
                 <tr>
-                  <td colSpan={12} className="px-4 py-10 text-center text-slate-500">
+                  <td colSpan={11} className="px-4 py-10 text-center text-slate-500">
                     No published player snapshots match these filters yet.
                   </td>
                 </tr>

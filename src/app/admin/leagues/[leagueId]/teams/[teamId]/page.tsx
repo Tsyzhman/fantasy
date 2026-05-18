@@ -91,7 +91,6 @@ export default async function AdminTeamPage({ params }: PageProps) {
                 <th className="px-4 py-3 text-right">Assists</th>
                 <th className="px-4 py-3 text-right">Market</th>
                 <th className="px-4 py-3 text-right">Fantasy</th>
-                <th className="px-4 py-3 text-right">Value</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -109,12 +108,11 @@ export default async function AdminTeamPage({ params }: PageProps) {
                   <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatScore(player.assists)}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatCurrency(player.marketValue)}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-right font-semibold text-ink">{formatScore(player.fantasyScore)}</td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right font-semibold text-ink">{formatScore(player.valueScore)}</td>
                 </tr>
               ))}
               {players.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="px-4 py-10 text-center text-slate-500">
+                  <td colSpan={10} className="px-4 py-10 text-center text-slate-500">
                     No published player snapshots for this team yet.
                   </td>
                 </tr>
