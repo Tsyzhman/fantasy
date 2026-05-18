@@ -65,6 +65,11 @@ textarea {
   background-color: rgba(6, 95, 70, 0.28) !important;
 }
 
+:root[data-theme="dark"] .bg-sky-50,
+:root[data-theme="dark"] .bg-sky-50\/70 {
+  background-color: rgba(14, 116, 144, 0.3) !important;
+}
+
 :root[data-theme="dark"] .bg-amber-50,
 :root[data-theme="dark"] .bg-amber-50\/70 {
   background-color: rgba(146, 64, 14, 0.28) !important;
@@ -73,6 +78,14 @@ textarea {
 :root[data-theme="dark"] .bg-red-50,
 :root[data-theme="dark"] .bg-rose-50 {
   background-color: rgba(127, 29, 29, 0.32) !important;
+}
+
+:root[data-theme="dark"] .border-emerald-200 {
+  border-color: #047857 !important;
+}
+
+:root[data-theme="dark"] .border-sky-200 {
+  border-color: #0369a1 !important;
 }
 
 :root[data-theme="dark"] .border-amber-200 {
@@ -93,6 +106,10 @@ textarea {
 
 :root[data-theme="dark"] .text-emerald-700 {
   color: #7dd3b0 !important;
+}
+
+:root[data-theme="dark"] .text-sky-700 {
+  color: #7dd3fc !important;
 }
 
 :root[data-theme="dark"] .text-amber-700,

@@ -11,12 +11,10 @@ import {
   customFormulaFields,
   customFormulaForPosition,
   defaultFormulaByPosition,
-  formulaModeLabel,
   hasAnyAlternativeFormula,
   hasAnyCustomFormula,
   hasAnyScoringFormula,
-  scoringFormulaFields,
-  scoringFormulaModeLabel
+  scoringFormulaFields
 } from "@/lib/scoring/formula-display";
 import { validateCustomFormula } from "@/lib/scoring/formula";
 import type { ScoringModelSource } from "@/lib/scoring";
@@ -259,7 +257,7 @@ export async function ModelSettingsPage({
             <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm font-semibold text-ink"><I18nText en="Current Expected FP calculation" ru="Текущий расчет Expected FP" /></p>
               <span className="rounded bg-white px-2 py-1 text-xs font-semibold text-slate-600">
-                {formulaModeLabel(displayModel)}
+                <FormulaModeLabel model={displayModel} />
               </span>
             </div>
 
@@ -270,7 +268,7 @@ export async function ModelSettingsPage({
 
                     return (
                       <FormulaPreview key={entry.position} position={entry.position}>
-                      {formula || "Default predicted round rules for this position"}
+                        {formula || <I18nText en="Default predicted round rules for this position" ru="Встроенные правила прогноза тура для этой позиции" />}
                       </FormulaPreview>
                     );
                   })
@@ -439,7 +437,7 @@ function ScoreMap({
             ru="Основной прогнозный score. Использует встроенные правила прогноза тура или ваши основные формулы."
           />
         </p>
-        <p className="mt-3 text-xs font-semibold text-emerald-700">{formulaModeLabel(displayModel)}</p>
+        <p className="mt-3 text-xs font-semibold text-emerald-700"><FormulaModeLabel model={displayModel} /></p>
       </div>
       <div className="rounded border border-sky-200 bg-sky-50 p-4">
         <p className="text-xs font-semibold uppercase text-sky-700"><I18nText en="Blue table column" ru="Синяя колонка таблицы" /></p>
@@ -450,7 +448,7 @@ function ScoreMap({
             ru="Фактический суммарный score по загруженным totals. Это отдельно от прогноза."
           />
         </p>
-        <p className="mt-3 text-xs font-semibold text-sky-700">{scoringFormulaModeLabel(displayModel)}</p>
+        <p className="mt-3 text-xs font-semibold text-sky-700"><ScoringFormulaModeLabel model={displayModel} /></p>
       </div>
       <div className="rounded border border-amber-200 bg-amber-50 p-4">
         <p className="text-xs font-semibold uppercase text-amber-700"><I18nText en="Amber table column" ru="Желтая колонка таблицы" /></p>
@@ -461,7 +459,7 @@ function ScoreMap({
             ru="Дополнительный score для сравнения. Появляется, когда Alt FP включен и есть формула."
           />
         </p>
-        <p className="mt-3 text-xs font-semibold text-amber-700">{altEnabled ? "Alt FP enabled" : "Alt FP disabled"}</p>
+        <p className="mt-3 text-xs font-semibold text-amber-700"><AltStatusLabel enabled={altEnabled} /></p>
       </div>
       <div className="rounded border border-slate-200 bg-slate-50 p-4">
         <p className="text-xs font-semibold uppercase text-slate-500"><I18nText en="Save behavior" ru="После сохранения" /></p>
@@ -477,7 +475,27 @@ function ScoreMap({
   );
 }
 
-function FormulaPreview({ position, children }: { position: string; children: string }) {
+function FormulaModeLabel({ model }: { model?: Parameters<typeof hasAnyCustomFormula>[0] }) {
+  return model?.customFormulaEnabled && hasAnyCustomFormula(model) ? (
+    <I18nText en="Custom formulas by position" ru="Свои формулы по позициям" />
+  ) : (
+    <I18nText en="Default predicted round rules" ru="Встроенные правила прогноза тура" />
+  );
+}
+
+function ScoringFormulaModeLabel({ model }: { model?: Parameters<typeof hasAnyScoringFormula>[0] }) {
+  return model?.scoringFormulaEnabled && hasAnyScoringFormula(model) ? (
+    <I18nText en="Custom scoring formulas by position" ru="Свои scoring-формулы по позициям" />
+  ) : (
+    <I18nText en="Default aggregate scoring rules" ru="Встроенные правила фактического scoring" />
+  );
+}
+
+function AltStatusLabel({ enabled }: { enabled: boolean }) {
+  return enabled ? <I18nText en="Alt FP enabled" ru="Alt FP включен" /> : <I18nText en="Alt FP disabled" ru="Alt FP выключен" />;
+}
+
+function FormulaPreview({ position, children }: { position: string; children: ReactNode }) {
   return (
     <div className="rounded bg-white p-3">
       <p className="text-xs font-semibold uppercase text-slate-500">{position}</p>
@@ -522,15 +540,15 @@ function FormulaHelp({ source }: { source: ScoringModelSource }) {
       <p className="font-semibold text-ink"><I18nText en="Formula syntax and examples" ru="Синтаксис формул и примеры" /></p>
       <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-3">
         <div className="rounded bg-white p-3">
-          <p className="text-xs font-semibold uppercase text-slate-500">Expected FP example</p>
+          <p className="text-xs font-semibold uppercase text-slate-500"><I18nText en="Expected FP example" ru="Пример Expected FP" /></p>
           <pre className="mt-2 whitespace-pre-wrap break-words font-mono text-xs leading-5 text-slate-700">{examples.primary}</pre>
         </div>
         <div className="rounded bg-white p-3">
-          <p className="text-xs font-semibold uppercase text-slate-500">Scoring FP example</p>
+          <p className="text-xs font-semibold uppercase text-slate-500"><I18nText en="Scoring FP example" ru="Пример Scoring FP" /></p>
           <pre className="mt-2 whitespace-pre-wrap break-words font-mono text-xs leading-5 text-slate-700">{examples.scoring}</pre>
         </div>
         <div className="rounded bg-white p-3">
-          <p className="text-xs font-semibold uppercase text-slate-500">Alt FP example</p>
+          <p className="text-xs font-semibold uppercase text-slate-500"><I18nText en="Alt FP example" ru="Пример Alt FP" /></p>
           <pre className="mt-2 whitespace-pre-wrap break-words font-mono text-xs leading-5 text-slate-700">{examples.alternative}</pre>
         </div>
       </div>
@@ -556,9 +574,12 @@ function FieldGuideSections() {
     <>
       <section className="mt-6 rounded border border-slate-200 bg-white p-6 shadow-soft">
         <div>
-          <h2 className="text-lg font-semibold text-ink">Scoring fields and aliases</h2>
+          <h2 className="text-lg font-semibold text-ink"><I18nText en="Scoring fields and aliases" ru="Поля scoring и алиасы" /></h2>
           <p className="mt-1 text-sm text-slate-600">
-            You can write readable field names in braces. They are normalized into metric keys automatically.
+            <I18nText
+              en="You can write readable field names in braces. They are normalized into metric keys automatically."
+              ru="В формулах можно писать понятные названия полей в фигурных скобках. Они автоматически приводятся к metric keys."
+            />
           </p>
         </div>
 
@@ -566,9 +587,9 @@ function FieldGuideSections() {
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
               <tr>
-                <th className="px-3 py-3">Action</th>
-                <th className="px-3 py-3">Formula aliases</th>
-                <th className="px-3 py-3">Normalized keys</th>
+                <th className="px-3 py-3"><I18nText en="Action" ru="Действие" /></th>
+                <th className="px-3 py-3"><I18nText en="Formula aliases" ru="Алиасы формулы" /></th>
+                <th className="px-3 py-3"><I18nText en="Normalized keys" ru="Нормализованные ключи" /></th>
                 <th className="px-3 py-3 text-right">GK</th>
                 <th className="px-3 py-3 text-right">DEF</th>
                 <th className="px-3 py-3 text-right">MID</th>
@@ -614,9 +635,12 @@ function FieldGuideSections() {
 
       <section className="mt-6 rounded border border-slate-200 bg-white p-6 shadow-soft">
         <div>
-          <h2 className="text-lg font-semibold text-ink">All numeric source fields</h2>
+          <h2 className="text-lg font-semibold text-ink"><I18nText en="All numeric source fields" ru="Все числовые поля источника" /></h2>
           <p className="mt-1 text-sm text-slate-600">
-            Numeric fields can be used in formulas. Text, date, and boolean fields are stored as metadata and evaluate to 0.
+            <I18nText
+              en="Numeric fields can be used in formulas. Text, date, and boolean fields are stored as metadata and evaluate to 0."
+              ru="Числовые поля можно использовать в формулах. Текст, даты и boolean хранятся как метаданные и в формулах считаются как 0."
+            />
           </p>
         </div>
 
@@ -624,12 +648,12 @@ function FieldGuideSections() {
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="sticky top-0 bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
               <tr>
-                <th className="px-3 py-3">Group</th>
-                <th className="px-3 py-3">Alias</th>
-                <th className="px-3 py-3">Normalized key</th>
-                <th className="px-3 py-3">Type</th>
-                <th className="px-3 py-3">Meaning</th>
-                <th className="px-3 py-3">Default FP</th>
+                <th className="px-3 py-3"><I18nText en="Group" ru="Группа" /></th>
+                <th className="px-3 py-3"><I18nText en="Alias" ru="Алиас" /></th>
+                <th className="px-3 py-3"><I18nText en="Normalized key" ru="Нормализованный ключ" /></th>
+                <th className="px-3 py-3"><I18nText en="Type" ru="Тип" /></th>
+                <th className="px-3 py-3"><I18nText en="Meaning" ru="Смысл" /></th>
+                <th className="px-3 py-3"><I18nText en="Default FP" ru="Default FP" /></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -647,7 +671,11 @@ function FieldGuideSections() {
                   <td className="whitespace-nowrap px-3 py-3 text-slate-600">{field.type}</td>
                   <td className="max-w-[360px] px-3 py-3 text-slate-600">{field.meaning}</td>
                   <td className="whitespace-nowrap px-3 py-3 text-slate-600">
-                    {field.type === "number" || field.type === "money" ? "0, set by formula" : "non-numeric"}
+                    {field.type === "number" || field.type === "money" ? (
+                      <I18nText en="0, set by formula" ru="0, задается формулой" />
+                    ) : (
+                      <I18nText en="non-numeric" ru="не число" />
+                    )}
                   </td>
                 </tr>
               ))}
