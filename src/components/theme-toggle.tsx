@@ -7,6 +7,7 @@ type Theme = "light" | "dark";
 
 export function ThemeToggle() {
   const [theme, setTheme] = useState<Theme>("light");
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     const stored = window.localStorage.getItem("fantasy-theme");
@@ -18,6 +19,7 @@ export function ThemeToggle() {
           : "light";
     setTheme(initial);
     document.documentElement.dataset.theme = initial;
+    setMounted(true);
   }, []);
 
   function toggleTheme() {
@@ -28,16 +30,17 @@ export function ThemeToggle() {
   }
 
   const Icon = theme === "dark" ? Sun : Moon;
+  const label = theme === "dark" ? "Switch to light theme" : "Switch to dark theme";
 
   return (
     <button
       type="button"
       onClick={toggleTheme}
-      title={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
-      aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+      title={mounted ? label : "Switch theme"}
+      aria-label={mounted ? label : "Switch theme"}
       className="inline-flex h-9 w-9 items-center justify-center rounded border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
     >
-      <Icon className="h-4 w-4" />
+      {mounted ? <Icon className="h-4 w-4" /> : <span className="h-4 w-4" />}
     </button>
   );
 }
