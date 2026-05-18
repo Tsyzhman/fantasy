@@ -1,8 +1,8 @@
 import type { FantasyModel, FantasyModelRule } from "@prisma/client";
 
-import { prisma } from "@/lib/db";
-import { calculateCustomFormulaScore } from "@/lib/scoring/formula";
-import { seedRules } from "@/lib/scoring/rules";
+import { prisma } from "../db";
+import { calculateCustomFormulaScore } from "./formula";
+import { seedRules } from "./rules";
 
 export type ScoringRule = Pick<FantasyModelRule, "positionGroup" | "metricKey" | "weight" | "transform" | "enabled">;
 export type ActiveScoringModel = Pick<
@@ -70,17 +70,62 @@ export function calculateFantasyScore(
     if (customFormula) return round(calculateCustomFormulaScore(customFormula, rawMetrics));
   }
 
-  const rules = Array.isArray(modelOrRules) ? modelOrRules : modelOrRules.rules;
-  const activeRules = rules.filter(
-    (rule) => rule.enabled && (rule.positionGroup === "DEFAULT" || rule.positionGroup === positionGroup)
-  );
+  return calculatePredictedRoundScore(rawMetrics, positionGroup);
+}
 
-  const score = activeRules.reduce((total, rule) => {
-    const value = transformMetric(readMetric(rawMetrics, rule.metricKey), rule.transform, rawMetrics);
-    return total + value * rule.weight;
-  }, 0);
+export function calculatePredictedRoundScore(rawMetrics: Record<string, unknown>, positionGroup: string | null | undefined) {
+  const position = positionGroup ?? "UNKNOWN";
+  const matches = readMetric(rawMetrics, "matches_played");
+  const minutes = readMetric(rawMetrics, "minutes_played");
+  const expectedMinutes = matches > 0 ? clamp(minutes / matches, 0, 90) : 0;
+  const minutesFactor = expectedMinutes / 90;
+  const likelyAppearance = expectedMinutes > 0 ? 1 : 0;
+  const likelySixty = expectedMinutes >= 60 ? 1 : 0;
+  const likelyFullMatch = expectedMinutes >= 89.5 ? 1 : 0;
 
-  return round(score);
+  let total = 0;
+
+  total += likelyAppearance;
+  total += likelySixty;
+  if (position === "MID" || position === "FWD") total += likelyFullMatch;
+
+  total += expectedPerMatch(rawMetrics, "goals", "goals_per_90", minutesFactor, matches) * goalWeight(position);
+  total += expectedPerMatch(rawMetrics, "assists", "assists_per_90", minutesFactor, matches) * 3;
+  total += perMatchFromTotal(rawMetrics, "fantasy_assists|fantasy_assist", matches) * 3;
+
+  if (position === "GK" || position === "DEF" || position === "MID") {
+    total += perMatchFromTotal(rawMetrics, "clean_sheets|clean_sheet", matches) * cleanSheetWeight(position);
+  }
+
+  if (position === "GK") {
+    const saves = expectedSaves(rawMetrics, minutesFactor, matches);
+    total += saves / 3;
+    total += perMatchFromTotal(rawMetrics, "penalties_saved|penalty_saves", matches) * 5;
+  }
+
+  if (position === "DEF" || position === "MID" || position === "FWD") {
+    total +=
+      expectedPerMatch(
+        rawMetrics,
+        "recoveries|possession_recoveries",
+        "recoveries_per_90|possession_recoveries_per_90",
+        minutesFactor,
+        matches
+      ) / 3;
+  }
+
+  total -= perMatchFromTotal(rawMetrics, "fouls_leading_to_penalty|penalties_conceded", matches) * 2;
+  total -= expectedMissedPenalties(rawMetrics, matches) * 2;
+  total -= perMatchFromTotal(rawMetrics, "own_goals|own_goal", matches) * 2;
+
+  if (position === "GK" || position === "DEF") {
+    total -= expectedPerMatch(rawMetrics, "goals_conceded|conceded_goals", "goals_conceded_per_90|conceded_goals_per_90", minutesFactor, matches) / 2;
+  }
+
+  total -= expectedPerMatch(rawMetrics, "yellow_cards", "yellow_cards_per_90", minutesFactor, matches);
+  total -= expectedPerMatch(rawMetrics, "red_cards", "red_cards_per_90", minutesFactor, matches) * 3;
+
+  return round(total);
 }
 
 function selectCustomFormula(model: ActiveScoringModel, positionGroup: string | null | undefined) {
@@ -96,6 +141,61 @@ function selectCustomFormula(model: ActiveScoringModel, positionGroup: string | 
             : null;
 
   return formula?.trim() || model.customFormula?.trim() || null;
+}
+
+function expectedPerMatch(
+  rawMetrics: Record<string, unknown>,
+  totalKey: string,
+  per90Key: string,
+  minutesFactor: number,
+  matches: number
+) {
+  const per90 = readMetric(rawMetrics, per90Key);
+  if (per90 > 0) return per90 * minutesFactor;
+
+  return perMatchFromTotal(rawMetrics, totalKey, matches);
+}
+
+function perMatchFromTotal(rawMetrics: Record<string, unknown>, metricKey: string, matches: number) {
+  if (matches <= 0) return 0;
+  return readMetric(rawMetrics, metricKey) / matches;
+}
+
+function expectedSaves(rawMetrics: Record<string, unknown>, minutesFactor: number, matches: number) {
+  const saves = perMatchFromTotal(rawMetrics, "saves", matches);
+  if (saves > 0) return saves;
+
+  const shotsAgainst = readMetric(rawMetrics, "shots_against_per_90") * minutesFactor;
+  const saveRate = readMetric(rawMetrics, "save_rate_percent") / 100;
+  return shotsAgainst * clamp(saveRate, 0, 1);
+}
+
+function expectedMissedPenalties(rawMetrics: Record<string, unknown>, matches: number) {
+  const missed = perMatchFromTotal(rawMetrics, "missed_penalties|penalties_missed", matches);
+  if (missed > 0) return missed;
+
+  const penaltiesTaken = perMatchFromTotal(rawMetrics, "penalties_taken", matches);
+  const conversion = readMetric(rawMetrics, "penalty_conversion_percent");
+  if (penaltiesTaken > 0 && conversion > 0) return penaltiesTaken * (1 - clamp(conversion / 100, 0, 1));
+
+  return 0;
+}
+
+function goalWeight(position: string) {
+  if (position === "GK" || position === "DEF") return 6;
+  if (position === "MID") return 5;
+  if (position === "FWD") return 4;
+  return 4;
+}
+
+function cleanSheetWeight(position: string) {
+  if (position === "GK" || position === "DEF") return 4;
+  if (position === "MID") return 1;
+  return 0;
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
 }
 
 export function calculateValueScore(fantasyScore: number | null, marketValue: number | null) {
@@ -115,27 +215,6 @@ function readMetric(rawMetrics: Record<string, unknown>, metricKey: string) {
   }
 
   return 0;
-}
-
-function transformMetric(value: number, transform: string, rawMetrics: Record<string, unknown>) {
-  switch (transform) {
-    case "appearances_60":
-      return capByAppearances(Math.floor(value / 60), rawMetrics);
-    case "full_matches":
-      return capByAppearances(Math.floor(value / 90), rawMetrics);
-    case "floor_per_2":
-      return Math.floor(value / 2);
-    case "floor_per_3":
-      return Math.floor(value / 3);
-    case "linear":
-    default:
-      return value;
-  }
-}
-
-function capByAppearances(value: number, rawMetrics: Record<string, unknown>) {
-  const matches = readMetric(rawMetrics, "matches_played");
-  return matches > 0 ? Math.min(value, matches) : value;
 }
 
 function numericMetric(value: unknown) {

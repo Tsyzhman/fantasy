@@ -100,8 +100,8 @@ export default async function AdminModelsPage({ searchParams }: PageProps) {
           <div>
             <h2 className="text-lg font-semibold text-ink">{model?.name ?? "Fantasy 2025/26"}</h2>
             <p className="mt-1 text-sm text-slate-600">
-              This is one platform-wide fantasy model shared by every league. Default rules stay available; enabled custom
-              formulas override them by position.
+              This is one platform-wide fantasy model shared by every league. Default rules predict points for one upcoming
+              round from imported averages; enabled custom formulas override them by position.
             </p>
           </div>
           <span className="rounded bg-slate-100 px-2.5 py-1 text-sm font-medium text-slate-600">
@@ -139,7 +139,7 @@ export default async function AdminModelsPage({ searchParams }: PageProps) {
                     <div key={entry.position} className="rounded bg-white p-3">
                       <p className="text-xs font-semibold uppercase text-slate-500">{entry.position}</p>
                       <pre className="mt-2 whitespace-pre-wrap break-words font-mono text-xs leading-5 text-slate-700">
-                        {formula || "Default rules for this position"}
+                        {formula || "Default predicted round rules for this position"}
                       </pre>
                     </div>
                   );
@@ -159,8 +159,8 @@ export default async function AdminModelsPage({ searchParams }: PageProps) {
             )}
 
             <p className="mt-3 text-xs text-slate-500">
-              `appearances_60` = floor(minutes / 60), `full_matches` = floor(minutes / 90), оба ограничиваются количеством
-              matches_played. `floor(x/N)` означает целые бонусы за каждые N действий.
+              Default FP is predicted for one round: minutes are averaged as minutes_played / matches_played, per-90 metrics
+              are scaled by expected minutes, and totals are converted to per-match values.
             </p>
           </div>
 

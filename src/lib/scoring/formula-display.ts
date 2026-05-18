@@ -3,84 +3,88 @@ export const defaultFormulaByPosition = [
     key: "customFormulaGk",
     position: "ВР",
     formula: [
-      "{Matches played}",
-      "appearances_60({Minutes played})",
-      "6*{Goals}",
-      "3*{Assists}",
-      "3*{Fantasy assists}",
-      "4*{Clean sheets}",
-      "floor({Saves}/3)",
-      "5*{Penalties saved}",
-      "-2*{Fouls leading to penalty}",
-      "-2*{Missed penalties}",
-      "-2*{Own goals}",
-      "-floor({Goals conceded}/2)",
-      "-{Yellow cards}",
-      "-3*{Red cards}"
-    ].join(" + ")
+      "appearance_bonus",
+      "60min_bonus",
+      "6*expected_goals_per_match",
+      "3*expected_assists_per_match",
+      "3*fantasy_assists_per_match",
+      "4*clean_sheet_probability",
+      "expected_saves/3",
+      "5*penalty_saves_per_match",
+      "-2*penalties_conceded_per_match",
+      "-2*missed_penalties_per_match",
+      "-2*own_goals_per_match",
+      "-expected_goals_conceded/2",
+      "-expected_yellow_cards",
+      "-3*expected_red_cards"
+    ].join(" + "),
+    placeholder: "6*{Goals per 90} + 3*{Assists per 90} + 4*{Clean sheets} - 0.5*{Conceded goals per 90}"
   },
   {
     key: "customFormulaDef",
     position: "ЗЩ",
     formula: [
-      "{Matches played}",
-      "appearances_60({Minutes played})",
-      "6*{Goals}",
-      "3*{Assists}",
-      "3*{Fantasy assists}",
-      "4*{Clean sheets}",
-      "floor({Recoveries}/3)",
-      "-2*{Fouls leading to penalty}",
-      "-2*{Missed penalties}",
-      "-2*{Own goals}",
-      "-floor({Goals conceded}/2)",
-      "-{Yellow cards}",
-      "-3*{Red cards}"
-    ].join(" + ")
+      "appearance_bonus",
+      "60min_bonus",
+      "6*expected_goals_per_match",
+      "3*expected_assists_per_match",
+      "3*fantasy_assists_per_match",
+      "4*clean_sheet_probability",
+      "expected_recoveries/3",
+      "-2*penalties_conceded_per_match",
+      "-2*missed_penalties_per_match",
+      "-2*own_goals_per_match",
+      "-expected_goals_conceded/2",
+      "-expected_yellow_cards",
+      "-3*expected_red_cards"
+    ].join(" + "),
+    placeholder: "6*{Goals per 90} + 3*{Assists per 90} + 4*{Clean sheets} - 0.5*{Conceded goals per 90}"
   },
   {
     key: "customFormulaMid",
     position: "ПЗЩ",
     formula: [
-      "{Matches played}",
-      "appearances_60({Minutes played})",
-      "full_matches({Minutes played})",
-      "5*{Goals}",
-      "3*{Assists}",
-      "3*{Fantasy assists}",
-      "{Clean sheets}",
-      "floor({Recoveries}/3)",
-      "-2*{Fouls leading to penalty}",
-      "-2*{Missed penalties}",
-      "-2*{Own goals}",
-      "-{Yellow cards}",
-      "-3*{Red cards}"
-    ].join(" + ")
+      "appearance_bonus",
+      "60min_bonus",
+      "full_match_bonus",
+      "5*expected_goals_per_match",
+      "3*expected_assists_per_match",
+      "3*fantasy_assists_per_match",
+      "clean_sheet_probability",
+      "expected_recoveries/3",
+      "-2*penalties_conceded_per_match",
+      "-2*missed_penalties_per_match",
+      "-2*own_goals_per_match",
+      "-expected_yellow_cards",
+      "-3*expected_red_cards"
+    ].join(" + "),
+    placeholder: "5*{Goals per 90} + 3*{Assists per 90} + 0.5*{Key passes per 90} - {Yellow cards per 90}"
   },
   {
     key: "customFormulaFwd",
     position: "НАП",
     formula: [
-      "{Matches played}",
-      "appearances_60({Minutes played})",
-      "full_matches({Minutes played})",
-      "4*{Goals}",
-      "3*{Assists}",
-      "3*{Fantasy assists}",
-      "floor({Recoveries}/3)",
-      "-2*{Fouls leading to penalty}",
-      "-2*{Missed penalties}",
-      "-2*{Own goals}",
-      "-{Yellow cards}",
-      "-3*{Red cards}"
-    ].join(" + ")
+      "appearance_bonus",
+      "60min_bonus",
+      "full_match_bonus",
+      "4*expected_goals_per_match",
+      "3*expected_assists_per_match",
+      "3*fantasy_assists_per_match",
+      "expected_recoveries/3",
+      "-2*penalties_conceded_per_match",
+      "-2*missed_penalties_per_match",
+      "-2*own_goals_per_match",
+      "-expected_yellow_cards",
+      "-3*expected_red_cards"
+    ].join(" + "),
+    placeholder: "4*{Goals per 90} + 3*{Assists per 90} + 0.4*{Touches in box per 90} - {Yellow cards per 90}"
   }
 ];
 
-export const customFormulaFields = defaultFormulaByPosition.map(({ key, position, formula }) => ({
+export const customFormulaFields = defaultFormulaByPosition.map(({ key, position, placeholder }) => ({
   key,
   position,
-  placeholder: formula
+  placeholder
 }));
 
 type FormulaModel = {
@@ -103,7 +107,7 @@ export function hasAnyCustomFormula(model?: FormulaModel | null) {
 }
 
 export function formulaModeLabel(model?: FormulaModel | null) {
-  return model?.customFormulaEnabled && hasAnyCustomFormula(model) ? "Custom formulas by position" : "Default rules";
+  return model?.customFormulaEnabled && hasAnyCustomFormula(model) ? "Custom formulas by position" : "Default predicted round rules";
 }
 
 export function customFormulaForPosition(model: FormulaModel | null | undefined, key: string) {

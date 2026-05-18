@@ -90,7 +90,7 @@ export default async function AdminTeamPage({ params }: PageProps) {
                 <th className="px-4 py-3 text-right">xG</th>
                 <th className="px-4 py-3 text-right">Assists</th>
                 <th className="px-4 py-3 text-right">Market</th>
-                <th className="bg-emerald-50 px-4 py-3 text-right text-emerald-700">Fantasy</th>
+                <th className="bg-emerald-50 px-4 py-3 text-right text-emerald-700">Predicted FP</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">

@@ -17,22 +17,22 @@ export type ScoringFieldGuideItem = {
 export const scoringFieldGuide: ScoringFieldGuideItem[] = [
   {
     action: "Выход на поле",
-    meaning: "Количество матчей, в которых игрок выходил на поле.",
+    meaning: "В дефолтной модели это прогнозный бонус за выход в ближайшем туре: +1, если средние минуты больше 0.",
     formulaAliases: ["{Matches played}"],
     normalizedKeys: ["matches_played"],
     points: { GK: "+1", DEF: "+1", MID: "+1", FWD: "+1" }
   },
   {
     action: "60+ минут на поле",
-    meaning: "Приближение по суммарным минутам: floor(minutes_played / 60), но не больше matches_played.",
+    meaning: "В дефолтной модели это прогнозный бонус за 60+ минут: +1, если minutes_played / matches_played >= 60.",
     formulaAliases: ["{Minutes played}"],
     normalizedKeys: ["minutes_played"],
     points: { GK: "+1", DEF: "+1", MID: "+1", FWD: "+1" },
-    note: "В дефолтной модели считается трансформом appearances_60."
+    note: "В кастомной формуле можно использовать {Minutes played} напрямую или перейти на per-90 поля."
   },
   {
     action: "Полный матч",
-    meaning: "Приближение по суммарным минутам: floor(minutes_played / 90), но не больше matches_played.",
+    meaning: "В дефолтной модели это прогнозный бонус за полный матч: +1, если средние минуты почти 90.",
     formulaAliases: ["{Minutes played}"],
     normalizedKeys: ["minutes_played"],
     points: { MID: "+1", FWD: "+1" },
@@ -72,7 +72,7 @@ export const scoringFieldGuide: ScoringFieldGuideItem[] = [
     formulaAliases: ["{Saves}"],
     normalizedKeys: ["saves"],
     points: { GK: "+1" },
-    note: "В дефолтной модели считается как floor(saves / 3)."
+    note: "В дефолтной модели считается как ожидаемые сейвы за тур / 3."
   },
   {
     action: "Каждые 3 возврата владения",
@@ -80,7 +80,7 @@ export const scoringFieldGuide: ScoringFieldGuideItem[] = [
     formulaAliases: ["{Recoveries}", "{Possession recoveries}"],
     normalizedKeys: ["recoveries", "possession_recoveries"],
     points: { DEF: "+1", MID: "+1", FWD: "+1" },
-    note: "В дефолтной модели считается как floor(value / 3)."
+    note: "В дефолтной модели считается как ожидаемые возвраты владения за тур / 3."
   },
   {
     action: "Сэйв пенальти",
@@ -116,7 +116,7 @@ export const scoringFieldGuide: ScoringFieldGuideItem[] = [
     formulaAliases: ["{Goals conceded}", "{Conceded goals}"],
     normalizedKeys: ["goals_conceded", "conceded_goals"],
     points: { GK: "-1", DEF: "-1" },
-    note: "В дефолтной модели считается как floor(value / 2)."
+    note: "В дефолтной модели считается как ожидаемые пропущенные голы за тур / 2."
   },
   {
     action: "Желтая карточка",

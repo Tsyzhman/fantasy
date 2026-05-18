@@ -2,7 +2,7 @@
 
 ## Meaning
 
-`fantasyScore` is the player's projected fantasy points from the imported event metrics.
+`fantasyScore` is the player's predicted fantasy points for one upcoming round from the imported event metrics.
 
 `valueScore` is fantasy output adjusted for market value:
 
@@ -14,16 +14,21 @@ It answers a different question: not "who scores most?", but "who gives the most
 
 ## Formula
 
-The score is rule-based and position-aware:
+The default score is rule-based, position-aware, and normalized to one match/round:
 
 ```text
-fantasy_score = sum(transformed_metric_value * rule_weight)
+expected_minutes = minutes_played / matches_played
+fantasy_score = projected_one_round_events * position_rule_weight
 ```
 
 Rules can be `DEFAULT` for all positions or specific to `GK`, `DEF`, `MID`, and `FWD`.
+Imported totals are converted to per-match values. Per-90 fields are scaled by `expected_minutes / 90` when available.
 
 Admins can also enable custom formulas on `/admin/models`. Custom formulas are position-specific: GK, DEF, MID, and FWD
 can each have their own formula. If a position formula is empty, that position uses the default rule set.
+
+Custom formulas are evaluated exactly as written against the imported fields. For a per-round custom model, prefer per-90
+fields and scale them the way you want.
 
 Custom formula syntax:
 

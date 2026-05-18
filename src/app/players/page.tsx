@@ -143,7 +143,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
         <label className="text-sm">
           <span className="mb-1 block font-medium text-slate-600">Sort</span>
           <select name="sort" defaultValue={sort} className="w-full rounded border border-slate-200 px-3 py-2">
-            <option value="fantasyScore">Fantasy score</option>
+            <option value="fantasyScore">Predicted FP</option>
             <option value="minutesPlayed">Minutes</option>
             <option value="playerName">Player name</option>
           </select>
@@ -175,7 +175,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
                 <th className="px-4 py-3 text-right">Assists</th>
                 <th className="px-4 py-3 text-right">xA</th>
                 <th className="px-4 py-3 text-right">Market</th>
-                <th className="bg-emerald-50 px-4 py-3 text-right text-emerald-700">Fantasy</th>
+                <th className="bg-emerald-50 px-4 py-3 text-right text-emerald-700">Predicted FP</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
