@@ -65,18 +65,20 @@ export function BaltikaCalendarPanel({
     return Array.from(new Set(values));
   }, [fixtures]);
   const roundLabels = useMemo(() => new Map(rounds.map((round, index) => [round, index + 1])), [rounds]);
-  const [selectedRound, setSelectedRound] = useState<number | null>(rounds[0] ?? null);
-  const activeRound = selectedRound ?? rounds[0] ?? null;
+  const initialRound = useMemo(() => findDefaultRound(fixtures, rounds), [fixtures, rounds]);
+  const [selectedRound, setSelectedRound] = useState<number | null>(initialRound);
+  const activeRound = selectedRound ?? initialRound;
+  const visibleRounds = useMemo(() => prioritizeRounds(rounds, activeRound), [activeRound, rounds]);
   const teamsById = useMemo(() => new Map(teams.map((team) => [team.id, team])), [teams]);
 
   const matrix = useMemo(() => {
     return teams.map((team) => ({
       team,
-      cells: rounds.map((round) =>
+      cells: visibleRounds.map((round) =>
         fixtures.filter((fixture) => fixture.roundNumber === round && (fixture.homeTeamId === team.id || fixture.awayTeamId === team.id))
       )
     }));
-  }, [fixtures, rounds, teams]);
+  }, [fixtures, teams, visibleRounds]);
   const roundProjectionRows = useMemo(() => {
     if (activeRound === null) return [];
 
@@ -211,9 +213,10 @@ export function BaltikaCalendarPanel({
           <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
             <tr>
               <th className="sticky left-0 z-10 bg-slate-50 px-4 py-3">Team</th>
-              {rounds.map((round) => (
+              {visibleRounds.map((round) => (
                 <th key={round} className="min-w-[150px] px-4 py-3">
                   Tour {roundLabels.get(round)}
+                  {round === activeRound ? <span className="ml-1 rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] text-emerald-700">selected</span> : null}
                   {roundLabels.get(round) !== round ? <span className="ml-1 font-normal normal-case text-slate-400">(source {round})</span> : null}
                 </th>
               ))}
@@ -224,7 +227,7 @@ export function BaltikaCalendarPanel({
               <tr key={team.id}>
                 <td className="sticky left-0 z-10 whitespace-nowrap bg-white px-4 py-3 font-semibold text-ink">{team.name}</td>
                 {cells.map((cell, index) => (
-                  <td key={`${team.id}-${rounds[index]}`} className="align-top px-4 py-3 text-slate-600">
+                  <td key={`${team.id}-${visibleRounds[index]}`} className="align-top px-4 py-3 text-slate-600">
                     {cell.length === 0 ? (
                       <span className="text-slate-300">Empty</span>
                     ) : (
@@ -382,6 +385,45 @@ export function BaltikaCalendarPanel({
       </div>
     </section>
   );
+}
+
+function findDefaultRound(fixtures: BaltikaCalendarFixture[], rounds: number[]) {
+  if (rounds.length === 0) return null;
+
+  const today = startOfUtcDay(new Date()).getTime();
+  const fixturesWithRound = fixtures.filter((fixture) => typeof fixture.roundNumber === "number" && fixture.kickoffAt);
+  const upcoming = fixturesWithRound
+    .filter((fixture) => startOfUtcDay(new Date(fixture.kickoffAt as string)).getTime() >= today)
+    .sort((left, right) => {
+      const leftTime = new Date(left.kickoffAt as string).getTime();
+      const rightTime = new Date(right.kickoffAt as string).getTime();
+      return leftTime - rightTime;
+    })[0];
+
+  if (upcoming?.roundNumber) return upcoming.roundNumber;
+
+  const latestPast = fixturesWithRound
+    .filter((fixture) => startOfUtcDay(new Date(fixture.kickoffAt as string)).getTime() < today)
+    .sort((left, right) => {
+      const leftTime = new Date(left.kickoffAt as string).getTime();
+      const rightTime = new Date(right.kickoffAt as string).getTime();
+      return rightTime - leftTime;
+    })[0];
+
+  return latestPast?.roundNumber ?? rounds[0] ?? null;
+}
+
+function prioritizeRounds(rounds: number[], activeRound: number | null) {
+  if (activeRound === null) return rounds;
+  return [...rounds].sort((left, right) => {
+    if (left === activeRound) return -1;
+    if (right === activeRound) return 1;
+    return left - right;
+  });
+}
+
+function startOfUtcDay(date: Date) {
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()));
 }
 
 function projectFixtureForTeam(
