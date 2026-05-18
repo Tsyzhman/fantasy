@@ -1,8 +1,12 @@
 import type { Prisma } from "@prisma/client";
 
+import { leagueSeeds } from "@/lib/leagues/seed-data";
+import { teamLogoUrlForSlug } from "@/lib/teams/logo-assets";
+import { normalizeName, slugify } from "@/lib/text";
+
 import type { FotMobFixture, FotMobPlayer, FotMobPlayerMatchStat, FotMobTeam } from "./types";
 
-export function normalizeMacheteTeam(team: FotMobTeam, leagueId: string) {
+export function normalizeMacheteTeam(team: FotMobTeam, leagueId: string, providerLeagueId?: string | null) {
   return {
     leagueId,
     provider: "FOTMOB",
@@ -10,7 +14,7 @@ export function normalizeMacheteTeam(team: FotMobTeam, leagueId: string) {
     name: team.name,
     shortName: team.shortName ?? null,
     country: team.country ?? null,
-    logoUrl: team.logoUrl ?? null,
+    logoUrl: localFotMobTeamLogoUrl(team, providerLeagueId) ?? team.logoUrl ?? null,
     status: "SYNCED",
     lastSyncedAt: new Date()
   };
@@ -69,4 +73,29 @@ export function normalizeMacheteMatchStat(stat: FotMobPlayerMatchStat, fixtureId
     redCards: stat.redCards,
     raw: stat as unknown as Prisma.InputJsonValue
   };
+}
+
+function localFotMobTeamLogoUrl(team: FotMobTeam, providerLeagueId?: string | null) {
+  const leagueSeed = leagueSeeds.find((league) => league.fotMobLeagueId === providerLeagueId);
+  if (!leagueSeed) return team.logoUrl?.startsWith("/") ? team.logoUrl : null;
+
+  const normalizedTeamNames = [team.name, team.shortName].filter((value): value is string => Boolean(value)).map(normalizeName);
+  const seedTeam = leagueSeed.teams.find((candidate) => {
+    const candidateNames = [candidate.name, ...(candidate.aliases ?? [])].map(normalizeName);
+    return normalizedTeamNames.some((name) => candidateNames.includes(name));
+  });
+
+  const logoCandidates = [
+    seedTeam?.name,
+    ...(seedTeam?.aliases ?? []),
+    team.name,
+    team.shortName
+  ].filter((value): value is string => Boolean(value));
+
+  for (const candidate of logoCandidates) {
+    const logoUrl = teamLogoUrlForSlug(leagueSeed.id, slugify(candidate));
+    if (logoUrl) return logoUrl;
+  }
+
+  return null;
 }

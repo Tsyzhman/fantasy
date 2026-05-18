@@ -69,3 +69,7 @@ Those aggregates are stored against a synthetic `SEASON_AGGREGATE` fixture per t
 The scorer uses the team's synced finished fixture count as the denominator for these season totals, so `Expected Fantasy Points` stays a per-match expectation instead of treating season goals and assists as one-match output.
 
 Because `/data/teams` does not expose every fantasy metric, fields such as minutes, shots, key passes, tackles, interceptions, and saves may be empty or zero in unofficial mode.
+
+## Local Team Logos
+
+Machete team sync prefers local repository logos from `public/team-logos` over FotMob CDN URLs. Matching uses the seeded `fotMobLeagueId`, team name, short name, and aliases from `src/lib/leagues/seed-data.ts`.

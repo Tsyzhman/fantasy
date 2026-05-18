@@ -20,7 +20,7 @@ export async function syncMacheteTeams(prisma: PrismaClient, leagueId: string) {
   });
 
   for (const team of teams) {
-    const normalized = normalizeMacheteTeam(team, league.id);
+    const normalized = normalizeMacheteTeam(team, league.id, league.providerLeagueId);
     const macheteTeam = await prisma.macheteTeam.upsert({
       where: {
         provider_providerTeamId: {
