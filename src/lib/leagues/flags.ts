@@ -17,7 +17,8 @@ const flagByLeagueId: Record<string, string> = {
   "primeira-liga": "🇵🇹",
   eredivisie: "🇳🇱",
   "russian-premier-league": "🇷🇺",
-  "turkish-super-lig": "🇹🇷"
+  "turkish-super-lig": "🇹🇷",
+  "world-cup-2026": "🏆"
 };
 
 const flagByLeagueCode: Record<string, string> = {
@@ -30,7 +31,8 @@ const flagByLeagueCode: Record<string, string> = {
   POR: "🇵🇹",
   ERE: "🇳🇱",
   RPL: "🇷🇺",
-  TSL: "🇹🇷"
+  TSL: "🇹🇷",
+  WC26: "🏆"
 };
 
 const flagByCountry: Record<string, string> = {

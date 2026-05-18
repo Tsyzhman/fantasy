@@ -203,6 +203,57 @@ Recommended: square transparent PNG, 128x128 or larger.
 - public/team-logos/russian-premier-league/spartak-moscow.png  -- Spartak Moscow
 - public/team-logos/russian-premier-league/zenit-saint-petersburg.png  -- Zenit Saint Petersburg
 
+## World Cup 2026 (world-cup-2026)
+
+- public/team-logos/world-cup-2026/algeria.png  -- Algeria
+- public/team-logos/world-cup-2026/argentina.png  -- Argentina
+- public/team-logos/world-cup-2026/australia.png  -- Australia
+- public/team-logos/world-cup-2026/austria.png  -- Austria
+- public/team-logos/world-cup-2026/belgium.png  -- Belgium
+- public/team-logos/world-cup-2026/bosnia-and-herzegovina.png  -- Bosnia and Herzegovina
+- public/team-logos/world-cup-2026/brazil.png  -- Brazil
+- public/team-logos/world-cup-2026/canada.png  -- Canada
+- public/team-logos/world-cup-2026/cape-verde.png  -- Cape Verde
+- public/team-logos/world-cup-2026/colombia.png  -- Colombia
+- public/team-logos/world-cup-2026/croatia.png  -- Croatia
+- public/team-logos/world-cup-2026/curacao.png  -- Curacao
+- public/team-logos/world-cup-2026/czech-republic.png  -- Czech Republic
+- public/team-logos/world-cup-2026/dr-congo.png  -- DR Congo
+- public/team-logos/world-cup-2026/ecuador.png  -- Ecuador
+- public/team-logos/world-cup-2026/egypt.png  -- Egypt
+- public/team-logos/world-cup-2026/england.png  -- England
+- public/team-logos/world-cup-2026/france.png  -- France
+- public/team-logos/world-cup-2026/germany.png  -- Germany
+- public/team-logos/world-cup-2026/ghana.png  -- Ghana
+- public/team-logos/world-cup-2026/haiti.png  -- Haiti
+- public/team-logos/world-cup-2026/iran.png  -- Iran
+- public/team-logos/world-cup-2026/iraq.png  -- Iraq
+- public/team-logos/world-cup-2026/ivory-coast.png  -- Ivory Coast
+- public/team-logos/world-cup-2026/japan.png  -- Japan
+- public/team-logos/world-cup-2026/jordan.png  -- Jordan
+- public/team-logos/world-cup-2026/mexico.png  -- Mexico
+- public/team-logos/world-cup-2026/morocco.png  -- Morocco
+- public/team-logos/world-cup-2026/netherlands.png  -- Netherlands
+- public/team-logos/world-cup-2026/new-zealand.png  -- New Zealand
+- public/team-logos/world-cup-2026/norway.png  -- Norway
+- public/team-logos/world-cup-2026/panama.png  -- Panama
+- public/team-logos/world-cup-2026/paraguay.png  -- Paraguay
+- public/team-logos/world-cup-2026/portugal.png  -- Portugal
+- public/team-logos/world-cup-2026/qatar.png  -- Qatar
+- public/team-logos/world-cup-2026/saudi-arabia.png  -- Saudi Arabia
+- public/team-logos/world-cup-2026/scotland.png  -- Scotland
+- public/team-logos/world-cup-2026/senegal.png  -- Senegal
+- public/team-logos/world-cup-2026/south-africa.png  -- South Africa
+- public/team-logos/world-cup-2026/south-korea.png  -- South Korea
+- public/team-logos/world-cup-2026/spain.png  -- Spain
+- public/team-logos/world-cup-2026/sweden.png  -- Sweden
+- public/team-logos/world-cup-2026/switzerland.png  -- Switzerland
+- public/team-logos/world-cup-2026/tunisia.png  -- Tunisia
+- public/team-logos/world-cup-2026/turkey.png  -- Turkey
+- public/team-logos/world-cup-2026/united-states.png  -- United States
+- public/team-logos/world-cup-2026/uruguay.png  -- Uruguay
+- public/team-logos/world-cup-2026/uzbekistan.png  -- Uzbekistan
+
 ## Turkish Super Lig (turkish-super-lig)
 
 - public/team-logos/turkish-super-lig/alanyaspor.png  -- Alanyaspor
