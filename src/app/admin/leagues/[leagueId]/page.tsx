@@ -122,7 +122,7 @@ export default async function AdminLeaguePage({ params }: PageProps) {
       </section>
 
       <section className="mt-6">
-        <TeamCardGrid teams={teams} seasonId={season?.id ?? ""} />
+        <TeamCardGrid teams={teams} seasonId={season?.id ?? ""} leagueId={league.id} />
       </section>
     </main>
   );

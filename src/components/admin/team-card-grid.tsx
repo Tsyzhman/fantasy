@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertCircle, CheckCircle2, CloudUpload, FileSpreadsheet, Loader2, Send } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
@@ -28,7 +29,7 @@ type UploadState = {
   message?: string;
 };
 
-export function TeamCardGrid({ teams, seasonId }: { teams: TeamCardDto[]; seasonId: string }) {
+export function TeamCardGrid({ teams, seasonId, leagueId }: { teams: TeamCardDto[]; seasonId: string; leagueId: string }) {
   if (teams.length === 0) {
     return (
       <div className="rounded border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">
@@ -40,13 +41,13 @@ export function TeamCardGrid({ teams, seasonId }: { teams: TeamCardDto[]; season
   return (
     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
       {teams.map((team) => (
-        <TeamCard key={team.id} team={team} seasonId={seasonId} />
+        <TeamCard key={team.id} team={team} seasonId={seasonId} leagueId={leagueId} />
       ))}
     </div>
   );
 }
 
-function TeamCard({ team, seasonId }: { team: TeamCardDto; seasonId: string }) {
+function TeamCard({ team, seasonId, leagueId }: { team: TeamCardDto; seasonId: string; leagueId: string }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -174,6 +175,13 @@ function TeamCard({ team, seasonId }: { team: TeamCardDto; seasonId: string }) {
           Publish import
         </button>
       ) : null}
+
+      <Link
+        href={`/admin/leagues/${leagueId}/teams/${team.id}`}
+        className="mt-3 inline-flex items-center justify-center rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+      >
+        Open team
+      </Link>
 
       {state.message ? (
         <p

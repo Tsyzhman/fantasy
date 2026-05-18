@@ -1,7 +1,6 @@
 import { ImportStatus, Prisma } from "@prisma/client";
 import Link from "next/link";
 
-import { StarterCheckbox } from "@/components/players/starter-checkbox";
 import { formatCurrency, formatNumber, formatScore } from "@/lib/format";
 import { prisma } from "@/lib/db";
 
@@ -173,7 +172,6 @@ export default async function PlayersPage({ searchParams }: PageProps) {
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
               <tr>
-                <th className="px-4 py-3 text-center">В старте</th>
                 <th className="px-4 py-3">Player</th>
                 <th className="px-4 py-3">Team</th>
                 <th className="px-4 py-3">Pos</th>
@@ -191,9 +189,6 @@ export default async function PlayersPage({ searchParams }: PageProps) {
             <tbody className="divide-y divide-slate-100">
               {players.map((player) => (
                 <tr key={player.id} className="hover:bg-slate-50">
-                  <td className="whitespace-nowrap px-4 py-3 text-center">
-                    <StarterCheckbox snapshotId={player.id} defaultChecked={player.isStarter} />
-                  </td>
                   <td className="whitespace-nowrap px-4 py-3 font-medium text-ink">{player.playerName}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-slate-600">{player.team.name}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-slate-600">{player.positionGroup ?? "—"}</td>
@@ -210,7 +205,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
               ))}
               {players.length === 0 ? (
                 <tr>
-                  <td colSpan={13} className="px-4 py-10 text-center text-slate-500">
+                  <td colSpan={12} className="px-4 py-10 text-center text-slate-500">
                     No published player snapshots match these filters yet.
                   </td>
                 </tr>

@@ -6,9 +6,10 @@ import { useState, useTransition } from "react";
 type StarterCheckboxProps = {
   snapshotId: string;
   defaultChecked: boolean;
+  label?: string;
 };
 
-export function StarterCheckbox({ snapshotId, defaultChecked }: StarterCheckboxProps) {
+export function StarterCheckbox({ snapshotId, defaultChecked, label = "В старте" }: StarterCheckboxProps) {
   const router = useRouter();
   const [checked, setChecked] = useState(defaultChecked);
   const [isPending, startTransition] = useTransition();
@@ -39,7 +40,7 @@ export function StarterCheckbox({ snapshotId, defaultChecked }: StarterCheckboxP
       type="checkbox"
       checked={checked}
       disabled={isPending}
-      aria-label="В старте"
+      aria-label={label}
       onChange={(event) => updateStarter(event.target.checked)}
       className="h-4 w-4 rounded border-slate-300 text-ink disabled:cursor-wait disabled:opacity-60"
     />
