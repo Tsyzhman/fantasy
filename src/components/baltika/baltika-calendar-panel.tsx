@@ -174,10 +174,74 @@ export function BaltikaCalendarPanel({
     <section className="mt-8 rounded border border-slate-200 bg-white p-5 shadow-soft">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-ink">Calendar by round</h2>
-          <p className="mt-1 text-sm text-slate-500">Any fixture can be moved to another round; teams can have no fixture or multiple fixtures in one round.</p>
+          <h2 className="text-lg font-semibold text-ink">Round prediction</h2>
+          <p className="mt-1 text-sm text-slate-500">Predicted xG/xGA uses team home/away form and opponent opposite-side form.</p>
         </div>
         {message ? <p className="rounded bg-rose-50 px-3 py-2 text-sm text-rose-700">{message}</p> : null}
+      </div>
+
+      <div className="mt-5 rounded border border-slate-200 bg-white">
+        <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="text-base font-semibold text-ink">Round projection</h3>
+            <p className="mt-1 text-sm text-slate-500">Select a tour to check team-level xG and xGA expectations.</p>
+          </div>
+          <select
+            value={activeRound ?? ""}
+            onChange={(event) => setSelectedRound(event.target.value ? Number(event.target.value) : null)}
+            className="rounded border border-slate-200 px-3 py-2 text-sm"
+          >
+            {rounds.map((round) => (
+              <option key={round} value={round}>
+                Tour {roundLabels.get(round)}{roundLabels.get(round) !== round ? ` (source ${round})` : ""}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-slate-200 text-sm">
+            <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
+              <tr>
+                <th className="px-4 py-3">Team</th>
+                <th className="px-4 py-3">Fixtures</th>
+                <th className="px-4 py-3 text-right">Pred xG</th>
+                <th className="px-4 py-3 text-right">Pred xGA</th>
+                <th className="px-4 py-3 text-right">Avg xG</th>
+                <th className="px-4 py-3 text-right">Avg xGA</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {roundProjectionRows.map((row) => (
+                <tr key={row.team.id} className="hover:bg-slate-50">
+                  <td className="whitespace-nowrap px-4 py-3 font-semibold text-ink">{row.team.name}</td>
+                  <td className="min-w-[240px] px-4 py-3 text-slate-600">
+                    {row.fixtures.length === 0 ? (
+                      <span className="text-slate-300">Empty</span>
+                    ) : (
+                      <div className="space-y-1">
+                        {row.fixtures.map((fixture) => (
+                          <p key={fixture.id}>
+                            {fixture.homeTeamId === row.team.id ? "vs" : "@"}{" "}
+                            {fixture.homeTeamId === row.team.id ? fixture.awayTeamName ?? "TBD" : fixture.homeTeamName}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-right font-semibold text-emerald-700">{formatMetric(row.projectedXg)}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-right font-semibold text-rose-700">{formatMetric(row.projectedXga)}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatMetric(row.avgProjectedXg)}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatMetric(row.avgProjectedXga)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div className="mt-6">
+        <h2 className="text-lg font-semibold text-ink">Calendar by round</h2>
+        <p className="mt-1 text-sm text-slate-500">Any fixture can be moved to another round; teams can have no fixture or multiple fixtures in one round.</p>
       </div>
 
       <div className="mt-5 grid grid-cols-1 gap-3 lg:grid-cols-[90px_1fr_1fr_1fr_auto]">
@@ -253,65 +317,6 @@ export function BaltikaCalendarPanel({
           {unscheduledFixtures.length} imported fixtures do not have a round yet.
         </div>
       ) : null}
-
-      <div className="mt-6 rounded border border-slate-200 bg-white">
-        <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h3 className="text-base font-semibold text-ink">Round projection</h3>
-            <p className="mt-1 text-sm text-slate-500">Predicted xG/xGA uses team home/away form and opponent opposite-side form.</p>
-          </div>
-          <select
-            value={activeRound ?? ""}
-            onChange={(event) => setSelectedRound(event.target.value ? Number(event.target.value) : null)}
-            className="rounded border border-slate-200 px-3 py-2 text-sm"
-          >
-            {rounds.map((round) => (
-              <option key={round} value={round}>
-                Tour {roundLabels.get(round)}{roundLabels.get(round) !== round ? ` (source ${round})` : ""}
-              </option>
-            ))}
-          </select>
-        </div>
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
-              <tr>
-                <th className="px-4 py-3">Team</th>
-                <th className="px-4 py-3">Fixtures</th>
-                <th className="px-4 py-3 text-right">Pred xG</th>
-                <th className="px-4 py-3 text-right">Pred xGA</th>
-                <th className="px-4 py-3 text-right">Avg xG</th>
-                <th className="px-4 py-3 text-right">Avg xGA</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {roundProjectionRows.map((row) => (
-                <tr key={row.team.id} className="hover:bg-slate-50">
-                  <td className="whitespace-nowrap px-4 py-3 font-semibold text-ink">{row.team.name}</td>
-                  <td className="min-w-[240px] px-4 py-3 text-slate-600">
-                    {row.fixtures.length === 0 ? (
-                      <span className="text-slate-300">Empty</span>
-                    ) : (
-                      <div className="space-y-1">
-                        {row.fixtures.map((fixture) => (
-                          <p key={fixture.id}>
-                            {fixture.homeTeamId === row.team.id ? "vs" : "@"}{" "}
-                            {fixture.homeTeamId === row.team.id ? fixture.awayTeamName ?? "TBD" : fixture.homeTeamName}
-                          </p>
-                        ))}
-                      </div>
-                    )}
-                  </td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right font-semibold text-emerald-700">{formatMetric(row.projectedXg)}</td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right font-semibold text-rose-700">{formatMetric(row.projectedXga)}</td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatMetric(row.avgProjectedXg)}</td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatMetric(row.avgProjectedXga)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
 
       <div className="mt-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
