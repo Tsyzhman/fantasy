@@ -69,7 +69,7 @@ export class UnofficialFotMobClient implements FotMobClient {
       ...(requestSeason ? { season: requestSeason } : {})
     });
     const league = asRecord(leaguePayload);
-    const tableTeams = extractLeagueTeamsFromLeaguePayload(league);
+    const tableTeams = extractLeagueTeamsFromLeaguePayload(league, { leagueId, season: requestSeason ?? season });
     const teams: FotMobTeam[] = [];
 
     for (const tableTeam of tableTeams) {
@@ -223,14 +223,24 @@ type FotMobTeamSummary = {
   shortName?: string;
 };
 
-const FIXTURE_TEAM_KEYS = new Set(["home", "away", "homeTeam", "awayTeam", "team", "opponent"]);
+type ExtractLeagueTeamsOptions = {
+  leagueId?: string;
+  season?: string;
+};
 
-export function extractLeagueTeamsFromLeaguePayload(payload: unknown): FotMobTeamSummary[] {
+export function extractLeagueTeamsFromLeaguePayload(payload: unknown, options: ExtractLeagueTeamsOptions = {}): FotMobTeamSummary[] {
   const league = asRecord(payload);
   const tableTeams = extractLeagueTableTeams(league);
   if (tableTeams.length > 0) return tableTeams;
 
-  return extractLeagueFixtureTeams(league);
+  const fixtureTeams = extractLeagueFixtureTeams(league);
+  if (options.leagueId === "77" && options.season === "2026" && fixtureTeams.length > 48) {
+    console.warn(
+      `[fotmob] World Cup fallback extracted ${fixtureTeams.length} teams after placeholder filtering; review fixture payload shape.`
+    );
+  }
+
+  return fixtureTeams;
 }
 
 function extractLeagueTableTeams(league: JsonRecord): FotMobTeamSummary[] {
@@ -257,20 +267,20 @@ function extractLeagueTableTeams(league: JsonRecord): FotMobTeamSummary[] {
 
 function extractLeagueFixtureTeams(payload: unknown): FotMobTeamSummary[] {
   const teams: FotMobTeamSummary[] = [];
-  const seenIds = new Set<string>();
+  const indexesById = new Map<string, number>();
   const indexesByName = new Map<string, number>();
 
   function addTeam(value: unknown) {
     const record = asRecord(value);
-    const id = stringValue(record.id) ?? stringValue(record.teamId) ?? "";
+    const rawId = stringValue(record.id) ?? stringValue(record.teamId) ?? "";
+    const id = isNumericFotMobId(rawId) ? rawId : "";
     const name = stringValue(record.name) ?? stringValue(record.teamName);
-    if (!name) return;
+    if (!name || is_placeholder_team(name)) return;
 
     const nameKey = normalizeTeamNameKey(name);
-    if (id && seenIds.has(id)) return;
+    if (id && indexesById.has(id)) return;
     if (!id && (!nameKey || indexesByName.has(nameKey))) return;
 
-    if (id) seenIds.add(id);
     const team = {
       id,
       name,
@@ -278,13 +288,27 @@ function extractLeagueFixtureTeams(payload: unknown): FotMobTeamSummary[] {
     };
 
     const existingNameIndex = nameKey ? indexesByName.get(nameKey) : undefined;
-    if (existingNameIndex !== undefined && !teams[existingNameIndex]?.id) {
+    if (existingNameIndex !== undefined) {
+      if (teams[existingNameIndex]?.id) return;
+      if (id && !teams[existingNameIndex]?.id) indexesById.set(id, existingNameIndex);
       teams[existingNameIndex] = team;
       return;
     }
 
+    if (id) indexesById.set(id, teams.length);
     if (nameKey && existingNameIndex === undefined) indexesByName.set(nameKey, teams.length);
     teams.push(team);
+  }
+
+  function addFixtureTeams(record: JsonRecord) {
+    if ("home" in record && "away" in record) {
+      addTeam(record.home);
+      addTeam(record.away);
+    }
+    if ("homeTeam" in record && "awayTeam" in record) {
+      addTeam(record.homeTeam);
+      addTeam(record.awayTeam);
+    }
   }
 
   function visit(value: unknown) {
@@ -294,14 +318,37 @@ function extractLeagueFixtureTeams(payload: unknown): FotMobTeamSummary[] {
     }
 
     const record = asRecord(value);
-    for (const [key, nested] of Object.entries(record)) {
-      if (FIXTURE_TEAM_KEYS.has(key)) addTeam(nested);
+    addFixtureTeams(record);
+    for (const nested of Object.values(record)) {
       visit(nested);
     }
   }
 
   visit(payload);
   return teams;
+}
+
+export function is_placeholder_team(name: unknown): boolean {
+  const value = typeof name === "string" ? name.trim() : "";
+  if (!value) return true;
+
+  const normalized = value
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[._-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (/^(tbd|tba|to be decided|to be determined|unknown|placeholder|n\/a|na)$/.test(normalized)) return true;
+  if (/^(winner|loser|runner up|runnerup)\s+(group\s+)?[a-z0-9]+$/.test(normalized)) return true;
+  if (/^([a-z]\d+|\d+[a-z])$/.test(normalized)) return true;
+  if (/^[wl]\d+$/.test(normalized)) return true;
+
+  const cyrillic = value.toLowerCase();
+  if (/(победител|группа|не\s*определ|будет\s*определ|заглушк)/i.test(cyrillic)) return true;
+
+  return false;
 }
 
 function normalizeTeam(payload: unknown, leagueId: string, tableTeam: { id: string; name: string; shortName?: string }): FotMobTeam {
@@ -434,6 +481,10 @@ function numberValue(value: unknown): number | undefined {
     if (Number.isFinite(parsed)) return parsed;
   }
   return undefined;
+}
+
+function isNumericFotMobId(value: string) {
+  return /^\d+$/.test(value.trim());
 }
 
 function normalizeTeamNameKey(value: string) {
