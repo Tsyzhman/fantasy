@@ -34,6 +34,7 @@ export function MachetePlayerTable({ players, showContext = false }: { players: 
               {showContext ? <th className="px-4 py-3">League</th> : null}
               <th className="px-4 py-3">Pos</th>
               <th className="bg-emerald-50 px-4 py-3 text-right text-emerald-700">Expected FP</th>
+              <th className="bg-amber-50 px-4 py-3 text-right text-amber-700">Alt FP</th>
               <th className="px-4 py-3 text-right">Age</th>
               <th className="px-4 py-3">Nation</th>
               <th className="px-4 py-3 text-right">Apps</th>
@@ -44,7 +45,6 @@ export function MachetePlayerTable({ players, showContext = false }: { players: 
               <th className="px-4 py-3 text-right">KP</th>
               <th className="px-4 py-3 text-right">Tkl</th>
               <th className="px-4 py-3 text-right">Rating</th>
-              <th className="bg-amber-50 px-4 py-3 text-right text-amber-700">Alt FP</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -57,6 +57,9 @@ export function MachetePlayerTable({ players, showContext = false }: { players: 
                 <td className="whitespace-nowrap bg-emerald-50/70 px-4 py-3 text-right font-semibold text-emerald-700">
                   {formatScore(player.fantasyScore)}
                 </td>
+                <td className="whitespace-nowrap bg-amber-50/70 px-4 py-3 text-right font-semibold text-amber-700">
+                  {formatScore(player.alternativeScore ?? null)}
+                </td>
                 <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatNumber(player.age)}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-slate-600">{player.nationality ?? "-"}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatNumber(player.matchesPlayed)}</td>
@@ -67,9 +70,6 @@ export function MachetePlayerTable({ players, showContext = false }: { players: 
                 <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatNumber(player.keyPasses)}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatNumber(player.tackles)}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatScore(player.averageRating)}</td>
-                <td className="whitespace-nowrap bg-amber-50/70 px-4 py-3 text-right font-semibold text-amber-700">
-                  {formatScore(player.alternativeScore ?? null)}
-                </td>
               </tr>
             ))}
             {players.length === 0 ? (
