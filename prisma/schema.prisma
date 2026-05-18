@@ -1,0 +1,238 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  ADMIN
+  USER
+}
+
+enum ImportStatus {
+  EMPTY
+  UPLOADING
+  PARSING
+  VALIDATED
+  READY
+  PUBLISHED
+  ERROR
+  OUTDATED
+  ARCHIVED
+}
+
+enum DataSourceType {
+  WYSCOUT_EXCEL
+  API_FOOTBALL
+  WYSCOUT_API
+  MANUAL
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  role      UserRole @default(USER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model League {
+  id        String       @id @default(cuid())
+  name      String
+  country   String?
+  code      String?
+  logoUrl   String?
+  seasons   Season[]
+  teams     Team[]
+  imports   TeamImport[]
+  snapshots PlayerSnapshot[]
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+}
+
+model Season {
+  id        String           @id @default(cuid())
+  leagueId  String
+  name      String
+  startDate DateTime?
+  endDate   DateTime?
+  league    League           @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  imports   TeamImport[]
+  snapshots PlayerSnapshot[]
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@unique([leagueId, name])
+}
+
+model Team {
+  id        String           @id @default(cuid())
+  leagueId  String
+  name      String
+  slug      String
+  logoUrl   String?
+  aliases   String[]         @default([])
+  league    League           @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  imports   TeamImport[]
+  snapshots PlayerSnapshot[]
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@unique([leagueId, slug])
+}
+
+model SourceFile {
+  id               String         @id @default(cuid())
+  sourceType       DataSourceType @default(WYSCOUT_EXCEL)
+  originalFilename String
+  storagePath      String
+  mimeType         String?
+  sizeBytes        Int?
+  checksum         String?
+  uploadedById     String?
+  imports          TeamImport[]
+  createdAt        DateTime       @default(now())
+
+  @@index([checksum])
+}
+
+model TeamImport {
+  id                 String           @id @default(cuid())
+  leagueId           String
+  seasonId           String
+  teamId             String
+  sourceFileId        String
+  status             ImportStatus     @default(PARSING)
+  periodFrom          DateTime?
+  periodTo            DateTime?
+  detectedTeamName    String?
+  rowsCount           Int              @default(0)
+  columnsCount        Int              @default(0)
+  errorsJson          Json?
+  warningsJson        Json?
+  isCurrentPublished  Boolean          @default(false)
+  publishedAt         DateTime?
+  createdById         String?
+  createdAt           DateTime         @default(now())
+  updatedAt           DateTime         @updatedAt
+
+  league      League           @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  season      Season           @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  team        Team             @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  sourceFile  SourceFile       @relation(fields: [sourceFileId], references: [id], onDelete: Cascade)
+  snapshots   PlayerSnapshot[]
+
+  @@index([leagueId, seasonId, teamId, status])
+  @@index([teamId, isCurrentPublished])
+}
+
+model Player {
+  id              String           @id @default(cuid())
+  canonicalName   String
+  normalizedName  String
+  birthCountry    String?
+  passportCountry String?
+  foot            String?
+  heightCm        Int?
+  weightKg        Int?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  snapshots PlayerSnapshot[]
+
+  @@index([normalizedName])
+}
+
+model PlayerSnapshot {
+  id              String   @id @default(cuid())
+  teamImportId    String
+  leagueId         String
+  seasonId         String
+  teamId           String
+  playerId         String?
+
+  playerName       String
+  normalizedName   String
+  teamName         String
+  positionRaw      String?
+  positionGroup    String?
+  age              Int?
+  marketValue      Int?
+  contractExpires  DateTime?
+  matchesPlayed    Int?
+  minutesPlayed    Int?
+  goals            Float?
+  xg               Float?
+  assists          Float?
+  xa               Float?
+  birthCountry     String?
+  passportCountry  String?
+  foot             String?
+  heightCm         Int?
+  weightKg         Int?
+  onLoan           Boolean?
+
+  fantasyScore     Float?
+  valueScore       Float?
+  rawMetrics       Json
+
+  createdAt        DateTime @default(now())
+
+  teamImport TeamImport @relation(fields: [teamImportId], references: [id], onDelete: Cascade)
+  league     League     @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  season     Season     @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  team       Team       @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  player     Player?    @relation(fields: [playerId], references: [id])
+
+  @@index([leagueId, seasonId, teamId])
+  @@index([positionGroup])
+  @@index([fantasyScore])
+  @@index([valueScore])
+}
+
+model FantasyModel {
+  id          String             @id @default(cuid())
+  name        String
+  description String?
+  version     Int                @default(1)
+  isDefault   Boolean            @default(false)
+  isActive    Boolean            @default(true)
+  rules       FantasyModelRule[]
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+}
+
+model FantasyModelRule {
+  id             String  @id @default(cuid())
+  modelId        String
+  positionGroup  String
+  metricKey      String
+  weight         Float
+  transform      String  @default("linear")
+  enabled        Boolean @default(true)
+
+  model FantasyModel @relation(fields: [modelId], references: [id], onDelete: Cascade)
+
+  @@index([modelId, positionGroup])
+}
+
+model SavedFilter {
+  id        String   @id @default(cuid())
+  userId    String?
+  name      String
+  filters   Json
+  createdAt DateTime @default(now())
+}
+
+model Shortlist {
+  id        String   @id @default(cuid())
+  userId    String?
+  name      String
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

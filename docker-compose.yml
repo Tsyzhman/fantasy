@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: fantasy-scout-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: fantasy_scout
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5433:5432"
+    volumes:
+      - fantasy-scout-postgres:/var/lib/postgresql/data
+
+volumes:
+  fantasy-scout-postgres:
