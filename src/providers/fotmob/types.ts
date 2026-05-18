@@ -56,6 +56,7 @@ export type FotMobPlayerMatchStat = {
   saves: number | null;
   yellowCards: number | null;
   redCards: number | null;
+  aggregateMatches?: number | null;
   raw?: unknown;
 };
 

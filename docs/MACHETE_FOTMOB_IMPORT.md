@@ -66,5 +66,6 @@ red cards
 ```
 
 Those aggregates are stored against a synthetic `SEASON_AGGREGATE` fixture per team so the existing Machete snapshot and scoring pipeline can stay unchanged.
+The scorer uses the team's synced finished fixture count as the denominator for these season totals, so `Expected Fantasy Points` stays a per-match expectation instead of treating season goals and assists as one-match output.
 
 Because `/data/teams` does not expose every fantasy metric, fields such as minutes, shots, key passes, tackles, interceptions, and saves may be empty or zero in unofficial mode.

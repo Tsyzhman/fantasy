@@ -37,6 +37,15 @@ export async function syncMacheteTeamPlayerStats(prisma: PrismaClient, teamId: s
 
   const aggregateStats = providerTeam.players.filter((player) => player.seasonStat);
   if (aggregateStats.length > 0) {
+    const aggregateMatches = await prisma.macheteFixture.count({
+      where: {
+        leagueId: team.leagueId,
+        status: "FINISHED",
+        OR: [{ homeTeamId: team.id }, { awayTeamId: team.id }]
+      }
+    });
+    const aggregateMatchesDenominator = Math.max(aggregateMatches, 1);
+
     await storeMacheteRawPayload(prisma, {
       entityType: "TEAM_SEASON_AGGREGATE",
       providerEntityId: team.providerTeamId,
@@ -105,7 +114,8 @@ export async function syncMacheteTeamPlayerStats(prisma: PrismaClient, teamId: s
 
       const stat = {
         ...player.seasonStat,
-        fixtureId: syntheticProviderFixtureId
+        fixtureId: syntheticProviderFixtureId,
+        aggregateMatches: aggregateMatchesDenominator
       };
       await prisma.machetePlayerMatchStat.upsert({
         where: {

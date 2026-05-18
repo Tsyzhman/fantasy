@@ -21,7 +21,11 @@ export async function aggregateMachetePlayerSnapshots(prisma: PrismaClient, opti
       }
     },
     include: {
-      matchStats: true
+      matchStats: {
+        include: {
+          fixture: true
+        }
+      }
     },
     orderBy: { name: "asc" }
   });
@@ -30,7 +34,8 @@ export async function aggregateMachetePlayerSnapshots(prisma: PrismaClient, opti
 
   for (const player of players) {
     const stats = player.matchStats;
-    const matchesPlayed = stats.length;
+    const aggregateMatches = firstPositiveNumber(stats.map((stat) => readRawNumber(stat.raw, "aggregateMatches")));
+    const matchesPlayed = aggregateMatches ?? stats.length;
     const minutesPlayed = sum(stats.map((stat) => stat.minutes));
     const goals = sum(stats.map((stat) => stat.goals));
     const assists = sum(stats.map((stat) => stat.assists));
@@ -107,4 +112,22 @@ function sum(values: Array<number | null | undefined>): number {
     total += value ?? 0;
   }
   return total;
+}
+
+function firstPositiveNumber(values: Array<number | null>): number | null {
+  for (const value of values) {
+    if (value !== null && value > 0) return value;
+  }
+  return null;
+}
+
+function readRawNumber(raw: unknown, key: string): number | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const value = (raw as Record<string, unknown>)[key];
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string") {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return null;
 }
