@@ -15,6 +15,7 @@ export type TeamCardDto = {
   name: string;
   slug: string;
   logoUrl: string | null;
+  flag?: string | null;
   status: string;
   playersCount: number;
   lastUploadAt: string | null;
@@ -105,7 +106,7 @@ function TeamCard({ team, seasonId, leagueId }: { team: TeamCardDto; seasonId: s
     <article className="flex min-h-[340px] flex-col rounded border border-slate-200 bg-white p-4 shadow-soft">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
-          <TeamLogo logoUrl={team.logoUrl} name={team.name} />
+          <TeamLogo logoUrl={team.logoUrl} name={team.name} flag={team.flag ?? null} />
 
           <div className="min-w-0">
             <h2 className="truncate text-base font-semibold text-ink">{team.name}</h2>
@@ -204,8 +205,17 @@ function TeamCard({ team, seasonId, leagueId }: { team: TeamCardDto; seasonId: s
   );
 }
 
-function TeamLogo({ logoUrl, name }: { logoUrl: string | null; name: string }) {
+function TeamLogo({ logoUrl, name, flag }: { logoUrl: string | null; name: string; flag: string | null }) {
   const [failed, setFailed] = useState(false);
+
+  if (flag) {
+    return (
+      <div className="grid h-12 w-12 shrink-0 place-items-center rounded bg-slate-900 text-2xl leading-none">
+        {flag}
+      </div>
+    );
+  }
+
   const showImage = Boolean(logoUrl) && !failed;
   return (
     <div className="grid h-12 w-12 shrink-0 place-items-center rounded bg-slate-900 text-sm font-bold text-white">

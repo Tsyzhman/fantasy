@@ -6,6 +6,7 @@ import { TeamCardGrid, type TeamCardDto } from "@/components/admin/team-card-gri
 import { prisma } from "@/lib/db";
 import { leagueSubtitle } from "@/lib/leagues/display";
 import { leagueFlag } from "@/lib/leagues/flags";
+import { nationalTeamFlag } from "@/lib/teams/national-flags";
 
 export const dynamic = "force-dynamic";
 
@@ -52,6 +53,7 @@ export default async function AdminLeaguePage({ params }: PageProps) {
       name: team.name,
       slug: team.slug,
       logoUrl: team.logoUrl,
+      flag: nationalTeamFlag(team.name),
       status: latestImport?.status ?? "EMPTY",
       playersCount: latestImport?._count.snapshots ?? 0,
       lastUploadAt: latestImport?.createdAt.toISOString() ?? null,
