@@ -41,7 +41,7 @@ const modes = [
 
 export default function HomePage() {
   return (
-    <main className="mx-auto flex min-h-[calc(100vh-83px)] max-w-7xl flex-col justify-center px-4 py-10 sm:px-6 lg:px-8">
+    <main className="mx-auto flex min-h-screen max-w-7xl flex-col justify-center px-4 py-10 sm:px-6 lg:px-8">
       <section className="max-w-3xl">
         <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
           <I18nText en="Choose workspace" ru="Выберите режим" />
@@ -69,13 +69,13 @@ export default function HomePage() {
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex min-w-0 items-center gap-4">
-                  <span className="mode-logo-frame h-24 w-24">
+                  <span className="mode-logo-frame mode-logo-frame-choice">
                     <Image
                       src={mode.imageSrc}
                       alt=""
                       width={96}
                       height={96}
-                      className={mode.imageClassName}
+                      className={`mode-logo-image ${mode.imageClassName}`}
                       priority
                     />
                   </span>

@@ -232,6 +232,11 @@ textarea {
   background: radial-gradient(circle at 20% 20%, rgba(37, 99, 235, 0.32), transparent 44%);
 }
 
+.mode-logo-frame-choice {
+  width: 96px;
+  height: 96px;
+}
+
 .mode-logo-image {
   display: block;
   object-fit: contain;
