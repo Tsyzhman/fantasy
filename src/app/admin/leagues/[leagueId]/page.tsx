@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { TeamCardGrid, type TeamCardDto } from "@/components/admin/team-card-grid";
 import { prisma } from "@/lib/db";
+import { leagueFlag } from "@/lib/leagues/flags";
 
 export const dynamic = "force-dynamic";
 
@@ -68,7 +69,12 @@ export default async function AdminLeaguePage({ params }: PageProps) {
       <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">League workspace</p>
-          <h1 className="mt-2 text-3xl font-bold text-ink">{league.name}</h1>
+          <h1 className="mt-2 flex items-center gap-3 text-3xl font-bold text-ink">
+            <span aria-hidden="true" className="text-4xl leading-none">
+              {leagueFlag(league)}
+            </span>
+            {league.name}
+          </h1>
           <p className="mt-2 text-sm text-slate-600">
             {[league.country, season?.name ?? "No season"].filter(Boolean).join(" · ")}
           </p>
