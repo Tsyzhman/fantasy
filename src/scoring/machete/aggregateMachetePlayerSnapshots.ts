@@ -48,10 +48,12 @@ export async function aggregateMachetePlayerSnapshots(prisma: PrismaClient, opti
     const redCards = sum(stats.map((stat) => stat.redCards));
     const ratings = stats.map((stat) => stat.rating).filter((rating): rating is number => rating !== null);
     const averageRating = ratings.length ? Number((sum(ratings) / ratings.length).toFixed(2)) : null;
+    const expectedMinutes = minutesPlayed <= 0 && matchesPlayed > 0 && averageRating !== null ? 75 : null;
 
     const rawMetrics = {
       matches_played: matchesPlayed,
       minutes_played: minutesPlayed,
+      ...(expectedMinutes !== null ? { expected_minutes: expectedMinutes } : {}),
       goals,
       assists,
       shots_on_target: shotsOnTarget,

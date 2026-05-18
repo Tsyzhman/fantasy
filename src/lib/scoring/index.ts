@@ -139,7 +139,7 @@ export function calculatePredictedRoundScore(rawMetrics: Record<string, unknown>
   const position = positionGroup ?? "UNKNOWN";
   const matches = readMetric(rawMetrics, "matches_played");
   const minutes = readMetric(rawMetrics, "minutes_played");
-  const expectedMinutes = matches > 0 ? clamp(minutes / matches, 0, 90) : 0;
+  const expectedMinutes = expectedMinutesFromMetrics(rawMetrics, matches, minutes);
   const minutesFactor = expectedMinutes / 90;
   const likelyAppearance = expectedMinutes > 0 ? 1 : 0;
   const likelySixty = expectedMinutes >= 60 ? 1 : 0;
@@ -224,7 +224,7 @@ export function enrichFormulaMetrics(rawMetrics: Record<string, unknown>) {
   const metrics = { ...rawMetrics };
   const matches = readMetric(metrics, "matches_played");
   const minutes = readMetric(metrics, "minutes_played");
-  const expectedMinutes = matches > 0 ? clamp(minutes / matches, 0, 90) : 0;
+  const expectedMinutes = expectedMinutesFromMetrics(metrics, matches, minutes);
   const minutesFactor = expectedMinutes / 90;
 
   setMetricIfMissing(metrics, "expected_minutes", expectedMinutes);
@@ -252,6 +252,13 @@ function expectedPerMatch(
   if (per90 > 0) return per90 * minutesFactor;
 
   return perMatchFromTotal(rawMetrics, totalKey, matches);
+}
+
+function expectedMinutesFromMetrics(rawMetrics: Record<string, unknown>, matches: number, minutes: number) {
+  const expectedMinutes = readMetric(rawMetrics, "expected_minutes|projected_minutes");
+  if (expectedMinutes > 0) return clamp(expectedMinutes, 0, 90);
+
+  return matches > 0 ? clamp(minutes / matches, 0, 90) : 0;
 }
 
 function perMatchFromTotal(rawMetrics: Record<string, unknown>, metricKey: string, matches: number) {
