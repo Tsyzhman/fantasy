@@ -47,6 +47,7 @@ export default async function MacheteLeaguePage({ params }: PageProps) {
 
   if (!league) notFound();
 
+  const fixtures = league.fixtures.filter(isMatchFixture);
   const playersCount = league.teams.reduce((total, team) => total + team.players.length, 0);
   const leagueFantasyScores = league.teams.flatMap((team) =>
     team.players
@@ -92,7 +93,7 @@ export default async function MacheteLeaguePage({ params }: PageProps) {
             </div>
             <div>
               <dt className="text-xs font-medium uppercase text-slate-400">Fixtures</dt>
-              <dd className="mt-1 font-semibold text-ink">{formatNumber(league.fixtures.length)}</dd>
+              <dd className="mt-1 font-semibold text-ink">{formatNumber(fixtures.length)}</dd>
             </div>
             <div>
               <dt className="text-xs font-medium uppercase text-slate-400">Last sync</dt>
@@ -134,6 +135,7 @@ export default async function MacheteLeaguePage({ params }: PageProps) {
 
       <section className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         {league.teams.map((team) => {
+          const teamFixtures = [...team.fixturesHome, ...team.fixturesAway].filter(isMatchFixture);
           const teamScores = team.players
             .map((player) => player.snapshots[0]?.fantasyScore)
             .filter((score): score is number => typeof score === "number");
@@ -154,7 +156,7 @@ export default async function MacheteLeaguePage({ params }: PageProps) {
                 logoUrl: team.logoUrl,
                 status: team.status,
                 playersSynced: team.players.length,
-                fixturesSynced: team.fixturesHome.length + team.fixturesAway.length,
+                fixturesSynced: teamFixtures.length,
                 expectedFantasyPoints: teamExpectedFantasyPoints,
                 lastSyncedAt: team.lastSyncedAt
               }}
@@ -169,4 +171,8 @@ export default async function MacheteLeaguePage({ params }: PageProps) {
       ) : null}
     </MacheteShell>
   );
+}
+
+function isMatchFixture(fixture: { status: string | null }) {
+  return fixture.status !== "SEASON_AGGREGATE";
 }

@@ -46,11 +46,11 @@ export default async function MacheteTeamPage({ params }: PageProps) {
 
   if (!team || team.leagueId !== params.leagueId) notFound();
 
+  const teamFixtures = [...team.fixturesHome, ...team.fixturesAway].filter(isMatchFixture);
   const providerIds = [
     team.providerTeamId,
     ...team.players.map((player) => player.providerPlayerId),
-    ...team.fixturesHome.map((fixture) => fixture.providerFixtureId),
-    ...team.fixturesAway.map((fixture) => fixture.providerFixtureId)
+    ...teamFixtures.map((fixture) => fixture.providerFixtureId)
   ].filter((value): value is string => Boolean(value));
 
   const [rawPayloads, entityMap] = await Promise.all([
@@ -76,7 +76,7 @@ export default async function MacheteTeamPage({ params }: PageProps) {
       : null
   ]);
 
-  const fixtures = [...team.fixturesHome, ...team.fixturesAway]
+  const fixtures = teamFixtures
     .sort((a, b) => (b.kickoffAt?.getTime() ?? 0) - (a.kickoffAt?.getTime() ?? 0))
     .slice(0, 8);
 
@@ -212,4 +212,8 @@ export default async function MacheteTeamPage({ params }: PageProps) {
       </section>
     </main>
   );
+}
+
+function isMatchFixture(fixture: { status: string | null }) {
+  return fixture.status !== "SEASON_AGGREGATE";
 }

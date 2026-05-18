@@ -39,23 +39,27 @@ export default async function MacheteLeaguesPage() {
   return (
     <MacheteShell>
       <section className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-        {leagues.map((league) => (
-          <MacheteLeagueCard
-            key={league.id}
-            league={{
-              id: league.id,
-              name: league.name,
-              country: league.country,
-              season: league.season,
-              status: league.status,
-              lastSyncedAt: league.lastSyncedAt,
-              teamsSynced: league.teams.length,
-              playersSynced: league.teams.reduce((total, team) => total + team.players.length, 0),
-              fixturesSynced: league.fixtures.length,
-              expectedFantasyPoints: expectedFantasyPointsByLeague.get(league.id) ?? null
-            }}
-          />
-        ))}
+        {leagues.map((league) => {
+          const fixturesSynced = league.fixtures.filter(isMatchFixture).length;
+
+          return (
+            <MacheteLeagueCard
+              key={league.id}
+              league={{
+                id: league.id,
+                name: league.name,
+                country: league.country,
+                season: league.season,
+                status: league.status,
+                lastSyncedAt: league.lastSyncedAt,
+                teamsSynced: league.teams.length,
+                playersSynced: league.teams.reduce((total, team) => total + team.players.length, 0),
+                fixturesSynced,
+                expectedFantasyPoints: expectedFantasyPointsByLeague.get(league.id) ?? null
+              }}
+            />
+          );
+        })}
       </section>
       {leagues.length === 0 ? (
         <div className="mt-8 rounded border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">
@@ -64,4 +68,8 @@ export default async function MacheteLeaguesPage() {
       ) : null}
     </MacheteShell>
   );
+}
+
+function isMatchFixture(fixture: { status: string | null }) {
+  return fixture.status !== "SEASON_AGGREGATE";
 }
