@@ -87,7 +87,7 @@ async function main() {
     }
   }
 
-  await prisma.fantasyModel.deleteMany({ where: { name: { in: ["MVP Seed Model", "Fantasy 2025/26"] } } });
+  await prisma.fantasyModel.deleteMany({ where: { name: { in: ["MVP Seed Model", "Fantasy 2025/26", "Baltika Fantasy 2025/26", "Machete Fantasy 2025/26"] } } });
   await prisma.fantasyModel.updateMany({
     where: { isDefault: true },
     data: { isDefault: false }
@@ -95,8 +95,28 @@ async function main() {
 
   await prisma.fantasyModel.create({
     data: {
-      name: "Fantasy 2025/26",
-      description: "Position-aware fantasy scoring based on the 2025/26 rules table.",
+      modelSource: "WYSCOUT",
+      name: "Baltika Fantasy 2025/26",
+      description: "Position-aware fantasy scoring for Baltika/Wyscout Excel imports.",
+      isDefault: true,
+      isActive: true,
+      customFormula: null,
+      customFormulaGk: null,
+      customFormulaDef: null,
+      customFormulaMid: null,
+      customFormulaFwd: null,
+      customFormulaEnabled: false,
+      rules: {
+        create: seedRules
+      }
+    }
+  });
+
+  await prisma.fantasyModel.create({
+    data: {
+      modelSource: "MACHETE",
+      name: "Machete Fantasy 2025/26",
+      description: "Position-aware fantasy scoring for Machete/FotMob snapshots.",
       isDefault: true,
       isActive: true,
       customFormula: null,

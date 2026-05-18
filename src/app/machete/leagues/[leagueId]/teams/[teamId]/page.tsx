@@ -1,11 +1,11 @@
-import { ArrowLeft, Database, GitCompareArrows, Shield } from "lucide-react";
-import Link from "next/link";
+import { Database, GitCompareArrows, Shield } from "lucide-react";
 import { notFound } from "next/navigation";
 
 import { MacheteFixtureTable } from "@/components/machete/MacheteFixtureTable";
 import { MachetePlayerTable } from "@/components/machete/MachetePlayerTable";
 import { MacheteStatusBadge } from "@/components/machete/MacheteStatusBadge";
 import { MacheteSyncButton } from "@/components/machete/MacheteSyncButton";
+import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
 import { prisma } from "@/lib/db";
 import { formatDate, formatNumber, formatScore } from "@/lib/format";
 
@@ -96,7 +96,8 @@ export default async function MacheteTeamPage({ params }: PageProps) {
       keyPasses: snapshot?.keyPasses ?? 0,
       tackles: snapshot?.tackles ?? 0,
       averageRating: snapshot?.averageRating ?? null,
-      fantasyScore: snapshot?.fantasyScore ?? null
+      fantasyScore: snapshot?.fantasyScore ?? null,
+      alternativeScore: snapshot?.alternativeScore ?? null
     };
   });
 
@@ -109,13 +110,16 @@ export default async function MacheteTeamPage({ params }: PageProps) {
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <Link
-        href={`/machete/leagues/${team.leagueId}`}
-        className="inline-flex items-center gap-2 text-sm font-semibold text-slate-600 hover:text-ink"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back to Machete league
-      </Link>
+      <PageBreadcrumbs
+        backHref={`/machete/leagues/${team.leagueId}`}
+        backLabel="Back to league"
+        items={[
+          { label: "Machete", href: "/machete" },
+          { label: "Leagues", href: "/machete/leagues" },
+          { label: team.league.name, href: `/machete/leagues/${team.leagueId}` },
+          { label: team.name, href: `/machete/leagues/${team.leagueId}/teams/${team.id}` }
+        ]}
+      />
 
       <section className="mt-6 rounded border border-slate-200 bg-white p-5 shadow-soft">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">

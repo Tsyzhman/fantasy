@@ -200,6 +200,7 @@ model PlayerSnapshot {
 
 model FantasyModel {
   id                   String             @id @default(cuid())
+  modelSource          String             @default("WYSCOUT")
   name                 String
   description          String?
   version              Int                @default(1)
@@ -219,6 +220,8 @@ model FantasyModel {
   rules                FantasyModelRule[]
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
+
+  @@index([modelSource, isDefault, isActive])
 }
 
 model FantasyModelRule {
@@ -395,6 +398,7 @@ model MachetePlayerSnapshot {
   redCards          Int       @default(0)
   averageRating     Float?
   fantasyScore      Float?
+  alternativeScore  Float?
   valueScore        Float?
   rawMetrics        Json?
   createdAt         DateTime  @default(now())
@@ -404,6 +408,7 @@ model MachetePlayerSnapshot {
 
   @@index([leagueId, teamId])
   @@index([fantasyScore])
+  @@index([alternativeScore])
 }
 
 model MacheteSyncJob {

@@ -7,10 +7,10 @@ import { usePathname } from "next/navigation";
 export function ModeBrand() {
   const pathname = usePathname();
   const isMachete = pathname.startsWith("/machete") || pathname.startsWith("/api/machete");
-  const href = isMachete ? "/machete" : "/admin/leagues";
+  const href = isMachete ? "/machete" : "/baltika/leagues";
   const imageSrc = isMachete ? "/mode-logos/fotmob-mode.png" : "/mode-logos/wyscout-mode.jpg";
-  const label = isMachete ? "Machete" : "Fantasy Scout";
-  const subtitle = isMachete ? "FOTMOB mode" : "Wyscout Excel mode";
+  const label = isMachete ? "Machete" : "Baltika";
+  const subtitle = isMachete ? "FotMob mode" : "Wyscout Excel mode";
 
   return (
     <Link href={href} className="flex min-w-0 items-center gap-3">

@@ -177,7 +177,7 @@ function TeamCard({ team, seasonId, leagueId }: { team: TeamCardDto; seasonId: s
       ) : null}
 
       <Link
-        href={`/admin/leagues/${leagueId}/teams/${team.id}`}
+        href={`/baltika/leagues/${leagueId}/teams/${team.id}`}
         className="mt-3 inline-flex items-center justify-center rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
       >
         Open team

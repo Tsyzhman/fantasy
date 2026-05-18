@@ -5,8 +5,11 @@ import { calculateCustomFormulaScore } from "./formula";
 import { seedRules } from "./rules";
 
 export type ScoringRule = Pick<FantasyModelRule, "positionGroup" | "metricKey" | "weight" | "transform" | "enabled">;
+export type ScoringModelSource = "WYSCOUT" | "MACHETE";
+
 export type ActiveScoringModel = Pick<
   FantasyModel,
+  | "modelSource"
   | "customFormula"
   | "customFormulaGk"
   | "customFormulaDef"
@@ -23,8 +26,12 @@ export type ActiveScoringModel = Pick<
 };
 
 export async function getActiveScoringModel(): Promise<ActiveScoringModel> {
+  return getActiveScoringModelForSource("WYSCOUT");
+}
+
+export async function getActiveScoringModelForSource(source: ScoringModelSource): Promise<ActiveScoringModel> {
   const model = await prisma.fantasyModel.findFirst({
-    where: { isDefault: true, isActive: true },
+    where: { modelSource: source, isDefault: true, isActive: true },
     include: {
       rules: {
         where: { enabled: true }
@@ -33,23 +40,24 @@ export async function getActiveScoringModel(): Promise<ActiveScoringModel> {
   });
 
   if (model) {
-    return {
-      customFormula: model.customFormula,
-      customFormulaGk: model.customFormulaGk,
-      customFormulaDef: model.customFormulaDef,
-      customFormulaMid: model.customFormulaMid,
-      customFormulaFwd: model.customFormulaFwd,
-      customFormulaEnabled: model.customFormulaEnabled,
-      alternativeFormulaGk: model.alternativeFormulaGk,
-      alternativeFormulaDef: model.alternativeFormulaDef,
-      alternativeFormulaMid: model.alternativeFormulaMid,
-      alternativeFormulaFwd: model.alternativeFormulaFwd,
-      alternativeFormulaEnabled: model.alternativeFormulaEnabled,
-      rules: model.rules.length ? model.rules : seedScoringRules()
-    };
+    return mapActiveModel(model, source);
+  }
+
+  if (source === "MACHETE") {
+    const wyscoutModel = await prisma.fantasyModel.findFirst({
+      where: { modelSource: "WYSCOUT", isDefault: true, isActive: true },
+      include: {
+        rules: {
+          where: { enabled: true }
+        }
+      }
+    });
+
+    if (wyscoutModel) return mapActiveModel(wyscoutModel, "MACHETE");
   }
 
   return {
+    modelSource: source,
     customFormula: null,
     customFormulaGk: null,
     customFormulaDef: null,
@@ -62,6 +70,27 @@ export async function getActiveScoringModel(): Promise<ActiveScoringModel> {
     alternativeFormulaFwd: null,
     alternativeFormulaEnabled: false,
     rules: seedScoringRules()
+  };
+}
+
+function mapActiveModel(
+  model: FantasyModel & { rules: ScoringRule[] },
+  source: ScoringModelSource
+): ActiveScoringModel {
+  return {
+    modelSource: source,
+    customFormula: model.customFormula,
+    customFormulaGk: model.customFormulaGk,
+    customFormulaDef: model.customFormulaDef,
+    customFormulaMid: model.customFormulaMid,
+    customFormulaFwd: model.customFormulaFwd,
+    customFormulaEnabled: model.customFormulaEnabled,
+    alternativeFormulaGk: model.alternativeFormulaGk,
+    alternativeFormulaDef: model.alternativeFormulaDef,
+    alternativeFormulaMid: model.alternativeFormulaMid,
+    alternativeFormulaFwd: model.alternativeFormulaFwd,
+    alternativeFormulaEnabled: model.alternativeFormulaEnabled,
+    rules: model.rules.length ? model.rules : seedScoringRules()
   };
 }
 

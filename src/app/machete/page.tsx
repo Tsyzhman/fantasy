@@ -1,4 +1,4 @@
-import { ArrowRight, BarChart3, Boxes, DatabaseZap, Layers3, ListChecks, Search, Shield } from "lucide-react";
+import { ArrowRight, BarChart3, Boxes, DatabaseZap, Layers3, ListChecks, Search, Settings, Shield } from "lucide-react";
 import Link from "next/link";
 
 import { MacheteShell } from "@/components/machete/MacheteShell";
@@ -22,13 +22,14 @@ export default async function MacheteHomePage() {
     : null;
 
   const cards = [
-    { label: "Modules", value: 4, href: "/machete", icon: Boxes, caption: "Leagues / sync / matching / snapshots" },
+    { label: "Modules", value: 5, href: "/machete", icon: Boxes, caption: "Leagues / players / sync / matching / scoring" },
     { label: "Leagues", value: leagues, href: "/machete/leagues", icon: Layers3, caption: "FotMob provider workspaces" },
     { label: "Teams", value: teams, href: "/machete/leagues", icon: Shield, caption: "Synced team cards" },
     { label: "Expected FP", value: formatScore(expectedFantasyPoints), href: "/machete/leagues", icon: BarChart3, caption: "Average Machete fantasy points" },
     { label: "Sync jobs", value: jobs, href: "/machete/sync-jobs", icon: ListChecks, caption: "Persisted provider jobs" },
     { label: "Entity matching", value: unmatched, href: "/machete/leagues", icon: Search, caption: "Unmatched FotMob entities" },
-    { label: "Player snapshots", value: snapshots, href: "/machete/leagues", icon: DatabaseZap, caption: "Normalized scoring rows" }
+    { label: "Player snapshots", value: snapshots, href: "/machete/players", icon: DatabaseZap, caption: "Normalized scoring rows" },
+    { label: "Model settings", value: "Own", href: "/machete/models", icon: Settings, caption: "Machete-specific formulas" }
   ];
 
   return (

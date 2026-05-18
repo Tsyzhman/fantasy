@@ -1,5 +1,6 @@
 import { MacheteShell } from "@/components/machete/MacheteShell";
 import { MacheteSyncJobList } from "@/components/machete/MacheteSyncJobList";
+import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
 import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -16,6 +17,16 @@ export default async function MacheteSyncJobsPage() {
 
   return (
     <MacheteShell>
+      <div className="mt-6">
+        <PageBreadcrumbs
+          backHref="/machete"
+          backLabel="Back to Machete"
+          items={[
+            { label: "Machete", href: "/machete" },
+            { label: "Sync jobs", href: "/machete/sync-jobs" }
+          ]}
+        />
+      </div>
       <section className="mt-8">
         <MacheteSyncJobList
           jobs={jobs.map((job) => ({

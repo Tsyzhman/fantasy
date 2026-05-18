@@ -1,4 +1,4 @@
-import { DatabaseZap, Layers3, ListChecks, Search } from "lucide-react";
+import { BarChart3, DatabaseZap, Layers3, ListChecks, Search, Settings } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -21,6 +21,14 @@ export function MacheteShell({ children }: { children: ReactNode }) {
           <Link className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50" href="/machete/sync-jobs">
             <ListChecks className="h-4 w-4" />
             Sync jobs
+          </Link>
+          <Link className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50" href="/machete/players">
+            <BarChart3 className="h-4 w-4" />
+            Players
+          </Link>
+          <Link className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50" href="/machete/models">
+            <Settings className="h-4 w-4" />
+            Model
           </Link>
           <span className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-slate-400">
             <Search className="h-4 w-4" />

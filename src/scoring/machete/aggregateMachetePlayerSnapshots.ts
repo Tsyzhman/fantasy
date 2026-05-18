@@ -1,6 +1,10 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 
-import { calculateMacheteFantasyScore } from "./calculateMacheteFantasyScore";
+import {
+  calculateAlternativeScore,
+  calculateFantasyScore,
+  getActiveScoringModelForSource
+} from "@/lib/scoring";
 
 type AggregateOptions = {
   leagueId: string;
@@ -8,6 +12,7 @@ type AggregateOptions = {
 };
 
 export async function aggregateMachetePlayerSnapshots(prisma: PrismaClient, options: AggregateOptions) {
+  const model = await getActiveScoringModelForSource("MACHETE");
   const players = await prisma.machetePlayer.findMany({
     where: {
       teamId: options.teamId ?? undefined,
@@ -39,19 +44,23 @@ export async function aggregateMachetePlayerSnapshots(prisma: PrismaClient, opti
     const ratings = stats.map((stat) => stat.rating).filter((rating): rating is number => rating !== null);
     const averageRating = ratings.length ? Number((sum(ratings) / ratings.length).toFixed(2)) : null;
 
-    const fantasyScore = calculateMacheteFantasyScore({
-      minutes: minutesPlayed,
+    const rawMetrics = {
+      matches_played: matchesPlayed,
+      minutes_played: minutesPlayed,
       goals,
       assists,
-      shotsOnTarget,
-      keyPasses,
+      shots_on_target: shotsOnTarget,
+      key_passes: keyPasses,
       tackles,
       interceptions,
       saves,
-      averageRating,
-      yellowCards,
-      redCards
-    });
+      yellow_cards: yellowCards,
+      red_cards: redCards,
+      average_rating: averageRating
+    };
+    const positionGroup = machetePositionGroup(player.position);
+    const fantasyScore = calculateFantasyScore(rawMetrics, positionGroup, model);
+    const alternativeScore = calculateAlternativeScore(rawMetrics, positionGroup, model);
 
     const snapshot = await prisma.machetePlayerSnapshot.create({
       data: {
@@ -72,27 +81,24 @@ export async function aggregateMachetePlayerSnapshots(prisma: PrismaClient, opti
         redCards,
         averageRating,
         fantasyScore,
+        alternativeScore,
         valueScore: minutesPlayed > 0 ? Number((fantasyScore / (minutesPlayed / 90)).toFixed(2)) : null,
-        rawMetrics: {
-          matchesPlayed,
-          minutesPlayed,
-          goals,
-          assists,
-          shotsOnTarget,
-          keyPasses,
-          tackles,
-          interceptions,
-          saves,
-          yellowCards,
-          redCards,
-          averageRating
-        } as Prisma.InputJsonValue
+        rawMetrics: rawMetrics as Prisma.InputJsonValue
       }
     });
     snapshots.push(snapshot);
   }
 
   return snapshots;
+}
+
+function machetePositionGroup(position: string | null | undefined) {
+  const value = position?.toLowerCase() ?? "";
+  if (value.includes("keeper") || value === "gk") return "GK";
+  if (value.includes("defender") || value.includes("back") || value === "def") return "DEF";
+  if (value.includes("midfielder") || value === "mid") return "MID";
+  if (value.includes("forward") || value.includes("striker") || value.includes("winger") || value === "fw") return "FWD";
+  return "UNKNOWN";
 }
 
 function sum(values: Array<number | null | undefined>): number {

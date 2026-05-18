@@ -5,6 +5,7 @@ import { MacheteShell } from "@/components/machete/MacheteShell";
 import { MacheteStatusBadge } from "@/components/machete/MacheteStatusBadge";
 import { MacheteSyncButton } from "@/components/machete/MacheteSyncButton";
 import { MacheteTeamCard } from "@/components/machete/MacheteTeamCard";
+import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
 import { prisma } from "@/lib/db";
 import { formatDate, formatNumber, formatScore } from "@/lib/format";
 
@@ -58,6 +59,17 @@ export default async function MacheteLeaguePage({ params }: PageProps) {
 
   return (
     <MacheteShell>
+      <div className="mt-6">
+        <PageBreadcrumbs
+          backHref="/machete/leagues"
+          backLabel="Back to leagues"
+          items={[
+            { label: "Machete", href: "/machete" },
+            { label: "Leagues", href: "/machete/leagues" },
+            { label: league.name, href: `/machete/leagues/${league.id}` }
+          ]}
+        />
+      </div>
       <section className="mt-8 rounded border border-slate-200 bg-white p-5 shadow-soft">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
