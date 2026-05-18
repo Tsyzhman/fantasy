@@ -33,7 +33,7 @@ export function MachetePlayerTable({ players, showContext = false }: { players: 
             <tr>
               <th className="w-[42%] px-3 py-3"><I18nText en="Surname" ru="Фамилия" /></th>
               <th className="w-[29%] bg-emerald-50 px-3 py-3 text-right text-emerald-700"><I18nText en="Forecast" ru="Прогноз" /></th>
-              <th className="w-[29%] bg-sky-50 px-3 py-3 text-right text-sky-700">Scoring</th>
+              <th className="w-[29%] bg-sky-50 px-3 py-3 text-right text-sky-700"><I18nText en="Scoring" ru="Скоринг" /></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -68,16 +68,16 @@ export function MachetePlayerTable({ players, showContext = false }: { players: 
         <table className="min-w-full divide-y divide-slate-200 text-sm">
           <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
             <tr>
-              <th className="px-4 py-3">Player</th>
-              {showContext ? <th className="px-4 py-3">Team</th> : null}
+              <th className="px-4 py-3"><I18nText en="Player" ru="Игрок" /></th>
+              {showContext ? <th className="px-4 py-3"><I18nText en="Team" ru="Команда" /></th> : null}
               <th className="px-4 py-3">Pos</th>
               <th className="px-4 py-3 text-right">Apps</th>
               <th className="px-4 py-3 text-right">Min</th>
               <th className="hidden px-4 py-3 text-right lg:table-cell">G</th>
               <th className="hidden px-4 py-3 text-right lg:table-cell">A</th>
-              <th className="bg-emerald-50 px-4 py-3 text-right text-emerald-700">Expected FP</th>
-              <th className="bg-sky-50 px-4 py-3 text-right text-sky-700">Scoring FP</th>
-              <th className="bg-amber-50 px-4 py-3 text-right text-amber-700">Alt FP</th>
+              <th className="bg-emerald-50 px-4 py-3 text-right text-emerald-700"><I18nText en="Expected FP" ru="Прогноз FP" /></th>
+              <th className="bg-sky-50 px-4 py-3 text-right text-sky-700"><I18nText en="Scoring FP" ru="Скоринг FP" /></th>
+              <th className="bg-amber-50 px-4 py-3 text-right text-amber-700"><I18nText en="Alt FP" ru="Альт. FP" /></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -116,15 +116,15 @@ export function MachetePlayerTable({ players, showContext = false }: { players: 
         <table className="min-w-full divide-y divide-slate-200 text-sm">
           <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
             <tr>
-              <th className="px-4 py-3">Player</th>
-              {showContext ? <th className="px-4 py-3">Team</th> : null}
-              {showContext ? <th className="px-4 py-3">League</th> : null}
+              <th className="px-4 py-3"><I18nText en="Player" ru="Игрок" /></th>
+              {showContext ? <th className="px-4 py-3"><I18nText en="Team" ru="Команда" /></th> : null}
+              {showContext ? <th className="px-4 py-3"><I18nText en="League" ru="Лига" /></th> : null}
               <th className="px-4 py-3">Pos</th>
-              <th className="bg-emerald-50 px-4 py-3 text-right text-emerald-700">Expected FP</th>
-              <th className="bg-sky-50 px-4 py-3 text-right text-sky-700">Scoring FP</th>
-              <th className="bg-amber-50 px-4 py-3 text-right text-amber-700">Alt FP</th>
-              <th className="px-4 py-3 text-right">Age</th>
-              <th className="px-4 py-3">Nation</th>
+              <th className="bg-emerald-50 px-4 py-3 text-right text-emerald-700"><I18nText en="Expected FP" ru="Прогноз FP" /></th>
+              <th className="bg-sky-50 px-4 py-3 text-right text-sky-700"><I18nText en="Scoring FP" ru="Скоринг FP" /></th>
+              <th className="bg-amber-50 px-4 py-3 text-right text-amber-700"><I18nText en="Alt FP" ru="Альт. FP" /></th>
+              <th className="px-4 py-3 text-right"><I18nText en="Age" ru="Возраст" /></th>
+              <th className="px-4 py-3"><I18nText en="Nation" ru="Страна" /></th>
               <th className="px-4 py-3 text-right">Apps</th>
               <th className="px-4 py-3 text-right">Min</th>
               <th className="px-4 py-3 text-right">G</th>

@@ -2,6 +2,7 @@ import { ArrowRight, IdCard } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
+import { I18nText } from "@/components/i18n-text";
 import { formatDate, formatNumber, formatScore } from "@/lib/format";
 import { initials } from "@/lib/text";
 
@@ -44,19 +45,19 @@ export function MacheteTeamCard({ team }: { team: MacheteTeamCardDto }) {
           <dt className="text-xs font-medium uppercase text-slate-400">FotMob ID</dt>
           <dd className="mt-1 flex items-center gap-1 truncate text-slate-700">
             <IdCard className="h-3.5 w-3.5 shrink-0 text-slate-400" />
-            {team.providerTeamId ?? "Not linked"}
+            {team.providerTeamId ?? <I18nText en="Not linked" ru="Не связан" />}
           </dd>
         </div>
         <div>
-          <dt className="text-xs font-medium uppercase text-slate-400">Last sync</dt>
+          <dt className="text-xs font-medium uppercase text-slate-400"><I18nText en="Last sync" ru="Последняя синхронизация" /></dt>
           <dd className="mt-1 text-slate-700">{formatDate(team.lastSyncedAt)}</dd>
         </div>
         <div>
-          <dt className="text-xs font-medium uppercase text-slate-400">Players</dt>
+          <dt className="text-xs font-medium uppercase text-slate-400"><I18nText en="Players" ru="Игроки" /></dt>
           <dd className="mt-1 font-semibold text-ink">{formatNumber(team.playersSynced)}</dd>
         </div>
         <div>
-          <dt className="text-xs font-medium uppercase text-slate-400">Fixtures</dt>
+          <dt className="text-xs font-medium uppercase text-slate-400"><I18nText en="Fixtures" ru="Матчи" /></dt>
           <dd className="mt-1 font-semibold text-ink">{formatNumber(team.fixturesSynced)}</dd>
         </div>
         <div>
@@ -66,12 +67,14 @@ export function MacheteTeamCard({ team }: { team: MacheteTeamCardDto }) {
       </dl>
 
       <div className="mt-auto flex flex-col gap-2 pt-5">
-        <MacheteSyncButton endpoint={`/api/machete/teams/${team.id}/sync`}>Sync team</MacheteSyncButton>
+        <MacheteSyncButton endpoint={`/api/machete/teams/${team.id}/sync`}>
+          <I18nText en="Sync team" ru="Синхронизировать команду" />
+        </MacheteSyncButton>
         <Link
           href={`/machete/leagues/${team.leagueId}/teams/${team.id}`}
           className="inline-flex items-center justify-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
         >
-          View details
+          <I18nText en="View details" ru="Открыть детали" />
           <ArrowRight className="h-4 w-4" />
         </Link>
       </div>

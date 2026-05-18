@@ -6,6 +6,7 @@ import { MacheteStatusBadge } from "@/components/machete/MacheteStatusBadge";
 import { MacheteSyncButton } from "@/components/machete/MacheteSyncButton";
 import { MacheteTeamCard } from "@/components/machete/MacheteTeamCard";
 import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
+import { I18nText } from "@/components/i18n-text";
 import { prisma } from "@/lib/db";
 import { formatDate, formatNumber, formatScore } from "@/lib/format";
 import { leagueSeeds } from "@/lib/leagues/seed-data";
@@ -74,10 +75,10 @@ export default async function MacheteLeaguePage({ params }: PageProps) {
       <div className="mt-6">
         <PageBreadcrumbs
           backHref="/machete/leagues"
-          backLabel="Back to leagues"
+          backLabel={<I18nText en="Back to leagues" ru="Назад к лигам" />}
           items={[
             { label: "Machete", href: "/machete/leagues" },
-            { label: "Leagues", href: "/machete/leagues" },
+            { label: <I18nText en="Leagues" ru="Лиги" />, href: "/machete/leagues" },
             { label: displayName, href: `/machete/leagues/${league.id}` }
           ]}
         />
@@ -100,19 +101,19 @@ export default async function MacheteLeaguePage({ params }: PageProps) {
           </div>
           <dl className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-5">
             <div>
-              <dt className="text-xs font-medium uppercase text-slate-400">Teams</dt>
+              <dt className="text-xs font-medium uppercase text-slate-400"><I18nText en="Teams" ru="Команды" /></dt>
               <dd className="mt-1 font-semibold text-ink">{formatNumber(league.teams.length)}</dd>
             </div>
             <div>
-              <dt className="text-xs font-medium uppercase text-slate-400">Players</dt>
+              <dt className="text-xs font-medium uppercase text-slate-400"><I18nText en="Players" ru="Игроки" /></dt>
               <dd className="mt-1 font-semibold text-ink">{formatNumber(playersCount)}</dd>
             </div>
             <div>
-              <dt className="text-xs font-medium uppercase text-slate-400">Fixtures</dt>
+              <dt className="text-xs font-medium uppercase text-slate-400"><I18nText en="Fixtures" ru="Матчи" /></dt>
               <dd className="mt-1 font-semibold text-ink">{formatNumber(fixtures.length)}</dd>
             </div>
             <div>
-              <dt className="text-xs font-medium uppercase text-slate-400">Last sync</dt>
+              <dt className="text-xs font-medium uppercase text-slate-400"><I18nText en="Last sync" ru="Последняя синхронизация" /></dt>
               <dd className="mt-1 font-semibold text-ink">{formatDate(league.lastSyncedAt)}</dd>
             </div>
             <div>
@@ -124,30 +125,30 @@ export default async function MacheteLeaguePage({ params }: PageProps) {
 
         <div className="mt-5 flex flex-wrap gap-2">
           <MacheteSyncButton endpoint={`/api/machete/leagues/${league.id}/sync-full`}>
-            Full league refresh
+            <I18nText en="Full league refresh" ru="Обновить всю лигу" />
           </MacheteSyncButton>
           <MacheteSyncButton endpoint={`/api/machete/leagues/${league.id}/sync-metadata`} variant="secondary">
             <TableProperties className="hidden h-4 w-4" />
-            Sync league metadata
+            <I18nText en="Sync league metadata" ru="Метаданные лиги" />
           </MacheteSyncButton>
           <MacheteSyncButton endpoint={`/api/machete/leagues/${league.id}/sync-teams`} variant="secondary">
             <Users className="hidden h-4 w-4" />
-            Sync teams
+            <I18nText en="Sync teams" ru="Синхронизировать команды" />
           </MacheteSyncButton>
           <MacheteSyncButton endpoint={`/api/machete/leagues/${league.id}/sync-fixtures`} variant="secondary">
             <ListRestart className="hidden h-4 w-4" />
-            Sync fixtures
+            <I18nText en="Sync fixtures" ru="Синхронизировать календарь" />
           </MacheteSyncButton>
           <MacheteSyncButton endpoint={`/api/machete/leagues/${league.id}/sync-player-stats`} variant="secondary">
-            Sync player stats
+            <I18nText en="Sync player stats" ru="Синхронизировать игроков" />
           </MacheteSyncButton>
           <MacheteSyncButton endpoint={`/api/machete/leagues/${league.id}/run-entity-matching`} variant="secondary">
             <GitCompareArrows className="hidden h-4 w-4" />
-            Run entity matching
+            <I18nText en="Run entity matching" ru="Сопоставить сущности" />
           </MacheteSyncButton>
           <MacheteSyncButton endpoint={`/api/machete/leagues/${league.id}/calculate-scores`} variant="secondary">
             <BarChart3 className="hidden h-4 w-4" />
-            Calculate fantasy scores
+            <I18nText en="Calculate fantasy scores" ru="Пересчитать fantasy-очки" />
           </MacheteSyncButton>
         </div>
       </section>
@@ -185,7 +186,7 @@ export default async function MacheteLeaguePage({ params }: PageProps) {
       </section>
       {league.teams.length === 0 ? (
         <div className="mt-6 rounded border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">
-          No teams synced yet. Start with Sync teams.
+          <I18nText en="No teams synced yet. Start with Sync teams." ru="Команды еще не синхронизированы. Начните с синхронизации команд." />
         </div>
       ) : null}
     </MacheteShell>

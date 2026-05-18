@@ -1,3 +1,4 @@
+import { I18nText } from "@/components/i18n-text";
 import { cn } from "@/lib/cn";
 
 const statusStyles: Record<string, string> = {
@@ -21,7 +22,23 @@ export function MacheteStatusBadge({ status, className }: { status: string; clas
         className
       )}
     >
-      {status.replace(/_/g, " ")}
+      {statusLabel(status)}
     </span>
   );
+}
+
+function statusLabel(status: string) {
+  const labels: Record<string, { en: string; ru: string }> = {
+    NOT_CONFIGURED: { en: "Not configured", ru: "Не настроено" },
+    READY: { en: "Ready", ru: "Готово" },
+    SYNCING: { en: "Syncing", ru: "Синхронизация" },
+    SYNCED: { en: "Synced", ru: "Синхронизировано" },
+    NEEDS_REVIEW: { en: "Needs review", ru: "Нужна проверка" },
+    ERROR: { en: "Error", ru: "Ошибка" },
+    PENDING: { en: "Pending", ru: "В очереди" },
+    RUNNING: { en: "Running", ru: "Выполняется" },
+    SUCCEEDED: { en: "Succeeded", ru: "Успешно" }
+  };
+  const label = labels[status] ?? { en: status.replace(/_/g, " "), ru: status.replace(/_/g, " ") };
+  return <I18nText en={label.en} ru={label.ru} />;
 }

@@ -1,3 +1,4 @@
+import { I18nText } from "@/components/i18n-text";
 import { formatDate } from "@/lib/format";
 
 export type MacheteFixtureRow = {
@@ -17,11 +18,11 @@ export function MacheteFixtureTable({ fixtures }: { fixtures: MacheteFixtureRow[
         <table className="min-w-full divide-y divide-slate-200 text-sm">
           <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
             <tr>
-              <th className="px-4 py-3">Date</th>
-              <th className="px-4 py-3">Home</th>
-              <th className="px-4 py-3 text-center">Score</th>
-              <th className="px-4 py-3">Away</th>
-              <th className="px-4 py-3">Status</th>
+              <th className="px-4 py-3"><I18nText en="Date" ru="Дата" /></th>
+              <th className="px-4 py-3"><I18nText en="Home" ru="Хозяева" /></th>
+              <th className="px-4 py-3 text-center"><I18nText en="Score" ru="Счет" /></th>
+              <th className="px-4 py-3"><I18nText en="Away" ru="Гости" /></th>
+              <th className="px-4 py-3"><I18nText en="Status" ru="Статус" /></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -39,7 +40,7 @@ export function MacheteFixtureTable({ fixtures }: { fixtures: MacheteFixtureRow[
             {fixtures.length === 0 ? (
               <tr>
                 <td colSpan={5} className="px-4 py-10 text-center text-slate-500">
-                  No Machete fixtures synced yet.
+                  <I18nText en="No Machete fixtures synced yet." ru="Матчи Machete еще не синхронизированы." />
                 </td>
               </tr>
             ) : null}

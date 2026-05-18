@@ -6,6 +6,7 @@ import { MachetePlayerTable } from "@/components/machete/MachetePlayerTable";
 import { MacheteStatusBadge } from "@/components/machete/MacheteStatusBadge";
 import { MacheteSyncButton } from "@/components/machete/MacheteSyncButton";
 import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
+import { I18nText } from "@/components/i18n-text";
 import { prisma } from "@/lib/db";
 import { formatDate, formatNumber, formatScore } from "@/lib/format";
 import { macheteLeagueDisplayName } from "@/lib/leagues/display";
@@ -115,10 +116,10 @@ export default async function MacheteTeamPage({ params }: PageProps) {
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <PageBreadcrumbs
         backHref={`/machete/leagues/${team.leagueId}`}
-        backLabel="Back to league"
+        backLabel={<I18nText en="Back to league" ru="Назад к лиге" />}
         items={[
           { label: "Machete", href: "/machete/leagues" },
-          { label: "Leagues", href: "/machete/leagues" },
+          { label: <I18nText en="Leagues" ru="Лиги" />, href: "/machete/leagues" },
           { label: leagueDisplayName, href: `/machete/leagues/${team.leagueId}` },
           { label: team.name, href: `/machete/leagues/${team.leagueId}/teams/${team.id}` }
         ]}
@@ -135,35 +136,38 @@ export default async function MacheteTeamPage({ params }: PageProps) {
               <MacheteStatusBadge status={team.status} />
             </div>
             <p className="mt-2 text-sm text-slate-600">
-              Provider ID {team.providerTeamId ?? "not linked"} / Last sync {formatDate(team.lastSyncedAt)}
+              <I18nText en="Provider ID" ru="ID провайдера" /> {team.providerTeamId ?? <I18nText en="not linked" ru="не связан" />} /{" "}
+              <I18nText en="Last sync" ru="последняя синхронизация" /> {formatDate(team.lastSyncedAt)}
             </p>
           </div>
-          <MacheteSyncButton endpoint={`/api/machete/teams/${team.id}/sync`}>Sync team</MacheteSyncButton>
+          <MacheteSyncButton endpoint={`/api/machete/teams/${team.id}/sync`}>
+            <I18nText en="Sync team" ru="Синхронизировать команду" />
+          </MacheteSyncButton>
         </div>
 
         <dl className="mt-6 grid grid-cols-1 gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
           <div className="rounded border border-slate-200 bg-field p-4">
             <dt className="flex items-center gap-2 text-xs font-medium uppercase text-slate-400">
               <Shield className="h-4 w-4" />
-              Matched internal team
+              <I18nText en="Matched internal team" ru="Связанная внутренняя команда" />
             </dt>
             <dd className="mt-2 font-semibold text-ink">
-              {entityMap?.status === "MATCHED" ? entityMap.internalEntityId : "Unmatched"}
+              {entityMap?.status === "MATCHED" ? entityMap.internalEntityId : <I18nText en="Unmatched" ru="Не сопоставлено" />}
             </dd>
           </div>
           <div className="rounded border border-slate-200 bg-field p-4">
-            <dt className="text-xs font-medium uppercase text-slate-400">Players synced</dt>
+            <dt className="text-xs font-medium uppercase text-slate-400"><I18nText en="Players synced" ru="Игроков синхронизировано" /></dt>
             <dd className="mt-2 font-semibold text-ink">{formatNumber(team.players.length)}</dd>
           </div>
           <div className="rounded border border-slate-200 bg-field p-4">
             <dt className="flex items-center gap-2 text-xs font-medium uppercase text-slate-400">
               <GitCompareArrows className="h-4 w-4" />
-              Unmatched players
+              <I18nText en="Unmatched players" ru="Игроки без связи" />
             </dt>
             <dd className="mt-2 font-semibold text-ink">{formatNumber(team.players.length)}</dd>
           </div>
           <div className="rounded border border-slate-200 bg-field p-4">
-            <dt className="text-xs font-medium uppercase text-slate-400">Avg fantasy score</dt>
+            <dt className="text-xs font-medium uppercase text-slate-400"><I18nText en="Avg fantasy score" ru="Средний fantasy score" /></dt>
             <dd className="mt-2 font-semibold text-ink">{formatScore(averageFantasyScore)}</dd>
           </div>
         </dl>
@@ -171,16 +175,18 @@ export default async function MacheteTeamPage({ params }: PageProps) {
 
       <section className="mt-6">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-ink">Players</h2>
-          <span className="text-sm text-slate-500">Fantasy score preview</span>
+          <h2 className="text-lg font-semibold text-ink"><I18nText en="Players" ru="Игроки" /></h2>
+          <span className="text-sm text-slate-500"><I18nText en="Fantasy score preview" ru="Предпросмотр fantasy-очков" /></span>
         </div>
         <MachetePlayerTable players={players} />
       </section>
 
       <section className="mt-6">
         <div className="mb-3 flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-ink">Recent fixtures</h2>
-          <span className="text-sm text-slate-500">{formatNumber(fixtures.length)} shown</span>
+          <h2 className="text-lg font-semibold text-ink"><I18nText en="Recent fixtures" ru="Последние матчи" /></h2>
+          <span className="text-sm text-slate-500">
+            {formatNumber(fixtures.length)} <I18nText en="shown" ru="показано" />
+          </span>
         </div>
         <MacheteFixtureTable
           fixtures={fixtures.map((fixture) => ({
@@ -198,7 +204,7 @@ export default async function MacheteTeamPage({ params }: PageProps) {
       <section className="mt-6 rounded border border-slate-200 bg-white p-5 shadow-soft">
         <div className="flex items-center gap-2">
           <Database className="h-5 w-5 text-slate-500" />
-          <h2 className="text-lg font-semibold text-ink">Raw payload references</h2>
+          <h2 className="text-lg font-semibold text-ink"><I18nText en="Raw payload references" ru="Сырые payload-ссылки" /></h2>
         </div>
         <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
           {rawPayloads.map((payload) => (
@@ -209,7 +215,9 @@ export default async function MacheteTeamPage({ params }: PageProps) {
             </div>
           ))}
           {rawPayloads.length === 0 ? (
-            <p className="text-sm text-slate-500">No raw payloads stored for this team yet.</p>
+            <p className="text-sm text-slate-500">
+              <I18nText en="No raw payloads stored for this team yet." ru="Для этой команды пока нет сохраненных raw payload." />
+            </p>
           ) : null}
         </div>
       </section>

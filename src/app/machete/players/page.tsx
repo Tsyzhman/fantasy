@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import Link from "next/link";
 
+import { I18nText } from "@/components/i18n-text";
 import { MachetePlayerTable } from "@/components/machete/MachetePlayerTable";
 import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
 import { AutoSubmitForm } from "@/components/players/auto-submit-form";
@@ -97,30 +98,37 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <PageBreadcrumbs
         backHref="/machete/leagues"
-        backLabel="Back to Machete leagues"
+        backLabel={<I18nText en="Back to Machete leagues" ru="Назад к лигам Machete" />}
         items={[
           { label: "Machete", href: "/machete/leagues" },
-          { label: "Players", href: "/machete/players" }
+          { label: <I18nText en="Players" ru="Игроки" />, href: "/machete/players" }
         ]}
       />
       <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">Machete player explorer</p>
-          <h1 className="mt-2 text-3xl font-bold text-ink">FotMob players</h1>
+          <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+            <I18nText en="Machete player explorer" ru="Таблица игроков Machete" />
+          </p>
+          <h1 className="mt-2 text-3xl font-bold text-ink">
+            <I18nText en="FotMob players" ru="Игроки FotMob" />
+          </h1>
           <p className="mt-2 max-w-2xl text-sm text-slate-600">
-            Separate Machete snapshots with their own primary and alternative predictions.
+            <I18nText
+              en="Separate Machete snapshots with their own Expected FP, Scoring FP and Alt FP values."
+              ru="Отдельные снапшоты Machete со своими Expected FP, Scoring FP и Alt FP."
+            />
           </p>
         </div>
         <Link href="/machete/leagues" className="rounded bg-ink px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700">
-          Back to Machete leagues
+          <I18nText en="Back to Machete leagues" ru="Назад к лигам Machete" />
         </Link>
       </div>
 
       <AutoSubmitForm className="mt-8 grid grid-cols-1 gap-3 rounded border border-slate-200 bg-white p-4 shadow-soft md:grid-cols-5">
         <label className="text-sm">
-          <span className="mb-1 block font-medium text-slate-600">League</span>
+          <span className="mb-1 block font-medium text-slate-600"><I18nText en="League" ru="Лига" /></span>
           <select name="leagueId" defaultValue={searchParams.leagueId ?? ""} className="w-full rounded border border-slate-200 px-3 py-2">
-            <option value="">All leagues</option>
+            <option value="">All leagues / Все лиги</option>
             {sortedLeagues.map((league) => (
               <option key={league.id} value={league.id}>
                 {macheteLeagueDisplayName(league)}
@@ -129,9 +137,9 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
           </select>
         </label>
         <label className="text-sm">
-          <span className="mb-1 block font-medium text-slate-600">Team</span>
+          <span className="mb-1 block font-medium text-slate-600"><I18nText en="Team" ru="Команда" /></span>
           <select name="teamId" defaultValue={searchParams.teamId ?? ""} className="w-full rounded border border-slate-200 px-3 py-2">
-            <option value="">All teams</option>
+            <option value="">All teams / Все команды</option>
             {sortedLeagues.flatMap((league) =>
               league.teams.map((team) => (
                 <option key={team.id} value={team.id}>
@@ -142,7 +150,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
           </select>
         </label>
         <label className="text-sm">
-          <span className="mb-1 block font-medium text-slate-600">Position</span>
+          <span className="mb-1 block font-medium text-slate-600"><I18nText en="Position" ru="Позиция" /></span>
           <input
             name="position"
             defaultValue={searchParams.position ?? ""}
@@ -151,7 +159,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
           />
         </label>
         <label className="text-sm">
-          <span className="mb-1 block font-medium text-slate-600">Min minutes</span>
+          <span className="mb-1 block font-medium text-slate-600"><I18nText en="Min minutes" ru="Мин. минуты" /></span>
           <input
             name="minMinutes"
             type="number"
@@ -162,13 +170,13 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
           />
         </label>
         <label className="text-sm">
-          <span className="mb-1 block font-medium text-slate-600">Sort</span>
+          <span className="mb-1 block font-medium text-slate-600"><I18nText en="Sort" ru="Сортировка" /></span>
           <select name="sort" defaultValue={sort} className="w-full rounded border border-slate-200 px-3 py-2">
             <option value="fantasyScore">Expected FP / Прогноз FP</option>
             <option value="scoringScore">Scoring FP / Факт FP</option>
             <option value="alternativeScore">Alt FP / Альт. FP</option>
-            <option value="minutesPlayed">Minutes</option>
-            <option value="playerName">Player name</option>
+            <option value="minutesPlayed">Minutes / Минуты</option>
+            <option value="playerName">Player name / Имя игрока</option>
           </select>
         </label>
       </AutoSubmitForm>

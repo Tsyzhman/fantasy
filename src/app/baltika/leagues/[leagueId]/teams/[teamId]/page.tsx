@@ -105,7 +105,7 @@ export default async function BaltikaTeamPage({ params }: PageProps) {
               <tr>
                 <th className="w-[42%] px-3 py-3"><I18nText en="Surname" ru="Фамилия" /></th>
                 <th className="w-[29%] bg-emerald-50 px-3 py-3 text-right text-emerald-700"><I18nText en="Forecast" ru="Прогноз" /></th>
-                <th className="w-[29%] bg-sky-50 px-3 py-3 text-right text-sky-700">Scoring</th>
+                <th className="w-[29%] bg-sky-50 px-3 py-3 text-right text-sky-700"><I18nText en="Scoring" ru="Скоринг" /></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -148,7 +148,7 @@ export default async function BaltikaTeamPage({ params }: PageProps) {
                 <th className="hidden px-4 py-3 text-right lg:table-cell"><I18nText en="Goals" ru="Голы" /></th>
                 <th className="hidden px-4 py-3 text-right lg:table-cell"><I18nText en="Assists" ru="Ассисты" /></th>
                 <th className="bg-emerald-50 px-4 py-3 text-right text-emerald-700"><I18nText en="Predicted FP" ru="Прогноз FP" /></th>
-                <th className="bg-sky-50 px-4 py-3 text-right text-sky-700">Scoring FP</th>
+                <th className="bg-sky-50 px-4 py-3 text-right text-sky-700"><I18nText en="Scoring FP" ru="Скоринг FP" /></th>
                 <th className="bg-amber-50 px-4 py-3 text-right text-amber-700"><I18nText en="Alt FP" ru="Альт. FP" /></th>
               </tr>
             </thead>
@@ -199,7 +199,7 @@ export default async function BaltikaTeamPage({ params }: PageProps) {
                 <th className="px-4 py-3 text-right"><I18nText en="Assists" ru="Ассисты" /></th>
                 <th className="px-4 py-3 text-right"><I18nText en="Market" ru="Стоимость" /></th>
                 <th className="bg-emerald-50 px-4 py-3 text-right text-emerald-700"><I18nText en="Predicted FP" ru="Прогноз FP" /></th>
-                <th className="bg-sky-50 px-4 py-3 text-right text-sky-700">Scoring FP</th>
+                <th className="bg-sky-50 px-4 py-3 text-right text-sky-700"><I18nText en="Scoring FP" ru="Скоринг FP" /></th>
                 <th className="bg-amber-50 px-4 py-3 text-right text-amber-700"><I18nText en="Alt FP" ru="Альт. FP" /></th>
               </tr>
             </thead>

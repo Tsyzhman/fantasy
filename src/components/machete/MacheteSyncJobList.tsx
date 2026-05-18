@@ -1,3 +1,4 @@
+import { I18nText } from "@/components/i18n-text";
 import { formatDate } from "@/lib/format";
 
 import { MacheteStatusBadge } from "./MacheteStatusBadge";
@@ -21,12 +22,12 @@ export function MacheteSyncJobList({ jobs }: { jobs: MacheteSyncJobRow[] }) {
         <table className="min-w-full divide-y divide-slate-200 text-sm">
           <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
             <tr>
-              <th className="px-4 py-3">Job</th>
-              <th className="px-4 py-3">Scope</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3">Created</th>
-              <th className="px-4 py-3">Finished</th>
-              <th className="px-4 py-3">Error</th>
+              <th className="px-4 py-3"><I18nText en="Job" ru="Задача" /></th>
+              <th className="px-4 py-3"><I18nText en="Scope" ru="Область" /></th>
+              <th className="px-4 py-3"><I18nText en="Status" ru="Статус" /></th>
+              <th className="px-4 py-3"><I18nText en="Created" ru="Создано" /></th>
+              <th className="px-4 py-3"><I18nText en="Finished" ru="Завершено" /></th>
+              <th className="px-4 py-3"><I18nText en="Error" ru="Ошибка" /></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -34,7 +35,7 @@ export function MacheteSyncJobList({ jobs }: { jobs: MacheteSyncJobRow[] }) {
               <tr key={job.id} className="hover:bg-slate-50">
                 <td className="whitespace-nowrap px-4 py-3 font-medium text-ink">{job.type.replace(/_/g, " ")}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-slate-600">
-                  {[job.leagueName, job.teamName].filter(Boolean).join(" / ") || "Global"}
+                  {[job.leagueName, job.teamName].filter(Boolean).join(" / ") || <I18nText en="Global" ru="Глобально" />}
                 </td>
                 <td className="whitespace-nowrap px-4 py-3">
                   <MacheteStatusBadge status={job.status} />
@@ -47,7 +48,7 @@ export function MacheteSyncJobList({ jobs }: { jobs: MacheteSyncJobRow[] }) {
             {jobs.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-10 text-center text-slate-500">
-                  No Machete sync jobs yet.
+                  <I18nText en="No Machete sync jobs yet." ru="Задач синхронизации Machete пока нет." />
                 </td>
               </tr>
             ) : null}

@@ -20,7 +20,7 @@ import { validateCustomFormula } from "@/lib/scoring/formula";
 import type { ScoringModelSource } from "@/lib/scoring";
 import { recalculateSnapshotsForSource } from "@/lib/scoring/recalculate-snapshots";
 import { seedRules } from "@/lib/scoring/rules";
-import { formulaAlias, sourceFormulaFields } from "@/lib/scoring/source-field-guide";
+import { formulaAlias, sourceFormulaFields, type SourceFormulaField } from "@/lib/scoring/source-field-guide";
 
 type ModelSettingsPageProps = {
   source: ScoringModelSource;
@@ -299,7 +299,7 @@ export async function ModelSettingsPage({
             </div>
             <div className="mt-2 grid grid-cols-1 gap-3 lg:grid-cols-2">
               {customFormulaFields.map((field) => (
-                <FormulaTextarea key={field.key} field={field} defaultValue={customFormulaForPosition(displayModel, field.key)} />
+                <FormulaTextarea key={field.key} field={field} defaultValue={editableExpectedFormula(displayModel, field.key)} />
               ))}
             </div>
             <label className="mt-3 flex items-center gap-3 text-sm font-medium text-ink">
@@ -504,6 +504,10 @@ function FormulaPreview({ position, children }: { position: string; children: Re
   );
 }
 
+function editableExpectedFormula(model: Parameters<typeof customFormulaForPosition>[0], key: string) {
+  return customFormulaForPosition(model, key).trim() || defaultFormulaByPosition.find((entry) => entry.key === key)?.formula || "";
+}
+
 function FormulaTextarea({
   field,
   defaultValue,
@@ -653,13 +657,13 @@ function FieldGuideSections() {
                 <th className="px-3 py-3"><I18nText en="Normalized key" ru="Нормализованный ключ" /></th>
                 <th className="px-3 py-3"><I18nText en="Type" ru="Тип" /></th>
                 <th className="px-3 py-3"><I18nText en="Meaning" ru="Смысл" /></th>
-                <th className="px-3 py-3"><I18nText en="Default FP" ru="Default FP" /></th>
+                <th className="px-3 py-3"><I18nText en="Default FP" ru="FP по умолчанию" /></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {sourceFormulaFields.map((field) => (
                 <tr key={`${field.category}:${field.key}`} className="align-top">
-                  <td className="whitespace-nowrap px-3 py-3 text-slate-500">{field.category}</td>
+                  <td className="whitespace-nowrap px-3 py-3 text-slate-500"><SourceCategoryLabel category={field.category} /></td>
                   <td className="px-3 py-3">
                     <span className="rounded bg-slate-100 px-2 py-1 font-mono text-xs text-slate-700">
                       {formulaAlias(field.label)}
@@ -668,8 +672,10 @@ function FieldGuideSections() {
                   <td className="px-3 py-3">
                     <span className="rounded bg-slate-100 px-2 py-1 font-mono text-xs text-slate-700">{field.key}</span>
                   </td>
-                  <td className="whitespace-nowrap px-3 py-3 text-slate-600">{field.type}</td>
-                  <td className="max-w-[360px] px-3 py-3 text-slate-600">{field.meaning}</td>
+                  <td className="whitespace-nowrap px-3 py-3 text-slate-600"><SourceTypeLabel type={field.type} /></td>
+                  <td className="max-w-[360px] px-3 py-3 text-slate-600">
+                    <I18nText en={field.meaning} ru={sourceFieldMeaningRu(field)} />
+                  </td>
                   <td className="whitespace-nowrap px-3 py-3 text-slate-600">
                     {field.type === "number" || field.type === "money" ? (
                       <I18nText en="0, set by formula" ru="0, задается формулой" />
@@ -685,4 +691,184 @@ function FieldGuideSections() {
       </section>
     </>
   );
+}
+
+function SourceCategoryLabel({ category }: { category: string }) {
+  const ru: Record<string, string> = {
+    Core: "Основное",
+    Defending: "Оборона",
+    Discipline: "Дисциплина",
+    Attacking: "Атака",
+    Shooting: "Удары",
+    Creation: "Создание моментов",
+    Crossing: "Навесы",
+    Passing: "Пасы",
+    Progression: "Продвижение мяча",
+    Goalkeeper: "Вратарь",
+    "Set pieces": "Стандарты",
+    "Team form": "Форма команды",
+    Schedule: "Календарь"
+  };
+
+  return <I18nText en={category} ru={ru[category] ?? category} />;
+}
+
+function SourceTypeLabel({ type }: { type: SourceFormulaField["type"] }) {
+  const ru: Record<SourceFormulaField["type"], string> = {
+    number: "число",
+    money: "деньги",
+    date: "дата",
+    text: "текст",
+    boolean: "да/нет"
+  };
+
+  return <I18nText en={type} ru={ru[type]} />;
+}
+
+function sourceFieldMeaningRu(field: SourceFormulaField) {
+  const special: Record<string, string> = {
+    Player: "Имя игрока. Это метаданные: текстовые поля в формулах считаются как 0.",
+    Team: "Название команды. Это метаданные: текстовые поля в формулах считаются как 0.",
+    Position: "Исходная позиция игрока. Приложение также нормализует ее в GK/DEF/MID/FWD.",
+    Age: "Возраст игрока.",
+    "Market value": "Рыночная стоимость игрока в евро после парсинга.",
+    "Contract expires": "Дата окончания контракта. Это метаданные: даты в формулах считаются как 0.",
+    "Birth country": "Страна рождения. Это метаданные: текстовые поля в формулах считаются как 0.",
+    "Passport country": "Страна паспорта. Это метаданные: текстовые поля в формулах считаются как 0.",
+    Foot: "Рабочая нога. Это метаданные: текстовые поля в формулах считаются как 0.",
+    "On loan": "Статус аренды. Это метаданные: boolean-поля в формулах считаются как 0.",
+    "Save rate, %": "Процент отраженных ударов.",
+    "Goal conversion, %": "Процент реализации ударов в голы.",
+    "Penalty conversion, %": "Процент реализации пенальти.",
+    "Team home matches": "Количество загруженных домашних матчей Team Stats для этой команды.",
+    "Team home xG": "Суммарный xG команды в загруженных домашних матчах.",
+    "Team home xGA": "Суммарный xGA команды в загруженных домашних матчах.",
+    "Team home xG per match": "Средний xG команды в загруженных домашних матчах.",
+    "Team home xGA per match": "Средний xGA команды в загруженных домашних матчах.",
+    "Team away matches": "Количество гостевых строк Team Stats, полученных из домашних загрузок соперников.",
+    "Team away xG": "Суммарный xG команды в загруженных гостевых матчах.",
+    "Team away xGA": "Суммарный xGA команды в загруженных гостевых матчах.",
+    "Team away xG per match": "Средний xG команды в загруженных гостевых матчах.",
+    "Team away xGA per match": "Средний xGA команды в загруженных гостевых матчах.",
+    "Team overall xG per match": "Средний xG команды по всем загруженным матчам Team Stats.",
+    "Team overall xGA per match": "Средний xGA команды по всем загруженным матчам Team Stats.",
+    "Next fixture count": "1, если у команды есть следующий матч; иначе 0.",
+    "Round fixture count": "Количество матчей команды в ближайшем запланированном туре.",
+    "Next round": "Номер следующего тура из источника календаря.",
+    "Next is home": "1, если первый следующий матч домашний; иначе 0.",
+    "Next is away": "1, если первый следующий матч гостевой; иначе 0.",
+    "Next team xG per match": "Атакующая форма команды для стороны первого следующего матча.",
+    "Next team xGA per match": "Оборонительная форма команды для стороны первого следующего матча.",
+    "Next opponent xG per match": "Атакующая форма соперника для стороны первого следующего матча.",
+    "Next opponent xGA per match": "Оборонительная форма соперника для стороны первого следующего матча.",
+    "Next projected xG": "Прогнозный xG команды для первого следующего матча.",
+    "Next projected xGA": "Прогнозный xGA команды для первого следующего матча.",
+    "Round projected xG": "Суммарный прогнозный xG команды по всем матчам ближайшего тура.",
+    "Round projected xGA": "Суммарный прогнозный xGA команды по всем матчам ближайшего тура.",
+    "Round projected xG avg": "Средний прогнозный xG команды по матчам ближайшего тура.",
+    "Round projected xGA avg": "Средний прогнозный xGA команды по матчам ближайшего тура."
+  };
+  if (special[field.label]) return special[field.label];
+
+  if (field.label.endsWith(" per 90")) {
+    return `${metricNameRu(field.label.replace(/ per 90$/, ""))} за 90 минут.`;
+  }
+  if (field.label.endsWith(" per match")) {
+    return `${metricNameRu(field.label.replace(/ per match$/, ""))} в среднем за матч.`;
+  }
+  if (field.label.startsWith("Accurate ")) {
+    return `Точность: ${metricNameRu(field.label.replace(/^Accurate /, "").replace(/, %$/, ""))}.`;
+  }
+  if (field.label.endsWith(", %")) {
+    return `Доля или процент: ${metricNameRu(field.label.replace(/, %$/, ""))}.`;
+  }
+  if (field.label.startsWith("PAdj ")) {
+    return `${metricNameRu(field.label.replace(/^PAdj /, ""))} с поправкой на владение.`;
+  }
+  if (field.label.startsWith("Average ")) {
+    return `Среднее значение: ${metricNameRu(field.label.replace(/^Average /, ""))}.`;
+  }
+  if (field.type === "text" || field.type === "date" || field.type === "boolean") {
+    return `${metricNameRu(field.label)}. Это метаданные: в формулах считается как 0.`;
+  }
+
+  return `${metricNameRu(field.label)} за загруженный период.`;
+}
+
+function metricNameRu(label: string) {
+  const dictionary: Record<string, string> = {
+    "Matches played": "матчи",
+    "Minutes played": "минуты",
+    Goals: "голы",
+    xG: "xG",
+    Assists: "ассисты",
+    xA: "xA",
+    Height: "рост",
+    Weight: "вес",
+    Duels: "единоборства",
+    "Duels won": "выигранные единоборства",
+    "Successful defensive actions": "успешные оборонительные действия",
+    "Defensive duels": "оборонительные единоборства",
+    "Defensive duels won": "выигранные оборонительные единоборства",
+    "Aerial duels": "верховые единоборства",
+    "Aerial duels won": "выигранные верховые единоборства",
+    "Sliding tackles": "подкаты",
+    "Shots blocked": "заблокированные удары",
+    Interceptions: "перехваты",
+    Fouls: "фолы",
+    "Yellow cards": "желтые карточки",
+    "Red cards": "красные карточки",
+    "Successful attacking actions": "успешные атакующие действия",
+    "Non-penalty goals": "голы без пенальти",
+    "Head goals": "голы головой",
+    Shots: "удары",
+    "Shots on target": "удары в створ",
+    "Assists per 90": "ассисты за 90 минут",
+    Crosses: "навесы",
+    "Crosses from left flank": "навесы с левого фланга",
+    "Crosses from right flank": "навесы с правого фланга",
+    "Crosses to goalie box": "навесы во вратарскую",
+    Dribbles: "дриблинг",
+    "Successful dribbles": "успешный дриблинг",
+    "Offensive duels": "атакующие единоборства",
+    "Offensive duels won": "выигранные атакующие единоборства",
+    "Touches in box": "касания в штрафной",
+    "Progressive runs": "прогрессивные рывки",
+    "Received passes": "полученные передачи",
+    "Received long passes": "полученные длинные передачи",
+    "Fouls suffered": "заработанные фолы",
+    Passes: "пасы",
+    "Forward passes": "пасы вперед",
+    "Back passes": "пасы назад",
+    "Lateral passes": "поперечные пасы",
+    "Short / medium passes": "короткие и средние пасы",
+    "Long passes": "длинные пасы",
+    "pass length, m": "длина паса, м",
+    "long pass length, m": "длина длинного паса, м",
+    "Shot assists": "пасы под удар",
+    "Second assists": "вторые ассисты",
+    "Third assists": "третьи ассисты",
+    "Smart passes": "умные пасы",
+    "Key passes": "ключевые пасы",
+    "Passes to final third": "пасы в финальную треть",
+    "Passes to penalty area": "пасы в штрафную",
+    "Through passes": "разрезающие пасы",
+    "Deep completions": "глубокие завершенные передачи",
+    "Deep completed crosses": "глубокие завершенные навесы",
+    "Progressive passes": "прогрессивные пасы",
+    "Conceded goals": "пропущенные голы",
+    "Shots against": "удары по воротам",
+    "Clean sheets": "сухие матчи",
+    "xG against": "xGA",
+    "Prevented goals": "предотвращенные голы",
+    "Back passes received as GK": "пасы назад, полученные вратарем",
+    Exits: "выходы вратаря",
+    "Free kicks": "штрафные",
+    "Direct free kicks": "прямые штрафные",
+    "Direct free kicks on target": "прямые штрафные в створ",
+    Corners: "угловые",
+    "Penalties taken": "исполненные пенальти"
+  };
+
+  return dictionary[label] ?? label;
 }

@@ -1,6 +1,7 @@
 import { ArrowRight, CalendarDays } from "lucide-react";
 import Link from "next/link";
 
+import { I18nText } from "@/components/i18n-text";
 import { formatDate, formatNumber, formatScore } from "@/lib/format";
 import { leagueSeeds } from "@/lib/leagues/seed-data";
 import { leagueSubtitle, macheteLeagueDisplayName } from "@/lib/leagues/display";
@@ -47,7 +48,7 @@ export function MacheteLeagueCard({ league }: { league: MacheteLeagueCardDto }) 
           <div>
             <h2 className="font-semibold text-ink">{displayName}</h2>
             <p className="text-sm text-slate-500">
-              {leagueSubtitle(flagInput, league.season) || "FotMob league"}
+              {leagueSubtitle(flagInput, league.season) || <I18nText en="FotMob league" ru="Лига FotMob" />}
             </p>
           </div>
         </div>
@@ -64,15 +65,15 @@ export function MacheteLeagueCard({ league }: { league: MacheteLeagueCardDto }) 
 
       <dl className="mt-5 grid grid-cols-4 gap-3 text-sm">
         <div>
-          <dt className="text-xs font-medium uppercase text-slate-400">Teams</dt>
+          <dt className="text-xs font-medium uppercase text-slate-400"><I18nText en="Teams" ru="Команды" /></dt>
           <dd className="mt-1 font-semibold text-ink">{formatNumber(league.teamsSynced)}</dd>
         </div>
         <div>
-          <dt className="text-xs font-medium uppercase text-slate-400">Players</dt>
+          <dt className="text-xs font-medium uppercase text-slate-400"><I18nText en="Players" ru="Игроки" /></dt>
           <dd className="mt-1 font-semibold text-ink">{formatNumber(league.playersSynced)}</dd>
         </div>
         <div>
-          <dt className="text-xs font-medium uppercase text-slate-400">Fixtures</dt>
+          <dt className="text-xs font-medium uppercase text-slate-400"><I18nText en="Fixtures" ru="Матчи" /></dt>
           <dd className="mt-1 font-semibold text-ink">{formatNumber(league.fixturesSynced)}</dd>
         </div>
         <div>

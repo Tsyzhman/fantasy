@@ -1,4 +1,5 @@
 import { ModelSettingsPage } from "@/components/model-settings-page";
+import { I18nText } from "@/components/i18n-text";
 
 type PageProps = {
   searchParams?: {
@@ -13,10 +14,15 @@ export default async function MacheteModelsPage({ searchParams }: PageProps) {
   return ModelSettingsPage({
     source: "MACHETE",
     modeName: "Machete",
-    title: "Fantasy model",
-    description: "Machete model settings for FotMob snapshots. It starts from the same default formula as Baltika but can diverge independently.",
+    title: <I18nText en="Fantasy model" ru="Fantasy-модель" />,
+    description: (
+      <I18nText
+        en="Machete model settings for FotMob snapshots. Expected FP, Scoring FP and Alt FP can be tuned independently from Baltika."
+        ru="Настройки модели Machete для снапшотов FotMob. Expected FP, Scoring FP и Alt FP можно настраивать отдельно от Балтики."
+      />
+    ),
     backHref: "/machete/leagues",
-    backLabel: "Back to Machete leagues",
+    backLabel: <I18nText en="Back to Machete leagues" ru="Назад к лигам Machete" />,
     searchParams
   });
 }
