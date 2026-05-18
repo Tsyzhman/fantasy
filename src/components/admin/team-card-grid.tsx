@@ -19,10 +19,10 @@ export type TeamCardDto = {
   status: string;
   playersCount: number;
   lastUploadAt: string | null;
-  publishedAt: string | null;
+  playersPublishedAt: string | null;
   latestImportId: string | null;
-  homeFixturesCount: number;
-  lastTeamStatsUploadAt: string | null;
+  fixturesCount: number;
+  teamStatsPublishedAt: string | null;
   errors: unknown[];
   warnings: unknown[];
 };
@@ -103,7 +103,7 @@ function TeamCard({ team, seasonId, leagueId }: { team: TeamCardDto; seasonId: s
     data.append("file", file);
     data.append("seasonId", seasonId);
 
-    setTeamStatsState({ status: "uploading", message: "Importing home matches..." });
+    setTeamStatsState({ status: "uploading", message: "Importing matches..." });
     const response = await fetch(`/api/baltika/teams/${team.id}/team-stats/upload`, {
       method: "POST",
       body: data
@@ -118,7 +118,7 @@ function TeamCard({ team, seasonId, leagueId }: { team: TeamCardDto; seasonId: s
       return;
     }
 
-    setTeamStatsState({ status: "success", message: `Imported ${payload.fixturesCount ?? 0} home matches.` });
+    setTeamStatsState({ status: "success", message: `Imported ${payload.fixturesCount ?? 0} matches.` });
     router.refresh();
   }
 
@@ -157,16 +157,16 @@ function TeamCard({ team, seasonId, leagueId }: { team: TeamCardDto; seasonId: s
           <dd className="mt-1 text-slate-700">{formatDate(team.lastUploadAt)}</dd>
         </div>
         <div>
-          <dt className="text-xs font-medium uppercase text-slate-400">Published</dt>
-          <dd className="mt-1 text-slate-700">{formatDate(team.publishedAt)}</dd>
+          <dt className="text-xs font-medium uppercase text-slate-400">Players published</dt>
+          <dd className="mt-1 text-slate-700">{formatDate(team.playersPublishedAt)}</dd>
         </div>
         <div>
-          <dt className="text-xs font-medium uppercase text-slate-400">Home matches</dt>
-          <dd className="mt-1 text-slate-700">{formatNumber(team.homeFixturesCount)}</dd>
+          <dt className="text-xs font-medium uppercase text-slate-400">Matches</dt>
+          <dd className="mt-1 text-slate-700">{formatNumber(team.fixturesCount)}</dd>
         </div>
         <div>
-          <dt className="text-xs font-medium uppercase text-slate-400">Stats upload</dt>
-          <dd className="mt-1 text-slate-700">{formatDate(team.lastTeamStatsUploadAt)}</dd>
+          <dt className="text-xs font-medium uppercase text-slate-400">xG/xGA published</dt>
+          <dd className="mt-1 text-slate-700">{formatDate(team.teamStatsPublishedAt)}</dd>
         </div>
       </dl>
 
@@ -232,7 +232,7 @@ function TeamCard({ team, seasonId, leagueId }: { team: TeamCardDto; seasonId: s
         ) : (
           <CalendarDays className="h-4 w-4" />
         )}
-        Upload home Team Stats
+        Upload Team Stats
       </button>
       <input
         ref={teamStatsInputRef}

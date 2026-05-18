@@ -30,8 +30,10 @@ export default async function BaltikaLeaguePage({ params }: PageProps) {
         orderBy: { name: "asc" },
         include: {
           baltikaFixturesHome: true,
+          baltikaFixturesAway: true,
           baltikaTeamStatsImports: {
-            orderBy: { createdAt: "desc" },
+            where: { status: "PUBLISHED" },
+            orderBy: { updatedAt: "desc" },
             take: 1
           },
           imports: {
@@ -64,10 +66,10 @@ export default async function BaltikaLeaguePage({ params }: PageProps) {
       status: latestImport?.status ?? "EMPTY",
       playersCount: latestImport?._count.snapshots ?? 0,
       lastUploadAt: latestImport?.createdAt.toISOString() ?? null,
-      publishedAt: publishedImport?.publishedAt?.toISOString() ?? null,
+      playersPublishedAt: publishedImport?.publishedAt?.toISOString() ?? null,
       latestImportId: latestImport?.id ?? null,
-      homeFixturesCount: team.baltikaFixturesHome.length,
-      lastTeamStatsUploadAt: team.baltikaTeamStatsImports[0]?.createdAt.toISOString() ?? null,
+      fixturesCount: team.baltikaFixturesHome.length + team.baltikaFixturesAway.length,
+      teamStatsPublishedAt: team.baltikaTeamStatsImports[0]?.updatedAt.toISOString() ?? null,
       errors: Array.isArray(latestImport?.errorsJson) ? latestImport.errorsJson : [],
       warnings: Array.isArray(latestImport?.warningsJson) ? latestImport.warningsJson : []
     };
