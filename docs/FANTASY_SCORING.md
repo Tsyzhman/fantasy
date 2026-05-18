@@ -70,3 +70,7 @@ Missing metric values count as 0 in formula calculation, while raw imported valu
 
 The `/admin/models` page includes the full field guide for formula aliases, normalized keys, field meanings, and fantasy
 points by position.
+
+It also includes the full Wyscout Excel field list. Any numeric source field can be used in a custom formula by wrapping
+its label in braces, for example `{Shots per 90}` or `{Accurate progressive passes, %}`. Extra fields have 0 fantasy
+points by default until a custom formula assigns a weight.

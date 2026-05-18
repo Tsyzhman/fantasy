@@ -12,6 +12,7 @@ import {
 } from "@/lib/scoring/formula-display";
 import { validateCustomFormula } from "@/lib/scoring/formula";
 import { seedRules } from "@/lib/scoring/rules";
+import { formulaAlias, sourceFormulaFields } from "@/lib/scoring/source-field-guide";
 
 type PageProps = {
   searchParams?: {
@@ -195,6 +196,11 @@ export default async function AdminModelsPage({ searchParams }: PageProps) {
               <span className="font-mono"> 4*{"{Goals}"} + 2*{"{xG/per90}"} + 3*{"{Assists}"} - {"{Yellow cards}"}</span>.
               Leave a position empty to use the default rules for that position.
             </p>
+            <p className="mt-2">
+              Any numeric Excel field from the full field list below can be used. Fields that are not part of the default
+              scoring table have 0 fantasy points by default; assign their weight directly in the formula, for example
+              <span className="font-mono"> 0.4*{"{Touches in box per 90}"}</span>.
+            </p>
           </div>
 
           <label className="flex items-center gap-3 text-sm font-medium text-ink">
@@ -266,6 +272,52 @@ export default async function AdminModelsPage({ searchParams }: PageProps) {
                   <td className="px-3 py-3 text-right font-semibold text-ink">{formatPositionPoints(field.points, "DEF")}</td>
                   <td className="px-3 py-3 text-right font-semibold text-ink">{formatPositionPoints(field.points, "MID")}</td>
                   <td className="px-3 py-3 text-right font-semibold text-ink">{formatPositionPoints(field.points, "FWD")}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section className="mt-6 rounded border border-slate-200 bg-white p-6 shadow-soft">
+        <div>
+          <h2 className="text-lg font-semibold text-ink">Все поля Excel для формул</h2>
+          <p className="mt-1 text-sm text-slate-600">
+            Числовые поля можно использовать в кастомной формуле. Текстовые, даты и boolean-поля хранятся как metadata, но
+            в математической формуле дают 0. Для дополнительных метрик ФО по умолчанию не задано: вес задается прямо в
+            формуле.
+          </p>
+        </div>
+
+        <div className="mt-5 max-h-[560px] overflow-auto rounded border border-slate-200">
+          <table className="min-w-full divide-y divide-slate-200 text-sm">
+            <thead className="sticky top-0 bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
+              <tr>
+                <th className="px-3 py-3">Группа</th>
+                <th className="px-3 py-3">Alias</th>
+                <th className="px-3 py-3">Normalized key</th>
+                <th className="px-3 py-3">Тип</th>
+                <th className="px-3 py-3">Значение</th>
+                <th className="px-3 py-3">ФО по умолчанию</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {sourceFormulaFields.map((field) => (
+                <tr key={`${field.category}:${field.key}`} className="align-top">
+                  <td className="whitespace-nowrap px-3 py-3 text-slate-500">{field.category}</td>
+                  <td className="px-3 py-3">
+                    <span className="rounded bg-slate-100 px-2 py-1 font-mono text-xs text-slate-700">
+                      {formulaAlias(field.label)}
+                    </span>
+                  </td>
+                  <td className="px-3 py-3">
+                    <span className="rounded bg-slate-100 px-2 py-1 font-mono text-xs text-slate-700">{field.key}</span>
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-3 text-slate-600">{field.type}</td>
+                  <td className="max-w-[360px] px-3 py-3 text-slate-600">{field.meaning}</td>
+                  <td className="whitespace-nowrap px-3 py-3 text-slate-600">
+                    {field.type === "number" || field.type === "money" ? "0, задается формулой" : "не числовое"}
+                  </td>
                 </tr>
               ))}
             </tbody>
