@@ -47,6 +47,7 @@ export function BaltikaCalendarPanel({
   const router = useRouter();
   const [draft, setDraft] = useState<Draft>({ roundNumber: "", kickoffAt: "", homeTeamId: "", awayTeamId: "" });
   const [editing, setEditing] = useState<Record<string, Draft>>({});
+  const [fixtureFilter, setFixtureFilter] = useState("");
   const [busyId, setBusyId] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
@@ -122,7 +123,21 @@ export function BaltikaCalendarPanel({
     router.refresh();
   }
 
-  const futureFixtures = fixtures.filter(isEditableFixture);
+  const editableFixtures = useMemo(() => {
+    const query = fixtureFilter.trim().toLowerCase();
+    return fixtures
+      .filter((fixture) => {
+        if (!query) return true;
+        return `${fixture.homeTeamName} ${fixture.awayTeamName ?? ""} ${fixture.roundNumber ?? ""}`.toLowerCase().includes(query);
+      })
+      .sort((left, right) => {
+        const leftRound = left.roundNumber ?? Number.MAX_SAFE_INTEGER;
+        const rightRound = right.roundNumber ?? Number.MAX_SAFE_INTEGER;
+        const leftDate = left.kickoffAt ? new Date(left.kickoffAt).getTime() : 0;
+        const rightDate = right.kickoffAt ? new Date(right.kickoffAt).getTime() : 0;
+        return leftRound - rightRound || leftDate - rightDate || left.homeTeamName.localeCompare(right.homeTeamName);
+      });
+  }, [fixtureFilter, fixtures]);
   const unscheduledFixtures = fixtures.filter((fixture) => fixture.roundNumber === null);
 
   return (
@@ -130,7 +145,7 @@ export function BaltikaCalendarPanel({
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <h2 className="text-lg font-semibold text-ink">Calendar by round</h2>
-          <p className="mt-1 text-sm text-slate-500">Future rounds are editable; teams can have no fixture or multiple fixtures in one round.</p>
+          <p className="mt-1 text-sm text-slate-500">Any fixture can be moved to another round; teams can have no fixture or multiple fixtures in one round.</p>
         </div>
         {message ? <p className="rounded bg-rose-50 px-3 py-2 text-sm text-rose-700">{message}</p> : null}
       </div>
@@ -209,12 +224,32 @@ export function BaltikaCalendarPanel({
       ) : null}
 
       <div className="mt-6">
-        <h3 className="text-sm font-semibold uppercase text-slate-500">Editable future fixtures</h3>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h3 className="text-sm font-semibold uppercase text-slate-500">Editable fixtures</h3>
+            <p className="mt-1 text-sm text-slate-500">Change the round number to move a match into any tour.</p>
+          </div>
+          <input
+            type="search"
+            value={fixtureFilter}
+            onChange={(event) => setFixtureFilter(event.target.value)}
+            placeholder="Find team or round"
+            className="w-full rounded border border-slate-200 px-3 py-2 text-sm sm:max-w-xs"
+          />
+        </div>
         <div className="mt-3 space-y-2">
-          {futureFixtures.map((fixture) => {
+          {editableFixtures.map((fixture) => {
             const value = editing[fixture.id] ?? toDraft(fixture);
             return (
-              <div key={fixture.id} className="grid grid-cols-1 gap-2 rounded border border-slate-200 bg-field p-3 lg:grid-cols-[90px_1fr_1fr_1fr_auto_auto]">
+              <div key={fixture.id} className="grid grid-cols-1 gap-2 rounded border border-slate-200 bg-field p-3 lg:grid-cols-[minmax(180px,1.2fr)_90px_1fr_1fr_1fr_auto_auto]">
+                <div className="min-w-0 text-sm">
+                  <p className="truncate font-semibold text-ink">
+                    {fixture.homeTeamName} - {fixture.awayTeamName ?? "TBD"}
+                  </p>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {fixture.status} · {fixture.source}
+                  </p>
+                </div>
                 <input
                   type="number"
                   min="1"
@@ -251,9 +286,9 @@ export function BaltikaCalendarPanel({
               </div>
             );
           })}
-          {futureFixtures.length === 0 ? (
+          {editableFixtures.length === 0 ? (
             <div className="rounded border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-500">
-              No future fixtures to edit.
+              No fixtures match this filter.
             </div>
           ) : null}
         </div>
@@ -307,10 +342,4 @@ function toDraft(fixture: BaltikaCalendarFixture): Draft {
     homeTeamId: fixture.homeTeamId ?? "",
     awayTeamId: fixture.awayTeamId ?? ""
   };
-}
-
-function isEditableFixture(fixture: BaltikaCalendarFixture) {
-  if (fixture.status !== "PLAYED" && fixture.status !== "FINISHED") return true;
-  if (!fixture.kickoffAt) return false;
-  return new Date(fixture.kickoffAt).getTime() > Date.now();
 }

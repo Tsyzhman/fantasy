@@ -16,9 +16,6 @@ type Params = {
 export async function PATCH(request: Request, { params }: Params) {
   const fixture = await prisma.baltikaFixture.findUnique({ where: { id: params.fixtureId } });
   if (!fixture) return errorResponse("FIXTURE_NOT_FOUND", "Fixture not found.", 404);
-  if (!isFutureEditable(fixture.kickoffAt, fixture.status)) {
-    return errorResponse("FIXTURE_LOCKED", "Only future fixtures can be edited manually.", 409);
-  }
 
   const body = await request.json();
   const homeTeamId = stringOrNull(body.homeTeamId);
@@ -45,7 +42,6 @@ export async function PATCH(request: Request, { params }: Params) {
       awayTeamName: awayTeam?.name ?? stringOrNull(body.awayTeamName),
       roundNumber: integerOrNull(body.roundNumber),
       kickoffAt: dateOrNull(body.kickoffAt),
-      status: "SCHEDULED",
       source: fixture.source === "WYSCOUT_TEAM_STATS" ? fixture.source : "MANUAL"
     }
   });
@@ -63,9 +59,6 @@ export async function PATCH(request: Request, { params }: Params) {
 export async function DELETE(_request: Request, { params }: Params) {
   const fixture = await prisma.baltikaFixture.findUnique({ where: { id: params.fixtureId } });
   if (!fixture) return errorResponse("FIXTURE_NOT_FOUND", "Fixture not found.", 404);
-  if (!isFutureEditable(fixture.kickoffAt, fixture.status)) {
-    return errorResponse("FIXTURE_LOCKED", "Only future fixtures can be deleted manually.", 409);
-  }
 
   await prisma.baltikaFixture.delete({ where: { id: fixture.id } });
   const scoringModel = await getActiveScoringModel();
@@ -76,11 +69,6 @@ export async function DELETE(_request: Request, { params }: Params) {
     scoringModel
   );
   return NextResponse.json({ ok: true });
-}
-
-function isFutureEditable(kickoffAt: Date | null, status: string | null) {
-  if (status !== "PLAYED" && status !== "FINISHED") return true;
-  return Boolean(kickoffAt && kickoffAt.getTime() > Date.now());
 }
 
 function stringOrNull(value: unknown) {
