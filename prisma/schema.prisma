@@ -187,6 +187,7 @@ model PlayerSnapshot {
   onLoan          Boolean?
 
   fantasyScore     Float?
+  scoringScore     Float?
   alternativeScore Float?
   valueScore       Float?
   isStarter        Boolean @default(false)
@@ -203,6 +204,7 @@ model PlayerSnapshot {
   @@index([leagueId, seasonId, teamId])
   @@index([positionGroup])
   @@index([fantasyScore])
+  @@index([scoringScore])
   @@index([alternativeScore])
   @@index([valueScore])
   @@index([isStarter])
@@ -222,6 +224,11 @@ model FantasyModel {
   customFormulaMid          String?
   customFormulaFwd          String?
   customFormulaEnabled      Boolean            @default(false)
+  scoringFormulaGk          String?
+  scoringFormulaDef         String?
+  scoringFormulaMid         String?
+  scoringFormulaFwd         String?
+  scoringFormulaEnabled     Boolean            @default(false)
   alternativeFormulaGk      String?
   alternativeFormulaDef     String?
   alternativeFormulaMid     String?
@@ -408,6 +415,7 @@ model MachetePlayerSnapshot {
   redCards         Int       @default(0)
   averageRating    Float?
   fantasyScore     Float?
+  scoringScore     Float?
   alternativeScore Float?
   valueScore       Float?
   rawMetrics       Json?
@@ -418,6 +426,7 @@ model MachetePlayerSnapshot {
 
   @@index([leagueId, teamId])
   @@index([fantasyScore])
+  @@index([scoringScore])
   @@index([alternativeScore])
 }
 

@@ -99,6 +99,7 @@ export default async function MacheteTeamPage({ params }: PageProps) {
       tackles: snapshot?.tackles ?? 0,
       averageRating: snapshot?.averageRating ?? null,
       fantasyScore: snapshot?.fantasyScore ?? null,
+      scoringScore: snapshot?.scoringScore ?? null,
       alternativeScore: snapshot?.alternativeScore ?? null
     };
   });

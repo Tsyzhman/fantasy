@@ -110,6 +110,29 @@ export const alternativeFormulaFields = [
   }
 ] as const;
 
+export const scoringFormulaFields = [
+  {
+    key: "scoringFormulaGk",
+    position: "GK",
+    placeholder: "{Matches played} + {Clean sheets}*4 + {Saves}/3 - {Goals conceded}/2"
+  },
+  {
+    key: "scoringFormulaDef",
+    position: "DEF",
+    placeholder: "{Matches played} + 6*{Goals} + 3*{Assists} + 4*{Clean sheets} - {Goals conceded}/2"
+  },
+  {
+    key: "scoringFormulaMid",
+    position: "MID",
+    placeholder: "{Matches played} + 5*{Goals} + 3*{Assists} + {Clean sheets} + {Recoveries}/3"
+  },
+  {
+    key: "scoringFormulaFwd",
+    position: "FWD",
+    placeholder: "{Matches played} + 4*{Goals} + 3*{Assists} + {Recoveries}/3"
+  }
+] as const;
+
 type FormulaModel = {
   customFormula?: string | null;
   customFormulaGk?: string | null;
@@ -117,6 +140,11 @@ type FormulaModel = {
   customFormulaMid?: string | null;
   customFormulaFwd?: string | null;
   customFormulaEnabled?: boolean | null;
+  scoringFormulaGk?: string | null;
+  scoringFormulaDef?: string | null;
+  scoringFormulaMid?: string | null;
+  scoringFormulaFwd?: string | null;
+  scoringFormulaEnabled?: boolean | null;
   alternativeFormulaGk?: string | null;
   alternativeFormulaDef?: string | null;
   alternativeFormulaMid?: string | null;
@@ -150,4 +178,17 @@ export function hasAnyAlternativeFormula(model?: FormulaModel | null) {
       model?.alternativeFormulaMid?.trim() ||
       model?.alternativeFormulaFwd?.trim()
   );
+}
+
+export function hasAnyScoringFormula(model?: FormulaModel | null) {
+  return Boolean(
+    model?.scoringFormulaGk?.trim() ||
+      model?.scoringFormulaDef?.trim() ||
+      model?.scoringFormulaMid?.trim() ||
+      model?.scoringFormulaFwd?.trim()
+  );
+}
+
+export function scoringFormulaModeLabel(model?: FormulaModel | null) {
+  return model?.scoringFormulaEnabled && hasAnyScoringFormula(model) ? "Custom scoring formulas by position" : "Default aggregate scoring rules";
 }

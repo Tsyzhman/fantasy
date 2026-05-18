@@ -30,6 +30,8 @@ export async function GET(request: Request) {
   const orderBy: Prisma.PlayerSnapshotOrderByWithRelationInput =
     sort === "valueScore"
       ? { valueScore: { sort: "desc", nulls: "last" } }
+      : sort === "scoringScore"
+        ? { scoringScore: { sort: "desc", nulls: "last" } }
       : sort === "alternativeScore"
         ? { alternativeScore: { sort: "desc", nulls: "last" } }
         : { fantasyScore: { sort: "desc", nulls: "last" } };

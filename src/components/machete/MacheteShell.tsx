@@ -1,4 +1,4 @@
-import { BarChart3, DatabaseZap, Layers3, ListChecks, Search, Settings } from "lucide-react";
+import { BarChart3, Layers3, ListChecks, Settings } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -30,14 +30,6 @@ export function MacheteShell({ children }: { children: ReactNode }) {
             <Settings className="h-4 w-4" />
             Model
           </Link>
-          <span className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-slate-400">
-            <Search className="h-4 w-4" />
-            Matching
-          </span>
-          <span className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-slate-400">
-            <DatabaseZap className="h-4 w-4" />
-            Snapshots
-          </span>
         </nav>
       </div>
       {children}

@@ -99,7 +99,93 @@ export default async function BaltikaTeamPage({ params }: PageProps) {
       </div>
 
       <section className="mt-8 overflow-hidden rounded border border-slate-200 bg-white shadow-soft">
-        <div className="overflow-x-auto">
+        <div className="sm:hidden">
+          <table className="min-w-full table-fixed divide-y divide-slate-200 text-xs">
+            <thead className="bg-slate-50 text-left font-semibold uppercase text-slate-500">
+              <tr>
+                <th className="w-[42%] px-3 py-3"><I18nText en="Surname" ru="Фамилия" /></th>
+                <th className="w-[29%] bg-emerald-50 px-3 py-3 text-right text-emerald-700"><I18nText en="Forecast" ru="Прогноз" /></th>
+                <th className="w-[29%] bg-sky-50 px-3 py-3 text-right text-sky-700">Scoring</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {players.map((player) => (
+                <tr key={player.id} className="hover:bg-slate-50">
+                  <td className="max-w-[42vw] px-3 py-3 font-medium text-ink">
+                    <div className="flex items-center gap-2">
+                      <StarterCheckbox snapshotId={player.id} defaultChecked={player.isStarter} label={`Starter: ${player.playerName}`} />
+                      <span className="block truncate" title={player.playerName}>{compactPlayerName(player.playerName)}</span>
+                    </div>
+                    <span className="mt-0.5 block truncate pl-6 text-[11px] font-normal text-slate-500">{player.positionGroup ?? "-"} · {formatNumber(player.minutesPlayed)} min</span>
+                  </td>
+                  <td className="whitespace-nowrap bg-emerald-50/70 px-3 py-3 text-right font-semibold text-emerald-700">
+                    {formatScore(player.fantasyScore)}
+                  </td>
+                  <td className="whitespace-nowrap bg-sky-50/70 px-3 py-3 text-right font-semibold text-sky-700">
+                    {formatScore(player.scoringScore)}
+                  </td>
+                </tr>
+              ))}
+              {players.length === 0 ? (
+                <tr>
+                  <td colSpan={3} className="px-4 py-10 text-center text-slate-500">
+                    <I18nText en="No published player snapshots for this team yet." ru="Для этой команды пока нет опубликованных игроков." />
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="hidden overflow-x-auto sm:block xl:hidden">
+          <table className="min-w-full divide-y divide-slate-200 text-sm">
+            <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
+              <tr>
+                <th className="px-4 py-3 text-center"><I18nText en="Starter" ru="Старт" /></th>
+                <th className="px-4 py-3"><I18nText en="Player" ru="Игрок" /></th>
+                <th className="px-4 py-3">Pos</th>
+                <th className="px-4 py-3 text-right"><I18nText en="Minutes" ru="Минуты" /></th>
+                <th className="hidden px-4 py-3 text-right lg:table-cell"><I18nText en="Goals" ru="Голы" /></th>
+                <th className="hidden px-4 py-3 text-right lg:table-cell"><I18nText en="Assists" ru="Ассисты" /></th>
+                <th className="bg-emerald-50 px-4 py-3 text-right text-emerald-700"><I18nText en="Predicted FP" ru="Прогноз FP" /></th>
+                <th className="bg-sky-50 px-4 py-3 text-right text-sky-700">Scoring FP</th>
+                <th className="bg-amber-50 px-4 py-3 text-right text-amber-700"><I18nText en="Alt FP" ru="Альт. FP" /></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {players.map((player) => (
+                <tr key={player.id} className="hover:bg-slate-50">
+                  <td className="whitespace-nowrap px-4 py-3 text-center">
+                    <StarterCheckbox snapshotId={player.id} defaultChecked={player.isStarter} label={`Starter: ${player.playerName}`} />
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 font-medium text-ink">{player.playerName}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-slate-600">{player.positionGroup ?? "-"}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatNumber(player.minutesPlayed)}</td>
+                  <td className="hidden whitespace-nowrap px-4 py-3 text-right text-slate-600 lg:table-cell">{formatScore(player.goals)}</td>
+                  <td className="hidden whitespace-nowrap px-4 py-3 text-right text-slate-600 lg:table-cell">{formatScore(player.assists)}</td>
+                  <td className="whitespace-nowrap bg-emerald-50/70 px-4 py-3 text-right font-semibold text-emerald-700">
+                    {formatScore(player.fantasyScore)}
+                  </td>
+                  <td className="whitespace-nowrap bg-sky-50/70 px-4 py-3 text-right font-semibold text-sky-700">
+                    {formatScore(player.scoringScore)}
+                  </td>
+                  <td className="whitespace-nowrap bg-amber-50/70 px-4 py-3 text-right font-semibold text-amber-700">
+                    {formatScore(player.alternativeScore)}
+                  </td>
+                </tr>
+              ))}
+              {players.length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="px-4 py-10 text-center text-slate-500">
+                    <I18nText en="No published player snapshots for this team yet." ru="Для этой команды пока нет опубликованных игроков." />
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="hidden overflow-x-auto xl:block">
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
               <tr>
@@ -113,6 +199,7 @@ export default async function BaltikaTeamPage({ params }: PageProps) {
                 <th className="px-4 py-3 text-right"><I18nText en="Assists" ru="Ассисты" /></th>
                 <th className="px-4 py-3 text-right"><I18nText en="Market" ru="Стоимость" /></th>
                 <th className="bg-emerald-50 px-4 py-3 text-right text-emerald-700"><I18nText en="Predicted FP" ru="Прогноз FP" /></th>
+                <th className="bg-sky-50 px-4 py-3 text-right text-sky-700">Scoring FP</th>
                 <th className="bg-amber-50 px-4 py-3 text-right text-amber-700"><I18nText en="Alt FP" ru="Альт. FP" /></th>
               </tr>
             </thead>
@@ -133,6 +220,9 @@ export default async function BaltikaTeamPage({ params }: PageProps) {
                   <td className="whitespace-nowrap bg-emerald-50/70 px-4 py-3 text-right font-semibold text-emerald-700">
                     {formatScore(player.fantasyScore)}
                   </td>
+                  <td className="whitespace-nowrap bg-sky-50/70 px-4 py-3 text-right font-semibold text-sky-700">
+                    {formatScore(player.scoringScore)}
+                  </td>
                   <td className="whitespace-nowrap bg-amber-50/70 px-4 py-3 text-right font-semibold text-amber-700">
                     {formatScore(player.alternativeScore)}
                   </td>
@@ -140,7 +230,7 @@ export default async function BaltikaTeamPage({ params }: PageProps) {
               ))}
               {players.length === 0 ? (
                 <tr>
-                  <td colSpan={11} className="px-4 py-10 text-center text-slate-500">
+                  <td colSpan={12} className="px-4 py-10 text-center text-slate-500">
                     <I18nText en="No published player snapshots for this team yet." ru="Для этой команды пока нет опубликованных игроков." />
                   </td>
                 </tr>
@@ -252,4 +342,9 @@ function scoreLabel(stat: TeamFormRow) {
   const away = stat.fixture.awayScore;
   if (home === null || away === null) return "-";
   return stat.side === "HOME" ? `${home}:${away}` : `${away}:${home}`;
+}
+
+function compactPlayerName(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return parts.length > 1 ? parts[parts.length - 1] : name;
 }

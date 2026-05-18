@@ -4,6 +4,7 @@ import { prisma } from "../src/lib/db";
 import {
   calculateAlternativeScore,
   calculateFantasyScore,
+  calculateScoringScore,
   calculateValueScore,
   getActiveScoringModel
 } from "../src/lib/scoring";
@@ -41,6 +42,7 @@ async function main() {
         ...teamMetrics
       };
       const fantasyScore = calculateFantasyScore(rawMetrics, snapshot.positionGroup, scoringModel);
+      const scoringScore = calculateScoringScore(rawMetrics, snapshot.positionGroup, scoringModel);
       const alternativeScore = calculateAlternativeScore(rawMetrics, snapshot.positionGroup, scoringModel);
       const valueScore = calculateValueScore(fantasyScore, snapshot.marketValue);
 
@@ -50,6 +52,7 @@ async function main() {
           data: {
             rawMetrics: rawMetrics as Prisma.InputJsonValue,
             fantasyScore,
+            scoringScore,
             alternativeScore,
             valueScore
           }

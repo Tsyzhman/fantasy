@@ -1,6 +1,6 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 
-import { calculateAlternativeScore, calculateFantasyScore, calculateValueScore, getActiveScoringModel, getActiveScoringModelForSource } from ".";
+import { calculateAlternativeScore, calculateFantasyScore, calculateScoringScore, calculateValueScore, getActiveScoringModel, getActiveScoringModelForSource } from ".";
 import type { ScoringModelSource } from ".";
 import { buildBaltikaTeamFormulaMetrics } from "./baltika-team-form-metrics";
 
@@ -40,6 +40,7 @@ async function recalculateWyscoutSnapshots(prisma: PrismaClient) {
         ...teamMetrics
       };
       const fantasyScore = calculateFantasyScore(rawMetrics, snapshot.positionGroup, scoringModel);
+      const scoringScore = calculateScoringScore(rawMetrics, snapshot.positionGroup, scoringModel);
       const alternativeScore = calculateAlternativeScore(rawMetrics, snapshot.positionGroup, scoringModel);
       const valueScore = calculateValueScore(fantasyScore, snapshot.marketValue);
 
@@ -49,6 +50,7 @@ async function recalculateWyscoutSnapshots(prisma: PrismaClient) {
           data: {
             rawMetrics: rawMetrics as Prisma.InputJsonValue,
             fantasyScore,
+            scoringScore,
             alternativeScore,
             valueScore
           }
@@ -88,12 +90,14 @@ async function recalculateMacheteSnapshots(prisma: PrismaClient) {
       const rawMetrics = objectMetrics(snapshot.rawMetrics);
       const positionGroup = machetePositionGroup(snapshot.position);
       const fantasyScore = calculateFantasyScore(rawMetrics, positionGroup, scoringModel);
+      const scoringScore = calculateScoringScore(rawMetrics, positionGroup, scoringModel);
       const alternativeScore = calculateAlternativeScore(rawMetrics, positionGroup, scoringModel);
 
       return prisma.machetePlayerSnapshot.update({
         where: { id: snapshot.id },
         data: {
           fantasyScore,
+          scoringScore,
           alternativeScore,
           valueScore: snapshot.minutesPlayed > 0 ? Number((fantasyScore / (snapshot.minutesPlayed / 90)).toFixed(2)) : null
         }

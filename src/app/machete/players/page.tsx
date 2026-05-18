@@ -51,6 +51,8 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
         ? { player: { name: "asc" } }
         : sort === "alternativeScore"
           ? { alternativeScore: { sort: "desc", nulls: "last" } }
+          : sort === "scoringScore"
+            ? { scoringScore: { sort: "desc", nulls: "last" } }
           : { fantasyScore: { sort: "desc", nulls: "last" } };
 
   const snapshots = await prisma.machetePlayerSnapshot.findMany({
@@ -87,6 +89,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
     tackles: snapshot.tackles,
     averageRating: snapshot.averageRating,
     fantasyScore: snapshot.fantasyScore,
+    scoringScore: snapshot.scoringScore,
     alternativeScore: snapshot.alternativeScore
   }));
 
@@ -161,8 +164,9 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
         <label className="text-sm">
           <span className="mb-1 block font-medium text-slate-600">Sort</span>
           <select name="sort" defaultValue={sort} className="w-full rounded border border-slate-200 px-3 py-2">
-            <option value="fantasyScore">Expected FP</option>
-            <option value="alternativeScore">Alt FP</option>
+            <option value="fantasyScore">Expected FP / Прогноз FP</option>
+            <option value="scoringScore">Scoring FP / Факт FP</option>
+            <option value="alternativeScore">Alt FP / Альт. FP</option>
             <option value="minutesPlayed">Minutes</option>
             <option value="playerName">Player name</option>
           </select>

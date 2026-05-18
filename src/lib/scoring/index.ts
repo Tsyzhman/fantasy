@@ -16,6 +16,11 @@ export type ActiveScoringModel = Pick<
   | "customFormulaMid"
   | "customFormulaFwd"
   | "customFormulaEnabled"
+  | "scoringFormulaGk"
+  | "scoringFormulaDef"
+  | "scoringFormulaMid"
+  | "scoringFormulaFwd"
+  | "scoringFormulaEnabled"
   | "alternativeFormulaGk"
   | "alternativeFormulaDef"
   | "alternativeFormulaMid"
@@ -64,6 +69,11 @@ export async function getActiveScoringModelForSource(source: ScoringModelSource)
     customFormulaMid: null,
     customFormulaFwd: null,
     customFormulaEnabled: false,
+    scoringFormulaGk: null,
+    scoringFormulaDef: null,
+    scoringFormulaMid: null,
+    scoringFormulaFwd: null,
+    scoringFormulaEnabled: false,
     alternativeFormulaGk: null,
     alternativeFormulaDef: null,
     alternativeFormulaMid: null,
@@ -85,6 +95,11 @@ function mapActiveModel(
     customFormulaMid: model.customFormulaMid,
     customFormulaFwd: model.customFormulaFwd,
     customFormulaEnabled: model.customFormulaEnabled,
+    scoringFormulaGk: model.scoringFormulaGk,
+    scoringFormulaDef: model.scoringFormulaDef,
+    scoringFormulaMid: model.scoringFormulaMid,
+    scoringFormulaFwd: model.scoringFormulaFwd,
+    scoringFormulaEnabled: model.scoringFormulaEnabled,
     alternativeFormulaGk: model.alternativeFormulaGk,
     alternativeFormulaDef: model.alternativeFormulaDef,
     alternativeFormulaMid: model.alternativeFormulaMid,
@@ -133,6 +148,19 @@ export function calculateAlternativeScore(
   if (!formula) return null;
 
   return round(calculateCustomFormulaScore(formula, enrichFormulaMetrics(rawMetrics)));
+}
+
+export function calculateScoringScore(
+  rawMetrics: Record<string, unknown>,
+  positionGroup: string | null | undefined,
+  model: ActiveScoringModel
+) {
+  if (model.scoringFormulaEnabled) {
+    const formula = selectScoringFormula(model, positionGroup);
+    if (formula) return round(calculateCustomFormulaScore(formula, enrichFormulaMetrics(rawMetrics)));
+  }
+
+  return calculateAggregateScoringScore(rawMetrics, positionGroup);
 }
 
 export function calculatePredictedRoundScore(rawMetrics: Record<string, unknown>, positionGroup: string | null | undefined) {
@@ -218,6 +246,66 @@ function selectAlternativeFormula(model: ActiveScoringModel, positionGroup: stri
             : null;
 
   return formula?.trim() || null;
+}
+
+function selectScoringFormula(model: ActiveScoringModel, positionGroup: string | null | undefined) {
+  const formula =
+    positionGroup === "GK"
+      ? model.scoringFormulaGk
+      : positionGroup === "DEF"
+        ? model.scoringFormulaDef
+        : positionGroup === "MID"
+          ? model.scoringFormulaMid
+          : positionGroup === "FWD"
+            ? model.scoringFormulaFwd
+            : null;
+
+  return formula?.trim() || null;
+}
+
+export function calculateAggregateScoringScore(rawMetrics: Record<string, unknown>, positionGroup: string | null | undefined) {
+  const position = positionGroup ?? "UNKNOWN";
+  const matches = readMetric(rawMetrics, "matches_played");
+  const minutes = readMetric(rawMetrics, "minutes_played");
+  const appearances = matches > 0 ? matches : minutes > 0 ? 1 : 0;
+  const sixtyMinuteBonuses = clamp(Math.floor(minutes / 60), 0, appearances);
+  const fullMatchBonuses = clamp(Math.floor(minutes / 89.5), 0, appearances);
+
+  let total = 0;
+
+  total += appearances;
+  total += sixtyMinuteBonuses;
+  if (position === "MID" || position === "FWD") total += fullMatchBonuses;
+
+  total += readMetric(rawMetrics, "goals") * goalWeight(position);
+  total += readMetric(rawMetrics, "assists") * 3;
+  total += readMetric(rawMetrics, "fantasy_assists|fantasy_assist") * 3;
+
+  if (position === "GK" || position === "DEF" || position === "MID") {
+    total += readMetric(rawMetrics, "clean_sheets|clean_sheet") * cleanSheetWeight(position);
+  }
+
+  if (position === "GK") {
+    total += readMetric(rawMetrics, "saves") / 3;
+    total += readMetric(rawMetrics, "penalties_saved|penalty_saves") * 5;
+  }
+
+  if (position === "DEF" || position === "MID" || position === "FWD") {
+    total += readMetric(rawMetrics, "recoveries|possession_recoveries") / 3;
+  }
+
+  total -= readMetric(rawMetrics, "fouls_leading_to_penalty|penalties_conceded") * 2;
+  total -= readMetric(rawMetrics, "missed_penalties|penalties_missed") * 2;
+  total -= readMetric(rawMetrics, "own_goals|own_goal") * 2;
+
+  if (position === "GK" || position === "DEF") {
+    total -= readMetric(rawMetrics, "goals_conceded|conceded_goals") / 2;
+  }
+
+  total -= readMetric(rawMetrics, "yellow_cards");
+  total -= readMetric(rawMetrics, "red_cards") * 3;
+
+  return round(total);
 }
 
 export function enrichFormulaMetrics(rawMetrics: Record<string, unknown>) {

@@ -6,6 +6,7 @@ import { parseWyscoutTeamStatsWorkbook } from "@/lib/importers/wyscout-team-stat
 import {
   calculateAlternativeScore,
   calculateFantasyScore,
+  calculateScoringScore,
   calculateValueScore,
   getActiveScoringModel
 } from "@/lib/scoring";
@@ -141,6 +142,7 @@ export async function importWyscoutPlayersForTeam(teamId: string, upload: Workbo
       ...teamFormulaMetrics
     };
     const fantasyScore = calculateFantasyScore(rawMetrics, row.positionGroup, scoringModel);
+    const scoringScore = calculateScoringScore(rawMetrics, row.positionGroup, scoringModel);
     const alternativeScore = calculateAlternativeScore(rawMetrics, row.positionGroup, scoringModel);
     const valueScore = calculateValueScore(fantasyScore, row.marketValue);
 
@@ -170,6 +172,7 @@ export async function importWyscoutPlayersForTeam(teamId: string, upload: Workbo
       weightKg: row.weightKg,
       onLoan: row.onLoan,
       fantasyScore,
+      scoringScore,
       alternativeScore,
       valueScore,
       rawMetrics: rawMetrics as Prisma.InputJsonValue

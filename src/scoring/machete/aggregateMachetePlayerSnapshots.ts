@@ -3,6 +3,7 @@ import type { Prisma, PrismaClient } from "@prisma/client";
 import {
   calculateAlternativeScore,
   calculateFantasyScore,
+  calculateScoringScore,
   getActiveScoringModelForSource
 } from "@/lib/scoring";
 
@@ -67,6 +68,7 @@ export async function aggregateMachetePlayerSnapshots(prisma: PrismaClient, opti
     };
     const positionGroup = machetePositionGroup(player.position);
     const fantasyScore = calculateFantasyScore(rawMetrics, positionGroup, model);
+    const scoringScore = calculateScoringScore(rawMetrics, positionGroup, model);
     const alternativeScore = calculateAlternativeScore(rawMetrics, positionGroup, model);
 
     const snapshot = await prisma.machetePlayerSnapshot.create({
@@ -88,6 +90,7 @@ export async function aggregateMachetePlayerSnapshots(prisma: PrismaClient, opti
         redCards,
         averageRating,
         fantasyScore,
+        scoringScore,
         alternativeScore,
         valueScore: minutesPlayed > 0 ? Number((fantasyScore / (minutesPlayed / 90)).toFixed(2)) : null,
         rawMetrics: rawMetrics as Prisma.InputJsonValue

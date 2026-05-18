@@ -102,6 +102,11 @@ async function main() {
       customFormulaMid: null,
       customFormulaFwd: null,
       customFormulaEnabled: false,
+      scoringFormulaGk: null,
+      scoringFormulaDef: null,
+      scoringFormulaMid: null,
+      scoringFormulaFwd: null,
+      scoringFormulaEnabled: false,
       rules: {
         create: seedRules
       }
@@ -121,6 +126,11 @@ async function main() {
       customFormulaMid: null,
       customFormulaFwd: null,
       customFormulaEnabled: false,
+      scoringFormulaGk: null,
+      scoringFormulaDef: null,
+      scoringFormulaMid: null,
+      scoringFormulaFwd: null,
+      scoringFormulaEnabled: false,
       rules: {
         create: seedRules
       }

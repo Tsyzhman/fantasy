@@ -66,6 +66,8 @@ export default async function PlayersPage({ searchParams }: PageProps) {
           ? { playerName: "asc" }
           : sort === "alternativeScore"
             ? { alternativeScore: { sort: "desc", nulls: "last" } }
+            : sort === "scoringScore"
+              ? { scoringScore: { sort: "desc", nulls: "last" } }
             : { fantasyScore: { sort: "desc", nulls: "last" } };
 
   const players = await prisma.playerSnapshot.findMany({
@@ -78,7 +80,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
     }
   });
 
-  const columnsCount = 12;
+  const columnsCount = 13;
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -158,6 +160,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
           <span className="mb-1 block font-medium text-slate-600"><I18nText en="Sort" ru="Сортировка" /></span>
           <select name="sort" defaultValue={sort} className="w-full rounded border border-slate-200 px-3 py-2">
             <option value="fantasyScore">Predicted FP / Прогноз FP</option>
+            <option value="scoringScore">Scoring FP / Факт FP</option>
             <option value="alternativeScore">Alt FP / Альт. FP</option>
             <option value="minutesPlayed">Minutes / Минуты</option>
             <option value="playerName">Player name / Имя игрока</option>
@@ -176,7 +179,88 @@ export default async function PlayersPage({ searchParams }: PageProps) {
       </AutoSubmitForm>
 
       <section className="mt-6 overflow-hidden rounded border border-slate-200 bg-white shadow-soft">
-        <div className="overflow-x-auto">
+        <div className="sm:hidden">
+          <table className="min-w-full table-fixed divide-y divide-slate-200 text-xs">
+            <thead className="bg-slate-50 text-left font-semibold uppercase text-slate-500">
+              <tr>
+                <th className="w-[42%] px-3 py-3"><I18nText en="Surname" ru="Фамилия" /></th>
+                <th className="w-[29%] bg-emerald-50 px-3 py-3 text-right text-emerald-700"><I18nText en="Forecast" ru="Прогноз" /></th>
+                <th className="w-[29%] bg-sky-50 px-3 py-3 text-right text-sky-700">Scoring</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {players.map((player) => (
+                <tr key={player.id} className="hover:bg-slate-50">
+                  <td className="max-w-[42vw] px-3 py-3 font-medium text-ink">
+                    <span className="block truncate" title={player.playerName}>{compactPlayerName(player.playerName)}</span>
+                    <span className="mt-0.5 block truncate text-[11px] font-normal text-slate-500">{player.positionGroup ?? "-"} · {player.team.name}</span>
+                  </td>
+                  <td className="whitespace-nowrap bg-emerald-50/70 px-3 py-3 text-right font-semibold text-emerald-700">
+                    {formatScore(player.fantasyScore)}
+                  </td>
+                  <td className="whitespace-nowrap bg-sky-50/70 px-3 py-3 text-right font-semibold text-sky-700">
+                    {formatScore(player.scoringScore)}
+                  </td>
+                </tr>
+              ))}
+              {players.length === 0 ? (
+                <tr>
+                  <td colSpan={3} className="px-4 py-10 text-center text-slate-500">
+                    <I18nText en="No published player snapshots match these filters yet." ru="Пока нет опубликованных игроков под эти фильтры." />
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="hidden overflow-x-auto sm:block xl:hidden">
+          <table className="min-w-full divide-y divide-slate-200 text-sm">
+            <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
+              <tr>
+                <th className="px-4 py-3"><I18nText en="Player" ru="Игрок" /></th>
+                <th className="px-4 py-3"><I18nText en="Team" ru="Команда" /></th>
+                <th className="px-4 py-3">Pos</th>
+                <th className="px-4 py-3 text-right"><I18nText en="Minutes" ru="Минуты" /></th>
+                <th className="hidden px-4 py-3 text-right lg:table-cell"><I18nText en="Goals" ru="Голы" /></th>
+                <th className="hidden px-4 py-3 text-right lg:table-cell"><I18nText en="Assists" ru="Ассисты" /></th>
+                <th className="bg-emerald-50 px-4 py-3 text-right text-emerald-700"><I18nText en="Predicted FP" ru="Прогноз FP" /></th>
+                <th className="bg-sky-50 px-4 py-3 text-right text-sky-700">Scoring FP</th>
+                <th className="bg-amber-50 px-4 py-3 text-right text-amber-700"><I18nText en="Alt FP" ru="Альт. FP" /></th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {players.map((player) => (
+                <tr key={player.id} className="hover:bg-slate-50">
+                  <td className="whitespace-nowrap px-4 py-3 font-medium text-ink">{player.playerName}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-slate-600">{player.team.name}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-slate-600">{player.positionGroup ?? "-"}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatNumber(player.minutesPlayed)}</td>
+                  <td className="hidden whitespace-nowrap px-4 py-3 text-right text-slate-600 lg:table-cell">{formatScore(player.goals)}</td>
+                  <td className="hidden whitespace-nowrap px-4 py-3 text-right text-slate-600 lg:table-cell">{formatScore(player.assists)}</td>
+                  <td className="whitespace-nowrap bg-emerald-50/70 px-4 py-3 text-right font-semibold text-emerald-700">
+                    {formatScore(player.fantasyScore)}
+                  </td>
+                  <td className="whitespace-nowrap bg-sky-50/70 px-4 py-3 text-right font-semibold text-sky-700">
+                    {formatScore(player.scoringScore)}
+                  </td>
+                  <td className="whitespace-nowrap bg-amber-50/70 px-4 py-3 text-right font-semibold text-amber-700">
+                    {formatScore(player.alternativeScore)}
+                  </td>
+                </tr>
+              ))}
+              {players.length === 0 ? (
+                <tr>
+                  <td colSpan={9} className="px-4 py-10 text-center text-slate-500">
+                    <I18nText en="No published player snapshots match these filters yet." ru="Пока нет опубликованных игроков под эти фильтры." />
+                  </td>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
+        </div>
+
+        <div className="hidden overflow-x-auto xl:block">
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
               <tr>
@@ -191,6 +275,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
                 <th className="px-4 py-3 text-right">xA</th>
                 <th className="px-4 py-3 text-right"><I18nText en="Market" ru="Стоимость" /></th>
                 <th className="bg-emerald-50 px-4 py-3 text-right text-emerald-700"><I18nText en="Predicted FP" ru="Прогноз FP" /></th>
+                <th className="bg-sky-50 px-4 py-3 text-right text-sky-700">Scoring FP</th>
                 <th className="bg-amber-50 px-4 py-3 text-right text-amber-700"><I18nText en="Alt FP" ru="Альт. FP" /></th>
               </tr>
             </thead>
@@ -210,6 +295,9 @@ export default async function PlayersPage({ searchParams }: PageProps) {
                   <td className="whitespace-nowrap bg-emerald-50/70 px-4 py-3 text-right font-semibold text-emerald-700">
                     {formatScore(player.fantasyScore)}
                   </td>
+                  <td className="whitespace-nowrap bg-sky-50/70 px-4 py-3 text-right font-semibold text-sky-700">
+                    {formatScore(player.scoringScore)}
+                  </td>
                   <td className="whitespace-nowrap bg-amber-50/70 px-4 py-3 text-right font-semibold text-amber-700">
                     {formatScore(player.alternativeScore)}
                   </td>
@@ -228,4 +316,9 @@ export default async function PlayersPage({ searchParams }: PageProps) {
       </section>
     </main>
   );
+}
+
+function compactPlayerName(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  return parts.length > 1 ? parts[parts.length - 1] : name;
 }

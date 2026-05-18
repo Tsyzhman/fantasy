@@ -13,7 +13,10 @@ import {
   defaultFormulaByPosition,
   formulaModeLabel,
   hasAnyAlternativeFormula,
-  hasAnyCustomFormula
+  hasAnyCustomFormula,
+  hasAnyScoringFormula,
+  scoringFormulaFields,
+  scoringFormulaModeLabel
 } from "@/lib/scoring/formula-display";
 import { validateCustomFormula } from "@/lib/scoring/formula";
 import type { ScoringModelSource } from "@/lib/scoring";
@@ -35,6 +38,7 @@ type ModelSettingsPageProps = {
 };
 
 type FormulaFieldKey = (typeof customFormulaFields)[number]["key"];
+type ScoringFieldKey = (typeof scoringFormulaFields)[number]["key"];
 type AlternativeFieldKey = (typeof alternativeFormulaFields)[number]["key"];
 
 const sourceConfig: Record<ScoringModelSource, { name: string; description: string; path: string }> = {
@@ -50,14 +54,16 @@ const sourceConfig: Record<ScoringModelSource, { name: string; description: stri
   }
 };
 
-const formulaExamples: Record<ScoringModelSource, { primary: string; alternative: string; fields: string[] }> = {
+const formulaExamples: Record<ScoringModelSource, { primary: string; scoring: string; alternative: string; fields: string[] }> = {
   WYSCOUT: {
     primary: "1 + {Minutes factor} + 4*{Goals per match} + 3*{Assists per match} - {Yellow cards}",
+    scoring: "{Matches played} + 4*{Goals} + 3*{Assists} + {Clean sheets} - {Yellow cards}",
     alternative: "3*{xG per 90} + 3*{xA per 90} + 0.4*{Key passes per 90} + 0.2*{Progressive passes per 90}",
     fields: ["{xG per 90}", "{xA per 90}", "{Key passes per 90}", "{Progressive passes per 90}", "{Round projected xG}"]
   },
   MACHETE: {
     primary: "1 + {Minutes factor} + 4*{Goals per match} + 3*{Assists per match} - {Yellow cards}",
+    scoring: "{Matches played} + 4*{Goals} + 3*{Assists} + 0.2*{Shots on target} + 0.2*{Average rating}",
     alternative: "4*{Goals per match} + 2*{Assists per match} + 0.2*{Shots on target} + 0.1*{Key passes} + 0.2*{Average rating}",
     fields: ["{Goals}", "{Goals per match}", "{Assists}", "{Assists per match}", "{Shots on target}", "{Key passes}", "{Average rating}"]
   }
@@ -79,6 +85,11 @@ export async function saveModelSettings(formData: FormData) {
   ) as Record<AlternativeFieldKey, string>;
   const alternativeEnabled = formData.get("alternativeFormulaEnabled") === "on";
 
+  const scoringFormulas = Object.fromEntries(
+    scoringFormulaFields.map((field) => [field.key, String(formData.get(field.key) ?? "").trim()])
+  ) as Record<ScoringFieldKey, string>;
+  const scoringEnabled = formData.get("scoringFormulaEnabled") === "on";
+
   for (const field of customFormulaFields) {
     const validation = validateCustomFormula(formulas[field.key]);
     if (!validation.ok) {
@@ -93,8 +104,16 @@ export async function saveModelSettings(formData: FormData) {
     }
   }
 
+  for (const field of scoringFormulaFields) {
+    const validation = validateCustomFormula(scoringFormulas[field.key]);
+    if (!validation.ok) {
+      redirect(`${config.path}?error=${encodeURIComponent(`Scoring ${field.position}: ${validation.message}`)}`);
+    }
+  }
+
   const hasFormula = Object.values(formulas).some((formula) => formula.length > 0);
   const hasAlternativeFormula = Object.values(alternativeFormulas).some((formula) => formula.length > 0);
+  const hasScoringFormula = Object.values(scoringFormulas).some((formula) => formula.length > 0);
 
   if (enabled && !hasFormula) {
     redirect(`${config.path}?error=${encodeURIComponent("Expected FP custom mode needs at least one formula.")}`);
@@ -102,6 +121,10 @@ export async function saveModelSettings(formData: FormData) {
 
   if (alternativeEnabled && !hasAlternativeFormula) {
     redirect(`${config.path}?error=${encodeURIComponent("Alt FP needs at least one formula.")}`);
+  }
+
+  if (scoringEnabled && !hasScoringFormula) {
+    redirect(`${config.path}?error=${encodeURIComponent("Scoring FP needs at least one formula.")}`);
   }
 
   const model = await prisma.fantasyModel.findFirst({
@@ -115,6 +138,11 @@ export async function saveModelSettings(formData: FormData) {
     customFormulaMid: formulas.customFormulaMid || null,
     customFormulaFwd: formulas.customFormulaFwd || null,
     customFormulaEnabled: enabled && hasFormula,
+    scoringFormulaGk: scoringFormulas.scoringFormulaGk || null,
+    scoringFormulaDef: scoringFormulas.scoringFormulaDef || null,
+    scoringFormulaMid: scoringFormulas.scoringFormulaMid || null,
+    scoringFormulaFwd: scoringFormulas.scoringFormulaFwd || null,
+    scoringFormulaEnabled: scoringEnabled && hasScoringFormula,
     alternativeFormulaGk: alternativeFormulas.alternativeFormulaGk || null,
     alternativeFormulaDef: alternativeFormulas.alternativeFormulaDef || null,
     alternativeFormulaMid: alternativeFormulas.alternativeFormulaMid || null,
@@ -218,7 +246,7 @@ export async function ModelSettingsPage({
 
         {searchParams?.saved ? (
           <div className="mt-5 rounded border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-            <I18nText en="Saved. Expected FP and Alt FP were recalculated for existing player snapshots." ru="Сохранено. Expected FP и Alt FP пересчитаны для уже загруженных игроков." />
+            <I18nText en="Saved. Expected FP, Scoring FP and Alt FP were recalculated for existing player snapshots." ru="Сохранено. Expected FP, Scoring FP и Alt FP пересчитаны для уже загруженных игроков." />
           </div>
         ) : null}
 
@@ -287,6 +315,45 @@ export async function ModelSettingsPage({
             </label>
           </div>
 
+          <div className="rounded border border-sky-200 bg-sky-50 p-4">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-ink">
+                  <I18nText en="Edit Scoring FP formulas" ru="Редактировать формулы Scoring FP" />
+                </p>
+                <p className="mt-1 text-xs text-slate-600">
+                  <I18nText
+                    en="These formulas calculate actual aggregate scoring from loaded player totals. They do not use next-round projections."
+                    ru="Эти формулы считают фактический суммарный scoring по загруженным totals игрока. Они не используют прогноз следующего тура."
+                  />
+                </p>
+              </div>
+              <span className="rounded bg-white px-2 py-1 text-xs font-semibold text-sky-700">
+                <I18nText en="Actual scoring" ru="Фактический scoring" />
+              </span>
+            </div>
+            <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
+              {scoringFormulaFields.map((field) => (
+                <FormulaTextarea
+                  key={field.key}
+                  field={field}
+                  defaultValue={customFormulaForPosition(displayModel, field.key)}
+                  accent="sky"
+                  rows={4}
+                />
+              ))}
+            </div>
+            <label className="mt-3 flex items-center gap-3 text-sm font-medium text-ink">
+              <input
+                type="checkbox"
+                name="scoringFormulaEnabled"
+                defaultChecked={Boolean(displayModel?.scoringFormulaEnabled)}
+                className="h-4 w-4 rounded border-slate-300"
+              />
+              <I18nText en="Use custom Scoring FP formulas" ru="Использовать свои формулы Scoring FP" />
+            </label>
+          </div>
+
           <div className="rounded border border-amber-200 bg-amber-50 p-4">
             <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
               <div>
@@ -350,6 +417,11 @@ function ScoreMap({
         alternativeFormulaDef?: string | null;
         alternativeFormulaMid?: string | null;
         alternativeFormulaFwd?: string | null;
+        scoringFormulaEnabled?: boolean | null;
+        scoringFormulaGk?: string | null;
+        scoringFormulaDef?: string | null;
+        scoringFormulaMid?: string | null;
+        scoringFormulaFwd?: string | null;
       }
     | null
     | undefined;
@@ -357,29 +429,48 @@ function ScoreMap({
   const altEnabled = Boolean(displayModel?.alternativeFormulaEnabled && hasAnyAlternativeFormula(displayModel));
 
   return (
-    <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+    <div className="grid grid-cols-1 gap-3 lg:grid-cols-4">
       <div className="rounded border border-emerald-200 bg-emerald-50 p-4">
-        <p className="text-xs font-semibold uppercase text-emerald-700">Green table column</p>
+        <p className="text-xs font-semibold uppercase text-emerald-700"><I18nText en="Green table column" ru="Зеленая колонка таблицы" /></p>
         <h3 className="mt-1 text-base font-semibold text-ink">Expected FP</h3>
         <p className="mt-2 text-sm text-slate-700">
-          Main predicted score. It uses either the built-in scoring or your primary formulas.
+          <I18nText
+            en="Main predicted score. It uses either the built-in predicted-round rules or your primary formulas."
+            ru="Основной прогнозный score. Использует встроенные правила прогноза тура или ваши основные формулы."
+          />
         </p>
         <p className="mt-3 text-xs font-semibold text-emerald-700">{formulaModeLabel(displayModel)}</p>
       </div>
+      <div className="rounded border border-sky-200 bg-sky-50 p-4">
+        <p className="text-xs font-semibold uppercase text-sky-700"><I18nText en="Blue table column" ru="Синяя колонка таблицы" /></p>
+        <h3 className="mt-1 text-base font-semibold text-ink">Scoring FP</h3>
+        <p className="mt-2 text-sm text-slate-700">
+          <I18nText
+            en="Actual aggregate score from loaded totals. This is separate from prediction."
+            ru="Фактический суммарный score по загруженным totals. Это отдельно от прогноза."
+          />
+        </p>
+        <p className="mt-3 text-xs font-semibold text-sky-700">{scoringFormulaModeLabel(displayModel)}</p>
+      </div>
       <div className="rounded border border-amber-200 bg-amber-50 p-4">
-        <p className="text-xs font-semibold uppercase text-amber-700">Amber table column</p>
+        <p className="text-xs font-semibold uppercase text-amber-700"><I18nText en="Amber table column" ru="Желтая колонка таблицы" /></p>
         <h3 className="mt-1 text-base font-semibold text-ink">Alt FP</h3>
         <p className="mt-2 text-sm text-slate-700">
-          Optional second score for comparison. It appears only when Alt FP is enabled and has a formula.
+          <I18nText
+            en="Optional second score for comparison. It appears only when Alt FP is enabled and has a formula."
+            ru="Дополнительный score для сравнения. Появляется, когда Alt FP включен и есть формула."
+          />
         </p>
         <p className="mt-3 text-xs font-semibold text-amber-700">{altEnabled ? "Alt FP enabled" : "Alt FP disabled"}</p>
       </div>
       <div className="rounded border border-slate-200 bg-slate-50 p-4">
-        <p className="text-xs font-semibold uppercase text-slate-500">Save behavior</p>
-        <h3 className="mt-1 text-base font-semibold text-ink">Recalculate now</h3>
+        <p className="text-xs font-semibold uppercase text-slate-500"><I18nText en="Save behavior" ru="После сохранения" /></p>
+        <h3 className="mt-1 text-base font-semibold text-ink"><I18nText en="Recalculate now" ru="Пересчет сразу" /></h3>
         <p className="mt-2 text-sm text-slate-700">
-          Saving updates existing {source === "MACHETE" ? "Machete/FotMob" : "Baltika/Wyscout"} snapshots immediately.
-          Future syncs and imports use the same formulas.
+          <I18nText
+            en={<>Saving updates existing {source === "MACHETE" ? "Machete/FotMob" : "Baltika/Wyscout"} snapshots immediately. Future syncs and imports use the same formulas.</>}
+            ru={<>Сохранение сразу обновляет существующие снапшоты {source === "MACHETE" ? "Machete/FotMob" : "Baltika/Wyscout"}. Будущие синки и импорты используют те же формулы.</>}
+          />
         </p>
       </div>
     </div>
@@ -401,11 +492,14 @@ function FormulaTextarea({
   accent = "slate",
   rows = 5
 }: {
-  field: (typeof customFormulaFields)[number] | (typeof alternativeFormulaFields)[number];
+  field: (typeof customFormulaFields)[number] | (typeof alternativeFormulaFields)[number] | (typeof scoringFormulaFields)[number];
   defaultValue: string;
-  accent?: "slate" | "amber";
+  accent?: "slate" | "amber" | "sky";
   rows?: number;
 }) {
+  const focusClass =
+    accent === "amber" ? "focus:border-amber-400" : accent === "sky" ? "focus:border-sky-400" : "focus:border-slate-400";
+
   return (
     <label className="block rounded bg-white p-3">
       <span className="mb-1 block text-xs font-semibold uppercase text-slate-500">{field.position}</span>
@@ -414,9 +508,7 @@ function FormulaTextarea({
         defaultValue={defaultValue}
         rows={rows}
         placeholder={field.placeholder}
-        className={`w-full rounded border border-slate-200 px-3 py-2 font-mono text-sm text-ink outline-none transition ${
-          accent === "amber" ? "focus:border-amber-400" : "focus:border-slate-400"
-        }`}
+        className={`w-full rounded border border-slate-200 px-3 py-2 font-mono text-sm text-ink outline-none transition ${focusClass}`}
       />
     </label>
   );
@@ -427,11 +519,15 @@ function FormulaHelp({ source }: { source: ScoringModelSource }) {
 
   return (
     <div className="rounded border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-      <p className="font-semibold text-ink">Formula syntax and examples</p>
-      <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
+      <p className="font-semibold text-ink"><I18nText en="Formula syntax and examples" ru="Синтаксис формул и примеры" /></p>
+      <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-3">
         <div className="rounded bg-white p-3">
           <p className="text-xs font-semibold uppercase text-slate-500">Expected FP example</p>
           <pre className="mt-2 whitespace-pre-wrap break-words font-mono text-xs leading-5 text-slate-700">{examples.primary}</pre>
+        </div>
+        <div className="rounded bg-white p-3">
+          <p className="text-xs font-semibold uppercase text-slate-500">Scoring FP example</p>
+          <pre className="mt-2 whitespace-pre-wrap break-words font-mono text-xs leading-5 text-slate-700">{examples.scoring}</pre>
         </div>
         <div className="rounded bg-white p-3">
           <p className="text-xs font-semibold uppercase text-slate-500">Alt FP example</p>
@@ -439,8 +535,10 @@ function FormulaHelp({ source }: { source: ScoringModelSource }) {
         </div>
       </div>
       <p className="mt-3">
-        Use numbers, <span className="font-mono">+ - * / ( )</span>, and fields in braces. Missing fields count as 0.
-        Empty Expected FP formulas fall back to built-in scoring; empty Alt FP formulas show no Alt FP for that position.
+        <I18nText
+          en={<>Use numbers, <span className="font-mono">+ - * / ( )</span>, and fields in braces. Missing fields count as 0. Empty Expected FP and Scoring FP formulas fall back to built-in rules; empty Alt FP formulas show no Alt FP for that position.</>}
+          ru={<>Используйте числа, <span className="font-mono">+ - * / ( )</span> и поля в фигурных скобках. Отсутствующие поля считаются как 0. Пустые формулы Expected FP и Scoring FP откатываются к встроенным правилам; пустые формулы Alt FP не показывают Alt FP для позиции.</>}
+        />
       </p>
       <div className="mt-3 flex flex-wrap gap-1.5">
         {examples.fields.map((field) => (
