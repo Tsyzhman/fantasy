@@ -2,7 +2,12 @@ import { PrismaClient } from "@prisma/client";
 
 import { leagueSeeds, seasonName } from "../src/lib/leagues/seed-data";
 import { seedRules } from "../src/lib/scoring/rules";
+import { teamLogoUrlForSlug } from "../src/lib/teams/logo-assets";
 import { slugify } from "../src/lib/text";
+import { runMacheteEntityMatching } from "../src/providers/fotmob/entity-matcher";
+import { syncMacheteFixtures } from "../src/providers/fotmob/sync-fixtures";
+import { syncMacheteLeaguePlayerStats } from "../src/providers/fotmob/sync-player-stats";
+import { syncMacheteTeams } from "../src/providers/fotmob/sync-teams";
 
 const prisma = new PrismaClient();
 
@@ -58,7 +63,7 @@ async function main() {
 
     for (const team of leagueSeed.teams) {
       const slug = slugify(team.name);
-      const logoUrl = `/team-logos/${league.id}/${slug}.png`;
+      const logoUrl = teamLogoUrlForSlug(league.id, slug);
       await prisma.team.upsert({
         where: {
           leagueId_slug: {
@@ -105,6 +110,30 @@ async function main() {
       }
     }
   });
+
+  const macheteLeague = await prisma.macheteLeague.upsert({
+    where: { providerLeagueId: "championship-2025" },
+    update: {
+      provider: "FOTMOB",
+      name: "Championship",
+      country: "England",
+      season: "2025/26",
+      status: "READY"
+    },
+    create: {
+      provider: "FOTMOB",
+      providerLeagueId: "championship-2025",
+      name: "Championship",
+      country: "England",
+      season: "2025/26",
+      status: "READY"
+    }
+  });
+
+  await syncMacheteTeams(prisma, macheteLeague.id);
+  await syncMacheteFixtures(prisma, macheteLeague.id);
+  await syncMacheteLeaguePlayerStats(prisma, macheteLeague.id);
+  await runMacheteEntityMatching(prisma, macheteLeague.id);
 }
 
 main()

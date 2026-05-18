@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="160" height="160" viewBox="0 0 160 160" role="img" aria-label="Fantasy Scout old mode">
+  <rect width="160" height="160" fill="none"/>
+  <circle cx="80" cy="80" r="68" fill="#1d4ed8" stroke="#0f172a" stroke-width="5"/>
+  <circle cx="80" cy="80" r="50" fill="#f8fafc" stroke="#0f172a" stroke-width="4"/>
+  <path d="M26 75a54 54 0 0 1 108 0" fill="none" stroke="#e5e7eb" stroke-width="15"/>
+  <text x="80" y="39" text-anchor="middle" font-family="Arial, sans-serif" font-size="17" font-weight="700" fill="#f8fafc" letter-spacing="2">BALTIKA</text>
+  <text x="80" y="130" text-anchor="middle" font-family="Arial, sans-serif" font-size="13" font-weight="700" fill="#1d4ed8">2016 FANTASY</text>
+  <circle cx="80" cy="82" r="30" fill="#fecaca" stroke="#0f172a" stroke-width="4"/>
+  <path d="M51 76c8-28 42-33 58-9 9 13 7 32-4 43-11 12-33 15-47 2-10-9-13-22-7-36Z" fill="#fecaca"/>
+  <path d="M54 64c13-21 46-18 59 2-18-9-35-6-49 11l-10-13Z" fill="#fde68a" stroke="#0f172a" stroke-width="4" stroke-linejoin="round"/>
+  <path d="M45 79c12 7 25 7 38-1 10 7 20 9 31 4" fill="none" stroke="#0f172a" stroke-width="4" stroke-linecap="round"/>
+  <path d="M54 96c18 15 40 15 60 1" fill="none" stroke="#0f172a" stroke-width="4" stroke-linecap="round"/>
+  <path d="M66 97c3 6 7 10 13 12m6-14c1 7 4 12 10 15m9-18c-2 7-6 12-12 15" fill="none" stroke="#0f172a" stroke-width="3" stroke-linecap="round"/>
+  <path d="M65 75c3-5 10-6 15-2m24-1c-5-3-11-3-16 1" fill="none" stroke="#0f172a" stroke-width="4" stroke-linecap="round"/>
+  <circle cx="73" cy="80" r="4" fill="#0f172a"/>
+  <circle cx="98" cy="80" r="4" fill="#0f172a"/>
+  <path d="M83 82c-4 5-4 10 0 15 5 1 10 0 15-3" fill="none" stroke="#0f172a" stroke-width="3" stroke-linecap="round"/>
+</svg>

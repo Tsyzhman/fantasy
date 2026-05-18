@@ -1,0 +1,72 @@
+import type { Prisma } from "@prisma/client";
+
+import type { FotMobFixture, FotMobPlayer, FotMobPlayerMatchStat, FotMobTeam } from "./types";
+
+export function normalizeMacheteTeam(team: FotMobTeam, leagueId: string) {
+  return {
+    leagueId,
+    provider: "FOTMOB",
+    providerTeamId: team.id,
+    name: team.name,
+    shortName: team.shortName ?? null,
+    country: team.country ?? null,
+    logoUrl: team.logoUrl ?? null,
+    status: "SYNCED",
+    lastSyncedAt: new Date()
+  };
+}
+
+export function normalizeMachetePlayer(player: FotMobPlayer, teamId?: string) {
+  return {
+    teamId,
+    provider: "FOTMOB",
+    providerPlayerId: player.id,
+    name: player.name,
+    position: player.position ?? null,
+    age: player.age ?? null,
+    nationality: player.nationality ?? null,
+    height: player.height ?? null,
+    foot: player.foot ?? null,
+    photoUrl: player.photoUrl ?? null,
+    status: "ACTIVE",
+    lastSyncedAt: new Date(),
+    raw: player as unknown as Prisma.InputJsonValue
+  };
+}
+
+export function normalizeMacheteFixture(fixture: FotMobFixture, leagueId: string, teamIdsByProviderId: Map<string, string>) {
+  return {
+    leagueId,
+    provider: "FOTMOB",
+    providerFixtureId: fixture.id,
+    homeTeamId: teamIdsByProviderId.get(fixture.homeTeamId) ?? null,
+    awayTeamId: teamIdsByProviderId.get(fixture.awayTeamId) ?? null,
+    kickoffAt: fixture.kickoffAt ? new Date(fixture.kickoffAt) : null,
+    status: fixture.status,
+    homeScore: fixture.homeScore ?? null,
+    awayScore: fixture.awayScore ?? null,
+    raw: fixture as unknown as Prisma.InputJsonValue,
+    lastSyncedAt: new Date()
+  };
+}
+
+export function normalizeMacheteMatchStat(stat: FotMobPlayerMatchStat, fixtureId: string, playerId: string, teamId?: string) {
+  return {
+    fixtureId,
+    playerId,
+    teamId: teamId ?? null,
+    minutes: stat.minutes,
+    rating: stat.rating,
+    goals: stat.goals,
+    assists: stat.assists,
+    shots: stat.shots,
+    shotsOnTarget: stat.shotsOnTarget,
+    keyPasses: stat.keyPasses,
+    tackles: stat.tackles,
+    interceptions: stat.interceptions,
+    saves: stat.saves,
+    yellowCards: stat.yellowCards,
+    redCards: stat.redCards,
+    raw: stat as unknown as Prisma.InputJsonValue
+  };
+}

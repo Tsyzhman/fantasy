@@ -1,0 +1,51 @@
+import { formatDate } from "@/lib/format";
+
+export type MacheteFixtureRow = {
+  id: string;
+  kickoffAt: Date | string | null;
+  status: string | null;
+  homeTeamName: string | null;
+  awayTeamName: string | null;
+  homeScore: number | null;
+  awayScore: number | null;
+};
+
+export function MacheteFixtureTable({ fixtures }: { fixtures: MacheteFixtureRow[] }) {
+  return (
+    <div className="overflow-hidden rounded border border-slate-200 bg-white shadow-soft">
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-slate-200 text-sm">
+          <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
+            <tr>
+              <th className="px-4 py-3">Date</th>
+              <th className="px-4 py-3">Home</th>
+              <th className="px-4 py-3 text-center">Score</th>
+              <th className="px-4 py-3">Away</th>
+              <th className="px-4 py-3">Status</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {fixtures.map((fixture) => (
+              <tr key={fixture.id} className="hover:bg-slate-50">
+                <td className="whitespace-nowrap px-4 py-3 text-slate-600">{formatDate(fixture.kickoffAt)}</td>
+                <td className="whitespace-nowrap px-4 py-3 font-medium text-ink">{fixture.homeTeamName ?? "TBD"}</td>
+                <td className="whitespace-nowrap px-4 py-3 text-center font-semibold text-ink">
+                  {fixture.homeScore ?? "-"} : {fixture.awayScore ?? "-"}
+                </td>
+                <td className="whitespace-nowrap px-4 py-3 font-medium text-ink">{fixture.awayTeamName ?? "TBD"}</td>
+                <td className="whitespace-nowrap px-4 py-3 text-slate-600">{fixture.status ?? "UNKNOWN"}</td>
+              </tr>
+            ))}
+            {fixtures.length === 0 ? (
+              <tr>
+                <td colSpan={5} className="px-4 py-10 text-center text-slate-500">
+                  No Machete fixtures synced yet.
+                </td>
+              </tr>
+            ) : null}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}

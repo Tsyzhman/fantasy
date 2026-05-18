@@ -251,3 +251,209 @@ model Shortlist {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+model MacheteLeague {
+  id                String    @id @default(cuid())
+  provider          String    @default("FOTMOB")
+  providerLeagueId  String?   @unique
+  name              String
+  country           String?
+  season            String?
+  logoUrl           String?
+  status            String    @default("NOT_CONFIGURED")
+  lastSyncedAt      DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  teams             MacheteTeam[]
+  fixtures          MacheteFixture[]
+  syncJobs          MacheteSyncJob[]
+}
+
+model MacheteTeam {
+  id                String    @id @default(cuid())
+  leagueId          String
+  provider          String    @default("FOTMOB")
+  providerTeamId    String?
+  name              String
+  shortName         String?
+  country           String?
+  logoUrl           String?
+  status            String    @default("NOT_CONFIGURED")
+  lastSyncedAt      DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  league            MacheteLeague @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  players           MachetePlayer[]
+  fixturesHome      MacheteFixture[] @relation("MacheteFixtureHomeTeam")
+  fixturesAway      MacheteFixture[] @relation("MacheteFixtureAwayTeam")
+  syncJobs          MacheteSyncJob[]
+
+  @@unique([provider, providerTeamId])
+  @@index([leagueId, status])
+}
+
+model MachetePlayer {
+  id                String    @id @default(cuid())
+  teamId            String?
+  provider          String    @default("FOTMOB")
+  providerPlayerId  String?
+  name              String
+  position          String?
+  age               Int?
+  nationality       String?
+  height            String?
+  foot              String?
+  photoUrl          String?
+  status            String    @default("ACTIVE")
+  lastSyncedAt      DateTime?
+  raw               Json?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  team              MacheteTeam? @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  matchStats        MachetePlayerMatchStat[]
+  snapshots         MachetePlayerSnapshot[]
+
+  @@unique([provider, providerPlayerId])
+  @@index([teamId])
+}
+
+model MacheteFixture {
+  id                String    @id @default(cuid())
+  leagueId          String
+  provider          String    @default("FOTMOB")
+  providerFixtureId String?
+  homeTeamId        String?
+  awayTeamId        String?
+  kickoffAt         DateTime?
+  status            String?
+  homeScore         Int?
+  awayScore         Int?
+  raw               Json?
+  lastSyncedAt      DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  league            MacheteLeague @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  homeTeam          MacheteTeam? @relation("MacheteFixtureHomeTeam", fields: [homeTeamId], references: [id], onDelete: SetNull)
+  awayTeam          MacheteTeam? @relation("MacheteFixtureAwayTeam", fields: [awayTeamId], references: [id], onDelete: SetNull)
+  playerStats       MachetePlayerMatchStat[]
+
+  @@unique([provider, providerFixtureId])
+  @@index([leagueId, kickoffAt])
+}
+
+model MachetePlayerMatchStat {
+  id                String    @id @default(cuid())
+  fixtureId         String
+  playerId          String
+  teamId            String?
+  minutes           Int?
+  rating            Float?
+  goals             Int?
+  assists           Int?
+  shots             Int?
+  shotsOnTarget     Int?
+  keyPasses         Int?
+  tackles           Int?
+  interceptions     Int?
+  saves             Int?
+  yellowCards       Int?
+  redCards          Int?
+  raw               Json?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  fixture           MacheteFixture @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
+  player            MachetePlayer @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([fixtureId, playerId])
+  @@index([playerId])
+  @@index([teamId])
+}
+
+model MachetePlayerSnapshot {
+  id                String    @id @default(cuid())
+  playerId          String
+  leagueId          String?
+  teamId            String?
+  periodFrom        DateTime?
+  periodTo          DateTime?
+  position          String?
+  matchesPlayed     Int       @default(0)
+  minutesPlayed     Int       @default(0)
+  goals             Int       @default(0)
+  assists           Int       @default(0)
+  shotsOnTarget     Int       @default(0)
+  keyPasses         Int       @default(0)
+  tackles           Int       @default(0)
+  interceptions     Int       @default(0)
+  saves             Int       @default(0)
+  yellowCards       Int       @default(0)
+  redCards          Int       @default(0)
+  averageRating     Float?
+  fantasyScore      Float?
+  valueScore        Float?
+  rawMetrics        Json?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  player            MachetePlayer @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@index([leagueId, teamId])
+  @@index([fantasyScore])
+}
+
+model MacheteSyncJob {
+  id                String    @id @default(cuid())
+  leagueId          String?
+  teamId            String?
+  provider          String    @default("FOTMOB")
+  type              String
+  status            String    @default("PENDING")
+  startedAt         DateTime?
+  finishedAt        DateTime?
+  errorMessage      String?
+  result            Json?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+
+  league            MacheteLeague? @relation(fields: [leagueId], references: [id], onDelete: SetNull)
+  team              MacheteTeam? @relation(fields: [teamId], references: [id], onDelete: SetNull)
+
+  @@index([leagueId, teamId, status])
+  @@index([createdAt])
+}
+
+model MacheteRawPayload {
+  id                String    @id @default(cuid())
+  provider          String    @default("FOTMOB")
+  entityType        String
+  providerEntityId  String?
+  endpoint          String?
+  payload           Json
+  checksum          String?
+  createdAt         DateTime  @default(now())
+
+  @@index([provider, entityType, providerEntityId])
+  @@index([checksum])
+}
+
+model ProviderEntityMap {
+  id                  String    @id @default(cuid())
+  provider            String
+  providerEntityType  String
+  providerEntityId    String
+  internalEntityType  String
+  internalEntityId    String?
+  confidence          Float?
+  matchedBy           String?
+  status              String    @default("UNMATCHED")
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@unique([provider, providerEntityType, providerEntityId, internalEntityType])
+  @@index([internalEntityType, internalEntityId])
+}
