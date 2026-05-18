@@ -2,6 +2,7 @@ import { BarChart3, Database } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { BaltikaCalendarPanel } from "@/components/baltika/baltika-calendar-panel";
 import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
 import { TeamCardGrid, type TeamCardDto } from "@/components/admin/team-card-grid";
 import { prisma } from "@/lib/db";
@@ -29,6 +30,11 @@ export default async function BaltikaLeaguePage({ params }: PageProps) {
       teams: {
         orderBy: { name: "asc" },
         include: {
+          baltikaFixturesHome: true,
+          baltikaTeamStatsImports: {
+            orderBy: { createdAt: "desc" },
+            take: 1
+          },
           imports: {
             orderBy: { createdAt: "desc" },
             take: 4,
@@ -39,6 +45,13 @@ export default async function BaltikaLeaguePage({ params }: PageProps) {
             }
           }
         }
+      },
+      baltikaFixtures: {
+        orderBy: [
+          { roundNumber: "asc" },
+          { kickoffAt: "asc" },
+          { homeTeamName: "asc" }
+        ]
       }
     }
   });
@@ -61,6 +74,8 @@ export default async function BaltikaLeaguePage({ params }: PageProps) {
       lastUploadAt: latestImport?.createdAt.toISOString() ?? null,
       publishedAt: publishedImport?.publishedAt?.toISOString() ?? null,
       latestImportId: latestImport?.id ?? null,
+      homeFixturesCount: team.baltikaFixturesHome.length,
+      lastTeamStatsUploadAt: team.baltikaTeamStatsImports[0]?.createdAt.toISOString() ?? null,
       errors: Array.isArray(latestImport?.errorsJson) ? latestImport.errorsJson : [],
       warnings: Array.isArray(latestImport?.warningsJson) ? latestImport.warningsJson : []
     };
@@ -130,6 +145,29 @@ export default async function BaltikaLeaguePage({ params }: PageProps) {
       <section className="mt-6">
         <TeamCardGrid teams={teams} seasonId={season?.id ?? ""} leagueId={league.id} />
       </section>
+
+      {season ? (
+        <BaltikaCalendarPanel
+          leagueId={league.id}
+          seasonId={season.id}
+          teams={league.teams.map((team) => ({ id: team.id, name: team.name }))}
+          fixtures={league.baltikaFixtures.map((fixture) => ({
+            id: fixture.id,
+            roundNumber: fixture.roundNumber,
+            kickoffAt: fixture.kickoffAt?.toISOString() ?? null,
+            status: fixture.status,
+            source: fixture.source,
+            homeTeamId: fixture.homeTeamId,
+            awayTeamId: fixture.awayTeamId,
+            homeTeamName: fixture.homeTeamName,
+            awayTeamName: fixture.awayTeamName,
+            homeScore: fixture.homeScore,
+            awayScore: fixture.awayScore,
+            homeXg: fixture.homeXg,
+            awayXg: fixture.awayXg
+          }))}
+        />
+      ) : null}
     </main>
   );
 }

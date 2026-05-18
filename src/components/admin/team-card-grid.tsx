@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, CheckCircle2, CloudUpload, FileSpreadsheet, Loader2, Send } from "lucide-react";
+import { AlertCircle, CalendarDays, CheckCircle2, CloudUpload, FileSpreadsheet, Loader2, Send } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
@@ -21,6 +21,8 @@ export type TeamCardDto = {
   lastUploadAt: string | null;
   publishedAt: string | null;
   latestImportId: string | null;
+  homeFixturesCount: number;
+  lastTeamStatsUploadAt: string | null;
   errors: unknown[];
   warnings: unknown[];
 };
@@ -51,8 +53,11 @@ export function TeamCardGrid({ teams, seasonId, leagueId }: { teams: TeamCardDto
 function TeamCard({ team, seasonId, leagueId }: { team: TeamCardDto; seasonId: string; leagueId: string }) {
   const router = useRouter();
   const inputRef = useRef<HTMLInputElement | null>(null);
+  const teamStatsInputRef = useRef<HTMLInputElement | null>(null);
   const [isDragging, setIsDragging] = useState(false);
+  const [isTeamStatsDragging, setIsTeamStatsDragging] = useState(false);
   const [state, setState] = useState<UploadState>({ status: "idle" });
+  const [teamStatsState, setTeamStatsState] = useState<UploadState>({ status: "idle" });
 
   const displayStatus = state.status === "uploading" ? "UPLOADING" : state.status === "publishing" ? "PARSING" : team.status;
   const canPublish = team.status === "READY" && team.latestImportId && state.status !== "publishing";
@@ -84,6 +89,36 @@ function TeamCard({ team, seasonId, leagueId }: { team: TeamCardDto; seasonId: s
     }
 
     setState({ status: "success", message: `Imported ${payload.rowsCount ?? 0} players. Ready to publish.` });
+    router.refresh();
+  }
+
+  async function uploadTeamStatsFile(file: File | null | undefined) {
+    if (!file) return;
+    if (!file.name.toLowerCase().endsWith(".xlsx")) {
+      setTeamStatsState({ status: "error", message: "Only .xlsx files are supported." });
+      return;
+    }
+
+    const data = new FormData();
+    data.append("file", file);
+    data.append("seasonId", seasonId);
+
+    setTeamStatsState({ status: "uploading", message: "Importing home matches..." });
+    const response = await fetch(`/api/baltika/teams/${team.id}/team-stats/upload`, {
+      method: "POST",
+      body: data
+    });
+    const payload = await response.json();
+
+    if (!response.ok) {
+      const message =
+        payload?.errors?.[0]?.message ?? payload?.error?.message ?? "Team stats import failed. Check the Team Stats file.";
+      setTeamStatsState({ status: "error", message });
+      router.refresh();
+      return;
+    }
+
+    setTeamStatsState({ status: "success", message: `Imported ${payload.fixturesCount ?? 0} home matches.` });
     router.refresh();
   }
 
@@ -125,6 +160,14 @@ function TeamCard({ team, seasonId, leagueId }: { team: TeamCardDto; seasonId: s
           <dt className="text-xs font-medium uppercase text-slate-400">Published</dt>
           <dd className="mt-1 text-slate-700">{formatDate(team.publishedAt)}</dd>
         </div>
+        <div>
+          <dt className="text-xs font-medium uppercase text-slate-400">Home matches</dt>
+          <dd className="mt-1 text-slate-700">{formatNumber(team.homeFixturesCount)}</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-medium uppercase text-slate-400">Stats upload</dt>
+          <dd className="mt-1 text-slate-700">{formatDate(team.lastTeamStatsUploadAt)}</dd>
+        </div>
       </dl>
 
       <button
@@ -165,6 +208,43 @@ function TeamCard({ team, seasonId, leagueId }: { team: TeamCardDto; seasonId: s
         }}
       />
 
+      <button
+        type="button"
+        onClick={() => teamStatsInputRef.current?.click()}
+        onDragEnter={(event) => {
+          event.preventDefault();
+          setIsTeamStatsDragging(true);
+        }}
+        onDragOver={(event) => event.preventDefault()}
+        onDragLeave={() => setIsTeamStatsDragging(false)}
+        onDrop={(event) => {
+          event.preventDefault();
+          setIsTeamStatsDragging(false);
+          void uploadTeamStatsFile(event.dataTransfer.files[0]);
+        }}
+        className={cn(
+          "mt-3 flex items-center justify-center gap-2 rounded border border-dashed px-3 py-2 text-sm font-semibold transition",
+          isTeamStatsDragging ? "border-ink bg-slate-100 text-ink" : "border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+        )}
+      >
+        {teamStatsState.status === "uploading" ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          <CalendarDays className="h-4 w-4" />
+        )}
+        Upload home Team Stats
+      </button>
+      <input
+        ref={teamStatsInputRef}
+        type="file"
+        accept=".xlsx"
+        className="hidden"
+        onChange={(event) => {
+          void uploadTeamStatsFile(event.target.files?.[0]);
+          event.currentTarget.value = "";
+        }}
+      />
+
       {canPublish ? (
         <button
           type="button"
@@ -192,6 +272,18 @@ function TeamCard({ team, seasonId, leagueId }: { team: TeamCardDto; seasonId: s
         >
           {state.status === "error" ? <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /> : <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />}
           <span>{state.message}</span>
+        </p>
+      ) : null}
+
+      {teamStatsState.message ? (
+        <p
+          className={cn(
+            "mt-3 flex items-start gap-2 rounded px-3 py-2 text-xs",
+            teamStatsState.status === "error" ? "bg-rose-50 text-rose-700" : "bg-emerald-50 text-emerald-700"
+          )}
+        >
+          {teamStatsState.status === "error" ? <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" /> : <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />}
+          <span>{teamStatsState.message}</span>
         </p>
       ) : null}
 

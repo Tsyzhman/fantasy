@@ -41,97 +41,107 @@ model User {
 }
 
 model League {
-  id        String       @id @default(cuid())
-  name      String
-  country   String?
-  code      String?
-  logoUrl   String?
-  seasons   Season[]
-  teams     Team[]
-  imports   TeamImport[]
-  snapshots PlayerSnapshot[]
-  createdAt DateTime     @default(now())
-  updatedAt DateTime     @updatedAt
+  id                      String                   @id @default(cuid())
+  name                    String
+  country                 String?
+  code                    String?
+  logoUrl                 String?
+  seasons                 Season[]
+  teams                   Team[]
+  imports                 TeamImport[]
+  snapshots               PlayerSnapshot[]
+  baltikaFixtures         BaltikaFixture[]
+  baltikaTeamStatsImports BaltikaTeamStatsImport[]
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
 }
 
 model Season {
-  id        String           @id @default(cuid())
-  leagueId  String
-  name      String
-  startDate DateTime?
-  endDate   DateTime?
-  league    League           @relation(fields: [leagueId], references: [id], onDelete: Cascade)
-  imports   TeamImport[]
-  snapshots PlayerSnapshot[]
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
+  id                      String                   @id @default(cuid())
+  leagueId                String
+  name                    String
+  startDate               DateTime?
+  endDate                 DateTime?
+  league                  League                   @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  imports                 TeamImport[]
+  snapshots               PlayerSnapshot[]
+  baltikaFixtures         BaltikaFixture[]
+  baltikaTeamStatsImports BaltikaTeamStatsImport[]
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
 
   @@unique([leagueId, name])
 }
 
 model Team {
-  id        String           @id @default(cuid())
-  leagueId  String
-  name      String
-  slug      String
-  logoUrl   String?
-  aliases   String[]         @default([])
-  league    League           @relation(fields: [leagueId], references: [id], onDelete: Cascade)
-  imports   TeamImport[]
-  snapshots PlayerSnapshot[]
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
+  id                      String                   @id @default(cuid())
+  leagueId                String
+  name                    String
+  slug                    String
+  logoUrl                 String?
+  aliases                 String[]                 @default([])
+  league                  League                   @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  imports                 TeamImport[]
+  snapshots               PlayerSnapshot[]
+  baltikaFixturesHome     BaltikaFixture[]         @relation("BaltikaFixtureHomeTeam")
+  baltikaFixturesAway     BaltikaFixture[]         @relation("BaltikaFixtureAwayTeam")
+  baltikaTeamStatsImports BaltikaTeamStatsImport[]
+  baltikaMatchStats       BaltikaTeamMatchStat[]   @relation("BaltikaTeamMatchStatTeam")
+  baltikaOpponentStats    BaltikaTeamMatchStat[]   @relation("BaltikaTeamMatchStatOpponent")
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
 
   @@unique([leagueId, slug])
 }
 
 model SourceFile {
-  id               String         @id @default(cuid())
-  sourceType       DataSourceType @default(WYSCOUT_EXCEL)
-  originalFilename String
-  storagePath      String
-  mimeType         String?
-  sizeBytes        Int?
-  checksum         String?
-  uploadedById     String?
-  imports          TeamImport[]
-  createdAt        DateTime       @default(now())
+  id                      String                   @id @default(cuid())
+  sourceType              DataSourceType           @default(WYSCOUT_EXCEL)
+  originalFilename        String
+  storagePath             String
+  mimeType                String?
+  sizeBytes               Int?
+  checksum                String?
+  uploadedById            String?
+  imports                 TeamImport[]
+  baltikaTeamStatsImports BaltikaTeamStatsImport[]
+  createdAt               DateTime                 @default(now())
 
   @@index([checksum])
 }
 
 model TeamImport {
-  id                 String           @id @default(cuid())
+  id                 String       @id @default(cuid())
   leagueId           String
   seasonId           String
   teamId             String
-  sourceFileId        String
-  status             ImportStatus     @default(PARSING)
-  periodFrom          DateTime?
-  periodTo            DateTime?
-  detectedTeamName    String?
-  rowsCount           Int              @default(0)
-  columnsCount        Int              @default(0)
-  errorsJson          Json?
-  warningsJson        Json?
-  isCurrentPublished  Boolean          @default(false)
-  publishedAt         DateTime?
-  createdById         String?
-  createdAt           DateTime         @default(now())
-  updatedAt           DateTime         @updatedAt
+  sourceFileId       String
+  status             ImportStatus @default(PARSING)
+  periodFrom         DateTime?
+  periodTo           DateTime?
+  detectedTeamName   String?
+  rowsCount          Int          @default(0)
+  columnsCount       Int          @default(0)
+  errorsJson         Json?
+  warningsJson       Json?
+  isCurrentPublished Boolean      @default(false)
+  publishedAt        DateTime?
+  createdById        String?
+  createdAt          DateTime     @default(now())
+  updatedAt          DateTime     @updatedAt
 
-  league      League           @relation(fields: [leagueId], references: [id], onDelete: Cascade)
-  season      Season           @relation(fields: [seasonId], references: [id], onDelete: Cascade)
-  team        Team             @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  sourceFile  SourceFile       @relation(fields: [sourceFileId], references: [id], onDelete: Cascade)
-  snapshots   PlayerSnapshot[]
+  league     League           @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  season     Season           @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  team       Team             @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  sourceFile SourceFile       @relation(fields: [sourceFileId], references: [id], onDelete: Cascade)
+  snapshots  PlayerSnapshot[]
 
   @@index([leagueId, seasonId, teamId, status])
   @@index([teamId, isCurrentPublished])
 }
 
 model Player {
-  id              String           @id @default(cuid())
+  id              String   @id @default(cuid())
   canonicalName   String
   normalizedName  String
   birthCountry    String?
@@ -139,8 +149,8 @@ model Player {
   foot            String?
   heightCm        Int?
   weightKg        Int?
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   snapshots PlayerSnapshot[]
 
@@ -148,41 +158,41 @@ model Player {
 }
 
 model PlayerSnapshot {
-  id              String   @id @default(cuid())
-  teamImportId    String
-  leagueId         String
-  seasonId         String
-  teamId           String
-  playerId         String?
+  id           String  @id @default(cuid())
+  teamImportId String
+  leagueId     String
+  seasonId     String
+  teamId       String
+  playerId     String?
 
-  playerName       String
-  normalizedName   String
-  teamName         String
-  positionRaw      String?
-  positionGroup    String?
-  age              Int?
-  marketValue      Int?
-  contractExpires  DateTime?
-  matchesPlayed    Int?
-  minutesPlayed    Int?
-  goals            Float?
-  xg               Float?
-  assists          Float?
-  xa               Float?
-  birthCountry     String?
-  passportCountry  String?
-  foot             String?
-  heightCm         Int?
-  weightKg         Int?
-  onLoan           Boolean?
+  playerName      String
+  normalizedName  String
+  teamName        String
+  positionRaw     String?
+  positionGroup   String?
+  age             Int?
+  marketValue     Int?
+  contractExpires DateTime?
+  matchesPlayed   Int?
+  minutesPlayed   Int?
+  goals           Float?
+  xg              Float?
+  assists         Float?
+  xa              Float?
+  birthCountry    String?
+  passportCountry String?
+  foot            String?
+  heightCm        Int?
+  weightKg        Int?
+  onLoan          Boolean?
 
   fantasyScore     Float?
   alternativeScore Float?
   valueScore       Float?
-  isStarter        Boolean  @default(false)
+  isStarter        Boolean @default(false)
   rawMetrics       Json
 
-  createdAt        DateTime @default(now())
+  createdAt DateTime @default(now())
 
   teamImport TeamImport @relation(fields: [teamImportId], references: [id], onDelete: Cascade)
   league     League     @relation(fields: [leagueId], references: [id], onDelete: Cascade)
@@ -199,39 +209,39 @@ model PlayerSnapshot {
 }
 
 model FantasyModel {
-  id                   String             @id @default(cuid())
-  modelSource          String             @default("WYSCOUT")
-  name                 String
-  description          String?
-  version              Int                @default(1)
-  isDefault            Boolean            @default(false)
-  isActive             Boolean            @default(true)
-  customFormula        String?
-  customFormulaGk      String?
-  customFormulaDef     String?
-  customFormulaMid     String?
-  customFormulaFwd     String?
-  customFormulaEnabled Boolean            @default(false)
+  id                        String             @id @default(cuid())
+  modelSource               String             @default("WYSCOUT")
+  name                      String
+  description               String?
+  version                   Int                @default(1)
+  isDefault                 Boolean            @default(false)
+  isActive                  Boolean            @default(true)
+  customFormula             String?
+  customFormulaGk           String?
+  customFormulaDef          String?
+  customFormulaMid          String?
+  customFormulaFwd          String?
+  customFormulaEnabled      Boolean            @default(false)
   alternativeFormulaGk      String?
   alternativeFormulaDef     String?
   alternativeFormulaMid     String?
   alternativeFormulaFwd     String?
-  alternativeFormulaEnabled Boolean       @default(false)
-  rules                FantasyModelRule[]
-  createdAt            DateTime           @default(now())
-  updatedAt            DateTime           @updatedAt
+  alternativeFormulaEnabled Boolean            @default(false)
+  rules                     FantasyModelRule[]
+  createdAt                 DateTime           @default(now())
+  updatedAt                 DateTime           @updatedAt
 
   @@index([modelSource, isDefault, isActive])
 }
 
 model FantasyModelRule {
-  id             String  @id @default(cuid())
-  modelId        String
-  positionGroup  String
-  metricKey      String
-  weight         Float
-  transform      String  @default("linear")
-  enabled        Boolean @default(true)
+  id            String  @id @default(cuid())
+  modelId       String
+  positionGroup String
+  metricKey     String
+  weight        Float
+  transform     String  @default("linear")
+  enabled       Boolean @default(true)
 
   model FantasyModel @relation(fields: [modelId], references: [id], onDelete: Cascade)
 
@@ -256,68 +266,68 @@ model Shortlist {
 }
 
 model MacheteLeague {
-  id                String    @id @default(cuid())
-  provider          String    @default("FOTMOB")
-  providerLeagueId  String?   @unique
-  name              String
-  country           String?
-  season            String?
-  logoUrl           String?
-  status            String    @default("NOT_CONFIGURED")
-  lastSyncedAt      DateTime?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  id               String    @id @default(cuid())
+  provider         String    @default("FOTMOB")
+  providerLeagueId String?   @unique
+  name             String
+  country          String?
+  season           String?
+  logoUrl          String?
+  status           String    @default("NOT_CONFIGURED")
+  lastSyncedAt     DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
-  teams             MacheteTeam[]
-  fixtures          MacheteFixture[]
-  syncJobs          MacheteSyncJob[]
+  teams    MacheteTeam[]
+  fixtures MacheteFixture[]
+  syncJobs MacheteSyncJob[]
 }
 
 model MacheteTeam {
-  id                String    @id @default(cuid())
-  leagueId          String
-  provider          String    @default("FOTMOB")
-  providerTeamId    String?
-  name              String
-  shortName         String?
-  country           String?
-  logoUrl           String?
-  status            String    @default("NOT_CONFIGURED")
-  lastSyncedAt      DateTime?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  id             String    @id @default(cuid())
+  leagueId       String
+  provider       String    @default("FOTMOB")
+  providerTeamId String?
+  name           String
+  shortName      String?
+  country        String?
+  logoUrl        String?
+  status         String    @default("NOT_CONFIGURED")
+  lastSyncedAt   DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
-  league            MacheteLeague @relation(fields: [leagueId], references: [id], onDelete: Cascade)
-  players           MachetePlayer[]
-  fixturesHome      MacheteFixture[] @relation("MacheteFixtureHomeTeam")
-  fixturesAway      MacheteFixture[] @relation("MacheteFixtureAwayTeam")
-  syncJobs          MacheteSyncJob[]
+  league       MacheteLeague    @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  players      MachetePlayer[]
+  fixturesHome MacheteFixture[] @relation("MacheteFixtureHomeTeam")
+  fixturesAway MacheteFixture[] @relation("MacheteFixtureAwayTeam")
+  syncJobs     MacheteSyncJob[]
 
   @@unique([provider, providerTeamId])
   @@index([leagueId, status])
 }
 
 model MachetePlayer {
-  id                String    @id @default(cuid())
-  teamId            String?
-  provider          String    @default("FOTMOB")
-  providerPlayerId  String?
-  name              String
-  position          String?
-  age               Int?
-  nationality       String?
-  height            String?
-  foot              String?
-  photoUrl          String?
-  status            String    @default("ACTIVE")
-  lastSyncedAt      DateTime?
-  raw               Json?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  id               String    @id @default(cuid())
+  teamId           String?
+  provider         String    @default("FOTMOB")
+  providerPlayerId String?
+  name             String
+  position         String?
+  age              Int?
+  nationality      String?
+  height           String?
+  foot             String?
+  photoUrl         String?
+  status           String    @default("ACTIVE")
+  lastSyncedAt     DateTime?
+  raw              Json?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
-  team              MacheteTeam? @relation(fields: [teamId], references: [id], onDelete: SetNull)
-  matchStats        MachetePlayerMatchStat[]
-  snapshots         MachetePlayerSnapshot[]
+  team       MacheteTeam?             @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  matchStats MachetePlayerMatchStat[]
+  snapshots  MachetePlayerSnapshot[]
 
   @@unique([provider, providerPlayerId])
   @@index([teamId])
@@ -339,38 +349,38 @@ model MacheteFixture {
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
-  league            MacheteLeague @relation(fields: [leagueId], references: [id], onDelete: Cascade)
-  homeTeam          MacheteTeam? @relation("MacheteFixtureHomeTeam", fields: [homeTeamId], references: [id], onDelete: SetNull)
-  awayTeam          MacheteTeam? @relation("MacheteFixtureAwayTeam", fields: [awayTeamId], references: [id], onDelete: SetNull)
-  playerStats       MachetePlayerMatchStat[]
+  league      MacheteLeague            @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  homeTeam    MacheteTeam?             @relation("MacheteFixtureHomeTeam", fields: [homeTeamId], references: [id], onDelete: SetNull)
+  awayTeam    MacheteTeam?             @relation("MacheteFixtureAwayTeam", fields: [awayTeamId], references: [id], onDelete: SetNull)
+  playerStats MachetePlayerMatchStat[]
 
   @@unique([provider, providerFixtureId])
   @@index([leagueId, kickoffAt])
 }
 
 model MachetePlayerMatchStat {
-  id                String    @id @default(cuid())
-  fixtureId         String
-  playerId          String
-  teamId            String?
-  minutes           Int?
-  rating            Float?
-  goals             Int?
-  assists           Int?
-  shots             Int?
-  shotsOnTarget     Int?
-  keyPasses         Int?
-  tackles           Int?
-  interceptions     Int?
-  saves             Int?
-  yellowCards       Int?
-  redCards          Int?
-  raw               Json?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  id            String   @id @default(cuid())
+  fixtureId     String
+  playerId      String
+  teamId        String?
+  minutes       Int?
+  rating        Float?
+  goals         Int?
+  assists       Int?
+  shots         Int?
+  shotsOnTarget Int?
+  keyPasses     Int?
+  tackles       Int?
+  interceptions Int?
+  saves         Int?
+  yellowCards   Int?
+  redCards      Int?
+  raw           Json?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
-  fixture           MacheteFixture @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
-  player            MachetePlayer @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  fixture MacheteFixture @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
+  player  MachetePlayer  @relation(fields: [playerId], references: [id], onDelete: Cascade)
 
   @@unique([fixtureId, playerId])
   @@index([playerId])
@@ -378,33 +388,33 @@ model MachetePlayerMatchStat {
 }
 
 model MachetePlayerSnapshot {
-  id                String    @id @default(cuid())
-  playerId          String
-  leagueId          String?
-  teamId            String?
-  periodFrom        DateTime?
-  periodTo          DateTime?
-  position          String?
-  matchesPlayed     Int       @default(0)
-  minutesPlayed     Int       @default(0)
-  goals             Int       @default(0)
-  assists           Int       @default(0)
-  shotsOnTarget     Int       @default(0)
-  keyPasses         Int       @default(0)
-  tackles           Int       @default(0)
-  interceptions     Int       @default(0)
-  saves             Int       @default(0)
-  yellowCards       Int       @default(0)
-  redCards          Int       @default(0)
-  averageRating     Float?
-  fantasyScore      Float?
-  alternativeScore  Float?
-  valueScore        Float?
-  rawMetrics        Json?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  id               String    @id @default(cuid())
+  playerId         String
+  leagueId         String?
+  teamId           String?
+  periodFrom       DateTime?
+  periodTo         DateTime?
+  position         String?
+  matchesPlayed    Int       @default(0)
+  minutesPlayed    Int       @default(0)
+  goals            Int       @default(0)
+  assists          Int       @default(0)
+  shotsOnTarget    Int       @default(0)
+  keyPasses        Int       @default(0)
+  tackles          Int       @default(0)
+  interceptions    Int       @default(0)
+  saves            Int       @default(0)
+  yellowCards      Int       @default(0)
+  redCards         Int       @default(0)
+  averageRating    Float?
+  fantasyScore     Float?
+  alternativeScore Float?
+  valueScore       Float?
+  rawMetrics       Json?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
 
-  player            MachetePlayer @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  player MachetePlayer @relation(fields: [playerId], references: [id], onDelete: Cascade)
 
   @@index([leagueId, teamId])
   @@index([fantasyScore])
@@ -412,53 +422,137 @@ model MachetePlayerSnapshot {
 }
 
 model MacheteSyncJob {
-  id                String    @id @default(cuid())
-  leagueId          String?
-  teamId            String?
-  provider          String    @default("FOTMOB")
-  type              String
-  status            String    @default("PENDING")
-  startedAt         DateTime?
-  finishedAt        DateTime?
-  errorMessage      String?
-  result            Json?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  id           String    @id @default(cuid())
+  leagueId     String?
+  teamId       String?
+  provider     String    @default("FOTMOB")
+  type         String
+  status       String    @default("PENDING")
+  startedAt    DateTime?
+  finishedAt   DateTime?
+  errorMessage String?
+  result       Json?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  league            MacheteLeague? @relation(fields: [leagueId], references: [id], onDelete: SetNull)
-  team              MacheteTeam? @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  league MacheteLeague? @relation(fields: [leagueId], references: [id], onDelete: SetNull)
+  team   MacheteTeam?   @relation(fields: [teamId], references: [id], onDelete: SetNull)
 
   @@index([leagueId, teamId, status])
   @@index([createdAt])
 }
 
 model MacheteRawPayload {
-  id                String    @id @default(cuid())
-  provider          String    @default("FOTMOB")
-  entityType        String
-  providerEntityId  String?
-  endpoint          String?
-  payload           Json
-  checksum          String?
-  createdAt         DateTime  @default(now())
+  id               String   @id @default(cuid())
+  provider         String   @default("FOTMOB")
+  entityType       String
+  providerEntityId String?
+  endpoint         String?
+  payload          Json
+  checksum         String?
+  createdAt        DateTime @default(now())
 
   @@index([provider, entityType, providerEntityId])
   @@index([checksum])
 }
 
 model ProviderEntityMap {
-  id                  String    @id @default(cuid())
-  provider            String
-  providerEntityType  String
-  providerEntityId    String
-  internalEntityType  String
-  internalEntityId    String?
-  confidence          Float?
-  matchedBy           String?
-  status              String    @default("UNMATCHED")
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  id                 String   @id @default(cuid())
+  provider           String
+  providerEntityType String
+  providerEntityId   String
+  internalEntityType String
+  internalEntityId   String?
+  confidence         Float?
+  matchedBy          String?
+  status             String   @default("UNMATCHED")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
 
   @@unique([provider, providerEntityType, providerEntityId, internalEntityType])
   @@index([internalEntityType, internalEntityId])
+}
+
+model BaltikaTeamStatsImport {
+  id            String       @id @default(cuid())
+  leagueId      String
+  seasonId      String
+  teamId        String
+  sourceFileId  String
+  status        ImportStatus @default(PARSING)
+  rowsCount     Int          @default(0)
+  fixturesCount Int          @default(0)
+  errorsJson    Json?
+  warningsJson  Json?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  league     League           @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  season     Season           @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  team       Team             @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  sourceFile SourceFile       @relation(fields: [sourceFileId], references: [id], onDelete: Cascade)
+  fixtures   BaltikaFixture[]
+
+  @@index([leagueId, seasonId, teamId, status])
+  @@index([teamId, createdAt])
+}
+
+model BaltikaFixture {
+  id              String    @id @default(cuid())
+  leagueId        String
+  seasonId        String
+  importId        String?
+  homeTeamId      String?
+  awayTeamId      String?
+  homeTeamName    String
+  awayTeamName    String?
+  roundNumber     Int?
+  kickoffAt       DateTime?
+  competition     String?
+  durationMinutes Int?
+  status          String    @default("PLAYED")
+  source          String    @default("MANUAL")
+  homeScore       Int?
+  awayScore       Int?
+  homeXg          Float?
+  awayXg          Float?
+  raw             Json?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  league    League                  @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  season    Season                  @relation(fields: [seasonId], references: [id], onDelete: Cascade)
+  import    BaltikaTeamStatsImport? @relation(fields: [importId], references: [id], onDelete: SetNull)
+  homeTeam  Team?                   @relation("BaltikaFixtureHomeTeam", fields: [homeTeamId], references: [id], onDelete: SetNull)
+  awayTeam  Team?                   @relation("BaltikaFixtureAwayTeam", fields: [awayTeamId], references: [id], onDelete: SetNull)
+  teamStats BaltikaTeamMatchStat[]
+
+  @@index([leagueId, seasonId, roundNumber])
+  @@index([leagueId, seasonId, kickoffAt])
+  @@index([homeTeamId, kickoffAt])
+  @@index([awayTeamId, kickoffAt])
+}
+
+model BaltikaTeamMatchStat {
+  id             String   @id @default(cuid())
+  fixtureId      String
+  teamId         String
+  opponentTeamId String?
+  side           String
+  goals          Int?
+  xg             Float?
+  xga            Float?
+  shots          Int?
+  shotsOnTarget  Int?
+  raw            Json?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  fixture      BaltikaFixture @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
+  team         Team           @relation("BaltikaTeamMatchStatTeam", fields: [teamId], references: [id], onDelete: Cascade)
+  opponentTeam Team?          @relation("BaltikaTeamMatchStatOpponent", fields: [opponentTeamId], references: [id], onDelete: SetNull)
+
+  @@unique([fixtureId, teamId])
+  @@index([teamId, side])
+  @@index([opponentTeamId])
 }

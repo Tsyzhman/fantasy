@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
 import { StarterCheckbox } from "@/components/players/starter-checkbox";
 import { prisma } from "@/lib/db";
-import { formatCurrency, formatNumber, formatScore } from "@/lib/format";
+import { formatCurrency, formatDate, formatNumber, formatScore } from "@/lib/format";
 import { leagueFlag } from "@/lib/leagues/flags";
 
 export const dynamic = "force-dynamic";
@@ -39,6 +39,12 @@ export default async function BaltikaTeamPage({ params }: PageProps) {
             ]
           }
         }
+      },
+      baltikaMatchStats: {
+        include: {
+          fixture: true,
+          opponentTeam: true
+        }
       }
     }
   });
@@ -48,6 +54,13 @@ export default async function BaltikaTeamPage({ params }: PageProps) {
   const currentImport = team.imports[0];
   const players = currentImport?.snapshots ?? [];
   const startersCount = players.filter((player) => player.isStarter).length;
+  const matchStats = [...team.baltikaMatchStats].sort((left, right) => {
+    const leftDate = left.fixture.kickoffAt?.getTime() ?? 0;
+    const rightDate = right.fixture.kickoffAt?.getTime() ?? 0;
+    return rightDate - leftDate;
+  });
+  const homeForm = matchStats.filter((stat) => stat.side === "HOME");
+  const awayForm = matchStats.filter((stat) => stat.side === "AWAY");
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -129,6 +142,107 @@ export default async function BaltikaTeamPage({ params }: PageProps) {
           </table>
         </div>
       </section>
+
+      <section className="mt-8 grid grid-cols-1 gap-5 lg:grid-cols-2">
+        <TeamFormTable title="Home form" stats={homeForm} />
+        <TeamFormTable title="Away form" stats={awayForm} />
+      </section>
     </main>
   );
+}
+
+type TeamFormRow = {
+  id: string;
+  side: string;
+  goals: number | null;
+  xg: number | null;
+  xga: number | null;
+  shots: number | null;
+  shotsOnTarget: number | null;
+  fixture: {
+    kickoffAt: Date | null;
+    roundNumber: number | null;
+    homeTeamName: string;
+    awayTeamName: string | null;
+    homeScore: number | null;
+    awayScore: number | null;
+  };
+  opponentTeam: {
+    name: string;
+  } | null;
+};
+
+function TeamFormTable({ title, stats }: { title: string; stats: TeamFormRow[] }) {
+  const avgXg = average(stats.map((stat) => stat.xg));
+  const avgXga = average(stats.map((stat) => stat.xga));
+
+  return (
+    <div className="overflow-hidden rounded border border-slate-200 bg-white shadow-soft">
+      <div className="flex items-center justify-between gap-4 border-b border-slate-200 px-4 py-3">
+        <div>
+          <h2 className="text-base font-semibold text-ink">{title}</h2>
+          <p className="mt-1 text-xs text-slate-500">
+            xG {formatScore(avgXg)} / xGA {formatScore(avgXga)}
+          </p>
+        </div>
+        <span className="text-sm font-semibold text-slate-500">{formatNumber(stats.length)} matches</span>
+      </div>
+      <div className="overflow-x-auto">
+        <table className="min-w-full divide-y divide-slate-200 text-sm">
+          <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
+            <tr>
+              <th className="px-4 py-3">Date</th>
+              <th className="px-4 py-3">Round</th>
+              <th className="px-4 py-3">Opponent</th>
+              <th className="px-4 py-3 text-right">Score</th>
+              <th className="px-4 py-3 text-right">xG</th>
+              <th className="px-4 py-3 text-right">xGA</th>
+              <th className="px-4 py-3 text-right">Shots</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {stats.map((stat) => (
+              <tr key={stat.id} className="hover:bg-slate-50">
+                <td className="whitespace-nowrap px-4 py-3 text-slate-600">{formatDate(stat.fixture.kickoffAt)}</td>
+                <td className="whitespace-nowrap px-4 py-3 text-slate-600">{stat.fixture.roundNumber ?? "-"}</td>
+                <td className="whitespace-nowrap px-4 py-3 font-medium text-ink">{stat.opponentTeam?.name ?? opponentName(stat)}</td>
+                <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">
+                  {scoreLabel(stat)}
+                </td>
+                <td className="whitespace-nowrap px-4 py-3 text-right font-semibold text-emerald-700">{formatScore(stat.xg)}</td>
+                <td className="whitespace-nowrap px-4 py-3 text-right font-semibold text-rose-700">{formatScore(stat.xga)}</td>
+                <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">
+                  {formatNumber(stat.shots)} / {formatNumber(stat.shotsOnTarget)}
+                </td>
+              </tr>
+            ))}
+            {stats.length === 0 ? (
+              <tr>
+                <td colSpan={7} className="px-4 py-8 text-center text-slate-500">
+                  No Team Stats matches loaded yet.
+                </td>
+              </tr>
+            ) : null}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+function average(values: Array<number | null>) {
+  const numeric = values.filter((value): value is number => typeof value === "number" && Number.isFinite(value));
+  if (numeric.length === 0) return null;
+  return numeric.reduce((sum, value) => sum + value, 0) / numeric.length;
+}
+
+function opponentName(stat: TeamFormRow) {
+  return stat.side === "HOME" ? stat.fixture.awayTeamName ?? "TBD" : stat.fixture.homeTeamName;
+}
+
+function scoreLabel(stat: TeamFormRow) {
+  const home = stat.fixture.homeScore;
+  const away = stat.fixture.awayScore;
+  if (home === null || away === null) return "-";
+  return stat.side === "HOME" ? `${home}:${away}` : `${away}:${home}`;
 }
