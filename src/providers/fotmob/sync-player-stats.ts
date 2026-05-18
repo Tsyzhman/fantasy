@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@prisma/client";
+import type { Prisma, PrismaClient } from "@prisma/client";
 
 import { aggregateMachetePlayerSnapshots } from "@/scoring/machete/aggregateMachetePlayerSnapshots";
 
@@ -33,6 +33,113 @@ export async function syncMacheteTeamPlayerStats(prisma: PrismaClient, teamId: s
       update: normalizeMachetePlayer(player, team.id),
       create: normalizeMachetePlayer(player, team.id)
     });
+  }
+
+  const aggregateStats = providerTeam.players.filter((player) => player.seasonStat);
+  if (aggregateStats.length > 0) {
+    await storeMacheteRawPayload(prisma, {
+      entityType: "TEAM_SEASON_AGGREGATE",
+      providerEntityId: team.providerTeamId,
+      endpoint: "getTeams",
+      payload: providerTeam
+    });
+
+    const syntheticProviderFixtureId = [
+      "fotmob-season-aggregate",
+      team.league.providerLeagueId ?? team.leagueId,
+      team.providerTeamId,
+      team.league.season ?? "current"
+    ].join(":");
+
+    const aggregateFixture = await prisma.macheteFixture.upsert({
+      where: {
+        provider_providerFixtureId: {
+          provider: "FOTMOB",
+          providerFixtureId: syntheticProviderFixtureId
+        }
+      },
+      update: {
+        leagueId: team.leagueId,
+        homeTeamId: team.id,
+        awayTeamId: null,
+        kickoffAt: null,
+        status: "SEASON_AGGREGATE",
+        homeScore: null,
+        awayScore: null,
+        raw: {
+          source: "FotMob /data/teams squad",
+          providerTeamId: team.providerTeamId,
+          season: team.league.season
+        } satisfies Prisma.InputJsonValue,
+        lastSyncedAt: new Date()
+      },
+      create: {
+        leagueId: team.leagueId,
+        provider: "FOTMOB",
+        providerFixtureId: syntheticProviderFixtureId,
+        homeTeamId: team.id,
+        awayTeamId: null,
+        kickoffAt: null,
+        status: "SEASON_AGGREGATE",
+        raw: {
+          source: "FotMob /data/teams squad",
+          providerTeamId: team.providerTeamId,
+          season: team.league.season
+        } satisfies Prisma.InputJsonValue,
+        lastSyncedAt: new Date()
+      }
+    });
+
+    let statsCount = 0;
+    for (const player of aggregateStats) {
+      if (!player.seasonStat) continue;
+      const machetePlayer = await prisma.machetePlayer.findUnique({
+        where: {
+          provider_providerPlayerId: {
+            provider: "FOTMOB",
+            providerPlayerId: player.id
+          }
+        }
+      });
+      if (!machetePlayer) continue;
+
+      const stat = {
+        ...player.seasonStat,
+        fixtureId: syntheticProviderFixtureId
+      };
+      await prisma.machetePlayerMatchStat.upsert({
+        where: {
+          fixtureId_playerId: {
+            fixtureId: aggregateFixture.id,
+            playerId: machetePlayer.id
+          }
+        },
+        update: normalizeMacheteMatchStat(stat, aggregateFixture.id, machetePlayer.id, team.id),
+        create: normalizeMacheteMatchStat(stat, aggregateFixture.id, machetePlayer.id, team.id)
+      });
+      statsCount += 1;
+    }
+
+    await prisma.machetePlayerSnapshot.deleteMany({
+      where: {
+        leagueId: team.leagueId,
+        teamId: team.id
+      }
+    });
+    const snapshots = await aggregateMachetePlayerSnapshots(prisma, { leagueId: team.leagueId, teamId: team.id });
+
+    await prisma.macheteTeam.update({
+      where: { id: team.id },
+      data: {
+        status: "SYNCED",
+        lastSyncedAt: new Date()
+      }
+    });
+
+    return {
+      statsCount,
+      snapshotsCount: snapshots.length
+    };
   }
 
   const fixtures = await prisma.macheteFixture.findMany({

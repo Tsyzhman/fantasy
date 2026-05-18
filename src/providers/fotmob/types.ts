@@ -16,6 +16,7 @@ export type FotMobPlayer = {
   height?: string;
   foot?: string;
   photoUrl?: string;
+  seasonStat?: Omit<FotMobPlayerMatchStat, "fixtureId">;
 };
 
 export type FotMobTeam = {
@@ -43,18 +44,19 @@ export type FotMobPlayerMatchStat = {
   fixtureId: string;
   playerId: string;
   teamId: string;
-  minutes: number;
-  rating: number;
-  goals: number;
-  assists: number;
-  shots: number;
-  shotsOnTarget: number;
-  keyPasses: number;
-  tackles: number;
-  interceptions: number;
-  saves: number;
-  yellowCards: number;
-  redCards: number;
+  minutes: number | null;
+  rating: number | null;
+  goals: number | null;
+  assists: number | null;
+  shots: number | null;
+  shotsOnTarget: number | null;
+  keyPasses: number | null;
+  tackles: number | null;
+  interceptions: number | null;
+  saves: number | null;
+  yellowCards: number | null;
+  redCards: number | null;
+  raw?: unknown;
 };
 
 export type FotMobFixtureDetails = FotMobFixture & {
