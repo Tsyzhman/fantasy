@@ -8,6 +8,7 @@ import {
   calculateValueScore,
   getActiveScoringModel
 } from "@/lib/scoring";
+import { buildBaltikaTeamFormulaMetrics } from "@/lib/scoring/baltika-team-form-metrics";
 import { prisma } from "@/lib/db";
 import { checksum, storeUpload } from "@/lib/storage/local";
 
@@ -129,10 +130,17 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
-  const scoringModel = await getActiveScoringModel();
+  const [scoringModel, teamFormulaMetrics] = await Promise.all([
+    getActiveScoringModel(),
+    buildBaltikaTeamFormulaMetrics(prisma, team.id, seasonId)
+  ]);
   const snapshots: Prisma.PlayerSnapshotCreateManyInput[] = parsed.rows.map((row) => {
-    const fantasyScore = calculateFantasyScore(row.rawMetrics, row.positionGroup, scoringModel);
-    const alternativeScore = calculateAlternativeScore(row.rawMetrics, row.positionGroup, scoringModel);
+    const rawMetrics = {
+      ...row.rawMetrics,
+      ...teamFormulaMetrics
+    };
+    const fantasyScore = calculateFantasyScore(rawMetrics, row.positionGroup, scoringModel);
+    const alternativeScore = calculateAlternativeScore(rawMetrics, row.positionGroup, scoringModel);
     const valueScore = calculateValueScore(fantasyScore, row.marketValue);
 
     return {
@@ -163,7 +171,7 @@ export async function POST(request: Request, { params }: Params) {
       fantasyScore,
       alternativeScore,
       valueScore,
-      rawMetrics: row.rawMetrics as Prisma.InputJsonValue
+      rawMetrics: rawMetrics as Prisma.InputJsonValue
     };
   });
 

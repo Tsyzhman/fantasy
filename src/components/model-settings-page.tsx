@@ -345,6 +345,12 @@ function FormulaHelp() {
         <span className="font-mono"> {"{Expected minutes}"}</span>, <span className="font-mono">{"{Minutes factor}"}</span>,
         <span className="font-mono"> {"{Goals per match}"}</span>, <span className="font-mono">{"{Assists per 90}"}</span>.
       </p>
+      <p className="mt-2">
+        Baltika Team Stats variables are available after schedule/team-stat sync:
+        <span className="font-mono"> {"{Team home xG per match}"}</span>,
+        <span className="font-mono"> {"{Team away xGA per match}"}</span>,
+        <span className="font-mono"> {"{Round projected xG}"}</span>.
+      </p>
     </div>
   );
 }

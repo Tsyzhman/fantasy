@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/db";
+import { getActiveScoringModel } from "@/lib/scoring";
+import { recalculateBaltikaTeamSnapshots } from "@/lib/scoring/baltika-team-form-metrics";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -47,6 +49,13 @@ export async function PATCH(request: Request, { params }: Params) {
       source: fixture.source === "WYSCOUT_TEAM_STATS" ? fixture.source : "MANUAL"
     }
   });
+  const scoringModel = await getActiveScoringModel();
+  await recalculateBaltikaTeamSnapshots(
+    prisma,
+    [fixture.homeTeamId, fixture.awayTeamId, updated.homeTeamId, updated.awayTeamId].filter((value): value is string => Boolean(value)),
+    fixture.seasonId,
+    scoringModel
+  );
 
   return NextResponse.json({ fixture: updated });
 }
@@ -59,6 +68,13 @@ export async function DELETE(_request: Request, { params }: Params) {
   }
 
   await prisma.baltikaFixture.delete({ where: { id: fixture.id } });
+  const scoringModel = await getActiveScoringModel();
+  await recalculateBaltikaTeamSnapshots(
+    prisma,
+    [fixture.homeTeamId, fixture.awayTeamId].filter((value): value is string => Boolean(value)),
+    fixture.seasonId,
+    scoringModel
+  );
   return NextResponse.json({ ok: true });
 }
 

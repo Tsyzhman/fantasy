@@ -32,7 +32,11 @@ export function MacheteSyncButton({
     const payload = await response.json().catch(() => ({}));
 
     if (!response.ok) {
-      setState({ status: "error", message: payload?.error ?? payload?.job?.errorMessage ?? "Sync failed." });
+      const message =
+        typeof payload?.error === "string"
+          ? payload.error
+          : payload?.error?.message ?? payload?.job?.errorMessage ?? "Sync failed.";
+      setState({ status: "error", message });
       router.refresh();
       return;
     }

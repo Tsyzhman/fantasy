@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/db";
+import { getActiveScoringModel } from "@/lib/scoring";
+import { recalculateBaltikaTeamSnapshots } from "@/lib/scoring/baltika-team-form-metrics";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -44,6 +46,13 @@ export async function POST(request: Request) {
       source: "MANUAL"
     }
   });
+  const scoringModel = await getActiveScoringModel();
+  await recalculateBaltikaTeamSnapshots(
+    prisma,
+    [homeTeamId, awayTeamId].filter((value): value is string => Boolean(value)),
+    seasonId,
+    scoringModel
+  );
 
   return NextResponse.json({ fixture });
 }

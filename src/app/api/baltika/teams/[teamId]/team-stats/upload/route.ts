@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 
 import { prisma } from "@/lib/db";
 import { parseWyscoutTeamStatsWorkbook } from "@/lib/importers/wyscout-team-stats-excel";
+import { getActiveScoringModel } from "@/lib/scoring";
+import { recalculateBaltikaTeamSnapshots } from "@/lib/scoring/baltika-team-form-metrics";
 import { checksum, storeUpload } from "@/lib/storage/local";
 
 export const runtime = "nodejs";
@@ -117,6 +119,7 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   let fixturesSaved = 0;
+  const affectedTeamIds = new Set<string>();
 
   for (const fixture of parsed.fixtures) {
     const savedFixture = await upsertBaltikaFixture(teamStatsImport.id, team.leagueId, seasonId, fixture);
@@ -137,6 +140,11 @@ export async function POST(request: Request, { params }: Params) {
         raw: row.rawMetrics as Prisma.InputJsonValue
       }));
 
+    for (const stat of stats) {
+      affectedTeamIds.add(stat.teamId);
+      if (stat.opponentTeamId) affectedTeamIds.add(stat.opponentTeamId);
+    }
+
     if (stats.length > 0) {
       await prisma.baltikaTeamMatchStat.createMany({ data: stats });
     }
@@ -154,12 +162,15 @@ export async function POST(request: Request, { params }: Params) {
       warningsJson: parsed.warnings as Prisma.InputJsonValue
     }
   });
+  const scoringModel = await getActiveScoringModel();
+  const snapshotsRecalculated = await recalculateBaltikaTeamSnapshots(prisma, Array.from(affectedTeamIds), seasonId, scoringModel);
 
   return NextResponse.json({
     importId: readyImport.id,
     status: readyImport.status,
     rowsCount: readyImport.rowsCount,
     fixturesCount: readyImport.fixturesCount,
+    snapshotsRecalculated,
     warnings: parsed.warnings
   });
 }

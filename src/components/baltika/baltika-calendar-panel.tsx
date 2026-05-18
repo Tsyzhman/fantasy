@@ -57,6 +57,7 @@ export function BaltikaCalendarPanel({
       .sort((left, right) => left - right);
     return Array.from(new Set(values));
   }, [fixtures]);
+  const roundLabels = useMemo(() => new Map(rounds.map((round, index) => [round, index + 1])), [rounds]);
 
   const matrix = useMemo(() => {
     return teams.map((team) => ({
@@ -168,7 +169,10 @@ export function BaltikaCalendarPanel({
             <tr>
               <th className="sticky left-0 z-10 bg-slate-50 px-4 py-3">Team</th>
               {rounds.map((round) => (
-                <th key={round} className="min-w-[150px] px-4 py-3">Round {round}</th>
+                <th key={round} className="min-w-[150px] px-4 py-3">
+                  Tour {roundLabels.get(round)}
+                  {roundLabels.get(round) !== round ? <span className="ml-1 font-normal normal-case text-slate-400">(source {round})</span> : null}
+                </th>
               ))}
             </tr>
           </thead>

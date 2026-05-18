@@ -7,6 +7,7 @@ import {
   calculateValueScore,
   getActiveScoringModel
 } from "../src/lib/scoring";
+import { buildBaltikaTeamFormulaMetrics } from "../src/lib/scoring/baltika-team-form-metrics";
 
 const batchSize = 500;
 
@@ -24,29 +25,39 @@ async function main() {
         id: true,
         rawMetrics: true,
         positionGroup: true,
-        marketValue: true
+        marketValue: true,
+        teamId: true,
+        seasonId: true
       }
     });
 
     if (snapshots.length === 0) break;
 
-    await prisma.$transaction(
-      snapshots.map((snapshot) => {
-        const rawMetrics = objectMetrics(snapshot.rawMetrics);
-        const fantasyScore = calculateFantasyScore(rawMetrics, snapshot.positionGroup, scoringModel);
-        const alternativeScore = calculateAlternativeScore(rawMetrics, snapshot.positionGroup, scoringModel);
-        const valueScore = calculateValueScore(fantasyScore, snapshot.marketValue);
+    const updates = [];
+    for (const snapshot of snapshots) {
+      const teamMetrics = await buildBaltikaTeamFormulaMetrics(prisma, snapshot.teamId, snapshot.seasonId);
+      const rawMetrics = {
+        ...objectMetrics(snapshot.rawMetrics),
+        ...teamMetrics
+      };
+      const fantasyScore = calculateFantasyScore(rawMetrics, snapshot.positionGroup, scoringModel);
+      const alternativeScore = calculateAlternativeScore(rawMetrics, snapshot.positionGroup, scoringModel);
+      const valueScore = calculateValueScore(fantasyScore, snapshot.marketValue);
 
-        return prisma.playerSnapshot.update({
+      updates.push(
+        prisma.playerSnapshot.update({
           where: { id: snapshot.id },
           data: {
+            rawMetrics: rawMetrics as Prisma.InputJsonValue,
             fantasyScore,
             alternativeScore,
             valueScore
           }
-        });
-      })
-    );
+        })
+      );
+    }
+
+    await prisma.$transaction(updates);
 
     recalculated += snapshots.length;
     cursor = snapshots[snapshots.length - 1]?.id;
