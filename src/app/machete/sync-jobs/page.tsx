@@ -20,10 +20,10 @@ export default async function MacheteSyncJobsPage() {
     <MacheteShell>
       <div className="mt-6">
         <PageBreadcrumbs
-          backHref="/machete"
-          backLabel="Back to Machete"
+          backHref="/machete/leagues"
+          backLabel="Back to Machete leagues"
           items={[
-            { label: "Machete", href: "/machete" },
+            { label: "Machete", href: "/machete/leagues" },
             { label: "Sync jobs", href: "/machete/sync-jobs" }
           ]}
         />

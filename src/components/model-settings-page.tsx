@@ -15,6 +15,7 @@ import {
 } from "@/lib/scoring/formula-display";
 import { validateCustomFormula } from "@/lib/scoring/formula";
 import type { ScoringModelSource } from "@/lib/scoring";
+import { recalculateSnapshotsForSource } from "@/lib/scoring/recalculate-snapshots";
 import { seedRules } from "@/lib/scoring/rules";
 import { formulaAlias, sourceFormulaFields } from "@/lib/scoring/source-field-guide";
 
@@ -44,6 +45,19 @@ const sourceConfig: Record<ScoringModelSource, { name: string; description: stri
     name: "Machete Fantasy 2025/26",
     description: "Position-aware fantasy scoring for Machete/FotMob snapshots.",
     path: "/machete/models"
+  }
+};
+
+const formulaExamples: Record<ScoringModelSource, { primary: string; alternative: string; fields: string[] }> = {
+  WYSCOUT: {
+    primary: "1 + {Minutes factor} + 4*{Goals per match} + 3*{Assists per match} - {Yellow cards}",
+    alternative: "3*{xG per 90} + 3*{xA per 90} + 0.4*{Key passes per 90} + 0.2*{Progressive passes per 90}",
+    fields: ["{xG per 90}", "{xA per 90}", "{Key passes per 90}", "{Progressive passes per 90}", "{Round projected xG}"]
+  },
+  MACHETE: {
+    primary: "1 + {Minutes factor} + 4*{Goals per match} + 3*{Assists per match} - {Yellow cards}",
+    alternative: "4*{Goals per match} + 2*{Assists per match} + 0.2*{Shots on target} + 0.1*{Key passes} + 0.2*{Average rating}",
+    fields: ["{Goals}", "{Goals per match}", "{Assists}", "{Assists per match}", "{Shots on target}", "{Key passes}", "{Average rating}"]
   }
 };
 
@@ -79,6 +93,14 @@ export async function saveModelSettings(formData: FormData) {
 
   const hasFormula = Object.values(formulas).some((formula) => formula.length > 0);
   const hasAlternativeFormula = Object.values(alternativeFormulas).some((formula) => formula.length > 0);
+
+  if (enabled && !hasFormula) {
+    redirect(`${config.path}?error=${encodeURIComponent("Expected FP custom mode needs at least one formula.")}`);
+  }
+
+  if (alternativeEnabled && !hasAlternativeFormula) {
+    redirect(`${config.path}?error=${encodeURIComponent("Alt FP needs at least one formula.")}`);
+  }
 
   const model = await prisma.fantasyModel.findFirst({
     where: { modelSource: source, isDefault: true, isActive: true }
@@ -119,7 +141,11 @@ export async function saveModelSettings(formData: FormData) {
     });
   }
 
+  await recalculateSnapshotsForSource(prisma, source);
+
   revalidatePath(config.path);
+  revalidatePath(source === "MACHETE" ? "/machete/players" : "/baltika/players");
+  revalidatePath(source === "MACHETE" ? "/machete/leagues" : "/baltika/leagues");
   redirect(`${config.path}?saved=1`);
 }
 
@@ -188,16 +214,18 @@ export async function ModelSettingsPage({
 
         {searchParams?.saved ? (
           <div className="mt-5 rounded border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-            Formula settings saved.
+            Saved. Expected FP and Alt FP were recalculated for existing player snapshots.
           </div>
         ) : null}
 
         <form action={saveModelSettings} className="mt-6 space-y-4">
           <input type="hidden" name="modelSource" value={source} />
 
+          <ScoreMap source={source} displayModel={displayModel} />
+
           <div className="rounded border border-slate-200 bg-slate-50 p-4">
             <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm font-semibold text-ink">Current primary formula</p>
+              <p className="text-sm font-semibold text-ink">Current Expected FP calculation</p>
               <span className="rounded bg-white px-2 py-1 text-xs font-semibold text-slate-600">
                 {formulaModeLabel(displayModel)}
               </span>
@@ -222,13 +250,21 @@ export async function ModelSettingsPage({
             </div>
 
             <p className="mt-3 text-xs text-slate-500">
-              Default FP predicts one round: minutes are averaged, per-90 metrics are scaled by expected minutes, and totals
-              are converted to per-match values.
+              This is the formula behind the green Expected FP column. If custom formulas are off, Expected FP uses the
+              built-in predicted-round scoring.
             </p>
           </div>
 
-          <div>
-            <span className="text-sm font-semibold text-ink">Primary fantasy score formulas by position</span>
+          <div className="rounded border border-emerald-200 bg-emerald-50 p-4">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-ink">Edit Expected FP formulas</p>
+                <p className="mt-1 text-xs text-slate-600">
+                  These formulas replace the green Expected FP column for the positions you fill in.
+                </p>
+              </div>
+              <span className="rounded bg-white px-2 py-1 text-xs font-semibold text-emerald-700">Primary score</span>
+            </div>
             <div className="mt-2 grid grid-cols-1 gap-3 lg:grid-cols-2">
               {customFormulaFields.map((field) => (
                 <FormulaTextarea key={field.key} field={field} defaultValue={customFormulaForPosition(displayModel, field.key)} />
@@ -241,20 +277,20 @@ export async function ModelSettingsPage({
                 defaultChecked={Boolean(displayModel?.customFormulaEnabled)}
                 className="h-4 w-4 rounded border-slate-300"
               />
-              Use primary custom formulas for new calculations
+              Use primary custom formulas
             </label>
           </div>
 
           <div className="rounded border border-amber-200 bg-amber-50 p-4">
             <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm font-semibold text-ink">Alternative score column</p>
-              <span className="rounded bg-white px-2 py-1 text-xs font-semibold text-amber-700">
-                {displayModel?.alternativeFormulaEnabled && hasAnyAlternativeFormula(displayModel) ? "Alt FP enabled" : "Alt FP disabled"}
-              </span>
+              <div>
+                <p className="text-sm font-semibold text-ink">Edit Alt FP formulas</p>
+                <p className="mt-1 text-xs text-slate-600">
+                  These formulas fill the amber Alt FP column. They do not change Expected FP.
+                </p>
+              </div>
+              <span className="rounded bg-white px-2 py-1 text-xs font-semibold text-amber-700">Comparison score</span>
             </div>
-            <p className="mt-2 text-xs text-slate-600">
-              Alt FP is an independent second score. It does not replace the primary score.
-            </p>
             <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
               {alternativeFormulaFields.map((field) => (
                 <FormulaTextarea
@@ -273,20 +309,74 @@ export async function ModelSettingsPage({
                 defaultChecked={Boolean(displayModel?.alternativeFormulaEnabled)}
                 className="h-4 w-4 rounded border-slate-300"
               />
-              Calculate Alt FP for new calculations
+              Calculate Alt FP
             </label>
           </div>
 
-          <FormulaHelp />
+          <FormulaHelp source={source} />
 
           <button type="submit" className="rounded bg-ink px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">
-            Save formulas
+            Save and recalculate scores
           </button>
         </form>
       </section>
 
       <FieldGuideSections />
     </main>
+  );
+}
+
+function ScoreMap({
+  source,
+  displayModel
+}: {
+  source: ScoringModelSource;
+  displayModel:
+    | {
+        customFormulaEnabled?: boolean | null;
+        customFormula?: string | null;
+        customFormulaGk?: string | null;
+        customFormulaDef?: string | null;
+        customFormulaMid?: string | null;
+        customFormulaFwd?: string | null;
+        alternativeFormulaEnabled?: boolean | null;
+        alternativeFormulaGk?: string | null;
+        alternativeFormulaDef?: string | null;
+        alternativeFormulaMid?: string | null;
+        alternativeFormulaFwd?: string | null;
+      }
+    | null
+    | undefined;
+}) {
+  const altEnabled = Boolean(displayModel?.alternativeFormulaEnabled && hasAnyAlternativeFormula(displayModel));
+
+  return (
+    <div className="grid grid-cols-1 gap-3 lg:grid-cols-3">
+      <div className="rounded border border-emerald-200 bg-emerald-50 p-4">
+        <p className="text-xs font-semibold uppercase text-emerald-700">Green table column</p>
+        <h3 className="mt-1 text-base font-semibold text-ink">Expected FP</h3>
+        <p className="mt-2 text-sm text-slate-700">
+          Main predicted score. It uses either the built-in scoring or your primary formulas.
+        </p>
+        <p className="mt-3 text-xs font-semibold text-emerald-700">{formulaModeLabel(displayModel)}</p>
+      </div>
+      <div className="rounded border border-amber-200 bg-amber-50 p-4">
+        <p className="text-xs font-semibold uppercase text-amber-700">Amber table column</p>
+        <h3 className="mt-1 text-base font-semibold text-ink">Alt FP</h3>
+        <p className="mt-2 text-sm text-slate-700">
+          Optional second score for comparison. It appears only when Alt FP is enabled and has a formula.
+        </p>
+        <p className="mt-3 text-xs font-semibold text-amber-700">{altEnabled ? "Alt FP enabled" : "Alt FP disabled"}</p>
+      </div>
+      <div className="rounded border border-slate-200 bg-slate-50 p-4">
+        <p className="text-xs font-semibold uppercase text-slate-500">Save behavior</p>
+        <h3 className="mt-1 text-base font-semibold text-ink">Recalculate now</h3>
+        <p className="mt-2 text-sm text-slate-700">
+          Saving updates existing {source === "MACHETE" ? "Machete/FotMob" : "Baltika/Wyscout"} snapshots immediately.
+          Future syncs and imports use the same formulas.
+        </p>
+      </div>
+    </div>
   );
 }
 
@@ -326,31 +416,33 @@ function FormulaTextarea({
   );
 }
 
-function FormulaHelp() {
+function FormulaHelp({ source }: { source: ScoringModelSource }) {
+  const examples = formulaExamples[source];
+
   return (
     <div className="rounded border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-      <p className="font-semibold text-ink">How to write it</p>
-      <p className="mt-2">
-        Use numbers and operators <span className="font-mono">+ - * / ( )</span>. Put source fields in braces:
-        <span className="font-mono"> {"{Goals}"}</span>, <span className="font-mono">{"{xG/per90}"}</span>,
-        <span className="font-mono"> {"{Assists}"}</span>. Field names are normalized automatically.
+      <p className="font-semibold text-ink">Formula syntax and examples</p>
+      <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
+        <div className="rounded bg-white p-3">
+          <p className="text-xs font-semibold uppercase text-slate-500">Expected FP example</p>
+          <pre className="mt-2 whitespace-pre-wrap break-words font-mono text-xs leading-5 text-slate-700">{examples.primary}</pre>
+        </div>
+        <div className="rounded bg-white p-3">
+          <p className="text-xs font-semibold uppercase text-slate-500">Alt FP example</p>
+          <pre className="mt-2 whitespace-pre-wrap break-words font-mono text-xs leading-5 text-slate-700">{examples.alternative}</pre>
+        </div>
+      </div>
+      <p className="mt-3">
+        Use numbers, <span className="font-mono">+ - * / ( )</span>, and fields in braces. Missing fields count as 0.
+        Empty Expected FP formulas fall back to built-in scoring; empty Alt FP formulas show no Alt FP for that position.
       </p>
-      <p className="mt-2">
-        Missing fields count as 0. Example:
-        <span className="font-mono"> 4*{"{Goals}"} + 2*{"{xG/per90}"} + 3*{"{Assists}"} - {"{Yellow cards}"}</span>.
-        Leave a position empty to use the default rules for that position.
-      </p>
-      <p className="mt-2">
-        Derived aliases are also available:
-        <span className="font-mono"> {"{Expected minutes}"}</span>, <span className="font-mono">{"{Minutes factor}"}</span>,
-        <span className="font-mono"> {"{Goals per match}"}</span>, <span className="font-mono">{"{Assists per 90}"}</span>.
-      </p>
-      <p className="mt-2">
-        Baltika Team Stats variables are available after schedule/team-stat sync:
-        <span className="font-mono"> {"{Team home xG per match}"}</span>,
-        <span className="font-mono"> {"{Team away xGA per match}"}</span>,
-        <span className="font-mono"> {"{Round projected xG}"}</span>.
-      </p>
+      <div className="mt-3 flex flex-wrap gap-1.5">
+        {examples.fields.map((field) => (
+          <span key={field} className="rounded bg-white px-2 py-1 font-mono text-xs text-slate-700">
+            {field}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }

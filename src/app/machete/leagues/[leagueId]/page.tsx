@@ -76,7 +76,7 @@ export default async function MacheteLeaguePage({ params }: PageProps) {
           backHref="/machete/leagues"
           backLabel="Back to leagues"
           items={[
-            { label: "Machete", href: "/machete" },
+            { label: "Machete", href: "/machete/leagues" },
             { label: "Leagues", href: "/machete/leagues" },
             { label: displayName, href: `/machete/leagues/${league.id}` }
           ]}

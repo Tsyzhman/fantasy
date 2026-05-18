@@ -1,7 +1,7 @@
 export const defaultFormulaByPosition = [
   {
     key: "customFormulaGk",
-    position: "ВР",
+    position: "GK",
     formula: [
       "appearance_bonus",
       "60min_bonus",
@@ -22,7 +22,7 @@ export const defaultFormulaByPosition = [
   },
   {
     key: "customFormulaDef",
-    position: "ЗЩ",
+    position: "DEF",
     formula: [
       "appearance_bonus",
       "60min_bonus",
@@ -42,7 +42,7 @@ export const defaultFormulaByPosition = [
   },
   {
     key: "customFormulaMid",
-    position: "ПЗЩ",
+    position: "MID",
     formula: [
       "appearance_bonus",
       "60min_bonus",
@@ -62,7 +62,7 @@ export const defaultFormulaByPosition = [
   },
   {
     key: "customFormulaFwd",
-    position: "НАП",
+    position: "FWD",
     formula: [
       "appearance_bonus",
       "60min_bonus",
@@ -90,22 +90,22 @@ export const customFormulaFields = defaultFormulaByPosition.map(({ key, position
 export const alternativeFormulaFields = [
   {
     key: "alternativeFormulaGk",
-    position: "ВР",
+    position: "GK",
     placeholder: "4*{Clean sheets} + {Saves}/3 - 0.5*{Conceded goals per 90}"
   },
   {
     key: "alternativeFormulaDef",
-    position: "ЗЩ",
+    position: "DEF",
     placeholder: "2*{xG per 90} + 3*{xA per 90} + 0.25*{Successful defensive actions per 90}"
   },
   {
     key: "alternativeFormulaMid",
-    position: "ПЗЩ",
+    position: "MID",
     placeholder: "3*{xG per 90} + 3*{xA per 90} + 0.4*{Key passes per 90} + 0.2*{Progressive passes per 90}"
   },
   {
     key: "alternativeFormulaFwd",
-    position: "НАП",
+    position: "FWD",
     placeholder: "4*{xG per 90} + 2*{xA per 90} + 0.25*{Touches in box per 90}"
   }
 ] as const;

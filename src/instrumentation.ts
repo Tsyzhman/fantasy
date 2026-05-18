@@ -1,0 +1,6 @@
+export async function register() {
+  if (process.env.NEXT_RUNTIME !== "nodejs") return;
+
+  const { startMacheteDailyFotMobSyncScheduler } = await import("./server/machete-daily-sync");
+  startMacheteDailyFotMobSyncScheduler();
+}

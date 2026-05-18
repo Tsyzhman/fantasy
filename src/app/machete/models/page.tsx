@@ -15,8 +15,8 @@ export default async function MacheteModelsPage({ searchParams }: PageProps) {
     modeName: "Machete",
     title: "Fantasy model",
     description: "Machete model settings for FotMob snapshots. It starts from the same default formula as Baltika but can diverge independently.",
-    backHref: "/machete",
-    backLabel: "Back to Machete",
+    backHref: "/machete/leagues",
+    backLabel: "Back to Machete leagues",
     searchParams
   });
 }
