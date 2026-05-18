@@ -4,8 +4,6 @@ import Link from "next/link";
 import { AutoSubmitForm } from "@/components/players/auto-submit-form";
 import { formatCurrency, formatNumber, formatScore } from "@/lib/format";
 import { prisma } from "@/lib/db";
-import { getActiveScoringModel } from "@/lib/scoring";
-import { hasAnyAlternativeFormula } from "@/lib/scoring/formula-display";
 
 export const dynamic = "force-dynamic";
 
@@ -68,21 +66,17 @@ export default async function PlayersPage({ searchParams }: PageProps) {
             ? { alternativeScore: { sort: "desc", nulls: "last" } }
             : { fantasyScore: { sort: "desc", nulls: "last" } };
 
-  const [players, scoringModel] = await Promise.all([
-    prisma.playerSnapshot.findMany({
-      where,
-      orderBy,
-      take: 250,
-      include: {
-        league: true,
-        team: true
-      }
-    }),
-    getActiveScoringModel()
-  ]);
+  const players = await prisma.playerSnapshot.findMany({
+    where,
+    orderBy,
+    take: 250,
+    include: {
+      league: true,
+      team: true
+    }
+  });
 
-  const showAlternative = Boolean(scoringModel.alternativeFormulaEnabled) && hasAnyAlternativeFormula(scoringModel);
-  const columnsCount = showAlternative ? 12 : 11;
+  const columnsCount = 12;
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -154,7 +148,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
           <span className="mb-1 block font-medium text-slate-600">Sort</span>
           <select name="sort" defaultValue={sort} className="w-full rounded border border-slate-200 px-3 py-2">
             <option value="fantasyScore">Predicted FP</option>
-            {showAlternative ? <option value="alternativeScore">Alt FP</option> : null}
+            <option value="alternativeScore">Alt FP</option>
             <option value="minutesPlayed">Minutes</option>
             <option value="playerName">Player name</option>
           </select>
@@ -187,9 +181,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
                 <th className="px-4 py-3 text-right">xA</th>
                 <th className="px-4 py-3 text-right">Market</th>
                 <th className="bg-emerald-50 px-4 py-3 text-right text-emerald-700">Predicted FP</th>
-                {showAlternative ? (
-                  <th className="bg-amber-50 px-4 py-3 text-right text-amber-700">Alt FP</th>
-                ) : null}
+                <th className="bg-amber-50 px-4 py-3 text-right text-amber-700">Alt FP</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -208,11 +200,9 @@ export default async function PlayersPage({ searchParams }: PageProps) {
                   <td className="whitespace-nowrap bg-emerald-50/70 px-4 py-3 text-right font-semibold text-emerald-700">
                     {formatScore(player.fantasyScore)}
                   </td>
-                  {showAlternative ? (
-                    <td className="whitespace-nowrap bg-amber-50/70 px-4 py-3 text-right font-semibold text-amber-700">
-                      {formatScore(player.alternativeScore)}
-                    </td>
-                  ) : null}
+                  <td className="whitespace-nowrap bg-amber-50/70 px-4 py-3 text-right font-semibold text-amber-700">
+                    {formatScore(player.alternativeScore)}
+                  </td>
                 </tr>
               ))}
               {players.length === 0 ? (
