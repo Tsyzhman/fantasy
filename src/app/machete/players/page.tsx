@@ -34,10 +34,16 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
   const sortedLeagues = [...leagues].sort((left, right) =>
     macheteLeagueDisplayName(left).localeCompare(macheteLeagueDisplayName(right))
   );
+  const selectedLeagueId = searchParams.leagueId ?? "";
+  const teamLeagues = selectedLeagueId ? sortedLeagues.filter((league) => league.id === selectedLeagueId) : sortedLeagues;
+  const selectedTeamId =
+    searchParams.teamId && teamLeagues.some((league) => league.teams.some((team) => team.id === searchParams.teamId))
+      ? searchParams.teamId
+      : "";
 
   const where: Prisma.MachetePlayerSnapshotWhereInput = {};
-  if (searchParams.leagueId) where.leagueId = searchParams.leagueId;
-  if (searchParams.teamId) where.teamId = searchParams.teamId;
+  if (selectedLeagueId) where.leagueId = selectedLeagueId;
+  if (selectedTeamId) where.teamId = selectedTeamId;
   if (searchParams.position) where.position = { contains: searchParams.position, mode: "insensitive" };
   if (searchParams.minMinutes) {
     const minutes = Number(searchParams.minMinutes);
@@ -127,7 +133,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
       <AutoSubmitForm className="mt-8 grid grid-cols-1 gap-3 rounded border border-slate-200 bg-white p-4 shadow-soft md:grid-cols-5">
         <label className="text-sm">
           <span className="mb-1 block font-medium text-slate-600"><I18nText en="League" ru="Лига" /></span>
-          <select name="leagueId" defaultValue={searchParams.leagueId ?? ""} className="w-full rounded border border-slate-200 px-3 py-2">
+          <select name="leagueId" defaultValue={selectedLeagueId} className="w-full rounded border border-slate-200 px-3 py-2">
             <option value="">All leagues / Все лиги</option>
             {sortedLeagues.map((league) => (
               <option key={league.id} value={league.id}>
@@ -138,12 +144,12 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
         </label>
         <label className="text-sm">
           <span className="mb-1 block font-medium text-slate-600"><I18nText en="Team" ru="Команда" /></span>
-          <select name="teamId" defaultValue={searchParams.teamId ?? ""} className="w-full rounded border border-slate-200 px-3 py-2">
+          <select name="teamId" defaultValue={selectedTeamId} className="w-full rounded border border-slate-200 px-3 py-2">
             <option value="">All teams / Все команды</option>
-            {sortedLeagues.flatMap((league) =>
+            {teamLeagues.flatMap((league) =>
               league.teams.map((team) => (
                 <option key={team.id} value={team.id}>
-                  {team.name} - {macheteLeagueDisplayName(league)}
+                  {selectedLeagueId ? team.name : `${team.name} - ${macheteLeagueDisplayName(league)}`}
                 </option>
               ))
             )}
