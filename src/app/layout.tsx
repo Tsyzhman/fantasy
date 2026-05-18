@@ -7,6 +7,7 @@ import { ModeBrand } from "@/components/mode-brand";
 import { ModePlayersLink } from "@/components/mode-players-link";
 import { ModeSwitchLink } from "@/components/mode-switch-link";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { ensureDatabaseSchema } from "@/lib/db";
 
 import "./globals.css";
 
@@ -15,7 +16,9 @@ export const metadata: Metadata = {
   description: "Excel-first fantasy football scouting"
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  await ensureDatabaseSchema();
+
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
