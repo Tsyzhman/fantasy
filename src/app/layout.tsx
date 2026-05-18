@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Settings } from "lucide-react";
 
 import { ModeBrand } from "@/components/mode-brand";
+import { ModeSwitchLink } from "@/components/mode-switch-link";
 
 import "./globals.css";
 
@@ -26,9 +27,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <Link className="rounded px-3 py-2 hover:bg-slate-100" href="/players">
                   Players
                 </Link>
-                <Link className="rounded px-3 py-2 hover:bg-slate-100" href="/machete">
-                  Machete
-                </Link>
+                <ModeSwitchLink />
                 <Link
                   className="inline-flex items-center gap-2 rounded px-3 py-2 hover:bg-slate-100"
                   href="/admin/models"

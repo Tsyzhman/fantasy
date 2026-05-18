@@ -8,7 +8,7 @@ export function ModeBrand() {
   const pathname = usePathname();
   const isMachete = pathname.startsWith("/machete") || pathname.startsWith("/api/machete");
   const href = isMachete ? "/machete" : "/admin/leagues";
-  const imageSrc = isMachete ? "/mode-logos/fotmob-mode.svg" : "/mode-logos/wyscout-mode.svg";
+  const imageSrc = isMachete ? "/mode-logos/fotmob-mode.png" : "/mode-logos/wyscout-mode.jpg";
   const label = isMachete ? "Machete" : "Fantasy Scout";
   const subtitle = isMachete ? "FOTMOB mode" : "Wyscout Excel mode";
 
