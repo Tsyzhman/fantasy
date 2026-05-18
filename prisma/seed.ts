@@ -57,22 +57,26 @@ async function main() {
     }
 
     for (const team of leagueSeed.teams) {
+      const slug = slugify(team.name);
+      const logoUrl = `/team-logos/${league.id}/${slug}.png`;
       await prisma.team.upsert({
         where: {
           leagueId_slug: {
             leagueId: league.id,
-            slug: slugify(team.name)
+            slug
           }
         },
         update: {
           name: team.name,
-          aliases: team.aliases ?? []
+          aliases: team.aliases ?? [],
+          logoUrl
         },
         create: {
           leagueId: league.id,
           name: team.name,
-          slug: slugify(team.name),
-          aliases: team.aliases ?? []
+          slug,
+          aliases: team.aliases ?? [],
+          logoUrl
         }
       });
     }

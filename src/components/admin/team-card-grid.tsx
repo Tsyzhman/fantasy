@@ -105,9 +105,8 @@ function TeamCard({ team, seasonId, leagueId }: { team: TeamCardDto; seasonId: s
     <article className="flex min-h-[340px] flex-col rounded border border-slate-200 bg-white p-4 shadow-soft">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
-          <div className="grid h-12 w-12 shrink-0 place-items-center rounded bg-slate-900 text-sm font-bold text-white">
-            {team.logoUrl ? <img src={team.logoUrl} alt="" className="h-full w-full rounded object-cover" /> : initials(team.name)}
-          </div>
+          <TeamLogo logoUrl={team.logoUrl} name={team.name} />
+
           <div className="min-w-0">
             <h2 className="truncate text-base font-semibold text-ink">{team.name}</h2>
             <p className="text-xs text-slate-500">{formatNumber(team.playersCount)} players</p>
@@ -202,6 +201,25 @@ function TeamCard({ team, seasonId, leagueId }: { team: TeamCardDto; seasonId: s
         </p>
       ) : null}
     </article>
+  );
+}
+
+function TeamLogo({ logoUrl, name }: { logoUrl: string | null; name: string }) {
+  const [failed, setFailed] = useState(false);
+  const showImage = Boolean(logoUrl) && !failed;
+  return (
+    <div className="grid h-12 w-12 shrink-0 place-items-center rounded bg-slate-900 text-sm font-bold text-white">
+      {showImage ? (
+        <img
+          src={logoUrl as string}
+          alt=""
+          className="h-full w-full rounded object-contain p-1"
+          onError={() => setFailed(true)}
+        />
+      ) : (
+        initials(name)
+      )}
+    </div>
   );
 }
 
