@@ -11,6 +11,7 @@ import {
   customFormulaFields,
   customFormulaForPosition,
   defaultFormulaByPosition,
+  defaultScoringFormulaByPosition,
   hasAnyAlternativeFormula,
   hasAnyCustomFormula,
   hasAnyScoringFormula,
@@ -122,7 +123,7 @@ export async function saveModelSettings(formData: FormData) {
   }
 
   if (scoringEnabled && !hasScoringFormula) {
-    redirect(`${config.path}?error=${encodeURIComponent("Scoring FP needs at least one formula.")}`);
+    redirect(`${config.path}?error=${encodeURIComponent("Actual FP needs at least one formula.")}`);
   }
 
   const model = await prisma.fantasyModel.findFirst({
@@ -244,7 +245,7 @@ export async function ModelSettingsPage({
 
         {searchParams?.saved ? (
           <div className="mt-5 rounded border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-            <I18nText en="Saved. Expected FP, Scoring FP and Alt FP were recalculated for existing player snapshots." ru="Сохранено. Expected FP, Scoring FP и Alt FP пересчитаны для уже загруженных игроков." />
+            <I18nText en="Saved. Expected FP, Actual FP and Alt FP were recalculated for existing player snapshots." ru="Сохранено. Expected FP, Реальные FP и Alt FP пересчитаны для уже загруженных игроков." />
           </div>
         ) : null}
 
@@ -317,12 +318,12 @@ export async function ModelSettingsPage({
             <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm font-semibold text-ink">
-                  <I18nText en="Edit Scoring FP formulas" ru="Редактировать формулы Scoring FP" />
+                  <I18nText en="Current Actual FP formulas" ru="Текущие формулы Реальные FP" />
                 </p>
                 <p className="mt-1 text-xs text-slate-600">
                   <I18nText
-                    en="These formulas calculate actual aggregate scoring from loaded player totals. They do not use next-round projections."
-                    ru="Эти формулы считают фактический суммарный scoring по загруженным totals игрока. Они не используют прогноз следующего тура."
+                    en="Edit the formulas already used by the blue Actual FP column."
+                    ru="Редактируйте формулы, которые уже используются в синей колонке Реальные FP."
                   />
                 </p>
               </div>
@@ -335,7 +336,7 @@ export async function ModelSettingsPage({
                 <FormulaTextarea
                   key={field.key}
                   field={field}
-                  defaultValue={customFormulaForPosition(displayModel, field.key)}
+                  defaultValue={editableScoringFormula(displayModel, field.key)}
                   accent="sky"
                   rows={4}
                 />
@@ -348,7 +349,7 @@ export async function ModelSettingsPage({
                 defaultChecked={Boolean(displayModel?.scoringFormulaEnabled)}
                 className="h-4 w-4 rounded border-slate-300"
               />
-              <I18nText en="Use custom Scoring FP formulas" ru="Использовать свои формулы Scoring FP" />
+              <I18nText en="Use custom Actual FP formulas" ru="Использовать свои формулы Реальные FP" />
             </label>
           </div>
 
@@ -441,7 +442,7 @@ function ScoreMap({
       </div>
       <div className="rounded border border-sky-200 bg-sky-50 p-4">
         <p className="text-xs font-semibold uppercase text-sky-700"><I18nText en="Blue table column" ru="Синяя колонка таблицы" /></p>
-        <h3 className="mt-1 text-base font-semibold text-ink">Scoring FP</h3>
+        <h3 className="mt-1 text-base font-semibold text-ink">Actual FP</h3>
         <p className="mt-2 text-sm text-slate-700">
           <I18nText
             en="Actual aggregate score from loaded totals. This is separate from prediction."
@@ -508,6 +509,10 @@ function editableExpectedFormula(model: Parameters<typeof customFormulaForPositi
   return customFormulaForPosition(model, key).trim() || defaultFormulaByPosition.find((entry) => entry.key === key)?.formula || "";
 }
 
+function editableScoringFormula(model: Parameters<typeof customFormulaForPosition>[0], key: string) {
+  return customFormulaForPosition(model, key).trim() || defaultScoringFormulaByPosition.find((entry) => entry.key === key)?.formula || "";
+}
+
 function FormulaTextarea({
   field,
   defaultValue,
@@ -548,7 +553,7 @@ function FormulaHelp({ source }: { source: ScoringModelSource }) {
           <pre className="mt-2 whitespace-pre-wrap break-words font-mono text-xs leading-5 text-slate-700">{examples.primary}</pre>
         </div>
         <div className="rounded bg-white p-3">
-          <p className="text-xs font-semibold uppercase text-slate-500"><I18nText en="Scoring FP example" ru="Пример Scoring FP" /></p>
+          <p className="text-xs font-semibold uppercase text-slate-500"><I18nText en="Actual FP example" ru="Пример Реальные FP" /></p>
           <pre className="mt-2 whitespace-pre-wrap break-words font-mono text-xs leading-5 text-slate-700">{examples.scoring}</pre>
         </div>
         <div className="rounded bg-white p-3">
@@ -558,8 +563,8 @@ function FormulaHelp({ source }: { source: ScoringModelSource }) {
       </div>
       <p className="mt-3">
         <I18nText
-          en={<>Use numbers, <span className="font-mono">+ - * / ( )</span>, and fields in braces. Missing fields count as 0. Empty Expected FP and Scoring FP formulas fall back to built-in rules; empty Alt FP formulas show no Alt FP for that position.</>}
-          ru={<>Используйте числа, <span className="font-mono">+ - * / ( )</span> и поля в фигурных скобках. Отсутствующие поля считаются как 0. Пустые формулы Expected FP и Scoring FP откатываются к встроенным правилам; пустые формулы Alt FP не показывают Alt FP для позиции.</>}
+          en={<>Use numbers, <span className="font-mono">+ - * / ( )</span>, and fields in braces. Missing fields count as 0. Empty Expected FP and Actual FP formulas fall back to built-in rules; empty Alt FP formulas show no Alt FP for that position.</>}
+          ru={<>Используйте числа, <span className="font-mono">+ - * / ( )</span> и поля в фигурных скобках. Отсутствующие поля считаются как 0. Пустые формулы Expected FP и Реальные FP откатываются к встроенным правилам; пустые формулы Alt FP не показывают Alt FP для позиции.</>}
         />
       </p>
       <div className="mt-3 flex flex-wrap gap-1.5">

@@ -120,8 +120,8 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
           </h1>
           <p className="mt-2 max-w-2xl text-sm text-slate-600">
             <I18nText
-              en="Separate Machete snapshots with their own Expected FP, Scoring FP and Alt FP values."
-              ru="Отдельные снапшоты Machete со своими Expected FP, Scoring FP и Alt FP."
+              en="Separate Machete snapshots with their own Expected FP, Actual FP and Alt FP values."
+              ru="Отдельные снапшоты Machete со своими Expected FP, Реальные FP и Alt FP."
             />
           </p>
         </div>
@@ -179,7 +179,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
           <span className="mb-1 block font-medium text-slate-600"><I18nText en="Sort" ru="Сортировка" /></span>
           <select name="sort" defaultValue={sort} className="w-full rounded border border-slate-200 px-3 py-2">
             <option value="fantasyScore">Expected FP / Прогноз FP</option>
-            <option value="scoringScore">Scoring FP / Факт FP</option>
+            <option value="scoringScore">Actual FP / Реальные FP</option>
             <option value="alternativeScore">Alt FP / Альт. FP</option>
             <option value="minutesPlayed">Minutes / Минуты</option>
             <option value="playerName">Player name / Имя игрока</option>

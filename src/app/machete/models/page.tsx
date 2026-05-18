@@ -17,8 +17,8 @@ export default async function MacheteModelsPage({ searchParams }: PageProps) {
     title: <I18nText en="Fantasy model" ru="Fantasy-модель" />,
     description: (
       <I18nText
-        en="Machete model settings for FotMob snapshots. Expected FP, Scoring FP and Alt FP can be tuned independently from Baltika."
-        ru="Настройки модели Machete для снапшотов FotMob. Expected FP, Scoring FP и Alt FP можно настраивать отдельно от Балтики."
+        en="Machete model settings for FotMob snapshots. Expected FP, Actual FP and Alt FP can be tuned independently from Baltika."
+        ru="Настройки модели Machete для снапшотов FotMob. Expected FP, Реальные FP и Alt FP можно настраивать отдельно от Балтики."
       />
     ),
     backHref: "/machete/leagues",

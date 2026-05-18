@@ -166,7 +166,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
           <span className="mb-1 block font-medium text-slate-600"><I18nText en="Sort" ru="Сортировка" /></span>
           <select name="sort" defaultValue={sort} className="w-full rounded border border-slate-200 px-3 py-2">
             <option value="fantasyScore">Predicted FP / Прогноз FP</option>
-            <option value="scoringScore">Scoring FP / Факт FP</option>
+            <option value="scoringScore">Actual FP / Реальные FP</option>
             <option value="alternativeScore">Alt FP / Альт. FP</option>
             <option value="minutesPlayed">Minutes / Минуты</option>
             <option value="playerName">Player name / Имя игрока</option>
@@ -231,7 +231,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
                 <th className="hidden px-4 py-3 text-right lg:table-cell"><I18nText en="Goals" ru="Голы" /></th>
                 <th className="hidden px-4 py-3 text-right lg:table-cell"><I18nText en="Assists" ru="Ассисты" /></th>
                 <th className="bg-emerald-50 px-4 py-3 text-right text-emerald-700"><I18nText en="Predicted FP" ru="Прогноз FP" /></th>
-                <th className="bg-sky-50 px-4 py-3 text-right text-sky-700"><I18nText en="Scoring FP" ru="Скоринг FP" /></th>
+                <th className="bg-sky-50 px-4 py-3 text-right text-sky-700"><I18nText en="Actual FP" ru="Реальные FP" /></th>
                 <th className="bg-amber-50 px-4 py-3 text-right text-amber-700"><I18nText en="Alt FP" ru="Альт. FP" /></th>
               </tr>
             </thead>
@@ -281,7 +281,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
                 <th className="px-4 py-3 text-right">xA</th>
                 <th className="px-4 py-3 text-right"><I18nText en="Market" ru="Стоимость" /></th>
                 <th className="bg-emerald-50 px-4 py-3 text-right text-emerald-700"><I18nText en="Predicted FP" ru="Прогноз FP" /></th>
-                <th className="bg-sky-50 px-4 py-3 text-right text-sky-700"><I18nText en="Scoring FP" ru="Скоринг FP" /></th>
+                <th className="bg-sky-50 px-4 py-3 text-right text-sky-700"><I18nText en="Actual FP" ru="Реальные FP" /></th>
                 <th className="bg-amber-50 px-4 py-3 text-right text-amber-700"><I18nText en="Alt FP" ru="Альт. FP" /></th>
               </tr>
             </thead>
