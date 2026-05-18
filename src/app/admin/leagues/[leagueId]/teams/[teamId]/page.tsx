@@ -6,6 +6,8 @@ import { StarterCheckbox } from "@/components/players/starter-checkbox";
 import { prisma } from "@/lib/db";
 import { formatCurrency, formatNumber, formatScore } from "@/lib/format";
 import { leagueFlag } from "@/lib/leagues/flags";
+import { getActiveScoringModel } from "@/lib/scoring";
+import { hasAnyAlternativeFormula } from "@/lib/scoring/formula-display";
 
 export const dynamic = "force-dynamic";
 
@@ -17,6 +19,8 @@ type PageProps = {
 };
 
 export default async function AdminTeamPage({ params }: PageProps) {
+  const scoringModel = await getActiveScoringModel();
+  const showAlternative = Boolean(scoringModel.alternativeFormulaEnabled) && hasAnyAlternativeFormula(scoringModel);
   const team = await prisma.team.findUnique({
     where: { id: params.teamId },
     include: {
@@ -91,6 +95,9 @@ export default async function AdminTeamPage({ params }: PageProps) {
                 <th className="px-4 py-3 text-right">Assists</th>
                 <th className="px-4 py-3 text-right">Market</th>
                 <th className="bg-emerald-50 px-4 py-3 text-right text-emerald-700">Predicted FP</th>
+                {showAlternative ? (
+                  <th className="bg-amber-50 px-4 py-3 text-right text-amber-700">Alt FP</th>
+                ) : null}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -110,11 +117,16 @@ export default async function AdminTeamPage({ params }: PageProps) {
                   <td className="whitespace-nowrap bg-emerald-50/70 px-4 py-3 text-right font-semibold text-emerald-700">
                     {formatScore(player.fantasyScore)}
                   </td>
+                  {showAlternative ? (
+                    <td className="whitespace-nowrap bg-amber-50/70 px-4 py-3 text-right font-semibold text-amber-700">
+                      {formatScore(player.alternativeScore)}
+                    </td>
+                  ) : null}
                 </tr>
               ))}
               {players.length === 0 ? (
                 <tr>
-                  <td colSpan={10} className="px-4 py-10 text-center text-slate-500">
+                  <td colSpan={showAlternative ? 11 : 10} className="px-4 py-10 text-center text-slate-500">
                     No published player snapshots for this team yet.
                   </td>
                 </tr>

@@ -1,7 +1,12 @@
 import type { Prisma } from "@prisma/client";
 
 import { prisma } from "../src/lib/db";
-import { calculateFantasyScore, calculateValueScore, getActiveScoringModel } from "../src/lib/scoring";
+import {
+  calculateAlternativeScore,
+  calculateFantasyScore,
+  calculateValueScore,
+  getActiveScoringModel
+} from "../src/lib/scoring";
 
 const batchSize = 500;
 
@@ -29,12 +34,14 @@ async function main() {
       snapshots.map((snapshot) => {
         const rawMetrics = objectMetrics(snapshot.rawMetrics);
         const fantasyScore = calculateFantasyScore(rawMetrics, snapshot.positionGroup, scoringModel);
+        const alternativeScore = calculateAlternativeScore(rawMetrics, snapshot.positionGroup, scoringModel);
         const valueScore = calculateValueScore(fantasyScore, snapshot.marketValue);
 
         return prisma.playerSnapshot.update({
           where: { id: snapshot.id },
           data: {
             fantasyScore,
+            alternativeScore,
             valueScore
           }
         });

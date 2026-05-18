@@ -87,6 +87,29 @@ export const customFormulaFields = defaultFormulaByPosition.map(({ key, position
   placeholder
 }));
 
+export const alternativeFormulaFields = [
+  {
+    key: "alternativeFormulaGk",
+    position: "ВР",
+    placeholder: "4*{Clean sheets} + {Saves}/3 - 0.5*{Conceded goals per 90}"
+  },
+  {
+    key: "alternativeFormulaDef",
+    position: "ЗЩ",
+    placeholder: "2*{xG per 90} + 3*{xA per 90} + 0.25*{Successful defensive actions per 90}"
+  },
+  {
+    key: "alternativeFormulaMid",
+    position: "ПЗЩ",
+    placeholder: "3*{xG per 90} + 3*{xA per 90} + 0.4*{Key passes per 90} + 0.2*{Progressive passes per 90}"
+  },
+  {
+    key: "alternativeFormulaFwd",
+    position: "НАП",
+    placeholder: "4*{xG per 90} + 2*{xA per 90} + 0.25*{Touches in box per 90}"
+  }
+] as const;
+
 type FormulaModel = {
   customFormula?: string | null;
   customFormulaGk?: string | null;
@@ -94,6 +117,11 @@ type FormulaModel = {
   customFormulaMid?: string | null;
   customFormulaFwd?: string | null;
   customFormulaEnabled?: boolean | null;
+  alternativeFormulaGk?: string | null;
+  alternativeFormulaDef?: string | null;
+  alternativeFormulaMid?: string | null;
+  alternativeFormulaFwd?: string | null;
+  alternativeFormulaEnabled?: boolean | null;
 };
 
 export function hasAnyCustomFormula(model?: FormulaModel | null) {
@@ -113,4 +141,13 @@ export function formulaModeLabel(model?: FormulaModel | null) {
 export function customFormulaForPosition(model: FormulaModel | null | undefined, key: string) {
   const value = model?.[key as keyof FormulaModel];
   return typeof value === "string" ? value : "";
+}
+
+export function hasAnyAlternativeFormula(model?: FormulaModel | null) {
+  return Boolean(
+    model?.alternativeFormulaGk?.trim() ||
+      model?.alternativeFormulaDef?.trim() ||
+      model?.alternativeFormulaMid?.trim() ||
+      model?.alternativeFormulaFwd?.trim()
+  );
 }

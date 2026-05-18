@@ -7,7 +7,17 @@ import { seedRules } from "./rules";
 export type ScoringRule = Pick<FantasyModelRule, "positionGroup" | "metricKey" | "weight" | "transform" | "enabled">;
 export type ActiveScoringModel = Pick<
   FantasyModel,
-  "customFormula" | "customFormulaGk" | "customFormulaDef" | "customFormulaMid" | "customFormulaFwd" | "customFormulaEnabled"
+  | "customFormula"
+  | "customFormulaGk"
+  | "customFormulaDef"
+  | "customFormulaMid"
+  | "customFormulaFwd"
+  | "customFormulaEnabled"
+  | "alternativeFormulaGk"
+  | "alternativeFormulaDef"
+  | "alternativeFormulaMid"
+  | "alternativeFormulaFwd"
+  | "alternativeFormulaEnabled"
 > & {
   rules: ScoringRule[];
 };
@@ -30,6 +40,11 @@ export async function getActiveScoringModel(): Promise<ActiveScoringModel> {
       customFormulaMid: model.customFormulaMid,
       customFormulaFwd: model.customFormulaFwd,
       customFormulaEnabled: model.customFormulaEnabled,
+      alternativeFormulaGk: model.alternativeFormulaGk,
+      alternativeFormulaDef: model.alternativeFormulaDef,
+      alternativeFormulaMid: model.alternativeFormulaMid,
+      alternativeFormulaFwd: model.alternativeFormulaFwd,
+      alternativeFormulaEnabled: model.alternativeFormulaEnabled,
       rules: model.rules.length ? model.rules : seedScoringRules()
     };
   }
@@ -41,6 +56,11 @@ export async function getActiveScoringModel(): Promise<ActiveScoringModel> {
     customFormulaMid: null,
     customFormulaFwd: null,
     customFormulaEnabled: false,
+    alternativeFormulaGk: null,
+    alternativeFormulaDef: null,
+    alternativeFormulaMid: null,
+    alternativeFormulaFwd: null,
+    alternativeFormulaEnabled: false,
     rules: seedScoringRules()
   };
 }
@@ -67,10 +87,23 @@ export function calculateFantasyScore(
 ) {
   if (!Array.isArray(modelOrRules) && modelOrRules.customFormulaEnabled) {
     const customFormula = selectCustomFormula(modelOrRules, positionGroup);
-    if (customFormula) return round(calculateCustomFormulaScore(customFormula, rawMetrics));
+    if (customFormula) return round(calculateCustomFormulaScore(customFormula, enrichFormulaMetrics(rawMetrics)));
   }
 
   return calculatePredictedRoundScore(rawMetrics, positionGroup);
+}
+
+export function calculateAlternativeScore(
+  rawMetrics: Record<string, unknown>,
+  positionGroup: string | null | undefined,
+  model: ActiveScoringModel
+) {
+  if (!model.alternativeFormulaEnabled) return null;
+
+  const formula = selectAlternativeFormula(model, positionGroup);
+  if (!formula) return null;
+
+  return round(calculateCustomFormulaScore(formula, enrichFormulaMetrics(rawMetrics)));
 }
 
 export function calculatePredictedRoundScore(rawMetrics: Record<string, unknown>, positionGroup: string | null | undefined) {
@@ -143,6 +176,42 @@ function selectCustomFormula(model: ActiveScoringModel, positionGroup: string | 
   return formula?.trim() || model.customFormula?.trim() || null;
 }
 
+function selectAlternativeFormula(model: ActiveScoringModel, positionGroup: string | null | undefined) {
+  const formula =
+    positionGroup === "GK"
+      ? model.alternativeFormulaGk
+      : positionGroup === "DEF"
+        ? model.alternativeFormulaDef
+        : positionGroup === "MID"
+          ? model.alternativeFormulaMid
+          : positionGroup === "FWD"
+            ? model.alternativeFormulaFwd
+            : null;
+
+  return formula?.trim() || null;
+}
+
+export function enrichFormulaMetrics(rawMetrics: Record<string, unknown>) {
+  const metrics = { ...rawMetrics };
+  const matches = readMetric(metrics, "matches_played");
+  const minutes = readMetric(metrics, "minutes_played");
+  const expectedMinutes = matches > 0 ? clamp(minutes / matches, 0, 90) : 0;
+  const minutesFactor = expectedMinutes / 90;
+
+  setMetricIfMissing(metrics, "expected_minutes", expectedMinutes);
+  setMetricIfMissing(metrics, "minutes_factor", minutesFactor);
+  setMetricIfMissing(metrics, "goals_per_match", perMatchFromTotal(metrics, "goals", matches));
+  setMetricIfMissing(metrics, "xg_per_match", perMatchFromTotal(metrics, "xg", matches));
+  setMetricIfMissing(metrics, "assists_per_match", perMatchFromTotal(metrics, "assists", matches));
+  setMetricIfMissing(metrics, "xa_per_match", perMatchFromTotal(metrics, "xa", matches));
+  setMetricIfMissing(metrics, "goals_per_90", per90FromTotal(metrics, "goals", minutes));
+  setMetricIfMissing(metrics, "xg_per_90", per90FromTotal(metrics, "xg", minutes));
+  setMetricIfMissing(metrics, "assists_per_90", per90FromTotal(metrics, "assists", minutes));
+  setMetricIfMissing(metrics, "xa_per_90", per90FromTotal(metrics, "xa", minutes));
+
+  return metrics;
+}
+
 function expectedPerMatch(
   rawMetrics: Record<string, unknown>,
   totalKey: string,
@@ -159,6 +228,17 @@ function expectedPerMatch(
 function perMatchFromTotal(rawMetrics: Record<string, unknown>, metricKey: string, matches: number) {
   if (matches <= 0) return 0;
   return readMetric(rawMetrics, metricKey) / matches;
+}
+
+function per90FromTotal(rawMetrics: Record<string, unknown>, metricKey: string, minutes: number) {
+  if (minutes <= 0) return 0;
+  return (readMetric(rawMetrics, metricKey) / minutes) * 90;
+}
+
+function setMetricIfMissing(metrics: Record<string, unknown>, key: string, value: number) {
+  if (metrics[key] === null || metrics[key] === undefined || metrics[key] === "") {
+    metrics[key] = round(value);
+  }
 }
 
 function expectedSaves(rawMetrics: Record<string, unknown>, minutesFactor: number, matches: number) {

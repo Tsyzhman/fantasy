@@ -177,6 +177,7 @@ model PlayerSnapshot {
   onLoan           Boolean?
 
   fantasyScore     Float?
+  alternativeScore Float?
   valueScore       Float?
   isStarter        Boolean  @default(false)
   rawMetrics       Json
@@ -192,6 +193,7 @@ model PlayerSnapshot {
   @@index([leagueId, seasonId, teamId])
   @@index([positionGroup])
   @@index([fantasyScore])
+  @@index([alternativeScore])
   @@index([valueScore])
   @@index([isStarter])
 }
@@ -209,6 +211,11 @@ model FantasyModel {
   customFormulaMid     String?
   customFormulaFwd     String?
   customFormulaEnabled Boolean            @default(false)
+  alternativeFormulaGk      String?
+  alternativeFormulaDef     String?
+  alternativeFormulaMid     String?
+  alternativeFormulaFwd     String?
+  alternativeFormulaEnabled Boolean       @default(false)
   rules                FantasyModelRule[]
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt

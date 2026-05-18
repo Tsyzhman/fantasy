@@ -28,7 +28,11 @@ export async function GET(request: Request) {
 
   const sort = params.get("sort") ?? "fantasyScore";
   const orderBy: Prisma.PlayerSnapshotOrderByWithRelationInput =
-    sort === "valueScore" ? { valueScore: { sort: "desc", nulls: "last" } } : { fantasyScore: { sort: "desc", nulls: "last" } };
+    sort === "valueScore"
+      ? { valueScore: { sort: "desc", nulls: "last" } }
+      : sort === "alternativeScore"
+        ? { alternativeScore: { sort: "desc", nulls: "last" } }
+        : { fantasyScore: { sort: "desc", nulls: "last" } };
 
   const players = await prisma.playerSnapshot.findMany({
     where,

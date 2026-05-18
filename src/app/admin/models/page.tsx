@@ -4,10 +4,12 @@ import { redirect } from "next/navigation";
 import { prisma } from "@/lib/db";
 import { formatPositionPoints, scoringFieldGuide } from "@/lib/scoring/field-guide";
 import {
+  alternativeFormulaFields,
   customFormulaFields,
   customFormulaForPosition,
   defaultFormulaByPosition,
   formulaModeLabel,
+  hasAnyAlternativeFormula,
   hasAnyCustomFormula
 } from "@/lib/scoring/formula-display";
 import { validateCustomFormula } from "@/lib/scoring/formula";
@@ -30,6 +32,10 @@ async function saveCustomFormula(formData: FormData) {
     customFormulaFields.map((field) => [field.key, String(formData.get(field.key) ?? "").trim()])
   ) as Record<(typeof customFormulaFields)[number]["key"], string>;
   const enabled = formData.get("customFormulaEnabled") === "on";
+  const alternativeFormulas = Object.fromEntries(
+    alternativeFormulaFields.map((field) => [field.key, String(formData.get(field.key) ?? "").trim()])
+  ) as Record<(typeof alternativeFormulaFields)[number]["key"], string>;
+  const alternativeEnabled = formData.get("alternativeFormulaEnabled") === "on";
 
   for (const field of customFormulaFields) {
     const validation = validateCustomFormula(formulas[field.key]);
@@ -38,7 +44,15 @@ async function saveCustomFormula(formData: FormData) {
     }
   }
 
+  for (const field of alternativeFormulaFields) {
+    const validation = validateCustomFormula(alternativeFormulas[field.key]);
+    if (!validation.ok) {
+      redirect(`/admin/models?error=${encodeURIComponent(`Alt ${field.position}: ${validation.message}`)}`);
+    }
+  }
+
   const hasFormula = Object.values(formulas).some((formula) => formula.length > 0);
+  const hasAlternativeFormula = Object.values(alternativeFormulas).some((formula) => formula.length > 0);
 
   const model = await prisma.fantasyModel.findFirst({
     where: { isDefault: true, isActive: true }
@@ -53,7 +67,12 @@ async function saveCustomFormula(formData: FormData) {
         customFormulaDef: formulas.customFormulaDef || null,
         customFormulaMid: formulas.customFormulaMid || null,
         customFormulaFwd: formulas.customFormulaFwd || null,
-        customFormulaEnabled: enabled && hasFormula
+        customFormulaEnabled: enabled && hasFormula,
+        alternativeFormulaGk: alternativeFormulas.alternativeFormulaGk || null,
+        alternativeFormulaDef: alternativeFormulas.alternativeFormulaDef || null,
+        alternativeFormulaMid: alternativeFormulas.alternativeFormulaMid || null,
+        alternativeFormulaFwd: alternativeFormulas.alternativeFormulaFwd || null,
+        alternativeFormulaEnabled: alternativeEnabled && hasAlternativeFormula
       }
     });
   } else {
@@ -69,6 +88,11 @@ async function saveCustomFormula(formData: FormData) {
         customFormulaMid: formulas.customFormulaMid || null,
         customFormulaFwd: formulas.customFormulaFwd || null,
         customFormulaEnabled: enabled && hasFormula,
+        alternativeFormulaGk: alternativeFormulas.alternativeFormulaGk || null,
+        alternativeFormulaDef: alternativeFormulas.alternativeFormulaDef || null,
+        alternativeFormulaMid: alternativeFormulas.alternativeFormulaMid || null,
+        alternativeFormulaFwd: alternativeFormulas.alternativeFormulaFwd || null,
+        alternativeFormulaEnabled: alternativeEnabled && hasAlternativeFormula,
         rules: {
           create: seedRules
         }
@@ -164,6 +188,42 @@ export default async function AdminModelsPage({ searchParams }: PageProps) {
             </p>
           </div>
 
+          <div className="rounded border border-amber-200 bg-amber-50 p-4">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm font-semibold text-ink">Alternative score column</p>
+              <span className="rounded bg-white px-2 py-1 text-xs font-semibold text-amber-700">
+                {model?.alternativeFormulaEnabled && hasAnyAlternativeFormula(model) ? "Alt FP enabled" : "Alt FP disabled"}
+              </span>
+            </div>
+            <p className="mt-2 text-xs text-slate-600">
+              Alt FP is a second independent formula column. It does not replace Predicted FP and can use every Excel or
+              derived field below.
+            </p>
+            <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
+              {alternativeFormulaFields.map((field) => (
+                <label key={field.key} className="block rounded bg-white p-3">
+                  <span className="mb-1 block text-xs font-semibold uppercase text-slate-500">{field.position}</span>
+                  <textarea
+                    name={field.key}
+                    defaultValue={customFormulaForPosition(model, field.key)}
+                    rows={4}
+                    placeholder={field.placeholder}
+                    className="w-full rounded border border-slate-200 px-3 py-2 font-mono text-sm text-ink outline-none transition focus:border-amber-400"
+                  />
+                </label>
+              ))}
+            </div>
+            <label className="mt-3 flex items-center gap-3 text-sm font-medium text-ink">
+              <input
+                type="checkbox"
+                name="alternativeFormulaEnabled"
+                defaultChecked={Boolean(model?.alternativeFormulaEnabled)}
+                className="h-4 w-4 rounded border-slate-300"
+              />
+              Show and calculate Alt FP for new imports
+            </label>
+          </div>
+
           <div>
             <span className="text-sm font-semibold text-ink">Custom fantasy score formulas by position</span>
             <div className="mt-2 grid grid-cols-1 gap-3 lg:grid-cols-2">
@@ -195,6 +255,12 @@ export default async function AdminModelsPage({ searchParams }: PageProps) {
               Missing fields count as 0. Example:
               <span className="font-mono"> 4*{"{Goals}"} + 2*{"{xG/per90}"} + 3*{"{Assists}"} - {"{Yellow cards}"}</span>.
               Leave a position empty to use the default rules for that position.
+            </p>
+            <p className="mt-2">
+              Derived aliases are also available:
+              <span className="font-mono"> {"{Expected minutes}"}</span>, <span className="font-mono">{"{Minutes factor}"}</span>,
+              <span className="font-mono"> {"{Goals per match}"}</span>, <span className="font-mono">{"{xG per match}"}</span>,
+              <span className="font-mono"> {"{Assists per 90}"}</span>, <span className="font-mono">{"{xA per 90}"}</span>.
             </p>
             <p className="mt-2">
               Any numeric Excel field from the full field list below can be used. Fields that are not part of the default
