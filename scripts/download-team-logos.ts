@@ -1,141 +1,342 @@
-import { execFile } from "node:child_process";
 import { existsSync } from "node:fs";
-import { mkdir } from "node:fs/promises";
+import { mkdir, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { promisify } from "node:util";
 
-import { leagueSeeds } from "../src/lib/leagues/seed-data";
-import { slugify } from "../src/lib/text";
+import { leagueSeeds, type LeagueSeed, type TeamSeed } from "../src/lib/leagues/seed-data";
+import { teamLogoUrlForSlug } from "../src/lib/teams/logo-assets";
+import { normalizeName, slugify } from "../src/lib/text";
 
-const execFileP = promisify(execFile);
-
-const apiBase = "https://www.thesportsdb.com/api/v1/json/3";
 const outDir = "public/team-logos";
-const requestDelayMs = 5000;
-const rateLimitBackoffMs = 60_000;
+const userAgent = "fantasy-export-logo-bot/1.0 (local development asset fetch)";
+const logoExtensions = [".png", ".svg", ".jpg", ".jpeg", ".webp"] as const;
+const requestDelayMs = 1500;
 
-type SportsDbTeam = {
-  idTeam: string;
-  strTeam: string;
-  strTeamAlternate?: string | null;
-  strSport: string;
-  strCountry?: string | null;
-  strLeague?: string | null;
-  strBadge?: string | null;
+type PageMatch = {
+  pageTitle: string;
+  imageUrl: string;
 };
 
-async function sleep(ms: number) {
+type DownloadResult = PageMatch & {
+  publicUrl: string;
+};
+
+const args = new Set(process.argv.slice(2));
+const force = args.has("--force");
+const includeNationalTeams = args.has("--include-national");
+const leagueFilter = process.argv.find((arg) => arg.startsWith("--league="))?.split("=")[1];
+const teamFilter = process.argv.find((arg) => arg.startsWith("--team="))?.split("=")[1];
+const limit = Number(process.argv.find((arg) => arg.startsWith("--limit="))?.split("=")[1] ?? 0);
+
+function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-async function curlJson(url: string): Promise<any> {
-  for (let attempt = 0; attempt < 3; attempt++) {
-    try {
-      const { stdout } = await execFileP("curl", ["-fsSL", "--max-time", "30", url], {
-        maxBuffer: 50 * 1024 * 1024
-      });
-      return JSON.parse(stdout);
-    } catch (err) {
-      const message = (err as Error).message || "";
-      if (message.includes("429")) {
-        console.log(`    (rate limited; sleeping ${rateLimitBackoffMs / 1000}s)`);
-        await sleep(rateLimitBackoffMs);
-        continue;
-      }
-      throw err;
-    }
+function htmlDecode(value: string) {
+  return value
+    .replace(/&amp;/g, "&")
+    .replace(/&#95;/g, "_")
+    .replace(/&#160;/g, " ")
+    .replace(/&quot;/g, "\"")
+    .replace(/&#39;/g, "'");
+}
+
+function wikipediaArticleUrl(title: string) {
+  return `https://en.wikipedia.org/wiki/${encodeURIComponent(title.replace(/ /g, "_"))}`;
+}
+
+function wikipediaSearchUrl(query: string) {
+  const url = new URL("https://en.wikipedia.org/w/index.php");
+  url.searchParams.set("search", query);
+  url.searchParams.set("title", "Special:Search");
+  url.searchParams.set("ns0", "1");
+  return url.toString();
+}
+
+async function fetchText(url: string) {
+  const response = await fetchWithBackoff(url, {
+    "User-Agent": userAgent,
+    Accept: "text/html,application/xhtml+xml"
+  });
+
+  if (!response.ok) return null;
+  return {
+    url: response.url,
+    text: await response.text()
+  };
+}
+
+async function fetchWithBackoff(url: string, headers: HeadersInit) {
+  let response: Response | null = null;
+
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    response = await fetch(url, { headers });
+    if (response.status !== 429) return response;
+
+    const waitMs = attempt * 30_000;
+    console.log(`    (rate limited; sleeping ${waitMs / 1000}s)`);
+    await sleep(waitMs);
   }
-  throw new Error("rate limit exceeded after retries");
+
+  return response as Response;
 }
 
-async function searchTeams(name: string): Promise<SportsDbTeam[]> {
-  const url = `${apiBase}/searchteams.php?t=${encodeURIComponent(name)}`;
-  const json = (await curlJson(url)) as { teams: SportsDbTeam[] | null };
-  return json.teams ?? [];
+function candidateNames(team: TeamSeed) {
+  const names = [team.name, ...(team.aliases ?? [])];
+  const exactNames = [...new Set(names)]
+    .filter(Boolean)
+    .sort((a, b) => normalizeName(b).length - normalizeName(a).length);
+
+  const variants = exactNames.flatMap((name) => {
+    const dotted = name
+      .replace(/\bAFC\b/g, "A.F.C.")
+      .replace(/\bFC\b/g, "F.C.")
+      .replace(/\bSC\b/g, "S.C.")
+      .replace(/\bSK\b/g, "S.K.");
+
+    return [
+      dotted,
+      `${name} FC`,
+      `${name} F.C.`,
+      `${name} football club`
+    ];
+  });
+
+  return [...new Set([...exactNames, ...variants])]
+    .filter(Boolean)
 }
 
-function pickTeam(matches: SportsDbTeam[], country: string, aliases: string[]): SportsDbTeam | null {
-  if (matches.length === 0) return null;
-  const soccer = matches.filter((m) => m.strSport === "Soccer" && m.strBadge);
-  if (soccer.length === 0) return null;
+function isBadPageTitle(title: string) {
+  return /\b(women|academy|under-?21|under-?23|youth|reserves?|season|fixtures?|statistics|stadium|supporters)\b/i.test(title);
+}
 
-  const byCountry = soccer.filter((m) => m.strCountry?.toLowerCase() === country.toLowerCase());
-  if (byCountry.length > 0) return byCountry[0];
+function hasBadShortDescription(html: string) {
+  const shortDescription = html
+    .match(/<div class="shortdescription[^"]*"[^>]*>([\s\S]*?)<\/div>/i)?.[1]
+    ?.replace(/<[^>]*>/g, "");
 
-  const aliasMatch = soccer.find((m) =>
-    aliases.some(
-      (alias) =>
-        m.strTeam.toLowerCase() === alias.toLowerCase() ||
-        m.strTeamAlternate?.toLowerCase().includes(alias.toLowerCase())
-    )
+  return /\b(city|town|district|municipality|province|commune|settlement|satellite)\b/i.test(shortDescription ?? "");
+}
+
+function extractCanonicalTitle(html: string, fallbackUrl: string) {
+  const heading = html.match(/<h1[^>]*id="firstHeading"[^>]*>([\s\S]*?)<\/h1>/i)?.[1]?.replace(/<[^>]*>/g, "");
+  if (heading) return htmlDecode(heading).trim();
+
+  const title = html.match(/<title>([\s\S]*?)<\/title>/i)?.[1]?.replace(/\s+-\s+Wikipedia$/, "");
+  if (title) return htmlDecode(title).trim();
+
+  return decodeURIComponent(fallbackUrl.split("/wiki/")[1] ?? fallbackUrl).replace(/_/g, " ");
+}
+
+function bestImageFromTag(imgTag: string) {
+  const srcset = imgTag.match(/\ssrcset="([^"]+)"/i)?.[1];
+  if (srcset) {
+    const options = htmlDecode(srcset)
+      .split(",")
+      .map((item) => item.trim().split(/\s+/)[0])
+      .filter(Boolean);
+    const best = options[options.length - 1];
+    if (best) return best;
+  }
+
+  return htmlDecode(imgTag.match(/\ssrc="([^"]+)"/i)?.[1] ?? "");
+}
+
+function normalizeImageUrl(url: string) {
+  if (!url) return null;
+  if (url.startsWith("//")) return `https:${url}`;
+  if (url.startsWith("/")) return `https://en.wikipedia.org${url}`;
+  return url;
+}
+
+function extractInfoboxImage(html: string) {
+  const infoboxStart = html.search(/<table[^>]+class="[^"]*\binfobox\b/i);
+  if (infoboxStart < 0) return null;
+
+  const infobox = html.slice(infoboxStart, infoboxStart + 120_000);
+  const imageCell =
+    infobox.match(/<td[^>]+class="[^"]*\binfobox-image\b[\s\S]*?<\/td>/i)?.[0] ??
+    infobox.match(/<tr[^>]*>[\s\S]*?<img[\s\S]*?<\/tr>/i)?.[0];
+
+  const imgTag = imageCell?.match(/<img[^>]+>/i)?.[0];
+  if (!imgTag) return null;
+
+  const imageUrl = normalizeImageUrl(bestImageFromTag(imgTag));
+  if (!imageUrl || /semi-protection|edit-icon|symbol/i.test(imageUrl)) return null;
+
+  return imageUrl;
+}
+
+async function tryArticlePage(title: string): Promise<PageMatch | null> {
+  const response = await fetchText(wikipediaArticleUrl(title));
+  if (!response) return null;
+
+  const pageTitle = extractCanonicalTitle(response.text, response.url);
+  if (isBadPageTitle(pageTitle) || /Wikipedia does not have an article/i.test(response.text)) return null;
+  if (hasBadShortDescription(response.text)) return null;
+
+  const imageUrl = extractInfoboxImage(response.text);
+  if (!imageUrl) return null;
+
+  return { pageTitle, imageUrl };
+}
+
+function searchResultTitles(html: string) {
+  const titles: string[] = [];
+  const seen = new Set<string>();
+  const matches = html.matchAll(/<a[^>]+href="\/wiki\/([^"#?:]+)"[^>]+title="([^"]+)"/g);
+
+  for (const match of matches) {
+    const title = htmlDecode(match[2]).trim();
+    const hrefTitle = decodeURIComponent(match[1]).replace(/_/g, " ");
+    const candidate = title || hrefTitle;
+
+    if (!candidate || seen.has(candidate) || isBadPageTitle(candidate)) continue;
+    seen.add(candidate);
+    titles.push(candidate);
+    if (titles.length >= 6) break;
+  }
+
+  return titles;
+}
+
+async function searchArticlePage(team: TeamSeed, league: LeagueSeed) {
+  const query = `${team.name} ${team.aliases?.[0] ?? ""} football club ${league.country}`;
+  const response = await fetchText(wikipediaSearchUrl(query));
+  if (!response) return null;
+
+  if (response.url.includes("/wiki/") && !response.url.includes("Special:Search")) {
+    const imageUrl = extractInfoboxImage(response.text);
+    if (imageUrl) return { pageTitle: extractCanonicalTitle(response.text, response.url), imageUrl };
+  }
+
+  for (const title of searchResultTitles(response.text)) {
+    const match = await tryArticlePage(title);
+    if (match) return match;
+    await sleep(150);
+  }
+
+  return null;
+}
+
+function extensionForDownload(url: string, contentType: string | null, buffer: Buffer) {
+  const lowerUrl = url.toLowerCase();
+  const mime = (contentType ?? "").toLowerCase();
+
+  if (buffer.subarray(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return ".png";
+  if (buffer.subarray(0, 3).equals(Buffer.from([0xff, 0xd8, 0xff]))) return ".jpg";
+  if (buffer.subarray(0, 4).toString("ascii") === "RIFF" && buffer.subarray(8, 12).toString("ascii") === "WEBP") return ".webp";
+  if (buffer.subarray(0, 5).toString("utf8").toLowerCase().includes("<svg")) return ".svg";
+
+  if (lowerUrl.endsWith(".png") || lowerUrl.includes(".svg.png")) return ".png";
+  if (lowerUrl.endsWith(".jpg") || lowerUrl.endsWith(".jpeg")) return ".jpg";
+  if (lowerUrl.endsWith(".webp")) return ".webp";
+  if (lowerUrl.endsWith(".svg")) return ".svg";
+  if (mime.includes("png")) return ".png";
+  if (mime.includes("jpeg") || mime.includes("jpg")) return ".jpg";
+  if (mime.includes("webp")) return ".webp";
+  if (mime.includes("svg")) return ".svg";
+
+  return ".png";
+}
+
+async function removeExistingLogoFiles(leagueId: string, slug: string) {
+  await Promise.all(
+    logoExtensions.map(async (ext) => {
+      const filePath = path.join(outDir, leagueId, `${slug}${ext}`);
+      if (existsSync(filePath)) await unlink(filePath);
+    })
   );
-  if (aliasMatch) return aliasMatch;
-
-  return soccer[0];
 }
 
-async function downloadImage(url: string, dest: string) {
-  await execFileP("curl", ["-fsSL", "--max-time", "30", "-o", dest, url]);
+async function downloadFile(url: string, leagueId: string, slug: string) {
+  const response = await fetchWithBackoff(url, {
+    "User-Agent": userAgent,
+    Accept: "image/png,image/jpeg,image/svg+xml,image/*;q=0.8,*/*;q=0.5"
+  });
+
+  if (!response.ok) throw new Error(`${response.status} ${response.statusText}`);
+
+  const buffer = Buffer.from(await response.arrayBuffer());
+  if (buffer.length < 1000) throw new Error(`image too small (${buffer.length} bytes)`);
+
+  const ext = extensionForDownload(url, response.headers.get("content-type"), buffer);
+  const dir = path.join(outDir, leagueId);
+  await mkdir(dir, { recursive: true });
+  await removeExistingLogoFiles(leagueId, slug);
+
+  const filePath = path.join(dir, `${slug}${ext}`);
+  await writeFile(filePath, buffer);
+
+  return `/team-logos/${leagueId}/${slug}${ext}`;
+}
+
+async function findTeamPage(team: TeamSeed, league: LeagueSeed) {
+  for (const title of candidateNames(team)) {
+    const match = await tryArticlePage(title);
+    if (match) return match;
+    await sleep(150);
+  }
+
+  return searchArticlePage(team, league);
+}
+
+async function downloadTeamLogo(team: TeamSeed, league: LeagueSeed): Promise<DownloadResult | null> {
+  const slug = slugify(team.name);
+  if (!force && teamLogoUrlForSlug(league.id, slug)) {
+    return null;
+  }
+
+  const match = await findTeamPage(team, league);
+  if (!match) throw new Error("no Wikipedia page with infobox image");
+
+  const publicUrl = await downloadFile(match.imageUrl, league.id, slug);
+  return { ...match, publicUrl };
 }
 
 async function main() {
-  const found: string[] = [];
+  const successes: string[] = [];
+  const skipped: string[] = [];
   const missing: string[] = [];
-  let networkCalls = 0;
+  let processed = 0;
 
-  for (const league of leagueSeeds) {
-    if (league.id === "world-cup-2026") continue;
-    const dir = path.join(outDir, league.id);
-    await mkdir(dir, { recursive: true });
+  const leagues = leagueSeeds.filter((league) => !leagueFilter || league.id === leagueFilter);
+
+  for (const league of leagues) {
+    if (league.id === "world-cup-2026" && !includeNationalTeams) {
+      console.log(`\n=== ${league.name} (skipped; flags are shown for national teams) ===`);
+      continue;
+    }
+
     console.log(`\n=== ${league.name} ===`);
 
     for (const team of league.teams) {
-      const slug = slugify(team.name);
-      const dest = path.join(dir, `${slug}.png`);
-
-      if (existsSync(dest)) {
-        console.log(`  - ${team.name} (already on disk)`);
-        found.push(`${league.id}/${slug}`);
-        continue;
-      }
-
-      const candidates = [team.name, ...(team.aliases ?? [])];
-      let picked: SportsDbTeam | null = null;
-      for (const candidate of candidates) {
-        try {
-          const matches = await searchTeams(candidate);
-          networkCalls++;
-          picked = pickTeam(matches, league.country, candidates);
-          if (picked) break;
-        } catch (err) {
-          console.log(`  ! ${team.name} search '${candidate}' failed: ${(err as Error).message}`);
-        }
-        await sleep(requestDelayMs);
-      }
-
-      if (!picked || !picked.strBadge) {
-        console.log(`  X ${team.name} — no match`);
-        missing.push(`${league.id}/${slug} :: ${team.name}`);
-        continue;
-      }
+      if (teamFilter && slugify(team.name) !== teamFilter) continue;
+      if (limit && processed >= limit) break;
+      processed++;
 
       try {
-        await downloadImage(picked.strBadge, dest);
-        networkCalls++;
-        console.log(`  + ${team.name}  <-  ${picked.strTeam} (${picked.strCountry ?? "?"})`);
-        found.push(`${league.id}/${slug}`);
+        const result = await downloadTeamLogo(team, league);
+        if (!result) {
+          console.log(`  - ${team.name} (already valid)`);
+          skipped.push(`${league.id}/${slugify(team.name)}`);
+          continue;
+        }
+
+        console.log(`  + ${team.name} <- ${result.pageTitle}`);
+        successes.push(`${league.id}/${slugify(team.name)}`);
       } catch (err) {
-        console.log(`  ! ${team.name} download failed: ${(err as Error).message}`);
-        missing.push(`${league.id}/${slug} :: ${team.name} (download error)`);
+        const message = (err as Error).message;
+        console.log(`  X ${team.name} -- ${message}`);
+        missing.push(`${league.id}/${slugify(team.name)} :: ${team.name} (${message})`);
       }
 
       await sleep(requestDelayMs);
     }
   }
 
-  console.log(`\nDone. Found: ${found.length}, Missing: ${missing.length}, Network calls: ${networkCalls}`);
+  console.log(`\nDone. Downloaded: ${successes.length}, Skipped: ${skipped.length}, Missing: ${missing.length}`);
   if (missing.length > 0) {
-    console.log("\nMissing (drop a PNG manually into the listed path):");
+    console.log("\nMissing:");
     for (const item of missing) console.log(`  - ${item}`);
   }
 }
