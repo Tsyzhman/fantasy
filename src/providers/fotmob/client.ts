@@ -43,10 +43,11 @@ export class UnofficialFotMobClient implements FotMobClient {
   private readonly timezone = process.env.MACHETE_FOTMOB_TIMEZONE || "Europe/London";
 
   async getLeague(leagueId: string, season?: string): Promise<FotMobLeague> {
+    const requestSeason = fotMobRequestSeason(leagueId, season);
     const payload = await this.getJson("/data/leagues", {
       id: leagueId,
       ccode3: this.ccode3,
-      ...(season ? { season: normalizeFotMobSeason(season) } : {})
+      ...(requestSeason ? { season: requestSeason } : {})
     });
     const data = asRecord(payload);
     const details = asRecord(data.details);
@@ -55,22 +56,24 @@ export class UnofficialFotMobClient implements FotMobClient {
       id: stringValue(details.id) ?? leagueId,
       name: stringValue(details.name) ?? "FotMob league",
       country: stringValue(details.country),
-      season: stringValue(details.selectedSeason) ?? season,
+      season: stringValue(details.selectedSeason) ?? (leagueId === "77" ? requestSeason : season),
       logoUrl: leagueLogoUrl(stringValue(details.id) ?? leagueId)
     };
   }
 
   async getTeams(leagueId: string, season?: string): Promise<FotMobTeam[]> {
+    const requestSeason = fotMobRequestSeason(leagueId, season);
     const leaguePayload = await this.getJson("/data/leagues", {
       id: leagueId,
       ccode3: this.ccode3,
-      ...(season ? { season: normalizeFotMobSeason(season) } : {})
+      ...(requestSeason ? { season: requestSeason } : {})
     });
     const league = asRecord(leaguePayload);
-    const tableTeams = extractLeagueTableTeams(league);
+    const tableTeams = extractLeagueTeamsFromLeaguePayload(league);
     const teams: FotMobTeam[] = [];
 
     for (const tableTeam of tableTeams) {
+      if (!tableTeam.id) continue;
       const teamPayload = await this.getJson("/data/teams", {
         id: tableTeam.id,
         ccode3: this.ccode3
@@ -82,11 +85,12 @@ export class UnofficialFotMobClient implements FotMobClient {
   }
 
   async getFixtures(leagueId: string, season?: string): Promise<FotMobFixture[]> {
+    const requestSeason = fotMobRequestSeason(leagueId, season);
     const payload = await this.getJson("/data/fixtures", {
       id: leagueId,
       ccode3: this.ccode3,
       timezone: this.timezone,
-      ...(season ? { season: normalizeFotMobSeason(season) } : {})
+      ...(requestSeason ? { season: requestSeason } : {})
     });
     if (!Array.isArray(payload)) return [];
 
@@ -213,7 +217,23 @@ export function createFotMobClient(): FotMobClient {
   return new MockFotMobClient();
 }
 
-function extractLeagueTableTeams(league: JsonRecord) {
+type FotMobTeamSummary = {
+  id: string;
+  name: string;
+  shortName?: string;
+};
+
+const FIXTURE_TEAM_KEYS = new Set(["home", "away", "homeTeam", "awayTeam", "team", "opponent"]);
+
+export function extractLeagueTeamsFromLeaguePayload(payload: unknown): FotMobTeamSummary[] {
+  const league = asRecord(payload);
+  const tableTeams = extractLeagueTableTeams(league);
+  if (tableTeams.length > 0) return tableTeams;
+
+  return extractLeagueFixtureTeams(league);
+}
+
+function extractLeagueTableTeams(league: JsonRecord): FotMobTeamSummary[] {
   const tableBlocks = Array.isArray(league.table) ? league.table : [];
   for (const block of tableBlocks) {
     const data = asRecord(asRecord(block).data);
@@ -233,6 +253,55 @@ function extractLeagueTableTeams(league: JsonRecord) {
     }
   }
   return [];
+}
+
+function extractLeagueFixtureTeams(payload: unknown): FotMobTeamSummary[] {
+  const teams: FotMobTeamSummary[] = [];
+  const seenIds = new Set<string>();
+  const indexesByName = new Map<string, number>();
+
+  function addTeam(value: unknown) {
+    const record = asRecord(value);
+    const id = stringValue(record.id) ?? stringValue(record.teamId) ?? "";
+    const name = stringValue(record.name) ?? stringValue(record.teamName);
+    if (!name) return;
+
+    const nameKey = normalizeTeamNameKey(name);
+    if (id && seenIds.has(id)) return;
+    if (!id && (!nameKey || indexesByName.has(nameKey))) return;
+
+    if (id) seenIds.add(id);
+    const team = {
+      id,
+      name,
+      shortName: stringValue(record.shortName)
+    };
+
+    const existingNameIndex = nameKey ? indexesByName.get(nameKey) : undefined;
+    if (existingNameIndex !== undefined && !teams[existingNameIndex]?.id) {
+      teams[existingNameIndex] = team;
+      return;
+    }
+
+    if (nameKey && existingNameIndex === undefined) indexesByName.set(nameKey, teams.length);
+    teams.push(team);
+  }
+
+  function visit(value: unknown) {
+    if (Array.isArray(value)) {
+      for (const item of value) visit(item);
+      return;
+    }
+
+    const record = asRecord(value);
+    for (const [key, nested] of Object.entries(record)) {
+      if (FIXTURE_TEAM_KEYS.has(key)) addTeam(nested);
+      visit(nested);
+    }
+  }
+
+  visit(payload);
+  return teams;
 }
 
 function normalizeTeam(payload: unknown, leagueId: string, tableTeam: { id: string; name: string; shortName?: string }): FotMobTeam {
@@ -343,6 +412,11 @@ function normalizeFotMobSeason(season: string) {
   return `${match[1]}/20${match[2]}`;
 }
 
+function fotMobRequestSeason(leagueId: string, season: string | undefined) {
+  if (leagueId === "77") return "2026";
+  return season ? normalizeFotMobSeason(season) : undefined;
+}
+
 function asRecord(value: unknown): JsonRecord {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as JsonRecord) : {};
 }
@@ -360,6 +434,17 @@ function numberValue(value: unknown): number | undefined {
     if (Number.isFinite(parsed)) return parsed;
   }
   return undefined;
+}
+
+function normalizeTeamNameKey(value: string) {
+  return value
+    .trim()
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function nullNumber(): number | null {

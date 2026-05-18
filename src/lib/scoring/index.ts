@@ -268,8 +268,12 @@ export function calculateAggregateScoringScore(rawMetrics: Record<string, unknow
   const matches = readMetric(rawMetrics, "matches_played");
   const minutes = readMetric(rawMetrics, "minutes_played");
   const appearances = matches > 0 ? matches : minutes > 0 ? 1 : 0;
-  const sixtyMinuteBonuses = clamp(Math.floor(minutes / 60), 0, appearances);
-  const fullMatchBonuses = clamp(Math.floor(minutes / 89.5), 0, appearances);
+  const sixtyMinuteBonuses =
+    readOptionalMetric(rawMetrics, "appearances_60|sixty_minute_appearances|60_minute_appearances") ??
+    clamp(Math.floor(minutes / 60), 0, appearances);
+  const fullMatchBonuses =
+    readOptionalMetric(rawMetrics, "full_matches|full_match_appearances") ??
+    clamp(Math.floor(minutes / 90), 0, appearances);
 
   let total = 0;
 
@@ -286,12 +290,12 @@ export function calculateAggregateScoringScore(rawMetrics: Record<string, unknow
   }
 
   if (position === "GK") {
-    total += readMetric(rawMetrics, "saves") / 3;
+    total += Math.floor(readMetric(rawMetrics, "saves") / 3);
     total += readMetric(rawMetrics, "penalties_saved|penalty_saves") * 5;
   }
 
   if (position === "DEF" || position === "MID" || position === "FWD") {
-    total += readMetric(rawMetrics, "recoveries|possession_recoveries") / 3;
+    total += Math.floor(readMetric(rawMetrics, "recoveries|possession_recoveries") / 3);
   }
 
   total -= readMetric(rawMetrics, "fouls_leading_to_penalty|penalties_conceded") * 2;
@@ -299,7 +303,7 @@ export function calculateAggregateScoringScore(rawMetrics: Record<string, unknow
   total -= readMetric(rawMetrics, "own_goals|own_goal") * 2;
 
   if (position === "GK" || position === "DEF") {
-    total -= readMetric(rawMetrics, "goals_conceded|conceded_goals") / 2;
+    total -= Math.floor(readMetric(rawMetrics, "goals_conceded|conceded_goals") / 2);
   }
 
   total -= readMetric(rawMetrics, "yellow_cards");
@@ -314,13 +318,52 @@ export function enrichFormulaMetrics(rawMetrics: Record<string, unknown>) {
   const minutes = readMetric(metrics, "minutes_played");
   const expectedMinutes = expectedMinutesFromMetrics(metrics, matches, minutes);
   const minutesFactor = expectedMinutes / 90;
+  const appearances = matches > 0 ? matches : minutes > 0 ? 1 : 0;
+  const sixtyMinuteCount =
+    readOptionalMetric(metrics, "appearances_60|sixty_minute_appearances|60_minute_appearances") ??
+    clamp(Math.floor(minutes / 60), 0, appearances);
+  const fullMatchCount =
+    readOptionalMetric(metrics, "full_matches|full_match_appearances") ?? clamp(Math.floor(minutes / 90), 0, appearances);
 
   setMetricIfMissing(metrics, "expected_minutes", expectedMinutes);
   setMetricIfMissing(metrics, "minutes_factor", minutesFactor);
+  setMetricIfMissing(metrics, "appearance_bonus", expectedMinutes > 0 ? 1 : 0);
+  setMetricIfMissing(metrics, "60min_bonus", expectedMinutes >= 60 ? 1 : 0);
+  setMetricIfMissing(metrics, "full_match_bonus", expectedMinutes >= 89.5 ? 1 : 0);
+  setMetricIfMissing(metrics, "appearance_count", appearances);
+  setMetricIfMissing(metrics, "60min_count", sixtyMinuteCount);
+  setMetricIfMissing(metrics, "full_match_count", fullMatchCount);
   setMetricIfMissing(metrics, "goals_per_match", perMatchFromTotal(metrics, "goals", matches));
   setMetricIfMissing(metrics, "xg_per_match", perMatchFromTotal(metrics, "xg", matches));
   setMetricIfMissing(metrics, "assists_per_match", perMatchFromTotal(metrics, "assists", matches));
   setMetricIfMissing(metrics, "xa_per_match", perMatchFromTotal(metrics, "xa", matches));
+  setMetricIfMissing(metrics, "expected_goals_per_match", expectedPerMatch(metrics, "goals", "goals_per_90", minutesFactor, matches));
+  setMetricIfMissing(metrics, "expected_assists_per_match", expectedPerMatch(metrics, "assists", "assists_per_90", minutesFactor, matches));
+  setMetricIfMissing(metrics, "fantasy_assists", readMetric(metrics, "fantasy_assists|fantasy_assist"));
+  setMetricIfMissing(metrics, "fantasy_assists_per_match", perMatchFromTotal(metrics, "fantasy_assists|fantasy_assist", matches));
+  setMetricIfMissing(metrics, "clean_sheet_probability", perMatchFromTotal(metrics, "clean_sheets|clean_sheet", matches));
+  setMetricIfMissing(metrics, "expected_saves", expectedSaves(metrics, minutesFactor, matches));
+  setMetricIfMissing(metrics, "penalty_saves", readMetric(metrics, "penalties_saved|penalty_saves"));
+  setMetricIfMissing(metrics, "penalty_saves_per_match", perMatchFromTotal(metrics, "penalties_saved|penalty_saves", matches));
+  setMetricIfMissing(metrics, "penalties_conceded", readMetric(metrics, "fouls_leading_to_penalty|penalties_conceded"));
+  setMetricIfMissing(metrics, "penalties_conceded_per_match", perMatchFromTotal(metrics, "fouls_leading_to_penalty|penalties_conceded", matches));
+  setMetricIfMissing(metrics, "missed_penalties", readMetric(metrics, "missed_penalties|penalties_missed"));
+  setMetricIfMissing(metrics, "missed_penalties_per_match", expectedMissedPenalties(metrics, matches));
+  setMetricIfMissing(metrics, "own_goals_per_match", perMatchFromTotal(metrics, "own_goals|own_goal", matches));
+  setMetricIfMissing(
+    metrics,
+    "expected_goals_conceded",
+    expectedPerMatch(metrics, "goals_conceded|conceded_goals", "goals_conceded_per_90|conceded_goals_per_90", minutesFactor, matches)
+  );
+  setMetricIfMissing(metrics, "expected_yellow_cards", expectedPerMatch(metrics, "yellow_cards", "yellow_cards_per_90", minutesFactor, matches));
+  setMetricIfMissing(metrics, "expected_red_cards", expectedPerMatch(metrics, "red_cards", "red_cards_per_90", minutesFactor, matches));
+  setMetricIfMissing(
+    metrics,
+    "expected_recoveries",
+    expectedPerMatch(metrics, "recoveries|possession_recoveries", "recoveries_per_90|possession_recoveries_per_90", minutesFactor, matches)
+  );
+  setMetricIfMissing(metrics, "recoveries", readMetric(metrics, "recoveries|possession_recoveries"));
+  setMetricIfMissing(metrics, "goals_conceded", readMetric(metrics, "goals_conceded|conceded_goals"));
   setMetricIfMissing(metrics, "goals_per_90", per90FromTotal(metrics, "goals", minutes));
   setMetricIfMissing(metrics, "xg_per_90", per90FromTotal(metrics, "xg", minutes));
   setMetricIfMissing(metrics, "assists_per_90", per90FromTotal(metrics, "assists", minutes));
@@ -408,6 +451,10 @@ export function calculateValueScore(fantasyScore: number | null, marketValue: nu
 }
 
 function readMetric(rawMetrics: Record<string, unknown>, metricKey: string) {
+  return readOptionalMetric(rawMetrics, metricKey) ?? 0;
+}
+
+function readOptionalMetric(rawMetrics: Record<string, unknown>, metricKey: string) {
   const aliases = metricKey.split("|").map((key) => key.trim()).filter(Boolean);
 
   for (const alias of aliases) {
@@ -418,7 +465,7 @@ function readMetric(rawMetrics: Record<string, unknown>, metricKey: string) {
     if (numeric !== null) return numeric;
   }
 
-  return 0;
+  return null;
 }
 
 function numericMetric(value: unknown) {

@@ -35,9 +35,16 @@ export async function aggregateMachetePlayerSnapshots(prisma: PrismaClient, opti
 
   for (const player of players) {
     const stats = player.matchStats;
+    const matchStats = stats.filter((stat) => stat.fixture.status !== "SEASON_AGGREGATE");
     const aggregateMatches = firstPositiveNumber(stats.map((stat) => readRawNumber(stat.raw, "aggregateMatches")));
     const matchesPlayed = aggregateMatches ?? stats.length;
     const minutesPlayed = sum(stats.map((stat) => stat.minutes));
+    const sixtyMinuteAppearances = matchStats.length
+      ? matchStats.filter((stat) => (stat.minutes ?? 0) >= 60).length
+      : null;
+    const fullMatches = matchStats.length
+      ? matchStats.filter((stat) => (stat.minutes ?? 0) >= 90).length
+      : null;
     const goals = sum(stats.map((stat) => stat.goals));
     const assists = sum(stats.map((stat) => stat.assists));
     const shotsOnTarget = sum(stats.map((stat) => stat.shotsOnTarget));
@@ -54,6 +61,8 @@ export async function aggregateMachetePlayerSnapshots(prisma: PrismaClient, opti
     const rawMetrics = {
       matches_played: matchesPlayed,
       minutes_played: minutesPlayed,
+      ...(sixtyMinuteAppearances !== null ? { appearances_60: sixtyMinuteAppearances } : {}),
+      ...(fullMatches !== null ? { full_matches: fullMatches } : {}),
       ...(expectedMinutes !== null ? { expected_minutes: expectedMinutes } : {}),
       goals,
       assists,
