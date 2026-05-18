@@ -2,6 +2,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { prisma } from "@/lib/db";
+import { formatPositionPoints, scoringFieldGuide } from "@/lib/scoring/field-guide";
 import { validateCustomFormula } from "@/lib/scoring/formula";
 import { seedRules } from "@/lib/scoring/rules";
 
@@ -68,7 +69,7 @@ export default async function AdminModelsPage({ searchParams }: PageProps) {
   });
 
   return (
-    <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+    <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">Admin</p>
       <h1 className="mt-2 text-3xl font-bold text-ink">Fantasy model</h1>
 
@@ -138,6 +139,66 @@ export default async function AdminModelsPage({ searchParams }: PageProps) {
             Save formula
           </button>
         </form>
+      </section>
+
+      <section className="mt-6 rounded border border-slate-200 bg-white p-6 shadow-soft">
+        <div>
+          <h2 className="text-lg font-semibold text-ink">Поля, alias и ФО</h2>
+          <p className="mt-1 text-sm text-slate-600">
+            В фигурных скобках можно писать человекочитаемые названия колонок. Они автоматически превращаются в normalized
+            keys: например <span className="font-mono">{"{Yellow cards}"}</span> станет{" "}
+            <span className="font-mono">yellow_cards</span>.
+          </p>
+        </div>
+
+        <div className="mt-5 overflow-x-auto">
+          <table className="min-w-full divide-y divide-slate-200 text-sm">
+            <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
+              <tr>
+                <th className="px-3 py-3">Действие</th>
+                <th className="px-3 py-3">Alias для формулы</th>
+                <th className="px-3 py-3">Normalized keys</th>
+                <th className="px-3 py-3 text-right">ВР</th>
+                <th className="px-3 py-3 text-right">ЗЩ</th>
+                <th className="px-3 py-3 text-right">ПЗЩ</th>
+                <th className="px-3 py-3 text-right">НАП</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {scoringFieldGuide.map((field) => (
+                <tr key={field.action} className="align-top">
+                  <td className="max-w-[260px] px-3 py-3">
+                    <p className="font-medium text-ink">{field.action}</p>
+                    <p className="mt-1 text-xs text-slate-500">{field.meaning}</p>
+                    {field.note ? <p className="mt-1 text-xs text-slate-500">{field.note}</p> : null}
+                  </td>
+                  <td className="px-3 py-3">
+                    <div className="flex max-w-[280px] flex-wrap gap-1.5">
+                      {field.formulaAliases.map((alias) => (
+                        <span key={alias} className="rounded bg-slate-100 px-2 py-1 font-mono text-xs text-slate-700">
+                          {alias}
+                        </span>
+                      ))}
+                    </div>
+                  </td>
+                  <td className="px-3 py-3">
+                    <div className="flex max-w-[260px] flex-wrap gap-1.5">
+                      {field.normalizedKeys.map((key) => (
+                        <span key={key} className="rounded bg-slate-100 px-2 py-1 font-mono text-xs text-slate-700">
+                          {key}
+                        </span>
+                      ))}
+                    </div>
+                  </td>
+                  <td className="px-3 py-3 text-right font-semibold text-ink">{formatPositionPoints(field.points, "GK")}</td>
+                  <td className="px-3 py-3 text-right font-semibold text-ink">{formatPositionPoints(field.points, "DEF")}</td>
+                  <td className="px-3 py-3 text-right font-semibold text-ink">{formatPositionPoints(field.points, "MID")}</td>
+                  <td className="px-3 py-3 text-right font-semibold text-ink">{formatPositionPoints(field.points, "FWD")}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </section>
     </main>
   );

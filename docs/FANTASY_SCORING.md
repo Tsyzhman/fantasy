@@ -65,3 +65,8 @@ Supported transforms:
 | Red card | -3 | -3 | -3 | -3 |
 
 Missing metric values count as 0 in formula calculation, while raw imported values stay preserved in `PlayerSnapshot.rawMetrics`.
+
+## Formula Fields
+
+The `/admin/models` page includes the full field guide for formula aliases, normalized keys, field meanings, and fantasy
+points by position.
