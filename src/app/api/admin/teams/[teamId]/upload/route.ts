@@ -97,7 +97,7 @@ export async function POST(request: Request, { params }: Params) {
     }
   });
 
-  const parsed = parseWyscoutWorkbook(buffer, { name: team.name, aliases: team.aliases });
+  const parsed = parseWyscoutWorkbook(buffer, { name: team.name });
   if (duplicate) {
     parsed.warnings.push({
       code: "DUPLICATE_FILE",

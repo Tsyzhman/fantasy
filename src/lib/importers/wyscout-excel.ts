@@ -42,7 +42,6 @@ export type WyscoutParseResult = {
 
 const requiredColumns = [
   "player",
-  "team",
   "position",
   "age",
   "market_value",
@@ -93,7 +92,7 @@ export function normalizeHeader(header: string): string {
 
 export function parseWyscoutWorkbook(
   buffer: Buffer,
-  expectedTeam: { name: string; aliases: string[] }
+  expectedTeam: { name: string }
 ): WyscoutParseResult {
   const errors: ImportIssue[] = [];
   const warnings: ImportIssue[] = [];
@@ -141,13 +140,10 @@ export function parseWyscoutWorkbook(
 
   const rows = table
     .slice(headerIndex + 1)
-    .map((row, rowIndex) => normalizeRow(headers, row, rowIndex + headerIndex + 2, warnings))
+    .map((row, rowIndex) => normalizeRow(headers, row, rowIndex + headerIndex + 2, expectedTeam.name, warnings))
     .filter((row): row is ParsedPlayerSnapshot => row !== null);
 
-  const detectedTeams = [...new Set(rows.map((row) => row.teamName).filter(Boolean))];
-  const detectedTeamName = detectedTeams.length === 1 ? detectedTeams[0] : detectedTeams.join(", ") || null;
-
-  validateTeam(expectedTeam, detectedTeams, errors);
+  const detectedTeamName = rows.length > 0 ? expectedTeam.name : null;
 
   return {
     columns: headers,
@@ -162,7 +158,7 @@ function findHeaderRow(table: unknown[][]) {
   const scanLimit = Math.min(table.length, 10);
   for (let index = 0; index < scanLimit; index += 1) {
     const headers = table[index].map((value) => normalizeHeader(String(value ?? "")));
-    if (headers.includes("player") && headers.includes("team")) {
+    if (headers.includes("player") && (headers.includes("team") || headers.includes("position"))) {
       return index;
     }
   }
@@ -185,6 +181,7 @@ function normalizeRow(
   headers: string[],
   row: unknown[],
   sourceRowNumber: number,
+  targetTeamName: string,
   warnings: ImportIssue[]
 ): ParsedPlayerSnapshot | null {
   const rawMetrics: Record<string, unknown> = {};
@@ -195,9 +192,10 @@ function normalizeRow(
   });
 
   const playerName = stringValue(rawMetrics.player);
-  const teamName = stringValue(rawMetrics.team);
+  const sourceTeamName = stringValue(rawMetrics.team);
+  const teamName = targetTeamName;
 
-  if (!playerName && !teamName) return null;
+  if (!playerName && !sourceTeamName) return null;
   if (!playerName) {
     warnings.push({
       code: "MISSING_PLAYER_NAME",
@@ -209,6 +207,7 @@ function normalizeRow(
   const positionRaw = nullableString(rawMetrics.position);
   const marketValue = parseMarketValue(rawMetrics.market_value);
   rawMetrics.market_value = marketValue;
+  rawMetrics.team = teamName;
 
   return {
     playerName,
@@ -233,32 +232,6 @@ function normalizeRow(
     onLoan: coerceBoolean(rawMetrics.on_loan),
     rawMetrics: jsonSafe(rawMetrics)
   };
-}
-
-function validateTeam(expectedTeam: { name: string; aliases: string[] }, detectedTeams: string[], errors: ImportIssue[]) {
-  if (detectedTeams.length === 0) {
-    errors.push({ code: "TEAM_NOT_DETECTED", message: "No Team values were found in the uploaded file." });
-    return;
-  }
-
-  if (detectedTeams.length > 1) {
-    errors.push({
-      code: "MULTIPLE_TEAMS_DETECTED",
-      message: `The file contains multiple teams: ${detectedTeams.join(", ")}.`,
-      details: detectedTeams
-    });
-    return;
-  }
-
-  const expectedNames = [expectedTeam.name, ...expectedTeam.aliases].map(normalizeName);
-  const detectedName = normalizeName(detectedTeams[0]);
-  if (!expectedNames.includes(detectedName)) {
-    errors.push({
-      code: "TEAM_MISMATCH",
-      message: `Expected ${expectedTeam.name}, but the file contains ${detectedTeams[0]}.`,
-      details: { expected: expectedTeam.name, aliases: expectedTeam.aliases, detected: detectedTeams[0] }
-    });
-  }
 }
 
 function normalizePositionGroup(positionRaw: string | null) {
