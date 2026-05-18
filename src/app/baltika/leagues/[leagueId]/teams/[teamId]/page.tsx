@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { ReactNode } from "react";
 
+import { I18nText } from "@/components/i18n-text";
 import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
 import { StarterCheckbox } from "@/components/players/starter-checkbox";
 import { prisma } from "@/lib/db";
@@ -66,9 +68,9 @@ export default async function BaltikaTeamPage({ params }: PageProps) {
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <PageBreadcrumbs
         backHref={`/baltika/leagues/${team.leagueId}`}
-        backLabel="Back to league"
+        backLabel={<I18nText en="Back to league" ru="Назад к лиге" />}
         items={[
-          { label: "Baltika", href: "/baltika/leagues" },
+          { label: <I18nText en="Baltika" ru="Балтика" />, href: "/baltika/leagues" },
           { label: team.league.name, href: `/baltika/leagues/${team.leagueId}` },
           { label: team.name, href: `/baltika/leagues/${team.leagueId}/teams/${team.id}` }
         ]}
@@ -81,13 +83,18 @@ export default async function BaltikaTeamPage({ params }: PageProps) {
           </p>
           <h1 className="mt-2 text-3xl font-bold text-ink">{team.name}</h1>
           <p className="mt-2 text-sm text-slate-600">
-            {currentImport
-              ? `${players.length} players · ${startersCount} marked as starters · ${currentImport.season.name}`
-              : "Publish a team import before marking starters."}
+            {currentImport ? (
+              <I18nText
+                en={`${players.length} players - ${startersCount} marked as starters - ${currentImport.season.name}`}
+                ru={`${players.length} игроков - стартовых: ${startersCount} - ${currentImport.season.name}`}
+              />
+            ) : (
+              <I18nText en="Publish a team import before marking starters." ru="Опубликуйте импорт команды, чтобы отмечать стартовых." />
+            )}
           </p>
         </div>
         <Link href="/baltika/players?starterOnly=1" className="rounded bg-ink px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700">
-          View starters
+          <I18nText en="View starters" ru="Смотреть стартовых" />
         </Link>
       </div>
 
@@ -96,24 +103,24 @@ export default async function BaltikaTeamPage({ params }: PageProps) {
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
               <tr>
-                <th className="px-4 py-3 text-center">В старте</th>
-                <th className="px-4 py-3">Player</th>
+                <th className="px-4 py-3 text-center"><I18nText en="Starter" ru="Старт" /></th>
+                <th className="px-4 py-3"><I18nText en="Player" ru="Игрок" /></th>
                 <th className="px-4 py-3">Pos</th>
-                <th className="px-4 py-3 text-right">Age</th>
-                <th className="px-4 py-3 text-right">Minutes</th>
-                <th className="px-4 py-3 text-right">Goals</th>
+                <th className="px-4 py-3 text-right"><I18nText en="Age" ru="Возраст" /></th>
+                <th className="px-4 py-3 text-right"><I18nText en="Minutes" ru="Минуты" /></th>
+                <th className="px-4 py-3 text-right"><I18nText en="Goals" ru="Голы" /></th>
                 <th className="px-4 py-3 text-right">xG</th>
-                <th className="px-4 py-3 text-right">Assists</th>
-                <th className="px-4 py-3 text-right">Market</th>
-                <th className="bg-emerald-50 px-4 py-3 text-right text-emerald-700">Predicted FP</th>
-                <th className="bg-amber-50 px-4 py-3 text-right text-amber-700">Alt FP</th>
+                <th className="px-4 py-3 text-right"><I18nText en="Assists" ru="Ассисты" /></th>
+                <th className="px-4 py-3 text-right"><I18nText en="Market" ru="Стоимость" /></th>
+                <th className="bg-emerald-50 px-4 py-3 text-right text-emerald-700"><I18nText en="Predicted FP" ru="Прогноз FP" /></th>
+                <th className="bg-amber-50 px-4 py-3 text-right text-amber-700"><I18nText en="Alt FP" ru="Альт. FP" /></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
               {players.map((player) => (
                 <tr key={player.id} className="hover:bg-slate-50">
                   <td className="whitespace-nowrap px-4 py-3 text-center">
-                    <StarterCheckbox snapshotId={player.id} defaultChecked={player.isStarter} label={`В старте: ${player.playerName}`} />
+                    <StarterCheckbox snapshotId={player.id} defaultChecked={player.isStarter} label={`Starter: ${player.playerName}`} />
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 font-medium text-ink">{player.playerName}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-slate-600">{player.positionGroup ?? "-"}</td>
@@ -134,7 +141,7 @@ export default async function BaltikaTeamPage({ params }: PageProps) {
               {players.length === 0 ? (
                 <tr>
                   <td colSpan={11} className="px-4 py-10 text-center text-slate-500">
-                    No published player snapshots for this team yet.
+                    <I18nText en="No published player snapshots for this team yet." ru="Для этой команды пока нет опубликованных игроков." />
                   </td>
                 </tr>
               ) : null}
@@ -144,8 +151,8 @@ export default async function BaltikaTeamPage({ params }: PageProps) {
       </section>
 
       <section className="mt-8 grid grid-cols-1 gap-5 lg:grid-cols-2">
-        <TeamFormTable title="Home form" stats={homeForm} />
-        <TeamFormTable title="Away form" stats={awayForm} />
+        <TeamFormTable title={<I18nText en="Home form" ru="Домашняя форма" />} stats={homeForm} />
+        <TeamFormTable title={<I18nText en="Away form" ru="Гостевая форма" />} stats={awayForm} />
       </section>
     </main>
   );
@@ -172,7 +179,7 @@ type TeamFormRow = {
   } | null;
 };
 
-function TeamFormTable({ title, stats }: { title: string; stats: TeamFormRow[] }) {
+function TeamFormTable({ title, stats }: { title: ReactNode; stats: TeamFormRow[] }) {
   const avgXg = average(stats.map((stat) => stat.xg));
   const avgXga = average(stats.map((stat) => stat.xga));
 
@@ -185,19 +192,21 @@ function TeamFormTable({ title, stats }: { title: string; stats: TeamFormRow[] }
             xG {formatScore(avgXg)} / xGA {formatScore(avgXga)}
           </p>
         </div>
-        <span className="text-sm font-semibold text-slate-500">{formatNumber(stats.length)} matches</span>
+        <span className="text-sm font-semibold text-slate-500">
+          {formatNumber(stats.length)} <I18nText en="matches" ru="матчей" />
+        </span>
       </div>
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-slate-200 text-sm">
           <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
             <tr>
-              <th className="px-4 py-3">Date</th>
-              <th className="px-4 py-3">Round</th>
-              <th className="px-4 py-3">Opponent</th>
-              <th className="px-4 py-3 text-right">Score</th>
+              <th className="px-4 py-3"><I18nText en="Date" ru="Дата" /></th>
+              <th className="px-4 py-3"><I18nText en="Round" ru="Тур" /></th>
+              <th className="px-4 py-3"><I18nText en="Opponent" ru="Соперник" /></th>
+              <th className="px-4 py-3 text-right"><I18nText en="Score" ru="Счет" /></th>
               <th className="px-4 py-3 text-right">xG</th>
               <th className="px-4 py-3 text-right">xGA</th>
-              <th className="px-4 py-3 text-right">Shots</th>
+              <th className="px-4 py-3 text-right"><I18nText en="Shots" ru="Удары" /></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -206,9 +215,7 @@ function TeamFormTable({ title, stats }: { title: string; stats: TeamFormRow[] }
                 <td className="whitespace-nowrap px-4 py-3 text-slate-600">{formatDate(stat.fixture.kickoffAt)}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-slate-600">{stat.fixture.roundNumber ?? "-"}</td>
                 <td className="whitespace-nowrap px-4 py-3 font-medium text-ink">{stat.opponentTeam?.name ?? opponentName(stat)}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">
-                  {scoreLabel(stat)}
-                </td>
+                <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{scoreLabel(stat)}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-right font-semibold text-emerald-700">{formatScore(stat.xg)}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-right font-semibold text-rose-700">{formatScore(stat.xga)}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">
@@ -219,7 +226,7 @@ function TeamFormTable({ title, stats }: { title: string; stats: TeamFormRow[] }
             {stats.length === 0 ? (
               <tr>
                 <td colSpan={7} className="px-4 py-8 text-center text-slate-500">
-                  No Team Stats matches loaded yet.
+                  <I18nText en="No Team Stats matches loaded yet." ru="Матчи Team Stats еще не загружены." />
                 </td>
               </tr>
             ) : null}

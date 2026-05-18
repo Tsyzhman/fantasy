@@ -1,7 +1,9 @@
 import { revalidatePath } from "next/cache";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import type { ReactNode } from "react";
 
+import { I18nText } from "@/components/i18n-text";
 import { prisma } from "@/lib/db";
 import { formatPositionPoints, scoringFieldGuide } from "@/lib/scoring/field-guide";
 import {
@@ -21,11 +23,11 @@ import { formulaAlias, sourceFormulaFields } from "@/lib/scoring/source-field-gu
 
 type ModelSettingsPageProps = {
   source: ScoringModelSource;
-  modeName: string;
-  title: string;
-  description: string;
+  modeName: ReactNode;
+  title: ReactNode;
+  description: ReactNode;
   backHref: string;
-  backLabel: string;
+  backLabel: ReactNode;
   searchParams?: {
     error?: string;
     saved?: string;
@@ -196,13 +198,15 @@ export async function ModelSettingsPage({
           <div>
             <h2 className="text-lg font-semibold text-ink">{model?.name ?? sourceConfig[source].name}</h2>
             <p className="mt-1 text-sm text-slate-600">
-              These settings belong only to {modeName}. Baltika and Machete can now use different primary and alternative
-              formulas.
+              <I18nText
+                en={<>These settings belong only to {modeName}. Baltika and Machete can use different primary and alternative formulas.</>}
+                ru={<>Эти настройки относятся только к режиму {modeName}. Балтика и Machete могут использовать разные основные и альтернативные формулы.</>}
+              />
               {!model && source === "MACHETE" && wyscoutModel ? " Machete is currently inheriting the Baltika formulas until you save its own settings." : ""}
             </p>
           </div>
           <span className="rounded bg-slate-100 px-2.5 py-1 text-sm font-medium text-slate-600">
-            {displayModel?._count.rules ?? seedRules.length} rules
+            {displayModel?._count.rules ?? seedRules.length} <I18nText en="rules" ru="правил" />
           </span>
         </div>
 
@@ -214,7 +218,7 @@ export async function ModelSettingsPage({
 
         {searchParams?.saved ? (
           <div className="mt-5 rounded border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-            Saved. Expected FP and Alt FP were recalculated for existing player snapshots.
+            <I18nText en="Saved. Expected FP and Alt FP were recalculated for existing player snapshots." ru="Сохранено. Expected FP и Alt FP пересчитаны для уже загруженных игроков." />
           </div>
         ) : null}
 
@@ -225,7 +229,7 @@ export async function ModelSettingsPage({
 
           <div className="rounded border border-slate-200 bg-slate-50 p-4">
             <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-              <p className="text-sm font-semibold text-ink">Current Expected FP calculation</p>
+              <p className="text-sm font-semibold text-ink"><I18nText en="Current Expected FP calculation" ru="Текущий расчет Expected FP" /></p>
               <span className="rounded bg-white px-2 py-1 text-xs font-semibold text-slate-600">
                 {formulaModeLabel(displayModel)}
               </span>
@@ -238,7 +242,7 @@ export async function ModelSettingsPage({
 
                     return (
                       <FormulaPreview key={entry.position} position={entry.position}>
-                        {formula || "Default predicted round rules for this position"}
+                      {formula || "Default predicted round rules for this position"}
                       </FormulaPreview>
                     );
                   })
@@ -250,20 +254,22 @@ export async function ModelSettingsPage({
             </div>
 
             <p className="mt-3 text-xs text-slate-500">
-              This is the formula behind the green Expected FP column. If custom formulas are off, Expected FP uses the
-              built-in predicted-round scoring.
+              <I18nText
+                en="This is the formula behind the green Expected FP column. If custom formulas are off, Expected FP uses the built-in predicted-round scoring."
+                ru="Это формула зеленой колонки Expected FP. Если свои формулы выключены, Expected FP считается по встроенным правилам прогноза тура."
+              />
             </p>
           </div>
 
           <div className="rounded border border-emerald-200 bg-emerald-50 p-4">
             <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-sm font-semibold text-ink">Edit Expected FP formulas</p>
+                <p className="text-sm font-semibold text-ink"><I18nText en="Edit Expected FP formulas" ru="Редактировать формулы Expected FP" /></p>
                 <p className="mt-1 text-xs text-slate-600">
-                  These formulas replace the green Expected FP column for the positions you fill in.
+                  <I18nText en="These formulas replace the green Expected FP column for the positions you fill in." ru="Эти формулы заменяют зеленую колонку Expected FP для заполненных позиций." />
                 </p>
               </div>
-              <span className="rounded bg-white px-2 py-1 text-xs font-semibold text-emerald-700">Primary score</span>
+              <span className="rounded bg-white px-2 py-1 text-xs font-semibold text-emerald-700"><I18nText en="Primary score" ru="Основной счет" /></span>
             </div>
             <div className="mt-2 grid grid-cols-1 gap-3 lg:grid-cols-2">
               {customFormulaFields.map((field) => (
@@ -277,19 +283,19 @@ export async function ModelSettingsPage({
                 defaultChecked={Boolean(displayModel?.customFormulaEnabled)}
                 className="h-4 w-4 rounded border-slate-300"
               />
-              Use primary custom formulas
+              <I18nText en="Use primary custom formulas" ru="Использовать свои основные формулы" />
             </label>
           </div>
 
           <div className="rounded border border-amber-200 bg-amber-50 p-4">
             <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <p className="text-sm font-semibold text-ink">Edit Alt FP formulas</p>
+                <p className="text-sm font-semibold text-ink"><I18nText en="Edit Alt FP formulas" ru="Редактировать формулы Alt FP" /></p>
                 <p className="mt-1 text-xs text-slate-600">
-                  These formulas fill the amber Alt FP column. They do not change Expected FP.
+                  <I18nText en="These formulas fill the amber Alt FP column. They do not change Expected FP." ru="Эти формулы заполняют желтую колонку Alt FP и не меняют Expected FP." />
                 </p>
               </div>
-              <span className="rounded bg-white px-2 py-1 text-xs font-semibold text-amber-700">Comparison score</span>
+              <span className="rounded bg-white px-2 py-1 text-xs font-semibold text-amber-700"><I18nText en="Comparison score" ru="Счет для сравнения" /></span>
             </div>
             <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
               {alternativeFormulaFields.map((field) => (
@@ -309,14 +315,14 @@ export async function ModelSettingsPage({
                 defaultChecked={Boolean(displayModel?.alternativeFormulaEnabled)}
                 className="h-4 w-4 rounded border-slate-300"
               />
-              Calculate Alt FP
+              <I18nText en="Calculate Alt FP" ru="Считать Alt FP" />
             </label>
           </div>
 
           <FormulaHelp source={source} />
 
           <button type="submit" className="rounded bg-ink px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">
-            Save and recalculate scores
+            <I18nText en="Save and recalculate scores" ru="Сохранить и пересчитать очки" />
           </button>
         </form>
       </section>

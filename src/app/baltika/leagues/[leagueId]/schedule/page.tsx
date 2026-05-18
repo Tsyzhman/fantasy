@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { BaltikaCalendarPanel } from "@/components/baltika/baltika-calendar-panel";
+import { I18nText } from "@/components/i18n-text";
 import { MacheteSyncButton } from "@/components/machete/MacheteSyncButton";
 import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
 import { prisma } from "@/lib/db";
@@ -57,11 +58,11 @@ export default async function BaltikaLeagueSchedulePage({ params }: PageProps) {
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <PageBreadcrumbs
         backHref={`/baltika/leagues/${league.id}`}
-        backLabel="Back to league"
+        backLabel={<I18nText en="Back to league" ru="Назад к лиге" />}
         items={[
-          { label: "Baltika", href: "/baltika/leagues" },
+          { label: <I18nText en="Baltika" ru="Балтика" />, href: "/baltika/leagues" },
           { label: league.name, href: `/baltika/leagues/${league.id}` },
-          { label: "Calendar", href: `/baltika/leagues/${league.id}/schedule` }
+          { label: <I18nText en="Calendar" ru="Календарь" />, href: `/baltika/leagues/${league.id}/schedule` }
         ]}
       />
 
@@ -72,10 +73,13 @@ export default async function BaltikaLeagueSchedulePage({ params }: PageProps) {
           </p>
           <h1 className="mt-2 flex items-center gap-3 text-3xl font-bold text-ink">
             <CalendarDays className="h-8 w-8" />
-            {league.name} calendar
+            {league.name} <I18nText en="calendar" ru="календарь" />
           </h1>
           <p className="mt-2 max-w-3xl text-sm text-slate-600">
-            Rounds are displayed from 1 in the visible order. Future fixtures stay editable, including empty rounds and double-gameweek rounds.
+            <I18nText
+              en="Rounds are displayed from 1 in the visible order. Future fixtures stay editable, including empty rounds and double-gameweek rounds."
+              ru="Туры показаны в видимом порядке с 1. Будущие матчи можно редактировать, включая пустые туры и double-GW."
+            />
           </p>
         </div>
 
@@ -84,7 +88,7 @@ export default async function BaltikaLeagueSchedulePage({ params }: PageProps) {
             href={`/baltika/leagues/${league.id}`}
             className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
           >
-            Teams
+            <I18nText en="Teams" ru="Команды" />
           </Link>
           {source ? (
             <>
@@ -98,7 +102,7 @@ export default async function BaltikaLeagueSchedulePage({ params }: PageProps) {
                 <ExternalLink className="h-4 w-4" />
               </a>
               <MacheteSyncButton endpoint={`/api/baltika/leagues/${league.id}/sync-sports-schedule`} variant="secondary">
-                Sync Sports.ru schedule
+                <I18nText en="Sync Sports.ru schedule" ru="Синхронизировать календарь Sports.ru" />
               </MacheteSyncButton>
             </>
           ) : null}
@@ -143,7 +147,7 @@ export default async function BaltikaLeagueSchedulePage({ params }: PageProps) {
         />
       ) : (
         <section className="mt-8 rounded border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">
-          Create a season before managing the calendar.
+          <I18nText en="Create a season before managing the calendar." ru="Создайте сезон перед настройкой календаря." />
         </section>
       )}
     </main>

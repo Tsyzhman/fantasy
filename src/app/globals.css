@@ -138,6 +138,18 @@ textarea {
   background-color: #202c40 !important;
 }
 
+.i18n-ru {
+  display: none;
+}
+
+:root[data-language="ru"] .i18n-en {
+  display: none;
+}
+
+:root[data-language="ru"] .i18n-ru {
+  display: inline;
+}
+
 .team-logo-frame {
   border-radius: 8px;
   border: 1px solid rgba(203, 213, 225, 0.9);

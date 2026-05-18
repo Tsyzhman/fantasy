@@ -4,6 +4,8 @@ import { Settings } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { I18nText } from "@/components/i18n-text";
+
 export function ModelSettingsLink() {
   const pathname = usePathname();
   const isMachete = pathname.startsWith("/machete");
@@ -14,7 +16,7 @@ export function ModelSettingsLink() {
       href={isMachete ? "/machete/models" : "/baltika/models"}
     >
       <Settings className="h-4 w-4" />
-      Model settings
+      <I18nText en="Model settings" ru="Модель" />
     </Link>
   );
 }

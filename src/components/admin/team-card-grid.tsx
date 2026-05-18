@@ -8,6 +8,7 @@ import { useRef, useState } from "react";
 import { formatDate, formatNumber } from "@/lib/format";
 import { initials } from "@/lib/text";
 import { cn } from "@/lib/cn";
+import { I18nText } from "@/components/i18n-text";
 import { StatusBadge } from "@/components/status-badge";
 
 export type TeamCardDto = {
@@ -36,7 +37,7 @@ export function TeamCardGrid({ teams, seasonId, leagueId }: { teams: TeamCardDto
   if (teams.length === 0) {
     return (
       <div className="rounded border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">
-        No teams yet. Add teams to this league before uploading Wyscout files.
+        <I18nText en="No teams yet. Add teams to this league before uploading Wyscout files." ru="Команд пока нет. Добавьте команды в лигу перед загрузкой файлов Wyscout." />
       </div>
     );
   }
@@ -65,7 +66,7 @@ function TeamCard({ team, seasonId, leagueId }: { team: TeamCardDto; seasonId: s
   async function uploadFile(file: File | null | undefined) {
     if (!file) return;
     if (!file.name.toLowerCase().endsWith(".xlsx")) {
-      setState({ status: "error", message: "Only .xlsx files are supported." });
+      setState({ status: "error", message: localizedText("Only .xlsx files are supported.", "Поддерживаются только .xlsx файлы.") });
       return;
     }
 
@@ -73,7 +74,7 @@ function TeamCard({ team, seasonId, leagueId }: { team: TeamCardDto; seasonId: s
     data.append("file", file);
     data.append("seasonId", seasonId);
 
-    setState({ status: "uploading", message: "Uploading and parsing file..." });
+    setState({ status: "uploading", message: localizedText("Uploading and parsing file...", "Загружаю и разбираю файл...") });
     const response = await fetch(`/api/admin/teams/${team.id}/upload`, {
       method: "POST",
       body: data
@@ -82,20 +83,20 @@ function TeamCard({ team, seasonId, leagueId }: { team: TeamCardDto; seasonId: s
 
     if (!response.ok) {
       const message =
-        payload?.errors?.[0]?.message ?? payload?.error?.message ?? "Import failed. Check the file format and team name.";
+        payload?.errors?.[0]?.message ?? payload?.error?.message ?? localizedText("Import failed. Check the file format and team name.", "Импорт не удался. Проверьте формат файла и название команды.");
       setState({ status: "error", message });
       router.refresh();
       return;
     }
 
-    setState({ status: "success", message: `Imported ${payload.rowsCount ?? 0} players. Ready to publish.` });
+    setState({ status: "success", message: localizedText(`Imported ${payload.rowsCount ?? 0} players. Ready to publish.`, `Импортировано игроков: ${payload.rowsCount ?? 0}. Можно публиковать.`) });
     router.refresh();
   }
 
   async function uploadTeamStatsFile(file: File | null | undefined) {
     if (!file) return;
     if (!file.name.toLowerCase().endsWith(".xlsx")) {
-      setTeamStatsState({ status: "error", message: "Only .xlsx files are supported." });
+      setTeamStatsState({ status: "error", message: localizedText("Only .xlsx files are supported.", "Поддерживаются только .xlsx файлы.") });
       return;
     }
 
@@ -103,7 +104,7 @@ function TeamCard({ team, seasonId, leagueId }: { team: TeamCardDto; seasonId: s
     data.append("file", file);
     data.append("seasonId", seasonId);
 
-    setTeamStatsState({ status: "uploading", message: "Importing matches..." });
+    setTeamStatsState({ status: "uploading", message: localizedText("Importing matches...", "Импортирую матчи...") });
     const response = await fetch(`/api/baltika/teams/${team.id}/team-stats/upload`, {
       method: "POST",
       body: data
@@ -112,28 +113,28 @@ function TeamCard({ team, seasonId, leagueId }: { team: TeamCardDto; seasonId: s
 
     if (!response.ok) {
       const message =
-        payload?.errors?.[0]?.message ?? payload?.error?.message ?? "Team stats import failed. Check the Team Stats file.";
+        payload?.errors?.[0]?.message ?? payload?.error?.message ?? localizedText("Team stats import failed. Check the Team Stats file.", "Импорт Team Stats не удался. Проверьте файл.");
       setTeamStatsState({ status: "error", message });
       router.refresh();
       return;
     }
 
-    setTeamStatsState({ status: "success", message: `Imported ${payload.fixturesCount ?? 0} matches.` });
+    setTeamStatsState({ status: "success", message: localizedText(`Imported ${payload.fixturesCount ?? 0} matches.`, `Импортировано матчей: ${payload.fixturesCount ?? 0}.`) });
     router.refresh();
   }
 
   async function publishImport() {
     if (!team.latestImportId) return;
-    setState({ status: "publishing", message: "Publishing current import..." });
+    setState({ status: "publishing", message: localizedText("Publishing current import...", "Публикую текущий импорт...") });
     const response = await fetch(`/api/admin/imports/${team.latestImportId}/publish`, { method: "POST" });
     const payload = await response.json();
 
     if (!response.ok) {
-      setState({ status: "error", message: payload?.error?.message ?? "Publish failed." });
+      setState({ status: "error", message: payload?.error?.message ?? localizedText("Publish failed.", "Публикация не удалась.") });
       return;
     }
 
-    setState({ status: "success", message: "Published for players explorer." });
+    setState({ status: "success", message: localizedText("Published for players explorer.", "Опубликовано для таблицы игроков.") });
     router.refresh();
   }
 
@@ -145,7 +146,9 @@ function TeamCard({ team, seasonId, leagueId }: { team: TeamCardDto; seasonId: s
 
           <div className="min-w-0">
             <h2 className="truncate text-base font-semibold text-ink">{team.name}</h2>
-            <p className="text-xs text-slate-500">{formatNumber(team.playersCount)} players</p>
+            <p className="text-xs text-slate-500">
+              {formatNumber(team.playersCount)} <I18nText en="players" ru="игроков" />
+            </p>
           </div>
         </div>
         <StatusBadge status={displayStatus} />
@@ -153,19 +156,19 @@ function TeamCard({ team, seasonId, leagueId }: { team: TeamCardDto; seasonId: s
 
       <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
         <div>
-          <dt className="text-xs font-medium uppercase text-slate-400">Last upload</dt>
+          <dt className="text-xs font-medium uppercase text-slate-400"><I18nText en="Last upload" ru="Последняя загрузка" /></dt>
           <dd className="mt-1 text-slate-700">{formatDate(team.lastUploadAt)}</dd>
         </div>
         <div>
-          <dt className="text-xs font-medium uppercase text-slate-400">Players published</dt>
+          <dt className="text-xs font-medium uppercase text-slate-400"><I18nText en="Players published" ru="Игроки опубликованы" /></dt>
           <dd className="mt-1 text-slate-700">{formatDate(team.playersPublishedAt)}</dd>
         </div>
         <div>
-          <dt className="text-xs font-medium uppercase text-slate-400">Matches</dt>
+          <dt className="text-xs font-medium uppercase text-slate-400"><I18nText en="Matches" ru="Матчи" /></dt>
           <dd className="mt-1 text-slate-700">{formatNumber(team.fixturesCount)}</dd>
         </div>
         <div>
-          <dt className="text-xs font-medium uppercase text-slate-400">xG/xGA published</dt>
+          <dt className="text-xs font-medium uppercase text-slate-400"><I18nText en="xG/xGA published" ru="xG/xGA опубликованы" /></dt>
           <dd className="mt-1 text-slate-700">{formatDate(team.teamStatsPublishedAt)}</dd>
         </div>
       </dl>
@@ -194,8 +197,8 @@ function TeamCard({ team, seasonId, leagueId }: { team: TeamCardDto; seasonId: s
         ) : (
           <CloudUpload className="h-7 w-7 text-slate-500" />
         )}
-        <span className="mt-3 text-sm font-semibold text-slate-800">Drop Wyscout .xlsx here</span>
-        <span className="mt-1 text-xs text-slate-500">or click to choose a file</span>
+        <span className="mt-3 text-sm font-semibold text-slate-800"><I18nText en="Drop Wyscout .xlsx here" ru="Перетащите Wyscout .xlsx сюда" /></span>
+        <span className="mt-1 text-xs text-slate-500"><I18nText en="or click to choose a file" ru="или нажмите, чтобы выбрать файл" /></span>
       </button>
       <input
         ref={inputRef}
@@ -232,7 +235,7 @@ function TeamCard({ team, seasonId, leagueId }: { team: TeamCardDto; seasonId: s
         ) : (
           <CalendarDays className="h-4 w-4" />
         )}
-        Upload Team Stats
+        <I18nText en="Upload Team Stats" ru="Загрузить Team Stats" />
       </button>
       <input
         ref={teamStatsInputRef}
@@ -252,7 +255,7 @@ function TeamCard({ team, seasonId, leagueId }: { team: TeamCardDto; seasonId: s
           className="mt-3 inline-flex items-center justify-center gap-2 rounded bg-ink px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700"
         >
           <Send className="h-4 w-4" />
-          Publish import
+          <I18nText en="Publish import" ru="Опубликовать импорт" />
         </button>
       ) : null}
 
@@ -260,7 +263,7 @@ function TeamCard({ team, seasonId, leagueId }: { team: TeamCardDto; seasonId: s
         href={`/baltika/leagues/${leagueId}/teams/${team.id}`}
         className="mt-3 inline-flex items-center justify-center rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
       >
-        Open team
+        <I18nText en="Open team" ru="Открыть команду" />
       </Link>
 
       {state.message ? (
@@ -329,5 +332,10 @@ function errorMessage(value: unknown) {
   if (typeof value === "object" && value && "message" in value) {
     return String((value as { message: unknown }).message);
   }
-  return "The last import failed validation.";
+  return localizedText("The last import failed validation.", "Последний импорт не прошел проверку.");
+}
+
+function localizedText(en: string, ru: string) {
+  if (typeof document !== "undefined" && document.documentElement.dataset.language === "ru") return ru;
+  return en;
 }

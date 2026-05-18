@@ -1,7 +1,9 @@
-import { BarChart3, Database } from "lucide-react";
+import { BarChart3 } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { BulkImportButton } from "@/components/baltika/bulk-import-button";
+import { I18nText } from "@/components/i18n-text";
 import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
 import { TeamCardGrid, type TeamCardDto } from "@/components/admin/team-card-grid";
 import { prisma } from "@/lib/db";
@@ -106,15 +108,15 @@ export default async function BaltikaLeaguePage({ params }: PageProps) {
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <PageBreadcrumbs
         backHref="/baltika/leagues"
-        backLabel="Back to leagues"
+        backLabel={<I18nText en="Back to leagues" ru="Назад к лигам" />}
         items={[
-          { label: "Baltika", href: "/baltika/leagues" },
+          { label: <I18nText en="Baltika" ru="Балтика" />, href: "/baltika/leagues" },
           { label: league.name, href: `/baltika/leagues/${league.id}` }
         ]}
       />
       <div className="mt-5 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">League workspace</p>
+          <p className="text-sm font-semibold uppercase tracking-wide text-slate-500"><I18nText en="League workspace" ru="Рабочее место лиги" /></p>
           <h1 className="mt-2 flex items-center gap-3 text-3xl font-bold text-ink">
             <span aria-hidden="true" className="text-4xl leading-none">
               {leagueFlag(league)}
@@ -127,26 +129,19 @@ export default async function BaltikaLeaguePage({ params }: PageProps) {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          <button
-            type="button"
-            disabled
-            className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-400"
-          >
-            <Database className="h-4 w-4" />
-            Bulk upload
-          </button>
+          <BulkImportButton leagueId={league.id} seasonId={season?.id ?? ""} />
           <Link
             href="/baltika/players"
             className="inline-flex items-center gap-2 rounded bg-ink px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700"
           >
             <BarChart3 className="h-4 w-4" />
-            View players
+            <I18nText en="View players" ru="Смотреть игроков" />
           </Link>
           <Link
             href={`/baltika/leagues/${league.id}/schedule`}
             className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
           >
-            Calendar
+            <I18nText en="Calendar" ru="Календарь" />
           </Link>
         </div>
       </div>
@@ -155,11 +150,11 @@ export default async function BaltikaLeaguePage({ params }: PageProps) {
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-semibold text-ink">
-              {publishedCount}/{teams.length} teams published
+              {publishedCount}/{teams.length} <I18nText en="teams published" ru="команд опубликовано" />
             </p>
-            <p className="text-sm text-slate-500">Drop one Wyscout .xlsx file onto each team card.</p>
+            <p className="text-sm text-slate-500"><I18nText en="Drop one Wyscout .xlsx file onto each team card." ru="Можно загружать файлы по одной команде или импортировать сразу много .xlsx через массовый импорт." /></p>
           </div>
-          <span className="text-sm font-medium text-slate-500">Target period: 2025/26</span>
+          <span className="text-sm font-medium text-slate-500"><I18nText en="Target period" ru="Период" />: 2025/26</span>
         </div>
         <div className="mt-4 h-3 overflow-hidden rounded-full bg-slate-100">
           <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${progress}%` }} />

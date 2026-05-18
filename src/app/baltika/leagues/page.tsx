@@ -1,6 +1,7 @@
 import { ArrowRight, CalendarDays } from "lucide-react";
 import Link from "next/link";
 
+import { I18nText } from "@/components/i18n-text";
 import { formatDate } from "@/lib/format";
 import { prisma } from "@/lib/db";
 import { leagueSubtitle } from "@/lib/leagues/display";
@@ -32,9 +33,12 @@ export default async function BaltikaLeaguesPage() {
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
           <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">Baltika</p>
-          <h1 className="mt-2 text-3xl font-bold text-ink">Leagues</h1>
+          <h1 className="mt-2 text-3xl font-bold text-ink"><I18nText en="Leagues" ru="Лиги" /></h1>
           <p className="mt-2 max-w-2xl text-sm text-slate-600">
-            Maintain fantasy datasets one league at a time by uploading Wyscout team spreadsheets.
+            <I18nText
+              en="Maintain fantasy datasets one league at a time by uploading Wyscout team spreadsheets."
+              ru="Загружайте таблицы Wyscout по командам и поддерживайте fantasy-данные отдельно для каждой лиги."
+            />
           </p>
         </div>
       </div>
@@ -73,7 +77,7 @@ export default async function BaltikaLeaguesPage() {
 
               <div className="mt-6">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-slate-500">Published teams</span>
+                  <span className="text-slate-500"><I18nText en="Published teams" ru="Опубликовано команд" /></span>
                   <span className="font-semibold text-ink">
                     {publishedCount}/{league.teams.length}
                   </span>
@@ -88,7 +92,7 @@ export default async function BaltikaLeaguesPage() {
 
               <p className="mt-5 flex items-center gap-2 text-sm text-slate-500">
                 <CalendarDays className="h-4 w-4" />
-                Last update {formatDate(lastUpdate)}
+                <I18nText en="Last update" ru="Последнее обновление" /> {formatDate(lastUpdate)}
               </p>
             </Link>
           );

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 
+import { LanguageToggle } from "@/components/language-toggle";
 import { ModeLeaguesLink } from "@/components/mode-leagues-link";
 import { ModelSettingsLink } from "@/components/model-settings-link";
 import { ModeBrand } from "@/components/mode-brand";
@@ -17,6 +18,14 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var l=localStorage.getItem('fantasy-language');if(l==='ru'||l==='en'){document.documentElement.dataset.language=l;document.documentElement.lang=l;}}catch(e){}"
+          }}
+        />
+      </head>
       <body>
         <div className="min-h-screen">
           <header className="border-b border-slate-200 bg-white/88 backdrop-blur">
@@ -27,6 +36,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <ModePlayersLink />
                 <ModeSwitchLink />
                 <ModelSettingsLink />
+                <LanguageToggle />
                 <ThemeToggle />
               </nav>
             </div>

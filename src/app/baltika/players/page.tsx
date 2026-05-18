@@ -1,6 +1,7 @@
 import { ImportStatus, Prisma } from "@prisma/client";
 import Link from "next/link";
 
+import { I18nText } from "@/components/i18n-text";
 import { AutoSubmitForm } from "@/components/players/auto-submit-form";
 import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
 import { formatCurrency, formatNumber, formatScore } from "@/lib/format";
@@ -83,30 +84,30 @@ export default async function PlayersPage({ searchParams }: PageProps) {
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <PageBreadcrumbs
         backHref="/baltika/leagues"
-        backLabel="Back to leagues"
+        backLabel={<I18nText en="Back to leagues" ru="Назад к лигам" />}
         items={[
-          { label: "Baltika", href: "/baltika/leagues" },
-          { label: "Players", href: "/baltika/players" }
+          { label: <I18nText en="Baltika" ru="Балтика" />, href: "/baltika/leagues" },
+          { label: <I18nText en="Players" ru="Игроки" />, href: "/baltika/players" }
         ]}
       />
       <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">Baltika player explorer</p>
-          <h1 className="mt-2 text-3xl font-bold text-ink">Published Wyscout players</h1>
+          <p className="text-sm font-semibold uppercase tracking-wide text-slate-500"><I18nText en="Baltika player explorer" ru="Таблица игроков Балтики" /></p>
+          <h1 className="mt-2 text-3xl font-bold text-ink"><I18nText en="Published Wyscout players" ru="Опубликованные игроки Wyscout" /></h1>
           <p className="mt-2 max-w-2xl text-sm text-slate-600">
-            This table only reads snapshots from imports marked current and published.
+            <I18nText en="This table only reads snapshots from imports marked current and published." ru="Здесь показаны только игроки из текущих опубликованных импортов." />
           </p>
         </div>
         <Link href="/baltika/leagues" className="rounded bg-ink px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700">
-          Back to Baltika
+          <I18nText en="Back to Baltika" ru="Назад в Балтику" />
         </Link>
       </div>
 
       <AutoSubmitForm className="mt-8 grid grid-cols-1 gap-3 rounded border border-slate-200 bg-white p-4 shadow-soft md:grid-cols-6">
         <label className="text-sm">
-          <span className="mb-1 block font-medium text-slate-600">League</span>
+          <span className="mb-1 block font-medium text-slate-600"><I18nText en="League" ru="Лига" /></span>
           <select name="leagueId" defaultValue={searchParams.leagueId ?? ""} className="w-full rounded border border-slate-200 px-3 py-2">
-            <option value="">All leagues</option>
+            <option value="">All leagues / Все лиги</option>
             {leagues.map((league) => (
               <option key={league.id} value={league.id}>
                 {league.name}
@@ -115,9 +116,9 @@ export default async function PlayersPage({ searchParams }: PageProps) {
           </select>
         </label>
         <label className="text-sm">
-          <span className="mb-1 block font-medium text-slate-600">Team</span>
+          <span className="mb-1 block font-medium text-slate-600"><I18nText en="Team" ru="Команда" /></span>
           <select name="teamId" defaultValue={searchParams.teamId ?? ""} className="w-full rounded border border-slate-200 px-3 py-2">
-            <option value="">All teams</option>
+            <option value="">All teams / Все команды</option>
             {leagues.flatMap((league) =>
               league.teams.map((team) => (
                 <option key={team.id} value={team.id}>
@@ -128,13 +129,13 @@ export default async function PlayersPage({ searchParams }: PageProps) {
           </select>
         </label>
         <label className="text-sm">
-          <span className="mb-1 block font-medium text-slate-600">Position</span>
+          <span className="mb-1 block font-medium text-slate-600"><I18nText en="Position" ru="Позиция" /></span>
           <select
             name="positionGroup"
             defaultValue={searchParams.positionGroup ?? ""}
             className="w-full rounded border border-slate-200 px-3 py-2"
           >
-            <option value="">All positions</option>
+            <option value="">All positions / Все позиции</option>
             {positions.map((position) => (
               <option key={position} value={position}>
                 {position}
@@ -143,7 +144,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
           </select>
         </label>
         <label className="text-sm">
-          <span className="mb-1 block font-medium text-slate-600">Min minutes</span>
+          <span className="mb-1 block font-medium text-slate-600"><I18nText en="Min minutes" ru="Мин. минуты" /></span>
           <input
             name="minMinutes"
             type="number"
@@ -154,12 +155,12 @@ export default async function PlayersPage({ searchParams }: PageProps) {
           />
         </label>
         <label className="text-sm">
-          <span className="mb-1 block font-medium text-slate-600">Sort</span>
+          <span className="mb-1 block font-medium text-slate-600"><I18nText en="Sort" ru="Сортировка" /></span>
           <select name="sort" defaultValue={sort} className="w-full rounded border border-slate-200 px-3 py-2">
-            <option value="fantasyScore">Predicted FP</option>
-            <option value="alternativeScore">Alt FP</option>
-            <option value="minutesPlayed">Minutes</option>
-            <option value="playerName">Player name</option>
+            <option value="fantasyScore">Predicted FP / Прогноз FP</option>
+            <option value="alternativeScore">Alt FP / Альт. FP</option>
+            <option value="minutesPlayed">Minutes / Минуты</option>
+            <option value="playerName">Player name / Имя игрока</option>
           </select>
         </label>
         <label className="flex items-end gap-2 rounded border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700">
@@ -170,7 +171,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
             defaultChecked={searchParams.starterOnly === "1"}
             className="mb-1 h-4 w-4 rounded border-slate-300"
           />
-          <span>Только в старте</span>
+          <span><I18nText en="Starters only" ru="Только стартовые" /></span>
         </label>
       </AutoSubmitForm>
 
@@ -179,18 +180,18 @@ export default async function PlayersPage({ searchParams }: PageProps) {
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
               <tr>
-                <th className="px-4 py-3">Player</th>
-                <th className="px-4 py-3">Team</th>
+                <th className="px-4 py-3"><I18nText en="Player" ru="Игрок" /></th>
+                <th className="px-4 py-3"><I18nText en="Team" ru="Команда" /></th>
                 <th className="px-4 py-3">Pos</th>
-                <th className="px-4 py-3 text-right">Age</th>
-                <th className="px-4 py-3 text-right">Minutes</th>
-                <th className="px-4 py-3 text-right">Goals</th>
+                <th className="px-4 py-3 text-right"><I18nText en="Age" ru="Возраст" /></th>
+                <th className="px-4 py-3 text-right"><I18nText en="Minutes" ru="Минуты" /></th>
+                <th className="px-4 py-3 text-right"><I18nText en="Goals" ru="Голы" /></th>
                 <th className="px-4 py-3 text-right">xG</th>
-                <th className="px-4 py-3 text-right">Assists</th>
+                <th className="px-4 py-3 text-right"><I18nText en="Assists" ru="Ассисты" /></th>
                 <th className="px-4 py-3 text-right">xA</th>
-                <th className="px-4 py-3 text-right">Market</th>
-                <th className="bg-emerald-50 px-4 py-3 text-right text-emerald-700">Predicted FP</th>
-                <th className="bg-amber-50 px-4 py-3 text-right text-amber-700">Alt FP</th>
+                <th className="px-4 py-3 text-right"><I18nText en="Market" ru="Стоимость" /></th>
+                <th className="bg-emerald-50 px-4 py-3 text-right text-emerald-700"><I18nText en="Predicted FP" ru="Прогноз FP" /></th>
+                <th className="bg-amber-50 px-4 py-3 text-right text-amber-700"><I18nText en="Alt FP" ru="Альт. FP" /></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -217,7 +218,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
               {players.length === 0 ? (
                 <tr>
                   <td colSpan={columnsCount} className="px-4 py-10 text-center text-slate-500">
-                    No published player snapshots match these filters yet.
+                    <I18nText en="No published player snapshots match these filters yet." ru="Пока нет опубликованных игроков под эти фильтры." />
                   </td>
                 </tr>
               ) : null}

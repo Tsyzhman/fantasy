@@ -1,5 +1,6 @@
 import type { ImportStatus } from "@prisma/client";
 
+import { I18nText } from "@/components/i18n-text";
 import { cn } from "@/lib/cn";
 
 const statusStyles: Record<string, string> = {
@@ -23,7 +24,24 @@ export function StatusBadge({ status, className }: { status: ImportStatus | "EMP
         className
       )}
     >
-      {status}
+      {statusLabel(status)}
     </span>
   );
+}
+
+function statusLabel(status: ImportStatus | "EMPTY" | string) {
+  const labels: Record<string, { en: string; ru: string }> = {
+    EMPTY: { en: "EMPTY", ru: "Нет файла" },
+    UPLOADING: { en: "UPLOADING", ru: "Загрузка" },
+    PARSING: { en: "PARSING", ru: "Парсинг" },
+    VALIDATED: { en: "VALIDATED", ru: "Проверено" },
+    READY: { en: "READY", ru: "Готово" },
+    PUBLISHED: { en: "PUBLISHED", ru: "Опубликовано" },
+    ERROR: { en: "ERROR", ru: "Ошибка" },
+    OUTDATED: { en: "OUTDATED", ru: "Устарело" },
+    ARCHIVED: { en: "ARCHIVED", ru: "Архив" }
+  };
+
+  const label = labels[String(status)];
+  return label ? <I18nText en={label.en} ru={label.ru} /> : status;
 }

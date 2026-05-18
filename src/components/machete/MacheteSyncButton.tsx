@@ -27,7 +27,7 @@ export function MacheteSyncButton({
   const [state, setState] = useState<SyncState>({ status: "idle" });
 
   async function runSync() {
-    setState({ status: "running", message: "Running..." });
+    setState({ status: "running", message: localizedText("Running...", "Выполняется...") });
     const response = await fetch(endpoint, { method: "POST" });
     const payload = await response.json().catch(() => ({}));
 
@@ -35,13 +35,13 @@ export function MacheteSyncButton({
       const message =
         typeof payload?.error === "string"
           ? payload.error
-          : payload?.error?.message ?? payload?.job?.errorMessage ?? "Sync failed.";
+          : payload?.error?.message ?? payload?.job?.errorMessage ?? localizedText("Sync failed.", "Синхронизация не удалась.");
       setState({ status: "error", message });
       router.refresh();
       return;
     }
 
-    setState({ status: "success", message: "Done" });
+    setState({ status: "success", message: localizedText("Done", "Готово") });
     router.refresh();
   }
 
@@ -74,4 +74,9 @@ export function MacheteSyncButton({
       ) : null}
     </div>
   );
+}
+
+function localizedText(en: string, ru: string) {
+  if (typeof document !== "undefined" && document.documentElement.dataset.language === "ru") return ru;
+  return en;
 }

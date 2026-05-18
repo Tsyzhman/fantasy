@@ -1,7 +1,7 @@
 export function formatDate(value?: Date | string | null) {
-  if (!value) return "—";
+  if (!value) return "-";
   const date = typeof value === "string" ? new Date(value) : value;
-  if (Number.isNaN(date.getTime())) return "—";
+  if (Number.isNaN(date.getTime())) return "-";
   return new Intl.DateTimeFormat("en", {
     month: "short",
     day: "numeric",
@@ -11,7 +11,7 @@ export function formatDate(value?: Date | string | null) {
 }
 
 export function formatNumber(value?: number | null, maximumFractionDigits = 0) {
-  if (value === null || value === undefined || Number.isNaN(value)) return "—";
+  if (value === null || value === undefined || Number.isNaN(value)) return "-";
   return new Intl.NumberFormat("en", { maximumFractionDigits }).format(value);
 }
 
@@ -20,8 +20,8 @@ export function formatScore(value?: number | null) {
 }
 
 export function formatCurrency(value?: number | null) {
-  if (value === null || value === undefined || Number.isNaN(value)) return "—";
-  if (value >= 1_000_000) return `€${formatNumber(value / 1_000_000, 1)}m`;
-  if (value >= 1_000) return `€${formatNumber(value / 1_000, 0)}k`;
-  return `€${formatNumber(value, 0)}`;
+  if (value === null || value === undefined || Number.isNaN(value)) return "-";
+  if (value >= 1_000_000) return `EUR ${formatNumber(value / 1_000_000, 1)}m`;
+  if (value >= 1_000) return `EUR ${formatNumber(value / 1_000, 0)}k`;
+  return `EUR ${formatNumber(value, 0)}`;
 }

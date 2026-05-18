@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import type { Dispatch, SetStateAction } from "react";
 import { useMemo, useState } from "react";
 
+import { I18nText } from "@/components/i18n-text";
+
 export type BaltikaCalendarTeam = {
   id: string;
   name: string;
@@ -111,7 +113,7 @@ export function BaltikaCalendarPanel({
     setBusyId(null);
 
     if (!response.ok) {
-      setMessage(payload?.error?.message ?? "Could not create fixture.");
+      setMessage(payload?.error?.message ?? localizedText("Could not create fixture.", "Не удалось создать матч."));
       return;
     }
 
@@ -131,7 +133,7 @@ export function BaltikaCalendarPanel({
     setBusyId(null);
 
     if (!response.ok) {
-      setMessage(payload?.error?.message ?? "Could not save fixture.");
+      setMessage(payload?.error?.message ?? localizedText("Could not save fixture.", "Не удалось сохранить матч."));
       return;
     }
 
@@ -146,7 +148,7 @@ export function BaltikaCalendarPanel({
     setBusyId(null);
 
     if (!response.ok) {
-      setMessage(payload?.error?.message ?? "Could not delete fixture.");
+      setMessage(payload?.error?.message ?? localizedText("Could not delete fixture.", "Не удалось удалить матч."));
       return;
     }
 
@@ -174,8 +176,10 @@ export function BaltikaCalendarPanel({
     <section className="mt-8 rounded border border-slate-200 bg-white p-5 shadow-soft">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <h2 className="text-lg font-semibold text-ink">Round prediction</h2>
-          <p className="mt-1 text-sm text-slate-500">Predicted xG/xGA uses team home/away form and opponent opposite-side form.</p>
+          <h2 className="text-lg font-semibold text-ink"><I18nText en="Round prediction" ru="Прогноз тура" /></h2>
+          <p className="mt-1 text-sm text-slate-500">
+            <I18nText en="Predicted xG/xGA uses team home/away form and opponent opposite-side form." ru="Прогноз xG/xGA учитывает домашнюю/гостевую форму команды и форму соперника на другой стороне." />
+          </p>
         </div>
         {message ? <p className="rounded bg-rose-50 px-3 py-2 text-sm text-rose-700">{message}</p> : null}
       </div>
@@ -183,8 +187,8 @@ export function BaltikaCalendarPanel({
       <div className="mt-5 rounded border border-slate-200 bg-white">
         <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h3 className="text-base font-semibold text-ink">Round projection</h3>
-            <p className="mt-1 text-sm text-slate-500">Select a tour to check team-level xG and xGA expectations.</p>
+            <h3 className="text-base font-semibold text-ink"><I18nText en="Round projection" ru="Расчет тура" /></h3>
+            <p className="mt-1 text-sm text-slate-500"><I18nText en="Select a tour to check team-level xG and xGA expectations." ru="Выберите тур, чтобы увидеть ожидаемые xG и xGA по командам." /></p>
           </div>
           <select
             value={activeRound ?? ""}
@@ -193,7 +197,8 @@ export function BaltikaCalendarPanel({
           >
             {rounds.map((round) => (
               <option key={round} value={round}>
-                Tour {roundLabels.get(round)}{roundLabels.get(round) !== round ? ` (source ${round})` : ""}
+                Tour {roundLabels.get(round)} / Тур {roundLabels.get(round)}
+                {roundLabels.get(round) !== round ? ` (source ${round} / исходный ${round})` : ""}
               </option>
             ))}
           </select>
@@ -202,12 +207,12 @@ export function BaltikaCalendarPanel({
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
               <tr>
-                <th className="px-4 py-3">Team</th>
-                <th className="px-4 py-3">Fixtures</th>
-                <th className="px-4 py-3 text-right">Pred xG</th>
-                <th className="px-4 py-3 text-right">Pred xGA</th>
-                <th className="px-4 py-3 text-right">Avg xG</th>
-                <th className="px-4 py-3 text-right">Avg xGA</th>
+                <th className="px-4 py-3"><I18nText en="Team" ru="Команда" /></th>
+                <th className="px-4 py-3"><I18nText en="Fixtures" ru="Матчи" /></th>
+                <th className="px-4 py-3 text-right"><I18nText en="Pred xG" ru="Прогноз xG" /></th>
+                <th className="px-4 py-3 text-right"><I18nText en="Pred xGA" ru="Прогноз xGA" /></th>
+                <th className="px-4 py-3 text-right"><I18nText en="Avg xG" ru="Сред. xG" /></th>
+                <th className="px-4 py-3 text-right"><I18nText en="Avg xGA" ru="Сред. xGA" /></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -216,7 +221,7 @@ export function BaltikaCalendarPanel({
                   <td className="whitespace-nowrap px-4 py-3 font-semibold text-ink">{row.team.name}</td>
                   <td className="min-w-[240px] px-4 py-3 text-slate-600">
                     {row.fixtures.length === 0 ? (
-                      <span className="text-slate-300">Empty</span>
+                      <span className="text-slate-300"><I18nText en="Empty" ru="Пусто" /></span>
                     ) : (
                       <div className="space-y-1">
                         {row.fixtures.map((fixture) => (
@@ -240,15 +245,15 @@ export function BaltikaCalendarPanel({
       </div>
 
       <div className="mt-6">
-        <h2 className="text-lg font-semibold text-ink">Calendar by round</h2>
-        <p className="mt-1 text-sm text-slate-500">Any fixture can be moved to another round; teams can have no fixture or multiple fixtures in one round.</p>
+        <h2 className="text-lg font-semibold text-ink"><I18nText en="Calendar by round" ru="Календарь по турам" /></h2>
+        <p className="mt-1 text-sm text-slate-500"><I18nText en="Any fixture can be moved to another round; teams can have no fixture or multiple fixtures in one round." ru="Любой матч можно перенести в другой тур; у команды может не быть матча или может быть несколько матчей в одном туре." /></p>
       </div>
 
       <div className="mt-5 grid grid-cols-1 gap-3 lg:grid-cols-[90px_1fr_1fr_1fr_auto]">
         <input
           type="number"
           min="1"
-          placeholder="Round"
+          placeholder="Round / Тур"
           value={draft.roundNumber}
           onChange={(event) => setDraft((current) => ({ ...current, roundNumber: event.target.value }))}
           className="rounded border border-slate-200 px-3 py-2 text-sm"
@@ -259,8 +264,8 @@ export function BaltikaCalendarPanel({
           onChange={(event) => setDraft((current) => ({ ...current, kickoffAt: event.target.value }))}
           className="rounded border border-slate-200 px-3 py-2 text-sm"
         />
-        <TeamSelect value={draft.homeTeamId} teams={teams} placeholder="Home team" onChange={(value) => setDraft((current) => ({ ...current, homeTeamId: value }))} />
-        <TeamSelect value={draft.awayTeamId} teams={teams} placeholder="Away team" onChange={(value) => setDraft((current) => ({ ...current, awayTeamId: value }))} />
+        <TeamSelect value={draft.homeTeamId} teams={teams} placeholder="Home team / Хозяева" onChange={(value) => setDraft((current) => ({ ...current, homeTeamId: value }))} />
+        <TeamSelect value={draft.awayTeamId} teams={teams} placeholder="Away team / Гости" onChange={(value) => setDraft((current) => ({ ...current, awayTeamId: value }))} />
         <button
           type="button"
           onClick={() => void createFixture()}
@@ -268,7 +273,7 @@ export function BaltikaCalendarPanel({
           className="inline-flex items-center justify-center gap-2 rounded bg-ink px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-60"
         >
           <Plus className="h-4 w-4" />
-          Add
+          <I18nText en="Add" ru="Добавить" />
         </button>
       </div>
 
@@ -276,12 +281,12 @@ export function BaltikaCalendarPanel({
         <table className="min-w-full divide-y divide-slate-200 text-sm">
           <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
             <tr>
-              <th className="sticky left-0 z-10 bg-slate-50 px-4 py-3">Team</th>
+              <th className="sticky left-0 z-10 bg-slate-50 px-4 py-3"><I18nText en="Team" ru="Команда" /></th>
               {visibleRounds.map((round) => (
                 <th key={round} className="min-w-[150px] px-4 py-3">
-                  Tour {roundLabels.get(round)}
-                  {round === activeRound ? <span className="ml-1 rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] text-emerald-700">selected</span> : null}
-                  {roundLabels.get(round) !== round ? <span className="ml-1 font-normal normal-case text-slate-400">(source {round})</span> : null}
+                  <I18nText en="Tour" ru="Тур" /> {roundLabels.get(round)}
+                  {round === activeRound ? <span className="ml-1 rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] text-emerald-700"><I18nText en="selected" ru="выбран" /></span> : null}
+                  {roundLabels.get(round) !== round ? <span className="ml-1 font-normal normal-case text-slate-400">(<I18nText en="source" ru="исходный" /> {round})</span> : null}
                 </th>
               ))}
             </tr>
@@ -293,7 +298,7 @@ export function BaltikaCalendarPanel({
                 {cells.map((cell, index) => (
                   <td key={`${team.id}-${visibleRounds[index]}`} className="align-top px-4 py-3 text-slate-600">
                     {cell.length === 0 ? (
-                      <span className="text-slate-300">Empty</span>
+                      <span className="text-slate-300"><I18nText en="Empty" ru="Пусто" /></span>
                     ) : (
                       <div className="space-y-1">
                         {cell.map((fixture) => (
@@ -314,21 +319,21 @@ export function BaltikaCalendarPanel({
 
       {unscheduledFixtures.length > 0 ? (
         <div className="mt-4 rounded border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          {unscheduledFixtures.length} imported fixtures do not have a round yet.
+          {unscheduledFixtures.length} <I18nText en="imported fixtures do not have a round yet." ru="импортированных матчей пока без тура." />
         </div>
       ) : null}
 
       <div className="mt-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h3 className="text-sm font-semibold uppercase text-slate-500">Editable fixtures</h3>
-            <p className="mt-1 text-sm text-slate-500">Change the round number to move a match into any tour.</p>
+            <h3 className="text-sm font-semibold uppercase text-slate-500"><I18nText en="Editable fixtures" ru="Редактируемые матчи" /></h3>
+            <p className="mt-1 text-sm text-slate-500"><I18nText en="Change the round number to move a match into any tour." ru="Измените номер тура, чтобы перенести матч." /></p>
           </div>
           <input
             type="search"
             value={fixtureFilter}
             onChange={(event) => setFixtureFilter(event.target.value)}
-            placeholder="Find team or round"
+            placeholder="Find team or round / Найти команду или тур"
             className="w-full rounded border border-slate-200 px-3 py-2 text-sm sm:max-w-xs"
           />
         </div>
@@ -358,8 +363,8 @@ export function BaltikaCalendarPanel({
                   onChange={(event) => setEditingValue(fixture.id, "kickoffAt", event.target.value, setEditing)}
                   className="rounded border border-slate-200 px-3 py-2 text-sm"
                 />
-                <TeamSelect value={value.homeTeamId} teams={teams} placeholder="Home team" onChange={(next) => setEditingValue(fixture.id, "homeTeamId", next, setEditing)} />
-                <TeamSelect value={value.awayTeamId} teams={teams} placeholder="Away team" onChange={(next) => setEditingValue(fixture.id, "awayTeamId", next, setEditing)} />
+                <TeamSelect value={value.homeTeamId} teams={teams} placeholder="Home team / Хозяева" onChange={(next) => setEditingValue(fixture.id, "homeTeamId", next, setEditing)} />
+                <TeamSelect value={value.awayTeamId} teams={teams} placeholder="Away team / Гости" onChange={(next) => setEditingValue(fixture.id, "awayTeamId", next, setEditing)} />
                 <button
                   type="button"
                   onClick={() => void saveFixture(fixture)}
@@ -367,7 +372,7 @@ export function BaltikaCalendarPanel({
                   className="inline-flex items-center justify-center gap-2 rounded bg-ink px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-60"
                 >
                   <Save className="h-4 w-4" />
-                  Save
+                  <I18nText en="Save" ru="Сохранить" />
                 </button>
                 <button
                   type="button"
@@ -376,14 +381,14 @@ export function BaltikaCalendarPanel({
                   className="inline-flex items-center justify-center gap-2 rounded border border-rose-200 bg-white px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-60"
                 >
                   <Trash2 className="h-4 w-4" />
-                  Delete
+                  <I18nText en="Delete" ru="Удалить" />
                 </button>
               </div>
             );
           })}
           {editableFixtures.length === 0 ? (
             <div className="rounded border border-dashed border-slate-300 bg-white p-6 text-center text-sm text-slate-500">
-              No fixtures match this filter.
+              <I18nText en="No fixtures match this filter." ru="Нет матчей под этот фильтр." />
             </div>
           ) : null}
         </div>
@@ -525,4 +530,9 @@ function toDraft(fixture: BaltikaCalendarFixture): Draft {
     homeTeamId: fixture.homeTeamId ?? "",
     awayTeamId: fixture.awayTeamId ?? ""
   };
+}
+
+function localizedText(en: string, ru: string) {
+  if (typeof document !== "undefined" && document.documentElement.dataset.language === "ru") return ru;
+  return en;
 }
