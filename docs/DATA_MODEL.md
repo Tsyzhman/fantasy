@@ -184,6 +184,7 @@ model PlayerSnapshot {
 
   fantasyScore     Float?
   valueScore       Float?
+  isStarter        Boolean  @default(false)
   rawMetrics       Json
 
   createdAt        DateTime @default(now())

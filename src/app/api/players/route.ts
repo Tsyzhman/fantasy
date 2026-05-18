@@ -17,11 +17,13 @@ export async function GET(request: Request) {
   const leagueId = params.get("leagueId");
   const teamId = params.get("teamId");
   const positionGroup = params.get("positionGroup");
+  const starterOnly = params.get("starterOnly");
   const minMinutes = Number(params.get("minMinutes") ?? "");
 
   if (leagueId) where.leagueId = leagueId;
   if (teamId) where.teamId = teamId;
   if (positionGroup) where.positionGroup = positionGroup;
+  if (starterOnly === "1") where.isStarter = true;
   if (Number.isFinite(minMinutes)) where.minutesPlayed = { gte: minMinutes };
 
   const sort = params.get("sort") ?? "fantasyScore";

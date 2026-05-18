@@ -1,120 +1,67 @@
 # Fantasy Scoring
 
-## Goal
+## Meaning
 
-Calculate a comparable fantasy score for every imported player snapshot.
+`fantasyScore` is the player's projected fantasy points from the imported event metrics.
 
-The score should be transparent, configurable, and position-aware.
-
-## MVP approach
-
-Use a rule-based weighted model.
-
-Each rule:
-
-```ts
-type FantasyRule = {
-  positionGroup: 'DEFAULT' | 'GK' | 'DEF' | 'MID' | 'FWD';
-  metricKey: string;
-  weight: number;
-  transform: 'linear' | 'per90' | 'percent' | 'negative' | 'cap';
-  enabled: boolean;
-};
-```
-
-Formula:
-
-```text
-fantasy_score = sum(metric_value * rule_weight)
-```
-
-Apply rules in this order:
-
-1. DEFAULT rules;
-2. position-specific rules for GK/DEF/MID/FWD;
-3. optional caps/normalization later.
-
-## Suggested seed model
-
-### DEFAULT
-
-```text
-minutes_played * 0.01
-matches_played * 0.05
-goals * 5
-assists * 4
-xg * 1.5
-xa * 1.5
-yellow_cards * -1
-red_cards * -3
-```
-
-### FWD
-
-```text
-shots_per_90 * 0.3
-shots_on_target_percent * 0.02
-touches_in_box_per_90 * 0.4
-successful_attacking_actions_per_90 * 0.4
-goal_conversion_percent * 0.03
-```
-
-### MID
-
-```text
-key_passes_per_90 * 1.0
-shot_assists_per_90 * 0.8
-passes_to_final_third_per_90 * 0.2
-accurate_passes_to_final_third_percent * 0.02
-progressive_passes_per_90 * 0.25
-accurate_progressive_passes_percent * 0.02
-smart_passes_per_90 * 0.8
-```
-
-### DEF
-
-```text
-successful_defensive_actions_per_90 * 0.5
-defensive_duels_won_percent * 0.03
-aerial_duels_won_percent * 0.02
-interceptions_per_90 * 0.6
-shots_blocked_per_90 * 0.8
-```
-
-### GK
-
-```text
-clean_sheets * 2.5
-save_rate_percent * 0.05
-prevented_goals * 1.5
-conceded_goals * -0.8
-shots_against_per_90 * 0.1
-exits_per_90 * 0.2
-```
-
-## Value score
-
-Calculate value score when market value exists:
+`valueScore` is fantasy output adjusted for market value:
 
 ```text
 value_score = fantasy_score / max(market_value / 1_000_000, 0.1)
 ```
 
-This helps users find underpriced players.
+It answers a different question: not "who scores most?", but "who gives the most fantasy points per EUR 1m of value?"
 
-## Missing values
+## Formula
 
-For MVP:
+The score is rule-based and position-aware:
 
-- missing metric value = 0 for formula calculation;
-- keep raw value as null in DB;
-- show missing data in UI as `—`.
+```text
+fantasy_score = sum(transformed_metric_value * rule_weight)
+```
 
-## Future improvements
+Rules can be `DEFAULT` for all positions or specific to `GK`, `DEF`, `MID`, and `FWD`.
 
-- z-score normalization by position;
-- percentile ranking by league;
-- opponent strength adjustment;
-- fixture difficulty weighting;
-- recent-form weighting;
-- user-custom scoring models.
+Admins can also enable a custom formula on `/admin/models`. When enabled, the custom formula is used instead of the
+default rule set for new imports.
+
+Custom formula syntax:
+
+```text
+4*{Goals} + 2*{xG/per90} + 3*{Assists} - {Yellow cards}
+```
+
+Use numbers, `+`, `-`, `*`, `/`, and parentheses. Put metric names in braces. Metric labels are normalized like imported
+Wyscout headers, so `{xG/per90}` maps to `xg_per_90`, `{Yellow cards}` maps to `yellow_cards`, and missing fields count as
+0.
+
+Supported transforms:
+
+- `linear`: use the metric value as-is.
+- `appearances_60`: `floor(minutes_played / 60)`, capped by `matches_played` when available.
+- `full_matches`: `floor(minutes_played / 90)`, capped by `matches_played` when available.
+- `floor_per_2`: `floor(value / 2)`.
+- `floor_per_3`: `floor(value / 3)`.
+
+## 2025/26 Seed Model
+
+| Action | GK | DEF | MID | FWD |
+| --- | ---: | ---: | ---: | ---: |
+| Appearance | +1 | +1 | +1 | +1 |
+| 60+ minutes | +1 | +1 | +1 | +1 |
+| Full match | - | - | +1 | +1 |
+| Goal | +6 | +6 | +5 | +4 |
+| Assist | +3 | +3 | +3 | +3 |
+| Fantasy assist | +3 | +3 | +3 | +3 |
+| Clean sheet, 60+ minutes | +4 | +4 | +1 | - |
+| Every 3 saves | +1 | - | - | - |
+| Every 3 possession recoveries | - | +1 | +1 | +1 |
+| Penalty save | +5 | - | - | - |
+| Foul leading to penalty | -2 | -2 | -2 | -2 |
+| Missed penalty | -2 | -2 | -2 | -2 |
+| Own goal | -2 | -2 | -2 | -2 |
+| Every 2 goals conceded | -1 | -1 | - | - |
+| Yellow card | -1 | -1 | -1 | -1 |
+| Red card | -3 | -3 | -3 | -3 |
+
+Missing metric values count as 0 in formula calculation, while raw imported values stay preserved in `PlayerSnapshot.rawMetrics`.

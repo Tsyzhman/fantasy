@@ -1,6 +1,7 @@
 import { ImportStatus, Prisma } from "@prisma/client";
 import Link from "next/link";
 
+import { StarterCheckbox } from "@/components/players/starter-checkbox";
 import { formatCurrency, formatNumber, formatScore } from "@/lib/format";
 import { prisma } from "@/lib/db";
 
@@ -11,6 +12,7 @@ type SearchParams = {
   teamId?: string;
   positionGroup?: string;
   minMinutes?: string;
+  starterOnly?: string;
   sort?: string;
 };
 
@@ -48,6 +50,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
   if (searchParams.leagueId) where.leagueId = searchParams.leagueId;
   if (searchParams.teamId) where.teamId = searchParams.teamId;
   if (searchParams.positionGroup) where.positionGroup = searchParams.positionGroup;
+  if (searchParams.starterOnly === "1") where.isStarter = true;
   if (searchParams.minMinutes) {
     const minutes = Number(searchParams.minMinutes);
     if (Number.isFinite(minutes)) where.minutesPlayed = { gte: minutes };
@@ -88,7 +91,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
         </Link>
       </div>
 
-      <form className="mt-8 grid grid-cols-1 gap-3 rounded border border-slate-200 bg-white p-4 shadow-soft md:grid-cols-5">
+      <form className="mt-8 grid grid-cols-1 gap-3 rounded border border-slate-200 bg-white p-4 shadow-soft md:grid-cols-6">
         <label className="text-sm">
           <span className="mb-1 block font-medium text-slate-600">League</span>
           <select name="leagueId" defaultValue={searchParams.leagueId ?? ""} className="w-full rounded border border-slate-200 px-3 py-2">
@@ -148,7 +151,17 @@ export default async function PlayersPage({ searchParams }: PageProps) {
             <option value="playerName">Player name</option>
           </select>
         </label>
-        <div className="md:col-span-5">
+        <label className="flex items-end gap-2 rounded border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700">
+          <input
+            type="checkbox"
+            name="starterOnly"
+            value="1"
+            defaultChecked={searchParams.starterOnly === "1"}
+            className="mb-1 h-4 w-4 rounded border-slate-300"
+          />
+          <span>Только в старте</span>
+        </label>
+        <div className="md:col-span-6">
           <button type="submit" className="rounded bg-ink px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">
             Apply filters
           </button>
@@ -160,6 +173,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
           <table className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
               <tr>
+                <th className="px-4 py-3 text-center">В старте</th>
                 <th className="px-4 py-3">Player</th>
                 <th className="px-4 py-3">Team</th>
                 <th className="px-4 py-3">Pos</th>
@@ -177,6 +191,9 @@ export default async function PlayersPage({ searchParams }: PageProps) {
             <tbody className="divide-y divide-slate-100">
               {players.map((player) => (
                 <tr key={player.id} className="hover:bg-slate-50">
+                  <td className="whitespace-nowrap px-4 py-3 text-center">
+                    <StarterCheckbox snapshotId={player.id} defaultChecked={player.isStarter} />
+                  </td>
                   <td className="whitespace-nowrap px-4 py-3 font-medium text-ink">{player.playerName}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-slate-600">{player.team.name}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-slate-600">{player.positionGroup ?? "—"}</td>
@@ -193,7 +210,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
               ))}
               {players.length === 0 ? (
                 <tr>
-                  <td colSpan={12} className="px-4 py-10 text-center text-slate-500">
+                  <td colSpan={13} className="px-4 py-10 text-center text-slate-500">
                     No published player snapshots match these filters yet.
                   </td>
                 </tr>

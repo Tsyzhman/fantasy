@@ -88,6 +88,7 @@ minMinutes
 maxMarketValue
 minFantasyScore
 minValueScore
+starterOnly
 sort
 page
 pageSize
@@ -96,6 +97,16 @@ pageSize
 ### `GET /api/players/:snapshotId`
 
 Returns a player snapshot with raw metrics.
+
+### `PATCH /api/players/:snapshotId`
+
+Updates player snapshot UI flags.
+
+```ts
+{
+  isStarter: boolean;
+}
+```
 
 ### `GET /api/leagues`
 

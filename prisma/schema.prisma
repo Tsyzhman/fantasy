@@ -178,6 +178,7 @@ model PlayerSnapshot {
 
   fantasyScore     Float?
   valueScore       Float?
+  isStarter        Boolean  @default(false)
   rawMetrics       Json
 
   createdAt        DateTime @default(now())
@@ -192,18 +193,21 @@ model PlayerSnapshot {
   @@index([positionGroup])
   @@index([fantasyScore])
   @@index([valueScore])
+  @@index([isStarter])
 }
 
 model FantasyModel {
-  id          String             @id @default(cuid())
-  name        String
-  description String?
-  version     Int                @default(1)
-  isDefault   Boolean            @default(false)
-  isActive    Boolean            @default(true)
-  rules       FantasyModelRule[]
-  createdAt   DateTime           @default(now())
-  updatedAt   DateTime           @updatedAt
+  id                   String             @id @default(cuid())
+  name                 String
+  description          String?
+  version              Int                @default(1)
+  isDefault            Boolean            @default(false)
+  isActive             Boolean            @default(true)
+  customFormula        String?
+  customFormulaEnabled Boolean            @default(false)
+  rules                FantasyModelRule[]
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
 }
 
 model FantasyModelRule {

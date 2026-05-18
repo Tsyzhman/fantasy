@@ -1,0 +1,255 @@
+export type LeagueSeed = {
+  id: string;
+  name: string;
+  country: string;
+  code: string;
+  teams: TeamSeed[];
+};
+
+export type TeamSeed = {
+  name: string;
+  aliases?: string[];
+};
+
+export const seasonName = "2025/26";
+
+export const leagueSeeds: LeagueSeed[] = [
+  {
+    id: "premier-league",
+    name: "Premier League",
+    country: "England",
+    code: "EPL",
+    teams: [
+      { name: "Arsenal", aliases: ["Arsenal FC"] },
+      { name: "Aston Villa", aliases: ["Aston Villa FC"] },
+      { name: "Bournemouth", aliases: ["AFC Bournemouth"] },
+      { name: "Brentford", aliases: ["Brentford FC"] },
+      { name: "Brighton & Hove Albion", aliases: ["Brighton", "Brighton and Hove Albion"] },
+      { name: "Burnley", aliases: ["Burnley FC"] },
+      { name: "Chelsea", aliases: ["Chelsea FC"] },
+      { name: "Crystal Palace", aliases: ["Crystal Palace FC"] },
+      { name: "Everton", aliases: ["Everton FC"] },
+      { name: "Fulham", aliases: ["Fulham FC"] },
+      { name: "Leeds United", aliases: ["Leeds", "Leeds United FC"] },
+      { name: "Liverpool", aliases: ["Liverpool FC"] },
+      { name: "Manchester City", aliases: ["Man City", "Manchester City FC"] },
+      { name: "Manchester United", aliases: ["Man United", "Man Utd", "Manchester United FC"] },
+      { name: "Newcastle United", aliases: ["Newcastle", "Newcastle United FC"] },
+      { name: "Nottingham Forest", aliases: ["Nottingham Forest FC"] },
+      { name: "Sunderland", aliases: ["Sunderland AFC"] },
+      { name: "Tottenham Hotspur", aliases: ["Tottenham", "Spurs", "Tottenham Hotspur FC"] },
+      { name: "West Ham United", aliases: ["West Ham", "West Ham United FC"] },
+      { name: "Wolverhampton Wanderers", aliases: ["Wolves", "Wolverhampton Wanderers FC"] }
+    ]
+  },
+  {
+    id: "bundesliga",
+    name: "Bundesliga",
+    country: "Germany",
+    code: "BUN",
+    teams: [
+      { name: "Augsburg", aliases: ["FC Augsburg"] },
+      { name: "Bayer Leverkusen", aliases: ["Bayer 04 Leverkusen"] },
+      { name: "Bayern Munich", aliases: ["Bayern Munchen", "FC Bayern Munich", "FC Bayern Munchen"] },
+      { name: "Borussia Dortmund", aliases: ["BVB", "Dortmund"] },
+      { name: "Borussia Monchengladbach", aliases: ["Borussia M'gladbach", "Gladbach"] },
+      { name: "Eintracht Frankfurt", aliases: ["Frankfurt"] },
+      { name: "Freiburg", aliases: ["SC Freiburg"] },
+      { name: "Hamburger SV", aliases: ["Hamburg", "HSV"] },
+      { name: "Heidenheim", aliases: ["1. FC Heidenheim"] },
+      { name: "Hoffenheim", aliases: ["TSG Hoffenheim"] },
+      { name: "Koln", aliases: ["1. FC Koln", "Cologne"] },
+      { name: "Mainz 05", aliases: ["1. FSV Mainz 05", "Mainz"] },
+      { name: "RB Leipzig", aliases: ["Leipzig"] },
+      { name: "St. Pauli", aliases: ["FC St. Pauli"] },
+      { name: "Stuttgart", aliases: ["VfB Stuttgart"] },
+      { name: "Union Berlin", aliases: ["1. FC Union Berlin"] },
+      { name: "Werder Bremen", aliases: ["SV Werder Bremen"] },
+      { name: "Wolfsburg", aliases: ["VfL Wolfsburg"] }
+    ]
+  },
+  {
+    id: "ligue-1",
+    name: "Ligue 1",
+    country: "France",
+    code: "L1",
+    teams: [
+      { name: "Angers", aliases: ["Angers SCO"] },
+      { name: "Auxerre", aliases: ["AJ Auxerre"] },
+      { name: "Brest", aliases: ["Stade Brestois"] },
+      { name: "Le Havre", aliases: ["Le Havre AC"] },
+      { name: "Lens", aliases: ["RC Lens"] },
+      { name: "Lille", aliases: ["LOSC Lille"] },
+      { name: "Lorient", aliases: ["FC Lorient"] },
+      { name: "Lyon", aliases: ["Olympique Lyonnais"] },
+      { name: "Marseille", aliases: ["Olympique Marseille"] },
+      { name: "Metz", aliases: ["FC Metz"] },
+      { name: "Monaco", aliases: ["AS Monaco"] },
+      { name: "Nantes", aliases: ["FC Nantes"] },
+      { name: "Nice", aliases: ["OGC Nice"] },
+      { name: "Paris FC" },
+      { name: "Paris Saint-Germain", aliases: ["PSG"] },
+      { name: "Rennes", aliases: ["Stade Rennais"] },
+      { name: "Strasbourg", aliases: ["RC Strasbourg"] },
+      { name: "Toulouse", aliases: ["Toulouse FC"] }
+    ]
+  },
+  {
+    id: "serie-a",
+    name: "Serie A",
+    country: "Italy",
+    code: "SA",
+    teams: [
+      { name: "AC Milan", aliases: ["Milan"] },
+      { name: "Atalanta", aliases: ["Atalanta BC"] },
+      { name: "Bologna" },
+      { name: "Cagliari" },
+      { name: "Como" },
+      { name: "Cremonese" },
+      { name: "Fiorentina" },
+      { name: "Genoa" },
+      { name: "Hellas Verona", aliases: ["Verona"] },
+      { name: "Inter Milan", aliases: ["Inter", "Internazionale"] },
+      { name: "Juventus" },
+      { name: "Lazio" },
+      { name: "Lecce" },
+      { name: "Napoli" },
+      { name: "Parma" },
+      { name: "Pisa" },
+      { name: "Roma" },
+      { name: "Sassuolo" },
+      { name: "Torino" },
+      { name: "Udinese" }
+    ]
+  },
+  {
+    id: "la-liga",
+    name: "La Liga",
+    country: "Spain",
+    code: "LL",
+    teams: [
+      { name: "Alaves", aliases: ["Deportivo Alaves"] },
+      { name: "Athletic Bilbao", aliases: ["Athletic Club"] },
+      { name: "Atletico Madrid", aliases: ["Atletico", "Atletico de Madrid"] },
+      { name: "Barcelona", aliases: ["FC Barcelona"] },
+      { name: "Celta Vigo", aliases: ["Celta", "RC Celta"] },
+      { name: "Elche" },
+      { name: "Espanyol", aliases: ["RCD Espanyol"] },
+      { name: "Getafe" },
+      { name: "Girona" },
+      { name: "Levante" },
+      { name: "Mallorca", aliases: ["RCD Mallorca"] },
+      { name: "Osasuna" },
+      { name: "Rayo Vallecano", aliases: ["Rayo"] },
+      { name: "Real Betis", aliases: ["Betis"] },
+      { name: "Real Madrid" },
+      { name: "Real Oviedo" },
+      { name: "Real Sociedad" },
+      { name: "Sevilla" },
+      { name: "Valencia" },
+      { name: "Villarreal" }
+    ]
+  },
+  {
+    id: "primeira-liga",
+    name: "Primeira Liga",
+    country: "Portugal",
+    code: "POR",
+    teams: [
+      { name: "Alverca", aliases: ["FC Alverca"] },
+      { name: "Arouca", aliases: ["FC Arouca"] },
+      { name: "AVS", aliases: ["AVS Futebol SAD"] },
+      { name: "Benfica", aliases: ["SL Benfica"] },
+      { name: "Braga", aliases: ["SC Braga"] },
+      { name: "Casa Pia", aliases: ["Casa Pia AC"] },
+      { name: "Estoril", aliases: ["Estoril Praia"] },
+      { name: "Estrela da Amadora" },
+      { name: "Famalicao", aliases: ["Famalicao", "FC Famalicao"] },
+      { name: "Gil Vicente" },
+      { name: "Moreirense" },
+      { name: "Nacional" },
+      { name: "Porto", aliases: ["FC Porto"] },
+      { name: "Rio Ave" },
+      { name: "Santa Clara" },
+      { name: "Sporting CP", aliases: ["Sporting", "Sporting Lisbon"] },
+      { name: "Tondela" },
+      { name: "Vitoria de Guimaraes", aliases: ["Vitoria Guimaraes"] }
+    ]
+  },
+  {
+    id: "eredivisie",
+    name: "Eredivisie",
+    country: "Netherlands",
+    code: "ERE",
+    teams: [
+      { name: "Ajax", aliases: ["AFC Ajax"] },
+      { name: "AZ", aliases: ["AZ Alkmaar"] },
+      { name: "Excelsior" },
+      { name: "Feyenoord" },
+      { name: "Fortuna Sittard" },
+      { name: "Go Ahead Eagles" },
+      { name: "Groningen", aliases: ["FC Groningen"] },
+      { name: "Heerenveen", aliases: ["SC Heerenveen"] },
+      { name: "Heracles Almelo" },
+      { name: "NAC Breda" },
+      { name: "NEC", aliases: ["NEC Nijmegen"] },
+      { name: "PEC Zwolle" },
+      { name: "PSV Eindhoven", aliases: ["PSV"] },
+      { name: "Sparta Rotterdam" },
+      { name: "Telstar" },
+      { name: "Twente", aliases: ["FC Twente"] },
+      { name: "Utrecht", aliases: ["FC Utrecht"] },
+      { name: "Volendam", aliases: ["FC Volendam"] }
+    ]
+  },
+  {
+    id: "russian-premier-league",
+    name: "Russian Premier League",
+    country: "Russia",
+    code: "RPL",
+    teams: [
+      { name: "Akhmat Grozny", aliases: ["Akhmat"] },
+      { name: "Akron Tolyatti", aliases: ["Akron"] },
+      { name: "Baltika Kaliningrad", aliases: ["Baltika"] },
+      { name: "CSKA Moscow", aliases: ["CSKA Moskva"] },
+      { name: "Dynamo Makhachkala", aliases: ["Dinamo Makhachkala"] },
+      { name: "Dynamo Moscow", aliases: ["Dinamo Moscow", "Dynamo Moskva", "Dinamo Moskva"] },
+      { name: "Krasnodar", aliases: ["FC Krasnodar"] },
+      { name: "Krylia Sovetov Samara", aliases: ["Krylia Sovetov"] },
+      { name: "Lokomotiv Moscow", aliases: ["Lokomotiv Moskva"] },
+      { name: "Orenburg", aliases: ["FC Orenburg"] },
+      { name: "Pari Nizhny Novgorod", aliases: ["Pari NN", "Nizhny Novgorod"] },
+      { name: "Rostov", aliases: ["FC Rostov"] },
+      { name: "Rubin Kazan", aliases: ["Rubin"] },
+      { name: "Sochi", aliases: ["PFC Sochi"] },
+      { name: "Spartak Moscow", aliases: ["Spartak Moskva"] },
+      { name: "Zenit Saint Petersburg", aliases: ["Zenit", "Zenit St Petersburg"] }
+    ]
+  },
+  {
+    id: "turkish-super-lig",
+    name: "Turkish Super Lig",
+    country: "Turkey",
+    code: "TSL",
+    teams: [
+      { name: "Alanyaspor" },
+      { name: "Antalyaspor" },
+      { name: "Basaksehir", aliases: ["Istanbul Basaksehir"] },
+      { name: "Besiktas" },
+      { name: "Caykur Rizespor", aliases: ["Rizespor"] },
+      { name: "Eyupspor" },
+      { name: "Fatih Karagumruk" },
+      { name: "Fenerbahce" },
+      { name: "Galatasaray" },
+      { name: "Gaziantep" },
+      { name: "Genclerbirligi" },
+      { name: "Goztepe" },
+      { name: "Kasimpasa" },
+      { name: "Kayserispor" },
+      { name: "Kocaelispor" },
+      { name: "Konyaspor" },
+      { name: "Samsunspor" },
+      { name: "Trabzonspor" }
+    ]
+  }
+];

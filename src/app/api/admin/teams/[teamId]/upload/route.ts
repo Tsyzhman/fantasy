@@ -2,7 +2,7 @@ import { ImportStatus, Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 
 import { parseWyscoutWorkbook } from "@/lib/importers/wyscout-excel";
-import { getActiveScoringRules, calculateFantasyScore, calculateValueScore } from "@/lib/scoring";
+import { getActiveScoringModel, calculateFantasyScore, calculateValueScore } from "@/lib/scoring";
 import { prisma } from "@/lib/db";
 import { checksum, storeUpload } from "@/lib/storage/local";
 
@@ -124,9 +124,9 @@ export async function POST(request: Request, { params }: Params) {
     );
   }
 
-  const rules = await getActiveScoringRules();
+  const scoringModel = await getActiveScoringModel();
   const snapshots: Prisma.PlayerSnapshotCreateManyInput[] = parsed.rows.map((row) => {
-    const fantasyScore = calculateFantasyScore(row.rawMetrics, row.positionGroup, rules);
+    const fantasyScore = calculateFantasyScore(row.rawMetrics, row.positionGroup, scoringModel);
     const valueScore = calculateValueScore(fantasyScore, row.marketValue);
 
     return {

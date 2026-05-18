@@ -14,5 +14,5 @@ npm run dev
 Open:
 
 - Admin leagues: `http://localhost:3000/admin/leagues`
-- Championship workspace: `http://localhost:3000/admin/leagues/championship`
+- Premier League workspace: `http://localhost:3000/admin/leagues/premier-league`
 - Published players: `http://localhost:3000/players`
