@@ -8,6 +8,12 @@ import { useMemo, useState } from "react";
 export type BaltikaCalendarTeam = {
   id: string;
   name: string;
+  homeXgPerMatch: number;
+  homeXgaPerMatch: number;
+  awayXgPerMatch: number;
+  awayXgaPerMatch: number;
+  overallXgPerMatch: number;
+  overallXgaPerMatch: number;
 };
 
 export type BaltikaCalendarFixture = {
@@ -59,6 +65,9 @@ export function BaltikaCalendarPanel({
     return Array.from(new Set(values));
   }, [fixtures]);
   const roundLabels = useMemo(() => new Map(rounds.map((round, index) => [round, index + 1])), [rounds]);
+  const [selectedRound, setSelectedRound] = useState<number | null>(rounds[0] ?? null);
+  const activeRound = selectedRound ?? rounds[0] ?? null;
+  const teamsById = useMemo(() => new Map(teams.map((team) => [team.id, team])), [teams]);
 
   const matrix = useMemo(() => {
     return teams.map((team) => ({
@@ -68,6 +77,25 @@ export function BaltikaCalendarPanel({
       )
     }));
   }, [fixtures, rounds, teams]);
+  const roundProjectionRows = useMemo(() => {
+    if (activeRound === null) return [];
+
+    return teams.map((team) => {
+      const teamFixtures = fixtures.filter(
+        (fixture) => fixture.roundNumber === activeRound && (fixture.homeTeamId === team.id || fixture.awayTeamId === team.id)
+      );
+      const projections = teamFixtures.map((fixture) => projectFixtureForTeam(fixture, team, teamsById));
+
+      return {
+        team,
+        fixtures: teamFixtures,
+        projectedXg: roundNumber(sum(projections.map((projection) => projection.xg))),
+        projectedXga: roundNumber(sum(projections.map((projection) => projection.xga))),
+        avgProjectedXg: roundNumber(average(projections.map((projection) => projection.xg))),
+        avgProjectedXga: roundNumber(average(projections.map((projection) => projection.xga)))
+      };
+    });
+  }, [activeRound, fixtures, teams, teamsById]);
 
   async function createFixture() {
     setBusyId("new");
@@ -223,6 +251,65 @@ export function BaltikaCalendarPanel({
         </div>
       ) : null}
 
+      <div className="mt-6 rounded border border-slate-200 bg-white">
+        <div className="flex flex-col gap-3 border-b border-slate-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h3 className="text-base font-semibold text-ink">Round projection</h3>
+            <p className="mt-1 text-sm text-slate-500">Predicted xG/xGA uses team home/away form and opponent opposite-side form.</p>
+          </div>
+          <select
+            value={activeRound ?? ""}
+            onChange={(event) => setSelectedRound(event.target.value ? Number(event.target.value) : null)}
+            className="rounded border border-slate-200 px-3 py-2 text-sm"
+          >
+            {rounds.map((round) => (
+              <option key={round} value={round}>
+                Tour {roundLabels.get(round)}{roundLabels.get(round) !== round ? ` (source ${round})` : ""}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-slate-200 text-sm">
+            <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
+              <tr>
+                <th className="px-4 py-3">Team</th>
+                <th className="px-4 py-3">Fixtures</th>
+                <th className="px-4 py-3 text-right">Pred xG</th>
+                <th className="px-4 py-3 text-right">Pred xGA</th>
+                <th className="px-4 py-3 text-right">Avg xG</th>
+                <th className="px-4 py-3 text-right">Avg xGA</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {roundProjectionRows.map((row) => (
+                <tr key={row.team.id} className="hover:bg-slate-50">
+                  <td className="whitespace-nowrap px-4 py-3 font-semibold text-ink">{row.team.name}</td>
+                  <td className="min-w-[240px] px-4 py-3 text-slate-600">
+                    {row.fixtures.length === 0 ? (
+                      <span className="text-slate-300">Empty</span>
+                    ) : (
+                      <div className="space-y-1">
+                        {row.fixtures.map((fixture) => (
+                          <p key={fixture.id}>
+                            {fixture.homeTeamId === row.team.id ? "vs" : "@"}{" "}
+                            {fixture.homeTeamId === row.team.id ? fixture.awayTeamName ?? "TBD" : fixture.homeTeamName}
+                          </p>
+                        ))}
+                      </div>
+                    )}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-right font-semibold text-emerald-700">{formatMetric(row.projectedXg)}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-right font-semibold text-rose-700">{formatMetric(row.projectedXga)}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatMetric(row.avgProjectedXg)}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatMetric(row.avgProjectedXga)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
       <div className="mt-6">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -295,6 +382,55 @@ export function BaltikaCalendarPanel({
       </div>
     </section>
   );
+}
+
+function projectFixtureForTeam(
+  fixture: BaltikaCalendarFixture,
+  team: BaltikaCalendarTeam,
+  teamsById: Map<string, BaltikaCalendarTeam>
+) {
+  const isHome = fixture.homeTeamId === team.id;
+  const opponentId = isHome ? fixture.awayTeamId : fixture.homeTeamId;
+  const opponent = opponentId ? teamsById.get(opponentId) : null;
+  const ownXg = isHome ? fallbackMetric(team.homeXgPerMatch, team.overallXgPerMatch) : fallbackMetric(team.awayXgPerMatch, team.overallXgPerMatch);
+  const ownXga = isHome ? fallbackMetric(team.homeXgaPerMatch, team.overallXgaPerMatch) : fallbackMetric(team.awayXgaPerMatch, team.overallXgaPerMatch);
+  const opponentXg = opponent
+    ? isHome
+      ? fallbackMetric(opponent.awayXgPerMatch, opponent.overallXgPerMatch)
+      : fallbackMetric(opponent.homeXgPerMatch, opponent.overallXgPerMatch)
+    : 0;
+  const opponentXga = opponent
+    ? isHome
+      ? fallbackMetric(opponent.awayXgaPerMatch, opponent.overallXgaPerMatch)
+      : fallbackMetric(opponent.homeXgaPerMatch, opponent.overallXgaPerMatch)
+    : 0;
+
+  return {
+    xg: average([ownXg, opponentXga]),
+    xga: average([ownXga, opponentXg])
+  };
+}
+
+function fallbackMetric(primary: number, fallback: number) {
+  return primary > 0 ? primary : fallback;
+}
+
+function sum(values: number[]) {
+  return values.reduce((total, value) => total + value, 0);
+}
+
+function average(values: number[]) {
+  const known = values.filter((value) => Number.isFinite(value) && value > 0);
+  if (known.length === 0) return 0;
+  return sum(known) / known.length;
+}
+
+function roundNumber(value: number) {
+  return Math.round(value * 100) / 100;
+}
+
+function formatMetric(value: number) {
+  return value > 0 ? value.toFixed(2) : "-";
 }
 
 function TeamSelect({

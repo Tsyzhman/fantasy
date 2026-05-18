@@ -27,7 +27,16 @@ export default async function BaltikaLeagueSchedulePage({ params }: PageProps) {
         take: 1
       },
       teams: {
-        orderBy: { name: "asc" }
+        orderBy: { name: "asc" },
+        include: {
+          baltikaMatchStats: {
+            select: {
+              side: true,
+              xg: true,
+              xga: true
+            }
+          }
+        }
       },
       baltikaFixtures: {
         orderBy: [
@@ -100,7 +109,22 @@ export default async function BaltikaLeagueSchedulePage({ params }: PageProps) {
         <BaltikaCalendarPanel
           leagueId={league.id}
           seasonId={season.id}
-          teams={league.teams.map((team) => ({ id: team.id, name: team.name }))}
+          teams={league.teams.map((team) => {
+            const home = averageTeamStats(team.baltikaMatchStats.filter((stat) => stat.side === "HOME"));
+            const away = averageTeamStats(team.baltikaMatchStats.filter((stat) => stat.side === "AWAY"));
+            const overall = averageTeamStats(team.baltikaMatchStats);
+
+            return {
+              id: team.id,
+              name: team.name,
+              homeXgPerMatch: home.xgPerMatch,
+              homeXgaPerMatch: home.xgaPerMatch,
+              awayXgPerMatch: away.xgPerMatch,
+              awayXgaPerMatch: away.xgaPerMatch,
+              overallXgPerMatch: overall.xgPerMatch,
+              overallXgaPerMatch: overall.xgaPerMatch
+            };
+          })}
           fixtures={league.baltikaFixtures.map((fixture) => ({
             id: fixture.id,
             roundNumber: fixture.roundNumber,
@@ -124,4 +148,27 @@ export default async function BaltikaLeagueSchedulePage({ params }: PageProps) {
       )}
     </main>
   );
+}
+
+function averageTeamStats(stats: Array<{ xg: number | null; xga: number | null }>) {
+  const xg = stats.map((stat) => stat.xg).filter(isNumber);
+  const xga = stats.map((stat) => stat.xga).filter(isNumber);
+  const matches = Math.max(xg.length, xga.length);
+
+  return {
+    xgPerMatch: matches > 0 ? round(sum(xg) / matches) : 0,
+    xgaPerMatch: matches > 0 ? round(sum(xga) / matches) : 0
+  };
+}
+
+function isNumber(value: unknown): value is number {
+  return typeof value === "number" && Number.isFinite(value);
+}
+
+function sum(values: number[]) {
+  return values.reduce((total, value) => total + value, 0);
+}
+
+function round(value: number) {
+  return Math.round(value * 100) / 100;
 }
