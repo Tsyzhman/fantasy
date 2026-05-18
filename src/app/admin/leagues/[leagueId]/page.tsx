@@ -1,4 +1,4 @@
-import { BarChart3, Database, Settings } from "lucide-react";
+import { BarChart3, Database } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
@@ -90,13 +90,6 @@ export default async function AdminLeaguePage({ params }: PageProps) {
             <Database className="h-4 w-4" />
             Bulk upload
           </button>
-          <Link
-            href="/admin/models"
-            className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
-          >
-            <Settings className="h-4 w-4" />
-            Model settings
-          </Link>
           <Link
             href="/players"
             className="inline-flex items-center gap-2 rounded bg-ink px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700"

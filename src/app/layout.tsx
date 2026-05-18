@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { Settings } from "lucide-react";
 
 import "./globals.css";
 
@@ -27,6 +28,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 </Link>
                 <Link className="rounded px-3 py-2 hover:bg-slate-100" href="/players">
                   Players
+                </Link>
+                <Link
+                  className="inline-flex items-center gap-2 rounded px-3 py-2 hover:bg-slate-100"
+                  href="/admin/models"
+                >
+                  <Settings className="h-4 w-4" />
+                  Model settings
                 </Link>
               </nav>
             </div>
