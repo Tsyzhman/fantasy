@@ -19,7 +19,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 <span className="grid h-9 w-9 place-items-center rounded bg-ink text-sm font-bold text-white">FS</span>
                 <span>
                   <span className="block text-sm font-semibold uppercase tracking-wide text-slate-500">Fantasy Scout</span>
-                  <span className="block text-xs text-slate-500">Excel-first scouting admin</span>
                 </span>
               </Link>
               <nav className="flex items-center gap-2 text-sm font-medium text-slate-600">

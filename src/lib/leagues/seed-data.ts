@@ -43,6 +43,38 @@ export const leagueSeeds: LeagueSeed[] = [
     ]
   },
   {
+    id: "championship",
+    name: "Championship",
+    country: "England",
+    code: "CHA",
+    teams: [
+      { name: "Birmingham City", aliases: ["Birmingham"] },
+      { name: "Blackburn Rovers", aliases: ["Blackburn"] },
+      { name: "Bristol City" },
+      { name: "Charlton Athletic", aliases: ["Charlton"] },
+      { name: "Coventry City", aliases: ["Coventry"] },
+      { name: "Derby County", aliases: ["Derby"] },
+      { name: "Hull City", aliases: ["Hull"] },
+      { name: "Ipswich Town", aliases: ["Ipswich"] },
+      { name: "Leicester City", aliases: ["Leicester"] },
+      { name: "Middlesbrough", aliases: ["Boro"] },
+      { name: "Millwall" },
+      { name: "Norwich City", aliases: ["Norwich"] },
+      { name: "Oxford United", aliases: ["Oxford"] },
+      { name: "Portsmouth", aliases: ["Pompey"] },
+      { name: "Preston North End", aliases: ["Preston", "PNE"] },
+      { name: "Queens Park Rangers", aliases: ["QPR"] },
+      { name: "Sheffield United", aliases: ["Sheffield Utd"] },
+      { name: "Sheffield Wednesday", aliases: ["Sheffield Wed"] },
+      { name: "Southampton", aliases: ["Southampton FC"] },
+      { name: "Stoke City", aliases: ["Stoke"] },
+      { name: "Swansea City", aliases: ["Swansea"] },
+      { name: "Watford" },
+      { name: "West Bromwich Albion", aliases: ["West Brom", "WBA"] },
+      { name: "Wrexham", aliases: ["Wrexham AFC"] }
+    ]
+  },
+  {
     id: "bundesliga",
     name: "Bundesliga",
     country: "Germany",

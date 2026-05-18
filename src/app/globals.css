@@ -31,3 +31,87 @@ input,
 select {
   font: inherit;
 }
+
+textarea {
+  font: inherit;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    background: #07111f;
+    color: #e5edf7;
+  }
+
+  body {
+    background:
+      linear-gradient(180deg, rgba(8, 15, 28, 0.96), rgba(15, 23, 42, 0.98)),
+      #07111f;
+    color: #e5edf7;
+  }
+
+  .bg-white,
+  .bg-white\/88 {
+    background-color: rgba(15, 23, 42, 0.94) !important;
+  }
+
+  .bg-field,
+  .bg-slate-50,
+  .bg-slate-100 {
+    background-color: #111c2e !important;
+  }
+
+  .bg-emerald-50,
+  .bg-emerald-50\/70 {
+    background-color: rgba(6, 95, 70, 0.3) !important;
+  }
+
+  .text-ink,
+  .text-slate-800,
+  .text-slate-700 {
+    color: #f8fafc !important;
+  }
+
+  .text-slate-600,
+  .text-slate-500,
+  .text-slate-400 {
+    color: #9fb0c6 !important;
+  }
+
+  .text-emerald-700 {
+    color: #6ee7b7 !important;
+  }
+
+  .border-slate-100,
+  .border-slate-200,
+  .border-slate-300 {
+    border-color: #26364d !important;
+  }
+
+  .divide-slate-100 > :not([hidden]) ~ :not([hidden]),
+  .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
+    border-color: #26364d !important;
+  }
+
+  input,
+  select,
+  textarea {
+    background-color: #0b1424;
+    border-color: #334155;
+    color: #e5edf7;
+  }
+
+  option {
+    background-color: #0b1424;
+    color: #e5edf7;
+  }
+
+  .shadow-soft {
+    box-shadow: 0 18px 56px rgba(0, 0, 0, 0.35) !important;
+  }
+
+  .hover\:bg-slate-50:hover,
+  .hover\:bg-slate-100:hover {
+    background-color: #182235 !important;
+  }
+}

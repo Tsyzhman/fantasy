@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { formatDate } from "@/lib/format";
 import { prisma } from "@/lib/db";
+import { leagueSubtitle } from "@/lib/leagues/display";
 import { leagueFlag } from "@/lib/leagues/flags";
 
 export const dynamic = "force-dynamic";
@@ -63,7 +64,7 @@ export default async function AdminLeaguesPage() {
                   <div>
                     <h2 className="font-semibold text-ink">{league.name}</h2>
                     <p className="text-sm text-slate-500">
-                      {[league.country, league.seasons[0]?.name].filter(Boolean).join(" · ")}
+                      {leagueSubtitle(league, league.seasons[0]?.name)}
                     </p>
                   </div>
                 </div>

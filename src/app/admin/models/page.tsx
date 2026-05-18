@@ -99,7 +99,8 @@ export default async function AdminModelsPage({ searchParams }: PageProps) {
           <div>
             <h2 className="text-lg font-semibold text-ink">{model?.name ?? "Fantasy 2025/26"}</h2>
             <p className="mt-1 text-sm text-slate-600">
-              The default rules stay available. When a custom formula is enabled, imports use it instead.
+              This is one platform-wide fantasy model shared by every league. Default rules stay available; enabled custom
+              formulas override them by position.
             </p>
           </div>
           <span className="rounded bg-slate-100 px-2.5 py-1 text-sm font-medium text-slate-600">

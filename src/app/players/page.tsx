@@ -1,6 +1,7 @@
 import { ImportStatus, Prisma } from "@prisma/client";
 import Link from "next/link";
 
+import { AutoSubmitForm } from "@/components/players/auto-submit-form";
 import { formatCurrency, formatNumber, formatScore } from "@/lib/format";
 import { prisma } from "@/lib/db";
 
@@ -88,7 +89,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
         </Link>
       </div>
 
-      <form className="mt-8 grid grid-cols-1 gap-3 rounded border border-slate-200 bg-white p-4 shadow-soft md:grid-cols-6">
+      <AutoSubmitForm className="mt-8 grid grid-cols-1 gap-3 rounded border border-slate-200 bg-white p-4 shadow-soft md:grid-cols-6">
         <label className="text-sm">
           <span className="mb-1 block font-medium text-slate-600">League</span>
           <select name="leagueId" defaultValue={searchParams.leagueId ?? ""} className="w-full rounded border border-slate-200 px-3 py-2">
@@ -157,12 +158,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
           />
           <span>Только в старте</span>
         </label>
-        <div className="md:col-span-6">
-          <button type="submit" className="rounded bg-ink px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">
-            Apply filters
-          </button>
-        </div>
-      </form>
+      </AutoSubmitForm>
 
       <section className="mt-6 overflow-hidden rounded border border-slate-200 bg-white shadow-soft">
         <div className="overflow-x-auto">
@@ -179,7 +175,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
                 <th className="px-4 py-3 text-right">Assists</th>
                 <th className="px-4 py-3 text-right">xA</th>
                 <th className="px-4 py-3 text-right">Market</th>
-                <th className="px-4 py-3 text-right">Fantasy</th>
+                <th className="bg-emerald-50 px-4 py-3 text-right text-emerald-700">Fantasy</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -195,7 +191,9 @@ export default async function PlayersPage({ searchParams }: PageProps) {
                   <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatScore(player.assists)}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatScore(player.xa)}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatCurrency(player.marketValue)}</td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right font-semibold text-ink">{formatScore(player.fantasyScore)}</td>
+                  <td className="whitespace-nowrap bg-emerald-50/70 px-4 py-3 text-right font-semibold text-emerald-700">
+                    {formatScore(player.fantasyScore)}
+                  </td>
                 </tr>
               ))}
               {players.length === 0 ? (

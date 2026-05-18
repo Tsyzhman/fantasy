@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { TeamCardGrid, type TeamCardDto } from "@/components/admin/team-card-grid";
 import { prisma } from "@/lib/db";
+import { leagueSubtitle } from "@/lib/leagues/display";
 import { leagueFlag } from "@/lib/leagues/flags";
 
 export const dynamic = "force-dynamic";
@@ -76,7 +77,7 @@ export default async function AdminLeaguePage({ params }: PageProps) {
             {league.name}
           </h1>
           <p className="mt-2 text-sm text-slate-600">
-            {[league.country, season?.name ?? "No season"].filter(Boolean).join(" · ")}
+            {leagueSubtitle(league, season?.name ?? "No season")}
           </p>
         </div>
 

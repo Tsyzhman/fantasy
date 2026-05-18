@@ -90,7 +90,7 @@ export default async function AdminTeamPage({ params }: PageProps) {
                 <th className="px-4 py-3 text-right">xG</th>
                 <th className="px-4 py-3 text-right">Assists</th>
                 <th className="px-4 py-3 text-right">Market</th>
-                <th className="px-4 py-3 text-right">Fantasy</th>
+                <th className="bg-emerald-50 px-4 py-3 text-right text-emerald-700">Fantasy</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -107,7 +107,9 @@ export default async function AdminTeamPage({ params }: PageProps) {
                   <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatScore(player.xg)}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatScore(player.assists)}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatCurrency(player.marketValue)}</td>
-                  <td className="whitespace-nowrap px-4 py-3 text-right font-semibold text-ink">{formatScore(player.fantasyScore)}</td>
+                  <td className="whitespace-nowrap bg-emerald-50/70 px-4 py-3 text-right font-semibold text-emerald-700">
+                    {formatScore(player.fantasyScore)}
+                  </td>
                 </tr>
               ))}
               {players.length === 0 ? (
