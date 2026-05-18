@@ -4,6 +4,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { cn } from "@/lib/cn";
+
 export function ModeBrand() {
   const pathname = usePathname();
   const isMachete = pathname.startsWith("/machete") || pathname.startsWith("/api/machete");
@@ -13,9 +15,16 @@ export function ModeBrand() {
   const subtitle = isMachete ? "FotMob mode" : "Wyscout Excel mode";
 
   return (
-    <Link href={href} className="flex min-w-0 items-center gap-3">
-      <span className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded bg-white ring-1 ring-slate-200">
-        <Image src={imageSrc} alt={`${label} logo`} width={48} height={48} className="h-12 w-12 object-contain" priority />
+    <Link href={href} className="group flex min-w-0 items-center gap-3 rounded px-1 py-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-slate-300">
+      <span className={cn("mode-logo-frame", isMachete ? "mode-logo-frame-machete" : "mode-logo-frame-baltika")}>
+        <Image
+          src={imageSrc}
+          alt={`${label} logo`}
+          width={48}
+          height={48}
+          className={cn("mode-logo-image", isMachete ? "mode-logo-image-machete" : "mode-logo-image-baltika")}
+          priority
+        />
       </span>
       <span className="min-w-0">
         <span className="block truncate text-sm font-semibold uppercase tracking-wide text-slate-500">{label}</span>

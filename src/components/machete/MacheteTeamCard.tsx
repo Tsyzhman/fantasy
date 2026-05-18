@@ -82,14 +82,14 @@ export function MacheteTeamCard({ team }: { team: MacheteTeamCardDto }) {
 function TeamLogo({ logoUrl, name }: { logoUrl: string | null; name: string }) {
   if (logoUrl && logoUrl.startsWith("/")) {
     return (
-      <div className="grid h-12 w-12 shrink-0 place-items-center rounded bg-slate-900">
-        <Image src={logoUrl} alt="" width={40} height={40} className="h-10 w-10 object-contain" />
+      <div className="team-logo-frame grid h-12 w-12 shrink-0 place-items-center">
+        <Image src={logoUrl} alt="" width={40} height={40} className="team-logo-image h-10 w-10 object-contain" />
       </div>
     );
   }
 
   return (
-    <div className="grid h-12 w-12 shrink-0 place-items-center rounded bg-slate-900 text-sm font-bold text-white">
+    <div className="team-logo-frame grid h-12 w-12 shrink-0 place-items-center text-sm font-bold text-ink">
       {initials(name)}
     </div>
   );

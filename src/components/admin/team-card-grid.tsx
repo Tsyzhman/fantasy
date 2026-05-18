@@ -302,7 +302,7 @@ function TeamLogo({ logoUrl, name, flag }: { logoUrl: string | null; name: strin
 
   if (flag) {
     return (
-      <div className="grid h-12 w-12 shrink-0 place-items-center rounded bg-slate-900 text-2xl leading-none">
+      <div className="team-logo-frame grid h-12 w-12 shrink-0 place-items-center text-2xl leading-none">
         {flag}
       </div>
     );
@@ -310,12 +310,12 @@ function TeamLogo({ logoUrl, name, flag }: { logoUrl: string | null; name: strin
 
   const showImage = Boolean(logoUrl) && !failed;
   return (
-    <div className="grid h-12 w-12 shrink-0 place-items-center rounded bg-slate-900 text-sm font-bold text-white">
+    <div className="team-logo-frame grid h-12 w-12 shrink-0 place-items-center text-sm font-bold text-ink">
       {showImage ? (
         <img
           src={logoUrl as string}
           alt=""
-          className="h-full w-full rounded object-contain p-1"
+          className="team-logo-image h-10 w-10 object-contain"
           onError={() => setFailed(true)}
         />
       ) : (
