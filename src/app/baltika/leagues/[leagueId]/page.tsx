@@ -29,8 +29,6 @@ export default async function BaltikaLeaguePage({ params }: PageProps) {
       teams: {
         orderBy: { name: "asc" },
         include: {
-          baltikaFixturesHome: true,
-          baltikaFixturesAway: true,
           baltikaTeamStatsImports: {
             where: { status: "PUBLISHED" },
             orderBy: { updatedAt: "desc" },
@@ -68,7 +66,7 @@ export default async function BaltikaLeaguePage({ params }: PageProps) {
       lastUploadAt: latestImport?.createdAt.toISOString() ?? null,
       playersPublishedAt: publishedImport?.publishedAt?.toISOString() ?? null,
       latestImportId: latestImport?.id ?? null,
-      fixturesCount: team.baltikaFixturesHome.length + team.baltikaFixturesAway.length,
+      fixturesCount: team.baltikaTeamStatsImports[0]?.fixturesCount ?? 0,
       teamStatsPublishedAt: team.baltikaTeamStatsImports[0]?.updatedAt.toISOString() ?? null,
       errors: Array.isArray(latestImport?.errorsJson) ? latestImport.errorsJson : [],
       warnings: Array.isArray(latestImport?.warningsJson) ? latestImport.warningsJson : []
