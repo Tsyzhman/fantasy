@@ -7,7 +7,11 @@ import { normalizeMacheteMatchStat, normalizeMachetePlayer } from "./normalizers
 import { storeMacheteRawPayload } from "./raw-payloads";
 import { syncMacheteFixtures } from "./sync-fixtures";
 
-export async function syncMacheteTeamPlayerStats(prisma: PrismaClient, teamId: string) {
+type SyncPlayerStatsOptions = {
+  syncFixtures?: boolean;
+};
+
+export async function syncMacheteTeamPlayerStats(prisma: PrismaClient, teamId: string, options: SyncPlayerStatsOptions = {}) {
   const team = await prisma.macheteTeam.findUnique({
     where: { id: teamId },
     include: { league: true }
@@ -16,7 +20,9 @@ export async function syncMacheteTeamPlayerStats(prisma: PrismaClient, teamId: s
   if (!team.providerTeamId) throw new Error("Machete team has no FotMob team ID.");
 
   const client = createFotMobClient();
-  await syncMacheteFixtures(prisma, team.leagueId);
+  if (options.syncFixtures ?? true) {
+    await syncMacheteFixtures(prisma, team.leagueId);
+  }
 
   const providerTeams = await client.getTeams(team.league.providerLeagueId ?? team.leagueId, team.league.season ?? undefined);
   const providerTeam = providerTeams.find((item) => item.id === team.providerTeamId);
@@ -217,7 +223,7 @@ export async function syncMacheteTeamPlayerStats(prisma: PrismaClient, teamId: s
   };
 }
 
-export async function syncMacheteLeaguePlayerStats(prisma: PrismaClient, leagueId: string) {
+export async function syncMacheteLeaguePlayerStats(prisma: PrismaClient, leagueId: string, options: SyncPlayerStatsOptions = {}) {
   const teams = await prisma.macheteTeam.findMany({
     where: { leagueId },
     orderBy: { name: "asc" }
@@ -226,7 +232,7 @@ export async function syncMacheteLeaguePlayerStats(prisma: PrismaClient, leagueI
   let statsCount = 0;
   let snapshotsCount = 0;
   for (const team of teams) {
-    const result = await syncMacheteTeamPlayerStats(prisma, team.id);
+    const result = await syncMacheteTeamPlayerStats(prisma, team.id, options);
     statsCount += result.statsCount;
     snapshotsCount += result.snapshotsCount;
   }

@@ -14,6 +14,8 @@ export type MacheteJobType =
   | "SYNC_FIXTURES"
   | "SYNC_TEAM"
   | "SYNC_PLAYER_STATS"
+  | "SYNC_LEAGUE_FULL"
+  | "SYNC_ALL_LEAGUES"
   | "RUN_ENTITY_MATCHING"
   | "CALCULATE_FANTASY_SCORES";
 
@@ -66,6 +68,10 @@ async function executeJob(prisma: PrismaClient, input: RunJobInput) {
     return syncMacheteTeamPlayerStats(prisma, input.teamId);
   }
 
+  if (input.type === "SYNC_ALL_LEAGUES") {
+    return syncAllMacheteLeagues(prisma);
+  }
+
   if (!input.leagueId) throw new Error("leagueId is required.");
 
   if (input.type === "SYNC_LEAGUE_METADATA") {
@@ -83,6 +89,9 @@ async function executeJob(prisma: PrismaClient, input: RunJobInput) {
   if (input.type === "SYNC_PLAYER_STATS") {
     return syncMacheteLeaguePlayerStats(prisma, input.leagueId);
   }
+  if (input.type === "SYNC_LEAGUE_FULL") {
+    return syncMacheteLeagueFull(prisma, input.leagueId);
+  }
   if (input.type === "RUN_ENTITY_MATCHING") {
     return runMacheteEntityMatching(prisma, input.leagueId);
   }
@@ -93,4 +102,41 @@ async function executeJob(prisma: PrismaClient, input: RunJobInput) {
   }
 
   throw new Error(`Unsupported Machete job type: ${input.type}`);
+}
+
+async function syncMacheteLeagueFull(prisma: PrismaClient, leagueId: string) {
+  const teams = await syncMacheteTeams(prisma, leagueId);
+  const fixtures = await syncMacheteFixtures(prisma, leagueId);
+  const playerStats = await syncMacheteLeaguePlayerStats(prisma, leagueId, { syncFixtures: false });
+
+  return {
+    teamsSynced: teams.length,
+    fixturesSynced: fixtures.length,
+    ...playerStats
+  };
+}
+
+async function syncAllMacheteLeagues(prisma: PrismaClient) {
+  const leagues = await prisma.macheteLeague.findMany({
+    orderBy: { name: "asc" },
+    select: {
+      id: true,
+      name: true
+    }
+  });
+
+  const results = [];
+  for (const league of leagues) {
+    const result = await syncMacheteLeagueFull(prisma, league.id);
+    results.push({
+      leagueId: league.id,
+      leagueName: league.name,
+      ...result
+    });
+  }
+
+  return {
+    leaguesSynced: results.length,
+    results
+  };
 }

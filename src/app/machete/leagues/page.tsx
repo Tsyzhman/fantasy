@@ -1,5 +1,6 @@
 import { MacheteLeagueCard } from "@/components/machete/MacheteLeagueCard";
 import { MacheteShell } from "@/components/machete/MacheteShell";
+import { MacheteSyncButton } from "@/components/machete/MacheteSyncButton";
 import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -38,6 +39,18 @@ export default async function MacheteLeaguesPage() {
 
   return (
     <MacheteShell>
+      <section className="mt-8 flex flex-col gap-3 rounded border border-slate-200 bg-white p-5 shadow-soft sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-lg font-semibold text-ink">Full Machete refresh</h2>
+          <p className="mt-1 text-sm text-slate-600">
+            Runs every league one by one: teams, fixtures, then player stats.
+          </p>
+        </div>
+        <MacheteSyncButton endpoint="/api/machete/sync-all" className="sm:items-end">
+          Full sync all leagues
+        </MacheteSyncButton>
+      </section>
+
       <section className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {leagues.map((league) => {
           const fixturesSynced = league.fixtures.filter(isMatchFixture).length;

@@ -107,6 +107,9 @@ export default async function MacheteLeaguePage({ params }: PageProps) {
         </div>
 
         <div className="mt-5 flex flex-wrap gap-2">
+          <MacheteSyncButton endpoint={`/api/machete/leagues/${league.id}/sync-full`}>
+            Full league refresh
+          </MacheteSyncButton>
           <MacheteSyncButton endpoint={`/api/machete/leagues/${league.id}/sync-metadata`} variant="secondary">
             <TableProperties className="hidden h-4 w-4" />
             Sync league metadata
@@ -126,7 +129,7 @@ export default async function MacheteLeaguePage({ params }: PageProps) {
             <GitCompareArrows className="hidden h-4 w-4" />
             Run entity matching
           </MacheteSyncButton>
-          <MacheteSyncButton endpoint={`/api/machete/leagues/${league.id}/calculate-scores`}>
+          <MacheteSyncButton endpoint={`/api/machete/leagues/${league.id}/calculate-scores`} variant="secondary">
             <BarChart3 className="hidden h-4 w-4" />
             Calculate fantasy scores
           </MacheteSyncButton>
