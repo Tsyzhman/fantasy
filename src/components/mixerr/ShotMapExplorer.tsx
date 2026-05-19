@@ -99,12 +99,13 @@ export function ShotMapExplorer({ teamShots, concededShots, playerShots, overlay
         </div>
 
         <div className="mt-4 overflow-x-auto">
-          <div className="relative mx-auto aspect-[68/105] min-h-[560px] w-full min-w-[360px] max-w-[720px] overflow-hidden rounded border border-emerald-700 bg-emerald-700">
+          <div className="relative mx-auto aspect-[68/52] min-h-[320px] w-full min-w-[360px] max-w-[860px] overflow-hidden rounded border border-emerald-700 bg-emerald-700">
             <div className="absolute inset-4 border-2 border-white/75" />
-            <div className="absolute left-1/2 top-1/2 h-28 w-28 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white/70" />
-            <div className="absolute left-4 right-4 top-1/2 border-t-2 border-white/70" />
-            <div className="absolute left-1/2 top-4 h-24 w-44 -translate-x-1/2 border-x-2 border-b-2 border-white/70" />
-            <div className="absolute bottom-4 left-1/2 h-24 w-44 -translate-x-1/2 border-x-2 border-t-2 border-white/70" />
+            <div className="absolute bottom-4 left-1/2 h-24 w-24 -translate-x-1/2 translate-y-1/2 rounded-full border-2 border-white/70" />
+            <div className="absolute bottom-4 left-4 right-4 border-t-2 border-white/70" />
+            <div className="absolute left-1/2 top-4 h-28 w-56 -translate-x-1/2 border-x-2 border-b-2 border-white/70" />
+            <div className="absolute left-1/2 top-4 h-14 w-28 -translate-x-1/2 border-x-2 border-b-2 border-white/70" />
+            <div className="absolute left-1/2 top-[33%] h-2 w-2 -translate-x-1/2 rounded-full bg-white/80" />
             <Goal className="absolute left-1/2 top-2 h-5 w-5 -translate-x-1/2 text-white/90" />
 
             {layers.map((layer) =>
@@ -205,7 +206,7 @@ export function ShotMapExplorer({ teamShots, concededShots, playerShots, overlay
           <ZoneTable title="Attacking" summary={zoneSummary.attacking} />
           <ZoneTable title="Conceded" summary={zoneSummary.conceded} />
           <p className="mt-4 text-xs leading-5 text-slate-500">
-            Shots are normalized to a common attacking direction when possible. Raw FotMob coordinates are preserved.
+            Shots are normalized to a common attacking direction and shown on the attacking half. Raw FotMob coordinates are preserved.
           </p>
         </section>
       </aside>
@@ -335,13 +336,14 @@ function legendDotClassName(tone: "attacking" | "conceded" | "player") {
 }
 
 function markerStyle(shot: ShotMapShot) {
-  const x = clamp(shot.normalized_x ?? shot.x ?? 50, 0, 100);
+  const x = clamp(shot.normalized_x ?? shot.x ?? 50, 50, 100);
   const y = clamp(shot.normalized_y ?? shot.y ?? 50, 0, 100);
   const size = Math.max(9, Math.min(24, 9 + (shot.xg ?? 0.04) * 34));
+  const attackingHalfTop = ((100 - x) / 50) * 100;
 
   return {
     left: `${y}%`,
-    top: `${100 - x}%`,
+    top: `${attackingHalfTop}%`,
     width: `${size}px`,
     height: `${size}px`
   };
