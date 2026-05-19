@@ -8,6 +8,23 @@ import { ensureDatabaseSchema } from "@/lib/db";
 
 import "./globals.css";
 
+const earlyPreferenceScript = `
+try {
+  var theme = localStorage.getItem("fantasy-theme");
+  if (theme !== "dark" && theme !== "light") {
+    theme = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  }
+  document.documentElement.dataset.theme = theme;
+  document.documentElement.style.colorScheme = theme;
+
+  var language = localStorage.getItem("fantasy-language");
+  if (language === "ru" || language === "en") {
+    document.documentElement.dataset.language = language;
+    document.documentElement.lang = language;
+  }
+} catch (error) {}
+`;
+
 export const metadata: Metadata = {
   title: "Fantasy Scout",
   description: "Excel-first fantasy football scouting",
@@ -31,8 +48,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       <head>
         <script
           dangerouslySetInnerHTML={{
-            __html:
-              "try{var l=localStorage.getItem('fantasy-language');if(l==='ru'||l==='en'){document.documentElement.dataset.language=l;document.documentElement.lang=l;}}catch(e){}"
+            __html: earlyPreferenceScript
           }}
         />
       </head>

@@ -13,12 +13,12 @@ export function ThemeToggle() {
   const theme = useSyncExternalStore(subscribeToTheme, getThemeSnapshot, getServerThemeSnapshot);
 
   useEffect(() => {
-    document.documentElement.dataset.theme = theme;
+    applyTheme(theme);
   }, [theme]);
 
   function toggleTheme() {
     const next = theme === "dark" ? "light" : "dark";
-    document.documentElement.dataset.theme = next;
+    applyTheme(next);
     window.localStorage.setItem("fantasy-theme", next);
     window.dispatchEvent(new Event(themeChangeEvent));
   }
@@ -60,4 +60,9 @@ function getThemeSnapshot(): Theme {
 
 function getServerThemeSnapshot(): Theme {
   return defaultTheme;
+}
+
+function applyTheme(theme: Theme) {
+  document.documentElement.dataset.theme = theme;
+  document.documentElement.style.colorScheme = theme;
 }
