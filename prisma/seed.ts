@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 
+import { macheteLeagueCatalog } from "../src/lib/leagues/machete-catalog";
 import { leagueSeeds, seasonName } from "../src/lib/leagues/seed-data";
 import { seedRules } from "../src/lib/scoring/rules";
 import { teamLogoUrlForSlug } from "../src/lib/teams/logo-assets";
@@ -161,7 +162,7 @@ async function seedMacheteLeagues() {
     });
   }
 
-  for (const leagueSeed of leagueSeeds.filter((league) => league.fotMobLeagueId)) {
+  for (const leagueSeed of macheteLeagueCatalog) {
     await prisma.macheteLeague.upsert({
       where: { providerLeagueId: leagueSeed.fotMobLeagueId },
       update: {

@@ -32,6 +32,11 @@ export function leagueSubtitle(league: LeagueDisplayInput, seasonName?: string |
 
 export function macheteLeagueDisplayName(league: LeagueDisplayInput) {
   const providerLeagueId = league.providerLeagueId ?? null;
+  const catalogLeague = macheteCatalogByFotMobId(providerLeagueId);
+  if (catalogLeague) {
+    return catalogLeague.country === "International" ? catalogLeague.name : `${catalogLeague.country} ${catalogLeague.name}`;
+  }
+
   if (providerLeagueId && macheteLeagueDisplayNamesByFotMobId[providerLeagueId]) {
     return macheteLeagueDisplayNamesByFotMobId[providerLeagueId];
   }
@@ -65,3 +70,4 @@ function countryAdjective(country: string) {
 
   return adjectives[country] ?? country;
 }
+import { macheteCatalogByFotMobId } from "./machete-catalog";

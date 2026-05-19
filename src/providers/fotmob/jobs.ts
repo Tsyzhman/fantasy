@@ -23,6 +23,7 @@ type RunJobInput = {
   type: MacheteJobType;
   leagueId?: string;
   teamId?: string;
+  includePreviousSeasons?: boolean;
 };
 
 export async function runMacheteJob(prisma: PrismaClient, input: RunJobInput) {
@@ -69,7 +70,7 @@ async function executeJob(prisma: PrismaClient, input: RunJobInput) {
   }
 
   if (input.type === "SYNC_ALL_LEAGUES") {
-    return syncAllMacheteLeagues(prisma);
+    return syncAllMacheteLeagues(prisma, { includePreviousSeasons: input.includePreviousSeasons });
   }
 
   if (!input.leagueId) throw new Error("leagueId is required.");
@@ -83,14 +84,14 @@ async function executeJob(prisma: PrismaClient, input: RunJobInput) {
     return { teamsSynced: teams.length };
   }
   if (input.type === "SYNC_FIXTURES") {
-    const fixtures = await syncMacheteFixtures(prisma, input.leagueId);
+    const fixtures = await syncMacheteFixtures(prisma, input.leagueId, { includePreviousSeasons: input.includePreviousSeasons });
     return { fixturesSynced: fixtures.length };
   }
   if (input.type === "SYNC_PLAYER_STATS") {
-    return syncMacheteLeaguePlayerStats(prisma, input.leagueId);
+    return syncMacheteLeaguePlayerStats(prisma, input.leagueId, { includePreviousSeasons: input.includePreviousSeasons });
   }
   if (input.type === "SYNC_LEAGUE_FULL") {
-    return syncMacheteLeagueFull(prisma, input.leagueId);
+    return syncMacheteLeagueFull(prisma, input.leagueId, { includePreviousSeasons: input.includePreviousSeasons });
   }
   if (input.type === "RUN_ENTITY_MATCHING") {
     return runMacheteEntityMatching(prisma, input.leagueId);
@@ -104,11 +105,15 @@ async function executeJob(prisma: PrismaClient, input: RunJobInput) {
   throw new Error(`Unsupported Machete job type: ${input.type}`);
 }
 
-async function syncMacheteLeagueFull(prisma: PrismaClient, leagueId: string) {
+type SyncScopeOptions = {
+  includePreviousSeasons?: boolean;
+};
+
+async function syncMacheteLeagueFull(prisma: PrismaClient, leagueId: string, options: SyncScopeOptions = {}) {
   const metadata = await syncMacheteLeagueMetadata(prisma, leagueId);
   const teams = await syncMacheteTeams(prisma, leagueId);
-  const fixtures = await syncMacheteFixtures(prisma, leagueId);
-  const playerStats = await syncMacheteLeaguePlayerStats(prisma, leagueId, { syncFixtures: false });
+  const fixtures = await syncMacheteFixtures(prisma, leagueId, { includePreviousSeasons: options.includePreviousSeasons });
+  const playerStats = await syncMacheteLeaguePlayerStats(prisma, leagueId, { syncFixtures: false, includePreviousSeasons: options.includePreviousSeasons });
 
   return {
     leagueId: metadata.id,
@@ -119,7 +124,7 @@ async function syncMacheteLeagueFull(prisma: PrismaClient, leagueId: string) {
   };
 }
 
-async function syncAllMacheteLeagues(prisma: PrismaClient) {
+export async function syncAllMacheteLeagues(prisma: PrismaClient, options: SyncScopeOptions = {}) {
   const leagues = await prisma.macheteLeague.findMany({
     orderBy: { createdAt: "asc" },
     select: {
@@ -132,7 +137,7 @@ async function syncAllMacheteLeagues(prisma: PrismaClient) {
 
   const results = [];
   for (const league of orderedLeagues) {
-    const result = await syncMacheteLeagueFull(prisma, league.id);
+    const result = await syncMacheteLeagueFull(prisma, league.id, options);
     results.push(result);
   }
 

@@ -46,13 +46,8 @@ async function runScheduledSync(state: SchedulerState, scheduledFor: string) {
   state.running = true;
   try {
     console.info(`[machete] Starting scheduled FotMob sync for ${scheduledFor}.`);
-    const response = await fetch(macheteSyncAllUrl(), { method: "POST" });
-
-    if (!response.ok) {
-      console.error(`[machete] Scheduled FotMob sync failed with ${response.status}: ${await response.text()}`);
-    } else {
-      console.info("[machete] Scheduled FotMob sync completed.");
-    }
+    await syncAllMacheteLeagues(prisma, { includePreviousSeasons: false });
+    console.info("[machete] Scheduled FotMob sync completed.");
   } catch (error) {
     console.error("[machete] Scheduled FotMob sync crashed.", error);
   } finally {
@@ -75,17 +70,6 @@ function nextDailyRun() {
     delayMs: target.getTime() - now.getTime(),
     label: `${formatZonedDate(target, timeZone)} ${pad(hour)}:${pad(minute)} ${timeZone}`
   };
-}
-
-function macheteSyncAllUrl() {
-  const configuredUrl = process.env.MACHETE_DAILY_SYNC_URL;
-  if (configuredUrl) return configuredUrl;
-
-  const baseUrl =
-    process.env.NEXTAUTH_URL ??
-    (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : `http://localhost:${process.env.PORT ?? 3000}`);
-
-  return new URL("/api/machete/sync-all", baseUrl).toString();
 }
 
 function parseDailySyncTime(value: string) {
@@ -147,3 +131,5 @@ function formatZonedDate(date: Date, timeZone: string) {
 function pad(value: number) {
   return String(value).padStart(2, "0");
 }
+import { prisma } from "@/lib/db";
+import { syncAllMacheteLeagues } from "@/providers/fotmob/jobs";

@@ -1,0 +1,99 @@
+export type MacheteLeagueCatalogItem = {
+  id: string;
+  name: string;
+  country: string;
+  code: string;
+  fotMobLeagueId: string;
+};
+
+export const macheteLeagueCatalog: MacheteLeagueCatalogItem[] = [
+  league("champions-league", "Champions League", "International", "UCL", "42"),
+  league("europa-league", "Europa League", "International", "UEL", "73"),
+  league("conference-league", "Conference League", "International", "UECL", "10216"),
+  league("uefa-super-cup", "UEFA Super Cup", "International", "USC", "74"),
+  league("euro", "EURO", "International", "EURO", "50"),
+  league("uefa-nations-league-a", "UEFA Nations League A", "International", "UNL", "9806"),
+  league("world-cup-qualification-uefa", "World Cup Qualification UEFA", "International", "WCQ-UEFA", "10195"),
+  league("premier-league", "Premier League", "England", "EPL", "47"),
+  league("championship", "Championship", "England", "CHA", "48"),
+  league("england-league-one", "League One", "England", "EFL1", "108"),
+  league("england-league-two", "League Two", "England", "EFL2", "109"),
+  league("fa-cup", "FA Cup", "England", "FAC", "132"),
+  league("efl-cup", "EFL Cup", "England", "EFLC", "133"),
+  league("la-liga", "LaLiga", "Spain", "LL", "87"),
+  league("la-liga-2", "LaLiga2", "Spain", "LL2", "140"),
+  league("copa-del-rey", "Copa del Rey", "Spain", "CDR", "138"),
+  league("supercopa-de-espana", "Supercopa de Espana", "Spain", "SDE", "139"),
+  league("bundesliga", "Bundesliga", "Germany", "BUN", "54"),
+  league("bundesliga-2", "2. Bundesliga", "Germany", "2BUN", "146"),
+  league("dfb-pokal", "DFB Pokal", "Germany", "DFB", "209"),
+  league("serie-a", "Serie A", "Italy", "SA", "55"),
+  league("serie-b", "Serie B", "Italy", "SB", "86"),
+  league("coppa-italia", "Coppa Italia", "Italy", "CI", "141"),
+  league("ligue-1", "Ligue 1", "France", "L1", "53"),
+  league("ligue-2", "Ligue 2", "France", "L2", "110"),
+  league("coupe-de-france", "Coupe de France", "France", "CDF", "134"),
+  league("primeira-liga", "Liga Portugal", "Portugal", "POR", "61"),
+  league("liga-portugal-2", "Liga Portugal 2", "Portugal", "POR2", "185"),
+  league("taca-de-portugal", "Taca de Portugal", "Portugal", "TDP", "186"),
+  league("eredivisie", "Eredivisie", "Netherlands", "ERE", "57"),
+  league("eerste-divisie", "Eerste Divisie", "Netherlands", "EED", "111"),
+  league("knvb-cup", "KNVB Cup", "Netherlands", "KNVB", "235"),
+  league("turkish-super-lig", "Super Lig", "Turkey", "TSL", "71"),
+  league("turkish-1-lig", "1. Lig", "Turkey", "T1L", "165"),
+  league("russian-premier-league", "Premier League", "Russia", "RPL", "63"),
+  league("russian-cup", "Russian Cup", "Russia", "RC", "193"),
+  league("belgian-first-division-a", "First Division A", "Belgium", "BEL1", "40"),
+  league("belgian-first-division-b", "First Division B", "Belgium", "BEL2", "264"),
+  league("belgian-cup", "Belgian Cup", "Belgium", "BCUP", "149"),
+  league("scottish-premiership", "Premiership", "Scotland", "SPL", "64"),
+  league("scottish-championship", "Championship", "Scotland", "SCOCH", "123"),
+  league("scottish-cup", "Scottish Cup", "Scotland", "SCUP", "137"),
+  league("swiss-super-league", "Super League", "Switzerland", "SWI", "69"),
+  league("swiss-challenge-league", "Challenge League", "Switzerland", "SWI2", "163"),
+  league("austrian-bundesliga", "Bundesliga", "Austria", "AUT", "38"),
+  league("austrian-2-liga", "2. Liga", "Austria", "AUT2", "119"),
+  league("greek-super-league-1", "Super League 1", "Greece", "GRE", "135"),
+  league("danish-superligaen", "Superligaen", "Denmark", "DEN", "46"),
+  league("swedish-allsvenskan", "Allsvenskan", "Sweden", "SWE", "67"),
+  league("norwegian-eliteserien", "Eliteserien", "Norway", "NOR", "59"),
+  league("polish-ekstraklasa", "Ekstraklasa", "Poland", "POL", "196"),
+  league("ukrainian-premier-league", "Premier League", "Ukraine", "UKR", "441"),
+  league("world-cup-2026", "World Cup 2026", "International", "WC26", "77"),
+  league("copa-libertadores", "Copa Libertadores", "International", "LIB", "45"),
+  league("copa-sudamericana", "Copa Sudamericana", "International", "SUD", "299"),
+  league("recopa-sudamericana", "Recopa Sudamericana", "International", "REC", "491"),
+  league("copa-america", "Copa America", "International", "CA", "44"),
+  league("world-cup-qualification-conmebol", "World Cup Qualification CONMEBOL", "International", "WCQ-CON", "10199"),
+  league("argentina-liga-profesional", "Liga Profesional", "Argentina", "ARG", "112"),
+  league("copa-argentina", "Copa Argentina", "Argentina", "CARG", "9305"),
+  league("copa-de-la-liga-profesional", "Copa de la Liga Profesional", "Argentina", "CLP", "10007"),
+  league("brazil-serie-a", "Serie A", "Brazil", "BRA", "268"),
+  league("brazil-serie-b", "Serie B", "Brazil", "BRB", "8814"),
+  league("copa-do-brasil", "Copa do Brasil", "Brazil", "CDB", "9067"),
+  league("chile-primera-division", "Primera Division", "Chile", "CHI", "273"),
+  league("colombia-primera-a", "Primera A", "Colombia", "COL", "274"),
+  league("uruguay-primera-division", "Primera Division", "Uruguay", "URU", "161"),
+  league("paraguay-division-profesional", "Division Profesional", "Paraguay", "PAR", "199"),
+  league("peru-liga-1", "Liga 1", "Peru", "PER", "131"),
+  league("ecuador-serie-a", "Serie A", "Ecuador", "ECU", "246"),
+  league("bolivia-primera-division", "Primera Division", "Bolivia", "BOL", "144"),
+  league("venezuela-primera-division", "Primera Division", "Venezuela", "VEN", "339"),
+  league("mls", "MLS", "United States", "MLS", "130"),
+  league("usl-championship", "USL Championship", "United States", "USLC", "8972"),
+  league("usl-league-one", "USL League One", "United States", "USL1", "9296"),
+  league("us-open-cup", "US Open Cup", "United States", "USOC", "9441"),
+  league("mls-next-pro", "MLS Next Pro", "United States", "MLSN", "10282"),
+  league("saudi-pro-league", "Saudi Pro League", "Saudi Arabia", "SPLSA", "536"),
+  league("saudi-first-division", "Saudi First Division", "Saudi Arabia", "SFD", "10721"),
+  league("kings-cup", "King's Cup", "Saudi Arabia", "KSAKC", "9942"),
+  league("saudi-super-cup", "Saudi Super Cup", "Saudi Arabia", "KSASC", "10074")
+];
+
+export function macheteCatalogByFotMobId(fotMobLeagueId: string | null | undefined) {
+  return macheteLeagueCatalog.find((league) => league.fotMobLeagueId === fotMobLeagueId);
+}
+
+function league(id: string, name: string, country: string, code: string, fotMobLeagueId: string): MacheteLeagueCatalogItem {
+  return { id, name, country, code, fotMobLeagueId };
+}

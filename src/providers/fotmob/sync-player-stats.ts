@@ -15,6 +15,7 @@ type SyncPlayerStatsOptions = {
   syncFixtures?: boolean;
   providerTeams?: FotMobTeam[];
   providerTeamSets?: ProviderTeamSet[];
+  includePreviousSeasons?: boolean;
 };
 
 type ProviderTeamSet = {
@@ -32,18 +33,19 @@ export async function syncMacheteTeamPlayerStats(prisma: PrismaClient, teamId: s
 
   const client = createFotMobClient();
   if (options.syncFixtures ?? true) {
-    await syncMacheteFixtures(prisma, team.leagueId);
+    await syncMacheteFixtures(prisma, team.leagueId, { includePreviousSeasons: options.includePreviousSeasons });
   }
 
   const providerTeamSets = options.providerTeamSets ?? (
     options.providerTeams
       ? [{ season: team.league.season ?? null, teams: options.providerTeams }]
-      : await getProviderTeamSets(client, team.league.providerLeagueId ?? team.leagueId, team.league.season, team.league.providerLeagueId)
+      : await getProviderTeamSets(client, team.league.providerLeagueId ?? team.leagueId, team.league.season, team.league.providerLeagueId, options.includePreviousSeasons)
   );
   const providerTeam = providerTeamSets.flatMap((set) => set.teams).find((item) => item.id === team.providerTeamId);
   if (!providerTeam) throw new Error("Provider team not found in mock FotMob dataset.");
 
   for (const player of dedupePlayers(providerTeamSets.flatMap((set) => set.teams.find((item) => item.id === team.providerTeamId)?.players ?? []))) {
+    const { teamId: _teamId, ...playerUpdate } = normalizeMachetePlayer(player, team.id);
     await prisma.machetePlayer.upsert({
       where: {
         provider_providerPlayerId: {
@@ -51,7 +53,7 @@ export async function syncMacheteTeamPlayerStats(prisma: PrismaClient, teamId: s
           providerPlayerId: player.id
         }
       },
-      update: normalizeMachetePlayer(player, team.id),
+      update: playerUpdate,
       create: normalizeMachetePlayer(player, team.id)
     });
   }
@@ -274,13 +276,13 @@ export async function syncMacheteLeaguePlayerStats(prisma: PrismaClient, leagueI
 
   const client = createFotMobClient();
   if (options.syncFixtures ?? true) {
-    await syncMacheteFixtures(prisma, leagueId);
+    await syncMacheteFixtures(prisma, leagueId, { includePreviousSeasons: options.includePreviousSeasons });
   }
 
   const providerTeamSets = options.providerTeamSets ?? (
     options.providerTeams
       ? [{ season: league.season ?? null, teams: options.providerTeams }]
-      : await getProviderTeamSets(client, league.providerLeagueId ?? league.id, league.season, league.providerLeagueId)
+      : await getProviderTeamSets(client, league.providerLeagueId ?? league.id, league.season, league.providerLeagueId, options.includePreviousSeasons)
   );
   const teams = await prisma.macheteTeam.findMany({
     where: { leagueId },
@@ -302,8 +304,14 @@ export async function syncMacheteLeaguePlayerStats(prisma: PrismaClient, leagueI
   return { statsCount, snapshotsCount };
 }
 
-async function getProviderTeamSets(client: ReturnType<typeof createFotMobClient>, leagueId: string, season: string | null, providerLeagueId?: string | null) {
-  const seasons = fixtureSyncSeasons(season, providerLeagueId);
+async function getProviderTeamSets(
+  client: ReturnType<typeof createFotMobClient>,
+  leagueId: string,
+  season: string | null,
+  providerLeagueId?: string | null,
+  includePreviousSeasons = true
+) {
+  const seasons = includePreviousSeasons === false ? [season ?? null] : fixtureSyncSeasons(season, providerLeagueId);
   return Promise.all(
     seasons.map(async (seasonLabel) => ({
       season: seasonLabel,

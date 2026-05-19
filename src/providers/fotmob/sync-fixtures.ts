@@ -6,7 +6,11 @@ import { createFotMobClient } from "./client";
 import { normalizeMacheteFixture } from "./normalizers";
 import { storeMacheteRawPayload } from "./raw-payloads";
 
-export async function syncMacheteFixtures(prisma: PrismaClient, leagueId: string) {
+type SyncFixtureOptions = {
+  includePreviousSeasons?: boolean;
+};
+
+export async function syncMacheteFixtures(prisma: PrismaClient, leagueId: string, options: SyncFixtureOptions = {}) {
   const league = await prisma.macheteLeague.findUnique({
     where: { id: leagueId },
     include: { teams: true }
@@ -14,7 +18,7 @@ export async function syncMacheteFixtures(prisma: PrismaClient, leagueId: string
   if (!league) throw new Error("Machete league not found.");
 
   const client = createFotMobClient();
-  const seasons = fixtureSyncSeasons(league.season, league.providerLeagueId);
+  const seasons = options.includePreviousSeasons === false ? [league.season ?? null] : fixtureSyncSeasons(league.season, league.providerLeagueId);
   const fixtureSets = await Promise.all(
     seasons.map(async (season) => ({
       season,

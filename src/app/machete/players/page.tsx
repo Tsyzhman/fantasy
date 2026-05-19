@@ -195,9 +195,29 @@ async function buildMatchWindowRows({
   matchWindow: MacheteMatchWindow;
   sort: string;
 }) {
-  const playerWhere: Prisma.MachetePlayerWhereInput = {};
-  if (selectedTeamId) playerWhere.teamId = selectedTeamId;
-  else if (selectedLeagueId) playerWhere.team = { leagueId: selectedLeagueId };
+  const teams = await prisma.macheteTeam.findMany({
+    where: selectedTeamId ? { id: selectedTeamId } : selectedLeagueId ? { leagueId: selectedLeagueId } : undefined,
+    include: {
+      league: true,
+      fixturesHome: { select: { id: true, status: true, kickoffAt: true } },
+      fixturesAway: { select: { id: true, status: true, kickoffAt: true } }
+    }
+  });
+  const teamIds = teams.map((team) => team.id);
+  const playerWhere: Prisma.MachetePlayerWhereInput = teamIds.length
+    ? {
+        OR: [
+          { teamId: { in: teamIds } },
+          {
+            matchStats: {
+              some: {
+                teamId: { in: teamIds }
+              }
+            }
+          }
+        ]
+      }
+    : {};
   if (position) playerWhere.position = { contains: position, mode: "insensitive" };
 
   const sourcePlayers = await prisma.machetePlayer.findMany({
@@ -209,6 +229,7 @@ async function buildMatchWindowRows({
         }
       },
       matchStats: {
+        where: teamIds.length ? { teamId: { in: teamIds } } : undefined,
         include: {
           fixture: {
             select: {
@@ -219,15 +240,6 @@ async function buildMatchWindowRows({
           }
         }
       }
-    }
-  });
-  const teamIds = [...new Set(sourcePlayers.map((player) => player.teamId).filter((teamId): teamId is string => Boolean(teamId)))];
-  const teams = await prisma.macheteTeam.findMany({
-    where: { id: { in: teamIds } },
-    include: {
-      league: true,
-      fixturesHome: { select: { id: true, status: true, kickoffAt: true } },
-      fixturesAway: { select: { id: true, status: true, kickoffAt: true } }
     }
   });
   const fixtureIdsByTeam = new Map(
@@ -242,20 +254,21 @@ async function buildMatchWindowRows({
   const scoringModel = await getActiveScoringModelForSource("MACHETE");
   const minimumMinutes = minMinutes ? Number(minMinutes) : null;
 
-  return sourcePlayers
-    .map((player) => {
+  return teams
+    .flatMap((team) =>
+      sourcePlayers.map((player) => {
       const stats = aggregateRecentMachetePlayerStats(
-        player.matchStats,
+        player.matchStats.filter((stat) => stat.teamId === team.id),
         player.position,
         scoringModel,
-        player.teamId ? fixtureIdsByTeam.get(player.teamId) ?? new Set<string>() : new Set<string>()
+        fixtureIdsByTeam.get(team.id) ?? new Set<string>()
       );
 
       return {
-        id: player.id,
+        id: `${player.id}:${team.id}`,
         name: player.name,
-        teamName: player.team?.name ?? null,
-        leagueName: player.team?.league ? macheteLeagueDisplayName(player.team.league) : null,
+        teamName: team.name,
+        leagueName: macheteLeagueDisplayName(team.league),
         position: player.position,
         age: player.age,
         nationality: player.nationality,
@@ -272,6 +285,7 @@ async function buildMatchWindowRows({
         alternativeScore: stats.alternativeScore
       };
     })
+    )
     .filter((player) => (minimumMinutes !== null && Number.isFinite(minimumMinutes) ? player.minutesPlayed >= minimumMinutes : true))
     .sort((left, right) => compareMacheteRows(left, right, sort))
     .slice(0, 250);

@@ -41,27 +41,7 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
     where: { id: teamId },
     include: {
       league: true,
-      players: {
-        orderBy: { name: "asc" },
-        include: {
-          snapshots: {
-            where: { leagueId },
-            orderBy: { createdAt: "desc" },
-            take: 1
-          },
-          matchStats: {
-            include: {
-              fixture: {
-                select: {
-                  id: true,
-                  status: true,
-                  kickoffAt: true
-                }
-              }
-            }
-          }
-        }
-      },
+      players: true,
       fixturesHome: {
         include: { homeTeam: true, awayTeam: true },
         orderBy: { kickoffAt: "desc" }
@@ -75,11 +55,45 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
 
   if (!team || team.leagueId !== leagueId) notFound();
   const leagueDisplayName = macheteLeagueDisplayName(team.league);
+  const teamPlayers = await prisma.machetePlayer.findMany({
+    where: {
+      OR: [
+        { teamId: team.id },
+        {
+          matchStats: {
+            some: {
+              teamId: team.id
+            }
+          }
+        }
+      ]
+    },
+    orderBy: { name: "asc" },
+    include: {
+      snapshots: {
+        where: { leagueId, teamId: team.id },
+        orderBy: { createdAt: "desc" },
+        take: 1
+      },
+      matchStats: {
+        where: { teamId: team.id },
+        include: {
+          fixture: {
+            select: {
+              id: true,
+              status: true,
+              kickoffAt: true
+            }
+          }
+        }
+      }
+    }
+  });
 
   const teamFixtures = [...team.fixturesHome, ...team.fixturesAway].filter(isMatchFixture);
   const providerIds = [
     team.providerTeamId,
-    ...team.players.map((player) => player.providerPlayerId),
+    ...teamPlayers.map((player) => player.providerPlayerId),
     ...teamFixtures.map((fixture) => fixture.providerFixtureId)
   ].filter((value): value is string => Boolean(value));
 
@@ -112,7 +126,7 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
   const windowFixtureIds = teamFixtureIdsForWindow(teamFixtures, matchWindow, team.league.season, team.league.providerLeagueId);
   const scoringModel = await getActiveScoringModelForSource("MACHETE");
 
-  const players = team.players.map((player) => {
+  const players = teamPlayers.map((player) => {
     const snapshot = player.snapshots[0];
     const recentStats = aggregateRecentMachetePlayerStats(player.matchStats, player.position, scoringModel, windowFixtureIds);
     return {
@@ -187,14 +201,14 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
           </div>
           <div className="rounded border border-slate-200 bg-field p-4">
             <dt className="text-xs font-medium uppercase text-slate-400"><I18nText en="Players synced" ru="Игроков синхронизировано" /></dt>
-            <dd className="mt-2 font-semibold text-ink">{formatNumber(team.players.length)}</dd>
+            <dd className="mt-2 font-semibold text-ink">{formatNumber(teamPlayers.length)}</dd>
           </div>
           <div className="rounded border border-slate-200 bg-field p-4">
             <dt className="flex items-center gap-2 text-xs font-medium uppercase text-slate-400">
               <GitCompareArrows className="h-4 w-4" />
               <I18nText en="Unmatched players" ru="Игроки без связи" />
             </dt>
-            <dd className="mt-2 font-semibold text-ink">{formatNumber(team.players.length)}</dd>
+            <dd className="mt-2 font-semibold text-ink">{formatNumber(teamPlayers.length)}</dd>
           </div>
           <div className="rounded border border-slate-200 bg-field p-4">
             <dt className="text-xs font-medium uppercase text-slate-400"><I18nText en="Avg fantasy score" ru="Средний fantasy score" /></dt>

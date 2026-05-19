@@ -9,7 +9,7 @@ import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
 import { I18nText } from "@/components/i18n-text";
 import { prisma } from "@/lib/db";
 import { formatDate, formatNumber, formatScore } from "@/lib/format";
-import { leagueSeeds } from "@/lib/leagues/seed-data";
+import { macheteCatalogByFotMobId } from "@/lib/leagues/machete-catalog";
 import { leagueSubtitle, macheteLeagueDisplayName } from "@/lib/leagues/display";
 import { leagueFlag } from "@/lib/leagues/flags";
 
@@ -62,7 +62,7 @@ export default async function MacheteLeaguePage({ params }: PageProps) {
   const expectedFantasyPoints = leagueFantasyScores.length
     ? leagueFantasyScores.reduce((total, score) => total + score, 0) / leagueFantasyScores.length
     : null;
-  const seedLeague = leagueSeeds.find((item) => item.fotMobLeagueId === league.providerLeagueId);
+  const seedLeague = macheteCatalogByFotMobId(league.providerLeagueId);
   const flagInput = {
     id: seedLeague?.id ?? league.id,
     name: league.name,

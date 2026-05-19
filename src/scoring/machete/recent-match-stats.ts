@@ -10,6 +10,7 @@ export type MacheteFixtureWindowInput = {
 
 export type MacheteMatchStatWindowInput = {
   fixtureId: string;
+  teamId?: string | null;
   fixture: MacheteFixtureWindowInput;
   minutes: number | null;
   rating: number | null;

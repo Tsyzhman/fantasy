@@ -17,25 +17,41 @@ type AggregateOptions = {
 
 export async function aggregateMachetePlayerSnapshots(prisma: PrismaClient, options: AggregateOptions) {
   const model = await getActiveScoringModelForSource("MACHETE");
-  const players = await prisma.machetePlayer.findMany({
+  const teams = await prisma.macheteTeam.findMany({
     where: {
-      teamId: options.teamId ?? undefined,
-      team: {
-        leagueId: options.leagueId
-      }
+      leagueId: options.leagueId,
+      id: options.teamId ?? undefined
     },
     include: {
-      team: {
+      league: {
         select: {
-          league: {
-            select: {
-              providerLeagueId: true,
-              season: true
-            }
-          }
+          providerLeagueId: true,
+          season: true
         }
-      },
+      }
+    }
+  });
+  const teamIds = teams.map((team) => team.id);
+  const players = await prisma.machetePlayer.findMany({
+    where: teamIds.length
+      ? {
+          OR: [
+            { teamId: { in: teamIds } },
+            {
+              matchStats: {
+                some: {
+                  teamId: { in: teamIds }
+                }
+              }
+            }
+          ]
+        }
+      : { id: "__no_teams__" },
+    include: {
       matchStats: {
+        where: {
+          teamId: { in: teamIds }
+        },
         include: {
           fixture: true
         }
@@ -46,11 +62,11 @@ export async function aggregateMachetePlayerSnapshots(prisma: PrismaClient, opti
 
   const snapshots = [];
   const playerIds = players.map((player) => player.id);
-  const leagueSeason = players.find((player) => player.team?.league.season)?.team?.league.season ?? null;
+  const leagueSeason = teams[0]?.league.season ?? null;
   const teamDenominators = await getMacheteAggregateMatchDenominators(
     prisma,
     options.leagueId,
-    players.map((player) => player.teamId).filter((teamId): teamId is string => Boolean(teamId)),
+    teamIds,
     leagueSeason
   );
 
@@ -66,14 +82,16 @@ export async function aggregateMachetePlayerSnapshots(prisma: PrismaClient, opti
     });
   }
 
-  for (const player of players) {
-    const currentSeason = player.team?.league.season ?? null;
-    const stats = player.matchStats.filter((stat) => fixtureMatchesSeason(stat.fixture, currentSeason));
+  for (const team of teams) {
+    for (const player of players) {
+    const currentSeason = team.league.season ?? null;
+    const stats = player.matchStats.filter((stat) => stat.teamId === team.id && fixtureMatchesSeason(stat.fixture, currentSeason));
+    if (stats.length === 0 && player.teamId !== team.id) continue;
     const matchStats = stats.filter((stat) => stat.fixture.status !== "SEASON_AGGREGATE");
-    const ignoreProviderSeasonStats = shouldIgnoreProviderSeasonStats(player.team?.league.providerLeagueId, player.team?.league.season);
+    const ignoreProviderSeasonStats = shouldIgnoreProviderSeasonStats(team.league.providerLeagueId, team.league.season);
     const statsForTotals = ignoreProviderSeasonStats ? matchStats : stats;
     const aggregateMatches = ignoreProviderSeasonStats ? null : firstPositiveNumber(stats.map((stat) => readRawNumber(stat.raw, "aggregateMatches")));
-    const fixtureDenominator = !ignoreProviderSeasonStats && player.teamId ? teamDenominators.get(player.teamId) ?? 0 : 0;
+    const fixtureDenominator = !ignoreProviderSeasonStats ? teamDenominators.get(team.id) ?? 0 : 0;
     const matchesPlayed = ignoreProviderSeasonStats ? matchStats.length : Math.max(aggregateMatches ?? 0, fixtureDenominator, stats.length);
     const minutesPlayed = sum(statsForTotals.map((stat) => stat.minutes));
     const sixtyMinuteAppearances = matchStats.length
@@ -122,7 +140,7 @@ export async function aggregateMachetePlayerSnapshots(prisma: PrismaClient, opti
       data: {
         playerId: player.id,
         leagueId: options.leagueId,
-        teamId: player.teamId,
+        teamId: team.id,
         position: player.position,
         matchesPlayed,
         minutesPlayed,
@@ -144,6 +162,7 @@ export async function aggregateMachetePlayerSnapshots(prisma: PrismaClient, opti
       }
     });
     snapshots.push(snapshot);
+  }
   }
 
   return snapshots;

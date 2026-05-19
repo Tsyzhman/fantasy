@@ -4,6 +4,7 @@ import { createFotMobClient } from "./client";
 import { normalizeMachetePlayer, normalizeMacheteTeam } from "./normalizers";
 import { storeMacheteRawPayload } from "./raw-payloads";
 import type { FotMobTeam } from "./types";
+import { isWorldCup2026 } from "@/scoring/machete/world-cup";
 
 export async function syncMacheteTeams(prisma: PrismaClient, leagueId: string) {
   const league = await prisma.macheteLeague.findUnique({ where: { id: leagueId } });
@@ -27,12 +28,6 @@ export async function syncMacheteTeams(prisma: PrismaClient, leagueId: string) {
 
     if (staleTeams.length > 0) {
       const staleTeamIds = staleTeams.map((team) => team.id);
-      await prisma.machetePlayer.deleteMany({
-        where: {
-          teamId: { in: staleTeamIds },
-          provider: "FOTMOB"
-        }
-      });
       await prisma.macheteTeam.deleteMany({
         where: {
           id: { in: staleTeamIds }
@@ -128,8 +123,4 @@ export function filterMacheteTeamsForSync(input: { teams: FotMobTeam[]; provider
   }
 
   return teamsWithPlayers;
-}
-
-function isWorldCup2026(providerLeagueId: string, season?: string) {
-  return providerLeagueId === "77" && (!season || season === "2026");
 }

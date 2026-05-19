@@ -44,7 +44,30 @@ const flagByCountry: Record<string, string> = {
   portugal: "🇵🇹",
   netherlands: "🇳🇱",
   russia: "🇷🇺",
-  turkey: "🇹🇷"
+  turkey: "🇹🇷",
+  belgium: "🇧🇪",
+  scotland: "🏴",
+  switzerland: "🇨🇭",
+  austria: "🇦🇹",
+  greece: "🇬🇷",
+  denmark: "🇩🇰",
+  sweden: "🇸🇪",
+  norway: "🇳🇴",
+  poland: "🇵🇱",
+  ukraine: "🇺🇦",
+  argentina: "🇦🇷",
+  brazil: "🇧🇷",
+  chile: "🇨🇱",
+  colombia: "🇨🇴",
+  uruguay: "🇺🇾",
+  paraguay: "🇵🇾",
+  peru: "🇵🇪",
+  ecuador: "🇪🇨",
+  bolivia: "🇧🇴",
+  venezuela: "🇻🇪",
+  "united states": "🇺🇸",
+  "saudi arabia": "🇸🇦",
+  international: "🏆"
 };
 
 export function leagueFlag(league: LeagueFlagInput) {
@@ -55,7 +78,7 @@ export function leagueFlag(league: LeagueFlagInput) {
   if (code && flagByLeagueCode[code]) return flagByLeagueCode[code];
 
   const name = league.name?.toLowerCase();
-  if (name?.includes("championship")) return "🇬🇧";
+  if (name?.includes("championship") && league.country?.toLowerCase() === "england") return "🇬🇧";
   if (name?.includes("premier league") && league.country?.toLowerCase() === "england") return englandFlag;
 
   const country = league.country?.toLowerCase();

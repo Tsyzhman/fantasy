@@ -3,7 +3,7 @@ import Link from "next/link";
 
 import { I18nText } from "@/components/i18n-text";
 import { formatDate, formatNumber, formatScore } from "@/lib/format";
-import { leagueSeeds } from "@/lib/leagues/seed-data";
+import { macheteCatalogByFotMobId } from "@/lib/leagues/machete-catalog";
 import { leagueSubtitle, macheteLeagueDisplayName } from "@/lib/leagues/display";
 import { leagueFlag } from "@/lib/leagues/flags";
 
@@ -24,7 +24,7 @@ export type MacheteLeagueCardDto = {
 };
 
 export function MacheteLeagueCard({ league }: { league: MacheteLeagueCardDto }) {
-  const seedLeague = leagueSeeds.find((item) => item.fotMobLeagueId === league.providerLeagueId);
+  const seedLeague = macheteCatalogByFotMobId(league.providerLeagueId);
   const flagInput = {
     id: seedLeague?.id ?? league.id,
     name: league.name,

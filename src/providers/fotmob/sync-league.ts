@@ -1,6 +1,6 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 
-import { leagueSeeds } from "@/lib/leagues/seed-data";
+import { macheteCatalogByFotMobId } from "@/lib/leagues/machete-catalog";
 
 import { createFotMobClient } from "./client";
 import { storeMacheteRawPayload } from "./raw-payloads";
@@ -11,7 +11,7 @@ export async function syncMacheteLeagueMetadata(prisma: PrismaClient, leagueId: 
 
   const client = createFotMobClient();
   const providerLeague = await client.getLeague(league.providerLeagueId ?? league.id, league.season ?? undefined);
-  const seededLeague = leagueSeeds.find((item) => item.fotMobLeagueId === providerLeague.id);
+  const catalogLeague = macheteCatalogByFotMobId(providerLeague.id);
 
   await storeMacheteRawPayload(prisma, {
     entityType: "LEAGUE",
@@ -25,8 +25,8 @@ export async function syncMacheteLeagueMetadata(prisma: PrismaClient, leagueId: 
     data: {
       provider: "FOTMOB",
       providerLeagueId: providerLeague.id,
-      name: providerLeague.name,
-      country: seededLeague?.country ?? providerLeague.country ?? null,
+      name: catalogLeague?.name ?? providerLeague.name,
+      country: catalogLeague?.country ?? providerLeague.country ?? null,
       season: providerLeague.season ?? league.season,
       logoUrl: providerLeague.logoUrl ?? null,
       status: "SYNCED",
