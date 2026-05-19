@@ -174,21 +174,19 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: "in
         }
       });
 
-      if (jobType === "incremental_update") {
-        try {
-          await sync_league_season_rosters(prisma, client, {
-            leagueId: scope.league_id,
-            season: scope.season,
-            isCurrent: true
-          });
-        } catch (error) {
-          await prisma.ingestionJob.update({
-            where: { id: jobId },
-            data: {
-              errorMessage: error instanceof Error ? error.message : "Unknown roster sync error"
-            }
-          });
-        }
+      try {
+        await sync_league_season_rosters(prisma, client, {
+          leagueId: scope.league_id,
+          season: scope.season,
+          isCurrent: jobType === "incremental_update"
+        });
+      } catch (error) {
+        await prisma.ingestionJob.update({
+          where: { id: jobId },
+          data: {
+            errorMessage: error instanceof Error ? error.message : "Unknown roster sync error"
+          }
+        });
       }
 
       const discoveredMatches = await discover_matches_for_scope(client, scope);
