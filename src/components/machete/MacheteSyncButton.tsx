@@ -16,12 +16,14 @@ export function MacheteSyncButton({
   endpoint,
   children,
   variant = "primary",
-  className
+  className,
+  runningMessage
 }: {
   endpoint: string;
   children: ReactNode;
   variant?: "primary" | "secondary";
   className?: string;
+  runningMessage?: ReactNode;
 }) {
   const router = useRouter();
   const [state, setState] = useState<SyncState>({ status: "idle" });
@@ -61,15 +63,22 @@ export function MacheteSyncButton({
         {state.status === "running" ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
         {children}
       </button>
-      {state.message && state.status !== "running" ? (
+      {state.message ? (
         <p
           className={cn(
             "flex items-center gap-1 text-xs",
-            state.status === "error" ? "text-rose-700" : "text-emerald-700"
+            state.status === "running" ? "text-sky-700" : state.status === "error" ? "text-rose-700" : "text-emerald-700"
           )}
+          aria-live="polite"
         >
-          {state.status === "error" ? <AlertCircle className="h-3.5 w-3.5" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
-          {state.message}
+          {state.status === "running" ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : state.status === "error" ? (
+            <AlertCircle className="h-3.5 w-3.5" />
+          ) : (
+            <CheckCircle2 className="h-3.5 w-3.5" />
+          )}
+          {state.status === "running" && runningMessage ? runningMessage : state.message}
         </p>
       ) : null}
     </div>

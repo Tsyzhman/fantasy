@@ -62,7 +62,11 @@ export default async function MacheteLeaguesPage() {
           </p>
         </div>
         <div className="flex flex-col gap-1 sm:items-end">
-          <MacheteSyncButton endpoint="/api/machete/sync-all" className="sm:items-end">
+          <MacheteSyncButton
+            endpoint="/api/machete/sync-all"
+            className="sm:items-end"
+            runningMessage={<I18nText en="Updating all Machete leagues..." ru="Обновляю все лиги Machete..." />}
+          >
             <I18nText en="Sync all leagues" ru="Синхронизировать все лиги" />
           </MacheteSyncButton>
           <p className="max-w-64 text-xs text-slate-500 sm:text-right">
