@@ -1,6 +1,7 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 
 import { aggregateMachetePlayerSnapshots } from "@/scoring/machete/aggregateMachetePlayerSnapshots";
+import { getMacheteAggregateMatchDenominator } from "@/scoring/machete/aggregate-match-denominator";
 
 import { createFotMobClient } from "./client";
 import { normalizeMacheteMatchStat, normalizeMachetePlayer } from "./normalizers";
@@ -45,13 +46,7 @@ export async function syncMacheteTeamPlayerStats(prisma: PrismaClient, teamId: s
 
   const aggregateStats = providerTeam.players.filter((player) => player.seasonStat);
   if (aggregateStats.length > 0) {
-    const aggregateMatches = await prisma.macheteFixture.count({
-      where: {
-        leagueId: team.leagueId,
-        status: "FINISHED",
-        OR: [{ homeTeamId: team.id }, { awayTeamId: team.id }]
-      }
-    });
+    const aggregateMatches = await getMacheteAggregateMatchDenominator(prisma, team.leagueId, team.id);
     const aggregateMatchesDenominator = Math.max(aggregateMatches, 1);
 
     await storeMacheteRawPayload(prisma, {

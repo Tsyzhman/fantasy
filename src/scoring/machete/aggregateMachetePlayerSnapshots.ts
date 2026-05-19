@@ -6,6 +6,7 @@ import {
   calculateScoringScore,
   getActiveScoringModelForSource
 } from "@/lib/scoring";
+import { getMacheteAggregateMatchDenominators } from "./aggregate-match-denominator";
 
 type AggregateOptions = {
   leagueId: string;
@@ -33,6 +34,11 @@ export async function aggregateMachetePlayerSnapshots(prisma: PrismaClient, opti
 
   const snapshots = [];
   const playerIds = players.map((player) => player.id);
+  const teamDenominators = await getMacheteAggregateMatchDenominators(
+    prisma,
+    options.leagueId,
+    players.map((player) => player.teamId).filter((teamId): teamId is string => Boolean(teamId))
+  );
 
   if (playerIds.length > 0) {
     await prisma.machetePlayerSnapshot.deleteMany({
@@ -50,7 +56,8 @@ export async function aggregateMachetePlayerSnapshots(prisma: PrismaClient, opti
     const stats = player.matchStats;
     const matchStats = stats.filter((stat) => stat.fixture.status !== "SEASON_AGGREGATE");
     const aggregateMatches = firstPositiveNumber(stats.map((stat) => readRawNumber(stat.raw, "aggregateMatches")));
-    const matchesPlayed = aggregateMatches ?? stats.length;
+    const fixtureDenominator = player.teamId ? teamDenominators.get(player.teamId) ?? 0 : 0;
+    const matchesPlayed = Math.max(aggregateMatches ?? 0, fixtureDenominator, stats.length);
     const minutesPlayed = sum(stats.map((stat) => stat.minutes));
     const sixtyMinuteAppearances = matchStats.length
       ? matchStats.filter((stat) => (stat.minutes ?? 0) >= 60).length

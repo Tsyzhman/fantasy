@@ -3,6 +3,7 @@ import type { Prisma, PrismaClient } from "@prisma/client";
 import { calculateAlternativeScore, calculateFantasyScore, calculateScoringScore, calculateValueScore, getActiveScoringModel, getActiveScoringModelForSource } from ".";
 import type { ScoringModelSource } from ".";
 import { buildBaltikaTeamFormulaMetrics } from "./baltika-team-form-metrics";
+import { getMacheteAggregateMatchDenominators } from "@/scoring/machete/aggregate-match-denominator";
 
 const batchSize = 500;
 
@@ -79,6 +80,8 @@ async function recalculateMacheteSnapshots(prisma: PrismaClient) {
       select: {
         id: true,
         rawMetrics: true,
+        leagueId: true,
+        teamId: true,
         position: true,
         minutesPlayed: true
       }
@@ -86,8 +89,29 @@ async function recalculateMacheteSnapshots(prisma: PrismaClient) {
 
     if (snapshots.length === 0) break;
 
+    const denominatorMaps = await Promise.all(
+      [...new Set(snapshots.map((snapshot) => snapshot.leagueId).filter((leagueId): leagueId is string => Boolean(leagueId)))].map(
+        async (leagueId) => [
+          leagueId,
+          await getMacheteAggregateMatchDenominators(
+            prisma,
+            leagueId,
+            snapshots
+              .filter((snapshot) => snapshot.leagueId === leagueId)
+              .map((snapshot) => snapshot.teamId)
+              .filter((teamId): teamId is string => Boolean(teamId))
+          )
+        ] as const
+      )
+    );
+    const denominatorsByLeague = new Map(denominatorMaps);
+
     const updates = snapshots.map((snapshot) => {
       const rawMetrics = objectMetrics(snapshot.rawMetrics);
+      const denominator = snapshot.leagueId && snapshot.teamId ? denominatorsByLeague.get(snapshot.leagueId)?.get(snapshot.teamId) ?? 0 : 0;
+      if (denominator > readMetric(rawMetrics, "matches_played")) {
+        rawMetrics.matches_played = denominator;
+      }
       const positionGroup = machetePositionGroup(snapshot.position);
       const fantasyScore = calculateFantasyScore(rawMetrics, positionGroup, scoringModel);
       const scoringScore = calculateScoringScore(rawMetrics, positionGroup, scoringModel);
@@ -124,4 +148,14 @@ function machetePositionGroup(position: string | null | undefined) {
   if (value.includes("midfielder") || value === "mid") return "MID";
   if (value.includes("forward") || value.includes("striker") || value.includes("winger") || value === "fw") return "FWD";
   return "UNKNOWN";
+}
+
+function readMetric(rawMetrics: Record<string, unknown>, key: string) {
+  const value = rawMetrics[key];
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value.replace(/,/g, "").replace(/%$/g, ""));
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return 0;
 }

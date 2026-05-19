@@ -131,7 +131,7 @@ export function calculateFantasyScore(
 ) {
   if (!Array.isArray(modelOrRules) && modelOrRules.customFormulaEnabled) {
     const customFormula = selectCustomFormula(modelOrRules, positionGroup);
-    if (customFormula) return round(calculateCustomFormulaScore(customFormula, enrichFormulaMetrics(rawMetrics)));
+    if (customFormula) return round(calculateCustomFormulaScore(customFormula, enrichPredictedFormulaMetrics(rawMetrics)));
   }
 
   return calculatePredictedRoundScore(rawMetrics, positionGroup);
@@ -372,6 +372,88 @@ export function enrichFormulaMetrics(rawMetrics: Record<string, unknown>) {
   return metrics;
 }
 
+function enrichPredictedFormulaMetrics(rawMetrics: Record<string, unknown>) {
+  const metrics = enrichFormulaMetrics(rawMetrics);
+  const matches = readMetric(metrics, "matches_played");
+  const minutes = readMetric(metrics, "minutes_played");
+  const expectedMinutes = expectedMinutesFromMetrics(metrics, matches, minutes);
+  const minutesFactor = expectedMinutes / 90;
+  const expectedGoals = expectedPerMatch(metrics, "goals", "goals_per_90", minutesFactor, matches);
+  const expectedXg = expectedPerMatch(metrics, "xg", "xg_per_90", minutesFactor, matches);
+  const expectedAssists = expectedPerMatch(metrics, "assists", "assists_per_90", minutesFactor, matches);
+  const expectedXa = expectedPerMatch(metrics, "xa", "xa_per_90", minutesFactor, matches);
+  const expectedFantasyAssists = perMatchFromTotal(metrics, "fantasy_assists|fantasy_assist", matches);
+  const expectedCleanSheets = perMatchFromTotal(metrics, "clean_sheets|clean_sheet", matches);
+  const expectedPenaltySaves = perMatchFromTotal(metrics, "penalties_saved|penalty_saves", matches);
+  const expectedPenaltiesConceded = perMatchFromTotal(metrics, "fouls_leading_to_penalty|penalties_conceded", matches);
+  const expectedMissed = expectedMissedPenalties(metrics, matches);
+  const expectedOwnGoals = perMatchFromTotal(metrics, "own_goals|own_goal", matches);
+  const expectedGoalsConceded = expectedPerMatch(
+    metrics,
+    "goals_conceded|conceded_goals",
+    "goals_conceded_per_90|conceded_goals_per_90",
+    minutesFactor,
+    matches
+  );
+  const expectedYellowCards = expectedPerMatch(metrics, "yellow_cards", "yellow_cards_per_90", minutesFactor, matches);
+  const expectedRedCards = expectedPerMatch(metrics, "red_cards", "red_cards_per_90", minutesFactor, matches);
+  const expectedRecoveries = expectedPerMatch(
+    metrics,
+    "recoveries|possession_recoveries",
+    "recoveries_per_90|possession_recoveries_per_90",
+    minutesFactor,
+    matches
+  );
+
+  setMetric(metrics, "matches_played", expectedMinutes > 0 ? 1 : 0);
+  setMetric(metrics, "minutes_played", expectedMinutes);
+  setMetric(metrics, "goals", expectedGoals);
+  setMetric(metrics, "xg", expectedXg);
+  setMetric(metrics, "assists", expectedAssists);
+  setMetric(metrics, "xa", expectedXa);
+  setMetric(metrics, "fantasy_assists", expectedFantasyAssists);
+  setMetric(metrics, "clean_sheets", expectedCleanSheets);
+  setMetric(metrics, "clean_sheet", expectedCleanSheets);
+  setMetric(metrics, "saves", expectedSaves(metrics, minutesFactor, matches));
+  setMetric(metrics, "penalties_saved", expectedPenaltySaves);
+  setMetric(metrics, "penalty_saves", expectedPenaltySaves);
+  setMetric(metrics, "fouls_leading_to_penalty", expectedPenaltiesConceded);
+  setMetric(metrics, "penalties_conceded", expectedPenaltiesConceded);
+  setMetric(metrics, "missed_penalties", expectedMissed);
+  setMetric(metrics, "penalties_missed", expectedMissed);
+  setMetric(metrics, "own_goals", expectedOwnGoals);
+  setMetric(metrics, "own_goal", expectedOwnGoals);
+  setMetric(metrics, "goals_conceded", expectedGoalsConceded);
+  setMetric(metrics, "conceded_goals", expectedGoalsConceded);
+  setMetric(metrics, "yellow_cards", expectedYellowCards);
+  setMetric(metrics, "red_cards", expectedRedCards);
+  setMetric(metrics, "recoveries", expectedRecoveries);
+  setMetric(metrics, "possession_recoveries", expectedRecoveries);
+  setProjectedTotalMetrics(metrics, minutesFactor, matches, [
+    ["shots", "shots_per_90"],
+    ["shots_on_target", "shots_on_target_per_90"],
+    ["key_passes", "key_passes_per_90"],
+    ["tackles", "tackles_per_90"],
+    ["interceptions", "interceptions_per_90"],
+    ["non_penalty_goals", "non_penalty_goals_per_90"],
+    ["head_goals", "head_goals_per_90"],
+    ["penalties_taken", ""]
+  ]);
+
+  return metrics;
+}
+
+function setProjectedTotalMetrics(
+  metrics: Record<string, unknown>,
+  minutesFactor: number,
+  matches: number,
+  metricKeys: Array<[totalKey: string, per90Key: string]>
+) {
+  for (const [totalKey, per90Key] of metricKeys) {
+    setMetric(metrics, totalKey, per90Key ? expectedPerMatch(metrics, totalKey, per90Key, minutesFactor, matches) : perMatchFromTotal(metrics, totalKey, matches));
+  }
+}
+
 function expectedPerMatch(
   rawMetrics: Record<string, unknown>,
   totalKey: string,
@@ -406,6 +488,10 @@ function setMetricIfMissing(metrics: Record<string, unknown>, key: string, value
   if (metrics[key] === null || metrics[key] === undefined || metrics[key] === "") {
     metrics[key] = round(value);
   }
+}
+
+function setMetric(metrics: Record<string, unknown>, key: string, value: number) {
+  metrics[key] = round(value);
 }
 
 function expectedSaves(rawMetrics: Record<string, unknown>, minutesFactor: number, matches: number) {
