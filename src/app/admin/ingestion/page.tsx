@@ -12,7 +12,7 @@ export default async function AdminIngestionPage() {
   await requireAdminUser();
   const status = await getIngestionAdminStatus(prisma);
   const job = status.active_job ?? status.latest_job;
-  const progress = job && job.total_scopes > 0 ? Math.round((job.processed_scopes / job.total_scopes) * 100) : 0;
+  const progress = calculateProgress(job);
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -40,7 +40,7 @@ export default async function AdminIngestionPage() {
             <h2 className="text-lg font-bold text-ink">Status</h2>
             <p className="mt-1 text-sm text-slate-500">{job ? `${job.job_type} / ${job.status}` : "No ingestion job has run yet."}</p>
           </div>
-          <span className="rounded bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-700">{progress}%</span>
+          <span className="rounded bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-700">{formatProgress(progress)}</span>
         </div>
         <div className="mt-4 h-2 overflow-hidden rounded bg-slate-100">
           <div className="h-full bg-emerald-500" style={{ width: `${progress}%` }} />
@@ -83,4 +83,29 @@ function Metric({ label, value }: { label: string; value: string }) {
 function formatIso(value: string | Date | null | undefined) {
   if (!value) return "-";
   return formatDate(value instanceof Date ? value : new Date(value));
+}
+
+type AdminIngestionJob = NonNullable<Awaited<ReturnType<typeof getIngestionAdminStatus>>["latest_job"]>;
+
+function calculateProgress(job: AdminIngestionJob | null) {
+  if (!job || job.total_scopes <= 0) return 0;
+  if (job.status === "completed") return 100;
+
+  const scopeProgress = job.processed_scopes / job.total_scopes;
+  const processedMatches = job.fetched_matches + job.skipped_matches + job.failed_matches;
+  const hasActiveScope = Boolean(job.current_league_id || job.current_season || job.current_match_id);
+  const discoveredScopes = Math.min(job.total_scopes, job.processed_scopes + (hasActiveScope || job.total_matches > 0 ? 1 : 0));
+  const matchProgress =
+    job.total_matches > 0 && discoveredScopes > 0
+      ? (processedMatches / job.total_matches) * (discoveredScopes / job.total_scopes)
+      : 0;
+
+  const progress = Math.max(scopeProgress, matchProgress) * 100;
+  return Math.min(job.status === "running" ? 99.9 : 100, Math.max(0, progress));
+}
+
+function formatProgress(progress: number) {
+  if (progress <= 0) return "0%";
+  if (progress < 10) return `${progress.toFixed(1)}%`;
+  return `${Math.round(progress)}%`;
 }
