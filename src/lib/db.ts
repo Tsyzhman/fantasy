@@ -29,7 +29,26 @@ BEGIN
 
   IF to_regclass('"MachetePlayerSnapshot"') IS NOT NULL THEN
     ALTER TABLE "MachetePlayerSnapshot" ADD COLUMN IF NOT EXISTS "scoringScore" DOUBLE PRECISION;
+
+    WITH ranked_snapshots AS (
+      SELECT
+        id,
+        ROW_NUMBER() OVER (
+          PARTITION BY "playerId", COALESCE("leagueId", ''), COALESCE("teamId", '')
+          ORDER BY "createdAt" DESC, id DESC
+        ) AS row_number
+      FROM "MachetePlayerSnapshot"
+      WHERE "periodFrom" IS NULL AND "periodTo" IS NULL
+    )
+    DELETE FROM "MachetePlayerSnapshot"
+    WHERE id IN (
+      SELECT id FROM ranked_snapshots WHERE row_number > 1
+    );
+
     CREATE INDEX IF NOT EXISTS "MachetePlayerSnapshot_scoringScore_idx" ON "MachetePlayerSnapshot"("scoringScore");
+    CREATE UNIQUE INDEX IF NOT EXISTS "MachetePlayerSnapshot_current_unique_idx"
+      ON "MachetePlayerSnapshot"("playerId", (COALESCE("leagueId", '')), (COALESCE("teamId", '')))
+      WHERE "periodFrom" IS NULL AND "periodTo" IS NULL;
   END IF;
 
   IF to_regclass('"FantasyModel"') IS NOT NULL THEN

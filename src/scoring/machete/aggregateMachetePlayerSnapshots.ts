@@ -32,6 +32,19 @@ export async function aggregateMachetePlayerSnapshots(prisma: PrismaClient, opti
   });
 
   const snapshots = [];
+  const playerIds = players.map((player) => player.id);
+
+  if (playerIds.length > 0) {
+    await prisma.machetePlayerSnapshot.deleteMany({
+      where: {
+        playerId: { in: playerIds },
+        leagueId: options.leagueId,
+        teamId: options.teamId ?? undefined,
+        periodFrom: null,
+        periodTo: null
+      }
+    });
+  }
 
   for (const player of players) {
     const stats = player.matchStats;
