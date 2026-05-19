@@ -54,9 +54,9 @@ export default async function AdminIngestionPage() {
           <Metric label="Skipped matches" value={formatNumber(job?.skipped_matches ?? 0)} />
           <Metric label="Failed matches" value={formatNumber(job?.failed_matches ?? 0)} />
           <Metric label="Processed scopes" value={`${formatNumber(job?.processed_scopes ?? 0)} / ${formatNumber(job?.total_scopes ?? status.total_configured_scopes)}`} />
-          <Metric label="Current league" value={job?.current_league_id ?? "-"} />
-          <Metric label="Current season" value={job?.current_season ?? "-"} />
-          <Metric label="Current match" value={job?.current_match_id ?? "-"} />
+          <Metric label="Processing league" value={job?.current_league_id ?? "-"} />
+          <Metric label="Processing scope season" value={job?.current_season ?? "-"} />
+          <Metric label="Processing match" value={job?.current_match_id ?? "-"} />
           <Metric label="Started at" value={formatIso(job?.started_at)} />
           <Metric label="Finished at" value={formatIso(job?.finished_at ?? status.initial_backfill_completed_at)} />
         </dl>
