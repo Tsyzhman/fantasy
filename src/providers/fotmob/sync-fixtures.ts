@@ -1,5 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 
+import { fixtureSyncSeasons } from "@/scoring/machete/match-window";
+
 import { createFotMobClient } from "./client";
 import { normalizeMacheteFixture } from "./normalizers";
 import { storeMacheteRawPayload } from "./raw-payloads";
@@ -12,7 +14,14 @@ export async function syncMacheteFixtures(prisma: PrismaClient, leagueId: string
   if (!league) throw new Error("Machete league not found.");
 
   const client = createFotMobClient();
-  const fixtures = await client.getFixtures(league.providerLeagueId ?? league.id, league.season ?? undefined);
+  const seasons = fixtureSyncSeasons(league.season, league.providerLeagueId);
+  const fixtureSets = await Promise.all(
+    seasons.map(async (season) => ({
+      season,
+      fixtures: await client.getFixtures(league.providerLeagueId ?? league.id, season ?? undefined)
+    }))
+  );
+  const fixtures = dedupeById(fixtureSets.flatMap((set) => set.fixtures));
   const providerFixtureIds = fixtures.map((fixture) => fixture.id);
   const teamIdsByProviderId = new Map(
     league.teams
@@ -20,12 +29,14 @@ export async function syncMacheteFixtures(prisma: PrismaClient, leagueId: string
       .map((team) => [team.providerTeamId as string, team.id])
   );
 
-  await storeMacheteRawPayload(prisma, {
-    entityType: "FIXTURE_COLLECTION",
-    providerEntityId: league.providerLeagueId ?? league.id,
-    endpoint: "getFixtures",
-    payload: fixtures
-  });
+  for (const fixtureSet of fixtureSets) {
+    await storeMacheteRawPayload(prisma, {
+      entityType: "FIXTURE_COLLECTION",
+      providerEntityId: [league.providerLeagueId ?? league.id, fixtureSet.season ?? "current"].join(":"),
+      endpoint: "getFixtures",
+      payload: fixtureSet.fixtures
+    });
+  }
 
   if (providerFixtureIds.length > 0) {
     await prisma.macheteFixture.deleteMany({
@@ -66,4 +77,17 @@ export async function syncMacheteFixtures(prisma: PrismaClient, leagueId: string
   });
 
   return syncedFixtures;
+}
+
+function dedupeById<T extends { id: string }>(items: T[]) {
+  const seen = new Set<string>();
+  const unique: T[] = [];
+
+  for (const item of items) {
+    if (seen.has(item.id)) continue;
+    seen.add(item.id);
+    unique.push(item);
+  }
+
+  return unique;
 }

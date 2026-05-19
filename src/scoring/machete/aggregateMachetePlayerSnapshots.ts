@@ -7,6 +7,7 @@ import {
   getActiveScoringModelForSource
 } from "@/lib/scoring";
 import { getMacheteAggregateMatchDenominators } from "./aggregate-match-denominator";
+import { fixtureInSeason } from "./match-window";
 import { shouldIgnoreProviderSeasonStats } from "./world-cup";
 
 type AggregateOptions = {
@@ -45,10 +46,12 @@ export async function aggregateMachetePlayerSnapshots(prisma: PrismaClient, opti
 
   const snapshots = [];
   const playerIds = players.map((player) => player.id);
+  const leagueSeason = players.find((player) => player.team?.league.season)?.team?.league.season ?? null;
   const teamDenominators = await getMacheteAggregateMatchDenominators(
     prisma,
     options.leagueId,
-    players.map((player) => player.teamId).filter((teamId): teamId is string => Boolean(teamId))
+    players.map((player) => player.teamId).filter((teamId): teamId is string => Boolean(teamId)),
+    leagueSeason
   );
 
   if (playerIds.length > 0) {
@@ -64,7 +67,8 @@ export async function aggregateMachetePlayerSnapshots(prisma: PrismaClient, opti
   }
 
   for (const player of players) {
-    const stats = player.matchStats;
+    const currentSeason = player.team?.league.season ?? null;
+    const stats = player.matchStats.filter((stat) => fixtureMatchesSeason(stat.fixture, currentSeason));
     const matchStats = stats.filter((stat) => stat.fixture.status !== "SEASON_AGGREGATE");
     const ignoreProviderSeasonStats = shouldIgnoreProviderSeasonStats(player.team?.league.providerLeagueId, player.team?.league.season);
     const statsForTotals = ignoreProviderSeasonStats ? matchStats : stats;
@@ -178,4 +182,13 @@ function readRawNumber(raw: unknown, key: string): number | null {
     if (Number.isFinite(parsed)) return parsed;
   }
   return null;
+}
+
+function fixtureMatchesSeason(fixture: { status: string | null; kickoffAt: Date | null; raw: Prisma.JsonValue }, season: string | null) {
+  if (fixture.status !== "SEASON_AGGREGATE") return fixtureInSeason(fixture, season);
+
+  const raw = fixture.raw;
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return true;
+  const rawSeason = (raw as Record<string, unknown>).season;
+  return typeof rawSeason !== "string" || rawSeason === season;
 }

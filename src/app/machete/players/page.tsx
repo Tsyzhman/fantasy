@@ -8,7 +8,8 @@ import { AutoSubmitForm } from "@/components/players/auto-submit-form";
 import { prisma } from "@/lib/db";
 import { macheteLeagueDisplayName } from "@/lib/leagues/display";
 import { getActiveScoringModelForSource } from "@/lib/scoring";
-import { aggregateRecentMachetePlayerStats, parseRecentMatchWindow, recentTeamFixtureIds } from "@/scoring/machete/recent-match-stats";
+import { matchWindowLabel, matchWindowModeValue, parseMacheteMatchWindow, type MacheteMatchWindow } from "@/scoring/machete/match-window";
+import { aggregateRecentMachetePlayerStats, teamFixtureIdsForWindow } from "@/scoring/machete/recent-match-stats";
 
 export const dynamic = "force-dynamic";
 
@@ -18,6 +19,8 @@ type SearchParams = {
   position?: string;
   minMinutes?: string;
   recentMatches?: string;
+  matchWindow?: string;
+  customMatches?: string;
   sort?: string;
 };
 
@@ -45,24 +48,20 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
       ? resolvedSearchParams.teamId
       : "";
   const sort = resolvedSearchParams.sort ?? "fantasyScore";
-  const recentMatches = parseRecentMatchWindow(resolvedSearchParams.recentMatches);
+  const matchWindow = parseMacheteMatchWindow({
+    mode: resolvedSearchParams.matchWindow,
+    customMatches: resolvedSearchParams.customMatches,
+    legacyRecentMatches: resolvedSearchParams.recentMatches
+  });
 
-  const players = recentMatches
-    ? await buildRecentMatchRows({
-        selectedLeagueId,
-        selectedTeamId,
-        position: resolvedSearchParams.position,
-        minMinutes: resolvedSearchParams.minMinutes,
-        recentMatches,
-        sort
-      })
-    : await buildSnapshotRows({
-        selectedLeagueId,
-        selectedTeamId,
-        position: resolvedSearchParams.position,
-        minMinutes: resolvedSearchParams.minMinutes,
-        sort
-      });
+  const players = await buildMatchWindowRows({
+    selectedLeagueId,
+    selectedTeamId,
+    position: resolvedSearchParams.position,
+    minMinutes: resolvedSearchParams.minMinutes,
+    matchWindow,
+    sort
+  });
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -150,24 +149,29 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
           </select>
         </label>
         <label className="text-sm">
-          <span className="mb-1 block font-medium text-slate-600"><I18nText en="Last team matches" ru="Последние матчи" /></span>
+          <span className="mb-1 block font-medium text-slate-600"><I18nText en="Stats window" ru="Окно статистики" /></span>
+          <select name="matchWindow" defaultValue={matchWindowModeValue(matchWindow)} className="w-full rounded border border-slate-200 px-3 py-2">
+            <option value="last5">Last 5 team matches</option>
+            <option value="last10">Last 10 team matches</option>
+            <option value="last15">Last 15 team matches</option>
+            <option value="current">Current season</option>
+            <option value="previous">Previous season</option>
+            <option value="all">All loaded matches</option>
+            <option value="custom">Custom team matches</option>
+          </select>
           <input
-            name="recentMatches"
+            name="customMatches"
             type="number"
             min="1"
             max="50"
-            defaultValue={resolvedSearchParams.recentMatches ?? ""}
-            className="w-full rounded border border-slate-200 px-3 py-2"
-            placeholder="6"
+            defaultValue={resolvedSearchParams.customMatches ?? ""}
+            className="mt-2 w-full rounded border border-slate-200 px-3 py-2"
+            placeholder="Custom N"
           />
         </label>
       </AutoSubmitForm>
 
-      {recentMatches ? (
-        <p className="mt-3 text-sm text-slate-500">
-          Stats and FP are recalculated from the last {recentMatches} played matches for each player team.
-        </p>
-      ) : null}
+      <p className="mt-3 text-sm text-slate-500">Stats and FP are recalculated from {matchWindowLabel(matchWindow)}.</p>
 
       <section className="mt-6">
         <MachetePlayerTable players={players} showContext />
@@ -176,80 +180,19 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
   );
 }
 
-async function buildSnapshotRows({
+async function buildMatchWindowRows({
   selectedLeagueId,
   selectedTeamId,
   position,
   minMinutes,
+  matchWindow,
   sort
 }: {
   selectedLeagueId: string;
   selectedTeamId: string;
   position?: string;
   minMinutes?: string;
-  sort: string;
-}) {
-  const where: Prisma.MachetePlayerSnapshotWhereInput = {};
-  if (selectedLeagueId) where.leagueId = selectedLeagueId;
-  if (selectedTeamId) where.teamId = selectedTeamId;
-  if (position) where.position = { contains: position, mode: "insensitive" };
-  if (minMinutes) {
-    const minutes = Number(minMinutes);
-    if (Number.isFinite(minutes)) where.minutesPlayed = { gte: minutes };
-  }
-
-  const snapshots = await prisma.machetePlayerSnapshot.findMany({
-    where,
-    orderBy: snapshotOrderBy(sort),
-    take: 250,
-    include: {
-      player: {
-        include: {
-          team: {
-            include: {
-              league: true
-            }
-          }
-        }
-      }
-    }
-  });
-
-  return snapshots.map((snapshot) => ({
-    id: snapshot.id,
-    name: snapshot.player.name,
-    teamName: snapshot.player.team?.name ?? null,
-    leagueName: snapshot.player.team?.league ? macheteLeagueDisplayName(snapshot.player.team.league) : null,
-    position: snapshot.position,
-    age: snapshot.player.age,
-    nationality: snapshot.player.nationality,
-    matchesPlayed: snapshot.matchesPlayed,
-    minutesPlayed: snapshot.minutesPlayed,
-    goals: snapshot.goals,
-    assists: snapshot.assists,
-    shotsOnTarget: snapshot.shotsOnTarget,
-    keyPasses: snapshot.keyPasses,
-    tackles: snapshot.tackles,
-    averageRating: snapshot.averageRating,
-    fantasyScore: snapshot.fantasyScore,
-    scoringScore: snapshot.scoringScore,
-    alternativeScore: snapshot.alternativeScore
-  }));
-}
-
-async function buildRecentMatchRows({
-  selectedLeagueId,
-  selectedTeamId,
-  position,
-  minMinutes,
-  recentMatches,
-  sort
-}: {
-  selectedLeagueId: string;
-  selectedTeamId: string;
-  position?: string;
-  minMinutes?: string;
-  recentMatches: number;
+  matchWindow: MacheteMatchWindow;
   sort: string;
 }) {
   const playerWhere: Prisma.MachetePlayerWhereInput = {};
@@ -282,12 +225,19 @@ async function buildRecentMatchRows({
   const teams = await prisma.macheteTeam.findMany({
     where: { id: { in: teamIds } },
     include: {
+      league: true,
       fixturesHome: { select: { id: true, status: true, kickoffAt: true } },
       fixturesAway: { select: { id: true, status: true, kickoffAt: true } }
     }
   });
   const fixtureIdsByTeam = new Map(
-    teams.map((team) => [team.id, recentTeamFixtureIds([...team.fixturesHome, ...team.fixturesAway], recentMatches)] as const)
+    teams.map(
+      (team) =>
+        [
+          team.id,
+          teamFixtureIdsForWindow([...team.fixturesHome, ...team.fixturesAway], matchWindow, team.league.season, team.league.providerLeagueId)
+        ] as const
+    )
   );
   const scoringModel = await getActiveScoringModelForSource("MACHETE");
   const minimumMinutes = minMinutes ? Number(minMinutes) : null;
@@ -327,15 +277,13 @@ async function buildRecentMatchRows({
     .slice(0, 250);
 }
 
-type MacheteSortableRow = Awaited<ReturnType<typeof buildSnapshotRows>>[number];
-
-function snapshotOrderBy(sort: string): Prisma.MachetePlayerSnapshotOrderByWithRelationInput {
-  if (sort === "minutesPlayed") return { minutesPlayed: "desc" };
-  if (sort === "playerName") return { player: { name: "asc" } };
-  if (sort === "alternativeScore") return { alternativeScore: { sort: "desc", nulls: "last" } };
-  if (sort === "scoringScore") return { scoringScore: { sort: "desc", nulls: "last" } };
-  return { fantasyScore: { sort: "desc", nulls: "last" } };
-}
+type MacheteSortableRow = {
+  name: string;
+  minutesPlayed: number;
+  fantasyScore: number | null;
+  scoringScore?: number | null;
+  alternativeScore?: number | null;
+};
 
 function compareMacheteRows(left: MacheteSortableRow, right: MacheteSortableRow, sort: string) {
   if (sort === "playerName") return left.name.localeCompare(right.name);

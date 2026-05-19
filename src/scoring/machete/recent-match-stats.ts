@@ -1,5 +1,6 @@
 import type { ActiveScoringModel } from "@/lib/scoring";
 import { calculateAlternativeScore, calculateFantasyScore, calculateScoringScore } from "@/lib/scoring";
+import { fixtureInMatchWindow, type MacheteMatchWindow } from "./match-window";
 
 export type MacheteFixtureWindowInput = {
   id: string;
@@ -23,21 +24,28 @@ export type MacheteMatchStatWindowInput = {
   redCards: number | null;
 };
 
-export function parseRecentMatchWindow(value: string | null | undefined) {
-  if (!value) return null;
-
-  const parsed = Number(value);
-  if (!Number.isInteger(parsed) || parsed <= 0) return null;
-
-  return Math.min(parsed, 50);
-}
-
 export function recentTeamFixtureIds(fixtures: MacheteFixtureWindowInput[], limit: number) {
   return new Set(
     dedupeFixtures(fixtures)
       .filter(isPlayedFixture)
       .sort((left, right) => (right.kickoffAt?.getTime() ?? 0) - (left.kickoffAt?.getTime() ?? 0))
       .slice(0, limit)
+      .map((fixture) => fixture.id)
+  );
+}
+
+export function teamFixtureIdsForWindow(
+  fixtures: MacheteFixtureWindowInput[],
+  window: MacheteMatchWindow,
+  currentSeason: string | null | undefined,
+  providerLeagueId?: string | null
+) {
+  if (window.kind === "last") return recentTeamFixtureIds(fixtures, window.matches);
+
+  return new Set(
+    dedupeFixtures(fixtures)
+      .filter(isPlayedFixture)
+      .filter((fixture) => fixtureInMatchWindow(fixture, window, currentSeason, providerLeagueId))
       .map((fixture) => fixture.id)
   );
 }

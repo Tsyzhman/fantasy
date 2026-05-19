@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import type { ActiveScoringModel } from "@/lib/scoring";
-import { aggregateRecentMachetePlayerStats, parseRecentMatchWindow, recentTeamFixtureIds } from "./recent-match-stats";
+import { fixtureSyncSeasons, parseMacheteMatchWindow, previousSeasonLabel } from "./match-window";
+import { aggregateRecentMachetePlayerStats, recentTeamFixtureIds, teamFixtureIdsForWindow } from "./recent-match-stats";
 
 const model: ActiveScoringModel = {
   modelSource: "MACHETE",
@@ -54,11 +55,32 @@ test("recent player stats aggregate only selected team fixtures", () => {
   assert.equal(result.shotsOnTarget, 1);
 });
 
-test("recent match window parser clamps positive integers", () => {
-  assert.equal(parseRecentMatchWindow("7"), 7);
-  assert.equal(parseRecentMatchWindow("200"), 50);
-  assert.equal(parseRecentMatchWindow("0"), null);
-  assert.equal(parseRecentMatchWindow("nope"), null);
+test("match window parser supports presets and custom match counts", () => {
+  assert.deepEqual(parseMacheteMatchWindow({ mode: "last10" }), { kind: "last", matches: 10 });
+  assert.deepEqual(parseMacheteMatchWindow({ mode: "custom", customMatches: "7" }), { kind: "last", matches: 7 });
+  assert.deepEqual(parseMacheteMatchWindow({ mode: "custom", customMatches: "200" }), { kind: "last", matches: 50 });
+  assert.deepEqual(parseMacheteMatchWindow({ mode: "previous" }), { kind: "season", offset: -1 });
+  assert.deepEqual(parseMacheteMatchWindow({ mode: "all" }), { kind: "all" });
+  assert.deepEqual(parseMacheteMatchWindow({ mode: "custom", customMatches: "nope" }), { kind: "last", matches: 5 });
+});
+
+test("team fixture ids support current, previous, and all season windows", () => {
+  const fixtures = [
+    fixture("previous", "FINISHED", "2024-09-01"),
+    fixture("current", "FINISHED", "2025-09-01"),
+    fixture("future", "SCHEDULED", "2025-10-01")
+  ];
+
+  assert.deepEqual([...teamFixtureIdsForWindow(fixtures, { kind: "season", offset: 0 }, "2025/26")], ["current"]);
+  assert.deepEqual([...teamFixtureIdsForWindow(fixtures, { kind: "season", offset: -1 }, "2025/26")], ["previous"]);
+  assert.deepEqual([...teamFixtureIdsForWindow(fixtures, { kind: "all" }, "2025/26")], ["previous", "current"]);
+});
+
+test("previous season labels support domestic seasons and World Cup tournaments", () => {
+  assert.equal(previousSeasonLabel("2025/26", "48"), "2024/25");
+  assert.equal(previousSeasonLabel("2025/26", "77"), "2022");
+  assert.deepEqual(fixtureSyncSeasons("2025/26", "48"), ["2025/26", "2024/25"]);
+  assert.deepEqual(fixtureSyncSeasons("2025/26", "77"), ["2025/26", "2022"]);
 });
 
 function fixture(id: string, status: string | null, kickoffAt: string | null) {

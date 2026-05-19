@@ -460,8 +460,14 @@ function normalizeFotMobSeason(season: string) {
 }
 
 function fotMobRequestSeason(leagueId: string, season: string | undefined) {
-  if (leagueId === "77") return "2026";
+  if (leagueId === "77") return fotMobWorldCupSeason(season);
   return season ? normalizeFotMobSeason(season) : undefined;
+}
+
+function fotMobWorldCupSeason(season: string | undefined) {
+  if (!season) return "2026";
+  const years = season.match(/\d{4}/g);
+  return years?.length ? years[years.length - 1] : season;
 }
 
 function asRecord(value: unknown): JsonRecord {

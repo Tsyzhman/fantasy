@@ -90,26 +90,11 @@ async function recalculateMacheteSnapshots(prisma: PrismaClient) {
 
     if (snapshots.length === 0) break;
 
-    const denominatorMaps = await Promise.all(
-      [...new Set(snapshots.map((snapshot) => snapshot.leagueId).filter((leagueId): leagueId is string => Boolean(leagueId)))].map(
-        async (leagueId) => [
-          leagueId,
-          await getMacheteAggregateMatchDenominators(
-            prisma,
-            leagueId,
-            snapshots
-              .filter((snapshot) => snapshot.leagueId === leagueId)
-              .map((snapshot) => snapshot.teamId)
-              .filter((teamId): teamId is string => Boolean(teamId))
-          )
-        ] as const
-      )
-    );
-    const denominatorsByLeague = new Map(denominatorMaps);
+    const leagueIds = [...new Set(snapshots.map((snapshot) => snapshot.leagueId).filter((leagueId): leagueId is string => Boolean(leagueId)))];
     const leagueMetadata = await prisma.macheteLeague.findMany({
       where: {
         id: {
-          in: [...denominatorsByLeague.keys()]
+          in: leagueIds
         }
       },
       select: {
@@ -119,6 +104,21 @@ async function recalculateMacheteSnapshots(prisma: PrismaClient) {
       }
     });
     const leaguesById = new Map(leagueMetadata.map((league) => [league.id, league]));
+    const denominatorMaps = await Promise.all(
+      leagueIds.map(async (leagueId) => [
+        leagueId,
+        await getMacheteAggregateMatchDenominators(
+          prisma,
+          leagueId,
+          snapshots
+            .filter((snapshot) => snapshot.leagueId === leagueId)
+            .map((snapshot) => snapshot.teamId)
+            .filter((teamId): teamId is string => Boolean(teamId)),
+          leaguesById.get(leagueId)?.season
+        )
+      ] as const)
+    );
+    const denominatorsByLeague = new Map(denominatorMaps);
 
     const updates = snapshots.map((snapshot) => {
       const rawMetrics = objectMetrics(snapshot.rawMetrics);

@@ -12,7 +12,8 @@ import { prisma } from "@/lib/db";
 import { formatDate, formatNumber, formatScore } from "@/lib/format";
 import { macheteLeagueDisplayName } from "@/lib/leagues/display";
 import { getActiveScoringModelForSource } from "@/lib/scoring";
-import { aggregateRecentMachetePlayerStats, parseRecentMatchWindow, recentTeamFixtureIds } from "@/scoring/machete/recent-match-stats";
+import { matchWindowLabel, matchWindowModeValue, parseMacheteMatchWindow } from "@/scoring/machete/match-window";
+import { aggregateRecentMachetePlayerStats, teamFixtureIdsForWindow } from "@/scoring/machete/recent-match-stats";
 
 export const dynamic = "force-dynamic";
 
@@ -23,13 +24,19 @@ type PageProps = {
   }>;
   searchParams?: Promise<{
     recentMatches?: string;
+    matchWindow?: string;
+    customMatches?: string;
   }>;
 };
 
 export default async function MacheteTeamPage({ params, searchParams }: PageProps) {
   const { leagueId, teamId } = await params;
   const resolvedSearchParams = (await searchParams) ?? {};
-  const recentMatches = parseRecentMatchWindow(resolvedSearchParams.recentMatches);
+  const matchWindow = parseMacheteMatchWindow({
+    mode: resolvedSearchParams.matchWindow,
+    customMatches: resolvedSearchParams.customMatches,
+    legacyRecentMatches: resolvedSearchParams.recentMatches
+  });
   const team = await prisma.macheteTeam.findUnique({
     where: { id: teamId },
     include: {
@@ -102,15 +109,12 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
   const fixtures = teamFixtures
     .sort((a, b) => (b.kickoffAt?.getTime() ?? 0) - (a.kickoffAt?.getTime() ?? 0))
     .slice(0, 8);
-  const recentFixtureIds = recentMatches ? recentTeamFixtureIds(teamFixtures, recentMatches) : null;
-  const scoringModel = recentMatches ? await getActiveScoringModelForSource("MACHETE") : null;
+  const windowFixtureIds = teamFixtureIdsForWindow(teamFixtures, matchWindow, team.league.season, team.league.providerLeagueId);
+  const scoringModel = await getActiveScoringModelForSource("MACHETE");
 
   const players = team.players.map((player) => {
     const snapshot = player.snapshots[0];
-    const recentStats =
-      recentFixtureIds && scoringModel
-        ? aggregateRecentMachetePlayerStats(player.matchStats, player.position, scoringModel, recentFixtureIds)
-        : null;
+    const recentStats = aggregateRecentMachetePlayerStats(player.matchStats, player.position, scoringModel, windowFixtureIds);
     return {
       id: player.id,
       name: player.name,
@@ -204,23 +208,30 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
           <h2 className="text-lg font-semibold text-ink"><I18nText en="Players" ru="Игроки" /></h2>
           <span className="text-sm text-slate-500"><I18nText en="Fantasy score preview" ru="Предпросмотр fantasy-очков" /></span>
         </div>
+        <p className="mb-3 text-sm text-slate-500">Stats and FP from {matchWindowLabel(matchWindow)}. Only fixtures from this team are used for every player.</p>
         <AutoSubmitForm className="mb-3 flex w-full max-w-xs items-end gap-2">
           <label className="flex-1 text-sm">
-            <span className="mb-1 block font-medium text-slate-600">Last team matches</span>
+            <span className="mb-1 block font-medium text-slate-600">Stats window</span>
+            <select name="matchWindow" defaultValue={matchWindowModeValue(matchWindow)} className="w-full rounded border border-slate-200 px-3 py-2">
+              <option value="last5">Last 5 team matches</option>
+              <option value="last10">Last 10 team matches</option>
+              <option value="last15">Last 15 team matches</option>
+              <option value="current">Current season</option>
+              <option value="previous">Previous season</option>
+              <option value="all">All loaded matches</option>
+              <option value="custom">Custom team matches</option>
+            </select>
             <input
-              name="recentMatches"
+              name="customMatches"
               type="number"
               min="1"
               max="50"
-              defaultValue={resolvedSearchParams.recentMatches ?? ""}
-              className="w-full rounded border border-slate-200 px-3 py-2"
-              placeholder="6"
+              defaultValue={resolvedSearchParams.customMatches ?? ""}
+              className="mt-2 w-full rounded border border-slate-200 px-3 py-2"
+              placeholder="Custom N"
             />
           </label>
         </AutoSubmitForm>
-        {recentMatches ? (
-          <p className="mb-3 text-sm text-slate-500">Stats and FP are recalculated from the last {recentMatches} played team matches.</p>
-        ) : null}
         <MachetePlayerTable players={players} />
       </section>
 
