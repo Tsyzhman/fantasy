@@ -27,17 +27,15 @@ export function IngestionControls({ hasActiveJob, initialBackfillCompleted }: Pr
 
   return (
     <div className="flex flex-wrap gap-3">
-      {!initialBackfillCompleted ? (
-        <button
-          type="button"
-          disabled={hasActiveJob || isPending}
-          onClick={() => post("/api/admin/ingestion/initial-backfill/start")}
-          className="inline-flex items-center gap-2 rounded bg-ink px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-45"
-        >
-          <UploadCloud className="h-4 w-4" />
-          Start initial backfill
-        </button>
-      ) : null}
+      <button
+        type="button"
+        disabled={hasActiveJob || isPending}
+        onClick={() => post("/api/admin/ingestion/initial-backfill/start")}
+        className="inline-flex items-center gap-2 rounded bg-ink px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-45"
+      >
+        <UploadCloud className="h-4 w-4" />
+        Start initial backfill
+      </button>
       <button
         type="button"
         disabled={hasActiveJob || isPending || !initialBackfillCompleted}
