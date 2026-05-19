@@ -1,4 +1,5 @@
 import { ArrowRight, Crosshair } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 
 import { ShotMapExplorer } from "@/components/mixerr/ShotMapExplorer";
@@ -12,8 +13,6 @@ import {
 import { matchWindowLabel, matchWindowModeValue, parseMacheteMatchWindow } from "@/scoring/machete/match-window";
 
 export const dynamic = "force-dynamic";
-
-const mixerPhotoUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/KitchenAid_Stand_Mixer.jpg/960px-KitchenAid_Stand_Mixer.jpg";
 
 type PageProps = {
   searchParams?: Promise<{
@@ -82,19 +81,16 @@ export default async function MixerrPage({ searchParams }: PageProps) {
             </div>
           </div>
         </div>
-        <figure className="overflow-hidden rounded border border-slate-200 bg-white shadow-soft">
-          <img
-            src={mixerPhotoUrl}
-            alt="Stand mixer"
-            className="h-44 w-full object-cover sm:h-56 lg:h-64"
+        <div className="grid min-h-44 place-items-center rounded border border-slate-200 bg-white p-6 shadow-soft sm:min-h-56 lg:min-h-64">
+          <Image
+            src="/mode-logos/mixerr-mode.svg"
+            alt="MiXerr logo"
+            width={168}
+            height={168}
+            className="h-36 w-36 object-contain sm:h-40 sm:w-40"
+            priority
           />
-          <figcaption className="px-3 py-2 text-xs text-slate-500">
-            Photo:{" "}
-            <a className="underline hover:text-slate-700" href="https://commons.wikimedia.org/wiki/File:KitchenAid_Stand_Mixer.jpg">
-              Wikimedia Commons
-            </a>
-          </figcaption>
-        </figure>
+        </div>
       </section>
 
       <form className="mt-6 grid grid-cols-1 gap-3 rounded border border-slate-200 bg-white p-4 shadow-soft md:grid-cols-2 xl:grid-cols-5">

@@ -232,6 +232,10 @@ textarea {
   background: radial-gradient(circle at 20% 20%, rgba(37, 99, 235, 0.32), transparent 44%);
 }
 
+.mode-logo-frame-mixerr::before {
+  background: radial-gradient(circle at 72% 18%, rgba(244, 114, 182, 0.42), transparent 46%);
+}
+
 .mode-logo-frame-choice {
   width: 96px;
   height: 96px;
@@ -255,6 +259,11 @@ textarea {
   width: 42px;
   height: 42px;
   border-radius: 999px;
+}
+
+.mode-logo-image-mixerr {
+  width: 45px;
+  height: 45px;
 }
 
 .group:hover .mode-logo-image {
