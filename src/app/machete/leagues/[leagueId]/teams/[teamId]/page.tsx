@@ -14,22 +14,23 @@ import { macheteLeagueDisplayName } from "@/lib/leagues/display";
 export const dynamic = "force-dynamic";
 
 type PageProps = {
-  params: {
+  params: Promise<{
     leagueId: string;
     teamId: string;
-  };
+  }>;
 };
 
 export default async function MacheteTeamPage({ params }: PageProps) {
+  const { leagueId, teamId } = await params;
   const team = await prisma.macheteTeam.findUnique({
-    where: { id: params.teamId },
+    where: { id: teamId },
     include: {
       league: true,
       players: {
         orderBy: { name: "asc" },
         include: {
           snapshots: {
-            where: { leagueId: params.leagueId },
+            where: { leagueId },
             orderBy: { createdAt: "desc" },
             take: 1
           }
@@ -46,7 +47,7 @@ export default async function MacheteTeamPage({ params }: PageProps) {
     }
   });
 
-  if (!team || team.leagueId !== params.leagueId) notFound();
+  if (!team || team.leagueId !== leagueId) notFound();
   const leagueDisplayName = macheteLeagueDisplayName(team.league);
 
   const teamFixtures = [...team.fixturesHome, ...team.fixturesAway].filter(isMatchFixture);

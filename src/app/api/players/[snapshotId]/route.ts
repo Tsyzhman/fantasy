@@ -1,17 +1,22 @@
 import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 
+import { requireApiAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
 type Params = {
-  params: {
+  params: Promise<{
     snapshotId: string;
-  };
+  }>;
 };
 
 export async function PATCH(request: Request, { params }: Params) {
+  const auth = await requireApiAdmin();
+  if (auth.response) return auth.response;
+
+  const { snapshotId } = await params;
   const payload = await request.json().catch(() => null);
 
   if (!payload || typeof payload.isStarter !== "boolean") {
@@ -20,7 +25,7 @@ export async function PATCH(request: Request, { params }: Params) {
 
   try {
     const snapshot = await prisma.playerSnapshot.update({
-      where: { id: params.snapshotId },
+      where: { id: snapshotId },
       data: { isStarter: payload.isStarter },
       select: {
         id: true,

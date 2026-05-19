@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { requireApiAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { normalizeName } from "@/lib/text";
 import {
@@ -12,9 +13,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 type Params = {
-  params: {
+  params: Promise<{
     leagueId: string;
-  };
+  }>;
 };
 
 type TeamForMatching = {
@@ -40,6 +41,10 @@ type BulkUploadResult = {
 const organizationTokens = new Set(["fc", "afc", "ac", "sc", "cf", "fk", "cd", "sv", "sad", "jk", "bb"]);
 
 export async function POST(request: Request, { params }: Params) {
+  const auth = await requireApiAdmin();
+  if (auth.response) return auth.response;
+
+  const { leagueId } = await params;
   const formData = await request.formData();
   const uploads = [...formData.getAll("files"), ...formData.getAll("file")].filter((value): value is File => value instanceof File);
 
@@ -48,7 +53,7 @@ export async function POST(request: Request, { params }: Params) {
   }
 
   const league = await prisma.league.findUnique({
-    where: { id: params.leagueId },
+    where: { id: leagueId },
     include: {
       seasons: {
         orderBy: { createdAt: "desc" },

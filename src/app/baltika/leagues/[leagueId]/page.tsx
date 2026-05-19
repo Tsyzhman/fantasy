@@ -15,14 +15,15 @@ import { nationalTeamFlag } from "@/lib/teams/national-flags";
 export const dynamic = "force-dynamic";
 
 type PageProps = {
-  params: {
+  params: Promise<{
     leagueId: string;
-  };
+  }>;
 };
 
 export default async function BaltikaLeaguePage({ params }: PageProps) {
+  const { leagueId } = await params;
   const league = await prisma.league.findUnique({
-    where: { id: params.leagueId },
+    where: { id: leagueId },
     include: {
       seasons: {
         orderBy: { createdAt: "desc" },

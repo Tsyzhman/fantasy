@@ -1,17 +1,22 @@
 import { NextResponse } from "next/server";
 
+import { requireApiAdmin } from "@/lib/auth";
 import { importWyscoutPlayersForTeam } from "@/server/baltika/workbook-imports";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 type Params = {
-  params: {
+  params: Promise<{
     teamId: string;
-  };
+  }>;
 };
 
 export async function POST(request: Request, { params }: Params) {
+  const auth = await requireApiAdmin();
+  if (auth.response) return auth.response;
+
+  const { teamId } = await params;
   const formData = await request.formData();
   const upload = formData.get("file");
 
@@ -19,7 +24,7 @@ export async function POST(request: Request, { params }: Params) {
     return NextResponse.json({ error: { code: "MISSING_FILE", message: "Upload a Wyscout .xlsx file in the file field." } }, { status: 400 });
   }
 
-  const result = await importWyscoutPlayersForTeam(params.teamId, {
+  const result = await importWyscoutPlayersForTeam(teamId, {
     buffer: Buffer.from(await upload.arrayBuffer()),
     fileName: upload.name,
     mimeType: upload.type || null,

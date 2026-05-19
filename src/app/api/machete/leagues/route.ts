@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 
+import { requireApiAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+  const auth = await requireApiAdmin();
+  if (auth.response) return auth.response;
+
   const body = await request.json().catch(() => ({}));
   const league = await prisma.macheteLeague.create({
     data: {

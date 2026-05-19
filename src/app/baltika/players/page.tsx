@@ -19,12 +19,13 @@ type SearchParams = {
 };
 
 type PageProps = {
-  searchParams: SearchParams;
+  searchParams: Promise<SearchParams>;
 };
 
 const positions = ["GK", "DEF", "MID", "FWD", "UNKNOWN"];
 
 export default async function PlayersPage({ searchParams }: PageProps) {
+  const resolvedSearchParams = await searchParams;
   const leagues = await prisma.league.findMany({
     orderBy: { name: "asc" },
     include: {
@@ -41,11 +42,11 @@ export default async function PlayersPage({ searchParams }: PageProps) {
       }
     }
   });
-  const selectedLeagueId = searchParams.leagueId ?? "";
+  const selectedLeagueId = resolvedSearchParams.leagueId ?? "";
   const teamLeagues = selectedLeagueId ? leagues.filter((league) => league.id === selectedLeagueId) : leagues;
   const selectedTeamId =
-    searchParams.teamId && teamLeagues.some((league) => league.teams.some((team) => team.id === searchParams.teamId))
-      ? searchParams.teamId
+    resolvedSearchParams.teamId && teamLeagues.some((league) => league.teams.some((team) => team.id === resolvedSearchParams.teamId))
+      ? resolvedSearchParams.teamId
       : "";
 
   const where: Prisma.PlayerSnapshotWhereInput = {
@@ -57,14 +58,14 @@ export default async function PlayersPage({ searchParams }: PageProps) {
 
   if (selectedLeagueId) where.leagueId = selectedLeagueId;
   if (selectedTeamId) where.teamId = selectedTeamId;
-  if (searchParams.positionGroup) where.positionGroup = searchParams.positionGroup;
-  if (searchParams.starterOnly === "1") where.isStarter = true;
-  if (searchParams.minMinutes) {
-    const minutes = Number(searchParams.minMinutes);
+  if (resolvedSearchParams.positionGroup) where.positionGroup = resolvedSearchParams.positionGroup;
+  if (resolvedSearchParams.starterOnly === "1") where.isStarter = true;
+  if (resolvedSearchParams.minMinutes) {
+    const minutes = Number(resolvedSearchParams.minMinutes);
     if (Number.isFinite(minutes)) where.minutesPlayed = { gte: minutes };
   }
 
-  const sort = searchParams.sort ?? "fantasyScore";
+  const sort = resolvedSearchParams.sort ?? "fantasyScore";
   const orderBy: Prisma.PlayerSnapshotOrderByWithRelationInput =
     sort === "minutesPlayed"
         ? { minutesPlayed: { sort: "desc", nulls: "last" } }
@@ -140,7 +141,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
           <span className="mb-1 block font-medium text-slate-600"><I18nText en="Position" ru="Позиция" /></span>
           <select
             name="positionGroup"
-            defaultValue={searchParams.positionGroup ?? ""}
+            defaultValue={resolvedSearchParams.positionGroup ?? ""}
             className="w-full rounded border border-slate-200 px-3 py-2"
           >
             <option value="">All positions / Все позиции</option>
@@ -157,7 +158,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
             name="minMinutes"
             type="number"
             min="0"
-            defaultValue={searchParams.minMinutes ?? ""}
+            defaultValue={resolvedSearchParams.minMinutes ?? ""}
             className="w-full rounded border border-slate-200 px-3 py-2"
             placeholder="0"
           />
@@ -177,7 +178,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
             type="checkbox"
             name="starterOnly"
             value="1"
-            defaultChecked={searchParams.starterOnly === "1"}
+            defaultChecked={resolvedSearchParams.starterOnly === "1"}
             className="mb-1 h-4 w-4 rounded border-slate-300"
           />
           <span><I18nText en="Starters only" ru="Только стартовые" /></span>

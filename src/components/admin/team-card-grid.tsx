@@ -1,6 +1,7 @@
 "use client";
 
 import { AlertCircle, CalendarDays, CheckCircle2, CloudUpload, FileSpreadsheet, Loader2, Send } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
@@ -315,9 +316,12 @@ function TeamLogo({ logoUrl, name, flag }: { logoUrl: string | null; name: strin
   return (
     <div className="team-logo-frame grid h-12 w-12 shrink-0 place-items-center text-sm font-bold text-ink">
       {showImage ? (
-        <img
+        <Image
           src={logoUrl as string}
           alt=""
+          width={40}
+          height={40}
+          unoptimized
           className="team-logo-image h-10 w-10 object-contain"
           onError={() => setFailed(true)}
         />

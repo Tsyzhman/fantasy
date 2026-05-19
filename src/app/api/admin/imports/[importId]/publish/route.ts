@@ -1,20 +1,25 @@
 import { ImportStatus } from "@prisma/client";
 import { NextResponse } from "next/server";
 
+import { requireApiAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 type Params = {
-  params: {
+  params: Promise<{
     importId: string;
-  };
+  }>;
 };
 
 export async function POST(_request: Request, { params }: Params) {
+  const auth = await requireApiAdmin();
+  if (auth.response) return auth.response;
+
+  const { importId } = await params;
   const teamImport = await prisma.teamImport.findUnique({
-    where: { id: params.importId },
+    where: { id: importId },
     include: {
       _count: {
         select: { snapshots: true }

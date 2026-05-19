@@ -1,32 +1,26 @@
 "use client";
 
 import { Moon, Sun } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useSyncExternalStore } from "react";
 
 type Theme = "light" | "dark";
 
+const defaultTheme: Theme = "light";
+const themeChangeEvent = "fantasy-theme-change";
+const darkSchemeQuery = "(prefers-color-scheme: dark)";
+
 export function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme>("light");
-  const [mounted, setMounted] = useState(false);
+  const theme = useSyncExternalStore(subscribeToTheme, getThemeSnapshot, getServerThemeSnapshot);
 
   useEffect(() => {
-    const stored = window.localStorage.getItem("fantasy-theme");
-    const initial =
-      stored === "dark" || stored === "light"
-        ? stored
-        : window.matchMedia("(prefers-color-scheme: dark)").matches
-          ? "dark"
-          : "light";
-    setTheme(initial);
-    document.documentElement.dataset.theme = initial;
-    setMounted(true);
-  }, []);
+    document.documentElement.dataset.theme = theme;
+  }, [theme]);
 
   function toggleTheme() {
     const next = theme === "dark" ? "light" : "dark";
-    setTheme(next);
     document.documentElement.dataset.theme = next;
     window.localStorage.setItem("fantasy-theme", next);
+    window.dispatchEvent(new Event(themeChangeEvent));
   }
 
   const Icon = theme === "dark" ? Sun : Moon;
@@ -36,11 +30,34 @@ export function ThemeToggle() {
     <button
       type="button"
       onClick={toggleTheme}
-      title={mounted ? label : "Switch theme"}
-      aria-label={mounted ? label : "Switch theme"}
+      title={label}
+      aria-label={label}
       className="inline-flex h-9 w-9 items-center justify-center rounded border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
     >
-      {mounted ? <Icon className="h-4 w-4" /> : <span className="h-4 w-4" />}
+      <Icon className="h-4 w-4" />
     </button>
   );
+}
+
+function subscribeToTheme(callback: () => void) {
+  const mediaQuery = window.matchMedia(darkSchemeQuery);
+  window.addEventListener("storage", callback);
+  window.addEventListener(themeChangeEvent, callback);
+  mediaQuery.addEventListener("change", callback);
+
+  return () => {
+    window.removeEventListener("storage", callback);
+    window.removeEventListener(themeChangeEvent, callback);
+    mediaQuery.removeEventListener("change", callback);
+  };
+}
+
+function getThemeSnapshot(): Theme {
+  const stored = window.localStorage.getItem("fantasy-theme");
+  if (stored === "dark" || stored === "light") return stored;
+  return window.matchMedia(darkSchemeQuery).matches ? "dark" : defaultTheme;
+}
+
+function getServerThemeSnapshot(): Theme {
+  return defaultTheme;
 }

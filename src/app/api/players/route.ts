@@ -1,11 +1,15 @@
 import { ImportStatus, Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 
+import { requireApiUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
 
 export async function GET(request: Request) {
+  const auth = await requireApiUser();
+  if (auth.response) return auth.response;
+
   const params = new URL(request.url).searchParams;
   const where: Prisma.PlayerSnapshotWhereInput = {
     teamImport: {

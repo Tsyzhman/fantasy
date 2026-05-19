@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { requireApiAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getActiveScoringModel } from "@/lib/scoring";
 import { recalculateBaltikaTeamSnapshots } from "@/lib/scoring/baltika-team-form-metrics";
@@ -8,6 +9,9 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export async function POST(request: Request) {
+  const auth = await requireApiAdmin();
+  if (auth.response) return auth.response;
+
   const body = await request.json();
   const leagueId = stringOrNull(body.leagueId);
   const seasonId = stringOrNull(body.seasonId);

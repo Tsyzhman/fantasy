@@ -12,15 +12,16 @@ import { leagueFlag } from "@/lib/leagues/flags";
 export const dynamic = "force-dynamic";
 
 type PageProps = {
-  params: {
+  params: Promise<{
     leagueId: string;
     teamId: string;
-  };
+  }>;
 };
 
 export default async function BaltikaTeamPage({ params }: PageProps) {
+  const { leagueId, teamId } = await params;
   const team = await prisma.team.findUnique({
-    where: { id: params.teamId },
+    where: { id: teamId },
     include: {
       league: true,
       imports: {
@@ -51,7 +52,7 @@ export default async function BaltikaTeamPage({ params }: PageProps) {
     }
   });
 
-  if (!team || team.leagueId !== params.leagueId) notFound();
+  if (!team || team.leagueId !== leagueId) notFound();
 
   const currentImport = team.imports[0];
   const players = currentImport?.snapshots ?? [];

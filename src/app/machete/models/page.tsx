@@ -2,15 +2,16 @@ import { ModelSettingsPage } from "@/components/model-settings-page";
 import { I18nText } from "@/components/i18n-text";
 
 type PageProps = {
-  searchParams?: {
+  searchParams?: Promise<{
     error?: string;
     saved?: string;
-  };
+  }>;
 };
 
 export const dynamic = "force-dynamic";
 
 export default async function MacheteModelsPage({ searchParams }: PageProps) {
+  const resolvedSearchParams = await searchParams;
   return ModelSettingsPage({
     source: "MACHETE",
     modeName: "Machete",
@@ -23,6 +24,6 @@ export default async function MacheteModelsPage({ searchParams }: PageProps) {
     ),
     backHref: "/machete/leagues",
     backLabel: <I18nText en="Back to Machete leagues" ru="Назад к лигам Machete" />,
-    searchParams
+    searchParams: resolvedSearchParams
   });
 }

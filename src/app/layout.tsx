@@ -1,17 +1,30 @@
 import type { Metadata } from "next";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
 
 import { AppHeader } from "@/components/app-header";
+import { getCurrentUser } from "@/lib/auth";
 import { ensureDatabaseSchema } from "@/lib/db";
 
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Fantasy Scout",
-  description: "Excel-first fantasy football scouting"
+  description: "Excel-first fantasy football scouting",
+  icons: {
+    icon: "/favicon.svg"
+  }
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   await ensureDatabaseSchema();
+  const headerStore = await headers();
+  const pathname = headerStore.get("x-pathname") ?? "";
+  const user = process.env.NEXT_PHASE === "phase-production-build" ? null : await getCurrentUser();
+
+  if (pathname && !isPublicPath(pathname) && !user) {
+    redirect(`/login?next=${encodeURIComponent(pathname)}`);
+  }
 
   return (
     <html lang="en" suppressHydrationWarning>
@@ -25,10 +38,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       </head>
       <body>
         <div className="min-h-screen">
-          <AppHeader />
+          <AppHeader user={user} />
           {children}
         </div>
       </body>
     </html>
   );
+}
+
+function isPublicPath(pathname: string) {
+  return pathname === "/login" || pathname === "/setup";
 }

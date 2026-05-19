@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 import { LanguageToggle } from "@/components/language-toggle";
 import { ModeBrand } from "@/components/mode-brand";
@@ -10,9 +11,27 @@ import { ModeSwitchLink } from "@/components/mode-switch-link";
 import { ModelSettingsLink } from "@/components/model-settings-link";
 import { ThemeToggle } from "@/components/theme-toggle";
 
-export function AppHeader() {
+type AppHeaderProps = {
+  user?: {
+    email: string;
+    name: string | null;
+    role: string;
+  } | null;
+};
+
+export function AppHeader({ user }: AppHeaderProps) {
   const pathname = usePathname();
+  const router = useRouter();
   const isHome = pathname === "/";
+  const isPublicAuthPage = pathname === "/login" || pathname === "/setup";
+
+  async function logout() {
+    await fetch("/api/auth/logout", { method: "POST" });
+    router.push("/login");
+    router.refresh();
+  }
+
+  if (isPublicAuthPage) return null;
 
   if (isHome) {
     return (
@@ -36,6 +55,21 @@ export function AppHeader() {
           <ModePlayersLink />
           <ModeSwitchLink />
           <ModelSettingsLink />
+          {user?.role === "ADMIN" ? (
+            <a className="rounded px-3 py-2 hover:bg-slate-100" href="/admin/users">
+              Users
+            </a>
+          ) : null}
+          {user ? (
+            <button
+              type="button"
+              onClick={logout}
+              className="rounded px-3 py-2 text-slate-600 hover:bg-slate-100"
+              title={user.name ?? user.email}
+            >
+              Sign out
+            </button>
+          ) : null}
           <LanguageToggle />
           <ThemeToggle />
         </nav>

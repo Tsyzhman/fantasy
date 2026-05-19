@@ -1,5 +1,4 @@
-import * as XLSX from "xlsx";
-
+import { parseExcelSerialDate, readFirstWorksheetTable } from "@/lib/importers/excel-workbook";
 import { normalizeName } from "@/lib/text";
 import { normalizeHeader, type ImportIssue } from "@/lib/importers/wyscout-excel";
 
@@ -48,17 +47,16 @@ export type WyscoutTeamStatsParseResult = {
 
 const requiredColumns = ["date", "match", "team", "goals", "xg"];
 
-export function parseWyscoutTeamStatsWorkbook(
+export async function parseWyscoutTeamStatsWorkbook(
   buffer: Buffer,
   expectedHomeTeam: TeamMatcherInput,
   teams: TeamMatcherInput[]
-): WyscoutTeamStatsParseResult {
+): Promise<WyscoutTeamStatsParseResult> {
   const errors: ImportIssue[] = [];
   const warnings: ImportIssue[] = [];
-  const workbook = XLSX.read(buffer, { type: "buffer", cellDates: true });
-  const firstSheetName = workbook.SheetNames[0];
+  const worksheet = await readFirstWorksheetTable(buffer);
 
-  if (!firstSheetName) {
+  if (!worksheet) {
     return {
       columns: [],
       fixtures: [],
@@ -67,13 +65,7 @@ export function parseWyscoutTeamStatsWorkbook(
     };
   }
 
-  const sheet = workbook.Sheets[firstSheetName];
-  const table = XLSX.utils.sheet_to_json<unknown[]>(sheet, {
-    header: 1,
-    defval: null,
-    blankrows: false,
-    raw: true
-  });
+  const table = worksheet.table;
 
   const headerIndex = findHeaderRow(table);
   if (headerIndex === -1) {
@@ -352,8 +344,7 @@ function parseDate(value: unknown) {
   if (value === null || value === undefined || value === "") return null;
   if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
   if (typeof value === "number") {
-    const parsed = XLSX.SSF.parse_date_code(value);
-    if (parsed) return new Date(Date.UTC(parsed.y, parsed.m - 1, parsed.d));
+    return parseExcelSerialDate(value);
   }
 
   const date = new Date(stringValue(value));

@@ -99,7 +99,7 @@ export async function importWyscoutPlayersForTeam(teamId: string, upload: Workbo
     }
   });
 
-  const parsed = parseWyscoutWorkbook(upload.buffer, { name: team.name });
+  const parsed = await parseWyscoutWorkbook(upload.buffer, { name: team.name });
   if (duplicate) {
     parsed.warnings.push({
       code: "DUPLICATE_FILE",
@@ -264,7 +264,7 @@ export async function importWyscoutTeamStatsForTeam(teamId: string, upload: Work
     }
   });
 
-  const parsed = parseWyscoutTeamStatsWorkbook(
+  const parsed = await parseWyscoutTeamStatsWorkbook(
     upload.buffer,
     { id: team.id, name: team.name, aliases: team.aliases },
     team.league.teams.map((leagueTeam) => ({
@@ -368,7 +368,7 @@ async function upsertBaltikaFixture(
   importId: string,
   leagueId: string,
   seasonId: string,
-  fixture: ReturnType<typeof parseWyscoutTeamStatsWorkbook>["fixtures"][number]
+  fixture: Awaited<ReturnType<typeof parseWyscoutTeamStatsWorkbook>>["fixtures"][number]
 ) {
   const existing = await prisma.baltikaFixture.findFirst({
     where: {

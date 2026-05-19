@@ -16,14 +16,15 @@ import { leagueFlag } from "@/lib/leagues/flags";
 export const dynamic = "force-dynamic";
 
 type PageProps = {
-  params: {
+  params: Promise<{
     leagueId: string;
-  };
+  }>;
 };
 
 export default async function MacheteLeaguePage({ params }: PageProps) {
+  const { leagueId } = await params;
   const league = await prisma.macheteLeague.findUnique({
-    where: { id: params.leagueId },
+    where: { id: leagueId },
     include: {
       teams: {
         orderBy: { name: "asc" },
@@ -31,7 +32,7 @@ export default async function MacheteLeaguePage({ params }: PageProps) {
           players: {
             include: {
               snapshots: {
-                where: { leagueId: params.leagueId },
+                where: { leagueId },
                 orderBy: { createdAt: "desc" },
                 take: 1
               }

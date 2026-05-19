@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { requireApiAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getSportsRuCalendarSource, fetchSportsRuCalendarFixtures } from "@/lib/providers/sports-ru-calendar";
 import { getActiveScoringModel } from "@/lib/scoring";
@@ -10,14 +11,18 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 type Params = {
-  params: {
+  params: Promise<{
     leagueId: string;
-  };
+  }>;
 };
 
 export async function POST(_request: Request, { params }: Params) {
+  const auth = await requireApiAdmin();
+  if (auth.response) return auth.response;
+
+  const { leagueId } = await params;
   const league = await prisma.league.findUnique({
-    where: { id: params.leagueId },
+    where: { id: leagueId },
     include: {
       seasons: {
         orderBy: { createdAt: "desc" },

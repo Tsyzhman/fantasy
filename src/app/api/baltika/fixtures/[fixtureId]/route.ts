@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { requireApiAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getActiveScoringModel } from "@/lib/scoring";
 import { recalculateBaltikaTeamSnapshots } from "@/lib/scoring/baltika-team-form-metrics";
@@ -8,13 +9,17 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 type Params = {
-  params: {
+  params: Promise<{
     fixtureId: string;
-  };
+  }>;
 };
 
 export async function PATCH(request: Request, { params }: Params) {
-  const fixture = await prisma.baltikaFixture.findUnique({ where: { id: params.fixtureId } });
+  const auth = await requireApiAdmin();
+  if (auth.response) return auth.response;
+
+  const { fixtureId } = await params;
+  const fixture = await prisma.baltikaFixture.findUnique({ where: { id: fixtureId } });
   if (!fixture) return errorResponse("FIXTURE_NOT_FOUND", "Fixture not found.", 404);
 
   const body = await request.json();
@@ -57,7 +62,11 @@ export async function PATCH(request: Request, { params }: Params) {
 }
 
 export async function DELETE(_request: Request, { params }: Params) {
-  const fixture = await prisma.baltikaFixture.findUnique({ where: { id: params.fixtureId } });
+  const auth = await requireApiAdmin();
+  if (auth.response) return auth.response;
+
+  const { fixtureId } = await params;
+  const fixture = await prisma.baltikaFixture.findUnique({ where: { id: fixtureId } });
   if (!fixture) return errorResponse("FIXTURE_NOT_FOUND", "Fixture not found.", 404);
 
   await prisma.baltikaFixture.delete({ where: { id: fixture.id } });

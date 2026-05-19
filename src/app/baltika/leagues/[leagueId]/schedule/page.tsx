@@ -14,14 +14,15 @@ import { getSportsRuCalendarSource } from "@/lib/providers/sports-ru-calendar";
 export const dynamic = "force-dynamic";
 
 type PageProps = {
-  params: {
+  params: Promise<{
     leagueId: string;
-  };
+  }>;
 };
 
 export default async function BaltikaLeagueSchedulePage({ params }: PageProps) {
+  const { leagueId } = await params;
   const league = await prisma.league.findUnique({
-    where: { id: params.leagueId },
+    where: { id: leagueId },
     include: {
       seasons: {
         orderBy: { createdAt: "desc" },

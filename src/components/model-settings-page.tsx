@@ -22,6 +22,7 @@ import type { ScoringModelSource } from "@/lib/scoring";
 import { recalculateSnapshotsForSource } from "@/lib/scoring/recalculate-snapshots";
 import { seedRules } from "@/lib/scoring/rules";
 import { formulaAlias, sourceFormulaFields, type SourceFormulaField } from "@/lib/scoring/source-field-guide";
+import { requireAdminUser } from "@/lib/auth";
 
 type ModelSettingsPageProps = {
   source: ScoringModelSource;
@@ -70,6 +71,8 @@ const formulaExamples: Record<ScoringModelSource, { primary: string; scoring: st
 
 export async function saveModelSettings(formData: FormData) {
   "use server";
+
+  await requireAdminUser();
 
   const source = String(formData.get("modelSource") ?? "WYSCOUT") === "MACHETE" ? "MACHETE" : "WYSCOUT";
   const config = sourceConfig[source];
@@ -187,6 +190,8 @@ export async function ModelSettingsPage({
   backLabel,
   searchParams
 }: ModelSettingsPageProps) {
+  await requireAdminUser();
+
   const [model, wyscoutModel] = await Promise.all([
     prisma.fantasyModel.findFirst({
       where: { modelSource: source, isDefault: true, isActive: true },

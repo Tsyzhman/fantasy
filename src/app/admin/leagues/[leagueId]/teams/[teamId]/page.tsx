@@ -1,12 +1,13 @@
 import { redirect } from "next/navigation";
 
 type PageProps = {
-  params: {
+  params: Promise<{
     leagueId: string;
     teamId: string;
-  };
+  }>;
 };
 
-export default function AdminTeamRedirect({ params }: PageProps) {
-  redirect(`/baltika/leagues/${params.leagueId}/teams/${params.teamId}`);
+export default async function AdminTeamRedirect({ params }: PageProps) {
+  const { leagueId, teamId } = await params;
+  redirect(`/baltika/leagues/${leagueId}/teams/${teamId}`);
 }

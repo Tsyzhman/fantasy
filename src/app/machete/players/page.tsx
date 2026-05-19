@@ -19,10 +19,11 @@ type SearchParams = {
 };
 
 type PageProps = {
-  searchParams: SearchParams;
+  searchParams: Promise<SearchParams>;
 };
 
 export default async function MachetePlayersPage({ searchParams }: PageProps) {
+  const resolvedSearchParams = await searchParams;
   const leagues = await prisma.macheteLeague.findMany({
     orderBy: { name: "asc" },
     include: {
@@ -34,23 +35,23 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
   const sortedLeagues = [...leagues].sort((left, right) =>
     macheteLeagueDisplayName(left).localeCompare(macheteLeagueDisplayName(right))
   );
-  const selectedLeagueId = searchParams.leagueId ?? "";
+  const selectedLeagueId = resolvedSearchParams.leagueId ?? "";
   const teamLeagues = selectedLeagueId ? sortedLeagues.filter((league) => league.id === selectedLeagueId) : sortedLeagues;
   const selectedTeamId =
-    searchParams.teamId && teamLeagues.some((league) => league.teams.some((team) => team.id === searchParams.teamId))
-      ? searchParams.teamId
+    resolvedSearchParams.teamId && teamLeagues.some((league) => league.teams.some((team) => team.id === resolvedSearchParams.teamId))
+      ? resolvedSearchParams.teamId
       : "";
 
   const where: Prisma.MachetePlayerSnapshotWhereInput = {};
   if (selectedLeagueId) where.leagueId = selectedLeagueId;
   if (selectedTeamId) where.teamId = selectedTeamId;
-  if (searchParams.position) where.position = { contains: searchParams.position, mode: "insensitive" };
-  if (searchParams.minMinutes) {
-    const minutes = Number(searchParams.minMinutes);
+  if (resolvedSearchParams.position) where.position = { contains: resolvedSearchParams.position, mode: "insensitive" };
+  if (resolvedSearchParams.minMinutes) {
+    const minutes = Number(resolvedSearchParams.minMinutes);
     if (Number.isFinite(minutes)) where.minutesPlayed = { gte: minutes };
   }
 
-  const sort = searchParams.sort ?? "fantasyScore";
+  const sort = resolvedSearchParams.sort ?? "fantasyScore";
   const orderBy: Prisma.MachetePlayerSnapshotOrderByWithRelationInput =
     sort === "minutesPlayed"
       ? { minutesPlayed: "desc" }
@@ -159,7 +160,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
           <span className="mb-1 block font-medium text-slate-600"><I18nText en="Position" ru="Позиция" /></span>
           <input
             name="position"
-            defaultValue={searchParams.position ?? ""}
+            defaultValue={resolvedSearchParams.position ?? ""}
             className="w-full rounded border border-slate-200 px-3 py-2"
             placeholder="Defender"
           />
@@ -170,7 +171,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
             name="minMinutes"
             type="number"
             min="0"
-            defaultValue={searchParams.minMinutes ?? ""}
+            defaultValue={resolvedSearchParams.minMinutes ?? ""}
             className="w-full rounded border border-slate-200 px-3 py-2"
             placeholder="0"
           />

@@ -1,5 +1,4 @@
-import * as XLSX from "xlsx";
-
+import { parseExcelSerialDate, readFirstWorksheetTable } from "@/lib/importers/excel-workbook";
 import { normalizeName } from "@/lib/text";
 
 export type ImportIssue = {
@@ -56,7 +55,6 @@ const requiredColumns = [
 
 const numericFields = new Set([
   "age",
-  "market_value",
   "matches_played",
   "minutes_played",
   "goals",
@@ -90,16 +88,15 @@ export function normalizeHeader(header: string): string {
     .replace(/^_+|_+$/g, "");
 }
 
-export function parseWyscoutWorkbook(
+export async function parseWyscoutWorkbook(
   buffer: Buffer,
   expectedTeam: { name: string }
-): WyscoutParseResult {
+): Promise<WyscoutParseResult> {
   const errors: ImportIssue[] = [];
   const warnings: ImportIssue[] = [];
-  const workbook = XLSX.read(buffer, { type: "buffer", cellDates: true });
-  const firstSheetName = workbook.SheetNames[0];
+  const worksheet = await readFirstWorksheetTable(buffer);
 
-  if (!firstSheetName) {
+  if (!worksheet) {
     return {
       columns: [],
       rows: [],
@@ -109,13 +106,7 @@ export function parseWyscoutWorkbook(
     };
   }
 
-  const sheet = workbook.Sheets[firstSheetName];
-  const table = XLSX.utils.sheet_to_json<unknown[]>(sheet, {
-    header: 1,
-    defval: null,
-    blankrows: false,
-    raw: true
-  });
+  const table = worksheet.table;
 
   const headerIndex = findHeaderRow(table);
   if (headerIndex === -1) {
@@ -300,8 +291,7 @@ function parseDate(value: unknown) {
   if (value === null || value === undefined || value === "") return null;
   if (value instanceof Date && !Number.isNaN(value.getTime())) return value;
   if (typeof value === "number") {
-    const parsed = XLSX.SSF.parse_date_code(value);
-    if (parsed) return new Date(Date.UTC(parsed.y, parsed.m - 1, parsed.d));
+    return parseExcelSerialDate(value);
   }
 
   const text = stringValue(value);
@@ -315,7 +305,8 @@ function parseMarketValue(value: unknown) {
 
   const text = String(value)
     .trim()
-    .replace(/[€£$]/g, "")
+    .replace(/[\u20ac\u00a3$]/g, "")
+    .replace(/\b(?:eur|gbp|usd)\b/gi, "")
     .replace(/\s+/g, "")
     .replace(/,/g, "");
 

@@ -12,7 +12,7 @@ function publicLogoFilePath(logoUrl: string) {
   const parts = relativePath.split("/");
   if (parts.some((part) => part === ".." || part === "")) return null;
 
-  return path.join(process.cwd(), "public", ...parts);
+  return path.join(/* turbopackIgnore: true */ process.cwd(), "public", ...parts);
 }
 
 function collectLogoFiles(dir: string): string[] {
@@ -34,7 +34,7 @@ function duplicateLogoHashes() {
   if (duplicateHashesCache) return duplicateHashesCache;
 
   const counts = new Map<string, number>();
-  for (const filePath of collectLogoFiles(path.join(process.cwd(), "public", "team-logos"))) {
+  for (const filePath of collectLogoFiles(path.join(/* turbopackIgnore: true */ process.cwd(), "public", "team-logos"))) {
     if (statSync(filePath).size === 0) continue;
     const hash = fileHash(filePath);
     counts.set(hash, (counts.get(hash) ?? 0) + 1);
