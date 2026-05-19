@@ -25,7 +25,7 @@ export class MockFotMobClient implements FotMobClient {
   async getFixtureDetails(fixtureId: string) {
     const fixture = mockFotMobFixtures.find((item) => item.id === fixtureId);
     if (!fixture) throw new Error(`Mock FotMob fixture not found: ${fixtureId}`);
-    return fixture;
+    return { ...fixture, raw: fixture };
   }
 
   async getPlayer(playerId: string) {
@@ -104,7 +104,8 @@ export class UnofficialFotMobClient implements FotMobClient {
 
     return {
       ...fixture,
-      playerStats: []
+      playerStats: [],
+      raw: payload
     };
   }
 

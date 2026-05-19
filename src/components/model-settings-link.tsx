@@ -9,6 +9,9 @@ import { I18nText } from "@/components/i18n-text";
 export function ModelSettingsLink() {
   const pathname = usePathname();
   const isMachete = pathname.startsWith("/machete");
+  const isMixerr = pathname.startsWith("/mixerr");
+
+  if (isMixerr) return null;
 
   return (
     <Link

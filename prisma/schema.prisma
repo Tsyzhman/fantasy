@@ -325,6 +325,8 @@ model MacheteTeam {
   players      MachetePlayer[]
   fixturesHome MacheteFixture[] @relation("MacheteFixtureHomeTeam")
   fixturesAway MacheteFixture[] @relation("MacheteFixtureAwayTeam")
+  shotsFor     MatchShot[]      @relation("MatchShotTeam")
+  shotsAgainst MatchShot[]      @relation("MatchShotOpponentTeam")
   syncJobs     MacheteSyncJob[]
 
   @@unique([provider, providerTeamId])
@@ -352,6 +354,7 @@ model MachetePlayer {
   team       MacheteTeam?             @relation(fields: [teamId], references: [id], onDelete: SetNull)
   matchStats MachetePlayerMatchStat[]
   snapshots  MachetePlayerSnapshot[]
+  shots      MatchShot[]
 
   @@unique([provider, providerPlayerId])
   @@index([teamId])
@@ -377,9 +380,60 @@ model MacheteFixture {
   homeTeam    MacheteTeam?             @relation("MacheteFixtureHomeTeam", fields: [homeTeamId], references: [id], onDelete: SetNull)
   awayTeam    MacheteTeam?             @relation("MacheteFixtureAwayTeam", fields: [awayTeamId], references: [id], onDelete: SetNull)
   playerStats MachetePlayerMatchStat[]
+  shots       MatchShot[]
 
   @@unique([provider, providerFixtureId])
   @@index([leagueId, kickoffAt])
+}
+
+model MatchShot {
+  id                     String   @id @default(cuid())
+  fixtureId              String?
+  provider               String   @default("FOTMOB")
+  providerMatchId        String
+  teamId                 String?
+  opponentTeamId         String?
+  providerTeamId         String?
+  providerOpponentTeamId String?
+  playerId               String?
+  providerPlayerId       String?
+  playerName             String?
+  isHome                 Boolean?
+  minute                 Int?
+  addedTime              Int?
+  x                      Float?
+  y                      Float?
+  normalizedX            Float?
+  normalizedY            Float?
+  eventType              String?
+  shotType               String?
+  bodyPart               String?
+  situation              String?
+  isGoal                 Boolean  @default(false)
+  isOnTarget             Boolean?
+  isBlocked              Boolean?
+  isBigChance            Boolean?
+  xg                     Float?
+  xgot                   Float?
+  teamName               String?
+  opponentTeamName       String?
+  raw                    Json
+  dedupeKey              String
+  createdAt              DateTime @default(now())
+  updatedAt              DateTime @updatedAt
+
+  fixture      MacheteFixture? @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
+  team         MacheteTeam?    @relation("MatchShotTeam", fields: [teamId], references: [id], onDelete: SetNull)
+  opponentTeam MacheteTeam?    @relation("MatchShotOpponentTeam", fields: [opponentTeamId], references: [id], onDelete: SetNull)
+  player       MachetePlayer?  @relation(fields: [playerId], references: [id], onDelete: SetNull)
+
+  @@unique([provider, dedupeKey])
+  @@index([fixtureId])
+  @@index([teamId])
+  @@index([opponentTeamId])
+  @@index([playerId])
+  @@index([providerMatchId])
+  @@map("match_shots")
 }
 
 model MachetePlayerMatchStat {

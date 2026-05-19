@@ -62,4 +62,5 @@ export type FotMobPlayerMatchStat = {
 
 export type FotMobFixtureDetails = FotMobFixture & {
   playerStats: FotMobPlayerMatchStat[];
+  raw?: unknown;
 };

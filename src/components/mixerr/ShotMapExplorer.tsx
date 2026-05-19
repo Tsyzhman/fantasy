@@ -1,0 +1,371 @@
+"use client";
+
+import { Crosshair, Goal, Layers3, Shield, UserRound } from "lucide-react";
+import type { ReactNode } from "react";
+import { useMemo, useState } from "react";
+
+import type { ShotMapShot } from "@/lib/shot-maps";
+
+type ShotMapExplorerProps = {
+  teamShots: ShotMapShot[];
+  concededShots: ShotMapShot[];
+  playerShots: ShotMapShot[];
+  overlayShots: {
+    attacking: ShotMapShot[];
+    conceded: ShotMapShot[];
+  };
+  zoneSummary: {
+    attacking: ZoneSummary;
+    conceded: ZoneSummary;
+  };
+  windowLabel: string;
+  defendingWindowLabel: string;
+};
+
+type ZoneSummary = {
+  left_shots: number;
+  center_shots: number;
+  right_shots: number;
+  left_xg: number;
+  center_xg: number;
+  right_xg: number;
+};
+
+type Mode = "for" | "against" | "overlay" | "player";
+type SituationFilter = "all" | "open_play" | "set_piece" | "penalty";
+
+export function ShotMapExplorer({ teamShots, concededShots, playerShots, overlayShots, zoneSummary, windowLabel, defendingWindowLabel }: ShotMapExplorerProps) {
+  const [mode, setMode] = useState<Mode>("overlay");
+  const [goalsOnly, setGoalsOnly] = useState(false);
+  const [onTargetOnly, setOnTargetOnly] = useState(false);
+  const [bigChancesOnly, setBigChancesOnly] = useState(false);
+  const [situation, setSituation] = useState<SituationFilter>("all");
+
+  const layers = useMemo(() => {
+    if (mode === "for") return [{ key: "for", label: "Team shots for", shots: filterShots(teamShots), tone: "attacking" as const }];
+    if (mode === "against") return [{ key: "against", label: "Team shots against", shots: filterShots(concededShots), tone: "conceded" as const }];
+    if (mode === "player") return [{ key: "player", label: "Player shots", shots: filterShots(playerShots), tone: "player" as const }];
+    return [
+      { key: "overlay-for", label: "Team A attacking", shots: filterShots(overlayShots.attacking), tone: "attacking" as const },
+      { key: "overlay-against", label: "Team B conceded", shots: filterShots(overlayShots.conceded), tone: "conceded" as const }
+    ];
+
+    function filterShots(shots: ShotMapShot[]) {
+      return shots.filter((shot) => {
+        if (goalsOnly && !shot.is_goal) return false;
+        if (onTargetOnly && !shot.is_on_target) return false;
+        if (bigChancesOnly && !shot.is_big_chance) return false;
+        if (situation !== "all" && normalizedSituation(shot.situation) !== situation) return false;
+        return true;
+      });
+    }
+  }, [bigChancesOnly, concededShots, goalsOnly, mode, onTargetOnly, overlayShots.attacking, overlayShots.conceded, playerShots, situation, teamShots]);
+
+  const visibleShots = layers.flatMap((layer) => layer.shots);
+  const totalXg = visibleShots.reduce((total, shot) => total + (shot.xg ?? 0), 0);
+  const shooterSummaries = summarizeShooters(visibleShots);
+
+  return (
+    <div className="mt-6 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
+      <section className="rounded border border-slate-200 bg-white p-4 shadow-soft">
+        <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 xl:flex-row xl:items-center xl:justify-between">
+          <div className="flex flex-wrap gap-2">
+            <ModeButton active={mode === "for"} onClick={() => setMode("for")} icon={<Crosshair className="h-4 w-4" />} label="For" />
+            <ModeButton active={mode === "against"} onClick={() => setMode("against")} icon={<Shield className="h-4 w-4" />} label="Against" />
+            <ModeButton active={mode === "overlay"} onClick={() => setMode("overlay")} icon={<Layers3 className="h-4 w-4" />} label="Overlay" />
+            <ModeButton active={mode === "player"} onClick={() => setMode("player")} icon={<UserRound className="h-4 w-4" />} label="Player" />
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600">
+            <label className="inline-flex items-center gap-2">
+              <input type="checkbox" checked={goalsOnly} onChange={(event) => setGoalsOnly(event.target.checked)} />
+              Goals
+            </label>
+            <label className="inline-flex items-center gap-2">
+              <input type="checkbox" checked={onTargetOnly} onChange={(event) => setOnTargetOnly(event.target.checked)} />
+              On target
+            </label>
+            <label className="inline-flex items-center gap-2">
+              <input type="checkbox" checked={bigChancesOnly} onChange={(event) => setBigChancesOnly(event.target.checked)} />
+              Big chances
+            </label>
+            <select value={situation} onChange={(event) => setSituation(event.target.value as SituationFilter)} className="rounded border border-slate-200 px-2 py-1">
+              <option value="all">All situations</option>
+              <option value="open_play">Open play</option>
+              <option value="set_piece">Set piece</option>
+              <option value="penalty">Penalty</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="mt-4 overflow-x-auto">
+          <div className="relative mx-auto aspect-[68/105] min-h-[560px] w-full min-w-[360px] max-w-[720px] overflow-hidden rounded border border-emerald-700 bg-emerald-700">
+            <div className="absolute inset-4 border-2 border-white/75" />
+            <div className="absolute left-1/2 top-1/2 h-28 w-28 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white/70" />
+            <div className="absolute left-4 right-4 top-1/2 border-t-2 border-white/70" />
+            <div className="absolute left-1/2 top-4 h-24 w-44 -translate-x-1/2 border-x-2 border-b-2 border-white/70" />
+            <div className="absolute bottom-4 left-1/2 h-24 w-44 -translate-x-1/2 border-x-2 border-t-2 border-white/70" />
+            <Goal className="absolute left-1/2 top-2 h-5 w-5 -translate-x-1/2 text-white/90" />
+
+            {layers.map((layer) =>
+              layer.shots.map((shot, index) => (
+                <span
+                  key={`${layer.key}-${shot.id}-${index}`}
+                  className={markerClassName(layer.tone, shot)}
+                  style={markerStyle(shot)}
+                  title={shotTooltip(shot, layer.label)}
+                />
+              ))
+            )}
+
+            {visibleShots.length === 0 ? (
+              <div className="absolute inset-0 grid place-items-center bg-emerald-950/20 text-sm font-semibold text-white">
+                No shots for current filters
+              </div>
+            ) : null}
+          </div>
+        </div>
+
+        <div className="mt-5 border-t border-slate-200 pt-4">
+          <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <h2 className="text-base font-semibold text-ink">Shooters</h2>
+              <p className="mt-1 text-xs text-slate-500">
+                Team A window: {windowLabel}. Team B conceded window: {defendingWindowLabel}.
+              </p>
+            </div>
+            <p className="text-xs text-slate-500">{visibleShots.length} visible shots after filters</p>
+          </div>
+          <div className="mt-3 overflow-x-auto">
+            <table className="min-w-full divide-y divide-slate-200 text-sm">
+              <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
+                <tr>
+                  <th className="px-3 py-2">Player</th>
+                  <th className="px-3 py-2">Team</th>
+                  <th className="px-3 py-2 text-right">Shots</th>
+                  <th className="px-3 py-2 text-right">xG</th>
+                  <th className="px-3 py-2 text-right">Goals</th>
+                  <th className="px-3 py-2 text-right">On target</th>
+                  <th className="px-3 py-2 text-right">Big chances</th>
+                  <th className="px-3 py-2">Last shot</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {shooterSummaries.map((summary) => (
+                  <tr key={summary.key} className="hover:bg-slate-50">
+                    <td className="whitespace-nowrap px-3 py-2 font-medium text-ink">{summary.playerName}</td>
+                    <td className="whitespace-nowrap px-3 py-2 text-slate-600">{summary.teamName}</td>
+                    <td className="whitespace-nowrap px-3 py-2 text-right font-semibold text-ink">{summary.shots}</td>
+                    <td className="whitespace-nowrap px-3 py-2 text-right text-slate-700">{summary.xg.toFixed(2)}</td>
+                    <td className="whitespace-nowrap px-3 py-2 text-right text-slate-700">{summary.goals}</td>
+                    <td className="whitespace-nowrap px-3 py-2 text-right text-slate-700">{summary.onTarget}</td>
+                    <td className="whitespace-nowrap px-3 py-2 text-right text-slate-700">{summary.bigChances}</td>
+                    <td className="min-w-48 px-3 py-2 text-slate-600">{summary.lastShot}</td>
+                  </tr>
+                ))}
+                {shooterSummaries.length === 0 ? (
+                  <tr>
+                    <td colSpan={8} className="px-3 py-8 text-center text-slate-500">
+                      No shooter stats for the current layer and filters.
+                    </td>
+                  </tr>
+                ) : null}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <aside className="space-y-5">
+        <section className="rounded border border-slate-200 bg-white p-4 shadow-soft">
+          <p className="text-xs font-semibold uppercase text-slate-500">Visible layer</p>
+          <dl className="mt-3 grid grid-cols-3 gap-3 text-sm">
+            <div>
+              <dt className="text-slate-500">Shots</dt>
+              <dd className="mt-1 text-lg font-bold text-ink">{visibleShots.length}</dd>
+            </div>
+            <div>
+              <dt className="text-slate-500">xG</dt>
+              <dd className="mt-1 text-lg font-bold text-ink">{totalXg.toFixed(2)}</dd>
+            </div>
+            <div>
+              <dt className="text-slate-500">Goals</dt>
+              <dd className="mt-1 text-lg font-bold text-ink">{visibleShots.filter((shot) => shot.is_goal).length}</dd>
+            </div>
+          </dl>
+          <div className="mt-4 space-y-2 text-xs text-slate-500">
+            <LegendItem tone="attacking" label="Team A attacking shots" />
+            <LegendItem tone="conceded" label="Team B conceded shots" />
+            <LegendItem tone="player" label="Selected player shots" />
+          </div>
+        </section>
+
+        <section className="rounded border border-slate-200 bg-white p-4 shadow-soft">
+          <p className="text-xs font-semibold uppercase text-slate-500">Side zones</p>
+          <ZoneTable title="Attacking" summary={zoneSummary.attacking} />
+          <ZoneTable title="Conceded" summary={zoneSummary.conceded} />
+          <p className="mt-4 text-xs leading-5 text-slate-500">
+            Shots are normalized to a common attacking direction when possible. Raw FotMob coordinates are preserved.
+          </p>
+        </section>
+      </aside>
+    </div>
+  );
+}
+
+function summarizeShooters(shots: ShotMapShot[]) {
+  const summaries = new Map<
+    string,
+    {
+      key: string;
+      playerName: string;
+      teamName: string;
+      shots: number;
+      xg: number;
+      goals: number;
+      onTarget: number;
+      bigChances: number;
+      latestTimestamp: number;
+      lastShot: string;
+    }
+  >();
+
+  for (const shot of shots) {
+    const key = [shot.player_id ?? shot.provider_player_id ?? shot.player_name ?? "unknown", shot.team_id ?? shot.provider_team_id ?? shot.team_name ?? ""].join(":");
+    const existing = summaries.get(key) ?? {
+      key,
+      playerName: shot.player_name ?? "Unknown shooter",
+      teamName: shot.team_name ?? "Unknown team",
+      shots: 0,
+      xg: 0,
+      goals: 0,
+      onTarget: 0,
+      bigChances: 0,
+      latestTimestamp: 0,
+      lastShot: ""
+    };
+
+    existing.shots += 1;
+    existing.xg += shot.xg ?? 0;
+    existing.goals += shot.is_goal ? 1 : 0;
+    existing.onTarget += shot.is_on_target ? 1 : 0;
+    existing.bigChances += shot.is_big_chance ? 1 : 0;
+
+    const timestamp = shot.match_date ? new Date(shot.match_date).getTime() : 0;
+    if (timestamp >= existing.latestTimestamp) {
+      existing.latestTimestamp = timestamp;
+      existing.lastShot = [
+        shot.minute !== null ? `${shot.minute}${shot.added_time ? `+${shot.added_time}` : ""}'` : null,
+        shot.xg !== null ? `${shot.xg.toFixed(2)} xG` : null,
+        shot.event_type,
+        shot.match_label
+      ].filter(Boolean).join(" | ");
+    }
+
+    summaries.set(key, existing);
+  }
+
+  return [...summaries.values()].sort((left, right) => right.shots - left.shots || right.xg - left.xg || left.playerName.localeCompare(right.playerName));
+}
+
+function ModeButton({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: ReactNode; label: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`inline-flex items-center gap-2 rounded px-3 py-2 text-sm font-semibold ${
+        active ? "bg-ink text-white" : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+      }`}
+    >
+      {icon}
+      {label}
+    </button>
+  );
+}
+
+function ZoneTable({ title, summary }: { title: string; summary: ZoneSummary }) {
+  const total = summary.left_shots + summary.center_shots + summary.right_shots;
+  const rows = [
+    ["Left", summary.left_shots, summary.left_xg],
+    ["Center", summary.center_shots, summary.center_xg],
+    ["Right", summary.right_shots, summary.right_xg]
+  ] as const;
+
+  return (
+    <div className="mt-4">
+      <h3 className="text-sm font-semibold text-ink">{title}</h3>
+      <div className="mt-2 divide-y divide-slate-100 text-sm">
+        {rows.map(([label, shots, xg]) => (
+          <div key={label} className="grid grid-cols-[1fr_auto_auto] gap-3 py-2">
+            <span className="text-slate-600">{label}</span>
+            <span className="font-semibold text-ink">{total ? Math.round((shots / total) * 100) : 0}%</span>
+            <span className="text-slate-500">{xg.toFixed(2)} xG</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function LegendItem({ tone, label }: { tone: "attacking" | "conceded" | "player"; label: string }) {
+  return (
+    <p className="flex items-center gap-2">
+      <span className={legendDotClassName(tone)} />
+      {label}
+    </p>
+  );
+}
+
+function markerClassName(tone: "attacking" | "conceded" | "player", shot: ShotMapShot) {
+  const base = "absolute z-10 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 shadow-sm transition hover:z-20 hover:scale-125";
+  const state = shot.is_goal
+    ? "border-white bg-amber-300"
+    : shot.is_blocked
+      ? "border-white/80 bg-slate-400"
+      : shot.is_on_target
+        ? "border-white bg-sky-300"
+        : "border-white/75";
+  const toneClass = tone === "attacking" ? "bg-rose-500" : tone === "conceded" ? "bg-indigo-500" : "bg-emerald-300";
+  return `${base} ${shot.is_goal || shot.is_blocked || shot.is_on_target ? state : toneClass}`;
+}
+
+function legendDotClassName(tone: "attacking" | "conceded" | "player") {
+  const color = tone === "attacking" ? "bg-rose-500" : tone === "conceded" ? "bg-indigo-500" : "bg-emerald-300";
+  return `h-3 w-3 rounded-full border border-white shadow-sm ${color}`;
+}
+
+function markerStyle(shot: ShotMapShot) {
+  const x = clamp(shot.normalized_x ?? shot.x ?? 50, 0, 100);
+  const y = clamp(shot.normalized_y ?? shot.y ?? 50, 0, 100);
+  const size = Math.max(9, Math.min(24, 9 + (shot.xg ?? 0.04) * 34));
+
+  return {
+    left: `${y}%`,
+    top: `${100 - x}%`,
+    width: `${size}px`,
+    height: `${size}px`
+  };
+}
+
+function shotTooltip(shot: ShotMapShot, layer: string) {
+  return [
+    layer,
+    shot.player_name,
+    shot.minute !== null ? `${shot.minute}${shot.added_time ? `+${shot.added_time}` : ""}'` : null,
+    shot.xg !== null ? `${shot.xg.toFixed(2)} xG` : null,
+    shot.event_type,
+    shot.match_label
+  ].filter(Boolean).join(" | ");
+}
+
+function normalizedSituation(value: string | null): SituationFilter {
+  const normalized = (value ?? "").toLowerCase().replace(/\s+/g, "_");
+  if (normalized.includes("penalty")) return "penalty";
+  if (normalized.includes("set")) return "set_piece";
+  if (normalized.includes("open")) return "open_play";
+  return "all";
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
+}

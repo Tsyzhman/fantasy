@@ -9,6 +9,7 @@ import { createFotMobClient } from "./client";
 import { normalizeMacheteMatchStat, normalizeMachetePlayer } from "./normalizers";
 import { storeMacheteRawPayload } from "./raw-payloads";
 import { syncMacheteFixtures } from "./sync-fixtures";
+import { syncMacheteMatchShots } from "./sync-shots";
 import type { FotMobPlayerMatchStat, FotMobTeam } from "./types";
 
 type SyncPlayerStatsOptions = {
@@ -187,6 +188,7 @@ export async function syncMacheteTeamPlayerStats(prisma: PrismaClient, teamId: s
   });
 
   let statsCount = 0;
+  let shotsCount = 0;
   for (const fixture of fixtures) {
     if (!fixture.providerFixtureId) continue;
     const details = await client.getFixtureDetails(fixture.providerFixtureId);
@@ -196,6 +198,14 @@ export async function syncMacheteTeamPlayerStats(prisma: PrismaClient, teamId: s
       endpoint: "getFixtureDetails",
       payload: details
     });
+    try {
+      const shotResult = await syncMacheteMatchShots(prisma, fixture, details);
+      shotsCount += shotResult.shotsSynced;
+    } catch (error) {
+      console.warn(
+        `[mixerr] Could not sync FotMob shots for fixture ${fixture.providerFixtureId}: ${error instanceof Error ? error.message : "unknown error"}`
+      );
+    }
 
     for (const stat of details.playerStats.filter((item) => item.teamId === team.providerTeamId)) {
       const player = await prisma.machetePlayer.findUnique({
@@ -240,6 +250,7 @@ export async function syncMacheteTeamPlayerStats(prisma: PrismaClient, teamId: s
 
   return {
     statsCount,
+    shotsCount,
     snapshotsCount: snapshots.length
   };
 }

@@ -1,4 +1,4 @@
-import { ArrowRight, Database, RadioTower } from "lucide-react";
+import { ArrowRight, Crosshair, Database, RadioTower } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -36,6 +36,22 @@ const modes = [
     descriptionRu: "Загружайте Wyscout-файлы игроков и Team Stats по одной команде или массово, затем публикуйте готовые fantasy-данные.",
     ctaEn: "Open Baltika",
     ctaRu: "Открыть Балтику"
+  },
+  {
+    nameEn: "MiXerr",
+    nameRu: "Миксер",
+    href: "/mixerr",
+    imageSrc: "/mode-logos/fotmob-mode.png",
+    imageClassName: "h-20 w-20 object-contain",
+    icon: Crosshair,
+    kickerEn: "FotMob shot-map mode",
+    kickerRu: "Режим shot-map FotMob",
+    titleEn: "Shot-map comparison",
+    titleRu: "Сравнение карт ударов",
+    descriptionEn: "Collect individual FotMob shots with coordinates, then compare team attacking maps, conceded maps and player shot maps.",
+    descriptionRu: "Собирайте удары FotMob с координатами, затем сравнивайте атакующие, допущенные и индивидуальные карты ударов.",
+    ctaEn: "Open MiXerr",
+    ctaRu: "Открыть MiXerr"
   }
 ];
 
@@ -57,7 +73,7 @@ export default function HomePage() {
         </p>
       </section>
 
-      <section className="mt-8 grid grid-cols-1 gap-5 lg:grid-cols-2">
+      <section className="mt-8 grid grid-cols-1 gap-5 lg:grid-cols-3">
         {modes.map((mode) => {
           const Icon = mode.icon;
 

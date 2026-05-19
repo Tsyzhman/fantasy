@@ -6,6 +6,7 @@ import { runMacheteEntityMatching } from "./entity-matcher";
 import { syncMacheteFixtures } from "./sync-fixtures";
 import { syncMacheteLeagueMetadata } from "./sync-league";
 import { syncMacheteLeaguePlayerStats, syncMacheteTeamPlayerStats } from "./sync-player-stats";
+import { syncMacheteLeagueShots } from "./sync-shots";
 import { syncMacheteTeams } from "./sync-teams";
 
 export type MacheteJobType =
@@ -14,6 +15,7 @@ export type MacheteJobType =
   | "SYNC_FIXTURES"
   | "SYNC_TEAM"
   | "SYNC_PLAYER_STATS"
+  | "SYNC_SHOTS"
   | "SYNC_LEAGUE_FULL"
   | "SYNC_ALL_LEAGUES"
   | "RUN_ENTITY_MATCHING"
@@ -90,6 +92,9 @@ async function executeJob(prisma: PrismaClient, input: RunJobInput) {
   if (input.type === "SYNC_PLAYER_STATS") {
     return syncMacheteLeaguePlayerStats(prisma, input.leagueId, { includePreviousSeasons: input.includePreviousSeasons });
   }
+  if (input.type === "SYNC_SHOTS") {
+    return syncMacheteLeagueShots(prisma, input.leagueId);
+  }
   if (input.type === "SYNC_LEAGUE_FULL") {
     return syncMacheteLeagueFull(prisma, input.leagueId, { includePreviousSeasons: input.includePreviousSeasons });
   }
@@ -114,12 +119,14 @@ async function syncMacheteLeagueFull(prisma: PrismaClient, leagueId: string, opt
   const teams = await syncMacheteTeams(prisma, leagueId);
   const fixtures = await syncMacheteFixtures(prisma, leagueId, { includePreviousSeasons: options.includePreviousSeasons });
   const playerStats = await syncMacheteLeaguePlayerStats(prisma, leagueId, { syncFixtures: false, includePreviousSeasons: options.includePreviousSeasons });
+  const shotMaps = await syncMacheteLeagueShots(prisma, leagueId);
 
   return {
     leagueId: metadata.id,
     leagueName: metadata.name,
     teamsSynced: teams.length,
     fixturesSynced: fixtures.length,
+    ...shotMaps,
     ...playerStats
   };
 }

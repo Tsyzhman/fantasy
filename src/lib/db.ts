@@ -80,6 +80,61 @@ BEGIN
     ALTER TABLE "UserSession" ADD CONSTRAINT "UserSession_userId_fkey"
       FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
   END IF;
+
+  IF to_regclass('match_shots') IS NULL THEN
+    CREATE TABLE match_shots (
+      "id" TEXT NOT NULL,
+      "fixtureId" TEXT,
+      "provider" TEXT NOT NULL DEFAULT 'FOTMOB',
+      "providerMatchId" TEXT NOT NULL,
+      "teamId" TEXT,
+      "opponentTeamId" TEXT,
+      "providerTeamId" TEXT,
+      "providerOpponentTeamId" TEXT,
+      "playerId" TEXT,
+      "providerPlayerId" TEXT,
+      "playerName" TEXT,
+      "isHome" BOOLEAN,
+      "minute" INTEGER,
+      "addedTime" INTEGER,
+      "x" DOUBLE PRECISION,
+      "y" DOUBLE PRECISION,
+      "normalizedX" DOUBLE PRECISION,
+      "normalizedY" DOUBLE PRECISION,
+      "eventType" TEXT,
+      "shotType" TEXT,
+      "bodyPart" TEXT,
+      "situation" TEXT,
+      "isGoal" BOOLEAN NOT NULL DEFAULT false,
+      "isOnTarget" BOOLEAN,
+      "isBlocked" BOOLEAN,
+      "isBigChance" BOOLEAN,
+      "xg" DOUBLE PRECISION,
+      "xgot" DOUBLE PRECISION,
+      "teamName" TEXT,
+      "opponentTeamName" TEXT,
+      "raw" JSONB NOT NULL,
+      "dedupeKey" TEXT NOT NULL,
+      "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      CONSTRAINT "match_shots_pkey" PRIMARY KEY ("id")
+    );
+
+    CREATE UNIQUE INDEX "match_shots_provider_dedupeKey_key" ON match_shots("provider", "dedupeKey");
+    CREATE INDEX "match_shots_fixtureId_idx" ON match_shots("fixtureId");
+    CREATE INDEX "match_shots_teamId_idx" ON match_shots("teamId");
+    CREATE INDEX "match_shots_opponentTeamId_idx" ON match_shots("opponentTeamId");
+    CREATE INDEX "match_shots_playerId_idx" ON match_shots("playerId");
+    CREATE INDEX "match_shots_providerMatchId_idx" ON match_shots("providerMatchId");
+    ALTER TABLE match_shots ADD CONSTRAINT "match_shots_fixtureId_fkey"
+      FOREIGN KEY ("fixtureId") REFERENCES "MacheteFixture"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    ALTER TABLE match_shots ADD CONSTRAINT "match_shots_teamId_fkey"
+      FOREIGN KEY ("teamId") REFERENCES "MacheteTeam"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+    ALTER TABLE match_shots ADD CONSTRAINT "match_shots_opponentTeamId_fkey"
+      FOREIGN KEY ("opponentTeamId") REFERENCES "MacheteTeam"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+    ALTER TABLE match_shots ADD CONSTRAINT "match_shots_playerId_fkey"
+      FOREIGN KEY ("playerId") REFERENCES "MachetePlayer"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+  END IF;
 END $$;
 `)
     .then(() => undefined)
