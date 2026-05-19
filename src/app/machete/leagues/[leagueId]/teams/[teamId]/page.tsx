@@ -6,10 +6,13 @@ import { MachetePlayerTable } from "@/components/machete/MachetePlayerTable";
 import { MacheteStatusBadge } from "@/components/machete/MacheteStatusBadge";
 import { MacheteSyncButton } from "@/components/machete/MacheteSyncButton";
 import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
+import { AutoSubmitForm } from "@/components/players/auto-submit-form";
 import { I18nText } from "@/components/i18n-text";
 import { prisma } from "@/lib/db";
 import { formatDate, formatNumber, formatScore } from "@/lib/format";
 import { macheteLeagueDisplayName } from "@/lib/leagues/display";
+import { getActiveScoringModelForSource } from "@/lib/scoring";
+import { aggregateRecentMachetePlayerStats, parseRecentMatchWindow, recentTeamFixtureIds } from "@/scoring/machete/recent-match-stats";
 
 export const dynamic = "force-dynamic";
 
@@ -18,10 +21,15 @@ type PageProps = {
     leagueId: string;
     teamId: string;
   }>;
+  searchParams?: Promise<{
+    recentMatches?: string;
+  }>;
 };
 
-export default async function MacheteTeamPage({ params }: PageProps) {
+export default async function MacheteTeamPage({ params, searchParams }: PageProps) {
   const { leagueId, teamId } = await params;
+  const resolvedSearchParams = (await searchParams) ?? {};
+  const recentMatches = parseRecentMatchWindow(resolvedSearchParams.recentMatches);
   const team = await prisma.macheteTeam.findUnique({
     where: { id: teamId },
     include: {
@@ -33,6 +41,17 @@ export default async function MacheteTeamPage({ params }: PageProps) {
             where: { leagueId },
             orderBy: { createdAt: "desc" },
             take: 1
+          },
+          matchStats: {
+            include: {
+              fixture: {
+                select: {
+                  id: true,
+                  status: true,
+                  kickoffAt: true
+                }
+              }
+            }
           }
         }
       },
@@ -83,26 +102,32 @@ export default async function MacheteTeamPage({ params }: PageProps) {
   const fixtures = teamFixtures
     .sort((a, b) => (b.kickoffAt?.getTime() ?? 0) - (a.kickoffAt?.getTime() ?? 0))
     .slice(0, 8);
+  const recentFixtureIds = recentMatches ? recentTeamFixtureIds(teamFixtures, recentMatches) : null;
+  const scoringModel = recentMatches ? await getActiveScoringModelForSource("MACHETE") : null;
 
   const players = team.players.map((player) => {
     const snapshot = player.snapshots[0];
+    const recentStats =
+      recentFixtureIds && scoringModel
+        ? aggregateRecentMachetePlayerStats(player.matchStats, player.position, scoringModel, recentFixtureIds)
+        : null;
     return {
       id: player.id,
       name: player.name,
       position: player.position,
       age: player.age,
       nationality: player.nationality,
-      matchesPlayed: snapshot?.matchesPlayed ?? 0,
-      minutesPlayed: snapshot?.minutesPlayed ?? 0,
-      goals: snapshot?.goals ?? 0,
-      assists: snapshot?.assists ?? 0,
-      shotsOnTarget: snapshot?.shotsOnTarget ?? 0,
-      keyPasses: snapshot?.keyPasses ?? 0,
-      tackles: snapshot?.tackles ?? 0,
-      averageRating: snapshot?.averageRating ?? null,
-      fantasyScore: snapshot?.fantasyScore ?? null,
-      scoringScore: snapshot?.scoringScore ?? null,
-      alternativeScore: snapshot?.alternativeScore ?? null
+      matchesPlayed: recentStats?.matchesPlayed ?? snapshot?.matchesPlayed ?? 0,
+      minutesPlayed: recentStats?.minutesPlayed ?? snapshot?.minutesPlayed ?? 0,
+      goals: recentStats?.goals ?? snapshot?.goals ?? 0,
+      assists: recentStats?.assists ?? snapshot?.assists ?? 0,
+      shotsOnTarget: recentStats?.shotsOnTarget ?? snapshot?.shotsOnTarget ?? 0,
+      keyPasses: recentStats?.keyPasses ?? snapshot?.keyPasses ?? 0,
+      tackles: recentStats?.tackles ?? snapshot?.tackles ?? 0,
+      averageRating: recentStats?.averageRating ?? snapshot?.averageRating ?? null,
+      fantasyScore: recentStats?.fantasyScore ?? snapshot?.fantasyScore ?? null,
+      scoringScore: recentStats?.scoringScore ?? snapshot?.scoringScore ?? null,
+      alternativeScore: recentStats?.alternativeScore ?? snapshot?.alternativeScore ?? null
     };
   });
 
@@ -179,6 +204,23 @@ export default async function MacheteTeamPage({ params }: PageProps) {
           <h2 className="text-lg font-semibold text-ink"><I18nText en="Players" ru="Игроки" /></h2>
           <span className="text-sm text-slate-500"><I18nText en="Fantasy score preview" ru="Предпросмотр fantasy-очков" /></span>
         </div>
+        <AutoSubmitForm className="mb-3 flex w-full max-w-xs items-end gap-2">
+          <label className="flex-1 text-sm">
+            <span className="mb-1 block font-medium text-slate-600">Last team matches</span>
+            <input
+              name="recentMatches"
+              type="number"
+              min="1"
+              max="50"
+              defaultValue={resolvedSearchParams.recentMatches ?? ""}
+              className="w-full rounded border border-slate-200 px-3 py-2"
+              placeholder="6"
+            />
+          </label>
+        </AutoSubmitForm>
+        {recentMatches ? (
+          <p className="mb-3 text-sm text-slate-500">Stats and FP are recalculated from the last {recentMatches} played team matches.</p>
+        ) : null}
         <MachetePlayerTable players={players} />
       </section>
 
