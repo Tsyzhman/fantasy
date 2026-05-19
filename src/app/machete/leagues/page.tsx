@@ -3,7 +3,7 @@ import { MacheteShell } from "@/components/machete/MacheteShell";
 import { MacheteSyncButton } from "@/components/machete/MacheteSyncButton";
 import { I18nText } from "@/components/i18n-text";
 import { prisma } from "@/lib/db";
-import { macheteLeagueDisplayName } from "@/lib/leagues/display";
+import { compareMacheteLeagues } from "@/lib/leagues/display";
 
 export const dynamic = "force-dynamic";
 
@@ -14,33 +14,38 @@ export default async function MacheteLeaguesPage() {
       include: {
         teams: {
           include: {
-            players: true
+            _count: {
+              select: {
+                players: true
+              }
+            }
           }
         },
-        fixtures: true
+        fixtures: {
+          select: {
+            status: true
+          }
+        }
       }
     }),
-    prisma.machetePlayerSnapshot.findMany({
-      select: {
-        leagueId: true,
+    prisma.machetePlayerSnapshot.groupBy({
+      by: ["leagueId"],
+      where: {
+        leagueId: {
+          not: null
+        }
+      },
+      _avg: {
         fantasyScore: true
       }
     })
   ]);
 
   const expectedFantasyPointsByLeague = new Map<string, number | null>();
-  for (const league of leagues) {
-    const leagueSnapshots = snapshots.filter((snapshot) => snapshot.leagueId === league.id);
-    expectedFantasyPointsByLeague.set(
-      league.id,
-      leagueSnapshots.length
-        ? leagueSnapshots.reduce((total, snapshot) => total + (snapshot.fantasyScore ?? 0), 0) / leagueSnapshots.length
-        : null
-    );
+  for (const snapshot of snapshots) {
+    if (snapshot.leagueId) expectedFantasyPointsByLeague.set(snapshot.leagueId, snapshot._avg.fantasyScore ?? null);
   }
-  const sortedLeagues = [...leagues].sort((left, right) =>
-    macheteLeagueDisplayName(left).localeCompare(macheteLeagueDisplayName(right))
-  );
+  const sortedLeagues = [...leagues].sort(compareMacheteLeagues);
 
   return (
     <MacheteShell>
@@ -85,7 +90,7 @@ export default async function MacheteLeaguesPage() {
                 status: league.status,
                 lastSyncedAt: league.lastSyncedAt,
                 teamsSynced: league.teams.length,
-                playersSynced: league.teams.reduce((total, team) => total + team.players.length, 0),
+                playersSynced: league.teams.reduce((total, team) => total + team._count.players, 0),
                 fixturesSynced,
                 expectedFantasyPoints: expectedFantasyPointsByLeague.get(league.id) ?? null
               }}

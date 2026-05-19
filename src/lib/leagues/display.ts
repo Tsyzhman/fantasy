@@ -1,3 +1,5 @@
+import { macheteCatalogByFotMobId } from "./machete-catalog";
+
 type LeagueDisplayInput = {
   id?: string | null;
   name?: string | null;
@@ -56,6 +58,34 @@ export function macheteLeagueDisplayName(league: LeagueDisplayInput) {
   return `${country} ${name}`;
 }
 
+const priorityMacheteLeagueFotMobIds = [
+  "47",
+  "87",
+  "54",
+  "55",
+  "53",
+  "63",
+  "71",
+  "48",
+  "57",
+  "42",
+  "73",
+  "77"
+] as const;
+
+const priorityMacheteLeagueRank: Map<string, number> = new Map(priorityMacheteLeagueFotMobIds.map((id, index) => [id, index]));
+
+export function macheteLeagueSortRank(league: LeagueDisplayInput) {
+  const providerLeagueId = league.providerLeagueId ?? null;
+  return providerLeagueId ? priorityMacheteLeagueRank.get(providerLeagueId) ?? priorityMacheteLeagueFotMobIds.length : priorityMacheteLeagueFotMobIds.length;
+}
+
+export function compareMacheteLeagues(left: LeagueDisplayInput, right: LeagueDisplayInput) {
+  const rankDifference = macheteLeagueSortRank(left) - macheteLeagueSortRank(right);
+  if (rankDifference !== 0) return rankDifference;
+  return macheteLeagueDisplayName(left).localeCompare(macheteLeagueDisplayName(right));
+}
+
 function countryAdjective(country: string) {
   const adjectives: Record<string, string> = {
     england: "english",
@@ -70,4 +100,3 @@ function countryAdjective(country: string) {
 
   return adjectives[country] ?? country;
 }
-import { macheteCatalogByFotMobId } from "./machete-catalog";

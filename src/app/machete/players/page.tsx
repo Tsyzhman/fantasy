@@ -6,7 +6,7 @@ import { MachetePlayerTable } from "@/components/machete/MachetePlayerTable";
 import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
 import { AutoSubmitForm } from "@/components/players/auto-submit-form";
 import { prisma } from "@/lib/db";
-import { macheteLeagueDisplayName } from "@/lib/leagues/display";
+import { compareMacheteLeagues, macheteLeagueDisplayName } from "@/lib/leagues/display";
 import { getActiveScoringModelForSource } from "@/lib/scoring";
 import { matchWindowLabel, matchWindowModeValue, parseMacheteMatchWindow, type MacheteMatchWindow } from "@/scoring/machete/match-window";
 import { aggregateRecentMachetePlayerStats, teamFixtureIdsForWindow } from "@/scoring/machete/recent-match-stats";
@@ -22,11 +22,17 @@ type SearchParams = {
   matchWindow?: string;
   customMatches?: string;
   sort?: string;
+  page?: string;
+  pageSize?: string;
 };
 
 type PageProps = {
   searchParams: Promise<SearchParams>;
 };
+
+const ALL_LEAGUES_VALUE = "all";
+const DEFAULT_PAGE_SIZE = 50;
+const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 
 export default async function MachetePlayersPage({ searchParams }: PageProps) {
   const resolvedSearchParams = await searchParams;
@@ -38,30 +44,44 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
       }
     }
   });
-  const sortedLeagues = [...leagues].sort((left, right) =>
-    macheteLeagueDisplayName(left).localeCompare(macheteLeagueDisplayName(right))
-  );
-  const selectedLeagueId = resolvedSearchParams.leagueId ?? "";
-  const teamLeagues = selectedLeagueId ? sortedLeagues.filter((league) => league.id === selectedLeagueId) : sortedLeagues;
+  const sortedLeagues = [...leagues].sort(compareMacheteLeagues);
+  const requestedLeagueId = resolvedSearchParams.leagueId ?? "";
+  const selectedLeagueId =
+    requestedLeagueId === ALL_LEAGUES_VALUE || sortedLeagues.some((league) => league.id === requestedLeagueId) ? requestedLeagueId : "";
+  const teamLeagues =
+    selectedLeagueId === ALL_LEAGUES_VALUE ? sortedLeagues : selectedLeagueId ? sortedLeagues.filter((league) => league.id === selectedLeagueId) : [];
   const selectedTeamId =
-    resolvedSearchParams.teamId && teamLeagues.some((league) => league.teams.some((team) => team.id === resolvedSearchParams.teamId))
+    resolvedSearchParams.teamId &&
+    selectedLeagueId &&
+    teamLeagues.some((league) => league.teams.some((team) => team.id === resolvedSearchParams.teamId))
       ? resolvedSearchParams.teamId
       : "";
   const sort = resolvedSearchParams.sort ?? "fantasyScore";
+  const pageSize = parsePageSize(resolvedSearchParams.pageSize);
+  const requestedPage = parsePositiveInt(resolvedSearchParams.page, 1);
   const matchWindow = parseMacheteMatchWindow({
     mode: resolvedSearchParams.matchWindow,
     customMatches: resolvedSearchParams.customMatches,
     legacyRecentMatches: resolvedSearchParams.recentMatches
   });
 
-  const players = await buildMatchWindowRows({
+  const playersResult = await buildMatchWindowRows({
     selectedLeagueId,
     selectedTeamId,
     position: resolvedSearchParams.position,
     minMinutes: resolvedSearchParams.minMinutes,
     matchWindow,
-    sort
+    sort,
+    page: requestedPage,
+    pageSize
   });
+  const players = playersResult.players;
+  const paginationParams = {
+    ...resolvedSearchParams,
+    leagueId: selectedLeagueId,
+    teamId: selectedTeamId,
+    pageSize: String(pageSize)
+  };
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -93,11 +113,12 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
         </Link>
       </div>
 
-      <AutoSubmitForm className="mt-8 grid grid-cols-1 gap-3 rounded border border-slate-200 bg-white p-4 shadow-soft md:grid-cols-6">
+      <AutoSubmitForm className="mt-8 grid grid-cols-1 gap-3 rounded border border-slate-200 bg-white p-4 shadow-soft md:grid-cols-7">
         <label className="text-sm">
           <span className="mb-1 block font-medium text-slate-600"><I18nText en="League" ru="Лига" /></span>
           <select name="leagueId" defaultValue={selectedLeagueId} className="w-full rounded border border-slate-200 px-3 py-2">
-            <option value="">All leagues / Все лиги</option>
+            <option value="">Choose league / Выберите лигу</option>
+            <option value={ALL_LEAGUES_VALUE}>All loaded leagues / Все загруженные лиги</option>
             {sortedLeagues.map((league) => (
               <option key={league.id} value={league.id}>
                 {macheteLeagueDisplayName(league)}
@@ -107,12 +128,12 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
         </label>
         <label className="text-sm">
           <span className="mb-1 block font-medium text-slate-600"><I18nText en="Team" ru="Команда" /></span>
-          <select name="teamId" defaultValue={selectedTeamId} className="w-full rounded border border-slate-200 px-3 py-2">
+          <select name="teamId" defaultValue={selectedTeamId} disabled={!selectedLeagueId} className="w-full rounded border border-slate-200 px-3 py-2 disabled:bg-slate-100">
             <option value="">All teams / Все команды</option>
             {teamLeagues.flatMap((league) =>
               league.teams.map((team) => (
                 <option key={team.id} value={team.id}>
-                  {selectedLeagueId ? team.name : `${team.name} - ${macheteLeagueDisplayName(league)}`}
+                  {selectedLeagueId && selectedLeagueId !== ALL_LEAGUES_VALUE ? team.name : `${team.name} - ${macheteLeagueDisplayName(league)}`}
                 </option>
               ))
             )}
@@ -169,12 +190,42 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
             placeholder="Custom N"
           />
         </label>
+        <label className="text-sm">
+          <span className="mb-1 block font-medium text-slate-600"><I18nText en="Rows" ru="Строк" /></span>
+          <select name="pageSize" defaultValue={String(pageSize)} className="w-full rounded border border-slate-200 px-3 py-2">
+            {PAGE_SIZE_OPTIONS.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </label>
       </AutoSubmitForm>
 
       <p className="mt-3 text-sm text-slate-500">Stats and FP are recalculated from {matchWindowLabel(matchWindow)}.</p>
 
       <section className="mt-6">
-        <MachetePlayerTable players={players} showContext />
+        {selectedLeagueId ? (
+          <>
+            <div className="mb-3 flex flex-col gap-2 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+              <span>
+                Showing {playersResult.from}-{playersResult.to} of {playersResult.total} players.
+              </span>
+              <PaginationLinks page={playersResult.page} pageCount={playersResult.pageCount} params={paginationParams} />
+            </div>
+            <MachetePlayerTable players={players} showContext />
+            <div className="mt-4 flex justify-end">
+              <PaginationLinks page={playersResult.page} pageCount={playersResult.pageCount} params={paginationParams} />
+            </div>
+          </>
+        ) : (
+          <div className="rounded border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">
+            <I18nText
+              en="Choose a league above to load players. The page no longer loads every FotMob player on first open."
+              ru="Выберите лигу выше, чтобы загрузить игроков. Страница больше не грузит всех игроков FotMob при открытии."
+            />
+          </div>
+        )}
       </section>
     </main>
   );
@@ -186,7 +237,9 @@ async function buildMatchWindowRows({
   position,
   minMinutes,
   matchWindow,
-  sort
+  sort,
+  page,
+  pageSize
 }: {
   selectedLeagueId: string;
   selectedTeamId: string;
@@ -194,9 +247,15 @@ async function buildMatchWindowRows({
   minMinutes?: string;
   matchWindow: MacheteMatchWindow;
   sort: string;
+  page: number;
+  pageSize: number;
 }) {
+  if (!selectedLeagueId) {
+    return emptyPagedPlayers(page, pageSize);
+  }
+
   const teams = await prisma.macheteTeam.findMany({
-    where: selectedTeamId ? { id: selectedTeamId } : selectedLeagueId ? { leagueId: selectedLeagueId } : undefined,
+    where: selectedTeamId ? { id: selectedTeamId } : selectedLeagueId === ALL_LEAGUES_VALUE ? undefined : { leagueId: selectedLeagueId },
     include: {
       league: true,
       fixturesHome: { select: { id: true, status: true, kickoffAt: true } },
@@ -204,6 +263,10 @@ async function buildMatchWindowRows({
     }
   });
   const teamIds = teams.map((team) => team.id);
+  if (teamIds.length === 0) {
+    return emptyPagedPlayers(page, pageSize);
+  }
+
   const playerWhere: Prisma.MachetePlayerWhereInput = teamIds.length
     ? {
         OR: [
@@ -242,6 +305,19 @@ async function buildMatchWindowRows({
       }
     }
   });
+  const sourcePlayersByTeam = new Map<string, typeof sourcePlayers>();
+  for (const player of sourcePlayers) {
+    const seenTeamIds = new Set<string>();
+    if (player.teamId && teamIds.includes(player.teamId)) seenTeamIds.add(player.teamId);
+    for (const stat of player.matchStats) {
+      if (stat.teamId && teamIds.includes(stat.teamId)) seenTeamIds.add(stat.teamId);
+    }
+    for (const teamId of seenTeamIds) {
+      const teamPlayers = sourcePlayersByTeam.get(teamId) ?? [];
+      teamPlayers.push(player);
+      sourcePlayersByTeam.set(teamId, teamPlayers);
+    }
+  }
   const fixtureIdsByTeam = new Map(
     teams.map(
       (team) =>
@@ -254,9 +330,9 @@ async function buildMatchWindowRows({
   const scoringModel = await getActiveScoringModelForSource("MACHETE");
   const minimumMinutes = minMinutes ? Number(minMinutes) : null;
 
-  return teams
+  const rows = teams
     .flatMap((team) =>
-      sourcePlayers.map((player) => {
+      (sourcePlayersByTeam.get(team.id) ?? []).map((player) => {
       const stats = aggregateRecentMachetePlayerStats(
         player.matchStats.filter((stat) => stat.teamId === team.id),
         player.position,
@@ -287,8 +363,9 @@ async function buildMatchWindowRows({
     })
     )
     .filter((player) => (minimumMinutes !== null && Number.isFinite(minimumMinutes) ? player.minutesPlayed >= minimumMinutes : true))
-    .sort((left, right) => compareMacheteRows(left, right, sort))
-    .slice(0, 250);
+    .sort((left, right) => compareMacheteRows(left, right, sort));
+
+  return paginateRows(rows, page, pageSize);
 }
 
 type MacheteSortableRow = {
@@ -305,4 +382,83 @@ function compareMacheteRows(left: MacheteSortableRow, right: MacheteSortableRow,
   if (sort === "scoringScore") return (right.scoringScore ?? -Infinity) - (left.scoringScore ?? -Infinity);
   if (sort === "alternativeScore") return (right.alternativeScore ?? -Infinity) - (left.alternativeScore ?? -Infinity);
   return (right.fantasyScore ?? -Infinity) - (left.fantasyScore ?? -Infinity);
+}
+
+function parsePositiveInt(value: string | undefined, fallback: number) {
+  const parsed = Number.parseInt(value ?? "", 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function parsePageSize(value: string | undefined) {
+  const parsed = parsePositiveInt(value, DEFAULT_PAGE_SIZE);
+  return PAGE_SIZE_OPTIONS.includes(parsed as (typeof PAGE_SIZE_OPTIONS)[number]) ? parsed : DEFAULT_PAGE_SIZE;
+}
+
+function paginateRows<T>(rows: T[], requestedPage: number, pageSize: number) {
+  const total = rows.length;
+  const pageCount = Math.max(1, Math.ceil(total / pageSize));
+  const page = Math.min(Math.max(1, requestedPage), pageCount);
+  const offset = (page - 1) * pageSize;
+  const players = rows.slice(offset, offset + pageSize);
+
+  return {
+    players,
+    total,
+    page,
+    pageSize,
+    pageCount,
+    from: total === 0 ? 0 : offset + 1,
+    to: Math.min(offset + players.length, total)
+  };
+}
+
+function emptyPagedPlayers(page: number, pageSize: number) {
+  return paginateRows([], page, pageSize);
+}
+
+function PaginationLinks({
+  page,
+  pageCount,
+  params
+}: {
+  page: number;
+  pageCount: number;
+  params: SearchParams;
+}) {
+  if (pageCount <= 1) return null;
+
+  return (
+    <div className="flex items-center gap-2">
+      <Link
+        href={machetePlayersHref(params, page - 1)}
+        aria-disabled={page <= 1}
+        className={`rounded border px-3 py-1.5 font-medium ${
+          page <= 1 ? "pointer-events-none border-slate-200 text-slate-300" : "border-slate-200 text-slate-700 hover:bg-slate-50"
+        }`}
+      >
+        Prev
+      </Link>
+      <span className="text-slate-500">
+        {page} / {pageCount}
+      </span>
+      <Link
+        href={machetePlayersHref(params, page + 1)}
+        aria-disabled={page >= pageCount}
+        className={`rounded border px-3 py-1.5 font-medium ${
+          page >= pageCount ? "pointer-events-none border-slate-200 text-slate-300" : "border-slate-200 text-slate-700 hover:bg-slate-50"
+        }`}
+      >
+        Next
+      </Link>
+    </div>
+  );
+}
+
+function machetePlayersHref(params: SearchParams, page: number) {
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value && key !== "page") query.set(key, value);
+  }
+  query.set("page", String(page));
+  return `/machete/players?${query.toString()}`;
 }
