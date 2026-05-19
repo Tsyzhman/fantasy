@@ -42,11 +42,28 @@ export default async function AdminIngestionPage() {
             <h2 className="text-lg font-bold text-ink">Status</h2>
             <p className="mt-1 text-sm text-slate-500">{job ? `${job.job_type} / ${job.status}` : "No ingestion job has run yet."}</p>
           </div>
-          <span className="rounded bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-700">{formatProgress(progress)}</span>
+          <span className="rounded bg-slate-100 px-3 py-1 text-sm font-semibold text-slate-700">Overall {formatProgress(progress.overall)}</span>
         </div>
         <div className="mt-4 h-2 overflow-hidden rounded bg-slate-100">
-          <div className="h-full bg-emerald-500" style={{ width: `${progress}%` }} />
+          <div className="h-full bg-emerald-500" style={{ width: `${progress.overall}%` }} />
         </div>
+        {progress.current_scope !== null ? (
+          <>
+            <div className="mt-4 flex flex-col gap-1 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
+              <span>
+                Current league-season scope
+                {progress.current_scope_index ? ` ${formatNumber(progress.current_scope_index)} / ${formatNumber(progress.total_scopes)}` : ""}
+              </span>
+              <span className="font-medium text-slate-700">
+                {formatNumber(progress.current_scope_processed ?? 0)} / {formatNumber(progress.current_scope_total ?? 0)} matches ·{" "}
+                {formatProgress(progress.current_scope)}
+              </span>
+            </div>
+            <div className="mt-2 h-1.5 overflow-hidden rounded bg-slate-100">
+              <div className="h-full bg-sky-500" style={{ width: `${progress.current_scope}%` }} />
+            </div>
+          </>
+        ) : null}
 
         <dl className="mt-6 grid grid-cols-1 gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
           <Metric label="Total configured leagues" value={formatNumber(status.total_configured_leagues)} />
@@ -90,24 +107,54 @@ function formatIso(value: string | Date | null | undefined) {
 type AdminIngestionJob = NonNullable<Awaited<ReturnType<typeof getIngestionAdminStatus>>["latest_job"]>;
 
 function calculateProgress(job: AdminIngestionJob | null) {
-  if (!job || job.total_scopes <= 0) return 0;
-  if (job.status === "completed") return 100;
+  const empty = {
+    overall: 0,
+    current_scope: null as number | null,
+    current_scope_processed: null as number | null,
+    current_scope_total: null as number | null,
+    current_scope_index: null as number | null,
+    total_scopes: 0
+  };
+  if (!job || job.total_scopes <= 0) return empty;
+  if (job.status === "completed") return { ...empty, overall: 100, total_scopes: job.total_scopes };
 
-  const scopeProgress = job.processed_scopes / job.total_scopes;
-  const processedMatches = job.fetched_matches + job.skipped_matches + job.failed_matches;
-  const hasActiveScope = Boolean(job.current_league_id || job.current_season || job.current_match_id);
-  const discoveredScopes = Math.min(job.total_scopes, job.processed_scopes + (hasActiveScope || job.total_matches > 0 ? 1 : 0));
-  const matchProgress =
-    job.total_matches > 0 && discoveredScopes > 0
-      ? (processedMatches / job.total_matches) * (discoveredScopes / job.total_scopes)
-      : 0;
+  const metadata = metadataRecord(job.metadata);
+  const currentScopeTotal = metadataNumber(metadata, "current_scope_total_matches");
+  const currentScopeProcessed = metadataNumber(metadata, "current_scope_processed_matches");
+  const currentScopeIndex = metadataNumber(metadata, "current_scope_index");
+  const currentScope =
+    currentScopeTotal !== null && currentScopeTotal > 0
+      ? Math.min(100, Math.max(0, ((currentScopeProcessed ?? 0) / currentScopeTotal) * 100))
+      : null;
+  const currentScopeFraction = currentScope !== null ? currentScope / 100 : 0;
+  const overall = ((job.processed_scopes + currentScopeFraction) / job.total_scopes) * 100;
 
-  const progress = Math.max(scopeProgress, matchProgress) * 100;
-  return Math.min(job.status === "running" ? 99.9 : 100, Math.max(0, progress));
+  return {
+    overall: Math.min(job.status === "running" ? 99.9 : 100, Math.max(0, overall)),
+    current_scope: currentScope,
+    current_scope_processed: currentScopeProcessed,
+    current_scope_total: currentScopeTotal,
+    current_scope_index: currentScopeIndex,
+    total_scopes: job.total_scopes
+  };
 }
 
 function formatProgress(progress: number) {
   if (progress <= 0) return "0%";
   if (progress < 10) return `${progress.toFixed(1)}%`;
   return `${Math.round(progress)}%`;
+}
+
+function metadataRecord(value: unknown) {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+}
+
+function metadataNumber(metadata: Record<string, unknown>, key: string) {
+  const value = metadata[key];
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim()) {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return null;
 }

@@ -159,6 +159,16 @@ export function serializeIngestionJob(job: IngestionJob) {
 async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: "initial_backfill" | "incremental_update", scopes: IngestionScope[], client: FotMobClient) {
   const ingestionRepository = new CoreIngestionRepository(prisma);
   const ruleset = await new FantasyPointsRepository(prisma).createRuleset(defaultRuleset);
+  const jobSnapshot = await prisma.ingestionJob.findUnique({
+    where: { id: jobId },
+    select: { metadata: true }
+  });
+  let jobMetadata: Prisma.JsonValue = jobSnapshot?.metadata ?? {};
+  const mergeJobMetadata = (next: Record<string, unknown>) => {
+    const merged = mergeMetadata(jobMetadata, next);
+    jobMetadata = merged as Prisma.JsonValue;
+    return merged;
+  };
   let processedScopes = 0;
 
   try {
@@ -170,7 +180,13 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: "in
         data: {
           currentLeagueId: BigInt(scope.league_id),
           currentSeason: scope.season,
-          currentMatchId: null
+          currentMatchId: null,
+          metadata: mergeJobMetadata({
+            current_scope_index: processedScopes + 1,
+            current_scope_total_matches: null,
+            current_scope_processed_matches: 0,
+            current_scope_status: "syncing_rosters"
+          })
         }
       });
 
@@ -190,9 +206,17 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: "in
       }
 
       const discoveredMatches = await discover_matches_for_scope(client, scope);
+      let currentScopeProcessedMatches = 0;
       await prisma.ingestionJob.update({
         where: { id: jobId },
-        data: { totalMatches: { increment: discoveredMatches.length } }
+        data: {
+          totalMatches: { increment: discoveredMatches.length },
+          metadata: mergeJobMetadata({
+            current_scope_total_matches: discoveredMatches.length,
+            current_scope_processed_matches: currentScopeProcessedMatches,
+            current_scope_status: "ingesting_matches"
+          })
+        }
       });
 
       for (const fixture of discoveredMatches) {
@@ -223,7 +247,12 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: "in
           }
           await prisma.ingestionJob.update({
             where: { id: jobId },
-            data: result.skipped ? { skippedMatches: { increment: 1 } } : { fetchedMatches: { increment: result.fetched ? 1 : 0 } }
+            data: {
+              ...(result.skipped ? { skippedMatches: { increment: 1 } } : { fetchedMatches: { increment: result.fetched ? 1 : 0 } }),
+              metadata: mergeJobMetadata({
+                current_scope_processed_matches: ++currentScopeProcessedMatches
+              })
+            }
           });
           await ingestionRepository.upsertCheckpoint({
             jobType,
@@ -238,7 +267,10 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: "in
             where: { id: jobId },
             data: {
               failedMatches: { increment: 1 },
-              errorMessage: error instanceof Error ? error.message : "Unknown match ingestion error"
+              errorMessage: error instanceof Error ? error.message : "Unknown match ingestion error",
+              metadata: mergeJobMetadata({
+                current_scope_processed_matches: ++currentScopeProcessedMatches
+              })
             }
           });
         }
@@ -249,7 +281,13 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: "in
         where: { id: jobId },
         data: {
           processedScopes,
-          currentMatchId: null
+          currentMatchId: null,
+          metadata: mergeJobMetadata({
+            current_scope_index: null,
+            current_scope_total_matches: null,
+            current_scope_processed_matches: null,
+            current_scope_status: "between_scopes"
+          })
         }
       });
     }
@@ -261,7 +299,13 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: "in
         finishedAt: new Date(),
         currentLeagueId: null,
         currentSeason: null,
-        currentMatchId: null
+        currentMatchId: null,
+        metadata: mergeJobMetadata({
+          current_scope_index: null,
+          current_scope_total_matches: null,
+          current_scope_processed_matches: null,
+          current_scope_status: "completed"
+        })
       }
     });
   } catch (error) {
