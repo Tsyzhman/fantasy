@@ -3,7 +3,9 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { ShotMapExplorer } from "@/components/mixerr/ShotMapExplorer";
+import { AutoSubmitForm } from "@/components/players/auto-submit-form";
 import { prisma } from "@/lib/db";
+import { loadSharedLeagueOptions, loadSharedLeagueTeams, loadSharedTeamPlayers } from "@/machete/shared_read_model";
 import {
   get_player_shots_for_team_window,
   get_shot_map_comparison_for_windows,
@@ -16,6 +18,7 @@ export const dynamic = "force-dynamic";
 
 type PageProps = {
   searchParams?: Promise<{
+    leagueId?: string;
     attackingTeamId?: string;
     defendingTeamId?: string;
     playerId?: string;
@@ -26,32 +29,27 @@ type PageProps = {
 
 export default async function MixerrPage({ searchParams }: PageProps) {
   const resolvedSearchParams = (await searchParams) ?? {};
-  const teams = await prisma.macheteTeam.findMany({
-    where: { provider: "FOTMOB" },
-    include: { league: true },
-    orderBy: [{ league: { name: "asc" } }, { name: "asc" }]
-  });
-
-  const attackingTeamId = resolvedSearchParams.attackingTeamId ?? teams[0]?.id ?? "";
-  const defendingTeamId = resolvedSearchParams.defendingTeamId ?? teams.find((team) => team.id !== attackingTeamId)?.id ?? attackingTeamId;
+  const leagueOptions = await loadSharedLeagueOptions(prisma);
+  const selectedLeague = leagueOptions.find((league) => String(league.leagueId) === resolvedSearchParams.leagueId) ?? leagueOptions[0] ?? null;
+  const teams = selectedLeague ? await loadSharedLeagueTeams(prisma, selectedLeague.leagueId, selectedLeague.season) : [];
+  const attackingTeam = teams.find((team) => String(team.id) === resolvedSearchParams.attackingTeamId) ?? teams[0] ?? null;
+  const defendingTeam = teams.find((team) => String(team.id) === resolvedSearchParams.defendingTeamId) ?? teams.find((team) => team.id !== attackingTeam?.id) ?? attackingTeam;
+  const attackingTeamId = attackingTeam ? String(attackingTeam.id) : "";
+  const defendingTeamId = defendingTeam ? String(defendingTeam.id) : "";
   const matchWindow = parseMacheteMatchWindow({ mode: resolvedSearchParams.matchWindow });
   const defendingMatchWindow = parseMacheteMatchWindow({ mode: resolvedSearchParams.defendingMatchWindow ?? resolvedSearchParams.matchWindow });
-  const players = attackingTeamId
-    ? await prisma.machetePlayer.findMany({
-        where: { teamId: attackingTeamId },
-        orderBy: { name: "asc" },
-        select: { id: true, name: true, position: true }
-      })
-    : [];
-  const playerId = resolvedSearchParams.playerId ?? players[0]?.id ?? "";
+  const players = selectedLeague && attackingTeam ? await loadSharedTeamPlayers(prisma, selectedLeague.leagueId, selectedLeague.season, attackingTeam.id) : [];
+  const player = players.find((candidate) => String(candidate.id) === resolvedSearchParams.playerId) ?? players[0] ?? null;
+  const playerId = player ? String(player.id) : "";
+  const shotContext = selectedLeague ? { leagueId: selectedLeague.leagueId, season: selectedLeague.season } : {};
 
   const [teamShots, concededShots, playerShots, comparison] = attackingTeamId
     ? await Promise.all([
-        get_team_shots_for_window(prisma, attackingTeamId, matchWindow),
-        get_team_conceded_shots_for_window(prisma, attackingTeamId, matchWindow),
-        playerId ? get_player_shots_for_team_window(prisma, playerId, attackingTeamId, matchWindow) : Promise.resolve([]),
+        get_team_shots_for_window(prisma, attackingTeamId, matchWindow, shotContext),
+        get_team_conceded_shots_for_window(prisma, attackingTeamId, matchWindow, shotContext),
+        playerId ? get_player_shots_for_team_window(prisma, playerId, attackingTeamId, matchWindow, shotContext) : Promise.resolve([]),
         defendingTeamId
-          ? get_shot_map_comparison_for_windows(prisma, attackingTeamId, defendingTeamId, matchWindow, defendingMatchWindow)
+          ? get_shot_map_comparison_for_windows(prisma, attackingTeamId, defendingTeamId, matchWindow, defendingMatchWindow, shotContext)
           : Promise.resolve(emptyComparison(attackingTeamId, defendingTeamId))
       ])
     : [[], [], [], emptyComparison(attackingTeamId, defendingTeamId)];
@@ -93,32 +91,42 @@ export default async function MixerrPage({ searchParams }: PageProps) {
         </div>
       </section>
 
-      <form className="mt-6 grid grid-cols-1 gap-3 rounded border border-slate-200 bg-white p-4 shadow-soft md:grid-cols-2 xl:grid-cols-5">
+      <AutoSubmitForm className="mt-6 grid grid-cols-1 gap-3 rounded border border-slate-200 bg-white p-4 shadow-soft md:grid-cols-2 xl:grid-cols-6">
+        <label className="text-sm">
+          <span className="mb-1 block font-medium text-slate-600">League</span>
+          <select name="leagueId" defaultValue={selectedLeague ? String(selectedLeague.leagueId) : ""} className="w-full rounded border border-slate-200 px-3 py-2">
+            {leagueOptions.map((league) => (
+              <option key={`${league.leagueId}:${league.season}`} value={String(league.leagueId)}>
+                {league.displayName} - {league.season}
+              </option>
+            ))}
+          </select>
+        </label>
         <label className="text-sm">
           <span className="mb-1 block font-medium text-slate-600">Team A</span>
-          <select name="attackingTeamId" defaultValue={attackingTeamId} className="w-full rounded border border-slate-200 px-3 py-2">
+          <select name="attackingTeamId" defaultValue={attackingTeamId} disabled={!selectedLeague} className="w-full rounded border border-slate-200 px-3 py-2 disabled:bg-slate-100">
             {teams.map((team) => (
-              <option key={team.id} value={team.id}>
-                {team.name} - {team.league.name}
+              <option key={String(team.id)} value={String(team.id)}>
+                {team.name}
               </option>
             ))}
           </select>
         </label>
         <label className="text-sm">
           <span className="mb-1 block font-medium text-slate-600">Team B</span>
-          <select name="defendingTeamId" defaultValue={defendingTeamId} className="w-full rounded border border-slate-200 px-3 py-2">
+          <select name="defendingTeamId" defaultValue={defendingTeamId} disabled={!selectedLeague} className="w-full rounded border border-slate-200 px-3 py-2 disabled:bg-slate-100">
             {teams.map((team) => (
-              <option key={team.id} value={team.id}>
-                {team.name} - {team.league.name}
+              <option key={String(team.id)} value={String(team.id)}>
+                {team.name}
               </option>
             ))}
           </select>
         </label>
         <label className="text-sm">
           <span className="mb-1 block font-medium text-slate-600">Player</span>
-          <select name="playerId" defaultValue={playerId} className="w-full rounded border border-slate-200 px-3 py-2">
+          <select name="playerId" defaultValue={playerId} disabled={!attackingTeam} className="w-full rounded border border-slate-200 px-3 py-2 disabled:bg-slate-100">
             {players.map((player) => (
-              <option key={player.id} value={player.id}>
+              <option key={String(player.id)} value={String(player.id)}>
                 {player.name}{player.position ? ` - ${player.position}` : ""}
               </option>
             ))}
@@ -132,20 +140,15 @@ export default async function MixerrPage({ searchParams }: PageProps) {
         </label>
         <label className="text-sm">
           <span className="mb-1 block font-medium text-slate-600">Team B matches</span>
-          <div className="flex gap-2">
-            <select name="defendingMatchWindow" defaultValue={matchWindowModeValue(defendingMatchWindow)} className="min-w-0 flex-1 rounded border border-slate-200 px-3 py-2">
-              <MatchWindowOptions />
-            </select>
-            <button type="submit" className="rounded bg-ink px-3 py-2 font-semibold text-white hover:bg-slate-700">
-              Apply
-            </button>
-          </div>
+          <select name="defendingMatchWindow" defaultValue={matchWindowModeValue(defendingMatchWindow)} className="w-full rounded border border-slate-200 px-3 py-2">
+            <MatchWindowOptions />
+          </select>
         </label>
-      </form>
+      </AutoSubmitForm>
 
-      {teams.length === 0 ? (
+      {leagueOptions.length === 0 || teams.length === 0 ? (
         <section className="mt-6 rounded border border-slate-200 bg-white p-8 text-center text-sm text-slate-500 shadow-soft">
-          No FotMob teams are synced yet. Ask an administrator to run the shared FotMob ingestion.
+          No shared FotMob league rosters are synced yet. Run the safe DB update, then let the 03:00 incremental ingestion populate league seasons, teams and players.
         </section>
       ) : (
         <ShotMapExplorer

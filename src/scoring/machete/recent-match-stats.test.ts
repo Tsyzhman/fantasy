@@ -78,6 +78,7 @@ test("team fixture ids support current, previous, and all season windows", () =>
 
 test("previous season labels support domestic seasons and World Cup tournaments", () => {
   assert.equal(previousSeasonLabel("2025/26", "48"), "2024/25");
+  assert.equal(previousSeasonLabel("2025/2026", "48"), "2024/2025");
   assert.equal(previousSeasonLabel("2025/26", "77"), "2022");
   assert.deepEqual(fixtureSyncSeasons("2025/26", "48"), ["2025/26", "2024/25"]);
   assert.deepEqual(fixtureSyncSeasons("2025/26", "77"), ["2025/26", "2022"]);

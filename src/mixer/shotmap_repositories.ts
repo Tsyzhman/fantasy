@@ -3,8 +3,7 @@ import { Prisma, type PrismaClient } from "@prisma/client";
 import { CoreMatchRepository, CoreShotRepository } from "@/core_data/repositories";
 import { sourceIdToBigInt } from "@/core_data/models";
 import { buildSideZoneSummary } from "@/providers/fotmob/shots";
-import type { MacheteMatchWindow } from "@/scoring/machete/match-window";
-import { teamFixtureIdsForWindow } from "@/scoring/machete/recent-match-stats";
+import { matchWindowSeasonLabel, type MacheteMatchWindow } from "@/scoring/machete/match-window";
 
 export type ShotMapShot = {
   id: string;
@@ -139,24 +138,30 @@ export async function get_player_shots_for_team_window(
   prisma: PrismaClient,
   player_id: string | number | bigint,
   team_id: string | number | bigint,
-  window: MacheteMatchWindow
+  window: MacheteMatchWindow,
+  context: ShotWindowContext = {}
 ) {
-  const team = await resolveTeamReference(prisma, team_id);
+  const team = await resolveTeamReference(prisma, team_id, context);
   const player = await resolvePlayerReference(prisma, player_id);
   const matchIds = await teamMatchIdsForShotWindow(prisma, team, window);
   const shots = await new CoreShotRepository(prisma).findPlayerShotsForTeamMatches(player.coreId, team.coreId, matchIds);
   return shots.map(serializeShot);
 }
 
-export async function get_team_shots_for_window(prisma: PrismaClient, team_id: string | number | bigint, window: MacheteMatchWindow) {
-  const team = await resolveTeamReference(prisma, team_id);
+export async function get_team_shots_for_window(prisma: PrismaClient, team_id: string | number | bigint, window: MacheteMatchWindow, context: ShotWindowContext = {}) {
+  const team = await resolveTeamReference(prisma, team_id, context);
   const matchIds = await teamMatchIdsForShotWindow(prisma, team, window);
   const shots = await new CoreShotRepository(prisma).findTeamShotsForMatches(team.coreId, matchIds);
   return shots.map(serializeShot);
 }
 
-export async function get_team_conceded_shots_for_window(prisma: PrismaClient, team_id: string | number | bigint, window: MacheteMatchWindow) {
-  const team = await resolveTeamReference(prisma, team_id);
+export async function get_team_conceded_shots_for_window(
+  prisma: PrismaClient,
+  team_id: string | number | bigint,
+  window: MacheteMatchWindow,
+  context: ShotWindowContext = {}
+) {
+  const team = await resolveTeamReference(prisma, team_id, context);
   const matchIds = await teamMatchIdsForShotWindow(prisma, team, window);
   const shots = await new CoreShotRepository(prisma).findTeamConcededShotsForMatches(team.coreId, matchIds);
   return shots.map(serializeShot);
@@ -167,10 +172,11 @@ export async function get_shot_map_comparison_for_windows(
   attacking_team_id: string | number | bigint,
   defending_team_id: string | number | bigint,
   attacking_window: MacheteMatchWindow,
-  defending_window: MacheteMatchWindow
+  defending_window: MacheteMatchWindow,
+  context: ShotWindowContext = {}
 ) {
-  const attacking_shots = await get_team_shots_for_window(prisma, attacking_team_id, attacking_window);
-  const defending_conceded_shots = await get_team_conceded_shots_for_window(prisma, defending_team_id, defending_window);
+  const attacking_shots = await get_team_shots_for_window(prisma, attacking_team_id, attacking_window, context);
+  const defending_conceded_shots = await get_team_conceded_shots_for_window(prisma, defending_team_id, defending_window, context);
 
   return buildShotMapComparisonFromShots(String(attacking_team_id), String(defending_team_id), attacking_shots, defending_conceded_shots);
 }
@@ -280,11 +286,17 @@ export function buildShotMapComparisonFromShots(
 
 type TeamReference = {
   coreId: bigint;
+  leagueId: bigint | null;
   season: string | null;
   providerLeagueId: string | null;
 };
 
-async function resolveTeamReference(prisma: PrismaClient, teamId: string | number | bigint): Promise<TeamReference> {
+type ShotWindowContext = {
+  leagueId?: string | number | bigint | null;
+  season?: string | null;
+};
+
+async function resolveTeamReference(prisma: PrismaClient, teamId: string | number | bigint, context: ShotWindowContext = {}): Promise<TeamReference> {
   const raw = String(teamId);
   const macheteTeam = await prisma.macheteTeam.findUnique({
     where: { id: raw },
@@ -301,10 +313,13 @@ async function resolveTeamReference(prisma: PrismaClient, teamId: string | numbe
 
   const coreId = sourceIdToBigInt(macheteTeam?.providerTeamId ?? raw, "team");
   if (!coreId) throw new Error(`Cannot resolve team id for shot map: ${raw}`);
+  const contextLeagueId = sourceIdToBigInt(context.leagueId, "league");
+  const macheteLeagueId = sourceIdToBigInt(macheteTeam?.league.providerLeagueId, "league");
 
   return {
     coreId,
-    season: macheteTeam?.league.season ?? null,
+    leagueId: contextLeagueId ?? macheteLeagueId,
+    season: context.season ?? macheteTeam?.league.season ?? null,
     providerLeagueId: macheteTeam?.league.providerLeagueId ?? null
   };
 }
@@ -321,35 +336,24 @@ async function resolvePlayerReference(prisma: PrismaClient, playerId: string | n
 }
 
 async function teamMatchIdsForShotWindow(prisma: PrismaClient, team: TeamReference, window: MacheteMatchWindow) {
-  if (window.kind === "last") {
-    return new CoreMatchRepository(prisma).latestTeamMatchIds(team.coreId, window.matches);
-  }
+  const season = window.kind === "season" ? matchWindowSeasonLabel(team.season, window.offset, team.providerLeagueId) : window.kind === "last" ? team.season : null;
 
   const matches = await prisma.coreMatch.findMany({
     where: {
       finished: true,
+      ...(team.leagueId ? { leagueId: team.leagueId } : {}),
+      ...(season ? { season } : {}),
       OR: [{ homeTeamId: team.coreId }, { awayTeamId: team.coreId }]
     },
     orderBy: { matchDate: "desc" },
+    take: window.kind === "last" ? window.matches : undefined,
     select: {
       id: true,
-      status: true,
-      matchDate: true
+      status: true
     }
   });
 
-  const matchIds = teamFixtureIdsForWindow(
-    matches.map((match) => ({
-      id: String(match.id),
-      status: match.status,
-      kickoffAt: match.matchDate
-    })),
-    window,
-    team.season,
-    team.providerLeagueId
-  );
-
-  return [...matchIds].map((id) => BigInt(id));
+  return matches.map((match) => match.id);
 }
 
 function serializeShot(shot: ShotRecord): ShotMapShot {

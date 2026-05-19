@@ -326,21 +326,19 @@ async function isCancelled(prisma: PrismaClient, jobId: string) {
 async function buildIncrementalScopes(prisma: PrismaClient, client: FotMobClient) {
   const configs = enabledLeagueIngestionConfigs();
   const baseScopes = scopesForIncrementalUpdate(configs);
-  const macheteLeagues = await prisma.macheteLeague.findMany({
+  const sharedLeagueSeasons = await prisma.leagueSeason.findMany({
     where: {
-      provider: "FOTMOB",
-      providerLeagueId: { not: null },
-      season: { not: null }
+      source: "fotmob"
     },
     select: {
-      providerLeagueId: true,
+      leagueId: true,
       season: true
     }
   });
   const seasonsByLeagueId = new Map<number, string>();
-  for (const league of macheteLeagues) {
-    const leagueId = Number(league.providerLeagueId);
-    if (!Number.isFinite(leagueId) || !league.season) continue;
+  for (const league of sharedLeagueSeasons) {
+    const leagueId = Number(league.leagueId);
+    if (!Number.isFinite(leagueId)) continue;
     seasonsByLeagueId.set(leagueId, latestSeason(seasonsByLeagueId.get(leagueId), league.season));
   }
 

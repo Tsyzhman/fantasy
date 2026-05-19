@@ -56,7 +56,7 @@ export function MachetePlayerTable({ players, showContext = false }: { players: 
             {players.length === 0 ? (
               <tr>
                 <td colSpan={3} className="px-4 py-10 text-center text-slate-500">
-                  <I18nText en="No Machete player snapshots yet." ru="Пока нет снапшотов игроков Machete." />
+                  <I18nText en="No Machete player rows yet." ru="Пока нет строк игроков Machete." />
                 </td>
               </tr>
             ) : null}
@@ -104,7 +104,7 @@ export function MachetePlayerTable({ players, showContext = false }: { players: 
             {players.length === 0 ? (
               <tr>
                 <td colSpan={showContext ? 10 : 9} className="px-4 py-10 text-center text-slate-500">
-                  <I18nText en="No Machete player snapshots yet." ru="Пока нет снапшотов игроков Machete." />
+                  <I18nText en="No Machete player rows yet." ru="Пока нет строк игроков Machete." />
                 </td>
               </tr>
             ) : null}
@@ -166,7 +166,7 @@ export function MachetePlayerTable({ players, showContext = false }: { players: 
             {players.length === 0 ? (
               <tr>
                 <td colSpan={columnsCount} className="px-4 py-10 text-center text-slate-500">
-                  <I18nText en="No Machete player snapshots yet." ru="Пока нет снапшотов игроков Machete." />
+                  <I18nText en="No Machete player rows yet." ru="Пока нет строк игроков Machete." />
                 </td>
               </tr>
             ) : null}

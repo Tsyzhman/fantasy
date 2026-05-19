@@ -8,9 +8,9 @@ import { MacheteTeamCard } from "@/components/machete/MacheteTeamCard";
 import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
 import { prisma } from "@/lib/db";
 import { formatDate, formatNumber, formatScore } from "@/lib/format";
-import { macheteCatalogByFotMobId } from "@/lib/leagues/machete-catalog";
-import { leagueSubtitle, macheteLeagueDisplayName } from "@/lib/leagues/display";
+import { leagueSubtitle } from "@/lib/leagues/display";
 import { leagueFlag } from "@/lib/leagues/flags";
+import { loadSharedLeagueSeason, loadSharedLeagueTeams } from "@/machete/shared_read_model";
 
 export const dynamic = "force-dynamic";
 
@@ -22,60 +22,94 @@ type PageProps = {
 
 export default async function MacheteLeaguePage({ params }: PageProps) {
   const { leagueId } = await params;
-  const league = await prisma.macheteLeague.findUnique({
-    where: { id: leagueId },
-    include: {
-      teams: {
-        orderBy: { name: "asc" },
-        include: {
-          players: {
-            include: {
-              snapshots: {
-                where: { leagueId },
-                orderBy: { createdAt: "desc" },
-                take: 1
-              }
-            }
-          },
-          fixturesHome: true,
-          fixturesAway: true
-        }
-      },
-      fixtures: true
-    }
-  });
-
+  const league = await loadSharedLeagueSeason(prisma, leagueId);
   if (!league) notFound();
 
-  const fixtures = league.fixtures.filter(isMatchFixture);
-  const playersCount = league.teams.reduce((total, team) => total + team.players.length, 0);
-  const leagueFantasyScores = league.teams.flatMap((team) =>
-    team.players
-      .map((player) => player.snapshots[0]?.fantasyScore)
-      .filter((score): score is number => typeof score === "number")
+  const [teams, fixturesCount, fantasyAggregate] = await Promise.all([
+    loadSharedLeagueTeams(prisma, league.leagueId, league.season),
+    prisma.coreMatch.count({
+      where: {
+        leagueId: league.leagueId,
+        season: league.season
+      }
+    }),
+    prisma.fantasyPoint.aggregate({
+      where: {
+        match: {
+          leagueId: league.leagueId,
+          season: league.season
+        }
+      },
+      _avg: {
+        points: true
+      }
+    })
+  ]);
+  const teamCards = await Promise.all(
+    teams.map(async (team) => {
+      const [playersSynced, teamFixtures, teamFantasy] = await Promise.all([
+        prisma.teamPlayerSeason.count({
+          where: {
+            leagueId: league.leagueId,
+            season: league.season,
+            teamId: team.id,
+            active: true
+          }
+        }),
+        prisma.coreMatch.count({
+          where: {
+            leagueId: league.leagueId,
+            season: league.season,
+            OR: [{ homeTeamId: team.id }, { awayTeamId: team.id }]
+          }
+        }),
+        prisma.fantasyPoint.aggregate({
+          where: {
+            teamId: team.id,
+            match: {
+              leagueId: league.leagueId,
+              season: league.season
+            }
+          },
+          _avg: {
+            points: true
+          }
+        })
+      ]);
+
+      return {
+        id: String(team.id),
+        leagueId: String(league.leagueId),
+        name: team.name,
+        country: team.country,
+        leagueName: league.displayName,
+        providerTeamId: team.rawRef ?? String(team.id),
+        logoUrl: null,
+        status: playersSynced > 0 || teamFixtures > 0 ? "SYNCED" : "NOT_CONFIGURED",
+        playersSynced,
+        fixturesSynced: teamFixtures,
+        expectedFantasyPoints: teamFantasy._avg.points ?? null,
+        lastSyncedAt: league.updatedAt
+      };
+    })
   );
-  const expectedFantasyPoints = leagueFantasyScores.length
-    ? leagueFantasyScores.reduce((total, score) => total + score, 0) / leagueFantasyScores.length
-    : null;
-  const seedLeague = macheteCatalogByFotMobId(league.providerLeagueId);
+
   const flagInput = {
-    id: seedLeague?.id ?? league.id,
+    id: league.providerLeagueId,
     name: league.name,
-    code: seedLeague?.code,
-    country: seedLeague?.country ?? league.country
+    country: league.country
   };
-  const displayName = macheteLeagueDisplayName({ ...flagInput, providerLeagueId: league.providerLeagueId });
 
   return (
     <MacheteShell>
       <div className="mt-6">
         <PageBreadcrumbs
           backHref="/machete/leagues"
-          backLabel={<I18nText en="Back to leagues" ru="Назад к лигам" />}
+          backLabel={<I18nText en="Back to leagues" ru="РќР°Р·Р°Рґ Рє Р»РёРіР°Рј" />}
           items={[
             { label: "Machete", href: "/machete/leagues" },
-            { label: <I18nText en="Leagues" ru="Лиги" />, href: "/machete/leagues" },
-            { label: displayName, href: `/machete/leagues/${league.id}` }
+            { label: <I18nText en="Leagues" ru="Р›РёРіРё" />, href: "/machete/leagues" },
+            { label: league.displayName, href: `/machete/leagues/${league.leagueId}` }
           ]}
         />
       </div>
@@ -89,59 +123,36 @@ export default async function MacheteLeaguePage({ params }: PageProps) {
                   {leagueFlag(flagInput)}
                 </span>
               </div>
-              <h2 className="text-2xl font-bold text-ink">{displayName}</h2>
-              <MacheteStatusBadge status={league.status} />
+              <h2 className="text-2xl font-bold text-ink">{league.displayName}</h2>
+              <MacheteStatusBadge status={teams.length > 0 ? "SYNCED" : "NOT_CONFIGURED"} />
             </div>
             <p className="mt-2 text-sm text-slate-600">
               {[leagueSubtitle(flagInput, league.season), "Provider FOTMOB"].filter(Boolean).join(" / ")}
             </p>
           </div>
           <dl className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-5">
-            <Metric label={<I18nText en="Teams" ru="Команды" />} value={formatNumber(league.teams.length)} />
-            <Metric label={<I18nText en="Players" ru="Игроки" />} value={formatNumber(playersCount)} />
-            <Metric label={<I18nText en="Fixtures" ru="Матчи" />} value={formatNumber(fixtures.length)} />
-            <Metric label={<I18nText en="Last sync" ru="Последняя синхронизация" />} value={formatDate(league.lastSyncedAt)} />
-            <Metric label="Expected FP" value={formatScore(expectedFantasyPoints)} accent />
+            <Metric label={<I18nText en="Teams" ru="РљРѕРјР°РЅРґС‹" />} value={formatNumber(teams.length)} />
+            <Metric
+              label={<I18nText en="Players" ru="РРіСЂРѕРєРё" />}
+              value={formatNumber(teamCards.reduce((total, team) => total + team.playersSynced, 0))}
+            />
+            <Metric label={<I18nText en="Fixtures" ru="РњР°С‚С‡Рё" />} value={formatNumber(fixturesCount)} />
+            <Metric label={<I18nText en="Last sync" ru="РџРѕСЃР»РµРґРЅСЏСЏ СЃРёРЅС…СЂРѕРЅРёР·Р°С†РёСЏ" />} value={formatDate(league.updatedAt)} />
+            <Metric label="Expected FP" value={formatScore(fantasyAggregate._avg.points ?? null)} accent />
           </dl>
         </div>
       </section>
 
       <section className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {league.teams.map((team) => {
-          const teamFixtures = [...team.fixturesHome, ...team.fixturesAway].filter(isMatchFixture);
-          const teamScores = team.players
-            .map((player) => player.snapshots[0]?.fantasyScore)
-            .filter((score): score is number => typeof score === "number");
-          const teamExpectedFantasyPoints = teamScores.length
-            ? teamScores.reduce((total, score) => total + score, 0) / teamScores.length
-            : null;
-
-          return (
-            <MacheteTeamCard
-              key={team.id}
-              team={{
-                id: team.id,
-                leagueId: league.id,
-                name: team.name,
-                country: team.country,
-                leagueName: displayName,
-                providerTeamId: team.providerTeamId,
-                logoUrl: team.logoUrl,
-                status: team.status,
-                playersSynced: team.players.length,
-                fixturesSynced: teamFixtures.length,
-                expectedFantasyPoints: teamExpectedFantasyPoints,
-                lastSyncedAt: team.lastSyncedAt
-              }}
-            />
-          );
-        })}
+        {teamCards.map((team) => (
+          <MacheteTeamCard key={team.id} team={team} />
+        ))}
       </section>
-      {league.teams.length === 0 ? (
+      {teams.length === 0 ? (
         <div className="mt-6 rounded border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">
           <I18nText
             en="No teams synced yet. Ask an administrator to run the shared FotMob ingestion."
-            ru="Команды еще не синхронизированы. Попросите администратора запустить общую загрузку FotMob."
+            ru="РљРѕРјР°РЅРґС‹ РµС‰Рµ РЅРµ СЃРёРЅС…СЂРѕРЅРёР·РёСЂРѕРІР°РЅС‹. РџРѕРїСЂРѕСЃРёС‚Рµ Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂР° Р·Р°РїСѓСЃС‚РёС‚СЊ РѕР±С‰СѓСЋ Р·Р°РіСЂСѓР·РєСѓ FotMob."
           />
         </div>
       ) : null}
@@ -156,8 +167,4 @@ function Metric({ label, value, accent = false }: { label: ReactNode; value: str
       <dd className={`mt-1 font-semibold ${accent ? "text-emerald-700" : "text-ink"}`}>{value}</dd>
     </div>
   );
-}
-
-function isMatchFixture(fixture: { status: string | null }) {
-  return fixture.status !== "SEASON_AGGREGATE";
 }

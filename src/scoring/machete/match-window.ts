@@ -62,7 +62,7 @@ export function previousSeasonLabel(season: string | null | undefined, providerL
   const splitSeason = normalized.match(/^(\d{4})\/(\d{2}|\d{4})$/);
   if (splitSeason) {
     const startYear = Number(splitSeason[1]);
-    return `${startYear - 1}/${String(startYear).slice(-2)}`;
+    return `${startYear - 1}/${splitSeason[2].length === 4 ? String(startYear) : String(startYear).slice(-2)}`;
   }
 
   const yearSeason = normalized.match(/^(\d{4})$/);

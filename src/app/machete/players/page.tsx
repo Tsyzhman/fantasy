@@ -1,4 +1,3 @@
-import { Prisma } from "@prisma/client";
 import Link from "next/link";
 
 import { I18nText } from "@/components/i18n-text";
@@ -6,10 +5,17 @@ import { MachetePlayerTable } from "@/components/machete/MachetePlayerTable";
 import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
 import { AutoSubmitForm } from "@/components/players/auto-submit-form";
 import { prisma } from "@/lib/db";
-import { compareMacheteLeagues, macheteLeagueDisplayName } from "@/lib/leagues/display";
-import { getActiveScoringModelForSource } from "@/lib/scoring";
 import { matchWindowLabel, matchWindowModeValue, parseMacheteMatchWindow, type MacheteMatchWindow } from "@/scoring/machete/match-window";
-import { aggregateRecentMachetePlayerStats, teamFixtureIdsForWindow } from "@/scoring/machete/recent-match-stats";
+import {
+  loadSharedLeagueOptions,
+  loadSharedLeagueTeams,
+  loadSharedMachetePlayerRows,
+  parseSharedBigInt,
+  sortSharedMacheteRows,
+  type SharedLeagueSeasonOption,
+  type SharedPlayerRowsScope,
+  type SharedTeamOption
+} from "@/machete/shared_read_model";
 
 export const dynamic = "force-dynamic";
 
@@ -36,24 +42,15 @@ const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
 
 export default async function MachetePlayersPage({ searchParams }: PageProps) {
   const resolvedSearchParams = await searchParams;
-  const leagues = await prisma.macheteLeague.findMany({
-    orderBy: { name: "asc" },
-    include: {
-      teams: {
-        orderBy: { name: "asc" }
-      }
-    }
-  });
-  const sortedLeagues = [...leagues].sort(compareMacheteLeagues);
+  const sortedLeagues = await loadSharedLeagueOptions(prisma);
   const requestedLeagueId = resolvedSearchParams.leagueId ?? "";
   const selectedLeagueId =
-    requestedLeagueId === ALL_LEAGUES_VALUE || sortedLeagues.some((league) => league.id === requestedLeagueId) ? requestedLeagueId : "";
-  const teamLeagues =
-    selectedLeagueId === ALL_LEAGUES_VALUE ? sortedLeagues : selectedLeagueId ? sortedLeagues.filter((league) => league.id === selectedLeagueId) : [];
+    requestedLeagueId === ALL_LEAGUES_VALUE || sortedLeagues.some((league) => String(league.leagueId) === requestedLeagueId) ? requestedLeagueId : "";
+  const teamLeagues = await loadTeamLeagueOptions(sortedLeagues, selectedLeagueId);
   const selectedTeamId =
     resolvedSearchParams.teamId &&
     selectedLeagueId &&
-    teamLeagues.some((league) => league.teams.some((team) => team.id === resolvedSearchParams.teamId))
+    teamLeagues.some((league) => league.teams.some((team) => String(team.id) === resolvedSearchParams.teamId))
       ? resolvedSearchParams.teamId
       : "";
   const sort = resolvedSearchParams.sort ?? "fantasyScore";
@@ -103,8 +100,8 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
           </h1>
           <p className="mt-2 max-w-2xl text-sm text-slate-600">
             <I18nText
-              en="Separate Machete snapshots with their own Expected FP, Actual FP and Alt FP values."
-              ru="Отдельные снапшоты Machete со своими Expected FP, Реальные FP и Alt FP."
+              en="Shared FotMob rosters with Expected FP, Actual FP and Alt FP recalculated from normalized match stats."
+              ru="Общие составы FotMob с Expected FP, Реальными FP и Alt FP, пересчитанными из нормализованной статистики матчей."
             />
           </p>
         </div>
@@ -120,8 +117,8 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
             <option value="">Choose league / Выберите лигу</option>
             <option value={ALL_LEAGUES_VALUE}>All loaded leagues / Все загруженные лиги</option>
             {sortedLeagues.map((league) => (
-              <option key={league.id} value={league.id}>
-                {macheteLeagueDisplayName(league)}
+              <option key={`${league.leagueId}:${league.season}`} value={String(league.leagueId)}>
+                {league.displayName} - {league.season}
               </option>
             ))}
           </select>
@@ -132,8 +129,8 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
             <option value="">All teams / Все команды</option>
             {teamLeagues.flatMap((league) =>
               league.teams.map((team) => (
-                <option key={team.id} value={team.id}>
-                  {selectedLeagueId && selectedLeagueId !== ALL_LEAGUES_VALUE ? team.name : `${team.name} - ${macheteLeagueDisplayName(league)}`}
+                <option key={`${league.leagueId}:${league.season}:${team.id}`} value={String(team.id)}>
+                  {selectedLeagueId && selectedLeagueId !== ALL_LEAGUES_VALUE ? team.name : `${team.name} - ${league.displayName}`}
                 </option>
               ))
             )}
@@ -254,134 +251,43 @@ async function buildMatchWindowRows({
     return emptyPagedPlayers(page, pageSize);
   }
 
-  const teams = await prisma.macheteTeam.findMany({
-    where: selectedTeamId ? { id: selectedTeamId } : selectedLeagueId === ALL_LEAGUES_VALUE ? undefined : { leagueId: selectedLeagueId },
-    include: {
-      league: true,
-      fixturesHome: { select: { id: true, status: true, kickoffAt: true } },
-      fixturesAway: { select: { id: true, status: true, kickoffAt: true } }
-    }
-  });
-  const teamIds = teams.map((team) => team.id);
-  if (teamIds.length === 0) {
-    return emptyPagedPlayers(page, pageSize);
-  }
-
-  const playerWhere: Prisma.MachetePlayerWhereInput = teamIds.length
-    ? {
-        OR: [
-          { teamId: { in: teamIds } },
-          {
-            matchStats: {
-              some: {
-                teamId: { in: teamIds }
-              }
-            }
-          }
-        ]
-      }
-    : {};
-  if (position) playerWhere.position = { contains: position, mode: "insensitive" };
-
-  const sourcePlayers = await prisma.machetePlayer.findMany({
-    where: playerWhere,
-    include: {
-      team: {
-        include: {
-          league: true
-        }
-      },
-      matchStats: {
-        where: teamIds.length ? { teamId: { in: teamIds } } : undefined,
-        include: {
-          fixture: {
-            select: {
-              id: true,
-              status: true,
-              kickoffAt: true
-            }
-          }
-        }
-      }
-    }
-  });
-  const sourcePlayersByTeam = new Map<string, typeof sourcePlayers>();
-  for (const player of sourcePlayers) {
-    const seenTeamIds = new Set<string>();
-    if (player.teamId && teamIds.includes(player.teamId)) seenTeamIds.add(player.teamId);
-    for (const stat of player.matchStats) {
-      if (stat.teamId && teamIds.includes(stat.teamId)) seenTeamIds.add(stat.teamId);
-    }
-    for (const teamId of seenTeamIds) {
-      const teamPlayers = sourcePlayersByTeam.get(teamId) ?? [];
-      teamPlayers.push(player);
-      sourcePlayersByTeam.set(teamId, teamPlayers);
-    }
-  }
-  const fixtureIdsByTeam = new Map(
-    teams.map(
-      (team) =>
-        [
-          team.id,
-          teamFixtureIdsForWindow([...team.fixturesHome, ...team.fixturesAway], matchWindow, team.league.season, team.league.providerLeagueId)
-        ] as const
-    )
+  const scopes = await buildPlayerScopes(selectedLeagueId, selectedTeamId);
+  const rows = sortSharedMacheteRows(
+    await loadSharedMachetePlayerRows(prisma, {
+      scopes,
+      position,
+      minMinutes,
+      matchWindow
+    }),
+    sort
   );
-  const scoringModel = await getActiveScoringModelForSource("MACHETE");
-  const minimumMinutes = minMinutes ? Number(minMinutes) : null;
-
-  const rows = teams
-    .flatMap((team) =>
-      (sourcePlayersByTeam.get(team.id) ?? []).map((player) => {
-      const stats = aggregateRecentMachetePlayerStats(
-        player.matchStats.filter((stat) => stat.teamId === team.id),
-        player.position,
-        scoringModel,
-        fixtureIdsByTeam.get(team.id) ?? new Set<string>()
-      );
-
-      return {
-        id: `${player.id}:${team.id}`,
-        name: player.name,
-        teamName: team.name,
-        leagueName: macheteLeagueDisplayName(team.league),
-        position: player.position,
-        age: player.age,
-        nationality: player.nationality,
-        matchesPlayed: stats.matchesPlayed,
-        minutesPlayed: stats.minutesPlayed,
-        goals: stats.goals,
-        assists: stats.assists,
-        shotsOnTarget: stats.shotsOnTarget,
-        keyPasses: stats.keyPasses,
-        tackles: stats.tackles,
-        averageRating: stats.averageRating,
-        fantasyScore: stats.fantasyScore,
-        scoringScore: stats.scoringScore,
-        alternativeScore: stats.alternativeScore
-      };
-    })
-    )
-    .filter((player) => (minimumMinutes !== null && Number.isFinite(minimumMinutes) ? player.minutesPlayed >= minimumMinutes : true))
-    .sort((left, right) => compareMacheteRows(left, right, sort));
 
   return paginateRows(rows, page, pageSize);
 }
 
-type MacheteSortableRow = {
-  name: string;
-  minutesPlayed: number;
-  fantasyScore: number | null;
-  scoringScore?: number | null;
-  alternativeScore?: number | null;
-};
+async function buildPlayerScopes(selectedLeagueId: string, selectedTeamId: string): Promise<SharedPlayerRowsScope[]> {
+  const teamId = parseSharedBigInt(selectedTeamId);
+  const leagues = await loadSharedLeagueOptions(prisma);
+  const selectedLeagues =
+    selectedLeagueId === ALL_LEAGUES_VALUE ? leagues : leagues.filter((league) => String(league.leagueId) === selectedLeagueId);
 
-function compareMacheteRows(left: MacheteSortableRow, right: MacheteSortableRow, sort: string) {
-  if (sort === "playerName") return left.name.localeCompare(right.name);
-  if (sort === "minutesPlayed") return right.minutesPlayed - left.minutesPlayed;
-  if (sort === "scoringScore") return (right.scoringScore ?? -Infinity) - (left.scoringScore ?? -Infinity);
-  if (sort === "alternativeScore") return (right.alternativeScore ?? -Infinity) - (left.alternativeScore ?? -Infinity);
-  return (right.fantasyScore ?? -Infinity) - (left.fantasyScore ?? -Infinity);
+  return selectedLeagues.map((league) => ({
+    leagueId: league.leagueId,
+    season: league.season,
+    teamId
+  }));
+}
+
+async function loadTeamLeagueOptions(leagues: SharedLeagueSeasonOption[], selectedLeagueId: string) {
+  const selectedLeagues =
+    selectedLeagueId === ALL_LEAGUES_VALUE ? leagues : selectedLeagueId ? leagues.filter((league) => String(league.leagueId) === selectedLeagueId) : [];
+
+  return Promise.all(
+    selectedLeagues.map(async (league) => ({
+      ...league,
+      teams: await loadSharedLeagueTeams(prisma, league.leagueId, league.season)
+    }))
+  ) as Promise<Array<SharedLeagueSeasonOption & { teams: SharedTeamOption[] }>>;
 }
 
 function parsePositiveInt(value: string | undefined, fallback: number) {

@@ -45,6 +45,20 @@ export function AutoSubmitForm({ children, onChange, onSubmit, ...props }: AutoS
         if (target instanceof HTMLSelectElement && target.name === "leagueId") {
           const teamSelect = form.elements.namedItem("teamId");
           if (teamSelect instanceof HTMLSelectElement) teamSelect.value = "";
+
+          const attackingTeamSelect = form.elements.namedItem("attackingTeamId");
+          if (attackingTeamSelect instanceof HTMLSelectElement) attackingTeamSelect.value = "";
+
+          const defendingTeamSelect = form.elements.namedItem("defendingTeamId");
+          if (defendingTeamSelect instanceof HTMLSelectElement) defendingTeamSelect.value = "";
+
+          const playerSelect = form.elements.namedItem("playerId");
+          if (playerSelect instanceof HTMLSelectElement) playerSelect.value = "";
+        }
+
+        if (target instanceof HTMLSelectElement && target.name === "attackingTeamId") {
+          const playerSelect = form.elements.namedItem("playerId");
+          if (playerSelect instanceof HTMLSelectElement) playerSelect.value = "";
         }
 
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
