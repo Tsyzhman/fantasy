@@ -1,5 +1,6 @@
 import { DatabaseZap } from "lucide-react";
 
+import { IngestionAutoRefresh } from "@/components/admin/IngestionAutoRefresh";
 import { IngestionControls } from "@/components/admin/IngestionControls";
 import { getIngestionAdminStatus } from "@/core_data/ingestion-jobs";
 import { requireAdminUser } from "@/lib/auth";
@@ -16,6 +17,7 @@ export default async function AdminIngestionPage() {
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <IngestionAutoRefresh enabled={Boolean(status.active_job)} />
       <section className="rounded border border-slate-200 bg-white p-5 shadow-soft">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
