@@ -59,7 +59,8 @@ export async function getIngestionAdminStatus(prisma: PrismaClient) {
     latest_initial_backfill: latestInitialBackfill ? serializeIngestionJob(latestInitialBackfill) : null,
     start_seasons: {
       autumn_spring: "2023/2024",
-      spring_autumn: "2023"
+      spring_autumn: "2023",
+      mode: "from_start_to_current"
     }
   };
 }
@@ -77,7 +78,8 @@ export async function start_initial_backfill(prisma: PrismaClient, input: StartJ
       metadata: jsonValue({
         start_seasons: {
           autumn_spring: "2023/2024",
-          spring_autumn: "2023"
+          spring_autumn: "2023",
+          mode: "from_start_to_current"
         }
       })
     }

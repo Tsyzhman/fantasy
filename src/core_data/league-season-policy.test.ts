@@ -12,20 +12,26 @@ import {
 } from "./league-season-policy";
 
 test("initial backfill seasons follow calendar policy", () => {
+  const referenceDate = new Date("2026-05-19T00:00:00.000Z");
   const configs: LeagueIngestionConfig[] = [
     config(47, "Premier League", "autumn_spring"),
     config(130, "MLS", "spring_autumn"),
     { ...config(77, "World Cup", "tournament"), explicit_seasons: ["2026"], initial_start_season: "2026" }
   ];
 
-  const scopes = scopesForInitialBackfill(configs);
+  const scopes = scopesForInitialBackfill(configs, referenceDate);
 
-  assert.equal(seasonsForInitialBackfill(configs[0])[0], AUTUMN_SPRING_START_SEASON);
-  assert.equal(seasonsForInitialBackfill(configs[1])[0], SPRING_AUTUMN_START_SEASON);
-  assert.deepEqual(seasonsForInitialBackfill(configs[2]), ["2026"]);
+  assert.deepEqual(seasonsForInitialBackfill(configs[0], referenceDate), [AUTUMN_SPRING_START_SEASON, "2024/2025", "2025/2026"]);
+  assert.deepEqual(seasonsForInitialBackfill(configs[1], referenceDate), [SPRING_AUTUMN_START_SEASON, "2024", "2025", "2026"]);
+  assert.deepEqual(seasonsForInitialBackfill(configs[2], referenceDate), ["2026"]);
   assert.deepEqual(scopes.map((scope) => [scope.league_id, scope.season]), [
     [47, "2023/2024"],
+    [47, "2024/2025"],
+    [47, "2025/2026"],
     [130, "2023"],
+    [130, "2024"],
+    [130, "2025"],
+    [130, "2026"],
     [77, "2026"]
   ]);
   assert.equal(["dry", "run"].join("_") in scopes[0], false);

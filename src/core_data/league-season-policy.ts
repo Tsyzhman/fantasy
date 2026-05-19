@@ -76,9 +76,9 @@ export function enabledLeagueIngestionConfigs() {
   return leagueIngestionConfig.filter((league) => league.enabled);
 }
 
-export function scopesForInitialBackfill(configs: readonly LeagueIngestionConfig[] = enabledLeagueIngestionConfigs()): IngestionScope[] {
+export function scopesForInitialBackfill(configs: readonly LeagueIngestionConfig[] = enabledLeagueIngestionConfigs(), referenceDate = new Date()): IngestionScope[] {
   return configs.flatMap((config) =>
-    seasonsForInitialBackfill(config).map((season) =>
+    seasonsForInitialBackfill(config, referenceDate).map((season) =>
       createIngestionScope({
         league_id: config.league_id,
         season,
@@ -95,7 +95,7 @@ export function scopesForInitialBackfill(configs: readonly LeagueIngestionConfig
 
 export function scopesForIncrementalUpdate(configs: readonly LeagueIngestionConfig[] = enabledLeagueIngestionConfigs(), referenceDate = new Date()): IngestionScope[] {
   return configs.flatMap((config) => {
-    const seasons = config.calendar_type === "tournament" ? seasonsForInitialBackfill(config) : [seasonForIncrementalUpdate(config, referenceDate)];
+    const seasons = config.calendar_type === "tournament" ? seasonsForInitialBackfill(config, referenceDate) : [seasonForIncrementalUpdate(config, referenceDate)];
     return seasons.map((season) =>
       createIngestionScope({
         league_id: config.league_id,
@@ -111,9 +111,13 @@ export function scopesForIncrementalUpdate(configs: readonly LeagueIngestionConf
   });
 }
 
-export function seasonsForInitialBackfill(config: LeagueIngestionConfig): readonly string[] {
-  if (config.calendar_type === "autumn_spring") return [AUTUMN_SPRING_START_SEASON];
-  if (config.calendar_type === "spring_autumn") return [SPRING_AUTUMN_START_SEASON];
+export function seasonsForInitialBackfill(config: LeagueIngestionConfig, referenceDate = new Date()): readonly string[] {
+  if (config.calendar_type === "autumn_spring") {
+    return autumnSpringSeasonRange(AUTUMN_SPRING_START_SEASON, seasonForIncrementalUpdate(config, referenceDate));
+  }
+  if (config.calendar_type === "spring_autumn") {
+    return calendarYearSeasonRange(SPRING_AUTUMN_START_SEASON, seasonForIncrementalUpdate(config, referenceDate));
+  }
   return config.explicit_seasons ?? [config.initial_start_season];
 }
 
@@ -130,4 +134,35 @@ export function seasonForIncrementalUpdate(config: LeagueIngestionConfig, refere
 
 export function configForLeague(leagueId: number) {
   return leagueIngestionConfig.find((config) => config.league_id === leagueId);
+}
+
+function autumnSpringSeasonRange(startSeason: string, endSeason: string) {
+  const startYear = seasonStartYear(startSeason);
+  const endYear = seasonStartYear(endSeason);
+  if (startYear === null || endYear === null || endYear < startYear) return [startSeason];
+
+  const seasons: string[] = [];
+  for (let year = startYear; year <= endYear; year += 1) {
+    seasons.push(`${year}/${year + 1}`);
+  }
+  return seasons;
+}
+
+function calendarYearSeasonRange(startSeason: string, endSeason: string) {
+  const startYear = seasonStartYear(startSeason);
+  const endYear = seasonStartYear(endSeason);
+  if (startYear === null || endYear === null || endYear < startYear) return [startSeason];
+
+  const seasons: string[] = [];
+  for (let year = startYear; year <= endYear; year += 1) {
+    seasons.push(String(year));
+  }
+  return seasons;
+}
+
+function seasonStartYear(season: string) {
+  const match = season.match(/\d{4}/);
+  if (!match) return null;
+  const year = Number(match[0]);
+  return Number.isFinite(year) ? year : null;
 }

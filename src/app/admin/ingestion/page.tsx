@@ -29,7 +29,7 @@ export default async function AdminIngestionPage() {
             <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
               {status.initial_backfill_completed
                 ? "Initial backfill completed. Future runs should use incremental updates."
-                : "Initial backfill has not been completed. Start season: 2023/2024 for autumn-spring leagues, 2023 for calendar-year leagues."}
+                : "Initial backfill has not been completed. It starts at 2023/2024 for autumn-spring leagues and 2023 for calendar-year leagues, then walks forward to the current season."}
             </p>
           </div>
           <IngestionControls hasActiveJob={Boolean(status.active_job)} initialBackfillCompleted={status.initial_backfill_completed} />
