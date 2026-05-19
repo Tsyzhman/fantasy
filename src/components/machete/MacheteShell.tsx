@@ -15,8 +15,8 @@ export function MacheteShell({ children }: { children: ReactNode }) {
           </h1>
           <p className="mt-2 max-w-2xl text-sm text-slate-600">
             <I18nText
-              en="Sync leagues, teams, fixtures and player snapshots from FotMob, then compare them with fantasy scoring."
-              ru="Синхронизируйте лиги, команды, календарь и снапшоты игроков FotMob, затем сравнивайте их через fantasy scoring."
+              en="Shared FotMob data refreshes automatically at 03:00 Moscow time; admins manage ingestion from the admin panel."
+              ru="Общие данные FotMob обновляются автоматически в 03:00 по Москве; ingestion управляется из админ-панели."
             />
           </p>
         </div>
@@ -27,7 +27,7 @@ export function MacheteShell({ children }: { children: ReactNode }) {
           </Link>
           <Link className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50" href="/machete/sync-jobs">
             <ListChecks className="h-4 w-4" />
-            <I18nText en="Sync jobs" ru="Синхронизации" />
+            <I18nText en="Data jobs" ru="Задачи данных" />
           </Link>
           <Link className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50" href="/machete/players">
             <BarChart3 className="h-4 w-4" />

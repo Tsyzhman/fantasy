@@ -25,7 +25,7 @@ export default async function MacheteSyncJobsPage() {
           backLabel={<I18nText en="Back to Machete leagues" ru="Назад к лигам Machete" />}
           items={[
             { label: "Machete", href: "/machete/leagues" },
-            { label: <I18nText en="Sync jobs" ru="Синхронизации" />, href: "/machete/sync-jobs" }
+            { label: <I18nText en="Data jobs" ru="Задачи данных" />, href: "/machete/sync-jobs" }
           ]}
         />
       </div>
@@ -34,7 +34,7 @@ export default async function MacheteSyncJobsPage() {
           <I18nText en="Machete operations" ru="Операции Machete" />
         </p>
         <h2 className="mt-2 text-2xl font-bold text-ink">
-          <I18nText en="Sync job history" ru="История синхронизаций" />
+          <I18nText en="Data job history" ru="История задач данных" />
         </h2>
         <p className="mt-2 max-w-2xl text-sm text-slate-600">
           <I18nText

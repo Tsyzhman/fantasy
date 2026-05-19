@@ -1,12 +1,11 @@
-import { BarChart3, GitCompareArrows, ListRestart, TableProperties, Users } from "lucide-react";
 import { notFound } from "next/navigation";
+import type { ReactNode } from "react";
 
+import { I18nText } from "@/components/i18n-text";
 import { MacheteShell } from "@/components/machete/MacheteShell";
 import { MacheteStatusBadge } from "@/components/machete/MacheteStatusBadge";
-import { MacheteSyncButton } from "@/components/machete/MacheteSyncButton";
 import { MacheteTeamCard } from "@/components/machete/MacheteTeamCard";
 import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
-import { I18nText } from "@/components/i18n-text";
 import { prisma } from "@/lib/db";
 import { formatDate, formatNumber, formatScore } from "@/lib/format";
 import { macheteCatalogByFotMobId } from "@/lib/leagues/machete-catalog";
@@ -42,11 +41,7 @@ export default async function MacheteLeaguePage({ params }: PageProps) {
           fixturesAway: true
         }
       },
-      fixtures: true,
-      syncJobs: {
-        orderBy: { createdAt: "desc" },
-        take: 3
-      }
+      fixtures: true
     }
   });
 
@@ -84,6 +79,7 @@ export default async function MacheteLeaguePage({ params }: PageProps) {
           ]}
         />
       </div>
+
       <section className="mt-8 rounded border border-slate-200 bg-white p-5 shadow-soft">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
@@ -101,56 +97,12 @@ export default async function MacheteLeaguePage({ params }: PageProps) {
             </p>
           </div>
           <dl className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-5">
-            <div>
-              <dt className="text-xs font-medium uppercase text-slate-400"><I18nText en="Teams" ru="Команды" /></dt>
-              <dd className="mt-1 font-semibold text-ink">{formatNumber(league.teams.length)}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-medium uppercase text-slate-400"><I18nText en="Players" ru="Игроки" /></dt>
-              <dd className="mt-1 font-semibold text-ink">{formatNumber(playersCount)}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-medium uppercase text-slate-400"><I18nText en="Fixtures" ru="Матчи" /></dt>
-              <dd className="mt-1 font-semibold text-ink">{formatNumber(fixtures.length)}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-medium uppercase text-slate-400"><I18nText en="Last sync" ru="Последняя синхронизация" /></dt>
-              <dd className="mt-1 font-semibold text-ink">{formatDate(league.lastSyncedAt)}</dd>
-            </div>
-            <div>
-              <dt className="text-xs font-medium uppercase text-slate-400">Expected FP</dt>
-              <dd className="mt-1 font-semibold text-emerald-700">{formatScore(expectedFantasyPoints)}</dd>
-            </div>
+            <Metric label={<I18nText en="Teams" ru="Команды" />} value={formatNumber(league.teams.length)} />
+            <Metric label={<I18nText en="Players" ru="Игроки" />} value={formatNumber(playersCount)} />
+            <Metric label={<I18nText en="Fixtures" ru="Матчи" />} value={formatNumber(fixtures.length)} />
+            <Metric label={<I18nText en="Last sync" ru="Последняя синхронизация" />} value={formatDate(league.lastSyncedAt)} />
+            <Metric label="Expected FP" value={formatScore(expectedFantasyPoints)} accent />
           </dl>
-        </div>
-
-        <div className="mt-5 flex flex-wrap gap-2">
-          <MacheteSyncButton endpoint={`/api/machete/leagues/${league.id}/sync-full`}>
-            <I18nText en="Full league refresh" ru="Обновить всю лигу" />
-          </MacheteSyncButton>
-          <MacheteSyncButton endpoint={`/api/machete/leagues/${league.id}/sync-metadata`} variant="secondary">
-            <TableProperties className="hidden h-4 w-4" />
-            <I18nText en="Sync league metadata" ru="Метаданные лиги" />
-          </MacheteSyncButton>
-          <MacheteSyncButton endpoint={`/api/machete/leagues/${league.id}/sync-teams`} variant="secondary">
-            <Users className="hidden h-4 w-4" />
-            <I18nText en="Sync teams" ru="Синхронизировать команды" />
-          </MacheteSyncButton>
-          <MacheteSyncButton endpoint={`/api/machete/leagues/${league.id}/sync-fixtures`} variant="secondary">
-            <ListRestart className="hidden h-4 w-4" />
-            <I18nText en="Sync fixtures" ru="Синхронизировать календарь" />
-          </MacheteSyncButton>
-          <MacheteSyncButton endpoint={`/api/machete/leagues/${league.id}/sync-player-stats`} variant="secondary">
-            <I18nText en="Sync player stats" ru="Синхронизировать игроков" />
-          </MacheteSyncButton>
-          <MacheteSyncButton endpoint={`/api/machete/leagues/${league.id}/run-entity-matching`} variant="secondary">
-            <GitCompareArrows className="hidden h-4 w-4" />
-            <I18nText en="Run entity matching" ru="Сопоставить сущности" />
-          </MacheteSyncButton>
-          <MacheteSyncButton endpoint={`/api/machete/leagues/${league.id}/calculate-scores`} variant="secondary">
-            <BarChart3 className="hidden h-4 w-4" />
-            <I18nText en="Calculate fantasy scores" ru="Пересчитать fantasy-очки" />
-          </MacheteSyncButton>
         </div>
       </section>
 
@@ -187,10 +139,22 @@ export default async function MacheteLeaguePage({ params }: PageProps) {
       </section>
       {league.teams.length === 0 ? (
         <div className="mt-6 rounded border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">
-          <I18nText en="No teams synced yet. Start with Sync teams." ru="Команды еще не синхронизированы. Начните с синхронизации команд." />
+          <I18nText
+            en="No teams synced yet. Ask an administrator to run the shared FotMob ingestion."
+            ru="Команды еще не синхронизированы. Попросите администратора запустить общую загрузку FotMob."
+          />
         </div>
       ) : null}
     </MacheteShell>
+  );
+}
+
+function Metric({ label, value, accent = false }: { label: ReactNode; value: string; accent?: boolean }) {
+  return (
+    <div>
+      <dt className="text-xs font-medium uppercase text-slate-400">{label}</dt>
+      <dd className={`mt-1 font-semibold ${accent ? "text-emerald-700" : "text-ink"}`}>{value}</dd>
+    </div>
   );
 }
 

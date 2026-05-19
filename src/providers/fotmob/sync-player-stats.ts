@@ -192,12 +192,6 @@ export async function syncMacheteTeamPlayerStats(prisma: PrismaClient, teamId: s
   for (const fixture of fixtures) {
     if (!fixture.providerFixtureId) continue;
     const details = await client.getFixtureDetails(fixture.providerFixtureId);
-    await storeMacheteRawPayload(prisma, {
-      entityType: "FIXTURE_DETAILS",
-      providerEntityId: fixture.providerFixtureId,
-      endpoint: "getFixtureDetails",
-      payload: details
-    });
     try {
       const shotResult = await syncMacheteMatchShots(prisma, fixture, details);
       shotsCount += shotResult.shotsSynced;

@@ -79,9 +79,14 @@ export function AppHeader({ user }: AppHeaderProps) {
           <ModeSwitchLink />
           <ModelSettingsLink />
           {user?.role === "ADMIN" ? (
-            <a className="rounded px-3 py-2 hover:bg-slate-100" href="/admin/users">
-              Users
-            </a>
+            <>
+              <a className="rounded px-3 py-2 hover:bg-slate-100" href="/admin/ingestion">
+                Ingestion
+              </a>
+              <a className="rounded px-3 py-2 hover:bg-slate-100" href="/admin/users">
+                Users
+              </a>
+            </>
           ) : null}
           {user ? (
             <button

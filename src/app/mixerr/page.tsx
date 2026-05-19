@@ -1,7 +1,6 @@
 import { ArrowRight, Crosshair } from "lucide-react";
 import Link from "next/link";
 
-import { MacheteSyncButton } from "@/components/machete/MacheteSyncButton";
 import { ShotMapExplorer } from "@/components/mixerr/ShotMapExplorer";
 import { prisma } from "@/lib/db";
 import {
@@ -35,7 +34,6 @@ export default async function MixerrPage({ searchParams }: PageProps) {
   });
 
   const attackingTeamId = resolvedSearchParams.attackingTeamId ?? teams[0]?.id ?? "";
-  const attackingTeam = teams.find((team) => team.id === attackingTeamId);
   const defendingTeamId = resolvedSearchParams.defendingTeamId ?? teams.find((team) => team.id !== attackingTeamId)?.id ?? attackingTeamId;
   const matchWindow = parseMacheteMatchWindow({ mode: resolvedSearchParams.matchWindow });
   const defendingMatchWindow = parseMacheteMatchWindow({ mode: resolvedSearchParams.defendingMatchWindow ?? resolvedSearchParams.matchWindow });
@@ -80,11 +78,6 @@ export default async function MixerrPage({ searchParams }: PageProps) {
                 Baltika
                 <ArrowRight className="h-4 w-4" />
               </Link>
-              {attackingTeam ? (
-                <MacheteSyncButton endpoint={`/api/mixerr/leagues/${attackingTeam.leagueId}/sync-shots`} variant="secondary">
-                  Sync shot maps
-                </MacheteSyncButton>
-              ) : null}
               <Crosshair className="h-9 w-9 text-slate-400" />
             </div>
           </div>
@@ -156,7 +149,7 @@ export default async function MixerrPage({ searchParams }: PageProps) {
 
       {teams.length === 0 ? (
         <section className="mt-6 rounded border border-slate-200 bg-white p-8 text-center text-sm text-slate-500 shadow-soft">
-          No FotMob teams are synced yet. Sync Machete leagues first, then MiXerr can collect and compare shot maps.
+          No FotMob teams are synced yet. Ask an administrator to run the shared FotMob ingestion.
         </section>
       ) : (
         <ShotMapExplorer

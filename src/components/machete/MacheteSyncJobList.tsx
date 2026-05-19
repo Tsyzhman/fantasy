@@ -48,7 +48,7 @@ export function MacheteSyncJobList({ jobs }: { jobs: MacheteSyncJobRow[] }) {
             {jobs.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-10 text-center text-slate-500">
-                  <I18nText en="No Machete sync jobs yet." ru="Задач синхронизации Machete пока нет." />
+                  <I18nText en="No Machete data jobs yet." ru="Задач данных Machete пока нет." />
                 </td>
               </tr>
             ) : null}

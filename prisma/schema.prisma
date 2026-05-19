@@ -325,8 +325,6 @@ model MacheteTeam {
   players      MachetePlayer[]
   fixturesHome MacheteFixture[] @relation("MacheteFixtureHomeTeam")
   fixturesAway MacheteFixture[] @relation("MacheteFixtureAwayTeam")
-  shotsFor     MatchShot[]      @relation("MatchShotTeam")
-  shotsAgainst MatchShot[]      @relation("MatchShotOpponentTeam")
   syncJobs     MacheteSyncJob[]
 
   @@unique([provider, providerTeamId])
@@ -354,7 +352,6 @@ model MachetePlayer {
   team       MacheteTeam?             @relation(fields: [teamId], references: [id], onDelete: SetNull)
   matchStats MachetePlayerMatchStat[]
   snapshots  MachetePlayerSnapshot[]
-  shots      MatchShot[]
 
   @@unique([provider, providerPlayerId])
   @@index([teamId])
@@ -380,60 +377,427 @@ model MacheteFixture {
   homeTeam    MacheteTeam?             @relation("MacheteFixtureHomeTeam", fields: [homeTeamId], references: [id], onDelete: SetNull)
   awayTeam    MacheteTeam?             @relation("MacheteFixtureAwayTeam", fields: [awayTeamId], references: [id], onDelete: SetNull)
   playerStats MachetePlayerMatchStat[]
-  shots       MatchShot[]
 
   @@unique([provider, providerFixtureId])
   @@index([leagueId, kickoffAt])
 }
 
+model CoreLeague {
+  id        BigInt   @id
+  name      String
+  country   String?
+  source    String   @default("fotmob")
+  rawRef    String?  @map("raw_ref")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  matches CoreMatch[]
+
+  @@index([source, rawRef])
+  @@map("leagues")
+}
+
+model CoreTeam {
+  id        BigInt   @id
+  name      String
+  country   String?
+  ccode     String?
+  source    String   @default("fotmob")
+  rawRef    String?  @map("raw_ref")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  homeMatches         CoreMatch[]       @relation("CoreMatchHomeTeam")
+  awayMatches         CoreMatch[]       @relation("CoreMatchAwayTeam")
+  teamStats           MatchTeamStat[]   @relation("MatchTeamStatsTeam")
+  opponentTeamStats   MatchTeamStat[]   @relation("MatchTeamStatsOpponentTeam")
+  playerStats         MatchPlayerStat[] @relation("MatchPlayerStatsTeam")
+  opponentPlayerStats MatchPlayerStat[] @relation("MatchPlayerStatsOpponentTeam")
+  events              MatchEvent[]
+  shotsFor            MatchShot[]       @relation("MatchShotTeam")
+  shotsAgainst        MatchShot[]       @relation("MatchShotOpponentTeam")
+
+  @@index([source, rawRef])
+  @@map("teams")
+}
+
+model CorePlayer {
+  id        BigInt    @id
+  name      String
+  country   String?
+  birthDate DateTime? @map("birth_date") @db.Date
+  source    String    @default("fotmob")
+  rawRef    String?   @map("raw_ref")
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+
+  stats                  MatchPlayerStat[]
+  events                 MatchEvent[] @relation("MatchEventPlayer")
+  relatedEvents          MatchEvent[] @relation("MatchEventRelatedPlayer")
+  shots                  MatchShot[]
+  fantasyPoints          FantasyPoint[]
+  fantasyPointBreakdowns FantasyPointBreakdown[]
+
+  @@index([source, rawRef])
+  @@map("players")
+}
+
+model CoreMatch {
+  id          BigInt    @id
+  leagueId    BigInt?   @map("league_id")
+  season      String?
+  round       String?
+  homeTeamId  BigInt?   @map("home_team_id")
+  awayTeamId  BigInt?   @map("away_team_id")
+  homeScore   Int?      @map("home_score")
+  awayScore   Int?      @map("away_score")
+  status      String?
+  started     Boolean   @default(false)
+  finished    Boolean   @default(false)
+  cancelled   Boolean   @default(false)
+  matchDate   DateTime? @map("match_date")
+  utcTime     DateTime? @map("utc_time")
+  source      String    @default("fotmob")
+  sourceUrl   String?   @map("source_url")
+  rawRef      String?   @map("raw_ref")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  league      CoreLeague?        @relation(fields: [leagueId], references: [id])
+  homeTeam    CoreTeam?          @relation("CoreMatchHomeTeam", fields: [homeTeamId], references: [id])
+  awayTeam    CoreTeam?          @relation("CoreMatchAwayTeam", fields: [awayTeamId], references: [id])
+  rawPayload  RawMatchPayload?
+  teamStats   MatchTeamStat[]
+  playerStats MatchPlayerStat[]
+  events      MatchEvent[]
+  shots       MatchShot[]
+  fantasyPoints          FantasyPoint[]
+  fantasyPointBreakdowns FantasyPointBreakdown[]
+
+  @@index([leagueId, season], map: "idx_matches_league_season")
+  @@index([finished, matchDate], map: "idx_matches_finished_date")
+  @@index([homeTeamId, matchDate], map: "idx_matches_home_team_date")
+  @@index([awayTeamId, matchDate], map: "idx_matches_away_team_date")
+  @@index([source, rawRef])
+  @@map("matches")
+}
+
+model RawMatchPayload {
+  matchId       BigInt   @id @map("match_id")
+  source        String   @default("fotmob")
+  payload       Json
+  payloadHash   String   @map("payload_hash")
+  fetchedAt     DateTime @default(now()) @map("fetched_at")
+  parserVersion String?  @map("parser_version")
+  schemaVersion String?  @map("schema_version")
+  isFinal       Boolean  @default(false) @map("is_final")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  match CoreMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@index([source, isFinal])
+  @@map("raw_match_payloads")
+}
+
+model MatchTeamStat {
+  matchId           BigInt   @map("match_id")
+  teamId            BigInt   @map("team_id")
+  opponentTeamId    BigInt?  @map("opponent_team_id")
+  isHome            Boolean? @map("is_home")
+  goals             Int?
+  xg                Float?
+  xgot              Float?
+  xa                Float?
+  shots             Int?
+  shotsOnTarget     Int?     @map("shots_on_target")
+  shotsOffTarget    Int?     @map("shots_off_target")
+  blockedShots      Int?     @map("blocked_shots")
+  bigChances        Int?     @map("big_chances")
+  bigChancesMissed  Int?     @map("big_chances_missed")
+  touchesInOppBox   Int?     @map("touches_in_opp_box")
+  possession        Float?
+  passes            Int?
+  accuratePasses    Int?     @map("accurate_passes")
+  passAccuracy      Float?   @map("pass_accuracy")
+  corners           Int?
+  offsides          Int?
+  fouls             Int?
+  yellowCards       Int?     @map("yellow_cards")
+  redCards          Int?     @map("red_cards")
+  tacklesWon        Int?     @map("tackles_won")
+  interceptions     Int?
+  clearances        Int?
+  saves             Int?
+  statsPayload      Json?    @map("stats_payload")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  match        CoreMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  team         CoreTeam  @relation("MatchTeamStatsTeam", fields: [teamId], references: [id])
+  opponentTeam CoreTeam? @relation("MatchTeamStatsOpponentTeam", fields: [opponentTeamId], references: [id])
+
+  @@id([matchId, teamId])
+  @@index([teamId, matchId], map: "idx_team_stats_team_match")
+  @@map("match_team_stats")
+}
+
+model MatchPlayerStat {
+  matchId           BigInt   @map("match_id")
+  playerId          BigInt   @map("player_id")
+  teamId            BigInt?  @map("team_id")
+  opponentTeamId    BigInt?  @map("opponent_team_id")
+  isHome            Boolean? @map("is_home")
+  started           Boolean?
+  substitutedIn     Boolean? @map("substituted_in")
+  substitutedOut    Boolean? @map("substituted_out")
+  minutes           Int?
+  position          String?
+  shirtNumber       Int?     @map("shirt_number")
+  goals             Int?
+  assists           Int?
+  yellowCards       Int?     @map("yellow_cards")
+  redCards          Int?     @map("red_cards")
+  saves             Int?
+  goalsConceded     Int?     @map("goals_conceded")
+  cleanSheet        Boolean? @map("clean_sheet")
+  xg                Float?
+  xgot              Float?
+  xa                Float?
+  shots             Int?
+  shotsOnTarget     Int?     @map("shots_on_target")
+  keyPasses         Int?     @map("key_passes")
+  chancesCreated    Int?     @map("chances_created")
+  tacklesWon        Int?     @map("tackles_won")
+  interceptions     Int?
+  clearances        Int?
+  duelsWon          Int?     @map("duels_won")
+  aerialsWon        Int?     @map("aerials_won")
+  rating            Float?
+  statsPayload      Json?    @map("stats_payload")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  match        CoreMatch   @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  player       CorePlayer  @relation(fields: [playerId], references: [id])
+  team         CoreTeam?   @relation("MatchPlayerStatsTeam", fields: [teamId], references: [id])
+  opponentTeam CoreTeam?   @relation("MatchPlayerStatsOpponentTeam", fields: [opponentTeamId], references: [id])
+  fantasyPoints          FantasyPoint[]
+  fantasyPointBreakdowns FantasyPointBreakdown[]
+
+  @@id([matchId, playerId])
+  @@index([playerId, matchId], map: "idx_player_stats_player_match")
+  @@index([teamId, matchId], map: "idx_player_stats_team_match")
+  @@map("match_player_stats")
+}
+
 model MatchShot {
-  id                     String   @id @default(cuid())
-  fixtureId              String?
-  provider               String   @default("FOTMOB")
-  providerMatchId        String
-  teamId                 String?
-  opponentTeamId         String?
-  providerTeamId         String?
-  providerOpponentTeamId String?
-  playerId               String?
-  providerPlayerId       String?
-  playerName             String?
-  isHome                 Boolean?
-  minute                 Int?
-  addedTime              Int?
-  x                      Float?
-  y                      Float?
-  normalizedX            Float?
-  normalizedY            Float?
-  eventType              String?
-  shotType               String?
-  bodyPart               String?
-  situation              String?
-  isGoal                 Boolean  @default(false)
-  isOnTarget             Boolean?
-  isBlocked              Boolean?
-  isBigChance            Boolean?
-  xg                     Float?
-  xgot                   Float?
-  teamName               String?
-  opponentTeamName       String?
-  raw                    Json
-  dedupeKey              String
-  createdAt              DateTime @default(now())
-  updatedAt              DateTime @updatedAt
+  id                BigInt   @id @default(autoincrement())
+  matchId           BigInt   @map("match_id")
+  teamId            BigInt?  @map("team_id")
+  opponentTeamId    BigInt?  @map("opponent_team_id")
+  playerId          BigInt?  @map("player_id")
+  isHome            Boolean? @map("is_home")
+  minute            Int?
+  addedTime         Int?     @map("added_time")
+  x                 Float?
+  y                 Float?
+  normalizedX       Float?   @map("normalized_x")
+  normalizedY       Float?   @map("normalized_y")
+  eventType         String?  @map("event_type")
+  shotType          String?  @map("shot_type")
+  bodyPart          String?  @map("body_part")
+  situation         String?
+  isGoal            Boolean  @default(false) @map("is_goal")
+  isOnTarget        Boolean? @map("is_on_target")
+  isBlocked         Boolean? @map("is_blocked")
+  isBigChance       Boolean? @map("is_big_chance")
+  xg                Float?
+  xgot              Float?
+  sourceFingerprint String   @map("source_fingerprint")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
 
-  fixture      MacheteFixture? @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
-  team         MacheteTeam?    @relation("MatchShotTeam", fields: [teamId], references: [id], onDelete: SetNull)
-  opponentTeam MacheteTeam?    @relation("MatchShotOpponentTeam", fields: [opponentTeamId], references: [id], onDelete: SetNull)
-  player       MachetePlayer?  @relation(fields: [playerId], references: [id], onDelete: SetNull)
+  match        CoreMatch   @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  team         CoreTeam?   @relation("MatchShotTeam", fields: [teamId], references: [id], onDelete: SetNull)
+  opponentTeam CoreTeam?   @relation("MatchShotOpponentTeam", fields: [opponentTeamId], references: [id], onDelete: SetNull)
+  player       CorePlayer? @relation(fields: [playerId], references: [id], onDelete: SetNull)
 
-  @@unique([provider, dedupeKey])
-  @@index([fixtureId])
-  @@index([teamId])
-  @@index([opponentTeamId])
-  @@index([playerId])
-  @@index([providerMatchId])
+  @@unique([matchId, sourceFingerprint])
+  @@unique([matchId, teamId, playerId, minute, addedTime, x, y, eventType])
+  @@index([teamId, matchId], map: "idx_shots_team_match")
+  @@index([opponentTeamId, matchId], map: "idx_shots_opponent_match")
+  @@index([playerId, matchId], map: "idx_shots_player_match")
   @@map("match_shots")
+}
+
+model MatchEvent {
+  id              BigInt   @id @default(autoincrement())
+  matchId         BigInt   @map("match_id")
+  teamId          BigInt?  @map("team_id")
+  playerId        BigInt?  @map("player_id")
+  relatedPlayerId BigInt?  @map("related_player_id")
+  minute          Int?
+  addedTime       Int?     @map("added_time")
+  eventType       String?  @map("event_type")
+  eventSubtype    String?  @map("event_subtype")
+  isGoal          Boolean  @default(false) @map("is_goal")
+  isAssist        Boolean  @default(false) @map("is_assist")
+  isOwnGoal       Boolean  @default(false) @map("is_own_goal")
+  isPenalty       Boolean  @default(false) @map("is_penalty")
+  isCard          Boolean  @default(false) @map("is_card")
+  isSubstitution  Boolean  @default(false) @map("is_substitution")
+  eventPayload    Json?    @map("event_payload")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  match         CoreMatch   @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  team          CoreTeam?   @relation(fields: [teamId], references: [id])
+  player        CorePlayer? @relation("MatchEventPlayer", fields: [playerId], references: [id])
+  relatedPlayer CorePlayer? @relation("MatchEventRelatedPlayer", fields: [relatedPlayerId], references: [id])
+
+  @@unique([matchId, teamId, playerId, minute, addedTime, eventType, eventSubtype])
+  @@index([matchId], map: "idx_events_match")
+  @@index([playerId, matchId], map: "idx_events_player")
+  @@map("match_events")
+}
+
+model FantasyRuleset {
+  id        BigInt   @id @default(autoincrement())
+  name      String
+  version   String
+  rules     Json
+  createdAt DateTime @default(now()) @map("created_at")
+
+  points FantasyPoint[]
+  breakdowns FantasyPointBreakdown[]
+
+  @@unique([name, version])
+  @@map("fantasy_rulesets")
+}
+
+model FantasyPoint {
+  matchId   BigInt   @map("match_id")
+  playerId  BigInt   @map("player_id")
+  teamId    BigInt?  @map("team_id")
+  rulesetId BigInt   @map("ruleset_id")
+  points    Float
+  minutes   Int?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  match    CoreMatch      @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  player   CorePlayer     @relation(fields: [playerId], references: [id])
+  stats    MatchPlayerStat? @relation(fields: [matchId, playerId], references: [matchId, playerId])
+  ruleset  FantasyRuleset @relation(fields: [rulesetId], references: [id])
+  breakdowns FantasyPointBreakdown[]
+
+  @@id([matchId, playerId, rulesetId])
+  @@index([playerId, rulesetId], map: "idx_fantasy_player_ruleset")
+  @@index([teamId, matchId], map: "idx_fantasy_team_match")
+  @@map("fantasy_points")
+}
+
+model FantasyPointBreakdown {
+  matchId   BigInt   @map("match_id")
+  playerId  BigInt   @map("player_id")
+  rulesetId BigInt   @map("ruleset_id")
+  category  String
+  value     Float?
+  points    Float?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  match   CoreMatch       @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  player  CorePlayer      @relation(fields: [playerId], references: [id])
+  stats   MatchPlayerStat? @relation(fields: [matchId, playerId], references: [matchId, playerId])
+  ruleset FantasyRuleset  @relation(fields: [rulesetId], references: [id])
+  fantasyPoint FantasyPoint @relation(fields: [matchId, playerId, rulesetId], references: [matchId, playerId, rulesetId], onDelete: Cascade)
+
+  @@id([matchId, playerId, rulesetId, category])
+  @@map("fantasy_point_breakdown")
+}
+
+model IngestionRun {
+  id                BigInt    @id @default(autoincrement())
+  source            String    @default("fotmob")
+  jobType           String    @map("job_type")
+  leagueId          BigInt?   @map("league_id")
+  season            String?
+  status            String
+  startedAt         DateTime  @default(now()) @map("started_at")
+  finishedAt        DateTime? @map("finished_at")
+  matchesDiscovered Int       @default(0) @map("matches_discovered")
+  matchesFetched    Int       @default(0) @map("matches_fetched")
+  matchesSkipped    Int       @default(0) @map("matches_skipped")
+  matchesFailed     Int       @default(0) @map("matches_failed")
+  errorMessage      String?   @map("error_message")
+  metadata          Json?
+
+  @@index([source, jobType, status])
+  @@map("ingestion_runs")
+}
+
+model IngestionJob {
+  id                String    @id @default(cuid())
+  jobType           String    @map("job_type")
+  status            String    @default("pending")
+  startedByUserId   String?   @map("started_by_user_id")
+  startedAt         DateTime? @map("started_at")
+  finishedAt        DateTime? @map("finished_at")
+  totalScopes       Int       @default(0) @map("total_scopes")
+  processedScopes   Int       @default(0) @map("processed_scopes")
+  totalMatches      Int       @default(0) @map("total_matches")
+  fetchedMatches    Int       @default(0) @map("fetched_matches")
+  skippedMatches    Int       @default(0) @map("skipped_matches")
+  failedMatches     Int       @default(0) @map("failed_matches")
+  currentLeagueId   BigInt?   @map("current_league_id")
+  currentSeason     String?   @map("current_season")
+  currentMatchId    BigInt?   @map("current_match_id")
+  errorMessage      String?   @map("error_message")
+  metadata          Json?
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  @@index([status, updatedAt])
+  @@index([jobType, status])
+  @@map("ingestion_jobs")
+}
+
+model IngestionCheckpoint {
+  source               String   @default("fotmob")
+  jobType              String   @map("job_type")
+  leagueId             BigInt   @map("league_id")
+  season               String
+  lastProcessedMatchId BigInt?  @map("last_processed_match_id")
+  lastProcessedDate    DateTime? @map("last_processed_date")
+  cursor               Json?
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  @@id([source, jobType, leagueId, season])
+  @@map("ingestion_checkpoints")
+}
+
+model ShotmapPreset {
+  id        BigInt   @id @default(autoincrement())
+  name      String
+  config    Json
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("shotmap_presets")
+}
+
+model ShotmapComparisonsCache {
+  cacheKey       String   @id @map("cache_key")
+  queryParams    Json     @map("query_params")
+  result         Json
+  expiresAt      DateTime @map("expires_at")
+  sourceMatchIds Json     @map("source_match_ids")
+  payloadHashes  Json?    @map("payload_hashes")
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@index([expiresAt])
+  @@map("shotmap_comparisons_cache")
 }
 
 model MachetePlayerMatchStat {

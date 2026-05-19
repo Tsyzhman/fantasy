@@ -11,6 +11,10 @@ export async function storeMacheteRawPayload(
     payload: unknown;
   }
 ) {
+  if (input.entityType === "FIXTURE_DETAILS" || input.endpoint === "getFixtureDetails") {
+    throw new Error("FotMob match details must be stored through core_data.raw_match_payloads, not MacheteRawPayload.");
+  }
+
   const json = JSON.stringify(input.payload);
   return prisma.macheteRawPayload.create({
     data: {

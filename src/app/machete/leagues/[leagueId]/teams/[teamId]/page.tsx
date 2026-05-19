@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import { MacheteFixtureTable } from "@/components/machete/MacheteFixtureTable";
 import { MachetePlayerTable } from "@/components/machete/MachetePlayerTable";
 import { MacheteStatusBadge } from "@/components/machete/MacheteStatusBadge";
-import { MacheteSyncButton } from "@/components/machete/MacheteSyncButton";
 import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
 import { AutoSubmitForm } from "@/components/players/auto-submit-form";
 import { I18nText } from "@/components/i18n-text";
@@ -184,9 +183,6 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
               <I18nText en="Last sync" ru="последняя синхронизация" /> {formatDate(team.lastSyncedAt)}
             </p>
           </div>
-          <MacheteSyncButton endpoint={`/api/machete/teams/${team.id}/sync`}>
-            <I18nText en="Sync team" ru="Синхронизировать команду" />
-          </MacheteSyncButton>
         </div>
 
         <dl className="mt-6 grid grid-cols-1 gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">

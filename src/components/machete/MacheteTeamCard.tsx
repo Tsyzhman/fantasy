@@ -7,7 +7,6 @@ import { formatDate, formatNumber, formatScore } from "@/lib/format";
 import { initials } from "@/lib/text";
 
 import { MacheteStatusBadge } from "./MacheteStatusBadge";
-import { MacheteSyncButton } from "./MacheteSyncButton";
 
 export type MacheteTeamCardDto = {
   id: string;
@@ -26,7 +25,7 @@ export type MacheteTeamCardDto = {
 
 export function MacheteTeamCard({ team }: { team: MacheteTeamCardDto }) {
   return (
-    <article className="flex min-h-[310px] flex-col rounded border border-slate-200 bg-white p-4 shadow-soft">
+    <article className="flex min-h-[280px] flex-col rounded border border-slate-200 bg-white p-4 shadow-soft">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <TeamLogo logoUrl={team.logoUrl} name={team.name} />
@@ -49,15 +48,21 @@ export function MacheteTeamCard({ team }: { team: MacheteTeamCardDto }) {
           </dd>
         </div>
         <div>
-          <dt className="text-xs font-medium uppercase text-slate-400"><I18nText en="Last sync" ru="Последняя синхронизация" /></dt>
+          <dt className="text-xs font-medium uppercase text-slate-400">
+            <I18nText en="Last sync" ru="Последняя синхронизация" />
+          </dt>
           <dd className="mt-1 text-slate-700">{formatDate(team.lastSyncedAt)}</dd>
         </div>
         <div>
-          <dt className="text-xs font-medium uppercase text-slate-400"><I18nText en="Players" ru="Игроки" /></dt>
+          <dt className="text-xs font-medium uppercase text-slate-400">
+            <I18nText en="Players" ru="Игроки" />
+          </dt>
           <dd className="mt-1 font-semibold text-ink">{formatNumber(team.playersSynced)}</dd>
         </div>
         <div>
-          <dt className="text-xs font-medium uppercase text-slate-400"><I18nText en="Fixtures" ru="Матчи" /></dt>
+          <dt className="text-xs font-medium uppercase text-slate-400">
+            <I18nText en="Fixtures" ru="Матчи" />
+          </dt>
           <dd className="mt-1 font-semibold text-ink">{formatNumber(team.fixturesSynced)}</dd>
         </div>
         <div>
@@ -67,9 +72,6 @@ export function MacheteTeamCard({ team }: { team: MacheteTeamCardDto }) {
       </dl>
 
       <div className="mt-auto flex flex-col gap-2 pt-5">
-        <MacheteSyncButton endpoint={`/api/machete/teams/${team.id}/sync`}>
-          <I18nText en="Sync team" ru="Синхронизировать команду" />
-        </MacheteSyncButton>
         <Link
           href={`/machete/leagues/${team.leagueId}/teams/${team.id}`}
           className="inline-flex items-center justify-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
@@ -81,7 +83,6 @@ export function MacheteTeamCard({ team }: { team: MacheteTeamCardDto }) {
     </article>
   );
 }
-
 function TeamLogo({ logoUrl, name }: { logoUrl: string | null; name: string }) {
   if (logoUrl && logoUrl.startsWith("/")) {
     return (

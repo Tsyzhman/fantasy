@@ -1,3 +1,6 @@
+import { run_incremental_update } from "@/core_data/ingestion-jobs";
+import { prisma } from "@/lib/db";
+
 const DEFAULT_SYNC_TIME = "03:00";
 const DEFAULT_TIME_ZONE = "Europe/Moscow";
 
@@ -37,7 +40,7 @@ function scheduleNextRun(state: SchedulerState) {
   }, schedule.delayMs);
   state.timer.unref?.();
 
-  console.info(`[machete] Scheduled daily FotMob sync at ${schedule.label}.`);
+  console.info(`[ingestion] Scheduled shared FotMob incremental update at ${schedule.label}.`);
 }
 
 async function runScheduledSync(state: SchedulerState, scheduledFor: string) {
@@ -45,11 +48,11 @@ async function runScheduledSync(state: SchedulerState, scheduledFor: string) {
 
   state.running = true;
   try {
-    console.info(`[machete] Starting scheduled FotMob sync for ${scheduledFor}.`);
-    await syncAllMacheteLeagues(prisma, { includePreviousSeasons: false });
-    console.info("[machete] Scheduled FotMob sync completed.");
+    console.info(`[ingestion] Starting scheduled shared FotMob incremental update for ${scheduledFor}.`);
+    await run_incremental_update(prisma, { startedByUserId: null });
+    console.info("[ingestion] Scheduled shared FotMob incremental update started.");
   } catch (error) {
-    console.error("[machete] Scheduled FotMob sync crashed.", error);
+    console.error("[ingestion] Scheduled shared FotMob incremental update crashed.", error);
   } finally {
     state.running = false;
   }
@@ -131,5 +134,3 @@ function formatZonedDate(date: Date, timeZone: string) {
 function pad(value: number) {
   return String(value).padStart(2, "0");
 }
-import { prisma } from "@/lib/db";
-import { syncAllMacheteLeagues } from "@/providers/fotmob/jobs";
