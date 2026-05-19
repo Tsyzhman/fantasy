@@ -11,6 +11,8 @@
     "typecheck": "next typegen && tsc --noEmit",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
+    "db:safe-update": "tsx scripts/apply-safe-db-update.ts",
+    "db:prod-update": "npm run db:safe-update && prisma generate",
     "db:seed": "tsx prisma/seed.ts",
     "scores:recalculate": "tsx prisma/recalculate-fantasy.ts",
     "logos:download": "tsx scripts/download-team-logos.ts"
