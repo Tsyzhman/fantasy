@@ -4,6 +4,7 @@ import { calculateAlternativeScore, calculateFantasyScore, calculateScoringScore
 import type { ScoringModelSource } from ".";
 import { buildBaltikaTeamFormulaMetrics } from "./baltika-team-form-metrics";
 import { getMacheteAggregateMatchDenominators } from "@/scoring/machete/aggregate-match-denominator";
+import { shouldIgnoreProviderSeasonStats } from "@/scoring/machete/world-cup";
 
 const batchSize = 500;
 
@@ -105,11 +106,28 @@ async function recalculateMacheteSnapshots(prisma: PrismaClient) {
       )
     );
     const denominatorsByLeague = new Map(denominatorMaps);
+    const leagueMetadata = await prisma.macheteLeague.findMany({
+      where: {
+        id: {
+          in: [...denominatorsByLeague.keys()]
+        }
+      },
+      select: {
+        id: true,
+        providerLeagueId: true,
+        season: true
+      }
+    });
+    const leaguesById = new Map(leagueMetadata.map((league) => [league.id, league]));
 
     const updates = snapshots.map((snapshot) => {
       const rawMetrics = objectMetrics(snapshot.rawMetrics);
-      const denominator = snapshot.leagueId && snapshot.teamId ? denominatorsByLeague.get(snapshot.leagueId)?.get(snapshot.teamId) ?? 0 : 0;
-      if (denominator > readMetric(rawMetrics, "matches_played")) {
+      const league = snapshot.leagueId ? leaguesById.get(snapshot.leagueId) : null;
+      const shouldIgnoreStats = shouldIgnoreProviderSeasonStats(league?.providerLeagueId, league?.season) && readMetric(rawMetrics, "minutes_played") <= 0;
+      const denominator = !shouldIgnoreStats && snapshot.leagueId && snapshot.teamId ? denominatorsByLeague.get(snapshot.leagueId)?.get(snapshot.teamId) ?? 0 : 0;
+      if (shouldIgnoreStats) {
+        clearProviderSeasonMetrics(rawMetrics);
+      } else if (denominator > readMetric(rawMetrics, "matches_played")) {
         rawMetrics.matches_played = denominator;
       }
       const positionGroup = machetePositionGroup(snapshot.position);
@@ -148,6 +166,27 @@ function machetePositionGroup(position: string | null | undefined) {
   if (value.includes("midfielder") || value === "mid") return "MID";
   if (value.includes("forward") || value.includes("striker") || value.includes("winger") || value === "fw") return "FWD";
   return "UNKNOWN";
+}
+
+function clearProviderSeasonMetrics(rawMetrics: Record<string, unknown>) {
+  for (const key of [
+    "matches_played",
+    "minutes_played",
+    "expected_minutes",
+    "goals",
+    "assists",
+    "shots_on_target",
+    "key_passes",
+    "tackles",
+    "interceptions",
+    "saves",
+    "yellow_cards",
+    "red_cards",
+    "average_rating"
+  ]) {
+    rawMetrics[key] = 0;
+  }
+  rawMetrics.provider_season_stats_ignored = 1;
 }
 
 function readMetric(rawMetrics: Record<string, unknown>, key: string) {

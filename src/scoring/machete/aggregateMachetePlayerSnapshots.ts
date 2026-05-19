@@ -7,6 +7,7 @@ import {
   getActiveScoringModelForSource
 } from "@/lib/scoring";
 import { getMacheteAggregateMatchDenominators } from "./aggregate-match-denominator";
+import { shouldIgnoreProviderSeasonStats } from "./world-cup";
 
 type AggregateOptions = {
   leagueId: string;
@@ -23,6 +24,16 @@ export async function aggregateMachetePlayerSnapshots(prisma: PrismaClient, opti
       }
     },
     include: {
+      team: {
+        select: {
+          league: {
+            select: {
+              providerLeagueId: true,
+              season: true
+            }
+          }
+        }
+      },
       matchStats: {
         include: {
           fixture: true
@@ -55,26 +66,28 @@ export async function aggregateMachetePlayerSnapshots(prisma: PrismaClient, opti
   for (const player of players) {
     const stats = player.matchStats;
     const matchStats = stats.filter((stat) => stat.fixture.status !== "SEASON_AGGREGATE");
-    const aggregateMatches = firstPositiveNumber(stats.map((stat) => readRawNumber(stat.raw, "aggregateMatches")));
-    const fixtureDenominator = player.teamId ? teamDenominators.get(player.teamId) ?? 0 : 0;
-    const matchesPlayed = Math.max(aggregateMatches ?? 0, fixtureDenominator, stats.length);
-    const minutesPlayed = sum(stats.map((stat) => stat.minutes));
+    const ignoreProviderSeasonStats = shouldIgnoreProviderSeasonStats(player.team?.league.providerLeagueId, player.team?.league.season);
+    const statsForTotals = ignoreProviderSeasonStats ? matchStats : stats;
+    const aggregateMatches = ignoreProviderSeasonStats ? null : firstPositiveNumber(stats.map((stat) => readRawNumber(stat.raw, "aggregateMatches")));
+    const fixtureDenominator = !ignoreProviderSeasonStats && player.teamId ? teamDenominators.get(player.teamId) ?? 0 : 0;
+    const matchesPlayed = ignoreProviderSeasonStats ? matchStats.length : Math.max(aggregateMatches ?? 0, fixtureDenominator, stats.length);
+    const minutesPlayed = sum(statsForTotals.map((stat) => stat.minutes));
     const sixtyMinuteAppearances = matchStats.length
       ? matchStats.filter((stat) => (stat.minutes ?? 0) >= 60).length
       : null;
     const fullMatches = matchStats.length
       ? matchStats.filter((stat) => (stat.minutes ?? 0) >= 90).length
       : null;
-    const goals = sum(stats.map((stat) => stat.goals));
-    const assists = sum(stats.map((stat) => stat.assists));
-    const shotsOnTarget = sum(stats.map((stat) => stat.shotsOnTarget));
-    const keyPasses = sum(stats.map((stat) => stat.keyPasses));
-    const tackles = sum(stats.map((stat) => stat.tackles));
-    const interceptions = sum(stats.map((stat) => stat.interceptions));
-    const saves = sum(stats.map((stat) => stat.saves));
-    const yellowCards = sum(stats.map((stat) => stat.yellowCards));
-    const redCards = sum(stats.map((stat) => stat.redCards));
-    const ratings = stats.map((stat) => stat.rating).filter((rating): rating is number => rating !== null);
+    const goals = sum(statsForTotals.map((stat) => stat.goals));
+    const assists = sum(statsForTotals.map((stat) => stat.assists));
+    const shotsOnTarget = sum(statsForTotals.map((stat) => stat.shotsOnTarget));
+    const keyPasses = sum(statsForTotals.map((stat) => stat.keyPasses));
+    const tackles = sum(statsForTotals.map((stat) => stat.tackles));
+    const interceptions = sum(statsForTotals.map((stat) => stat.interceptions));
+    const saves = sum(statsForTotals.map((stat) => stat.saves));
+    const yellowCards = sum(statsForTotals.map((stat) => stat.yellowCards));
+    const redCards = sum(statsForTotals.map((stat) => stat.redCards));
+    const ratings = statsForTotals.map((stat) => stat.rating).filter((rating): rating is number => rating !== null);
     const averageRating = ratings.length ? Number((sum(ratings) / ratings.length).toFixed(2)) : null;
     const expectedMinutes = minutesPlayed <= 0 && matchesPlayed > 0 && averageRating !== null ? 75 : null;
 
@@ -93,7 +106,8 @@ export async function aggregateMachetePlayerSnapshots(prisma: PrismaClient, opti
       saves,
       yellow_cards: yellowCards,
       red_cards: redCards,
-      average_rating: averageRating
+      average_rating: averageRating,
+      ...(ignoreProviderSeasonStats ? { provider_season_stats_ignored: 1 } : {})
     };
     const positionGroup = machetePositionGroup(player.position);
     const fantasyScore = calculateFantasyScore(rawMetrics, positionGroup, model);

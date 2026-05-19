@@ -2,12 +2,13 @@ import type { Prisma, PrismaClient } from "@prisma/client";
 
 import { aggregateMachetePlayerSnapshots } from "@/scoring/machete/aggregateMachetePlayerSnapshots";
 import { getMacheteAggregateMatchDenominator } from "@/scoring/machete/aggregate-match-denominator";
+import { shouldIgnoreProviderSeasonStats } from "@/scoring/machete/world-cup";
 
 import { createFotMobClient } from "./client";
 import { normalizeMacheteMatchStat, normalizeMachetePlayer } from "./normalizers";
 import { storeMacheteRawPayload } from "./raw-payloads";
 import { syncMacheteFixtures } from "./sync-fixtures";
-import type { FotMobTeam } from "./types";
+import type { FotMobPlayerMatchStat, FotMobTeam } from "./types";
 
 type SyncPlayerStatsOptions = {
   syncFixtures?: boolean;
@@ -46,6 +47,7 @@ export async function syncMacheteTeamPlayerStats(prisma: PrismaClient, teamId: s
 
   const aggregateStats = providerTeam.players.filter((player) => player.seasonStat);
   if (aggregateStats.length > 0) {
+    const ignoreProviderSeasonStats = shouldIgnoreProviderSeasonStats(team.league.providerLeagueId, team.league.season);
     const aggregateMatches = await getMacheteAggregateMatchDenominator(prisma, team.leagueId, team.id);
     const aggregateMatchesDenominator = Math.max(aggregateMatches, 1);
 
@@ -116,7 +118,7 @@ export async function syncMacheteTeamPlayerStats(prisma: PrismaClient, teamId: s
       if (!machetePlayer) continue;
 
       const stat = {
-        ...player.seasonStat,
+        ...sanitizeProviderSeasonStat(player.seasonStat, ignoreProviderSeasonStats),
         fixtureId: syntheticProviderFixtureId,
         aggregateMatches: aggregateMatchesDenominator
       };
@@ -217,6 +219,32 @@ export async function syncMacheteTeamPlayerStats(prisma: PrismaClient, teamId: s
   return {
     statsCount,
     snapshotsCount: snapshots.length
+  };
+}
+
+function sanitizeProviderSeasonStat(
+  stat: Omit<FotMobPlayerMatchStat, "fixtureId">,
+  ignoreProviderSeasonStats: boolean
+): Omit<FotMobPlayerMatchStat, "fixtureId"> {
+  if (!ignoreProviderSeasonStats) return stat;
+
+  return {
+    ...stat,
+    minutes: null,
+    rating: null,
+    goals: 0,
+    assists: 0,
+    shots: 0,
+    shotsOnTarget: 0,
+    keyPasses: 0,
+    tackles: 0,
+    interceptions: 0,
+    saves: 0,
+    yellowCards: 0,
+    redCards: 0,
+    raw: {
+      providerSeasonStatsIgnored: true
+    } satisfies Prisma.InputJsonValue
   };
 }
 
