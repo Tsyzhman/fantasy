@@ -36,7 +36,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
       <div>
         <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">Administration</p>
         <h1 className="mt-2 text-3xl font-bold text-ink">Users</h1>
-        <p className="mt-2 max-w-3xl text-sm text-slate-600">Создавайте доступы для команды и временно отключайте аккаунты без удаления истории.</p>
+        <p className="mt-2 max-w-3xl text-sm text-slate-600">Create team accounts, change roles, and temporarily disable access without deleting history.</p>
       </div>
 
       {resolvedSearchParams.error ? (
@@ -80,7 +80,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
         </form>
 
         <section className="overflow-hidden rounded border border-slate-200 bg-white shadow-sm">
-          <div className="grid grid-cols-[1.3fr_120px_120px_160px_150px] gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <div className="grid grid-cols-[1.3fr_220px_120px_160px_150px] gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
             <span>User</span>
             <span>Role</span>
             <span>Status</span>
@@ -89,12 +89,30 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
           </div>
           <div className="divide-y divide-slate-100">
             {users.map((user) => (
-              <div key={user.id} className="grid grid-cols-[1.3fr_120px_120px_160px_150px] items-center gap-3 px-4 py-3 text-sm">
+              <div key={user.id} className="grid grid-cols-[1.3fr_220px_120px_160px_150px] items-center gap-3 px-4 py-3 text-sm">
                 <div>
                   <p className="font-semibold text-ink">{user.name || user.email}</p>
                   <p className="text-xs text-slate-500">{user.email}</p>
                 </div>
-                <span className="text-slate-700">{user.role}</span>
+                <form action={setUserRoleAction} className="flex items-center gap-2">
+                  <input type="hidden" name="userId" value={user.id} />
+                  <select
+                    name="role"
+                    defaultValue={user.role}
+                    disabled={user.id === admin.id}
+                    className="min-w-0 flex-1 rounded border border-slate-200 px-2 py-2 text-sm outline-none focus:border-slate-400 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
+                  >
+                    <option value={UserRole.USER}>User</option>
+                    <option value={UserRole.ADMIN}>Admin</option>
+                  </select>
+                  <button
+                    type="submit"
+                    disabled={user.id === admin.id}
+                    className="rounded border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-45"
+                  >
+                    Save
+                  </button>
+                </form>
                 <span className={user.isActive ? "text-emerald-700" : "text-rose-700"}>{user.isActive ? "Active" : "Inactive"}</span>
                 <span className="text-slate-500">{user.lastLoginAt ? formatDate(user.lastLoginAt) : "Never"}</span>
                 <form action={setUserActiveAction} className="text-right">
@@ -171,6 +189,26 @@ async function setUserActiveAction(formData: FormData) {
     }),
     ...(isActive ? [] : [prisma.userSession.deleteMany({ where: { userId } })])
   ]);
+
+  revalidatePath("/admin/users");
+  redirect("/admin/users?saved=1");
+}
+
+async function setUserRoleAction(formData: FormData) {
+  "use server";
+
+  const admin = await requireAdminUser();
+  const userId = String(formData.get("userId") ?? "");
+  const role = String(formData.get("role") ?? UserRole.USER) === UserRole.ADMIN ? UserRole.ADMIN : UserRole.USER;
+
+  if (userId === admin.id && role !== UserRole.ADMIN) {
+    redirect(`/admin/users?error=${encodeURIComponent("You cannot remove your own admin role.")}`);
+  }
+
+  await prisma.user.update({
+    where: { id: userId },
+    data: { role }
+  });
 
   revalidatePath("/admin/users");
   redirect("/admin/users?saved=1");
