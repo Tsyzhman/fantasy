@@ -40,7 +40,11 @@ BEGIN
     ALTER TABLE "FantasyModel" ADD COLUMN IF NOT EXISTS "scoringFormulaEnabled" BOOLEAN NOT NULL DEFAULT false;
   END IF;
 END $$;
-`).then(() => undefined);
+`)
+    .then(() => undefined)
+    .catch((error) => {
+      console.error("[db] Failed to ensure database schema.", error);
+    });
 
   return globalForPrisma.scoringSchemaPromise;
 }
