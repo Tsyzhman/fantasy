@@ -14,7 +14,7 @@ git checkout main
 git pull origin main
 npm install
 npm run build
-pm2 restart fantasy
+pm2 restart fantasy-scout --update-env
 ```
 
 If the PM2 process has a different name, check it with:
