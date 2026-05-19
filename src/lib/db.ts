@@ -16,6 +16,7 @@ if (process.env.NODE_ENV !== "production") {
 }
 
 export function ensureDatabaseSchema() {
+  if (process.env.NEXT_PHASE === "phase-production-build") return Promise.resolve();
   if (!process.env.DATABASE_URL) return Promise.resolve();
 
   globalForPrisma.scoringSchemaPromise ??= prisma.$executeRawUnsafe(`
