@@ -2,6 +2,7 @@ import type { PrismaClient } from "@prisma/client";
 
 import { createFotMobClient, type FotMobClient } from "./fotmob_client";
 import type { IngestionScope } from "./ingestion-scope";
+import { configForLeague } from "./league-season-policy";
 import {
   CORE_SCHEMA_VERSION,
   DEFAULT_PARSER_VERSION,
@@ -147,6 +148,7 @@ export async function persist_match_payload(
   const overrideLeagueId = sourceIdToBigInt(options.leagueId, "league");
   const enriched: ParsedMatchPayload = {
     ...parsed,
+    leagues: ensureScopeLeague(parsed.leagues, overrideLeagueId),
     match: {
       ...parsed.match,
       id: matchId,
@@ -326,6 +328,7 @@ async function upsertDiscoveredFixture(
   leagueId: bigint,
   season: string
 ) {
+  await new CoreMatchRepository(prisma).upsertLeague(scopeLeagueData(leagueId));
   const teamRepository = new CoreTeamRepository(prisma);
   const teams = [fixture.homeTeamId, fixture.awayTeamId]
     .map((teamId) => placeholderTeam(teamId))
@@ -343,6 +346,21 @@ async function upsertDiscoveredFixture(
     homeScore: fixture.homeScore ?? null,
     awayScore: fixture.awayScore ?? null
   });
+}
+
+function ensureScopeLeague(leagues: ParsedMatchPayload["leagues"], leagueId: bigint | null) {
+  if (!leagueId || leagues.some((league) => league.id === leagueId)) return leagues;
+  return [scopeLeagueData(leagueId), ...leagues];
+}
+
+function scopeLeagueData(leagueId: bigint) {
+  const config = configForLeague(Number(leagueId));
+  return {
+    id: leagueId,
+    name: config?.name ?? `FotMob league ${String(leagueId)}`,
+    country: null,
+    rawRef: String(leagueId)
+  };
 }
 
 async function invalidate_shotmap_cache_for_match(prisma: PrismaClient, matchId: bigint) {
