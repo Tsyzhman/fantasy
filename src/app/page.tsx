@@ -4,6 +4,8 @@ import Link from "next/link";
 
 import { I18nText } from "@/components/i18n-text";
 
+const mixerPhotoUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/KitchenAid_Stand_Mixer.jpg/960px-KitchenAid_Stand_Mixer.jpg";
+
 const modes = [
   {
     nameEn: "Machete",
@@ -41,8 +43,9 @@ const modes = [
     nameEn: "MiXerr",
     nameRu: "Миксер",
     href: "/mixerr",
-    imageSrc: "/mode-logos/fotmob-mode.png",
-    imageClassName: "h-20 w-20 object-contain",
+    imageSrc: mixerPhotoUrl,
+    imageClassName: "h-20 w-20 rounded-full object-cover",
+    imageExternal: true,
     icon: Crosshair,
     kickerEn: "FotMob shot-map mode",
     kickerRu: "Режим shot-map FotMob",
@@ -86,14 +89,18 @@ export default function HomePage() {
               <div className="flex items-start justify-between gap-4">
                 <div className="flex min-w-0 items-center gap-4">
                   <span className="mode-logo-frame mode-logo-frame-choice">
-                    <Image
-                      src={mode.imageSrc}
-                      alt=""
-                      width={96}
-                      height={96}
-                      className={`mode-logo-image ${mode.imageClassName}`}
-                      priority
-                    />
+                    {mode.imageExternal ? (
+                      <img src={mode.imageSrc} alt="" className={`mode-logo-image ${mode.imageClassName}`} />
+                    ) : (
+                      <Image
+                        src={mode.imageSrc}
+                        alt=""
+                        width={96}
+                        height={96}
+                        className={`mode-logo-image ${mode.imageClassName}`}
+                        priority
+                      />
+                    )}
                   </span>
                   <div className="min-w-0">
                     <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">

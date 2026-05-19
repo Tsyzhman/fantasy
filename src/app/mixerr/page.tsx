@@ -1,4 +1,5 @@
-import { Crosshair } from "lucide-react";
+import { ArrowRight, Crosshair } from "lucide-react";
+import Link from "next/link";
 
 import { MacheteSyncButton } from "@/components/machete/MacheteSyncButton";
 import { ShotMapExplorer } from "@/components/mixerr/ShotMapExplorer";
@@ -12,6 +13,8 @@ import {
 import { matchWindowLabel, matchWindowModeValue, parseMacheteMatchWindow } from "@/scoring/machete/match-window";
 
 export const dynamic = "force-dynamic";
+
+const mixerPhotoUrl = "https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/KitchenAid_Stand_Mixer.jpg/960px-KitchenAid_Stand_Mixer.jpg";
 
 type PageProps = {
   searchParams?: Promise<{
@@ -58,24 +61,47 @@ export default async function MixerrPage({ searchParams }: PageProps) {
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <section className="border-b border-slate-200 pb-6">
-        <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">MiXerr / FotMob</p>
-        <div className="mt-2 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-ink">MiXerr shot maps</h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-              Compare attacking shot locations, conceded shot locations and player shot maps from stored FotMob match payloads.
-            </p>
-          </div>
-          <div className="flex items-center gap-3">
-            {attackingTeam ? (
-              <MacheteSyncButton endpoint={`/api/mixerr/leagues/${attackingTeam.leagueId}/sync-shots`} variant="secondary">
-                Sync shot maps
-              </MacheteSyncButton>
-            ) : null}
-            <Crosshair className="h-9 w-9 text-slate-400" />
+      <section className="grid gap-6 border-b border-slate-200 pb-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-end">
+        <div>
+          <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">MiXerr / FotMob</p>
+          <div className="mt-2 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-ink">MiXerr shot maps</h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+                Compare attacking shot locations, conceded shot locations and player shot maps from stored FotMob match payloads.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <Link className="inline-flex items-center gap-2 rounded bg-ink px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700" href="/machete/leagues">
+                Machete
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+              <Link className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" href="/baltika/leagues">
+                Baltika
+                <ArrowRight className="h-4 w-4" />
+              </Link>
+              {attackingTeam ? (
+                <MacheteSyncButton endpoint={`/api/mixerr/leagues/${attackingTeam.leagueId}/sync-shots`} variant="secondary">
+                  Sync shot maps
+                </MacheteSyncButton>
+              ) : null}
+              <Crosshair className="h-9 w-9 text-slate-400" />
+            </div>
           </div>
         </div>
+        <figure className="overflow-hidden rounded border border-slate-200 bg-white shadow-soft">
+          <img
+            src={mixerPhotoUrl}
+            alt="Stand mixer"
+            className="h-44 w-full object-cover sm:h-56 lg:h-64"
+          />
+          <figcaption className="px-3 py-2 text-xs text-slate-500">
+            Photo:{" "}
+            <a className="underline hover:text-slate-700" href="https://commons.wikimedia.org/wiki/File:KitchenAid_Stand_Mixer.jpg">
+              Wikimedia Commons
+            </a>
+          </figcaption>
+        </figure>
       </section>
 
       <form className="mt-6 grid grid-cols-1 gap-3 rounded border border-slate-200 bg-white p-4 shadow-soft md:grid-cols-2 xl:grid-cols-5">
