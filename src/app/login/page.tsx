@@ -1,3 +1,4 @@
+import { UserRole } from "@prisma/client";
 import { redirect } from "next/navigation";
 
 import { createUserSession, getCurrentUser, isSafeRedirectPath, normalizeEmail, verifyPassword } from "@/lib/auth";
@@ -14,8 +15,14 @@ export const dynamic = "force-dynamic";
 
 export default async function LoginPage({ searchParams }: PageProps) {
   const resolvedSearchParams = (await searchParams) ?? {};
-  const usersCount = await prisma.user.count();
-  if (usersCount === 0) redirect("/setup");
+  const adminWithPasswordCount = await prisma.user.count({
+    where: {
+      role: UserRole.ADMIN,
+      isActive: true,
+      passwordHash: { not: null }
+    }
+  });
+  if (adminWithPasswordCount === 0) redirect("/setup");
 
   const currentUser = await getCurrentUser();
   const requestedNextPath = resolvedSearchParams.next;
@@ -27,7 +34,7 @@ export default async function LoginPage({ searchParams }: PageProps) {
       <section className="w-full max-w-sm rounded border border-slate-200 bg-white p-6 shadow-sm">
         <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">Fantasy Scout</p>
         <h1 className="mt-2 text-2xl font-bold text-ink">Sign in</h1>
-        <p className="mt-2 text-sm text-slate-600">Войдите, чтобы открыть рабочее пространство.</p>
+        <p className="mt-2 text-sm text-slate-600">Sign in to open the workspace.</p>
 
         {resolvedSearchParams.error ? (
           <p className="mt-4 rounded bg-rose-50 px-3 py-2 text-sm text-rose-700">{resolvedSearchParams.error}</p>

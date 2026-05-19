@@ -14,15 +14,17 @@ export const dynamic = "force-dynamic";
 
 export default async function SetupPage({ searchParams }: PageProps) {
   const resolvedSearchParams = (await searchParams) ?? {};
-  const usersCount = await prisma.user.count();
-  if (usersCount > 0) redirect("/login");
+  const adminWithPasswordCount = await getAdminWithPasswordCount();
+  if (adminWithPasswordCount > 0) redirect("/login");
 
   return (
     <main className="grid min-h-screen place-items-center px-4 py-12">
       <section className="w-full max-w-md rounded border border-slate-200 bg-white p-6 shadow-sm">
         <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">First run</p>
         <h1 className="mt-2 text-2xl font-bold text-ink">Create admin account</h1>
-        <p className="mt-2 text-sm text-slate-600">Создайте первого администратора. После этого управление пользователями будет доступно в админке.</p>
+        <p className="mt-2 text-sm text-slate-600">
+          Create the first admin with a password. Existing imported users without passwords will not block this setup.
+        </p>
 
         {resolvedSearchParams.error ? (
           <p className="mt-4 rounded bg-rose-50 px-3 py-2 text-sm text-rose-700">{resolvedSearchParams.error}</p>
@@ -53,7 +55,7 @@ export default async function SetupPage({ searchParams }: PageProps) {
 async function setupAction(formData: FormData) {
   "use server";
 
-  if ((await prisma.user.count()) > 0) redirect("/login");
+  if ((await getAdminWithPasswordCount()) > 0) redirect("/login");
 
   const email = normalizeEmail(String(formData.get("email") ?? ""));
   const name = String(formData.get("name") ?? "").trim() || null;
@@ -63,17 +65,36 @@ async function setupAction(formData: FormData) {
     redirect(`/setup?error=${encodeURIComponent("Password must be at least 8 characters.")}`);
   }
 
-  const user = await prisma.user.create({
-    data: {
+  const passwordHash = await hashPassword(password);
+  const user = await prisma.user.upsert({
+    where: { email },
+    create: {
       email,
       name,
       role: UserRole.ADMIN,
       isActive: true,
-      passwordHash: await hashPassword(password),
+      passwordHash,
+      lastLoginAt: new Date()
+    },
+    update: {
+      name,
+      role: UserRole.ADMIN,
+      isActive: true,
+      passwordHash,
       lastLoginAt: new Date()
     }
   });
 
   await createUserSession(user.id);
   redirect("/");
+}
+
+function getAdminWithPasswordCount() {
+  return prisma.user.count({
+    where: {
+      role: UserRole.ADMIN,
+      isActive: true,
+      passwordHash: { not: null }
+    }
+  });
 }
