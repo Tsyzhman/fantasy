@@ -2,12 +2,15 @@ import { Prisma, type PrismaClient } from "@prisma/client";
 
 import {
   FOTMOB_SOURCE,
+  type LeagueSeasonData,
+  type LeagueSeasonTeamData,
   type LeagueData,
   type MatchData,
   type MatchEventData,
   type MatchShotData,
   type PlayerData,
   type PlayerMatchStatsData,
+  type TeamPlayerSeasonData,
   type TeamData,
   type TeamMatchStatsData
 } from "../models";
@@ -103,6 +106,115 @@ export class CorePlayerRepository {
     for (const player of players) {
       await this.upsert(player);
     }
+  }
+}
+
+export class CoreSeasonRosterRepository {
+  constructor(private readonly prisma: PrismaClient) {}
+
+  async upsertLeagueSeason(row: LeagueSeasonData) {
+    if (row.isCurrent) {
+      await this.prisma.leagueSeason.updateMany({
+        where: {
+          leagueId: row.leagueId,
+          season: { not: row.season },
+          isCurrent: true
+        },
+        data: { isCurrent: false }
+      });
+    }
+
+    return this.prisma.leagueSeason.upsert({
+      where: {
+        leagueId_season: {
+          leagueId: row.leagueId,
+          season: row.season
+        }
+      },
+      update: leagueSeasonData(row),
+      create: leagueSeasonData(row)
+    });
+  }
+
+  async upsertSeasonTeams(rows: LeagueSeasonTeamData[]) {
+    const now = new Date();
+    for (const row of rows) {
+      await this.prisma.leagueSeasonTeam.upsert({
+        where: {
+          leagueId_season_teamId: {
+            leagueId: row.leagueId,
+            season: row.season,
+            teamId: row.teamId
+          }
+        },
+        update: {
+          active: row.active,
+          lastSeenAt: now,
+          metadata: jsonValue(row.metadata)
+        },
+        create: {
+          ...leagueSeasonTeamData(row),
+          firstSeenAt: now,
+          lastSeenAt: now
+        }
+      });
+    }
+  }
+
+  async deactivateMissingSeasonTeams(leagueId: bigint, season: string, activeTeamIds: bigint[]) {
+    await this.prisma.leagueSeasonTeam.updateMany({
+      where: {
+        leagueId,
+        season,
+        teamId: { notIn: activeTeamIds },
+        active: true
+      },
+      data: { active: false }
+    });
+  }
+
+  async upsertTeamPlayers(rows: TeamPlayerSeasonData[]) {
+    const now = new Date();
+    for (const row of rows) {
+      await this.prisma.teamPlayerSeason.upsert({
+        where: {
+          leagueId_season_teamId_playerId: {
+            leagueId: row.leagueId,
+            season: row.season,
+            teamId: row.teamId,
+            playerId: row.playerId
+          }
+        },
+        update: {
+          active: row.active,
+          position: row.position,
+          shirtNumber: row.shirtNumber,
+          nationality: row.nationality,
+          age: row.age,
+          photoUrl: row.photoUrl,
+          rosterPayload: jsonValue(row.rosterPayload),
+          lastSeenAt: now
+        },
+        create: {
+          ...teamPlayerSeasonData(row),
+          firstSeenAt: now,
+          lastSeenAt: now
+        }
+      });
+    }
+  }
+
+  async deactivateMissingTeamPlayers(leagueId: bigint, season: string, teamId: bigint, activePlayerIds: bigint[]) {
+    await this.prisma.teamPlayerSeason.updateMany({
+      where: {
+        leagueId,
+        season,
+        teamId,
+        playerId: { notIn: activePlayerIds },
+        active: true
+      },
+      data: { active: false }
+    });
   }
 }
 
@@ -327,6 +439,48 @@ function matchData(match: MatchData) {
     source: FOTMOB_SOURCE,
     sourceUrl: match.sourceUrl,
     rawRef: match.rawRef
+  };
+}
+
+function leagueSeasonData(row: LeagueSeasonData) {
+  return {
+    leagueId: row.leagueId,
+    season: row.season,
+    source: FOTMOB_SOURCE,
+    calendarType: row.calendarType,
+    isCurrent: row.isCurrent,
+    providerSeason: row.providerSeason,
+    name: row.name,
+    country: row.country,
+    metadata: jsonValue(row.metadata)
+  };
+}
+
+function leagueSeasonTeamData(row: LeagueSeasonTeamData) {
+  return {
+    leagueId: row.leagueId,
+    season: row.season,
+    teamId: row.teamId,
+    source: FOTMOB_SOURCE,
+    active: row.active,
+    metadata: jsonValue(row.metadata)
+  };
+}
+
+function teamPlayerSeasonData(row: TeamPlayerSeasonData) {
+  return {
+    leagueId: row.leagueId,
+    season: row.season,
+    teamId: row.teamId,
+    playerId: row.playerId,
+    source: FOTMOB_SOURCE,
+    active: row.active,
+    position: row.position,
+    shirtNumber: row.shirtNumber,
+    nationality: row.nationality,
+    age: row.age,
+    photoUrl: row.photoUrl,
+    rosterPayload: jsonValue(row.rosterPayload)
   };
 }
 

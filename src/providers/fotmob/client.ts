@@ -401,10 +401,12 @@ function normalizeSquadMember(member: unknown, teamId: string): FotMobPlayer | n
     teamId,
     name,
     position: stringValue(data.positionIdsDesc) ?? stringValue(role.fallback),
+    shirtNumber: numberValue(data.shirtNumber ?? data.shirt_number ?? data.number),
     age: numberValue(data.age),
     nationality: stringValue(data.cname) ?? stringValue(data.ccode),
     height: formatHeight(numberValue(data.height)),
     photoUrl: playerPhotoUrl(id),
+    raw: data,
     seasonStat: {
       playerId: id,
       teamId,

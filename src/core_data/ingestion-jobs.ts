@@ -14,6 +14,7 @@ import {
 } from "./league-season-policy";
 import { sourceIdToBigInt } from "./models";
 import { CoreIngestionRepository } from "./repositories";
+import { resolveProviderCurrentSeason, sync_league_season_rosters } from "./season-rosters";
 import { ScopeTooBroadError } from "./scope-validation";
 
 const activeStatuses = ["pending", "running"];
@@ -97,7 +98,8 @@ export async function run_incremental_update(prisma: PrismaClient, input: StartJ
     throw new Error("Initial backfill must complete before incremental updates.");
   }
 
-  const scopes = await buildIncrementalScopes(prisma);
+  const client = input.client ?? createFotMobClient();
+  const scopes = await buildIncrementalScopes(prisma, client);
   const result = await createLockedJob(prisma, {
     jobType: "incremental_update",
     data: {
@@ -112,7 +114,7 @@ export async function run_incremental_update(prisma: PrismaClient, input: StartJ
 
   if (!result.started) return { job: serializeIngestionJob(result.job), started: false };
 
-  void runIngestionJob(prisma, result.job.id, "incremental_update", scopes, input.client ?? createFotMobClient());
+  void runIngestionJob(prisma, result.job.id, "incremental_update", scopes, client);
   return { job: serializeIngestionJob(result.job), started: true };
 }
 
@@ -171,6 +173,23 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: "in
           currentMatchId: null
         }
       });
+
+      if (jobType === "incremental_update") {
+        try {
+          await sync_league_season_rosters(prisma, client, {
+            leagueId: scope.league_id,
+            season: scope.season,
+            isCurrent: true
+          });
+        } catch (error) {
+          await prisma.ingestionJob.update({
+            where: { id: jobId },
+            data: {
+              errorMessage: error instanceof Error ? error.message : "Unknown roster sync error"
+            }
+          });
+        }
+      }
 
       const discoveredMatches = await discover_matches_for_scope(client, scope);
       await prisma.ingestionJob.update({
@@ -304,7 +323,7 @@ async function isCancelled(prisma: PrismaClient, jobId: string) {
   return job?.status === "cancelled";
 }
 
-async function buildIncrementalScopes(prisma: PrismaClient) {
+async function buildIncrementalScopes(prisma: PrismaClient, client: FotMobClient) {
   const configs = enabledLeagueIngestionConfigs();
   const baseScopes = scopesForIncrementalUpdate(configs);
   const macheteLeagues = await prisma.macheteLeague.findMany({
@@ -325,17 +344,20 @@ async function buildIncrementalScopes(prisma: PrismaClient) {
     seasonsByLeagueId.set(leagueId, latestSeason(seasonsByLeagueId.get(leagueId), league.season));
   }
 
-  return baseScopes.map((scope) => {
+  return Promise.all(baseScopes.map(async (scope) => {
+    const config = configs.find((candidate) => candidate.league_id === scope.league_id);
+    const providerSeason = config ? await resolveProviderCurrentSeason(client, config, scope.season) : scope.season;
     const season = latestSeason(scope.season, seasonsByLeagueId.get(scope.league_id));
+    const latestProviderSeason = latestSeason(season, providerSeason);
     return {
       ...scope,
-      season,
+      season: latestProviderSeason,
       include_live: true,
       include_upcoming: false,
       force_refresh: false,
       force_reparse: false
     };
-  });
+  }));
 }
 
 function latestSeason(first: string | undefined, second: string | undefined) {

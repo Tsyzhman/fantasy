@@ -11,12 +11,14 @@ export type FotMobPlayer = {
   teamId: string;
   name: string;
   position?: string;
+  shirtNumber?: number;
   age?: number;
   nationality?: string;
   height?: string;
   foot?: string;
   photoUrl?: string;
   seasonStat?: Omit<FotMobPlayerMatchStat, "fixtureId">;
+  raw?: unknown;
 };
 
 export type FotMobTeam = {

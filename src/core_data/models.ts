@@ -48,6 +48,39 @@ export type PlayerData = {
   rawRef: string | null;
 };
 
+export type LeagueSeasonData = {
+  leagueId: bigint;
+  season: string;
+  calendarType: string | null;
+  isCurrent: boolean;
+  providerSeason: string | null;
+  name: string | null;
+  country: string | null;
+  metadata: unknown;
+};
+
+export type LeagueSeasonTeamData = {
+  leagueId: bigint;
+  season: string;
+  teamId: bigint;
+  active: boolean;
+  metadata: unknown;
+};
+
+export type TeamPlayerSeasonData = {
+  leagueId: bigint;
+  season: string;
+  teamId: bigint;
+  playerId: bigint;
+  active: boolean;
+  position: string | null;
+  shirtNumber: number | null;
+  nationality: string | null;
+  age: number | null;
+  photoUrl: string | null;
+  rosterPayload: unknown;
+};
+
 export type TeamMatchStatsData = {
   matchId: bigint;
   teamId: bigint;
@@ -211,4 +244,3 @@ export function asRecord(value: unknown): JsonRecord {
 export function isRecord(value: unknown): value is JsonRecord {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
-
