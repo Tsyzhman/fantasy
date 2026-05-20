@@ -132,6 +132,9 @@ test("shallow FotMob payloads are not marked final raw payloads", async () => {
     coreTeam: {
       async upsert() {
         return {};
+      },
+      async createMany() {
+        return {};
       }
     },
     corePlayer: {
@@ -193,4 +196,84 @@ test("shallow FotMob payloads are not marked final raw payloads", async () => {
   const rawUpsert = calls[0] as { update?: { isFinal?: boolean }; create?: { isFinal?: boolean } };
   assert.equal(rawUpsert.update?.isFinal, false);
   assert.equal(rawUpsert.create?.isFinal, false);
+});
+
+test("match payload persistence creates placeholder teams for player stat team references", async () => {
+  const placeholderCalls: unknown[] = [];
+  const playerStatCalls: unknown[] = [];
+  const prisma = {
+    coreLeague: {
+      async upsert() {
+        return {};
+      }
+    },
+    coreTeam: {
+      async upsert() {
+        return {};
+      },
+      async createMany(input: unknown) {
+        placeholderCalls.push(input);
+        return {};
+      }
+    },
+    corePlayer: {
+      async upsert() {
+        return {};
+      }
+    },
+    coreMatch: {
+      async upsert() {
+        return {};
+      }
+    },
+    matchTeamStat: {
+      async upsert() {
+        return {};
+      }
+    },
+    matchPlayerStat: {
+      async upsert(input: unknown) {
+        playerStatCalls.push(input);
+        return {};
+      }
+    },
+    matchEvent: {
+      async deleteMany() {
+        return {};
+      }
+    },
+    matchShot: {
+      async upsert() {
+        return {};
+      }
+    },
+    rawMatchPayload: {
+      async upsert() {
+        return {};
+      }
+    },
+    shotmapComparisonsCache: {
+      async findMany() {
+        return [];
+      }
+    }
+  } as unknown as PrismaClient;
+
+  const { persist_match_payload } = await import("./ingestion");
+  await persist_match_payload(
+    prisma,
+    {
+      id: 1002,
+      leagueId: 47,
+      home: { id: 10, name: "Home FC", score: 1 },
+      away: { id: 20, name: "Away FC", score: 0 },
+      status: { finished: true, started: true, utcTime: "2026-05-01T18:00:00.000Z" },
+      playerStats: [{ id: 999, name: "Loose Team Player", teamId: 30, stats: { minutes: 90 } }]
+    },
+    { matchId: 1002n, fetched: true }
+  );
+
+  const createMany = placeholderCalls[0] as { data?: Array<{ id: bigint; name: string }> };
+  assert.ok(createMany.data?.some((team) => team.id === 30n && team.name === "FotMob team 30"));
+  assert.equal(playerStatCalls.length, 1);
 });

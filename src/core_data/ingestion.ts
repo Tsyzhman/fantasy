@@ -334,12 +334,25 @@ async function upsertParsedPayload(prisma: PrismaClient, parsed: ParsedMatchPayl
     await matchRepository.upsertLeague(league);
   }
   await teamRepository.upsertMany(parsed.teams);
+  await teamRepository.ensurePlaceholders(referencedTeamIds(parsed));
   await playerRepository.upsertMany(parsed.players);
   await matchRepository.upsert(parsed.match);
   await statsRepository.upsertTeamStats(parsed.teamStats);
   await statsRepository.upsertPlayerStats(parsed.playerStats);
   await new CoreEventRepository(prisma).replaceMatchEvents(parsed.match.id, parsed.events);
   await new CoreShotRepository(prisma).upsertShots(parsed.shots);
+}
+
+function referencedTeamIds(parsed: ParsedMatchPayload) {
+  return uniqueBigints([
+    ...parsed.teams.map((team) => team.id),
+    parsed.match.homeTeamId,
+    parsed.match.awayTeamId,
+    ...parsed.teamStats.flatMap((row) => [row.teamId, row.opponentTeamId]),
+    ...parsed.playerStats.flatMap((row) => [row.teamId, row.opponentTeamId]),
+    ...parsed.events.map((row) => row.teamId),
+    ...parsed.shots.flatMap((row) => [row.teamId, row.opponentTeamId])
+  ].filter((teamId): teamId is bigint => teamId !== null && teamId !== undefined && teamId > 0n));
 }
 
 async function upsertDiscoveredFixture(
@@ -429,4 +442,16 @@ function hasDetailedMatchPayload(payload: unknown) {
 
 function jsonArray(value: unknown) {
   return Array.isArray(value) ? value : [];
+}
+
+function uniqueBigints(values: bigint[]) {
+  const seen = new Set<string>();
+  const result: bigint[] = [];
+  for (const value of values) {
+    const key = String(value);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(value);
+  }
+  return result;
 }

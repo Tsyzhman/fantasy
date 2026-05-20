@@ -86,6 +86,23 @@ export class CoreTeamRepository {
       await this.upsert(team);
     }
   }
+
+  async ensurePlaceholders(teamIds: Array<bigint | null | undefined>) {
+    const ids = uniqueBigints(teamIds.filter((teamId): teamId is bigint => teamId !== null && teamId !== undefined && teamId > 0n));
+    if (ids.length === 0) return;
+
+    await this.prisma.coreTeam.createMany({
+      data: ids.map((id) => ({
+        id,
+        name: `FotMob team ${String(id)}`,
+        country: null,
+        ccode: null,
+        source: FOTMOB_SOURCE,
+        rawRef: String(id)
+      })),
+      skipDuplicates: true
+    });
+  }
 }
 
 export class CorePlayerRepository {
