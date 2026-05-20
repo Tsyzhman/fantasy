@@ -10,10 +10,13 @@ import {
   loadSharedLeagueOptions,
   loadSharedLeagueTeams,
   loadSharedMachetePlayerRows,
+  loadSharedTeamCompetitionOptions,
+  parseSharedCompetitionKey,
   parseSharedBigInt,
   sortSharedMacheteRows,
   type SharedLeagueSeasonOption,
   type SharedPlayerRowsScope,
+  type SharedTeamCompetitionOption,
   type SharedTeamOption
 } from "@/machete/shared_read_model";
 
@@ -22,6 +25,7 @@ export const dynamic = "force-dynamic";
 type SearchParams = {
   leagueId?: string;
   teamId?: string;
+  competitionKey?: string;
   position?: string;
   minMinutes?: string;
   recentMatches?: string;
@@ -61,10 +65,15 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
     customMatches: resolvedSearchParams.customMatches,
     legacyRecentMatches: resolvedSearchParams.recentMatches
   });
+  const selectedTeamBigInt = parseSharedBigInt(selectedTeamId);
+  const teamCompetitionOptions = selectedTeamBigInt ? await loadSharedTeamCompetitionOptions(prisma, selectedTeamBigInt) : [];
+  const selectedCompetition = selectedTeamCompetitionOption(resolvedSearchParams.competitionKey, teamCompetitionOptions);
+  const selectedCompetitionKey = selectedCompetition?.key ?? "";
 
   const playersResult = await buildMatchWindowRows({
     selectedLeagueId,
     selectedTeamId,
+    competitionKey: selectedCompetitionKey,
     position: resolvedSearchParams.position,
     minMinutes: resolvedSearchParams.minMinutes,
     matchWindow,
@@ -77,6 +86,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
     ...resolvedSearchParams,
     leagueId: selectedLeagueId,
     teamId: selectedTeamId,
+    competitionKey: selectedCompetitionKey,
     pageSize: String(pageSize)
   };
 
@@ -110,7 +120,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
         </Link>
       </div>
 
-      <AutoSubmitForm className="mt-8 grid grid-cols-1 gap-3 rounded border border-slate-200 bg-white p-4 shadow-soft md:grid-cols-7">
+      <AutoSubmitForm className="mt-8 grid grid-cols-1 gap-3 rounded border border-slate-200 bg-white p-4 shadow-soft md:grid-cols-2 xl:grid-cols-8">
         <label className="text-sm">
           <span className="mb-1 block font-medium text-slate-600"><I18nText en="League" ru="Лига" /></span>
           <select name="leagueId" defaultValue={selectedLeagueId} className="w-full rounded border border-slate-200 px-3 py-2">
@@ -134,6 +144,22 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
                 </option>
               ))
             )}
+          </select>
+        </label>
+        <label className="text-sm">
+          <span className="mb-1 block font-medium text-slate-600"><I18nText en="Competition" ru="Турнир" /></span>
+          <select
+            name="competitionKey"
+            defaultValue={selectedCompetitionKey}
+            disabled={!selectedTeamId || teamCompetitionOptions.length === 0}
+            className="w-full rounded border border-slate-200 px-3 py-2 disabled:bg-slate-100"
+          >
+            <option value="">Selected league / Текущая лига</option>
+            {teamCompetitionOptions.map((competition) => (
+              <option key={competition.key} value={competition.key}>
+                {competition.displayName} - {competition.season} ({competition.matchesCount})
+              </option>
+            ))}
           </select>
         </label>
         <label className="text-sm">
@@ -199,7 +225,10 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
         </label>
       </AutoSubmitForm>
 
-      <p className="mt-3 text-sm text-slate-500">Stats and FP are recalculated from {matchWindowLabel(matchWindow)}.</p>
+      <p className="mt-3 text-sm text-slate-500">
+        Stats and FP are recalculated from {matchWindowLabel(matchWindow)}
+        {selectedCompetition ? ` in ${selectedCompetition.displayName} ${selectedCompetition.season}` : ""}.
+      </p>
 
       <section className="mt-6">
         {selectedLeagueId ? (
@@ -231,6 +260,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
 async function buildMatchWindowRows({
   selectedLeagueId,
   selectedTeamId,
+  competitionKey,
   position,
   minMinutes,
   matchWindow,
@@ -240,6 +270,7 @@ async function buildMatchWindowRows({
 }: {
   selectedLeagueId: string;
   selectedTeamId: string;
+  competitionKey: string;
   position?: string;
   minMinutes?: string;
   matchWindow: MacheteMatchWindow;
@@ -251,7 +282,7 @@ async function buildMatchWindowRows({
     return emptyPagedPlayers(page, pageSize);
   }
 
-  const scopes = await buildPlayerScopes(selectedLeagueId, selectedTeamId);
+  const scopes = await buildPlayerScopes(selectedLeagueId, selectedTeamId, competitionKey);
   const rows = sortSharedMacheteRows(
     await loadSharedMachetePlayerRows(prisma, {
       scopes,
@@ -265,8 +296,13 @@ async function buildMatchWindowRows({
   return paginateRows(rows, page, pageSize);
 }
 
-async function buildPlayerScopes(selectedLeagueId: string, selectedTeamId: string): Promise<SharedPlayerRowsScope[]> {
+async function buildPlayerScopes(selectedLeagueId: string, selectedTeamId: string, competitionKey: string): Promise<SharedPlayerRowsScope[]> {
   const teamId = parseSharedBigInt(selectedTeamId);
+  const competition = parseSharedCompetitionKey(competitionKey);
+  if (teamId && competition) {
+    return [{ leagueId: competition.leagueId, season: competition.season, teamId }];
+  }
+
   const leagues = await loadSharedLeagueOptions(prisma);
   const selectedLeagues =
     selectedLeagueId === ALL_LEAGUES_VALUE ? leagues : leagues.filter((league) => String(league.leagueId) === selectedLeagueId);
@@ -288,6 +324,11 @@ async function loadTeamLeagueOptions(leagues: SharedLeagueSeasonOption[], select
       teams: await loadSharedLeagueTeams(prisma, league.leagueId, league.season)
     }))
   ) as Promise<Array<SharedLeagueSeasonOption & { teams: SharedTeamOption[] }>>;
+}
+
+function selectedTeamCompetitionOption(value: string | undefined, options: SharedTeamCompetitionOption[]) {
+  if (!value) return null;
+  return options.find((option) => option.key === value) ?? null;
 }
 
 function parsePositiveInt(value: string | undefined, fallback: number) {

@@ -18,6 +18,12 @@ export type SharedLeagueSeasonOption = {
   updatedAt: Date;
 };
 
+export type SharedTeamCompetitionOption = SharedLeagueSeasonOption & {
+  key: string;
+  matchesCount: number;
+  latestMatchDate: Date | null;
+};
+
 export type SharedTeamOption = {
   id: bigint;
   name: string;
@@ -120,6 +126,103 @@ export async function loadSharedLeagueSeason(prisma: PrismaClient, rawLeagueId: 
   if (!leagueId) return null;
   const options = await loadSharedLeagueOptions(prisma);
   return options.find((option) => option.leagueId === leagueId) ?? null;
+}
+
+export async function loadSharedTeamCompetitionOptions(prisma: PrismaClient, teamId: bigint): Promise<SharedTeamCompetitionOption[]> {
+  const matches = await prisma.coreMatch.findMany({
+    where: {
+      finished: true,
+      leagueId: { not: null },
+      season: { not: null },
+      OR: [{ homeTeamId: teamId }, { awayTeamId: teamId }]
+    },
+    select: {
+      leagueId: true,
+      season: true,
+      matchDate: true,
+      league: {
+        select: {
+          name: true,
+          country: true
+        }
+      }
+    },
+    orderBy: { matchDate: "desc" }
+  });
+
+  const grouped = new Map<
+    string,
+    {
+      leagueId: bigint;
+      season: string;
+      matchesCount: number;
+      latestMatchDate: Date | null;
+      league: { name: string; country: string | null } | null;
+    }
+  >();
+
+  for (const match of matches) {
+    if (!match.leagueId || !match.season) continue;
+    const key = sharedCompetitionKey(match.leagueId, match.season);
+    const existing = grouped.get(key);
+    if (existing) {
+      existing.matchesCount += 1;
+      if (dateMs(match.matchDate) > dateMs(existing.latestMatchDate)) existing.latestMatchDate = match.matchDate;
+      continue;
+    }
+
+    grouped.set(key, {
+      leagueId: match.leagueId,
+      season: match.season,
+      matchesCount: 1,
+      latestMatchDate: match.matchDate,
+      league: match.league
+    });
+  }
+
+  if (grouped.size === 0) return [];
+
+  const seasonRows = await prisma.leagueSeason.findMany({
+    where: {
+      OR: [...grouped.values()].map((group) => ({
+        leagueId: group.leagueId,
+        season: group.season
+      }))
+    },
+    include: {
+      league: true
+    }
+  });
+  const seasonRowsByKey = new Map(seasonRows.map((row) => [sharedCompetitionKey(row.leagueId, row.season), row]));
+
+  return [...grouped.values()]
+    .map((group) => {
+      const row = seasonRowsByKey.get(sharedCompetitionKey(group.leagueId, group.season));
+      const providerLeagueId = String(group.leagueId);
+      const name = row?.name ?? row?.league.name ?? group.league?.name ?? `League ${providerLeagueId}`;
+      const country = row?.country ?? row?.league.country ?? group.league?.country ?? null;
+      const displayName = macheteLeagueDisplayName({
+        id: providerLeagueId,
+        name,
+        country,
+        providerLeagueId
+      });
+
+      return {
+        key: sharedCompetitionKey(group.leagueId, group.season),
+        leagueId: group.leagueId,
+        season: group.season,
+        name,
+        displayName,
+        country,
+        providerLeagueId,
+        isCurrent: row?.isCurrent ?? false,
+        updatedAt: row?.updatedAt ?? group.latestMatchDate ?? new Date(0),
+        matchesCount: group.matchesCount,
+        latestMatchDate: group.latestMatchDate
+      };
+    })
+    .sort((left, right) => compareMacheteLeagues(leagueDisplayInput(left), leagueDisplayInput(right)) || seasonRank(right.season) - seasonRank(left.season));
 }
 
 export async function loadSharedLeagueTeams(prisma: PrismaClient, leagueId: bigint, season: string): Promise<SharedTeamOption[]> {
@@ -343,6 +446,21 @@ export function parseSharedBigInt(value: string | number | bigint | null | undef
   }
 }
 
+export function sharedCompetitionKey(leagueId: string | number | bigint, season: string) {
+  return `${leagueId}:${season}`;
+}
+
+export function parseSharedCompetitionKey(value: string | null | undefined) {
+  const raw = value?.trim();
+  if (!raw) return null;
+  const separatorIndex = raw.indexOf(":");
+  if (separatorIndex <= 0 || separatorIndex >= raw.length - 1) return null;
+  const leagueId = parseSharedBigInt(raw.slice(0, separatorIndex));
+  const season = raw.slice(separatorIndex + 1);
+  if (!leagueId || !season) return null;
+  return { leagueId, season };
+}
+
 export function seasonRank(season: string) {
   const parts = season.match(/\d{2,4}/g);
   if (!parts?.length) return Number.NEGATIVE_INFINITY;
@@ -471,6 +589,10 @@ function leagueDisplayInput(league: SharedLeagueSeasonOption) {
     country: league.country,
     providerLeagueId: league.providerLeagueId
   };
+}
+
+function dateMs(value: Date | null) {
+  return value?.getTime() ?? 0;
 }
 
 function teamScopeKey(leagueId: bigint, season: string, teamId: bigint) {

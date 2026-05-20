@@ -173,10 +173,11 @@ export async function get_shot_map_comparison_for_windows(
   defending_team_id: string | number | bigint,
   attacking_window: MacheteMatchWindow,
   defending_window: MacheteMatchWindow,
-  context: ShotWindowContext = {}
+  context: ShotWindowContext = {},
+  defendingContext: ShotWindowContext = context
 ) {
   const attacking_shots = await get_team_shots_for_window(prisma, attacking_team_id, attacking_window, context);
-  const defending_conceded_shots = await get_team_conceded_shots_for_window(prisma, defending_team_id, defending_window, context);
+  const defending_conceded_shots = await get_team_conceded_shots_for_window(prisma, defending_team_id, defending_window, defendingContext);
 
   return buildShotMapComparisonFromShots(String(attacking_team_id), String(defending_team_id), attacking_shots, defending_conceded_shots);
 }

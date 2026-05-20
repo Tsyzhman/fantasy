@@ -46,17 +46,44 @@ export function AutoSubmitForm({ children, onChange, onSubmit, ...props }: AutoS
           const teamSelect = form.elements.namedItem("teamId");
           if (teamSelect instanceof HTMLSelectElement) teamSelect.value = "";
 
+          const competitionSelect = form.elements.namedItem("competitionKey");
+          if (competitionSelect instanceof HTMLSelectElement) competitionSelect.value = "";
+
           const attackingTeamSelect = form.elements.namedItem("attackingTeamId");
           if (attackingTeamSelect instanceof HTMLSelectElement) attackingTeamSelect.value = "";
 
           const defendingTeamSelect = form.elements.namedItem("defendingTeamId");
           if (defendingTeamSelect instanceof HTMLSelectElement) defendingTeamSelect.value = "";
 
+          const attackingCompetitionSelect = form.elements.namedItem("attackingCompetitionKey");
+          if (attackingCompetitionSelect instanceof HTMLSelectElement) attackingCompetitionSelect.value = "";
+
+          const defendingCompetitionSelect = form.elements.namedItem("defendingCompetitionKey");
+          if (defendingCompetitionSelect instanceof HTMLSelectElement) defendingCompetitionSelect.value = "";
+
           const playerSelect = form.elements.namedItem("playerId");
           if (playerSelect instanceof HTMLSelectElement) playerSelect.value = "";
         }
 
+        if (target instanceof HTMLSelectElement && target.name === "teamId") {
+          const competitionSelect = form.elements.namedItem("competitionKey");
+          if (competitionSelect instanceof HTMLSelectElement) competitionSelect.value = "";
+        }
+
         if (target instanceof HTMLSelectElement && target.name === "attackingTeamId") {
+          const attackingCompetitionSelect = form.elements.namedItem("attackingCompetitionKey");
+          if (attackingCompetitionSelect instanceof HTMLSelectElement) attackingCompetitionSelect.value = "";
+
+          const playerSelect = form.elements.namedItem("playerId");
+          if (playerSelect instanceof HTMLSelectElement) playerSelect.value = "";
+        }
+
+        if (target instanceof HTMLSelectElement && target.name === "defendingTeamId") {
+          const defendingCompetitionSelect = form.elements.namedItem("defendingCompetitionKey");
+          if (defendingCompetitionSelect instanceof HTMLSelectElement) defendingCompetitionSelect.value = "";
+        }
+
+        if (target instanceof HTMLSelectElement && target.name === "attackingCompetitionKey") {
           const playerSelect = form.elements.namedItem("playerId");
           if (playerSelect instanceof HTMLSelectElement) playerSelect.value = "";
         }

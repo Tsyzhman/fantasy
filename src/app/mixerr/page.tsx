@@ -1,7 +1,13 @@
 import { ShotMapExplorer } from "@/components/mixerr/ShotMapExplorer";
 import { AutoSubmitForm } from "@/components/players/auto-submit-form";
 import { prisma } from "@/lib/db";
-import { loadSharedLeagueOptions, loadSharedLeagueTeams, loadSharedTeamPlayers } from "@/machete/shared_read_model";
+import {
+  loadSharedLeagueOptions,
+  loadSharedLeagueTeams,
+  loadSharedTeamCompetitionOptions,
+  loadSharedTeamPlayers,
+  type SharedTeamCompetitionOption
+} from "@/machete/shared_read_model";
 import {
   get_player_shots_for_team_window,
   get_shot_map_comparison_for_windows,
@@ -17,6 +23,8 @@ type PageProps = {
     leagueId?: string;
     attackingTeamId?: string;
     defendingTeamId?: string;
+    attackingCompetitionKey?: string;
+    defendingCompetitionKey?: string;
     playerId?: string;
     matchWindow?: string;
     defendingMatchWindow?: string;
@@ -34,18 +42,32 @@ export default async function MixerrPage({ searchParams }: PageProps) {
   const defendingTeamId = defendingTeam ? String(defendingTeam.id) : "";
   const matchWindow = parseMacheteMatchWindow({ mode: resolvedSearchParams.matchWindow });
   const defendingMatchWindow = parseMacheteMatchWindow({ mode: resolvedSearchParams.defendingMatchWindow ?? resolvedSearchParams.matchWindow });
-  const players = selectedLeague && attackingTeam ? await loadSharedTeamPlayers(prisma, selectedLeague.leagueId, selectedLeague.season, attackingTeam.id) : [];
+  const attackingCompetitionOptions = attackingTeam ? await loadSharedTeamCompetitionOptions(prisma, attackingTeam.id) : [];
+  const defendingCompetitionOptions = defendingTeam ? await loadSharedTeamCompetitionOptions(prisma, defendingTeam.id) : [];
+  const selectedAttackingCompetition = selectedTeamCompetitionOption(resolvedSearchParams.attackingCompetitionKey, attackingCompetitionOptions);
+  const selectedDefendingCompetition = selectedTeamCompetitionOption(resolvedSearchParams.defendingCompetitionKey, defendingCompetitionOptions);
+  const playerScope = selectedAttackingCompetition ?? selectedLeague;
+  const players = playerScope && attackingTeam ? await loadSharedTeamPlayers(prisma, playerScope.leagueId, playerScope.season, attackingTeam.id) : [];
   const player = players.find((candidate) => String(candidate.id) === resolvedSearchParams.playerId) ?? players[0] ?? null;
   const playerId = player ? String(player.id) : "";
-  const shotContext = selectedLeague ? { leagueId: selectedLeague.leagueId, season: selectedLeague.season } : {};
+  const attackingShotContext = selectedAttackingCompetition
+    ? { leagueId: selectedAttackingCompetition.leagueId, season: selectedAttackingCompetition.season }
+    : selectedLeague
+      ? { leagueId: selectedLeague.leagueId, season: selectedLeague.season }
+      : {};
+  const defendingShotContext = selectedDefendingCompetition
+    ? { leagueId: selectedDefendingCompetition.leagueId, season: selectedDefendingCompetition.season }
+    : selectedLeague
+      ? { leagueId: selectedLeague.leagueId, season: selectedLeague.season }
+      : {};
 
   const [teamShots, concededShots, playerShots, comparison] = attackingTeamId
     ? await Promise.all([
-        get_team_shots_for_window(prisma, attackingTeamId, matchWindow, shotContext),
-        get_team_conceded_shots_for_window(prisma, attackingTeamId, matchWindow, shotContext),
-        playerId ? get_player_shots_for_team_window(prisma, playerId, attackingTeamId, matchWindow, shotContext) : Promise.resolve([]),
+        get_team_shots_for_window(prisma, attackingTeamId, matchWindow, attackingShotContext),
+        get_team_conceded_shots_for_window(prisma, attackingTeamId, matchWindow, attackingShotContext),
+        playerId ? get_player_shots_for_team_window(prisma, playerId, attackingTeamId, matchWindow, attackingShotContext) : Promise.resolve([]),
         defendingTeamId
-          ? get_shot_map_comparison_for_windows(prisma, attackingTeamId, defendingTeamId, matchWindow, defendingMatchWindow, shotContext)
+          ? get_shot_map_comparison_for_windows(prisma, attackingTeamId, defendingTeamId, matchWindow, defendingMatchWindow, attackingShotContext, defendingShotContext)
           : Promise.resolve(emptyComparison(attackingTeamId, defendingTeamId))
       ])
     : [[], [], [], emptyComparison(attackingTeamId, defendingTeamId)];
@@ -60,7 +82,7 @@ export default async function MixerrPage({ searchParams }: PageProps) {
         </p>
       </section>
 
-      <AutoSubmitForm className="mt-6 grid grid-cols-1 gap-3 rounded border border-slate-200 bg-white p-4 shadow-soft md:grid-cols-2 xl:grid-cols-6">
+      <AutoSubmitForm className="mt-6 grid grid-cols-1 gap-3 rounded border border-slate-200 bg-white p-4 shadow-soft md:grid-cols-2 xl:grid-cols-8">
         <label className="text-sm">
           <span className="mb-1 block font-medium text-slate-600">League</span>
           <select name="leagueId" defaultValue={selectedLeague ? String(selectedLeague.leagueId) : ""} className="w-full rounded border border-slate-200 px-3 py-2">
@@ -82,11 +104,43 @@ export default async function MixerrPage({ searchParams }: PageProps) {
           </select>
         </label>
         <label className="text-sm">
+          <span className="mb-1 block font-medium text-slate-600">Team A comp</span>
+          <select
+            name="attackingCompetitionKey"
+            defaultValue={selectedAttackingCompetition?.key ?? ""}
+            disabled={!attackingTeam || attackingCompetitionOptions.length === 0}
+            className="w-full rounded border border-slate-200 px-3 py-2 disabled:bg-slate-100"
+          >
+            <option value="">Selected league</option>
+            {attackingCompetitionOptions.map((competition) => (
+              <option key={competition.key} value={competition.key}>
+                {competition.displayName} - {competition.season} ({competition.matchesCount})
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="text-sm">
           <span className="mb-1 block font-medium text-slate-600">Team B</span>
           <select name="defendingTeamId" defaultValue={defendingTeamId} disabled={!selectedLeague} className="w-full rounded border border-slate-200 px-3 py-2 disabled:bg-slate-100">
             {teams.map((team) => (
               <option key={String(team.id)} value={String(team.id)}>
                 {team.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="text-sm">
+          <span className="mb-1 block font-medium text-slate-600">Team B comp</span>
+          <select
+            name="defendingCompetitionKey"
+            defaultValue={selectedDefendingCompetition?.key ?? ""}
+            disabled={!defendingTeam || defendingCompetitionOptions.length === 0}
+            className="w-full rounded border border-slate-200 px-3 py-2 disabled:bg-slate-100"
+          >
+            <option value="">Selected league</option>
+            {defendingCompetitionOptions.map((competition) => (
+              <option key={competition.key} value={competition.key}>
+                {competition.displayName} - {competition.season} ({competition.matchesCount})
               </option>
             ))}
           </select>
@@ -135,6 +189,11 @@ export default async function MixerrPage({ searchParams }: PageProps) {
       )}
     </main>
   );
+}
+
+function selectedTeamCompetitionOption(value: string | undefined, options: SharedTeamCompetitionOption[]) {
+  if (!value) return null;
+  return options.find((option) => option.key === value) ?? null;
 }
 
 function MatchWindowOptions() {
