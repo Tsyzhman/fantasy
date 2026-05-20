@@ -18,6 +18,8 @@ import { resolveProviderCurrentSeason, sync_league_season_rosters } from "./seas
 import { ScopeTooBroadError } from "./scope-validation";
 
 const activeStatuses = ["pending", "running"];
+type IngestionJobType = "initial_backfill" | "incremental_update";
+
 const defaultRuleset = {
   name: "Machete project fantasy model",
   version: "2025/26",
@@ -29,6 +31,10 @@ const defaultRuleset = {
 
 type StartJobInput = {
   startedByUserId?: string | null;
+  client?: FotMobClient;
+};
+
+type RunJobInput = {
   client?: FotMobClient;
 };
 
@@ -71,7 +77,7 @@ export async function start_initial_backfill(prisma: PrismaClient, input: StartJ
     jobType: "initial_backfill",
     data: {
       jobType: "initial_backfill",
-      status: "running",
+      status: "pending",
       startedByUserId: input.startedByUserId ?? null,
       startedAt: new Date(),
       totalScopes: scopes.length,
@@ -87,7 +93,6 @@ export async function start_initial_backfill(prisma: PrismaClient, input: StartJ
 
   if (!result.started) return { job: serializeIngestionJob(result.job), started: false };
 
-  void runIngestionJob(prisma, result.job.id, "initial_backfill", scopes, input.client ?? createFotMobClient());
   return { job: serializeIngestionJob(result.job), started: true };
 }
 
@@ -106,7 +111,7 @@ export async function run_incremental_update(prisma: PrismaClient, input: StartJ
     jobType: "incremental_update",
     data: {
       jobType: "incremental_update",
-      status: "running",
+      status: "pending",
       startedByUserId: input.startedByUserId ?? null,
       startedAt: new Date(),
       totalScopes: scopes.length,
@@ -116,8 +121,27 @@ export async function run_incremental_update(prisma: PrismaClient, input: StartJ
 
   if (!result.started) return { job: serializeIngestionJob(result.job), started: false };
 
-  void runIngestionJob(prisma, result.job.id, "incremental_update", scopes, client);
   return { job: serializeIngestionJob(result.job), started: true };
+}
+
+export async function run_next_ingestion_job(prisma: PrismaClient, input: RunJobInput = {}) {
+  const job = await runningJob(prisma);
+  if (!job) return { job: null, ran: false };
+
+  return run_ingestion_job_by_id(prisma, job.id, input);
+}
+
+export async function run_ingestion_job_by_id(prisma: PrismaClient, jobId: string, input: RunJobInput = {}) {
+  const job = await prisma.ingestionJob.findUnique({ where: { id: jobId } });
+  if (!job) return { job: null, ran: false };
+  if (!activeStatuses.includes(job.status)) return { job: serializeIngestionJob(job), ran: false };
+
+  const client = input.client ?? createFotMobClient();
+  const scopes = await scopesForJob(prisma, job, client);
+  await runIngestionJob(prisma, job.id, job.jobType as IngestionJobType, scopes, client);
+
+  const updatedJob = await prisma.ingestionJob.findUnique({ where: { id: job.id } });
+  return { job: updatedJob ? serializeIngestionJob(updatedJob) : null, ran: true };
 }
 
 export async function cancel_running_ingestion(prisma: PrismaClient) {
@@ -158,24 +182,43 @@ export function serializeIngestionJob(job: IngestionJob) {
   };
 }
 
-async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: "initial_backfill" | "incremental_update", scopes: IngestionScope[], client: FotMobClient) {
+async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: IngestionJobType, scopes: IngestionScope[], client: FotMobClient) {
   const ingestionRepository = new CoreIngestionRepository(prisma);
   const ruleset = await new FantasyPointsRepository(prisma).createRuleset(defaultRuleset);
   const jobSnapshot = await prisma.ingestionJob.findUnique({
     where: { id: jobId },
-    select: { metadata: true }
+    select: { status: true, metadata: true, processedScopes: true, startedAt: true }
   });
+  if (!jobSnapshot || jobSnapshot.status === "cancelled") return;
+
   let jobMetadata: Prisma.JsonValue = jobSnapshot?.metadata ?? {};
   const mergeJobMetadata = (next: Record<string, unknown>) => {
     const merged = mergeMetadata(jobMetadata, next);
     jobMetadata = merged as Prisma.JsonValue;
     return merged;
   };
-  let processedScopes = 0;
+  let processedScopes = Math.max(0, jobSnapshot.processedScopes ?? 0);
 
   try {
-    for (const scope of scopes) {
+    await prisma.ingestionJob.update({
+      where: { id: jobId },
+      data: {
+        status: "running",
+        startedAt: jobSnapshot.startedAt ?? new Date()
+      }
+    });
+
+    console.info(`[ingestion] Running ${jobType} job ${jobId} from scope ${processedScopes + 1}/${scopes.length}.`);
+
+    for (let scopeIndex = processedScopes; scopeIndex < scopes.length; scopeIndex += 1) {
+      const scope = scopes[scopeIndex];
       if (await isCancelled(prisma, jobId)) return;
+
+      const scopeOrdinal = scopeIndex + 1;
+      const currentMetadata = metadataRecord(jobMetadata);
+      const isResumingSameScope = metadataNumber(currentMetadata, "current_scope_index") === scopeOrdinal;
+      const knownScopeTotal = isResumingSameScope ? metadataNumber(currentMetadata, "current_scope_total_matches") : null;
+      const knownScopeProcessed = isResumingSameScope ? metadataNumber(currentMetadata, "current_scope_processed_matches") ?? 0 : 0;
 
       await prisma.ingestionJob.update({
         where: { id: jobId },
@@ -184,13 +227,15 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: "in
           currentSeason: scope.season,
           currentMatchId: null,
           metadata: mergeJobMetadata({
-            current_scope_index: processedScopes + 1,
-            current_scope_total_matches: null,
-            current_scope_processed_matches: 0,
+            current_scope_index: scopeOrdinal,
+            current_scope_total_matches: knownScopeTotal,
+            current_scope_processed_matches: knownScopeProcessed,
             current_scope_status: "syncing_rosters"
           })
         }
       });
+
+      console.info(`[ingestion] Scope ${scopeOrdinal}/${scopes.length}: league ${scope.league_id}, season ${scope.season}.`);
 
       try {
         await sync_league_season_rosters(prisma, client, {
@@ -208,11 +253,12 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: "in
       }
 
       const discoveredMatches = await discover_matches_for_scope(client, scope);
-      let currentScopeProcessedMatches = 0;
+      const shouldIncrementTotalMatches = !isResumingSameScope || knownScopeTotal === null;
+      let currentScopeProcessedMatches = isResumingSameScope ? Math.min(knownScopeProcessed, discoveredMatches.length) : 0;
       await prisma.ingestionJob.update({
         where: { id: jobId },
         data: {
-          totalMatches: { increment: discoveredMatches.length },
+          ...(shouldIncrementTotalMatches ? { totalMatches: { increment: discoveredMatches.length } } : {}),
           metadata: mergeJobMetadata({
             current_scope_total_matches: discoveredMatches.length,
             current_scope_processed_matches: currentScopeProcessedMatches,
@@ -221,7 +267,7 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: "in
         }
       });
 
-      for (const fixture of discoveredMatches) {
+      for (const fixture of discoveredMatches.slice(currentScopeProcessedMatches)) {
         if (await isCancelled(prisma, jobId)) return;
 
         const matchId = sourceIdToBigInt(fixture.id, "match");
@@ -257,6 +303,11 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: "in
               })
             }
           });
+          if (currentScopeProcessedMatches % 25 === 0 || currentScopeProcessedMatches === discoveredMatches.length) {
+            console.info(
+              `[ingestion] Scope ${scopeOrdinal}/${scopes.length}: ${currentScopeProcessedMatches}/${discoveredMatches.length} matches processed.`
+            );
+          }
           await ingestionRepository.upsertCheckpoint({
             jobType,
             leagueId: BigInt(scope.league_id),
@@ -279,7 +330,7 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: "in
         }
       }
 
-      processedScopes += 1;
+      processedScopes = scopeIndex + 1;
       await prisma.ingestionJob.update({
         where: { id: jobId },
         data: {
@@ -293,6 +344,7 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: "in
           })
         }
       });
+      console.info(`[ingestion] Scope ${scopeOrdinal}/${scopes.length} completed.`);
     }
 
     await prisma.ingestionJob.update({
@@ -311,6 +363,7 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: "in
         })
       }
     });
+    console.info(`[ingestion] ${jobType} job ${jobId} completed.`);
   } catch (error) {
     const status = error instanceof ScopeTooBroadError ? "failed" : "failed";
     await prisma.ingestionJob.update({
@@ -357,6 +410,12 @@ async function runningJob(prisma: PrismaClient) {
     where: { status: { in: activeStatuses } },
     orderBy: { updatedAt: "desc" }
   });
+}
+
+async function scopesForJob(prisma: PrismaClient, job: IngestionJob, client: FotMobClient) {
+  if (job.jobType === "initial_backfill") return scopesForInitialBackfill();
+  if (job.jobType === "incremental_update") return buildIncrementalScopes(prisma, client);
+  throw new Error(`Unsupported ingestion job type: ${job.jobType}`);
 }
 
 async function createLockedJob(
@@ -464,4 +523,18 @@ function mergeMetadata(current: Prisma.JsonValue, next: Record<string, unknown>)
 function jsonValue(value: unknown): Prisma.InputJsonValue {
   if (value === null || value === undefined) return {};
   return value as Prisma.InputJsonValue;
+}
+
+function metadataRecord(value: unknown) {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+}
+
+function metadataNumber(metadata: Record<string, unknown>, key: string) {
+  const value = metadata[key];
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim()) {
+    const parsed = Number(value);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return null;
 }
