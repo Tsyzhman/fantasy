@@ -19,11 +19,17 @@ try {
     console.info(`[ingestion:cli] ${started.started ? "Queued" : "Reusing active"} initial backfill job ${started.job.id}.`);
     const result = await run_next_ingestion_job(prisma);
     console.info(`[ingestion:cli] Finished runner for job ${result.job?.id ?? "none"} with status ${result.job?.status ?? "none"}.`);
+  } else if (command === "queue-initial-backfill") {
+    const started = await start_initial_backfill(prisma, { startedByUserId: null });
+    console.info(`[ingestion:cli] ${started.started ? "Queued" : "Reusing active"} initial backfill job ${started.job.id}.`);
   } else if (command === "incremental-update") {
     const started = await run_incremental_update(prisma, { startedByUserId: null });
     console.info(`[ingestion:cli] ${started.started ? "Queued" : "Reusing active"} incremental update job ${started.job.id}.`);
     const result = await run_next_ingestion_job(prisma);
     console.info(`[ingestion:cli] Finished runner for job ${result.job?.id ?? "none"} with status ${result.job?.status ?? "none"}.`);
+  } else if (command === "queue-incremental-update") {
+    const started = await run_incremental_update(prisma, { startedByUserId: null });
+    console.info(`[ingestion:cli] ${started.started ? "Queued" : "Reusing active"} incremental update job ${started.job.id}.`);
   } else if (command === "run-next") {
     const result = await run_next_ingestion_job(prisma);
     console.info(`[ingestion:cli] ${result.ran ? "Ran" : "No active"} ingestion job ${result.job?.id ?? ""}.`);
@@ -33,7 +39,9 @@ try {
     const status = await getIngestionAdminStatus(prisma);
     console.dir(status, { depth: null });
   } else {
-    throw new Error(`Unknown ingestion command "${command}". Use status, initial-backfill, incremental-update, run-next, or worker.`);
+    throw new Error(
+      `Unknown ingestion command "${command}". Use status, queue-initial-backfill, initial-backfill, queue-incremental-update, incremental-update, run-next, or worker.`
+    );
   }
 } catch (error) {
   console.error("[ingestion:cli] Failed.", error);
