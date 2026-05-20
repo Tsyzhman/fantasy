@@ -258,9 +258,25 @@ export class CoreEventRepository {
   async replaceMatchEvents(matchId: bigint, rows: MatchEventData[]) {
     await this.prisma.matchEvent.deleteMany({ where: { matchId } });
     if (rows.length === 0) return;
+    await this.ensureReferencedPlayers(rows);
 
     await this.prisma.matchEvent.createMany({
       data: rows.map(eventData),
+      skipDuplicates: true
+    });
+  }
+
+  private async ensureReferencedPlayers(rows: MatchEventData[]) {
+    const playerIds = uniqueBigints(rows.flatMap((row) => [row.playerId, row.relatedPlayerId]).filter((id): id is bigint => id !== null));
+    if (playerIds.length === 0) return;
+
+    await this.prisma.corePlayer.createMany({
+      data: playerIds.map((id) => ({
+        id,
+        name: `FotMob player ${String(id)}`,
+        source: FOTMOB_SOURCE,
+        rawRef: String(id)
+      })),
       skipDuplicates: true
     });
   }
@@ -625,6 +641,18 @@ function shotData(row: MatchShotData) {
 function jsonValue(value: unknown): Prisma.InputJsonValue {
   if (value === null || value === undefined) return {};
   return value as Prisma.InputJsonValue;
+}
+
+function uniqueBigints(values: bigint[]) {
+  const seen = new Set<string>();
+  const result: bigint[] = [];
+  for (const value of values) {
+    const key = String(value);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(value);
+  }
+  return result;
 }
 
 function shotInclude() {

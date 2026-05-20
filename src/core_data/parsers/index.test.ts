@@ -180,3 +180,58 @@ test("shared parser reads FotMob page playerStats maps", () => {
   assert.equal(stat.chancesCreated, 3);
   assert.equal(stat.rating, 7.8);
 });
+
+test("shared parser creates players referenced only by match events", () => {
+  const payload = {
+    general: {
+      matchId: "404",
+      leagueId: 47,
+      homeTeam: { id: 10, name: "Home FC" },
+      awayTeam: { id: 20, name: "Away FC" },
+      started: true,
+      finished: true,
+      matchTimeUTCDate: "2026-05-04T18:00:00.000Z"
+    },
+    header: {
+      teams: [
+        { id: 10, name: "Home FC", score: 0 },
+        { id: 20, name: "Away FC", score: 0 }
+      ],
+      status: { finished: true, started: true, utcTime: "2026-05-04T18:00:00.000Z" }
+    },
+    content: {
+      matchFacts: {
+        events: {
+          events: [
+            {
+              type: "Card",
+              time: 37,
+              playerId: 7001,
+              nameStr: "Event Only",
+              card: "Yellow",
+              isHome: true
+            },
+            {
+              type: "Substitution",
+              time: 61,
+              isHome: false,
+              swap: [
+                { id: "7002", name: "Sub In" },
+                { id: "7003", name: "Sub Out" }
+              ]
+            }
+          ]
+        }
+      }
+    }
+  };
+
+  const parsed = parse_payload(payload);
+  const playerIds = new Set(parsed.players.map((player) => String(player.id)));
+
+  assert.equal(parsed.events[0].playerId, 7001n);
+  assert.equal(parsed.events[0].teamId, 10n);
+  assert.equal(playerIds.has("7001"), true);
+  assert.equal(playerIds.has("7002"), true);
+  assert.equal(playerIds.has("7003"), true);
+});

@@ -104,25 +104,41 @@ export function parse_players(payload: unknown): PlayerData[] {
   }
 
   for (const event of eventObjects(payload)) {
-    const record = asRecord(event);
-    const player = asRecord(firstRecordValue(record.player, record.person, record.actor));
-    const related = asRecord(firstRecordValue(record.assist, record.assistPlayer, record.relatedPlayer));
-    addPlayer(players, {
-      id: firstString(record.playerId, record.player_id, player.id, player.playerId),
-      name: firstString(record.playerName, record.name, player.name),
-      country: null,
-      birthDate: null
-    });
-    addPlayer(players, {
-      id: firstString(record.relatedPlayerId, record.assistPlayerId, related.id, related.playerId),
-      name: firstString(record.relatedPlayerName, record.assistPlayerName, related.name),
-      country: null,
-      birthDate: null
-    });
+    addEventPlayers(players, event);
   }
 
   collectNestedPlayers(rawPayloadFromDetails(payload), players);
   return [...players.values()];
+}
+
+function addEventPlayers(players: Map<string, PlayerData>, value: unknown) {
+  const event = asRecord(value);
+  const player = asRecord(firstRecordValue(event.player, event.person, event.actor));
+  const related = asRecord(firstRecordValue(event.assist, event.assistPlayer, event.relatedPlayer));
+  addPlayer(players, {
+    id: firstString(event.playerId, event.player_id, player.id, player.playerId),
+    name: firstString(event.playerName, event.name, event.nameStr, event.fullName, player.name),
+    country: null,
+    birthDate: null
+  });
+  addPlayer(players, {
+    id: firstString(event.relatedPlayerId, event.assistPlayerId, related.id, related.playerId),
+    name: firstString(event.relatedPlayerName, event.assistPlayerName, related.name),
+    country: null,
+    birthDate: null
+  });
+
+  if (Array.isArray(event.swap)) {
+    for (const swapPlayer of event.swap) {
+      const record = asRecord(swapPlayer);
+      addPlayer(players, {
+        id: firstString(record.id, record.playerId, record.player_id),
+        name: firstString(record.name, record.playerName, record.fullName),
+        country: null,
+        birthDate: null
+      });
+    }
+  }
 }
 
 export function parse_team_stats(payload: unknown): TeamMatchStatsData[] {
@@ -557,7 +573,7 @@ function collectNestedPlayers(value: unknown, players: Map<string, PlayerData>, 
     });
   }
 
-  for (const key of ["players", "members", "lineup", "substitutes", "bench", "starters"]) {
+  for (const key of ["players", "members", "lineup", "substitutes", "subs", "bench", "starters", "events", "swap", "player", "person", "actor", "assist", "assistPlayer", "relatedPlayer"]) {
     collectNestedPlayers(record[key], players, depth + 1);
   }
 }
