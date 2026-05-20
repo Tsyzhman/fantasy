@@ -120,3 +120,77 @@ test("unavailable FotMob matchDetails are skipped instead of failed", async () =
   assert.equal(result.fetched, false);
   assert.equal(result.skipped, true);
 });
+
+test("shallow FotMob payloads are not marked final raw payloads", async () => {
+  const calls: unknown[] = [];
+  const prisma = {
+    coreLeague: {
+      async upsert() {
+        return {};
+      }
+    },
+    coreTeam: {
+      async upsert() {
+        return {};
+      }
+    },
+    corePlayer: {
+      async upsert() {
+        return {};
+      }
+    },
+    coreMatch: {
+      async upsert() {
+        return {};
+      }
+    },
+    matchTeamStat: {
+      async upsert() {
+        return {};
+      }
+    },
+    matchPlayerStat: {
+      async upsert() {
+        return {};
+      }
+    },
+    matchEvent: {
+      async deleteMany() {
+        return {};
+      }
+    },
+    matchShot: {
+      async upsert() {
+        return {};
+      }
+    },
+    rawMatchPayload: {
+      async upsert(input: unknown) {
+        calls.push(input);
+        return {};
+      }
+    },
+    shotmapComparisonsCache: {
+      async findMany() {
+        return [];
+      }
+    }
+  } as unknown as PrismaClient;
+
+  const { persist_match_payload } = await import("./ingestion");
+  await persist_match_payload(
+    prisma,
+    {
+      id: 1001,
+      leagueId: 47,
+      home: { id: 10, name: "Home FC", score: 1 },
+      away: { id: 20, name: "Away FC", score: 0 },
+      status: { finished: true, started: true, utcTime: "2026-05-01T18:00:00.000Z" }
+    },
+    { matchId: 1001n, fetched: true }
+  );
+
+  const rawUpsert = calls[0] as { update?: { isFinal?: boolean }; create?: { isFinal?: boolean } };
+  assert.equal(rawUpsert.update?.isFinal, false);
+  assert.equal(rawUpsert.create?.isFinal, false);
+});

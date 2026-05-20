@@ -210,7 +210,7 @@ export class UnofficialFotMobClient implements FotMobClient {
     const matchId = stringValue(general.matchId) ?? stringValue(asRecord(pageProps.header).matchId);
 
     if (matchId !== fixtureId) {
-      throw new FotMobFixtureDetailsUnavailableError(fixtureId, `match page payload id mismatch: ${matchId ?? "missing"}`);
+      return fallbackMatchPayload(summaryPayload, `match page payload id mismatch: ${matchId ?? "missing"}`);
     }
 
     const { translations: _translations, ...matchPayload } = pageProps;
@@ -254,6 +254,13 @@ export class UnofficialFotMobClient implements FotMobClient {
 
     throw lastError instanceof Error ? lastError : new Error("FotMob page request failed.");
   }
+}
+
+function fallbackMatchPayload(summaryPayload: unknown, reason: string) {
+  return {
+    ...asRecord(summaryPayload),
+    detailsUnavailableReason: reason
+  };
 }
 
 export class RealFotMobClient implements FotMobClient {

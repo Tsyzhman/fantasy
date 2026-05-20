@@ -187,7 +187,7 @@ export async function persist_match_payload(
     payloadHash: rawPayloadHash,
     parserVersion: options.parserVersion ?? DEFAULT_PARSER_VERSION,
     schemaVersion: options.schemaVersion ?? CORE_SCHEMA_VERSION,
-    isFinal: enriched.match.finished
+    isFinal: enriched.match.finished && hasDetailedMatchPayload(canonicalPayload)
   });
 
   await invalidate_shotmap_cache_for_match(prisma, matchId);
