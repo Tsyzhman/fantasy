@@ -1,7 +1,3 @@
-import { ArrowRight, Crosshair } from "lucide-react";
-import Image from "next/image";
-import Link from "next/link";
-
 import { ShotMapExplorer } from "@/components/mixerr/ShotMapExplorer";
 import { AutoSubmitForm } from "@/components/players/auto-submit-form";
 import { prisma } from "@/lib/db";
@@ -56,39 +52,12 @@ export default async function MixerrPage({ searchParams }: PageProps) {
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <section className="grid gap-6 border-b border-slate-200 pb-6 lg:grid-cols-[minmax(0,1fr)_360px] lg:items-end">
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">MiXerr / FotMob</p>
-          <div className="mt-2 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div>
-              <h1 className="text-3xl font-bold text-ink">MiXerr shot maps</h1>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-                Compare attacking shot locations, conceded shot locations and player shot maps from stored FotMob match payloads.
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <Link className="inline-flex items-center gap-2 rounded bg-ink px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700" href="/machete/leagues">
-                Machete
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Link className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50" href="/baltika/leagues">
-                Baltika
-                <ArrowRight className="h-4 w-4" />
-              </Link>
-              <Crosshair className="h-9 w-9 text-slate-400" />
-            </div>
-          </div>
-        </div>
-        <div className="grid min-h-44 place-items-center rounded border border-slate-200 bg-white p-6 shadow-soft sm:min-h-56 lg:min-h-64">
-          <Image
-            src="/mode-logos/mixerr-mode.svg"
-            alt="MiXerr logo"
-            width={168}
-            height={168}
-            className="h-36 w-36 object-contain sm:h-40 sm:w-40"
-            priority
-          />
-        </div>
+      <section className="border-b border-slate-200 pb-6">
+        <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">MiXerr / FotMob</p>
+        <h1 className="mt-2 text-3xl font-bold text-ink">MiXerr shot maps</h1>
+        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+          Compare attacking shot locations, conceded shot locations and player shot maps from stored FotMob match payloads.
+        </p>
       </section>
 
       <AutoSubmitForm className="mt-6 grid grid-cols-1 gap-3 rounded border border-slate-200 bg-white p-4 shadow-soft md:grid-cols-2 xl:grid-cols-6">
