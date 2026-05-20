@@ -1,8 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import type { PrismaClient } from "@prisma/client";
 
-import type { FotMobClient } from "./fotmob_client";
-import { discover_matches_for_scope } from "./ingestion";
+import { FotMobFixtureDetailsUnavailableError, type FotMobClient } from "./fotmob_client";
+import { discover_matches_for_scope, ingest_match } from "./ingestion";
 import { createIngestionScope } from "./ingestion-scope";
 import { ScopeTooBroadError } from "./scope-validation";
 
@@ -82,3 +83,40 @@ test("scope validation blocks before matchDetails fetching", async () => {
   assert.equal(detailsFetched, false);
 });
 
+test("unavailable FotMob matchDetails are skipped instead of failed", async () => {
+  const prisma = {
+    coreMatch: {
+      async findUnique() {
+        return null;
+      }
+    },
+    rawMatchPayload: {
+      async findUnique() {
+        return null;
+      }
+    }
+  } as unknown as PrismaClient;
+  const client: FotMobClient = {
+    async getLeague() {
+      throw new Error("not used");
+    },
+    async getTeams() {
+      throw new Error("not used");
+    },
+    async getFixtures() {
+      throw new Error("not used");
+    },
+    async getFixtureDetails(fixtureId) {
+      throw new FotMobFixtureDetailsUnavailableError(fixtureId, "empty payload");
+    },
+    async getPlayer() {
+      throw new Error("not used");
+    }
+  };
+
+  const result = await ingest_match(prisma, "1000008820", { client });
+
+  assert.equal(result.matchId, 1000008820n);
+  assert.equal(result.fetched, false);
+  assert.equal(result.skipped, true);
+});

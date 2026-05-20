@@ -9,6 +9,16 @@ export interface FotMobClient {
   getPlayer(playerId: string): Promise<FotMobPlayer>;
 }
 
+export class FotMobFixtureDetailsUnavailableError extends Error {
+  constructor(
+    readonly fixtureId: string,
+    readonly reason: string
+  ) {
+    super(`FotMob matchDetails unavailable for ${fixtureId}: ${reason}`);
+    this.name = "FotMobFixtureDetailsUnavailableError";
+  }
+}
+
 export class MockFotMobClient implements FotMobClient {
   async getLeague() {
     return mockFotMobLeague;
@@ -99,8 +109,14 @@ export class UnofficialFotMobClient implements FotMobClient {
 
   async getFixtureDetails(fixtureId: string): Promise<FotMobFixtureDetails> {
     const payload = await this.getJson("/data/match", { id: fixtureId });
+    if (isEmptyRecord(payload)) {
+      throw new FotMobFixtureDetailsUnavailableError(fixtureId, "empty payload");
+    }
+
     const fixture = normalizeFixture(payload, stringValue(asRecord(payload).leagueId) ?? "");
-    if (!fixture) throw new Error(`FotMob match payload could not be normalized: ${fixtureId}`);
+    if (!fixture) {
+      throw new FotMobFixtureDetailsUnavailableError(fixtureId, "payload could not be normalized");
+    }
 
     return {
       ...fixture,
@@ -475,6 +491,10 @@ function fotMobWorldCupSeason(season: string | undefined) {
 
 function asRecord(value: unknown): JsonRecord {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as JsonRecord) : {};
+}
+
+function isEmptyRecord(value: unknown) {
+  return value && typeof value === "object" && !Array.isArray(value) && Object.keys(value).length === 0;
 }
 
 function stringValue(value: unknown): string | undefined {

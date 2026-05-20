@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 
-import { createFotMobClient, type FotMobClient } from "./fotmob_client";
+import { createFotMobClient, FotMobFixtureDetailsUnavailableError, type FotMobClient } from "./fotmob_client";
 import type { IngestionScope } from "./ingestion-scope";
 import { configForLeague } from "./league-season-policy";
 import {
@@ -70,7 +70,24 @@ export async function ingest_match(prisma: PrismaClient, match_id: bigint | stri
   }
 
   const client = options.client ?? createFotMobClient();
-  const details = await client.getFixtureDetails(String(match_id));
+  let details: Awaited<ReturnType<FotMobClient["getFixtureDetails"]>>;
+  try {
+    details = await client.getFixtureDetails(String(match_id));
+  } catch (error) {
+    if (error instanceof FotMobFixtureDetailsUnavailableError) {
+      console.warn(`[core_data] ${error.message}; skipping matchDetails fetch until FotMob exposes a usable payload.`);
+      return {
+        matchId,
+        fetched: false,
+        skipped: true,
+        shotsParsed: 0,
+        playerStatsParsed: 0,
+        teamStatsParsed: 0
+      };
+    }
+    throw error;
+  }
+
   return persist_match_payload(prisma, details, {
     ...options,
     matchId,
