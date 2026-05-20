@@ -53,6 +53,19 @@ test("shared match player stats expose the metrics expected by the Machete fanta
     interceptions: 2,
     clearances: 0,
     rating: 7.4,
+    statsPayload: {
+      stats: [
+        {
+          title: "Defense",
+          stats: {
+            Recoveries: {
+              key: "recoveries",
+              stat: { value: 6, type: "integer" }
+            }
+          }
+        }
+      ]
+    },
     match: {
       homeTeamId: 10n,
       awayTeamId: 20n,
@@ -72,8 +85,9 @@ test("shared match player stats expose the metrics expected by the Machete fanta
   assert.equal(rawMetrics.xa, 0.31);
   assert.equal(rawMetrics.shots_on_target, 2);
   assert.equal(rawMetrics.tackles, 1);
+  assert.equal(rawMetrics.recoveries, 6);
 
-  assert.equal(calculateFantasyScore(rawMetrics, positionGroup, model), 9);
+  assert.equal(calculateFantasyScore(rawMetrics, positionGroup, model), 11);
 });
 
 test("clean sheets and goals conceded are derived from shared match/team relations when player stats omit them", () => {

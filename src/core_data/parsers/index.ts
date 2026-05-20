@@ -180,11 +180,11 @@ export function parse_player_stats(payload: unknown): PlayerMatchStatsData[] {
         teamId,
         opponentTeamId,
         isHome,
-        started: booleanValue(stat.started),
+        started: booleanValue(stat.started ?? stat._started),
         substitutedIn: booleanValue(stat.substitutedIn ?? stat.substituted_in),
         substitutedOut: booleanValue(stat.substitutedOut ?? stat.substituted_out),
         minutes: intOrNull(readPlayerStatNumber(stat, ["minutes", "minutesPlayed", "minutes played", "mins"])),
-        position: firstString(stat.position, stat.positionDescription) ?? null,
+        position: firstString(stat.position, stat.positionDescription) ?? fotMobPosition(stat),
         shirtNumber: intOrNull(readPlayerStatNumber(stat, ["shirtNumber", "shirt_number", "shirt number"])),
         goals: intOrNull(readPlayerStatNumber(stat, ["goals"])),
         assists: intOrNull(readPlayerStatNumber(stat, ["assists"])),
@@ -198,13 +198,13 @@ export function parse_player_stats(payload: unknown): PlayerMatchStatsData[] {
         xa: readPlayerStatNumber(stat, ["xa", "expectedAssists", "expected_assists", "Expected assists (xA)", "expected assists"]),
         shots: intOrNull(readPlayerStatNumber(stat, ["shots", "total shots"])),
         shotsOnTarget: intOrNull(readPlayerStatNumber(stat, ["shotsOnTarget", "shots_on_target", "shots on target"])),
-        keyPasses: intOrNull(readPlayerStatNumber(stat, ["keyPasses", "key_passes", "key passes"])),
+        keyPasses: intOrNull(readPlayerStatNumber(stat, ["keyPasses", "key_passes", "key passes", "chancesCreated", "chances_created", "chances created"])),
         chancesCreated: intOrNull(readPlayerStatNumber(stat, ["chancesCreated", "chances_created", "chances created"])),
         tacklesWon: intOrNull(readPlayerStatNumber(stat, ["tacklesWon", "tackles", "tackles_won", "tackles won"])),
         interceptions: intOrNull(readPlayerStatNumber(stat, ["interceptions"])),
         clearances: intOrNull(readPlayerStatNumber(stat, ["clearances"])),
         duelsWon: intOrNull(readPlayerStatNumber(stat, ["duelsWon", "duels_won", "duels won"])),
-        aerialsWon: intOrNull(readPlayerStatNumber(stat, ["aerialsWon", "aerials_won", "aerials won"])),
+        aerialsWon: intOrNull(readPlayerStatNumber(stat, ["aerialsWon", "aerials_won", "aerials won", "aerial duels won"])),
         rating: readPlayerStatNumber(stat, ["rating", "fotmob rating"]),
         statsPayload: stat.raw ?? stat
       } satisfies PlayerMatchStatsData;
@@ -214,6 +214,7 @@ export function parse_player_stats(payload: unknown): PlayerMatchStatsData[] {
 
 export function parse_events(payload: unknown): MatchEventData[] {
   const match = parse_match_metadata(payload);
+  const teams = extractTeams(payload);
 
   return eventObjects(payload).map((value) => {
     const event = asRecord(value);
@@ -221,10 +222,11 @@ export function parse_events(payload: unknown): MatchEventData[] {
     const nestedRelated = asRecord(firstRecordValue(event.assist, event.assistPlayer, event.relatedPlayer));
     const eventType = normalizeEventType(firstString(event.eventType, event.type, event.event, event.incidentType));
     const eventSubtype = firstString(event.eventSubtype, event.subtype, event.detail, event.card) ?? null;
+    const isHomeEvent = booleanValue(event.isHome);
 
     return {
       matchId: match.id,
-      teamId: sourceIdToBigInt(firstString(event.teamId, event.team_id, asRecord(event.team).id), "team"),
+      teamId: sourceIdToBigInt(firstString(event.teamId, event.team_id, asRecord(event.team).id), "team") ?? (isHomeEvent === true ? teams.home?.id ?? null : isHomeEvent === false ? teams.away?.id ?? null : null),
       playerId: sourceIdToBigInt(firstString(event.playerId, event.player_id, nestedPlayer.id, nestedPlayer.playerId), "player"),
       relatedPlayerId: sourceIdToBigInt(firstString(event.relatedPlayerId, event.assistPlayerId, nestedRelated.id, nestedRelated.playerId), "player"),
       minute: intOrNull(numberValue(event.minute ?? event.time ?? event.eventMinute)),
@@ -332,9 +334,11 @@ function teamCandidate(value: unknown, fallbackId?: string): TeamCandidate | nul
 
 function directPlayerStats(payload: unknown): unknown[] {
   const details = asRecord(payload);
-  if (Array.isArray(details.playerStats)) return details.playerStats;
+  const detailRows = playerStatsFromCollection(details.playerStats, playerLineupContext(rawPayloadFromDetails(payload)));
+  if (detailRows.length > 0) return detailRows;
 
   const raw = rawPayloadFromDetails(payload);
+  const lineupContext = playerLineupContext(raw);
   const exactPaths = [
     ["playerStats"],
     ["content", "playerStats"],
@@ -346,27 +350,96 @@ function directPlayerStats(payload: unknown): unknown[] {
 
   for (const path of exactPaths) {
     const value = getPath(raw, path);
-    if (Array.isArray(value)) return flattenPlayerStatArray(value);
+    const rows = playerStatsFromCollection(value, lineupContext);
+    if (rows.length > 0) return rows;
   }
 
   return [];
 }
 
-function flattenPlayerStatArray(values: unknown[], context: JsonRecord = {}): unknown[] {
+function playerStatsFromCollection(value: unknown, lineupContext: Map<string, JsonRecord>): unknown[] {
+  const values = Array.isArray(value) ? value : playerStatMapValues(value);
+  return values.length > 0 ? flattenPlayerStatArray(values, {}, lineupContext) : [];
+}
+
+function playerStatMapValues(value: unknown): unknown[] {
+  const record = asRecord(value);
+  const values = Object.values(record);
+  if (values.length === 0) return [];
+  return values.some(isLikelyPlayerStat) ? values : [];
+}
+
+function isLikelyPlayerStat(value: unknown) {
+  const record = asRecord(value);
+  return firstString(record.playerId, record.player_id, record.id) !== undefined && (record.name !== undefined || record.stats !== undefined || record.teamId !== undefined);
+}
+
+function flattenPlayerStatArray(values: unknown[], context: JsonRecord = {}, lineupContext: Map<string, JsonRecord> = new Map()): unknown[] {
   return values.flatMap((value) => {
     const record = asRecord(value);
     const nextContext = {
       ...context,
       _teamId: firstString(record.teamId, record.team_id, asRecord(record.team).id, context._teamId)
     };
-    if (Array.isArray(record.players)) return flattenPlayerStatArray(record.players, nextContext);
-    if (Array.isArray(record.members)) return flattenPlayerStatArray(record.members, nextContext);
-    if (Array.isArray(record.lineup)) return flattenPlayerStatArray(record.lineup, nextContext);
-    if (Array.isArray(record.starters)) return flattenPlayerStatArray(record.starters, nextContext);
-    if (Array.isArray(record.substitutes)) return flattenPlayerStatArray(record.substitutes, nextContext);
-    if (!nextContext._teamId) return [value];
-    return [{ ...nextContext, ...record, _teamId: firstString(record.teamId, record.team_id, asRecord(record.team).id, nextContext._teamId) }];
+    if (Array.isArray(record.players)) return flattenPlayerStatArray(record.players, nextContext, lineupContext);
+    if (Array.isArray(record.members)) return flattenPlayerStatArray(record.members, nextContext, lineupContext);
+    if (Array.isArray(record.lineup)) return flattenPlayerStatArray(record.lineup, nextContext, lineupContext);
+    if (Array.isArray(record.starters)) return flattenPlayerStatArray(record.starters, { ...nextContext, _started: true }, lineupContext);
+    if (Array.isArray(record.substitutes)) return flattenPlayerStatArray(record.substitutes, nextContext, lineupContext);
+    if (Array.isArray(record.subs)) return flattenPlayerStatArray(record.subs, nextContext, lineupContext);
+    const playerId = firstString(record.playerId, record.player_id, record.id);
+    const lineup = playerId ? playerLineupContextValue(lineupContext, playerId) : {};
+    return {
+      ...lineup,
+      ...nextContext,
+      ...record,
+      _teamId: firstString(record.teamId, record.team_id, asRecord(record.team).id, nextContext._teamId, lineup._teamId)
+    };
   });
+}
+
+function playerLineupContext(raw: unknown) {
+  const lineup = asRecord(getPath(raw, ["content", "lineup"]));
+  const context = new Map<string, JsonRecord>();
+  for (const sideKey of ["homeTeam", "awayTeam"]) {
+    const team = asRecord(lineup[sideKey]);
+    const teamId = firstString(team.id, team.teamId);
+    addLineupPlayers(context, team.starters, teamId, true);
+    addLineupPlayers(context, team.subs, teamId, false);
+    addLineupPlayers(context, team.substitutes, teamId, false);
+  }
+  return context;
+}
+
+function addLineupPlayers(context: Map<string, JsonRecord>, players: unknown, teamId: string | undefined, started: boolean) {
+  if (!Array.isArray(players)) return;
+  for (const value of players) {
+    const player = asRecord(value);
+    const playerId = firstString(player.id, player.playerId, player.player_id);
+    if (!playerId) continue;
+    context.set(playerId, {
+      _teamId: firstString(player.teamId, player.team_id, teamId),
+      _started: started,
+      position: fotMobPosition(player),
+      shirtNumber: firstString(player.shirtNumber, player.shirt_number, player.number),
+      country: firstString(player.countryName, player.country, player.nationality),
+      name: firstString(player.name)
+    });
+  }
+}
+
+function playerLineupContextValue(context: Map<string, JsonRecord>, playerId: string) {
+  return context.get(playerId) ?? context.get(String(Number(playerId))) ?? {};
+}
+
+function fotMobPosition(record: JsonRecord) {
+  if (booleanValue(record.isGoalkeeper) === true) return "Goalkeeper";
+  const usualPosition = intOrNull(numberValue(record.usualPosition ?? record.usualPlayingPositionId));
+  if (usualPosition === 0) return "Goalkeeper";
+  if (usualPosition === 1) return "Defender";
+  if (usualPosition === 2) return "Midfielder";
+  if (usualPosition === 3) return "Forward";
+  return null;
 }
 
 function readPlayerStatNumber(record: JsonRecord, aliases: string[]) {
@@ -375,28 +448,7 @@ function readPlayerStatNumber(record: JsonRecord, aliases: string[]) {
     if (direct !== null) return direct;
   }
 
-  const stats = record.stats;
-  if (stats && typeof stats === "object" && !Array.isArray(stats)) {
-    const statsRecord = stats as JsonRecord;
-    for (const alias of aliases) {
-      const direct = numberValue(statsRecord[alias]);
-      if (direct !== null) return direct;
-    }
-  }
-
-  if (Array.isArray(stats)) {
-    const normalizedAliases = new Set(aliases.map(normalizeStatLabel));
-    for (const item of stats) {
-      const stat = asRecord(item);
-      const label = firstString(stat.key, stat.name, stat.title, stat.label, stat.statName);
-      if (!label || !normalizedAliases.has(normalizeStatLabel(label))) continue;
-      const value = firstRecordValue(stat.stat, stat.value).value ?? stat.value ?? stat.stat ?? stat.displayValue ?? stat.total;
-      const parsed = numberValue(value);
-      if (parsed !== null) return parsed;
-    }
-  }
-
-  return null;
+  return findNestedStatNumber(record.stats, new Set(aliases.map(normalizeStatLabel)));
 }
 
 function normalizeStatLabel(value: string) {
@@ -405,6 +457,60 @@ function normalizeStatLabel(value: string) {
     .toLowerCase()
     .replace(/\([^)]*\)/g, "")
     .replace(/[^a-z0-9]+/g, "");
+}
+
+function findNestedStatNumber(value: unknown, normalizedAliases: Set<string>, depth = 0): number | null {
+  if (depth > 6) return null;
+  const direct = statNumberValue(value);
+  if (direct !== null && (typeof value === "number" || typeof value === "string")) return direct;
+
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      const nested = findNestedStatNumber(item, normalizedAliases, depth + 1);
+      if (nested !== null) return nested;
+    }
+    return null;
+  }
+
+  const record = asRecord(value);
+  if (Object.keys(record).length === 0) return null;
+
+  const label = firstString(record.key, record.name, record.title, record.label, record.statName);
+  if (label && statLabelMatches(label, normalizedAliases)) {
+    const parsed = statNumberValue(record);
+    if (parsed !== null) return parsed;
+  }
+
+  for (const [key, nestedValue] of Object.entries(record)) {
+    if (statLabelMatches(key, normalizedAliases)) {
+      const parsed = statNumberValue(nestedValue);
+      if (parsed !== null) return parsed;
+    }
+  }
+
+  for (const key of ["stats", "groups", "items", "children", "sections"]) {
+    const nested = findNestedStatNumber(record[key], normalizedAliases, depth + 1);
+    if (nested !== null) return nested;
+  }
+
+  return null;
+}
+
+function statLabelMatches(label: string, normalizedAliases: Set<string>) {
+  const normalized = normalizeStatLabel(label);
+  for (const alias of normalizedAliases) {
+    if (normalized === alias) return true;
+    if (alias.length >= 8 && normalized.includes(alias)) return true;
+  }
+  return false;
+}
+
+function statNumberValue(value: unknown): number | null {
+  const direct = numberValue(value);
+  if (direct !== null) return direct;
+  const record = asRecord(value);
+  const stat = asRecord(record.stat);
+  return numberValue(record.value) ?? numberValue(record.displayValue) ?? numberValue(record.total) ?? numberValue(stat.value) ?? numberValue(stat.displayValue) ?? numberValue(stat.total);
 }
 
 function eventObjects(payload: unknown): unknown[] {

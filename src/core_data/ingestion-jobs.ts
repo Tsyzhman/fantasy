@@ -4,7 +4,7 @@ import { FantasyPointsRepository } from "@/machete/fantasy_repositories";
 import { calculate_fantasy_points_for_match } from "@/machete/fantasy_points_engine";
 
 import { createFotMobClient, type FotMobClient } from "./fotmob_client";
-import { ingest_match, discover_matches_for_scope } from "./ingestion";
+import { ingest_match, discover_matches_for_scope, reparse_match, type IngestMatchResult } from "./ingestion";
 import type { IngestionScope } from "./ingestion-scope";
 import {
   enabledLeagueIngestionConfigs,
@@ -244,7 +244,8 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: "in
             forceRefresh: scope.force_refresh,
             forceReparse: scope.force_reparse
           });
-          if (!result.skipped) {
+          const shouldCalculateFantasy = await ensureNormalizedForFantasy(prisma, result, ruleset.id);
+          if (shouldCalculateFantasy) {
             await calculate_fantasy_points_for_match(prisma, result.matchId, ruleset.id);
           }
           await prisma.ingestionJob.update({
@@ -321,6 +322,34 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: "in
       }
     });
   }
+}
+
+async function ensureNormalizedForFantasy(prisma: PrismaClient, result: IngestMatchResult, rulesetId: bigint) {
+  if (!result.skipped) return result.playerStatsParsed > 0;
+
+  const [raw, teamStatsCount, playerStatsCount, fantasyPointsCount] = await Promise.all([
+    prisma.rawMatchPayload.findUnique({
+      where: { matchId: result.matchId },
+      select: { matchId: true }
+    }),
+    prisma.matchTeamStat.count({ where: { matchId: result.matchId } }),
+    prisma.matchPlayerStat.count({ where: { matchId: result.matchId } }),
+    prisma.fantasyPoint.count({
+      where: {
+        matchId: result.matchId,
+        rulesetId
+      }
+    })
+  ]);
+
+  if (!raw) return false;
+
+  if (teamStatsCount === 0 || playerStatsCount === 0) {
+    const reparsed = await reparse_match(prisma, result.matchId);
+    return reparsed.playerStatsParsed > 0;
+  }
+
+  return fantasyPointsCount < playerStatsCount;
 }
 
 async function runningJob(prisma: PrismaClient) {

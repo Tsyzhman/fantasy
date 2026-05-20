@@ -49,6 +49,7 @@ type JsonRecord = Record<string, unknown>;
 
 export class UnofficialFotMobClient implements FotMobClient {
   private readonly baseUrl = process.env.MACHETE_FOTMOB_BASE_URL || "https://www.fotmob.com/api";
+  private readonly siteUrl = process.env.MACHETE_FOTMOB_SITE_URL || "https://www.fotmob.com";
   private readonly ccode3 = process.env.MACHETE_FOTMOB_CCODE3 || "GBR";
   private readonly timezone = process.env.MACHETE_FOTMOB_TIMEZONE || "Europe/London";
 
@@ -108,20 +109,21 @@ export class UnofficialFotMobClient implements FotMobClient {
   }
 
   async getFixtureDetails(fixtureId: string): Promise<FotMobFixtureDetails> {
-    const payload = await this.getJson("/data/match", { id: fixtureId });
-    if (isEmptyRecord(payload)) {
+    const summaryPayload = await this.getJson("/data/match", { id: fixtureId });
+    if (isEmptyRecord(summaryPayload)) {
       throw new FotMobFixtureDetailsUnavailableError(fixtureId, "empty payload");
     }
 
-    const fixture = normalizeFixture(payload, stringValue(asRecord(payload).leagueId) ?? "");
+    const fixture = normalizeFixture(summaryPayload, stringValue(asRecord(summaryPayload).leagueId) ?? "");
     if (!fixture) {
       throw new FotMobFixtureDetailsUnavailableError(fixtureId, "payload could not be normalized");
     }
+    const detailPayload = await this.getMatchPageProps(fixtureId, summaryPayload);
 
     return {
       ...fixture,
       playerStats: [],
-      raw: payload
+      raw: detailPayload
     };
   }
 
@@ -193,6 +195,64 @@ export class UnofficialFotMobClient implements FotMobClient {
     }
 
     throw lastError instanceof Error ? lastError : new Error("FotMob request failed.");
+  }
+
+  private async getMatchPageProps(fixtureId: string, summaryPayload: unknown): Promise<unknown> {
+    const pageUrl = stringValue(asRecord(summaryPayload).pageUrl);
+    if (!pageUrl) {
+      throw new FotMobFixtureDetailsUnavailableError(fixtureId, "match page URL missing from summary payload");
+    }
+
+    const html = await this.getText(new URL(pageUrl, this.siteUrl).toString());
+    const nextData = extractNextData(html);
+    const pageProps = asRecord(asRecord(nextData.props).pageProps);
+    const general = asRecord(pageProps.general);
+    const matchId = stringValue(general.matchId) ?? stringValue(asRecord(pageProps.header).matchId);
+
+    if (matchId !== fixtureId) {
+      throw new FotMobFixtureDetailsUnavailableError(fixtureId, `match page payload id mismatch: ${matchId ?? "missing"}`);
+    }
+
+    const { translations: _translations, ...matchPayload } = pageProps;
+    return {
+      ...matchPayload,
+      summary: summaryPayload
+    };
+  }
+
+  private async getText(url: string): Promise<string> {
+    let lastError: unknown;
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        const response = await fetch(url, {
+          headers: {
+            "User-Agent": "Mozilla/5.0",
+            Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+            "Accept-Language": "en-US,en;q=0.9",
+            Referer: "https://www.fotmob.com/"
+          },
+          signal: AbortSignal.timeout(20_000)
+        });
+
+        if (response.status === 403 || response.status === 429) {
+          throw new Error(`FotMob request blocked with ${response.status}; stop syncing and use an approved provider or a larger cache interval.`);
+        }
+        if (!response.ok) {
+          throw new Error(`FotMob page request failed with ${response.status} ${response.statusText}`);
+        }
+
+        return response.text();
+      } catch (error) {
+        lastError = error;
+        if (error instanceof Error && (error.message.includes("403") || error.message.includes("429") || error.message.includes("verification"))) {
+          throw error;
+        }
+        if (attempt === 2) break;
+        await wait(2 ** attempt * 750);
+      }
+    }
+
+    throw lastError instanceof Error ? lastError : new Error("FotMob page request failed.");
   }
 }
 
@@ -491,6 +551,14 @@ function fotMobWorldCupSeason(season: string | undefined) {
 
 function asRecord(value: unknown): JsonRecord {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as JsonRecord) : {};
+}
+
+function extractNextData(html: string): JsonRecord {
+  const match = html.match(/<script id="__NEXT_DATA__" type="application\/json">([^<]+)<\/script>/);
+  if (!match?.[1]) throw new Error("FotMob match page did not include __NEXT_DATA__.");
+
+  const parsed = JSON.parse(match[1]) as unknown;
+  return asRecord(parsed);
 }
 
 function isEmptyRecord(value: unknown) {

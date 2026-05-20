@@ -57,7 +57,7 @@ export async function ingest_match(prisma: PrismaClient, match_id: bigint | stri
     return reparse_match(prisma, matchId, options.parserVersion ?? DEFAULT_PARSER_VERSION);
   }
 
-  if (!options.forceRefresh && existingMatch?.finished && existingRaw?.isFinal) {
+  if (!options.forceRefresh && existingMatch?.finished && existingRaw?.isFinal && hasDetailedMatchPayload(existingRaw.payload)) {
     return {
       matchId,
       fetched: false,
@@ -169,7 +169,7 @@ export async function persist_match_payload(
     match: {
       ...parsed.match,
       id: matchId,
-      leagueId: parsed.match.leagueId ?? overrideLeagueId,
+      leagueId: overrideLeagueId ?? parsed.match.leagueId,
       season: parsed.match.season ?? options.season ?? null
     },
     teamStats: parsed.teamStats.map((row) => ({ ...row, matchId })),
@@ -209,9 +209,12 @@ export async function reparse_match(prisma: PrismaClient, match_id: bigint | str
 
   const raw = await new RawPayloadRepository(prisma).find(matchId);
   if (!raw) throw new Error(`No raw FotMob payload stored for match ${String(match_id)}.`);
+  const existingMatch = await new CoreMatchRepository(prisma).find(matchId);
 
   const result = await persist_match_payload(prisma, raw.payload, {
     matchId,
+    leagueId: existingMatch?.leagueId ?? undefined,
+    season: existingMatch?.season ?? undefined,
     parserVersion: parser_version,
     schemaVersion: raw.schemaVersion ?? CORE_SCHEMA_VERSION,
     fetched: false
@@ -417,6 +420,11 @@ function canonicalMatchPayload(payload: unknown) {
   const record = asRecord(payload);
   const raw = asRecord(record.raw);
   return Object.keys(raw).length > 0 ? raw : payload;
+}
+
+function hasDetailedMatchPayload(payload: unknown) {
+  const content = asRecord(asRecord(payload).content);
+  return ["playerStats", "shotmap", "lineup", "stats", "matchFacts"].some((key) => content[key] !== undefined);
 }
 
 function jsonArray(value: unknown) {
