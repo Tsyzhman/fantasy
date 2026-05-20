@@ -1,6 +1,7 @@
 import { UserRole } from "@prisma/client";
 import { redirect } from "next/navigation";
 
+import { I18nText } from "@/components/i18n-text";
 import { createUserSession, hashPassword, normalizeEmail } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
@@ -16,35 +17,41 @@ export default async function SetupPage({ searchParams }: PageProps) {
   const resolvedSearchParams = (await searchParams) ?? {};
   const adminWithPasswordCount = await getAdminWithPasswordCount();
   if (adminWithPasswordCount > 0) redirect("/login");
+  const errorMessage = setupErrorMessage(resolvedSearchParams.error);
 
   return (
     <main className="grid min-h-screen place-items-center px-4 py-12">
       <section className="w-full max-w-md rounded border border-slate-200 bg-white p-6 shadow-sm">
-        <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">First run</p>
-        <h1 className="mt-2 text-2xl font-bold text-ink">Create admin account</h1>
+        <p className="text-sm font-semibold uppercase tracking-wide text-slate-500"><I18nText en="First run" ru="Первый запуск" /></p>
+        <h1 className="mt-2 text-2xl font-bold text-ink"><I18nText en="Create admin account" ru="Создайте администратора" /></h1>
         <p className="mt-2 text-sm text-slate-600">
-          Create the first admin with a password. Existing imported users without passwords will not block this setup.
+          <I18nText
+            en="Create the first admin with a password. Existing imported users without passwords will not block this setup."
+            ru="Создайте первого администратора с паролем. Уже импортированные пользователи без паролей не блокируют настройку."
+          />
         </p>
 
-        {resolvedSearchParams.error ? (
-          <p className="mt-4 rounded bg-rose-50 px-3 py-2 text-sm text-rose-700">{resolvedSearchParams.error}</p>
+        {errorMessage ? (
+          <p className="mt-4 rounded bg-rose-50 px-3 py-2 text-sm text-rose-700">
+            <I18nText en={errorMessage.en} ru={errorMessage.ru} />
+          </p>
         ) : null}
 
         <form action={setupAction} className="mt-6 space-y-4">
           <label className="block">
-            <span className="text-sm font-semibold text-slate-700">Name</span>
+            <span className="text-sm font-semibold text-slate-700"><I18nText en="Name" ru="Имя" /></span>
             <input name="name" className="mt-1 w-full rounded border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400" />
           </label>
           <label className="block">
-            <span className="text-sm font-semibold text-slate-700">Email</span>
+            <span className="text-sm font-semibold text-slate-700"><I18nText en="Email" ru="Почта" /></span>
             <input required name="email" type="email" className="mt-1 w-full rounded border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400" />
           </label>
           <label className="block">
-            <span className="text-sm font-semibold text-slate-700">Password</span>
+            <span className="text-sm font-semibold text-slate-700"><I18nText en="Password" ru="Пароль" /></span>
             <input required name="password" type="password" minLength={8} className="mt-1 w-full rounded border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400" />
           </label>
           <button type="submit" className="w-full rounded bg-ink px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">
-            Create admin
+            <I18nText en="Create admin" ru="Создать администратора" />
           </button>
         </form>
       </section>
@@ -62,7 +69,7 @@ async function setupAction(formData: FormData) {
   const password = String(formData.get("password") ?? "");
 
   if (password.length < 8) {
-    redirect(`/setup?error=${encodeURIComponent("Password must be at least 8 characters.")}`);
+    redirect("/setup?error=password_short");
   }
 
   const passwordHash = await hashPassword(password);
@@ -87,6 +94,14 @@ async function setupAction(formData: FormData) {
 
   await createUserSession(user.id);
   redirect("/");
+}
+
+function setupErrorMessage(error: string | undefined) {
+  if (!error) return null;
+  if (error === "password_short") {
+    return { en: "Password must be at least 8 characters.", ru: "Пароль должен быть не короче 8 символов." };
+  }
+  return { en: error, ru: error };
 }
 
 function getAdminWithPasswordCount() {

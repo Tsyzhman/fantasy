@@ -29,12 +29,12 @@ export function MacheteFixtureTable({ fixtures }: { fixtures: MacheteFixtureRow[
             {fixtures.map((fixture) => (
               <tr key={fixture.id} className="hover:bg-slate-50">
                 <td className="whitespace-nowrap px-4 py-3 text-slate-600">{formatDate(fixture.kickoffAt)}</td>
-                <td className="whitespace-nowrap px-4 py-3 font-medium text-ink">{fixture.homeTeamName ?? "TBD"}</td>
+                <td className="whitespace-nowrap px-4 py-3 font-medium text-ink">{fixture.homeTeamName ?? <I18nText en="TBD" ru="Не определено" />}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-center font-semibold text-ink">
                   {fixture.homeScore ?? "-"} : {fixture.awayScore ?? "-"}
                 </td>
-                <td className="whitespace-nowrap px-4 py-3 font-medium text-ink">{fixture.awayTeamName ?? "TBD"}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-slate-600">{fixture.status ?? "UNKNOWN"}</td>
+                <td className="whitespace-nowrap px-4 py-3 font-medium text-ink">{fixture.awayTeamName ?? <I18nText en="TBD" ru="Не определено" />}</td>
+                <td className="whitespace-nowrap px-4 py-3 text-slate-600">{fixture.status ?? <I18nText en="UNKNOWN" ru="Неизвестно" />}</td>
               </tr>
             ))}
             {fixtures.length === 0 ? (

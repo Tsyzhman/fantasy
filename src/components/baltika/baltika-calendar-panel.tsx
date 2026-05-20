@@ -6,6 +6,7 @@ import type { Dispatch, SetStateAction } from "react";
 import { useMemo, useState } from "react";
 
 import { I18nText } from "@/components/i18n-text";
+import { useLanguage } from "@/components/localized-option";
 
 export type BaltikaCalendarTeam = {
   id: string;
@@ -53,6 +54,7 @@ export function BaltikaCalendarPanel({
   fixtures: BaltikaCalendarFixture[];
 }) {
   const router = useRouter();
+  const language = useLanguage();
   const [draft, setDraft] = useState<Draft>({ roundNumber: "", kickoffAt: "", homeTeamId: "", awayTeamId: "" });
   const [editing, setEditing] = useState<Record<string, Draft>>({});
   const [fixtureFilter, setFixtureFilter] = useState("");
@@ -197,8 +199,8 @@ export function BaltikaCalendarPanel({
           >
             {rounds.map((round) => (
               <option key={round} value={round}>
-                Tour {roundLabels.get(round)} / Тур {roundLabels.get(round)}
-                {roundLabels.get(round) !== round ? ` (source ${round} / исходный ${round})` : ""}
+                {localizedText("Tour", "Тур", language)} {roundLabels.get(round)}
+                {roundLabels.get(round) !== round ? ` (${localizedText("source", "исходный", language)} ${round})` : ""}
               </option>
             ))}
           </select>
@@ -227,7 +229,7 @@ export function BaltikaCalendarPanel({
                         {row.fixtures.map((fixture) => (
                           <p key={fixture.id}>
                             {fixture.homeTeamId === row.team.id ? "vs" : "@"}{" "}
-                            {fixture.homeTeamId === row.team.id ? fixture.awayTeamName ?? "TBD" : fixture.homeTeamName}
+                            {fixture.homeTeamId === row.team.id ? fixture.awayTeamName ?? localizedText("TBD", "Не определено", language) : fixture.homeTeamName}
                           </p>
                         ))}
                       </div>
@@ -253,7 +255,7 @@ export function BaltikaCalendarPanel({
         <input
           type="number"
           min="1"
-          placeholder="Round / Тур"
+          placeholder={localizedText("Round", "Тур", language)}
           value={draft.roundNumber}
           onChange={(event) => setDraft((current) => ({ ...current, roundNumber: event.target.value }))}
           className="rounded border border-slate-200 px-3 py-2 text-sm"
@@ -264,8 +266,8 @@ export function BaltikaCalendarPanel({
           onChange={(event) => setDraft((current) => ({ ...current, kickoffAt: event.target.value }))}
           className="rounded border border-slate-200 px-3 py-2 text-sm"
         />
-        <TeamSelect value={draft.homeTeamId} teams={teams} placeholder="Home team / Хозяева" onChange={(value) => setDraft((current) => ({ ...current, homeTeamId: value }))} />
-        <TeamSelect value={draft.awayTeamId} teams={teams} placeholder="Away team / Гости" onChange={(value) => setDraft((current) => ({ ...current, awayTeamId: value }))} />
+        <TeamSelect value={draft.homeTeamId} teams={teams} placeholder={localizedText("Home team", "Хозяева", language)} onChange={(value) => setDraft((current) => ({ ...current, homeTeamId: value }))} />
+        <TeamSelect value={draft.awayTeamId} teams={teams} placeholder={localizedText("Away team", "Гости", language)} onChange={(value) => setDraft((current) => ({ ...current, awayTeamId: value }))} />
         <button
           type="button"
           onClick={() => void createFixture()}
@@ -304,7 +306,7 @@ export function BaltikaCalendarPanel({
                         {cell.map((fixture) => (
                           <p key={fixture.id}>
                             {fixture.homeTeamId === team.id ? "vs" : "@"}{" "}
-                            {fixture.homeTeamId === team.id ? fixture.awayTeamName ?? "TBD" : fixture.homeTeamName}
+                            {fixture.homeTeamId === team.id ? fixture.awayTeamName ?? localizedText("TBD", "Не определено", language) : fixture.homeTeamName}
                           </p>
                         ))}
                       </div>
@@ -333,7 +335,7 @@ export function BaltikaCalendarPanel({
             type="search"
             value={fixtureFilter}
             onChange={(event) => setFixtureFilter(event.target.value)}
-            placeholder="Find team or round / Найти команду или тур"
+            placeholder={localizedText("Find team or round", "Найти команду или тур", language)}
             className="w-full rounded border border-slate-200 px-3 py-2 text-sm sm:max-w-xs"
           />
         </div>
@@ -344,7 +346,7 @@ export function BaltikaCalendarPanel({
               <div key={fixture.id} className="grid grid-cols-1 gap-2 rounded border border-slate-200 bg-field p-3 lg:grid-cols-[minmax(180px,1.2fr)_90px_1fr_1fr_1fr_auto_auto]">
                 <div className="min-w-0 text-sm">
                   <p className="truncate font-semibold text-ink">
-                    {fixture.homeTeamName} - {fixture.awayTeamName ?? "TBD"}
+                    {fixture.homeTeamName} - {fixture.awayTeamName ?? localizedText("TBD", "Не определено", language)}
                   </p>
                   <p className="mt-1 text-xs text-slate-500">
                     {fixture.status} · {fixture.source}
@@ -363,8 +365,8 @@ export function BaltikaCalendarPanel({
                   onChange={(event) => setEditingValue(fixture.id, "kickoffAt", event.target.value, setEditing)}
                   className="rounded border border-slate-200 px-3 py-2 text-sm"
                 />
-                <TeamSelect value={value.homeTeamId} teams={teams} placeholder="Home team / Хозяева" onChange={(next) => setEditingValue(fixture.id, "homeTeamId", next, setEditing)} />
-                <TeamSelect value={value.awayTeamId} teams={teams} placeholder="Away team / Гости" onChange={(next) => setEditingValue(fixture.id, "awayTeamId", next, setEditing)} />
+                <TeamSelect value={value.homeTeamId} teams={teams} placeholder={localizedText("Home team", "Хозяева", language)} onChange={(next) => setEditingValue(fixture.id, "homeTeamId", next, setEditing)} />
+                <TeamSelect value={value.awayTeamId} teams={teams} placeholder={localizedText("Away team", "Гости", language)} onChange={(next) => setEditingValue(fixture.id, "awayTeamId", next, setEditing)} />
                 <button
                   type="button"
                   onClick={() => void saveFixture(fixture)}
@@ -532,7 +534,7 @@ function toDraft(fixture: BaltikaCalendarFixture): Draft {
   };
 }
 
-function localizedText(en: string, ru: string) {
-  if (typeof document !== "undefined" && document.documentElement.dataset.language === "ru") return ru;
+function localizedText(en: string, ru: string, language?: "en" | "ru") {
+  if (language ? language === "ru" : typeof document !== "undefined" && document.documentElement.dataset.language === "ru") return ru;
   return en;
 }

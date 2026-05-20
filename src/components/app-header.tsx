@@ -73,10 +73,10 @@ export function AppHeader({ user }: AppHeaderProps) {
               </HeaderLink>
               <span className="mx-1 hidden h-6 w-px bg-slate-200 sm:block" />
               <HeaderLink href="/admin/ingestion" active={pathname.startsWith("/admin/ingestion")} icon={<DatabaseZap className="h-4 w-4" />}>
-                Ingestion
+                <I18nText en="Ingestion" ru="Загрузка" />
               </HeaderLink>
               <HeaderLink href="/admin/users" active={pathname.startsWith("/admin/users")} icon={<Users className="h-4 w-4" />}>
-                Users
+                <I18nText en="Users" ru="Пользователи" />
               </HeaderLink>
             </>
           ) : (
@@ -99,7 +99,7 @@ export function AppHeader({ user }: AppHeaderProps) {
               <ModelSettingsLink />
               {user?.role === "ADMIN" ? (
                 <HeaderLink href="/admin/ingestion" icon={<ShieldCheck className="h-4 w-4" />}>
-                  Admin
+                  <I18nText en="Admin" ru="Админ" />
                 </HeaderLink>
               ) : null}
             </>
@@ -111,7 +111,7 @@ export function AppHeader({ user }: AppHeaderProps) {
               className="rounded px-3 py-2 text-slate-600 hover:bg-slate-100"
               title={user.name ?? user.email}
             >
-              Sign out
+              <I18nText en="Sign out" ru="Выйти" />
             </button>
           ) : null}
           <LanguageToggle />

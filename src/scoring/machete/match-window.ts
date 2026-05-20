@@ -39,6 +39,12 @@ export function matchWindowLabel(window: MacheteMatchWindow) {
   return `last ${window.matches} played team matches`;
 }
 
+export function matchWindowLabelRu(window: MacheteMatchWindow) {
+  if (window.kind === "all") return "все загруженные матчи";
+  if (window.kind === "season") return window.offset === 0 ? "текущий сезон" : "предыдущий сезон";
+  return `последние ${window.matches} матчей команды`;
+}
+
 export function matchWindowSeasonLabel(currentSeason: string | null | undefined, offset: 0 | -1, providerLeagueId?: string | null) {
   return offset === 0 ? currentSeason ?? null : previousSeasonLabel(currentSeason, providerLeagueId);
 }

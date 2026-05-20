@@ -4,6 +4,8 @@ import { Crosshair, Goal, Layers3, Shield, UserRound } from "lucide-react";
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 
+import { I18nText } from "@/components/i18n-text";
+import { LocalizedOption, localizedText, useLanguage } from "@/components/localized-option";
 import type { ShotMapShot } from "@/lib/shot-maps";
 
 type ShotMapExplorerProps = {
@@ -20,6 +22,8 @@ type ShotMapExplorerProps = {
   };
   windowLabel: string;
   defendingWindowLabel: string;
+  windowLabelRu: string;
+  defendingWindowLabelRu: string;
 };
 
 type ZoneSummary = {
@@ -34,7 +38,18 @@ type ZoneSummary = {
 type Mode = "for" | "against" | "overlay" | "player";
 type SituationFilter = "all" | "open_play" | "set_piece" | "penalty";
 
-export function ShotMapExplorer({ teamShots, concededShots, playerShots, overlayShots, zoneSummary, windowLabel, defendingWindowLabel }: ShotMapExplorerProps) {
+export function ShotMapExplorer({
+  teamShots,
+  concededShots,
+  playerShots,
+  overlayShots,
+  zoneSummary,
+  windowLabel,
+  defendingWindowLabel,
+  windowLabelRu,
+  defendingWindowLabelRu
+}: ShotMapExplorerProps) {
+  const language = useLanguage();
   const [mode, setMode] = useState<Mode>("overlay");
   const [goalsOnly, setGoalsOnly] = useState(false);
   const [onTargetOnly, setOnTargetOnly] = useState(false);
@@ -42,12 +57,12 @@ export function ShotMapExplorer({ teamShots, concededShots, playerShots, overlay
   const [situation, setSituation] = useState<SituationFilter>("all");
 
   const layers = useMemo(() => {
-    if (mode === "for") return [{ key: "for", label: "Team shots for", shots: filterShots(teamShots), tone: "attacking" as const }];
-    if (mode === "against") return [{ key: "against", label: "Team shots against", shots: filterShots(concededShots), tone: "conceded" as const }];
-    if (mode === "player") return [{ key: "player", label: "Player shots", shots: filterShots(playerShots), tone: "player" as const }];
+    if (mode === "for") return [{ key: "for", label: localizedText(language, "Team shots for", "Удары команды"), shots: filterShots(teamShots), tone: "attacking" as const }];
+    if (mode === "against") return [{ key: "against", label: localizedText(language, "Team shots against", "Допущенные удары"), shots: filterShots(concededShots), tone: "conceded" as const }];
+    if (mode === "player") return [{ key: "player", label: localizedText(language, "Player shots", "Удары игрока"), shots: filterShots(playerShots), tone: "player" as const }];
     return [
-      { key: "overlay-for", label: "Team A attacking", shots: filterShots(overlayShots.attacking), tone: "attacking" as const },
-      { key: "overlay-against", label: "Team B conceded", shots: filterShots(overlayShots.conceded), tone: "conceded" as const }
+      { key: "overlay-for", label: localizedText(language, "Team A attacking", "Команда А атакует"), shots: filterShots(overlayShots.attacking), tone: "attacking" as const },
+      { key: "overlay-against", label: localizedText(language, "Team B conceded", "Команда B допускает"), shots: filterShots(overlayShots.conceded), tone: "conceded" as const }
     ];
 
     function filterShots(shots: ShotMapShot[]) {
@@ -59,41 +74,41 @@ export function ShotMapExplorer({ teamShots, concededShots, playerShots, overlay
         return true;
       });
     }
-  }, [bigChancesOnly, concededShots, goalsOnly, mode, onTargetOnly, overlayShots.attacking, overlayShots.conceded, playerShots, situation, teamShots]);
+  }, [bigChancesOnly, concededShots, goalsOnly, language, mode, onTargetOnly, overlayShots.attacking, overlayShots.conceded, playerShots, situation, teamShots]);
 
   const visibleShots = layers.flatMap((layer) => layer.shots);
   const totalXg = visibleShots.reduce((total, shot) => total + (shot.xg ?? 0), 0);
-  const shooterSummaries = summarizeShooters(visibleShots);
+  const shooterSummaries = summarizeShooters(visibleShots, language);
 
   return (
     <div className="mt-6 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
       <section className="rounded border border-slate-200 bg-white p-4 shadow-soft">
         <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex flex-wrap gap-2">
-            <ModeButton active={mode === "for"} onClick={() => setMode("for")} icon={<Crosshair className="h-4 w-4" />} label="For" />
-            <ModeButton active={mode === "against"} onClick={() => setMode("against")} icon={<Shield className="h-4 w-4" />} label="Against" />
-            <ModeButton active={mode === "overlay"} onClick={() => setMode("overlay")} icon={<Layers3 className="h-4 w-4" />} label="Overlay" />
-            <ModeButton active={mode === "player"} onClick={() => setMode("player")} icon={<UserRound className="h-4 w-4" />} label="Player" />
+            <ModeButton active={mode === "for"} onClick={() => setMode("for")} icon={<Crosshair className="h-4 w-4" />} label={<I18nText en="For" ru="Свои" />} />
+            <ModeButton active={mode === "against"} onClick={() => setMode("against")} icon={<Shield className="h-4 w-4" />} label={<I18nText en="Against" ru="Против" />} />
+            <ModeButton active={mode === "overlay"} onClick={() => setMode("overlay")} icon={<Layers3 className="h-4 w-4" />} label={<I18nText en="Overlay" ru="Наложение" />} />
+            <ModeButton active={mode === "player"} onClick={() => setMode("player")} icon={<UserRound className="h-4 w-4" />} label={<I18nText en="Player" ru="Игрок" />} />
           </div>
 
           <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600">
             <label className="inline-flex items-center gap-2">
               <input type="checkbox" checked={goalsOnly} onChange={(event) => setGoalsOnly(event.target.checked)} />
-              Goals
+              <I18nText en="Goals" ru="Голы" />
             </label>
             <label className="inline-flex items-center gap-2">
               <input type="checkbox" checked={onTargetOnly} onChange={(event) => setOnTargetOnly(event.target.checked)} />
-              On target
+              <I18nText en="On target" ru="В створ" />
             </label>
             <label className="inline-flex items-center gap-2">
               <input type="checkbox" checked={bigChancesOnly} onChange={(event) => setBigChancesOnly(event.target.checked)} />
-              Big chances
+              <I18nText en="Big chances" ru="Большие моменты" />
             </label>
             <select value={situation} onChange={(event) => setSituation(event.target.value as SituationFilter)} className="rounded border border-slate-200 px-2 py-1">
-              <option value="all">All situations</option>
-              <option value="open_play">Open play</option>
-              <option value="set_piece">Set piece</option>
-              <option value="penalty">Penalty</option>
+              <LocalizedOption value="all" en="All situations" ru="Все ситуации" />
+              <LocalizedOption value="open_play" en="Open play" ru="С игры" />
+              <LocalizedOption value="set_piece" en="Set piece" ru="Стандарт" />
+              <LocalizedOption value="penalty" en="Penalty" ru="Пенальти" />
             </select>
           </div>
         </div>
@@ -121,7 +136,7 @@ export function ShotMapExplorer({ teamShots, concededShots, playerShots, overlay
 
             {visibleShots.length === 0 ? (
               <div className="absolute inset-0 grid place-items-center bg-emerald-950/20 text-sm font-semibold text-white">
-                No shots for current filters
+                <I18nText en="No shots for current filters" ru="Нет ударов по текущим фильтрам" />
               </div>
             ) : null}
           </div>
@@ -130,25 +145,30 @@ export function ShotMapExplorer({ teamShots, concededShots, playerShots, overlay
         <div className="mt-5 border-t border-slate-200 pt-4">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h2 className="text-base font-semibold text-ink">Shooters</h2>
+              <h2 className="text-base font-semibold text-ink"><I18nText en="Shooters" ru="Бьющие" /></h2>
               <p className="mt-1 text-xs text-slate-500">
-                Team A window: {windowLabel}. Team B conceded window: {defendingWindowLabel}.
+                <I18nText
+                  en={<>Team A window: {windowLabel}. Team B conceded window: {defendingWindowLabel}.</>}
+                  ru={<>Окно команды А: {windowLabelRu}. Окно допущенных ударов команды B: {defendingWindowLabelRu}.</>}
+                />
               </p>
             </div>
-            <p className="text-xs text-slate-500">{visibleShots.length} visible shots after filters</p>
+            <p className="text-xs text-slate-500">
+              <I18nText en={`${visibleShots.length} visible shots after filters`} ru={`Видимых ударов после фильтров: ${visibleShots.length}`} />
+            </p>
           </div>
           <div className="mt-3 overflow-x-auto">
             <table className="min-w-full divide-y divide-slate-200 text-sm">
               <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
                 <tr>
-                  <th className="px-3 py-2">Player</th>
-                  <th className="px-3 py-2">Team</th>
-                  <th className="px-3 py-2 text-right">Shots</th>
+                  <th className="px-3 py-2"><I18nText en="Player" ru="Игрок" /></th>
+                  <th className="px-3 py-2"><I18nText en="Team" ru="Команда" /></th>
+                  <th className="px-3 py-2 text-right"><I18nText en="Shots" ru="Удары" /></th>
                   <th className="px-3 py-2 text-right">xG</th>
-                  <th className="px-3 py-2 text-right">Goals</th>
-                  <th className="px-3 py-2 text-right">On target</th>
-                  <th className="px-3 py-2 text-right">Big chances</th>
-                  <th className="px-3 py-2">Last shot</th>
+                  <th className="px-3 py-2 text-right"><I18nText en="Goals" ru="Голы" /></th>
+                  <th className="px-3 py-2 text-right"><I18nText en="On target" ru="В створ" /></th>
+                  <th className="px-3 py-2 text-right"><I18nText en="Big chances" ru="Большие моменты" /></th>
+                  <th className="px-3 py-2"><I18nText en="Last shot" ru="Последний удар" /></th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
@@ -167,7 +187,7 @@ export function ShotMapExplorer({ teamShots, concededShots, playerShots, overlay
                 {shooterSummaries.length === 0 ? (
                   <tr>
                     <td colSpan={8} className="px-3 py-8 text-center text-slate-500">
-                      No shooter stats for the current layer and filters.
+                      <I18nText en="No shooter stats for the current layer and filters." ru="Нет статистики бьющих по текущему слою и фильтрам." />
                     </td>
                   </tr>
                 ) : null}
@@ -179,10 +199,10 @@ export function ShotMapExplorer({ teamShots, concededShots, playerShots, overlay
 
       <aside className="space-y-5">
         <section className="rounded border border-slate-200 bg-white p-4 shadow-soft">
-          <p className="text-xs font-semibold uppercase text-slate-500">Visible layer</p>
+          <p className="text-xs font-semibold uppercase text-slate-500"><I18nText en="Visible layer" ru="Видимый слой" /></p>
           <dl className="mt-3 grid grid-cols-3 gap-3 text-sm">
             <div>
-              <dt className="text-slate-500">Shots</dt>
+              <dt className="text-slate-500"><I18nText en="Shots" ru="Удары" /></dt>
               <dd className="mt-1 text-lg font-bold text-ink">{visibleShots.length}</dd>
             </div>
             <div>
@@ -190,23 +210,26 @@ export function ShotMapExplorer({ teamShots, concededShots, playerShots, overlay
               <dd className="mt-1 text-lg font-bold text-ink">{totalXg.toFixed(2)}</dd>
             </div>
             <div>
-              <dt className="text-slate-500">Goals</dt>
+              <dt className="text-slate-500"><I18nText en="Goals" ru="Голы" /></dt>
               <dd className="mt-1 text-lg font-bold text-ink">{visibleShots.filter((shot) => shot.is_goal).length}</dd>
             </div>
           </dl>
           <div className="mt-4 space-y-2 text-xs text-slate-500">
-            <LegendItem tone="attacking" label="Team A attacking shots" />
-            <LegendItem tone="conceded" label="Team B conceded shots" />
-            <LegendItem tone="player" label="Selected player shots" />
+            <LegendItem tone="attacking" label={localizedText(language, "Team A attacking shots", "Удары команды А")} />
+            <LegendItem tone="conceded" label={localizedText(language, "Team B conceded shots", "Допущенные удары команды B")} />
+            <LegendItem tone="player" label={localizedText(language, "Selected player shots", "Удары выбранного игрока")} />
           </div>
         </section>
 
         <section className="rounded border border-slate-200 bg-white p-4 shadow-soft">
-          <p className="text-xs font-semibold uppercase text-slate-500">Side zones</p>
-          <ZoneTable title="Attacking" summary={zoneSummary.attacking} />
-          <ZoneTable title="Conceded" summary={zoneSummary.conceded} />
+          <p className="text-xs font-semibold uppercase text-slate-500"><I18nText en="Side zones" ru="Зоны по флангам" /></p>
+          <ZoneTable title={<I18nText en="Attacking" ru="Атака" />} summary={zoneSummary.attacking} />
+          <ZoneTable title={<I18nText en="Conceded" ru="Допущено" />} summary={zoneSummary.conceded} />
           <p className="mt-4 text-xs leading-5 text-slate-500">
-            Shots are normalized to a common attacking direction and shown on the attacking half. Raw FotMob coordinates are preserved.
+            <I18nText
+              en="Shots are normalized to a common attacking direction and shown on the attacking half. Raw FotMob coordinates are preserved."
+              ru="Удары нормализованы в одну сторону атаки и показаны на атакующей половине. Исходные координаты FotMob сохраняются."
+            />
           </p>
         </section>
       </aside>
@@ -214,7 +237,7 @@ export function ShotMapExplorer({ teamShots, concededShots, playerShots, overlay
   );
 }
 
-function summarizeShooters(shots: ShotMapShot[]) {
+function summarizeShooters(shots: ShotMapShot[], language: "en" | "ru") {
   const summaries = new Map<
     string,
     {
@@ -235,8 +258,8 @@ function summarizeShooters(shots: ShotMapShot[]) {
     const key = [shot.player_id ?? shot.provider_player_id ?? shot.player_name ?? "unknown", shot.team_id ?? shot.provider_team_id ?? shot.team_name ?? ""].join(":");
     const existing = summaries.get(key) ?? {
       key,
-      playerName: shot.player_name ?? "Unknown shooter",
-      teamName: shot.team_name ?? "Unknown team",
+      playerName: shot.player_name ?? localizedText(language, "Unknown shooter", "Неизвестный игрок"),
+      teamName: shot.team_name ?? localizedText(language, "Unknown team", "Неизвестная команда"),
       shots: 0,
       xg: 0,
       goals: 0,
@@ -269,7 +292,7 @@ function summarizeShooters(shots: ShotMapShot[]) {
   return [...summaries.values()].sort((left, right) => right.shots - left.shots || right.xg - left.xg || left.playerName.localeCompare(right.playerName));
 }
 
-function ModeButton({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: ReactNode; label: string }) {
+function ModeButton({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: ReactNode; label: ReactNode }) {
   return (
     <button
       type="button"
@@ -284,20 +307,20 @@ function ModeButton({ active, onClick, icon, label }: { active: boolean; onClick
   );
 }
 
-function ZoneTable({ title, summary }: { title: string; summary: ZoneSummary }) {
+function ZoneTable({ title, summary }: { title: ReactNode; summary: ZoneSummary }) {
   const total = summary.left_shots + summary.center_shots + summary.right_shots;
   const rows = [
-    ["Left", summary.left_shots, summary.left_xg],
-    ["Center", summary.center_shots, summary.center_xg],
-    ["Right", summary.right_shots, summary.right_xg]
+    [<I18nText key="left" en="Left" ru="Слева" />, summary.left_shots, summary.left_xg],
+    [<I18nText key="center" en="Center" ru="Центр" />, summary.center_shots, summary.center_xg],
+    [<I18nText key="right" en="Right" ru="Справа" />, summary.right_shots, summary.right_xg]
   ] as const;
 
   return (
     <div className="mt-4">
       <h3 className="text-sm font-semibold text-ink">{title}</h3>
       <div className="mt-2 divide-y divide-slate-100 text-sm">
-        {rows.map(([label, shots, xg]) => (
-          <div key={label} className="grid grid-cols-[1fr_auto_auto] gap-3 py-2">
+        {rows.map(([label, shots, xg], index) => (
+          <div key={index} className="grid grid-cols-[1fr_auto_auto] gap-3 py-2">
             <span className="text-slate-600">{label}</span>
             <span className="font-semibold text-ink">{total ? Math.round((shots / total) * 100) : 0}%</span>
             <span className="text-slate-500">{xg.toFixed(2)} xG</span>

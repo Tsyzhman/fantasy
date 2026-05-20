@@ -125,7 +125,7 @@ export default async function BaltikaLeaguePage({ params }: PageProps) {
             {league.name}
           </h1>
           <p className="mt-2 text-sm text-slate-600">
-            {leagueSubtitle(league, season?.name ?? "No season")}
+            <I18nText en={leagueSubtitle(league, season?.name ?? "No season")} ru={leagueSubtitle(league, season?.name ?? "Сезон не задан")} />
           </p>
         </div>
 

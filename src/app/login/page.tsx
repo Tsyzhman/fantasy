@@ -1,6 +1,7 @@
 import { UserRole } from "@prisma/client";
 import { redirect } from "next/navigation";
 
+import { I18nText } from "@/components/i18n-text";
 import { createUserSession, getCurrentUser, isSafeRedirectPath, normalizeEmail, verifyPassword } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
@@ -28,22 +29,25 @@ export default async function LoginPage({ searchParams }: PageProps) {
   const requestedNextPath = resolvedSearchParams.next;
   const nextPath = isSafeRedirectPath(requestedNextPath) ? requestedNextPath : "/";
   if (currentUser) redirect(nextPath);
+  const errorMessage = loginErrorMessage(resolvedSearchParams.error);
 
   return (
     <main className="grid min-h-screen place-items-center px-4 py-12">
       <section className="w-full max-w-sm rounded border border-slate-200 bg-white p-6 shadow-sm">
         <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">Fantasy Scout</p>
-        <h1 className="mt-2 text-2xl font-bold text-ink">Sign in</h1>
-        <p className="mt-2 text-sm text-slate-600">Sign in to open the workspace.</p>
+        <h1 className="mt-2 text-2xl font-bold text-ink"><I18nText en="Sign in" ru="Вход" /></h1>
+        <p className="mt-2 text-sm text-slate-600"><I18nText en="Sign in to open the workspace." ru="Войдите, чтобы открыть рабочую область." /></p>
 
-        {resolvedSearchParams.error ? (
-          <p className="mt-4 rounded bg-rose-50 px-3 py-2 text-sm text-rose-700">{resolvedSearchParams.error}</p>
+        {errorMessage ? (
+          <p className="mt-4 rounded bg-rose-50 px-3 py-2 text-sm text-rose-700">
+            <I18nText en={errorMessage.en} ru={errorMessage.ru} />
+          </p>
         ) : null}
 
         <form action={loginAction} className="mt-6 space-y-4">
           <input type="hidden" name="next" value={nextPath} />
           <label className="block">
-            <span className="text-sm font-semibold text-slate-700">Email</span>
+            <span className="text-sm font-semibold text-slate-700"><I18nText en="Email" ru="Почта" /></span>
             <input
               required
               name="email"
@@ -53,7 +57,7 @@ export default async function LoginPage({ searchParams }: PageProps) {
             />
           </label>
           <label className="block">
-            <span className="text-sm font-semibold text-slate-700">Password</span>
+            <span className="text-sm font-semibold text-slate-700"><I18nText en="Password" ru="Пароль" /></span>
             <input
               required
               name="password"
@@ -63,7 +67,7 @@ export default async function LoginPage({ searchParams }: PageProps) {
             />
           </label>
           <button type="submit" className="w-full rounded bg-ink px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">
-            Sign in
+            <I18nText en="Sign in" ru="Войти" />
           </button>
         </form>
       </section>
@@ -77,7 +81,7 @@ async function loginAction(formData: FormData) {
   const email = normalizeEmail(String(formData.get("email") ?? ""));
   const password = String(formData.get("password") ?? "");
   const nextPath = isSafeRedirectPath(String(formData.get("next") ?? "")) ? String(formData.get("next")) : "/";
-  const errorPath = `/login?error=${encodeURIComponent("Invalid email, password, or inactive account.")}&next=${encodeURIComponent(nextPath)}`;
+  const errorPath = `/login?error=invalid&next=${encodeURIComponent(nextPath)}`;
 
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user || !user.isActive || !(await verifyPassword(password, user.passwordHash))) {
@@ -90,4 +94,12 @@ async function loginAction(formData: FormData) {
   });
   await createUserSession(user.id);
   redirect(nextPath);
+}
+
+function loginErrorMessage(error: string | undefined) {
+  if (!error) return null;
+  if (error === "invalid") {
+    return { en: "Invalid email, password, or inactive account.", ru: "Неверная почта, пароль или аккаунт отключен." };
+  }
+  return { en: error, ru: error };
 }

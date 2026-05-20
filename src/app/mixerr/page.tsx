@@ -1,4 +1,6 @@
 import { ShotMapExplorer } from "@/components/mixerr/ShotMapExplorer";
+import { I18nText } from "@/components/i18n-text";
+import { LocalizedOption } from "@/components/localized-option";
 import { AutoSubmitForm } from "@/components/players/auto-submit-form";
 import { prisma } from "@/lib/db";
 import {
@@ -16,7 +18,7 @@ import {
   get_team_conceded_shots_for_window,
   get_team_shots_for_window
 } from "@/lib/shot-maps";
-import { matchWindowLabel, matchWindowModeValue, parseMacheteMatchWindow } from "@/scoring/machete/match-window";
+import { matchWindowLabel, matchWindowLabelRu, matchWindowModeValue, parseMacheteMatchWindow } from "@/scoring/machete/match-window";
 
 export const dynamic = "force-dynamic";
 
@@ -76,15 +78,18 @@ export default async function MixerrPage({ searchParams }: PageProps) {
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <section className="border-b border-slate-200 pb-6">
         <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">MiXerr / FotMob</p>
-        <h1 className="mt-2 text-3xl font-bold text-ink">MiXerr shot maps</h1>
+        <h1 className="mt-2 text-3xl font-bold text-ink"><I18nText en="MiXerr shot maps" ru="Карты ударов Миксер" /></h1>
         <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-          Compare attacking shot locations, conceded shot locations and player shot maps from stored FotMob match payloads.
+          <I18nText
+            en="Compare attacking shot locations, conceded shot locations and player shot maps from stored FotMob match payloads."
+            ru="Сравнивайте точки своих ударов, допущенные удары и карты ударов игроков по сохраненным payload матчей FotMob."
+          />
         </p>
       </section>
 
       <AutoSubmitForm className="mt-6 grid grid-cols-1 gap-3 rounded border border-slate-200 bg-white p-4 shadow-soft md:grid-cols-2 xl:grid-cols-8">
         <label className="text-sm">
-          <span className="mb-1 block font-medium text-slate-600">League</span>
+          <span className="mb-1 block font-medium text-slate-600"><I18nText en="League" ru="Лига" /></span>
           <select name="leagueId" defaultValue={selectedLeague ? String(selectedLeague.leagueId) : ""} className="w-full rounded border border-slate-200 px-3 py-2">
             {leagueOptions.map((league) => (
               <option key={`${league.leagueId}:${league.season}`} value={String(league.leagueId)}>
@@ -94,7 +99,7 @@ export default async function MixerrPage({ searchParams }: PageProps) {
           </select>
         </label>
         <label className="text-sm">
-          <span className="mb-1 block font-medium text-slate-600">Team A</span>
+          <span className="mb-1 block font-medium text-slate-600"><I18nText en="Team A" ru="Команда А" /></span>
           <select name="attackingTeamId" defaultValue={attackingTeamId} disabled={!selectedLeague} className="w-full rounded border border-slate-200 px-3 py-2 disabled:bg-slate-100">
             {teams.map((team) => (
               <option key={String(team.id)} value={String(team.id)}>
@@ -104,7 +109,7 @@ export default async function MixerrPage({ searchParams }: PageProps) {
           </select>
         </label>
         <label className="text-sm">
-          <span className="mb-1 block font-medium text-slate-600">Team A comp</span>
+          <span className="mb-1 block font-medium text-slate-600"><I18nText en="Team A competitions" ru="Турниры команды А" /></span>
           <select
             name="attackingCompetitionKey"
             multiple
@@ -113,7 +118,7 @@ export default async function MixerrPage({ searchParams }: PageProps) {
             disabled={!attackingTeam || attackingCompetitionOptions.length === 0}
             className="w-full rounded border border-slate-200 px-3 py-2 disabled:bg-slate-100"
           >
-            <option value="" disabled>Selected league</option>
+            <LocalizedOption value="" disabled en="Selected league" ru="Выбранная лига" />
             {attackingCompetitionOptions.map((competition) => (
               <option key={competition.key} value={competition.key}>
                 {competition.displayName} - {competition.season} ({competition.matchesCount})
@@ -122,7 +127,7 @@ export default async function MixerrPage({ searchParams }: PageProps) {
           </select>
         </label>
         <label className="text-sm">
-          <span className="mb-1 block font-medium text-slate-600">Team B</span>
+          <span className="mb-1 block font-medium text-slate-600"><I18nText en="Team B" ru="Команда B" /></span>
           <select name="defendingTeamId" defaultValue={defendingTeamId} disabled={!selectedLeague} className="w-full rounded border border-slate-200 px-3 py-2 disabled:bg-slate-100">
             {teams.map((team) => (
               <option key={String(team.id)} value={String(team.id)}>
@@ -132,7 +137,7 @@ export default async function MixerrPage({ searchParams }: PageProps) {
           </select>
         </label>
         <label className="text-sm">
-          <span className="mb-1 block font-medium text-slate-600">Team B comp</span>
+          <span className="mb-1 block font-medium text-slate-600"><I18nText en="Team B competitions" ru="Турниры команды B" /></span>
           <select
             name="defendingCompetitionKey"
             multiple
@@ -141,7 +146,7 @@ export default async function MixerrPage({ searchParams }: PageProps) {
             disabled={!defendingTeam || defendingCompetitionOptions.length === 0}
             className="w-full rounded border border-slate-200 px-3 py-2 disabled:bg-slate-100"
           >
-            <option value="" disabled>Selected league</option>
+            <LocalizedOption value="" disabled en="Selected league" ru="Выбранная лига" />
             {defendingCompetitionOptions.map((competition) => (
               <option key={competition.key} value={competition.key}>
                 {competition.displayName} - {competition.season} ({competition.matchesCount})
@@ -150,7 +155,7 @@ export default async function MixerrPage({ searchParams }: PageProps) {
           </select>
         </label>
         <label className="text-sm">
-          <span className="mb-1 block font-medium text-slate-600">Player</span>
+          <span className="mb-1 block font-medium text-slate-600"><I18nText en="Player" ru="Игрок" /></span>
           <select name="playerId" defaultValue={playerId} disabled={!attackingTeam} className="w-full rounded border border-slate-200 px-3 py-2 disabled:bg-slate-100">
             {players.map((player) => (
               <option key={String(player.id)} value={String(player.id)}>
@@ -160,13 +165,13 @@ export default async function MixerrPage({ searchParams }: PageProps) {
           </select>
         </label>
         <label className="text-sm">
-          <span className="mb-1 block font-medium text-slate-600">Team A matches</span>
+          <span className="mb-1 block font-medium text-slate-600"><I18nText en="Team A matches" ru="Матчи команды А" /></span>
           <select name="matchWindow" defaultValue={matchWindowModeValue(matchWindow)} className="w-full rounded border border-slate-200 px-3 py-2">
             <MatchWindowOptions />
           </select>
         </label>
         <label className="text-sm">
-          <span className="mb-1 block font-medium text-slate-600">Team B matches</span>
+          <span className="mb-1 block font-medium text-slate-600"><I18nText en="Team B matches" ru="Матчи команды B" /></span>
           <select name="defendingMatchWindow" defaultValue={matchWindowModeValue(defendingMatchWindow)} className="w-full rounded border border-slate-200 px-3 py-2">
             <MatchWindowOptions />
           </select>
@@ -175,7 +180,10 @@ export default async function MixerrPage({ searchParams }: PageProps) {
 
       {leagueOptions.length === 0 || teams.length === 0 ? (
         <section className="mt-6 rounded border border-slate-200 bg-white p-8 text-center text-sm text-slate-500 shadow-soft">
-          No shared FotMob league rosters are synced yet. Run the safe DB update, then let the 03:00 incremental ingestion populate league seasons, teams and players.
+          <I18nText
+            en="No shared FotMob league rosters are synced yet. Run the safe DB update, then let the 03:00 incremental ingestion populate league seasons, teams and players."
+            ru="Общие составы лиг FotMob еще не синхронизированы. Запустите безопасное обновление БД, затем дождитесь инкрементальной загрузки в 03:00: она заполнит сезоны лиг, команды и игроков."
+          />
         </section>
       ) : (
         <ShotMapExplorer
@@ -189,6 +197,8 @@ export default async function MixerrPage({ searchParams }: PageProps) {
           zoneSummary={comparison.summary.zones}
           windowLabel={matchWindowLabel(matchWindow)}
           defendingWindowLabel={matchWindowLabel(defendingMatchWindow)}
+          windowLabelRu={matchWindowLabelRu(matchWindow)}
+          defendingWindowLabelRu={matchWindowLabelRu(defendingMatchWindow)}
         />
       )}
     </main>
@@ -227,12 +237,12 @@ function searchParamValues(value: SearchParamValue) {
 function MatchWindowOptions() {
   return (
     <>
-      <option value="last5">Last 5 team matches</option>
-      <option value="last10">Last 10 team matches</option>
-      <option value="last15">Last 15 team matches</option>
-      <option value="current">Current season</option>
-      <option value="previous">Previous season</option>
-      <option value="all">All loaded matches</option>
+      <LocalizedOption value="last5" en="Last 5 team matches" ru="Последние 5 матчей команды" />
+      <LocalizedOption value="last10" en="Last 10 team matches" ru="Последние 10 матчей команды" />
+      <LocalizedOption value="last15" en="Last 15 team matches" ru="Последние 15 матчей команды" />
+      <LocalizedOption value="current" en="Current season" ru="Текущий сезон" />
+      <LocalizedOption value="previous" en="Previous season" ru="Предыдущий сезон" />
+      <LocalizedOption value="all" en="All loaded matches" ru="Все загруженные матчи" />
     </>
   );
 }

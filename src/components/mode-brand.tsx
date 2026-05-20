@@ -21,7 +21,7 @@ export function ModeBrand() {
           <ShieldCheck className="h-7 w-7 text-slate-700" />
         </span>
         <span className="min-w-0">
-          <span className="block truncate text-sm font-semibold uppercase tracking-wide text-slate-500">Administration</span>
+          <span className="block truncate text-sm font-semibold uppercase tracking-wide text-slate-500"><I18nText en="Administration" ru="Администрирование" /></span>
           <span className="block truncate text-xs font-medium text-slate-400">
             <I18nText en="System controls" ru="Системное управление" />
           </span>

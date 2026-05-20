@@ -3,6 +3,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { AdminNav } from "@/components/admin/AdminNav";
+import { I18nText } from "@/components/i18n-text";
+import { LocalizedOption } from "@/components/localized-option";
 import { hashPassword, normalizeEmail, requireAdminUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { formatDate } from "@/lib/format";
@@ -31,63 +33,68 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
       createdAt: true
     }
   });
+  const errorMessage = usersErrorMessage(resolvedSearchParams.error);
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <AdminNav />
       <div className="mt-6">
-        <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">Administration</p>
-        <h1 className="mt-2 text-3xl font-bold text-ink">Users</h1>
-        <p className="mt-2 max-w-3xl text-sm text-slate-600">Create team accounts, change roles, and temporarily disable access without deleting history.</p>
+        <p className="text-sm font-semibold uppercase tracking-wide text-slate-500"><I18nText en="Administration" ru="Администрирование" /></p>
+        <h1 className="mt-2 text-3xl font-bold text-ink"><I18nText en="Users" ru="Пользователи" /></h1>
+        <p className="mt-2 max-w-3xl text-sm text-slate-600">
+          <I18nText en="Create team accounts, change roles, and temporarily disable access without deleting history." ru="Создавайте аккаунты команды, меняйте роли и временно отключайте доступ без удаления истории." />
+        </p>
       </div>
 
-      {resolvedSearchParams.error ? (
-        <p className="mt-6 rounded bg-rose-50 px-3 py-2 text-sm text-rose-700">{resolvedSearchParams.error}</p>
+      {errorMessage ? (
+        <p className="mt-6 rounded bg-rose-50 px-3 py-2 text-sm text-rose-700">
+          <I18nText en={errorMessage.en} ru={errorMessage.ru} />
+        </p>
       ) : null}
       {resolvedSearchParams.saved ? (
-        <p className="mt-6 rounded bg-emerald-50 px-3 py-2 text-sm text-emerald-700">Changes saved.</p>
+        <p className="mt-6 rounded bg-emerald-50 px-3 py-2 text-sm text-emerald-700"><I18nText en="Changes saved." ru="Изменения сохранены." /></p>
       ) : null}
 
       <section className="mt-8 grid gap-8 lg:grid-cols-[360px_1fr]">
         <form action={createUserAction} className="self-start rounded border border-slate-200 bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-bold text-ink">Create account</h2>
+          <h2 className="text-lg font-bold text-ink"><I18nText en="Create account" ru="Создать аккаунт" /></h2>
           <div className="mt-4 space-y-4">
             <label className="block">
-              <span className="text-sm font-semibold text-slate-700">Name</span>
+              <span className="text-sm font-semibold text-slate-700"><I18nText en="Name" ru="Имя" /></span>
               <input name="name" className="mt-1 w-full rounded border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400" />
             </label>
             <label className="block">
-              <span className="text-sm font-semibold text-slate-700">Email</span>
+              <span className="text-sm font-semibold text-slate-700"><I18nText en="Email" ru="Почта" /></span>
               <input required name="email" type="email" className="mt-1 w-full rounded border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400" />
             </label>
             <label className="block">
-              <span className="text-sm font-semibold text-slate-700">Password</span>
+              <span className="text-sm font-semibold text-slate-700"><I18nText en="Password" ru="Пароль" /></span>
               <input required name="password" type="password" minLength={8} className="mt-1 w-full rounded border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400" />
             </label>
             <label className="block">
-              <span className="text-sm font-semibold text-slate-700">Role</span>
+              <span className="text-sm font-semibold text-slate-700"><I18nText en="Role" ru="Роль" /></span>
               <select name="role" defaultValue={UserRole.USER} className="mt-1 w-full rounded border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400">
-                <option value={UserRole.USER}>User</option>
-                <option value={UserRole.ADMIN}>Admin</option>
+                <LocalizedOption value={UserRole.USER} en="User" ru="Пользователь" />
+                <LocalizedOption value={UserRole.ADMIN} en="Admin" ru="Администратор" />
               </select>
             </label>
             <label className="flex items-center gap-2 text-sm font-semibold text-slate-700">
               <input name="isActive" type="checkbox" defaultChecked className="h-4 w-4 rounded border-slate-300" />
-              Active
+              <I18nText en="Active" ru="Активен" />
             </label>
             <button type="submit" className="w-full rounded bg-ink px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">
-              Create user
+              <I18nText en="Create user" ru="Создать пользователя" />
             </button>
           </div>
         </form>
 
         <section className="overflow-hidden rounded border border-slate-200 bg-white shadow-sm">
           <div className="grid grid-cols-[1.3fr_220px_120px_160px_150px] gap-3 border-b border-slate-200 bg-slate-50 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
-            <span>User</span>
-            <span>Role</span>
-            <span>Status</span>
-            <span>Last login</span>
-            <span className="text-right">Action</span>
+            <span><I18nText en="User" ru="Пользователь" /></span>
+            <span><I18nText en="Role" ru="Роль" /></span>
+            <span><I18nText en="Status" ru="Статус" /></span>
+            <span><I18nText en="Last login" ru="Последний вход" /></span>
+            <span className="text-right"><I18nText en="Action" ru="Действие" /></span>
           </div>
           <div className="divide-y divide-slate-100">
             {users.map((user) => (
@@ -104,19 +111,21 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
                     disabled={user.id === admin.id}
                     className="min-w-0 flex-1 rounded border border-slate-200 px-2 py-2 text-sm outline-none focus:border-slate-400 disabled:cursor-not-allowed disabled:bg-slate-50 disabled:text-slate-400"
                   >
-                    <option value={UserRole.USER}>User</option>
-                    <option value={UserRole.ADMIN}>Admin</option>
+                    <LocalizedOption value={UserRole.USER} en="User" ru="Пользователь" />
+                    <LocalizedOption value={UserRole.ADMIN} en="Admin" ru="Администратор" />
                   </select>
                   <button
                     type="submit"
                     disabled={user.id === admin.id}
                     className="rounded border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-45"
                   >
-                    Save
+                    <I18nText en="Save" ru="Сохранить" />
                   </button>
                 </form>
-                <span className={user.isActive ? "text-emerald-700" : "text-rose-700"}>{user.isActive ? "Active" : "Inactive"}</span>
-                <span className="text-slate-500">{user.lastLoginAt ? formatDate(user.lastLoginAt) : "Never"}</span>
+                <span className={user.isActive ? "text-emerald-700" : "text-rose-700"}>
+                  {user.isActive ? <I18nText en="Active" ru="Активен" /> : <I18nText en="Inactive" ru="Отключен" />}
+                </span>
+                <span className="text-slate-500">{user.lastLoginAt ? formatDate(user.lastLoginAt) : <I18nText en="Never" ru="Никогда" />}</span>
                 <form action={setUserActiveAction} className="text-right">
                   <input type="hidden" name="userId" value={user.id} />
                   <input type="hidden" name="isActive" value={user.isActive ? "false" : "true"} />
@@ -125,7 +134,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
                     disabled={user.id === admin.id}
                     className="rounded border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-45"
                   >
-                    {user.isActive ? "Deactivate" : "Activate"}
+                    {user.isActive ? <I18nText en="Deactivate" ru="Отключить" /> : <I18nText en="Activate" ru="Включить" />}
                   </button>
                 </form>
               </div>
@@ -149,7 +158,7 @@ async function createUserAction(formData: FormData) {
   const isActive = formData.get("isActive") === "on";
 
   if (password.length < 8) {
-    redirect(`/admin/users?error=${encodeURIComponent("Password must be at least 8 characters.")}`);
+    redirect("/admin/users?error=password_short");
   }
 
   try {
@@ -164,7 +173,7 @@ async function createUserAction(formData: FormData) {
     });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-      redirect(`/admin/users?error=${encodeURIComponent("A user with this email already exists.")}`);
+      redirect("/admin/users?error=email_exists");
     }
     throw error;
   }
@@ -181,7 +190,7 @@ async function setUserActiveAction(formData: FormData) {
   const isActive = String(formData.get("isActive") ?? "") === "true";
 
   if (userId === admin.id) {
-    redirect(`/admin/users?error=${encodeURIComponent("You cannot deactivate your own account.")}`);
+    redirect("/admin/users?error=self_deactivate");
   }
 
   await prisma.$transaction([
@@ -204,7 +213,7 @@ async function setUserRoleAction(formData: FormData) {
   const role = String(formData.get("role") ?? UserRole.USER) === UserRole.ADMIN ? UserRole.ADMIN : UserRole.USER;
 
   if (userId === admin.id && role !== UserRole.ADMIN) {
-    redirect(`/admin/users?error=${encodeURIComponent("You cannot remove your own admin role.")}`);
+    redirect("/admin/users?error=self_admin_role");
   }
 
   await prisma.user.update({
@@ -214,4 +223,15 @@ async function setUserRoleAction(formData: FormData) {
 
   revalidatePath("/admin/users");
   redirect("/admin/users?saved=1");
+}
+
+function usersErrorMessage(error: string | undefined) {
+  if (!error) return null;
+  const labels: Record<string, { en: string; ru: string }> = {
+    password_short: { en: "Password must be at least 8 characters.", ru: "Пароль должен быть не короче 8 символов." },
+    email_exists: { en: "A user with this email already exists.", ru: "Пользователь с такой почтой уже существует." },
+    self_deactivate: { en: "You cannot deactivate your own account.", ru: "Нельзя отключить собственный аккаунт." },
+    self_admin_role: { en: "You cannot remove your own admin role.", ru: "Нельзя снять роль администратора с самого себя." }
+  };
+  return labels[error] ?? { en: error, ru: error };
 }

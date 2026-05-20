@@ -77,7 +77,7 @@ export function MacheteLeagueCard({ league }: { league: MacheteLeagueCardDto }) 
           <dd className="mt-1 font-semibold text-ink">{formatNumber(league.fixturesSynced)}</dd>
         </div>
         <div>
-          <dt className="text-xs font-medium uppercase text-slate-400">Exp FP</dt>
+          <dt className="text-xs font-medium uppercase text-slate-400"><I18nText en="Exp FP" ru="Прогноз FP" /></dt>
           <dd className="mt-1 font-semibold text-emerald-700">{formatScore(league.expectedFantasyPoints)}</dd>
         </div>
       </dl>

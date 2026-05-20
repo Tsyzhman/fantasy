@@ -70,7 +70,7 @@ export function MachetePlayerTable({ players, showContext = false }: { players: 
             <tr>
               <th className="px-4 py-3"><I18nText en="Player" ru="Игрок" /></th>
               {showContext ? <th className="px-4 py-3"><I18nText en="Team" ru="Команда" /></th> : null}
-              <th className="px-4 py-3">Pos</th>
+              <th className="px-4 py-3"><I18nText en="Pos" ru="Поз." /></th>
               <th className="px-4 py-3 text-right">Apps</th>
               <th className="px-4 py-3 text-right">Min</th>
               <th className="hidden px-4 py-3 text-right lg:table-cell">G</th>
@@ -119,7 +119,7 @@ export function MachetePlayerTable({ players, showContext = false }: { players: 
               <th className="px-4 py-3"><I18nText en="Player" ru="Игрок" /></th>
               {showContext ? <th className="px-4 py-3"><I18nText en="Team" ru="Команда" /></th> : null}
               {showContext ? <th className="px-4 py-3"><I18nText en="League" ru="Лига" /></th> : null}
-              <th className="px-4 py-3">Pos</th>
+              <th className="px-4 py-3"><I18nText en="Pos" ru="Поз." /></th>
               <th className="bg-emerald-50 px-4 py-3 text-right text-emerald-700"><I18nText en="Expected FP" ru="Прогноз FP" /></th>
               <th className="bg-sky-50 px-4 py-3 text-right text-sky-700"><I18nText en="Actual FP" ru="Реальные FP" /></th>
               <th className="bg-amber-50 px-4 py-3 text-right text-amber-700"><I18nText en="Alt FP" ru="Альт. FP" /></th>

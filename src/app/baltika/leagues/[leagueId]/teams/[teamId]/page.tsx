@@ -144,7 +144,7 @@ export default async function BaltikaTeamPage({ params }: PageProps) {
               <tr>
                 <th className="px-4 py-3 text-center"><I18nText en="Starter" ru="Старт" /></th>
                 <th className="px-4 py-3"><I18nText en="Player" ru="Игрок" /></th>
-                <th className="px-4 py-3">Pos</th>
+                <th className="px-4 py-3"><I18nText en="Pos" ru="Поз." /></th>
                 <th className="px-4 py-3 text-right"><I18nText en="Minutes" ru="Минуты" /></th>
                 <th className="hidden px-4 py-3 text-right lg:table-cell"><I18nText en="Goals" ru="Голы" /></th>
                 <th className="hidden px-4 py-3 text-right lg:table-cell"><I18nText en="Assists" ru="Ассисты" /></th>
@@ -192,7 +192,7 @@ export default async function BaltikaTeamPage({ params }: PageProps) {
               <tr>
                 <th className="px-4 py-3 text-center"><I18nText en="Starter" ru="Старт" /></th>
                 <th className="px-4 py-3"><I18nText en="Player" ru="Игрок" /></th>
-                <th className="px-4 py-3">Pos</th>
+                <th className="px-4 py-3"><I18nText en="Pos" ru="Поз." /></th>
                 <th className="px-4 py-3 text-right"><I18nText en="Age" ru="Возраст" /></th>
                 <th className="px-4 py-3 text-right"><I18nText en="Minutes" ru="Минуты" /></th>
                 <th className="px-4 py-3 text-right"><I18nText en="Goals" ru="Голы" /></th>

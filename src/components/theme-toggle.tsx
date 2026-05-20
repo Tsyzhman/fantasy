@@ -3,6 +3,8 @@
 import { Moon, Sun } from "lucide-react";
 import { useEffect, useSyncExternalStore } from "react";
 
+import { localizedText, useLanguage } from "@/components/localized-option";
+
 type Theme = "light" | "dark";
 
 const defaultTheme: Theme = "light";
@@ -11,6 +13,7 @@ const darkSchemeQuery = "(prefers-color-scheme: dark)";
 
 export function ThemeToggle() {
   const theme = useSyncExternalStore(subscribeToTheme, getThemeSnapshot, getServerThemeSnapshot);
+  const language = useLanguage();
 
   useEffect(() => {
     applyTheme(theme);
@@ -24,7 +27,10 @@ export function ThemeToggle() {
   }
 
   const Icon = theme === "dark" ? Sun : Moon;
-  const label = theme === "dark" ? "Switch to light theme" : "Switch to dark theme";
+  const label =
+    theme === "dark"
+      ? localizedText(language, "Switch to light theme", "Переключить на светлую тему")
+      : localizedText(language, "Switch to dark theme", "Переключить на темную тему");
 
   return (
     <button

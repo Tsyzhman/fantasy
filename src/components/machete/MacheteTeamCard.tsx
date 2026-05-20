@@ -66,7 +66,7 @@ export function MacheteTeamCard({ team }: { team: MacheteTeamCardDto }) {
           <dd className="mt-1 font-semibold text-ink">{formatNumber(team.fixturesSynced)}</dd>
         </div>
         <div>
-          <dt className="text-xs font-medium uppercase text-slate-400">Expected FP</dt>
+          <dt className="text-xs font-medium uppercase text-slate-400"><I18nText en="Expected FP" ru="Прогноз FP" /></dt>
           <dd className="mt-1 font-semibold text-emerald-700">{formatScore(team.expectedFantasyPoints)}</dd>
         </div>
       </dl>

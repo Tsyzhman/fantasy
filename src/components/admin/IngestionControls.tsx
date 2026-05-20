@@ -4,6 +4,9 @@ import { RefreshCw, Square, UploadCloud } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 
+import { I18nText } from "@/components/i18n-text";
+import { localizedText, useLanguage } from "@/components/localized-option";
+
 type Props = {
   hasActiveJob: boolean;
   initialBackfillCompleted: boolean;
@@ -11,6 +14,7 @@ type Props = {
 
 export function IngestionControls({ hasActiveJob, initialBackfillCompleted }: Props) {
   const router = useRouter();
+  const language = useLanguage();
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -19,7 +23,7 @@ export function IngestionControls({ hasActiveJob, initialBackfillCompleted }: Pr
     const response = await fetch(endpoint, { method: "POST" });
     if (!response.ok) {
       const body = await response.json().catch(() => null);
-      setError(body?.error?.message ?? "Request failed.");
+      setError(body?.error?.message ?? localizedText(language, "Request failed.", "Запрос не удался."));
       return;
     }
     startTransition(() => router.refresh());
@@ -34,7 +38,7 @@ export function IngestionControls({ hasActiveJob, initialBackfillCompleted }: Pr
         className="inline-flex items-center gap-2 rounded bg-ink px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-45"
       >
         <UploadCloud className="h-4 w-4" />
-        Start initial backfill
+        <I18nText en="Start initial backfill" ru="Запустить первичную загрузку" />
       </button>
       <button
         type="button"
@@ -43,7 +47,7 @@ export function IngestionControls({ hasActiveJob, initialBackfillCompleted }: Pr
         className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-45"
       >
         <RefreshCw className="h-4 w-4" />
-        Run incremental update
+        <I18nText en="Run incremental update" ru="Запустить обновление" />
       </button>
       <button
         type="button"
@@ -52,7 +56,7 @@ export function IngestionControls({ hasActiveJob, initialBackfillCompleted }: Pr
         className="inline-flex items-center gap-2 rounded border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-45"
       >
         <Square className="h-4 w-4" />
-        Cancel
+        <I18nText en="Cancel" ru="Отменить" />
       </button>
       {error ? <p className="basis-full rounded bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p> : null}
     </div>

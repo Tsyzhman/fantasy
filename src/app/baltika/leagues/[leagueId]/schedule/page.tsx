@@ -70,7 +70,7 @@ export default async function BaltikaLeagueSchedulePage({ params }: PageProps) {
       <div className="mt-5 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-            {leagueFlag(league)} {leagueSubtitle(league, season?.name ?? "No season")}
+            {leagueFlag(league)} <I18nText en={leagueSubtitle(league, season?.name ?? "No season")} ru={leagueSubtitle(league, season?.name ?? "Сезон не задан")} />
           </p>
           <h1 className="mt-2 flex items-center gap-3 text-3xl font-bold text-ink">
             <CalendarDays className="h-8 w-8" />

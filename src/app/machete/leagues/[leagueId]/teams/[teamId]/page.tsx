@@ -7,10 +7,11 @@ import { MachetePlayerTable } from "@/components/machete/MachetePlayerTable";
 import { MacheteStatusBadge } from "@/components/machete/MacheteStatusBadge";
 import { MacheteTeamLogo } from "@/components/machete/MacheteTeamCard";
 import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
+import { LocalizedOption } from "@/components/localized-option";
 import { AutoSubmitForm } from "@/components/players/auto-submit-form";
 import { prisma } from "@/lib/db";
 import { formatDate, formatNumber, formatScore } from "@/lib/format";
-import { matchWindowLabel, matchWindowModeValue, parseMacheteMatchWindow } from "@/scoring/machete/match-window";
+import { matchWindowLabel, matchWindowLabelRu, matchWindowModeValue, parseMacheteMatchWindow } from "@/scoring/machete/match-window";
 import {
   loadSharedLeagueSeason,
   loadSharedMachetePlayerRows,
@@ -97,15 +98,15 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <PageBreadcrumbs
-        backHref={`/machete/leagues/${league.leagueId}`}
-        backLabel={<I18nText en="Back to league" ru="РќР°Р·Р°Рґ Рє Р»РёРіРµ" />}
-        items={[
-          { label: "Machete", href: "/machete/leagues" },
-          { label: <I18nText en="Leagues" ru="Р›РёРіРё" />, href: "/machete/leagues" },
-          { label: league.displayName, href: `/machete/leagues/${league.leagueId}` },
-          { label: seasonTeam.team.name, href: `/machete/leagues/${league.leagueId}/teams/${seasonTeam.teamId}` }
-        ]}
+        <PageBreadcrumbs
+          backHref={`/machete/leagues/${league.leagueId}`}
+          backLabel={<I18nText en="Back to league" ru="Назад к лиге" />}
+          items={[
+            { label: "Machete", href: "/machete/leagues" },
+            { label: <I18nText en="Leagues" ru="Лиги" />, href: "/machete/leagues" },
+            { label: league.displayName, href: `/machete/leagues/${league.leagueId}` },
+            { label: seasonTeam.team.name, href: `/machete/leagues/${league.leagueId}/teams/${seasonTeam.teamId}` }
+          ]}
       />
 
       <section className="mt-6 rounded border border-slate-200 bg-white p-5 shadow-soft">
@@ -122,7 +123,7 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
               </div>
               <p className="mt-2 text-sm text-slate-600">
                 <I18nText en="FotMob ID" ru="ID FotMob" /> {seasonTeam.team.rawRef ?? String(seasonTeam.teamId)} /{" "}
-              <I18nText en="Roster updated" ru="РЎРѕСЃС‚Р°РІ РѕР±РЅРѕРІР»РµРЅ" /> {formatDate(seasonTeam.updatedAt)}
+                <I18nText en="Roster updated" ru="Состав обновлен" /> {formatDate(seasonTeam.updatedAt)}
               </p>
             </div>
           </div>
@@ -132,25 +133,25 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
           <div className="rounded border border-slate-200 bg-field p-4">
             <dt className="flex items-center gap-2 text-xs font-medium uppercase text-slate-400">
               <Shield className="h-4 w-4" />
-              <I18nText en="Shared core team" ru="РћР±С‰Р°СЏ core-РєРѕРјР°РЅРґР°" />
+              <I18nText en="Shared core team" ru="Общая core-команда" />
             </dt>
             <dd className="mt-2 font-semibold text-ink">{String(seasonTeam.teamId)}</dd>
           </div>
           <div className="rounded border border-slate-200 bg-field p-4">
             <dt className="text-xs font-medium uppercase text-slate-400">
-              <I18nText en="Players synced" ru="РРіСЂРѕРєРѕРІ СЃРёРЅС…СЂРѕРЅРёР·РёСЂРѕРІР°РЅРѕ" />
+              <I18nText en="Players synced" ru="Игроков синхронизировано" />
             </dt>
             <dd className="mt-2 font-semibold text-ink">{formatNumber(players.length)}</dd>
           </div>
           <div className="rounded border border-slate-200 bg-field p-4">
             <dt className="text-xs font-medium uppercase text-slate-400">
-              <I18nText en="Recent matches shown" ru="РџРѕРєР°Р·Р°РЅРѕ РјР°С‚С‡РµР№" />
+              <I18nText en="Recent matches shown" ru="Показано матчей" />
             </dt>
             <dd className="mt-2 font-semibold text-ink">{formatNumber(fixtures.length)}</dd>
           </div>
           <div className="rounded border border-slate-200 bg-field p-4">
             <dt className="text-xs font-medium uppercase text-slate-400">
-              <I18nText en="Avg fantasy score" ru="РЎСЂРµРґРЅРёР№ fantasy score" />
+              <I18nText en="Avg fantasy score" ru="Средние fantasy-очки" />
             </dt>
             <dd className="mt-2 font-semibold text-ink">{formatScore(averageFantasyScore)}</dd>
           </div>
@@ -160,24 +161,29 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
       <section className="mt-6">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-ink">
-            <I18nText en="Players" ru="РРіСЂРѕРєРё" />
+            <I18nText en="Players" ru="Игроки" />
           </h2>
           <span className="text-sm text-slate-500">
-            <I18nText en="Fantasy score preview" ru="РџСЂРµРґРїСЂРѕСЃРјРѕС‚СЂ fantasy-РѕС‡РєРѕРІ" />
+            <I18nText en="Fantasy score preview" ru="Предпросмотр fantasy-очков" />
           </span>
         </div>
-        <p className="mb-3 text-sm text-slate-500">Stats and FP from {matchWindowLabel(matchWindow)}. Only shared match_player_stats rows for this team are used.</p>
+        <p className="mb-3 text-sm text-slate-500">
+          <I18nText
+            en={<>Stats and FP from {matchWindowLabel(matchWindow)}. Only shared match_player_stats rows for this team are used.</>}
+            ru={<>Статистика и FP по окну «{matchWindowLabelRu(matchWindow)}». Используются только общие строки match_player_stats этой команды.</>}
+          />
+        </p>
         <AutoSubmitForm className="mb-3 flex w-full max-w-xs items-end gap-2">
           <label className="flex-1 text-sm">
-            <span className="mb-1 block font-medium text-slate-600">Stats window</span>
+            <span className="mb-1 block font-medium text-slate-600"><I18nText en="Stats window" ru="Окно статистики" /></span>
             <select name="matchWindow" defaultValue={matchWindowModeValue(matchWindow)} className="w-full rounded border border-slate-200 px-3 py-2">
-              <option value="last5">Last 5 team matches</option>
-              <option value="last10">Last 10 team matches</option>
-              <option value="last15">Last 15 team matches</option>
-              <option value="current">Current season</option>
-              <option value="previous">Previous season</option>
-              <option value="all">All loaded matches</option>
-              <option value="custom">Custom team matches</option>
+              <LocalizedOption value="last5" en="Last 5 team matches" ru="Последние 5 матчей команды" />
+              <LocalizedOption value="last10" en="Last 10 team matches" ru="Последние 10 матчей команды" />
+              <LocalizedOption value="last15" en="Last 15 team matches" ru="Последние 15 матчей команды" />
+              <LocalizedOption value="current" en="Current season" ru="Текущий сезон" />
+              <LocalizedOption value="previous" en="Previous season" ru="Предыдущий сезон" />
+              <LocalizedOption value="all" en="All loaded matches" ru="Все загруженные матчи" />
+              <LocalizedOption value="custom" en="Custom team matches" ru="Свое число матчей команды" />
             </select>
             <input
               name="customMatches"
@@ -186,7 +192,7 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
               max="50"
               defaultValue={resolvedSearchParams.customMatches ?? ""}
               className="mt-2 w-full rounded border border-slate-200 px-3 py-2"
-              placeholder="Custom N"
+              placeholder="Кол-во матчей"
             />
           </label>
         </AutoSubmitForm>
@@ -196,10 +202,10 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
       <section className="mt-6">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-ink">
-            <I18nText en="Recent fixtures" ru="РџРѕСЃР»РµРґРЅРёРµ РјР°С‚С‡Рё" />
+            <I18nText en="Recent fixtures" ru="Последние матчи" />
           </h2>
           <span className="text-sm text-slate-500">
-            {formatNumber(fixtures.length)} <I18nText en="shown" ru="РїРѕРєР°Р·Р°РЅРѕ" />
+            {formatNumber(fixtures.length)} <I18nText en="shown" ru="показано" />
           </span>
         </div>
         <MacheteFixtureTable
@@ -219,24 +225,24 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
         <div className="flex items-center gap-2">
           <Database className="h-5 w-5 text-slate-500" />
           <h2 className="text-lg font-semibold text-ink">
-            <I18nText en="Shared raw payload references" ru="РЎСЃС‹Р»РєРё РЅР° РѕР±С‰РёРµ raw payload" />
+            <I18nText en="Shared raw payload references" ru="Ссылки на общие raw payload" />
           </h2>
         </div>
         <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
           {rawPayloads.map((payload) => (
             <div key={String(payload.matchId)} className="rounded border border-slate-200 bg-field p-3 text-sm">
-              <p className="font-semibold text-ink">Match {String(payload.matchId)}</p>
+              <p className="font-semibold text-ink"><I18nText en="Match" ru="Матч" /> {String(payload.matchId)}</p>
               <p className="mt-1 truncate text-slate-600">
-                {[payload.match.homeTeam?.name, payload.match.awayTeam?.name].filter(Boolean).join(" - ") || "Fixture"}
+                {[payload.match.homeTeam?.name, payload.match.awayTeam?.name].filter(Boolean).join(" - ") || <I18nText en="Fixture" ru="Матч" />}
               </p>
               <p className="mt-1 text-xs text-slate-500">
-                {payload.isFinal ? "final" : "not final"} / {formatDate(payload.fetchedAt)}
+                {payload.isFinal ? <I18nText en="final" ru="финальный" /> : <I18nText en="not final" ru="не финальный" />} / {formatDate(payload.fetchedAt)}
               </p>
             </div>
           ))}
           {rawPayloads.length === 0 ? (
             <p className="text-sm text-slate-500">
-              <I18nText en="No shared raw match payloads stored for this team yet." ru="Р”Р»СЏ СЌС‚РѕР№ РєРѕРјР°РЅРґС‹ РїРѕРєР° РЅРµС‚ РѕР±С‰РёС… raw payload РјР°С‚С‡РµР№." />
+              <I18nText en="No shared raw match payloads stored for this team yet." ru="Для этой команды пока нет общих raw payload матчей." />
             </p>
           ) : null}
         </div>

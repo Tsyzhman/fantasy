@@ -2,6 +2,7 @@ import { ImportStatus, Prisma } from "@prisma/client";
 import Link from "next/link";
 
 import { I18nText } from "@/components/i18n-text";
+import { LocalizedOption } from "@/components/localized-option";
 import { AutoSubmitForm } from "@/components/players/auto-submit-form";
 import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
 import { formatCurrency, formatNumber, formatScore } from "@/lib/format";
@@ -116,7 +117,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
         <label className="text-sm">
           <span className="mb-1 block font-medium text-slate-600"><I18nText en="League" ru="Лига" /></span>
           <select name="leagueId" defaultValue={selectedLeagueId} className="w-full rounded border border-slate-200 px-3 py-2">
-            <option value="">All leagues / Все лиги</option>
+            <LocalizedOption value="" en="All leagues" ru="Все лиги" />
             {leagues.map((league) => (
               <option key={league.id} value={league.id}>
                 {league.name}
@@ -127,7 +128,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
         <label className="text-sm">
           <span className="mb-1 block font-medium text-slate-600"><I18nText en="Team" ru="Команда" /></span>
           <select name="teamId" defaultValue={selectedTeamId} className="w-full rounded border border-slate-200 px-3 py-2">
-            <option value="">All teams / Все команды</option>
+            <LocalizedOption value="" en="All teams" ru="Все команды" />
             {teamLeagues.flatMap((league) =>
               league.teams.map((team) => (
                 <option key={team.id} value={team.id}>
@@ -144,7 +145,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
             defaultValue={resolvedSearchParams.positionGroup ?? ""}
             className="w-full rounded border border-slate-200 px-3 py-2"
           >
-            <option value="">All positions / Все позиции</option>
+            <LocalizedOption value="" en="All positions" ru="Все позиции" />
             {positions.map((position) => (
               <option key={position} value={position}>
                 {position}
@@ -166,11 +167,11 @@ export default async function PlayersPage({ searchParams }: PageProps) {
         <label className="text-sm">
           <span className="mb-1 block font-medium text-slate-600"><I18nText en="Sort" ru="Сортировка" /></span>
           <select name="sort" defaultValue={sort} className="w-full rounded border border-slate-200 px-3 py-2">
-            <option value="fantasyScore">Predicted FP / Прогноз FP</option>
-            <option value="scoringScore">Actual FP / Реальные FP</option>
-            <option value="alternativeScore">Alt FP / Альт. FP</option>
-            <option value="minutesPlayed">Minutes / Минуты</option>
-            <option value="playerName">Player name / Имя игрока</option>
+            <LocalizedOption value="fantasyScore" en="Predicted FP" ru="Прогноз FP" />
+            <LocalizedOption value="scoringScore" en="Actual FP" ru="Реальные FP" />
+            <LocalizedOption value="alternativeScore" en="Alt FP" ru="Альт. FP" />
+            <LocalizedOption value="minutesPlayed" en="Minutes" ru="Минуты" />
+            <LocalizedOption value="playerName" en="Player name" ru="Имя игрока" />
           </select>
         </label>
         <label className="flex items-end gap-2 rounded border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700">
@@ -227,7 +228,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
               <tr>
                 <th className="px-4 py-3"><I18nText en="Player" ru="Игрок" /></th>
                 <th className="px-4 py-3"><I18nText en="Team" ru="Команда" /></th>
-                <th className="px-4 py-3">Pos</th>
+                <th className="px-4 py-3"><I18nText en="Pos" ru="Поз." /></th>
                 <th className="px-4 py-3 text-right"><I18nText en="Minutes" ru="Минуты" /></th>
                 <th className="hidden px-4 py-3 text-right lg:table-cell"><I18nText en="Goals" ru="Голы" /></th>
                 <th className="hidden px-4 py-3 text-right lg:table-cell"><I18nText en="Assists" ru="Ассисты" /></th>
@@ -273,7 +274,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
               <tr>
                 <th className="px-4 py-3"><I18nText en="Player" ru="Игрок" /></th>
                 <th className="px-4 py-3"><I18nText en="Team" ru="Команда" /></th>
-                <th className="px-4 py-3">Pos</th>
+                <th className="px-4 py-3"><I18nText en="Pos" ru="Поз." /></th>
                 <th className="px-4 py-3 text-right"><I18nText en="Age" ru="Возраст" /></th>
                 <th className="px-4 py-3 text-right"><I18nText en="Minutes" ru="Минуты" /></th>
                 <th className="px-4 py-3 text-right"><I18nText en="Goals" ru="Голы" /></th>

@@ -5,19 +5,20 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { I18nText } from "@/components/i18n-text";
 import { cn } from "@/lib/cn";
 
 const adminLinks = [
   {
     href: "/admin/ingestion",
-    label: "Ingestion",
-    description: "Shared FotMob jobs",
+    label: <I18nText en="Ingestion" ru="Загрузка" />,
+    description: <I18nText en="Shared FotMob jobs" ru="Общие задачи FotMob" />,
     icon: <DatabaseZap className="h-4 w-4" />
   },
   {
     href: "/admin/users",
-    label: "Users",
-    description: "Accounts and roles",
+    label: <I18nText en="Users" ru="Пользователи" />,
+    description: <I18nText en="Accounts and roles" ru="Аккаунты и роли" />,
     icon: <Users className="h-4 w-4" />
   }
 ];
@@ -49,7 +50,7 @@ function AdminNavLink({
   href: string;
   active: boolean;
   icon: ReactNode;
-  description: string;
+  description: ReactNode;
   children: ReactNode;
 }) {
   return (

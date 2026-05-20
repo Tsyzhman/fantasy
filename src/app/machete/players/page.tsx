@@ -1,11 +1,12 @@
 import Link from "next/link";
 
 import { I18nText } from "@/components/i18n-text";
+import { LocalizedOption } from "@/components/localized-option";
 import { MachetePlayerTable } from "@/components/machete/MachetePlayerTable";
 import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
 import { AutoSubmitForm } from "@/components/players/auto-submit-form";
 import { prisma } from "@/lib/db";
-import { matchWindowLabel, matchWindowModeValue, parseMacheteMatchWindow, type MacheteMatchWindow } from "@/scoring/machete/match-window";
+import { matchWindowLabel, matchWindowLabelRu, matchWindowModeValue, parseMacheteMatchWindow, type MacheteMatchWindow } from "@/scoring/machete/match-window";
 import {
   loadSharedLeagueOptions,
   loadSharedLeagueTeams,
@@ -129,8 +130,8 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
         <label className="text-sm">
           <span className="mb-1 block font-medium text-slate-600"><I18nText en="League" ru="Лига" /></span>
           <select name="leagueId" defaultValue={selectedLeagueId} className="w-full rounded border border-slate-200 px-3 py-2">
-            <option value="">Choose league / Выберите лигу</option>
-            <option value={ALL_LEAGUES_VALUE}>All loaded leagues / Все загруженные лиги</option>
+            <LocalizedOption value="" en="Choose league" ru="Выберите лигу" />
+            <LocalizedOption value={ALL_LEAGUES_VALUE} en="All loaded leagues" ru="Все загруженные лиги" />
             {sortedLeagues.map((league) => (
               <option key={`${league.leagueId}:${league.season}`} value={String(league.leagueId)}>
                 {league.displayName} - {league.season}
@@ -141,7 +142,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
         <label className="text-sm">
           <span className="mb-1 block font-medium text-slate-600"><I18nText en="Team" ru="Команда" /></span>
           <select name="teamId" defaultValue={selectedTeamId} disabled={!selectedLeagueId} className="w-full rounded border border-slate-200 px-3 py-2 disabled:bg-slate-100">
-            <option value="">All teams / Все команды</option>
+            <LocalizedOption value="" en="All teams" ru="Все команды" />
             {teamLeagues.flatMap((league) =>
               league.teams.map((team) => (
                 <option key={`${league.leagueId}:${league.season}:${team.id}`} value={String(team.id)}>
@@ -161,7 +162,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
             disabled={!selectedTeamId || teamCompetitionOptions.length === 0}
             className="w-full rounded border border-slate-200 px-3 py-2 disabled:bg-slate-100"
           >
-            <option value="" disabled>Selected league / Текущая лига</option>
+            <LocalizedOption value="" disabled en="Selected league" ru="Текущая лига" />
             {teamCompetitionOptions.map((competition) => (
               <option key={competition.key} value={competition.key}>
                 {competition.displayName} - {competition.season} ({competition.matchesCount})
@@ -175,7 +176,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
             name="position"
             defaultValue={resolvedSearchParams.position ?? ""}
             className="w-full rounded border border-slate-200 px-3 py-2"
-            placeholder="Defender"
+            placeholder="Например: Defender"
           />
         </label>
         <label className="text-sm">
@@ -192,23 +193,23 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
         <label className="text-sm">
           <span className="mb-1 block font-medium text-slate-600"><I18nText en="Sort" ru="Сортировка" /></span>
           <select name="sort" defaultValue={sort} className="w-full rounded border border-slate-200 px-3 py-2">
-            <option value="fantasyScore">Expected FP / Прогноз FP</option>
-            <option value="scoringScore">Actual FP / Реальные FP</option>
-            <option value="alternativeScore">Alt FP / Альт. FP</option>
-            <option value="minutesPlayed">Minutes / Минуты</option>
-            <option value="playerName">Player name / Имя игрока</option>
+            <LocalizedOption value="fantasyScore" en="Expected FP" ru="Прогноз FP" />
+            <LocalizedOption value="scoringScore" en="Actual FP" ru="Реальные FP" />
+            <LocalizedOption value="alternativeScore" en="Alt FP" ru="Альт. FP" />
+            <LocalizedOption value="minutesPlayed" en="Minutes" ru="Минуты" />
+            <LocalizedOption value="playerName" en="Player name" ru="Имя игрока" />
           </select>
         </label>
         <label className="text-sm">
           <span className="mb-1 block font-medium text-slate-600"><I18nText en="Stats window" ru="Окно статистики" /></span>
           <select name="matchWindow" defaultValue={matchWindowModeValue(matchWindow)} className="w-full rounded border border-slate-200 px-3 py-2">
-            <option value="last5">Last 5 team matches</option>
-            <option value="last10">Last 10 team matches</option>
-            <option value="last15">Last 15 team matches</option>
-            <option value="current">Current season</option>
-            <option value="previous">Previous season</option>
-            <option value="all">All loaded matches</option>
-            <option value="custom">Custom team matches</option>
+            <LocalizedOption value="last5" en="Last 5 team matches" ru="Последние 5 матчей команды" />
+            <LocalizedOption value="last10" en="Last 10 team matches" ru="Последние 10 матчей команды" />
+            <LocalizedOption value="last15" en="Last 15 team matches" ru="Последние 15 матчей команды" />
+            <LocalizedOption value="current" en="Current season" ru="Текущий сезон" />
+            <LocalizedOption value="previous" en="Previous season" ru="Предыдущий сезон" />
+            <LocalizedOption value="all" en="All loaded matches" ru="Все загруженные матчи" />
+            <LocalizedOption value="custom" en="Custom team matches" ru="Свое число матчей команды" />
           </select>
           <input
             name="customMatches"
@@ -217,7 +218,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
             max="50"
             defaultValue={resolvedSearchParams.customMatches ?? ""}
             className="mt-2 w-full rounded border border-slate-200 px-3 py-2"
-            placeholder="Custom N"
+            placeholder="Кол-во матчей"
           />
         </label>
         <label className="text-sm">
@@ -233,8 +234,20 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
       </AutoSubmitForm>
 
       <p className="mt-3 text-sm text-slate-500">
-        Stats and FP are recalculated from {matchWindowLabel(matchWindow)}
-        {selectedCompetitions.length > 0 ? ` in ${competitionSummary(selectedCompetitions)}` : ""}.
+        <I18nText
+          en={
+            <>
+              Stats and FP are recalculated from {matchWindowLabel(matchWindow)}
+              {selectedCompetitions.length > 0 ? ` in ${competitionSummary(selectedCompetitions)}` : ""}.
+            </>
+          }
+          ru={
+            <>
+              Статистика и FP пересчитаны по окну «{matchWindowLabelRu(matchWindow)}»
+              {selectedCompetitions.length > 0 ? ` в турнирах: ${competitionSummary(selectedCompetitions)}` : ""}.
+            </>
+          }
+        />
       </p>
 
       <section className="mt-6">
@@ -242,7 +255,10 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
           <>
             <div className="mb-3 flex flex-col gap-2 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
               <span>
-                Showing {playersResult.from}-{playersResult.to} of {playersResult.total} players.
+                <I18nText
+                  en={`Showing ${playersResult.from}-${playersResult.to} of ${playersResult.total} players.`}
+                  ru={`Показаны ${playersResult.from}-${playersResult.to} из ${playersResult.total} игроков.`}
+                />
               </span>
               <PaginationLinks page={playersResult.page} pageCount={playersResult.pageCount} params={paginationParams} />
             </div>

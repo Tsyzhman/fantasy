@@ -22,7 +22,7 @@ export function LanguageToggle() {
     window.dispatchEvent(new Event(languageChangeEvent));
   }
 
-  const label = language === "ru" ? "Switch to English" : "Switch to Russian";
+  const label = language === "ru" ? "Переключить на английский" : "Switch to Russian";
 
   return (
     <button

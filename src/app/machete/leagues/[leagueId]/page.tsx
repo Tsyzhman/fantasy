@@ -105,10 +105,10 @@ export default async function MacheteLeaguePage({ params }: PageProps) {
       <div className="mt-6">
         <PageBreadcrumbs
           backHref="/machete/leagues"
-          backLabel={<I18nText en="Back to leagues" ru="РќР°Р·Р°Рґ Рє Р»РёРіР°Рј" />}
+          backLabel={<I18nText en="Back to leagues" ru="Назад к лигам" />}
           items={[
             { label: "Machete", href: "/machete/leagues" },
-            { label: <I18nText en="Leagues" ru="Р›РёРіРё" />, href: "/machete/leagues" },
+            { label: <I18nText en="Leagues" ru="Лиги" />, href: "/machete/leagues" },
             { label: league.displayName, href: `/machete/leagues/${league.leagueId}` }
           ]}
         />
@@ -131,14 +131,14 @@ export default async function MacheteLeaguePage({ params }: PageProps) {
             </p>
           </div>
           <dl className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-5">
-            <Metric label={<I18nText en="Teams" ru="РљРѕРјР°РЅРґС‹" />} value={formatNumber(teams.length)} />
+            <Metric label={<I18nText en="Teams" ru="Команды" />} value={formatNumber(teams.length)} />
             <Metric
-              label={<I18nText en="Players" ru="РРіСЂРѕРєРё" />}
+              label={<I18nText en="Players" ru="Игроки" />}
               value={formatNumber(teamCards.reduce((total, team) => total + team.playersSynced, 0))}
             />
-            <Metric label={<I18nText en="Fixtures" ru="РњР°С‚С‡Рё" />} value={formatNumber(fixturesCount)} />
-            <Metric label={<I18nText en="Last sync" ru="РџРѕСЃР»РµРґРЅСЏСЏ СЃРёРЅС…СЂРѕРЅРёР·Р°С†РёСЏ" />} value={formatDate(league.updatedAt)} />
-            <Metric label="Expected FP" value={formatScore(fantasyAggregate._avg.points ?? null)} accent />
+            <Metric label={<I18nText en="Fixtures" ru="Матчи" />} value={formatNumber(fixturesCount)} />
+            <Metric label={<I18nText en="Last sync" ru="Последняя синхронизация" />} value={formatDate(league.updatedAt)} />
+            <Metric label={<I18nText en="Expected FP" ru="Прогноз FP" />} value={formatScore(fantasyAggregate._avg.points ?? null)} accent />
           </dl>
         </div>
       </section>
@@ -152,7 +152,7 @@ export default async function MacheteLeaguePage({ params }: PageProps) {
         <div className="mt-6 rounded border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">
           <I18nText
             en="No teams synced yet. Ask an administrator to run the shared FotMob ingestion."
-            ru="РљРѕРјР°РЅРґС‹ РµС‰Рµ РЅРµ СЃРёРЅС…СЂРѕРЅРёР·РёСЂРѕРІР°РЅС‹. РџРѕРїСЂРѕСЃРёС‚Рµ Р°РґРјРёРЅРёСЃС‚СЂР°С‚РѕСЂР° Р·Р°РїСѓСЃС‚РёС‚СЊ РѕР±С‰СѓСЋ Р·Р°РіСЂСѓР·РєСѓ FotMob."
+            ru="Команды еще не синхронизированы. Попросите администратора запустить общую загрузку FotMob."
           />
         </div>
       ) : null}
