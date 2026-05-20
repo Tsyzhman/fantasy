@@ -6,12 +6,14 @@ import { configForLeague } from "./league-season-policy";
 import {
   CORE_SCHEMA_VERSION,
   DEFAULT_PARSER_VERSION,
+  FOTMOB_SOURCE,
   asRecord,
   payloadHash,
   sourceIdToBigInt,
   type ParsedMatchPayload,
   type TeamData
 } from "./models";
+import { normalizeParsedMatchPayloadLinks, type ParsedPayloadDataQuality } from "./payload-normalization";
 import { parse_match_metadata, parse_payload } from "./parsers";
 import {
   CoreEventRepository,
@@ -43,6 +45,23 @@ export type IngestMatchResult = {
   shotsParsed: number;
   playerStatsParsed: number;
   teamStatsParsed: number;
+  dataQuality: ParsedPayloadDataQuality;
+};
+
+const emptyDataQuality: ParsedPayloadDataQuality = {
+  repaired: {
+    teamStatsTeamIds: 0,
+    teamStatsOpponentTeamIds: 0,
+    playerStatsTeamIds: 0,
+    playerStatsOpponentTeamIds: 0,
+    shotTeamIds: 0,
+    shotOpponentTeamIds: 0,
+    eventTeamIds: 0
+  },
+  dropped: {
+    teamStats: 0,
+    playerStats: 0
+  }
 };
 
 export async function ingest_match(prisma: PrismaClient, match_id: bigint | string | number, options: IngestMatchOptions = {}): Promise<IngestMatchResult> {
@@ -65,7 +84,8 @@ export async function ingest_match(prisma: PrismaClient, match_id: bigint | stri
       rawPayloadHash: existingRaw.payloadHash,
       shotsParsed: 0,
       playerStatsParsed: 0,
-      teamStatsParsed: 0
+      teamStatsParsed: 0,
+      dataQuality: emptyDataQuality
     };
   }
 
@@ -82,7 +102,8 @@ export async function ingest_match(prisma: PrismaClient, match_id: bigint | stri
         skipped: true,
         shotsParsed: 0,
         playerStatsParsed: 0,
-        teamStatsParsed: 0
+        teamStatsParsed: 0,
+        dataQuality: emptyDataQuality
       };
     }
     throw error;
@@ -178,7 +199,8 @@ export async function persist_match_payload(
     shots: parsed.shots.map((row) => ({ ...row, matchId }))
   };
 
-  await upsertParsedPayload(prisma, enriched);
+  const normalized = normalizeParsedMatchPayloadLinks(enriched);
+  await upsertParsedPayload(prisma, normalized.parsed);
 
   const rawPayloadHash = payloadHash(canonicalPayload);
   await new RawPayloadRepository(prisma).upsert({
@@ -197,9 +219,10 @@ export async function persist_match_payload(
     fetched: options.fetched ?? false,
     skipped: false,
     rawPayloadHash,
-    shotsParsed: enriched.shots.length,
-    playerStatsParsed: enriched.playerStats.length,
-    teamStatsParsed: enriched.teamStats.length
+    shotsParsed: normalized.parsed.shots.length,
+    playerStatsParsed: normalized.parsed.playerStats.length,
+    teamStatsParsed: normalized.parsed.teamStats.length,
+    dataQuality: normalized.dataQuality
   };
 }
 
@@ -339,10 +362,112 @@ async function upsertParsedPayload(prisma: PrismaClient, parsed: ParsedMatchPayl
   await playerRepository.upsertMany(parsed.players);
   await playerRepository.ensurePlaceholders(missingReferencedPlayerIds(parsed));
   await matchRepository.upsert(parsed.match);
+  await upsertMatchDerivedSeasonLinks(prisma, parsed);
   await statsRepository.upsertTeamStats(parsed.teamStats);
   await statsRepository.upsertPlayerStats(parsed.playerStats);
   await new CoreEventRepository(prisma).replaceMatchEvents(parsed.match.id, parsed.events);
   await new CoreShotRepository(prisma).upsertShots(parsed.shots);
+}
+
+async function upsertMatchDerivedSeasonLinks(prisma: PrismaClient, parsed: ParsedMatchPayload) {
+  const leagueId = parsed.match.leagueId;
+  const season = parsed.match.season;
+  if (!leagueId || !season) return;
+
+  await prisma.leagueSeason.upsert({
+    where: {
+      leagueId_season: {
+        leagueId,
+        season
+      }
+    },
+    update: {
+      source: FOTMOB_SOURCE
+    },
+    create: {
+      leagueId,
+      season,
+      source: FOTMOB_SOURCE,
+      calendarType: null,
+      isCurrent: false,
+      providerSeason: season,
+      name: null,
+      country: null,
+      metadata: { derived_from_match_payload: true }
+    }
+  });
+
+  const now = new Date();
+  const teamIds = uniqueBigints([
+    parsed.match.homeTeamId,
+    parsed.match.awayTeamId,
+    ...parsed.teamStats.flatMap((row) => [row.teamId, row.opponentTeamId]),
+    ...parsed.playerStats.flatMap((row) => [row.teamId, row.opponentTeamId])
+  ].filter((teamId): teamId is bigint => teamId !== null && teamId !== undefined && teamId > 0n));
+
+  for (const teamId of teamIds) {
+    await prisma.leagueSeasonTeam.upsert({
+      where: {
+        leagueId_season_teamId: {
+          leagueId,
+          season,
+          teamId
+        }
+      },
+      update: {
+        active: true,
+        lastSeenAt: now
+      },
+      create: {
+        leagueId,
+        season,
+        teamId,
+        source: FOTMOB_SOURCE,
+        active: true,
+        firstSeenAt: now,
+        lastSeenAt: now,
+        metadata: { derived_from_match_payload: true }
+      }
+    });
+  }
+
+  const seenPlayerTeams = new Set<string>();
+  for (const row of parsed.playerStats) {
+    if (!row.teamId || row.teamId <= 0n || !row.playerId || row.playerId <= 0n) continue;
+    const key = `${row.teamId}:${row.playerId}`;
+    if (seenPlayerTeams.has(key)) continue;
+    seenPlayerTeams.add(key);
+    await prisma.teamPlayerSeason.upsert({
+      where: {
+        leagueId_season_teamId_playerId: {
+          leagueId,
+          season,
+          teamId: row.teamId,
+          playerId: row.playerId
+        }
+      },
+      update: {
+        active: true,
+        lastSeenAt: now
+      },
+      create: {
+        leagueId,
+        season,
+        teamId: row.teamId,
+        playerId: row.playerId,
+        source: FOTMOB_SOURCE,
+        active: true,
+        position: row.position,
+        shirtNumber: row.shirtNumber,
+        nationality: null,
+        age: null,
+        photoUrl: null,
+        firstSeenAt: now,
+        lastSeenAt: now,
+        rosterPayload: { derived_from_match_payload: true }
+      }
+    });
+  }
 }
 
 function missingReferencedLeagueIds(parsed: ParsedMatchPayload) {

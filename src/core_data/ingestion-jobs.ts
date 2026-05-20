@@ -13,6 +13,7 @@ import {
   type LeagueIngestionConfig
 } from "./league-season-policy";
 import { sourceIdToBigInt } from "./models";
+import { mergeDataQualityTotals } from "./payload-normalization";
 import { CoreIngestionRepository } from "./repositories";
 import { resolveProviderCurrentSeason, sync_league_season_rosters } from "./season-rosters";
 import { ScopeTooBroadError } from "./scope-validation";
@@ -299,7 +300,8 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: Ing
             data: {
               ...(result.skipped ? { skippedMatches: { increment: 1 } } : { fetchedMatches: { increment: result.fetched ? 1 : 0 } }),
               metadata: mergeJobMetadata({
-                current_scope_processed_matches: ++currentScopeProcessedMatches
+                current_scope_processed_matches: ++currentScopeProcessedMatches,
+                data_quality: mergeDataQualityTotals(metadataRecord(jobMetadata).data_quality, result.dataQuality)
               })
             }
           });

@@ -17,6 +17,7 @@ export default async function AdminIngestionPage() {
   const status = await getIngestionAdminStatus(prisma);
   const job = status.active_job ?? status.latest_job;
   const progress = calculateProgress(job);
+  const dataQuality = summarizeDataQuality(job?.metadata);
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -90,6 +91,8 @@ export default async function AdminIngestionPage() {
           <Metric label={<I18nText en="Processing league" ru="Текущая лига" />} value={job?.current_league_id ?? "-"} />
           <Metric label={<I18nText en="Processing scope season" ru="Текущий сезон" />} value={job?.current_season ?? "-"} />
           <Metric label={<I18nText en="Processing match" ru="Текущий матч" />} value={job?.current_match_id ?? "-"} />
+          <Metric label={<I18nText en="Repaired data links" ru="Восстановлено связей" />} value={formatNumber(dataQuality.repaired)} />
+          <Metric label={<I18nText en="Dropped invalid rows" ru="Пропущено битых строк" />} value={formatNumber(dataQuality.dropped)} />
           <Metric label={<I18nText en="Started at" ru="Старт" />} value={formatIso(job?.started_at)} />
           <Metric label={<I18nText en="Finished at" ru="Финиш" />} value={formatIso(job?.finished_at ?? status.initial_backfill_completed_at)} />
         </dl>
@@ -174,6 +177,15 @@ function calculateProgress(job: AdminIngestionJob | null) {
   };
 }
 
+function summarizeDataQuality(metadataValue: unknown): { repaired: number; dropped: number } {
+  const metadata = metadataRecord(metadataValue);
+  const dataQuality = metadataRecord(metadata.data_quality);
+  return {
+    repaired: sumMetadataNumbers(metadataRecord(dataQuality.repaired)),
+    dropped: sumMetadataNumbers(metadataRecord(dataQuality.dropped))
+  };
+}
+
 function formatProgress(progress: number) {
   if (progress <= 0) return "0%";
   if (progress < 10) return `${progress.toFixed(1)}%`;
@@ -192,4 +204,8 @@ function metadataNumber(metadata: Record<string, unknown>, key: string) {
     if (Number.isFinite(parsed)) return parsed;
   }
   return null;
+}
+
+function sumMetadataNumbers(metadata: Record<string, unknown>): number {
+  return Object.values(metadata).reduce<number>((total, value) => total + (typeof value === "number" && Number.isFinite(value) ? value : 0), 0);
 }

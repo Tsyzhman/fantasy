@@ -38,22 +38,13 @@ export class CoreMatchRepository {
   }
 
   async ensureLeaguePlaceholders(leagueIds: Array<bigint | null | undefined>) {
-    const ids = uniqueBigints(leagueIds.filter(isPositiveBigInt));
-    if (ids.length === 0) return;
-
-    await this.prisma.coreLeague.createMany({
-      data: ids.map((id) => ({
-        id,
-        name: `FotMob league ${String(id)}`,
-        country: null,
-        source: FOTMOB_SOURCE,
-        rawRef: String(id)
-      })),
-      skipDuplicates: true
-    });
+    await ensureCoreLeaguePlaceholders(this.prisma, leagueIds);
   }
 
   async upsert(match: MatchData) {
+    await this.ensureLeaguePlaceholders([match.leagueId]);
+    await ensureCoreTeamPlaceholders(this.prisma, [match.homeTeamId, match.awayTeamId]);
+
     return this.prisma.coreMatch.upsert({
       where: { id: match.id },
       update: matchData(match),
@@ -104,20 +95,7 @@ export class CoreTeamRepository {
   }
 
   async ensurePlaceholders(teamIds: Array<bigint | null | undefined>) {
-    const ids = uniqueBigints(teamIds.filter(isPositiveBigInt));
-    if (ids.length === 0) return;
-
-    await this.prisma.coreTeam.createMany({
-      data: ids.map((id) => ({
-        id,
-        name: `FotMob team ${String(id)}`,
-        country: null,
-        ccode: null,
-        source: FOTMOB_SOURCE,
-        rawRef: String(id)
-      })),
-      skipDuplicates: true
-    });
+    await ensureCoreTeamPlaceholders(this.prisma, teamIds);
   }
 }
 
@@ -142,18 +120,7 @@ export class CorePlayerRepository {
   }
 
   async ensurePlaceholders(playerIds: Array<bigint | null | undefined>) {
-    const ids = uniqueBigints(playerIds.filter(isPositiveBigInt));
-    if (ids.length === 0) return;
-
-    await this.prisma.corePlayer.createMany({
-      data: ids.map((id) => ({
-        id,
-        name: `FotMob player ${String(id)}`,
-        source: FOTMOB_SOURCE,
-        rawRef: String(id)
-      })),
-      skipDuplicates: true
-    });
+    await ensureCorePlayerPlaceholders(this.prisma, playerIds);
   }
 }
 
@@ -161,6 +128,8 @@ export class CoreSeasonRosterRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
   async upsertLeagueSeason(row: LeagueSeasonData) {
+    await ensureCoreLeaguePlaceholders(this.prisma, [row.leagueId]);
+
     if (row.isCurrent) {
       await this.prisma.leagueSeason.updateMany({
         where: {
@@ -185,6 +154,8 @@ export class CoreSeasonRosterRepository {
   }
 
   async upsertSeasonTeams(rows: LeagueSeasonTeamData[]) {
+    await ensureCoreTeamPlaceholders(this.prisma, rows.map((row) => row.teamId));
+
     const now = new Date();
     for (const row of rows) {
       await this.prisma.leagueSeasonTeam.upsert({
@@ -222,6 +193,9 @@ export class CoreSeasonRosterRepository {
   }
 
   async upsertTeamPlayers(rows: TeamPlayerSeasonData[]) {
+    await ensureCoreTeamPlaceholders(this.prisma, rows.map((row) => row.teamId));
+    await ensureCorePlayerPlaceholders(this.prisma, rows.map((row) => row.playerId));
+
     const now = new Date();
     for (const row of rows) {
       await this.prisma.teamPlayerSeason.upsert({
@@ -270,6 +244,11 @@ export class CoreStatsRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
   async upsertTeamStats(rows: TeamMatchStatsData[]) {
+    await ensureCoreTeamPlaceholders(
+      this.prisma,
+      rows.flatMap((row) => [row.teamId, row.opponentTeamId])
+    );
+
     for (const row of rows) {
       if (!isPositiveBigInt(row.teamId)) continue;
       await this.prisma.matchTeamStat.upsert({
@@ -286,6 +265,12 @@ export class CoreStatsRepository {
   }
 
   async upsertPlayerStats(rows: PlayerMatchStatsData[]) {
+    await ensureCorePlayerPlaceholders(this.prisma, rows.map((row) => row.playerId));
+    await ensureCoreTeamPlaceholders(
+      this.prisma,
+      rows.flatMap((row) => [row.teamId, row.opponentTeamId])
+    );
+
     for (const row of rows) {
       if (!isPositiveBigInt(row.playerId)) continue;
       await this.prisma.matchPlayerStat.upsert({
@@ -317,18 +302,11 @@ export class CoreEventRepository {
   }
 
   private async ensureReferencedPlayers(rows: MatchEventData[]) {
-    const playerIds = uniqueBigints(rows.flatMap((row) => [row.playerId, row.relatedPlayerId]).filter(isPositiveBigInt));
-    if (playerIds.length === 0) return;
-
-    await this.prisma.corePlayer.createMany({
-      data: playerIds.map((id) => ({
-        id,
-        name: `FotMob player ${String(id)}`,
-        source: FOTMOB_SOURCE,
-        rawRef: String(id)
-      })),
-      skipDuplicates: true
-    });
+    await ensureCorePlayerPlaceholders(
+      this.prisma,
+      rows.flatMap((row) => [row.playerId, row.relatedPlayerId])
+    );
+    await ensureCoreTeamPlaceholders(this.prisma, rows.map((row) => row.teamId));
   }
 }
 
@@ -336,6 +314,12 @@ export class CoreShotRepository {
   constructor(private readonly prisma: PrismaClient) {}
 
   async upsertShots(rows: MatchShotData[]) {
+    await ensureCoreTeamPlaceholders(
+      this.prisma,
+      rows.flatMap((row) => [row.teamId, row.opponentTeamId])
+    );
+    await ensureCorePlayerPlaceholders(this.prisma, rows.map((row) => row.playerId));
+
     for (const row of rows) {
       await this.prisma.matchShot.upsert({
         where: {
@@ -691,6 +675,54 @@ function shotData(row: MatchShotData) {
 function jsonValue(value: unknown): Prisma.InputJsonValue {
   if (value === null || value === undefined) return {};
   return value as Prisma.InputJsonValue;
+}
+
+async function ensureCoreLeaguePlaceholders(prisma: PrismaClient, leagueIds: Array<bigint | null | undefined>) {
+  const ids = uniqueBigints(leagueIds.filter(isPositiveBigInt));
+  if (ids.length === 0) return;
+
+  await prisma.coreLeague.createMany({
+    data: ids.map((id) => ({
+      id,
+      name: `FotMob league ${String(id)}`,
+      country: null,
+      source: FOTMOB_SOURCE,
+      rawRef: String(id)
+    })),
+    skipDuplicates: true
+  });
+}
+
+async function ensureCoreTeamPlaceholders(prisma: PrismaClient, teamIds: Array<bigint | null | undefined>) {
+  const ids = uniqueBigints(teamIds.filter(isPositiveBigInt));
+  if (ids.length === 0) return;
+
+  await prisma.coreTeam.createMany({
+    data: ids.map((id) => ({
+      id,
+      name: `FotMob team ${String(id)}`,
+      country: null,
+      ccode: null,
+      source: FOTMOB_SOURCE,
+      rawRef: String(id)
+    })),
+    skipDuplicates: true
+  });
+}
+
+async function ensureCorePlayerPlaceholders(prisma: PrismaClient, playerIds: Array<bigint | null | undefined>) {
+  const ids = uniqueBigints(playerIds.filter(isPositiveBigInt));
+  if (ids.length === 0) return;
+
+  await prisma.corePlayer.createMany({
+    data: ids.map((id) => ({
+      id,
+      name: `FotMob player ${String(id)}`,
+      source: FOTMOB_SOURCE,
+      rawRef: String(id)
+    })),
+    skipDuplicates: true
+  });
 }
 
 function uniqueBigints(values: bigint[]) {

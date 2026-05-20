@@ -126,6 +126,9 @@ test("shallow FotMob payloads are not marked final raw payloads", async () => {
   const calls: unknown[] = [];
   const prisma = {
     coreLeague: {
+      async createMany() {
+        return {};
+      },
       async upsert() {
         return {};
       }
@@ -139,6 +142,9 @@ test("shallow FotMob payloads are not marked final raw payloads", async () => {
       }
     },
     corePlayer: {
+      async createMany() {
+        return {};
+      },
       async upsert() {
         return {};
       }
@@ -204,6 +210,9 @@ test("match payload persistence creates placeholder teams for player stat team r
   const playerStatCalls: unknown[] = [];
   const prisma = {
     coreLeague: {
+      async createMany() {
+        return {};
+      },
       async upsert() {
         return {};
       }
@@ -218,6 +227,9 @@ test("match payload persistence creates placeholder teams for player stat team r
       }
     },
     corePlayer: {
+      async createMany() {
+        return {};
+      },
       async upsert() {
         return {};
       }
@@ -279,6 +291,97 @@ test("match payload persistence creates placeholder teams for player stat team r
   assert.equal(playerStatCalls.length, 1);
 });
 
+test("match payload persistence repairs player stat team links from shot ownership", async () => {
+  const playerStatCalls: unknown[] = [];
+  const prisma = {
+    coreLeague: {
+      async createMany() {
+        return {};
+      },
+      async upsert() {
+        return {};
+      }
+    },
+    coreTeam: {
+      async upsert() {
+        return {};
+      },
+      async createMany() {
+        return {};
+      }
+    },
+    corePlayer: {
+      async createMany() {
+        return {};
+      },
+      async upsert() {
+        return {};
+      }
+    },
+    coreMatch: {
+      async upsert() {
+        return {};
+      }
+    },
+    matchTeamStat: {
+      async upsert() {
+        return {};
+      }
+    },
+    matchPlayerStat: {
+      async upsert(input: unknown) {
+        playerStatCalls.push(input);
+        return {};
+      }
+    },
+    matchEvent: {
+      async deleteMany() {
+        return {};
+      }
+    },
+    matchShot: {
+      async upsert() {
+        return {};
+      }
+    },
+    rawMatchPayload: {
+      async upsert() {
+        return {};
+      }
+    },
+    shotmapComparisonsCache: {
+      async findMany() {
+        return [];
+      }
+    }
+  } as unknown as PrismaClient;
+
+  const { persist_match_payload } = await import("./ingestion");
+  const result = await persist_match_payload(
+    prisma,
+    {
+      id: 1003,
+      leagueId: 47,
+      home: { id: 10, name: "Home FC", score: 1 },
+      away: { id: 20, name: "Away FC", score: 0 },
+      status: { finished: true, started: true, utcTime: "2026-05-01T18:00:00.000Z" },
+      playerStats: [{ id: 777, name: "Shot Linked Player", stats: { minutes: 90 } }],
+      content: {
+        shotmap: {
+          shots: [{ matchId: 1003, teamId: 10, playerId: 777, playerName: "Shot Linked Player", x: 90, y: 50 }]
+        }
+      }
+    },
+    { matchId: 1003n, fetched: true }
+  );
+
+  const call = playerStatCalls[0] as { create?: { teamId?: bigint | null; opponentTeamId?: bigint | null } };
+  assert.equal(call.create?.teamId, 10n);
+  assert.equal(call.create?.opponentTeamId, 20n);
+  assert.equal(result.dataQuality.repaired.playerStatsTeamIds, 1);
+  assert.equal(result.dataQuality.dropped.playerStats, 0);
+});
+
 test("player placeholder creation ignores invalid ids and deduplicates references", async () => {
   const calls: unknown[] = [];
   const prisma = {
@@ -301,6 +404,16 @@ test("stats repositories skip invalid required ids and null invalid optional rel
   const teamStatCalls: unknown[] = [];
   const playerStatCalls: unknown[] = [];
   const prisma = {
+    coreTeam: {
+      async createMany() {
+        return {};
+      }
+    },
+    corePlayer: {
+      async createMany() {
+        return {};
+      }
+    },
     matchTeamStat: {
       async upsert(input: unknown) {
         teamStatCalls.push(input);
