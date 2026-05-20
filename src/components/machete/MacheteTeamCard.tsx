@@ -28,7 +28,7 @@ export function MacheteTeamCard({ team }: { team: MacheteTeamCardDto }) {
     <article className="flex min-h-[280px] flex-col rounded border border-slate-200 bg-white p-4 shadow-soft">
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
-          <TeamLogo logoUrl={team.logoUrl} name={team.name} />
+          <MacheteTeamLogo logoUrl={team.logoUrl} name={team.name} />
           <div className="min-w-0">
             <h2 className="truncate text-base font-semibold text-ink">{team.name}</h2>
             <p className="text-xs text-slate-500">
@@ -83,17 +83,29 @@ export function MacheteTeamCard({ team }: { team: MacheteTeamCardDto }) {
     </article>
   );
 }
-function TeamLogo({ logoUrl, name }: { logoUrl: string | null; name: string }) {
-  if (logoUrl && logoUrl.startsWith("/")) {
+export function MacheteTeamLogo({ logoUrl, name, size = "md" }: { logoUrl: string | null; name: string; size?: "md" | "lg" }) {
+  const frameSize = size === "lg" ? "h-16 w-16" : "h-12 w-12";
+  const imageSize = size === "lg" ? "h-14 w-14" : "h-10 w-10";
+  const imageDimension = size === "lg" ? 56 : 40;
+  const renderableLogoUrl = logoUrl && (logoUrl.startsWith("/") || logoUrl.startsWith("https://images.fotmob.com/")) ? logoUrl : null;
+
+  if (renderableLogoUrl) {
     return (
-      <div className="team-logo-frame grid h-12 w-12 shrink-0 place-items-center">
-        <Image src={logoUrl} alt="" width={40} height={40} className="team-logo-image h-10 w-10 object-contain" />
+      <div className={`team-logo-frame grid ${frameSize} shrink-0 place-items-center`}>
+        <Image
+          src={renderableLogoUrl}
+          alt=""
+          width={imageDimension}
+          height={imageDimension}
+          unoptimized
+          className={`team-logo-image ${imageSize} object-contain`}
+        />
       </div>
     );
   }
 
   return (
-    <div className="team-logo-frame grid h-12 w-12 shrink-0 place-items-center text-sm font-bold text-ink">
+    <div className={`team-logo-frame grid ${frameSize} shrink-0 place-items-center text-sm font-bold text-ink`}>
       {initials(name)}
     </div>
   );

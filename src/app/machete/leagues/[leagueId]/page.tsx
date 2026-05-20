@@ -84,7 +84,7 @@ export default async function MacheteLeaguePage({ params }: PageProps) {
         country: team.country,
         leagueName: league.displayName,
         providerTeamId: team.rawRef ?? String(team.id),
-        logoUrl: null,
+        logoUrl: team.logoUrl,
         status: playersSynced > 0 || teamFixtures > 0 ? "SYNCED" : "NOT_CONFIGURED",
         playersSynced,
         fixturesSynced: teamFixtures,

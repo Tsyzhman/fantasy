@@ -1,7 +1,10 @@
 import type { PrismaClient } from "@prisma/client";
 
 import { calculateAlternativeScore, calculateFantasyScore, calculateScoringScore, getActiveScoringModelForSource, type ActiveScoringModel } from "@/lib/scoring";
+import { leagueSeeds } from "@/lib/leagues/seed-data";
 import { compareMacheteLeagues, macheteLeagueDisplayName } from "@/lib/leagues/display";
+import { teamLogoUrlForSlug, validTeamLogoUrl } from "@/lib/teams/logo-assets";
+import { normalizeName, slugify } from "@/lib/text";
 import { matchWindowSeasonLabel, type MacheteMatchWindow } from "@/scoring/machete/match-window";
 
 export type SharedLeagueSeasonOption = {
@@ -20,6 +23,7 @@ export type SharedTeamOption = {
   name: string;
   country: string | null;
   rawRef: string | null;
+  logoUrl: string | null;
 };
 
 export type SharedPlayerOption = {
@@ -139,8 +143,30 @@ export async function loadSharedLeagueTeams(prisma: PrismaClient, leagueId: bigi
     id: row.team.id,
     name: row.team.name,
     country: row.team.country,
-    rawRef: row.team.rawRef
+    rawRef: row.team.rawRef,
+    logoUrl: resolveSharedTeamLogoUrl({
+      providerLeagueId: String(leagueId),
+      teamName: row.team.name,
+      rawRef: row.team.rawRef,
+      metadata: row.metadata
+    })
   }));
+}
+
+export function resolveSharedTeamLogoUrl(input: {
+  providerLeagueId: string;
+  teamName: string;
+  rawRef: string | null | undefined;
+  metadata: unknown;
+}) {
+  const metadataLogoUrl = metadataText(input.metadata, "logo_url");
+  const shortName = metadataText(input.metadata, "short_name");
+
+  return (
+    localSharedTeamLogoUrl(input.providerLeagueId, input.teamName, shortName, metadataLogoUrl) ??
+    renderableTeamLogoUrl(metadataLogoUrl) ??
+    fotMobTeamLogoUrl(input.rawRef)
+  );
 }
 
 export async function loadSharedTeamPlayers(prisma: PrismaClient, leagueId: bigint, season: string, teamId: bigint): Promise<SharedPlayerOption[]> {
@@ -453,6 +479,55 @@ function teamScopeKey(leagueId: bigint, season: string, teamId: bigint) {
 
 function teamPlayerKey(teamId: bigint, playerId: bigint) {
   return `${teamId}:${playerId}`;
+}
+
+function localSharedTeamLogoUrl(providerLeagueId: string, teamName: string, shortName: string | null, metadataLogoUrl: string | null) {
+  const preferredLogoUrl = validTeamLogoUrl(metadataLogoUrl);
+  if (preferredLogoUrl) return preferredLogoUrl;
+
+  const leagueSeed = leagueSeeds.find((league) => league.fotMobLeagueId === providerLeagueId);
+  if (!leagueSeed) return null;
+
+  const normalizedTeamNames = [teamName, shortName].filter((value): value is string => Boolean(value)).map(normalizeName);
+  const seedTeam = leagueSeed.teams.find((candidate) => {
+    const candidateNames = [candidate.name, ...(candidate.aliases ?? [])].map(normalizeName);
+    return normalizedTeamNames.some((name) => candidateNames.includes(name));
+  });
+
+  const logoCandidates = [
+    seedTeam?.name,
+    ...(seedTeam?.aliases ?? []),
+    teamName,
+    shortName
+  ].filter((value): value is string => Boolean(value));
+
+  for (const candidate of logoCandidates) {
+    const logoUrl = teamLogoUrlForSlug(leagueSeed.id, slugify(candidate));
+    if (logoUrl) return logoUrl;
+  }
+
+  return null;
+}
+
+function renderableTeamLogoUrl(value: string | null) {
+  if (!value) return null;
+  const logoUrl = value.trim();
+  if (!logoUrl) return null;
+  if (logoUrl.startsWith("/")) return validTeamLogoUrl(logoUrl);
+  if (logoUrl.startsWith("https://images.fotmob.com/")) return logoUrl;
+  return null;
+}
+
+function fotMobTeamLogoUrl(rawRef: string | null | undefined) {
+  const teamId = rawRef?.trim();
+  if (!teamId || !/^\d+$/.test(teamId)) return null;
+  return `https://images.fotmob.com/image_resources/logo/teamlogo/${teamId}.png`;
+}
+
+function metadataText(metadata: unknown, key: string) {
+  const record = metadata && typeof metadata === "object" && !Array.isArray(metadata) ? (metadata as Record<string, unknown>) : {};
+  const value = record[key];
+  return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
 function uniqueBigints(values: bigint[]) {

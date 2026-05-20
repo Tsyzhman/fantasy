@@ -5,6 +5,7 @@ import { I18nText } from "@/components/i18n-text";
 import { MacheteFixtureTable } from "@/components/machete/MacheteFixtureTable";
 import { MachetePlayerTable } from "@/components/machete/MachetePlayerTable";
 import { MacheteStatusBadge } from "@/components/machete/MacheteStatusBadge";
+import { MacheteTeamLogo } from "@/components/machete/MacheteTeamCard";
 import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
 import { AutoSubmitForm } from "@/components/players/auto-submit-form";
 import { prisma } from "@/lib/db";
@@ -15,6 +16,7 @@ import {
   loadSharedMachetePlayerRows,
   loadSharedTeamFixtures,
   parseSharedBigInt,
+  resolveSharedTeamLogoUrl,
   sortSharedMacheteRows
 } from "@/machete/shared_read_model";
 
@@ -86,6 +88,12 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
   const players = sortSharedMacheteRows(playerRows, "fantasyScore");
   const fantasyPreview = players.map((player) => player.fantasyScore).filter((score): score is number => typeof score === "number");
   const averageFantasyScore = fantasyPreview.length ? fantasyPreview.reduce((total, score) => total + score, 0) / fantasyPreview.length : null;
+  const teamLogoUrl = resolveSharedTeamLogoUrl({
+    providerLeagueId: league.providerLeagueId,
+    teamName: seasonTeam.team.name,
+    rawRef: seasonTeam.team.rawRef,
+    metadata: seasonTeam.metadata
+  });
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -102,18 +110,21 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
 
       <section className="mt-6 rounded border border-slate-200 bg-white p-5 shadow-soft">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-              {league.displayName} / {league.season} / FOTMOB
-            </p>
-            <div className="mt-2 flex flex-wrap items-center gap-3">
-              <h1 className="text-3xl font-bold text-ink">{seasonTeam.team.name}</h1>
-              <MacheteStatusBadge status="SYNCED" />
-            </div>
-            <p className="mt-2 text-sm text-slate-600">
-              <I18nText en="FotMob ID" ru="ID FotMob" /> {seasonTeam.team.rawRef ?? String(seasonTeam.teamId)} /{" "}
+          <div className="flex items-start gap-4">
+            <MacheteTeamLogo logoUrl={teamLogoUrl} name={seasonTeam.team.name} size="lg" />
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+                {league.displayName} / {league.season} / FOTMOB
+              </p>
+              <div className="mt-2 flex flex-wrap items-center gap-3">
+                <h1 className="text-3xl font-bold text-ink">{seasonTeam.team.name}</h1>
+                <MacheteStatusBadge status="SYNCED" />
+              </div>
+              <p className="mt-2 text-sm text-slate-600">
+                <I18nText en="FotMob ID" ru="ID FotMob" /> {seasonTeam.team.rawRef ?? String(seasonTeam.teamId)} /{" "}
               <I18nText en="Roster updated" ru="РЎРѕСЃС‚Р°РІ РѕР±РЅРѕРІР»РµРЅ" /> {formatDate(seasonTeam.updatedAt)}
-            </p>
+              </p>
+            </div>
           </div>
         </div>
 
