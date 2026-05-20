@@ -5,6 +5,7 @@ import type { PrismaClient } from "@prisma/client";
 import { FotMobFixtureDetailsUnavailableError, type FotMobClient } from "./fotmob_client";
 import { discover_matches_for_scope, ingest_match } from "./ingestion";
 import { createIngestionScope } from "./ingestion-scope";
+import { CorePlayerRepository, CoreStatsRepository } from "./repositories";
 import { ScopeTooBroadError } from "./scope-validation";
 
 test("scope discovery uses league-season fixtures only and does not load team history", async () => {
@@ -276,4 +277,57 @@ test("match payload persistence creates placeholder teams for player stat team r
   const createMany = placeholderCalls[0] as { data?: Array<{ id: bigint; name: string }> };
   assert.ok(createMany.data?.some((team) => team.id === 30n && team.name === "FotMob team 30"));
   assert.equal(playerStatCalls.length, 1);
+});
+
+test("player placeholder creation ignores invalid ids and deduplicates references", async () => {
+  const calls: unknown[] = [];
+  const prisma = {
+    corePlayer: {
+      async createMany(input: unknown) {
+        calls.push(input);
+        return {};
+      }
+    }
+  } as unknown as PrismaClient;
+
+  await new CorePlayerRepository(prisma).ensurePlaceholders([7001n, 0n, null, undefined, 7001n, 7002n]);
+
+  const createMany = calls[0] as { data?: Array<{ id: bigint; name: string }> };
+  assert.deepEqual(createMany.data?.map((player) => player.id), [7001n, 7002n]);
+  assert.ok(createMany.data?.every((player) => player.name.startsWith("FotMob player ")));
+});
+
+test("stats repositories skip invalid required ids and null invalid optional relation ids", async () => {
+  const teamStatCalls: unknown[] = [];
+  const playerStatCalls: unknown[] = [];
+  const prisma = {
+    matchTeamStat: {
+      async upsert(input: unknown) {
+        teamStatCalls.push(input);
+        return {};
+      }
+    },
+    matchPlayerStat: {
+      async upsert(input: unknown) {
+        playerStatCalls.push(input);
+        return {};
+      }
+    }
+  } as unknown as PrismaClient;
+  const repository = new CoreStatsRepository(prisma);
+
+  await repository.upsertTeamStats([
+    { matchId: 1n, teamId: 0n, opponentTeamId: 10n },
+    { matchId: 1n, teamId: 20n, opponentTeamId: 0n }
+  ] as never);
+  await repository.upsertPlayerStats([
+    { matchId: 1n, playerId: 0n, teamId: 20n, opponentTeamId: 30n },
+    { matchId: 1n, playerId: 7001n, teamId: 0n, opponentTeamId: 0n }
+  ] as never);
+
+  assert.equal(teamStatCalls.length, 1);
+  assert.equal((teamStatCalls[0] as { create?: { opponentTeamId?: bigint | null } }).create?.opponentTeamId, null);
+  assert.equal(playerStatCalls.length, 1);
+  assert.equal((playerStatCalls[0] as { create?: { teamId?: bigint | null; opponentTeamId?: bigint | null } }).create?.teamId, null);
+  assert.equal((playerStatCalls[0] as { create?: { teamId?: bigint | null; opponentTeamId?: bigint | null } }).create?.opponentTeamId, null);
 });

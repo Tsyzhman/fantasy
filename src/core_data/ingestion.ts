@@ -333,14 +333,28 @@ async function upsertParsedPayload(prisma: PrismaClient, parsed: ParsedMatchPayl
   for (const league of parsed.leagues) {
     await matchRepository.upsertLeague(league);
   }
+  await matchRepository.ensureLeaguePlaceholders(missingReferencedLeagueIds(parsed));
   await teamRepository.upsertMany(parsed.teams);
-  await teamRepository.ensurePlaceholders(referencedTeamIds(parsed));
+  await teamRepository.ensurePlaceholders(missingReferencedTeamIds(parsed));
   await playerRepository.upsertMany(parsed.players);
+  await playerRepository.ensurePlaceholders(missingReferencedPlayerIds(parsed));
   await matchRepository.upsert(parsed.match);
   await statsRepository.upsertTeamStats(parsed.teamStats);
   await statsRepository.upsertPlayerStats(parsed.playerStats);
   await new CoreEventRepository(prisma).replaceMatchEvents(parsed.match.id, parsed.events);
   await new CoreShotRepository(prisma).upsertShots(parsed.shots);
+}
+
+function missingReferencedLeagueIds(parsed: ParsedMatchPayload) {
+  const knownLeagueIds = new Set(parsed.leagues.map((league) => String(league.id)));
+  return uniqueBigints([parsed.match.leagueId].filter((leagueId): leagueId is bigint => leagueId !== null && leagueId !== undefined && leagueId > 0n)).filter(
+    (leagueId) => !knownLeagueIds.has(String(leagueId))
+  );
+}
+
+function missingReferencedTeamIds(parsed: ParsedMatchPayload) {
+  const knownTeamIds = new Set(parsed.teams.map((team) => String(team.id)));
+  return referencedTeamIds(parsed).filter((teamId) => !knownTeamIds.has(String(teamId)));
 }
 
 function referencedTeamIds(parsed: ParsedMatchPayload) {
@@ -353,6 +367,20 @@ function referencedTeamIds(parsed: ParsedMatchPayload) {
     ...parsed.events.map((row) => row.teamId),
     ...parsed.shots.flatMap((row) => [row.teamId, row.opponentTeamId])
   ].filter((teamId): teamId is bigint => teamId !== null && teamId !== undefined && teamId > 0n));
+}
+
+function missingReferencedPlayerIds(parsed: ParsedMatchPayload) {
+  const knownPlayerIds = new Set(parsed.players.map((player) => String(player.id)));
+  return referencedPlayerIds(parsed).filter((playerId) => !knownPlayerIds.has(String(playerId)));
+}
+
+function referencedPlayerIds(parsed: ParsedMatchPayload) {
+  return uniqueBigints([
+    ...parsed.players.map((player) => player.id),
+    ...parsed.playerStats.map((row) => row.playerId),
+    ...parsed.events.flatMap((row) => [row.playerId, row.relatedPlayerId]),
+    ...parsed.shots.map((row) => row.playerId)
+  ].filter((playerId): playerId is bigint => playerId !== null && playerId !== undefined && playerId > 0n));
 }
 
 async function upsertDiscoveredFixture(

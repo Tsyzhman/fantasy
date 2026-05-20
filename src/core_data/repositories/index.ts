@@ -37,6 +37,22 @@ export class CoreMatchRepository {
     });
   }
 
+  async ensureLeaguePlaceholders(leagueIds: Array<bigint | null | undefined>) {
+    const ids = uniqueBigints(leagueIds.filter(isPositiveBigInt));
+    if (ids.length === 0) return;
+
+    await this.prisma.coreLeague.createMany({
+      data: ids.map((id) => ({
+        id,
+        name: `FotMob league ${String(id)}`,
+        country: null,
+        source: FOTMOB_SOURCE,
+        rawRef: String(id)
+      })),
+      skipDuplicates: true
+    });
+  }
+
   async upsert(match: MatchData) {
     return this.prisma.coreMatch.upsert({
       where: { id: match.id },
@@ -88,7 +104,7 @@ export class CoreTeamRepository {
   }
 
   async ensurePlaceholders(teamIds: Array<bigint | null | undefined>) {
-    const ids = uniqueBigints(teamIds.filter((teamId): teamId is bigint => teamId !== null && teamId !== undefined && teamId > 0n));
+    const ids = uniqueBigints(teamIds.filter(isPositiveBigInt));
     if (ids.length === 0) return;
 
     await this.prisma.coreTeam.createMany({
@@ -123,6 +139,21 @@ export class CorePlayerRepository {
     for (const player of players) {
       await this.upsert(player);
     }
+  }
+
+  async ensurePlaceholders(playerIds: Array<bigint | null | undefined>) {
+    const ids = uniqueBigints(playerIds.filter(isPositiveBigInt));
+    if (ids.length === 0) return;
+
+    await this.prisma.corePlayer.createMany({
+      data: ids.map((id) => ({
+        id,
+        name: `FotMob player ${String(id)}`,
+        source: FOTMOB_SOURCE,
+        rawRef: String(id)
+      })),
+      skipDuplicates: true
+    });
   }
 }
 
@@ -240,6 +271,7 @@ export class CoreStatsRepository {
 
   async upsertTeamStats(rows: TeamMatchStatsData[]) {
     for (const row of rows) {
+      if (!isPositiveBigInt(row.teamId)) continue;
       await this.prisma.matchTeamStat.upsert({
         where: {
           matchId_teamId: {
@@ -255,6 +287,7 @@ export class CoreStatsRepository {
 
   async upsertPlayerStats(rows: PlayerMatchStatsData[]) {
     for (const row of rows) {
+      if (!isPositiveBigInt(row.playerId)) continue;
       await this.prisma.matchPlayerStat.upsert({
         where: {
           matchId_playerId: {
@@ -284,7 +317,7 @@ export class CoreEventRepository {
   }
 
   private async ensureReferencedPlayers(rows: MatchEventData[]) {
-    const playerIds = uniqueBigints(rows.flatMap((row) => [row.playerId, row.relatedPlayerId]).filter((id): id is bigint => id !== null));
+    const playerIds = uniqueBigints(rows.flatMap((row) => [row.playerId, row.relatedPlayerId]).filter(isPositiveBigInt));
     if (playerIds.length === 0) return;
 
     await this.prisma.corePlayer.createMany({
@@ -456,11 +489,11 @@ export class CoreIngestionRepository {
 
 function matchData(match: MatchData) {
   return {
-    leagueId: match.leagueId,
+    leagueId: relationId(match.leagueId),
     season: match.season,
     round: match.round,
-    homeTeamId: match.homeTeamId,
-    awayTeamId: match.awayTeamId,
+    homeTeamId: relationId(match.homeTeamId),
+    awayTeamId: relationId(match.awayTeamId),
     homeScore: match.homeScore,
     awayScore: match.awayScore,
     status: match.status,
@@ -541,7 +574,7 @@ function teamStatsData(row: TeamMatchStatsData) {
   return {
     matchId: row.matchId,
     teamId: row.teamId,
-    opponentTeamId: row.opponentTeamId,
+    opponentTeamId: relationId(row.opponentTeamId),
     isHome: row.isHome,
     goals: row.goals,
     xg: row.xg,
@@ -575,8 +608,8 @@ function playerStatsData(row: PlayerMatchStatsData) {
   return {
     matchId: row.matchId,
     playerId: row.playerId,
-    teamId: row.teamId,
-    opponentTeamId: row.opponentTeamId,
+    teamId: relationId(row.teamId),
+    opponentTeamId: relationId(row.opponentTeamId),
     isHome: row.isHome,
     started: row.started,
     substitutedIn: row.substitutedIn,
@@ -611,9 +644,9 @@ function playerStatsData(row: PlayerMatchStatsData) {
 function eventData(row: MatchEventData) {
   return {
     matchId: row.matchId,
-    teamId: row.teamId,
-    playerId: row.playerId,
-    relatedPlayerId: row.relatedPlayerId,
+    teamId: relationId(row.teamId),
+    playerId: relationId(row.playerId),
+    relatedPlayerId: relationId(row.relatedPlayerId),
     minute: row.minute,
     addedTime: row.addedTime,
     eventType: row.eventType,
@@ -631,9 +664,9 @@ function eventData(row: MatchEventData) {
 function shotData(row: MatchShotData) {
   return {
     matchId: row.matchId,
-    teamId: row.teamId,
-    opponentTeamId: row.opponentTeamId,
-    playerId: row.playerId,
+    teamId: relationId(row.teamId),
+    opponentTeamId: relationId(row.opponentTeamId),
+    playerId: relationId(row.playerId),
     isHome: row.isHome,
     minute: row.minute,
     addedTime: row.addedTime,
@@ -670,6 +703,14 @@ function uniqueBigints(values: bigint[]) {
     result.push(value);
   }
   return result;
+}
+
+function isPositiveBigInt(value: bigint | null | undefined): value is bigint {
+  return value !== null && value !== undefined && value > 0n;
+}
+
+function relationId(value: bigint | null | undefined) {
+  return isPositiveBigInt(value) ? value : null;
 }
 
 function shotInclude() {
