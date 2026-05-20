@@ -5,12 +5,105 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_DB: fantasy_scout
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: fantasy_app
+      POSTGRES_PASSWORD: fantasy_app_password
     ports:
       - "5433:5432"
     volumes:
       - fantasy-scout-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fantasy_app -d fantasy_scout"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  db-setup:
+    build: .
+    profiles:
+      - setup
+    restart: "no"
+    environment:
+      DATABASE_URL: postgresql://fantasy_app:fantasy_app_password@postgres:5432/fantasy_scout
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-replace-with-long-random-secret}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-https://fantasy.tsyzhman.ru}
+      CRON_SECRET: ${CRON_SECRET:-strong-secret}
+      MACHETE_FOTMOB_PROVIDER_MODE: unofficial
+      MACHETE_DAILY_SYNC_ENABLED: "true"
+      MACHETE_DAILY_SYNC_TIME: "03:00"
+      MACHETE_DAILY_SYNC_TIMEZONE: Europe/Moscow
+      NEXT_PUBLIC_APP_NAME: Fantasy Scout
+      DEFAULT_SEASON: 2025/26
+      UPLOAD_STORAGE: local
+      LOCAL_UPLOAD_DIR: /app/storage/uploads
+      MAX_UPLOAD_MB: "25"
+      ENABLE_BULK_UPLOAD: "true"
+      ENABLE_USER_SHORTLISTS: "false"
+      ENABLE_API_FOOTBALL_PROVIDER: "false"
+      ENABLE_WYSCOUT_API_PROVIDER: "false"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: sh -lc "npx prisma db push --accept-data-loss && npm run db:seed"
+
+  web:
+    build: .
+    container_name: fantasy-scout-web
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://fantasy_app:fantasy_app_password@postgres:5432/fantasy_scout
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-replace-with-long-random-secret}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-https://fantasy.tsyzhman.ru}
+      CRON_SECRET: ${CRON_SECRET:-strong-secret}
+      MACHETE_FOTMOB_PROVIDER_MODE: unofficial
+      MACHETE_DAILY_SYNC_ENABLED: "true"
+      MACHETE_DAILY_SYNC_TIME: "03:00"
+      MACHETE_DAILY_SYNC_TIMEZONE: Europe/Moscow
+      NEXT_PUBLIC_APP_NAME: Fantasy Scout
+      DEFAULT_SEASON: 2025/26
+      UPLOAD_STORAGE: local
+      LOCAL_UPLOAD_DIR: /app/storage/uploads
+      MAX_UPLOAD_MB: "25"
+      ENABLE_BULK_UPLOAD: "true"
+      ENABLE_USER_SHORTLISTS: "false"
+      ENABLE_API_FOOTBALL_PROVIDER: "false"
+      ENABLE_WYSCOUT_API_PROVIDER: "false"
+    ports:
+      - "3000:3000"
+    volumes:
+      - fantasy-scout-uploads:/app/storage/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  ingestion-worker:
+    build: .
+    container_name: fantasy-scout-ingestion
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://fantasy_app:fantasy_app_password@postgres:5432/fantasy_scout
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-replace-with-long-random-secret}
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-https://fantasy.tsyzhman.ru}
+      CRON_SECRET: ${CRON_SECRET:-strong-secret}
+      MACHETE_FOTMOB_PROVIDER_MODE: unofficial
+      MACHETE_DAILY_SYNC_ENABLED: "false"
+      MACHETE_DAILY_SYNC_TIME: "03:00"
+      MACHETE_DAILY_SYNC_TIMEZONE: Europe/Moscow
+      NEXT_PUBLIC_APP_NAME: Fantasy Scout
+      DEFAULT_SEASON: 2025/26
+      UPLOAD_STORAGE: local
+      LOCAL_UPLOAD_DIR: /app/storage/uploads
+      MAX_UPLOAD_MB: "25"
+      ENABLE_BULK_UPLOAD: "true"
+      ENABLE_USER_SHORTLISTS: "false"
+      ENABLE_API_FOOTBALL_PROVIDER: "false"
+      ENABLE_WYSCOUT_API_PROVIDER: "false"
+    volumes:
+      - fantasy-scout-uploads:/app/storage/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: npm run ingestion:worker
 
 volumes:
   fantasy-scout-postgres:
+  fantasy-scout-uploads:
