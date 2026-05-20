@@ -1,63 +1,63 @@
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
 
-loadDotEnv();
+void main();
 
-const { prisma } = await import("../src/lib/db");
-const {
-  getIngestionAdminStatus,
-  run_incremental_update,
-  run_next_ingestion_job,
-  start_initial_backfill
-} = await import("../src/core_data/ingestion-jobs");
+async function main() {
+  loadDotEnv();
 
-const command = process.argv[2] ?? "status";
+  const { prisma } = await import("../src/lib/db");
+  const {
+    getIngestionAdminStatus,
+    run_incremental_update,
+    run_next_ingestion_job,
+    start_initial_backfill
+  } = await import("../src/core_data/ingestion-jobs");
 
-try {
-  if (command === "initial-backfill") {
-    const started = await start_initial_backfill(prisma, { startedByUserId: null });
-    console.info(`[ingestion:cli] ${started.started ? "Queued" : "Reusing active"} initial backfill job ${started.job.id}.`);
-    const result = await run_next_ingestion_job(prisma);
-    console.info(`[ingestion:cli] Finished runner for job ${result.job?.id ?? "none"} with status ${result.job?.status ?? "none"}.`);
-  } else if (command === "queue-initial-backfill") {
-    const started = await start_initial_backfill(prisma, { startedByUserId: null });
-    console.info(`[ingestion:cli] ${started.started ? "Queued" : "Reusing active"} initial backfill job ${started.job.id}.`);
-  } else if (command === "incremental-update") {
-    const started = await run_incremental_update(prisma, { startedByUserId: null });
-    console.info(`[ingestion:cli] ${started.started ? "Queued" : "Reusing active"} incremental update job ${started.job.id}.`);
-    const result = await run_next_ingestion_job(prisma);
-    console.info(`[ingestion:cli] Finished runner for job ${result.job?.id ?? "none"} with status ${result.job?.status ?? "none"}.`);
-  } else if (command === "queue-incremental-update") {
-    const started = await run_incremental_update(prisma, { startedByUserId: null });
-    console.info(`[ingestion:cli] ${started.started ? "Queued" : "Reusing active"} incremental update job ${started.job.id}.`);
-  } else if (command === "run-next") {
-    const result = await run_next_ingestion_job(prisma);
-    console.info(`[ingestion:cli] ${result.ran ? "Ran" : "No active"} ingestion job ${result.job?.id ?? ""}.`);
-  } else if (command === "worker") {
-    await runWorker();
-  } else if (command === "status") {
-    const status = await getIngestionAdminStatus(prisma);
-    console.dir(status, { depth: null });
-  } else {
-    throw new Error(
-      `Unknown ingestion command "${command}". Use status, queue-initial-backfill, initial-backfill, queue-incremental-update, incremental-update, run-next, or worker.`
-    );
-  }
-} catch (error) {
-  console.error("[ingestion:cli] Failed.", error);
-  process.exitCode = 1;
-} finally {
-  await prisma.$disconnect();
-}
+  const command = process.argv[2] ?? "status";
 
-async function runWorker() {
-  console.info("[ingestion:worker] Started. Waiting for pending/running ingestion jobs.");
-  while (true) {
-    const result = await run_next_ingestion_job(prisma);
-    if (result.ran) {
-      console.info(`[ingestion:worker] Job ${result.job?.id ?? "unknown"} ended with status ${result.job?.status ?? "unknown"}.`);
+  try {
+    if (command === "initial-backfill") {
+      const started = await start_initial_backfill(prisma, { startedByUserId: null });
+      console.info(`[ingestion:cli] ${started.started ? "Queued" : "Reusing active"} initial backfill job ${started.job.id}.`);
+      const result = await run_next_ingestion_job(prisma);
+      console.info(`[ingestion:cli] Finished runner for job ${result.job?.id ?? "none"} with status ${result.job?.status ?? "none"}.`);
+    } else if (command === "queue-initial-backfill") {
+      const started = await start_initial_backfill(prisma, { startedByUserId: null });
+      console.info(`[ingestion:cli] ${started.started ? "Queued" : "Reusing active"} initial backfill job ${started.job.id}.`);
+    } else if (command === "incremental-update") {
+      const started = await run_incremental_update(prisma, { startedByUserId: null });
+      console.info(`[ingestion:cli] ${started.started ? "Queued" : "Reusing active"} incremental update job ${started.job.id}.`);
+      const result = await run_next_ingestion_job(prisma);
+      console.info(`[ingestion:cli] Finished runner for job ${result.job?.id ?? "none"} with status ${result.job?.status ?? "none"}.`);
+    } else if (command === "queue-incremental-update") {
+      const started = await run_incremental_update(prisma, { startedByUserId: null });
+      console.info(`[ingestion:cli] ${started.started ? "Queued" : "Reusing active"} incremental update job ${started.job.id}.`);
+    } else if (command === "run-next") {
+      const result = await run_next_ingestion_job(prisma);
+      console.info(`[ingestion:cli] ${result.ran ? "Ran" : "No active"} ingestion job ${result.job?.id ?? ""}.`);
+    } else if (command === "worker") {
+      console.info("[ingestion:worker] Started. Waiting for pending/running ingestion jobs.");
+      while (true) {
+        const result = await run_next_ingestion_job(prisma);
+        if (result.ran) {
+          console.info(`[ingestion:worker] Job ${result.job?.id ?? "unknown"} ended with status ${result.job?.status ?? "unknown"}.`);
+        }
+        await sleep(5_000);
+      }
+    } else if (command === "status") {
+      const status = await getIngestionAdminStatus(prisma);
+      console.dir(status, { depth: null });
+    } else {
+      throw new Error(
+        `Unknown ingestion command "${command}". Use status, queue-initial-backfill, initial-backfill, queue-incremental-update, incremental-update, run-next, or worker.`
+      );
     }
-    await sleep(5_000);
+  } catch (error) {
+    console.error("[ingestion:cli] Failed.", error);
+    process.exitCode = 1;
+  } finally {
+    await prisma.$disconnect();
   }
 }
 
