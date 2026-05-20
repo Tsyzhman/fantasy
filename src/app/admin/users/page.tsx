@@ -2,6 +2,7 @@ import { Prisma, UserRole } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { AdminNav } from "@/components/admin/AdminNav";
 import { hashPassword, normalizeEmail, requireAdminUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { formatDate } from "@/lib/format";
@@ -33,7 +34,8 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      <div>
+      <AdminNav />
+      <div className="mt-6">
         <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">Administration</p>
         <h1 className="mt-2 text-3xl font-bold text-ink">Users</h1>
         <p className="mt-2 max-w-3xl text-sm text-slate-600">Create team accounts, change roles, and temporarily disable access without deleting history.</p>
