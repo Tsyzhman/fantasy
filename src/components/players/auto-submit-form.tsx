@@ -18,7 +18,7 @@ export function AutoSubmitForm({ children, onChange, onSubmit, ...props }: AutoS
 
     for (const [key, value] of formData.entries()) {
       const stringValue = String(value).trim();
-      if (stringValue) params.set(key, stringValue);
+      if (stringValue) params.append(key, stringValue);
     }
 
     const query = params.toString();
@@ -43,49 +43,30 @@ export function AutoSubmitForm({ children, onChange, onSubmit, ...props }: AutoS
         const target = event.target;
 
         if (target instanceof HTMLSelectElement && target.name === "leagueId") {
-          const teamSelect = form.elements.namedItem("teamId");
-          if (teamSelect instanceof HTMLSelectElement) teamSelect.value = "";
-
-          const competitionSelect = form.elements.namedItem("competitionKey");
-          if (competitionSelect instanceof HTMLSelectElement) competitionSelect.value = "";
-
-          const attackingTeamSelect = form.elements.namedItem("attackingTeamId");
-          if (attackingTeamSelect instanceof HTMLSelectElement) attackingTeamSelect.value = "";
-
-          const defendingTeamSelect = form.elements.namedItem("defendingTeamId");
-          if (defendingTeamSelect instanceof HTMLSelectElement) defendingTeamSelect.value = "";
-
-          const attackingCompetitionSelect = form.elements.namedItem("attackingCompetitionKey");
-          if (attackingCompetitionSelect instanceof HTMLSelectElement) attackingCompetitionSelect.value = "";
-
-          const defendingCompetitionSelect = form.elements.namedItem("defendingCompetitionKey");
-          if (defendingCompetitionSelect instanceof HTMLSelectElement) defendingCompetitionSelect.value = "";
-
-          const playerSelect = form.elements.namedItem("playerId");
-          if (playerSelect instanceof HTMLSelectElement) playerSelect.value = "";
+          clearNamedControls(form, "teamId");
+          clearNamedControls(form, "competitionKey");
+          clearNamedControls(form, "attackingTeamId");
+          clearNamedControls(form, "defendingTeamId");
+          clearNamedControls(form, "attackingCompetitionKey");
+          clearNamedControls(form, "defendingCompetitionKey");
+          clearNamedControls(form, "playerId");
         }
 
         if (target instanceof HTMLSelectElement && target.name === "teamId") {
-          const competitionSelect = form.elements.namedItem("competitionKey");
-          if (competitionSelect instanceof HTMLSelectElement) competitionSelect.value = "";
+          clearNamedControls(form, "competitionKey");
         }
 
         if (target instanceof HTMLSelectElement && target.name === "attackingTeamId") {
-          const attackingCompetitionSelect = form.elements.namedItem("attackingCompetitionKey");
-          if (attackingCompetitionSelect instanceof HTMLSelectElement) attackingCompetitionSelect.value = "";
-
-          const playerSelect = form.elements.namedItem("playerId");
-          if (playerSelect instanceof HTMLSelectElement) playerSelect.value = "";
+          clearNamedControls(form, "attackingCompetitionKey");
+          clearNamedControls(form, "playerId");
         }
 
         if (target instanceof HTMLSelectElement && target.name === "defendingTeamId") {
-          const defendingCompetitionSelect = form.elements.namedItem("defendingCompetitionKey");
-          if (defendingCompetitionSelect instanceof HTMLSelectElement) defendingCompetitionSelect.value = "";
+          clearNamedControls(form, "defendingCompetitionKey");
         }
 
-        if (target instanceof HTMLSelectElement && target.name === "attackingCompetitionKey") {
-          const playerSelect = form.elements.namedItem("playerId");
-          if (playerSelect instanceof HTMLSelectElement) playerSelect.value = "";
+        if (isNamedControlChange(target, "attackingCompetitionKey")) {
+          clearNamedControls(form, "playerId");
         }
 
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -97,5 +78,45 @@ export function AutoSubmitForm({ children, onChange, onSubmit, ...props }: AutoS
     >
       {children}
     </form>
+  );
+}
+
+function clearNamedControls(form: HTMLFormElement, name: string) {
+  const controls = form.elements.namedItem(name);
+  if (!controls) return;
+
+  if (controls instanceof RadioNodeList) {
+    for (const control of Array.from(controls)) {
+      clearControl(control);
+    }
+    return;
+  }
+
+  clearControl(controls);
+}
+
+function clearControl(control: Element | RadioNodeList) {
+  if (control instanceof HTMLInputElement) {
+    if (control.type === "checkbox" || control.type === "radio") {
+      control.checked = false;
+      return;
+    }
+
+    control.value = "";
+    return;
+  }
+
+  if (control instanceof HTMLSelectElement) {
+    for (const option of Array.from(control.options)) {
+      option.selected = false;
+    }
+    control.value = "";
+  }
+}
+
+function isNamedControlChange(target: EventTarget, name: string) {
+  return (
+    (target instanceof HTMLInputElement || target instanceof HTMLSelectElement || target instanceof HTMLTextAreaElement) &&
+    target.name === name
   );
 }

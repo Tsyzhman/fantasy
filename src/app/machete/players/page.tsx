@@ -13,6 +13,7 @@ import {
   loadSharedTeamCompetitionOptions,
   parseSharedCompetitionKey,
   parseSharedBigInt,
+  sharedCompetitionKey,
   sortSharedMacheteRows,
   type SharedLeagueSeasonOption,
   type SharedPlayerRowsScope,
@@ -25,7 +26,7 @@ export const dynamic = "force-dynamic";
 type SearchParams = {
   leagueId?: string;
   teamId?: string;
-  competitionKey?: string;
+  competitionKey?: SearchParamValue;
   position?: string;
   minMinutes?: string;
   recentMatches?: string;
@@ -35,6 +36,8 @@ type SearchParams = {
   page?: string;
   pageSize?: string;
 };
+
+type SearchParamValue = string | string[] | undefined;
 
 type PageProps = {
   searchParams: Promise<SearchParams>;
@@ -67,13 +70,15 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
   });
   const selectedTeamBigInt = parseSharedBigInt(selectedTeamId);
   const teamCompetitionOptions = selectedTeamBigInt ? await loadSharedTeamCompetitionOptions(prisma, selectedTeamBigInt) : [];
-  const selectedCompetition = selectedTeamCompetitionOption(resolvedSearchParams.competitionKey, teamCompetitionOptions);
-  const selectedCompetitionKey = selectedCompetition?.key ?? "";
+  const selectedCompetitions = selectedTeamCompetitionOptions(resolvedSearchParams.competitionKey, teamCompetitionOptions);
+  const selectedCompetitionKeys = selectedCompetitions.map((competition) => competition.key);
+  const checkedCompetitionKeys =
+    selectedCompetitionKeys.length > 0 ? selectedCompetitionKeys : defaultCompetitionKeysForSelectedLeague(selectedLeagueId, sortedLeagues, teamCompetitionOptions);
 
   const playersResult = await buildMatchWindowRows({
     selectedLeagueId,
     selectedTeamId,
-    competitionKey: selectedCompetitionKey,
+    competitionKeys: selectedCompetitionKeys,
     position: resolvedSearchParams.position,
     minMinutes: resolvedSearchParams.minMinutes,
     matchWindow,
@@ -86,7 +91,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
     ...resolvedSearchParams,
     leagueId: selectedLeagueId,
     teamId: selectedTeamId,
-    competitionKey: selectedCompetitionKey,
+    competitionKey: selectedCompetitionKeys,
     pageSize: String(pageSize)
   };
 
@@ -150,11 +155,13 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
           <span className="mb-1 block font-medium text-slate-600"><I18nText en="Competition" ru="Турнир" /></span>
           <select
             name="competitionKey"
-            defaultValue={selectedCompetitionKey}
+            multiple
+            size={Math.min(4, Math.max(2, teamCompetitionOptions.length || 2))}
+            defaultValue={checkedCompetitionKeys}
             disabled={!selectedTeamId || teamCompetitionOptions.length === 0}
             className="w-full rounded border border-slate-200 px-3 py-2 disabled:bg-slate-100"
           >
-            <option value="">Selected league / Текущая лига</option>
+            <option value="" disabled>Selected league / Текущая лига</option>
             {teamCompetitionOptions.map((competition) => (
               <option key={competition.key} value={competition.key}>
                 {competition.displayName} - {competition.season} ({competition.matchesCount})
@@ -227,7 +234,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
 
       <p className="mt-3 text-sm text-slate-500">
         Stats and FP are recalculated from {matchWindowLabel(matchWindow)}
-        {selectedCompetition ? ` in ${selectedCompetition.displayName} ${selectedCompetition.season}` : ""}.
+        {selectedCompetitions.length > 0 ? ` in ${competitionSummary(selectedCompetitions)}` : ""}.
       </p>
 
       <section className="mt-6">
@@ -260,7 +267,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
 async function buildMatchWindowRows({
   selectedLeagueId,
   selectedTeamId,
-  competitionKey,
+  competitionKeys,
   position,
   minMinutes,
   matchWindow,
@@ -270,7 +277,7 @@ async function buildMatchWindowRows({
 }: {
   selectedLeagueId: string;
   selectedTeamId: string;
-  competitionKey: string;
+  competitionKeys: string[];
   position?: string;
   minMinutes?: string;
   matchWindow: MacheteMatchWindow;
@@ -282,13 +289,14 @@ async function buildMatchWindowRows({
     return emptyPagedPlayers(page, pageSize);
   }
 
-  const scopes = await buildPlayerScopes(selectedLeagueId, selectedTeamId, competitionKey);
+  const scopes = await buildPlayerScopes(selectedLeagueId, selectedTeamId, competitionKeys);
   const rows = sortSharedMacheteRows(
     await loadSharedMachetePlayerRows(prisma, {
       scopes,
       position,
       minMinutes,
-      matchWindow
+      matchWindow,
+      combineTeamCompetitions: competitionKeys.length > 1
     }),
     sort
   );
@@ -296,11 +304,11 @@ async function buildMatchWindowRows({
   return paginateRows(rows, page, pageSize);
 }
 
-async function buildPlayerScopes(selectedLeagueId: string, selectedTeamId: string, competitionKey: string): Promise<SharedPlayerRowsScope[]> {
+async function buildPlayerScopes(selectedLeagueId: string, selectedTeamId: string, competitionKeys: string[]): Promise<SharedPlayerRowsScope[]> {
   const teamId = parseSharedBigInt(selectedTeamId);
-  const competition = parseSharedCompetitionKey(competitionKey);
-  if (teamId && competition) {
-    return [{ leagueId: competition.leagueId, season: competition.season, teamId }];
+  const competitions = competitionKeys.map(parseSharedCompetitionKey).filter((competition): competition is { leagueId: bigint; season: string } => Boolean(competition));
+  if (teamId && competitions.length > 0) {
+    return competitions.map((competition) => ({ leagueId: competition.leagueId, season: competition.season, teamId }));
   }
 
   const leagues = await loadSharedLeagueOptions(prisma);
@@ -326,9 +334,35 @@ async function loadTeamLeagueOptions(leagues: SharedLeagueSeasonOption[], select
   ) as Promise<Array<SharedLeagueSeasonOption & { teams: SharedTeamOption[] }>>;
 }
 
-function selectedTeamCompetitionOption(value: string | undefined, options: SharedTeamCompetitionOption[]) {
-  if (!value) return null;
-  return options.find((option) => option.key === value) ?? null;
+function selectedTeamCompetitionOptions(value: SearchParamValue, options: SharedTeamCompetitionOption[]) {
+  const requestedKeys = new Set(searchParamValues(value));
+  if (requestedKeys.size === 0) return [];
+  return options.filter((option) => requestedKeys.has(option.key));
+}
+
+function defaultCompetitionKeysForSelectedLeague(
+  selectedLeagueId: string,
+  leagues: SharedLeagueSeasonOption[],
+  options: SharedTeamCompetitionOption[]
+) {
+  if (!selectedLeagueId || selectedLeagueId === ALL_LEAGUES_VALUE) return [];
+  const selectedLeague = leagues.find((league) => String(league.leagueId) === selectedLeagueId);
+  if (!selectedLeague) return [];
+  const key = sharedCompetitionKey(selectedLeague.leagueId, selectedLeague.season);
+  return options.some((option) => option.key === key) ? [key] : [];
+}
+
+function searchParamValues(value: SearchParamValue) {
+  return (Array.isArray(value) ? value : [value]).filter((item): item is string => Boolean(item));
+}
+
+function competitionSummary(competitions: SharedTeamCompetitionOption[]) {
+  if (competitions.length <= 2) return competitions.map(competitionLabel).join(" + ");
+  return `${competitions.slice(0, 2).map(competitionLabel).join(" + ")} +${competitions.length - 2}`;
+}
+
+function competitionLabel(competition: SharedTeamCompetitionOption) {
+  return `${competition.displayName} ${competition.season}`;
 }
 
 function parsePositiveInt(value: string | undefined, fallback: number) {
@@ -404,7 +438,10 @@ function PaginationLinks({
 function machetePlayersHref(params: SearchParams, page: number) {
   const query = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
-    if (value && key !== "page") query.set(key, value);
+    if (key === "page") continue;
+    for (const item of searchParamValues(value)) {
+      query.append(key, item);
+    }
   }
   query.set("page", String(page));
   return `/machete/players?${query.toString()}`;

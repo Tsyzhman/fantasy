@@ -306,6 +306,7 @@ export async function loadSharedMachetePlayerRows(
     position?: string;
     minMinutes?: string;
     matchWindow: MacheteMatchWindow;
+    combineTeamCompetitions?: boolean;
   }
 ): Promise<SharedMachetePlayerRow[]> {
   const scopes = input.scopes.filter((scope) => scope.leagueId && scope.season);
@@ -365,20 +366,52 @@ export async function loadSharedMachetePlayerRows(
   const scoringModel = await getActiveScoringModelForSource("MACHETE");
   const minimumMinutes = input.minMinutes ? Number(input.minMinutes) : null;
 
+  if (input.combineTeamCompetitions) {
+    const rosterRowsByTeamPlayer = new Map<string, typeof rosterRows>();
+    for (const row of rosterRows) {
+      const key = teamPlayerKey(row.teamId, row.playerId);
+      const rows = rosterRowsByTeamPlayer.get(key) ?? [];
+      rows.push(row);
+      rosterRowsByTeamPlayer.set(key, rows);
+    }
+
+    return [...rosterRowsByTeamPlayer.values()]
+      .map((rows) => {
+        const first = rows[0];
+        const allowedMatchIds = new Set<string>();
+        for (const row of rows) {
+          const teamKey = teamScopeKey(row.leagueId, row.season, row.teamId);
+          for (const matchId of matchIdsByTeamScope.get(teamKey) ?? []) {
+            allowedMatchIds.add(String(matchId));
+          }
+        }
+
+        const playerStats = (statsByTeamPlayer.get(teamPlayerKey(first.teamId, first.playerId)) ?? []).filter((stat) => allowedMatchIds.has(String(stat.matchId)));
+        const position = firstNonEmpty(rows.map((row) => row.position));
+        const leagueNames = uniqueStrings(rows.map(leagueNameForRosterRow));
+        const aggregate = aggregateSharedStats(playerStats, position, scoringModel);
+
+        return {
+          id: `combined:${first.teamId}:${first.playerId}:${rows.map((row) => `${row.leagueId}:${row.season}`).join("|")}`,
+          name: first.player.name,
+          teamName: first.team.name,
+          leagueName: formatCombinedLeagueNames(leagueNames),
+          position,
+          age: rows.find((row) => row.age !== null)?.age ?? null,
+          nationality: firstNonEmpty(rows.map((row) => row.nationality ?? row.player.country)),
+          ...aggregate
+        };
+      })
+      .filter((row) => (minimumMinutes !== null && Number.isFinite(minimumMinutes) ? row.minutesPlayed >= minimumMinutes : true));
+  }
+
   return rosterRows
     .map((row) => {
       const teamKey = teamScopeKey(row.leagueId, row.season, row.teamId);
       const allowedMatchIds = new Set((matchIdsByTeamScope.get(teamKey) ?? []).map(String));
       const playerStats = (statsByTeamPlayer.get(teamPlayerKey(row.teamId, row.playerId)) ?? []).filter((stat) => allowedMatchIds.has(String(stat.matchId)));
       const aggregate = aggregateSharedStats(playerStats, row.position, scoringModel);
-      const leagueSeason = row.seasonTeam.leagueSeason;
-      const providerLeagueId = String(row.leagueId);
-      const leagueName = macheteLeagueDisplayName({
-        id: providerLeagueId,
-        name: leagueSeason.name ?? leagueSeason.league.name,
-        country: leagueSeason.country ?? leagueSeason.league.country,
-        providerLeagueId
-      });
+      const leagueName = leagueNameForRosterRow(row);
 
       return {
         id: `${row.leagueId}:${row.season}:${row.teamId}:${row.playerId}`,
@@ -591,6 +624,29 @@ function leagueDisplayInput(league: SharedLeagueSeasonOption) {
   };
 }
 
+function leagueNameForRosterRow(row: {
+  leagueId: bigint;
+  seasonTeam: {
+    leagueSeason: {
+      name: string | null;
+      country: string | null;
+      league: {
+        name: string;
+        country: string | null;
+      };
+    };
+  };
+}) {
+  const leagueSeason = row.seasonTeam.leagueSeason;
+  const providerLeagueId = String(row.leagueId);
+  return macheteLeagueDisplayName({
+    id: providerLeagueId,
+    name: leagueSeason.name ?? leagueSeason.league.name,
+    country: leagueSeason.country ?? leagueSeason.league.country,
+    providerLeagueId
+  });
+}
+
 function dateMs(value: Date | null) {
   return value?.getTime() ?? 0;
 }
@@ -662,6 +718,26 @@ function uniqueBigints(values: bigint[]) {
     result.push(value);
   }
   return result;
+}
+
+function uniqueStrings(values: string[]) {
+  const seen = new Set<string>();
+  const result: string[] = [];
+  for (const value of values) {
+    if (seen.has(value)) continue;
+    seen.add(value);
+    result.push(value);
+  }
+  return result;
+}
+
+function firstNonEmpty(values: Array<string | null | undefined>) {
+  return values.find((value) => value?.trim())?.trim() ?? null;
+}
+
+function formatCombinedLeagueNames(names: string[]) {
+  if (names.length <= 2) return names.join(" + ");
+  return `${names.slice(0, 2).join(" + ")} +${names.length - 2}`;
 }
 
 function machetePositionGroup(position: string | null | undefined) {

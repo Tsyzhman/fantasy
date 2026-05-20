@@ -6,6 +6,8 @@ import {
   loadSharedLeagueTeams,
   loadSharedTeamCompetitionOptions,
   loadSharedTeamPlayers,
+  sharedCompetitionKey,
+  type SharedLeagueSeasonOption,
   type SharedTeamCompetitionOption
 } from "@/machete/shared_read_model";
 import {
@@ -18,13 +20,15 @@ import { matchWindowLabel, matchWindowModeValue, parseMacheteMatchWindow } from 
 
 export const dynamic = "force-dynamic";
 
+type SearchParamValue = string | string[] | undefined;
+
 type PageProps = {
   searchParams?: Promise<{
     leagueId?: string;
     attackingTeamId?: string;
     defendingTeamId?: string;
-    attackingCompetitionKey?: string;
-    defendingCompetitionKey?: string;
+    attackingCompetitionKey?: SearchParamValue;
+    defendingCompetitionKey?: SearchParamValue;
     playerId?: string;
     matchWindow?: string;
     defendingMatchWindow?: string;
@@ -44,22 +48,18 @@ export default async function MixerrPage({ searchParams }: PageProps) {
   const defendingMatchWindow = parseMacheteMatchWindow({ mode: resolvedSearchParams.defendingMatchWindow ?? resolvedSearchParams.matchWindow });
   const attackingCompetitionOptions = attackingTeam ? await loadSharedTeamCompetitionOptions(prisma, attackingTeam.id) : [];
   const defendingCompetitionOptions = defendingTeam ? await loadSharedTeamCompetitionOptions(prisma, defendingTeam.id) : [];
-  const selectedAttackingCompetition = selectedTeamCompetitionOption(resolvedSearchParams.attackingCompetitionKey, attackingCompetitionOptions);
-  const selectedDefendingCompetition = selectedTeamCompetitionOption(resolvedSearchParams.defendingCompetitionKey, defendingCompetitionOptions);
-  const playerScope = selectedAttackingCompetition ?? selectedLeague;
+  const selectedAttackingCompetitions = selectedTeamCompetitionOptions(resolvedSearchParams.attackingCompetitionKey, attackingCompetitionOptions);
+  const selectedDefendingCompetitions = selectedTeamCompetitionOptions(resolvedSearchParams.defendingCompetitionKey, defendingCompetitionOptions);
+  const checkedAttackingCompetitionKeys =
+    selectedAttackingCompetitions.length > 0 ? selectedAttackingCompetitions.map((competition) => competition.key) : defaultCompetitionKeysForSelectedLeague(selectedLeague, attackingCompetitionOptions);
+  const checkedDefendingCompetitionKeys =
+    selectedDefendingCompetitions.length > 0 ? selectedDefendingCompetitions.map((competition) => competition.key) : defaultCompetitionKeysForSelectedLeague(selectedLeague, defendingCompetitionOptions);
+  const playerScope = selectedAttackingCompetitions[0] ?? selectedLeague;
   const players = playerScope && attackingTeam ? await loadSharedTeamPlayers(prisma, playerScope.leagueId, playerScope.season, attackingTeam.id) : [];
   const player = players.find((candidate) => String(candidate.id) === resolvedSearchParams.playerId) ?? players[0] ?? null;
   const playerId = player ? String(player.id) : "";
-  const attackingShotContext = selectedAttackingCompetition
-    ? { leagueId: selectedAttackingCompetition.leagueId, season: selectedAttackingCompetition.season }
-    : selectedLeague
-      ? { leagueId: selectedLeague.leagueId, season: selectedLeague.season }
-      : {};
-  const defendingShotContext = selectedDefendingCompetition
-    ? { leagueId: selectedDefendingCompetition.leagueId, season: selectedDefendingCompetition.season }
-    : selectedLeague
-      ? { leagueId: selectedLeague.leagueId, season: selectedLeague.season }
-      : {};
+  const attackingShotContext = buildShotContext(selectedAttackingCompetitions, selectedLeague);
+  const defendingShotContext = buildShotContext(selectedDefendingCompetitions, selectedLeague);
 
   const [teamShots, concededShots, playerShots, comparison] = attackingTeamId
     ? await Promise.all([
@@ -107,11 +107,13 @@ export default async function MixerrPage({ searchParams }: PageProps) {
           <span className="mb-1 block font-medium text-slate-600">Team A comp</span>
           <select
             name="attackingCompetitionKey"
-            defaultValue={selectedAttackingCompetition?.key ?? ""}
+            multiple
+            size={Math.min(4, Math.max(2, attackingCompetitionOptions.length || 2))}
+            defaultValue={checkedAttackingCompetitionKeys}
             disabled={!attackingTeam || attackingCompetitionOptions.length === 0}
             className="w-full rounded border border-slate-200 px-3 py-2 disabled:bg-slate-100"
           >
-            <option value="">Selected league</option>
+            <option value="" disabled>Selected league</option>
             {attackingCompetitionOptions.map((competition) => (
               <option key={competition.key} value={competition.key}>
                 {competition.displayName} - {competition.season} ({competition.matchesCount})
@@ -133,11 +135,13 @@ export default async function MixerrPage({ searchParams }: PageProps) {
           <span className="mb-1 block font-medium text-slate-600">Team B comp</span>
           <select
             name="defendingCompetitionKey"
-            defaultValue={selectedDefendingCompetition?.key ?? ""}
+            multiple
+            size={Math.min(4, Math.max(2, defendingCompetitionOptions.length || 2))}
+            defaultValue={checkedDefendingCompetitionKeys}
             disabled={!defendingTeam || defendingCompetitionOptions.length === 0}
             className="w-full rounded border border-slate-200 px-3 py-2 disabled:bg-slate-100"
           >
-            <option value="">Selected league</option>
+            <option value="" disabled>Selected league</option>
             {defendingCompetitionOptions.map((competition) => (
               <option key={competition.key} value={competition.key}>
                 {competition.displayName} - {competition.season} ({competition.matchesCount})
@@ -191,9 +195,33 @@ export default async function MixerrPage({ searchParams }: PageProps) {
   );
 }
 
-function selectedTeamCompetitionOption(value: string | undefined, options: SharedTeamCompetitionOption[]) {
-  if (!value) return null;
-  return options.find((option) => option.key === value) ?? null;
+function selectedTeamCompetitionOptions(value: SearchParamValue, options: SharedTeamCompetitionOption[]) {
+  const requestedKeys = new Set(searchParamValues(value));
+  if (requestedKeys.size === 0) return [];
+  return options.filter((option) => requestedKeys.has(option.key));
+}
+
+function defaultCompetitionKeysForSelectedLeague(selectedLeague: SharedLeagueSeasonOption | null, options: SharedTeamCompetitionOption[]) {
+  if (!selectedLeague) return [];
+  const key = sharedCompetitionKey(selectedLeague.leagueId, selectedLeague.season);
+  return options.some((option) => option.key === key) ? [key] : [];
+}
+
+function buildShotContext(competitions: SharedTeamCompetitionOption[], selectedLeague: SharedLeagueSeasonOption | null) {
+  if (competitions.length > 0) {
+    return {
+      competitionScopes: competitions.map((competition) => ({
+        leagueId: competition.leagueId,
+        season: competition.season
+      }))
+    };
+  }
+
+  return selectedLeague ? { leagueId: selectedLeague.leagueId, season: selectedLeague.season } : {};
+}
+
+function searchParamValues(value: SearchParamValue) {
+  return (Array.isArray(value) ? value : [value]).filter((item): item is string => Boolean(item));
 }
 
 function MatchWindowOptions() {

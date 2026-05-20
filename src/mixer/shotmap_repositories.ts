@@ -290,11 +290,18 @@ type TeamReference = {
   leagueId: bigint | null;
   season: string | null;
   providerLeagueId: string | null;
+  competitionScopes: ShotCompetitionScope[];
+};
+
+type ShotCompetitionScope = {
+  leagueId: bigint;
+  season: string;
 };
 
 type ShotWindowContext = {
   leagueId?: string | number | bigint | null;
   season?: string | null;
+  competitionScopes?: ShotCompetitionScope[];
 };
 
 async function resolveTeamReference(prisma: PrismaClient, teamId: string | number | bigint, context: ShotWindowContext = {}): Promise<TeamReference> {
@@ -321,7 +328,8 @@ async function resolveTeamReference(prisma: PrismaClient, teamId: string | numbe
     coreId,
     leagueId: contextLeagueId ?? macheteLeagueId,
     season: context.season ?? macheteTeam?.league.season ?? null,
-    providerLeagueId: macheteTeam?.league.providerLeagueId ?? null
+    providerLeagueId: macheteTeam?.league.providerLeagueId ?? null,
+    competitionScopes: context.competitionScopes ?? []
   };
 }
 
@@ -337,6 +345,31 @@ async function resolvePlayerReference(prisma: PrismaClient, playerId: string | n
 }
 
 async function teamMatchIdsForShotWindow(prisma: PrismaClient, team: TeamReference, window: MacheteMatchWindow) {
+  if (team.competitionScopes.length > 0) {
+    const matches = await prisma.coreMatch.findMany({
+      where: {
+        finished: true,
+        OR: team.competitionScopes.map((scope) => ({
+          leagueId: scope.leagueId,
+          ...(window.kind === "season"
+            ? { season: matchWindowSeasonLabel(scope.season, window.offset, String(scope.leagueId)) }
+            : window.kind === "last"
+              ? { season: scope.season }
+              : {}),
+          OR: [{ homeTeamId: team.coreId }, { awayTeamId: team.coreId }]
+        }))
+      },
+      orderBy: { matchDate: "desc" },
+      take: window.kind === "last" ? window.matches : undefined,
+      select: {
+        id: true,
+        status: true
+      }
+    });
+
+    return matches.map((match) => match.id);
+  }
+
   const season = window.kind === "season" ? matchWindowSeasonLabel(team.season, window.offset, team.providerLeagueId) : window.kind === "last" ? team.season : null;
 
   const matches = await prisma.coreMatch.findMany({
