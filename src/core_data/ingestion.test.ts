@@ -123,6 +123,52 @@ test("unavailable FotMob matchDetails are skipped instead of failed", async () =
   assert.equal(result.skipped, true);
 });
 
+test("structural FotMob unavailable errors are skipped when module identity differs", async () => {
+  const prisma = {
+    coreMatch: {
+      async findUnique() {
+        return null;
+      }
+    },
+    rawMatchPayload: {
+      async findUnique() {
+        return null;
+      }
+    }
+  } as unknown as PrismaClient;
+  const client: FotMobClient = {
+    async getLeague() {
+      throw new Error("not used");
+    },
+    async getTeams() {
+      throw new Error("not used");
+    },
+    async getFixtures() {
+      throw new Error("not used");
+    },
+    async getFixtureDetails(fixtureId) {
+      const error = Object.assign(
+        new Error(`FotMob matchDetails unavailable for ${fixtureId}: signed-matchDetails-fallback blocked after next-data id mismatch: TURNSTILE_REQUIRED`),
+        {
+          name: "FotMobFixtureDetailsUnavailableError",
+          fixtureId,
+          reason: "signed-matchDetails-fallback blocked after next-data id mismatch: TURNSTILE_REQUIRED"
+        }
+      );
+      throw error;
+    },
+    async getPlayer() {
+      throw new Error("not used");
+    }
+  };
+
+  const result = await ingest_match(prisma, "4813374", { client, requireDetailedPayload: false });
+
+  assert.equal(result.matchId, 4813374n);
+  assert.equal(result.fetched, false);
+  assert.equal(result.skipped, true);
+});
+
 test("required detailed FotMob matchDetails fail instead of creating partial data", async () => {
   const prisma = {
     coreMatch: {
