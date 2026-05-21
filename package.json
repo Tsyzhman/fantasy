@@ -22,6 +22,7 @@
     "ingestion:run-next": "tsx scripts/ingestion-runner.ts run-next",
     "ingestion:worker": "tsx scripts/ingestion-runner.ts worker",
     "ingestion:reparse-raw": "tsx scripts/ingestion-runner.ts reparse-raw",
+    "ingestion:import-payloads": "tsx scripts/ingestion-runner.ts import-payloads",
     "scores:recalculate": "tsx prisma/recalculate-fantasy.ts",
     "logos:download": "tsx scripts/download-team-logos.ts"
   },
