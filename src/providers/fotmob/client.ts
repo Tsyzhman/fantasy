@@ -330,10 +330,13 @@ export function createFotMobClient(): FotMobClient {
   const mode = process.env.MACHETE_FOTMOB_PROVIDER_MODE;
   if (mode === "real") return new RealFotMobClient();
   if (mode === "browser") {
-    // Lazy require so that environments without playwright installed can still
-    // load this module (e.g. test runners or builds that don't use browser mode).
-    const { BrowserFotMobClient } = require("./browser-client") as typeof import("./browser-client");
-    return new BrowserFotMobClient();
+    // Resolved through eval so webpack does not follow the transitive
+    // playwright import while bundling. Prod images intentionally omit the
+    // browser-client / playwright tree; non-browser modes must still build.
+    // eslint-disable-next-line no-eval
+    const dynamicRequire = eval("require") as NodeRequire;
+    const mod = dynamicRequire("./browser-client") as { BrowserFotMobClient: new () => FotMobClient };
+    return new mod.BrowserFotMobClient();
   }
   if (mode === "unofficial") return new UnofficialFotMobClient();
   return new MockFotMobClient();

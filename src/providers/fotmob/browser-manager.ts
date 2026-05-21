@@ -43,9 +43,15 @@ const READY_POLL_MS = 1_000;
 const READY_TIMEOUT_MS = Number(process.env.MACHETE_FOTMOB_BROWSER_READY_TIMEOUT_MS || 60_000);
 const REQUEST_TIMEOUT_MS = Number(process.env.MACHETE_FOTMOB_BROWSER_REQUEST_TIMEOUT_MS || 30_000);
 
+// Dynamic import that the TypeScript compiler and webpack cannot statically
+// follow. Playwright is an optional runtime dependency — prod images skip it
+// with npm install --omit=optional, and a static import would fail the build
+// with "module not found" even though the code is guarded by a try/catch.
+const importByName = new Function("specifier", "return import(specifier)") as <T = unknown>(specifier: string) => Promise<T>;
+
 async function loadPlaywright(): Promise<PlaywrightModule> {
   try {
-    return (await import("playwright")) as unknown as PlaywrightModule;
+    return await importByName<PlaywrightModule>("playwright");
   } catch {
     throw new Error(
       "Browser FotMob mode requires playwright. Run: npm install playwright && npx playwright install chromium"
