@@ -15,6 +15,7 @@ import { matchWindowLabel, matchWindowLabelRu, matchWindowModeValue, parseMachet
 import {
   loadSharedLeagueSeason,
   loadSharedMachetePlayerRows,
+  loadSharedMatchWindowSummary,
   loadSharedTeamFixtures,
   parseSharedBigInt,
   resolveSharedTeamLogoUrl,
@@ -61,9 +62,10 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
   });
   if (!seasonTeam || !seasonTeam.active) notFound();
 
-  const [playerRows, fixtures, rawPayloads] = await Promise.all([
+  const teamScope = { leagueId: league.leagueId, season: league.season, teamId: parsedTeamId };
+  const [playerRows, fixtures, rawPayloads, windowSummary] = await Promise.all([
     loadSharedMachetePlayerRows(prisma, {
-      scopes: [{ leagueId: league.leagueId, season: league.season, teamId: parsedTeamId }],
+      scopes: [teamScope],
       matchWindow
     }),
     loadSharedTeamFixtures(prisma, league.leagueId, league.season, parsedTeamId, 8),
@@ -82,9 +84,10 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
           }
         }
       },
-      orderBy: { fetchedAt: "desc" },
+      orderBy: [{ match: { matchDate: "desc" } }, { fetchedAt: "desc" }],
       take: 8
-    })
+    }),
+    loadSharedMatchWindowSummary(prisma, [teamScope], matchWindow)
   ]);
   const players = sortSharedMacheteRows(playerRows, "fantasyScore");
   const fantasyPreview = players.map((player) => player.fantasyScore).filter((score): score is number => typeof score === "number");
@@ -129,7 +132,7 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
           </div>
         </div>
 
-        <dl className="mt-6 grid grid-cols-1 gap-4 text-sm sm:grid-cols-2 lg:grid-cols-4">
+        <dl className="mt-6 grid grid-cols-1 gap-4 text-sm sm:grid-cols-2 lg:grid-cols-5">
           <div className="rounded border border-slate-200 bg-field p-4">
             <dt className="flex items-center gap-2 text-xs font-medium uppercase text-slate-400">
               <Shield className="h-4 w-4" />
@@ -148,6 +151,17 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
               <I18nText en="Recent matches shown" ru="Показано матчей" />
             </dt>
             <dd className="mt-2 font-semibold text-ink">{formatNumber(fixtures.length)}</dd>
+          </div>
+          <div className="rounded border border-slate-200 bg-field p-4">
+            <dt className="text-xs font-medium uppercase text-slate-400">
+              <I18nText en="Player-stat coverage" ru="Покрытие статистики" />
+            </dt>
+            <dd className="mt-2 font-semibold text-ink">
+              {windowSummary ? `${formatNumber(windowSummary.matchesWithPlayerStats)}/${formatNumber(windowSummary.officialMatches)}` : "-"}
+            </dd>
+            <p className="mt-1 text-xs text-slate-500">
+              <I18nText en="parsed / official in selected window" ru="распарсено / официально в выбранном окне" />
+            </p>
           </div>
           <div className="rounded border border-slate-200 bg-field p-4">
             <dt className="text-xs font-medium uppercase text-slate-400">
@@ -236,8 +250,26 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
                 {[payload.match.homeTeam?.name, payload.match.awayTeam?.name].filter(Boolean).join(" - ") || <I18nText en="Fixture" ru="Матч" />}
               </p>
               <p className="mt-1 text-xs text-slate-500">
-                {payload.isFinal ? <I18nText en="final" ru="финальный" /> : <I18nText en="not final" ru="не финальный" />} / {formatDate(payload.fetchedAt)}
+                <I18nText en="Match date" ru="Дата матча" />: {formatDate(payload.match.matchDate)}
               </p>
+              <p className="mt-1 text-xs text-slate-500">
+                <I18nText en="Fetched" ru="Загружен" />: {formatDate(payload.fetchedAt)}
+              </p>
+              <p className="mt-1 text-xs text-slate-500">
+                <I18nText en="Match status" ru="Статус матча" />: {payload.match.status ?? (payload.match.finished ? "FINISHED" : "-")}
+              </p>
+              <p className={`mt-1 text-xs font-medium ${payload.isFinal ? "text-emerald-700" : "text-amber-700"}`}>
+                {payload.isFinal ? (
+                  <I18nText en="Detailed payload parsed" ru="Детальный payload распарсен" />
+                ) : (
+                  <I18nText en="Shallow payload: player stats may be missing" ru="Поверхностный payload: статистика игроков может отсутствовать" />
+                )}
+              </p>
+              {rawPayloadDetailReason(payload.payload) ? (
+                <p className="mt-1 text-xs text-amber-700">
+                  <I18nText en="Reason" ru="Причина" />: {rawPayloadDetailReason(payload.payload)}
+                </p>
+              ) : null}
             </div>
           ))}
           {rawPayloads.length === 0 ? (
@@ -249,4 +281,10 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
       </section>
     </main>
   );
+}
+
+function rawPayloadDetailReason(payload: unknown) {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) return null;
+  const reason = (payload as { detailsUnavailableReason?: unknown }).detailsUnavailableReason;
+  return typeof reason === "string" && reason.trim() ? reason : null;
 }
