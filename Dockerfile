@@ -4,9 +4,10 @@ WORKDIR /app
 
 ENV NEXT_TELEMETRY_DISABLED=1
 # Playwright is an optional dependency used only by browser-mode FotMob ingestion.
-# Skip the Chromium download here so prod images stay small and `npm ci` does not
-# need network access for ~170 MB of browser binaries. To enable browser mode in
-# a container, build a derived image that runs `npx playwright install --with-deps chromium`.
+# Skip it entirely in the slim prod image (--omit=optional). The lazy import in
+# createFotMobClient will surface a clear error if anyone enables browser mode in
+# this image. To run browser mode in a container, derive an image, install with
+# --include=optional, then run `npx playwright install --with-deps chromium`.
 ENV PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 
 RUN apt-get update \
@@ -14,7 +15,7 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm ci --omit=optional
 
 COPY . .
 RUN npx prisma generate && npm run build
