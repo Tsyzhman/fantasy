@@ -5,6 +5,7 @@ import {
   AUTUMN_SPRING_START_SEASON,
   SPRING_AUTUMN_START_SEASON,
   scopesForInitialBackfill,
+  scopesForCurrentSeasonLeagueBackfill,
   scopesForIncrementalUpdate,
   seasonForIncrementalUpdate,
   seasonsForInitialBackfill,
@@ -53,6 +54,23 @@ test("incremental updates use current seasons instead of initial backfill season
     [130, "2026"],
     [77, "2026"]
   ]);
+});
+
+test("quick current league backfill uses only Premier League current season", () => {
+  const referenceDate = new Date("2026-05-19T00:00:00.000Z");
+  const scopes = scopesForCurrentSeasonLeagueBackfill(47, referenceDate);
+
+  assert.deepEqual(scopes.map((scope) => [scope.league_id, scope.season]), [[47, "2025/2026"]]);
+  assert.equal(scopes[0].include_finished, true);
+  assert.equal(scopes[0].include_live, false);
+  assert.equal(scopes[0].include_upcoming, false);
+});
+
+test("quick current league backfill follows new season after summer rollover", () => {
+  const referenceDate = new Date("2026-08-01T00:00:00.000Z");
+  const scopes = scopesForCurrentSeasonLeagueBackfill(47, referenceDate);
+
+  assert.deepEqual(scopes.map((scope) => [scope.league_id, scope.season]), [[47, "2026/2027"]]);
 });
 
 function config(league_id: number, name: string, calendar_type: LeagueIngestionConfig["calendar_type"]): LeagueIngestionConfig {

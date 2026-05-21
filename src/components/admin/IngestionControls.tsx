@@ -18,12 +18,16 @@ export function IngestionControls({ hasActiveJob, initialBackfillCompleted }: Pr
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  async function post(endpoint: string) {
+  async function post(endpoint: string, body?: Record<string, unknown>) {
     setError(null);
-    const response = await fetch(endpoint, { method: "POST" });
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: body ? { "Content-Type": "application/json" } : undefined,
+      body: body ? JSON.stringify(body) : undefined
+    });
     if (!response.ok) {
-      const body = await response.json().catch(() => null);
-      setError(body?.error?.message ?? localizedText(language, "Request failed.", "Запрос не удался."));
+      const responseBody = await response.json().catch(() => null);
+      setError(responseBody?.error?.message ?? localizedText(language, "Request failed.", "Запрос не удался."));
       return;
     }
     startTransition(() => router.refresh());
@@ -34,11 +38,20 @@ export function IngestionControls({ hasActiveJob, initialBackfillCompleted }: Pr
       <button
         type="button"
         disabled={hasActiveJob || isPending}
-        onClick={() => post("/api/admin/ingestion/initial-backfill/start")}
+        onClick={() => post("/api/admin/ingestion/initial-backfill/start", { mode: "current_league_47" })}
         className="inline-flex items-center gap-2 rounded bg-ink px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-45"
       >
         <UploadCloud className="h-4 w-4" />
-        <I18nText en="Start initial backfill" ru="Запустить первичную загрузку" />
+        <I18nText en="Quick EPL current season" ru="Быстро: АПЛ текущий сезон" />
+      </button>
+      <button
+        type="button"
+        disabled={hasActiveJob || isPending}
+        onClick={() => post("/api/admin/ingestion/initial-backfill/start", { mode: "full" })}
+        className="inline-flex items-center gap-2 rounded border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-45"
+      >
+        <UploadCloud className="h-4 w-4" />
+        <I18nText en="Full FotMob backfill" ru="Полная выгрузка FotMob" />
       </button>
       <button
         type="button"

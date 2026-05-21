@@ -4,6 +4,7 @@ import { createIngestionScope, type CalendarType, type IngestionScope } from "./
 
 export const AUTUMN_SPRING_START_SEASON = "2023/2024";
 export const SPRING_AUTUMN_START_SEASON = "2023";
+export const QUICK_BACKFILL_LEAGUE_ID = 47;
 
 export type LeagueIngestionConfig = Readonly<{
   league_id: number;
@@ -91,6 +92,24 @@ export function scopesForInitialBackfill(configs: readonly LeagueIngestionConfig
       })
     )
   );
+}
+
+export function scopesForCurrentSeasonLeagueBackfill(leagueId = QUICK_BACKFILL_LEAGUE_ID, referenceDate = new Date()): IngestionScope[] {
+  const config = configForLeague(leagueId);
+  if (!config || !config.enabled) throw new Error(`League ${leagueId} is not configured for ingestion.`);
+
+  return [
+    createIngestionScope({
+      league_id: config.league_id,
+      season: seasonForIncrementalUpdate(config, referenceDate),
+      include_finished: true,
+      include_live: false,
+      include_upcoming: false,
+      max_matches: config.max_matches,
+      force_refresh: false,
+      force_reparse: false
+    })
+  ];
 }
 
 export function scopesForIncrementalUpdate(configs: readonly LeagueIngestionConfig[] = enabledLeagueIngestionConfigs(), referenceDate = new Date()): IngestionScope[] {

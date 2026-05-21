@@ -1,6 +1,8 @@
 import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
 import { resolve } from "node:path";
 
+type InitialBackfillMode = "current_league_47" | "full";
+
 void main();
 
 async function main() {
@@ -19,13 +21,15 @@ async function main() {
 
   try {
     if (command === "initial-backfill") {
-      const started = await start_initial_backfill(prisma, { startedByUserId: null });
-      console.info(`[ingestion:cli] ${started.started ? "Queued" : "Reusing active"} initial backfill job ${started.job.id}.`);
+      const mode = parseInitialBackfillMode(process.argv[3]);
+      const started = await start_initial_backfill(prisma, { startedByUserId: null, mode });
+      console.info(`[ingestion:cli] ${started.started ? "Queued" : "Reusing active"} ${mode} initial backfill job ${started.job.id}.`);
       const result = await run_next_ingestion_job(prisma);
       console.info(`[ingestion:cli] Finished runner for job ${result.job?.id ?? "none"} with status ${result.job?.status ?? "none"}.`);
     } else if (command === "queue-initial-backfill") {
-      const started = await start_initial_backfill(prisma, { startedByUserId: null });
-      console.info(`[ingestion:cli] ${started.started ? "Queued" : "Reusing active"} initial backfill job ${started.job.id}.`);
+      const mode = parseInitialBackfillMode(process.argv[3]);
+      const started = await start_initial_backfill(prisma, { startedByUserId: null, mode });
+      console.info(`[ingestion:cli] ${started.started ? "Queued" : "Reusing active"} ${mode} initial backfill job ${started.job.id}.`);
     } else if (command === "incremental-update") {
       const started = await run_incremental_update(prisma, { startedByUserId: null });
       console.info(`[ingestion:cli] ${started.started ? "Queued" : "Reusing active"} incremental update job ${started.job.id}.`);
@@ -122,6 +126,13 @@ async function main() {
 function parsePositiveInt(value: string | null | undefined) {
   const parsed = Number(value);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
+}
+
+function parseInitialBackfillMode(value: string | null | undefined): InitialBackfillMode {
+  const normalized = value?.trim().toLowerCase();
+  if (!normalized || normalized === "full") return "full";
+  if (["current_league_47", "quick", "epl", "league47", "league_47"].includes(normalized)) return "current_league_47";
+  throw new Error(`Unknown initial backfill mode "${value}". Use full or current_league_47.`);
 }
 
 function sleep(ms: number) {
