@@ -115,9 +115,21 @@ export async function ingest_match(prisma: PrismaClient, match_id: bigint | stri
     throw error;
   }
 
+  const payloadMatch = parse_match_metadata(canonicalMatchPayload(details));
+  const payloadMatchId = payloadMatch.id && payloadMatch.id !== 0n ? payloadMatch.id : matchId;
+  const payloadLeagueId = payloadMatch.leagueId ?? sourceIdToBigInt(options.leagueId, "league");
+  const payloadSeason = payloadMatch.season ?? options.season ?? null;
+  if (payloadMatchId !== matchId) {
+    console.warn(
+      `[core_data] Requested FotMob match ${String(matchId)} resolved to canonical match ${String(payloadMatchId)}; storing canonical payload under its real id.`
+    );
+  }
+
   return persist_match_payload(prisma, details, {
     ...options,
-    matchId,
+    matchId: payloadMatchId,
+    leagueId: payloadLeagueId ?? options.leagueId,
+    season: payloadSeason,
     fetched: true
   });
 }

@@ -200,9 +200,10 @@ class FotMobBrowserManager {
     const ignoredMatchDetailsUrls: string[] = [];
     const exactBlockedUrls: string[] = [];
     const debug = process.env.MACHETE_FOTMOB_BROWSER_DEBUG === "true";
-    let resolveCanonicalMatchDetails: ((url: string) => void) | null = null;
-    const canonicalMatchDetailsPromise = new Promise<string>((resolve) => {
-      resolveCanonicalMatchDetails = resolve;
+    let canonicalSuccessResponse: PlaywrightResponse | null = null;
+    let resolveCanonicalSignal: ((response: PlaywrightResponse) => void) | null = null;
+    const canonicalSignalPromise = new Promise<PlaywrightResponse>((resolve) => {
+      resolveCanonicalSignal = resolve;
     });
 
     newPage.on("response", (event) => {
@@ -218,9 +219,12 @@ class FotMobBrowserManager {
           exactBlockedUrls.push(`${status} ${url}`);
         } else if (!isMatchDetailsUrlForMatch(url, matchId)) {
           ignoredMatchDetailsUrls.push(`${status} ${url}`);
-          if (resolveCanonicalMatchDetails) {
-            resolveCanonicalMatchDetails(url);
-            resolveCanonicalMatchDetails = null;
+          if (status < 400 && !canonicalSuccessResponse) {
+            canonicalSuccessResponse = response;
+          }
+          if (resolveCanonicalSignal) {
+            resolveCanonicalSignal(response);
+            resolveCanonicalSignal = null;
           }
         }
       }
@@ -262,18 +266,27 @@ class FotMobBrowserManager {
       console.info(`[fotmob:browser] Match ${matchId}: waiting up to ${MATCH_DETAILS_TIMEOUT_MS}ms for exact matchDetails response.`);
       const responseResult = await Promise.race([
         responsePromise.then((result) => ({ kind: "exact" as const, result })),
-        canonicalMatchDetailsPromise.then(async (canonicalUrl) => {
+        canonicalSignalPromise.then(async (canonicalResponse) => {
           await newPage.waitForTimeout(CANONICAL_GRACE_MS);
-          return { kind: "canonical" as const, canonicalUrl };
+          return { kind: "canonical" as const, canonicalResponse };
         })
       ]);
 
       if (responseResult.kind === "canonical") {
+        const canonicalResponse = canonicalSuccessResponse ?? responseResult.canonicalResponse;
+        const canonicalStatus = canonicalResponse.status();
+        const canonicalUrl = canonicalResponse.url();
+        if (canonicalSuccessResponse) {
+          console.info(
+            `[fotmob:browser] Match ${matchId}: using canonical matchDetails response instead (${canonicalStatus} ${canonicalUrl}).`
+          );
+          return await canonicalResponse.json();
+        }
         const sample = seenApiUrls.slice(0, 25).join("\n  ");
         const ignored = ignoredMatchDetailsUrls.slice(0, 10).join("\n  ");
         const blocked = exactBlockedUrls.slice(0, 10).join("\n  ");
         throw new Error(
-          `FotMob stayed on canonical matchDetails for ${matchId}; exact matchDetails was not observed within ${CANONICAL_GRACE_MS}ms after ${responseResult.canonicalUrl}.\n` +
+          `FotMob stayed on blocked canonical matchDetails for ${matchId}; exact matchDetails was not observed within ${CANONICAL_GRACE_MS}ms after ${canonicalStatus} ${canonicalUrl}.\n` +
             `Blocked exact matchDetails responses:\n  ${blocked || "(none)"}\n` +
             `Ignored paired/canonical matchDetails responses:\n  ${ignored || "(none)"}\n` +
             `Observed /api/data/* responses on the page:\n  ${sample || "(none)"}`

@@ -160,6 +160,137 @@ test("required detailed FotMob matchDetails fail instead of creating partial dat
   );
 });
 
+test("canonical FotMob matchDetails are persisted under their real match id", async () => {
+  const rawUpserts: unknown[] = [];
+  const matchUpserts: unknown[] = [];
+  const prisma = {
+    coreLeague: {
+      async createMany() {
+        return {};
+      },
+      async upsert() {
+        return {};
+      }
+    },
+    coreTeam: {
+      async upsert() {
+        return {};
+      },
+      async createMany() {
+        return {};
+      }
+    },
+    corePlayer: {
+      async createMany() {
+        return {};
+      },
+      async upsert() {
+        return {};
+      }
+    },
+    coreMatch: {
+      async findUnique() {
+        return null;
+      },
+      async upsert(input: unknown) {
+        matchUpserts.push(input);
+        return {};
+      }
+    },
+    leagueSeason: {
+      async upsert() {
+        return {};
+      }
+    },
+    leagueSeasonTeam: {
+      async upsert() {
+        return {};
+      }
+    },
+    teamPlayerSeason: {
+      async upsert() {
+        return {};
+      }
+    },
+    matchTeamStat: {
+      async upsert() {
+        return {};
+      }
+    },
+    matchPlayerStat: {
+      async upsert() {
+        return {};
+      }
+    },
+    matchEvent: {
+      async deleteMany() {
+        return {};
+      }
+    },
+    matchShot: {
+      async upsert() {
+        return {};
+      }
+    },
+    rawMatchPayload: {
+      async findUnique() {
+        return null;
+      },
+      async upsert(input: unknown) {
+        rawUpserts.push(input);
+        return {};
+      }
+    },
+    shotmapComparisonsCache: {
+      async findMany() {
+        return [];
+      }
+    }
+  } as unknown as PrismaClient;
+  const client: FotMobClient = {
+    async getLeague() {
+      throw new Error("not used");
+    },
+    async getTeams() {
+      throw new Error("not used");
+    },
+    async getFixtures() {
+      throw new Error("not used");
+    },
+    async getFixtureDetails() {
+      return {
+        id: "4813595",
+        leagueId: "47",
+        homeTeamId: "8678",
+        awayTeamId: "8650",
+        kickoffAt: "2026-01-01T18:00:00.000Z",
+        status: "FINISHED",
+        homeScore: 0,
+        awayScore: 2,
+        playerStats: [],
+        raw: {
+          id: 4813595,
+          leagueId: 47,
+          season: "2025/2026",
+          home: { id: 8678, name: "AFC Bournemouth", score: 0 },
+          away: { id: 8650, name: "Liverpool", score: 2 },
+          status: { finished: true, started: true, utcTime: "2026-01-01T18:00:00.000Z" },
+          content: { matchFacts: {} }
+        }
+      };
+    },
+    async getPlayer() {
+      throw new Error("not used");
+    }
+  };
+
+  const result = await ingest_match(prisma, "4813374", { client, leagueId: 47, season: "2025/2026" });
+
+  assert.equal(result.matchId, 4813595n);
+  assert.equal((rawUpserts[0] as { where?: { matchId?: bigint } }).where?.matchId, 4813595n);
+  assert.equal((matchUpserts[0] as { where?: { id?: bigint } }).where?.id, 4813595n);
+});
+
 test("non-browser workers leave current league 47 backfills queued", async () => {
   const previousMode = process.env.MACHETE_FOTMOB_PROVIDER_MODE;
   process.env.MACHETE_FOTMOB_PROVIDER_MODE = "unofficial";
