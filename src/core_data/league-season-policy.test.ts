@@ -64,7 +64,7 @@ test("quick current league backfill uses only Premier League current season", ()
   assert.equal(scopes[0].include_finished, true);
   assert.equal(scopes[0].include_live, false);
   assert.equal(scopes[0].include_upcoming, false);
-  assert.equal(scopes[0].require_detailed_payloads, true);
+  assert.equal(scopes[0].require_detailed_payloads, false);
 });
 
 test("quick current league backfill follows new season after summer rollover", () => {

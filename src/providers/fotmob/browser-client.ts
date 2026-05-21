@@ -35,7 +35,15 @@ export class BrowserFotMobClient extends UnofficialFotMobClient {
     }
 
     const path = ensureHashId(pageUrl, fixtureId);
-    const payload = await getFotMobBrowser().fetchMatchDetailsByNavigation(fixtureId, path);
+    let payload: unknown;
+    try {
+      payload = await getFotMobBrowser().fetchMatchDetailsByNavigation(fixtureId, path);
+    } catch (error) {
+      throw new FotMobFixtureDetailsUnavailableError(
+        fixtureId,
+        `browser navigation unavailable: ${error instanceof Error ? error.message : String(error)}`
+      );
+    }
     return validatedMatchDetailsPayload(fixtureId, payload, "browser navigation");
   }
 }
