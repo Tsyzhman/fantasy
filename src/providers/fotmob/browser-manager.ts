@@ -238,40 +238,15 @@ class FotMobBrowserManager {
         console.info(`[fotmob:browser] Match ${matchId}: network idle not reached, continuing.`);
       }
 
-      // Hydrate the canonical page first, then switch the hash. The canonical
-      // page can fetch the paired leg on slug-collision URLs; those responses
-      // are ignored here and will be processed when their own fixture id is due.
-      try {
-        await newPage.evaluate(
-          ({ id, url }) => {
-            try {
-              window.history.pushState(null, "", url);
-              window.location.hash = `#${id}`;
-              window.dispatchEvent(new PopStateEvent("popstate"));
-              window.dispatchEvent(new HashChangeEvent("hashchange"));
-            } catch {
-              /* ignore */
-            }
-          },
-          { id: matchId, url: fullUrl }
-        );
-        console.info(`[fotmob:browser] Match ${matchId}: hash route triggered.`);
-      } catch {
-        // ignore — diagnostic only
-      }
-
-      try {
-        await newPage.evaluate((id) => {
-          const url = new URL("/api/data/matchDetails", window.location.origin);
-          url.searchParams.set("matchId", id);
-          void fetch(url.toString(), {
-            credentials: "include",
-            headers: { Accept: "application/json, text/plain, */*" }
-          }).catch(() => undefined);
-        }, matchId);
-        console.info(`[fotmob:browser] Match ${matchId}: exact matchDetails fetch triggered.`);
-      } catch {
-        // The SPA hash-change path above is still the primary trigger.
+      // Hydrate the canonical page first, then navigate to the exact hash URL.
+      // A real navigation lets FotMob's own router/API layer decide what to
+      // fetch. Manually dispatching HashChangeEvent or raw fetch calls can
+      // bypass their request wrapper and produce bogus matchId=[object Object]
+      // or unsigned 403s, which tells us nothing useful.
+      if (fullUrl !== canonicalUrl) {
+        console.info(`[fotmob:browser] Match ${matchId}: navigating exact hash ${fullUrl}.`);
+        await newPage.goto(fullUrl, { waitUntil: "domcontentloaded", timeout: REQUEST_TIMEOUT_MS });
+        console.info(`[fotmob:browser] Match ${matchId}: exact hash page DOM loaded.`);
       }
 
       console.info(`[fotmob:browser] Match ${matchId}: waiting up to ${REQUEST_TIMEOUT_MS}ms for exact matchDetails response.`);
