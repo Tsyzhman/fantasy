@@ -222,7 +222,10 @@ class FotMobBrowserManager {
         return response.status() < 400 && isMatchDetailsUrlForMatch(url, matchId);
       };
 
-      const responsePromise = newPage.waitForResponse(matchPredicate, { timeout: REQUEST_TIMEOUT_MS });
+      const responsePromise = newPage
+        .waitForResponse(matchPredicate, { timeout: REQUEST_TIMEOUT_MS })
+        .then((response) => ({ response }))
+        .catch((error: unknown) => ({ error }));
 
       if (debug) console.info(`[fotmob:browser] navigating to ${canonicalUrl}`);
       await newPage.goto(canonicalUrl, { waitUntil: "domcontentloaded", timeout: REQUEST_TIMEOUT_MS });
@@ -237,24 +240,45 @@ class FotMobBrowserManager {
       // are ignored here and will be processed when their own fixture id is due.
       try {
         await newPage.evaluate(
-          (id) => {
+          ({ id, url }) => {
             try {
+              window.history.pushState(null, "", url);
               window.location.hash = `#${id}`;
+              window.dispatchEvent(new PopStateEvent("popstate"));
               window.dispatchEvent(new HashChangeEvent("hashchange"));
             } catch {
               /* ignore */
             }
           },
-          matchId
+          { id: matchId, url: fullUrl }
         );
       } catch {
         // ignore — diagnostic only
       }
 
-      let response: PlaywrightResponse;
       try {
-        response = await responsePromise;
-      } catch (error) {
+        await newPage.evaluate((id) => {
+          const url = new URL("/api/data/matchDetails", window.location.origin);
+          url.searchParams.set("matchId", id);
+          void fetch(url.toString(), {
+            credentials: "include",
+            headers: { Accept: "application/json, text/plain, */*" }
+          }).catch(() => undefined);
+        }, matchId);
+      } catch {
+        // The SPA hash-change path above is still the primary trigger.
+      }
+
+      const responseResult = await responsePromise;
+      let response: PlaywrightResponse;
+      if ("response" in responseResult) {
+        response = responseResult.response;
+      } else {
+        try {
+          await newPage.waitForTimeout(250);
+        } catch {
+          // ignore
+        }
         const sample = seenApiUrls.slice(0, 25).join("\n  ");
         const ignored = ignoredMatchDetailsUrls.slice(0, 10).join("\n  ");
         const blocked = exactBlockedUrls.slice(0, 10).join("\n  ");
@@ -263,7 +287,7 @@ class FotMobBrowserManager {
             `Blocked exact matchDetails responses:\n  ${blocked || "(none)"}\n` +
             `Ignored paired/canonical matchDetails responses:\n  ${ignored || "(none)"}\n` +
             `Observed /api/data/* responses on the page:\n  ${sample || "(none)"}\n` +
-            `Original error: ${error instanceof Error ? error.message : String(error)}`
+            `Original error: ${responseResult.error instanceof Error ? responseResult.error.message : String(responseResult.error)}`
         );
       }
 

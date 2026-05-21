@@ -44,9 +44,13 @@ async function main() {
     } else if (command === "worker") {
       console.info("[ingestion:worker] Started. Waiting for pending/running ingestion jobs.");
       while (true) {
-        const result = await run_next_ingestion_job(prisma);
-        if (result.ran) {
-          console.info(`[ingestion:worker] Job ${result.job?.id ?? "unknown"} ended with status ${result.job?.status ?? "unknown"}.`);
+        try {
+          const result = await run_next_ingestion_job(prisma);
+          if (result.ran) {
+            console.info(`[ingestion:worker] Job ${result.job?.id ?? "unknown"} ended with status ${result.job?.status ?? "unknown"}.`);
+          }
+        } catch (error) {
+          console.error("[ingestion:worker] Run failed.", error);
         }
         await sleep(5_000);
       }
