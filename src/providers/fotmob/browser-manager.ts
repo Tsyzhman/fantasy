@@ -192,8 +192,11 @@ class FotMobBrowserManager {
     if (!context) throw new Error("FotMob browser context is not initialized.");
 
     const fullUrl = new URL(pagePath, FOTMOB_SITE).toString();
+    const canonicalUrl = withoutHash(fullUrl);
     const newPage = await context.newPage();
     const seenApiUrls: string[] = [];
+    const ignoredMatchDetailsUrls: string[] = [];
+    const exactBlockedUrls: string[] = [];
     const debug = process.env.MACHETE_FOTMOB_BROWSER_DEBUG === "true";
 
     newPage.on("response", (event) => {
@@ -203,28 +206,35 @@ class FotMobBrowserManager {
         seenApiUrls.push(`${response.status()} ${url}`);
         if (debug) console.info(`[fotmob:browser] response ${response.status()} ${url}`);
       }
+      if (url.includes("/api/data/matchDetails")) {
+        const status = response.status();
+        if (isMatchDetailsUrlForMatch(url, matchId) && status >= 400) {
+          exactBlockedUrls.push(`${status} ${url}`);
+        } else if (!isMatchDetailsUrlForMatch(url, matchId)) {
+          ignoredMatchDetailsUrls.push(`${status} ${url}`);
+        }
+      }
     });
 
     try {
       const matchPredicate = (response: PlaywrightResponse): boolean => {
         const url = response.url();
-        if (!url.includes("/api/data/matchDetails")) return false;
-        // Match matchId in query (raw, percent-encoded, or trailing path).
-        return (
-          url.includes(`matchId=${matchId}`) ||
-          url.includes(`matchId%3D${matchId}`) ||
-          url.endsWith(`/${matchId}`)
-        );
+        return response.status() < 400 && isMatchDetailsUrlForMatch(url, matchId);
       };
 
       const responsePromise = newPage.waitForResponse(matchPredicate, { timeout: REQUEST_TIMEOUT_MS });
 
-      if (debug) console.info(`[fotmob:browser] navigating to ${fullUrl}`);
-      await newPage.goto(fullUrl, { waitUntil: "domcontentloaded", timeout: REQUEST_TIMEOUT_MS });
+      if (debug) console.info(`[fotmob:browser] navigating to ${canonicalUrl}`);
+      await newPage.goto(canonicalUrl, { waitUntil: "domcontentloaded", timeout: REQUEST_TIMEOUT_MS });
+      try {
+        await newPage.waitForLoadState("networkidle", { timeout: REQUEST_TIMEOUT_MS });
+      } catch {
+        // Networkidle is a readiness hint, not a hard requirement.
+      }
 
-      // After domcontentloaded the SPA still has to hydrate and fire its own
-      // matchDetails XHR. Force the hash navigation via the History API in case
-      // the SPA's router ignores the initial hash.
+      // Hydrate the canonical page first, then switch the hash. The canonical
+      // page can fetch the paired leg on slug-collision URLs; those responses
+      // are ignored here and will be processed when their own fixture id is due.
       try {
         await newPage.evaluate(
           (id) => {
@@ -246,8 +256,12 @@ class FotMobBrowserManager {
         response = await responsePromise;
       } catch (error) {
         const sample = seenApiUrls.slice(0, 25).join("\n  ");
+        const ignored = ignoredMatchDetailsUrls.slice(0, 10).join("\n  ");
+        const blocked = exactBlockedUrls.slice(0, 10).join("\n  ");
         throw new Error(
-          `FotMob matchDetails XHR was not observed for ${matchId} within ${REQUEST_TIMEOUT_MS}ms.\n` +
+          `Successful FotMob matchDetails XHR was not observed for exact match ${matchId} within ${REQUEST_TIMEOUT_MS}ms.\n` +
+            `Blocked exact matchDetails responses:\n  ${blocked || "(none)"}\n` +
+            `Ignored paired/canonical matchDetails responses:\n  ${ignored || "(none)"}\n` +
             `Observed /api/data/* responses on the page:\n  ${sample || "(none)"}\n` +
             `Original error: ${error instanceof Error ? error.message : String(error)}`
         );
@@ -373,6 +387,52 @@ export async function closeFotMobBrowser(): Promise<void> {
   const current = instance;
   instance = null;
   await current.close();
+}
+
+export function isMatchDetailsUrlForMatch(url: string, matchId: string): boolean {
+  if (!url.includes("/api/data/matchDetails")) {
+    try {
+      const parsed = new URL(url);
+      const nestedUrl = parsed.searchParams.get("url");
+      if (!nestedUrl) return false;
+      const nested = new URL(nestedUrl, FOTMOB_SITE);
+      return nested.pathname.includes("/api/data/matchDetails") && nested.searchParams.get("matchId") === matchId;
+    } catch {
+      return false;
+    }
+  }
+
+  try {
+    const parsed = new URL(url);
+    if (parsed.searchParams.get("matchId") === matchId) return true;
+    const nestedUrl = parsed.searchParams.get("url");
+    if (nestedUrl) {
+      try {
+        const nested = new URL(nestedUrl, FOTMOB_SITE);
+        if (nested.searchParams.get("matchId") === matchId) return true;
+      } catch {
+        // Fall through to substring checks below.
+      }
+    }
+  } catch {
+    // Fall through to substring checks below.
+  }
+
+  return (
+    url.includes(`matchId=${matchId}`) ||
+    url.includes(`matchId%3D${matchId}`) ||
+    url.endsWith(`/${matchId}`)
+  );
+}
+
+function withoutHash(url: string): string {
+  try {
+    const parsed = new URL(url);
+    parsed.hash = "";
+    return parsed.toString();
+  } catch {
+    return url.split("#")[0] ?? url;
+  }
 }
 
 function sleep(ms: number): Promise<void> {
