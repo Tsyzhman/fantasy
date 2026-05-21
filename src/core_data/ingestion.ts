@@ -95,7 +95,7 @@ export async function ingest_match(prisma: PrismaClient, match_id: bigint | stri
   try {
     details = await client.getFixtureDetails(String(match_id));
   } catch (error) {
-    if (isFotMobFixtureDetailsUnavailableError(error)) {
+    if (error instanceof FotMobFixtureDetailsUnavailableError) {
       if (options.requireDetailedPayload) {
         throw new Error(
           `${error.message}. This ingestion scope requires detailed match payloads, so the job is failing instead of creating a misleading partial database.`
@@ -159,16 +159,6 @@ export async function discover_matches_for_scope(client: FotMobClient, scope: In
 function parseFotMobSkipList(raw: string | undefined): Set<string> {
   if (!raw) return new Set();
   return new Set(raw.split(/[\s,;]+/).map((value) => value.trim()).filter(Boolean));
-}
-
-function isFotMobFixtureDetailsUnavailableError(error: unknown): error is FotMobFixtureDetailsUnavailableError {
-  if (error instanceof FotMobFixtureDetailsUnavailableError) return true;
-  return (
-    error instanceof Error &&
-    error.name === "FotMobFixtureDetailsUnavailableError" &&
-    "fixtureId" in error &&
-    "reason" in error
-  );
 }
 
 export async function ingest_scope(

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { extractLeagueTeamsFromLeaguePayload, FotMobFixtureDetailsUnavailableError, is_placeholder_team, UnofficialFotMobClient } from "./client";
+import { extractLeagueTeamsFromLeaguePayload, is_placeholder_team, UnofficialFotMobClient } from "./client";
 
 test("normal standings payload still works", () => {
   const teams = extractLeagueTeamsFromLeaguePayload({
@@ -235,14 +235,13 @@ test("unofficial client fetches matchDetails via the next-data endpoint", async 
   }
 });
 
-test("unofficial client rejects next-data canonical mismatches without signed fallback", async () => {
+test("unofficial client falls back to signed matchDetails on slug-collision id mismatch", async () => {
   const originalFetch = globalThis.fetch;
   const originalInterval = process.env.MACHETE_FOTMOB_REQUEST_INTERVAL_MS;
   process.env.MACHETE_FOTMOB_REQUEST_INTERVAL_MS = "0";
-  const urls: string[] = [];
+  const signedCalls: string[] = [];
   globalThis.fetch = (async (input: string | URL | Request) => {
     const url = String(input instanceof Request ? input.url : input);
-    urls.push(url);
 
     if (url === "https://www.fotmob.com/") {
       return textResponse(`<html><script>"buildId":"abc"</script></html>`);
@@ -266,20 +265,23 @@ test("unofficial client rejects next-data canonical mismatches without signed fa
     }
 
     if (url.includes("/api/data/matchDetails?")) {
-      throw new Error("signed matchDetails must not be called");
+      signedCalls.push(url);
+      return jsonResponse({
+        general: { matchId: "4506554", leagueId: "47", homeTeam: { id: 9825 }, awayTeam: { id: 9826 } },
+        header: { status: { finished: true }, teams: [{ score: 2 }, { score: 1 }] },
+        content: { playerStats: {}, shotmap: { shots: [] }, stats: {} }
+      });
     }
 
     throw new Error(`Unexpected fetch ${url}`);
   }) as typeof fetch;
 
   try {
-    await assert.rejects(
-      () => new UnofficialFotMobClient().getFixtureDetails("4506554"),
-      (error) =>
-        error instanceof FotMobFixtureDetailsUnavailableError &&
-        /next-data payload id mismatch: 4813747/.test(error.reason)
-    );
-    assert.equal(urls.some((url) => url.includes("/api/data/matchDetails")), false, "bjrsti/fotmob mode must not call signed matchDetails");
+    const details = await new UnofficialFotMobClient().getFixtureDetails("4506554");
+    assert.equal((details.raw as { general?: { matchId?: string } }).general?.matchId, "4506554");
+    assert.equal(details.homeScore, 2);
+    assert.equal(signedCalls.length, 1, "signed matchDetails fallback must run exactly once");
+    assert.ok(signedCalls[0].includes("matchId=4506554"));
   } finally {
     globalThis.fetch = originalFetch;
     if (originalInterval === undefined) {

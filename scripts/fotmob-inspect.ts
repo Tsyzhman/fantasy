@@ -38,7 +38,7 @@ async function main(): Promise<void> {
   const client = createFotMobClient();
   // The factory returns the same network seam the production code uses
   // (Mock/Unofficial/Real). We poke its protected getJson via a cast so the
-  // inspector shares the exact transport used for public summary endpoints.
+  // inspector shares the exact transport — x-mas signing and all.
   const protectedClient = client as unknown as {
     getJson?: (path: string, params: Record<string, string>) => Promise<unknown>;
   };
@@ -92,6 +92,24 @@ async function main(): Promise<void> {
         entry.summaryFinished = asRecord(record.status).finished === true;
       } catch (error) {
         entry.summaryError = error instanceof Error ? error.message : String(error);
+      }
+
+      console.info(`[fotmob:inspect] Querying RAW /data/matchDetails?matchId=${id} (no validation)...`);
+      try {
+        const raw = await callGetJson("/data/matchDetails", { matchId: id });
+        writeFileSync(resolve(outDir, `raw-matchDetails-${id}.json`), JSON.stringify(raw, null, 2));
+        const record = asRecord(raw);
+        const general = asRecord(record.general);
+        const header = asRecord(record.header);
+        const content = asRecord(record.content);
+        entry.rawDirectId =
+          stringValue(general.matchId) ?? stringValue(header.matchId) ?? stringValue(record.matchId) ?? stringValue(record.id) ?? null;
+        entry.rawDirectIdMatches = entry.rawDirectId === id;
+        entry.rawDirectLeagueId = stringValue(general.leagueId) ?? stringValue(header.leagueId);
+        entry.rawDirectKickoff = stringValue(general.matchTimeUTCDate) ?? stringValue(general.matchTimeUTC);
+        entry.rawDirectContentKeys = Object.keys(content);
+      } catch (error) {
+        entry.rawDirectError = error instanceof Error ? error.message : String(error);
       }
 
       console.info(`[fotmob:inspect] Calling client.getFixtureDetails(${id})...`);

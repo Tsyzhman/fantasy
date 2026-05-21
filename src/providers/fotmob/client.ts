@@ -1,4 +1,5 @@
 import { mockFotMobFixtures, mockFotMobLeague, mockFotMobTeams } from "./mock-data";
+import { createXMasHeader, xMasSigningPath } from "./signing";
 import type { FotMobFixture, FotMobFixtureDetails, FotMobLeague, FotMobPlayer, FotMobPlayerMatchStat, FotMobTeam } from "./types";
 
 export interface FotMobClient {
@@ -51,9 +52,13 @@ export class UnofficialFotMobClient implements FotMobClient {
   protected readonly baseUrl = process.env.MACHETE_FOTMOB_BASE_URL || "https://www.fotmob.com/api";
   protected readonly ccode3 = process.env.MACHETE_FOTMOB_CCODE3 || "GBR";
   protected readonly timezone = process.env.MACHETE_FOTMOB_TIMEZONE || "Europe/London";
-  // Keep league/team/fixture discovery polite. Match details follow the same
-  // unsigned Next.js data route used by bjrsti/fotmob and do not call
-  // /api/data/matchDetails.
+  // FotMob rate-limits signed /api/data/* requests with a per-IP token
+  // bucket; ~5 quick successes empty it, then several requests in a row get
+  // 403 until it refills. matchDetails goes through the unsigned next-data
+  // endpoint and bypasses this entirely, so the spacing only matters for
+  // league/team/fixtures sync. Override via
+  // MACHETE_FOTMOB_REQUEST_INTERVAL_MS if FotMob tightens or loosens the
+  // limit.
   protected readonly requestIntervalMs = Number(process.env.MACHETE_FOTMOB_REQUEST_INTERVAL_MS || 2_000);
   private lastRequestAt = 0;
   private cachedBuildId: string | null = null;
@@ -115,12 +120,27 @@ export class UnofficialFotMobClient implements FotMobClient {
   }
 
   async getFixtureDetails(fixtureId: string): Promise<FotMobFixtureDetails> {
-    // Strict bjrsti/fotmob flow: resolve the FotMob slug through Next data,
-    // then fetch the pageProps JSON from matches/<slug>.json. We keep an id
-    // check because FotMob can return a canonical paired fixture for the same
-    // slug; storing that would corrupt match stats.
-    const pageProps = await this.fetchMatchPageProps(fixtureId);
-    const validated = validatedMatchDetailsPayload(fixtureId, pageProps, "next-data");
+    // Fast path: Next.js page-data endpoint is unsigned and edge-cached, so
+    // it bypasses the rate limit on /api/data/matchDetails. It resolves
+    // matches by slug, however — Arsenal vs Crystal Palace in 2024/25 and
+    // 2025/26 share `/matches/arsenal-vs-crystal-palace/<hash>`, and FotMob
+    // serves whichever match is canonical for that slug today. For those
+    // collisions we fall back to the signed /api/data/matchDetails endpoint,
+    // which selects by exact matchId.
+    let validated: unknown;
+    try {
+      const pageProps = await this.fetchMatchPageProps(fixtureId);
+      validated = validatedMatchDetailsPayload(fixtureId, pageProps, "next-data");
+    } catch (error) {
+      if (!(error instanceof FotMobFixtureDetailsUnavailableError) || !/payload id mismatch/i.test(error.reason)) {
+        throw error;
+      }
+      console.info(
+        `[fotmob] next-data slug collision for matchId ${fixtureId} (${error.reason}); falling back to signed matchDetails.`
+      );
+      const signed = await this.getJson("/data/matchDetails", { matchId: fixtureId });
+      validated = validatedMatchDetailsPayload(fixtureId, signed, "signed-matchDetails-fallback");
+    }
 
     const record = asRecord(validated);
     const general = asRecord(record.general);
@@ -269,12 +289,16 @@ export class UnofficialFotMobClient implements FotMobClient {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
             Accept: "application/json, text/plain, */*",
             "Accept-Language": "en-US,en;q=0.9",
-            Referer: "https://www.fotmob.com/"
+            Referer: "https://www.fotmob.com/",
+            "x-mas": createXMasHeader(xMasSigningPath(url))
           },
           signal: AbortSignal.timeout(20_000)
         });
 
         if (response.status === 403 || response.status === 429) {
+          // FotMob rate-limits signed requests sporadically. Back off long
+          // enough that the per-IP/per-token bucket refills before the next
+          // attempt, then retry with a fresh `code` timestamp.
           throw new RateLimitedError(response.status);
         }
 
@@ -290,7 +314,7 @@ export class UnofficialFotMobClient implements FotMobClient {
         const data = await response.json();
         const record = asRecord(data);
         if (record.code === "TURNSTILE_REQUIRED" || record.error === "Verification required") {
-          throw new Error("FotMob rejected the request (TURNSTILE_REQUIRED).");
+          throw new Error("FotMob rejected the signed request (TURNSTILE_REQUIRED). The x-mas secret may have rotated; update src/providers/fotmob/signing.ts.");
         }
 
         return data;
