@@ -235,6 +235,63 @@ test("unofficial client fetches matchDetails via the next-data endpoint", async 
   }
 });
 
+test("unofficial client falls back to signed matchDetails on slug-collision id mismatch", async () => {
+  const originalFetch = globalThis.fetch;
+  const originalInterval = process.env.MACHETE_FOTMOB_REQUEST_INTERVAL_MS;
+  process.env.MACHETE_FOTMOB_REQUEST_INTERVAL_MS = "0";
+  const signedCalls: string[] = [];
+  globalThis.fetch = (async (input: string | URL | Request) => {
+    const url = String(input instanceof Request ? input.url : input);
+
+    if (url === "https://www.fotmob.com/") {
+      return textResponse(`<html><script>"buildId":"abc"</script></html>`);
+    }
+
+    if (url === "https://www.fotmob.com/_next/data/abc/match/4506554.json") {
+      return jsonResponse({
+        pageProps: { __N_REDIRECT: "/matches/arsenal-vs-crystal-palace/xyz#4506554" }
+      });
+    }
+
+    if (url === "https://www.fotmob.com/_next/data/abc/matches/arsenal-vs-crystal-palace/xyz.json") {
+      // FotMob serves the canonical (current-season) match for this slug.
+      return jsonResponse({
+        pageProps: {
+          general: { matchId: "4813747", leagueId: "47", homeTeam: { id: 9825 }, awayTeam: { id: 9826 } },
+          header: { status: { finished: true }, teams: [{ score: 1 }, { score: 0 }] },
+          content: { playerStats: {} }
+        }
+      });
+    }
+
+    if (url.includes("/api/data/matchDetails?")) {
+      signedCalls.push(url);
+      return jsonResponse({
+        general: { matchId: "4506554", leagueId: "47", homeTeam: { id: 9825 }, awayTeam: { id: 9826 } },
+        header: { status: { finished: true }, teams: [{ score: 2 }, { score: 1 }] },
+        content: { playerStats: {}, shotmap: { shots: [] }, stats: {} }
+      });
+    }
+
+    throw new Error(`Unexpected fetch ${url}`);
+  }) as typeof fetch;
+
+  try {
+    const details = await new UnofficialFotMobClient().getFixtureDetails("4506554");
+    assert.equal((details.raw as { general?: { matchId?: string } }).general?.matchId, "4506554");
+    assert.equal(details.homeScore, 2);
+    assert.equal(signedCalls.length, 1, "signed matchDetails fallback must run exactly once");
+    assert.ok(signedCalls[0].includes("matchId=4506554"));
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (originalInterval === undefined) {
+      delete process.env.MACHETE_FOTMOB_REQUEST_INTERVAL_MS;
+    } else {
+      process.env.MACHETE_FOTMOB_REQUEST_INTERVAL_MS = originalInterval;
+    }
+  }
+});
+
 test("unofficial client refetches buildId after a stale next-data 404", async () => {
   const originalFetch = globalThis.fetch;
   const originalInterval = process.env.MACHETE_FOTMOB_REQUEST_INTERVAL_MS;

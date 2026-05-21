@@ -120,19 +120,34 @@ export class UnofficialFotMobClient implements FotMobClient {
   }
 
   async getFixtureDetails(fixtureId: string): Promise<FotMobFixtureDetails> {
-    // The /api/data/matchDetails endpoint is signed AND rate-limited at ~5
-    // requests per IP bucket. The Next.js page-data endpoint serves the same
-    // payload, is unsigned, and is cached at Cloudflare's edge — much higher
-    // throughput. We resolve the slug via the same buildId path, then fetch
-    // the matches/<slug>.json blob.
-    const pageProps = await this.fetchMatchPageProps(fixtureId);
-    const validated = validatedMatchDetailsPayload(fixtureId, pageProps, "next-data");
+    // Fast path: Next.js page-data endpoint is unsigned and edge-cached, so
+    // it bypasses the rate limit on /api/data/matchDetails. It resolves
+    // matches by slug, however — Arsenal vs Crystal Palace in 2024/25 and
+    // 2025/26 share `/matches/arsenal-vs-crystal-palace/<hash>`, and FotMob
+    // serves whichever match is canonical for that slug today. For those
+    // collisions we fall back to the signed /api/data/matchDetails endpoint,
+    // which selects by exact matchId.
+    let validated: unknown;
+    try {
+      const pageProps = await this.fetchMatchPageProps(fixtureId);
+      validated = validatedMatchDetailsPayload(fixtureId, pageProps, "next-data");
+    } catch (error) {
+      if (!(error instanceof FotMobFixtureDetailsUnavailableError) || !/payload id mismatch/i.test(error.reason)) {
+        throw error;
+      }
+      console.info(
+        `[fotmob] next-data slug collision for matchId ${fixtureId} (${error.reason}); falling back to signed matchDetails.`
+      );
+      const signed = await this.getJson("/data/matchDetails", { matchId: fixtureId });
+      validated = validatedMatchDetailsPayload(fixtureId, signed, "signed-matchDetails-fallback");
+    }
 
-    const general = asRecord(asRecord(pageProps).general);
-    const header = asRecord(asRecord(pageProps).header);
+    const record = asRecord(validated);
+    const general = asRecord(record.general);
+    const header = asRecord(record.header);
     const fixture = normalizeFixtureFromPageProps(fixtureId, general, header);
     if (!fixture) {
-      throw new FotMobFixtureDetailsUnavailableError(fixtureId, "next-data payload could not be normalized");
+      throw new FotMobFixtureDetailsUnavailableError(fixtureId, "matchDetails payload could not be normalized");
     }
 
     return {
