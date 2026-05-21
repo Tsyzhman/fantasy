@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { classify_shot_zone, extract_match_shots } from "./shots";
+import { classify_shot_zone, extract_match_shots, normalize_fotmob_pitch_coordinates } from "./shots";
 
 test("extracts one normalized row per FotMob content shotmap shot", () => {
   const shots = extract_match_shots({
@@ -38,8 +38,6 @@ test("extracts one normalized row per FotMob content shotmap shot", () => {
       player_id: shots[0].player_id,
       x: shots[0].x,
       y: shots[0].y,
-      normalized_x: shots[0].normalized_x,
-      normalized_y: shots[0].normalized_y,
       xg: shots[0].xg,
       xgot: shots[0].xgot,
       is_goal: shots[0].is_goal,
@@ -52,15 +50,22 @@ test("extracts one normalized row per FotMob content shotmap shot", () => {
       player_id: 99,
       x: 88.5,
       y: 29.5,
-      normalized_x: 88.5,
-      normalized_y: 29.5,
       xg: 0.32,
       xgot: 0.71,
       is_goal: true,
       is_on_target: true
     }
   );
+  assert.equal(shots[0].normalized_x?.toFixed(3), "84.286");
+  assert.equal(shots[0].normalized_y?.toFixed(3), "43.382");
   assert.equal(shots[0].raw.playerName, "Finisher");
+});
+
+test("normalizes FotMob 105 by 68 pitch coordinates to percentages", () => {
+  const [x, y] = normalize_fotmob_pitch_coordinates(102.5, 34);
+
+  assert.equal(x?.toFixed(3), "97.619");
+  assert.equal(y?.toFixed(3), "50.000");
 });
 
 test("missing shotmap returns an empty array", () => {

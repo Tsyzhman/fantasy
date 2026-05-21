@@ -37,6 +37,8 @@ export type FotMobMatchContext = {
 type JsonRecord = Record<string, unknown>;
 
 const coordinateKeys = ["x", "y", "coordinateX", "coordinateY", "xCoord", "yCoord", "shotX", "shotY"];
+const FOTMOB_PITCH_LENGTH = 105;
+const FOTMOB_PITCH_WIDTH = 68;
 
 export function extract_match_shots(payload: unknown): FotMobShotRow[] {
   const sourcePayload = rawPayloadFromDetails(payload);
@@ -57,20 +59,24 @@ export function normalize_shot_coordinates(
   const x = numberValue(shot.x);
   const y = numberValue(shot.y);
   if (x === null || y === null) return [x, y];
+  const [scaledX, scaledY] = normalize_fotmob_pitch_coordinates(x, y);
 
   const direction = stringValue(pick(shot.raw ?? {}, ["attackingDirection", "attackDirection", "direction", "teamDirection"]));
   if (direction && /right.?to.?left|rtl/i.test(direction) && !/left.?to.?right|ltr/i.test(direction)) {
-    return [flipCoordinate(x), flipCoordinate(y)];
+    return [flipPercentCoordinate(scaledX), flipPercentCoordinate(scaledY)];
   }
 
-  // FotMob shot maps are usually already stored as attacking-shot locations in a stable pitch frame.
-  // If the payload does not expose a trustworthy direction marker, MiXerr keeps normalized coordinates
-  // equal to the raw coordinates and preserves the full raw object for future re-normalization.
+  // FotMob web shot maps expose coordinates on a 105 x 68 pitch. MiXerr stores normalized
+  // percentages so drawing code and side-zone summaries can share one coordinate contract.
   if (!direction && process.env.MIXERR_DEBUG_SHOT_COORDS === "1") {
-    console.debug("[mixerr] FotMob shot direction was not present; using raw shot coordinates as normalized coordinates.");
+    console.debug("[mixerr] FotMob shot direction was not present; using scaled raw shot coordinates as normalized coordinates.");
   }
 
-  return [x, y];
+  return [scaledX, scaledY];
+}
+
+export function normalize_fotmob_pitch_coordinates(x: number | null | undefined, y: number | null | undefined): [number | null, number | null] {
+  return [normalizePitchAxisCoordinate(x, FOTMOB_PITCH_LENGTH), normalizePitchAxisCoordinate(y, FOTMOB_PITCH_WIDTH)];
 }
 
 export function classify_shot_zone(normalized_x: number | null | undefined, normalized_y: number | null | undefined) {
@@ -366,8 +372,15 @@ function booleanValue(value: unknown): boolean | null {
   return null;
 }
 
-function flipCoordinate(value: number) {
-  if (value >= 0 && value <= 1) return 1 - value;
+function normalizePitchAxisCoordinate(value: number | null | undefined, axisLength: number) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return null;
+  if (value >= 0 && value <= 1) return value * 100;
+  if (value >= 0 && value <= axisLength) return (value / axisLength) * 100;
+  return value;
+}
+
+function flipPercentCoordinate(value: number | null) {
+  if (value === null) return null;
   return 100 - value;
 }
 

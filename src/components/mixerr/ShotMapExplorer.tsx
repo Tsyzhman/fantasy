@@ -359,8 +359,9 @@ function legendDotClassName(tone: "attacking" | "conceded" | "player") {
 }
 
 function markerStyle(shot: ShotMapShot) {
-  const x = clamp(shot.normalized_x ?? shot.x ?? 50, 50, 100);
-  const y = clamp(shot.normalized_y ?? shot.y ?? 50, 0, 100);
+  const [displayX, displayY] = shotDisplayCoordinates(shot);
+  const x = clamp(displayX ?? 50, 50, 100);
+  const y = clamp(displayY ?? 50, 0, 100);
   const size = Math.max(9, Math.min(24, 9 + (shot.xg ?? 0.04) * 34));
   const attackingHalfTop = ((100 - x) / 50) * 100;
 
@@ -370,6 +371,17 @@ function markerStyle(shot: ShotMapShot) {
     width: `${size}px`,
     height: `${size}px`
   };
+}
+
+function shotDisplayCoordinates(shot: ShotMapShot): [number | null, number | null] {
+  const hasDerivedNormalizedCoordinates =
+    shot.normalized_x !== null &&
+    shot.normalized_y !== null &&
+    (!sameCoordinate(shot.normalized_x, shot.x) || !sameCoordinate(shot.normalized_y, shot.y));
+
+  if (hasDerivedNormalizedCoordinates) return [shot.normalized_x, shot.normalized_y];
+
+  return [normalizeFotMobAxis(shot.normalized_x ?? shot.x, 105), normalizeFotMobAxis(shot.normalized_y ?? shot.y, 68)];
 }
 
 function shotTooltip(shot: ShotMapShot, layer: string) {
@@ -393,4 +405,16 @@ function normalizedSituation(value: string | null): SituationFilter {
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
+}
+
+function normalizeFotMobAxis(value: number | null, axisLength: number) {
+  if (value === null || !Number.isFinite(value)) return null;
+  if (value >= 0 && value <= 1) return value * 100;
+  if (value >= 0 && value <= axisLength) return (value / axisLength) * 100;
+  return value;
+}
+
+function sameCoordinate(left: number | null, right: number | null) {
+  if (left === null || right === null) return left === right;
+  return Math.abs(left - right) < 0.000001;
 }

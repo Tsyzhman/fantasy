@@ -2,7 +2,7 @@ import { Prisma, type PrismaClient } from "@prisma/client";
 
 import { CoreMatchRepository, CoreShotRepository } from "@/core_data/repositories";
 import { sourceIdToBigInt } from "@/core_data/models";
-import { buildSideZoneSummary } from "@/providers/fotmob/shots";
+import { buildSideZoneSummary, normalize_fotmob_pitch_coordinates } from "@/providers/fotmob/shots";
 import { matchWindowSeasonLabel, type MacheteMatchWindow } from "@/scoring/machete/match-window";
 
 export type ShotMapShot = {
@@ -346,10 +346,11 @@ async function resolvePlayerReference(prisma: PrismaClient, playerId: string | n
 
 async function teamMatchIdsForShotWindow(prisma: PrismaClient, team: TeamReference, window: MacheteMatchWindow) {
   if (team.competitionScopes.length > 0) {
+    const competitionScopes = window.kind === "season" ? latestCompetitionScopesByLeague(team.competitionScopes) : team.competitionScopes;
     const matches = await prisma.coreMatch.findMany({
       where: {
         finished: true,
-        OR: team.competitionScopes.map((scope) => ({
+        OR: competitionScopes.map((scope) => ({
           leagueId: scope.leagueId,
           ...(window.kind === "season"
             ? { season: matchWindowSeasonLabel(scope.season, window.offset, String(scope.leagueId)) }
@@ -390,7 +391,21 @@ async function teamMatchIdsForShotWindow(prisma: PrismaClient, team: TeamReferen
   return matches.map((match) => match.id);
 }
 
+function latestCompetitionScopesByLeague(scopes: ShotCompetitionScope[]) {
+  const latest = new Map<string, ShotCompetitionScope>();
+
+  for (const scope of scopes) {
+    const key = String(scope.leagueId);
+    const existing = latest.get(key);
+    if (!existing || seasonRank(scope.season) > seasonRank(existing.season)) latest.set(key, scope);
+  }
+
+  return [...latest.values()];
+}
+
 function serializeShot(shot: ShotRecord): ShotMapShot {
+  const [normalizedX, normalizedY] = serializeShotCoordinates(shot);
+
   return {
     id: String(shot.id),
     fixture_id: String(shot.matchId),
@@ -407,8 +422,8 @@ function serializeShot(shot: ShotRecord): ShotMapShot {
     added_time: shot.addedTime,
     x: shot.x,
     y: shot.y,
-    normalized_x: shot.normalizedX,
-    normalized_y: shot.normalizedY,
+    normalized_x: normalizedX,
+    normalized_y: normalizedY,
     event_type: shot.eventType,
     shot_type: shot.shotType,
     body_part: shot.bodyPart,
@@ -426,6 +441,16 @@ function serializeShot(shot: ShotRecord): ShotMapShot {
   };
 }
 
+function serializeShotCoordinates(shot: Pick<ShotRecord, "x" | "y" | "normalizedX" | "normalizedY">) {
+  const hasDerivedNormalizedCoordinates =
+    shot.normalizedX !== null &&
+    shot.normalizedY !== null &&
+    (!sameCoordinate(shot.normalizedX, shot.x) || !sameCoordinate(shot.normalizedY, shot.y));
+
+  if (hasDerivedNormalizedCoordinates) return [shot.normalizedX, shot.normalizedY] as const;
+  return normalize_fotmob_pitch_coordinates(shot.normalizedX ?? shot.x, shot.normalizedY ?? shot.y);
+}
+
 function sumXg(shots: Array<{ xg: number | null }>) {
   return shots.reduce((total, shot) => total + (shot.xg ?? 0), 0);
 }
@@ -433,6 +458,25 @@ function sumXg(shots: Array<{ xg: number | null }>) {
 function dateMs(value: Date | string | null) {
   if (!value) return 0;
   return value instanceof Date ? value.getTime() : new Date(value).getTime();
+}
+
+function seasonRank(season: string) {
+  const parts = season.match(/\d{2,4}/g);
+  if (!parts?.length) return Number.NEGATIVE_INFINITY;
+
+  const startYear = Number(parts[0]);
+  if (!Number.isFinite(startYear)) return Number.NEGATIVE_INFINITY;
+
+  let endYear = startYear;
+  if (parts[1]) {
+    endYear = Number(parts[1]);
+    if (parts[1].length === 2) {
+      endYear = Math.floor(startYear / 100) * 100 + endYear;
+      if (endYear < startYear) endYear += 100;
+    }
+  }
+
+  return endYear * 10_000 + startYear;
 }
 
 function shotFixtureId(shot: ShotLike) {
@@ -453,6 +497,11 @@ function shotPlayerId(shot: ShotLike) {
 
 function round(value: number) {
   return Math.round(value * 1000) / 1000;
+}
+
+function sameCoordinate(left: number | null, right: number | null) {
+  if (left === null || right === null) return left === right;
+  return Math.abs(left - right) < 0.000001;
 }
 
 function jsonValue(value: unknown): Prisma.InputJsonValue {
