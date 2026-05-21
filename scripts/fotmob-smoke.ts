@@ -37,25 +37,56 @@ async function main(): Promise<void> {
     summary.fixturesScheduled = fixtures.filter((f) => f.status === "SCHEDULED").length;
     console.info(`[fotmob:smoke] Fixtures OK: total=${fixtures.length}, finished=${summary.fixturesFinished}.`);
 
-    const finishedFixture = fixtures.find((f) => f.status === "FINISHED");
-    if (finishedFixture) {
-      console.info(`[fotmob:smoke] Fetching matchDetails for ${finishedFixture.id}...`);
-      const details = await client.getFixtureDetails(finishedFixture.id);
-      writeFileSync(resolve(outDir, `match-${finishedFixture.id}.json`), JSON.stringify(details, null, 2));
-      const content = asRecord(asRecord(details.raw).content);
-      summary.sampleMatch = {
-        id: finishedFixture.id,
-        hasContent: Object.keys(content).length > 0,
-        contentKeys: Object.keys(content),
-        hasPlayerStats: "playerStats" in content,
-        hasShotmap: "shotmap" in content,
-        hasLineup: "lineup" in content,
-        hasMatchFacts: "matchFacts" in content
-      };
-      console.info("[fotmob:smoke] matchDetails OK; content keys:", Object.keys(content).join(", "));
-    } else {
-      summary.sampleMatch = null;
+    const sampleCount = Number(process.argv[4] || 5);
+    const candidates = fixtures
+      .filter((f) => f.status === "FINISHED")
+      .sort((a, b) => (b.kickoffAt > a.kickoffAt ? 1 : b.kickoffAt < a.kickoffAt ? -1 : 0))
+      .slice(0, sampleCount);
+
+    const sampleResults: Array<Record<string, unknown>> = [];
+    let succeeded = 0;
+    for (const fixture of candidates) {
+      console.info(`[fotmob:smoke] Fetching matchDetails for ${fixture.id} (kickoff ${fixture.kickoffAt})...`);
+      try {
+        const details = await client.getFixtureDetails(fixture.id);
+        writeFileSync(resolve(outDir, `match-${fixture.id}.json`), JSON.stringify(details, null, 2));
+        const content = asRecord(asRecord(details.raw).content);
+        const record = {
+          id: fixture.id,
+          ok: true,
+          kickoffAt: fixture.kickoffAt,
+          contentKeys: Object.keys(content),
+          hasPlayerStats: "playerStats" in content,
+          hasShotmap: "shotmap" in content,
+          hasLineup: "lineup" in content,
+          hasMatchFacts: "matchFacts" in content
+        };
+        sampleResults.push(record);
+        succeeded += 1;
+        console.info(`[fotmob:smoke] ${fixture.id} OK; content keys: ${record.contentKeys.join(", ")}`);
+      } catch (error) {
+        sampleResults.push({
+          id: fixture.id,
+          ok: false,
+          kickoffAt: fixture.kickoffAt,
+          error: error instanceof Error ? error.message : String(error)
+        });
+        console.warn(`[fotmob:smoke] ${fixture.id} FAILED: ${error instanceof Error ? error.message : error}`);
+      }
+    }
+    summary.sampleMatches = {
+      tried: candidates.length,
+      succeeded,
+      failed: candidates.length - succeeded,
+      results: sampleResults
+    };
+    if (candidates.length > 0 && succeeded === 0) {
+      throw new Error(`All ${candidates.length} sampled matches failed; browser session is not returning detailed payloads.`);
+    }
+    if (candidates.length === 0) {
       console.warn("[fotmob:smoke] No finished fixtures available to test matchDetails.");
+    } else {
+      console.info(`[fotmob:smoke] matchDetails sample: ${succeeded}/${candidates.length} matches returned detailed payloads.`);
     }
 
     writeFileSync(resolve(outDir, `summary-${leagueId}.json`), JSON.stringify(summary, null, 2));
