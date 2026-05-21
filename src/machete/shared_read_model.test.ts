@@ -4,7 +4,7 @@ import test from "node:test";
 import type { PrismaClient } from "@prisma/client";
 
 import type { ActiveScoringModel } from "@/lib/scoring";
-import { loadSharedMachetePlayerRows, loadSharedTeamMatchIds } from "./shared_read_model";
+import { loadSharedMachetePlayerRows, loadSharedMatchWindowSummary, loadSharedTeamMatchIds } from "./shared_read_model";
 
 const scoringModel: ActiveScoringModel = {
   modelSource: "MACHETE",
@@ -33,7 +33,7 @@ test("shared team match ids keep all-loaded scoped to the selected competition s
     coreMatch: {
       async findMany(input: unknown) {
         calls.push(input);
-        return [{ id: 201n }];
+        return [{ id: 201n, matchDate: new Date("2025-05-25T16:00:00.000Z") }];
       }
     }
   } as unknown as PrismaClient;
@@ -44,6 +44,7 @@ test("shared team match ids keep all-loaded scoped to the selected competition s
   const call = calls[0] as { where?: { leagueId?: bigint; season?: string } };
   assert.equal(call.where?.leagueId, 47n);
   assert.equal(call.where?.season, "2024/2025");
+  assert.equal((call.where as { playerStats?: unknown }).playerStats, undefined);
 });
 
 test("combined player rows aggregate all selected team scope matches even when roster exists only in one season", async () => {
@@ -81,8 +82,13 @@ test("combined player rows aggregate all selected team scope matches even when r
       async findMany(input: unknown) {
         coreMatchCalls.push(input);
         const season = (input as { where?: { season?: string } }).where?.season;
-        if (season === "2023/2024") return [{ id: 101n }, { id: 102n }];
-        if (season === "2024/2025") return [{ id: 201n }];
+        if (season === "2023/2024") {
+          return [
+            { id: 101n, matchDate: new Date("2024-04-01T16:00:00.000Z") },
+            { id: 102n, matchDate: new Date("2024-04-08T16:00:00.000Z") }
+          ];
+        }
+        if (season === "2024/2025") return [{ id: 201n, matchDate: new Date("2025-04-01T16:00:00.000Z") }];
         return [];
       }
     },
@@ -121,6 +127,110 @@ test("combined player rows aggregate all selected team scope matches even when r
   assert.deepEqual(statCall.where?.matchId?.in, [101n, 102n, 201n]);
   assert.deepEqual(statCall.where?.teamId?.in, [10n]);
   assert.deepEqual(statCall.where?.playerId?.in, [99n]);
+});
+
+test("combined last match window is applied across selected competitions without hiding statless fixtures", async () => {
+  const coreMatchCalls: unknown[] = [];
+  const statCalls: unknown[] = [];
+  const prisma = {
+    teamPlayerSeason: {
+      async findMany() {
+        return [
+          {
+            leagueId: 47n,
+            season: "2024/2025",
+            teamId: 10n,
+            playerId: 99n,
+            position: "GK",
+            age: 33,
+            nationality: "Argentina",
+            player: { name: "Emiliano Martinez", country: "Argentina" },
+            team: { name: "Aston Villa" },
+            seasonTeam: {
+              leagueSeason: {
+                name: "Premier League",
+                country: "England",
+                league: {
+                  name: "Premier League",
+                  country: "England"
+                }
+              }
+            }
+          }
+        ];
+      }
+    },
+    coreMatch: {
+      async findMany(input: unknown) {
+        coreMatchCalls.push(input);
+        const season = (input as { where?: { season?: string } }).where?.season;
+        if (season === "2023/2024") {
+          return [
+            { id: 101n, matchDate: new Date("2024-05-01T16:00:00.000Z") },
+            { id: 102n, matchDate: new Date("2024-05-08T16:00:00.000Z") }
+          ];
+        }
+        if (season === "2024/2025") {
+          return [
+            { id: 203n, matchDate: new Date("2025-05-15T16:00:00.000Z") },
+            { id: 201n, matchDate: new Date("2025-05-01T16:00:00.000Z") },
+            { id: 202n, matchDate: new Date("2025-05-08T16:00:00.000Z") }
+          ];
+        }
+        return [];
+      }
+    },
+    matchPlayerStat: {
+      async findMany(input: unknown) {
+        statCalls.push(input);
+        return [playerStat(102n, 90), playerStat(201n, 90), playerStat(202n, 90)];
+      }
+    }
+  } as unknown as PrismaClient;
+
+  const rows = await loadSharedMachetePlayerRows(prisma, {
+    scopes: [
+      { leagueId: 47n, season: "2023/2024", teamId: 10n },
+      { leagueId: 47n, season: "2024/2025", teamId: 10n }
+    ],
+    matchWindow: { kind: "last", matches: 3 },
+    combineTeamCompetitions: true,
+    scoringModel
+  });
+
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].matchesPlayed, 2);
+  assert.equal(rows[0].minutesPlayed, 180);
+  assert.equal(coreMatchCalls.every((call) => (call as { take?: number }).take === undefined), true);
+  assert.equal(coreMatchCalls.every((call) => (call as { where?: { playerStats?: unknown } }).where?.playerStats === undefined), true);
+  const statCall = statCalls[0] as { where?: { matchId?: { in?: bigint[] } } };
+  assert.deepEqual(statCall.where?.matchId?.in, [203n, 202n, 201n]);
+});
+
+test("match window summary reports official matches separately from parsed player-stat coverage", async () => {
+  const prisma = {
+    coreMatch: {
+      async findMany() {
+        return [
+          { id: 203n, matchDate: new Date("2025-05-15T16:00:00.000Z") },
+          { id: 202n, matchDate: new Date("2025-05-08T16:00:00.000Z") },
+          { id: 201n, matchDate: new Date("2025-05-01T16:00:00.000Z") }
+        ];
+      }
+    },
+    matchPlayerStat: {
+      async findMany() {
+        return [{ matchId: 202n }, { matchId: 201n }];
+      }
+    }
+  } as unknown as PrismaClient;
+
+  const summary = await loadSharedMatchWindowSummary(prisma, [{ leagueId: 47n, season: "2024/2025", teamId: 10n }], { kind: "last", matches: 3 }, false);
+
+  assert.deepEqual(summary, {
+    officialMatches: 3,
+    matchesWithPlayerStats: 2
+  });
 });
 
 function playerStat(matchId: bigint, minutes: number) {

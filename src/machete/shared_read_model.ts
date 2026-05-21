@@ -67,7 +67,16 @@ export type SharedPlayerRowsScope = {
   teamId?: bigint | null;
 };
 
+export type SharedMatchWindowSummary = {
+  officialMatches: number;
+  matchesWithPlayerStats: number;
+};
+
 type MatchPlayerStatRecord = Awaited<ReturnType<typeof loadStatsForMatchIds>>[number];
+type SharedTeamMatchRef = {
+  id: bigint;
+  matchDate: Date | null;
+};
 
 export async function loadSharedLeagueOptions(prisma: PrismaClient): Promise<SharedLeagueSeasonOption[]> {
   const rows = await prisma.leagueSeason.findMany({
@@ -353,20 +362,27 @@ export async function loadSharedMachetePlayerRows(
     if (!teamScopes.has(key)) teamScopes.set(key, { leagueId: row.leagueId, season: row.season, teamId: row.teamId });
   }
 
-  const matchIdsByTeamScope = new Map<string, bigint[]>();
+  const matchRefsByTeamScope = new Map<string, SharedTeamMatchRef[]>();
   await Promise.all(
     [...teamScopes.values()].map(async (scope) => {
       if (!scope.teamId) return;
       const key = teamScopeKey(scope.leagueId, scope.season, scope.teamId);
-      matchIdsByTeamScope.set(key, await loadSharedTeamMatchIds(prisma, scope.leagueId, scope.season, scope.teamId, input.matchWindow));
+      matchRefsByTeamScope.set(
+        key,
+        await loadSharedTeamMatchRefs(prisma, scope.leagueId, scope.season, scope.teamId, input.matchWindow, {
+          deferLastLimit: Boolean(input.combineTeamCompetitions && input.matchWindow.kind === "last")
+        })
+      );
     })
   );
 
+  const matchIdsByTeamScope = new Map([...matchRefsByTeamScope.entries()].map(([key, matches]) => [key, matches.map((match) => match.id)]));
+  const limitedMatchIdsByTeam = groupScopeMatchIdsByTeam(teamScopes.values(), matchRefsByTeamScope, input.matchWindow);
   const allMatchIds = uniqueBigints([...matchIdsByTeamScope.values()].flat());
-  const matchIdsByTeam = groupScopeMatchIdsByTeam(teamScopes.values(), matchIdsByTeamScope);
+  const scopedMatchIds = input.combineTeamCompetitions && input.matchWindow.kind === "last" ? uniqueBigints([...limitedMatchIdsByTeam.values()].flat()) : allMatchIds;
   const stats = await loadStatsForMatchIds(
     prisma,
-    allMatchIds,
+    scopedMatchIds,
     uniqueBigints(rosterRows.map((row) => row.teamId)),
     uniqueBigints(rosterRows.map((row) => row.playerId))
   );
@@ -386,7 +402,7 @@ export async function loadSharedMachetePlayerRows(
     return [...rosterRowsByTeamPlayer.values()]
       .map((rows) => {
         const first = rows[0];
-        const allowedMatchIds = new Set((matchIdsByTeam.get(String(first.teamId)) ?? []).map(String));
+        const allowedMatchIds = new Set((limitedMatchIdsByTeam.get(String(first.teamId)) ?? []).map(String));
 
         const playerStats = (statsByTeamPlayer.get(teamPlayerKey(first.teamId, first.playerId)) ?? []).filter((stat) => allowedMatchIds.has(String(stat.matchId)));
         const position = firstNonEmpty(rows.map((row) => row.position));
@@ -440,6 +456,68 @@ export async function loadSharedTeamMatchIds(
   teamId: bigint,
   window: MacheteMatchWindow
 ) {
+  const matches = await loadSharedTeamMatchRefs(prisma, leagueId, season, teamId, window);
+  return matches.map((match) => match.id);
+}
+
+export async function loadSharedMatchWindowSummary(
+  prisma: PrismaClient,
+  scopes: SharedPlayerRowsScope[],
+  window: MacheteMatchWindow,
+  combineTeamCompetitions = false
+): Promise<SharedMatchWindowSummary | null> {
+  const teamScopes = new Map<string, SharedPlayerRowsScope>();
+  for (const scope of scopes) {
+    if (!scope.teamId) continue;
+    const key = teamScopeKey(scope.leagueId, scope.season, scope.teamId);
+    teamScopes.set(key, scope);
+  }
+  if (teamScopes.size === 0) return null;
+
+  const matchRefsByTeamScope = new Map<string, SharedTeamMatchRef[]>();
+  await Promise.all(
+    [...teamScopes.values()].map(async (scope) => {
+      if (!scope.teamId) return;
+      const key = teamScopeKey(scope.leagueId, scope.season, scope.teamId);
+      matchRefsByTeamScope.set(
+        key,
+        await loadSharedTeamMatchRefs(prisma, scope.leagueId, scope.season, scope.teamId, window, {
+          deferLastLimit: combineTeamCompetitions && window.kind === "last"
+        })
+      );
+    })
+  );
+
+  const matchIdsByTeam = groupScopeMatchIdsByTeam(teamScopes.values(), matchRefsByTeamScope, window);
+  const officialMatchIds = uniqueBigints([...matchIdsByTeam.values()].flat());
+  if (officialMatchIds.length === 0) return { officialMatches: 0, matchesWithPlayerStats: 0 };
+
+  const teamIds = uniqueBigints([...teamScopes.values()].map((scope) => scope.teamId).filter((teamId): teamId is bigint => Boolean(teamId)));
+  const statMatches = await prisma.matchPlayerStat.findMany({
+    where: {
+      matchId: { in: officialMatchIds },
+      teamId: { in: teamIds }
+    },
+    select: {
+      matchId: true
+    },
+    distinct: ["matchId"]
+  });
+
+  return {
+    officialMatches: officialMatchIds.length,
+    matchesWithPlayerStats: statMatches.length
+  };
+}
+
+async function loadSharedTeamMatchRefs(
+  prisma: PrismaClient,
+  leagueId: bigint,
+  season: string,
+  teamId: bigint,
+  window: MacheteMatchWindow,
+  options: { deferLastLimit?: boolean } = {}
+) {
   const seasonFilter = window.kind === "season" ? matchWindowSeasonLabel(season, window.offset, String(leagueId)) : season;
   const matches = await prisma.coreMatch.findMany({
     where: {
@@ -449,11 +527,11 @@ export async function loadSharedTeamMatchIds(
       OR: [{ homeTeamId: teamId }, { awayTeamId: teamId }]
     },
     orderBy: { matchDate: "desc" },
-    take: window.kind === "last" ? window.matches : undefined,
-    select: { id: true }
+    take: window.kind === "last" && !options.deferLastLimit ? window.matches : undefined,
+    select: { id: true, matchDate: true }
   });
 
-  return matches.map((match) => match.id);
+  return matches;
 }
 
 export async function loadSharedTeamFixtures(prisma: PrismaClient, leagueId: bigint, season: string, teamId: bigint, limit = 8) {
@@ -661,17 +739,36 @@ function teamPlayerKey(teamId: bigint, playerId: bigint) {
   return `${teamId}:${playerId}`;
 }
 
-function groupScopeMatchIdsByTeam(scopes: Iterable<SharedPlayerRowsScope>, matchIdsByTeamScope: Map<string, bigint[]>) {
+function groupScopeMatchIdsByTeam(scopes: Iterable<SharedPlayerRowsScope>, matchRefsByTeamScope: Map<string, SharedTeamMatchRef[]>, window: MacheteMatchWindow) {
   const grouped = new Map<string, bigint[]>();
+  const refsByTeam = new Map<string, SharedTeamMatchRef[]>();
 
   for (const scope of scopes) {
     if (!scope.teamId) continue;
     const teamKey = String(scope.teamId);
     const scopeKey = teamScopeKey(scope.leagueId, scope.season, scope.teamId);
-    grouped.set(teamKey, uniqueBigints([...(grouped.get(teamKey) ?? []), ...(matchIdsByTeamScope.get(scopeKey) ?? [])]));
+    refsByTeam.set(teamKey, [...(refsByTeam.get(teamKey) ?? []), ...(matchRefsByTeamScope.get(scopeKey) ?? [])]);
+  }
+
+  for (const [teamKey, refs] of refsByTeam) {
+    const sorted = uniqueMatchRefs(refs).sort((left, right) => dateMs(right.matchDate) - dateMs(left.matchDate));
+    const limited = window.kind === "last" ? sorted.slice(0, window.matches) : sorted;
+    grouped.set(teamKey, limited.map((match) => match.id));
   }
 
   return grouped;
+}
+
+function uniqueMatchRefs(values: SharedTeamMatchRef[]) {
+  const seen = new Set<string>();
+  const result: SharedTeamMatchRef[] = [];
+  for (const value of values) {
+    const key = String(value.id);
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(value);
+  }
+  return result;
 }
 
 function localSharedTeamLogoUrl(providerLeagueId: string, teamName: string, shortName: string | null, metadataLogoUrl: string | null) {

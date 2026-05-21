@@ -11,6 +11,7 @@ import {
   loadSharedLeagueOptions,
   loadSharedLeagueTeams,
   loadSharedMachetePlayerRows,
+  loadSharedMatchWindowSummary,
   loadSharedTeamCompetitionOptions,
   parseSharedCompetitionKey,
   parseSharedBigInt,
@@ -86,6 +87,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
     pageSize
   });
   const players = playersResult.players;
+  const windowSummary = playersResult.windowSummary;
   const paginationParams = {
     ...resolvedSearchParams,
     leagueId: selectedLeagueId,
@@ -237,12 +239,14 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
             <>
               Stats and FP are recalculated from {matchWindowLabel(matchWindow)}
               {activeCompetitions.length > 0 ? ` in ${competitionSummary(activeCompetitions)}` : ""}.
+              {windowSummary ? ` Official matches in window: ${windowSummary.officialMatches}; with parsed player stats: ${windowSummary.matchesWithPlayerStats}.` : ""}
             </>
           }
           ru={
             <>
               Статистика и FP пересчитаны по окну «{matchWindowLabelRu(matchWindow)}»
               {activeCompetitions.length > 0 ? ` в турнирах: ${competitionSummary(activeCompetitions)}` : ""}.
+              {windowSummary ? ` Официальных матчей в окне: ${windowSummary.officialMatches}; с распарсенной статистикой игроков: ${windowSummary.matchesWithPlayerStats}.` : ""}
             </>
           }
         />
@@ -300,22 +304,33 @@ async function buildMatchWindowRows({
   pageSize: number;
 }) {
   if (!selectedLeagueId) {
-    return emptyPagedPlayers(page, pageSize);
+    return {
+      ...emptyPagedPlayers(page, pageSize),
+      windowSummary: null
+    };
   }
 
   const scopes = await buildPlayerScopes(selectedLeagueId, selectedTeamId, competitionKeys);
-  const rows = sortSharedMacheteRows(
-    await loadSharedMachetePlayerRows(prisma, {
+  const combineTeamCompetitions = competitionKeys.length > 1;
+  const [rawRows, windowSummary] = await Promise.all([
+    loadSharedMachetePlayerRows(prisma, {
       scopes,
       position,
       minMinutes,
       matchWindow,
-      combineTeamCompetitions: competitionKeys.length > 1
+      combineTeamCompetitions
     }),
+    loadSharedMatchWindowSummary(prisma, scopes, matchWindow, combineTeamCompetitions)
+  ]);
+  const rows = sortSharedMacheteRows(
+    rawRows,
     sort
   );
 
-  return paginateRows(rows, page, pageSize);
+  return {
+    ...paginateRows(rows, page, pageSize),
+    windowSummary
+  };
 }
 
 async function buildPlayerScopes(selectedLeagueId: string, selectedTeamId: string, competitionKeys: string[]): Promise<SharedPlayerRowsScope[]> {
