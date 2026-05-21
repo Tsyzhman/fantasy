@@ -213,6 +213,11 @@ class FotMobBrowserManager {
       if (url.includes("/api/data/")) {
         seenApiUrls.push(`${response.status()} ${url}`);
         if (debug) console.info(`[fotmob:browser] response ${response.status()} ${url}`);
+        const apiMatchId = fotMobApiUrlMatchId(url);
+        if (apiMatchId && apiMatchId !== matchId && resolveCanonicalSignal) {
+          resolveCanonicalSignal(response);
+          resolveCanonicalSignal = null;
+        }
       }
       if (url.includes("/api/data/matchDetails")) {
         const status = response.status();
@@ -481,6 +486,30 @@ export function isMatchDetailsUrlForMatch(url: string, matchId: string): boolean
     url.includes(`matchId%3D${matchId}`) ||
     url.endsWith(`/${matchId}`)
   );
+}
+
+export function fotMobApiUrlMatchId(url: string): string | null {
+  try {
+    const parsed = new URL(url);
+    const nestedUrl = parsed.searchParams.get("url");
+    if (nestedUrl) {
+      const nestedMatchId = fotMobApiUrlMatchId(new URL(nestedUrl, FOTMOB_SITE).toString());
+      if (nestedMatchId) return nestedMatchId;
+    }
+
+    const fromMatchId = parsed.searchParams.get("matchId");
+    if (fromMatchId && /^\d+$/.test(fromMatchId)) return fromMatchId;
+
+    const fromId = parsed.searchParams.get("id");
+    const matchScopedIdEndpoints = ["/api/data/matchNews", "/api/data/audio-live-stream"];
+    if (fromId && /^\d+$/.test(fromId) && matchScopedIdEndpoints.some((endpoint) => parsed.pathname.includes(endpoint))) {
+      return fromId;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
 }
 
 function withoutHash(url: string): string {
