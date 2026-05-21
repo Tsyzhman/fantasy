@@ -1,0 +1,39 @@
+# Browser-enabled image for FotMob ingestion.
+# Same Node base as the main image, but ships the Playwright npm package and
+# a Chromium binary so MACHETE_FOTMOB_PROVIDER_MODE=browser actually works
+# inside the docker network. Use this image only for the dedicated
+# `ingestion-browser` compose service — the regular web and ingestion-worker
+# services run the slim production image.
+FROM node:20-bookworm-slim
+
+WORKDIR /app
+
+ENV NEXT_TELEMETRY_DISABLED=1
+ENV NODE_ENV=production
+# Stable, predictable browser path so the layer is cacheable and image size
+# stays consistent across rebuilds.
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+
+RUN apt-get update \
+  && apt-get install -y --no-install-recommends ca-certificates openssl tini \
+  && rm -rf /var/lib/apt/lists/*
+
+COPY package.json package-lock.json ./
+# npm install (not npm ci) for cross-platform lock drift — see main Dockerfile.
+# Include optional deps here so playwright is actually present.
+RUN npm install --include=optional --no-audit --no-fund
+
+# Install Chromium and all the X/font/audio libs it needs to run headless on
+# bookworm-slim. --with-deps pulls in libnss3, libasound2, etc.
+RUN npx playwright install --with-deps chromium
+
+COPY . .
+RUN npx prisma generate
+
+EXPOSE 3000
+# tini reaps zombie processes from Chromium subprocesses cleanly.
+ENTRYPOINT ["/usr/bin/tini", "--"]
+# Idle container — the operator runs `docker compose exec ingestion-browser ...`
+# for smoke tests and one-shot backfills. Override CMD to start the worker
+# loop if you want continuous ingestion.
+CMD ["tail", "-f", "/dev/null"]

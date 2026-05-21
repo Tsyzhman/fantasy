@@ -19,22 +19,82 @@ MACHETE_FOTMOB_PROVIDER_MODE="real"
 
 ## Browser mode setup
 
+Browser mode runs in a dedicated docker service (`ingestion-browser`) so it
+shares the same docker network as Postgres. The host machine never needs to
+reach the DB. Build is gated behind the `browser` compose profile so default
+`docker compose up` skips it.
+
+### 1. Build and start the browser service
+
 ```bash
-npm install                 # picks up playwright as an optional dependency
-npx playwright install chromium
-
-# .env
-MACHETE_FOTMOB_PROVIDER_MODE="browser"
-MACHETE_FOTMOB_BROWSER_HEADLESS="false"      # first run only, to solve Turnstile
-MACHETE_FOTMOB_BROWSER_PROFILE_DIR=".cache/fotmob-browser-profile"
-
-# Smoke test (default league 47 / Premier League):
-npm run fotmob:smoke -- 47
-
-# After the first successful run, flip headless back to "true".
+docker compose --profile browser build ingestion-browser
+docker compose --profile browser up -d ingestion-browser
+docker compose ps ingestion-browser
 ```
 
-The smoke script writes `tmp_fotmob_smoke/league-47.json`, `fixtures-47.json`, a sample `match-{id}.json`, and a `summary-47.json` that confirms which `content.*` sections are present (`playerStats`, `shotmap`, `lineup`, `matchFacts`).
+### 2. Smoke test (default league 47 / Premier League)
+
+```bash
+docker compose exec ingestion-browser npm run fotmob:smoke -- 47
+# arguments: leagueId season sampleCount
+docker compose exec ingestion-browser npm run fotmob:smoke -- 47 2025/2026 10
+```
+
+Outputs land in the `fotmob-browser-smoke` volume (mounted at
+`/app/tmp_fotmob_smoke`). To pull them out:
+
+```bash
+docker compose cp ingestion-browser:/app/tmp_fotmob_smoke ./tmp_fotmob_smoke
+cat ./tmp_fotmob_smoke/summary-47.json
+```
+
+A successful run reports `matchDetails sample: N/M matches returned detailed
+payloads` with `hasPlayerStats: true` / `hasShotmap: true` for at least one
+match.
+
+### 3. Run the actual backfill
+
+```bash
+docker compose exec ingestion-browser npm run ingestion:initial-backfill -- current_league_47
+# or the full multi-league backfill (long-running)
+docker compose exec ingestion-browser npm run ingestion:initial-backfill
+docker compose exec ingestion-browser npm run ingestion:status
+```
+
+### Turnstile fallback
+
+Most of the time Cloudflare Turnstile passes silently with a real Chromium and
+realistic settings. If you see `TURNSTILE_REQUIRED` or `Verification required`
+in the smoke output, solve the challenge once on a workstation with a desktop
+and copy the resulting cookies into the docker volume:
+
+```bash
+# On a workstation with a desktop (Windows/macOS/Linux + X):
+npm install
+npx playwright install chromium
+MACHETE_FOTMOB_BROWSER_HEADLESS=false npm run fotmob:smoke -- 47
+# A Chromium window opens; solve the Turnstile, close once smoke is green.
+# Cookies are written to ./.cache/fotmob-browser-profile.
+
+# Copy that profile into the docker volume (run on the docker host):
+docker compose --profile browser cp ./.cache/fotmob-browser-profile/. \
+  ingestion-browser:/data/fotmob-browser-profile/
+docker compose --profile browser restart ingestion-browser
+```
+
+### Custom database credentials
+
+The `ingestion-browser` service shares its `DATABASE_URL` with the other
+ingestion containers via the `DATABASE_URL_INTERNAL` env variable in `.env`.
+For example, if the postgres role in your container is `postgres` rather than
+`fantasy_app`, set in `.env` (on the docker host):
+
+```env
+DATABASE_URL_INTERNAL="postgresql://postgres:postgres@postgres:5432/fantasy_scout"
+```
+
+Both `ingestion-worker` and `ingestion-browser` will pick that up; no YAML
+edits required.
 
 ## Endpoint Mapping
 
