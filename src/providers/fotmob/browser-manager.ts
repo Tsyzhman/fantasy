@@ -57,6 +57,7 @@ const FOTMOB_SITE = process.env.MACHETE_FOTMOB_SITE_URL || "https://www.fotmob.c
 const READY_POLL_MS = 1_000;
 const READY_TIMEOUT_MS = Number(process.env.MACHETE_FOTMOB_BROWSER_READY_TIMEOUT_MS || 60_000);
 const REQUEST_TIMEOUT_MS = Number(process.env.MACHETE_FOTMOB_BROWSER_REQUEST_TIMEOUT_MS || 30_000);
+const MATCH_DETAILS_TIMEOUT_MS = Number(process.env.MACHETE_FOTMOB_BROWSER_MATCH_DETAILS_TIMEOUT_MS || 20_000);
 
 // Dynamic import that the TypeScript compiler and webpack cannot statically
 // follow. Playwright is an optional runtime dependency — prod images skip it
@@ -223,7 +224,7 @@ class FotMobBrowserManager {
       };
 
       const responsePromise = newPage
-        .waitForResponse(matchPredicate, { timeout: REQUEST_TIMEOUT_MS })
+        .waitForResponse(matchPredicate, { timeout: MATCH_DETAILS_TIMEOUT_MS })
         .then((response) => ({ response }))
         .catch((error: unknown) => ({ error }));
 
@@ -249,7 +250,7 @@ class FotMobBrowserManager {
         console.info(`[fotmob:browser] Match ${matchId}: exact hash page DOM loaded.`);
       }
 
-      console.info(`[fotmob:browser] Match ${matchId}: waiting up to ${REQUEST_TIMEOUT_MS}ms for exact matchDetails response.`);
+      console.info(`[fotmob:browser] Match ${matchId}: waiting up to ${MATCH_DETAILS_TIMEOUT_MS}ms for exact matchDetails response.`);
       const responseResult = await responsePromise;
       let response: PlaywrightResponse;
       if ("response" in responseResult) {
@@ -265,7 +266,7 @@ class FotMobBrowserManager {
         const ignored = ignoredMatchDetailsUrls.slice(0, 10).join("\n  ");
         const blocked = exactBlockedUrls.slice(0, 10).join("\n  ");
         throw new Error(
-          `Successful FotMob matchDetails XHR was not observed for exact match ${matchId} within ${REQUEST_TIMEOUT_MS}ms.\n` +
+          `Successful FotMob matchDetails XHR was not observed for exact match ${matchId} within ${MATCH_DETAILS_TIMEOUT_MS}ms.\n` +
             `Blocked exact matchDetails responses:\n  ${blocked || "(none)"}\n` +
             `Ignored paired/canonical matchDetails responses:\n  ${ignored || "(none)"}\n` +
             `Observed /api/data/* responses on the page:\n  ${sample || "(none)"}\n` +
