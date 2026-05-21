@@ -14,7 +14,6 @@ import {
   loadSharedTeamCompetitionOptions,
   parseSharedCompetitionKey,
   parseSharedBigInt,
-  sharedCompetitionKey,
   sortSharedMacheteRows,
   type SharedLeagueSeasonOption,
   type SharedPlayerRowsScope,
@@ -65,21 +64,20 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
   const pageSize = parsePageSize(resolvedSearchParams.pageSize);
   const requestedPage = parsePositiveInt(resolvedSearchParams.page, 1);
   const matchWindow = parseMacheteMatchWindow({
-    mode: resolvedSearchParams.matchWindow,
+    mode: resolvedSearchParams.matchWindow ?? (selectedTeamId ? "all" : undefined),
     customMatches: resolvedSearchParams.customMatches,
     legacyRecentMatches: resolvedSearchParams.recentMatches
   });
   const selectedTeamBigInt = parseSharedBigInt(selectedTeamId);
   const teamCompetitionOptions = selectedTeamBigInt ? await loadSharedTeamCompetitionOptions(prisma, selectedTeamBigInt) : [];
-  const selectedCompetitions = selectedTeamCompetitionOptions(resolvedSearchParams.competitionKey, teamCompetitionOptions);
-  const selectedCompetitionKeys = selectedCompetitions.map((competition) => competition.key);
-  const checkedCompetitionKeys =
-    selectedCompetitionKeys.length > 0 ? selectedCompetitionKeys : defaultCompetitionKeysForSelectedLeague(selectedLeagueId, sortedLeagues, teamCompetitionOptions);
+  const explicitlySelectedCompetitions = selectedTeamCompetitionOptions(resolvedSearchParams.competitionKey, teamCompetitionOptions);
+  const activeCompetitions = explicitlySelectedCompetitions.length > 0 ? explicitlySelectedCompetitions : selectedTeamId ? teamCompetitionOptions : [];
+  const activeCompetitionKeys = activeCompetitions.map((competition) => competition.key);
 
   const playersResult = await buildMatchWindowRows({
     selectedLeagueId,
     selectedTeamId,
-    competitionKeys: selectedCompetitionKeys,
+    competitionKeys: activeCompetitionKeys,
     position: resolvedSearchParams.position,
     minMinutes: resolvedSearchParams.minMinutes,
     matchWindow,
@@ -92,7 +90,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
     ...resolvedSearchParams,
     leagueId: selectedLeagueId,
     teamId: selectedTeamId,
-    competitionKey: selectedCompetitionKeys,
+    competitionKey: activeCompetitionKeys,
     pageSize: String(pageSize)
   };
 
@@ -158,11 +156,11 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
             name="competitionKey"
             multiple
             size={Math.min(4, Math.max(2, teamCompetitionOptions.length || 2))}
-            defaultValue={checkedCompetitionKeys}
+            defaultValue={activeCompetitionKeys}
             disabled={!selectedTeamId || teamCompetitionOptions.length === 0}
             className="w-full rounded border border-slate-200 px-3 py-2 disabled:bg-slate-100"
           >
-            <LocalizedOption value="" disabled en="Selected league" ru="Текущая лига" />
+            <LocalizedOption value="" disabled en="All loaded competitions by default" ru="По умолчанию все загруженные турниры" />
             {teamCompetitionOptions.map((competition) => (
               <option key={competition.key} value={competition.key}>
                 {competition.displayName} - {competition.season} ({competition.matchesCount})
@@ -238,13 +236,13 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
           en={
             <>
               Stats and FP are recalculated from {matchWindowLabel(matchWindow)}
-              {selectedCompetitions.length > 0 ? ` in ${competitionSummary(selectedCompetitions)}` : ""}.
+              {activeCompetitions.length > 0 ? ` in ${competitionSummary(activeCompetitions)}` : ""}.
             </>
           }
           ru={
             <>
               Статистика и FP пересчитаны по окну «{matchWindowLabelRu(matchWindow)}»
-              {selectedCompetitions.length > 0 ? ` в турнирах: ${competitionSummary(selectedCompetitions)}` : ""}.
+              {activeCompetitions.length > 0 ? ` в турнирах: ${competitionSummary(activeCompetitions)}` : ""}.
             </>
           }
         />
@@ -327,6 +325,13 @@ async function buildPlayerScopes(selectedLeagueId: string, selectedTeamId: strin
     return competitions.map((competition) => ({ leagueId: competition.leagueId, season: competition.season, teamId }));
   }
 
+  if (teamId) {
+    const competitionsForTeam = await loadSharedTeamCompetitionOptions(prisma, teamId);
+    if (competitionsForTeam.length > 0) {
+      return competitionsForTeam.map((competition) => ({ leagueId: competition.leagueId, season: competition.season, teamId }));
+    }
+  }
+
   const leagues = await loadSharedLeagueOptions(prisma);
   const selectedLeagues =
     selectedLeagueId === ALL_LEAGUES_VALUE ? leagues : leagues.filter((league) => String(league.leagueId) === selectedLeagueId);
@@ -354,18 +359,6 @@ function selectedTeamCompetitionOptions(value: SearchParamValue, options: Shared
   const requestedKeys = new Set(searchParamValues(value));
   if (requestedKeys.size === 0) return [];
   return options.filter((option) => requestedKeys.has(option.key));
-}
-
-function defaultCompetitionKeysForSelectedLeague(
-  selectedLeagueId: string,
-  leagues: SharedLeagueSeasonOption[],
-  options: SharedTeamCompetitionOption[]
-) {
-  if (!selectedLeagueId || selectedLeagueId === ALL_LEAGUES_VALUE) return [];
-  const selectedLeague = leagues.find((league) => String(league.leagueId) === selectedLeagueId);
-  if (!selectedLeague) return [];
-  const key = sharedCompetitionKey(selectedLeague.leagueId, selectedLeague.season);
-  return options.some((option) => option.key === key) ? [key] : [];
 }
 
 function searchParamValues(value: SearchParamValue) {

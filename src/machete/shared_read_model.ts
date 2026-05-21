@@ -307,6 +307,7 @@ export async function loadSharedMachetePlayerRows(
     minMinutes?: string;
     matchWindow: MacheteMatchWindow;
     combineTeamCompetitions?: boolean;
+    scoringModel?: ActiveScoringModel;
   }
 ): Promise<SharedMachetePlayerRow[]> {
   const scopes = input.scopes.filter((scope) => scope.leagueId && scope.season);
@@ -341,6 +342,12 @@ export async function loadSharedMachetePlayerRows(
   if (rosterRows.length === 0) return [];
 
   const teamScopes = new Map<string, SharedPlayerRowsScope>();
+  for (const scope of scopes) {
+    if (!scope.teamId) continue;
+    const key = teamScopeKey(scope.leagueId, scope.season, scope.teamId);
+    if (!teamScopes.has(key)) teamScopes.set(key, { leagueId: scope.leagueId, season: scope.season, teamId: scope.teamId });
+  }
+
   for (const row of rosterRows) {
     const key = teamScopeKey(row.leagueId, row.season, row.teamId);
     if (!teamScopes.has(key)) teamScopes.set(key, { leagueId: row.leagueId, season: row.season, teamId: row.teamId });
@@ -356,6 +363,7 @@ export async function loadSharedMachetePlayerRows(
   );
 
   const allMatchIds = uniqueBigints([...matchIdsByTeamScope.values()].flat());
+  const matchIdsByTeam = groupScopeMatchIdsByTeam(teamScopes.values(), matchIdsByTeamScope);
   const stats = await loadStatsForMatchIds(
     prisma,
     allMatchIds,
@@ -363,7 +371,7 @@ export async function loadSharedMachetePlayerRows(
     uniqueBigints(rosterRows.map((row) => row.playerId))
   );
   const statsByTeamPlayer = groupStatsByTeamPlayer(stats);
-  const scoringModel = await getActiveScoringModelForSource("MACHETE");
+  const scoringModel = input.scoringModel ?? (await getActiveScoringModelForSource("MACHETE"));
   const minimumMinutes = input.minMinutes ? Number(input.minMinutes) : null;
 
   if (input.combineTeamCompetitions) {
@@ -378,13 +386,7 @@ export async function loadSharedMachetePlayerRows(
     return [...rosterRowsByTeamPlayer.values()]
       .map((rows) => {
         const first = rows[0];
-        const allowedMatchIds = new Set<string>();
-        for (const row of rows) {
-          const teamKey = teamScopeKey(row.leagueId, row.season, row.teamId);
-          for (const matchId of matchIdsByTeamScope.get(teamKey) ?? []) {
-            allowedMatchIds.add(String(matchId));
-          }
-        }
+        const allowedMatchIds = new Set((matchIdsByTeam.get(String(first.teamId)) ?? []).map(String));
 
         const playerStats = (statsByTeamPlayer.get(teamPlayerKey(first.teamId, first.playerId)) ?? []).filter((stat) => allowedMatchIds.has(String(stat.matchId)));
         const position = firstNonEmpty(rows.map((row) => row.position));
@@ -438,7 +440,7 @@ export async function loadSharedTeamMatchIds(
   teamId: bigint,
   window: MacheteMatchWindow
 ) {
-  const seasonFilter = window.kind === "season" ? matchWindowSeasonLabel(season, window.offset, String(leagueId)) : window.kind === "last" ? season : null;
+  const seasonFilter = window.kind === "season" ? matchWindowSeasonLabel(season, window.offset, String(leagueId)) : season;
   const matches = await prisma.coreMatch.findMany({
     where: {
       finished: true,
@@ -657,6 +659,19 @@ function teamScopeKey(leagueId: bigint, season: string, teamId: bigint) {
 
 function teamPlayerKey(teamId: bigint, playerId: bigint) {
   return `${teamId}:${playerId}`;
+}
+
+function groupScopeMatchIdsByTeam(scopes: Iterable<SharedPlayerRowsScope>, matchIdsByTeamScope: Map<string, bigint[]>) {
+  const grouped = new Map<string, bigint[]>();
+
+  for (const scope of scopes) {
+    if (!scope.teamId) continue;
+    const teamKey = String(scope.teamId);
+    const scopeKey = teamScopeKey(scope.leagueId, scope.season, scope.teamId);
+    grouped.set(teamKey, uniqueBigints([...(grouped.get(teamKey) ?? []), ...(matchIdsByTeamScope.get(scopeKey) ?? [])]));
+  }
+
+  return grouped;
 }
 
 function localSharedTeamLogoUrl(providerLeagueId: string, teamName: string, shortName: string | null, metadataLogoUrl: string | null) {
