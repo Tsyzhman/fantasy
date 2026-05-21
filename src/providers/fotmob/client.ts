@@ -1,5 +1,5 @@
 import { mockFotMobFixtures, mockFotMobLeague, mockFotMobTeams } from "./mock-data";
-import { createXMasHeader, xMasSigningPath } from "./signing";
+import { createXMasHeader, xMasSigningUrl } from "./signing";
 import type { FotMobFixture, FotMobFixtureDetails, FotMobLeague, FotMobPlayer, FotMobPlayerMatchStat, FotMobTeam } from "./types";
 
 export interface FotMobClient {
@@ -138,8 +138,18 @@ export class UnofficialFotMobClient implements FotMobClient {
       console.info(
         `[fotmob] next-data slug collision for matchId ${fixtureId} (${error.reason}); falling back to signed matchDetails.`
       );
-      const signed = await this.getJson("/data/matchDetails", { matchId: fixtureId });
-      validated = validatedMatchDetailsPayload(fixtureId, signed, "signed-matchDetails-fallback");
+      try {
+        const signed = await this.getJson("/data/matchDetails", { matchId: fixtureId });
+        validated = validatedMatchDetailsPayload(fixtureId, signed, "signed-matchDetails-fallback");
+      } catch (signedError) {
+        if (signedError instanceof FotMobSignedRequestBlockedError) {
+          throw new FotMobFixtureDetailsUnavailableError(
+            fixtureId,
+            `signed-matchDetails-fallback blocked after next-data id mismatch: ${signedError.reason}`
+          );
+        }
+        throw signedError;
+      }
     }
 
     const record = asRecord(validated);
@@ -290,12 +300,16 @@ export class UnofficialFotMobClient implements FotMobClient {
             Accept: "application/json, text/plain, */*",
             "Accept-Language": "en-US,en;q=0.9",
             Referer: "https://www.fotmob.com/",
-            "x-mas": createXMasHeader(xMasSigningPath(url))
+            "x-mas": createXMasHeader(xMasSigningUrl(url))
           },
           signal: AbortSignal.timeout(20_000)
         });
 
         if (response.status === 403 || response.status === 429) {
+          const blockedReason = await signedRequestBlockedReason(response.clone());
+          if (blockedReason) {
+            throw new FotMobSignedRequestBlockedError(blockedReason);
+          }
           // FotMob rate-limits signed requests sporadically. Back off long
           // enough that the per-IP/per-token bucket refills before the next
           // attempt, then retry with a fresh `code` timestamp.
@@ -314,12 +328,13 @@ export class UnofficialFotMobClient implements FotMobClient {
         const data = await response.json();
         const record = asRecord(data);
         if (record.code === "TURNSTILE_REQUIRED" || record.error === "Verification required") {
-          throw new Error("FotMob rejected the signed request (TURNSTILE_REQUIRED). The x-mas secret may have rotated; update src/providers/fotmob/signing.ts.");
+          throw new FotMobSignedRequestBlockedError("TURNSTILE_REQUIRED");
         }
 
         return data;
       } catch (error) {
         lastError = error;
+        if (error instanceof FotMobSignedRequestBlockedError) throw error;
         if (attempt === maxAttempts - 1) break;
         const isRateLimit = error instanceof RateLimitedError;
         // 3s, 6s, 12s, 24s for rate limit; 0.75s, 1.5s, 3s, 6s for transient
@@ -351,11 +366,32 @@ class RateLimitedError extends Error {
   }
 }
 
+class FotMobSignedRequestBlockedError extends Error {
+  constructor(readonly reason: string) {
+    super(`FotMob blocked the signed request (${reason}).`);
+    this.name = "FotMobSignedRequestBlockedError";
+  }
+}
+
 class NextDataNotFoundError extends Error {
   constructor(readonly url: string) {
     super(`FotMob next-data 404: ${url}`);
     this.name = "NextDataNotFoundError";
   }
+}
+
+async function signedRequestBlockedReason(response: Response): Promise<string | null> {
+  const contentType = response.headers.get("content-type") ?? "";
+  if (!contentType.includes("application/json")) return null;
+
+  try {
+    const data = asRecord(await response.json());
+    if (data.code === "TURNSTILE_REQUIRED" || data.error === "Verification required") return "TURNSTILE_REQUIRED";
+  } catch {
+    return null;
+  }
+
+  return null;
 }
 
 function isNotFoundError(error: unknown): boolean {

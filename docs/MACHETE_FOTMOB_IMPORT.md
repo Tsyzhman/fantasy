@@ -12,8 +12,9 @@ MACHETE_FOTMOB_PROVIDER_MODE="real"
 
 `unofficial` calls FotMob public endpoints directly. Every request is signed
 with the `x-mas` header (`base64(JSON({body, signature}))`, signature =
-`MD5(JSON(body) + secret).toUpperCase()`, body = `{url, code: Date.now()}`).
-The secret string lives in [`src/providers/fotmob/signing.ts`](../src/providers/fotmob/signing.ts).
+`MD5(JSON(body) + secret).toUpperCase()`, body = `{url, code: Date.now(), foo}`).
+`url` is the absolute request URL, and `foo` is FotMob's current deploy marker.
+The secret string and deploy marker live in [`src/providers/fotmob/signing.ts`](../src/providers/fotmob/signing.ts).
 This is enough to fetch detailed match payloads (matchDetails / shotmap /
 playerStats / stats) without a browser.
 
@@ -27,11 +28,11 @@ likely changed the signing secret. Find the new one by:
 
 1. Open `https://www.fotmob.com` in a browser with DevTools → Network.
 2. Pick any request to `/api/data/*` and copy the `x-mas` header value.
-3. Base64-decode it; the JSON body contains `url` and `code` (ms timestamp).
+3. Base64-decode it; the JSON body contains `url`, `code` (ms timestamp), and usually a deploy marker such as `foo`.
 4. Pull the FotMob JS bundle, search for `x-mas`, and follow the function that
    produces the signature — the secret is a string concatenated to the JSON
    body before MD5. It has been Rick Astley and Three Lions lyrics in the past.
-5. Replace `SECRET_LYRICS` in `signing.ts` (no leading/trailing newlines,
+5. Replace `SECRET_LYRICS` and the deploy marker in `signing.ts` (no leading/trailing newlines,
    internal blank lines matter).
 
 ## Smoke test

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { extractLeagueTeamsFromLeaguePayload, is_placeholder_team, UnofficialFotMobClient } from "./client";
+import { extractLeagueTeamsFromLeaguePayload, FotMobFixtureDetailsUnavailableError, is_placeholder_team, UnofficialFotMobClient } from "./client";
 
 test("normal standings payload still works", () => {
   const teams = extractLeagueTeamsFromLeaguePayload({
@@ -282,6 +282,60 @@ test("unofficial client falls back to signed matchDetails on slug-collision id m
     assert.equal(details.homeScore, 2);
     assert.equal(signedCalls.length, 1, "signed matchDetails fallback must run exactly once");
     assert.ok(signedCalls[0].includes("matchId=4506554"));
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (originalInterval === undefined) {
+      delete process.env.MACHETE_FOTMOB_REQUEST_INTERVAL_MS;
+    } else {
+      process.env.MACHETE_FOTMOB_REQUEST_INTERVAL_MS = originalInterval;
+    }
+  }
+});
+
+test("unofficial client does not retry signed fallback when FotMob returns Turnstile", async () => {
+  const originalFetch = globalThis.fetch;
+  const originalInterval = process.env.MACHETE_FOTMOB_REQUEST_INTERVAL_MS;
+  process.env.MACHETE_FOTMOB_REQUEST_INTERVAL_MS = "0";
+  let signedCalls = 0;
+  globalThis.fetch = (async (input: string | URL | Request) => {
+    const url = String(input instanceof Request ? input.url : input);
+
+    if (url === "https://www.fotmob.com/") {
+      return textResponse(`<html><script>"buildId":"abc"</script></html>`);
+    }
+
+    if (url === "https://www.fotmob.com/_next/data/abc/match/4506554.json") {
+      return jsonResponse({
+        pageProps: { __N_REDIRECT: "/matches/arsenal-vs-crystal-palace/xyz#4506554" }
+      });
+    }
+
+    if (url === "https://www.fotmob.com/_next/data/abc/matches/arsenal-vs-crystal-palace/xyz.json") {
+      return jsonResponse({
+        pageProps: {
+          general: { matchId: "4813747", leagueId: "47", homeTeam: { id: 9825 }, awayTeam: { id: 9826 } },
+          header: { status: { finished: true }, teams: [{ score: 1 }, { score: 0 }] },
+          content: { playerStats: {} }
+        }
+      });
+    }
+
+    if (url.includes("/api/data/matchDetails?")) {
+      signedCalls += 1;
+      return jsonResponse({ error: "Verification required", code: "TURNSTILE_REQUIRED" }, 403);
+    }
+
+    throw new Error(`Unexpected fetch ${url}`);
+  }) as typeof fetch;
+
+  try {
+    await assert.rejects(
+      () => new UnofficialFotMobClient().getFixtureDetails("4506554"),
+      (error) =>
+        error instanceof FotMobFixtureDetailsUnavailableError &&
+        /signed-matchDetails-fallback blocked/.test(error.reason)
+    );
+    assert.equal(signedCalls, 1, "blocked signed fallback must fail fast instead of retrying");
   } finally {
     globalThis.fetch = originalFetch;
     if (originalInterval === undefined) {

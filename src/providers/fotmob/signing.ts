@@ -1,9 +1,10 @@
 import { createHash } from "node:crypto";
 
 // FotMob signs `/api/data/*` requests with an `x-mas` header. The signature is
-// `MD5(JSON(body) + secretLyrics).toUpperCase()` where `body = {url, code}`,
-// `url` is the request path+query (e.g. "/api/data/matchDetails?matchId=1"),
-// `code` is `Date.now()`, and the secret is the Three Lions lyrics below. The
+// `MD5(JSON(body) + secretLyrics).toUpperCase()` where
+// `body = {url, code, foo}`, `url` is the absolute request URL,
+// `code` is `Date.now()`, `foo` is FotMob's current deploy marker, and the
+// secret is the Three Lions lyrics below. The
 // final header is `base64(JSON({body, signature}))`.
 //
 // The lyrics constant must have no leading or trailing newline; the internal
@@ -84,8 +85,10 @@ It's coming home) Thirty years of hurt
 (It's coming home, it's coming) Never stopped me dreaming
 (Football's coming home)`;
 
-export function createXMasHeader(pathWithQuery: string, now: number = Date.now()): string {
-  const body = { url: pathWithQuery, code: now };
+const SIGNING_FOO = "production:dbfd6d0c36fcd14bbcd5815cea66cd4b005b6a98";
+
+export function createXMasHeader(absoluteUrl: string, now: number = Date.now()): string {
+  const body = { url: absoluteUrl, code: now, foo: SIGNING_FOO };
   const signature = createHash("md5")
     .update(`${JSON.stringify(body)}${SECRET_LYRICS}`)
     .digest("hex")
@@ -93,7 +96,7 @@ export function createXMasHeader(pathWithQuery: string, now: number = Date.now()
   return Buffer.from(JSON.stringify({ body, signature })).toString("base64");
 }
 
-export function xMasSigningPath(url: URL | string): string {
+export function xMasSigningUrl(url: URL | string): string {
   const parsed = typeof url === "string" ? new URL(url) : url;
-  return `${parsed.pathname}${parsed.search}`;
+  return parsed.toString();
 }
