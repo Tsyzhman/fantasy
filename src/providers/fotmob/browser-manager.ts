@@ -58,6 +58,7 @@ const READY_POLL_MS = 1_000;
 const READY_TIMEOUT_MS = Number(process.env.MACHETE_FOTMOB_BROWSER_READY_TIMEOUT_MS || 60_000);
 const REQUEST_TIMEOUT_MS = Number(process.env.MACHETE_FOTMOB_BROWSER_REQUEST_TIMEOUT_MS || 30_000);
 const MATCH_DETAILS_TIMEOUT_MS = Number(process.env.MACHETE_FOTMOB_BROWSER_MATCH_DETAILS_TIMEOUT_MS || 20_000);
+const CANONICAL_GRACE_MS = Number(process.env.MACHETE_FOTMOB_BROWSER_CANONICAL_GRACE_MS || 3_000);
 
 // Dynamic import that the TypeScript compiler and webpack cannot statically
 // follow. Playwright is an optional runtime dependency — prod images skip it
@@ -199,6 +200,10 @@ class FotMobBrowserManager {
     const ignoredMatchDetailsUrls: string[] = [];
     const exactBlockedUrls: string[] = [];
     const debug = process.env.MACHETE_FOTMOB_BROWSER_DEBUG === "true";
+    let resolveCanonicalMatchDetails: ((url: string) => void) | null = null;
+    const canonicalMatchDetailsPromise = new Promise<string>((resolve) => {
+      resolveCanonicalMatchDetails = resolve;
+    });
 
     newPage.on("response", (event) => {
       const response = event as PlaywrightResponse;
@@ -213,6 +218,10 @@ class FotMobBrowserManager {
           exactBlockedUrls.push(`${status} ${url}`);
         } else if (!isMatchDetailsUrlForMatch(url, matchId)) {
           ignoredMatchDetailsUrls.push(`${status} ${url}`);
+          if (status < 400 && resolveCanonicalMatchDetails) {
+            resolveCanonicalMatchDetails(url);
+            resolveCanonicalMatchDetails = null;
+          }
         }
       }
     });
@@ -251,10 +260,29 @@ class FotMobBrowserManager {
       }
 
       console.info(`[fotmob:browser] Match ${matchId}: waiting up to ${MATCH_DETAILS_TIMEOUT_MS}ms for exact matchDetails response.`);
-      const responseResult = await responsePromise;
+      const responseResult = await Promise.race([
+        responsePromise.then((result) => ({ kind: "exact" as const, result })),
+        canonicalMatchDetailsPromise.then(async (canonicalUrl) => {
+          await newPage.waitForTimeout(CANONICAL_GRACE_MS);
+          return { kind: "canonical" as const, canonicalUrl };
+        })
+      ]);
+
+      if (responseResult.kind === "canonical") {
+        const sample = seenApiUrls.slice(0, 25).join("\n  ");
+        const ignored = ignoredMatchDetailsUrls.slice(0, 10).join("\n  ");
+        const blocked = exactBlockedUrls.slice(0, 10).join("\n  ");
+        throw new Error(
+          `FotMob stayed on canonical matchDetails for ${matchId}; exact matchDetails was not observed within ${CANONICAL_GRACE_MS}ms after ${responseResult.canonicalUrl}.\n` +
+            `Blocked exact matchDetails responses:\n  ${blocked || "(none)"}\n` +
+            `Ignored paired/canonical matchDetails responses:\n  ${ignored || "(none)"}\n` +
+            `Observed /api/data/* responses on the page:\n  ${sample || "(none)"}`
+        );
+      }
+
       let response: PlaywrightResponse;
-      if ("response" in responseResult) {
-        response = responseResult.response;
+      if ("response" in responseResult.result) {
+        response = responseResult.result.response;
         console.info(`[fotmob:browser] Match ${matchId}: exact matchDetails response captured (${response.status()}).`);
       } else {
         try {
@@ -270,7 +298,7 @@ class FotMobBrowserManager {
             `Blocked exact matchDetails responses:\n  ${blocked || "(none)"}\n` +
             `Ignored paired/canonical matchDetails responses:\n  ${ignored || "(none)"}\n` +
             `Observed /api/data/* responses on the page:\n  ${sample || "(none)"}\n` +
-            `Original error: ${responseResult.error instanceof Error ? responseResult.error.message : String(responseResult.error)}`
+            `Original error: ${responseResult.result.error instanceof Error ? responseResult.result.error.message : String(responseResult.result.error)}`
         );
       }
 
