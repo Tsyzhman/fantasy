@@ -52,6 +52,17 @@ export class UnofficialFotMobClient implements FotMobClient {
   protected readonly baseUrl = process.env.MACHETE_FOTMOB_BASE_URL || "https://www.fotmob.com/api";
   protected readonly ccode3 = process.env.MACHETE_FOTMOB_CCODE3 || "GBR";
   protected readonly timezone = process.env.MACHETE_FOTMOB_TIMEZONE || "Europe/London";
+  // FotMob rate-limits signed /api/data/* requests with a per-IP token
+  // bucket; ~5 quick successes empty it, then several requests in a row get
+  // 403 until it refills. matchDetails goes through the unsigned next-data
+  // endpoint and bypasses this entirely, so the spacing only matters for
+  // league/team/fixtures sync. Override via
+  // MACHETE_FOTMOB_REQUEST_INTERVAL_MS if FotMob tightens or loosens the
+  // limit.
+  protected readonly requestIntervalMs = Number(process.env.MACHETE_FOTMOB_REQUEST_INTERVAL_MS || 2_000);
+  private lastRequestAt = 0;
+  private cachedBuildId: string | null = null;
+  private buildIdInflight: Promise<string> | null = null;
 
   async getLeague(leagueId: string, season?: string): Promise<FotMobLeague> {
     const requestSeason = fotMobRequestSeason(leagueId, season);
@@ -109,23 +120,123 @@ export class UnofficialFotMobClient implements FotMobClient {
   }
 
   async getFixtureDetails(fixtureId: string): Promise<FotMobFixtureDetails> {
-    const summaryPayload = await this.getJson("/data/match", { id: fixtureId });
-    if (isEmptyRecord(summaryPayload)) {
-      throw new FotMobFixtureDetailsUnavailableError(fixtureId, "empty payload");
-    }
+    // The /api/data/matchDetails endpoint is signed AND rate-limited at ~5
+    // requests per IP bucket. The Next.js page-data endpoint serves the same
+    // payload, is unsigned, and is cached at Cloudflare's edge — much higher
+    // throughput. We resolve the slug via the same buildId path, then fetch
+    // the matches/<slug>.json blob.
+    const pageProps = await this.fetchMatchPageProps(fixtureId);
+    const validated = validatedMatchDetailsPayload(fixtureId, pageProps, "next-data");
 
-    const fixture = normalizeFixture(summaryPayload, stringValue(asRecord(summaryPayload).leagueId) ?? "");
+    const general = asRecord(asRecord(pageProps).general);
+    const header = asRecord(asRecord(pageProps).header);
+    const fixture = normalizeFixtureFromPageProps(fixtureId, general, header);
     if (!fixture) {
-      throw new FotMobFixtureDetailsUnavailableError(fixtureId, "payload could not be normalized");
+      throw new FotMobFixtureDetailsUnavailableError(fixtureId, "next-data payload could not be normalized");
     }
-    const detailPayload = await this.getJson("/data/matchDetails", { matchId: fixtureId });
-    const validated = validatedMatchDetailsPayload(fixtureId, detailPayload, "matchDetails");
 
     return {
       ...fixture,
       playerStats: [],
       raw: validated
     };
+  }
+
+  private async fetchMatchPageProps(matchId: string): Promise<unknown> {
+    let buildId = await this.getBuildId();
+    let slug: string;
+    try {
+      slug = await this.resolveMatchSlug(matchId, buildId);
+    } catch (error) {
+      // Stale buildId after a FotMob deploy → refetch once and retry.
+      if (isNotFoundError(error)) {
+        buildId = await this.getBuildId({ force: true });
+        slug = await this.resolveMatchSlug(matchId, buildId);
+      } else {
+        throw error;
+      }
+    }
+
+    const url = `https://www.fotmob.com/_next/data/${buildId}/matches/${slug}.json`;
+    const data = await this.fetchUnsignedJson(url);
+    const pageProps = asRecord(asRecord(data).pageProps);
+    if (Object.keys(pageProps).length === 0) {
+      throw new FotMobFixtureDetailsUnavailableError(matchId, "next-data response missing pageProps");
+    }
+    return pageProps;
+  }
+
+  private async resolveMatchSlug(matchId: string, buildId: string): Promise<string> {
+    const url = `https://www.fotmob.com/_next/data/${buildId}/match/${matchId}.json`;
+    const data = await this.fetchUnsignedJson(url);
+    const pageProps = asRecord(asRecord(data).pageProps);
+    const redirect = stringValue(pageProps.__N_REDIRECT);
+    if (!redirect) {
+      throw new FotMobFixtureDetailsUnavailableError(matchId, "next-data slug redirect missing");
+    }
+    return redirect.replace(/^\/matches\//, "").replace(/#.*$/, "");
+  }
+
+  private async getBuildId(options: { force?: boolean } = {}): Promise<string> {
+    if (options.force) {
+      this.cachedBuildId = null;
+    }
+    if (this.cachedBuildId) return this.cachedBuildId;
+    if (!this.buildIdInflight) {
+      this.buildIdInflight = this.fetchBuildId().finally(() => { this.buildIdInflight = null; });
+    }
+    this.cachedBuildId = await this.buildIdInflight;
+    return this.cachedBuildId;
+  }
+
+  private async fetchBuildId(): Promise<string> {
+    const html = await this.fetchUnsignedText("https://www.fotmob.com/");
+    const match = html.match(/"buildId":"([^"]+)"/);
+    if (!match?.[1]) {
+      throw new Error("FotMob homepage did not include a buildId — unable to use Next.js data endpoint.");
+    }
+    return match[1];
+  }
+
+  private async fetchUnsignedJson(url: string): Promise<unknown> {
+    const text = await this.fetchUnsignedText(url);
+    try {
+      return JSON.parse(text);
+    } catch (error) {
+      throw new Error(`FotMob next-data endpoint returned non-JSON: ${(error as Error).message}`);
+    }
+  }
+
+  private async fetchUnsignedText(url: string): Promise<string> {
+    let lastError: unknown;
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        const response = await fetch(url, {
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+            Accept: "application/json, text/plain, */*",
+            "Accept-Language": "en-US,en;q=0.9",
+            Referer: "https://www.fotmob.com/"
+          },
+          signal: AbortSignal.timeout(20_000)
+        });
+
+        if (response.status === 404) {
+          throw new NextDataNotFoundError(url);
+        }
+        if (!response.ok) {
+          throw new Error(`FotMob next-data request failed with ${response.status} ${response.statusText}`);
+        }
+
+        return await response.text();
+      } catch (error) {
+        if (error instanceof NextDataNotFoundError) throw error;
+        lastError = error;
+        if (attempt === 2) break;
+        await wait(750 * 2 ** attempt + Math.floor(Math.random() * 250));
+      }
+    }
+    throw lastError instanceof Error ? lastError : new Error("FotMob next-data request failed.");
   }
 
   async getPlayer(playerId: string): Promise<FotMobPlayer> {
@@ -157,6 +268,7 @@ export class UnofficialFotMobClient implements FotMobClient {
     let lastError: unknown;
     for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
       try {
+        await this.throttle();
         const response = await fetch(url, {
           headers: {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
@@ -204,6 +316,17 @@ export class UnofficialFotMobClient implements FotMobClient {
 
     throw lastError instanceof Error ? lastError : new Error("FotMob request failed.");
   }
+
+  private async throttle(): Promise<void> {
+    if (this.requestIntervalMs <= 0) return;
+    const now = Date.now();
+    const earliestNext = this.lastRequestAt + this.requestIntervalMs;
+    if (now < earliestNext) {
+      const jitter = Math.floor(Math.random() * 300);
+      await wait(earliestNext - now + jitter);
+    }
+    this.lastRequestAt = Date.now();
+  }
 }
 
 class RateLimitedError extends Error {
@@ -211,6 +334,56 @@ class RateLimitedError extends Error {
     super(`FotMob rate-limited the signed request with ${status}`);
     this.name = "RateLimitedError";
   }
+}
+
+class NextDataNotFoundError extends Error {
+  constructor(readonly url: string) {
+    super(`FotMob next-data 404: ${url}`);
+    this.name = "NextDataNotFoundError";
+  }
+}
+
+function isNotFoundError(error: unknown): boolean {
+  return error instanceof NextDataNotFoundError;
+}
+
+function normalizeFixtureFromPageProps(
+  fixtureId: string,
+  general: JsonRecord,
+  header: JsonRecord
+): FotMobFixture | null {
+  const homeTeam = asRecord(general.homeTeam);
+  const awayTeam = asRecord(general.awayTeam);
+  const homeTeamId = stringValue(homeTeam.id) ?? stringValue(homeTeam.teamId);
+  const awayTeamId = stringValue(awayTeam.id) ?? stringValue(awayTeam.teamId);
+  if (!homeTeamId || !awayTeamId) return null;
+
+  const headerStatus = asRecord(header.status);
+  const teamsArray = Array.isArray(header.teams) ? header.teams.map(asRecord) : [];
+
+  return {
+    id: fixtureId,
+    leagueId: stringValue(general.leagueId) ?? "",
+    homeTeamId,
+    awayTeamId,
+    kickoffAt:
+      stringValue(general.matchTimeUTCDate) ??
+      stringValue(general.matchTimeUTC) ??
+      stringValue(headerStatus.utcTime) ??
+      new Date(0).toISOString(),
+    status: normalizePagePropsStatus(general, headerStatus),
+    homeScore: numberValue(teamsArray[0]?.score) ?? numberValue(headerStatus.homeScore),
+    awayScore: numberValue(teamsArray[1]?.score) ?? numberValue(headerStatus.awayScore)
+  };
+}
+
+function normalizePagePropsStatus(general: JsonRecord, headerStatus: JsonRecord): FotMobFixture["status"] {
+  if (headerStatus.finished === true) return "FINISHED";
+  if (headerStatus.started === true || headerStatus.ongoing === true) return "LIVE";
+  const matchStatus = asRecord(general.matchStatus);
+  if (matchStatus.finished === true) return "FINISHED";
+  if (matchStatus.started === true) return "LIVE";
+  return "SCHEDULED";
 }
 
 export function validatedMatchDetailsPayload(fixtureId: string, payload: unknown, source: string) {
@@ -531,10 +704,6 @@ function fotMobWorldCupSeason(season: string | undefined) {
 
 function asRecord(value: unknown): JsonRecord {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as JsonRecord) : {};
-}
-
-function isEmptyRecord(value: unknown) {
-  return value && typeof value === "object" && !Array.isArray(value) && Object.keys(value).length === 0;
 }
 
 function stringValue(value: unknown): string | undefined {

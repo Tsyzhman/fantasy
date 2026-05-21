@@ -179,34 +179,37 @@ test("placeholder team detection covers known playoff labels", () => {
   assert.equal(is_placeholder_team("Argentina"), false);
 });
 
-test("unofficial client uses exact matchDetails payload when available", async () => {
+test("unofficial client fetches matchDetails via the next-data endpoint", async () => {
   const originalFetch = globalThis.fetch;
+  const originalInterval = process.env.MACHETE_FOTMOB_REQUEST_INTERVAL_MS;
+  process.env.MACHETE_FOTMOB_REQUEST_INTERVAL_MS = "0";
   const urls: string[] = [];
   globalThis.fetch = (async (input: string | URL | Request) => {
     const url = String(input instanceof Request ? input.url : input);
     urls.push(url);
 
-    if (url.includes("/api/data/match?")) {
+    if (url === "https://www.fotmob.com/") {
+      return textResponse(`<html><body><script>{"props":{"pageProps":{}},"buildId":"abc123"}</script></body></html>`);
+    }
+
+    if (url === "https://www.fotmob.com/_next/data/abc123/match/4813565.json") {
       return jsonResponse({
-        id: 4813565,
-        home: { id: 8678, name: "AFC Bournemouth", score: 2 },
-        away: { id: 9825, name: "Arsenal", score: 3 },
-        status: { finished: true, started: true, utcTime: "2026-01-03T17:30:00.000Z" },
-        pageUrl: "/matches/afc-bournemouth-vs-arsenal/2txefx#4813565"
+        pageProps: { __N_REDIRECT: "/matches/afc-bournemouth-vs-arsenal/2txefx#4813565" }
       });
     }
 
-    if (url.includes("/api/data/matchDetails?")) {
+    if (url === "https://www.fotmob.com/_next/data/abc123/matches/afc-bournemouth-vs-arsenal/2txefx.json") {
       return jsonResponse({
-        general: {
-          matchId: "4813565",
-          leagueId: 47,
-          homeTeam: { id: 8678, name: "AFC Bournemouth" },
-          awayTeam: { id: 9825, name: "Arsenal" }
-        },
-        content: {
-          playerStats: {},
-          stats: {}
+        pageProps: {
+          general: {
+            matchId: "4813565",
+            leagueId: "47",
+            matchTimeUTCDate: "2026-01-03T17:30:00.000Z",
+            homeTeam: { id: 8678, name: "AFC Bournemouth" },
+            awayTeam: { id: 9825, name: "Arsenal" }
+          },
+          header: { status: { finished: true }, teams: [{ score: 2 }, { score: 3 }] },
+          content: { playerStats: {}, shotmap: { shots: [] }, stats: {}, lineup: {} }
         }
       });
     }
@@ -217,42 +220,59 @@ test("unofficial client uses exact matchDetails payload when available", async (
   try {
     const details = await new UnofficialFotMobClient().getFixtureDetails("4813565");
     assert.equal((details.raw as { general?: { matchId?: string } }).general?.matchId, "4813565");
-    assert.equal(urls.some((url) => url.includes("/matches/")), false);
+    assert.equal(details.homeScore, 2);
+    assert.equal(details.awayScore, 3);
+    assert.equal(details.status, "FINISHED");
+    assert.equal(urls.some((url) => url.includes("/api/data/matchDetails")), false, "must not call signed matchDetails");
+    assert.equal(urls.filter((url) => url === "https://www.fotmob.com/").length, 1, "buildId is fetched once per session");
   } finally {
     globalThis.fetch = originalFetch;
+    if (originalInterval === undefined) {
+      delete process.env.MACHETE_FOTMOB_REQUEST_INTERVAL_MS;
+    } else {
+      process.env.MACHETE_FOTMOB_REQUEST_INTERVAL_MS = originalInterval;
+    }
   }
 });
 
-test("unofficial client signs matchDetails requests with an x-mas header", async () => {
+test("unofficial client refetches buildId after a stale next-data 404", async () => {
   const originalFetch = globalThis.fetch;
-  const seenHeaders: Array<Record<string, string>> = [];
-  globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
+  const originalInterval = process.env.MACHETE_FOTMOB_REQUEST_INTERVAL_MS;
+  process.env.MACHETE_FOTMOB_REQUEST_INTERVAL_MS = "0";
+  let buildIdRequests = 0;
+  let staleSlugServed = false;
+  globalThis.fetch = (async (input: string | URL | Request) => {
     const url = String(input instanceof Request ? input.url : input);
-    const headers: Record<string, string> = {};
-    const rawHeaders = init?.headers ?? (input instanceof Request ? input.headers : undefined);
-    if (rawHeaders instanceof Headers) {
-      rawHeaders.forEach((value, name) => { headers[name.toLowerCase()] = value; });
-    } else if (rawHeaders && typeof rawHeaders === "object") {
-      for (const [name, value] of Object.entries(rawHeaders as Record<string, string>)) {
-        headers[name.toLowerCase()] = value;
-      }
-    }
-    seenHeaders.push(headers);
 
-    if (url.includes("/api/data/match?")) {
+    if (url === "https://www.fotmob.com/") {
+      buildIdRequests += 1;
+      const buildId = buildIdRequests === 1 ? "stale" : "fresh";
+      return textResponse(`<html><script>"buildId":"${buildId}"</script></html>`);
+    }
+
+    if (url.includes("/_next/data/stale/match/")) {
+      staleSlugServed = true;
+      return new Response("not found", { status: 404 });
+    }
+
+    if (url === "https://www.fotmob.com/_next/data/fresh/match/4813565.json") {
       return jsonResponse({
-        id: 4813565,
-        home: { id: 8678, name: "AFC Bournemouth", score: 2 },
-        away: { id: 9825, name: "Arsenal", score: 3 },
-        status: { finished: true, started: true, utcTime: "2026-01-03T17:30:00.000Z" },
-        pageUrl: "/matches/afc-bournemouth-vs-arsenal/2txefx#4813565"
+        pageProps: { __N_REDIRECT: "/matches/whatever/abc#4813565" }
       });
     }
 
-    if (url.includes("/api/data/matchDetails?")) {
+    if (url === "https://www.fotmob.com/_next/data/fresh/matches/whatever/abc.json") {
       return jsonResponse({
-        general: { matchId: "4813565" },
-        content: { playerStats: {}, shotmap: { shots: [] }, stats: {} }
+        pageProps: {
+          general: {
+            matchId: "4813565",
+            leagueId: "47",
+            homeTeam: { id: 1 },
+            awayTeam: { id: 2 }
+          },
+          header: { status: { finished: true }, teams: [{ score: 0 }, { score: 0 }] },
+          content: { playerStats: {} }
+        }
       });
     }
 
@@ -260,13 +280,17 @@ test("unofficial client signs matchDetails requests with an x-mas header", async
   }) as typeof fetch;
 
   try {
-    await new UnofficialFotMobClient().getFixtureDetails("4813565");
-    assert.ok(seenHeaders.length >= 2, "expected match summary + matchDetails fetches");
-    for (const headers of seenHeaders) {
-      assert.match(headers["x-mas"] ?? "", /.+/, "every signed request must carry an x-mas header");
-    }
+    const details = await new UnofficialFotMobClient().getFixtureDetails("4813565");
+    assert.equal((details.raw as { general?: { matchId?: string } }).general?.matchId, "4813565");
+    assert.equal(buildIdRequests, 2, "buildId must be refetched after the stale 404");
+    assert.ok(staleSlugServed, "must hit stale buildId first");
   } finally {
     globalThis.fetch = originalFetch;
+    if (originalInterval === undefined) {
+      delete process.env.MACHETE_FOTMOB_REQUEST_INTERVAL_MS;
+    } else {
+      process.env.MACHETE_FOTMOB_REQUEST_INTERVAL_MS = originalInterval;
+    }
   }
 });
 
@@ -276,5 +300,12 @@ function jsonResponse(payload: unknown, status = 200) {
     headers: {
       "content-type": "application/json"
     }
+  });
+}
+
+function textResponse(body: string) {
+  return new Response(body, {
+    status: 200,
+    headers: { "content-type": "text/html" }
   });
 }
