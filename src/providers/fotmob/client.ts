@@ -197,7 +197,7 @@ export class UnofficialFotMobClient implements FotMobClient {
     throw lastError instanceof Error ? lastError : new Error("FotMob request failed.");
   }
 
-  private async getDirectMatchDetails(fixtureId: string): Promise<unknown | null> {
+  protected async getDirectMatchDetails(fixtureId: string): Promise<unknown | null> {
     try {
       const payload = await this.getJson("/data/matchDetails", { matchId: fixtureId });
       return validatedMatchDetailsPayload(fixtureId, payload, "matchDetails");
@@ -208,7 +208,7 @@ export class UnofficialFotMobClient implements FotMobClient {
     }
   }
 
-  private async getMatchPageProps(fixtureId: string, summaryPayload: unknown): Promise<unknown> {
+  protected async getMatchPageProps(fixtureId: string, summaryPayload: unknown): Promise<unknown> {
     const pageUrl = stringValue(asRecord(summaryPayload).pageUrl);
     if (!pageUrl) {
       throw new FotMobFixtureDetailsUnavailableError(fixtureId, "match page URL missing from summary payload");
@@ -267,7 +267,7 @@ export class UnofficialFotMobClient implements FotMobClient {
   }
 }
 
-function validatedMatchDetailsPayload(fixtureId: string, payload: unknown, source: string) {
+export function validatedMatchDetailsPayload(fixtureId: string, payload: unknown, source: string) {
   const record = asRecord(payload);
   const general = asRecord(record.general);
   const header = asRecord(record.header);

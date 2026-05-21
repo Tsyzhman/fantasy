@@ -10,10 +10,18 @@ type PlaywrightBrowserContext = {
   close: () => Promise<void>;
 };
 
+type PlaywrightResponse = {
+  url: () => string;
+  status: () => number;
+  text: () => Promise<string>;
+  json: () => Promise<unknown>;
+};
+
 type PlaywrightPage = {
   goto: (url: string, options?: AnyRecord) => Promise<{ status: () => number } | null>;
   evaluate: <T, A = void>(fn: (arg: A) => T | Promise<T>, arg?: A) => Promise<T>;
   waitForTimeout: (ms: number) => Promise<void>;
+  waitForResponse: (urlOrPredicate: string | RegExp | ((response: PlaywrightResponse) => boolean | Promise<boolean>), options?: { timeout?: number }) => Promise<PlaywrightResponse>;
   isClosed: () => boolean;
   close: () => Promise<void>;
   context: () => PlaywrightBrowserContext;
@@ -156,6 +164,55 @@ class FotMobBrowserManager {
     const result = await this.runFetch(url, { kind: "text" });
     if (typeof result !== "string") throw new Error("Expected text response from FotMob page request.");
     return result;
+  }
+
+  // Navigate to a FotMob match page and capture the matchDetails JSON that the
+  // SPA itself fetches once the hash-id is hydrated. This works around two
+  // FotMob behaviours:
+  //   1. Direct /api/data/matchDetails calls return 403 unless the request is
+  //      decorated with FotMob's signed `x-mas` header, which is added by their
+  //      runtime — we cannot reproduce it via raw `fetch` from the page.
+  //   2. The SSR HTML on a slug-collision URL (e.g. two Liverpool vs Bournemouth
+  //      legs sharing /matches/<slug>/<round>) only contains one of the two
+  //      matches, so parsing __NEXT_DATA__ from the initial HTML always loses
+  //      the non-canonical leg.
+  // By navigating with the right `#id` hash and waiting for the SPA's own
+  // network request, we get FotMob to make the authenticated, id-correct call
+  // for us and read it back.
+  async fetchMatchDetailsByNavigation(matchId: string, pagePath: string): Promise<unknown> {
+    await this.ensurePage();
+    const context = this.context;
+    if (!context) throw new Error("FotMob browser context is not initialized.");
+
+    const fullUrl = new URL(pagePath, FOTMOB_SITE).toString();
+    const newPage = await context.newPage();
+    try {
+      const responsePromise = newPage.waitForResponse(
+        (response: PlaywrightResponse) => {
+          const url = response.url();
+          if (!url.includes("/api/data/matchDetails")) return false;
+          // Match either matchId=X anywhere or the trailing id form.
+          return url.includes(`matchId=${matchId}`) || url.includes(`matchId%3D${matchId}`);
+        },
+        { timeout: REQUEST_TIMEOUT_MS }
+      );
+
+      await newPage.goto(fullUrl, { waitUntil: "domcontentloaded", timeout: REQUEST_TIMEOUT_MS });
+      const response = await responsePromise;
+
+      const status = response.status();
+      if (status >= 400) {
+        const body = await response.text().catch(() => "");
+        throw new Error(`FotMob matchDetails returned ${status} for ${matchId}: ${body.slice(0, 200)}`);
+      }
+      return await response.json();
+    } finally {
+      try {
+        await newPage.close();
+      } catch {
+        // ignore page close errors
+      }
+    }
   }
 
   private async runFetch(url: string, opts: { kind: "json" | "text" }): Promise<unknown> {
