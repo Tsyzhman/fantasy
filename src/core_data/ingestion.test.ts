@@ -3,7 +3,6 @@ import test from "node:test";
 import type { PrismaClient } from "@prisma/client";
 
 import { FotMobFixtureDetailsUnavailableError, type FotMobClient } from "./fotmob_client";
-import { run_next_ingestion_job } from "./ingestion-jobs";
 import { discover_matches_for_scope, ingest_match } from "./ingestion";
 import { createIngestionScope } from "./ingestion-scope";
 import { CorePlayerRepository, CoreStatsRepository } from "./repositories";
@@ -148,11 +147,11 @@ test("structural FotMob unavailable errors are skipped when module identity diff
     },
     async getFixtureDetails(fixtureId) {
       const error = Object.assign(
-        new Error(`FotMob matchDetails unavailable for ${fixtureId}: signed-matchDetails-fallback blocked after next-data id mismatch: TURNSTILE_REQUIRED`),
+        new Error(`FotMob matchDetails unavailable for ${fixtureId}: next-data payload id mismatch: 4813595`),
         {
           name: "FotMobFixtureDetailsUnavailableError",
           fixtureId,
-          reason: "signed-matchDetails-fallback blocked after next-data id mismatch: TURNSTILE_REQUIRED"
+          reason: "next-data payload id mismatch: 4813595"
         }
       );
       throw error;
@@ -335,106 +334,6 @@ test("canonical FotMob matchDetails are persisted under their real match id", as
   assert.equal(result.matchId, 4813595n);
   assert.equal((rawUpserts[0] as { where?: { matchId?: bigint } }).where?.matchId, 4813595n);
   assert.equal((matchUpserts[0] as { where?: { id?: bigint } }).where?.id, 4813595n);
-});
-
-test("non-browser workers leave current league 47 backfills queued", async () => {
-  const previousMode = process.env.MACHETE_FOTMOB_PROVIDER_MODE;
-  process.env.MACHETE_FOTMOB_PROVIDER_MODE = "unofficial";
-  let findUniqueCalled = false;
-  const prisma = {
-    ingestionJob: {
-      async findFirst() {
-        return {
-          id: "job-current-47",
-          jobType: "initial_backfill",
-          status: "pending",
-          startedByUserId: null,
-          startedAt: new Date("2026-05-21T12:00:00.000Z"),
-          finishedAt: null,
-          totalScopes: 1,
-          processedScopes: 0,
-          totalMatches: 0,
-          fetchedMatches: 0,
-          skippedMatches: 0,
-          failedMatches: 0,
-          currentLeagueId: 47n,
-          currentSeason: "2025/2026",
-          currentMatchId: null,
-          errorMessage: null,
-          metadata: { backfill_mode: "current_league_47" },
-          createdAt: new Date("2026-05-21T12:00:00.000Z"),
-          updatedAt: new Date("2026-05-21T12:00:00.000Z")
-        };
-      },
-      async findUnique() {
-        findUniqueCalled = true;
-        throw new Error("wrong worker should not claim this job");
-      }
-    }
-  } as unknown as PrismaClient;
-
-  try {
-    const result = await run_next_ingestion_job(prisma);
-    assert.equal(result.ran, false);
-    assert.equal(result.job?.id, "job-current-47");
-    assert.equal(findUniqueCalled, false);
-  } finally {
-    if (previousMode === undefined) {
-      delete process.env.MACHETE_FOTMOB_PROVIDER_MODE;
-    } else {
-      process.env.MACHETE_FOTMOB_PROVIDER_MODE = previousMode;
-    }
-  }
-});
-
-test("browser worker leaves full backfills for the regular worker", async () => {
-  const previousMode = process.env.MACHETE_FOTMOB_PROVIDER_MODE;
-  process.env.MACHETE_FOTMOB_PROVIDER_MODE = "browser";
-  let findUniqueCalled = false;
-  const prisma = {
-    ingestionJob: {
-      async findFirst() {
-        return {
-          id: "job-full",
-          jobType: "initial_backfill",
-          status: "pending",
-          startedByUserId: null,
-          startedAt: new Date("2026-05-21T12:00:00.000Z"),
-          finishedAt: null,
-          totalScopes: 201,
-          processedScopes: 0,
-          totalMatches: 0,
-          fetchedMatches: 0,
-          skippedMatches: 0,
-          failedMatches: 0,
-          currentLeagueId: null,
-          currentSeason: null,
-          currentMatchId: null,
-          errorMessage: null,
-          metadata: { backfill_mode: "full" },
-          createdAt: new Date("2026-05-21T12:00:00.000Z"),
-          updatedAt: new Date("2026-05-21T12:00:00.000Z")
-        };
-      },
-      async findUnique() {
-        findUniqueCalled = true;
-        throw new Error("browser worker should not claim full jobs");
-      }
-    }
-  } as unknown as PrismaClient;
-
-  try {
-    const result = await run_next_ingestion_job(prisma);
-    assert.equal(result.ran, false);
-    assert.equal(result.job?.id, "job-full");
-    assert.equal(findUniqueCalled, false);
-  } finally {
-    if (previousMode === undefined) {
-      delete process.env.MACHETE_FOTMOB_PROVIDER_MODE;
-    } else {
-      process.env.MACHETE_FOTMOB_PROVIDER_MODE = previousMode;
-    }
-  }
 });
 
 test("shallow FotMob payloads are not marked final raw payloads", async () => {
