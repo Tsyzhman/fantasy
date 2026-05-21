@@ -17,11 +17,18 @@ type PlaywrightResponse = {
   json: () => Promise<unknown>;
 };
 
+type PlaywrightRequest = {
+  url: () => string;
+  method: () => string;
+};
+
 type PlaywrightPage = {
   goto: (url: string, options?: AnyRecord) => Promise<{ status: () => number } | null>;
   evaluate: <T, A = void>(fn: (arg: A) => T | Promise<T>, arg?: A) => Promise<T>;
   waitForTimeout: (ms: number) => Promise<void>;
   waitForResponse: (urlOrPredicate: string | RegExp | ((response: PlaywrightResponse) => boolean | Promise<boolean>), options?: { timeout?: number }) => Promise<PlaywrightResponse>;
+  waitForLoadState: (state?: "load" | "domcontentloaded" | "networkidle", options?: { timeout?: number }) => Promise<void>;
+  on: (event: "request" | "response", listener: (eventArg: PlaywrightRequest | PlaywrightResponse) => void) => void;
   isClosed: () => boolean;
   close: () => Promise<void>;
   context: () => PlaywrightBrowserContext;
@@ -186,19 +193,65 @@ class FotMobBrowserManager {
 
     const fullUrl = new URL(pagePath, FOTMOB_SITE).toString();
     const newPage = await context.newPage();
-    try {
-      const responsePromise = newPage.waitForResponse(
-        (response: PlaywrightResponse) => {
-          const url = response.url();
-          if (!url.includes("/api/data/matchDetails")) return false;
-          // Match either matchId=X anywhere or the trailing id form.
-          return url.includes(`matchId=${matchId}`) || url.includes(`matchId%3D${matchId}`);
-        },
-        { timeout: REQUEST_TIMEOUT_MS }
-      );
+    const seenApiUrls: string[] = [];
+    const debug = process.env.MACHETE_FOTMOB_BROWSER_DEBUG === "true";
 
+    newPage.on("response", (event) => {
+      const response = event as PlaywrightResponse;
+      const url = response.url();
+      if (url.includes("/api/data/")) {
+        seenApiUrls.push(`${response.status()} ${url}`);
+        if (debug) console.info(`[fotmob:browser] response ${response.status()} ${url}`);
+      }
+    });
+
+    try {
+      const matchPredicate = (response: PlaywrightResponse): boolean => {
+        const url = response.url();
+        if (!url.includes("/api/data/matchDetails")) return false;
+        // Match matchId in query (raw, percent-encoded, or trailing path).
+        return (
+          url.includes(`matchId=${matchId}`) ||
+          url.includes(`matchId%3D${matchId}`) ||
+          url.endsWith(`/${matchId}`)
+        );
+      };
+
+      const responsePromise = newPage.waitForResponse(matchPredicate, { timeout: REQUEST_TIMEOUT_MS });
+
+      if (debug) console.info(`[fotmob:browser] navigating to ${fullUrl}`);
       await newPage.goto(fullUrl, { waitUntil: "domcontentloaded", timeout: REQUEST_TIMEOUT_MS });
-      const response = await responsePromise;
+
+      // After domcontentloaded the SPA still has to hydrate and fire its own
+      // matchDetails XHR. Force the hash navigation via the History API in case
+      // the SPA's router ignores the initial hash.
+      try {
+        await newPage.evaluate(
+          (id) => {
+            try {
+              window.location.hash = `#${id}`;
+              window.dispatchEvent(new HashChangeEvent("hashchange"));
+            } catch {
+              /* ignore */
+            }
+          },
+          matchId
+        );
+      } catch {
+        // ignore — diagnostic only
+      }
+
+      let response: PlaywrightResponse;
+      try {
+        response = await responsePromise;
+      } catch (error) {
+        const sample = seenApiUrls.slice(0, 25).join("\n  ");
+        throw new Error(
+          `FotMob matchDetails XHR was not observed for ${matchId} within ${REQUEST_TIMEOUT_MS}ms.\n` +
+            `Observed /api/data/* responses on the page:\n  ${sample || "(none)"}\n` +
+            `Original error: ${error instanceof Error ? error.message : String(error)}`
+        );
+      }
 
       const status = response.status();
       if (status >= 400) {
