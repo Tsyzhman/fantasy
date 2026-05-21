@@ -153,8 +153,9 @@ export class UnofficialFotMobClient implements FotMobClient {
       if (value !== undefined) url.searchParams.set(key, String(value));
     }
 
+    const maxAttempts = 5;
     let lastError: unknown;
-    for (let attempt = 0; attempt < 3; attempt += 1) {
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
       try {
         const response = await fetch(url, {
           headers: {
@@ -166,6 +167,13 @@ export class UnofficialFotMobClient implements FotMobClient {
           },
           signal: AbortSignal.timeout(20_000)
         });
+
+        if (response.status === 403 || response.status === 429) {
+          // FotMob rate-limits signed requests sporadically. Back off long
+          // enough that the per-IP/per-token bucket refills before the next
+          // attempt, then retry with a fresh `code` timestamp.
+          throw new RateLimitedError(response.status);
+        }
 
         if (!response.ok) {
           throw new Error(`FotMob request failed with ${response.status} ${response.statusText}`);
@@ -185,12 +193,23 @@ export class UnofficialFotMobClient implements FotMobClient {
         return data;
       } catch (error) {
         lastError = error;
-        if (attempt === 2) break;
-        await wait(2 ** attempt * 750);
+        if (attempt === maxAttempts - 1) break;
+        const isRateLimit = error instanceof RateLimitedError;
+        // 3s, 6s, 12s, 24s for rate limit; 0.75s, 1.5s, 3s, 6s for transient
+        const backoff = isRateLimit ? 3_000 * 2 ** attempt : 750 * 2 ** attempt;
+        const jitter = Math.floor(Math.random() * 500);
+        await wait(backoff + jitter);
       }
     }
 
     throw lastError instanceof Error ? lastError : new Error("FotMob request failed.");
+  }
+}
+
+class RateLimitedError extends Error {
+  constructor(readonly status: number) {
+    super(`FotMob rate-limited the signed request with ${status}`);
+    this.name = "RateLimitedError";
   }
 }
 
