@@ -33,10 +33,21 @@ async function main(): Promise<void> {
   const outDir = resolve(process.cwd(), "tmp_fotmob_inspect");
   mkdirSync(outDir, { recursive: true });
 
-  const { createFotMobClient, UnofficialFotMobClient } = await import("../src/providers/fotmob/client");
+  const { createFotMobClient } = await import("../src/providers/fotmob/client");
   const { closeFotMobBrowser } = await import("../src/providers/fotmob/browser-manager");
 
   const client = createFotMobClient();
+  // The factory returns the same network seam the production code uses
+  // (Mock/Unofficial/Browser/Real). We poke its protected getJson via a cast
+  // so the inspector shares the exact transport — Turnstile cookies and all.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const protectedClient = client as any;
+  const callGetJson = async (path: string, params: Record<string, string>): Promise<unknown> => {
+    if (typeof protectedClient.getJson !== "function") {
+      throw new Error("Active FotMob client does not expose a getJson method (mock/real?)");
+    }
+    return protectedClient.getJson(path, params) as Promise<unknown>;
+  };
   const report: Record<string, unknown> = { leagueId, matchIds };
 
   try {
@@ -64,24 +75,12 @@ async function main(): Promise<void> {
       );
     }
 
-    // Use the unofficial client's protected getJson via a small subclass purely
-    // to peek at the raw /data/match summary endpoint (lightweight, no detail).
-    class PeekClient extends UnofficialFotMobClient {
-      async getRawSummary(matchId: string): Promise<unknown> {
-        // browser mode is set globally; this calls the same getJson the production
-        // client uses, so we get whatever fotmob.com would return through our session
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        return (this as any).getJson("/data/match", { id: matchId });
-      }
-    }
-    const peek = new PeekClient();
-
     const matchDetails: Array<Record<string, unknown>> = [];
     for (const id of matchIds) {
       console.info(`[fotmob:inspect] Querying /data/match?id=${id}...`);
       const entry: Record<string, unknown> = { id };
       try {
-        const summary = await peek.getRawSummary(id);
+        const summary = await callGetJson("/data/match", { id });
         writeFileSync(resolve(outDir, `summary-${id}.json`), JSON.stringify(summary, null, 2));
         const record = asRecord(summary);
         entry.summaryId = stringValue(record.id);
@@ -93,6 +92,24 @@ async function main(): Promise<void> {
         entry.summaryFinished = asRecord(record.status).finished === true;
       } catch (error) {
         entry.summaryError = error instanceof Error ? error.message : String(error);
+      }
+
+      console.info(`[fotmob:inspect] Querying RAW /data/matchDetails?matchId=${id} (no validation)...`);
+      try {
+        const raw = await callGetJson("/data/matchDetails", { matchId: id });
+        writeFileSync(resolve(outDir, `raw-matchDetails-${id}.json`), JSON.stringify(raw, null, 2));
+        const record = asRecord(raw);
+        const general = asRecord(record.general);
+        const header = asRecord(record.header);
+        const content = asRecord(record.content);
+        entry.rawDirectId =
+          stringValue(general.matchId) ?? stringValue(header.matchId) ?? stringValue(record.matchId) ?? stringValue(record.id) ?? null;
+        entry.rawDirectIdMatches = entry.rawDirectId === id;
+        entry.rawDirectLeagueId = stringValue(general.leagueId) ?? stringValue(header.leagueId);
+        entry.rawDirectKickoff = stringValue(general.matchTimeUTCDate) ?? stringValue(general.matchTimeUTC);
+        entry.rawDirectContentKeys = Object.keys(content);
+      } catch (error) {
+        entry.rawDirectError = error instanceof Error ? error.message : String(error);
       }
 
       console.info(`[fotmob:inspect] Calling client.getFixtureDetails(${id})...`);
