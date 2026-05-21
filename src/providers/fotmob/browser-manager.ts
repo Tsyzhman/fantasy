@@ -201,6 +201,7 @@ class FotMobBrowserManager {
     const exactBlockedUrls: string[] = [];
     const debug = process.env.MACHETE_FOTMOB_BROWSER_DEBUG === "true";
     const exactSuccessResponse: { current: PlaywrightResponse | null } = { current: null };
+    let canonicalSignalResponse: PlaywrightResponse | null = null;
     let canonicalSuccessResponse: PlaywrightResponse | null = null;
     let resolveCanonicalSignal: ((response: PlaywrightResponse) => void) | null = null;
     const canonicalSignalPromise = new Promise<PlaywrightResponse>((resolve) => {
@@ -215,6 +216,7 @@ class FotMobBrowserManager {
         if (debug) console.info(`[fotmob:browser] response ${response.status()} ${url}`);
         const apiMatchId = fotMobApiUrlMatchId(url);
         if (apiMatchId && apiMatchId !== matchId && resolveCanonicalSignal) {
+          canonicalSignalResponse = response;
           resolveCanonicalSignal(response);
           resolveCanonicalSignal = null;
         }
@@ -229,6 +231,9 @@ class FotMobBrowserManager {
           }
         } else {
           ignoredMatchDetailsUrls.push(`${status} ${url}`);
+          if (!canonicalSignalResponse) {
+            canonicalSignalResponse = response;
+          }
           if (status < 400 && !canonicalSuccessResponse) {
             canonicalSuccessResponse = response;
           }
@@ -240,16 +245,42 @@ class FotMobBrowserManager {
       }
     });
 
+    const handleCanonicalResponse = async (canonicalResponse: PlaywrightResponse) => {
+      console.info(
+        `[fotmob:browser] Match ${matchId}: canonical matchDetails observed; waiting ${CANONICAL_GRACE_MS}ms for an exact response before falling back.`
+      );
+      await newPage.waitForTimeout(CANONICAL_GRACE_MS);
+      if (exactSuccessResponse.current) {
+        console.info(`[fotmob:browser] Match ${matchId}: exact matchDetails response captured during canonical grace (${exactSuccessResponse.current.status()}).`);
+        return await exactSuccessResponse.current.json();
+      }
+
+      const fallbackResponse = canonicalSuccessResponse ?? canonicalResponse;
+      const canonicalStatus = fallbackResponse.status();
+      const fallbackUrl = fallbackResponse.url();
+      if (canonicalSuccessResponse) {
+        console.info(
+          `[fotmob:browser] Match ${matchId}: using canonical matchDetails response instead (${canonicalStatus} ${fallbackUrl}).`
+        );
+        return await fallbackResponse.json();
+      }
+
+      const sample = seenApiUrls.slice(0, 25).join("\n  ");
+      const ignored = ignoredMatchDetailsUrls.slice(0, 10).join("\n  ");
+      const blocked = exactBlockedUrls.slice(0, 10).join("\n  ");
+      throw new Error(
+        `FotMob stayed on blocked canonical matchDetails for ${matchId}; exact matchDetails was not observed within ${CANONICAL_GRACE_MS}ms after ${canonicalStatus} ${fallbackUrl}.\n` +
+          `Blocked exact matchDetails responses:\n  ${blocked || "(none)"}\n` +
+          `Ignored paired/canonical matchDetails responses:\n  ${ignored || "(none)"}\n` +
+          `Observed /api/data/* responses on the page:\n  ${sample || "(none)"}`
+      );
+    };
+
     try {
       const matchPredicate = (response: PlaywrightResponse): boolean => {
         const url = response.url();
         return response.status() < 400 && isMatchDetailsUrlForMatch(url, matchId);
       };
-
-      const responsePromise = newPage
-        .waitForResponse(matchPredicate, { timeout: MATCH_DETAILS_TIMEOUT_MS })
-        .then((response) => ({ response }))
-        .catch((error: unknown) => ({ error }));
 
       console.info(`[fotmob:browser] Match ${matchId}: opening ${canonicalUrl}.`);
       await newPage.goto(canonicalUrl, { waitUntil: "domcontentloaded", timeout: REQUEST_TIMEOUT_MS });
@@ -273,6 +304,19 @@ class FotMobBrowserManager {
         console.info(`[fotmob:browser] Match ${matchId}: exact hash page DOM loaded.`);
       }
 
+      if (exactSuccessResponse.current) {
+        console.info(`[fotmob:browser] Match ${matchId}: exact matchDetails response captured during navigation (${exactSuccessResponse.current.status()}).`);
+        return await exactSuccessResponse.current.json();
+      }
+      if (canonicalSignalResponse) {
+        return await handleCanonicalResponse(canonicalSignalResponse);
+      }
+
+      const responsePromise = newPage
+        .waitForResponse(matchPredicate, { timeout: MATCH_DETAILS_TIMEOUT_MS })
+        .then((response) => ({ response }))
+        .catch((error: unknown) => ({ error }));
+
       console.info(`[fotmob:browser] Match ${matchId}: waiting up to ${MATCH_DETAILS_TIMEOUT_MS}ms for exact matchDetails response.`);
       const responseResult = await Promise.race([
         responsePromise.then((result) => ({ kind: "exact" as const, result })),
@@ -280,32 +324,7 @@ class FotMobBrowserManager {
       ]);
 
       if (responseResult.kind === "canonical") {
-        console.info(
-          `[fotmob:browser] Match ${matchId}: canonical matchDetails observed; waiting ${CANONICAL_GRACE_MS}ms for an exact response before falling back.`
-        );
-        await newPage.waitForTimeout(CANONICAL_GRACE_MS);
-        if (exactSuccessResponse.current) {
-          console.info(`[fotmob:browser] Match ${matchId}: exact matchDetails response captured during canonical grace (${exactSuccessResponse.current.status()}).`);
-          return await exactSuccessResponse.current.json();
-        }
-        const canonicalResponse = canonicalSuccessResponse ?? responseResult.canonicalResponse;
-        const canonicalStatus = canonicalResponse.status();
-        const canonicalUrl = canonicalResponse.url();
-        if (canonicalSuccessResponse) {
-          console.info(
-            `[fotmob:browser] Match ${matchId}: using canonical matchDetails response instead (${canonicalStatus} ${canonicalUrl}).`
-          );
-          return await canonicalResponse.json();
-        }
-        const sample = seenApiUrls.slice(0, 25).join("\n  ");
-        const ignored = ignoredMatchDetailsUrls.slice(0, 10).join("\n  ");
-        const blocked = exactBlockedUrls.slice(0, 10).join("\n  ");
-        throw new Error(
-          `FotMob stayed on blocked canonical matchDetails for ${matchId}; exact matchDetails was not observed within ${CANONICAL_GRACE_MS}ms after ${canonicalStatus} ${canonicalUrl}.\n` +
-            `Blocked exact matchDetails responses:\n  ${blocked || "(none)"}\n` +
-            `Ignored paired/canonical matchDetails responses:\n  ${ignored || "(none)"}\n` +
-            `Observed /api/data/* responses on the page:\n  ${sample || "(none)"}`
-        );
+        return await handleCanonicalResponse(responseResult.canonicalResponse);
       }
 
       let response: PlaywrightResponse;
