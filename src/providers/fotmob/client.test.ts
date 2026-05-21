@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { extractLeagueTeamsFromLeaguePayload, is_placeholder_team } from "./client";
+import { extractLeagueTeamsFromLeaguePayload, FotMobFixtureDetailsUnavailableError, is_placeholder_team, UnofficialFotMobClient } from "./client";
 
 test("normal standings payload still works", () => {
   const teams = extractLeagueTeamsFromLeaguePayload({
@@ -178,3 +178,108 @@ test("placeholder team detection covers known playoff labels", () => {
 
   assert.equal(is_placeholder_team("Argentina"), false);
 });
+
+test("unofficial client uses exact matchDetails payload when available", async () => {
+  const originalFetch = globalThis.fetch;
+  const urls: string[] = [];
+  globalThis.fetch = (async (input: string | URL | Request) => {
+    const url = String(input instanceof Request ? input.url : input);
+    urls.push(url);
+
+    if (url.includes("/api/data/match?")) {
+      return jsonResponse({
+        id: 4813565,
+        home: { id: 8678, name: "AFC Bournemouth", score: 2 },
+        away: { id: 9825, name: "Arsenal", score: 3 },
+        status: { finished: true, started: true, utcTime: "2026-01-03T17:30:00.000Z" },
+        pageUrl: "/matches/afc-bournemouth-vs-arsenal/2txefx#4813565"
+      });
+    }
+
+    if (url.includes("/api/data/matchDetails?")) {
+      return jsonResponse({
+        general: {
+          matchId: "4813565",
+          leagueId: 47,
+          homeTeam: { id: 8678, name: "AFC Bournemouth" },
+          awayTeam: { id: 9825, name: "Arsenal" }
+        },
+        content: {
+          playerStats: {},
+          stats: {}
+        }
+      });
+    }
+
+    throw new Error(`Unexpected fetch ${url}`);
+  }) as typeof fetch;
+
+  try {
+    const details = await new UnofficialFotMobClient().getFixtureDetails("4813565");
+    assert.equal((details.raw as { general?: { matchId?: string } }).general?.matchId, "4813565");
+    assert.equal(urls.some((url) => url.includes("/matches/")), false);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("unofficial client rejects mismatched match pages instead of saving shallow payloads", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = (async (input: string | URL | Request) => {
+    const url = String(input instanceof Request ? input.url : input);
+
+    if (url.includes("/api/data/match?")) {
+      return jsonResponse({
+        id: 4813565,
+        home: { id: 8678, name: "AFC Bournemouth", score: 2 },
+        away: { id: 9825, name: "Arsenal", score: 3 },
+        status: { finished: true, started: true, utcTime: "2026-01-03T17:30:00.000Z" },
+        pageUrl: "/matches/afc-bournemouth-vs-arsenal/2txefx#4813565"
+      });
+    }
+
+    if (url.includes("/api/data/matchDetails?")) {
+      return jsonResponse({ error: "Verification required", code: "TURNSTILE_REQUIRED" }, 403);
+    }
+
+    if (url.includes("/matches/")) {
+      return htmlResponse(nextDataHtml({
+        general: { matchId: "4813685" },
+        content: { playerStats: {}, stats: {} }
+      }));
+    }
+
+    throw new Error(`Unexpected fetch ${url}`);
+  }) as typeof fetch;
+
+  try {
+    await assert.rejects(
+      () => new UnofficialFotMobClient().getFixtureDetails("4813565"),
+      (error) => error instanceof FotMobFixtureDetailsUnavailableError && error.reason === "match page payload id mismatch: 4813685"
+    );
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+function jsonResponse(payload: unknown, status = 200) {
+  return new Response(JSON.stringify(payload), {
+    status,
+    headers: {
+      "content-type": "application/json"
+    }
+  });
+}
+
+function htmlResponse(html: string) {
+  return new Response(html, {
+    status: 200,
+    headers: {
+      "content-type": "text/html"
+    }
+  });
+}
+
+function nextDataHtml(pageProps: unknown) {
+  return `<script id="__NEXT_DATA__" type="application/json">${JSON.stringify({ props: { pageProps } })}</script>`;
+}

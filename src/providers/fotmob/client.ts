@@ -118,7 +118,7 @@ export class UnofficialFotMobClient implements FotMobClient {
     if (!fixture) {
       throw new FotMobFixtureDetailsUnavailableError(fixtureId, "payload could not be normalized");
     }
-    const detailPayload = await this.getMatchPageProps(fixtureId, summaryPayload);
+    const detailPayload = (await this.getDirectMatchDetails(fixtureId)) ?? (await this.getMatchPageProps(fixtureId, summaryPayload));
 
     return {
       ...fixture,
@@ -197,6 +197,17 @@ export class UnofficialFotMobClient implements FotMobClient {
     throw lastError instanceof Error ? lastError : new Error("FotMob request failed.");
   }
 
+  private async getDirectMatchDetails(fixtureId: string): Promise<unknown | null> {
+    try {
+      const payload = await this.getJson("/data/matchDetails", { matchId: fixtureId });
+      return validatedMatchDetailsPayload(fixtureId, payload, "matchDetails");
+    } catch (error) {
+      if (isBlockedFotMobRequest(error)) return null;
+      if (error instanceof FotMobFixtureDetailsUnavailableError) return null;
+      throw error;
+    }
+  }
+
   private async getMatchPageProps(fixtureId: string, summaryPayload: unknown): Promise<unknown> {
     const pageUrl = stringValue(asRecord(summaryPayload).pageUrl);
     if (!pageUrl) {
@@ -210,14 +221,14 @@ export class UnofficialFotMobClient implements FotMobClient {
     const matchId = stringValue(general.matchId) ?? stringValue(asRecord(pageProps.header).matchId);
 
     if (matchId !== fixtureId) {
-      return fallbackMatchPayload(summaryPayload, `match page payload id mismatch: ${matchId ?? "missing"}`);
+      throw new FotMobFixtureDetailsUnavailableError(fixtureId, `match page payload id mismatch: ${matchId ?? "missing"}`);
     }
 
     const { translations: _translations, ...matchPayload } = pageProps;
-    return {
+    return validatedMatchDetailsPayload(fixtureId, {
       ...matchPayload,
       summary: summaryPayload
-    };
+    }, "match page");
   }
 
   private async getText(url: string): Promise<string> {
@@ -256,11 +267,31 @@ export class UnofficialFotMobClient implements FotMobClient {
   }
 }
 
-function fallbackMatchPayload(summaryPayload: unknown, reason: string) {
-  return {
-    ...asRecord(summaryPayload),
-    detailsUnavailableReason: reason
-  };
+function validatedMatchDetailsPayload(fixtureId: string, payload: unknown, source: string) {
+  const record = asRecord(payload);
+  const general = asRecord(record.general);
+  const header = asRecord(record.header);
+  const matchId = stringValue(general.matchId) ?? stringValue(header.matchId) ?? stringValue(record.matchId) ?? stringValue(record.id);
+
+  if (matchId !== fixtureId) {
+    throw new FotMobFixtureDetailsUnavailableError(fixtureId, `${source} payload id mismatch: ${matchId ?? "missing"}`);
+  }
+
+  if (!hasDetailedMatchContent(record)) {
+    throw new FotMobFixtureDetailsUnavailableError(fixtureId, `${source} payload missing detailed match content`);
+  }
+
+  return payload;
+}
+
+function hasDetailedMatchContent(payload: JsonRecord) {
+  const content = asRecord(payload.content);
+  return ["playerStats", "shotmap", "lineup", "stats", "matchFacts"].some((key) => content[key] !== undefined);
+}
+
+function isBlockedFotMobRequest(error: unknown) {
+  if (!(error instanceof Error)) return false;
+  return error.message.includes("403") || error.message.includes("429") || error.message.toLowerCase().includes("verification");
 }
 
 export class RealFotMobClient implements FotMobClient {
