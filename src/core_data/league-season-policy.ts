@@ -107,7 +107,8 @@ export function scopesForCurrentSeasonLeagueBackfill(leagueId = QUICK_BACKFILL_L
       include_upcoming: false,
       max_matches: config.max_matches,
       force_refresh: false,
-      force_reparse: false
+      force_reparse: false,
+      require_detailed_payloads: true
     })
   ];
 }

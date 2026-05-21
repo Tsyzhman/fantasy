@@ -12,6 +12,7 @@ export type IngestionScope = Readonly<{
   max_matches?: number | null;
   force_refresh: boolean;
   force_reparse: boolean;
+  require_detailed_payloads: boolean;
 }>;
 
 export function createIngestionScope(input: {
@@ -25,6 +26,7 @@ export function createIngestionScope(input: {
   max_matches?: number | null;
   force_refresh?: boolean;
   force_reparse?: boolean;
+  require_detailed_payloads?: boolean;
 }): IngestionScope {
   return Object.freeze({
     source: "fotmob" as const,
@@ -37,7 +39,7 @@ export function createIngestionScope(input: {
     include_upcoming: input.include_upcoming ?? false,
     max_matches: input.max_matches ?? null,
     force_refresh: input.force_refresh ?? false,
-    force_reparse: input.force_reparse ?? false
+    force_reparse: input.force_reparse ?? false,
+    require_detailed_payloads: input.require_detailed_payloads ?? false
   });
 }
-

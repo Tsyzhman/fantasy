@@ -122,6 +122,43 @@ test("unavailable FotMob matchDetails are skipped instead of failed", async () =
   assert.equal(result.skipped, true);
 });
 
+test("required detailed FotMob matchDetails fail instead of creating partial data", async () => {
+  const prisma = {
+    coreMatch: {
+      async findUnique() {
+        return null;
+      }
+    },
+    rawMatchPayload: {
+      async findUnique() {
+        return null;
+      }
+    }
+  } as unknown as PrismaClient;
+  const client: FotMobClient = {
+    async getLeague() {
+      throw new Error("not used");
+    },
+    async getTeams() {
+      throw new Error("not used");
+    },
+    async getFixtures() {
+      throw new Error("not used");
+    },
+    async getFixtureDetails(fixtureId) {
+      throw new FotMobFixtureDetailsUnavailableError(fixtureId, "match page payload id mismatch: 4813704");
+    },
+    async getPlayer() {
+      throw new Error("not used");
+    }
+  };
+
+  await assert.rejects(
+    ingest_match(prisma, "4813417", { client, requireDetailedPayload: true }),
+    /requires detailed match payloads/
+  );
+});
+
 test("shallow FotMob payloads are not marked final raw payloads", async () => {
   const calls: unknown[] = [];
   const prisma = {

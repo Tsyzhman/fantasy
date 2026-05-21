@@ -35,6 +35,7 @@ export type IngestMatchOptions = {
   season?: string | null;
   forceRefresh?: boolean;
   forceReparse?: boolean;
+  requireDetailedPayload?: boolean;
 };
 
 export type IngestMatchResult = {
@@ -95,6 +96,11 @@ export async function ingest_match(prisma: PrismaClient, match_id: bigint | stri
     details = await client.getFixtureDetails(String(match_id));
   } catch (error) {
     if (error instanceof FotMobFixtureDetailsUnavailableError) {
+      if (options.requireDetailedPayload) {
+        throw new Error(
+          `${error.message}. This ingestion scope requires detailed match payloads, so the job is failing instead of creating a misleading partial database.`
+        );
+      }
       console.warn(`[core_data] ${error.message}; skipping matchDetails fetch until FotMob exposes a usable payload.`);
       return {
         matchId,
@@ -151,9 +157,10 @@ export async function ingest_scope(
         season: scope.season,
         parserVersion: options.parserVersion,
         schemaVersion: options.schemaVersion,
-        forceRefresh: scope.force_refresh,
-        forceReparse: scope.force_reparse
-      });
+            forceRefresh: scope.force_refresh,
+            forceReparse: scope.force_reparse,
+            requireDetailedPayload: scope.require_detailed_payloads
+          });
       if (result.skipped) skipped += 1;
       else fetched += result.fetched ? 1 : 0;
       if (!result.skipped) affectedMatchIds.push(result.matchId);
@@ -277,7 +284,8 @@ export async function backfill_league_season(
       include_upcoming: false,
       max_matches: null,
       force_refresh: false,
-      force_reparse: false
+      force_reparse: false,
+      require_detailed_payloads: false
     };
     const fixtures = await discover_matches_for_scope(client, scope);
     await new CoreMatchRepository(prisma).upsertLeague({

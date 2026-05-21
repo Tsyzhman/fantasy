@@ -299,7 +299,8 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: Ing
             leagueId: scope.league_id,
             season: scope.season,
             forceRefresh: scope.force_refresh,
-            forceReparse: scope.force_reparse
+            forceReparse: scope.force_reparse,
+            requireDetailedPayload: scope.require_detailed_payloads
           });
           const shouldCalculateFantasy = await ensureNormalizedForFantasy(prisma, result, ruleset.id);
           if (shouldCalculateFantasy) {
@@ -339,6 +340,7 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: Ing
               })
             }
           });
+          if (scope.require_detailed_payloads) throw error;
         }
       }
 
