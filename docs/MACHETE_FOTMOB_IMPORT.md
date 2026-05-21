@@ -82,6 +82,30 @@ docker compose --profile browser cp ./.cache/fotmob-browser-profile/. \
 docker compose --profile browser restart ingestion-browser
 ```
 
+### Skipping broken fixtures
+
+For modes that set `require_detailed_payloads: true` (e.g. `current_league_47`),
+even a single FotMob anomaly fails the whole job. The most common cause is a
+fixture whose page redirects to a different match id — confirmed by an
+`error_message` like `match page payload id mismatch: <other id>`.
+
+Add the offending fixture id(s) to `MACHETE_FOTMOB_SKIP_FIXTURE_IDS` in the
+host `.env`. Both ingestion services pick it up via compose interpolation, so
+no YAML edit is required:
+
+```env
+MACHETE_FOTMOB_SKIP_FIXTURE_IDS="4813374,4813380"
+```
+
+```bash
+docker compose --profile browser up -d --force-recreate ingestion-browser
+docker compose exec ingestion-browser npm run ingestion:initial-backfill -- current_league_47
+```
+
+A `[core_data] Skipping N fixture(s) via MACHETE_FOTMOB_SKIP_FIXTURE_IDS ...`
+warning is logged at the start of each scope, so it is obvious which matches
+were excluded from the dataset.
+
 ### Custom database credentials
 
 The `ingestion-browser` service shares its `DATABASE_URL` with the other

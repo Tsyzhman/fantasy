@@ -124,13 +124,29 @@ export async function ingest_match(prisma: PrismaClient, match_id: bigint | stri
 
 export async function discover_matches_for_scope(client: FotMobClient, scope: IngestionScope) {
   const fixtures = await client.getFixtures(String(scope.league_id), scope.season);
+  const skipIds = parseFotMobSkipList(process.env.MACHETE_FOTMOB_SKIP_FIXTURE_IDS);
+  const skipped: string[] = [];
   const discovered = fixtures.filter((fixture) => {
+    if (skipIds.has(fixture.id)) {
+      skipped.push(fixture.id);
+      return false;
+    }
     if (fixture.status === "FINISHED") return scope.include_finished;
     if (fixture.status === "LIVE") return scope.include_live;
     return scope.include_upcoming;
   });
+  if (skipped.length > 0) {
+    console.warn(
+      `[core_data] Skipping ${skipped.length} fixture(s) via MACHETE_FOTMOB_SKIP_FIXTURE_IDS for league ${scope.league_id} / ${scope.season}: ${skipped.join(", ")}`
+    );
+  }
   validate_ingestion_scope(scope, discovered);
   return discovered;
+}
+
+function parseFotMobSkipList(raw: string | undefined): Set<string> {
+  if (!raw) return new Set();
+  return new Set(raw.split(/[\s,;]+/).map((value) => value.trim()).filter(Boolean));
 }
 
 export async function ingest_scope(
