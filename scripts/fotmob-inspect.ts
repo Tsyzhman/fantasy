@@ -3,7 +3,7 @@
 // distinguished from genuine FotMob outages.
 //
 // Usage:
-//   docker compose exec ingestion-browser \
+//   docker compose exec ingestion-worker \
 //     npm run fotmob:inspect -- <leagueId> <matchId> [<matchId>...]
 //
 // Example:
@@ -26,22 +26,22 @@ async function main(): Promise<void> {
   }
 
   if (!process.env.MACHETE_FOTMOB_PROVIDER_MODE || process.env.MACHETE_FOTMOB_PROVIDER_MODE === "mock") {
-    process.env.MACHETE_FOTMOB_PROVIDER_MODE = "browser";
-    console.info("[fotmob:inspect] No provider mode set; defaulting to 'browser'.");
+    process.env.MACHETE_FOTMOB_PROVIDER_MODE = "unofficial";
+    console.info("[fotmob:inspect] No provider mode set; defaulting to 'unofficial'.");
   }
 
   const outDir = resolve(process.cwd(), "tmp_fotmob_inspect");
   mkdirSync(outDir, { recursive: true });
 
   const { createFotMobClient } = await import("../src/providers/fotmob/client");
-  const { closeFotMobBrowser } = await import("../src/providers/fotmob/browser-manager");
 
   const client = createFotMobClient();
   // The factory returns the same network seam the production code uses
-  // (Mock/Unofficial/Browser/Real). We poke its protected getJson via a cast
-  // so the inspector shares the exact transport — Turnstile cookies and all.
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const protectedClient = client as any;
+  // (Mock/Unofficial/Real). We poke its protected getJson via a cast so the
+  // inspector shares the exact transport — x-mas signing and all.
+  const protectedClient = client as unknown as {
+    getJson?: (path: string, params: Record<string, string>) => Promise<unknown>;
+  };
   const callGetJson = async (path: string, params: Record<string, string>): Promise<unknown> => {
     if (typeof protectedClient.getJson !== "function") {
       throw new Error("Active FotMob client does not expose a getJson method (mock/real?)");
@@ -145,8 +145,6 @@ async function main(): Promise<void> {
   } catch (error) {
     console.error("[fotmob:inspect] Fatal:", error instanceof Error ? error.message : error);
     process.exitCode = 1;
-  } finally {
-    await closeFotMobBrowser();
   }
 }
 

@@ -1,4 +1,5 @@
 import { mockFotMobFixtures, mockFotMobLeague, mockFotMobTeams } from "./mock-data";
+import { createXMasHeader, xMasSigningPath } from "./signing";
 import type { FotMobFixture, FotMobFixtureDetails, FotMobLeague, FotMobPlayer, FotMobPlayerMatchStat, FotMobTeam } from "./types";
 
 export interface FotMobClient {
@@ -49,7 +50,6 @@ type JsonRecord = Record<string, unknown>;
 
 export class UnofficialFotMobClient implements FotMobClient {
   protected readonly baseUrl = process.env.MACHETE_FOTMOB_BASE_URL || "https://www.fotmob.com/api";
-  protected readonly siteUrl = process.env.MACHETE_FOTMOB_SITE_URL || "https://www.fotmob.com";
   protected readonly ccode3 = process.env.MACHETE_FOTMOB_CCODE3 || "GBR";
   protected readonly timezone = process.env.MACHETE_FOTMOB_TIMEZONE || "Europe/London";
 
@@ -118,12 +118,13 @@ export class UnofficialFotMobClient implements FotMobClient {
     if (!fixture) {
       throw new FotMobFixtureDetailsUnavailableError(fixtureId, "payload could not be normalized");
     }
-    const detailPayload = (await this.getDirectMatchDetails(fixtureId)) ?? (await this.getMatchPageProps(fixtureId, summaryPayload));
+    const detailPayload = await this.getJson("/data/matchDetails", { matchId: fixtureId });
+    const validated = validatedMatchDetailsPayload(fixtureId, detailPayload, "matchDetails");
 
     return {
       ...fixture,
       playerStats: [],
-      raw: detailPayload
+      raw: validated
     };
   }
 
@@ -157,17 +158,15 @@ export class UnofficialFotMobClient implements FotMobClient {
       try {
         const response = await fetch(url, {
           headers: {
-            "User-Agent": "Mozilla/5.0",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
             Accept: "application/json, text/plain, */*",
             "Accept-Language": "en-US,en;q=0.9",
-            Referer: "https://www.fotmob.com/"
+            Referer: "https://www.fotmob.com/",
+            "x-mas": createXMasHeader(xMasSigningPath(url))
           },
           signal: AbortSignal.timeout(20_000)
         });
 
-        if (response.status === 403 || response.status === 429) {
-          throw new Error(`FotMob request blocked with ${response.status}; stop syncing and use an approved provider or a larger cache interval.`);
-        }
         if (!response.ok) {
           throw new Error(`FotMob request failed with ${response.status} ${response.statusText}`);
         }
@@ -180,90 +179,18 @@ export class UnofficialFotMobClient implements FotMobClient {
         const data = await response.json();
         const record = asRecord(data);
         if (record.code === "TURNSTILE_REQUIRED" || record.error === "Verification required") {
-          throw new Error("FotMob verification is required for this endpoint; Machete will not bypass anti-bot protection.");
+          throw new Error("FotMob rejected the signed request (TURNSTILE_REQUIRED). The x-mas secret may have rotated; update src/providers/fotmob/signing.ts.");
         }
 
         return data;
       } catch (error) {
         lastError = error;
-        if (error instanceof Error && (error.message.includes("403") || error.message.includes("429") || error.message.includes("verification"))) {
-          throw error;
-        }
         if (attempt === 2) break;
         await wait(2 ** attempt * 750);
       }
     }
 
     throw lastError instanceof Error ? lastError : new Error("FotMob request failed.");
-  }
-
-  protected async getDirectMatchDetails(fixtureId: string): Promise<unknown | null> {
-    try {
-      const payload = await this.getJson("/data/matchDetails", { matchId: fixtureId });
-      return validatedMatchDetailsPayload(fixtureId, payload, "matchDetails");
-    } catch (error) {
-      if (isBlockedFotMobRequest(error)) return null;
-      if (error instanceof FotMobFixtureDetailsUnavailableError) return null;
-      throw error;
-    }
-  }
-
-  protected async getMatchPageProps(fixtureId: string, summaryPayload: unknown): Promise<unknown> {
-    const pageUrl = stringValue(asRecord(summaryPayload).pageUrl);
-    if (!pageUrl) {
-      throw new FotMobFixtureDetailsUnavailableError(fixtureId, "match page URL missing from summary payload");
-    }
-
-    const html = await this.getText(new URL(pageUrl, this.siteUrl).toString());
-    const nextData = extractNextData(html);
-    const pageProps = asRecord(asRecord(nextData.props).pageProps);
-    const general = asRecord(pageProps.general);
-    const matchId = stringValue(general.matchId) ?? stringValue(asRecord(pageProps.header).matchId);
-
-    if (matchId !== fixtureId) {
-      throw new FotMobFixtureDetailsUnavailableError(fixtureId, `match page payload id mismatch: ${matchId ?? "missing"}`);
-    }
-
-    const { translations: _translations, ...matchPayload } = pageProps;
-    return validatedMatchDetailsPayload(fixtureId, {
-      ...matchPayload,
-      summary: summaryPayload
-    }, "match page");
-  }
-
-  protected async getText(url: string): Promise<string> {
-    let lastError: unknown;
-    for (let attempt = 0; attempt < 3; attempt += 1) {
-      try {
-        const response = await fetch(url, {
-          headers: {
-            "User-Agent": "Mozilla/5.0",
-            Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Accept-Language": "en-US,en;q=0.9",
-            Referer: "https://www.fotmob.com/"
-          },
-          signal: AbortSignal.timeout(20_000)
-        });
-
-        if (response.status === 403 || response.status === 429) {
-          throw new Error(`FotMob request blocked with ${response.status}; stop syncing and use an approved provider or a larger cache interval.`);
-        }
-        if (!response.ok) {
-          throw new Error(`FotMob page request failed with ${response.status} ${response.statusText}`);
-        }
-
-        return response.text();
-      } catch (error) {
-        lastError = error;
-        if (error instanceof Error && (error.message.includes("403") || error.message.includes("429") || error.message.includes("verification"))) {
-          throw error;
-        }
-        if (attempt === 2) break;
-        await wait(2 ** attempt * 750);
-      }
-    }
-
-    throw lastError instanceof Error ? lastError : new Error("FotMob page request failed.");
   }
 }
 
@@ -287,11 +214,6 @@ export function validatedMatchDetailsPayload(fixtureId: string, payload: unknown
 function hasDetailedMatchContent(payload: JsonRecord) {
   const content = asRecord(payload.content);
   return ["playerStats", "shotmap", "lineup", "stats", "matchFacts"].some((key) => content[key] !== undefined);
-}
-
-function isBlockedFotMobRequest(error: unknown) {
-  if (!(error instanceof Error)) return false;
-  return error.message.includes("403") || error.message.includes("429") || error.message.toLowerCase().includes("verification");
 }
 
 export class RealFotMobClient implements FotMobClient {
@@ -329,15 +251,6 @@ export class RealFotMobClient implements FotMobClient {
 export function createFotMobClient(): FotMobClient {
   const mode = process.env.MACHETE_FOTMOB_PROVIDER_MODE;
   if (mode === "real") return new RealFotMobClient();
-  if (mode === "browser") {
-    // Resolved through eval so webpack does not follow the transitive
-    // playwright import while bundling. Prod images intentionally omit the
-    // browser-client / playwright tree; non-browser modes must still build.
-    // eslint-disable-next-line no-eval
-    const dynamicRequire = eval("require") as NodeRequire;
-    const mod = dynamicRequire("./browser-client") as { BrowserFotMobClient: new () => FotMobClient };
-    return new mod.BrowserFotMobClient();
-  }
   if (mode === "unofficial") return new UnofficialFotMobClient();
   return new MockFotMobClient();
 }
@@ -599,14 +512,6 @@ function fotMobWorldCupSeason(season: string | undefined) {
 
 function asRecord(value: unknown): JsonRecord {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as JsonRecord) : {};
-}
-
-function extractNextData(html: string): JsonRecord {
-  const match = html.match(/<script id="__NEXT_DATA__" type="application\/json">([^<]+)<\/script>/);
-  if (!match?.[1]) throw new Error("FotMob match page did not include __NEXT_DATA__.");
-
-  const parsed = JSON.parse(match[1]) as unknown;
-  return asRecord(parsed);
 }
 
 function isEmptyRecord(value: unknown) {

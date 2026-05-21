@@ -9,10 +9,6 @@ const nextConfig = {
       }
     ]
   },
-  // Playwright is an optional runtime dep used only by browser-mode FotMob
-  // ingestion. Keep it out of the server bundle so prod images that skip the
-  // optional install still build.
-  serverExternalPackages: ["playwright"],
   experimental: {
     serverActions: {
       bodySizeLimit: "25mb"

@@ -12,12 +12,11 @@ async function main(): Promise<void> {
   mkdirSync(outDir, { recursive: true });
 
   if (!process.env.MACHETE_FOTMOB_PROVIDER_MODE || process.env.MACHETE_FOTMOB_PROVIDER_MODE === "mock") {
-    process.env.MACHETE_FOTMOB_PROVIDER_MODE = "browser";
-    console.info("[fotmob:smoke] No provider mode set; defaulting to 'browser' for this run.");
+    process.env.MACHETE_FOTMOB_PROVIDER_MODE = "unofficial";
+    console.info("[fotmob:smoke] No provider mode set; defaulting to 'unofficial' for this run.");
   }
 
   const { createFotMobClient } = await import("../src/providers/fotmob/client");
-  const { closeFotMobBrowser } = await import("../src/providers/fotmob/browser-manager");
 
   const client = createFotMobClient();
   const summary: Record<string, unknown> = { leagueId, season: season ?? null };
@@ -81,7 +80,7 @@ async function main(): Promise<void> {
       results: sampleResults
     };
     if (candidates.length > 0 && succeeded === 0) {
-      throw new Error(`All ${candidates.length} sampled matches failed; browser session is not returning detailed payloads.`);
+      throw new Error(`All ${candidates.length} sampled matches failed; signed FotMob client is not returning detailed payloads.`);
     }
     if (candidates.length === 0) {
       console.warn("[fotmob:smoke] No finished fixtures available to test matchDetails.");
@@ -94,8 +93,6 @@ async function main(): Promise<void> {
   } catch (error) {
     console.error("[fotmob:smoke] Failed:", error instanceof Error ? error.message : error);
     process.exitCode = 1;
-  } finally {
-    await closeFotMobBrowser();
   }
 }
 

@@ -105,50 +105,6 @@ services:
         condition: service_healthy
     command: npm run ingestion:worker
 
-  ingestion-browser:
-    build:
-      context: .
-      dockerfile: Dockerfile.browser
-    container_name: fantasy-scout-ingestion-browser
-    restart: unless-stopped
-    profiles:
-      - browser
-    environment:
-      DATABASE_URL: ${DATABASE_URL_INTERNAL:-postgresql://fantasy_app:fantasy_app_password@postgres:5432/fantasy_scout}
-      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-replace-with-long-random-secret}
-      NEXTAUTH_URL: ${NEXTAUTH_URL:-https://fantasy.tsyzhman.ru}
-      CRON_SECRET: ${CRON_SECRET:-strong-secret}
-      MACHETE_FOTMOB_PROVIDER_MODE: browser
-      MACHETE_FOTMOB_SKIP_FIXTURE_IDS: ${MACHETE_FOTMOB_SKIP_FIXTURE_IDS:-}
-      MACHETE_FOTMOB_BROWSER_HEADLESS: ${MACHETE_FOTMOB_BROWSER_HEADLESS:-true}
-      MACHETE_FOTMOB_BROWSER_PROFILE_DIR: /data/fotmob-browser-profile
-      MACHETE_FOTMOB_BROWSER_READY_TIMEOUT_MS: "120000"
-      MACHETE_FOTMOB_BROWSER_REQUEST_TIMEOUT_MS: "120000"
-      MACHETE_FOTMOB_BROWSER_MATCH_DETAILS_TIMEOUT_MS: "20000"
-      MACHETE_FOTMOB_BROWSER_CANONICAL_GRACE_MS: "3000"
-      MACHETE_DAILY_SYNC_ENABLED: "false"
-      MACHETE_DAILY_SYNC_TIME: "03:00"
-      MACHETE_DAILY_SYNC_TIMEZONE: Europe/Moscow
-      NEXT_PUBLIC_APP_NAME: Fantasy Scout
-      DEFAULT_SEASON: 2025/26
-      UPLOAD_STORAGE: local
-      LOCAL_UPLOAD_DIR: /app/storage/uploads
-      MAX_UPLOAD_MB: "25"
-      ENABLE_BULK_UPLOAD: "true"
-      ENABLE_USER_SHORTLISTS: "false"
-      ENABLE_API_FOOTBALL_PROVIDER: "false"
-      ENABLE_WYSCOUT_API_PROVIDER: "false"
-    volumes:
-      - fantasy-scout-uploads:/app/storage/uploads
-      - fotmob-browser-profile:/data/fotmob-browser-profile
-      - fotmob-browser-smoke:/app/tmp_fotmob_smoke
-    depends_on:
-      postgres:
-        condition: service_healthy
-    command: npm run ingestion:worker
-
 volumes:
   fantasy-scout-postgres:
   fantasy-scout-uploads:
-  fotmob-browser-profile:
-  fotmob-browser-smoke:

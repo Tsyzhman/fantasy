@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { extractLeagueTeamsFromLeaguePayload, FotMobFixtureDetailsUnavailableError, is_placeholder_team, UnofficialFotMobClient } from "./client";
+import { extractLeagueTeamsFromLeaguePayload, is_placeholder_team, UnofficialFotMobClient } from "./client";
 
 test("normal standings payload still works", () => {
   const teams = extractLeagueTeamsFromLeaguePayload({
@@ -223,10 +223,21 @@ test("unofficial client uses exact matchDetails payload when available", async (
   }
 });
 
-test("unofficial client rejects mismatched match pages instead of saving shallow payloads", async () => {
+test("unofficial client signs matchDetails requests with an x-mas header", async () => {
   const originalFetch = globalThis.fetch;
-  globalThis.fetch = (async (input: string | URL | Request) => {
+  const seenHeaders: Array<Record<string, string>> = [];
+  globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
     const url = String(input instanceof Request ? input.url : input);
+    const headers: Record<string, string> = {};
+    const rawHeaders = init?.headers ?? (input instanceof Request ? input.headers : undefined);
+    if (rawHeaders instanceof Headers) {
+      rawHeaders.forEach((value, name) => { headers[name.toLowerCase()] = value; });
+    } else if (rawHeaders && typeof rawHeaders === "object") {
+      for (const [name, value] of Object.entries(rawHeaders as Record<string, string>)) {
+        headers[name.toLowerCase()] = value;
+      }
+    }
+    seenHeaders.push(headers);
 
     if (url.includes("/api/data/match?")) {
       return jsonResponse({
@@ -239,24 +250,21 @@ test("unofficial client rejects mismatched match pages instead of saving shallow
     }
 
     if (url.includes("/api/data/matchDetails?")) {
-      return jsonResponse({ error: "Verification required", code: "TURNSTILE_REQUIRED" }, 403);
-    }
-
-    if (url.includes("/matches/")) {
-      return htmlResponse(nextDataHtml({
-        general: { matchId: "4813685" },
-        content: { playerStats: {}, stats: {} }
-      }));
+      return jsonResponse({
+        general: { matchId: "4813565" },
+        content: { playerStats: {}, shotmap: { shots: [] }, stats: {} }
+      });
     }
 
     throw new Error(`Unexpected fetch ${url}`);
   }) as typeof fetch;
 
   try {
-    await assert.rejects(
-      () => new UnofficialFotMobClient().getFixtureDetails("4813565"),
-      (error) => error instanceof FotMobFixtureDetailsUnavailableError && error.reason === "match page payload id mismatch: 4813685"
-    );
+    await new UnofficialFotMobClient().getFixtureDetails("4813565");
+    assert.ok(seenHeaders.length >= 2, "expected match summary + matchDetails fetches");
+    for (const headers of seenHeaders) {
+      assert.match(headers["x-mas"] ?? "", /.+/, "every signed request must carry an x-mas header");
+    }
   } finally {
     globalThis.fetch = originalFetch;
   }
@@ -269,17 +277,4 @@ function jsonResponse(payload: unknown, status = 200) {
       "content-type": "application/json"
     }
   });
-}
-
-function htmlResponse(html: string) {
-  return new Response(html, {
-    status: 200,
-    headers: {
-      "content-type": "text/html"
-    }
-  });
-}
-
-function nextDataHtml(pageProps: unknown) {
-  return `<script id="__NEXT_DATA__" type="application/json">${JSON.stringify({ props: { pageProps } })}</script>`;
 }
