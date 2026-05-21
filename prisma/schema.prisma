@@ -40,6 +40,7 @@ model User {
   isActive     Boolean       @default(true)
   lastLoginAt  DateTime?
   sessions     UserSession[]
+  fantasySquads UserFantasySquad[]
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 }
@@ -393,6 +394,9 @@ model CoreLeague {
 
   matches CoreMatch[]
   seasons LeagueSeason[]
+  fantasyContests SportsRuFantasyContest[]
+  fantasyPrices FantasyPlayerPrice[]
+  fantasySquads UserFantasySquad[]
 
   @@index([source, rawRef])
   @@map("leagues")
@@ -419,6 +423,8 @@ model CoreTeam {
   shotsAgainst        MatchShot[]        @relation("MatchShotOpponentTeam")
   leagueSeasonTeams   LeagueSeasonTeam[]
   seasonRosterEntries TeamPlayerSeason[]
+  fantasyPrices       FantasyPlayerPrice[]
+  fantasySquadPlayers UserFantasySquadPlayer[]
 
   @@index([source, rawRef])
   @@map("teams")
@@ -441,9 +447,106 @@ model CorePlayer {
   fantasyPoints          FantasyPoint[]
   fantasyPointBreakdowns FantasyPointBreakdown[]
   seasonRosterEntries    TeamPlayerSeason[]
+  fantasyPrices          FantasyPlayerPrice[]
+  fantasySquadPlayers    UserFantasySquadPlayer[]
 
   @@index([source, rawRef])
   @@map("players")
+}
+
+model SportsRuFantasyContest {
+  id                 String   @id @default(cuid())
+  leagueId           BigInt   @map("league_id")
+  season             String
+  provider           String   @default("SPORTS_RU")
+  providerContestId  String?  @map("provider_contest_id")
+  slug               String?
+  name               String
+  budgetLimit        Float    @default(100) @map("budget_limit")
+  squadSize          Int      @default(15) @map("squad_size")
+  maxPlayersPerTeam  Int      @default(2) @map("max_players_per_team")
+  rules              Json?
+  sourceUrl          String?  @map("source_url")
+  lastSyncedAt       DateTime? @map("last_synced_at")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  league CoreLeague @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, leagueId, season])
+  @@index([leagueId, season])
+  @@map("sports_ru_fantasy_contests")
+}
+
+model FantasyPlayerPrice {
+  id               String   @id @default(cuid())
+  leagueId         BigInt   @map("league_id")
+  season           String
+  teamId           BigInt?  @map("team_id")
+  playerId         BigInt?  @map("player_id")
+  provider         String   @default("SPORTS_RU")
+  providerPlayerId String?  @map("provider_player_id")
+  playerName       String   @map("player_name")
+  normalizedName   String   @map("normalized_name")
+  teamName         String   @default("") @map("team_name")
+  position         String?
+  price            Float
+  raw              Json?
+  firstSeenAt      DateTime @default(now()) @map("first_seen_at")
+  lastSeenAt       DateTime @default(now()) @map("last_seen_at")
+
+  league CoreLeague @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  team   CoreTeam?  @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  player CorePlayer? @relation(fields: [playerId], references: [id], onDelete: SetNull)
+
+  @@unique([provider, leagueId, season, normalizedName, teamName])
+  @@index([playerId, leagueId, season])
+  @@index([teamId, leagueId, season])
+  @@map("fantasy_player_prices")
+}
+
+model UserFantasySquad {
+  id            String   @id @default(cuid())
+  userId        String   @map("user_id")
+  leagueId      BigInt   @map("league_id")
+  season        String
+  name          String   @default("My squad")
+  budgetLimit   Float    @default(100) @map("budget_limit")
+  bank          Float    @default(0)
+  horizonRounds Int      @default(5) @map("horizon_rounds")
+  filters       Json?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  user    User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  league  CoreLeague @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  players UserFantasySquadPlayer[]
+
+  @@unique([userId, leagueId, season])
+  @@index([leagueId, season])
+  @@map("user_fantasy_squads")
+}
+
+model UserFantasySquadPlayer {
+  id            String   @id @default(cuid())
+  squadId       String   @map("squad_id")
+  playerId      BigInt   @map("player_id")
+  teamId        BigInt?  @map("team_id")
+  position      String?
+  isStarter     Boolean  @default(true) @map("is_starter")
+  isLocked      Boolean  @default(false) @map("is_locked")
+  slotIndex     Int      @default(0) @map("slot_index")
+  purchasePrice Float?   @map("purchase_price")
+  addedAt       DateTime @default(now()) @map("added_at")
+
+  squad  UserFantasySquad @relation(fields: [squadId], references: [id], onDelete: Cascade)
+  player CorePlayer       @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  team   CoreTeam?        @relation(fields: [teamId], references: [id], onDelete: SetNull)
+
+  @@unique([squadId, playerId])
+  @@index([playerId])
+  @@index([teamId])
+  @@map("user_fantasy_squad_players")
 }
 
 model LeagueSeason {

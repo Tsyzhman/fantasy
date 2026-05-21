@@ -1,4 +1,4 @@
-import { BarChart3, Layers3, ListChecks, Settings } from "lucide-react";
+import { BarChart3, Layers3, ListChecks, Settings, Users } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
@@ -32,6 +32,10 @@ export function MacheteShell({ children }: { children: ReactNode }) {
           <Link className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50" href="/machete/players">
             <BarChart3 className="h-4 w-4" />
             <I18nText en="Players" ru="Игроки" />
+          </Link>
+          <Link className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50" href="/machete/squad">
+            <Users className="h-4 w-4" />
+            <I18nText en="Squad" ru="Состав" />
           </Link>
           <Link className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-slate-700 hover:bg-slate-50" href="/machete/models">
             <Settings className="h-4 w-4" />

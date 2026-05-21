@@ -1,3 +1,4 @@
+import { UserRole } from "@prisma/client";
 import { Database, Shield } from "lucide-react";
 import { notFound } from "next/navigation";
 
@@ -6,9 +7,11 @@ import { MacheteFixtureTable } from "@/components/machete/MacheteFixtureTable";
 import { MachetePlayerTable } from "@/components/machete/MachetePlayerTable";
 import { MacheteStatusBadge } from "@/components/machete/MacheteStatusBadge";
 import { MacheteTeamLogo } from "@/components/machete/MacheteTeamCard";
+import { SportsRuPlayerMappingPanel } from "@/components/machete/SportsRuPlayerMappingPanel";
 import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
 import { LocalizedOption } from "@/components/localized-option";
 import { AutoSubmitForm } from "@/components/players/auto-submit-form";
+import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { formatDate, formatNumber, formatScore } from "@/lib/format";
 import { matchWindowLabel, matchWindowLabelRu, matchWindowModeValue, parseMacheteMatchWindow } from "@/scoring/machete/match-window";
@@ -21,6 +24,7 @@ import {
   resolveSharedTeamLogoUrl,
   sortSharedMacheteRows
 } from "@/machete/shared_read_model";
+import { loadSportsRuTeamPlayerMappings } from "@/machete/sports_ru_player_mapping";
 
 export const dynamic = "force-dynamic";
 
@@ -63,7 +67,7 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
   if (!seasonTeam || !seasonTeam.active) notFound();
 
   const teamScope = { leagueId: league.leagueId, season: league.season, teamId: parsedTeamId };
-  const [playerRows, fixtures, rawPayloads, windowSummary] = await Promise.all([
+  const [playerRows, fixtures, rawPayloads, windowSummary, sportsRuMappings, rosterOptions, currentUser] = await Promise.all([
     loadSharedMachetePlayerRows(prisma, {
       scopes: [teamScope],
       matchWindow
@@ -87,7 +91,25 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
       orderBy: [{ match: { matchDate: "desc" } }, { fetchedAt: "desc" }],
       take: 8
     }),
-    loadSharedMatchWindowSummary(prisma, [teamScope], matchWindow)
+    loadSharedMatchWindowSummary(prisma, [teamScope], matchWindow),
+    loadSportsRuTeamPlayerMappings(prisma, {
+      leagueId: league.leagueId,
+      season: league.season,
+      teamId: parsedTeamId
+    }),
+    prisma.teamPlayerSeason.findMany({
+      where: {
+        leagueId: league.leagueId,
+        season: league.season,
+        teamId: parsedTeamId,
+        active: true
+      },
+      include: {
+        player: true
+      },
+      orderBy: [{ position: "asc" }, { player: { name: "asc" } }]
+    }),
+    getCurrentUser()
   ]);
   const players = sortSharedMacheteRows(playerRows, "fantasyScore");
   const fantasyPreview = players.map((player) => player.fantasyScore).filter((score): score is number => typeof score === "number");
@@ -171,6 +193,16 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
           </div>
         </dl>
       </section>
+
+      <SportsRuPlayerMappingPanel
+        rows={sportsRuMappings}
+        roster={rosterOptions.map((row) => ({
+          playerId: String(row.playerId),
+          name: row.player.name,
+          position: row.position
+        }))}
+        canEdit={currentUser?.role === UserRole.ADMIN}
+      />
 
       <section className="mt-6">
         <div className="mb-3 flex items-center justify-between">
