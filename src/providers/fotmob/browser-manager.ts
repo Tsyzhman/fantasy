@@ -218,7 +218,7 @@ class FotMobBrowserManager {
           exactBlockedUrls.push(`${status} ${url}`);
         } else if (!isMatchDetailsUrlForMatch(url, matchId)) {
           ignoredMatchDetailsUrls.push(`${status} ${url}`);
-          if (status < 400 && resolveCanonicalMatchDetails) {
+          if (resolveCanonicalMatchDetails) {
             resolveCanonicalMatchDetails(url);
             resolveCanonicalMatchDetails = null;
           }
