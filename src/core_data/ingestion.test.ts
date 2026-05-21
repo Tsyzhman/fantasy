@@ -3,6 +3,7 @@ import test from "node:test";
 import type { PrismaClient } from "@prisma/client";
 
 import { FotMobFixtureDetailsUnavailableError, type FotMobClient } from "./fotmob_client";
+import { run_next_ingestion_job } from "./ingestion-jobs";
 import { discover_matches_for_scope, ingest_match } from "./ingestion";
 import { createIngestionScope } from "./ingestion-scope";
 import { CorePlayerRepository, CoreStatsRepository } from "./repositories";
@@ -157,6 +158,56 @@ test("required detailed FotMob matchDetails fail instead of creating partial dat
     ingest_match(prisma, "4813417", { client, requireDetailedPayload: true }),
     /requires detailed match payloads/
   );
+});
+
+test("non-browser workers leave current league 47 backfills queued", async () => {
+  const previousMode = process.env.MACHETE_FOTMOB_PROVIDER_MODE;
+  process.env.MACHETE_FOTMOB_PROVIDER_MODE = "unofficial";
+  let findUniqueCalled = false;
+  const prisma = {
+    ingestionJob: {
+      async findFirst() {
+        return {
+          id: "job-current-47",
+          jobType: "initial_backfill",
+          status: "pending",
+          startedByUserId: null,
+          startedAt: new Date("2026-05-21T12:00:00.000Z"),
+          finishedAt: null,
+          totalScopes: 1,
+          processedScopes: 0,
+          totalMatches: 0,
+          fetchedMatches: 0,
+          skippedMatches: 0,
+          failedMatches: 0,
+          currentLeagueId: 47n,
+          currentSeason: "2025/2026",
+          currentMatchId: null,
+          errorMessage: null,
+          metadata: { backfill_mode: "current_league_47" },
+          createdAt: new Date("2026-05-21T12:00:00.000Z"),
+          updatedAt: new Date("2026-05-21T12:00:00.000Z")
+        };
+      },
+      async findUnique() {
+        findUniqueCalled = true;
+        throw new Error("wrong worker should not claim this job");
+      }
+    }
+  } as unknown as PrismaClient;
+
+  try {
+    const result = await run_next_ingestion_job(prisma);
+    assert.equal(result.ran, false);
+    assert.equal(result.job?.id, "job-current-47");
+    assert.equal(findUniqueCalled, false);
+  } finally {
+    if (previousMode === undefined) {
+      delete process.env.MACHETE_FOTMOB_PROVIDER_MODE;
+    } else {
+      process.env.MACHETE_FOTMOB_PROVIDER_MODE = previousMode;
+    }
+  }
 });
 
 test("shallow FotMob payloads are not marked final raw payloads", async () => {

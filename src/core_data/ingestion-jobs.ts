@@ -138,6 +138,7 @@ export async function run_incremental_update(prisma: PrismaClient, input: StartJ
 export async function run_next_ingestion_job(prisma: PrismaClient, input: RunJobInput = {}) {
   const job = await runningJob(prisma);
   if (!job) return { job: null, ran: false };
+  if (!canCurrentWorkerRunJob(job, input)) return { job: serializeIngestionJob(job), ran: false };
 
   return run_ingestion_job_by_id(prisma, job.id, input);
 }
@@ -146,6 +147,7 @@ export async function run_ingestion_job_by_id(prisma: PrismaClient, jobId: strin
   const job = await prisma.ingestionJob.findUnique({ where: { id: jobId } });
   if (!job) return { job: null, ran: false };
   if (!activeStatuses.includes(job.status)) return { job: serializeIngestionJob(job), ran: false };
+  if (!canCurrentWorkerRunJob(job, input)) return { job: serializeIngestionJob(job), ran: false };
 
   const client = input.client ?? createFotMobClient();
   const scopes = await scopesForJob(prisma, job, client);
@@ -438,6 +440,13 @@ function scopesForInitialBackfillMode(mode: InitialBackfillMode) {
 
 function backfillModeFromMetadata(metadataValue: unknown): InitialBackfillMode {
   return metadataRecord(metadataValue).backfill_mode === "current_league_47" ? "current_league_47" : "full";
+}
+
+function canCurrentWorkerRunJob(job: IngestionJob, input: RunJobInput) {
+  if (input.client) return true;
+  if (job.jobType !== "initial_backfill") return true;
+  if (backfillModeFromMetadata(job.metadata) !== "current_league_47") return true;
+  return process.env.MACHETE_FOTMOB_PROVIDER_MODE === "browser";
 }
 
 async function createLockedJob(
