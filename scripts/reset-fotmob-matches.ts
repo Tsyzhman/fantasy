@@ -1,25 +1,27 @@
 // Wipe FotMob-sourced match data so the next sync re-pulls everything clean.
 //
-// Deletes (in dependency-safe order):
-//   - MachetePlayerSnapshot
-//   - MachetePlayerMatchStat
-//   - MacheteFixture            (incl. synthetic SEASON_AGGREGATE rows)
-//   - MacheteRawPayload         (cached FotMob payloads)
-//   - MacheteSyncJob            (sync job history)
-//   - CoreMatch                 (cascades to MatchTeamStat, MatchPlayerStat,
-//                                MatchShot, MatchEvent, RawMatchPayload,
-//                                FantasyPoint, FantasyPointBreakdown)
-//   - IngestionCheckpoint, IngestionJob, IngestionRun
-//   - ShotmapComparisonsCache   (derived from MatchShot)
+// Truncates (with CASCADE so FKs handle themselves):
+//   - matches          (CoreMatch, cascades to raw_match_payloads,
+//                       match_team_stats, match_player_stats, match_shots,
+//                       match_events, fantasy_points, fantasy_point_breakdown)
+//   - ingestion_runs / ingestion_jobs / ingestion_checkpoints
+//   - shotmap_comparisons_cache
+//   - MachetePlayerSnapshot / MachetePlayerMatchStat / MacheteFixture
+//   - MacheteRawPayload / MacheteSyncJob
 //
 // Keeps:
 //   - MacheteLeague / MacheteTeam / MachetePlayer (refreshed by sync upsert)
-//   - CoreLeague / CoreTeam / CorePlayer / Season aggregates
+//   - CoreLeague / CoreTeam / CorePlayer / season aggregates
 //   - User data (squads, models, shortlists, sessions)
 //   - Manual imports (Wyscout, Baltika)
 //
 // Also clears lastSyncedAt on MacheteLeague / MacheteTeam so the ingestion
 // scheduler treats them as fresh again.
+//
+// TRUNCATE is used instead of deleteMany because Postgres can drop millions
+// of cascading FK rows in milliseconds via TRUNCATE, whereas deleteMany has
+// to walk every row + every FK index and easily blows the 5s Prisma
+// interactive-transaction timeout.
 //
 // Usage:
 //   docker compose exec ingestion-worker npm run fotmob:reset -- --yes
@@ -28,6 +30,23 @@
 import { PrismaClient } from "@prisma/client";
 
 const args = new Set(process.argv.slice(2));
+
+const MACHETE_TABLES = [
+  '"MachetePlayerSnapshot"',
+  '"MachetePlayerMatchStat"',
+  '"MacheteFixture"',
+  '"MacheteRawPayload"',
+  '"MacheteSyncJob"'
+];
+
+const CORE_TABLES = [
+  "matches", // cascades to raw_match_payloads, match_*_stats, match_shots,
+             // match_events, fantasy_points, fantasy_point_breakdown
+  "ingestion_runs",
+  "ingestion_jobs",
+  "ingestion_checkpoints",
+  "shotmap_comparisons_cache"
+];
 
 async function main() {
   if (!args.has("--yes")) {
@@ -42,50 +61,19 @@ async function main() {
 
   try {
     console.info("[reset] Counting current rows...");
-    const before = await counts(prisma);
-    logCounts("before", before);
+    logCounts("before", await counts(prisma));
 
-    await prisma.$transaction(async (tx) => {
-      console.info("[reset] Deleting MachetePlayerSnapshot...");
-      await tx.machetePlayerSnapshot.deleteMany({});
+    const tables = onlyMachete ? MACHETE_TABLES : [...MACHETE_TABLES, ...CORE_TABLES];
+    const truncate = `TRUNCATE TABLE ${tables.join(", ")} RESTART IDENTITY CASCADE`;
+    console.info(`[reset] ${truncate}`);
+    await prisma.$executeRawUnsafe(truncate);
 
-      console.info("[reset] Deleting MachetePlayerMatchStat...");
-      await tx.machetePlayerMatchStat.deleteMany({});
-
-      console.info("[reset] Deleting MacheteFixture...");
-      await tx.macheteFixture.deleteMany({});
-
-      console.info("[reset] Deleting MacheteRawPayload...");
-      await tx.macheteRawPayload.deleteMany({});
-
-      console.info("[reset] Deleting MacheteSyncJob...");
-      await tx.macheteSyncJob.deleteMany({});
-
-      if (!onlyMachete) {
-        console.info("[reset] Deleting CoreMatch (cascades to stats/shots/events/fantasy points/raw payloads)...");
-        await tx.coreMatch.deleteMany({});
-
-        console.info("[reset] Deleting IngestionCheckpoint...");
-        await tx.ingestionCheckpoint.deleteMany({});
-
-        console.info("[reset] Deleting IngestionJob...");
-        await tx.ingestionJob.deleteMany({});
-
-        console.info("[reset] Deleting IngestionRun...");
-        await tx.ingestionRun.deleteMany({});
-
-        console.info("[reset] Deleting ShotmapComparisonsCache...");
-        await tx.shotmapComparisonsCache.deleteMany({});
-      }
-
-      console.info("[reset] Clearing lastSyncedAt on MacheteLeague/MacheteTeam...");
-      await tx.macheteLeague.updateMany({ data: { status: "NEW", lastSyncedAt: null } });
-      await tx.macheteTeam.updateMany({ data: { status: "NEW", lastSyncedAt: null } });
-    });
+    console.info("[reset] Clearing lastSyncedAt on MacheteLeague/MacheteTeam...");
+    await prisma.macheteLeague.updateMany({ data: { status: "NEW", lastSyncedAt: null } });
+    await prisma.macheteTeam.updateMany({ data: { status: "NEW", lastSyncedAt: null } });
 
     console.info("[reset] Counting again...");
-    const after = await counts(prisma);
-    logCounts("after", after);
+    logCounts("after", await counts(prisma));
     console.info("[reset] Done.");
   } finally {
     await prisma.$disconnect();
