@@ -210,6 +210,56 @@ test("non-browser workers leave current league 47 backfills queued", async () =>
   }
 });
 
+test("browser worker leaves full backfills for the regular worker", async () => {
+  const previousMode = process.env.MACHETE_FOTMOB_PROVIDER_MODE;
+  process.env.MACHETE_FOTMOB_PROVIDER_MODE = "browser";
+  let findUniqueCalled = false;
+  const prisma = {
+    ingestionJob: {
+      async findFirst() {
+        return {
+          id: "job-full",
+          jobType: "initial_backfill",
+          status: "pending",
+          startedByUserId: null,
+          startedAt: new Date("2026-05-21T12:00:00.000Z"),
+          finishedAt: null,
+          totalScopes: 201,
+          processedScopes: 0,
+          totalMatches: 0,
+          fetchedMatches: 0,
+          skippedMatches: 0,
+          failedMatches: 0,
+          currentLeagueId: null,
+          currentSeason: null,
+          currentMatchId: null,
+          errorMessage: null,
+          metadata: { backfill_mode: "full" },
+          createdAt: new Date("2026-05-21T12:00:00.000Z"),
+          updatedAt: new Date("2026-05-21T12:00:00.000Z")
+        };
+      },
+      async findUnique() {
+        findUniqueCalled = true;
+        throw new Error("browser worker should not claim full jobs");
+      }
+    }
+  } as unknown as PrismaClient;
+
+  try {
+    const result = await run_next_ingestion_job(prisma);
+    assert.equal(result.ran, false);
+    assert.equal(result.job?.id, "job-full");
+    assert.equal(findUniqueCalled, false);
+  } finally {
+    if (previousMode === undefined) {
+      delete process.env.MACHETE_FOTMOB_PROVIDER_MODE;
+    } else {
+      process.env.MACHETE_FOTMOB_PROVIDER_MODE = previousMode;
+    }
+  }
+});
+
 test("shallow FotMob payloads are not marked final raw payloads", async () => {
   const calls: unknown[] = [];
   const prisma = {

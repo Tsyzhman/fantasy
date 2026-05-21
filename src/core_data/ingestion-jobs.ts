@@ -444,9 +444,11 @@ function backfillModeFromMetadata(metadataValue: unknown): InitialBackfillMode {
 
 function canCurrentWorkerRunJob(job: IngestionJob, input: RunJobInput) {
   if (input.client) return true;
-  if (job.jobType !== "initial_backfill") return true;
-  if (backfillModeFromMetadata(job.metadata) !== "current_league_47") return true;
-  return process.env.MACHETE_FOTMOB_PROVIDER_MODE === "browser";
+  const isBrowserWorker = process.env.MACHETE_FOTMOB_PROVIDER_MODE === "browser";
+  const isCurrentLeagueBackfill = job.jobType === "initial_backfill" && backfillModeFromMetadata(job.metadata) === "current_league_47";
+
+  if (isCurrentLeagueBackfill) return isBrowserWorker;
+  return !isBrowserWorker;
 }
 
 async function createLockedJob(
