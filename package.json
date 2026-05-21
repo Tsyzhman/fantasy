@@ -25,6 +25,7 @@
     "ingestion:import-payloads": "tsx scripts/ingestion-runner.ts import-payloads",
     "fotmob:smoke": "tsx scripts/fotmob-smoke.ts",
     "fotmob:inspect": "tsx scripts/fotmob-inspect.ts",
+    "fotmob:reset": "tsx scripts/reset-fotmob-matches.ts",
     "scores:recalculate": "tsx prisma/recalculate-fantasy.ts",
     "logos:download": "tsx scripts/download-team-logos.ts"
   },
