@@ -13,6 +13,7 @@ async function main() {
     run_next_ingestion_job,
     start_initial_backfill
   } = await import("../src/core_data/ingestion-jobs");
+  const { reparse_match } = await import("../src/core_data/ingestion");
 
   const command = process.argv[2] ?? "status";
 
@@ -48,9 +49,29 @@ async function main() {
     } else if (command === "status") {
       const status = await getIngestionAdminStatus(prisma);
       console.dir(status, { depth: null });
+    } else if (command === "reparse-raw") {
+      const limit = parsePositiveInt(process.argv[3]);
+      const raws = await prisma.rawMatchPayload.findMany({
+        select: { matchId: true },
+        orderBy: { fetchedAt: "desc" },
+        ...(limit ? { take: limit } : {})
+      });
+      let reparsed = 0;
+      let failed = 0;
+      for (const raw of raws) {
+        try {
+          await reparse_match(prisma, raw.matchId);
+          reparsed += 1;
+          if (reparsed % 100 === 0) console.info(`[ingestion:cli] Reparsed ${reparsed}/${raws.length} raw payloads.`);
+        } catch (error) {
+          failed += 1;
+          console.warn(`[ingestion:cli] Failed to reparse match ${String(raw.matchId)}: ${error instanceof Error ? error.message : "unknown error"}`);
+        }
+      }
+      console.info(`[ingestion:cli] Raw reparse complete. Reparsed=${reparsed}; failed=${failed}.`);
     } else {
       throw new Error(
-        `Unknown ingestion command "${command}". Use status, queue-initial-backfill, initial-backfill, queue-incremental-update, incremental-update, run-next, or worker.`
+        `Unknown ingestion command "${command}". Use status, queue-initial-backfill, initial-backfill, queue-incremental-update, incremental-update, run-next, worker, or reparse-raw.`
       );
     }
   } catch (error) {
@@ -59,6 +80,11 @@ async function main() {
   } finally {
     await prisma.$disconnect();
   }
+}
+
+function parsePositiveInt(value: string | null | undefined) {
+  const parsed = Number(value);
+  return Number.isInteger(parsed) && parsed > 0 ? parsed : null;
 }
 
 function sleep(ms: number) {

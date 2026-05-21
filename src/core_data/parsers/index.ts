@@ -54,7 +54,7 @@ export function parse_match_metadata(payload: unknown): MatchData {
   const finished = details.status === "FINISHED" || statusRecord.finished === true || normalizedStatus === "FINISHED";
   const started = finished || details.status === "LIVE" || statusRecord.started === true || statusRecord.ongoing === true || normalizedStatus === "LIVE";
   const cancelled = statusRecord.cancelled === true || normalizedStatus === "CANCELLED" || normalizedStatus === "POSTPONED";
-  const matchDate = dateValue(firstString(details.kickoffAt, raw.matchDate, statusRecord.utcTime, header.utcTime, general.matchTimeUTC));
+  const matchDate = firstDateValue(details.kickoffAt, statusRecord.utcTime, header.utcTime, general.matchTimeUTCDate, general.matchTimeUTC, raw.matchDate);
 
   return {
     id: matchId,
@@ -70,7 +70,7 @@ export function parse_match_metadata(payload: unknown): MatchData {
     finished,
     cancelled,
     matchDate,
-    utcTime: dateValue(firstString(statusRecord.utcTime, header.utcTime, general.matchTimeUTC)) ?? matchDate,
+    utcTime: firstDateValue(statusRecord.utcTime, header.utcTime, general.matchTimeUTCDate, general.matchTimeUTC, details.kickoffAt, raw.matchDate) ?? matchDate,
     sourceUrl: matchRawId ? `https://www.fotmob.com/matches/${matchRawId}` : null,
     rawRef: matchRawId ?? null
   };
@@ -682,5 +682,22 @@ function booleanValue(value: unknown): boolean | null {
 function dateValue(value: string | null | undefined): Date | null {
   if (!value) return null;
   const parsed = new Date(value);
-  return Number.isNaN(parsed.getTime()) ? null : parsed;
+  if (!Number.isNaN(parsed.getTime())) return parsed;
+
+  const fotMobLocalDate = value.trim().match(/^(\d{2})\.(\d{2})\.(\d{4})\s+(\d{2}):(\d{2})(?::(\d{2}))?$/);
+  if (fotMobLocalDate) {
+    const [, day, month, year, hour, minute, second = "0"] = fotMobLocalDate;
+    const utcDate = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute), Number(second)));
+    return Number.isNaN(utcDate.getTime()) ? null : utcDate;
+  }
+
+  return null;
+}
+
+function firstDateValue(...values: unknown[]) {
+  for (const value of values) {
+    const date = dateValue(firstString(value));
+    if (date) return date;
+  }
+  return null;
 }

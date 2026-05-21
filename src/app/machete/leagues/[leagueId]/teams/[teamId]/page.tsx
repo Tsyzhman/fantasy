@@ -250,7 +250,7 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
                 {[payload.match.homeTeam?.name, payload.match.awayTeam?.name].filter(Boolean).join(" - ") || <I18nText en="Fixture" ru="Матч" />}
               </p>
               <p className="mt-1 text-xs text-slate-500">
-                <I18nText en="Match date" ru="Дата матча" />: {formatDate(payload.match.matchDate)}
+                <I18nText en="Match date" ru="Дата матча" />: {formatDate(payload.match.matchDate ?? rawPayloadMatchDate(payload.payload))}
               </p>
               <p className="mt-1 text-xs text-slate-500">
                 <I18nText en="Fetched" ru="Загружен" />: {formatDate(payload.fetchedAt)}
@@ -287,4 +287,37 @@ function rawPayloadDetailReason(payload: unknown) {
   if (!payload || typeof payload !== "object" || Array.isArray(payload)) return null;
   const reason = (payload as { detailsUnavailableReason?: unknown }).detailsUnavailableReason;
   return typeof reason === "string" && reason.trim() ? reason : null;
+}
+
+function rawPayloadMatchDate(payload: unknown) {
+  const record = rawPayloadRecord(payload);
+  const status = rawPayloadRecord(record.status);
+  return firstRawPayloadDate(status.utcTime, record.kickoffAt, record.matchTimeUTC, record.matchDate, record.startDay);
+}
+
+function firstRawPayloadDate(...values: unknown[]) {
+  for (const value of values) {
+    const parsed = rawPayloadDateValue(value);
+    if (parsed) return parsed;
+  }
+  return null;
+}
+
+function rawPayloadDateValue(value: unknown) {
+  const raw = typeof value === "string" ? value.trim() : typeof value === "number" && Number.isFinite(value) ? String(value) : "";
+  if (!raw) return null;
+
+  const directDate = new Date(raw);
+  if (!Number.isNaN(directDate.getTime())) return directDate;
+
+  const fotMobLocalDate = raw.match(/^(\d{2})\.(\d{2})\.(\d{4})\s+(\d{2}):(\d{2})(?::(\d{2}))?$/);
+  if (!fotMobLocalDate) return null;
+
+  const [, day, month, year, hour, minute, second = "0"] = fotMobLocalDate;
+  const utcDate = new Date(Date.UTC(Number(year), Number(month) - 1, Number(day), Number(hour), Number(minute), Number(second)));
+  return Number.isNaN(utcDate.getTime()) ? null : utcDate;
+}
+
+function rawPayloadRecord(value: unknown): Record<string, unknown> {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
 }

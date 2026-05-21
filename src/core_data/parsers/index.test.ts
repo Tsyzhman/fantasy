@@ -53,6 +53,20 @@ test("shared parser normalizes match payload without embedding raw shot payloads
   assert.equal("raw_shots" in (parsed.teamStats[0].statsPayload as Record<string, unknown>), false);
 });
 
+test("shared parser uses the first valid match date candidate", () => {
+  const parsed = parse_payload({
+    id: 102,
+    leagueId: 47,
+    matchDate: "27.12.2025 16:00",
+    home: { id: 10, name: "Home FC", score: 2 },
+    away: { id: 20, name: "Away FC", score: 1 },
+    status: { finished: true, started: true, utcTime: "2025-12-27T15:00:00.000Z" }
+  });
+
+  assert.equal(parsed.match.matchDate?.toISOString(), "2025-12-27T15:00:00.000Z");
+  assert.equal(parsed.match.utcTime?.toISOString(), "2025-12-27T15:00:00.000Z");
+});
+
 test("shared parser reads nested lineup player stats for fantasy scoring", () => {
   const payload = {
     id: 202,
