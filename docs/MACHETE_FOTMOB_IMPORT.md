@@ -1,18 +1,40 @@
 # Machete FotMob Import
 
-Machete supports three FotMob provider modes:
+Machete supports four FotMob provider modes:
 
 ```env
 MACHETE_FOTMOB_PROVIDER_MODE="mock"
 MACHETE_FOTMOB_PROVIDER_MODE="unofficial"
+MACHETE_FOTMOB_PROVIDER_MODE="browser"
 MACHETE_FOTMOB_PROVIDER_MODE="real"
 ```
 
 `mock` is the default and uses local seed data.
 
-`unofficial` calls FotMob public endpoints for prototype/internal research. Keep volumes small, respect blocks and rate limits, and do not use proxy or verification bypasses. If FotMob returns `403`, `429`, or `TURNSTILE_REQUIRED`, the sync stops.
+`unofficial` calls FotMob public endpoints directly. In practice most detail endpoints now require Cloudflare Turnstile verification, so this mode is mainly useful for endpoints that are still openly cacheable.
+
+`browser` runs requests through a Playwright-driven Chromium that holds a persistent FotMob session. On the first run, set `MACHETE_FOTMOB_BROWSER_HEADLESS=false` and solve the Turnstile challenge once in the visible window; the resulting cookies are written to the profile dir and re-used by headless runs.
 
 `real` is reserved for a licensed provider adapter. The app intentionally keeps this separate from the unofficial endpoint client.
+
+## Browser mode setup
+
+```bash
+npm install                 # picks up playwright as an optional dependency
+npx playwright install chromium
+
+# .env
+MACHETE_FOTMOB_PROVIDER_MODE="browser"
+MACHETE_FOTMOB_BROWSER_HEADLESS="false"      # first run only, to solve Turnstile
+MACHETE_FOTMOB_BROWSER_PROFILE_DIR=".cache/fotmob-browser-profile"
+
+# Smoke test (default league 47 / Premier League):
+npm run fotmob:smoke -- 47
+
+# After the first successful run, flip headless back to "true".
+```
+
+The smoke script writes `tmp_fotmob_smoke/league-47.json`, `fixtures-47.json`, a sample `match-{id}.json`, and a `summary-47.json` that confirms which `content.*` sections are present (`playerStats`, `shotmap`, `lineup`, `matchFacts`).
 
 ## Endpoint Mapping
 

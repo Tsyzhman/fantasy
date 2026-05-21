@@ -4,3 +4,8 @@ node_modules
 .env*.local
 storage/uploads
 *.tsbuildinfo
+.cache
+.tmp-fotmob-js
+tmp_*.json
+tmp_*.rds
+tmp_fotmob_smoke

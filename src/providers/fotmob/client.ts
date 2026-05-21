@@ -48,10 +48,10 @@ export class MockFotMobClient implements FotMobClient {
 type JsonRecord = Record<string, unknown>;
 
 export class UnofficialFotMobClient implements FotMobClient {
-  private readonly baseUrl = process.env.MACHETE_FOTMOB_BASE_URL || "https://www.fotmob.com/api";
-  private readonly siteUrl = process.env.MACHETE_FOTMOB_SITE_URL || "https://www.fotmob.com";
-  private readonly ccode3 = process.env.MACHETE_FOTMOB_CCODE3 || "GBR";
-  private readonly timezone = process.env.MACHETE_FOTMOB_TIMEZONE || "Europe/London";
+  protected readonly baseUrl = process.env.MACHETE_FOTMOB_BASE_URL || "https://www.fotmob.com/api";
+  protected readonly siteUrl = process.env.MACHETE_FOTMOB_SITE_URL || "https://www.fotmob.com";
+  protected readonly ccode3 = process.env.MACHETE_FOTMOB_CCODE3 || "GBR";
+  protected readonly timezone = process.env.MACHETE_FOTMOB_TIMEZONE || "Europe/London";
 
   async getLeague(leagueId: string, season?: string): Promise<FotMobLeague> {
     const requestSeason = fotMobRequestSeason(leagueId, season);
@@ -146,7 +146,7 @@ export class UnofficialFotMobClient implements FotMobClient {
     };
   }
 
-  private async getJson(path: string, params: Record<string, string | number | undefined>): Promise<unknown> {
+  protected async getJson(path: string, params: Record<string, string | number | undefined>): Promise<unknown> {
     const url = new URL(`${this.baseUrl}${path}`);
     for (const [key, value] of Object.entries(params)) {
       if (value !== undefined) url.searchParams.set(key, String(value));
@@ -231,7 +231,7 @@ export class UnofficialFotMobClient implements FotMobClient {
     }, "match page");
   }
 
-  private async getText(url: string): Promise<string> {
+  protected async getText(url: string): Promise<string> {
     let lastError: unknown;
     for (let attempt = 0; attempt < 3; attempt += 1) {
       try {
@@ -327,8 +327,15 @@ export class RealFotMobClient implements FotMobClient {
 }
 
 export function createFotMobClient(): FotMobClient {
-  if (process.env.MACHETE_FOTMOB_PROVIDER_MODE === "real") return new RealFotMobClient();
-  if (process.env.MACHETE_FOTMOB_PROVIDER_MODE === "unofficial") return new UnofficialFotMobClient();
+  const mode = process.env.MACHETE_FOTMOB_PROVIDER_MODE;
+  if (mode === "real") return new RealFotMobClient();
+  if (mode === "browser") {
+    // Lazy require so that environments without playwright installed can still
+    // load this module (e.g. test runners or builds that don't use browser mode).
+    const { BrowserFotMobClient } = require("./browser-client") as typeof import("./browser-client");
+    return new BrowserFotMobClient();
+  }
+  if (mode === "unofficial") return new UnofficialFotMobClient();
   return new MockFotMobClient();
 }
 

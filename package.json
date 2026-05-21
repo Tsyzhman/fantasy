@@ -23,6 +23,7 @@
     "ingestion:worker": "tsx scripts/ingestion-runner.ts worker",
     "ingestion:reparse-raw": "tsx scripts/ingestion-runner.ts reparse-raw",
     "ingestion:import-payloads": "tsx scripts/ingestion-runner.ts import-payloads",
+    "fotmob:smoke": "tsx scripts/fotmob-smoke.ts",
     "scores:recalculate": "tsx prisma/recalculate-fantasy.ts",
     "logos:download": "tsx scripts/download-team-logos.ts"
   },
@@ -35,6 +36,9 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "tailwind-merge": "^2.5.4"
+  },
+  "optionalDependencies": {
+    "playwright": "^1.49.0"
   },
   "devDependencies": {
     "@types/node": "^20.17.6",
