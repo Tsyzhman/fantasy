@@ -227,12 +227,15 @@ class FotMobBrowserManager {
         .then((response) => ({ response }))
         .catch((error: unknown) => ({ error }));
 
-      if (debug) console.info(`[fotmob:browser] navigating to ${canonicalUrl}`);
+      console.info(`[fotmob:browser] Match ${matchId}: opening ${canonicalUrl}.`);
       await newPage.goto(canonicalUrl, { waitUntil: "domcontentloaded", timeout: REQUEST_TIMEOUT_MS });
+      console.info(`[fotmob:browser] Match ${matchId}: page DOM loaded.`);
       try {
         await newPage.waitForLoadState("networkidle", { timeout: REQUEST_TIMEOUT_MS });
+        console.info(`[fotmob:browser] Match ${matchId}: page network idle.`);
       } catch {
         // Networkidle is a readiness hint, not a hard requirement.
+        console.info(`[fotmob:browser] Match ${matchId}: network idle not reached, continuing.`);
       }
 
       // Hydrate the canonical page first, then switch the hash. The canonical
@@ -252,6 +255,7 @@ class FotMobBrowserManager {
           },
           { id: matchId, url: fullUrl }
         );
+        console.info(`[fotmob:browser] Match ${matchId}: hash route triggered.`);
       } catch {
         // ignore — diagnostic only
       }
@@ -265,14 +269,17 @@ class FotMobBrowserManager {
             headers: { Accept: "application/json, text/plain, */*" }
           }).catch(() => undefined);
         }, matchId);
+        console.info(`[fotmob:browser] Match ${matchId}: exact matchDetails fetch triggered.`);
       } catch {
         // The SPA hash-change path above is still the primary trigger.
       }
 
+      console.info(`[fotmob:browser] Match ${matchId}: waiting up to ${REQUEST_TIMEOUT_MS}ms for exact matchDetails response.`);
       const responseResult = await responsePromise;
       let response: PlaywrightResponse;
       if ("response" in responseResult) {
         response = responseResult.response;
+        console.info(`[fotmob:browser] Match ${matchId}: exact matchDetails response captured (${response.status()}).`);
       } else {
         try {
           await newPage.waitForTimeout(250);

@@ -251,11 +251,13 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: Ing
       console.info(`[ingestion] Scope ${scopeOrdinal}/${scopes.length}: league ${scope.league_id}, season ${scope.season}.`);
 
       try {
+        console.info(`[ingestion] Scope ${scopeOrdinal}/${scopes.length}: syncing rosters.`);
         await sync_league_season_rosters(prisma, client, {
           leagueId: scope.league_id,
           season: scope.season,
           isCurrent: jobType === "incremental_update"
         });
+        console.info(`[ingestion] Scope ${scopeOrdinal}/${scopes.length}: rosters synced.`);
       } catch (error) {
         await prisma.ingestionJob.update({
           where: { id: jobId },
@@ -265,7 +267,9 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: Ing
         });
       }
 
+      console.info(`[ingestion] Scope ${scopeOrdinal}/${scopes.length}: discovering fixtures.`);
       const discoveredMatches = await discover_matches_for_scope(client, scope);
+      console.info(`[ingestion] Scope ${scopeOrdinal}/${scopes.length}: discovered ${discoveredMatches.length} fixtures.`);
       const shouldIncrementTotalMatches = !isResumingSameScope || knownScopeTotal === null;
       let currentScopeProcessedMatches = isResumingSameScope ? Math.min(knownScopeProcessed, discoveredMatches.length) : 0;
       await prisma.ingestionJob.update({
@@ -296,6 +300,11 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: Ing
         });
 
         try {
+          if (currentScopeProcessedMatches === 0 || (currentScopeProcessedMatches + 1) % 25 === 0) {
+            console.info(
+              `[ingestion] Scope ${scopeOrdinal}/${scopes.length}: fetching match ${currentScopeProcessedMatches + 1}/${discoveredMatches.length} (${fixture.id}).`
+            );
+          }
           const result = await ingest_match(prisma, fixture.id, {
             client,
             leagueId: scope.league_id,
@@ -332,6 +341,11 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: Ing
             cursor: { match_id: fixture.id }
           });
         } catch (error) {
+          console.error(
+            `[ingestion] Scope ${scopeOrdinal}/${scopes.length}: match ${fixture.id} failed: ${
+              error instanceof Error ? error.message : "Unknown match ingestion error"
+            }`
+          );
           await prisma.ingestionJob.update({
             where: { id: jobId },
             data: {
@@ -381,6 +395,9 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: Ing
     });
     console.info(`[ingestion] ${jobType} job ${jobId} completed.`);
   } catch (error) {
+    console.error(
+      `[ingestion] ${jobType} job ${jobId} failed: ${error instanceof Error ? error.message : "Unknown ingestion job error"}`
+    );
     const status = error instanceof ScopeTooBroadError ? "failed" : "failed";
     await prisma.ingestionJob.update({
       where: { id: jobId },
