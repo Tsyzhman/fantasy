@@ -15,7 +15,12 @@ RUN apt-get update \
   && rm -rf /var/lib/apt/lists/*
 
 COPY package.json package-lock.json ./
-RUN npm ci --omit=optional
+# npm install (not npm ci) — package-lock.json is generated on a developer
+# workstation, and npm omits transitive native deps for other platforms there.
+# `npm ci` is strict about that and refuses to build; `npm install` reconciles
+# the lock with the build-platform deps on the fly. The lock change stays
+# inside the layer and is not committed back.
+RUN npm install --omit=optional --no-audit --no-fund
 
 COPY . .
 RUN npx prisma generate && npm run build
