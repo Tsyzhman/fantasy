@@ -103,6 +103,21 @@ test("goal and on-target detection uses event fields defensively", () => {
   assert.equal(shot.is_on_target, true);
 });
 
+test("shot situation keeps FotMob situation separate from match period", () => {
+  const shots = extract_match_shots({
+    id: 1,
+    home: { id: 10 },
+    away: { id: 20 },
+    shots: [
+      { teamId: 10, playerId: 1, coordinateX: 91, coordinateY: 51, situation: "FromCorner", period: "FirstHalf" },
+      { teamId: 10, playerId: 2, coordinateX: 88, coordinateY: 35, period: "SecondHalf" }
+    ]
+  });
+
+  assert.equal(shots[0].situation, "FromCorner");
+  assert.equal(shots[1].situation, null);
+});
+
 test("left center right zone classification works", () => {
   assert.equal(classify_shot_zone(90, 20), "left");
   assert.equal(classify_shot_zone(90, 50), "center");

@@ -293,7 +293,7 @@ function teamNameForId(teamId: number | null, context: FotMobMatchContext) {
 }
 
 function shotSituation(shot: JsonRecord) {
-  const direct = stringValue(pick(shot, ["situation", "period"]));
+  const direct = stringValue(pick(shot, ["situation"]));
   if (direct) return direct;
   if (booleanValue(shot.isPenalty)) return "penalty";
   if (booleanValue(shot.isFromSetPiece)) return "set_piece";
