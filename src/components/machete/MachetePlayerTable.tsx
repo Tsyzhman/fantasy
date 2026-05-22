@@ -34,7 +34,7 @@ export function MachetePlayerTable({
   serverSortParam?: string;
   defaultSort?: string;
 }) {
-  const columnsCount = showContext ? 17 : 15;
+  const columnsCount = showContext ? 15 : 14;
   const sortProps = { serverSortParam, defaultSort };
 
   return (
@@ -130,12 +130,10 @@ export function MachetePlayerTable({
             <tr>
               <th className="px-4 py-3" data-sort-key="playerName"><I18nText en="Player" ru="Игрок" /></th>
               {showContext ? <th className="px-4 py-3" data-sort-key="teamName"><I18nText en="Team" ru="Команда" /></th> : null}
-              {showContext ? <th className="px-4 py-3" data-sort-key="leagueName"><I18nText en="League" ru="Лига" /></th> : null}
               <th className="px-4 py-3" data-sort-key="position"><I18nText en="Pos" ru="Поз." /></th>
               <th className="bg-emerald-50 px-4 py-3 text-right text-emerald-700" data-sort-key="fantasyScore"><I18nText en="Expected FP" ru="Прогноз FP" /></th>
               <th className="bg-sky-50 px-4 py-3 text-right text-sky-700" data-sort-key="scoringScore"><I18nText en="Actual FP" ru="Реальные FP" /></th>
               <th className="bg-amber-50 px-4 py-3 text-right text-amber-700" data-sort-key="alternativeScore"><I18nText en="Alt FP" ru="Альт. FP" /></th>
-              <th className="px-4 py-3 text-right" data-sort-key="age"><I18nText en="Age" ru="Возраст" /></th>
               <th className="px-4 py-3" data-sort-key="nationality"><I18nText en="Nation" ru="Страна" /></th>
               <th className="px-4 py-3 text-right" data-sort-key="matchesPlayed">Apps</th>
               <th className="px-4 py-3 text-right" data-sort-key="minutesPlayed">Min</th>
@@ -152,7 +150,6 @@ export function MachetePlayerTable({
               <tr key={player.id} className="hover:bg-slate-50">
                 <td className="whitespace-nowrap px-4 py-3 font-medium text-ink">{player.name}</td>
                 {showContext ? <td className="whitespace-nowrap px-4 py-3 text-slate-600">{player.teamName ?? "-"}</td> : null}
-                {showContext ? <td className="whitespace-nowrap px-4 py-3 text-slate-600">{player.leagueName ?? "-"}</td> : null}
                 <td className="whitespace-nowrap px-4 py-3 text-slate-600">{player.position ?? "-"}</td>
                 <td className="whitespace-nowrap bg-emerald-50/70 px-4 py-3 text-right font-semibold text-emerald-700">
                   {formatScore(player.fantasyScore)}
@@ -163,7 +160,6 @@ export function MachetePlayerTable({
                 <td className="whitespace-nowrap bg-amber-50/70 px-4 py-3 text-right font-semibold text-amber-700">
                   {formatScore(player.alternativeScore ?? null)}
                 </td>
-                <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatNumber(player.age)}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-slate-600">{player.nationality ?? "-"}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatNumber(player.matchesPlayed)}</td>
                 <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatNumber(player.minutesPlayed)}</td>

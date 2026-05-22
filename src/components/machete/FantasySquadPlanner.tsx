@@ -681,11 +681,12 @@ function signedNumber(value: number) {
 }
 
 function positionPillClass(position: FantasyPositionGroup) {
-  if (position === "GK") return "bg-violet-100 text-violet-700";
-  if (position === "DEF") return "bg-sky-100 text-sky-700";
-  if (position === "MID") return "bg-emerald-100 text-emerald-700";
-  if (position === "FWD") return "bg-rose-100 text-rose-700";
-  return "bg-slate-100 text-slate-600";
+  const base = "border border-black/10 text-white shadow-sm";
+  if (position === "GK") return `${base} bg-violet-700`;
+  if (position === "DEF") return `${base} bg-blue-700`;
+  if (position === "MID") return `${base} bg-emerald-700`;
+  if (position === "FWD") return `${base} bg-rose-700`;
+  return `${base} bg-slate-700`;
 }
 
 function starterLimitLabel(rules: FantasySquadRules, position: Exclude<FantasyPositionGroup, "UNK">) {
