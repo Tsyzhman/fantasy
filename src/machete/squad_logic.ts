@@ -97,12 +97,24 @@ export const defaultFantasySquadRules: FantasySquadRules = {
 };
 
 export function normalizeFantasyPosition(position: string | null | undefined): FantasyPositionGroup {
-  const value = position?.toLowerCase() ?? "";
-  if (["gk", "\u0432\u0440", "\u0432\u0440\u0430\u0442\u0430\u0440\u044c"].includes(value) || value.includes("keeper")) return "GK";
-  if (["def", "\u0437\u0430\u0449", "\u0437\u0430\u0449\u0438\u0442\u043d\u0438\u043a"].includes(value) || value.includes("defender") || value.includes("back")) return "DEF";
-  if (["mid", "\u043f\u0437", "\u043f\u043e\u043b\u0443\u0437\u0430\u0449\u0438\u0442\u043d\u0438\u043a"].includes(value) || value.includes("midfielder")) return "MID";
+  const value = position?.trim().toLowerCase() ?? "";
+  const compact = value.replace(/[\s._/-]+/g, "");
+  if (["gk", "\u0432", "\u0432\u0440", "\u0432\u0440\u0430\u0442\u0430\u0440\u044c", "\u0432\u0440\u0430\u0442\u0430\u0440\u0438"].includes(compact) || value.includes("keeper")) return "GK";
   if (
-    ["fw", "fwd", "\u043d\u0430\u043f", "\u043d\u0430\u043f\u0430\u0434\u0430\u044e\u0449\u0438\u0439"].includes(value) ||
+    ["def", "\u0437", "\u0437\u0449", "\u0437\u0430\u0449", "\u0437\u0430\u0449\u0438\u0442\u043d\u0438\u043a", "\u0437\u0430\u0449\u0438\u0442\u043d\u0438\u043a\u0438"].includes(compact) ||
+    value.includes("defender") ||
+    value.includes("back")
+  ) {
+    return "DEF";
+  }
+  if (
+    ["mid", "\u043f", "\u043f\u0437", "\u043f\u043e\u043b\u0443\u0437\u0430\u0449\u0438\u0442\u043d\u0438\u043a", "\u043f\u043e\u043b\u0443\u0437\u0430\u0449\u0438\u0442\u043d\u0438\u043a\u0438"].includes(compact) ||
+    value.includes("midfielder")
+  ) {
+    return "MID";
+  }
+  if (
+    ["fw", "fwd", "\u043d", "\u043d\u043f", "\u043d\u0430\u043f", "\u0444\u043e\u0440\u0432\u0430\u0440\u0434", "\u043d\u0430\u043f\u0430\u0434\u0430\u044e\u0449\u0438\u0439", "\u043d\u0430\u043f\u0430\u0434\u0430\u044e\u0449\u0438\u0435"].includes(compact) ||
     value.includes("forward") ||
     value.includes("striker") ||
     value.includes("winger")

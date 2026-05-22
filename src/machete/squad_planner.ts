@@ -108,6 +108,17 @@ type TeamStrengthMatchInput = {
   }>;
 };
 
+type SportsRuPositionPriceRow = {
+  id: string;
+  playerId: bigint | null;
+  position: string | null;
+};
+
+type SportsRuPositionMapRow = {
+  providerEntityId: string;
+  internalEntityId: string | null;
+};
+
 const maxProjectionRounds = 10;
 const defaultTeamXgPerMatch = 1.25;
 
@@ -183,6 +194,7 @@ export async function loadFantasySquadPlannerData(
   const rules = fantasyRulesForLeague(league, contest ?? null);
   const projectedByPlayerTeam = new Map(playerRows.map((row) => [playerTeamKey(row.playerId, row.teamId), row]));
   const prices = priceLookup(priceRows, priceMaps);
+  const sportsPositionsByPlayerId = sportsRuFantasyPositionsByPlayerId(priceRows, priceMaps);
   const players = rosterRows.map((row) => {
     const projected = projectedByPlayerTeam.get(playerTeamKey(row.playerId, row.teamId));
     const predictedFp = projected?.fantasyScore ?? null;
@@ -190,7 +202,8 @@ export async function loadFantasySquadPlannerData(
       prices.byPlayerId.get(String(row.playerId)) ??
       prices.byNameTeam.get(nameTeamKey(row.player.name, row.team.name)) ??
       prices.findByPlayerName(row.player.name);
-    const position = fantasyPlannerPosition(priceRow?.position ?? null, row.position, projected?.position ?? null);
+    const sportsPosition = sportsPositionsByPlayerId.get(String(row.playerId)) ?? priceRow?.position ?? null;
+    const position = fantasyPlannerPosition(sportsPosition, row.position, projected?.position ?? null);
     const positionGroup = normalizeFantasyPosition(position);
     const price = priceRow?.price ?? estimateFantasyPrice(predictedFp, positionGroup);
     const roundPoints = roundsAndFixtures.rounds.map((round) => {
@@ -621,7 +634,15 @@ export async function loadSportsRuFantasyPositionsByPlayerId(
       internalEntityId: true
     }
   });
-  const mappedPlayerIdsByPriceId = new Map(maps.map((row) => [row.providerEntityId, row.internalEntityId]));
+  return sportsRuFantasyPositionsByPlayerId(priceRows, maps);
+}
+
+export function sportsRuFantasyPositionsByPlayerId(priceRows: SportsRuPositionPriceRow[], priceMaps: SportsRuPositionMapRow[]) {
+  const mappedPlayerIdsByPriceId = new Map(
+    priceMaps
+      .filter((row) => row.internalEntityId)
+      .map((row) => [row.providerEntityId, row.internalEntityId as string])
+  );
   const positionsByPlayerId = new Map<string, string>();
 
   for (const row of priceRows) {
@@ -819,7 +840,9 @@ export function fantasyPlannerPosition(
   rosterPosition: string | null | undefined,
   projectedPosition: string | null | undefined
 ) {
-  return sportsPosition ?? rosterPosition ?? projectedPosition ?? null;
+  const candidates = [sportsPosition, rosterPosition, projectedPosition];
+  const known = candidates.find((position) => position && normalizeFantasyPosition(position) !== "UNK");
+  return known ?? candidates.find((position) => position?.trim()) ?? null;
 }
 
 function estimateFantasyPrice(score: number | null, positionGroup: string) {

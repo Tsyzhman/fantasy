@@ -107,9 +107,13 @@ test("next fantasy points fall back to predicted FP when no fixture rounds are l
 
 test("position normalizer accepts Sports.ru labels", () => {
   assert.equal(normalizeFantasyPosition("\u0432\u0440"), "GK");
+  assert.equal(normalizeFantasyPosition("\u0412\u0440\u0430\u0442\u0430\u0440\u0438"), "GK");
   assert.equal(normalizeFantasyPosition("\u0437\u0430\u0449"), "DEF");
+  assert.equal(normalizeFantasyPosition("\u0417\u0429"), "DEF");
   assert.equal(normalizeFantasyPosition("\u043f\u0437"), "MID");
+  assert.equal(normalizeFantasyPosition("\u041f"), "MID");
   assert.equal(normalizeFantasyPosition("\u043d\u0430\u043f"), "FWD");
+  assert.equal(normalizeFantasyPosition("\u041d\u0430\u043f\u0430\u0434\u0430\u044e\u0449\u0438\u0435"), "FWD");
 });
 
 function player(

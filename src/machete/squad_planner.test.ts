@@ -6,6 +6,7 @@ import {
   buildTeamStrengthProfilesFromMatches,
   fantasyPlannerPosition,
   projectFixtureFantasyPoints,
+  sportsRuFantasyPositionsByPlayerId,
   sportsRuSeasonAliases
 } from "./squad_planner";
 
@@ -34,6 +35,21 @@ test("sports ru season aliases support long and compact FotMob season labels", (
 test("squad planner prefers Sports.ru position over FotMob roster position", () => {
   assert.equal(fantasyPlannerPosition("DEF", "Midfielder", "Forward"), "DEF");
   assert.equal(fantasyPlannerPosition(null, "Midfielder", "Forward"), "Midfielder");
+  assert.equal(fantasyPlannerPosition("unknown", "Defender", "Forward"), "Defender");
+});
+
+test("squad planner resolves Sports.ru positions through manual mappings", () => {
+  const positions = sportsRuFantasyPositionsByPlayerId(
+    [
+      { id: "price-1", playerId: 7n, position: "MID" },
+      { id: "price-2", playerId: 8n, position: "DEF" }
+    ],
+    [{ providerEntityId: "price-1", internalEntityId: "42" }]
+  );
+
+  assert.equal(positions.get("42"), "MID");
+  assert.equal(positions.get("7"), undefined);
+  assert.equal(positions.get("8"), "DEF");
 });
 
 test("team strength profiles derive attack and defense from parsed match xG", () => {
