@@ -112,6 +112,7 @@ type SportsRuPositionPriceRow = {
   id: string;
   playerId: bigint | null;
   position: string | null;
+  raw?: unknown;
 };
 
 type SportsRuPositionMapRow = {
@@ -202,7 +203,7 @@ export async function loadFantasySquadPlannerData(
       prices.byPlayerId.get(String(row.playerId)) ??
       prices.byNameTeam.get(nameTeamKey(row.player.name, row.team.name)) ??
       prices.findByPlayerName(row.player.name);
-    const sportsPosition = sportsPositionsByPlayerId.get(String(row.playerId)) ?? priceRow?.position ?? null;
+    const sportsPosition = sportsPositionsByPlayerId.get(String(row.playerId)) ?? (priceRow ? sportsRuPricePosition(priceRow) : null);
     const position = fantasyPlannerPosition(sportsPosition, row.position, projected?.position ?? null);
     const positionGroup = normalizeFantasyPosition(position);
     const price = priceRow?.price ?? estimateFantasyPrice(predictedFp, positionGroup);
@@ -609,13 +610,13 @@ export async function loadSportsRuFantasyPositionsByPlayerId(
     where: {
       provider: "SPORTS_RU",
       leagueId: input.leagueId,
-      season: { in: sportsRuSeasonAliases(input.season) },
-      position: { not: null }
+      season: { in: sportsRuSeasonAliases(input.season) }
     },
     select: {
       id: true,
       playerId: true,
-      position: true
+      position: true,
+      raw: true
     },
     orderBy: { lastSeenAt: "desc" }
   });
@@ -646,13 +647,33 @@ export function sportsRuFantasyPositionsByPlayerId(priceRows: SportsRuPositionPr
   const positionsByPlayerId = new Map<string, string>();
 
   for (const row of priceRows) {
-    if (!row.position) continue;
+    const position = sportsRuPricePosition(row);
+    if (!position) continue;
     const playerId = mappedPlayerIdsByPriceId.get(row.id) ?? (row.playerId ? String(row.playerId) : null);
     if (!playerId || positionsByPlayerId.has(playerId)) continue;
-    positionsByPlayerId.set(playerId, row.position);
+    positionsByPlayerId.set(playerId, position);
   }
 
   return positionsByPlayerId;
+}
+
+export function sportsRuPricePosition(row: Pick<SportsRuPositionPriceRow, "position" | "raw">) {
+  const directPosition = knownFantasyPosition(row.position);
+  if (directPosition) return directPosition;
+
+  const raw = rawRecord(row.raw);
+  const rawLabel = stringValue(raw?.positionLabel ?? raw?.position ?? raw?.positionGroup ?? raw?.pos);
+  const rawPosition = knownFantasyPosition(rawLabel);
+  if (rawPosition) return rawPosition;
+
+  const source = stringValue(raw?.source);
+  const rowIndex = numberValue(raw?.rowIndex);
+  if (source === "featured-field" && rowIndex !== null) return sportsRuFeaturedRowPosition(rowIndex);
+
+  const index = numberValue(raw?.index);
+  if (source === "featured-field-fallback" && index !== null) return sportsRuFeaturedIndexPosition(index);
+
+  return null;
 }
 
 async function loadLegacyMacheteUpcomingRoundFixtures(prisma: PrismaClient, league: SharedLeagueSeasonOption, now: Date) {
@@ -791,6 +812,40 @@ function ratioMultiplier(numerator: number | null, denominator: number | null) {
   return clamp(numerator / denominator, 0.72, 1.28);
 }
 
+function knownFantasyPosition(position: string | null | undefined) {
+  const positionGroup = normalizeFantasyPosition(position);
+  return positionGroup === "UNK" ? null : positionGroup;
+}
+
+function rawRecord(value: unknown) {
+  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
+}
+
+function stringValue(value: unknown) {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function numberValue(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value !== "string" || !value.trim()) return null;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function sportsRuFeaturedRowPosition(rowIndex: number) {
+  if (rowIndex === 0) return "GK";
+  if (rowIndex === 1) return "DEF";
+  if (rowIndex === 2) return "MID";
+  return "FWD";
+}
+
+function sportsRuFeaturedIndexPosition(index: number) {
+  if (index === 0) return "GK";
+  if (index <= 4) return "DEF";
+  if (index <= 8) return "MID";
+  return "FWD";
+}
+
 function priceLookup(
   priceRows: Array<{
     id: string;
@@ -799,6 +854,7 @@ function priceLookup(
     normalizedName: string;
     teamName: string;
     position: string | null;
+    raw?: unknown;
     price: number;
   }>,
   priceMaps: Array<{

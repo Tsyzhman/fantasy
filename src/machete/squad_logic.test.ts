@@ -107,6 +107,7 @@ test("next fantasy points fall back to predicted FP when no fixture rounds are l
 
 test("position normalizer accepts Sports.ru labels", () => {
   assert.equal(normalizeFantasyPosition("\u0432\u0440"), "GK");
+  assert.equal(normalizeFantasyPosition("\u0412\u0420\u0422"), "GK");
   assert.equal(normalizeFantasyPosition("\u0412\u0440\u0430\u0442\u0430\u0440\u0438"), "GK");
   assert.equal(normalizeFantasyPosition("\u0437\u0430\u0449"), "DEF");
   assert.equal(normalizeFantasyPosition("\u0417\u0429"), "DEF");

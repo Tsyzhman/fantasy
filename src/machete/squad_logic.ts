@@ -99,7 +99,7 @@ export const defaultFantasySquadRules: FantasySquadRules = {
 export function normalizeFantasyPosition(position: string | null | undefined): FantasyPositionGroup {
   const value = position?.trim().toLowerCase() ?? "";
   const compact = value.replace(/[\s._/-]+/g, "");
-  if (["gk", "\u0432", "\u0432\u0440", "\u0432\u0440\u0430\u0442\u0430\u0440\u044c", "\u0432\u0440\u0430\u0442\u0430\u0440\u0438"].includes(compact) || value.includes("keeper")) return "GK";
+  if (["gk", "\u0432", "\u0432\u0440", "\u0432\u0440\u0442", "\u0432\u0440\u0430\u0442\u0430\u0440\u044c", "\u0432\u0440\u0430\u0442\u0430\u0440\u0438"].includes(compact) || value.includes("keeper")) return "GK";
   if (
     ["def", "\u0437", "\u0437\u0449", "\u0437\u0430\u0449", "\u0437\u0430\u0449\u0438\u0442\u043d\u0438\u043a", "\u0437\u0430\u0449\u0438\u0442\u043d\u0438\u043a\u0438"].includes(compact) ||
     value.includes("defender") ||

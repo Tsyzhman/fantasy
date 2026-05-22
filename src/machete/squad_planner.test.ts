@@ -7,6 +7,7 @@ import {
   fantasyPlannerPosition,
   projectFixtureFantasyPoints,
   sportsRuFantasyPositionsByPlayerId,
+  sportsRuPricePosition,
   sportsRuSeasonAliases
 } from "./squad_planner";
 
@@ -41,7 +42,7 @@ test("squad planner prefers Sports.ru position over FotMob roster position", () 
 test("squad planner resolves Sports.ru positions through manual mappings", () => {
   const positions = sportsRuFantasyPositionsByPlayerId(
     [
-      { id: "price-1", playerId: 7n, position: "MID" },
+      { id: "price-1", playerId: 7n, position: "UNKNOWN", raw: { source: "xlsx", positionLabel: "\u041f\u0417" } },
       { id: "price-2", playerId: 8n, position: "DEF" }
     ],
     [{ providerEntityId: "price-1", internalEntityId: "42" }]
@@ -50,6 +51,13 @@ test("squad planner resolves Sports.ru positions through manual mappings", () =>
   assert.equal(positions.get("42"), "MID");
   assert.equal(positions.get("7"), undefined);
   assert.equal(positions.get("8"), "DEF");
+});
+
+test("squad planner recovers Sports.ru positions from raw price metadata", () => {
+  assert.equal(sportsRuPricePosition({ position: "UNKNOWN", raw: { source: "xlsx", positionLabel: "\u0412\u0420" } }), "GK");
+  assert.equal(sportsRuPricePosition({ position: "UNKNOWN", raw: { source: "xlsx", positionLabel: "\u0417\u0430\u0449" } }), "DEF");
+  assert.equal(sportsRuPricePosition({ position: null, raw: { source: "featured-field", rowIndex: 2 } }), "MID");
+  assert.equal(sportsRuPricePosition({ position: null, raw: { source: "featured-field-fallback", index: 9 } }), "FWD");
 });
 
 test("team strength profiles derive attack and defense from parsed match xG", () => {
