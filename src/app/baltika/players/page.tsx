@@ -18,6 +18,7 @@ type SearchParams = {
   teamId?: string;
   positionGroup?: string;
   minMinutes?: string;
+  starterFilter?: string;
   starterOnly?: string;
   sort?: string;
 };
@@ -31,6 +32,7 @@ const playerSnapshotSortColumns = {
   playerName: { field: "playerName", defaultDirection: "asc", nullable: false },
   teamName: { field: "teamName", defaultDirection: "asc", nullable: false },
   positionGroup: { field: "positionGroup", defaultDirection: "asc", nullable: true },
+  isStarter: { field: "isStarter", defaultDirection: "desc", nullable: false },
   age: { field: "age", defaultDirection: "desc", nullable: true },
   minutesPlayed: { field: "minutesPlayed", defaultDirection: "desc", nullable: true },
   goals: { field: "goals", defaultDirection: "desc", nullable: true },
@@ -68,6 +70,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
     resolvedSearchParams.teamId && teamLeagues.some((league) => league.teams.some((team) => team.id === resolvedSearchParams.teamId))
       ? resolvedSearchParams.teamId
       : "";
+  const starterFilter = parseStarterFilter(resolvedSearchParams.starterFilter, resolvedSearchParams.starterOnly);
 
   const where: Prisma.PlayerSnapshotWhereInput = {
     teamImport: {
@@ -79,7 +82,8 @@ export default async function PlayersPage({ searchParams }: PageProps) {
   if (selectedLeagueId) where.leagueId = selectedLeagueId;
   if (selectedTeamId) where.teamId = selectedTeamId;
   if (resolvedSearchParams.positionGroup) where.positionGroup = resolvedSearchParams.positionGroup;
-  if (resolvedSearchParams.starterOnly === "1") where.isStarter = true;
+  if (starterFilter === "starter") where.isStarter = true;
+  if (starterFilter === "bench") where.isStarter = false;
   if (resolvedSearchParams.minMinutes) {
     const minutes = Number(resolvedSearchParams.minMinutes);
     if (Number.isFinite(minutes)) where.minutesPlayed = { gte: minutes };
@@ -98,7 +102,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
     }
   });
 
-  const columnsCount = 13;
+  const columnsCount = 14;
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -180,15 +184,13 @@ export default async function PlayersPage({ searchParams }: PageProps) {
             placeholder="0"
           />
         </label>
-        <label className="flex items-end gap-2 rounded border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700">
-          <input
-            type="checkbox"
-            name="starterOnly"
-            value="1"
-            defaultChecked={resolvedSearchParams.starterOnly === "1"}
-            className="mb-1 h-4 w-4 rounded border-slate-300"
-          />
-          <span><I18nText en="Starters only" ru="Только стартовые" /></span>
+        <label className="text-sm">
+          <span className="mb-1 block font-medium text-slate-600"><I18nText en="Starter status" ru="Статус старта" /></span>
+          <select name="starterFilter" defaultValue={starterFilter} className="w-full rounded border border-slate-200 px-3 py-2">
+            <LocalizedOption value="" en="All players" ru="Все игроки" />
+            <LocalizedOption value="starter" en="In starting XI" ru="В старте" />
+            <LocalizedOption value="bench" en="Not in starting XI" ru="Не в старте" />
+          </select>
         </label>
       </AutoSubmitForm>
       </FilterShell>
@@ -215,7 +217,10 @@ export default async function PlayersPage({ searchParams }: PageProps) {
                 <tr key={player.id} className="hover:bg-slate-50">
                   <td className="max-w-[42vw] px-3 py-3 font-medium text-ink">
                     <span className="block truncate" title={player.playerName}>{compactPlayerName(player.playerName)}</span>
-                    <span className="mt-0.5 block truncate text-[11px] font-normal text-slate-500">{player.positionGroup ?? "-"} · {player.team.name}</span>
+                    <span className="mt-0.5 flex min-w-0 items-center gap-1 text-[11px] font-normal text-slate-500">
+                      <StarterBadge isStarter={player.isStarter} compact />
+                      <span className="truncate">{player.positionGroup ?? "-"} · {player.team.name}</span>
+                    </span>
                   </td>
                   <td className="whitespace-nowrap bg-emerald-50/70 px-3 py-3 text-right font-semibold text-emerald-700">
                     {formatScore(player.fantasyScore)}
@@ -243,6 +248,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
                 <th className="px-4 py-3" data-sort-key="playerName"><I18nText en="Player" ru="Игрок" /></th>
                 <th className="px-4 py-3" data-sort-key="teamName"><I18nText en="Team" ru="Команда" /></th>
                 <th className="px-4 py-3" data-sort-key="positionGroup"><I18nText en="Pos" ru="Поз." /></th>
+                <th className="px-4 py-3" data-sort-key="isStarter"><I18nText en="Start" ru="В старте" /></th>
                 <th className="px-4 py-3 text-right" data-sort-key="minutesPlayed"><I18nText en="Minutes" ru="Минуты" /></th>
                 <th className="hidden px-4 py-3 text-right lg:table-cell" data-sort-key="goals"><I18nText en="Goals" ru="Голы" /></th>
                 <th className="hidden px-4 py-3 text-right lg:table-cell" data-sort-key="assists"><I18nText en="Assists" ru="Ассисты" /></th>
@@ -257,6 +263,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
                   <td className="whitespace-nowrap px-4 py-3 font-medium text-ink">{player.playerName}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-slate-600">{player.team.name}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-slate-600">{player.positionGroup ?? "-"}</td>
+                  <td className="whitespace-nowrap px-4 py-3"><StarterBadge isStarter={player.isStarter} /></td>
                   <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatNumber(player.minutesPlayed)}</td>
                   <td className="hidden whitespace-nowrap px-4 py-3 text-right text-slate-600 lg:table-cell">{formatScore(player.goals)}</td>
                   <td className="hidden whitespace-nowrap px-4 py-3 text-right text-slate-600 lg:table-cell">{formatScore(player.assists)}</td>
@@ -273,7 +280,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
               ))}
               {players.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-4 py-10 text-center text-slate-500">
+                  <td colSpan={10} className="px-4 py-10 text-center text-slate-500">
                     <I18nText en="No published player snapshots match these filters yet." ru="Пока нет опубликованных игроков под эти фильтры." />
                   </td>
                 </tr>
@@ -289,6 +296,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
                 <th className="px-4 py-3" data-sort-key="playerName"><I18nText en="Player" ru="Игрок" /></th>
                 <th className="px-4 py-3" data-sort-key="teamName"><I18nText en="Team" ru="Команда" /></th>
                 <th className="px-4 py-3" data-sort-key="positionGroup"><I18nText en="Pos" ru="Поз." /></th>
+                <th className="px-4 py-3" data-sort-key="isStarter"><I18nText en="Start" ru="В старте" /></th>
                 <th className="px-4 py-3 text-right" data-sort-key="age"><I18nText en="Age" ru="Возраст" /></th>
                 <th className="px-4 py-3 text-right" data-sort-key="minutesPlayed"><I18nText en="Minutes" ru="Минуты" /></th>
                 <th className="px-4 py-3 text-right" data-sort-key="goals"><I18nText en="Goals" ru="Голы" /></th>
@@ -307,6 +315,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
                   <td className="whitespace-nowrap px-4 py-3 font-medium text-ink">{player.playerName}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-slate-600">{player.team.name}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-slate-600">{player.positionGroup ?? "—"}</td>
+                  <td className="whitespace-nowrap px-4 py-3"><StarterBadge isStarter={player.isStarter} /></td>
                   <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatNumber(player.age)}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatNumber(player.minutesPlayed)}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatScore(player.goals)}</td>
@@ -345,12 +354,31 @@ function compactPlayerName(name: string) {
   return parts.length > 1 ? parts[parts.length - 1] : name;
 }
 
+function parseStarterFilter(starterFilter: string | undefined, starterOnly: string | undefined) {
+  if (starterFilter === "starter" || starterOnly === "1") return "starter";
+  if (starterFilter === "bench") return "bench";
+  return "";
+}
+
+function StarterBadge({ isStarter, compact = false }: { isStarter: boolean; compact?: boolean }) {
+  const className = isStarter
+    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+    : "border-slate-200 bg-slate-50 text-slate-500";
+
+  return (
+    <span className={`inline-flex items-center justify-center rounded border px-2 py-0.5 text-[11px] font-semibold ${className}`}>
+      {compact ? (isStarter ? "XI" : "B") : <I18nText en={isStarter ? "Start" : "Bench"} ru={isStarter ? "Старт" : "Запас"} />}
+    </span>
+  );
+}
+
 function baltikaSortLabel(sortValue: string) {
   const [key, direction] = sortValue.split(":");
   const labels: Record<keyof typeof playerSnapshotSortColumns, string> = {
     playerName: "player",
     teamName: "team",
     positionGroup: "position",
+    isStarter: "starter status",
     age: "age",
     minutesPlayed: "minutes",
     goals: "goals",

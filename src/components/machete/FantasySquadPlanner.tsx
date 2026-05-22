@@ -47,6 +47,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
   const [horizon, setHorizon] = useState(initialHorizon);
   const [query, setQuery] = useState("");
   const [positionFilter, setPositionFilter] = useState("ALL");
+  const [starterPoolFilter, setStarterPoolFilter] = useState("ALL");
   const [onlyAffordable, setOnlyAffordable] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -66,9 +67,15 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
           ? `${player.name} ${player.teamName} ${player.position ?? ""}`.toLowerCase().includes(normalizedQuery)
           : true
       )
+      .filter((player) => {
+        const selection = selectionsByPlayerId.get(player.playerId);
+        if (starterPoolFilter === "STARTER") return selection?.isStarter === true;
+        if (starterPoolFilter === "BENCH") return selection?.isStarter === false;
+        return true;
+      })
       .filter((player) => (onlyAffordable ? fantasyAddBlockReason(player, players, selections, rules) === null || selectionsByPlayerId.has(player.playerId) : true))
       .slice(0, 140);
-  }, [onlyAffordable, players, positionFilter, query, rules, selections, selectionsByPlayerId]);
+  }, [onlyAffordable, players, positionFilter, query, rules, selections, selectionsByPlayerId, starterPoolFilter]);
 
   function addPlayer(player: FantasyPlannerPlayer) {
     const blockReason = fantasyAddBlockReason(player, players, selections, rules);
@@ -100,7 +107,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
 
     const promoted = promoteStarter(player, players, selections, rules, horizon);
     if (!promoted) {
-      setMessage("Starting XI needs 1 GK and 10 outfield players within formation limits.");
+      setMessage("Starting XI must keep 1 GK, 10 field players, DEF 3-5, MID 2-5, FWD 1-3.");
       return;
     }
     setSelections(promoted);
@@ -252,7 +259,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
       </section>
 
       <section className="rounded border border-slate-200 bg-white p-4 shadow-soft">
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[0.95fr_1.05fr]">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
           <div>
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Your squad</h3>
@@ -270,17 +277,17 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
           </div>
 
           <div>
-            <div className="mb-3 grid grid-cols-1 gap-2 md:grid-cols-[1fr_auto_auto]">
+            <div className="mb-3 grid grid-cols-1 gap-2 md:grid-cols-[1fr_auto_auto_auto]">
               <label className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder="Search player or team"
-                  className="w-full rounded border border-slate-200 py-2 pl-9 pr-3 text-sm"
+                  className="w-full rounded border border-slate-200 py-2 pl-9 pr-3 text-xs"
                 />
               </label>
-              <select value={positionFilter} onChange={(event) => setPositionFilter(event.target.value)} className="rounded border border-slate-200 px-3 py-2 text-sm">
+              <select value={positionFilter} onChange={(event) => setPositionFilter(event.target.value)} className="rounded border border-slate-200 px-3 py-2 text-xs">
                 <option value="ALL">All positions</option>
                 {positionOrder.map((position) => (
                   <option key={position} value={position}>
@@ -288,7 +295,12 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
                   </option>
                 ))}
               </select>
-              <label className="flex items-center gap-2 rounded border border-slate-200 px-3 py-2 text-sm text-slate-700">
+              <select value={starterPoolFilter} onChange={(event) => setStarterPoolFilter(event.target.value)} className="rounded border border-slate-200 px-3 py-2 text-xs">
+                <option value="ALL">All players</option>
+                <option value="STARTER">In starting XI</option>
+                <option value="BENCH">On bench</option>
+              </select>
+              <label className="flex items-center gap-2 rounded border border-slate-200 px-3 py-2 text-xs text-slate-700">
                 <input type="checkbox" checked={onlyAffordable} onChange={(event) => setOnlyAffordable(event.target.checked)} className="h-4 w-4 rounded border-slate-300" />
                 Fits
               </label>
@@ -366,7 +378,7 @@ function PlayerPoolTable({
   return (
     <div className="overflow-hidden rounded border border-slate-200 bg-white">
       <div className="max-h-[720px] overflow-auto">
-        <SortableTable className="min-w-full divide-y divide-slate-200 text-sm">
+        <SortableTable className="min-w-[620px] divide-y divide-slate-200 text-xs">
           <thead className="sticky top-0 z-10 bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
             <tr>
               <th className="px-3 py-3">Player</th>
@@ -386,27 +398,30 @@ function PlayerPoolTable({
               const disabled = !isSelected && reason !== null;
               const fixtures = player.fixtures.slice(0, horizon).filter(Boolean).join(" / ");
               const rowClassName = isSelected
-                ? "bg-emerald-50/60"
+                ? "bg-slate-50/70 text-slate-400"
                 : disabled
                   ? "bg-slate-50/80 text-slate-400"
                   : "hover:bg-slate-50";
+              const muted = isSelected || disabled;
 
               return (
                 <tr key={player.playerId} className={rowClassName}>
-                  <td className="min-w-44 px-3 py-2">
-                    <span className={`block truncate font-semibold ${disabled ? "text-slate-500" : "text-ink"}`} title={player.name}>{player.name}</span>
-                    <span className={`block text-xs ${disabled ? "text-slate-400" : "text-slate-500"}`}>FP {formatScore(player.predictedFp)}</span>
+                  <td className="min-w-36 px-2.5 py-2">
+                    <span className={`block truncate font-semibold ${muted ? "text-slate-500" : "text-ink"}`} title={player.name}>{player.name}</span>
+                    <span className={`block text-[11px] ${muted ? "text-slate-400" : "text-slate-500"}`}>
+                      {isSelected ? "Selected" : `FP ${formatScore(player.predictedFp)}`}
+                    </span>
                   </td>
-                  <td className={`min-w-36 px-3 py-2 ${disabled ? "text-slate-400" : "text-slate-600"}`}>
+                  <td className={`min-w-28 px-2.5 py-2 ${muted ? "text-slate-400" : "text-slate-600"}`}>
                     <span className="block truncate" title={player.teamName}>{player.teamName}</span>
                   </td>
-                  <td className="px-3 py-2">
-                    <span className={`rounded px-2 py-0.5 text-[11px] font-bold ${disabled ? "border border-slate-300 bg-slate-200 text-slate-500" : positionPillClass(player.positionGroup)}`}>{player.positionGroup}</span>
+                  <td className="px-2.5 py-2">
+                    <span className={`rounded px-2 py-0.5 text-[11px] font-bold ${muted ? "border border-slate-300 bg-slate-200 text-slate-500" : positionPillClass(player.positionGroup)}`}>{player.positionGroup}</span>
                   </td>
-                  <td className={`whitespace-nowrap px-3 py-2 text-right font-semibold ${disabled ? "text-slate-400" : "text-ink"}`}>{formatNumber(player.price, 1)}</td>
-                  <td className={`whitespace-nowrap px-3 py-2 text-right font-semibold ${disabled ? "text-slate-400" : "text-emerald-700"}`}>{formatScore(nextFantasyPoints(player))}</td>
-                  <td className={`whitespace-nowrap px-3 py-2 text-right font-semibold ${disabled ? "text-slate-400" : "text-sky-700"}`}>{formatScore(playerHorizonPoints(player, horizon))}</td>
-                  <td className="max-w-56 px-3 py-2 text-xs text-slate-500">
+                  <td className={`whitespace-nowrap px-2.5 py-2 text-right font-semibold ${muted ? "text-slate-400" : "text-ink"}`}>{formatNumber(player.price, 1)}</td>
+                  <td className={`whitespace-nowrap px-2.5 py-2 text-right font-semibold ${muted ? "text-slate-400" : "text-emerald-700"}`}>{formatScore(nextFantasyPoints(player))}</td>
+                  <td className={`whitespace-nowrap px-2.5 py-2 text-right font-semibold ${muted ? "text-slate-400" : "text-sky-700"}`}>{formatScore(playerHorizonPoints(player, horizon))}</td>
+                  <td className="max-w-44 px-2.5 py-2 text-[11px] text-slate-500">
                     <span className="block truncate" title={fixtures}>{fixtures || "No fixture loaded"}</span>
                     {disabled ? (
                       <span
@@ -418,7 +433,7 @@ function PlayerPoolTable({
                       </span>
                     ) : null}
                   </td>
-                  <td className="px-3 py-2 text-right">
+                  <td className="px-2.5 py-2 text-right">
                     {isSelected ? (
                       <button type="button" onClick={() => onRemove(player.playerId)} className="inline-flex h-8 w-8 items-center justify-center rounded border border-rose-200 bg-white text-rose-700 hover:bg-rose-50" title="Remove">
                         <Trash2 className="h-4 w-4" />
@@ -494,12 +509,54 @@ function StarterCounts({ summary, rules }: { summary: Record<FantasyPositionGrou
   const fieldPlayers = summary.DEF + summary.MID + summary.FWD;
   return (
     <div className="flex flex-wrap gap-2 text-xs font-semibold text-white/90">
-      <span className="rounded border border-white/20 bg-white/10 px-2 py-1">Field {fieldPlayers}/10</span>
+      <StarterRulePill label="Field" count={fieldPlayers} min={10} max={10} />
       {rosterPositions.map((position) => (
-        <span key={position} className="rounded border border-white/20 bg-white/10 px-2 py-1">
-          {position} {summary[position]}/{starterLimitLabel(rules, position)}
-        </span>
+        <StarterRulePill key={position} label={position} count={summary[position]} min={rules.starterPositionLimits[position].min} max={rules.starterPositionLimits[position].max} />
       ))}
+    </div>
+  );
+}
+
+function StarterRulePill({ label, count, min, max }: { label: string; count: number; min: number; max: number }) {
+  const status = limitStatus(count, min, max);
+  const statusClass =
+    status === "bad"
+      ? "border-rose-300/80 bg-rose-500/25 text-rose-50"
+      : status === "missing"
+        ? "border-amber-300/80 bg-amber-400/20 text-amber-50"
+        : "border-emerald-300/70 bg-emerald-400/15 text-emerald-50";
+
+  return (
+    <span className={`rounded border px-2 py-1 ${statusClass}`}>
+      {label} {count}/{min === max ? max : `${min}-${max}`}
+    </span>
+  );
+}
+
+type LimitStatus = "bad" | "missing" | "good";
+
+function limitStatus(count: number, min: number, max: number): LimitStatus {
+  if (count > max) return "bad";
+  if (count < min) return "missing";
+  return "good";
+}
+
+function StarterRuleCard({ label, count, min, max, detail }: { label: string; count: number; min: number; max: number; detail: string }) {
+  const status = limitStatus(count, min, max);
+  const statusClass =
+    status === "bad"
+      ? "border-rose-200 bg-rose-50 text-rose-800"
+      : status === "missing"
+        ? "border-amber-200 bg-amber-50 text-amber-800"
+        : "border-emerald-200 bg-emerald-50 text-emerald-800";
+
+  return (
+    <div className={`rounded border px-2.5 py-2 ${statusClass}`}>
+      <div className="flex items-center justify-between gap-2">
+        <span className="font-bold">{label}</span>
+        <span className="font-black">{count}/{min === max ? max : `${min}-${max}`}</span>
+      </div>
+      <p className="mt-0.5 text-[11px] font-medium opacity-80">{detail}</p>
     </div>
   );
 }
@@ -546,6 +603,13 @@ function SquadPitch({
           <h4 className="text-sm font-bold uppercase tracking-wide text-white">Starting XI</h4>
           <StarterCounts summary={summary.startersByPosition} rules={rules} />
         </div>
+        <div className="mb-3 grid grid-cols-2 gap-2 text-xs sm:grid-cols-5">
+          <StarterRuleCard label="Field" count={summary.startersByPosition.DEF + summary.startersByPosition.MID + summary.startersByPosition.FWD} min={10} max={10} detail="always 10" />
+          <StarterRuleCard label="GK" count={summary.startersByPosition.GK} min={1} max={1} detail="always 1" />
+          <StarterRuleCard label="DEF" count={summary.startersByPosition.DEF} min={rules.starterPositionLimits.DEF.min} max={rules.starterPositionLimits.DEF.max} detail="min 3, max 5" />
+          <StarterRuleCard label="MID" count={summary.startersByPosition.MID} min={rules.starterPositionLimits.MID.min} max={rules.starterPositionLimits.MID.max} detail="min 2, max 5" />
+          <StarterRuleCard label="FWD" count={summary.startersByPosition.FWD} min={rules.starterPositionLimits.FWD.min} max={rules.starterPositionLimits.FWD.max} detail="min 1, max 3" />
+        </div>
         <div className="relative overflow-hidden rounded border border-white/20 bg-emerald-800/80 px-3 py-4">
           <div className="pointer-events-none absolute inset-x-3 top-1/2 border-t border-white/15" />
           <div className="pointer-events-none absolute left-1/2 top-1/2 h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/15" />
@@ -555,7 +619,7 @@ function SquadPitch({
               position="GK"
               players={summary.starterPlayers.filter((player) => player.positionGroup === "GK")}
               selectionsByPlayerId={selectionsByPlayerId}
-              countLabel={starterLimitLabel(rules, "GK")}
+              limit={rules.starterPositionLimits.GK}
               horizon={horizon}
               onRemove={onRemove}
               onToggleLock={onToggleLock}
@@ -568,7 +632,7 @@ function SquadPitch({
                 position={line.position}
                 players={summary.starterPlayers.filter((player) => player.positionGroup === line.position)}
                 selectionsByPlayerId={selectionsByPlayerId}
-                countLabel={starterLimitLabel(rules, line.position)}
+                limit={rules.starterPositionLimits[line.position]}
                 horizon={horizon}
                 onRemove={onRemove}
                 onToggleLock={onToggleLock}
@@ -611,7 +675,7 @@ function SquadLine({
   position,
   players,
   selectionsByPlayerId,
-  countLabel,
+  limit,
   horizon,
   onRemove,
   onToggleLock,
@@ -621,17 +685,26 @@ function SquadLine({
   position: Exclude<FantasyPositionGroup, "UNK">;
   players: FantasyPlannerPlayer[];
   selectionsByPlayerId: Map<string, FantasySquadSelection>;
-  countLabel: string;
+  limit: { min: number; max: number };
   horizon: number;
   onRemove: (playerId: string) => void;
   onToggleLock: (playerId: string) => void;
   onToggleStarter: (playerId: string) => void;
 }) {
+  const status = limitStatus(players.length, limit.min, limit.max);
+  const countClass =
+    status === "bad"
+      ? "border-rose-200 bg-rose-100 text-rose-800"
+      : status === "missing"
+        ? "border-amber-200 bg-amber-100 text-amber-800"
+        : "border-emerald-200 bg-emerald-100 text-emerald-800";
+  const countLabel = limit.min === limit.max ? String(limit.max) : `${limit.min}-${limit.max}`;
+
   return (
     <div>
       <div className="mb-2 flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wide text-white/85">
         <span>{label}</span>
-        <span className="rounded border border-white/20 bg-white/10 px-2 py-0.5">{players.length}/{countLabel}</span>
+        <span className={`rounded border px-2 py-0.5 ${countClass}`}>{players.length}/{countLabel}</span>
       </div>
       <div className="flex min-h-24 flex-wrap items-stretch justify-center gap-2">
         {players.map((player) => (
@@ -712,11 +785,6 @@ function positionPillClass(position: FantasyPositionGroup) {
   if (position === "MID") return `${base} bg-emerald-700`;
   if (position === "FWD") return `${base} bg-rose-700`;
   return `${base} bg-slate-700`;
-}
-
-function starterLimitLabel(rules: FantasySquadRules, position: Exclude<FantasyPositionGroup, "UNK">) {
-  const limit = rules.starterPositionLimits[position];
-  return limit.min === limit.max ? String(limit.max) : `${limit.min}-${limit.max}`;
 }
 
 function normalizeInitialSelections(selections: FantasySquadSelection[], players: FantasyPlannerPlayer[], rules: FantasySquadRules) {

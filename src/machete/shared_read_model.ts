@@ -48,6 +48,7 @@ export type SharedMachetePlayerRow = {
   position: string | null;
   age: number | null;
   nationality: string | null;
+  isStarter: boolean;
   matchesPlayed: number;
   minutesPlayed: number;
   goals: number;
@@ -417,6 +418,7 @@ export async function loadSharedMachetePlayerRows(
           position,
           age: rows.find((row) => row.age !== null)?.age ?? null,
           nationality: firstNonEmpty(rows.map((row) => row.nationality ?? row.player.country)),
+          isStarter: rows.some((row) => row.isStarter),
           ...aggregate
         };
       })
@@ -439,6 +441,7 @@ export async function loadSharedMachetePlayerRows(
         position: row.position,
         age: row.age,
         nationality: row.nationality ?? row.player.country,
+        isStarter: row.isStarter,
         ...aggregate
       };
     })
@@ -693,6 +696,7 @@ const sharedMacheteSortColumns = {
   teamName: { field: "teamName", defaultDirection: "asc" },
   leagueName: { field: "leagueName", defaultDirection: "asc" },
   position: { field: "position", defaultDirection: "asc" },
+  isStarter: { field: "isStarter", defaultDirection: "desc" },
   nationality: { field: "nationality", defaultDirection: "asc" },
   age: { field: "age", defaultDirection: "desc" },
   matchesPlayed: { field: "matchesPlayed", defaultDirection: "desc" },
@@ -717,7 +721,7 @@ function compareSharedMacheteRows(left: SharedMachetePlayerRow, right: SharedMac
   return result || left.name.localeCompare(right.name);
 }
 
-function compareSharedMacheteValues(left: string | number | null | undefined, right: string | number | null | undefined, direction: "asc" | "desc") {
+function compareSharedMacheteValues(left: string | number | boolean | null | undefined, right: string | number | boolean | null | undefined, direction: "asc" | "desc") {
   const leftEmpty = left === null || left === undefined || left === "";
   const rightEmpty = right === null || right === undefined || right === "";
 
@@ -728,6 +732,8 @@ function compareSharedMacheteValues(left: string | number | null | undefined, ri
   const result =
     typeof left === "number" && typeof right === "number"
       ? left - right
+      : typeof left === "boolean" && typeof right === "boolean"
+        ? Number(left) - Number(right)
       : String(left).localeCompare(String(right), undefined, { numeric: true, sensitivity: "base" });
 
   return direction === "asc" ? result : -result;

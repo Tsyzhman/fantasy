@@ -598,6 +598,7 @@ model TeamPlayerSeason {
   playerId      BigInt   @map("player_id")
   source        String   @default("fotmob")
   active        Boolean  @default(true)
+  isStarter     Boolean  @default(false) @map("is_starter")
   position      String?
   shirtNumber   Int?     @map("shirt_number")
   nationality   String?
@@ -616,6 +617,7 @@ model TeamPlayerSeason {
   @@id([leagueId, season, teamId, playerId])
   @@index([playerId, leagueId, season])
   @@index([teamId, leagueId, season])
+  @@index([isStarter])
   @@map("team_player_seasons")
 }
 

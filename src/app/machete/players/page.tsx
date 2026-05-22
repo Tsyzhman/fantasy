@@ -36,6 +36,7 @@ type SearchParams = {
   teamId?: string;
   competitionKey?: SearchParamValue;
   position?: string;
+  starterFilter?: string;
   minMinutes?: string;
   recentMatches?: string;
   matchWindow?: string;
@@ -75,6 +76,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
   const pageSize = parsePageSize(resolvedSearchParams.pageSize);
   const requestedPage = parsePositiveInt(resolvedSearchParams.page, 1);
   const selectedPosition = parsePositionFilter(resolvedSearchParams.position);
+  const starterFilter = parseStarterFilter(resolvedSearchParams.starterFilter);
   const matchWindow = parseMacheteMatchWindow({
     mode: resolvedSearchParams.matchWindow ?? (selectedTeamId ? "all" : undefined),
     customMatches: resolvedSearchParams.customMatches,
@@ -91,6 +93,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
     selectedTeamId,
     competitionKeys: activeCompetitionKeys,
     position: selectedPosition,
+    starterFilter,
     minMinutes: resolvedSearchParams.minMinutes,
     matchWindow,
     sort,
@@ -105,6 +108,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
     teamId: selectedTeamId,
     competitionKey: activeCompetitionKeys,
     position: selectedPosition ?? undefined,
+    starterFilter: starterFilter || undefined,
     pageSize: String(pageSize)
   };
 
@@ -144,7 +148,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
         description={<I18nText en="Choose the working scope first; detailed filters refine the table without a separate apply button." ru="Сначала выберите рабочий скоуп; дополнительные фильтры сразу уточняют таблицу." />}
         resetHref="/machete/players"
       >
-      <AutoSubmitForm className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-7">
+      <AutoSubmitForm className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-8">
         <label className="text-sm">
           <span className="mb-1 block font-medium text-slate-600"><I18nText en="League" ru="Лига" /></span>
           <select name="leagueId" defaultValue={selectedLeagueId} className="w-full rounded border border-slate-200 px-3 py-2">
@@ -197,6 +201,14 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
                 {position}
               </option>
             ))}
+          </select>
+        </label>
+        <label className="text-sm">
+          <span className="mb-1 block font-medium text-slate-600"><I18nText en="Starter status" ru="Статус старта" /></span>
+          <select name="starterFilter" defaultValue={starterFilter} className="w-full rounded border border-slate-200 px-3 py-2">
+            <LocalizedOption value="" en="All players" ru="Все игроки" />
+            <LocalizedOption value="starter" en="In starting XI" ru="В старте" />
+            <LocalizedOption value="bench" en="Not in starting XI" ru="Не в старте" />
           </select>
         </label>
         <label className="text-sm">
@@ -279,7 +291,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
       <section className="mt-6">
         {selectedLeagueId ? (
           <>
-            <MachetePlayerTable players={players} showContext serverSortParam="sort" defaultSort={sort} />
+            <MachetePlayerTable players={players} showContext showStarterStatus serverSortParam="sort" defaultSort={sort} />
             <div className="mt-4 flex justify-end">
               <PaginationLinks page={playersResult.page} pageCount={playersResult.pageCount} params={paginationParams} />
             </div>
@@ -300,6 +312,7 @@ async function buildMatchWindowRows({
   selectedTeamId,
   competitionKeys,
   position,
+  starterFilter,
   minMinutes,
   matchWindow,
   sort,
@@ -310,6 +323,7 @@ async function buildMatchWindowRows({
   selectedTeamId: string;
   competitionKeys: string[];
   position: PositionFilter | null;
+  starterFilter: ReturnType<typeof parseStarterFilter>;
   minMinutes?: string;
   matchWindow: MacheteMatchWindow;
   sort: string;
@@ -335,7 +349,7 @@ async function buildMatchWindowRows({
     loadSharedMatchWindowSummary(prisma, scopes, matchWindow, combineTeamCompetitions),
     loadSportsRuFantasyPriceRefsByScopedPlayer(prisma, { scopes })
   ]);
-  const rows = sortSharedMacheteRows(applySportsRuMappedPlayerRows(rawRows, sportsPriceRefs, position), sort);
+  const rows = sortSharedMacheteRows(filterByStarter(applySportsRuMappedPlayerRows(rawRows, sportsPriceRefs, position), starterFilter), sort);
 
   return {
     ...paginateRows(rows, page, pageSize),
@@ -406,6 +420,7 @@ function macheteSortLabel(sortValue: string) {
     name: "player",
     teamName: "team",
     position: "position",
+    isStarter: "starter status",
     nationality: "nationality",
     matchesPlayed: "apps",
     minutesPlayed: "minutes",
@@ -482,6 +497,16 @@ function combinedSportsRuScopeKeysForMacheteRowId(rowId: string) {
 function parsePositionFilter(value: string | undefined): PositionFilter | null {
   const position = normalizeFantasyPosition(value);
   return position === "UNK" ? null : position;
+}
+
+function parseStarterFilter(value: string | undefined) {
+  return value === "starter" || value === "bench" ? value : "";
+}
+
+function filterByStarter<T extends { isStarter?: boolean | null }>(rows: T[], starterFilter: ReturnType<typeof parseStarterFilter>) {
+  if (starterFilter === "starter") return rows.filter((row) => row.isStarter);
+  if (starterFilter === "bench") return rows.filter((row) => !row.isStarter);
+  return rows;
 }
 
 function parsePositiveInt(value: string | undefined, fallback: number) {

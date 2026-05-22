@@ -3,7 +3,9 @@ import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { I18nText } from "@/components/i18n-text";
+import { LocalizedOption } from "@/components/localized-option";
 import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
+import { AutoSubmitForm } from "@/components/players/auto-submit-form";
 import { StarterCheckbox } from "@/components/players/starter-checkbox";
 import { SortableTable } from "@/components/sortable-table";
 import { prisma } from "@/lib/db";
@@ -17,10 +19,15 @@ type PageProps = {
     leagueId: string;
     teamId: string;
   }>;
+  searchParams?: Promise<{
+    starterFilter?: string;
+  }>;
 };
 
-export default async function BaltikaTeamPage({ params }: PageProps) {
+export default async function BaltikaTeamPage({ params, searchParams }: PageProps) {
   const { leagueId, teamId } = await params;
+  const resolvedSearchParams = (await searchParams) ?? {};
+  const starterFilter = parseStarterFilter(resolvedSearchParams.starterFilter);
   const team = await prisma.team.findUnique({
     where: { id: teamId },
     include: {
@@ -57,6 +64,7 @@ export default async function BaltikaTeamPage({ params }: PageProps) {
 
   const currentImport = team.imports[0];
   const players = currentImport?.snapshots ?? [];
+  const filteredPlayers = filterByStarter(players, starterFilter);
   const startersCount = players.filter((player) => player.isStarter).length;
   const matchStats = [...team.baltikaMatchStats].sort((left, right) => {
     const leftDate = left.fixture.kickoffAt?.getTime() ?? 0;
@@ -95,12 +103,23 @@ export default async function BaltikaTeamPage({ params }: PageProps) {
             )}
           </p>
         </div>
-        <Link href="/baltika/players?starterOnly=1" className="rounded bg-ink px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700">
+        <Link href="/baltika/players?starterFilter=starter" className="rounded bg-ink px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700">
           <I18nText en="View starters" ru="Смотреть стартовых" />
         </Link>
       </div>
 
-      <section className="mt-8 overflow-hidden rounded border border-slate-200 bg-white shadow-soft">
+      <AutoSubmitForm className="mt-6 w-full sm:max-w-xs">
+        <label className="text-sm">
+          <span className="mb-1 block font-medium text-slate-600"><I18nText en="Starter status" ru="Статус старта" /></span>
+          <select name="starterFilter" defaultValue={starterFilter} className="w-full rounded border border-slate-200 px-3 py-2">
+            <LocalizedOption value="" en="All players" ru="Все игроки" />
+            <LocalizedOption value="starter" en="In starting XI" ru="В старте" />
+            <LocalizedOption value="bench" en="Not in starting XI" ru="Не в старте" />
+          </select>
+        </label>
+      </AutoSubmitForm>
+
+      <section className="mt-3 overflow-hidden rounded border border-slate-200 bg-white shadow-soft">
         <div className="sm:hidden">
           <SortableTable className="min-w-full table-fixed divide-y divide-slate-200 text-xs">
             <thead className="bg-slate-50 text-left font-semibold uppercase text-slate-500">
@@ -111,7 +130,7 @@ export default async function BaltikaTeamPage({ params }: PageProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {players.map((player) => (
+              {filteredPlayers.map((player) => (
                 <tr key={player.id} className="hover:bg-slate-50">
                   <td className="max-w-[42vw] px-3 py-3 font-medium text-ink">
                     <div className="flex items-center gap-2">
@@ -128,7 +147,7 @@ export default async function BaltikaTeamPage({ params }: PageProps) {
                   </td>
                 </tr>
               ))}
-              {players.length === 0 ? (
+              {filteredPlayers.length === 0 ? (
                 <tr>
                   <td colSpan={3} className="px-4 py-10 text-center text-slate-500">
                     <I18nText en="No published player snapshots for this team yet." ru="Для этой команды пока нет опубликованных игроков." />
@@ -155,7 +174,7 @@ export default async function BaltikaTeamPage({ params }: PageProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {players.map((player) => (
+              {filteredPlayers.map((player) => (
                 <tr key={player.id} className="hover:bg-slate-50">
                   <td className="whitespace-nowrap px-4 py-3 text-center">
                     <StarterCheckbox snapshotId={player.id} defaultChecked={player.isStarter} label={`Starter: ${player.playerName}`} />
@@ -176,7 +195,7 @@ export default async function BaltikaTeamPage({ params }: PageProps) {
                   </td>
                 </tr>
               ))}
-              {players.length === 0 ? (
+              {filteredPlayers.length === 0 ? (
                 <tr>
                   <td colSpan={9} className="px-4 py-10 text-center text-slate-500">
                     <I18nText en="No published player snapshots for this team yet." ru="Для этой команды пока нет опубликованных игроков." />
@@ -206,7 +225,7 @@ export default async function BaltikaTeamPage({ params }: PageProps) {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {players.map((player) => (
+              {filteredPlayers.map((player) => (
                 <tr key={player.id} className="hover:bg-slate-50">
                   <td className="whitespace-nowrap px-4 py-3 text-center">
                     <StarterCheckbox snapshotId={player.id} defaultChecked={player.isStarter} label={`Starter: ${player.playerName}`} />
@@ -230,7 +249,7 @@ export default async function BaltikaTeamPage({ params }: PageProps) {
                   </td>
                 </tr>
               ))}
-              {players.length === 0 ? (
+              {filteredPlayers.length === 0 ? (
                 <tr>
                   <td colSpan={12} className="px-4 py-10 text-center text-slate-500">
                     <I18nText en="No published player snapshots for this team yet." ru="Для этой команды пока нет опубликованных игроков." />
@@ -270,6 +289,16 @@ type TeamFormRow = {
     name: string;
   } | null;
 };
+
+function parseStarterFilter(value: string | undefined) {
+  return value === "starter" || value === "bench" ? value : "";
+}
+
+function filterByStarter<T extends { isStarter?: boolean | null }>(rows: T[], starterFilter: ReturnType<typeof parseStarterFilter>) {
+  if (starterFilter === "starter") return rows.filter((row) => row.isStarter);
+  if (starterFilter === "bench") return rows.filter((row) => !row.isStarter);
+  return rows;
+}
 
 function TeamFormTable({ title, stats }: { title: ReactNode; stats: TeamFormRow[] }) {
   const avgXg = average(stats.map((stat) => stat.xg));

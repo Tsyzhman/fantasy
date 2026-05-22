@@ -37,6 +37,7 @@ type PageProps = {
     recentMatches?: string;
     matchWindow?: string;
     customMatches?: string;
+    starterFilter?: string;
   }>;
 };
 
@@ -48,6 +49,7 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
     customMatches: resolvedSearchParams.customMatches,
     legacyRecentMatches: resolvedSearchParams.recentMatches
   });
+  const starterFilter = parseStarterFilter(resolvedSearchParams.starterFilter);
   const league = await loadSharedLeagueSeason(prisma, leagueId);
   const parsedTeamId = parseSharedBigInt(teamId);
   if (!league || !parsedTeamId) notFound();
@@ -111,9 +113,10 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
     }),
     getCurrentUser()
   ]);
-  const players = sortSharedMacheteRows(playerRows, "fantasyScore");
+  const players = filterByStarter(sortSharedMacheteRows(playerRows, "fantasyScore"), starterFilter);
   const fantasyPreview = players.map((player) => player.fantasyScore).filter((score): score is number => typeof score === "number");
   const averageFantasyScore = fantasyPreview.length ? fantasyPreview.reduce((total, score) => total + score, 0) / fantasyPreview.length : null;
+  const canEditRoster = currentUser?.role === UserRole.ADMIN;
   const teamLogoUrl = resolveSharedTeamLogoUrl({
     providerLeagueId: league.providerLeagueId,
     teamName: seasonTeam.team.name,
@@ -194,18 +197,6 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
         </dl>
       </section>
 
-      {currentUser?.role === UserRole.ADMIN ? (
-        <SportsRuPlayerMappingPanel
-          rows={sportsRuMappings}
-          roster={rosterOptions.map((row) => ({
-            playerId: String(row.playerId),
-            name: row.player.name,
-            position: row.position
-          }))}
-          canEdit
-        />
-      ) : null}
-
       <section className="mt-6">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-lg font-semibold text-ink">
@@ -221,8 +212,8 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
             ru={<>Статистика и FP по окну «{matchWindowLabelRu(matchWindow)}». Используются только общие строки match_player_stats этой команды.</>}
           />
         </p>
-        <AutoSubmitForm className="mb-3 flex w-full max-w-xs items-end gap-2">
-          <label className="flex-1 text-sm">
+        <AutoSubmitForm className="mb-3 grid w-full gap-3 sm:max-w-xl sm:grid-cols-2">
+          <label className="text-sm">
             <span className="mb-1 block font-medium text-slate-600"><I18nText en="Stats window" ru="Окно статистики" /></span>
             <select name="matchWindow" defaultValue={matchWindowModeValue(matchWindow)} className="w-full rounded border border-slate-200 px-3 py-2">
               <LocalizedOption value="last5" en="Last 5 team matches" ru="Последние 5 матчей команды" />
@@ -243,8 +234,25 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
               placeholder="Кол-во матчей"
             />
           </label>
+          <label className="text-sm">
+            <span className="mb-1 block font-medium text-slate-600"><I18nText en="Starter status" ru="Статус старта" /></span>
+            <select name="starterFilter" defaultValue={starterFilter} className="w-full rounded border border-slate-200 px-3 py-2">
+              <LocalizedOption value="" en="All players" ru="Все игроки" />
+              <LocalizedOption value="starter" en="In starting XI" ru="В старте" />
+              <LocalizedOption value="bench" en="Not in starting XI" ru="Не в старте" />
+            </select>
+          </label>
         </AutoSubmitForm>
-        <MachetePlayerTable players={players} />
+        <MachetePlayerTable
+          players={players}
+          showStarterStatus
+          starterControls={{
+            leagueId: String(league.leagueId),
+            season: league.season,
+            teamId: String(parsedTeamId),
+            canEdit: canEditRoster
+          }}
+        />
       </section>
 
       <section className="mt-6">
@@ -315,6 +323,18 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
         </div>
       </details>
       ) : null}
+
+      {canEditRoster ? (
+        <SportsRuPlayerMappingPanel
+          rows={sportsRuMappings}
+          roster={rosterOptions.map((row) => ({
+            playerId: String(row.playerId),
+            name: row.player.name,
+            position: row.position
+          }))}
+          canEdit
+        />
+      ) : null}
     </main>
   );
 }
@@ -323,6 +343,16 @@ function rawPayloadDetailReason(payload: unknown) {
   if (!payload || typeof payload !== "object" || Array.isArray(payload)) return null;
   const reason = (payload as { detailsUnavailableReason?: unknown }).detailsUnavailableReason;
   return typeof reason === "string" && reason.trim() ? reason : null;
+}
+
+function parseStarterFilter(value: string | undefined) {
+  return value === "starter" || value === "bench" ? value : "";
+}
+
+function filterByStarter<T extends { isStarter?: boolean | null }>(rows: T[], starterFilter: ReturnType<typeof parseStarterFilter>) {
+  if (starterFilter === "starter") return rows.filter((row) => row.isStarter);
+  if (starterFilter === "bench") return rows.filter((row) => !row.isStarter);
+  return rows;
 }
 
 function rawPayloadMatchDate(payload: unknown) {
