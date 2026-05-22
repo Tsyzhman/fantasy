@@ -385,25 +385,38 @@ function PlayerPoolTable({
               const isSelected = selectionsByPlayerId.has(player.playerId);
               const disabled = !isSelected && reason !== null;
               const fixtures = player.fixtures.slice(0, horizon).filter(Boolean).join(" / ");
+              const rowClassName = isSelected
+                ? "bg-emerald-50/60"
+                : disabled
+                  ? "bg-slate-50/80 text-slate-400"
+                  : "hover:bg-slate-50";
 
               return (
-                <tr key={player.playerId} className={isSelected ? "bg-emerald-50/60" : "hover:bg-slate-50"}>
+                <tr key={player.playerId} className={rowClassName}>
                   <td className="min-w-44 px-3 py-2">
-                    <span className="block truncate font-semibold text-ink" title={player.name}>{player.name}</span>
-                    <span className="block text-xs text-slate-500">FP {formatScore(player.predictedFp)}</span>
+                    <span className={`block truncate font-semibold ${disabled ? "text-slate-500" : "text-ink"}`} title={player.name}>{player.name}</span>
+                    <span className={`block text-xs ${disabled ? "text-slate-400" : "text-slate-500"}`}>FP {formatScore(player.predictedFp)}</span>
                   </td>
-                  <td className="min-w-36 px-3 py-2 text-slate-600">
+                  <td className={`min-w-36 px-3 py-2 ${disabled ? "text-slate-400" : "text-slate-600"}`}>
                     <span className="block truncate" title={player.teamName}>{player.teamName}</span>
                   </td>
                   <td className="px-3 py-2">
-                    <span className={`rounded px-2 py-0.5 text-[11px] font-bold ${positionPillClass(player.positionGroup)}`}>{player.positionGroup}</span>
+                    <span className={`rounded px-2 py-0.5 text-[11px] font-bold ${disabled ? "border border-slate-300 bg-slate-200 text-slate-500" : positionPillClass(player.positionGroup)}`}>{player.positionGroup}</span>
                   </td>
-                  <td className="whitespace-nowrap px-3 py-2 text-right font-semibold text-ink">{formatNumber(player.price, 1)}</td>
-                  <td className="whitespace-nowrap px-3 py-2 text-right font-semibold text-emerald-700">{formatScore(nextFantasyPoints(player))}</td>
-                  <td className="whitespace-nowrap px-3 py-2 text-right font-semibold text-sky-700">{formatScore(playerHorizonPoints(player, horizon))}</td>
+                  <td className={`whitespace-nowrap px-3 py-2 text-right font-semibold ${disabled ? "text-slate-400" : "text-ink"}`}>{formatNumber(player.price, 1)}</td>
+                  <td className={`whitespace-nowrap px-3 py-2 text-right font-semibold ${disabled ? "text-slate-400" : "text-emerald-700"}`}>{formatScore(nextFantasyPoints(player))}</td>
+                  <td className={`whitespace-nowrap px-3 py-2 text-right font-semibold ${disabled ? "text-slate-400" : "text-sky-700"}`}>{formatScore(playerHorizonPoints(player, horizon))}</td>
                   <td className="max-w-56 px-3 py-2 text-xs text-slate-500">
                     <span className="block truncate" title={fixtures}>{fixtures || "No fixture loaded"}</span>
-                    {reason && !isSelected ? <span className="block truncate text-slate-400" title={reason}>{reason}</span> : null}
+                    {disabled ? (
+                      <span
+                        className="mt-1 inline-flex max-w-full items-center gap-1 rounded bg-rose-50 px-2 py-1 font-semibold text-rose-700"
+                        title={reason ?? undefined}
+                      >
+                        <Lock className="h-3 w-3 shrink-0" />
+                        <span className="truncate">{reason}</span>
+                      </span>
+                    ) : null}
                   </td>
                   <td className="px-3 py-2 text-right">
                     {isSelected ? (
@@ -418,7 +431,7 @@ function PlayerPoolTable({
                         className="inline-flex h-8 w-8 items-center justify-center rounded border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
                         title={reason ?? "Add"}
                       >
-                        <Plus className="h-4 w-4" />
+                        {disabled ? <Lock className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
                       </button>
                     )}
                   </td>
@@ -521,10 +534,9 @@ function SquadPitch({
   onToggleStarter: (playerId: string) => void;
 }) {
   const starterLines: Array<{ position: Exclude<FantasyPositionGroup, "UNK">; label: string }> = [
-    { position: "FWD", label: "Forwards" },
-    { position: "MID", label: "Midfielders" },
     { position: "DEF", label: "Defenders" },
-    { position: "GK", label: "Goalkeeper" }
+    { position: "MID", label: "Midfielders" },
+    { position: "FWD", label: "Forwards" }
   ];
 
   return (
@@ -538,6 +550,17 @@ function SquadPitch({
           <div className="pointer-events-none absolute inset-x-3 top-1/2 border-t border-white/15" />
           <div className="pointer-events-none absolute left-1/2 top-1/2 h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/15" />
           <div className="relative space-y-4">
+            <SquadLine
+              label="Goalkeeper"
+              position="GK"
+              players={summary.starterPlayers.filter((player) => player.positionGroup === "GK")}
+              selectionsByPlayerId={selectionsByPlayerId}
+              countLabel={starterLimitLabel(rules, "GK")}
+              horizon={horizon}
+              onRemove={onRemove}
+              onToggleLock={onToggleLock}
+              onToggleStarter={onToggleStarter}
+            />
             {starterLines.map((line) => (
               <SquadLine
                 key={line.position}
@@ -555,6 +578,8 @@ function SquadPitch({
           </div>
         </div>
       </div>
+
+      <div className="h-px bg-slate-300" />
 
       <div className="rounded border border-slate-200 bg-slate-50 p-3">
         <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
