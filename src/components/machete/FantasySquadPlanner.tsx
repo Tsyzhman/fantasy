@@ -250,48 +250,15 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
               <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Your squad</h3>
               <PositionCounts summary={summary.byPosition} rules={rules} />
             </div>
-            <div className="rounded border border-emerald-200 bg-emerald-900/90 p-3">
-              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-                <h4 className="text-sm font-bold uppercase tracking-wide text-white">Starting XI</h4>
-                <StarterCounts summary={summary.startersByPosition} rules={rules} />
-              </div>
-              <div className="grid gap-3 md:grid-cols-2">
-                {rosterPositions.map((position) => (
-                  <SquadPositionGroup
-                    key={`starter:${position}`}
-                    position={position}
-                    players={summary.starterPlayers.filter((player) => player.positionGroup === position)}
-                    selectionsByPlayerId={selectionsByPlayerId}
-                    countLabel={starterLimitLabel(rules, position)}
-                    horizon={horizon}
-                    onRemove={removePlayer}
-                    onToggleLock={toggleLock}
-                    onToggleStarter={toggleStarter}
-                  />
-                ))}
-              </div>
-            </div>
-
-            <div className="mt-3 rounded border border-slate-200 bg-slate-50 p-3">
-              <div className="mb-3 flex items-center justify-between">
-                <h4 className="text-sm font-bold uppercase tracking-wide text-slate-500">Bench</h4>
-                <BenchCounts summary={summary.benchByPosition} total={summary.benchPlayers.length} rules={rules} />
-              </div>
-              <div className="grid gap-3 md:grid-cols-2">
-                {positionOrder.map((position) => (
-                <SquadPositionGroup
-                  key={`bench:${position}`}
-                  position={position}
-                  players={summary.benchPlayers.filter((player) => player.positionGroup === position)}
-                  selectionsByPlayerId={selectionsByPlayerId}
-                  horizon={horizon}
-                  onRemove={removePlayer}
-                  onToggleLock={toggleLock}
-                  onToggleStarter={toggleStarter}
-                />
-              ))}
-              </div>
-            </div>
+            <SquadPitch
+              summary={summary}
+              rules={rules}
+              selectionsByPlayerId={selectionsByPlayerId}
+              horizon={horizon}
+              onRemove={removePlayer}
+              onToggleLock={toggleLock}
+              onToggleStarter={toggleStarter}
+            />
           </div>
 
           <div>
@@ -318,24 +285,14 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
                 Fits
               </label>
             </div>
-            <div className="grid grid-cols-1 gap-2 lg:grid-cols-2">
-              {filteredPlayers.map((player) => (
-                <PlayerPoolCard
-                  key={player.playerId}
-                  player={player}
-                  horizon={horizon}
-                  addBlockReason={fantasyAddBlockReason(player, players, selections, rules)}
-                  isSelected={selectionsByPlayerId.has(player.playerId)}
-                  onAdd={addPlayer}
-                  onRemove={removePlayer}
-                />
-              ))}
-              {filteredPlayers.length === 0 ? (
-                <div className="rounded border border-dashed border-slate-300 bg-slate-50 px-4 py-10 text-center text-sm text-slate-500 lg:col-span-2">
-                  No Sports.ru mapped players match the filters.
-                </div>
-              ) : null}
-            </div>
+            <PlayerPoolTable
+              players={filteredPlayers}
+              horizon={horizon}
+              addBlockReason={(player) => fantasyAddBlockReason(player, players, selections, rules)}
+              selectionsByPlayerId={selectionsByPlayerId}
+              onAdd={addPlayer}
+              onRemove={removePlayer}
+            />
           </div>
         </div>
       </section>
@@ -383,75 +340,94 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
   );
 }
 
-function PlayerPoolCard({
-  player,
+function PlayerPoolTable({
+  players,
   horizon,
   addBlockReason,
-  isSelected,
+  selectionsByPlayerId,
   onAdd,
   onRemove
 }: {
-  player: FantasyPlannerPlayer;
+  players: FantasyPlannerPlayer[];
   horizon: number;
-  addBlockReason: string | null;
-  isSelected: boolean;
+  addBlockReason: (player: FantasyPlannerPlayer) => string | null;
+  selectionsByPlayerId: Map<string, FantasySquadSelection>;
   onAdd: (player: FantasyPlannerPlayer) => void;
   onRemove: (playerId: string) => void;
 }) {
-  const fixtures = player.fixtures.slice(0, horizon).filter(Boolean).join(" / ");
-  const disabled = !isSelected && addBlockReason !== null;
-
   return (
-    <article className={`rounded border bg-white p-3 shadow-sm ${isSelected ? "border-emerald-300 bg-emerald-50/60" : "border-slate-200"}`}>
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <div className="mb-1 flex items-center gap-2">
-            <span className={`rounded px-2 py-0.5 text-[11px] font-bold ${positionPillClass(player.positionGroup)}`}>{player.positionGroup}</span>
-            <span className="truncate text-xs font-medium text-slate-500" title={player.teamName}>{player.teamName}</span>
-          </div>
-          <h4 className="truncate text-sm font-bold text-ink" title={player.name}>{player.name}</h4>
-          <p className="mt-1 truncate text-xs text-slate-500" title={fixtures}>{fixtures || "No fixture loaded"}</p>
-        </div>
-        <div className="text-right">
-          <p className="text-sm font-bold text-ink">{formatNumber(player.price, 1)}</p>
-          <p className="text-[11px] font-semibold uppercase text-slate-400">Price</p>
-        </div>
-      </div>
+    <div className="overflow-hidden rounded border border-slate-200 bg-white">
+      <div className="max-h-[720px] overflow-auto">
+        <table className="min-w-full divide-y divide-slate-200 text-sm">
+          <thead className="sticky top-0 z-10 bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
+            <tr>
+              <th className="px-3 py-3">Player</th>
+              <th className="px-3 py-3">Team</th>
+              <th className="px-3 py-3">Pos</th>
+              <th className="px-3 py-3 text-right">Price</th>
+              <th className="px-3 py-3 text-right">Next</th>
+              <th className="px-3 py-3 text-right">{horizon}R</th>
+              <th className="px-3 py-3">Fixtures</th>
+              <th className="px-3 py-3 text-right">Add</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100">
+            {players.map((player) => {
+              const reason = addBlockReason(player);
+              const isSelected = selectionsByPlayerId.has(player.playerId);
+              const disabled = !isSelected && reason !== null;
+              const fixtures = player.fixtures.slice(0, horizon).filter(Boolean).join(" / ");
 
-      <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
-        <div className="rounded bg-slate-50 px-2 py-1.5">
-          <p className="font-bold text-emerald-700">{formatScore(nextFantasyPoints(player))}</p>
-          <p className="text-[10px] uppercase text-slate-400">Next</p>
-        </div>
-        <div className="rounded bg-slate-50 px-2 py-1.5">
-          <p className="font-bold text-sky-700">{formatScore(playerHorizonPoints(player, horizon))}</p>
-          <p className="text-[10px] uppercase text-slate-400">{horizon}R</p>
-        </div>
-        <div className="rounded bg-slate-50 px-2 py-1.5">
-          <p className="font-bold text-slate-700">{formatScore(player.predictedFp)}</p>
-          <p className="text-[10px] uppercase text-slate-400">FP</p>
-        </div>
+              return (
+                <tr key={player.playerId} className={isSelected ? "bg-emerald-50/60" : "hover:bg-slate-50"}>
+                  <td className="min-w-44 px-3 py-2">
+                    <span className="block truncate font-semibold text-ink" title={player.name}>{player.name}</span>
+                    <span className="block text-xs text-slate-500">FP {formatScore(player.predictedFp)}</span>
+                  </td>
+                  <td className="min-w-36 px-3 py-2 text-slate-600">
+                    <span className="block truncate" title={player.teamName}>{player.teamName}</span>
+                  </td>
+                  <td className="px-3 py-2">
+                    <span className={`rounded px-2 py-0.5 text-[11px] font-bold ${positionPillClass(player.positionGroup)}`}>{player.positionGroup}</span>
+                  </td>
+                  <td className="whitespace-nowrap px-3 py-2 text-right font-semibold text-ink">{formatNumber(player.price, 1)}</td>
+                  <td className="whitespace-nowrap px-3 py-2 text-right font-semibold text-emerald-700">{formatScore(nextFantasyPoints(player))}</td>
+                  <td className="whitespace-nowrap px-3 py-2 text-right font-semibold text-sky-700">{formatScore(playerHorizonPoints(player, horizon))}</td>
+                  <td className="max-w-56 px-3 py-2 text-xs text-slate-500">
+                    <span className="block truncate" title={fixtures}>{fixtures || "No fixture loaded"}</span>
+                    {reason && !isSelected ? <span className="block truncate text-slate-400" title={reason}>{reason}</span> : null}
+                  </td>
+                  <td className="px-3 py-2 text-right">
+                    {isSelected ? (
+                      <button type="button" onClick={() => onRemove(player.playerId)} className="inline-flex h-8 w-8 items-center justify-center rounded border border-rose-200 bg-white text-rose-700 hover:bg-rose-50" title="Remove">
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => onAdd(player)}
+                        disabled={disabled}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
+                        title={reason ?? "Add"}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
+            {players.length === 0 ? (
+              <tr>
+                <td colSpan={8} className="px-4 py-10 text-center text-sm text-slate-500">
+                  No Sports.ru mapped players match the filters.
+                </td>
+              </tr>
+            ) : null}
+          </tbody>
+        </table>
       </div>
-
-      <div className="mt-3 flex items-center justify-between gap-2">
-        {addBlockReason && !isSelected ? <span className="truncate text-xs font-medium text-slate-500" title={addBlockReason}>{addBlockReason}</span> : <span className="text-xs font-medium text-emerald-700">{isSelected ? "In squad" : "Available"}</span>}
-        {isSelected ? (
-          <button type="button" onClick={() => onRemove(player.playerId)} className="inline-flex h-8 w-8 items-center justify-center rounded border border-rose-200 bg-white text-rose-700 hover:bg-rose-50" title="Remove">
-            <Trash2 className="h-4 w-4" />
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={() => onAdd(player)}
-            disabled={disabled}
-            className="inline-flex h-8 w-8 items-center justify-center rounded border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
-            title={addBlockReason ?? "Add"}
-          >
-            <Plus className="h-4 w-4" />
-          </button>
-        )}
-      </div>
-    </article>
+    </div>
   );
 }
 
@@ -503,7 +479,86 @@ function BenchCounts({ summary, total, rules }: { summary: Record<FantasyPositio
   );
 }
 
-function SquadPositionGroup({
+function SquadPitch({
+  summary,
+  rules,
+  selectionsByPlayerId,
+  horizon,
+  onRemove,
+  onToggleLock,
+  onToggleStarter
+}: {
+  summary: ReturnType<typeof summarizeFantasySquad>;
+  rules: FantasySquadRules;
+  selectionsByPlayerId: Map<string, FantasySquadSelection>;
+  horizon: number;
+  onRemove: (playerId: string) => void;
+  onToggleLock: (playerId: string) => void;
+  onToggleStarter: (playerId: string) => void;
+}) {
+  const starterLines: Array<{ position: Exclude<FantasyPositionGroup, "UNK">; label: string }> = [
+    { position: "FWD", label: "Forwards" },
+    { position: "MID", label: "Midfielders" },
+    { position: "DEF", label: "Defenders" },
+    { position: "GK", label: "Goalkeeper" }
+  ];
+
+  return (
+    <div className="space-y-3">
+      <div className="rounded border border-emerald-300 bg-emerald-900 p-3 shadow-inner">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h4 className="text-sm font-bold uppercase tracking-wide text-white">Starting XI</h4>
+          <StarterCounts summary={summary.startersByPosition} rules={rules} />
+        </div>
+        <div className="relative overflow-hidden rounded border border-white/20 bg-emerald-800/80 px-3 py-4">
+          <div className="pointer-events-none absolute inset-x-3 top-1/2 border-t border-white/15" />
+          <div className="pointer-events-none absolute left-1/2 top-1/2 h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/15" />
+          <div className="relative space-y-4">
+            {starterLines.map((line) => (
+              <SquadLine
+                key={line.position}
+                label={line.label}
+                position={line.position}
+                players={summary.starterPlayers.filter((player) => player.positionGroup === line.position)}
+                selectionsByPlayerId={selectionsByPlayerId}
+                countLabel={starterLimitLabel(rules, line.position)}
+                horizon={horizon}
+                onRemove={onRemove}
+                onToggleLock={onToggleLock}
+                onToggleStarter={onToggleStarter}
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded border border-slate-200 bg-slate-50 p-3">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <h4 className="text-sm font-bold uppercase tracking-wide text-slate-500">Bench</h4>
+          <BenchCounts summary={summary.benchByPosition} total={summary.benchPlayers.length} rules={rules} />
+        </div>
+        <div className="flex flex-wrap justify-center gap-2">
+          {summary.benchPlayers.map((player) => (
+            <SquadPlayerTile
+              key={player.playerId}
+              player={player}
+              selection={selectionsByPlayerId.get(player.playerId)}
+              horizon={horizon}
+              compact
+              onRemove={onRemove}
+              onToggleLock={onToggleLock}
+              onToggleStarter={onToggleStarter}
+            />
+          ))}
+          {summary.benchPlayers.length === 0 ? <div className="rounded border border-dashed border-slate-300 bg-white px-4 py-6 text-center text-sm text-slate-500">Empty</div> : null}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SquadLine({
+  label,
   position,
   players,
   selectionsByPlayerId,
@@ -513,63 +568,84 @@ function SquadPositionGroup({
   onToggleLock,
   onToggleStarter
 }: {
-  position: FantasyPositionGroup;
+  label: string;
+  position: Exclude<FantasyPositionGroup, "UNK">;
   players: FantasyPlannerPlayer[];
   selectionsByPlayerId: Map<string, FantasySquadSelection>;
-  countLabel?: string;
+  countLabel: string;
   horizon: number;
   onRemove: (playerId: string) => void;
   onToggleLock: (playerId: string) => void;
   onToggleStarter: (playerId: string) => void;
 }) {
-  if (position === "UNK" && players.length === 0) return null;
-
   return (
-    <div className="rounded border border-white/20 bg-white/90 p-3">
-      <div className="mb-2 flex items-center justify-between">
-        <h4 className="text-sm font-bold text-ink">{position}</h4>
-        {countLabel ? <span className="text-xs font-semibold text-slate-500">{players.length}/{countLabel}</span> : null}
+    <div>
+      <div className="mb-2 flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wide text-white/85">
+        <span>{label}</span>
+        <span className="rounded border border-white/20 bg-white/10 px-2 py-0.5">{players.length}/{countLabel}</span>
       </div>
-      <div className="space-y-2">
-        {players.map((player) => {
-          const selection = selectionsByPlayerId.get(player.playerId);
-          return (
-            <div key={player.playerId} className="rounded border border-slate-200 bg-white px-3 py-2 shadow-sm">
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-ink" title={player.name}>{player.name}</p>
-                  <p className="truncate text-xs text-slate-500" title={player.teamName}>
-                    {player.teamName} / FP {formatScore(player.predictedFp)}
-                  </p>
-                </div>
-                <div className="flex gap-1">
-                  <button
-                    type="button"
-                    onClick={() => onToggleStarter(player.playerId)}
-                    className={`inline-flex h-7 w-7 items-center justify-center rounded border border-slate-200 hover:bg-amber-50 ${selection?.isStarter ? "text-amber-600" : "text-slate-500"}`}
-                    title={selection?.isStarter ? "Move to bench" : "Move to starting XI"}
-                  >
-                    <Star className={`h-3.5 w-3.5 ${selection?.isStarter ? "fill-current" : ""}`} />
-                  </button>
-                  <button type="button" onClick={() => onToggleLock(player.playerId)} className="inline-flex h-7 w-7 items-center justify-center rounded border border-slate-200 text-slate-600 hover:bg-slate-50" title={selection?.isLocked ? "Unlock" : "Lock"}>
-                    {selection?.isLocked ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
-                  </button>
-                  <button type="button" onClick={() => onRemove(player.playerId)} className="inline-flex h-7 w-7 items-center justify-center rounded border border-slate-200 text-rose-700 hover:bg-rose-50" title="Remove">
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </button>
-                </div>
-              </div>
-              <div className="mt-2 flex items-center justify-between text-xs">
-                <span className="text-slate-500">FP {formatScore(player.predictedFp)} / Price {formatNumber(player.price, 1)}</span>
-                <span className="font-semibold text-emerald-700">
-                  <Check className="mr-1 inline h-3.5 w-3.5" />
-                  {formatScore(player.roundPoints.length > 0 ? playerHorizonPoints(player, horizon) : player.predictedFp)}
-                </span>
-              </div>
-            </div>
-          );
-        })}
-        {players.length === 0 ? <div className="rounded border border-dashed border-slate-300 bg-white/80 px-3 py-8 text-center text-sm text-slate-500">Empty</div> : null}
+      <div className="flex min-h-24 flex-wrap items-stretch justify-center gap-2">
+        {players.map((player) => (
+          <SquadPlayerTile
+            key={player.playerId}
+            player={player}
+            selection={selectionsByPlayerId.get(player.playerId)}
+            horizon={horizon}
+            onRemove={onRemove}
+            onToggleLock={onToggleLock}
+            onToggleStarter={onToggleStarter}
+          />
+        ))}
+        {players.length === 0 ? <div className="flex min-h-20 w-32 items-center justify-center rounded border border-dashed border-white/25 bg-white/10 text-sm text-white/70">Empty</div> : null}
+      </div>
+    </div>
+  );
+}
+
+function SquadPlayerTile({
+  player,
+  selection,
+  horizon,
+  compact = false,
+  onRemove,
+  onToggleLock,
+  onToggleStarter
+}: {
+  player: FantasyPlannerPlayer;
+  selection: FantasySquadSelection | undefined;
+  horizon: number;
+  compact?: boolean;
+  onRemove: (playerId: string) => void;
+  onToggleLock: (playerId: string) => void;
+  onToggleStarter: (playerId: string) => void;
+}) {
+  return (
+    <div className={`${compact ? "w-36" : "w-32 sm:w-36"} rounded border border-white/70 bg-white px-2.5 py-2 text-center shadow-sm`}>
+      <div className="flex items-center justify-center gap-1">
+        <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${positionPillClass(player.positionGroup)}`}>{player.positionGroup}</span>
+        {selection?.isLocked ? <Lock className="h-3 w-3 text-slate-500" /> : null}
+      </div>
+      <p className="mt-1 truncate text-xs font-bold text-ink" title={player.name}>{player.name}</p>
+      <p className="truncate text-[11px] text-slate-500" title={player.teamName}>{player.teamName}</p>
+      <p className="mt-1 text-[11px] font-semibold text-emerald-700">
+        <Check className="mr-1 inline h-3 w-3" />
+        {formatScore(player.roundPoints.length > 0 ? playerHorizonPoints(player, horizon) : player.predictedFp)}
+      </p>
+      <div className="mt-2 flex justify-center gap-1">
+        <button
+          type="button"
+          onClick={() => onToggleStarter(player.playerId)}
+          className={`inline-flex h-6 w-6 items-center justify-center rounded border border-slate-200 hover:bg-amber-50 ${selection?.isStarter ? "text-amber-600" : "text-slate-500"}`}
+          title={selection?.isStarter ? "Move to bench" : "Move to starting XI"}
+        >
+          <Star className={`h-3.5 w-3.5 ${selection?.isStarter ? "fill-current" : ""}`} />
+        </button>
+        <button type="button" onClick={() => onToggleLock(player.playerId)} className="inline-flex h-6 w-6 items-center justify-center rounded border border-slate-200 text-slate-600 hover:bg-slate-50" title={selection?.isLocked ? "Unlock" : "Lock"}>
+          {selection?.isLocked ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
+        </button>
+        <button type="button" onClick={() => onRemove(player.playerId)} className="inline-flex h-6 w-6 items-center justify-center rounded border border-slate-200 text-rose-700 hover:bg-rose-50" title="Remove">
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
       </div>
     </div>
   );
