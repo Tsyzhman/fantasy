@@ -3,7 +3,7 @@ import type { PrismaClient } from "@prisma/client";
 import { formatDate } from "@/lib/format";
 import { macheteLeagueDisplayName } from "@/lib/leagues/display";
 
-import { loadSharedLeagueTeams, loadSharedMachetePlayerRows, type SharedLeagueSeasonOption } from "./shared_read_model";
+import { loadSharedLeagueTeams, loadSharedMachetePlayerRows, type SharedLeagueSeasonOption, type SharedPlayerRowsScope } from "./shared_read_model";
 import {
   defaultFantasySquadRules,
   normalizeFantasyPosition,
@@ -117,6 +117,22 @@ type SportsRuPositionPriceRow = {
 type SportsRuPositionMapRow = {
   providerEntityId: string;
   internalEntityId: string | null;
+};
+
+type SportsRuScopedPriceRow = SportsRuPositionPriceRow & {
+  leagueId: bigint;
+  season: string;
+  playerName: string;
+  price: number;
+};
+
+export type SportsRuFantasyPriceRef = {
+  playerId: string;
+  leagueId: string;
+  season: string;
+  playerName: string;
+  position: string | null;
+  price: number;
 };
 
 const maxProjectionRounds = 10;
@@ -637,6 +653,54 @@ export async function loadSportsRuFantasyPositionsByPlayerId(
   return sportsRuFantasyPositionsByPlayerId(priceRows, maps);
 }
 
+export async function loadSportsRuFantasyPriceRefsByScopedPlayer(
+  prisma: PrismaClient,
+  input: {
+    scopes: SharedPlayerRowsScope[];
+  }
+) {
+  const priceScopes = sportsRuPriceScopes(input.scopes);
+  if (priceScopes.length === 0) return new Map<string, SportsRuFantasyPriceRef>();
+
+  const priceRows = await prisma.fantasyPlayerPrice.findMany({
+    where: {
+      provider: "SPORTS_RU",
+      OR: priceScopes.map((scope) => ({
+        leagueId: scope.leagueId,
+        season: scope.season
+      }))
+    },
+    select: {
+      id: true,
+      leagueId: true,
+      season: true,
+      playerId: true,
+      playerName: true,
+      position: true,
+      price: true,
+      raw: true
+    },
+    orderBy: { lastSeenAt: "desc" }
+  });
+  if (priceRows.length === 0) return new Map<string, SportsRuFantasyPriceRef>();
+
+  const maps = await prisma.providerEntityMap.findMany({
+    where: {
+      provider: "SPORTS_RU",
+      providerEntityType: "FANTASY_PLAYER_PRICE",
+      providerEntityId: { in: priceRows.map((row) => row.id) },
+      internalEntityType: "PLAYER",
+      internalEntityId: { not: null }
+    },
+    select: {
+      providerEntityId: true,
+      internalEntityId: true
+    }
+  });
+
+  return sportsRuFantasyPriceRefsByScopedPlayer(priceRows, maps);
+}
+
 export function sportsRuFantasyPositionsByPlayerId(priceRows: SportsRuPositionPriceRow[], priceMaps: SportsRuPositionMapRow[]) {
   const mappedPlayerIdsByPriceId = new Map(
     priceMaps
@@ -654,6 +718,39 @@ export function sportsRuFantasyPositionsByPlayerId(priceRows: SportsRuPositionPr
   }
 
   return positionsByPlayerId;
+}
+
+export function sportsRuFantasyPriceRefsByScopedPlayer(priceRows: SportsRuScopedPriceRow[], priceMaps: SportsRuPositionMapRow[]) {
+  const mappedPlayerIdsByPriceId = new Map(
+    priceMaps
+      .filter((row) => row.internalEntityId)
+      .map((row) => [row.providerEntityId, row.internalEntityId as string])
+  );
+  const refsByScopedPlayer = new Map<string, SportsRuFantasyPriceRef>();
+
+  for (const row of priceRows) {
+    const playerId = mappedPlayerIdsByPriceId.get(row.id) ?? (row.playerId ? String(row.playerId) : null);
+    if (!playerId) continue;
+
+    for (const season of sportsRuSeasonAliases(row.season)) {
+      const key = sportsRuFantasyPriceScopeKey(row.leagueId, season, playerId);
+      if (refsByScopedPlayer.has(key)) continue;
+      refsByScopedPlayer.set(key, {
+        playerId,
+        leagueId: String(row.leagueId),
+        season,
+        playerName: row.playerName,
+        position: sportsRuPricePosition(row),
+        price: row.price
+      });
+    }
+  }
+
+  return refsByScopedPlayer;
+}
+
+export function sportsRuFantasyPriceScopeKey(leagueId: string | number | bigint, season: string, playerId: string | number | bigint) {
+  return `${leagueId}:${season}:${playerId}`;
 }
 
 export function sportsRuPricePosition(row: Pick<SportsRuPositionPriceRow, "position" | "raw">) {
@@ -843,6 +940,23 @@ function sportsRuFeaturedIndexPosition(index: number) {
   if (index <= 4) return "DEF";
   if (index <= 8) return "MID";
   return "FWD";
+}
+
+function sportsRuPriceScopes(scopes: SharedPlayerRowsScope[]) {
+  const seen = new Set<string>();
+  const priceScopes: Array<{ leagueId: bigint; season: string }> = [];
+
+  for (const scope of scopes) {
+    if (!scope.leagueId || !scope.season) continue;
+    for (const season of sportsRuSeasonAliases(scope.season)) {
+      const key = `${scope.leagueId}:${season}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      priceScopes.push({ leagueId: scope.leagueId, season });
+    }
+  }
+
+  return priceScopes;
 }
 
 function priceLookup(

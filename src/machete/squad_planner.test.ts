@@ -6,6 +6,8 @@ import {
   buildTeamStrengthProfilesFromMatches,
   fantasyPlannerPosition,
   projectFixtureFantasyPoints,
+  sportsRuFantasyPriceRefsByScopedPlayer,
+  sportsRuFantasyPriceScopeKey,
   sportsRuFantasyPositionsByPlayerId,
   sportsRuPricePosition,
   sportsRuSeasonAliases
@@ -51,6 +53,23 @@ test("squad planner resolves Sports.ru positions through manual mappings", () =>
   assert.equal(positions.get("42"), "MID");
   assert.equal(positions.get("7"), undefined);
   assert.equal(positions.get("8"), "DEF");
+});
+
+test("squad planner resolves scoped Sports.ru price refs through manual mappings and season aliases", () => {
+  const refs = sportsRuFantasyPriceRefsByScopedPlayer(
+    [
+      { id: "price-1", leagueId: 47n, season: "2025/26", playerId: 7n, playerName: "Sports Name", position: "UNKNOWN", raw: { source: "xlsx", positionLabel: "\u041f\u0417" }, price: 6.5 },
+      { id: "price-2", leagueId: 47n, season: "2025/26", playerId: 8n, playerName: "Direct Name", position: "DEF", price: 5 }
+    ],
+    [{ providerEntityId: "price-1", internalEntityId: "42" }]
+  );
+
+  const mapped = refs.get(sportsRuFantasyPriceScopeKey(47n, "2025/2026", "42"));
+  assert.equal(mapped?.playerName, "Sports Name");
+  assert.equal(mapped?.position, "MID");
+  assert.equal(mapped?.price, 6.5);
+  assert.equal(refs.get(sportsRuFantasyPriceScopeKey(47n, "2025/26", "7")), undefined);
+  assert.equal(refs.get(sportsRuFantasyPriceScopeKey(47n, "2025/26", "8"))?.playerName, "Direct Name");
 });
 
 test("squad planner recovers Sports.ru positions from raw price metadata", () => {

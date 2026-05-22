@@ -7,6 +7,8 @@ import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
 import { AutoSubmitForm } from "@/components/players/auto-submit-form";
 import { prisma } from "@/lib/db";
 import { matchWindowLabel, matchWindowLabelRu, matchWindowModeValue, parseMacheteMatchWindow, type MacheteMatchWindow } from "@/scoring/machete/match-window";
+import { normalizeFantasyPosition, type FantasyPositionGroup } from "@/machete/squad_logic";
+import { loadSportsRuFantasyPriceRefsByScopedPlayer, sportsRuFantasyPriceScopeKey, type SportsRuFantasyPriceRef } from "@/machete/squad_planner";
 import {
   loadSharedLeagueOptions,
   loadSharedLeagueTeams,
@@ -17,6 +19,7 @@ import {
   parseSharedBigInt,
   sortSharedMacheteRows,
   type SharedLeagueSeasonOption,
+  type SharedMachetePlayerRow,
   type SharedPlayerRowsScope,
   type SharedTeamCompetitionOption,
   type SharedTeamOption
@@ -47,6 +50,9 @@ type PageProps = {
 const ALL_LEAGUES_VALUE = "all";
 const DEFAULT_PAGE_SIZE = 50;
 const PAGE_SIZE_OPTIONS = [25, 50, 100] as const;
+const POSITION_FILTERS = ["GK", "DEF", "MID", "FWD"] as const;
+
+type PositionFilter = Exclude<FantasyPositionGroup, "UNK">;
 
 export default async function MachetePlayersPage({ searchParams }: PageProps) {
   const resolvedSearchParams = await searchParams;
@@ -64,6 +70,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
   const sort = resolvedSearchParams.sort ?? "fantasyScore";
   const pageSize = parsePageSize(resolvedSearchParams.pageSize);
   const requestedPage = parsePositiveInt(resolvedSearchParams.page, 1);
+  const selectedPosition = parsePositionFilter(resolvedSearchParams.position);
   const matchWindow = parseMacheteMatchWindow({
     mode: resolvedSearchParams.matchWindow ?? (selectedTeamId ? "all" : undefined),
     customMatches: resolvedSearchParams.customMatches,
@@ -79,7 +86,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
     selectedLeagueId,
     selectedTeamId,
     competitionKeys: activeCompetitionKeys,
-    position: resolvedSearchParams.position,
+    position: selectedPosition,
     minMinutes: resolvedSearchParams.minMinutes,
     matchWindow,
     sort,
@@ -93,6 +100,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
     leagueId: selectedLeagueId,
     teamId: selectedTeamId,
     competitionKey: activeCompetitionKeys,
+    position: selectedPosition ?? undefined,
     pageSize: String(pageSize)
   };
 
@@ -112,12 +120,12 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
             <I18nText en="Machete player explorer" ru="Таблица игроков Machete" />
           </p>
           <h1 className="mt-2 text-3xl font-bold text-ink">
-            <I18nText en="FotMob players" ru="Игроки FotMob" />
+            <I18nText en="Sports.ru mapped players" ru="Игроки Sports.ru с маппингом" />
           </h1>
           <p className="mt-2 max-w-2xl text-sm text-slate-600">
             <I18nText
-              en="Shared FotMob rosters with Expected FP, Actual FP and Alt FP recalculated from normalized match stats."
-              ru="Общие составы FotMob с Expected FP, Реальными FP и Alt FP, пересчитанными из нормализованной статистики матчей."
+              en="Machete stats for players mapped to Sports.ru fantasy prices. Names and positions come from Sports.ru."
+              ru="Machete-статы только для игроков, замапленных на цены Sports.ru. Имена и позиции берутся из Sports.ru."
             />
           </p>
         </div>
@@ -172,12 +180,18 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
         </label>
         <label className="text-sm">
           <span className="mb-1 block font-medium text-slate-600"><I18nText en="Position" ru="Позиция" /></span>
-          <input
+          <select
             name="position"
-            defaultValue={resolvedSearchParams.position ?? ""}
+            defaultValue={selectedPosition ?? ""}
             className="w-full rounded border border-slate-200 px-3 py-2"
-            placeholder="Например: Defender"
-          />
+          >
+            <LocalizedOption value="" en="All Sports.ru positions" ru="Все позиции Sports.ru" />
+            {POSITION_FILTERS.map((position) => (
+              <option key={position} value={position}>
+                {position}
+              </option>
+            ))}
+          </select>
         </label>
         <label className="text-sm">
           <span className="mb-1 block font-medium text-slate-600"><I18nText en="Min minutes" ru="Мин. минуты" /></span>
@@ -272,8 +286,8 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
         ) : (
           <div className="rounded border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">
             <I18nText
-              en="Choose a league above to load players. The page no longer loads every FotMob player on first open."
-              ru="Выберите лигу выше, чтобы загрузить игроков. Страница больше не грузит всех игроков FotMob при открытии."
+              en="Choose a league above to load Sports.ru mapped players."
+              ru="Выберите лигу выше, чтобы загрузить замапленных игроков Sports.ru."
             />
           </div>
         )}
@@ -296,7 +310,7 @@ async function buildMatchWindowRows({
   selectedLeagueId: string;
   selectedTeamId: string;
   competitionKeys: string[];
-  position?: string;
+  position: PositionFilter | null;
   minMinutes?: string;
   matchWindow: MacheteMatchWindow;
   sort: string;
@@ -312,20 +326,17 @@ async function buildMatchWindowRows({
 
   const scopes = await buildPlayerScopes(selectedLeagueId, selectedTeamId, competitionKeys);
   const combineTeamCompetitions = competitionKeys.length > 1;
-  const [rawRows, windowSummary] = await Promise.all([
+  const [rawRows, windowSummary, sportsPriceRefs] = await Promise.all([
     loadSharedMachetePlayerRows(prisma, {
       scopes,
-      position,
       minMinutes,
       matchWindow,
       combineTeamCompetitions
     }),
-    loadSharedMatchWindowSummary(prisma, scopes, matchWindow, combineTeamCompetitions)
+    loadSharedMatchWindowSummary(prisma, scopes, matchWindow, combineTeamCompetitions),
+    loadSportsRuFantasyPriceRefsByScopedPlayer(prisma, { scopes })
   ]);
-  const rows = sortSharedMacheteRows(
-    rawRows,
-    sort
-  );
+  const rows = sortSharedMacheteRows(applySportsRuMappedPlayerRows(rawRows, sportsPriceRefs, position), sort);
 
   return {
     ...paginateRows(rows, page, pageSize),
@@ -387,6 +398,68 @@ function competitionSummary(competitions: SharedTeamCompetitionOption[]) {
 
 function competitionLabel(competition: SharedTeamCompetitionOption) {
   return `${competition.displayName} ${competition.season}`;
+}
+
+function applySportsRuMappedPlayerRows(
+  rows: SharedMachetePlayerRow[],
+  sportsPriceRefs: Map<string, SportsRuFantasyPriceRef>,
+  position: PositionFilter | null
+) {
+  return rows.flatMap((row) => {
+    const sportsRef = sportsRuPriceRefForMacheteRow(row.id, sportsPriceRefs);
+    if (!sportsRef) return [];
+
+    const sportsPositionGroup = normalizeFantasyPosition(sportsRef.position);
+    const rowPositionGroup = normalizeFantasyPosition(row.position);
+    const positionGroup = sportsPositionGroup !== "UNK" ? sportsPositionGroup : rowPositionGroup;
+    if (position && positionGroup !== position) return [];
+
+    return [
+      {
+        ...row,
+        name: sportsRef.playerName,
+        position: sportsRef.position ?? (positionGroup === "UNK" ? row.position : positionGroup)
+      }
+    ];
+  });
+}
+
+function sportsRuPriceRefForMacheteRow(rowId: string, sportsPriceRefs: Map<string, SportsRuFantasyPriceRef>) {
+  for (const key of sportsRuScopeKeysForMacheteRowId(rowId)) {
+    const ref = sportsPriceRefs.get(key);
+    if (ref) return ref;
+  }
+  return null;
+}
+
+function sportsRuScopeKeysForMacheteRowId(rowId: string) {
+  if (rowId.startsWith("combined:")) return combinedSportsRuScopeKeysForMacheteRowId(rowId);
+
+  const [leagueId, season, , playerId] = rowId.split(":");
+  if (!leagueId || !season || !playerId) return [];
+  return [sportsRuFantasyPriceScopeKey(leagueId, season, playerId)];
+}
+
+function combinedSportsRuScopeKeysForMacheteRowId(rowId: string) {
+  const value = rowId.slice("combined:".length);
+  const teamSeparatorIndex = value.indexOf(":");
+  if (teamSeparatorIndex < 0) return [];
+
+  const afterTeam = value.slice(teamSeparatorIndex + 1);
+  const playerSeparatorIndex = afterTeam.indexOf(":");
+  if (playerSeparatorIndex < 0) return [];
+
+  const playerId = afterTeam.slice(0, playerSeparatorIndex);
+  const competitions = afterTeam.slice(playerSeparatorIndex + 1).split("|");
+  return competitions.flatMap((competition) => {
+    const parsed = parseSharedCompetitionKey(competition);
+    return parsed ? [sportsRuFantasyPriceScopeKey(parsed.leagueId, parsed.season, playerId)] : [];
+  });
+}
+
+function parsePositionFilter(value: string | undefined): PositionFilter | null {
+  const position = normalizeFantasyPosition(value);
+  return position === "UNK" ? null : position;
 }
 
 function parsePositiveInt(value: string | undefined, fallback: number) {
