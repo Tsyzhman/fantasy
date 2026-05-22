@@ -52,17 +52,21 @@ export class UnofficialFotMobClient implements FotMobClient {
   protected readonly baseUrl = process.env.MACHETE_FOTMOB_BASE_URL || "https://www.fotmob.com/api";
   protected readonly ccode3 = process.env.MACHETE_FOTMOB_CCODE3 || "GBR";
   protected readonly timezone = process.env.MACHETE_FOTMOB_TIMEZONE || "Europe/London";
-  // FotMob rate-limits signed /api/data/* requests with a per-IP token
-  // bucket; ~5 quick successes empty it, then several requests in a row get
-  // 403 until it refills. matchDetails goes through the unsigned next-data
-  // endpoint and bypasses this entirely, so the spacing only matters for
-  // league/team/fixtures sync. Override via
-  // MACHETE_FOTMOB_REQUEST_INTERVAL_MS if FotMob tightens or loosens the
-  // limit.
-  protected readonly requestIntervalMs = Number(process.env.MACHETE_FOTMOB_REQUEST_INTERVAL_MS || 2_000);
+  // Minimum spacing between requests, useful when many signed requests are
+  // queued (matchDetails sync). Default 1500ms. Override via
+  // MACHETE_FOTMOB_REQUEST_INTERVAL_MS.
+  protected readonly requestIntervalMs = Number(process.env.MACHETE_FOTMOB_REQUEST_INTERVAL_MS || 1_500);
   private lastRequestAt = 0;
-  private cachedBuildId: string | null = null;
-  private buildIdInflight: Promise<string> | null = null;
+  // Raw Cookie header value pulled from a real browser session — needed
+  // because /api/data/matchDetails is now gated by Cloudflare Turnstile.
+  // Grab from DevTools → Application → Cookies on fotmob.com; paste the full
+  // cookie string into MACHETE_FOTMOB_COOKIE (e.g. "turnstile_verified=...;
+  // __cf_bm=...; ..."). See docs/MACHETE_FOTMOB_IMPORT.md for the recipe.
+  protected readonly cookieHeader = process.env.MACHETE_FOTMOB_COOKIE || "";
+
+  // Endpoints that require the x-mas signature. Only matchDetails and
+  // playerData are gated; leagues/teams/fixtures/match are public.
+  private static readonly SIGNED_PATHS = ["/data/matchDetails", "/data/playerData"];
 
   async getLeague(leagueId: string, season?: string): Promise<FotMobLeague> {
     const requestSeason = fotMobRequestSeason(leagueId, season);
@@ -120,138 +124,30 @@ export class UnofficialFotMobClient implements FotMobClient {
   }
 
   async getFixtureDetails(fixtureId: string): Promise<FotMobFixtureDetails> {
-    // Fast path: Next.js page-data endpoint is unsigned and edge-cached, so
-    // it bypasses the rate limit on /api/data/matchDetails. It resolves
-    // matches by slug, however — Arsenal vs Crystal Palace in 2024/25 and
-    // 2025/26 share `/matches/arsenal-vs-crystal-palace/<hash>`, and FotMob
-    // serves whichever match is canonical for that slug today. For those
-    // collisions we fall back to the signed /api/data/matchDetails endpoint,
-    // which selects by exact matchId.
-    let validated: unknown;
-    try {
-      const pageProps = await this.fetchMatchPageProps(fixtureId);
-      validated = validatedMatchDetailsPayload(fixtureId, pageProps, "next-data");
-    } catch (error) {
-      if (!(error instanceof FotMobFixtureDetailsUnavailableError) || !/payload id mismatch/i.test(error.reason)) {
-        throw error;
-      }
-      console.info(
-        `[fotmob] next-data slug collision for matchId ${fixtureId} (${error.reason}); falling back to signed matchDetails.`
-      );
-      const signed = await this.getJson("/data/matchDetails", { matchId: fixtureId });
-      validated = validatedMatchDetailsPayload(fixtureId, signed, "signed-matchDetails-fallback");
+    // /api/data/match?id= is unsigned and returns basic fixture info (teams,
+    // score, kickoff). /api/data/matchDetails?matchId= is signed AND gated by
+    // Cloudflare Turnstile — needs the `turnstile_verified` cookie from a real
+    // browser session, supplied via MACHETE_FOTMOB_COOKIE. The next-data slug
+    // path is NOT usable: FotMob serves the canonical match for a slug, not
+    // the specific id we asked for.
+    const summaryPayload = await this.getJson("/data/match", { id: fixtureId });
+    if (isEmptyRecord(summaryPayload)) {
+      throw new FotMobFixtureDetailsUnavailableError(fixtureId, "empty payload");
     }
 
-    const record = asRecord(validated);
-    const general = asRecord(record.general);
-    const header = asRecord(record.header);
-    const fixture = normalizeFixtureFromPageProps(fixtureId, general, header);
+    const fixture = normalizeFixture(summaryPayload, stringValue(asRecord(summaryPayload).leagueId) ?? "");
     if (!fixture) {
-      throw new FotMobFixtureDetailsUnavailableError(fixtureId, "matchDetails payload could not be normalized");
+      throw new FotMobFixtureDetailsUnavailableError(fixtureId, "payload could not be normalized");
     }
+
+    const detailPayload = await this.getJson("/data/matchDetails", { matchId: fixtureId });
+    const validated = validatedMatchDetailsPayload(fixtureId, detailPayload, "matchDetails");
 
     return {
       ...fixture,
       playerStats: [],
       raw: validated
     };
-  }
-
-  private async fetchMatchPageProps(matchId: string): Promise<unknown> {
-    let buildId = await this.getBuildId();
-    let slug: string;
-    try {
-      slug = await this.resolveMatchSlug(matchId, buildId);
-    } catch (error) {
-      // Stale buildId after a FotMob deploy → refetch once and retry.
-      if (isNotFoundError(error)) {
-        buildId = await this.getBuildId({ force: true });
-        slug = await this.resolveMatchSlug(matchId, buildId);
-      } else {
-        throw error;
-      }
-    }
-
-    const url = `https://www.fotmob.com/_next/data/${buildId}/matches/${slug}.json`;
-    const data = await this.fetchUnsignedJson(url);
-    const pageProps = asRecord(asRecord(data).pageProps);
-    if (Object.keys(pageProps).length === 0) {
-      throw new FotMobFixtureDetailsUnavailableError(matchId, "next-data response missing pageProps");
-    }
-    return pageProps;
-  }
-
-  private async resolveMatchSlug(matchId: string, buildId: string): Promise<string> {
-    const url = `https://www.fotmob.com/_next/data/${buildId}/match/${matchId}.json`;
-    const data = await this.fetchUnsignedJson(url);
-    const pageProps = asRecord(asRecord(data).pageProps);
-    const redirect = stringValue(pageProps.__N_REDIRECT);
-    if (!redirect) {
-      throw new FotMobFixtureDetailsUnavailableError(matchId, "next-data slug redirect missing");
-    }
-    return redirect.replace(/^\/matches\//, "").replace(/#.*$/, "");
-  }
-
-  private async getBuildId(options: { force?: boolean } = {}): Promise<string> {
-    if (options.force) {
-      this.cachedBuildId = null;
-    }
-    if (this.cachedBuildId) return this.cachedBuildId;
-    if (!this.buildIdInflight) {
-      this.buildIdInflight = this.fetchBuildId().finally(() => { this.buildIdInflight = null; });
-    }
-    this.cachedBuildId = await this.buildIdInflight;
-    return this.cachedBuildId;
-  }
-
-  private async fetchBuildId(): Promise<string> {
-    const html = await this.fetchUnsignedText("https://www.fotmob.com/");
-    const match = html.match(/"buildId":"([^"]+)"/);
-    if (!match?.[1]) {
-      throw new Error("FotMob homepage did not include a buildId — unable to use Next.js data endpoint.");
-    }
-    return match[1];
-  }
-
-  private async fetchUnsignedJson(url: string): Promise<unknown> {
-    const text = await this.fetchUnsignedText(url);
-    try {
-      return JSON.parse(text);
-    } catch (error) {
-      throw new Error(`FotMob next-data endpoint returned non-JSON: ${(error as Error).message}`);
-    }
-  }
-
-  private async fetchUnsignedText(url: string): Promise<string> {
-    let lastError: unknown;
-    for (let attempt = 0; attempt < 3; attempt += 1) {
-      try {
-        const response = await fetch(url, {
-          headers: {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-            Accept: "application/json, text/plain, */*",
-            "Accept-Language": "en-US,en;q=0.9",
-            Referer: "https://www.fotmob.com/"
-          },
-          signal: AbortSignal.timeout(20_000)
-        });
-
-        if (response.status === 404) {
-          throw new NextDataNotFoundError(url);
-        }
-        if (!response.ok) {
-          throw new Error(`FotMob next-data request failed with ${response.status} ${response.statusText}`);
-        }
-
-        return await response.text();
-      } catch (error) {
-        if (error instanceof NextDataNotFoundError) throw error;
-        lastError = error;
-        if (attempt === 2) break;
-        await wait(750 * 2 ** attempt + Math.floor(Math.random() * 250));
-      }
-    }
-    throw lastError instanceof Error ? lastError : new Error("FotMob next-data request failed.");
   }
 
   async getPlayer(playerId: string): Promise<FotMobPlayer> {
@@ -279,26 +175,34 @@ export class UnofficialFotMobClient implements FotMobClient {
       if (value !== undefined) url.searchParams.set(key, String(value));
     }
 
+    const needsSigning = UnofficialFotMobClient.SIGNED_PATHS.some((signed) => path.startsWith(signed));
+    const headers: Record<string, string> = {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+      Accept: "application/json, text/plain, */*",
+      "Accept-Language": "en-US,en;q=0.9",
+      Referer: "https://www.fotmob.com/"
+    };
+    if (needsSigning) {
+      headers["x-mas"] = createXMasHeader(xMasSigningPath(url));
+    }
+    if (this.cookieHeader) {
+      headers.Cookie = this.cookieHeader;
+    }
+
     const maxAttempts = 5;
     let lastError: unknown;
     for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
       try {
         await this.throttle();
-        const response = await fetch(url, {
-          headers: {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
-            Accept: "application/json, text/plain, */*",
-            "Accept-Language": "en-US,en;q=0.9",
-            Referer: "https://www.fotmob.com/",
-            "x-mas": createXMasHeader(xMasSigningPath(url))
-          },
-          signal: AbortSignal.timeout(20_000)
-        });
+        const response = await fetch(url, { headers, signal: AbortSignal.timeout(20_000) });
 
         if (response.status === 403 || response.status === 429) {
-          // FotMob rate-limits signed requests sporadically. Back off long
-          // enough that the per-IP/per-token bucket refills before the next
-          // attempt, then retry with a fresh `code` timestamp.
+          // Could be either rate-limit OR missing Turnstile cookie. Body
+          // tells us which.
+          const body = await response.text();
+          if (body.includes("TURNSTILE_REQUIRED") || body.includes("Verification required")) {
+            throw new TurnstileRequiredError(path);
+          }
           throw new RateLimitedError(response.status);
         }
 
@@ -314,15 +218,18 @@ export class UnofficialFotMobClient implements FotMobClient {
         const data = await response.json();
         const record = asRecord(data);
         if (record.code === "TURNSTILE_REQUIRED" || record.error === "Verification required") {
-          throw new Error("FotMob rejected the signed request (TURNSTILE_REQUIRED). The x-mas secret may have rotated; update src/providers/fotmob/signing.ts.");
+          throw new TurnstileRequiredError(path);
         }
 
         return data;
       } catch (error) {
         lastError = error;
+        // Turnstile failures are permanent for this session — no point
+        // retrying. Surface immediately so the operator can refresh the
+        // cookie.
+        if (error instanceof TurnstileRequiredError) throw error;
         if (attempt === maxAttempts - 1) break;
         const isRateLimit = error instanceof RateLimitedError;
-        // 3s, 6s, 12s, 24s for rate limit; 0.75s, 1.5s, 3s, 6s for transient
         const backoff = isRateLimit ? 3_000 * 2 ** attempt : 750 * 2 ** attempt;
         const jitter = Math.floor(Math.random() * 500);
         await wait(backoff + jitter);
@@ -351,54 +258,17 @@ class RateLimitedError extends Error {
   }
 }
 
-class NextDataNotFoundError extends Error {
-  constructor(readonly url: string) {
-    super(`FotMob next-data 404: ${url}`);
-    this.name = "NextDataNotFoundError";
+export class TurnstileRequiredError extends Error {
+  constructor(readonly path: string) {
+    super(
+      `FotMob ${path} requires a Cloudflare Turnstile session. ` +
+        `Open https://www.fotmob.com/match/4813374 in a real browser, copy the full ` +
+        `Cookie header from DevTools (Network tab → any /api/data/matchDetails request), ` +
+        `set it as MACHETE_FOTMOB_COOKIE in .env, and restart the worker. ` +
+        `The cookie typically lasts several hours.`
+    );
+    this.name = "TurnstileRequiredError";
   }
-}
-
-function isNotFoundError(error: unknown): boolean {
-  return error instanceof NextDataNotFoundError;
-}
-
-function normalizeFixtureFromPageProps(
-  fixtureId: string,
-  general: JsonRecord,
-  header: JsonRecord
-): FotMobFixture | null {
-  const homeTeam = asRecord(general.homeTeam);
-  const awayTeam = asRecord(general.awayTeam);
-  const homeTeamId = stringValue(homeTeam.id) ?? stringValue(homeTeam.teamId);
-  const awayTeamId = stringValue(awayTeam.id) ?? stringValue(awayTeam.teamId);
-  if (!homeTeamId || !awayTeamId) return null;
-
-  const headerStatus = asRecord(header.status);
-  const teamsArray = Array.isArray(header.teams) ? header.teams.map(asRecord) : [];
-
-  return {
-    id: fixtureId,
-    leagueId: stringValue(general.leagueId) ?? "",
-    homeTeamId,
-    awayTeamId,
-    kickoffAt:
-      stringValue(general.matchTimeUTCDate) ??
-      stringValue(general.matchTimeUTC) ??
-      stringValue(headerStatus.utcTime) ??
-      new Date(0).toISOString(),
-    status: normalizePagePropsStatus(general, headerStatus),
-    homeScore: numberValue(teamsArray[0]?.score) ?? numberValue(headerStatus.homeScore),
-    awayScore: numberValue(teamsArray[1]?.score) ?? numberValue(headerStatus.awayScore)
-  };
-}
-
-function normalizePagePropsStatus(general: JsonRecord, headerStatus: JsonRecord): FotMobFixture["status"] {
-  if (headerStatus.finished === true) return "FINISHED";
-  if (headerStatus.started === true || headerStatus.ongoing === true) return "LIVE";
-  const matchStatus = asRecord(general.matchStatus);
-  if (matchStatus.finished === true) return "FINISHED";
-  if (matchStatus.started === true) return "LIVE";
-  return "SCHEDULED";
 }
 
 export function validatedMatchDetailsPayload(fixtureId: string, payload: unknown, source: string) {
@@ -719,6 +589,10 @@ function fotMobWorldCupSeason(season: string | undefined) {
 
 function asRecord(value: unknown): JsonRecord {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as JsonRecord) : {};
+}
+
+function isEmptyRecord(value: unknown): boolean {
+  return Boolean(value) && typeof value === "object" && !Array.isArray(value) && Object.keys(value as JsonRecord).length === 0;
 }
 
 function stringValue(value: unknown): string | undefined {

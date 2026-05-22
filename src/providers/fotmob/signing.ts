@@ -1,14 +1,24 @@
 import { createHash } from "node:crypto";
 
-// FotMob signs `/api/data/*` requests with an `x-mas` header. The signature is
-// `MD5(JSON(body) + secretLyrics).toUpperCase()` where `body = {url, code}`,
-// `url` is the request path+query (e.g. "/api/data/matchDetails?matchId=1"),
-// `code` is `Date.now()`, and the secret is the Three Lions lyrics below. The
-// final header is `base64(JSON({body, signature}))`.
+// FotMob signs `/api/data/*` requests with an `x-mas` header. The signature
+// is `MD5(JSON(body) + secretLyrics).toUpperCase()` where
+//   body = { url, code, foo }
+//   url  = request path+query (e.g. "/api/data/matchDetails?matchId=1")
+//   code = Date.now() in ms
+//   foo  = current FotMob deploy marker, e.g. "production:<sha>"
+// Final header = base64(JSON({body, signature}))
 //
-// The lyrics constant must have no leading or trailing newline; the internal
-// blank lines DO contribute to the hash and must be preserved verbatim.
-// Rotate the constant if FotMob switches secrets again.
+// Decoded from the live JS bundle: I=function(e){var n={url:e,code:Date.now(),
+// foo:"production:..."}, o=md5(JSON.stringify(n)+lyrics).toUpperCase(); return
+// btoa(JSON.stringify({body:n,signature:o}))}.
+//
+// The lyrics constant must have no leading/trailing newlines; internal blank
+// lines DO contribute to the hash. Use unix LF endings — Windows CRLF in this
+// source file would break the hash on Linux containers.
+//
+// The deploy marker rotates with each FotMob deploy. Override at runtime via
+// MACHETE_FOTMOB_DEPLOY_ID. To discover the current value:
+//   curl -sI https://www.fotmob.com/api/data/leagues?id=47 | grep x-client-version
 const SECRET_LYRICS = `[Spoken Intro: Alan Hansen & Trevor Brooking]
 I think it's bad news for the English game
 We're not creative enough, and we're not positive enough
@@ -82,10 +92,16 @@ It's coming home) Three lions on a shirt
 (Football's coming home
 It's coming home) Thirty years of hurt
 (It's coming home, it's coming) Never stopped me dreaming
-(Football's coming home)`;
+(Football's coming home)`.replace(/\r\n/g, "\n");
+
+const DEFAULT_DEPLOY_ID = "production:dbfd6d0c36fcd14bbcd5815cea66cd4b005b6a98";
+
+function deployId(): string {
+  return process.env.MACHETE_FOTMOB_DEPLOY_ID || DEFAULT_DEPLOY_ID;
+}
 
 export function createXMasHeader(pathWithQuery: string, now: number = Date.now()): string {
-  const body = { url: pathWithQuery, code: now };
+  const body = { url: pathWithQuery, code: now, foo: deployId() };
   const signature = createHash("md5")
     .update(`${JSON.stringify(body)}${SECRET_LYRICS}`)
     .digest("hex")

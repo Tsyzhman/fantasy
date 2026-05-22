@@ -10,41 +10,72 @@ MACHETE_FOTMOB_PROVIDER_MODE="real"
 
 `mock` is the default and uses local seed data.
 
-`unofficial` calls FotMob public endpoints directly. Every request is signed
-with the `x-mas` header (`base64(JSON({body, signature}))`, signature =
-`MD5(JSON(body) + secret).toUpperCase()`, body = `{url, code: Date.now()}`).
-The secret string lives in [`src/providers/fotmob/signing.ts`](../src/providers/fotmob/signing.ts).
-This is enough to fetch detailed match payloads (matchDetails / shotmap /
-playerStats / stats) without a browser.
+`unofficial` calls FotMob public endpoints directly. Two layers of protection
+have to be satisfied:
 
-`real` is reserved for a licensed provider adapter. The app intentionally keeps
-this separate from the unofficial endpoint client.
+1. **x-mas signature** — required on `/api/data/matchDetails` and
+   `/api/data/playerData`. The body is `{url, code, foo}`, signature =
+   `MD5(JSON(body) + secretLyrics).toUpperCase()`, final header =
+   `base64(JSON({body, signature}))`. Implemented in
+   [`src/providers/fotmob/signing.ts`](../src/providers/fotmob/signing.ts).
+2. **Cloudflare Turnstile session cookie** — set via
+   `MACHETE_FOTMOB_COOKIE`. FotMob's frontend solves Turnstile silently when
+   you load the site in a browser; the resulting `turnstile_verified` cookie
+   is what unlocks signed endpoints. Without it the server returns
+   `{error: "Verification required", code: "TURNSTILE_REQUIRED"}` regardless
+   of how perfect the signature is.
 
-## When FotMob rotates the secret
+Unsigned public endpoints (`/api/data/leagues`, `/api/data/fixtures`,
+`/api/data/teams`, `/api/data/match`) work without any cookie or signature.
 
-If you start seeing `TURNSTILE_REQUIRED` or `403` on signed requests, FotMob
-likely changed the signing secret. Find the new one by:
+`real` is reserved for a licensed provider adapter.
 
-1. Open `https://www.fotmob.com` in a browser with DevTools → Network.
-2. Pick any request to `/api/data/*` and copy the `x-mas` header value.
-3. Base64-decode it; the JSON body contains `url` and `code` (ms timestamp).
-4. Pull the FotMob JS bundle, search for `x-mas`, and follow the function that
-   produces the signature — the secret is a string concatenated to the JSON
-   body before MD5. It has been Rick Astley and Three Lions lyrics in the past.
-5. Replace `SECRET_LYRICS` in `signing.ts` (no leading/trailing newlines,
-   internal blank lines matter).
+## Setting up the Turnstile cookie
+
+You need a real browser session ONCE. The cookie lasts several hours; refresh
+when the worker starts logging `TurnstileRequiredError`.
+
+1. Open `https://www.fotmob.com` in Chrome.
+2. Click any finished match (e.g. a Premier League fixture).
+3. DevTools (F12) → Network → filter `matchDetails`.
+4. The frontend will fire `GET /api/data/matchDetails?matchId=...`. Right-click
+   it → Copy → Copy as cURL (bash).
+5. From the cURL command, copy the value passed via `-H 'cookie: ...'`.
+6. Paste into your `.env` on the host:
+   ```env
+   MACHETE_FOTMOB_COOKIE="turnstile_verified=...; __cf_bm=...; ..."
+   ```
+7. Restart the worker so it picks up the new env:
+   ```bash
+   docker compose up -d --force-recreate ingestion-worker
+   ```
+
+If matchDetails still fails after a fresh cookie, FotMob may have rotated the
+deploy marker. Discover the current value and set it explicitly:
+
+```bash
+curl -sI https://www.fotmob.com/api/data/leagues?id=47 | grep x-client-version
+# x-client-version: production:<sha>
+```
+
+```env
+MACHETE_FOTMOB_DEPLOY_ID="production:<sha>"
+```
+
+If the SECRET (Three Lions lyrics) itself rotates — rare, but it has happened
+before — replace `SECRET_LYRICS` in `signing.ts` by decoding a fresh `x-mas`
+header from DevTools (base64 → JSON; the `signature` is `MD5(JSON(body) +
+lyrics)`).
 
 ## Smoke test
 
 ```bash
 docker compose exec ingestion-worker npm run fotmob:smoke -- 47
-# arguments: leagueId season sampleCount
 docker compose exec ingestion-worker npm run fotmob:smoke -- 47 2025/2026 10
 ```
 
 A successful run reports `matchDetails sample: N/M matches returned detailed
-payloads` with `hasPlayerStats: true` / `hasShotmap: true` for at least one
-match.
+payloads` with `hasPlayerStats: true` / `hasShotmap: true`.
 
 ## Run the actual backfill
 
@@ -54,6 +85,18 @@ docker compose exec ingestion-worker npm run ingestion:initial-backfill -- curre
 docker compose exec ingestion-worker npm run ingestion:initial-backfill
 docker compose exec ingestion-worker npm run ingestion:status
 ```
+
+## Reset stored data
+
+If old broken rows are polluting the UI, wipe the FotMob-sourced match data
+and re-run the backfill:
+
+```bash
+docker compose exec ingestion-worker npm run fotmob:reset -- --yes
+```
+
+This truncates `matches` and cascades to all dependent stats/shots/events/
+fantasy points; keeps user data and the Machete league/team master rows.
 
 ## Skipping broken fixtures
 
@@ -70,9 +113,6 @@ docker compose up -d --force-recreate ingestion-worker
 docker compose exec ingestion-worker npm run ingestion:initial-backfill -- current_league_47
 ```
 
-A `[core_data] Skipping N fixture(s) via MACHETE_FOTMOB_SKIP_FIXTURE_IDS ...`
-warning is logged at the start of each scope.
-
 ## Custom database credentials
 
 The `ingestion-worker` service uses `DATABASE_URL_INTERNAL` from `.env` if set,
@@ -84,20 +124,19 @@ DATABASE_URL_INTERNAL="postgresql://postgres:postgres@postgres:5432/fantasy_scou
 
 ## Endpoint Mapping
 
-The unofficial client currently maps:
-
 ```text
-GET /api/data/leagues?id={leagueId}&season={YYYY/YYYY}&ccode3={CCODE3}
-GET /api/data/teams?id={teamId}&ccode3={CCODE3}
-GET /api/data/fixtures?id={leagueId}&season={YYYY/YYYY}
-GET /api/data/match?id={matchId}
-GET /api/data/matchDetails?matchId={matchId}
-GET /api/data/playerData?id={playerId}
+Unsigned (no cookie, no x-mas):
+  GET /api/data/leagues?id={leagueId}&season={YYYY/YYYY}&ccode3={CCODE3}
+  GET /api/data/teams?id={teamId}&ccode3={CCODE3}
+  GET /api/data/fixtures?id={leagueId}&season={YYYY/YYYY}
+  GET /api/data/match?id={matchId}            (basic info only)
+
+Signed + Turnstile cookie required:
+  GET /api/data/matchDetails?matchId={matchId}   (full content)
+  GET /api/data/playerData?id={playerId}
 ```
 
 ## Seeded League IDs
-
-Machete seeds these FotMob league IDs:
 
 | League | FotMob ID |
 | --- | ---: |
