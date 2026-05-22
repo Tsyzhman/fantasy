@@ -33,6 +33,52 @@ test("can add rejects players that break a team cap", () => {
   assert.equal(canAddFantasyPlayer(pool[1], pool, selections, rules), false);
 });
 
+test("squad summary counts projected points from starters only", () => {
+  const rules = { ...defaultFantasySquadRules, maxPlayersPerTeam: 3 };
+  const starter = player("1", "Starter", "10", "GK", 5, [4, 5]);
+  const bench = player("2", "Bench", "11", "MID", 5, [20, 20]);
+  const summary = summarizeFantasySquad(
+    [starter, bench],
+    [selectionForPlayer(starter, 0, true), selectionForPlayer(bench, 1, false)],
+    rules,
+    2
+  );
+
+  assert.equal(summary.projectedNext, 4);
+  assert.equal(summary.projectedHorizon, 9);
+  assert.deepEqual(summary.starterPlayers.map((item) => item.playerId), ["1"]);
+  assert.deepEqual(summary.benchPlayers.map((item) => item.playerId), ["2"]);
+});
+
+test("full squad enforces roster shape and starting formation", () => {
+  const rules = { ...defaultFantasySquadRules, maxPlayersPerTeam: 3 };
+  const pool = [
+    ...rangePlayers("GK", 2, 1),
+    ...rangePlayers("DEF", 5, 10),
+    ...rangePlayers("MID", 5, 20),
+    ...rangePlayers("FWD", 3, 30)
+  ];
+  const validStarterIds = new Set(["1", "10", "11", "12", "13", "20", "21", "22", "23", "30", "31"]);
+  const validSummary = summarizeFantasySquad(
+    pool,
+    pool.map((item, index) => selectionForPlayer(item, index, validStarterIds.has(item.playerId))),
+    rules,
+    1
+  );
+  const invalidStarterIds = new Set(["1", "2", "10", "11", "12", "20", "21", "22", "23", "30", "31"]);
+  const invalidSummary = summarizeFantasySquad(
+    pool,
+    pool.map((item, index) => selectionForPlayer(item, index, invalidStarterIds.has(item.playerId))),
+    rules,
+    1
+  );
+
+  assert.deepEqual(validSummary.violations, []);
+  assert.equal(validSummary.starterPlayers.length, 11);
+  assert.equal(validSummary.benchPlayers.length, 4);
+  assert.equal(invalidSummary.violations.some((violation) => violation.includes("GK starters exceeded")), true);
+});
+
 test("transfer suggestions improve next round and stay non-negative over horizon", () => {
   const rules = { ...defaultFantasySquadRules, budgetLimit: 100, maxPlayersPerTeam: 3 };
   const out = player("1", "Old Mid", "10", "MID", 6, [4, 4, 4]);
@@ -75,4 +121,11 @@ function player(
     roundPoints,
     fixtures: []
   };
+}
+
+function rangePlayers(positionGroup: FantasyPlannerPlayer["positionGroup"], count: number, startId: number) {
+  return Array.from({ length: count }, (_, index) => {
+    const id = String(startId + index);
+    return player(id, `${positionGroup} ${index + 1}`, id, positionGroup, 5, [1]);
+  });
 }

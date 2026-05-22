@@ -4,7 +4,7 @@ import { requireApiUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { macheteLeagueDisplayName } from "@/lib/leagues/display";
 import { fantasyRulesForLeague, saveFantasySquad } from "@/machete/squad_planner";
-import type { FantasySquadSelection } from "@/machete/squad_logic";
+import { normalizeFantasyPosition, type FantasyPositionGroup, type FantasySquadRules, type FantasySquadSelection } from "@/machete/squad_logic";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -36,20 +36,17 @@ export async function POST(request: Request) {
   }
 
   const selections = parseSelections(body.selections);
-  const rosterPlayerIds = new Set(
-    (
-      await prisma.teamPlayerSeason.findMany({
-        where: {
-          leagueId,
-          season,
-          active: true,
-          playerId: { in: selections.map((selection) => BigInt(selection.playerId)) }
-        },
-        select: { playerId: true }
-      })
-    ).map((row) => String(row.playerId))
-  );
-  const safeSelections = selections.filter((selection) => rosterPlayerIds.has(selection.playerId));
+  const rosterRows = await prisma.teamPlayerSeason.findMany({
+    where: {
+      leagueId,
+      season,
+      active: true,
+      playerId: { in: selections.map((selection) => BigInt(selection.playerId)) }
+    },
+    select: { playerId: true, teamId: true, position: true }
+  });
+  const rosterByPlayerId = new Map(rosterRows.map((row) => [String(row.playerId), row]));
+  const safeSelections = selections.filter((selection) => rosterByPlayerId.has(selection.playerId));
   const contest = await prisma.sportsRuFantasyContest.findUnique({
     where: {
       provider_leagueId_season: {
@@ -79,8 +76,9 @@ export async function POST(request: Request) {
     contest
   );
 
-  if (safeSelections.length > rules.squadSize) {
-    return NextResponse.json({ error: { code: "BAD_REQUEST", message: `Squad can contain at most ${rules.squadSize} players.` } }, { status: 400 });
+  const validationError = validateSquadSelections(safeSelections, rosterByPlayerId, rules);
+  if (validationError) {
+    return NextResponse.json({ error: { code: "BAD_REQUEST", message: validationError } }, { status: 400 });
   }
 
   const squad = await saveFantasySquad(prisma, {
@@ -121,6 +119,58 @@ function parseSelections(value: unknown): FantasySquadSelection[] {
   }
 
   return selections;
+}
+
+function validateSquadSelections(
+  selections: FantasySquadSelection[],
+  rosterByPlayerId: Map<string, { playerId: bigint; teamId: bigint | null; position: string | null }>,
+  rules: FantasySquadRules
+) {
+  if (selections.length > rules.squadSize) return `Squad can contain at most ${rules.squadSize} players.`;
+
+  const rosterCounts: Record<FantasyPositionGroup, number> = { GK: 0, DEF: 0, MID: 0, FWD: 0, UNK: 0 };
+  const starterCounts: Record<FantasyPositionGroup, number> = { GK: 0, DEF: 0, MID: 0, FWD: 0, UNK: 0 };
+  const teamCounts = new Map<string, number>();
+  let starters = 0;
+
+  for (const selection of selections) {
+    const rosterRow = rosterByPlayerId.get(selection.playerId);
+    if (!rosterRow) continue;
+    const position = normalizeFantasyPosition(rosterRow.position);
+    rosterCounts[position] += 1;
+    if (selection.isStarter) {
+      starterCounts[position] += 1;
+      starters += 1;
+    }
+    if (rosterRow.teamId) {
+      const teamId = String(rosterRow.teamId);
+      teamCounts.set(teamId, (teamCounts.get(teamId) ?? 0) + 1);
+    }
+  }
+
+  if (starters > rules.starterSize) return `Starting XI can contain at most ${rules.starterSize} players.`;
+  if (selections.length === rules.squadSize && selections.length - starters !== rules.benchSize) {
+    return `Bench must contain exactly ${rules.benchSize} players.`;
+  }
+
+  for (const position of ["GK", "DEF", "MID", "FWD"] as const) {
+    const rosterLimit = rules.positionLimits[position];
+    const starterLimit = rules.starterPositionLimits[position];
+    if (rosterCounts[position] > rosterLimit) return `${position} roster limit is ${rosterLimit}.`;
+    if (selections.length === rules.squadSize && rosterCounts[position] !== rosterLimit) {
+      return `Full squad must contain ${rosterLimit} ${position} players.`;
+    }
+    if (starterCounts[position] > starterLimit.max) return `${position} starter limit is ${starterLimit.max}.`;
+    if (starters === rules.starterSize && starterCounts[position] < starterLimit.min) {
+      return `Starting XI needs at least ${starterLimit.min} ${position} players.`;
+    }
+  }
+
+  for (const count of teamCounts.values()) {
+    if (count > rules.maxPlayersPerTeam) return `Squad can contain at most ${rules.maxPlayersPerTeam} players from one team.`;
+  }
+
+  return null;
 }
 
 function parseBigInt(value: unknown) {

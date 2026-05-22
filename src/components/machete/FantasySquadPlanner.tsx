@@ -1,14 +1,16 @@
 "use client";
 
-import { Check, Lock, Plus, Save, Search, Sparkles, Trash2, Unlock } from "lucide-react";
+import { Check, Lock, Plus, Save, Search, Sparkles, Star, Trash2, Unlock } from "lucide-react";
 import { useMemo, useState, useTransition } from "react";
 
 import { formatDate, formatNumber, formatScore } from "@/lib/format";
 import {
   buildTransferSuggestions,
   canAddFantasyPlayer,
+  canStartFantasyPlayer,
   playerHorizonPoints,
   selectionForPlayer,
+  selectionForNewPlayer,
   summarizeFantasySquad,
   type FantasyPlannerPlayer,
   type FantasyPositionGroup,
@@ -34,10 +36,11 @@ type FantasySquadPlannerProps = {
 };
 
 const positionOrder: FantasyPositionGroup[] = ["GK", "DEF", "MID", "FWD", "UNK"];
+const rosterPositions: Array<Exclude<FantasyPositionGroup, "UNK">> = ["GK", "DEF", "MID", "FWD"];
 
 export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, initialSquad, priceStatus }: FantasySquadPlannerProps) {
   const initialHorizon = initialSquad.horizonRounds || 5;
-  const [selections, setSelections] = useState<FantasySquadSelection[]>(initialSquad.selections);
+  const [selections, setSelections] = useState<FantasySquadSelection[]>(() => normalizeInitialSelections(initialSquad.selections, players, rules));
   const [horizon, setHorizon] = useState(initialHorizon);
   const [transferCount, setTransferCount] = useState(initialHorizon);
   const [query, setQuery] = useState("");
@@ -70,7 +73,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
       setMessage("Player does not fit budget, team limit, position slots, or squad size.");
       return;
     }
-    setSelections((current) => [...current, selectionForPlayer(player, current.length)]);
+    setSelections((current) => [...current, selectionForNewPlayer(player, players, current, rules)]);
     setMessage(null);
   }
 
@@ -82,6 +85,18 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
     setSelections((current) => current.map((selection) => (selection.playerId === playerId ? { ...selection, isLocked: !selection.isLocked } : selection)));
   }
 
+  function toggleStarter(playerId: string) {
+    const selection = selectionsByPlayerId.get(playerId);
+    const player = players.find((candidate) => candidate.playerId === playerId);
+    if (!selection || !player) return;
+    if (!selection.isStarter && !canStartFantasyPlayer(player, players, selections, rules)) {
+      setMessage("Starting XI does not fit formation limits.");
+      return;
+    }
+    setSelections((current) => current.map((item) => (item.playerId === playerId ? { ...item, isStarter: !item.isStarter } : item)));
+    setMessage(null);
+  }
+
   function applySuggestion(suggestion: TransferSuggestion) {
     const incoming = players.find((player) => player.playerId === suggestion.inPlayerId);
     if (!incoming) return;
@@ -90,7 +105,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
       const slotIndex = outSelection?.slotIndex ?? current.length;
       return [
         ...current.filter((selection) => selection.playerId !== suggestion.outPlayerId),
-        selectionForPlayer(incoming, slotIndex)
+        selectionForPlayer(incoming, slotIndex, outSelection?.isStarter ?? true)
       ].sort((left, right) => left.slotIndex - right.slotIndex);
     });
   }
@@ -127,7 +142,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Squad builder</p>
               <h2 className="mt-1 text-2xl font-bold text-ink">{initialSquad.name}</h2>
               <p className="mt-1 text-sm text-slate-600">
-                {summary.selectedPlayers.length}/{rules.squadSize} players, max {rules.maxPlayersPerTeam} from one team, budget {formatNumber(rules.budgetLimit, 1)}.
+                {summary.selectedPlayers.length}/{rules.squadSize} players, {summary.starterPlayers.length}/{rules.starterSize} starters, {summary.benchPlayers.length}/{rules.benchSize} bench.
               </p>
             </div>
             <button
@@ -144,8 +159,8 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
           <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-5">
             <Metric label="Spent" value={formatNumber(summary.spent, 1)} tone={summary.spent > rules.budgetLimit ? "bad" : "default"} />
             <Metric label="Bank" value={formatNumber(summary.bank, 1)} tone={summary.bank < 0 ? "bad" : "good"} />
-            <Metric label="Next round" value={formatScore(summary.projectedNext)} tone="good" />
-            <Metric label={`${horizon} rounds`} value={formatScore(summary.projectedHorizon)} tone="accent" />
+            <Metric label="Starting XI next" value={formatScore(summary.projectedNext)} tone="good" />
+            <Metric label={`Starting XI ${horizon}R`} value={formatScore(summary.projectedHorizon)} tone="accent" />
             <Metric label="Sports.ru prices" value={`${priceStatus.sportsRuPrices}/${players.length}`} />
           </div>
 
@@ -186,6 +201,9 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
 
           {summary.violations.length > 0 ? (
             <div className="mt-4 rounded border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{summary.violations.join(" / ")}</div>
+          ) : null}
+          {summary.warnings.length > 0 ? (
+            <div className="mt-3 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">{summary.warnings.join(" / ")}</div>
           ) : null}
           {rounds.length === 0 ? (
             <div className="mt-4 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
@@ -233,19 +251,47 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
               <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Your squad</h3>
               <PositionCounts summary={summary.byPosition} rules={rules} />
             </div>
-            <div className="grid min-h-[520px] gap-3 rounded border border-emerald-200 bg-emerald-900/90 p-3 md:grid-cols-2">
-              {positionOrder.map((position) => (
+            <div className="rounded border border-emerald-200 bg-emerald-900/90 p-3">
+              <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+                <h4 className="text-sm font-bold uppercase tracking-wide text-white">Starting XI</h4>
+                <StarterCounts summary={summary.startersByPosition} rules={rules} />
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                {rosterPositions.map((position) => (
+                  <SquadPositionGroup
+                    key={`starter:${position}`}
+                    position={position}
+                    players={summary.starterPlayers.filter((player) => player.positionGroup === position)}
+                    selectionsByPlayerId={selectionsByPlayerId}
+                    countLabel={starterLimitLabel(rules, position)}
+                    horizon={horizon}
+                    onRemove={removePlayer}
+                    onToggleLock={toggleLock}
+                    onToggleStarter={toggleStarter}
+                  />
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-3 rounded border border-slate-200 bg-slate-50 p-3">
+              <div className="mb-3 flex items-center justify-between">
+                <h4 className="text-sm font-bold uppercase tracking-wide text-slate-500">Bench</h4>
+                <span className="text-xs font-semibold text-slate-500">{summary.benchPlayers.length}/{rules.benchSize}</span>
+              </div>
+              <div className="grid gap-3 md:grid-cols-2">
+                {positionOrder.map((position) => (
                 <SquadPositionGroup
-                  key={position}
+                  key={`bench:${position}`}
                   position={position}
-                  players={summary.selectedPlayers.filter((player) => player.positionGroup === position)}
+                  players={summary.benchPlayers.filter((player) => player.positionGroup === position)}
                   selectionsByPlayerId={selectionsByPlayerId}
-                  limit={position === "UNK" ? undefined : rules.positionLimits[position]}
                   horizon={horizon}
                   onRemove={removePlayer}
                   onToggleLock={toggleLock}
+                  onToggleStarter={toggleStarter}
                 />
               ))}
+              </div>
             </div>
           </div>
 
@@ -357,10 +403,10 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
               </thead>
               <tbody>
                 <tr>
-                  <td className="px-4 py-3 font-semibold text-ink">Squad FP</td>
+                  <td className="px-4 py-3 font-semibold text-ink">Starting XI FP</td>
                   {rounds.map((round, index) => (
                     <td key={round.id} className="px-4 py-3 text-right font-semibold text-emerald-700">
-                      {formatScore(summary.selectedPlayers.reduce((total, player) => total + (player.roundPoints[index] ?? 0), 0))}
+                      {formatScore(summary.starterPlayers.reduce((total, player) => total + (player.roundPoints[index] ?? 0), 0))}
                     </td>
                   ))}
                 </tr>
@@ -403,22 +449,36 @@ function PositionCounts({ summary, rules }: { summary: Record<FantasyPositionGro
   );
 }
 
+function StarterCounts({ summary, rules }: { summary: Record<FantasyPositionGroup, number>; rules: FantasySquadRules }) {
+  return (
+    <div className="flex flex-wrap gap-2 text-xs font-semibold text-white/90">
+      {rosterPositions.map((position) => (
+        <span key={position} className="rounded border border-white/20 bg-white/10 px-2 py-1">
+          {position} {summary[position]}/{starterLimitLabel(rules, position)}
+        </span>
+      ))}
+    </div>
+  );
+}
+
 function SquadPositionGroup({
   position,
   players,
   selectionsByPlayerId,
-  limit,
+  countLabel,
   horizon,
   onRemove,
-  onToggleLock
+  onToggleLock,
+  onToggleStarter
 }: {
   position: FantasyPositionGroup;
   players: FantasyPlannerPlayer[];
   selectionsByPlayerId: Map<string, FantasySquadSelection>;
-  limit?: number;
+  countLabel?: string;
   horizon: number;
   onRemove: (playerId: string) => void;
   onToggleLock: (playerId: string) => void;
+  onToggleStarter: (playerId: string) => void;
 }) {
   if (position === "UNK" && players.length === 0) return null;
 
@@ -426,7 +486,7 @@ function SquadPositionGroup({
     <div className="rounded border border-white/20 bg-white/90 p-3">
       <div className="mb-2 flex items-center justify-between">
         <h4 className="text-sm font-bold text-ink">{position}</h4>
-        {limit ? <span className="text-xs font-semibold text-slate-500">{players.length}/{limit}</span> : null}
+        {countLabel ? <span className="text-xs font-semibold text-slate-500">{players.length}/{countLabel}</span> : null}
       </div>
       <div className="space-y-2">
         {players.map((player) => {
@@ -439,6 +499,14 @@ function SquadPositionGroup({
                   <p className="truncate text-xs text-slate-500" title={player.teamName}>{player.teamName}</p>
                 </div>
                 <div className="flex gap-1">
+                  <button
+                    type="button"
+                    onClick={() => onToggleStarter(player.playerId)}
+                    className={`inline-flex h-7 w-7 items-center justify-center rounded border border-slate-200 hover:bg-amber-50 ${selection?.isStarter ? "text-amber-600" : "text-slate-500"}`}
+                    title={selection?.isStarter ? "Move to bench" : "Move to starting XI"}
+                  >
+                    <Star className={`h-3.5 w-3.5 ${selection?.isStarter ? "fill-current" : ""}`} />
+                  </button>
                   <button type="button" onClick={() => onToggleLock(player.playerId)} className="inline-flex h-7 w-7 items-center justify-center rounded border border-slate-200 text-slate-600 hover:bg-slate-50" title={selection?.isLocked ? "Unlock" : "Lock"}>
                     {selection?.isLocked ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
                   </button>
@@ -466,4 +534,41 @@ function SquadPositionGroup({
 function signedNumber(value: number) {
   if (value > 0) return `+${formatNumber(value, 1)}`;
   return formatNumber(value, 1);
+}
+
+function starterLimitLabel(rules: FantasySquadRules, position: Exclude<FantasyPositionGroup, "UNK">) {
+  const limit = rules.starterPositionLimits[position];
+  return limit.min === limit.max ? String(limit.max) : `${limit.min}-${limit.max}`;
+}
+
+function normalizeInitialSelections(selections: FantasySquadSelection[], players: FantasyPlannerPlayer[], rules: FantasySquadRules) {
+  const playersById = new Map(players.map((player) => [player.playerId, player]));
+  const sorted = selections
+    .filter((selection) => playersById.has(selection.playerId))
+    .sort((left, right) => left.slotIndex - right.slotIndex);
+  const normalized: FantasySquadSelection[] = [];
+
+  for (const selection of sorted) {
+    const player = playersById.get(selection.playerId);
+    const wantsStarter = selection.isStarter && player ? canStartFantasyPlayer(player, players, normalized, rules) : false;
+    normalized.push({ ...selection, isStarter: wantsStarter, slotIndex: normalized.length });
+  }
+
+  const starterCount = () => normalized.filter((selection) => selection.isStarter).length;
+  if (starterCount() < rules.starterSize) {
+    const candidates = normalized
+      .filter((selection) => !selection.isStarter)
+      .map((selection) => playersById.get(selection.playerId))
+      .filter((player): player is FantasyPlannerPlayer => Boolean(player))
+      .sort((left, right) => playerHorizonPoints(right, 1) - playerHorizonPoints(left, 1));
+
+    for (const player of candidates) {
+      if (starterCount() >= rules.starterSize) break;
+      if (!canStartFantasyPlayer(player, players, normalized, rules)) continue;
+      const index = normalized.findIndex((selection) => selection.playerId === player.playerId);
+      if (index >= 0) normalized[index] = { ...normalized[index], isStarter: true };
+    }
+  }
+
+  return normalized;
 }
