@@ -59,6 +59,7 @@ const additiveStatements = [
     "player_id" BIGINT NOT NULL,
     "source" TEXT NOT NULL DEFAULT 'fotmob',
     "active" BOOLEAN NOT NULL DEFAULT true,
+    "is_starter" BOOLEAN NOT NULL DEFAULT false,
     "position" TEXT,
     "shirt_number" INTEGER,
     "nationality" TEXT,
@@ -84,7 +85,9 @@ const additiveStatements = [
   `CREATE INDEX IF NOT EXISTS "league_seasons_source_is_current_idx" ON "league_seasons"("source", "is_current")`,
   `CREATE INDEX IF NOT EXISTS "league_season_teams_team_id_league_id_season_idx" ON "league_season_teams"("team_id", "league_id", "season")`,
   `CREATE INDEX IF NOT EXISTS "team_player_seasons_player_id_league_id_season_idx" ON "team_player_seasons"("player_id", "league_id", "season")`,
-  `CREATE INDEX IF NOT EXISTS "team_player_seasons_team_id_league_id_season_idx" ON "team_player_seasons"("team_id", "league_id", "season")`
+  `CREATE INDEX IF NOT EXISTS "team_player_seasons_team_id_league_id_season_idx" ON "team_player_seasons"("team_id", "league_id", "season")`,
+  `ALTER TABLE "team_player_seasons" ADD COLUMN IF NOT EXISTS "is_starter" BOOLEAN NOT NULL DEFAULT false`,
+  `CREATE INDEX IF NOT EXISTS "team_player_seasons_is_starter_idx" ON "team_player_seasons"("is_starter")`
 ];
 
 async function main() {
