@@ -1,5 +1,7 @@
+import { UserRole } from "@prisma/client";
 import Link from "next/link";
 
+import { FantasyPriceSheetImportForm } from "@/components/machete/FantasyPriceSheetImportForm";
 import { FantasySquadPlanner } from "@/components/machete/FantasySquadPlanner";
 import { MacheteShell } from "@/components/machete/MacheteShell";
 import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
@@ -51,21 +53,26 @@ export default async function MacheteSquadPage({ searchParams }: PageProps) {
           </Link>
         </div>
 
-        <AutoSubmitForm className="mt-5 grid grid-cols-1 gap-3 md:max-w-xl md:grid-cols-[1fr_auto]">
-          <label className="text-sm">
-            <span className="mb-1 block font-medium text-slate-600">League</span>
-            <select name="leagueId" defaultValue={selectedLeague ? String(selectedLeague.leagueId) : ""} className="w-full rounded border border-slate-200 px-3 py-2">
-              {leagues.map((league) => (
-                <option key={`${league.leagueId}:${league.season}`} value={String(league.leagueId)}>
-                  {league.displayName} - {league.season}
-                </option>
-              ))}
-            </select>
-          </label>
-          <button type="submit" className="self-end rounded bg-ink px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">
-            Load
-          </button>
-        </AutoSubmitForm>
+        <div className="mt-5 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(320px,0.8fr)_minmax(420px,1.2fr)]">
+          <AutoSubmitForm className="grid grid-cols-1 gap-3 md:grid-cols-[1fr_auto]">
+            <label className="text-sm">
+              <span className="mb-1 block font-medium text-slate-600">League</span>
+              <select name="leagueId" defaultValue={selectedLeague ? String(selectedLeague.leagueId) : ""} className="w-full rounded border border-slate-200 px-3 py-2">
+                {leagues.map((league) => (
+                  <option key={`${league.leagueId}:${league.season}`} value={String(league.leagueId)}>
+                    {league.displayName} - {league.season}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button type="submit" className="self-end rounded bg-ink px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">
+              Load
+            </button>
+          </AutoSubmitForm>
+          {selectedLeague ? (
+            <FantasyPriceSheetImportForm leagueId={String(selectedLeague.leagueId)} season={selectedLeague.season} canImport={user.role === UserRole.ADMIN} />
+          ) : null}
+        </div>
       </section>
 
       {selectedLeague && data ? (
