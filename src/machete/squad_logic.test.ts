@@ -6,6 +6,7 @@ import {
   canAddFantasyPlayer,
   defaultFantasySquadRules,
   nextFantasyPoints,
+  normalizeFantasyPosition,
   selectionForPlayer,
   summarizeFantasySquad,
   type FantasyPlannerPlayer
@@ -102,6 +103,13 @@ test("transfer suggestions improve next round and stay non-negative over horizon
 test("next fantasy points fall back to predicted FP when no fixture rounds are loaded", () => {
   assert.equal(nextFantasyPoints(player("1", "No Fixtures", "10", "MID", 5, [])), 0);
   assert.equal(nextFantasyPoints({ ...player("2", "Projected", "10", "MID", 5, []), predictedFp: 6.4 }), 6.4);
+});
+
+test("position normalizer accepts Sports.ru labels", () => {
+  assert.equal(normalizeFantasyPosition("\u0432\u0440"), "GK");
+  assert.equal(normalizeFantasyPosition("\u0437\u0430\u0449"), "DEF");
+  assert.equal(normalizeFantasyPosition("\u043f\u0437"), "MID");
+  assert.equal(normalizeFantasyPosition("\u043d\u0430\u043f"), "FWD");
 });
 
 function player(

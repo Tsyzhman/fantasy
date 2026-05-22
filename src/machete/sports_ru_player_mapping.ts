@@ -430,8 +430,7 @@ async function updatePriceFromRoster(prisma: PrismaClient, priceId: string, rost
     where: { id: priceId },
     data: {
       playerId: rosterEntry.playerId,
-      teamId: rosterEntry.teamId,
-      position: rosterEntry.position
+      teamId: rosterEntry.teamId
     }
   });
 }
@@ -443,6 +442,7 @@ async function applyPriceRosterMapping(prisma: PrismaClient, price: SportsRuStor
     season: price.season,
     previousPlayerId: price.playerId,
     rosterEntry,
+    sportsPosition: price.position,
     price: price.price
   });
 }
@@ -464,6 +464,7 @@ async function syncSquadSelectionsForSportsRuMapping(
     season: string;
     previousPlayerId: bigint | null;
     rosterEntry: RosterEntry;
+    sportsPosition: string | null;
     price: number;
   }
 ): Promise<SportsRuSelectionSyncResult> {
@@ -516,7 +517,7 @@ async function syncSquadSelectionsForSportsRuMapping(
             data: {
               playerId: targetPlayerId,
               teamId: input.rosterEntry.teamId,
-              position: input.rosterEntry.position,
+              position: input.sportsPosition ?? input.rosterEntry.position,
               purchasePrice: input.price
             }
           })
@@ -543,7 +544,7 @@ async function syncSquadSelectionsForSportsRuMapping(
     },
     data: {
       teamId: input.rosterEntry.teamId,
-      position: input.rosterEntry.position,
+      position: input.sportsPosition ?? input.rosterEntry.position,
       purchasePrice: input.price
     }
   });

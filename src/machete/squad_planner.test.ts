@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { buildPlannerRoundFixtures, sportsRuSeasonAliases } from "./squad_planner";
+import { buildPlannerRoundFixtures, fantasyPlannerPosition, sportsRuSeasonAliases } from "./squad_planner";
 
 test("squad planner groups upcoming matches into fixture rounds", () => {
   const result = buildPlannerRoundFixtures(
@@ -22,6 +22,11 @@ test("squad planner groups upcoming matches into fixture rounds", () => {
 test("sports ru season aliases support long and compact FotMob season labels", () => {
   assert.deepEqual(sportsRuSeasonAliases("2025/2026"), ["2025/2026", "2025/26"]);
   assert.deepEqual(sportsRuSeasonAliases("2025/26"), ["2025/26", "2025/2026"]);
+});
+
+test("squad planner prefers Sports.ru position over FotMob roster position", () => {
+  assert.equal(fantasyPlannerPosition("DEF", "Midfielder", "Forward"), "DEF");
+  assert.equal(fantasyPlannerPosition(null, "Midfielder", "Forward"), "Midfielder");
 });
 
 function match(input: {

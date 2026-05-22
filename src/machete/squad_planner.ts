@@ -133,12 +133,13 @@ export async function loadFantasySquadPlannerData(
   const prices = priceLookup(priceRows, priceMaps);
   const players = rosterRows.map((row) => {
     const projected = projectedByPlayerTeam.get(playerTeamKey(row.playerId, row.teamId));
-    const positionGroup = normalizeFantasyPosition(row.position ?? projected?.position ?? null);
     const predictedFp = projected?.fantasyScore ?? null;
     const priceRow =
       prices.byPlayerId.get(String(row.playerId)) ??
       prices.byNameTeam.get(nameTeamKey(row.player.name, row.team.name)) ??
       prices.findByPlayerName(row.player.name);
+    const position = fantasyPlannerPosition(priceRow?.position ?? null, row.position, projected?.position ?? null);
+    const positionGroup = normalizeFantasyPosition(position);
     const price = priceRow?.price ?? estimateFantasyPrice(predictedFp, positionGroup);
     const roundPoints = roundsAndFixtures.rounds.map((round) => {
       const fixtures = roundsAndFixtures.fixturesByTeamRound.get(round.id)?.get(String(row.teamId)) ?? [];
@@ -157,7 +158,7 @@ export async function loadFantasySquadPlannerData(
       name: row.player.name,
       teamName: row.team.name,
       leagueName: league.displayName,
-      position: row.position ?? projected?.position ?? null,
+      position,
       positionGroup,
       price,
       priceSource: priceRow ? ("SPORTS_RU" as const) : ("ESTIMATED" as const),
@@ -227,6 +228,10 @@ export async function saveFantasySquad(
       position: true
     }
   });
+  const sportsPositionsByPlayerId = await loadSportsRuFantasyPositionsByPlayerId(prisma, {
+    leagueId: input.leagueId,
+    season: input.season
+  });
   const rosterByPlayerId = new Map(rosterRows.map((row) => [String(row.playerId), row]));
   const squad = await prisma.userFantasySquad.upsert({
     where: {
@@ -259,7 +264,7 @@ export async function saveFantasySquad(
           squadId: squad.id,
           playerId: BigInt(selection.playerId),
           teamId: rosterByPlayerId.get(selection.playerId)?.teamId ?? null,
-          position: rosterByPlayerId.get(selection.playerId)?.position ?? null,
+          position: sportsPositionsByPlayerId.get(selection.playerId) ?? rosterByPlayerId.get(selection.playerId)?.position ?? null,
           isStarter: selection.isStarter,
           isLocked: selection.isLocked,
           slotIndex: selection.slotIndex ?? index,
@@ -392,6 +397,55 @@ export function buildPlannerRoundFixtures(matches: PlannerMatch[], now = new Dat
   };
 }
 
+export async function loadSportsRuFantasyPositionsByPlayerId(
+  prisma: PrismaClient,
+  input: {
+    leagueId: bigint;
+    season: string;
+  }
+) {
+  const priceRows = await prisma.fantasyPlayerPrice.findMany({
+    where: {
+      provider: "SPORTS_RU",
+      leagueId: input.leagueId,
+      season: { in: sportsRuSeasonAliases(input.season) },
+      position: { not: null }
+    },
+    select: {
+      id: true,
+      playerId: true,
+      position: true
+    },
+    orderBy: { lastSeenAt: "desc" }
+  });
+  if (priceRows.length === 0) return new Map<string, string>();
+
+  const maps = await prisma.providerEntityMap.findMany({
+    where: {
+      provider: "SPORTS_RU",
+      providerEntityType: "FANTASY_PLAYER_PRICE",
+      providerEntityId: { in: priceRows.map((row) => row.id) },
+      internalEntityType: "PLAYER",
+      internalEntityId: { not: null }
+    },
+    select: {
+      providerEntityId: true,
+      internalEntityId: true
+    }
+  });
+  const mappedPlayerIdsByPriceId = new Map(maps.map((row) => [row.providerEntityId, row.internalEntityId]));
+  const positionsByPlayerId = new Map<string, string>();
+
+  for (const row of priceRows) {
+    if (!row.position) continue;
+    const playerId = mappedPlayerIdsByPriceId.get(row.id) ?? (row.playerId ? String(row.playerId) : null);
+    if (!playerId || positionsByPlayerId.has(playerId)) continue;
+    positionsByPlayerId.set(playerId, row.position);
+  }
+
+  return positionsByPlayerId;
+}
+
 async function loadLegacyMacheteUpcomingRoundFixtures(prisma: PrismaClient, league: SharedLeagueSeasonOption, now: Date) {
   const macheteLeague = await prisma.macheteLeague.findFirst({
     where: {
@@ -472,6 +526,7 @@ function priceLookup(
     playerName: string;
     normalizedName: string;
     teamName: string;
+    position: string | null;
     price: number;
   }>,
   priceMaps: Array<{
@@ -506,6 +561,14 @@ function priceLookup(
       });
     }
   };
+}
+
+export function fantasyPlannerPosition(
+  sportsPosition: string | null | undefined,
+  rosterPosition: string | null | undefined,
+  projectedPosition: string | null | undefined
+) {
+  return sportsPosition ?? rosterPosition ?? projectedPosition ?? null;
 }
 
 function estimateFantasyPrice(score: number | null, positionGroup: string) {

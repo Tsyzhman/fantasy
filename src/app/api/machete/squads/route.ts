@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { requireApiUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { macheteLeagueDisplayName } from "@/lib/leagues/display";
-import { fantasyRulesForLeague, saveFantasySquad } from "@/machete/squad_planner";
+import { fantasyRulesForLeague, loadSportsRuFantasyPositionsByPlayerId, saveFantasySquad, sportsRuSeasonAliases } from "@/machete/squad_planner";
 import { normalizeFantasyPosition, type FantasyPositionGroup, type FantasySquadRules, type FantasySquadSelection } from "@/machete/squad_logic";
 
 export const runtime = "nodejs";
@@ -45,16 +45,24 @@ export async function POST(request: Request) {
     },
     select: { playerId: true, teamId: true, position: true }
   });
-  const rosterByPlayerId = new Map(rosterRows.map((row) => [String(row.playerId), row]));
+  const sportsPositionsByPlayerId = await loadSportsRuFantasyPositionsByPlayerId(prisma, {
+    leagueId,
+    season
+  });
+  const rosterByPlayerId = new Map(
+    rosterRows.map((row) => {
+      const playerId = String(row.playerId);
+      return [playerId, { ...row, position: sportsPositionsByPlayerId.get(playerId) ?? row.position }] as const;
+    })
+  );
   const safeSelections = selections.filter((selection) => rosterByPlayerId.has(selection.playerId));
-  const contest = await prisma.sportsRuFantasyContest.findUnique({
+  const contest = await prisma.sportsRuFantasyContest.findFirst({
     where: {
-      provider_leagueId_season: {
-        provider: "SPORTS_RU",
-        leagueId,
-        season
-      }
-    }
+      provider: "SPORTS_RU",
+      leagueId,
+      season: { in: sportsRuSeasonAliases(season) }
+    },
+    orderBy: { lastSyncedAt: "desc" }
   });
   const displayName = macheteLeagueDisplayName({
     id: String(leagueSeason.leagueId),

@@ -98,10 +98,17 @@ export const defaultFantasySquadRules: FantasySquadRules = {
 
 export function normalizeFantasyPosition(position: string | null | undefined): FantasyPositionGroup {
   const value = position?.toLowerCase() ?? "";
-  if (value === "gk" || value.includes("keeper")) return "GK";
-  if (value === "def" || value.includes("defender") || value.includes("back")) return "DEF";
-  if (value === "mid" || value.includes("midfielder")) return "MID";
-  if (value === "fw" || value === "fwd" || value.includes("forward") || value.includes("striker") || value.includes("winger")) return "FWD";
+  if (["gk", "\u0432\u0440", "\u0432\u0440\u0430\u0442\u0430\u0440\u044c"].includes(value) || value.includes("keeper")) return "GK";
+  if (["def", "\u0437\u0430\u0449", "\u0437\u0430\u0449\u0438\u0442\u043d\u0438\u043a"].includes(value) || value.includes("defender") || value.includes("back")) return "DEF";
+  if (["mid", "\u043f\u0437", "\u043f\u043e\u043b\u0443\u0437\u0430\u0449\u0438\u0442\u043d\u0438\u043a"].includes(value) || value.includes("midfielder")) return "MID";
+  if (
+    ["fw", "fwd", "\u043d\u0430\u043f", "\u043d\u0430\u043f\u0430\u0434\u0430\u044e\u0449\u0438\u0439"].includes(value) ||
+    value.includes("forward") ||
+    value.includes("striker") ||
+    value.includes("winger")
+  ) {
+    return "FWD";
+  }
   return "UNK";
 }
 
