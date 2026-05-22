@@ -459,13 +459,12 @@ function backfillModeFromMetadata(metadataValue: unknown): InitialBackfillMode {
   return metadataRecord(metadataValue).backfill_mode === "current_league_47" ? "current_league_47" : "full";
 }
 
-function canCurrentWorkerRunJob(job: IngestionJob, input: RunJobInput) {
-  if (input.client) return true;
-  const isBrowserWorker = process.env.MACHETE_FOTMOB_PROVIDER_MODE === "browser";
-  const isCurrentLeagueBackfill = job.jobType === "initial_backfill" && backfillModeFromMetadata(job.metadata) === "current_league_47";
-
-  if (isCurrentLeagueBackfill) return isBrowserWorker;
-  return !isBrowserWorker;
+function canCurrentWorkerRunJob(_job: IngestionJob, _input: RunJobInput) {
+  // Pre-Turnstile-bypass era used to route `current_league_47` jobs to a
+  // dedicated browser-mode worker because matchDetails required a real
+  // Chromium session. The unified worker now handles every job type via the
+  // unsigned playbyplay next-data endpoint, so there is nothing to gate on.
+  return true;
 }
 
 async function createLockedJob(
