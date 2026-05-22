@@ -179,44 +179,36 @@ test("placeholder team detection covers known playoff labels", () => {
   assert.equal(is_placeholder_team("Argentina"), false);
 });
 
-test("unofficial client fetches summary unsigned and matchDetails with x-mas", async () => {
+test("unofficial client fetches matchDetails via the playbyplay next-data endpoint", async () => {
   const originalFetch = globalThis.fetch;
   const originalInterval = process.env.MACHETE_FOTMOB_REQUEST_INTERVAL_MS;
-  const originalCookie = process.env.MACHETE_FOTMOB_COOKIE;
   process.env.MACHETE_FOTMOB_REQUEST_INTERVAL_MS = "0";
-  process.env.MACHETE_FOTMOB_COOKIE = "turnstile_verified=test123; __cf_bm=abc";
-  const requests: Array<{ url: string; headers: Record<string, string> }> = [];
+  const urls: string[] = [];
 
-  globalThis.fetch = (async (input: string | URL | Request, init?: RequestInit) => {
+  globalThis.fetch = (async (input: string | URL | Request) => {
     const url = String(input instanceof Request ? input.url : input);
-    const headers: Record<string, string> = {};
-    const rawHeaders = init?.headers;
-    if (rawHeaders && typeof rawHeaders === "object" && !Array.isArray(rawHeaders)) {
-      for (const [name, value] of Object.entries(rawHeaders as Record<string, string>)) {
-        headers[name.toLowerCase()] = value;
-      }
+    urls.push(url);
+
+    if (url === "https://www.fotmob.com" || url === "https://www.fotmob.com/") {
+      return textResponse(`<html><script>"buildId":"abc"</script></html>`);
     }
-    requests.push({ url, headers });
 
     if (url.includes("/api/data/match?")) {
       return jsonResponse({
         id: 4813565,
         home: { id: 8678, name: "AFC Bournemouth", score: 2 },
         away: { id: 9825, name: "Arsenal", score: 3 },
-        status: { finished: true, utcTime: "2026-01-03T17:30:00.000Z" },
-        pageUrl: "/matches/afc-bournemouth-vs-arsenal/2txefx#4813565"
+        status: { finished: true, utcTime: "2026-01-03T17:30:00.000Z" }
       });
     }
 
-    if (url.includes("/api/data/matchDetails?")) {
+    if (url === "https://www.fotmob.com/_next/data/abc/match/4813565/playbyplay.json") {
       return jsonResponse({
-        general: {
-          matchId: "4813565",
-          leagueId: 47,
-          homeTeam: { id: 8678, name: "AFC Bournemouth" },
-          awayTeam: { id: 9825, name: "Arsenal" }
-        },
-        content: { playerStats: {}, shotmap: { shots: [] }, stats: {}, lineup: {} }
+        pageProps: {
+          general: { matchId: "4813565", leagueId: 47, homeTeam: { id: 8678 }, awayTeam: { id: 9825 } },
+          header: { status: { finished: true }, teams: [{ score: 2 }, { score: 3 }] },
+          content: { matchFacts: {}, playerStats: {}, shotmap: { shots: [] }, stats: {}, lineup: {} }
+        }
       });
     }
 
@@ -226,54 +218,63 @@ test("unofficial client fetches summary unsigned and matchDetails with x-mas", a
   try {
     const details = await new UnofficialFotMobClient().getFixtureDetails("4813565");
     assert.equal((details.raw as { general?: { matchId?: string } }).general?.matchId, "4813565");
-
-    const summaryReq = requests.find((r) => r.url.includes("/api/data/match?"));
-    const detailReq = requests.find((r) => r.url.includes("/api/data/matchDetails?"));
-    assert.ok(summaryReq, "summary fetch must happen");
-    assert.ok(detailReq, "matchDetails fetch must happen");
-    assert.equal(summaryReq.headers["x-mas"], undefined, "summary is unsigned");
-    assert.match(detailReq.headers["x-mas"] ?? "", /.+/, "matchDetails carries x-mas");
-    assert.equal(summaryReq.headers.cookie, "turnstile_verified=test123; __cf_bm=abc");
-    assert.equal(detailReq.headers.cookie, "turnstile_verified=test123; __cf_bm=abc");
+    assert.equal(urls.some((u) => u.includes("/api/data/matchDetails")), false, "must not hit signed matchDetails");
+    assert.equal(urls.some((u) => u.includes("/playbyplay.json")), true, "must use playbyplay endpoint");
+    assert.equal(urls.filter((u) => u === "https://www.fotmob.com" || u === "https://www.fotmob.com/").length, 1, "buildId fetched once");
   } finally {
     globalThis.fetch = originalFetch;
     if (originalInterval === undefined) delete process.env.MACHETE_FOTMOB_REQUEST_INTERVAL_MS;
     else process.env.MACHETE_FOTMOB_REQUEST_INTERVAL_MS = originalInterval;
-    if (originalCookie === undefined) delete process.env.MACHETE_FOTMOB_COOKIE;
-    else process.env.MACHETE_FOTMOB_COOKIE = originalCookie;
   }
 });
 
-test("unofficial client surfaces TURNSTILE_REQUIRED without retrying", async () => {
+test("unofficial client refetches buildId after a stale playbyplay 404", async () => {
   const originalFetch = globalThis.fetch;
   const originalInterval = process.env.MACHETE_FOTMOB_REQUEST_INTERVAL_MS;
   process.env.MACHETE_FOTMOB_REQUEST_INTERVAL_MS = "0";
-  let calls = 0;
+  let buildIdRequests = 0;
+  let staleAttempt = false;
 
   globalThis.fetch = (async (input: string | URL | Request) => {
     const url = String(input instanceof Request ? input.url : input);
-    calls += 1;
+
+    if (url === "https://www.fotmob.com" || url === "https://www.fotmob.com/") {
+      buildIdRequests += 1;
+      return textResponse(`<html><script>"buildId":"${buildIdRequests === 1 ? "stale" : "fresh"}"</script></html>`);
+    }
+
     if (url.includes("/api/data/match?")) {
       return jsonResponse({
         id: 4813565,
-        home: { id: 8678, score: 0 },
-        away: { id: 9825, score: 0 },
+        home: { id: 1, score: 0 },
+        away: { id: 2, score: 0 },
         status: { finished: true, utcTime: "2026-01-03T17:30:00.000Z" }
       });
     }
-    return new Response(JSON.stringify({ error: "Verification required", code: "TURNSTILE_REQUIRED" }), {
-      status: 403,
-      headers: { "content-type": "application/json" }
-    });
+
+    if (url === "https://www.fotmob.com/_next/data/stale/match/4813565/playbyplay.json") {
+      staleAttempt = true;
+      return new Response("not found", { status: 404 });
+    }
+
+    if (url === "https://www.fotmob.com/_next/data/fresh/match/4813565/playbyplay.json") {
+      return jsonResponse({
+        pageProps: {
+          general: { matchId: "4813565", leagueId: 47, homeTeam: { id: 1 }, awayTeam: { id: 2 } },
+          header: { status: { finished: true }, teams: [{ score: 0 }, { score: 0 }] },
+          content: { playerStats: {} }
+        }
+      });
+    }
+
+    throw new Error(`Unexpected fetch ${url}`);
   }) as typeof fetch;
 
   try {
-    await assert.rejects(
-      () => new UnofficialFotMobClient().getFixtureDetails("4813565"),
-      (error: unknown) => error instanceof Error && /Cloudflare Turnstile/i.test(error.message)
-    );
-    // Summary call + exactly one matchDetails attempt (no retries on Turnstile).
-    assert.equal(calls, 2);
+    const details = await new UnofficialFotMobClient().getFixtureDetails("4813565");
+    assert.equal((details.raw as { general?: { matchId?: string } }).general?.matchId, "4813565");
+    assert.ok(staleAttempt, "must try stale buildId first");
+    assert.equal(buildIdRequests, 2, "buildId must be refetched after the stale 404");
   } finally {
     globalThis.fetch = originalFetch;
     if (originalInterval === undefined) delete process.env.MACHETE_FOTMOB_REQUEST_INTERVAL_MS;
@@ -284,8 +285,13 @@ test("unofficial client surfaces TURNSTILE_REQUIRED without retrying", async () 
 function jsonResponse(payload: unknown, status = 200) {
   return new Response(JSON.stringify(payload), {
     status,
-    headers: {
-      "content-type": "application/json"
-    }
+    headers: { "content-type": "application/json" }
+  });
+}
+
+function textResponse(body: string) {
+  return new Response(body, {
+    status: 200,
+    headers: { "content-type": "text/html" }
   });
 }

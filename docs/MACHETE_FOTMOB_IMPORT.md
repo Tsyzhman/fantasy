@@ -10,62 +10,37 @@ MACHETE_FOTMOB_PROVIDER_MODE="real"
 
 `mock` is the default and uses local seed data.
 
-`unofficial` calls FotMob public endpoints directly. Two layers of protection
-have to be satisfied:
+`unofficial` calls FotMob public endpoints directly. Two transport layers:
 
-1. **x-mas signature** — required on `/api/data/matchDetails` and
-   `/api/data/playerData`. The body is `{url, code, foo}`, signature =
-   `MD5(JSON(body) + secretLyrics).toUpperCase()`, final header =
-   `base64(JSON({body, signature}))`. Implemented in
-   [`src/providers/fotmob/signing.ts`](../src/providers/fotmob/signing.ts).
-2. **Cloudflare Turnstile session cookie** — set via
-   `MACHETE_FOTMOB_COOKIE`. FotMob's frontend solves Turnstile silently when
-   you load the site in a browser; the resulting `turnstile_verified` cookie
-   is what unlocks signed endpoints. Without it the server returns
-   `{error: "Verification required", code: "TURNSTILE_REQUIRED"}` regardless
-   of how perfect the signature is.
+* **Unsigned `/api/data/*`** for league / team / fixtures / single-match
+  summaries. Plain GET, no headers, edge-cached at CloudFront.
+* **Unsigned `/_next/data/{buildId}/match/{matchId}/playbyplay.json`** for
+  the full match payload (matchFacts, playerStats, shotmap, lineup, stats,
+  …). This is the same content shape that the signed `/api/data/matchDetails`
+  endpoint returns, but indexed by matchId in the URL path and not gated by
+  Cloudflare Turnstile. The Next.js buildId is parsed out of the homepage
+  HTML once per session and refreshed automatically on 404.
 
-Unsigned public endpoints (`/api/data/leagues`, `/api/data/fixtures`,
-`/api/data/teams`, `/api/data/match`) work without any cookie or signature.
+There is no x-mas signature or cookie required for the main ingestion flow.
+Signing + `MACHETE_FOTMOB_COOKIE` are only relevant if you use `getPlayer`
+(signed `/api/data/playerData`), which is currently a secondary path.
 
 `real` is reserved for a licensed provider adapter.
 
-## Setting up the Turnstile cookie
+## How the playbyplay endpoint dodges the slug-collision trap
 
-You need a real browser session ONCE. The cookie lasts several hours; refresh
-when the worker starts logging `TurnstileRequiredError`.
+The intuitive next-data path `/match/{id}.json` → 308 redirect to
+`/matches/{slug}` → fetch `/matches/{slug}.json` does NOT work. FotMob's
+slugs are per team-pair, not per match, so for any home/away pair (e.g.
+Liverpool vs Bournemouth round 1 vs round 23) FotMob serves the canonical
+match's data for both. Validators in this codebase catch the mismatch and
+treat the payload as unavailable.
 
-1. Open `https://www.fotmob.com` in Chrome.
-2. Click any finished match (e.g. a Premier League fixture).
-3. DevTools (F12) → Network → filter `matchDetails`.
-4. The frontend will fire `GET /api/data/matchDetails?matchId=...`. Right-click
-   it → Copy → Copy as cURL (bash).
-5. From the cURL command, copy the value passed via `-H 'cookie: ...'`.
-6. Paste into your `.env` on the host:
-   ```env
-   MACHETE_FOTMOB_COOKIE="turnstile_verified=...; __cf_bm=...; ..."
-   ```
-7. Restart the worker so it picks up the new env:
-   ```bash
-   docker compose up -d --force-recreate ingestion-worker
-   ```
-
-If matchDetails still fails after a fresh cookie, FotMob may have rotated the
-deploy marker. Discover the current value and set it explicitly:
-
-```bash
-curl -sI https://www.fotmob.com/api/data/leagues?id=47 | grep x-client-version
-# x-client-version: production:<sha>
-```
-
-```env
-MACHETE_FOTMOB_DEPLOY_ID="production:<sha>"
-```
-
-If the SECRET (Three Lions lyrics) itself rotates — rare, but it has happened
-before — replace `SECRET_LYRICS` in `signing.ts` by decoding a fresh `x-mas`
-header from DevTools (base64 → JSON; the `signature` is `MD5(JSON(body) +
-lyrics)`).
+`/match/{matchId}/playbyplay.json` is a separate Next.js page whose getter
+takes matchId as the URL parameter directly. It returns the exact match we
+ask for, with the full content tree intact. Verified against finished PL
+matches across the 2024/25 and 2025/26 seasons: 100% success rate, all
+matchIds returned exactly as requested.
 
 ## Smoke test
 
@@ -75,28 +50,43 @@ docker compose exec ingestion-worker npm run fotmob:smoke -- 47 2025/2026 10
 ```
 
 A successful run reports `matchDetails sample: N/M matches returned detailed
-payloads` with `hasPlayerStats: true` / `hasShotmap: true`.
+payloads` with `hasPlayerStats: true` / `hasShotmap: true` for the sample.
 
 ## Run the actual backfill
 
 ```bash
 docker compose exec ingestion-worker npm run ingestion:initial-backfill -- current_league_47
-# or the full multi-league backfill (long-running)
+# Full multi-league backfill (long-running)
 docker compose exec ingestion-worker npm run ingestion:initial-backfill
 docker compose exec ingestion-worker npm run ingestion:status
 ```
 
 ## Reset stored data
 
-If old broken rows are polluting the UI, wipe the FotMob-sourced match data
-and re-run the backfill:
+If stale rows from a broken earlier run pollute the UI, wipe FotMob-sourced
+match data and re-run the backfill:
 
 ```bash
 docker compose exec ingestion-worker npm run fotmob:reset -- --yes
 ```
 
 This truncates `matches` and cascades to all dependent stats/shots/events/
-fantasy points; keeps user data and the Machete league/team master rows.
+fantasy points; user data and Machete league/team master rows survive.
+
+## When FotMob's deploy or schema rotates
+
+The playbyplay path is keyed on the Next.js `buildId`. Every FotMob deploy
+mints a new buildId. The client refetches it once on a 404 and caches the
+result for the session. If smoke suddenly fails on every match with
+`buildId-related` errors, check the homepage:
+
+```bash
+curl -s https://www.fotmob.com/ | grep -oE '"buildId":"[^"]+"'
+```
+
+If FotMob ever drops the `playbyplay.json` route (it has existed for a long
+time but is undocumented), fall back to the signed `/api/data/matchDetails`
++ Turnstile cookie flow — see commit history for the previous implementation.
 
 ## Skipping broken fixtures
 
@@ -115,9 +105,6 @@ docker compose exec ingestion-worker npm run ingestion:initial-backfill -- curre
 
 ## Custom database credentials
 
-The `ingestion-worker` service uses `DATABASE_URL_INTERNAL` from `.env` if set,
-otherwise the default `fantasy_app` role:
-
 ```env
 DATABASE_URL_INTERNAL="postgresql://postgres:postgres@postgres:5432/fantasy_scout"
 ```
@@ -129,10 +116,10 @@ Unsigned (no cookie, no x-mas):
   GET /api/data/leagues?id={leagueId}&season={YYYY/YYYY}&ccode3={CCODE3}
   GET /api/data/teams?id={teamId}&ccode3={CCODE3}
   GET /api/data/fixtures?id={leagueId}&season={YYYY/YYYY}
-  GET /api/data/match?id={matchId}            (basic info only)
+  GET /api/data/match?id={matchId}                                  (summary)
+  GET /_next/data/{buildId}/match/{matchId}/playbyplay.json         (full content)
 
-Signed + Turnstile cookie required:
-  GET /api/data/matchDetails?matchId={matchId}   (full content)
+Signed + Turnstile cookie required (only used by getPlayer today):
   GET /api/data/playerData?id={playerId}
 ```
 
@@ -160,24 +147,6 @@ MachetePlayer
 MacheteFixture
 MachetePlayerMatchStat
 MachetePlayerSnapshot
-```
-
-## Player Stats
-
-With signed `matchDetails` working, per-match player stats, the shotmap, and
-team stats land in `details.raw.content.{playerStats,shotmap,stats,lineup}`
-and feed the normal Machete snapshot/scoring pipeline.
-
-If you intentionally fall back to the squad aggregate endpoint
-(`/data/teams`), only the season totals below are exposed (no per-match
-breakdown):
-
-```text
-rating
-goals
-assists
-yellow cards
-red cards
 ```
 
 ## Local Team Logos

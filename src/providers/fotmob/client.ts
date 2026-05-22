@@ -50,22 +50,23 @@ type JsonRecord = Record<string, unknown>;
 
 export class UnofficialFotMobClient implements FotMobClient {
   protected readonly baseUrl = process.env.MACHETE_FOTMOB_BASE_URL || "https://www.fotmob.com/api";
+  protected readonly siteUrl = process.env.MACHETE_FOTMOB_SITE_URL || "https://www.fotmob.com";
   protected readonly ccode3 = process.env.MACHETE_FOTMOB_CCODE3 || "GBR";
   protected readonly timezone = process.env.MACHETE_FOTMOB_TIMEZONE || "Europe/London";
-  // Minimum spacing between requests, useful when many signed requests are
-  // queued (matchDetails sync). Default 1500ms. Override via
-  // MACHETE_FOTMOB_REQUEST_INTERVAL_MS.
-  protected readonly requestIntervalMs = Number(process.env.MACHETE_FOTMOB_REQUEST_INTERVAL_MS || 1_500);
+  // Minimum spacing between requests, useful when looping many fixtures.
+  // Override via MACHETE_FOTMOB_REQUEST_INTERVAL_MS. Default 0 — the unsigned
+  // paths we use today are edge-cached and not rate-limited.
+  protected readonly requestIntervalMs = Number(process.env.MACHETE_FOTMOB_REQUEST_INTERVAL_MS || 0);
   private lastRequestAt = 0;
-  // Raw Cookie header value pulled from a real browser session — needed
-  // because /api/data/matchDetails is now gated by Cloudflare Turnstile.
-  // Grab from DevTools → Application → Cookies on fotmob.com; paste the full
-  // cookie string into MACHETE_FOTMOB_COOKIE (e.g. "turnstile_verified=...;
-  // __cf_bm=...; ..."). See docs/MACHETE_FOTMOB_IMPORT.md for the recipe.
+  private cachedBuildId: string | null = null;
+  private buildIdInflight: Promise<string> | null = null;
+  // Optional cookie passthrough for /api/data/playerData and /api/data/matchDetails,
+  // which are gated by Cloudflare Turnstile. We don't need them for
+  // getFixtureDetails (handled via the unsigned /_next/data/.../playbyplay path),
+  // but getPlayer still hits the signed endpoint.
   protected readonly cookieHeader = process.env.MACHETE_FOTMOB_COOKIE || "";
 
-  // Endpoints that require the x-mas signature. Only matchDetails and
-  // playerData are gated; leagues/teams/fixtures/match are public.
+  // Endpoints that require the x-mas signature + Turnstile cookie.
   private static readonly SIGNED_PATHS = ["/data/matchDetails", "/data/playerData"];
 
   async getLeague(leagueId: string, season?: string): Promise<FotMobLeague> {
@@ -124,12 +125,12 @@ export class UnofficialFotMobClient implements FotMobClient {
   }
 
   async getFixtureDetails(fixtureId: string): Promise<FotMobFixtureDetails> {
-    // /api/data/match?id= is unsigned and returns basic fixture info (teams,
-    // score, kickoff). /api/data/matchDetails?matchId= is signed AND gated by
-    // Cloudflare Turnstile — needs the `turnstile_verified` cookie from a real
-    // browser session, supplied via MACHETE_FOTMOB_COOKIE. The next-data slug
-    // path is NOT usable: FotMob serves the canonical match for a slug, not
-    // the specific id we asked for.
+    // The Next.js page-data endpoint /_next/data/{buildId}/match/{matchId}/playbyplay.json
+    // returns the EXACT match we ask for — by matchId in the URL path, not via
+    // a slug redirect — and ships the same content shape as the signed
+    // /api/data/matchDetails endpoint (general, header, content.{matchFacts,
+    // playerStats, shotmap, stats, lineup, ...}). It is edge-cached at
+    // CloudFront and requires neither x-mas signature nor a Turnstile cookie.
     const summaryPayload = await this.getJson("/data/match", { id: fixtureId });
     if (isEmptyRecord(summaryPayload)) {
       throw new FotMobFixtureDetailsUnavailableError(fixtureId, "empty payload");
@@ -140,14 +141,98 @@ export class UnofficialFotMobClient implements FotMobClient {
       throw new FotMobFixtureDetailsUnavailableError(fixtureId, "payload could not be normalized");
     }
 
-    const detailPayload = await this.getJson("/data/matchDetails", { matchId: fixtureId });
-    const validated = validatedMatchDetailsPayload(fixtureId, detailPayload, "matchDetails");
+    const pageProps = await this.fetchMatchPlayByPlay(fixtureId);
+    const validated = validatedMatchDetailsPayload(fixtureId, pageProps, "playbyplay");
 
     return {
       ...fixture,
       playerStats: [],
       raw: validated
     };
+  }
+
+  private async fetchMatchPlayByPlay(matchId: string): Promise<unknown> {
+    let buildId = await this.getBuildId();
+    try {
+      return await this.fetchPlayByPlayWithBuildId(matchId, buildId);
+    } catch (error) {
+      if (isStaleBuildIdError(error)) {
+        // FotMob deployed mid-session → refresh buildId once and retry.
+        buildId = await this.getBuildId({ force: true });
+        return await this.fetchPlayByPlayWithBuildId(matchId, buildId);
+      }
+      throw error;
+    }
+  }
+
+  private async fetchPlayByPlayWithBuildId(matchId: string, buildId: string): Promise<unknown> {
+    const url = `${this.siteUrl}/_next/data/${buildId}/match/${matchId}/playbyplay.json`;
+    const text = await this.fetchUnsignedText(url);
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(text);
+    } catch (error) {
+      throw new FotMobFixtureDetailsUnavailableError(
+        matchId,
+        `next-data playbyplay returned non-JSON: ${(error as Error).message}`
+      );
+    }
+    const pageProps = asRecord(asRecord(parsed).pageProps);
+    if (Object.keys(pageProps).length === 0) {
+      throw new FotMobFixtureDetailsUnavailableError(matchId, "next-data playbyplay missing pageProps");
+    }
+    return pageProps;
+  }
+
+  private async getBuildId(options: { force?: boolean } = {}): Promise<string> {
+    if (options.force) this.cachedBuildId = null;
+    if (this.cachedBuildId) return this.cachedBuildId;
+    if (!this.buildIdInflight) {
+      this.buildIdInflight = this.fetchBuildId().finally(() => { this.buildIdInflight = null; });
+    }
+    this.cachedBuildId = await this.buildIdInflight;
+    return this.cachedBuildId;
+  }
+
+  private async fetchBuildId(): Promise<string> {
+    const html = await this.fetchUnsignedText(this.siteUrl);
+    const match = html.match(/"buildId":"([^"]+)"/);
+    if (!match?.[1]) {
+      throw new Error("FotMob homepage did not include a buildId — unable to use Next.js data endpoint.");
+    }
+    return match[1];
+  }
+
+  private async fetchUnsignedText(url: string): Promise<string> {
+    let lastError: unknown;
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        await this.throttle();
+        const response = await fetch(url, {
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36",
+            Accept: "application/json, text/plain, */*",
+            "Accept-Language": "en-US,en;q=0.9",
+            Referer: this.siteUrl
+          },
+          signal: AbortSignal.timeout(20_000)
+        });
+
+        if (response.status === 404) {
+          throw new NextDataNotFoundError(url);
+        }
+        if (!response.ok) {
+          throw new Error(`FotMob next-data request failed with ${response.status} ${response.statusText} for ${url}`);
+        }
+        return await response.text();
+      } catch (error) {
+        if (error instanceof NextDataNotFoundError) throw error;
+        lastError = error;
+        if (attempt === 2) break;
+        await wait(750 * 2 ** attempt + Math.floor(Math.random() * 250));
+      }
+    }
+    throw lastError instanceof Error ? lastError : new Error("FotMob next-data request failed.");
   }
 
   async getPlayer(playerId: string): Promise<FotMobPlayer> {
@@ -263,12 +348,23 @@ export class TurnstileRequiredError extends Error {
     super(
       `FotMob ${path} requires a Cloudflare Turnstile session. ` +
         `Open https://www.fotmob.com/match/4813374 in a real browser, copy the full ` +
-        `Cookie header from DevTools (Network tab → any /api/data/matchDetails request), ` +
+        `Cookie header from DevTools (Network tab → any signed request), ` +
         `set it as MACHETE_FOTMOB_COOKIE in .env, and restart the worker. ` +
-        `The cookie typically lasts several hours.`
+        `Note: getFixtureDetails does not use this path; only getPlayer does.`
     );
     this.name = "TurnstileRequiredError";
   }
+}
+
+class NextDataNotFoundError extends Error {
+  constructor(readonly url: string) {
+    super(`FotMob next-data 404: ${url}`);
+    this.name = "NextDataNotFoundError";
+  }
+}
+
+function isStaleBuildIdError(error: unknown): boolean {
+  return error instanceof NextDataNotFoundError;
 }
 
 export function validatedMatchDetailsPayload(fixtureId: string, payload: unknown, source: string) {
