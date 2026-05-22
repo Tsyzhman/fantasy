@@ -1,7 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { buildPlannerRoundFixtures, fantasyPlannerPosition, sportsRuSeasonAliases } from "./squad_planner";
+import {
+  buildPlannerRoundFixtures,
+  buildTeamStrengthProfilesFromMatches,
+  fantasyPlannerPosition,
+  projectFixtureFantasyPoints,
+  sportsRuSeasonAliases
+} from "./squad_planner";
 
 test("squad planner groups upcoming matches into fixture rounds", () => {
   const result = buildPlannerRoundFixtures(
@@ -17,6 +23,7 @@ test("squad planner groups upcoming matches into fixture rounds", () => {
   assert.equal(result.rounds[0].label, "Round 12");
   assert.equal(result.rounds[0].fixtureCount, 2);
   assert.equal(result.fixturesByTeamRound.get("round:12")?.get("10")?.[0].opponentName, "Away 20");
+  assert.equal(result.fixturesByTeamRound.get("round:12")?.get("10")?.[0].opponentTeamId, "20");
 });
 
 test("sports ru season aliases support long and compact FotMob season labels", () => {
@@ -27,6 +34,53 @@ test("sports ru season aliases support long and compact FotMob season labels", (
 test("squad planner prefers Sports.ru position over FotMob roster position", () => {
   assert.equal(fantasyPlannerPosition("DEF", "Midfielder", "Forward"), "DEF");
   assert.equal(fantasyPlannerPosition(null, "Midfielder", "Forward"), "Midfielder");
+});
+
+test("team strength profiles derive attack and defense from parsed match xG", () => {
+  const profiles = buildTeamStrengthProfilesFromMatches([
+    {
+      homeTeamId: "10",
+      awayTeamId: "20",
+      teamStats: [
+        { teamId: "10", isHome: true, xg: 2 },
+        { teamId: "20", isHome: false, xg: 0.4 }
+      ]
+    },
+    {
+      homeTeamId: "30",
+      awayTeamId: "20",
+      teamStats: [
+        { teamId: "30", isHome: true, xg: 1.5 },
+        { teamId: "20", isHome: false, xg: 0.6 }
+      ]
+    }
+  ]);
+
+  const team = profiles.byTeamId.get("20");
+  assert.equal(team?.away.matches, 2);
+  assert.equal(team?.away.xgForPerMatch, 0.5);
+  assert.equal(team?.away.xgAgainstPerMatch, 1.75);
+});
+
+test("fixture projection weights opponent difficulty by fantasy position", () => {
+  const homeOnly = projectFixtureFantasyPoints(10, "FWD", {
+    side: "H",
+    attackMultiplier: null,
+    defenseMultiplier: null
+  });
+  const attackerAgainstStrongDefense = projectFixtureFantasyPoints(10, "FWD", {
+    side: "H",
+    attackMultiplier: 0.75,
+    defenseMultiplier: 1
+  });
+  const defenderInGoodCleanSheetSpot = projectFixtureFantasyPoints(10, "DEF", {
+    side: "H",
+    attackMultiplier: 1,
+    defenseMultiplier: 1.25
+  });
+
+  assert.ok(attackerAgainstStrongDefense < homeOnly);
+  assert.ok(defenderInGoodCleanSheetSpot > homeOnly);
 });
 
 function match(input: {

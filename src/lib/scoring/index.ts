@@ -179,8 +179,8 @@ export function calculatePredictedRoundScore(rawMetrics: Record<string, unknown>
   total += likelySixty;
   if (position === "MID" || position === "FWD") total += likelyFullMatch;
 
-  total += expectedPerMatch(rawMetrics, "goals", "goals_per_90", minutesFactor, matches) * goalWeight(position);
-  total += expectedPerMatch(rawMetrics, "assists", "assists_per_90", minutesFactor, matches) * 3;
+  total += expectedOutcomePerMatch(rawMetrics, "xg", "xg_per_90", "goals", "goals_per_90", minutesFactor, matches, minutes) * goalWeight(position);
+  total += expectedOutcomePerMatch(rawMetrics, "xa", "xa_per_90", "assists", "assists_per_90", minutesFactor, matches, minutes) * 3;
   total += perMatchFromTotal(rawMetrics, "fantasy_assists|fantasy_assist", matches) * 3;
 
   if (position === "GK" || position === "DEF" || position === "MID") {
@@ -337,8 +337,8 @@ export function enrichFormulaMetrics(rawMetrics: Record<string, unknown>) {
   setMetricIfMissing(metrics, "xg_per_match", perMatchFromTotal(metrics, "xg", matches));
   setMetricIfMissing(metrics, "assists_per_match", perMatchFromTotal(metrics, "assists", matches));
   setMetricIfMissing(metrics, "xa_per_match", perMatchFromTotal(metrics, "xa", matches));
-  setMetricIfMissing(metrics, "expected_goals_per_match", expectedPerMatch(metrics, "goals", "goals_per_90", minutesFactor, matches));
-  setMetricIfMissing(metrics, "expected_assists_per_match", expectedPerMatch(metrics, "assists", "assists_per_90", minutesFactor, matches));
+  setMetricIfMissing(metrics, "expected_goals_per_match", expectedOutcomePerMatch(metrics, "xg", "xg_per_90", "goals", "goals_per_90", minutesFactor, matches, minutes));
+  setMetricIfMissing(metrics, "expected_assists_per_match", expectedOutcomePerMatch(metrics, "xa", "xa_per_90", "assists", "assists_per_90", minutesFactor, matches, minutes));
   setMetricIfMissing(metrics, "fantasy_assists", readMetric(metrics, "fantasy_assists|fantasy_assist"));
   setMetricIfMissing(metrics, "fantasy_assists_per_match", perMatchFromTotal(metrics, "fantasy_assists|fantasy_assist", matches));
   setMetricIfMissing(metrics, "clean_sheet_probability", perMatchFromTotal(metrics, "clean_sheets|clean_sheet", matches));
@@ -378,10 +378,10 @@ function enrichPredictedFormulaMetrics(rawMetrics: Record<string, unknown>) {
   const minutes = readMetric(metrics, "minutes_played");
   const expectedMinutes = expectedMinutesFromMetrics(metrics, matches, minutes);
   const minutesFactor = expectedMinutes / 90;
-  const expectedGoals = expectedPerMatch(metrics, "goals", "goals_per_90", minutesFactor, matches);
-  const expectedXg = expectedPerMatch(metrics, "xg", "xg_per_90", minutesFactor, matches);
-  const expectedAssists = expectedPerMatch(metrics, "assists", "assists_per_90", minutesFactor, matches);
-  const expectedXa = expectedPerMatch(metrics, "xa", "xa_per_90", minutesFactor, matches);
+  const expectedGoals = expectedOutcomePerMatch(rawMetrics, "xg", "xg_per_90", "goals", "goals_per_90", minutesFactor, matches, minutes);
+  const expectedXg = expectedExpectedPerMatch(rawMetrics, "xg", "xg_per_90", minutesFactor, matches, minutes) ?? 0;
+  const expectedAssists = expectedOutcomePerMatch(rawMetrics, "xa", "xa_per_90", "assists", "assists_per_90", minutesFactor, matches, minutes);
+  const expectedXa = expectedExpectedPerMatch(rawMetrics, "xa", "xa_per_90", minutesFactor, matches, minutes) ?? 0;
   const expectedFantasyAssists = perMatchFromTotal(metrics, "fantasy_assists|fantasy_assist", matches);
   const expectedCleanSheets = perMatchFromTotal(metrics, "clean_sheets|clean_sheet", matches);
   const expectedPenaltySaves = perMatchFromTotal(metrics, "penalties_saved|penalty_saves", matches);
@@ -465,6 +465,41 @@ function expectedPerMatch(
   if (per90 > 0) return per90 * minutesFactor;
 
   return perMatchFromTotal(rawMetrics, totalKey, matches);
+}
+
+function expectedOutcomePerMatch(
+  rawMetrics: Record<string, unknown>,
+  expectedTotalKey: string,
+  expectedPer90Key: string,
+  actualTotalKey: string,
+  actualPer90Key: string,
+  minutesFactor: number,
+  matches: number,
+  minutes: number
+) {
+  const expected = expectedExpectedPerMatch(rawMetrics, expectedTotalKey, expectedPer90Key, minutesFactor, matches, minutes);
+  if (expected !== null) return expected;
+
+  return expectedPerMatch(rawMetrics, actualTotalKey, actualPer90Key, minutesFactor, matches);
+}
+
+function expectedExpectedPerMatch(
+  rawMetrics: Record<string, unknown>,
+  totalKey: string,
+  per90Key: string,
+  minutesFactor: number,
+  matches: number,
+  minutes: number
+) {
+  const per90 = readOptionalMetric(rawMetrics, per90Key);
+  if (per90 !== null) return per90 * minutesFactor;
+
+  const total = readOptionalMetric(rawMetrics, totalKey);
+  if (total === null) return null;
+  if (minutes > 0) return (total / minutes) * 90 * minutesFactor;
+  if (matches > 0) return total / matches;
+
+  return null;
 }
 
 function expectedMinutesFromMetrics(rawMetrics: Record<string, unknown>, matches: number, minutes: number) {

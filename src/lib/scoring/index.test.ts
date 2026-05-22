@@ -49,3 +49,17 @@ test("custom Actual FP formulas keep aggregate values", () => {
 
   assert.equal(calculateScoringScore(rawMetrics, "FWD", customExpectedModel), 63);
 });
+
+test("default Expected FP prefers xG and xA when projection stats are available", () => {
+  const rawMetrics = {
+    matches_played: 10,
+    minutes_played: 900,
+    goals: 10,
+    xg: 4,
+    assists: 5,
+    xa: 2,
+    yellow_cards: 2
+  };
+
+  assert.equal(calculateFantasyScore(rawMetrics, "FWD", { ...customExpectedModel, customFormulaEnabled: false }), 5);
+});

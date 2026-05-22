@@ -87,7 +87,7 @@ test("shared match player stats expose the metrics expected by the Machete fanta
   assert.equal(rawMetrics.tackles, 1);
   assert.equal(rawMetrics.recoveries, 6);
 
-  assert.equal(calculateFantasyScore(rawMetrics, positionGroup, model), 11);
+  assert.equal(calculateFantasyScore(rawMetrics, positionGroup, model), 7.81);
 });
 
 test("clean sheets and goals conceded are derived from shared match/team relations when player stats omit them", () => {
