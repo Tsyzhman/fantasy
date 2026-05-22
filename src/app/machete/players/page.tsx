@@ -195,7 +195,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
             defaultValue={selectedPosition ?? ""}
             className="w-full rounded border border-slate-200 px-3 py-2"
           >
-            <LocalizedOption value="" en="All Sports.ru positions" ru="Все позиции Sports.ru" />
+            <LocalizedOption value="" en="All" ru="Все" />
             {POSITION_FILTERS.map((position) => (
               <option key={position} value={position}>
                 {position}

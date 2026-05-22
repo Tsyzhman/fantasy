@@ -545,18 +545,20 @@ function StarterRuleCard({ label, count, min, max, detail }: { label: string; co
   const status = limitStatus(count, min, max);
   const statusClass =
     status === "bad"
-      ? "border-rose-200 bg-rose-50 text-rose-800"
+      ? "border-rose-300 bg-white text-rose-800"
       : status === "missing"
-        ? "border-amber-200 bg-amber-50 text-amber-800"
-        : "border-emerald-200 bg-emerald-50 text-emerald-800";
+        ? "border-amber-300 bg-white text-amber-800"
+        : "border-emerald-300 bg-white text-emerald-800";
 
   return (
-    <div className={`rounded border px-2.5 py-2 ${statusClass}`}>
-      <div className="flex items-center justify-between gap-2">
-        <span className="font-bold">{label}</span>
-        <span className="font-black">{count}/{min === max ? max : `${min}-${max}`}</span>
+    <div className={`rounded border px-2 py-1.5 shadow-sm ${statusClass}`}>
+      <div className="flex items-center justify-between gap-2 whitespace-nowrap">
+        <span className="text-[11px] font-black tracking-wide text-slate-800">{label}</span>
+        <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-black text-slate-900">
+          {count} / {min === max ? max : `${min}-${max}`}
+        </span>
       </div>
-      <p className="mt-0.5 text-[11px] font-medium opacity-80">{detail}</p>
+      <p className="mt-1 truncate text-[10px] font-semibold text-slate-500">{detail}</p>
     </div>
   );
 }
@@ -598,22 +600,22 @@ function SquadPitch({
 
   return (
     <div className="space-y-3">
-      <div className="rounded border border-emerald-300 bg-emerald-900 p-3 shadow-inner">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+      <div className="rounded border border-emerald-300 bg-emerald-900 p-2.5 shadow-inner">
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <h4 className="text-sm font-bold uppercase tracking-wide text-white">Starting XI</h4>
           <StarterCounts summary={summary.startersByPosition} rules={rules} />
         </div>
-        <div className="mb-3 grid grid-cols-2 gap-2 text-xs sm:grid-cols-5">
-          <StarterRuleCard label="Field" count={summary.startersByPosition.DEF + summary.startersByPosition.MID + summary.startersByPosition.FWD} min={10} max={10} detail="always 10" />
-          <StarterRuleCard label="GK" count={summary.startersByPosition.GK} min={1} max={1} detail="always 1" />
-          <StarterRuleCard label="DEF" count={summary.startersByPosition.DEF} min={rules.starterPositionLimits.DEF.min} max={rules.starterPositionLimits.DEF.max} detail="min 3, max 5" />
-          <StarterRuleCard label="MID" count={summary.startersByPosition.MID} min={rules.starterPositionLimits.MID.min} max={rules.starterPositionLimits.MID.max} detail="min 2, max 5" />
-          <StarterRuleCard label="FWD" count={summary.startersByPosition.FWD} min={rules.starterPositionLimits.FWD.min} max={rules.starterPositionLimits.FWD.max} detail="min 1, max 3" />
+        <div className="mb-2 grid grid-cols-2 gap-1.5 text-xs sm:grid-cols-5">
+          <StarterRuleCard label="Field" count={summary.startersByPosition.DEF + summary.startersByPosition.MID + summary.startersByPosition.FWD} min={10} max={10} detail="Always 10" />
+          <StarterRuleCard label="GK" count={summary.startersByPosition.GK} min={1} max={1} detail="Always 1" />
+          <StarterRuleCard label="DEF" count={summary.startersByPosition.DEF} min={rules.starterPositionLimits.DEF.min} max={rules.starterPositionLimits.DEF.max} detail="Min 3, max 5" />
+          <StarterRuleCard label="MID" count={summary.startersByPosition.MID} min={rules.starterPositionLimits.MID.min} max={rules.starterPositionLimits.MID.max} detail="Min 2, max 5" />
+          <StarterRuleCard label="FWD" count={summary.startersByPosition.FWD} min={rules.starterPositionLimits.FWD.min} max={rules.starterPositionLimits.FWD.max} detail="Min 1, max 3" />
         </div>
-        <div className="relative overflow-hidden rounded border border-white/20 bg-emerald-800/80 px-3 py-4">
+        <div className="relative overflow-hidden rounded border border-white/20 bg-emerald-800/80 px-2.5 py-3">
           <div className="pointer-events-none absolute inset-x-3 top-1/2 border-t border-white/15" />
-          <div className="pointer-events-none absolute left-1/2 top-1/2 h-24 w-24 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/15" />
-          <div className="relative space-y-4">
+          <div className="pointer-events-none absolute left-1/2 top-1/2 h-20 w-20 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/15" />
+          <div className="relative space-y-3">
             <SquadLine
               label="Goalkeeper"
               position="GK"
@@ -645,12 +647,12 @@ function SquadPitch({
 
       <div className="h-px bg-slate-300" />
 
-      <div className="rounded border border-slate-200 bg-slate-50 p-3">
-        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+      <div className="rounded border border-slate-200 bg-slate-50 p-2.5">
+        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
           <h4 className="text-sm font-bold uppercase tracking-wide text-slate-500">Bench</h4>
           <BenchCounts summary={summary.benchByPosition} total={summary.benchPlayers.length} rules={rules} />
         </div>
-        <div className="flex flex-wrap justify-center gap-2">
+        <div className="flex flex-wrap justify-center gap-1.5">
           {summary.benchPlayers.map((player) => (
             <SquadPlayerTile
               key={player.playerId}
@@ -706,7 +708,7 @@ function SquadLine({
         <span>{label}</span>
         <span className={`rounded border px-2 py-0.5 ${countClass}`}>{players.length}/{countLabel}</span>
       </div>
-      <div className="flex min-h-24 flex-wrap items-stretch justify-center gap-2">
+      <div className="flex min-h-20 flex-wrap items-stretch justify-center gap-1.5">
         {players.map((player) => (
           <SquadPlayerTile
             key={player.playerId}
@@ -718,7 +720,7 @@ function SquadLine({
             onToggleStarter={onToggleStarter}
           />
         ))}
-        {players.length === 0 ? <div className="flex min-h-20 w-32 items-center justify-center rounded border border-dashed border-white/25 bg-white/10 text-sm text-white/70">Empty</div> : null}
+        {players.length === 0 ? <div className="flex min-h-16 w-28 items-center justify-center rounded border border-dashed border-white/25 bg-white/10 text-xs text-white/70">Empty</div> : null}
       </div>
     </div>
   );
@@ -742,31 +744,31 @@ function SquadPlayerTile({
   onToggleStarter: (playerId: string) => void;
 }) {
   return (
-    <div className={`${compact ? "w-36" : "w-32 sm:w-36"} rounded border border-white/70 bg-white px-2.5 py-2 text-center shadow-sm`}>
+    <div className={`${compact ? "w-32" : "w-28 sm:w-32"} rounded border border-white/70 bg-white px-2 py-1.5 text-center shadow-sm`}>
       <div className="flex items-center justify-center gap-1">
         <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${positionPillClass(player.positionGroup)}`}>{player.positionGroup}</span>
         {selection?.isLocked ? <Lock className="h-3 w-3 text-slate-500" /> : null}
       </div>
-      <p className="mt-1 truncate text-xs font-bold text-ink" title={player.name}>{player.name}</p>
-      <p className="truncate text-[11px] text-slate-500" title={player.teamName}>{player.teamName}</p>
+      <p className="mt-1 truncate text-[11px] font-bold text-ink" title={player.name}>{player.name}</p>
+      <p className="truncate text-[10px] text-slate-500" title={player.teamName}>{player.teamName}</p>
       <p className="mt-1 text-[11px] font-semibold text-emerald-700">
         <Check className="mr-1 inline h-3 w-3" />
         {formatScore(player.roundPoints.length > 0 ? playerHorizonPoints(player, horizon) : player.predictedFp)}
       </p>
-      <div className="mt-2 flex justify-center gap-1">
+      <div className="mt-1.5 flex justify-center gap-1">
         <button
           type="button"
           onClick={() => onToggleStarter(player.playerId)}
-          className={`inline-flex h-6 w-6 items-center justify-center rounded border border-slate-200 hover:bg-amber-50 ${selection?.isStarter ? "text-amber-600" : "text-slate-500"}`}
+          className={`inline-flex h-5 w-5 items-center justify-center rounded border border-slate-200 hover:bg-amber-50 ${selection?.isStarter ? "text-amber-600" : "text-slate-500"}`}
           title={selection?.isStarter ? "Move to bench" : "Move to starting XI"}
         >
-          <Star className={`h-3.5 w-3.5 ${selection?.isStarter ? "fill-current" : ""}`} />
+          <Star className={`h-3 w-3 ${selection?.isStarter ? "fill-current" : ""}`} />
         </button>
-        <button type="button" onClick={() => onToggleLock(player.playerId)} className="inline-flex h-6 w-6 items-center justify-center rounded border border-slate-200 text-slate-600 hover:bg-slate-50" title={selection?.isLocked ? "Unlock" : "Lock"}>
-          {selection?.isLocked ? <Lock className="h-3.5 w-3.5" /> : <Unlock className="h-3.5 w-3.5" />}
+        <button type="button" onClick={() => onToggleLock(player.playerId)} className="inline-flex h-5 w-5 items-center justify-center rounded border border-slate-200 text-slate-600 hover:bg-slate-50" title={selection?.isLocked ? "Unlock" : "Lock"}>
+          {selection?.isLocked ? <Lock className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
         </button>
-        <button type="button" onClick={() => onRemove(player.playerId)} className="inline-flex h-6 w-6 items-center justify-center rounded border border-slate-200 text-rose-700 hover:bg-rose-50" title="Remove">
-          <Trash2 className="h-3.5 w-3.5" />
+        <button type="button" onClick={() => onRemove(player.playerId)} className="inline-flex h-5 w-5 items-center justify-center rounded border border-slate-200 text-rose-700 hover:bg-rose-50" title="Remove">
+          <Trash2 className="h-3 w-3" />
         </button>
       </div>
     </div>
