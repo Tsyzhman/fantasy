@@ -38,12 +38,12 @@ type FantasySquadPlannerProps = {
 
 const positionOrder: FantasyPositionGroup[] = ["GK", "DEF", "MID", "FWD", "UNK"];
 const rosterPositions: Array<Exclude<FantasyPositionGroup, "UNK">> = ["GK", "DEF", "MID", "FWD"];
+const transfersPerRound = 3;
 
 export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, initialSquad, priceStatus }: FantasySquadPlannerProps) {
   const initialHorizon = initialSquad.horizonRounds || 5;
   const [selections, setSelections] = useState<FantasySquadSelection[]>(() => normalizeInitialSelections(initialSquad.selections, players, rules));
   const [horizon, setHorizon] = useState(initialHorizon);
-  const [transferCount, setTransferCount] = useState(initialHorizon);
   const [query, setQuery] = useState("");
   const [positionFilter, setPositionFilter] = useState("ALL");
   const [onlyAffordable, setOnlyAffordable] = useState(false);
@@ -53,8 +53,8 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
   const selectionsByPlayerId = useMemo(() => new Map(selections.map((selection) => [selection.playerId, selection])), [selections]);
   const summary = useMemo(() => summarizeFantasySquad(players, selections, rules, horizon), [players, selections, rules, horizon]);
   const suggestions = useMemo(
-    () => buildTransferSuggestions({ pool: players, selections, rules, horizon, transferCount }),
-    [players, selections, rules, horizon, transferCount]
+    () => buildTransferSuggestions({ pool: players, selections, rules, horizon, transferCount: transfersPerRound }),
+    [players, selections, rules, horizon]
   );
   const filteredPlayers = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -170,11 +170,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
               <span className="mb-1 block text-xs font-semibold uppercase text-slate-500">Forecast</span>
               <select
                 value={horizon}
-                onChange={(event) => {
-                  const next = Number(event.target.value);
-                  setHorizon(next);
-                  setTransferCount(next);
-                }}
+                onChange={(event) => setHorizon(Number(event.target.value))}
                 className="rounded border border-slate-200 px-3 py-2"
               >
                 {rules.horizonOptions.map((option) => (
@@ -184,18 +180,12 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
                 ))}
               </select>
             </label>
-            <label className="text-sm">
+            <div className="text-sm">
               <span className="mb-1 block text-xs font-semibold uppercase text-slate-500">Transfers</span>
-              <select value={transferCount} onChange={(event) => setTransferCount(Number(event.target.value))} className="rounded border border-slate-200 px-3 py-2">
-                {[1, 2, 3, 5, 10]
-                  .filter((option) => option <= horizon)
-                  .map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-              </select>
-            </label>
+              <div className="rounded border border-slate-200 px-3 py-2 text-slate-700">
+                {transfersPerRound} per round, no carryover
+              </div>
+            </div>
             {priceStatus.lastSyncedAt ? <span className="text-sm text-slate-500">Prices synced {formatDate(priceStatus.lastSyncedAt)}</span> : null}
             {message ? <span className="rounded bg-amber-50 px-3 py-2 text-sm text-amber-800">{message}</span> : null}
           </div>
