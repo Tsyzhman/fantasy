@@ -59,6 +59,7 @@ export function ShotMapExplorer({
   const [mode, setMode] = useState<Mode>("overlay");
   const [goalsOnly, setGoalsOnly] = useState(false);
   const [onTargetOnly, setOnTargetOnly] = useState(false);
+  const [showTeamShots, setShowTeamShots] = useState(true);
   const [showConceded, setShowConceded] = useState(true);
   const [situation, setSituation] = useState<ShotSituationFilter>("all");
 
@@ -99,7 +100,7 @@ export function ShotMapExplorer({
       const teammates = filteredShots.filter((shot) => !isSelectedPlayerShot(shot));
 
       return [
-        { key, label, shots: teammates, tone: "attacking" as const },
+        ...(showTeamShots ? [{ key, label, shots: teammates, tone: "attacking" as const }] : []),
         ...(selected.length > 0
           ? [
               {
@@ -117,7 +118,7 @@ export function ShotMapExplorer({
       if (selectedShotIds.has(shot.id)) return true;
       return selectedPlayerRefs.has(shot.player_id ?? "") || selectedPlayerRefs.has(shot.provider_player_id ?? "");
     }
-  }, [concededShots, goalsOnly, language, mode, onTargetOnly, overlayShots.attacking, overlayShots.conceded, playerShots, showConceded, situation, teamShots]);
+  }, [concededShots, goalsOnly, language, mode, onTargetOnly, overlayShots.attacking, overlayShots.conceded, playerShots, showConceded, showTeamShots, situation, teamShots]);
 
   const visibleShots = layers.flatMap((layer) => layer.shots);
   const totalXg = visibleShots.reduce((total, shot) => total + (shot.xg ?? 0), 0);
@@ -143,6 +144,12 @@ export function ShotMapExplorer({
               <input type="checkbox" checked={onTargetOnly} onChange={(event) => setOnTargetOnly(event.target.checked)} />
               <I18nText en="On target" ru="В створ" />
             </label>
+            {mode === "for" || mode === "overlay" ? (
+              <label className="inline-flex items-center gap-2">
+                <input type="checkbox" checked={showTeamShots} onChange={(event) => setShowTeamShots(event.target.checked)} />
+                <I18nText en="Team layer" ru="Слой команды" />
+              </label>
+            ) : null}
             <label className="inline-flex items-center gap-2">
               <input type="checkbox" checked={showConceded} onChange={(event) => setShowConceded(event.target.checked)} />
               <I18nText en="Conceded layer" ru="Допущенные" />

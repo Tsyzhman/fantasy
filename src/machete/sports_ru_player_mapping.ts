@@ -14,6 +14,13 @@ type SportsRuPriceLike = {
   price: number;
 };
 
+type SportsRuStoredPrice = SportsRuPriceLike & {
+  leagueId: bigint;
+  season: string;
+  playerId: bigint | null;
+  teamId: bigint | null;
+};
+
 type RosterEntry = {
   playerId: bigint;
   teamId: bigint;
@@ -50,6 +57,17 @@ export type SportsRuTeamMappingRow = {
   confidence: number | null;
   matchedBy: string | null;
   candidates: SportsRuPlayerMappingCandidate[];
+};
+
+type SquadSelectionRef = {
+  id: string;
+  squadId: string;
+};
+
+type SportsRuSelectionSyncResult = {
+  movedSelections: number;
+  refreshedSelections: number;
+  removedDuplicateSelections: number;
 };
 
 const sportsRuProvider = "SPORTS_RU";
@@ -91,13 +109,22 @@ export async function autoMapSportsRuFantasyPlayers(
   let matched = 0;
   let manual = 0;
   let unmatched = 0;
+  let movedSelections = 0;
+  let refreshedSelections = 0;
+  let removedDuplicateSelections = 0;
+
+  function addSelectionSync(result: SportsRuSelectionSyncResult) {
+    movedSelections += result.movedSelections;
+    refreshedSelections += result.refreshedSelections;
+    removedDuplicateSelections += result.removedDuplicateSelections;
+  }
 
   for (const price of prices) {
     const existing = mapsByPriceId.get(price.id);
     if (existing?.matchedBy === "MANUAL" && existing.internalEntityId) {
       const manualRosterEntry = rosterByPlayerId.get(existing.internalEntityId);
       if (manualRosterEntry) {
-        await updatePriceFromRoster(prisma, price.id, manualRosterEntry);
+        addSelectionSync(await applyPriceRosterMapping(prisma, price, manualRosterEntry));
         manual += 1;
         continue;
       }
@@ -137,9 +164,12 @@ export async function autoMapSportsRuFantasyPlayers(
     });
 
     if (matchedRosterEntry) {
-      await updatePriceFromRoster(prisma, price.id, matchedRosterEntry);
+      addSelectionSync(await applyPriceRosterMapping(prisma, price, matchedRosterEntry));
       matched += 1;
     } else {
+      if (price.playerId || price.teamId) {
+        await clearPriceRosterMapping(prisma, price.id);
+      }
       unmatched += 1;
     }
   }
@@ -148,7 +178,10 @@ export async function autoMapSportsRuFantasyPlayers(
     total: prices.length,
     matched,
     manual,
-    unmatched
+    unmatched,
+    movedSelections,
+    refreshedSelections,
+    removedDuplicateSelections
   };
 }
 
@@ -277,24 +310,28 @@ export async function setSportsRuPlayerMapping(
   });
 
   if (rosterEntry) {
-    await updatePriceFromRoster(prisma, price.id, rosterEntry);
+    const selectionSync = await applyPriceRosterMapping(prisma, price, rosterEntry);
+    return {
+      priceId: price.id,
+      playerId: String(rosterEntry.playerId),
+      teamId: String(rosterEntry.teamId),
+      confidence,
+      status: "MATCHED",
+      matchedBy: "MANUAL",
+      selectionSync
+    };
   } else {
-    await prisma.fantasyPlayerPrice.update({
-      where: { id: price.id },
-      data: {
-        playerId: null,
-        teamId: null
-      }
-    });
+    await clearPriceRosterMapping(prisma, price.id);
   }
 
   return {
     priceId: price.id,
-    playerId: rosterEntry ? String(rosterEntry.playerId) : null,
-    teamId: rosterEntry ? String(rosterEntry.teamId) : null,
+    playerId: null,
+    teamId: null,
     confidence,
-    status: rosterEntry ? "MATCHED" : "UNMATCHED",
-    matchedBy: rosterEntry ? "MANUAL" : null
+    status: "UNMATCHED",
+    matchedBy: null,
+    selectionSync: emptySelectionSync()
   };
 }
 
@@ -339,6 +376,25 @@ export function scoreSportsRuCandidate(price: SportsRuPriceLike, entry: RosterEn
   };
 }
 
+export function planSportsRuSelectionRemap(staleSelections: SquadSelectionRef[], targetSelections: SquadSelectionRef[]) {
+  const squadsWithTarget = new Set(targetSelections.map((selection) => selection.squadId));
+  const moveSelectionIds: string[] = [];
+  const deleteSelectionIds: string[] = [];
+
+  for (const selection of staleSelections) {
+    if (squadsWithTarget.has(selection.squadId)) {
+      deleteSelectionIds.push(selection.id);
+    } else {
+      moveSelectionIds.push(selection.id);
+    }
+  }
+
+  return {
+    moveSelectionIds,
+    deleteSelectionIds
+  };
+}
+
 async function loadLeagueRoster(prisma: PrismaClient, leagueId: bigint, season: string) {
   return prisma.teamPlayerSeason.findMany({
     where: {
@@ -378,6 +434,133 @@ async function updatePriceFromRoster(prisma: PrismaClient, priceId: string, rost
       position: rosterEntry.position
     }
   });
+}
+
+async function applyPriceRosterMapping(prisma: PrismaClient, price: SportsRuStoredPrice, rosterEntry: RosterEntry) {
+  await updatePriceFromRoster(prisma, price.id, rosterEntry);
+  return syncSquadSelectionsForSportsRuMapping(prisma, {
+    leagueId: price.leagueId,
+    season: price.season,
+    previousPlayerId: price.playerId,
+    rosterEntry,
+    price: price.price
+  });
+}
+
+async function clearPriceRosterMapping(prisma: PrismaClient, priceId: string) {
+  await prisma.fantasyPlayerPrice.update({
+    where: { id: priceId },
+    data: {
+      playerId: null,
+      teamId: null
+    }
+  });
+}
+
+async function syncSquadSelectionsForSportsRuMapping(
+  prisma: PrismaClient,
+  input: {
+    leagueId: bigint;
+    season: string;
+    previousPlayerId: bigint | null;
+    rosterEntry: RosterEntry;
+    price: number;
+  }
+): Promise<SportsRuSelectionSyncResult> {
+  const squads = await prisma.userFantasySquad.findMany({
+    where: {
+      leagueId: input.leagueId,
+      season: input.season
+    },
+    select: {
+      id: true
+    }
+  });
+  if (squads.length === 0) return emptySelectionSync();
+
+  const squadIds = squads.map((squad) => squad.id);
+  const targetPlayerId = input.rosterEntry.playerId;
+  let movedSelections = 0;
+  let removedDuplicateSelections = 0;
+  let movedSelectionIds: string[] = [];
+  const previousPlayerId = input.previousPlayerId && input.previousPlayerId !== targetPlayerId ? input.previousPlayerId : null;
+
+  if (previousPlayerId) {
+    const staleSelections = await prisma.userFantasySquadPlayer.findMany({
+      where: {
+        squadId: { in: squadIds },
+        playerId: previousPlayerId
+      },
+      select: {
+        id: true,
+        squadId: true
+      }
+    });
+
+    if (staleSelections.length > 0) {
+      const targetSelections = await prisma.userFantasySquadPlayer.findMany({
+        where: {
+          squadId: { in: staleSelections.map((selection) => selection.squadId) },
+          playerId: targetPlayerId
+        },
+        select: {
+          id: true,
+          squadId: true
+        }
+      });
+      const remapPlan = planSportsRuSelectionRemap(staleSelections, targetSelections);
+      const operations = [
+        ...remapPlan.moveSelectionIds.map((id) =>
+          prisma.userFantasySquadPlayer.update({
+            where: { id },
+            data: {
+              playerId: targetPlayerId,
+              teamId: input.rosterEntry.teamId,
+              position: input.rosterEntry.position,
+              purchasePrice: input.price
+            }
+          })
+        ),
+        ...remapPlan.deleteSelectionIds.map((id) =>
+          prisma.userFantasySquadPlayer.delete({
+            where: { id }
+          })
+        )
+      ];
+
+      if (operations.length > 0) await prisma.$transaction(operations);
+      movedSelectionIds = remapPlan.moveSelectionIds;
+      movedSelections = remapPlan.moveSelectionIds.length;
+      removedDuplicateSelections = remapPlan.deleteSelectionIds.length;
+    }
+  }
+
+  const refreshed = await prisma.userFantasySquadPlayer.updateMany({
+    where: {
+      squadId: { in: squadIds },
+      playerId: targetPlayerId,
+      ...(movedSelectionIds.length > 0 ? { id: { notIn: movedSelectionIds } } : {})
+    },
+    data: {
+      teamId: input.rosterEntry.teamId,
+      position: input.rosterEntry.position,
+      purchasePrice: input.price
+    }
+  });
+
+  return {
+    movedSelections,
+    refreshedSelections: refreshed.count,
+    removedDuplicateSelections
+  };
+}
+
+function emptySelectionSync(): SportsRuSelectionSyncResult {
+  return {
+    movedSelections: 0,
+    refreshedSelections: 0,
+    removedDuplicateSelections: 0
+  };
 }
 
 function compareMappingRows(left: SportsRuTeamMappingRow, right: SportsRuTeamMappingRow) {

@@ -100,9 +100,25 @@ export async function loadFantasySquadPlannerData(
     })
   ]);
 
+  const priceMaps =
+    priceRows.length > 0
+      ? await prisma.providerEntityMap.findMany({
+          where: {
+            provider: "SPORTS_RU",
+            providerEntityType: "FANTASY_PLAYER_PRICE",
+            providerEntityId: { in: priceRows.map((row) => row.id) },
+            internalEntityType: "PLAYER",
+            internalEntityId: { not: null }
+          },
+          select: {
+            providerEntityId: true,
+            internalEntityId: true
+          }
+        })
+      : [];
   const rules = fantasyRulesForLeague(league, contest ?? null);
   const projectedByPlayerTeam = new Map(playerRows.map((row) => [playerTeamKey(row.playerId, row.teamId), row]));
-  const prices = priceLookup(priceRows);
+  const prices = priceLookup(priceRows, priceMaps);
   const players = rosterRows.map((row) => {
     const projected = projectedByPlayerTeam.get(playerTeamKey(row.playerId, row.teamId));
     const positionGroup = normalizeFantasyPosition(row.position ?? projected?.position ?? null);
@@ -143,6 +159,7 @@ export async function loadFantasySquadPlannerData(
     if (!latest || row.lastSeenAt > latest) return row.lastSeenAt;
     return latest;
   }, null);
+  const playersById = new Map(players.map((player) => [player.playerId, player]));
 
   return {
     rules,
@@ -160,7 +177,7 @@ export async function loadFantasySquadPlannerData(
           isStarter: player.isStarter,
           isLocked: player.isLocked,
           slotIndex: player.slotIndex,
-          purchasePrice: player.purchasePrice
+          purchasePrice: playersById.get(String(player.playerId))?.price ?? player.purchasePrice
         })) ?? []
     },
     priceStatus: {
@@ -376,17 +393,32 @@ function addTeamFixture(map: Map<string, Map<string, PlannerFixture[]>>, roundId
 
 function priceLookup(
   priceRows: Array<{
+    id: string;
     playerId: bigint | null;
     playerName: string;
     normalizedName: string;
     teamName: string;
     price: number;
+  }>,
+  priceMaps: Array<{
+    providerEntityId: string;
+    internalEntityId: string | null;
   }>
 ) {
+  const mappedPlayerIdsByPriceId = new Map(
+    priceMaps
+      .filter((row) => row.internalEntityId)
+      .map((row) => [row.providerEntityId, row.internalEntityId as string])
+  );
   const byPlayerId = new Map<string, (typeof priceRows)[number]>();
   const byNameTeam = new Map<string, (typeof priceRows)[number]>();
   for (const row of priceRows) {
-    if (row.playerId) byPlayerId.set(String(row.playerId), row);
+    const mappedPlayerId = mappedPlayerIdsByPriceId.get(row.id);
+    if (mappedPlayerId) {
+      byPlayerId.set(mappedPlayerId, row);
+    } else if (row.playerId) {
+      byPlayerId.set(String(row.playerId), row);
+    }
     byNameTeam.set(nameTeamKey(row.playerName, row.teamName), row);
   }
   return {

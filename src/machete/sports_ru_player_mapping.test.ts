@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { buildSportsRuMappingCandidates, scoreSportsRuCandidate } from "./sports_ru_player_mapping";
+import { buildSportsRuMappingCandidates, planSportsRuSelectionRemap, scoreSportsRuCandidate } from "./sports_ru_player_mapping";
 
 const liverpool = { name: "Liverpool" };
 const city = { name: "Manchester City" };
@@ -34,6 +34,19 @@ test("sports ru mapping penalizes known position mismatch", () => {
   const forward = scoreSportsRuCandidate(price("gabriel", "FWD"), roster("Gabriel Magalhaes", "DEF", { name: "Arsenal" }));
 
   assert.equal(defender.confidence > forward.confidence, true);
+});
+
+test("sports ru mapping remap moves stale squad picks and removes same-squad duplicates", () => {
+  const plan = planSportsRuSelectionRemap(
+    [
+      { id: "stale-a", squadId: "squad-a" },
+      { id: "stale-b", squadId: "squad-b" }
+    ],
+    [{ id: "target-b", squadId: "squad-b" }]
+  );
+
+  assert.deepEqual(plan.moveSelectionIds, ["stale-a"]);
+  assert.deepEqual(plan.deleteSelectionIds, ["stale-b"]);
 });
 
 function price(normalizedName: string, position: string) {

@@ -61,7 +61,12 @@ export function SportsRuPlayerMappingPanel({ rows, roster, canEdit }: SportsRuPl
           confidence: payload.mapping?.confidence ?? null
         }
       }));
-      setMessage("Mapping saved.");
+      const selectionSync = payload.mapping?.selectionSync;
+      const syncedSelections =
+        Number(selectionSync?.movedSelections ?? 0) +
+        Number(selectionSync?.refreshedSelections ?? 0) +
+        Number(selectionSync?.removedDuplicateSelections ?? 0);
+      setMessage(syncedSelections > 0 ? `Mapping saved. Synced ${syncedSelections} squad selections.` : "Mapping saved.");
     });
   }
 
