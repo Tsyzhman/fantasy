@@ -7,6 +7,7 @@ import { useMemo, useState } from "react";
 
 import { I18nText } from "@/components/i18n-text";
 import { useLanguage } from "@/components/localized-option";
+import { SortableTable } from "@/components/sortable-table";
 
 export type BaltikaCalendarTeam = {
   id: string;
@@ -206,7 +207,7 @@ export function BaltikaCalendarPanel({
           </select>
         </div>
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
+          <SortableTable className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
               <tr>
                 <th className="px-4 py-3"><I18nText en="Team" ru="Команда" /></th>
@@ -242,7 +243,7 @@ export function BaltikaCalendarPanel({
                 </tr>
               ))}
             </tbody>
-          </table>
+          </SortableTable>
         </div>
       </div>
 
@@ -280,7 +281,7 @@ export function BaltikaCalendarPanel({
       </div>
 
       <div className="mt-6 overflow-x-auto rounded border border-slate-200">
-        <table className="min-w-full divide-y divide-slate-200 text-sm">
+        <SortableTable className="min-w-full divide-y divide-slate-200 text-sm">
           <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
             <tr>
               <th className="sticky left-0 z-10 bg-slate-50 px-4 py-3"><I18nText en="Team" ru="Команда" /></th>
@@ -316,7 +317,7 @@ export function BaltikaCalendarPanel({
               </tr>
             ))}
           </tbody>
-        </table>
+        </SortableTable>
       </div>
 
       {unscheduledFixtures.length > 0 ? (

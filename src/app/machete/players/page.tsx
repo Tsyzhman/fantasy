@@ -5,6 +5,10 @@ import { LocalizedOption } from "@/components/localized-option";
 import { MachetePlayerTable } from "@/components/machete/MachetePlayerTable";
 import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
 import { AutoSubmitForm } from "@/components/players/auto-submit-form";
+import { CompetitionCheckboxList } from "@/components/ui/competition-checkbox-list";
+import { EmptyState } from "@/components/ui/empty-state";
+import { FilterShell } from "@/components/ui/filter-shell";
+import { ResultsToolbar } from "@/components/ui/results-toolbar";
 import { prisma } from "@/lib/db";
 import { matchWindowLabel, matchWindowLabelRu, matchWindowModeValue, parseMacheteMatchWindow, type MacheteMatchWindow } from "@/scoring/machete/match-window";
 import { normalizeFantasyPosition, type FantasyPositionGroup } from "@/machete/squad_logic";
@@ -134,7 +138,13 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
         </Link>
       </div>
 
-      <AutoSubmitForm className="mt-8 grid grid-cols-1 gap-3 rounded border border-slate-200 bg-white p-4 shadow-soft md:grid-cols-2 xl:grid-cols-8">
+      <FilterShell
+        className="mt-8"
+        title={<I18nText en="Player filters" ru="Фильтры игроков" />}
+        description={<I18nText en="Choose the working scope first; detailed filters refine the table without a separate apply button." ru="Сначала выберите рабочий скоуп; дополнительные фильтры сразу уточняют таблицу." />}
+        resetHref="/machete/players"
+      >
+      <AutoSubmitForm className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-7">
         <label className="text-sm">
           <span className="mb-1 block font-medium text-slate-600"><I18nText en="League" ru="Лига" /></span>
           <select name="leagueId" defaultValue={selectedLeagueId} className="w-full rounded border border-slate-200 px-3 py-2">
@@ -160,24 +170,20 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
             )}
           </select>
         </label>
-        <label className="text-sm">
-          <span className="mb-1 block font-medium text-slate-600"><I18nText en="Competition" ru="Турнир" /></span>
-          <select
+        <fieldset className="text-sm md:col-span-2 xl:col-span-2">
+          <legend className="mb-1 block font-medium text-slate-600"><I18nText en="Competitions" ru="Турниры" /></legend>
+          <CompetitionCheckboxList
             name="competitionKey"
-            multiple
-            size={Math.min(4, Math.max(2, teamCompetitionOptions.length || 2))}
-            defaultValue={activeCompetitionKeys}
-            disabled={!selectedTeamId || teamCompetitionOptions.length === 0}
-            className="w-full rounded border border-slate-200 px-3 py-2 disabled:bg-slate-100"
-          >
-            <LocalizedOption value="" disabled en="All loaded competitions by default" ru="По умолчанию все загруженные турниры" />
-            {teamCompetitionOptions.map((competition) => (
-              <option key={competition.key} value={competition.key}>
-                {competition.displayName} - {competition.season} ({competition.matchesCount})
-              </option>
-            ))}
-          </select>
-        </label>
+            selectedKeys={activeCompetitionKeys}
+            emptyLabel={<I18nText en="Choose a team to filter by competition." ru="Выберите команду, чтобы фильтровать по турнирам." />}
+            options={teamCompetitionOptions.map((competition) => ({
+              key: competition.key,
+              label: `${competition.displayName} - ${competition.season}`,
+              description: <I18nText en={`${competition.matchesCount} matches`} ru={`Матчей: ${competition.matchesCount}`} />,
+              disabled: !selectedTeamId
+            }))}
+          />
+        </fieldset>
         <label className="text-sm">
           <span className="mb-1 block font-medium text-slate-600"><I18nText en="Position" ru="Позиция" /></span>
           <select
@@ -205,16 +211,6 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
           />
         </label>
         <label className="text-sm">
-          <span className="mb-1 block font-medium text-slate-600"><I18nText en="Sort" ru="Сортировка" /></span>
-          <select name="sort" defaultValue={sort} className="w-full rounded border border-slate-200 px-3 py-2">
-            <LocalizedOption value="fantasyScore" en="Expected FP" ru="Прогноз FP" />
-            <LocalizedOption value="scoringScore" en="Actual FP" ru="Реальные FP" />
-            <LocalizedOption value="alternativeScore" en="Alt FP" ru="Альт. FP" />
-            <LocalizedOption value="minutesPlayed" en="Minutes" ru="Минуты" />
-            <LocalizedOption value="playerName" en="Player name" ru="Имя игрока" />
-          </select>
-        </label>
-        <label className="text-sm">
           <span className="mb-1 block font-medium text-slate-600"><I18nText en="Stats window" ru="Окно статистики" /></span>
           <select name="matchWindow" defaultValue={matchWindowModeValue(matchWindow)} className="w-full rounded border border-slate-200 px-3 py-2">
             <LocalizedOption value="last5" en="Last 5 team matches" ru="Последние 5 матчей команды" />
@@ -225,15 +221,17 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
             <LocalizedOption value="all" en="All loaded matches" ru="Все загруженные матчи" />
             <LocalizedOption value="custom" en="Custom team matches" ru="Свое число матчей команды" />
           </select>
-          <input
-            name="customMatches"
-            type="number"
-            min="1"
-            max="50"
-            defaultValue={resolvedSearchParams.customMatches ?? ""}
-            className="mt-2 w-full rounded border border-slate-200 px-3 py-2"
-            placeholder="Кол-во матчей"
-          />
+          {matchWindowModeValue(matchWindow) === "custom" ? (
+            <input
+              name="customMatches"
+              type="number"
+              min="1"
+              max="50"
+              defaultValue={resolvedSearchParams.customMatches ?? ""}
+              className="mt-2 w-full rounded border border-slate-200 px-3 py-2"
+              placeholder="Кол-во матчей"
+            />
+          ) : null}
         </label>
         <label className="text-sm">
           <span className="mb-1 block font-medium text-slate-600"><I18nText en="Rows" ru="Строк" /></span>
@@ -246,6 +244,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
           </select>
         </label>
       </AutoSubmitForm>
+      </FilterShell>
 
       <p className="mt-3 text-sm text-slate-500">
         <I18nText
@@ -266,30 +265,30 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
         />
       </p>
 
+      {selectedLeagueId ? (
+        <ResultsToolbar
+          className="mt-5"
+          title={<I18nText en={`Showing ${playersResult.from}-${playersResult.to} of ${playersResult.total} players`} ru={`Показаны ${playersResult.from}-${playersResult.to} из ${playersResult.total} игроков`} />}
+          meta={<I18nText en={`Sorted by ${macheteSortLabel(sort)}; window ${matchWindowLabel(matchWindow)}.`} ru={`Сортировка: ${macheteSortLabel(sort)}; окно ${matchWindowLabelRu(matchWindow)}.`} />}
+          resetHref="/machete/players"
+        >
+          <PaginationLinks page={playersResult.page} pageCount={playersResult.pageCount} params={paginationParams} />
+        </ResultsToolbar>
+      ) : null}
+
       <section className="mt-6">
         {selectedLeagueId ? (
           <>
-            <div className="mb-3 flex flex-col gap-2 text-sm text-slate-500 sm:flex-row sm:items-center sm:justify-between">
-              <span>
-                <I18nText
-                  en={`Showing ${playersResult.from}-${playersResult.to} of ${playersResult.total} players.`}
-                  ru={`Показаны ${playersResult.from}-${playersResult.to} из ${playersResult.total} игроков.`}
-                />
-              </span>
-              <PaginationLinks page={playersResult.page} pageCount={playersResult.pageCount} params={paginationParams} />
-            </div>
-            <MachetePlayerTable players={players} showContext />
+            <MachetePlayerTable players={players} showContext serverSortParam="sort" defaultSort={sort} />
             <div className="mt-4 flex justify-end">
               <PaginationLinks page={playersResult.page} pageCount={playersResult.pageCount} params={paginationParams} />
             </div>
           </>
         ) : (
-          <div className="rounded border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">
-            <I18nText
-              en="Choose a league above to load Sports.ru mapped players."
-              ru="Выберите лигу выше, чтобы загрузить замапленных игроков Sports.ru."
-            />
-          </div>
+          <EmptyState
+            title={<I18nText en="Choose a league" ru="Выберите лигу" />}
+            description={<I18nText en="After that the table will load Sports.ru mapped players and their recalculated Machete stats." ru="После этого таблица загрузит замапленных игроков Sports.ru и пересчитанную статистику Machete." />}
+          />
         )}
       </section>
     </main>
@@ -398,6 +397,31 @@ function competitionSummary(competitions: SharedTeamCompetitionOption[]) {
 
 function competitionLabel(competition: SharedTeamCompetitionOption) {
   return `${competition.displayName} ${competition.season}`;
+}
+
+function macheteSortLabel(sortValue: string) {
+  const [key, direction] = sortValue.split(":");
+  const labels: Record<string, string> = {
+    playerName: "player",
+    name: "player",
+    teamName: "team",
+    leagueName: "league",
+    position: "position",
+    nationality: "nationality",
+    age: "age",
+    matchesPlayed: "apps",
+    minutesPlayed: "minutes",
+    goals: "goals",
+    assists: "assists",
+    shotsOnTarget: "shots on target",
+    keyPasses: "key passes",
+    tackles: "tackles",
+    averageRating: "rating",
+    fantasyScore: "expected FP",
+    scoringScore: "actual FP",
+    alternativeScore: "alternative FP"
+  };
+  return `${labels[key] ?? labels.fantasyScore}, ${direction === "asc" ? "ascending" : "descending"}`;
 }
 
 function applySportsRuMappedPlayerRows(

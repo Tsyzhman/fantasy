@@ -2,7 +2,11 @@ import { ShotMapExplorer } from "@/components/mixerr/ShotMapExplorer";
 import { I18nText } from "@/components/i18n-text";
 import { LocalizedOption } from "@/components/localized-option";
 import { AutoSubmitForm } from "@/components/players/auto-submit-form";
+import { CompetitionCheckboxList } from "@/components/ui/competition-checkbox-list";
+import { FilterShell } from "@/components/ui/filter-shell";
+import { ResultsToolbar } from "@/components/ui/results-toolbar";
 import { prisma } from "@/lib/db";
+import Link from "next/link";
 import {
   loadSharedLeagueOptions,
   loadSharedLeagueTeams,
@@ -105,7 +109,13 @@ export default async function MixerrPage({ searchParams }: PageProps) {
         </p>
       </section>
 
-      <AutoSubmitForm className="mt-6 grid grid-cols-1 gap-4 rounded border border-slate-200 bg-white p-4 shadow-soft md:grid-cols-2 xl:grid-cols-8">
+      <FilterShell
+        className="mt-6"
+        title={<I18nText en="Comparison setup" ru="Настройка сравнения" />}
+        description={<I18nText en="Pick teams, competition scopes and match windows; the shot map updates from the URL state." ru="Выберите команды, турниры и окна матчей; карта ударов обновляется из состояния URL." />}
+        resetHref="/mixerr"
+      >
+      <AutoSubmitForm className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-8">
         <label className="text-sm xl:order-1 xl:col-span-2">
           <span className="mb-1 block font-medium text-slate-600"><I18nText en="League" ru="Лига" /></span>
           <select name="leagueId" defaultValue={selectedLeague ? String(selectedLeague.leagueId) : ""} className="w-full rounded border border-slate-200 px-3 py-2">
@@ -126,24 +136,20 @@ export default async function MixerrPage({ searchParams }: PageProps) {
             ))}
           </select>
         </label>
-        <label className="text-sm xl:order-5 xl:col-span-3">
-          <span className="mb-1 block font-medium text-slate-600"><I18nText en="Team A competitions" ru="Турниры команды А" /></span>
-          <select
+        <fieldset className="text-sm xl:order-5 xl:col-span-3">
+          <legend className="mb-1 block font-medium text-slate-600"><I18nText en="Team A competitions" ru="Турниры команды А" /></legend>
+          <CompetitionCheckboxList
             name="attackingCompetitionKey"
-            multiple
-            size={Math.min(6, Math.max(4, attackingCompetitionOptions.length || 4))}
-            defaultValue={checkedAttackingCompetitionKeys}
-            disabled={!attackingTeam || attackingCompetitionOptions.length === 0}
-            className="min-h-32 w-full rounded border border-slate-200 px-3 py-2 disabled:bg-slate-100"
-          >
-            <LocalizedOption value="" disabled en="Selected league" ru="Выбранная лига" />
-            {attackingCompetitionOptions.map((competition) => (
-              <option key={competition.key} value={competition.key}>
-                {competition.displayName} ({competition.matchesCount})
-              </option>
-            ))}
-          </select>
-        </label>
+            selectedKeys={checkedAttackingCompetitionKeys}
+            emptyLabel={<I18nText en="No competitions for Team A." ru="Нет турниров для команды А." />}
+            options={attackingCompetitionOptions.map((competition) => ({
+              key: competition.key,
+              label: competition.displayName,
+              description: <I18nText en={`${competition.matchesCount} shots-source matches`} ru={`Матчей-источников: ${competition.matchesCount}`} />,
+              disabled: !attackingTeam
+            }))}
+          />
+        </fieldset>
         <label className="text-sm xl:order-3 xl:col-span-2">
           <span className="mb-1 block font-medium text-slate-600"><I18nText en="Team B" ru="Команда B" /></span>
           <select name="defendingTeamId" defaultValue={defendingTeamId} disabled={!selectedLeague} className="w-full rounded border border-slate-200 px-3 py-2 disabled:bg-slate-100">
@@ -154,24 +160,20 @@ export default async function MixerrPage({ searchParams }: PageProps) {
             ))}
           </select>
         </label>
-        <label className="text-sm xl:order-6 xl:col-span-3">
-          <span className="mb-1 block font-medium text-slate-600"><I18nText en="Team B competitions" ru="Турниры команды B" /></span>
-          <select
+        <fieldset className="text-sm xl:order-6 xl:col-span-3">
+          <legend className="mb-1 block font-medium text-slate-600"><I18nText en="Team B competitions" ru="Турниры команды B" /></legend>
+          <CompetitionCheckboxList
             name="defendingCompetitionKey"
-            multiple
-            size={Math.min(6, Math.max(4, defendingCompetitionOptions.length || 4))}
-            defaultValue={checkedDefendingCompetitionKeys}
-            disabled={!defendingTeam || defendingCompetitionOptions.length === 0}
-            className="min-h-32 w-full rounded border border-slate-200 px-3 py-2 disabled:bg-slate-100"
-          >
-            <LocalizedOption value="" disabled en="Selected league" ru="Выбранная лига" />
-            {defendingCompetitionOptions.map((competition) => (
-              <option key={competition.key} value={competition.key}>
-                {competition.displayName} ({competition.matchesCount})
-              </option>
-            ))}
-          </select>
-        </label>
+            selectedKeys={checkedDefendingCompetitionKeys}
+            emptyLabel={<I18nText en="No competitions for Team B." ru="Нет турниров для команды B." />}
+            options={defendingCompetitionOptions.map((competition) => ({
+              key: competition.key,
+              label: competition.displayName,
+              description: <I18nText en={`${competition.matchesCount} shots-source matches`} ru={`Матчей-источников: ${competition.matchesCount}`} />,
+              disabled: !defendingTeam
+            }))}
+          />
+        </fieldset>
         <label className="text-sm xl:order-4 xl:col-span-2">
           <span className="mb-1 block font-medium text-slate-600"><I18nText en="Player" ru="Игрок" /></span>
           <select name="playerId" defaultValue={playerId} disabled={!attackingTeam} className="w-full rounded border border-slate-200 px-3 py-2 disabled:bg-slate-100">
@@ -195,6 +197,38 @@ export default async function MixerrPage({ searchParams }: PageProps) {
           </select>
         </label>
       </AutoSubmitForm>
+      <div className="mt-3 flex flex-wrap items-center gap-2">
+        <Link
+          href={mixerrSwapHref({
+            leagueId: selectedLeague ? String(selectedLeague.leagueId) : undefined,
+            attackingTeamId: defendingTeamId,
+            defendingTeamId: attackingTeamId,
+            matchWindow: matchWindowModeValue(defendingMatchWindow),
+            defendingMatchWindow: matchWindowModeValue(matchWindow)
+          })}
+          className="rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+        >
+          <I18nText en="Swap teams" ru="Поменять команды" />
+        </Link>
+      </div>
+      </FilterShell>
+
+      <ResultsToolbar
+        className="mt-5"
+        title={
+          <I18nText
+            en={`${attackingTeam?.name ?? "Team A"} vs ${defendingTeam?.name ?? "Team B"}`}
+            ru={`${attackingTeam?.name ?? "Команда А"} против ${defendingTeam?.name ?? "Команда B"}`}
+          />
+        }
+        meta={
+          <I18nText
+            en={`${teamShots.length} attacking shots, ${concededShots.length} conceded shots, ${playerShots.length} selected-player shots.`}
+            ru={`Свои удары: ${teamShots.length}; допущенные: ${concededShots.length}; удары выбранного игрока: ${playerShots.length}.`}
+          />
+        }
+        resetHref="/mixerr"
+      />
 
       {leagueOptions.length === 0 || teams.length === 0 ? (
         <section className="mt-6 rounded border border-slate-200 bg-white p-8 text-center text-sm text-slate-500 shadow-soft">
@@ -281,6 +315,20 @@ function buildShotContext(competitions: MixerrCompetitionOption[], selectedLeagu
   }
 
   return selectedLeague ? { leagueId: selectedLeague.leagueId, season: selectedLeague.season } : {};
+}
+
+function mixerrSwapHref(params: {
+  leagueId?: string;
+  attackingTeamId?: string;
+  defendingTeamId?: string;
+  matchWindow?: string;
+  defendingMatchWindow?: string;
+}) {
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (value) query.set(key, value);
+  }
+  return `/mixerr?${query.toString()}`;
 }
 
 function searchParamValues(value: SearchParamValue) {

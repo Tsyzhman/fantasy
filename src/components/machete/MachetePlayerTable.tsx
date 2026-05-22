@@ -1,5 +1,6 @@
 import { formatNumber, formatScore } from "@/lib/format";
 import { I18nText } from "@/components/i18n-text";
+import { SortableTable } from "@/components/sortable-table";
 
 export type MachetePlayerRow = {
   id: string;
@@ -22,18 +23,29 @@ export type MachetePlayerRow = {
   alternativeScore?: number | null;
 };
 
-export function MachetePlayerTable({ players, showContext = false }: { players: MachetePlayerRow[]; showContext?: boolean }) {
+export function MachetePlayerTable({
+  players,
+  showContext = false,
+  serverSortParam,
+  defaultSort
+}: {
+  players: MachetePlayerRow[];
+  showContext?: boolean;
+  serverSortParam?: string;
+  defaultSort?: string;
+}) {
   const columnsCount = showContext ? 17 : 15;
+  const sortProps = { serverSortParam, defaultSort };
 
   return (
     <div className="overflow-hidden rounded border border-slate-200 bg-white shadow-soft">
       <div className="sm:hidden">
-        <table className="min-w-full table-fixed divide-y divide-slate-200 text-xs">
+        <SortableTable {...sortProps} className="min-w-full table-fixed divide-y divide-slate-200 text-xs">
           <thead className="bg-slate-50 text-left font-semibold uppercase text-slate-500">
             <tr>
-              <th className="w-[42%] px-3 py-3"><I18nText en="Surname" ru="Фамилия" /></th>
-              <th className="w-[29%] bg-emerald-50 px-3 py-3 text-right text-emerald-700"><I18nText en="Forecast" ru="Прогноз" /></th>
-              <th className="w-[29%] bg-sky-50 px-3 py-3 text-right text-sky-700"><I18nText en="Scoring" ru="Скоринг" /></th>
+              <th className="w-[42%] px-3 py-3" data-sort-key="playerName"><I18nText en="Surname" ru="Фамилия" /></th>
+              <th className="w-[29%] bg-emerald-50 px-3 py-3 text-right text-emerald-700" data-sort-key="fantasyScore"><I18nText en="Forecast" ru="Прогноз" /></th>
+              <th className="w-[29%] bg-sky-50 px-3 py-3 text-right text-sky-700" data-sort-key="scoringScore"><I18nText en="Scoring" ru="Скоринг" /></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -61,23 +73,23 @@ export function MachetePlayerTable({ players, showContext = false }: { players: 
               </tr>
             ) : null}
           </tbody>
-        </table>
+        </SortableTable>
       </div>
 
       <div className="hidden overflow-x-auto sm:block xl:hidden">
-        <table className="min-w-full divide-y divide-slate-200 text-sm">
+        <SortableTable {...sortProps} className="min-w-full divide-y divide-slate-200 text-sm">
           <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
             <tr>
-              <th className="px-4 py-3"><I18nText en="Player" ru="Игрок" /></th>
-              {showContext ? <th className="px-4 py-3"><I18nText en="Team" ru="Команда" /></th> : null}
-              <th className="px-4 py-3"><I18nText en="Pos" ru="Поз." /></th>
-              <th className="px-4 py-3 text-right">Apps</th>
-              <th className="px-4 py-3 text-right">Min</th>
-              <th className="hidden px-4 py-3 text-right lg:table-cell">G</th>
-              <th className="hidden px-4 py-3 text-right lg:table-cell">A</th>
-              <th className="bg-emerald-50 px-4 py-3 text-right text-emerald-700"><I18nText en="Expected FP" ru="Прогноз FP" /></th>
-              <th className="bg-sky-50 px-4 py-3 text-right text-sky-700"><I18nText en="Actual FP" ru="Реальные FP" /></th>
-              <th className="bg-amber-50 px-4 py-3 text-right text-amber-700"><I18nText en="Alt FP" ru="Альт. FP" /></th>
+              <th className="px-4 py-3" data-sort-key="playerName"><I18nText en="Player" ru="Игрок" /></th>
+              {showContext ? <th className="px-4 py-3" data-sort-key="teamName"><I18nText en="Team" ru="Команда" /></th> : null}
+              <th className="px-4 py-3" data-sort-key="position"><I18nText en="Pos" ru="Поз." /></th>
+              <th className="px-4 py-3 text-right" data-sort-key="matchesPlayed">Apps</th>
+              <th className="px-4 py-3 text-right" data-sort-key="minutesPlayed">Min</th>
+              <th className="hidden px-4 py-3 text-right lg:table-cell" data-sort-key="goals">G</th>
+              <th className="hidden px-4 py-3 text-right lg:table-cell" data-sort-key="assists">A</th>
+              <th className="bg-emerald-50 px-4 py-3 text-right text-emerald-700" data-sort-key="fantasyScore"><I18nText en="Expected FP" ru="Прогноз FP" /></th>
+              <th className="bg-sky-50 px-4 py-3 text-right text-sky-700" data-sort-key="scoringScore"><I18nText en="Actual FP" ru="Реальные FP" /></th>
+              <th className="bg-amber-50 px-4 py-3 text-right text-amber-700" data-sort-key="alternativeScore"><I18nText en="Alt FP" ru="Альт. FP" /></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -109,30 +121,30 @@ export function MachetePlayerTable({ players, showContext = false }: { players: 
               </tr>
             ) : null}
           </tbody>
-        </table>
+        </SortableTable>
       </div>
 
       <div className="hidden overflow-x-auto xl:block">
-        <table className="min-w-full divide-y divide-slate-200 text-sm">
+        <SortableTable {...sortProps} className="min-w-full divide-y divide-slate-200 text-sm">
           <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
             <tr>
-              <th className="px-4 py-3"><I18nText en="Player" ru="Игрок" /></th>
-              {showContext ? <th className="px-4 py-3"><I18nText en="Team" ru="Команда" /></th> : null}
-              {showContext ? <th className="px-4 py-3"><I18nText en="League" ru="Лига" /></th> : null}
-              <th className="px-4 py-3"><I18nText en="Pos" ru="Поз." /></th>
-              <th className="bg-emerald-50 px-4 py-3 text-right text-emerald-700"><I18nText en="Expected FP" ru="Прогноз FP" /></th>
-              <th className="bg-sky-50 px-4 py-3 text-right text-sky-700"><I18nText en="Actual FP" ru="Реальные FP" /></th>
-              <th className="bg-amber-50 px-4 py-3 text-right text-amber-700"><I18nText en="Alt FP" ru="Альт. FP" /></th>
-              <th className="px-4 py-3 text-right"><I18nText en="Age" ru="Возраст" /></th>
-              <th className="px-4 py-3"><I18nText en="Nation" ru="Страна" /></th>
-              <th className="px-4 py-3 text-right">Apps</th>
-              <th className="px-4 py-3 text-right">Min</th>
-              <th className="px-4 py-3 text-right">G</th>
-              <th className="px-4 py-3 text-right">A</th>
-              <th className="px-4 py-3 text-right">SOT</th>
-              <th className="px-4 py-3 text-right">KP</th>
-              <th className="px-4 py-3 text-right">Tkl</th>
-              <th className="px-4 py-3 text-right">Rating</th>
+              <th className="px-4 py-3" data-sort-key="playerName"><I18nText en="Player" ru="Игрок" /></th>
+              {showContext ? <th className="px-4 py-3" data-sort-key="teamName"><I18nText en="Team" ru="Команда" /></th> : null}
+              {showContext ? <th className="px-4 py-3" data-sort-key="leagueName"><I18nText en="League" ru="Лига" /></th> : null}
+              <th className="px-4 py-3" data-sort-key="position"><I18nText en="Pos" ru="Поз." /></th>
+              <th className="bg-emerald-50 px-4 py-3 text-right text-emerald-700" data-sort-key="fantasyScore"><I18nText en="Expected FP" ru="Прогноз FP" /></th>
+              <th className="bg-sky-50 px-4 py-3 text-right text-sky-700" data-sort-key="scoringScore"><I18nText en="Actual FP" ru="Реальные FP" /></th>
+              <th className="bg-amber-50 px-4 py-3 text-right text-amber-700" data-sort-key="alternativeScore"><I18nText en="Alt FP" ru="Альт. FP" /></th>
+              <th className="px-4 py-3 text-right" data-sort-key="age"><I18nText en="Age" ru="Возраст" /></th>
+              <th className="px-4 py-3" data-sort-key="nationality"><I18nText en="Nation" ru="Страна" /></th>
+              <th className="px-4 py-3 text-right" data-sort-key="matchesPlayed">Apps</th>
+              <th className="px-4 py-3 text-right" data-sort-key="minutesPlayed">Min</th>
+              <th className="px-4 py-3 text-right" data-sort-key="goals">G</th>
+              <th className="px-4 py-3 text-right" data-sort-key="assists">A</th>
+              <th className="px-4 py-3 text-right" data-sort-key="shotsOnTarget">SOT</th>
+              <th className="px-4 py-3 text-right" data-sort-key="keyPasses">KP</th>
+              <th className="px-4 py-3 text-right" data-sort-key="tackles">Tkl</th>
+              <th className="px-4 py-3 text-right" data-sort-key="averageRating">Rating</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -171,7 +183,7 @@ export function MachetePlayerTable({ players, showContext = false }: { players: 
               </tr>
             ) : null}
           </tbody>
-        </table>
+        </SortableTable>
       </div>
     </div>
   );

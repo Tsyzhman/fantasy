@@ -194,15 +194,17 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
         </dl>
       </section>
 
-      <SportsRuPlayerMappingPanel
-        rows={sportsRuMappings}
-        roster={rosterOptions.map((row) => ({
-          playerId: String(row.playerId),
-          name: row.player.name,
-          position: row.position
-        }))}
-        canEdit={currentUser?.role === UserRole.ADMIN}
-      />
+      {currentUser?.role === UserRole.ADMIN ? (
+        <SportsRuPlayerMappingPanel
+          rows={sportsRuMappings}
+          roster={rosterOptions.map((row) => ({
+            playerId: String(row.playerId),
+            name: row.player.name,
+            position: row.position
+          }))}
+          canEdit
+        />
+      ) : null}
 
       <section className="mt-6">
         <div className="mb-3 flex items-center justify-between">
@@ -267,13 +269,13 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
         />
       </section>
 
-      <section className="mt-6 rounded border border-slate-200 bg-white p-5 shadow-soft">
-        <div className="flex items-center gap-2">
+      {currentUser?.role === UserRole.ADMIN ? (
+      <details className="mt-6 rounded border border-slate-200 bg-white p-5 shadow-soft">
+        <summary className="flex cursor-pointer items-center gap-2 text-lg font-semibold text-ink">
           <Database className="h-5 w-5 text-slate-500" />
-          <h2 className="text-lg font-semibold text-ink">
-            <I18nText en="Shared raw payload references" ru="Ссылки на общие raw payload" />
-          </h2>
-        </div>
+          <I18nText en="Diagnostics and raw payload references" ru="Диагностика и raw payload" />
+        </summary>
+        <div className="mt-4 border-t border-slate-200 pt-4">
         <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
           {rawPayloads.map((payload) => (
             <div key={String(payload.matchId)} className="rounded border border-slate-200 bg-field p-3 text-sm">
@@ -310,7 +312,9 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
             </p>
           ) : null}
         </div>
-      </section>
+        </div>
+      </details>
+      ) : null}
     </main>
   );
 }

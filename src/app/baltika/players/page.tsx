@@ -5,6 +5,9 @@ import { I18nText } from "@/components/i18n-text";
 import { LocalizedOption } from "@/components/localized-option";
 import { AutoSubmitForm } from "@/components/players/auto-submit-form";
 import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
+import { SortableTable } from "@/components/sortable-table";
+import { FilterShell } from "@/components/ui/filter-shell";
+import { ResultsToolbar } from "@/components/ui/results-toolbar";
 import { formatCurrency, formatNumber, formatScore } from "@/lib/format";
 import { prisma } from "@/lib/db";
 
@@ -24,6 +27,22 @@ type PageProps = {
 };
 
 const positions = ["GK", "DEF", "MID", "FWD", "UNKNOWN"];
+const playerSnapshotSortColumns = {
+  playerName: { field: "playerName", defaultDirection: "asc", nullable: false },
+  teamName: { field: "teamName", defaultDirection: "asc", nullable: false },
+  positionGroup: { field: "positionGroup", defaultDirection: "asc", nullable: true },
+  age: { field: "age", defaultDirection: "desc", nullable: true },
+  minutesPlayed: { field: "minutesPlayed", defaultDirection: "desc", nullable: true },
+  goals: { field: "goals", defaultDirection: "desc", nullable: true },
+  xg: { field: "xg", defaultDirection: "desc", nullable: true },
+  assists: { field: "assists", defaultDirection: "desc", nullable: true },
+  xa: { field: "xa", defaultDirection: "desc", nullable: true },
+  marketValue: { field: "marketValue", defaultDirection: "desc", nullable: true },
+  fantasyScore: { field: "fantasyScore", defaultDirection: "desc", nullable: true },
+  scoringScore: { field: "scoringScore", defaultDirection: "desc", nullable: true },
+  alternativeScore: { field: "alternativeScore", defaultDirection: "desc", nullable: true },
+  valueScore: { field: "valueScore", defaultDirection: "desc", nullable: true }
+} as const;
 
 export default async function PlayersPage({ searchParams }: PageProps) {
   const resolvedSearchParams = await searchParams;
@@ -67,16 +86,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
   }
 
   const sort = resolvedSearchParams.sort ?? "fantasyScore";
-  const orderBy: Prisma.PlayerSnapshotOrderByWithRelationInput =
-    sort === "minutesPlayed"
-        ? { minutesPlayed: { sort: "desc", nulls: "last" } }
-        : sort === "playerName"
-          ? { playerName: "asc" }
-          : sort === "alternativeScore"
-            ? { alternativeScore: { sort: "desc", nulls: "last" } }
-            : sort === "scoringScore"
-              ? { scoringScore: { sort: "desc", nulls: "last" } }
-            : { fantasyScore: { sort: "desc", nulls: "last" } };
+  const orderBy = playerSnapshotOrderBy(sort);
 
   const players = await prisma.playerSnapshot.findMany({
     where,
@@ -113,7 +123,13 @@ export default async function PlayersPage({ searchParams }: PageProps) {
         </Link>
       </div>
 
-      <AutoSubmitForm className="mt-8 grid grid-cols-1 gap-3 rounded border border-slate-200 bg-white p-4 shadow-soft md:grid-cols-6">
+      <FilterShell
+        className="mt-8"
+        title={<I18nText en="Filters" ru="Фильтры" />}
+        description={<I18nText en="Changes apply automatically and keep the table focused on the current published snapshots." ru="Изменения применяются автоматически и оставляют таблицу в текущих опубликованных снимках." />}
+        resetHref="/baltika/players"
+      >
+      <AutoSubmitForm className="grid grid-cols-1 gap-3 md:grid-cols-5">
         <label className="text-sm">
           <span className="mb-1 block font-medium text-slate-600"><I18nText en="League" ru="Лига" /></span>
           <select name="leagueId" defaultValue={selectedLeagueId} className="w-full rounded border border-slate-200 px-3 py-2">
@@ -164,16 +180,6 @@ export default async function PlayersPage({ searchParams }: PageProps) {
             placeholder="0"
           />
         </label>
-        <label className="text-sm">
-          <span className="mb-1 block font-medium text-slate-600"><I18nText en="Sort" ru="Сортировка" /></span>
-          <select name="sort" defaultValue={sort} className="w-full rounded border border-slate-200 px-3 py-2">
-            <LocalizedOption value="fantasyScore" en="Predicted FP" ru="Прогноз FP" />
-            <LocalizedOption value="scoringScore" en="Actual FP" ru="Реальные FP" />
-            <LocalizedOption value="alternativeScore" en="Alt FP" ru="Альт. FP" />
-            <LocalizedOption value="minutesPlayed" en="Minutes" ru="Минуты" />
-            <LocalizedOption value="playerName" en="Player name" ru="Имя игрока" />
-          </select>
-        </label>
         <label className="flex items-end gap-2 rounded border border-slate-200 px-3 py-2 text-sm font-medium text-slate-700">
           <input
             type="checkbox"
@@ -185,15 +191,23 @@ export default async function PlayersPage({ searchParams }: PageProps) {
           <span><I18nText en="Starters only" ru="Только стартовые" /></span>
         </label>
       </AutoSubmitForm>
+      </FilterShell>
+
+      <ResultsToolbar
+        className="mt-5"
+        title={<I18nText en={`${players.length} players shown`} ru={`Показано игроков: ${players.length}`} />}
+        meta={<I18nText en={`Sorted by ${baltikaSortLabel(sort)}`} ru={`Сортировка: ${baltikaSortLabel(sort)}`} />}
+        resetHref="/baltika/players"
+      />
 
       <section className="mt-6 overflow-hidden rounded border border-slate-200 bg-white shadow-soft">
         <div className="sm:hidden">
-          <table className="min-w-full table-fixed divide-y divide-slate-200 text-xs">
+          <SortableTable serverSortParam="sort" defaultSort={sort} className="min-w-full table-fixed divide-y divide-slate-200 text-xs">
             <thead className="bg-slate-50 text-left font-semibold uppercase text-slate-500">
               <tr>
-                <th className="w-[42%] px-3 py-3"><I18nText en="Surname" ru="Фамилия" /></th>
-                <th className="w-[29%] bg-emerald-50 px-3 py-3 text-right text-emerald-700"><I18nText en="Forecast" ru="Прогноз" /></th>
-                <th className="w-[29%] bg-sky-50 px-3 py-3 text-right text-sky-700"><I18nText en="Scoring" ru="Скоринг" /></th>
+                <th className="w-[42%] px-3 py-3" data-sort-key="playerName"><I18nText en="Surname" ru="Фамилия" /></th>
+                <th className="w-[29%] bg-emerald-50 px-3 py-3 text-right text-emerald-700" data-sort-key="fantasyScore"><I18nText en="Forecast" ru="Прогноз" /></th>
+                <th className="w-[29%] bg-sky-50 px-3 py-3 text-right text-sky-700" data-sort-key="scoringScore"><I18nText en="Scoring" ru="Скоринг" /></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -219,22 +233,22 @@ export default async function PlayersPage({ searchParams }: PageProps) {
                 </tr>
               ) : null}
             </tbody>
-          </table>
+          </SortableTable>
         </div>
 
         <div className="hidden overflow-x-auto sm:block xl:hidden">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
+          <SortableTable serverSortParam="sort" defaultSort={sort} className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
               <tr>
-                <th className="px-4 py-3"><I18nText en="Player" ru="Игрок" /></th>
-                <th className="px-4 py-3"><I18nText en="Team" ru="Команда" /></th>
-                <th className="px-4 py-3"><I18nText en="Pos" ru="Поз." /></th>
-                <th className="px-4 py-3 text-right"><I18nText en="Minutes" ru="Минуты" /></th>
-                <th className="hidden px-4 py-3 text-right lg:table-cell"><I18nText en="Goals" ru="Голы" /></th>
-                <th className="hidden px-4 py-3 text-right lg:table-cell"><I18nText en="Assists" ru="Ассисты" /></th>
-                <th className="bg-emerald-50 px-4 py-3 text-right text-emerald-700"><I18nText en="Predicted FP" ru="Прогноз FP" /></th>
-                <th className="bg-sky-50 px-4 py-3 text-right text-sky-700"><I18nText en="Actual FP" ru="Реальные FP" /></th>
-                <th className="bg-amber-50 px-4 py-3 text-right text-amber-700"><I18nText en="Alt FP" ru="Альт. FP" /></th>
+                <th className="px-4 py-3" data-sort-key="playerName"><I18nText en="Player" ru="Игрок" /></th>
+                <th className="px-4 py-3" data-sort-key="teamName"><I18nText en="Team" ru="Команда" /></th>
+                <th className="px-4 py-3" data-sort-key="positionGroup"><I18nText en="Pos" ru="Поз." /></th>
+                <th className="px-4 py-3 text-right" data-sort-key="minutesPlayed"><I18nText en="Minutes" ru="Минуты" /></th>
+                <th className="hidden px-4 py-3 text-right lg:table-cell" data-sort-key="goals"><I18nText en="Goals" ru="Голы" /></th>
+                <th className="hidden px-4 py-3 text-right lg:table-cell" data-sort-key="assists"><I18nText en="Assists" ru="Ассисты" /></th>
+                <th className="bg-emerald-50 px-4 py-3 text-right text-emerald-700" data-sort-key="fantasyScore"><I18nText en="Predicted FP" ru="Прогноз FP" /></th>
+                <th className="bg-sky-50 px-4 py-3 text-right text-sky-700" data-sort-key="scoringScore"><I18nText en="Actual FP" ru="Реальные FP" /></th>
+                <th className="bg-amber-50 px-4 py-3 text-right text-amber-700" data-sort-key="alternativeScore"><I18nText en="Alt FP" ru="Альт. FP" /></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -265,26 +279,26 @@ export default async function PlayersPage({ searchParams }: PageProps) {
                 </tr>
               ) : null}
             </tbody>
-          </table>
+          </SortableTable>
         </div>
 
         <div className="hidden overflow-x-auto xl:block">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
+          <SortableTable serverSortParam="sort" defaultSort={sort} className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
               <tr>
-                <th className="px-4 py-3"><I18nText en="Player" ru="Игрок" /></th>
-                <th className="px-4 py-3"><I18nText en="Team" ru="Команда" /></th>
-                <th className="px-4 py-3"><I18nText en="Pos" ru="Поз." /></th>
-                <th className="px-4 py-3 text-right"><I18nText en="Age" ru="Возраст" /></th>
-                <th className="px-4 py-3 text-right"><I18nText en="Minutes" ru="Минуты" /></th>
-                <th className="px-4 py-3 text-right"><I18nText en="Goals" ru="Голы" /></th>
-                <th className="px-4 py-3 text-right">xG</th>
-                <th className="px-4 py-3 text-right"><I18nText en="Assists" ru="Ассисты" /></th>
-                <th className="px-4 py-3 text-right">xA</th>
-                <th className="px-4 py-3 text-right"><I18nText en="Market" ru="Стоимость" /></th>
-                <th className="bg-emerald-50 px-4 py-3 text-right text-emerald-700"><I18nText en="Predicted FP" ru="Прогноз FP" /></th>
-                <th className="bg-sky-50 px-4 py-3 text-right text-sky-700"><I18nText en="Actual FP" ru="Реальные FP" /></th>
-                <th className="bg-amber-50 px-4 py-3 text-right text-amber-700"><I18nText en="Alt FP" ru="Альт. FP" /></th>
+                <th className="px-4 py-3" data-sort-key="playerName"><I18nText en="Player" ru="Игрок" /></th>
+                <th className="px-4 py-3" data-sort-key="teamName"><I18nText en="Team" ru="Команда" /></th>
+                <th className="px-4 py-3" data-sort-key="positionGroup"><I18nText en="Pos" ru="Поз." /></th>
+                <th className="px-4 py-3 text-right" data-sort-key="age"><I18nText en="Age" ru="Возраст" /></th>
+                <th className="px-4 py-3 text-right" data-sort-key="minutesPlayed"><I18nText en="Minutes" ru="Минуты" /></th>
+                <th className="px-4 py-3 text-right" data-sort-key="goals"><I18nText en="Goals" ru="Голы" /></th>
+                <th className="px-4 py-3 text-right" data-sort-key="xg">xG</th>
+                <th className="px-4 py-3 text-right" data-sort-key="assists"><I18nText en="Assists" ru="Ассисты" /></th>
+                <th className="px-4 py-3 text-right" data-sort-key="xa">xA</th>
+                <th className="px-4 py-3 text-right" data-sort-key="marketValue"><I18nText en="Market" ru="Стоимость" /></th>
+                <th className="bg-emerald-50 px-4 py-3 text-right text-emerald-700" data-sort-key="fantasyScore"><I18nText en="Predicted FP" ru="Прогноз FP" /></th>
+                <th className="bg-sky-50 px-4 py-3 text-right text-sky-700" data-sort-key="scoringScore"><I18nText en="Actual FP" ru="Реальные FP" /></th>
+                <th className="bg-amber-50 px-4 py-3 text-right text-amber-700" data-sort-key="alternativeScore"><I18nText en="Alt FP" ru="Альт. FP" /></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -319,7 +333,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
                 </tr>
               ) : null}
             </tbody>
-          </table>
+          </SortableTable>
         </div>
       </section>
     </main>
@@ -329,4 +343,39 @@ export default async function PlayersPage({ searchParams }: PageProps) {
 function compactPlayerName(name: string) {
   const parts = name.trim().split(/\s+/).filter(Boolean);
   return parts.length > 1 ? parts[parts.length - 1] : name;
+}
+
+function baltikaSortLabel(sortValue: string) {
+  const [key, direction] = sortValue.split(":");
+  const labels: Record<keyof typeof playerSnapshotSortColumns, string> = {
+    playerName: "player",
+    teamName: "team",
+    positionGroup: "position",
+    age: "age",
+    minutesPlayed: "minutes",
+    goals: "goals",
+    xg: "xG",
+    assists: "assists",
+    xa: "xA",
+    marketValue: "market value",
+    fantasyScore: "predicted FP",
+    scoringScore: "actual FP",
+    alternativeScore: "alternative FP",
+    valueScore: "value"
+  };
+  const safeKey = key in labels ? (key as keyof typeof labels) : "fantasyScore";
+  const safeDirection = direction === "asc" ? "ascending" : "descending";
+  return `${labels[safeKey]}, ${safeDirection}`;
+}
+
+function playerSnapshotOrderBy(sortValue: string): Prisma.PlayerSnapshotOrderByWithRelationInput[] {
+  const [rawKey, rawDirection] = sortValue.split(":");
+  const key = rawKey in playerSnapshotSortColumns ? (rawKey as keyof typeof playerSnapshotSortColumns) : "fantasyScore";
+  const column = playerSnapshotSortColumns[key];
+  const direction = rawDirection === "asc" || rawDirection === "desc" ? rawDirection : column.defaultDirection;
+  const primary = column.nullable
+    ? { [column.field]: { sort: direction, nulls: "last" } }
+    : { [column.field]: direction };
+
+  return [primary as Prisma.PlayerSnapshotOrderByWithRelationInput, { playerName: "asc" }];
 }

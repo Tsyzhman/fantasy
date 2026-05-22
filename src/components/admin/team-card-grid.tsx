@@ -4,7 +4,7 @@ import { AlertCircle, CalendarDays, CheckCircle2, CloudUpload, FileSpreadsheet, 
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useRef, useState, type ReactNode } from "react";
 
 import { formatDate, formatNumber } from "@/lib/format";
 import { initials } from "@/lib/text";
@@ -43,11 +43,77 @@ export function TeamCardGrid({ teams, seasonId, leagueId }: { teams: TeamCardDto
     );
   }
 
+  const summary = summarizeTeams(teams);
+  const sortedTeams = [...teams].sort(compareTeamCards);
+
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-      {teams.map((team) => (
-        <TeamCard key={team.id} team={team} seasonId={seasonId} leagueId={leagueId} />
-      ))}
+    <div className="space-y-4">
+      <div className="rounded border border-slate-200 bg-white p-4 shadow-soft">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+              <I18nText en="Import overview" ru="Обзор импорта" />
+            </h2>
+            <p className="mt-1 text-sm text-slate-500">
+              <I18nText en="Teams that need attention are shown first." ru="Команды, которым нужно внимание, показаны первыми." />
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4">
+            <TeamSummaryPill label={<I18nText en="Ready" ru="Готово" />} value={summary.ready} tone="good" />
+            <TeamSummaryPill label={<I18nText en="Errors" ru="Ошибки" />} value={summary.errors} tone="bad" />
+            <TeamSummaryPill label={<I18nText en="Missing files" ru="Нет файлов" />} value={summary.missing} />
+            <TeamSummaryPill label={<I18nText en="Published" ru="Опубликовано" />} value={summary.published} tone="accent" />
+          </div>
+        </div>
+      </div>
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {sortedTeams.map((team) => (
+          <TeamCard key={team.id} team={team} seasonId={seasonId} leagueId={leagueId} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function summarizeTeams(teams: TeamCardDto[]) {
+  return teams.reduce(
+    (summary, team) => {
+      if (team.status === "READY") summary.ready += 1;
+      if (team.status === "ERROR" || team.errors.length > 0) summary.errors += 1;
+      if (!team.lastUploadAt) summary.missing += 1;
+      if (team.playersPublishedAt) summary.published += 1;
+      return summary;
+    },
+    { ready: 0, errors: 0, missing: 0, published: 0 }
+  );
+}
+
+function compareTeamCards(left: TeamCardDto, right: TeamCardDto) {
+  return teamPriority(left) - teamPriority(right) || left.name.localeCompare(right.name);
+}
+
+function teamPriority(team: TeamCardDto) {
+  if (team.status === "ERROR" || team.errors.length > 0) return 0;
+  if (!team.lastUploadAt) return 1;
+  if (team.status === "READY") return 2;
+  if (!team.playersPublishedAt) return 3;
+  return 4;
+}
+
+function TeamSummaryPill({ label, value, tone = "default" }: { label: ReactNode; value: number; tone?: "default" | "good" | "bad" | "accent" }) {
+  const toneClass =
+    tone === "good"
+      ? "bg-emerald-50 text-emerald-700"
+      : tone === "bad"
+        ? "bg-rose-50 text-rose-700"
+        : tone === "accent"
+          ? "bg-sky-50 text-sky-700"
+          : "bg-slate-50 text-slate-700";
+
+  return (
+    <div className={`rounded px-3 py-2 ${toneClass}`}>
+      <p className="text-xs font-semibold uppercase">{label}</p>
+      <p className="mt-1 text-lg font-bold">{formatNumber(value)}</p>
     </div>
   );
 }

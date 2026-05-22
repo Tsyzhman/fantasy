@@ -1,4 +1,5 @@
 import { I18nText } from "@/components/i18n-text";
+import { SortableTable } from "@/components/sortable-table";
 import { formatDate } from "@/lib/format";
 
 export type MacheteFixtureRow = {
@@ -15,7 +16,7 @@ export function MacheteFixtureTable({ fixtures }: { fixtures: MacheteFixtureRow[
   return (
     <div className="overflow-hidden rounded border border-slate-200 bg-white shadow-soft">
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-slate-200 text-sm">
+        <SortableTable className="min-w-full divide-y divide-slate-200 text-sm">
           <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
             <tr>
               <th className="px-4 py-3"><I18nText en="Date" ru="Дата" /></th>
@@ -45,7 +46,7 @@ export function MacheteFixtureTable({ fixtures }: { fixtures: MacheteFixtureRow[
               </tr>
             ) : null}
           </tbody>
-        </table>
+        </SortableTable>
       </div>
     </div>
   );

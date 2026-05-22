@@ -3,6 +3,7 @@
 import { CheckCircle2, Link2, Save, XCircle } from "lucide-react";
 import { useMemo, useState, useTransition } from "react";
 
+import { SortableTable } from "@/components/sortable-table";
 import { formatNumber } from "@/lib/format";
 import type { SportsRuTeamMappingRow } from "@/machete/sports_ru_player_mapping";
 
@@ -100,14 +101,14 @@ export function SportsRuPlayerMappingPanel({ rows, roster, canEdit }: SportsRuPl
       </div>
 
       <div className="mt-4 overflow-hidden rounded border border-slate-200">
-        <table className="min-w-full divide-y divide-slate-200 text-sm">
+        <SortableTable className="min-w-full divide-y divide-slate-200 text-sm">
           <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
             <tr>
               <th className="px-3 py-3">Sports.ru</th>
               <th className="px-3 py-3 text-right">Price</th>
               <th className="px-3 py-3">FotMob roster player</th>
               <th className="px-3 py-3">Status</th>
-              {canEdit ? <th className="w-20 px-3 py-3" /> : null}
+              {canEdit ? <th className="w-20 px-3 py-3" data-sort-disabled="true" /> : null}
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -188,7 +189,7 @@ export function SportsRuPlayerMappingPanel({ rows, roster, canEdit }: SportsRuPl
               );
             })}
           </tbody>
-        </table>
+        </SortableTable>
       </div>
     </section>
   );

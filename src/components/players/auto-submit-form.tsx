@@ -3,13 +3,15 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { type FormHTMLAttributes, useRef, useTransition } from "react";
 
+import { cn } from "@/lib/cn";
+
 type AutoSubmitFormProps = FormHTMLAttributes<HTMLFormElement>;
 
-export function AutoSubmitForm({ children, onChange, onSubmit, ...props }: AutoSubmitFormProps) {
+export function AutoSubmitForm({ children, className, onChange, onSubmit, ...props }: AutoSubmitFormProps) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [, startTransition] = useTransition();
+  const [isPending, startTransition] = useTransition();
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   function updateUrl(form: HTMLFormElement) {
@@ -32,6 +34,9 @@ export function AutoSubmitForm({ children, onChange, onSubmit, ...props }: AutoS
   return (
     <form
       {...props}
+      aria-busy={isPending}
+      className={cn("auto-submit-form", className)}
+      data-pending={isPending ? "true" : undefined}
       onSubmit={(event) => {
         event.preventDefault();
         onSubmit?.(event);

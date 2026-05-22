@@ -36,6 +36,17 @@ textarea {
   font: inherit;
 }
 
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid #38bdf8;
+  outline-offset: 2px;
+}
+
 :root[data-theme="dark"] {
   color-scheme: dark;
   background: #0a101b;
@@ -165,6 +176,57 @@ textarea {
 
 :root[data-language="ru"] .i18n-ru {
   display: inline;
+}
+
+.sortable-table th[data-sortable="true"] {
+  cursor: pointer;
+  user-select: none;
+}
+
+.sortable-table th[data-sortable="true"]:hover {
+  background-color: rgba(241, 245, 249, 0.86);
+}
+
+.sortable-table th[data-sortable="true"]::after {
+  display: inline-block;
+  margin-left: 0.35rem;
+  color: currentColor;
+  content: "\2195";
+  font-size: 0.72em;
+  opacity: 0.38;
+}
+
+.sortable-table th[data-sort-direction="asc"]::after {
+  content: "\2191";
+  opacity: 0.85;
+}
+
+.sortable-table th[data-sort-direction="desc"]::after {
+  content: "\2193";
+  opacity: 0.85;
+}
+
+.auto-submit-form {
+  position: relative;
+}
+
+.auto-submit-form[data-pending="true"]::after {
+  position: absolute;
+  right: 0.75rem;
+  bottom: 0.75rem;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.88);
+  color: #ffffff;
+  content: "Updating...";
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  padding: 0.25rem 0.55rem;
+  pointer-events: none;
+}
+
+:root[data-language="ru"] .auto-submit-form[data-pending="true"]::after {
+  content: "Обновляю...";
 }
 
 .team-logo-frame {

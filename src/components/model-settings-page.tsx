@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { I18nText } from "@/components/i18n-text";
+import { SortableTable } from "@/components/sortable-table";
 import { prisma } from "@/lib/db";
 import { formatPositionPoints, scoringFieldGuide } from "@/lib/scoring/field-guide";
 import {
@@ -598,7 +599,7 @@ function FieldGuideSections() {
         </div>
 
         <div className="mt-5 overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
+          <SortableTable className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
               <tr>
                 <th className="px-3 py-3"><I18nText en="Action" ru="Действие" /></th>
@@ -643,7 +644,7 @@ function FieldGuideSections() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </SortableTable>
         </div>
       </section>
 
@@ -659,7 +660,7 @@ function FieldGuideSections() {
         </div>
 
         <div className="mt-5 max-h-[560px] overflow-auto rounded border border-slate-200">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
+          <SortableTable className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="sticky top-0 bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
               <tr>
                 <th className="px-3 py-3"><I18nText en="Group" ru="Группа" /></th>
@@ -696,7 +697,7 @@ function FieldGuideSections() {
                 </tr>
               ))}
             </tbody>
-          </table>
+          </SortableTable>
         </div>
       </section>
     </>

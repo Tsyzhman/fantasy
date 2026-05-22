@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 
 import { I18nText } from "@/components/i18n-text";
 import { LocalizedOption, localizedText, useLanguage } from "@/components/localized-option";
+import { SortableTable } from "@/components/sortable-table";
 import type { ShotMapShot } from "@/lib/shot-maps";
 import { shotMatchesSituationFilter, type ShotSituationFilter } from "@/mixer/shot-filters";
 
@@ -129,10 +130,10 @@ export function ShotMapExplorer({
       <section className="rounded border border-slate-200 bg-white p-4 shadow-soft">
         <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex flex-wrap gap-2">
-            <ModeButton active={mode === "for"} onClick={() => setMode("for")} icon={<Crosshair className="h-4 w-4" />} label={<I18nText en="For" ru="Свои" />} />
-            <ModeButton active={mode === "against"} onClick={() => setMode("against")} icon={<Shield className="h-4 w-4" />} label={<I18nText en="Against" ru="Против" />} />
-            <ModeButton active={mode === "overlay"} onClick={() => setMode("overlay")} icon={<Layers3 className="h-4 w-4" />} label={<I18nText en="Overlay" ru="Наложение" />} />
-            <ModeButton active={mode === "player"} onClick={() => setMode("player")} icon={<UserRound className="h-4 w-4" />} label={<I18nText en="Player" ru="Игрок" />} />
+            <ModeButton active={mode === "for"} onClick={() => setMode("for")} icon={<Crosshair className="h-4 w-4" />} label={<I18nText en="Team A attack" ru="Атака A" />} />
+            <ModeButton active={mode === "against"} onClick={() => setMode("against")} icon={<Shield className="h-4 w-4" />} label={<I18nText en="Team A conceded" ru="Допущено A" />} />
+            <ModeButton active={mode === "overlay"} onClick={() => setMode("overlay")} icon={<Layers3 className="h-4 w-4" />} label={<I18nText en="A vs B overlay" ru="A против B" />} />
+            <ModeButton active={mode === "player"} onClick={() => setMode("player")} icon={<UserRound className="h-4 w-4" />} label={<I18nText en="Selected player" ru="Игрок" />} />
           </div>
 
           <div className="flex flex-wrap items-center gap-3 text-sm text-slate-600">
@@ -150,10 +151,12 @@ export function ShotMapExplorer({
                 <I18nText en="Team layer" ru="Слой команды" />
               </label>
             ) : null}
-            <label className="inline-flex items-center gap-2">
-              <input type="checkbox" checked={showConceded} onChange={(event) => setShowConceded(event.target.checked)} />
-              <I18nText en="Conceded layer" ru="Допущенные" />
-            </label>
+            {mode === "overlay" ? (
+              <label className="inline-flex items-center gap-2">
+                <input type="checkbox" checked={showConceded} onChange={(event) => setShowConceded(event.target.checked)} />
+                <I18nText en="Team B conceded" ru="Допущено B" />
+              </label>
+            ) : null}
             <select value={situation} onChange={(event) => setSituation(event.target.value as ShotSituationFilter)} className="rounded border border-slate-200 px-2 py-1">
               <LocalizedOption value="all" en="All situations" ru="Все ситуации" />
               <LocalizedOption value="open_play" en="Open play" ru="С игры" />
@@ -163,7 +166,14 @@ export function ShotMapExplorer({
           </div>
         </div>
 
-        <div className="mt-4 overflow-x-auto">
+        <div className="mt-4 flex flex-wrap items-center gap-3 text-xs text-slate-500">
+          <LegendItem tone="attacking" label={localizedText(language, "Team shots", "Удары команды")} />
+          <LegendItem tone="conceded" label={localizedText(language, "Conceded shots", "Допущенные удары")} />
+          <LegendItem tone="player" label={localizedText(language, "Selected player", "Выбранный игрок")} />
+          <span><I18nText en="Marker size follows xG." ru="Размер маркера зависит от xG." /></span>
+        </div>
+
+        <div className="mt-3 overflow-x-auto">
           <div className="relative mx-auto aspect-[68/36] min-h-[260px] w-full min-w-[360px] max-w-[980px] overflow-hidden rounded border border-emerald-700 bg-emerald-700">
             <div className="absolute inset-3 sm:inset-4">
               <div className="absolute inset-0 border-2 border-white/75" />
@@ -209,7 +219,7 @@ export function ShotMapExplorer({
             </p>
           </div>
           <div className="mt-3 overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-200 text-sm">
+            <SortableTable className="min-w-full divide-y divide-slate-200 text-sm">
               <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
                 <tr>
                   <th className="px-3 py-2"><I18nText en="Player" ru="Игрок" /></th>
@@ -241,7 +251,7 @@ export function ShotMapExplorer({
                   </tr>
                 ) : null}
               </tbody>
-            </table>
+            </SortableTable>
           </div>
         </div>
       </section>
@@ -346,6 +356,7 @@ function ModeButton({ active, onClick, icon, label }: { active: boolean; onClick
     <button
       type="button"
       onClick={onClick}
+      aria-pressed={active}
       className={`inline-flex items-center gap-2 rounded px-3 py-2 text-sm font-semibold ${
         active ? "bg-ink text-white" : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
       }`}

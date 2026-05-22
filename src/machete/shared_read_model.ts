@@ -687,12 +687,50 @@ function aggregateSharedStats(stats: MatchPlayerStatRecord[], position: string |
   };
 }
 
+const sharedMacheteSortColumns = {
+  playerName: { field: "name", defaultDirection: "asc" },
+  name: { field: "name", defaultDirection: "asc" },
+  teamName: { field: "teamName", defaultDirection: "asc" },
+  leagueName: { field: "leagueName", defaultDirection: "asc" },
+  position: { field: "position", defaultDirection: "asc" },
+  nationality: { field: "nationality", defaultDirection: "asc" },
+  age: { field: "age", defaultDirection: "desc" },
+  matchesPlayed: { field: "matchesPlayed", defaultDirection: "desc" },
+  minutesPlayed: { field: "minutesPlayed", defaultDirection: "desc" },
+  goals: { field: "goals", defaultDirection: "desc" },
+  assists: { field: "assists", defaultDirection: "desc" },
+  shotsOnTarget: { field: "shotsOnTarget", defaultDirection: "desc" },
+  keyPasses: { field: "keyPasses", defaultDirection: "desc" },
+  tackles: { field: "tackles", defaultDirection: "desc" },
+  averageRating: { field: "averageRating", defaultDirection: "desc" },
+  fantasyScore: { field: "fantasyScore", defaultDirection: "desc" },
+  scoringScore: { field: "scoringScore", defaultDirection: "desc" },
+  alternativeScore: { field: "alternativeScore", defaultDirection: "desc" }
+} as const;
+
 function compareSharedMacheteRows(left: SharedMachetePlayerRow, right: SharedMachetePlayerRow, sort: string) {
-  if (sort === "playerName") return left.name.localeCompare(right.name);
-  if (sort === "minutesPlayed") return right.minutesPlayed - left.minutesPlayed;
-  if (sort === "scoringScore") return (right.scoringScore ?? -Infinity) - (left.scoringScore ?? -Infinity);
-  if (sort === "alternativeScore") return (right.alternativeScore ?? -Infinity) - (left.alternativeScore ?? -Infinity);
-  return (right.fantasyScore ?? -Infinity) - (left.fantasyScore ?? -Infinity);
+  const [rawKey, rawDirection] = sort.split(":");
+  const key = rawKey in sharedMacheteSortColumns ? (rawKey as keyof typeof sharedMacheteSortColumns) : "fantasyScore";
+  const column = sharedMacheteSortColumns[key];
+  const direction = rawDirection === "asc" || rawDirection === "desc" ? rawDirection : column.defaultDirection;
+  const result = compareSharedMacheteValues(left[column.field], right[column.field], direction);
+  return result || left.name.localeCompare(right.name);
+}
+
+function compareSharedMacheteValues(left: string | number | null | undefined, right: string | number | null | undefined, direction: "asc" | "desc") {
+  const leftEmpty = left === null || left === undefined || left === "";
+  const rightEmpty = right === null || right === undefined || right === "";
+
+  if (leftEmpty && rightEmpty) return 0;
+  if (leftEmpty) return 1;
+  if (rightEmpty) return -1;
+
+  const result =
+    typeof left === "number" && typeof right === "number"
+      ? left - right
+      : String(left).localeCompare(String(right), undefined, { numeric: true, sensitivity: "base" });
+
+  return direction === "asc" ? result : -result;
 }
 
 function leagueDisplayInput(league: SharedLeagueSeasonOption) {

@@ -5,6 +5,7 @@ import type { ReactNode } from "react";
 import { I18nText } from "@/components/i18n-text";
 import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
 import { StarterCheckbox } from "@/components/players/starter-checkbox";
+import { SortableTable } from "@/components/sortable-table";
 import { prisma } from "@/lib/db";
 import { formatCurrency, formatDate, formatNumber, formatScore } from "@/lib/format";
 import { leagueFlag } from "@/lib/leagues/flags";
@@ -101,7 +102,7 @@ export default async function BaltikaTeamPage({ params }: PageProps) {
 
       <section className="mt-8 overflow-hidden rounded border border-slate-200 bg-white shadow-soft">
         <div className="sm:hidden">
-          <table className="min-w-full table-fixed divide-y divide-slate-200 text-xs">
+          <SortableTable className="min-w-full table-fixed divide-y divide-slate-200 text-xs">
             <thead className="bg-slate-50 text-left font-semibold uppercase text-slate-500">
               <tr>
                 <th className="w-[42%] px-3 py-3"><I18nText en="Surname" ru="Фамилия" /></th>
@@ -135,11 +136,11 @@ export default async function BaltikaTeamPage({ params }: PageProps) {
                 </tr>
               ) : null}
             </tbody>
-          </table>
+          </SortableTable>
         </div>
 
         <div className="hidden overflow-x-auto sm:block xl:hidden">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
+          <SortableTable className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
               <tr>
                 <th className="px-4 py-3 text-center"><I18nText en="Starter" ru="Старт" /></th>
@@ -183,11 +184,11 @@ export default async function BaltikaTeamPage({ params }: PageProps) {
                 </tr>
               ) : null}
             </tbody>
-          </table>
+          </SortableTable>
         </div>
 
         <div className="hidden overflow-x-auto xl:block">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
+          <SortableTable className="min-w-full divide-y divide-slate-200 text-sm">
             <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
               <tr>
                 <th className="px-4 py-3 text-center"><I18nText en="Starter" ru="Старт" /></th>
@@ -237,7 +238,7 @@ export default async function BaltikaTeamPage({ params }: PageProps) {
                 </tr>
               ) : null}
             </tbody>
-          </table>
+          </SortableTable>
         </div>
       </section>
 
@@ -288,7 +289,7 @@ function TeamFormTable({ title, stats }: { title: ReactNode; stats: TeamFormRow[
         </span>
       </div>
       <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-slate-200 text-sm">
+        <SortableTable className="min-w-full divide-y divide-slate-200 text-sm">
           <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
             <tr>
               <th className="px-4 py-3"><I18nText en="Date" ru="Дата" /></th>
@@ -322,7 +323,7 @@ function TeamFormTable({ title, stats }: { title: ReactNode; stats: TeamFormRow[
               </tr>
             ) : null}
           </tbody>
-        </table>
+        </SortableTable>
       </div>
     </div>
   );

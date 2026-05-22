@@ -3,6 +3,7 @@
 import { Check, Lock, Plus, Save, Search, Sparkles, Star, Trash2, Unlock } from "lucide-react";
 import { useMemo, useState, useTransition } from "react";
 
+import { SortableTable } from "@/components/sortable-table";
 import { formatDate, formatNumber, formatScore } from "@/lib/format";
 import {
   buildTransferSuggestions,
@@ -145,7 +146,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
   return (
     <div className="mt-6 space-y-5">
       <section className="grid grid-cols-1 gap-3 lg:grid-cols-[1.25fr_0.75fr]">
-        <div className="rounded border border-slate-200 bg-white p-4 shadow-soft">
+        <div className="rounded border border-slate-200 bg-white p-4 shadow-soft lg:sticky lg:top-24 lg:self-start">
           <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Squad builder</p>
@@ -172,6 +173,13 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
             <Metric label={`Starting XI ${horizon}R`} value={formatScore(summary.projectedHorizon)} tone="accent" />
             <Metric label="Sports.ru mapped" value={`${priceStatus.sportsRuPrices}`} />
           </div>
+
+          <ol className="mt-4 grid grid-cols-1 gap-2 text-sm md:grid-cols-4">
+            <PlannerStep index={1} title="Choose league" state="done" />
+            <PlannerStep index={2} title="Build squad" state={summary.selectedPlayers.length >= rules.squadSize ? "done" : "active"} />
+            <PlannerStep index={3} title="Fix rules" state={summary.violations.length === 0 ? "done" : "active"} />
+            <PlannerStep index={4} title="Review upgrades" state={suggestions.length > 0 ? "active" : "idle"} />
+          </ol>
 
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <label className="text-sm">
@@ -303,7 +311,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
             <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Round forecast</h3>
           </div>
           <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-slate-200 text-sm">
+            <SortableTable className="min-w-full divide-y divide-slate-200 text-sm">
               <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
                 <tr>
                   <th className="px-4 py-3">Round</th>
@@ -332,7 +340,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
                   ))}
                 </tr>
               </tbody>
-            </table>
+            </SortableTable>
           </div>
         </section>
       ) : null}
@@ -358,7 +366,7 @@ function PlayerPoolTable({
   return (
     <div className="overflow-hidden rounded border border-slate-200 bg-white">
       <div className="max-h-[720px] overflow-auto">
-        <table className="min-w-full divide-y divide-slate-200 text-sm">
+        <SortableTable className="min-w-full divide-y divide-slate-200 text-sm">
           <thead className="sticky top-0 z-10 bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
             <tr>
               <th className="px-3 py-3">Player</th>
@@ -425,7 +433,7 @@ function PlayerPoolTable({
               </tr>
             ) : null}
           </tbody>
-        </table>
+        </SortableTable>
       </div>
     </div>
   );
@@ -438,6 +446,22 @@ function Metric({ label, value, tone = "default" }: { label: string; value: stri
       <dt className="text-xs font-medium uppercase text-slate-400">{label}</dt>
       <dd className={`mt-1 text-lg font-bold ${color}`}>{value}</dd>
     </div>
+  );
+}
+
+function PlannerStep({ index, title, state }: { index: number; title: string; state: "done" | "active" | "idle" }) {
+  const stateClass =
+    state === "done"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+      : state === "active"
+        ? "border-ink bg-slate-50 text-ink"
+        : "border-slate-200 bg-white text-slate-500";
+
+  return (
+    <li className={`flex items-center gap-2 rounded border px-3 py-2 ${stateClass}`}>
+      <span className="grid h-6 w-6 shrink-0 place-items-center rounded bg-white text-xs font-bold text-ink">{index}</span>
+      <span className="font-semibold">{title}</span>
+    </li>
   );
 }
 

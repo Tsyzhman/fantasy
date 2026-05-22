@@ -56,10 +56,10 @@ export function AppHeader({ user }: AppHeaderProps) {
   }
 
   return (
-    <header className="border-b border-slate-200 bg-white/88 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-4 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/88 backdrop-blur">
+      <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
         <ModeBrand />
-        <nav className="flex flex-wrap items-center justify-end gap-2 text-sm font-medium text-slate-600">
+        <nav className="flex w-full items-center gap-2 overflow-x-auto pb-1 text-sm font-medium text-slate-600 md:w-auto md:flex-wrap md:justify-end md:overflow-visible md:pb-0">
           {isAdmin ? (
             <>
               <HeaderLink href="/machete/leagues" icon={<Layers3 className="h-4 w-4" />}>
@@ -108,7 +108,7 @@ export function AppHeader({ user }: AppHeaderProps) {
             <button
               type="button"
               onClick={logout}
-              className="rounded px-3 py-2 text-slate-600 hover:bg-slate-100"
+              className="shrink-0 rounded px-3 py-2 text-slate-600 hover:bg-slate-100"
               title={user.name ?? user.email}
             >
               <I18nText en="Sign out" ru="Выйти" />
@@ -138,7 +138,8 @@ function HeaderLink({
   return (
     <Link
       href={href}
-      className={cn("inline-flex items-center gap-2 rounded px-3 py-2", active ? "bg-slate-100 text-ink" : "text-slate-600", hoverClassName)}
+      aria-current={active ? "page" : undefined}
+      className={cn("inline-flex shrink-0 items-center gap-2 rounded px-3 py-2", active ? "bg-slate-100 text-ink" : "text-slate-600", hoverClassName)}
     >
       {icon}
       {children}
