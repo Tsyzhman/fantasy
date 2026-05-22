@@ -138,6 +138,7 @@ function validateSquadSelections(
 
   const rosterCounts: Record<FantasyPositionGroup, number> = { GK: 0, DEF: 0, MID: 0, FWD: 0, UNK: 0 };
   const starterCounts: Record<FantasyPositionGroup, number> = { GK: 0, DEF: 0, MID: 0, FWD: 0, UNK: 0 };
+  const benchCounts: Record<FantasyPositionGroup, number> = { GK: 0, DEF: 0, MID: 0, FWD: 0, UNK: 0 };
   const teamCounts = new Map<string, number>();
   let starters = 0;
 
@@ -149,6 +150,8 @@ function validateSquadSelections(
     if (selection.isStarter) {
       starterCounts[position] += 1;
       starters += 1;
+    } else {
+      benchCounts[position] += 1;
     }
     if (rosterRow.teamId) {
       const teamId = String(rosterRow.teamId);
@@ -157,8 +160,19 @@ function validateSquadSelections(
   }
 
   if (starters > rules.starterSize) return `Starting XI can contain at most ${rules.starterSize} players.`;
+  if (starters === rules.starterSize) {
+    const starterFieldPlayers = starters - starterCounts.GK;
+    if (starterCounts.GK !== 1) return `Starting XI must contain exactly 1 GK.`;
+    if (starterFieldPlayers !== 10) return `Starting XI must contain exactly 10 field players.`;
+  }
   if (selections.length === rules.squadSize && selections.length - starters !== rules.benchSize) {
     return `Bench must contain exactly ${rules.benchSize} players.`;
+  }
+  if (selections.length === rules.squadSize) {
+    const benchFieldPlayers = rules.benchSize - benchCounts.GK;
+    const requiredBenchFieldPlayers = rules.benchSize - 1;
+    if (benchCounts.GK !== 1) return `Bench must contain exactly 1 GK.`;
+    if (benchFieldPlayers !== requiredBenchFieldPlayers) return `Bench must contain exactly ${requiredBenchFieldPlayers} field players.`;
   }
 
   for (const position of ["GK", "DEF", "MID", "FWD"] as const) {

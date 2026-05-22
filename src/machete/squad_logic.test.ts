@@ -5,6 +5,7 @@ import {
   buildTransferSuggestions,
   canAddFantasyPlayer,
   defaultFantasySquadRules,
+  fantasyAddBlockReason,
   nextFantasyPoints,
   normalizeFantasyPosition,
   selectionForPlayer,
@@ -78,7 +79,25 @@ test("full squad enforces roster shape and starting formation", () => {
   assert.deepEqual(validSummary.violations, []);
   assert.equal(validSummary.starterPlayers.length, 11);
   assert.equal(validSummary.benchPlayers.length, 4);
+  assert.equal(validSummary.benchByPosition.GK, 1);
   assert.equal(invalidSummary.violations.some((violation) => violation.includes("GK starters exceeded")), true);
+  assert.equal(invalidSummary.violations.some((violation) => violation.includes("Bench GK must be 1")), true);
+});
+
+test("player additions are blocked when position or team slots are full", () => {
+  const rules = { ...defaultFantasySquadRules, maxPlayersPerTeam: 2 };
+  const gks = rangePlayers("GK", 3, 1);
+  const teamMids = [
+    player("10", "Team Mid 1", "90", "MID", 5, [1]),
+    player("11", "Team Mid 2", "90", "MID", 5, [1]),
+    player("12", "Team Mid 3", "90", "MID", 5, [1])
+  ];
+
+  assert.equal(fantasyAddBlockReason(gks[2], gks, [selectionForPlayer(gks[0], 0), selectionForPlayer(gks[1], 1)], rules), "GK limit reached");
+  assert.equal(
+    fantasyAddBlockReason(teamMids[2], teamMids, [selectionForPlayer(teamMids[0], 0), selectionForPlayer(teamMids[1], 1)], rules),
+    "Team 90 limit reached"
+  );
 });
 
 test("transfer suggestions improve next round and stay non-negative over horizon", () => {

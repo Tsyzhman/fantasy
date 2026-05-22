@@ -2,7 +2,6 @@ import type { PrismaClient } from "@prisma/client";
 
 import { formatDate } from "@/lib/format";
 import { macheteLeagueDisplayName } from "@/lib/leagues/display";
-import { normalizeName } from "@/lib/text";
 
 import { loadSharedLeagueTeams, loadSharedMachetePlayerRows, type SharedLeagueSeasonOption } from "./shared_read_model";
 import {
@@ -196,17 +195,15 @@ export async function loadFantasySquadPlannerData(
   const projectedByPlayerTeam = new Map(playerRows.map((row) => [playerTeamKey(row.playerId, row.teamId), row]));
   const prices = priceLookup(priceRows, priceMaps);
   const sportsPositionsByPlayerId = sportsRuFantasyPositionsByPlayerId(priceRows, priceMaps);
-  const players = rosterRows.map((row) => {
+  const players: FantasyPlannerPlayer[] = rosterRows.flatMap((row) => {
     const projected = projectedByPlayerTeam.get(playerTeamKey(row.playerId, row.teamId));
     const predictedFp = projected?.fantasyScore ?? null;
-    const priceRow =
-      prices.byPlayerId.get(String(row.playerId)) ??
-      prices.byNameTeam.get(nameTeamKey(row.player.name, row.team.name)) ??
-      prices.findByPlayerName(row.player.name);
-    const sportsPosition = sportsPositionsByPlayerId.get(String(row.playerId)) ?? (priceRow ? sportsRuPricePosition(priceRow) : null);
+    const priceRow = prices.byPlayerId.get(String(row.playerId));
+    if (!priceRow) return [];
+    const sportsPosition = sportsPositionsByPlayerId.get(String(row.playerId)) ?? sportsRuPricePosition(priceRow);
     const position = fantasyPlannerPosition(sportsPosition, row.position, projected?.position ?? null);
     const positionGroup = normalizeFantasyPosition(position);
-    const price = priceRow?.price ?? estimateFantasyPrice(predictedFp, positionGroup);
+    const price = priceRow.price;
     const roundPoints = roundsAndFixtures.rounds.map((round) => {
       const fixtures = roundsAndFixtures.fixturesByTeamRound.get(round.id)?.get(String(row.teamId)) ?? [];
       const basePoints = predictedFp ?? 0;
@@ -217,25 +214,27 @@ export async function loadFantasySquadPlannerData(
       return teamFixtures.map((fixture) => `${fixture.side} ${fixture.opponentName}`).join(", ");
     });
 
-    return {
-      id: String(row.playerId),
-      playerId: String(row.playerId),
-      teamId: String(row.teamId),
-      name: row.player.name,
-      teamName: row.team.name,
-      leagueName: league.displayName,
-      position,
-      positionGroup,
-      price,
-      priceSource: priceRow ? ("SPORTS_RU" as const) : ("ESTIMATED" as const),
-      predictedFp,
-      valueScore: price > 0 ? roundFantasyValue((roundPoints[0] ?? predictedFp ?? 0) / price) : 0,
-      roundPoints,
-      fixtures
-    };
+    return [
+      {
+        id: String(row.playerId),
+        playerId: String(row.playerId),
+        teamId: String(row.teamId),
+        name: priceRow.playerName,
+        teamName: row.team.name,
+        leagueName: league.displayName,
+        position,
+        positionGroup,
+        price,
+        priceSource: "SPORTS_RU" as const,
+        predictedFp,
+        valueScore: price > 0 ? roundFantasyValue((roundPoints[0] ?? predictedFp ?? 0) / price) : 0,
+        roundPoints,
+        fixtures
+      }
+    ];
   });
 
-  const sportsRuPrices = players.filter((player) => player.priceSource === "SPORTS_RU").length;
+  const sportsRuPrices = players.length;
   const latestPriceSync = priceRows.reduce<Date | null>((latest, row) => {
     if (!latest || row.lastSeenAt > latest) return row.lastSeenAt;
     return latest;
@@ -263,7 +262,7 @@ export async function loadFantasySquadPlannerData(
     },
     priceStatus: {
       sportsRuPrices,
-      estimatedPrices: players.length - sportsRuPrices,
+      estimatedPrices: 0,
       lastSyncedAt: latestPriceSync?.toISOString() ?? null
     }
   };
@@ -868,26 +867,17 @@ function priceLookup(
       .map((row) => [row.providerEntityId, row.internalEntityId as string])
   );
   const byPlayerId = new Map<string, (typeof priceRows)[number]>();
-  const byNameTeam = new Map<string, (typeof priceRows)[number]>();
   for (const row of priceRows) {
     const mappedPlayerId = mappedPlayerIdsByPriceId.get(row.id);
     if (mappedPlayerId) {
-      byPlayerId.set(mappedPlayerId, row);
+      if (!byPlayerId.has(mappedPlayerId)) byPlayerId.set(mappedPlayerId, row);
     } else if (row.playerId) {
-      byPlayerId.set(String(row.playerId), row);
+      const playerId = String(row.playerId);
+      if (!byPlayerId.has(playerId)) byPlayerId.set(playerId, row);
     }
-    byNameTeam.set(nameTeamKey(row.playerName, row.teamName), row);
   }
   return {
-    byPlayerId,
-    byNameTeam,
-    findByPlayerName(playerName: string) {
-      const normalizedPlayerName = normalizeName(playerName);
-      return priceRows.find((row) => {
-        const normalizedPriceName = row.normalizedName || normalizeName(row.playerName);
-        return normalizedPriceName.length >= 3 && normalizedPlayerName.split(" ").includes(normalizedPriceName);
-      });
-    }
+    byPlayerId
   };
 }
 
@@ -930,10 +920,6 @@ function comparePlannerPlayers(left: FantasyPlannerPlayer, right: FantasyPlanner
 
 function playerTeamKey(playerId: string | number | bigint, teamId: string | number | bigint) {
   return `${playerId}:${teamId}`;
-}
-
-function nameTeamKey(playerName: string, teamName: string) {
-  return `${normalizeName(playerName)}:${normalizeName(teamName)}`;
 }
 
 function isTopFiveLeague(league: Pick<SharedLeagueSeasonOption, "leagueId" | "name" | "displayName" | "country">) {

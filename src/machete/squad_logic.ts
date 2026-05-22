@@ -54,6 +54,7 @@ export type FantasySquadSummary = {
   projectedHorizon: number;
   byPosition: Record<FantasyPositionGroup, number>;
   startersByPosition: Record<FantasyPositionGroup, number>;
+  benchByPosition: Record<FantasyPositionGroup, number>;
   byTeam: Record<string, number>;
   violations: string[];
   warnings: string[];
@@ -152,6 +153,7 @@ export function summarizeFantasySquad(
   const bank = roundFantasyValue(rules.budgetLimit - spent);
   const byPosition: FantasySquadSummary["byPosition"] = { GK: 0, DEF: 0, MID: 0, FWD: 0, UNK: 0 };
   const startersByPosition: FantasySquadSummary["startersByPosition"] = { GK: 0, DEF: 0, MID: 0, FWD: 0, UNK: 0 };
+  const benchByPosition: FantasySquadSummary["benchByPosition"] = { GK: 0, DEF: 0, MID: 0, FWD: 0, UNK: 0 };
   const byTeam: Record<string, number> = {};
 
   for (const player of selectedPlayers) {
@@ -161,14 +163,30 @@ export function summarizeFantasySquad(
   for (const player of starterPlayers) {
     startersByPosition[player.positionGroup] += 1;
   }
+  for (const player of benchPlayers) {
+    benchByPosition[player.positionGroup] += 1;
+  }
 
   const violations: string[] = [];
   const warnings: string[] = [];
   if (spent > rules.budgetLimit) violations.push(`Budget exceeded by ${roundFantasyValue(spent - rules.budgetLimit)}`);
   if (selectedPlayers.length > rules.squadSize) violations.push(`Squad has ${selectedPlayers.length}/${rules.squadSize} players`);
   if (starterPlayers.length > rules.starterSize) violations.push(`Starting XI has ${starterPlayers.length}/${rules.starterSize} players`);
+  if (starterPlayers.length === rules.starterSize) {
+    const starterFieldPlayers = starterPlayers.length - startersByPosition.GK;
+    if (startersByPosition.GK !== 1) violations.push(`Starting XI GK must be 1: ${startersByPosition.GK}/1`);
+    if (starterFieldPlayers !== 10) violations.push(`Starting XI field players must be 10: ${starterFieldPlayers}/10`);
+  }
   if (selectedPlayers.length === rules.squadSize && benchPlayers.length !== rules.benchSize) {
     violations.push(`Bench has ${benchPlayers.length}/${rules.benchSize} players`);
+  }
+  if (selectedPlayers.length === rules.squadSize) {
+    const benchFieldPlayers = benchPlayers.length - benchByPosition.GK;
+    const requiredBenchFieldPlayers = rules.benchSize - 1;
+    if (benchByPosition.GK !== 1) violations.push(`Bench GK must be 1: ${benchByPosition.GK}/1`);
+    if (benchFieldPlayers !== requiredBenchFieldPlayers) {
+      violations.push(`Bench field players must be ${requiredBenchFieldPlayers}: ${benchFieldPlayers}/${requiredBenchFieldPlayers}`);
+    }
   }
 
   for (const [position, maxCount] of Object.entries(rules.positionLimits)) {
@@ -207,6 +225,7 @@ export function summarizeFantasySquad(
     projectedHorizon: roundFantasyValue(starterPlayers.reduce((total, player) => total + playerHorizonPoints(player, horizon), 0)),
     byPosition,
     startersByPosition,
+    benchByPosition,
     byTeam,
     violations,
     warnings
@@ -219,9 +238,30 @@ export function canAddFantasyPlayer(
   selections: FantasySquadSelection[],
   rules: FantasySquadRules
 ) {
-  if (selections.some((selection) => selection.playerId === player.playerId)) return false;
+  return fantasyAddBlockReason(player, pool, selections, rules) === null;
+}
+
+export function fantasyAddBlockReason(
+  player: FantasyPlannerPlayer,
+  pool: FantasyPlannerPlayer[],
+  selections: FantasySquadSelection[],
+  rules: FantasySquadRules
+) {
+  if (selections.some((selection) => selection.playerId === player.playerId)) return "Already in squad";
+  const summary = summarizeFantasySquad(pool, selections, rules, 1);
+  if (summary.selectedPlayers.length >= rules.squadSize) return "Squad is full";
+  const positionLimit = player.positionGroup === "UNK" ? 0 : rules.positionLimits[player.positionGroup];
+  if (player.positionGroup === "UNK" || summary.byPosition[player.positionGroup] >= positionLimit) {
+    return `${player.positionGroup} limit reached`;
+  }
+  if (player.teamId && (summary.byTeam[player.teamId] ?? 0) >= rules.maxPlayersPerTeam) {
+    return `${player.teamName} limit reached`;
+  }
+  if (roundFantasyValue(summary.spent + player.price) > rules.budgetLimit) return "Budget limit";
+
   const nextSelections = [...selections, selectionForNewPlayer(player, pool, selections, rules)];
-  return summarizeFantasySquad(pool, nextSelections, rules, 1).violations.length === 0;
+  const violations = summarizeFantasySquad(pool, nextSelections, rules, 1).violations;
+  return violations[0] ?? null;
 }
 
 export function selectionForNewPlayer(
