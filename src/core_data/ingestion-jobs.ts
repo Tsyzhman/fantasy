@@ -4,7 +4,7 @@ import { FantasyPointsRepository } from "@/machete/fantasy_repositories";
 import { calculate_fantasy_points_for_match } from "@/machete/fantasy_points_engine";
 
 import { createFotMobClient, type FotMobClient } from "./fotmob_client";
-import { ingest_match, discover_matches_for_scope, reparse_match, type IngestMatchResult } from "./ingestion";
+import { ingest_match, discover_matches_for_scope, reparse_match, upsert_discovered_fixture, type IngestMatchResult } from "./ingestion";
 import type { IngestionScope } from "./ingestion-scope";
 import {
   enabledLeagueIngestionConfigs,
@@ -305,6 +305,7 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: Ing
               `[ingestion] Scope ${scopeOrdinal}/${scopes.length}: fetching match ${currentScopeProcessedMatches + 1}/${discoveredMatches.length} (${fixture.id}).`
             );
           }
+          await upsert_discovered_fixture(prisma, fixture, BigInt(scope.league_id), scope.season);
           const result = await ingest_match(prisma, fixture.id, {
             client,
             leagueId: scope.league_id,

@@ -104,7 +104,7 @@ export function scopesForCurrentSeasonLeagueBackfill(leagueId = QUICK_BACKFILL_L
       season: seasonForIncrementalUpdate(config, referenceDate),
       include_finished: true,
       include_live: false,
-      include_upcoming: false,
+      include_upcoming: true,
       max_matches: config.max_matches,
       force_refresh: false,
       force_reparse: false,
@@ -122,7 +122,7 @@ export function scopesForIncrementalUpdate(configs: readonly LeagueIngestionConf
         season,
         include_finished: true,
         include_live: true,
-        include_upcoming: false,
+        include_upcoming: true,
         max_matches: config.max_matches,
         force_refresh: false,
         force_reparse: false

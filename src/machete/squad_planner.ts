@@ -45,6 +45,18 @@ type PlannerFixture = {
   kickoffAt: Date | null;
 };
 
+type PlannerMatch = {
+  id: string;
+  round: string | null;
+  matchDate: Date | null;
+  homeTeamId: string | null;
+  awayTeamId: string | null;
+  homeTeamName: string | null;
+  awayTeamName: string | null;
+  finished: boolean;
+  cancelled: boolean;
+};
+
 const maxProjectionRounds = 10;
 
 export async function loadFantasySquadPlannerData(
@@ -52,15 +64,15 @@ export async function loadFantasySquadPlannerData(
   userId: string,
   league: SharedLeagueSeasonOption
 ): Promise<FantasySquadPlannerData> {
+  const sportsRuSeasons = sportsRuSeasonAliases(league.season);
   const [contest, savedSquad, rosterRows, playerRows, roundsAndFixtures, priceRows] = await Promise.all([
-    prisma.sportsRuFantasyContest.findUnique({
+    prisma.sportsRuFantasyContest.findFirst({
       where: {
-        provider_leagueId_season: {
-          provider: "SPORTS_RU",
-          leagueId: league.leagueId,
-          season: league.season
-        }
-      }
+        provider: "SPORTS_RU",
+        leagueId: league.leagueId,
+        season: { in: sportsRuSeasons }
+      },
+      orderBy: { lastSyncedAt: "desc" }
     }),
     prisma.userFantasySquad.findUnique({
       where: {
@@ -94,7 +106,7 @@ export async function loadFantasySquadPlannerData(
       where: {
         provider: "SPORTS_RU",
         leagueId: league.leagueId,
-        season: league.season
+        season: { in: sportsRuSeasons }
       },
       orderBy: { lastSeenAt: "desc" }
     })
@@ -122,14 +134,15 @@ export async function loadFantasySquadPlannerData(
   const players = rosterRows.map((row) => {
     const projected = projectedByPlayerTeam.get(playerTeamKey(row.playerId, row.teamId));
     const positionGroup = normalizeFantasyPosition(row.position ?? projected?.position ?? null);
+    const predictedFp = projected?.fantasyScore ?? null;
     const priceRow =
       prices.byPlayerId.get(String(row.playerId)) ??
       prices.byNameTeam.get(nameTeamKey(row.player.name, row.team.name)) ??
       prices.findByPlayerName(row.player.name);
-    const price = priceRow?.price ?? estimateFantasyPrice(projected?.fantasyScore ?? null, positionGroup);
+    const price = priceRow?.price ?? estimateFantasyPrice(predictedFp, positionGroup);
     const roundPoints = roundsAndFixtures.rounds.map((round) => {
       const fixtures = roundsAndFixtures.fixturesByTeamRound.get(round.id)?.get(String(row.teamId)) ?? [];
-      const basePoints = projected?.fantasyScore ?? 0;
+      const basePoints = predictedFp ?? 0;
       return roundFantasyValue(fixtures.reduce((total, fixture) => total + basePoints * fixtureMultiplier(fixture), 0));
     });
     const fixtures = roundsAndFixtures.rounds.map((round) => {
@@ -148,7 +161,8 @@ export async function loadFantasySquadPlannerData(
       positionGroup,
       price,
       priceSource: priceRow ? ("SPORTS_RU" as const) : ("ESTIMATED" as const),
-      valueScore: price > 0 ? roundFantasyValue((roundPoints[0] ?? projected?.fantasyScore ?? 0) / price) : 0,
+      predictedFp,
+      valueScore: price > 0 ? roundFantasyValue((roundPoints[0] ?? predictedFp ?? 0) / price) : 0,
       roundPoints,
       fixtures
     };
@@ -314,6 +328,27 @@ async function loadUpcomingRoundFixtures(prisma: PrismaClient, league: SharedLea
     orderBy: [{ matchDate: "asc" }, { id: "asc" }],
     take: 180
   });
+  const coreFixtures = buildPlannerRoundFixtures(
+    matches.map((match) => ({
+      id: String(match.id),
+      round: match.round,
+      matchDate: match.matchDate,
+      homeTeamId: match.homeTeamId ? String(match.homeTeamId) : null,
+      awayTeamId: match.awayTeamId ? String(match.awayTeamId) : null,
+      homeTeamName: match.homeTeam?.name ?? null,
+      awayTeamName: match.awayTeam?.name ?? null,
+      finished: match.finished,
+      cancelled: match.cancelled
+    })),
+    now
+  );
+
+  if (coreFixtures.rounds.length > 0) return coreFixtures;
+
+  return loadLegacyMacheteUpcomingRoundFixtures(prisma, league, now);
+}
+
+export function buildPlannerRoundFixtures(matches: PlannerMatch[], now = new Date()) {
   const upcoming = matches.filter((match) => !match.finished && !match.cancelled && (!match.matchDate || match.matchDate >= startOfTodayUtc(now)));
   const grouped = groupMatchesByRound(upcoming.length > 0 ? upcoming : matches.filter((match) => !match.finished && !match.cancelled));
   const rounds = grouped.slice(0, maxProjectionRounds).map((group, index) => ({
@@ -330,20 +365,20 @@ async function loadUpcomingRoundFixtures(prisma: PrismaClient, league: SharedLea
     for (const match of group.matches) {
       if (match.homeTeamId) {
         addTeamFixture(fixturesByTeamRound, group.id, {
-          id: String(match.id),
+          id: match.id,
           roundId: group.id,
-          teamId: String(match.homeTeamId),
-          opponentName: match.awayTeam?.name ?? "Opponent",
+          teamId: match.homeTeamId,
+          opponentName: match.awayTeamName ?? "Opponent",
           side: "H",
           kickoffAt: match.matchDate
         });
       }
       if (match.awayTeamId) {
         addTeamFixture(fixturesByTeamRound, group.id, {
-          id: String(match.id),
+          id: match.id,
           roundId: group.id,
-          teamId: String(match.awayTeamId),
-          opponentName: match.homeTeam?.name ?? "Opponent",
+          teamId: match.awayTeamId,
+          opponentName: match.homeTeamName ?? "Opponent",
           side: "A",
           kickoffAt: match.matchDate
         });
@@ -357,7 +392,46 @@ async function loadUpcomingRoundFixtures(prisma: PrismaClient, league: SharedLea
   };
 }
 
-function groupMatchesByRound<T extends { id: bigint; round: string | null; matchDate: Date | null }>(matches: T[]) {
+async function loadLegacyMacheteUpcomingRoundFixtures(prisma: PrismaClient, league: SharedLeagueSeasonOption, now: Date) {
+  const macheteLeague = await prisma.macheteLeague.findFirst({
+    where: {
+      provider: "FOTMOB",
+      providerLeagueId: String(league.leagueId),
+      OR: [{ season: { in: sportsRuSeasonAliases(league.season) } }, { season: null }]
+    }
+  });
+  if (!macheteLeague) return buildPlannerRoundFixtures([], now);
+
+  const fixtures = await prisma.macheteFixture.findMany({
+    where: {
+      leagueId: macheteLeague.id,
+      OR: [{ status: { notIn: ["FINISHED", "PLAYED", "CANCELLED", "POSTPONED"] } }, { kickoffAt: { gte: startOfTodayUtc(now) } }]
+    },
+    include: {
+      homeTeam: { select: { providerTeamId: true, name: true } },
+      awayTeam: { select: { providerTeamId: true, name: true } }
+    },
+    orderBy: [{ kickoffAt: "asc" }, { id: "asc" }],
+    take: 180
+  });
+
+  return buildPlannerRoundFixtures(
+    fixtures.map((fixture) => ({
+      id: fixture.providerFixtureId ?? fixture.id,
+      round: legacyFixtureRound(fixture.raw),
+      matchDate: fixture.kickoffAt,
+      homeTeamId: fixture.homeTeam?.providerTeamId ?? null,
+      awayTeamId: fixture.awayTeam?.providerTeamId ?? null,
+      homeTeamName: fixture.homeTeam?.name ?? null,
+      awayTeamName: fixture.awayTeam?.name ?? null,
+      finished: fixture.status === "FINISHED" || fixture.status === "PLAYED",
+      cancelled: fixture.status === "CANCELLED" || fixture.status === "POSTPONED"
+    })),
+    now
+  );
+}
+
+function groupMatchesByRound<T extends { id: string; round: string | null; matchDate: Date | null }>(matches: T[]) {
   const groups = new Map<string, { id: string; label: string; startsAt: Date | null; rank: number; matches: T[] }>();
   for (const match of matches) {
     const roundLabel = normalizeRoundLabel(match.round);
@@ -446,7 +520,7 @@ function fixtureMultiplier(fixture: PlannerFixture) {
 }
 
 function comparePlannerPlayers(left: FantasyPlannerPlayer, right: FantasyPlannerPlayer) {
-  return (right.roundPoints[0] ?? 0) - (left.roundPoints[0] ?? 0) || right.valueScore - left.valueScore || left.name.localeCompare(right.name);
+  return (right.roundPoints[0] ?? right.predictedFp ?? 0) - (left.roundPoints[0] ?? left.predictedFp ?? 0) || right.valueScore - left.valueScore || left.name.localeCompare(right.name);
 }
 
 function playerTeamKey(playerId: string | number | bigint, teamId: string | number | bigint) {
@@ -477,6 +551,21 @@ function dateMs(value: Date | null) {
 
 function startOfTodayUtc(now: Date) {
   return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()));
+}
+
+export function sportsRuSeasonAliases(season: string) {
+  const values = new Set([season]);
+  const long = season.match(/^(\d{4})\/(\d{4})$/);
+  if (long) values.add(`${long[1]}/${long[2].slice(-2)}`);
+  const short = season.match(/^(\d{4})\/(\d{2})$/);
+  if (short) values.add(`${short[1]}/20${short[2]}`);
+  return [...values];
+}
+
+function legacyFixtureRound(raw: unknown) {
+  const record = raw && typeof raw === "object" && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
+  const value = record.round ?? record.roundName;
+  return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
 export function displayLeagueName(league: SharedLeagueSeasonOption) {

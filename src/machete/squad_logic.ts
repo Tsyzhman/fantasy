@@ -30,6 +30,7 @@ export type FantasyPlannerPlayer = {
   positionGroup: FantasyPositionGroup;
   price: number;
   priceSource: "SPORTS_RU" | "ESTIMATED";
+  predictedFp: number | null;
   valueScore: number;
   roundPoints: number[];
   fixtures: string[];
@@ -183,7 +184,7 @@ export function summarizeFantasySquad(
     benchPlayers,
     spent,
     bank,
-    projectedNext: roundFantasyValue(starterPlayers.reduce((total, player) => total + (player.roundPoints[0] ?? 0), 0)),
+    projectedNext: roundFantasyValue(starterPlayers.reduce((total, player) => total + nextFantasyPoints(player), 0)),
     projectedHorizon: roundFantasyValue(starterPlayers.reduce((total, player) => total + playerHorizonPoints(player, horizon), 0)),
     byPosition,
     startersByPosition,
@@ -267,7 +268,7 @@ export function buildTransferSuggestions(input: {
       ];
       if (summarizeFantasySquad(pool, nextSelections, rules, horizon).violations.length > 0) continue;
 
-      const nextDelta = roundFantasyValue((inPlayer.roundPoints[0] ?? 0) - (outPlayer.roundPoints[0] ?? 0));
+      const nextDelta = roundFantasyValue(nextFantasyPoints(inPlayer) - nextFantasyPoints(outPlayer));
       const horizonDelta = roundFantasyValue(playerHorizonPoints(inPlayer, horizon) - playerHorizonPoints(outPlayer, horizon));
       if (nextDelta <= 0 || horizonDelta < 0) continue;
 
@@ -307,4 +308,8 @@ export function buildTransferSuggestions(input: {
 function outPlayerIndex(selections: FantasySquadSelection[], playerId: string) {
   const selection = selections.find((item) => item.playerId === playerId);
   return selection?.slotIndex ?? selections.length;
+}
+
+export function nextFantasyPoints(player: Pick<FantasyPlannerPlayer, "predictedFp" | "roundPoints">) {
+  return player.roundPoints.length > 0 ? (player.roundPoints[0] ?? 0) : (player.predictedFp ?? 0);
 }

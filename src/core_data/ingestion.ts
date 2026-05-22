@@ -178,17 +178,17 @@ export async function ingest_scope(
     if (!matchId) continue;
     await options.onMatchStart?.(matchId);
     try {
-      await upsertDiscoveredFixture(prisma, fixture, BigInt(scope.league_id), scope.season);
+      await upsert_discovered_fixture(prisma, fixture, BigInt(scope.league_id), scope.season);
       const result = await ingest_match(prisma, fixture.id, {
         client,
         leagueId: scope.league_id,
         season: scope.season,
         parserVersion: options.parserVersion,
         schemaVersion: options.schemaVersion,
-            forceRefresh: scope.force_refresh,
-            forceReparse: scope.force_reparse,
-            requireDetailedPayload: scope.require_detailed_payloads
-          });
+        forceRefresh: scope.force_refresh,
+        forceReparse: scope.force_reparse,
+        requireDetailedPayload: scope.require_detailed_payloads
+      });
       if (result.skipped) skipped += 1;
       else fetched += result.fetched ? 1 : 0;
       if (!result.skipped) affectedMatchIds.push(result.matchId);
@@ -324,7 +324,7 @@ export async function backfill_league_season(
     });
 
     for (const fixture of fixtures) {
-      await upsertDiscoveredFixture(prisma, fixture, leagueId, season);
+      await upsert_discovered_fixture(prisma, fixture, leagueId, season);
     }
 
     for (const fixture of fixtures) {
@@ -544,7 +544,7 @@ function referencedPlayerIds(parsed: ParsedMatchPayload) {
   ].filter((playerId): playerId is bigint => playerId !== null && playerId !== undefined && playerId > 0n));
 }
 
-async function upsertDiscoveredFixture(
+export async function upsert_discovered_fixture(
   prisma: PrismaClient,
   fixture: { id: string; leagueId: string; homeTeamId: string; awayTeamId: string; kickoffAt: string; status: string; homeScore?: number; awayScore?: number },
   leagueId: bigint,

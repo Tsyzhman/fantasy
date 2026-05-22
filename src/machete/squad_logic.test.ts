@@ -5,6 +5,7 @@ import {
   buildTransferSuggestions,
   canAddFantasyPlayer,
   defaultFantasySquadRules,
+  nextFantasyPoints,
   selectionForPlayer,
   summarizeFantasySquad,
   type FantasyPlannerPlayer
@@ -98,6 +99,11 @@ test("transfer suggestions improve next round and stay non-negative over horizon
   assert.equal(suggestions[0].horizonDelta, 2);
 });
 
+test("next fantasy points fall back to predicted FP when no fixture rounds are loaded", () => {
+  assert.equal(nextFantasyPoints(player("1", "No Fixtures", "10", "MID", 5, [])), 0);
+  assert.equal(nextFantasyPoints({ ...player("2", "Projected", "10", "MID", 5, []), predictedFp: 6.4 }), 6.4);
+});
+
 function player(
   id: string,
   name: string,
@@ -117,6 +123,7 @@ function player(
     positionGroup,
     price,
     priceSource: "ESTIMATED",
+    predictedFp: roundPoints[0] ?? null,
     valueScore: 1,
     roundPoints,
     fixtures: []

@@ -54,6 +54,7 @@ test("incremental updates use current seasons instead of initial backfill season
     [130, "2026"],
     [77, "2026"]
   ]);
+  assert.equal(scopes.every((scope) => scope.include_upcoming), true);
 });
 
 test("quick current league backfill uses only Premier League current season", () => {
@@ -63,7 +64,7 @@ test("quick current league backfill uses only Premier League current season", ()
   assert.deepEqual(scopes.map((scope) => [scope.league_id, scope.season]), [[47, "2025/2026"]]);
   assert.equal(scopes[0].include_finished, true);
   assert.equal(scopes[0].include_live, false);
-  assert.equal(scopes[0].include_upcoming, false);
+  assert.equal(scopes[0].include_upcoming, true);
   assert.equal(scopes[0].require_detailed_payloads, false);
 });
 

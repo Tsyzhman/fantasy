@@ -8,6 +8,7 @@ import {
   buildTransferSuggestions,
   canAddFantasyPlayer,
   canStartFantasyPlayer,
+  nextFantasyPoints,
   playerHorizonPoints,
   selectionForPlayer,
   selectionForNewPlayer,
@@ -339,7 +340,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
                         <td className="min-w-0 px-3 py-3">
                           <p className="max-w-[220px] truncate font-semibold text-ink" title={player.name}>{player.name}</p>
                           <p className="max-w-[220px] truncate text-xs text-slate-500" title={player.teamName}>
-                            {player.positionGroup} / {player.teamName}
+                            {player.positionGroup} / {player.teamName} / FP {formatScore(player.predictedFp)}
                           </p>
                         </td>
                         <td className="max-w-[150px] px-3 py-3 text-xs text-slate-500">
@@ -347,7 +348,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
                             {player.fixtures.slice(0, horizon).filter(Boolean).join(" / ") || "-"}
                           </span>
                         </td>
-                        <td className="whitespace-nowrap px-3 py-3 text-right font-semibold text-emerald-700">{formatScore(player.roundPoints[0] ?? 0)}</td>
+                        <td className="whitespace-nowrap px-3 py-3 text-right font-semibold text-emerald-700">{formatScore(nextFantasyPoints(player))}</td>
                         <td className="whitespace-nowrap px-3 py-3 text-right text-slate-700">{formatScore(playerHorizonPoints(player, horizon))}</td>
                         <td className="whitespace-nowrap px-3 py-3 text-right">
                           <span className={player.priceSource === "SPORTS_RU" ? "font-semibold text-ink" : "text-slate-500"}>{formatNumber(player.price, 1)}</span>
@@ -406,7 +407,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
                   <td className="px-4 py-3 font-semibold text-ink">Starting XI FP</td>
                   {rounds.map((round, index) => (
                     <td key={round.id} className="px-4 py-3 text-right font-semibold text-emerald-700">
-                      {formatScore(summary.starterPlayers.reduce((total, player) => total + (player.roundPoints[index] ?? 0), 0))}
+                      {formatScore(summary.starterPlayers.reduce((total, player) => total + (player.roundPoints[index] ?? (index === 0 ? player.predictedFp ?? 0 : 0)), 0))}
                     </td>
                   ))}
                 </tr>
@@ -496,7 +497,9 @@ function SquadPositionGroup({
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-ink" title={player.name}>{player.name}</p>
-                  <p className="truncate text-xs text-slate-500" title={player.teamName}>{player.teamName}</p>
+                  <p className="truncate text-xs text-slate-500" title={player.teamName}>
+                    {player.teamName} / FP {formatScore(player.predictedFp)}
+                  </p>
                 </div>
                 <div className="flex gap-1">
                   <button
@@ -516,10 +519,10 @@ function SquadPositionGroup({
                 </div>
               </div>
               <div className="mt-2 flex items-center justify-between text-xs">
-                <span className="text-slate-500">Price {formatNumber(player.price, 1)}</span>
+                <span className="text-slate-500">FP {formatScore(player.predictedFp)} / Price {formatNumber(player.price, 1)}</span>
                 <span className="font-semibold text-emerald-700">
                   <Check className="mr-1 inline h-3.5 w-3.5" />
-                  {formatScore(playerHorizonPoints(player, horizon))}
+                  {formatScore(player.roundPoints.length > 0 ? playerHorizonPoints(player, horizon) : player.predictedFp)}
                 </span>
               </div>
             </div>
