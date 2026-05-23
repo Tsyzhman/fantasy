@@ -257,6 +257,58 @@ BEGIN
       FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
   END IF;
 
+  CREATE TABLE IF NOT EXISTS "shotmap_presets" (
+    "id" BIGSERIAL NOT NULL,
+    "name" TEXT NOT NULL,
+    "config" JSONB NOT NULL,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "shotmap_presets_pkey" PRIMARY KEY ("id")
+  );
+
+  CREATE TABLE IF NOT EXISTS "shotmap_comparisons_cache" (
+    "cache_key" TEXT NOT NULL,
+    "query_params" JSONB NOT NULL,
+    "result" JSONB NOT NULL,
+    "expires_at" TIMESTAMP(3) NOT NULL,
+    "source_match_ids" JSONB NOT NULL,
+    "payload_hashes" JSONB,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "shotmap_comparisons_cache_pkey" PRIMARY KEY ("cache_key")
+  );
+  CREATE INDEX IF NOT EXISTS "shotmap_comparisons_cache_expires_at_idx"
+    ON "shotmap_comparisons_cache"("expires_at");
+
+  IF to_regclass('match_shots') IS NOT NULL THEN
+    ALTER TABLE "match_shots" ADD COLUMN IF NOT EXISTS "normalized_x" DOUBLE PRECISION;
+    ALTER TABLE "match_shots" ADD COLUMN IF NOT EXISTS "normalized_y" DOUBLE PRECISION;
+    ALTER TABLE "match_shots" ADD COLUMN IF NOT EXISTS "event_type" TEXT;
+    ALTER TABLE "match_shots" ADD COLUMN IF NOT EXISTS "shot_type" TEXT;
+    ALTER TABLE "match_shots" ADD COLUMN IF NOT EXISTS "body_part" TEXT;
+    ALTER TABLE "match_shots" ADD COLUMN IF NOT EXISTS "situation" TEXT;
+    ALTER TABLE "match_shots" ADD COLUMN IF NOT EXISTS "is_big_chance" BOOLEAN;
+    ALTER TABLE "match_shots" ADD COLUMN IF NOT EXISTS "source_fingerprint" TEXT;
+    UPDATE "match_shots"
+    SET "source_fingerprint" = md5(concat_ws(
+      ':',
+      'legacy',
+      "id"::text,
+      "match_id"::text,
+      COALESCE("team_id"::text, ''),
+      COALESCE("player_id"::text, ''),
+      COALESCE("minute"::text, ''),
+      COALESCE("added_time"::text, ''),
+      COALESCE("x"::text, ''),
+      COALESCE("y"::text, ''),
+      COALESCE("event_type", '')
+    ))
+    WHERE "source_fingerprint" IS NULL;
+    ALTER TABLE "match_shots" ALTER COLUMN "source_fingerprint" SET NOT NULL;
+    CREATE UNIQUE INDEX IF NOT EXISTS "match_shots_match_id_source_fingerprint_key"
+      ON "match_shots"("match_id", "source_fingerprint");
+  END IF;
+
 END $$;
 `)
     .then(() => undefined)
