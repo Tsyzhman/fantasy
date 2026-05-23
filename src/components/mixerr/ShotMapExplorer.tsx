@@ -517,11 +517,11 @@ function ShotPitchPanel({
 
 function ShotPitchSvg({ layers, showHeatmap, activeShotId }: { layers: ShotLayer[]; showHeatmap: boolean; activeShotId: string | null }) {
   return (
-    <svg className="h-full w-full" viewBox="0 0 680 360" role="img" aria-label="Pitch">
+    <svg className="h-full w-full" viewBox={`0 0 ${PITCH_WIDTH} ${PITCH_HEIGHT}`} role="img" aria-label="Pitch">
       <defs>
-        <pattern id="pitch-stripes" width="136" height="360" patternUnits="userSpaceOnUse">
-          <rect width="68" height="360" fill="#047857" opacity="0.35" />
-          <rect x="68" width="68" height="360" fill="#065f46" opacity="0.28" />
+        <pattern id="pitch-stripes" width="136" height={PITCH_HEIGHT} patternUnits="userSpaceOnUse">
+          <rect width="68" height={PITCH_HEIGHT} fill="#047857" opacity="0.35" />
+          <rect x="68" width="68" height={PITCH_HEIGHT} fill="#065f46" opacity="0.28" />
         </pattern>
         <filter id="shot-shadow" x="-50%" y="-50%" width="200%" height="200%">
           <feDropShadow dx="0" dy="1.2" stdDeviation="1.4" floodColor="#052e16" floodOpacity="0.36" />
@@ -531,23 +531,20 @@ function ShotPitchSvg({ layers, showHeatmap, activeShotId }: { layers: ShotLayer
         </filter>
       </defs>
 
-      <rect width="680" height="360" fill="#047857" />
-      <rect width="680" height="360" fill="url(#pitch-stripes)" />
+      <rect width={PITCH_WIDTH} height={PITCH_HEIGHT} fill="#047857" />
+      <rect width={PITCH_WIDTH} height={PITCH_HEIGHT} fill="url(#pitch-stripes)" />
       <g fill="none" stroke="rgba(255,255,255,0.76)" strokeLinecap="round" strokeWidth="3">
         <rect x="18" y="18" width="644" height="324" />
-        <path d="M253 18V174H427V18" />
-        <path d="M296 18V76H384V18" />
-        <path d="M312 18V8H368V18" />
-        <path d="M340 18V342" strokeOpacity="0.16" />
-        <path d="M18 180H662" strokeOpacity="0.12" />
-        <circle cx="340" cy="132" r="4" fill="rgba(255,255,255,0.82)" stroke="none" />
-        <path d="M270 174a70 70 0 0 0 140 0" strokeOpacity="0.5" />
+        <path d="M149 18V171H531V18" />
+        <path d="M253 18V69H427V18" />
+        <path d="M305 18V8H375V18" />
+        <circle cx="340" cy="120" r="4" fill="rgba(255,255,255,0.82)" stroke="none" />
+        <path d="M271 171A86 86 0 0 0 409 171" strokeOpacity="0.5" />
       </g>
       <g fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="1.5">
-        <path d="M18 72H662" />
-        <path d="M18 126H662" />
-        <path d="M18 234H662" />
-        <path d="M18 288H662" />
+        <path d="M18 99H662" />
+        <path d="M18 180H662" />
+        <path d="M18 261H662" />
       </g>
 
       {showHeatmap ? <ShotHeatmap layers={layers} /> : null}
@@ -648,6 +645,10 @@ function legendDotClassName(tone: "attacking" | "conceded" | "player") {
 const ATTACKING_THIRD_START_X = 100 * 2 / 3;
 const PITCH_WIDTH = 680;
 const PITCH_HEIGHT = 360;
+const PITCH_FIELD_X = 18;
+const PITCH_FIELD_Y = 18;
+const PITCH_FIELD_WIDTH = 644;
+const PITCH_FIELD_HEIGHT = 324;
 
 function shotMarkerGeometry(shot: ShotMapShot) {
   const [displayX, displayY] = shotDisplayCoordinates(shot);
@@ -657,8 +658,8 @@ function shotMarkerGeometry(shot: ShotMapShot) {
   const attackingThirdTop = ((100 - x) / (100 - ATTACKING_THIRD_START_X)) * 100;
 
   return {
-    x: (y / 100) * PITCH_WIDTH,
-    y: (attackingThirdTop / 100) * PITCH_HEIGHT,
+    x: PITCH_FIELD_X + (y / 100) * PITCH_FIELD_WIDTH,
+    y: PITCH_FIELD_Y + (attackingThirdTop / 100) * PITCH_FIELD_HEIGHT,
     radius: size / 2
   };
 }

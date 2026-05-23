@@ -445,8 +445,8 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
         </div>
       </section>
 
-      <section className="rounded border border-slate-200 bg-white p-4 shadow-soft">
-        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
+      <section className="rounded border border-slate-200 bg-white p-3 shadow-soft sm:p-4">
+        <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(320px,0.72fr)_minmax(560px,1.28fr)] 2xl:grid-cols-[minmax(340px,0.68fr)_minmax(680px,1.32fr)]">
           <div className={cn(mobileTab === "squad" ? "block" : "hidden xl:block")}>
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
               <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500"><I18nText en="Your squad" ru="Ваш состав" /></h3>
@@ -581,7 +581,7 @@ function PlayerPoolTable({
   return (
     <div className="overflow-hidden rounded border border-slate-200 bg-white">
       <div className="max-h-[720px] overflow-auto">
-        <SortableTable className="min-w-[620px] divide-y divide-slate-200 text-xs">
+        <SortableTable className="min-w-[760px] divide-y divide-slate-200 text-xs">
           <thead className="sticky top-0 z-10 bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
             <tr>
               <th className="px-3 py-3">Player</th>
@@ -787,7 +787,7 @@ function PositionCounts({ summary, rules }: { summary: Record<FantasyPositionGro
 function StarterCounts({ summary, rules }: { summary: Record<FantasyPositionGroup, number>; rules: FantasySquadRules }) {
   const fieldPlayers = summary.DEF + summary.MID + summary.FWD;
   return (
-    <div className="flex flex-wrap gap-2 text-xs font-semibold text-white/90">
+    <div className="flex flex-wrap gap-1.5 text-[11px] font-semibold text-white/90">
       <StarterRulePill label="Field" count={fieldPlayers} min={10} max={10} />
       {rosterPositions.map((position) => (
         <StarterRulePill key={position} label={position} count={summary[position]} min={rules.starterPositionLimits[position].min} max={rules.starterPositionLimits[position].max} />
@@ -806,7 +806,7 @@ function StarterRulePill({ label, count, min, max }: { label: string; count: num
         : "border-emerald-300/70 bg-emerald-400/15 text-emerald-50";
 
   return (
-    <span className={`rounded border px-2 py-1 ${statusClass}`}>
+    <span className={`rounded border px-1.5 py-0.5 ${statusClass}`}>
       {label} {count}/{min === max ? max : `${min}-${max}`}
     </span>
   );
@@ -841,7 +841,7 @@ function StarterRuleCard({ label, count, min, max, detail }: { label: string; co
         : "border-emerald-300 bg-white text-emerald-800";
 
   return (
-    <div className={`rounded border px-2 py-1.5 shadow-sm ${statusClass}`}>
+    <div className={`rounded border px-1.5 py-1 shadow-sm ${statusClass}`}>
       <div className="flex items-center justify-between gap-2 whitespace-nowrap">
         <span className="text-[11px] font-black tracking-wide text-slate-800">{label}</span>
         <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-black text-slate-900">
@@ -933,10 +933,10 @@ function SquadPitch({
   const draggedSelection = draggedPlayerId ? selectionsByPlayerId.get(draggedPlayerId) : undefined;
 
   return (
-    <div className="space-y-3">
-      <div className="rounded border border-emerald-300 bg-emerald-900 p-2.5 shadow-inner">
+    <div className="space-y-2">
+      <div className="rounded border border-emerald-300 bg-emerald-900 p-2 shadow-inner">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-          <h4 className="text-sm font-bold uppercase tracking-wide text-white">Starting XI</h4>
+          <h4 className="text-xs font-bold uppercase tracking-wide text-white">Starting XI</h4>
           <StarterCounts summary={summary.startersByPosition} rules={rules} />
         </div>
         <div className="mb-2 grid grid-cols-2 gap-1.5 text-xs sm:grid-cols-5">
@@ -947,10 +947,10 @@ function SquadPitch({
           <StarterRuleCard label="FWD" count={summary.startersByPosition.FWD} min={rules.starterPositionLimits.FWD.min} max={rules.starterPositionLimits.FWD.max} detail="Min 1, max 3" />
         </div>
         <SquadActionLegend />
-        <div className="relative overflow-hidden rounded border border-white/20 bg-emerald-800/80 px-2.5 py-3">
+        <div className="relative overflow-hidden rounded border border-white/20 bg-emerald-800/80 px-1.5 py-2">
           <div className="pointer-events-none absolute inset-x-3 top-1/2 border-t border-white/15" />
-          <div className="pointer-events-none absolute left-1/2 top-1/2 h-20 w-20 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/15" />
-          <div className="relative space-y-3">
+          <div className="pointer-events-none absolute left-1/2 top-1/2 h-16 w-16 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/15" />
+          <div className="relative space-y-2">
             <SquadLine
               label="Goalkeeper"
               position="GK"
@@ -998,14 +998,14 @@ function SquadPitch({
 
       <div className="h-px bg-slate-300" />
 
-      <div className="rounded border border-slate-200 bg-slate-50 p-2.5">
+      <div className="rounded border border-slate-200 bg-slate-50 p-2">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-          <h4 className="text-sm font-bold uppercase tracking-wide text-slate-500">Bench</h4>
+          <h4 className="text-xs font-bold uppercase tracking-wide text-slate-500">Bench</h4>
           <BenchCounts summary={summary.benchByPosition} total={summary.benchPlayers.length} rules={rules} />
         </div>
         <div
           className={cn(
-            "flex min-h-20 flex-wrap justify-center gap-1.5 rounded border border-dashed border-transparent p-1 transition-colors",
+            "flex min-h-16 flex-wrap justify-center gap-1 rounded border border-dashed border-transparent p-0.5 transition-colors",
             draggedSelection?.isStarter && "border-sky-300 bg-sky-50"
           )}
           onDragOver={(event) => allowSquadDrop(event, Boolean(draggedPlayerId))}
@@ -1088,13 +1088,13 @@ function SquadLine({
 
   return (
     <div>
-      <div className="mb-2 flex items-center justify-center gap-2 text-xs font-bold uppercase tracking-wide text-white/85">
+      <div className="mb-1 flex items-center justify-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-white/85">
         <span>{label}</span>
-        <span className={`rounded border px-2 py-0.5 ${countClass}`}>{players.length}/{countLabel}</span>
+        <span className={`rounded border px-1.5 py-0.5 ${countClass}`}>{players.length}/{countLabel}</span>
       </div>
       <div
         className={cn(
-          "flex min-h-20 flex-wrap items-stretch justify-center gap-1.5 rounded border border-dashed border-transparent p-1 transition-colors",
+          "flex min-h-16 flex-wrap items-stretch justify-center gap-1 rounded border border-dashed border-transparent p-0.5 transition-colors",
           draggedPlayerId && "border-white/30 bg-white/10"
         )}
         onDragOver={(event) => allowSquadDrop(event, Boolean(draggedPlayerId))}
@@ -1121,7 +1121,7 @@ function SquadLine({
             onDragEnd={onDragEnd}
           />
         ))}
-        {players.length === 0 ? <div className="flex min-h-16 w-28 items-center justify-center rounded border border-dashed border-white/25 bg-white/10 text-xs text-white/70">Empty</div> : null}
+        {players.length === 0 ? <div className="flex min-h-12 w-24 items-center justify-center rounded border border-dashed border-white/25 bg-white/10 text-[11px] text-white/70">Empty</div> : null}
       </div>
     </div>
   );
@@ -1183,90 +1183,90 @@ function SquadPlayerTile({
       }}
       onDragEnd={onDragEnd}
       className={cn(
-        compact ? "w-32" : "w-28 sm:w-32",
-        "relative cursor-grab rounded border bg-white px-2 py-1.5 text-center shadow-sm transition active:cursor-grabbing",
+        compact ? "w-[5.25rem]" : "w-[5.25rem] sm:w-[5.5rem]",
+        "relative cursor-grab rounded border bg-white px-1.5 py-1 text-center shadow-sm transition active:cursor-grabbing",
         isCaptain ? "border-amber-400 ring-2 ring-amber-200" : "border-white/70",
         isDragging && "opacity-55 ring-2 ring-sky-300"
       )}
     >
       {isCaptain ? (
-        <span className="absolute -top-2 left-1/2 -translate-x-1/2 rounded bg-amber-400 px-1.5 py-0.5 text-[9px] font-black text-white shadow">
+        <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 rounded bg-amber-400 px-1.5 py-0.5 text-[8px] font-black text-white shadow">
           C
         </span>
       ) : isVice ? (
-        <span className="absolute -top-2 left-1/2 -translate-x-1/2 rounded bg-slate-700 px-1.5 py-0.5 text-[9px] font-black text-white shadow">
+        <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 rounded bg-slate-700 px-1.5 py-0.5 text-[8px] font-black text-white shadow">
           VC
         </span>
       ) : null}
       <div className="flex items-center justify-center gap-1">
-        <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${positionPillClass(player.positionGroup)}`}>{player.positionGroup}</span>
-        {selection?.isLocked ? <Lock className="h-3 w-3 text-slate-500" /> : null}
+        <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${positionPillClass(player.positionGroup)}`}>{player.positionGroup}</span>
+        {selection?.isLocked ? <Lock className="h-2.5 w-2.5 text-slate-500" /> : null}
       </div>
-      <p className="mt-1 truncate text-[11px] font-bold text-ink" title={player.name}>{player.name}</p>
-      <p className="truncate text-[10px] text-slate-500" title={player.teamName}>{player.teamName}</p>
-      <p className="mt-1 text-[11px] font-semibold text-emerald-700 num-tabular">
-        <Check className="mr-1 inline h-3 w-3" />
+      <p className="mt-0.5 truncate text-[10px] font-bold text-ink" title={player.name}>{player.name}</p>
+      <p className="truncate text-[9px] text-slate-500" title={player.teamName}>{player.teamName}</p>
+      <p className="mt-0.5 text-[10px] font-semibold text-emerald-700 num-tabular">
+        <Check className="mr-0.5 inline h-2.5 w-2.5" />
         {formatScore((player.roundPoints.length > 0 ? playerHorizonPoints(player, horizon) : player.predictedFp ?? 0) * (isCaptain ? 2 : 1))}
         {isCaptain ? <span className="ml-1 text-amber-600">×2</span> : null}
       </p>
       {player.baltikaXg !== null && player.baltikaXg !== undefined ? (
-        <p className="mt-0.5 text-[10px] font-semibold text-violet-700 num-tabular">W xG {formatScore(player.baltikaXg)}</p>
+        <p className="text-[9px] font-semibold text-violet-700 num-tabular">W xG {formatScore(player.baltikaXg)}</p>
       ) : null}
       {fixtureChips.length > 0 ? (
-        <div className="mt-1 flex justify-center">
+        <div className="mt-0.5 flex justify-center">
           <FdrRow fixtures={fixtureChips} />
         </div>
       ) : null}
-      <div className="mt-1.5 flex justify-center gap-1">
+      <div className="mt-1 flex justify-center gap-0.5">
         <button
           type="button"
           onClick={() => onToggleStarter(player.playerId)}
-          className={`inline-flex h-6 w-6 items-center justify-center rounded border border-slate-200 hover:bg-amber-50 ${selection?.isStarter ? "text-amber-600" : "text-slate-500"}`}
+          className={`inline-flex h-5 w-5 items-center justify-center rounded border border-slate-200 hover:bg-amber-50 ${selection?.isStarter ? "text-amber-600" : "text-slate-500"}`}
           aria-label={starterActionLabel}
         >
-          <Star className={`h-3 w-3 ${selection?.isStarter ? "fill-current" : ""}`} />
+          <Star className={`h-2.5 w-2.5 ${selection?.isStarter ? "fill-current" : ""}`} />
           <span className="sr-only">{starterActionLabel}</span>
         </button>
         <button
           type="button"
           onClick={() => onToggleCaptain(player.playerId)}
           className={cn(
-            "inline-flex h-6 w-6 items-center justify-center rounded border border-slate-200 hover:bg-amber-50",
+            "inline-flex h-5 w-5 items-center justify-center rounded border border-slate-200 hover:bg-amber-50",
             isCaptain ? "text-amber-600" : "text-slate-500"
           )}
           aria-label={captainActionLabel}
         >
-          <Crown className={`h-3 w-3 ${isCaptain ? "fill-current" : ""}`} />
+          <Crown className={`h-2.5 w-2.5 ${isCaptain ? "fill-current" : ""}`} />
           <span className="sr-only">{captainActionLabel}</span>
         </button>
         <button
           type="button"
           onClick={() => onToggleVice(player.playerId)}
           className={cn(
-            "inline-flex h-6 w-6 items-center justify-center rounded border border-slate-200 hover:bg-slate-50",
+            "inline-flex h-5 w-5 items-center justify-center rounded border border-slate-200 hover:bg-slate-50",
             isVice ? "text-slate-900 font-extrabold" : "text-slate-500"
           )}
           aria-label={viceActionLabel}
         >
-          <span className="text-[9px] font-black">VC</span>
+          <span className="text-[8px] font-black">VC</span>
           <span className="sr-only">{viceActionLabel}</span>
         </button>
         <button
           type="button"
           onClick={() => onToggleLock(player.playerId)}
-          className="inline-flex h-6 w-6 items-center justify-center rounded border border-slate-200 text-slate-600 hover:bg-slate-50"
+          className="inline-flex h-5 w-5 items-center justify-center rounded border border-slate-200 text-slate-600 hover:bg-slate-50"
           aria-label={lockActionLabel}
         >
-          {selection?.isLocked ? <Lock className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
+          {selection?.isLocked ? <Lock className="h-2.5 w-2.5" /> : <Unlock className="h-2.5 w-2.5" />}
           <span className="sr-only">{lockActionLabel}</span>
         </button>
         <button
           type="button"
           onClick={() => onRemove(player.playerId)}
-          className="inline-flex h-6 w-6 items-center justify-center rounded border border-slate-200 text-rose-700 hover:bg-rose-50"
+          className="inline-flex h-5 w-5 items-center justify-center rounded border border-slate-200 text-rose-700 hover:bg-rose-50"
           aria-label={removeActionLabel}
         >
-          <Trash2 className="h-3 w-3" />
+          <Trash2 className="h-2.5 w-2.5" />
           <span className="sr-only">{removeActionLabel}</span>
         </button>
       </div>

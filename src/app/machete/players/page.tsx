@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import Link from "next/link";
 
 import { PlayerCompareDock, PlayerCompareProvider, PlayerCompareToggle } from "@/components/compare/player-compare";
@@ -15,6 +16,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { FilterShell } from "@/components/ui/filter-shell";
 import { ResultsToolbar } from "@/components/ui/results-toolbar";
 import { prisma } from "@/lib/db";
+import { NULL_GLYPH, formatNumber } from "@/lib/format";
 import { matchWindowLabel, matchWindowLabelRu, matchWindowModeValue, parseMacheteMatchWindow, type MacheteMatchWindow } from "@/scoring/machete/match-window";
 import { normalizeFantasyPosition, type FantasyPositionGroup } from "@/machete/squad_logic";
 import { loadSportsRuFantasyPriceRefsByScopedPlayer, sportsRuFantasyPriceScopeKey, type SportsRuFantasyPriceRef } from "@/machete/squad_planner";
@@ -69,7 +71,7 @@ type PositionFilter = Exclude<FantasyPositionGroup, "UNK">;
 export default async function MachetePlayersPage({ searchParams }: PageProps) {
   const resolvedSearchParams = await searchParams;
   const [sortedLeagues, leagueSeasonOptions] = await Promise.all([loadSharedLeagueOptions(prisma), loadSharedLeagueSeasonOptions(prisma)]);
-  const requestedLeagueId = resolvedSearchParams.leagueId ?? "";
+  const requestedLeagueId = resolvedSearchParams.leagueId ?? ALL_LEAGUES_VALUE;
   const selectedLeagueId =
     requestedLeagueId === ALL_LEAGUES_VALUE || sortedLeagues.some((league) => String(league.leagueId) === requestedLeagueId) ? requestedLeagueId : "";
   const seasonsForSelectedLeague =
@@ -128,6 +130,10 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
     starterFilter: starterFilter || undefined,
     pageSize: String(pageSize)
   };
+  const scopeTeamCount = teamLeagues.reduce((total, league) => total + league.teams.length, 0);
+  const windowMatchesLabel = windowSummary
+    ? `${formatNumber(windowSummary.matchesWithPlayerStats)} / ${formatNumber(windowSummary.officialMatches)}`
+    : NULL_GLYPH;
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -308,6 +314,29 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
         })}
       />
 
+      <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <MacheteScopeStat
+          label={<I18nText en="Mapped players" ru="Игроки" />}
+          value={formatNumber(playersResult.total)}
+          detail={<I18nText en="Sports.ru identities" ru="Sports.ru-маппинг" />}
+        />
+        <MacheteScopeStat
+          label={<I18nText en="Teams" ru="Команды" />}
+          value={formatNumber(scopeTeamCount)}
+          detail={selectedLeagueId === ALL_LEAGUES_VALUE ? <I18nText en="All loaded leagues" ru="Все загруженные лиги" /> : selectedSeason || NULL_GLYPH}
+        />
+        <MacheteScopeStat
+          label={<I18nText en="Competitions" ru="Турниры" />}
+          value={activeCompetitions.length > 0 ? formatNumber(activeCompetitions.length) : <I18nText en="All" ru="Все" />}
+          detail={selectedTeamId ? <I18nText en="Team scope" ru="Скоуп команды" /> : <I18nText en="League scope" ru="Скоуп лиги" />}
+        />
+        <MacheteScopeStat
+          label={<I18nText en="Parsed matches" ru="Матчи со статами" />}
+          value={windowMatchesLabel}
+          detail={matchWindowLabel(matchWindow)}
+        />
+      </div>
+
       <p className="mt-3 text-sm text-slate-500">
         <I18nText
           en={
@@ -362,6 +391,24 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
         </section>
       </PlayerCompareProvider>
     </main>
+  );
+}
+
+function MacheteScopeStat({
+  label,
+  value,
+  detail
+}: {
+  label: ReactNode;
+  value: ReactNode;
+  detail?: ReactNode;
+}) {
+  return (
+    <dl className="rounded border border-slate-200 bg-white px-3 py-2 shadow-soft">
+      <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</dt>
+      <dd className="mt-1 text-xl font-bold text-ink num-tabular">{value}</dd>
+      {detail ? <p className="mt-1 truncate text-xs text-slate-500">{detail}</p> : null}
+    </dl>
   );
 }
 
