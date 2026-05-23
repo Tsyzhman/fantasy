@@ -8,7 +8,7 @@ import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
 import { TeamCardGrid, type TeamCardDto } from "@/components/admin/team-card-grid";
 import { prisma } from "@/lib/db";
 import { leagueSubtitle } from "@/lib/leagues/display";
-import { leagueFlag } from "@/lib/leagues/flags";
+import { LeagueFlag } from "@/components/ui/league-flag";
 import { teamLogoUrlForSlug } from "@/lib/teams/logo-assets";
 import { nationalTeamFlag } from "@/lib/teams/national-flags";
 
@@ -119,9 +119,7 @@ export default async function BaltikaLeaguePage({ params }: PageProps) {
         <div>
           <p className="text-sm font-semibold uppercase tracking-wide text-slate-500"><I18nText en="League workspace" ru="Рабочее место лиги" /></p>
           <h1 className="mt-2 flex items-center gap-3 text-3xl font-bold text-ink">
-            <span aria-hidden="true" className="text-4xl leading-none">
-              {leagueFlag(league)}
-            </span>
+            <LeagueFlag league={league} size={40} />
             {league.name}
           </h1>
           <p className="mt-2 text-sm text-slate-600">

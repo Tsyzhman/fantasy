@@ -121,6 +121,8 @@ function parseSelections(value: unknown): FantasySquadSelection[] {
       playerId,
       isStarter: record.isStarter !== false,
       isLocked: record.isLocked === true,
+      isCaptain: record.isCaptain === true,
+      isViceCaptain: record.isViceCaptain === true,
       slotIndex: parsePositiveInt(record.slotIndex, selections.length),
       purchasePrice: numberOrNull(record.purchasePrice)
     });
@@ -141,10 +143,21 @@ function validateSquadSelections(
   const benchCounts: Record<FantasyPositionGroup, number> = { GK: 0, DEF: 0, MID: 0, FWD: 0, UNK: 0 };
   const teamCounts = new Map<string, number>();
   let starters = 0;
+  let captains = 0;
+  let viceCaptains = 0;
 
   for (const selection of selections) {
     const rosterRow = rosterByPlayerId.get(selection.playerId);
     if (!rosterRow) continue;
+    if (selection.isCaptain && selection.isViceCaptain) return `Captain and vice-captain must be different players.`;
+    if (selection.isCaptain) {
+      captains += 1;
+      if (!selection.isStarter) return `Captain must be in the starting XI.`;
+    }
+    if (selection.isViceCaptain) {
+      viceCaptains += 1;
+      if (!selection.isStarter) return `Vice-captain must be in the starting XI.`;
+    }
     const position = normalizeFantasyPosition(rosterRow.position);
     rosterCounts[position] += 1;
     if (selection.isStarter) {
@@ -159,6 +172,8 @@ function validateSquadSelections(
     }
   }
 
+  if (captains > 1) return `Squad can contain only one captain.`;
+  if (viceCaptains > 1) return `Squad can contain only one vice-captain.`;
   if (starters > rules.starterSize) return `Starting XI can contain at most ${rules.starterSize} players.`;
   if (starters === rules.starterSize) {
     const starterFieldPlayers = starters - starterCounts.GK;

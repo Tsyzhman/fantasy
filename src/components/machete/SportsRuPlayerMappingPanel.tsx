@@ -3,6 +3,8 @@
 import { CheckCircle2, Link2, Save, XCircle } from "lucide-react";
 import { useMemo, useState, useTransition } from "react";
 
+import { I18nText } from "@/components/i18n-text";
+import { localizedText, useLanguage } from "@/components/localized-option";
 import { SortableTable } from "@/components/sortable-table";
 import { formatNumber } from "@/lib/format";
 import type { SportsRuTeamMappingRow } from "@/machete/sports_ru_player_mapping";
@@ -20,6 +22,7 @@ type SportsRuPlayerMappingPanelProps = {
 };
 
 export function SportsRuPlayerMappingPanel({ rows, roster, canEdit }: SportsRuPlayerMappingPanelProps) {
+  const language = useLanguage();
   const [drafts, setDrafts] = useState<Record<string, string>>(
     Object.fromEntries(rows.map((row) => [row.priceId, row.mappedPlayerId ?? ""]))
   );
@@ -76,10 +79,13 @@ export function SportsRuPlayerMappingPanel({ rows, roster, canEdit }: SportsRuPl
       <section className="mt-6 rounded border border-slate-200 bg-white p-5 shadow-soft">
         <div className="flex items-center gap-2">
           <Link2 className="h-5 w-5 text-slate-500" />
-          <h2 className="text-lg font-semibold text-ink">Sports.ru to FotMob mapping</h2>
+          <h2 className="text-lg font-semibold text-ink"><I18nText en="Sports.ru to FotMob mapping" ru="Маппинг Sports.ru в FotMob" /></h2>
         </div>
         <p className="mt-2 text-sm text-slate-500">
-          No Sports.ru price rows are linked to this team yet. Import Sports.ru fantasy prices first, then return here.
+          <I18nText
+            en="No Sports.ru price rows are linked to this team yet. Import Sports.ru fantasy prices first, then return here."
+            ru="К этой команде пока не привязаны строки цен Sports.ru. Сначала импортируйте фэнтези-цены Sports.ru, затем вернитесь сюда."
+          />
         </p>
       </section>
     );
@@ -91,10 +97,13 @@ export function SportsRuPlayerMappingPanel({ rows, roster, canEdit }: SportsRuPl
         <div>
           <div className="flex items-center gap-2">
             <Link2 className="h-5 w-5 text-slate-500" />
-            <h2 className="text-lg font-semibold text-ink">Sports.ru to FotMob mapping</h2>
+            <h2 className="text-lg font-semibold text-ink"><I18nText en="Sports.ru to FotMob mapping" ru="Маппинг Sports.ru в FotMob" /></h2>
           </div>
           <p className="mt-1 text-sm text-slate-500">
-            {summary.matched}/{summary.total} mapped. Manual links are reused by the squad picker and future price imports.
+            <I18nText
+              en={<>{summary.matched}/{summary.total} mapped. Manual links are reused by the squad picker and future price imports.</>}
+              ru={<>{summary.matched}/{summary.total} замаплено. Ручные связи используются в планировщике состава и будущих импортах цен.</>}
+            />
           </p>
         </div>
         {message ? <span className="rounded bg-amber-50 px-3 py-2 text-sm text-amber-800">{message}</span> : null}
@@ -105,9 +114,9 @@ export function SportsRuPlayerMappingPanel({ rows, roster, canEdit }: SportsRuPl
           <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
             <tr>
               <th className="px-3 py-3">Sports.ru</th>
-              <th className="px-3 py-3 text-right">Price</th>
-              <th className="px-3 py-3">FotMob roster player</th>
-              <th className="px-3 py-3">Status</th>
+              <th className="px-3 py-3 text-right"><I18nText en="Price" ru="Цена" /></th>
+              <th className="px-3 py-3"><I18nText en="FotMob roster player" ru="Игрок состава FotMob" /></th>
+              <th className="px-3 py-3"><I18nText en="Status" ru="Статус" /></th>
               {canEdit ? <th className="w-20 px-3 py-3" data-sort-disabled="true" /> : null}
             </tr>
           </thead>
@@ -134,9 +143,9 @@ export function SportsRuPlayerMappingPanel({ rows, roster, canEdit }: SportsRuPl
                         onChange={(event) => updateDraft(row.priceId, event.target.value)}
                         className="w-full rounded border border-slate-200 px-3 py-2"
                       >
-                        <option value="">Not mapped</option>
+                        <option value="">{localizedText(language, "Not mapped", "Не замаплен")}</option>
                         {row.candidates.length > 0 ? (
-                          <optgroup label="Best candidates">
+                          <optgroup label={localizedText(language, "Best candidates", "Лучшие кандидаты")}>
                             {row.candidates.slice(0, 5).map((candidate) => (
                               <option key={`candidate:${candidate.playerId}`} value={candidate.playerId}>
                                 {candidate.playerName} / {candidate.position ?? "-"} / {Math.round(candidate.confidence * 100)}%
@@ -144,7 +153,7 @@ export function SportsRuPlayerMappingPanel({ rows, roster, canEdit }: SportsRuPl
                             ))}
                           </optgroup>
                         ) : null}
-                        <optgroup label="Full FotMob roster">
+                        <optgroup label={localizedText(language, "Full FotMob roster", "Полный состав FotMob")}>
                           {roster.map((player) => (
                             <option key={player.playerId} value={player.playerId}>
                               {player.name} / {player.position ?? "-"}
@@ -154,10 +163,13 @@ export function SportsRuPlayerMappingPanel({ rows, roster, canEdit }: SportsRuPl
                       </select>
                     ) : (
                       <div>
-                        <p className="font-medium text-ink">{row.mappedPlayerName ?? "Not mapped"}</p>
+                        <p className="font-medium text-ink">{row.mappedPlayerName ?? localizedText(language, "Not mapped", "Не замаплен")}</p>
                         {bestCandidate ? (
                           <p className="text-xs text-slate-500">
-                            Best candidate: {bestCandidate.playerName} ({Math.round(bestCandidate.confidence * 100)}%)
+                            <I18nText
+                              en={<>Best candidate: {bestCandidate.playerName} ({Math.round(bestCandidate.confidence * 100)}%)</>}
+                              ru={<>Лучший кандидат: {bestCandidate.playerName} ({Math.round(bestCandidate.confidence * 100)}%)</>}
+                            />
                           </p>
                         ) : null}
                       </div>
@@ -179,7 +191,7 @@ export function SportsRuPlayerMappingPanel({ rows, roster, canEdit }: SportsRuPl
                         onClick={() => saveMapping(row)}
                         disabled={isPending}
                         className="inline-flex h-9 w-9 items-center justify-center rounded border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-                        title="Save mapping"
+                        aria-label={localizedText(language, "Save mapping", "Сохранить маппинг")}
                       >
                         <Save className="h-4 w-4" />
                       </button>

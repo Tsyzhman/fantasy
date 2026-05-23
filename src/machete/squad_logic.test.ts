@@ -8,6 +8,7 @@ import {
   fantasyAddBlockReason,
   nextFantasyPoints,
   normalizeFantasyPosition,
+  optimizeFantasyStarters,
   selectionForPlayer,
   summarizeFantasySquad,
   type FantasyPlannerPlayer
@@ -84,6 +85,42 @@ test("full squad enforces roster shape and starting formation", () => {
   assert.equal(invalidSummary.violations.some((violation) => violation.includes("Bench GK must be 1")), true);
 });
 
+test("optimizer picks the best valid starting XI while respecting locks", () => {
+  const rules = { ...defaultFantasySquadRules, maxPlayersPerTeam: 20 };
+  const pool = [
+    player("1", "Weak GK", "1", "GK", 5, [1]),
+    player("2", "Strong GK", "2", "GK", 5, [9]),
+    player("10", "DEF 8", "10", "DEF", 5, [8]),
+    player("11", "DEF 7", "11", "DEF", 5, [7]),
+    player("12", "DEF 6", "12", "DEF", 5, [6]),
+    player("13", "DEF 1", "13", "DEF", 5, [1]),
+    player("14", "Locked DEF", "14", "DEF", 5, [1]),
+    player("20", "MID 9", "20", "MID", 5, [9]),
+    player("21", "MID 8", "21", "MID", 5, [8]),
+    player("22", "MID 7", "22", "MID", 5, [7]),
+    player("23", "MID 6", "23", "MID", 5, [6]),
+    player("24", "MID 1", "24", "MID", 5, [1]),
+    player("30", "Locked Bench FWD", "30", "FWD", 5, [10]),
+    player("31", "FWD 5", "31", "FWD", 5, [5]),
+    player("32", "FWD 1", "32", "FWD", 5, [1])
+  ];
+  const startingIds = new Set(["1", "10", "13", "14", "20", "21", "22", "23", "24", "31", "32"]);
+  const selections = pool.map((item, index) => ({
+    ...selectionForPlayer(item, index, startingIds.has(item.playerId)),
+    isLocked: item.playerId === "14" || item.playerId === "30"
+  }));
+
+  const optimized = optimizeFantasyStarters({ pool, selections, rules, horizon: 1 });
+  assert.ok(optimized);
+
+  const optimizedSummary = summarizeFantasySquad(pool, optimized, rules, 1);
+  assert.deepEqual(optimizedSummary.violations, []);
+  assert.equal(optimized.find((selection) => selection.playerId === "2")?.isStarter, true);
+  assert.equal(optimized.find((selection) => selection.playerId === "14")?.isStarter, true);
+  assert.equal(optimized.find((selection) => selection.playerId === "30")?.isStarter, false);
+  assert.equal(optimizedSummary.projectedHorizon > summarizeFantasySquad(pool, selections, rules, 1).projectedHorizon, true);
+});
+
 test("player additions are blocked when position or team slots are full", () => {
   const rules = { ...defaultFantasySquadRules, maxPlayersPerTeam: 2 };
   const gks = rangePlayers("GK", 3, 1);
@@ -158,7 +195,8 @@ function player(
     predictedFp: roundPoints[0] ?? null,
     valueScore: 1,
     roundPoints,
-    fixtures: []
+    fixtures: [],
+    fixtureDifficulties: []
   };
 }
 

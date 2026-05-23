@@ -1,7 +1,12 @@
-import { formatNumber, formatScore } from "@/lib/format";
+import { formatNumber } from "@/lib/format";
+import { PlayerCompareDraggable, PlayerComparePickButton, type ComparePlayer } from "@/components/compare/player-compare";
 import { I18nText } from "@/components/i18n-text";
 import { MacheteStarterCheckbox } from "@/components/machete/MacheteStarterCheckbox";
+import { PlayerWatchlistButton } from "@/components/players/player-watchlist";
 import { SortableTable } from "@/components/sortable-table";
+import { PlayerHoverCard, type PlayerHoverCardData } from "@/components/ui/player-hover-card";
+import { ScoreHeatCell, computeRanks } from "@/components/ui/score-heat-cell";
+import { SparkLine } from "@/components/ui/spark-line";
 
 export type MachetePlayerRow = {
   id: string;
@@ -23,6 +28,7 @@ export type MachetePlayerRow = {
   fantasyScore: number | null;
   scoringScore?: number | null;
   alternativeScore?: number | null;
+  recentFp?: number[] | null;
 };
 
 export function MachetePlayerTable({
@@ -46,8 +52,12 @@ export function MachetePlayerTable({
   };
 }) {
   const hasStarterColumn = showStarterStatus || Boolean(starterControls);
-  const columnsCount = (showContext ? 15 : 14) + (hasStarterColumn ? 1 : 0);
+  const columnsCount = (showContext ? 16 : 15) + (hasStarterColumn ? 1 : 0);
   const sortProps = { serverSortParam, defaultSort };
+
+  const xRanks = computeRanks(players.map((p) => p.fantasyScore));
+  const fpRanks = computeRanks(players.map((p) => p.scoringScore ?? null));
+  const altRanks = computeRanks(players.map((p) => p.alternativeScore ?? null));
 
   return (
     <div className="overflow-hidden rounded border border-slate-200 bg-white shadow-soft">
@@ -56,25 +66,32 @@ export function MachetePlayerTable({
           <thead className="bg-slate-50 text-left font-semibold uppercase text-slate-500">
             <tr>
               <th className="w-[42%] px-3 py-3" data-sort-key="playerName"><I18nText en="Surname" ru="Фамилия" /></th>
-              <th className="w-[29%] bg-emerald-50 px-3 py-3 text-right text-emerald-700" data-sort-key="fantasyScore"><I18nText en="Forecast" ru="Прогноз" /></th>
-              <th className="w-[29%] bg-sky-50 px-3 py-3 text-right text-sky-700" data-sort-key="scoringScore"><I18nText en="Scoring" ru="Скоринг" /></th>
+              <th className="w-[29%] bg-emerald-50 px-3 py-3 text-right text-emerald-700" data-sort-key="fantasyScore">xFP</th>
+              <th className="w-[29%] bg-sky-50 px-3 py-3 text-right text-sky-700" data-sort-key="scoringScore">FP</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {players.map((player) => (
+            {players.map((player, idx) => (
               <tr key={player.id} className="hover:bg-slate-50">
                 <td className="max-w-[42vw] px-3 py-3 font-medium text-ink">
-                  <span className="block truncate" title={player.name}>{compactPlayerName(player.name)}</span>
-                  <span className="mt-0.5 flex min-w-0 items-center gap-1 text-[11px] font-normal text-slate-500">
+                  <div className="flex min-w-0 items-center gap-1.5">
+                    <PlayerComparePickButton player={macheteComparePlayer(player)} />
+                    <PlayerWatchlistButton source="machete" player={macheteWatchlistPlayer(player)} />
+                    <PlayerCompareDraggable player={macheteComparePlayer(player)} className="min-w-0 flex-1">
+                      <span className="block truncate" title={player.name}>{compactPlayerName(player.name)}</span>
+                    </PlayerCompareDraggable>
+                  </div>
+                  <span className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[11px] font-normal text-slate-500">
                     {hasStarterColumn ? <StarterCell player={player} controls={starterControls} compact /> : null}
-                    {player.position ?? "-"}{showContext && player.teamName ? ` · ${player.teamName}` : ""}
+                    <span className="min-w-0 truncate">{player.position ?? "—"}{showContext && player.teamName ? ` · ${player.teamName}` : ""}</span>
+                    <SparkLine values={player.recentFp ?? []} width={44} height={16} className="shrink-0" />
                   </span>
                 </td>
-                <td className="whitespace-nowrap bg-emerald-50/70 px-3 py-3 text-right font-semibold text-emerald-700">
-                  {formatScore(player.fantasyScore)}
+                <td className="px-1 py-2 text-right">
+                  <ScoreHeatCell value={player.fantasyScore} rank={xRanks[idx]} tone="emerald" />
                 </td>
-                <td className="whitespace-nowrap bg-sky-50/70 px-3 py-3 text-right font-semibold text-sky-700">
-                  {formatScore(player.scoringScore ?? null)}
+                <td className="px-1 py-2 text-right">
+                  <ScoreHeatCell value={player.scoringScore ?? null} rank={fpRanks[idx]} tone="sky" />
                 </td>
               </tr>
             ))}
@@ -90,47 +107,53 @@ export function MachetePlayerTable({
       </div>
 
       <div className="hidden overflow-x-auto sm:block xl:hidden">
-        <SortableTable {...sortProps} className="min-w-full divide-y divide-slate-200 text-sm">
+        <SortableTable {...sortProps} className="sticky-first-col min-w-full divide-y divide-slate-200 text-sm">
           <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
             <tr>
               <th className="px-4 py-3" data-sort-key="playerName"><I18nText en="Player" ru="Игрок" /></th>
               {showContext ? <th className="px-4 py-3" data-sort-key="teamName"><I18nText en="Team" ru="Команда" /></th> : null}
               <th className="px-4 py-3" data-sort-key="position"><I18nText en="Pos" ru="Поз." /></th>
               {hasStarterColumn ? <th className="px-4 py-3" data-sort-key="isStarter"><I18nText en="Start" ru="В старте" /></th> : null}
-              <th className="px-4 py-3 text-right" data-sort-key="matchesPlayed">Apps</th>
-              <th className="px-4 py-3 text-right" data-sort-key="minutesPlayed">Min</th>
-              <th className="hidden px-4 py-3 text-right lg:table-cell" data-sort-key="goals">G</th>
-              <th className="hidden px-4 py-3 text-right lg:table-cell" data-sort-key="assists">A</th>
-              <th className="bg-emerald-50 px-4 py-3 text-right text-emerald-700" data-sort-key="fantasyScore"><I18nText en="Expected FP" ru="Прогноз FP" /></th>
-              <th className="bg-sky-50 px-4 py-3 text-right text-sky-700" data-sort-key="scoringScore"><I18nText en="Actual FP" ru="Реальные FP" /></th>
-              <th className="bg-amber-50 px-4 py-3 text-right text-amber-700" data-sort-key="alternativeScore"><I18nText en="Alt FP" ru="Альт. FP" /></th>
+              <th className="px-4 py-3 text-right num-tabular" data-sort-key="matchesPlayed">Apps</th>
+              <th className="px-4 py-3 text-right num-tabular" data-sort-key="minutesPlayed">Min</th>
+              <th className="hidden px-4 py-3 text-right num-tabular lg:table-cell" data-sort-key="goals">G</th>
+              <th className="hidden px-4 py-3 text-right num-tabular lg:table-cell" data-sort-key="assists">A</th>
+              <th className="bg-emerald-50 px-2 py-3 text-right text-emerald-700" data-sort-key="fantasyScore">xFP</th>
+              <th className="bg-sky-50 px-2 py-3 text-right text-sky-700" data-sort-key="scoringScore">FP</th>
+              <th className="bg-amber-50 px-2 py-3 text-right text-amber-700" data-sort-key="alternativeScore">vFP</th>
+              <th className="px-3 py-3 text-center" data-sort-disabled="true"><I18nText en="Form" ru="Форма" /></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {players.map((player) => (
+            {players.map((player, idx) => (
               <tr key={player.id} className="hover:bg-slate-50">
-                <td className="whitespace-nowrap px-4 py-3 font-medium text-ink">{player.name}</td>
-                {showContext ? <td className="whitespace-nowrap px-4 py-3 text-slate-600">{player.teamName ?? "-"}</td> : null}
-                <td className="whitespace-nowrap px-4 py-3 text-slate-600">{player.position ?? "-"}</td>
+                <td className="whitespace-nowrap px-4 py-3 font-medium text-ink">
+                  <PlayerNameCell player={player} />
+                </td>
+                {showContext ? <td className="whitespace-nowrap px-4 py-3 text-slate-600">{player.teamName ?? "—"}</td> : null}
+                <td className="whitespace-nowrap px-4 py-3 text-slate-600">{player.position ?? "—"}</td>
                 {hasStarterColumn ? <td className="whitespace-nowrap px-4 py-3"><StarterCell player={player} controls={starterControls} /></td> : null}
-                <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatNumber(player.matchesPlayed)}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatNumber(player.minutesPlayed)}</td>
-                <td className="hidden whitespace-nowrap px-4 py-3 text-right text-slate-600 lg:table-cell">{formatNumber(player.goals)}</td>
-                <td className="hidden whitespace-nowrap px-4 py-3 text-right text-slate-600 lg:table-cell">{formatNumber(player.assists)}</td>
-                <td className="whitespace-nowrap bg-emerald-50/70 px-4 py-3 text-right font-semibold text-emerald-700">
-                  {formatScore(player.fantasyScore)}
+                <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600 num-tabular">{formatNumber(player.matchesPlayed)}</td>
+                <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600 num-tabular">{formatNumber(player.minutesPlayed)}</td>
+                <td className="hidden whitespace-nowrap px-4 py-3 text-right text-slate-600 num-tabular lg:table-cell">{formatNumber(player.goals)}</td>
+                <td className="hidden whitespace-nowrap px-4 py-3 text-right text-slate-600 num-tabular lg:table-cell">{formatNumber(player.assists)}</td>
+                <td className="px-1 py-2 text-right">
+                  <ScoreHeatCell value={player.fantasyScore} rank={xRanks[idx]} tone="emerald" />
                 </td>
-                <td className="whitespace-nowrap bg-sky-50/70 px-4 py-3 text-right font-semibold text-sky-700">
-                  {formatScore(player.scoringScore ?? null)}
+                <td className="px-1 py-2 text-right">
+                  <ScoreHeatCell value={player.scoringScore ?? null} rank={fpRanks[idx]} tone="sky" />
                 </td>
-                <td className="whitespace-nowrap bg-amber-50/70 px-4 py-3 text-right font-semibold text-amber-700">
-                  {formatScore(player.alternativeScore ?? null)}
+                <td className="px-1 py-2 text-right">
+                  <ScoreHeatCell value={player.alternativeScore ?? null} rank={altRanks[idx]} tone="amber" />
+                </td>
+                <td className="whitespace-nowrap px-3 py-2 text-center">
+                  <SparkLine values={player.recentFp ?? []} width={64} height={20} />
                 </td>
               </tr>
             ))}
             {players.length === 0 ? (
               <tr>
-                <td colSpan={(showContext ? 10 : 9) + (hasStarterColumn ? 1 : 0)} className="px-4 py-10 text-center text-slate-500">
+                <td colSpan={(showContext ? 11 : 10) + (hasStarterColumn ? 1 : 0)} className="px-4 py-10 text-center text-slate-500">
                   <I18nText en="No Machete player rows yet." ru="Пока нет строк игроков Machete." />
                 </td>
               </tr>
@@ -140,52 +163,58 @@ export function MachetePlayerTable({
       </div>
 
       <div className="hidden overflow-x-auto xl:block">
-        <SortableTable {...sortProps} className="min-w-full divide-y divide-slate-200 text-sm">
+        <SortableTable {...sortProps} className="sticky-first-col min-w-full divide-y divide-slate-200 text-sm">
           <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
             <tr>
               <th className="px-4 py-3" data-sort-key="playerName"><I18nText en="Player" ru="Игрок" /></th>
               {showContext ? <th className="px-4 py-3" data-sort-key="teamName"><I18nText en="Team" ru="Команда" /></th> : null}
               <th className="px-4 py-3" data-sort-key="position"><I18nText en="Pos" ru="Поз." /></th>
               {hasStarterColumn ? <th className="px-4 py-3" data-sort-key="isStarter"><I18nText en="Start" ru="В старте" /></th> : null}
-              <th className="bg-emerald-50 px-4 py-3 text-right text-emerald-700" data-sort-key="fantasyScore"><I18nText en="Expected FP" ru="Прогноз FP" /></th>
-              <th className="bg-sky-50 px-4 py-3 text-right text-sky-700" data-sort-key="scoringScore"><I18nText en="Actual FP" ru="Реальные FP" /></th>
-              <th className="bg-amber-50 px-4 py-3 text-right text-amber-700" data-sort-key="alternativeScore"><I18nText en="Alt FP" ru="Альт. FP" /></th>
+              <th className="bg-emerald-50 px-2 py-3 text-right text-emerald-700" data-sort-key="fantasyScore">xFP</th>
+              <th className="bg-sky-50 px-2 py-3 text-right text-sky-700" data-sort-key="scoringScore">FP</th>
+              <th className="bg-amber-50 px-2 py-3 text-right text-amber-700" data-sort-key="alternativeScore">vFP</th>
+              <th className="px-3 py-3 text-center" data-sort-disabled="true"><I18nText en="Form" ru="Форма" /></th>
               <th className="px-4 py-3" data-sort-key="nationality"><I18nText en="Nation" ru="Страна" /></th>
-              <th className="px-4 py-3 text-right" data-sort-key="matchesPlayed">Apps</th>
-              <th className="px-4 py-3 text-right" data-sort-key="minutesPlayed">Min</th>
-              <th className="px-4 py-3 text-right" data-sort-key="goals">G</th>
-              <th className="px-4 py-3 text-right" data-sort-key="assists">A</th>
-              <th className="px-4 py-3 text-right" data-sort-key="shotsOnTarget">SOT</th>
-              <th className="px-4 py-3 text-right" data-sort-key="keyPasses">KP</th>
-              <th className="px-4 py-3 text-right" data-sort-key="tackles">Tkl</th>
-              <th className="px-4 py-3 text-right" data-sort-key="averageRating">Rating</th>
+              <th className="px-4 py-3 text-right num-tabular" data-sort-key="matchesPlayed">Apps</th>
+              <th className="px-4 py-3 text-right num-tabular" data-sort-key="minutesPlayed">Min</th>
+              <th className="px-4 py-3 text-right num-tabular" data-sort-key="goals">G</th>
+              <th className="px-4 py-3 text-right num-tabular" data-sort-key="assists">A</th>
+              <th className="px-4 py-3 text-right num-tabular" data-sort-key="shotsOnTarget">SOT</th>
+              <th className="px-4 py-3 text-right num-tabular" data-sort-key="keyPasses">KP</th>
+              <th className="px-4 py-3 text-right num-tabular" data-sort-key="tackles">Tkl</th>
+              <th className="px-4 py-3 text-right num-tabular" data-sort-key="averageRating">Rating</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {players.map((player) => (
+            {players.map((player, idx) => (
               <tr key={player.id} className="hover:bg-slate-50">
-                <td className="whitespace-nowrap px-4 py-3 font-medium text-ink">{player.name}</td>
-                {showContext ? <td className="whitespace-nowrap px-4 py-3 text-slate-600">{player.teamName ?? "-"}</td> : null}
-                <td className="whitespace-nowrap px-4 py-3 text-slate-600">{player.position ?? "-"}</td>
+                <td className="whitespace-nowrap px-4 py-3 font-medium text-ink">
+                  <PlayerNameCell player={player} />
+                </td>
+                {showContext ? <td className="whitespace-nowrap px-4 py-3 text-slate-600">{player.teamName ?? "—"}</td> : null}
+                <td className="whitespace-nowrap px-4 py-3 text-slate-600">{player.position ?? "—"}</td>
                 {hasStarterColumn ? <td className="whitespace-nowrap px-4 py-3"><StarterCell player={player} controls={starterControls} /></td> : null}
-                <td className="whitespace-nowrap bg-emerald-50/70 px-4 py-3 text-right font-semibold text-emerald-700">
-                  {formatScore(player.fantasyScore)}
+                <td className="px-1 py-2 text-right">
+                  <ScoreHeatCell value={player.fantasyScore} rank={xRanks[idx]} tone="emerald" />
                 </td>
-                <td className="whitespace-nowrap bg-sky-50/70 px-4 py-3 text-right font-semibold text-sky-700">
-                  {formatScore(player.scoringScore ?? null)}
+                <td className="px-1 py-2 text-right">
+                  <ScoreHeatCell value={player.scoringScore ?? null} rank={fpRanks[idx]} tone="sky" />
                 </td>
-                <td className="whitespace-nowrap bg-amber-50/70 px-4 py-3 text-right font-semibold text-amber-700">
-                  {formatScore(player.alternativeScore ?? null)}
+                <td className="px-1 py-2 text-right">
+                  <ScoreHeatCell value={player.alternativeScore ?? null} rank={altRanks[idx]} tone="amber" />
                 </td>
-                <td className="whitespace-nowrap px-4 py-3 text-slate-600">{player.nationality ?? "-"}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatNumber(player.matchesPlayed)}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatNumber(player.minutesPlayed)}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatNumber(player.goals)}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatNumber(player.assists)}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatNumber(player.shotsOnTarget)}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatNumber(player.keyPasses)}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatNumber(player.tackles)}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatScore(player.averageRating)}</td>
+                <td className="whitespace-nowrap px-3 py-2 text-center">
+                  <SparkLine values={player.recentFp ?? []} width={64} height={20} />
+                </td>
+                <td className="whitespace-nowrap px-4 py-3 text-slate-600">{player.nationality ?? "—"}</td>
+                <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600 num-tabular">{formatNumber(player.matchesPlayed)}</td>
+                <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600 num-tabular">{formatNumber(player.minutesPlayed)}</td>
+                <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600 num-tabular">{formatNumber(player.goals)}</td>
+                <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600 num-tabular">{formatNumber(player.assists)}</td>
+                <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600 num-tabular">{formatNumber(player.shotsOnTarget)}</td>
+                <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600 num-tabular">{formatNumber(player.keyPasses)}</td>
+                <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600 num-tabular">{formatNumber(player.tackles)}</td>
+                <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600 num-tabular">{formatNumber(player.averageRating, 2)}</td>
               </tr>
             ))}
             {players.length === 0 ? (
@@ -200,6 +229,59 @@ export function MachetePlayerTable({
       </div>
     </div>
   );
+}
+
+function PlayerNameCell({ player }: { player: MachetePlayerRow }) {
+  const comparePlayer = macheteComparePlayer(player);
+  const data: PlayerHoverCardData = {
+    name: player.name,
+    position: player.position,
+    teamName: player.teamName,
+    nationality: player.nationality,
+    age: player.age,
+    matchesPlayed: player.matchesPlayed,
+    minutesPlayed: player.minutesPlayed,
+    goals: player.goals,
+    assists: player.assists,
+    averageRating: player.averageRating,
+    xFp: player.fantasyScore,
+    actualFp: player.scoringScore ?? null,
+    altFp: player.alternativeScore ?? null
+  };
+  return (
+    <div className="flex min-w-0 items-center gap-2">
+      <PlayerComparePickButton player={comparePlayer} />
+      <PlayerWatchlistButton source="machete" player={macheteWatchlistPlayer(player)} />
+      <PlayerCompareDraggable player={comparePlayer} className="min-w-0">
+        <PlayerHoverCard
+          player={data}
+          trigger={
+            <span className="cursor-help truncate border-b border-dashed border-slate-300" title={player.name}>
+              {player.name}
+            </span>
+          }
+        />
+      </PlayerCompareDraggable>
+    </div>
+  );
+}
+
+function macheteWatchlistPlayer(player: MachetePlayerRow) {
+  return {
+    id: player.id,
+    name: player.name,
+    position: player.position,
+    teamName: player.teamName
+  };
+}
+
+function macheteComparePlayer(player: MachetePlayerRow): ComparePlayer {
+  return {
+    id: player.id,
+    name: player.name,
+    position: player.position,
+    teamName: player.teamName
+  };
 }
 
 function compactPlayerName(name: string) {

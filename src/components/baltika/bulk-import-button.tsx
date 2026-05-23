@@ -110,7 +110,10 @@ export function BulkImportButton({ leagueId, seasonId }: BulkImportButtonProps) 
                 {payload.summary.imported}/{payload.summary.total} <I18nText en="files imported" ru="файлов импортировано" />
               </p>
               <p className="mt-1 text-xs text-slate-500">
-                <I18nText en="Players" ru="Игроки" />: {payload.summary.playersImported}. Team Stats: {payload.summary.teamStatsImported}.
+                <I18nText
+                  en={<>Players: {payload.summary.playersImported}. Team Stats: {payload.summary.teamStatsImported}.</>}
+                  ru={<>Игроки: {payload.summary.playersImported}. Статистика команд: {payload.summary.teamStatsImported}.</>}
+                />
               </p>
               {failed.length > 0 ? (
                 <div className="mt-3 space-y-2">

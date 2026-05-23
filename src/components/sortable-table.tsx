@@ -77,7 +77,12 @@ function initializeHeaders(table: HTMLTableElement) {
 
     header.dataset.sortable = "true";
     header.tabIndex = 0;
+    header.setAttribute("role", "button");
+    header.setAttribute("aria-keyshortcuts", "Enter Space");
     header.setAttribute("aria-sort", header.getAttribute("aria-sort") ?? "none");
+    if (!header.hasAttribute("aria-roledescription")) {
+      header.setAttribute("aria-roledescription", "sortable column header");
+    }
   }
 }
 

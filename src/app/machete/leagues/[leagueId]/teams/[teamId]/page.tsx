@@ -10,6 +10,7 @@ import { MacheteTeamLogo } from "@/components/machete/MacheteTeamCard";
 import { SportsRuPlayerMappingPanel } from "@/components/machete/SportsRuPlayerMappingPanel";
 import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
 import { LocalizedOption } from "@/components/localized-option";
+import { LocalizedNumberInput } from "@/components/ui/localized-number-input";
 import { AutoSubmitForm } from "@/components/players/auto-submit-form";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -34,6 +35,7 @@ type PageProps = {
     teamId: string;
   }>;
   searchParams?: Promise<{
+    season?: string;
     recentMatches?: string;
     matchWindow?: string;
     customMatches?: string;
@@ -50,7 +52,7 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
     legacyRecentMatches: resolvedSearchParams.recentMatches
   });
   const starterFilter = parseStarterFilter(resolvedSearchParams.starterFilter);
-  const league = await loadSharedLeagueSeason(prisma, leagueId);
+  const league = await loadSharedLeagueSeason(prisma, leagueId, resolvedSearchParams.season);
   const parsedTeamId = parseSharedBigInt(teamId);
   if (!league || !parsedTeamId) notFound();
 
@@ -79,6 +81,7 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
       where: {
         match: {
           leagueId: league.leagueId,
+          season: league.season,
           OR: [{ homeTeamId: parsedTeamId }, { awayTeamId: parsedTeamId }]
         }
       },
@@ -127,13 +130,13 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
         <PageBreadcrumbs
-          backHref={`/machete/leagues/${league.leagueId}`}
+          backHref={macheteLeagueHref(league.leagueId, league.season)}
           backLabel={<I18nText en="Back to league" ru="Назад к лиге" />}
           items={[
             { label: "Machete", href: "/machete/leagues" },
             { label: <I18nText en="Leagues" ru="Лиги" />, href: "/machete/leagues" },
-            { label: league.displayName, href: `/machete/leagues/${league.leagueId}` },
-            { label: seasonTeam.team.name, href: `/machete/leagues/${league.leagueId}/teams/${seasonTeam.teamId}` }
+            { label: league.displayName, href: macheteLeagueHref(league.leagueId, league.season) },
+            { label: seasonTeam.team.name, href: macheteTeamHref(league.leagueId, league.season, seasonTeam.teamId) }
           ]}
       />
 
@@ -213,6 +216,7 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
           />
         </p>
         <AutoSubmitForm className="mb-3 grid w-full gap-3 sm:max-w-xl sm:grid-cols-2">
+          <input type="hidden" name="season" value={league.season} />
           <label className="text-sm">
             <span className="mb-1 block font-medium text-slate-600"><I18nText en="Stats window" ru="Окно статистики" /></span>
             <select name="matchWindow" defaultValue={matchWindowModeValue(matchWindow)} className="w-full rounded border border-slate-200 px-3 py-2">
@@ -224,14 +228,14 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
               <LocalizedOption value="all" en="All loaded matches" ru="Все загруженные матчи" />
               <LocalizedOption value="custom" en="Custom team matches" ru="Свое число матчей команды" />
             </select>
-            <input
+            <LocalizedNumberInput
               name="customMatches"
-              type="number"
-              min="1"
-              max="50"
+              min={1}
+              max={50}
               defaultValue={resolvedSearchParams.customMatches ?? ""}
-              className="mt-2 w-full rounded border border-slate-200 px-3 py-2"
-              placeholder="Кол-во матчей"
+              className="mt-2"
+              placeholderEn="Number of matches"
+              placeholderRu="Кол-во матчей"
             />
           </label>
           <label className="text-sm">
@@ -353,6 +357,14 @@ function filterByStarter<T extends { isStarter?: boolean | null }>(rows: T[], st
   if (starterFilter === "starter") return rows.filter((row) => row.isStarter);
   if (starterFilter === "bench") return rows.filter((row) => !row.isStarter);
   return rows;
+}
+
+function macheteLeagueHref(leagueId: bigint, season: string) {
+  return `/machete/leagues/${leagueId}?season=${encodeURIComponent(season)}`;
+}
+
+function macheteTeamHref(leagueId: bigint, season: string, teamId: bigint) {
+  return `/machete/leagues/${leagueId}/teams/${teamId}?season=${encodeURIComponent(season)}`;
 }
 
 function rawPayloadMatchDate(payload: unknown) {

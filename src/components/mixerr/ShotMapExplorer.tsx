@@ -1,8 +1,8 @@
 "use client";
 
-import { Crosshair, Goal, Layers3, Shield, UserRound } from "lucide-react";
+import { Columns2, Crosshair, Layers3, Pause, Play, Shield, SkipForward, UserRound } from "lucide-react";
 import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { I18nText } from "@/components/i18n-text";
 import { LocalizedOption, localizedText, useLanguage } from "@/components/localized-option";
@@ -37,7 +37,7 @@ type ZoneSummary = {
   right_xg: number;
 };
 
-type Mode = "for" | "against" | "overlay" | "player";
+type Mode = "for" | "against" | "overlay" | "split" | "player";
 type ShotLayer = {
   key: string;
   label: string;
@@ -62,7 +62,10 @@ export function ShotMapExplorer({
   const [onTargetOnly, setOnTargetOnly] = useState(false);
   const [showTeamShots, setShowTeamShots] = useState(true);
   const [showConceded, setShowConceded] = useState(true);
+  const [showHeatmap, setShowHeatmap] = useState(true);
   const [situation, setSituation] = useState<ShotSituationFilter>("all");
+  const [playbackIndex, setPlaybackIndex] = useState(0);
+  const [isPlaybackRunning, setIsPlaybackRunning] = useState(false);
 
   const layers = useMemo(() => {
     const selectedShotIds = new Set(playerShots.map((shot) => shot.id));
@@ -71,6 +74,21 @@ export function ShotMapExplorer({
     if (mode === "against") return [{ key: "against", label: localizedText(language, "Team shots against", "Допущенные удары"), shots: filterShots(concededShots), tone: "conceded" as const }];
     if (mode === "player") return [{ key: "player", label: localizedText(language, "Selected player shots", "Удары выбранного игрока"), shots: filterShots(playerShots), tone: "player" as const }];
     if (mode === "for") return attackingLayers("for", localizedText(language, "Team shots for", "Удары команды"), teamShots);
+    if (mode === "split") {
+      return [
+        ...attackingLayers("split-for", localizedText(language, "Team A attacking", "Команда А атакует"), overlayShots.attacking),
+        ...(showConceded
+          ? [
+              {
+                key: "split-against",
+                label: localizedText(language, "Team B conceded", "Команда B допускает"),
+                shots: filterShots(overlayShots.conceded),
+                tone: "conceded" as const
+              }
+            ]
+          : [])
+      ];
+    }
 
     return [
       ...attackingLayers("overlay-for", localizedText(language, "Team A attacking", "Команда А атакует"), overlayShots.attacking),
@@ -122,8 +140,23 @@ export function ShotMapExplorer({
   }, [concededShots, goalsOnly, language, mode, onTargetOnly, overlayShots.attacking, overlayShots.conceded, playerShots, showConceded, showTeamShots, situation, teamShots]);
 
   const visibleShots = layers.flatMap((layer) => layer.shots);
+  const sequenceShots = useMemo(() => orderShotsForPlayback(visibleShots), [visibleShots]);
+  const clampedPlaybackIndex = sequenceShots.length ? playbackIndex % sequenceShots.length : 0;
+  const activeSequenceShot = sequenceShots[clampedPlaybackIndex] ?? null;
+  const playbackRunning = isPlaybackRunning && sequenceShots.length > 1;
   const totalXg = visibleShots.reduce((total, shot) => total + (shot.xg ?? 0), 0);
   const shooterSummaries = summarizeShooters(visibleShots, language);
+  const topShooterSummaries = shooterSummaries.slice(0, 8);
+  const splitAttackLayers = layers.filter((layer) => layer.tone !== "conceded");
+  const splitConcededLayers = layers.filter((layer) => layer.tone === "conceded");
+
+  useEffect(() => {
+    if (!playbackRunning) return;
+    const timer = window.setInterval(() => {
+      setPlaybackIndex((current) => (current + 1) % sequenceShots.length);
+    }, 900);
+    return () => window.clearInterval(timer);
+  }, [playbackRunning, sequenceShots.length]);
 
   return (
     <div className="mt-6 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
@@ -133,6 +166,7 @@ export function ShotMapExplorer({
             <ModeButton active={mode === "for"} onClick={() => setMode("for")} icon={<Crosshair className="h-4 w-4" />} label={<I18nText en="Team A attack" ru="Атака A" />} />
             <ModeButton active={mode === "against"} onClick={() => setMode("against")} icon={<Shield className="h-4 w-4" />} label={<I18nText en="Team A conceded" ru="Допущено A" />} />
             <ModeButton active={mode === "overlay"} onClick={() => setMode("overlay")} icon={<Layers3 className="h-4 w-4" />} label={<I18nText en="A vs B overlay" ru="A против B" />} />
+            <ModeButton active={mode === "split"} onClick={() => setMode("split")} icon={<Columns2 className="h-4 w-4" />} label={<I18nText en="Side-by-side" ru="Рядом" />} />
             <ModeButton active={mode === "player"} onClick={() => setMode("player")} icon={<UserRound className="h-4 w-4" />} label={<I18nText en="Selected player" ru="Игрок" />} />
           </div>
 
@@ -145,18 +179,45 @@ export function ShotMapExplorer({
               <input type="checkbox" checked={onTargetOnly} onChange={(event) => setOnTargetOnly(event.target.checked)} />
               <I18nText en="On target" ru="В створ" />
             </label>
-            {mode === "for" || mode === "overlay" ? (
+            {mode === "for" || mode === "overlay" || mode === "split" ? (
               <label className="inline-flex items-center gap-2">
                 <input type="checkbox" checked={showTeamShots} onChange={(event) => setShowTeamShots(event.target.checked)} />
                 <I18nText en="Team layer" ru="Слой команды" />
               </label>
             ) : null}
-            {mode === "overlay" ? (
+            {mode === "overlay" || mode === "split" ? (
               <label className="inline-flex items-center gap-2">
                 <input type="checkbox" checked={showConceded} onChange={(event) => setShowConceded(event.target.checked)} />
                 <I18nText en="Team B conceded" ru="Допущено B" />
               </label>
             ) : null}
+            <label className="inline-flex items-center gap-2">
+              <input type="checkbox" checked={showHeatmap} onChange={(event) => setShowHeatmap(event.target.checked)} />
+              <I18nText en="Heatmap" ru="Теплокарта" />
+            </label>
+            <div className="inline-flex items-center gap-1 rounded border border-slate-200 bg-white p-1">
+              <button
+                type="button"
+                onClick={() => setIsPlaybackRunning((current) => !current)}
+                disabled={sequenceShots.length === 0}
+                className="inline-flex h-7 w-7 items-center justify-center rounded text-slate-700 hover:bg-slate-50 disabled:opacity-40"
+                aria-label={playbackRunning ? "Pause shot sequence" : "Play shot sequence"}
+              >
+                {playbackRunning ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+              </button>
+              <button
+                type="button"
+                onClick={() => setPlaybackIndex((current) => (sequenceShots.length ? (current + 1) % sequenceShots.length : 0))}
+                disabled={sequenceShots.length === 0}
+                className="inline-flex h-7 w-7 items-center justify-center rounded text-slate-700 hover:bg-slate-50 disabled:opacity-40"
+                aria-label="Next shot"
+              >
+                <SkipForward className="h-3.5 w-3.5" />
+              </button>
+              <span className="min-w-12 px-1 text-right text-xs font-semibold text-slate-500 num-tabular">
+                {sequenceShots.length ? `${clampedPlaybackIndex + 1}/${sequenceShots.length}` : "0/0"}
+              </span>
+            </div>
             <select value={situation} onChange={(event) => setSituation(event.target.value as ShotSituationFilter)} className="rounded border border-slate-200 px-2 py-1">
               <LocalizedOption value="all" en="All situations" ru="Все ситуации" />
               <LocalizedOption value="open_play" en="Open play" ru="С игры" />
@@ -170,43 +231,46 @@ export function ShotMapExplorer({
           <LegendItem tone="attacking" label={localizedText(language, "Team shots", "Удары команды")} />
           <LegendItem tone="conceded" label={localizedText(language, "Conceded shots", "Допущенные удары")} />
           <LegendItem tone="player" label={localizedText(language, "Selected player", "Выбранный игрок")} />
-          <span><I18nText en="Marker size follows xG." ru="Размер маркера зависит от xG." /></span>
+        </div>
+        <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500">
+          <span className="font-semibold uppercase tracking-wide text-slate-400"><I18nText en="Outcome:" ru="Исход:" /></span>
+          <OutcomeKey color="bg-emerald-500" label={localizedText(language, "Goal", "Гол")} />
+          <OutcomeKey color="bg-amber-400" label={localizedText(language, "On target", "В створ")} />
+          <OutcomeKey color="bg-slate-400" label={localizedText(language, "Off target", "Мимо")} />
+          <OutcomeKey color="bg-violet-500" label={localizedText(language, "Blocked", "Заблокирован")} />
+          <span className="ml-2"><I18nText en="◇ Header · ◯ Foot · ⊙ Set piece. Size ∝ xG." ru="◇ Голова · ◯ Нога · ⊙ Стандарт. Размер ∝ xG." /></span>
         </div>
 
-        <div className="mt-3 overflow-x-auto">
-          <div className="relative mx-auto aspect-[68/36] min-h-[260px] w-full min-w-[360px] max-w-[980px] overflow-hidden rounded border border-emerald-700 bg-emerald-700">
-            <div className="absolute inset-3 sm:inset-4">
-              <div className="absolute inset-0 border-2 border-white/75" />
-              <div className="absolute left-1/2 top-0 h-[47%] w-[59%] -translate-x-1/2 border-x-2 border-b-2 border-white/70" />
-              <div className="absolute left-1/2 top-0 h-[16%] w-[26%] -translate-x-1/2 border-x-2 border-b-2 border-white/70" />
-              <div className="absolute left-1/2 top-[31.5%] h-2 w-2 -translate-x-1/2 rounded-full bg-white/80" />
-              <div className="absolute left-1/2 top-[35%] h-[28%] w-[28%] -translate-x-1/2 rounded-b-full border-b-2 border-white/45" />
-              <Goal className="absolute left-1/2 top-1 h-5 w-5 -translate-x-1/2 text-white/90" />
-
-              {layers.map((layer) =>
-                layer.shots.map((shot, index) => (
-                  <span
-                    key={`${layer.key}-${shot.id}-${index}`}
-                    className={markerClassName(layer.tone, shot)}
-                    style={markerStyle(shot)}
-                    title={shotTooltip(shot, layer.label)}
-                  />
-                ))
-              )}
-
-              {visibleShots.length === 0 ? (
-                <div className="absolute inset-0 grid place-items-center bg-emerald-950/20 text-sm font-semibold text-white">
-                  <I18nText en="No shots for current filters" ru="Нет ударов по текущим фильтрам" />
-                </div>
-              ) : null}
-            </div>
+        {mode === "split" ? (
+          <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-2">
+            <ShotPitchPanel
+              title={<I18nText en="Team A attack" ru="Атака A" />}
+              layers={splitAttackLayers}
+              showHeatmap={showHeatmap}
+              activeShotId={activeSequenceShot?.id ?? null}
+            />
+            <ShotPitchPanel
+              title={<I18nText en="Team B conceded" ru="Допущено B" />}
+              layers={splitConcededLayers}
+              showHeatmap={showHeatmap}
+              activeShotId={activeSequenceShot?.id ?? null}
+            />
           </div>
-        </div>
+        ) : (
+          <div className="mt-3 overflow-x-auto">
+            <ShotPitchPanel
+              layers={layers}
+              showHeatmap={showHeatmap}
+              activeShotId={activeSequenceShot?.id ?? null}
+              compact={false}
+            />
+          </div>
+        )}
 
         <div className="mt-5 border-t border-slate-200 pt-4">
           <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h2 className="text-base font-semibold text-ink"><I18nText en="Shooters" ru="Бьющие" /></h2>
+              <h2 className="text-base font-semibold text-ink"><I18nText en="Top shooters" ru="Топ бьющих" /></h2>
               <p className="mt-1 text-xs text-slate-500">
                 <I18nText
                   en={<>Team A window: {windowLabel}. Team B conceded window: {defendingWindowLabel}.</>}
@@ -215,7 +279,7 @@ export function ShotMapExplorer({
               </p>
             </div>
             <p className="text-xs text-slate-500">
-              <I18nText en={`${visibleShots.length} visible shots after filters`} ru={`Видимых ударов после фильтров: ${visibleShots.length}`} />
+              <I18nText en={`${visibleShots.length} visible shots · ${shooterSummaries.length} shooters`} ru={`Видимых ударов: ${visibleShots.length} · бьющих: ${shooterSummaries.length}`} />
             </p>
           </div>
           <div className="mt-3 overflow-x-auto">
@@ -232,7 +296,7 @@ export function ShotMapExplorer({
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {shooterSummaries.map((summary) => (
+                {topShooterSummaries.map((summary) => (
                   <tr key={summary.key} className="hover:bg-slate-50">
                     <td className="whitespace-nowrap px-3 py-2 font-medium text-ink">{summary.playerName}</td>
                     <td className="whitespace-nowrap px-3 py-2 text-slate-600">{summary.teamName}</td>
@@ -243,7 +307,7 @@ export function ShotMapExplorer({
                     <td className="min-w-48 px-3 py-2 text-slate-600">{summary.lastShot}</td>
                   </tr>
                 ))}
-                {shooterSummaries.length === 0 ? (
+                {topShooterSummaries.length === 0 ? (
                   <tr>
                     <td colSpan={7} className="px-3 py-8 text-center text-slate-500">
                       <I18nText en="No shooter stats for the current layer and filters." ru="Нет статистики бьющих по текущему слою и фильтрам." />
@@ -351,6 +415,19 @@ function summarizeShooters(shots: ShotMapShot[], language: "en" | "ru") {
   return [...summaries.values()].sort((left, right) => right.shots - left.shots || right.xg - left.xg || left.playerName.localeCompare(right.playerName));
 }
 
+function orderShotsForPlayback(shots: ShotMapShot[]) {
+  return [...shots].sort((left, right) => {
+    const leftDate = left.match_date ? new Date(left.match_date).getTime() : 0;
+    const rightDate = right.match_date ? new Date(right.match_date).getTime() : 0;
+    return (
+      leftDate - rightDate ||
+      (left.minute ?? 0) - (right.minute ?? 0) ||
+      (left.added_time ?? 0) - (right.added_time ?? 0) ||
+      left.id.localeCompare(right.id)
+    );
+  });
+}
+
 function ModeButton({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: ReactNode; label: ReactNode }) {
   return (
     <button
@@ -400,16 +477,166 @@ function LegendItem({ tone, label }: { tone: "attacking" | "conceded" | "player"
   );
 }
 
-function markerClassName(tone: "attacking" | "conceded" | "player", shot: ShotMapShot) {
-  const base = "absolute -translate-x-1/2 -translate-y-1/2 border-2 shadow-sm transition hover:z-30 hover:scale-125";
-  const toneClass =
-    tone === "attacking"
-      ? "z-10 rounded-full border-white/80 bg-rose-500"
-      : tone === "conceded"
-        ? "z-10 rotate-45 rounded-[3px] border-white/70 bg-indigo-600 opacity-80"
-        : "z-20 rounded-full border-emerald-950/60 bg-emerald-300 ring-2 ring-white/90";
-  const outcomeClass = shot.is_goal ? "ring-2 ring-amber-300" : shot.is_blocked ? "opacity-55" : shot.is_on_target ? "border-white" : "";
-  return `${base} ${toneClass} ${outcomeClass}`;
+function ShotPitchPanel({
+  title,
+  layers,
+  showHeatmap,
+  activeShotId,
+  compact = true
+}: {
+  title?: ReactNode;
+  layers: ShotLayer[];
+  showHeatmap: boolean;
+  activeShotId: string | null;
+  compact?: boolean;
+}) {
+  const shotCount = layers.reduce((total, layer) => total + layer.shots.length, 0);
+  const frameClassName = compact
+    ? "relative aspect-[68/36] min-h-[220px] w-full overflow-hidden rounded border border-emerald-800 bg-emerald-800 shadow-inner"
+    : "relative mx-auto aspect-[68/36] min-h-[260px] w-full min-w-[360px] max-w-[980px] overflow-hidden rounded border border-emerald-800 bg-emerald-800 shadow-inner";
+
+  return (
+    <div>
+      {title ? (
+        <div className="mb-2 flex items-center justify-between gap-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+          <span>{title}</span>
+          <span className="rounded bg-slate-100 px-2 py-0.5 text-slate-600 num-tabular">{shotCount}</span>
+        </div>
+      ) : null}
+      <div className={frameClassName}>
+        <ShotPitchSvg layers={layers} showHeatmap={showHeatmap} activeShotId={activeShotId} />
+        {shotCount === 0 ? (
+          <div className="absolute inset-0 grid place-items-center bg-emerald-950/35 text-sm font-semibold text-white">
+            <I18nText en="No shots for current filters" ru="Нет ударов по текущим фильтрам" />
+          </div>
+        ) : null}
+      </div>
+    </div>
+  );
+}
+
+function ShotPitchSvg({ layers, showHeatmap, activeShotId }: { layers: ShotLayer[]; showHeatmap: boolean; activeShotId: string | null }) {
+  return (
+    <svg className="h-full w-full" viewBox="0 0 680 360" role="img" aria-label="Pitch">
+      <defs>
+        <pattern id="pitch-stripes" width="136" height="360" patternUnits="userSpaceOnUse">
+          <rect width="68" height="360" fill="#047857" opacity="0.35" />
+          <rect x="68" width="68" height="360" fill="#065f46" opacity="0.28" />
+        </pattern>
+        <filter id="shot-shadow" x="-50%" y="-50%" width="200%" height="200%">
+          <feDropShadow dx="0" dy="1.2" stdDeviation="1.4" floodColor="#052e16" floodOpacity="0.36" />
+        </filter>
+        <filter id="shot-heat-blur" x="-35%" y="-35%" width="170%" height="170%">
+          <feGaussianBlur stdDeviation="16" />
+        </filter>
+      </defs>
+
+      <rect width="680" height="360" fill="#047857" />
+      <rect width="680" height="360" fill="url(#pitch-stripes)" />
+      <g fill="none" stroke="rgba(255,255,255,0.76)" strokeLinecap="round" strokeWidth="3">
+        <rect x="18" y="18" width="644" height="324" />
+        <path d="M253 18V174H427V18" />
+        <path d="M296 18V76H384V18" />
+        <path d="M312 18V8H368V18" />
+        <path d="M340 18V342" strokeOpacity="0.16" />
+        <path d="M18 180H662" strokeOpacity="0.12" />
+        <circle cx="340" cy="132" r="4" fill="rgba(255,255,255,0.82)" stroke="none" />
+        <path d="M270 174a70 70 0 0 0 140 0" strokeOpacity="0.5" />
+      </g>
+      <g fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="1.5">
+        <path d="M18 72H662" />
+        <path d="M18 126H662" />
+        <path d="M18 234H662" />
+        <path d="M18 288H662" />
+      </g>
+
+      {showHeatmap ? <ShotHeatmap layers={layers} /> : null}
+
+      {layers.map((layer) =>
+        layer.shots.map((shot, index) => (
+          <ShotMarker key={`${layer.key}-${shot.id}-${index}`} layer={layer} shot={shot} active={shot.id === activeShotId} />
+        ))
+      )}
+    </svg>
+  );
+}
+
+function ShotHeatmap({ layers }: { layers: ShotLayer[] }) {
+  return (
+    <g filter="url(#shot-heat-blur)" opacity="0.95" style={{ mixBlendMode: "screen" }}>
+      {layers.map((layer) =>
+        layer.shots.map((shot, index) => {
+          const marker = shotMarkerGeometry(shot);
+          const radius = 28 + Math.sqrt(Math.max(shot.xg ?? 0.03, 0.03)) * 52;
+          const opacity = heatmapOpacity(layer.tone, shot);
+          return (
+            <circle
+              key={`heat-${layer.key}-${shot.id}-${index}`}
+              cx={marker.x}
+              cy={marker.y}
+              r={radius}
+              fill={heatmapFill(layer.tone)}
+              opacity={opacity}
+            />
+          );
+        })
+      )}
+    </g>
+  );
+}
+
+function ShotMarker({ layer, shot, active }: { layer: ShotLayer; shot: ShotMapShot; active: boolean }) {
+  const marker = shotMarkerGeometry(shot);
+  const fill = markerFill(shot);
+  const stroke = markerStroke(layer.tone);
+  const strokeWidth = layer.tone === "player" ? 3 : 2;
+  const opacity = layer.tone === "conceded" ? 0.86 : 0.96;
+
+  // Shape by body part / situation.
+  const isHead = (shot.body_part ?? "").toLowerCase().includes("head");
+  const isSetPiece = (shot.situation ?? "").toLowerCase().includes("penalty") || (shot.event_type ?? "").toLowerCase().includes("penalty");
+
+  return (
+    <g className="transition-transform hover:scale-125" filter="url(#shot-shadow)" opacity={opacity} style={{ transformOrigin: `${marker.x}px ${marker.y}px` }}>
+      <title>{shotTooltip(shot, layer.label)}</title>
+      {active ? (
+        <>
+          <circle cx={marker.x} cy={marker.y} r={marker.radius + 13} fill="#fef08a" opacity="0.2" />
+          <circle cx={marker.x} cy={marker.y} r={marker.radius + 8} fill="none" stroke="#fef08a" strokeWidth="4" />
+        </>
+      ) : null}
+      {isHead ? (
+        <rect
+          x={marker.x - marker.radius}
+          y={marker.y - marker.radius}
+          width={marker.radius * 2}
+          height={marker.radius * 2}
+          rx="2"
+          fill={fill}
+          stroke={stroke}
+          strokeWidth={strokeWidth}
+          transform={`rotate(45 ${marker.x} ${marker.y})`}
+        />
+      ) : (
+        <circle cx={marker.x} cy={marker.y} r={marker.radius} fill={fill} stroke={stroke} strokeWidth={strokeWidth} />
+      )}
+      {isSetPiece ? (
+        <circle cx={marker.x} cy={marker.y} r={marker.radius + 4} fill="none" stroke="#fcd34d" strokeOpacity="0.88" strokeWidth="2" />
+      ) : null}
+      {layer.tone === "player" ? (
+        <circle cx={marker.x} cy={marker.y} r={marker.radius + 6} fill="none" stroke="rgba(236,253,245,0.92)" strokeWidth="2" />
+      ) : null}
+    </g>
+  );
+}
+
+function OutcomeKey({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="inline-flex items-center gap-1">
+      <span className={`inline-block h-2.5 w-2.5 rounded-full border border-white shadow-sm ${color}`} />
+      <span>{label}</span>
+    </span>
+  );
 }
 
 function legendDotClassName(tone: "attacking" | "conceded" | "player") {
@@ -419,8 +646,10 @@ function legendDotClassName(tone: "attacking" | "conceded" | "player") {
 }
 
 const ATTACKING_THIRD_START_X = 100 * 2 / 3;
+const PITCH_WIDTH = 680;
+const PITCH_HEIGHT = 360;
 
-function markerStyle(shot: ShotMapShot) {
+function shotMarkerGeometry(shot: ShotMapShot) {
   const [displayX, displayY] = shotDisplayCoordinates(shot);
   const x = clamp(displayX ?? ATTACKING_THIRD_START_X, ATTACKING_THIRD_START_X, 100);
   const y = clamp(displayY ?? 50, 2, 98);
@@ -428,11 +657,35 @@ function markerStyle(shot: ShotMapShot) {
   const attackingThirdTop = ((100 - x) / (100 - ATTACKING_THIRD_START_X)) * 100;
 
   return {
-    left: `${y}%`,
-    top: `${attackingThirdTop}%`,
-    width: `${size}px`,
-    height: `${size}px`
+    x: (y / 100) * PITCH_WIDTH,
+    y: (attackingThirdTop / 100) * PITCH_HEIGHT,
+    radius: size / 2
   };
+}
+
+function markerFill(shot: ShotMapShot) {
+  if (shot.is_goal) return "#10b981";
+  if (shot.is_blocked) return "#8b5cf6";
+  if (shot.is_on_target) return "#f59e0b";
+  return "#94a3b8";
+}
+
+function markerStroke(tone: "attacking" | "conceded" | "player") {
+  if (tone === "conceded") return "#312e81";
+  if (tone === "player") return "#022c22";
+  return "rgba(255,255,255,0.92)";
+}
+
+function heatmapFill(tone: "attacking" | "conceded" | "player") {
+  if (tone === "conceded") return "#818cf8";
+  if (tone === "player") return "#34d399";
+  return "#fb7185";
+}
+
+function heatmapOpacity(tone: "attacking" | "conceded" | "player", shot: ShotMapShot) {
+  const xgWeight = Math.min(0.22, Math.max(0.07, (shot.xg ?? 0.04) * 0.55));
+  const toneWeight = tone === "player" ? 1.2 : tone === "conceded" ? 0.92 : 1;
+  return xgWeight * toneWeight;
 }
 
 function shotDisplayCoordinates(shot: ShotMapShot): [number | null, number | null] {

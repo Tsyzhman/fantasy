@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { CommandPalette } from "@/components/command-palette";
 import { I18nText } from "@/components/i18n-text";
 import { LanguageToggle } from "@/components/language-toggle";
 import { ModeBrand } from "@/components/mode-brand";
@@ -47,6 +48,7 @@ export function AppHeader({ user }: AppHeaderProps) {
             <HeaderLink href="/mixerr" hoverClassName="hover:bg-white/70" icon={<Crosshair className="h-4 w-4" />}>
               <I18nText en="MiXerr" ru="Миксер" />
             </HeaderLink>
+            <CommandPalette showAdmin={user?.role === "ADMIN"} />
             <LanguageToggle />
             <ThemeToggle />
           </nav>
@@ -104,12 +106,13 @@ export function AppHeader({ user }: AppHeaderProps) {
               ) : null}
             </>
           )}
+          <CommandPalette showAdmin={user?.role === "ADMIN" || isAdmin} />
           {user ? (
             <button
               type="button"
               onClick={logout}
               className="shrink-0 rounded px-3 py-2 text-slate-600 hover:bg-slate-100"
-              title={user.name ?? user.email}
+              aria-label={`Sign out ${user.name ?? user.email}`}
             >
               <I18nText en="Sign out" ru="Выйти" />
             </button>

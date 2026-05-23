@@ -60,3 +60,14 @@ used as a progress monitor.
 
 The web container queues the scheduled 03:00 Europe/Moscow incremental update.
 The `ingestion-worker` container executes queued ingestion jobs.
+
+## League-season retention
+
+The web container also runs shared FotMob season retention at 03:30
+Europe/Moscow on January 1 and July 1. January prunes spring-autumn seasons
+older than the rolling three-year window; July does the same for autumn-spring
+seasons. Preview manually with:
+
+```bash
+docker compose exec web npm run retention:prune-league-seasons -- --dry-run --date=2026-07-01
+```

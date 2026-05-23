@@ -8,7 +8,7 @@ import { MacheteSyncButton } from "@/components/machete/MacheteSyncButton";
 import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
 import { prisma } from "@/lib/db";
 import { leagueSubtitle } from "@/lib/leagues/display";
-import { leagueFlag } from "@/lib/leagues/flags";
+import { LeagueFlag } from "@/components/ui/league-flag";
 import { getSportsRuCalendarSource } from "@/lib/providers/sports-ru-calendar";
 
 export const dynamic = "force-dynamic";
@@ -69,8 +69,9 @@ export default async function BaltikaLeagueSchedulePage({ params }: PageProps) {
 
       <div className="mt-5 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-            {leagueFlag(league)} <I18nText en={leagueSubtitle(league, season?.name ?? "No season")} ru={leagueSubtitle(league, season?.name ?? "Сезон не задан")} />
+          <p className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+            <LeagueFlag league={league} size={18} />
+            <I18nText en={leagueSubtitle(league, season?.name ?? "No season")} ru={leagueSubtitle(league, season?.name ?? "Сезон не задан")} />
           </p>
           <h1 className="mt-2 flex items-center gap-3 text-3xl font-bold text-ink">
             <CalendarDays className="h-8 w-8" />
@@ -99,7 +100,7 @@ export default async function BaltikaLeagueSchedulePage({ params }: PageProps) {
                 rel="noreferrer"
                 className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
               >
-                Sports.ru Fantasy
+                <I18nText en="Sports.ru Fantasy" ru="Sports.ru Fantasy" />
                 <ExternalLink className="h-4 w-4" />
               </a>
               <MacheteSyncButton endpoint={`/api/baltika/leagues/${league.id}/sync-sports-schedule`} variant="secondary">

@@ -3,6 +3,7 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { type FormHTMLAttributes, useRef, useTransition } from "react";
 
+import { I18nText } from "@/components/i18n-text";
 import { cn } from "@/lib/cn";
 
 type AutoSubmitFormProps = FormHTMLAttributes<HTMLFormElement>;
@@ -36,7 +37,6 @@ export function AutoSubmitForm({ children, className, onChange, onSubmit, ...pro
       {...props}
       aria-busy={isPending}
       className={cn("auto-submit-form", className)}
-      data-pending={isPending ? "true" : undefined}
       onSubmit={(event) => {
         event.preventDefault();
         onSubmit?.(event);
@@ -48,6 +48,17 @@ export function AutoSubmitForm({ children, className, onChange, onSubmit, ...pro
         const target = event.target;
 
         if (target instanceof HTMLSelectElement && target.name === "leagueId") {
+          clearNamedControls(form, "season");
+          clearNamedControls(form, "teamId");
+          clearNamedControls(form, "competitionKey");
+          clearNamedControls(form, "attackingTeamId");
+          clearNamedControls(form, "defendingTeamId");
+          clearNamedControls(form, "attackingCompetitionKey");
+          clearNamedControls(form, "defendingCompetitionKey");
+          clearNamedControls(form, "playerId");
+        }
+
+        if (target instanceof HTMLSelectElement && target.name === "season") {
           clearNamedControls(form, "teamId");
           clearNamedControls(form, "competitionKey");
           clearNamedControls(form, "attackingTeamId");
@@ -82,6 +93,14 @@ export function AutoSubmitForm({ children, className, onChange, onSubmit, ...pro
       }}
     >
       {children}
+      <span
+        className={cn("auto-submit-status", !isPending && "sr-only")}
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        {isPending ? <I18nText en="Updating filters" ru="Обновляю фильтры" /> : null}
+      </span>
     </form>
   );
 }

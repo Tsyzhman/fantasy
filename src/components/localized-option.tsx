@@ -33,6 +33,7 @@ export function localizedText(language: Language, en: string, ru: string) {
 }
 
 function subscribeToLanguage(callback: () => void) {
+  if (typeof window === "undefined") return () => {};
   window.addEventListener("storage", callback);
   window.addEventListener(languageChangeEvent, callback);
 
@@ -43,6 +44,7 @@ function subscribeToLanguage(callback: () => void) {
 }
 
 function getLanguageSnapshot(): Language {
+  if (typeof window === "undefined") return defaultLanguage;
   const stored = window.localStorage.getItem("fantasy-language");
   return stored === "ru" || stored === "en" ? stored : defaultLanguage;
 }

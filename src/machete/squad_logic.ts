@@ -34,12 +34,19 @@ export type FantasyPlannerPlayer = {
   valueScore: number;
   roundPoints: number[];
   fixtures: string[];
+  fixtureDifficulties: (number | null)[];
+  baltikaXg?: number | null;
+  baltikaXa?: number | null;
+  baltikaMatchesPlayed?: number | null;
+  baltikaTeamName?: string | null;
 };
 
 export type FantasySquadSelection = {
   playerId: string;
   isStarter: boolean;
   isLocked: boolean;
+  isCaptain: boolean;
+  isViceCaptain: boolean;
   slotIndex: number;
   purchasePrice: number | null;
 };
@@ -74,6 +81,8 @@ export type TransferSuggestion = {
   score: number;
   reason: string;
 };
+
+export type FantasyStarterOptimizationBasis = "next" | "horizon";
 
 export const defaultFantasySquadRules: FantasySquadRules = {
   budgetLimit: 100,
@@ -278,6 +287,8 @@ export function selectionForPlayer(player: FantasyPlannerPlayer, slotIndex: numb
     playerId: player.playerId,
     isStarter,
     isLocked: false,
+    isCaptain: false,
+    isViceCaptain: false,
     slotIndex,
     purchasePrice: player.price
   };
@@ -296,6 +307,84 @@ export function canStartFantasyPlayer(
     nextSelections.push(selectionForPlayer(player, selections.length, true));
   }
   return summarizeFantasySquad(pool, nextSelections, rules, 1).violations.length === 0;
+}
+
+export function optimizeFantasyStarters(input: {
+  pool: FantasyPlannerPlayer[];
+  selections: FantasySquadSelection[];
+  rules: FantasySquadRules;
+  horizon: number;
+  basis?: FantasyStarterOptimizationBasis;
+  respectLocks?: boolean;
+}) {
+  const { pool, selections, rules, horizon, basis = "horizon", respectLocks = true } = input;
+  const playersById = new Map(pool.map((player) => [player.playerId, player]));
+  const selectedPairs = selections
+    .map((selection) => {
+      const player = playersById.get(selection.playerId);
+      return player ? { selection, player } : null;
+    })
+    .filter((pair): pair is { selection: FantasySquadSelection; player: FantasyPlannerPlayer } => Boolean(pair))
+    .filter((pair) => pair.player.positionGroup !== "UNK");
+
+  if (selectedPairs.length < rules.starterSize) return null;
+
+  const scorePlayer = (player: FantasyPlannerPlayer) => (basis === "next" ? nextFantasyPoints(player) : playerHorizonPoints(player, horizon));
+  const forcedStarterIds = new Set(
+    selectedPairs
+      .filter((pair) => respectLocks && pair.selection.isLocked && pair.selection.isStarter)
+      .map((pair) => pair.player.playerId)
+  );
+  const forcedBenchIds = new Set(
+    selectedPairs
+      .filter((pair) => respectLocks && pair.selection.isLocked && !pair.selection.isStarter)
+      .map((pair) => pair.player.playerId)
+  );
+  const formationOptions: Array<Record<Exclude<FantasyPositionGroup, "UNK">, number>> = [];
+
+  for (let def = rules.starterPositionLimits.DEF.min; def <= rules.starterPositionLimits.DEF.max; def += 1) {
+    for (let mid = rules.starterPositionLimits.MID.min; mid <= rules.starterPositionLimits.MID.max; mid += 1) {
+      for (let fwd = rules.starterPositionLimits.FWD.min; fwd <= rules.starterPositionLimits.FWD.max; fwd += 1) {
+        if (def + mid + fwd !== rules.starterSize - 1) continue;
+        formationOptions.push({ GK: 1, DEF: def, MID: mid, FWD: fwd });
+      }
+    }
+  }
+
+  let best: { ids: Set<string>; score: number } | null = null;
+  for (const formation of formationOptions) {
+    const starterIds = new Set<string>();
+    let score = 0;
+    let valid = true;
+
+    for (const position of ["GK", "DEF", "MID", "FWD"] as const) {
+      const targetCount = formation[position];
+      const forced = selectedPairs
+        .filter((pair) => pair.player.positionGroup === position && forcedStarterIds.has(pair.player.playerId))
+        .sort((left, right) => scorePlayer(right.player) - scorePlayer(left.player));
+      const candidates = selectedPairs
+        .filter((pair) => pair.player.positionGroup === position && !forcedStarterIds.has(pair.player.playerId) && !forcedBenchIds.has(pair.player.playerId))
+        .sort((left, right) => scorePlayer(right.player) - scorePlayer(left.player));
+
+      if (forced.length > targetCount || forced.length + candidates.length < targetCount) {
+        valid = false;
+        break;
+      }
+
+      for (const pair of [...forced, ...candidates.slice(0, targetCount - forced.length)]) {
+        starterIds.add(pair.player.playerId);
+        score += scorePlayer(pair.player);
+      }
+    }
+
+    if (!valid || starterIds.size !== rules.starterSize) continue;
+    const optimized = selections.map((selection) => ({ ...selection, isStarter: starterIds.has(selection.playerId) }));
+    if (summarizeFantasySquad(pool, optimized, rules, horizon).violations.length > 0) continue;
+    if (!best || score > best.score) best = { ids: starterIds, score };
+  }
+
+  if (!best) return null;
+  return selections.map((selection) => ({ ...selection, isStarter: best.ids.has(selection.playerId) }));
 }
 
 export function buildTransferSuggestions(input: {

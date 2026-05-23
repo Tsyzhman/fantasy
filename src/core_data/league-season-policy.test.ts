@@ -4,6 +4,8 @@ import test from "node:test";
 import {
   AUTUMN_SPRING_START_SEASON,
   SPRING_AUTUMN_START_SEASON,
+  enabledLeagueIngestionConfigs,
+  leagueIngestionConfig,
   scopesForInitialBackfill,
   scopesForCurrentSeasonLeagueBackfill,
   scopesForIncrementalUpdate,
@@ -73,6 +75,21 @@ test("quick current league backfill follows new season after summer rollover", (
   const scopes = scopesForCurrentSeasonLeagueBackfill(47, referenceDate);
 
   assert.deepEqual(scopes.map((scope) => [scope.league_id, scope.season]), [[47, "2026/2027"]]);
+});
+
+test("production ingestion excludes non-target leagues", () => {
+  const enabledIds = new Set(enabledLeagueIngestionConfigs().map((league) => league.league_id));
+
+  assert.equal(leagueIngestionConfig.length, 81);
+  assert.equal(enabledIds.size, 43);
+
+  for (const leagueId of [44, 47, 48, 50, 77, 86, 108, 110, 140, 146]) {
+    assert.equal(enabledIds.has(leagueId), true);
+  }
+
+  for (const leagueId of [109, 111, 119, 130, 163, 165, 264, 441, 536, 9806, 10195]) {
+    assert.equal(enabledIds.has(leagueId), false);
+  }
 });
 
 function config(league_id: number, name: string, calendar_type: LeagueIngestionConfig["calendar_type"]): LeagueIngestionConfig {

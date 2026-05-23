@@ -3,9 +3,36 @@
 @tailwind utilities;
 
 :root {
+  --brand-50: #eef2ff;
+  --brand-100: #e0e7ff;
+  --brand-500: #6366f1;
+  --brand-600: #4f46e5;
+  --brand-700: #4338ca;
+  --brand-fg: #ffffff;
+  --surface: #ffffff;
+  --surface-muted: #f8fafc;
+  --border-subtle: rgba(148, 163, 184, 0.32);
+
   color-scheme: light;
   background: #f5f7fb;
   color: #18202f;
+}
+
+:root[data-theme="dark"] {
+  --brand-50: rgba(99, 102, 241, 0.14);
+  --brand-100: rgba(99, 102, 241, 0.2);
+  --brand-500: #818cf8;
+  --brand-600: #818cf8;
+  --brand-700: #6366f1;
+  --brand-fg: #0b1120;
+  --surface: rgba(18, 26, 40, 0.96);
+  --surface-muted: #172133;
+  --border-subtle: rgba(148, 163, 184, 0.18);
+}
+
+.num-tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
 }
 
 * {
@@ -43,8 +70,27 @@ select:focus-visible,
 textarea:focus-visible,
 summary:focus-visible,
 [tabindex]:focus-visible {
-  outline: 2px solid #38bdf8;
+  outline: 2px solid var(--brand-500);
   outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Skip-to-content link */
+.skip-link {
+  position: absolute;
+  left: -9999px;
+  top: -9999px;
+}
+
+.skip-link:focus {
+  left: 0.5rem;
+  top: 0.5rem;
+  z-index: 100;
+  background: var(--brand-600);
+  color: var(--brand-fg);
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-weight: 600;
 }
 
 :root[data-theme="dark"] {
@@ -187,6 +233,16 @@ summary:focus-visible,
   background-color: rgba(241, 245, 249, 0.86);
 }
 
+.sortable-table th[data-sortable="true"]:focus-visible {
+  outline: 2px solid var(--brand-500, #6366f1);
+  outline-offset: -2px;
+  background-color: rgba(241, 245, 249, 0.86);
+}
+
+:root[data-theme="dark"] .sortable-table th[data-sortable="true"]:focus-visible {
+  background-color: rgba(255, 255, 255, 0.08);
+}
+
 .sortable-table th[data-sortable="true"]::after {
   display: inline-block;
   margin-left: 0.35rem;
@@ -206,18 +262,198 @@ summary:focus-visible,
   opacity: 0.85;
 }
 
+:root[data-theme="dark"] .sortable-table th[data-sortable="true"]:hover {
+  background-color: rgba(255, 255, 255, 0.06);
+}
+
+/* Sticky first column for the dense player tables. */
+.sticky-first-col thead th:first-child,
+.sticky-first-col tbody td:first-child {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background-clip: padding-box;
+}
+
+.sticky-first-col thead th:first-child {
+  z-index: 3;
+  background-color: #f8fafc;
+}
+
+.sticky-first-col tbody tr:hover td:first-child {
+  background-color: #f8fafc;
+}
+
+.sticky-first-col tbody td:first-child {
+  background-color: #ffffff;
+  box-shadow: 1px 0 0 rgba(148, 163, 184, 0.18);
+}
+
+:root[data-theme="dark"] .sticky-first-col thead th:first-child {
+  background-color: #172133;
+}
+
+:root[data-theme="dark"] .sticky-first-col tbody td:first-child {
+  background-color: rgba(18, 26, 40, 0.98);
+  box-shadow: 1px 0 0 rgba(148, 163, 184, 0.12);
+}
+
+:root[data-theme="dark"] .sticky-first-col tbody tr:hover td:first-child {
+  background-color: #202c40;
+}
+
+/* Score heat-bar — paints a horizontal gradient behind the score cell based on
+   the player's percentile rank (0..1). The actual percentile is set inline. */
+.score-heat {
+  position: relative;
+  isolation: isolate;
+}
+
+.score-heat::before {
+  position: absolute;
+  inset: 4px 4px 4px 4px;
+  z-index: -1;
+  content: "";
+  border-radius: 4px;
+  background: linear-gradient(90deg,
+    color-mix(in oklab, var(--heat-color, #10b981) 18%, transparent) 0%,
+    color-mix(in oklab, var(--heat-color, #10b981) calc(var(--heat-fill, 0) * 60%), transparent) calc(var(--heat-fill, 0) * 100%),
+    transparent calc(var(--heat-fill, 0) * 100% + 1%));
+  opacity: 0.78;
+}
+
+:root[data-theme="dark"] .score-heat::before {
+  opacity: 0.56;
+}
+
+/* Brand button helper — gives a single accent for primary actions. */
+.btn-brand {
+  background: var(--brand-600);
+  color: var(--brand-fg);
+}
+
+.btn-brand:hover {
+  background: var(--brand-700);
+}
+
+/* Hover-card. */
+.hover-card-trigger {
+  position: relative;
+  display: inline-block;
+}
+
+.hover-card-trigger .hover-card-panel {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  z-index: 30;
+  margin-top: 0.4rem;
+  min-width: 240px;
+  max-width: 320px;
+  padding: 0.75rem;
+  border-radius: 8px;
+  background: var(--surface);
+  color: inherit;
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 14px 40px rgba(15, 23, 42, 0.18);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 120ms ease;
+}
+
+:root[data-theme="dark"] .hover-card-trigger .hover-card-panel {
+  border-color: rgba(148, 163, 184, 0.26);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.5);
+}
+
+.hover-card-trigger:hover .hover-card-panel,
+.hover-card-trigger:focus-within .hover-card-panel {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Active filter chips bar. */
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: var(--brand-50);
+  color: var(--brand-700);
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid color-mix(in oklab, var(--brand-500) 32%, transparent);
+}
+
+.chip-remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  color: inherit;
+}
+
+.chip-remove:hover {
+  background: color-mix(in oklab, var(--brand-600) 18%, transparent);
+}
+
+:root[data-theme="dark"] .chip {
+  background: rgba(99, 102, 241, 0.16);
+  border-color: rgba(129, 140, 248, 0.36);
+  color: #c7d2fe;
+}
+
+:root[data-theme="dark"] .chip-remove:hover {
+  background: rgba(129, 140, 248, 0.22);
+}
+
+/* FDR pill — 1..5 colors. */
+.fdr-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 0.25rem;
+  border-radius: 4px;
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: #ffffff;
+  font-variant-numeric: tabular-nums;
+}
+
+.fdr-1 { background: #16a34a; }
+.fdr-2 { background: #84cc16; color: #0b1120; }
+.fdr-3 { background: #f59e0b; color: #1f1209; }
+.fdr-4 { background: #f97316; }
+.fdr-5 { background: #dc2626; }
+.fdr-na { background: #94a3b8; }
+
+:root[data-theme="dark"] .fdr-pill {
+  box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.32);
+}
+
 .auto-submit-form {
   position: relative;
 }
 
-.auto-submit-form[data-pending="true"]::after {
+.auto-submit-status {
   position: absolute;
   right: 0.75rem;
   bottom: 0.75rem;
   border-radius: 999px;
   background: rgba(15, 23, 42, 0.88);
   color: #ffffff;
-  content: "Updating...";
   font-size: 0.72rem;
   font-weight: 700;
   letter-spacing: 0;
@@ -225,8 +461,9 @@ summary:focus-visible,
   pointer-events: none;
 }
 
-:root[data-language="ru"] .auto-submit-form[data-pending="true"]::after {
-  content: "Обновляю...";
+:root[data-theme="dark"] .auto-submit-status {
+  background: rgba(226, 232, 240, 0.92);
+  color: #0f172a;
 }
 
 .team-logo-frame {

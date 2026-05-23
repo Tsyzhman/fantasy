@@ -50,6 +50,52 @@ const tournamentMaxMatches = new Map<number, number>([
   [299, 260]
 ]);
 
+const disabledLeagueIngestionIds = new Set([
+  // National-team competitions except World Cup, EURO, and Copa America.
+  "uefa-nations-league-a",
+  "world-cup-qualification-uefa",
+  "world-cup-qualification-conmebol",
+
+  // Non-European club competitions and domestic leagues.
+  "copa-libertadores",
+  "copa-sudamericana",
+  "recopa-sudamericana",
+  "argentina-liga-profesional",
+  "copa-argentina",
+  "copa-de-la-liga-profesional",
+  "brazil-serie-a",
+  "brazil-serie-b",
+  "copa-do-brasil",
+  "chile-primera-division",
+  "colombia-primera-a",
+  "uruguay-primera-division",
+  "paraguay-division-profesional",
+  "peru-liga-1",
+  "ecuador-serie-a",
+  "bolivia-primera-division",
+  "venezuela-primera-division",
+  "mls",
+  "usl-championship",
+  "usl-league-one",
+  "us-open-cup",
+  "mls-next-pro",
+  "saudi-pro-league",
+  "saudi-first-division",
+  "kings-cup",
+  "saudi-super-cup",
+
+  // Lower divisions outside the top-five European second tiers, plus Ukraine.
+  "england-league-two",
+  "liga-portugal-2",
+  "eerste-divisie",
+  "turkish-1-lig",
+  "belgian-first-division-b",
+  "scottish-championship",
+  "swiss-challenge-league",
+  "austrian-2-liga",
+  "ukrainian-premier-league"
+]);
+
 export const leagueIngestionConfig: readonly LeagueIngestionConfig[] = macheteLeagueCatalog.map((league) => {
   const leagueId = Number(league.fotMobLeagueId);
   const calendarType = tournamentLeagueIds.has(leagueId) ? "tournament" : springAutumnLeagueIds.has(leagueId) ? "spring_autumn" : "autumn_spring";
@@ -66,7 +112,7 @@ export const leagueIngestionConfig: readonly LeagueIngestionConfig[] = macheteLe
     name: league.name,
     calendar_type: calendarType,
     initial_start_season: initialStartSeason,
-    enabled: true,
+    enabled: !disabledLeagueIngestionIds.has(league.id),
     explicit_seasons: explicitSeasons,
     max_matches: tournamentMaxMatches.get(leagueId) ?? 700,
     max_date_span_days: calendarType === "spring_autumn" ? 400 : calendarType === "tournament" ? 450 : 450

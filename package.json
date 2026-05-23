@@ -23,6 +23,7 @@
     "ingestion:worker": "tsx scripts/ingestion-runner.ts worker",
     "ingestion:reparse-raw": "tsx scripts/ingestion-runner.ts reparse-raw",
     "ingestion:import-payloads": "tsx scripts/ingestion-runner.ts import-payloads",
+    "retention:prune-league-seasons": "tsx scripts/prune-old-league-seasons.ts",
     "fotmob:smoke": "tsx scripts/fotmob-smoke.ts",
     "fotmob:inspect": "tsx scripts/fotmob-inspect.ts",
     "fotmob:reset": "tsx scripts/reset-fotmob-matches.ts",

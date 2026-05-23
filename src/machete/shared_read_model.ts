@@ -60,6 +60,7 @@ export type SharedMachetePlayerRow = {
   fantasyScore: number | null;
   scoringScore: number | null;
   alternativeScore: number | null;
+  recentFp: number[];
 };
 
 export type SharedPlayerRowsScope = {
@@ -80,6 +81,22 @@ type SharedTeamMatchRef = {
 };
 
 export async function loadSharedLeagueOptions(prisma: PrismaClient): Promise<SharedLeagueSeasonOption[]> {
+  const options = await loadSharedLeagueSeasonOptions(prisma);
+  const latestByLeagueId = new Map<string, SharedLeagueSeasonOption>();
+  for (const option of options) {
+    const key = String(option.leagueId);
+    const current = latestByLeagueId.get(key);
+    if (!current || (option.isCurrent && !current.isCurrent) || (!current.isCurrent && !option.isCurrent && seasonRank(option.season) > seasonRank(current.season))) {
+      latestByLeagueId.set(key, option);
+    }
+  }
+
+  return [...latestByLeagueId.values()].sort((left, right) =>
+    compareMacheteLeagues(leagueDisplayInput(left), leagueDisplayInput(right)) || seasonRank(right.season) - seasonRank(left.season)
+  );
+}
+
+export async function loadSharedLeagueSeasonOptions(prisma: PrismaClient): Promise<SharedLeagueSeasonOption[]> {
   const rows = await prisma.leagueSeason.findMany({
     where: {
       teams: {
@@ -94,16 +111,7 @@ export async function loadSharedLeagueOptions(prisma: PrismaClient): Promise<Sha
     orderBy: [{ isCurrent: "desc" }, { updatedAt: "desc" }]
   });
 
-  const latestByLeagueId = new Map<string, (typeof rows)[number]>();
-  for (const row of rows) {
-    const key = String(row.leagueId);
-    const current = latestByLeagueId.get(key);
-    if (!current || (row.isCurrent && !current.isCurrent) || (!current.isCurrent && !row.isCurrent && seasonRank(row.season) > seasonRank(current.season))) {
-      latestByLeagueId.set(key, row);
-    }
-  }
-
-  return [...latestByLeagueId.values()]
+  return rows
     .map((row) => {
       const providerLeagueId = String(row.leagueId);
       const name = row.name ?? row.league.name;
@@ -131,11 +139,15 @@ export async function loadSharedLeagueOptions(prisma: PrismaClient): Promise<Sha
     );
 }
 
-export async function loadSharedLeagueSeason(prisma: PrismaClient, rawLeagueId: string | number | bigint) {
+export async function loadSharedLeagueSeason(prisma: PrismaClient, rawLeagueId: string | number | bigint, rawSeason?: string | null) {
   const leagueId = parseSharedBigInt(rawLeagueId);
   if (!leagueId) return null;
-  const options = await loadSharedLeagueOptions(prisma);
-  return options.find((option) => option.leagueId === leagueId) ?? null;
+  const options = (await loadSharedLeagueSeasonOptions(prisma)).filter((option) => option.leagueId === leagueId);
+  if (rawSeason) {
+    const exactSeason = options.find((option) => option.season === rawSeason);
+    if (exactSeason) return exactSeason;
+  }
+  return defaultSharedLeagueSeason(options);
 }
 
 export async function loadSharedTeamCompetitionOptions(prisma: PrismaClient, teamId: bigint): Promise<SharedTeamCompetitionOption[]> {
@@ -378,6 +390,10 @@ export async function loadSharedMachetePlayerRows(
   );
 
   const matchIdsByTeamScope = new Map([...matchRefsByTeamScope.entries()].map(([key, matches]) => [key, matches.map((match) => match.id)]));
+  const matchDateById = new Map<string, Date | null>();
+  for (const matches of matchRefsByTeamScope.values()) {
+    for (const match of matches) matchDateById.set(String(match.id), match.matchDate);
+  }
   const limitedMatchIdsByTeam = groupScopeMatchIdsByTeam(teamScopes.values(), matchRefsByTeamScope, input.matchWindow);
   const allMatchIds = uniqueBigints([...matchIdsByTeamScope.values()].flat());
   const scopedMatchIds = input.combineTeamCompetitions && input.matchWindow.kind === "last" ? uniqueBigints([...limitedMatchIdsByTeam.values()].flat()) : allMatchIds;
@@ -408,7 +424,7 @@ export async function loadSharedMachetePlayerRows(
         const playerStats = (statsByTeamPlayer.get(teamPlayerKey(first.teamId, first.playerId)) ?? []).filter((stat) => allowedMatchIds.has(String(stat.matchId)));
         const position = firstNonEmpty(rows.map((row) => row.position));
         const leagueNames = uniqueStrings(rows.map(leagueNameForRosterRow));
-        const aggregate = aggregateSharedStats(playerStats, position, scoringModel);
+        const aggregate = aggregateSharedStats(playerStats, position, scoringModel, matchDateById);
 
         return {
           id: `combined:${first.teamId}:${first.playerId}:${rows.map((row) => `${row.leagueId}:${row.season}`).join("|")}`,
@@ -430,7 +446,7 @@ export async function loadSharedMachetePlayerRows(
       const teamKey = teamScopeKey(row.leagueId, row.season, row.teamId);
       const allowedMatchIds = new Set((matchIdsByTeamScope.get(teamKey) ?? []).map(String));
       const playerStats = (statsByTeamPlayer.get(teamPlayerKey(row.teamId, row.playerId)) ?? []).filter((stat) => allowedMatchIds.has(String(stat.matchId)));
-      const aggregate = aggregateSharedStats(playerStats, row.position, scoringModel);
+      const aggregate = aggregateSharedStats(playerStats, row.position, scoringModel, matchDateById);
       const leagueName = leagueNameForRosterRow(row);
 
       return {
@@ -596,6 +612,10 @@ export function seasonRank(season: string) {
   return endYear * 10_000 + startYear;
 }
 
+function defaultSharedLeagueSeason(options: SharedLeagueSeasonOption[]) {
+  return options.find((option) => option.isCurrent) ?? options[0] ?? null;
+}
+
 async function loadStatsForMatchIds(prisma: PrismaClient, matchIds: bigint[], teamIds: bigint[] = [], playerIds: bigint[] = []) {
   if (matchIds.length === 0) return [];
 
@@ -620,7 +640,14 @@ function groupStatsByTeamPlayer(stats: MatchPlayerStatRecord[]) {
   return grouped;
 }
 
-function aggregateSharedStats(stats: MatchPlayerStatRecord[], position: string | null | undefined, model: ActiveScoringModel) {
+const RECENT_FP_WINDOW = 5;
+
+function aggregateSharedStats(
+  stats: MatchPlayerStatRecord[],
+  position: string | null | undefined,
+  model: ActiveScoringModel,
+  matchDateById?: Map<string, Date | null>
+) {
   const matchesPlayed = stats.length;
   const minutesPlayed = sum(stats.map((stat) => stat.minutes));
   const goals = sum(stats.map((stat) => stat.goals));
@@ -675,6 +702,8 @@ function aggregateSharedStats(stats: MatchPlayerStatRecord[], position: string |
   };
   const positionGroup = machetePositionGroup(position);
 
+  const recentFp = computeRecentFp(stats, positionGroup, model, matchDateById);
+
   return {
     matchesPlayed,
     minutesPlayed,
@@ -686,7 +715,66 @@ function aggregateSharedStats(stats: MatchPlayerStatRecord[], position: string |
     averageRating,
     fantasyScore: calculateFantasyScore(rawMetrics, positionGroup, model),
     scoringScore: calculateScoringScore(rawMetrics, positionGroup, model),
-    alternativeScore: calculateAlternativeScore(rawMetrics, positionGroup, model)
+    alternativeScore: calculateAlternativeScore(rawMetrics, positionGroup, model),
+    recentFp
+  };
+}
+
+function computeRecentFp(
+  stats: MatchPlayerStatRecord[],
+  positionGroup: string | null,
+  model: ActiveScoringModel,
+  matchDateById?: Map<string, Date | null>
+): number[] {
+  if (stats.length === 0) return [];
+
+  const ordered = matchDateById
+    ? [...stats].sort((left, right) => dateMs(matchDateById.get(String(left.matchId)) ?? null) - dateMs(matchDateById.get(String(right.matchId)) ?? null))
+    : stats;
+  const recent = ordered.slice(-RECENT_FP_WINDOW);
+
+  return recent
+    .map((stat) => {
+      const rawMetrics = perMatchRawMetrics(stat);
+      const value = calculateScoringScore(rawMetrics, positionGroup, model);
+      return typeof value === "number" && Number.isFinite(value) ? value : null;
+    })
+    .filter((value): value is number => value !== null);
+}
+
+function perMatchRawMetrics(stat: MatchPlayerStatRecord) {
+  const minutes = stat.minutes ?? 0;
+  const recoveries = readPayloadNumber(stat.statsPayload, ["recoveries", "possessionRecoveries", "possession_recoveries"]);
+  const cleanSheet = stat.cleanSheet === true ? 1 : 0;
+
+  return {
+    matches_played: 1,
+    minutes_played: minutes,
+    appearances_60: minutes >= 60 ? 1 : 0,
+    full_matches: minutes >= 90 ? 1 : 0,
+    goals: stat.goals ?? 0,
+    assists: stat.assists ?? 0,
+    xg: stat.xg ?? 0,
+    xa: stat.xa ?? 0,
+    xgot: stat.xgot ?? 0,
+    shots: stat.shots ?? 0,
+    shots_on_target: stat.shotsOnTarget ?? 0,
+    key_passes: stat.keyPasses ?? 0,
+    chances_created: stat.chancesCreated ?? 0,
+    tackles: stat.tacklesWon ?? 0,
+    tackles_won: stat.tacklesWon ?? 0,
+    interceptions: stat.interceptions ?? 0,
+    clearances: stat.clearances ?? 0,
+    recoveries,
+    possession_recoveries: recoveries,
+    saves: stat.saves ?? 0,
+    goals_conceded: stat.goalsConceded ?? 0,
+    conceded_goals: stat.goalsConceded ?? 0,
+    clean_sheets: cleanSheet,
+    clean_sheet: cleanSheet,
+    yellow_cards: stat.yellowCards ?? 0,
+    red_cards: stat.redCards ?? 0,
+    average_rating: typeof stat.rating === "number" && Number.isFinite(stat.rating) ? stat.rating : 0
   };
 }
 

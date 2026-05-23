@@ -1,15 +1,21 @@
 "use client";
 
-import { Check, Lock, Plus, Save, Search, Sparkles, Star, Trash2, Unlock } from "lucide-react";
-import { useMemo, useState, useTransition } from "react";
+import { Check, Crown, Layers3, ListChecks, Lock, Plus, Save, Search, Sparkles, Star, Trash2, Unlock, Users } from "lucide-react";
+import { type DragEvent, useEffect, useMemo, useState, useTransition } from "react";
 
+import { I18nText } from "@/components/i18n-text";
+import { localizedText, useLanguage } from "@/components/localized-option";
 import { SortableTable } from "@/components/sortable-table";
+import { FdrRow } from "@/components/ui/fdr-pill";
+import { SegmentedControl, type SegmentedOption } from "@/components/ui/segmented-control";
 import { formatDate, formatNumber, formatScore } from "@/lib/format";
+import { cn } from "@/lib/cn";
 import {
   buildTransferSuggestions,
   canStartFantasyPlayer,
   fantasyAddBlockReason,
   nextFantasyPoints,
+  optimizeFantasyStarters,
   playerHorizonPoints,
   selectionForPlayer,
   selectionForNewPlayer,
@@ -40,10 +46,34 @@ type FantasySquadPlannerProps = {
 const positionOrder: FantasyPositionGroup[] = ["GK", "DEF", "MID", "FWD", "UNK"];
 const rosterPositions: Array<Exclude<FantasyPositionGroup, "UNK">> = ["GK", "DEF", "MID", "FWD"];
 const transfersPerRound = 3;
+const squadDragDataType = "application/x-fantasy-player-id";
+const starterRuleMessage = "Starting XI must keep 1 GK, 10 field players, DEF 3-5, MID 2-5, FWD 1-3.";
+
+type MobileTab = "squad" | "pool" | "suggestions";
+type TransferMode = "normal" | "wildcard";
+type StoredSquadCaptains = {
+  captainId: string | null;
+  viceCaptainId: string | null;
+};
+
+type SquadDiff = {
+  changeCount: number;
+  added: number;
+  removed: number;
+  starterChanges: number;
+  lockChanges: number;
+  captainChanges: number;
+  nextDelta: number;
+  horizonDelta: number;
+};
 
 export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, initialSquad, priceStatus }: FantasySquadPlannerProps) {
+  const language = useLanguage();
   const initialHorizon = initialSquad.horizonRounds || 5;
-  const [selections, setSelections] = useState<FantasySquadSelection[]>(() => normalizeInitialSelections(initialSquad.selections, players, rules));
+  const initialSelections = useMemo(() => normalizeInitialSelections(initialSquad.selections, players, rules), [initialSquad.selections, players, rules]);
+  const captainStorageKey = `fantasy-squad-captains:${leagueId}:${season}`;
+  const [selections, setSelections] = useState<FantasySquadSelection[]>(() => initialSelections);
+  const [savedSelections, setSavedSelections] = useState<FantasySquadSelection[]>(() => initialSelections);
   const [horizon, setHorizon] = useState(initialHorizon);
   const [query, setQuery] = useState("");
   const [positionFilter, setPositionFilter] = useState("ALL");
@@ -51,12 +81,21 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
   const [onlyAffordable, setOnlyAffordable] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [mobileTab, setMobileTab] = useState<MobileTab>("squad");
+  const [draggedPlayerId, setDraggedPlayerId] = useState<string | null>(null);
+  const [transferMode, setTransferMode] = useState<TransferMode>("normal");
 
   const selectionsByPlayerId = useMemo(() => new Map(selections.map((selection) => [selection.playerId, selection])), [selections]);
+  const selectedPlayerIds = useMemo(() => new Set(selections.map((selection) => selection.playerId)), [selections]);
+  const captainId = useMemo(() => selections.find((selection) => selection.isCaptain)?.playerId ?? null, [selections]);
+  const viceCaptainId = useMemo(() => selections.find((selection) => selection.isViceCaptain)?.playerId ?? null, [selections]);
   const summary = useMemo(() => summarizeFantasySquad(players, selections, rules, horizon), [players, selections, rules, horizon]);
+  const savedSummary = useMemo(() => summarizeFantasySquad(players, savedSelections, rules, horizon), [players, savedSelections, rules, horizon]);
+  const squadDiff = useMemo(() => buildSquadDiff(savedSelections, selections, savedSummary, summary), [savedSelections, selections, savedSummary, summary]);
+  const transferLimit = transferMode === "normal" ? transfersPerRound : rules.squadSize;
   const suggestions = useMemo(
-    () => buildTransferSuggestions({ pool: players, selections, rules, horizon, transferCount: transfersPerRound }),
-    [players, selections, rules, horizon]
+    () => buildTransferSuggestions({ pool: players, selections, rules, horizon, transferCount: transferLimit }),
+    [players, selections, rules, horizon, transferLimit]
   );
   const filteredPlayers = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -76,6 +115,32 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
       .filter((player) => (onlyAffordable ? fantasyAddBlockReason(player, players, selections, rules) === null || selectionsByPlayerId.has(player.playerId) : true))
       .slice(0, 140);
   }, [onlyAffordable, players, positionFilter, query, rules, selections, selectionsByPlayerId, starterPoolFilter]);
+
+  useEffect(() => {
+    const handle = window.setTimeout(() => {
+      if (captainId || viceCaptainId) {
+        writeStoredSquadCaptains(captainStorageKey, { captainId, viceCaptainId });
+        return;
+      }
+      const storedCaptains = readStoredSquadCaptains(captainStorageKey, selectedPlayerIds);
+      if (!storedCaptains.captainId && !storedCaptains.viceCaptainId) return;
+      setSelections((current) => {
+        const next = withCaptainState(current, storedCaptains.captainId, storedCaptains.viceCaptainId);
+        if (!next.some((selection) => selection.isCaptain || selection.isViceCaptain)) {
+          writeStoredSquadCaptains(captainStorageKey, { captainId: null, viceCaptainId: null });
+          return current;
+        }
+        return next;
+      });
+    }, 0);
+
+    return () => window.clearTimeout(handle);
+  }, [captainId, captainStorageKey, selectedPlayerIds, viceCaptainId]);
+
+  function updateCaptainState(nextCaptainId: string | null, nextViceCaptainId: string | null) {
+    writeStoredSquadCaptains(captainStorageKey, { captainId: nextCaptainId, viceCaptainId: nextViceCaptainId });
+    setSelections((current) => withCaptainState(current, nextCaptainId, nextViceCaptainId));
+  }
 
   function addPlayer(player: FantasyPlannerPlayer) {
     const blockReason = fantasyAddBlockReason(player, players, selections, rules);
@@ -97,21 +162,77 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
 
   function toggleStarter(playerId: string) {
     const selection = selectionsByPlayerId.get(playerId);
+    if (!selection) return;
+    if (selection.isStarter) {
+      movePlayerToBench(playerId);
+      return;
+    }
+
+    movePlayerToStarter(playerId);
+  }
+
+  function movePlayerToStarter(playerId: string) {
+    const selection = selectionsByPlayerId.get(playerId);
     const player = players.find((candidate) => candidate.playerId === playerId);
     if (!selection || !player) return;
     if (selection.isStarter) {
-      setSelections((current) => current.map((item) => (item.playerId === playerId ? { ...item, isStarter: false } : item)));
       setMessage(null);
       return;
     }
 
     const promoted = promoteStarter(player, players, selections, rules, horizon);
     if (!promoted) {
-      setMessage("Starting XI must keep 1 GK, 10 field players, DEF 3-5, MID 2-5, FWD 1-3.");
+      setMessage(starterRuleMessage);
       return;
     }
-    setSelections(promoted);
-    setMessage(null);
+    setSelections(sanitizeCaptainRoles(promoted));
+    setMessage(`${player.name} moved to starting XI.`);
+  }
+
+  function movePlayerToBench(playerId: string) {
+    const selection = selectionsByPlayerId.get(playerId);
+    const player = players.find((candidate) => candidate.playerId === playerId);
+    if (!selection) return;
+    if (!selection.isStarter) {
+      setMessage(null);
+      return;
+    }
+
+    setSelections((current) =>
+      current.map((item) => (item.playerId === playerId ? { ...item, isStarter: false, isCaptain: false, isViceCaptain: false } : item))
+    );
+    setMessage(`${player?.name ?? "Player"} moved to bench.`);
+  }
+
+  function handleDropToStarter(playerId: string) {
+    movePlayerToStarter(playerId);
+    setDraggedPlayerId(null);
+  }
+
+  function handleDropToBench(playerId: string) {
+    movePlayerToBench(playerId);
+    setDraggedPlayerId(null);
+  }
+
+  function toggleCaptain(playerId: string) {
+    const selection = selectionsByPlayerId.get(playerId);
+    if (!selection?.isStarter) {
+      setMessage("Captain must be in the starting XI.");
+      return;
+    }
+    const nextCaptainId = captainId === playerId ? null : playerId;
+    const nextViceCaptainId = viceCaptainId === playerId ? null : viceCaptainId;
+    updateCaptainState(nextCaptainId, nextViceCaptainId);
+  }
+
+  function toggleViceCaptain(playerId: string) {
+    const selection = selectionsByPlayerId.get(playerId);
+    if (!selection?.isStarter) {
+      setMessage("Vice-captain must be in the starting XI.");
+      return;
+    }
+    if (captainId === playerId) return;
+    updateCaptainState(captainId, viceCaptainId === playerId ? null : playerId);
   }
 
   function applySuggestion(suggestion: TransferSuggestion) {
@@ -127,9 +248,23 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
     });
   }
 
+  function autoPickStarters() {
+    const optimized = optimizeFantasyStarters({ pool: players, selections, rules, horizon, basis: "horizon", respectLocks: true });
+    if (!optimized) {
+      setMessage("Could not auto-pick a valid XI with the current squad and locks.");
+      return;
+    }
+
+    const optimizedSummary = summarizeFantasySquad(players, optimized, rules, horizon);
+    const delta = optimizedSummary.projectedHorizon - summary.projectedHorizon;
+    setSelections(sanitizeCaptainRoles(optimized));
+    setMessage(delta > 0.05 ? `Auto-picked XI: ${signedScore(delta)} xFP over ${horizon} rounds.` : "Starting XI is already optimal for this horizon.");
+  }
+
   function saveSquad() {
     startTransition(async () => {
       setMessage(null);
+      const selectionsToSave = sanitizeCaptainRoles(selections);
       const response = await fetch("/api/machete/squads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -138,7 +273,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
           season,
           name: initialSquad.name,
           horizonRounds: horizon,
-          selections
+          selections: selectionsToSave
         })
       });
       const payload = await response.json().catch(() => ({}));
@@ -146,54 +281,85 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
         setMessage(payload?.error?.message ?? "Failed to save squad.");
         return;
       }
-      setMessage(`Saved ${payload.squad?.savedPlayers ?? selections.length} players.`);
+      setSelections(selectionsToSave);
+      setSavedSelections(selectionsToSave.map((selection) => ({ ...selection })));
+      setMessage(`Saved ${payload.squad?.savedPlayers ?? selectionsToSave.length} players.`);
     });
   }
 
+  const mobileTabs: SegmentedOption<MobileTab>[] = [
+    { value: "squad", label: <span className="inline-flex items-center gap-1"><Users className="h-3.5 w-3.5" /><I18nText en="Squad" ru="Состав" /></span> },
+    { value: "pool", label: <span className="inline-flex items-center gap-1"><Layers3 className="h-3.5 w-3.5" /><I18nText en="Pool" ru="Пул" /></span> },
+    { value: "suggestions", label: <span className="inline-flex items-center gap-1"><ListChecks className="h-3.5 w-3.5" /><I18nText en="Tips" ru="Советы" /></span> }
+  ];
+  const transferModeOptions: SegmentedOption<TransferMode>[] = [
+    { value: "normal", label: <I18nText en="Normal" ru="Обычный" /> },
+    { value: "wildcard", label: <I18nText en="Wildcard" ru="Wildcard" /> }
+  ];
+
   return (
     <div className="mt-6 space-y-5">
+      <div className="lg:hidden">
+        <SegmentedControl value={mobileTab} onChange={setMobileTab} options={mobileTabs} className="w-full justify-between" size="sm" />
+      </div>
       <section className="grid grid-cols-1 gap-3 lg:grid-cols-[1.25fr_0.75fr]">
-        <div className="rounded border border-slate-200 bg-white p-4 shadow-soft lg:sticky lg:top-24 lg:self-start">
+        <div className={cn(mobileTab === "squad" ? "block" : "hidden lg:block", "rounded border border-slate-200 bg-white p-4 shadow-soft lg:sticky lg:top-24 lg:self-start")}>
           <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Squad builder</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <I18nText en="Squad builder" ru="Конструктор состава" />
+              </p>
               <h2 className="mt-1 text-2xl font-bold text-ink">{initialSquad.name}</h2>
-              <p className="mt-1 text-sm text-slate-600">
-                {summary.selectedPlayers.length}/{rules.squadSize} players, {summary.starterPlayers.length}/{rules.starterSize} starters, {summary.benchPlayers.length}/{rules.benchSize} bench.
+              <p className="mt-1 text-sm text-slate-600 num-tabular">
+                <I18nText
+                  en={`${summary.selectedPlayers.length}/${rules.squadSize} players · ${summary.starterPlayers.length}/${rules.starterSize} starters · ${summary.benchPlayers.length}/${rules.benchSize} bench`}
+                  ru={`${summary.selectedPlayers.length}/${rules.squadSize} игроков · ${summary.starterPlayers.length}/${rules.starterSize} в старте · ${summary.benchPlayers.length}/${rules.benchSize} на скамейке`}
+                />
               </p>
             </div>
-            <button
-              type="button"
-              onClick={saveSquad}
-              disabled={isPending}
-              className="inline-flex items-center justify-center gap-2 rounded bg-ink px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:opacity-60"
-            >
-              <Save className="h-4 w-4" />
-              {isPending ? "Saving" : "Save squad"}
-            </button>
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={autoPickStarters}
+                className="inline-flex items-center justify-center gap-2 rounded border border-sky-200 bg-sky-50 px-4 py-2 text-sm font-semibold text-sky-800 hover:bg-sky-100"
+              >
+                <Sparkles className="h-4 w-4" />
+                <I18nText en="Auto-pick XI" ru="Автостарт" />
+              </button>
+              <button
+                type="button"
+                onClick={saveSquad}
+                disabled={isPending}
+                className="btn-brand inline-flex items-center justify-center gap-2 rounded px-4 py-2 text-sm font-semibold disabled:opacity-60"
+              >
+                <Save className="h-4 w-4" />
+                {isPending ? <I18nText en="Saving" ru="Сохраняем" /> : <I18nText en="Save squad" ru="Сохранить состав" />}
+              </button>
+            </div>
           </div>
 
-          <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-5">
-            <Metric label="Spent" value={formatNumber(summary.spent, 1)} tone={summary.spent > rules.budgetLimit ? "bad" : "default"} />
-            <Metric label="Bank" value={formatNumber(summary.bank, 1)} tone={summary.bank < 0 ? "bad" : "good"} />
-            <Metric label="Starting XI next" value={formatScore(summary.projectedNext)} tone="good" />
-            <Metric label={`Starting XI ${horizon}R`} value={formatScore(summary.projectedHorizon)} tone="accent" />
-            <Metric label="Sports.ru mapped" value={`${priceStatus.sportsRuPrices}`} />
+          <div className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
+            <Metric prominent label={<I18nText en="Next round" ru="След. тур" />} value={formatScore(summary.projectedNext + (captainBonus(summary, captainId)))} tone="good" />
+            <Metric prominent label={<I18nText en={`Horizon ${horizon}R`} ru={`Горизонт ${horizon}т`} />} value={formatScore(summary.projectedHorizon)} tone="accent" />
+            <Metric prominent label={<I18nText en="Budget" ru="Бюджет" />} value={`${formatNumber(summary.spent, 1)} / ${formatNumber(rules.budgetLimit, 1)}`} tone={summary.spent > rules.budgetLimit ? "bad" : summary.bank < 0 ? "bad" : "default"} />
+            <Metric label={<I18nText en="Bank" ru="Банк" />} value={formatNumber(summary.bank, 1)} tone={summary.bank < 0 ? "bad" : "good"} />
           </div>
+          <SquadDiffBadge diff={squadDiff} horizon={horizon} />
 
           <ol className="mt-4 grid grid-cols-1 gap-2 text-sm md:grid-cols-4">
-            <PlannerStep index={1} title="Choose league" state="done" />
-            <PlannerStep index={2} title="Build squad" state={summary.selectedPlayers.length >= rules.squadSize ? "done" : "active"} />
-            <PlannerStep index={3} title="Fix rules" state={summary.violations.length === 0 ? "done" : "active"} />
-            <PlannerStep index={4} title="Review upgrades" state={suggestions.length > 0 ? "active" : "idle"} />
+            <PlannerStep index={1} title={<I18nText en="Choose league" ru="Выбрать лигу" />} state="done" />
+            <PlannerStep index={2} title={<I18nText en="Build squad" ru="Собрать состав" />} state={summary.selectedPlayers.length >= rules.squadSize ? "done" : "active"} />
+            <PlannerStep index={3} title={<I18nText en="Fix rules" ru="Исправить правила" />} state={summary.violations.length === 0 ? "done" : "active"} />
+            <PlannerStep index={4} title={<I18nText en="Review upgrades" ru="Проверить апгрейды" />} state={suggestions.length > 0 ? "active" : "idle"} />
           </ol>
 
           <div className="mt-4 flex flex-wrap items-center gap-3">
             <label className="text-sm">
-              <span className="mb-1 block text-xs font-semibold uppercase text-slate-500">Forecast</span>
+              <span className="mb-1 block text-xs font-semibold uppercase text-slate-500"><I18nText en="Forecast" ru="Прогноз" /></span>
               <select
                 value={horizon}
                 onChange={(event) => setHorizon(Number(event.target.value))}
+                aria-label={localizedText(language, "Forecast horizon", "Горизонт прогноза")}
                 className="rounded border border-slate-200 px-3 py-2"
               >
                 {rules.horizonOptions.map((option) => (
@@ -204,13 +370,31 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
               </select>
             </label>
             <div className="text-sm">
-              <span className="mb-1 block text-xs font-semibold uppercase text-slate-500">Transfers</span>
+              <span className="mb-1 block text-xs font-semibold uppercase text-slate-500"><I18nText en="Transfers" ru="Трансферы" /></span>
               <div className="rounded border border-slate-200 px-3 py-2 text-slate-700">
-                {transfersPerRound} per round, no carryover
+                {transferMode === "normal" ? (
+                  <I18nText
+                    en={`${transfersPerRound} per round, no carryover`}
+                    ru={`${transfersPerRound} в туре, без переноса`}
+                  />
+                ) : (
+                  <I18nText
+                    en={`Up to ${transferLimit} what-if moves`}
+                    ru={`До ${transferLimit} what-if замен`}
+                  />
+                )}
               </div>
             </div>
-            {priceStatus.lastSyncedAt ? <span className="text-sm text-slate-500">Prices synced {formatDate(priceStatus.lastSyncedAt)}</span> : null}
-            {message ? <span className="rounded bg-amber-50 px-3 py-2 text-sm text-amber-800">{message}</span> : null}
+            <div className="text-sm">
+              <span className="mb-1 block text-xs font-semibold uppercase text-slate-500"><I18nText en="Mode" ru="Режим" /></span>
+              <SegmentedControl value={transferMode} onChange={setTransferMode} options={transferModeOptions} size="sm" />
+            </div>
+            {priceStatus.lastSyncedAt ? (
+              <span className="text-sm text-slate-500">
+                <I18nText en={`Prices synced ${formatDate(priceStatus.lastSyncedAt)}`} ru={`Цены обновлены ${formatDate(priceStatus.lastSyncedAt)}`} />
+              </span>
+            ) : null}
+            {message ? <span role="status" aria-live="polite" className="rounded bg-amber-50 px-3 py-2 text-sm text-amber-800">{message}</span> : null}
           </div>
 
           {summary.violations.length > 0 ? (
@@ -221,14 +405,17 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
           ) : null}
           {rounds.length === 0 ? (
             <div className="mt-4 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-              No upcoming fixtures are loaded for this league season yet, so round projections are zero until schedule ingestion has future matches.
+              <I18nText
+                en="No upcoming fixtures are loaded for this league season yet, so round projections are zero until schedule ingestion has future matches."
+                ru="На сезон этой лиги пока не загружены будущие матчи, поэтому прогноз по турам будет нулевым до загрузки календаря."
+              />
             </div>
           ) : null}
         </div>
 
-        <div className="rounded border border-slate-200 bg-white p-4 shadow-soft">
+        <div className={cn(mobileTab === "suggestions" ? "block" : "hidden lg:block", "rounded border border-slate-200 bg-white p-4 shadow-soft")}>
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Transfer suggestions</h3>
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500"><I18nText en="Transfer suggestions" ru="Подсказки трансферов" /></h3>
             <Sparkles className="h-4 w-4 text-amber-600" />
           </div>
           <div className="mt-3 space-y-2">
@@ -253,16 +440,16 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
                 <p className="mt-1 text-xs text-slate-500">{suggestion.reason}; price {signedNumber(suggestion.priceDelta)}</p>
               </button>
             ))}
-            {suggestions.length === 0 ? <p className="text-sm text-slate-500">No clean upgrade found for the selected filters.</p> : null}
+            {suggestions.length === 0 ? <p className="text-sm text-slate-500"><I18nText en="No clean upgrade found for the selected filters." ru="Для выбранных фильтров чистый апгрейд не найден." /></p> : null}
           </div>
         </div>
       </section>
 
       <section className="rounded border border-slate-200 bg-white p-4 shadow-soft">
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
-          <div>
+          <div className={cn(mobileTab === "squad" ? "block" : "hidden xl:block")}>
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Your squad</h3>
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500"><I18nText en="Your squad" ru="Ваш состав" /></h3>
               <PositionCounts summary={summary.byPosition} rules={rules} />
             </div>
             <SquadPitch
@@ -270,35 +457,45 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
               rules={rules}
               selectionsByPlayerId={selectionsByPlayerId}
               horizon={horizon}
+              captainId={captainId}
+              viceCaptainId={viceCaptainId}
+              draggedPlayerId={draggedPlayerId}
               onRemove={removePlayer}
               onToggleLock={toggleLock}
               onToggleStarter={toggleStarter}
+              onToggleCaptain={toggleCaptain}
+              onToggleVice={toggleViceCaptain}
+              onDragStart={setDraggedPlayerId}
+              onDragEnd={() => setDraggedPlayerId(null)}
+              onDropToStarter={handleDropToStarter}
+              onDropToBench={handleDropToBench}
             />
           </div>
 
-          <div>
+          <div className={cn(mobileTab === "pool" ? "block" : "hidden xl:block")}>
             <div className="mb-3 grid grid-cols-1 gap-2 md:grid-cols-[1fr_auto_auto_auto]">
               <label className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
                   value={query}
                   onChange={(event) => setQuery(event.target.value)}
-                  placeholder="Search player or team"
+                  placeholder={localizedText(language, "Search player or team", "Игрок или команда")}
+                  aria-label={localizedText(language, "Search player or team", "Поиск игрока или команды")}
                   className="w-full rounded border border-slate-200 py-2 pl-9 pr-3 text-xs"
                 />
               </label>
-              <select value={positionFilter} onChange={(event) => setPositionFilter(event.target.value)} className="rounded border border-slate-200 px-3 py-2 text-xs">
-                <option value="ALL">All positions</option>
+              <select value={positionFilter} onChange={(event) => setPositionFilter(event.target.value)} aria-label={localizedText(language, "Position filter", "Фильтр позиции")} className="rounded border border-slate-200 px-3 py-2 text-xs">
+                <option value="ALL">{localizedText(language, "All positions", "Все позиции")}</option>
                 {positionOrder.map((position) => (
                   <option key={position} value={position}>
                     {position}
                   </option>
                 ))}
               </select>
-              <select value={starterPoolFilter} onChange={(event) => setStarterPoolFilter(event.target.value)} className="rounded border border-slate-200 px-3 py-2 text-xs">
-                <option value="ALL">All players</option>
-                <option value="STARTER">In starting XI</option>
-                <option value="BENCH">On bench</option>
+              <select value={starterPoolFilter} onChange={(event) => setStarterPoolFilter(event.target.value)} aria-label={localizedText(language, "Starter pool filter", "Фильтр старта")} className="rounded border border-slate-200 px-3 py-2 text-xs">
+                <option value="ALL">{localizedText(language, "All players", "Все игроки")}</option>
+                <option value="STARTER">{localizedText(language, "In starting XI", "В старте")}</option>
+                <option value="BENCH">{localizedText(language, "On bench", "На скамейке")}</option>
               </select>
               <label className="flex items-center gap-2 rounded border border-slate-200 px-3 py-2 text-xs text-slate-700">
                 <input type="checkbox" checked={onlyAffordable} onChange={(event) => setOnlyAffordable(event.target.checked)} className="h-4 w-4 rounded border-slate-300" />
@@ -320,13 +517,15 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
       {rounds.length > 0 ? (
         <section className="overflow-hidden rounded border border-slate-200 bg-white shadow-soft">
           <div className="border-b border-slate-200 px-4 py-3">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">Round forecast</h3>
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+              <I18nText en="Round forecast" ru="Прогноз по турам" />
+            </h3>
           </div>
           <div className="overflow-x-auto">
             <SortableTable className="min-w-full divide-y divide-slate-200 text-sm">
               <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
                 <tr>
-                  <th className="px-4 py-3">Round</th>
+                  <th className="px-4 py-3"><I18nText en="Round" ru="Тур" /></th>
                   {rounds.map((round) => (
                     <th key={round.id} className="min-w-28 px-4 py-3 text-right">
                       {round.label}
@@ -336,17 +535,21 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
               </thead>
               <tbody>
                 <tr>
-                  <td className="px-4 py-3 font-semibold text-ink">Starting XI FP</td>
+                  <td className="px-4 py-3 font-semibold text-ink">
+                    <I18nText en="Starting XI FP" ru="FP старта" />
+                  </td>
                   {rounds.map((round, index) => (
-                    <td key={round.id} className="px-4 py-3 text-right font-semibold text-emerald-700">
+                    <td key={round.id} className="px-4 py-3 text-right font-semibold text-emerald-700 num-tabular">
                       {formatScore(summary.starterPlayers.reduce((total, player) => total + (player.roundPoints[index] ?? (index === 0 ? player.predictedFp ?? 0 : 0)), 0))}
                     </td>
                   ))}
                 </tr>
                 <tr className="border-t border-slate-100">
-                  <td className="px-4 py-3 text-slate-500">Fixtures</td>
+                  <td className="px-4 py-3 text-slate-500">
+                    <I18nText en="Fixtures" ru="Матчи" />
+                  </td>
                   {rounds.map((round) => (
-                    <td key={round.id} className="px-4 py-3 text-right text-slate-500">
+                    <td key={round.id} className="px-4 py-3 text-right text-slate-500 num-tabular">
                       {round.fixtureCount}
                     </td>
                   ))}
@@ -387,6 +590,7 @@ function PlayerPoolTable({
               <th className="px-3 py-3 text-right">Price</th>
               <th className="px-3 py-3 text-right">Next</th>
               <th className="px-3 py-3 text-right">{horizon}R</th>
+              <th className="px-3 py-3 text-right">W xG</th>
               <th className="px-3 py-3">Fixtures</th>
               <th className="px-3 py-3 text-right">Add</th>
             </tr>
@@ -396,6 +600,11 @@ function PlayerPoolTable({
               const reason = addBlockReason(player);
               const isSelected = selectionsByPlayerId.has(player.playerId);
               const disabled = !isSelected && reason !== null;
+              const fixtureChips = player.fixtures
+                .slice(0, horizon)
+                .map((label, fixtureIdx) => ({ label, difficulty: player.fixtureDifficulties?.[fixtureIdx] ?? null }))
+                .filter((chip) => Boolean(chip.label))
+                .map((chip) => ({ label: compactFixtureLabel(chip.label), difficulty: chip.difficulty, title: chip.label }));
               const fixtures = player.fixtures.slice(0, horizon).filter(Boolean).join(" / ");
               const rowClassName = isSelected
                 ? "bg-slate-50/70 text-slate-400"
@@ -403,6 +612,8 @@ function PlayerPoolTable({
                   ? "bg-slate-50/80 text-slate-400"
                   : "hover:bg-slate-50";
               const muted = isSelected || disabled;
+              const addLabel = disabled ? (reason ?? `Cannot add ${player.name}`) : `Add ${player.name}`;
+              const removeLabel = `Remove ${player.name}`;
 
               return (
                 <tr key={player.playerId} className={rowClassName}>
@@ -421,8 +632,22 @@ function PlayerPoolTable({
                   <td className={`whitespace-nowrap px-2.5 py-2 text-right font-semibold ${muted ? "text-slate-400" : "text-ink"}`}>{formatNumber(player.price, 1)}</td>
                   <td className={`whitespace-nowrap px-2.5 py-2 text-right font-semibold ${muted ? "text-slate-400" : "text-emerald-700"}`}>{formatScore(nextFantasyPoints(player))}</td>
                   <td className={`whitespace-nowrap px-2.5 py-2 text-right font-semibold ${muted ? "text-slate-400" : "text-sky-700"}`}>{formatScore(playerHorizonPoints(player, horizon))}</td>
+                  <td className={`whitespace-nowrap px-2.5 py-2 text-right text-[11px] font-semibold ${muted ? "text-slate-400" : "text-violet-700"}`}>
+                    {player.baltikaXg !== null && player.baltikaXg !== undefined ? (
+                      <>
+                        <span className="block num-tabular">{formatScore(player.baltikaXg)}</span>
+                        {player.baltikaMatchesPlayed ? <span className="block text-[10px] font-normal text-slate-400">{player.baltikaMatchesPlayed} apps</span> : null}
+                      </>
+                    ) : (
+                      <span className="text-slate-300">—</span>
+                    )}
+                  </td>
                   <td className="max-w-44 px-2.5 py-2 text-[11px] text-slate-500">
-                    <span className="block truncate" title={fixtures}>{fixtures || "No fixture loaded"}</span>
+                    {fixtureChips.length > 0 ? (
+                      <FdrRow fixtures={fixtureChips} />
+                    ) : (
+                      <span className="block truncate" title={fixtures}><I18nText en="No fixture loaded" ru="Матч не загружен" /></span>
+                    )}
                     {disabled ? (
                       <span
                         className="mt-1 inline-flex max-w-full items-center gap-1 rounded bg-rose-50 px-2 py-1 font-semibold text-rose-700"
@@ -435,8 +660,9 @@ function PlayerPoolTable({
                   </td>
                   <td className="px-2.5 py-2 text-right">
                     {isSelected ? (
-                      <button type="button" onClick={() => onRemove(player.playerId)} className="inline-flex h-8 w-8 items-center justify-center rounded border border-rose-200 bg-white text-rose-700 hover:bg-rose-50" title="Remove">
+                      <button type="button" onClick={() => onRemove(player.playerId)} aria-label={removeLabel} className="inline-flex h-8 w-8 items-center justify-center rounded border border-rose-200 bg-white text-rose-700 hover:bg-rose-50">
                         <Trash2 className="h-4 w-4" />
+                        <span className="sr-only">{removeLabel}</span>
                       </button>
                     ) : (
                       <button
@@ -444,9 +670,10 @@ function PlayerPoolTable({
                         onClick={() => onAdd(player)}
                         disabled={disabled}
                         className="inline-flex h-8 w-8 items-center justify-center rounded border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
-                        title={reason ?? "Add"}
+                        aria-label={addLabel}
                       >
                         {disabled ? <Lock className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                        <span className="sr-only">{addLabel}</span>
                       </button>
                     )}
                   </td>
@@ -455,8 +682,8 @@ function PlayerPoolTable({
             })}
             {players.length === 0 ? (
               <tr>
-                <td colSpan={8} className="px-4 py-10 text-center text-sm text-slate-500">
-                  No Sports.ru mapped players match the filters.
+                <td colSpan={9} className="px-4 py-10 text-center text-sm text-slate-500">
+                  <I18nText en="No Sports.ru mapped players match the filters." ru="Нет замапленных Sports.ru игроков под эти фильтры." />
                 </td>
               </tr>
             ) : null}
@@ -467,17 +694,69 @@ function PlayerPoolTable({
   );
 }
 
-function Metric({ label, value, tone = "default" }: { label: string; value: string; tone?: "default" | "good" | "bad" | "accent" }) {
+function Metric({ label, value, tone = "default", prominent = false }: { label: React.ReactNode; value: string; tone?: "default" | "good" | "bad" | "accent"; prominent?: boolean }) {
   const color = tone === "good" ? "text-emerald-700" : tone === "bad" ? "text-rose-700" : tone === "accent" ? "text-sky-700" : "text-ink";
   return (
-    <div className="rounded border border-slate-200 bg-slate-50 px-3 py-2">
+    <div className={cn("rounded border border-slate-200 bg-slate-50 px-3 py-2", prominent && "bg-white shadow-elev")}>
       <dt className="text-xs font-medium uppercase text-slate-400">{label}</dt>
-      <dd className={`mt-1 text-lg font-bold ${color}`}>{value}</dd>
+      <dd className={cn("mt-1 font-bold num-tabular", prominent ? "text-2xl" : "text-lg", color)}>{value}</dd>
     </div>
   );
 }
 
-function PlannerStep({ index, title, state }: { index: number; title: string; state: "done" | "active" | "idle" }) {
+function captainBonus(summary: ReturnType<typeof summarizeFantasySquad>, captainId: string | null) {
+  if (!captainId) return 0;
+  const captain = summary.starterPlayers.find((p) => p.playerId === captainId);
+  if (!captain) return 0;
+  return nextFantasyPoints(captain);
+}
+
+function SquadDiffBadge({ diff, horizon }: { diff: SquadDiff; horizon: number }) {
+  const tone =
+    diff.horizonDelta > 0.05
+      ? "good"
+      : diff.horizonDelta < -0.05
+        ? "bad"
+        : diff.changeCount > 0
+          ? "neutral"
+          : "saved";
+  const toneClass =
+    tone === "good"
+      ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+      : tone === "bad"
+        ? "border-rose-200 bg-rose-50 text-rose-800"
+        : tone === "neutral"
+          ? "border-sky-200 bg-sky-50 text-sky-800"
+          : "border-slate-200 bg-slate-50 text-slate-600";
+
+  return (
+    <div className={cn("mt-3 flex flex-wrap items-center gap-2 rounded border px-3 py-2 text-sm", toneClass)}>
+      {diff.changeCount === 0 ? (
+        <span className="font-semibold"><I18nText en="No changes vs saved" ru="Без изменений к сохранённому" /></span>
+      ) : (
+        <>
+          <span className="font-semibold"><I18nText en="Vs saved" ru="К сохранённому" /></span>
+          <span className="rounded bg-white/80 px-2 py-0.5 font-black num-tabular">
+            {signedScore(diff.horizonDelta)} xFP
+          </span>
+          <span className="text-xs font-semibold opacity-80">{horizon}R</span>
+          <span className="text-xs opacity-70">/</span>
+          <span className="font-semibold num-tabular">
+            <I18nText en={`${diff.changeCount} ${diff.changeCount === 1 ? "change" : "changes"}`} ru={`${diff.changeCount} изм.`} />
+          </span>
+          <span className="text-xs opacity-80">
+            <I18nText
+              en={`${diff.added} in, ${diff.removed} out, ${diff.starterChanges} XI, ${diff.captainChanges} C/VC`}
+              ru={`+${diff.added}, -${diff.removed}, старт: ${diff.starterChanges}, C/VC: ${diff.captainChanges}`}
+            />
+          </span>
+        </>
+      )}
+    </div>
+  );
+}
+
+function PlannerStep({ index, title, state }: { index: number; title: React.ReactNode; state: "done" | "active" | "idle" }) {
   const stateClass =
     state === "done"
       ? "border-emerald-200 bg-emerald-50 text-emerald-700"
@@ -541,6 +820,17 @@ function limitStatus(count: number, min: number, max: number): LimitStatus {
   return "good";
 }
 
+function allowSquadDrop(event: DragEvent<HTMLElement>, canDrop: boolean) {
+  if (!canDrop) return;
+  event.preventDefault();
+  event.dataTransfer.dropEffect = "move";
+}
+
+function readDraggedPlayerId(event: DragEvent<HTMLElement>) {
+  event.preventDefault();
+  return event.dataTransfer.getData(squadDragDataType) || event.dataTransfer.getData("text/plain") || null;
+}
+
 function StarterRuleCard({ label, count, min, max, detail }: { label: string; count: number; min: number; max: number; detail: string }) {
   const status = limitStatus(count, min, max);
   const statusClass =
@@ -575,28 +865,72 @@ function BenchCounts({ summary, total, rules }: { summary: Record<FantasyPositio
   );
 }
 
+function SquadActionLegend() {
+  const itemClassName = "inline-flex items-center gap-1.5 rounded border border-white/15 bg-white/10 px-2 py-1";
+  return (
+    <div className="mb-2 grid grid-cols-2 gap-1.5 text-[11px] font-semibold text-white/85 sm:hidden" aria-label="Actions">
+      <span className={itemClassName}>
+        <Star className="h-3 w-3" />
+        <I18nText en="XI / bench" ru="Старт / скамейка" />
+      </span>
+      <span className={itemClassName}>
+        <Crown className="h-3 w-3" />
+        <I18nText en="Captain" ru="Капитан" />
+      </span>
+      <span className={itemClassName}>
+        <span className="text-[9px] font-black">VC</span>
+        <I18nText en="Vice" ru="Вице" />
+      </span>
+      <span className={itemClassName}>
+        <Lock className="h-3 w-3" />
+        <Trash2 className="h-3 w-3" />
+        <I18nText en="Lock / remove" ru="Лок / удалить" />
+      </span>
+    </div>
+  );
+}
+
 function SquadPitch({
   summary,
   rules,
   selectionsByPlayerId,
   horizon,
+  captainId,
+  viceCaptainId,
+  draggedPlayerId,
   onRemove,
   onToggleLock,
-  onToggleStarter
+  onToggleStarter,
+  onToggleCaptain,
+  onToggleVice,
+  onDragStart,
+  onDragEnd,
+  onDropToStarter,
+  onDropToBench
 }: {
   summary: ReturnType<typeof summarizeFantasySquad>;
   rules: FantasySquadRules;
   selectionsByPlayerId: Map<string, FantasySquadSelection>;
   horizon: number;
+  captainId: string | null;
+  viceCaptainId: string | null;
+  draggedPlayerId: string | null;
   onRemove: (playerId: string) => void;
   onToggleLock: (playerId: string) => void;
   onToggleStarter: (playerId: string) => void;
+  onToggleCaptain: (playerId: string) => void;
+  onToggleVice: (playerId: string) => void;
+  onDragStart: (playerId: string) => void;
+  onDragEnd: () => void;
+  onDropToStarter: (playerId: string) => void;
+  onDropToBench: (playerId: string) => void;
 }) {
   const starterLines: Array<{ position: Exclude<FantasyPositionGroup, "UNK">; label: string }> = [
     { position: "DEF", label: "Defenders" },
     { position: "MID", label: "Midfielders" },
     { position: "FWD", label: "Forwards" }
   ];
+  const draggedSelection = draggedPlayerId ? selectionsByPlayerId.get(draggedPlayerId) : undefined;
 
   return (
     <div className="space-y-3">
@@ -612,6 +946,7 @@ function SquadPitch({
           <StarterRuleCard label="MID" count={summary.startersByPosition.MID} min={rules.starterPositionLimits.MID.min} max={rules.starterPositionLimits.MID.max} detail="Min 2, max 5" />
           <StarterRuleCard label="FWD" count={summary.startersByPosition.FWD} min={rules.starterPositionLimits.FWD.min} max={rules.starterPositionLimits.FWD.max} detail="Min 1, max 3" />
         </div>
+        <SquadActionLegend />
         <div className="relative overflow-hidden rounded border border-white/20 bg-emerald-800/80 px-2.5 py-3">
           <div className="pointer-events-none absolute inset-x-3 top-1/2 border-t border-white/15" />
           <div className="pointer-events-none absolute left-1/2 top-1/2 h-20 w-20 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/15" />
@@ -623,9 +958,17 @@ function SquadPitch({
               selectionsByPlayerId={selectionsByPlayerId}
               limit={rules.starterPositionLimits.GK}
               horizon={horizon}
+              captainId={captainId}
+              viceCaptainId={viceCaptainId}
+              draggedPlayerId={draggedPlayerId}
               onRemove={onRemove}
               onToggleLock={onToggleLock}
               onToggleStarter={onToggleStarter}
+              onToggleCaptain={onToggleCaptain}
+              onToggleVice={onToggleVice}
+              onDragStart={onDragStart}
+              onDragEnd={onDragEnd}
+              onDropToStarter={onDropToStarter}
             />
             {starterLines.map((line) => (
               <SquadLine
@@ -636,9 +979,17 @@ function SquadPitch({
                 selectionsByPlayerId={selectionsByPlayerId}
                 limit={rules.starterPositionLimits[line.position]}
                 horizon={horizon}
+                captainId={captainId}
+                viceCaptainId={viceCaptainId}
+                draggedPlayerId={draggedPlayerId}
                 onRemove={onRemove}
                 onToggleLock={onToggleLock}
                 onToggleStarter={onToggleStarter}
+                onToggleCaptain={onToggleCaptain}
+                onToggleVice={onToggleVice}
+                onDragStart={onDragStart}
+                onDragEnd={onDragEnd}
+                onDropToStarter={onDropToStarter}
               />
             ))}
           </div>
@@ -652,17 +1003,34 @@ function SquadPitch({
           <h4 className="text-sm font-bold uppercase tracking-wide text-slate-500">Bench</h4>
           <BenchCounts summary={summary.benchByPosition} total={summary.benchPlayers.length} rules={rules} />
         </div>
-        <div className="flex flex-wrap justify-center gap-1.5">
+        <div
+          className={cn(
+            "flex min-h-20 flex-wrap justify-center gap-1.5 rounded border border-dashed border-transparent p-1 transition-colors",
+            draggedSelection?.isStarter && "border-sky-300 bg-sky-50"
+          )}
+          onDragOver={(event) => allowSquadDrop(event, Boolean(draggedPlayerId))}
+          onDrop={(event) => {
+            const playerId = readDraggedPlayerId(event);
+            if (playerId) onDropToBench(playerId);
+          }}
+        >
           {summary.benchPlayers.map((player) => (
             <SquadPlayerTile
               key={player.playerId}
               player={player}
               selection={selectionsByPlayerId.get(player.playerId)}
               horizon={horizon}
+              isCaptain={captainId === player.playerId}
+              isVice={viceCaptainId === player.playerId}
+              isDragging={draggedPlayerId === player.playerId}
               compact
               onRemove={onRemove}
               onToggleLock={onToggleLock}
               onToggleStarter={onToggleStarter}
+              onToggleCaptain={onToggleCaptain}
+              onToggleVice={onToggleVice}
+              onDragStart={onDragStart}
+              onDragEnd={onDragEnd}
             />
           ))}
           {summary.benchPlayers.length === 0 ? <div className="rounded border border-dashed border-slate-300 bg-white px-4 py-6 text-center text-sm text-slate-500">Empty</div> : null}
@@ -679,9 +1047,17 @@ function SquadLine({
   selectionsByPlayerId,
   limit,
   horizon,
+  captainId,
+  viceCaptainId,
+  draggedPlayerId,
   onRemove,
   onToggleLock,
-  onToggleStarter
+  onToggleStarter,
+  onToggleCaptain,
+  onToggleVice,
+  onDragStart,
+  onDragEnd,
+  onDropToStarter
 }: {
   label: string;
   position: Exclude<FantasyPositionGroup, "UNK">;
@@ -689,9 +1065,17 @@ function SquadLine({
   selectionsByPlayerId: Map<string, FantasySquadSelection>;
   limit: { min: number; max: number };
   horizon: number;
+  captainId: string | null;
+  viceCaptainId: string | null;
+  draggedPlayerId: string | null;
   onRemove: (playerId: string) => void;
   onToggleLock: (playerId: string) => void;
   onToggleStarter: (playerId: string) => void;
+  onToggleCaptain: (playerId: string) => void;
+  onToggleVice: (playerId: string) => void;
+  onDragStart: (playerId: string) => void;
+  onDragEnd: () => void;
+  onDropToStarter: (playerId: string) => void;
 }) {
   const status = limitStatus(players.length, limit.min, limit.max);
   const countClass =
@@ -708,16 +1092,33 @@ function SquadLine({
         <span>{label}</span>
         <span className={`rounded border px-2 py-0.5 ${countClass}`}>{players.length}/{countLabel}</span>
       </div>
-      <div className="flex min-h-20 flex-wrap items-stretch justify-center gap-1.5">
+      <div
+        className={cn(
+          "flex min-h-20 flex-wrap items-stretch justify-center gap-1.5 rounded border border-dashed border-transparent p-1 transition-colors",
+          draggedPlayerId && "border-white/30 bg-white/10"
+        )}
+        onDragOver={(event) => allowSquadDrop(event, Boolean(draggedPlayerId))}
+        onDrop={(event) => {
+          const playerId = readDraggedPlayerId(event);
+          if (playerId) onDropToStarter(playerId);
+        }}
+      >
         {players.map((player) => (
           <SquadPlayerTile
             key={player.playerId}
             player={player}
             selection={selectionsByPlayerId.get(player.playerId)}
             horizon={horizon}
+            isCaptain={captainId === player.playerId}
+            isVice={viceCaptainId === player.playerId}
+            isDragging={draggedPlayerId === player.playerId}
             onRemove={onRemove}
             onToggleLock={onToggleLock}
             onToggleStarter={onToggleStarter}
+            onToggleCaptain={onToggleCaptain}
+            onToggleVice={onToggleVice}
+            onDragStart={onDragStart}
+            onDragEnd={onDragEnd}
           />
         ))}
         {players.length === 0 ? <div className="flex min-h-16 w-28 items-center justify-center rounded border border-dashed border-white/25 bg-white/10 text-xs text-white/70">Empty</div> : null}
@@ -730,54 +1131,277 @@ function SquadPlayerTile({
   player,
   selection,
   horizon,
+  isCaptain = false,
+  isVice = false,
+  isDragging = false,
   compact = false,
   onRemove,
   onToggleLock,
-  onToggleStarter
+  onToggleStarter,
+  onToggleCaptain,
+  onToggleVice,
+  onDragStart,
+  onDragEnd
 }: {
   player: FantasyPlannerPlayer;
   selection: FantasySquadSelection | undefined;
   horizon: number;
+  isCaptain?: boolean;
+  isVice?: boolean;
+  isDragging?: boolean;
   compact?: boolean;
   onRemove: (playerId: string) => void;
   onToggleLock: (playerId: string) => void;
   onToggleStarter: (playerId: string) => void;
+  onToggleCaptain: (playerId: string) => void;
+  onToggleVice: (playerId: string) => void;
+  onDragStart: (playerId: string) => void;
+  onDragEnd: () => void;
 }) {
+  const fixtureChips = player.fixtures
+    .slice(0, Math.min(horizon, 3))
+    .map((label, idx) => ({ label, difficulty: player.fixtureDifficulties?.[idx] ?? null }))
+    .filter((chip) => Boolean(chip.label))
+    .map((chip) => ({
+      label: compactFixtureLabel(chip.label),
+      difficulty: chip.difficulty,
+      title: chip.label
+    }));
+  const starterActionLabel = selection?.isStarter ? "Move to bench" : "Move to starting XI";
+  const captainActionLabel = isCaptain ? "Remove captain" : "Make captain x2";
+  const viceActionLabel = isVice ? "Remove vice-captain" : "Make vice-captain";
+  const lockActionLabel = selection?.isLocked ? "Unlock player" : "Lock player";
+  const removeActionLabel = `Remove ${player.name}`;
   return (
-    <div className={`${compact ? "w-32" : "w-28 sm:w-32"} rounded border border-white/70 bg-white px-2 py-1.5 text-center shadow-sm`}>
+    <div
+      draggable={Boolean(selection)}
+      onDragStart={(event) => {
+        event.dataTransfer.effectAllowed = "move";
+        event.dataTransfer.setData(squadDragDataType, player.playerId);
+        event.dataTransfer.setData("text/plain", player.playerId);
+        onDragStart(player.playerId);
+      }}
+      onDragEnd={onDragEnd}
+      className={cn(
+        compact ? "w-32" : "w-28 sm:w-32",
+        "relative cursor-grab rounded border bg-white px-2 py-1.5 text-center shadow-sm transition active:cursor-grabbing",
+        isCaptain ? "border-amber-400 ring-2 ring-amber-200" : "border-white/70",
+        isDragging && "opacity-55 ring-2 ring-sky-300"
+      )}
+    >
+      {isCaptain ? (
+        <span className="absolute -top-2 left-1/2 -translate-x-1/2 rounded bg-amber-400 px-1.5 py-0.5 text-[9px] font-black text-white shadow">
+          C
+        </span>
+      ) : isVice ? (
+        <span className="absolute -top-2 left-1/2 -translate-x-1/2 rounded bg-slate-700 px-1.5 py-0.5 text-[9px] font-black text-white shadow">
+          VC
+        </span>
+      ) : null}
       <div className="flex items-center justify-center gap-1">
         <span className={`rounded px-1.5 py-0.5 text-[10px] font-bold ${positionPillClass(player.positionGroup)}`}>{player.positionGroup}</span>
         {selection?.isLocked ? <Lock className="h-3 w-3 text-slate-500" /> : null}
       </div>
       <p className="mt-1 truncate text-[11px] font-bold text-ink" title={player.name}>{player.name}</p>
       <p className="truncate text-[10px] text-slate-500" title={player.teamName}>{player.teamName}</p>
-      <p className="mt-1 text-[11px] font-semibold text-emerald-700">
+      <p className="mt-1 text-[11px] font-semibold text-emerald-700 num-tabular">
         <Check className="mr-1 inline h-3 w-3" />
-        {formatScore(player.roundPoints.length > 0 ? playerHorizonPoints(player, horizon) : player.predictedFp)}
+        {formatScore((player.roundPoints.length > 0 ? playerHorizonPoints(player, horizon) : player.predictedFp ?? 0) * (isCaptain ? 2 : 1))}
+        {isCaptain ? <span className="ml-1 text-amber-600">×2</span> : null}
       </p>
+      {player.baltikaXg !== null && player.baltikaXg !== undefined ? (
+        <p className="mt-0.5 text-[10px] font-semibold text-violet-700 num-tabular">W xG {formatScore(player.baltikaXg)}</p>
+      ) : null}
+      {fixtureChips.length > 0 ? (
+        <div className="mt-1 flex justify-center">
+          <FdrRow fixtures={fixtureChips} />
+        </div>
+      ) : null}
       <div className="mt-1.5 flex justify-center gap-1">
         <button
           type="button"
           onClick={() => onToggleStarter(player.playerId)}
-          className={`inline-flex h-5 w-5 items-center justify-center rounded border border-slate-200 hover:bg-amber-50 ${selection?.isStarter ? "text-amber-600" : "text-slate-500"}`}
-          title={selection?.isStarter ? "Move to bench" : "Move to starting XI"}
+          className={`inline-flex h-6 w-6 items-center justify-center rounded border border-slate-200 hover:bg-amber-50 ${selection?.isStarter ? "text-amber-600" : "text-slate-500"}`}
+          aria-label={starterActionLabel}
         >
           <Star className={`h-3 w-3 ${selection?.isStarter ? "fill-current" : ""}`} />
+          <span className="sr-only">{starterActionLabel}</span>
         </button>
-        <button type="button" onClick={() => onToggleLock(player.playerId)} className="inline-flex h-5 w-5 items-center justify-center rounded border border-slate-200 text-slate-600 hover:bg-slate-50" title={selection?.isLocked ? "Unlock" : "Lock"}>
+        <button
+          type="button"
+          onClick={() => onToggleCaptain(player.playerId)}
+          className={cn(
+            "inline-flex h-6 w-6 items-center justify-center rounded border border-slate-200 hover:bg-amber-50",
+            isCaptain ? "text-amber-600" : "text-slate-500"
+          )}
+          aria-label={captainActionLabel}
+        >
+          <Crown className={`h-3 w-3 ${isCaptain ? "fill-current" : ""}`} />
+          <span className="sr-only">{captainActionLabel}</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => onToggleVice(player.playerId)}
+          className={cn(
+            "inline-flex h-6 w-6 items-center justify-center rounded border border-slate-200 hover:bg-slate-50",
+            isVice ? "text-slate-900 font-extrabold" : "text-slate-500"
+          )}
+          aria-label={viceActionLabel}
+        >
+          <span className="text-[9px] font-black">VC</span>
+          <span className="sr-only">{viceActionLabel}</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => onToggleLock(player.playerId)}
+          className="inline-flex h-6 w-6 items-center justify-center rounded border border-slate-200 text-slate-600 hover:bg-slate-50"
+          aria-label={lockActionLabel}
+        >
           {selection?.isLocked ? <Lock className="h-3 w-3" /> : <Unlock className="h-3 w-3" />}
+          <span className="sr-only">{lockActionLabel}</span>
         </button>
-        <button type="button" onClick={() => onRemove(player.playerId)} className="inline-flex h-5 w-5 items-center justify-center rounded border border-slate-200 text-rose-700 hover:bg-rose-50" title="Remove">
+        <button
+          type="button"
+          onClick={() => onRemove(player.playerId)}
+          className="inline-flex h-6 w-6 items-center justify-center rounded border border-slate-200 text-rose-700 hover:bg-rose-50"
+          aria-label={removeActionLabel}
+        >
           <Trash2 className="h-3 w-3" />
+          <span className="sr-only">{removeActionLabel}</span>
         </button>
       </div>
     </div>
   );
 }
 
+function readStoredSquadCaptains(storageKey: string, selectedPlayerIds: Set<string>): StoredSquadCaptains {
+  if (typeof window === "undefined") return { captainId: null, viceCaptainId: null };
+
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(storageKey) ?? "{}") as Partial<StoredSquadCaptains>;
+    const captainId = typeof parsed.captainId === "string" && selectedPlayerIds.has(parsed.captainId) ? parsed.captainId : null;
+    const viceCaptainId =
+      typeof parsed.viceCaptainId === "string" && selectedPlayerIds.has(parsed.viceCaptainId) && parsed.viceCaptainId !== captainId
+        ? parsed.viceCaptainId
+        : null;
+
+    return { captainId, viceCaptainId };
+  } catch {
+    return { captainId: null, viceCaptainId: null };
+  }
+}
+
+function writeStoredSquadCaptains(storageKey: string, captains: StoredSquadCaptains) {
+  if (typeof window === "undefined") return;
+
+  if (!captains.captainId && !captains.viceCaptainId) {
+    window.localStorage.removeItem(storageKey);
+    return;
+  }
+
+  window.localStorage.setItem(storageKey, JSON.stringify(captains));
+}
+
+function withCaptainState(selections: FantasySquadSelection[], captainId: string | null, viceCaptainId: string | null) {
+  return sanitizeCaptainRoles(
+    selections.map((selection) => ({
+      ...selection,
+      isCaptain: selection.playerId === captainId,
+      isViceCaptain: selection.playerId === viceCaptainId && selection.playerId !== captainId
+    }))
+  );
+}
+
+function sanitizeCaptainRoles(selections: FantasySquadSelection[]) {
+  let captainAssigned = false;
+  let viceAssigned = false;
+  let captainId: string | null = null;
+
+  return selections.map((selection) => {
+    const isCaptain = selection.isStarter && selection.isCaptain && !captainAssigned;
+    if (isCaptain) {
+      captainAssigned = true;
+      captainId = selection.playerId;
+    }
+
+    const isViceCaptain = selection.isStarter && selection.isViceCaptain && selection.playerId !== captainId && !isCaptain && !viceAssigned;
+    if (isViceCaptain) viceAssigned = true;
+
+    return {
+      ...selection,
+      isCaptain,
+      isViceCaptain
+    };
+  });
+}
+
 function signedNumber(value: number) {
   if (value > 0) return `+${formatNumber(value, 1)}`;
   return formatNumber(value, 1);
+}
+
+function signedScore(value: number) {
+  if (value > 0) return `+${formatScore(value)}`;
+  return formatScore(value);
+}
+
+function compactFixtureLabel(label: string) {
+  return label.replace(/\s*\(([HhAa])\)$/, (_, side: string) => ` ${side.toUpperCase()}`);
+}
+
+function buildSquadDiff(
+  savedSelections: FantasySquadSelection[],
+  currentSelections: FantasySquadSelection[],
+  savedSummary: ReturnType<typeof summarizeFantasySquad>,
+  currentSummary: ReturnType<typeof summarizeFantasySquad>
+): SquadDiff {
+  const savedById = new Map(savedSelections.map((selection) => [selection.playerId, selection]));
+  const currentById = new Map(currentSelections.map((selection) => [selection.playerId, selection]));
+  const changedPlayerIds = new Set<string>();
+  let added = 0;
+  let removed = 0;
+  let starterChanges = 0;
+  let lockChanges = 0;
+  let captainChanges = 0;
+
+  for (const selection of currentSelections) {
+    const saved = savedById.get(selection.playerId);
+    if (!saved) {
+      added += 1;
+      changedPlayerIds.add(selection.playerId);
+      continue;
+    }
+    if (saved.isStarter !== selection.isStarter) {
+      starterChanges += 1;
+      changedPlayerIds.add(selection.playerId);
+    }
+    if (saved.isLocked !== selection.isLocked) {
+      lockChanges += 1;
+      changedPlayerIds.add(selection.playerId);
+    }
+    if (saved.isCaptain !== selection.isCaptain || saved.isViceCaptain !== selection.isViceCaptain) {
+      captainChanges += 1;
+      changedPlayerIds.add(selection.playerId);
+    }
+  }
+
+  for (const selection of savedSelections) {
+    if (!currentById.has(selection.playerId)) {
+      removed += 1;
+      changedPlayerIds.add(selection.playerId);
+    }
+  }
+
+  return {
+    changeCount: changedPlayerIds.size,
+    added,
+    removed,
+    starterChanges,
+    lockChanges,
+    captainChanges,
+    nextDelta: currentSummary.projectedNext - savedSummary.projectedNext,
+    horizonDelta: currentSummary.projectedHorizon - savedSummary.projectedHorizon
+  };
 }
 
 function positionPillClass(position: FantasyPositionGroup) {
@@ -818,7 +1442,7 @@ function normalizeInitialSelections(selections: FantasySquadSelection[], players
     }
   }
 
-  return normalized;
+  return sanitizeCaptainRoles(normalized);
 }
 
 function promoteStarter(

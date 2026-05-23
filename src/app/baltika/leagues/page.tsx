@@ -2,10 +2,10 @@ import { ArrowRight, CalendarDays } from "lucide-react";
 import Link from "next/link";
 
 import { I18nText } from "@/components/i18n-text";
+import { LeagueFlag } from "@/components/ui/league-flag";
 import { formatDate } from "@/lib/format";
 import { prisma } from "@/lib/db";
 import { leagueSubtitle } from "@/lib/leagues/display";
-import { leagueFlag } from "@/lib/leagues/flags";
 
 export const dynamic = "force-dynamic";
 
@@ -60,11 +60,7 @@ export default async function BaltikaLeaguesPage() {
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">
-                  <div className="grid h-11 w-11 place-items-center rounded bg-ink text-white">
-                    <span aria-hidden="true" className="text-2xl leading-none">
-                      {leagueFlag(league)}
-                    </span>
-                  </div>
+                  <LeagueFlag league={league} size={36} />
                   <div>
                     <h2 className="font-semibold text-ink">{league.name}</h2>
                     <p className="text-sm text-slate-500">

@@ -6,11 +6,13 @@ import { MacheteShell } from "@/components/machete/MacheteShell";
 import { MacheteStatusBadge } from "@/components/machete/MacheteStatusBadge";
 import { MacheteTeamCard } from "@/components/machete/MacheteTeamCard";
 import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
+import { AutoSubmitForm } from "@/components/players/auto-submit-form";
+import { LocalizedOption } from "@/components/localized-option";
 import { prisma } from "@/lib/db";
 import { formatDate, formatNumber, formatScore } from "@/lib/format";
 import { leagueSubtitle } from "@/lib/leagues/display";
-import { leagueFlag } from "@/lib/leagues/flags";
-import { loadSharedLeagueSeason, loadSharedLeagueTeams } from "@/machete/shared_read_model";
+import { LeagueFlag } from "@/components/ui/league-flag";
+import { loadSharedLeagueSeason, loadSharedLeagueSeasonOptions, loadSharedLeagueTeams } from "@/machete/shared_read_model";
 
 export const dynamic = "force-dynamic";
 
@@ -18,12 +20,20 @@ type PageProps = {
   params: Promise<{
     leagueId: string;
   }>;
+  searchParams?: Promise<{
+    season?: string;
+  }>;
 };
 
-export default async function MacheteLeaguePage({ params }: PageProps) {
+export default async function MacheteLeaguePage({ params, searchParams }: PageProps) {
   const { leagueId } = await params;
-  const league = await loadSharedLeagueSeason(prisma, leagueId);
+  const resolvedSearchParams = (await searchParams) ?? {};
+  const [league, leagueSeasonOptions] = await Promise.all([
+    loadSharedLeagueSeason(prisma, leagueId, resolvedSearchParams.season),
+    loadSharedLeagueSeasonOptions(prisma)
+  ]);
   if (!league) notFound();
+  const seasonsForLeague = leagueSeasonOptions.filter((option) => option.leagueId === league.leagueId);
 
   const [teams, fixturesCount, fantasyAggregate] = await Promise.all([
     loadSharedLeagueTeams(prisma, league.leagueId, league.season),
@@ -80,6 +90,7 @@ export default async function MacheteLeaguePage({ params }: PageProps) {
       return {
         id: String(team.id),
         leagueId: String(league.leagueId),
+        season: league.season,
         name: team.name,
         country: team.country,
         leagueName: league.displayName,
@@ -109,7 +120,7 @@ export default async function MacheteLeaguePage({ params }: PageProps) {
           items={[
             { label: "Machete", href: "/machete/leagues" },
             { label: <I18nText en="Leagues" ru="Лиги" />, href: "/machete/leagues" },
-            { label: league.displayName, href: `/machete/leagues/${league.leagueId}` }
+            { label: league.displayName, href: macheteLeagueHref(league.leagueId, league.season) }
           ]}
         />
       </div>
@@ -118,11 +129,8 @@ export default async function MacheteLeaguePage({ params }: PageProps) {
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-3">
-              <div className="grid h-11 w-11 place-items-center rounded bg-ink text-white">
-                <span aria-hidden="true" className="text-2xl leading-none">
-                  {leagueFlag(flagInput)}
-                </span>
-              </div>
+              <LeagueFlag league={flagInput} size={44} className="rounded shadow-soft" />
+
               <h2 className="text-2xl font-bold text-ink">{league.displayName}</h2>
               <MacheteStatusBadge status={teams.length > 0 ? "SYNCED" : "NOT_CONFIGURED"} />
             </div>
@@ -130,6 +138,19 @@ export default async function MacheteLeaguePage({ params }: PageProps) {
               {[leagueSubtitle(flagInput, league.season), "Provider FOTMOB"].filter(Boolean).join(" / ")}
             </p>
           </div>
+          <AutoSubmitForm className="w-full sm:w-56">
+            <label className="text-sm">
+              <span className="mb-1 block font-medium text-slate-600"><I18nText en="Season" ru="Сезон" /></span>
+              <select name="season" defaultValue={league.season} className="w-full rounded border border-slate-200 px-3 py-2">
+                {seasonsForLeague.map((option) => (
+                  <option key={`${option.leagueId}:${option.season}`} value={option.season}>
+                    {option.season}{option.isCurrent ? " · current" : ""}
+                  </option>
+                ))}
+                {seasonsForLeague.length === 0 ? <LocalizedOption value={league.season} en={league.season} ru={league.season} /> : null}
+              </select>
+            </label>
+          </AutoSubmitForm>
           <dl className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-5">
             <Metric label={<I18nText en="Teams" ru="Команды" />} value={formatNumber(teams.length)} />
             <Metric
@@ -167,4 +188,8 @@ function Metric({ label, value, accent = false }: { label: ReactNode; value: str
       <dd className={`mt-1 font-semibold ${accent ? "text-emerald-700" : "text-ink"}`}>{value}</dd>
     </div>
   );
+}
+
+function macheteLeagueHref(leagueId: bigint, season: string) {
+  return `/machete/leagues/${leagueId}?season=${encodeURIComponent(season)}`;
 }

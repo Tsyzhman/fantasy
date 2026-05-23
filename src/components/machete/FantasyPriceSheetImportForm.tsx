@@ -4,6 +4,8 @@ import { Upload } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type FormEvent, useState, useTransition } from "react";
 
+import { I18nText } from "@/components/i18n-text";
+
 type FantasyPriceSheetImportFormProps = {
   leagueId: string;
   season: string;
@@ -45,7 +47,7 @@ export function FantasyPriceSheetImportForm({ leagueId, season, canImport }: Fan
   return (
     <form onSubmit={submitImport} className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_auto]">
       <label className="text-sm">
-        <span className="mb-1 block font-medium text-slate-600">Sports.ru XLSX prices</span>
+        <span className="mb-1 block font-medium text-slate-600"><I18nText en="Sports.ru XLSX prices" ru="Цены Sports.ru XLSX" /></span>
         <input
           required
           name="file"
@@ -57,7 +59,7 @@ export function FantasyPriceSheetImportForm({ leagueId, season, canImport }: Fan
       <div className="flex flex-col justify-end gap-2">
         <label className="inline-flex items-center gap-2 text-sm text-slate-700">
           <input name="replace" type="checkbox" defaultChecked className="h-4 w-4 rounded border-slate-300" />
-          Replace old rows
+          <I18nText en="Replace old rows" ru="Заменить старые строки" />
         </label>
         <button
           type="submit"
@@ -65,7 +67,7 @@ export function FantasyPriceSheetImportForm({ leagueId, season, canImport }: Fan
           className="inline-flex items-center justify-center gap-2 rounded bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800 disabled:opacity-60"
         >
           <Upload className="h-4 w-4" />
-          {isPending ? "Importing" : "Import prices"}
+          {isPending ? <I18nText en="Importing" ru="Импортируем" /> : <I18nText en="Import prices" ru="Импортировать цены" />}
         </button>
       </div>
       {message ? <div className="md:col-span-2 rounded bg-slate-50 px-3 py-2 text-sm text-slate-700">{message}</div> : null}

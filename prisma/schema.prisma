@@ -41,6 +41,8 @@ model User {
   lastLoginAt  DateTime?
   sessions     UserSession[]
   fantasySquads UserFantasySquad[]
+  savedViews   UserSavedView[]
+  watchlistPlayers UserWatchlistPlayer[]
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 }
@@ -535,6 +537,8 @@ model UserFantasySquadPlayer {
   position      String?
   isStarter     Boolean  @default(true) @map("is_starter")
   isLocked      Boolean  @default(false) @map("is_locked")
+  isCaptain     Boolean  @default(false) @map("is_captain")
+  isViceCaptain Boolean  @default(false) @map("is_vice_captain")
   slotIndex     Int      @default(0) @map("slot_index")
   purchasePrice Float?   @map("purchase_price")
   addedAt       DateTime @default(now()) @map("added_at")
@@ -547,6 +551,42 @@ model UserFantasySquadPlayer {
   @@index([playerId])
   @@index([teamId])
   @@map("user_fantasy_squad_players")
+}
+
+model UserSavedView {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  source    String
+  name      String
+  href      String
+  filters   Json?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, source, href])
+  @@index([userId, source, updatedAt])
+  @@map("user_saved_views")
+}
+
+model UserWatchlistPlayer {
+  id         String   @id @default(cuid())
+  userId     String   @map("user_id")
+  source     String
+  playerKey  String   @map("player_key")
+  playerName String   @map("player_name")
+  teamName   String?  @map("team_name")
+  position   String?
+  metadata   Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, source, playerKey])
+  @@index([userId, source, updatedAt])
+  @@map("user_watchlist_players")
 }
 
 model LeagueSeason {

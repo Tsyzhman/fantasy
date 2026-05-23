@@ -1,7 +1,8 @@
-import type { PrismaClient } from "@prisma/client";
+import { ImportStatus, type PrismaClient } from "@prisma/client";
 
 import { formatDate } from "@/lib/format";
 import { macheteLeagueDisplayName } from "@/lib/leagues/display";
+import { normalizeSportsRuPlayerName } from "@/lib/providers/sports-ru-fantasy";
 
 import { loadSharedLeagueTeams, loadSharedMachetePlayerRows, type SharedLeagueSeasonOption, type SharedPlayerRowsScope } from "./shared_read_model";
 import {
@@ -126,6 +127,14 @@ type SportsRuScopedPriceRow = SportsRuPositionPriceRow & {
   price: number;
 };
 
+type BaltikaPlayerMetric = {
+  xg: number | null;
+  xa: number | null;
+  matchesPlayed: number | null;
+  minutesPlayed: number | null;
+  teamName: string;
+};
+
 export type SportsRuFantasyPriceRef = {
   playerId: string;
   leagueId: string;
@@ -144,7 +153,7 @@ export async function loadFantasySquadPlannerData(
   league: SharedLeagueSeasonOption
 ): Promise<FantasySquadPlannerData> {
   const sportsRuSeasons = sportsRuSeasonAliases(league.season);
-  const [contest, savedSquad, rosterRows, playerRows, roundsAndFixtures, priceRows] = await Promise.all([
+  const [contest, savedSquad, rosterRows, playerRows, roundsAndFixtures, priceRows, baltikaMetricsByName] = await Promise.all([
     prisma.sportsRuFantasyContest.findFirst({
       where: {
         provider: "SPORTS_RU",
@@ -188,7 +197,8 @@ export async function loadFantasySquadPlannerData(
         season: { in: sportsRuSeasons }
       },
       orderBy: { lastSeenAt: "desc" }
-    })
+    }),
+    loadBaltikaPlayerMetricsByName(prisma, sportsRuSeasons)
   ]);
 
   const priceMaps =
@@ -220,6 +230,7 @@ export async function loadFantasySquadPlannerData(
     const position = fantasyPlannerPosition(sportsPosition, row.position, projected?.position ?? null);
     const positionGroup = normalizeFantasyPosition(position);
     const price = priceRow.price;
+    const baltikaMetric = baltikaMetricsByName.get(normalizeSportsRuPlayerName(priceRow.playerName));
     const roundPoints = roundsAndFixtures.rounds.map((round) => {
       const fixtures = roundsAndFixtures.fixturesByTeamRound.get(round.id)?.get(String(row.teamId)) ?? [];
       const basePoints = predictedFp ?? 0;
@@ -228,6 +239,10 @@ export async function loadFantasySquadPlannerData(
     const fixtures = roundsAndFixtures.rounds.map((round) => {
       const teamFixtures = roundsAndFixtures.fixturesByTeamRound.get(round.id)?.get(String(row.teamId)) ?? [];
       return teamFixtures.map((fixture) => `${fixture.side} ${fixture.opponentName}`).join(", ");
+    });
+    const fixtureDifficulties = roundsAndFixtures.rounds.map((round) => {
+      const teamFixtures = roundsAndFixtures.fixturesByTeamRound.get(round.id)?.get(String(row.teamId)) ?? [];
+      return aggregateRoundDifficulty(teamFixtures, positionGroup);
     });
 
     return [
@@ -245,7 +260,12 @@ export async function loadFantasySquadPlannerData(
         predictedFp,
         valueScore: price > 0 ? roundFantasyValue((roundPoints[0] ?? predictedFp ?? 0) / price) : 0,
         roundPoints,
-        fixtures
+        fixtures,
+        fixtureDifficulties,
+        baltikaXg: baltikaMetric?.xg ?? null,
+        baltikaXa: baltikaMetric?.xa ?? null,
+        baltikaMatchesPlayed: baltikaMetric?.matchesPlayed ?? null,
+        baltikaTeamName: baltikaMetric?.teamName ?? null
       }
     ];
   });
@@ -272,6 +292,8 @@ export async function loadFantasySquadPlannerData(
           playerId: String(player.playerId),
           isStarter: player.isStarter,
           isLocked: player.isLocked,
+          isCaptain: player.isCaptain,
+          isViceCaptain: player.isViceCaptain,
           slotIndex: player.slotIndex,
           purchasePrice: playersById.get(String(player.playerId))?.price ?? player.purchasePrice
         })) ?? []
@@ -282,6 +304,54 @@ export async function loadFantasySquadPlannerData(
       lastSyncedAt: latestPriceSync?.toISOString() ?? null
     }
   };
+}
+
+async function loadBaltikaPlayerMetricsByName(prisma: PrismaClient, seasonNames: string[]) {
+  const rows = await prisma.playerSnapshot.findMany({
+    where: {
+      teamImport: {
+        status: ImportStatus.PUBLISHED,
+        isCurrentPublished: true
+      },
+      season: {
+        name: { in: seasonNames }
+      }
+    },
+    select: {
+      normalizedName: true,
+      playerName: true,
+      teamName: true,
+      xg: true,
+      xa: true,
+      matchesPlayed: true,
+      minutesPlayed: true
+    },
+    orderBy: [{ minutesPlayed: "desc" }, { playerName: "asc" }]
+  });
+
+  const grouped = new Map<string, BaltikaPlayerMetric[]>();
+  for (const row of rows) {
+    const key = row.normalizedName || normalizeSportsRuPlayerName(row.playerName);
+    if (!key) continue;
+    const metrics = grouped.get(key) ?? [];
+    metrics.push({
+      xg: row.xg,
+      xa: row.xa,
+      matchesPlayed: row.matchesPlayed,
+      minutesPlayed: row.minutesPlayed,
+      teamName: row.teamName
+    });
+    grouped.set(key, metrics);
+  }
+
+  const unique = new Map<string, BaltikaPlayerMetric>();
+  for (const [key, metrics] of grouped) {
+    const teams = new Set(metrics.map((metric) => metric.teamName));
+    if (metrics.length > 1 && teams.size > 1) continue;
+    unique.set(key, metrics[0]);
+  }
+
+  return unique;
 }
 
 export async function saveFantasySquad(
@@ -348,6 +418,8 @@ export async function saveFantasySquad(
           position: sportsPositionsByPlayerId.get(selection.playerId) ?? rosterByPlayerId.get(selection.playerId)?.position ?? null,
           isStarter: selection.isStarter,
           isLocked: selection.isLocked,
+          isCaptain: selection.isCaptain,
+          isViceCaptain: selection.isViceCaptain,
           slotIndex: selection.slotIndex ?? index,
           purchasePrice: selection.purchasePrice
         }
@@ -497,6 +569,42 @@ export function projectFixtureFantasyPoints(
   fixture: FantasyFixtureProjection
 ) {
   return basePoints * fixtureMultiplier(fixture, positionGroup);
+}
+
+function fixtureDifficultyFromMultipliers(
+  fixture: Pick<PlannerFixture, "attackMultiplier" | "defenseMultiplier" | "side">,
+  positionGroup: FantasyPositionGroup
+): number | null {
+  const attack = fixture.attackMultiplier;
+  const defense = fixture.defenseMultiplier;
+  if (attack === null && defense === null) return null;
+
+  const attackWeight = positionGroup === "GK" || positionGroup === "DEF" ? 0.35 : 0.7;
+  const defenseWeight = 1 - attackWeight;
+  const attackComponent = attack ?? defense ?? 1;
+  const defenseComponent = defense ?? attack ?? 1;
+  const combined = attackComponent * attackWeight + defenseComponent * defenseWeight;
+  const homeBoost = fixture.side === "H" ? 0.04 : -0.04;
+  const score = combined + homeBoost;
+
+  if (score >= 1.18) return 1;
+  if (score >= 1.06) return 2;
+  if (score >= 0.94) return 3;
+  if (score >= 0.82) return 4;
+  return 5;
+}
+
+function aggregateRoundDifficulty(
+  teamFixtures: PlannerFixture[],
+  positionGroup: FantasyPositionGroup
+): number | null {
+  if (teamFixtures.length === 0) return null;
+  const values = teamFixtures
+    .map((fixture) => fixtureDifficultyFromMultipliers(fixture, positionGroup))
+    .filter((value): value is number => value !== null);
+  if (values.length === 0) return null;
+  const max = Math.max(...values);
+  return max;
 }
 
 export function buildTeamStrengthProfilesFromMatches(matches: TeamStrengthMatchInput[]): TeamStrengthProfiles {

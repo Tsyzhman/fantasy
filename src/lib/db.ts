@@ -175,6 +175,8 @@ BEGIN
       "position" TEXT,
       "is_starter" BOOLEAN NOT NULL DEFAULT true,
       "is_locked" BOOLEAN NOT NULL DEFAULT false,
+      "is_captain" BOOLEAN NOT NULL DEFAULT false,
+      "is_vice_captain" BOOLEAN NOT NULL DEFAULT false,
       "slot_index" INTEGER NOT NULL DEFAULT 0,
       "purchase_price" DOUBLE PRECISION,
       "added_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -192,6 +194,67 @@ BEGIN
       FOREIGN KEY ("player_id") REFERENCES "players"("id") ON DELETE CASCADE ON UPDATE CASCADE;
     ALTER TABLE "user_fantasy_squad_players" ADD CONSTRAINT "user_fantasy_squad_players_team_id_fkey"
       FOREIGN KEY ("team_id") REFERENCES "teams"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+  END IF;
+
+  IF to_regclass('user_fantasy_squad_players') IS NOT NULL THEN
+    ALTER TABLE "user_fantasy_squad_players" ADD COLUMN IF NOT EXISTS "is_captain" BOOLEAN NOT NULL DEFAULT false;
+    ALTER TABLE "user_fantasy_squad_players" ADD COLUMN IF NOT EXISTS "is_vice_captain" BOOLEAN NOT NULL DEFAULT false;
+    CREATE UNIQUE INDEX IF NOT EXISTS "user_fantasy_squad_players_one_captain_idx"
+      ON "user_fantasy_squad_players"("squad_id") WHERE "is_captain";
+    CREATE UNIQUE INDEX IF NOT EXISTS "user_fantasy_squad_players_one_vice_captain_idx"
+      ON "user_fantasy_squad_players"("squad_id") WHERE "is_vice_captain";
+    IF NOT EXISTS (
+      SELECT 1 FROM pg_constraint WHERE conname = 'user_fantasy_squad_players_captain_distinct_check'
+    ) THEN
+      ALTER TABLE "user_fantasy_squad_players" ADD CONSTRAINT "user_fantasy_squad_players_captain_distinct_check"
+        CHECK (NOT ("is_captain" AND "is_vice_captain"));
+    END IF;
+  END IF;
+
+  CREATE TABLE IF NOT EXISTS "user_saved_views" (
+    "id" TEXT NOT NULL,
+    "user_id" TEXT NOT NULL,
+    "source" TEXT NOT NULL,
+    "name" TEXT NOT NULL,
+    "href" TEXT NOT NULL,
+    "filters" JSONB,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "user_saved_views_pkey" PRIMARY KEY ("id")
+  );
+  CREATE UNIQUE INDEX IF NOT EXISTS "user_saved_views_user_source_href_key"
+    ON "user_saved_views"("user_id", "source", "href");
+  CREATE INDEX IF NOT EXISTS "user_saved_views_user_source_updated_at_idx"
+    ON "user_saved_views"("user_id", "source", "updated_at");
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'user_saved_views_user_id_fkey'
+  ) THEN
+    ALTER TABLE "user_saved_views" ADD CONSTRAINT "user_saved_views_user_id_fkey"
+      FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+  END IF;
+
+  CREATE TABLE IF NOT EXISTS "user_watchlist_players" (
+    "id" TEXT NOT NULL,
+    "user_id" TEXT NOT NULL,
+    "source" TEXT NOT NULL,
+    "player_key" TEXT NOT NULL,
+    "player_name" TEXT NOT NULL,
+    "team_name" TEXT,
+    "position" TEXT,
+    "metadata" JSONB,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "user_watchlist_players_pkey" PRIMARY KEY ("id")
+  );
+  CREATE UNIQUE INDEX IF NOT EXISTS "user_watchlist_players_user_source_player_key_key"
+    ON "user_watchlist_players"("user_id", "source", "player_key");
+  CREATE INDEX IF NOT EXISTS "user_watchlist_players_user_source_updated_at_idx"
+    ON "user_watchlist_players"("user_id", "source", "updated_at");
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_constraint WHERE conname = 'user_watchlist_players_user_id_fkey'
+  ) THEN
+    ALTER TABLE "user_watchlist_players" ADD CONSTRAINT "user_watchlist_players_user_id_fkey"
+      FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
   END IF;
 
 END $$;

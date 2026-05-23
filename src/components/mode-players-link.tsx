@@ -20,7 +20,7 @@ export function ModePlayersLink() {
         className={cn("rounded px-3 py-2 hover:bg-slate-100", isActive ? "bg-slate-100 text-ink" : "")}
         href={href}
       >
-        FotMob players
+        <I18nText en="FotMob players" ru="Игроки FotMob" />
       </Link>
     );
   }

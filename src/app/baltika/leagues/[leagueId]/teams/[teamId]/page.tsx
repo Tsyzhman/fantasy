@@ -10,7 +10,7 @@ import { StarterCheckbox } from "@/components/players/starter-checkbox";
 import { SortableTable } from "@/components/sortable-table";
 import { prisma } from "@/lib/db";
 import { formatCurrency, formatDate, formatNumber, formatScore } from "@/lib/format";
-import { leagueFlag } from "@/lib/leagues/flags";
+import { LeagueFlag } from "@/components/ui/league-flag";
 
 export const dynamic = "force-dynamic";
 
@@ -88,8 +88,9 @@ export default async function BaltikaTeamPage({ params, searchParams }: PageProp
 
       <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-            {leagueFlag(team.league)} {team.league.name}
+          <p className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+            <LeagueFlag league={team.league} size={18} />
+            {team.league.name}
           </p>
           <h1 className="mt-2 text-3xl font-bold text-ink">{team.name}</h1>
           <p className="mt-2 text-sm text-slate-600">

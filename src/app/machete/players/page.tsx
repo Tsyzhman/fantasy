@@ -1,10 +1,15 @@
 import Link from "next/link";
 
+import { PlayerCompareDock, PlayerCompareProvider, PlayerCompareToggle } from "@/components/compare/player-compare";
 import { I18nText } from "@/components/i18n-text";
 import { LocalizedOption } from "@/components/localized-option";
+import { LocalizedNumberInput } from "@/components/ui/localized-number-input";
 import { MachetePlayerTable } from "@/components/machete/MachetePlayerTable";
 import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
 import { AutoSubmitForm } from "@/components/players/auto-submit-form";
+import { PlayerSavedViews } from "@/components/players/player-saved-views";
+import { PlayerWatchlistPanel } from "@/components/players/player-watchlist";
+import { ActiveFilterChips, type ActiveFilterChip } from "@/components/ui/active-filter-chips";
 import { CompetitionCheckboxList } from "@/components/ui/competition-checkbox-list";
 import { EmptyState } from "@/components/ui/empty-state";
 import { FilterShell } from "@/components/ui/filter-shell";
@@ -15,6 +20,7 @@ import { normalizeFantasyPosition, type FantasyPositionGroup } from "@/machete/s
 import { loadSportsRuFantasyPriceRefsByScopedPlayer, sportsRuFantasyPriceScopeKey, type SportsRuFantasyPriceRef } from "@/machete/squad_planner";
 import {
   loadSharedLeagueOptions,
+  loadSharedLeagueSeasonOptions,
   loadSharedLeagueTeams,
   loadSharedMachetePlayerRows,
   loadSharedMatchWindowSummary,
@@ -33,6 +39,7 @@ export const dynamic = "force-dynamic";
 
 type SearchParams = {
   leagueId?: string;
+  season?: string;
   teamId?: string;
   competitionKey?: SearchParamValue;
   position?: string;
@@ -61,11 +68,19 @@ type PositionFilter = Exclude<FantasyPositionGroup, "UNK">;
 
 export default async function MachetePlayersPage({ searchParams }: PageProps) {
   const resolvedSearchParams = await searchParams;
-  const sortedLeagues = await loadSharedLeagueOptions(prisma);
+  const [sortedLeagues, leagueSeasonOptions] = await Promise.all([loadSharedLeagueOptions(prisma), loadSharedLeagueSeasonOptions(prisma)]);
   const requestedLeagueId = resolvedSearchParams.leagueId ?? "";
   const selectedLeagueId =
     requestedLeagueId === ALL_LEAGUES_VALUE || sortedLeagues.some((league) => String(league.leagueId) === requestedLeagueId) ? requestedLeagueId : "";
-  const teamLeagues = await loadTeamLeagueOptions(sortedLeagues, selectedLeagueId);
+  const seasonsForSelectedLeague =
+    selectedLeagueId && selectedLeagueId !== ALL_LEAGUES_VALUE
+      ? leagueSeasonOptions.filter((league) => String(league.leagueId) === selectedLeagueId)
+      : [];
+  const selectedSeason =
+    selectedLeagueId && selectedLeagueId !== ALL_LEAGUES_VALUE
+      ? selectedSeasonValue(resolvedSearchParams.season, seasonsForSelectedLeague)
+      : "";
+  const teamLeagues = await loadTeamLeagueOptions(sortedLeagues, leagueSeasonOptions, selectedLeagueId, selectedSeason);
   const selectedTeamId =
     resolvedSearchParams.teamId &&
     selectedLeagueId &&
@@ -90,6 +105,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
 
   const playersResult = await buildMatchWindowRows({
     selectedLeagueId,
+    selectedSeason,
     selectedTeamId,
     competitionKeys: activeCompetitionKeys,
     position: selectedPosition,
@@ -105,6 +121,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
   const paginationParams = {
     ...resolvedSearchParams,
     leagueId: selectedLeagueId,
+    season: selectedSeason || undefined,
     teamId: selectedTeamId,
     competitionKey: activeCompetitionKeys,
     position: selectedPosition ?? undefined,
@@ -122,24 +139,19 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
           { label: <I18nText en="Players" ru="Игроки" />, href: "/machete/players" }
         ]}
       />
-      <div className="mt-5 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-            <I18nText en="Machete player explorer" ru="Таблица игроков Machete" />
-          </p>
-          <h1 className="mt-2 text-3xl font-bold text-ink">
-            <I18nText en="Sports.ru mapped players" ru="Игроки Sports.ru с маппингом" />
-          </h1>
-          <p className="mt-2 max-w-2xl text-sm text-slate-600">
-            <I18nText
-              en="Machete stats for players mapped to Sports.ru fantasy prices. Names and positions come from Sports.ru."
-              ru="Machete-статы только для игроков, замапленных на цены Sports.ru. Имена и позиции берутся из Sports.ru."
-            />
-          </p>
-        </div>
-        <Link href="/machete/leagues" className="rounded bg-ink px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700">
-          <I18nText en="Back to Machete leagues" ru="Назад к лигам Machete" />
-        </Link>
+      <div className="mt-5">
+        <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+          <I18nText en="Machete player explorer" ru="Таблица игроков Machete" />
+        </p>
+        <h1 className="mt-2 text-3xl font-bold text-ink">
+          <I18nText en="Sports.ru mapped players" ru="Игроки Sports.ru с маппингом" />
+        </h1>
+        <p className="mt-2 max-w-2xl text-sm text-slate-600">
+          <I18nText
+            en="Machete stats for players mapped to Sports.ru fantasy prices. Names and positions come from Sports.ru."
+            ru="Machete-статы только для игроков, замапленных на цены Sports.ru. Имена и позиции берутся из Sports.ru."
+          />
+        </p>
       </div>
 
       <FilterShell
@@ -148,7 +160,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
         description={<I18nText en="Choose the working scope first; detailed filters refine the table without a separate apply button." ru="Сначала выберите рабочий скоуп; дополнительные фильтры сразу уточняют таблицу." />}
         resetHref="/machete/players"
       >
-      <AutoSubmitForm className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-8">
+      <AutoSubmitForm className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-9">
         <label className="text-sm">
           <span className="mb-1 block font-medium text-slate-600"><I18nText en="League" ru="Лига" /></span>
           <select name="leagueId" defaultValue={selectedLeagueId} className="w-full rounded border border-slate-200 px-3 py-2">
@@ -156,7 +168,27 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
             <LocalizedOption value={ALL_LEAGUES_VALUE} en="All loaded leagues" ru="Все загруженные лиги" />
             {sortedLeagues.map((league) => (
               <option key={`${league.leagueId}:${league.season}`} value={String(league.leagueId)}>
-                {league.displayName} - {league.season}
+                {league.displayName}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label className="text-sm">
+          <span className="mb-1 block font-medium text-slate-600"><I18nText en="Season" ru="Сезон" /></span>
+          <select
+            name="season"
+            defaultValue={selectedSeason}
+            disabled={!selectedLeagueId || selectedLeagueId === ALL_LEAGUES_VALUE}
+            className="w-full rounded border border-slate-200 px-3 py-2 disabled:bg-slate-100"
+          >
+            <LocalizedOption
+              value=""
+              en={selectedLeagueId === ALL_LEAGUES_VALUE ? "Latest per league" : "Choose league first"}
+              ru={selectedLeagueId === ALL_LEAGUES_VALUE ? "Последний по каждой лиге" : "Сначала выберите лигу"}
+            />
+            {seasonsForSelectedLeague.map((league) => (
+              <option key={`${league.leagueId}:${league.season}`} value={league.season}>
+                {league.season}{league.isCurrent ? " · current" : ""}
               </option>
             ))}
           </select>
@@ -213,13 +245,12 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
         </label>
         <label className="text-sm">
           <span className="mb-1 block font-medium text-slate-600"><I18nText en="Min minutes" ru="Мин. минуты" /></span>
-          <input
+          <LocalizedNumberInput
             name="minMinutes"
-            type="number"
-            min="0"
+            min={0}
             defaultValue={resolvedSearchParams.minMinutes ?? ""}
-            className="w-full rounded border border-slate-200 px-3 py-2"
-            placeholder="0"
+            placeholderEn="0"
+            placeholderRu="0"
           />
         </label>
         <label className="text-sm">
@@ -234,14 +265,14 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
             <LocalizedOption value="custom" en="Custom team matches" ru="Свое число матчей команды" />
           </select>
           {matchWindowModeValue(matchWindow) === "custom" ? (
-            <input
+            <LocalizedNumberInput
               name="customMatches"
-              type="number"
-              min="1"
-              max="50"
+              min={1}
+              max={50}
               defaultValue={resolvedSearchParams.customMatches ?? ""}
-              className="mt-2 w-full rounded border border-slate-200 px-3 py-2"
-              placeholder="Кол-во матчей"
+              placeholderEn="Number of matches"
+              placeholderRu="Кол-во матчей"
+              className="mt-2"
             />
           ) : null}
         </label>
@@ -257,6 +288,25 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
         </label>
       </AutoSubmitForm>
       </FilterShell>
+
+      <ActiveFilterChips
+        className="mt-3"
+        resetHref="/machete/players"
+        chips={buildMacheteActiveChips({
+          allLeagues: sortedLeagues,
+          seasonsForSelectedLeague,
+          teamLeagues,
+          activeCompetitions,
+          selectedLeagueId,
+          selectedSeason,
+          selectedTeamId,
+          selectedPosition,
+          starterFilter,
+          minMinutes: resolvedSearchParams.minMinutes,
+          matchWindow,
+          searchParams: resolvedSearchParams
+        })}
+      />
 
       <p className="mt-3 text-sm text-slate-500">
         <I18nText
@@ -277,38 +327,47 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
         />
       </p>
 
-      {selectedLeagueId ? (
-        <ResultsToolbar
-          className="mt-5"
-          title={<I18nText en={`Showing ${playersResult.from}-${playersResult.to} of ${playersResult.total} players`} ru={`Показаны ${playersResult.from}-${playersResult.to} из ${playersResult.total} игроков`} />}
-          meta={<I18nText en={`Sorted by ${macheteSortLabel(sort)}; window ${matchWindowLabel(matchWindow)}.`} ru={`Сортировка: ${macheteSortLabel(sort)}; окно ${matchWindowLabelRu(matchWindow)}.`} />}
-          resetHref="/machete/players"
-        >
-          <PaginationLinks page={playersResult.page} pageCount={playersResult.pageCount} params={paginationParams} />
-        </ResultsToolbar>
-      ) : null}
-
-      <section className="mt-6">
+      <PlayerCompareProvider source="machete">
         {selectedLeagueId ? (
           <>
-            <MachetePlayerTable players={players} showContext showStarterStatus serverSortParam="sort" defaultSort={sort} />
-            <div className="mt-4 flex justify-end">
+            <ResultsToolbar
+              className="mt-5"
+              title={<I18nText en={`Showing ${playersResult.from}-${playersResult.to} of ${playersResult.total} players`} ru={`Показаны ${playersResult.from}-${playersResult.to} из ${playersResult.total} игроков`} />}
+              meta={<I18nText en={`Sorted by ${macheteSortLabel(sort)}; window ${matchWindowLabel(matchWindow)}.`} ru={`Сортировка: ${macheteSortLabel(sort)}; окно ${matchWindowLabelRu(matchWindow)}.`} />}
+              resetHref="/machete/players"
+            >
+              <PlayerSavedViews source="machete" />
+              <PlayerWatchlistPanel source="machete" />
+              <PlayerCompareToggle />
               <PaginationLinks page={playersResult.page} pageCount={playersResult.pageCount} params={paginationParams} />
-            </div>
+            </ResultsToolbar>
+            <PlayerCompareDock />
           </>
-        ) : (
-          <EmptyState
-            title={<I18nText en="Choose a league" ru="Выберите лигу" />}
-            description={<I18nText en="After that the table will load Sports.ru mapped players and their recalculated Machete stats." ru="После этого таблица загрузит замапленных игроков Sports.ru и пересчитанную статистику Machete." />}
-          />
-        )}
-      </section>
+        ) : null}
+
+        <section className="mt-6">
+          {selectedLeagueId ? (
+            <>
+              <MachetePlayerTable players={players} showContext showStarterStatus serverSortParam="sort" defaultSort={sort} />
+              <div className="mt-4 flex justify-end">
+                <PaginationLinks page={playersResult.page} pageCount={playersResult.pageCount} params={paginationParams} />
+              </div>
+            </>
+          ) : (
+            <EmptyState
+              title={<I18nText en="Choose a league" ru="Выберите лигу" />}
+              description={<I18nText en="After that the table will load Sports.ru mapped players and their recalculated Machete stats." ru="После этого таблица загрузит замапленных игроков Sports.ru и пересчитанную статистику Machete." />}
+            />
+          )}
+        </section>
+      </PlayerCompareProvider>
     </main>
   );
 }
 
 async function buildMatchWindowRows({
   selectedLeagueId,
+  selectedSeason,
   selectedTeamId,
   competitionKeys,
   position,
@@ -320,6 +379,7 @@ async function buildMatchWindowRows({
   pageSize
 }: {
   selectedLeagueId: string;
+  selectedSeason: string;
   selectedTeamId: string;
   competitionKeys: string[];
   position: PositionFilter | null;
@@ -337,7 +397,7 @@ async function buildMatchWindowRows({
     };
   }
 
-  const scopes = await buildPlayerScopes(selectedLeagueId, selectedTeamId, competitionKeys);
+  const scopes = await buildPlayerScopes(selectedLeagueId, selectedSeason, selectedTeamId, competitionKeys);
   const combineTeamCompetitions = competitionKeys.length > 1;
   const [rawRows, windowSummary, sportsPriceRefs] = await Promise.all([
     loadSharedMachetePlayerRows(prisma, {
@@ -357,7 +417,7 @@ async function buildMatchWindowRows({
   };
 }
 
-async function buildPlayerScopes(selectedLeagueId: string, selectedTeamId: string, competitionKeys: string[]): Promise<SharedPlayerRowsScope[]> {
+async function buildPlayerScopes(selectedLeagueId: string, selectedSeason: string, selectedTeamId: string, competitionKeys: string[]): Promise<SharedPlayerRowsScope[]> {
   const teamId = parseSharedBigInt(selectedTeamId);
   const competitions = competitionKeys.map(parseSharedCompetitionKey).filter((competition): competition is { leagueId: bigint; season: string } => Boolean(competition));
   if (teamId && competitions.length > 0) {
@@ -371,9 +431,11 @@ async function buildPlayerScopes(selectedLeagueId: string, selectedTeamId: strin
     }
   }
 
-  const leagues = await loadSharedLeagueOptions(prisma);
+  const leagues = selectedLeagueId === ALL_LEAGUES_VALUE ? await loadSharedLeagueOptions(prisma) : await loadSharedLeagueSeasonOptions(prisma);
   const selectedLeagues =
-    selectedLeagueId === ALL_LEAGUES_VALUE ? leagues : leagues.filter((league) => String(league.leagueId) === selectedLeagueId);
+    selectedLeagueId === ALL_LEAGUES_VALUE
+      ? leagues
+      : leagues.filter((league) => String(league.leagueId) === selectedLeagueId && (!selectedSeason || league.season === selectedSeason));
 
   return selectedLeagues.map((league) => ({
     leagueId: league.leagueId,
@@ -382,9 +444,18 @@ async function buildPlayerScopes(selectedLeagueId: string, selectedTeamId: strin
   }));
 }
 
-async function loadTeamLeagueOptions(leagues: SharedLeagueSeasonOption[], selectedLeagueId: string) {
+async function loadTeamLeagueOptions(
+  leagues: SharedLeagueSeasonOption[],
+  leagueSeasonOptions: SharedLeagueSeasonOption[],
+  selectedLeagueId: string,
+  selectedSeason: string
+) {
   const selectedLeagues =
-    selectedLeagueId === ALL_LEAGUES_VALUE ? leagues : selectedLeagueId ? leagues.filter((league) => String(league.leagueId) === selectedLeagueId) : [];
+    selectedLeagueId === ALL_LEAGUES_VALUE
+      ? leagues
+      : selectedLeagueId
+        ? leagueSeasonOptions.filter((league) => String(league.leagueId) === selectedLeagueId && (!selectedSeason || league.season === selectedSeason))
+        : [];
 
   return Promise.all(
     selectedLeagues.map(async (league) => ({
@@ -392,6 +463,11 @@ async function loadTeamLeagueOptions(leagues: SharedLeagueSeasonOption[], select
       teams: await loadSharedLeagueTeams(prisma, league.leagueId, league.season)
     }))
   ) as Promise<Array<SharedLeagueSeasonOption & { teams: SharedTeamOption[] }>>;
+}
+
+function selectedSeasonValue(requestedSeason: string | undefined, seasons: SharedLeagueSeasonOption[]) {
+  if (requestedSeason && seasons.some((league) => league.season === requestedSeason)) return requestedSeason;
+  return seasons.find((league) => league.isCurrent)?.season ?? seasons[0]?.season ?? "";
 }
 
 function selectedTeamCompetitionOptions(value: SearchParamValue, options: SharedTeamCompetitionOption[]) {
@@ -589,4 +665,137 @@ function machetePlayersHref(params: SearchParams, page: number) {
   }
   query.set("page", String(page));
   return `/machete/players?${query.toString()}`;
+}
+
+function buildMacheteActiveChips({
+  allLeagues,
+  seasonsForSelectedLeague,
+  teamLeagues,
+  activeCompetitions,
+  selectedLeagueId,
+  selectedSeason,
+  selectedTeamId,
+  selectedPosition,
+  starterFilter,
+  minMinutes,
+  matchWindow,
+  searchParams
+}: {
+  allLeagues: SharedLeagueSeasonOption[];
+  seasonsForSelectedLeague: SharedLeagueSeasonOption[];
+  teamLeagues: Array<SharedLeagueSeasonOption & { teams: SharedTeamOption[] }>;
+  activeCompetitions: SharedTeamCompetitionOption[];
+  selectedLeagueId: string;
+  selectedSeason: string;
+  selectedTeamId: string;
+  selectedPosition: PositionFilter | null;
+  starterFilter: ReturnType<typeof parseStarterFilter>;
+  minMinutes?: string;
+  matchWindow: MacheteMatchWindow;
+  searchParams: SearchParams;
+}): ActiveFilterChip[] {
+  const chips: ActiveFilterChip[] = [];
+  const cleanedParams: SearchParams = { ...searchParams, page: undefined };
+
+  if (selectedLeagueId && selectedLeagueId !== ALL_LEAGUES_VALUE) {
+    const league = allLeagues.find((entry) => String(entry.leagueId) === selectedLeagueId);
+    chips.push({
+      key: `league:${selectedLeagueId}`,
+      label: <><I18nText en="League" ru="Лига" />: {league?.displayName ?? selectedLeagueId}</>,
+      removeHref: filterHrefWithout(cleanedParams, "leagueId", "season", "teamId", "competitionKey")
+    });
+  } else if (selectedLeagueId === ALL_LEAGUES_VALUE) {
+    chips.push({
+      key: "league:all",
+      label: <><I18nText en="League" ru="Лига" />: <I18nText en="all" ru="все" /></>,
+      removeHref: filterHrefWithout(cleanedParams, "leagueId", "season", "teamId", "competitionKey")
+    });
+  }
+
+  if (selectedSeason) {
+    const seasonOption = seasonsForSelectedLeague.find((league) => league.season === selectedSeason);
+    chips.push({
+      key: `season:${selectedSeason}`,
+      label: <><I18nText en="Season" ru="Сезон" />: {selectedSeason}{seasonOption?.isCurrent ? " · current" : ""}</>,
+      removeHref: filterHrefWithout(cleanedParams, "season", "teamId", "competitionKey")
+    });
+  }
+
+  if (selectedTeamId) {
+    const teamName =
+      teamLeagues
+        .flatMap((league) => league.teams)
+        .find((team) => String(team.id) === selectedTeamId)?.name ?? selectedTeamId;
+    chips.push({
+      key: `team:${selectedTeamId}`,
+      label: <><I18nText en="Team" ru="Команда" />: {teamName}</>,
+      removeHref: filterHrefWithout(cleanedParams, "teamId", "competitionKey")
+    });
+  }
+
+  for (const competition of activeCompetitions) {
+    chips.push({
+      key: `comp:${competition.key}`,
+      label: <>{competition.displayName} {competition.season}</>,
+      removeHref: filterHrefRemovingArrayValue(cleanedParams, "competitionKey", competition.key)
+    });
+  }
+
+  if (selectedPosition) {
+    chips.push({
+      key: `pos:${selectedPosition}`,
+      label: <><I18nText en="Pos" ru="Поз." />: {selectedPosition}</>,
+      removeHref: filterHrefWithout(cleanedParams, "position")
+    });
+  }
+
+  if (starterFilter) {
+    chips.push({
+      key: `starter:${starterFilter}`,
+      label: starterFilter === "starter" ? <I18nText en="In starting XI" ru="В старте" /> : <I18nText en="Bench only" ru="Только запас" />,
+      removeHref: filterHrefWithout(cleanedParams, "starterFilter")
+    });
+  }
+
+  if (minMinutes && Number.parseInt(minMinutes, 10) > 0) {
+    chips.push({
+      key: `min:${minMinutes}`,
+      label: <>≥ {minMinutes}&apos;</>,
+      removeHref: filterHrefWithout(cleanedParams, "minMinutes")
+    });
+  }
+
+  const mode = matchWindowModeValue(matchWindow);
+  if (mode !== "last5") {
+    chips.push({
+      key: `win:${mode}`,
+      label: <><I18nText en="Window" ru="Окно" />: {matchWindowLabel(matchWindow)}</>,
+      removeHref: filterHrefWithout(cleanedParams, "matchWindow", "customMatches", "recentMatches")
+    });
+  }
+
+  return chips;
+}
+
+function filterHrefWithout(params: SearchParams, ...keys: string[]) {
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (keys.includes(key)) continue;
+    for (const item of searchParamValues(value)) query.append(key, item);
+  }
+  const qs = query.toString();
+  return `/machete/players${qs ? `?${qs}` : ""}`;
+}
+
+function filterHrefRemovingArrayValue(params: SearchParams, key: string, valueToRemove: string) {
+  const query = new URLSearchParams();
+  for (const [paramKey, value] of Object.entries(params)) {
+    const items = searchParamValues(value);
+    for (const item of items) {
+      if (paramKey === key && item === valueToRemove) continue;
+      query.append(paramKey, item);
+    }
+  }
+  const qs = query.toString();
+  return `/machete/players${qs ? `?${qs}` : ""}`;
 }
