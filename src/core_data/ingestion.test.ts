@@ -160,7 +160,7 @@ test("required detailed FotMob matchDetails fail instead of creating partial dat
   );
 });
 
-test("canonical FotMob matchDetails are persisted under their real match id", async () => {
+test("canonical FotMob matchDetails keep the requested scope league and season", async () => {
   const rawUpserts: unknown[] = [];
   const matchUpserts: unknown[] = [];
   const prisma = {
@@ -260,7 +260,7 @@ test("canonical FotMob matchDetails are persisted under their real match id", as
     async getFixtureDetails() {
       return {
         id: "4813595",
-        leagueId: "47",
+        leagueId: "9999",
         homeTeamId: "8678",
         awayTeamId: "8650",
         kickoffAt: "2026-01-01T18:00:00.000Z",
@@ -270,8 +270,8 @@ test("canonical FotMob matchDetails are persisted under their real match id", as
         playerStats: [],
         raw: {
           id: 4813595,
-          leagueId: 47,
-          season: "2025/2026",
+          leagueId: 9999,
+          season: "2024/2025",
           home: { id: 8678, name: "AFC Bournemouth", score: 0 },
           away: { id: 8650, name: "Liverpool", score: 2 },
           status: { finished: true, started: true, utcTime: "2026-01-01T18:00:00.000Z" },
@@ -289,6 +289,8 @@ test("canonical FotMob matchDetails are persisted under their real match id", as
   assert.equal(result.matchId, 4813595n);
   assert.equal((rawUpserts[0] as { where?: { matchId?: bigint } }).where?.matchId, 4813595n);
   assert.equal((matchUpserts[0] as { where?: { id?: bigint } }).where?.id, 4813595n);
+  assert.equal((matchUpserts[0] as { update?: { leagueId?: bigint } }).update?.leagueId, 47n);
+  assert.equal((matchUpserts[0] as { update?: { season?: string } }).update?.season, "2025/2026");
 });
 
 // Browser-mode worker segregation was removed alongside the browser

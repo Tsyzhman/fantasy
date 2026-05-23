@@ -117,8 +117,9 @@ export async function ingest_match(prisma: PrismaClient, match_id: bigint | stri
 
   const payloadMatch = parse_match_metadata(canonicalMatchPayload(details));
   const payloadMatchId = payloadMatch.id && payloadMatch.id !== 0n ? payloadMatch.id : matchId;
-  const payloadLeagueId = payloadMatch.leagueId ?? sourceIdToBigInt(options.leagueId, "league");
-  const payloadSeason = payloadMatch.season ?? options.season ?? null;
+  const scopeLeagueId = sourceIdToBigInt(options.leagueId, "league");
+  const payloadLeagueId = scopeLeagueId ?? payloadMatch.leagueId;
+  const payloadSeason = options.season ?? payloadMatch.season ?? null;
   if (payloadMatchId !== matchId) {
     console.warn(
       `[core_data] Requested FotMob match ${String(matchId)} resolved to canonical match ${String(payloadMatchId)}; storing canonical payload under its real id.`
@@ -221,12 +222,12 @@ export async function persist_match_payload(
   const overrideLeagueId = sourceIdToBigInt(options.leagueId, "league");
   const enriched: ParsedMatchPayload = {
     ...parsed,
-    leagues: ensureScopeLeague(parsed.leagues, overrideLeagueId),
+    leagues: scopedLeagues(parsed.leagues, overrideLeagueId),
     match: {
       ...parsed.match,
       id: matchId,
       leagueId: overrideLeagueId ?? parsed.match.leagueId,
-      season: parsed.match.season ?? options.season ?? null
+      season: options.season ?? parsed.match.season ?? null
     },
     teamStats: parsed.teamStats.map((row) => ({ ...row, matchId })),
     playerStats: parsed.playerStats.map((row) => ({ ...row, matchId })),
@@ -570,9 +571,9 @@ export async function upsert_discovered_fixture(
   });
 }
 
-function ensureScopeLeague(leagues: ParsedMatchPayload["leagues"], leagueId: bigint | null) {
-  if (!leagueId || leagues.some((league) => league.id === leagueId)) return leagues;
-  return [scopeLeagueData(leagueId), ...leagues];
+function scopedLeagues(leagues: ParsedMatchPayload["leagues"], leagueId: bigint | null) {
+  if (!leagueId) return leagues;
+  return [leagues.find((league) => league.id === leagueId) ?? scopeLeagueData(leagueId)];
 }
 
 function scopeLeagueData(leagueId: bigint) {
