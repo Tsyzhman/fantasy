@@ -34,9 +34,9 @@ Remove from automatic ingestion:
 Current expected scale after this cut:
 
 - Enabled leagues: about 43.
-- Initial backfill scopes: about 93.
-- Upper match limit: about 62k matches.
-- Rough disk expectation without raw payload retention: about 35-60 GB for database data, depending on actual parsed match volume.
+- Initial backfill scope policy: latest 2 seasons for domestic leagues; current season only for UEFA club tournaments.
+- Initial backfill scopes: about 79 at the May 2026 season boundary.
+- Rough disk expectation without raw payload retention: lower than the previous 35-60 GB estimate, depending on actual parsed match volume.
 
 ## Raw Payload Retention
 
@@ -71,7 +71,7 @@ docker compose exec -T postgres psql -U fantasy_app -d fantasy_scout -c "TRUNCAT
 Desired behavior:
 
 - UEFA club tournaments should ingest only the current season.
-- Domestic leagues may keep the broader historical backfill policy.
+- Domestic leagues should ingest only the latest 2 seasons.
 - Domestic cups can follow the same policy as their country unless we decide to reduce them too.
 
 UEFA club tournaments in scope:

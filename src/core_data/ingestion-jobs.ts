@@ -8,6 +8,7 @@ import { ingest_match, discover_matches_for_scope, reparse_match, upsert_discove
 import type { IngestionScope } from "./ingestion-scope";
 import {
   enabledLeagueIngestionConfigs,
+  INITIAL_BACKFILL_SEASON_WINDOW,
   scopesForCurrentSeasonLeagueBackfill,
   scopesForInitialBackfill,
   scopesForIncrementalUpdate,
@@ -70,9 +71,9 @@ export async function getIngestionAdminStatus(prisma: PrismaClient) {
     latest_job: latestJob ? serializeIngestionJob(latestJob) : null,
     latest_initial_backfill: latestInitialBackfill ? serializeIngestionJob(latestInitialBackfill) : null,
     start_seasons: {
-      autumn_spring: "2023/2024",
-      spring_autumn: "2023",
-      mode: "from_start_to_current"
+      season_window: INITIAL_BACKFILL_SEASON_WINDOW,
+      mode: "last_n_seasons",
+      uefa_club_tournaments: "current_season_only"
     }
   };
 }
@@ -91,9 +92,9 @@ export async function start_initial_backfill(prisma: PrismaClient, input: StartJ
       metadata: jsonValue({
         backfill_mode: mode,
         start_seasons: {
-          autumn_spring: "2023/2024",
-          spring_autumn: "2023",
-          mode: mode === "current_league_47" ? "current_league_47_current_season" : "from_start_to_current"
+          season_window: mode === "current_league_47" ? 1 : INITIAL_BACKFILL_SEASON_WINDOW,
+          mode: mode === "current_league_47" ? "current_league_47_current_season" : "last_n_seasons",
+          uefa_club_tournaments: "current_season_only"
         }
       })
     }

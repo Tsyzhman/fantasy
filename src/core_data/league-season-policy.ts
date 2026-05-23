@@ -2,6 +2,7 @@ import { macheteLeagueCatalog } from "@/lib/leagues/machete-catalog";
 
 import { createIngestionScope, type CalendarType, type IngestionScope } from "./ingestion-scope";
 
+export const INITIAL_BACKFILL_SEASON_WINDOW = 2;
 export const AUTUMN_SPRING_START_SEASON = "2023/2024";
 export const SPRING_AUTUMN_START_SEASON = "2023";
 export const QUICK_BACKFILL_LEAGUE_ID = 47;
@@ -26,14 +27,12 @@ const tournamentLeagueIds = new Set([
   9942, 10007, 10074, 10195, 10199, 10216
 ]);
 
+const uefaClubTournamentLeagueIds = new Set([42, 73, 74, 10216]);
+
 const tournamentSeasons = new Map<number, readonly string[]>([
   [77, ["2026"]],
   [50, ["2024"]],
   [44, ["2024"]],
-  [42, [AUTUMN_SPRING_START_SEASON]],
-  [73, [AUTUMN_SPRING_START_SEASON]],
-  [10216, [AUTUMN_SPRING_START_SEASON]],
-  [74, ["2023"]],
   [45, [SPRING_AUTUMN_START_SEASON]],
   [299, [SPRING_AUTUMN_START_SEASON]],
   [491, [SPRING_AUTUMN_START_SEASON]]
@@ -99,7 +98,7 @@ const disabledLeagueIngestionIds = new Set([
 export const leagueIngestionConfig: readonly LeagueIngestionConfig[] = macheteLeagueCatalog.map((league) => {
   const leagueId = Number(league.fotMobLeagueId);
   const calendarType = tournamentLeagueIds.has(leagueId) ? "tournament" : springAutumnLeagueIds.has(leagueId) ? "spring_autumn" : "autumn_spring";
-  const explicitSeasons = calendarType === "tournament" ? tournamentSeasons.get(leagueId) ?? [AUTUMN_SPRING_START_SEASON] : undefined;
+  const explicitSeasons = calendarType === "tournament" && !uefaClubTournamentLeagueIds.has(leagueId) ? tournamentSeasons.get(leagueId) : undefined;
   const initialStartSeason =
     calendarType === "autumn_spring"
       ? AUTUMN_SPRING_START_SEASON
@@ -179,51 +178,70 @@ export function scopesForIncrementalUpdate(configs: readonly LeagueIngestionConf
 
 export function seasonsForInitialBackfill(config: LeagueIngestionConfig, referenceDate = new Date()): readonly string[] {
   if (config.calendar_type === "autumn_spring") {
-    return autumnSpringSeasonRange(AUTUMN_SPRING_START_SEASON, seasonForIncrementalUpdate(config, referenceDate));
+    return latestAutumnSpringSeasons(seasonForIncrementalUpdate(config, referenceDate), INITIAL_BACKFILL_SEASON_WINDOW);
   }
   if (config.calendar_type === "spring_autumn") {
-    return calendarYearSeasonRange(SPRING_AUTUMN_START_SEASON, seasonForIncrementalUpdate(config, referenceDate));
+    return latestCalendarYearSeasons(seasonForIncrementalUpdate(config, referenceDate), INITIAL_BACKFILL_SEASON_WINDOW);
   }
-  return config.explicit_seasons ?? [config.initial_start_season];
+  if (isUefaClubTournament(config)) {
+    return [currentAutumnSpringSeason(referenceDate)];
+  }
+  if (config.calendar_type === "tournament" && config.explicit_seasons) {
+    return config.explicit_seasons;
+  }
+  if (config.calendar_type === "tournament") {
+    return latestAutumnSpringSeasons(currentAutumnSpringSeason(referenceDate), INITIAL_BACKFILL_SEASON_WINDOW);
+  }
+  return [config.initial_start_season];
 }
 
 export function seasonForIncrementalUpdate(config: LeagueIngestionConfig, referenceDate = new Date()) {
-  if (config.calendar_type === "tournament") return config.explicit_seasons?.[0] ?? config.initial_start_season;
+  if (isUefaClubTournament(config)) return currentAutumnSpringSeason(referenceDate);
+  if (config.calendar_type === "tournament") return config.explicit_seasons?.[0] ?? currentAutumnSpringSeason(referenceDate);
 
   const year = referenceDate.getUTCFullYear();
   if (config.calendar_type === "spring_autumn") return String(year);
 
-  const month = referenceDate.getUTCMonth() + 1;
-  const startYear = month >= 7 ? year : year - 1;
-  return `${startYear}/${startYear + 1}`;
+  return currentAutumnSpringSeason(referenceDate);
 }
 
 export function configForLeague(leagueId: number) {
   return leagueIngestionConfig.find((config) => config.league_id === leagueId);
 }
 
-function autumnSpringSeasonRange(startSeason: string, endSeason: string) {
-  const startYear = seasonStartYear(startSeason);
+function latestAutumnSpringSeasons(endSeason: string, count: number) {
   const endYear = seasonStartYear(endSeason);
-  if (startYear === null || endYear === null || endYear < startYear) return [startSeason];
+  if (endYear === null) return [endSeason];
 
   const seasons: string[] = [];
+  const startYear = Math.max(0, endYear - Math.max(1, count) + 1);
   for (let year = startYear; year <= endYear; year += 1) {
     seasons.push(`${year}/${year + 1}`);
   }
   return seasons;
 }
 
-function calendarYearSeasonRange(startSeason: string, endSeason: string) {
-  const startYear = seasonStartYear(startSeason);
+function latestCalendarYearSeasons(endSeason: string, count: number) {
   const endYear = seasonStartYear(endSeason);
-  if (startYear === null || endYear === null || endYear < startYear) return [startSeason];
+  if (endYear === null) return [endSeason];
 
   const seasons: string[] = [];
+  const startYear = Math.max(0, endYear - Math.max(1, count) + 1);
   for (let year = startYear; year <= endYear; year += 1) {
     seasons.push(String(year));
   }
   return seasons;
+}
+
+function currentAutumnSpringSeason(referenceDate: Date) {
+  const year = referenceDate.getUTCFullYear();
+  const month = referenceDate.getUTCMonth() + 1;
+  const startYear = month >= 7 ? year : year - 1;
+  return `${startYear}/${startYear + 1}`;
+}
+
+function isUefaClubTournament(config: Pick<LeagueIngestionConfig, "league_id" | "calendar_type">) {
+  return config.calendar_type === "tournament" && uefaClubTournamentLeagueIds.has(config.league_id);
 }
 
 function seasonStartYear(season: string) {

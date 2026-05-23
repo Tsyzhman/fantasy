@@ -124,7 +124,7 @@ function requireNextValue(args: string[], index: number, flag: string) {
 function printResult(result: Awaited<ReturnType<typeof pruneOldLeagueSeasons>>) {
   console.info(`[retention] Mode: ${result.dryRun ? "dry-run" : "delete"}`);
   console.info(
-    `[retention] Date: ${result.referenceDate} ${result.timeZone}; retention=${result.retentionYears} years; cutoff start year=${result.cutoffStartYear}.`
+    `[retention] Date: ${result.referenceDate} ${result.timeZone}; keep=${result.retentionYears} seasons; cutoff start year=${result.cutoffStartYear}.`
   );
   console.info(`[retention] Active calendar types: ${result.activeCalendarTypes.join(", ") || "none"}.`);
 
@@ -167,7 +167,7 @@ Options:
   --yes                             Required for destructive cleanup.
   --date YYYY-MM-DD                 Evaluate retention as if run on this date.
   --calendar-type spring_autumn     Override the date gate; also accepts autumn_spring or all.
-  --retention-years ${LEAGUE_SEASON_RETENTION_YEARS}                Rolling window size.
+  --retention-years ${LEAGUE_SEASON_RETENTION_YEARS}                Number of latest seasons to keep.
   --timezone ${LEAGUE_SEASON_RETENTION_TIME_ZONE}          Date gate timezone.
   --json                            Print machine-readable JSON.
 `);

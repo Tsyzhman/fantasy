@@ -65,7 +65,7 @@ The `ingestion-worker` container executes queued ingestion jobs.
 
 The web container also runs shared FotMob season retention at 03:30
 Europe/Moscow on January 1 and July 1. January prunes spring-autumn seasons
-older than the rolling three-year window; July does the same for autumn-spring
+outside the latest two-season window; July does the same for autumn-spring
 seasons. Preview manually with:
 
 ```bash

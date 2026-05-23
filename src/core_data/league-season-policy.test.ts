@@ -2,8 +2,6 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
-  AUTUMN_SPRING_START_SEASON,
-  SPRING_AUTUMN_START_SEASON,
   enabledLeagueIngestionConfigs,
   leagueIngestionConfig,
   scopesForInitialBackfill,
@@ -24,20 +22,43 @@ test("initial backfill seasons follow calendar policy", () => {
 
   const scopes = scopesForInitialBackfill(configs, referenceDate);
 
-  assert.deepEqual(seasonsForInitialBackfill(configs[0], referenceDate), [AUTUMN_SPRING_START_SEASON, "2024/2025", "2025/2026"]);
-  assert.deepEqual(seasonsForInitialBackfill(configs[1], referenceDate), [SPRING_AUTUMN_START_SEASON, "2024", "2025", "2026"]);
+  assert.deepEqual(seasonsForInitialBackfill(configs[0], referenceDate), ["2024/2025", "2025/2026"]);
+  assert.deepEqual(seasonsForInitialBackfill(configs[1], referenceDate), ["2025", "2026"]);
   assert.deepEqual(seasonsForInitialBackfill(configs[2], referenceDate), ["2026"]);
   assert.deepEqual(scopes.map((scope) => [scope.league_id, scope.season]), [
-    [47, "2023/2024"],
     [47, "2024/2025"],
     [47, "2025/2026"],
-    [130, "2023"],
-    [130, "2024"],
     [130, "2025"],
     [130, "2026"],
     [77, "2026"]
   ]);
   assert.equal(["dry", "run"].join("_") in scopes[0], false);
+});
+
+test("UEFA club tournaments use only the current autumn-spring season", () => {
+  const mayReferenceDate = new Date("2026-05-19T00:00:00.000Z");
+  const augustReferenceDate = new Date("2026-08-01T00:00:00.000Z");
+  const configs: LeagueIngestionConfig[] = [
+    config(42, "Champions League", "tournament"),
+    config(73, "Europa League", "tournament"),
+    config(74, "UEFA Super Cup", "tournament"),
+    config(10216, "Conference League", "tournament")
+  ];
+
+  for (const tournament of configs) {
+    assert.deepEqual(seasonsForInitialBackfill(tournament, mayReferenceDate), ["2025/2026"]);
+    assert.equal(seasonForIncrementalUpdate(tournament, mayReferenceDate), "2025/2026");
+    assert.deepEqual(seasonsForInitialBackfill(tournament, augustReferenceDate), ["2026/2027"]);
+    assert.equal(seasonForIncrementalUpdate(tournament, augustReferenceDate), "2026/2027");
+  }
+});
+
+test("domestic cup tournaments use the latest two autumn-spring seasons", () => {
+  const referenceDate = new Date("2026-05-19T00:00:00.000Z");
+  const faCup = config(132, "FA Cup", "tournament");
+
+  assert.deepEqual(seasonsForInitialBackfill(faCup, referenceDate), ["2024/2025", "2025/2026"]);
+  assert.equal(seasonForIncrementalUpdate(faCup, referenceDate), "2025/2026");
 });
 
 test("incremental updates use current seasons instead of initial backfill seasons", () => {

@@ -4,7 +4,7 @@ import type { CalendarType } from "./ingestion-scope";
 import { configForLeague } from "./league-season-policy";
 import { FOTMOB_SOURCE } from "./models";
 
-export const LEAGUE_SEASON_RETENTION_YEARS = 3;
+export const LEAGUE_SEASON_RETENTION_YEARS = 2;
 export const LEAGUE_SEASON_RETENTION_TIME_ZONE = "Europe/Moscow";
 
 export type RetentionCalendarType = Extract<CalendarType, "autumn_spring" | "spring_autumn">;
@@ -207,7 +207,7 @@ export function retentionCalendarTypesForDate(date: Date, timeZone = LEAGUE_SEAS
 }
 
 export function retentionCutoffStartYear(date: Date, retentionYears = LEAGUE_SEASON_RETENTION_YEARS, timeZone = LEAGUE_SEASON_RETENTION_TIME_ZONE) {
-  return zonedDateParts(date, timeZone).year - retentionYears;
+  return zonedDateParts(date, timeZone).year - Math.max(1, retentionYears) + 1;
 }
 
 function retentionCalendarTypeForRow(row: LeagueSeasonRetentionRow): RetentionCalendarType | null {
