@@ -68,6 +68,13 @@ test("normalizes FotMob 105 by 68 pitch coordinates to percentages", () => {
   assert.equal(y?.toFixed(3), "50.000");
 });
 
+test("FotMob penalty coordinates land on the metric penalty spot", () => {
+  const [x, y] = normalize_fotmob_pitch_coordinates(94, 34);
+
+  assert.equal(x?.toFixed(3), "89.524");
+  assert.equal(y?.toFixed(3), "50.000");
+});
+
 test("missing shotmap returns an empty array", () => {
   assert.deepEqual(extract_match_shots({ id: 1, home: { id: 10 }, away: { id: 20 } }), []);
 });

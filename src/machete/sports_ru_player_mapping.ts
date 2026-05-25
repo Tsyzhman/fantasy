@@ -12,6 +12,7 @@ type SportsRuPriceLike = {
   teamName: string;
   position: string | null;
   price: number;
+  raw?: unknown;
 };
 
 type SportsRuStoredPrice = SportsRuPriceLike & {
@@ -47,6 +48,7 @@ export type SportsRuTeamMappingRow = {
   priceId: string;
   sportsName: string;
   sportsNormalizedName: string;
+  fotmobHintName: string | null;
   sportsTeamName: string;
   sportsPosition: string | null;
   price: number;
@@ -234,6 +236,7 @@ export async function loadSportsRuTeamPlayerMappings(
         priceId: price.id,
         sportsName: price.playerName,
         sportsNormalizedName: price.normalizedName,
+        fotmobHintName: readFotMobPlayerNameHint(price.raw),
         sportsTeamName: price.teamName,
         sportsPosition: price.position,
         price: price.price,
@@ -355,15 +358,19 @@ export function buildSportsRuMappingCandidates(price: SportsRuPriceLike, roster:
 
 export function scoreSportsRuCandidate(price: SportsRuPriceLike, entry: RosterEntry) {
   const sportsName = normalizedSportsRuName(price.playerName, price.normalizedName);
+  const fotmobHintName = normalizeName(readFotMobPlayerNameHint(price.raw) ?? "");
   const fotmobName = normalizeName(entry.player.name);
-  const nameScore = scoreNameMatch(sportsName, fotmobName);
+  const sportsNameScore = scoreNameMatch(sportsName, fotmobName);
+  const fotmobHintScore = scoreNameMatch(fotmobHintName, fotmobName);
+  const nameScore = Math.max(sportsNameScore, fotmobHintScore);
   const pricePosition = normalizeFantasyPosition(price.position);
   const rosterPosition = normalizeFantasyPosition(entry.position);
   const positionAdjustment = positionScoreAdjustment(pricePosition, rosterPosition);
   const teamAdjustment = teamScoreAdjustment(price.teamName, entry.team.name);
   const confidence = clamp(round(nameScore + positionAdjustment + teamAdjustment), 0, 1);
+  const matchedNameSource = fotmobHintScore >= sportsNameScore && fotmobHintScore > 0 ? "fotmob hint" : "name";
   const reason = [
-    nameScore >= 0.92 ? "name" : nameScore >= 0.74 ? "fuzzy name" : "weak name",
+    nameScore >= 0.92 ? matchedNameSource : nameScore >= 0.74 ? `fuzzy ${matchedNameSource}` : `weak ${matchedNameSource}`,
     pricePosition !== "UNK" && rosterPosition !== "UNK" ? `position ${pricePosition}/${rosterPosition}` : null,
     teamAdjustment > 0 ? "team" : null
   ]
@@ -578,6 +585,12 @@ function statusSortRank(status: string) {
 
 function normalizedSportsRuName(playerName: string, normalizedName: string) {
   return normalizeName(normalizedName || normalizeSportsRuPlayerName(playerName));
+}
+
+function readFotMobPlayerNameHint(raw: unknown) {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const value = (raw as { fotmobPlayerName?: unknown }).fotmobPlayerName;
+  return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
 function scoreNameMatch(sportsName: string, fotmobName: string) {

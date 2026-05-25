@@ -492,8 +492,8 @@ function ShotPitchPanel({
 }) {
   const shotCount = layers.reduce((total, layer) => total + layer.shots.length, 0);
   const frameClassName = compact
-    ? "relative aspect-[68/36] min-h-[220px] w-full overflow-hidden rounded border border-emerald-800 bg-emerald-800 shadow-inner"
-    : "relative mx-auto aspect-[68/36] min-h-[260px] w-full min-w-[360px] max-w-[980px] overflow-hidden rounded border border-emerald-800 bg-emerald-800 shadow-inner";
+    ? "relative aspect-[680/368] min-h-[220px] w-full overflow-hidden rounded border border-emerald-800 bg-emerald-800 shadow-inner"
+    : "relative mx-auto aspect-[680/368] min-h-[260px] w-full min-w-[360px] max-w-[980px] overflow-hidden rounded border border-emerald-800 bg-emerald-800 shadow-inner";
 
   return (
     <div>
@@ -516,12 +516,20 @@ function ShotPitchPanel({
 }
 
 function ShotPitchSvg({ layers, showHeatmap, activeShotId }: { layers: ShotLayer[]; showHeatmap: boolean; activeShotId: string | null }) {
+  const penaltyArea = pitchRectFromCenterWidth(PENALTY_AREA_WIDTH_METERS, PENALTY_AREA_DEPTH_METERS);
+  const sixYardBox = pitchRectFromCenterWidth(SIX_YARD_BOX_WIDTH_METERS, SIX_YARD_BOX_DEPTH_METERS);
+  const goal = goalMouthRect();
+  const penaltySpot = pitchPoint(CENTER_Y_METERS, FOTMOB_PITCH_LENGTH_METERS - PENALTY_SPOT_DISTANCE_METERS);
+  const penaltyArc = penaltyArcPath();
+  const zoneLineOne = pitchXFromFotMobY(FOTMOB_PITCH_WIDTH_METERS / 3);
+  const zoneLineTwo = pitchXFromFotMobY((FOTMOB_PITCH_WIDTH_METERS * 2) / 3);
+
   return (
     <svg className="h-full w-full" viewBox={`0 0 ${PITCH_WIDTH} ${PITCH_HEIGHT}`} role="img" aria-label="Pitch">
       <defs>
-        <pattern id="pitch-stripes" width="136" height={PITCH_HEIGHT} patternUnits="userSpaceOnUse">
-          <rect width="68" height={PITCH_HEIGHT} fill="#047857" opacity="0.35" />
-          <rect x="68" width="68" height={PITCH_HEIGHT} fill="#065f46" opacity="0.28" />
+        <pattern id="pitch-stripes" width={PITCH_FIELD_WIDTH / 5} height={PITCH_HEIGHT} patternUnits="userSpaceOnUse">
+          <rect width={PITCH_FIELD_WIDTH / 10} height={PITCH_HEIGHT} fill="#047857" opacity="0.35" />
+          <rect x={PITCH_FIELD_WIDTH / 10} width={PITCH_FIELD_WIDTH / 10} height={PITCH_HEIGHT} fill="#065f46" opacity="0.28" />
         </pattern>
         <filter id="shot-shadow" x="-50%" y="-50%" width="200%" height="200%">
           <feDropShadow dx="0" dy="1.2" stdDeviation="1.4" floodColor="#052e16" floodOpacity="0.36" />
@@ -534,17 +542,16 @@ function ShotPitchSvg({ layers, showHeatmap, activeShotId }: { layers: ShotLayer
       <rect width={PITCH_WIDTH} height={PITCH_HEIGHT} fill="#047857" />
       <rect width={PITCH_WIDTH} height={PITCH_HEIGHT} fill="url(#pitch-stripes)" />
       <g fill="none" stroke="rgba(255,255,255,0.76)" strokeLinecap="round" strokeWidth="3">
-        <rect x="18" y="18" width="644" height="324" />
-        <path d="M149 18V171H531V18" />
-        <path d="M253 18V69H427V18" />
-        <path d="M305 18V8H375V18" />
-        <circle cx="340" cy="120" r="4" fill="rgba(255,255,255,0.82)" stroke="none" />
-        <path d="M271 171A86 86 0 0 0 409 171" strokeOpacity="0.5" />
+        <rect x={PITCH_FIELD_X} y={PITCH_FIELD_Y} width={PITCH_FIELD_WIDTH} height={PITCH_FIELD_HEIGHT} />
+        <path d={`M${penaltyArea.x} ${penaltyArea.y}V${penaltyArea.y + penaltyArea.height}H${penaltyArea.x + penaltyArea.width}V${penaltyArea.y}`} />
+        <path d={`M${sixYardBox.x} ${sixYardBox.y}V${sixYardBox.y + sixYardBox.height}H${sixYardBox.x + sixYardBox.width}V${sixYardBox.y}`} />
+        <path d={`M${goal.x} ${PITCH_FIELD_Y}V${goal.y}H${goal.x + goal.width}V${PITCH_FIELD_Y}`} />
+        <circle cx={penaltySpot.x} cy={penaltySpot.y} r="4" fill="rgba(255,255,255,0.82)" stroke="none" />
+        <path d={penaltyArc} strokeOpacity="0.5" />
       </g>
       <g fill="none" stroke="rgba(255,255,255,0.18)" strokeWidth="1.5">
-        <path d="M18 99H662" />
-        <path d="M18 180H662" />
-        <path d="M18 261H662" />
+        <path d={`M${zoneLineOne} ${PITCH_FIELD_Y}V${PITCH_FIELD_Y + PITCH_FIELD_HEIGHT}`} />
+        <path d={`M${zoneLineTwo} ${PITCH_FIELD_Y}V${PITCH_FIELD_Y + PITCH_FIELD_HEIGHT}`} />
       </g>
 
       {showHeatmap ? <ShotHeatmap layers={layers} /> : null}
@@ -642,26 +649,96 @@ function legendDotClassName(tone: "attacking" | "conceded" | "player") {
   return "h-3 w-3 rounded-full border border-white bg-rose-500 shadow-sm";
 }
 
-const ATTACKING_THIRD_START_X = 100 * 2 / 3;
+const FOTMOB_PITCH_LENGTH_METERS = 105;
+const FOTMOB_PITCH_WIDTH_METERS = 68;
+const FOTMOB_FINAL_THIRD_START_X_METERS = 70;
+const CENTER_Y_METERS = FOTMOB_PITCH_WIDTH_METERS / 2;
+const SHOTMAP_DEPTH_METERS = FOTMOB_PITCH_LENGTH_METERS - FOTMOB_FINAL_THIRD_START_X_METERS;
+const PENALTY_AREA_DEPTH_METERS = 16.5;
+const PENALTY_AREA_WIDTH_METERS = 40.32;
+const SIX_YARD_BOX_DEPTH_METERS = 5.5;
+const SIX_YARD_BOX_WIDTH_METERS = 18.32;
+const GOAL_WIDTH_METERS = 7.32;
+const GOAL_DEPTH_PX = 10;
+const PENALTY_SPOT_DISTANCE_METERS = 11;
+const PENALTY_ARC_RADIUS_METERS = 9.15;
 const PITCH_WIDTH = 680;
-const PITCH_HEIGHT = 360;
 const PITCH_FIELD_X = 18;
 const PITCH_FIELD_Y = 18;
 const PITCH_FIELD_WIDTH = 644;
-const PITCH_FIELD_HEIGHT = 324;
+const PITCH_FIELD_HEIGHT = (PITCH_FIELD_WIDTH / FOTMOB_PITCH_WIDTH_METERS) * SHOTMAP_DEPTH_METERS;
+const PITCH_HEIGHT = PITCH_FIELD_Y * 2 + PITCH_FIELD_HEIGHT;
 
 function shotMarkerGeometry(shot: ShotMapShot) {
   const [displayX, displayY] = shotDisplayCoordinates(shot);
-  const x = clamp(displayX ?? ATTACKING_THIRD_START_X, ATTACKING_THIRD_START_X, 100);
-  const y = clamp(displayY ?? 50, 2, 98);
+  const xMeters = clamp(percentToMeters(displayX, FOTMOB_PITCH_LENGTH_METERS) ?? FOTMOB_FINAL_THIRD_START_X_METERS, FOTMOB_FINAL_THIRD_START_X_METERS, FOTMOB_PITCH_LENGTH_METERS);
+  const yMeters = clamp(percentToMeters(displayY, FOTMOB_PITCH_WIDTH_METERS) ?? CENTER_Y_METERS, 0, FOTMOB_PITCH_WIDTH_METERS);
   const size = Math.max(7, Math.min(17, 7 + Math.sqrt(Math.max(shot.xg ?? 0.04, 0)) * 10));
-  const attackingThirdTop = ((100 - x) / (100 - ATTACKING_THIRD_START_X)) * 100;
 
   return {
-    x: PITCH_FIELD_X + (y / 100) * PITCH_FIELD_WIDTH,
-    y: PITCH_FIELD_Y + (attackingThirdTop / 100) * PITCH_FIELD_HEIGHT,
+    x: pitchXFromFotMobY(yMeters),
+    y: pitchYFromFotMobX(xMeters),
     radius: size / 2
   };
+}
+
+function pitchPoint(fotMobY: number, fotMobX: number) {
+  return {
+    x: pitchXFromFotMobY(fotMobY),
+    y: pitchYFromFotMobX(fotMobX)
+  };
+}
+
+function pitchRectFromCenterWidth(widthMeters: number, depthMeters: number, topOffsetPx = 0) {
+  const leftMeters = (FOTMOB_PITCH_WIDTH_METERS - widthMeters) / 2;
+  return {
+    x: pitchXFromFotMobY(leftMeters),
+    y: PITCH_FIELD_Y + topOffsetPx,
+    width: fieldWidthMetersToPx(widthMeters),
+    height: fieldDepthMetersToPx(depthMeters)
+  };
+}
+
+function goalMouthRect() {
+  const leftMeters = (FOTMOB_PITCH_WIDTH_METERS - GOAL_WIDTH_METERS) / 2;
+  return {
+    x: pitchXFromFotMobY(leftMeters),
+    y: PITCH_FIELD_Y - GOAL_DEPTH_PX,
+    width: fieldWidthMetersToPx(GOAL_WIDTH_METERS)
+  };
+}
+
+function penaltyArcPath() {
+  const boxBottomY = PITCH_FIELD_Y + fieldDepthMetersToPx(PENALTY_AREA_DEPTH_METERS);
+  const radiusPx = fieldDepthMetersToPx(PENALTY_ARC_RADIUS_METERS);
+  const penaltyToBoxMeters = PENALTY_AREA_DEPTH_METERS - PENALTY_SPOT_DISTANCE_METERS;
+  const lateralOffsetMeters = Math.sqrt(Math.max(PENALTY_ARC_RADIUS_METERS ** 2 - penaltyToBoxMeters ** 2, 0));
+  const leftX = pitchXFromFotMobY(CENTER_Y_METERS - lateralOffsetMeters);
+  const rightX = pitchXFromFotMobY(CENTER_Y_METERS + lateralOffsetMeters);
+
+  return `M${leftX} ${boxBottomY}A${radiusPx} ${radiusPx} 0 0 0 ${rightX} ${boxBottomY}`;
+}
+
+function pitchXFromFotMobY(yMeters: number) {
+  return PITCH_FIELD_X + (yMeters / FOTMOB_PITCH_WIDTH_METERS) * PITCH_FIELD_WIDTH;
+}
+
+function pitchYFromFotMobX(xMeters: number) {
+  const distanceFromGoalMeters = FOTMOB_PITCH_LENGTH_METERS - xMeters;
+  return PITCH_FIELD_Y + (distanceFromGoalMeters / SHOTMAP_DEPTH_METERS) * PITCH_FIELD_HEIGHT;
+}
+
+function fieldWidthMetersToPx(value: number) {
+  return (value / FOTMOB_PITCH_WIDTH_METERS) * PITCH_FIELD_WIDTH;
+}
+
+function fieldDepthMetersToPx(value: number) {
+  return (value / SHOTMAP_DEPTH_METERS) * PITCH_FIELD_HEIGHT;
+}
+
+function percentToMeters(value: number | null, axisLength: number) {
+  if (value === null) return null;
+  return (value / 100) * axisLength;
 }
 
 function markerFill(shot: ShotMapShot) {
@@ -697,7 +774,10 @@ function shotDisplayCoordinates(shot: ShotMapShot): [number | null, number | nul
 
   if (hasDerivedNormalizedCoordinates) return [shot.normalized_x, shot.normalized_y];
 
-  return [normalizeFotMobAxis(shot.normalized_x ?? shot.x, 105), normalizeFotMobAxis(shot.normalized_y ?? shot.y, 68)];
+  return [
+    normalizeFotMobAxis(shot.normalized_x ?? shot.x, FOTMOB_PITCH_LENGTH_METERS),
+    normalizeFotMobAxis(shot.normalized_y ?? shot.y, FOTMOB_PITCH_WIDTH_METERS)
+  ];
 }
 
 function shotTooltip(shot: ShotMapShot, layer: string) {

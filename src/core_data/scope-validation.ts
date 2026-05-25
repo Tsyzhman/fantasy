@@ -1,5 +1,6 @@
 import type { FotMobFixture } from "@/providers/fotmob/types";
 
+import { scopeCanonicalLeagueId } from "./league-aliases";
 import type { IngestionScope } from "./ingestion-scope";
 import { configForLeague } from "./league-season-policy";
 
@@ -11,7 +12,8 @@ export class ScopeTooBroadError extends Error {
 }
 
 export function validate_ingestion_scope(scope: IngestionScope, discovered_matches: FotMobFixture[]) {
-  const config = configForLeague(scope.league_id);
+  const canonicalLeagueId = scopeCanonicalLeagueId(scope);
+  const config = configForLeague(canonicalLeagueId) ?? configForLeague(scope.league_id);
   const maxMatches = scope.max_matches ?? config?.max_matches ?? 700;
   if (discovered_matches.length > maxMatches) {
     throw new ScopeTooBroadError(
@@ -19,7 +21,8 @@ export function validate_ingestion_scope(scope: IngestionScope, discovered_match
     );
   }
 
-  const wrongLeague = discovered_matches.find((match) => match.leagueId && String(match.leagueId) !== String(scope.league_id));
+  const allowedLeagueIds = new Set([String(scope.league_id), String(canonicalLeagueId)]);
+  const wrongLeague = discovered_matches.find((match) => match.leagueId && !allowedLeagueIds.has(String(match.leagueId)));
   if (wrongLeague) {
     throw new ScopeTooBroadError(
       `Discovered match ${wrongLeague.id} belongs to league ${wrongLeague.leagueId}, not requested league ${scope.league_id}.`
@@ -64,4 +67,3 @@ function parseDate(value: string | Date | null | undefined) {
   const date = value instanceof Date ? value : new Date(value);
   return Number.isNaN(date.getTime()) ? null : date;
 }
-

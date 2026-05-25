@@ -23,10 +23,12 @@
     "ingestion:worker": "tsx scripts/ingestion-runner.ts worker",
     "ingestion:reparse-raw": "tsx scripts/ingestion-runner.ts reparse-raw",
     "ingestion:import-payloads": "tsx scripts/ingestion-runner.ts import-payloads",
+    "db:merge-leagues": "tsx scripts/merge-core-leagues.ts",
     "retention:prune-league-seasons": "tsx scripts/prune-old-league-seasons.ts",
     "fotmob:smoke": "tsx scripts/fotmob-smoke.ts",
     "fotmob:inspect": "tsx scripts/fotmob-inspect.ts",
     "fotmob:reset": "tsx scripts/reset-fotmob-matches.ts",
+    "fotmob:penalty-potential": "tsx scripts/penalty-potential-index.ts",
     "prices:import-sheet": "tsx scripts/import-fantasy-price-sheet.ts",
     "scores:recalculate": "tsx prisma/recalculate-fantasy.ts",
     "logos:download": "tsx scripts/download-team-logos.ts"

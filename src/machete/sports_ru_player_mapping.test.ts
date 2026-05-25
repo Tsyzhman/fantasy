@@ -15,6 +15,19 @@ test("sports ru mapping matches transliterated surname to FotMob roster name", (
   assert.equal(result.confidence >= 0.78, true);
 });
 
+test("sports ru mapping uses FotMob player-name hints from imported sheets", () => {
+  const result = scoreSportsRuCandidate(
+    {
+      ...price("not close", "GK"),
+      raw: { fotmobPlayerName: "David Raya" }
+    },
+    roster("David Raya", "GK", { name: "Arsenal" })
+  );
+
+  assert.equal(result.confidence, 1);
+  assert.equal(result.reason.includes("fotmob hint"), true);
+});
+
 test("sports ru mapping prefers same-position team roster candidate", () => {
   const candidates = buildSportsRuMappingCandidates(
     price("alisson", "GK"),

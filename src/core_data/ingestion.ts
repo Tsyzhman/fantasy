@@ -2,6 +2,7 @@ import type { PrismaClient } from "@prisma/client";
 
 import { createFotMobClient, FotMobFixtureDetailsUnavailableError, type FotMobClient } from "./fotmob_client";
 import type { IngestionScope } from "./ingestion-scope";
+import { canonicalLeagueIdForIdentity, targetLeagueForCanonicalId } from "./league-aliases";
 import { configForLeague } from "./league-season-policy";
 import {
   CORE_SCHEMA_VERSION,
@@ -179,10 +180,11 @@ export async function ingest_scope(
     if (!matchId) continue;
     await options.onMatchStart?.(matchId);
     try {
-      await upsert_discovered_fixture(prisma, fixture, BigInt(scope.league_id), scope.season);
+      const canonicalLeagueId = BigInt(scope.canonical_league_id ?? scope.league_id);
+      await upsert_discovered_fixture(prisma, fixture, canonicalLeagueId, scope.season);
       const result = await ingest_match(prisma, fixture.id, {
         client,
-        leagueId: scope.league_id,
+        leagueId: canonicalLeagueId,
         season: scope.season,
         parserVersion: options.parserVersion,
         schemaVersion: options.schemaVersion,
@@ -219,14 +221,26 @@ export async function persist_match_payload(
   const matchId = options.matchId ?? parsed.match.id;
   if (!matchId || matchId === 0n) throw new Error("FotMob match payload does not contain a usable match id.");
 
-  const overrideLeagueId = sourceIdToBigInt(options.leagueId, "league");
+  const overrideLeagueId = canonicalSourceLeagueId(options.leagueId, parsed.leagues);
+  const parsedLeague = parsed.match.leagueId ? parsed.leagues.find((league) => league.id === parsed.match.leagueId) : undefined;
+  const parsedCanonicalLeagueId = parsed.match.leagueId
+    ? sourceIdToBigInt(
+        canonicalLeagueIdForIdentity({
+          id: parsed.match.leagueId,
+          name: parsedLeague?.name,
+          country: parsedLeague?.country
+        }),
+        "league"
+      )
+    : null;
+  const resolvedLeagueId = overrideLeagueId ?? parsedCanonicalLeagueId ?? parsed.match.leagueId;
   const enriched: ParsedMatchPayload = {
     ...parsed,
-    leagues: scopedLeagues(parsed.leagues, overrideLeagueId),
+    leagues: scopedLeagues(parsed.leagues, resolvedLeagueId),
     match: {
       ...parsed.match,
       id: matchId,
-      leagueId: overrideLeagueId ?? parsed.match.leagueId,
+      leagueId: resolvedLeagueId,
       season: options.season ?? parsed.match.season ?? null
     },
     teamStats: parsed.teamStats.map((row) => ({ ...row, matchId })),
@@ -571,6 +585,20 @@ export async function upsert_discovered_fixture(
   });
 }
 
+function canonicalSourceLeagueId(value: bigint | string | number | null | undefined, leagues: ParsedMatchPayload["leagues"]) {
+  const sourceLeagueId = sourceIdToBigInt(value, "league");
+  if (!sourceLeagueId) return null;
+
+  const sourceLeague = leagues.find((league) => league.id === sourceLeagueId);
+  const canonicalLeagueId = canonicalLeagueIdForIdentity({
+    id: sourceLeagueId,
+    name: sourceLeague?.name,
+    country: sourceLeague?.country
+  });
+
+  return sourceIdToBigInt(canonicalLeagueId, "league");
+}
+
 function scopedLeagues(leagues: ParsedMatchPayload["leagues"], leagueId: bigint | null) {
   if (!leagueId) return leagues;
   return [leagues.find((league) => league.id === leagueId) ?? scopeLeagueData(leagueId)];
@@ -578,10 +606,11 @@ function scopedLeagues(leagues: ParsedMatchPayload["leagues"], leagueId: bigint 
 
 function scopeLeagueData(leagueId: bigint) {
   const config = configForLeague(Number(leagueId));
+  const targetLeague = targetLeagueForCanonicalId(leagueId);
   return {
     id: leagueId,
-    name: config?.name ?? `FotMob league ${String(leagueId)}`,
-    country: null,
+    name: targetLeague?.name ?? config?.name ?? `FotMob league ${String(leagueId)}`,
+    country: targetLeague?.country ?? null,
     rawRef: String(leagueId)
   };
 }

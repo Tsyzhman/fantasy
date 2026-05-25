@@ -29,6 +29,7 @@ async function main() {
     console.log(`Parsed ${parsed.rows.length} price rows from "${parsed.sheetName}".`);
     console.table(parsed.rows.slice(0, 12).map((row) => ({
       row: row.rowNumber,
+      fotmob: row.fotmobPlayerName,
       name: row.playerName,
       team: row.teamName,
       sportsTeam: row.sportsTeamName,

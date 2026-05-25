@@ -3,6 +3,7 @@ export type CalendarType = "autumn_spring" | "spring_autumn" | "tournament";
 export type IngestionScope = Readonly<{
   source: "fotmob";
   league_id: number;
+  canonical_league_id?: number | null;
   season: string;
   date_from?: Date | null;
   date_to?: Date | null;
@@ -17,6 +18,7 @@ export type IngestionScope = Readonly<{
 
 export function createIngestionScope(input: {
   league_id: number;
+  canonical_league_id?: number | null;
   season: string;
   date_from?: Date | null;
   date_to?: Date | null;
@@ -31,6 +33,7 @@ export function createIngestionScope(input: {
   return Object.freeze({
     source: "fotmob" as const,
     league_id: input.league_id,
+    canonical_league_id: input.canonical_league_id ?? null,
     season: input.season,
     date_from: input.date_from ?? null,
     date_to: input.date_to ?? null,

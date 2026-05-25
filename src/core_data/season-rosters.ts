@@ -1,6 +1,7 @@
 import type { PrismaClient } from "@prisma/client";
 
 import type { FotMobClient } from "./fotmob_client";
+import { targetLeagueForCanonicalId } from "./league-aliases";
 import { configForLeague, type LeagueIngestionConfig } from "./league-season-policy";
 import { sourceIdToBigInt, type PlayerData, type TeamData } from "./models";
 import { CoreMatchRepository, CorePlayerRepository, CoreSeasonRosterRepository, CoreTeamRepository } from "./repositories";
@@ -31,19 +32,24 @@ export async function sync_league_season_rosters(
   client: FotMobClient,
   input: {
     leagueId: number;
+    canonicalLeagueId?: number | null;
     season: string;
     isCurrent?: boolean;
+    deactivateMissing?: boolean;
   }
 ): Promise<SeasonRosterSyncResult> {
-  const leagueId = sourceIdToBigInt(input.leagueId, "league");
+  const sourceLeagueId = input.leagueId;
+  const canonicalLeagueId = input.canonicalLeagueId ?? input.leagueId;
+  const leagueId = sourceIdToBigInt(canonicalLeagueId, "league");
   if (!leagueId) throw new Error("leagueId is required for roster sync.");
 
-  const config = configForLeague(input.leagueId);
-  const league = await client.getLeague(String(input.leagueId), input.season);
+  const config = configForLeague(canonicalLeagueId) ?? configForLeague(sourceLeagueId);
+  const targetLeague = targetLeagueForCanonicalId(canonicalLeagueId);
+  const league = await client.getLeague(String(sourceLeagueId), input.season);
   const season = normalizeSeasonLabel(league.season) ?? input.season;
-  const teams = await client.getTeams(String(input.leagueId), season);
+  const teams = await client.getTeams(String(sourceLeagueId), season);
   if (teams.length === 0) {
-    throw new Error(`FotMob returned no teams for league ${input.leagueId} season ${season}.`);
+    throw new Error(`FotMob returned no teams for league ${sourceLeagueId} season ${season}.`);
   }
 
   const matchRepository = new CoreMatchRepository(prisma);
@@ -53,9 +59,9 @@ export async function sync_league_season_rosters(
 
   await matchRepository.upsertLeague({
     id: leagueId,
-    name: league.name,
-    country: league.country ?? null,
-    rawRef: String(input.leagueId)
+    name: targetLeague?.name ?? config?.name ?? league.name,
+    country: targetLeague?.country ?? league.country ?? null,
+    rawRef: String(canonicalLeagueId)
   });
 
   await rosterRepository.upsertLeagueSeason({
@@ -64,10 +70,12 @@ export async function sync_league_season_rosters(
     calendarType: config?.calendar_type ?? null,
     isCurrent: input.isCurrent ?? true,
     providerSeason: league.season ?? season,
-    name: league.name,
-    country: league.country ?? null,
+    name: targetLeague?.name ?? config?.name ?? league.name,
+    country: targetLeague?.country ?? league.country ?? null,
     metadata: {
-      logo_url: league.logoUrl ?? null
+      logo_url: league.logoUrl ?? null,
+      source_league_id: sourceLeagueId,
+      source_league_name: league.name
     }
   });
 
@@ -82,11 +90,13 @@ export async function sync_league_season_rosters(
     metadata: teamMetadata(teams, team)
   }));
   await rosterRepository.upsertSeasonTeams(seasonTeams);
-  await rosterRepository.deactivateMissingSeasonTeams(
-    leagueId,
-    season,
-    seasonTeams.map((team) => team.teamId)
-  );
+  if (input.deactivateMissing ?? true) {
+    await rosterRepository.deactivateMissingSeasonTeams(
+      leagueId,
+      season,
+      seasonTeams.map((team) => team.teamId)
+    );
+  }
 
   let playerCount = 0;
   for (const team of teams) {
@@ -118,12 +128,14 @@ export async function sync_league_season_rosters(
       .filter((row): row is NonNullable<typeof row> => row !== null);
 
     await rosterRepository.upsertTeamPlayers(rosterRows);
-    await rosterRepository.deactivateMissingTeamPlayers(
-      leagueId,
-      season,
-      teamId,
-      rosterRows.map((row) => row.playerId)
-    );
+    if (input.deactivateMissing ?? true) {
+      await rosterRepository.deactivateMissingTeamPlayers(
+        leagueId,
+        season,
+        teamId,
+        rosterRows.map((row) => row.playerId)
+      );
+    }
   }
 
   return {

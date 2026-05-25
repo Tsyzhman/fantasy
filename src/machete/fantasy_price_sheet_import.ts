@@ -9,6 +9,7 @@ export type ParsedFantasyPriceRow = {
   rowNumber: number;
   playerName: string;
   normalizedName: string;
+  fotmobPlayerName: string | null;
   sportsTeamName: string;
   teamName: string;
   position: string | null;
@@ -22,6 +23,7 @@ export type ParsedFantasyPriceSheet = {
 };
 
 type PriceSheetColumns = {
+  fotmobPlayerNameCol: number | null;
   fcCol: number | null;
   nameCol: number;
   clubCol: number;
@@ -154,6 +156,7 @@ export function parseFantasyPriceWorkbook(workbook: ExcelJS.Workbook, input: { s
   for (let rowNumber = header.rowNumber + 1; rowNumber <= worksheet.rowCount; rowNumber += 1) {
     const row = worksheet.getRow(rowNumber);
     const playerName = cellString(row.getCell(header.columns.nameCol));
+    const fotmobPlayerName = header.columns.fotmobPlayerNameCol ? cellString(row.getCell(header.columns.fotmobPlayerNameCol)) : null;
     const sportsTeamName = cellString(row.getCell(header.columns.clubCol));
     const price = cellNumber(row.getCell(header.columns.priceCol));
     if (!playerName || !sportsTeamName || price === null) continue;
@@ -167,6 +170,7 @@ export function parseFantasyPriceWorkbook(workbook: ExcelJS.Workbook, input: { s
       rowNumber,
       playerName,
       normalizedName: normalizeSportsRuPlayerName(playerName),
+      fotmobPlayerName,
       sportsTeamName,
       teamName,
       position,
@@ -178,7 +182,8 @@ export function parseFantasyPriceWorkbook(workbook: ExcelJS.Workbook, input: { s
         sportsTeamName,
         teamName,
         positionLabel,
-        fcTeamName
+        fcTeamName,
+        fotmobPlayerName
       }
     });
   }
@@ -205,7 +210,7 @@ function findPriceHeader(worksheet: ExcelJS.Worksheet): { rowNumber: number; col
     const headers = new Map<string, number>();
     for (let col = 1; col <= worksheet.columnCount; col += 1) {
       const value = normalizeHeader(cellString(row.getCell(col)));
-      if (value) headers.set(value, col);
+      if (value && !headers.has(value)) headers.set(value, col);
     }
 
     const nameCol = firstHeader(headers, ["\u0438\u043c\u044f", "\u0438\u0433\u0440\u043e\u043a", "player", "name"]);
@@ -216,6 +221,7 @@ function findPriceHeader(worksheet: ExcelJS.Worksheet): { rowNumber: number; col
       return {
         rowNumber,
         columns: {
+          fotmobPlayerNameCol: firstHeader(headers, ["fotmob", "fotmob name", "fot mob", "fotmob player"]),
           fcCol: firstHeader(headers, ["fc"]),
           nameCol,
           clubCol,
