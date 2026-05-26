@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 
 import { requireApiUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { readJsonObject } from "@/lib/request-json";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -22,18 +23,20 @@ const validSources = new Set<WatchlistSource>(["machete", "baltika"]);
 export async function GET(request: Request) {
   const auth = await requireApiUser();
   if (auth.response) return auth.response;
+  const userId = auth.user.id;
 
   const source = sourceValue(new URL(request.url).searchParams.get("source"));
   if (!source) return badRequest("source must be machete or baltika.");
 
-  return NextResponse.json({ players: await loadWatchlist(auth.user!.id, source) });
+  return NextResponse.json({ players: await loadWatchlist(userId, source) });
 }
 
 export async function POST(request: Request) {
   const auth = await requireApiUser();
   if (auth.response) return auth.response;
+  const userId = auth.user.id;
 
-  const body = await request.json().catch(() => ({}));
+  const body = await readJsonObject(request);
   const source = sourceValue(body.source);
   const player = playerInput(body.player);
   if (!source) return badRequest("source must be machete or baltika.");
@@ -45,13 +48,13 @@ export async function POST(request: Request) {
   await prisma.userWatchlistPlayer.upsert({
     where: {
       userId_source_playerKey: {
-        userId: auth.user!.id,
+        userId,
         source,
         playerKey: player.id
       }
     },
     create: {
-      userId: auth.user!.id,
+      userId,
       source,
       playerKey: player.id,
       playerName: player.name,
@@ -67,13 +70,14 @@ export async function POST(request: Request) {
     }
   });
 
-  await trimWatchlist(auth.user!.id, source);
-  return NextResponse.json({ players: await loadWatchlist(auth.user!.id, source) });
+  await trimWatchlist(userId, source);
+  return NextResponse.json({ players: await loadWatchlist(userId, source) });
 }
 
 export async function DELETE(request: Request) {
   const auth = await requireApiUser();
   if (auth.response) return auth.response;
+  const userId = auth.user.id;
 
   const params = new URL(request.url).searchParams;
   const source = sourceValue(params.get("source"));
@@ -83,13 +87,13 @@ export async function DELETE(request: Request) {
 
   await prisma.userWatchlistPlayer.deleteMany({
     where: {
-      userId: auth.user!.id,
+      userId,
       source,
       playerKey
     }
   });
 
-  return NextResponse.json({ players: await loadWatchlist(auth.user!.id, source) });
+  return NextResponse.json({ players: await loadWatchlist(userId, source) });
 }
 
 async function loadWatchlist(userId: string, source: WatchlistSource) {

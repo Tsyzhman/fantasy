@@ -2,6 +2,7 @@ import { ImportStatus, Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 
 import { requireApiUser } from "@/lib/auth";
+import { finiteNumberQueryParam } from "@/lib/api-query";
 import { prisma } from "@/lib/db";
 
 export const dynamic = "force-dynamic";
@@ -41,14 +42,14 @@ export async function GET(request: Request) {
   const positionGroup = params.get("positionGroup");
   const starterFilter = params.get("starterFilter");
   const starterOnly = params.get("starterOnly");
-  const minMinutes = Number(params.get("minMinutes") ?? "");
+  const minMinutes = finiteNumberQueryParam(params.get("minMinutes"));
 
   if (leagueId) where.leagueId = leagueId;
   if (teamId) where.teamId = teamId;
   if (positionGroup) where.positionGroup = positionGroup;
   if (starterFilter === "starter" || starterOnly === "1") where.isStarter = true;
   if (starterFilter === "bench") where.isStarter = false;
-  if (Number.isFinite(minMinutes)) where.minutesPlayed = { gte: minMinutes };
+  if (minMinutes !== null) where.minutesPlayed = { gte: minMinutes };
 
   const sort = params.get("sort") ?? "fantasyScore";
   const orderBy = playerSnapshotOrderBy(sort);

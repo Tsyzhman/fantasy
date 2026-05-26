@@ -13,8 +13,11 @@ import { cn } from "@/lib/cn";
 import {
   buildTransferSuggestions,
   canStartFantasyPlayer,
+  countFantasySquadTransfers,
   fantasyAddBlockReason,
+  fantasyTransferLimitForHorizon,
   nextFantasyPoints,
+  normalizeFantasyHorizon,
   optimizeFantasyStarters,
   playerHorizonPoints,
   selectionForPlayer,
@@ -45,12 +48,10 @@ type FantasySquadPlannerProps = {
 
 const positionOrder: FantasyPositionGroup[] = ["GK", "DEF", "MID", "FWD", "UNK"];
 const rosterPositions: Array<Exclude<FantasyPositionGroup, "UNK">> = ["GK", "DEF", "MID", "FWD"];
-const transfersPerRound = 3;
 const squadDragDataType = "application/x-fantasy-player-id";
-const starterRuleMessage = "Starting XI must keep 1 GK, 10 field players, DEF 3-5, MID 2-5, FWD 1-3.";
 
+type UiLanguage = ReturnType<typeof useLanguage>;
 type MobileTab = "squad" | "pool" | "suggestions";
-type TransferMode = "normal" | "wildcard";
 type StoredSquadCaptains = {
   captainId: string | null;
   viceCaptainId: string | null;
@@ -63,13 +64,14 @@ type SquadDiff = {
   starterChanges: number;
   lockChanges: number;
   captainChanges: number;
+  transferCount: number;
   nextDelta: number;
   horizonDelta: number;
 };
 
 export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, initialSquad, priceStatus }: FantasySquadPlannerProps) {
   const language = useLanguage();
-  const initialHorizon = initialSquad.horizonRounds || 5;
+  const initialHorizon = normalizeFantasyHorizon(initialSquad.horizonRounds, rules.horizonOptions);
   const initialSelections = useMemo(() => normalizeInitialSelections(initialSquad.selections, players, rules), [initialSquad.selections, players, rules]);
   const captainStorageKey = `fantasy-squad-captains:${leagueId}:${season}`;
   const [selections, setSelections] = useState<FantasySquadSelection[]>(() => initialSelections);
@@ -83,7 +85,6 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
   const [isPending, startTransition] = useTransition();
   const [mobileTab, setMobileTab] = useState<MobileTab>("squad");
   const [draggedPlayerId, setDraggedPlayerId] = useState<string | null>(null);
-  const [transferMode, setTransferMode] = useState<TransferMode>("normal");
 
   const selectionsByPlayerId = useMemo(() => new Map(selections.map((selection) => [selection.playerId, selection])), [selections]);
   const selectedPlayerIds = useMemo(() => new Set(selections.map((selection) => selection.playerId)), [selections]);
@@ -92,10 +93,12 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
   const summary = useMemo(() => summarizeFantasySquad(players, selections, rules, horizon), [players, selections, rules, horizon]);
   const savedSummary = useMemo(() => summarizeFantasySquad(players, savedSelections, rules, horizon), [players, savedSelections, rules, horizon]);
   const squadDiff = useMemo(() => buildSquadDiff(savedSelections, selections, savedSummary, summary), [savedSelections, selections, savedSummary, summary]);
-  const transferLimit = transferMode === "normal" ? transfersPerRound : rules.squadSize;
+  const transferLimit = fantasyTransferLimitForHorizon(horizon);
+  const transferLimitIsActive = savedSelections.length === rules.squadSize;
+  const availableSuggestionCount = transferLimitIsActive ? Math.max(0, transferLimit - squadDiff.transferCount) : transferLimit;
   const suggestions = useMemo(
-    () => buildTransferSuggestions({ pool: players, selections, rules, horizon, transferCount: transferLimit }),
-    [players, selections, rules, horizon, transferLimit]
+    () => buildTransferSuggestions({ pool: players, selections, rules, horizon, transferCount: availableSuggestionCount }),
+    [availableSuggestionCount, players, selections, rules, horizon]
   );
   const filteredPlayers = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
@@ -142,18 +145,45 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
     setSelections((current) => withCaptainState(current, nextCaptainId, nextViceCaptainId));
   }
 
+  function transferLimitBlockReason(nextSelections: FantasySquadSelection[]) {
+    if (!transferLimitIsActive) return null;
+    if (countFantasySquadTransfers(savedSelections, nextSelections) <= transferLimit) return null;
+
+    return localizedText(
+      language,
+      `Transfer limit reached: ${transferLimit} for the selected forecast.`,
+      `Лимит замен: ${transferLimit} на выбранный прогноз.`
+    );
+  }
+
   function addPlayer(player: FantasyPlannerPlayer) {
     const blockReason = fantasyAddBlockReason(player, players, selections, rules);
     if (blockReason) {
-      setMessage(blockReason);
+      setMessage(localizeAddBlockReason(blockReason, language));
       return;
     }
-    setSelections((current) => [...current, selectionForNewPlayer(player, players, current, rules)]);
+
+    const nextSelections = [...selections, selectionForNewPlayer(player, players, selections, rules)];
+    const limitReason = transferLimitBlockReason(nextSelections);
+    if (limitReason) {
+      setMessage(limitReason);
+      return;
+    }
+
+    setSelections(nextSelections);
     setMessage(null);
   }
 
   function removePlayer(playerId: string) {
-    setSelections((current) => current.filter((selection) => selection.playerId !== playerId).map((selection, index) => ({ ...selection, slotIndex: index })));
+    const nextSelections = selections.filter((selection) => selection.playerId !== playerId).map((selection, index) => ({ ...selection, slotIndex: index }));
+    const limitReason = transferLimitBlockReason(nextSelections);
+    if (limitReason) {
+      setMessage(limitReason);
+      return;
+    }
+
+    setSelections(nextSelections);
+    setMessage(null);
   }
 
   function toggleLock(playerId: string) {
@@ -182,11 +212,17 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
 
     const promoted = promoteStarter(player, players, selections, rules, horizon);
     if (!promoted) {
-      setMessage(starterRuleMessage);
+      setMessage(
+        localizedText(
+          language,
+          "Starting XI must keep 1 GK, 10 field players, DEF 3-5, MID 2-5, FWD 1-3.",
+          "В старте должны быть 1 GK, 10 полевых игроков, DEF 3-5, MID 2-5, FWD 1-3."
+        )
+      );
       return;
     }
     setSelections(sanitizeCaptainRoles(promoted));
-    setMessage(`${player.name} moved to starting XI.`);
+    setMessage(localizedText(language, `${player.name} moved to starting XI.`, `${player.name} переведён в старт.`));
   }
 
   function movePlayerToBench(playerId: string) {
@@ -201,7 +237,8 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
     setSelections((current) =>
       current.map((item) => (item.playerId === playerId ? { ...item, isStarter: false, isCaptain: false, isViceCaptain: false } : item))
     );
-    setMessage(`${player?.name ?? "Player"} moved to bench.`);
+    const playerName = player?.name ?? localizedText(language, "Player", "Игрок");
+    setMessage(localizedText(language, `${playerName} moved to bench.`, `${playerName} переведён в запас.`));
   }
 
   function handleDropToStarter(playerId: string) {
@@ -217,7 +254,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
   function toggleCaptain(playerId: string) {
     const selection = selectionsByPlayerId.get(playerId);
     if (!selection?.isStarter) {
-      setMessage("Captain must be in the starting XI.");
+      setMessage(localizedText(language, "Captain must be in the starting XI.", "Капитан должен быть в стартовом составе."));
       return;
     }
     const nextCaptainId = captainId === playerId ? null : playerId;
@@ -228,7 +265,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
   function toggleViceCaptain(playerId: string) {
     const selection = selectionsByPlayerId.get(playerId);
     if (!selection?.isStarter) {
-      setMessage("Vice-captain must be in the starting XI.");
+      setMessage(localizedText(language, "Vice-captain must be in the starting XI.", "Вице-капитан должен быть в стартовом составе."));
       return;
     }
     if (captainId === playerId) return;
@@ -238,27 +275,43 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
   function applySuggestion(suggestion: TransferSuggestion) {
     const incoming = players.find((player) => player.playerId === suggestion.inPlayerId);
     if (!incoming) return;
-    setSelections((current) => {
-      const outSelection = current.find((selection) => selection.playerId === suggestion.outPlayerId);
-      const slotIndex = outSelection?.slotIndex ?? current.length;
-      return [
-        ...current.filter((selection) => selection.playerId !== suggestion.outPlayerId),
-        selectionForPlayer(incoming, slotIndex, outSelection?.isStarter ?? true)
-      ].sort((left, right) => left.slotIndex - right.slotIndex);
-    });
+    const outSelection = selections.find((selection) => selection.playerId === suggestion.outPlayerId);
+    const slotIndex = outSelection?.slotIndex ?? selections.length;
+    const nextSelections = [
+      ...selections.filter((selection) => selection.playerId !== suggestion.outPlayerId),
+      selectionForPlayer(incoming, slotIndex, outSelection?.isStarter ?? true)
+    ].sort((left, right) => left.slotIndex - right.slotIndex);
+    const limitReason = transferLimitBlockReason(nextSelections);
+    if (limitReason) {
+      setMessage(limitReason);
+      return;
+    }
+
+    setSelections(nextSelections);
+    setMessage(null);
   }
 
   function autoPickStarters() {
     const optimized = optimizeFantasyStarters({ pool: players, selections, rules, horizon, basis: "horizon", respectLocks: true });
     if (!optimized) {
-      setMessage("Could not auto-pick a valid XI with the current squad and locks.");
+      setMessage(
+        localizedText(
+          language,
+          "Could not auto-pick a valid XI with the current squad and locks.",
+          "Не удалось автоматически собрать валидный старт с текущим составом и блокировками."
+        )
+      );
       return;
     }
 
     const optimizedSummary = summarizeFantasySquad(players, optimized, rules, horizon);
     const delta = optimizedSummary.projectedHorizon - summary.projectedHorizon;
     setSelections(sanitizeCaptainRoles(optimized));
-    setMessage(delta > 0.05 ? `Auto-picked XI: ${signedScore(delta)} xFP over ${horizon} rounds.` : "Starting XI is already optimal for this horizon.");
+    setMessage(
+      delta > 0.05
+        ? localizedText(language, `Auto-picked XI: ${signedScore(delta)} xFP over ${horizon} rounds.`, `Старт подобран автоматически: ${signedScore(delta)} xFP за ${horizon} тур.`)
+        : localizedText(language, "Starting XI is already optimal for this horizon.", "Стартовый состав уже оптимален для этого горизонта.")
+    );
   }
 
   function saveSquad() {
@@ -278,12 +331,13 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
-        setMessage(payload?.error?.message ?? "Failed to save squad.");
+        setMessage(payload?.error?.message ?? localizedText(language, "Failed to save squad.", "Не удалось сохранить состав."));
         return;
       }
       setSelections(selectionsToSave);
       setSavedSelections(selectionsToSave.map((selection) => ({ ...selection })));
-      setMessage(`Saved ${payload.squad?.savedPlayers ?? selectionsToSave.length} players.`);
+      const savedPlayers = payload.squad?.savedPlayers ?? selectionsToSave.length;
+      setMessage(localizedText(language, `Saved ${savedPlayers} players.`, `Сохранено игроков: ${savedPlayers}.`));
     });
   }
 
@@ -291,10 +345,6 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
     { value: "squad", label: <span className="inline-flex items-center gap-1"><Users className="h-3.5 w-3.5" /><I18nText en="Squad" ru="Состав" /></span> },
     { value: "pool", label: <span className="inline-flex items-center gap-1"><Layers3 className="h-3.5 w-3.5" /><I18nText en="Pool" ru="Пул" /></span> },
     { value: "suggestions", label: <span className="inline-flex items-center gap-1"><ListChecks className="h-3.5 w-3.5" /><I18nText en="Tips" ru="Советы" /></span> }
-  ];
-  const transferModeOptions: SegmentedOption<TransferMode>[] = [
-    { value: "normal", label: <I18nText en="Normal" ru="Обычный" /> },
-    { value: "wildcard", label: <I18nText en="Wildcard" ru="Wildcard" /> }
   ];
 
   return (
@@ -358,7 +408,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
               <span className="mb-1 block text-xs font-semibold uppercase text-slate-500"><I18nText en="Forecast" ru="Прогноз" /></span>
               <select
                 value={horizon}
-                onChange={(event) => setHorizon(Number(event.target.value))}
+                onChange={(event) => setHorizon(normalizeFantasyHorizon(event.target.value, rules.horizonOptions, horizon))}
                 aria-label={localizedText(language, "Forecast horizon", "Горизонт прогноза")}
                 className="rounded border border-slate-200 px-3 py-2"
               >
@@ -371,27 +421,29 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
             </label>
             <div className="text-sm">
               <span className="mb-1 block text-xs font-semibold uppercase text-slate-500"><I18nText en="Transfers" ru="Трансферы" /></span>
-              <div className="rounded border border-slate-200 px-3 py-2 text-slate-700">
-                {transferMode === "normal" ? (
-                  <I18nText
-                    en={`${transfersPerRound} per round, no carryover`}
-                    ru={`${transfersPerRound} в туре, без переноса`}
-                  />
-                ) : (
-                  <I18nText
-                    en={`Up to ${transferLimit} what-if moves`}
-                    ru={`До ${transferLimit} what-if замен`}
-                  />
+              <div
+                className={cn(
+                  "rounded border px-3 py-2 font-semibold text-slate-700 num-tabular",
+                  transferLimitIsActive && squadDiff.transferCount >= transferLimit ? "border-amber-200 bg-amber-50 text-amber-800" : "border-slate-200"
                 )}
+                aria-label={localizedText(language, "Transfer count", "Счетчик замен")}
+              >
+                {transferLimitIsActive ? `${squadDiff.transferCount}/${transferLimit}` : transferLimit}
               </div>
-            </div>
-            <div className="text-sm">
-              <span className="mb-1 block text-xs font-semibold uppercase text-slate-500"><I18nText en="Mode" ru="Режим" /></span>
-              <SegmentedControl value={transferMode} onChange={setTransferMode} options={transferModeOptions} size="sm" />
             </div>
             {priceStatus.lastSyncedAt ? (
               <span className="text-sm text-slate-500">
                 <I18nText en={`Prices synced ${formatDate(priceStatus.lastSyncedAt)}`} ru={`Цены обновлены ${formatDate(priceStatus.lastSyncedAt)}`} />
+              </span>
+            ) : null}
+            {priceStatus.sportsRuPrices > 0 || priceStatus.estimatedPrices > 0 ? (
+              <span className="rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700">
+                <I18nText en={`Sports.ru prices ${priceStatus.sportsRuPrices}`} ru={`Цены Sports.ru ${priceStatus.sportsRuPrices}`} />
+              </span>
+            ) : null}
+            {priceStatus.estimatedPrices > 0 ? (
+              <span className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800">
+                <I18nText en={`Estimated prices ${priceStatus.estimatedPrices}`} ru={`Оценочные цены ${priceStatus.estimatedPrices}`} />
               </span>
             ) : null}
             {message ? <span role="status" aria-live="polite" className="rounded bg-amber-50 px-3 py-2 text-sm text-amber-800">{message}</span> : null}
@@ -430,14 +482,19 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
                   <div className="min-w-0">
                     <p className="truncate text-sm font-semibold text-ink">{suggestion.inName}</p>
                     <p className="truncate text-xs text-slate-500">
-                      for {suggestion.outName} / {suggestion.positionGroup}
+                      <I18nText en={`for ${suggestion.outName} / ${suggestion.positionGroup}`} ru={`за ${suggestion.outName} / ${suggestion.positionGroup}`} />
                     </p>
                   </div>
                   <span className="whitespace-nowrap rounded bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">
                     +{formatScore(suggestion.nextDelta)}
                   </span>
                 </div>
-                <p className="mt-1 text-xs text-slate-500">{suggestion.reason}; price {signedNumber(suggestion.priceDelta)}</p>
+                <p className="mt-1 text-xs text-slate-500">
+                  <I18nText
+                    en={`+${formatScore(suggestion.nextDelta)} next round, +${formatScore(suggestion.horizonDelta)} over ${horizon} rounds; price ${signedNumber(suggestion.priceDelta)}`}
+                    ru={`+${formatScore(suggestion.nextDelta)} в след. туре, +${formatScore(suggestion.horizonDelta)} за ${horizon} тур.; цена ${signedNumber(suggestion.priceDelta)}`}
+                  />
+                </p>
               </button>
             ))}
             {suggestions.length === 0 ? <p className="text-sm text-slate-500"><I18nText en="No clean upgrade found for the selected filters." ru="Для выбранных фильтров чистый апгрейд не найден." /></p> : null}
@@ -457,6 +514,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
               rules={rules}
               selectionsByPlayerId={selectionsByPlayerId}
               horizon={horizon}
+              language={language}
               captainId={captainId}
               viceCaptainId={viceCaptainId}
               draggedPlayerId={draggedPlayerId}
@@ -499,12 +557,13 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
               </select>
               <label className="flex items-center gap-2 rounded border border-slate-200 px-3 py-2 text-xs text-slate-700">
                 <input type="checkbox" checked={onlyAffordable} onChange={(event) => setOnlyAffordable(event.target.checked)} className="h-4 w-4 rounded border-slate-300" />
-                Fits
+                <I18nText en="Fits" ru="Проходит" />
               </label>
             </div>
             <PlayerPoolTable
               players={filteredPlayers}
               horizon={horizon}
+              language={language}
               addBlockReason={(player) => fantasyAddBlockReason(player, players, selections, rules)}
               selectionsByPlayerId={selectionsByPlayerId}
               onAdd={addPlayer}
@@ -566,6 +625,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
 function PlayerPoolTable({
   players,
   horizon,
+  language,
   addBlockReason,
   selectionsByPlayerId,
   onAdd,
@@ -573,6 +633,7 @@ function PlayerPoolTable({
 }: {
   players: FantasyPlannerPlayer[];
   horizon: number;
+  language: UiLanguage;
   addBlockReason: (player: FantasyPlannerPlayer) => string | null;
   selectionsByPlayerId: Map<string, FantasySquadSelection>;
   onAdd: (player: FantasyPlannerPlayer) => void;
@@ -584,15 +645,15 @@ function PlayerPoolTable({
         <SortableTable className="min-w-[760px] divide-y divide-slate-200 text-xs">
           <thead className="sticky top-0 z-10 bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
             <tr>
-              <th className="px-3 py-3">Player</th>
-              <th className="px-3 py-3">Team</th>
-              <th className="px-3 py-3">Pos</th>
-              <th className="px-3 py-3 text-right">Price</th>
-              <th className="px-3 py-3 text-right">Next</th>
+              <th className="px-3 py-3"><I18nText en="Player" ru="Игрок" /></th>
+              <th className="px-3 py-3"><I18nText en="Team" ru="Команда" /></th>
+              <th className="px-3 py-3"><I18nText en="Pos" ru="Поз." /></th>
+              <th className="px-3 py-3 text-right"><I18nText en="Price" ru="Цена" /></th>
+              <th className="px-3 py-3 text-right"><I18nText en="Next" ru="След." /></th>
               <th className="px-3 py-3 text-right">{horizon}R</th>
               <th className="px-3 py-3 text-right">W xG</th>
-              <th className="px-3 py-3">Fixtures</th>
-              <th className="px-3 py-3 text-right">Add</th>
+              <th className="px-3 py-3"><I18nText en="Fixtures" ru="Матчи" /></th>
+              <th className="px-3 py-3 text-right"><I18nText en="Add" ru="Добавить" /></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -600,6 +661,7 @@ function PlayerPoolTable({
               const reason = addBlockReason(player);
               const isSelected = selectionsByPlayerId.has(player.playerId);
               const disabled = !isSelected && reason !== null;
+              const localizedReason = reason ? localizeAddBlockReason(reason, language) : null;
               const fixtureChips = player.fixtures
                 .slice(0, horizon)
                 .map((label, fixtureIdx) => ({ label, difficulty: player.fixtureDifficulties?.[fixtureIdx] ?? null }))
@@ -612,15 +674,17 @@ function PlayerPoolTable({
                   ? "bg-slate-50/80 text-slate-400"
                   : "hover:bg-slate-50";
               const muted = isSelected || disabled;
-              const addLabel = disabled ? (reason ?? `Cannot add ${player.name}`) : `Add ${player.name}`;
-              const removeLabel = `Remove ${player.name}`;
+              const addLabel = disabled
+                ? localizedText(language, `Cannot add ${player.name}: ${localizedReason ?? reason ?? ""}`, `Нельзя добавить ${player.name}: ${localizedReason ?? reason ?? ""}`)
+                : localizedText(language, `Add ${player.name}`, `Добавить ${player.name}`);
+              const removeLabel = localizedText(language, `Remove ${player.name}`, `Удалить ${player.name}`);
 
               return (
                 <tr key={player.playerId} className={rowClassName}>
                   <td className="min-w-36 px-2.5 py-2">
                     <span className={`block truncate font-semibold ${muted ? "text-slate-500" : "text-ink"}`} title={player.name}>{player.name}</span>
                     <span className={`block text-[11px] ${muted ? "text-slate-400" : "text-slate-500"}`}>
-                      {isSelected ? "Selected" : `FP ${formatScore(player.predictedFp)}`}
+                      {isSelected ? <I18nText en="Selected" ru="В составе" /> : `FP ${formatScore(player.predictedFp)}`}
                     </span>
                   </td>
                   <td className={`min-w-28 px-2.5 py-2 ${muted ? "text-slate-400" : "text-slate-600"}`}>
@@ -629,14 +693,28 @@ function PlayerPoolTable({
                   <td className="px-2.5 py-2">
                     <span className={`rounded px-2 py-0.5 text-[11px] font-bold ${muted ? "border border-slate-300 bg-slate-200 text-slate-500" : positionPillClass(player.positionGroup)}`}>{player.positionGroup}</span>
                   </td>
-                  <td className={`whitespace-nowrap px-2.5 py-2 text-right font-semibold ${muted ? "text-slate-400" : "text-ink"}`}>{formatNumber(player.price, 1)}</td>
+                  <td className={`whitespace-nowrap px-2.5 py-2 text-right font-semibold ${muted ? "text-slate-400" : "text-ink"}`}>
+                    <span>{player.priceSource === "ESTIMATED" ? "~" : ""}{formatNumber(player.price, 1)}</span>
+                    {player.priceSource === "ESTIMATED" ? (
+                      <span
+                        className="ml-1 rounded bg-amber-50 px-1 py-0.5 text-[10px] font-bold uppercase text-amber-700"
+                        aria-label={localizedText(language, "Estimated price", "Оценочная цена")}
+                      >
+                        <I18nText en="est." ru="оц." />
+                      </span>
+                    ) : null}
+                  </td>
                   <td className={`whitespace-nowrap px-2.5 py-2 text-right font-semibold ${muted ? "text-slate-400" : "text-emerald-700"}`}>{formatScore(nextFantasyPoints(player))}</td>
                   <td className={`whitespace-nowrap px-2.5 py-2 text-right font-semibold ${muted ? "text-slate-400" : "text-sky-700"}`}>{formatScore(playerHorizonPoints(player, horizon))}</td>
                   <td className={`whitespace-nowrap px-2.5 py-2 text-right text-[11px] font-semibold ${muted ? "text-slate-400" : "text-violet-700"}`}>
                     {player.baltikaXg !== null && player.baltikaXg !== undefined ? (
                       <>
                         <span className="block num-tabular">{formatScore(player.baltikaXg)}</span>
-                        {player.baltikaMatchesPlayed ? <span className="block text-[10px] font-normal text-slate-400">{player.baltikaMatchesPlayed} apps</span> : null}
+                        {player.baltikaMatchesPlayed ? (
+                          <span className="block text-[10px] font-normal text-slate-400">
+                            <I18nText en={`${player.baltikaMatchesPlayed} apps`} ru={`${player.baltikaMatchesPlayed} матч.`} />
+                          </span>
+                        ) : null}
                       </>
                     ) : (
                       <span className="text-slate-300">—</span>
@@ -651,10 +729,10 @@ function PlayerPoolTable({
                     {disabled ? (
                       <span
                         className="mt-1 inline-flex max-w-full items-center gap-1 rounded bg-rose-50 px-2 py-1 font-semibold text-rose-700"
-                        title={reason ?? undefined}
+                        title={localizedReason ?? undefined}
                       >
                         <Lock className="h-3 w-3 shrink-0" />
-                        <span className="truncate">{reason}</span>
+                        <span className="truncate">{localizedReason}</span>
                       </span>
                     ) : null}
                   </td>
@@ -683,7 +761,7 @@ function PlayerPoolTable({
             {players.length === 0 ? (
               <tr>
                 <td colSpan={9} className="px-4 py-10 text-center text-sm text-slate-500">
-                  <I18nText en="No Sports.ru mapped players match the filters." ru="Нет замапленных Sports.ru игроков под эти фильтры." />
+                  <I18nText en="No players match the selected filters." ru="Нет игроков под выбранные фильтры." />
                 </td>
               </tr>
             ) : null}
@@ -788,7 +866,7 @@ function StarterCounts({ summary, rules }: { summary: Record<FantasyPositionGrou
   const fieldPlayers = summary.DEF + summary.MID + summary.FWD;
   return (
     <div className="flex flex-wrap gap-1.5 text-[11px] font-semibold text-white/90">
-      <StarterRulePill label="Field" count={fieldPlayers} min={10} max={10} />
+      <StarterRulePill label={<I18nText en="Field" ru="Поле" />} count={fieldPlayers} min={10} max={10} />
       {rosterPositions.map((position) => (
         <StarterRulePill key={position} label={position} count={summary[position]} min={rules.starterPositionLimits[position].min} max={rules.starterPositionLimits[position].max} />
       ))}
@@ -796,7 +874,7 @@ function StarterCounts({ summary, rules }: { summary: Record<FantasyPositionGrou
   );
 }
 
-function StarterRulePill({ label, count, min, max }: { label: string; count: number; min: number; max: number }) {
+function StarterRulePill({ label, count, min, max }: { label: React.ReactNode; count: number; min: number; max: number }) {
   const status = limitStatus(count, min, max);
   const statusClass =
     status === "bad"
@@ -831,7 +909,7 @@ function readDraggedPlayerId(event: DragEvent<HTMLElement>) {
   return event.dataTransfer.getData(squadDragDataType) || event.dataTransfer.getData("text/plain") || null;
 }
 
-function StarterRuleCard({ label, count, min, max, detail }: { label: string; count: number; min: number; max: number; detail: string }) {
+function StarterRuleCard({ label, count, min, max, detail }: { label: React.ReactNode; count: number; min: number; max: number; detail: React.ReactNode }) {
   const status = limitStatus(count, min, max);
   const statusClass =
     status === "bad"
@@ -858,17 +936,22 @@ function BenchCounts({ summary, total, rules }: { summary: Record<FantasyPositio
   const requiredFieldPlayers = rules.benchSize - 1;
   return (
     <div className="flex flex-wrap gap-2 text-xs font-semibold text-slate-500">
-      <span className="rounded border border-slate-200 bg-white px-2 py-1">Bench {total}/{rules.benchSize}</span>
+      <span className="rounded border border-slate-200 bg-white px-2 py-1">
+        <I18nText en="Bench" ru="Запас" /> {total}/{rules.benchSize}
+      </span>
       <span className="rounded border border-slate-200 bg-white px-2 py-1">GK {summary.GK}/1</span>
-      <span className="rounded border border-slate-200 bg-white px-2 py-1">Field {fieldPlayers}/{requiredFieldPlayers}</span>
+      <span className="rounded border border-slate-200 bg-white px-2 py-1">
+        <I18nText en="Field" ru="Поле" /> {fieldPlayers}/{requiredFieldPlayers}
+      </span>
     </div>
   );
 }
 
 function SquadActionLegend() {
+  const language = useLanguage();
   const itemClassName = "inline-flex items-center gap-1.5 rounded border border-white/15 bg-white/10 px-2 py-1";
   return (
-    <div className="mb-2 grid grid-cols-2 gap-1.5 text-[11px] font-semibold text-white/85 sm:hidden" aria-label="Actions">
+    <div className="mb-2 grid grid-cols-2 gap-1.5 text-[11px] font-semibold text-white/85 sm:hidden" aria-label={localizedText(language, "Actions", "Действия")}>
       <span className={itemClassName}>
         <Star className="h-3 w-3" />
         <I18nText en="XI / bench" ru="Старт / скамейка" />
@@ -895,6 +978,7 @@ function SquadPitch({
   rules,
   selectionsByPlayerId,
   horizon,
+  language,
   captainId,
   viceCaptainId,
   draggedPlayerId,
@@ -912,6 +996,7 @@ function SquadPitch({
   rules: FantasySquadRules;
   selectionsByPlayerId: Map<string, FantasySquadSelection>;
   horizon: number;
+  language: UiLanguage;
   captainId: string | null;
   viceCaptainId: string | null;
   draggedPlayerId: string | null;
@@ -925,10 +1010,10 @@ function SquadPitch({
   onDropToStarter: (playerId: string) => void;
   onDropToBench: (playerId: string) => void;
 }) {
-  const starterLines: Array<{ position: Exclude<FantasyPositionGroup, "UNK">; label: string }> = [
-    { position: "DEF", label: "Defenders" },
-    { position: "MID", label: "Midfielders" },
-    { position: "FWD", label: "Forwards" }
+  const starterLines: Array<{ position: Exclude<FantasyPositionGroup, "UNK">; label: React.ReactNode }> = [
+    { position: "DEF", label: <I18nText en="Defenders" ru="Защитники" /> },
+    { position: "MID", label: <I18nText en="Midfielders" ru="Полузащитники" /> },
+    { position: "FWD", label: <I18nText en="Forwards" ru="Нападающие" /> }
   ];
   const draggedSelection = draggedPlayerId ? selectionsByPlayerId.get(draggedPlayerId) : undefined;
 
@@ -936,15 +1021,15 @@ function SquadPitch({
     <div className="space-y-2">
       <div className="rounded border border-emerald-300 bg-emerald-900 p-2 shadow-inner">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-          <h4 className="text-xs font-bold uppercase tracking-wide text-white">Starting XI</h4>
+          <h4 className="text-xs font-bold uppercase tracking-wide text-white"><I18nText en="Starting XI" ru="Стартовый состав" /></h4>
           <StarterCounts summary={summary.startersByPosition} rules={rules} />
         </div>
         <div className="mb-2 grid grid-cols-2 gap-1.5 text-xs sm:grid-cols-5">
-          <StarterRuleCard label="Field" count={summary.startersByPosition.DEF + summary.startersByPosition.MID + summary.startersByPosition.FWD} min={10} max={10} detail="Always 10" />
-          <StarterRuleCard label="GK" count={summary.startersByPosition.GK} min={1} max={1} detail="Always 1" />
-          <StarterRuleCard label="DEF" count={summary.startersByPosition.DEF} min={rules.starterPositionLimits.DEF.min} max={rules.starterPositionLimits.DEF.max} detail="Min 3, max 5" />
-          <StarterRuleCard label="MID" count={summary.startersByPosition.MID} min={rules.starterPositionLimits.MID.min} max={rules.starterPositionLimits.MID.max} detail="Min 2, max 5" />
-          <StarterRuleCard label="FWD" count={summary.startersByPosition.FWD} min={rules.starterPositionLimits.FWD.min} max={rules.starterPositionLimits.FWD.max} detail="Min 1, max 3" />
+          <StarterRuleCard label={<I18nText en="Field" ru="Поле" />} count={summary.startersByPosition.DEF + summary.startersByPosition.MID + summary.startersByPosition.FWD} min={10} max={10} detail={<I18nText en="Always 10" ru="Всегда 10" />} />
+          <StarterRuleCard label="GK" count={summary.startersByPosition.GK} min={1} max={1} detail={<I18nText en="Always 1" ru="Всегда 1" />} />
+          <StarterRuleCard label="DEF" count={summary.startersByPosition.DEF} min={rules.starterPositionLimits.DEF.min} max={rules.starterPositionLimits.DEF.max} detail={<I18nText en="Min 3, max 5" ru="Мин. 3, макс. 5" />} />
+          <StarterRuleCard label="MID" count={summary.startersByPosition.MID} min={rules.starterPositionLimits.MID.min} max={rules.starterPositionLimits.MID.max} detail={<I18nText en="Min 2, max 5" ru="Мин. 2, макс. 5" />} />
+          <StarterRuleCard label="FWD" count={summary.startersByPosition.FWD} min={rules.starterPositionLimits.FWD.min} max={rules.starterPositionLimits.FWD.max} detail={<I18nText en="Min 1, max 3" ru="Мин. 1, макс. 3" />} />
         </div>
         <SquadActionLegend />
         <div className="relative overflow-hidden rounded border border-white/20 bg-emerald-800/80 px-1.5 py-2">
@@ -952,12 +1037,13 @@ function SquadPitch({
           <div className="pointer-events-none absolute left-1/2 top-1/2 h-16 w-16 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/15" />
           <div className="relative space-y-2">
             <SquadLine
-              label="Goalkeeper"
+              label={<I18nText en="Goalkeeper" ru="Вратарь" />}
               position="GK"
               players={summary.starterPlayers.filter((player) => player.positionGroup === "GK")}
               selectionsByPlayerId={selectionsByPlayerId}
               limit={rules.starterPositionLimits.GK}
               horizon={horizon}
+              language={language}
               captainId={captainId}
               viceCaptainId={viceCaptainId}
               draggedPlayerId={draggedPlayerId}
@@ -979,6 +1065,7 @@ function SquadPitch({
                 selectionsByPlayerId={selectionsByPlayerId}
                 limit={rules.starterPositionLimits[line.position]}
                 horizon={horizon}
+                language={language}
                 captainId={captainId}
                 viceCaptainId={viceCaptainId}
                 draggedPlayerId={draggedPlayerId}
@@ -1000,7 +1087,7 @@ function SquadPitch({
 
       <div className="rounded border border-slate-200 bg-slate-50 p-2">
         <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-          <h4 className="text-xs font-bold uppercase tracking-wide text-slate-500">Bench</h4>
+          <h4 className="text-xs font-bold uppercase tracking-wide text-slate-500"><I18nText en="Bench" ru="Запас" /></h4>
           <BenchCounts summary={summary.benchByPosition} total={summary.benchPlayers.length} rules={rules} />
         </div>
         <div
@@ -1020,6 +1107,7 @@ function SquadPitch({
               player={player}
               selection={selectionsByPlayerId.get(player.playerId)}
               horizon={horizon}
+              language={language}
               isCaptain={captainId === player.playerId}
               isVice={viceCaptainId === player.playerId}
               isDragging={draggedPlayerId === player.playerId}
@@ -1033,7 +1121,11 @@ function SquadPitch({
               onDragEnd={onDragEnd}
             />
           ))}
-          {summary.benchPlayers.length === 0 ? <div className="rounded border border-dashed border-slate-300 bg-white px-4 py-6 text-center text-sm text-slate-500">Empty</div> : null}
+          {summary.benchPlayers.length === 0 ? (
+            <div className="rounded border border-dashed border-slate-300 bg-white px-4 py-6 text-center text-sm text-slate-500">
+              <I18nText en="Empty" ru="Пусто" />
+            </div>
+          ) : null}
         </div>
       </div>
     </div>
@@ -1047,6 +1139,7 @@ function SquadLine({
   selectionsByPlayerId,
   limit,
   horizon,
+  language,
   captainId,
   viceCaptainId,
   draggedPlayerId,
@@ -1059,12 +1152,13 @@ function SquadLine({
   onDragEnd,
   onDropToStarter
 }: {
-  label: string;
+  label: React.ReactNode;
   position: Exclude<FantasyPositionGroup, "UNK">;
   players: FantasyPlannerPlayer[];
   selectionsByPlayerId: Map<string, FantasySquadSelection>;
   limit: { min: number; max: number };
   horizon: number;
+  language: UiLanguage;
   captainId: string | null;
   viceCaptainId: string | null;
   draggedPlayerId: string | null;
@@ -1109,6 +1203,7 @@ function SquadLine({
             player={player}
             selection={selectionsByPlayerId.get(player.playerId)}
             horizon={horizon}
+            language={language}
             isCaptain={captainId === player.playerId}
             isVice={viceCaptainId === player.playerId}
             isDragging={draggedPlayerId === player.playerId}
@@ -1121,7 +1216,11 @@ function SquadLine({
             onDragEnd={onDragEnd}
           />
         ))}
-        {players.length === 0 ? <div className="flex min-h-12 w-24 items-center justify-center rounded border border-dashed border-white/25 bg-white/10 text-[11px] text-white/70">Empty</div> : null}
+        {players.length === 0 ? (
+          <div className="flex min-h-12 w-24 items-center justify-center rounded border border-dashed border-white/25 bg-white/10 text-[11px] text-white/70">
+            <I18nText en="Empty" ru="Пусто" />
+          </div>
+        ) : null}
       </div>
     </div>
   );
@@ -1131,6 +1230,7 @@ function SquadPlayerTile({
   player,
   selection,
   horizon,
+  language,
   isCaptain = false,
   isVice = false,
   isDragging = false,
@@ -1146,6 +1246,7 @@ function SquadPlayerTile({
   player: FantasyPlannerPlayer;
   selection: FantasySquadSelection | undefined;
   horizon: number;
+  language: UiLanguage;
   isCaptain?: boolean;
   isVice?: boolean;
   isDragging?: boolean;
@@ -1167,11 +1268,19 @@ function SquadPlayerTile({
       difficulty: chip.difficulty,
       title: chip.label
     }));
-  const starterActionLabel = selection?.isStarter ? "Move to bench" : "Move to starting XI";
-  const captainActionLabel = isCaptain ? "Remove captain" : "Make captain x2";
-  const viceActionLabel = isVice ? "Remove vice-captain" : "Make vice-captain";
-  const lockActionLabel = selection?.isLocked ? "Unlock player" : "Lock player";
-  const removeActionLabel = `Remove ${player.name}`;
+  const starterActionLabel = selection?.isStarter
+    ? localizedText(language, "Move to bench", "Перевести в запас")
+    : localizedText(language, "Move to starting XI", "Перевести в старт");
+  const captainActionLabel = isCaptain
+    ? localizedText(language, "Remove captain", "Снять капитана")
+    : localizedText(language, "Make captain x2", "Сделать капитаном x2");
+  const viceActionLabel = isVice
+    ? localizedText(language, "Remove vice-captain", "Снять вице-капитана")
+    : localizedText(language, "Make vice-captain", "Сделать вице-капитаном");
+  const lockActionLabel = selection?.isLocked
+    ? localizedText(language, "Unlock player", "Разблокировать игрока")
+    : localizedText(language, "Lock player", "Заблокировать игрока");
+  const removeActionLabel = localizedText(language, `Remove ${player.name}`, `Удалить ${player.name}`);
   return (
     <div
       draggable={Boolean(selection)}
@@ -1345,6 +1454,20 @@ function signedScore(value: number) {
   return formatScore(value);
 }
 
+function localizeAddBlockReason(reason: string, language: UiLanguage) {
+  if (reason === "Already in squad") return localizedText(language, reason, "Уже в составе");
+  if (reason === "Squad is full") return localizedText(language, reason, "Состав заполнен");
+  if (reason === "Budget limit") return localizedText(language, reason, "Лимит бюджета");
+
+  const positionLimit = reason.match(/^(GK|DEF|MID|FWD|UNK) limit reached$/);
+  if (positionLimit) return localizedText(language, reason, `Лимит ${positionLimit[1]} достигнут`);
+
+  const teamLimit = reason.match(/^(.+) limit reached$/);
+  if (teamLimit) return localizedText(language, reason, `Лимит команды ${teamLimit[1]} достигнут`);
+
+  return reason;
+}
+
 function compactFixtureLabel(label: string) {
   return label.replace(/\s*\(([HhAa])\)$/, (_, side: string) => ` ${side.toUpperCase()}`);
 }
@@ -1399,6 +1522,7 @@ function buildSquadDiff(
     starterChanges,
     lockChanges,
     captainChanges,
+    transferCount: countFantasySquadTransfers(savedSelections, currentSelections),
     nextDelta: currentSummary.projectedNext - savedSummary.projectedNext,
     horizonDelta: currentSummary.projectedHorizon - savedSummary.projectedHorizon
   };

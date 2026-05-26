@@ -1,5 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 
+import { hasDatabaseUrl, isDatabaseConfigured } from "@/lib/database-url";
+
 const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient;
   scoringSchemaPromise?: Promise<void>;
@@ -15,9 +17,11 @@ if (process.env.NODE_ENV !== "production") {
   globalForPrisma.prisma = prisma;
 }
 
+export { hasDatabaseUrl, isDatabaseConfigured };
+
 export function ensureDatabaseSchema() {
   if (process.env.NEXT_PHASE === "phase-production-build") return Promise.resolve();
-  if (!process.env.DATABASE_URL) return Promise.resolve();
+  if (!isDatabaseConfigured()) return Promise.resolve();
 
   globalForPrisma.scoringSchemaPromise ??= prisma.$executeRawUnsafe(`
 DO $$

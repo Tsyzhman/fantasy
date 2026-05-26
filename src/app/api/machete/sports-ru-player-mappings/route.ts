@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { requireApiAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { readJsonObject } from "@/lib/request-json";
 import { setSportsRuPlayerMapping } from "@/machete/sports_ru_player_mapping";
 
 export const runtime = "nodejs";
@@ -11,7 +12,7 @@ export async function PATCH(request: Request) {
   const auth = await requireApiAdmin();
   if (auth.response) return auth.response;
 
-  const body = await request.json().catch(() => ({}));
+  const body = await readJsonObject(request);
   const priceId = typeof body.priceId === "string" ? body.priceId : "";
   const playerId = body.playerId === null || body.playerId === "" ? null : parseBigInt(body.playerId);
 

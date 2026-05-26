@@ -1,9 +1,10 @@
 import { UserRole } from "@prisma/client";
 import { redirect } from "next/navigation";
 
+import { DatabaseSetupNotice } from "@/components/database-setup-notice";
 import { I18nText } from "@/components/i18n-text";
 import { createUserSession, getCurrentUser, isSafeRedirectPath, normalizeEmail, verifyPassword } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { isDatabaseConfigured, prisma } from "@/lib/db";
 
 type PageProps = {
   searchParams?: Promise<{
@@ -15,6 +16,8 @@ type PageProps = {
 export const dynamic = "force-dynamic";
 
 export default async function LoginPage({ searchParams }: PageProps) {
+  if (!isDatabaseConfigured()) return <DatabaseSetupNotice />;
+
   const resolvedSearchParams = (await searchParams) ?? {};
   const adminWithPasswordCount = await prisma.user.count({
     where: {
@@ -77,6 +80,8 @@ export default async function LoginPage({ searchParams }: PageProps) {
 
 async function loginAction(formData: FormData) {
   "use server";
+
+  if (!isDatabaseConfigured()) redirect("/login");
 
   const email = normalizeEmail(String(formData.get("email") ?? ""));
   const password = String(formData.get("password") ?? "");

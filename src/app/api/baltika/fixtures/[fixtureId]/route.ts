@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { requireApiAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { readJsonObjectOrNull } from "@/lib/request-json";
 import { getActiveScoringModel } from "@/lib/scoring";
 import { recalculateBaltikaTeamSnapshots } from "@/lib/scoring/baltika-team-form-metrics";
 
@@ -22,7 +23,9 @@ export async function PATCH(request: Request, { params }: Params) {
   const fixture = await prisma.baltikaFixture.findUnique({ where: { id: fixtureId } });
   if (!fixture) return errorResponse("FIXTURE_NOT_FOUND", "Fixture not found.", 404);
 
-  const body = await request.json();
+  const body = await readJsonObjectOrNull(request);
+  if (!body) return errorResponse("INVALID_PAYLOAD", "JSON object body is required.", 400);
+
   const homeTeamId = stringOrNull(body.homeTeamId);
   const awayTeamId = stringOrNull(body.awayTeamId);
   const [homeTeam, awayTeam] = await Promise.all([

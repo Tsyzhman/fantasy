@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { requireApiAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { readJsonObject } from "@/lib/request-json";
 import { getActiveScoringModel } from "@/lib/scoring";
 import { recalculateBaltikaTeamSnapshots } from "@/lib/scoring/baltika-team-form-metrics";
 
@@ -12,7 +13,7 @@ export async function POST(request: Request) {
   const auth = await requireApiAdmin();
   if (auth.response) return auth.response;
 
-  const body = await request.json();
+  const body = await readJsonObject(request);
   const leagueId = stringOrNull(body.leagueId);
   const seasonId = stringOrNull(body.seasonId);
 

@@ -7,6 +7,7 @@ import { normalizeSportsRuPlayerName } from "@/lib/providers/sports-ru-fantasy";
 import { loadSharedLeagueTeams, loadSharedMachetePlayerRows, type SharedLeagueSeasonOption, type SharedPlayerRowsScope } from "./shared_read_model";
 import {
   defaultFantasySquadRules,
+  normalizeFantasyHorizon,
   normalizeFantasyPosition,
   roundFantasyValue,
   type FantasyPlannerPlayer,
@@ -225,12 +226,12 @@ export async function loadFantasySquadPlannerData(
     const projected = projectedByPlayerTeam.get(playerTeamKey(row.playerId, row.teamId));
     const predictedFp = projected?.fantasyScore ?? null;
     const priceRow = prices.byPlayerId.get(String(row.playerId));
-    if (!priceRow) return [];
-    const sportsPosition = sportsPositionsByPlayerId.get(String(row.playerId)) ?? sportsRuPricePosition(priceRow);
+    const sportsPosition = sportsPositionsByPlayerId.get(String(row.playerId)) ?? (priceRow ? sportsRuPricePosition(priceRow) : null);
     const position = fantasyPlannerPosition(sportsPosition, row.position, projected?.position ?? null);
     const positionGroup = normalizeFantasyPosition(position);
-    const price = priceRow.price;
-    const baltikaMetric = baltikaMetricsByName.get(normalizeSportsRuPlayerName(priceRow.playerName));
+    const price = resolveFantasyPlannerPrice(priceRow, predictedFp, positionGroup);
+    const playerName = priceRow?.playerName ?? row.player.name;
+    const baltikaMetric = baltikaMetricsByName.get(normalizeSportsRuPlayerName(playerName));
     const roundPoints = roundsAndFixtures.rounds.map((round) => {
       const fixtures = roundsAndFixtures.fixturesByTeamRound.get(round.id)?.get(String(row.teamId)) ?? [];
       const basePoints = predictedFp ?? 0;
@@ -250,15 +251,15 @@ export async function loadFantasySquadPlannerData(
         id: String(row.playerId),
         playerId: String(row.playerId),
         teamId: String(row.teamId),
-        name: priceRow.playerName,
+        name: playerName,
         teamName: row.team.name,
         leagueName: league.displayName,
         position,
         positionGroup,
-        price,
-        priceSource: "SPORTS_RU" as const,
+        price: price.price,
+        priceSource: price.priceSource,
         predictedFp,
-        valueScore: price > 0 ? roundFantasyValue((roundPoints[0] ?? predictedFp ?? 0) / price) : 0,
+        valueScore: price.price > 0 ? roundFantasyValue((roundPoints[0] ?? predictedFp ?? 0) / price.price) : 0,
         roundPoints,
         fixtures,
         fixtureDifficulties,
@@ -270,23 +271,25 @@ export async function loadFantasySquadPlannerData(
     ];
   });
 
-  const sportsRuPrices = players.length;
+  const sportsRuPrices = players.filter((player) => player.priceSource === "SPORTS_RU").length;
+  const estimatedPrices = players.length - sportsRuPrices;
   const latestPriceSync = priceRows.reduce<Date | null>((latest, row) => {
     if (!latest || row.lastSeenAt > latest) return row.lastSeenAt;
     return latest;
   }, null);
   const playersById = new Map(players.map((player) => [player.playerId, player]));
+  const horizonRounds = normalizeFantasyHorizon(savedSquad?.horizonRounds, rules.horizonOptions);
 
   return {
     rules,
     rounds: roundsAndFixtures.rounds,
-    players: players.sort(comparePlannerPlayers),
+    players: players.sort(compareFantasyPlannerPlayers),
     squad: {
       id: savedSquad?.id ?? null,
       name: savedSquad?.name ?? "My squad",
       leagueId: String(league.leagueId),
       season: league.season,
-      horizonRounds: savedSquad?.horizonRounds ?? 5,
+      horizonRounds,
       selections:
         savedSquad?.players.map((player) => ({
           playerId: String(player.playerId),
@@ -300,7 +303,7 @@ export async function loadFantasySquadPlannerData(
     },
     priceStatus: {
       sportsRuPrices,
-      estimatedPrices: 0,
+      estimatedPrices,
       lastSyncedAt: latestPriceSync?.toISOString() ?? null
     }
   };
@@ -384,6 +387,7 @@ export async function saveFantasySquad(
     season: input.season
   });
   const rosterByPlayerId = new Map(rosterRows.map((row) => [String(row.playerId), row]));
+  const horizonRounds = normalizeFantasyHorizon(input.horizonRounds, input.rules.horizonOptions);
   const squad = await prisma.userFantasySquad.upsert({
     where: {
       userId_leagueId_season: {
@@ -395,7 +399,7 @@ export async function saveFantasySquad(
     update: {
       name: input.name?.trim() || "My squad",
       budgetLimit: input.rules.budgetLimit,
-      horizonRounds: input.horizonRounds
+      horizonRounds
     },
     create: {
       userId: input.userId,
@@ -403,7 +407,7 @@ export async function saveFantasySquad(
       season: input.season,
       name: input.name?.trim() || "My squad",
       budgetLimit: input.rules.budgetLimit,
-      horizonRounds: input.horizonRounds
+      horizonRounds
     }
   });
 
@@ -1113,7 +1117,20 @@ export function fantasyPlannerPosition(
   return known ?? candidates.find((position) => position?.trim()) ?? null;
 }
 
-function estimateFantasyPrice(score: number | null, positionGroup: string) {
+export function resolveFantasyPlannerPrice(
+  priceRow: { price: number } | null | undefined,
+  score: number | null,
+  positionGroup: FantasyPositionGroup
+): Pick<FantasyPlannerPlayer, "price" | "priceSource"> {
+  if (priceRow) return { price: priceRow.price, priceSource: "SPORTS_RU" };
+
+  return {
+    price: estimateFantasyPrice(score, positionGroup),
+    priceSource: "ESTIMATED"
+  };
+}
+
+function estimateFantasyPrice(score: number | null, positionGroup: FantasyPositionGroup) {
   const safeScore = Math.max(0, score ?? 0);
   const base = positionGroup === "GK" ? 4.5 : positionGroup === "DEF" ? 4.5 : positionGroup === "MID" ? 5 : 5.5;
   const multiplier = positionGroup === "GK" ? 0.28 : positionGroup === "DEF" ? 0.38 : positionGroup === "MID" ? 0.48 : 0.55;
@@ -1136,8 +1153,17 @@ function fixtureMultiplier(fixture: FantasyFixtureProjection, positionGroup: Fan
   return clamp(venueMultiplier * positionBlend, 0.68, 1.35);
 }
 
-function comparePlannerPlayers(left: FantasyPlannerPlayer, right: FantasyPlannerPlayer) {
-  return (right.roundPoints[0] ?? right.predictedFp ?? 0) - (left.roundPoints[0] ?? left.predictedFp ?? 0) || right.valueScore - left.valueScore || left.name.localeCompare(right.name);
+export function compareFantasyPlannerPlayers(left: FantasyPlannerPlayer, right: FantasyPlannerPlayer) {
+  return (
+    (right.roundPoints[0] ?? right.predictedFp ?? 0) - (left.roundPoints[0] ?? left.predictedFp ?? 0) ||
+    priceSourceRank(right.priceSource) - priceSourceRank(left.priceSource) ||
+    right.valueScore - left.valueScore ||
+    left.name.localeCompare(right.name)
+  );
+}
+
+function priceSourceRank(source: FantasyPlannerPlayer["priceSource"]) {
+  return source === "SPORTS_RU" ? 1 : 0;
 }
 
 function playerTeamKey(playerId: string | number | bigint, teamId: string | number | bigint) {

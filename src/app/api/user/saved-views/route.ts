@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 
 import { requireApiUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { readJsonObject } from "@/lib/request-json";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,18 +16,20 @@ const validSources = new Set<SavedViewSource>(["machete", "baltika"]);
 export async function GET(request: Request) {
   const auth = await requireApiUser();
   if (auth.response) return auth.response;
+  const userId = auth.user.id;
 
   const source = sourceValue(new URL(request.url).searchParams.get("source"));
   if (!source) return badRequest("source must be machete or baltika.");
 
-  return NextResponse.json({ views: await loadSavedViews(auth.user!.id, source) });
+  return NextResponse.json({ views: await loadSavedViews(userId, source) });
 }
 
 export async function POST(request: Request) {
   const auth = await requireApiUser();
   if (auth.response) return auth.response;
+  const userId = auth.user.id;
 
-  const body = await request.json().catch(() => ({}));
+  const body = await readJsonObject(request);
   const source = sourceValue(body.source);
   const name = trimmedString(body.name, 80);
   const href = trimmedString(body.href, 2000);
@@ -40,13 +43,13 @@ export async function POST(request: Request) {
   await prisma.userSavedView.upsert({
     where: {
       userId_source_href: {
-        userId: auth.user!.id,
+        userId,
         source,
         href
       }
     },
     create: {
-      userId: auth.user!.id,
+      userId,
       source,
       name,
       href,
@@ -58,13 +61,14 @@ export async function POST(request: Request) {
     }
   });
 
-  await trimSavedViews(auth.user!.id, source);
-  return NextResponse.json({ views: await loadSavedViews(auth.user!.id, source) });
+  await trimSavedViews(userId, source);
+  return NextResponse.json({ views: await loadSavedViews(userId, source) });
 }
 
 export async function DELETE(request: Request) {
   const auth = await requireApiUser();
   if (auth.response) return auth.response;
+  const userId = auth.user.id;
 
   const params = new URL(request.url).searchParams;
   const source = sourceValue(params.get("source"));
@@ -75,12 +79,12 @@ export async function DELETE(request: Request) {
   await prisma.userSavedView.deleteMany({
     where: {
       id,
-      userId: auth.user!.id,
+      userId,
       source
     }
   });
 
-  return NextResponse.json({ views: await loadSavedViews(auth.user!.id, source) });
+  return NextResponse.json({ views: await loadSavedViews(userId, source) });
 }
 
 async function loadSavedViews(userId: string, source: SavedViewSource) {

@@ -4,9 +4,12 @@ import test from "node:test";
 import {
   buildTransferSuggestions,
   canAddFantasyPlayer,
+  countFantasySquadTransfers,
   defaultFantasySquadRules,
   fantasyAddBlockReason,
+  fantasyTransferLimitForHorizon,
   nextFantasyPoints,
+  normalizeFantasyHorizon,
   normalizeFantasyPosition,
   optimizeFantasyStarters,
   selectionForPlayer,
@@ -154,6 +157,38 @@ test("transfer suggestions improve next round and stay non-negative over horizon
   assert.equal(suggestions[0].inPlayerId, "2");
   assert.equal(suggestions[0].nextDelta, 2);
   assert.equal(suggestions[0].horizonDelta, 2);
+  assert.deepEqual(
+    buildTransferSuggestions({
+      pool: [out, goodIn, trapIn],
+      selections: [selectionForPlayer(out, 0)],
+      rules,
+      horizon: 3,
+      transferCount: 0
+    }),
+    []
+  );
+});
+
+test("transfer limit scales with forecast horizon", () => {
+  assert.equal(fantasyTransferLimitForHorizon(1), 3);
+  assert.equal(fantasyTransferLimitForHorizon(5), 15);
+  assert.equal(fantasyTransferLimitForHorizon(0), 3);
+});
+
+test("forecast horizon accepts only configured options", () => {
+  assert.equal(normalizeFantasyHorizon(3, [1, 3, 5, 10]), 3);
+  assert.equal(normalizeFantasyHorizon("10", [1, 3, 5, 10]), 10);
+  assert.equal(normalizeFantasyHorizon(999, [1, 3, 5, 10]), 5);
+  assert.equal(normalizeFantasyHorizon(0, [1, 3, 5, 10]), 5);
+  assert.equal(normalizeFantasyHorizon(5, [1, 3], 3), 3);
+});
+
+test("transfer counter treats a paired out and in as one move", () => {
+  const saved = [{ playerId: "1" }, { playerId: "2" }, { playerId: "3" }];
+
+  assert.equal(countFantasySquadTransfers(saved, [{ playerId: "1" }, { playerId: "2" }, { playerId: "4" }]), 1);
+  assert.equal(countFantasySquadTransfers(saved, [{ playerId: "1" }]), 2);
+  assert.equal(countFantasySquadTransfers([{ playerId: "1" }], saved), 2);
 });
 
 test("next fantasy points fall back to predicted FP when no fixture rounds are loaded", () => {

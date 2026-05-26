@@ -1,15 +1,12 @@
 import { NextResponse } from "next/server";
 
 import { pruneOldLeagueSeasons } from "@/core_data/league-season-retention";
+import { requireCronAccess } from "@/lib/cron-auth";
 import { prisma } from "@/lib/db";
 
 export async function GET(request: Request) {
-  const expectedSecret = process.env.CRON_SECRET;
-  const authorization = request.headers.get("authorization");
-
-  if (!expectedSecret || authorization !== `Bearer ${expectedSecret}`) {
-    return NextResponse.json({ error: { code: "FORBIDDEN", message: "Cron access is not allowed." } }, { status: 403 });
-  }
+  const cronAccessResponse = requireCronAccess(request);
+  if (cronAccessResponse) return cronAccessResponse;
 
   const url = new URL(request.url);
   const dryRun = ["1", "true", "yes"].includes((url.searchParams.get("dryRun") ?? "").toLowerCase());

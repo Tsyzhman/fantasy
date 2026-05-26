@@ -2,6 +2,9 @@
   "name": "fantasy-scout",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=20.9.0"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build --webpack",
@@ -9,6 +12,7 @@
     "test": "tsx --test \"src/**/*.test.ts\"",
     "lint": "eslint .",
     "typecheck": "next typegen && tsc --noEmit",
+    "check": "npm run test && npm run lint && npm run typecheck && npm run build",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
     "db:safe-update": "tsx scripts/apply-safe-db-update.ts",

@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { requireApiAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { readFormDataOrNull } from "@/lib/request-form-data";
 import { normalizeName } from "@/lib/text";
 import {
   importWyscoutPlayersForTeam,
@@ -45,7 +46,11 @@ export async function POST(request: Request, { params }: Params) {
   if (auth.response) return auth.response;
 
   const { leagueId } = await params;
-  const formData = await request.formData();
+  const formData = await readFormDataOrNull(request);
+  if (!formData) {
+    return NextResponse.json({ error: { code: "BAD_REQUEST", message: "Upload form data is required." } }, { status: 400 });
+  }
+
   const uploads = [...formData.getAll("files"), ...formData.getAll("file")].filter((value): value is File => value instanceof File);
 
   if (uploads.length === 0) {

@@ -106,7 +106,7 @@ docker compose exec ingestion-worker npm run ingestion:initial-backfill -- curre
 ## Custom database credentials
 
 ```env
-DATABASE_URL_INTERNAL="postgresql://postgres:postgres@postgres:5432/fantasy_scout"
+DATABASE_URL_INTERNAL="postgresql://fantasy_app:fantasy_app_password@postgres:5432/fantasy_scout"
 ```
 
 ## Endpoint Mapping

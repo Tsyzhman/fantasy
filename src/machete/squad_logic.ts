@@ -79,10 +79,11 @@ export type TransferSuggestion = {
   nextDelta: number;
   horizonDelta: number;
   score: number;
-  reason: string;
 };
 
 export type FantasyStarterOptimizationBasis = "next" | "horizon";
+
+export const transfersPerFantasyRound = 3;
 
 export const defaultFantasySquadRules: FantasySquadRules = {
   budgetLimit: 100,
@@ -136,6 +137,39 @@ export function normalizeFantasyPosition(position: string | null | undefined): F
 
 export function roundFantasyValue(value: number) {
   return Math.round(value * 10) / 10;
+}
+
+export function fantasyTransferLimitForHorizon(horizon: number) {
+  const safeHorizon = Number.isFinite(horizon) ? Math.max(1, Math.floor(horizon)) : 1;
+  return safeHorizon * transfersPerFantasyRound;
+}
+
+export function normalizeFantasyHorizon(value: unknown, options: readonly number[], fallback = 5) {
+  const safeOptions = options.filter((option) => Number.isInteger(option) && option > 0);
+  const fallbackHorizon = safeOptions.includes(fallback) ? fallback : (safeOptions[0] ?? Math.max(1, Math.floor(Number(fallback) || 1)));
+  const parsed = Number(value);
+
+  if (!Number.isInteger(parsed) || parsed <= 0) return fallbackHorizon;
+  return safeOptions.includes(parsed) ? parsed : fallbackHorizon;
+}
+
+export function countFantasySquadTransfers(
+  savedSelections: Array<Pick<FantasySquadSelection, "playerId">>,
+  currentSelections: Array<Pick<FantasySquadSelection, "playerId">>
+) {
+  const savedIds = new Set(savedSelections.map((selection) => selection.playerId));
+  const currentIds = new Set(currentSelections.map((selection) => selection.playerId));
+  let added = 0;
+  let removed = 0;
+
+  for (const playerId of currentIds) {
+    if (!savedIds.has(playerId)) added += 1;
+  }
+  for (const playerId of savedIds) {
+    if (!currentIds.has(playerId)) removed += 1;
+  }
+
+  return Math.max(added, removed);
 }
 
 export function playerHorizonPoints(player: Pick<FantasyPlannerPlayer, "roundPoints">, horizon: number) {
@@ -395,6 +429,8 @@ export function buildTransferSuggestions(input: {
   transferCount: number;
 }) {
   const { pool, selections, rules, horizon, transferCount } = input;
+  if (transferCount <= 0) return [];
+
   const selectedIds = new Set(selections.map((selection) => selection.playerId));
   const playersById = new Map(pool.map((player) => [player.playerId, player]));
   const lockedIds = new Set(selections.filter((selection) => selection.isLocked).map((selection) => selection.playerId));
@@ -433,8 +469,7 @@ export function buildTransferSuggestions(input: {
         priceDelta,
         nextDelta,
         horizonDelta,
-        score,
-        reason: `+${nextDelta} next round, +${horizonDelta} over ${horizon} rounds`
+        score
       });
     }
   }

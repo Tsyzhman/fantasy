@@ -1,15 +1,12 @@
 import { NextResponse } from "next/server";
 
 import { run_incremental_update } from "@/core_data/ingestion-jobs";
+import { requireCronAccess } from "@/lib/cron-auth";
 import { prisma } from "@/lib/db";
 
 export async function GET(request: Request) {
-  const expectedSecret = process.env.CRON_SECRET;
-  const authorization = request.headers.get("authorization");
-
-  if (!expectedSecret || authorization !== `Bearer ${expectedSecret}`) {
-    return NextResponse.json({ error: { code: "FORBIDDEN", message: "Cron access is not allowed." } }, { status: 403 });
-  }
+  const cronAccessResponse = requireCronAccess(request);
+  if (cronAccessResponse) return cronAccessResponse;
 
   try {
     const result = await run_incremental_update(prisma, { startedByUserId: null });
@@ -28,4 +25,3 @@ export async function GET(request: Request) {
     );
   }
 }
-

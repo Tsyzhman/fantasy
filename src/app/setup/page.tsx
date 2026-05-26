@@ -1,9 +1,10 @@
 import { UserRole } from "@prisma/client";
 import { redirect } from "next/navigation";
 
+import { DatabaseSetupNotice } from "@/components/database-setup-notice";
 import { I18nText } from "@/components/i18n-text";
 import { createUserSession, hashPassword, normalizeEmail } from "@/lib/auth";
-import { prisma } from "@/lib/db";
+import { isDatabaseConfigured, prisma } from "@/lib/db";
 
 type PageProps = {
   searchParams?: Promise<{
@@ -14,6 +15,8 @@ type PageProps = {
 export const dynamic = "force-dynamic";
 
 export default async function SetupPage({ searchParams }: PageProps) {
+  if (!isDatabaseConfigured()) return <DatabaseSetupNotice />;
+
   const resolvedSearchParams = (await searchParams) ?? {};
   const adminWithPasswordCount = await getAdminWithPasswordCount();
   if (adminWithPasswordCount > 0) redirect("/login");
@@ -61,6 +64,8 @@ export default async function SetupPage({ searchParams }: PageProps) {
 
 async function setupAction(formData: FormData) {
   "use server";
+
+  if (!isDatabaseConfigured()) redirect("/setup");
 
   if ((await getAdminWithPasswordCount()) > 0) redirect("/login");
 

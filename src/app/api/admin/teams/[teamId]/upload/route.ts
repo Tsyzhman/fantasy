@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { requireApiAdmin } from "@/lib/auth";
+import { readFormDataOrNull } from "@/lib/request-form-data";
 import { importWyscoutPlayersForTeam } from "@/server/baltika/workbook-imports";
 
 export const runtime = "nodejs";
@@ -17,7 +18,11 @@ export async function POST(request: Request, { params }: Params) {
   if (auth.response) return auth.response;
 
   const { teamId } = await params;
-  const formData = await request.formData();
+  const formData = await readFormDataOrNull(request);
+  if (!formData) {
+    return NextResponse.json({ error: { code: "BAD_REQUEST", message: "Upload form data is required." } }, { status: 400 });
+  }
+
   const upload = formData.get("file");
 
   if (!(upload instanceof File)) {

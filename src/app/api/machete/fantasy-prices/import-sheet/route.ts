@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 
 import { requireApiAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { readFormDataOrNull } from "@/lib/request-form-data";
 import { importFantasyPriceWorkbook } from "@/machete/fantasy_price_sheet_import";
 
 export const runtime = "nodejs";
@@ -12,7 +13,7 @@ export async function POST(request: Request) {
   const auth = await requireApiAdmin();
   if (auth.response) return auth.response;
 
-  const formData = await request.formData().catch(() => null);
+  const formData = await readFormDataOrNull(request);
   if (!formData) {
     return NextResponse.json({ error: { code: "BAD_REQUEST", message: "Upload form data is required." } }, { status: 400 });
   }

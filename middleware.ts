@@ -1,9 +1,10 @@
 import { NextResponse, type NextRequest } from "next/server";
 
 import { sessionCookieName } from "@/lib/auth-constants";
+import { isDatabaseConfigured } from "@/lib/database-url";
 
-const publicPaths = ["/login", "/setup"];
-const publicPrefixes = ["/_next", "/favicon", "/team-logos", "/mode-logos"];
+const publicPaths = ["/login", "/setup", "/api/auth/logout"];
+const publicPrefixes = ["/_next", "/favicon", "/team-logos", "/mode-logos", "/api/cron/"];
 
 export function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
@@ -12,6 +13,13 @@ export function middleware(request: NextRequest) {
 
   if (isPublicPath(pathname)) {
     return NextResponse.next({ request: { headers: requestHeaders } });
+  }
+
+  if (pathname.startsWith("/api/") && !isDatabaseConfigured()) {
+    return NextResponse.json(
+      { error: { code: "DATABASE_NOT_CONFIGURED", message: "Configure DATABASE_URL before using the API." } },
+      { status: 503 }
+    );
   }
 
   const hasSession = Boolean(request.cookies.get(sessionCookieName)?.value);

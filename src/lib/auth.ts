@@ -7,7 +7,7 @@ import { redirect } from "next/navigation";
 import { NextResponse } from "next/server";
 
 import { sessionCookieName } from "@/lib/auth-constants";
-import { ensureDatabaseSchema, prisma } from "@/lib/db";
+import { ensureDatabaseSchema, isDatabaseConfigured, prisma } from "@/lib/db";
 
 const scrypt = promisify(scryptCallback);
 
@@ -21,6 +21,24 @@ export type AuthUser = {
   role: UserRole;
   isActive: boolean;
 };
+
+export type ApiAuthSuccess = {
+  user: AuthUser;
+  response: null;
+};
+
+export type ApiAuthFailure = {
+  user: null;
+  response: NextResponse;
+};
+
+export type ApiAdminForbidden = {
+  user: AuthUser;
+  response: NextResponse;
+};
+
+export type ApiUserAuth = ApiAuthSuccess | ApiAuthFailure;
+export type ApiAdminAuth = ApiAuthSuccess | ApiAuthFailure | ApiAdminForbidden;
 
 export function normalizeEmail(email: string) {
   return email.trim().toLowerCase();
@@ -46,6 +64,7 @@ export async function verifyPassword(password: string, passwordHash: string | nu
 
 export async function getCurrentUser(): Promise<AuthUser | null> {
   await ensureDatabaseSchema();
+  if (!isDatabaseConfigured()) return null;
 
   const cookieStore = await cookies();
   const token = cookieStore.get(sessionCookieName)?.value;
@@ -76,6 +95,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 
 export async function createUserSession(userId: string) {
   await ensureDatabaseSchema();
+  if (!isDatabaseConfigured()) throw new Error("DATABASE_URL is not configured.");
 
   const token = randomBytes(32).toString("base64url");
   const expiresAt = new Date(Date.now() + sessionDays * 24 * 60 * 60 * 1000);
@@ -104,6 +124,11 @@ export async function clearCurrentUserSession() {
   const cookieStore = await cookies();
   const token = cookieStore.get(sessionCookieName)?.value;
 
+  if (!isDatabaseConfigured()) {
+    cookieStore.delete(sessionCookieName);
+    return;
+  }
+
   if (token) {
     await prisma.userSession.deleteMany({ where: { tokenHash: hashSessionToken(token) } });
   }
@@ -123,7 +148,17 @@ export async function requireAdminUser() {
   return user;
 }
 
-export async function requireApiUser() {
+export async function requireApiUser(): Promise<ApiUserAuth> {
+  if (!isDatabaseConfigured()) {
+    return {
+      user: null,
+      response: NextResponse.json(
+        { error: { code: "DATABASE_NOT_CONFIGURED", message: "Configure DATABASE_URL before using the API." } },
+        { status: 503 }
+      )
+    };
+  }
+
   const user = await getCurrentUser();
   if (!user) {
     return {
@@ -135,7 +170,7 @@ export async function requireApiUser() {
   return { user, response: null };
 }
 
-export async function requireApiAdmin() {
+export async function requireApiAdmin(): Promise<ApiAdminAuth> {
   const auth = await requireApiUser();
   if (auth.response) return auth;
 

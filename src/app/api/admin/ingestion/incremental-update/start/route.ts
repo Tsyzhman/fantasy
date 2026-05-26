@@ -7,7 +7,6 @@ import { prisma } from "@/lib/db";
 export async function POST() {
   const auth = await requireApiAdmin();
   if (auth.response) return auth.response;
-  if (!auth.user) return NextResponse.json({ error: { code: "UNAUTHORIZED", message: "Sign in to continue." } }, { status: 401 });
 
   try {
     const result = await run_incremental_update(prisma, { startedByUserId: auth.user.id });

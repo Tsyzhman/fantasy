@@ -9,3 +9,4 @@ storage/uploads
 tmp_*.json
 tmp_*.rds
 tmp_fotmob_smoke
+sports_ru_*_backup_*.json
