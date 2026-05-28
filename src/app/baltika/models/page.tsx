@@ -15,7 +15,7 @@ export default async function BaltikaModelsPage({ searchParams }: PageProps) {
   return ModelSettingsPage({
     source: "WYSCOUT",
     modeName: <I18nText en="Baltika" ru="Балтика" />,
-    title: <I18nText en="Fantasy model" ru="Fantasy-модель" />,
+    title: <I18nText en="Fantasy model" ru="Фэнтези-модель" />,
     description: (
       <I18nText
         en="Baltika model settings for Wyscout Excel imports. Primary and alternative formulas are separate from Machete."

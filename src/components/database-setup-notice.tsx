@@ -19,7 +19,7 @@ export function DatabaseSetupNotice() {
             }
             ru={
               <>
-                Укажите <code className="rounded bg-white/70 px-1 py-0.5 font-mono text-xs">DATABASE_URL</code> в <code className="rounded bg-white/70 px-1 py-0.5 font-mono text-xs">.env</code>, затем перезапустите dev-сервер.
+                Укажите <code className="rounded bg-white/70 px-1 py-0.5 font-mono text-xs">DATABASE_URL</code> в <code className="rounded bg-white/70 px-1 py-0.5 font-mono text-xs">.env</code>, затем перезапустите сервер разработки.
               </>
             }
           />

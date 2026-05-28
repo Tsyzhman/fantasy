@@ -133,7 +133,7 @@ function TeamCard({ team, seasonId, leagueId }: { team: TeamCardDto; seasonId: s
   async function uploadFile(file: File | null | undefined) {
     if (!file) return;
     if (!file.name.toLowerCase().endsWith(".xlsx")) {
-      setState({ status: "error", message: localizedText("Only .xlsx files are supported.", "Поддерживаются только .xlsx файлы.") });
+      setState({ status: "error", message: localizedText("Only .xlsx files are supported.", "Поддерживаются только файлы .xlsx.") });
       return;
     }
 
@@ -149,8 +149,11 @@ function TeamCard({ team, seasonId, leagueId }: { team: TeamCardDto; seasonId: s
     const payload = await response.json();
 
     if (!response.ok) {
-      const message =
-        payload?.errors?.[0]?.message ?? payload?.error?.message ?? localizedText("Import failed. Check the file format and team name.", "Импорт не удался. Проверьте формат файла и название команды.");
+      const message = localizedApiMessage(
+        payload?.errors?.[0]?.message ?? payload?.error?.message,
+        "Import failed. Check the file format and team name.",
+        "Импорт не удался. Проверьте формат файла и название команды."
+      );
       setState({ status: "error", message });
       router.refresh();
       return;
@@ -163,7 +166,7 @@ function TeamCard({ team, seasonId, leagueId }: { team: TeamCardDto; seasonId: s
   async function uploadTeamStatsFile(file: File | null | undefined) {
     if (!file) return;
     if (!file.name.toLowerCase().endsWith(".xlsx")) {
-      setTeamStatsState({ status: "error", message: localizedText("Only .xlsx files are supported.", "Поддерживаются только .xlsx файлы.") });
+      setTeamStatsState({ status: "error", message: localizedText("Only .xlsx files are supported.", "Поддерживаются только файлы .xlsx.") });
       return;
     }
 
@@ -179,8 +182,11 @@ function TeamCard({ team, seasonId, leagueId }: { team: TeamCardDto; seasonId: s
     const payload = await response.json();
 
     if (!response.ok) {
-      const message =
-        payload?.errors?.[0]?.message ?? payload?.error?.message ?? localizedText("Team stats import failed. Check the Team Stats file.", "Импорт Team Stats не удался. Проверьте файл.");
+      const message = localizedApiMessage(
+        payload?.errors?.[0]?.message ?? payload?.error?.message,
+        "Team stats import failed. Check the Team Stats file.",
+        "Импорт Team Stats не удался. Проверьте файл."
+      );
       setTeamStatsState({ status: "error", message });
       router.refresh();
       return;
@@ -197,7 +203,7 @@ function TeamCard({ team, seasonId, leagueId }: { team: TeamCardDto; seasonId: s
     const payload = await response.json();
 
     if (!response.ok) {
-      setState({ status: "error", message: payload?.error?.message ?? localizedText("Publish failed.", "Публикация не удалась.") });
+      setState({ status: "error", message: localizedApiMessage(payload?.error?.message, "Publish failed.", "Публикация не удалась.") });
       return;
     }
 
@@ -399,13 +405,23 @@ function TeamLogo({ logoUrl, name, flag }: { logoUrl: string | null; name: strin
 }
 
 function errorMessage(value: unknown) {
+  if (isRussianLanguage()) return localizedText("The last import failed validation.", "Последний импорт не прошел проверку.");
   if (typeof value === "object" && value && "message" in value) {
     return String((value as { message: unknown }).message);
   }
   return localizedText("The last import failed validation.", "Последний импорт не прошел проверку.");
 }
 
+function localizedApiMessage(value: unknown, fallbackEn: string, fallbackRu: string) {
+  if (isRussianLanguage()) return fallbackRu;
+  return typeof value === "string" && value.trim() ? value : fallbackEn;
+}
+
 function localizedText(en: string, ru: string) {
-  if (typeof document !== "undefined" && document.documentElement.dataset.language === "ru") return ru;
+  if (isRussianLanguage()) return ru;
   return en;
+}
+
+function isRussianLanguage() {
+  return typeof document !== "undefined" && document.documentElement.dataset.language === "ru";
 }

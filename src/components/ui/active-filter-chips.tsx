@@ -22,19 +22,25 @@ export function ActiveFilterChips({
 }) {
   if (chips.length === 0) return null;
   return (
-    <div className={cn("chip-row", className)} aria-label="Active filters">
-      {chips.map((chip) => (
-        <span key={chip.key} className="chip">
-          <span>{chip.label}</span>
-          <Link
-            href={chip.removeHref}
-            aria-label={`Remove filter ${typeof chip.label === "string" ? chip.label : chip.key}`}
-            className="chip-remove"
-          >
-            <X className="h-3 w-3" />
-          </Link>
-        </span>
-      ))}
+    <div className={cn("chip-row", className)} aria-labelledby="active-filter-chips-label">
+      <span id="active-filter-chips-label" className="sr-only">
+        <I18nText en="Active filters" ru="Активные фильтры" />
+      </span>
+      {chips.map((chip) => {
+        const filterLabel = typeof chip.label === "string" ? chip.label : chip.key;
+
+        return (
+          <span key={chip.key} className="chip">
+            <span>{chip.label}</span>
+            <Link href={chip.removeHref} className="chip-remove">
+              <X className="h-3 w-3" />
+              <span className="sr-only">
+                <I18nText en={`Remove filter ${filterLabel}`} ru={`Убрать фильтр ${filterLabel}`} />
+              </span>
+            </Link>
+          </span>
+        );
+      })}
       {resetHref ? (
         <Link
           href={resetHref}

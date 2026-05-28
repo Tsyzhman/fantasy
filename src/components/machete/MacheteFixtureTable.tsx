@@ -21,7 +21,7 @@ export function MacheteFixtureTable({ fixtures }: { fixtures: MacheteFixtureRow[
             <tr>
               <th className="px-4 py-3"><I18nText en="Date" ru="Дата" /></th>
               <th className="px-4 py-3"><I18nText en="Home" ru="Хозяева" /></th>
-              <th className="px-4 py-3 text-center"><I18nText en="Score" ru="Счет" /></th>
+              <th className="px-4 py-3 text-center"><I18nText en="Score" ru="Счёт" /></th>
               <th className="px-4 py-3"><I18nText en="Away" ru="Гости" /></th>
               <th className="px-4 py-3"><I18nText en="Status" ru="Статус" /></th>
             </tr>

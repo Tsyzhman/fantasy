@@ -2,6 +2,8 @@ import { ArrowLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import type { ReactNode } from "react";
 
+import { I18nText } from "@/components/i18n-text";
+
 export type BreadcrumbItem = {
   label: ReactNode;
   href: string;
@@ -18,7 +20,10 @@ export function PageBreadcrumbs({ items, backHref, backLabel }: { items: Breadcr
       ) : (
         <span />
       )}
-      <nav aria-label="Breadcrumb" className="flex flex-wrap items-center gap-1 text-sm text-slate-500">
+      <nav aria-labelledby="page-breadcrumbs-label" className="flex flex-wrap items-center gap-1 text-sm text-slate-500">
+        <span id="page-breadcrumbs-label" className="sr-only">
+          <I18nText en="Breadcrumb" ru="Навигационная цепочка" />
+        </span>
         {items.map((item, index) => (
           <span key={`${item.href}:${index}`} className="inline-flex items-center gap-1">
             {index > 0 ? <ChevronRight className="h-4 w-4 text-slate-400" /> : null}

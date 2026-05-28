@@ -331,7 +331,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
-        setMessage(payload?.error?.message ?? localizedText(language, "Failed to save squad.", "Не удалось сохранить состав."));
+        setMessage(language === "ru" ? localizedText(language, "Failed to save squad.", "Не удалось сохранить состав.") : payload?.error?.message ?? localizedText(language, "Failed to save squad.", "Не удалось сохранить состав."));
         return;
       }
       setSelections(selectionsToSave);
@@ -492,12 +492,12 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players, 
                 <p className="mt-1 text-xs text-slate-500">
                   <I18nText
                     en={`+${formatScore(suggestion.nextDelta)} next round, +${formatScore(suggestion.horizonDelta)} over ${horizon} rounds; price ${signedNumber(suggestion.priceDelta)}`}
-                    ru={`+${formatScore(suggestion.nextDelta)} в след. туре, +${formatScore(suggestion.horizonDelta)} за ${horizon} тур.; цена ${signedNumber(suggestion.priceDelta)}`}
+                    ru={`+${formatScore(suggestion.nextDelta)} в следующем туре, +${formatScore(suggestion.horizonDelta)} за ${horizon} туров; цена ${signedNumber(suggestion.priceDelta)}`}
                   />
                 </p>
               </button>
             ))}
-            {suggestions.length === 0 ? <p className="text-sm text-slate-500"><I18nText en="No clean upgrade found for the selected filters." ru="Для выбранных фильтров чистый апгрейд не найден." /></p> : null}
+            {suggestions.length === 0 ? <p className="text-sm text-slate-500"><I18nText en="No clean upgrade found for the selected filters." ru="Для выбранных фильтров чистое улучшение не найдено." /></p> : null}
           </div>
         </div>
       </section>

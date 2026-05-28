@@ -127,7 +127,7 @@ export default async function BaltikaTeamPage({ params, searchParams }: PageProp
               <tr>
                 <th className="w-[42%] px-3 py-3"><I18nText en="Surname" ru="Фамилия" /></th>
                 <th className="w-[29%] bg-emerald-50 px-3 py-3 text-right text-emerald-700"><I18nText en="Forecast" ru="Прогноз" /></th>
-                <th className="w-[29%] bg-sky-50 px-3 py-3 text-right text-sky-700"><I18nText en="Scoring" ru="Скоринг" /></th>
+                <th className="w-[29%] bg-sky-50 px-3 py-3 text-right text-sky-700"><I18nText en="Scoring" ru="Очки" /></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -135,7 +135,7 @@ export default async function BaltikaTeamPage({ params, searchParams }: PageProp
                 <tr key={player.id} className="hover:bg-slate-50">
                   <td className="max-w-[42vw] px-3 py-3 font-medium text-ink">
                     <div className="flex items-center gap-2">
-                      <StarterCheckbox snapshotId={player.id} defaultChecked={player.isStarter} label={`Starter: ${player.playerName}`} />
+                      <StarterCheckbox snapshotId={player.id} defaultChecked={player.isStarter} labelEn={`Starter: ${player.playerName}`} labelRu={`В старте: ${player.playerName}`} />
                       <span className="block truncate" title={player.playerName}>{compactPlayerName(player.playerName)}</span>
                     </div>
                     <span className="mt-0.5 block truncate pl-6 text-[11px] font-normal text-slate-500">{player.positionGroup ?? "-"} · {formatNumber(player.minutesPlayed)} min</span>
@@ -178,7 +178,7 @@ export default async function BaltikaTeamPage({ params, searchParams }: PageProp
               {filteredPlayers.map((player) => (
                 <tr key={player.id} className="hover:bg-slate-50">
                   <td className="whitespace-nowrap px-4 py-3 text-center">
-                    <StarterCheckbox snapshotId={player.id} defaultChecked={player.isStarter} label={`Starter: ${player.playerName}`} />
+                    <StarterCheckbox snapshotId={player.id} defaultChecked={player.isStarter} labelEn={`Starter: ${player.playerName}`} labelRu={`В старте: ${player.playerName}`} />
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 font-medium text-ink">{player.playerName}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-slate-600">{player.positionGroup ?? "-"}</td>
@@ -229,7 +229,7 @@ export default async function BaltikaTeamPage({ params, searchParams }: PageProp
               {filteredPlayers.map((player) => (
                 <tr key={player.id} className="hover:bg-slate-50">
                   <td className="whitespace-nowrap px-4 py-3 text-center">
-                    <StarterCheckbox snapshotId={player.id} defaultChecked={player.isStarter} label={`Starter: ${player.playerName}`} />
+                    <StarterCheckbox snapshotId={player.id} defaultChecked={player.isStarter} labelEn={`Starter: ${player.playerName}`} labelRu={`В старте: ${player.playerName}`} />
                   </td>
                   <td className="whitespace-nowrap px-4 py-3 font-medium text-ink">{player.playerName}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-slate-600">{player.positionGroup ?? "-"}</td>
@@ -325,7 +325,7 @@ function TeamFormTable({ title, stats }: { title: ReactNode; stats: TeamFormRow[
               <th className="px-4 py-3"><I18nText en="Date" ru="Дата" /></th>
               <th className="px-4 py-3"><I18nText en="Round" ru="Тур" /></th>
               <th className="px-4 py-3"><I18nText en="Opponent" ru="Соперник" /></th>
-              <th className="px-4 py-3 text-right"><I18nText en="Score" ru="Счет" /></th>
+              <th className="px-4 py-3 text-right"><I18nText en="Score" ru="Счёт" /></th>
               <th className="px-4 py-3 text-right">xG</th>
               <th className="px-4 py-3 text-right">xGA</th>
               <th className="px-4 py-3 text-right"><I18nText en="Shots" ru="Удары" /></th>

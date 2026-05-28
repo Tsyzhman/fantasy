@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { type FormEvent, useState, useTransition } from "react";
 
 import { I18nText } from "@/components/i18n-text";
+import { localizedText, useLanguage } from "@/components/localized-option";
 
 type FantasyPriceSheetImportFormProps = {
   leagueId: string;
@@ -13,6 +14,7 @@ type FantasyPriceSheetImportFormProps = {
 };
 
 export function FantasyPriceSheetImportForm({ leagueId, season, canImport }: FantasyPriceSheetImportFormProps) {
+  const language = useLanguage();
   const router = useRouter();
   const [message, setMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -34,12 +36,18 @@ export function FantasyPriceSheetImportForm({ leagueId, season, canImport }: Fan
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
-        setMessage(payload?.error?.message ?? "Failed to import prices.");
+        setMessage(language === "ru" ? localizedText(language, "Failed to import prices.", "Не удалось импортировать цены.") : payload?.error?.message ?? localizedText(language, "Failed to import prices.", "Не удалось импортировать цены."));
         return;
       }
 
       const result = payload.import;
-      setMessage(`Imported ${result.imported} rows. Mapped ${result.mapped}, manual ${result.manual}, unmatched ${result.unmatched}.`);
+      setMessage(
+        localizedText(
+          language,
+          `Imported ${result.imported} rows. Mapped ${result.mapped}, manual ${result.manual}, unmatched ${result.unmatched}.`,
+          `Импортировано строк: ${result.imported}. Сопоставлено: ${result.mapped}, вручную: ${result.manual}, без пары: ${result.unmatched}.`
+        )
+      );
       router.refresh();
     });
   }

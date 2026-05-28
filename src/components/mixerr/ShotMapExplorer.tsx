@@ -201,7 +201,11 @@ export function ShotMapExplorer({
                 onClick={() => setIsPlaybackRunning((current) => !current)}
                 disabled={sequenceShots.length === 0}
                 className="inline-flex h-7 w-7 items-center justify-center rounded text-slate-700 hover:bg-slate-50 disabled:opacity-40"
-                aria-label={playbackRunning ? "Pause shot sequence" : "Play shot sequence"}
+                aria-label={
+                  playbackRunning
+                    ? localizedText(language, "Pause shot sequence", "Поставить проигрывание ударов на паузу")
+                    : localizedText(language, "Play shot sequence", "Запустить проигрывание ударов")
+                }
               >
                 {playbackRunning ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
               </button>
@@ -210,7 +214,7 @@ export function ShotMapExplorer({
                 onClick={() => setPlaybackIndex((current) => (sequenceShots.length ? (current + 1) % sequenceShots.length : 0))}
                 disabled={sequenceShots.length === 0}
                 className="inline-flex h-7 w-7 items-center justify-center rounded text-slate-700 hover:bg-slate-50 disabled:opacity-40"
-                aria-label="Next shot"
+                aria-label={localizedText(language, "Next shot", "Следующий удар")}
               >
                 <SkipForward className="h-3.5 w-3.5" />
               </button>
@@ -248,12 +252,14 @@ export function ShotMapExplorer({
               layers={splitAttackLayers}
               showHeatmap={showHeatmap}
               activeShotId={activeSequenceShot?.id ?? null}
+              language={language}
             />
             <ShotPitchPanel
               title={<I18nText en="Team B conceded" ru="Допущено B" />}
               layers={splitConcededLayers}
               showHeatmap={showHeatmap}
               activeShotId={activeSequenceShot?.id ?? null}
+              language={language}
             />
           </div>
         ) : (
@@ -263,6 +269,7 @@ export function ShotMapExplorer({
               showHeatmap={showHeatmap}
               activeShotId={activeSequenceShot?.id ?? null}
               compact={false}
+              language={language}
             />
           </div>
         )}
@@ -482,13 +489,15 @@ function ShotPitchPanel({
   layers,
   showHeatmap,
   activeShotId,
-  compact = true
+  compact = true,
+  language
 }: {
   title?: ReactNode;
   layers: ShotLayer[];
   showHeatmap: boolean;
   activeShotId: string | null;
   compact?: boolean;
+  language: "en" | "ru";
 }) {
   const shotCount = layers.reduce((total, layer) => total + layer.shots.length, 0);
   const frameClassName = compact
@@ -504,7 +513,7 @@ function ShotPitchPanel({
         </div>
       ) : null}
       <div className={frameClassName}>
-        <ShotPitchSvg layers={layers} showHeatmap={showHeatmap} activeShotId={activeShotId} />
+        <ShotPitchSvg layers={layers} showHeatmap={showHeatmap} activeShotId={activeShotId} language={language} />
         {shotCount === 0 ? (
           <div className="absolute inset-0 grid place-items-center bg-emerald-950/35 text-sm font-semibold text-white">
             <I18nText en="No shots for current filters" ru="Нет ударов по текущим фильтрам" />
@@ -515,7 +524,7 @@ function ShotPitchPanel({
   );
 }
 
-function ShotPitchSvg({ layers, showHeatmap, activeShotId }: { layers: ShotLayer[]; showHeatmap: boolean; activeShotId: string | null }) {
+function ShotPitchSvg({ layers, showHeatmap, activeShotId, language }: { layers: ShotLayer[]; showHeatmap: boolean; activeShotId: string | null; language: "en" | "ru" }) {
   const penaltyArea = pitchRectFromCenterWidth(PENALTY_AREA_WIDTH_METERS, PENALTY_AREA_DEPTH_METERS);
   const sixYardBox = pitchRectFromCenterWidth(SIX_YARD_BOX_WIDTH_METERS, SIX_YARD_BOX_DEPTH_METERS);
   const goal = goalMouthRect();
@@ -525,7 +534,7 @@ function ShotPitchSvg({ layers, showHeatmap, activeShotId }: { layers: ShotLayer
   const zoneLineTwo = pitchXFromFotMobY((FOTMOB_PITCH_WIDTH_METERS * 2) / 3);
 
   return (
-    <svg className="h-full w-full" viewBox={`0 0 ${PITCH_WIDTH} ${PITCH_HEIGHT}`} role="img" aria-label="Pitch">
+    <svg className="h-full w-full" viewBox={`0 0 ${PITCH_WIDTH} ${PITCH_HEIGHT}`} role="img" aria-label={localizedText(language, "Pitch", "Поле")}>
       <defs>
         <pattern id="pitch-stripes" width={PITCH_FIELD_WIDTH / 5} height={PITCH_HEIGHT} patternUnits="userSpaceOnUse">
           <rect width={PITCH_FIELD_WIDTH / 10} height={PITCH_HEIGHT} fill="#047857" opacity="0.35" />

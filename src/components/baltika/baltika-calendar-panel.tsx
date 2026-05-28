@@ -116,7 +116,7 @@ export function BaltikaCalendarPanel({
     setBusyId(null);
 
     if (!response.ok) {
-      setMessage(payload?.error?.message ?? localizedText("Could not create fixture.", "Не удалось создать матч."));
+      setMessage(language === "ru" ? localizedText("Could not create fixture.", "Не удалось создать матч.", language) : payload?.error?.message ?? localizedText("Could not create fixture.", "Не удалось создать матч.", language));
       return;
     }
 
@@ -136,7 +136,7 @@ export function BaltikaCalendarPanel({
     setBusyId(null);
 
     if (!response.ok) {
-      setMessage(payload?.error?.message ?? localizedText("Could not save fixture.", "Не удалось сохранить матч."));
+      setMessage(language === "ru" ? localizedText("Could not save fixture.", "Не удалось сохранить матч.", language) : payload?.error?.message ?? localizedText("Could not save fixture.", "Не удалось сохранить матч.", language));
       return;
     }
 
@@ -151,7 +151,7 @@ export function BaltikaCalendarPanel({
     setBusyId(null);
 
     if (!response.ok) {
-      setMessage(payload?.error?.message ?? localizedText("Could not delete fixture.", "Не удалось удалить матч."));
+      setMessage(language === "ru" ? localizedText("Could not delete fixture.", "Не удалось удалить матч.", language) : payload?.error?.message ?? localizedText("Could not delete fixture.", "Не удалось удалить матч.", language));
       return;
     }
 

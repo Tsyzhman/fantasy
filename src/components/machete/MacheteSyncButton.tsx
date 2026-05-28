@@ -35,9 +35,11 @@ export function MacheteSyncButton({
 
     if (!response.ok) {
       const message =
-        typeof payload?.error === "string"
-          ? payload.error
-          : payload?.error?.message ?? payload?.job?.errorMessage ?? localizedText("Sync failed.", "Синхронизация не удалась.");
+        isRussianLanguage()
+          ? localizedText("Sync failed.", "Синхронизация не удалась.")
+          : typeof payload?.error === "string"
+            ? payload.error
+            : payload?.error?.message ?? payload?.job?.errorMessage ?? localizedText("Sync failed.", "Синхронизация не удалась.");
       setState({ status: "error", message });
       router.refresh();
       return;
@@ -86,6 +88,10 @@ export function MacheteSyncButton({
 }
 
 function localizedText(en: string, ru: string) {
-  if (typeof document !== "undefined" && document.documentElement.dataset.language === "ru") return ru;
+  if (isRussianLanguage()) return ru;
   return en;
+}
+
+function isRussianLanguage() {
+  return typeof document !== "undefined" && document.documentElement.dataset.language === "ru";
 }

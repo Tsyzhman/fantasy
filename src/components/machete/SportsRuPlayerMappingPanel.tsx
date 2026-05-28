@@ -54,7 +54,7 @@ export function SportsRuPlayerMappingPanel({ rows, roster, canEdit }: SportsRuPl
       });
       const payload = await response.json().catch(() => ({}));
       if (!response.ok) {
-        setMessage(payload?.error?.message ?? "Failed to save mapping.");
+        setMessage(language === "ru" ? localizedText(language, "Failed to save mapping.", "Не удалось сохранить сопоставление.") : payload?.error?.message ?? localizedText(language, "Failed to save mapping.", "Не удалось сохранить сопоставление."));
         return;
       }
       setSavedRows((current) => ({
@@ -70,7 +70,11 @@ export function SportsRuPlayerMappingPanel({ rows, roster, canEdit }: SportsRuPl
         Number(selectionSync?.movedSelections ?? 0) +
         Number(selectionSync?.refreshedSelections ?? 0) +
         Number(selectionSync?.removedDuplicateSelections ?? 0);
-      setMessage(syncedSelections > 0 ? `Mapping saved. Synced ${syncedSelections} squad selections.` : "Mapping saved.");
+      setMessage(
+        syncedSelections > 0
+          ? localizedText(language, `Mapping saved. Synced ${syncedSelections} squad selections.`, `Сопоставление сохранено. Обновлено записей состава: ${syncedSelections}.`)
+          : localizedText(language, "Mapping saved.", "Сопоставление сохранено.")
+      );
     });
   }
 
@@ -79,7 +83,7 @@ export function SportsRuPlayerMappingPanel({ rows, roster, canEdit }: SportsRuPl
       <section className="mt-6 rounded border border-slate-200 bg-white p-5 shadow-soft">
         <div className="flex items-center gap-2">
           <Link2 className="h-5 w-5 text-slate-500" />
-          <h2 className="text-lg font-semibold text-ink"><I18nText en="Sports.ru to FotMob mapping" ru="Маппинг Sports.ru в FotMob" /></h2>
+          <h2 className="text-lg font-semibold text-ink"><I18nText en="Sports.ru to FotMob mapping" ru="Сопоставление Sports.ru с FotMob" /></h2>
         </div>
         <p className="mt-2 text-sm text-slate-500">
           <I18nText
@@ -97,12 +101,12 @@ export function SportsRuPlayerMappingPanel({ rows, roster, canEdit }: SportsRuPl
         <div>
           <div className="flex items-center gap-2">
             <Link2 className="h-5 w-5 text-slate-500" />
-            <h2 className="text-lg font-semibold text-ink"><I18nText en="Sports.ru to FotMob mapping" ru="Маппинг Sports.ru в FotMob" /></h2>
+            <h2 className="text-lg font-semibold text-ink"><I18nText en="Sports.ru to FotMob mapping" ru="Сопоставление Sports.ru с FotMob" /></h2>
           </div>
           <p className="mt-1 text-sm text-slate-500">
             <I18nText
               en={<>{summary.matched}/{summary.total} mapped. Manual links are reused by the squad picker and future price imports.</>}
-              ru={<>{summary.matched}/{summary.total} замаплено. Ручные связи используются в планировщике состава и будущих импортах цен.</>}
+              ru={<>{summary.matched}/{summary.total} сопоставлено. Ручные связи используются в планировщике состава и будущих импортах цен.</>}
             />
           </p>
         </div>
@@ -143,7 +147,7 @@ export function SportsRuPlayerMappingPanel({ rows, roster, canEdit }: SportsRuPl
                         onChange={(event) => updateDraft(row.priceId, event.target.value)}
                         className="w-full rounded border border-slate-200 px-3 py-2"
                       >
-                        <option value="">{localizedText(language, "Not mapped", "Не замаплен")}</option>
+                        <option value="">{localizedText(language, "Not mapped", "Не сопоставлен")}</option>
                         {row.candidates.length > 0 ? (
                           <optgroup label={localizedText(language, "Best candidates", "Лучшие кандидаты")}>
                             {row.candidates.slice(0, 5).map((candidate) => (
@@ -163,7 +167,7 @@ export function SportsRuPlayerMappingPanel({ rows, roster, canEdit }: SportsRuPl
                       </select>
                     ) : (
                       <div>
-                        <p className="font-medium text-ink">{row.mappedPlayerName ?? localizedText(language, "Not mapped", "Не замаплен")}</p>
+                        <p className="font-medium text-ink">{row.mappedPlayerName ?? localizedText(language, "Not mapped", "Не сопоставлен")}</p>
                         {bestCandidate ? (
                           <p className="text-xs text-slate-500">
                             <I18nText
@@ -191,7 +195,7 @@ export function SportsRuPlayerMappingPanel({ rows, roster, canEdit }: SportsRuPl
                         onClick={() => saveMapping(row)}
                         disabled={isPending}
                         className="inline-flex h-9 w-9 items-center justify-center rounded border border-slate-200 text-slate-700 hover:bg-slate-50 disabled:opacity-50"
-                        aria-label={localizedText(language, "Save mapping", "Сохранить маппинг")}
+                        aria-label={localizedText(language, "Save mapping", "Сохранить сопоставление")}
                       >
                         <Save className="h-4 w-4" />
                       </button>

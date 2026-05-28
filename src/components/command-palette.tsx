@@ -28,11 +28,11 @@ const baseCommands: CommandItem[] = [
   { href: "/machete/leagues", labelEn: "Machete leagues", labelRu: "Лиги Machete", sectionEn: "Machete", sectionRu: "Machete", keywords: ["machete", "leagues", "fotmob"] },
   { href: "/machete/players", labelEn: "Machete players", labelRu: "Игроки Machete", sectionEn: "Machete", sectionRu: "Machete", keywords: ["machete", "players", "fotmob"] },
   { href: "/machete/squad", labelEn: "Squad planner", labelRu: "Планировщик состава", sectionEn: "Machete", sectionRu: "Machete", keywords: ["squad", "planner", "состав"] },
-  { href: "/machete/models", labelEn: "Machete scoring models", labelRu: "Модели скоринга Machete", sectionEn: "Machete", sectionRu: "Machete", keywords: ["models", "scoring"] },
+  { href: "/machete/models", labelEn: "Machete scoring models", labelRu: "Модели очков Machete", sectionEn: "Machete", sectionRu: "Machete", keywords: ["models", "scoring"] },
   { href: "/machete/sync-jobs", labelEn: "Machete sync jobs", labelRu: "Задачи синхронизации Machete", sectionEn: "Machete", sectionRu: "Machete", keywords: ["sync", "jobs", "ingestion"] },
   { href: "/baltika/leagues", labelEn: "Baltika leagues", labelRu: "Лиги Балтики", sectionEn: "Baltika", sectionRu: "Балтика", keywords: ["baltika", "leagues", "wyscout"] },
   { href: "/baltika/players", labelEn: "Baltika players", labelRu: "Игроки Балтики", sectionEn: "Baltika", sectionRu: "Балтика", keywords: ["baltika", "players", "wyscout"] },
-  { href: "/baltika/models", labelEn: "Baltika scoring models", labelRu: "Модели скоринга Балтики", sectionEn: "Baltika", sectionRu: "Балтика", keywords: ["baltika", "models", "scoring"] },
+  { href: "/baltika/models", labelEn: "Baltika scoring models", labelRu: "Модели очков Балтики", sectionEn: "Baltika", sectionRu: "Балтика", keywords: ["baltika", "models", "scoring"] },
   { href: "/mixerr", labelEn: "MiXerr shot maps", labelRu: "Карты ударов Миксер", sectionEn: "MiXerr", sectionRu: "Миксер", keywords: ["mixerr", "shots", "xg", "карты"] }
 ];
 

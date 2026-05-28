@@ -22,7 +22,7 @@ export function ModeLeaguesLink() {
         href="/mixerr"
       >
         <Crosshair className="h-4 w-4" />
-        Shot maps
+        <I18nText en="Shot maps" ru="Карты ударов" />
       </Link>
     );
   }

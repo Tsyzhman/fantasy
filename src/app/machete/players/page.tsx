@@ -150,12 +150,12 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
           <I18nText en="Machete player explorer" ru="Таблица игроков Machete" />
         </p>
         <h1 className="mt-2 text-3xl font-bold text-ink">
-          <I18nText en="Sports.ru mapped players" ru="Игроки Sports.ru с маппингом" />
+          <I18nText en="Sports.ru mapped players" ru="Игроки Sports.ru с сопоставлением" />
         </h1>
         <p className="mt-2 max-w-2xl text-sm text-slate-600">
           <I18nText
             en="Machete stats for players mapped to Sports.ru fantasy prices. Names and positions come from Sports.ru."
-            ru="Machete-статы только для игроков, замапленных на цены Sports.ru. Имена и позиции берутся из Sports.ru."
+            ru="Статистика Machete только для игроков, сопоставленных с ценами Sports.ru. Имена и позиции берутся из Sports.ru."
           />
         </p>
       </div>
@@ -328,7 +328,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
         <MacheteScopeStat
           label={<I18nText en="Competitions" ru="Турниры" />}
           value={activeCompetitions.length > 0 ? formatNumber(activeCompetitions.length) : <I18nText en="All" ru="Все" />}
-          detail={selectedTeamId ? <I18nText en="Team scope" ru="Скоуп команды" /> : <I18nText en="League scope" ru="Скоуп лиги" />}
+          detail={selectedTeamId ? <I18nText en="Team scope" ru="Область команды" /> : <I18nText en="League scope" ru="Область лиги" />}
         />
         <MacheteScopeStat
           label={<I18nText en="Parsed matches" ru="Матчи со статами" />}
@@ -385,7 +385,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
           ) : (
             <EmptyState
               title={<I18nText en="Choose a league" ru="Выберите лигу" />}
-              description={<I18nText en="After that the table will load Sports.ru mapped players and their recalculated Machete stats." ru="После этого таблица загрузит замапленных игроков Sports.ru и пересчитанную статистику Machete." />}
+              description={<I18nText en="After that the table will load Sports.ru mapped players and their recalculated Machete stats." ru="После этого таблица загрузит сопоставленных игроков Sports.ru и пересчитанную статистику Machete." />}
             />
           )}
         </section>

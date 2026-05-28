@@ -16,6 +16,7 @@ import {
 } from "react";
 
 import { I18nText } from "@/components/i18n-text";
+import { localizedText, useLanguage } from "@/components/localized-option";
 import { cn } from "@/lib/cn";
 
 export type CompareSource = "machete" | "baltika";
@@ -112,9 +113,12 @@ function useCompareContext() {
 }
 
 export function PlayerCompareToggle({ className }: { className?: string }) {
+  const language = useLanguage();
   const { players, isOpen, setOpen } = useCompareContext();
   const count = players.length;
-  const label = isOpen ? "Hide comparison panel" : "Compare players";
+  const label = isOpen
+    ? localizedText(language, "Hide comparison panel", "Скрыть панель сравнения")
+    : localizedText(language, "Compare players", "Сравнить игроков");
 
   return (
     <button
@@ -149,6 +153,7 @@ export function PlayerComparePickButton({
   player: ComparePlayer;
   className?: string;
 }) {
+  const language = useLanguage();
   const ctx = useContext(CompareContext);
   if (!ctx) return null;
   const compare = ctx;
@@ -156,10 +161,10 @@ export function PlayerComparePickButton({
   const isSelected = compare.players.some((existing) => existing.id === player.id);
   const isFull = !isSelected && compare.players.length >= MAX_PLAYERS;
   const label = isSelected
-    ? `Remove ${player.name} from comparison`
+    ? localizedText(language, `Remove ${player.name} from comparison`, `Убрать ${player.name} из сравнения`)
     : isFull
-      ? `Comparison is full (${MAX_PLAYERS} players)`
-      : `Add ${player.name} to comparison`;
+      ? localizedText(language, `Comparison is full (${MAX_PLAYERS} players)`, `В сравнении уже ${MAX_PLAYERS} игрока`)
+      : localizedText(language, `Add ${player.name} to comparison`, `Добавить ${player.name} в сравнение`);
 
   function handleClick() {
     if (isSelected) {
@@ -291,6 +296,7 @@ function CompareSlot({
   index: number;
   onRemove: (id: string) => void;
 }) {
+  const language = useLanguage();
   if (!player) {
     return (
       <div className="flex h-14 items-center justify-center rounded border border-dashed border-slate-300 bg-white/60 text-[11px] uppercase tracking-wide text-slate-400">
@@ -311,7 +317,7 @@ function CompareSlot({
       <button
         type="button"
         onClick={() => onRemove(player.id)}
-        aria-label={`Remove ${player.name} from comparison`}
+        aria-label={localizedText(language, `Remove ${player.name} from comparison`, `Убрать ${player.name} из сравнения`)}
         className="ml-1 flex h-5 w-5 items-center justify-center rounded-full text-slate-400 hover:bg-rose-50 hover:text-rose-600"
       >
         <X className="h-3.5 w-3.5" />
@@ -329,6 +335,7 @@ export function PlayerCompareDraggable({
   children: ReactNode;
   className?: string;
 }) {
+  const language = useLanguage();
   const ctx = useContext(CompareContext);
 
   const handleDragStart = (event: DragEvent<HTMLSpanElement>) => {
@@ -355,7 +362,7 @@ export function PlayerCompareDraggable({
       onDragStart={handleDragStart}
       onDoubleClick={handleDoubleClick}
       onKeyDown={handleKeyDown}
-      aria-label={`Add ${player.name} to comparison`}
+      aria-label={localizedText(language, `Add ${player.name} to comparison`, `Добавить ${player.name} в сравнение`)}
       className={cn("inline-flex cursor-grab items-center outline-none focus-visible:ring-2 focus-visible:ring-brand-400 active:cursor-grabbing", className)}
     >
       {children}

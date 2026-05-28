@@ -4,6 +4,7 @@ import { AlertTriangle, Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
 
 import { I18nText } from "@/components/i18n-text";
+import { localizedText, useLanguage } from "@/components/localized-option";
 
 type SyncStatusJob = {
   id: string;
@@ -19,6 +20,7 @@ type SyncStatusPayload = {
 };
 
 export function MacheteSyncStatusBanner() {
+  const language = useLanguage();
   const [payload, setPayload] = useState<SyncStatusPayload | null>(null);
 
   useEffect(() => {
@@ -44,7 +46,7 @@ export function MacheteSyncStatusBanner() {
   if (!payload?.running) return null;
 
   const primaryJob = payload.jobs[0];
-  const jobLabel = primaryJob ? syncJobLabel(primaryJob) : null;
+  const jobLabel = primaryJob ? syncJobLabel(primaryJob, language) : null;
   const extraCount = Math.max(0, payload.jobs.length - 1);
 
   return (
@@ -71,8 +73,21 @@ export function MacheteSyncStatusBanner() {
   );
 }
 
-function syncJobLabel(job: SyncStatusJob) {
+function syncJobLabel(job: SyncStatusJob, language: "en" | "ru") {
   const scope = [job.leagueName, job.teamName].filter(Boolean).join(" / ");
-  const typeLabel = job.type.replace(/^SYNC_/, "").replace(/_/g, " ").toLowerCase();
+  const labels: Record<string, { en: string; ru: string }> = {
+    SYNC_ALL_LEAGUES: { en: "Sync all leagues", ru: "Синхронизация всех лиг" },
+    SYNC_LEAGUE_METADATA: { en: "Sync league metadata", ru: "Синхронизация данных лиги" },
+    SYNC_TEAMS: { en: "Sync teams", ru: "Синхронизация команд" },
+    SYNC_FIXTURES: { en: "Sync fixtures", ru: "Синхронизация календаря" },
+    SYNC_PLAYER_STATS: { en: "Sync player stats", ru: "Синхронизация статистики игроков" },
+    SYNC_LEAGUE_FULL: { en: "Full league sync", ru: "Полная синхронизация лиги" },
+    SYNC_TEAM: { en: "Sync team", ru: "Синхронизация команды" },
+    CALCULATE_FANTASY_SCORES: { en: "Calculate fantasy scores", ru: "Расчет фэнтези-очков" },
+    RUN_ENTITY_MATCHING: { en: "Run entity matching", ru: "Сопоставление сущностей" },
+    SYNC_SHOTS: { en: "Sync shots", ru: "Синхронизация ударов" }
+  };
+  const fallback = job.type.replace(/^SYNC_/, "").replace(/_/g, " ").toLowerCase();
+  const typeLabel = labels[job.type] ? localizedText(language, labels[job.type].en, labels[job.type].ru) : fallback;
   return scope ? `${typeLabel}: ${scope}` : typeLabel;
 }

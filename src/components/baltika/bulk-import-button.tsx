@@ -45,7 +45,7 @@ export function BulkImportButton({ leagueId, seasonId }: BulkImportButtonProps) 
   async function uploadFiles(files: FileList | null) {
     const selectedFiles = Array.from(files ?? []).filter((file) => file.name.toLowerCase().endsWith(".xlsx"));
     if (selectedFiles.length === 0) {
-      setPayload({ error: { message: localizedText("Choose one or more .xlsx files.", "Выберите один или несколько .xlsx файлов.") } });
+      setPayload({ error: { message: localizedText("Choose one or more .xlsx files.", "Выберите один или несколько файлов .xlsx.") } });
       return;
     }
 
@@ -63,10 +63,13 @@ export function BulkImportButton({ leagueId, seasonId }: BulkImportButtonProps) 
         body: data
       });
       const nextPayload = (await response.json()) as BulkUploadPayload;
+      if (isRussianLanguage() && nextPayload.error) {
+        nextPayload.error.message = localizedText("Bulk upload failed.", "Массовая загрузка не удалась.");
+      }
       setPayload(nextPayload);
       router.refresh();
-    } catch (error) {
-      setPayload({ error: { message: error instanceof Error ? error.message : localizedText("Bulk upload failed.", "Массовая загрузка не удалась.") } });
+    } catch {
+      setPayload({ error: { message: localizedText("Bulk upload failed.", "Массовая загрузка не удалась.") } });
     } finally {
       setIsUploading(false);
     }
@@ -120,7 +123,7 @@ export function BulkImportButton({ leagueId, seasonId }: BulkImportButtonProps) 
                   {failed.slice(0, 6).map((result) => (
                     <p key={result.filename} className="rounded bg-rose-50 px-3 py-2 text-xs text-rose-700">
                       <span className="font-semibold">{result.filename}</span>
-                      <span className="block">{result.error ?? "Import failed."}</span>
+                      <span className="block">{localizedApiMessage(result.error, "Import failed.", "Импорт не удался.")}</span>
                     </p>
                   ))}
                   {failed.length > 6 ? (
@@ -144,6 +147,15 @@ export function BulkImportButton({ leagueId, seasonId }: BulkImportButtonProps) 
 }
 
 function localizedText(en: string, ru: string) {
-  if (typeof document !== "undefined" && document.documentElement.dataset.language === "ru") return ru;
+  if (isRussianLanguage()) return ru;
   return en;
+}
+
+function localizedApiMessage(value: unknown, fallbackEn: string, fallbackRu: string) {
+  if (isRussianLanguage()) return fallbackRu;
+  return typeof value === "string" && value.trim() ? value : fallbackEn;
+}
+
+function isRussianLanguage() {
+  return typeof document !== "undefined" && document.documentElement.dataset.language === "ru";
 }

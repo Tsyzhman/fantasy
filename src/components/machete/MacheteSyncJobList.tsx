@@ -32,20 +32,24 @@ export function MacheteSyncJobList({ jobs }: { jobs: MacheteSyncJobRow[] }) {
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {jobs.map((job) => (
-              <tr key={job.id} className="hover:bg-slate-50">
-                <td className="whitespace-nowrap px-4 py-3 font-medium text-ink">{job.type.replace(/_/g, " ")}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-slate-600">
-                  {[job.leagueName, job.teamName].filter(Boolean).join(" / ") || <I18nText en="Global" ru="Глобально" />}
-                </td>
-                <td className="whitespace-nowrap px-4 py-3">
-                  <MacheteStatusBadge status={job.status} />
-                </td>
-                <td className="whitespace-nowrap px-4 py-3 text-slate-600">{formatDate(job.createdAt)}</td>
-                <td className="whitespace-nowrap px-4 py-3 text-slate-600">{formatDate(job.finishedAt)}</td>
-                <td className="max-w-xs truncate px-4 py-3 text-rose-700">{job.errorMessage ?? "-"}</td>
-              </tr>
-            ))}
+            {jobs.map((job) => {
+              const label = macheteJobLabel(job.type);
+
+              return (
+                <tr key={job.id} className="hover:bg-slate-50">
+                  <td className="whitespace-nowrap px-4 py-3 font-medium text-ink"><I18nText en={label.en} ru={label.ru} /></td>
+                  <td className="whitespace-nowrap px-4 py-3 text-slate-600">
+                    {[job.leagueName, job.teamName].filter(Boolean).join(" / ") || <I18nText en="Global" ru="Глобально" />}
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3">
+                    <MacheteStatusBadge status={job.status} />
+                  </td>
+                  <td className="whitespace-nowrap px-4 py-3 text-slate-600">{formatDate(job.createdAt)}</td>
+                  <td className="whitespace-nowrap px-4 py-3 text-slate-600">{formatDate(job.finishedAt)}</td>
+                  <td className="max-w-xs truncate px-4 py-3 text-rose-700">{job.errorMessage ? <I18nText en={job.errorMessage} ru="Ошибка при выполнении задачи" /> : "-"}</td>
+                </tr>
+              );
+            })}
             {jobs.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-10 text-center text-slate-500">
@@ -58,4 +62,21 @@ export function MacheteSyncJobList({ jobs }: { jobs: MacheteSyncJobRow[] }) {
       </div>
     </div>
   );
+}
+
+function macheteJobLabel(type: string) {
+  const labels: Record<string, { en: string; ru: string }> = {
+    SYNC_ALL_LEAGUES: { en: "Sync all leagues", ru: "Синхронизация всех лиг" },
+    SYNC_LEAGUE_METADATA: { en: "Sync league metadata", ru: "Синхронизация данных лиги" },
+    SYNC_TEAMS: { en: "Sync teams", ru: "Синхронизация команд" },
+    SYNC_FIXTURES: { en: "Sync fixtures", ru: "Синхронизация календаря" },
+    SYNC_PLAYER_STATS: { en: "Sync player stats", ru: "Синхронизация статистики игроков" },
+    SYNC_LEAGUE_FULL: { en: "Full league sync", ru: "Полная синхронизация лиги" },
+    SYNC_TEAM: { en: "Sync team", ru: "Синхронизация команды" },
+    CALCULATE_FANTASY_SCORES: { en: "Calculate fantasy scores", ru: "Расчет фэнтези-очков" },
+    RUN_ENTITY_MATCHING: { en: "Run entity matching", ru: "Сопоставление сущностей" },
+    SYNC_SHOTS: { en: "Sync shots", ru: "Синхронизация ударов" }
+  };
+
+  return labels[type] ?? { en: type.replace(/_/g, " "), ru: type.replace(/_/g, " ") };
 }

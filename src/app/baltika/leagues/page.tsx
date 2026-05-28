@@ -37,7 +37,7 @@ export default async function BaltikaLeaguesPage() {
           <p className="mt-2 max-w-2xl text-sm text-slate-600">
             <I18nText
               en="Maintain fantasy datasets one league at a time by uploading Wyscout team spreadsheets."
-              ru="Загружайте таблицы Wyscout по командам и поддерживайте fantasy-данные отдельно для каждой лиги."
+              ru="Загружайте таблицы Wyscout по командам и поддерживайте фэнтези-данные отдельно для каждой лиги."
             />
           </p>
         </div>

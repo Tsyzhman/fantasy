@@ -251,7 +251,7 @@ export async function ModelSettingsPage({
 
         {searchParams?.saved ? (
           <div className="mt-5 rounded border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-            <I18nText en="Saved. Expected FP, Actual FP and Alt FP were recalculated for existing player snapshots." ru="Сохранено. Expected FP, Реальные FP и Alt FP пересчитаны для уже загруженных игроков." />
+            <I18nText en="Saved. Expected FP, Actual FP and Alt FP were recalculated for existing player snapshots." ru="Сохранено. Expected FP, Actual FP и Alt FP пересчитаны для уже загруженных игроков." />
           </div>
         ) : null}
 
@@ -302,7 +302,7 @@ export async function ModelSettingsPage({
                   <I18nText en="These formulas replace the green Expected FP column for the positions you fill in." ru="Эти формулы заменяют зеленую колонку Expected FP для заполненных позиций." />
                 </p>
               </div>
-              <span className="rounded bg-white px-2 py-1 text-xs font-semibold text-emerald-700"><I18nText en="Primary score" ru="Основной счет" /></span>
+              <span className="rounded bg-white px-2 py-1 text-xs font-semibold text-emerald-700"><I18nText en="Primary score" ru="Основные очки" /></span>
             </div>
             <div className="mt-2 grid grid-cols-1 gap-3 lg:grid-cols-2">
               {customFormulaFields.map((field) => (
@@ -334,7 +334,7 @@ export async function ModelSettingsPage({
                 </p>
               </div>
               <span className="rounded bg-white px-2 py-1 text-xs font-semibold text-sky-700">
-                <I18nText en="Actual scoring" ru="Фактический scoring" />
+                <I18nText en="Actual scoring" ru="Фактические очки" />
               </span>
             </div>
             <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
@@ -367,7 +367,7 @@ export async function ModelSettingsPage({
                   <I18nText en="These formulas fill the amber Alt FP column. They do not change Expected FP." ru="Эти формулы заполняют желтую колонку Alt FP и не меняют Expected FP." />
                 </p>
               </div>
-              <span className="rounded bg-white px-2 py-1 text-xs font-semibold text-amber-700"><I18nText en="Comparison score" ru="Счет для сравнения" /></span>
+              <span className="rounded bg-white px-2 py-1 text-xs font-semibold text-amber-700"><I18nText en="Comparison score" ru="Очки для сравнения" /></span>
             </div>
             <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
               {alternativeFormulaFields.map((field) => (
@@ -441,7 +441,7 @@ function ScoreMap({
         <p className="mt-2 text-sm text-slate-700">
           <I18nText
             en="Main predicted score. It uses either the built-in predicted-round rules or your primary formulas."
-            ru="Основной прогнозный score. Использует встроенные правила прогноза тура или ваши основные формулы."
+            ru="Основные прогнозные очки. Используют встроенные правила прогноза тура или ваши основные формулы."
           />
         </p>
         <p className="mt-3 text-xs font-semibold text-emerald-700"><FormulaModeLabel model={displayModel} /></p>
@@ -452,7 +452,7 @@ function ScoreMap({
         <p className="mt-2 text-sm text-slate-700">
           <I18nText
             en="Actual aggregate score from loaded totals. This is separate from prediction."
-            ru="Фактический суммарный score по загруженным totals. Это отдельно от прогноза."
+            ru="Фактические суммарные очки по загруженным итогам. Это отдельно от прогноза."
           />
         </p>
         <p className="mt-3 text-xs font-semibold text-sky-700"><ScoringFormulaModeLabel model={displayModel} /></p>
@@ -463,7 +463,7 @@ function ScoreMap({
         <p className="mt-2 text-sm text-slate-700">
           <I18nText
             en="Optional second score for comparison. It appears only when Alt FP is enabled and has a formula."
-            ru="Дополнительный score для сравнения. Появляется, когда Alt FP включен и есть формула."
+            ru="Дополнительные очки для сравнения. Появляются, когда Alt FP включен и есть формула."
           />
         </p>
         <p className="mt-3 text-xs font-semibold text-amber-700"><AltStatusLabel enabled={altEnabled} /></p>
@@ -474,7 +474,7 @@ function ScoreMap({
         <p className="mt-2 text-sm text-slate-700">
           <I18nText
             en={<>Saving updates existing {source === "MACHETE" ? "Machete/FotMob" : "Baltika/Wyscout"} snapshots immediately. Future syncs and imports use the same formulas.</>}
-            ru={<>Сохранение сразу обновляет существующие снапшоты {source === "MACHETE" ? "Machete/FotMob" : "Baltika/Wyscout"}. Будущие синки и импорты используют те же формулы.</>}
+            ru={<>Сохранение сразу обновляет существующие снимки {source === "MACHETE" ? "Machete/FotMob" : "Baltika/Wyscout"}. Будущие синхронизации и импорты используют те же формулы.</>}
           />
         </p>
       </div>
@@ -492,9 +492,9 @@ function FormulaModeLabel({ model }: { model?: Parameters<typeof hasAnyCustomFor
 
 function ScoringFormulaModeLabel({ model }: { model?: Parameters<typeof hasAnyScoringFormula>[0] }) {
   return model?.scoringFormulaEnabled && hasAnyScoringFormula(model) ? (
-    <I18nText en="Custom scoring formulas by position" ru="Свои scoring-формулы по позициям" />
+    <I18nText en="Custom scoring formulas by position" ru="Свои формулы фактических очков по позициям" />
   ) : (
-    <I18nText en="Default aggregate scoring rules" ru="Встроенные правила фактического scoring" />
+    <I18nText en="Default aggregate scoring rules" ru="Встроенные правила фактических очков" />
   );
 }
 
@@ -559,7 +559,7 @@ function FormulaHelp({ source }: { source: ScoringModelSource }) {
           <pre className="mt-2 whitespace-pre-wrap break-words font-mono text-xs leading-5 text-slate-700">{examples.primary}</pre>
         </div>
         <div className="rounded bg-white p-3">
-          <p className="text-xs font-semibold uppercase text-slate-500"><I18nText en="Actual FP example" ru="Пример Реальные FP" /></p>
+          <p className="text-xs font-semibold uppercase text-slate-500"><I18nText en="Actual FP example" ru="Пример Actual FP" /></p>
           <pre className="mt-2 whitespace-pre-wrap break-words font-mono text-xs leading-5 text-slate-700">{examples.scoring}</pre>
         </div>
         <div className="rounded bg-white p-3">
@@ -570,7 +570,7 @@ function FormulaHelp({ source }: { source: ScoringModelSource }) {
       <p className="mt-3">
         <I18nText
           en={<>Use numbers, <span className="font-mono">+ - * / ( )</span>, and fields in braces. Missing fields count as 0. Empty Expected FP and Actual FP formulas fall back to built-in rules; empty Alt FP formulas show no Alt FP for that position.</>}
-          ru={<>Используйте числа, <span className="font-mono">+ - * / ( )</span> и поля в фигурных скобках. Отсутствующие поля считаются как 0. Пустые формулы Expected FP и Реальные FP откатываются к встроенным правилам; пустые формулы Alt FP не показывают Alt FP для позиции.</>}
+          ru={<>Используйте числа, <span className="font-mono">+ - * / ( )</span> и поля в фигурных скобках. Отсутствующие поля считаются как 0. Пустые формулы Expected FP и Actual FP возвращаются к встроенным правилам; пустые формулы Alt FP не показывают Alt FP для позиции.</>}
         />
       </p>
       <div className="mt-3 flex flex-wrap gap-1.5">
@@ -589,11 +589,11 @@ function FieldGuideSections() {
     <>
       <section className="mt-6 rounded border border-slate-200 bg-white p-6 shadow-soft">
         <div>
-          <h2 className="text-lg font-semibold text-ink"><I18nText en="Scoring fields and aliases" ru="Поля scoring и алиасы" /></h2>
+          <h2 className="text-lg font-semibold text-ink"><I18nText en="Scoring fields and aliases" ru="Поля очков и псевдонимы" /></h2>
           <p className="mt-1 text-sm text-slate-600">
             <I18nText
               en="You can write readable field names in braces. They are normalized into metric keys automatically."
-              ru="В формулах можно писать понятные названия полей в фигурных скобках. Они автоматически приводятся к metric keys."
+              ru="В формулах можно писать понятные названия полей в фигурных скобках. Они автоматически приводятся к ключам метрик."
             />
           </p>
         </div>

@@ -46,8 +46,8 @@ export function PlayerWatchlistButton({
   useEffect(() => subscribeToWatchlist(source, () => setIsWatched(readWatchlist(source).some((item) => item.id === player.id))), [player.id, source]);
 
   const label = isWatched
-    ? localizedText(language, "Remove from watchlist", "Убрать из watchlist")
-    : localizedText(language, "Add to watchlist", "Добавить в watchlist");
+    ? localizedText(language, "Remove from watchlist", "Убрать из избранного")
+    : localizedText(language, "Add to watchlist", "Добавить в избранное");
 
   return (
     <button
@@ -83,12 +83,12 @@ export function PlayerWatchlistPanel({ source }: { source: WatchlistSource }) {
         type="button"
         onClick={() => setOpen((current) => !current)}
         aria-expanded={open}
-        aria-label={localizedText(language, "Open watchlist", "Открыть watchlist")}
+        aria-label={localizedText(language, "Open watchlist", "Открыть избранное")}
         className="inline-flex items-center justify-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-700 hover:bg-slate-50"
       >
         <Star className="h-4 w-4" />
         <span>
-          <I18nText en="Watchlist" ru="Watchlist" />
+          <I18nText en="Watchlist" ru="Избранное" />
         </span>
         {players.length > 0 ? <span className="rounded-full bg-slate-100 px-1.5 text-[11px] text-slate-500">{players.length}</span> : null}
       </button>
@@ -109,7 +109,7 @@ export function PlayerWatchlistPanel({ source }: { source: WatchlistSource }) {
                   onClick={() => {
                     void removeWatchlistPlayer(source, player.id);
                   }}
-                  aria-label={localizedText(language, "Remove watched player", "Удалить игрока из watchlist")}
+                  aria-label={localizedText(language, "Remove watched player", "Удалить игрока из избранного")}
                   className="inline-flex h-8 w-8 items-center justify-center rounded text-rose-700 hover:bg-rose-50"
                 >
                   <Trash2 className="h-4 w-4" />
@@ -118,7 +118,7 @@ export function PlayerWatchlistPanel({ source }: { source: WatchlistSource }) {
             ))}
             {players.length === 0 ? (
               <p className="rounded bg-slate-50 px-3 py-3 text-center text-sm text-slate-500">
-                <I18nText en="No watched players yet." ru="Игроков в watchlist пока нет." />
+                <I18nText en="No watched players yet." ru="В избранном пока нет игроков." />
               </p>
             ) : null}
           </div>

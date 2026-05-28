@@ -8,6 +8,7 @@ import type { ReactNode } from "react";
 import { CommandPalette } from "@/components/command-palette";
 import { I18nText } from "@/components/i18n-text";
 import { LanguageToggle } from "@/components/language-toggle";
+import { localizedText, useLanguage } from "@/components/localized-option";
 import { ModeBrand } from "@/components/mode-brand";
 import { ModeLeaguesLink } from "@/components/mode-leagues-link";
 import { ModePlayersLink } from "@/components/mode-players-link";
@@ -25,6 +26,7 @@ type AppHeaderProps = {
 };
 
 export function AppHeader({ user }: AppHeaderProps) {
+  const language = useLanguage();
   const pathname = usePathname();
   const router = useRouter();
   const isHome = pathname === "/";
@@ -112,7 +114,7 @@ export function AppHeader({ user }: AppHeaderProps) {
               type="button"
               onClick={logout}
               className="shrink-0 rounded px-3 py-2 text-slate-600 hover:bg-slate-100"
-              aria-label={`Sign out ${user.name ?? user.email}`}
+              aria-label={localizedText(language, `Sign out ${user.name ?? user.email}`, `Выйти: ${user.name ?? user.email}`)}
             >
               <I18nText en="Sign out" ru="Выйти" />
             </button>

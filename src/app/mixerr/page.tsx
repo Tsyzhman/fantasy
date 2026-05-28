@@ -135,7 +135,7 @@ export default async function MixerrPage({ searchParams }: PageProps) {
         <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
           <I18nText
             en="Compare attacking shot locations, conceded shot locations and player shot maps from stored FotMob match payloads."
-            ru="Сравнивайте точки своих ударов, допущенные удары и карты ударов игроков по сохраненным payload матчей FotMob."
+            ru="Сравнивайте точки своих ударов, допущенные удары и карты ударов игроков по сохраненным данным матчей FotMob."
           />
         </p>
       </section>
@@ -250,7 +250,6 @@ export default async function MixerrPage({ searchParams }: PageProps) {
             defendingMatchWindow: matchWindowModeValue(matchWindow)
           })}
           className="btn-brand inline-flex items-center gap-2 rounded px-4 py-2 text-sm font-semibold shadow-elev"
-          aria-label="Swap teams"
         >
           <span aria-hidden="true">⇄</span>
           <I18nText en="Swap teams" ru="Поменять команды" />

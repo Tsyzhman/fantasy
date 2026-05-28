@@ -91,7 +91,7 @@ export function LeagueFlag({
 }) {
   const country = resolveCountry(league);
   const shape: FlagShape = country ? flags[country] ?? { kind: "trophy" } : { kind: "trophy" };
-  const labelTitle = title ?? league.name ?? league.country ?? "Flag";
+  const labelTitle = title ?? league.name ?? league.country ?? "Флаг";
 
   return (
     <span

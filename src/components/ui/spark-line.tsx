@@ -31,7 +31,7 @@ export function SparkLine({ values, width = 64, height = 20, className, ariaLabe
   const stroke = trendUp ? "var(--brand-500, #6366f1)" : "rgb(244, 114, 182)";
   const fill = trendUp ? "rgb(99, 102, 241)" : "rgb(244, 114, 182)";
 
-  const label = ariaLabel ?? `Recent fantasy points: ${cleaned.map((v) => v.toFixed(1)).join(", ")}`;
+  const label = ariaLabel ?? `FP: ${cleaned.map((v) => v.toFixed(1)).join(", ")}`;
 
   return (
     <span

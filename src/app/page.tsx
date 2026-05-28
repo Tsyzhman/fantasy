@@ -22,7 +22,7 @@ const modes = [
     kickerEn: "FotMob mode",
     kickerRu: "Режим FotMob",
     descriptionEn: "Leagues, fixtures, player stats, squads and fantasy projections.",
-    descriptionRu: "Лиги, календарь, статистика игроков, составы и fantasy-прогнозы."
+    descriptionRu: "Лиги, календарь, статистика игроков, составы и фэнтези-прогнозы."
   },
   {
     nameEn: "Baltika",
@@ -68,7 +68,7 @@ export default async function HomePage() {
           <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600">
             <I18nText
               en="Your latest squad, fresh prices, watched players and active workspaces in one place."
-              ru="Последний состав, свежие цены, watchlist и рабочие режимы в одном месте."
+              ru="Последний состав, свежие цены, избранное и рабочие режимы в одном месте."
             />
           </p>
         </div>
@@ -88,7 +88,7 @@ export default async function HomePage() {
         <MetricCard icon={<Users className="h-5 w-5" />} labelEn="Squad players" labelRu="Игроки состава" value={dashboard?.squad ? String(dashboard.squad.playersCount) : "0"} />
         <MetricCard icon={<CalendarDays className="h-5 w-5" />} labelEn="Next fixtures" labelRu="Ближайшие матчи" value={dashboard?.squad ? String(dashboard.squad.nextRound.fixtureCount) : "0"} />
         <MetricCard icon={<Eye className="h-5 w-5" />} labelEn="Saved views" labelRu="Сохраненные виды" value={String(dashboard?.savedViewsCount ?? 0)} />
-        <MetricCard icon={<Star className="h-5 w-5" />} labelEn="Watchlist" labelRu="Watchlist" value={String(dashboard?.watchlistCount ?? 0)} />
+        <MetricCard icon={<Star className="h-5 w-5" />} labelEn="Watchlist" labelRu="Избранное" value={String(dashboard?.watchlistCount ?? 0)} />
       </section>
 
       <section className="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
@@ -178,7 +178,7 @@ export default async function HomePage() {
               dashboard.recentPrices.map((price) => <PriceRow key={price.id} price={price} />)
             ) : (
               <p className="rounded bg-slate-50 px-3 py-4 text-sm text-slate-500">
-                <I18nText en="No fantasy prices have been imported yet." ru="Fantasy-цены пока не импортированы." />
+                <I18nText en="No fantasy prices have been imported yet." ru="Фэнтези-цены пока не импортированы." />
               </p>
             )}
           </div>

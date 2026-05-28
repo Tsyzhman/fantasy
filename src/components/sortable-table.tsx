@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, type KeyboardEvent, type MouseEvent, type TableHTMLAttributes } from "react";
 
+import { localizedText, useLanguage } from "@/components/localized-option";
+
 type SortDirection = "asc" | "desc";
 
 type SortableTableProps = TableHTMLAttributes<HTMLTableElement> & {
@@ -16,15 +18,16 @@ type ComparableValue =
   | { kind: "text"; text: string };
 
 export function SortableTable({ className, serverSortParam, defaultSort, children, ...props }: SortableTableProps) {
+  const language = useLanguage();
   const tableRef = useRef<HTMLTableElement>(null);
 
   useEffect(() => {
     const table = tableRef.current;
     if (!table) return;
 
-    initializeHeaders(table);
+    initializeHeaders(table, language);
     if (serverSortParam) syncServerSortHeaders(table, serverSortParam, defaultSort);
-  }, [serverSortParam, defaultSort, children]);
+  }, [serverSortParam, defaultSort, children, language]);
 
   function sortFromEvent(target: EventTarget | null) {
     const table = tableRef.current;
@@ -66,7 +69,7 @@ export function SortableTable({ className, serverSortParam, defaultSort, childre
   );
 }
 
-function initializeHeaders(table: HTMLTableElement) {
+function initializeHeaders(table: HTMLTableElement, language: "en" | "ru") {
   const headers = table.tHead ? Array.from(table.tHead.querySelectorAll("th")) : [];
   for (const header of headers) {
     if (header.dataset.sortDisabled === "true") continue;
@@ -80,9 +83,7 @@ function initializeHeaders(table: HTMLTableElement) {
     header.setAttribute("role", "button");
     header.setAttribute("aria-keyshortcuts", "Enter Space");
     header.setAttribute("aria-sort", header.getAttribute("aria-sort") ?? "none");
-    if (!header.hasAttribute("aria-roledescription")) {
-      header.setAttribute("aria-roledescription", "sortable column header");
-    }
+    header.setAttribute("aria-roledescription", localizedText(language, "sortable column header", "сортируемый заголовок столбца"));
   }
 }
 

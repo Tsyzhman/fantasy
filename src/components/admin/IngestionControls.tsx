@@ -27,7 +27,7 @@ export function IngestionControls({ hasActiveJob, initialBackfillCompleted }: Pr
     });
     if (!response.ok) {
       const responseBody = await response.json().catch(() => null);
-      setError(responseBody?.error?.message ?? localizedText(language, "Request failed.", "Запрос не удался."));
+      setError(language === "ru" ? localizedText(language, "Request failed.", "Запрос не удался.") : responseBody?.error?.message ?? localizedText(language, "Request failed.", "Запрос не удался."));
       return;
     }
     startTransition(() => router.refresh());

@@ -15,7 +15,7 @@ export default async function MacheteModelsPage({ searchParams }: PageProps) {
   return ModelSettingsPage({
     source: "MACHETE",
     modeName: "Machete",
-    title: <I18nText en="Fantasy model" ru="Fantasy-модель" />,
+    title: <I18nText en="Fantasy model" ru="Фэнтези-модель" />,
     description: (
       <I18nText
         en="Machete model settings for FotMob snapshots. Expected FP, Actual FP and Alt FP can be tuned independently from Baltika."

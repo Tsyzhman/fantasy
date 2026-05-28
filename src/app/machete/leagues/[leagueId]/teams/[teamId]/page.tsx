@@ -193,7 +193,7 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
           </div>
           <div className="rounded border border-slate-200 bg-field p-4">
             <dt className="text-xs font-medium uppercase text-slate-400">
-              <I18nText en="Avg fantasy score" ru="Средние fantasy-очки" />
+              <I18nText en="Avg fantasy score" ru="Средние фэнтези-очки" />
             </dt>
             <dd className="mt-2 font-semibold text-ink">{formatScore(averageFantasyScore)}</dd>
           </div>
@@ -206,7 +206,7 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
             <I18nText en="Players" ru="Игроки" />
           </h2>
           <span className="text-sm text-slate-500">
-            <I18nText en="Fantasy score preview" ru="Предпросмотр fantasy-очков" />
+            <I18nText en="Fantasy score preview" ru="Предпросмотр фэнтези-очков" />
           </span>
         </div>
         <p className="mb-3 text-sm text-slate-500">
@@ -285,7 +285,7 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
       <details className="mt-6 rounded border border-slate-200 bg-white p-5 shadow-soft">
         <summary className="flex cursor-pointer items-center gap-2 text-lg font-semibold text-ink">
           <Database className="h-5 w-5 text-slate-500" />
-          <I18nText en="Diagnostics and raw payload references" ru="Диагностика и raw payload" />
+          <I18nText en="Diagnostics and raw payload references" ru="Диагностика и исходные данные" />
         </summary>
         <div className="mt-4 border-t border-slate-200 pt-4">
         <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -306,9 +306,9 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
               </p>
               <p className={`mt-1 text-xs font-medium ${payload.isFinal ? "text-emerald-700" : "text-amber-700"}`}>
                 {payload.isFinal ? (
-                  <I18nText en="Detailed payload parsed" ru="Детальный payload распарсен" />
+                  <I18nText en="Detailed payload parsed" ru="Подробные данные разобраны" />
                 ) : (
-                  <I18nText en="Shallow payload: player stats may be missing" ru="Поверхностный payload: статистика игроков может отсутствовать" />
+                  <I18nText en="Shallow payload: player stats may be missing" ru="Данные неполные: статистика игроков может отсутствовать" />
                 )}
               </p>
               {rawPayloadDetailReason(payload.payload) ? (
@@ -320,7 +320,7 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
           ))}
           {rawPayloads.length === 0 ? (
             <p className="text-sm text-slate-500">
-              <I18nText en="No shared raw match payloads stored for this team yet." ru="Для этой команды пока нет общих raw payload матчей." />
+              <I18nText en="No shared raw match payloads stored for this team yet." ru="Для этой команды пока нет сохраненных исходных данных матчей." />
             </p>
           ) : null}
         </div>
