@@ -18,6 +18,7 @@ import { formatDate, formatNumber, formatScore } from "@/lib/format";
 import { matchWindowLabel, matchWindowLabelRu, matchWindowModeValue, parseMacheteMatchWindow } from "@/scoring/machete/match-window";
 import {
   loadSharedLeagueSeason,
+  loadSharedLeagueSeasonOptions,
   loadSharedMachetePlayerRows,
   loadSharedMatchWindowSummary,
   loadSharedTeamFixtures,
@@ -52,9 +53,10 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
     legacyRecentMatches: resolvedSearchParams.recentMatches
   });
   const starterFilter = parseStarterFilter(resolvedSearchParams.starterFilter);
-  const league = await loadSharedLeagueSeason(prisma, leagueId, resolvedSearchParams.season);
+  const [league, leagueSeasonOptions] = await Promise.all([loadSharedLeagueSeason(prisma, leagueId, resolvedSearchParams.season), loadSharedLeagueSeasonOptions(prisma)]);
   const parsedTeamId = parseSharedBigInt(teamId);
   if (!league || !parsedTeamId) notFound();
+  const seasonsForLeague = leagueSeasonOptions.filter((option) => option.leagueId === league.leagueId);
 
   const seasonTeam = await prisma.leagueSeasonTeam.findUnique({
     where: {
@@ -158,6 +160,22 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
               </p>
             </div>
           </div>
+          <AutoSubmitForm className="w-full sm:w-56">
+            {resolvedSearchParams.matchWindow ? <input type="hidden" name="matchWindow" value={matchWindowModeValue(matchWindow)} /> : null}
+            {resolvedSearchParams.customMatches ? <input type="hidden" name="customMatches" value={resolvedSearchParams.customMatches} /> : null}
+            {starterFilter ? <input type="hidden" name="starterFilter" value={starterFilter} /> : null}
+            <label className="text-sm">
+              <span className="mb-1 block font-medium text-slate-600"><I18nText en="Season" ru="РЎРµР·РѕРЅ" /></span>
+              <select name="season" defaultValue={league.season} className="w-full rounded border border-slate-200 px-3 py-2">
+                {seasonsForLeague.map((option) => (
+                  <option key={`${option.leagueId}:${option.season}`} value={option.season}>
+                    {option.season}{option.isCurrent ? " - current" : ""}
+                  </option>
+                ))}
+                {seasonsForLeague.length === 0 ? <LocalizedOption value={league.season} en={league.season} ru={league.season} /> : null}
+              </select>
+            </label>
+          </AutoSubmitForm>
         </div>
 
         <dl className="mt-6 grid grid-cols-1 gap-4 text-sm sm:grid-cols-2 lg:grid-cols-5">
@@ -285,7 +303,7 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
       <details className="mt-6 rounded border border-slate-200 bg-white p-5 shadow-soft">
         <summary className="flex cursor-pointer items-center gap-2 text-lg font-semibold text-ink">
           <Database className="h-5 w-5 text-slate-500" />
-          <I18nText en="Diagnostics and raw payload references" ru="Диагностика и исходные данные" />
+          <I18nText en="Diagnostics and retained raw payload references" ru="Диагностика и сохраненные исходные данные" />
         </summary>
         <div className="mt-4 border-t border-slate-200 pt-4">
         <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
@@ -320,7 +338,7 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
           ))}
           {rawPayloads.length === 0 ? (
             <p className="text-sm text-slate-500">
-              <I18nText en="No shared raw match payloads stored for this team yet." ru="Для этой команды пока нет сохраненных исходных данных матчей." />
+              <I18nText en="No retained raw payloads for this team. Finalized matches keep normalized rows only." ru="Для этой команды нет сохраненных raw-payload: финальные матчи хранят только нормализованные строки." />
             </p>
           ) : null}
         </div>

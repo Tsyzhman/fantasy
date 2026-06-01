@@ -1,5 +1,3 @@
-import type { Prisma } from "@prisma/client";
-
 import { leagueSeeds } from "@/lib/leagues/seed-data";
 import { teamLogoUrlForSlug } from "@/lib/teams/logo-assets";
 import { normalizeName, slugify } from "@/lib/text";
@@ -33,8 +31,7 @@ export function normalizeMachetePlayer(player: FotMobPlayer, teamId?: string) {
     foot: player.foot ?? null,
     photoUrl: player.photoUrl ?? null,
     status: "ACTIVE",
-    lastSyncedAt: new Date(),
-    raw: player as unknown as Prisma.InputJsonValue
+    lastSyncedAt: new Date()
   };
 }
 
@@ -47,9 +44,10 @@ export function normalizeMacheteFixture(fixture: FotMobFixture, leagueId: string
     awayTeamId: teamIdsByProviderId.get(fixture.awayTeamId) ?? null,
     kickoffAt: fixture.kickoffAt ? new Date(fixture.kickoffAt) : null,
     status: fixture.status,
+    round: fixture.round ?? null,
+    aggregateSeason: null,
     homeScore: fixture.homeScore ?? null,
     awayScore: fixture.awayScore ?? null,
-    raw: fixture as unknown as Prisma.InputJsonValue,
     lastSyncedAt: new Date()
   };
 }
@@ -71,7 +69,7 @@ export function normalizeMacheteMatchStat(stat: FotMobPlayerMatchStat, fixtureId
     saves: stat.saves,
     yellowCards: stat.yellowCards,
     redCards: stat.redCards,
-    raw: stat as unknown as Prisma.InputJsonValue
+    aggregateMatches: stat.aggregateMatches ?? null
   };
 }
 

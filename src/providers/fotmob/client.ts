@@ -604,7 +604,7 @@ function normalizeSquadMember(member: unknown, teamId: string): FotMobPlayer | n
   const assists = numberValue(data.assists) ?? 0;
   const yellowCards = numberValue(data.ycards) ?? 0;
   const redCards = numberValue(data.rcards) ?? 0;
-  const rating = numberValue(data.rating);
+  const rating = numberValue(data.rating) ?? null;
 
   return {
     id,
@@ -631,9 +631,8 @@ function normalizeSquadMember(member: unknown, teamId: string): FotMobPlayer | n
       interceptions: 0,
       saves: 0,
       yellowCards,
-      redCards,
-      raw: data
-    } as FotMobPlayerMatchStat
+      redCards
+    }
   };
 }
 
@@ -655,6 +654,7 @@ function normalizeFixture(payload: unknown, leagueId: string): FotMobFixture | n
     awayTeamId,
     kickoffAt: stringValue(status.utcTime) ?? stringValue(data.matchDate) ?? new Date(0).toISOString(),
     status: normalizeStatus(status),
+    round: stringValue(data.round) ?? stringValue(data.roundName) ?? stringValue(data.roundLabel),
     homeScore: numberValue(data.homeScore) ?? numberValue(home.score),
     awayScore: numberValue(data.awayScore) ?? numberValue(away.score)
   };

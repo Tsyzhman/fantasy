@@ -1,7 +1,7 @@
 # Machete Ingestion Optimization Tasks
 
-This document captures the agreed future work. Do not implement these items as
-part of routine deploys unless the task is explicitly picked up.
+This document captures the agreed optimization work and the remaining manual
+production checks.
 
 ## Goals
 
@@ -60,10 +60,11 @@ Required follow-up changes:
 - Keep `reparse-raw` either disabled, documented as unavailable, or replaced with a re-fetch-and-reparse command.
 - Add a safe production cleanup command for existing raw payload data.
 
-Suggested cleanup command after code support exists:
+Suggested cleanup commands after code support exists:
 
 ```bash
-docker compose exec -T postgres psql -U fantasy_app -d fantasy_scout -c "TRUNCATE TABLE raw_match_payloads, \"MacheteRawPayload\";"
+docker compose --profile setup run --rm db-setup npm run payloads:prune-finalized -- --yes
+docker compose --profile setup run --rm db-setup npm run payloads:prune-machete -- --yes
 ```
 
 ## Eurocups Seasons
@@ -124,10 +125,16 @@ Acceptance criteria:
 
 ## Suggested Task Order
 
-1. Lock the ingestion league allowlist and add tests.
-2. Add current-season-only policy for UEFA club tournaments.
-3. Stop writing raw payloads and update "already processed" detection.
-4. Add raw payload cleanup runbook.
-5. Refactor shared read model to expose grouped league options with `seasons`.
-6. Update UI selectors and links to pass `season` explicitly.
-7. Verify full backfill status and disk usage after one production run.
+1. Done in code: lock the ingestion league allowlist and add tests.
+2. Done in code: add current-season-only policy for UEFA club tournaments.
+3. Done in code: stop long-term raw payload retention and use normalized rows for processed-match checks.
+4. Done in code: add raw payload cleanup commands and runbook.
+5. Done in code: refactor shared read model to expose grouped league options with seasons.
+6. Done in code: update UI selectors and links to pass `season` explicitly.
+
+## Manual User Checks After Deploy
+
+These checks require the real server, a fresh deploy, and a full FotMob run, so they are not AI-agent tasks:
+
+1. Verify full backfill status after one production run.
+2. Verify production disk usage after that backfill and cleanup.

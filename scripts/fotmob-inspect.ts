@@ -3,13 +3,14 @@
 // distinguished from genuine FotMob outages.
 //
 // Usage:
-//   docker compose exec ingestion-worker \
+//   docker compose --profile setup run --rm db-setup \
 //     npm run fotmob:inspect -- <leagueId> <matchId> [<matchId>...]
 //
 // Example:
 //   npm run fotmob:inspect -- 47 4813374 4813595
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import { resolve } from "node:path";
 
 void main();
@@ -17,10 +18,11 @@ void main();
 async function main(): Promise<void> {
   loadDotEnv();
 
-  const leagueId = process.argv[2];
-  const matchIds = process.argv.slice(3);
+  const args = parseArgs(process.argv.slice(2));
+  const leagueId = args.positionals[0];
+  const matchIds = args.positionals.slice(1);
   if (!leagueId || matchIds.length === 0) {
-    console.error("Usage: npm run fotmob:inspect -- <leagueId> <matchId> [<matchId>...]");
+    console.error("Usage: npm run fotmob:inspect -- <leagueId> <matchId> [<matchId>...] [--out-dir path]");
     process.exitCode = 1;
     return;
   }
@@ -30,7 +32,7 @@ async function main(): Promise<void> {
     console.info("[fotmob:inspect] No provider mode set; defaulting to 'unofficial'.");
   }
 
-  const outDir = resolve(process.cwd(), "tmp_fotmob_inspect");
+  const outDir = resolve(args.outDir ?? resolve(tmpdir(), "fantasy-export-fotmob-inspect"));
   mkdirSync(outDir, { recursive: true });
 
   const { createFotMobClient } = await import("../src/providers/fotmob/client");
@@ -156,6 +158,30 @@ function stringValue(value: unknown): string | undefined {
   if (typeof value === "string" && value.length > 0) return value;
   if (typeof value === "number" && Number.isFinite(value)) return String(value);
   return undefined;
+}
+
+function parseArgs(argv: string[]) {
+  const positionals: string[] = [];
+  let outDir: string | undefined;
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+    if (arg === "--out-dir") {
+      const next = argv[index + 1];
+      if (next && !next.startsWith("--")) {
+        outDir = next;
+        index += 1;
+      }
+      continue;
+    }
+    if (arg.startsWith("--out-dir=")) {
+      outDir = arg.slice("--out-dir=".length);
+      continue;
+    }
+    positionals.push(arg);
+  }
+
+  return { positionals, outDir };
 }
 
 function loadDotEnv(): void {

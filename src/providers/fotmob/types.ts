@@ -38,6 +38,7 @@ export type FotMobFixture = {
   awayTeamId: string;
   kickoffAt: string;
   status: "SCHEDULED" | "FINISHED" | "LIVE";
+  round?: string | null;
   homeScore?: number;
   awayScore?: number;
 };
@@ -59,7 +60,6 @@ export type FotMobPlayerMatchStat = {
   yellowCards: number | null;
   redCards: number | null;
   aggregateMatches?: number | null;
-  raw?: unknown;
 };
 
 export type FotMobFixtureDetails = FotMobFixture & {

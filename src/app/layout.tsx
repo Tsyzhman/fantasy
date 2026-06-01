@@ -4,7 +4,6 @@ import { redirect } from "next/navigation";
 
 import { AppHeader } from "@/components/app-header";
 import { getCurrentUser } from "@/lib/auth";
-import { ensureDatabaseSchema } from "@/lib/db";
 
 import "./globals.css";
 
@@ -34,7 +33,6 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  await ensureDatabaseSchema();
   const headerStore = await headers();
   const pathname = headerStore.get("x-pathname") ?? "";
   const user = process.env.NEXT_PHASE === "phase-production-build" ? null : await getCurrentUser();

@@ -1,4 +1,4 @@
-import ExcelJS from "exceljs";
+import type ExcelJS from "exceljs";
 import { NextResponse } from "next/server";
 
 import { requireApiAdmin } from "@/lib/auth";
@@ -33,8 +33,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: { code: "BAD_REQUEST", message: `File is larger than ${Math.round(maxBytes / 1024 / 1024)} MB.` } }, { status: 400 });
   }
 
-  const workbook = new ExcelJS.Workbook();
-  await workbook.xlsx.load(await file.arrayBuffer());
+  const workbook = await readWorkbookFromFile(file);
 
   try {
     const result = await importFantasyPriceWorkbook(prisma, workbook, {
@@ -76,4 +75,11 @@ function maxUploadBytes() {
   const configured = Number(process.env.MAX_UPLOAD_MB);
   const mb = Number.isFinite(configured) && configured > 0 ? configured : 25;
   return mb * 1024 * 1024;
+}
+
+async function readWorkbookFromFile(file: File): Promise<ExcelJS.Workbook> {
+  const { default: ExcelJSLib } = await import("exceljs");
+  const workbook = new ExcelJSLib.Workbook();
+  await workbook.xlsx.load((await file.arrayBuffer()) as Parameters<ExcelJS.Workbook["xlsx"]["load"]>[0]);
+  return workbook;
 }

@@ -273,5 +273,5 @@ Detected columns: **113**.
 ## Notes
 
 - Some Wyscout headers may appear position-specific or duplicated in meaning, e.g. aerial duels can appear in outfield and goalkeeper sections.
-- Store the full normalized row in `PlayerSnapshot.rawMetrics` to avoid losing data.
-- Promote only frequently used metrics to first-class database columns.
+- Store metrics used by scoring, filtering, and UI in typed `PlayerSnapshot` columns.
+- Add a typed column and importer mapping when a new source metric becomes part of formulas or UI.

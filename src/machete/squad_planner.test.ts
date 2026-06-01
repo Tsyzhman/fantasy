@@ -130,7 +130,7 @@ test("squad planner normalizes forecast horizon before saving", async () => {
 test("squad planner resolves Sports.ru positions through manual mappings", () => {
   const positions = sportsRuFantasyPositionsByPlayerId(
     [
-      { id: "price-1", playerId: 7n, position: "UNKNOWN", raw: { source: "xlsx", positionLabel: "\u041f\u0417" } },
+      { id: "price-1", playerId: 7n, position: "UNKNOWN", positionLabel: "\u041f\u0417" },
       { id: "price-2", playerId: 8n, position: "DEF" }
     ],
     [{ providerEntityId: "price-1", internalEntityId: "42" }]
@@ -144,7 +144,7 @@ test("squad planner resolves Sports.ru positions through manual mappings", () =>
 test("squad planner resolves scoped Sports.ru price refs through manual mappings and season aliases", () => {
   const refs = sportsRuFantasyPriceRefsByScopedPlayer(
     [
-      { id: "price-1", leagueId: 47n, season: "2025/26", playerId: 7n, playerName: "Sports Name", position: "UNKNOWN", raw: { source: "xlsx", positionLabel: "\u041f\u0417" }, price: 6.5 },
+      { id: "price-1", leagueId: 47n, season: "2025/26", playerId: 7n, playerName: "Sports Name", position: "UNKNOWN", positionLabel: "\u041f\u0417", price: 6.5 },
       { id: "price-2", leagueId: 47n, season: "2025/26", playerId: 8n, playerName: "Direct Name", position: "DEF", price: 5 }
     ],
     [{ providerEntityId: "price-1", internalEntityId: "42" }]
@@ -158,11 +158,11 @@ test("squad planner resolves scoped Sports.ru price refs through manual mappings
   assert.equal(refs.get(sportsRuFantasyPriceScopeKey(47n, "2025/26", "8"))?.playerName, "Direct Name");
 });
 
-test("squad planner recovers Sports.ru positions from raw price metadata", () => {
-  assert.equal(sportsRuPricePosition({ position: "UNKNOWN", raw: { source: "xlsx", positionLabel: "\u0412\u0420" } }), "GK");
-  assert.equal(sportsRuPricePosition({ position: "UNKNOWN", raw: { source: "xlsx", positionLabel: "\u0417\u0430\u0449" } }), "DEF");
-  assert.equal(sportsRuPricePosition({ position: null, raw: { source: "featured-field", rowIndex: 2 } }), "MID");
-  assert.equal(sportsRuPricePosition({ position: null, raw: { source: "featured-field-fallback", index: 9 } }), "FWD");
+test("squad planner recovers Sports.ru positions from typed price metadata", () => {
+  assert.equal(sportsRuPricePosition({ position: "UNKNOWN", positionLabel: "\u0412\u0420" }), "GK");
+  assert.equal(sportsRuPricePosition({ position: "UNKNOWN", positionLabel: "\u0417\u0430\u0449" }), "DEF");
+  assert.equal(sportsRuPricePosition({ position: null, sourceKind: "featured-field", sourceRowIndex: 2 }), "MID");
+  assert.equal(sportsRuPricePosition({ position: null, sourceKind: "featured-field-fallback", sourceRowIndex: 9 }), "FWD");
 });
 
 test("team strength profiles derive attack and defense from parsed match xG", () => {

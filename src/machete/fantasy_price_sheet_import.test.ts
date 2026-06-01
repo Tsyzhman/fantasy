@@ -30,5 +30,5 @@ test("fantasy price workbook keeps FotMob player-name hints from the first colum
   assert.equal(parsed.rows[0].playerName, "\u0420\u0430\u0439\u044f");
   assert.equal(parsed.rows[0].fotmobPlayerName, "David Raya");
   assert.equal(parsed.rows[0].teamName, "Arsenal");
-  assert.equal(parsed.rows[0].raw.fotmobPlayerName, "David Raya");
+  assert.equal(parsed.rows[0].sourceKind, "xlsx");
 });

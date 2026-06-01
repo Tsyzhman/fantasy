@@ -50,7 +50,7 @@ test("shared parser normalizes match payload without embedding raw shot payloads
   assert.equal(parsed.teamStats.length, 2);
   assert.equal(parsed.shots.length, 1);
   assert.equal("raw" in parsed.shots[0], false);
-  assert.equal("raw_shots" in (parsed.teamStats[0].statsPayload as Record<string, unknown>), false);
+  assert.equal("statsPayload" in parsed.teamStats[0], false);
 });
 
 test("shared parser uses the first valid match date candidate", () => {

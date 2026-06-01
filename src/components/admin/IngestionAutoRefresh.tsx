@@ -1,20 +1,63 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useCallback, useRef } from "react";
 
-export function IngestionAutoRefresh({ enabled, intervalMs = 5000 }: { enabled: boolean; intervalMs?: number }) {
+import { useAdaptivePoll } from "@/lib/use-adaptive-poll";
+
+type IngestionStatusPayload = {
+  active_job: { status: string } | null;
+};
+
+type IngestionPollState = {
+  active: boolean;
+};
+
+export function IngestionAutoRefresh({
+  enabled,
+  activeIntervalMs = 10_000,
+  idleIntervalMs = 60_000,
+  initialIntervalMs = 5_000
+}: {
+  enabled: boolean;
+  activeIntervalMs?: number;
+  idleIntervalMs?: number;
+  initialIntervalMs?: number;
+}) {
   const router = useRouter();
+  const previousActiveRef = useRef(enabled);
 
-  useEffect(() => {
-    if (!enabled) return;
+  const fetchStatus = useCallback(async (): Promise<IngestionPollState> => {
+    let active = enabled;
 
-    const interval = window.setInterval(() => {
+    try {
+      const response = await fetch("/api/admin/ingestion/status", { cache: "no-store" });
+      if (response.ok) {
+        const payload = (await response.json()) as IngestionStatusPayload;
+        active = payload.active_job ? ["pending", "running"].includes(payload.active_job.status) : false;
+      }
+    } catch {
+      active = enabled;
+    }
+
+    if (active || previousActiveRef.current !== active) {
       router.refresh();
-    }, intervalMs);
+    }
+    previousActiveRef.current = active;
 
-    return () => window.clearInterval(interval);
-  }, [enabled, intervalMs, router]);
+    return { active };
+  }, [enabled, router]);
+
+  useAdaptivePoll(fetchStatus, {
+    activeIntervalMs,
+    idleIntervalMs,
+    initialIntervalMs,
+    isActive: isIngestionActive
+  });
 
   return null;
+}
+
+function isIngestionActive(state: IngestionPollState) {
+  return state.active;
 }

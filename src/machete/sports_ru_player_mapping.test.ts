@@ -19,7 +19,7 @@ test("sports ru mapping uses FotMob player-name hints from imported sheets", () 
   const result = scoreSportsRuCandidate(
     {
       ...price("not close", "GK"),
-      raw: { fotmobPlayerName: "David Raya" }
+      fotmobPlayerName: "David Raya"
     },
     roster("David Raya", "GK", { name: "Arsenal" })
   );

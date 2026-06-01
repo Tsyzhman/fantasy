@@ -1,4 +1,4 @@
-import type { Prisma, PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "@prisma/client";
 
 import {
   calculateAlternativeScore,
@@ -7,6 +7,7 @@ import {
   calculateValueScore,
   type ActiveScoringModel
 } from "@/lib/scoring";
+import { playerSnapshotScoringMetrics } from "@/lib/players/derived-metrics";
 
 type TeamStat = {
   side: string;
@@ -147,18 +148,37 @@ export async function recalculateBaltikaTeamSnapshots(
       },
       select: {
         id: true,
-        rawMetrics: true,
         positionGroup: true,
-        marketValue: true
+        marketValue: true,
+        matchesPlayed: true,
+        minutesPlayed: true,
+        goals: true,
+        xg: true,
+        assists: true,
+        xa: true,
+        fantasyAssists: true,
+        cleanSheets: true,
+        saves: true,
+        penaltySaves: true,
+        recoveries: true,
+        penaltiesConceded: true,
+        missedPenalties: true,
+        ownGoals: true,
+        goalsConceded: true,
+        shotsOnTarget: true,
+        keyPasses: true,
+        tacklesWon: true,
+        interceptions: true,
+        clearances: true,
+        yellowCards: true,
+        redCards: true,
+        averageRating: true
       }
     });
 
     await prisma.$transaction(
       snapshots.map((snapshot) => {
-        const rawMetrics = {
-          ...objectMetrics(snapshot.rawMetrics),
-          ...teamMetrics
-        };
+        const rawMetrics = playerSnapshotScoringMetrics(snapshot, teamMetrics);
         const fantasyScore = calculateFantasyScore(rawMetrics, snapshot.positionGroup, scoringModel);
         const scoringScore = calculateScoringScore(rawMetrics, snapshot.positionGroup, scoringModel);
         const alternativeScore = calculateAlternativeScore(rawMetrics, snapshot.positionGroup, scoringModel);
@@ -167,7 +187,6 @@ export async function recalculateBaltikaTeamSnapshots(
         return prisma.playerSnapshot.update({
           where: { id: snapshot.id },
           data: {
-            rawMetrics: rawMetrics as Prisma.InputJsonValue,
             fantasyScore,
             scoringScore,
             alternativeScore,
@@ -226,11 +245,6 @@ function emptyTeamAverages(): TeamAverages {
 function firstRoundNumber(fixtures: Array<{ roundNumber: number | null }>) {
   const round = fixtures.find((fixture) => fixture.roundNumber !== null)?.roundNumber;
   return round ?? null;
-}
-
-function objectMetrics(value: Prisma.JsonValue): Record<string, unknown> {
-  if (value && typeof value === "object" && !Array.isArray(value)) return value as Record<string, unknown>;
-  return {};
 }
 
 function averageKnown(values: number[]) {

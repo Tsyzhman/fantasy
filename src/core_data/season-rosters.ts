@@ -121,8 +121,7 @@ export async function sync_league_season_rosters(
           shirtNumber: player.shirtNumber ?? null,
           nationality: player.nationality ?? null,
           age: player.age ?? null,
-          photoUrl: player.photoUrl ?? null,
-          rosterPayload: player.raw ?? null
+          photoUrl: player.photoUrl ?? null
         };
       })
       .filter((row): row is NonNullable<typeof row> => row !== null);

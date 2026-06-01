@@ -50,7 +50,7 @@ async function runScheduledSync(state: SchedulerState, scheduledFor: string) {
   try {
     console.info(`[ingestion] Queueing scheduled shared FotMob incremental update for ${scheduledFor}.`);
     await run_incremental_update(prisma, { startedByUserId: null });
-    console.info("[ingestion] Scheduled shared FotMob incremental update queued for the ingestion worker.");
+    console.info("[ingestion] Scheduled shared FotMob incremental update queued for the ingestion worker loop.");
   } catch (error) {
     console.error("[ingestion] Scheduled shared FotMob incremental update crashed.", error);
   } finally {

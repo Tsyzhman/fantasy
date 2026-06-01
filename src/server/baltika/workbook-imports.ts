@@ -137,13 +137,13 @@ export async function importWyscoutPlayersForTeam(teamId: string, upload: Workbo
     buildBaltikaTeamFormulaMetrics(prisma, team.id, seasonId)
   ]);
   const snapshots: Prisma.PlayerSnapshotCreateManyInput[] = parsed.rows.map((row) => {
-    const rawMetrics = {
-      ...row.rawMetrics,
+    const scoringMetrics = {
+      ...row.scoringMetrics,
       ...teamFormulaMetrics
     };
-    const fantasyScore = calculateFantasyScore(rawMetrics, row.positionGroup, scoringModel);
-    const scoringScore = calculateScoringScore(rawMetrics, row.positionGroup, scoringModel);
-    const alternativeScore = calculateAlternativeScore(rawMetrics, row.positionGroup, scoringModel);
+    const fantasyScore = calculateFantasyScore(scoringMetrics, row.positionGroup, scoringModel);
+    const scoringScore = calculateScoringScore(scoringMetrics, row.positionGroup, scoringModel);
+    const alternativeScore = calculateAlternativeScore(scoringMetrics, row.positionGroup, scoringModel);
     const valueScore = calculateValueScore(fantasyScore, row.marketValue);
 
     return {
@@ -171,11 +171,27 @@ export async function importWyscoutPlayersForTeam(teamId: string, upload: Workbo
       heightCm: row.heightCm,
       weightKg: row.weightKg,
       onLoan: row.onLoan,
+      fantasyAssists: row.fantasyAssists,
+      cleanSheets: row.cleanSheets,
+      saves: row.saves,
+      penaltySaves: row.penaltySaves,
+      recoveries: row.recoveries,
+      penaltiesConceded: row.penaltiesConceded,
+      missedPenalties: row.missedPenalties,
+      ownGoals: row.ownGoals,
+      goalsConceded: row.goalsConceded,
+      shotsOnTarget: row.shotsOnTarget,
+      keyPasses: row.keyPasses,
+      tacklesWon: row.tacklesWon,
+      interceptions: row.interceptions,
+      clearances: row.clearances,
+      yellowCards: row.yellowCards,
+      redCards: row.redCards,
+      averageRating: row.averageRating,
       fantasyScore,
       scoringScore,
       alternativeScore,
-      valueScore,
-      rawMetrics: rawMetrics as Prisma.InputJsonValue
+      valueScore
     };
   });
 
@@ -316,8 +332,7 @@ export async function importWyscoutTeamStatsForTeam(teamId: string, upload: Work
         xg: row.xg,
         xga: row.xga,
         shots: row.shots,
-        shotsOnTarget: row.shotsOnTarget,
-        raw: row.rawMetrics as Prisma.InputJsonValue
+        shotsOnTarget: row.shotsOnTarget
       }));
 
     for (const stat of stats) {
@@ -398,8 +413,7 @@ async function upsertBaltikaFixture(
     homeScore: fixture.homeScore,
     awayScore: fixture.awayScore,
     homeXg: fixture.homeXg,
-    awayXg: fixture.awayXg,
-    raw: fixture.raw as Prisma.InputJsonValue
+    awayXg: fixture.awayXg
   };
 
   if (existing) {

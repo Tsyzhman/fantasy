@@ -23,7 +23,7 @@ export default async function MacheteLeaguesPage() {
 
       <section className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {sortedLeagues.map((league) => (
-          <MacheteLeagueCard key={`${league.id}:${league.season}`} league={league} />
+          <MacheteLeagueCard key={league.id} league={league} />
         ))}
       </section>
       {sortedLeagues.length === 0 ? (

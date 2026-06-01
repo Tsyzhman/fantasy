@@ -432,11 +432,7 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: Ing
 async function ensureNormalizedForFantasy(prisma: PrismaClient, result: IngestMatchResult, rulesetId: bigint) {
   if (!result.skipped) return result.playerStatsParsed > 0;
 
-  const [raw, teamStatsCount, playerStatsCount, fantasyPointsCount] = await Promise.all([
-    prisma.rawMatchPayload.findUnique({
-      where: { matchId: result.matchId },
-      select: { matchId: true }
-    }),
+  const [teamStatsCount, playerStatsCount, fantasyPointsCount] = await Promise.all([
     prisma.matchTeamStat.count({ where: { matchId: result.matchId } }),
     prisma.matchPlayerStat.count({ where: { matchId: result.matchId } }),
     prisma.fantasyPoint.count({
@@ -447,9 +443,15 @@ async function ensureNormalizedForFantasy(prisma: PrismaClient, result: IngestMa
     })
   ]);
 
-  if (!raw) return false;
+  if (playerStatsCount === 0) return false;
 
-  if (teamStatsCount === 0 || playerStatsCount === 0) {
+  const raw = teamStatsCount === 0
+    ? await prisma.rawMatchPayload.findUnique({
+        where: { matchId: result.matchId },
+        select: { matchId: true }
+      })
+    : null;
+  if (raw) {
     const reparsed = await reparse_match(prisma, result.matchId);
     return reparsed.playerStatsParsed > 0;
   }

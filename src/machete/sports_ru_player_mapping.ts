@@ -10,9 +10,9 @@ type SportsRuPriceLike = {
   playerName: string;
   normalizedName: string;
   teamName: string;
+  fotmobPlayerName?: string | null;
   position: string | null;
   price: number;
-  raw?: unknown;
 };
 
 type SportsRuStoredPrice = SportsRuPriceLike & {
@@ -236,7 +236,7 @@ export async function loadSportsRuTeamPlayerMappings(
         priceId: price.id,
         sportsName: price.playerName,
         sportsNormalizedName: price.normalizedName,
-        fotmobHintName: readFotMobPlayerNameHint(price.raw),
+        fotmobHintName: price.fotmobPlayerName ?? null,
         sportsTeamName: price.teamName,
         sportsPosition: price.position,
         price: price.price,
@@ -358,7 +358,7 @@ export function buildSportsRuMappingCandidates(price: SportsRuPriceLike, roster:
 
 export function scoreSportsRuCandidate(price: SportsRuPriceLike, entry: RosterEntry) {
   const sportsName = normalizedSportsRuName(price.playerName, price.normalizedName);
-  const fotmobHintName = normalizeName(readFotMobPlayerNameHint(price.raw) ?? "");
+  const fotmobHintName = normalizeName(price.fotmobPlayerName ?? "");
   const fotmobName = normalizeName(entry.player.name);
   const sportsNameScore = scoreNameMatch(sportsName, fotmobName);
   const fotmobHintScore = scoreNameMatch(fotmobHintName, fotmobName);
@@ -585,12 +585,6 @@ function statusSortRank(status: string) {
 
 function normalizedSportsRuName(playerName: string, normalizedName: string) {
   return normalizeName(normalizedName || normalizeSportsRuPlayerName(playerName));
-}
-
-function readFotMobPlayerNameHint(raw: unknown) {
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
-  const value = (raw as { fotmobPlayerName?: unknown }).fotmobPlayerName;
-  return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
 function scoreNameMatch(sportsName: string, fotmobName: string) {

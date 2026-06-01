@@ -1,5 +1,3 @@
-import type { Prisma } from "@prisma/client";
-
 import { ensureDatabaseSchema, prisma } from "@/lib/db";
 import { parseSportsRuFantasyTournament, parseSportsRuFantasyTournamentLinks } from "@/lib/providers/sports-ru-fantasy";
 import { autoMapSportsRuFantasyPlayers } from "@/machete/sports_ru_player_mapping";
@@ -98,7 +96,8 @@ async function main() {
         playerName: row.playerName,
         position: row.position,
         price: row.price,
-        raw: row.raw as Prisma.InputJsonValue,
+        sourceKind: row.sourceKind,
+        sourceRowIndex: row.sourceRowIndex,
         lastSeenAt: new Date()
       },
       create: {
@@ -110,7 +109,8 @@ async function main() {
         teamName: "",
         position: row.position,
         price: row.price,
-        raw: row.raw as Prisma.InputJsonValue,
+        sourceKind: row.sourceKind,
+        sourceRowIndex: row.sourceRowIndex,
         lastSeenAt: new Date()
       }
     });

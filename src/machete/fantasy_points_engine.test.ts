@@ -52,20 +52,8 @@ test("shared match player stats expose the metrics expected by the Machete fanta
     tacklesWon: 1,
     interceptions: 2,
     clearances: 0,
+    recoveries: 6,
     rating: 7.4,
-    statsPayload: {
-      stats: [
-        {
-          title: "Defense",
-          stats: {
-            Recoveries: {
-              key: "recoveries",
-              stat: { value: 6, type: "integer" }
-            }
-          }
-        }
-      ]
-    },
     match: {
       homeTeamId: 10n,
       awayTeamId: 20n,
@@ -116,6 +104,7 @@ test("clean sheets and goals conceded are derived from shared match/team relatio
     tacklesWon: 2,
     interceptions: 3,
     clearances: 5,
+    recoveries: 0,
     rating: 7,
     match: {
       homeTeamId: 10n,

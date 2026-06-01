@@ -4,7 +4,7 @@ import test from "node:test";
 import type { PrismaClient } from "@prisma/client";
 
 import type { ActiveScoringModel } from "@/lib/scoring";
-import { loadSharedMachetePlayerRows, loadSharedMatchWindowSummary, loadSharedTeamMatchIds } from "./shared_read_model";
+import { loadSharedLeagueOptions, loadSharedLeagueSeason, loadSharedMachetePlayerRows, loadSharedMatchWindowSummary, loadSharedTeamMatchIds } from "./shared_read_model";
 
 const scoringModel: ActiveScoringModel = {
   modelSource: "MACHETE",
@@ -26,6 +26,45 @@ const scoringModel: ActiveScoringModel = {
   alternativeFormulaEnabled: false,
   rules: []
 };
+
+test("shared league options collapse seasons and prefer the default season per league", async () => {
+  const prisma = {
+    leagueSeason: {
+      async findMany() {
+        return [
+          leagueSeasonRow(47n, "2024/2025", true, "2025-05-01T00:00:00.000Z", "Premier League", "England"),
+          leagueSeasonRow(47n, "2025/2026", true, "2025-01-01T00:00:00.000Z", "Premier League", "England"),
+          leagueSeasonRow(87n, "2023/2024", false, "2024-06-01T00:00:00.000Z", "LaLiga", "Spain"),
+          leagueSeasonRow(87n, "2022/2023", false, "2024-07-01T00:00:00.000Z", "LaLiga", "Spain")
+        ];
+      }
+    }
+  } as unknown as PrismaClient;
+
+  const leagues = await loadSharedLeagueOptions(prisma);
+
+  assert.equal(leagues.filter((league) => league.leagueId === 47n).length, 1);
+  assert.equal(leagues.find((league) => league.leagueId === 47n)?.season, "2025/2026");
+  assert.equal(leagues.find((league) => league.leagueId === 87n)?.season, "2023/2024");
+});
+
+test("shared league season falls back to the league default when requested season is absent", async () => {
+  const prisma = {
+    leagueSeason: {
+      async findMany() {
+        return [
+          leagueSeasonRow(47n, "2023/2024", false, "2024-05-01T00:00:00.000Z", "Premier League", "England"),
+          leagueSeasonRow(47n, "2024/2025", true, "2025-05-01T00:00:00.000Z", "Premier League", "England")
+        ];
+      }
+    }
+  } as unknown as PrismaClient;
+
+  const league = await loadSharedLeagueSeason(prisma, "47", "1999/2000");
+
+  assert.equal(league?.leagueId, 47n);
+  assert.equal(league?.season, "2024/2025");
+});
 
 test("shared team match ids keep all-loaded scoped to the selected competition season", async () => {
   const calls: unknown[] = [];
@@ -233,6 +272,21 @@ test("match window summary reports official matches separately from parsed playe
   });
 });
 
+function leagueSeasonRow(leagueId: bigint, season: string, isCurrent: boolean, updatedAt: string, name: string, country: string) {
+  return {
+    leagueId,
+    season,
+    name,
+    country,
+    isCurrent,
+    updatedAt: new Date(updatedAt),
+    league: {
+      name,
+      country
+    }
+  };
+}
+
 function playerStat(matchId: bigint, minutes: number) {
   return {
     matchId,
@@ -265,7 +319,10 @@ function playerStat(matchId: bigint, minutes: number) {
     clearances: 0,
     duelsWon: 0,
     aerialsWon: 0,
-    rating: 7,
-    statsPayload: null
+    recoveries: 0,
+    touchesInOppBox: 0,
+    foulsWon: 0,
+    penaltiesWon: 0,
+    rating: 7
   };
 }

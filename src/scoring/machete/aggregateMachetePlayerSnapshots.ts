@@ -1,4 +1,4 @@
-import type { Prisma, PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "@prisma/client";
 
 import {
   calculateAlternativeScore,
@@ -90,7 +90,7 @@ export async function aggregateMachetePlayerSnapshots(prisma: PrismaClient, opti
     const matchStats = stats.filter((stat) => stat.fixture.status !== "SEASON_AGGREGATE");
     const ignoreProviderSeasonStats = shouldIgnoreProviderSeasonStats(team.league.providerLeagueId, team.league.season);
     const statsForTotals = ignoreProviderSeasonStats ? matchStats : stats;
-    const aggregateMatches = ignoreProviderSeasonStats ? null : firstPositiveNumber(stats.map((stat) => readRawNumber(stat.raw, "aggregateMatches")));
+    const aggregateMatches = ignoreProviderSeasonStats ? null : firstPositiveNumber(stats.map((stat) => stat.aggregateMatches));
     const fixtureDenominator = !ignoreProviderSeasonStats ? teamDenominators.get(team.id) ?? 0 : 0;
     const matchesPlayed = ignoreProviderSeasonStats ? matchStats.length : Math.max(aggregateMatches ?? 0, fixtureDenominator, stats.length);
     const minutesPlayed = sum(statsForTotals.map((stat) => stat.minutes));
@@ -158,7 +158,10 @@ export async function aggregateMachetePlayerSnapshots(prisma: PrismaClient, opti
         scoringScore,
         alternativeScore,
         valueScore: minutesPlayed > 0 ? Number((fantasyScore / (minutesPlayed / 90)).toFixed(2)) : null,
-        rawMetrics: rawMetrics as Prisma.InputJsonValue
+        appearances60: sixtyMinuteAppearances ?? 0,
+        fullMatches: fullMatches ?? 0,
+        expectedMinutes,
+        providerSeasonStatsIgnored: ignoreProviderSeasonStats
       }
     });
     snapshots.push(snapshot);
@@ -192,22 +195,7 @@ function firstPositiveNumber(values: Array<number | null>): number | null {
   return null;
 }
 
-function readRawNumber(raw: unknown, key: string): number | null {
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
-  const value = (raw as Record<string, unknown>)[key];
-  if (typeof value === "number" && Number.isFinite(value)) return value;
-  if (typeof value === "string") {
-    const parsed = Number(value);
-    if (Number.isFinite(parsed)) return parsed;
-  }
-  return null;
-}
-
-function fixtureMatchesSeason(fixture: { status: string | null; kickoffAt: Date | null; raw: Prisma.JsonValue }, season: string | null) {
+function fixtureMatchesSeason(fixture: { status: string | null; kickoffAt: Date | null; aggregateSeason: string | null }, season: string | null) {
   if (fixture.status !== "SEASON_AGGREGATE") return fixtureInSeason(fixture, season);
-
-  const raw = fixture.raw;
-  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return true;
-  const rawSeason = (raw as Record<string, unknown>).season;
-  return typeof rawSeason !== "string" || rawSeason === season;
+  return fixture.aggregateSeason === null || fixture.aggregateSeason === season;
 }

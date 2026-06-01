@@ -1,4 +1,4 @@
-import type { Prisma, PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "@prisma/client";
 
 import { aggregateMachetePlayerSnapshots } from "@/scoring/machete/aggregateMachetePlayerSnapshots";
 import { getMacheteAggregateMatchDenominator } from "@/scoring/machete/aggregate-match-denominator";
@@ -100,13 +100,10 @@ export async function syncMacheteTeamPlayerStats(prisma: PrismaClient, teamId: s
           awayTeamId: null,
           kickoffAt: null,
           status: "SEASON_AGGREGATE",
+          round: null,
+          aggregateSeason: providerTeamSet.season,
           homeScore: null,
           awayScore: null,
-          raw: {
-            source: "FotMob /data/teams squad",
-            providerTeamId: team.providerTeamId,
-            season: providerTeamSet.season
-          } satisfies Prisma.InputJsonValue,
           lastSyncedAt: new Date()
         },
         create: {
@@ -117,11 +114,8 @@ export async function syncMacheteTeamPlayerStats(prisma: PrismaClient, teamId: s
           awayTeamId: null,
           kickoffAt: null,
           status: "SEASON_AGGREGATE",
-          raw: {
-            source: "FotMob /data/teams squad",
-            providerTeamId: team.providerTeamId,
-            season: providerTeamSet.season
-          } satisfies Prisma.InputJsonValue,
+          round: null,
+          aggregateSeason: providerTeamSet.season,
           lastSyncedAt: new Date()
         }
       });
@@ -269,9 +263,6 @@ function sanitizeProviderSeasonStat(
     saves: 0,
     yellowCards: 0,
     redCards: 0,
-    raw: {
-      providerSeasonStatsIgnored: true
-    } satisfies Prisma.InputJsonValue
   };
 }
 

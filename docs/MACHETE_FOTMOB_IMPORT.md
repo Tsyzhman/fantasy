@@ -45,8 +45,8 @@ matchIds returned exactly as requested.
 ## Smoke test
 
 ```bash
-docker compose exec ingestion-worker npm run fotmob:smoke -- 47
-docker compose exec ingestion-worker npm run fotmob:smoke -- 47 2025/2026 10
+docker compose --profile setup run --rm db-setup npm run fotmob:smoke -- 47
+docker compose --profile setup run --rm db-setup npm run fotmob:smoke -- 47 2025/2026 10
 ```
 
 A successful run reports `matchDetails sample: N/M matches returned detailed
@@ -55,10 +55,10 @@ payloads` with `hasPlayerStats: true` / `hasShotmap: true` for the sample.
 ## Run the actual backfill
 
 ```bash
-docker compose exec ingestion-worker npm run ingestion:initial-backfill -- current_league_47
+docker compose --profile setup run --rm db-setup npm run ingestion:queue-initial-backfill -- current_league_47
 # Full multi-league backfill (long-running)
-docker compose exec ingestion-worker npm run ingestion:initial-backfill
-docker compose exec ingestion-worker npm run ingestion:status
+docker compose --profile setup run --rm db-setup npm run ingestion:queue-initial-backfill
+docker compose --profile setup run --rm db-setup npm run ingestion:status
 ```
 
 ## Reset stored data
@@ -67,7 +67,7 @@ If stale rows from a broken earlier run pollute the UI, wipe FotMob-sourced
 match data and re-run the backfill:
 
 ```bash
-docker compose exec ingestion-worker npm run fotmob:reset -- --yes
+docker compose --profile setup run --rm db-setup npm run fotmob:reset -- --yes
 ```
 
 This truncates `matches` and cascades to all dependent stats/shots/events/
@@ -99,8 +99,8 @@ MACHETE_FOTMOB_SKIP_FIXTURE_IDS="4813374,4813380"
 ```
 
 ```bash
-docker compose up -d --force-recreate ingestion-worker
-docker compose exec ingestion-worker npm run ingestion:initial-backfill -- current_league_47
+docker compose up -d --force-recreate web
+docker compose --profile setup run --rm db-setup npm run ingestion:queue-initial-backfill -- current_league_47
 ```
 
 ## Custom database credentials
@@ -138,7 +138,7 @@ Signed + Turnstile cookie required (only used by getPlayer today):
 | Russian Premier League | `63` |
 | World Cup 2026 | `77` |
 
-Machete stores raw provider payloads through `MacheteRawPayload` in the existing sync jobs, then normalizes them into:
+Machete normalizes provider responses directly into:
 
 ```text
 MacheteLeague
@@ -148,6 +148,10 @@ MacheteFixture
 MachetePlayerMatchStat
 MachetePlayerSnapshot
 ```
+
+Legacy `MacheteRawPayload` rows are not written by default. Set
+`MACHETE_STORE_RAW_PAYLOADS=true` only for short-lived debugging, then run
+`npm run payloads:prune-machete -- --yes`.
 
 ## Local Team Logos
 

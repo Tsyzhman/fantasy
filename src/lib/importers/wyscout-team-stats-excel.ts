@@ -18,7 +18,6 @@ export type ParsedBaltikaTeamStatRow = {
   xga: number | null;
   shots: number | null;
   shotsOnTarget: number | null;
-  rawMetrics: Record<string, unknown>;
 };
 
 export type ParsedBaltikaFixture = {
@@ -35,7 +34,6 @@ export type ParsedBaltikaFixture = {
   homeXg: number | null;
   awayXg: number | null;
   rows: [ParsedBaltikaTeamStatRow, ParsedBaltikaTeamStatRow];
-  raw: Record<string, unknown>;
 };
 
 export type WyscoutTeamStatsParseResult = {
@@ -162,12 +160,7 @@ export async function parseWyscoutTeamStatsWorkbook(
       rows: [
         toParsedStatRow(homeRow, homeTeam?.id ?? expectedHomeTeam.id, awayTeam?.id ?? null, "HOME", awayRow.xg),
         toParsedStatRow(awayRow, awayTeam?.id ?? null, homeTeam?.id ?? expectedHomeTeam.id, "AWAY", homeRow.xg)
-      ],
-      raw: {
-        matchLabel: homeRow.matchLabel,
-        home: homeRow.rawMetrics,
-        away: awayRow.rawMetrics
-      }
+      ]
     });
   }
 
@@ -288,8 +281,7 @@ function toParsedStatRow(
     xg: row.xg,
     xga,
     shots: row.shots,
-    shotsOnTarget: row.shotsOnTarget,
-    rawMetrics: row.rawMetrics
+    shotsOnTarget: row.shotsOnTarget
   };
 }
 

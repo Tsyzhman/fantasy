@@ -24,8 +24,8 @@
 // interactive-transaction timeout.
 //
 // Usage:
-//   docker compose exec ingestion-worker npm run fotmob:reset -- --yes
-//   docker compose exec ingestion-worker npm run fotmob:reset -- --yes --only-machete
+//   docker compose --profile setup run --rm db-setup npm run fotmob:reset -- --yes
+//   docker compose --profile setup run --rm db-setup npm run fotmob:reset -- --yes --only-machete
 
 import { PrismaClient } from "@prisma/client";
 

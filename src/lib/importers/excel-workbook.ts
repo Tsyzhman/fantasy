@@ -1,4 +1,4 @@
-import ExcelJS from "exceljs";
+import type ExcelJS from "exceljs";
 
 export type FirstWorksheetTable = {
   sheetName: string;
@@ -6,9 +6,10 @@ export type FirstWorksheetTable = {
 };
 
 export async function readFirstWorksheetTable(buffer: Buffer): Promise<FirstWorksheetTable | null> {
-  const workbook = new ExcelJS.Workbook();
+  const { default: ExcelJSLib } = await import("exceljs");
+  const workbook = new ExcelJSLib.Workbook();
   const workbookBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
-  await workbook.xlsx.load(workbookBuffer as Parameters<typeof workbook.xlsx.load>[0]);
+  await workbook.xlsx.load(workbookBuffer as Parameters<ExcelJS.Workbook["xlsx"]["load"]>[0]);
 
   const sheet = workbook.worksheets[0];
   if (!sheet) return null;

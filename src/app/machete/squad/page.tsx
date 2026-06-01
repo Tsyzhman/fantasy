@@ -76,7 +76,7 @@ export default async function MacheteSquadPage({ searchParams }: PageProps) {
               <span className="mb-1 block font-medium text-slate-600"><I18nText en="League" ru="Лига" /></span>
               <select name="leagueId" defaultValue={selectedLeagueId} className="w-full rounded border border-slate-200 px-3 py-2">
                 {leagues.map((league) => (
-                  <option key={`${league.leagueId}:${league.season}`} value={String(league.leagueId)}>
+                  <option key={String(league.leagueId)} value={String(league.leagueId)}>
                     {league.displayName}
                   </option>
                 ))}

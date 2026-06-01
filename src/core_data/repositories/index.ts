@@ -15,8 +15,10 @@ import {
   type TeamMatchStatsData
 } from "../models";
 
+type PrismaRepositoryClient = PrismaClient | Prisma.TransactionClient;
+
 export class CoreMatchRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaRepositoryClient) {}
 
   async upsertLeague(league: LeagueData) {
     return this.prisma.coreLeague.upsert({
@@ -75,12 +77,12 @@ export class CoreMatchRepository {
 }
 
 export class CoreTeamRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaRepositoryClient) {}
 
   async upsert(team: TeamData) {
     return this.prisma.coreTeam.upsert({
       where: { id: team.id },
-      update: teamData(team),
+      update: isFotMobPlaceholderTeamName(team.name) ? placeholderTeamUpdateData(team) : teamData(team),
       create: {
         id: team.id,
         ...teamData(team)
@@ -100,7 +102,7 @@ export class CoreTeamRepository {
 }
 
 export class CorePlayerRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaRepositoryClient) {}
 
   async upsert(player: PlayerData) {
     return this.prisma.corePlayer.upsert({
@@ -125,7 +127,7 @@ export class CorePlayerRepository {
 }
 
 export class CoreSeasonRosterRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaRepositoryClient) {}
 
   async upsertLeagueSeason(row: LeagueSeasonData) {
     await ensureCoreLeaguePlaceholders(this.prisma, [row.leagueId]);
@@ -214,7 +216,6 @@ export class CoreSeasonRosterRepository {
           nationality: row.nationality,
           age: row.age,
           photoUrl: row.photoUrl,
-          rosterPayload: jsonValue(row.rosterPayload),
           lastSeenAt: now
         },
         create: {
@@ -241,7 +242,7 @@ export class CoreSeasonRosterRepository {
 }
 
 export class CoreStatsRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaRepositoryClient) {}
 
   async upsertTeamStats(rows: TeamMatchStatsData[]) {
     await ensureCoreTeamPlaceholders(
@@ -288,7 +289,7 @@ export class CoreStatsRepository {
 }
 
 export class CoreEventRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaRepositoryClient) {}
 
   async replaceMatchEvents(matchId: bigint, rows: MatchEventData[]) {
     await this.prisma.matchEvent.deleteMany({ where: { matchId } });
@@ -311,7 +312,7 @@ export class CoreEventRepository {
 }
 
 export class CoreShotRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaRepositoryClient) {}
 
   async upsertShots(rows: MatchShotData[]) {
     await ensureCoreTeamPlaceholders(
@@ -379,7 +380,7 @@ export class CoreShotRepository {
 }
 
 export class RawPayloadRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaRepositoryClient) {}
 
   async find(matchId: bigint) {
     return this.prisma.rawMatchPayload.findUnique({ where: { matchId } });
@@ -415,10 +416,19 @@ export class RawPayloadRepository {
       }
     });
   }
+
+  async delete(matchId: bigint) {
+    const rawPayloads = this.prisma.rawMatchPayload as typeof this.prisma.rawMatchPayload & {
+      deleteMany?: (input: { where: { matchId: bigint } }) => Promise<{ count: number }>;
+    };
+    if (typeof rawPayloads.deleteMany !== "function") return { count: 0 };
+
+    return rawPayloads.deleteMany({ where: { matchId } });
+  }
 }
 
 export class CoreIngestionRepository {
-  constructor(private readonly prisma: PrismaClient) {}
+  constructor(private readonly prisma: PrismaRepositoryClient) {}
 
   async createRun(input: { jobType: string; leagueId?: bigint | null; season?: string | null }) {
     return this.prisma.ingestionRun.create({
@@ -529,8 +539,7 @@ function teamPlayerSeasonData(row: TeamPlayerSeasonData) {
     shirtNumber: row.shirtNumber,
     nationality: row.nationality,
     age: row.age,
-    photoUrl: row.photoUrl,
-    rosterPayload: jsonValue(row.rosterPayload)
+    photoUrl: row.photoUrl
   };
 }
 
@@ -542,6 +551,16 @@ function teamData(team: TeamData) {
     source: FOTMOB_SOURCE,
     rawRef: team.rawRef
   };
+}
+
+function placeholderTeamUpdateData(team: TeamData): Prisma.CoreTeamUpdateInput {
+  const data: Prisma.CoreTeamUpdateInput = { source: FOTMOB_SOURCE };
+  if (team.rawRef !== null) data.rawRef = team.rawRef;
+  return data;
+}
+
+function isFotMobPlaceholderTeamName(name: string) {
+  return /^FotMob team \d+$/.test(name);
 }
 
 function playerData(player: PlayerData) {
@@ -583,8 +602,7 @@ function teamStatsData(row: TeamMatchStatsData) {
     tacklesWon: row.tacklesWon,
     interceptions: row.interceptions,
     clearances: row.clearances,
-    saves: row.saves,
-    statsPayload: jsonValue(row.statsPayload)
+    saves: row.saves
   };
 }
 
@@ -620,8 +638,11 @@ function playerStatsData(row: PlayerMatchStatsData) {
     clearances: row.clearances,
     duelsWon: row.duelsWon,
     aerialsWon: row.aerialsWon,
-    rating: row.rating,
-    statsPayload: jsonValue(row.statsPayload)
+    recoveries: row.recoveries,
+    touchesInOppBox: row.touchesInOppBox,
+    foulsWon: row.foulsWon,
+    penaltiesWon: row.penaltiesWon,
+    rating: row.rating
   };
 }
 
@@ -640,8 +661,7 @@ function eventData(row: MatchEventData) {
     isOwnGoal: row.isOwnGoal,
     isPenalty: row.isPenalty,
     isCard: row.isCard,
-    isSubstitution: row.isSubstitution,
-    eventPayload: jsonValue(row.eventPayload)
+    isSubstitution: row.isSubstitution
   };
 }
 
@@ -677,7 +697,7 @@ function jsonValue(value: unknown): Prisma.InputJsonValue {
   return value as Prisma.InputJsonValue;
 }
 
-async function ensureCoreLeaguePlaceholders(prisma: PrismaClient, leagueIds: Array<bigint | null | undefined>) {
+async function ensureCoreLeaguePlaceholders(prisma: PrismaRepositoryClient, leagueIds: Array<bigint | null | undefined>) {
   const ids = uniqueBigints(leagueIds.filter(isPositiveBigInt));
   if (ids.length === 0) return;
 
@@ -693,7 +713,7 @@ async function ensureCoreLeaguePlaceholders(prisma: PrismaClient, leagueIds: Arr
   });
 }
 
-async function ensureCoreTeamPlaceholders(prisma: PrismaClient, teamIds: Array<bigint | null | undefined>) {
+async function ensureCoreTeamPlaceholders(prisma: PrismaRepositoryClient, teamIds: Array<bigint | null | undefined>) {
   const ids = uniqueBigints(teamIds.filter(isPositiveBigInt));
   if (ids.length === 0) return;
 
@@ -710,7 +730,7 @@ async function ensureCoreTeamPlaceholders(prisma: PrismaClient, teamIds: Array<b
   });
 }
 
-async function ensureCorePlayerPlaceholders(prisma: PrismaClient, playerIds: Array<bigint | null | undefined>) {
+async function ensureCorePlayerPlaceholders(prisma: PrismaRepositoryClient, playerIds: Array<bigint | null | undefined>) {
   const ids = uniqueBigints(playerIds.filter(isPositiveBigInt));
   if (ids.length === 0) return;
 

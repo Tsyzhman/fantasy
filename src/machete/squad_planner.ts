@@ -113,7 +113,9 @@ type SportsRuPositionPriceRow = {
   id: string;
   playerId: bigint | null;
   position: string | null;
-  raw?: unknown;
+  positionLabel?: string | null;
+  sourceKind?: string | null;
+  sourceRowIndex?: number | null;
 };
 
 type SportsRuPositionMapRow = {
@@ -743,7 +745,9 @@ export async function loadSportsRuFantasyPositionsByPlayerId(
       id: true,
       playerId: true,
       position: true,
-      raw: true
+      positionLabel: true,
+      sourceKind: true,
+      sourceRowIndex: true
     },
     orderBy: { lastSeenAt: "desc" }
   });
@@ -790,7 +794,9 @@ export async function loadSportsRuFantasyPriceRefsByScopedPlayer(
       playerName: true,
       position: true,
       price: true,
-      raw: true
+      positionLabel: true,
+      sourceKind: true,
+      sourceRowIndex: true
     },
     orderBy: { lastSeenAt: "desc" }
   });
@@ -865,21 +871,20 @@ export function sportsRuFantasyPriceScopeKey(leagueId: string | number | bigint,
   return `${leagueId}:${season}:${playerId}`;
 }
 
-export function sportsRuPricePosition(row: Pick<SportsRuPositionPriceRow, "position" | "raw">) {
+export function sportsRuPricePosition(row: Pick<SportsRuPositionPriceRow, "position" | "positionLabel" | "sourceKind" | "sourceRowIndex">) {
   const directPosition = knownFantasyPosition(row.position);
   if (directPosition) return directPosition;
 
-  const raw = rawRecord(row.raw);
-  const rawLabel = stringValue(raw?.positionLabel ?? raw?.position ?? raw?.positionGroup ?? raw?.pos);
-  const rawPosition = knownFantasyPosition(rawLabel);
-  if (rawPosition) return rawPosition;
+  const labelPosition = knownFantasyPosition(row.positionLabel);
+  if (labelPosition) return labelPosition;
 
-  const source = stringValue(raw?.source);
-  const rowIndex = numberValue(raw?.rowIndex);
-  if (source === "featured-field" && rowIndex !== null) return sportsRuFeaturedRowPosition(rowIndex);
+  if (row.sourceKind === "featured-field" && row.sourceRowIndex !== null && row.sourceRowIndex !== undefined) {
+    return sportsRuFeaturedRowPosition(row.sourceRowIndex);
+  }
 
-  const index = numberValue(raw?.index);
-  if (source === "featured-field-fallback" && index !== null) return sportsRuFeaturedIndexPosition(index);
+  if (row.sourceKind === "featured-field-fallback" && row.sourceRowIndex !== null && row.sourceRowIndex !== undefined) {
+    return sportsRuFeaturedIndexPosition(row.sourceRowIndex);
+  }
 
   return null;
 }
@@ -910,7 +915,7 @@ async function loadLegacyMacheteUpcomingRoundFixtures(prisma: PrismaClient, leag
   return buildPlannerRoundFixtures(
     fixtures.map((fixture) => ({
       id: fixture.providerFixtureId ?? fixture.id,
-      round: legacyFixtureRound(fixture.raw),
+      round: fixture.round ?? null,
       matchDate: fixture.kickoffAt,
       homeTeamId: fixture.homeTeam?.providerTeamId ?? null,
       awayTeamId: fixture.awayTeam?.providerTeamId ?? null,
@@ -1025,21 +1030,6 @@ function knownFantasyPosition(position: string | null | undefined) {
   return positionGroup === "UNK" ? null : positionGroup;
 }
 
-function rawRecord(value: unknown) {
-  return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : null;
-}
-
-function stringValue(value: unknown) {
-  return typeof value === "string" && value.trim() ? value.trim() : null;
-}
-
-function numberValue(value: unknown) {
-  if (typeof value === "number" && Number.isFinite(value)) return value;
-  if (typeof value !== "string" || !value.trim()) return null;
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
 function sportsRuFeaturedRowPosition(rowIndex: number) {
   if (rowIndex === 0) return "GK";
   if (rowIndex === 1) return "DEF";
@@ -1079,7 +1069,9 @@ function priceLookup(
     normalizedName: string;
     teamName: string;
     position: string | null;
-    raw?: unknown;
+    positionLabel?: string | null;
+    sourceKind?: string | null;
+    sourceRowIndex?: number | null;
     price: number;
   }>,
   priceMaps: Array<{
@@ -1203,12 +1195,6 @@ export function sportsRuSeasonAliases(season: string) {
   const short = season.match(/^(\d{4})\/(\d{2})$/);
   if (short) values.add(`${short[1]}/20${short[2]}`);
   return [...values];
-}
-
-function legacyFixtureRound(raw: unknown) {
-  const record = raw && typeof raw === "object" && !Array.isArray(raw) ? (raw as Record<string, unknown>) : {};
-  const value = record.round ?? record.roundName;
-  return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
 export function displayLeagueName(league: SharedLeagueSeasonOption) {

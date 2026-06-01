@@ -173,7 +173,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
             <LocalizedOption value="" en="Choose league" ru="Выберите лигу" />
             <LocalizedOption value={ALL_LEAGUES_VALUE} en="All loaded leagues" ru="Все загруженные лиги" />
             {sortedLeagues.map((league) => (
-              <option key={`${league.leagueId}:${league.season}`} value={String(league.leagueId)}>
+              <option key={String(league.leagueId)} value={String(league.leagueId)}>
                 {league.displayName}
               </option>
             ))}

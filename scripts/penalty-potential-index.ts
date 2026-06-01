@@ -134,7 +134,9 @@ function loadFotMobPayloadDirectoryStats(rawDir: string, options: CliOptions): P
         season: parsed.match.season,
         position: row.position,
         minutes: row.minutes,
-        statsPayload: row.statsPayload
+        touchesInBox: row.touchesInOppBox,
+        foulsWon: row.foulsWon,
+        penaltiesWon: row.penaltiesWon
       });
     }
   }
@@ -157,7 +159,9 @@ async function loadFotMobSourceStats(prisma: PrismaClient, options: CliOptions):
       teamId: true,
       minutes: true,
       position: true,
-      statsPayload: true,
+      touchesInOppBox: true,
+      foulsWon: true,
+      penaltiesWon: true,
       player: {
         select: {
           name: true
@@ -192,7 +196,9 @@ async function loadFotMobSourceStats(prisma: PrismaClient, options: CliOptions):
     season: stat.match.season,
     position: stat.position,
     minutes: stat.minutes,
-    statsPayload: stat.statsPayload
+    touchesInBox: stat.touchesInOppBox,
+    foulsWon: stat.foulsWon,
+    penaltiesWon: stat.penaltiesWon
   }));
 }
 

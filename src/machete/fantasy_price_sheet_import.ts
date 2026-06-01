@@ -1,5 +1,5 @@
-import type { Prisma, PrismaClient } from "@prisma/client";
-import ExcelJS from "exceljs";
+import type { PrismaClient } from "@prisma/client";
+import type ExcelJS from "exceljs";
 
 import { normalizeSportsRuPlayerName } from "@/lib/providers/sports-ru-fantasy";
 
@@ -12,9 +12,11 @@ export type ParsedFantasyPriceRow = {
   fotmobPlayerName: string | null;
   sportsTeamName: string;
   teamName: string;
+  positionLabel: string | null;
   position: string | null;
   price: number;
-  raw: Record<string, unknown>;
+  sourceKind: string;
+  sourceRowIndex: number;
 };
 
 export type ParsedFantasyPriceSheet = {
@@ -109,8 +111,12 @@ export async function importFantasyPriceWorkbook(
       update: {
         playerName: row.playerName,
         position: row.position,
+        sportsTeamName: row.sportsTeamName,
+        fotmobPlayerName: row.fotmobPlayerName,
+        positionLabel: row.positionLabel,
+        sourceKind: row.sourceKind,
+        sourceRowIndex: row.sourceRowIndex,
         price: row.price,
-        raw: row.raw as Prisma.InputJsonValue,
         lastSeenAt: importedAt
       },
       create: {
@@ -120,9 +126,13 @@ export async function importFantasyPriceWorkbook(
         playerName: row.playerName,
         normalizedName: row.normalizedName,
         teamName: row.teamName,
+        sportsTeamName: row.sportsTeamName,
+        fotmobPlayerName: row.fotmobPlayerName,
+        positionLabel: row.positionLabel,
+        sourceKind: row.sourceKind,
+        sourceRowIndex: row.sourceRowIndex,
         position: row.position,
         price: row.price,
-        raw: row.raw as Prisma.InputJsonValue,
         lastSeenAt: importedAt
       }
     });
@@ -173,18 +183,11 @@ export function parseFantasyPriceWorkbook(workbook: ExcelJS.Workbook, input: { s
       fotmobPlayerName,
       sportsTeamName,
       teamName,
+      positionLabel,
       position,
       price,
-      raw: {
-        source: "xlsx",
-        sheetName: worksheet.name,
-        rowNumber,
-        sportsTeamName,
-        teamName,
-        positionLabel,
-        fcTeamName,
-        fotmobPlayerName
-      }
+      sourceKind: "xlsx",
+      sourceRowIndex: rowNumber
     });
   }
 

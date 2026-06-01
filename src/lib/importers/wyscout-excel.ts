@@ -22,13 +22,30 @@ export type ParsedPlayerSnapshot = {
   xg: number | null;
   assists: number | null;
   xa: number | null;
+  fantasyAssists: number | null;
+  cleanSheets: number | null;
+  saves: number | null;
+  penaltySaves: number | null;
+  recoveries: number | null;
+  penaltiesConceded: number | null;
+  missedPenalties: number | null;
+  ownGoals: number | null;
+  goalsConceded: number | null;
+  shotsOnTarget: number | null;
+  keyPasses: number | null;
+  tacklesWon: number | null;
+  interceptions: number | null;
+  clearances: number | null;
+  yellowCards: number | null;
+  redCards: number | null;
+  averageRating: number | null;
   birthCountry: string | null;
   passportCountry: string | null;
   foot: string | null;
   heightCm: number | null;
   weightKg: number | null;
   onLoan: boolean | null;
-  rawMetrics: Record<string, unknown>;
+  scoringMetrics: Record<string, unknown>;
 };
 
 export type WyscoutParseResult = {
@@ -61,6 +78,14 @@ const numericFields = new Set([
   "xg",
   "assists",
   "xa",
+  "shots_on_target",
+  "key_passes",
+  "tackles_won",
+  "interceptions",
+  "clearances",
+  "yellow_cards",
+  "red_cards",
+  "average_rating",
   "clean_sheets",
   "saves",
   "penalties_saved",
@@ -199,6 +224,29 @@ function normalizeRow(
   const marketValue = parseMarketValue(rawMetrics.market_value);
   rawMetrics.market_value = marketValue;
   rawMetrics.team = teamName;
+  const matchesPlayed = coerceInteger(rawMetrics.matches_played);
+  const minutesPlayed = coerceInteger(rawMetrics.minutes_played);
+  const goals = coerceNumber(rawMetrics.goals);
+  const xg = coerceNumber(rawMetrics.xg);
+  const assists = coerceNumber(rawMetrics.assists);
+  const xa = coerceNumber(rawMetrics.xa);
+  const fantasyAssists = coerceInteger(rawMetrics.fantasy_assists);
+  const cleanSheets = coerceInteger(rawMetrics.clean_sheets);
+  const saves = coerceInteger(rawMetrics.saves);
+  const penaltySaves = coerceInteger(rawMetrics.penalty_saves ?? rawMetrics.penalties_saved);
+  const recoveries = coerceInteger(rawMetrics.recoveries ?? rawMetrics.possession_recoveries);
+  const penaltiesConceded = coerceInteger(rawMetrics.penalties_conceded ?? rawMetrics.fouls_leading_to_penalty);
+  const missedPenalties = coerceInteger(rawMetrics.missed_penalties ?? rawMetrics.penalties_missed);
+  const ownGoals = coerceInteger(rawMetrics.own_goals);
+  const goalsConceded = coerceInteger(rawMetrics.goals_conceded ?? rawMetrics.conceded_goals);
+  const shotsOnTarget = coerceInteger(rawMetrics.shots_on_target);
+  const keyPasses = coerceInteger(rawMetrics.key_passes);
+  const tacklesWon = coerceInteger(rawMetrics.tackles_won ?? rawMetrics.tackles);
+  const interceptions = coerceInteger(rawMetrics.interceptions);
+  const clearances = coerceInteger(rawMetrics.clearances);
+  const yellowCards = coerceInteger(rawMetrics.yellow_cards);
+  const redCards = coerceInteger(rawMetrics.red_cards);
+  const averageRating = coerceNumber(rawMetrics.average_rating);
 
   return {
     playerName,
@@ -209,19 +257,118 @@ function normalizeRow(
     age: coerceInteger(rawMetrics.age),
     marketValue,
     contractExpires: parseDate(rawMetrics.contract_expires),
-    matchesPlayed: coerceInteger(rawMetrics.matches_played),
-    minutesPlayed: coerceInteger(rawMetrics.minutes_played),
-    goals: coerceNumber(rawMetrics.goals),
-    xg: coerceNumber(rawMetrics.xg),
-    assists: coerceNumber(rawMetrics.assists),
-    xa: coerceNumber(rawMetrics.xa),
+    matchesPlayed,
+    minutesPlayed,
+    goals,
+    xg,
+    assists,
+    xa,
+    fantasyAssists,
+    cleanSheets,
+    saves,
+    penaltySaves,
+    recoveries,
+    penaltiesConceded,
+    missedPenalties,
+    ownGoals,
+    goalsConceded,
+    shotsOnTarget,
+    keyPasses,
+    tacklesWon,
+    interceptions,
+    clearances,
+    yellowCards,
+    redCards,
+    averageRating,
     birthCountry: nullableString(rawMetrics.birth_country),
     passportCountry: nullableString(rawMetrics.passport_country),
     foot: nullableString(rawMetrics.foot),
     heightCm: coerceInteger(rawMetrics.height),
     weightKg: coerceInteger(rawMetrics.weight),
     onLoan: coerceBoolean(rawMetrics.on_loan),
-    rawMetrics: jsonSafe(rawMetrics)
+    scoringMetrics: scoringMetrics({
+      matchesPlayed,
+      minutesPlayed,
+      goals,
+      xg,
+      assists,
+      xa,
+      fantasyAssists,
+      cleanSheets,
+      saves,
+      penaltySaves,
+      recoveries,
+      penaltiesConceded,
+      missedPenalties,
+      ownGoals,
+      goalsConceded,
+      shotsOnTarget,
+      keyPasses,
+      tacklesWon,
+      interceptions,
+      clearances,
+      yellowCards,
+      redCards,
+      averageRating
+    })
+  };
+}
+
+function scoringMetrics(values: Pick<ParsedPlayerSnapshot,
+  | "matchesPlayed"
+  | "minutesPlayed"
+  | "goals"
+  | "xg"
+  | "assists"
+  | "xa"
+  | "fantasyAssists"
+  | "cleanSheets"
+  | "saves"
+  | "penaltySaves"
+  | "recoveries"
+  | "penaltiesConceded"
+  | "missedPenalties"
+  | "ownGoals"
+  | "goalsConceded"
+  | "shotsOnTarget"
+  | "keyPasses"
+  | "tacklesWon"
+  | "interceptions"
+  | "clearances"
+  | "yellowCards"
+  | "redCards"
+  | "averageRating"
+>) {
+  return {
+    matches_played: values.matchesPlayed ?? 0,
+    minutes_played: values.minutesPlayed ?? 0,
+    goals: values.goals ?? 0,
+    xg: values.xg ?? 0,
+    assists: values.assists ?? 0,
+    xa: values.xa ?? 0,
+    fantasy_assists: values.fantasyAssists ?? 0,
+    clean_sheets: values.cleanSheets ?? 0,
+    saves: values.saves ?? 0,
+    penalty_saves: values.penaltySaves ?? 0,
+    penalties_saved: values.penaltySaves ?? 0,
+    recoveries: values.recoveries ?? 0,
+    possession_recoveries: values.recoveries ?? 0,
+    penalties_conceded: values.penaltiesConceded ?? 0,
+    fouls_leading_to_penalty: values.penaltiesConceded ?? 0,
+    missed_penalties: values.missedPenalties ?? 0,
+    penalties_missed: values.missedPenalties ?? 0,
+    own_goals: values.ownGoals ?? 0,
+    goals_conceded: values.goalsConceded ?? 0,
+    conceded_goals: values.goalsConceded ?? 0,
+    shots_on_target: values.shotsOnTarget ?? 0,
+    key_passes: values.keyPasses ?? 0,
+    tackles_won: values.tacklesWon ?? 0,
+    tackles: values.tacklesWon ?? 0,
+    interceptions: values.interceptions ?? 0,
+    clearances: values.clearances ?? 0,
+    yellow_cards: values.yellowCards ?? 0,
+    red_cards: values.redCards ?? 0,
+    average_rating: values.averageRating ?? 0
   };
 }
 
@@ -317,10 +464,4 @@ function parseMarketValue(value: unknown) {
   const suffix = match[2]?.toLowerCase();
   const multiplier = suffix === "m" || suffix === "mn" ? 1_000_000 : suffix === "k" ? 1_000 : 1;
   return Math.round(amount * multiplier);
-}
-
-function jsonSafe(value: Record<string, unknown>) {
-  return Object.fromEntries(
-    Object.entries(value).map(([key, entry]) => [key, entry instanceof Date ? entry.toISOString() : entry])
-  );
 }

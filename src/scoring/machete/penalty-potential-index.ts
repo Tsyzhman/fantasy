@@ -65,7 +65,6 @@ export type PenaltyPotentialSourceStat = {
   touchesInBox?: number | null;
   foulsWon?: number | null;
   penaltiesWon?: number | null;
-  statsPayload?: unknown;
 };
 
 export type PenaltyPotentialDiagnostics = {
@@ -385,7 +384,7 @@ function sourceMetricValue(stat: PenaltyPotentialSourceStat, metric: PenaltyPote
   const explicit = metric === "touchesInBox" ? stat.touchesInBox : metric === "foulsWon" ? stat.foulsWon : stat.penaltiesWon;
   const direct = numericOrNull(explicit);
   if (direct !== null) return { value: direct, matchedLabel: "explicit" };
-  return extractPenaltyPotentialMetric(stat.statsPayload, metric);
+  return { value: null, matchedLabel: null };
 }
 
 function aggregateKey(stat: PenaltyPotentialSourceStat) {

@@ -19,7 +19,7 @@
 - Import stores source file metadata.
 - Import stores a `TeamImport` record.
 - Import creates `PlayerSnapshot` rows.
-- Import stores original normalized metrics in `rawMetrics`.
+- Import stores scoring/UI metrics in typed `PlayerSnapshot` columns.
 - Import calculates `fantasyScore` and `valueScore`.
 - Successful import ends with status `READY`.
 

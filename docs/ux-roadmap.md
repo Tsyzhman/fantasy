@@ -14,7 +14,7 @@ The single-session polish covered:
 - Drag-and-drop between Squad Planner starting XI lines and bench, using the existing `isStarter` save shape.
 - Diff against saved squad (`xFP` delta, player changes, starter changes) with baseline refresh after Save.
 - Auto-pick optimal starting XI from the current squad for the selected horizon, respecting locked players.
-- Wildcard what-if mode for transfer suggestions (unlimited suggestion list without save/schema changes).
+- Transfer counter in Squad Planner scales with the selected forecast horizon and caps saved squad moves.
 - FDR pills on planner tiles and pool fixtures, backed by opponent/side difficulty from existing xG strength profiles.
 - MiXerr markers smarter: shape ↔ body part / set-piece, color ↔ outcome (goal/on-target/off/blocked).
 - MiXerr real SVG pitch with goal/box markings.

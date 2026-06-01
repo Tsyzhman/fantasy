@@ -76,11 +76,7 @@ export async function POST(_request: Request, { params }: Params) {
       status,
       source: "SPORTS_RU",
       homeScore: fixture.homeScore,
-      awayScore: fixture.awayScore,
-      raw: {
-        sourceUrl: fixture.sourceUrl,
-        fantasyUrl: source.fantasyUrl
-      }
+      awayScore: fixture.awayScore
     };
 
     if (existing) {

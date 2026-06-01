@@ -12,10 +12,10 @@ async function main() {
   const {
     getIngestionAdminStatus,
     run_incremental_update,
-    run_next_ingestion_job,
     start_initial_backfill
   } = await import("../src/core_data/ingestion-jobs");
   const { persist_match_payload, reparse_match } = await import("../src/core_data/ingestion");
+  const { runIngestionWorkerLoop, runIngestionWorkerTick } = await import("../src/core_data/worker");
 
   const command = process.argv[2] ?? "status";
 
@@ -24,7 +24,7 @@ async function main() {
       const mode = parseInitialBackfillMode(process.argv[3]);
       const started = await start_initial_backfill(prisma, { startedByUserId: null, mode });
       console.info(`[ingestion:cli] ${started.started ? "Queued" : "Reusing active"} ${mode} initial backfill job ${started.job.id}.`);
-      const result = await run_next_ingestion_job(prisma);
+      const result = await runIngestionWorkerTick(prisma);
       console.info(`[ingestion:cli] Finished runner for job ${result.job?.id ?? "none"} with status ${result.job?.status ?? "none"}.`);
     } else if (command === "queue-initial-backfill") {
       const mode = parseInitialBackfillMode(process.argv[3]);
@@ -33,27 +33,16 @@ async function main() {
     } else if (command === "incremental-update") {
       const started = await run_incremental_update(prisma, { startedByUserId: null });
       console.info(`[ingestion:cli] ${started.started ? "Queued" : "Reusing active"} incremental update job ${started.job.id}.`);
-      const result = await run_next_ingestion_job(prisma);
+      const result = await runIngestionWorkerTick(prisma);
       console.info(`[ingestion:cli] Finished runner for job ${result.job?.id ?? "none"} with status ${result.job?.status ?? "none"}.`);
     } else if (command === "queue-incremental-update") {
       const started = await run_incremental_update(prisma, { startedByUserId: null });
       console.info(`[ingestion:cli] ${started.started ? "Queued" : "Reusing active"} incremental update job ${started.job.id}.`);
     } else if (command === "run-next") {
-      const result = await run_next_ingestion_job(prisma);
+      const result = await runIngestionWorkerTick(prisma);
       console.info(`[ingestion:cli] ${result.ran ? "Ran" : "No active"} ingestion job ${result.job?.id ?? ""}.`);
     } else if (command === "worker") {
-      console.info("[ingestion:worker] Started. Waiting for pending/running ingestion jobs.");
-      while (true) {
-        try {
-          const result = await run_next_ingestion_job(prisma);
-          if (result.ran) {
-            console.info(`[ingestion:worker] Job ${result.job?.id ?? "unknown"} ended with status ${result.job?.status ?? "unknown"}.`);
-          }
-        } catch (error) {
-          console.error("[ingestion:worker] Run failed.", error);
-        }
-        await sleep(5_000);
-      }
+      await runIngestionWorkerLoop(prisma);
     } else if (command === "status") {
       const status = await getIngestionAdminStatus(prisma);
       console.dir(status, { depth: null });
@@ -137,10 +126,6 @@ function parseInitialBackfillMode(value: string | null | undefined): InitialBack
   if (!normalized || normalized === "full") return "full";
   if (["current_league_47", "quick", "epl", "league47", "league_47"].includes(normalized)) return "current_league_47";
   throw new Error(`Unknown initial backfill mode "${value}". Use full or current_league_47.`);
-}
-
-function sleep(ms: number) {
-  return new Promise((resolveSleep) => setTimeout(resolveSleep, ms));
 }
 
 function collectPayloadFiles(path: string): string[] {

@@ -16,6 +16,11 @@ export async function store_raw_match_payload(
   const hash = payloadHash(input.payload);
   const repository = new RawPayloadRepository(prisma);
 
+  if (input.isFinal) {
+    await repository.delete(input.matchId);
+    return null;
+  }
+
   return repository.upsert({
     matchId: input.matchId,
     payload: input.payload,
@@ -29,4 +34,3 @@ export async function store_raw_match_payload(
 export async function get_raw_match_payload(prisma: PrismaClient, matchId: bigint) {
   return new RawPayloadRepository(prisma).find(matchId);
 }
-

@@ -162,6 +162,7 @@ test("required detailed FotMob matchDetails fail instead of creating partial dat
 
 test("canonical FotMob matchDetails keep the requested scope league and season", async () => {
   const rawUpserts: unknown[] = [];
+  const rawDeletes: unknown[] = [];
   const matchUpserts: unknown[] = [];
   const prisma = {
     coreLeague: {
@@ -239,6 +240,10 @@ test("canonical FotMob matchDetails keep the requested scope league and season",
       async upsert(input: unknown) {
         rawUpserts.push(input);
         return {};
+      },
+      async deleteMany(input: unknown) {
+        rawDeletes.push(input);
+        return { count: 0 };
       }
     },
     shotmapComparisonsCache: {
@@ -287,7 +292,8 @@ test("canonical FotMob matchDetails keep the requested scope league and season",
   const result = await ingest_match(prisma, "4813374", { client, leagueId: 47, season: "2025/2026" });
 
   assert.equal(result.matchId, 4813595n);
-  assert.equal((rawUpserts[0] as { where?: { matchId?: bigint } }).where?.matchId, 4813595n);
+  assert.equal(rawUpserts.length, 0);
+  assert.equal((rawDeletes[0] as { where?: { matchId?: bigint } }).where?.matchId, 4813595n);
   assert.equal((matchUpserts[0] as { where?: { id?: bigint } }).where?.id, 4813595n);
   assert.equal((matchUpserts[0] as { update?: { leagueId?: bigint } }).update?.leagueId, 47n);
   assert.equal((matchUpserts[0] as { update?: { season?: string } }).update?.season, "2025/2026");

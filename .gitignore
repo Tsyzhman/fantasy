@@ -5,6 +5,7 @@ node_modules
 storage/uploads
 *.tsbuildinfo
 .cache
+tmp_*
 .tmp-fotmob-js
 tmp_*.json
 tmp_*.rds

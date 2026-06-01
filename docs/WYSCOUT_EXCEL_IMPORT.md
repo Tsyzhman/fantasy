@@ -49,17 +49,17 @@ On loan
 
 ```text
 read workbook
-→ select first worksheet
-→ read header row
-→ normalize header names
-→ validate required columns
-→ read player rows
-→ coerce numeric/date/boolean fields
-→ detect team name
-→ compare with target team card
-→ normalize position group
-→ store raw metrics JSON
-→ calculate fantasy score
+-> select first worksheet
+-> read header row
+-> normalize header names
+-> validate required columns
+-> read player rows
+-> coerce numeric/date/boolean fields
+-> detect team name
+-> compare with target team card
+-> normalize position group
+-> promote scoring/UI metrics into typed columns
+-> calculate fantasy score
 ```
 
 ## Header normalization

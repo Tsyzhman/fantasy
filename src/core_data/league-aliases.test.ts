@@ -11,6 +11,14 @@ test("canonical league matcher folds known split tournament names", () => {
   assert.equal(canonicalLeagueIdForIdentity({ id: 9004, name: "League One Playoff", country: "England" }), 108);
   assert.equal(canonicalLeagueIdForIdentity({ id: 9005, name: "EFL Cup Qualification", country: "England" }), 133);
   assert.equal(canonicalLeagueIdForIdentity({ id: 9006, name: "Carabao Cup Qualifying", country: "England" }), 133);
+  assert.equal(canonicalLeagueIdForIdentity({ id: 9007, name: "First Division A Championship Playoff", country: "Belgium" }), 40);
+  assert.equal(canonicalLeagueIdForIdentity({ id: 9008, name: "Jupiler Pro League Europe Playoff", country: "Belgium" }), 40);
+  assert.equal(canonicalLeagueIdForIdentity({ id: 9009, name: "Bundesliga Relegation", country: "Germany" }), 54);
+  assert.equal(canonicalLeagueIdForIdentity({ id: 9010, name: "2. Bundesliga Promotion Playoff", country: "Germany" }), 146);
+  assert.equal(canonicalLeagueIdForIdentity({ id: 9011, name: "World Cup Grp. A", country: "INT" }), 77);
+  assert.equal(canonicalLeagueIdForIdentity({ id: 9012, name: "Copa America Group B", country: "International" }), 44);
+  assert.equal(canonicalLeagueIdForIdentity({ id: 9013, name: "Copa Libertadores Group C", country: "South America" }), 45);
+  assert.equal(canonicalLeagueIdForIdentity({ id: 9014, name: "Challenger Pro League Promotion Playoff", country: "Belgium" }), 9014);
 });
 
 test("league alias env parser supports compact target-source groups", () => {

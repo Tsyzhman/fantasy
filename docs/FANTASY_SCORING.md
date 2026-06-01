@@ -69,7 +69,8 @@ Supported transforms:
 | Yellow card | -1 | -1 | -1 | -1 |
 | Red card | -3 | -3 | -3 | -3 |
 
-Missing metric values count as 0 in formula calculation, while raw imported values stay preserved in `PlayerSnapshot.rawMetrics`.
+Missing metric values count as 0 in formula calculation. Formula inputs come from the promoted typed metric columns on
+`PlayerSnapshot`; new formula fields need an importer mapping and a typed column.
 
 ## Formula Fields
 

@@ -185,7 +185,24 @@ model PlayerSnapshot {
   fantasyScore     Float?
   valueScore       Float?
   isStarter        Boolean  @default(false)
-  rawMetrics       Json
+
+  fantasyAssists       Float?
+  cleanSheets          Float?
+  saves                Float?
+  penaltySaves         Float?
+  recoveries           Float?
+  penaltiesConceded    Float?
+  missedPenalties      Float?
+  ownGoals             Float?
+  goalsConceded        Float?
+  shotsOnTarget        Float?
+  keyPasses            Float?
+  tacklesWon           Float?
+  interceptions        Float?
+  clearances           Float?
+  yellowCards          Float?
+  redCards             Float?
+  averageRating        Float?
 
   createdAt        DateTime @default(now())
 
@@ -225,15 +242,16 @@ model FantasyModelRule {
 }
 ```
 
-## Why `rawMetrics` JSON is important
+## Why typed metric columns matter
 
-The Wyscout file has many columns. Do not create a database column for every metric at the start.
+The Wyscout file has many columns, but production storage should avoid duplicated JSON payload columns.
 
-Use explicit columns only for:
+Use explicit columns for:
 
 - common filters;
 - sorting;
 - score calculation;
 - normalized identity fields.
 
-Store all original normalized metrics in `rawMetrics` JSON for future formulas and debugging.
+Fantasy formulas read from the promoted typed metric set. If a new imported metric must be used by scoring or UI, add it as
+a typed column and map it in the importer instead of storing the full row as JSON.

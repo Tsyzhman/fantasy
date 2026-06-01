@@ -172,8 +172,7 @@ export function parse_team_stats(payload: unknown): TeamMatchStatsData[] {
       tacklesWon: intOrNull(row.tackles_won),
       interceptions: intOrNull(row.interceptions),
       clearances: intOrNull(row.clearances),
-      saves: intOrNull(row.saves),
-      statsPayload: { raw_stats: row.raw_stats }
+      saves: intOrNull(row.saves)
     }));
 }
 
@@ -221,8 +220,62 @@ export function parse_player_stats(payload: unknown): PlayerMatchStatsData[] {
         clearances: intOrNull(readPlayerStatNumber(stat, ["clearances"])),
         duelsWon: intOrNull(readPlayerStatNumber(stat, ["duelsWon", "duels_won", "duels won"])),
         aerialsWon: intOrNull(readPlayerStatNumber(stat, ["aerialsWon", "aerials_won", "aerials won", "aerial duels won"])),
-        rating: readPlayerStatNumber(stat, ["rating", "fotmob rating"]),
-        statsPayload: stat.raw ?? stat
+        recoveries: intOrNull(readPlayerStatNumber(stat, ["recoveries", "possessionRecoveries", "possession_recoveries", "ballRecovery", "ball_recoveries"])),
+        touchesInOppBox: intOrNull(
+          readPlayerStatNumber(stat, [
+            "Touches in opposition box",
+            "Touches in opp box",
+            "Touches in opponent box",
+            "Touches in box",
+            "Touches inside opposition box",
+            "Touches in penalty area",
+            "Opposition box touches",
+            "Penalty area touches",
+            "touchesInOppBox",
+            "touchesInOppositionBox",
+            "touchesInBox",
+            "touches_in_opp_box",
+            "touches_in_opposition_box",
+            "touches_in_box",
+            "touches_opp_box"
+          ])
+        ),
+        foulsWon: intOrNull(
+          readPlayerStatNumber(stat, [
+            "Fouls won",
+            "Fouls suffered",
+            "Fouls drawn",
+            "Was fouled",
+            "Won fouls",
+            "foulsWon",
+            "fouls_won",
+            "foulsSuffered",
+            "fouls_suffered",
+            "foulsDrawn",
+            "fouls_drawn",
+            "wasFouled",
+            "was_fouled"
+          ])
+        ),
+        penaltiesWon: intOrNull(
+          readPlayerStatNumber(stat, [
+            "Penalties won",
+            "Penalty won",
+            "Penalties awarded",
+            "Penalty awarded",
+            "Penalties earned",
+            "Penalty earned",
+            "penaltiesWon",
+            "penalties_won",
+            "penaltyWon",
+            "penalty_won",
+            "penaltiesAwarded",
+            "penalties_awarded",
+            "penaltiesEarned",
+            "penalties_earned"
+          ])
+        ),
+        rating: readPlayerStatNumber(stat, ["rating", "fotmob rating"])
       } satisfies PlayerMatchStatsData;
     })
     .filter((row): row is PlayerMatchStatsData => row !== null);
@@ -254,8 +307,7 @@ export function parse_events(payload: unknown): MatchEventData[] {
       isOwnGoal: booleanValue(event.isOwnGoal ?? event.ownGoal) === true,
       isPenalty: booleanValue(event.isPenalty ?? event.penalty) === true || /penalty/i.test(eventSubtype ?? ""),
       isCard: eventType === "card" || /card/i.test(eventSubtype ?? ""),
-      isSubstitution: eventType === "substitution",
-      eventPayload: event
+      isSubstitution: eventType === "substitution"
     };
   });
 }

@@ -3,6 +3,8 @@ import { resolve } from "node:path";
 
 import { Prisma, PrismaClient } from "@prisma/client";
 
+import { canonicalLeagueIdForIdentity, targetLeagueForCanonicalId } from "../src/core_data/league-aliases";
+
 type TargetLeague = {
   id: bigint;
   name: string;
@@ -24,19 +26,6 @@ type LeagueCandidate = {
   };
 };
 
-type Matcher = {
-  words?: string[];
-  anyPhrase?: string[];
-  compactIncludes?: string[];
-  country?: Array<string | null>;
-  exclude?: string[];
-};
-
-type MergeRule = {
-  target: TargetLeague;
-  matchers: Matcher[];
-};
-
 type PlannedMerge = {
   source: LeagueCandidate;
   target: TargetLeague;
@@ -44,79 +33,6 @@ type PlannedMerge = {
 };
 
 type MergeCounts = Record<string, number>;
-
-const rules: MergeRule[] = [
-  rule(42, "Champions League", "International", [
-    {
-      words: ["champions", "league"],
-      country: ["international", null],
-      exclude: ["afc", "caf", "concacaf", "ofc", "women", "youth", "u17", "u19", "u20", "u21"]
-    }
-  ]),
-  rule(10216, "Conference League", "International", [
-    {
-      words: ["conference", "league"],
-      country: ["international", null],
-      exclude: ["women", "youth", "u17", "u19", "u20", "u21"]
-    }
-  ]),
-  rule(73, "Europa League", "International", [
-    {
-      words: ["europa", "league"],
-      country: ["international", null],
-      exclude: ["conference", "women", "youth", "u17", "u19", "u20", "u21"]
-    }
-  ]),
-  rule(50, "EURO", "International", [
-    {
-      words: ["euro"],
-      country: ["international", null],
-      exclude: ["qualification", "qualifier", "qualifying", "women", "futsal", "beach", "u17", "u19", "u20", "u21"]
-    },
-    {
-      words: ["european", "championship"],
-      country: ["international", null],
-      exclude: ["qualification", "qualifier", "qualifying", "women", "futsal", "beach", "u17", "u19", "u20", "u21"]
-    }
-  ]),
-  rule(48, "Championship", "England", [
-    {
-      words: ["championship"],
-      anyPhrase: ["playoff", "play off", "playoffs", "play offs"],
-      country: ["england", null],
-      exclude: ["scottish", "usl", "women", "u17", "u19", "u20", "u21"]
-    }
-  ]),
-  rule(133, "EFL Cup", "England", [
-    {
-      words: ["efl", "cup"],
-      anyPhrase: ["qualification", "qualifying", "qualifier"],
-      country: ["england", null],
-      exclude: ["women", "u17", "u19", "u20", "u21"]
-    },
-    {
-      words: ["carabao", "cup"],
-      anyPhrase: ["qualification", "qualifying", "qualifier"],
-      country: ["england", null],
-      exclude: ["women", "u17", "u19", "u20", "u21"]
-    }
-  ]),
-  rule(140, "LaLiga2", "Spain", [
-    {
-      anyPhrase: ["laliga2 playoff", "laliga 2 playoff", "la liga 2 playoff", "laliga2 play off", "laliga 2 play off", "la liga 2 play off"],
-      compactIncludes: ["laliga2playoff", "laliga2playoffs"],
-      country: ["spain", null],
-      exclude: ["women", "u17", "u19", "u20", "u21"]
-    }
-  ]),
-  rule(108, "League One", "England", [
-    {
-      anyPhrase: ["league one", "efl league one", "league one playoff", "league one play off"],
-      country: ["england", null],
-      exclude: ["usl", "scottish", "women", "u17", "u19", "u20", "u21"]
-    }
-  ])
-];
 
 const cli = parseCli(process.argv.slice(2));
 
@@ -184,41 +100,31 @@ async function buildPlan(prisma: PrismaClient): Promise<PlannedMerge[]> {
   for (const league of leagues) {
     if (cli.seasons.length > 0 && league.seasons.length === 0) continue;
 
-    for (const mergeRule of rules) {
-      if (league.id === mergeRule.target.id) continue;
-      if (!matchesRule(league, mergeRule)) continue;
+    const canonicalLeagueId = canonicalLeagueIdForIdentity({
+      id: league.id,
+      name: league.name,
+      country: league.country
+    });
+    if (!canonicalLeagueId || BigInt(canonicalLeagueId) === league.id) continue;
 
-      const key = String(league.id);
-      if (seenSources.has(key)) continue;
-      seenSources.add(key);
-      planned.push({
-        source: league,
-        target: mergeRule.target,
-        ruleName: mergeRule.target.name
-      });
-      break;
-    }
+    const target = targetLeagueForCanonicalId(canonicalLeagueId);
+    if (!target) continue;
+
+    const key = String(league.id);
+    if (seenSources.has(key)) continue;
+    seenSources.add(key);
+    planned.push({
+      source: league,
+      target: {
+        id: BigInt(target.id),
+        name: target.name,
+        country: target.country
+      },
+      ruleName: target.name
+    });
   }
 
   return planned.sort((left, right) => Number(left.target.id - right.target.id) || left.source.name.localeCompare(right.source.name));
-}
-
-function matchesRule(league: Pick<LeagueCandidate, "name" | "country">, mergeRule: MergeRule) {
-  return mergeRule.matchers.some((matcher) => matchesMatcher(league, matcher));
-}
-
-function matchesMatcher(league: Pick<LeagueCandidate, "name" | "country">, matcher: Matcher) {
-  const text = normalizeText(league.name);
-  const compact = text.replace(/\s+/g, "");
-  const country = normalizeCountry(league.country);
-
-  if (matcher.country && !matcher.country.some((candidate) => normalizeCountry(candidate) === country)) return false;
-  if (matcher.exclude?.some((word) => hasWord(text, word))) return false;
-  if (matcher.words?.some((word) => !hasWord(text, word))) return false;
-  if (matcher.anyPhrase && !matcher.anyPhrase.some((phrase) => text.includes(normalizeText(phrase)))) return false;
-  if (matcher.compactIncludes && !matcher.compactIncludes.some((phrase) => compact.includes(normalizeText(phrase).replace(/\s+/g, "")))) return false;
-
-  return true;
 }
 
 async function mergeLeague(tx: Prisma.TransactionClient, item: PlannedMerge): Promise<MergeCounts> {
@@ -290,12 +196,12 @@ async function mergeLeague(tx: Prisma.TransactionClient, item: PlannedMerge): Pr
     INSERT INTO team_player_seasons (
       league_id, season, team_id, player_id, source, active, is_starter,
       position, shirt_number, nationality, age, photo_url, first_seen_at,
-      last_seen_at, roster_payload, created_at, updated_at
+      last_seen_at, created_at, updated_at
     )
     SELECT
       ${targetId}, season, team_id, player_id, source, active, is_starter,
       position, shirt_number, nationality, age, photo_url, first_seen_at,
-      last_seen_at, roster_payload, created_at, now()
+      last_seen_at, created_at, now()
     FROM team_player_seasons
     WHERE league_id = ${sourceId}
     ${seasonFilter}
@@ -310,7 +216,6 @@ async function mergeLeague(tx: Prisma.TransactionClient, item: PlannedMerge): Pr
       photo_url = COALESCE(team_player_seasons.photo_url, EXCLUDED.photo_url),
       first_seen_at = LEAST(team_player_seasons.first_seen_at, EXCLUDED.first_seen_at),
       last_seen_at = GREATEST(team_player_seasons.last_seen_at, EXCLUDED.last_seen_at),
-      roster_payload = COALESCE(team_player_seasons.roster_payload, EXCLUDED.roster_payload),
       updated_at = now()
   `;
 
@@ -324,13 +229,15 @@ async function mergeLeague(tx: Prisma.TransactionClient, item: PlannedMerge): Pr
   counts.fantasyPrices = await tx.$executeRaw`
     INSERT INTO fantasy_player_prices (
       id, league_id, season, team_id, player_id, provider, provider_player_id,
-      player_name, normalized_name, team_name, position, price, raw,
+      player_name, normalized_name, team_name, sports_team_name, fotmob_player_name,
+      position_label, source_kind, source_row_index, position, price,
       first_seen_at, last_seen_at
     )
     SELECT
       'merge_' || md5(id || ':' || ${targetId}::text), ${targetId}, season, team_id, player_id,
-      provider, provider_player_id, player_name, normalized_name, team_name,
-      position, price, raw, first_seen_at, last_seen_at
+      provider, provider_player_id, player_name, normalized_name, team_name, sports_team_name,
+      fotmob_player_name, position_label, source_kind, source_row_index, position, price,
+      first_seen_at, last_seen_at
     FROM fantasy_player_prices
     WHERE league_id = ${sourceId}
     ${seasonFilter}
@@ -338,12 +245,16 @@ async function mergeLeague(tx: Prisma.TransactionClient, item: PlannedMerge): Pr
       team_id = COALESCE(fantasy_player_prices.team_id, EXCLUDED.team_id),
       player_id = COALESCE(fantasy_player_prices.player_id, EXCLUDED.player_id),
       provider_player_id = COALESCE(fantasy_player_prices.provider_player_id, EXCLUDED.provider_player_id),
+      sports_team_name = COALESCE(fantasy_player_prices.sports_team_name, EXCLUDED.sports_team_name),
+      fotmob_player_name = COALESCE(fantasy_player_prices.fotmob_player_name, EXCLUDED.fotmob_player_name),
+      position_label = COALESCE(fantasy_player_prices.position_label, EXCLUDED.position_label),
+      source_kind = COALESCE(fantasy_player_prices.source_kind, EXCLUDED.source_kind),
+      source_row_index = COALESCE(fantasy_player_prices.source_row_index, EXCLUDED.source_row_index),
       position = COALESCE(fantasy_player_prices.position, EXCLUDED.position),
       price = CASE
         WHEN EXCLUDED.last_seen_at >= fantasy_player_prices.last_seen_at THEN EXCLUDED.price
         ELSE fantasy_player_prices.price
       END,
-      raw = COALESCE(fantasy_player_prices.raw, EXCLUDED.raw),
       first_seen_at = LEAST(fantasy_player_prices.first_seen_at, EXCLUDED.first_seen_at),
       last_seen_at = GREATEST(fantasy_player_prices.last_seen_at, EXCLUDED.last_seen_at)
   `;
@@ -512,17 +423,6 @@ async function mergeFantasySquads(tx: Prisma.TransactionClient, sourceId: bigint
   `;
 }
 
-function rule(id: number, name: string, country: string | null, matchers: Matcher[]): MergeRule {
-  return {
-    target: {
-      id: BigInt(id),
-      name,
-      country
-    },
-    matchers
-  };
-}
-
 function parseCli(args: string[]) {
   const seasons: string[] = [];
   let apply = false;
@@ -593,30 +493,6 @@ function addCounts(target: MergeCounts, source: MergeCounts) {
   for (const [key, value] of Object.entries(source)) {
     target[key] = (target[key] ?? 0) + value;
   }
-}
-
-function normalizeText(value: string | null | undefined) {
-  return (value ?? "")
-    .toLowerCase()
-    .replace(/&/g, " and ")
-    .replace(/[^a-z0-9]+/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-function normalizeCountry(value: string | null | undefined) {
-  const normalized = normalizeText(value);
-  return normalized || null;
-}
-
-function hasWord(text: string, word: string) {
-  const normalizedWord = normalizeText(word);
-  if (!normalizedWord) return false;
-  return new RegExp(`(^|\\s)${escapeRegExp(normalizedWord)}(\\s|$)`).test(text);
-}
-
-function escapeRegExp(value: string) {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
 function loadDotEnv() {

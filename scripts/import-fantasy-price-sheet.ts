@@ -1,4 +1,4 @@
-import ExcelJS from "exceljs";
+import type ExcelJS from "exceljs";
 
 import { ensureDatabaseSchema, prisma } from "@/lib/db";
 import { importFantasyPriceWorkbook, parseFantasyPriceWorkbook } from "@/machete/fantasy_price_sheet_import";
@@ -19,8 +19,7 @@ async function main() {
     return;
   }
 
-  const workbook = new ExcelJS.Workbook();
-  await workbook.xlsx.readFile(file);
+  const workbook = await readWorkbookFromFile(file);
 
   if (Boolean(args["dry-run"])) {
     const parsed = parseFantasyPriceWorkbook(workbook, {
@@ -81,6 +80,13 @@ function numberArg(value: string | boolean | undefined) {
   if (typeof value !== "string") return null;
   const numeric = Number(value);
   return Number.isFinite(numeric) ? numeric : null;
+}
+
+async function readWorkbookFromFile(file: string): Promise<ExcelJS.Workbook> {
+  const { default: ExcelJSLib } = await import("exceljs");
+  const workbook = new ExcelJSLib.Workbook();
+  await workbook.xlsx.readFile(file);
+  return workbook;
 }
 
 main()

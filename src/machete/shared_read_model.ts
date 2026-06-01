@@ -86,7 +86,7 @@ export async function loadSharedLeagueOptions(prisma: PrismaClient): Promise<Sha
   for (const option of options) {
     const key = String(option.leagueId);
     const current = latestByLeagueId.get(key);
-    if (!current || (option.isCurrent && !current.isCurrent) || (!current.isCurrent && !option.isCurrent && seasonRank(option.season) > seasonRank(current.season))) {
+    if (!current || preferSharedLeagueSeason(option, current)) {
       latestByLeagueId.set(key, option);
     }
   }
@@ -613,7 +613,17 @@ export function seasonRank(season: string) {
 }
 
 function defaultSharedLeagueSeason(options: SharedLeagueSeasonOption[]) {
-  return options.find((option) => option.isCurrent) ?? options[0] ?? null;
+  return options.reduce<SharedLeagueSeasonOption | null>((current, option) => (!current || preferSharedLeagueSeason(option, current) ? option : current), null);
+}
+
+function preferSharedLeagueSeason(candidate: SharedLeagueSeasonOption, current: SharedLeagueSeasonOption) {
+  if (candidate.isCurrent !== current.isCurrent) return candidate.isCurrent;
+
+  const candidateRank = seasonRank(candidate.season);
+  const currentRank = seasonRank(current.season);
+  if (candidateRank !== currentRank) return candidateRank > currentRank;
+
+  return dateMs(candidate.updatedAt) > dateMs(current.updatedAt);
 }
 
 async function loadStatsForMatchIds(prisma: PrismaClient, matchIds: bigint[], teamIds: bigint[] = [], playerIds: bigint[] = []) {
@@ -667,7 +677,7 @@ function aggregateSharedStats(
   const yellowCards = sum(stats.map((stat) => stat.yellowCards));
   const redCards = sum(stats.map((stat) => stat.redCards));
   const cleanSheets = stats.filter((stat) => stat.cleanSheet === true).length;
-  const recoveries = sum(stats.map((stat) => readPayloadNumber(stat.statsPayload, ["recoveries", "possessionRecoveries", "possession_recoveries"])));
+  const recoveries = sum(stats.map((stat) => stat.recoveries));
   const ratings = stats.map((stat) => stat.rating).filter((rating): rating is number => typeof rating === "number" && Number.isFinite(rating));
   const averageRating = ratings.length ? round(sum(ratings) / ratings.length) : null;
 
@@ -744,7 +754,7 @@ function computeRecentFp(
 
 function perMatchRawMetrics(stat: MatchPlayerStatRecord) {
   const minutes = stat.minutes ?? 0;
-  const recoveries = readPayloadNumber(stat.statsPayload, ["recoveries", "possessionRecoveries", "possession_recoveries"]);
+  const recoveries = stat.recoveries ?? 0;
   const cleanSheet = stat.cleanSheet === true ? 1 : 0;
 
   return {
@@ -991,70 +1001,6 @@ function machetePositionGroup(position: string | null | undefined) {
   if (value.includes("midfielder") || value === "mid") return "MID";
   if (value.includes("forward") || value.includes("striker") || value.includes("winger") || value === "fw") return "FWD";
   return "UNKNOWN";
-}
-
-function readPayloadNumber(payload: unknown, keys: string[]) {
-  const record = payload && typeof payload === "object" && !Array.isArray(payload) ? (payload as Record<string, unknown>) : {};
-  for (const key of keys) {
-    const direct = numericOrNull(record[key]);
-    if (direct !== null) return direct;
-  }
-
-  return readNestedPayloadNumber(record.stats, new Set(keys.map(normalizePayloadKey)));
-}
-
-function readNestedPayloadNumber(value: unknown, normalizedKeys: Set<string>, depth = 0): number | null {
-  if (depth > 6) return null;
-
-  if (Array.isArray(value)) {
-    for (const item of value) {
-      const nested = readNestedPayloadNumber(item, normalizedKeys, depth + 1);
-      if (nested !== null) return nested;
-    }
-    return null;
-  }
-
-  const record = value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
-  if (Object.keys(record).length === 0) return null;
-
-  for (const [key, nestedValue] of Object.entries(record)) {
-    if (payloadKeyMatches(key, normalizedKeys)) {
-      const parsed = payloadNumberValue(nestedValue);
-      if (parsed !== null) return parsed;
-    }
-  }
-
-  for (const key of ["stats", "groups", "items", "children", "sections"]) {
-    const nested = readNestedPayloadNumber(record[key], normalizedKeys, depth + 1);
-    if (nested !== null) return nested;
-  }
-
-  return null;
-}
-
-function payloadKeyMatches(key: string, normalizedKeys: Set<string>) {
-  const normalized = normalizePayloadKey(key);
-  for (const candidate of normalizedKeys) {
-    if (normalized === candidate) return true;
-    if (candidate.length >= 8 && normalized.includes(candidate)) return true;
-  }
-  return false;
-}
-
-function payloadNumberValue(value: unknown): number | null {
-  const direct = numericOrNull(value);
-  if (direct !== null) return direct;
-  const record = value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
-  const stat = record.stat && typeof record.stat === "object" && !Array.isArray(record.stat) ? (record.stat as Record<string, unknown>) : {};
-  return numericOrNull(record.value) ?? numericOrNull(record.displayValue) ?? numericOrNull(record.total) ?? numericOrNull(stat.value) ?? numericOrNull(stat.displayValue) ?? numericOrNull(stat.total);
-}
-
-function normalizePayloadKey(value: string) {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/\([^)]*\)/g, "")
-    .replace(/[^a-z0-9]+/g, "");
 }
 
 function numericOrNull(value: unknown) {

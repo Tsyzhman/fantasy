@@ -126,13 +126,9 @@ test("aggregates match rows by player-team-league-season and finds value candida
         season: "2025/2026",
         position: "Forward",
         minutes: 90,
-        statsPayload: {
-          stats: {
-            "Touches in box": { stat: { value: 6 } },
-            "Fouls won": { stat: { value: 2 } },
-            "Penalties won": { stat: { value: 0 } }
-          }
-        }
+        touchesInBox: 6,
+        foulsWon: 2,
+        penaltiesWon: 0
       },
       {
         playerId: 10,

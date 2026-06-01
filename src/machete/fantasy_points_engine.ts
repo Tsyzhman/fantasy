@@ -40,8 +40,8 @@ export type FantasyMatchPlayerStatInput = {
   tacklesWon: number | null;
   interceptions: number | null;
   clearances: number | null;
+  recoveries?: number | null;
   rating?: number | null;
-  statsPayload?: unknown;
   match?: {
     homeTeamId: bigint | null;
     awayTeamId: bigint | null;
@@ -109,13 +109,7 @@ export function build_fantasy_model_metrics_from_player_stat(stat: FantasyMatchP
   const played = minutes > 0 || stat.started === true || stat.substitutedIn === true || numericOrZero(stat.rating ?? null) > 0;
   const goalsConceded = stat.goalsConceded ?? deriveGoalsConceded(stat);
   const cleanSheets = cleanSheetValue(stat.cleanSheet, goalsConceded, minutes);
-  const recoveries = readPayloadNumber(stat.statsPayload, [
-    "recoveries",
-    "possessionRecoveries",
-    "possession_recoveries",
-    "ballRecovery",
-    "ball_recoveries"
-  ]);
+  const recoveries = numericOrZero(stat.recoveries ?? null);
 
   return {
     positionGroup: machetePositionGroup(stat.position),
@@ -136,8 +130,8 @@ export function build_fantasy_model_metrics_from_player_stat(stat: FantasyMatchP
       tackles_won: numericOrZero(stat.tacklesWon),
       interceptions: numericOrZero(stat.interceptions),
       clearances: numericOrZero(stat.clearances),
-      recoveries: recoveries ?? 0,
-      possession_recoveries: recoveries ?? 0,
+      recoveries,
+      possession_recoveries: recoveries,
       saves: numericOrZero(stat.saves),
       goals_conceded: goalsConceded ?? 0,
       conceded_goals: goalsConceded ?? 0,
@@ -358,70 +352,6 @@ function cleanSheetWeight(position: string) {
 
 function metric(rawMetrics: Record<string, number>, key: string) {
   return rawMetrics[key] ?? 0;
-}
-
-function readPayloadNumber(payload: unknown, keys: string[]) {
-  const record = payload && typeof payload === "object" && !Array.isArray(payload) ? (payload as Record<string, unknown>) : {};
-  for (const key of keys) {
-    const direct = numericOrNull(record[key]);
-    if (direct !== null) return direct;
-  }
-
-  return readNestedPayloadNumber(record.stats, new Set(keys.map(normalizePayloadKey)));
-}
-
-function readNestedPayloadNumber(value: unknown, normalizedKeys: Set<string>, depth = 0): number | null {
-  if (depth > 6) return null;
-
-  if (Array.isArray(value)) {
-    for (const item of value) {
-      const nested = readNestedPayloadNumber(item, normalizedKeys, depth + 1);
-      if (nested !== null) return nested;
-    }
-    return null;
-  }
-
-  const record = value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
-  if (Object.keys(record).length === 0) return null;
-
-  for (const [key, nestedValue] of Object.entries(record)) {
-    if (payloadKeyMatches(key, normalizedKeys)) {
-      const parsed = payloadNumberValue(nestedValue);
-      if (parsed !== null) return parsed;
-    }
-  }
-
-  for (const key of ["stats", "groups", "items", "children", "sections"]) {
-    const nested = readNestedPayloadNumber(record[key], normalizedKeys, depth + 1);
-    if (nested !== null) return nested;
-  }
-
-  return null;
-}
-
-function payloadKeyMatches(key: string, normalizedKeys: Set<string>) {
-  const normalized = normalizePayloadKey(key);
-  for (const candidate of normalizedKeys) {
-    if (normalized === candidate) return true;
-    if (candidate.length >= 8 && normalized.includes(candidate)) return true;
-  }
-  return false;
-}
-
-function payloadNumberValue(value: unknown): number | null {
-  const direct = numericOrNull(value);
-  if (direct !== null) return direct;
-  const record = value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
-  const stat = record.stat && typeof record.stat === "object" && !Array.isArray(record.stat) ? (record.stat as Record<string, unknown>) : {};
-  return numericOrNull(record.value) ?? numericOrNull(record.displayValue) ?? numericOrNull(record.total) ?? numericOrNull(stat.value) ?? numericOrNull(stat.displayValue) ?? numericOrNull(stat.total);
-}
-
-function normalizePayloadKey(value: string) {
-  return value
-    .trim()
-    .toLowerCase()
-    .replace(/\([^)]*\)/g, "")
-    .replace(/[^a-z0-9]+/g, "");
 }
 
 function numericOrZero(value: number | null | undefined) {

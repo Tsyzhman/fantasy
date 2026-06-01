@@ -1,14 +1,16 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { dirname, resolve } from "node:path";
+import { tmpdir } from "node:os";
+import { resolve } from "node:path";
 
 void main();
 
 async function main(): Promise<void> {
   loadDotEnv();
 
-  const leagueId = process.argv[2] ?? "47";
-  const season = process.argv[3];
-  const outDir = resolve(process.cwd(), "tmp_fotmob_smoke");
+  const args = parseArgs(process.argv.slice(2));
+  const leagueId = args.positionals[0] ?? "47";
+  const season = args.positionals[1];
+  const outDir = resolve(args.outDir ?? resolve(tmpdir(), "fantasy-export-fotmob-smoke"));
   mkdirSync(outDir, { recursive: true });
 
   if (!process.env.MACHETE_FOTMOB_PROVIDER_MODE || process.env.MACHETE_FOTMOB_PROVIDER_MODE === "mock") {
@@ -36,7 +38,8 @@ async function main(): Promise<void> {
     summary.fixturesScheduled = fixtures.filter((f) => f.status === "SCHEDULED").length;
     console.info(`[fotmob:smoke] Fixtures OK: total=${fixtures.length}, finished=${summary.fixturesFinished}.`);
 
-    const sampleCount = Number(process.argv[4] || 5);
+    const requestedSampleCount = Number(args.positionals[2] || 5);
+    const sampleCount = Number.isFinite(requestedSampleCount) ? requestedSampleCount : 5;
     const candidates = fixtures
       .filter((f) => f.status === "FINISHED")
       .sort((a, b) => (b.kickoffAt > a.kickoffAt ? 1 : b.kickoffAt < a.kickoffAt ? -1 : 0))
@@ -98,6 +101,30 @@ async function main(): Promise<void> {
 
 function asRecord(value: unknown): Record<string, unknown> {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as Record<string, unknown>) : {};
+}
+
+function parseArgs(argv: string[]) {
+  const positionals: string[] = [];
+  let outDir: string | undefined;
+
+  for (let index = 0; index < argv.length; index += 1) {
+    const arg = argv[index];
+    if (arg === "--out-dir") {
+      const next = argv[index + 1];
+      if (next && !next.startsWith("--")) {
+        outDir = next;
+        index += 1;
+      }
+      continue;
+    }
+    if (arg.startsWith("--out-dir=")) {
+      outDir = arg.slice("--out-dir=".length);
+      continue;
+    }
+    positionals.push(arg);
+  }
+
+  return { positionals, outDir };
 }
 
 function loadDotEnv(): void {

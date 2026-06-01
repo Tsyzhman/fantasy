@@ -30,7 +30,7 @@ export type LeagueAlias = {
   canonicalLeagueId: number;
 };
 
-export const canonicalCombinedLeagueIds = new Set([42, 48, 50, 73, 108, 133, 140, 10216]);
+export const canonicalCombinedLeagueIds = new Set([40, 42, 44, 45, 48, 50, 54, 73, 77, 108, 133, 140, 146, 299, 9806, 10216]);
 
 const canonicalRules: CanonicalRule[] = [
   rule(42, "Champions League", "International", [
@@ -64,6 +64,78 @@ const canonicalRules: CanonicalRule[] = [
       words: ["european", "championship"],
       country: ["international", "int", null],
       exclude: ["qualification", "qualifier", "qualifying", "women", "futsal", "beach", "u17", "u19", "u20", "u21"]
+    }
+  ]),
+  rule(77, "World Cup 2026", "International", [
+    {
+      words: ["world", "cup"],
+      country: ["international", "int", null],
+      exclude: ["club", "qualification", "qualifier", "qualifying", "women", "futsal", "beach", "u17", "u19", "u20", "u21"]
+    }
+  ]),
+  rule(44, "Copa America", "International", [
+    {
+      words: ["copa", "america"],
+      country: ["international", "int", "south america", null],
+      exclude: ["qualification", "qualifier", "qualifying", "women", "femenina", "futsal", "beach", "u17", "u19", "u20", "u21"]
+    }
+  ]),
+  rule(45, "Copa Libertadores", "International", [
+    {
+      words: ["copa", "libertadores"],
+      country: ["international", "int", "south america", null],
+      exclude: ["qualification", "qualifier", "qualifying", "women", "femenina", "futsal", "beach", "u17", "u19", "u20", "u21"]
+    }
+  ]),
+  rule(299, "Copa Sudamericana", "International", [
+    {
+      words: ["copa", "sudamericana"],
+      country: ["international", "int", "south america", null],
+      exclude: ["qualification", "qualifier", "qualifying", "women", "femenina", "futsal", "beach", "u17", "u19", "u20", "u21"]
+    }
+  ]),
+  rule(9806, "UEFA Nations League A", "International", [
+    {
+      words: ["nations", "league", "a"],
+      country: ["international", "int", null],
+      exclude: ["women", "futsal", "beach", "u17", "u19", "u20", "u21"]
+    }
+  ]),
+  rule(40, "First Division A", "Belgium", [
+    {
+      words: ["first", "division", "a"],
+      country: ["belgium", null],
+      exclude: ["women", "u17", "u19", "u20", "u21"]
+    },
+    {
+      words: ["pro", "league"],
+      country: ["belgium"],
+      exclude: ["challenger", "b", "women", "u17", "u19", "u20", "u21"]
+    },
+    {
+      words: ["jupiler", "league"],
+      country: ["belgium", null],
+      exclude: ["women", "u17", "u19", "u20", "u21"]
+    }
+  ]),
+  rule(146, "2. Bundesliga", "Germany", [
+    {
+      words: ["2", "bundesliga"],
+      country: ["germany", null],
+      exclude: ["women", "u17", "u19", "u20", "u21"]
+    },
+    {
+      anyPhrase: ["zweite bundesliga", "second bundesliga"],
+      country: ["germany", null],
+      exclude: ["women", "u17", "u19", "u20", "u21"]
+    }
+  ]),
+  rule(54, "Bundesliga", "Germany", [
+    {
+      words: ["bundesliga"],
+      anyPhrase: ["playoff", "play off", "playoffs", "play offs", "relegation", "promotion", "qualification", "qualifying"],
+      country: ["germany"],
+      exclude: ["2", "second", "zweite", "women", "u17", "u19", "u20", "u21"]
     }
   ]),
   rule(48, "Championship", "England", [

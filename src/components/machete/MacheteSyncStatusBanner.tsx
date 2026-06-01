@@ -1,10 +1,11 @@
 "use client";
 
 import { AlertTriangle, Loader2 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback } from "react";
 
 import { I18nText } from "@/components/i18n-text";
 import { localizedText, useLanguage } from "@/components/localized-option";
+import { useAdaptivePoll } from "@/lib/use-adaptive-poll";
 
 type SyncStatusJob = {
   id: string;
@@ -21,27 +22,18 @@ type SyncStatusPayload = {
 
 export function MacheteSyncStatusBanner() {
   const language = useLanguage();
-  const [payload, setPayload] = useState<SyncStatusPayload | null>(null);
+  const fetchStatus = useCallback(async (): Promise<SyncStatusPayload> => {
+    const response = await fetch("/api/machete/sync-status", { cache: "no-store" });
+    if (!response.ok) return { running: false, jobs: [] };
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function loadStatus() {
-      const response = await fetch("/api/machete/sync-status", { cache: "no-store" });
-      if (!response.ok) return;
-
-      const nextPayload = (await response.json()) as SyncStatusPayload;
-      if (!cancelled) setPayload(nextPayload);
-    }
-
-    void loadStatus();
-    const interval = window.setInterval(() => void loadStatus(), 10_000);
-
-    return () => {
-      cancelled = true;
-      window.clearInterval(interval);
-    };
+    return (await response.json()) as SyncStatusPayload;
   }, []);
+  const payload = useAdaptivePoll(fetchStatus, {
+    activeIntervalMs: 15_000,
+    idleIntervalMs: 120_000,
+    initialIntervalMs: 5_000,
+    isActive: isSyncRunning
+  });
 
   if (!payload?.running) return null;
 
@@ -66,7 +58,7 @@ export function MacheteSyncStatusBanner() {
         </div>
         <div className="inline-flex items-center gap-2 font-medium text-amber-800">
           <Loader2 className="h-4 w-4 animate-spin" />
-          <I18nText en="Checking every 10 seconds" ru="Проверка каждые 10 секунд" />
+          <I18nText en="Checking every 15 seconds" ru="Проверка каждые 15 секунд" />
         </div>
       </div>
     </section>
@@ -90,4 +82,8 @@ function syncJobLabel(job: SyncStatusJob, language: "en" | "ru") {
   const fallback = job.type.replace(/^SYNC_/, "").replace(/_/g, " ").toLowerCase();
   const typeLabel = labels[job.type] ? localizedText(language, labels[job.type].en, labels[job.type].ru) : fallback;
   return scope ? `${typeLabel}: ${scope}` : typeLabel;
+}
+
+function isSyncRunning(payload: SyncStatusPayload) {
+  return payload.running;
 }

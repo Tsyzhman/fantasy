@@ -19,7 +19,8 @@ export type SportsRuFantasyPriceRow = {
   normalizedName: string;
   position: string | null;
   price: number;
-  raw: Record<string, unknown>;
+  sourceKind: string;
+  sourceRowIndex: number;
 };
 
 const defaultBudget = 100;
@@ -88,10 +89,8 @@ function parseFeaturedPriceRows(html: string): SportsRuFantasyPriceRow[] {
         normalizedName: normalizeSportsRuPlayerName(playerName),
         position,
         price,
-        raw: {
-          source: "featured-field",
-          rowIndex
-        }
+        sourceKind: "featured-field",
+        sourceRowIndex: rowIndex
       });
     }
     rowIndex += 1;
@@ -106,16 +105,14 @@ function parseFeaturedPriceRows(html: string): SportsRuFantasyPriceRow[] {
     const playerName = cleanText(fallbackMatch[1]);
     const price = Number(fallbackMatch[2].replace(",", "."));
     if (!playerName || !Number.isFinite(price)) continue;
-    rows.push({
-      playerName,
-      normalizedName: normalizeSportsRuPlayerName(playerName),
-      position: positionForFeaturedIndex(index),
-      price,
-      raw: {
-        source: "featured-field-fallback",
-        index
-      }
-    });
+      rows.push({
+        playerName,
+        normalizedName: normalizeSportsRuPlayerName(playerName),
+        position: positionForFeaturedIndex(index),
+        price,
+        sourceKind: "featured-field-fallback",
+        sourceRowIndex: index
+      });
     index += 1;
   }
 

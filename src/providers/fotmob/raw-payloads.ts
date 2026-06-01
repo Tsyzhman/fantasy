@@ -1,5 +1,3 @@
-import { createHash } from "crypto";
-
 import type { Prisma, PrismaClient } from "@prisma/client";
 
 export async function storeMacheteRawPayload(
@@ -11,10 +9,13 @@ export async function storeMacheteRawPayload(
     payload: unknown;
   }
 ) {
+  if (process.env.MACHETE_STORE_RAW_PAYLOADS !== "true") return null;
+
   if (input.entityType === "FIXTURE_DETAILS" || input.endpoint === "getFixtureDetails") {
     throw new Error("FotMob match details must be stored through core_data.raw_match_payloads, not MacheteRawPayload.");
   }
 
+  const { createHash } = await import("crypto");
   const json = JSON.stringify(input.payload);
   return prisma.macheteRawPayload.create({
     data: {

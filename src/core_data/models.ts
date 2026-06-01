@@ -78,7 +78,6 @@ export type TeamPlayerSeasonData = {
   nationality: string | null;
   age: number | null;
   photoUrl: string | null;
-  rosterPayload: unknown;
 };
 
 export type TeamMatchStatsData = {
@@ -110,7 +109,6 @@ export type TeamMatchStatsData = {
   interceptions: number | null;
   clearances: number | null;
   saves: number | null;
-  statsPayload: unknown;
 };
 
 export type PlayerMatchStatsData = {
@@ -144,8 +142,11 @@ export type PlayerMatchStatsData = {
   clearances: number | null;
   duelsWon: number | null;
   aerialsWon: number | null;
+  recoveries: number | null;
+  touchesInOppBox: number | null;
+  foulsWon: number | null;
+  penaltiesWon: number | null;
   rating: number | null;
-  statsPayload: unknown;
 };
 
 export type MatchEventData = {
@@ -163,7 +164,6 @@ export type MatchEventData = {
   isPenalty: boolean;
   isCard: boolean;
   isSubstitution: boolean;
-  eventPayload: unknown;
 };
 
 export type MatchShotData = {

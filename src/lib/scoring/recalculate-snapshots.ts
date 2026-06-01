@@ -1,8 +1,9 @@
-import type { Prisma, PrismaClient } from "@prisma/client";
+import type { PrismaClient } from "@prisma/client";
 
 import { calculateAlternativeScore, calculateFantasyScore, calculateScoringScore, calculateValueScore, getActiveScoringModel, getActiveScoringModelForSource } from ".";
 import type { ScoringModelSource } from ".";
 import { buildBaltikaTeamFormulaMetrics } from "./baltika-team-form-metrics";
+import { playerSnapshotScoringMetrics } from "@/lib/players/derived-metrics";
 import { getMacheteAggregateMatchDenominators } from "@/scoring/machete/aggregate-match-denominator";
 import { shouldIgnoreProviderSeasonStats } from "@/scoring/machete/world-cup";
 
@@ -24,11 +25,33 @@ async function recalculateWyscoutSnapshots(prisma: PrismaClient) {
       take: batchSize,
       select: {
         id: true,
-        rawMetrics: true,
         positionGroup: true,
         marketValue: true,
         teamId: true,
-        seasonId: true
+        seasonId: true,
+        matchesPlayed: true,
+        minutesPlayed: true,
+        goals: true,
+        xg: true,
+        assists: true,
+        xa: true,
+        fantasyAssists: true,
+        cleanSheets: true,
+        saves: true,
+        penaltySaves: true,
+        recoveries: true,
+        penaltiesConceded: true,
+        missedPenalties: true,
+        ownGoals: true,
+        goalsConceded: true,
+        shotsOnTarget: true,
+        keyPasses: true,
+        tacklesWon: true,
+        interceptions: true,
+        clearances: true,
+        yellowCards: true,
+        redCards: true,
+        averageRating: true
       }
     });
 
@@ -37,10 +60,7 @@ async function recalculateWyscoutSnapshots(prisma: PrismaClient) {
     const updates = [];
     for (const snapshot of snapshots) {
       const teamMetrics = await buildBaltikaTeamFormulaMetrics(prisma, snapshot.teamId, snapshot.seasonId);
-      const rawMetrics = {
-        ...objectMetrics(snapshot.rawMetrics),
-        ...teamMetrics
-      };
+      const rawMetrics = playerSnapshotScoringMetrics(snapshot, teamMetrics);
       const fantasyScore = calculateFantasyScore(rawMetrics, snapshot.positionGroup, scoringModel);
       const scoringScore = calculateScoringScore(rawMetrics, snapshot.positionGroup, scoringModel);
       const alternativeScore = calculateAlternativeScore(rawMetrics, snapshot.positionGroup, scoringModel);
@@ -50,7 +70,6 @@ async function recalculateWyscoutSnapshots(prisma: PrismaClient) {
         prisma.playerSnapshot.update({
           where: { id: snapshot.id },
           data: {
-            rawMetrics: rawMetrics as Prisma.InputJsonValue,
             fantasyScore,
             scoringScore,
             alternativeScore,
@@ -80,11 +99,25 @@ async function recalculateMacheteSnapshots(prisma: PrismaClient) {
       take: batchSize,
       select: {
         id: true,
-        rawMetrics: true,
         leagueId: true,
         teamId: true,
         position: true,
-        minutesPlayed: true
+        matchesPlayed: true,
+        minutesPlayed: true,
+        goals: true,
+        assists: true,
+        shotsOnTarget: true,
+        keyPasses: true,
+        tackles: true,
+        interceptions: true,
+        saves: true,
+        yellowCards: true,
+        redCards: true,
+        averageRating: true,
+        appearances60: true,
+        fullMatches: true,
+        expectedMinutes: true,
+        providerSeasonStatsIgnored: true
       }
     });
 
@@ -121,7 +154,7 @@ async function recalculateMacheteSnapshots(prisma: PrismaClient) {
     const denominatorsByLeague = new Map(denominatorMaps);
 
     const updates = snapshots.map((snapshot) => {
-      const rawMetrics = objectMetrics(snapshot.rawMetrics);
+      const rawMetrics = macheteSnapshotScoringMetrics(snapshot);
       const league = snapshot.leagueId ? leaguesById.get(snapshot.leagueId) : null;
       const shouldIgnoreStats = shouldIgnoreProviderSeasonStats(league?.providerLeagueId, league?.season) && readMetric(rawMetrics, "minutes_played") <= 0;
       const denominator = !shouldIgnoreStats && snapshot.leagueId && snapshot.teamId ? denominatorsByLeague.get(snapshot.leagueId)?.get(snapshot.teamId) ?? 0 : 0;
@@ -154,11 +187,6 @@ async function recalculateMacheteSnapshots(prisma: PrismaClient) {
   return recalculated;
 }
 
-function objectMetrics(value: Prisma.JsonValue): Record<string, unknown> {
-  if (value && typeof value === "object" && !Array.isArray(value)) return value as Record<string, unknown>;
-  return {};
-}
-
 function machetePositionGroup(position: string | null | undefined) {
   const value = position?.toLowerCase() ?? "";
   if (value.includes("keeper") || value === "gk") return "GK";
@@ -166,6 +194,44 @@ function machetePositionGroup(position: string | null | undefined) {
   if (value.includes("midfielder") || value === "mid") return "MID";
   if (value.includes("forward") || value.includes("striker") || value.includes("winger") || value === "fw") return "FWD";
   return "UNKNOWN";
+}
+
+function macheteSnapshotScoringMetrics(snapshot: {
+  matchesPlayed: number;
+  minutesPlayed: number;
+  goals: number;
+  assists: number;
+  shotsOnTarget: number;
+  keyPasses: number;
+  tackles: number;
+  interceptions: number;
+  saves: number;
+  yellowCards: number;
+  redCards: number;
+  averageRating: number | null;
+  appearances60: number;
+  fullMatches: number;
+  expectedMinutes: number | null;
+  providerSeasonStatsIgnored: boolean;
+}) {
+  return {
+    matches_played: snapshot.matchesPlayed,
+    minutes_played: snapshot.minutesPlayed,
+    appearances_60: snapshot.appearances60,
+    full_matches: snapshot.fullMatches,
+    ...(snapshot.expectedMinutes !== null ? { expected_minutes: snapshot.expectedMinutes } : {}),
+    goals: snapshot.goals,
+    assists: snapshot.assists,
+    shots_on_target: snapshot.shotsOnTarget,
+    key_passes: snapshot.keyPasses,
+    tackles: snapshot.tackles,
+    interceptions: snapshot.interceptions,
+    saves: snapshot.saves,
+    yellow_cards: snapshot.yellowCards,
+    red_cards: snapshot.redCards,
+    average_rating: snapshot.averageRating ?? 0,
+    ...(snapshot.providerSeasonStatsIgnored ? { provider_season_stats_ignored: 1 } : {})
+  };
 }
 
 function clearProviderSeasonMetrics(rawMetrics: Record<string, unknown>) {

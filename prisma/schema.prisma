@@ -32,19 +32,19 @@ enum DataSourceType {
 }
 
 model User {
-  id           String        @id @default(cuid())
-  email        String        @unique
-  name         String?
-  passwordHash String?
-  role         UserRole      @default(USER)
-  isActive     Boolean       @default(true)
-  lastLoginAt  DateTime?
-  sessions     UserSession[]
-  fantasySquads UserFantasySquad[]
-  savedViews   UserSavedView[]
+  id               String                @id @default(cuid())
+  email            String                @unique
+  name             String?
+  passwordHash     String?
+  role             UserRole              @default(USER)
+  isActive         Boolean               @default(true)
+  lastLoginAt      DateTime?
+  sessions         UserSession[]
+  fantasySquads    UserFantasySquad[]
+  savedViews       UserSavedView[]
   watchlistPlayers UserWatchlistPlayer[]
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
 }
 
 model UserSession {
@@ -206,12 +206,28 @@ model PlayerSnapshot {
   weightKg        Int?
   onLoan          Boolean?
 
-  fantasyScore     Float?
-  scoringScore     Float?
-  alternativeScore Float?
-  valueScore       Float?
-  isStarter        Boolean @default(false)
-  rawMetrics       Json
+  fantasyScore      Float?
+  scoringScore      Float?
+  alternativeScore  Float?
+  valueScore        Float?
+  isStarter         Boolean @default(false)
+  fantasyAssists    Int?    @map("fantasy_assists")
+  cleanSheets       Int?    @map("clean_sheets")
+  saves             Int?
+  penaltySaves      Int?    @map("penalty_saves")
+  recoveries        Int?
+  penaltiesConceded Int?    @map("penalties_conceded")
+  missedPenalties   Int?    @map("missed_penalties")
+  ownGoals          Int?    @map("own_goals")
+  goalsConceded     Int?    @map("goals_conceded")
+  shotsOnTarget     Int?    @map("shots_on_target")
+  keyPasses         Int?    @map("key_passes")
+  tacklesWon        Int?    @map("tackles_won")
+  interceptions     Int?
+  clearances        Int?
+  yellowCards       Int?    @map("yellow_cards")
+  redCards          Int?    @map("red_cards")
+  averageRating     Float?  @map("average_rating")
 
   createdAt DateTime @default(now())
 
@@ -348,7 +364,6 @@ model MachetePlayer {
   photoUrl         String?
   status           String    @default("ACTIVE")
   lastSyncedAt     DateTime?
-  raw              Json?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
 
@@ -369,9 +384,10 @@ model MacheteFixture {
   awayTeamId        String?
   kickoffAt         DateTime?
   status            String?
+  round             String?
+  aggregateSeason   String?   @map("aggregate_season")
   homeScore         Int?
   awayScore         Int?
-  raw               Json?
   lastSyncedAt      DateTime?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
@@ -394,11 +410,11 @@ model CoreLeague {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  matches CoreMatch[]
-  seasons LeagueSeason[]
+  matches         CoreMatch[]
+  seasons         LeagueSeason[]
   fantasyContests SportsRuFantasyContest[]
-  fantasyPrices FantasyPlayerPrice[]
-  fantasySquads UserFantasySquad[]
+  fantasyPrices   FantasyPlayerPrice[]
+  fantasySquads   UserFantasySquad[]
 
   @@index([source, rawRef])
   @@map("leagues")
@@ -414,15 +430,15 @@ model CoreTeam {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  homeMatches         CoreMatch[]        @relation("CoreMatchHomeTeam")
-  awayMatches         CoreMatch[]        @relation("CoreMatchAwayTeam")
-  teamStats           MatchTeamStat[]    @relation("MatchTeamStatsTeam")
-  opponentTeamStats   MatchTeamStat[]    @relation("MatchTeamStatsOpponentTeam")
-  playerStats         MatchPlayerStat[]  @relation("MatchPlayerStatsTeam")
-  opponentPlayerStats MatchPlayerStat[]  @relation("MatchPlayerStatsOpponentTeam")
+  homeMatches         CoreMatch[]              @relation("CoreMatchHomeTeam")
+  awayMatches         CoreMatch[]              @relation("CoreMatchAwayTeam")
+  teamStats           MatchTeamStat[]          @relation("MatchTeamStatsTeam")
+  opponentTeamStats   MatchTeamStat[]          @relation("MatchTeamStatsOpponentTeam")
+  playerStats         MatchPlayerStat[]        @relation("MatchPlayerStatsTeam")
+  opponentPlayerStats MatchPlayerStat[]        @relation("MatchPlayerStatsOpponentTeam")
   events              MatchEvent[]
-  shotsFor            MatchShot[]        @relation("MatchShotTeam")
-  shotsAgainst        MatchShot[]        @relation("MatchShotOpponentTeam")
+  shotsFor            MatchShot[]              @relation("MatchShotTeam")
+  shotsAgainst        MatchShot[]              @relation("MatchShotOpponentTeam")
   leagueSeasonTeams   LeagueSeasonTeam[]
   seasonRosterEntries TeamPlayerSeason[]
   fantasyPrices       FantasyPlayerPrice[]
@@ -443,8 +459,8 @@ model CorePlayer {
   updatedAt DateTime  @updatedAt @map("updated_at")
 
   stats                  MatchPlayerStat[]
-  events                 MatchEvent[]            @relation("MatchEventPlayer")
-  relatedEvents          MatchEvent[]            @relation("MatchEventRelatedPlayer")
+  events                 MatchEvent[]             @relation("MatchEventPlayer")
+  relatedEvents          MatchEvent[]             @relation("MatchEventRelatedPlayer")
   shots                  MatchShot[]
   fantasyPoints          FantasyPoint[]
   fantasyPointBreakdowns FantasyPointBreakdown[]
@@ -457,21 +473,21 @@ model CorePlayer {
 }
 
 model SportsRuFantasyContest {
-  id                 String   @id @default(cuid())
-  leagueId           BigInt   @map("league_id")
-  season             String
-  provider           String   @default("SPORTS_RU")
-  providerContestId  String?  @map("provider_contest_id")
-  slug               String?
-  name               String
-  budgetLimit        Float    @default(100) @map("budget_limit")
-  squadSize          Int      @default(15) @map("squad_size")
-  maxPlayersPerTeam  Int      @default(2) @map("max_players_per_team")
-  rules              Json?
-  sourceUrl          String?  @map("source_url")
-  lastSyncedAt       DateTime? @map("last_synced_at")
-  createdAt          DateTime @default(now()) @map("created_at")
-  updatedAt          DateTime @updatedAt @map("updated_at")
+  id                String    @id @default(cuid())
+  leagueId          BigInt    @map("league_id")
+  season            String
+  provider          String    @default("SPORTS_RU")
+  providerContestId String?   @map("provider_contest_id")
+  slug              String?
+  name              String
+  budgetLimit       Float     @default(100) @map("budget_limit")
+  squadSize         Int       @default(15) @map("squad_size")
+  maxPlayersPerTeam Int       @default(2) @map("max_players_per_team")
+  rules             Json?
+  sourceUrl         String?   @map("source_url")
+  lastSyncedAt      DateTime? @map("last_synced_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
 
   league CoreLeague @relation(fields: [leagueId], references: [id], onDelete: Cascade)
 
@@ -491,14 +507,18 @@ model FantasyPlayerPrice {
   playerName       String   @map("player_name")
   normalizedName   String   @map("normalized_name")
   teamName         String   @default("") @map("team_name")
+  sportsTeamName   String?  @map("sports_team_name")
+  fotmobPlayerName String?  @map("fotmob_player_name")
+  positionLabel    String?  @map("position_label")
+  sourceKind       String?  @map("source_kind")
+  sourceRowIndex   Int?     @map("source_row_index")
   position         String?
   price            Float
-  raw              Json?
   firstSeenAt      DateTime @default(now()) @map("first_seen_at")
   lastSeenAt       DateTime @default(now()) @map("last_seen_at")
 
-  league CoreLeague @relation(fields: [leagueId], references: [id], onDelete: Cascade)
-  team   CoreTeam?  @relation(fields: [teamId], references: [id], onDelete: SetNull)
+  league CoreLeague  @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  team   CoreTeam?   @relation(fields: [teamId], references: [id], onDelete: SetNull)
   player CorePlayer? @relation(fields: [playerId], references: [id], onDelete: SetNull)
 
   @@unique([provider, leagueId, season, normalizedName, teamName])
@@ -520,8 +540,8 @@ model UserFantasySquad {
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
-  user    User       @relation(fields: [userId], references: [id], onDelete: Cascade)
-  league  CoreLeague @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  user    User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  league  CoreLeague               @relation(fields: [leagueId], references: [id], onDelete: Cascade)
   players UserFantasySquadPlayer[]
 
   @@unique([userId, leagueId, season])
@@ -632,23 +652,22 @@ model LeagueSeasonTeam {
 }
 
 model TeamPlayerSeason {
-  leagueId      BigInt   @map("league_id")
-  season        String
-  teamId        BigInt   @map("team_id")
-  playerId      BigInt   @map("player_id")
-  source        String   @default("fotmob")
-  active        Boolean  @default(true)
-  isStarter     Boolean  @default(false) @map("is_starter")
-  position      String?
-  shirtNumber   Int?     @map("shirt_number")
-  nationality   String?
-  age           Int?
-  photoUrl      String?  @map("photo_url")
-  firstSeenAt   DateTime @default(now()) @map("first_seen_at")
-  lastSeenAt    DateTime @default(now()) @map("last_seen_at")
-  rosterPayload Json?    @map("roster_payload")
-  createdAt     DateTime @default(now()) @map("created_at")
-  updatedAt     DateTime @updatedAt @map("updated_at")
+  leagueId    BigInt   @map("league_id")
+  season      String
+  teamId      BigInt   @map("team_id")
+  playerId    BigInt   @map("player_id")
+  source      String   @default("fotmob")
+  active      Boolean  @default(true)
+  isStarter   Boolean  @default(false) @map("is_starter")
+  position    String?
+  shirtNumber Int?     @map("shirt_number")
+  nationality String?
+  age         Int?
+  photoUrl    String?  @map("photo_url")
+  firstSeenAt DateTime @default(now()) @map("first_seen_at")
+  lastSeenAt  DateTime @default(now()) @map("last_seen_at")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
   seasonTeam LeagueSeasonTeam @relation(fields: [leagueId, season, teamId], references: [leagueId, season, teamId], onDelete: Cascade)
   team       CoreTeam         @relation(fields: [teamId], references: [id], onDelete: Cascade)
@@ -748,7 +767,6 @@ model MatchTeamStat {
   interceptions    Int?
   clearances       Int?
   saves            Int?
-  statsPayload     Json?    @map("stats_payload")
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 
@@ -762,40 +780,43 @@ model MatchTeamStat {
 }
 
 model MatchPlayerStat {
-  matchId        BigInt   @map("match_id")
-  playerId       BigInt   @map("player_id")
-  teamId         BigInt?  @map("team_id")
-  opponentTeamId BigInt?  @map("opponent_team_id")
-  isHome         Boolean? @map("is_home")
-  started        Boolean?
-  substitutedIn  Boolean? @map("substituted_in")
-  substitutedOut Boolean? @map("substituted_out")
-  minutes        Int?
-  position       String?
-  shirtNumber    Int?     @map("shirt_number")
-  goals          Int?
-  assists        Int?
-  yellowCards    Int?     @map("yellow_cards")
-  redCards       Int?     @map("red_cards")
-  saves          Int?
-  goalsConceded  Int?     @map("goals_conceded")
-  cleanSheet     Boolean? @map("clean_sheet")
-  xg             Float?
-  xgot           Float?
-  xa             Float?
-  shots          Int?
-  shotsOnTarget  Int?     @map("shots_on_target")
-  keyPasses      Int?     @map("key_passes")
-  chancesCreated Int?     @map("chances_created")
-  tacklesWon     Int?     @map("tackles_won")
-  interceptions  Int?
-  clearances     Int?
-  duelsWon       Int?     @map("duels_won")
-  aerialsWon     Int?     @map("aerials_won")
-  rating         Float?
-  statsPayload   Json?    @map("stats_payload")
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
+  matchId         BigInt   @map("match_id")
+  playerId        BigInt   @map("player_id")
+  teamId          BigInt?  @map("team_id")
+  opponentTeamId  BigInt?  @map("opponent_team_id")
+  isHome          Boolean? @map("is_home")
+  started         Boolean?
+  substitutedIn   Boolean? @map("substituted_in")
+  substitutedOut  Boolean? @map("substituted_out")
+  minutes         Int?
+  position        String?
+  shirtNumber     Int?     @map("shirt_number")
+  goals           Int?
+  assists         Int?
+  yellowCards     Int?     @map("yellow_cards")
+  redCards        Int?     @map("red_cards")
+  saves           Int?
+  goalsConceded   Int?     @map("goals_conceded")
+  cleanSheet      Boolean? @map("clean_sheet")
+  xg              Float?
+  xgot            Float?
+  xa              Float?
+  shots           Int?
+  shotsOnTarget   Int?     @map("shots_on_target")
+  keyPasses       Int?     @map("key_passes")
+  chancesCreated  Int?     @map("chances_created")
+  tacklesWon      Int?     @map("tackles_won")
+  interceptions   Int?
+  clearances      Int?
+  duelsWon        Int?     @map("duels_won")
+  aerialsWon      Int?     @map("aerials_won")
+  recoveries      Int?
+  touchesInOppBox Int?     @map("touches_in_opp_box")
+  foulsWon        Int?     @map("fouls_won")
+  penaltiesWon    Int?     @map("penalties_won")
+  rating          Float?
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
 
   match                  CoreMatch               @relation(fields: [matchId], references: [id], onDelete: Cascade)
   player                 CorePlayer              @relation(fields: [playerId], references: [id])
@@ -866,7 +887,6 @@ model MatchEvent {
   isPenalty       Boolean  @default(false) @map("is_penalty")
   isCard          Boolean  @default(false) @map("is_card")
   isSubstitution  Boolean  @default(false) @map("is_substitution")
-  eventPayload    Json?    @map("event_payload")
   createdAt       DateTime @default(now()) @map("created_at")
 
   match         CoreMatch   @relation(fields: [matchId], references: [id], onDelete: Cascade)
@@ -1020,25 +1040,25 @@ model ShotmapComparisonsCache {
 }
 
 model MachetePlayerMatchStat {
-  id            String   @id @default(cuid())
-  fixtureId     String
-  playerId      String
-  teamId        String?
-  minutes       Int?
-  rating        Float?
-  goals         Int?
-  assists       Int?
-  shots         Int?
-  shotsOnTarget Int?
-  keyPasses     Int?
-  tackles       Int?
-  interceptions Int?
-  saves         Int?
-  yellowCards   Int?
-  redCards      Int?
-  raw           Json?
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id               String   @id @default(cuid())
+  fixtureId        String
+  playerId         String
+  teamId           String?
+  minutes          Int?
+  rating           Float?
+  goals            Int?
+  assists          Int?
+  shots            Int?
+  shotsOnTarget    Int?
+  keyPasses        Int?
+  tackles          Int?
+  interceptions    Int?
+  saves            Int?
+  yellowCards      Int?
+  redCards         Int?
+  aggregateMatches Int?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
 
   fixture MacheteFixture @relation(fields: [fixtureId], references: [id], onDelete: Cascade)
   player  MachetePlayer  @relation(fields: [playerId], references: [id], onDelete: Cascade)
@@ -1049,32 +1069,35 @@ model MachetePlayerMatchStat {
 }
 
 model MachetePlayerSnapshot {
-  id               String    @id @default(cuid())
-  playerId         String
-  leagueId         String?
-  teamId           String?
-  periodFrom       DateTime?
-  periodTo         DateTime?
-  position         String?
-  matchesPlayed    Int       @default(0)
-  minutesPlayed    Int       @default(0)
-  goals            Int       @default(0)
-  assists          Int       @default(0)
-  shotsOnTarget    Int       @default(0)
-  keyPasses        Int       @default(0)
-  tackles          Int       @default(0)
-  interceptions    Int       @default(0)
-  saves            Int       @default(0)
-  yellowCards      Int       @default(0)
-  redCards         Int       @default(0)
-  averageRating    Float?
-  fantasyScore     Float?
-  scoringScore     Float?
-  alternativeScore Float?
-  valueScore       Float?
-  rawMetrics       Json?
-  createdAt        DateTime  @default(now())
-  updatedAt        DateTime  @updatedAt
+  id                         String    @id @default(cuid())
+  playerId                   String
+  leagueId                   String?
+  teamId                     String?
+  periodFrom                 DateTime?
+  periodTo                   DateTime?
+  position                   String?
+  matchesPlayed              Int       @default(0)
+  minutesPlayed              Int       @default(0)
+  goals                      Int       @default(0)
+  assists                    Int       @default(0)
+  shotsOnTarget              Int       @default(0)
+  keyPasses                  Int       @default(0)
+  tackles                    Int       @default(0)
+  interceptions              Int       @default(0)
+  saves                      Int       @default(0)
+  yellowCards                Int       @default(0)
+  redCards                   Int       @default(0)
+  averageRating              Float?
+  fantasyScore               Float?
+  scoringScore               Float?
+  alternativeScore           Float?
+  valueScore                 Float?
+  appearances60              Int       @default(0)
+  fullMatches                Int       @default(0)
+  expectedMinutes            Float?
+  providerSeasonStatsIgnored Boolean   @default(false)
+  createdAt                  DateTime  @default(now())
+  updatedAt                  DateTime  @updatedAt
 
   player MachetePlayer @relation(fields: [playerId], references: [id], onDelete: Cascade)
 
@@ -1179,7 +1202,6 @@ model BaltikaFixture {
   awayScore       Int?
   homeXg          Float?
   awayXg          Float?
-  raw             Json?
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
 
@@ -1207,7 +1229,6 @@ model BaltikaTeamMatchStat {
   xga            Float?
   shots          Int?
   shotsOnTarget  Int?
-  raw            Json?
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 

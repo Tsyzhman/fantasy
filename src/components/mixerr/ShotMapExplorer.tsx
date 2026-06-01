@@ -1,8 +1,8 @@
 "use client";
 
-import { Columns2, Crosshair, Layers3, Pause, Play, Shield, SkipForward, UserRound } from "lucide-react";
+import { ChevronLeft, ChevronRight, Columns2, Crosshair, Layers3, Shield, UserRound } from "lucide-react";
 import type { ReactNode } from "react";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 
 import { I18nText } from "@/components/i18n-text";
 import { LocalizedOption, localizedText, useLanguage } from "@/components/localized-option";
@@ -62,10 +62,8 @@ export function ShotMapExplorer({
   const [onTargetOnly, setOnTargetOnly] = useState(false);
   const [showTeamShots, setShowTeamShots] = useState(true);
   const [showConceded, setShowConceded] = useState(true);
-  const [showHeatmap, setShowHeatmap] = useState(true);
   const [situation, setSituation] = useState<ShotSituationFilter>("all");
-  const [playbackIndex, setPlaybackIndex] = useState(0);
-  const [isPlaybackRunning, setIsPlaybackRunning] = useState(false);
+  const [activeShotIndex, setActiveShotIndex] = useState(0);
 
   const layers = useMemo(() => {
     const selectedShotIds = new Set(playerShots.map((shot) => shot.id));
@@ -140,23 +138,17 @@ export function ShotMapExplorer({
   }, [concededShots, goalsOnly, language, mode, onTargetOnly, overlayShots.attacking, overlayShots.conceded, playerShots, showConceded, showTeamShots, situation, teamShots]);
 
   const visibleShots = layers.flatMap((layer) => layer.shots);
-  const sequenceShots = useMemo(() => orderShotsForPlayback(visibleShots), [visibleShots]);
-  const clampedPlaybackIndex = sequenceShots.length ? playbackIndex % sequenceShots.length : 0;
-  const activeSequenceShot = sequenceShots[clampedPlaybackIndex] ?? null;
-  const playbackRunning = isPlaybackRunning && sequenceShots.length > 1;
+  const sequenceShots = useMemo(() => orderShotsForSequence(visibleShots), [visibleShots]);
+  const activeSequenceIndex = sequenceShots.length ? activeShotIndex % sequenceShots.length : 0;
+  const activeSequenceShot = sequenceShots[activeSequenceIndex] ?? null;
   const totalXg = visibleShots.reduce((total, shot) => total + (shot.xg ?? 0), 0);
   const shooterSummaries = summarizeShooters(visibleShots, language);
   const topShooterSummaries = shooterSummaries.slice(0, 8);
   const splitAttackLayers = layers.filter((layer) => layer.tone !== "conceded");
   const splitConcededLayers = layers.filter((layer) => layer.tone === "conceded");
-
-  useEffect(() => {
-    if (!playbackRunning) return;
-    const timer = window.setInterval(() => {
-      setPlaybackIndex((current) => (current + 1) % sequenceShots.length);
-    }, 900);
-    return () => window.clearInterval(timer);
-  }, [playbackRunning, sequenceShots.length]);
+  const switchActiveShot = (direction: -1 | 1) => {
+    setActiveShotIndex((current) => (sequenceShots.length ? (current + direction + sequenceShots.length) % sequenceShots.length : 0));
+  };
 
   return (
     <div className="mt-6 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
@@ -191,35 +183,27 @@ export function ShotMapExplorer({
                 <I18nText en="Team B conceded" ru="Допущено B" />
               </label>
             ) : null}
-            <label className="inline-flex items-center gap-2">
-              <input type="checkbox" checked={showHeatmap} onChange={(event) => setShowHeatmap(event.target.checked)} />
-              <I18nText en="Heatmap" ru="Теплокарта" />
-            </label>
             <div className="inline-flex items-center gap-1 rounded border border-slate-200 bg-white p-1">
               <button
                 type="button"
-                onClick={() => setIsPlaybackRunning((current) => !current)}
+                onClick={() => switchActiveShot(-1)}
                 disabled={sequenceShots.length === 0}
                 className="inline-flex h-7 w-7 items-center justify-center rounded text-slate-700 hover:bg-slate-50 disabled:opacity-40"
-                aria-label={
-                  playbackRunning
-                    ? localizedText(language, "Pause shot sequence", "Поставить проигрывание ударов на паузу")
-                    : localizedText(language, "Play shot sequence", "Запустить проигрывание ударов")
-                }
+                aria-label={localizedText(language, "Previous shot", "Предыдущий удар")}
               >
-                {playbackRunning ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+                <ChevronLeft className="h-3.5 w-3.5" />
               </button>
               <button
                 type="button"
-                onClick={() => setPlaybackIndex((current) => (sequenceShots.length ? (current + 1) % sequenceShots.length : 0))}
+                onClick={() => switchActiveShot(1)}
                 disabled={sequenceShots.length === 0}
                 className="inline-flex h-7 w-7 items-center justify-center rounded text-slate-700 hover:bg-slate-50 disabled:opacity-40"
                 aria-label={localizedText(language, "Next shot", "Следующий удар")}
               >
-                <SkipForward className="h-3.5 w-3.5" />
+                <ChevronRight className="h-3.5 w-3.5" />
               </button>
               <span className="min-w-12 px-1 text-right text-xs font-semibold text-slate-500 num-tabular">
-                {sequenceShots.length ? `${clampedPlaybackIndex + 1}/${sequenceShots.length}` : "0/0"}
+                {sequenceShots.length ? `${activeSequenceIndex + 1}/${sequenceShots.length}` : "0/0"}
               </span>
             </div>
             <select value={situation} onChange={(event) => setSituation(event.target.value as ShotSituationFilter)} className="rounded border border-slate-200 px-2 py-1">
@@ -250,14 +234,12 @@ export function ShotMapExplorer({
             <ShotPitchPanel
               title={<I18nText en="Team A attack" ru="Атака A" />}
               layers={splitAttackLayers}
-              showHeatmap={showHeatmap}
               activeShotId={activeSequenceShot?.id ?? null}
               language={language}
             />
             <ShotPitchPanel
               title={<I18nText en="Team B conceded" ru="Допущено B" />}
               layers={splitConcededLayers}
-              showHeatmap={showHeatmap}
               activeShotId={activeSequenceShot?.id ?? null}
               language={language}
             />
@@ -266,7 +248,6 @@ export function ShotMapExplorer({
           <div className="mt-3 overflow-x-auto">
             <ShotPitchPanel
               layers={layers}
-              showHeatmap={showHeatmap}
               activeShotId={activeSequenceShot?.id ?? null}
               compact={false}
               language={language}
@@ -422,7 +403,7 @@ function summarizeShooters(shots: ShotMapShot[], language: "en" | "ru") {
   return [...summaries.values()].sort((left, right) => right.shots - left.shots || right.xg - left.xg || left.playerName.localeCompare(right.playerName));
 }
 
-function orderShotsForPlayback(shots: ShotMapShot[]) {
+function orderShotsForSequence(shots: ShotMapShot[]) {
   return [...shots].sort((left, right) => {
     const leftDate = left.match_date ? new Date(left.match_date).getTime() : 0;
     const rightDate = right.match_date ? new Date(right.match_date).getTime() : 0;
@@ -487,14 +468,12 @@ function LegendItem({ tone, label }: { tone: "attacking" | "conceded" | "player"
 function ShotPitchPanel({
   title,
   layers,
-  showHeatmap,
   activeShotId,
   compact = true,
   language
 }: {
   title?: ReactNode;
   layers: ShotLayer[];
-  showHeatmap: boolean;
   activeShotId: string | null;
   compact?: boolean;
   language: "en" | "ru";
@@ -513,7 +492,7 @@ function ShotPitchPanel({
         </div>
       ) : null}
       <div className={frameClassName}>
-        <ShotPitchSvg layers={layers} showHeatmap={showHeatmap} activeShotId={activeShotId} language={language} />
+        <ShotPitchSvg layers={layers} activeShotId={activeShotId} language={language} />
         {shotCount === 0 ? (
           <div className="absolute inset-0 grid place-items-center bg-emerald-950/35 text-sm font-semibold text-white">
             <I18nText en="No shots for current filters" ru="Нет ударов по текущим фильтрам" />
@@ -524,7 +503,7 @@ function ShotPitchPanel({
   );
 }
 
-function ShotPitchSvg({ layers, showHeatmap, activeShotId, language }: { layers: ShotLayer[]; showHeatmap: boolean; activeShotId: string | null; language: "en" | "ru" }) {
+function ShotPitchSvg({ layers, activeShotId, language }: { layers: ShotLayer[]; activeShotId: string | null; language: "en" | "ru" }) {
   const penaltyArea = pitchRectFromCenterWidth(PENALTY_AREA_WIDTH_METERS, PENALTY_AREA_DEPTH_METERS);
   const sixYardBox = pitchRectFromCenterWidth(SIX_YARD_BOX_WIDTH_METERS, SIX_YARD_BOX_DEPTH_METERS);
   const goal = goalMouthRect();
@@ -543,9 +522,6 @@ function ShotPitchSvg({ layers, showHeatmap, activeShotId, language }: { layers:
         <filter id="shot-shadow" x="-50%" y="-50%" width="200%" height="200%">
           <feDropShadow dx="0" dy="1.2" stdDeviation="1.4" floodColor="#052e16" floodOpacity="0.36" />
         </filter>
-        <filter id="shot-heat-blur" x="-35%" y="-35%" width="170%" height="170%">
-          <feGaussianBlur stdDeviation="16" />
-        </filter>
       </defs>
 
       <rect width={PITCH_WIDTH} height={PITCH_HEIGHT} fill="#047857" />
@@ -563,38 +539,12 @@ function ShotPitchSvg({ layers, showHeatmap, activeShotId, language }: { layers:
         <path d={`M${zoneLineTwo} ${PITCH_FIELD_Y}V${PITCH_FIELD_Y + PITCH_FIELD_HEIGHT}`} />
       </g>
 
-      {showHeatmap ? <ShotHeatmap layers={layers} /> : null}
-
       {layers.map((layer) =>
         layer.shots.map((shot, index) => (
           <ShotMarker key={`${layer.key}-${shot.id}-${index}`} layer={layer} shot={shot} active={shot.id === activeShotId} />
         ))
       )}
     </svg>
-  );
-}
-
-function ShotHeatmap({ layers }: { layers: ShotLayer[] }) {
-  return (
-    <g filter="url(#shot-heat-blur)" opacity="0.95" style={{ mixBlendMode: "screen" }}>
-      {layers.map((layer) =>
-        layer.shots.map((shot, index) => {
-          const marker = shotMarkerGeometry(shot);
-          const radius = 28 + Math.sqrt(Math.max(shot.xg ?? 0.03, 0.03)) * 52;
-          const opacity = heatmapOpacity(layer.tone, shot);
-          return (
-            <circle
-              key={`heat-${layer.key}-${shot.id}-${index}`}
-              cx={marker.x}
-              cy={marker.y}
-              r={radius}
-              fill={heatmapFill(layer.tone)}
-              opacity={opacity}
-            />
-          );
-        })
-      )}
-    </g>
   );
 }
 
@@ -761,18 +711,6 @@ function markerStroke(tone: "attacking" | "conceded" | "player") {
   if (tone === "conceded") return "#312e81";
   if (tone === "player") return "#022c22";
   return "rgba(255,255,255,0.92)";
-}
-
-function heatmapFill(tone: "attacking" | "conceded" | "player") {
-  if (tone === "conceded") return "#818cf8";
-  if (tone === "player") return "#34d399";
-  return "#fb7185";
-}
-
-function heatmapOpacity(tone: "attacking" | "conceded" | "player", shot: ShotMapShot) {
-  const xgWeight = Math.min(0.22, Math.max(0.07, (shot.xg ?? 0.04) * 0.55));
-  const toneWeight = tone === "player" ? 1.2 : tone === "conceded" ? 0.92 : 1;
-  return xgWeight * toneWeight;
 }
 
 function shotDisplayCoordinates(shot: ShotMapShot): [number | null, number | null] {
