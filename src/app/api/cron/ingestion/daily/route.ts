@@ -1,10 +1,11 @@
 import { NextResponse } from "next/server";
 
 import { run_incremental_update } from "@/core_data/ingestion-jobs";
+import { jsonError, withApiHandler } from "@/lib/api-handler";
 import { requireCronAccess } from "@/lib/cron-auth";
 import { prisma } from "@/lib/db";
 
-export async function GET(request: Request) {
+export const GET = withApiHandler(async (request: Request) => {
   const cronAccessResponse = requireCronAccess(request);
   if (cronAccessResponse) return cronAccessResponse;
 
@@ -19,9 +20,6 @@ export async function GET(request: Request) {
       { status: result.started ? 202 : 200 }
     );
   } catch (error) {
-    return NextResponse.json(
-      { error: { code: "CRON_INGESTION_FAILED", message: error instanceof Error ? error.message : "Cron ingestion failed." } },
-      { status: 409 }
-    );
+    return jsonError("CRON_INGESTION_FAILED", error instanceof Error ? error.message : "Cron ingestion failed.", 409);
   }
-}
+});

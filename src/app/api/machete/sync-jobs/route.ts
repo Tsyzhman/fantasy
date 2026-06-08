@@ -1,12 +1,13 @@
 import { NextResponse } from "next/server";
 
+import { withApiHandler } from "@/lib/api-handler";
 import { requireApiUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export const GET = withApiHandler(async () => {
   const auth = await requireApiUser();
   if (auth.response) return auth.response;
 
@@ -20,4 +21,4 @@ export async function GET() {
   });
 
   return NextResponse.json({ jobs });
-}
+});

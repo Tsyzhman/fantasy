@@ -10,6 +10,20 @@ jobs:
   check:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_DB: fantasy_scout_test
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d fantasy_scout_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
 
     steps:
       - name: Checkout
@@ -26,6 +40,14 @@ jobs:
 
       - name: Generate Prisma client
         run: npm run prisma:generate
+
+      - name: Audit production dependencies
+        run: npm run audit:prod
+
+      - name: Run database integration tests
+        run: npm run prisma:migrate:deploy && npm run test:db
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fantasy_scout_test?schema=public
 
       - name: Run checks
         run: npm run check

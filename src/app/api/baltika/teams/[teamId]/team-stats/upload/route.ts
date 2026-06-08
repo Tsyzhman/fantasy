@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { jsonError, withApiHandler } from "@/lib/api-handler";
 import { requireApiAdmin } from "@/lib/auth";
 import { readFormDataOrNull } from "@/lib/request-form-data";
 import { importWyscoutTeamStatsForTeam } from "@/server/baltika/workbook-imports";
@@ -13,23 +14,20 @@ type Params = {
   }>;
 };
 
-export async function POST(request: Request, { params }: Params) {
+export const POST = withApiHandler(async (request: Request, { params }: Params) => {
   const auth = await requireApiAdmin();
   if (auth.response) return auth.response;
 
   const { teamId } = await params;
   const formData = await readFormDataOrNull(request);
   if (!formData) {
-    return NextResponse.json({ error: { code: "BAD_REQUEST", message: "Upload form data is required." } }, { status: 400 });
+    return jsonError("BAD_REQUEST", "Upload form data is required.", 400);
   }
 
   const upload = formData.get("file");
 
   if (!(upload instanceof File)) {
-    return NextResponse.json(
-      { error: { code: "MISSING_FILE", message: "Upload a Wyscout Team Stats .xlsx file in the file field." } },
-      { status: 400 }
-    );
+    return jsonError("MISSING_FILE", "Upload a Wyscout Team Stats .xlsx file in the file field.", 400);
   }
 
   const result = await importWyscoutTeamStatsForTeam(teamId, {
@@ -41,4 +39,4 @@ export async function POST(request: Request, { params }: Params) {
   });
 
   return NextResponse.json(result.payload, { status: result.status });
-}
+});

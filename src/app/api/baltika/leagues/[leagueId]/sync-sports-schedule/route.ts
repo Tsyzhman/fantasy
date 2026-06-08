@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { jsonError, withApiHandler } from "@/lib/api-handler";
 import { requireApiAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getSportsRuCalendarSource, fetchSportsRuCalendarFixtures } from "@/lib/providers/sports-ru-calendar";
@@ -16,7 +17,7 @@ type Params = {
   }>;
 };
 
-export async function POST(_request: Request, { params }: Params) {
+export const POST = withApiHandler(async (_request: Request, { params }: Params) => {
   const auth = await requireApiAdmin();
   if (auth.response) return auth.response;
 
@@ -106,7 +107,7 @@ export async function POST(_request: Request, { params }: Params) {
     snapshotsRecalculated,
     source: source.fantasyUrl
   });
-}
+});
 
 type TeamMatcherTeam = {
   id: string;
@@ -127,5 +128,5 @@ function createTeamMatcher(teams: TeamMatcherTeam[]) {
 }
 
 function errorResponse(code: string, message: string, status: number) {
-  return NextResponse.json({ error: { code, message } }, { status });
+  return jsonError(code, message, status);
 }

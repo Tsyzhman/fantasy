@@ -1,13 +1,14 @@
 import { NextResponse } from "next/server";
 
+import { requiredSearchParam, withApiHandler } from "@/lib/api-handler";
 import { prisma } from "@/lib/db";
 import { get_shot_map_comparison_for_windows } from "@/lib/shot-maps";
 import { parseMacheteMatchWindow } from "@/scoring/machete/match-window";
 
-export async function GET(request: Request) {
+export const GET = withApiHandler(async (request: Request) => {
   const url = new URL(request.url);
-  const attackingTeamId = url.searchParams.get("attacking_team_id");
-  const defendingTeamId = url.searchParams.get("defending_team_id");
+  const attackingTeamId = requiredSearchParam(url.searchParams, "attacking_team_id");
+  const defendingTeamId = requiredSearchParam(url.searchParams, "defending_team_id");
   const attackingWindow = parseMacheteMatchWindow({
     mode: url.searchParams.get("attacking_match_window"),
     legacyRecentMatches: url.searchParams.get("attacking_matches")
@@ -17,10 +18,6 @@ export async function GET(request: Request) {
     legacyRecentMatches: url.searchParams.get("defending_matches")
   });
 
-  if (!attackingTeamId || !defendingTeamId) {
-    return NextResponse.json({ error: "attacking_team_id and defending_team_id are required" }, { status: 400 });
-  }
-
   const comparison = await get_shot_map_comparison_for_windows(prisma, attackingTeamId, defendingTeamId, attackingWindow, defendingWindow);
   return NextResponse.json(comparison);
-}
+});

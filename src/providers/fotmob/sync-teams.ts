@@ -1,10 +1,14 @@
 import type { PrismaClient } from "@prisma/client";
 
+import { createLogger } from "@/lib/logger";
+import { isWorldCup2026 } from "@/scoring/machete/world-cup";
+
 import { createFotMobClient } from "./client";
 import { normalizeMachetePlayer, normalizeMacheteTeam } from "./normalizers";
 import { storeMacheteRawPayload } from "./raw-payloads";
 import type { FotMobTeam } from "./types";
-import { isWorldCup2026 } from "@/scoring/machete/world-cup";
+
+const logger = createLogger("fotmob-sync-teams");
 
 export async function syncMacheteTeams(prisma: PrismaClient, leagueId: string) {
   const league = await prisma.macheteLeague.findUnique({ where: { id: leagueId } });
@@ -119,7 +123,11 @@ export function filterMacheteTeamsForSync(input: { teams: FotMobTeam[]; provider
       .map((team) => `${team.name} (${team.id})`)
       .join(", ");
     const suffix = teamsWithoutPlayers.length > 12 ? ", ..." : "";
-    console.warn(`[fotmob] Ignoring ${teamsWithoutPlayers.length} World Cup teams without players: ${names}${suffix}`);
+    logger.warn(`Ignoring ${teamsWithoutPlayers.length} World Cup teams without players: ${names}${suffix}`, {
+      providerLeagueId: input.providerLeagueId,
+      season: input.season,
+      ignoredTeamsCount: teamsWithoutPlayers.length
+    });
   }
 
   return teamsWithPlayers;

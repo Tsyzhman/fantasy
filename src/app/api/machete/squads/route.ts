@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { jsonError, withApiHandler } from "@/lib/api-handler";
 import { requireApiUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { macheteLeagueDisplayName } from "@/lib/leagues/display";
@@ -18,7 +19,7 @@ import {
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function POST(request: Request) {
+export const POST = withApiHandler(async (request: Request) => {
   const auth = await requireApiUser();
   if (auth.response) return auth.response;
   const userId = auth.user.id;
@@ -27,7 +28,7 @@ export async function POST(request: Request) {
   const leagueId = parseBigInt(body.leagueId);
   const season = typeof body.season === "string" ? body.season : "";
   if (!leagueId || !season) {
-    return NextResponse.json({ error: { code: "BAD_REQUEST", message: "leagueId and season are required." } }, { status: 400 });
+    return jsonError("BAD_REQUEST", "leagueId and season are required.", 400);
   }
 
   const leagueSeason = await prisma.leagueSeason.findUnique({
@@ -42,7 +43,7 @@ export async function POST(request: Request) {
     }
   });
   if (!leagueSeason) {
-    return NextResponse.json({ error: { code: "NOT_FOUND", message: "League season not found." } }, { status: 404 });
+    return jsonError("NOT_FOUND", "League season not found.", 404);
   }
 
   const selections = parseSelections(body.selections);
@@ -96,7 +97,7 @@ export async function POST(request: Request) {
 
   const validationError = validateSquadSelections(safeSelections, rosterByPlayerId, rules);
   if (validationError) {
-    return NextResponse.json({ error: { code: "BAD_REQUEST", message: validationError } }, { status: 400 });
+    return jsonError("BAD_REQUEST", validationError, 400);
   }
 
   const horizonRounds = normalizeFantasyHorizon(body.horizonRounds, rules.horizonOptions);
@@ -120,10 +121,7 @@ export async function POST(request: Request) {
   const transferLimit = fantasyTransferLimitForHorizon(horizonRounds);
   const transferCount = countFantasySquadTransfers(savedSelections, safeSelections);
   if (savedSelections.length === rules.squadSize && transferCount > transferLimit) {
-    return NextResponse.json(
-      { error: { code: "BAD_REQUEST", message: `You made ${transferCount} transfers; limit for this forecast is ${transferLimit}.` } },
-      { status: 400 }
-    );
+    return jsonError("BAD_REQUEST", `You made ${transferCount} transfers; limit for this forecast is ${transferLimit}.`, 400);
   }
 
   const squad = await saveFantasySquad(prisma, {
@@ -142,7 +140,7 @@ export async function POST(request: Request) {
       savedPlayers: safeSelections.length
     }
   });
-}
+});
 
 function parseSelections(value: unknown): FantasySquadSelection[] {
   if (!Array.isArray(value)) return [];

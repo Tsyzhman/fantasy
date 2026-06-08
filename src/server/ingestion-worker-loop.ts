@@ -1,7 +1,9 @@
 import { runIngestionWorkerTick } from "@/core_data/worker";
 import { prisma } from "@/lib/db";
+import { createLogger } from "@/lib/logger";
 
 const DEFAULT_INTERVAL_MS = 10_000;
+const logger = createLogger("ingestion:worker");
 
 type WorkerLoopState = {
   running: boolean;
@@ -35,7 +37,7 @@ export function startIngestionWorkerLoop() {
   state.timer.unref?.();
 
   void runWorkerTick(state);
-  console.info(`[ingestion:worker] In-process worker loop started; polling every ${intervalMs}ms.`);
+  logger.info("In-process worker loop started.", { intervalMs });
 }
 
 async function runWorkerTick(state: WorkerLoopState) {
@@ -45,7 +47,7 @@ async function runWorkerTick(state: WorkerLoopState) {
   try {
     await runIngestionWorkerTick(prisma);
   } catch (error) {
-    console.error("[ingestion:worker] In-process run failed.", error);
+    logger.error("In-process run failed.", { error });
   } finally {
     state.running = false;
   }

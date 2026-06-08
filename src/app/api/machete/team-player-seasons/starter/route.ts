@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 
+import { jsonError, withApiHandler } from "@/lib/api-handler";
 import { requireApiAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { readJsonObjectOrNull } from "@/lib/request-json";
 
 export const dynamic = "force-dynamic";
 
@@ -14,21 +16,18 @@ type StarterPayload = {
   isStarter?: unknown;
 };
 
-export async function PATCH(request: Request) {
+export const PATCH = withApiHandler(async (request: Request) => {
   const auth = await requireApiAdmin();
   if (auth.response) return auth.response;
 
-  const payload = (await request.json().catch(() => null)) as StarterPayload | null;
+  const payload = (await readJsonObjectOrNull(request)) as StarterPayload | null;
   const leagueId = bigintPayloadValue(payload?.leagueId);
   const teamId = bigintPayloadValue(payload?.teamId);
   const playerId = bigintPayloadValue(payload?.playerId);
   const season = typeof payload?.season === "string" ? payload.season : null;
 
   if (!payload || !leagueId || !season || !teamId || !playerId || typeof payload.isStarter !== "boolean") {
-    return NextResponse.json(
-      { error: { code: "INVALID_PAYLOAD", message: "leagueId, season, teamId, playerId and boolean isStarter are required." } },
-      { status: 400 }
-    );
+    return jsonError("INVALID_PAYLOAD", "leagueId, season, teamId, playerId and boolean isStarter are required.", 400);
   }
 
   try {
@@ -61,12 +60,12 @@ export async function PATCH(request: Request) {
     });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
-      return NextResponse.json({ error: { code: "PLAYER_NOT_FOUND", message: "Team player season row not found." } }, { status: 404 });
+      return jsonError("PLAYER_NOT_FOUND", "Team player season row not found.", 404);
     }
 
     throw error;
   }
-}
+});
 
 function bigintPayloadValue(value: unknown) {
   if (typeof value === "bigint") return value;

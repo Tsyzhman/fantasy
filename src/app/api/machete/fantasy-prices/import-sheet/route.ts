@@ -1,6 +1,7 @@
 import type ExcelJS from "exceljs";
 import { NextResponse } from "next/server";
 
+import { jsonError, withApiHandler } from "@/lib/api-handler";
 import { requireApiAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { readFormDataOrNull } from "@/lib/request-form-data";
@@ -9,28 +10,28 @@ import { importFantasyPriceWorkbook } from "@/machete/fantasy_price_sheet_import
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function POST(request: Request) {
+export const POST = withApiHandler(async (request: Request) => {
   const auth = await requireApiAdmin();
   if (auth.response) return auth.response;
 
   const formData = await readFormDataOrNull(request);
   if (!formData) {
-    return NextResponse.json({ error: { code: "BAD_REQUEST", message: "Upload form data is required." } }, { status: 400 });
+    return jsonError("BAD_REQUEST", "Upload form data is required.", 400);
   }
 
   const leagueId = parseBigInt(formData.get("leagueId"));
   const season = stringValue(formData.get("season"));
   const file = formData.get("file");
   if (!leagueId || !season) {
-    return NextResponse.json({ error: { code: "BAD_REQUEST", message: "leagueId and season are required." } }, { status: 400 });
+    return jsonError("BAD_REQUEST", "leagueId and season are required.", 400);
   }
   if (!(file instanceof File) || file.size === 0) {
-    return NextResponse.json({ error: { code: "BAD_REQUEST", message: "XLSX file is required." } }, { status: 400 });
+    return jsonError("BAD_REQUEST", "XLSX file is required.", 400);
   }
 
   const maxBytes = maxUploadBytes();
   if (file.size > maxBytes) {
-    return NextResponse.json({ error: { code: "BAD_REQUEST", message: `File is larger than ${Math.round(maxBytes / 1024 / 1024)} MB.` } }, { status: 400 });
+    return jsonError("BAD_REQUEST", `File is larger than ${Math.round(maxBytes / 1024 / 1024)} MB.`, 400);
   }
 
   const workbook = await readWorkbookFromFile(file);
@@ -46,17 +47,9 @@ export async function POST(request: Request) {
 
     return NextResponse.json({ import: result });
   } catch (error) {
-    return NextResponse.json(
-      {
-        error: {
-          code: "IMPORT_FAILED",
-          message: error instanceof Error ? error.message : "Failed to import price sheet."
-        }
-      },
-      { status: 400 }
-    );
+    return jsonError("IMPORT_FAILED", error instanceof Error ? error.message : "Failed to import price sheet.", 400);
   }
-}
+});
 
 function parseBigInt(value: FormDataEntryValue | null) {
   if (typeof value !== "string" || !/^\d+$/.test(value)) return null;

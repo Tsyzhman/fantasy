@@ -10,12 +10,15 @@
     "build": "next build --webpack",
     "start": "next start -H 0.0.0.0",
     "test": "tsx --test \"src/**/*.test.ts\"",
+    "test:db": "tsx --test \"src/**/*.db-test.ts\"",
+    "audit:prod": "npm audit --omit=dev --audit-level=high",
     "lint": "eslint .",
     "typecheck": "next typegen && tsc --noEmit",
     "check": "npm run test && npm run lint && npm run typecheck && npm run build",
     "clean:dev": "tsx scripts/clean-dev.ts",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
+    "prisma:migrate:deploy": "prisma migrate deploy",
     "db:safe-update": "tsx scripts/apply-safe-db-update.ts",
     "db:prod-update": "npm run db:safe-update && prisma generate",
     "db:seed": "tsx prisma/seed.ts",
@@ -28,6 +31,7 @@
     "ingestion:worker": "tsx scripts/ingestion-runner.ts worker",
     "ingestion:reparse-raw": "tsx scripts/ingestion-runner.ts reparse-raw",
     "ingestion:import-payloads": "tsx scripts/ingestion-runner.ts import-payloads",
+    "payloads:audit": "tsx scripts/audit-raw-payloads.ts",
     "payloads:prune-finalized": "tsx scripts/prune-finalized-raw-payloads.ts",
     "payloads:prune-machete": "tsx scripts/prune-machete-raw-payloads.ts",
     "db:merge-leagues": "tsx scripts/merge-core-leagues.ts",
@@ -67,6 +71,7 @@
     "seed": "tsx prisma/seed.ts"
   },
   "overrides": {
-    "postcss": "8.5.15"
+    "postcss": "8.5.15",
+    "tmp": "^0.2.6"
   }
 }

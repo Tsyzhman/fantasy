@@ -33,6 +33,15 @@ test("cron routes reject requests with the wrong bearer secret", async () => {
   });
 });
 
+test("cron routes reject bearer tokens that only share a prefix", async () => {
+  await withEnv({ CRON_SECRET: "expected-secret", DATABASE_URL: "postgresql://user:pass@localhost:5432/app" }, async () => {
+    const headers = { authorization: "Bearer expected-secret-extra" };
+    const dailyResponse = await dailyIngestionCron(new Request("http://localhost/api/cron/ingestion/daily", { headers }));
+    assert.equal(dailyResponse.status, 403);
+    assert.equal((await dailyResponse.json()).error.code, "FORBIDDEN");
+  });
+});
+
 test("cron routes reject requests when CRON_SECRET is not configured", async () => {
   await withEnv({ CRON_SECRET: undefined, DATABASE_URL: "postgresql://user:pass@localhost:5432/app" }, async () => {
     const headers = { authorization: "Bearer anything" };

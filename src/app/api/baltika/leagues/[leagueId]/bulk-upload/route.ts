@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { jsonError, withApiHandler } from "@/lib/api-handler";
 import { requireApiAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { readFormDataOrNull } from "@/lib/request-form-data";
@@ -41,20 +42,20 @@ type BulkUploadResult = {
 
 const organizationTokens = new Set(["fc", "afc", "ac", "sc", "cf", "fk", "cd", "sv", "sad", "jk", "bb"]);
 
-export async function POST(request: Request, { params }: Params) {
+export const POST = withApiHandler(async (request: Request, { params }: Params) => {
   const auth = await requireApiAdmin();
   if (auth.response) return auth.response;
 
   const { leagueId } = await params;
   const formData = await readFormDataOrNull(request);
   if (!formData) {
-    return NextResponse.json({ error: { code: "BAD_REQUEST", message: "Upload form data is required." } }, { status: 400 });
+    return jsonError("BAD_REQUEST", "Upload form data is required.", 400);
   }
 
   const uploads = [...formData.getAll("files"), ...formData.getAll("file")].filter((value): value is File => value instanceof File);
 
   if (uploads.length === 0) {
-    return NextResponse.json({ error: { code: "MISSING_FILES", message: "Upload one or more .xlsx files." } }, { status: 400 });
+    return jsonError("MISSING_FILES", "Upload one or more .xlsx files.", 400);
   }
 
   const league = await prisma.league.findUnique({
@@ -76,12 +77,12 @@ export async function POST(request: Request, { params }: Params) {
   });
 
   if (!league) {
-    return NextResponse.json({ error: { code: "LEAGUE_NOT_FOUND", message: "League not found." } }, { status: 404 });
+    return jsonError("LEAGUE_NOT_FOUND", "League not found.", 404);
   }
 
   const seasonId = String(formData.get("seasonId") ?? league.seasons[0]?.id ?? "");
   if (!seasonId) {
-    return NextResponse.json({ error: { code: "SEASON_NOT_FOUND", message: "Create a season before importing files." } }, { status: 400 });
+    return jsonError("SEASON_NOT_FOUND", "Create a season before importing files.", 400);
   }
 
   const results: BulkUploadResult[] = [];
@@ -148,7 +149,7 @@ export async function POST(request: Request, { params }: Params) {
     },
     { status: failed.length > 0 ? 207 : 200 }
   );
-}
+});
 
 function detectFileKind(filename: string): BulkFileKind {
   return normalizeName(baseNameWithoutExtension(filename)).startsWith("team stats") ? "teamStats" : "players";

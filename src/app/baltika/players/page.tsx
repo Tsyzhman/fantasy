@@ -1,4 +1,5 @@
 import { ImportStatus, Prisma } from "@prisma/client";
+import { Download } from "lucide-react";
 import Link from "next/link";
 
 import {
@@ -259,6 +260,8 @@ export default async function PlayersPage({ searchParams }: PageProps) {
       >
         <PlayerSavedViews source="baltika" />
         <PlayerWatchlistPanel source="baltika" />
+        <ExportLink href={baltikaPlayerExportHref(paginationParams, "csv")} label="CSV" />
+        <ExportLink href={baltikaPlayerExportHref(paginationParams, "xlsx")} label="XLSX" />
         <PlayerCompareToggle />
         <PaginationLinks page={page} pageCount={pageCount} params={paginationParams} />
       </ResultsToolbar>
@@ -521,6 +524,18 @@ function PaginationLinks({
   );
 }
 
+function ExportLink({ href, label }: { href: string; label: string }) {
+  return (
+    <Link
+      href={href}
+      className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-1.5 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+    >
+      <Download className="h-4 w-4" aria-hidden="true" />
+      {label}
+    </Link>
+  );
+}
+
 function baltikaPlayersHref(params: SearchParams, page: number) {
   const query = new URLSearchParams();
   for (const [key, value] of Object.entries(params)) {
@@ -529,6 +544,16 @@ function baltikaPlayersHref(params: SearchParams, page: number) {
   }
   query.set("page", String(page));
   return `/baltika/players?${query.toString()}`;
+}
+
+function baltikaPlayerExportHref(params: SearchParams, format: "csv" | "xlsx") {
+  const query = new URLSearchParams();
+  for (const [key, value] of Object.entries(params)) {
+    if (key === "page" || key === "pageSize") continue;
+    if (typeof value === "string" && value !== "") query.set(key, value);
+  }
+  query.set("format", format);
+  return `/api/players?${query.toString()}`;
 }
 
 function playerSnapshotOrderBy(sortValue: string): Prisma.PlayerSnapshotOrderByWithRelationInput[] {

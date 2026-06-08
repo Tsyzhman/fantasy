@@ -1,5 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 
+import { createLogger } from "@/lib/logger";
 import { aggregateMachetePlayerSnapshots } from "@/scoring/machete/aggregateMachetePlayerSnapshots";
 import { getMacheteAggregateMatchDenominator } from "@/scoring/machete/aggregate-match-denominator";
 import { fixtureSyncSeasons } from "@/scoring/machete/match-window";
@@ -11,6 +12,8 @@ import { storeMacheteRawPayload } from "./raw-payloads";
 import { syncMacheteFixtures } from "./sync-fixtures";
 import { syncMacheteMatchShots } from "./sync-shots";
 import type { FotMobPlayerMatchStat, FotMobTeam } from "./types";
+
+const logger = createLogger("fotmob-sync-player-stats");
 
 type SyncPlayerStatsOptions = {
   syncFixtures?: boolean;
@@ -190,9 +193,7 @@ export async function syncMacheteTeamPlayerStats(prisma: PrismaClient, teamId: s
       const shotResult = await syncMacheteMatchShots(prisma, fixture, details);
       shotsCount += shotResult.shotsSynced;
     } catch (error) {
-      console.warn(
-        `[mixerr] Could not sync FotMob shots for fixture ${fixture.providerFixtureId}: ${error instanceof Error ? error.message : "unknown error"}`
-      );
+      logger.warn("Could not sync FotMob shots for fixture.", { fixtureId: fixture.providerFixtureId, error });
     }
 
     for (const stat of details.playerStats.filter((item) => item.teamId === team.providerTeamId)) {

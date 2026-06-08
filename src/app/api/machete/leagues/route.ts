@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { withApiHandler } from "@/lib/api-handler";
 import { requireApiAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { readJsonObject } from "@/lib/request-json";
@@ -7,7 +8,7 @@ import { readJsonObject } from "@/lib/request-json";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function POST(request: Request) {
+export const POST = withApiHandler(async (request: Request) => {
   const auth = await requireApiAdmin();
   if (auth.response) return auth.response;
 
@@ -24,4 +25,4 @@ export async function POST(request: Request) {
   });
 
   return NextResponse.json({ league });
-}
+});

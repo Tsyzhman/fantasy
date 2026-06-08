@@ -1,6 +1,9 @@
 import { PrismaClient } from "@prisma/client";
 
 import { hasDatabaseUrl, isDatabaseConfigured } from "@/lib/database-url";
+import { createLogger } from "@/lib/logger";
+
+const logger = createLogger("db");
 
 const globalForPrisma = globalThis as unknown as {
   prisma?: PrismaClient;
@@ -84,6 +87,22 @@ BEGIN
     ALTER TABLE "UserSession" ADD CONSTRAINT "UserSession_userId_fkey"
       FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
   END IF;
+
+  CREATE TABLE IF NOT EXISTS "AuthRateLimit" (
+    "id" TEXT NOT NULL,
+    "action" TEXT NOT NULL,
+    "subjectHash" TEXT NOT NULL,
+    "failedCount" INTEGER NOT NULL DEFAULT 0,
+    "lastFailedAt" TIMESTAMP(3),
+    "lockedUntil" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT "AuthRateLimit_pkey" PRIMARY KEY ("id")
+  );
+  CREATE UNIQUE INDEX IF NOT EXISTS "AuthRateLimit_action_subjectHash_key"
+    ON "AuthRateLimit"("action", "subjectHash");
+  CREATE INDEX IF NOT EXISTS "AuthRateLimit_lockedUntil_idx"
+    ON "AuthRateLimit"("lockedUntil");
 
   IF to_regclass('sports_ru_fantasy_contests') IS NULL THEN
     CREATE TABLE "sports_ru_fantasy_contests" (
@@ -321,7 +340,7 @@ END $$;
 `)
     .then(() => undefined)
     .catch((error) => {
-      console.error("[db] Failed to ensure database schema.", error);
+      logger.error("Failed to ensure database schema.", { error });
     });
 
   return globalForPrisma.scoringSchemaPromise;

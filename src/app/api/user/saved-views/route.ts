@@ -1,6 +1,7 @@
 import { Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 
+import { jsonError, withApiHandler } from "@/lib/api-handler";
 import { requireApiUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { readJsonObject } from "@/lib/request-json";
@@ -13,7 +14,7 @@ type SavedViewSource = "machete" | "baltika";
 const maxSavedViews = 8;
 const validSources = new Set<SavedViewSource>(["machete", "baltika"]);
 
-export async function GET(request: Request) {
+export const GET = withApiHandler(async (request: Request) => {
   const auth = await requireApiUser();
   if (auth.response) return auth.response;
   const userId = auth.user.id;
@@ -22,9 +23,9 @@ export async function GET(request: Request) {
   if (!source) return badRequest("source must be machete or baltika.");
 
   return NextResponse.json({ views: await loadSavedViews(userId, source) });
-}
+});
 
-export async function POST(request: Request) {
+export const POST = withApiHandler(async (request: Request) => {
   const auth = await requireApiUser();
   if (auth.response) return auth.response;
   const userId = auth.user.id;
@@ -63,9 +64,9 @@ export async function POST(request: Request) {
 
   await trimSavedViews(userId, source);
   return NextResponse.json({ views: await loadSavedViews(userId, source) });
-}
+});
 
-export async function DELETE(request: Request) {
+export const DELETE = withApiHandler(async (request: Request) => {
   const auth = await requireApiUser();
   if (auth.response) return auth.response;
   const userId = auth.user.id;
@@ -85,7 +86,7 @@ export async function DELETE(request: Request) {
   });
 
   return NextResponse.json({ views: await loadSavedViews(userId, source) });
-}
+});
 
 async function loadSavedViews(userId: string, source: SavedViewSource) {
   const views = await prisma.userSavedView.findMany({
@@ -147,5 +148,5 @@ function inputJson(value: unknown): Prisma.InputJsonValue | undefined {
 }
 
 function badRequest(message: string) {
-  return NextResponse.json({ error: { code: "BAD_REQUEST", message } }, { status: 400 });
+  return jsonError("BAD_REQUEST", message, 400);
 }

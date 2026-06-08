@@ -1,9 +1,11 @@
 import { pruneOldLeagueSeasons } from "@/core_data/league-season-retention";
 import { prisma } from "@/lib/db";
+import { createLogger } from "@/lib/logger";
 
 const DEFAULT_RETENTION_TIME = "03:30";
 const DEFAULT_TIME_ZONE = "Europe/Moscow";
 const MAX_TIMER_DELAY_MS = 24 * 60 * 60 * 1000;
+const logger = createLogger("retention");
 
 type SchedulerState = {
   running: boolean;
@@ -44,7 +46,7 @@ function scheduleNextRun(state: SchedulerState) {
   }, Math.min(schedule.delayMs, MAX_TIMER_DELAY_MS));
   state.timer.unref?.();
 
-  console.info(`[retention] Scheduled league season cleanup at ${schedule.label}.`);
+  logger.info("Scheduled league season cleanup.", { scheduledFor: schedule.label });
 }
 
 async function runScheduledRetention(state: SchedulerState, scheduledFor: string) {
@@ -52,15 +54,15 @@ async function runScheduledRetention(state: SchedulerState, scheduledFor: string
 
   state.running = true;
   try {
-    console.info(`[retention] Running scheduled league season cleanup for ${scheduledFor}.`);
+    logger.info("Running scheduled league season cleanup.", { scheduledFor });
     const result = await pruneOldLeagueSeasons(prisma);
     if (result.skipped) {
-      console.info(`[retention] Scheduled cleanup skipped: ${result.reason ?? "nothing to do"}.`);
+      logger.info("Scheduled cleanup skipped.", { reason: result.reason ?? "nothing to do" });
     } else {
-      console.info(`[retention] Scheduled cleanup removed ${result.deleted.leagueSeasons ?? 0} league seasons.`);
+      logger.info("Scheduled cleanup removed league seasons.", { deletedLeagueSeasons: result.deleted.leagueSeasons ?? 0 });
     }
   } catch (error) {
-    console.error("[retention] Scheduled league season cleanup crashed.", error);
+    logger.error("Scheduled league season cleanup crashed.", { error });
   } finally {
     state.running = false;
   }

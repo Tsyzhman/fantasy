@@ -1,0 +1,96 @@
+name: Deploy Production
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: Print the remote deployment command without executing it.
+        required: true
+        default: "true"
+        type: choice
+        options:
+          - "true"
+          - "false"
+      ref:
+        description: Git ref to deploy on the production host.
+        required: true
+        default: main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment: production
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Generate Prisma client
+        run: npm run prisma:generate
+
+      - name: Run checks before deploy
+        run: npm run check
+
+      - name: Prepare SSH key
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          test -n "$DEPLOY_SSH_KEY"
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+
+      - name: Deploy over SSH
+        env:
+          DEPLOY_DRY_RUN: ${{ inputs.dry_run }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
+          DEPLOY_PM2_PROCESS: ${{ secrets.DEPLOY_PM2_PROCESS }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_REF: ${{ inputs.ref }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          set -euo pipefail
+          : "${DEPLOY_HOST:?DEPLOY_HOST secret is required}"
+          : "${DEPLOY_PATH:?DEPLOY_PATH secret is required}"
+          : "${DEPLOY_PM2_PROCESS:?DEPLOY_PM2_PROCESS secret is required}"
+          : "${DEPLOY_USER:?DEPLOY_USER secret is required}"
+          DEPLOY_PORT="${DEPLOY_PORT:-22}"
+
+          ssh-keyscan -p "$DEPLOY_PORT" "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+
+          remote_command=$(cat <<EOF
+          set -euo pipefail
+          cd "$DEPLOY_PATH"
+          git fetch origin "$DEPLOY_REF"
+          git checkout "$DEPLOY_REF"
+          git pull --ff-only origin "$DEPLOY_REF"
+          npm ci --no-audit --no-fund
+          npm run prisma:generate
+          npm run prisma:migrate:deploy
+          npm run build
+          test -f .next/prerender-manifest.json
+          pm2 restart "$DEPLOY_PM2_PROCESS" --update-env
+          pm2 save
+          EOF
+          )
+
+          if [ "$DEPLOY_DRY_RUN" = "true" ]; then
+            printf '%s\n' "$remote_command"
+            exit 0
+          fi
+
+          ssh -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" "$remote_command"

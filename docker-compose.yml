@@ -6,9 +6,9 @@ services:
     environment:
       POSTGRES_DB: fantasy_scout
       POSTGRES_USER: fantasy_app
-      POSTGRES_PASSWORD: fantasy_app_password
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}
     ports:
-      - "5433:5432"
+      - "127.0.0.1:${FANTASY_POSTGRES_HOST_PORT:-5433}:5432"
     volumes:
       - fantasy-scout-postgres:/var/lib/postgresql/data
     healthcheck:
@@ -25,7 +25,7 @@ services:
       - setup
     restart: "no"
     environment:
-      DATABASE_URL: postgresql://fantasy_app:fantasy_app_password@postgres:5432/fantasy_scout
+      DATABASE_URL: postgresql://fantasy_app:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/fantasy_scout
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-replace-with-long-random-secret}
       NEXTAUTH_URL: ${NEXTAUTH_URL:-https://fantasy.tsyzhman.ru}
       CRON_SECRET: ${CRON_SECRET:-strong-secret}
@@ -62,7 +62,7 @@ services:
     container_name: fantasy-scout-web
     restart: unless-stopped
     environment:
-      DATABASE_URL: postgresql://fantasy_app:fantasy_app_password@postgres:5432/fantasy_scout
+      DATABASE_URL: postgresql://fantasy_app:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/fantasy_scout
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-replace-with-long-random-secret}
       NEXTAUTH_URL: ${NEXTAUTH_URL:-https://fantasy.tsyzhman.ru}
       CRON_SECRET: ${CRON_SECRET:-strong-secret}
@@ -89,12 +89,18 @@ services:
       ENABLE_API_FOOTBALL_PROVIDER: "false"
       ENABLE_WYSCOUT_API_PROVIDER: "false"
     ports:
-      - "3000:3000"
+      - "127.0.0.1:${FANTASY_HOST_PORT:-3000}:3000"
     volumes:
       - fantasy-scout-uploads:/app/storage/uploads
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://127.0.0.1:3000/api/health').then((res)=>process.exit(res.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
 
 volumes:
   fantasy-scout-postgres:

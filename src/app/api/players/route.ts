@@ -1,9 +1,12 @@
 import { ImportStatus, Prisma } from "@prisma/client";
 import { NextResponse } from "next/server";
 
+import { jsonError, withApiHandler } from "@/lib/api-handler";
 import { requireApiUser } from "@/lib/auth";
 import { finiteNumberQueryParam } from "@/lib/api-query";
+import type { CsvColumn } from "@/lib/csv";
 import { prisma } from "@/lib/db";
+import { parseTableExportFormat, tableExportResponse } from "@/lib/table-export";
 
 export const dynamic = "force-dynamic";
 
@@ -25,7 +28,33 @@ const playerSnapshotSortColumns = {
   valueScore: { field: "valueScore", defaultDirection: "desc", nullable: true }
 } as const;
 
-export async function GET(request: Request) {
+type PlayerSnapshotApiRow = Prisma.PlayerSnapshotGetPayload<{
+  include: {
+    team: true;
+    league: true;
+  };
+}>;
+
+const playerCsvColumns: CsvColumn<PlayerSnapshotApiRow>[] = [
+  { header: "Player", value: (player) => player.playerName },
+  { header: "Team", value: (player) => player.team?.name ?? player.teamName },
+  { header: "League", value: (player) => player.league?.name ?? "" },
+  { header: "Position", value: (player) => player.positionGroup ?? player.positionRaw ?? "" },
+  { header: "Starter", value: (player) => (player.isStarter ? "yes" : "no") },
+  { header: "Age", value: (player) => player.age },
+  { header: "Minutes", value: (player) => player.minutesPlayed },
+  { header: "Goals", value: (player) => player.goals },
+  { header: "xG", value: (player) => player.xg },
+  { header: "Assists", value: (player) => player.assists },
+  { header: "xA", value: (player) => player.xa },
+  { header: "Market value", value: (player) => player.marketValue },
+  { header: "Fantasy score", value: (player) => player.fantasyScore },
+  { header: "Scoring score", value: (player) => player.scoringScore },
+  { header: "Alternative score", value: (player) => player.alternativeScore },
+  { header: "Value score", value: (player) => player.valueScore }
+];
+
+export const GET = withApiHandler(async (request: Request) => {
   const auth = await requireApiUser();
   if (auth.response) return auth.response;
 
@@ -64,8 +93,20 @@ export async function GET(request: Request) {
     }
   });
 
+  const exportFormat = parseTableExportFormat(params.get("format"), null);
+  if (params.has("format")) {
+    if (!exportFormat) return jsonError("INVALID_FORMAT", "format must be csv or xlsx.", 400);
+    return tableExportResponse({
+      rows: players,
+      columns: playerCsvColumns,
+      format: exportFormat,
+      filename: "players",
+      sheetName: "Players"
+    });
+  }
+
   return NextResponse.json({ players });
-}
+});
 
 function playerSnapshotOrderBy(sortValue: string): Prisma.PlayerSnapshotOrderByWithRelationInput[] {
   const [rawKey, rawDirection] = sortValue.split(":");

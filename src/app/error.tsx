@@ -1,0 +1,34 @@
+"use client";
+
+import { RotateCcw } from "lucide-react";
+
+import { I18nText } from "@/components/i18n-text";
+
+export default function Error({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
+  return (
+    <main className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-3xl items-center px-4 py-12 sm:px-6 lg:px-8">
+      <section className="w-full rounded border border-rose-200 bg-white p-6 shadow-soft">
+        <p className="text-sm font-semibold uppercase tracking-wide text-rose-700">
+          <I18nText en="Something went wrong" ru="Что-то пошло не так" />
+        </p>
+        <h1 className="mt-2 text-2xl font-bold text-ink">
+          <I18nText en="This screen could not be loaded." ru="Этот экран не удалось загрузить." />
+        </h1>
+        <p className="mt-3 text-sm text-slate-600">
+          <I18nText
+            en="Try loading it again. If the error repeats, the latest action may need a server check."
+            ru="Попробуйте загрузить его снова. Если ошибка повторится, последнее действие может требовать проверки сервера."
+          />
+        </p>
+        <button
+          type="button"
+          onClick={() => reset()}
+          className="btn-brand mt-5 inline-flex items-center justify-center gap-2 rounded px-4 py-2 text-sm font-semibold"
+        >
+          <RotateCcw className="h-4 w-4" />
+          <I18nText en="Try again" ru="Повторить" />
+        </button>
+      </section>
+    </main>
+  );
+}

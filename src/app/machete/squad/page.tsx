@@ -1,4 +1,5 @@
 import { UserRole } from "@prisma/client";
+import { Download } from "lucide-react";
 import Link from "next/link";
 
 import { FantasyPriceSheetImportForm } from "@/components/machete/FantasyPriceSheetImportForm";
@@ -65,9 +66,23 @@ export default async function MacheteSquadPage({ searchParams }: PageProps) {
               />
             </p>
           </div>
-          <Link href={machetePlayersHref(selectedLeague)} className="inline-flex items-center justify-center rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-            <I18nText en="Player explorer" ru="Таблица игроков" />
-          </Link>
+          <div className="flex flex-wrap gap-2">
+            <Link href={machetePlayersHref(selectedLeague)} className="inline-flex items-center justify-center rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+              <I18nText en="Player explorer" ru="Таблица игроков" />
+            </Link>
+            {selectedLeague ? (
+              <>
+                <Link href={squadExportHref(selectedLeague, "csv")} className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                  <Download className="h-4 w-4" aria-hidden="true" />
+                  CSV
+                </Link>
+                <Link href={squadExportHref(selectedLeague, "xlsx")} className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                  <Download className="h-4 w-4" aria-hidden="true" />
+                  XLSX
+                </Link>
+              </>
+            ) : null}
+          </div>
         </div>
 
         <div className="mt-5 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(320px,0.8fr)_minmax(420px,1.2fr)]">
@@ -136,4 +151,14 @@ function machetePlayersHref(league: SharedLeagueSeasonOption | null) {
   });
 
   return `/machete/players?${query.toString()}`;
+}
+
+function squadExportHref(league: SharedLeagueSeasonOption, format: "csv" | "xlsx") {
+  const query = new URLSearchParams({
+    leagueId: String(league.leagueId),
+    season: league.season,
+    format
+  });
+
+  return `/api/machete/squads/export?${query.toString()}`;
 }

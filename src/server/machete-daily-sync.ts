@@ -1,8 +1,10 @@
 import { run_incremental_update } from "@/core_data/ingestion-jobs";
 import { prisma } from "@/lib/db";
+import { createLogger } from "@/lib/logger";
 
 const DEFAULT_SYNC_TIME = "03:00";
 const DEFAULT_TIME_ZONE = "Europe/Moscow";
+const logger = createLogger("ingestion");
 
 type SchedulerState = {
   running: boolean;
@@ -40,7 +42,7 @@ function scheduleNextRun(state: SchedulerState) {
   }, schedule.delayMs);
   state.timer.unref?.();
 
-  console.info(`[ingestion] Scheduled shared FotMob incremental update at ${schedule.label}.`);
+  logger.info("Scheduled shared FotMob incremental update.", { scheduledFor: schedule.label });
 }
 
 async function runScheduledSync(state: SchedulerState, scheduledFor: string) {
@@ -48,11 +50,11 @@ async function runScheduledSync(state: SchedulerState, scheduledFor: string) {
 
   state.running = true;
   try {
-    console.info(`[ingestion] Queueing scheduled shared FotMob incremental update for ${scheduledFor}.`);
+    logger.info("Queueing scheduled shared FotMob incremental update.", { scheduledFor });
     await run_incremental_update(prisma, { startedByUserId: null });
-    console.info("[ingestion] Scheduled shared FotMob incremental update queued for the ingestion worker loop.");
+    logger.info("Scheduled shared FotMob incremental update queued for the ingestion worker loop.");
   } catch (error) {
-    console.error("[ingestion] Scheduled shared FotMob incremental update crashed.", error);
+    logger.error("Scheduled shared FotMob incremental update crashed.", { error });
   } finally {
     state.running = false;
   }

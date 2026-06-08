@@ -4,9 +4,10 @@ import { promisify } from "node:util";
 import { UserRole } from "@prisma/client";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
-import { NextResponse } from "next/server";
+import type { NextResponse } from "next/server";
 
 import { sessionCookieName } from "@/lib/auth-constants";
+import { jsonError } from "@/lib/api-handler";
 import { ensureDatabaseSchema, isDatabaseConfigured, prisma } from "@/lib/db";
 
 const scrypt = promisify(scryptCallback);
@@ -152,10 +153,7 @@ export async function requireApiUser(): Promise<ApiUserAuth> {
   if (!isDatabaseConfigured()) {
     return {
       user: null,
-      response: NextResponse.json(
-        { error: { code: "DATABASE_NOT_CONFIGURED", message: "Configure DATABASE_URL before using the API." } },
-        { status: 503 }
-      )
+      response: jsonError("DATABASE_NOT_CONFIGURED", "Configure DATABASE_URL before using the API.", 503)
     };
   }
 
@@ -163,7 +161,7 @@ export async function requireApiUser(): Promise<ApiUserAuth> {
   if (!user) {
     return {
       user: null,
-      response: NextResponse.json({ error: { code: "UNAUTHORIZED", message: "Sign in to continue." } }, { status: 401 })
+      response: jsonError("UNAUTHORIZED", "Sign in to continue.", 401)
     };
   }
 
@@ -177,7 +175,7 @@ export async function requireApiAdmin(): Promise<ApiAdminAuth> {
   if (auth.user.role !== UserRole.ADMIN) {
     return {
       user: auth.user,
-      response: NextResponse.json({ error: { code: "FORBIDDEN", message: "Admin access is required." } }, { status: 403 })
+      response: jsonError("FORBIDDEN", "Admin access is required.", 403)
     };
   }
 

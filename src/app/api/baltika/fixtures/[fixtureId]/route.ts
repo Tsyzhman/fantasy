@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { jsonError, withApiHandler } from "@/lib/api-handler";
 import { requireApiAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { readJsonObjectOrNull } from "@/lib/request-json";
@@ -15,7 +16,7 @@ type Params = {
   }>;
 };
 
-export async function PATCH(request: Request, { params }: Params) {
+export const PATCH = withApiHandler(async (request: Request, { params }: Params) => {
   const auth = await requireApiAdmin();
   if (auth.response) return auth.response;
 
@@ -62,9 +63,9 @@ export async function PATCH(request: Request, { params }: Params) {
   );
 
   return NextResponse.json({ fixture: updated });
-}
+});
 
-export async function DELETE(_request: Request, { params }: Params) {
+export const DELETE = withApiHandler(async (_request: Request, { params }: Params) => {
   const auth = await requireApiAdmin();
   if (auth.response) return auth.response;
 
@@ -81,7 +82,7 @@ export async function DELETE(_request: Request, { params }: Params) {
     scoringModel
   );
   return NextResponse.json({ ok: true });
-}
+});
 
 function stringOrNull(value: unknown) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
@@ -99,5 +100,5 @@ function dateOrNull(value: unknown) {
 }
 
 function errorResponse(code: string, message: string, status: number) {
-  return NextResponse.json({ error: { code, message } }, { status });
+  return jsonError(code, message, status);
 }

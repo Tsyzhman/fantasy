@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { jsonError, withApiHandler } from "@/lib/api-handler";
 import { requireApiAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { readJsonObject } from "@/lib/request-json";
@@ -8,7 +9,7 @@ import { setSportsRuPlayerMapping } from "@/machete/sports_ru_player_mapping";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function PATCH(request: Request) {
+export const PATCH = withApiHandler(async (request: Request) => {
   const auth = await requireApiAdmin();
   if (auth.response) return auth.response;
 
@@ -17,10 +18,10 @@ export async function PATCH(request: Request) {
   const playerId = body.playerId === null || body.playerId === "" ? null : parseBigInt(body.playerId);
 
   if (!priceId) {
-    return NextResponse.json({ error: { code: "BAD_REQUEST", message: "priceId is required." } }, { status: 400 });
+    return badRequest("priceId is required.");
   }
   if (body.playerId !== null && body.playerId !== "" && !playerId) {
-    return NextResponse.json({ error: { code: "BAD_REQUEST", message: "playerId must be empty or integer-like." } }, { status: 400 });
+    return badRequest("playerId must be empty or integer-like.");
   }
 
   try {
@@ -30,12 +31,9 @@ export async function PATCH(request: Request) {
     });
     return NextResponse.json({ mapping });
   } catch (error) {
-    return NextResponse.json(
-      { error: { code: "BAD_REQUEST", message: error instanceof Error ? error.message : "Failed to save mapping." } },
-      { status: 400 }
-    );
+    return badRequest(error instanceof Error ? error.message : "Failed to save mapping.");
   }
-}
+});
 
 function parseBigInt(value: unknown) {
   if (typeof value !== "string" && typeof value !== "number" && typeof value !== "bigint") return null;
@@ -44,4 +42,8 @@ function parseBigInt(value: unknown) {
   } catch {
     return null;
   }
+}
+
+function badRequest(message: string) {
+  return jsonError("BAD_REQUEST", message, 400);
 }

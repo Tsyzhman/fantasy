@@ -2,6 +2,10 @@ import { mockFotMobFixtures, mockFotMobLeague, mockFotMobTeams } from "./mock-da
 import { createXMasHeader, xMasSigningPath } from "./signing";
 import type { FotMobFixture, FotMobFixtureDetails, FotMobLeague, FotMobPlayer, FotMobPlayerMatchStat, FotMobTeam } from "./types";
 
+import { createLogger } from "@/lib/logger";
+
+const logger = createLogger("fotmob-client");
+
 export interface FotMobClient {
   getLeague(leagueId: string, season?: string): Promise<FotMobLeague>;
   getTeams(leagueId: string, season?: string): Promise<FotMobTeam[]>;
@@ -53,6 +57,12 @@ export class UnofficialFotMobClient implements FotMobClient {
   protected readonly siteUrl = process.env.MACHETE_FOTMOB_SITE_URL || "https://www.fotmob.com";
   protected readonly ccode3 = process.env.MACHETE_FOTMOB_CCODE3 || "GBR";
   protected readonly timezone = process.env.MACHETE_FOTMOB_TIMEZONE || "Europe/London";
+  protected readonly requestTimeoutMs = integerEnv("MACHETE_FOTMOB_REQUEST_TIMEOUT_MS", 20_000, { min: 1 });
+  protected readonly unsignedMaxAttempts = integerEnv("MACHETE_FOTMOB_UNSIGNED_ATTEMPTS", 3, { min: 1 });
+  protected readonly apiMaxAttempts = integerEnv("MACHETE_FOTMOB_API_ATTEMPTS", 5, { min: 1 });
+  protected readonly retryBaseDelayMs = integerEnv("MACHETE_FOTMOB_RETRY_BASE_DELAY_MS", 750, { min: 0 });
+  protected readonly rateLimitRetryBaseDelayMs = integerEnv("MACHETE_FOTMOB_RATE_LIMIT_RETRY_BASE_DELAY_MS", 3_000, { min: 0 });
+  protected readonly retryJitterMs = integerEnv("MACHETE_FOTMOB_RETRY_JITTER_MS", 500, { min: 0 });
   // Minimum spacing between requests, useful when looping many fixtures.
   // Override via MACHETE_FOTMOB_REQUEST_INTERVAL_MS. Default 0 — the unsigned
   // paths we use today are edge-cached and not rate-limited.
@@ -204,8 +214,9 @@ export class UnofficialFotMobClient implements FotMobClient {
   }
 
   private async fetchUnsignedText(url: string): Promise<string> {
+    const maxAttempts = this.unsignedMaxAttempts;
     let lastError: unknown;
-    for (let attempt = 0; attempt < 3; attempt += 1) {
+    for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
       try {
         await this.throttle();
         const response = await fetch(url, {
@@ -215,7 +226,7 @@ export class UnofficialFotMobClient implements FotMobClient {
             "Accept-Language": "en-US,en;q=0.9",
             Referer: this.siteUrl
           },
-          signal: AbortSignal.timeout(20_000)
+          signal: AbortSignal.timeout(this.requestTimeoutMs)
         });
 
         if (response.status === 404) {
@@ -228,8 +239,9 @@ export class UnofficialFotMobClient implements FotMobClient {
       } catch (error) {
         if (error instanceof NextDataNotFoundError) throw error;
         lastError = error;
-        if (attempt === 2) break;
-        await wait(750 * 2 ** attempt + Math.floor(Math.random() * 250));
+        if (attempt === maxAttempts - 1) break;
+        logger.warn("Retrying FotMob next-data request.", { url, attempt: attempt + 1, maxAttempts, error });
+        await wait(retryDelay(this.retryBaseDelayMs, attempt, this.retryJitterMs));
       }
     }
     throw lastError instanceof Error ? lastError : new Error("FotMob next-data request failed.");
@@ -274,12 +286,12 @@ export class UnofficialFotMobClient implements FotMobClient {
       headers.Cookie = this.cookieHeader;
     }
 
-    const maxAttempts = 5;
+    const maxAttempts = this.apiMaxAttempts;
     let lastError: unknown;
     for (let attempt = 0; attempt < maxAttempts; attempt += 1) {
       try {
         await this.throttle();
-        const response = await fetch(url, { headers, signal: AbortSignal.timeout(20_000) });
+        const response = await fetch(url, { headers, signal: AbortSignal.timeout(this.requestTimeoutMs) });
 
         if (response.status === 403 || response.status === 429) {
           // Could be either rate-limit OR missing Turnstile cookie. Body
@@ -315,9 +327,8 @@ export class UnofficialFotMobClient implements FotMobClient {
         if (error instanceof TurnstileRequiredError) throw error;
         if (attempt === maxAttempts - 1) break;
         const isRateLimit = error instanceof RateLimitedError;
-        const backoff = isRateLimit ? 3_000 * 2 ** attempt : 750 * 2 ** attempt;
-        const jitter = Math.floor(Math.random() * 500);
-        await wait(backoff + jitter);
+        logger.warn("Retrying FotMob API request.", { path, attempt: attempt + 1, maxAttempts, rateLimited: isRateLimit, error });
+        await wait(retryDelay(isRateLimit ? this.rateLimitRetryBaseDelayMs : this.retryBaseDelayMs, attempt, this.retryJitterMs));
       }
     }
 
@@ -446,9 +457,11 @@ export function extractLeagueTeamsFromLeaguePayload(payload: unknown, options: E
 
   const fixtureTeams = extractLeagueFixtureTeams(league);
   if (options.leagueId === "77" && options.season === "2026" && fixtureTeams.length > 48) {
-    console.warn(
-      `[fotmob] World Cup fallback extracted ${fixtureTeams.length} teams after placeholder filtering; review fixture payload shape.`
-    );
+    logger.warn(`World Cup fallback extracted ${fixtureTeams.length} teams after placeholder filtering; review fixture payload shape.`, {
+      leagueId: options.leagueId,
+      season: options.season,
+      teamCount: fixtureTeams.length
+    });
   }
 
   return fixtureTeams;
@@ -743,4 +756,15 @@ function playerPhotoUrl(playerId: string) {
 
 function wait(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function retryDelay(baseDelayMs: number, attempt: number, jitterMs: number) {
+  const jitter = jitterMs > 0 ? Math.floor(Math.random() * jitterMs) : 0;
+  return baseDelayMs * 2 ** attempt + jitter;
+}
+
+function integerEnv(name: string, fallback: number, options: { min: number }) {
+  const value = Number(process.env[name]);
+  if (!Number.isInteger(value) || value < options.min) return fallback;
+  return value;
 }

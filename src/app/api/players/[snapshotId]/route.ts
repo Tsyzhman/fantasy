@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { Prisma } from "@prisma/client";
 
+import { jsonError, requiredStringParam, withApiHandler } from "@/lib/api-handler";
 import { requireApiAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { readJsonObjectOrNull } from "@/lib/request-json";
 
 export const dynamic = "force-dynamic";
 
@@ -12,15 +14,15 @@ type Params = {
   }>;
 };
 
-export async function PATCH(request: Request, { params }: Params) {
+export const PATCH = withApiHandler(async (request: Request, { params }: Params) => {
   const auth = await requireApiAdmin();
   if (auth.response) return auth.response;
 
-  const { snapshotId } = await params;
-  const payload = await request.json().catch(() => null);
+  const snapshotId = requiredStringParam((await params).snapshotId, "snapshotId");
+  const payload = await readJsonObjectOrNull(request);
 
   if (!payload || typeof payload.isStarter !== "boolean") {
-    return NextResponse.json({ error: { code: "INVALID_PAYLOAD", message: "isStarter must be a boolean." } }, { status: 400 });
+    return jsonError("INVALID_PAYLOAD", "isStarter must be a boolean.", 400);
   }
 
   try {
@@ -36,9 +38,9 @@ export async function PATCH(request: Request, { params }: Params) {
     return NextResponse.json({ player: snapshot });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2025") {
-      return NextResponse.json({ error: { code: "PLAYER_NOT_FOUND", message: "Player snapshot not found." } }, { status: 404 });
+      return jsonError("PLAYER_NOT_FOUND", "Player snapshot not found.", 404);
     }
 
     throw error;
   }
-}
+});

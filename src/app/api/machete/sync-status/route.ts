@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { withApiHandler } from "@/lib/api-handler";
 import { requireApiUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { macheteLeagueDisplayName } from "@/lib/leagues/display";
@@ -7,7 +8,7 @@ import { macheteLeagueDisplayName } from "@/lib/leagues/display";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function GET() {
+export const GET = withApiHandler(async () => {
   const auth = await requireApiUser();
   if (auth.response) return auth.response;
 
@@ -39,4 +40,4 @@ export async function GET() {
       createdAt: job.createdAt.toISOString()
     }))
   });
-}
+});

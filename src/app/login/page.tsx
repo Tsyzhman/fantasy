@@ -1,9 +1,11 @@
 import { UserRole } from "@prisma/client";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { DatabaseSetupNotice } from "@/components/database-setup-notice";
 import { I18nText } from "@/components/i18n-text";
 import { createUserSession, getCurrentUser, isSafeRedirectPath, normalizeEmail, verifyPassword } from "@/lib/auth";
+import { authRateLimitBuckets, checkAuthRateLimits, clearAuthRateLimits, getClientIpFromHeaders, recordFailedAuthAttempt } from "@/lib/auth-rate-limit";
 import { isDatabaseConfigured, prisma } from "@/lib/db";
 
 type PageProps = {
@@ -87,12 +89,20 @@ async function loginAction(formData: FormData) {
   const password = String(formData.get("password") ?? "");
   const nextPath = isSafeRedirectPath(String(formData.get("next") ?? "")) ? String(formData.get("next")) : "/";
   const errorPath = `/login?error=invalid&next=${encodeURIComponent(nextPath)}`;
+  const headerStore = await headers();
+  const rateLimitBuckets = authRateLimitBuckets({ action: "login", email, clientIp: getClientIpFromHeaders(headerStore) });
+  const rateLimit = await checkAuthRateLimits(prisma, rateLimitBuckets);
+  if (!rateLimit.allowed) {
+    redirect(`/login?error=rate_limited&next=${encodeURIComponent(nextPath)}`);
+  }
 
   const user = await prisma.user.findUnique({ where: { email } });
   if (!user || !user.isActive || !(await verifyPassword(password, user.passwordHash))) {
+    await recordFailedAuthAttempt(prisma, rateLimitBuckets);
     redirect(errorPath);
   }
 
+  await clearAuthRateLimits(prisma, rateLimitBuckets);
   await prisma.user.update({
     where: { id: user.id },
     data: { lastLoginAt: new Date() }
@@ -105,6 +115,9 @@ function loginErrorMessage(error: string | undefined) {
   if (!error) return null;
   if (error === "invalid") {
     return { en: "Invalid email, password, or inactive account.", ru: "Неверная почта, пароль или аккаунт отключен." };
+  }
+  if (error === "rate_limited") {
+    return { en: "Too many sign-in attempts. Try again later.", ru: "Слишком много попыток входа. Попробуйте позже." };
   }
   return { en: error, ru: error };
 }

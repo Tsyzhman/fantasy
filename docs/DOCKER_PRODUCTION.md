@@ -64,14 +64,20 @@ and executes queued ingestion jobs in its in-process worker loop.
 ## Raw payload cleanup
 
 Finalized FotMob match payloads are not retained after normalized rows are
-written. To reclaim disk from an older deployment, run:
+written. Audit storage first:
 
 ```bash
-docker compose --profile setup run --rm db-setup npm run payloads:prune-finalized -- --yes
-docker compose --profile setup run --rm db-setup npm run payloads:prune-machete -- --yes
+docker compose --profile setup run --rm db-setup npm run payloads:audit
 ```
 
-Both commands print a dry-run count when `--yes` is omitted.
+To reclaim disk from an older deployment, run:
+
+```bash
+docker compose --profile setup run --rm db-setup npm run payloads:prune-finalized -- --older-than-days=7 --yes
+docker compose --profile setup run --rm db-setup npm run payloads:prune-machete -- --older-than-days=30 --yes
+```
+
+Both prune commands print a dry-run count when `--yes` is omitted.
 
 ## League-season retention
 

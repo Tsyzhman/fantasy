@@ -227,6 +227,53 @@ test("unofficial client fetches matchDetails via the playbyplay next-data endpoi
   });
 });
 
+test("unofficial client retries transient FotMob API failures", async () => {
+  await withEnv(
+    {
+      MACHETE_FOTMOB_API_ATTEMPTS: "2",
+      MACHETE_FOTMOB_REQUEST_INTERVAL_MS: "0",
+      MACHETE_FOTMOB_RETRY_BASE_DELAY_MS: "0",
+      MACHETE_FOTMOB_RETRY_JITTER_MS: "0"
+    },
+    async () => {
+      const originalFetch = globalThis.fetch;
+      const originalWarn = console.warn;
+      let attempts = 0;
+      console.warn = () => undefined;
+
+      globalThis.fetch = (async (input: string | URL | Request) => {
+        const url = String(input instanceof Request ? input.url : input);
+        assert.match(url, /\/api\/data\/fixtures\?/);
+        attempts += 1;
+
+        if (attempts === 1) {
+          return new Response("temporarily unavailable", { status: 503, statusText: "Service Unavailable" });
+        }
+
+        return jsonResponse([
+          {
+            id: 4813565,
+            home: { id: 8678, score: 2 },
+            away: { id: 9825, score: 3 },
+            status: { finished: true, utcTime: "2026-01-03T17:30:00.000Z" }
+          }
+        ]);
+      }) as typeof fetch;
+
+      try {
+        const fixtures = await new UnofficialFotMobClient().getFixtures("47", "2025/2026");
+
+        assert.equal(attempts, 2);
+        assert.equal(fixtures.length, 1);
+        assert.equal(fixtures[0]?.id, "4813565");
+      } finally {
+        globalThis.fetch = originalFetch;
+        console.warn = originalWarn;
+      }
+    }
+  );
+});
+
 test("unofficial client refetches buildId after a stale playbyplay 404", async () => {
   await withEnv({ MACHETE_FOTMOB_REQUEST_INTERVAL_MS: "0" }, async () => {
     const originalFetch = globalThis.fetch;

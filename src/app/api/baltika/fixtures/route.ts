@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { jsonError, withApiHandler } from "@/lib/api-handler";
 import { requireApiAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { readJsonObject } from "@/lib/request-json";
@@ -9,7 +10,7 @@ import { recalculateBaltikaTeamSnapshots } from "@/lib/scoring/baltika-team-form
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export async function POST(request: Request) {
+export const POST = withApiHandler(async (request: Request) => {
   const auth = await requireApiAdmin();
   if (auth.response) return auth.response;
 
@@ -60,7 +61,7 @@ export async function POST(request: Request) {
   );
 
   return NextResponse.json({ fixture });
-}
+});
 
 function stringOrNull(value: unknown) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
@@ -78,5 +79,5 @@ function dateOrNull(value: unknown) {
 }
 
 function errorResponse(code: string, message: string, status: number) {
-  return NextResponse.json({ error: { code, message } }, { status });
+  return jsonError(code, message, status);
 }

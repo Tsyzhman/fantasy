@@ -1,9 +1,11 @@
 import { UserRole } from "@prisma/client";
+import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { DatabaseSetupNotice } from "@/components/database-setup-notice";
 import { I18nText } from "@/components/i18n-text";
 import { createUserSession, hashPassword, normalizeEmail } from "@/lib/auth";
+import { authRateLimitBuckets, checkAuthRateLimits, clearAuthRateLimits, getClientIpFromHeaders, recordFailedAuthAttempt } from "@/lib/auth-rate-limit";
 import { isDatabaseConfigured, prisma } from "@/lib/db";
 
 type PageProps = {
@@ -72,8 +74,15 @@ async function setupAction(formData: FormData) {
   const email = normalizeEmail(String(formData.get("email") ?? ""));
   const name = String(formData.get("name") ?? "").trim() || null;
   const password = String(formData.get("password") ?? "");
+  const headerStore = await headers();
+  const rateLimitBuckets = authRateLimitBuckets({ action: "setup", email, clientIp: getClientIpFromHeaders(headerStore) });
+  const rateLimit = await checkAuthRateLimits(prisma, rateLimitBuckets);
+  if (!rateLimit.allowed) {
+    redirect("/setup?error=rate_limited");
+  }
 
   if (password.length < 8) {
+    await recordFailedAuthAttempt(prisma, rateLimitBuckets);
     redirect("/setup?error=password_short");
   }
 
@@ -97,6 +106,7 @@ async function setupAction(formData: FormData) {
     }
   });
 
+  await clearAuthRateLimits(prisma, rateLimitBuckets);
   await createUserSession(user.id);
   redirect("/");
 }
@@ -105,6 +115,9 @@ function setupErrorMessage(error: string | undefined) {
   if (!error) return null;
   if (error === "password_short") {
     return { en: "Password must be at least 8 characters.", ru: "Пароль должен быть не короче 8 символов." };
+  }
+  if (error === "rate_limited") {
+    return { en: "Too many setup attempts. Try again later.", ru: "Слишком много попыток настройки. Попробуйте позже." };
   }
   return { en: error, ru: error };
 }
