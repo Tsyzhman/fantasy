@@ -67,7 +67,7 @@ export function normalize_shot_coordinates(
 
   const direction = stringValue(pick(shot.raw ?? {}, ["attackingDirection", "attackDirection", "direction", "teamDirection"]));
   if (direction && /right.?to.?left|rtl/i.test(direction) && !/left.?to.?right|ltr/i.test(direction)) {
-    return [flipPercentCoordinate(scaledX), flipPercentCoordinate(scaledY)];
+    return [flipPercentCoordinate(scaledX), scaledY];
   }
 
   // FotMob web shot maps expose coordinates on a 105 x 68 pitch. MiXerr stores normalized

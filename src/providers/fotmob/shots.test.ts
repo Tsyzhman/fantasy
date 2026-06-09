@@ -3,7 +3,7 @@ import test from "node:test";
 
 import { normalize_fotmob_pitch_coordinates } from "@/lib/shot-coordinates";
 
-import { classify_shot_zone, extract_match_shots } from "./shots";
+import { classify_shot_zone, extract_match_shots, normalize_shot_coordinates } from "./shots";
 
 test("extracts one normalized row per FotMob content shotmap shot", () => {
   const shots = extract_match_shots({
@@ -75,6 +75,16 @@ test("FotMob penalty coordinates land on the metric penalty spot", () => {
 
   assert.equal(x?.toFixed(3), "89.524");
   assert.equal(y?.toFixed(3), "50.000");
+});
+
+test("right-to-left shot direction flips depth without mirroring flanks", () => {
+  const [x, y] = normalize_shot_coordinates(
+    { x: 20, y: 12, raw: { attackingDirection: "right-to-left" } },
+    { match_id: 1, home_team_id: 10, away_team_id: 20, home_team_name: "Home FC", away_team_name: "Away FC" }
+  );
+
+  assert.equal(x?.toFixed(3), "80.952");
+  assert.equal(y?.toFixed(3), "17.647");
 });
 
 test("missing shotmap returns an empty array", () => {

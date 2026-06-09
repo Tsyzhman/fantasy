@@ -53,7 +53,8 @@ export async function syncMacheteLeagueShots(prisma: PrismaClient, leagueId: str
     const result = await ingest_match(prisma, fixture.providerFixtureId, {
       client,
       leagueId: league.providerLeagueId ?? league.id,
-      season: league.season
+      season: league.season,
+      forceRefresh: true
     });
     matchesChecked += 1;
     shotsSynced += result.shotsParsed;
