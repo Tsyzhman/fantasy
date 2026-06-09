@@ -4,6 +4,12 @@ import test from "node:test";
 import { withEnv } from "../../test-utils/env";
 import { extractLeagueTeamsFromLeaguePayload, is_placeholder_team, UnofficialFotMobClient } from "./client";
 
+class InspectableUnofficialFotMobClient extends UnofficialFotMobClient {
+  getRequestIntervalMs() {
+    return this.requestIntervalMs;
+  }
+}
+
 test("normal standings payload still works", () => {
   const teams = extractLeagueTeamsFromLeaguePayload({
     table: [
@@ -178,6 +184,18 @@ test("placeholder team detection covers known playoff labels", () => {
   }
 
   assert.equal(is_placeholder_team("Argentina"), false);
+});
+
+test("unofficial client uses a safe request interval by default", async () => {
+  await withEnv({ MACHETE_FOTMOB_REQUEST_INTERVAL_MS: undefined }, async () => {
+    assert.equal(new InspectableUnofficialFotMobClient().getRequestIntervalMs(), 1500);
+  });
+});
+
+test("unofficial client allows request throttling to be disabled explicitly", async () => {
+  await withEnv({ MACHETE_FOTMOB_REQUEST_INTERVAL_MS: "0" }, async () => {
+    assert.equal(new InspectableUnofficialFotMobClient().getRequestIntervalMs(), 0);
+  });
 });
 
 test("unofficial client fetches matchDetails via the playbyplay next-data endpoint", async () => {

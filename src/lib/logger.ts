@@ -9,6 +9,9 @@ type LoggerOptions = {
   sink?: LoggerSink;
 };
 
+const redactedLogValue = "[REDACTED]";
+const sensitiveLogKeyPattern = /(cookie|authorization|secret|token|password|x-mas)/i;
+
 export type AppLogger = ReturnType<typeof createLogger>;
 
 export function createLogger(scope: string, options: LoggerOptions = {}) {
@@ -48,10 +51,12 @@ function writeLog(sink: LoggerSink, json: boolean, level: LogLevel, scope: strin
 }
 
 function serializeFields(fields: LogFields) {
-  return Object.fromEntries(Object.entries(fields).map(([key, value]) => [key, serializeValue(value)]));
+  return Object.fromEntries(Object.entries(fields).map(([key, value]) => [key, serializeValue(value, key)]));
 }
 
-function serializeValue(value: unknown): unknown {
+function serializeValue(value: unknown, key?: string, seen = new WeakSet<object>()): unknown {
+  if (key && sensitiveLogKeyPattern.test(key)) return redactedLogValue;
+
   if (value instanceof Error) {
     return {
       name: value.name,
@@ -60,7 +65,28 @@ function serializeValue(value: unknown): unknown {
     };
   }
   if (typeof value === "bigint") return value.toString();
+  if (value instanceof Date) return value.toISOString();
+  if (Array.isArray(value)) {
+    if (seen.has(value)) return "[Circular]";
+    seen.add(value);
+    const result = value.map((item) => serializeValue(item, undefined, seen));
+    seen.delete(value);
+    return result;
+  }
+  if (isPlainRecord(value)) {
+    if (seen.has(value)) return "[Circular]";
+    seen.add(value);
+    const result = Object.fromEntries(Object.entries(value).map(([nestedKey, nestedValue]) => [nestedKey, serializeValue(nestedValue, nestedKey, seen)]));
+    seen.delete(value);
+    return result;
+  }
   return value;
+}
+
+function isPlainRecord(value: unknown): value is Record<string, unknown> {
+  if (!value || typeof value !== "object") return false;
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
 }
 
 function shouldUseJsonLogs() {

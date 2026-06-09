@@ -40,3 +40,33 @@ test("logger writes structured JSON logs", () => {
   assert.equal(parsed.message, "failed");
   assert.equal(parsed.error.message, "boom");
 });
+
+test("logger redacts sensitive fields recursively", () => {
+  const lines: string[] = [];
+  const logger = createLogger("secure", {
+    json: true,
+    sink: {
+      error: (line) => lines.push(String(line)),
+      info: (line) => lines.push(String(line)),
+      warn: (line) => lines.push(String(line))
+    }
+  });
+
+  logger.info("request", {
+    authorization: "Bearer raw-token",
+    headers: {
+      Cookie: "session=raw",
+      "x-mas": "signature",
+      requestId: "req-1"
+    },
+    nested: [{ password: "raw-password", ok: true }]
+  });
+
+  const parsed = JSON.parse(lines[0]);
+  assert.equal(parsed.authorization, "[REDACTED]");
+  assert.equal(parsed.headers.Cookie, "[REDACTED]");
+  assert.equal(parsed.headers["x-mas"], "[REDACTED]");
+  assert.equal(parsed.headers.requestId, "req-1");
+  assert.equal(parsed.nested[0].password, "[REDACTED]");
+  assert.equal(parsed.nested[0].ok, true);
+});

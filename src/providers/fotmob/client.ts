@@ -64,9 +64,9 @@ export class UnofficialFotMobClient implements FotMobClient {
   protected readonly rateLimitRetryBaseDelayMs = integerEnv("MACHETE_FOTMOB_RATE_LIMIT_RETRY_BASE_DELAY_MS", 3_000, { min: 0 });
   protected readonly retryJitterMs = integerEnv("MACHETE_FOTMOB_RETRY_JITTER_MS", 500, { min: 0 });
   // Minimum spacing between requests, useful when looping many fixtures.
-  // Override via MACHETE_FOTMOB_REQUEST_INTERVAL_MS. Default 0 — the unsigned
-  // paths we use today are edge-cached and not rate-limited.
-  protected readonly requestIntervalMs = Number(process.env.MACHETE_FOTMOB_REQUEST_INTERVAL_MS || 0);
+  // Override via MACHETE_FOTMOB_REQUEST_INTERVAL_MS. Default 1500ms is safe
+  // for long worker runs; set 0 explicitly to disable throttling.
+  protected readonly requestIntervalMs = integerEnv("MACHETE_FOTMOB_REQUEST_INTERVAL_MS", 1500, { min: 0 });
   private lastRequestAt = 0;
   private cachedBuildId: string | null = null;
   private buildIdInflight: Promise<string> | null = null;

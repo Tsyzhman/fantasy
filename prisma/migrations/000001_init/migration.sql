@@ -666,6 +666,7 @@ CREATE TABLE "match_shots" (
     "added_time" INTEGER,
     "x" DOUBLE PRECISION,
     "y" DOUBLE PRECISION,
+    -- Stored as 0-100 pitch percentages, not meters.
     "normalized_x" DOUBLE PRECISION,
     "normalized_y" DOUBLE PRECISION,
     "event_type" TEXT,

@@ -842,7 +842,9 @@ model MatchShot {
   addedTime         Int?     @map("added_time")
   x                 Float?
   y                 Float?
+  /// Stored as 0-100 pitch percentage, not meters.
   normalizedX       Float?   @map("normalized_x")
+  /// Stored as 0-100 pitch percentage, not meters.
   normalizedY       Float?   @map("normalized_y")
   eventType         String?  @map("event_type")
   shotType          String?  @map("shot_type")

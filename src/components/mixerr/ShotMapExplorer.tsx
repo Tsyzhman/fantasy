@@ -7,6 +7,7 @@ import { useMemo, useState } from "react";
 import { I18nText } from "@/components/i18n-text";
 import { LocalizedOption, localizedText, useLanguage } from "@/components/localized-option";
 import { SortableTable } from "@/components/sortable-table";
+import { FOTMOB_PITCH_LENGTH_METERS, FOTMOB_PITCH_WIDTH_METERS, normalized_shot_axis_coordinate } from "@/lib/shot-coordinates";
 import type { ShotMapShot } from "@/lib/shot-maps";
 import { shotMatchesSituationFilter, type ShotSituationFilter } from "@/mixer/shot-filters";
 
@@ -608,8 +609,6 @@ function legendDotClassName(tone: "attacking" | "conceded" | "player") {
   return "h-3 w-3 rounded-full border border-white bg-rose-500 shadow-sm";
 }
 
-const FOTMOB_PITCH_LENGTH_METERS = 105;
-const FOTMOB_PITCH_WIDTH_METERS = 68;
 const FOTMOB_FINAL_THIRD_START_X_METERS = 70;
 const CENTER_Y_METERS = FOTMOB_PITCH_WIDTH_METERS / 2;
 const SHOTMAP_DEPTH_METERS = FOTMOB_PITCH_LENGTH_METERS - FOTMOB_FINAL_THIRD_START_X_METERS;
@@ -714,16 +713,9 @@ function markerStroke(tone: "attacking" | "conceded" | "player") {
 }
 
 function shotDisplayCoordinates(shot: ShotMapShot): [number | null, number | null] {
-  const hasDerivedNormalizedCoordinates =
-    shot.normalized_x !== null &&
-    shot.normalized_y !== null &&
-    (!sameCoordinate(shot.normalized_x, shot.x) || !sameCoordinate(shot.normalized_y, shot.y));
-
-  if (hasDerivedNormalizedCoordinates) return [shot.normalized_x, shot.normalized_y];
-
   return [
-    normalizeFotMobAxis(shot.normalized_x ?? shot.x, FOTMOB_PITCH_LENGTH_METERS),
-    normalizeFotMobAxis(shot.normalized_y ?? shot.y, FOTMOB_PITCH_WIDTH_METERS)
+    normalized_shot_axis_coordinate(shot.normalized_x, shot.x, FOTMOB_PITCH_LENGTH_METERS),
+    normalized_shot_axis_coordinate(shot.normalized_y, shot.y, FOTMOB_PITCH_WIDTH_METERS)
   ];
 }
 
@@ -740,16 +732,4 @@ function shotTooltip(shot: ShotMapShot, layer: string) {
 
 function clamp(value: number, min: number, max: number) {
   return Math.min(max, Math.max(min, value));
-}
-
-function normalizeFotMobAxis(value: number | null, axisLength: number) {
-  if (value === null || !Number.isFinite(value)) return null;
-  if (value >= 0 && value <= 1) return value * 100;
-  if (value >= 0 && value <= axisLength) return (value / axisLength) * 100;
-  return value;
-}
-
-function sameCoordinate(left: number | null, right: number | null) {
-  if (left === null || right === null) return left === right;
-  return Math.abs(left - right) < 0.000001;
 }

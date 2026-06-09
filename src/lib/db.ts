@@ -308,6 +308,7 @@ BEGIN
     ON "shotmap_comparisons_cache"("expires_at");
 
   IF to_regclass('match_shots') IS NOT NULL THEN
+    -- normalized_* stores 0-100 pitch percentages, not meters.
     ALTER TABLE "match_shots" ADD COLUMN IF NOT EXISTS "normalized_x" DOUBLE PRECISION;
     ALTER TABLE "match_shots" ADD COLUMN IF NOT EXISTS "normalized_y" DOUBLE PRECISION;
     ALTER TABLE "match_shots" ADD COLUMN IF NOT EXISTS "event_type" TEXT;

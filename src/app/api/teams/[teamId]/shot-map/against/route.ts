@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { requiredStringParam, withApiHandler } from "@/lib/api-handler";
+import { requireApiUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { get_team_conceded_shots_for_window } from "@/lib/shot-maps";
 import { matchWindowModeValue, parseMacheteMatchWindow } from "@/scoring/machete/match-window";
@@ -10,6 +11,9 @@ type RouteProps = {
 };
 
 export const GET = withApiHandler(async (request: Request, { params }: RouteProps) => {
+  const auth = await requireApiUser(request);
+  if (auth.response) return auth.response;
+
   const teamId = requiredStringParam((await params).teamId, "teamId");
   const url = new URL(request.url);
   const window = parseMacheteMatchWindow({

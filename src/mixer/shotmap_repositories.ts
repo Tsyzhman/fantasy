@@ -2,7 +2,8 @@ import { Prisma, type PrismaClient } from "@prisma/client";
 
 import { CoreMatchRepository, CoreShotRepository } from "@/core_data/repositories";
 import { sourceIdToBigInt } from "@/core_data/models";
-import { buildSideZoneSummary, normalize_fotmob_pitch_coordinates } from "@/providers/fotmob/shots";
+import { FOTMOB_PITCH_LENGTH_METERS, FOTMOB_PITCH_WIDTH_METERS, normalized_shot_axis_coordinate } from "@/lib/shot-coordinates";
+import { buildSideZoneSummary } from "@/providers/fotmob/shots";
 import { matchWindowSeasonLabel, type MacheteMatchWindow } from "@/scoring/machete/match-window";
 
 export type ShotMapShot = {
@@ -442,13 +443,10 @@ function serializeShot(shot: ShotRecord): ShotMapShot {
 }
 
 function serializeShotCoordinates(shot: Pick<ShotRecord, "x" | "y" | "normalizedX" | "normalizedY">) {
-  const hasDerivedNormalizedCoordinates =
-    shot.normalizedX !== null &&
-    shot.normalizedY !== null &&
-    (!sameCoordinate(shot.normalizedX, shot.x) || !sameCoordinate(shot.normalizedY, shot.y));
-
-  if (hasDerivedNormalizedCoordinates) return [shot.normalizedX, shot.normalizedY] as const;
-  return normalize_fotmob_pitch_coordinates(shot.normalizedX ?? shot.x, shot.normalizedY ?? shot.y);
+  return [
+    normalized_shot_axis_coordinate(shot.normalizedX, shot.x, FOTMOB_PITCH_LENGTH_METERS),
+    normalized_shot_axis_coordinate(shot.normalizedY, shot.y, FOTMOB_PITCH_WIDTH_METERS)
+  ] as const;
 }
 
 function sumXg(shots: Array<{ xg: number | null }>) {
@@ -497,11 +495,6 @@ function shotPlayerId(shot: ShotLike) {
 
 function round(value: number) {
   return Math.round(value * 1000) / 1000;
-}
-
-function sameCoordinate(left: number | null, right: number | null) {
-  if (left === null || right === null) return left === right;
-  return Math.abs(left - right) < 0.000001;
 }
 
 function jsonValue(value: unknown): Prisma.InputJsonValue {

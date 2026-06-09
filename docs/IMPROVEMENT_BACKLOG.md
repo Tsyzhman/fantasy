@@ -2,9 +2,9 @@
 
 ## Implementation Status - 2026-06-08
 
-- **Done in code:** 1 (timing-safe CRON secret), 2 (`/api/health`), 3 (App Router fallbacks), 4 (FotMob dev outputs use temp dirs + `--out-dir`), 5 (`/api/players?format=csv|xlsx` plus saved squad CSV/XLSX export), 6 (`ensureDatabaseSchema` runs through instrumentation), 7 (dynamic `exceljs` in runtime import paths), 8 (standalone Docker image + in-process worker), 10 (Prisma `000001_init` baseline migration for new installs), 11 (login/setup brute-force protection), 16 (Postgres-backed DB smoke test in CI), 17 (`npm audit` high/critical gate in CI), 19 (manual dry-run-first GitHub Actions PM2 deploy workflow).
+- **Done in code:** 1 (timing-safe CRON secret), 2 (`/api/health`), 3 (App Router fallbacks), 4 (FotMob dev outputs use temp dirs + `--out-dir`), 5 (`/api/players?format=csv|xlsx` plus saved squad CSV/XLSX export), 6 (`ensureDatabaseSchema` runs through instrumentation), 7 (dynamic `exceljs` in runtime import paths), 8 (standalone Docker image + in-process worker), 10 (Prisma `000001_init` baseline migration for new installs), 11 (login/setup brute-force protection), 16 (Postgres-backed DB smoke test in CI), 17 (`npm audit` high/critical gate in CI), 19 (manual dry-run-first GitHub Actions PM2 deploy workflow), 20 (route-level user auth for shot-map API routes), 22 (`.env.example` password duplication warning), 23 (upload size guard before `arrayBuffer()`), 24 (safe FotMob request interval default), 25 (recursive logger secret redaction), 26 (neutral shot-coordinate module + `normalized_*` invariant).
 - **Partially done / first pass:** 9 (raw payload audit + dry-run retention scripts; destructive column drops still intentionally avoided), 12 and 15 (shared API error wrapper + broader validation across API routes), 13 and 14 (configurable FotMob retries/timeouts + structured logging in core provider paths).
-- **Requires a product/prod decision before code should proceed:** 18 (documentation consolidation needs agreement on archive/current sources). For existing production DBs, task 10 still requires one-time `prisma migrate resolve --applied 000001_init` before non-dry-run CD.
+- **Requires a product/prod decision before code should proceed:** 18 (documentation consolidation needs agreement on archive/current sources), 21 (runtime DDL removal requires production DB backup and migration baseline). For existing production DBs, task 10 still requires one-time `prisma migrate resolve --applied 000001_init` before non-dry-run CD.
 
 Список потенциальных доработок Fantasy Scout по результатам аудита кодовой базы.
 Каждая идея привязана к конкретным файлам/модулям. Это бэклог для согласования и
@@ -37,6 +37,13 @@
 | 17 | `npm audit` в CI | Безопасность | низкая | низкий | низкий |
 | 18 | Консолидация документации | Документация | низкая | низкий | низкий |
 | 19 | Автоматизация деплоя (CD) | DevOps | средняя | средний | низкий |
+| 20 | Обход авторизации в shot-map роутах | Безопасность | низкая | низкий | высокий |
+| 21 | Деструктивный рантайм-DDL и `db push --accept-data-loss` | Надёжность | средняя | высокий | высокий |
+| 22 | `.env.example`: дубль пароля БД | DevOps | низкая | низкий | средний |
+| 23 | Проверка размера upload до чтения в память | Надёжность | низкая | низкий | средний |
+| 24 | Дефолт `MACHETE_FOTMOB_REQUEST_INTERVAL_MS` | Качество кода | низкая | низкий | средний |
+| 25 | Маскирование секретов в логгере | Безопасность | низкая | низкий | средний |
+| 26 | Инвариант `normalized_*` + перенос модуля координат | Качество кода | низкая | низкий | низкий |
 
 ---
 
@@ -320,17 +327,168 @@
 
 ---
 
+## Аудит 2026-06-09 — дополнительные задачи
+
+> Найдено при повторном аудите кодовой базы. Спорные решения уже приняты и
+> отражены в полях «Решение» (см. ниже), отдельного согласования не требуют,
+> кроме явно отмеченных.
+
+### 20. Обход авторизации в shot-map роутах
+
+- **Тип:** безопасность · **Приоритет:** высокий
+- **Описание:** `middleware.ts:25` пропускает запрос по факту **наличия**
+  непустого session-cookie (`Boolean(request.cookies.get(sessionCookieName)?.value)`),
+  не проверяя его валидность. При этом роуты
+  `src/app/api/teams/[teamId]/shot-map/for/route.ts`,
+  `src/app/api/teams/[teamId]/shot-map/against/route.ts`,
+  `src/app/api/shot-map/compare/route.ts`,
+  `src/app/api/players/[snapshotId]/shot-map/route.ts` **не вызывают**
+  `requireApiUser()` и отдают данные из БД. Итог: запрос с произвольным
+  `Cookie: <sessionCookieName>=x` проходит middleware и получает данные без
+  валидной сессии. Остальные роуты защищены собственным `requireApiUser`/
+  `requireApiAdmin`, поэтому middleware фактически не является слоем авторизации.
+- **Зачем:** закрыть обход контроля доступа (defense-in-depth); привести роуты к
+  единому контракту авторизации проекта.
+- **Где:** четыре `route.ts` выше; образец — любой роут, вызывающий
+  `requireApiUser()` (`src/lib/auth.ts:152`).
+- **Решение:** доступ к shot-map предоставляется любому **авторизованному
+  пользователю (роль USER)**, не admin-only. В начало каждого хендлера добавить
+  `const auth = await requireApiUser(); if (auth.response) return auth.response;`.
+  Первичная защита — в роуте, а не в middleware.
+- **Сложность:** низкая · **Риск:** низкий
+- **Тесты:** добавить интеграционную проверку «без валидной сессии → 401» (см.
+  задачу 16).
+
+### 21. Деструктивный рантайм-DDL и `prisma db push --accept-data-loss`
+
+- **Тип:** надёжность / архитектура · **Приоритет:** высокий · усиливает задачу 10
+- **Описание:** Схема управляется тремя механизмами одновременно: миграцией
+  Prisma (`prisma/migrations/000001_init`), большим идемпотентным `DO $$ … $$`
+  блоком в рантайме (`src/lib/db.ts:25-347`, вызывается из
+  `src/instrumentation.ts:9`) и `npx prisma db push --accept-data-loss`
+  (`docker-compose.yml:56`). Внутри рантайм-блока выполняются **мутации данных**:
+  `DELETE FROM "MachetePlayerSnapshot"` (`src/lib/db.ts:50-53`) и
+  `UPDATE "match_shots" …` (`src/lib/db.ts:319-334`) — как побочный эффект
+  первого запроса к БД при старте контейнера.
+- **Зачем:** убрать дрейф схемы (три источника правды), деструктивные операции
+  при старте и риск молчаливой потери данных от `--accept-data-loss` в проде.
+- **Где:** `src/lib/db.ts`, `src/instrumentation.ts`, `docker-compose.yml`,
+  `prisma/`, скрипты `db:*` в `package.json`.
+- **Решение:** полный переход на `prisma migrate deploy` (закрыть задачу 10);
+  перенести содержимое `ensureDatabaseSchema` в версионированные миграции и убрать
+  рантайм-DDL; заменить `db push --accept-data-loss` на `migrate deploy` в compose.
+  В рантайме оставить максимум лёгкую проверку «миграции применены», без DDL и без
+  мутаций данных.
+- **Сложность:** средняя · **Риск:** высокий
+- **Согласование (обязательно):** бэкап прод-БД и baseline существующей схемы
+  (`prisma migrate resolve --applied 000001_init`) до первого non-dry-run.
+- **Тесты:** прогон миграций на чистой БД в CI (пересекается с задачей 16) + dry-run.
+
+### 22. `.env.example`: пароль БД продублирован в двух переменных
+
+- **Тип:** DevOps / надёжность · **Приоритет:** средний
+- **Описание:** `.env.example:2-5` содержит `POSTGRES_PASSWORD="replace-me"` и тот
+  же пароль внутри `DATABASE_URL="postgresql://fantasy_app:replace-me@…"`. При
+  смене `POSTGRES_PASSWORD` нужно вручную править и `DATABASE_URL`; забытое — даёт
+  трудно диагностируемую ошибку аутентификации. `docker-compose.yml` собирает URL
+  из `${POSTGRES_PASSWORD}`, локальный `.env` — нет.
+- **Зачем:** убрать footgun локального старта; цель «воспроизводимый локальный
+  запуск».
+- **Где:** `.env.example`.
+- **Решение:** добавить явный комментарий «при смене пароля обновите ОБЕ строки»
+  рядом с `POSTGRES_PASSWORD` и `DATABASE_URL`. Декомпозицию URL на host/port/db не
+  делаем, чтобы не усложнять локальный сценарий.
+- **Сложность:** низкая · **Риск:** низкий
+
+### 23. Размер upload проверяется уже после чтения файла в память
+
+- **Тип:** надёжность / производительность · **Приоритет:** средний
+- **Описание:** `src/app/api/admin/teams/[teamId]/upload/route.ts:33-39` выполняет
+  `Buffer.from(await upload.arrayBuffer())` **до** `importWyscoutPlayersForTeam`, а
+  лимит `MAX_UPLOAD_MB` проверяется внутри (`validateXlsxUpload`,
+  `src/server/baltika/workbook-imports.ts:434-436`). Файл целиком буферизуется до
+  проверки. (`bodySizeLimit: "25mb"` в `next.config.mjs:15` относится к Server
+  Actions, не к этому API-роуту — проверить на стенде.)
+- **Зачем:** убрать memory-spike от больших файлов. Риск ограничен — роут под
+  `requireApiAdmin`.
+- **Где:** `upload/route.ts`.
+- **Решение:** проверять `upload.size` против `MAX_UPLOAD_MB` сразу после
+  `upload instanceof File` и до `arrayBuffer()`; вернуть 400 `FILE_TOO_LARGE` до
+  чтения. Проверку внутри `validateXlsxUpload` оставить как второй рубеж.
+- **Сложность:** низкая · **Риск:** низкий
+
+### 24. Несоответствие дефолта `MACHETE_FOTMOB_REQUEST_INTERVAL_MS`
+
+- **Тип:** качество кода / документация · **Приоритет:** средний
+- **Описание:** `src/providers/fotmob/client.ts:69` использует дефолт `0` (и
+  комментарий «Default 0»), тогда как `.env.example:39` утверждает «1500ms is the
+  safe default» и задаёт `1500`. При запуске без `.env` воркер не троттлит.
+- **Зачем:** убрать расхождение код/документация; снизить риск упереться в
+  rate-limit FotMob при дефолтной конфигурации.
+- **Где:** `src/providers/fotmob/client.ts:66-69`, `.env.example:37-39`.
+- **Решение:** привести код к безопасному дефолту **1500 мс** (а не 0); обновить
+  комментарий в `client.ts` под новое значение. Возможность отключить троттлинг
+  через `MACHETE_FOTMOB_REQUEST_INTERVAL_MS=0` сохранить.
+- **Сложность:** низкая · **Риск:** низкий
+- **Тесты:** юнит на `throttle()`/чтение env при отсутствии переменной.
+
+### 25. Логгер не маскирует секреты
+
+- **Тип:** безопасность / логирование · **Приоритет:** средний
+- **Описание:** `src/lib/logger.ts:50-64` (`serializeFields`) пишет поля как есть,
+  `Error` сериализуется со `stack`. Сейчас секреты (`MACHETE_FOTMOB_COOKIE`,
+  `CRON_SECRET`, `authorization`) в логи не попадают, но защита держится только на
+  дисциплине вызывающих — один неаккуратный `logger.*("...", { headers })` приведёт
+  к утечке.
+- **Зачем:** превентивно исключить попадание секретов/токенов в логи.
+- **Где:** `src/lib/logger.ts`.
+- **Решение:** в `serializeFields`/`serializeValue` добавить denylist ключей
+  (case-insensitive: `cookie`, `authorization`, `secret`, `token`, `password`,
+  `x-mas`) с заменой значения на `"[REDACTED]"`, включая вложенные объекты.
+- **Сложность:** низкая · **Риск:** низкий
+- **Тесты:** юнит «чувствительные ключи маскируются, остальные сохраняются».
+
+### 26. Зафиксировать инвариант `normalized_*` и перенести модуль координат
+
+- **Тип:** качество кода / архитектура · **Приоритет:** низкий
+- **Описание:** Рефактор (`src/mixer/shot-coordinates.ts` + тесты) свёл
+  дублированные `normalizeFotMobAxis`/`sameCoordinate` в один модуль — корректно и
+  покрыто тестами. Новая `normalized_shot_axis_coordinate` считает сохранённые
+  `normalized_*` авторитетными (проценты). Путь записи
+  (`src/providers/fotmob/shots.ts:61-82`) действительно пишет в `normalized_*`
+  проценты (0–100), а в `x/y` — метры, поэтому поведение эквивалентно старому.
+  Допущение «`normalized_*` всегда в процентах» нигде не зафиксировано. Кроме того,
+  `src/providers/fotmob/shots.ts:7` ре-экспортирует `normalize_fotmob_pitch_coordinates`
+  из `@/mixer/shot-coordinates` — `providers` начинает зависеть от `mixer`.
+- **Зачем:** защитить инвариант от будущих регрессий ингестии; выправить
+  направление зависимости слоёв.
+- **Где:** `src/mixer/shot-coordinates.ts`, схема `match_shots`,
+  `src/providers/fotmob/shots.ts`.
+- **Решение:** (1) добавить комментарий-инвариант «`normalized_*` хранятся в
+  процентах 0–100» в `shot-coordinates.ts` и рядом с колонками `match_shots`;
+  (2) при удобном случае перенести общий модуль координат в нейтральный слой
+  (`src/lib/` или `src/core_data/`) и убрать ре-экспорт из `shots.ts`. Текущий
+  рефактор можно коммитить как есть.
+- **Сложность:** низкая · **Риск:** низкий
+
+---
+
 ## Рекомендованный порядок
 
-**Сначала** (высокий приоритет, низкий риск): 2, 3, 6 → затем 1 и 11.
+**Сначала** (высокий приоритет, низкий риск): **20** (обход авторизации), 2, 3, 6
+→ затем 1 и 11.
+
+**Быстрый низкорисковый пакет** (можно одним PR): 22, 23, 24, 25, 26 — мелкие
+правки без миграций.
 
 **Второй эшелон** (средний риск): 12 + 15 (вместе), 14, затем 8 (после 6).
 
 **Откладываемое / требует согласований:**
 
+- 21 → часть перехода на миграции (задача 10); требует бэкапа БД и baseline.
 - 9 → требует 10 (миграции) и обязательного бэкапа БД.
-- 10 → фундамент для 9 и 19; нужен baseline прод-схемы.
+- 10 → фундамент для 9, 19 и 21; нужен baseline прод-схемы.
 - 19 → зависит от 10.
 - 13 → требует решения по юридическому статусу FotMob.
 
-**Зависимости:** 9 → 10 · 19 → 10 · 8 → желательно после 6 · 12 ↔ 15.
+**Зависимости:** 9 → 10 · 21 → 10 · 19 → 10 · 8 → желательно после 6 · 12 ↔ 15.

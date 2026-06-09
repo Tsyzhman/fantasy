@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { classify_shot_zone, extract_match_shots, normalize_fotmob_pitch_coordinates } from "./shots";
+import { normalize_fotmob_pitch_coordinates } from "@/lib/shot-coordinates";
+
+import { classify_shot_zone, extract_match_shots } from "./shots";
 
 test("extracts one normalized row per FotMob content shotmap shot", () => {
   const shots = extract_match_shots({

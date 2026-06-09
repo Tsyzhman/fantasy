@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { jsonError, withApiHandler } from "@/lib/api-handler";
 import { requireApiAdmin } from "@/lib/auth";
 import { readFormDataOrNull } from "@/lib/request-form-data";
-import { importWyscoutPlayersForTeam } from "@/server/baltika/workbook-imports";
+import { getMaxWorkbookUploadMb, importWyscoutPlayersForTeam } from "@/server/baltika/workbook-imports";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -28,6 +28,11 @@ export const POST = withApiHandler(async (request: Request, { params }: Params) 
 
   if (!(upload instanceof File)) {
     return jsonError("MISSING_FILE", "Upload a Wyscout .xlsx file in the file field.", 400);
+  }
+
+  const maxUploadMb = getMaxWorkbookUploadMb();
+  if (upload.size > maxUploadMb * 1024 * 1024) {
+    return jsonError("FILE_TOO_LARGE", `Uploads are limited to ${maxUploadMb} MB.`, 400);
   }
 
   const result = await importWyscoutPlayersForTeam(teamId, {

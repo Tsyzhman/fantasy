@@ -1,3 +1,9 @@
+import {
+  FOTMOB_PITCH_LENGTH_METERS as FOTMOB_PITCH_LENGTH,
+  FOTMOB_PITCH_WIDTH_METERS as FOTMOB_PITCH_WIDTH,
+  normalize_fotmob_pitch_coordinates
+} from "@/lib/shot-coordinates";
+
 export type FotMobShotRow = {
   match_id: number | null;
   team_id: number | null;
@@ -37,8 +43,6 @@ export type FotMobMatchContext = {
 type JsonRecord = Record<string, unknown>;
 
 const coordinateKeys = ["x", "y", "coordinateX", "coordinateY", "xCoord", "yCoord", "shotX", "shotY"];
-const FOTMOB_PITCH_LENGTH = 105;
-const FOTMOB_PITCH_WIDTH = 68;
 
 export function extract_match_shots(payload: unknown): FotMobShotRow[] {
   const sourcePayload = rawPayloadFromDetails(payload);
@@ -73,10 +77,6 @@ export function normalize_shot_coordinates(
   }
 
   return [scaledX, scaledY];
-}
-
-export function normalize_fotmob_pitch_coordinates(x: number | null | undefined, y: number | null | undefined): [number | null, number | null] {
-  return [normalizePitchAxisCoordinate(x, FOTMOB_PITCH_LENGTH), normalizePitchAxisCoordinate(y, FOTMOB_PITCH_WIDTH)];
 }
 
 export function classify_shot_zone(normalized_x: number | null | undefined, normalized_y: number | null | undefined) {
@@ -370,13 +370,6 @@ function booleanValue(value: unknown): boolean | null {
     if (["false", "0", "no"].includes(normalized)) return false;
   }
   return null;
-}
-
-function normalizePitchAxisCoordinate(value: number | null | undefined, axisLength: number) {
-  if (typeof value !== "number" || !Number.isFinite(value)) return null;
-  if (value >= 0 && value <= 1) return value * 100;
-  if (value >= 0 && value <= axisLength) return (value / axisLength) * 100;
-  return value;
 }
 
 function flipPercentCoordinate(value: number | null) {

@@ -1,11 +1,15 @@
 import { NextResponse } from "next/server";
 
 import { requiredSearchParam, withApiHandler } from "@/lib/api-handler";
+import { requireApiUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { get_shot_map_comparison_for_windows } from "@/lib/shot-maps";
 import { parseMacheteMatchWindow } from "@/scoring/machete/match-window";
 
 export const GET = withApiHandler(async (request: Request) => {
+  const auth = await requireApiUser(request);
+  if (auth.response) return auth.response;
+
   const url = new URL(request.url);
   const attackingTeamId = requiredSearchParam(url.searchParams, "attacking_team_id");
   const defendingTeamId = requiredSearchParam(url.searchParams, "defending_team_id");

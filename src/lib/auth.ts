@@ -69,7 +69,17 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 
   const cookieStore = await cookies();
   const token = cookieStore.get(sessionCookieName)?.value;
+  return getCurrentUserForSessionToken(token);
+}
+
+async function getCurrentUserFromRequest(request: Request): Promise<AuthUser | null> {
+  return getCurrentUserForSessionToken(readSessionTokenFromRequest(request));
+}
+
+async function getCurrentUserForSessionToken(token: string | null | undefined): Promise<AuthUser | null> {
   if (!token) return null;
+  await ensureDatabaseSchema();
+  if (!isDatabaseConfigured()) return null;
 
   const session = await prisma.userSession.findUnique({
     where: { tokenHash: hashSessionToken(token) },
@@ -149,7 +159,7 @@ export async function requireAdminUser() {
   return user;
 }
 
-export async function requireApiUser(): Promise<ApiUserAuth> {
+export async function requireApiUser(request?: Request): Promise<ApiUserAuth> {
   if (!isDatabaseConfigured()) {
     return {
       user: null,
@@ -157,7 +167,7 @@ export async function requireApiUser(): Promise<ApiUserAuth> {
     };
   }
 
-  const user = await getCurrentUser();
+  const user = request ? await getCurrentUserFromRequest(request) : await getCurrentUser();
   if (!user) {
     return {
       user: null,
@@ -188,4 +198,16 @@ export function isSafeRedirectPath(value: string | null | undefined): value is s
 
 function hashSessionToken(token: string) {
   return createHash("sha256").update(token).digest("hex");
+}
+
+function readSessionTokenFromRequest(request: Request) {
+  const cookieHeader = request.headers.get("cookie");
+  if (!cookieHeader) return null;
+
+  for (const part of cookieHeader.split(";")) {
+    const [rawName, ...rawValue] = part.trim().split("=");
+    if (rawName === sessionCookieName) return rawValue.join("=") || null;
+  }
+
+  return null;
 }
