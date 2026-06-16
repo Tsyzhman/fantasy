@@ -5,6 +5,19 @@ The app process also runs the in-process ingestion worker loop. App containers
 connect to PostgreSQL through the Compose service name `postgres`, not through
 host `localhost`.
 
+## Required environment
+
+Create `.env` before running Compose. These values are mandatory:
+
+```bash
+POSTGRES_PASSWORD=...
+CRON_SECRET=...
+```
+
+`CRON_SECRET` protects `/api/cron/*` routes and has no Compose fallback. Use a
+long random value. The current custom cookie auth does not use `NEXTAUTH_*`
+variables.
+
 ## Full reset
 
 This deletes the database, uploaded files, containers and old PM2 processes.
@@ -26,12 +39,30 @@ git clean -fdx
 
 ## Build and initialize
 
+For a clean empty database, initialize with deployed Prisma migrations:
+
 ```bash
 docker compose build --no-cache
 docker compose up -d postgres
 docker compose --profile setup run --rm db-setup
 docker compose up -d web
 ```
+
+For an existing production database created before migrations, take a backup
+first and baseline the initial migration once before running setup:
+
+```bash
+docker compose exec postgres pg_dump -U fantasy_app -d fantasy_scout > fantasy_scout_backup.sql
+docker compose --profile setup run --rm db-setup npx prisma migrate resolve --applied 000001_init
+docker compose --profile setup run --rm db-setup npm run prisma:migrate:deploy
+```
+
+The deploy step applies `000002_runtime_schema_cleanup`, which replaces the old
+runtime schema mutation and `db:safe-update` SQL path. It also performs the
+legacy repair for `MachetePlayerSnapshot` and `match_shots.source_fingerprint`;
+duplicate current Machete snapshots are deleted after keeping the newest row by
+`createdAt`, then `id`. Do not run it on existing production data without the
+backup above.
 
 ## Verify
 

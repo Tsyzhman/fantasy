@@ -23,7 +23,7 @@ run `nvm use` to pick the version from `.nvmrc`.
 docker compose up -d postgres
 copy .env.example .env
 npm install
-npm run prisma:push
+npm run prisma:migrate:deploy
 npm run db:seed
 npm run dev
 ```
@@ -67,4 +67,14 @@ npm run ingestion:worker
 npm run retention:prune-league-seasons -- --dry-run --date=2026-07-01
 ```
 
-See `docs/LOCAL_DEVELOPMENT.md`, `docs/MACHETE_FOTMOB_IMPORT.md` and `docs/DOCKER_PRODUCTION.md` for operational details.
+Current operational docs:
+
+- `docs/LOCAL_DEVELOPMENT.md`
+- `docs/DEPLOYMENT.md`
+- `docs/DOCKER_PRODUCTION.md`
+- `docs/MACHETE_FOTMOB_IMPORT.md`
+- `docs/API_ROUTES.md`
+- `docs/DATA_MODEL.md`
+
+Older planning/backlog files are kept as historical references and should not be
+treated as the current product architecture unless they explicitly say so.

@@ -1,12 +1,11 @@
 import type ExcelJS from "exceljs";
 
-import { ensureDatabaseSchema, prisma } from "@/lib/db";
+import { prisma } from "@/lib/db";
 import { importFantasyPriceWorkbook, parseFantasyPriceWorkbook } from "@/machete/fantasy_price_sheet_import";
 
 type Args = Record<string, string | boolean>;
 
 async function main() {
-  await ensureDatabaseSchema();
   const args = parseArgs(process.argv.slice(2));
   const file = stringArg(args.file) ?? stringArg(args.path);
   const leagueIdArg = stringArg(args["league-id"]);

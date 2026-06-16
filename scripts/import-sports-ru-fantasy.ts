@@ -1,11 +1,10 @@
-import { ensureDatabaseSchema, prisma } from "@/lib/db";
+import { prisma } from "@/lib/db";
 import { parseSportsRuFantasyTournament, parseSportsRuFantasyTournamentLinks } from "@/lib/providers/sports-ru-fantasy";
 import { autoMapSportsRuFantasyPlayers } from "@/machete/sports_ru_player_mapping";
 
 type Args = Record<string, string | boolean>;
 
 async function main() {
-  await ensureDatabaseSchema();
   const args = parseArgs(process.argv.slice(2));
   const url = stringArg(args.url) ?? "https://www.sports.ru/fantasy/football/";
 

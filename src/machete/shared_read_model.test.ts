@@ -246,6 +246,70 @@ test("combined last match window is applied across selected competitions without
   assert.deepEqual(statCall.where?.matchId?.in, [203n, 202n, 201n]);
 });
 
+test("shared player rows push position filters into roster loading and normalize returned rows", async () => {
+  const rosterCalls: unknown[] = [];
+  const prisma = {
+    teamPlayerSeason: {
+      async findMany(input: unknown) {
+        rosterCalls.push(input);
+        return [
+          rosterRow({
+            leagueId: 47n,
+            season: "2024/2025",
+            teamId: 10n,
+            playerId: 99n,
+            position: "Goalkeeper",
+            playerName: "Emiliano Martinez"
+          }),
+          rosterRow({
+            leagueId: 47n,
+            season: "2024/2025",
+            teamId: 10n,
+            playerId: 100n,
+            position: "Defender",
+            playerName: "Pau Torres"
+          })
+        ];
+      }
+    },
+    coreMatch: {
+      async findMany() {
+        return [];
+      }
+    },
+    matchPlayerStat: {
+      async findMany() {
+        return [];
+      }
+    }
+  } as unknown as PrismaClient;
+
+  const rows = await loadSharedMachetePlayerRows(prisma, {
+    scopes: [{ leagueId: 47n, season: "2024/2025", teamId: 10n }],
+    position: "GK",
+    matchWindow: { kind: "all" },
+    scoringModel
+  });
+
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].id, "47:2024/2025:10:99");
+  assert.equal(rows[0].position, "Goalkeeper");
+
+  const rosterCall = rosterCalls[0] as {
+    where?: {
+      AND?: Array<{
+        OR?: Array<{
+          position?: {
+            contains?: string;
+          };
+        }>;
+      }>;
+    };
+  };
+  const positionTerms = rosterCall.where?.AND?.[1]?.OR?.map((item) => item.position?.contains).filter(Boolean);
+  assert.deepEqual(positionTerms, ["GK", "keeper", "goalkeeper"]);
+});
+
 test("match window summary reports official matches separately from parsed player-stat coverage", async () => {
   const prisma = {
     coreMatch: {
@@ -283,6 +347,38 @@ function leagueSeasonRow(leagueId: bigint, season: string, isCurrent: boolean, u
     league: {
       name,
       country
+    }
+  };
+}
+
+function rosterRow(input: {
+  leagueId: bigint;
+  season: string;
+  teamId: bigint;
+  playerId: bigint;
+  position: string | null;
+  playerName: string;
+}) {
+  return {
+    leagueId: input.leagueId,
+    season: input.season,
+    teamId: input.teamId,
+    playerId: input.playerId,
+    position: input.position,
+    age: 30,
+    nationality: "England",
+    isStarter: true,
+    player: { name: input.playerName, country: "England" },
+    team: { name: "Aston Villa" },
+    seasonTeam: {
+      leagueSeason: {
+        name: "Premier League",
+        country: "England",
+        league: {
+          name: "Premier League",
+          country: "England"
+        }
+      }
     }
   };
 }

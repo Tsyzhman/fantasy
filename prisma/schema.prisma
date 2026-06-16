@@ -60,6 +60,20 @@ model UserSession {
   @@index([expiresAt])
 }
 
+model AuthRateLimit {
+  id           String    @id
+  action       String
+  subjectHash  String
+  failedCount  Int       @default(0)
+  lastFailedAt DateTime?
+  lockedUntil  DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @default(now())
+
+  @@unique([action, subjectHash])
+  @@index([lockedUntil])
+}
+
 model League {
   id                      String                   @id @default(cuid())
   name                    String

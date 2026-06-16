@@ -1,257 +1,110 @@
 # Data Model
 
-Use PostgreSQL + Prisma.
+The canonical schema is `prisma/schema.prisma`. Versioned SQL migrations in
+`prisma/migrations` are the deployment source of truth. This document is a
+map of the current model groups, not a full Prisma schema copy.
 
-## Core entities
+## Auth And Preferences
 
-```text
-User
-League
-Team
-Season
-SourceFile
-TeamImport
-Player
-PlayerSnapshot
-FantasyModel
-FantasyModelRule
-FantasyScore
-SavedFilter
-Shortlist
+- `User`: application account with role, password hash, status, sessions, saved
+  views, watchlist rows, and fantasy squads.
+- `UserSession`: hashed cookie-session token with expiry.
+- `AuthRateLimit`: persisted login/setup rate-limit buckets.
+- `UserSavedView`: saved Machete or Baltika explorer URLs per user.
+- `UserWatchlistPlayer`: watched player keys per user and source.
+
+## Baltika And Legacy Wyscout Imports
+
+These models support the Excel-imported scouting workflow.
+
+- `League`, `Season`, `Team`: admin-managed Baltika/Wyscout league structure.
+- `SourceFile`: uploaded workbook metadata and storage pointer.
+- `TeamImport`: versioned player workbook import for a team and season.
+- `Player`: canonical player identity for imported snapshots.
+- `PlayerSnapshot`: typed imported player metrics, fantasy scores, model scores,
+  starter flags, and current published explorer rows.
+- `FantasyModel`, `FantasyModelRule`: configurable scoring models for imported
+  player snapshots.
+- `BaltikaTeamStatsImport`: versioned Wyscout Team Stats workbook import.
+- `BaltikaFixture`: manual or imported Baltika fixture.
+- `BaltikaTeamMatchStat`: team-level fixture statistics used for Baltika views.
+
+The Wyscout import path is still active, but it is one mode of the app rather
+than the whole product.
+
+## Shared FotMob Core
+
+These lower-case mapped tables are the normalized source for Machete and MiXerr.
+
+- `CoreLeague`, `CoreTeam`, `CorePlayer`: provider identities for leagues,
+  teams, and players.
+- `LeagueSeason`: active season metadata per league.
+- `LeagueSeasonTeam`: teams participating in a league season.
+- `TeamPlayerSeason`: roster membership, position, starter status, nationality,
+  age, and shirt data per league/team/player/season.
+- `CoreMatch`: normalized match fixture and score row.
+- `RawMatchPayload`: temporary or audit storage for fetched provider payloads.
+- `MatchTeamStat`: normalized team match stats.
+- `MatchPlayerStat`: normalized player match stats.
+- `MatchShot`: normalized shot rows with 0-100 pitch coordinates and
+  `sourceFingerprint`.
+- `MatchEvent`: normalized match events.
+- `FantasyRuleset`, `FantasyPoint`, `FantasyPointBreakdown`: normalized fantasy
+  scoring outputs for shared match data.
+- `IngestionRun`, `IngestionJob`, `IngestionCheckpoint`: operational state for
+  initial backfills, incremental updates, retries, and progress display.
+
+`MatchShot.sourceFingerprint` is required and unique with `matchId`. It lets the
+importer upsert shots without storing full raw shot payloads in the normalized
+table.
+
+## Machete Models
+
+Machete has legacy provider-state tables plus read-model snapshots.
+
+- `MacheteLeague`, `MacheteTeam`, `MachetePlayer`, `MacheteFixture`: legacy
+  FotMob shell entities used by Machete pages and sync jobs.
+- `MachetePlayerMatchStat`: Machete-specific player fixture stats.
+- `MachetePlayerSnapshot`: aggregate current or period-specific player rows with
+  projection scores and value scores.
+- `MacheteSyncJob`: status and result payloads for Machete sync endpoints.
+- `MacheteRawPayload`: retained provider payloads for Machete-specific syncs.
+- `ProviderEntityMap`: links provider ids to internal entities where automatic
+  matching is not enough.
+
+Current player explorer pages increasingly read from the shared FotMob core and
+Machete read models instead of treating Wyscout snapshots as the primary source.
+
+## Sports.ru Prices And Squads
+
+- `SportsRuFantasyContest`: league/season fantasy contest settings, such as
+  budget, squad size, and max players per team.
+- `FantasyPlayerPrice`: imported Sports.ru price rows and optional mapping to
+  normalized FotMob players and teams.
+- `UserFantasySquad`: one saved squad per user, league, and season.
+- `UserFantasySquadPlayer`: selected squad players with starter, lock, captain,
+  vice-captain, slot, and purchase-price fields.
+
+Database constraints enforce one squad per user/league/season, one player per
+squad, and distinct captain/vice-captain choices.
+
+## Shot-Map Support
+
+- `ShotmapPreset`: saved shot-map configuration.
+- `ShotmapComparisonsCache`: cached comparison results and source-match ids.
+
+MiXerr and player/team shot-map views read from `MatchShot`, `MatchTeamStat`,
+`MatchPlayerStat`, and `CoreMatch`.
+
+## Migration Notes
+
+Fresh databases are created with:
+
+```bash
+npm run prisma:migrate:deploy
 ```
 
-## Prisma model sketch
-
-```prisma
-enum UserRole {
-  ADMIN
-  USER
-}
-
-enum ImportStatus {
-  EMPTY
-  UPLOADING
-  PARSING
-  VALIDATED
-  READY
-  PUBLISHED
-  ERROR
-  OUTDATED
-  ARCHIVED
-}
-
-enum DataSourceType {
-  WYSCOUT_EXCEL
-  API_FOOTBALL
-  WYSCOUT_API
-  MANUAL
-}
-
-model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  role      UserRole @default(USER)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model League {
-  id        String   @id @default(cuid())
-  name      String
-  country   String?
-  code      String?
-  logoUrl   String?
-  seasons   Season[]
-  teams     Team[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Season {
-  id        String   @id @default(cuid())
-  leagueId  String
-  name      String   // e.g. "2025/26"
-  startDate DateTime?
-  endDate   DateTime?
-  league    League   @relation(fields: [leagueId], references: [id])
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([leagueId, name])
-}
-
-model Team {
-  id        String   @id @default(cuid())
-  leagueId  String
-  name      String
-  slug      String
-  logoUrl   String?
-  aliases   String[] @default([])
-  league    League   @relation(fields: [leagueId], references: [id])
-  imports   TeamImport[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  @@unique([leagueId, slug])
-}
-
-model SourceFile {
-  id               String         @id @default(cuid())
-  sourceType       DataSourceType @default(WYSCOUT_EXCEL)
-  originalFilename String
-  storagePath      String
-  mimeType         String?
-  sizeBytes        Int?
-  checksum         String?
-  uploadedById     String?
-  createdAt        DateTime       @default(now())
-}
-
-model TeamImport {
-  id                 String       @id @default(cuid())
-  leagueId           String
-  seasonId           String
-  teamId             String
-  sourceFileId        String
-  status             ImportStatus @default(PARSING)
-  periodFrom          DateTime?
-  periodTo            DateTime?
-  detectedTeamName    String?
-  rowsCount           Int         @default(0)
-  columnsCount        Int         @default(0)
-  errorsJson          Json?
-  warningsJson        Json?
-  isCurrentPublished  Boolean     @default(false)
-  publishedAt         DateTime?
-  createdById         String?
-  createdAt           DateTime    @default(now())
-  updatedAt           DateTime    @updatedAt
-
-  team        Team       @relation(fields: [teamId], references: [id])
-  sourceFile  SourceFile @relation(fields: [sourceFileId], references: [id])
-  snapshots   PlayerSnapshot[]
-
-  @@index([leagueId, seasonId, teamId, status])
-  @@index([teamId, isCurrentPublished])
-}
-
-model Player {
-  id              String   @id @default(cuid())
-  canonicalName   String
-  normalizedName  String
-  birthCountry    String?
-  passportCountry String?
-  foot            String?
-  heightCm        Int?
-  weightKg        Int?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  snapshots PlayerSnapshot[]
-
-  @@index([normalizedName])
-}
-
-model PlayerSnapshot {
-  id              String   @id @default(cuid())
-  teamImportId    String
-  leagueId         String
-  seasonId         String
-  teamId           String
-  playerId         String?
-
-  playerName       String
-  normalizedName   String
-  teamName         String
-  positionRaw      String?
-  positionGroup    String?  // GK, DEF, MID, FWD, UNKNOWN
-  age              Int?
-  marketValue      Int?
-  contractExpires  DateTime?
-  matchesPlayed    Int?
-  minutesPlayed    Int?
-  goals            Float?
-  xg               Float?
-  assists          Float?
-  xa               Float?
-  birthCountry     String?
-  passportCountry  String?
-  foot             String?
-  heightCm         Int?
-  weightKg         Int?
-  onLoan           Boolean?
-
-  fantasyScore     Float?
-  valueScore       Float?
-  isStarter        Boolean  @default(false)
-
-  fantasyAssists       Float?
-  cleanSheets          Float?
-  saves                Float?
-  penaltySaves         Float?
-  recoveries           Float?
-  penaltiesConceded    Float?
-  missedPenalties      Float?
-  ownGoals             Float?
-  goalsConceded        Float?
-  shotsOnTarget        Float?
-  keyPasses            Float?
-  tacklesWon           Float?
-  interceptions        Float?
-  clearances           Float?
-  yellowCards          Float?
-  redCards             Float?
-  averageRating        Float?
-
-  createdAt        DateTime @default(now())
-
-  teamImport TeamImport @relation(fields: [teamImportId], references: [id])
-  player     Player?    @relation(fields: [playerId], references: [id])
-
-  @@index([leagueId, seasonId, teamId])
-  @@index([positionGroup])
-  @@index([fantasyScore])
-  @@index([valueScore])
-}
-
-model FantasyModel {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  version     Int      @default(1)
-  isDefault   Boolean  @default(false)
-  isActive    Boolean  @default(true)
-  rules       FantasyModelRule[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
-
-model FantasyModelRule {
-  id             String  @id @default(cuid())
-  modelId        String
-  positionGroup  String  // DEFAULT, GK, DEF, MID, FWD
-  metricKey      String
-  weight         Float
-  transform      String  @default("linear")
-  enabled        Boolean @default(true)
-
-  model FantasyModel @relation(fields: [modelId], references: [id])
-
-  @@index([modelId, positionGroup])
-}
-```
-
-## Why typed metric columns matter
-
-The Wyscout file has many columns, but production storage should avoid duplicated JSON payload columns.
-
-Use explicit columns for:
-
-- common filters;
-- sorting;
-- score calculation;
-- normalized identity fields.
-
-Fantasy formulas read from the promoted typed metric set. If a new imported metric must be used by scoring or UI, add it as
-a typed column and map it in the importer instead of storing the full row as JSON.
+Existing production databases from before Prisma migrations must be backed up,
+baselined with `000001_init`, and then upgraded with deploy migrations. The
+`000002_runtime_schema_cleanup` migration moved historical runtime schema
+mutation and data repair into versioned SQL.

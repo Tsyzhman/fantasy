@@ -2,10 +2,6 @@ import { createHash } from "node:crypto";
 
 import type { PrismaClient } from "@prisma/client";
 
-import { createLogger } from "@/lib/logger";
-
-const logger = createLogger("auth");
-
 type HeaderReader = {
   get(name: string): string | null;
 };
@@ -31,10 +27,6 @@ const defaultMaxFailures = 5;
 const defaultWindowMs = 15 * 60 * 1000;
 const defaultLockMs = 15 * 60 * 1000;
 
-const globalForAuthRateLimit = globalThis as unknown as {
-  authRateLimitSchemaPromise?: Promise<void>;
-};
-
 export function authRateLimitBuckets(input: { action: string; email?: string | null; clientIp?: string | null }) {
   const buckets: AuthRateLimitBucket[] = [];
   const normalizedEmail = input.email?.trim().toLowerCase();
@@ -53,8 +45,6 @@ export async function checkAuthRateLimits(
   prisma: PrismaClient,
   buckets: AuthRateLimitBucket[]
 ) {
-  await ensureAuthRateLimitSchema(prisma);
-
   const now = new Date();
   for (const bucket of buckets) {
     const row = await findBucket(prisma, bucket);
@@ -74,8 +64,6 @@ export async function recordFailedAuthAttempt(
   buckets: AuthRateLimitBucket[],
   options: AuthRateLimitOptions = {}
 ) {
-  await ensureAuthRateLimitSchema(prisma);
-
   const maxFailures = options.maxFailures ?? defaultMaxFailures;
   const windowMs = options.windowMs ?? defaultWindowMs;
   const lockMs = options.lockMs ?? defaultLockMs;
@@ -104,8 +92,6 @@ export async function recordFailedAuthAttempt(
 }
 
 export async function clearAuthRateLimits(prisma: PrismaClient, buckets: AuthRateLimitBucket[]) {
-  await ensureAuthRateLimitSchema(prisma);
-
   for (const bucket of buckets) {
     await prisma.$executeRaw`
       DELETE FROM "AuthRateLimit"
@@ -122,36 +108,6 @@ async function findBucket(prisma: PrismaClient, bucket: AuthRateLimitBucket) {
     LIMIT 1
   `;
   return rows[0] ?? null;
-}
-
-function ensureAuthRateLimitSchema(prisma: PrismaClient) {
-  globalForAuthRateLimit.authRateLimitSchemaPromise ??= createAuthRateLimitSchema(prisma)
-    .catch((error) => {
-      logger.error("Failed to ensure auth rate-limit schema.", { error });
-    });
-
-  return globalForAuthRateLimit.authRateLimitSchemaPromise;
-}
-
-async function createAuthRateLimitSchema(prisma: PrismaClient) {
-  await prisma.$executeRawUnsafe(`
-CREATE TABLE IF NOT EXISTS "AuthRateLimit" (
-  "id" TEXT NOT NULL,
-  "action" TEXT NOT NULL,
-  "subjectHash" TEXT NOT NULL,
-  "failedCount" INTEGER NOT NULL DEFAULT 0,
-  "lastFailedAt" TIMESTAMP(3),
-  "lockedUntil" TIMESTAMP(3),
-  "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-  CONSTRAINT "AuthRateLimit_pkey" PRIMARY KEY ("id")
-)`);
-  await prisma.$executeRawUnsafe(`
-CREATE UNIQUE INDEX IF NOT EXISTS "AuthRateLimit_action_subjectHash_key"
-ON "AuthRateLimit"("action", "subjectHash")`);
-  await prisma.$executeRawUnsafe(`
-CREATE INDEX IF NOT EXISTS "AuthRateLimit_lockedUntil_idx"
-ON "AuthRateLimit"("lockedUntil")`);
 }
 
 function bucketId(bucket: AuthRateLimitBucket) {

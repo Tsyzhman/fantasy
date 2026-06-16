@@ -2,8 +2,8 @@ import { NextResponse } from "next/server";
 
 import { jsonError, withApiHandler } from "@/lib/api-handler";
 import { requireApiAdmin } from "@/lib/auth";
-import { readFormDataOrNull } from "@/lib/request-form-data";
-import { getMaxWorkbookUploadMb, importWyscoutPlayersForTeam } from "@/server/baltika/workbook-imports";
+import { multipartBodyLimitForFileBytes, readFormDataWithLimit } from "@/lib/request-form-data";
+import { getMaxWorkbookUploadBytes, getMaxWorkbookUploadMb, importWyscoutPlayersForTeam } from "@/server/baltika/workbook-imports";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -19,10 +19,18 @@ export const POST = withApiHandler(async (request: Request, { params }: Params) 
   if (auth.response) return auth.response;
 
   const { teamId } = await params;
-  const formData = await readFormDataOrNull(request);
-  if (!formData) {
+  const maxUploadMb = getMaxWorkbookUploadMb();
+  const maxUploadBytes = getMaxWorkbookUploadBytes();
+  const formDataResult = await readFormDataWithLimit(request, {
+    maxBodyBytes: multipartBodyLimitForFileBytes(maxUploadBytes)
+  });
+  if (!formDataResult.ok) {
+    if (formDataResult.reason === "body-too-large") {
+      return jsonError("FILE_TOO_LARGE", `Uploads are limited to ${maxUploadMb} MB.`, 400);
+    }
     return jsonError("BAD_REQUEST", "Upload form data is required.", 400);
   }
+  const formData = formDataResult.formData;
 
   const upload = formData.get("file");
 
@@ -30,8 +38,7 @@ export const POST = withApiHandler(async (request: Request, { params }: Params) 
     return jsonError("MISSING_FILE", "Upload a Wyscout .xlsx file in the file field.", 400);
   }
 
-  const maxUploadMb = getMaxWorkbookUploadMb();
-  if (upload.size > maxUploadMb * 1024 * 1024) {
+  if (upload.size > maxUploadBytes) {
     return jsonError("FILE_TOO_LARGE", `Uploads are limited to ${maxUploadMb} MB.`, 400);
   }
 

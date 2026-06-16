@@ -8,6 +8,6 @@ source /var/www/fantasy-scout/.env
 set +a
 
 : "${DATABASE_URL:?DATABASE_URL is required}"
-: "${NEXTAUTH_SECRET:?NEXTAUTH_SECRET is required}"
+: "${CRON_SECRET:?CRON_SECRET is required}"
 
 exec npm start

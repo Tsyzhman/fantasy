@@ -10,7 +10,7 @@ version from `.nvmrc`.
 docker compose up -d postgres
 copy .env.example .env
 npm install
-npm run prisma:push
+npm run prisma:migrate:deploy
 npm run db:seed
 npm run dev
 ```

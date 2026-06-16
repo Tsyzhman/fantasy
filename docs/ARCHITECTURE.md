@@ -1,120 +1,147 @@
 # Architecture
 
-## Design principle
+This document describes the current application. Older MVP planning files in
+`docs/IMPLEMENTATION_PLAN.md`, `docs/optimization-plan.md`, and parts of
+`docs/IMPROVEMENT_BACKLOG.md` are historical references, not the active
+architecture.
 
-Build the first version around uploaded Wyscout Excel files, not external APIs.
+## Product Modes
 
-External data providers can be added later using a provider abstraction, but the MVP source of truth is:
+Fantasy Scout now has three active product modes:
 
-```text
-Wyscout-format `.xlsx` uploaded by admin
-```
+- Machete: FotMob-backed competition data, fixtures, player stats, Sports.ru
+  fantasy prices, projections, and squad planning.
+- Baltika: admin-managed Wyscout-style Excel imports, team/player scouting
+  tables, manual fixtures, team-stat uploads, and fantasy model settings.
+- MiXerr: shot maps, xG overlays, player/team shot views, and comparison
+  workflows built on normalized FotMob match data.
 
-## Suggested stack
+The old Wyscout-first MVP still exists as the Baltika import path. It is not the
+whole product anymore.
 
-- Next.js App Router
-- TypeScript
-- PostgreSQL
-- Prisma
-- Tailwind CSS
-- shadcn/ui
-- Node Excel parser, e.g. `xlsx`
-- Local file storage in development
-- S3-compatible file storage in production
+## Runtime Stack
 
-## High-level modules
+- Next.js App Router with React and TypeScript.
+- Prisma Client with PostgreSQL.
+- Versioned Prisma migrations as the only schema source of truth.
+- Tailwind CSS and server-rendered application pages.
+- Node's built-in test runner through `tsx --test`.
+- Cron-style API routes protected by `CRON_SECRET`.
+- In-process ingestion worker loop when the production app container is running.
 
-```text
-src/app/admin/leagues
-src/app/admin/leagues/[leagueId]
-src/app/admin/leagues/[leagueId]/teams/[teamId]
-src/app/admin/models
-src/app/players
-
-src/lib/importers/wyscout-excel
-src/lib/scoring
-src/lib/storage
-src/lib/db
-src/lib/auth
-src/components/team-card
-src/components/upload-dropzone
-src/components/player-table
-src/components/filter-sidebar
-```
-
-## Data flow
+## Module Map
 
 ```text
-Admin drops Excel file on a team card
-→ API route receives file
-→ file stored in storage
-→ import job created
-→ parser reads workbook
-→ validator checks required columns
-→ normalizer maps Wyscout headers to internal metric keys
-→ team name is validated against target team
-→ previous current import is archived
-→ new team import is saved as READY
-→ player snapshots are inserted
-→ fantasy scores are calculated
-→ admin publishes import
-→ user player explorer reads published snapshots
+src/app/machete
+  league setup, league detail, player explorer, models, squad planner, sync jobs
+
+src/app/baltika
+  Wyscout-style imported leagues, teams, players, schedule, models
+
+src/app/mixerr
+  shot-map explorer and comparison UI
+
+src/app/admin
+  admin shell, legacy league/team management, user admin, ingestion controls
+
+src/app/api
+  route handlers for imports, ingestion jobs, squads, shot maps, cron, auth
+
+src/core_data
+  shared FotMob ingestion, normalized match/team/player/shot repositories
+
+src/machete
+  Machete read models, scoring, Sports.ru price mapping, squad planning
+
+src/server/baltika
+  Baltika workbook import and fixture/team-stat logic
+
+src/lib
+  auth, Prisma client, request parsing, logging, scoring/import helpers
+
+prisma
+  datamodel, migrations, seed and recalculation scripts
 ```
 
-## Import versioning
+## Data Flows
 
-Every upload creates a new `team_import` record.
-
-Only one import per team should be `is_current_published = true`.
-
-Recommended MVP behavior:
-
-- keep all historical imports;
-- show only current published import to users;
-- allow admin to publish a new import after validation;
-- publishing a new import automatically unpublishes the previous one for the same league/team/season/period/model context.
-
-## Provider abstraction for future
-
-Keep these source types even if only one is implemented now:
-
-```ts
-export type DataSourceType =
-  | 'WYSCOUT_EXCEL'
-  | 'API_FOOTBALL'
-  | 'WYSCOUT_API'
-  | 'MANUAL';
-```
-
-This keeps the product Excel-first while allowing API-based importers later.
-
-## Security and roles
-
-Roles:
+### Machete FotMob ingestion
 
 ```text
-ADMIN
-USER
+Admin or cron queues ingestion
+-> ingestion job selects league/season scopes
+-> FotMob fixtures and match details are fetched
+-> raw payloads are stored only while needed
+-> normalized core tables are upserted
+-> rosters, player stats, shots, events, and team stats are refreshed
+-> Machete read models aggregate current player rows and projections
+-> squad planner combines projections with Sports.ru prices and saved squads
 ```
 
-Admin can upload/import/publish.
-
-User can view/filter published datasets.
-
-Never expose unpublished imports to normal users.
-
-## Storage
-
-In development:
+### Sports.ru fantasy prices
 
 ```text
-storage/uploads/{sourceFileId}/{originalFilename}
+Admin uploads price workbook
+-> workbook parser normalizes names, teams, positions, prices
+-> rows are stored in fantasy_player_prices
+-> automatic and manual mappings connect prices to FotMob players
+-> squad planner uses mapped positions/prices before estimates
 ```
 
-In production:
+### Baltika Excel imports
 
 ```text
-s3://bucket/uploads/{sourceFileId}/{originalFilename}
+Admin uploads player or team-stat workbook
+-> route checks request and file size
+-> workbook parser validates expected sheets and columns
+-> SourceFile and import rows are recorded
+-> PlayerSnapshot or Baltika team stats are written
+-> scoring models calculate published scouting views
 ```
 
-Store file metadata and checksum in `source_files`.
+### MiXerr shot maps
+
+```text
+FotMob match data is normalized
+-> match_shots stores source_fingerprint and normalized coordinates
+-> shot-map API routes apply player/team/match-window filters
+-> UI renders attacking, conceded, and comparison layers
+```
+
+## Database Policy
+
+Schema changes live in `prisma/schema.prisma` and `prisma/migrations`.
+Application startup must not create tables, add columns, create indexes, or run
+schema-repair DML. Existing production databases that predate migrations must be
+baselined once and then upgraded with `npm run prisma:migrate:deploy`.
+
+`scripts/apply-safe-db-update.ts` is retained only as a compatibility wrapper
+around Prisma migrate deploy. New code should not add SQL there.
+
+## Auth And Roles
+
+Roles are `ADMIN` and `USER`.
+
+- Admin users can upload workbooks, trigger ingestion, edit models, manage users,
+  and run sync jobs.
+- Signed-in users can view published data, save views, maintain watchlists, and
+  save Machete squads.
+- Cron routes do not rely on cookie auth; they validate
+  `Authorization: Bearer <CRON_SECRET>`.
+- The current custom cookie/session auth does not use `NEXTAUTH_*`.
+
+## Current Documentation
+
+Use these files for current behavior:
+
+- `README.md`
+- `docs/LOCAL_DEVELOPMENT.md`
+- `docs/DEPLOYMENT.md`
+- `docs/DOCKER_PRODUCTION.md`
+- `docs/API_ROUTES.md`
+- `docs/DATA_MODEL.md`
+- `docs/MACHETE_FOTMOB_IMPORT.md`
+- `docs/WYSCOUT_EXCEL_IMPORT.md`
+
+Use planning/backlog documents only for historical context unless they have been
+freshly audited against code.

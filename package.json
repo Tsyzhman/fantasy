@@ -11,16 +11,17 @@
     "start": "next start -H 0.0.0.0",
     "test": "tsx --test \"src/**/*.test.ts\"",
     "test:db": "tsx --test \"src/**/*.db-test.ts\"",
-    "audit:prod": "npm audit --omit=dev --audit-level=high",
+    "audit:prod": "npm audit --omit=dev --audit-level=moderate",
     "lint": "eslint .",
     "typecheck": "next typegen && tsc --noEmit",
     "check": "npm run test && npm run lint && npm run typecheck && npm run build",
     "clean:dev": "tsx scripts/clean-dev.ts",
     "prisma:generate": "prisma generate",
-    "prisma:push": "prisma db push",
+    "prisma:push": "npm run prisma:migrate:deploy",
     "prisma:migrate:deploy": "prisma migrate deploy",
+    "prisma:migrate:diff": "tsx scripts/check-migration-drift.ts",
     "db:safe-update": "tsx scripts/apply-safe-db-update.ts",
-    "db:prod-update": "npm run db:safe-update && prisma generate",
+    "db:prod-update": "npm run prisma:migrate:deploy && prisma generate",
     "db:seed": "tsx prisma/seed.ts",
     "ingestion:status": "tsx scripts/ingestion-runner.ts status",
     "ingestion:queue-initial-backfill": "tsx scripts/ingestion-runner.ts queue-initial-backfill",
@@ -72,6 +73,7 @@
   },
   "overrides": {
     "postcss": "8.5.15",
-    "tmp": "^0.2.6"
+    "tmp": "^0.2.6",
+    "uuid": "11.1.1"
   }
 }

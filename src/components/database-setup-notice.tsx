@@ -1,6 +1,6 @@
 import { I18nText } from "@/components/i18n-text";
 
-const localSetupCommands = ["copy .env.example .env", "docker compose up -d postgres", "npm run prisma:push", "npm run db:seed", "npm run dev"];
+const localSetupCommands = ["copy .env.example .env", "docker compose up -d postgres", "npm run prisma:migrate:deploy", "npm run db:seed", "npm run dev"];
 
 export function DatabaseSetupNotice() {
   return (

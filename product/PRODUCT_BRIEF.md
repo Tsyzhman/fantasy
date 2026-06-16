@@ -1,83 +1,109 @@
 # Product Brief
 
-## Product name
+## Product Name
 
 Fantasy Scout
 
-## One-liner
+## One-Liner
 
-A fantasy football player discovery tool powered by uploaded Wyscout-format team spreadsheets.
+A fantasy football scouting workspace for FotMob-backed projections, Sports.ru
+prices, squad planning, Wyscout-style team imports, and shot-map analysis.
+
+## Current Product Reality
+
+Fantasy Scout is no longer only a Wyscout spreadsheet MVP. It has three active
+workspaces:
+
+- Machete: shared FotMob data, player projections, Sports.ru prices, squad
+  planning, and sync operations.
+- Baltika: Wyscout-style Excel imports, scouting tables, manual schedules,
+  team-stat workbooks, and configurable models.
+- MiXerr: shot maps, xG overlays, and team/player shot comparisons.
 
 ## Problem
 
-Fantasy users need a fast way to compare players across a league using structured football metrics, but raw scouting tables are difficult to use manually. Admins may have team-by-team Wyscout spreadsheets, but users need a clean searchable interface with calculated fantasy scores.
+Fantasy users need to turn scattered football data into decisions: which players
+to buy, who is underpriced, who has useful upcoming fixtures, and which shot
+profiles are real. Admins also need controlled data pipelines because provider
+data, price sheets, and Excel exports do not arrive in one clean format.
 
 ## Solution
 
-Create a web app where an admin maintains league datasets visually:
+The app combines managed ingestion with decision-oriented views:
 
-```text
-League → team cards → drag & drop Wyscout Excel file → publish dataset
-```
+- fetch and normalize FotMob fixtures, rosters, player stats, shots, and events;
+- import Sports.ru fantasy prices and map them to FotMob players;
+- calculate fantasy projections and value scores;
+- let users build, validate, optimize, save, and export squads;
+- keep Baltika's Wyscout-style import workflow for uploaded scouting workbooks;
+- expose MiXerr shot-map analysis on top of normalized match shots.
 
-The app parses each team spreadsheet, calculates fantasy and value scores, and exposes a player explorer for normal users.
-
-## Primary personas
+## Primary Personas
 
 ### Admin
 
-Owns data preparation and publishing.
+Owns data quality and operations.
 
 Needs to:
 
-- create/manage leagues and teams;
-- upload Wyscout Excel files team by team;
-- see which teams are missing/outdated;
-- validate imported rows;
-- publish/unpublish datasets;
-- configure fantasy scoring models.
+- configure leagues, teams, seasons, users, and fantasy models;
+- run initial backfills and incremental ingestion jobs;
+- inspect ingestion status and failures;
+- upload Wyscout-style player/team-stat workbooks;
+- upload Sports.ru price workbooks and fix player mappings;
+- trigger league/team sync jobs;
+- keep production secrets and migrations safe.
 
-### User
+### Fantasy User
 
-Uses the prepared data to make fantasy decisions.
+Uses prepared data to make squad decisions.
 
 Needs to:
 
-- browse one league at a time;
-- filter by team, position, age, minutes, value, xG/xA, goals, assists, score;
-- sort by fantasy score and value score;
-- compare players quickly;
-- optionally save shortlists later.
+- browse players by league, season, team, position, price, minutes, and score;
+- compare projections, value, recent form, and upcoming fixtures;
+- save watchlists and reusable views;
+- build a legal squad under budget and team limits;
+- lock players, select captain/vice-captain, and evaluate transfers;
+- export squad or player data.
 
-## MVP scope
+### Analyst
 
-Included:
+Uses shot and match data to inspect team/player profiles.
 
-- admin login;
-- league list;
-- league detail page with team cards;
-- drag & drop Excel upload on a team card;
-- fixed Wyscout-format parser;
-- validation and import status;
-- versioned team imports;
-- fantasy model with configurable weights;
-- player explorer for published data;
-- CSV export from player explorer.
+Needs to:
 
-Excluded from first MVP:
+- inspect attacking and conceded shot maps;
+- filter by match window and context;
+- compare teams or players with consistent normalized coordinates;
+- rely on deduplicated shot source fingerprints.
 
-- live API-Football integration;
-- Wyscout API integration;
-- payments;
-- multi-tenant organizations;
-- real-time live match updates;
-- complex ML predictions;
-- manual column mapping UI.
+## In Scope
 
-## Product positioning
+- Custom cookie/session auth with admin and user roles.
+- Prisma/PostgreSQL schema with versioned migrations.
+- Machete FotMob ingestion and shared normalized core tables.
+- Sports.ru fantasy price imports and player mapping.
+- Machete player explorer and squad planner.
+- Baltika Wyscout-style workbook imports and model settings.
+- MiXerr shot maps and comparison APIs.
+- Saved views, watchlists, and squad export.
+- Production Docker/PM2 runbooks and CI checks.
 
-Not “spreadsheet hosting”.
+## Out Of Scope For Now
+
+- Payments and subscriptions.
+- Multi-tenant organization management.
+- Real-time live-match updates.
+- Public anonymous fantasy league hosting.
+- A generic manual column-mapping UI for arbitrary spreadsheets.
+- Replacing provider-specific import logic with a fully generic ETL builder.
+
+## Positioning
+
+Not "spreadsheet hosting" and not a generic BI dashboard.
 
 Position it as:
 
-> Excel-first fantasy scouting platform with league/team upload dashboard and fantasy scoring models.
+> Fantasy football decision software that combines provider ingestion, price
+> sheets, squad constraints, and shot-map analysis in one operational workspace.

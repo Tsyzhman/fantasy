@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { readFormDataOrNull } from "./request-form-data";
+import { multipartBodyLimitForFileBytes, readFormDataOrNull, readFormDataWithLimit } from "./request-form-data";
 
 test("readFormDataOrNull returns parsed form data", async () => {
   const formData = new FormData();
@@ -21,4 +21,29 @@ test("readFormDataOrNull returns null for non-form request bodies", async () => 
   );
 
   assert.equal(parsed, null);
+});
+
+test("readFormDataWithLimit rejects oversized requests before parsing form data", async () => {
+  const result = await readFormDataWithLimit(
+    new Request("http://localhost/api/upload", {
+      method: "POST",
+      headers: {
+        "content-length": "2048",
+        "content-type": "application/json"
+      },
+      body: "{}"
+    }),
+    { maxBodyBytes: 1024 }
+  );
+
+  assert.deepEqual(result, {
+    ok: false,
+    reason: "body-too-large",
+    maxBodyBytes: 1024
+  });
+});
+
+test("multipartBodyLimitForFileBytes allows fixed multipart overhead per file set", () => {
+  assert.equal(multipartBodyLimitForFileBytes(1024), 1024 + 1024 * 1024);
+  assert.equal(multipartBodyLimitForFileBytes(1024, 3), 3 * 1024 + 1024 * 1024);
 });

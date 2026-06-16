@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import { jsonError, withApiHandler } from "@/lib/api-handler";
 import { requireApiAdmin } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { readFormDataOrNull } from "@/lib/request-form-data";
+import { multipartBodyLimitForFileBytes, readFormDataWithLimit } from "@/lib/request-form-data";
 import { importFantasyPriceWorkbook } from "@/machete/fantasy_price_sheet_import";
 
 export const runtime = "nodejs";
@@ -14,10 +14,17 @@ export const POST = withApiHandler(async (request: Request) => {
   const auth = await requireApiAdmin();
   if (auth.response) return auth.response;
 
-  const formData = await readFormDataOrNull(request);
-  if (!formData) {
+  const maxBytes = maxUploadBytes();
+  const formDataResult = await readFormDataWithLimit(request, {
+    maxBodyBytes: multipartBodyLimitForFileBytes(maxBytes)
+  });
+  if (!formDataResult.ok) {
+    if (formDataResult.reason === "body-too-large") {
+      return jsonError("BAD_REQUEST", `File is larger than ${Math.round(maxBytes / 1024 / 1024)} MB.`, 400);
+    }
     return jsonError("BAD_REQUEST", "Upload form data is required.", 400);
   }
+  const formData = formDataResult.formData;
 
   const leagueId = parseBigInt(formData.get("leagueId"));
   const season = stringValue(formData.get("season"));
@@ -29,7 +36,6 @@ export const POST = withApiHandler(async (request: Request) => {
     return jsonError("BAD_REQUEST", "XLSX file is required.", 400);
   }
 
-  const maxBytes = maxUploadBytes();
   if (file.size > maxBytes) {
     return jsonError("BAD_REQUEST", `File is larger than ${Math.round(maxBytes / 1024 / 1024)} MB.`, 400);
   }

@@ -11,5 +11,6 @@ test("DatabaseSetupNotice renders local database setup commands", () => {
   assert.match(html, /Database is not configured/);
   assert.match(html, /DATABASE_URL/);
   assert.match(html, /docker compose up -d postgres/);
+  assert.match(html, /npm run prisma:migrate:deploy/);
   assert.match(html, /npm run dev/);
 });

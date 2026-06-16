@@ -6,6 +6,8 @@ import { prisma } from "@/lib/db";
 import { readFormDataOrNull } from "@/lib/request-form-data";
 import { normalizeName } from "@/lib/text";
 import {
+  getMaxWorkbookUploadBytes,
+  getMaxWorkbookUploadMb,
   importWyscoutPlayersForTeam,
   importWyscoutTeamStatsForTeam,
   type WorkbookImportResult
@@ -36,6 +38,7 @@ type BulkUploadResult = {
   status: "imported" | "failed";
   rowsCount?: number;
   fixturesCount?: number;
+  errorCode?: string;
   error?: string;
   warningsCount?: number;
 };
@@ -85,6 +88,8 @@ export const POST = withApiHandler(async (request: Request, { params }: Params) 
     return jsonError("SEASON_NOT_FOUND", "Create a season before importing files.", 400);
   }
 
+  const maxUploadMb = getMaxWorkbookUploadMb();
+  const maxUploadBytes = getMaxWorkbookUploadBytes();
   const results: BulkUploadResult[] = [];
   for (const upload of uploads) {
     const kind = detectFileKind(upload.name);
@@ -98,6 +103,19 @@ export const POST = withApiHandler(async (request: Request, { params }: Params) 
         teamName: null,
         status: "failed",
         error: match.error
+      });
+      continue;
+    }
+
+    if (upload.size > maxUploadBytes) {
+      results.push({
+        filename: upload.name,
+        kind,
+        teamId: match.team.id,
+        teamName: match.team.name,
+        status: "failed",
+        errorCode: "FILE_TOO_LARGE",
+        error: `Uploads are limited to ${maxUploadMb} MB.`
       });
       continue;
     }

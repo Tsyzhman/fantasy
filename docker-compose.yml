@@ -26,9 +26,7 @@ services:
     restart: "no"
     environment:
       DATABASE_URL: postgresql://fantasy_app:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/fantasy_scout
-      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-replace-with-long-random-secret}
-      NEXTAUTH_URL: ${NEXTAUTH_URL:-https://fantasy.tsyzhman.ru}
-      CRON_SECRET: ${CRON_SECRET:-strong-secret}
+      CRON_SECRET: ${CRON_SECRET:?CRON_SECRET is required}
       MACHETE_FOTMOB_PROVIDER_MODE: unofficial
       MACHETE_FOTMOB_COOKIE: ${MACHETE_FOTMOB_COOKIE:-}
       MACHETE_FOTMOB_DEPLOY_ID: ${MACHETE_FOTMOB_DEPLOY_ID:-}
@@ -53,7 +51,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    command: sh -lc "npx prisma db push --accept-data-loss && npm run db:seed"
+    command: sh -lc "npm run prisma:migrate:deploy && npm run db:seed"
 
   web:
     build:
@@ -63,9 +61,7 @@ services:
     restart: unless-stopped
     environment:
       DATABASE_URL: postgresql://fantasy_app:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is required}@postgres:5432/fantasy_scout
-      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-replace-with-long-random-secret}
-      NEXTAUTH_URL: ${NEXTAUTH_URL:-https://fantasy.tsyzhman.ru}
-      CRON_SECRET: ${CRON_SECRET:-strong-secret}
+      CRON_SECRET: ${CRON_SECRET:?CRON_SECRET is required}
       MACHETE_FOTMOB_PROVIDER_MODE: unofficial
       MACHETE_FOTMOB_COOKIE: ${MACHETE_FOTMOB_COOKIE:-}
       MACHETE_FOTMOB_DEPLOY_ID: ${MACHETE_FOTMOB_DEPLOY_ID:-}

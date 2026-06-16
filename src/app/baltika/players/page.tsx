@@ -499,27 +499,27 @@ function PaginationLinks({
 
   return (
     <div className="flex items-center gap-2 text-sm">
-      <Link
-        href={baltikaPlayersHref(params, page - 1)}
-        aria-disabled={page <= 1}
-        className={`rounded border px-3 py-1.5 font-medium ${
-          page <= 1 ? "pointer-events-none border-slate-200 text-slate-300" : "border-slate-200 text-slate-700 hover:bg-slate-50"
-        }`}
-      >
-        Prev
-      </Link>
+      {page <= 1 ? (
+        <span aria-disabled="true" className="rounded border border-slate-200 px-3 py-1.5 font-medium text-slate-300">
+          <I18nText en="Prev" ru="Назад" />
+        </span>
+      ) : (
+        <Link href={baltikaPlayersHref(params, page - 1)} className="rounded border border-slate-200 px-3 py-1.5 font-medium text-slate-700 hover:bg-slate-50">
+          <I18nText en="Prev" ru="Назад" />
+        </Link>
+      )}
       <span className="text-slate-500">
         {page} / {pageCount}
       </span>
-      <Link
-        href={baltikaPlayersHref(params, page + 1)}
-        aria-disabled={page >= pageCount}
-        className={`rounded border px-3 py-1.5 font-medium ${
-          page >= pageCount ? "pointer-events-none border-slate-200 text-slate-300" : "border-slate-200 text-slate-700 hover:bg-slate-50"
-        }`}
-      >
-        Next
-      </Link>
+      {page >= pageCount ? (
+        <span aria-disabled="true" className="rounded border border-slate-200 px-3 py-1.5 font-medium text-slate-300">
+          <I18nText en="Next" ru="Вперед" />
+        </span>
+      ) : (
+        <Link href={baltikaPlayersHref(params, page + 1)} className="rounded border border-slate-200 px-3 py-1.5 font-medium text-slate-700 hover:bg-slate-50">
+          <I18nText en="Next" ru="Вперед" />
+        </Link>
+      )}
     </div>
   );
 }

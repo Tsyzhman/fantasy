@@ -8,7 +8,7 @@ import type { NextResponse } from "next/server";
 
 import { sessionCookieName } from "@/lib/auth-constants";
 import { jsonError } from "@/lib/api-handler";
-import { ensureDatabaseSchema, isDatabaseConfigured, prisma } from "@/lib/db";
+import { isDatabaseConfigured, prisma } from "@/lib/db";
 
 const scrypt = promisify(scryptCallback);
 
@@ -64,7 +64,6 @@ export async function verifyPassword(password: string, passwordHash: string | nu
 }
 
 export async function getCurrentUser(): Promise<AuthUser | null> {
-  await ensureDatabaseSchema();
   if (!isDatabaseConfigured()) return null;
 
   const cookieStore = await cookies();
@@ -78,7 +77,6 @@ async function getCurrentUserFromRequest(request: Request): Promise<AuthUser | n
 
 async function getCurrentUserForSessionToken(token: string | null | undefined): Promise<AuthUser | null> {
   if (!token) return null;
-  await ensureDatabaseSchema();
   if (!isDatabaseConfigured()) return null;
 
   const session = await prisma.userSession.findUnique({
@@ -105,7 +103,6 @@ async function getCurrentUserForSessionToken(token: string | null | undefined): 
 }
 
 export async function createUserSession(userId: string) {
-  await ensureDatabaseSchema();
   if (!isDatabaseConfigured()) throw new Error("DATABASE_URL is not configured.");
 
   const token = randomBytes(32).toString("base64url");
@@ -130,8 +127,6 @@ export async function createUserSession(userId: string) {
 }
 
 export async function clearCurrentUserSession() {
-  await ensureDatabaseSchema();
-
   const cookieStore = await cookies();
   const token = cookieStore.get(sessionCookieName)?.value;
 

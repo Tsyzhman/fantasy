@@ -44,6 +44,11 @@ jobs:
       - name: Audit production dependencies
         run: npm run audit:prod
 
+      - name: Check Prisma migration drift
+        run: npm run prisma:migrate:diff
+        env:
+          SHADOW_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fantasy_scout_test?schema=prisma_shadow
+
       - name: Run database integration tests
         run: npm run prisma:migrate:deploy && npm run test:db
         env:

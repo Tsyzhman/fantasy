@@ -2,6 +2,13 @@
 
 The app uses Next.js route handlers under `src/app/api`.
 
+## Health
+
+### `GET /api/health`
+
+Returns database configuration and connectivity status for deployment checks.
+When `DATABASE_URL` is missing it returns `503 DATABASE_NOT_CONFIGURED`.
+
 ## Auth
 
 ### `POST /api/auth/logout`
@@ -23,7 +30,8 @@ Request:
 - `file`: `.xlsx` workbook;
 - `seasonId`: target Baltika season id.
 
-Invalid or non-form request bodies return `400 BAD_REQUEST`.
+Invalid or non-form request bodies return `400 BAD_REQUEST`. Oversized workbook
+requests are rejected before workbook bytes are parsed.
 
 ### `POST /api/admin/imports/:importId/publish`
 
@@ -80,7 +88,8 @@ Deletes a fixture and recalculates affected team snapshots.
 
 Imports multiple Wyscout player or team-stat workbooks. Files can be supplied in
 `files` or `file` multipart fields. Invalid or non-form request bodies return
-`400 BAD_REQUEST`.
+`400 BAD_REQUEST`. Oversized files are rejected individually with structured
+per-file errors.
 
 ### `POST /api/baltika/leagues/:leagueId/sync-sports-schedule`
 
@@ -95,6 +104,8 @@ Request:
 - multipart form data;
 - `file`: `.xlsx` workbook;
 - `seasonId`: target Baltika season id.
+
+Oversized workbook requests are rejected before workbook bytes are parsed.
 
 ## Machete
 
@@ -148,6 +159,8 @@ Request:
 - optional `sheetName`;
 - optional `replace`, defaults to true unless set to `"false"`.
 
+Oversized workbook requests are rejected before workbook bytes are parsed.
+
 ### `PATCH /api/machete/sports-ru-player-mappings`
 
 Creates, updates, or clears a Sports.ru price-to-player mapping. Admin only.
@@ -187,6 +200,17 @@ JSON body:
 
 The route validates squad shape, captain/vice-captain rules, team limits, and
 transfer limits for the selected forecast horizon.
+
+### `GET /api/machete/squads/export`
+
+Exports the current user's saved Machete squad for a league season. Requires a
+signed-in user. Supported query params:
+
+```text
+leagueId
+season
+format=csv|xlsx
+```
 
 ### `PATCH /api/machete/team-player-seasons/starter`
 

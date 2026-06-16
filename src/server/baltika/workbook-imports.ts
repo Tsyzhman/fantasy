@@ -37,7 +37,12 @@ export type WorkbookImportResult =
     };
 
 export function getMaxWorkbookUploadMb() {
-  return Number(process.env.MAX_UPLOAD_MB ?? "25");
+  const configured = Number(process.env.MAX_UPLOAD_MB ?? "25");
+  return Number.isFinite(configured) && configured > 0 ? configured : 25;
+}
+
+export function getMaxWorkbookUploadBytes() {
+  return getMaxWorkbookUploadMb() * 1024 * 1024;
 }
 
 export async function importWyscoutPlayersForTeam(teamId: string, upload: WorkbookUploadInput): Promise<WorkbookImportResult> {
@@ -436,7 +441,7 @@ function validateXlsxUpload(fileName: string, sizeBytes: number, label: string) 
   }
 
   const maxUploadMb = getMaxWorkbookUploadMb();
-  if (sizeBytes > maxUploadMb * 1024 * 1024) {
+  if (sizeBytes > getMaxWorkbookUploadBytes()) {
     return errorResult("FILE_TOO_LARGE", `Uploads are limited to ${maxUploadMb} MB.`, 400);
   }
 

@@ -6,6 +6,7 @@ import { compareMacheteLeagues, macheteLeagueDisplayName } from "@/lib/leagues/d
 import { teamLogoUrlForSlug, validTeamLogoUrl } from "@/lib/teams/logo-assets";
 import { normalizeName, slugify } from "@/lib/text";
 import { matchWindowSeasonLabel, type MacheteMatchWindow } from "@/scoring/machete/match-window";
+import { normalizeFantasyPosition, type FantasyPositionGroup } from "@/machete/squad_logic";
 
 export type SharedLeagueSeasonOption = {
   leagueId: bigint;
@@ -75,6 +76,7 @@ export type SharedMatchWindowSummary = {
 };
 
 type MatchPlayerStatRecord = Awaited<ReturnType<typeof loadStatsForMatchIds>>[number];
+type SharedPositionFilter = Exclude<FantasyPositionGroup, "UNK">;
 type SharedTeamMatchRef = {
   id: bigint;
   matchDate: Date | null;
@@ -335,15 +337,26 @@ export async function loadSharedMachetePlayerRows(
   const scopes = input.scopes.filter((scope) => scope.leagueId && scope.season);
   if (scopes.length === 0) return [];
 
-  const rosterRows = await prisma.teamPlayerSeason.findMany({
+  const positionFilter = parseSharedPositionFilter(input.position);
+  const rosterRowsFromDb = await prisma.teamPlayerSeason.findMany({
     where: {
       active: true,
-      OR: scopes.map((scope) => ({
-        leagueId: scope.leagueId,
-        season: scope.season,
-        ...(scope.teamId ? { teamId: scope.teamId } : {})
-      })),
-      ...(input.position ? { position: { contains: input.position, mode: "insensitive" } } : {})
+      AND: [
+        {
+          OR: scopes.map((scope) => ({
+            leagueId: scope.leagueId,
+            season: scope.season,
+            ...(scope.teamId ? { teamId: scope.teamId } : {})
+          }))
+        },
+        ...(positionFilter
+          ? [
+              {
+                OR: sharedPositionWhereClauses(positionFilter)
+              }
+            ]
+          : [])
+      ]
     },
     include: {
       player: true,
@@ -360,6 +373,9 @@ export async function loadSharedMachetePlayerRows(
     },
     orderBy: [{ team: { name: "asc" } }, { player: { name: "asc" } }]
   });
+  const rosterRows = positionFilter
+    ? rosterRowsFromDb.filter((row) => normalizeFantasyPosition(row.position) === positionFilter)
+    : rosterRowsFromDb;
 
   if (rosterRows.length === 0) return [];
 
@@ -614,6 +630,24 @@ export function seasonRank(season: string) {
 
 function defaultSharedLeagueSeason(options: SharedLeagueSeasonOption[]) {
   return options.reduce<SharedLeagueSeasonOption | null>((current, option) => (!current || preferSharedLeagueSeason(option, current) ? option : current), null);
+}
+
+function parseSharedPositionFilter(position: string | null | undefined): SharedPositionFilter | null {
+  const normalized = normalizeFantasyPosition(position);
+  return normalized === "UNK" ? null : normalized;
+}
+
+function sharedPositionWhereClauses(position: SharedPositionFilter) {
+  const terms: Record<SharedPositionFilter, string[]> = {
+    GK: ["GK", "keeper", "goalkeeper"],
+    DEF: ["DEF", "defender", "back"],
+    MID: ["MID", "midfielder"],
+    FWD: ["FW", "FWD", "forward", "striker", "winger"]
+  };
+
+  return terms[position].map((term) => ({
+    position: { contains: term, mode: "insensitive" as const }
+  }));
 }
 
 function preferSharedLeagueSeason(candidate: SharedLeagueSeasonOption, current: SharedLeagueSeasonOption) {
