@@ -29,7 +29,10 @@ export function MacheteShell({ children }: { children: ReactNode }) {
               <I18nText en="FotMob data workspace" ru="Рабочее пространство FotMob" />
             </h1>
           </div>
-          <nav className="flex gap-2 overflow-x-auto pb-1 text-sm font-semibold lg:flex-wrap lg:justify-end lg:overflow-visible lg:pb-0">
+          <nav aria-labelledby="machete-workspace-nav-label" className="flex gap-2 overflow-x-auto pb-1 text-sm font-semibold lg:flex-wrap lg:justify-end lg:overflow-visible lg:pb-0">
+            <span id="machete-workspace-nav-label" className="sr-only">
+              <I18nText en="Machete workspace navigation" ru="Навигация рабочего пространства Machete" />
+            </span>
             {navItems.map((item) => {
               const Icon = item.icon;
               const active = pathname === item.href || pathname.startsWith(`${item.href}/`);

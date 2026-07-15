@@ -287,6 +287,7 @@ test("shared player rows push position filters into roster loading and normalize
   const rows = await loadSharedMachetePlayerRows(prisma, {
     scopes: [{ leagueId: 47n, season: "2024/2025", teamId: 10n }],
     position: "GK",
+    playerIds: [99n],
     matchWindow: { kind: "all" },
     scoringModel
   });
@@ -303,11 +304,63 @@ test("shared player rows push position filters into roster loading and normalize
             contains?: string;
           };
         }>;
+        playerId?: { in?: bigint[] };
       }>;
     };
   };
   const positionTerms = rosterCall.where?.AND?.[1]?.OR?.map((item) => item.position?.contains).filter(Boolean);
   assert.deepEqual(positionTerms, ["GK", "keeper", "goalkeeper"]);
+  assert.deepEqual(rosterCall.where?.AND?.[2]?.playerId?.in, [99n]);
+});
+
+test("shared player rows can carry recent league history and position into an empty new season", async () => {
+  const prisma = {
+    teamPlayerSeason: {
+      async findMany() {
+        return [
+          rosterRow({
+            leagueId: 47n,
+            season: "2025/2026",
+            teamId: 10n,
+            playerId: 99n,
+            position: null,
+            playerName: "Transferred Player"
+          })
+        ];
+      }
+    },
+    coreMatch: {
+      async findMany() {
+        return [];
+      }
+    },
+    matchPlayerStat: {
+      async findMany(input: { include?: { match?: unknown } }) {
+        if (!input.include?.match) return [];
+        return Array.from({ length: 5 }, (_, index) => ({
+          ...playerStat(BigInt(100 + index), 90),
+          teamId: 5n,
+          position: "Defender",
+          match: {
+            matchDate: new Date(`2025-05-${String(index + 1).padStart(2, "0")}T16:00:00.000Z`),
+            status: "FINISHED"
+          }
+        }));
+      }
+    }
+  } as unknown as PrismaClient;
+
+  const rows = await loadSharedMachetePlayerRows(prisma, {
+    scopes: [{ leagueId: 47n, season: "2025/2026", teamId: 10n }],
+    matchWindow: { kind: "last", matches: 5 },
+    fallbackToRecentLeagueHistory: true,
+    scoringModel
+  });
+
+  assert.equal(rows[0].position, "Defender");
+  assert.equal(rows[0].matchesPlayed, 5);
+  assert.equal(rows[0].expectedMinutes, 90);
+  assert.equal(rows[0].recentFp.length, 5);
 });
 
 test("match window summary reports official matches separately from parsed player-stat coverage", async () => {

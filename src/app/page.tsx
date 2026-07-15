@@ -280,7 +280,7 @@ async function loadHomeDashboard(userId: string) {
             providerLeagueId: String(latestSquad.leagueId)
           }),
           season: latestSquad.season,
-          href: `/machete/squad?${new URLSearchParams({ leagueId: String(latestSquad.leagueId), season: latestSquad.season }).toString()}`,
+          href: `/machete/squad?${new URLSearchParams({ leagueId: String(latestSquad.leagueId), season: latestSquad.season, squadId: latestSquad.id }).toString()}`,
           playersCount: latestSquad.players.length,
           startersCount: latestSquad.players.filter((player) => player.isStarter).length,
           lockedCount: latestSquad.players.filter((player) => player.isLocked).length,

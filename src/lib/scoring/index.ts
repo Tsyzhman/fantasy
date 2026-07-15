@@ -1,4 +1,4 @@
-import type { FantasyModel, FantasyModelRule } from "@prisma/client";
+import type { FantasyModel, FantasyModelRule, PrismaClient } from "@prisma/client";
 
 import { prisma } from "../db";
 import { calculateCustomFormulaScore } from "./formula";
@@ -30,12 +30,30 @@ export type ActiveScoringModel = Pick<
   rules: ScoringRule[];
 };
 
+export type ActiveScoringModelIdentity = {
+  configuredModelId: string | null;
+  configuredModelSource: ScoringModelSource | "SEED";
+  configuredModelName: string;
+  configuredModelVersion: number;
+  configuredModelUpdatedAt: Date | null;
+  fallback: "DIRECT" | "WYSCOUT" | "SEED";
+};
+
+export type ActiveScoringModelBundle = {
+  model: ActiveScoringModel;
+  identity: ActiveScoringModelIdentity;
+};
+
 export async function getActiveScoringModel(): Promise<ActiveScoringModel> {
   return getActiveScoringModelForSource("WYSCOUT");
 }
 
-export async function getActiveScoringModelForSource(source: ScoringModelSource): Promise<ActiveScoringModel> {
-  const model = await prisma.fantasyModel.findFirst({
+export async function getActiveScoringModelForSource(source: ScoringModelSource, client: PrismaClient = prisma): Promise<ActiveScoringModel> {
+  return (await getActiveScoringModelBundleForSource(source, client)).model;
+}
+
+export async function getActiveScoringModelBundleForSource(source: ScoringModelSource, client: PrismaClient = prisma): Promise<ActiveScoringModelBundle> {
+  const model = await client.fantasyModel.findFirst({
     where: { modelSource: source, isDefault: true, isActive: true },
     include: {
       rules: {
@@ -45,11 +63,14 @@ export async function getActiveScoringModelForSource(source: ScoringModelSource)
   });
 
   if (model) {
-    return mapActiveModel(model, source);
+    return {
+      model: mapActiveModel(model, source),
+      identity: scoringModelIdentity(model, "DIRECT")
+    };
   }
 
   if (source === "MACHETE") {
-    const wyscoutModel = await prisma.fantasyModel.findFirst({
+    const wyscoutModel = await client.fantasyModel.findFirst({
       where: { modelSource: "WYSCOUT", isDefault: true, isActive: true },
       include: {
         rules: {
@@ -58,28 +79,57 @@ export async function getActiveScoringModelForSource(source: ScoringModelSource)
       }
     });
 
-    if (wyscoutModel) return mapActiveModel(wyscoutModel, "MACHETE");
+    if (wyscoutModel) {
+      return {
+        model: mapActiveModel(wyscoutModel, "MACHETE"),
+        identity: scoringModelIdentity(wyscoutModel, "WYSCOUT")
+      };
+    }
   }
 
   return {
-    modelSource: source,
-    customFormula: null,
-    customFormulaGk: null,
-    customFormulaDef: null,
-    customFormulaMid: null,
-    customFormulaFwd: null,
-    customFormulaEnabled: false,
-    scoringFormulaGk: null,
-    scoringFormulaDef: null,
-    scoringFormulaMid: null,
-    scoringFormulaFwd: null,
-    scoringFormulaEnabled: false,
-    alternativeFormulaGk: null,
-    alternativeFormulaDef: null,
-    alternativeFormulaMid: null,
-    alternativeFormulaFwd: null,
-    alternativeFormulaEnabled: false,
-    rules: seedScoringRules()
+    model: {
+      modelSource: source,
+      customFormula: null,
+      customFormulaGk: null,
+      customFormulaDef: null,
+      customFormulaMid: null,
+      customFormulaFwd: null,
+      customFormulaEnabled: false,
+      scoringFormulaGk: null,
+      scoringFormulaDef: null,
+      scoringFormulaMid: null,
+      scoringFormulaFwd: null,
+      scoringFormulaEnabled: false,
+      alternativeFormulaGk: null,
+      alternativeFormulaDef: null,
+      alternativeFormulaMid: null,
+      alternativeFormulaFwd: null,
+      alternativeFormulaEnabled: false,
+      rules: seedScoringRules()
+    },
+    identity: {
+      configuredModelId: null,
+      configuredModelSource: "SEED",
+      configuredModelName: "Built-in seed model",
+      configuredModelVersion: 1,
+      configuredModelUpdatedAt: null,
+      fallback: "SEED"
+    }
+  };
+}
+
+function scoringModelIdentity(
+  model: Pick<FantasyModel, "id" | "modelSource" | "name" | "version" | "updatedAt">,
+  fallback: ActiveScoringModelIdentity["fallback"]
+): ActiveScoringModelIdentity {
+  return {
+    configuredModelId: model.id,
+    configuredModelSource: model.modelSource === "MACHETE" ? "MACHETE" : "WYSCOUT",
+    configuredModelName: model.name,
+    configuredModelVersion: model.version,
+    configuredModelUpdatedAt: model.updatedAt,
+    fallback
   };
 }
 
@@ -169,9 +219,9 @@ export function calculatePredictedRoundScore(rawMetrics: Record<string, unknown>
   const minutes = readMetric(rawMetrics, "minutes_played");
   const expectedMinutes = expectedMinutesFromMetrics(rawMetrics, matches, minutes);
   const minutesFactor = expectedMinutes / 90;
-  const likelyAppearance = expectedMinutes > 0 ? 1 : 0;
-  const likelySixty = expectedMinutes >= 60 ? 1 : 0;
-  const likelyFullMatch = expectedMinutes >= 89.5 ? 1 : 0;
+  const likelyAppearance = clamp(readOptionalMetric(rawMetrics, "appearance_probability") ?? (expectedMinutes > 0 ? 1 : 0), 0, 1);
+  const likelySixty = clamp(readOptionalMetric(rawMetrics, "sixty_minute_probability") ?? (expectedMinutes >= 60 ? 1 : 0), 0, 1);
+  const likelyFullMatch = clamp(readOptionalMetric(rawMetrics, "full_match_probability") ?? (expectedMinutes >= 89.5 ? 1 : 0), 0, 1);
 
   let total = 0;
 

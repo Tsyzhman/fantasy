@@ -14,6 +14,7 @@ export function parseMacheteMatchWindow({ mode, customMatches, legacyRecentMatch
     return { kind: "last", matches: parsePositiveInt(legacyRecentMatches) ?? 5 };
   }
 
+  if (mode === "last3") return { kind: "last", matches: 3 };
   if (mode === "last10") return { kind: "last", matches: 10 };
   if (mode === "last15") return { kind: "last", matches: 15 };
   if (mode === "current") return { kind: "season", offset: 0 };
@@ -27,6 +28,7 @@ export function parseMacheteMatchWindow({ mode, customMatches, legacyRecentMatch
 export function matchWindowModeValue(window: MacheteMatchWindow) {
   if (window.kind === "all") return "all";
   if (window.kind === "season") return window.offset === 0 ? "current" : "previous";
+  if (window.matches === 3) return "last3";
   if (window.matches === 10) return "last10";
   if (window.matches === 15) return "last15";
   if (window.matches === 5) return "last5";

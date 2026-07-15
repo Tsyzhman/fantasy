@@ -47,6 +47,8 @@ export type FantasyMatchPlayerStatInput = {
     awayTeamId: bigint | null;
     homeScore: number | null;
     awayScore: number | null;
+    homeXg?: number | null;
+    awayXg?: number | null;
   } | null;
 };
 

@@ -1,168 +1,69 @@
 import { prisma } from "@/lib/db";
-import { parseSportsRuFantasyTournament, parseSportsRuFantasyTournamentLinks } from "@/lib/providers/sports-ru-fantasy";
-import { autoMapSportsRuFantasyPlayers } from "@/machete/sports_ru_player_mapping";
-
-type Args = Record<string, string | boolean>;
+import { parseSportsRuFantasyTournamentLinks, sportsRuTournamentHruFromUrl } from "@/lib/providers/sports-ru-fantasy";
+import { parseSportsRuFantasyCliArgs, sportsRuFantasyCliBoolean, type SportsRuFantasyCliArgs } from "@/machete/sports_ru_fantasy_cli";
+import { syncSportsRuFantasy } from "@/machete/sports_ru_fantasy_sync";
 
 async function main() {
-  const args = parseArgs(process.argv.slice(2));
+  const args = parseSportsRuFantasyCliArgs(process.argv.slice(2));
   const url = stringArg(args.url) ?? "https://www.sports.ru/fantasy/football/";
 
   if (!args["league-id"] || !args.season) {
     const html = await fetchText(url);
     const links = parseSportsRuFantasyTournamentLinks(html);
     console.log("Sports.ru fantasy tournaments:");
-    for (const link of links) {
-      console.log(`- ${link.name}: ${link.href}${link.deadline ? `, deadline ${link.deadline}` : ""}`);
-    }
+    for (const link of links) console.log(`- ${link.name}: ${link.href}${link.deadline ? `, deadline ${link.deadline}` : ""}`);
     console.log("");
-    console.log("Import example:");
-    console.log("  npm exec tsx scripts/import-sports-ru-fantasy.ts -- --league-id 47 --season 2025/26 --url https://www.sports.ru/fantasy/football/england/");
+    console.log("Sync example:");
+    console.log(
+      "  npm run prices:sync-sports-ru -- --league-id 47 --season 2026/2027 --url https://www.sports.ru/fantasy/football/england/ --dry-run"
+    );
     return;
   }
 
   const leagueId = BigInt(String(args["league-id"]));
   const season = String(args.season);
-  const html = await fetchText(url);
-  const parsed = parseSportsRuFantasyTournament(html);
-  const leagueSeason = await prisma.leagueSeason.findUnique({
-    where: {
-      leagueId_season: {
-        leagueId,
-        season
-      }
-    },
-    include: {
-      league: true
-    }
+  const tournamentHru = stringArg(args.hru) ?? sportsRuTournamentHruFromUrl(url);
+  if (!tournamentHru) throw new Error("Sports.ru tournament HRU is required; pass --hru or use a /fantasy/football/<hru>/ URL.");
+
+  const result = await syncSportsRuFantasy(prisma, {
+    leagueId,
+    season,
+    tournamentHru,
+    sourceUrl: url,
+    minimumPlayers: numberArg(args["minimum-players"]) ?? undefined,
+    maxPlayersPerTeam: numberArg(args["max-per-team"]) ?? undefined,
+    dryRun: sportsRuFantasyCliBoolean(args["dry-run"])
   });
-
-  if (!leagueSeason) {
-    throw new Error(`League season not found: ${leagueId} ${season}`);
+  if (result.status === "UNAVAILABLE") {
+    throw new Error(`Sports.ru has no current fantasy season for ${tournamentHru}; current prices were not imported.`);
   }
 
-  const maxPlayersPerTeam = numberArg(args["max-per-team"]) ?? parsed.contest.maxPlayersPerTeam ?? inferredMaxPlayersPerTeam(leagueSeason.league.name);
-  const contestName = parsed.contest.name === "Фэнтези" ? `Sports.ru ${leagueSeason.league.name}` : parsed.contest.name;
-  await prisma.sportsRuFantasyContest.upsert({
-    where: {
-      provider_leagueId_season: {
-        provider: "SPORTS_RU",
-        leagueId,
-        season
-      }
-    },
-    update: {
-      name: contestName,
-      budgetLimit: parsed.contest.budgetLimit,
-      squadSize: parsed.contest.squadSize,
-      maxPlayersPerTeam,
-      sourceUrl: url,
-      rules: {
-        parsedMaxPlayersPerTeam: parsed.contest.maxPlayersPerTeam,
-        importedAt: new Date().toISOString()
-      },
-      lastSyncedAt: new Date()
-    },
-    create: {
-      leagueId,
-      season,
-      provider: "SPORTS_RU",
-      name: contestName,
-      budgetLimit: parsed.contest.budgetLimit,
-      squadSize: parsed.contest.squadSize,
-      maxPlayersPerTeam,
-      sourceUrl: url,
-      rules: {
-        parsedMaxPlayersPerTeam: parsed.contest.maxPlayersPerTeam,
-        importedAt: new Date().toISOString()
-      },
-      lastSyncedAt: new Date()
-    }
-  });
-
-  for (const row of parsed.prices) {
-    await prisma.fantasyPlayerPrice.upsert({
-      where: {
-        provider_leagueId_season_normalizedName_teamName: {
-          provider: "SPORTS_RU",
-          leagueId,
-          season,
-          normalizedName: row.normalizedName,
-          teamName: ""
-        }
-      },
-      update: {
-        playerName: row.playerName,
-        position: row.position,
-        price: row.price,
-        sourceKind: row.sourceKind,
-        sourceRowIndex: row.sourceRowIndex,
-        lastSeenAt: new Date()
-      },
-      create: {
-        leagueId,
-        season,
-        provider: "SPORTS_RU",
-        playerName: row.playerName,
-        normalizedName: row.normalizedName,
-        teamName: "",
-        position: row.position,
-        price: row.price,
-        sourceKind: row.sourceKind,
-        sourceRowIndex: row.sourceRowIndex,
-        lastSeenAt: new Date()
-      }
-    });
+  console.log(`Sports.ru current season ${result.seasonId}: ${result.prices} prices for ${tournamentHru}.`);
+  if (result.status === "READY") {
+    console.log("Dry run: no database rows were changed.");
+    return;
   }
-  const mapping = await autoMapSportsRuFantasyPlayers(prisma, { leagueId, season });
-
-  console.log(`Imported ${parsed.prices.length} public Sports.ru prices for ${leagueSeason.league.name} ${season}.`);
-  console.log(`Mapped ${mapping.matched} automatically, reused ${mapping.manual} manual links, left ${mapping.unmatched} unmatched.`);
-  if (parsed.prices.length === 0) {
-    console.log("No public price rows were found. Sports.ru may require an authenticated app endpoint for the full player list.");
-  }
-}
-
-function inferredMaxPlayersPerTeam(leagueName: string) {
-  const value = leagueName.toLowerCase();
-  return ["premier league", "la liga", "bundesliga", "serie a", "ligue 1"].some((name) => value.includes(name)) ? 3 : 2;
+  console.log(`Removed ${result.deletedStalePrices} stale price row(s).`);
+  console.log(
+    `Mapped ${result.mapping?.matched ?? 0} automatically, reused ${result.mapping?.manual ?? 0} manual links, left ${result.mapping?.unmatched ?? 0} unmatched.`
+  );
 }
 
 async function fetchText(url: string) {
-  const response = await fetch(url, {
-    headers: {
-      "User-Agent": "MacheteFantasyImporter/1.0"
-    }
-  });
+  const response = await fetch(url, { headers: { "user-agent": "MacheteFantasyImporter/2.0" } });
   if (!response.ok) throw new Error(`Sports.ru request failed: ${response.status} ${response.statusText}`);
   return response.text();
 }
 
-function parseArgs(argv: string[]): Args {
-  const result: Args = {};
-  for (let index = 0; index < argv.length; index += 1) {
-    const arg = argv[index];
-    if (!arg.startsWith("--")) continue;
-    const key = arg.slice(2);
-    const next = argv[index + 1];
-    if (!next || next.startsWith("--")) {
-      result[key] = true;
-      continue;
-    }
-    result[key] = next;
-    index += 1;
-  }
-  return result;
-}
-
-function stringArg(value: string | boolean | undefined) {
+function stringArg(value: SportsRuFantasyCliArgs[string]) {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
-function numberArg(value: string | boolean | undefined) {
+function numberArg(value: SportsRuFantasyCliArgs[string]) {
   if (typeof value !== "string") return null;
   const numeric = Number(value);
-  return Number.isFinite(numeric) ? numeric : null;
+  if (!Number.isInteger(numeric) || numeric <= 0) throw new Error(`Expected a positive integer; received ${value}.`);
+  return numeric;
 }
 
 main()

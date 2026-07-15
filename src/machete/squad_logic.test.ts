@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   buildTransferSuggestions,
+  buildTransferPlanSuggestions,
   canAddFantasyPlayer,
   countFantasySquadTransfers,
   defaultFantasySquadRules,
@@ -11,9 +12,11 @@ import {
   nextFantasyPoints,
   normalizeFantasyHorizon,
   normalizeFantasyPosition,
+  optimizeFantasySquad,
   optimizeFantasyStarters,
   selectionForPlayer,
   summarizeFantasySquad,
+  validateFantasySquadForSave,
   type FantasyPlannerPlayer
 } from "./squad_logic";
 
@@ -124,6 +127,174 @@ test("optimizer picks the best valid starting XI while respecting locks", () => 
   assert.equal(optimizedSummary.projectedHorizon > summarizeFantasySquad(pool, selections, rules, 1).projectedHorizon, true);
 });
 
+test("full-squad optimizer returns a legal squad within budget and respects locks and exclusions", () => {
+  const rules = { ...defaultFantasySquadRules, budgetLimit: 82, maxPlayersPerTeam: 3 };
+  const positions = ["GK", "DEF", "MID", "FWD"] as const;
+  const pool = positions.flatMap((position, positionIndex) =>
+    Array.from({ length: 20 }, (_, index) =>
+      player(
+        `${positionIndex + 1}${String(index).padStart(2, "0")}`,
+        `${position} candidate ${index}`,
+        String((index + positionIndex * 3) % 20),
+        position,
+        4 + (index % 5) * 0.5,
+        [2 + index * 0.35, 2 + index * 0.3, 2 + index * 0.25]
+      )
+    )
+  );
+  const lockedPlayer = pool.find((candidate) => candidate.positionGroup === "DEF" && candidate.name.endsWith("0"));
+  const excludedPlayer = pool.find((candidate) => candidate.positionGroup === "MID" && candidate.name.endsWith("19"));
+  assert.ok(lockedPlayer);
+  assert.ok(excludedPlayer);
+
+  const optimized = optimizeFantasySquad({
+    pool,
+    selections: [{ ...selectionForPlayer(lockedPlayer, 0, false), isLocked: true }],
+    rules,
+    horizon: 3,
+    excludedPlayerIds: [excludedPlayer.playerId]
+  });
+  assert.ok(optimized);
+
+  const summary = summarizeFantasySquad(pool, optimized, rules, 3);
+  assert.equal(optimized.length, rules.squadSize);
+  assert.deepEqual(summary.violations, []);
+  assert.equal(summary.spent <= rules.budgetLimit, true);
+  assert.equal(optimized.some((selection) => selection.playerId === lockedPlayer.playerId && selection.isLocked), true);
+  assert.equal(optimized.some((selection) => selection.playerId === excludedPlayer.playerId), false);
+  assert.equal(optimized.filter((selection) => selection.isCaptain).length, 1);
+  assert.equal(optimized.filter((selection) => selection.isViceCaptain).length, 1);
+});
+
+test("full-squad optimizer spends available budget on a higher forecast without selecting an unaffordable star", () => {
+  const rules = { ...defaultFantasySquadRules, budgetLimit: 76, maxPlayersPerTeam: 20 };
+  const basePool = [
+    ...rangePlayers("GK", 2, 1),
+    ...rangePlayers("DEF", 5, 10),
+    ...rangePlayers("MID", 5, 20),
+    ...rangePlayers("FWD", 3, 30)
+  ];
+  const upgrade = player("upgrade", "Affordable upgrade", "90", "MID", 6, [10]);
+  const unaffordable = player("unaffordable", "Unaffordable star", "91", "MID", 30, [100]);
+  const pool = [...basePool, upgrade, unaffordable];
+
+  const optimized = optimizeFantasySquad({ pool, rules, horizon: 1 });
+  assert.ok(optimized);
+  assert.equal(optimized.some((selection) => selection.playerId === upgrade.playerId), true);
+  assert.equal(optimized.some((selection) => selection.playerId === unaffordable.playerId), false);
+  assert.deepEqual(summarizeFantasySquad(pool, optimized, rules, 1).violations, []);
+});
+
+test("auto-pick strategies produce distinct legal squads when risk profiles differ", () => {
+  const rules = { ...defaultFantasySquadRules, budgetLimit: 100, maxPlayersPerTeam: 20 };
+  const fixedPlayers = [
+    ...rangePlayers("GK", 2, 1),
+    ...rangePlayers("DEF", 5, 10),
+    ...rangePlayers("MID", 4, 20),
+    ...rangePlayers("FWD", 3, 30)
+  ].map((candidate) => ({ ...candidate, roundPoints: [20, 20, 20], predictedFp: 20 }));
+  const balancedMid = {
+    ...player("balanced-mid", "Balanced Mid", "90", "MID", 5, [7, 7, 7]),
+    priceSource: "SPORTS_RU" as const,
+    expectedMinutes: 18,
+    startProbability: 0.1,
+    forecastConfidence: 0.1,
+    forecastRisks: ["Rotation", "Low minutes", "Low confidence"]
+  };
+  const reliableMid = {
+    ...player("reliable-mid", "Reliable Mid", "91", "MID", 5, [6.8, 6.8, 6.8]),
+    priceSource: "SPORTS_RU" as const,
+    expectedMinutes: 90,
+    startProbability: 1,
+    forecastConfidence: 1,
+    forecastRisks: []
+  };
+  const upsideMid = {
+    ...player("upside-mid", "Upside Mid", "92", "MID", 5, [12, 3, 3]),
+    priceSource: "SPORTS_RU" as const,
+    expectedMinutes: 55,
+    startProbability: 0.55,
+    forecastConfidence: 0.55,
+    forecastRisks: ["Volatile output"]
+  };
+  const pool = [...fixedPlayers, balancedMid, reliableMid, upsideMid];
+
+  const variants = (["balanced", "reliable", "upside"] as const).map((strategy) => {
+    const selections = optimizeFantasySquad({ pool, rules, horizon: 3, strategy });
+    assert.ok(selections);
+    assert.deepEqual(summarizeFantasySquad(pool, selections, rules, 3).violations, []);
+    return { strategy, selections, ids: new Set(selections.map((selection) => selection.playerId)) };
+  });
+
+  assert.equal(variants[0].ids.has("balanced-mid"), true);
+  assert.equal(variants[1].ids.has("reliable-mid"), true);
+  assert.equal(variants[2].ids.has("upside-mid"), true);
+  assert.equal(new Set(variants.map((variant) => [...variant.ids].sort().join(":"))).size, 3);
+});
+
+test("every auto-pick strategy stays below the five-second beta limit for a 640-player pool", { timeout: 16_000 }, () => {
+  const rules = { ...defaultFantasySquadRules, budgetLimit: 100, maxPlayersPerTeam: 3 };
+  const positions = ["GK", "DEF", "MID", "FWD"] as const;
+  const pool = positions.flatMap((position, positionIndex) =>
+    Array.from({ length: 160 }, (_, index) =>
+      player(
+        `load-${positionIndex}-${index}`,
+        `${position} load candidate ${index}`,
+        String(index % 20),
+        position,
+        4 + (index % 20) * 0.25,
+        [2 + (index % 30) * 0.2, 2 + (index % 30) * 0.18, 2 + (index % 30) * 0.16]
+      )
+    )
+  );
+
+  for (const strategy of ["balanced", "reliable", "upside"] as const) {
+    const startedAt = Date.now();
+    const optimized = optimizeFantasySquad({ pool, rules, horizon: 3, strategy });
+    const elapsedMs = Date.now() - startedAt;
+
+    assert.ok(optimized);
+    assert.equal(optimized.length, rules.squadSize);
+    assert.ok(elapsedMs < 5_000, `Expected ${strategy} optimizer under 5000 ms, got ${elapsedMs} ms`);
+  }
+});
+
+test("save validation ignores client prices and enforces the authoritative budget", () => {
+  const authoritative = player("1", "Authoritative price", "10", "MID", 9, [5]);
+  const forgedSelection = { ...selectionForPlayer(authoritative, 0), purchasePrice: 0.1 };
+  const rejected = validateFantasySquadForSave({
+    pool: [authoritative],
+    selections: [forgedSelection],
+    rules: { ...defaultFantasySquadRules, budgetLimit: 8 },
+    horizon: 1
+  });
+  assert.equal(rejected.ok, false);
+  if (!rejected.ok) assert.match(rejected.error, /Budget exceeded/);
+
+  const accepted = validateFantasySquadForSave({
+    pool: [authoritative],
+    selections: [forgedSelection],
+    rules: { ...defaultFantasySquadRules, budgetLimit: 10 },
+    horizon: 1
+  });
+  assert.equal(accepted.ok, true);
+  if (accepted.ok) assert.equal(accepted.selections[0].purchasePrice, 9);
+});
+
+test("save validation rejects players outside the active league-season pool", () => {
+  const available = player("1", "Available", "10", "MID", 5, [5]);
+  const unavailable = player("2", "Unavailable", "11", "MID", 5, [5]);
+  const validation = validateFantasySquadForSave({
+    pool: [available],
+    selections: [selectionForPlayer(unavailable, 0)],
+    rules: defaultFantasySquadRules,
+    horizon: 1
+  });
+
+  assert.equal(validation.ok, false);
+  if (!validation.ok) assert.match(validation.error, /not active/);
+});
+
 test("player additions are blocked when position or team slots are full", () => {
   const rules = { ...defaultFantasySquadRules, maxPlayersPerTeam: 2 };
   const gks = rangePlayers("GK", 3, 1);
@@ -169,6 +340,112 @@ test("transfer suggestions improve next round and stay non-negative over horizon
   );
 });
 
+test("transfer plans return at least three alternatives when three valid upgrades exist", () => {
+  const rules = { ...defaultFantasySquadRules, budgetLimit: 20, maxPlayersPerTeam: 3 };
+  const out = player("1", "Old Mid", "10", "MID", 5, [2, 2, 2, 2, 2]);
+  const alternatives = [
+    player("2", "New Mid A", "11", "MID", 5, [4, 4, 4, 4, 4]),
+    player("3", "New Mid B", "12", "MID", 5, [3.8, 3.8, 3.8, 3.8, 3.8]),
+    player("4", "New Mid C", "13", "MID", 5, [3.5, 3.5, 3.5, 3.5, 3.5])
+  ];
+
+  const plans = buildTransferPlanSuggestions({
+    pool: [out, ...alternatives],
+    selections: [selectionForPlayer(out, 0)],
+    rules,
+    horizon: 5,
+    transferCount: 1,
+    maximumPlans: 3
+  });
+
+  assert.equal(plans.length, 3);
+  assert.equal(plans.every((plan) => plan.transferCount === 1 && plan.round1Delta > 0 && (plan.round5Delta ?? 0) > 0), true);
+});
+
+test("linked transfer plan can fund an upgrade that is invalid as a single move", () => {
+  const rules = { ...defaultFantasySquadRules, budgetLimit: 10, maxPlayersPerTeam: 3 };
+  const expensiveOut = player("1", "Old Forward", "10", "FWD", 8, [2, 2, 2, 2, 2]);
+  const cheapOut = player("2", "Old Mid", "20", "MID", 2, [1, 1, 1, 1, 1]);
+  const expensiveIn = player("3", "Premium Forward", "30", "FWD", 9, [5, 5, 5, 5, 5]);
+  const cheapIn = player("4", "Budget Mid", "40", "MID", 1, [1.5, 1.5, 1.5, 1.5, 1.5]);
+
+  const plans = buildTransferPlanSuggestions({
+    pool: [expensiveOut, cheapOut, expensiveIn, cheapIn],
+    selections: [selectionForPlayer(expensiveOut, 0), selectionForPlayer(cheapOut, 1)],
+    rules,
+    horizon: 5,
+    transferCount: 2,
+    maximumPlans: 6,
+    freeTransfers: 1,
+    paidTransferPointCost: 4
+  });
+  const linked = plans.find((plan) => plan.transferCount === 2);
+
+  assert.ok(linked);
+  assert.equal(linked.priceDelta, 0);
+  assert.equal(linked.round5Delta, 17.5);
+  assert.equal(linked.paidTransferLoss, 4);
+  assert.equal(linked.netHorizonDelta, 13.5);
+});
+
+test("transfer plans reject fast-path candidates that break the budget or team cap", () => {
+  const rules = { ...defaultFantasySquadRules, budgetLimit: 7, maxPlayersPerTeam: 2 };
+  const out = player("1", "Old Mid", "10", "MID", 5, [1, 1, 1, 1, 1]);
+  const sameTeamDef = player("2", "Team Def", "20", "DEF", 1, [1, 1, 1, 1, 1]);
+  const sameTeamFwd = player("3", "Team Fwd", "20", "FWD", 1, [1, 1, 1, 1, 1]);
+  const overBudget = player("4", "Too Expensive", "30", "MID", 8, [9, 9, 9, 9, 9]);
+  const overTeamCap = player("5", "Third Team Player", "20", "MID", 5, [8, 8, 8, 8, 8]);
+  const valid = player("6", "Valid Upgrade", "40", "MID", 5, [3, 3, 3, 3, 3]);
+
+  const plans = buildTransferPlanSuggestions({
+    pool: [out, sameTeamDef, sameTeamFwd, overBudget, overTeamCap, valid],
+    selections: [selectionForPlayer(out, 0), selectionForPlayer(sameTeamDef, 1), selectionForPlayer(sameTeamFwd, 2)],
+    rules,
+    horizon: 5,
+    transferCount: 1,
+    maximumPlans: 6
+  });
+
+  assert.equal(plans.length, 1);
+  assert.equal(plans[0].moves[0].inPlayerId, valid.playerId);
+});
+
+test("linked transfer recommendations stay below the ten-second beta limit for a 500-player pool", () => {
+  const selected = [
+    ...rangePlayers("GK", 2, 1),
+    ...rangePlayers("DEF", 5, 20),
+    ...rangePlayers("MID", 5, 50),
+    ...rangePlayers("FWD", 3, 80)
+  ].map((value) => ({ ...value, roundPoints: [2, 2, 2, 2, 2], predictedFp: 2 }));
+  const extra = Array.from({ length: 485 }, (_, index) => {
+    const positions: Array<FantasyPlannerPlayer["positionGroup"]> = ["GK", "DEF", "MID", "FWD"];
+    const position = positions[index % positions.length];
+    return player(String(1_000 + index), `Candidate ${index}`, String(2_000 + index), position, 5, [3 + (index % 7) / 10, 3, 3, 3, 3]);
+  });
+  const selections = selected.map((value, index) => {
+    const positionIndex = selected.slice(0, index + 1).filter((playerRow) => playerRow.positionGroup === value.positionGroup).length - 1;
+    const starter =
+      (value.positionGroup === "GK" && positionIndex === 0) ||
+      (value.positionGroup === "DEF" && positionIndex < 4) ||
+      (value.positionGroup === "MID" && positionIndex < 3) ||
+      value.positionGroup === "FWD";
+    return selectionForPlayer(value, index, starter);
+  });
+  const startedAt = performance.now();
+  const plans = buildTransferPlanSuggestions({
+    pool: [...selected, ...extra],
+    selections,
+    rules: { ...defaultFantasySquadRules, budgetLimit: 100, maxPlayersPerTeam: 3 },
+    horizon: 5,
+    transferCount: 3,
+    maximumPlans: 6
+  });
+  const elapsed = performance.now() - startedAt;
+
+  assert.equal(plans.length >= 3, true);
+  assert.equal(elapsed < 10_000, true, `transfer recommendations took ${Math.round(elapsed)} ms`);
+});
+
 test("transfer limit scales with forecast horizon", () => {
   assert.equal(fantasyTransferLimitForHorizon(1), 3);
   assert.equal(fantasyTransferLimitForHorizon(5), 15);
@@ -206,6 +483,10 @@ test("position normalizer accepts Sports.ru labels", () => {
   assert.equal(normalizeFantasyPosition("\u041f"), "MID");
   assert.equal(normalizeFantasyPosition("\u043d\u0430\u043f"), "FWD");
   assert.equal(normalizeFantasyPosition("\u041d\u0430\u043f\u0430\u0434\u0430\u044e\u0449\u0438\u0435"), "FWD");
+  assert.equal(normalizeFantasyPosition("CB,LB"), "DEF");
+  assert.equal(normalizeFantasyPosition("CDM,CM,CAM"), "MID");
+  assert.equal(normalizeFantasyPosition("ST,CAM"), "FWD");
+  assert.equal(normalizeFantasyPosition("GK"), "GK");
 });
 
 function player(

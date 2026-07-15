@@ -17,6 +17,7 @@ export type ShotMapShot = {
   provider_opponent_team_id: string | null;
   provider_player_id: string | null;
   player_name: string | null;
+  player_position: string | null;
   is_home: boolean | null;
   minute: number | null;
   added_time: number | null;
@@ -86,6 +87,8 @@ type ShotRecord = {
   xgot: number | null;
   match?: {
     id: bigint;
+    leagueId: bigint | null;
+    season: string | null;
     matchDate: Date | null;
     homeTeam?: { id: bigint; name: string } | null;
     awayTeam?: { id: bigint; name: string } | null;
@@ -105,21 +108,21 @@ export async function get_player_shots_last_team_matches(
   const player = await resolvePlayerReference(prisma, player_id);
   const matchIds = await new CoreMatchRepository(prisma).latestTeamMatchIds(team.coreId, limit_matches);
   const shots = await new CoreShotRepository(prisma).findPlayerShotsForTeamMatches(player.coreId, team.coreId, matchIds);
-  return shots.map(serializeShot);
+  return serializeShots(prisma, shots);
 }
 
 export async function get_team_shots_for_last_matches(prisma: PrismaClient, team_id: string | number | bigint, limit_matches = 5) {
   const team = await resolveTeamReference(prisma, team_id);
   const matchIds = await new CoreMatchRepository(prisma).latestTeamMatchIds(team.coreId, limit_matches);
   const shots = await new CoreShotRepository(prisma).findTeamShotsForMatches(team.coreId, matchIds);
-  return shots.map(serializeShot);
+  return serializeShots(prisma, shots);
 }
 
 export async function get_team_conceded_shots_for_last_matches(prisma: PrismaClient, team_id: string | number | bigint, limit_matches = 5) {
   const team = await resolveTeamReference(prisma, team_id);
   const matchIds = await new CoreMatchRepository(prisma).latestTeamMatchIds(team.coreId, limit_matches);
   const shots = await new CoreShotRepository(prisma).findTeamConcededShotsForMatches(team.coreId, matchIds);
-  return shots.map(serializeShot);
+  return serializeShots(prisma, shots);
 }
 
 export async function get_shot_map_comparison(
@@ -146,14 +149,14 @@ export async function get_player_shots_for_team_window(
   const player = await resolvePlayerReference(prisma, player_id);
   const matchIds = await teamMatchIdsForShotWindow(prisma, team, window);
   const shots = await new CoreShotRepository(prisma).findPlayerShotsForTeamMatches(player.coreId, team.coreId, matchIds);
-  return shots.map(serializeShot);
+  return serializeShots(prisma, shots);
 }
 
 export async function get_team_shots_for_window(prisma: PrismaClient, team_id: string | number | bigint, window: MacheteMatchWindow, context: ShotWindowContext = {}) {
   const team = await resolveTeamReference(prisma, team_id, context);
   const matchIds = await teamMatchIdsForShotWindow(prisma, team, window);
   const shots = await new CoreShotRepository(prisma).findTeamShotsForMatches(team.coreId, matchIds);
-  return shots.map(serializeShot);
+  return serializeShots(prisma, shots);
 }
 
 export async function get_team_conceded_shots_for_window(
@@ -165,7 +168,7 @@ export async function get_team_conceded_shots_for_window(
   const team = await resolveTeamReference(prisma, team_id, context);
   const matchIds = await teamMatchIdsForShotWindow(prisma, team, window);
   const shots = await new CoreShotRepository(prisma).findTeamConcededShotsForMatches(team.coreId, matchIds);
-  return shots.map(serializeShot);
+  return serializeShots(prisma, shots);
 }
 
 export async function get_shot_map_comparison_for_windows(
@@ -305,6 +308,13 @@ type ShotWindowContext = {
   competitionScopes?: ShotCompetitionScope[];
 };
 
+type ShotPlayerPositionLookups = {
+  byProviderPlayerId: Map<string, string>;
+  rosterExact: Map<string, string>;
+  rosterByPlayerTeam: Map<string, string>;
+  rosterByPlayer: Map<string, string>;
+};
+
 async function resolveTeamReference(prisma: PrismaClient, teamId: string | number | bigint, context: ShotWindowContext = {}): Promise<TeamReference> {
   const raw = String(teamId);
   const macheteTeam = await prisma.macheteTeam.findUnique({
@@ -404,7 +414,71 @@ function latestCompetitionScopesByLeague(scopes: ShotCompetitionScope[]) {
   return [...latest.values()];
 }
 
-function serializeShot(shot: ShotRecord): ShotMapShot {
+async function serializeShots(prisma: PrismaClient, shots: ShotRecord[]) {
+  if (shots.length === 0) return [];
+  const positionLookups = await loadShotPlayerPositionLookups(prisma, shots);
+  return shots.map((shot) => serializeShot(shot, shotPlayerPosition(shot, positionLookups)));
+}
+
+async function loadShotPlayerPositionLookups(prisma: PrismaClient, shots: ShotRecord[]): Promise<ShotPlayerPositionLookups> {
+  const providerPlayerIds = uniqueStrings(shots.map((shot) => shot.player?.rawRef));
+  const playerIds = uniqueBigInts(shots.map((shot) => shot.playerId));
+
+  const [machetePlayers, rosterRows] = await Promise.all([
+    providerPlayerIds.length > 0
+      ? prisma.machetePlayer.findMany({
+          where: {
+            provider: "FOTMOB",
+            providerPlayerId: { in: providerPlayerIds }
+          },
+          select: {
+            providerPlayerId: true,
+            position: true
+          }
+        })
+      : Promise.resolve([]),
+    playerIds.length > 0
+      ? prisma.teamPlayerSeason.findMany({
+          where: {
+            playerId: { in: playerIds },
+            position: { not: null }
+          },
+          select: {
+            playerId: true,
+            teamId: true,
+            leagueId: true,
+            season: true,
+            active: true,
+            position: true
+          },
+          orderBy: [{ active: "desc" }, { lastSeenAt: "desc" }]
+        })
+      : Promise.resolve([])
+  ]);
+
+  const byProviderPlayerId = new Map<string, string>();
+  for (const player of machetePlayers) {
+    const providerPlayerId = nonEmptyString(player.providerPlayerId);
+    const position = nonEmptyString(player.position);
+    if (providerPlayerId && position) byProviderPlayerId.set(providerPlayerId, position);
+  }
+
+  const rosterExact = new Map<string, string>();
+  const rosterByPlayerTeam = new Map<string, string>();
+  const rosterByPlayer = new Map<string, string>();
+  for (const row of rosterRows) {
+    const position = nonEmptyString(row.position);
+    if (!position) continue;
+
+    setIfMissing(rosterExact, rosterExactKey(row.playerId, row.teamId, row.leagueId, row.season), position);
+    setIfMissing(rosterByPlayerTeam, rosterPlayerTeamKey(row.playerId, row.teamId), position);
+    setIfMissing(rosterByPlayer, String(row.playerId), position);
+  }
+
+  return { byProviderPlayerId, rosterExact, rosterByPlayerTeam, rosterByPlayer };
+}
+
+function serializeShot(shot: ShotRecord, playerPosition: string | null): ShotMapShot {
   const [normalizedX, normalizedY] = serializeShotCoordinates(shot);
 
   return {
@@ -418,6 +492,7 @@ function serializeShot(shot: ShotRecord): ShotMapShot {
     provider_player_id: shot.player?.rawRef ?? null,
     player_id: shot.playerId === null ? null : String(shot.playerId),
     player_name: shot.player?.name ?? null,
+    player_position: playerPosition,
     is_home: shot.isHome,
     minute: shot.minute,
     added_time: shot.addedTime,
@@ -440,6 +515,50 @@ function serializeShot(shot: ShotRecord): ShotMapShot {
     match_date: shot.match?.matchDate?.toISOString() ?? null,
     match_label: [shot.match?.homeTeam?.name, shot.match?.awayTeam?.name].filter(Boolean).join(" vs ") || null
   };
+}
+
+function shotPlayerPosition(shot: ShotRecord, lookups: ShotPlayerPositionLookups) {
+  const providerPlayerId = nonEmptyString(shot.player?.rawRef);
+  if (providerPlayerId) {
+    const machetePosition = lookups.byProviderPlayerId.get(providerPlayerId);
+    if (machetePosition) return machetePosition;
+  }
+
+  if (!shot.playerId) return null;
+
+  const exactPosition =
+    shot.teamId && shot.match?.leagueId && shot.match.season
+      ? lookups.rosterExact.get(rosterExactKey(shot.playerId, shot.teamId, shot.match.leagueId, shot.match.season))
+      : null;
+  if (exactPosition) return exactPosition;
+
+  const teamPosition = shot.teamId ? lookups.rosterByPlayerTeam.get(rosterPlayerTeamKey(shot.playerId, shot.teamId)) : null;
+  return teamPosition ?? lookups.rosterByPlayer.get(String(shot.playerId)) ?? null;
+}
+
+function uniqueStrings(values: Array<string | null | undefined>) {
+  return [...new Set(values.map(nonEmptyString).filter((value): value is string => Boolean(value)))];
+}
+
+function uniqueBigInts(values: Array<bigint | null | undefined>) {
+  return [...new Set(values.filter((value): value is bigint => value !== null && value !== undefined))];
+}
+
+function nonEmptyString(value: string | null | undefined) {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : null;
+}
+
+function rosterExactKey(playerId: bigint, teamId: bigint, leagueId: bigint, season: string) {
+  return `${playerId}:${teamId}:${leagueId}:${season}`;
+}
+
+function rosterPlayerTeamKey(playerId: bigint, teamId: bigint) {
+  return `${playerId}:${teamId}`;
+}
+
+function setIfMissing(map: Map<string, string>, key: string, value: string) {
+  if (!map.has(key)) map.set(key, value);
 }
 
 function serializeShotCoordinates(shot: Pick<ShotRecord, "x" | "y" | "normalizedX" | "normalizedY">) {

@@ -261,6 +261,7 @@ test("unofficial client retries transient FotMob API failures", async () => {
 
       globalThis.fetch = (async (input: string | URL | Request) => {
         const url = String(input instanceof Request ? input.url : input);
+        if (/\/api\/data\/leagues\?/.test(url)) return jsonResponse({});
         assert.match(url, /\/api\/data\/fixtures\?/);
         attempts += 1;
 
@@ -290,6 +291,42 @@ test("unofficial client retries transient FotMob API failures", async () => {
       }
     }
   );
+});
+
+test("unofficial fixture discovery preserves league round numbers", async () => {
+  await withEnv({ MACHETE_FOTMOB_REQUEST_INTERVAL_MS: "0" }, async () => {
+    const originalFetch = globalThis.fetch;
+    const urls: string[] = [];
+
+    globalThis.fetch = (async (input: string | URL | Request) => {
+      const url = String(input instanceof Request ? input.url : input);
+      urls.push(url);
+      assert.match(url, /\/api\/data\/leagues\?/);
+      return jsonResponse({
+        fixtures: {
+          allMatches: [
+            {
+              id: 5795363,
+              round: "1",
+              home: { id: 9825, score: 0 },
+              away: { id: 8669, score: 0 },
+              status: { finished: false, utcTime: "2026-08-21T19:00:00.000Z" }
+            }
+          ]
+        }
+      });
+    }) as typeof fetch;
+
+    try {
+      const fixtures = await new UnofficialFotMobClient().getFixtures("47", "2026/2027");
+
+      assert.equal(fixtures.length, 1);
+      assert.equal(fixtures[0]?.round, "1");
+      assert.equal(urls.some((url) => url.includes("/api/data/fixtures?")), false);
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
 });
 
 test("unofficial client refetches buildId after a stale playbyplay 404", async () => {

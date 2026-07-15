@@ -86,7 +86,13 @@ export function AutoSubmitForm({ children, className, onChange, onSubmit, ...pro
         }
 
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
-        const delay = target instanceof HTMLInputElement && target.type !== "checkbox" ? 600 : 150;
+        const requestedDelay =
+          target instanceof HTMLInputElement ? Number.parseInt(target.dataset.autoSubmitDelay ?? "", 10) : Number.NaN;
+        const delay = Number.isFinite(requestedDelay)
+          ? Math.min(2_000, Math.max(0, requestedDelay))
+          : target instanceof HTMLInputElement && target.type !== "checkbox"
+            ? 600
+            : 150;
         timeoutRef.current = setTimeout(() => {
           updateUrl(form);
         }, delay);

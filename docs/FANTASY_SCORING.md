@@ -72,6 +72,33 @@ Supported transforms:
 Missing metric values count as 0 in formula calculation. Formula inputs come from the promoted typed metric columns on
 `PlayerSnapshot`; new formula fields need an importer mapping and a typed column.
 
+## Historical Evaluation
+
+The production Machete formula can be evaluated with the rolling-origin runner
+documented in `docs/MODEL_BACKTEST.md`. Prediction uses only earlier match
+aggregates; actual points use the target match's scoring result. Reports compare
+the model with a same-window historical-mean baseline and are persisted with a
+model version and formula/rule hash.
+
+## Auto-pick Strategies
+
+The squad and starting-XI optimizers expose three explicit strategies. Every
+strategy is constrained by the same budget, position, club, lock, exclusion,
+and formation rules; only the player ranking score changes.
+
+- `balanced` maximizes raw projected fantasy points over the selected horizon.
+- `reliable` scales projected points using expected minutes (45%), historical
+  start share (30%), and forecast confidence (25%). It also penalizes declared
+  forecast risks and estimated rather than Sports.ru prices. These inputs are
+  heuristics, not calibrated probabilities.
+- `upside` adds 35% of the best loaded round projection and 50% of the
+  round-to-round standard deviation. It intentionally prefers a higher ceiling
+  and can produce a less stable squad.
+
+The interface always reports the raw xFP change after optimization. Strategy
+scores are ranking weights and must not be presented as expected fantasy
+points.
+
 ## Formula Fields
 
 The `/admin/models` page includes the full field guide for formula aliases, normalized keys, field meanings, and fantasy

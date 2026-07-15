@@ -41,6 +41,7 @@ model User {
   lastLoginAt      DateTime?
   sessions         UserSession[]
   fantasySquads    UserFantasySquad[]
+  betaTestRuns     BetaTestRun[]
   savedViews       UserSavedView[]
   watchlistPlayers UserWatchlistPlayer[]
   createdAt        DateTime              @default(now())
@@ -305,6 +306,124 @@ model FantasyModelRule {
   @@index([modelId, positionGroup])
 }
 
+model FantasyBacktestRun {
+  id                     String    @id @default(cuid())
+  leagueId               BigInt    @map("league_id")
+  season                 String
+  modelSource            String    @default("MACHETE") @map("model_source")
+  modelName              String    @map("model_name")
+  modelVersion           String    @map("model_version")
+  modelHash              String    @map("model_hash")
+  baseline               String
+  historyMatches         Int       @map("history_matches")
+  minimumHistory         Int       @map("minimum_history")
+  expectedMatches        Int?      @map("expected_matches")
+  finishedMatches        Int       @map("finished_matches")
+  seasonComplete         Boolean   @default(false) @map("season_complete")
+  sampleSize             Int       @default(0) @map("sample_size")
+  modelMae               Float?    @map("model_mae")
+  baselineMae            Float?    @map("baseline_mae")
+  modelRmse              Float?    @map("model_rmse")
+  baselineRmse           Float?    @map("baseline_rmse")
+  passingPositions       Int       @default(0) @map("passing_positions")
+  gatePassed             Boolean   @default(false) @map("gate_passed")
+  status                 String    @default("RUNNING")
+  configuration          Json
+  report                 Json?
+  error                  String?
+  startedAt              DateTime  @default(now()) @map("started_at")
+  completedAt            DateTime? @map("completed_at")
+  createdAt              DateTime  @default(now()) @map("created_at")
+  updatedAt              DateTime  @updatedAt @map("updated_at")
+
+  @@index([leagueId, season, createdAt])
+  @@index([modelHash, createdAt])
+  @@index([status, createdAt])
+  @@map("fantasy_backtest_runs")
+}
+
+model DataQualityAuditRun {
+  id                       String    @id @default(cuid())
+  leagueId                 BigInt    @map("league_id")
+  season                   String
+  modelVersion             String    @map("model_version")
+  modelHash                String    @map("model_hash")
+  coverageThreshold        Float     @default(98) @map("coverage_threshold")
+  maximumLatencyHours      Float     @default(6) @map("maximum_latency_hours")
+  activePlayers            Int       @default(0) @map("active_players")
+  forecastsAvailable       Int       @default(0) @map("forecasts_available")
+  forecastCoverage         Float     @default(0) @map("forecast_coverage")
+  playersWithBasicStats    Int       @default(0) @map("players_with_basic_stats")
+  playerDataCoverage       Float     @default(0) @map("player_data_coverage")
+  finishedMatches          Int       @default(0) @map("finished_matches")
+  matchesWithPlayerStats   Int       @default(0) @map("matches_with_player_stats")
+  matchDataCoverage        Float     @default(0) @map("match_data_coverage")
+  statRows                 Int       @default(0) @map("stat_rows")
+  completeStatRows         Int       @default(0) @map("complete_stat_rows")
+  statRowCoverage          Float     @default(0) @map("stat_row_coverage")
+  matchesPromotedInTime    Int       @default(0) @map("matches_promoted_in_time")
+  promotionLatencyCoverage Float     @default(0) @map("promotion_latency_coverage")
+  gatePassed               Boolean   @default(false) @map("gate_passed")
+  status                   String    @default("RUNNING")
+  report                   Json?
+  error                    String?
+  startedAt                DateTime  @default(now()) @map("started_at")
+  completedAt              DateTime? @map("completed_at")
+  createdAt                DateTime  @default(now()) @map("created_at")
+  updatedAt                DateTime  @updatedAt @map("updated_at")
+
+  @@index([leagueId, season, createdAt])
+  @@index([status, createdAt])
+  @@index([gatePassed, createdAt])
+  @@map("data_quality_audit_runs")
+}
+
+model BetaTestRun {
+  id                       String    @id
+  userId                   String    @map("user_id")
+  deviceClass              String    @map("device_class")
+  viewportWidth            Int       @map("viewport_width")
+  synthetic                Boolean   @default(false)
+  valid                    Boolean?
+  withoutHelp              Boolean?  @map("without_help")
+  transferReasonUnderstood Boolean?  @map("transfer_reason_understood")
+  usabilityRating          Int?      @map("usability_rating")
+  criticalIssue            Boolean?  @map("critical_issue")
+  invalidReason            String?   @map("invalid_reason")
+  moderatorNotes           String?   @map("moderator_notes")
+  reviewedAt               DateTime? @map("reviewed_at")
+  startedAt                DateTime  @default(now()) @map("started_at")
+  createdAt                DateTime  @default(now()) @map("created_at")
+  updatedAt                DateTime  @updatedAt @map("updated_at")
+
+  user         User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  observations BetaTestObservation[]
+
+  @@index([userId, startedAt])
+  @@index([synthetic, valid, startedAt])
+  @@map("beta_test_runs")
+}
+
+model BetaTestObservation {
+  id        BigInt   @id @default(autoincrement())
+  runId     String   @map("run_id")
+  kind      String
+  name      String
+  route     String   @default("")
+  value     Float?
+  rating    String?
+  count     Int      @default(1)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  run BetaTestRun @relation(fields: [runId], references: [id], onDelete: Cascade)
+
+  @@unique([runId, kind, name, route])
+  @@index([kind, name, createdAt])
+  @@index([runId, createdAt])
+  @@map("beta_test_observations")
+}
+
 model SavedFilter {
   id        String   @id @default(cuid())
   userId    String?
@@ -558,7 +677,8 @@ model UserFantasySquad {
   league  CoreLeague               @relation(fields: [leagueId], references: [id], onDelete: Cascade)
   players UserFantasySquadPlayer[]
 
-  @@unique([userId, leagueId, season])
+  @@unique([userId, leagueId, season, name])
+  @@index([userId, leagueId, season, updatedAt])
   @@index([leagueId, season])
   @@map("user_fantasy_squads")
 }

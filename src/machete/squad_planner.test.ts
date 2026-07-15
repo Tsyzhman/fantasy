@@ -2,11 +2,14 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  buildFantasyForecastExplanation,
   buildPlannerRoundFixtures,
   buildTeamStrengthProfilesFromMatches,
+  calibratedPlayerFixturePoints,
   compareFantasyPlannerPlayers,
   fantasyPlannerPosition,
   loadFantasySquadPlannerData,
+  normalizeFantasySquadName,
   projectFixtureFantasyPoints,
   resolveFantasyPlannerPrice,
   saveFantasySquad,
@@ -14,8 +17,11 @@ import {
   sportsRuFantasyPriceScopeKey,
   sportsRuFantasyPositionsByPlayerId,
   sportsRuPricePosition,
-  sportsRuSeasonAliases
+  sportsRuSeasonAliases,
+  uniqueFantasySquadName
 } from "./squad_planner";
+import { fitFantasyProjectionCalibration } from "./fantasy_projection_calibration";
+import type { FantasyBacktestSample } from "./fantasy_backtest";
 import { defaultFantasySquadRules } from "./squad_logic";
 
 test("squad planner groups upcoming matches into fixture rounds", () => {
@@ -64,48 +70,84 @@ test("squad planner ranks real Sports.ru prices before estimated price ties", ()
   assert.deepEqual([estimated, sportsRu].sort(compareFantasyPlannerPlayers).map((player) => player.name), ["Sports", "Estimated"]);
 });
 
+test("forecast explanation exposes positive factors and playing-time risks", () => {
+  const explanation = buildFantasyForecastExplanation({
+    matchesPlayed: 5,
+    expectedMinutes: 42,
+    forecastConfidence: 0.55,
+    recentFp: [2, 2, 3, 5, 6],
+    fixtureDifficulties: [2, 4],
+    isStarter: false
+  });
+
+  assert.equal(explanation.factors.includes("Five-match historical sample"), true);
+  assert.equal(explanation.factors.includes("Recent fantasy-points trend is positive"), true);
+  assert.equal(explanation.risks.includes("Expected minutes only 42"), true);
+  assert.equal(explanation.risks.includes("Low forecast confidence"), true);
+});
+
 test("squad planner normalizes saved forecast horizon on load", async () => {
   const prisma = {
     sportsRuFantasyContest: { findFirst: async () => null },
     userFantasySquad: {
-      findUnique: async () => ({
-        id: "squad-1",
-        name: "Saved squad",
-        horizonRounds: 999,
-        players: []
-      })
+      findMany: async () => [
+        {
+          id: "squad-newer",
+          name: "Newer squad",
+          horizonRounds: 1,
+          players: [],
+          updatedAt: new Date("2026-05-03T00:00:00.000Z"),
+          createdAt: new Date("2026-05-03T00:00:00.000Z")
+        },
+        {
+          id: "squad-1",
+          name: "Saved squad",
+          horizonRounds: 999,
+          players: [],
+          updatedAt: new Date("2026-05-02T00:00:00.000Z"),
+          createdAt: new Date("2026-05-01T00:00:00.000Z")
+        }
+      ]
     },
-    teamPlayerSeason: { findMany: async () => [] },
+    teamPlayerSeason: { findMany: async () => [], count: async () => 0 },
     fantasyPlayerPrice: { findMany: async () => [] },
+    fantasyModel: { findFirst: async () => null },
     playerSnapshot: { findMany: async () => [] },
     leagueSeasonTeam: { findMany: async () => [] },
     coreMatch: { findMany: async () => [] },
     macheteLeague: { findFirst: async () => null }
   };
 
-  const data = await loadFantasySquadPlannerData(prisma as never, "user-1", {
-    leagueId: 47n,
-    season: "2025/2026",
-    name: "Premier League",
-    displayName: "Premier League",
-    country: "England",
-    providerLeagueId: "47",
-    isCurrent: true,
-    updatedAt: new Date("2026-05-01T00:00:00.000Z")
-  });
+  const data = await loadFantasySquadPlannerData(
+    prisma as never,
+    "user-1",
+    {
+      leagueId: 47n,
+      season: "2025/2026",
+      name: "Premier League",
+      displayName: "Premier League",
+      country: "England",
+      providerLeagueId: "47",
+      isCurrent: true,
+      updatedAt: new Date("2026-05-01T00:00:00.000Z")
+    },
+    "squad-1"
+  );
 
   assert.equal(data.squad.horizonRounds, 5);
+  assert.equal(data.squad.id, "squad-1");
+  assert.deepEqual(data.squads.map((squad) => squad.name), ["Newer squad", "Saved squad"]);
 });
 
-test("squad planner normalizes forecast horizon before saving", async () => {
-  const upserts: Array<{ update: { horizonRounds: number }; create: { horizonRounds: number } }> = [];
+test("squad planner normalizes forecast horizon before creating a variant", async () => {
+  const creates: Array<{ data: { horizonRounds: number; name: string } }> = [];
   const prisma = {
     teamPlayerSeason: { findMany: async () => [] },
     fantasyPlayerPrice: { findMany: async () => [] },
     userFantasySquad: {
-      upsert: async (args: { update: { horizonRounds: number }; create: { horizonRounds: number } }) => {
-        upserts.push(args);
-        return { id: "squad-1" };
+      create: async (args: { data: { horizonRounds: number; name: string } }) => {
+        creates.push(args);
+        return { id: "squad-1", name: args.data.name };
       }
     },
     userFantasySquadPlayer: {
@@ -123,8 +165,45 @@ test("squad planner normalizes forecast horizon before saving", async () => {
     rules: defaultFantasySquadRules
   });
 
-  assert.equal(upserts[0]?.update.horizonRounds, 5);
-  assert.equal(upserts[0]?.create.horizonRounds, 5);
+  assert.equal(creates[0]?.data.horizonRounds, 5);
+  assert.equal(creates[0]?.data.name, "My squad");
+});
+
+test("squad planner updates only the requested owned variant", async () => {
+  const updates: Array<{ where: { id: string }; data: { name: string } }> = [];
+  const prisma = {
+    teamPlayerSeason: { findMany: async () => [] },
+    fantasyPlayerPrice: { findMany: async () => [] },
+    userFantasySquad: {
+      findFirst: async () => ({ id: "squad-2" }),
+      update: async (args: { where: { id: string }; data: { name: string } }) => {
+        updates.push(args);
+        return { id: args.where.id, name: args.data.name };
+      }
+    },
+    userFantasySquadPlayer: { deleteMany: () => ({}) },
+    $transaction: async () => []
+  };
+
+  const saved = await saveFantasySquad(prisma as never, {
+    userId: "user-1",
+    leagueId: 47n,
+    season: "2025/2026",
+    squadId: "squad-2",
+    name: "  Long   horizon  ",
+    horizonRounds: 3,
+    selections: [],
+    rules: defaultFantasySquadRules
+  });
+
+  assert.equal(saved.id, "squad-2");
+  assert.deepEqual(updates[0]?.where, { id: "squad-2" });
+  assert.equal(updates[0]?.data.name, "Long horizon");
+});
+
+test("squad variant names are normalized and copies receive a unique suffix", () => {
+  assert.equal(normalizeFantasySquadName("  My   differential   squad  "), "My differential squad");
+  assert.equal(uniqueFantasySquadName(["Main", "Main (2)"], "main"), "main (3)");
 });
 
 test("squad planner resolves Sports.ru positions through manual mappings", () => {
@@ -212,6 +291,57 @@ test("fixture projection weights opponent difficulty by fantasy position", () =>
   assert.ok(defenderInGoodCleanSheetSpot > homeOnly);
 });
 
+test("squad planner applies the fitted production calibration to upcoming fixture points", () => {
+  const training = Array.from({ length: 40 }, (_, index) => calibrationSample(index + 1));
+  const calibration = fitFantasyProjectionCalibration(training);
+  const row = {
+    id: "47:2026/2027:team-1:player-1",
+    name: "Player",
+    position: "FWD",
+    age: 25,
+    nationality: "England",
+    isStarter: true,
+    matchesPlayed: 5,
+    minutesPlayed: 400,
+    goals: 2,
+    assists: 1,
+    shotsOnTarget: 6,
+    keyPasses: 3,
+    tackles: 1,
+    averageRating: 7,
+    fantasyScore: 4,
+    scoringScore: 4,
+    alternativeScore: null,
+    recentFp: [3, 4, 5, 4, 4],
+    expectedMinutes: 80,
+    minutesDeviation: 10,
+    startProbability: 0.9,
+    forecastConfidence: 0.8,
+    dataUpdatedAt: new Date("2026-07-15T00:00:00.000Z"),
+    hasBasicStats: true,
+    teamId: "team-1",
+    playerId: "player-1"
+  };
+  const fixture = {
+    id: "fixture-1",
+    roundId: "round-1",
+    teamId: "team-1",
+    opponentTeamId: "team-2",
+    opponentName: "Opponent",
+    side: "H" as const,
+    kickoffAt: new Date("2026-08-15T12:00:00.000Z"),
+    projectedXg: 1.5,
+    projectedXga: 0.8,
+    attackMultiplier: 1.1,
+    defenseMultiplier: 1.1
+  };
+
+  assert.equal(calibratedPlayerFixturePoints(row, fixture, null), 4);
+  const calibrated = calibratedPlayerFixturePoints(row, fixture, calibration);
+  assert.equal(typeof calibrated, "number");
+  assert.ok((calibrated ?? 0) > 8);
+});
+
 function match(input: {
   id: string;
   round: string | null;
@@ -249,5 +379,38 @@ function plannerPlayer(input: { name: string; priceSource: "SPORTS_RU" | "ESTIMA
     roundPoints: [5],
     fixtures: [],
     fixtureDifficulties: []
+  };
+}
+
+function calibrationSample(index: number): FantasyBacktestSample {
+  const day = String((index % 28) + 1).padStart(2, "0");
+  return {
+    matchId: `history-${index}`,
+    playerId: `player-${index}`,
+    teamId: "team-1",
+    opponentTeamId: "team-2",
+    isHome: true,
+    homeTeamId: "team-1",
+    awayTeamId: "team-2",
+    homeScore: 2,
+    awayScore: 0,
+    homeXg: 1.5,
+    awayXg: 0.8,
+    matchDate: `2025-${index <= 28 ? "01" : "02"}-${day}T12:00:00.000Z`,
+    position: "FWD",
+    playingTimeGroup: "STABLE_STARTER",
+    historyMatchIds: ["h1", "h2", "h3", "h4", "h5"],
+    historyFeatures: {
+      expectedMinutes: 80,
+      startRate: 0.9,
+      minutesDeviation: 10,
+      averageRating: 7,
+      recentPointsDeviation: 1,
+      recentPointsTrend: 0
+    },
+    predictedPoints: 4,
+    baselinePoints: 4,
+    seasonBaselinePoints: 4,
+    actualPoints: 12
   };
 }

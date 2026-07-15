@@ -2,18 +2,30 @@ import type { Prisma, PrismaClient } from "@prisma/client";
 
 import { macheteCatalogByFotMobId } from "@/lib/leagues/machete-catalog";
 
-import { createFotMobClient } from "./client";
+import { createFotMobClient, type FotMobClient } from "./client";
 import { storeMacheteRawPayload } from "./raw-payloads";
 
-export async function syncMacheteLeagueMetadata(prisma: PrismaClient, leagueId: string) {
+type SyncMacheteLeagueMetadataDependencies = {
+  client?: Pick<FotMobClient, "getLeague">;
+  storeRawPayload?: typeof storeMacheteRawPayload;
+};
+
+export async function syncMacheteLeagueMetadata(
+  prisma: PrismaClient,
+  leagueId: string,
+  dependencies: SyncMacheteLeagueMetadataDependencies = {}
+) {
   const league = await prisma.macheteLeague.findUnique({ where: { id: leagueId } });
   if (!league) throw new Error("Machete league not found.");
 
-  const client = createFotMobClient();
-  const providerLeague = await client.getLeague(league.providerLeagueId ?? league.id, league.season ?? undefined);
+  const client = dependencies.client ?? createFotMobClient();
+  // Metadata sync is the season-rollover boundary. Asking FotMob for an
+  // already stored season pins the league forever and prevents a new season
+  // from being discovered.
+  const providerLeague = await client.getLeague(league.providerLeagueId ?? league.id);
   const catalogLeague = macheteCatalogByFotMobId(providerLeague.id);
 
-  await storeMacheteRawPayload(prisma, {
+  await (dependencies.storeRawPayload ?? storeMacheteRawPayload)(prisma, {
     entityType: "LEAGUE",
     providerEntityId: providerLeague.id,
     endpoint: "getLeague",

@@ -1,10 +1,25 @@
 import { ImportStatus, type PrismaClient } from "@prisma/client";
 
 import { formatDate } from "@/lib/format";
+import { ExpiringPromiseCache } from "@/lib/expiring-promise-cache";
 import { macheteLeagueDisplayName } from "@/lib/leagues/display";
 import { normalizeSportsRuPlayerName } from "@/lib/providers/sports-ru-fantasy";
+import { getActiveScoringModelBundleForSource } from "@/lib/scoring";
 
-import { loadSharedLeagueTeams, loadSharedMachetePlayerRows, type SharedLeagueSeasonOption, type SharedPlayerRowsScope } from "./shared_read_model";
+import type { FantasyBacktestSample } from "./fantasy_backtest";
+import {
+  FANTASY_PROJECTION_CALIBRATION,
+  predictCalibratedFantasyPoints,
+  type FantasyProjectionCalibrationModel
+} from "./fantasy_projection_calibration";
+import { loadFantasyProjectionCalibration } from "./fantasy_projection_service";
+import {
+  loadSharedLeagueTeams,
+  loadSharedMachetePlayerRows,
+  type SharedLeagueSeasonOption,
+  type SharedMachetePlayerRow,
+  type SharedPlayerRowsScope
+} from "./shared_read_model";
 import {
   defaultFantasySquadRules,
   normalizeFantasyHorizon,
@@ -26,11 +41,19 @@ export type SavedFantasySquad = {
   selections: FantasySquadSelection[];
 };
 
+export type SavedFantasySquadOption = {
+  id: string;
+  name: string;
+  playersCount: number;
+  updatedAt: string;
+};
+
 export type FantasySquadPlannerData = {
   rules: FantasySquadRules;
   rounds: FantasyRoundProjection[];
   players: FantasyPlannerPlayer[];
   squad: SavedFantasySquad;
+  squads: SavedFantasySquadOption[];
   priceStatus: {
     sportsRuPrices: number;
     estimatedPrices: number;
@@ -149,14 +172,27 @@ export type SportsRuFantasyPriceRef = {
 
 const maxProjectionRounds = 10;
 const defaultTeamXgPerMatch = 1.25;
+const fantasyPlayerPoolCacheTtlMs = 30_000;
+const fantasyPlayerPoolCache = new ExpiringPromiseCache<string, FantasyPlannerPlayer[]>(20);
+export const maxFantasySquadNameLength = 80;
+
+export function loadCachedFantasySquadPlayerPool(prisma: PrismaClient, league: SharedLeagueSeasonOption) {
+  const key = `${league.leagueId}:${league.season}:${league.updatedAt.toISOString()}`;
+  return fantasyPlayerPoolCache.getOrCreate(key, fantasyPlayerPoolCacheTtlMs, async () => {
+    const data = await loadFantasySquadPlannerData(prisma, "__shared_player_pool__", league);
+    return data.players;
+  });
+}
 
 export async function loadFantasySquadPlannerData(
   prisma: PrismaClient,
   userId: string,
-  league: SharedLeagueSeasonOption
+  league: SharedLeagueSeasonOption,
+  squadId?: string | null,
+  options?: { playerIds?: bigint[] }
 ): Promise<FantasySquadPlannerData> {
   const sportsRuSeasons = sportsRuSeasonAliases(league.season);
-  const [contest, savedSquad, rosterRows, playerRows, roundsAndFixtures, priceRows, baltikaMetricsByName] = await Promise.all([
+  const [contest, savedSquads, rosterRows, playerRows, roundsAndFixtures, priceRows, baltikaMetricsByName, rosterPlayerCount] = await Promise.all([
     prisma.sportsRuFantasyContest.findFirst({
       where: {
         provider: "SPORTS_RU",
@@ -165,25 +201,25 @@ export async function loadFantasySquadPlannerData(
       },
       orderBy: { lastSyncedAt: "desc" }
     }),
-    prisma.userFantasySquad.findUnique({
+    prisma.userFantasySquad.findMany({
       where: {
-        userId_leagueId_season: {
-          userId,
-          leagueId: league.leagueId,
-          season: league.season
-        }
+        userId,
+        leagueId: league.leagueId,
+        season: league.season
       },
       include: {
         players: {
           orderBy: { slotIndex: "asc" }
         }
-      }
+      },
+      orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }]
     }),
     prisma.teamPlayerSeason.findMany({
       where: {
         leagueId: league.leagueId,
         season: league.season,
-        active: true
+        active: true,
+        ...(options?.playerIds !== undefined ? { playerId: { in: options.playerIds } } : {})
       },
       include: {
         player: true,
@@ -191,7 +227,7 @@ export async function loadFantasySquadPlannerData(
       },
       orderBy: [{ team: { name: "asc" } }, { player: { name: "asc" } }]
     }),
-    loadProjectedPlayerRows(prisma, league),
+    loadProjectedPlayerRows(prisma, league, options?.playerIds),
     loadUpcomingRoundFixtures(prisma, league),
     prisma.fantasyPlayerPrice.findMany({
       where: {
@@ -201,8 +237,16 @@ export async function loadFantasySquadPlannerData(
       },
       orderBy: { lastSeenAt: "desc" }
     }),
-    loadBaltikaPlayerMetricsByName(prisma, sportsRuSeasons)
+    loadBaltikaPlayerMetricsByName(prisma, sportsRuSeasons),
+    prisma.teamPlayerSeason.count({
+      where: {
+        leagueId: league.leagueId,
+        season: league.season,
+        active: true
+      }
+    })
   ]);
+  const savedSquad = (squadId ? savedSquads.find((squad) => squad.id === squadId) : null) ?? savedSquads[0] ?? null;
 
   const priceMaps =
     priceRows.length > 0
@@ -221,12 +265,17 @@ export async function loadFantasySquadPlannerData(
         })
       : [];
   const rules = fantasyRulesForLeague(league, contest ?? null);
-  const projectedByPlayerTeam = new Map(playerRows.map((row) => [playerTeamKey(row.playerId, row.teamId), row]));
+  const projectedByPlayerTeam = new Map(playerRows.rows.map((row) => [playerTeamKey(row.playerId, row.teamId), row]));
   const prices = priceLookup(priceRows, priceMaps);
   const sportsPositionsByPlayerId = sportsRuFantasyPositionsByPlayerId(priceRows, priceMaps);
   const players: FantasyPlannerPlayer[] = rosterRows.flatMap((row) => {
     const projected = projectedByPlayerTeam.get(playerTeamKey(row.playerId, row.teamId));
-    const predictedFp = projected?.fantasyScore ?? null;
+    const nextFixture = roundsAndFixtures.rounds
+      .flatMap((round) => roundsAndFixtures.fixturesByTeamRound.get(round.id)?.get(String(row.teamId)) ?? [])
+      .at(0) ?? null;
+    const predictedFp = projected
+      ? calibratedPlayerFixturePoints(projected, nextFixture, playerRows.calibration?.model ?? null)
+      : null;
     const priceRow = prices.byPlayerId.get(String(row.playerId));
     const sportsPosition = sportsPositionsByPlayerId.get(String(row.playerId)) ?? (priceRow ? sportsRuPricePosition(priceRow) : null);
     const position = fantasyPlannerPosition(sportsPosition, row.position, projected?.position ?? null);
@@ -236,8 +285,12 @@ export async function loadFantasySquadPlannerData(
     const baltikaMetric = baltikaMetricsByName.get(normalizeSportsRuPlayerName(playerName));
     const roundPoints = roundsAndFixtures.rounds.map((round) => {
       const fixtures = roundsAndFixtures.fixturesByTeamRound.get(round.id)?.get(String(row.teamId)) ?? [];
-      const basePoints = predictedFp ?? 0;
-      return roundFantasyValue(fixtures.reduce((total, fixture) => total + projectFixtureFantasyPoints(basePoints, positionGroup, fixture), 0));
+      return roundFantasyValue(
+        fixtures.reduce((total, fixture) => {
+          const fixturePoints = projected ? calibratedPlayerFixturePoints(projected, fixture, playerRows.calibration?.model ?? null) ?? 0 : 0;
+          return total + (playerRows.calibration ? fixturePoints : projectFixtureFantasyPoints(fixturePoints, positionGroup, fixture));
+        }, 0)
+      );
     });
     const fixtures = roundsAndFixtures.rounds.map((round) => {
       const teamFixtures = roundsAndFixtures.fixturesByTeamRound.get(round.id)?.get(String(row.teamId)) ?? [];
@@ -246,6 +299,14 @@ export async function loadFantasySquadPlannerData(
     const fixtureDifficulties = roundsAndFixtures.rounds.map((round) => {
       const teamFixtures = roundsAndFixtures.fixturesByTeamRound.get(round.id)?.get(String(row.teamId)) ?? [];
       return aggregateRoundDifficulty(teamFixtures, positionGroup);
+    });
+    const forecastExplanation = buildFantasyForecastExplanation({
+      matchesPlayed: projected?.matchesPlayed ?? 0,
+      expectedMinutes: projected?.expectedMinutes ?? null,
+      forecastConfidence: projected?.forecastConfidence ?? null,
+      recentFp: projected?.recentFp ?? [],
+      fixtureDifficulties,
+      isStarter: row.isStarter
     });
 
     return [
@@ -261,6 +322,14 @@ export async function loadFantasySquadPlannerData(
         price: price.price,
         priceSource: price.priceSource,
         predictedFp,
+        expectedMinutes: projected?.expectedMinutes ?? null,
+        startProbability: projected?.startProbability ?? null,
+        forecastConfidence: projected?.forecastConfidence ?? null,
+        forecastFactors: forecastExplanation.factors,
+        forecastRisks: forecastExplanation.risks,
+        forecastCalculatedAt: playerRows.calculatedAt,
+        forecastDataUpdatedAt: projected?.dataUpdatedAt?.toISOString() ?? null,
+        forecastModelVersion: playerRows.modelVersion,
         valueScore: price.price > 0 ? roundFantasyValue((roundPoints[0] ?? predictedFp ?? 0) / price.price) : 0,
         roundPoints,
         fixtures,
@@ -273,8 +342,10 @@ export async function loadFantasySquadPlannerData(
     ];
   });
 
-  const sportsRuPrices = players.filter((player) => player.priceSource === "SPORTS_RU").length;
-  const estimatedPrices = players.length - sportsRuPrices;
+  const sportsRuPrices = options?.playerIds !== undefined
+    ? new Set(priceMaps.map((row) => row.internalEntityId).filter((playerId): playerId is string => Boolean(playerId))).size
+    : players.filter((player) => player.priceSource === "SPORTS_RU").length;
+  const estimatedPrices = Math.max(0, rosterPlayerCount - sportsRuPrices);
   const latestPriceSync = priceRows.reduce<Date | null>((latest, row) => {
     if (!latest || row.lastSeenAt > latest) return row.lastSeenAt;
     return latest;
@@ -286,6 +357,12 @@ export async function loadFantasySquadPlannerData(
     rules,
     rounds: roundsAndFixtures.rounds,
     players: players.sort(compareFantasyPlannerPlayers),
+    squads: savedSquads.map((squad) => ({
+      id: squad.id,
+      name: squad.name,
+      playersCount: squad.players.length,
+      updatedAt: squad.updatedAt.toISOString()
+    })),
     squad: {
       id: savedSquad?.id ?? null,
       name: savedSquad?.name ?? "My squad",
@@ -365,6 +442,7 @@ export async function saveFantasySquad(
     userId: string;
     leagueId: bigint;
     season: string;
+    squadId?: string | null;
     name?: string;
     horizonRounds: number;
     selections: FantasySquadSelection[];
@@ -390,28 +468,46 @@ export async function saveFantasySquad(
   });
   const rosterByPlayerId = new Map(rosterRows.map((row) => [String(row.playerId), row]));
   const horizonRounds = normalizeFantasyHorizon(input.horizonRounds, input.rules.horizonOptions);
-  const squad = await prisma.userFantasySquad.upsert({
-    where: {
-      userId_leagueId_season: {
+  const name = normalizeFantasySquadName(input.name);
+  const bank = roundFantasyValue(
+    input.rules.budgetLimit - input.selections.reduce((total, selection) => total + (selection.purchasePrice ?? 0), 0)
+  );
+  let squad: { id: string; name: string };
+  if (input.squadId) {
+    const ownedSquad = await prisma.userFantasySquad.findFirst({
+      where: {
+        id: input.squadId,
         userId: input.userId,
         leagueId: input.leagueId,
         season: input.season
-      }
-    },
-    update: {
-      name: input.name?.trim() || "My squad",
-      budgetLimit: input.rules.budgetLimit,
-      horizonRounds
-    },
-    create: {
-      userId: input.userId,
-      leagueId: input.leagueId,
-      season: input.season,
-      name: input.name?.trim() || "My squad",
-      budgetLimit: input.rules.budgetLimit,
-      horizonRounds
-    }
-  });
+      },
+      select: { id: true }
+    });
+    if (!ownedSquad) throw new Error("Fantasy squad does not belong to the selected user, league, and season.");
+    squad = await prisma.userFantasySquad.update({
+      where: { id: ownedSquad.id },
+      data: {
+        name,
+        budgetLimit: input.rules.budgetLimit,
+        bank,
+        horizonRounds
+      },
+      select: { id: true, name: true }
+    });
+  } else {
+    squad = await prisma.userFantasySquad.create({
+      data: {
+        userId: input.userId,
+        leagueId: input.leagueId,
+        season: input.season,
+        name,
+        budgetLimit: input.rules.budgetLimit,
+        bank,
+        horizonRounds
+      },
+      select: { id: true, name: true }
+    });
+  }
 
   await prisma.$transaction([
     prisma.userFantasySquadPlayer.deleteMany({ where: { squadId: squad.id } }),
@@ -436,6 +532,26 @@ export async function saveFantasySquad(
   return squad;
 }
 
+export function normalizeFantasySquadName(value: string | null | undefined, fallback = "My squad") {
+  const normalized = value?.replace(/\s+/g, " ").trim() || fallback;
+  return normalized.slice(0, maxFantasySquadNameLength).trim() || fallback;
+}
+
+export function uniqueFantasySquadName(existingNames: Iterable<string>, requestedName: string | null | undefined) {
+  const baseName = normalizeFantasySquadName(requestedName);
+  const used = new Set([...existingNames].map((name) => normalizeFantasySquadName(name).toLocaleLowerCase()));
+  if (!used.has(baseName.toLocaleLowerCase())) return baseName;
+
+  for (let index = 2; index < 10_000; index += 1) {
+    const suffix = ` (${index})`;
+    const stem = baseName.slice(0, Math.max(1, maxFantasySquadNameLength - suffix.length)).trimEnd();
+    const candidate = `${stem}${suffix}`;
+    if (!used.has(candidate.toLocaleLowerCase())) return candidate;
+  }
+
+  return `${baseName.slice(0, maxFantasySquadNameLength - 14)} ${Date.now()}`;
+}
+
 export function fantasyRulesForLeague(
   league: SharedLeagueSeasonOption,
   contest: {
@@ -455,25 +571,143 @@ export function fantasyRulesForLeague(
   };
 }
 
-async function loadProjectedPlayerRows(prisma: PrismaClient, league: SharedLeagueSeasonOption) {
-  const teams = await loadSharedLeagueTeams(prisma, league.leagueId, league.season);
-  const rows = await loadSharedMachetePlayerRows(prisma, {
-    scopes: teams.map((team) => ({
+async function loadProjectedPlayerRows(prisma: PrismaClient, league: SharedLeagueSeasonOption, playerIds?: bigint[]) {
+  const modelBundle = await getActiveScoringModelBundleForSource("MACHETE", prisma);
+  const teams = playerIds === undefined ? await loadSharedLeagueTeams(prisma, league.leagueId, league.season) : [];
+  const scopes = playerIds === undefined
+    ? teams.map((team) => ({
+        leagueId: league.leagueId,
+        season: league.season,
+        teamId: team.id
+      }))
+    : [{ leagueId: league.leagueId, season: league.season }];
+  const baseModelVersion = `${modelBundle.identity.configuredModelSource}:${modelBundle.identity.configuredModelId ?? "built-in"}:v${modelBundle.identity.configuredModelVersion}`;
+  const [rows, calibration] = await Promise.all([
+    loadSharedMachetePlayerRows(prisma, {
+      scopes,
+      matchWindow: { kind: "last", matches: 5 },
+      fallbackToRecentPlayerHistory: true,
+      scoringModel: modelBundle.model,
+      playerIds
+    }),
+    loadFantasyProjectionCalibration(prisma, {
       leagueId: league.leagueId,
-      season: league.season,
-      teamId: team.id
-    })),
-    matchWindow: { kind: "last", matches: 5 }
-  });
+      currentSeason: league.season,
+      scoringModel: modelBundle.model,
+      modelCacheKey: `${baseModelVersion}:${modelBundle.identity.configuredModelUpdatedAt?.toISOString() ?? "built-in"}`
+    })
+  ]);
 
-  return rows.map((row) => {
-    const parts = row.id.split(":");
-    return {
-      ...row,
-      teamId: parts[2] ?? "",
-      playerId: parts[3] ?? ""
-    };
-  });
+  return {
+    calculatedAt: new Date().toISOString(),
+    modelVersion: calibration
+      ? `${baseModelVersion}+${FANTASY_PROJECTION_CALIBRATION.featureVersion}@${calibration.trainingSeason}`
+      : `${baseModelVersion}+uncalibrated`,
+    calibration,
+    rows: rows.map((row) => {
+      const parts = row.id.split(":");
+      return {
+        ...row,
+        teamId: parts[2] ?? "",
+        playerId: parts[3] ?? ""
+      };
+    })
+  };
+}
+
+export function calibratedPlayerFixturePoints(
+  row: SharedMachetePlayerRow & { teamId: string; playerId: string },
+  fixture: PlannerFixture | null,
+  calibration: FantasyProjectionCalibrationModel | null
+) {
+  if (typeof row.fantasyScore !== "number" || !Number.isFinite(row.fantasyScore)) return null;
+  if (!calibration) return row.fantasyScore;
+
+  const position = normalizeFantasyPosition(row.position);
+  if (position === "UNK") return row.fantasyScore;
+  const recentPoints = row.recentFp.filter(Number.isFinite);
+  const baselinePoints = recentPoints.length > 0 ? average(recentPoints) : row.fantasyScore;
+  const expectedMinutes = row.expectedMinutes ?? 0;
+  const startRate = row.startProbability ?? 0;
+  const minutesDeviation = row.minutesDeviation ?? 0;
+  const sample: FantasyBacktestSample = {
+    matchId: fixture?.id ?? `upcoming:${row.teamId}:${row.playerId}`,
+    playerId: row.playerId,
+    teamId: row.teamId,
+    opponentTeamId: fixture?.opponentTeamId ?? null,
+    isHome: fixture ? fixture.side === "H" : null,
+    homeTeamId: fixture?.side === "A" ? fixture.opponentTeamId : row.teamId,
+    awayTeamId: fixture?.side === "H" ? fixture.opponentTeamId : row.teamId,
+    homeScore: null,
+    awayScore: null,
+    homeXg: null,
+    awayXg: null,
+    matchDate: fixture?.kickoffAt?.toISOString() ?? new Date().toISOString(),
+    position,
+    playingTimeGroup:
+      startRate >= 0.8 && expectedMinutes >= 60
+        ? "STABLE_STARTER"
+        : (startRate >= 0.2 && startRate < 0.8) || minutesDeviation >= 25
+          ? "UNCERTAIN_MINUTES"
+          : "OTHER",
+    historyMatchIds: recentPoints.map((_, index) => `history:${index}`),
+    historyFeatures: {
+      expectedMinutes,
+      startRate,
+      minutesDeviation,
+      averageRating: row.averageRating ?? 0,
+      recentPointsDeviation: standardDeviation(recentPoints, baselinePoints),
+      recentPointsTrend: recentTrend(recentPoints)
+    },
+    predictedPoints: row.fantasyScore,
+    baselinePoints,
+    seasonBaselinePoints: baselinePoints,
+    actualPoints: 0
+  };
+
+  return predictCalibratedFantasyPoints(calibration, sample);
+}
+
+export function buildFantasyForecastExplanation(input: {
+  matchesPlayed: number;
+  expectedMinutes: number | null;
+  forecastConfidence: number | null;
+  recentFp: number[];
+  fixtureDifficulties: Array<number | null>;
+  isStarter: boolean;
+}) {
+  const factors: string[] = [];
+  const risks: string[] = [];
+
+  if (input.isStarter) factors.push("Active-roster starter flag");
+  if (input.matchesPlayed >= 5) factors.push("Five-match historical sample");
+  if ((input.expectedMinutes ?? 0) >= 70) factors.push(`Expected minutes ${Math.round(input.expectedMinutes ?? 0)}`);
+  if (recentTrend(input.recentFp) > 0.5) factors.push("Recent fantasy-points trend is positive");
+  if (input.fixtureDifficulties.some((difficulty) => difficulty !== null && difficulty <= 2)) factors.push("Favourable upcoming fixture");
+
+  if (input.matchesPlayed === 0) risks.push("No prior match statistics");
+  if (input.expectedMinutes !== null && input.expectedMinutes < 60) risks.push(`Expected minutes only ${Math.round(input.expectedMinutes)}`);
+  if (input.forecastConfidence === null || input.forecastConfidence < 0.6) risks.push("Low forecast confidence");
+  if (input.fixtureDifficulties.length === 0 || input.fixtureDifficulties.every((difficulty) => difficulty === null)) risks.push("Upcoming fixture strength is unavailable");
+  if (input.fixtureDifficulties.some((difficulty) => difficulty !== null && difficulty >= 4)) risks.push("Difficult upcoming fixture");
+
+  if (factors.length === 0) factors.push("Historical per-match event rates");
+  return { factors, risks };
+}
+
+function recentTrend(values: number[]) {
+  if (values.length < 3) return 0;
+  const recent = values.slice(-2);
+  const earlier = values.slice(0, -2);
+  return average(recent) - average(earlier);
+}
+
+function average(values: number[]) {
+  return values.length > 0 ? values.reduce((total, value) => total + value, 0) / values.length : 0;
+}
+
+function standardDeviation(values: number[], mean: number) {
+  return values.length > 0 ? Math.sqrt(average(values.map((value) => (value - mean) ** 2))) : 0;
 }
 
 async function loadUpcomingRoundFixtures(prisma: PrismaClient, league: SharedLeagueSeasonOption) {

@@ -17,9 +17,16 @@ export function FdrPill({
 }) {
   const safe = clampDifficulty(difficulty);
   const klass = safe === null ? "fdr-na" : `fdr-${safe}`;
+  const visibleLabel = label ?? String(safe ?? "—");
+  const accessibleLabel = title?.trim();
   return (
-    <span className={cn("fdr-pill", klass, className)} aria-label={title ?? label}>
-      {label ?? (safe ?? "—")}
+    <span className={cn("fdr-pill", klass, className)} title={accessibleLabel}>
+      {accessibleLabel && accessibleLabel !== visibleLabel ? (
+        <>
+          <span aria-hidden="true">{visibleLabel}</span>
+          <span className="sr-only">{accessibleLabel}</span>
+        </>
+      ) : visibleLabel}
     </span>
   );
 }

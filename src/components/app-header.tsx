@@ -46,7 +46,10 @@ export function AppHeader({ user }: AppHeaderProps) {
     return (
       <header className="absolute inset-x-0 top-0 z-10">
         <div className="mx-auto flex max-w-7xl justify-end px-4 py-4 sm:px-6 lg:px-8">
-          <nav className="flex items-center gap-2 text-sm font-medium text-slate-600">
+          <nav
+            aria-label={localizedText(language, "Global navigation", "Глобальная навигация")}
+            className="flex items-center gap-2 text-sm font-medium text-slate-600"
+          >
             <HeaderLink href="/mixerr" hoverClassName="hover:bg-white/70" icon={<Crosshair className="h-4 w-4" />}>
               <I18nText en="MiXerr" ru="Миксер" />
             </HeaderLink>
@@ -60,10 +63,13 @@ export function AppHeader({ user }: AppHeaderProps) {
   }
 
   return (
-    <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/88 backdrop-blur">
-      <div className="mx-auto flex max-w-7xl flex-col gap-3 px-4 py-3 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
+    <header className="sticky top-0 z-20 overflow-x-hidden border-b border-slate-200 bg-white/88 backdrop-blur">
+      <div className="mx-auto flex min-w-0 max-w-7xl flex-col gap-3 px-4 py-3 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
         <ModeBrand />
-        <nav className="flex w-full items-center gap-2 overflow-x-auto pb-1 text-sm font-medium text-slate-600 md:w-auto md:flex-wrap md:justify-end md:overflow-visible md:pb-0">
+        <nav
+          aria-label={localizedText(language, "Global navigation", "Глобальная навигация")}
+          className="flex w-full max-w-full items-center gap-2 overflow-x-auto pb-1 text-sm font-medium text-slate-600 md:w-auto md:flex-wrap md:justify-end md:overflow-visible md:pb-0"
+        >
           {isAdmin ? (
             <>
               <HeaderLink href="/machete/leagues" icon={<Layers3 className="h-4 w-4" />}>

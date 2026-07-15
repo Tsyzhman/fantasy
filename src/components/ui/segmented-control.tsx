@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { KeyboardEvent, ReactNode } from "react";
 
 import { cn } from "@/lib/cn";
 
@@ -29,6 +29,7 @@ export function SegmentedControl<T extends string>({
     <div
       role="radiogroup"
       aria-label={name}
+      aria-orientation="horizontal"
       className={cn(
         "inline-flex rounded-md border border-slate-200 bg-white p-0.5 shadow-elev",
         className
@@ -43,7 +44,17 @@ export function SegmentedControl<T extends string>({
             role="radio"
             aria-checked={active}
             aria-label={option.ariaLabel}
+            tabIndex={active ? 0 : -1}
             onClick={() => onChange(option.value)}
+            onKeyDown={(event) => {
+              const currentIndex = options.findIndex((item) => item.value === option.value);
+              const nextIndex = segmentedControlIndexForKey(event.key, currentIndex, options.length);
+              if (nextIndex === null) return;
+
+              event.preventDefault();
+              onChange(options[nextIndex].value);
+              focusSegmentedOption(event, nextIndex);
+            }}
             className={cn(
               "inline-flex items-center justify-center rounded font-semibold transition",
               size === "sm" ? "px-2 py-1 text-xs" : "px-3 py-1.5 text-sm",
@@ -56,4 +67,18 @@ export function SegmentedControl<T extends string>({
       })}
     </div>
   );
+}
+
+export function segmentedControlIndexForKey(key: string, currentIndex: number, optionCount: number) {
+  if (optionCount <= 0 || currentIndex < 0 || currentIndex >= optionCount) return null;
+  if (key === "ArrowRight" || key === "ArrowDown") return (currentIndex + 1) % optionCount;
+  if (key === "ArrowLeft" || key === "ArrowUp") return (currentIndex - 1 + optionCount) % optionCount;
+  if (key === "Home") return 0;
+  if (key === "End") return optionCount - 1;
+  return null;
+}
+
+function focusSegmentedOption(event: KeyboardEvent<HTMLButtonElement>, optionIndex: number) {
+  const radios = event.currentTarget.parentElement?.querySelectorAll<HTMLElement>("[role='radio']");
+  radios?.[optionIndex]?.focus();
 }

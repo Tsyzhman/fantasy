@@ -20,6 +20,7 @@ type PageProps = {
   searchParams: Promise<{
     leagueId?: string;
     season?: string;
+    squadId?: string;
   }>;
 };
 
@@ -39,7 +40,7 @@ export default async function MacheteSquadPage({ searchParams }: PageProps) {
     leagueSeasonOptions.find((league) => String(league.leagueId) === selectedLeagueId && league.season === selectedSeason) ??
     leagues.find((league) => String(league.leagueId) === selectedLeagueId) ??
     null;
-  const data = selectedLeague ? await loadFantasySquadPlannerData(prisma, user.id, selectedLeague) : null;
+  const data = selectedLeague ? await loadInitialFantasySquadPlannerData(user.id, selectedLeague, params.squadId) : null;
 
   return (
     <MacheteShell>
@@ -72,14 +73,14 @@ export default async function MacheteSquadPage({ searchParams }: PageProps) {
             </Link>
             {selectedLeague ? (
               <>
-                <Link href={squadExportHref(selectedLeague, "csv")} className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                <a href={squadExportHref(selectedLeague, "csv", data?.squad.id)} className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
                   <Download className="h-4 w-4" aria-hidden="true" />
                   CSV
-                </Link>
-                <Link href={squadExportHref(selectedLeague, "xlsx")} className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                </a>
+                <a href={squadExportHref(selectedLeague, "xlsx", data?.squad.id)} className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
                   <Download className="h-4 w-4" aria-hidden="true" />
                   XLSX
-                </Link>
+                </a>
               </>
             ) : null}
           </div>
@@ -120,12 +121,15 @@ export default async function MacheteSquadPage({ searchParams }: PageProps) {
 
       {selectedLeague && data ? (
         <FantasySquadPlanner
+          key={`${selectedLeague.leagueId}:${selectedLeague.season}:${data.squad.id ?? "new-squad"}`}
           leagueId={String(selectedLeague.leagueId)}
           season={selectedLeague.season}
           rules={data.rules}
           rounds={data.rounds}
-          players={data.players}
+          players={initialSquadPlayers(data.players, data.squad.selections)}
+          playerPoolHref={squadPlayerPoolHref(selectedLeague, data.squad.id)}
           initialSquad={data.squad}
+          savedSquads={data.squads}
           priceStatus={data.priceStatus}
         />
       ) : (
@@ -153,12 +157,58 @@ function machetePlayersHref(league: SharedLeagueSeasonOption | null) {
   return `/machete/players?${query.toString()}`;
 }
 
-function squadExportHref(league: SharedLeagueSeasonOption, format: "csv" | "xlsx") {
+function squadExportHref(league: SharedLeagueSeasonOption, format: "csv" | "xlsx", squadId?: string | null) {
   const query = new URLSearchParams({
     leagueId: String(league.leagueId),
     season: league.season,
     format
   });
+  if (squadId) query.set("squadId", squadId);
 
   return `/api/machete/squads/export?${query.toString()}`;
+}
+
+function squadPlayerPoolHref(league: SharedLeagueSeasonOption, squadId?: string | null) {
+  const query = new URLSearchParams({
+    leagueId: String(league.leagueId),
+    season: league.season
+  });
+  if (squadId) query.set("squadId", squadId);
+  return `/api/machete/squads?${query.toString()}`;
+}
+
+function initialSquadPlayers<T extends { playerId: string }>(players: T[], selections: Array<{ playerId: string }>) {
+  const selectedPlayerIds = new Set(selections.map((selection) => selection.playerId));
+  return players.filter((player) => selectedPlayerIds.has(player.playerId));
+}
+
+async function loadInitialFantasySquadPlannerData(userId: string, league: SharedLeagueSeasonOption, squadId?: string | null) {
+  const requestedSquad = squadId
+    ? await prisma.userFantasySquad.findFirst({
+        where: {
+          id: squadId,
+          userId,
+          leagueId: league.leagueId,
+          season: league.season
+        },
+        select: {
+          players: { select: { playerId: true } }
+        }
+      })
+    : null;
+  const selectedSquad = requestedSquad ?? await prisma.userFantasySquad.findFirst({
+    where: {
+      userId,
+      leagueId: league.leagueId,
+      season: league.season
+    },
+    orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }],
+    select: {
+      players: { select: { playerId: true } }
+    }
+  });
+
+  return loadFantasySquadPlannerData(prisma, userId, league, squadId, {
+    playerIds: selectedSquad?.players.map((player) => player.playerId) ?? []
+  });
 }

@@ -5,6 +5,10 @@
       "schedule": "0 0 * * *"
     },
     {
+      "path": "/api/cron/data-quality",
+      "schedule": "0 7 * * *"
+    },
+    {
       "path": "/api/cron/retention/league-seasons",
       "schedule": "30 0 1 1,7 *"
     }

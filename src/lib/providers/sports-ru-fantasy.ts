@@ -15,6 +15,7 @@ export type SportsRuFantasyContestRules = {
 };
 
 export type SportsRuFantasyPriceRow = {
+  providerPlayerId?: string | null;
   playerName: string;
   normalizedName: string;
   position: string | null;
@@ -23,8 +24,141 @@ export type SportsRuFantasyPriceRow = {
   sourceRowIndex: number;
 };
 
+export type SportsRuFantasyGraphqlSnapshot = {
+  tournamentHru: string;
+  seasonId: string | null;
+  prices: SportsRuFantasyPriceRow[];
+  fetchedAt: string;
+};
+
 const defaultBudget = 100;
 const defaultSquadSize = 15;
+const sportsRuFantasyGraphqlEndpoint = "https://www.sports.ru/gql/graphql/";
+const sportsRuFantasyRoles = [
+  ["GOALKEEPER", "GK"],
+  ["DEFENDER", "DEF"],
+  ["MIDFIELDER", "MID"],
+  ["FORWARD", "FWD"]
+] as const;
+
+export async function fetchSportsRuFantasyGraphqlSnapshot(
+  tournamentHru: string,
+  options: {
+    endpoint?: string;
+    fetchImpl?: typeof fetch;
+    pageSize?: number;
+  } = {}
+): Promise<SportsRuFantasyGraphqlSnapshot> {
+  const hru = tournamentHru.trim();
+  if (!hru || !/^[a-z0-9-]+$/i.test(hru)) throw new Error(`Invalid Sports.ru tournament HRU: ${tournamentHru}.`);
+  const fetchImpl = options.fetchImpl ?? fetch;
+  const endpoint = options.endpoint ?? sportsRuFantasyGraphqlEndpoint;
+  const pageSize = Number.isInteger(options.pageSize) && (options.pageSize ?? 0) > 0 ? options.pageSize! : 100;
+  const seasonResponse = await sportsRuGraphqlRequest<{
+    fantasyQueries?: { tournament?: { currentSeason?: { id?: string | null } | null } | null };
+  }>(
+    endpoint,
+    `{
+      fantasyQueries {
+        tournament(id: ${JSON.stringify(hru)}, source: HRU) {
+          currentSeason { id }
+        }
+      }
+    }`,
+    fetchImpl
+  );
+  const seasonId = seasonResponse.fantasyQueries?.tournament?.currentSeason?.id?.trim() || null;
+  if (!seasonId) return { tournamentHru: hru, seasonId: null, prices: [], fetchedAt: new Date().toISOString() };
+
+  const prices: SportsRuFantasyPriceRow[] = [];
+  const seenPlayerIds = new Set<string>();
+  for (const [role, position] of sportsRuFantasyRoles) {
+    for (let pageNum = 1; pageNum <= 100; pageNum += 1) {
+      const response = await sportsRuGraphqlRequest<{
+        fantasyQueries?: {
+          players?: {
+            list?: Array<{
+              id?: string | null;
+              name?: string | null;
+              price?: number | null;
+              statObject?: { lastName?: string | null } | null;
+            }> | null;
+          } | null;
+        };
+      }>(
+        endpoint,
+        `{
+          fantasyQueries {
+            players(input: {
+              seasonID: ${JSON.stringify(seasonId)},
+              pageSize: ${pageSize},
+              pageNum: ${pageNum},
+              sortOrder: DESC,
+              sortType: BY_PRICE,
+              role: ${role}
+            }) {
+              list { id name price statObject { lastName } }
+            }
+          }
+        }`,
+        fetchImpl
+      );
+      const players = response.fantasyQueries?.players?.list ?? [];
+      for (const player of players) {
+        const providerPlayerId = player.id?.trim();
+        const playerName = cleanText(player.name || player.statObject?.lastName || "");
+        const price = Number(player.price);
+        if (!providerPlayerId || seenPlayerIds.has(providerPlayerId) || !playerName || !Number.isFinite(price)) continue;
+        seenPlayerIds.add(providerPlayerId);
+        prices.push({
+          providerPlayerId,
+          playerName,
+          normalizedName: normalizeSportsRuPlayerName(playerName),
+          position,
+          price,
+          sourceKind: "graphql-current-season",
+          sourceRowIndex: prices.length
+        });
+      }
+      if (players.length < pageSize) break;
+    }
+  }
+
+  return {
+    tournamentHru: hru,
+    seasonId,
+    prices,
+    fetchedAt: new Date().toISOString()
+  };
+}
+
+export function sportsRuTournamentHruFromUrl(value: string) {
+  try {
+    const parts = new URL(value).pathname.split("/").filter(Boolean);
+    const footballIndex = parts.findIndex((part) => part === "football");
+    return footballIndex >= 0 ? parts[footballIndex + 1] ?? null : null;
+  } catch {
+    return null;
+  }
+}
+
+async function sportsRuGraphqlRequest<T>(endpoint: string, query: string, fetchImpl: typeof fetch): Promise<T> {
+  const response = await fetchImpl(endpoint, {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "user-agent": "MacheteFantasyImporter/2.0",
+      "x-appname": "frontend-fantasy-landing",
+      "x-appversion": "v1.0.6"
+    },
+    body: JSON.stringify({ query })
+  });
+  if (!response.ok) throw new Error(`Sports.ru GraphQL request failed: ${response.status} ${response.statusText}`);
+  const payload = (await response.json()) as { data?: T; errors?: Array<{ message?: string }> };
+  if (payload.errors?.length) throw new Error(`Sports.ru GraphQL error: ${payload.errors.map((error) => error.message ?? "unknown error").join("; ")}`);
+  if (!payload.data) throw new Error("Sports.ru GraphQL response contains no data.");
+  return payload.data;
+}
 
 export function parseSportsRuFantasyTournamentLinks(html: string, baseUrl = "https://www.sports.ru"): SportsRuFantasyTournamentLink[] {
   const links: SportsRuFantasyTournamentLink[] = [];

@@ -113,15 +113,24 @@ DATABASE_URL_INTERNAL="postgresql://fantasy_app:fantasy_app_password@postgres:54
 
 ```text
 Unsigned (no cookie, no x-mas):
+  GET /api/data/leagues?id={leagueId}&ccode3={CCODE3}                (metadata/season discovery)
   GET /api/data/leagues?id={leagueId}&season={YYYY/YYYY}&ccode3={CCODE3}
   GET /api/data/teams?id={teamId}&ccode3={CCODE3}
-  GET /api/data/fixtures?id={leagueId}&season={YYYY/YYYY}
+  GET /api/data/fixtures?id={leagueId}&season={YYYY/YYYY}           (fixtures fallback)
   GET /api/data/match?id={matchId}                                  (summary)
   GET /_next/data/{buildId}/match/{matchId}/playbyplay.json         (full content)
 
 Signed + Turnstile cookie required (only used by getPlayer today):
   GET /api/data/playerData?id={playerId}
 ```
+
+Run metadata sync before teams and fixtures. Metadata discovery intentionally
+omits a stored season so summer rollover can select FotMob's current season;
+passing the old season here would keep the league pinned to stale metadata.
+Fixture sync then requests the discovered season and prefers
+`leagues.fixtures.allMatches`, because it contains round numbers. The separate
+`/api/data/fixtures` response remains a fallback when the league response has no
+usable fixture array.
 
 ## Seeded League IDs
 

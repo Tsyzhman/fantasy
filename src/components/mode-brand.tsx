@@ -22,7 +22,7 @@ export function ModeBrand() {
         </span>
         <span className="min-w-0">
           <span className="block truncate text-sm font-semibold uppercase tracking-wide text-slate-500"><I18nText en="Administration" ru="Администрирование" /></span>
-          <span className="block truncate text-xs font-medium text-slate-400">
+          <span className="block truncate text-xs font-medium text-slate-600">
             <I18nText en="System controls" ru="Системное управление" />
           </span>
         </span>
@@ -52,14 +52,13 @@ export function ModeBrand() {
           width={48}
           height={48}
           className={cn("mode-logo-image", imageClassName)}
-          priority
         />
       </span>
       <span className="min-w-0">
         <span className="block truncate text-sm font-semibold uppercase tracking-wide text-slate-500">
           {isMixerr ? <I18nText en={label} ru="Миксер" /> : isMachete ? label : <I18nText en={label} ru="Балтика" />}
         </span>
-        <span className="block truncate text-xs font-medium text-slate-400">{subtitle}</span>
+        <span className="block truncate text-xs font-medium text-slate-600">{subtitle}</span>
       </span>
     </Link>
   );

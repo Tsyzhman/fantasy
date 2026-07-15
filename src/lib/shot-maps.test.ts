@@ -69,6 +69,7 @@ function shot(overrides: Partial<ShotMapShot>): ShotMapShot {
     provider_opponent_team_id: null,
     provider_player_id: null,
     player_name: null,
+    player_position: null,
     is_home: null,
     minute: null,
     added_time: null,

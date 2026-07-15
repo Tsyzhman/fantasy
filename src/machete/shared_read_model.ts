@@ -62,6 +62,12 @@ export type SharedMachetePlayerRow = {
   scoringScore: number | null;
   alternativeScore: number | null;
   recentFp: number[];
+  expectedMinutes: number | null;
+  minutesDeviation: number | null;
+  startProbability: number | null;
+  forecastConfidence: number | null;
+  dataUpdatedAt: Date | null;
+  hasBasicStats: boolean;
 };
 
 export type SharedPlayerRowsScope = {
@@ -331,7 +337,10 @@ export async function loadSharedMachetePlayerRows(
     minMinutes?: string;
     matchWindow: MacheteMatchWindow;
     combineTeamCompetitions?: boolean;
+    fallbackToRecentLeagueHistory?: boolean;
+    fallbackToRecentPlayerHistory?: boolean;
     scoringModel?: ActiveScoringModel;
+    playerIds?: bigint[];
   }
 ): Promise<SharedMachetePlayerRow[]> {
   const scopes = input.scopes.filter((scope) => scope.leagueId && scope.season);
@@ -353,6 +362,13 @@ export async function loadSharedMachetePlayerRows(
           ? [
               {
                 OR: sharedPositionWhereClauses(positionFilter)
+              }
+            ]
+          : []),
+        ...(input.playerIds !== undefined
+          ? [
+              {
+                playerId: { in: uniqueBigints(input.playerIds) }
               }
             ]
           : [])
@@ -420,6 +436,15 @@ export async function loadSharedMachetePlayerRows(
     uniqueBigints(rosterRows.map((row) => row.playerId))
   );
   const statsByTeamPlayer = groupStatsByTeamPlayer(stats);
+  const fallbackStats = input.fallbackToRecentLeagueHistory || input.fallbackToRecentPlayerHistory
+    ? await loadRecentPlayerHistory(
+        prisma,
+        uniqueBigints(rosterRows.map((row) => row.playerId)),
+        input.fallbackToRecentPlayerHistory ? [] : uniqueBigints(scopes.map((scope) => scope.leagueId))
+      )
+    : [];
+  for (const row of fallbackStats) matchDateById.set(String(row.matchId), row.match.matchDate);
+  const fallbackStatsByPlayer = groupStatsByPlayer(fallbackStats);
   const scoringModel = input.scoringModel ?? (await getActiveScoringModelForSource("MACHETE"));
   const minimumMinutes = input.minMinutes ? Number(input.minMinutes) : null;
 
@@ -437,8 +462,9 @@ export async function loadSharedMachetePlayerRows(
         const first = rows[0];
         const allowedMatchIds = new Set((limitedMatchIdsByTeam.get(String(first.teamId)) ?? []).map(String));
 
-        const playerStats = (statsByTeamPlayer.get(teamPlayerKey(first.teamId, first.playerId)) ?? []).filter((stat) => allowedMatchIds.has(String(stat.matchId)));
-        const position = firstNonEmpty(rows.map((row) => row.position));
+        const scopedStats = (statsByTeamPlayer.get(teamPlayerKey(first.teamId, first.playerId)) ?? []).filter((stat) => allowedMatchIds.has(String(stat.matchId)));
+        const playerStats = mergeRecentPlayerStats(scopedStats, fallbackStatsByPlayer.get(String(first.playerId)) ?? [], matchDateById, input.matchWindow);
+        const position = inferSharedPosition(firstNonEmpty(rows.map((row) => row.position)), playerStats, matchDateById);
         const leagueNames = uniqueStrings(rows.map(leagueNameForRosterRow));
         const aggregate = aggregateSharedStats(playerStats, position, scoringModel, matchDateById);
 
@@ -451,7 +477,10 @@ export async function loadSharedMachetePlayerRows(
           age: rows.find((row) => row.age !== null)?.age ?? null,
           nationality: firstNonEmpty(rows.map((row) => row.nationality ?? row.player.country)),
           isStarter: rows.some((row) => row.isStarter),
-          ...aggregate
+          ...aggregate,
+          hasBasicStats:
+            aggregate.hasBasicStats ||
+            (fallbackStatsByPlayer.get(String(first.playerId)) ?? []).some((stat) => isSharedBasicStatComplete(stat, position))
         };
       })
       .filter((row) => (minimumMinutes !== null && Number.isFinite(minimumMinutes) ? row.minutesPlayed >= minimumMinutes : true));
@@ -461,8 +490,10 @@ export async function loadSharedMachetePlayerRows(
     .map((row) => {
       const teamKey = teamScopeKey(row.leagueId, row.season, row.teamId);
       const allowedMatchIds = new Set((matchIdsByTeamScope.get(teamKey) ?? []).map(String));
-      const playerStats = (statsByTeamPlayer.get(teamPlayerKey(row.teamId, row.playerId)) ?? []).filter((stat) => allowedMatchIds.has(String(stat.matchId)));
-      const aggregate = aggregateSharedStats(playerStats, row.position, scoringModel, matchDateById);
+      const scopedStats = (statsByTeamPlayer.get(teamPlayerKey(row.teamId, row.playerId)) ?? []).filter((stat) => allowedMatchIds.has(String(stat.matchId)));
+      const playerStats = mergeRecentPlayerStats(scopedStats, fallbackStatsByPlayer.get(String(row.playerId)) ?? [], matchDateById, input.matchWindow);
+      const position = inferSharedPosition(row.position, playerStats, matchDateById);
+      const aggregate = aggregateSharedStats(playerStats, position, scoringModel, matchDateById);
       const leagueName = leagueNameForRosterRow(row);
 
       return {
@@ -470,11 +501,14 @@ export async function loadSharedMachetePlayerRows(
         name: row.player.name,
         teamName: row.team.name,
         leagueName,
-        position: row.position,
+        position,
         age: row.age,
         nationality: row.nationality ?? row.player.country,
         isStarter: row.isStarter,
-        ...aggregate
+        ...aggregate,
+        hasBasicStats:
+          aggregate.hasBasicStats ||
+          (fallbackStatsByPlayer.get(String(row.playerId)) ?? []).some((stat) => isSharedBasicStatComplete(stat, position))
       };
     })
     .filter((row) => (minimumMinutes !== null && Number.isFinite(minimumMinutes) ? row.minutesPlayed >= minimumMinutes : true));
@@ -672,6 +706,33 @@ async function loadStatsForMatchIds(prisma: PrismaClient, matchIds: bigint[], te
   });
 }
 
+async function loadRecentPlayerHistory(prisma: PrismaClient, playerIds: bigint[], leagueIds: bigint[]) {
+  if (playerIds.length === 0) return [];
+
+  const rows = await prisma.matchPlayerStat.findMany({
+    where: {
+      playerId: { in: playerIds },
+      match: {
+        ...(leagueIds.length > 0 ? { leagueId: { in: leagueIds } } : {}),
+        finished: true,
+        cancelled: false,
+        matchDate: { not: null }
+      }
+    },
+    include: {
+      match: {
+        select: {
+          matchDate: true,
+          status: true
+        }
+      }
+    },
+    orderBy: [{ match: { matchDate: "asc" } }, { matchId: "asc" }]
+  });
+
+  return rows.filter((row) => row.match.status !== "SEASON_AGGREGATE");
+}
+
 function groupStatsByTeamPlayer(stats: MatchPlayerStatRecord[]) {
   const grouped = new Map<string, MatchPlayerStatRecord[]>();
   for (const stat of stats) {
@@ -684,6 +745,47 @@ function groupStatsByTeamPlayer(stats: MatchPlayerStatRecord[]) {
   return grouped;
 }
 
+function groupStatsByPlayer(stats: MatchPlayerStatRecord[]) {
+  const grouped = new Map<string, MatchPlayerStatRecord[]>();
+  for (const stat of stats) {
+    const key = String(stat.playerId);
+    const rows = grouped.get(key) ?? [];
+    rows.push(stat);
+    grouped.set(key, rows);
+  }
+  return grouped;
+}
+
+function mergeRecentPlayerStats(
+  scopedStats: MatchPlayerStatRecord[],
+  fallbackStats: MatchPlayerStatRecord[],
+  matchDateById: Map<string, Date | null>,
+  matchWindow: MacheteMatchWindow
+) {
+  if (matchWindow.kind !== "last" || fallbackStats.length === 0) return scopedStats;
+
+  const byMatchId = new Map<string, MatchPlayerStatRecord>();
+  for (const stat of [...fallbackStats, ...scopedStats]) byMatchId.set(String(stat.matchId), stat);
+  return [...byMatchId.values()]
+    .sort(
+      (left, right) =>
+        dateMs(matchDateById.get(String(left.matchId)) ?? null) - dateMs(matchDateById.get(String(right.matchId)) ?? null) ||
+        compareBigints(left.matchId, right.matchId)
+    )
+    .slice(-matchWindow.matches);
+}
+
+function inferSharedPosition(position: string | null | undefined, stats: MatchPlayerStatRecord[], matchDateById: Map<string, Date | null>) {
+  if (normalizeFantasyPosition(position) !== "UNK") return position ?? null;
+
+  const ordered = [...stats].sort(
+    (left, right) =>
+      dateMs(matchDateById.get(String(right.matchId)) ?? null) - dateMs(matchDateById.get(String(left.matchId)) ?? null) ||
+      compareBigints(right.matchId, left.matchId)
+  );
+  return ordered.find((stat) => normalizeFantasyPosition(stat.position) !== "UNK")?.position ?? position ?? null;
+}
+
 const RECENT_FP_WINDOW = 5;
 
 function aggregateSharedStats(
@@ -693,6 +795,7 @@ function aggregateSharedStats(
   matchDateById?: Map<string, Date | null>
 ) {
   const matchesPlayed = stats.length;
+  const appearances = stats.filter(isPlayerAppearance).length;
   const minutesPlayed = sum(stats.map((stat) => stat.minutes));
   const goals = sum(stats.map((stat) => stat.goals));
   const assists = sum(stats.map((stat) => stat.assists));
@@ -714,9 +817,26 @@ function aggregateSharedStats(
   const recoveries = sum(stats.map((stat) => stat.recoveries));
   const ratings = stats.map((stat) => stat.rating).filter((rating): rating is number => typeof rating === "number" && Number.isFinite(rating));
   const averageRating = ratings.length ? round(sum(ratings) / ratings.length) : null;
+  const expectedMinutes = matchesPlayed > 0 ? round(clamp(minutesPlayed / matchesPlayed, 0, 90)) : null;
+  const knownStarts = stats.filter((stat) => stat.started !== null);
+  const startProbability = knownStarts.length > 0 ? round(knownStarts.filter((stat) => stat.started).length / knownStarts.length) : null;
+  const minuteValues = stats.map((stat) => stat.minutes ?? 0);
+  const minuteDeviation = standardDeviation(minuteValues, expectedMinutes ?? 0);
+  const sampleConfidence = Math.min(matchesPlayed / RECENT_FP_WINDOW, 1);
+  const stabilityConfidence = 1 - Math.min(minuteDeviation / 45, 1);
+  const startDataConfidence = matchesPlayed > 0 ? knownStarts.length / matchesPlayed : 0;
+  const forecastConfidence = matchesPlayed > 0 ? round(clamp(sampleConfidence * 0.55 + stabilityConfidence * 0.3 + startDataConfidence * 0.15, 0, 1)) : null;
+  const dataUpdatedAt = stats.reduce<Date | null>((latest, stat) => {
+    if (!(stat.updatedAt instanceof Date)) return latest;
+    return !latest || stat.updatedAt > latest ? stat.updatedAt : latest;
+  }, null);
 
   const rawMetrics = {
     matches_played: matchesPlayed,
+    observed_rounds: matchesPlayed,
+    appearance_probability: matchesPlayed > 0 ? appearances / matchesPlayed : 0,
+    sixty_minute_probability: matchesPlayed > 0 ? stats.filter((stat) => (stat.minutes ?? 0) >= 60).length / matchesPlayed : 0,
+    full_match_probability: matchesPlayed > 0 ? stats.filter((stat) => (stat.minutes ?? 0) >= 90).length / matchesPlayed : 0,
     minutes_played: minutesPlayed,
     appearances_60: stats.filter((stat) => (stat.minutes ?? 0) >= 60).length,
     full_matches: stats.filter((stat) => (stat.minutes ?? 0) >= 90).length,
@@ -760,8 +880,40 @@ function aggregateSharedStats(
     fantasyScore: calculateFantasyScore(rawMetrics, positionGroup, model),
     scoringScore: calculateScoringScore(rawMetrics, positionGroup, model),
     alternativeScore: calculateAlternativeScore(rawMetrics, positionGroup, model),
-    recentFp
+    recentFp,
+    expectedMinutes,
+    minutesDeviation: matchesPlayed > 0 ? round(minuteDeviation) : null,
+    startProbability,
+    forecastConfidence,
+    dataUpdatedAt,
+    hasBasicStats: stats.some((stat) => isSharedBasicStatComplete(stat, position))
   };
+}
+
+function isPlayerAppearance(stat: MatchPlayerStatRecord) {
+  return (stat.minutes ?? 0) > 0 || stat.started === true || stat.substitutedIn === true || (stat.rating ?? 0) > 0;
+}
+
+function isSharedBasicStatComplete(stat: MatchPlayerStatRecord, fallbackPosition: string | null | undefined) {
+  if (normalizeFantasyPosition(stat.position ?? fallbackPosition) === "UNK") return false;
+  if (stat.started === false && stat.substitutedIn !== true && (stat.minutes === null || stat.minutes === 0)) return true;
+  if (typeof stat.minutes !== "number" || !Number.isFinite(stat.minutes)) return false;
+  return [
+    stat.rating,
+    stat.goals,
+    stat.assists,
+    stat.xg,
+    stat.xa,
+    stat.shots,
+    stat.shotsOnTarget,
+    stat.keyPasses,
+    stat.tacklesWon,
+    stat.interceptions,
+    stat.clearances,
+    stat.recoveries,
+    stat.saves,
+    stat.goalsConceded
+  ].some((value) => typeof value === "number" && Number.isFinite(value));
 }
 
 function computeRecentFp(
@@ -1008,6 +1160,10 @@ function uniqueBigints(values: bigint[]) {
   return result;
 }
 
+function compareBigints(left: bigint, right: bigint) {
+  return left < right ? -1 : left > right ? 1 : 0;
+}
+
 function uniqueStrings(values: string[]) {
   const seen = new Set<string>();
   const result: string[] = [];
@@ -1029,12 +1185,8 @@ function formatCombinedLeagueNames(names: string[]) {
 }
 
 function machetePositionGroup(position: string | null | undefined) {
-  const value = position?.toLowerCase() ?? "";
-  if (value.includes("keeper") || value === "gk") return "GK";
-  if (value.includes("defender") || value.includes("back") || value === "def") return "DEF";
-  if (value.includes("midfielder") || value === "mid") return "MID";
-  if (value.includes("forward") || value.includes("striker") || value.includes("winger") || value === "fw") return "FWD";
-  return "UNKNOWN";
+  const normalized = normalizeFantasyPosition(position);
+  return normalized === "UNK" ? "UNKNOWN" : normalized;
 }
 
 function numericOrNull(value: unknown) {
@@ -1052,6 +1204,15 @@ function sum(values: Array<number | null | undefined>): number {
     total += value ?? 0;
   }
   return total;
+}
+
+function standardDeviation(values: number[], average: number) {
+  if (values.length === 0) return 0;
+  return Math.sqrt(values.reduce((total, value) => total + (value - average) ** 2, 0) / values.length);
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.min(Math.max(value, min), max);
 }
 
 function round(value: number) {

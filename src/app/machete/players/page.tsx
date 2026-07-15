@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 
+import { BetaJourneyMarker } from "@/components/beta/BetaJourneyMarker";
 import { PlayerCompareDock, PlayerCompareProvider, PlayerCompareToggle } from "@/components/compare/player-compare";
 import { I18nText } from "@/components/i18n-text";
 import { LocalizedOption } from "@/components/localized-option";
@@ -20,6 +21,7 @@ import { NULL_GLYPH, formatNumber } from "@/lib/format";
 import { matchWindowLabel, matchWindowLabelRu, matchWindowModeValue, parseMacheteMatchWindow, type MacheteMatchWindow } from "@/scoring/machete/match-window";
 import { normalizeFantasyPosition, type FantasyPositionGroup } from "@/machete/squad_logic";
 import { loadSportsRuFantasyPriceRefsByScopedPlayer, sportsRuFantasyPriceScopeKey, type SportsRuFantasyPriceRef } from "@/machete/squad_planner";
+import { applyFantasyPlayerIdentityRows, filterFantasyPlayerIdentityRows } from "@/machete/player_identity";
 import {
   loadSharedLeagueOptions,
   loadSharedLeagueSeasonOptions,
@@ -31,7 +33,6 @@ import {
   parseSharedBigInt,
   sortSharedMacheteRows,
   type SharedLeagueSeasonOption,
-  type SharedMachetePlayerRow,
   type SharedPlayerRowsScope,
   type SharedTeamCompetitionOption,
   type SharedTeamOption
@@ -45,6 +46,7 @@ type SearchParams = {
   teamId?: string;
   competitionKey?: SearchParamValue;
   position?: string;
+  query?: string;
   starterFilter?: string;
   minMinutes?: string;
   recentMatches?: string;
@@ -111,6 +113,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
     selectedTeamId,
     competitionKeys: activeCompetitionKeys,
     position: selectedPosition,
+    query: resolvedSearchParams.query,
     starterFilter,
     minMinutes: resolvedSearchParams.minMinutes,
     matchWindow,
@@ -134,9 +137,20 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
   const windowMatchesLabel = windowSummary
     ? `${formatNumber(windowSummary.matchesWithPlayerStats)} / ${formatNumber(windowSummary.officialMatches)}`
     : NULL_GLYPH;
+  const squadHref =
+    selectedLeagueId && selectedLeagueId !== ALL_LEAGUES_VALUE
+      ? `/machete/squad?leagueId=${encodeURIComponent(selectedLeagueId)}${selectedSeason ? `&season=${encodeURIComponent(selectedSeason)}` : ""}`
+      : "/machete/squad";
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      {selectedLeagueId &&
+      selectedLeagueId !== ALL_LEAGUES_VALUE &&
+      selectedSeason &&
+      resolvedSearchParams.query?.trim() &&
+      players.some((player) => player.fantasyScore !== null) ? (
+        <BetaJourneyMarker milestone="PLAYER_FORECAST_FOUND" />
+      ) : null}
       <PageBreadcrumbs
         backHref="/machete/leagues"
         backLabel={<I18nText en="Back to Machete leagues" ru="Назад к лигам Machete" />}
@@ -150,12 +164,12 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
           <I18nText en="Machete player explorer" ru="Таблица игроков Machete" />
         </p>
         <h1 className="mt-2 text-3xl font-bold text-ink">
-          <I18nText en="Sports.ru mapped players" ru="Игроки Sports.ru с сопоставлением" />
+          <I18nText en="Player search and forecasts" ru="Поиск игроков и прогнозы" />
         </h1>
         <p className="mt-2 max-w-2xl text-sm text-slate-600">
           <I18nText
-            en="Machete stats for players mapped to Sports.ru fantasy prices. Names and positions come from Sports.ru."
-            ru="Статистика Machete только для игроков, сопоставленных с ценами Sports.ru. Имена и позиции берутся из Sports.ru."
+            en="Search real FotMob players and compare recalculated Machete forecasts. Sports.ru names and positions are used when a verified mapping exists."
+            ru="Ищите реальных игроков FotMob и сравнивайте пересчитанные прогнозы Machete. Имена и позиции Sports.ru используются только при подтверждённом сопоставлении."
           />
         </p>
       </div>
@@ -166,7 +180,18 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
         description={<I18nText en="Choose the working scope first; detailed filters refine the table without a separate apply button." ru="Сначала выберите рабочий скоуп; дополнительные фильтры сразу уточняют таблицу." />}
         resetHref="/machete/players"
       >
-      <AutoSubmitForm className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-9">
+      <AutoSubmitForm className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-12">
+        <label className="text-sm md:col-span-2 xl:col-span-2">
+          <span className="mb-1 block font-medium text-slate-600"><I18nText en="Player search" ru="Поиск игрока" /></span>
+          <input
+            type="search"
+            name="query"
+            defaultValue={resolvedSearchParams.query ?? ""}
+            data-auto-submit-delay="200"
+            autoComplete="off"
+            className="w-full rounded border border-slate-200 px-3 py-2"
+          />
+        </label>
         <label className="text-sm">
           <span className="mb-1 block font-medium text-slate-600"><I18nText en="League" ru="Лига" /></span>
           <select name="leagueId" defaultValue={selectedLeagueId} className="w-full rounded border border-slate-200 px-3 py-2">
@@ -306,6 +331,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
           selectedLeagueId,
           selectedSeason,
           selectedTeamId,
+          query: resolvedSearchParams.query,
           selectedPosition,
           starterFilter,
           minMinutes: resolvedSearchParams.minMinutes,
@@ -316,9 +342,14 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
 
       <div className="mt-4 grid grid-cols-2 gap-3 lg:grid-cols-4">
         <MacheteScopeStat
-          label={<I18nText en="Mapped players" ru="Игроки" />}
+          label={<I18nText en="Players" ru="Игроки" />}
           value={formatNumber(playersResult.total)}
-          detail={<I18nText en="Sports.ru identities" ru="Sports.ru-маппинг" />}
+          detail={
+            <I18nText
+              en={`${formatNumber(playersResult.sportsRuMappedCount)} Sports.ru · ${formatNumber(playersResult.fotMobFallbackCount)} FotMob`}
+              ru={`${formatNumber(playersResult.sportsRuMappedCount)} Sports.ru · ${formatNumber(playersResult.fotMobFallbackCount)} FotMob`}
+            />
+          }
         />
         <MacheteScopeStat
           label={<I18nText en="Teams" ru="Команды" />}
@@ -336,6 +367,15 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
           detail={matchWindowLabel(matchWindow)}
         />
       </div>
+
+      {playersResult.fotMobFallbackCount > 0 ? (
+        <div role="status" className="mt-3 rounded border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+          <I18nText
+            en={`${formatNumber(playersResult.fotMobFallbackCount)} players are shown with FotMob identities because no verified Sports.ru mapping is available for them. Forecasts use real Machete data; the squad planner marks unavailable official prices as estimates.`}
+            ru={`${formatNumber(playersResult.fotMobFallbackCount)} игроков показаны с идентификаторами FotMob, потому что для них нет подтверждённого сопоставления Sports.ru. Прогнозы рассчитаны на реальных данных Machete; в сборщике отсутствующие официальные цены явно отмечены как оценочные.`}
+          />
+        </div>
+      ) : null}
 
       <p className="mt-3 text-sm text-slate-500">
         <I18nText
@@ -368,6 +408,9 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
               <PlayerSavedViews source="machete" />
               <PlayerWatchlistPanel source="machete" />
               <PlayerCompareToggle />
+              <Link href={squadHref} className="rounded bg-emerald-700 px-3 py-1.5 font-semibold text-white hover:bg-emerald-800">
+                <I18nText en="Build squad" ru="Собрать состав" />
+              </Link>
               <PaginationLinks page={playersResult.page} pageCount={playersResult.pageCount} params={paginationParams} />
             </ResultsToolbar>
             <PlayerCompareDock />
@@ -385,7 +428,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
           ) : (
             <EmptyState
               title={<I18nText en="Choose a league" ru="Выберите лигу" />}
-              description={<I18nText en="After that the table will load Sports.ru mapped players and their recalculated Machete stats." ru="После этого таблица загрузит сопоставленных игроков Sports.ru и пересчитанную статистику Machete." />}
+              description={<I18nText en="After that the table will load real FotMob players, verified Sports.ru identities where available, and recalculated Machete forecasts." ru="После этого таблица загрузит реальных игроков FotMob, подтверждённые идентификаторы Sports.ru при их наличии и пересчитанные прогнозы Machete." />}
             />
           )}
         </section>
@@ -407,7 +450,7 @@ function MacheteScopeStat({
     <dl className="rounded border border-slate-200 bg-white px-3 py-2 shadow-soft">
       <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">{label}</dt>
       <dd className="mt-1 text-xl font-bold text-ink num-tabular">{value}</dd>
-      {detail ? <p className="mt-1 truncate text-xs text-slate-500">{detail}</p> : null}
+      {detail ? <dd className="mt-1 truncate text-xs text-slate-500">{detail}</dd> : null}
     </dl>
   );
 }
@@ -418,6 +461,7 @@ async function buildMatchWindowRows({
   selectedTeamId,
   competitionKeys,
   position,
+  query,
   starterFilter,
   minMinutes,
   matchWindow,
@@ -430,6 +474,7 @@ async function buildMatchWindowRows({
   selectedTeamId: string;
   competitionKeys: string[];
   position: PositionFilter | null;
+  query?: string;
   starterFilter: ReturnType<typeof parseStarterFilter>;
   minMinutes?: string;
   matchWindow: MacheteMatchWindow;
@@ -440,7 +485,9 @@ async function buildMatchWindowRows({
   if (!selectedLeagueId) {
     return {
       ...emptyPagedPlayers(page, pageSize),
-      windowSummary: null
+      windowSummary: null,
+      sportsRuMappedCount: 0,
+      fotMobFallbackCount: 0
     };
   }
 
@@ -457,11 +504,20 @@ async function buildMatchWindowRows({
     loadSharedMatchWindowSummary(prisma, scopes, matchWindow, combineTeamCompetitions),
     loadSportsRuFantasyPriceRefsByScopedPlayer(prisma, { scopes })
   ]);
-  const rows = sortSharedMacheteRows(filterByStarter(applySportsRuMappedPlayerRows(rawRows, sportsPriceRefs, position), starterFilter), sort);
+  const identityRows = applyFantasyPlayerIdentityRows(
+    rawRows,
+    (rowId) => sportsRuPriceRefForMacheteRow(rowId, sportsPriceRefs),
+    position
+  );
+  const rows = sortSharedMacheteRows(filterFantasyPlayerIdentityRows(filterByStarter(identityRows, starterFilter), query), sort);
+  const sportsRuMappedCount = rows.filter((row) => row.fantasyIdentitySource === "sports-ru").length;
+  const fotMobFallbackCount = rows.length - sportsRuMappedCount;
 
   return {
     ...paginateRows(rows, page, pageSize),
-    windowSummary
+    windowSummary,
+    sportsRuMappedCount,
+    fotMobFallbackCount
   };
 }
 
@@ -559,30 +615,6 @@ function macheteSortLabel(sortValue: string) {
     alternativeScore: "alternative FP"
   };
   return `${labels[key] ?? labels.fantasyScore}, ${direction === "asc" ? "ascending" : "descending"}`;
-}
-
-function applySportsRuMappedPlayerRows(
-  rows: SharedMachetePlayerRow[],
-  sportsPriceRefs: Map<string, SportsRuFantasyPriceRef>,
-  position: PositionFilter | null
-) {
-  return rows.flatMap((row) => {
-    const sportsRef = sportsRuPriceRefForMacheteRow(row.id, sportsPriceRefs);
-    if (!sportsRef) return [];
-
-    const sportsPositionGroup = normalizeFantasyPosition(sportsRef.position);
-    const rowPositionGroup = normalizeFantasyPosition(row.position);
-    const positionGroup = sportsPositionGroup !== "UNK" ? sportsPositionGroup : rowPositionGroup;
-    if (position && positionGroup !== position) return [];
-
-    return [
-      {
-        ...row,
-        name: sportsRef.playerName,
-        position: sportsRef.position ?? (positionGroup === "UNK" ? row.position : positionGroup)
-      }
-    ];
-  });
 }
 
 function sportsRuPriceRefForMacheteRow(rowId: string, sportsPriceRefs: Map<string, SportsRuFantasyPriceRef>) {
@@ -723,6 +755,7 @@ function buildMacheteActiveChips({
   selectedLeagueId,
   selectedSeason,
   selectedTeamId,
+  query,
   selectedPosition,
   starterFilter,
   minMinutes,
@@ -736,6 +769,7 @@ function buildMacheteActiveChips({
   selectedLeagueId: string;
   selectedSeason: string;
   selectedTeamId: string;
+  query?: string;
   selectedPosition: PositionFilter | null;
   starterFilter: ReturnType<typeof parseStarterFilter>;
   minMinutes?: string;
@@ -744,6 +778,14 @@ function buildMacheteActiveChips({
 }): ActiveFilterChip[] {
   const chips: ActiveFilterChip[] = [];
   const cleanedParams: SearchParams = { ...searchParams, page: undefined };
+
+  if (query?.trim()) {
+    chips.push({
+      key: `query:${query.trim()}`,
+      label: <><I18nText en="Search" ru="Поиск" />: {query.trim()}</>,
+      removeHref: filterHrefWithout(cleanedParams, "query")
+    });
+  }
 
   if (selectedLeagueId && selectedLeagueId !== ALL_LEAGUES_VALUE) {
     const league = allLeagues.find((entry) => String(entry.leagueId) === selectedLeagueId);

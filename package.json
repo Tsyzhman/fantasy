@@ -33,6 +33,7 @@
     "ingestion:reparse-raw": "tsx scripts/ingestion-runner.ts reparse-raw",
     "ingestion:import-payloads": "tsx scripts/ingestion-runner.ts import-payloads",
     "payloads:audit": "tsx scripts/audit-raw-payloads.ts",
+    "data:quality": "tsx scripts/audit-fantasy-data-quality.ts",
     "payloads:prune-finalized": "tsx scripts/prune-finalized-raw-payloads.ts",
     "payloads:prune-machete": "tsx scripts/prune-machete-raw-payloads.ts",
     "db:merge-leagues": "tsx scripts/merge-core-leagues.ts",
@@ -42,7 +43,12 @@
     "fotmob:reset": "tsx scripts/reset-fotmob-matches.ts",
     "fotmob:penalty-potential": "tsx scripts/penalty-potential-index.ts",
     "prices:import-sheet": "tsx scripts/import-fantasy-price-sheet.ts",
+    "prices:sync-sports-ru": "tsx scripts/import-sports-ru-fantasy.ts",
     "scores:recalculate": "tsx prisma/recalculate-fantasy.ts",
+    "model:backtest": "tsx scripts/backtest-fantasy-model.ts",
+    "model:explore-calibration": "tsx scripts/explore-fantasy-projection-calibration.ts",
+    "beta:load": "tsx scripts/beta-load-test.ts",
+    "beta:user-test": "tsx scripts/beta-user-test.ts",
     "logos:download": "tsx scripts/download-team-logos.ts"
   },
   "dependencies": {

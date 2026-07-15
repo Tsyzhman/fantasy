@@ -28,6 +28,13 @@ test("middleware lets health route report database status", () => {
   });
 });
 
+test("middleware lets nested health routes report operational status", () => {
+  return withEnv({ DATABASE_URL: "" }, () => {
+    const response = middleware(new NextRequest("http://localhost/api/health/data-quality"));
+    assert.equal(response.status, 200);
+  });
+});
+
 test("middleware lets cron routes enforce their bearer secret", () => {
   return withEnv({ DATABASE_URL: "postgresql://user:pass@localhost:5432/app" }, () => {
     const response = middleware(new NextRequest("http://localhost/api/cron/ingestion/daily"));

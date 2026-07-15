@@ -4,8 +4,12 @@ export async function register() {
   const { startMacheteDailyFotMobSyncScheduler } = await import("./server/machete-daily-sync");
   const { startIngestionWorkerLoop } = await import("./server/ingestion-worker-loop");
   const { startLeagueSeasonRetentionScheduler } = await import("./server/league-season-retention-scheduler");
+  const { startDataQualityAuditScheduler } = await import("./server/data-quality-audit-scheduler");
+  const { startSportsRuFantasySyncScheduler } = await import("./server/sports-ru-fantasy-sync-scheduler");
 
   startMacheteDailyFotMobSyncScheduler();
   startLeagueSeasonRetentionScheduler();
+  startDataQualityAuditScheduler();
+  startSportsRuFantasySyncScheduler();
   startIngestionWorkerLoop();
 }

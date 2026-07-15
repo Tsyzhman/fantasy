@@ -24,7 +24,6 @@ import {
 import {
   get_player_shots_for_team_window,
   get_shot_map_comparison_for_windows,
-  get_team_conceded_shots_for_window,
   get_team_shots_for_window
 } from "@/lib/shot-maps";
 import { matchWindowLabel, matchWindowLabelRu, matchWindowModeValue, parseMacheteMatchWindow } from "@/scoring/machete/match-window";
@@ -116,34 +115,26 @@ export default async function MixerrPage({ searchParams }: PageProps) {
     defendingMatchWindow
   });
 
-  const [teamShots, concededShots, playerShots, comparison] = attackingTeamId
+  const [teamShots, playerShots, comparison] = attackingTeamId
     ? await Promise.all([
         get_team_shots_for_window(prisma, attackingTeamId, matchWindow, attackingShotContext),
-        get_team_conceded_shots_for_window(prisma, attackingTeamId, matchWindow, attackingShotContext),
         playerId ? get_player_shots_for_team_window(prisma, playerId, attackingTeamId, matchWindow, attackingShotContext) : Promise.resolve([]),
         defendingTeamId
           ? get_shot_map_comparison_for_windows(prisma, attackingTeamId, defendingTeamId, matchWindow, defendingMatchWindow, attackingShotContext, defendingShotContext)
           : Promise.resolve(emptyComparison(attackingTeamId, defendingTeamId))
       ])
-    : [[], [], [], emptyComparison(attackingTeamId, defendingTeamId)];
+    : [[], [], emptyComparison(attackingTeamId, defendingTeamId)];
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <section className="border-b border-slate-200 pb-6">
         <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">MiXerr / FotMob</p>
         <h1 className="mt-2 text-3xl font-bold text-ink"><I18nText en="MiXerr shot maps" ru="Карты ударов Миксер" /></h1>
-        <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-          <I18nText
-            en="Compare attacking shot locations, conceded shot locations and player shot maps from stored FotMob match payloads."
-            ru="Сравнивайте точки своих ударов, допущенные удары и карты ударов игроков по сохраненным данным матчей FotMob."
-          />
-        </p>
       </section>
 
       <FilterShell
         className="mt-6"
         title={<I18nText en="Comparison setup" ru="Настройка сравнения" />}
-        description={<I18nText en="Pick teams, competition scopes and match windows; the shot map updates from the URL state." ru="Выберите команды, турниры и окна матчей; карта ударов обновляется из состояния URL." />}
         resetHref="/mixerr"
       >
       <AutoSubmitForm className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-9">
@@ -276,11 +267,10 @@ export default async function MixerrPage({ searchParams }: PageProps) {
         }
         meta={
           <I18nText
-            en={`${teamShots.length} attacking shots, ${concededShots.length} conceded shots, ${playerShots.length} selected-player shots.`}
-            ru={`Свои удары: ${teamShots.length}; допущенные: ${concededShots.length}; удары выбранного игрока: ${playerShots.length}.`}
+            en={`A ${teamShots.length} · B conceded ${comparison.defending_conceded_shots.length} · Player ${playerShots.length}`}
+            ru={`A ${teamShots.length} · B допущено ${comparison.defending_conceded_shots.length} · Игрок ${playerShots.length}`}
           />
         }
-        resetHref="/mixerr"
       >
         <CopyCurrentLinkButton />
       </ResultsToolbar>
@@ -295,17 +285,12 @@ export default async function MixerrPage({ searchParams }: PageProps) {
       ) : (
         <ShotMapExplorer
           teamShots={teamShots}
-          concededShots={concededShots}
           playerShots={playerShots}
           overlayShots={{
             attacking: comparison.attacking_shots,
             conceded: comparison.defending_conceded_shots
           }}
           zoneSummary={comparison.summary.zones}
-          windowLabel={matchWindowLabel(matchWindow)}
-          defendingWindowLabel={matchWindowLabel(defendingMatchWindow)}
-          windowLabelRu={matchWindowLabelRu(matchWindow)}
-          defendingWindowLabelRu={matchWindowLabelRu(defendingMatchWindow)}
         />
       )}
     </main>
@@ -550,6 +535,7 @@ function dateMs(value: Date | null) {
 function MatchWindowOptions() {
   return (
     <>
+      <LocalizedOption value="last3" en="Last 3 team matches" ru="Последние 3 матча команды" />
       <LocalizedOption value="last5" en="Last 5 team matches" ru="Последние 5 матчей команды" />
       <LocalizedOption value="last10" en="Last 10 team matches" ru="Последние 10 матчей команды" />
       <LocalizedOption value="last15" en="Last 15 team matches" ru="Последние 15 матчей команды" />

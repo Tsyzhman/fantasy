@@ -22,7 +22,7 @@ export function ActiveFilterChips({
 }) {
   if (chips.length === 0) return null;
   return (
-    <div className={cn("chip-row", className)} aria-labelledby="active-filter-chips-label">
+    <div className={cn("chip-row", className)} role="group" aria-labelledby="active-filter-chips-label">
       <span id="active-filter-chips-label" className="sr-only">
         <I18nText en="Active filters" ru="Активные фильтры" />
       </span>

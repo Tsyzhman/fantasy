@@ -80,7 +80,6 @@ function initializeHeaders(table: HTMLTableElement, language: "en" | "ru") {
 
     header.dataset.sortable = "true";
     header.tabIndex = 0;
-    header.setAttribute("role", "button");
     header.setAttribute("aria-keyshortcuts", "Enter Space");
     header.setAttribute("aria-sort", header.getAttribute("aria-sort") ?? "none");
     header.setAttribute("aria-roledescription", localizedText(language, "sortable column header", "сортируемый заголовок столбца"));

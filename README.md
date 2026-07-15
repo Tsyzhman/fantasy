@@ -65,6 +65,10 @@ npm run ingestion:status
 npm run ingestion:queue-initial-backfill
 npm run ingestion:worker
 npm run retention:prune-league-seasons -- --dry-run --date=2026-07-01
+npm run model:backtest -- --league=47 --season=2024/2025 --expected-matches=380
+npm run data:quality -- --league=47 --season=2025/2026
+npm run prices:sync-sports-ru -- --league-id=47 --season=2026/2027 --hru=england --dry-run
+npm run beta:user-test -- report --since-days=30
 ```
 
 Current operational docs:
@@ -75,6 +79,13 @@ Current operational docs:
 - `docs/MACHETE_FOTMOB_IMPORT.md`
 - `docs/API_ROUTES.md`
 - `docs/DATA_MODEL.md`
+- `docs/MODEL_BACKTEST.md`
+- `docs/DATA_QUALITY.md`
+- `docs/SPORTS_RU_FANTASY_SYNC.md`
+- `docs/BROWSER_BETA_CHECK.md`
+- `docs/BETA_LOAD_TEST.md`
+- `docs/BETA_READINESS_AUDIT.md`
+- `docs/BETA_USER_TEST_PROTOCOL.md`
 
 Older planning/backlog files are kept as historical references and should not be
 treated as the current product architecture unless they explicitly say so.

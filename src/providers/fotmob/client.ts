@@ -123,15 +123,28 @@ export class UnofficialFotMobClient implements FotMobClient {
 
   async getFixtures(leagueId: string, season?: string): Promise<FotMobFixture[]> {
     const requestSeason = fotMobRequestSeason(leagueId, season);
-    const payload = await this.getJson("/data/fixtures", {
+    const leaguePayload = await this.getJson("/data/leagues", {
+      id: leagueId,
+      ccode3: this.ccode3,
+      ...(requestSeason ? { season: requestSeason } : {})
+    });
+    const leagueFixtures = asRecord(asRecord(leaguePayload).fixtures).allMatches;
+    if (Array.isArray(leagueFixtures)) {
+      const normalized = normalizeFixtures(leagueFixtures, leagueId);
+      // The league payload includes round numbers while /data/fixtures omits
+      // them. Round-aware projections must use this richer source whenever it
+      // is available.
+      if (normalized.length > 0) return normalized;
+    }
+
+    const fallbackPayload = await this.getJson("/data/fixtures", {
       id: leagueId,
       ccode3: this.ccode3,
       timezone: this.timezone,
       ...(requestSeason ? { season: requestSeason } : {})
     });
-    if (!Array.isArray(payload)) return [];
 
-    return payload.map((item) => normalizeFixture(item, leagueId)).filter((item): item is FotMobFixture => item !== null);
+    return Array.isArray(fallbackPayload) ? normalizeFixtures(fallbackPayload, leagueId) : [];
   }
 
   async getFixtureDetails(fixtureId: string): Promise<FotMobFixtureDetails> {
@@ -671,6 +684,10 @@ function normalizeFixture(payload: unknown, leagueId: string): FotMobFixture | n
     homeScore: numberValue(data.homeScore) ?? numberValue(home.score),
     awayScore: numberValue(data.awayScore) ?? numberValue(away.score)
   };
+}
+
+function normalizeFixtures(payloads: unknown[], leagueId: string) {
+  return payloads.map((item) => normalizeFixture(item, leagueId)).filter((item): item is FotMobFixture => item !== null);
 }
 
 function normalizeStatus(status: JsonRecord): FotMobFixture["status"] {

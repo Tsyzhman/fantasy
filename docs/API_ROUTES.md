@@ -9,12 +9,38 @@ The app uses Next.js route handlers under `src/app/api`.
 Returns database configuration and connectivity status for deployment checks.
 When `DATABASE_URL` is missing it returns `503 DATABASE_NOT_CONFIGURED`.
 
+### `GET /api/health/fantasy-prices`
+
+Public freshness/completeness monitor for configured Sports.ru fantasy price
+scopes. It returns `200` only when every scope has a recent snapshot, at least
+the configured minimum player count, and the configured player-mapping
+percentage. Missing, stale, sparse, weakly mapped, invalidly configured, or
+unqueryable data returns `503`. Defaults are 7 hours, 100 players, and 98%.
+
 ## Auth
 
 ### `POST /api/auth/logout`
 
 Clears the current session cookie. This route is public so it can run even when
 `DATABASE_URL` is not configured.
+
+## Moderated Beta Telemetry
+
+### `POST /api/beta/telemetry`
+
+Accepts opt-in telemetry only for a signed-in user after `/beta-test` starts a
+run. The bounded JSON body is either a `start` command with a client UUID,
+device class, viewport width and permanent `synthetic` flag, or one allowlisted
+`observe` command. Observations are limited to journey milestones, pathname-only
+page views, named Web Vitals and coarse client-error categories. Arbitrary event
+names, query strings, fragments, text values, invalid JSON, and bodies over
+4 KiB are rejected.
+
+The endpoint permits at most 20 runs per account per rolling 24 hours and 250
+unique observations per run. A user can write only to their own run. Responses
+are `Cache-Control: private, no-store`. There is no public report endpoint;
+moderator review and aggregate reporting use the server-side
+`npm run beta:user-test` command so account identifiers never enter report JSON.
 
 ## Admin
 
@@ -174,9 +200,31 @@ JSON body:
 }
 ```
 
+### `GET /api/machete/squads`
+
+Returns the authenticated user's authoritative player pool for one league and
+season after the initial saved-squad HTML has loaded. Required query params are
+`leagueId` and `season`; optional `squadId` must belong to the current user and
+match the same league season.
+
+The response contains `players` in the squad-planner row shape. Optional
+`squadId` ownership is checked by a separate lightweight database query before
+the shared pool is returned. User squads and ownership are never stored in the
+pool cache.
+
+The league/season player pool is coalesced and cached inside one web process for
+30 seconds, with at most 20 keys. Rejected loads are removed. The key includes
+league ID, season, and `LeagueSeason.updatedAt`; other related data changes may
+therefore remain visible from that process up to 30 seconds later. HTTP remains
+`Cache-Control: private, no-store`, so browsers and intermediaries must not
+cache the response. The endpoint lets the server-rendered page load only saved
+player IDs while the browser fetches the full pool without embedding it in the
+initial HTML.
+
 ### `POST /api/machete/squads`
 
-Saves the current user's fantasy squad for a league season.
+Creates a named squad variant or updates the selected variant for the current
+user and league season.
 
 JSON body:
 
@@ -184,6 +232,7 @@ JSON body:
 {
   leagueId: string | number | bigint;
   season: string;
+  squadId?: string | null; // update when present; create when absent
   name?: string;
   horizonRounds?: number;
   selections?: Array<{
@@ -198,8 +247,14 @@ JSON body:
 }
 ```
 
-The route validates squad shape, captain/vice-captain rules, team limits, and
-transfer limits for the selected forecast horizon.
+The route resolves authoritative server prices and validates budget, squad
+shape, captain/vice-captain roles, team limits, ownership, and transfer limits
+for the selected forecast horizon. New variants receive a unique name.
+
+### `DELETE /api/machete/squads?squadId=...`
+
+Deletes one squad variant owned by the current user. Players are removed by the
+database cascade.
 
 ### `GET /api/machete/squads/export`
 
@@ -209,6 +264,7 @@ signed-in user. Supported query params:
 ```text
 leagueId
 season
+squadId (optional; defaults to the most recently updated variant)
 format=csv|xlsx
 ```
 
@@ -300,7 +356,22 @@ when it is missing or invalid. After cron auth succeeds, they return
 `503 DATABASE_NOT_CONFIGURED` when `DATABASE_URL` is empty.
 
 - `GET /api/cron/ingestion/daily`
+- `GET /api/cron/data-quality`
 - `GET /api/cron/retention/league-seasons`
+
+`GET /api/cron/data-quality` audits every scope in
+`DATA_QUALITY_AUDIT_SCOPES`. It persists each result, returns `409` when any
+quality gate fails, `503` when scopes/thresholds are not configured correctly,
+and `500` when execution crashes. A scheduler or uptime monitor must alert on
+all non-2xx responses.
+
+### `GET /api/health/data-quality`
+
+Public operational monitor for the latest persisted audit in each configured
+scope. Returns `200` only when every latest run is completed, passes its gate,
+and is no older than `DATA_QUALITY_AUDIT_MAXIMUM_RUN_AGE_HOURS` (26 by default).
+Returns `503` for missing/stale/failed runs, invalid configuration, database
+failure, or an unconfigured database.
 
 ## Error Format
 
@@ -326,6 +397,8 @@ IMPORT_FAILED
 INVALID_PAYLOAD
 MISSING_FILE
 NOT_FOUND
+PAYLOAD_TOO_LARGE
+RATE_LIMITED
 UNAUTHORIZED
 ```
 

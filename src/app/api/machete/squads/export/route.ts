@@ -41,7 +41,9 @@ export const GET = withApiHandler(async (request: Request) => {
   const league = await loadSharedLeagueSeason(prisma, leagueId, params.get("season"));
   if (!league) return jsonError("LEAGUE_SEASON_NOT_FOUND", "League season not found.", 404);
 
-  const data = await loadFantasySquadPlannerData(prisma, auth.user.id, league);
+  const squadId = params.get("squadId");
+  const data = await loadFantasySquadPlannerData(prisma, auth.user.id, league, squadId);
+  if (squadId && data.squad.id !== squadId) return jsonError("SQUAD_NOT_FOUND", "Squad variant not found.", 404);
   const roundCount = Math.min(data.squad.horizonRounds, data.rounds.length);
   const rows = squadExportRows(data.squad.selections, data.players, roundCount);
   const columns = squadExportColumns(roundCount);
@@ -50,7 +52,7 @@ export const GET = withApiHandler(async (request: Request) => {
     rows,
     columns,
     format,
-    filename: `squad-${String(league.leagueId)}-${league.season}`,
+    filename: `squad-${String(league.leagueId)}-${league.season}-${data.squad.id ?? "new"}`,
     sheetName: "Squad"
   });
 });

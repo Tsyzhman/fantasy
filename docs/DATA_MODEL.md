@@ -25,6 +25,12 @@ These models support the Excel-imported scouting workflow.
   starter flags, and current published explorer rows.
 - `FantasyModel`, `FantasyModelRule`: configurable scoring models for imported
   player snapshots.
+- `FantasyBacktestRun`: immutable-by-convention model evaluation record with
+  model version/hash, season coverage, baseline and model MAE/RMSE, the full
+  report, and the beta-gate result.
+- `DataQualityAuditRun`: persisted forecast coverage, active-player and match
+  coverage, basic-stat completeness, ingestion-promotion latency, model
+  version/hash, and the data-quality gate result.
 - `BaltikaTeamStatsImport`: versioned Wyscout Team Stats workbook import.
 - `BaltikaFixture`: manual or imported Baltika fixture.
 - `BaltikaTeamMatchStat`: team-level fixture statistics used for Baltika views.
@@ -81,12 +87,27 @@ Machete read models instead of treating Wyscout snapshots as the primary source.
   budget, squad size, and max players per team.
 - `FantasyPlayerPrice`: imported Sports.ru price rows and optional mapping to
   normalized FotMob players and teams.
-- `UserFantasySquad`: one saved squad per user, league, and season.
+- `UserFantasySquad`: a named saved squad variant. A user can keep multiple
+  variants for the same league and season and select them by id.
 - `UserFantasySquadPlayer`: selected squad players with starter, lock, captain,
   vice-captain, slot, and purchase-price fields.
 
-Database constraints enforce one squad per user/league/season, one player per
-squad, and distinct captain/vice-captain choices.
+Database constraints enforce a unique variant name per user/league/season and
+one player per squad. Application validation enforces budget, roster shape,
+team limits, and captain/vice-captain roles before persistence.
+
+## Moderated Beta Measurement
+
+- `BetaTestRun`: one opt-in moderated journey tied internally to a user for
+  distinct-participant counting. Stores device class, synthetic exclusion,
+  moderator judgments and timestamps; it does not copy account email or name.
+- `BetaTestObservation`: bounded allowlisted milestone, pathname page-view, Web
+  Vital, or coarse client-error observation. The unique run/kind/name/route key
+  makes client retries idempotent.
+
+Synthetic runs, invalid runs and unreviewed runs never satisfy the user gate.
+The aggregate report uses only the first moderator-approved valid run per
+distinct user and omits internal user IDs.
 
 ## Shot-Map Support
 
@@ -107,4 +128,17 @@ npm run prisma:migrate:deploy
 Existing production databases from before Prisma migrations must be backed up,
 baselined with `000001_init`, and then upgraded with deploy migrations. The
 `000002_runtime_schema_cleanup` migration moved historical runtime schema
-mutation and data repair into versioned SQL.
+mutation and data repair into versioned SQL. `000003_multiple_fantasy_squads`
+preserves existing squads while replacing the single-squad unique key with a
+named-variant key.
+`000004_fantasy_backtest_runs` adds the persisted registry for reproducible
+historical model evaluations.
+`000005_data_quality_audit_runs` adds persisted forecast/data coverage and
+promotion-latency audits.
+`000006_beta_test_telemetry` adds opt-in moderated beta runs and bounded
+observations; it does not enable collection for ordinary navigation. On
+2026-07-15 it was restore-tested against a production backup; `migrate deploy`
+was run twice on the disposable database and the second run reported no pending
+migrations, then it was applied once to production.
+The foreign key targets the canonical Prisma table `"User"`; production has 6/6
+applied migrations and no failed or rolled-back entry.

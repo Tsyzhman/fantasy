@@ -5,28 +5,32 @@ import { requireApiUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { macheteLeagueDisplayName } from "@/lib/leagues/display";
 import { readJsonObject } from "@/lib/request-json";
-import { fantasyRulesForLeague, loadSportsRuFantasyPositionsByPlayerId, saveFantasySquad, sportsRuSeasonAliases } from "@/machete/squad_planner";
+import {
+  loadCachedFantasySquadPlayerPool,
+  loadFantasySquadPlannerData,
+  normalizeFantasySquadName,
+  saveFantasySquad,
+  uniqueFantasySquadName
+} from "@/machete/squad_planner";
 import {
   countFantasySquadTransfers,
   fantasyTransferLimitForHorizon,
   normalizeFantasyHorizon,
-  normalizeFantasyPosition,
-  type FantasyPositionGroup,
-  type FantasySquadRules,
+  validateFantasySquadForSave,
   type FantasySquadSelection
 } from "@/machete/squad_logic";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-export const POST = withApiHandler(async (request: Request) => {
+export const GET = withApiHandler(async (request: Request) => {
   const auth = await requireApiUser();
   if (auth.response) return auth.response;
-  const userId = auth.user.id;
 
-  const body = await readJsonObject(request);
-  const leagueId = parseBigInt(body.leagueId);
-  const season = typeof body.season === "string" ? body.season : "";
+  const params = new URL(request.url).searchParams;
+  const leagueId = parseBigInt(params.get("leagueId"));
+  const season = params.get("season")?.trim() ?? "";
+  const squadId = optionalId(params.get("squadId"));
   if (!leagueId || !season) {
     return jsonError("BAD_REQUEST", "leagueId and season are required.", 400);
   }
@@ -46,89 +50,128 @@ export const POST = withApiHandler(async (request: Request) => {
     return jsonError("NOT_FOUND", "League season not found.", 404);
   }
 
-  const selections = parseSelections(body.selections);
-  const rosterRows = await prisma.teamPlayerSeason.findMany({
-    where: {
-      leagueId,
-      season,
-      active: true,
-      playerId: { in: selections.map((selection) => BigInt(selection.playerId)) }
-    },
-    select: { playerId: true, teamId: true, position: true }
-  });
-  const sportsPositionsByPlayerId = await loadSportsRuFantasyPositionsByPlayerId(prisma, {
-    leagueId,
-    season
-  });
-  const rosterByPlayerId = new Map(
-    rosterRows.map((row) => {
-      const playerId = String(row.playerId);
-      return [playerId, { ...row, position: sportsPositionsByPlayerId.get(playerId) ?? row.position }] as const;
-    })
-  );
-  const safeSelections = selections.filter((selection) => rosterByPlayerId.has(selection.playerId));
-  const contest = await prisma.sportsRuFantasyContest.findFirst({
-    where: {
-      provider: "SPORTS_RU",
-      leagueId,
-      season: { in: sportsRuSeasonAliases(season) }
-    },
-    orderBy: { lastSyncedAt: "desc" }
-  });
   const displayName = macheteLeagueDisplayName({
     id: String(leagueSeason.leagueId),
     name: leagueSeason.name ?? leagueSeason.league.name,
     country: leagueSeason.country ?? leagueSeason.league.country,
     providerLeagueId: String(leagueSeason.leagueId)
   });
-  const rules = fantasyRulesForLeague(
-    {
-      leagueId,
-      season,
-      name: leagueSeason.name ?? leagueSeason.league.name,
-      displayName,
-      country: leagueSeason.country ?? leagueSeason.league.country,
-      providerLeagueId: String(leagueSeason.leagueId),
-      isCurrent: leagueSeason.isCurrent,
-      updatedAt: leagueSeason.updatedAt
-    },
-    contest
-  );
+  const plannerLeague = {
+    leagueId,
+    season,
+    name: leagueSeason.name ?? leagueSeason.league.name,
+    displayName,
+    country: leagueSeason.country ?? leagueSeason.league.country,
+    providerLeagueId: String(leagueSeason.leagueId),
+    isCurrent: leagueSeason.isCurrent,
+    updatedAt: leagueSeason.updatedAt
+  };
+  if (squadId) {
+    const ownedSquad = await prisma.userFantasySquad.findFirst({
+      where: {
+        id: squadId,
+        userId: auth.user.id,
+        leagueId,
+        season
+      },
+      select: { id: true }
+    });
+    if (!ownedSquad) {
+      return jsonError("NOT_FOUND", "Squad variant not found for this league and season.", 404);
+    }
+  }
+  const players = await loadCachedFantasySquadPlayerPool(prisma, plannerLeague);
 
-  const validationError = validateSquadSelections(safeSelections, rosterByPlayerId, rules);
-  if (validationError) {
-    return jsonError("BAD_REQUEST", validationError, 400);
+  return NextResponse.json(
+    { players },
+    { headers: { "Cache-Control": "private, no-store" } }
+  );
+});
+
+export const POST = withApiHandler(async (request: Request) => {
+  const auth = await requireApiUser();
+  if (auth.response) return auth.response;
+  const userId = auth.user.id;
+
+  const body = await readJsonObject(request);
+  const leagueId = parseBigInt(body.leagueId);
+  const season = typeof body.season === "string" ? body.season : "";
+  const squadId = optionalId(body.squadId);
+  if (!leagueId || !season) {
+    return jsonError("BAD_REQUEST", "leagueId and season are required.", 400);
   }
 
-  const horizonRounds = normalizeFantasyHorizon(body.horizonRounds, rules.horizonOptions);
-  const existingSquad = await prisma.userFantasySquad.findUnique({
+  const leagueSeason = await prisma.leagueSeason.findUnique({
     where: {
-      userId_leagueId_season: {
-        userId,
+      leagueId_season: {
         leagueId,
         season
       }
     },
     include: {
-      players: {
-        select: {
-          playerId: true
-        }
-      }
+      league: true
     }
   });
-  const savedSelections = existingSquad?.players.map((player) => ({ playerId: String(player.playerId) })) ?? [];
+  if (!leagueSeason) {
+    return jsonError("NOT_FOUND", "League season not found.", 404);
+  }
+
+  const displayName = macheteLeagueDisplayName({
+    id: String(leagueSeason.leagueId),
+    name: leagueSeason.name ?? leagueSeason.league.name,
+    country: leagueSeason.country ?? leagueSeason.league.country,
+    providerLeagueId: String(leagueSeason.leagueId)
+  });
+  const plannerData = await loadFantasySquadPlannerData(prisma, userId, {
+    leagueId,
+    season,
+    name: leagueSeason.name ?? leagueSeason.league.name,
+    displayName,
+    country: leagueSeason.country ?? leagueSeason.league.country,
+    providerLeagueId: String(leagueSeason.leagueId),
+    isCurrent: leagueSeason.isCurrent,
+    updatedAt: leagueSeason.updatedAt
+  }, squadId);
+  if (squadId && plannerData.squad.id !== squadId) {
+    return jsonError("NOT_FOUND", "Squad variant not found for this league and season.", 404);
+  }
+  const rules = plannerData.rules;
+  const horizonRounds = normalizeFantasyHorizon(body.horizonRounds, rules.horizonOptions);
+  const validation = validateFantasySquadForSave({
+    pool: plannerData.players,
+    selections: parseSelections(body.selections),
+    rules,
+    horizon: horizonRounds
+  });
+  if (!validation.ok) {
+    return jsonError("BAD_REQUEST", validation.error, 400);
+  }
+  const safeSelections = validation.selections;
+
+  const savedSelections = squadId ? plannerData.squad.selections : [];
   const transferLimit = fantasyTransferLimitForHorizon(horizonRounds);
   const transferCount = countFantasySquadTransfers(savedSelections, safeSelections);
   if (savedSelections.length === rules.squadSize && transferCount > transferLimit) {
     return jsonError("BAD_REQUEST", `You made ${transferCount} transfers; limit for this forecast is ${transferLimit}.`, 400);
   }
 
+  const requestedName = typeof body.name === "string" ? body.name : undefined;
+  const normalizedName = normalizeFantasySquadName(requestedName);
+  const conflictingVariant = plannerData.squads.find(
+    (option) => option.id !== squadId && option.name.toLocaleLowerCase() === normalizedName.toLocaleLowerCase()
+  );
+  if (squadId && conflictingVariant) {
+    return jsonError("SQUAD_NAME_CONFLICT", "Another squad variant already uses this name.", 409);
+  }
+  const name = squadId
+    ? normalizedName
+    : uniqueFantasySquadName(plannerData.squads.map((option) => option.name), normalizedName);
   const squad = await saveFantasySquad(prisma, {
     userId,
     leagueId,
     season,
-    name: typeof body.name === "string" ? body.name : undefined,
+    squadId,
+    name,
     horizonRounds,
     selections: safeSelections,
     rules
@@ -137,9 +180,28 @@ export const POST = withApiHandler(async (request: Request) => {
   return NextResponse.json({
     squad: {
       id: squad.id,
+      name: squad.name,
       savedPlayers: safeSelections.length
     }
   });
+});
+
+export const DELETE = withApiHandler(async (request: Request) => {
+  const auth = await requireApiUser();
+  if (auth.response) return auth.response;
+
+  const squadId = optionalId(new URL(request.url).searchParams.get("squadId"));
+  if (!squadId) return jsonError("BAD_REQUEST", "squadId is required.", 400);
+
+  const deleted = await prisma.userFantasySquad.deleteMany({
+    where: {
+      id: squadId,
+      userId: auth.user.id
+    }
+  });
+  if (deleted.count === 0) return jsonError("NOT_FOUND", "Squad variant not found.", 404);
+
+  return NextResponse.json({ deletedSquadId: squadId });
 });
 
 function parseSelections(value: unknown): FantasySquadSelection[] {
@@ -166,85 +228,6 @@ function parseSelections(value: unknown): FantasySquadSelection[] {
   return selections;
 }
 
-function validateSquadSelections(
-  selections: FantasySquadSelection[],
-  rosterByPlayerId: Map<string, { playerId: bigint; teamId: bigint | null; position: string | null }>,
-  rules: FantasySquadRules
-) {
-  if (selections.length > rules.squadSize) return `Squad can contain at most ${rules.squadSize} players.`;
-
-  const rosterCounts: Record<FantasyPositionGroup, number> = { GK: 0, DEF: 0, MID: 0, FWD: 0, UNK: 0 };
-  const starterCounts: Record<FantasyPositionGroup, number> = { GK: 0, DEF: 0, MID: 0, FWD: 0, UNK: 0 };
-  const benchCounts: Record<FantasyPositionGroup, number> = { GK: 0, DEF: 0, MID: 0, FWD: 0, UNK: 0 };
-  const teamCounts = new Map<string, number>();
-  let starters = 0;
-  let captains = 0;
-  let viceCaptains = 0;
-
-  for (const selection of selections) {
-    const rosterRow = rosterByPlayerId.get(selection.playerId);
-    if (!rosterRow) continue;
-    if (selection.isCaptain && selection.isViceCaptain) return `Captain and vice-captain must be different players.`;
-    if (selection.isCaptain) {
-      captains += 1;
-      if (!selection.isStarter) return `Captain must be in the starting XI.`;
-    }
-    if (selection.isViceCaptain) {
-      viceCaptains += 1;
-      if (!selection.isStarter) return `Vice-captain must be in the starting XI.`;
-    }
-    const position = normalizeFantasyPosition(rosterRow.position);
-    rosterCounts[position] += 1;
-    if (selection.isStarter) {
-      starterCounts[position] += 1;
-      starters += 1;
-    } else {
-      benchCounts[position] += 1;
-    }
-    if (rosterRow.teamId) {
-      const teamId = String(rosterRow.teamId);
-      teamCounts.set(teamId, (teamCounts.get(teamId) ?? 0) + 1);
-    }
-  }
-
-  if (captains > 1) return `Squad can contain only one captain.`;
-  if (viceCaptains > 1) return `Squad can contain only one vice-captain.`;
-  if (starters > rules.starterSize) return `Starting XI can contain at most ${rules.starterSize} players.`;
-  if (starters === rules.starterSize) {
-    const starterFieldPlayers = starters - starterCounts.GK;
-    if (starterCounts.GK !== 1) return `Starting XI must contain exactly 1 GK.`;
-    if (starterFieldPlayers !== 10) return `Starting XI must contain exactly 10 field players.`;
-  }
-  if (selections.length === rules.squadSize && selections.length - starters !== rules.benchSize) {
-    return `Bench must contain exactly ${rules.benchSize} players.`;
-  }
-  if (selections.length === rules.squadSize) {
-    const benchFieldPlayers = rules.benchSize - benchCounts.GK;
-    const requiredBenchFieldPlayers = rules.benchSize - 1;
-    if (benchCounts.GK !== 1) return `Bench must contain exactly 1 GK.`;
-    if (benchFieldPlayers !== requiredBenchFieldPlayers) return `Bench must contain exactly ${requiredBenchFieldPlayers} field players.`;
-  }
-
-  for (const position of ["GK", "DEF", "MID", "FWD"] as const) {
-    const rosterLimit = rules.positionLimits[position];
-    const starterLimit = rules.starterPositionLimits[position];
-    if (rosterCounts[position] > rosterLimit) return `${position} roster limit is ${rosterLimit}.`;
-    if (selections.length === rules.squadSize && rosterCounts[position] !== rosterLimit) {
-      return `Full squad must contain ${rosterLimit} ${position} players.`;
-    }
-    if (starterCounts[position] > starterLimit.max) return `${position} starter limit is ${starterLimit.max}.`;
-    if (starters === rules.starterSize && starterCounts[position] < starterLimit.min) {
-      return `Starting XI needs at least ${starterLimit.min} ${position} players.`;
-    }
-  }
-
-  for (const count of teamCounts.values()) {
-    if (count > rules.maxPlayersPerTeam) return `Squad can contain at most ${rules.maxPlayersPerTeam} players from one team.`;
-  }
-
-  return null;
-}
-
 function parseBigInt(value: unknown) {
   if (typeof value !== "string" && typeof value !== "number" && typeof value !== "bigint") return null;
   try {
@@ -262,4 +245,10 @@ function parsePositiveInt(value: unknown, fallback: number) {
 function numberOrNull(value: unknown) {
   const numeric = Number(value);
   return Number.isFinite(numeric) ? numeric : null;
+}
+
+function optionalId(value: unknown) {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  return trimmed && trimmed.length <= 128 ? trimmed : null;
 }
