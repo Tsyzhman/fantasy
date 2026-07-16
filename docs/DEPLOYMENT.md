@@ -21,15 +21,16 @@ npm run check
 The currently verified runtime is Docker, not the PM2 workflow described later
 in this document:
 
-- active image: `fantasy-scout-web:beta27-20260716T111950Z`;
+- active image: `fantasy-scout-web:beta28-20260716T121415Z`;
 - image ID:
-  `sha256:5158ff770d1b55de3ebb8e4ecb2ddbf71952d882109922fd8d9d286952e9812a`;
+  `sha256:1f2835ff90616fdc10915bd41dad67fb599e0a09089fbf096f69d167a9aa6ed0`;
+- source commit: `1f0ed07bf21dfbcef618cff81b909bb06c631808`;
 - release directory:
-  `/var/www/fantasy-scout-releases/20260716T111950Z-beta27-4ac9b34-green-main`;
+  `/var/www/fantasy-scout-releases/20260716T121415Z-beta28-1f0ed07-green-main`;
 - state after rollout: `running`, `healthy`, restart count `0`;
 - stopped immediate rollback container:
-  `fantasy-scout-web-beta26-rollback-20260716T111950Z` (beta26 image ID
-  `sha256:c431d2687922003af410f17408f4a74ff695a510d0cd7e99d3605e5b81919f52`);
+  `fantasy-scout-web-beta27-rollback-20260716T121415Z` (beta27 image ID
+  `sha256:5158ff770d1b55de3ebb8e4ecb2ddbf71952d882109922fd8d9d286952e9812a`);
 - external liveness and data-quality health both return HTTP 200;
 - applied Prisma state: 7 migrations, including
   `000007_match_promotion_timestamps`; failed/rolled-back migrations: 0;
@@ -53,9 +54,9 @@ same env, network, upload volume, port binding, restart policy, and liveness
 healthcheck as the active container. Before stopping production, verify the
 exact active image ID, `running|healthy|0`, the exact candidate image ID, and the
 candidate's `created` state; syntax-check the swap script and keep an automatic
-rollback path. The beta27 swap restored loopback HTTP in 1.975 seconds and its
-post-promote browser workflow `29494531024` passed 5 checks with 2 expected
-skips. The preceding beta26 swap restored HTTP in 2.186 seconds.
+rollback path. The beta28 swap restored loopback HTTP in 1.855 seconds and its
+post-promote browser workflow `29498125902` passed 5 checks with 2 expected
+skips. The preceding beta27 swap restored HTTP in 1.975 seconds.
 
 The authenticated beta22 release smoke ran 40 GET requests in batches of five:
 0 errors, SSR p75 369 ms, and full-pool API p75 238 ms. The longer beta17
