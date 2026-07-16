@@ -3,9 +3,16 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
-import { buildBetaUserTestReport, validateBetaReviewInput, type BetaReviewInput } from "@/beta/user-test";
+import {
+  betaModeratedEnvironments,
+  buildBetaUserTestReport,
+  validateBetaReviewInput,
+  type BetaModeratedEnvironment,
+  type BetaReviewInput
+} from "@/beta/user-test";
 import { AdminNav } from "@/components/admin/AdminNav";
 import { I18nText } from "@/components/i18n-text";
+import { LocalizedOption } from "@/components/localized-option";
 import { requireAdminUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { formatDate } from "@/lib/format";
@@ -37,6 +44,7 @@ export default async function AdminBetaTestPage({ searchParams }: PageProps) {
       transferReasonUnderstood: true,
       usabilityRating: true,
       criticalIssue: true,
+      moderatedEnvironment: true,
       startedAt: true,
       observations: {
         select: {
@@ -119,6 +127,8 @@ export default async function AdminBetaTestPage({ searchParams }: PageProps) {
           <MetricCard label={<I18nText en="Real RUM participants" ru="Реальные RUM-участники" />} value={`${report.rum.lcpParticipants} / ${report.rum.gate.minimumLcpParticipants}`} />
           <MetricCard label={<I18nText en="LCP p75" ru="LCP p75" />} value={formatMilliseconds(report.rum.webVitals.LCP.p75)} />
           <MetricCard label={<I18nText en="Client-error affected runs" ru="Прогоны с client error" />} value={formatPercentage(report.rum.clientErrorAffectedRunRate)} />
+          <MetricCard label={<I18nText en="Physical Safari iOS" ru="Физический Safari iOS" />} value={`${report.physicalDeviceCoverage.iosSafari} / 1`} />
+          <MetricCard label={<I18nText en="Physical Chrome Android" ru="Физический Chrome Android" />} value={`${report.physicalDeviceCoverage.androidChrome} / 1`} />
         </div>
 
         <div className="mt-4 grid gap-4 lg:grid-cols-[1fr_1fr]">
@@ -194,6 +204,16 @@ export default async function AdminBetaTestPage({ searchParams }: PageProps) {
                         </select>
                       </label>
                       <ReviewBooleanSelect name="critical" label={<I18nText en="Critical/blocker" ru="Critical/blocker" />} defaultValue="false" />
+                      <label className="text-sm font-semibold text-slate-700">
+                        <I18nText en="Observed device/browser" ru="Проверенное устройство/браузер" />
+                        <select required name="moderatedEnvironment" defaultValue="" className="mt-1 w-full rounded border border-slate-200 bg-white px-3 py-2 font-normal">
+                          <LocalizedOption value="" disabled en="Select observed environment" ru="Выберите проверенную среду" />
+                          <LocalizedOption value="DESKTOP_BROWSER" en="Desktop browser" ru="Desktop-браузер" />
+                          <LocalizedOption value="IOS_SAFARI_PHYSICAL" en="Physical Safari iOS" ru="Физический Safari iOS" />
+                          <LocalizedOption value="ANDROID_CHROME_PHYSICAL" en="Physical Chrome Android" ru="Физический Chrome Android" />
+                          <LocalizedOption value="OTHER_MOBILE" en="Other mobile / emulator" ru="Другой телефон / эмулятор" />
+                        </select>
+                      </label>
                     </div>
                     <ReviewNotes />
                     <button type="submit" className="mt-3 rounded bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800">
@@ -235,6 +255,7 @@ export default async function AdminBetaTestPage({ searchParams }: PageProps) {
                 <th className="px-4 py-3"><I18nText en="Duration" ru="Время" /></th>
                 <th className="px-4 py-3"><I18nText en="Without help" ru="Без помощи" /></th>
                 <th className="px-4 py-3"><I18nText en="Critical" ru="Critical" /></th>
+                <th className="px-4 py-3"><I18nText en="Environment" ru="Среда" /></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
@@ -246,9 +267,10 @@ export default async function AdminBetaTestPage({ searchParams }: PageProps) {
                   <td className="px-4 py-3 text-slate-600">{formatDuration(run.durationMs)}</td>
                   <td className="px-4 py-3">{formatBoolean(run.withoutHelp)}</td>
                   <td className="px-4 py-3">{formatBoolean(run.criticalIssue)}</td>
+                  <td className="px-4 py-3 text-slate-600">{formatModeratedEnvironment(run.moderatedEnvironment)}</td>
                 </tr>
               )) : (
-                <tr><td colSpan={6} className="px-4 py-6 text-center text-slate-500"><I18nText en="No moderator-approved primary runs." ru="Нет подтверждённых moderator primary-прогонов." /></td></tr>
+                <tr><td colSpan={7} className="px-4 py-6 text-center text-slate-500"><I18nText en="No moderator-approved primary runs." ru="Нет подтверждённых moderator primary-прогонов." /></td></tr>
               )}
             </tbody>
           </table>
@@ -272,6 +294,7 @@ async function reviewBetaRunAction(formData: FormData) {
     transferReasonUnderstood: valid ? formBoolean(formData, "transferUnderstood") : null,
     usabilityRating: valid ? Number(formData.get("rating")) : null,
     criticalIssue: valid ? formBoolean(formData, "critical") : null,
+    moderatedEnvironment: valid ? formModeratedEnvironment(formData) : null,
     invalidReason: valid ? null : String(formData.get("invalidReason") ?? "").trim() || null,
     moderatorNotes: String(formData.get("notes") ?? "").trim() || null
   };
@@ -290,6 +313,7 @@ async function reviewBetaRunAction(formData: FormData) {
       transferReasonUnderstood: parsed.value.transferReasonUnderstood,
       usabilityRating: parsed.value.usabilityRating,
       criticalIssue: parsed.value.criticalIssue,
+      moderatedEnvironment: parsed.value.moderatedEnvironment,
       invalidReason: parsed.value.invalidReason,
       moderatorNotes: parsed.value.moderatorNotes,
       reviewedAt: new Date()
@@ -339,6 +363,11 @@ function formBoolean(formData: FormData, key: string) {
   return value === "true" ? true : value === "false" ? false : null;
 }
 
+function formModeratedEnvironment(formData: FormData): BetaModeratedEnvironment | null {
+  const value = String(formData.get("moderatedEnvironment") ?? "");
+  return betaModeratedEnvironments.includes(value as BetaModeratedEnvironment) ? value as BetaModeratedEnvironment : null;
+}
+
 function formatPercentage(value: number | null) {
   return value === null ? "—" : `${value}%`;
 }
@@ -359,6 +388,18 @@ function formatDuration(value: number | null) {
 function formatBoolean(value: boolean | null) {
   if (value === null) return "—";
   return value ? "Yes / Да" : "No / Нет";
+}
+
+function formatModeratedEnvironment(value: string | null) {
+  const labels: Record<BetaModeratedEnvironment, string> = {
+    DESKTOP_BROWSER: "Desktop browser",
+    IOS_SAFARI_PHYSICAL: "Physical Safari iOS",
+    ANDROID_CHROME_PHYSICAL: "Physical Chrome Android",
+    OTHER_MOBILE: "Other mobile / emulator"
+  };
+  return value && betaModeratedEnvironments.includes(value as BetaModeratedEnvironment)
+    ? labels[value as BetaModeratedEnvironment]
+    : "—";
 }
 
 function betaReviewErrorMessage(error: string | undefined) {

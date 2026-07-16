@@ -16,6 +16,12 @@ export const betaClientMilestones = betaTestMilestones.filter(
 
 export const betaWebVitalNames = ["CLS", "FCP", "INP", "LCP", "TTFB"] as const;
 export const betaWebVitalRatings = ["good", "needs-improvement", "poor"] as const;
+export const betaModeratedEnvironments = [
+  "DESKTOP_BROWSER",
+  "IOS_SAFARI_PHYSICAL",
+  "ANDROID_CHROME_PHYSICAL",
+  "OTHER_MOBILE"
+] as const;
 export const betaClientErrorNames = [
   "PLAYER_POOL_LOAD_FAILED",
   "SQUAD_SAVE_FAILED",
@@ -42,6 +48,7 @@ export type BetaWebVitalName = (typeof betaWebVitalNames)[number];
 export type BetaWebVitalRating = (typeof betaWebVitalRatings)[number];
 export type BetaClientErrorName = (typeof betaClientErrorNames)[number];
 export type BetaDeviceClass = "mobile" | "desktop";
+export type BetaModeratedEnvironment = (typeof betaModeratedEnvironments)[number];
 export type BetaObservationKind = "MILESTONE" | "PAGE_VIEW" | "WEB_VITAL" | "CLIENT_ERROR";
 
 export type BetaTelemetryCommand =
@@ -156,6 +163,7 @@ export type BetaTestRunForReport = {
   transferReasonUnderstood: boolean | null;
   usabilityRating: number | null;
   criticalIssue: boolean | null;
+  moderatedEnvironment: string | null;
   startedAt: Date;
   observations: BetaTestObservationForReport[];
 };
@@ -233,8 +241,24 @@ export function buildBetaUserTestReport(runs: BetaTestRunForReport[]) {
   const averageUsabilityRating = ratings.length > 0 ? round(ratings.reduce((total, rating) => total + rating, 0) / ratings.length, 3) : null;
   const criticalIssues = summaries.filter(({ run }) => run.criticalIssue === true).length;
   const mobileCriticalIssues = summaries.filter(({ run }) => run.deviceClass === "mobile" && run.criticalIssue === true).length;
+  const physicalIosSafariRuns = summaries.filter(
+    ({ run }) => run.deviceClass === "mobile" && run.moderatedEnvironment === "IOS_SAFARI_PHYSICAL"
+  ).length;
+  const physicalAndroidChromeRuns = summaries.filter(
+    ({ run }) => run.deviceClass === "mobile" && run.moderatedEnvironment === "ANDROID_CHROME_PHYSICAL"
+  ).length;
+  const physicalEnvironmentMismatches = summaries.filter(
+    ({ run }) =>
+      run.deviceClass !== "mobile" &&
+      (run.moderatedEnvironment === "IOS_SAFARI_PHYSICAL" || run.moderatedEnvironment === "ANDROID_CHROME_PHYSICAL")
+  ).length;
   const incompleteReviews = summaries.filter(
-    ({ run }) => run.withoutHelp === null || run.transferReasonUnderstood === null || run.usabilityRating === null || run.criticalIssue === null
+    ({ run }) =>
+      run.withoutHelp === null ||
+      run.transferReasonUnderstood === null ||
+      run.usabilityRating === null ||
+      run.criticalIssue === null ||
+      !betaModeratedEnvironments.includes(run.moderatedEnvironment as BetaModeratedEnvironment)
   ).length;
   const completionRate = percentage(completionSuccesses, participants);
   const forecastFoundRate = percentage(forecastSuccesses, participants);
@@ -250,6 +274,9 @@ export function buildBetaUserTestReport(runs: BetaTestRunForReport[]) {
   if (averageUsabilityRating === null || averageUsabilityRating < 4) violations.push(`Average usability rating must be at least 4/5; observed ${averageUsabilityRating ?? "not measured"}.`);
   if (criticalIssues > 0) violations.push(`${criticalIssues} primary participants reported a critical/blocker issue.`);
   if (mobileCriticalIssues > 0) violations.push(`${mobileCriticalIssues} mobile primary participants reported a critical/blocker issue.`);
+  if (physicalIosSafariRuns < 1) violations.push("Need at least one moderator-confirmed physical Safari iOS primary run.");
+  if (physicalAndroidChromeRuns < 1) violations.push("Need at least one moderator-confirmed physical Chrome Android primary run.");
+  if (physicalEnvironmentMismatches > 0) violations.push(`${physicalEnvironmentMismatches} physical-device reviews conflict with the recorded viewport device class.`);
   violations.push(...rum.gate.violations);
 
   return {
@@ -283,6 +310,12 @@ export function buildBetaUserTestReport(runs: BetaTestRunForReport[]) {
     averageUsabilityRating,
     criticalIssues,
     mobileCriticalIssues,
+    physicalDeviceCoverage: {
+      iosSafari: physicalIosSafariRuns,
+      androidChrome: physicalAndroidChromeRuns,
+      inconsistent: physicalEnvironmentMismatches,
+      passed: physicalIosSafariRuns > 0 && physicalAndroidChromeRuns > 0
+    },
     incompleteReviews,
     clientErrors: summaries.reduce((total, summary) => total + summary.technical.clientErrors, 0),
     webVitals,
@@ -294,6 +327,7 @@ export function buildBetaUserTestReport(runs: BetaTestRunForReport[]) {
       transferReasonUnderstood: run.transferReasonUnderstood,
       usabilityRating: run.usabilityRating,
       criticalIssue: run.criticalIssue,
+      moderatedEnvironment: run.moderatedEnvironment,
       ...technical
     })),
     gate: { passed: violations.length === 0, violations }
@@ -370,6 +404,7 @@ export type BetaReviewInput = {
   transferReasonUnderstood: boolean | null;
   usabilityRating: number | null;
   criticalIssue: boolean | null;
+  moderatedEnvironment: BetaModeratedEnvironment | null;
   invalidReason: string | null;
   moderatorNotes: string | null;
 };
@@ -388,6 +423,9 @@ export function validateBetaReviewInput(input: BetaReviewInput) {
     return { ok: false as const, error: "usabilityRating must be an integer from 1 to 5." };
   }
   if (typeof input.criticalIssue !== "boolean") return { ok: false as const, error: "criticalIssue is required for a valid run." };
+  if (!input.moderatedEnvironment || !betaModeratedEnvironments.includes(input.moderatedEnvironment)) {
+    return { ok: false as const, error: "moderatedEnvironment is required for a valid run." };
+  }
   return { ok: true as const, value: { ...input, invalidReason: null } };
 }
 

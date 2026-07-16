@@ -67,6 +67,7 @@ test("beta gate passes exact SMART thresholds on first valid run per ten users",
   assert.equal(report.rum.lcpParticipants, 10);
   assert.equal(report.rum.webVitals.LCP.p75, 2_000);
   assert.deepEqual(report.rum.webVitals.LCP.ratings, { good: 10, needsImprovement: 0, poor: 0 });
+  assert.deepEqual(report.physicalDeviceCoverage, { iosSafari: 1, androidChrome: 1, inconsistent: 0, passed: true });
   assert.equal(report.rum.gate.passed, true);
   assert.equal(report.gate.passed, true);
 });
@@ -81,6 +82,23 @@ test("beta gate rejects slow or insufficient real-user RUM", () => {
   assert.equal(slow.rum.webVitals.LCP.p75, betaRumMaximumLcpP75Ms + 1);
   assert.equal(slow.rum.gate.passed, false);
   assert.equal(slow.gate.passed, false);
+});
+
+test("beta gate requires moderator-confirmed physical Safari iOS and Chrome Android", () => {
+  const desktopOnly = Array.from({ length: 10 }, (_, index) => makeRun(index + 100, {
+    moderatedEnvironment: "DESKTOP_BROWSER"
+  }));
+  const report = buildBetaUserTestReport(desktopOnly);
+  assert.deepEqual(report.physicalDeviceCoverage, { iosSafari: 0, androidChrome: 0, inconsistent: 0, passed: false });
+  assert.match(report.gate.violations.join(" "), /physical Safari iOS/);
+  assert.match(report.gate.violations.join(" "), /physical Chrome Android/);
+  assert.equal(report.gate.passed, false);
+
+  const mismatchRuns = desktopOnly.map((run) => ({ ...run }));
+  mismatchRuns[0] = { ...mismatchRuns[0]!, deviceClass: "desktop", moderatedEnvironment: "IOS_SAFARI_PHYSICAL" };
+  const mismatch = buildBetaUserTestReport(mismatchRuns);
+  assert.equal(mismatch.physicalDeviceCoverage.inconsistent, 1);
+  assert.match(mismatch.gate.violations.join(" "), /conflict with the recorded viewport device class/);
 });
 
 test("RUM includes every real run and excludes synthetic telemetry", () => {
@@ -132,6 +150,7 @@ test("valid moderator review requires every human-only judgment", () => {
     transferReasonUnderstood: true,
     usabilityRating: 5,
     criticalIssue: false,
+    moderatedEnvironment: "DESKTOP_BROWSER" as const,
     invalidReason: null,
     moderatorNotes: null
   };
@@ -155,6 +174,7 @@ function makeRun(
     startedAtOffsetMs?: number;
     lcpMs?: number;
     clientErrorCount?: number;
+    moderatedEnvironment?: BetaTestRunForReport["moderatedEnvironment"];
   } = {}
 ): BetaTestRunForReport {
   const startedAt = new Date(Date.UTC(2026, 6, 15, 12, 0, 0) + (overrides.startedAtOffsetMs ?? index * 1_000));
@@ -199,6 +219,9 @@ function makeRun(
     transferReasonUnderstood: overrides.transferReasonUnderstood ?? true,
     usabilityRating: overrides.usabilityRating ?? 5,
     criticalIssue: overrides.criticalIssue ?? false,
+    moderatedEnvironment:
+      overrides.moderatedEnvironment ??
+      (index % 10 === 2 ? "IOS_SAFARI_PHYSICAL" : index % 10 === 4 ? "ANDROID_CHROME_PHYSICAL" : index % 2 === 0 ? "OTHER_MOBILE" : "DESKTOP_BROWSER"),
     startedAt,
     observations
   };

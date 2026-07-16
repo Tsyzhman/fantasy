@@ -389,6 +389,7 @@ model BetaTestRun {
   transferReasonUnderstood Boolean?  @map("transfer_reason_understood")
   usabilityRating          Int?      @map("usability_rating")
   criticalIssue            Boolean?  @map("critical_issue")
+  moderatedEnvironment     String?   @map("moderated_environment")
   invalidReason            String?   @map("invalid_reason")
   moderatorNotes           String?   @map("moderator_notes")
   reviewedAt               DateTime? @map("reviewed_at")
