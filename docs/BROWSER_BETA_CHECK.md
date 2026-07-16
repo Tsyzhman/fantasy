@@ -3,13 +3,13 @@
 Дата проверки: 2026-07-16.
 
 Финальная browser-проверка выполнена GitHub Actions Playwright Test workflow
-`29487510100` против production `https://fantasy.tsyzhman.ru` на образе
-`fantasy-scout-web:beta25-20260716T092644Z` с image ID
-`sha256:c3f3af733562b80b180396d4bcb56d18911d1296670162b6a17b2c1193273563`
-и source commit `beb3e95138ec3fb355c3fc6aed6a6cf734ef5124`.
+`29492135480` против production `https://fantasy.tsyzhman.ru` на образе
+`fantasy-scout-web:beta26-20260716T101422Z` с image ID
+`sha256:c431d2687922003af410f17408f4a74ff695a510d0cd7e99d3605e5b81919f52`
+и source commit `e739e75310736cbecff7d0bd4fc4fd5c8374091c`.
 
-Workflow дал 5 passed, 2 expected skipped за 34,8 с. Evidence загружен в
-artifact `production-browser-smoke-29487510100` (`8371025634`). Использован
+Workflow дал 5 passed, 2 expected skipped за 49,7 с. Evidence загружен в
+artifact `production-browser-smoke-29492135480` (`8372895542`). Использован
 отдельный production QA-пользователь; пароль хранится только в GitHub Secrets.
 Write-сценарий создаёт уникальный `E2E optimized …` вариант, проверяет
 server-returned `squadId` и удаляет QA-копию; рабочие пользовательские данные не
@@ -58,10 +58,10 @@ out; desktop primary controls не пересекаются по bounding boxes.
 
 | Сценарий | Viewport / выборка | Результат |
 |---|---:|---|
-| Clean UI `/machete/squad` | Production beta25, 1440×1000 | Save/auto-pick/more actions не пересекаются; player pool виден; `Ctrl+K` открывает один dialog; document overflow 0; runtime 5xx/page errors в тесте 0 |
-| Tablet gap | Production beta25, 1024×900 | Pool tab доступна, player search открывается; global Menu не обрезан; document overflow 0 |
-| Mobile clean UI | Production beta25, Pixel 5 | Squad/Pool/Tips, workspace grid и global Menu доступны; document overflow 0; runtime 5xx/page errors в тесте 0 |
-| Полный automated journey | Production beta25, desktop | Реальный forecast player найден; auto-pick дал valid squad; вариант сохранён и QA-copy удалена |
+| Clean UI `/machete/squad` | Production beta26, 1440×1000 | Save/auto-pick/more actions не пересекаются; player pool виден; `Ctrl+K` открывает один dialog; document overflow 0; runtime 5xx/page errors в тесте 0 |
+| Tablet gap | Production beta26, 1024×900 | Pool tab доступна, player search открывается; global Menu не обрезан; document overflow 0 |
+| Mobile clean UI | Production beta26, Pixel 5 | Squad/Pool/Tips, workspace grid и global Menu доступны; document overflow 0; runtime 5xx/page errors в тесте 0 |
+| Полный automated journey | Production beta26, desktop | Реальный forecast player найден; auto-pick дал valid squad; вариант сохранён и QA-copy удалена |
 | Поиск игрока `Mbeumo` | beta16, 1440×900; код пути не менялся в beta22 | HTTP 200 за 507 мс; найден Bryan Mbeumo, прогноз виден, ссылка `Build squad` ведёт в EPL 2026/2027; document width 1440; console errors 0 |
 | Сохранённый состав | desktop/mobile | Вариант `My squad` восстановлен без изменений: 15/15 игроков, 11 стартовых, 4 запасных, бюджет 100/100, банк 0 |
 | Автоподбор | production beta14, та же planner-логика в beta22 | 2,903 с при SMART-лимите 5 с; последующий reload вернул сохранённый состав без расхождений |
@@ -80,7 +80,7 @@ Load-smoke воспроизводится командой `npm run beta:load`; 
 `docs/BETA_LOAD_TEST.md`. Короткий прогон с пятью конкурентными пользователями
 не доказывает error rate за период реального beta-тестирования.
 
-Финальный production workflow beta25 дал 0 захваченных page errors и runtime
+Финальный production workflow beta26 дал 0 захваченных page errors и runtime
 5xx в тестовых сценариях. Отдельный часовой Caddy audit остаётся более строгим
 источником для всего трафика и не заменяется этим коротким smoke.
 Старый warning о preload логотипа устранён удалением ненужного `priority`.

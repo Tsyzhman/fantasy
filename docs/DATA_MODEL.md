@@ -140,5 +140,8 @@ observations; it does not enable collection for ordinary navigation. On
 2026-07-15 it was restore-tested against a production backup; `migrate deploy`
 was run twice on the disposable database and the second run reported no pending
 migrations, then it was applied once to production.
-The foreign key targets the canonical Prisma table `"User"`; production has 6/6
-applied migrations and no failed or rolled-back entry.
+`000007_match_promotion_timestamps` adds the atomic raw-received/normalized
+timing pair and its ordering constraint without backfilling historical values.
+It was applied on 2026-07-16 after a verified production backup, followed by a
+real 380-match refresh. Production has 7/7 applied migrations and no failed or
+rolled-back entry.

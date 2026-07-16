@@ -98,13 +98,28 @@ substitute for a passing full audit or a production run.
 At verification time `GET /api/health/data-quality` returned `503` with the
 persisted metrics above. This is the intended fail-closed monitor behavior.
 
-After deployment the same audit was repeated against the production database.
-Run `cmrm6rs0e0000c1rsq7g4mycz` was persisted as `COMPLETED` with forecast
-coverage `98.644%`, active-player coverage `98.644%`, finished-match coverage
-`100%`, stat-row coverage `99.967%`, and promotion-latency coverage `0%`.
-Production `/api/health/data-quality` therefore correctly remains `503`; the
-fresh run proves the coverage thresholds and also proves that the latency gate
-is still open rather than merely unconfigured.
+After deployment the first production audit was persisted as
+`cmrm6rs0e0000c1rsq7g4mycz`. It confirmed the four coverage thresholds but kept
+the overall gate closed because the historical rows had no comparable timing
+pair.
+
+On 2026-07-16 migration `000007_match_promotion_timestamps` was applied after a
+verified 50,216,261-byte production backup. A real sequential refresh fetched
+all `380 / 380` EPL 2025/26 matches with `0` failures. The database independently
+reported `380 / 380` comparable pairs within six hours; the observed maximum was
+`0.643` seconds. No historical timestamp was inferred or backfilled.
+
+Production run `cmrndxcnu000010km2tdjbsis` was then persisted as `COMPLETED`:
+
+- forecast coverage: `745 / 753 = 98.938%`;
+- active-player data coverage: `745 / 753 = 98.938%`;
+- finished-match coverage: `380 / 380 = 100%`;
+- basic stat-row coverage: `99.967%`;
+- promotion-latency coverage: `380 / 380 = 100%`;
+- overall gate: `PASS`.
+
+Production `/api/health/data-quality` now returns `200`. Monitor run
+`29492135499` observed the passing signal and closed deduplicated issue `#1`.
 
 ## Scheduled Control And Alert Signal
 

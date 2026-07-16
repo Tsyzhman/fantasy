@@ -16,28 +16,32 @@ for the branch is green:
 npm run check
 ```
 
-## Verified Docker production state (2026-07-15)
+## Verified Docker production state (2026-07-16)
 
 The currently verified runtime is Docker, not the PM2 workflow described later
 in this document:
 
-- active image: `fantasy-scout-web:beta23-20260715T204137Z`;
+- active image: `fantasy-scout-web:beta26-20260716T101422Z`;
 - image ID:
-  `sha256:311bd2f61fc8cb0f4fa4cc0afc20d2999e9615380c37a291ec023697f618a5b5`;
+  `sha256:c431d2687922003af410f17408f4a74ff695a510d0cd7e99d3605e5b81919f52`;
 - release directory:
-  `/var/www/fantasy-scout-releases/20260715T204137Z-beta23-pending-reviews`;
+  `/var/www/fantasy-scout-releases/20260716T101422Z-beta26-e739e75-green-main`;
 - state after rollout: `running`, `healthy`, restart count `0`;
 - stopped immediate rollback container:
-  `fantasy-scout-web-rollback-pre-beta23-20260715T204137Z` (beta22 image ID
-  `sha256:0b26738919f6638772749634f07d3acdf69c70baeb2ee1fb6cd322ef26ba18d5`);
-- older stopped rollback:
-  `fantasy-scout-web-rollback-pre-beta22-20260715T201038Z` (beta17);
-- external liveness: `https://fantasy.tsyzhman.ru/api/health` returns HTTP 200.
-- applied Prisma state: 6 migrations, including
-  `000006_beta_test_telemetry`; failed/rolled-back migrations: 0;
-- verified pre-000006 backup:
-  `/var/backups/fantasy-scout/fantasy_scout_pre_beta21_20260715T194036Z.dump`,
-  SHA-256 `ecefcd3b325643b1f6d66de7d62b0dc00446b35f8516e3c847d4a5ce0e9aa4ba`.
+  `fantasy-scout-web-beta25-rollback-20260716T101422Z` (beta25 image ID
+  `sha256:c3f3af733562b80b180396d4bcb56d18911d1296670162b6a17b2c1193273563`);
+- external liveness and data-quality health both return HTTP 200;
+- applied Prisma state: 7 migrations, including
+  `000007_match_promotion_timestamps`; failed/rolled-back migrations: 0;
+- PostgreSQL was controllably recreated as container ID
+  `325e03666369215bd5b68c527a4b9b70421237c1b8f78b0040df6d94e571230f`
+  with the same image, env, network and
+  `fantasy-scout_fantasy-scout-postgres` volume; it is healthy with bounded
+  `json-file` logs (`max-size=20m`, `max-file=5`), and the swap preserved
+  7 applied migrations plus 10,971 `matches` rows;
+- verified pre-000007 backup:
+  `/var/backups/fantasy-scout/fantasy_scout_pre_beta26_20260716T101422Z.dump`,
+  SHA-256 `0f8442d1d70e64198c240e51671f94972f02ee04aa3a5616bc52d31c28f65aac`.
 
 The checkout at `/var/www/fantasy-scout` contains unrelated uncommitted work.
 Do not run `docker compose up --build`, `git reset`, or the PM2 deploy from that
@@ -49,9 +53,9 @@ same env, network, upload volume, port binding, restart policy, and liveness
 healthcheck as the active container. Before stopping production, verify the
 exact active image ID, `running|healthy|0`, the exact candidate image ID, and the
 candidate's `created` state; syntax-check the swap script and keep an automatic
-rollback path. The beta23 swap restored HTTP in 2.011 seconds and completed all
-Docker/public/auth checks in 6.575 seconds. The preceding beta22 swap restored
-HTTP in 2.311 seconds and completed its checks in 7.032 seconds.
+rollback path. The beta26 swap restored loopback HTTP in 2.186 seconds and its
+post-promote browser workflow `29492135480` passed 5 checks with 2 expected
+skips. The preceding beta23 swap restored HTTP in 2.011 seconds.
 
 The authenticated beta22 release smoke ran 40 GET requests in batches of five:
 0 errors, SSR p75 369 ms, and full-pool API p75 238 ms. The longer beta17
@@ -91,8 +95,8 @@ Required runtime environment variables on the production host:
 - `DATABASE_URL`
 - `CRON_SECRET`
 - `DATA_QUALITY_AUDIT_SCOPES` (for example `47:2025/2026`)
-- `MACHETE_STORE_RAW_PAYLOADS=true` (required to prove the six-hour promotion
-  latency on future imports)
+- `MACHETE_STORE_RAW_PAYLOADS=true` (non-final payload retention; finalized
+  bodies are pruned while timing evidence remains on `matches`)
 - `SPORTS_RU_FANTASY_SYNC_SCOPES` (for example
   `47:2026/2027:england`)
 

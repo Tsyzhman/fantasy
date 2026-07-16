@@ -14,16 +14,24 @@ the 15-minute aggregate audit, and GitHub issue alert delivery are described in
 
 ## Current verified release
 
-As of 2026-07-15, production runs
-`fantasy-scout-web:beta23-20260715T204137Z` from
-`/var/www/fantasy-scout-releases/20260715T204137Z-beta23-pending-reviews`. Its exact
+As of 2026-07-16, production runs
+`fantasy-scout-web:beta26-20260716T101422Z` from
+`/var/www/fantasy-scout-releases/20260716T101422Z-beta26-e739e75-green-main`. Its exact
 image ID is
-`sha256:311bd2f61fc8cb0f4fa4cc0afc20d2999e9615380c37a291ec023697f618a5b5`.
+`sha256:c431d2687922003af410f17408f4a74ff695a510d0cd7e99d3605e5b81919f52`.
 The container is healthy with zero restarts. The stopped immediate rollback is
-`fantasy-scout-web-rollback-pre-beta23-20260715T204137Z`, pinned to beta22 image
-ID `sha256:0b26738919f6638772749634f07d3acdf69c70baeb2ee1fb6cd322ef26ba18d5`.
-The older beta17 rollback is also retained as
-`fantasy-scout-web-rollback-pre-beta22-20260715T201038Z`.
+`fantasy-scout-web-beta25-rollback-20260716T101422Z`, pinned to beta25 image ID
+`sha256:c3f3af733562b80b180396d4bcb56d18911d1296670162b6a17b2c1193273563`.
+Both liveness and data-quality health return HTTP 200. Production has 7/7
+applied Prisma migrations and a passing persisted 380-match data-quality audit.
+PostgreSQL container ID
+`325e03666369215bd5b68c527a4b9b70421237c1b8f78b0040df6d94e571230f`
+uses the same `postgres:16-alpine` image and
+`fantasy-scout_fantasy-scout-postgres` volume as before, is healthy, and now has
+bounded `json-file` logging (`max-size=20m`, `max-file=5`). Its controlled
+recreation preserved 7 applied migrations and 10,971 `matches` rows; the web
+container and both public health endpoints recovered successfully before the
+old container was removed.
 
 The normal release sequence is:
 
@@ -39,10 +47,9 @@ The normal release sequence is:
    and Docker health, and automatically restore the previous container on any
    failure.
 
-The beta23 swap restored HTTP in 2.011 seconds and completed health/public/auth
-checks in 6.575 seconds; its canary was removed after focused report/HTTP
-acceptance. The preceding beta22 swap restored HTTP in 2.311 seconds and
-completed its checks in 7.032 seconds. During the first beta14 attempt, a
+The beta26 swap restored loopback HTTP in 2.186 seconds; its canary/candidate
+were removed after acceptance, and production browser run `29492135480` passed.
+The beta23 swap restored HTTP in 2.011 seconds. During the first beta14 attempt, a
 CRLF/quoting defect occurred after production had been stopped, causing
 approximately 30–40 seconds of downtime before beta10 was restored. There was
 no data loss. Never use a direct unvalidated `stop` + `docker run` sequence for
