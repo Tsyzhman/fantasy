@@ -144,6 +144,17 @@ npm run beta:user-test -- review --run-id=<uuid> --valid=false --invalid-reason=
    обезличенный отчёт непосредственно в runtime-приложении и отдаёт его с
    `Cache-Control: private, no-store`.
 
+   Production beta33 acceptance 2026-07-16 подтвердил этот контракт фактически:
+   USER получил 403/`FORBIDDEN`, ADMIN — 200, `application/json`,
+   `Cache-Control: private, no-store` и
+   `Content-Disposition: attachment; filename="beta-user-test-2026-07-16.json"`.
+   Ссылка `Скачать JSON-отчёт` на `/admin/beta-test` создала download 2 574 байта
+   с SHA-256 `52d00fd16c8790dea6843dddd934f2ea649bb5804a9d13b8a3b3e66b08f86fe8`.
+   Проверка не нашла email, QA-name или поля `userId`; одноразовый QA-user и все
+   связанные session/squad records после проверки удалены. Отчёт по-прежнему
+   показывает 0 реальных участников и FAIL, поэтому acceptance не заполняет
+   human-only итог ниже.
+
    CLI-вариант предназначен для рабочего checkout, где выполнен `npm install`:
 
 ```bash

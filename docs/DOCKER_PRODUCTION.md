@@ -15,16 +15,18 @@ the 15-minute aggregate audit, and GitHub issue alert delivery are described in
 ## Current verified release
 
 As of 2026-07-16, production runs
-`fantasy-scout-web:beta32-20260716T141021Z` from
-`/var/www/fantasy-scout-releases/20260716T141021Z-beta32-5be7247-green-main`. Its exact
+`fantasy-scout-web:beta33-20260716T162012Z` from
+`/var/www/fantasy-scout-releases/20260716T162012Z-beta33-c4019ca-green-main`. Its exact
 image ID is
-`sha256:bc3560ea302dabc5b28e3acf48062f08f30749a0052a6e4f5a013351f538f75c`
-and source commit is `5be7247ba08d70c342915d884e0ee2ed4eacdb68`.
+`sha256:1632280efe40aac35139e56840fbc5d9be660471303839c0cc1cac63f6deeff4`
+and source commit is `c4019cae678638390a0bdc749ab1c5c6f8be7bec`.
 Active container ID
-`6e25d4c55bf166e23aff2b99c65e4bb63b2b66fa28ca203c8580a27b22343958`
+`43937a69e4348431389473af4daa2600e2232d40e9d0f8d11fa0f5345d75a481`
 is healthy with zero restarts and explicit `json-file` rotation
-(`max-size=20m`, `max-file=5`). The stopped immediate rollback is the same beta32
-image before that log-config correction:
+(`max-size=20m`, `max-file=5`). The stopped immediate rollback is bounded-log
+beta32 `fantasy-scout-web-beta32-rollback-pre-beta33-20260716T162012Z`, container
+ID `6e25d4c55bf166e23aff2b99c65e4bb63b2b66fa28ca203c8580a27b22343958`.
+The older beta32 image before its log-config correction remains retained as
 `fantasy-scout-web-beta32-unbounded-log-rollback-20260716T144424Z`, container ID
 `2eb8efb7a82284f68f2701033c542fb9f2b1da5efc18c0141c38835226dcaf7c`.
 The older beta31 rollback `fantasy-scout-web-beta31-rollback-20260716T143434Z`
@@ -63,12 +65,22 @@ The normal release sequence is:
 The first beta32 swap restored loopback HTTP in 2.351 seconds. Inspection then
 showed that the manual candidate had inherited `json-file` with an empty config,
 so the same image was recreated and promoted with explicit rotation; that
-log-fix swap restored HTTP in 1.909 seconds. The exact canary was removed after
-acceptance. Production browser run `29507456004` passed 5 checks with 2 expected
-skips, artifact `8379167025`; final monitor `29508147332` reported 0 critical and
-0 warning. Its access window had 252 requests and 1 response 5xx (0.397%), p75
-81.056 ms and p95 706.259 ms. The earlier beta31 swap restored HTTP in 1.862
-seconds.
+log-fix swap restored HTTP in 1.909 seconds. This remains historical incident
+evidence and the reason explicit log options are mandatory.
+
+Beta33 used archive SHA-256
+`c75ac11c89273d321340b55af1985146c029c36f126790738a15faf0a4fe994c`. Canary
+ID `c97c8e5bcceae4f3983657b565b6bae04a7bf945c0131d6c1e0fb7b46860abf9`
+passed health, report-auth, worker-chunk and unchanged-DB checks, then was removed.
+Stopped candidate `fantasy-scout-web-beta33-candidate-20260716T162012Z` had exact
+env/network/port/RW upload volume/restart policy/healthcheck and bounded logs.
+Guarded swap restored HTTP in 2.242 seconds; the candidate became the active
+container and its old name is absent. DB signature stayed `8|0|10971`.
+Production browser run `29517734343` passed 5 checks with 2 expected skips,
+artifact `8383413207`; monitor `29517734277` reported 0 critical, 0 warning,
+227 requests and 0 responses 5xx, p75 37.322 ms and p95 218.53 ms. Final app log
+inspection found 0 critical-pattern lines over 20 minutes. Treat this as release
+evidence only; long-running RUM and real-user server error rate remain open.
 During the first beta14 attempt, a
 CRLF/quoting defect occurred after production had been stopped, causing
 approximately 30–40 seconds of downtime before beta10 was restored. There was

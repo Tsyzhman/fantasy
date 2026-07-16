@@ -3,23 +3,27 @@
 Дата проверки: 2026-07-16.
 
 Финальная browser-проверка выполнена GitHub Actions Playwright Test workflow
-`29507456004` против production `https://fantasy.tsyzhman.ru` на образе
-`fantasy-scout-web:beta32-20260716T141021Z` с image ID
-`sha256:bc3560ea302dabc5b28e3acf48062f08f30749a0052a6e4f5a013351f538f75c`
-и source commit `5be7247ba08d70c342915d884e0ee2ed4eacdb68`.
+`29517734343` против production `https://fantasy.tsyzhman.ru` на образе
+`fantasy-scout-web:beta33-20260716T162012Z` с image ID
+`sha256:1632280efe40aac35139e56840fbc5d9be660471303839c0cc1cac63f6deeff4`
+и source commit `c4019cae678638390a0bdc749ab1c5c6f8be7bec`.
 
-Workflow дал 5 passed, 2 expected skipped за 1,0 минуту. Evidence загружен в
-artifact `production-browser-smoke-29507456004` (`8379167025`). Использован
+Workflow дал 5 passed, 2 expected skipped за 54,8 секунды тестов и 1 минуту
+54 секунды целиком. Evidence загружен в artifact
+`production-browser-smoke-29517734343` (`8383413207`, SHA-256 архива
+`1fe999d83c8d65b4a200c4c56398f99137a9836529ae8b71b02db30bf1dbd824`). Использован
 отдельный production QA-пользователь; пароль хранится только в GitHub Secrets.
 Write-сценарий создаёт уникальный `E2E optimized …` вариант, проверяет
 server-returned `squadId` и удаляет QA-копию; рабочие пользовательские данные не
 меняются.
 
 Этот smoke подтверждает работоспособность сценария и отсутствие измеримого
-viewport overflow. Production screenshots дополнительно просмотрены вручную на
-1440×1000, 1024×900 и Pixel 5; отдельный технический и визуальный clean-UI gate
-закрыт. Понятность для аудитории он не доказывает — это остаётся частью теста на
-10 реальных пользователях.
+viewport overflow. Дополнительный production HTTPS-сеанс в Edge проверил
+1440×1000 и 390×844, сохранение и reload, отдельный Web Worker, доступы к
+JSON-отчёту и визуальную плотность beta33. Одноразовые QA user/session/squad и
+credentials удалены; исходные DB-счётчики восстановлены. Понятность для
+аудитории это не доказывает — она остаётся частью теста на 10 реальных
+пользователях.
 
 Дополнительно выполнен одноразовый acceptance на публичном production HTTPS в
 Playwright CLI `0.1.17`, browser engine WebKit `26.5`, с iPhone 13 UA и viewport
@@ -34,14 +38,57 @@ Playwright CLI `0.1.17`, browser engine WebKit `26.5`, с iPhone 13 UA и viewpo
 
 Технический основной сценарий работает в production: поиск игрока возвращает
 реального игрока и прогноз, переход в планировщик доступен, полный пул
-догружается, сохранённый оптимизированный состав восстанавливается после reload,
-автоподбор и трансферные рекомендации работают. Desktop и мобильный viewport
-проходят без console errors и без горизонтального скролла всего документа.
+догружается, допустимый состав 15/11/4 укладывается в бюджет 100/100,
+сохраняется и восстанавливается после reload, а трансферные рекомендации
+работают. Автоподбор вынесен в отдельный Web Worker; production selection занял
+2,463 секунды, synthetic interaction event — 128 мс. Desktop и мобильный
+viewport не расширяют документ по горизонтали. Защищённый JSON-отчёт возвращает
+403 обычному USER и 200 ADMIN с `private, no-store`, attachment и без PII.
 
 Это не означает готовность полноценной beta: длительный beta error rate и RUM
 не собраны, физические iOS/Android не проверены, тест минимум на 10 реальных
 пользователях не проведён. Официальные цены Sports.ru временно исключены из
 объёма владельцем продукта и не подменяются оценочными.
+
+## Beta33 UI-density, worker и report acceptance 2026-07-16
+
+Было:
+
+- одни и те же ограничения состава повторялись верхними chips, строкой статуса и
+  отдельными карточками стартового состава и скамейки;
+- player pool был одновременно широким и глубоким: полные названия команд,
+  многострочные строки и пять вертикальных fixture-pills;
+- синхронный автоподбор удерживал main thread; synthetic INP одного предыдущего
+  acceptance достигал 2 744 мс;
+- production runtime не имел отдельного проверенного download endpoint для
+  обезличенного beta-отчёта.
+
+Стало:
+
+- оставлены один общий статус конструктора и единственные полезные счётчики
+  GK/DEF/MID/FWD внутри стартового состава; повторные `Поле/GK/DEF/MID/FWD` и
+  `Запас/GK/Поле` checks удалены;
+- desktop player table имеет фактическую ширину 744 px, шапку 35 px и первую
+  строку 45 px; команда показывается как DB short name (`Man United`) с полным
+  `Manchester United` в `title`, fixtures сведены к трём pills и доступному `+N`;
+- общий document width на 1440 px равен 1440, на 390 px — 390; mobile использует
+  cards, а скрытая desktop-таблица не расширяет страницу;
+- worker chunk `fantasy-squad-optimizer.0c23200f3f451f13.js` вернулся HTTP 200;
+  непрерывный замер дал 2 463 мс до 15/15 и event duration 128 мс. Максимальный
+  long task при отрисовке результата был 483 мс, поэтому это техническое
+  synthetic evidence, а не замена real-user RUM;
+- USER получил ожидаемый 403 на `/api/admin/beta-test/report`; ADMIN получил 200,
+  `Cache-Control: private, no-store`, attachment
+  `beta-user-test-2026-07-16.json`, `application/json`. Скачанный отчёт — 2 574
+  байта, SHA-256 `52d00fd16c8790dea6843dddd934f2ea649bb5804a9d13b8a3b3e66b08f86fe8`,
+  без email, QA-name и `userId`;
+- screenshots сохранены в
+  `output/playwright/beta33-production-c4019ca/`; после cleanup восстановлены
+  users 4, sessions 9, squads 2, squad players 30, runs 1, observations 20,
+  real runs 0 и synthetic runs 1.
+
+Полноценная beta этим не доказана: физические устройства, длительный real-user
+RUM и выборка ≥10 участников по-прежнему отсутствуют.
 
 ## Beta32 physical-environment evidence acceptance 2026-07-16
 
@@ -137,35 +184,37 @@ out; desktop primary controls не пересекаются по bounding boxes.
 
 | Сценарий | Viewport / выборка | Результат |
 |---|---:|---|
-| Геометрия `/machete/squad` | Production beta31, 1440×1000 | Compact header; Save/auto-pick/more actions не пересекаются; workbench и player pool видны в первом viewport; `Ctrl+K` открывает один dialog; document overflow 0; runtime 5xx/page errors 0 |
-| Tablet gap | Production beta31, 1024×900 | Pool tab доступна, player search открывается; global Menu не обрезан; document overflow 0 |
-| Mobile geometry | Production beta31, Pixel 5 | `Leagues`, `Players` и активная `Squad` целиком видны; Pool использует cards вместо desktop table; Squad/Pool/Tips и global Menu доступны; document overflow 0; runtime 5xx/page errors 0 |
+| Геометрия `/machete/squad` | Production beta33, 1440×1000 | Повторные validation checks отсутствуют; player table 744 px, header 35 px, row 45 px; DB short names и 3 fixtures + `+N`; document 1440/1440; состав и pool видны рядом |
+| Tablet gap | Production beta33 workflow, 1024×900 | Pool tab доступна, player search открывается; global Menu не обрезан; document overflow 0 |
+| Mobile geometry | Production beta33 workflow Pixel 5 + Edge 390×844 | Pool использует cards вместо desktop table; Squad/Pool/Tips и global Menu доступны; document width 390/390; сохранённый 15/11/4 valid squad восстановлен |
 | WebKit mobile geometry | Production beta32, WebKit 26.5, iPhone 13 UA, 390×664 | USER-login и authenticated pool API 200; поиск игрока, Squad/Pool/Tips и Menu работают; root/body width 390; console errors/warnings 0; наблюдавшихся 4xx/5xx нет. `maxTouchPoints=0`, поэтому physical/touch gate не закрыт |
-| Полный automated journey | Production beta31, desktop | Реальный forecast player найден; auto-pick дал valid squad; вариант сохранён и QA-copy удалена |
-| Поиск игрока `Mbeumo` | beta16, 1440×900; код пути не менялся в beta22 | HTTP 200 за 507 мс; найден Bryan Mbeumo, прогноз виден, ссылка `Build squad` ведёт в EPL 2026/2027; document width 1440; console errors 0 |
-| Сохранённый состав | desktop/mobile | Вариант `My squad` восстановлен без изменений: 15/15 игроков, 11 стартовых, 4 запасных, бюджет 100/100, банк 0 |
-| Автоподбор | production beta14, та же planner-логика в beta22 | 2,903 с при SMART-лимите 5 с; последующий reload вернул сохранённый состав без расхождений |
-| Полный пул | beta22, 390×844 | API вернул 629 игроков, ошибки загрузки отсутствуют; root/body overflow 0 |
-| Трансферные рекомендации | beta22, 390×844 | Вкладка Tips показывает планы, причины и риски; root/body overflow 0 |
-| Desktop-планировщик | beta22, 1440×900 | root/body overflow 0, сохранённый вариант, полный пул и рекомендации доступны; 3/3 navigation-landmark имеют имена; console errors/warnings 0 |
-| Mobile-планировщик | beta22, 390×844 | Squad, Pool и Tips переключаются кликом и ArrowLeft/ArrowRight с wrap, focus и `tabIndex=0`; root/body overflow 0; console errors/warnings 0 |
+| Полный automated journey | Production beta33, desktop | Реальный forecast pool загружен; worker auto-pick дал valid 15/11/4 и бюджет 100/100; вариант сохранён, восстановлен по `squadId`, QA-copy каскадно удалена |
+| Поиск игрока `Mbeumo` | Production beta33, 1440×1000 | Bryan Mbeumo виден с FP 5.59, short team `Man United`, доступным full name и compact fixtures; document width 1440 |
+| Сохранённый состав | Production beta33, desktop/mobile | `My squad · 15/15` восстановлен после reload: 15/15, 11/11, 4/4, valid, бюджет 100/100, без изменений к сохранённому |
+| Автоподбор | Production beta33, Edge 1440×1000 | Worker chunk HTTP 200; 15/15 за 2 463 мс при лимите 5 с; synthetic event duration 128 мс, max result-render long task 483 мс; это не real-user RUM |
+| Полный пул | Production beta33, desktop/mobile | Реальный EPL 2026/2027 pool загрузился; desktop table compact, mobile cards; ошибок загрузки нет, page-level overflow 0 |
+| Трансферные рекомендации | Production beta33 | После автоподбора показаны 6 планов с прогнозным выигрышем, причинами и рисками на реальном pool; официальные цены не заявляются |
+| Desktop-планировщик | Production beta33, 1440×1000 | Состав и compact pool помещаются рядом; short names берутся из DB; document overflow 0; intentional USER 403 проверен отдельно |
+| Mobile-планировщик | Production beta33, 390×844 | Основной control stack, сохранённый valid squad и admin report page помещаются в 390 px; document overflow 0; physical/touch gate не закрыт |
 | Маршрут `/machete/squad` | 10 авторизованных загрузок | Все ответы 200; выборка 343–2 439 мс, p75 480 мс, p95 2 439 мс; SMART-порог p75 ≤2,5 с выполнен |
 | Пересчёт горизонта | 10 browser-переключений | Summary p75/p95 552/585 мс при лимите 1 с; трансферные рекомендации p75/p95 581/603 мс при лимите 10 с; каждый раз возвращены 6 планов; console errors 0 |
 | Mixed load | beta22, 5 concurrent, 40 запросов | 40/40 GET 200; SSR p75/p95 369/678 мс, pool p75/p95 238/3 102 мс; production сохранил `healthy`, 0 рестартов и не создал новых error-логов |
 | Длинный mixed load | beta17, 5 concurrent, 60 с | 1 362 GET-запроса, ошибок 0%; SSR p75 352 мс, pool API p75 85 мс; исторический референс для более длинной выборки |
-| Beta telemetry | synthetic QA | 8 этапов в правильном порядке, 2 page views, 10 Web Vitals, 0 client errors; report видит 1 synthetic и 0 реальных участников, поэтому gate остаётся FAIL |
+| Beta telemetry и JSON-report | synthetic QA + production beta33 | Исторический synthetic run остаётся 1, real — 0; USER 403, ADMIN 200/no-store/attachment/no PII; admin UI честно показывает FAIL, 0/10 и physical 0/1 + 0/1 |
 | `/api/health` | 20 HTTPS-запросов | Все ответы 200; p75 121,9 мс, p95 203,6 мс, максимум 203,7 мс, ошибок 0 |
 
 Load-smoke воспроизводится командой `npm run beta:load`; точный профиль описан в
 `docs/BETA_LOAD_TEST.md`. Короткий прогон с пятью конкурентными пользователями
 не доказывает error rate за период реального beta-тестирования.
 
-Финальный production workflow beta32 дал 0 захваченных page errors и runtime
-5xx в тестовых сценариях. Отдельный часовой Caddy audit остаётся более строгим
-источником для всего трафика и не заменяется этим коротким smoke.
+Финальный production workflow beta33 `29517734343` дал 5 passed и 2 expected
+skipped; evidence сохранён в artifact `8383413207`. Отдельный monitor
+`29517734277` завершился с 0 critical и 0 warning: 227 user-traffic запросов,
+0 ответов 5xx, p75 37,322 мс, p95 218,53 мс. Это короткое окно не заменяет
+длительный error-rate и RUM реальной beta.
 Старый warning о preload логотипа устранён удалением ненужного `priority`.
 
-Beta32 сохраняет исправления beta27: не регистрирует Web Vitals observers заново
+Beta33 сохраняет исправления beta27: не регистрирует Web Vitals observers заново
 при каждом тике таймера, делает повтор POST telemetry идемпотентным и строит RUM по всем
 реальным прогонам, включая pending/invalid/failed. После synthetic smoke в
 production за 30 дней остаётся `1` synthetic и `0` real runs: QA не засчитан как

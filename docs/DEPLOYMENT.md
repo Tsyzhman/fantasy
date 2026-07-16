@@ -1,10 +1,14 @@
 # Deployment
 
-Production checkout path:
+Legacy checkout path (currently dirty; not the active build source):
 
 ```bash
 cd /var/www/fantasy-scout
 ```
+
+Production images must be built from a clean immutable directory under
+`/var/www/fantasy-scout-releases/`. Do not pull, reset, build, or deploy from the
+legacy checkout until its unrelated changes have been reconciled.
 
 Use Node.js `>=20.9.0`; `.nvmrc` pins the CI/development major version to
 Node 20.
@@ -21,16 +25,20 @@ npm run check
 The currently verified runtime is Docker, not the PM2 workflow described later
 in this document:
 
-- active image: `fantasy-scout-web:beta32-20260716T141021Z`;
+- active image: `fantasy-scout-web:beta33-20260716T162012Z`;
 - image ID:
-  `sha256:bc3560ea302dabc5b28e3acf48062f08f30749a0052a6e4f5a013351f538f75c`;
-- source commit: `5be7247ba08d70c342915d884e0ee2ed4eacdb68`;
+  `sha256:1632280efe40aac35139e56840fbc5d9be660471303839c0cc1cac63f6deeff4`;
+- source commit: `c4019cae678638390a0bdc749ab1c5c6f8be7bec`;
 - release directory:
-  `/var/www/fantasy-scout-releases/20260716T141021Z-beta32-5be7247-green-main`;
+  `/var/www/fantasy-scout-releases/20260716T162012Z-beta33-c4019ca-green-main`;
 - active container ID:
-  `6e25d4c55bf166e23aff2b99c65e4bb63b2b66fa28ca203c8580a27b22343958`;
+  `43937a69e4348431389473af4daa2600e2232d40e9d0f8d11fa0f5345d75a481`;
 - state after rollout: `running`, `healthy`, restart count `0`;
-- stopped immediate rollback container:
+- stopped immediate rollback container is bounded-log beta32:
+  `fantasy-scout-web-beta32-rollback-pre-beta33-20260716T162012Z`
+  (container ID
+  `6e25d4c55bf166e23aff2b99c65e4bb63b2b66fa28ca203c8580a27b22343958`);
+- retained historical pre-log-fix beta32 rollback:
   `fantasy-scout-web-beta32-unbounded-log-rollback-20260716T144424Z`
   (container ID
   `2eb8efb7a82284f68f2701033c542fb9f2b1da5efc18c0141c38835226dcaf7c`);
@@ -54,7 +62,7 @@ in this document:
 The checkout at `/var/www/fantasy-scout` contains unrelated uncommitted work.
 Do not run `docker compose up --build`, `git reset`, or the PM2 deploy from that
 checkout until its changes have been reconciled. The active runtime is pinned to
-the release directory and image above.
+the immutable release directory and image above.
 
 Production image replacement must use a pre-created stopped candidate with the
 same env, network, upload volume, port binding, restart policy, and liveness
@@ -64,14 +72,24 @@ candidate's `created` state; syntax-check the swap script and keep an automatic
 rollback path. Also compare `.HostConfig.LogConfig`: copying env/network/volume
 does not copy log rotation. The first beta32 candidate inherited an empty
 `LogConfig.Config`; a second guarded swap recreated the same image with explicit
-`json-file`, `max-size=20m`, `max-file=5`. The first swap restored loopback HTTP
-in 2.351 seconds and the log-fix swap in 1.909 seconds. Browser workflow
-`29507456004` passed 5 checks with 2 expected skips; evidence is artifact
-`8379167025`. Final monitor `29508147332` reported 0 critical and 0 warning,
-while the access window still contained 1 response 5xx out of 252 (0.397%), p75
-81.056 ms and p95 706.259 ms. The exact beta32 canary was removed after
-acceptance; the pre-log-fix beta32 container is the immediate rollback and the
-beta31 rollback is also retained.
+`json-file`, `max-size=20m`, `max-file=5`. That incident remains the reason for
+the mandatory exact log-config guard.
+
+Beta33 used clean archive SHA-256
+`c75ac11c89273d321340b55af1985146c029c36f126790738a15faf0a4fe994c`, one
+loopback canary with schedulers disabled and a read-only upload volume, then an
+exact stopped candidate. Canary ID
+`c97c8e5bcceae4f3983657b565b6bae04a7bf945c0131d6c1e0fb7b46860abf9` was
+removed before the swap; candidate
+`fantasy-scout-web-beta33-candidate-20260716T162012Z` became active container
+`43937a69e4348431389473af4daa2600e2232d40e9d0f8d11fa0f5345d75a481`, so the
+candidate-name is absent after promotion. Guarded swap restored loopback HTTP in 2.242 seconds,
+left DB signature `8|0|10971` unchanged, and retained beta32 as the immediate
+rollback. Browser workflow `29517734343` passed 5 checks with 2 expected skips;
+evidence is artifact `8383413207`. Monitor `29517734277` reported 0 critical,
+0 warning, 227 requests, 0 responses 5xx, p75 37.322 ms and p95 218.53 ms.
+Final app log inspection found 0 critical-pattern lines in the last 20 minutes.
+These are release checks, not long-running real-user RUM/error-rate evidence.
 
 The authenticated beta22 release smoke ran 40 GET requests in batches of five:
 0 errors, SSR p75 369 ms, and full-pool API p75 238 ms. The longer beta17
@@ -174,9 +192,14 @@ major. Keep ExcelJS on `4.4.0` and use the npm override for `uuid@11.1.1`
 instead; workbook import and export tests cover the project paths that use
 ExcelJS.
 
-## Manual PM2 deploy
+## Legacy manual PM2 deploy (disabled while the checkout is dirty)
 
-Update production from `main`:
+Do not run this section in the current server state. It is retained only for a
+future PM2 runtime after `/var/www/fantasy-scout` has been reconciled and verified
+clean. The current production runtime must use the immutable Docker release
+procedure documented above.
+
+After that reconciliation only, update a PM2 runtime from `main`:
 
 ```bash
 cd /var/www/fantasy-scout
