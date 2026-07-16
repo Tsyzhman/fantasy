@@ -3,13 +3,13 @@
 Дата проверки: 2026-07-16.
 
 Финальная browser-проверка выполнена GitHub Actions Playwright Test workflow
-`29492135480` против production `https://fantasy.tsyzhman.ru` на образе
-`fantasy-scout-web:beta26-20260716T101422Z` с image ID
-`sha256:c431d2687922003af410f17408f4a74ff695a510d0cd7e99d3605e5b81919f52`
-и source commit `e739e75310736cbecff7d0bd4fc4fd5c8374091c`.
+`29494531024` против production `https://fantasy.tsyzhman.ru` на образе
+`fantasy-scout-web:beta27-20260716T111950Z` с image ID
+`sha256:5158ff770d1b55de3ebb8e4ecb2ddbf71952d882109922fd8d9d286952e9812a`
+и source commit `4ac9b34cb6bc5f312909473743b95ad0a34f8da6`.
 
-Workflow дал 5 passed, 2 expected skipped за 49,7 с. Evidence загружен в
-artifact `production-browser-smoke-29492135480` (`8372895542`). Использован
+Workflow дал 5 passed, 2 expected skipped за 56,3 с. Evidence загружен в
+artifact `production-browser-smoke-29494531024` (`8373836399`). Использован
 отдельный production QA-пользователь; пароль хранится только в GitHub Secrets.
 Write-сценарий создаёт уникальный `E2E optimized …` вариант, проверяет
 server-returned `squadId` и удаляет QA-копию; рабочие пользовательские данные не
@@ -58,10 +58,10 @@ out; desktop primary controls не пересекаются по bounding boxes.
 
 | Сценарий | Viewport / выборка | Результат |
 |---|---:|---|
-| Clean UI `/machete/squad` | Production beta26, 1440×1000 | Save/auto-pick/more actions не пересекаются; player pool виден; `Ctrl+K` открывает один dialog; document overflow 0; runtime 5xx/page errors в тесте 0 |
-| Tablet gap | Production beta26, 1024×900 | Pool tab доступна, player search открывается; global Menu не обрезан; document overflow 0 |
-| Mobile clean UI | Production beta26, Pixel 5 | Squad/Pool/Tips, workspace grid и global Menu доступны; document overflow 0; runtime 5xx/page errors в тесте 0 |
-| Полный automated journey | Production beta26, desktop | Реальный forecast player найден; auto-pick дал valid squad; вариант сохранён и QA-copy удалена |
+| Clean UI `/machete/squad` | Production beta27, 1440×1000 | Save/auto-pick/more actions не пересекаются; player pool виден; `Ctrl+K` открывает один dialog; document overflow 0; runtime 5xx/page errors в тесте 0 |
+| Tablet gap | Production beta27, 1024×900 | Pool tab доступна, player search открывается; global Menu не обрезан; document overflow 0 |
+| Mobile clean UI | Production beta27, Pixel 5 | Squad/Pool/Tips, workspace grid и global Menu доступны; document overflow 0; runtime 5xx/page errors в тесте 0 |
+| Полный automated journey | Production beta27, desktop | Реальный forecast player найден; auto-pick дал valid squad; вариант сохранён и QA-copy удалена |
 | Поиск игрока `Mbeumo` | beta16, 1440×900; код пути не менялся в beta22 | HTTP 200 за 507 мс; найден Bryan Mbeumo, прогноз виден, ссылка `Build squad` ведёт в EPL 2026/2027; document width 1440; console errors 0 |
 | Сохранённый состав | desktop/mobile | Вариант `My squad` восстановлен без изменений: 15/15 игроков, 11 стартовых, 4 запасных, бюджет 100/100, банк 0 |
 | Автоподбор | production beta14, та же planner-логика в beta22 | 2,903 с при SMART-лимите 5 с; последующий reload вернул сохранённый состав без расхождений |
@@ -80,10 +80,16 @@ Load-smoke воспроизводится командой `npm run beta:load`; 
 `docs/BETA_LOAD_TEST.md`. Короткий прогон с пятью конкурентными пользователями
 не доказывает error rate за период реального beta-тестирования.
 
-Финальный production workflow beta26 дал 0 захваченных page errors и runtime
+Финальный production workflow beta27 дал 0 захваченных page errors и runtime
 5xx в тестовых сценариях. Отдельный часовой Caddy audit остаётся более строгим
 источником для всего трафика и не заменяется этим коротким smoke.
 Старый warning о preload логотипа устранён удалением ненужного `priority`.
+
+Beta27 также исправляет повторную регистрацию Web Vitals observers при каждом
+тике таймера, делает повтор POST telemetry идемпотентным и строит RUM по всем
+реальным прогонам, включая pending/invalid/failed. После synthetic smoke в
+production за 30 дней остаётся `1` synthetic и `0` real runs: QA не засчитан как
+человек и RUM-гейт остаётся FAIL.
 
 ## Точный сохранённый результат
 

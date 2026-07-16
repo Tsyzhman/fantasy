@@ -15,13 +15,13 @@ the 15-minute aggregate audit, and GitHub issue alert delivery are described in
 ## Current verified release
 
 As of 2026-07-16, production runs
-`fantasy-scout-web:beta26-20260716T101422Z` from
-`/var/www/fantasy-scout-releases/20260716T101422Z-beta26-e739e75-green-main`. Its exact
+`fantasy-scout-web:beta27-20260716T111950Z` from
+`/var/www/fantasy-scout-releases/20260716T111950Z-beta27-4ac9b34-green-main`. Its exact
 image ID is
-`sha256:c431d2687922003af410f17408f4a74ff695a510d0cd7e99d3605e5b81919f52`.
+`sha256:5158ff770d1b55de3ebb8e4ecb2ddbf71952d882109922fd8d9d286952e9812a`.
 The container is healthy with zero restarts. The stopped immediate rollback is
-`fantasy-scout-web-beta25-rollback-20260716T101422Z`, pinned to beta25 image ID
-`sha256:c3f3af733562b80b180396d4bcb56d18911d1296670162b6a17b2c1193273563`.
+`fantasy-scout-web-beta26-rollback-20260716T111950Z`, pinned to beta26 image ID
+`sha256:c431d2687922003af410f17408f4a74ff695a510d0cd7e99d3605e5b81919f52`.
 Both liveness and data-quality health return HTTP 200. Production has 7/7
 applied Prisma migrations and a passing persisted 380-match data-quality audit.
 PostgreSQL container ID
@@ -47,9 +47,9 @@ The normal release sequence is:
    and Docker health, and automatically restore the previous container on any
    failure.
 
-The beta26 swap restored loopback HTTP in 2.186 seconds; its canary/candidate
-were removed after acceptance, and production browser run `29492135480` passed.
-The beta23 swap restored HTTP in 2.011 seconds. During the first beta14 attempt, a
+The beta27 swap restored loopback HTTP in 1.975 seconds; its canary/candidate
+were removed after acceptance, and production browser run `29494531024` passed.
+The beta26 swap restored HTTP in 2.186 seconds. During the first beta14 attempt, a
 CRLF/quoting defect occurred after production had been stopped, causing
 approximately 30–40 seconds of downtime before beta10 was restored. There was
 no data loss. Never use a direct unvalidated `stop` + `docker run` sequence for

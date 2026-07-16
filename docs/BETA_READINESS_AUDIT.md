@@ -8,14 +8,14 @@ Done. По просьбе владельца продукта готовност
 как оценочные. Это исключение не превращает отсутствующие официальные цены в
 выполненный факт.
 
-Текущий production после beta26 data-quality promote:
+Текущий production после beta27 RUM promote:
 
-- image `fantasy-scout-web:beta26-20260716T101422Z`;
+- image `fantasy-scout-web:beta27-20260716T111950Z`;
 - image ID
-  `sha256:c431d2687922003af410f17408f4a74ff695a510d0cd7e99d3605e5b81919f52`;
-- source commit `e739e75310736cbecff7d0bd4fc4fd5c8374091c`;
+  `sha256:5158ff770d1b55de3ebb8e4ecb2ddbf71952d882109922fd8d9d286952e9812a`;
+- source commit `4ac9b34cb6bc5f312909473743b95ad0a34f8da6`;
 - release
-  `/var/www/fantasy-scout-releases/20260716T101422Z-beta26-e739e75-green-main`;
+  `/var/www/fantasy-scout-releases/20260716T111950Z-beta27-4ac9b34-green-main`;
 - состояние `running|healthy|0`, внешние `/api/health` и
   `/api/health/data-quality` — HTTP 200;
 - web и PostgreSQL container logs: `json-file`, `max-size=20m`,
@@ -25,16 +25,13 @@ Done. По просьбе владельца продукта готовност
   тот же image ID
   `sha256:16bc17c64a573ef34162af9298258d1aec548232985b33ed7b1eac33ba35c229`
   и тот же volume `fantasy-scout_fantasy-scout-postgres`;
-- beta25 сохранён остановленным rollback-контейнером.
+- beta26 сохранён остановленным rollback-контейнером.
 
-Перед promote тот же UI проверен отдельно на loopback canary:
+Перед promote beta27 проверен отдельно на loopback canary:
 
-- image `fantasy-scout-web:ui-canary-v4-20260716T090327Z`;
-- image ID
-  `sha256:d268da9f88cf3c25e2ef0d3db4871462abab975e5cb86462530143fa04763b5d`;
+- image `fantasy-scout-web:beta27-20260716T111950Z` с тем же точным image ID;
 - ingestion worker отключён, upload volume read-only;
-- Playwright: 5 passed, 2 ожидаемо skipped; полный изменяющий данные сценарий
-  запускается один раз на desktop, responsive-проекты остаются read-only.
+- loopback health/data-quality/login/beta-test — HTTP 200;
 - после успешного production smoke временные canary/candidate-контейнеры удалены.
 
 ## Итог
@@ -62,12 +59,12 @@ gate проходит, включая 100% raw→normalized latency coverage.
 | 2 | Сборщик не нарушает правила и бюджет | Выполнено для EPL-контура | Сервер заново загружает авторитетный pool и проверяет размер, позиции, схему старта, скамейку, клубный лимит, бюджет, капитана и transfer limit. UI-save принимается только после `Valid squad`; unit-тесты отклоняют недопустимые payload | Отдельная rule-matrix потребуется при добавлении других fantasy-турниров |
 | 3 | Прогнозы доступны всем основным игрокам | Выполнено | Production run `cmrndxcnu000010km2tdjbsis`: forecast coverage 745/753 = 98,938%, player coverage 98,938%, match coverage 380/380 = 100%, stat-row coverage 99,967%, общий gate PASS | Продолжать ежедневный fail-closed audit на новых данных |
 | 4 | Автоподбор и трансферы работают на реальных данных | Выполнено в согласованном объёме без официальных цен | Игроки, команды, статистика, матчи и прогнозы берутся из production FotMob-контура. UI автоподбор создаёт допустимый состав; transfer suggestions рассчитаны по реальному pool и прогнозам | Официальные цены явно отложены владельцем продукта; оценочные цены не выдаются за официальные |
-| 5 | Полноценная работа на компьютере и телефоне | Частично | Beta26 workflow `29492135480` проверил Chromium на 1440×1000, 1024×900 и Pixel 5: 5 passed, 2 expected skipped. Нет page-level horizontal overflow; на 1024 доступна вкладка Pool; mobile/tablet menu содержит навигацию и sign-out; `Ctrl+K` открывает ровно одну палитру; screenshots сохранены в artifact `8372895542` | Нужны физические Safari iOS и Chrome Android |
-| 6 | Выполнены показатели скорости | Частично только из-за beta-period | Исторические production замеры проходят SMART-пороги: squad SSR p75 480 мс, client summary p75 552 мс, автоподбор 2,903 с, transfer suggestions p75 581 мс. Текущий часовой Caddy audit: 523 запроса, 5xx 0,382%, p75 63,831 мс, p95 254,644 мс | Нужны длительные RUM/Web Vitals и error rate реальной группы |
-| 7 | Отсутствуют критические ошибки | Частично | Локальный gate: 259/259 unit/integration, lint, typecheck, production build; production dependencies — 0 vulnerabilities. Main CI `29489821967` полностью green; beta26 browser run `29492135480` green; beta26 healthy, 0 рестартов. Два старых Caddy upstream EOF дали 502, но 100-request probe воспроизвести их не смог и app error log пуст | Короткий acceptance и невоспроизведённые транзиенты не доказывают длительную beta без critical/blocker |
+| 5 | Полноценная работа на компьютере и телефоне | Частично | Beta27 workflow `29494531024` проверил Chromium на 1440×1000, 1024×900 и Pixel 5: 5 passed, 2 expected skipped. Нет page-level horizontal overflow; на 1024 доступна вкладка Pool; mobile/tablet menu содержит навигацию и sign-out; `Ctrl+K` открывает ровно одну палитру; screenshots сохранены в artifact `8373836399` | Нужны физические Safari iOS и Chrome Android |
+| 6 | Выполнены показатели скорости | Частично только из-за real-user sample | Исторические production замеры проходят SMART-пороги: squad SSR p75 480 мс, client summary p75 552 мс, автоподбор 2,903 с, transfer suggestions p75 581 мс. Текущий Caddy audit: 380 запросов, 0 5xx, p75 60,220 мс, p95 359,785 мс. Beta27 собирает opt-in RUM и требует LCP минимум от 10 реальных участников, p75 ≤2,5 с; pending/invalid/failed прогоны нельзя исключить модерацией | Сейчас реальных RUM-участников 0; нужна фактическая beta-выборка |
+| 7 | Отсутствуют критические ошибки | Частично | Локальный gate: 261/261 unit/integration, lint, typecheck, production build; production dependencies — 0 vulnerabilities. Main CI `29493752141` полностью green; beta27 browser run `29494531024` green; beta27 healthy, 0 рестартов. Два старых Caddy upstream EOF дали 502, но 100-request probe воспроизвести их не смог и app error log пуст | Короткий acceptance и невоспроизведённые транзиенты не доказывают длительную beta без critical/blocker |
 | 8 | Завершено историческое тестирование модели | Выполнено | Production run `cmrm6rgwx0000106radpcmtco`: `COMPLETED`, 380/380 EPL 2025/2026, `gate_passed=true`; пяти-туровый RMSE улучшен для GK/DEF/MID/FWD на 16,569/10,759/13,403/11,116% | Одноматчевый горизонт отдельно не достиг 10%; вывод относится к пяти-туровому планированию |
-| 9 | Не менее 80% тестовых пользователей проходят сценарий без помощи | Не выполнено | `/beta-test`, consent, bounded telemetry и обезличенный moderator report готовы; synthetic evidence исключается из human gate | Сейчас 0 доказанных реальных участников; нужны ≥10, completion ≥80%, forecast found ≥80%, transfer understanding ≥70%, UI ≥4/5 |
-| 10 | Мониторинг, логи и контроль обновления данных | Выполнено технически | Caddy JSON log ротируется; systemd audit каждые 15 минут; warning-health исключены из user error-rate; public aggregate работает; app и PostgreSQL logs ограничены 5×20 MiB. Реальный refresh `1` дал 380/380 fetched, 0 failed; audit `cmrndxcnu000010km2tdjbsis` дал latency 100% и PASS; оба health endpoint возвращают 200. Monitor `29492135499` green и закрыл issue `#1` | Поддерживать monitor и ежедневный fail-closed data-quality audit в beta |
+| 9 | Не менее 80% тестовых пользователей проходят сценарий без помощи | Не выполнено | `/beta-test`, consent, bounded telemetry и обезличенный moderator report готовы; synthetic evidence исключается из human/RUM gates, запросы идемпотентны, а RUM использует все реальные прогоны без выборочного удаления неудобных результатов | Сейчас 0 доказанных реальных участников; нужны ≥10, completion ≥80%, forecast found ≥80%, transfer understanding ≥70%, UI ≥4/5 |
+| 10 | Мониторинг, логи и контроль обновления данных | Выполнено технически | Caddy JSON log ротируется; systemd audit каждые 15 минут; warning-health исключены из user error-rate; public aggregate работает; app и PostgreSQL logs ограничены 5×20 MiB. Реальный refresh `1` дал 380/380 fetched, 0 failed; audit `cmrndxcnu000010km2tdjbsis` дал latency 100% и PASS; оба health endpoint возвращают 200. Monitor `29494529082` green: critical checks PASS, data-quality PASS, access audit 380 запросов и 0 5xx | Поддерживать monitor и ежедневный fail-closed data-quality audit в beta |
 | 11 | Чистый UI без наложений, обрезанной навигации и лишнего повторяющегося шума | Выполнено технически в production | `/machete/squad`: разделены variant/name и actions; Save стал основным; вторичные actions/settings свёрнуты; одинаковое transfer-warning показывается один раз; suggestions сокращены до top 3; 1024–1279 снова имеет Pool; mobile workspace/global navigation не обрезана; desktop controls геометрически не пересекаются; production workflow green | Нужна проверка на физических устройствах и реальных пользователях |
 
 ## UI-cleanup: что именно изменено
@@ -102,17 +99,16 @@ gate проходит, включая 100% raw→normalized latency coverage.
   PostgreSQL контролируемо пересоздан с тем же image/env/network/volume:
   до и после переключения подтверждены 7 миграций и 10 971 строка `matches`,
   затем web и оба публичных health endpoint вернулись в healthy/HTTP 200.
-- Проверенный часовой отчёт после promote: 523 user-traffic запроса, 17 4xx,
-  2 5xx, server error rate 0,382%, p50/p75/p95/max
-  20,892/63,831/254,644/4 125,378 мс.
+- Проверенный отчёт после beta27 promote: 380 user-traffic запросов, 0 5xx,
+  server error rate 0%, p75 60,220 мс, p95 359,785 мс.
 - `/_monitor/*` и warning-only data-quality/price health endpoints исключены из
   user-traffic метрики; report не содержит URL, IP, cookies, headers или user
   identifiers.
 - Workflow `Production Monitor` проверяет liveness/login как critical и
   data-quality/access audit как warning; состояние синхронизируется с одним
   GitHub Issue без обновления на каждом одинаковом прогоне.
-- Run `29492135499`: critical failures 0, data-quality PASS; issue `#1`
-  автоматически закрыт, access audit имеет статус `ok`.
+- Run `29494529082`: critical failures 0, data-quality PASS, access audit `ok`;
+  ранее открытый issue `#1` остаётся закрыт.
 - Официальные цены намеренно не входят в monitor до появления источника.
 
 ## Обязательные следующие действия
