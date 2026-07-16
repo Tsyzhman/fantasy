@@ -4,7 +4,7 @@ test("squad controls stay usable without page-level horizontal clipping", async 
   const failures = captureRuntimeFailures(page);
 
   await page.goto("/machete/squad");
-  await expect(page.getByRole("heading", { name: /Squad picker and transfer planner/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: /Squad planner/i })).toBeVisible();
   await expect(page.getByRole("button", { name: /Auto-pick squad/i })).toBeEnabled({ timeout: 30_000 });
 
   await expect
@@ -15,10 +15,12 @@ test("squad controls stay usable without page-level horizontal clipping", async 
     const controls = [
       page.getByRole("button", { name: /Save squad/i }),
       page.getByRole("button", { name: /Auto-pick squad/i }),
-      page.getByRole("button", { name: /Auto-pick XI/i }),
       page.getByText("More actions", { exact: true })
     ];
     await assertVisibleControlsDoNotOverlap(controls);
+    await page.getByText("More actions", { exact: true }).click();
+    await expect(page.getByRole("button", { name: /Auto-pick XI/i })).toBeVisible();
+    await page.getByText("More actions", { exact: true }).click();
     await expect(page.getByRole("textbox", { name: /Search player or team/i })).toBeVisible();
 
     await page.keyboard.press("Control+K");
@@ -41,6 +43,13 @@ test("squad controls stay usable without page-level horizontal clipping", async 
     await expect(page.getByRole("link", { name: /Players/i }).last()).toBeVisible();
     await expect(header.getByRole("button", { name: /Sign out/i }).last()).toBeVisible();
     await assertInsideViewport(menu, page);
+    await menu.click();
+    await expect(header.getByRole("button", { name: /Sign out/i }).last()).toBeHidden();
+
+    if (testInfo.project.name === "mobile-chromium") {
+      await expect(page.getByTestId("player-pool-mobile")).toBeVisible();
+      await expect(page.locator("table:visible")).toHaveCount(0);
+    }
   }
 
   expect(failures.pageErrors, failures.pageErrors.join("\n")).toEqual([]);

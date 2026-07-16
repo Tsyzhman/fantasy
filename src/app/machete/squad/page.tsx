@@ -1,5 +1,5 @@
 import { UserRole } from "@prisma/client";
-import { Download } from "lucide-react";
+import { ChevronDown, Download, Wrench } from "lucide-react";
 import Link from "next/link";
 
 import { FantasyPriceSheetImportForm } from "@/components/machete/FantasyPriceSheetImportForm";
@@ -7,7 +7,6 @@ import { FantasySquadPlanner } from "@/components/machete/FantasySquadPlanner";
 import { I18nText } from "@/components/i18n-text";
 import { LocalizedOption } from "@/components/localized-option";
 import { MacheteShell } from "@/components/machete/MacheteShell";
-import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
 import { AutoSubmitForm } from "@/components/players/auto-submit-form";
 import { requireCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -43,80 +42,77 @@ export default async function MacheteSquadPage({ searchParams }: PageProps) {
   const data = selectedLeague ? await loadInitialFantasySquadPlannerData(user.id, selectedLeague, params.squadId) : null;
 
   return (
-    <MacheteShell>
-      <div className="mt-4">
-        <PageBreadcrumbs
-          backHref="/machete/leagues"
-          backLabel="Back to leagues"
-          items={[
-            { label: "Machete", href: "/machete/leagues" },
-            { label: <I18nText en="Squad" ru="Состав" />, href: "/machete/squad" }
-          ]}
-        />
-      </div>
-
-      <section className="mt-4 rounded border border-slate-200 bg-white p-4 shadow-soft sm:p-5">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+    <MacheteShell compact>
+      <section className="border-b border-slate-200 py-4">
+        <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="text-sm font-semibold uppercase tracking-wide text-slate-500"><I18nText en="Fantasy planning" ru="Фэнтези-планирование" /></p>
-            <h2 className="mt-1 text-xl font-bold text-ink sm:mt-2 sm:text-2xl"><I18nText en="Squad picker and transfer planner" ru="Состав и трансферный план" /></h2>
-            <p className="mt-2 max-w-3xl text-sm text-slate-600">
-              <I18nText
-                en="Build a user squad for each league, project the next rounds, and let Machete suggest transfers that improve the next round without dropping over the selected horizon."
-                ru="Собирайте состав для каждой лиги, прогнозируйте ближайшие туры и получайте трансферные подсказки Machete без просадки на выбранном горизонте."
-              />
+            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+              <I18nText en="Fantasy planning" ru="Фэнтези-планирование" />
             </p>
+            <h1 className="mt-1 text-2xl font-bold text-ink">
+              <I18nText en="Squad planner" ru="Планировщик состава" />
+            </h1>
           </div>
-          <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap">
-            <Link href={machetePlayersHref(selectedLeague)} className="inline-flex items-center justify-center rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-              <I18nText en="Player explorer" ru="Таблица игроков" />
-            </Link>
-            {selectedLeague ? (
-              <>
-                <a href={squadExportHref(selectedLeague, "csv", data?.squad.id)} className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-                  <Download className="h-4 w-4" aria-hidden="true" />
-                  CSV
-                </a>
-                <a href={squadExportHref(selectedLeague, "xlsx", data?.squad.id)} className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-                  <Download className="h-4 w-4" aria-hidden="true" />
-                  XLSX
-                </a>
-              </>
-            ) : null}
-          </div>
+
+          <details className="relative">
+            <summary className="inline-flex cursor-pointer list-none items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
+              <Wrench className="h-4 w-4" aria-hidden="true" />
+              <I18nText en="Data tools" ru="Инструменты" />
+              <ChevronDown className="h-4 w-4" aria-hidden="true" />
+            </summary>
+            <div className="mt-2 rounded border border-slate-200 bg-white p-3 shadow-elev sm:absolute sm:right-0 sm:z-20 sm:w-[min(36rem,calc(100vw-3rem))]">
+              <div className="flex flex-wrap gap-2">
+                <Link href={machetePlayersHref(selectedLeague)} className="inline-flex items-center justify-center rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                  <I18nText en="Player explorer" ru="Таблица игроков" />
+                </Link>
+                {selectedLeague ? (
+                  <>
+                    <a href={squadExportHref(selectedLeague, "csv", data?.squad.id)} className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                      <Download className="h-4 w-4" aria-hidden="true" />
+                      CSV
+                    </a>
+                    <a href={squadExportHref(selectedLeague, "xlsx", data?.squad.id)} className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+                      <Download className="h-4 w-4" aria-hidden="true" />
+                      XLSX
+                    </a>
+                  </>
+                ) : null}
+              </div>
+              {selectedLeague && user.role === UserRole.ADMIN ? (
+                <div className="mt-3 border-t border-slate-200 pt-3">
+                  <FantasyPriceSheetImportForm leagueId={String(selectedLeague.leagueId)} season={selectedLeague.season} canImport />
+                </div>
+              ) : null}
+            </div>
+          </details>
         </div>
 
-        <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(320px,0.8fr)_minmax(420px,1.2fr)]">
-          <AutoSubmitForm className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(160px,0.55fr)_auto]">
-            <label className="text-sm">
-              <span className="mb-1 block font-medium text-slate-600"><I18nText en="League" ru="Лига" /></span>
-              <select name="leagueId" defaultValue={selectedLeagueId} className="w-full rounded border border-slate-200 px-3 py-2">
-                {leagues.map((league) => (
-                  <option key={String(league.leagueId)} value={String(league.leagueId)}>
-                    {league.displayName}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label className="text-sm">
-              <span className="mb-1 block font-medium text-slate-600"><I18nText en="Season" ru={"\u0421\u0435\u0437\u043e\u043d"} /></span>
-              <select name="season" defaultValue={selectedSeason} disabled={!selectedLeagueId} className="w-full rounded border border-slate-200 px-3 py-2 disabled:bg-slate-100">
-                <LocalizedOption value="" en="Choose league first" ru={"\u0421\u043d\u0430\u0447\u0430\u043b\u0430 \u0432\u044b\u0431\u0435\u0440\u0438\u0442\u0435 \u043b\u0438\u0433\u0443"} />
-                {seasonsForSelectedLeague.map((league) => (
-                  <option key={`${league.leagueId}:${league.season}`} value={league.season}>
-                    {league.season}{league.isCurrent ? " - current" : ""}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <button type="submit" className="self-end rounded bg-ink px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">
-              <I18nText en="Load" ru="Загрузить" />
-            </button>
-          </AutoSubmitForm>
-          {selectedLeague ? (
-            <FantasyPriceSheetImportForm leagueId={String(selectedLeague.leagueId)} season={selectedLeague.season} canImport={user.role === UserRole.ADMIN} />
-          ) : null}
-        </div>
+        <AutoSubmitForm className="mt-4 grid grid-cols-[minmax(0,1fr)_auto] gap-2 sm:max-w-3xl sm:grid-cols-[minmax(240px,1fr)_minmax(150px,0.55fr)_auto]">
+          <label className="col-span-2 text-sm sm:col-span-1">
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500"><I18nText en="League" ru="Лига" /></span>
+            <select name="leagueId" defaultValue={selectedLeagueId} className="w-full rounded border border-slate-200 bg-white px-3 py-2">
+              {leagues.map((league) => (
+                <option key={String(league.leagueId)} value={String(league.leagueId)}>
+                  {league.displayName}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="min-w-0 text-sm">
+            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500"><I18nText en="Season" ru="Сезон" /></span>
+            <select name="season" defaultValue={selectedSeason} disabled={!selectedLeagueId} className="w-full rounded border border-slate-200 bg-white px-3 py-2 disabled:bg-slate-100">
+              <LocalizedOption value="" en="Choose league first" ru="Сначала выберите лигу" />
+              {seasonsForSelectedLeague.map((league) => (
+                <option key={`${league.leagueId}:${league.season}`} value={league.season}>
+                  {league.season}{league.isCurrent ? " - current" : ""}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button type="submit" className="self-end rounded bg-ink px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">
+            <I18nText en="Load" ru="Загрузить" />
+          </button>
+        </AutoSubmitForm>
       </section>
 
       {selectedLeague && data ? (
@@ -133,7 +129,7 @@ export default async function MacheteSquadPage({ searchParams }: PageProps) {
           priceStatus={data.priceStatus}
         />
       ) : (
-        <div className="mt-8 rounded border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">
+        <div className="mt-6 rounded border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">
           <I18nText en="No Machete league data is loaded yet. Run the shared FotMob ingestion first." ru="Данные лиги Machete пока не загружены. Сначала запустите общий FotMob ingestion." />
         </div>
       )}

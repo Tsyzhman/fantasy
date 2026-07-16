@@ -648,12 +648,12 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
   const autoPickStrategyCopy = squadStrategyCopy(language, autoPickStrategy);
 
   return (
-    <div className="mt-6 space-y-5">
-      <div className="xl:hidden">
+    <div className="mt-4 flex flex-col gap-4">
+      <div className="order-1 xl:hidden">
         <SegmentedControl value={mobileTab} onChange={setMobileTab} options={mobileTabs} className="w-full justify-between" size="sm" />
       </div>
-      <section className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
-        <div className={cn(mobileTab === "squad" ? "block" : "hidden xl:block", "rounded border border-slate-200 bg-white p-4 shadow-soft xl:sticky xl:top-24 xl:self-start")}>
+      <section className="contents">
+        <div className={cn(mobileTab === "squad" ? "block" : "hidden xl:block", "order-2 rounded border border-slate-200 bg-white p-4 shadow-soft")}>
           <div className="space-y-3">
             <div className="flex flex-wrap items-start justify-between gap-2">
               <div>
@@ -703,16 +703,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
             </div>
 
             <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
-              <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
-                <button
-                  type="button"
-                  onClick={() => saveSquad(false)}
-                  disabled={isPending || summary.violations.length > 0}
-                  className="btn-brand col-span-2 inline-flex items-center justify-center gap-2 rounded px-4 py-2 text-sm font-semibold disabled:opacity-60 sm:col-span-1"
-                >
-                  <Save className="h-4 w-4" />
-                  {isPending ? <I18nText en="Saving" ru="Сохраняем" /> : <I18nText en="Save squad" ru="Сохранить состав" />}
-                </button>
+              <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
                 <button
                   type="button"
                   onClick={autoPickSquad}
@@ -724,11 +715,12 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                 </button>
                 <button
                   type="button"
-                  onClick={autoPickStarters}
-                  className="inline-flex items-center justify-center gap-2 rounded border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  onClick={() => saveSquad(false)}
+                  disabled={isPending || summary.violations.length > 0}
+                  className="btn-brand inline-flex items-center justify-center gap-2 rounded px-4 py-2 text-sm font-semibold disabled:opacity-60"
                 >
-                  <Sparkles className="h-4 w-4" />
-                  <I18nText en="Auto-pick XI" ru="Автостарт" />
+                  <Save className="h-4 w-4" />
+                  {isPending ? <I18nText en="Saving" ru="Сохраняем" /> : <I18nText en="Save squad" ru="Сохранить состав" />}
                 </button>
               </div>
 
@@ -736,7 +728,15 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                 <summary className="cursor-pointer list-none rounded border border-slate-200 bg-white px-3 py-2 text-center text-sm font-semibold text-slate-700 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
                   <I18nText en="More actions" ru="Другие действия" />
                 </summary>
-                <div className="mt-2 grid gap-2 rounded border border-slate-200 bg-white p-2 shadow-soft sm:absolute sm:right-0 sm:z-10 sm:w-48">
+                <div className="mt-2 grid gap-1 rounded border border-slate-200 bg-white p-2 shadow-soft sm:absolute sm:right-0 sm:z-10 sm:w-52">
+                  <button
+                    type="button"
+                    onClick={autoPickStarters}
+                    className="inline-flex items-center justify-center gap-2 rounded px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    <I18nText en="Auto-pick XI" ru="Автостарт" />
+                  </button>
                   <button
                     type="button"
                     onClick={() => saveSquad(true)}
@@ -769,10 +769,10 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
             </div>
           </div>
 
-          <div ref={budgetForecastRef} className="mt-4 grid grid-cols-2 gap-3 md:grid-cols-4">
-            <Metric prominent label={<I18nText en="Next round" ru="След. тур" />} value={formatScore(summary.projectedNext + (captainBonus(summary, captainId)))} tone="good" />
-            <Metric prominent label={<I18nText en={`Horizon ${horizon}R`} ru={`Горизонт ${horizon}т`} />} value={formatScore(summary.projectedHorizon)} tone="accent" />
-            <Metric prominent label={<I18nText en="Budget" ru="Бюджет" />} value={`${formatNumber(summary.spent, 1)} / ${formatNumber(rules.budgetLimit, 1)}`} tone={summary.spent > rules.budgetLimit ? "bad" : summary.bank < 0 ? "bad" : "default"} />
+          <div ref={budgetForecastRef} className="mt-3 grid grid-cols-2 overflow-hidden rounded border border-slate-200 bg-slate-50 [&>dl:nth-child(odd)]:border-r [&>dl:nth-child(n+3)]:border-b-0 md:grid-cols-4 md:divide-x md:divide-slate-200 md:[&>dl]:border-r-0">
+            <Metric label={<I18nText en="Next round" ru="След. тур" />} value={formatScore(summary.projectedNext + (captainBonus(summary, captainId)))} tone="good" />
+            <Metric label={<I18nText en={`Horizon ${horizon}R`} ru={`Горизонт ${horizon}т`} />} value={formatScore(summary.projectedHorizon)} tone="accent" />
+            <Metric label={<I18nText en="Budget" ru="Бюджет" />} value={`${formatNumber(summary.spent, 1)} / ${formatNumber(rules.budgetLimit, 1)}`} tone={summary.spent > rules.budgetLimit ? "bad" : summary.bank < 0 ? "bad" : "default"} />
             <Metric label={<I18nText en="Bank" ru="Банк" />} value={formatNumber(summary.bank, 1)} tone={summary.bank < 0 ? "bad" : "good"} />
           </div>
           <SquadDiffBadge diff={squadDiff} horizon={horizon} />
@@ -785,14 +785,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
               </span>
             </summary>
             <div className="border-t border-slate-200 p-3">
-              <ol className="grid grid-cols-1 gap-2 text-sm md:grid-cols-4">
-                <PlannerStep index={1} title={<I18nText en="Choose league" ru="Выбрать лигу" />} state="done" />
-                <PlannerStep index={2} title={<I18nText en="Build squad" ru="Собрать состав" />} state={summary.selectedPlayers.length >= rules.squadSize ? "done" : "active"} />
-                <PlannerStep index={3} title={<I18nText en="Fix rules" ru="Исправить правила" />} state={summary.violations.length === 0 ? "done" : "active"} />
-                <PlannerStep index={4} title={<I18nText en="Review upgrades" ru="Проверить апгрейды" />} state={suggestions.length > 0 ? "active" : "idle"} />
-              </ol>
-
-              <div className="mt-3 flex flex-wrap items-end gap-3">
+              <div className="flex flex-wrap items-end gap-3">
                 <div className="min-w-full text-sm sm:min-w-0 sm:flex-1">
                   <span className="mb-1 block text-xs font-semibold uppercase text-slate-500"><I18nText en="Auto-pick strategy" ru="Стратегия автоподбора" /></span>
                   <SegmentedControl
@@ -869,7 +862,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
           ) : null}
         </div>
 
-        <div ref={suggestionPanelRef} className={cn(mobileTab === "suggestions" ? "block" : "hidden xl:block", "rounded border border-slate-200 bg-white p-4 shadow-soft xl:self-start")}>
+        <div ref={suggestionPanelRef} className={cn(mobileTab === "suggestions" ? "block" : "hidden xl:block", "order-4 rounded border border-slate-200 bg-white p-4 shadow-soft")}>
           <div className="flex items-start justify-between gap-3">
             <div>
               <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500"><I18nText en="Transfer suggestions" ru="Подсказки трансферов" /></h3>
@@ -888,7 +881,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
               />
             </p>
           ) : null}
-          <div className="mt-3 space-y-2">
+          <div className="mt-3 grid gap-2 xl:grid-cols-3">
             {displayedSuggestions.map((suggestion) => (
               <button
                 key={suggestion.id}
@@ -975,7 +968,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
         </div>
       </section>
 
-      <section className="min-w-0 rounded border border-slate-200 bg-white p-3 shadow-soft sm:p-4">
+      <section className={cn(mobileTab === "suggestions" ? "hidden xl:block" : "block", "order-3 min-w-0 rounded border border-slate-200 bg-white p-3 shadow-soft sm:p-4")}>
         <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-[minmax(320px,0.72fr)_minmax(560px,1.28fr)] 2xl:grid-cols-[minmax(340px,0.68fr)_minmax(680px,1.32fr)]">
           <div className={cn(mobileTab === "squad" ? "block" : "hidden xl:block")}>
             <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
@@ -1004,8 +997,8 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
           </div>
 
           <div className={cn(mobileTab === "pool" ? "block" : "hidden xl:block", "min-w-0")}>
-            <div className="mb-3 grid grid-cols-1 gap-2 md:grid-cols-[1fr_auto_auto_auto]">
-              <label className="relative">
+            <div className="mb-3 grid grid-cols-2 gap-2 md:grid-cols-[1fr_auto_auto_auto]">
+              <label className="relative col-span-2 md:col-span-1">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                 <input
                   value={query}
@@ -1057,7 +1050,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
       </section>
 
       {rounds.length > 0 ? (
-        <section className="overflow-hidden rounded border border-slate-200 bg-white shadow-soft">
+        <section className="order-5 overflow-hidden rounded border border-slate-200 bg-white shadow-soft">
           <div className="border-b border-slate-200 px-4 py-3">
             <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
               <I18nText en="Round forecast" ru="Прогноз по турам" />
@@ -1123,8 +1116,18 @@ function PlayerPoolTable({
   onRemove: (playerId: string) => void;
 }) {
   return (
-    <div className="min-w-0 max-w-full overflow-hidden rounded border border-slate-200 bg-white">
-      <div className="relative max-h-[720px] w-full max-w-full overflow-auto">
+    <>
+      <PlayerPoolMobileList
+        players={players}
+        horizon={horizon}
+        language={language}
+        addBlockReason={addBlockReason}
+        selectionsByPlayerId={selectionsByPlayerId}
+        onAdd={onAdd}
+        onRemove={onRemove}
+      />
+      <div className="hidden min-w-0 max-w-full overflow-hidden rounded border border-slate-200 bg-white md:block">
+        <div className="relative max-h-[720px] w-full max-w-full overflow-auto">
         <SortableTable className="min-w-[760px] divide-y divide-slate-200 text-xs">
           <thead className="sticky top-0 z-10 bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
             <tr>
@@ -1259,18 +1262,142 @@ function PlayerPoolTable({
               </tr>
             ) : null}
           </tbody>
-        </SortableTable>
+          </SortableTable>
+        </div>
       </div>
+    </>
+  );
+}
+
+function PlayerPoolMobileList({
+  players,
+  horizon,
+  language,
+  addBlockReason,
+  selectionsByPlayerId,
+  onAdd,
+  onRemove
+}: {
+  players: FantasyPlannerPlayer[];
+  horizon: number;
+  language: UiLanguage;
+  addBlockReason: (player: FantasyPlannerPlayer) => string | null;
+  selectionsByPlayerId: Map<string, FantasySquadSelection>;
+  onAdd: (player: FantasyPlannerPlayer) => void;
+  onRemove: (playerId: string) => void;
+}) {
+  return (
+    <div className="space-y-2 md:hidden" data-testid="player-pool-mobile">
+      {players.map((player) => {
+        const reason = addBlockReason(player);
+        const isSelected = selectionsByPlayerId.has(player.playerId);
+        const disabled = !isSelected && reason !== null;
+        const localizedReason = reason ? localizeAddBlockReason(reason, language) : null;
+        const fixtureChips = player.fixtures
+          .slice(0, horizon)
+          .map((label, fixtureIdx) => ({ label, difficulty: player.fixtureDifficulties?.[fixtureIdx] ?? null }))
+          .filter((chip) => Boolean(chip.label))
+          .map((chip) => ({ label: compactFixtureLabel(chip.label), difficulty: chip.difficulty, title: chip.label }));
+        const addLabel = disabled
+          ? localizedText(language, `Cannot add ${player.name}: ${localizedReason ?? reason ?? ""}`, `Нельзя добавить ${player.name}: ${localizedReason ?? reason ?? ""}`)
+          : localizedText(language, `Add ${player.name}`, `Добавить ${player.name}`);
+        const removeLabel = localizedText(language, `Remove ${player.name}`, `Убрать ${player.name}`);
+
+        return (
+          <article
+            key={player.playerId}
+            className={cn(
+              "rounded border p-3",
+              isSelected
+                ? "border-emerald-200 bg-emerald-50"
+                : disabled
+                  ? "border-slate-200 bg-slate-50 text-slate-500"
+                  : "border-slate-200 bg-white"
+            )}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
+                <div className="flex min-w-0 items-center gap-2">
+                  <h4 className="truncate text-sm font-bold text-ink">{player.name}</h4>
+                  <span className={cn("shrink-0 rounded px-2 py-0.5 text-[10px] font-bold", disabled ? "bg-slate-200 text-slate-600" : positionPillClass(player.positionGroup))}>
+                    {player.positionGroup}
+                  </span>
+                </div>
+                <p className="mt-0.5 truncate text-xs text-slate-500">{player.teamName}</p>
+                {player.expectedMinutes !== null && player.expectedMinutes !== undefined ? (
+                  <p className="mt-0.5 text-[11px] text-slate-500">
+                    {Math.round(player.expectedMinutes)} <I18nText en="min" ru="мин" />
+                    {player.forecastConfidence !== null && player.forecastConfidence !== undefined
+                      ? ` · ${Math.round(player.forecastConfidence * 100)}%`
+                      : ""}
+                  </p>
+                ) : null}
+              </div>
+              {isSelected ? (
+                <button type="button" onClick={() => onRemove(player.playerId)} aria-label={removeLabel} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded border border-rose-200 bg-white text-rose-700 hover:bg-rose-50">
+                  <Trash2 className="h-4 w-4" />
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => onAdd(player)}
+                  disabled={disabled}
+                  aria-label={addLabel}
+                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
+                >
+                  {disabled ? <Lock className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                </button>
+              )}
+            </div>
+
+            <dl className="mt-2 grid grid-cols-3 divide-x divide-slate-200 rounded bg-white/80 px-1 py-2 text-center">
+              <div className="min-w-0 px-1">
+                <dt className="text-[10px] font-semibold uppercase text-slate-500"><I18nText en="Next" ru="След." /></dt>
+                <dd className="truncate text-sm font-bold text-emerald-700 num-tabular">{formatScore(nextFantasyPoints(player))}</dd>
+              </div>
+              <div className="min-w-0 px-1">
+                <dt className="text-[10px] font-semibold uppercase text-slate-500">{horizon}R</dt>
+                <dd className="truncate text-sm font-bold text-sky-700 num-tabular">{formatScore(playerHorizonPoints(player, horizon))}</dd>
+              </div>
+              <div className="min-w-0 px-1">
+                <dt className="text-[10px] font-semibold uppercase text-slate-500"><I18nText en="Price" ru="Цена" /></dt>
+                <dd className="truncate text-sm font-bold text-ink num-tabular">{player.priceSource === "ESTIMATED" ? "~" : ""}{formatNumber(player.price, 1)}</dd>
+              </div>
+            </dl>
+
+            <div className="mt-2 flex min-w-0 items-center justify-between gap-2">
+              <div className="min-w-0 overflow-hidden">
+                {fixtureChips.length > 0 ? <FdrRow fixtures={fixtureChips} /> : <span className="text-[11px] text-slate-500"><I18nText en="No fixture loaded" ru="Матч не загружен" /></span>}
+              </div>
+              {player.baltikaXg !== null && player.baltikaXg !== undefined ? (
+                <span className="shrink-0 text-[11px] font-semibold text-violet-700 num-tabular">W xG {formatScore(player.baltikaXg)}</span>
+              ) : null}
+            </div>
+
+            {disabled ? (
+              <p className="mt-2 flex items-center gap-1 text-[11px] font-semibold text-rose-700">
+                <Lock className="h-3 w-3 shrink-0" />
+                <span className="truncate">{localizedReason}</span>
+              </p>
+            ) : null}
+          </article>
+        );
+      })}
+      {players.length === 0 ? (
+        <p className="rounded border border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+          <I18nText en="No players match the selected filters." ru="Нет игроков под выбранные фильтры." />
+        </p>
+      ) : null}
     </div>
   );
 }
 
-function Metric({ label, value, tone = "default", prominent = false }: { label: React.ReactNode; value: string; tone?: "default" | "good" | "bad" | "accent"; prominent?: boolean }) {
+function Metric({ label, value, tone = "default" }: { label: React.ReactNode; value: string; tone?: "default" | "good" | "bad" | "accent" }) {
   const color = tone === "good" ? "text-emerald-700" : tone === "bad" ? "text-rose-700" : tone === "accent" ? "text-sky-700" : "text-ink";
   return (
-    <dl className={cn("rounded border border-slate-200 bg-slate-50 px-3 py-2", prominent && "bg-white shadow-elev")}>
-      <dt className="text-xs font-medium uppercase text-slate-600">{label}</dt>
-      <dd className={cn("mt-1 font-bold num-tabular", prominent ? "text-2xl" : "text-lg", color)}>{value}</dd>
+    <dl className="min-w-0 border-b border-slate-200 px-3 py-2 last:border-b-0 md:border-b-0">
+      <dt className="truncate text-[11px] font-semibold uppercase tracking-wide text-slate-500">{label}</dt>
+      <dd className={cn("mt-0.5 truncate text-lg font-bold num-tabular", color)}>{value}</dd>
     </dl>
   );
 }
@@ -1324,22 +1451,6 @@ function SquadDiffBadge({ diff, horizon }: { diff: SquadDiff; horizon: number })
         </>
       )}
     </div>
-  );
-}
-
-function PlannerStep({ index, title, state }: { index: number; title: React.ReactNode; state: "done" | "active" | "idle" }) {
-  const stateClass =
-    state === "done"
-      ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-      : state === "active"
-        ? "border-ink bg-slate-50 text-ink"
-        : "border-slate-200 bg-white text-slate-500";
-
-  return (
-    <li className={`flex items-center gap-2 rounded border px-3 py-2 ${stateClass}`}>
-      <span className="grid h-6 w-6 shrink-0 place-items-center rounded bg-white text-xs font-bold text-ink">{index}</span>
-      <span className="font-semibold">{title}</span>
-    </li>
   );
 }
 
