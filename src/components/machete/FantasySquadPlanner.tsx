@@ -268,7 +268,24 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
   useEffect(() => {
     if (!postLoadContentReady || !playerPoolHref) return;
 
+    let lifecycleCancelled = false;
+    let requestCompleted = false;
+    let retryAfterBfcacheRestore = false;
     const controller = new AbortController();
+    const handlePageHide = (event: PageTransitionEvent) => {
+      lifecycleCancelled = true;
+      retryAfterBfcacheRestore = event.persisted && !requestCompleted;
+      if (!requestCompleted) controller.abort();
+    };
+    const handlePageShow = (event: PageTransitionEvent) => {
+      if (!event.persisted || !retryAfterBfcacheRestore) return;
+      retryAfterBfcacheRestore = false;
+      setPlayerPoolFailed(false);
+      setPlayerPoolPending(true);
+      setPlayerPoolRetry((value) => value + 1);
+    };
+    window.addEventListener("pagehide", handlePageHide);
+    window.addEventListener("pageshow", handlePageShow);
     void fetch(playerPoolHref, {
       cache: "no-store",
       headers: { Accept: "application/json" },
@@ -277,19 +294,27 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
       .then(async (response) => {
         const payload = await response.json().catch(() => ({})) as { players?: FantasyPlannerPlayer[] };
         if (!response.ok || !Array.isArray(payload.players)) throw new Error("PLAYER_POOL_LOAD_FAILED");
+        if (lifecycleCancelled) return;
+        requestCompleted = true;
         setPlayers(payload.players);
         setPlayerPoolFailed(false);
         setPlayerPoolPending(false);
       })
       .catch((error: unknown) => {
-        if (controller.signal.aborted) return;
+        if (lifecycleCancelled || controller.signal.aborted || (error instanceof Error && error.name === "AbortError")) return;
+        requestCompleted = true;
         console.error("Failed to load fantasy player pool.", error);
         void recordBetaClientError("PLAYER_POOL_LOAD_FAILED");
         setPlayerPoolFailed(true);
         setPlayerPoolPending(false);
       });
 
-    return () => controller.abort();
+    return () => {
+      window.removeEventListener("pagehide", handlePageHide);
+      window.removeEventListener("pageshow", handlePageShow);
+      lifecycleCancelled = true;
+      controller.abort();
+    };
   }, [playerPoolHref, playerPoolRetry, postLoadContentReady]);
 
   useEffect(() => {
