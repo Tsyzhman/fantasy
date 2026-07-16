@@ -15,6 +15,7 @@ import { ModePlayersLink } from "@/components/mode-players-link";
 import { ModeSwitchLink } from "@/components/mode-switch-link";
 import { ModelSettingsLink } from "@/components/model-settings-link";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { stopBetaTestSession } from "@/lib/beta-telemetry-client";
 import { cn } from "@/lib/cn";
 
 type AppHeaderProps = {
@@ -38,6 +39,7 @@ export function AppHeader({ user }: AppHeaderProps) {
   const isMixerr = pathname.startsWith("/mixerr");
 
   async function logout() {
+    await stopBetaTestSession();
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/login");
     router.refresh();

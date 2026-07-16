@@ -1,6 +1,6 @@
 "use client";
 
-import { DatabaseZap, Users } from "lucide-react";
+import { ClipboardCheck, DatabaseZap, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -20,6 +20,12 @@ const adminLinks = [
     label: <I18nText en="Users" ru="Пользователи" />,
     description: <I18nText en="Accounts and roles" ru="Аккаунты и роли" />,
     icon: <Users className="h-4 w-4" />
+  },
+  {
+    href: "/admin/beta-test",
+    label: <I18nText en="Beta test" ru="Beta-тест" />,
+    description: <I18nText en="Runs, RUM, and reviews" ru="Прогоны, RUM и review" />,
+    icon: <ClipboardCheck className="h-4 w-4" />
   }
 ];
 
