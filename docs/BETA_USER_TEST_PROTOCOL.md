@@ -139,9 +139,20 @@ npm run beta:user-test -- review --run-id=<uuid> --valid=false --invalid-reason=
 
 9. После каждой сессии и по итогам выборки сформируйте машинно читаемый отчёт:
 
+   В production откройте `/admin/beta-test` и нажмите `Download JSON report`.
+   Защищённый endpoint `/api/admin/beta-test/report` формирует тот же 30-дневный
+   обезличенный отчёт непосредственно в runtime-приложении и отдаёт его с
+   `Cache-Control: private, no-store`.
+
+   CLI-вариант предназначен для рабочего checkout, где выполнен `npm install`:
+
 ```bash
 npm run beta:user-test -- report --since-days=30
 ```
+
+   Минимальный production Docker image намеренно не содержит `tsx`, исходники
+   `scripts/` и devDependencies; запускать эту CLI-команду внутри live web
+   container нельзя. Для production используйте download на admin-странице.
 
    Для CI/финального решения используйте `--require-pass=true`; при FAIL команда
    возвращает exit code 2. Отчёт не содержит email, имени или внутреннего user

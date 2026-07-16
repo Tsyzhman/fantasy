@@ -83,6 +83,9 @@ export default async function AdminBetaTestPage({ searchParams }: PageProps) {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <a href="/api/admin/beta-test/report" download className="rounded border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+            <I18nText en="Download JSON report" ru="Скачать JSON-отчёт" />
+          </a>
           <Link href="/admin/users" className="rounded border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
             <I18nText en="Create participant account" ru="Создать аккаунт участника" />
           </Link>

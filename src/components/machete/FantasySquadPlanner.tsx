@@ -34,6 +34,7 @@ import {
   type FantasyPositionGroup,
   type FantasyRoundProjection,
   type FantasySquadRules,
+  type FantasySquadOptimizationInput,
   type FantasySquadSelection,
   type FantasySquadStrategy,
   type TransferPlanSuggestion
@@ -59,6 +60,7 @@ type FantasySquadPlannerProps = {
 const positionOrder: FantasyPositionGroup[] = ["GK", "DEF", "MID", "FWD", "UNK"];
 const rosterPositions: Array<Exclude<FantasyPositionGroup, "UNK">> = ["GK", "DEF", "MID", "FWD"];
 const squadDragDataType = "application/x-fantasy-player-id";
+const fantasySquadOptimizationTimeoutMs = 5_000;
 
 type UiLanguage = ReturnType<typeof useLanguage>;
 type MobileTab = "squad" | "pool" | "suggestions";
@@ -66,6 +68,43 @@ type StoredSquadCaptains = {
   captainId: string | null;
   viceCaptainId: string | null;
 };
+
+type OptimizerWorkerResponse = {
+  optimized: FantasySquadSelection[] | null;
+  error: boolean;
+};
+
+function optimizeFantasySquadOffThread(input: FantasySquadOptimizationInput) {
+  if (typeof Worker === "undefined") return Promise.resolve(optimizeFantasySquad(input));
+
+  return new Promise<FantasySquadSelection[] | null>((resolve, reject) => {
+    const worker = new Worker(new URL("./FantasySquadOptimizer.worker.ts", import.meta.url), {
+      name: "fantasy-squad-optimizer"
+    });
+    const timeout = window.setTimeout(() => {
+      worker.terminate();
+      reject(new Error("FANTASY_SQUAD_OPTIMIZER_TIMEOUT"));
+    }, fantasySquadOptimizationTimeoutMs);
+    const finish = () => {
+      window.clearTimeout(timeout);
+      worker.terminate();
+    };
+
+    worker.onmessage = (event: MessageEvent<OptimizerWorkerResponse>) => {
+      finish();
+      if (event.data.error) {
+        reject(new Error("FANTASY_SQUAD_OPTIMIZER_FAILED"));
+        return;
+      }
+      resolve(event.data.optimized);
+    };
+    worker.onerror = () => {
+      finish();
+      reject(new Error("FANTASY_SQUAD_OPTIMIZER_FAILED"));
+    };
+    worker.postMessage({ input });
+  });
+}
 
 type SquadDiff = {
   changeCount: number;
@@ -118,7 +157,13 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
   const [draggedPlayerId, setDraggedPlayerId] = useState<string | null>(null);
   const [postLoadContentReady, setPostLoadContentReady] = useState(false);
   const [betaAutoPickComplete, setBetaAutoPickComplete] = useState(false);
+  const [autoPickPending, setAutoPickPending] = useState(false);
+  const autoPickRevisionRef = useRef(0);
   const playerPoolReady = !playerPoolHref || (!playerPoolPending && !playerPoolFailed);
+
+  useEffect(() => {
+    autoPickRevisionRef.current += 1;
+  }, [autoPickStrategy, horizon, players, rules, selections]);
 
   const selectionsByPlayerId = useMemo(() => new Map(selections.map((selection) => [selection.playerId, selection])), [selections]);
   const selectedPlayerIds = useMemo(() => new Set(selections.map((selection) => selection.playerId)), [selections]);
@@ -494,39 +539,62 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
     );
   }
 
-  function autoPickSquad() {
-    const optimized = optimizeFantasySquad({ pool: players, selections, rules, horizon, basis: "horizon", strategy: autoPickStrategy });
-    if (!optimized) {
+  async function autoPickSquad() {
+    if (autoPickPending) return;
+    const revision = autoPickRevisionRef.current;
+    const optimizerInput: FantasySquadOptimizationInput = {
+      pool: players,
+      selections,
+      rules,
+      horizon,
+      basis: "horizon",
+      strategy: autoPickStrategy
+    };
+    setAutoPickPending(true);
+    setMessage(localizedText(language, "Optimizing a valid squad…", "Подбираем допустимый состав…"));
+
+    try {
+      const optimized = await optimizeFantasySquadOffThread(optimizerInput);
+      if (revision !== autoPickRevisionRef.current) {
+        setMessage(localizedText(language, "Squad settings changed during auto-pick. Run it again.", "Настройки состава изменились во время автоподбора. Запустите его ещё раз."));
+        return;
+      }
+      if (!optimized) {
+        setMessage(
+          localizedText(
+            language,
+            "Could not auto-pick a valid squad within the current budget, rules, and locks.",
+            "Не удалось автоматически собрать допустимый состав с текущим бюджетом, правилами и блокировками."
+          )
+        );
+        return;
+      }
+
+      const limitReason = transferLimitBlockReason(optimized);
+      if (limitReason) {
+        setMessage(limitReason);
+        return;
+      }
+
+      const optimizedSummary = summarizeFantasySquad(players, optimized, rules, horizon);
+      const delta = optimizedSummary.projectedHorizon - summary.projectedHorizon;
+      setSelections(optimized);
+      if (optimizedSummary.violations.length === 0) {
+        setBetaAutoPickComplete(true);
+        void recordBetaMilestone("AUTO_PICK_COMPLETED");
+      }
       setMessage(
         localizedText(
           language,
-          "Could not auto-pick a valid squad within the current budget, rules, and locks.",
-          "Не удалось автоматически собрать допустимый состав с текущим бюджетом, правилами и блокировками."
+          `${squadStrategyCopy(language, autoPickStrategy).label} auto-pick produced a valid ${rules.squadSize}-player squad within budget${delta > 0.05 ? `: ${signedScore(delta)} raw xFP` : ""}.`,
+          `Стратегия «${squadStrategyCopy(language, autoPickStrategy).label}» собрала допустимый состав из ${rules.squadSize} игроков в рамках бюджета${delta > 0.05 ? `: ${signedScore(delta)} исходного xFP` : ""}.`
         )
       );
-      return;
+    } catch {
+      setMessage(localizedText(language, "Auto-pick could not finish within five seconds. Try again.", "Автоподбор не завершился за пять секунд. Попробуйте ещё раз."));
+    } finally {
+      setAutoPickPending(false);
     }
-
-    const limitReason = transferLimitBlockReason(optimized);
-    if (limitReason) {
-      setMessage(limitReason);
-      return;
-    }
-
-    const optimizedSummary = summarizeFantasySquad(players, optimized, rules, horizon);
-    const delta = optimizedSummary.projectedHorizon - summary.projectedHorizon;
-    setSelections(optimized);
-    if (optimizedSummary.violations.length === 0) {
-      setBetaAutoPickComplete(true);
-      void recordBetaMilestone("AUTO_PICK_COMPLETED");
-    }
-    setMessage(
-      localizedText(
-        language,
-        `${squadStrategyCopy(language, autoPickStrategy).label} auto-pick produced a valid ${rules.squadSize}-player squad within budget${delta > 0.05 ? `: ${signedScore(delta)} raw xFP` : ""}.`,
-        `Стратегия «${squadStrategyCopy(language, autoPickStrategy).label}» собрала допустимый состав из ${rules.squadSize} игроков в рамках бюджета${delta > 0.05 ? `: ${signedScore(delta)} исходного xFP` : ""}.`
-      )
-    );
   }
 
   function saveSquad(asCopy: boolean) {
@@ -718,17 +786,17 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
               <div className="grid grid-cols-1 gap-2 sm:flex sm:flex-wrap">
                 <button
                   type="button"
-                  onClick={autoPickSquad}
-                  disabled={isPending || !playerPoolReady}
+                  onClick={() => void autoPickSquad()}
+                  disabled={isPending || autoPickPending || !playerPoolReady}
                   className="inline-flex items-center justify-center gap-2 rounded border border-sky-200 bg-sky-50 px-4 py-2 text-sm font-semibold text-sky-800 hover:bg-sky-100 disabled:opacity-60"
                 >
                   <Sparkles className="h-4 w-4" />
-                  <I18nText en="Auto-pick squad" ru="Автоподбор состава" />
+                  {autoPickPending ? <I18nText en="Optimizing…" ru="Подбираем…" /> : <I18nText en="Auto-pick squad" ru="Автоподбор состава" />}
                 </button>
                 <button
                   type="button"
                   onClick={() => saveSquad(false)}
-                  disabled={isPending || !squadIsValid}
+                  disabled={isPending || autoPickPending || !squadIsValid}
                   className="btn-brand inline-flex items-center justify-center gap-2 rounded px-4 py-2 text-sm font-semibold disabled:opacity-60"
                 >
                   <Save className="h-4 w-4" />
@@ -744,7 +812,8 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                   <button
                     type="button"
                     onClick={autoPickStarters}
-                    className="inline-flex items-center justify-center gap-2 rounded px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                    disabled={isPending || autoPickPending}
+                    className="inline-flex items-center justify-center gap-2 rounded px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
                   >
                     <Sparkles className="h-4 w-4" />
                     <I18nText en="Auto-pick XI" ru="Автостарт" />
@@ -752,7 +821,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                   <button
                     type="button"
                     onClick={() => saveSquad(true)}
-                    disabled={isPending || !squadIsValid}
+                    disabled={isPending || autoPickPending || !squadIsValid}
                     className="inline-flex items-center justify-center gap-2 rounded px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
                   >
                     <Copy className="h-4 w-4" />
@@ -761,7 +830,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                   <button
                     type="button"
                     onClick={startBlankSquad}
-                    disabled={isPending}
+                    disabled={isPending || autoPickPending}
                     className="inline-flex items-center justify-center gap-2 rounded px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
                   >
                     <FilePlus2 className="h-4 w-4" />
@@ -770,7 +839,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                   <button
                     type="button"
                     onClick={deleteSquadVariant}
-                    disabled={isPending || !activeSquadId}
+                    disabled={isPending || autoPickPending || !activeSquadId}
                     className="inline-flex items-center justify-center gap-2 rounded px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-50"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -983,9 +1052,8 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
       <section className={cn(mobileTab === "suggestions" ? "hidden xl:block" : "block", "order-3 min-w-0 rounded border border-slate-200 bg-white p-3 shadow-soft sm:p-4")}>
         <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-[minmax(320px,0.72fr)_minmax(560px,1.28fr)] 2xl:grid-cols-[minmax(340px,0.68fr)_minmax(680px,1.32fr)]">
           <div className={cn(mobileTab === "squad" ? "block" : "hidden xl:block")}>
-            <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+            <div className="mb-3">
               <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500"><I18nText en="Your squad" ru="Ваш состав" /></h3>
-              <PositionCounts summary={summary.byPosition} rules={rules} />
             </div>
             <SquadPitch
               summary={summary}
@@ -1466,46 +1534,6 @@ function SquadDiffBadge({ diff, horizon }: { diff: SquadDiff; horizon: number })
   );
 }
 
-function PositionCounts({ summary, rules }: { summary: Record<FantasyPositionGroup, number>; rules: FantasySquadRules }) {
-  return (
-    <div className="flex flex-wrap gap-2 text-xs font-semibold text-slate-600">
-      {(["GK", "DEF", "MID", "FWD"] as const).map((position) => (
-        <span key={position} className="rounded border border-slate-200 bg-white px-2 py-1">
-          {position} {summary[position]}/{rules.positionLimits[position]}
-        </span>
-      ))}
-    </div>
-  );
-}
-
-function StarterCounts({ summary, rules }: { summary: Record<FantasyPositionGroup, number>; rules: FantasySquadRules }) {
-  const fieldPlayers = summary.DEF + summary.MID + summary.FWD;
-  return (
-    <div className="flex flex-wrap gap-1.5 text-[11px] font-semibold text-white/90">
-      <StarterRulePill label={<I18nText en="Field" ru="Поле" />} count={fieldPlayers} min={10} max={10} />
-      {rosterPositions.map((position) => (
-        <StarterRulePill key={position} label={position} count={summary[position]} min={rules.starterPositionLimits[position].min} max={rules.starterPositionLimits[position].max} />
-      ))}
-    </div>
-  );
-}
-
-function StarterRulePill({ label, count, min, max }: { label: React.ReactNode; count: number; min: number; max: number }) {
-  const status = limitStatus(count, min, max);
-  const statusClass =
-    status === "bad"
-      ? "border-rose-300/80 bg-rose-500/25 text-rose-50"
-      : status === "missing"
-        ? "border-amber-300/80 bg-amber-400/20 text-amber-50"
-        : "border-emerald-300/70 bg-emerald-400/15 text-emerald-50";
-
-  return (
-    <span className={`rounded border px-1.5 py-0.5 ${statusClass}`}>
-      {label} {count}/{min === max ? max : `${min}-${max}`}
-    </span>
-  );
-}
-
 type LimitStatus = "bad" | "missing" | "good";
 
 function limitStatus(count: number, min: number, max: number): LimitStatus {
@@ -1523,44 +1551,6 @@ function allowSquadDrop(event: DragEvent<HTMLElement>, canDrop: boolean) {
 function readDraggedPlayerId(event: DragEvent<HTMLElement>) {
   event.preventDefault();
   return event.dataTransfer.getData(squadDragDataType) || event.dataTransfer.getData("text/plain") || null;
-}
-
-function StarterRuleCard({ label, count, min, max, detail }: { label: React.ReactNode; count: number; min: number; max: number; detail: React.ReactNode }) {
-  const status = limitStatus(count, min, max);
-  const statusClass =
-    status === "bad"
-      ? "border-rose-300 bg-white text-rose-800"
-      : status === "missing"
-        ? "border-amber-300 bg-white text-amber-800"
-        : "border-emerald-300 bg-white text-emerald-800";
-
-  return (
-    <div className={`rounded border px-1.5 py-1 shadow-sm ${statusClass}`}>
-      <div className="flex items-center justify-between gap-2 whitespace-nowrap">
-        <span className="text-[11px] font-black tracking-wide text-slate-800">{label}</span>
-        <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[11px] font-black text-slate-900">
-          {count} / {min === max ? max : `${min}-${max}`}
-        </span>
-      </div>
-      <p className="mt-1 truncate text-[10px] font-semibold text-slate-500">{detail}</p>
-    </div>
-  );
-}
-
-function BenchCounts({ summary, total, rules }: { summary: Record<FantasyPositionGroup, number>; total: number; rules: FantasySquadRules }) {
-  const fieldPlayers = total - summary.GK;
-  const requiredFieldPlayers = rules.benchSize - 1;
-  return (
-    <div className="flex flex-wrap gap-2 text-xs font-semibold text-slate-500">
-      <span className="rounded border border-slate-200 bg-white px-2 py-1">
-        <I18nText en="Bench" ru="Запас" /> {total}/{rules.benchSize}
-      </span>
-      <span className="rounded border border-slate-200 bg-white px-2 py-1">GK {summary.GK}/1</span>
-      <span className="rounded border border-slate-200 bg-white px-2 py-1">
-        <I18nText en="Field" ru="Поле" /> {fieldPlayers}/{requiredFieldPlayers}
-      </span>
-    </div>
-  );
 }
 
 function SquadActionLegend() {
@@ -1636,16 +1626,8 @@ function SquadPitch({
   return (
     <div className="space-y-2">
       <div className="rounded border border-emerald-300 bg-emerald-900 p-2 shadow-inner">
-        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <div className="mb-2">
           <h4 className="text-xs font-bold uppercase tracking-wide text-white"><I18nText en="Starting XI" ru="Стартовый состав" /></h4>
-          <StarterCounts summary={summary.startersByPosition} rules={rules} />
-        </div>
-        <div className="mb-2 grid grid-cols-2 gap-1.5 text-xs sm:grid-cols-5">
-          <StarterRuleCard label={<I18nText en="Field" ru="Поле" />} count={summary.startersByPosition.DEF + summary.startersByPosition.MID + summary.startersByPosition.FWD} min={10} max={10} detail={<I18nText en="Always 10" ru="Всегда 10" />} />
-          <StarterRuleCard label="GK" count={summary.startersByPosition.GK} min={1} max={1} detail={<I18nText en="Always 1" ru="Всегда 1" />} />
-          <StarterRuleCard label="DEF" count={summary.startersByPosition.DEF} min={rules.starterPositionLimits.DEF.min} max={rules.starterPositionLimits.DEF.max} detail={<I18nText en="Min 3, max 5" ru="Мин. 3, макс. 5" />} />
-          <StarterRuleCard label="MID" count={summary.startersByPosition.MID} min={rules.starterPositionLimits.MID.min} max={rules.starterPositionLimits.MID.max} detail={<I18nText en="Min 2, max 5" ru="Мин. 2, макс. 5" />} />
-          <StarterRuleCard label="FWD" count={summary.startersByPosition.FWD} min={rules.starterPositionLimits.FWD.min} max={rules.starterPositionLimits.FWD.max} detail={<I18nText en="Min 1, max 3" ru="Мин. 1, макс. 3" />} />
         </div>
         <SquadActionLegend />
         <div className="relative overflow-hidden rounded border border-white/20 bg-emerald-800/80 px-1.5 py-2">
@@ -1702,9 +1684,8 @@ function SquadPitch({
       <div className="h-px bg-slate-300" />
 
       <div className="rounded border border-slate-200 bg-slate-50 p-2">
-        <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+        <div className="mb-2">
           <h4 className="text-xs font-bold uppercase tracking-wide text-slate-500"><I18nText en="Bench" ru="Запас" /></h4>
-          <BenchCounts summary={summary.benchByPosition} total={summary.benchPlayers.length} rules={rules} />
         </div>
         <div
           className={cn(

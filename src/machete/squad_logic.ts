@@ -479,7 +479,7 @@ export function fantasySquadStrategyPlayerScore(
   return Math.max(0, baseScore + ceiling * 0.35 + volatility * 0.5);
 }
 
-export function optimizeFantasySquad(input: {
+export type FantasySquadOptimizationInput = {
   pool: FantasyPlannerPlayer[];
   selections?: FantasySquadSelection[];
   rules: FantasySquadRules;
@@ -488,7 +488,9 @@ export function optimizeFantasySquad(input: {
   strategy?: FantasySquadStrategy;
   excludedPlayerIds?: Iterable<string>;
   minimumBank?: number;
-}) {
+};
+
+export function optimizeFantasySquad(input: FantasySquadOptimizationInput) {
   const {
     pool,
     selections = [],
