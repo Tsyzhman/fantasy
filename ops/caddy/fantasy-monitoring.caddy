@@ -1,3 +1,4 @@
+# fantasy-monitoring:start
 log fantasy_access {
 	output file /var/log/caddy/fantasy-access.log {
 		mode 0640
@@ -9,10 +10,11 @@ log fantasy_access {
 	format json
 }
 
-@fantasy_monitor_noise path /_monitor/*
+@fantasy_monitor_noise path /_monitor/* /api/health/data-quality /api/health/fantasy-prices
 log_skip @fantasy_monitor_noise
 
 handle_path /_monitor/* {
 	root * /var/lib/fantasy-scout-monitor
 	file_server
 }
+# fantasy-monitoring:end

@@ -5,9 +5,10 @@ The app process also runs the in-process ingestion worker loop. App containers
 connect to PostgreSQL through the Compose service name `postgres`, not through
 host `localhost`.
 
-PostgreSQL and web containers use bounded `json-file` logging: five files of
-20 MiB. Immutable manual candidates must be created with the same
-`--log-opt max-size=20m --log-opt max-file=5` contract. Caddy access logging,
+Compose-created PostgreSQL and web containers use bounded `json-file` logging:
+five files of 20 MiB. Existing containers keep their original log driver
+options until a controlled recreation. Immutable manual candidates must use the
+same `--log-opt max-size=20m --log-opt max-file=5` contract. Caddy access logging,
 the 15-minute aggregate audit, and GitHub issue alert delivery are described in
 `docs/PRODUCTION_MONITORING.md`.
 

@@ -56,14 +56,52 @@ import sys
 caddyfile = Path(sys.argv[1])
 snippet_path = Path(sys.argv[2])
 text = caddyfile.read_text(encoding="utf-8")
-old = "fantasy.tsyzhman.ru {\n\timport ai_common\n\treverse_proxy 127.0.0.1:3000\n}"
-if text.count(old) != 1:
-    raise SystemExit("Refusing to edit: the expected fantasy site block is not unique")
-
 snippet = snippet_path.read_text(encoding="utf-8").strip()
-indented_snippet = "\n".join(f"\t{line}" if line else "" for line in snippet.splitlines())
-new = f"fantasy.tsyzhman.ru {{\n\timport ai_common\n\n{indented_snippet}\n\n\treverse_proxy 127.0.0.1:3000\n}}"
-caddyfile.write_text(text.replace(old, new), encoding="utf-8")
+
+def indented(value: str) -> str:
+    return "\n".join(f"\t{line}" if line else "" for line in value.splitlines())
+
+
+def site_block(value: str) -> str:
+    return f"fantasy.tsyzhman.ru {{\n\timport ai_common\n\n{indented(value)}\n\n\treverse_proxy 127.0.0.1:3000\n}}"
+
+
+plain_block = "fantasy.tsyzhman.ru {\n\timport ai_common\n\treverse_proxy 127.0.0.1:3000\n}"
+legacy_snippet = """log fantasy_access {
+\toutput file /var/log/caddy/fantasy-access.log {
+\t\tmode 0640
+\t\troll_size 50MiB
+\t\troll_interval 24h
+\t\troll_keep 10
+\t\troll_keep_for 720h
+\t}
+\tformat json
+}
+
+@fantasy_monitor_noise path /_monitor/*
+log_skip @fantasy_monitor_noise
+
+handle_path /_monitor/* {
+\troot * /var/lib/fantasy-scout-monitor
+\tfile_server
+}"""
+legacy_block = site_block(legacy_snippet)
+desired_block = site_block(snippet)
+start_marker = "\t# fantasy-monitoring:start"
+end_marker = "\t# fantasy-monitoring:end"
+
+if text.count(plain_block) == 1:
+    updated = text.replace(plain_block, desired_block)
+elif text.count(legacy_block) == 1:
+    updated = text.replace(legacy_block, desired_block)
+elif text.count(start_marker) == 1 and text.count(end_marker) == 1:
+    start = text.index(start_marker)
+    end = text.index(end_marker, start) + len(end_marker)
+    updated = text[:start] + indented(snippet) + text[end:]
+else:
+    raise SystemExit("Refusing to edit: no unique supported fantasy monitoring block found")
+
+caddyfile.write_text(updated, encoding="utf-8")
 PY
 
 restore_caddyfile() {

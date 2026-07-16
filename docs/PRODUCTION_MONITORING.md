@@ -41,8 +41,11 @@ non-sensitive metrics:
 
 The state is `insufficient_data` below 20 requests, `breach` at a 5xx rate of
 1% or more, and `ok` otherwise. A breach makes the oneshot service fail. The
-public aggregate is served from `/_monitor/access-audit.json`; requests to the
-monitor path itself are excluded from the access log.
+public aggregate is served from `/_monitor/access-audit.json`. Requests to the
+monitor path and the warning-only `/api/health/data-quality` and
+`/api/health/fantasy-prices` endpoints are excluded from user-traffic metrics in
+both Caddy and the analyzer. Their expected 503 responses therefore cannot
+manufacture a user-facing 5xx breach.
 
 Install or update the server integration only after recording the exact current
 Caddyfile SHA-256:
@@ -53,7 +56,8 @@ sudo bash ops/monitoring/install-caddy-monitoring.sh \
   <directory-containing-the-four-monitoring-payload-files>
 ```
 
-The installer refuses a changed Caddyfile, creates a timestamped backup,
+The installer refuses a changed Caddyfile, supports a clean install and guarded
+updates of its own marked or legacy block, creates a timestamped backup,
 validates the new config, restores the backup if reload fails, normalizes the
 log owner without truncating an existing log, and enables the systemd timer.
 

@@ -22,6 +22,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--since-minutes", type=positive_float, default=60.0)
     parser.add_argument("--max-5xx-rate-percent", type=non_negative_float, default=1.0)
     parser.add_argument("--min-requests", type=positive_int, default=20)
+    parser.add_argument("--exclude-path", action="append", default=[], help="Exact request path to omit from user-traffic metrics.")
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--now", help="Fixed ISO-8601 time for deterministic verification.")
     return parser.parse_args()
@@ -36,7 +37,9 @@ def main() -> int:
     statuses: Counter[int] = Counter()
     durations_ms: list[float] = []
     invalid_lines = 0
+    excluded_requests = 0
     requests = 0
+    excluded_paths = set(args.exclude_path)
 
     for path in paths:
         for line in read_lines(path):
@@ -45,11 +48,15 @@ def main() -> int:
                 timestamp = datetime.fromtimestamp(float(entry["ts"]), tz=timezone.utc)
                 status = int(entry["status"])
                 duration_ms = max(0.0, float(entry.get("duration", 0.0)) * 1000.0)
+                request_path = str((entry.get("request") or {}).get("uri", "")).split("?", 1)[0]
             except (KeyError, TypeError, ValueError, json.JSONDecodeError, OverflowError):
                 invalid_lines += 1
                 continue
 
             if timestamp < cutoff or timestamp > now + timedelta(minutes=1):
+                continue
+            if request_path in excluded_paths:
+                excluded_requests += 1
                 continue
 
             requests += 1
@@ -78,6 +85,8 @@ def main() -> int:
         },
         "filesRead": len(paths),
         "invalidLines": invalid_lines,
+        "excludedPaths": sorted(excluded_paths),
+        "excludedRequests": excluded_requests,
         "requests": requests,
         "clientErrors": client_errors,
         "serverErrors": server_errors,

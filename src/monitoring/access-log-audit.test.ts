@@ -50,13 +50,47 @@ test("access-log audit reports insufficient data without inventing a passing rat
   }
 });
 
-function runAudit(log: string, output: string, minimumRequests: string) {
+test("access-log audit excludes warning health endpoints from user error rate", () => {
+  const directory = mkdtempSync(join(tmpdir(), "fantasy-access-audit-"));
+  try {
+    const log = join(directory, "fantasy-access.log");
+    const output = join(directory, "audit.json");
+    const entries = [
+      ...Array.from({ length: 20 }, (_, index) => ({
+        ts: Date.parse("2026-07-16T07:45:00Z") / 1000 + index,
+        status: 200,
+        duration: 0.01,
+        request: { uri: "/machete/squad" }
+      })),
+      {
+        ts: Date.parse("2026-07-16T07:50:00Z") / 1000,
+        status: 503,
+        duration: 0.02,
+        request: { uri: "/api/health/data-quality?probe=1" }
+      }
+    ];
+    writeFileSync(log, `${entries.map((entry) => JSON.stringify(entry)).join("\n")}\n`, "utf8");
+
+    const result = runAudit(log, output, "20", ["/api/health/data-quality"]);
+    assert.equal(result.status, 0, result.stderr);
+    const report = JSON.parse(readFileSync(output, "utf8"));
+    assert.equal(report.status, "ok");
+    assert.equal(report.requests, 20);
+    assert.equal(report.excludedRequests, 1);
+    assert.equal(report.serverErrors, 0);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+function runAudit(log: string, output: string, minimumRequests: string, excludedPaths: string[] = []) {
   return spawnSync(python, [
     script,
     "--log-pattern", log,
     "--since-minutes", "60",
     "--max-5xx-rate-percent", "1",
     "--min-requests", minimumRequests,
+    ...excludedPaths.flatMap((path) => ["--exclude-path", path]),
     "--output", output,
     "--now", now
   ], { encoding: "utf8" });
