@@ -81,11 +81,14 @@ raw→normalized latency can be proved. `0%` here does not mean that normalizati
 was observed taking longer than six hours; it means that every historical match
 lacks the comparable raw timestamp required by the strict denominator.
 
-Raw FotMob payload storage is now enabled for new syncs, so future runs can
-measure this interval. The missing historical timestamps must not be recreated
-or inferred after the fact. Until a fresh persisted run has 100% comparable
-finished matches within six hours, latency and the overall data-quality gate
-remain open.
+New successful syncs persist an atomic timing pair on the normalized match:
+`raw_received_at` is captured immediately after the FotMob response arrives and
+`normalized_at` is captured after all normalized rows and raw-retention actions
+complete in the same transaction. Finalized raw payload bodies can therefore be
+deleted without destroying timing evidence. Missing historical timestamps are
+not inferred after the fact; those matches require a real refresh. Until a fresh
+persisted run has 100% comparable finished matches within six hours, latency and
+the overall data-quality gate remain open.
 
 After current-season rollover the isolated 2026/27 player pool contained 629
 active players and 619 finite projections (`98.41%`). This confirms that the

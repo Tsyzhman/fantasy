@@ -390,6 +390,7 @@ test("shallow FotMob payloads are not marked final raw payloads", async () => {
 test("match payload persistence creates placeholder teams for player stat team references", async () => {
   const placeholderCalls: unknown[] = [];
   const playerStatCalls: unknown[] = [];
+  const promotionTimingCalls: unknown[] = [];
   const prisma = {
     coreLeague: {
       async createMany() {
@@ -418,6 +419,10 @@ test("match payload persistence creates placeholder teams for player stat team r
     },
     coreMatch: {
       async upsert() {
+        return {};
+      },
+      async update(input: unknown) {
+        promotionTimingCalls.push(input);
         return {};
       }
     },
@@ -465,12 +470,19 @@ test("match payload persistence creates placeholder teams for player stat team r
       status: { finished: true, started: true, utcTime: "2026-05-01T18:00:00.000Z" },
       playerStats: [{ id: 999, name: "Loose Team Player", teamId: 30, stats: { minutes: 90 } }]
     },
-    { matchId: 1002n, fetched: true }
+    { matchId: 1002n, fetched: true, rawReceivedAt: new Date("2026-05-01T18:00:01.000Z") }
   );
 
   const createMany = placeholderCalls[0] as { data?: Array<{ id: bigint; name: string }> };
   assert.ok(createMany.data?.some((team) => team.id === 30n && team.name === "FotMob team 30"));
   assert.equal(playerStatCalls.length, 1);
+  const promotionTiming = promotionTimingCalls[0] as {
+    where?: { id?: bigint };
+    data?: { rawReceivedAt?: Date; normalizedAt?: Date };
+  };
+  assert.equal(promotionTiming.where?.id, 1002n);
+  assert.equal(promotionTiming.data?.rawReceivedAt?.toISOString(), "2026-05-01T18:00:01.000Z");
+  assert.ok((promotionTiming.data?.normalizedAt?.getTime() ?? 0) >= new Date("2026-05-01T18:00:01.000Z").getTime());
 });
 
 test("match payload persistence repairs player stat team links from shot ownership", async () => {

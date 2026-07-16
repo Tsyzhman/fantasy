@@ -35,13 +35,13 @@ test("data quality gate reports coverage and unverifiable ingestion latency", ()
         matchId: "1",
         hasPlayerStats: true,
         rawReceivedAt: new Date("2025-01-01T12:00:00.000Z"),
-        firstStatsCreatedAt: new Date("2025-01-01T14:00:00.000Z")
+        normalizedAt: new Date("2025-01-01T14:00:00.000Z")
       },
       {
         matchId: "2",
         hasPlayerStats: true,
         rawReceivedAt: null,
-        firstStatsCreatedAt: new Date("2025-01-02T14:00:00.000Z")
+        normalizedAt: new Date("2025-01-02T14:00:00.000Z")
       }
     ],
     [

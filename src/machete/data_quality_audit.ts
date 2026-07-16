@@ -87,11 +87,6 @@ export async function runFantasyDataQualityAudit(
           cancelled: false
         },
         include: {
-          rawPayload: {
-            select: {
-              createdAt: true
-            }
-          },
           playerStats: true
         },
         orderBy: [{ matchDate: "asc" }, { id: "asc" }]
@@ -143,8 +138,8 @@ export async function runFantasyDataQualityAudit(
     const matchCoverage = matches.map((match) => ({
       matchId: String(match.id),
       hasPlayerStats: match.playerStats.length > 0,
-      rawReceivedAt: match.rawPayload?.createdAt ?? null,
-      firstStatsCreatedAt: earliestDate(match.playerStats.map((stat) => stat.createdAt))
+      rawReceivedAt: match.rawReceivedAt,
+      normalizedAt: match.normalizedAt
     }));
     const quality = evaluateFantasyDataQuality(candidates, matchCoverage, statRows, {
       coveragePercent,
@@ -230,10 +225,6 @@ function toBasicStat(stat: Prisma.MatchPlayerStatGetPayload<Record<string, never
     saves: stat.saves,
     goalsConceded: stat.goalsConceded
   };
-}
-
-function earliestDate(values: Date[]) {
-  return values.reduce<Date | null>((earliest, value) => (!earliest || value < earliest ? value : earliest), null);
 }
 
 function validCoveragePercent(value: number) {

@@ -307,34 +307,34 @@ model FantasyModelRule {
 }
 
 model FantasyBacktestRun {
-  id                     String    @id @default(cuid())
-  leagueId               BigInt    @map("league_id")
-  season                 String
-  modelSource            String    @default("MACHETE") @map("model_source")
-  modelName              String    @map("model_name")
-  modelVersion           String    @map("model_version")
-  modelHash              String    @map("model_hash")
-  baseline               String
-  historyMatches         Int       @map("history_matches")
-  minimumHistory         Int       @map("minimum_history")
-  expectedMatches        Int?      @map("expected_matches")
-  finishedMatches        Int       @map("finished_matches")
-  seasonComplete         Boolean   @default(false) @map("season_complete")
-  sampleSize             Int       @default(0) @map("sample_size")
-  modelMae               Float?    @map("model_mae")
-  baselineMae            Float?    @map("baseline_mae")
-  modelRmse              Float?    @map("model_rmse")
-  baselineRmse           Float?    @map("baseline_rmse")
-  passingPositions       Int       @default(0) @map("passing_positions")
-  gatePassed             Boolean   @default(false) @map("gate_passed")
-  status                 String    @default("RUNNING")
-  configuration          Json
-  report                 Json?
-  error                  String?
-  startedAt              DateTime  @default(now()) @map("started_at")
-  completedAt            DateTime? @map("completed_at")
-  createdAt              DateTime  @default(now()) @map("created_at")
-  updatedAt              DateTime  @updatedAt @map("updated_at")
+  id               String    @id @default(cuid())
+  leagueId         BigInt    @map("league_id")
+  season           String
+  modelSource      String    @default("MACHETE") @map("model_source")
+  modelName        String    @map("model_name")
+  modelVersion     String    @map("model_version")
+  modelHash        String    @map("model_hash")
+  baseline         String
+  historyMatches   Int       @map("history_matches")
+  minimumHistory   Int       @map("minimum_history")
+  expectedMatches  Int?      @map("expected_matches")
+  finishedMatches  Int       @map("finished_matches")
+  seasonComplete   Boolean   @default(false) @map("season_complete")
+  sampleSize       Int       @default(0) @map("sample_size")
+  modelMae         Float?    @map("model_mae")
+  baselineMae      Float?    @map("baseline_mae")
+  modelRmse        Float?    @map("model_rmse")
+  baselineRmse     Float?    @map("baseline_rmse")
+  passingPositions Int       @default(0) @map("passing_positions")
+  gatePassed       Boolean   @default(false) @map("gate_passed")
+  status           String    @default("RUNNING")
+  configuration    Json
+  report           Json?
+  error            String?
+  startedAt        DateTime  @default(now()) @map("started_at")
+  completedAt      DateTime? @map("completed_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
 
   @@index([leagueId, season, createdAt])
   @@index([modelHash, createdAt])
@@ -815,25 +815,27 @@ model TeamPlayerSeason {
 }
 
 model CoreMatch {
-  id         BigInt    @id
-  leagueId   BigInt?   @map("league_id")
-  season     String?
-  round      String?
-  homeTeamId BigInt?   @map("home_team_id")
-  awayTeamId BigInt?   @map("away_team_id")
-  homeScore  Int?      @map("home_score")
-  awayScore  Int?      @map("away_score")
-  status     String?
-  started    Boolean   @default(false)
-  finished   Boolean   @default(false)
-  cancelled  Boolean   @default(false)
-  matchDate  DateTime? @map("match_date")
-  utcTime    DateTime? @map("utc_time")
-  source     String    @default("fotmob")
-  sourceUrl  String?   @map("source_url")
-  rawRef     String?   @map("raw_ref")
-  createdAt  DateTime  @default(now()) @map("created_at")
-  updatedAt  DateTime  @updatedAt @map("updated_at")
+  id            BigInt    @id
+  leagueId      BigInt?   @map("league_id")
+  season        String?
+  round         String?
+  homeTeamId    BigInt?   @map("home_team_id")
+  awayTeamId    BigInt?   @map("away_team_id")
+  homeScore     Int?      @map("home_score")
+  awayScore     Int?      @map("away_score")
+  status        String?
+  started       Boolean   @default(false)
+  finished      Boolean   @default(false)
+  cancelled     Boolean   @default(false)
+  matchDate     DateTime? @map("match_date")
+  utcTime       DateTime? @map("utc_time")
+  source        String    @default("fotmob")
+  sourceUrl     String?   @map("source_url")
+  rawRef        String?   @map("raw_ref")
+  rawReceivedAt DateTime? @map("raw_received_at")
+  normalizedAt  DateTime? @map("normalized_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
 
   league                 CoreLeague?             @relation(fields: [leagueId], references: [id])
   homeTeam               CoreTeam?               @relation("CoreMatchHomeTeam", fields: [homeTeamId], references: [id])

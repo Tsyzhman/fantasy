@@ -61,6 +61,16 @@ export class CoreMatchRepository {
     return this.prisma.coreMatch.findUnique({ where: { id: matchId } });
   }
 
+  async recordPromotionTiming(matchId: bigint, rawReceivedAt: Date, normalizedAt: Date) {
+    return this.prisma.coreMatch.update({
+      where: { id: matchId },
+      data: {
+        rawReceivedAt,
+        normalizedAt
+      }
+    });
+  }
+
   async latestTeamMatchIds(teamId: bigint, limitMatches: number) {
     const matches = await this.prisma.coreMatch.findMany({
       where: {

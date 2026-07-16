@@ -36,6 +36,7 @@ export type IngestMatchOptions = {
   forceRefresh?: boolean;
   forceReparse?: boolean;
   requireDetailedPayload?: boolean;
+  rawReceivedAt?: Date | null;
 };
 
 export type IngestMatchResult = {
@@ -79,7 +80,13 @@ export async function ingest_match(prisma: PrismaClient, match_id: bigint | stri
     return reparse_match(prisma, matchId, options.parserVersion ?? DEFAULT_PARSER_VERSION);
   }
 
-  if (!options.forceRefresh && existingMatch?.finished && (await hasNormalizedDetailedMatchPayload(prisma, matchId))) {
+  if (
+    !options.forceRefresh
+    && existingMatch?.finished
+    && existingMatch.rawReceivedAt
+    && existingMatch.normalizedAt
+    && (await hasNormalizedDetailedMatchPayload(prisma, matchId))
+  ) {
     return {
       matchId,
       fetched: false,
@@ -116,6 +123,7 @@ export async function ingest_match(prisma: PrismaClient, match_id: bigint | stri
     }
     throw error;
   }
+  const rawReceivedAt = new Date();
 
   const payloadMatch = parse_match_metadata(canonicalMatchPayload(details));
   const payloadMatchId = payloadMatch.id && payloadMatch.id !== 0n ? payloadMatch.id : matchId;
@@ -133,7 +141,8 @@ export async function ingest_match(prisma: PrismaClient, match_id: bigint | stri
     matchId: payloadMatchId,
     leagueId: payloadLeagueId ?? options.leagueId,
     season: payloadSeason,
-    fetched: true
+    fetched: true,
+    rawReceivedAt
   });
 }
 
@@ -259,7 +268,8 @@ export async function persist_match_payload(
     payloadHash: rawPayloadHash,
     parserVersion: options.parserVersion ?? DEFAULT_PARSER_VERSION,
     schemaVersion: options.schemaVersion ?? CORE_SCHEMA_VERSION,
-    isFinal
+    isFinal,
+    rawReceivedAt: options.rawReceivedAt ?? null
   });
 
   await invalidate_shotmap_cache_for_match(prisma, matchId);
@@ -413,6 +423,7 @@ async function persistParsedPayloadAndMaybeRaw(
     parserVersion: string;
     schemaVersion: string;
     isFinal: boolean;
+    rawReceivedAt: Date | null;
   }
 ) {
   const operation = async (tx: PrismaIngestionClient) => {
@@ -420,10 +431,14 @@ async function persistParsedPayloadAndMaybeRaw(
     const repository = new RawPayloadRepository(tx);
     if (raw.isFinal) {
       await repository.delete(raw.matchId);
-      return;
+    } else {
+      await repository.upsert(raw);
     }
 
-    await repository.upsert(raw);
+    if (raw.rawReceivedAt && parsed.playerStats.length > 0) {
+      const normalizedAt = new Date(Math.max(Date.now(), raw.rawReceivedAt.getTime()));
+      await new CoreMatchRepository(tx).recordPromotionTiming(raw.matchId, raw.rawReceivedAt, normalizedAt);
+    }
   };
 
   if (typeof (prisma as { $transaction?: unknown }).$transaction === "function") {

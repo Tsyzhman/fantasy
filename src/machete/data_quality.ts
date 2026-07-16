@@ -17,7 +17,7 @@ export type MatchDataCoverageInput = {
   matchId: string;
   hasPlayerStats: boolean;
   rawReceivedAt: Date | null;
-  firstStatsCreatedAt: Date | null;
+  normalizedAt: Date | null;
 };
 
 export type BasicPlayerStatInput = {
@@ -172,11 +172,11 @@ function promotionLatency(match: MatchDataCoverageInput, maximumHours: number) {
   if (!match.rawReceivedAt) {
     return { matchId: match.matchId, hours: null, timely: false, reason: "NO_RAW_RECEIVED_AT" as const };
   }
-  if (!match.firstStatsCreatedAt) {
-    return { matchId: match.matchId, hours: null, timely: false, reason: "NO_FIRST_STATS_CREATED_AT" as const };
+  if (!match.normalizedAt) {
+    return { matchId: match.matchId, hours: null, timely: false, reason: "NO_NORMALIZED_AT" as const };
   }
 
-  const milliseconds = match.firstStatsCreatedAt.getTime() - match.rawReceivedAt.getTime();
+  const milliseconds = match.normalizedAt.getTime() - match.rawReceivedAt.getTime();
   if (milliseconds < 0) {
     return { matchId: match.matchId, hours: null, timely: false, reason: "TIMESTAMPS_NOT_COMPARABLE" as const };
   }
