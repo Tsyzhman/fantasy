@@ -8,16 +8,16 @@ Done. По просьбе владельца продукта готовност
 как оценочные. Это исключение не превращает отсутствующие официальные цены в
 выполненный факт.
 
-Текущий production после beta31 clean-UI promote:
+Текущий production после beta32 promote:
 
-- image `fantasy-scout-web:beta31-20260716T133614Z`;
+- image `fantasy-scout-web:beta32-20260716T141021Z`;
 - image ID
-  `sha256:61d5c13fb55df2723da311fea40bf5a845e72f79798a7fb7518e10ef1565ed4a`;
-- source commit `20bea7b14c824a572c76722491074148343f4451`;
+  `sha256:bc3560ea302dabc5b28e3acf48062f08f30749a0052a6e4f5a013351f538f75c`;
+- source commit `5be7247ba08d70c342915d884e0ee2ed4eacdb68`;
 - release
-  `/var/www/fantasy-scout-releases/20260716T133614Z-beta31-20bea7b-green-main`;
+  `/var/www/fantasy-scout-releases/20260716T141021Z-beta32-5be7247-green-main`;
 - active container ID
-  `380c0d541dc7f9648036505c1e0a559818fc527bff28c3013935bc8f811674b4`;
+  `6e25d4c55bf166e23aff2b99c65e4bb63b2b66fa28ca203c8580a27b22343958`;
 - состояние `running|healthy|0`, внешние `/api/health` и
   `/api/health/data-quality` — HTTP 200;
 - web и PostgreSQL container logs: `json-file`, `max-size=20m`,
@@ -27,18 +27,41 @@ Done. По просьбе владельца продукта готовност
   тот же image ID
   `sha256:16bc17c64a573ef34162af9298258d1aec548232985b33ed7b1eac33ba35c229`
   и тот же volume `fantasy-scout_fantasy-scout-postgres`;
-- beta30 сохранён остановленным immediate rollback-контейнером
-  `fantasy-scout-web-beta30-rollback-20260716T134325Z`.
+- production DB содержит 8 применённых миграций, 0 failed/rolled-back и
+  10 971 строку `matches`; `000008_beta_test_moderated_environment` добавила
+  nullable-колонку и DB CHECK для допустимых значений среды;
+- проверенный pre-beta32 backup:
+  `/var/backups/fantasy-scout/fantasy_scout_pre_beta32_20260716T141021Z.dump`,
+  50 259 500 байт, SHA-256
+  `38431add328d9e5920dab81d59248a8a7116c2660f540fdcf0e600e85632f4d5`;
+- первый beta32 container унаследовал пустой Docker `LogConfig.Config`; это
+  обнаружено после promote и исправлено контролируемым пересозданием того же
+  образа с явными `max-size=20m`, `max-file=5`;
+- предыдущий beta32 сохранён остановленным immediate rollback-контейнером
+  `fantasy-scout-web-beta32-unbounded-log-rollback-20260716T144424Z`, container
+  ID `2eb8efb7a82284f68f2701033c542fb9f2b1da5efc18c0141c38835226dcaf7c`;
+- beta31 дополнительно сохранён остановленным rollback-контейнером
+  `fantasy-scout-web-beta31-rollback-20260716T143434Z` с image ID
+  `sha256:61d5c13fb55df2723da311fea40bf5a845e72f79798a7fb7518e10ef1565ed4a`.
 
-Перед promote beta31 проверен отдельно на loopback canary:
+Перед promote beta32 проверен отдельно на loopback canary:
 
-- image `fantasy-scout-web:beta31-20260716T133614Z` с тем же точным image ID;
-- ingestion worker отключён, upload volume read-only;
-- целевой responsive suite на 1440×1000, 1024×900 и Pixel 5 дал 4/4 passed;
-- production browser workflow `29503570431` дал 5 passed и 2 expected skipped,
-  а monitor `29503572684` — 0 critical и 0 warning;
-- loopback HTTP восстановлен за 1,862 секунды; после acceptance временные
-  canary/candidate-контейнеры удалены.
+- image `fantasy-scout-web:beta32-20260716T141021Z` с тем же точным image ID;
+- ingestion worker и schedulers отключены, upload volume read-only;
+- защищённый `/admin/beta-test` проверен Playwright CLI на desktop и 390 px:
+  horizontal overflow 0, console errors/warnings 0, environment-select обязателен
+  и содержит только `DESKTOP_BROWSER`, `IOS_SAFARI_PHYSICAL`,
+  `ANDROID_CHROME_PHYSICAL`, `OTHER_MOBILE`;
+- одноразовые QA-user/run/session и credentials удалены; production вернулся к
+  0 real, 0 valid real и 0 pending real runs;
+- production browser workflow `29507456004` дал 5 passed и 2 expected skipped,
+  artifact `8379167025`; финальный monitor после log-fix `29508147332` —
+  0 critical и 0 warning;
+- monitor при этом честно зафиксировал 252 запроса, 1 ответ 5xx (0,397%),
+  p75 81,056 мс и p95 706,259 мс; это ниже alert-порогов, но не равно нулю 5xx;
+- первый beta32 swap восстановил loopback HTTP за 2,351 секунды, финальный
+  log-fix swap — за 1,909 секунды; после acceptance exact canary удалён,
+  остановленные beta32 и beta31 rollback сохранены.
 
 ## Итог
 
@@ -67,13 +90,13 @@ gate проходит, включая 100% raw→normalized latency coverage.
 | 2 | Сборщик не нарушает правила и бюджет | Выполнено для EPL-контура | Сервер заново загружает авторитетный pool и проверяет размер, позиции, схему старта, скамейку, клубный лимит, бюджет, капитана и transfer limit. UI-save принимается только после `Valid squad`; unit-тесты отклоняют недопустимые payload | Отдельная rule-matrix потребуется при добавлении других fantasy-турниров |
 | 3 | Прогнозы доступны всем основным игрокам | Выполнено | Production run `cmrndxcnu000010km2tdjbsis`: forecast coverage 745/753 = 98,938%, player coverage 98,938%, match coverage 380/380 = 100%, stat-row coverage 99,967%, общий gate PASS | Продолжать ежедневный fail-closed audit на новых данных |
 | 4 | Автоподбор и трансферы работают на реальных данных | Выполнено в согласованном объёме без официальных цен | Игроки, команды, статистика, матчи и прогнозы берутся из production FotMob-контура. UI автоподбор создаёт допустимый состав; transfer suggestions рассчитаны по реальному pool и прогнозам | Официальные цены явно отложены владельцем продукта; оценочные цены не выдаются за официальные |
-| 5 | Полноценная работа на компьютере и телефоне | Частично | Beta31 workflow `29503570431` проверил Chromium на 1440×1000, 1024×900 и Pixel 5: 5 passed, 2 expected skipped. Нет page-level horizontal overflow; на 1024 доступна вкладка Pool; mobile/tablet menu содержит навигацию и sign-out; активная mobile-вкладка `Squad` целиком видна; screenshots сохранены в artifact `8377527685` | Нужны physical Safari iOS/Chrome Android; понятность пути для аудитории проверяется критерием 9 |
-| 6 | Выполнены показатели скорости | Частично только из-за real-user sample | Исторические production замеры проходят SMART-пороги: squad SSR p75 480 мс, client summary p75 552 мс, автоподбор 2,903 с, transfer suggestions p75 581 мс. Последний Caddy audit: 233 запроса, 0 5xx, p75 90,092 мс, p95 389,196 мс. Beta31 собирает opt-in RUM и требует LCP минимум от 10 реальных участников, p75 ≤2,5 с; pending/invalid/failed прогоны нельзя исключить модерацией | Сейчас реальных RUM-участников 0; нужна фактическая beta-выборка |
-| 7 | Отсутствуют критические ошибки | Частично | Локальный gate: 261/261 unit/integration, lint, typecheck, production build; production dependencies — 0 vulnerabilities. Main CI `29502617657` полностью green; beta31 browser run `29503570431` green; beta31 healthy, 0 рестартов. Два старых Caddy upstream EOF дали 502, но 100-request probe воспроизвести их не смог и app error log пуст | Короткий acceptance и невоспроизведённые транзиенты не доказывают длительную beta без critical/blocker |
+| 5 | Полноценная работа на компьютере и телефоне | Частично | Beta32 workflow `29507456004` проверил Chromium на 1440×1000, 1024×900 и Pixel 5: 5 passed, 2 expected skipped; evidence в artifact `8379167025`. Playwright CLI отдельно проверил новый moderator UI на desktop и 390 px: overflow 0, console errors/warnings 0. Структурированная фиксация physical Safari iOS/Chrome Android теперь обязательна, защищена allowlist и DB CHECK, но фактические счётчики остаются 0/1 и 0/1 | Нужны реальные прогоны на физических Safari iOS и Chrome Android; понятность пути для аудитории проверяется критерием 9 |
+| 6 | Выполнены показатели скорости | Частично только из-за real-user sample | Исторические production замеры проходят SMART-пороги: squad SSR p75 480 мс, client summary p75 552 мс, автоподбор 2,903 с, transfer suggestions p75 581 мс. Финальный monitor `29508147332`: 252 запроса, 1 ответ 5xx (0,397%), p75 81,056 мс, p95 706,259 мс, 0 critical и 0 warning. Beta32 собирает opt-in RUM и требует LCP минимум от 10 реальных участников, p75 ≤2,5 с; pending/invalid/failed прогоны нельзя исключить модерацией | Сейчас реальных RUM-участников 0; нужна фактическая beta-выборка |
+| 7 | Отсутствуют критические ошибки | Частично | Локальный gate: 263/263 unit/integration, lint, typecheck, production build. Main CI `29505104261` полностью green; beta32 browser run `29507456004` green; финальный beta32 container healthy, 0 рестартов, app/PostgreSQL logs ограничены 5×20 MiB. Monitor `29508147332` дал 0 critical и 0 warning, но за окно был 1 ответ 5xx из 252 — факт не скрывается | Короткий acceptance и единичный 5xx не доказывают длительную beta без critical/blocker |
 | 8 | Завершено историческое тестирование модели | Выполнено | Production run `cmrm6rgwx0000106radpcmtco`: `COMPLETED`, 380/380 EPL 2025/2026, `gate_passed=true`; пяти-туровый RMSE улучшен для GK/DEF/MID/FWD на 16,569/10,759/13,403/11,116% | Одноматчевый горизонт отдельно не достиг 10%; вывод относится к пяти-туровому планированию |
-| 9 | Не менее 80% тестовых пользователей проходят сценарий без помощи | Не выполнено | `/beta-test`, consent, bounded telemetry и защищённый `/admin/beta-test` для обезличенного moderator review готовы; synthetic evidence исключается из human/RUM gates, запросы идемпотентны, а RUM использует все реальные прогоны без выборочного удаления неудобных результатов | Сейчас 0 доказанных реальных участников; нужны ≥10, completion ≥80%, forecast found ≥80%, transfer understanding ≥70%, UI ≥4/5 |
-| 10 | Мониторинг, логи и контроль обновления данных | Выполнено технически | Caddy JSON log ротируется; systemd audit каждые 15 минут; warning-health исключены из user error-rate; public aggregate работает; app и PostgreSQL logs ограничены 5×20 MiB. Реальный refresh `1` дал 380/380 fetched, 0 failed; audit `cmrndxcnu000010km2tdjbsis` дал latency 100% и PASS; оба health endpoint возвращают 200. Monitor `29503572684` green: 0 critical, 0 warning, data-quality PASS, access audit 233 запроса и 0 5xx | Поддерживать monitor и ежедневный fail-closed data-quality audit в beta |
-| 11 | Чистый UI без наложений, обрезанной навигации и лишнего повторяющегося шума | Выполнено технически и визуально | В beta31 убраны дублирующий Machete hero, breadcrumbs и большая intro-card; tools свёрнуты, метрики собраны в strip, workbench поднят выше transfer tips, mobile-таблица заменена карточками. Пустой состав больше не назван valid, Save отключён до допустимых 15/11/4, а активная `Squad` целиком видна на 360 px. Canary 4/4 и production workflow `29503570431` 5 passed/2 skipped; screenshots просмотрены на 1440, 1024 и Pixel 5 | Субъективную понятность и оценку ≥4/5 всё ещё должны подтвердить реальные участники в критерии 9 |
+| 9 | Не менее 80% тестовых пользователей проходят сценарий без помощи | Не выполнено | `/beta-test`, consent, bounded telemetry и защищённый `/admin/beta-test` готовы; synthetic evidence исключается из human/RUM gates, RUM использует все реальные прогоны. Beta32 требует структурированный moderator environment, отклоняет несовпадение physical-device/desktop viewport и не открывает gate без physical iOS и Android primary runs | Сейчас 0 доказанных реальных участников; нужны ≥10, completion ≥80%, forecast found ≥80%, transfer understanding ≥70%, UI ≥4/5, physical iOS ≥1 и Android ≥1 |
+| 10 | Мониторинг, логи и контроль обновления данных | Выполнено технически | Caddy JSON log ротируется; systemd audit каждые 15 минут; warning-health исключены из user error-rate; public aggregate работает. Унаследованный пустой app log config обнаружен и устранён: финальные app и PostgreSQL logs явно ограничены 5×20 MiB. Реальный refresh `1` дал 380/380 fetched, 0 failed; audit `cmrndxcnu000010km2tdjbsis` дал latency 100% и PASS; оба health endpoint возвращают 200. Финальный monitor `29508147332` green: 0 critical, 0 warning, fresh data-quality PASS; access audit 252 запроса, 1 ответ 5xx (0,397%), p75/p95 81,056/706,259 мс | Поддерживать monitor и ежедневный fail-closed data-quality audit в beta |
+| 11 | Чистый UI без наложений, обрезанной навигации и лишнего повторяющегося шума | Выполнено технически и визуально | В beta31 убраны дублирующий Machete hero, breadcrumbs и большая intro-card; tools свёрнуты, метрики собраны в strip, workbench поднят выше transfer tips, mobile-таблица заменена карточками. Пустой состав больше не назван valid, Save отключён до допустимых 15/11/4, а активная `Squad` целиком видна на 360 px. Финальный beta32 production workflow `29507456004` снова дал 5 passed/2 skipped; screenshots сохранены в artifact `8379167025` | Субъективную понятность и оценку ≥4/5 всё ещё должны подтвердить реальные участники в критерии 9 |
 
 ## Clean-UI gate `/machete/squad` — закрыт технически и визуально
 
@@ -100,7 +123,7 @@ screenshots; пользовательская понятность остаёт�
   полного допустимого состава, option отображается на одном языке;
 - на 360 px скрыта только избыточная подпись workspace, поэтому `Leagues`,
   `Players` и активная `Squad` видны целиком;
-- production workflow `29503570431` сохранил 0 document overflow и полный путь
+- production workflow `29507456004` сохранил 0 document overflow и полный путь
   search → auto-pick → valid → save → cleanup.
 
 ## Мониторинг и логи
@@ -108,19 +131,21 @@ screenshots; пользовательская понятность остаёт�
 - Caddy `v2.11.3` пишет `/var/log/caddy/fantasy-access.log` от `caddy:caddy`,
   mode 0640, rotation 50 MiB/24 h, keep 10/30 days.
 - `fantasy-access-audit.timer` active+enabled, период 15 минут.
-- Live app и PostgreSQL containers используют `json-file` 5×20 MiB.
-  PostgreSQL контролируемо пересоздан с тем же image/env/network/volume:
-  до и после переключения подтверждены 7 миграций и 10 971 строка `matches`,
-  затем web и оба публичных health endpoint вернулись в healthy/HTTP 200.
-- Проверенный отчёт после beta31 promote: 233 user-traffic запроса, 0 5xx,
-  server error rate 0%, p75 90,092 мс, p95 389,196 мс.
+- Live app и PostgreSQL containers используют `json-file` 5×20 MiB. Первый
+  beta32 candidate ошибочно унаследовал пустой app log config; проверка после
+  promote это обнаружила, после чего тот же image пересоздан с явными limits.
+  PostgreSQL сохранил тот же image/env/network/volume; подтверждены 8 миграций,
+  0 failed и 10 971 строка `matches`.
+- Финальный проверенный отчёт: 252 user-traffic запроса, 1 ответ 5xx (0,397%),
+  p75 81,056 мс, p95 706,259 мс. Это ниже warning-порога, но не равно 0 5xx.
 - `/_monitor/*` и warning-only data-quality/price health endpoints исключены из
   user-traffic метрики; report не содержит URL, IP, cookies, headers или user
   identifiers.
 - Workflow `Production Monitor` проверяет liveness/login как critical и
   data-quality/access audit как warning; состояние синхронизируется с одним
   GitHub Issue без обновления на каждом одинаковом прогоне.
-- Run `29503572684`: critical failures 0, warnings 0, data-quality PASS,
+- Финальный run `29508147332`: critical failures 0, warnings 0,
+  data-quality PASS,
   access audit `ok`;
   ранее открытый issue `#1` остаётся закрыт.
 - Официальные цены намеренно не входят в monitor до появления источника.

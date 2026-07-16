@@ -3,13 +3,13 @@
 Дата проверки: 2026-07-16.
 
 Финальная browser-проверка выполнена GitHub Actions Playwright Test workflow
-`29503570431` против production `https://fantasy.tsyzhman.ru` на образе
-`fantasy-scout-web:beta31-20260716T133614Z` с image ID
-`sha256:61d5c13fb55df2723da311fea40bf5a845e72f79798a7fb7518e10ef1565ed4a`
-и source commit `20bea7b14c824a572c76722491074148343f4451`.
+`29507456004` против production `https://fantasy.tsyzhman.ru` на образе
+`fantasy-scout-web:beta32-20260716T141021Z` с image ID
+`sha256:bc3560ea302dabc5b28e3acf48062f08f30749a0052a6e4f5a013351f538f75c`
+и source commit `5be7247ba08d70c342915d884e0ee2ed4eacdb68`.
 
-Workflow дал 5 passed, 2 expected skipped за 58,6 с. Evidence загружен в
-artifact `production-browser-smoke-29503570431` (`8377527685`). Использован
+Workflow дал 5 passed, 2 expected skipped за 1,0 минуту. Evidence загружен в
+artifact `production-browser-smoke-29507456004` (`8379167025`). Использован
 отдельный production QA-пользователь; пароль хранится только в GitHub Secrets.
 Write-сценарий создаёт уникальный `E2E optimized …` вариант, проверяет
 server-returned `squadId` и удаляет QA-копию; рабочие пользовательские данные не
@@ -33,6 +33,25 @@ viewport overflow. Production screenshots дополнительно просм�
 не собраны, физические iOS/Android не проверены, тест минимум на 10 реальных
 пользователях не проведён. Официальные цены Sports.ru временно исключены из
 объёма владельцем продукта и не подменяются оценочными.
+
+## Beta32 physical-environment evidence acceptance 2026-07-16
+
+До beta32 модератор мог упомянуть устройство только свободным текстом, поэтому
+даже реально проведённый physical Safari iOS / Chrome Android тест нельзя было
+надёжно доказать машинным отчётом. После beta32 valid review требует одно
+структурированное значение из allowlist; база дополнительно применяет CHECK, а
+gate требует минимум один primary physical Safari iOS и один physical Chrome
+Android run. Несовпадение physical environment с desktop viewport отклоняется.
+
+Canary `/admin/beta-test` проверен Playwright CLI на desktop и 390 px. Поле
+`Observed device/browser` имеет `required=true`, пустое значение не отправляет
+valid review, а allowlist содержит ровно `DESKTOP_BROWSER`,
+`IOS_SAFARI_PHYSICAL`, `ANDROID_CHROME_PHYSICAL`, `OTHER_MOBILE`. На 390 px
+`documentElement.scrollWidth = innerWidth = 390`; console errors/warnings — 0.
+Одноразовые QA-user/run/session и credentials удалены, после cleanup в production
+осталось 0 real, 0 valid real и 0 pending real runs. Это доказывает готовность
+сбора evidence, но не заменяет сами физические тесты: счётчики iOS/Android всё
+ещё 0/1 и 0/1.
 
 ## Beta31 clean-UI acceptance 2026-07-16
 
@@ -106,12 +125,12 @@ Load-smoke воспроизводится командой `npm run beta:load`; 
 `docs/BETA_LOAD_TEST.md`. Короткий прогон с пятью конкурентными пользователями
 не доказывает error rate за период реального beta-тестирования.
 
-Финальный production workflow beta31 дал 0 захваченных page errors и runtime
+Финальный production workflow beta32 дал 0 захваченных page errors и runtime
 5xx в тестовых сценариях. Отдельный часовой Caddy audit остаётся более строгим
 источником для всего трафика и не заменяется этим коротким smoke.
 Старый warning о preload логотипа устранён удалением ненужного `priority`.
 
-Beta31 сохраняет исправления beta27: не регистрирует Web Vitals observers заново
+Beta32 сохраняет исправления beta27: не регистрирует Web Vitals observers заново
 при каждом тике таймера, делает повтор POST telemetry идемпотентным и строит RUM по всем
 реальным прогонам, включая pending/invalid/failed. После synthetic smoke в
 production за 30 дней остаётся `1` synthetic и `0` real runs: QA не засчитан как

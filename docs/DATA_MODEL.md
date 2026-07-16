@@ -143,5 +143,8 @@ migrations, then it was applied once to production.
 `000007_match_promotion_timestamps` adds the atomic raw-received/normalized
 timing pair and its ordering constraint without backfilling historical values.
 It was applied on 2026-07-16 after a verified production backup, followed by a
-real 380-match refresh. Production has 7/7 applied migrations and no failed or
-rolled-back entry.
+real 380-match refresh.
+`000008_beta_test_moderated_environment` adds nullable structured moderator
+environment evidence and a database allowlist CHECK. It was applied on
+2026-07-16 after a custom-format backup verified with `pg_restore --list`.
+Production has 8/8 applied migrations and no failed or rolled-back entry.

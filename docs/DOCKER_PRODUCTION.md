@@ -15,24 +15,35 @@ the 15-minute aggregate audit, and GitHub issue alert delivery are described in
 ## Current verified release
 
 As of 2026-07-16, production runs
-`fantasy-scout-web:beta31-20260716T133614Z` from
-`/var/www/fantasy-scout-releases/20260716T133614Z-beta31-20bea7b-green-main`. Its exact
+`fantasy-scout-web:beta32-20260716T141021Z` from
+`/var/www/fantasy-scout-releases/20260716T141021Z-beta32-5be7247-green-main`. Its exact
 image ID is
-`sha256:61d5c13fb55df2723da311fea40bf5a845e72f79798a7fb7518e10ef1565ed4a`
-and source commit is `20bea7b14c824a572c76722491074148343f4451`.
-The container is healthy with zero restarts. The stopped immediate rollback is
-`fantasy-scout-web-beta30-rollback-20260716T134325Z`, pinned to beta30 image ID
-`sha256:b92ea7b3b704b19a951223884a6cb0f19a58368dc63929ec96d84b95c824b6e9`.
-Both liveness and data-quality health return HTTP 200. Production has 7/7
-applied Prisma migrations and a passing persisted 380-match data-quality audit.
+`sha256:bc3560ea302dabc5b28e3acf48062f08f30749a0052a6e4f5a013351f538f75c`
+and source commit is `5be7247ba08d70c342915d884e0ee2ed4eacdb68`.
+Active container ID
+`6e25d4c55bf166e23aff2b99c65e4bb63b2b66fa28ca203c8580a27b22343958`
+is healthy with zero restarts and explicit `json-file` rotation
+(`max-size=20m`, `max-file=5`). The stopped immediate rollback is the same beta32
+image before that log-config correction:
+`fantasy-scout-web-beta32-unbounded-log-rollback-20260716T144424Z`, container ID
+`2eb8efb7a82284f68f2701033c542fb9f2b1da5efc18c0141c38835226dcaf7c`.
+The older beta31 rollback `fantasy-scout-web-beta31-rollback-20260716T143434Z`
+is also retained. Both liveness and data-quality health return HTTP 200.
+Production has 8/8 applied Prisma migrations, 0 failed/rolled-back migrations,
+and a passing persisted 380-match data-quality audit.
 PostgreSQL container ID
 `325e03666369215bd5b68c527a4b9b70421237c1b8f78b0040df6d94e571230f`
 uses the same `postgres:16-alpine` image and
 `fantasy-scout_fantasy-scout-postgres` volume as before, is healthy, and now has
 bounded `json-file` logging (`max-size=20m`, `max-file=5`). Its controlled
-recreation preserved 7 applied migrations and 10,971 `matches` rows; the web
+recreation preserved 8 applied migrations and 10,971 `matches` rows; the web
 container and both public health endpoints recovered successfully before the
 old container was removed.
+
+The verified pre-beta32 custom-format backup is
+`/var/backups/fantasy-scout/fantasy_scout_pre_beta32_20260716T141021Z.dump`,
+50,259,500 bytes, SHA-256
+`38431add328d9e5920dab81d59248a8a7116c2660f540fdcf0e600e85632f4d5`.
 
 The normal release sequence is:
 
@@ -42,16 +53,22 @@ The normal release sequence is:
 3. start it on a loopback-only canary port with schedulers disabled;
 4. run HTTP, authenticated desktop/mobile, console, and performance checks;
 5. create the production candidate in the stopped `created` state with the
-   active env, network, port, upload volume, restart policy, and healthcheck;
+   active env, network, port, upload volume, restart policy, healthcheck, and
+   explicit `--log-driver json-file --log-opt max-size=20m --log-opt max-file=5`;
 6. syntax-check the swap script and require exact active/candidate preconditions;
 7. stop/rename the active container, rename/start the candidate, poll both HTTP
    and Docker health, and automatically restore the previous container on any
    failure.
 
-The beta31 swap restored loopback HTTP in 1.862 seconds; its canary/candidate
-were removed after acceptance, production browser run `29503570431` passed
-5 checks with 2 expected skips, and monitor `29503572684` reported 0 critical
-and 0 warning. The beta30 swap restored HTTP in 1.772 seconds.
+The first beta32 swap restored loopback HTTP in 2.351 seconds. Inspection then
+showed that the manual candidate had inherited `json-file` with an empty config,
+so the same image was recreated and promoted with explicit rotation; that
+log-fix swap restored HTTP in 1.909 seconds. The exact canary was removed after
+acceptance. Production browser run `29507456004` passed 5 checks with 2 expected
+skips, artifact `8379167025`; final monitor `29508147332` reported 0 critical and
+0 warning. Its access window had 252 requests and 1 response 5xx (0.397%), p75
+81.056 ms and p95 706.259 ms. The earlier beta31 swap restored HTTP in 1.862
+seconds.
 During the first beta14 attempt, a
 CRLF/quoting defect occurred after production had been stopped, causing
 approximately 30–40 seconds of downtime before beta10 was restored. There was
