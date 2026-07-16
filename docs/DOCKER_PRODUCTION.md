@@ -15,14 +15,14 @@ the 15-minute aggregate audit, and GitHub issue alert delivery are described in
 ## Current verified release
 
 As of 2026-07-16, production runs
-`fantasy-scout-web:beta28-20260716T121415Z` from
-`/var/www/fantasy-scout-releases/20260716T121415Z-beta28-1f0ed07-green-main`. Its exact
+`fantasy-scout-web:beta31-20260716T133614Z` from
+`/var/www/fantasy-scout-releases/20260716T133614Z-beta31-20bea7b-green-main`. Its exact
 image ID is
-`sha256:1f2835ff90616fdc10915bd41dad67fb599e0a09089fbf096f69d167a9aa6ed0`
-and source commit is `1f0ed07bf21dfbcef618cff81b909bb06c631808`.
+`sha256:61d5c13fb55df2723da311fea40bf5a845e72f79798a7fb7518e10ef1565ed4a`
+and source commit is `20bea7b14c824a572c76722491074148343f4451`.
 The container is healthy with zero restarts. The stopped immediate rollback is
-`fantasy-scout-web-beta27-rollback-20260716T121415Z`, pinned to beta27 image ID
-`sha256:5158ff770d1b55de3ebb8e4ecb2ddbf71952d882109922fd8d9d286952e9812a`.
+`fantasy-scout-web-beta30-rollback-20260716T134325Z`, pinned to beta30 image ID
+`sha256:b92ea7b3b704b19a951223884a6cb0f19a58368dc63929ec96d84b95c824b6e9`.
 Both liveness and data-quality health return HTTP 200. Production has 7/7
 applied Prisma migrations and a passing persisted 380-match data-quality audit.
 PostgreSQL container ID
@@ -48,9 +48,10 @@ The normal release sequence is:
    and Docker health, and automatically restore the previous container on any
    failure.
 
-The beta28 swap restored loopback HTTP in 1.855 seconds; its canary/candidate
-were removed after acceptance, and production browser run `29498125902` passed
-5 checks with 2 expected skips. The beta27 swap restored HTTP in 1.975 seconds.
+The beta31 swap restored loopback HTTP in 1.862 seconds; its canary/candidate
+were removed after acceptance, production browser run `29503570431` passed
+5 checks with 2 expected skips, and monitor `29503572684` reported 0 critical
+and 0 warning. The beta30 swap restored HTTP in 1.772 seconds.
 During the first beta14 attempt, a
 CRLF/quoting defect occurred after production had been stopped, causing
 approximately 30–40 seconds of downtime before beta10 was restored. There was

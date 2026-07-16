@@ -21,16 +21,18 @@ npm run check
 The currently verified runtime is Docker, not the PM2 workflow described later
 in this document:
 
-- active image: `fantasy-scout-web:beta28-20260716T121415Z`;
+- active image: `fantasy-scout-web:beta31-20260716T133614Z`;
 - image ID:
-  `sha256:1f2835ff90616fdc10915bd41dad67fb599e0a09089fbf096f69d167a9aa6ed0`;
-- source commit: `1f0ed07bf21dfbcef618cff81b909bb06c631808`;
+  `sha256:61d5c13fb55df2723da311fea40bf5a845e72f79798a7fb7518e10ef1565ed4a`;
+- source commit: `20bea7b14c824a572c76722491074148343f4451`;
 - release directory:
-  `/var/www/fantasy-scout-releases/20260716T121415Z-beta28-1f0ed07-green-main`;
+  `/var/www/fantasy-scout-releases/20260716T133614Z-beta31-20bea7b-green-main`;
+- active container ID:
+  `380c0d541dc7f9648036505c1e0a559818fc527bff28c3013935bc8f811674b4`;
 - state after rollout: `running`, `healthy`, restart count `0`;
 - stopped immediate rollback container:
-  `fantasy-scout-web-beta27-rollback-20260716T121415Z` (beta27 image ID
-  `sha256:5158ff770d1b55de3ebb8e4ecb2ddbf71952d882109922fd8d9d286952e9812a`);
+  `fantasy-scout-web-beta30-rollback-20260716T134325Z` (beta30 image ID
+  `sha256:b92ea7b3b704b19a951223884a6cb0f19a58368dc63929ec96d84b95c824b6e9`);
 - external liveness and data-quality health both return HTTP 200;
 - applied Prisma state: 7 migrations, including
   `000007_match_promotion_timestamps`; failed/rolled-back migrations: 0;
@@ -54,9 +56,10 @@ same env, network, upload volume, port binding, restart policy, and liveness
 healthcheck as the active container. Before stopping production, verify the
 exact active image ID, `running|healthy|0`, the exact candidate image ID, and the
 candidate's `created` state; syntax-check the swap script and keep an automatic
-rollback path. The beta28 swap restored loopback HTTP in 1.855 seconds and its
-post-promote browser workflow `29498125902` passed 5 checks with 2 expected
-skips. The preceding beta27 swap restored HTTP in 1.975 seconds.
+rollback path. The beta31 swap restored loopback HTTP in 1.862 seconds and its
+post-promote browser workflow `29503570431` passed 5 checks with 2 expected
+skips; monitor `29503572684` reported 0 critical and 0 warning. The preceding
+beta30 swap restored HTTP in 1.772 seconds.
 
 The authenticated beta22 release smoke ran 40 GET requests in batches of five:
 0 errors, SSR p75 369 ms, and full-pool API p75 238 ms. The longer beta17

@@ -3,22 +3,23 @@
 Дата проверки: 2026-07-16.
 
 Финальная browser-проверка выполнена GitHub Actions Playwright Test workflow
-`29498125902` против production `https://fantasy.tsyzhman.ru` на образе
-`fantasy-scout-web:beta28-20260716T121415Z` с image ID
-`sha256:1f2835ff90616fdc10915bd41dad67fb599e0a09089fbf096f69d167a9aa6ed0`
-и source commit `1f0ed07bf21dfbcef618cff81b909bb06c631808`.
+`29503570431` против production `https://fantasy.tsyzhman.ru` на образе
+`fantasy-scout-web:beta31-20260716T133614Z` с image ID
+`sha256:61d5c13fb55df2723da311fea40bf5a845e72f79798a7fb7518e10ef1565ed4a`
+и source commit `20bea7b14c824a572c76722491074148343f4451`.
 
-Workflow дал 5 passed, 2 expected skipped за 53,9 с. Evidence загружен в
-artifact `production-browser-smoke-29498125902` (`8375283390`). Использован
+Workflow дал 5 passed, 2 expected skipped за 58,6 с. Evidence загружен в
+artifact `production-browser-smoke-29503570431` (`8377527685`). Использован
 отдельный production QA-пользователь; пароль хранится только в GitHub Secrets.
 Write-сценарий создаёт уникальный `E2E optimized …` вариант, проверяет
 server-returned `squadId` и удаляет QA-копию; рабочие пользовательские данные не
 меняются.
 
 Этот smoke подтверждает работоспособность сценария и отсутствие измеримого
-viewport overflow. Он не доказывает, что экран визуально чист и понятен:
-по прямой оценке владельца `/machete/squad` всё ещё перегружен, поэтому отдельный
-clean-UI gate остаётся незакрытым.
+viewport overflow. Production screenshots дополнительно просмотрены вручную на
+1440×1000, 1024×900 и Pixel 5; отдельный технический и визуальный clean-UI gate
+закрыт. Понятность для аудитории он не доказывает — это остаётся частью теста на
+10 реальных пользователях.
 
 ## Итог
 
@@ -33,7 +34,27 @@ clean-UI gate остаётся незакрытым.
 пользователях не проведён. Официальные цены Sports.ru временно исключены из
 объёма владельцем продукта и не подменяются оценочными.
 
-## UI-cleanup canary 2026-07-16
+## Beta31 clean-UI acceptance 2026-07-16
+
+До правки `/machete/squad` повторял Machete hero, breadcrumbs и большую intro-card;
+import/export/admin tools постоянно конкурировали с основным сценарием, метрики
+занимали отдельные карточки, transfer tips шли до рабочего состава, а mobile pool
+оставался широкой таблицей. Пустой состав назывался valid и позволял Save; option
+смешивал EN/RU. После первой production-проверки дополнительно обнаружено, что на
+360 px активная вкладка `Squad` обрезалась служебной подписью workspace.
+
+После правки страница использует compact nav/title, data tools свёрнуты, метрики
+собраны в strip, workbench поднят выше tips, а mobile pool отображается карточками.
+Пустой состав показывает `15 players needed`, Save заблокирован до полного
+допустимого состава, option одноязычный. На 360 px избыточная подпись скрыта,
+поэтому `Leagues`, `Players` и активная `Squad` видны целиком.
+
+Loopback beta31 canary дал 4/4 responsive passed; production workflow
+`29503570431` дал 5 passed и 2 expected skipped. Во всех трёх viewport нет
+document-level overflow и runtime 5xx/page errors. Одноразовый canary QA-user
+удалён, canary удалён после production acceptance.
+
+## Предыдущий UI-cleanup canary 2026-07-16
 
 Новый UI-кандидат `fantasy-scout-web:ui-canary-v4-20260716T090327Z`
 (`sha256:d268da9f88cf3c25e2ef0d3db4871462abab975e5cb86462530143fa04763b5d`)
@@ -63,10 +84,10 @@ out; desktop primary controls не пересекаются по bounding boxes.
 
 | Сценарий | Viewport / выборка | Результат |
 |---|---:|---|
-| Геометрия `/machete/squad` | Production beta28, 1440×1000 | Save/auto-pick/more actions не пересекаются; player pool виден; `Ctrl+K` открывает один dialog; document overflow 0; runtime 5xx/page errors в тесте 0. Визуальная чистота этим не доказана |
-| Tablet gap | Production beta28, 1024×900 | Pool tab доступна, player search открывается; global Menu не обрезан; document overflow 0 |
-| Mobile geometry | Production beta28, Pixel 5 | Squad/Pool/Tips, workspace grid и global Menu доступны; document overflow 0; runtime 5xx/page errors в тесте 0 |
-| Полный automated journey | Production beta28, desktop | Реальный forecast player найден; auto-pick дал valid squad; вариант сохранён и QA-copy удалена |
+| Геометрия `/machete/squad` | Production beta31, 1440×1000 | Compact header; Save/auto-pick/more actions не пересекаются; workbench и player pool видны в первом viewport; `Ctrl+K` открывает один dialog; document overflow 0; runtime 5xx/page errors 0 |
+| Tablet gap | Production beta31, 1024×900 | Pool tab доступна, player search открывается; global Menu не обрезан; document overflow 0 |
+| Mobile geometry | Production beta31, Pixel 5 | `Leagues`, `Players` и активная `Squad` целиком видны; Pool использует cards вместо desktop table; Squad/Pool/Tips и global Menu доступны; document overflow 0; runtime 5xx/page errors 0 |
+| Полный automated journey | Production beta31, desktop | Реальный forecast player найден; auto-pick дал valid squad; вариант сохранён и QA-copy удалена |
 | Поиск игрока `Mbeumo` | beta16, 1440×900; код пути не менялся в beta22 | HTTP 200 за 507 мс; найден Bryan Mbeumo, прогноз виден, ссылка `Build squad` ведёт в EPL 2026/2027; document width 1440; console errors 0 |
 | Сохранённый состав | desktop/mobile | Вариант `My squad` восстановлен без изменений: 15/15 игроков, 11 стартовых, 4 запасных, бюджет 100/100, банк 0 |
 | Автоподбор | production beta14, та же planner-логика в beta22 | 2,903 с при SMART-лимите 5 с; последующий reload вернул сохранённый состав без расхождений |
@@ -85,12 +106,12 @@ Load-smoke воспроизводится командой `npm run beta:load`; 
 `docs/BETA_LOAD_TEST.md`. Короткий прогон с пятью конкурентными пользователями
 не доказывает error rate за период реального beta-тестирования.
 
-Финальный production workflow beta28 дал 0 захваченных page errors и runtime
+Финальный production workflow beta31 дал 0 захваченных page errors и runtime
 5xx в тестовых сценариях. Отдельный часовой Caddy audit остаётся более строгим
 источником для всего трафика и не заменяется этим коротким smoke.
 Старый warning о preload логотипа устранён удалением ненужного `priority`.
 
-Beta28 сохраняет исправления beta27: не регистрирует Web Vitals observers заново
+Beta31 сохраняет исправления beta27: не регистрирует Web Vitals observers заново
 при каждом тике таймера, делает повтор POST telemetry идемпотентным и строит RUM по всем
 реальным прогонам, включая pending/invalid/failed. После synthetic smoke в
 production за 30 дней остаётся `1` synthetic и `0` real runs: QA не засчитан как
@@ -108,7 +129,7 @@ production за 30 дней остаётся `1` synthetic и `0` real runs: QA 
 - Официальные Sports.ru-цены: 0; оценочные цены: 629. Интерфейс помечает их
   как оценочные и не маскирует под официальные.
 
-## Исправленный мобильный дефект Pool
+## Эволюция мобильного Pool
 
 До финальной правки при viewport 360 px вкладки Squad и Tips имели ширину
 документа 360 px, но широкая таблица Pool расширяла `documentElement` до 765 px.
@@ -120,8 +141,12 @@ scroll width.
 
 - `documentElement.scrollWidth = 360`;
 - `body.scrollWidth = 360`;
-- таблица остаётся шириной 760 px и прокручивается только внутри контейнера;
-- результат одинаков на canary, production beta16, beta17 и beta22.
+- таблица оставалась шириной 760 px и прокручивалась только внутри контейнера;
+- результат был одинаков на canary, production beta16, beta17 и beta22.
+
+В beta31 мобильный Pool больше не использует широкую таблицу: до breakpoint `md`
+он отображает отдельные player cards, а desktop/tablet сохраняют таблицу. Поэтому
+на Pixel 5 нет ни page-level, ни внутреннего табличного горизонтального скролла.
 
 ## Что эта проверка не доказывает
 
