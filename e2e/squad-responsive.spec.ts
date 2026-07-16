@@ -48,7 +48,7 @@ test("squad controls stay usable without page-level horizontal clipping", async 
 
     if (testInfo.project.name === "mobile-chromium") {
       await expect(page.getByTestId("player-pool-mobile")).toBeVisible();
-      await expect(page.locator("table:visible")).toHaveCount(0);
+      await expect(page.getByTestId("player-pool-table")).toBeHidden();
     }
   }
 

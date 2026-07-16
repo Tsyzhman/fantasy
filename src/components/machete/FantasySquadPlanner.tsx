@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { type DragEvent, useEffect, useMemo, useRef, useState, useTransition } from "react";
 
 import { I18nText } from "@/components/i18n-text";
-import { localizedText, useLanguage } from "@/components/localized-option";
+import { LocalizedOption, localizedText, useLanguage } from "@/components/localized-option";
 import { SortableTable } from "@/components/sortable-table";
 import { FdrRow } from "@/components/ui/fdr-pill";
 import { SegmentedControl, type SegmentedOption } from "@/components/ui/segmented-control";
@@ -127,6 +127,12 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
   const summary = useMemo(() => summarizeFantasySquad(players, selections, rules, horizon), [players, selections, rules, horizon]);
   const savedSummary = useMemo(() => summarizeFantasySquad(players, savedSelections, rules, horizon), [players, savedSelections, rules, horizon]);
   const squadDiff = useMemo(() => buildSquadDiff(savedSelections, selections, savedSummary, summary), [savedSelections, selections, savedSummary, summary]);
+  const hasFullSquad = summary.selectedPlayers.length === rules.squadSize;
+  const squadIsValid =
+    hasFullSquad &&
+    summary.starterPlayers.length === rules.starterSize &&
+    summary.benchPlayers.length === rules.benchSize &&
+    summary.violations.length === 0;
   const transferLimit = fantasyTransferLimitForHorizon(horizon);
   const transferLimitIsActive = savedSelections.length === rules.squadSize;
   const availableSuggestionCount = transferLimitIsActive ? Math.max(0, transferLimit - squadDiff.transferCount) : transferLimit;
@@ -669,11 +675,17 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
               </div>
               <span className={cn(
                 "rounded-full px-2.5 py-1 text-xs font-semibold",
-                summary.violations.length === 0 ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"
+                squadIsValid
+                  ? "bg-emerald-50 text-emerald-700"
+                  : hasFullSquad
+                    ? "bg-rose-50 text-rose-700"
+                    : "bg-amber-50 text-amber-800"
               )}>
-                {summary.violations.length === 0
+                {squadIsValid
                   ? <I18nText en="Valid squad" ru="Состав корректен" />
-                  : <I18nText en={`${summary.violations.length} rule issues`} ru={`Нарушений правил: ${summary.violations.length}`} />}
+                  : hasFullSquad
+                    ? <I18nText en={`${summary.violations.length} rule issues`} ru={`Нарушений правил: ${summary.violations.length}`} />
+                    : <I18nText en={`${rules.squadSize - summary.selectedPlayers.length} players needed`} ru={`Нужно игроков: ${rules.squadSize - summary.selectedPlayers.length}`} />}
               </span>
             </div>
 
@@ -685,7 +697,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                   onChange={(event) => selectSquadVariant(event.target.value)}
                   className="w-full rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold normal-case tracking-normal text-ink"
                 >
-                  {!activeSquadId ? <option value=""><I18nText en="Unsaved variant" ru="Несохранённый вариант" /></option> : null}
+                  {!activeSquadId ? <LocalizedOption value="" en="Unsaved variant" ru="Несохранённый вариант" /> : null}
                   {squadOptions.map((option) => (
                     <option key={option.id} value={option.id}>{option.name} · {option.playersCount}/{rules.squadSize}</option>
                   ))}
@@ -716,7 +728,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                 <button
                   type="button"
                   onClick={() => saveSquad(false)}
-                  disabled={isPending || summary.violations.length > 0}
+                  disabled={isPending || !squadIsValid}
                   className="btn-brand inline-flex items-center justify-center gap-2 rounded px-4 py-2 text-sm font-semibold disabled:opacity-60"
                 >
                   <Save className="h-4 w-4" />
@@ -740,7 +752,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                   <button
                     type="button"
                     onClick={() => saveSquad(true)}
-                    disabled={isPending || summary.violations.length > 0}
+                    disabled={isPending || !squadIsValid}
                     className="inline-flex items-center justify-center gap-2 rounded px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
                   >
                     <Copy className="h-4 w-4" />
@@ -775,7 +787,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
             <Metric label={<I18nText en="Budget" ru="Бюджет" />} value={`${formatNumber(summary.spent, 1)} / ${formatNumber(rules.budgetLimit, 1)}`} tone={summary.spent > rules.budgetLimit ? "bad" : summary.bank < 0 ? "bad" : "default"} />
             <Metric label={<I18nText en="Bank" ru="Банк" />} value={formatNumber(summary.bank, 1)} tone={summary.bank < 0 ? "bad" : "good"} />
           </div>
-          <SquadDiffBadge diff={squadDiff} horizon={horizon} />
+          {activeSquadId && savedSelections.length > 0 ? <SquadDiffBadge diff={squadDiff} horizon={horizon} /> : null}
 
           <details className="mt-4 rounded border border-slate-200 bg-slate-50/70">
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 text-sm [&::-webkit-details-marker]:hidden">
@@ -1021,7 +1033,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                 <option value="STARTER">{localizedText(language, "In starting XI", "В старте")}</option>
                 <option value="BENCH">{localizedText(language, "On bench", "На скамейке")}</option>
               </select>
-              <label className="flex items-center gap-2 rounded border border-slate-200 px-3 py-2 text-xs text-slate-700">
+              <label className="col-span-2 flex items-center gap-2 rounded border border-slate-200 px-3 py-2 text-xs text-slate-700 md:col-span-1">
                 <input type="checkbox" checked={onlyAffordable} onChange={(event) => setOnlyAffordable(event.target.checked)} className="h-4 w-4 rounded border-slate-300" />
                 <I18nText en="Fits" ru="Проходит" />
               </label>
@@ -1126,7 +1138,7 @@ function PlayerPoolTable({
         onAdd={onAdd}
         onRemove={onRemove}
       />
-      <div className="hidden min-w-0 max-w-full overflow-hidden rounded border border-slate-200 bg-white md:block">
+      <div className="hidden min-w-0 max-w-full overflow-hidden rounded border border-slate-200 bg-white md:block" data-testid="player-pool-table">
         <div className="relative max-h-[720px] w-full max-w-full overflow-auto">
         <SortableTable className="min-w-[760px] divide-y divide-slate-200 text-xs">
           <thead className="sticky top-0 z-10 bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
