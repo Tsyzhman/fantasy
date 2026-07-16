@@ -60,7 +60,7 @@ export function MacheteShell({ children, compact = false }: { children: ReactNod
     <main className={cn("mx-auto max-w-7xl px-4 sm:px-6 lg:px-8", compact ? "py-3 sm:py-4" : "py-5 sm:py-7")}>
       {compact ? (
         <div className="flex min-w-0 items-center gap-3 border-b border-slate-200 pb-2.5">
-          <span className="shrink-0 text-xs font-bold uppercase tracking-wide text-slate-500">Machete</span>
+          <span className="hidden shrink-0 text-xs font-bold uppercase tracking-wide text-slate-500 sm:inline">Machete</span>
           {workspaceNavigation}
         </div>
       ) : (
