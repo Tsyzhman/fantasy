@@ -58,9 +58,8 @@ type FantasySquadPlannerProps = {
 };
 
 const positionOrder: FantasyPositionGroup[] = ["GK", "DEF", "MID", "FWD", "UNK"];
-const rosterPositions: Array<Exclude<FantasyPositionGroup, "UNK">> = ["GK", "DEF", "MID", "FWD"];
 const squadDragDataType = "application/x-fantasy-player-id";
-const fantasySquadOptimizationTimeoutMs = 5_000;
+const fantasySquadOptimizationSafetyTimeoutMs = 15_000;
 
 type UiLanguage = ReturnType<typeof useLanguage>;
 type MobileTab = "squad" | "pool" | "suggestions";
@@ -84,7 +83,7 @@ function optimizeFantasySquadOffThread(input: FantasySquadOptimizationInput) {
     const timeout = window.setTimeout(() => {
       worker.terminate();
       reject(new Error("FANTASY_SQUAD_OPTIMIZER_TIMEOUT"));
-    }, fantasySquadOptimizationTimeoutMs);
+    }, fantasySquadOptimizationSafetyTimeoutMs);
     const finish = () => {
       window.clearTimeout(timeout);
       worker.terminate();
@@ -198,7 +197,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
       .filter((player) => (positionFilter === "ALL" ? true : player.positionGroup === positionFilter))
       .filter((player) =>
         normalizedQuery
-          ? `${player.name} ${player.teamName} ${player.position ?? ""}`.toLowerCase().includes(normalizedQuery)
+          ? `${player.name} ${player.teamName} ${player.teamShortName ?? ""} ${player.position ?? ""}`.toLowerCase().includes(normalizedQuery)
           : true
       )
       .filter((player) => {
@@ -591,7 +590,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
         )
       );
     } catch {
-      setMessage(localizedText(language, "Auto-pick could not finish within five seconds. Try again.", "Автоподбор не завершился за пять секунд. Попробуйте ещё раз."));
+      setMessage(localizedText(language, "Auto-pick could not finish. Try again.", "Автоподбор не завершился. Попробуйте ещё раз."));
     } finally {
       setAutoPickPending(false);
     }
@@ -1208,18 +1207,32 @@ function PlayerPoolTable({
       />
       <div className="hidden min-w-0 max-w-full overflow-hidden rounded border border-slate-200 bg-white md:block" data-testid="player-pool-table">
         <div className="relative max-h-[720px] w-full max-w-full overflow-auto">
-        <SortableTable className="min-w-[760px] divide-y divide-slate-200 text-xs">
-          <thead className="sticky top-0 z-10 bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
+        <SortableTable className="w-full min-w-[720px] table-fixed divide-y divide-slate-200 text-xs">
+          <colgroup>
+            <col className="w-[20%]" />
+            <col className="w-[13%]" />
+            <col className="w-[7%]" />
+            <col className="w-[8%]" />
+            <col className="w-[7%]" />
+            <col className="w-[7%]" />
+            <col className="w-[7%]" />
+            <col className="w-[24%]" />
+            <col className="w-[7%]" />
+          </colgroup>
+          <thead className="sticky top-0 z-10 whitespace-nowrap bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
             <tr>
-              <th className="px-3 py-3"><I18nText en="Player" ru="Игрок" /></th>
-              <th className="px-3 py-3"><I18nText en="Team" ru="Команда" /></th>
-              <th className="px-3 py-3"><I18nText en="Pos" ru="Поз." /></th>
-              <th className="px-3 py-3 text-right"><I18nText en="Price" ru="Цена" /></th>
-              <th className="px-3 py-3 text-right"><I18nText en="Next" ru="След." /></th>
-              <th className="px-3 py-3 text-right">{horizon}R</th>
-              <th className="px-3 py-3 text-right">W xG</th>
-              <th className="px-3 py-3"><I18nText en="Fixtures" ru="Матчи" /></th>
-              <th className="px-3 py-3 text-right"><I18nText en="Add" ru="Добавить" /></th>
+              <th className="px-2 py-2"><I18nText en="Player" ru="Игрок" /></th>
+              <th className="px-2 py-2"><I18nText en="Team" ru="Команда" /></th>
+              <th className="px-1 py-2"><I18nText en="Pos" ru="Поз." /></th>
+              <th className="px-1 py-2 text-right"><I18nText en="Price" ru="Цена" /></th>
+              <th className="px-1 py-2 text-right"><I18nText en="Next" ru="След." /></th>
+              <th className="px-1 py-2 text-right">{horizon}R</th>
+              <th className="px-1 py-2 text-right">W xG</th>
+              <th data-sort-disabled="true" className="px-2 py-2"><I18nText en="Fixtures" ru="Матчи" /></th>
+              <th data-sort-disabled="true" className="px-2 py-2 text-center">
+                <span aria-hidden="true">+</span>
+                <span className="sr-only"><I18nText en="Add or remove" ru="Добавить или убрать" /></span>
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -1233,7 +1246,11 @@ function PlayerPoolTable({
                 .map((label, fixtureIdx) => ({ label, difficulty: player.fixtureDifficulties?.[fixtureIdx] ?? null }))
                 .filter((chip) => Boolean(chip.label))
                 .map((chip) => ({ label: compactFixtureLabel(chip.label), difficulty: chip.difficulty, title: chip.label }));
+              const visibleFixtureChips = fixtureChips.slice(0, 3);
+              const hiddenFixtureCount = Math.max(0, fixtureChips.length - visibleFixtureChips.length);
+              const hiddenFixtureLabels = fixtureChips.slice(visibleFixtureChips.length).map((chip) => chip.title ?? chip.label).join(", ");
               const fixtures = player.fixtures.slice(0, horizon).filter(Boolean).join(" / ");
+              const teamDisplayName = fantasyPlayerTeamDisplayName(player);
               const rowClassName = isSelected
                 ? "bg-emerald-50 text-slate-700"
                 : disabled
@@ -1248,85 +1265,94 @@ function PlayerPoolTable({
 
               return (
                 <tr key={player.playerId} className={rowClassName}>
-                  <td className="min-w-36 px-2.5 py-2">
+                  <td className="px-2 py-1.5">
                     <span className={`block truncate font-semibold ${muted ? "text-slate-500" : "text-ink"}`} title={forecastTitle}>{player.name}</span>
-                    <span className={`block text-[11px] ${isSelected ? "font-bold text-emerald-700" : muted ? "text-slate-600" : "text-slate-500"}`}>
-                      {isSelected ? <I18nText en="Selected" ru="В составе" /> : `FP ${formatScore(player.predictedFp)}`}
-                    </span>
-                    {player.expectedMinutes !== null && player.expectedMinutes !== undefined ? (
-                      <span className="block text-[10px] text-slate-600" title={forecastTitle}>
-                        {Math.round(player.expectedMinutes)} <I18nText en="min" ru="мин" />
-                        {player.forecastConfidence !== null && player.forecastConfidence !== undefined
-                          ? ` · ${Math.round(player.forecastConfidence * 100)}%`
-                          : ""}
+                    <span className="block truncate text-[10px] text-slate-600" title={forecastTitle}>
+                      <span className={isSelected ? "font-bold text-emerald-700" : muted ? "text-slate-600" : "text-slate-500"}>
+                        {isSelected ? <I18nText en="Selected" ru="В составе" /> : `FP ${formatScore(player.predictedFp)}`}
                       </span>
-                    ) : null}
+                      {player.expectedMinutes !== null && player.expectedMinutes !== undefined ? (
+                        <>
+                          {` · ${Math.round(player.expectedMinutes)}`}<I18nText en="m" ru="м" />
+                          {player.forecastConfidence !== null && player.forecastConfidence !== undefined
+                            ? ` · ${Math.round(player.forecastConfidence * 100)}%`
+                            : ""}
+                        </>
+                      ) : null}
+                    </span>
                   </td>
-                  <td className="min-w-28 px-2.5 py-2 text-slate-600">
-                    <span className="block truncate" title={player.teamName}>{player.teamName}</span>
+                  <td className="px-2 py-1.5 text-slate-600">
+                    <span className="block truncate" title={player.teamName}>{teamDisplayName}</span>
                   </td>
-                  <td className="px-2.5 py-2">
+                  <td className="px-2 py-1.5">
                     <span className={`rounded px-2 py-0.5 text-[11px] font-bold ${muted ? "border border-slate-300 bg-slate-200 text-slate-700" : positionPillClass(player.positionGroup)}`}>{player.positionGroup}</span>
                   </td>
-                  <td className={`whitespace-nowrap px-2.5 py-2 text-right font-semibold ${muted ? "text-slate-600" : "text-ink"}`}>
-                    <span>{player.priceSource === "ESTIMATED" ? "~" : ""}{formatNumber(player.price, 1)}</span>
-                    {player.priceSource === "ESTIMATED" ? (
-                      <span
-                        className="ml-1 rounded bg-amber-50 px-1 py-0.5 text-[10px] font-bold uppercase text-amber-700"
-                        title={localizedText(language, "Estimated price", "Оценочная цена")}
-                      >
-                        <span aria-hidden="true"><I18nText en="est." ru="оц." /></span>
-                        <span className="sr-only"><I18nText en="Estimated price" ru="Оценочная цена" /></span>
-                      </span>
-                    ) : null}
+                  <td
+                    data-sort-value={player.price}
+                    className={`whitespace-nowrap px-2 py-1.5 text-right font-semibold ${muted ? "text-slate-600" : "text-ink"}`}
+                    title={player.priceSource === "ESTIMATED" ? localizedText(language, "Estimated price", "Оценочная цена") : undefined}
+                  >
+                    {player.priceSource === "ESTIMATED" ? "~" : ""}{formatNumber(player.price, 1)}
                   </td>
-                  <td className={`whitespace-nowrap px-2.5 py-2 text-right font-semibold ${muted ? "text-slate-600" : "text-emerald-700"}`}>{formatScore(nextFantasyPoints(player))}</td>
-                  <td className={`whitespace-nowrap px-2.5 py-2 text-right font-semibold ${muted ? "text-slate-600" : "text-sky-700"}`}>{formatScore(playerHorizonPoints(player, horizon))}</td>
-                  <td className={`whitespace-nowrap px-2.5 py-2 text-right text-[11px] font-semibold ${muted ? "text-slate-600" : "text-violet-700"}`}>
+                  <td data-sort-value={nextFantasyPoints(player)} className={`whitespace-nowrap px-2 py-1.5 text-right font-semibold ${muted ? "text-slate-600" : "text-emerald-700"}`}>{formatScore(nextFantasyPoints(player))}</td>
+                  <td data-sort-value={playerHorizonPoints(player, horizon)} className={`whitespace-nowrap px-2 py-1.5 text-right font-semibold ${muted ? "text-slate-600" : "text-sky-700"}`}>{formatScore(playerHorizonPoints(player, horizon))}</td>
+                  <td data-sort-value={player.baltikaXg ?? ""} className={`whitespace-nowrap px-2 py-1.5 text-right text-[11px] font-semibold ${muted ? "text-slate-600" : "text-violet-700"}`}>
                     {player.baltikaXg !== null && player.baltikaXg !== undefined ? (
-                      <>
-                        <span className="block num-tabular">{formatScore(player.baltikaXg)}</span>
-                        {player.baltikaMatchesPlayed ? (
-                          <span className="block text-[10px] font-normal text-slate-600">
-                            <I18nText en={`${player.baltikaMatchesPlayed} apps`} ru={`${player.baltikaMatchesPlayed} матч.`} />
-                          </span>
-                        ) : null}
-                      </>
+                      <span
+                        className="num-tabular"
+                        title={player.baltikaMatchesPlayed
+                          ? localizedText(language, `Wyscout xG over ${player.baltikaMatchesPlayed} matches`, `Wyscout xG за ${player.baltikaMatchesPlayed} матчей`)
+                          : "Wyscout xG"}
+                      >
+                        {formatScore(player.baltikaXg)}{player.baltikaMatchesPlayed ? ` · ${player.baltikaMatchesPlayed}` : ""}
+                      </span>
                     ) : (
                       <span className="text-slate-600">—</span>
                     )}
                   </td>
-                  <td className="max-w-44 px-2.5 py-2 text-[11px] text-slate-500">
-                    {fixtureChips.length > 0 ? (
-                      <FdrRow fixtures={fixtureChips} />
+                  <td className="overflow-hidden px-2 py-1.5 text-[11px] text-slate-500">
+                    {visibleFixtureChips.length > 0 ? (
+                      <div className="flex min-w-0 items-center gap-1 overflow-hidden" title={fixtures}>
+                        <FdrRow fixtures={visibleFixtureChips} className="min-w-0 flex-nowrap overflow-hidden" />
+                        {hiddenFixtureCount > 0 ? (
+                          <span
+                            className="inline-flex h-[18px] shrink-0 items-center rounded bg-slate-200 px-1 text-[10px] font-bold text-slate-700"
+                            aria-label={localizedText(language, `${hiddenFixtureCount} more fixtures: ${hiddenFixtureLabels}`, `Ещё матчей: ${hiddenFixtureCount}. ${hiddenFixtureLabels}`)}
+                            title={hiddenFixtureLabels}
+                          >
+                            +{hiddenFixtureCount}
+                          </span>
+                        ) : null}
+                      </div>
                     ) : (
                       <span className="block truncate" title={fixtures}><I18nText en="No fixture loaded" ru="Матч не загружен" /></span>
                     )}
-                    {disabled ? (
-                      <span
-                        className="mt-1 inline-flex max-w-full items-center gap-1 rounded bg-rose-50 px-2 py-1 font-semibold text-rose-700"
-                        title={localizedReason ?? undefined}
-                      >
-                        <Lock className="h-3 w-3 shrink-0" />
-                        <span className="truncate">{localizedReason}</span>
-                      </span>
-                    ) : null}
                   </td>
-                  <td className="px-2.5 py-2 text-right">
+                  <td className="px-1 py-1.5 text-center">
                     {isSelected ? (
-                      <button type="button" onClick={() => onRemove(player.playerId)} aria-label={removeLabel} className="inline-flex h-8 w-8 items-center justify-center rounded border border-rose-200 bg-white text-rose-700 hover:bg-rose-50">
+                      <button type="button" onClick={() => onRemove(player.playerId)} aria-label={removeLabel} className="inline-flex h-7 w-7 items-center justify-center rounded border border-rose-200 bg-white text-rose-700 hover:bg-rose-50">
                         <Trash2 className="h-4 w-4" />
                         <span className="sr-only">{removeLabel}</span>
                       </button>
+                    ) : disabled ? (
+                      <span
+                        role="button"
+                        aria-disabled="true"
+                        aria-label={addLabel}
+                        tabIndex={0}
+                        title={localizedReason ?? undefined}
+                        className="inline-flex h-7 w-7 items-center justify-center rounded border border-slate-200 bg-slate-100 text-slate-400"
+                      >
+                        <Lock className="h-4 w-4" />
+                      </span>
                     ) : (
                       <button
                         type="button"
                         onClick={() => onAdd(player)}
-                        disabled={disabled}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
+                        className="inline-flex h-7 w-7 items-center justify-center rounded border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
                         aria-label={addLabel}
                       >
-                        {disabled ? <Lock className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                        <Plus className="h-4 w-4" />
                         <span className="sr-only">{addLabel}</span>
                       </button>
                     )}
@@ -1403,7 +1429,7 @@ function PlayerPoolMobileList({
                     {player.positionGroup}
                   </span>
                 </div>
-                <p className="mt-0.5 truncate text-xs text-slate-500">{player.teamName}</p>
+                <p className="mt-0.5 truncate text-xs text-slate-500" title={player.teamName}>{fantasyPlayerTeamDisplayName(player)}</p>
                 {player.expectedMinutes !== null && player.expectedMinutes !== undefined ? (
                   <p className="mt-0.5 text-[11px] text-slate-500">
                     {Math.round(player.expectedMinutes)} <I18nText en="min" ru="мин" />
@@ -1910,7 +1936,7 @@ function SquadPlayerTile({
         {selection?.isLocked ? <Lock className="h-2.5 w-2.5 text-slate-500" /> : null}
       </div>
       <p className="mt-0.5 truncate text-[10px] font-bold text-ink" title={player.name}>{player.name}</p>
-      <p className="truncate text-[9px] text-slate-500" title={player.teamName}>{player.teamName}</p>
+      <p className="truncate text-[9px] text-slate-500" title={player.teamName}>{fantasyPlayerTeamDisplayName(player)}</p>
       <p className="mt-0.5 text-[10px] font-semibold text-emerald-700 num-tabular">
         <Check className="mr-0.5 inline h-2.5 w-2.5" />
         {formatScore((player.roundPoints.length > 0 ? playerHorizonPoints(player, horizon) : player.predictedFp ?? 0) * (isCaptain ? 2 : 1))}
@@ -2154,6 +2180,10 @@ function localizeAddBlockReason(reason: string, language: UiLanguage) {
 
 function compactFixtureLabel(label: string) {
   return label.replace(/\s*\(([HhAa])\)$/, (_, side: string) => ` ${side.toUpperCase()}`);
+}
+
+function fantasyPlayerTeamDisplayName(player: FantasyPlannerPlayer) {
+  return player.teamShortName?.trim() || player.teamName;
 }
 
 function buildSquadDiff(

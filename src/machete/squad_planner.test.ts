@@ -8,6 +8,7 @@ import {
   calibratedPlayerFixturePoints,
   compareFantasyPlannerPlayers,
   fantasyPlannerPosition,
+  fantasyTeamShortName,
   loadFantasySquadPlannerData,
   normalizeFantasySquadName,
   projectFixtureFantasyPoints,
@@ -39,6 +40,12 @@ test("squad planner groups upcoming matches into fixture rounds", () => {
   assert.equal(result.rounds[0].fixtureCount, 2);
   assert.equal(result.fixturesByTeamRound.get("round:12")?.get("10")?.[0].opponentName, "Away 20");
   assert.equal(result.fixturesByTeamRound.get("round:12")?.get("10")?.[0].opponentTeamId, "20");
+});
+
+test("squad planner uses provider team short names with a full-name fallback", () => {
+  assert.equal(fantasyTeamShortName({ short_name: "Man United" }, "Manchester United"), "Man United");
+  assert.equal(fantasyTeamShortName({ shortName: "Nottm Forest" }, "Nottingham Forest"), "Nottm Forest");
+  assert.equal(fantasyTeamShortName({ short_name: "  " }, "Brighton & Hove Albion"), "Brighton & Hove Albion");
 });
 
 test("sports ru season aliases support long and compact FotMob season labels", () => {

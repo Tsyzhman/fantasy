@@ -92,6 +92,7 @@ export type FantasyFixtureProjection = Pick<PlannerFixture, "side" | "attackMult
 type PlannerRoundFixtures = {
   rounds: FantasyRoundProjection[];
   fixturesByTeamRound: Map<string, Map<string, PlannerFixture[]>>;
+  teamShortNameById: Map<string, string>;
 };
 
 type TeamStrengthSide = "home" | "away";
@@ -316,6 +317,7 @@ export async function loadFantasySquadPlannerData(
         teamId: String(row.teamId),
         name: playerName,
         teamName: row.team.name,
+        teamShortName: roundsAndFixtures.teamShortNameById.get(String(row.teamId)) ?? row.team.name,
         leagueName: league.displayName,
         position,
         positionGroup,
@@ -712,7 +714,7 @@ function standardDeviation(values: number[], mean: number) {
 
 async function loadUpcomingRoundFixtures(prisma: PrismaClient, league: SharedLeagueSeasonOption) {
   const now = new Date();
-  const [matches, teamStrengthProfiles] = await Promise.all([
+  const [matches, teamStrengthProfiles, seasonTeams] = await Promise.all([
     prisma.coreMatch.findMany({
       where: {
         leagueId: league.leagueId,
@@ -727,8 +729,24 @@ async function loadUpcomingRoundFixtures(prisma: PrismaClient, league: SharedLea
       orderBy: [{ matchDate: "asc" }, { id: "asc" }],
       take: 180
     }),
-    loadTeamStrengthProfiles(prisma, league.leagueId, league.season)
+    loadTeamStrengthProfiles(prisma, league.leagueId, league.season),
+    prisma.leagueSeasonTeam.findMany({
+      where: {
+        leagueId: league.leagueId,
+        season: league.season,
+        active: true
+      },
+      select: {
+        teamId: true,
+        metadata: true
+      }
+    })
   ]);
+  const shortNameByTeamId = new Map(
+    seasonTeams
+      .map((row) => [String(row.teamId), fantasyTeamShortName(row.metadata, "")] as const)
+      .filter((entry) => Boolean(entry[1]))
+  );
   const coreFixtures = buildPlannerRoundFixtures(
     matches.map((match) => ({
       id: String(match.id),
@@ -736,17 +754,20 @@ async function loadUpcomingRoundFixtures(prisma: PrismaClient, league: SharedLea
       matchDate: match.matchDate,
       homeTeamId: match.homeTeamId ? String(match.homeTeamId) : null,
       awayTeamId: match.awayTeamId ? String(match.awayTeamId) : null,
-      homeTeamName: match.homeTeam?.name ?? null,
-      awayTeamName: match.awayTeam?.name ?? null,
+      homeTeamName: (match.homeTeamId ? shortNameByTeamId.get(String(match.homeTeamId)) : null) ?? match.homeTeam?.name ?? null,
+      awayTeamName: (match.awayTeamId ? shortNameByTeamId.get(String(match.awayTeamId)) : null) ?? match.awayTeam?.name ?? null,
       finished: match.finished,
       cancelled: match.cancelled
     })),
     now
   );
 
-  if (coreFixtures.rounds.length > 0) return applyFixtureStrength(coreFixtures, teamStrengthProfiles);
+  if (coreFixtures.rounds.length > 0) {
+    return applyFixtureStrength({ ...coreFixtures, teamShortNameById: shortNameByTeamId }, teamStrengthProfiles);
+  }
 
-  return applyFixtureStrength(await loadLegacyMacheteUpcomingRoundFixtures(prisma, league, now), teamStrengthProfiles);
+  const legacyFixtures = await loadLegacyMacheteUpcomingRoundFixtures(prisma, league, now);
+  return applyFixtureStrength({ ...legacyFixtures, teamShortNameById: shortNameByTeamId }, teamStrengthProfiles);
 }
 
 export function buildPlannerRoundFixtures(matches: PlannerMatch[], now = new Date()): PlannerRoundFixtures {
@@ -799,7 +820,8 @@ export function buildPlannerRoundFixtures(matches: PlannerMatch[], now = new Dat
 
   return {
     rounds,
-    fixturesByTeamRound
+    fixturesByTeamRound,
+    teamShortNameById: new Map()
   };
 }
 
@@ -1139,8 +1161,8 @@ async function loadLegacyMacheteUpcomingRoundFixtures(prisma: PrismaClient, leag
       OR: [{ status: { notIn: ["FINISHED", "PLAYED", "CANCELLED", "POSTPONED"] } }, { kickoffAt: { gte: startOfTodayUtc(now) } }]
     },
     include: {
-      homeTeam: { select: { providerTeamId: true, name: true } },
-      awayTeam: { select: { providerTeamId: true, name: true } }
+      homeTeam: { select: { providerTeamId: true, name: true, shortName: true } },
+      awayTeam: { select: { providerTeamId: true, name: true, shortName: true } }
     },
     orderBy: [{ kickoffAt: "asc" }, { id: "asc" }],
     take: 180
@@ -1153,8 +1175,8 @@ async function loadLegacyMacheteUpcomingRoundFixtures(prisma: PrismaClient, leag
       matchDate: fixture.kickoffAt,
       homeTeamId: fixture.homeTeam?.providerTeamId ?? null,
       awayTeamId: fixture.awayTeam?.providerTeamId ?? null,
-      homeTeamName: fixture.homeTeam?.name ?? null,
-      awayTeamName: fixture.awayTeam?.name ?? null,
+      homeTeamName: fixture.homeTeam?.shortName ?? fixture.homeTeam?.name ?? null,
+      awayTeamName: fixture.awayTeam?.shortName ?? fixture.awayTeam?.name ?? null,
       finished: fixture.status === "FINISHED" || fixture.status === "PLAYED",
       cancelled: fixture.status === "CANCELLED" || fixture.status === "POSTPONED"
     })),
@@ -1377,6 +1399,16 @@ function fixtureMultiplier(fixture: FantasyFixtureProjection, positionGroup: Fan
           : 1 + (attack - 1) * 0.24 + (defense - 1) * 0.12;
 
   return clamp(venueMultiplier * positionBlend, 0.68, 1.35);
+}
+
+export function fantasyTeamShortName(metadata: unknown, fallback: string) {
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return fallback;
+  const record = metadata as Record<string, unknown>;
+  for (const key of ["short_name", "shortName"]) {
+    const value = record[key];
+    if (typeof value === "string" && value.trim()) return value.trim();
+  }
+  return fallback;
 }
 
 export function compareFantasyPlannerPlayers(left: FantasyPlannerPlayer, right: FantasyPlannerPlayer) {

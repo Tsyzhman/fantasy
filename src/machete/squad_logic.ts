@@ -25,6 +25,7 @@ export type FantasyPlannerPlayer = {
   teamId: string | null;
   name: string;
   teamName: string;
+  teamShortName?: string | null;
   leagueName: string;
   position: string | null;
   positionGroup: FantasyPositionGroup;
