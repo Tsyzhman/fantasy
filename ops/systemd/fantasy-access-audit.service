@@ -1,0 +1,24 @@
+[Unit]
+Description=Fantasy Scout Caddy access-log audit
+After=caddy.service
+Requires=caddy.service
+
+[Service]
+Type=oneshot
+User=caddy
+Group=caddy
+ExecStart=/usr/bin/python3 /usr/local/lib/fantasy-scout/analyze-caddy-access-log.py --log-pattern /var/log/caddy/fantasy-access*.log* --since-minutes 60 --max-5xx-rate-percent 1 --min-requests 20 --output /var/lib/fantasy-scout-monitor/access-audit.json
+NoNewPrivileges=true
+PrivateDevices=true
+PrivateTmp=true
+ProtectControlGroups=true
+ProtectHome=true
+ProtectKernelLogs=true
+ProtectKernelModules=true
+ProtectKernelTunables=true
+ProtectSystem=strict
+ReadOnlyPaths=/var/log/caddy /usr/local/lib/fantasy-scout
+ReadWritePaths=/var/lib/fantasy-scout-monitor
+
+[Install]
+WantedBy=multi-user.target

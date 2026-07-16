@@ -7,6 +7,8 @@ storage/uploads
 .cache
 /output/
 /.playwright-cli/
+/playwright-report/
+/test-results/
 tmp_*
 .tmp-fotmob-js
 tmp_*.json

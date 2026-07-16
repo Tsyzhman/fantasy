@@ -1,9 +1,9 @@
 "use client";
 
-import { Crosshair, DatabaseZap, Layers3, ShieldCheck, Users } from "lucide-react";
+import { Crosshair, DatabaseZap, Layers3, Menu, ShieldCheck, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 
 import { CommandPalette } from "@/components/command-palette";
 import { I18nText } from "@/components/i18n-text";
@@ -18,17 +18,20 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/cn";
 
 type AppHeaderProps = {
-  user?: {
-    email: string;
-    name: string | null;
-    role: string;
-  } | null;
+  user?: HeaderUser | null;
+};
+
+type HeaderUser = {
+  email: string;
+  name: string | null;
+  role: string;
 };
 
 export function AppHeader({ user }: AppHeaderProps) {
   const language = useLanguage();
   const pathname = usePathname();
   const router = useRouter();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const isHome = pathname === "/";
   const isPublicAuthPage = pathname === "/login" || pathname === "/setup";
   const isAdmin = pathname.startsWith("/admin");
@@ -62,74 +65,117 @@ export function AppHeader({ user }: AppHeaderProps) {
     );
   }
 
+  const navigationProps = { isAdmin, isMixerr, pathname, user, logout };
+
   return (
-    <header className="sticky top-0 z-20 overflow-x-hidden border-b border-slate-200 bg-white/88 backdrop-blur">
-      <div className="mx-auto flex min-w-0 max-w-7xl flex-col gap-3 px-4 py-3 sm:px-6 md:flex-row md:items-center md:justify-between lg:px-8">
+    <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/88 backdrop-blur">
+      <div className="relative mx-auto flex min-w-0 max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
         <ModeBrand />
-        <nav
-          aria-label={localizedText(language, "Global navigation", "Глобальная навигация")}
-          className="flex w-full max-w-full items-center gap-2 overflow-x-auto pb-1 text-sm font-medium text-slate-600 md:w-auto md:flex-wrap md:justify-end md:overflow-visible md:pb-0"
+        <button
+          type="button"
+          aria-controls="global-navigation"
+          aria-expanded={mobileMenuOpen}
+          onClick={() => setMobileMenuOpen((isOpen) => !isOpen)}
+          className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 xl:hidden"
         >
-          {isAdmin ? (
-            <>
-              <HeaderLink href="/machete/leagues" icon={<Layers3 className="h-4 w-4" />}>
-                Machete
-              </HeaderLink>
-              <HeaderLink href="/baltika/leagues" icon={<Layers3 className="h-4 w-4" />}>
-                <I18nText en="Baltika" ru="Балтика" />
-              </HeaderLink>
-              <HeaderLink href="/mixerr" icon={<Crosshair className="h-4 w-4" />}>
-                <I18nText en="MiXerr" ru="Миксер" />
-              </HeaderLink>
-              <span className="mx-1 hidden h-6 w-px bg-slate-200 sm:block" />
-              <HeaderLink href="/admin/ingestion" active={pathname.startsWith("/admin/ingestion")} icon={<DatabaseZap className="h-4 w-4" />}>
-                <I18nText en="Ingestion" ru="Загрузка" />
-              </HeaderLink>
-              <HeaderLink href="/admin/users" active={pathname.startsWith("/admin/users")} icon={<Users className="h-4 w-4" />}>
-                <I18nText en="Users" ru="Пользователи" />
-              </HeaderLink>
-            </>
-          ) : (
-            <>
-              <ModeLeaguesLink />
-              <ModePlayersLink />
-              {isMixerr ? (
-                <>
-                  <HeaderLink href="/machete/leagues">Machete</HeaderLink>
-                  <HeaderLink href="/baltika/leagues">
-                    <I18nText en="Baltika" ru="Балтика" />
-                  </HeaderLink>
-                </>
-              ) : (
-                <HeaderLink href="/mixerr" icon={<Crosshair className="h-4 w-4" />}>
-                  <I18nText en="MiXerr" ru="Миксер" />
-                </HeaderLink>
-              )}
-              <ModeSwitchLink />
-              <ModelSettingsLink />
-              {user?.role === "ADMIN" ? (
-                <HeaderLink href="/admin/ingestion" icon={<ShieldCheck className="h-4 w-4" />}>
-                  <I18nText en="Admin" ru="Админ" />
-                </HeaderLink>
-              ) : null}
-            </>
+          <Menu className="h-4 w-4" aria-hidden="true" />
+          <I18nText en="Menu" ru="Меню" />
+        </button>
+        <nav
+          id="global-navigation"
+          aria-label={localizedText(language, "Global navigation", "Глобальная навигация")}
+          onClick={() => setMobileMenuOpen(false)}
+          onKeyDown={(event) => {
+            if (event.key === "Escape") setMobileMenuOpen(false);
+          }}
+          className={cn(
+            mobileMenuOpen ? "grid" : "hidden",
+            "absolute right-4 top-full z-30 mt-1 max-h-[calc(100vh-5rem)] w-[min(21rem,calc(100vw-2rem))] grid-cols-1 gap-1 overflow-y-auto rounded border border-slate-200 bg-white p-2 text-sm font-medium text-slate-600 shadow-xl sm:right-6 sm:grid-cols-2 [&_a]:justify-start [&_button]:justify-start",
+            "xl:static xl:mt-0 xl:flex xl:max-h-none xl:w-auto xl:flex-wrap xl:items-center xl:justify-end xl:overflow-visible xl:border-0 xl:bg-transparent xl:p-0 xl:shadow-none"
           )}
-          <CommandPalette showAdmin={user?.role === "ADMIN" || isAdmin} />
-          {user ? (
-            <button
-              type="button"
-              onClick={logout}
-              className="shrink-0 rounded px-3 py-2 text-slate-600 hover:bg-slate-100"
-              aria-label={localizedText(language, `Sign out ${user.name ?? user.email}`, `Выйти: ${user.name ?? user.email}`)}
-            >
-              <I18nText en="Sign out" ru="Выйти" />
-            </button>
-          ) : null}
-          <LanguageToggle />
-          <ThemeToggle />
+        >
+          <HeaderNavigationItems {...navigationProps} />
         </nav>
       </div>
     </header>
+  );
+}
+
+function HeaderNavigationItems({
+  isAdmin,
+  isMixerr,
+  pathname,
+  user,
+  logout
+}: {
+  isAdmin: boolean;
+  isMixerr: boolean;
+  pathname: string;
+  user?: HeaderUser | null;
+  logout: () => Promise<void>;
+}) {
+  const language = useLanguage();
+
+  return (
+    <>
+      {isAdmin ? (
+        <>
+          <HeaderLink href="/machete/leagues" icon={<Layers3 className="h-4 w-4" />}>
+            Machete
+          </HeaderLink>
+          <HeaderLink href="/baltika/leagues" icon={<Layers3 className="h-4 w-4" />}>
+            <I18nText en="Baltika" ru="Балтика" />
+          </HeaderLink>
+          <HeaderLink href="/mixerr" icon={<Crosshair className="h-4 w-4" />}>
+            <I18nText en="MiXerr" ru="Миксер" />
+          </HeaderLink>
+          <span className="mx-1 hidden h-6 w-px bg-slate-200 xl:block" />
+          <HeaderLink href="/admin/ingestion" active={pathname.startsWith("/admin/ingestion")} icon={<DatabaseZap className="h-4 w-4" />}>
+            <I18nText en="Ingestion" ru="Загрузка" />
+          </HeaderLink>
+          <HeaderLink href="/admin/users" active={pathname.startsWith("/admin/users")} icon={<Users className="h-4 w-4" />}>
+            <I18nText en="Users" ru="Пользователи" />
+          </HeaderLink>
+        </>
+      ) : (
+        <>
+          <ModeLeaguesLink />
+          <ModePlayersLink />
+          {isMixerr ? (
+            <>
+              <HeaderLink href="/machete/leagues">Machete</HeaderLink>
+              <HeaderLink href="/baltika/leagues">
+                <I18nText en="Baltika" ru="Балтика" />
+              </HeaderLink>
+            </>
+          ) : (
+            <HeaderLink href="/mixerr" icon={<Crosshair className="h-4 w-4" />}>
+              <I18nText en="MiXerr" ru="Миксер" />
+            </HeaderLink>
+          )}
+          <ModeSwitchLink />
+          <ModelSettingsLink />
+          {user?.role === "ADMIN" ? (
+            <HeaderLink href="/admin/ingestion" icon={<ShieldCheck className="h-4 w-4" />}>
+              <I18nText en="Admin" ru="Админ" />
+            </HeaderLink>
+          ) : null}
+        </>
+      )}
+      <CommandPalette showAdmin={user?.role === "ADMIN" || isAdmin} />
+      {user ? (
+        <button
+          type="button"
+          onClick={logout}
+          className="shrink-0 rounded px-3 py-2 text-slate-600 hover:bg-slate-100"
+          aria-label={localizedText(language, `Sign out ${user.name ?? user.email}`, `Выйти: ${user.name ?? user.email}`)}
+        >
+          <I18nText en="Sign out" ru="Выйти" />
+        </button>
+      ) : null}
+      <LanguageToggle />
+      <ThemeToggle />
+    </>
   );
 }
 

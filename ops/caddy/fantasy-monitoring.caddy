@@ -1,0 +1,18 @@
+log fantasy_access {
+	output file /var/log/caddy/fantasy-access.log {
+		mode 0640
+		roll_size 50MiB
+		roll_interval 24h
+		roll_keep 10
+		roll_keep_for 720h
+	}
+	format json
+}
+
+@fantasy_monitor_noise path /_monitor/*
+log_skip @fantasy_monitor_noise
+
+handle_path /_monitor/* {
+	root * /var/lib/fantasy-scout-monitor
+	file_server
+}

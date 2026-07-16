@@ -114,6 +114,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
   const [message, setMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [mobileTab, setMobileTab] = useState<MobileTab>("squad");
+  const [showAllSuggestions, setShowAllSuggestions] = useState(false);
   const [draggedPlayerId, setDraggedPlayerId] = useState<string | null>(null);
   const [postLoadContentReady, setPostLoadContentReady] = useState(false);
   const [betaAutoPickComplete, setBetaAutoPickComplete] = useState(false);
@@ -138,6 +139,8 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
     suggestionCalculation.availableSuggestionCount === availableSuggestionCount;
   const suggestions = suggestionsAreCurrent ? suggestionCalculation.suggestions : [];
   const suggestionsPending = !suggestionsAreCurrent;
+  const displayedSuggestions = showAllSuggestions ? suggestions : suggestions.slice(0, 3);
+  const transferCostUnconfigured = suggestions.some((suggestion) => suggestion.paidTransferLoss === null);
   const filteredPlayers = useMemo(() => {
     const normalizedQuery = query.trim().toLowerCase();
     return players
@@ -646,101 +649,123 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
 
   return (
     <div className="mt-6 space-y-5">
-      <div className="lg:hidden">
+      <div className="xl:hidden">
         <SegmentedControl value={mobileTab} onChange={setMobileTab} options={mobileTabs} className="w-full justify-between" size="sm" />
       </div>
-      <section className="grid grid-cols-1 gap-3 lg:grid-cols-[1.25fr_0.75fr]">
-        <div className={cn(mobileTab === "squad" ? "block" : "hidden lg:block", "rounded border border-slate-200 bg-white p-4 shadow-soft lg:sticky lg:top-24 lg:self-start")}>
-          <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                <I18nText en="Squad builder" ru="Конструктор состава" />
-              </p>
-              <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
-                <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  <span className="mb-1 block"><I18nText en="Saved variant" ru="Сохранённый вариант" /></span>
-                  <select
-                    value={activeSquadId ?? ""}
-                    onChange={(event) => selectSquadVariant(event.target.value)}
-                    className="w-full rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold normal-case tracking-normal text-ink"
-                  >
-                    {!activeSquadId ? <option value=""><I18nText en="Unsaved variant" ru="Несохранённый вариант" /></option> : null}
-                    {squadOptions.map((option) => (
-                      <option key={option.id} value={option.id}>{option.name} · {option.playersCount}/{rules.squadSize}</option>
-                    ))}
-                  </select>
-                </label>
-                <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  <span className="mb-1 block"><I18nText en="Variant name" ru="Название варианта" /></span>
-                  <input
-                    value={squadName}
-                    onChange={(event) => setSquadName(event.target.value)}
-                    maxLength={80}
-                    className="w-full rounded border border-slate-200 px-3 py-2 text-sm font-semibold normal-case tracking-normal text-ink"
+      <section className="grid grid-cols-1 gap-3 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
+        <div className={cn(mobileTab === "squad" ? "block" : "hidden xl:block", "rounded border border-slate-200 bg-white p-4 shadow-soft xl:sticky xl:top-24 xl:self-start")}>
+          <div className="space-y-3">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  <I18nText en="Squad builder" ru="Конструктор состава" />
+                </p>
+                <p className="mt-1 text-sm text-slate-600 num-tabular">
+                  <I18nText
+                    en={`${summary.selectedPlayers.length}/${rules.squadSize} players · ${summary.starterPlayers.length}/${rules.starterSize} starters · ${summary.benchPlayers.length}/${rules.benchSize} bench`}
+                    ru={`${summary.selectedPlayers.length}/${rules.squadSize} игроков · ${summary.starterPlayers.length}/${rules.starterSize} в старте · ${summary.benchPlayers.length}/${rules.benchSize} на скамейке`}
                   />
-                </label>
+                </p>
               </div>
-              <p className="mt-1 text-sm text-slate-600 num-tabular">
-                <I18nText
-                  en={`${summary.selectedPlayers.length}/${rules.squadSize} players · ${summary.starterPlayers.length}/${rules.starterSize} starters · ${summary.benchPlayers.length}/${rules.benchSize} bench`}
-                  ru={`${summary.selectedPlayers.length}/${rules.squadSize} игроков · ${summary.starterPlayers.length}/${rules.starterSize} в старте · ${summary.benchPlayers.length}/${rules.benchSize} на скамейке`}
-                />
-              </p>
+              <span className={cn(
+                "rounded-full px-2.5 py-1 text-xs font-semibold",
+                summary.violations.length === 0 ? "bg-emerald-50 text-emerald-700" : "bg-rose-50 text-rose-700"
+              )}>
+                {summary.violations.length === 0
+                  ? <I18nText en="Valid squad" ru="Состав корректен" />
+                  : <I18nText en={`${summary.violations.length} rule issues`} ru={`Нарушений правил: ${summary.violations.length}`} />}
+              </span>
             </div>
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={autoPickSquad}
-                disabled={isPending || !playerPoolReady}
-                className="btn-brand inline-flex items-center justify-center gap-2 rounded px-4 py-2 text-sm font-semibold disabled:opacity-60"
-              >
-                <Sparkles className="h-4 w-4" />
-                <I18nText en="Auto-pick squad" ru="Автоподбор состава" />
-              </button>
-              <button
-                type="button"
-                onClick={autoPickStarters}
-                className="inline-flex items-center justify-center gap-2 rounded border border-sky-200 bg-sky-50 px-4 py-2 text-sm font-semibold text-sky-800 hover:bg-sky-100"
-              >
-                <Sparkles className="h-4 w-4" />
-                <I18nText en="Auto-pick XI" ru="Автостарт" />
-              </button>
-              <button
-                type="button"
-                onClick={() => saveSquad(false)}
-                disabled={isPending || summary.violations.length > 0}
-                className="btn-brand inline-flex items-center justify-center gap-2 rounded px-4 py-2 text-sm font-semibold disabled:opacity-60"
-              >
-                <Save className="h-4 w-4" />
-                {isPending ? <I18nText en="Saving" ru="Сохраняем" /> : <I18nText en="Save squad" ru="Сохранить состав" />}
-              </button>
-              <button
-                type="button"
-                onClick={() => saveSquad(true)}
-                disabled={isPending || summary.violations.length > 0}
-                className="inline-flex items-center justify-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
-              >
-                <Copy className="h-4 w-4" />
-                <I18nText en="Save copy" ru="Сохранить копию" />
-              </button>
-              <button
-                type="button"
-                onClick={startBlankSquad}
-                disabled={isPending}
-                className="inline-flex items-center justify-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
-              >
-                <FilePlus2 className="h-4 w-4" />
-                <I18nText en="New blank" ru="Новый пустой" />
-              </button>
-              <button
-                type="button"
-                onClick={deleteSquadVariant}
-                disabled={isPending || !activeSquadId}
-                className="inline-flex items-center justify-center gap-2 rounded border border-rose-200 bg-white px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-50"
-              >
-                <Trash2 className="h-4 w-4" />
-                <I18nText en="Delete variant" ru="Удалить вариант" />
-              </button>
+
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <span className="mb-1 block"><I18nText en="Saved variant" ru="Сохранённый вариант" /></span>
+                <select
+                  value={activeSquadId ?? ""}
+                  onChange={(event) => selectSquadVariant(event.target.value)}
+                  className="w-full rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold normal-case tracking-normal text-ink"
+                >
+                  {!activeSquadId ? <option value=""><I18nText en="Unsaved variant" ru="Несохранённый вариант" /></option> : null}
+                  {squadOptions.map((option) => (
+                    <option key={option.id} value={option.id}>{option.name} · {option.playersCount}/{rules.squadSize}</option>
+                  ))}
+                </select>
+              </label>
+              <label className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <span className="mb-1 block"><I18nText en="Variant name" ru="Название варианта" /></span>
+                <input
+                  value={squadName}
+                  onChange={(event) => setSquadName(event.target.value)}
+                  maxLength={80}
+                  className="w-full rounded border border-slate-200 px-3 py-2 text-sm font-semibold normal-case tracking-normal text-ink"
+                />
+              </label>
+            </div>
+
+            <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => saveSquad(false)}
+                  disabled={isPending || summary.violations.length > 0}
+                  className="btn-brand col-span-2 inline-flex items-center justify-center gap-2 rounded px-4 py-2 text-sm font-semibold disabled:opacity-60 sm:col-span-1"
+                >
+                  <Save className="h-4 w-4" />
+                  {isPending ? <I18nText en="Saving" ru="Сохраняем" /> : <I18nText en="Save squad" ru="Сохранить состав" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={autoPickSquad}
+                  disabled={isPending || !playerPoolReady}
+                  className="inline-flex items-center justify-center gap-2 rounded border border-sky-200 bg-sky-50 px-4 py-2 text-sm font-semibold text-sky-800 hover:bg-sky-100 disabled:opacity-60"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  <I18nText en="Auto-pick squad" ru="Автоподбор состава" />
+                </button>
+                <button
+                  type="button"
+                  onClick={autoPickStarters}
+                  className="inline-flex items-center justify-center gap-2 rounded border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                >
+                  <Sparkles className="h-4 w-4" />
+                  <I18nText en="Auto-pick XI" ru="Автостарт" />
+                </button>
+              </div>
+
+              <details className="relative">
+                <summary className="cursor-pointer list-none rounded border border-slate-200 bg-white px-3 py-2 text-center text-sm font-semibold text-slate-700 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
+                  <I18nText en="More actions" ru="Другие действия" />
+                </summary>
+                <div className="mt-2 grid gap-2 rounded border border-slate-200 bg-white p-2 shadow-soft sm:absolute sm:right-0 sm:z-10 sm:w-48">
+                  <button
+                    type="button"
+                    onClick={() => saveSquad(true)}
+                    disabled={isPending || summary.violations.length > 0}
+                    className="inline-flex items-center justify-center gap-2 rounded px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                  >
+                    <Copy className="h-4 w-4" />
+                    <I18nText en="Save copy" ru="Сохранить копию" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={startBlankSquad}
+                    disabled={isPending}
+                    className="inline-flex items-center justify-center gap-2 rounded px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
+                  >
+                    <FilePlus2 className="h-4 w-4" />
+                    <I18nText en="New blank" ru="Новый пустой" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={deleteSquadVariant}
+                    disabled={isPending || !activeSquadId}
+                    className="inline-flex items-center justify-center gap-2 rounded px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-50"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                    <I18nText en="Delete variant" ru="Удалить вариант" />
+                  </button>
+                </div>
+              </details>
             </div>
           </div>
 
@@ -752,70 +777,81 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
           </div>
           <SquadDiffBadge diff={squadDiff} horizon={horizon} />
 
-          <ol className="mt-4 grid grid-cols-1 gap-2 text-sm md:grid-cols-4">
-            <PlannerStep index={1} title={<I18nText en="Choose league" ru="Выбрать лигу" />} state="done" />
-            <PlannerStep index={2} title={<I18nText en="Build squad" ru="Собрать состав" />} state={summary.selectedPlayers.length >= rules.squadSize ? "done" : "active"} />
-            <PlannerStep index={3} title={<I18nText en="Fix rules" ru="Исправить правила" />} state={summary.violations.length === 0 ? "done" : "active"} />
-            <PlannerStep index={4} title={<I18nText en="Review upgrades" ru="Проверить апгрейды" />} state={suggestions.length > 0 ? "active" : "idle"} />
-          </ol>
+          <details className="mt-4 rounded border border-slate-200 bg-slate-50/70">
+            <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 text-sm [&::-webkit-details-marker]:hidden">
+              <span className="font-semibold text-slate-700"><I18nText en="Planning settings" ru="Настройки планирования" /></span>
+              <span className="truncate text-xs text-slate-500 num-tabular">
+                {autoPickStrategyCopy.label} · {horizon}R · {transferLimitIsActive ? `${squadDiff.transferCount}/${transferLimit}` : transferLimit} <I18nText en="transfers" ru="трансферов" />
+              </span>
+            </summary>
+            <div className="border-t border-slate-200 p-3">
+              <ol className="grid grid-cols-1 gap-2 text-sm md:grid-cols-4">
+                <PlannerStep index={1} title={<I18nText en="Choose league" ru="Выбрать лигу" />} state="done" />
+                <PlannerStep index={2} title={<I18nText en="Build squad" ru="Собрать состав" />} state={summary.selectedPlayers.length >= rules.squadSize ? "done" : "active"} />
+                <PlannerStep index={3} title={<I18nText en="Fix rules" ru="Исправить правила" />} state={summary.violations.length === 0 ? "done" : "active"} />
+                <PlannerStep index={4} title={<I18nText en="Review upgrades" ru="Проверить апгрейды" />} state={suggestions.length > 0 ? "active" : "idle"} />
+              </ol>
 
-          <div className="mt-4 flex flex-wrap items-center gap-3">
-            <div className="min-w-full text-sm sm:min-w-0">
-              <span className="mb-1 block text-xs font-semibold uppercase text-slate-500"><I18nText en="Auto-pick strategy" ru="Стратегия автоподбора" /></span>
-              <SegmentedControl
-                name={localizedText(language, "Auto-pick strategy", "Стратегия автоподбора")}
-                value={autoPickStrategy}
-                onChange={setAutoPickStrategy}
-                options={autoPickStrategyOptions}
-                size="sm"
-                className="max-w-full overflow-x-auto"
-              />
-              <p className="mt-1 max-w-md text-xs text-slate-500">{autoPickStrategyCopy.description}</p>
+              <div className="mt-3 flex flex-wrap items-end gap-3">
+                <div className="min-w-full text-sm sm:min-w-0 sm:flex-1">
+                  <span className="mb-1 block text-xs font-semibold uppercase text-slate-500"><I18nText en="Auto-pick strategy" ru="Стратегия автоподбора" /></span>
+                  <SegmentedControl
+                    name={localizedText(language, "Auto-pick strategy", "Стратегия автоподбора")}
+                    value={autoPickStrategy}
+                    onChange={setAutoPickStrategy}
+                    options={autoPickStrategyOptions}
+                    size="sm"
+                    className="max-w-full overflow-x-auto"
+                  />
+                  <p className="mt-1 max-w-md text-xs text-slate-500">{autoPickStrategyCopy.description}</p>
+                </div>
+                <label className="text-sm">
+                  <span className="mb-1 block text-xs font-semibold uppercase text-slate-500"><I18nText en="Forecast" ru="Прогноз" /></span>
+                  <select
+                    value={horizon}
+                    onChange={(event) => setHorizon(normalizeFantasyHorizon(event.target.value, rules.horizonOptions, horizon))}
+                    aria-label={localizedText(language, "Forecast horizon", "Горизонт прогноза")}
+                    className="rounded border border-slate-200 bg-white px-3 py-2"
+                  >
+                    {rules.horizonOptions.map((option) => (
+                      <option key={option} value={option}>
+                        {option} rounds
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <div className="text-sm">
+                  <span id="transfer-count-label" className="mb-1 block text-xs font-semibold uppercase text-slate-500"><I18nText en="Transfers" ru="Трансферы" /></span>
+                  <output
+                    className={cn(
+                      "block rounded border bg-white px-3 py-2 font-semibold text-slate-700 num-tabular",
+                      transferLimitIsActive && squadDiff.transferCount >= transferLimit ? "border-amber-200 bg-amber-50 text-amber-800" : "border-slate-200"
+                    )}
+                    aria-labelledby="transfer-count-label"
+                  >
+                    {transferLimitIsActive ? `${squadDiff.transferCount}/${transferLimit}` : transferLimit}
+                  </output>
+                </div>
+                {priceStatus.lastSyncedAt ? (
+                  <span className="pb-2 text-sm text-slate-500">
+                    <I18nText en={`Prices synced ${formatDate(priceStatus.lastSyncedAt)}`} ru={`Цены обновлены ${formatDate(priceStatus.lastSyncedAt)}`} />
+                  </span>
+                ) : null}
+                {priceStatus.sportsRuPrices > 0 ? (
+                  <span className="rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700">
+                    <I18nText en={`Sports.ru prices ${priceStatus.sportsRuPrices}`} ru={`Цены Sports.ru ${priceStatus.sportsRuPrices}`} />
+                  </span>
+                ) : null}
+                {priceStatus.estimatedPrices > 0 ? (
+                  <span className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800">
+                    <I18nText en={`Estimated prices ${priceStatus.estimatedPrices}`} ru={`Оценочные цены ${priceStatus.estimatedPrices}`} />
+                  </span>
+                ) : null}
+              </div>
             </div>
-            <label className="text-sm">
-              <span className="mb-1 block text-xs font-semibold uppercase text-slate-500"><I18nText en="Forecast" ru="Прогноз" /></span>
-              <select
-                value={horizon}
-                onChange={(event) => setHorizon(normalizeFantasyHorizon(event.target.value, rules.horizonOptions, horizon))}
-                aria-label={localizedText(language, "Forecast horizon", "Горизонт прогноза")}
-                className="rounded border border-slate-200 px-3 py-2"
-              >
-                {rules.horizonOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option} rounds
-                  </option>
-                ))}
-              </select>
-            </label>
-            <div className="text-sm">
-              <span id="transfer-count-label" className="mb-1 block text-xs font-semibold uppercase text-slate-500"><I18nText en="Transfers" ru="Трансферы" /></span>
-              <output
-                className={cn(
-                  "block rounded border px-3 py-2 font-semibold text-slate-700 num-tabular",
-                  transferLimitIsActive && squadDiff.transferCount >= transferLimit ? "border-amber-200 bg-amber-50 text-amber-800" : "border-slate-200"
-                )}
-                aria-labelledby="transfer-count-label"
-              >
-                {transferLimitIsActive ? `${squadDiff.transferCount}/${transferLimit}` : transferLimit}
-              </output>
-            </div>
-            {priceStatus.lastSyncedAt ? (
-              <span className="text-sm text-slate-500">
-                <I18nText en={`Prices synced ${formatDate(priceStatus.lastSyncedAt)}`} ru={`Цены обновлены ${formatDate(priceStatus.lastSyncedAt)}`} />
-              </span>
-            ) : null}
-            {priceStatus.sportsRuPrices > 0 || priceStatus.estimatedPrices > 0 ? (
-              <span className="rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700">
-                <I18nText en={`Sports.ru prices ${priceStatus.sportsRuPrices}`} ru={`Цены Sports.ru ${priceStatus.sportsRuPrices}`} />
-              </span>
-            ) : null}
-            {priceStatus.estimatedPrices > 0 ? (
-              <span className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800">
-                <I18nText en={`Estimated prices ${priceStatus.estimatedPrices}`} ru={`Оценочные цены ${priceStatus.estimatedPrices}`} />
-              </span>
-            ) : null}
-            {message ? <span role="status" aria-live="polite" className="rounded bg-amber-50 px-3 py-2 text-sm text-amber-800">{message}</span> : null}
-          </div>
+          </details>
+
+          {message ? <div role="status" aria-live="polite" className="mt-3 rounded bg-amber-50 px-3 py-2 text-sm text-amber-800">{message}</div> : null}
 
           {summary.violations.length > 0 ? (
             <div className="mt-4 rounded border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{summary.violations.join(" / ")}</div>
@@ -833,13 +869,27 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
           ) : null}
         </div>
 
-        <div ref={suggestionPanelRef} className={cn(mobileTab === "suggestions" ? "block" : "hidden lg:block", "rounded border border-slate-200 bg-white p-4 shadow-soft")}>
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500"><I18nText en="Transfer suggestions" ru="Подсказки трансферов" /></h3>
-            <Sparkles className="h-4 w-4 text-amber-600" />
+        <div ref={suggestionPanelRef} className={cn(mobileTab === "suggestions" ? "block" : "hidden xl:block", "rounded border border-slate-200 bg-white p-4 shadow-soft xl:self-start")}>
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500"><I18nText en="Transfer suggestions" ru="Подсказки трансферов" /></h3>
+              <p className="mt-1 text-xs text-slate-500"><I18nText en="Ranked by the selected forecast horizon." ru="Ранжированы по выбранному горизонту прогноза." /></p>
+            </div>
+            <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 num-tabular">
+              <Sparkles className="h-3.5 w-3.5" />
+              {suggestions.length}
+            </span>
           </div>
+          {transferCostUnconfigured && suggestions.length > 0 ? (
+            <p className="mt-3 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+              <I18nText
+                en="Paid-transfer cost is not configured. Gains below are shown before transfer penalties."
+                ru="Стоимость платных трансферов не настроена. Выигрыш ниже указан без трансферных штрафов."
+              />
+            </p>
+          ) : null}
           <div className="mt-3 space-y-2">
-            {suggestions.map((suggestion) => (
+            {displayedSuggestions.map((suggestion) => (
               <button
                 key={suggestion.id}
                 type="button"
@@ -861,28 +911,41 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                     {signedScore(suggestion.round1Delta)}
                   </span>
                 </div>
-                <p className="mt-1 text-xs text-slate-500">
-                  <I18nText
-                    en={`Gain: ${signedScore(suggestion.round1Delta)} / ${transferDeltaLabel(suggestion.round3Delta)} / ${transferDeltaLabel(suggestion.round5Delta)} for 1/3/5 rounds; ${signedScore(suggestion.horizonDelta)} over selected horizon; price ${signedNumber(suggestion.priceDelta)}`}
-                    ru={`Выигрыш: ${signedScore(suggestion.round1Delta)} / ${transferDeltaLabel(suggestion.round3Delta)} / ${transferDeltaLabel(suggestion.round5Delta)} за 1/3/5 туров; ${signedScore(suggestion.horizonDelta)} за выбранный горизонт; цена ${signedNumber(suggestion.priceDelta)}`}
-                  />
-                </p>
+                <dl className="mt-2 grid grid-cols-3 gap-2 rounded bg-slate-50 px-2 py-1.5 text-xs">
+                  <div>
+                    <dt className="text-slate-500"><I18nText en="Next" ru="Следующий" /></dt>
+                    <dd className="font-semibold text-ink num-tabular">{signedScore(suggestion.round1Delta)}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-slate-500">{horizon}R</dt>
+                    <dd className="font-semibold text-ink num-tabular">{signedScore(suggestion.horizonDelta)}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-slate-500"><I18nText en="Budget" ru="Бюджет" /></dt>
+                    <dd className="font-semibold text-ink num-tabular">{signedNumber(suggestion.priceDelta)}</dd>
+                  </div>
+                </dl>
                 <p className="mt-1 text-xs font-medium text-slate-600">
                   <I18nText en={suggestion.reason} ru={`Прогнозный выигрыш ${signedScore(suggestion.horizonDelta)} за ${horizon} тур.`} />
                 </p>
-                <p className="mt-1 text-[11px] text-amber-700">
-                  <I18nText
-                    en={suggestion.paidTransferLoss === null ? "Paid-transfer loss: not configured." : `Paid-transfer loss: ${formatScore(suggestion.paidTransferLoss)} points.`}
-                    ru={suggestion.paidTransferLoss === null ? "Потеря за платные трансферы: правило не настроено." : `Потеря за платные трансферы: ${formatScore(suggestion.paidTransferLoss)} очк.`}
-                  />
-                </p>
-                {suggestion.risks.length > 0 ? (
+                {actionableTransferRisks(suggestion.risks).length > 0 ? (
                   <p className="mt-1 text-[11px] text-rose-700">
-                    <I18nText en={`Risks: ${suggestion.risks.join("; ")}`} ru={`Риски: ${suggestion.risks.map(localizeTransferRisk).join("; ")}`} />
+                    <I18nText en={`Risks: ${actionableTransferRisks(suggestion.risks).join("; ")}`} ru={`Риски: ${actionableTransferRisks(suggestion.risks).map(localizeTransferRisk).join("; ")}`} />
                   </p>
                 ) : null}
               </button>
             ))}
+            {suggestions.length > 3 ? (
+              <button
+                type="button"
+                onClick={() => setShowAllSuggestions((value) => !value)}
+                className="w-full rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              >
+                {showAllSuggestions
+                  ? <I18nText en="Show top 3" ru="Показать топ-3" />
+                  : <I18nText en={`Show all ${suggestions.length}`} ru={`Показать все: ${suggestions.length}`} />}
+              </button>
+            ) : null}
             {playerPoolFailed ? (
               <div className="space-y-2 rounded border border-rose-200 bg-rose-50 px-3 py-3 text-sm text-rose-700" role="alert">
                 <I18nText en="The player pool could not be loaded, so transfer recommendations are unavailable." ru="Не удалось загрузить пул игроков, поэтому трансферные рекомендации недоступны." />
@@ -1958,8 +2021,8 @@ function signedScore(value: number) {
   return formatScore(value);
 }
 
-function transferDeltaLabel(value: number | null) {
-  return value === null ? "n/a" : signedScore(value);
+function actionableTransferRisks(risks: readonly string[]) {
+  return risks.filter((risk) => risk !== "Paid-transfer point cost is not configured");
 }
 
 function localizeTransferRisk(value: string) {

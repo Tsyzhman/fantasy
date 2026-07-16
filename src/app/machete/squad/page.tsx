@@ -44,7 +44,7 @@ export default async function MacheteSquadPage({ searchParams }: PageProps) {
 
   return (
     <MacheteShell>
-      <div className="mt-6">
+      <div className="mt-4">
         <PageBreadcrumbs
           backHref="/machete/leagues"
           backLabel="Back to leagues"
@@ -55,11 +55,11 @@ export default async function MacheteSquadPage({ searchParams }: PageProps) {
         />
       </div>
 
-      <section className="mt-8 rounded border border-slate-200 bg-white p-5 shadow-soft">
+      <section className="mt-4 rounded border border-slate-200 bg-white p-4 shadow-soft sm:p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-sm font-semibold uppercase tracking-wide text-slate-500"><I18nText en="Fantasy planning" ru="Фэнтези-планирование" /></p>
-            <h2 className="mt-2 text-2xl font-bold text-ink"><I18nText en="Squad picker and transfer planner" ru="Состав и трансферный план" /></h2>
+            <h2 className="mt-1 text-xl font-bold text-ink sm:mt-2 sm:text-2xl"><I18nText en="Squad picker and transfer planner" ru="Состав и трансферный план" /></h2>
             <p className="mt-2 max-w-3xl text-sm text-slate-600">
               <I18nText
                 en="Build a user squad for each league, project the next rounds, and let Machete suggest transfers that improve the next round without dropping over the selected horizon."
@@ -67,7 +67,7 @@ export default async function MacheteSquadPage({ searchParams }: PageProps) {
               />
             </p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="grid grid-cols-3 gap-2 sm:flex sm:flex-wrap">
             <Link href={machetePlayersHref(selectedLeague)} className="inline-flex items-center justify-center rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
               <I18nText en="Player explorer" ru="Таблица игроков" />
             </Link>
@@ -86,7 +86,7 @@ export default async function MacheteSquadPage({ searchParams }: PageProps) {
           </div>
         </div>
 
-        <div className="mt-5 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(320px,0.8fr)_minmax(420px,1.2fr)]">
+        <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-[minmax(320px,0.8fr)_minmax(420px,1.2fr)]">
           <AutoSubmitForm className="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(160px,0.55fr)_auto]">
             <label className="text-sm">
               <span className="mb-1 block font-medium text-slate-600"><I18nText en="League" ru="Лига" /></span>

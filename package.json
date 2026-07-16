@@ -11,6 +11,7 @@
     "start": "next start -H 0.0.0.0",
     "test": "tsx scripts/run-test-files.ts .test.ts",
     "test:db": "tsx scripts/run-test-files.ts .db-test.ts",
+    "test:e2e": "playwright test",
     "audit:prod": "npm audit --omit=dev --audit-level=moderate",
     "lint": "eslint .",
     "typecheck": "next typegen && tsc --noEmit",
@@ -62,6 +63,7 @@
     "tailwind-merge": "^2.5.4"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@types/node": "^20.17.6",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",

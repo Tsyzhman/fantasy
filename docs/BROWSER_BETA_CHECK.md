@@ -1,6 +1,6 @@
 # Browser Beta Check
 
-Дата проверки: 2026-07-15.
+Дата проверки: 2026-07-16.
 
 Финальная browser-проверка выполнена Microsoft Edge через Playwright CLI против
 production `https://fantasy.tsyzhman.ru` на образе
@@ -26,10 +26,40 @@ acceptance QA-пароль ротирован, все тестовые сесс�
 недоступны, внешний alerting не настроен, длительный beta error rate не собран,
 тест минимум на 10 реальных пользователях не проведён.
 
-## Проверенный production-объём
+## UI-cleanup canary 2026-07-16
+
+Новый UI-кандидат `fantasy-scout-web:ui-canary-v4-20260716T090327Z`
+(`sha256:d268da9f88cf3c25e2ef0d3db4871462abab975e5cb86462530143fa04763b5d`)
+проверен через постоянный Playwright Test suite, добавленный в репозиторий.
+Canary работал с отключённым ingestion worker и read-only upload volume.
+
+Итог полного прогона: 5 passed, 2 expected skipped. Полный сценарий с записью
+выполняется только в desktop project; tablet/mobile projects не меняют данные.
+Сценарий:
+
+1. авторизовался отдельным QA-пользователем;
+2. получил production player pool и выбрал игрока с прогнозом;
+3. нашёл этого игрока в `/machete/players`;
+4. открыл `/machete/squad`, создал пустой вариант и запустил auto-pick;
+5. получил `Valid squad`, сохранил именованный вариант и проверил выбранный
+   server-returned `squadId`;
+6. удалил QA-вариант через authenticated browser fetch.
+
+Responsive acceptance проверил 1440×1000, 1024×900 и Pixel 5. Во всех проектах
+document-level horizontal overflow равен 0. На 1024 вкладка Pool видима и
+открывает поиск игрока; на tablet/mobile global Menu содержит Players и Sign
+out; desktop primary controls не пересекаются по bounding boxes. Скриншоты
+прикладываются к CI artifacts. Desktop-проверка дополнительно открывает
+`Ctrl+K` и подтверждает, что смонтирован ровно один dialog палитры команд.
+
+## Проверенный production/canary-объём
 
 | Сценарий | Viewport / выборка | Результат |
 |---|---:|---|
+| Clean UI `/machete/squad` | UI canary v4, 1440×1000 | Save/auto-pick/more actions не пересекаются; player pool виден; `Ctrl+K` открывает один dialog; document overflow 0; runtime 5xx/page errors 0 |
+| Tablet gap | UI canary v4, 1024×900 | Pool tab доступна, player search открывается; global Menu не обрезан; document overflow 0 |
+| Mobile clean UI | UI canary v4, Pixel 5 | Squad/Pool/Tips, workspace grid и global Menu доступны; document overflow 0; runtime 5xx/page errors 0 |
+| Полный automated journey | UI canary v4, desktop | Реальный forecast player найден; auto-pick дал valid squad; вариант сохранён и QA-copy удалена |
 | Поиск игрока `Mbeumo` | beta16, 1440×900; код пути не менялся в beta22 | HTTP 200 за 507 мс; найден Bryan Mbeumo, прогноз виден, ссылка `Build squad` ведёт в EPL 2026/2027; document width 1440; console errors 0 |
 | Сохранённый состав | desktop/mobile | Вариант `My squad` восстановлен без изменений: 15/15 игроков, 11 стартовых, 4 запасных, бюджет 100/100, банк 0 |
 | Автоподбор | production beta14, та же planner-логика в beta22 | 2,903 с при SMART-лимите 5 с; последующий reload вернул сохранённый состав без расхождений |
@@ -80,7 +110,11 @@ scroll width.
 
 ## Что эта проверка не доказывает
 
-- Нет постоянного E2E/visual regression suite; это управляемый acceptance-прогон.
+- Постоянный desktop/tablet/mobile browser-smoke теперь есть; он проверяет
+  viewport geometry, доступность Pool/Menu, runtime 5xx/page errors и полный
+  основной сценарий. Pixel-diff baseline намеренно не используется между
+  Windows и Linux из-за различий font rendering; screenshots сохраняются как
+  CI evidence.
 - Автоматизированный axe-аудит того же UI на beta21 desktop/mobile дал 0
   нарушений, а production beta22 keyboard-check прошёл в Edge. Это не заменяет
   проверки на реальных Safari iOS и Chrome

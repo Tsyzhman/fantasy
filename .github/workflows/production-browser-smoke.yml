@@ -1,0 +1,52 @@
+name: Production Browser Smoke
+
+on:
+  schedule:
+    - cron: "17 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-browser-smoke
+  cancel-in-progress: true
+
+jobs:
+  browser-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+
+      - name: Run authenticated desktop, tablet, and mobile checks
+        env:
+          BETA_QA_EMAIL: ${{ secrets.BETA_QA_EMAIL }}
+          BETA_QA_PASSWORD: ${{ secrets.BETA_QA_PASSWORD }}
+          PLAYWRIGHT_BASE_URL: https://fantasy.tsyzhman.ru
+        run: npm run test:e2e
+
+      - name: Upload browser evidence
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: production-browser-smoke-${{ github.run_id }}
+          path: |
+            output/playwright-test-results
+            playwright-report
+          if-no-files-found: ignore
+          retention-days: 7

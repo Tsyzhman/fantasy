@@ -105,6 +105,12 @@ healthy; configure alerting instead of using either endpoint for automatic
 container restarts. See `docs/DATA_QUALITY.md` and
 `docs/SPORTS_RU_FANTASY_SYNC.md` for thresholds.
 
+The repository also contains a scheduled availability/data/access-log monitor,
+deduplicated GitHub issue delivery, a Caddy JSON access-log audit, and bounded
+container log settings. Installation, verification, privacy rules, and the
+explicit temporary price exception are documented in
+`docs/PRODUCTION_MONITORING.md`.
+
 The workflow runs checks, SSHes into the host, pulls the requested ref, installs
 dependencies, runs Prisma deploy migrations, rebuilds Next.js, verifies
 `.next/prerender-manifest.json`, and restarts PM2.
