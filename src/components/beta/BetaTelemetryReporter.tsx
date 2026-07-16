@@ -2,7 +2,7 @@
 
 import { useReportWebVitals } from "next/web-vitals";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 import { betaWebVitalNames, betaWebVitalRatings, type BetaWebVitalName, type BetaWebVitalRating } from "@/beta/user-test";
 import { I18nText } from "@/components/i18n-text";
@@ -24,10 +24,12 @@ export function BetaTelemetryReporter() {
   const [now, setNow] = useState(() => Date.now());
   const runId = session?.runId ?? null;
 
-  useReportWebVitals((metric) => {
+  const reportWebVital = useCallback((metric: Parameters<Parameters<typeof useReportWebVitals>[0]>[0]) => {
     if (!betaWebVitalNames.includes(metric.name as never) || !betaWebVitalRatings.includes(metric.rating as never)) return;
-    void recordBetaWebVital(metric.name as BetaWebVitalName, metric.value, metric.rating as BetaWebVitalRating, pathname);
-  });
+    void recordBetaWebVital(metric.name as BetaWebVitalName, metric.value, metric.rating as BetaWebVitalRating);
+  }, []);
+
+  useReportWebVitals(reportWebVital);
 
   useEffect(() => {
     const refresh = () => setSession(getBetaTestSession());

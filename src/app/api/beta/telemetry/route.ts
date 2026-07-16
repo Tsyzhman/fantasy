@@ -90,7 +90,10 @@ export const POST = withApiHandler(async (request: Request) => {
       rating: command.rating
     },
     update: {
-      count: { increment: 1 },
+      // The unique key is the client idempotency key. A lost response may make
+      // the browser retry the same observation, which must not invent another
+      // page view, milestone, or error.
+      route: command.route,
       ...(command.kind === "WEB_VITAL" ? { value: command.value, rating: command.rating } : {})
     }
   });

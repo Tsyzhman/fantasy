@@ -64,6 +64,7 @@ async function printReport(prisma: PrismaClient, options: Map<string, string>) {
           name: true,
           route: true,
           value: true,
+          rating: true,
           count: true,
           createdAt: true
         },

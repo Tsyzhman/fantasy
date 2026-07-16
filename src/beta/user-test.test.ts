@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   betaRequiredJourneyMilestones,
+  betaRumMaximumLcpP75Ms,
   buildBetaUserTestReport,
   parseBetaTelemetryCommand,
   summarizeBetaTechnicalRun,
@@ -63,7 +64,35 @@ test("beta gate passes exact SMART thresholds on first valid run per ten users",
   assert.equal(report.forecastFoundRate, 100);
   assert.equal(report.transferUnderstandingRate, 70);
   assert.equal(report.averageUsabilityRating, 4);
+  assert.equal(report.rum.lcpParticipants, 10);
+  assert.equal(report.rum.webVitals.LCP.p75, 2_000);
+  assert.deepEqual(report.rum.webVitals.LCP.ratings, { good: 10, needsImprovement: 0, poor: 0 });
+  assert.equal(report.rum.gate.passed, true);
   assert.equal(report.gate.passed, true);
+});
+
+test("beta gate rejects slow or insufficient real-user RUM", () => {
+  const insufficient = buildBetaUserTestReport(Array.from({ length: 9 }, (_, index) => makeRun(index + 40)));
+  assert.equal(insufficient.rum.gate.passed, false);
+  assert.match(insufficient.rum.gate.violations.join(" "), /at least 10 distinct real participants/);
+
+  const slowRuns = Array.from({ length: 10 }, (_, index) => makeRun(index + 60, { lcpMs: betaRumMaximumLcpP75Ms + 1 }));
+  const slow = buildBetaUserTestReport(slowRuns);
+  assert.equal(slow.rum.webVitals.LCP.p75, betaRumMaximumLcpP75Ms + 1);
+  assert.equal(slow.rum.gate.passed, false);
+  assert.equal(slow.gate.passed, false);
+});
+
+test("RUM includes every real run and excludes synthetic telemetry", () => {
+  const pendingWithError = makeRun(80, { valid: null, clientErrorCount: 2 });
+  const invalid = makeRun(81, { valid: false });
+  const synthetic = makeRun(82, { synthetic: true, clientErrorCount: 5 });
+  const report = buildBetaUserTestReport([pendingWithError, invalid, synthetic]);
+  assert.equal(report.rum.realRuns, 2);
+  assert.equal(report.rum.distinctParticipants, 2);
+  assert.equal(report.rum.clientErrors, 1);
+  assert.equal(report.rum.runsWithClientErrors, 1);
+  assert.equal(report.rum.clientErrorAffectedRunRate, 50);
 });
 
 test("repeat successes cannot erase a participant's first valid failure", () => {
@@ -124,11 +153,42 @@ function makeRun(
     criticalIssue?: boolean;
     durationStepMs?: number;
     startedAtOffsetMs?: number;
+    lcpMs?: number;
+    clientErrorCount?: number;
   } = {}
 ): BetaTestRunForReport {
   const startedAt = new Date(Date.UTC(2026, 6, 15, 12, 0, 0) + (overrides.startedAtOffsetMs ?? index * 1_000));
   const durationStepMs = overrides.durationStepMs ?? 20_000;
   const milestones = ["JOURNEY_STARTED", ...betaRequiredJourneyMilestones];
+  const observations: BetaTestRunForReport["observations"] = milestones.map((name, milestoneIndex) => ({
+    kind: "MILESTONE",
+    name,
+    route: milestoneIndex < 2 ? "/machete/players" : "/machete/squad",
+    value: null,
+    rating: null,
+    count: 1,
+    createdAt: new Date(startedAt.getTime() + milestoneIndex * durationStepMs)
+  }));
+  observations.push({
+    kind: "WEB_VITAL",
+    name: "LCP",
+    route: "/machete/squad",
+    value: overrides.lcpMs ?? 2_000,
+    rating: (overrides.lcpMs ?? 2_000) <= betaRumMaximumLcpP75Ms ? "good" : "needs-improvement",
+    count: 1,
+    createdAt: new Date(startedAt.getTime() + 1_000)
+  });
+  if ((overrides.clientErrorCount ?? 0) > 0) {
+    observations.push({
+      kind: "CLIENT_ERROR",
+      name: "WINDOW_ERROR",
+      route: "/machete/squad",
+      value: null,
+      rating: null,
+      count: overrides.clientErrorCount!,
+      createdAt: new Date(startedAt.getTime() + 2_000)
+    });
+  }
   return {
     id: `${index.toString(16).padStart(8, "0")}-1111-4111-8111-${index.toString(16).padStart(12, "0")}`,
     userId: overrides.userId ?? `user-${index}`,
@@ -140,13 +200,6 @@ function makeRun(
     usabilityRating: overrides.usabilityRating ?? 5,
     criticalIssue: overrides.criticalIssue ?? false,
     startedAt,
-    observations: milestones.map((name, milestoneIndex) => ({
-      kind: "MILESTONE",
-      name,
-      route: milestoneIndex < 2 ? "/machete/players" : "/machete/squad",
-      value: null,
-      count: 1,
-      createdAt: new Date(startedAt.getTime() + milestoneIndex * durationStepMs)
-    }))
+    observations
   };
 }

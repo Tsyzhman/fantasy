@@ -34,6 +34,8 @@ export const betaRequiredJourneyMilestones = [
 ] as const;
 
 export const betaJourneyMaximumDurationMs = 5 * 60 * 1_000;
+export const betaRumMinimumLcpParticipants = 10;
+export const betaRumMaximumLcpP75Ms = 2_500;
 
 export type BetaTestMilestone = (typeof betaTestMilestones)[number];
 export type BetaWebVitalName = (typeof betaWebVitalNames)[number];
@@ -139,6 +141,7 @@ export type BetaTestObservationForReport = {
   name: string;
   route: string;
   value: number | null;
+  rating: string | null;
   count: number;
   createdAt: Date;
 };
@@ -176,7 +179,7 @@ export function summarizeBetaTechnicalRun(run: BetaTestRunForReport): BetaTechni
       const current = firstMilestoneAt.get(observation.name);
       if (!current || observation.createdAt < current) firstMilestoneAt.set(observation.name, observation.createdAt);
     }
-    if (observation.kind === "CLIENT_ERROR") clientErrors += Math.max(1, observation.count);
+    if (observation.kind === "CLIENT_ERROR") clientErrors += 1;
   }
 
   const missingMilestones = betaRequiredJourneyMilestones.filter((milestone) => !firstMilestoneAt.has(milestone));
@@ -237,6 +240,7 @@ export function buildBetaUserTestReport(runs: BetaTestRunForReport[]) {
   const forecastFoundRate = percentage(forecastSuccesses, participants);
   const transferUnderstandingRate = percentage(transferUnderstandingSuccesses, participants);
   const webVitals = summarizeWebVitals(primaryRuns);
+  const rum = summarizeRealBetaRum(realRuns);
   const violations: string[] = [];
   if (participants < 10) violations.push(`Need at least 10 distinct valid participants; observed ${participants}.`);
   if (incompleteReviews > 0) violations.push(`${incompleteReviews} primary participant reviews are incomplete.`);
@@ -246,6 +250,7 @@ export function buildBetaUserTestReport(runs: BetaTestRunForReport[]) {
   if (averageUsabilityRating === null || averageUsabilityRating < 4) violations.push(`Average usability rating must be at least 4/5; observed ${averageUsabilityRating ?? "not measured"}.`);
   if (criticalIssues > 0) violations.push(`${criticalIssues} primary participants reported a critical/blocker issue.`);
   if (mobileCriticalIssues > 0) violations.push(`${mobileCriticalIssues} mobile primary participants reported a critical/blocker issue.`);
+  violations.push(...rum.gate.violations);
 
   return {
     generatedAt: new Date().toISOString(),
@@ -281,6 +286,7 @@ export function buildBetaUserTestReport(runs: BetaTestRunForReport[]) {
     incompleteReviews,
     clientErrors: summaries.reduce((total, summary) => total + summary.technical.clientErrors, 0),
     webVitals,
+    rum,
     primaryRuns: summaries.map(({ run, technical }) => ({
       participantCode: run.id.slice(0, 8),
       startedAt: run.startedAt.toISOString(),
@@ -291,6 +297,69 @@ export function buildBetaUserTestReport(runs: BetaTestRunForReport[]) {
       ...technical
     })),
     gate: { passed: violations.length === 0, violations }
+  };
+}
+
+function summarizeRealBetaRum(runs: BetaTestRunForReport[]) {
+  const participantIds = new Set(runs.map((run) => run.userId));
+  const lcpParticipantIds = new Set<string>();
+  const runsWithClientErrors = new Set<string>();
+  let pageViews = 0;
+  let clientErrors = 0;
+  let firstObservedAt: Date | null = null;
+  let lastObservedAt: Date | null = null;
+
+  for (const run of runs) {
+    firstObservedAt = earlierDate(firstObservedAt, run.startedAt);
+    lastObservedAt = laterDate(lastObservedAt, run.startedAt);
+    for (const observation of run.observations) {
+      lastObservedAt = laterDate(lastObservedAt, observation.createdAt);
+      if (observation.kind === "PAGE_VIEW") pageViews += 1;
+      if (observation.kind === "CLIENT_ERROR") {
+        clientErrors += 1;
+        runsWithClientErrors.add(run.id);
+      }
+      if (observation.kind === "WEB_VITAL" && observation.name === "LCP" && observation.value !== null) {
+        lcpParticipantIds.add(run.userId);
+      }
+    }
+  }
+
+  const webVitals = summarizeWebVitals(runs);
+  const lcp = webVitals.LCP;
+  const violations: string[] = [];
+  if (lcpParticipantIds.size < betaRumMinimumLcpParticipants) {
+    violations.push(
+      `RUM needs LCP observations from at least ${betaRumMinimumLcpParticipants} distinct real participants; observed ${lcpParticipantIds.size}.`
+    );
+  }
+  if (lcp.p75 === null) {
+    violations.push("RUM LCP p75 is not measured.");
+  } else if (lcp.p75 > betaRumMaximumLcpP75Ms) {
+    violations.push(`RUM LCP p75 must be at most ${betaRumMaximumLcpP75Ms} ms; observed ${lcp.p75} ms.`);
+  }
+
+  return {
+    realRuns: runs.length,
+    distinctParticipants: participantIds.size,
+    lcpParticipants: lcpParticipantIds.size,
+    firstObservedAt: firstObservedAt?.toISOString() ?? null,
+    lastObservedAt: lastObservedAt?.toISOString() ?? null,
+    observationWindowHours:
+      firstObservedAt && lastObservedAt
+        ? round(Math.max(0, lastObservedAt.getTime() - firstObservedAt.getTime()) / (60 * 60 * 1_000), 3)
+        : null,
+    pageViews,
+    clientErrors,
+    runsWithClientErrors: runsWithClientErrors.size,
+    clientErrorAffectedRunRate: percentage(runsWithClientErrors.size, runs.length),
+    webVitals,
+    gate: {
+      passed: violations.length === 0,
+      maximumLcpP75Ms: betaRumMaximumLcpP75Ms,
+      minimumLcpParticipants: betaRumMinimumLcpParticipants,
+      violations
+    }
   };
 }
 
@@ -324,20 +393,41 @@ export function validateBetaReviewInput(input: BetaReviewInput) {
 
 function summarizeWebVitals(runs: BetaTestRunForReport[]) {
   const values = new Map<string, number[]>();
+  const ratings = new Map<string, { good: number; needsImprovement: number; poor: number }>();
   for (const run of runs) {
     for (const observation of run.observations) {
       if (observation.kind !== "WEB_VITAL" || observation.value === null || !betaWebVitalNames.includes(observation.name as never)) continue;
       const current = values.get(observation.name) ?? [];
       current.push(observation.value);
       values.set(observation.name, current);
+      const ratingCounts = ratings.get(observation.name) ?? { good: 0, needsImprovement: 0, poor: 0 };
+      if (observation.rating === "good") ratingCounts.good += 1;
+      if (observation.rating === "needs-improvement") ratingCounts.needsImprovement += 1;
+      if (observation.rating === "poor") ratingCounts.poor += 1;
+      ratings.set(observation.name, ratingCounts);
     }
   }
   return Object.fromEntries(
     betaWebVitalNames.map((name) => {
       const samples = values.get(name) ?? [];
-      return [name, { samples: samples.length, p75: nearestRank(samples, 0.75) }];
+      return [
+        name,
+        {
+          samples: samples.length,
+          p75: nearestRank(samples, 0.75),
+          ratings: ratings.get(name) ?? { good: 0, needsImprovement: 0, poor: 0 }
+        }
+      ];
     })
   );
+}
+
+function earlierDate(current: Date | null, candidate: Date) {
+  return !current || candidate < current ? candidate : current;
+}
+
+function laterDate(current: Date | null, candidate: Date) {
+  return !current || candidate > current ? candidate : current;
 }
 
 function nearestRank(values: number[], percentile: number) {
