@@ -29,7 +29,7 @@ export type StoredBetaTestSession = {
   pending: ObserveCommand[];
 };
 
-let flushing = false;
+let activeFlush: Promise<void> | null = null;
 
 export async function startBetaTestSession({ synthetic = false }: { synthetic?: boolean } = {}) {
   if (typeof window === "undefined") throw new Error("Beta test sessions can only start in a browser.");
@@ -79,6 +79,16 @@ export function betaSessionHasMilestone(name: BetaTestMilestone) {
   return session.recordedKeys.some((key) => key.startsWith(prefix)) || session.pending.some((command) => observationKey(command).startsWith(prefix));
 }
 
+export function betaSessionHasRecordedMilestone(name: BetaTestMilestone) {
+  const session = getBetaTestSession();
+  return session ? storedBetaSessionHasRecordedMilestone(session, name) : false;
+}
+
+export function storedBetaSessionHasRecordedMilestone(session: StoredBetaTestSession, name: BetaTestMilestone) {
+  const prefix = `MILESTONE:${name}:`;
+  return session.recordedKeys.some((key) => key.startsWith(prefix));
+}
+
 export function recordBetaMilestone(name: Exclude<BetaTestMilestone, "JOURNEY_STARTED">, route = currentRoute()) {
   return enqueueObservation({ action: "observe", runId: "", kind: "MILESTONE", name, route });
 }
@@ -96,43 +106,65 @@ export function recordBetaClientError(name: BetaClientErrorName, route = current
 }
 
 export async function stopBetaTestSession() {
-  if (typeof window === "undefined") return;
+  if (typeof window === "undefined") return true;
+  if (!getBetaTestSession()) return true;
   await recordBetaMilestone("JOURNEY_ABORTED");
   await flushBetaTelemetry();
-  window.sessionStorage.removeItem(betaSessionStorageKey);
-  notifySessionChanged();
+  const session = getBetaTestSession();
+  if (session?.pending.length) return false;
+  clearBetaTestSession();
+  return true;
 }
 
-export async function flushBetaTelemetry() {
-  if (typeof window === "undefined" || flushing) return;
-  flushing = true;
-  try {
-    while (true) {
-      const session = getBetaTestSession();
-      const command = session?.pending[0];
-      if (!session || !command) return;
-      let response: Response;
-      try {
-        response = await fetch("/api/beta/telemetry", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Accept: "application/json" },
-          cache: "no-store",
-          keepalive: true,
-          body: JSON.stringify(command)
-        });
-      } catch {
-        return;
-      }
-      if (!response.ok) return;
-      const latest = getBetaTestSession();
-      if (!latest || latest.runId !== session.runId) return;
-      const key = observationKey(command);
-      latest.pending = latest.pending.filter((item) => observationKey(item) !== key);
-      if (!latest.recordedKeys.includes(key)) latest.recordedKeys.push(key);
-      writeSession(latest);
+export async function finishBetaTestSession() {
+  if (typeof window === "undefined") return true;
+  await flushBetaTelemetry();
+  const session = getBetaTestSession();
+  if (!session) return true;
+  if (session.pending.length || !storedBetaSessionHasRecordedMilestone(session, "SQUAD_RESTORED")) return false;
+  clearBetaTestSession();
+  return true;
+}
+
+export function discardBetaTestSession() {
+  if (typeof window === "undefined" || !getBetaTestSession()) return false;
+  clearBetaTestSession();
+  return true;
+}
+
+export function flushBetaTelemetry() {
+  if (typeof window === "undefined") return Promise.resolve();
+  if (activeFlush) return activeFlush;
+  activeFlush = drainBetaTelemetry().finally(() => {
+    activeFlush = null;
+  });
+  return activeFlush;
+}
+
+async function drainBetaTelemetry() {
+  while (true) {
+    const session = getBetaTestSession();
+    const command = session?.pending[0];
+    if (!session || !command) return;
+    let response: Response;
+    try {
+      response = await fetch("/api/beta/telemetry", {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        cache: "no-store",
+        keepalive: true,
+        body: JSON.stringify(command)
+      });
+    } catch {
+      return;
     }
-  } finally {
-    flushing = false;
+    if (!response.ok) return;
+    const latest = getBetaTestSession();
+    if (!latest || latest.runId !== session.runId) return;
+    const key = observationKey(command);
+    latest.pending = latest.pending.filter((item) => observationKey(item) !== key);
+    if (!latest.recordedKeys.includes(key)) latest.recordedKeys.push(key);
+    writeSession(latest);
   }
 }
 
@@ -155,6 +187,11 @@ function writeSession(session: StoredBetaTestSession) {
 
 function notifySessionChanged() {
   window.dispatchEvent(new CustomEvent(betaSessionChangedEvent));
+}
+
+function clearBetaTestSession() {
+  window.sessionStorage.removeItem(betaSessionStorageKey);
+  notifySessionChanged();
 }
 
 function observationKey(command: Pick<ObserveCommand, "kind" | "name" | "route">) {

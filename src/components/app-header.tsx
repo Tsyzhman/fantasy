@@ -15,7 +15,7 @@ import { ModePlayersLink } from "@/components/mode-players-link";
 import { ModeSwitchLink } from "@/components/mode-switch-link";
 import { ModelSettingsLink } from "@/components/model-settings-link";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { stopBetaTestSession } from "@/lib/beta-telemetry-client";
+import { betaSessionHasMilestone, discardBetaTestSession, finishBetaTestSession, stopBetaTestSession } from "@/lib/beta-telemetry-client";
 import { cn } from "@/lib/cn";
 
 type AppHeaderProps = {
@@ -39,7 +39,18 @@ export function AppHeader({ user }: AppHeaderProps) {
   const isMixerr = pathname.startsWith("/mixerr");
 
   async function logout() {
-    await stopBetaTestSession();
+    const telemetryStopped = betaSessionHasMilestone("SQUAD_RESTORED")
+      ? await finishBetaTestSession()
+      : await stopBetaTestSession();
+    if (!telemetryStopped) {
+      const discardAndLogout = window.confirm(localizedText(
+        language,
+        "The active beta run has not been sent. Press Cancel to keep it and retry, or OK to discard its local queue and sign out anyway.",
+        "Активный beta-прогон не отправлен. Нажмите «Отмена», чтобы сохранить его и повторить, или OK, чтобы удалить локальную очередь и выйти."
+      ));
+      if (!discardAndLogout) return;
+      discardBetaTestSession();
+    }
     await fetch("/api/auth/logout", { method: "POST" });
     router.push("/login");
     router.refresh();

@@ -28,6 +28,9 @@ test("access-log audit fails closed when the 5xx rate reaches the one-percent li
     assert.equal(report.serverErrors, 1);
     assert.equal(report.serverErrorRatePercent, 5);
     assert.equal(report.durationMs.p75, 15);
+    assert.equal(report.firstObservedAt, "2026-07-16T07:45:00.000Z");
+    assert.equal(report.lastObservedAt, "2026-07-16T07:45:19.000Z");
+    assert.equal(report.observedSpanMinutes, 0.317);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
@@ -45,6 +48,7 @@ test("access-log audit reports insufficient data without inventing a passing rat
     const report = JSON.parse(readFileSync(output, "utf8"));
     assert.equal(report.status, "insufficient_data");
     assert.equal(report.requests, 1);
+    assert.equal(report.observedSpanMinutes, 0);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
@@ -78,12 +82,53 @@ test("access-log audit excludes warning health endpoints from user error rate", 
     assert.equal(report.requests, 20);
     assert.equal(report.excludedRequests, 1);
     assert.equal(report.serverErrors, 0);
+    assert.equal(report.lastObservedAt, "2026-07-16T07:45:19.000Z");
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
 });
 
-function runAudit(log: string, output: string, minimumRequests: string, excludedPaths: string[] = []) {
+test("access-log audit excludes the production monitor by User-Agent without excluding real login traffic", () => {
+  const directory = mkdtempSync(join(tmpdir(), "fantasy-access-audit-"));
+  try {
+    const log = join(directory, "fantasy-access.log");
+    const output = join(directory, "audit.json");
+    const entries = [
+      ...Array.from({ length: 20 }, (_, index) => ({
+        ts: Date.parse("2026-07-16T07:45:00Z") / 1000 + index,
+        status: 200,
+        duration: 0.01,
+        request: { uri: index === 0 ? "/login" : "/machete/squad", headers: { "User-Agent": ["Mozilla/5.0"] } }
+      })),
+      ...Array.from({ length: 5 }, (_, index) => ({
+        ts: Date.parse("2026-07-16T07:50:00Z") / 1000 + index,
+        status: 200,
+        duration: 0.02,
+        request: { uri: index % 2 === 0 ? "/api/health" : "/login", headers: { "User-Agent": ["Fantasy-Scout-Production-Monitor/1.0"] } }
+      }))
+    ];
+    writeFileSync(log, `${entries.map((entry) => JSON.stringify(entry)).join("\n")}\n`, "utf8");
+
+    const result = runAudit(log, output, "20", [], ["fantasy-scout-production-monitor/1.0"]);
+    assert.equal(result.status, 0, result.stderr);
+    const report = JSON.parse(readFileSync(output, "utf8"));
+    assert.equal(report.status, "ok");
+    assert.equal(report.requests, 20);
+    assert.equal(report.excludedRequests, 5);
+    assert.equal(report.excludedUserAgentRequests, 5);
+    assert.equal(report.statusCounts["200"], 20);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+function runAudit(
+  log: string,
+  output: string,
+  minimumRequests: string,
+  excludedPaths: string[] = [],
+  excludedUserAgentPrefixes: string[] = []
+) {
   return spawnSync(python, [
     script,
     "--log-pattern", log,
@@ -91,6 +136,7 @@ function runAudit(log: string, output: string, minimumRequests: string, excluded
     "--max-5xx-rate-percent", "1",
     "--min-requests", minimumRequests,
     ...excludedPaths.flatMap((path) => ["--exclude-path", path]),
+    ...excludedUserAgentPrefixes.flatMap((prefix) => ["--exclude-user-agent-prefix", prefix]),
     "--output", output,
     "--now", now
   ], { encoding: "utf8" });

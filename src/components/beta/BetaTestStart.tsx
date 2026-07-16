@@ -25,7 +25,7 @@ export function BetaTestStart({ synthetic }: { synthetic: boolean }) {
     try {
       const nextSession = await startBetaTestSession({ synthetic });
       setSession(nextSession);
-      router.push("/machete/players");
+      window.location.assign("/machete/players");
     } catch {
       setError(localizedText(language, "Could not start the beta test. Ask the moderator to check the server.", "Не удалось начать beta-тест. Попросите модератора проверить сервер."));
       setPending(false);

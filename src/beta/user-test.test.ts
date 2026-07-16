@@ -50,6 +50,20 @@ test("technical completion requires every milestone, correct order, and five-min
   const missingSummary = summarizeBetaTechnicalRun(missing);
   assert.equal(missingSummary.technicalComplete, false);
   assert.deepEqual(missingSummary.missingMilestones, ["TRANSFER_TIPS_VIEWED"]);
+
+  const aborted = makeRun(4);
+  aborted.observations.push({
+    kind: "MILESTONE",
+    name: "JOURNEY_ABORTED",
+    route: "/machete/squad",
+    value: null,
+    rating: null,
+    count: 1,
+    createdAt: new Date(aborted.startedAt.getTime() + 20_000)
+  });
+  const abortedSummary = summarizeBetaTechnicalRun(aborted);
+  assert.equal(abortedSummary.aborted, true);
+  assert.equal(abortedSummary.technicalComplete, false);
 });
 
 test("beta gate passes exact SMART thresholds on first valid run per ten users", () => {
@@ -142,6 +156,18 @@ test("synthetic, invalid, and unreviewed runs never satisfy the participant gate
   assert.equal(report.gate.passed, false);
 });
 
+test("invalid attempts remain auditable with environment, reason, and technical evidence", () => {
+  const report = buildBetaUserTestReport([
+    makeRun(45, { valid: false, moderatedEnvironment: "ANDROID_CHROME_PHYSICAL" })
+  ]);
+
+  assert.equal(report.invalidRuns, 1);
+  assert.equal(report.invalidAttempts.length, 1);
+  assert.equal(report.invalidAttempts[0]?.moderatedEnvironment, "ANDROID_CHROME_PHYSICAL");
+  assert.equal(report.invalidAttempts[0]?.invalidReason, "Technical environment failure");
+  assert.equal(report.invalidAttempts[0]?.technicalComplete, true);
+});
+
 test("valid moderator review requires every human-only judgment", () => {
   const base = {
     runId: "22222222-2222-4222-8222-222222222222",
@@ -158,6 +184,7 @@ test("valid moderator review requires every human-only judgment", () => {
   assert.equal(validateBetaReviewInput({ ...base, transferReasonUnderstood: null }).ok, false);
   assert.equal(validateBetaReviewInput({ ...base, usabilityRating: 6 }).ok, false);
   assert.equal(validateBetaReviewInput({ ...base, valid: false, invalidReason: "Environment failed", withoutHelp: null }).ok, true);
+  assert.equal(validateBetaReviewInput({ ...base, valid: false, invalidReason: "Environment failed", moderatedEnvironment: null }).ok, false);
 });
 
 function makeRun(
@@ -222,6 +249,7 @@ function makeRun(
     moderatedEnvironment:
       overrides.moderatedEnvironment ??
       (index % 10 === 2 ? "IOS_SAFARI_PHYSICAL" : index % 10 === 4 ? "ANDROID_CHROME_PHYSICAL" : index % 2 === 0 ? "OTHER_MOBILE" : "DESKTOP_BROWSER"),
+    invalidReason: overrides.valid === false ? "Technical environment failure" : null,
     startedAt,
     observations
   };

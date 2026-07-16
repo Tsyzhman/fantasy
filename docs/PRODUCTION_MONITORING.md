@@ -37,7 +37,11 @@ non-sensitive metrics:
 - request count and status-code counts;
 - 4xx and 5xx totals;
 - 5xx percentage;
-- p50, p75, p95, and maximum response duration.
+- p50, p75, p95, and maximum response duration;
+- first/last included request and the actual observed span, so a requested
+  24-hour window cannot be mistaken for 24 hours of evidence when the log is
+  newer;
+- excluded monitor-request count.
 
 The state is `insufficient_data` below 20 requests, `breach` at a 5xx rate of
 1% or more, and `ok` otherwise. A breach makes the oneshot service fail. The
@@ -45,7 +49,9 @@ public aggregate is served from `/_monitor/access-audit.json`. Requests to the
 monitor path and the warning-only `/api/health/data-quality` and
 `/api/health/fantasy-prices` endpoints are excluded from user-traffic metrics in
 both Caddy and the analyzer. Their expected 503 responses therefore cannot
-manufacture a user-facing 5xx breach.
+manufacture a user-facing 5xx breach. The scheduled production monitor is
+excluded by its dedicated User-Agent, while genuine user visits to `/login`
+remain included in the user-traffic denominator.
 
 Install or update the server integration only after recording the exact current
 Caddyfile SHA-256:

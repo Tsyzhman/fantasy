@@ -235,7 +235,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
   }, [betaAutoPickComplete, summary.violations.length]);
 
   useEffect(() => {
-    if (suggestions.length === 0) return;
+    if (!betaAutoPickComplete || !squadIsValid || playerPoolPending || playerPoolFailed || suggestionsPending) return;
     const node = suggestionPanelRef.current;
     if (!node) return;
     const observer = new IntersectionObserver((entries) => {
@@ -245,7 +245,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
     }, { threshold: 0.25 });
     observer.observe(node);
     return () => observer.disconnect();
-  }, [suggestions.length]);
+  }, [betaAutoPickComplete, playerPoolFailed, playerPoolPending, squadIsValid, suggestionsPending]);
 
   useEffect(() => {
     let revealHandle: number | null = null;

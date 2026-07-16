@@ -64,7 +64,7 @@ const checks = await Promise.all([
       const ok = status === 200 && auditStatus === "ok" && fresh;
       const detail = status !== 200
         ? `HTTP ${status}`
-        : `${auditStatus || "missing status"}; requests=${numberValue(body?.requests)}; 5xx=${numberValue(body?.serverErrors)} (${numberValue(body?.serverErrorRatePercent)}%); p75=${numberValue(body?.durationMs?.p75)}ms; p95=${numberValue(body?.durationMs?.p95)}ms; age=${Number.isFinite(ageMinutes) ? ageMinutes.toFixed(1) : "unknown"}m`;
+        : `${auditStatus || "missing status"}; requests=${numberValue(body?.requests)}; 5xx=${numberValue(body?.serverErrors)} (${numberValue(body?.serverErrorRatePercent)}%); p75=${numberValue(body?.durationMs?.p75)}ms; p95=${numberValue(body?.durationMs?.p95)}ms; observed-span=${numberValue(body?.observedSpanMinutes)}m; age=${Number.isFinite(ageMinutes) ? ageMinutes.toFixed(1) : "unknown"}m`;
       return {
         ok,
         detail,

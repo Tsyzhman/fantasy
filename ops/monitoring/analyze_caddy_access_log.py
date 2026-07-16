@@ -23,6 +23,12 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-5xx-rate-percent", type=non_negative_float, default=1.0)
     parser.add_argument("--min-requests", type=positive_int, default=20)
     parser.add_argument("--exclude-path", action="append", default=[], help="Exact request path to omit from user-traffic metrics.")
+    parser.add_argument(
+        "--exclude-user-agent-prefix",
+        action="append",
+        default=[],
+        help="Case-insensitive User-Agent prefix to omit from user-traffic metrics.",
+    )
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--now", help="Fixed ISO-8601 time for deterministic verification.")
     return parser.parse_args()
@@ -38,8 +44,12 @@ def main() -> int:
     durations_ms: list[float] = []
     invalid_lines = 0
     excluded_requests = 0
+    excluded_user_agent_requests = 0
     requests = 0
     excluded_paths = set(args.exclude_path)
+    excluded_user_agent_prefixes = tuple(prefix.casefold() for prefix in args.exclude_user_agent_prefix)
+    first_observed_at: datetime | None = None
+    last_observed_at: datetime | None = None
 
     for path in paths:
         for line in read_lines(path):
@@ -48,7 +58,9 @@ def main() -> int:
                 timestamp = datetime.fromtimestamp(float(entry["ts"]), tz=timezone.utc)
                 status = int(entry["status"])
                 duration_ms = max(0.0, float(entry.get("duration", 0.0)) * 1000.0)
-                request_path = str((entry.get("request") or {}).get("uri", "")).split("?", 1)[0]
+                request = entry.get("request") or {}
+                request_path = str(request.get("uri", "")).split("?", 1)[0]
+                user_agent = request_user_agent(request)
             except (KeyError, TypeError, ValueError, json.JSONDecodeError, OverflowError):
                 invalid_lines += 1
                 continue
@@ -58,10 +70,16 @@ def main() -> int:
             if request_path in excluded_paths:
                 excluded_requests += 1
                 continue
+            if excluded_user_agent_prefixes and user_agent.casefold().startswith(excluded_user_agent_prefixes):
+                excluded_requests += 1
+                excluded_user_agent_requests += 1
+                continue
 
             requests += 1
             statuses[status] += 1
             durations_ms.append(duration_ms)
+            first_observed_at = timestamp if first_observed_at is None else min(first_observed_at, timestamp)
+            last_observed_at = timestamp if last_observed_at is None else max(last_observed_at, timestamp)
 
     server_errors = sum(count for status, count in statuses.items() if 500 <= status <= 599)
     client_errors = sum(count for status, count in statuses.items() if 400 <= status <= 499)
@@ -86,8 +104,15 @@ def main() -> int:
         "filesRead": len(paths),
         "invalidLines": invalid_lines,
         "excludedPaths": sorted(excluded_paths),
+        "excludedUserAgentPrefixes": list(args.exclude_user_agent_prefix),
         "excludedRequests": excluded_requests,
+        "excludedUserAgentRequests": excluded_user_agent_requests,
         "requests": requests,
+        "firstObservedAt": iso_time(first_observed_at) if first_observed_at else None,
+        "lastObservedAt": iso_time(last_observed_at) if last_observed_at else None,
+        "observedSpanMinutes": round((last_observed_at - first_observed_at).total_seconds() / 60.0, 3)
+        if first_observed_at and last_observed_at
+        else 0.0,
         "clientErrors": client_errors,
         "serverErrors": server_errors,
         "serverErrorRatePercent": round(server_error_rate, 3),
@@ -109,6 +134,20 @@ def read_lines(path: Path) -> Iterable[str]:
     opener = gzip.open if path.suffix == ".gz" else open
     with opener(path, "rt", encoding="utf-8", errors="replace") as handle:
         yield from handle
+
+
+def request_user_agent(request: object) -> str:
+    if not isinstance(request, dict):
+        return ""
+    headers = request.get("headers")
+    if not isinstance(headers, dict):
+        return ""
+    raw_values = headers.get("User-Agent", headers.get("user-agent", []))
+    if isinstance(raw_values, str):
+        return raw_values
+    if isinstance(raw_values, list):
+        return " ".join(str(value) for value in raw_values)
+    return ""
 
 
 def percentile(values: list[float], requested_percentile: int) -> float:

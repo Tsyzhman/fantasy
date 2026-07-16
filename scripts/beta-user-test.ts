@@ -59,6 +59,7 @@ async function printReport(prisma: PrismaClient, options: Map<string, string>) {
       usabilityRating: true,
       criticalIssue: true,
       moderatedEnvironment: true,
+      invalidReason: true,
       startedAt: true,
       observations: {
         select: {
@@ -107,7 +108,7 @@ async function reviewRun(prisma: PrismaClient, options: Map<string, string>) {
     transferReasonUnderstood: valid ? requiredBooleanOption(options, "transfer-understood") : null,
     usabilityRating: valid ? integerOption(options, "rating", null, 1, 5) : null,
     criticalIssue: valid ? requiredBooleanOption(options, "critical") : null,
-    moderatedEnvironment: valid ? requiredOption(options, "environment") as BetaModeratedEnvironment : null,
+    moderatedEnvironment: requiredOption(options, "environment") as BetaModeratedEnvironment,
     invalidReason: valid ? null : optionalText(options, "invalid-reason"),
     moderatorNotes: optionalText(options, "notes")
   };
@@ -206,7 +207,7 @@ function printUsage() {
   npm run beta:user-test -- report --since-days=30
   npm run beta:user-test -- report --since-days=30 --require-pass=true
   npm run beta:user-test -- review --run-id=<uuid> --valid=true --without-help=true --transfer-understood=true --rating=4 --critical=false --environment=DESKTOP_BROWSER --notes="optional"
-  npm run beta:user-test -- review --run-id=<uuid> --valid=false --invalid-reason="reason" --notes="optional"
+  npm run beta:user-test -- review --run-id=<uuid> --valid=false --environment=DESKTOP_BROWSER --invalid-reason="reason" --notes="optional"
 
 The report never prints account email, name, or internal user ID. The gate uses only the first moderator-approved run per distinct participant.`);
 }

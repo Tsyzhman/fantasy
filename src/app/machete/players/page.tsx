@@ -144,10 +144,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-      {selectedLeagueId &&
-      selectedLeagueId !== ALL_LEAGUES_VALUE &&
-      selectedSeason &&
-      resolvedSearchParams.query?.trim() &&
+      {resolvedSearchParams.query?.trim() &&
       players.some((player) => player.fantasyScore !== null) ? (
         <BetaJourneyMarker milestone="PLAYER_FORECAST_FOUND" />
       ) : null}

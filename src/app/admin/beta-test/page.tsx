@@ -45,6 +45,7 @@ export default async function AdminBetaTestPage({ searchParams }: PageProps) {
       usabilityRating: true,
       criticalIssue: true,
       moderatedEnvironment: true,
+      invalidReason: true,
       startedAt: true,
       observations: {
         select: {
@@ -189,7 +190,7 @@ export default async function AdminBetaTestPage({ searchParams }: PageProps) {
                   </span>
                 </div>
                 <p className="mt-3 text-sm text-slate-600">
-                  <I18nText en={`Client errors: ${pending.clientErrors}. Missing milestones: ${pending.missingMilestones.join(", ") || "none"}.`} ru={`Client errors: ${pending.clientErrors}. Пропущенные этапы: ${pending.missingMilestones.join(", ") || "нет"}.`} />
+                  <I18nText en={`Aborted: ${pending.aborted ? "yes" : "no"}. Client errors: ${pending.clientErrors}. Missing milestones: ${pending.missingMilestones.join(", ") || "none"}.`} ru={`Прерван: ${pending.aborted ? "да" : "нет"}. Client errors: ${pending.clientErrors}. Пропущенные этапы: ${pending.missingMilestones.join(", ") || "нет"}.`} />
                 </p>
 
                 <div className="mt-5 grid gap-5 xl:grid-cols-[1.6fr_1fr]">
@@ -202,11 +203,12 @@ export default async function AdminBetaTestPage({ searchParams }: PageProps) {
                       <ReviewBooleanSelect name="transferUnderstood" label={<I18nText en="Transfer understood" ru="Трансфер понят" />} />
                       <label className="text-sm font-semibold text-slate-700">
                         <I18nText en="Usability rating" ru="Оценка удобства" />
-                        <select name="rating" defaultValue="4" className="mt-1 w-full rounded border border-slate-200 bg-white px-3 py-2 font-normal">
+                        <select required name="rating" defaultValue="" className="mt-1 w-full rounded border border-slate-200 bg-white px-3 py-2 font-normal">
+                          <LocalizedOption value="" disabled en="Select rating" ru="Выберите оценку" />
                           {[1, 2, 3, 4, 5].map((rating) => <option key={rating} value={rating}>{rating} / 5</option>)}
                         </select>
                       </label>
-                      <ReviewBooleanSelect name="critical" label={<I18nText en="Critical/blocker" ru="Critical/blocker" />} defaultValue="false" />
+                      <ReviewBooleanSelect name="critical" label={<I18nText en="Critical/blocker" ru="Critical/blocker" />} />
                       <label className="text-sm font-semibold text-slate-700">
                         <I18nText en="Observed device/browser" ru="Проверенное устройство/браузер" />
                         <select required name="moderatedEnvironment" defaultValue="" className="mt-1 w-full rounded border border-slate-200 bg-white px-3 py-2 font-normal">
@@ -232,12 +234,51 @@ export default async function AdminBetaTestPage({ searchParams }: PageProps) {
                       <I18nText en="Concrete technical reason" ru="Конкретная техническая причина" />
                       <input required name="invalidReason" maxLength={200} className="mt-1 w-full rounded border border-slate-200 bg-white px-3 py-2 font-normal" />
                     </label>
+                    <label className="mt-3 block text-sm font-semibold text-slate-700">
+                      <I18nText en="Observed device/browser" ru="Проверенное устройство/браузер" />
+                      <select required name="moderatedEnvironment" defaultValue="" className="mt-1 w-full rounded border border-slate-200 bg-white px-3 py-2 font-normal">
+                        <LocalizedOption value="" disabled en="Select observed environment" ru="Выберите проверенную среду" />
+                        <LocalizedOption value="DESKTOP_BROWSER" en="Desktop browser" ru="Desktop-браузер" />
+                        <LocalizedOption value="IOS_SAFARI_PHYSICAL" en="Physical Safari iOS" ru="Физический Safari iOS" />
+                        <LocalizedOption value="ANDROID_CHROME_PHYSICAL" en="Physical Chrome Android" ru="Физический Chrome Android" />
+                        <LocalizedOption value="OTHER_MOBILE" en="Other mobile / emulator" ru="Другой телефон / эмулятор" />
+                      </select>
+                    </label>
                     <ReviewNotes />
                     <button type="submit" className="mt-3 rounded border border-amber-400 bg-white px-4 py-2 text-sm font-semibold text-amber-900 hover:bg-amber-100">
                       <I18nText en="Save invalid review" ru="Сохранить invalid-review" />
                     </button>
                   </form>
                 </div>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <section aria-labelledby="invalid-runs-heading" className="mt-10">
+        <h2 id="invalid-runs-heading" className="text-xl font-bold text-ink">
+          <I18nText en={`Technically invalid attempts (${report.invalidAttempts.length})`} ru={`Технически invalid-прогоны (${report.invalidAttempts.length})`} />
+        </h2>
+        {report.invalidAttempts.length === 0 ? (
+          <p className="mt-4 rounded border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-sm text-slate-600">
+            <I18nText en="No technically invalid attempts have been excluded." ru="Нет исключённых технически invalid-прогонов." />
+          </p>
+        ) : (
+          <div className="mt-4 grid gap-3 md:grid-cols-2">
+            {report.invalidAttempts.map((run) => (
+              <article key={`${run.participantCode}-${run.startedAt}`} className="rounded border border-amber-200 bg-amber-50/50 p-4 text-sm">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <strong className="text-ink">{run.participantCode}</strong>
+                  <span className="text-slate-500">{formatDate(new Date(run.startedAt))}</span>
+                </div>
+                <p className="mt-2 text-slate-700">{run.invalidReason}</p>
+                <p className="mt-2 text-xs text-slate-500">
+                  <I18nText
+                    en={`${run.deviceClass} · ${formatModeratedEnvironment(run.moderatedEnvironment)} · aborted: ${run.aborted ? "yes" : "no"} · client errors: ${run.clientErrors} · missing: ${run.missingMilestones.join(", ") || "none"}`}
+                    ru={`${run.deviceClass} · ${formatModeratedEnvironment(run.moderatedEnvironment)} · прерван: ${run.aborted ? "да" : "нет"} · client errors: ${run.clientErrors} · пропущено: ${run.missingMilestones.join(", ") || "нет"}`}
+                  />
+                </p>
               </article>
             ))}
           </div>
@@ -297,7 +338,7 @@ async function reviewBetaRunAction(formData: FormData) {
     transferReasonUnderstood: valid ? formBoolean(formData, "transferUnderstood") : null,
     usabilityRating: valid ? Number(formData.get("rating")) : null,
     criticalIssue: valid ? formBoolean(formData, "critical") : null,
-    moderatedEnvironment: valid ? formModeratedEnvironment(formData) : null,
+    moderatedEnvironment: formModeratedEnvironment(formData),
     invalidReason: valid ? null : String(formData.get("invalidReason") ?? "").trim() || null,
     moderatorNotes: String(formData.get("notes") ?? "").trim() || null
   };
@@ -340,11 +381,12 @@ function SummaryRow({ label, value }: { label: ReactNode; value: ReactNode }) {
   return <><dt className="text-slate-500">{label}</dt><dd className="text-right font-semibold text-ink num-tabular">{value}</dd></>;
 }
 
-function ReviewBooleanSelect({ name, label, defaultValue = "true" }: { name: string; label: ReactNode; defaultValue?: "true" | "false" }) {
+function ReviewBooleanSelect({ name, label }: { name: string; label: ReactNode }) {
   return (
     <label className="text-sm font-semibold text-slate-700">
       {label}
-      <select name={name} defaultValue={defaultValue} className="mt-1 w-full rounded border border-slate-200 bg-white px-3 py-2 font-normal">
+      <select required name={name} defaultValue="" className="mt-1 w-full rounded border border-slate-200 bg-white px-3 py-2 font-normal">
+        <LocalizedOption value="" disabled en="Select answer" ru="Выберите ответ" />
         <option value="true">Yes / Да</option>
         <option value="false">No / Нет</option>
       </select>

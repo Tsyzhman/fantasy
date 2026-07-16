@@ -164,6 +164,7 @@ export type BetaTestRunForReport = {
   usabilityRating: number | null;
   criticalIssue: boolean | null;
   moderatedEnvironment: string | null;
+  invalidReason: string | null;
   startedAt: Date;
   observations: BetaTestObservationForReport[];
 };
@@ -172,6 +173,7 @@ export type BetaTechnicalRunSummary = {
   runId: string;
   deviceClass: string;
   technicalComplete: boolean;
+  aborted: boolean;
   durationMs: number | null;
   forecastFound: boolean;
   transferTipsViewed: boolean;
@@ -191,6 +193,7 @@ export function summarizeBetaTechnicalRun(run: BetaTestRunForReport): BetaTechni
   }
 
   const missingMilestones = betaRequiredJourneyMilestones.filter((milestone) => !firstMilestoneAt.has(milestone));
+  const aborted = firstMilestoneAt.has("JOURNEY_ABORTED");
   const restoredAt = firstMilestoneAt.get("SQUAD_RESTORED") ?? null;
   const durationMs = restoredAt ? Math.max(0, restoredAt.getTime() - run.startedAt.getTime()) : null;
   const orderedNames = ["PLAYER_FORECAST_FOUND", "PLANNER_OPENED", "AUTO_PICK_COMPLETED", "BUDGET_FORECAST_VIEWED", "SQUAD_SAVED", "SQUAD_RESTORED"];
@@ -201,6 +204,7 @@ export function summarizeBetaTechnicalRun(run: BetaTestRunForReport): BetaTechni
   const restoreTime = restoredAt?.getTime() ?? null;
   const tipsAreInJourney = tipsAt !== null && plannerAt !== null && restoreTime !== null && tipsAt >= plannerAt && tipsAt <= restoreTime;
   const technicalComplete =
+    !aborted &&
     missingMilestones.length === 0 &&
     sequenceIsOrdered &&
     tipsAreInJourney &&
@@ -211,6 +215,7 @@ export function summarizeBetaTechnicalRun(run: BetaTestRunForReport): BetaTechni
     runId: run.id,
     deviceClass: run.deviceClass,
     technicalComplete,
+    aborted,
     durationMs,
     forecastFound: firstMilestoneAt.has("PLAYER_FORECAST_FOUND"),
     transferTipsViewed: firstMilestoneAt.has("TRANSFER_TIPS_VIEWED"),
@@ -221,6 +226,7 @@ export function summarizeBetaTechnicalRun(run: BetaTestRunForReport): BetaTechni
 
 export function buildBetaUserTestReport(runs: BetaTestRunForReport[]) {
   const realRuns = runs.filter((run) => !run.synthetic);
+  const invalidRuns = realRuns.filter((run) => run.valid === false);
   const pendingRuns = realRuns
     .filter((run) => run.valid === null)
     .sort((left, right) => left.startedAt.getTime() - right.startedAt.getTime() || left.id.localeCompare(right.id));
@@ -292,12 +298,27 @@ export function buildBetaUserTestReport(runs: BetaTestRunForReport[]) {
         startedAt: run.startedAt.toISOString(),
         deviceClass: run.deviceClass,
         technicalComplete: technical.technicalComplete,
+        aborted: technical.aborted,
         durationMs: technical.durationMs,
         missingMilestones: technical.missingMilestones,
         clientErrors: technical.clientErrors
       };
     }),
-    invalidRuns: realRuns.filter((run) => run.valid === false).length,
+    invalidRuns: invalidRuns.length,
+    invalidAttempts: invalidRuns.map((run) => {
+      const technical = summarizeBetaTechnicalRun(run);
+      return {
+        participantCode: run.id.slice(0, 8),
+        startedAt: run.startedAt.toISOString(),
+        deviceClass: run.deviceClass,
+        moderatedEnvironment: run.moderatedEnvironment,
+        invalidReason: run.invalidReason,
+        technicalComplete: technical.technicalComplete,
+        aborted: technical.aborted,
+        missingMilestones: technical.missingMilestones,
+        clientErrors: technical.clientErrors
+      };
+    }),
     validRuns: validRuns.length,
     repeatValidRuns: Math.max(0, validRuns.length - participants),
     participants,
@@ -412,6 +433,9 @@ export type BetaReviewInput = {
 export function validateBetaReviewInput(input: BetaReviewInput) {
   if (!isUuid(input.runId)) return { ok: false as const, error: "runId must be a UUID." };
   if (input.moderatorNotes && input.moderatorNotes.length > 500) return { ok: false as const, error: "moderatorNotes is too long." };
+  if (!input.moderatedEnvironment || !betaModeratedEnvironments.includes(input.moderatedEnvironment)) {
+    return { ok: false as const, error: "moderatedEnvironment is required for every reviewed run." };
+  }
   if (!input.valid) {
     if (!input.invalidReason?.trim()) return { ok: false as const, error: "invalidReason is required for an invalid run." };
     if (input.invalidReason.length > 200) return { ok: false as const, error: "invalidReason is too long." };
@@ -423,9 +447,6 @@ export function validateBetaReviewInput(input: BetaReviewInput) {
     return { ok: false as const, error: "usabilityRating must be an integer from 1 to 5." };
   }
   if (typeof input.criticalIssue !== "boolean") return { ok: false as const, error: "criticalIssue is required for a valid run." };
-  if (!input.moderatedEnvironment || !betaModeratedEnvironments.includes(input.moderatedEnvironment)) {
-    return { ok: false as const, error: "moderatedEnvironment is required for a valid run." };
-  }
   return { ok: true as const, value: { ...input, invalidReason: null } };
 }
 
