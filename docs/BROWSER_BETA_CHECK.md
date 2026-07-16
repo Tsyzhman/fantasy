@@ -21,6 +21,15 @@ viewport overflow. Production screenshots дополнительно просм�
 закрыт. Понятность для аудитории он не доказывает — это остаётся частью теста на
 10 реальных пользователях.
 
+Дополнительно выполнен одноразовый acceptance на публичном production HTTPS в
+Playwright CLI `0.1.17`, browser engine WebKit `26.5`, с iPhone 13 UA и viewport
+390×664 при DPR 3. Обычный пользователь авторизовался, открыл `/machete/squad`,
+загрузил реальный player pool, нашёл Bryan Mbeumo, переключил Squad/Pool/Tips и
+открыл global Menu. В принятом HTTPS-сеансе console errors/warnings — 0, все
+наблюдавшиеся API/RSC-запросы — 200, login POST — 303, root/body scroll width —
+390 px. Инструмент сообщил `maxTouchPoints=0`, поэтому это проверка WebKit и
+мобильной геометрии, а не полноценная touch-эмуляция и не физический Safari iOS.
+
 ## Итог
 
 Технический основной сценарий работает в production: поиск игрока возвращает
@@ -52,6 +61,31 @@ valid review, а allowlist содержит ровно `DESKTOP_BROWSER`,
 осталось 0 real, 0 valid real и 0 pending real runs. Это доказывает готовность
 сбора evidence, но не заменяет сами физические тесты: счётчики iOS/Android всё
 ещё 0/1 и 0/1.
+
+## Beta32 WebKit/iPhone-profile acceptance 2026-07-16
+
+Проверка выполнена напрямую на `https://fantasy.tsyzhman.ru`, потому что
+production session cookie имеет `Secure`: loopback `http://` не является
+допустимым доказательством authenticated client API. Первый loopback-сеанс дал
+ожидаемые 401 именно из-за отсутствующего Secure-cookie и в результат не
+засчитан. В новом чистом HTTPS-сеансе:
+
+- WebKit `26.5`, iPhone 13 UA, viewport 390×664, DPR 3;
+- `/machete/squad` и player pool загрузились под ролью `USER`; API squads и
+  sync-status вернули 200;
+- поиск `Bryan Mbeumo` оставил одну читаемую mobile-card с прогнозом и fixtures;
+- Squad, Pool, Tips и global Menu доступны; Menu содержит Players и Sign out;
+- `documentElement.scrollWidth = body.scrollWidth = innerWidth = 390`,
+  page-level horizontal overflow отсутствует;
+- console errors/warnings — 0; среди наблюдавшихся HTTPS-запросов нет 4xx/5xx;
+- четыре просмотренных снимка сохранены локально в
+  `output/playwright/beta32-webkit-iphone-{squad,pool,menu,tips}.png`.
+
+Проверка была read-only: auto-pick/save/delete не запускались. Одноразовый
+QA-пользователь и созданная login-сессия удалены каскадно; счётчики до и после
+совпали: users 4, sessions 9, squads 2, real runs 0, synthetic runs 1;
+QA-users после cleanup 0. Профиль сообщил `maxTouchPoints=0` и platform `Win32`,
+поэтому physical Safari iOS и physical Chrome Android по-прежнему не закрыты.
 
 ## Beta31 clean-UI acceptance 2026-07-16
 
@@ -106,6 +140,7 @@ out; desktop primary controls не пересекаются по bounding boxes.
 | Геометрия `/machete/squad` | Production beta31, 1440×1000 | Compact header; Save/auto-pick/more actions не пересекаются; workbench и player pool видны в первом viewport; `Ctrl+K` открывает один dialog; document overflow 0; runtime 5xx/page errors 0 |
 | Tablet gap | Production beta31, 1024×900 | Pool tab доступна, player search открывается; global Menu не обрезан; document overflow 0 |
 | Mobile geometry | Production beta31, Pixel 5 | `Leagues`, `Players` и активная `Squad` целиком видны; Pool использует cards вместо desktop table; Squad/Pool/Tips и global Menu доступны; document overflow 0; runtime 5xx/page errors 0 |
+| WebKit mobile geometry | Production beta32, WebKit 26.5, iPhone 13 UA, 390×664 | USER-login и authenticated pool API 200; поиск игрока, Squad/Pool/Tips и Menu работают; root/body width 390; console errors/warnings 0; наблюдавшихся 4xx/5xx нет. `maxTouchPoints=0`, поэтому physical/touch gate не закрыт |
 | Полный automated journey | Production beta31, desktop | Реальный forecast player найден; auto-pick дал valid squad; вариант сохранён и QA-copy удалена |
 | Поиск игрока `Mbeumo` | beta16, 1440×900; код пути не менялся в beta22 | HTTP 200 за 507 мс; найден Bryan Mbeumo, прогноз виден, ссылка `Build squad` ведёт в EPL 2026/2027; document width 1440; console errors 0 |
 | Сохранённый состав | desktop/mobile | Вариант `My squad` восстановлен без изменений: 15/15 игроков, 11 стартовых, 4 запасных, бюджет 100/100, банк 0 |
@@ -176,8 +211,9 @@ scroll width.
   CI evidence.
 - Автоматизированный axe-аудит того же UI на beta21 desktop/mobile дал 0
   нарушений, а production beta22 keyboard-check прошёл в Edge. Это не заменяет
-  проверки на реальных Safari iOS и Chrome
-  Android; финальная production-проверка выполнена в Edge viewport 390×844.
+  проверки на реальных Safari iOS и Chrome Android. Помимо Chromium/Edge
+  viewport теперь проверен WebKit 26.5 с iPhone UA на 390×664, но
+  `maxTouchPoints=0`, platform `Win32`, физического устройства не было.
 - Есть воспроизводимый mixed load-smoke; нет длительного RUM/Web Vitals и
   подтверждённого error rate за период реального beta-тестирования.
 - Нет минимум 10 независимых участников и completion rate ≥80% по протоколу
