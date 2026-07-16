@@ -10,7 +10,7 @@
     "build": "next build --webpack",
     "start": "next start -H 0.0.0.0",
     "test": "tsx --test \"src/**/*.test.ts\"",
-    "test:db": "tsx --test \"src/**/*.db-test.ts\"",
+    "test:db": "tsx scripts/run-db-tests.ts",
     "audit:prod": "npm audit --omit=dev --audit-level=moderate",
     "lint": "eslint .",
     "typecheck": "next typegen && tsc --noEmit",
