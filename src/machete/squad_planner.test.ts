@@ -117,7 +117,7 @@ test("squad planner normalizes saved forecast horizon on load", async () => {
       ]
     },
     teamPlayerSeason: { findMany: async () => [], count: async () => 0 },
-    ingestionJob: { findFirst: async () => null },
+    ingestionJob: { findMany: async () => [] },
     dataQualityAuditRun: { findFirst: async () => null },
     fantasyPlayerPrice: { findMany: async () => [] },
     fantasyModel: { findFirst: async () => null },

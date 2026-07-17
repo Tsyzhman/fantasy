@@ -4,7 +4,7 @@ import type { PrismaClient } from "@prisma/client";
 
 import { FotMobFixtureDetailsUnavailableError, type FotMobClient } from "./fotmob_client";
 import { run_next_ingestion_job } from "./ingestion-jobs";
-import { discover_matches_for_scope, ingest_match } from "./ingestion";
+import { discover_matches_for_scope, fixtureRequiresDetailedPayload, ingest_match, ingest_scope } from "./ingestion";
 import { createIngestionScope } from "./ingestion-scope";
 import { CorePlayerRepository, CoreStatsRepository } from "./repositories";
 import { ScopeTooBroadError } from "./scope-validation";
@@ -83,6 +83,65 @@ test("scope validation blocks before matchDetails fetching", async () => {
     ScopeTooBroadError
   );
   assert.equal(detailsFetched, false);
+});
+
+test("upcoming fixtures are persisted without requesting unavailable match details", () => {
+  assert.equal(fixtureRequiresDetailedPayload({ status: "SCHEDULED" }), false);
+  assert.equal(fixtureRequiresDetailedPayload({ status: "LIVE" }), true);
+  assert.equal(fixtureRequiresDetailedPayload({ status: "FINISHED" }), true);
+});
+
+test("scheduled fixture-only ingestion persists the match and never requests details", async () => {
+  const matchUpserts: unknown[] = [];
+  let detailsRequested = false;
+  const prisma = {
+    coreLeague: {
+      async upsert() { return {}; },
+      async createMany() { return { count: 0 }; }
+    },
+    coreTeam: {
+      async createMany() { return { count: 2 }; }
+    },
+    coreMatch: {
+      async upsert(input: unknown) {
+        matchUpserts.push(input);
+        return {};
+      }
+    }
+  } as unknown as PrismaClient;
+  const client: FotMobClient = {
+    async getLeague() { throw new Error("not used"); },
+    async getTeams() { throw new Error("not used"); },
+    async getFixtures(leagueId) {
+      return [{
+        id: "5795363",
+        leagueId,
+        homeTeamId: "9825",
+        awayTeamId: "118795",
+        kickoffAt: "2026-08-21T19:00:00.000Z",
+        status: "SCHEDULED"
+      }];
+    },
+    async getFixtureDetails() {
+      detailsRequested = true;
+      throw new Error("scheduled fixtures must not request details");
+    },
+    async getPlayer() { throw new Error("not used"); }
+  };
+
+  const result = await ingest_scope(
+    prisma,
+    createIngestionScope({ league_id: 47, season: "2026/2027", include_upcoming: true }),
+    { client }
+  );
+
+  assert.equal(detailsRequested, false);
+  assert.equal(matchUpserts.length, 1);
+  assert.equal(result.matchesDiscovered, 1);
+  assert.equal(result.fixtureOnly, 1);
+  assert.equal(result.fetched, 0);
+  assert.equal(result.skipped, 0);
+  assert.equal(result.failed, 0);
 });
 
 test("unavailable FotMob matchDetails are skipped instead of failed", async () => {

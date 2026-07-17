@@ -15,6 +15,7 @@ export type LeagueIngestionConfig = Readonly<{
   enabled: boolean;
   explicit_seasons?: readonly string[];
   max_matches?: number;
+  minimum_matches?: number;
   max_date_span_days?: number;
 }>;
 
@@ -114,6 +115,7 @@ export const leagueIngestionConfig: readonly LeagueIngestionConfig[] = macheteLe
     enabled: !disabledLeagueIngestionIds.has(league.id),
     explicit_seasons: explicitSeasons,
     max_matches: tournamentMaxMatches.get(leagueId) ?? 700,
+    minimum_matches: leagueId === 47 ? 380 : 1,
     max_date_span_days: calendarType === "spring_autumn" ? 400 : calendarType === "tournament" ? 450 : 450
   } satisfies LeagueIngestionConfig;
 });

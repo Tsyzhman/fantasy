@@ -8,10 +8,12 @@ export type PlannerReadinessReason =
   | "NO_DATA_QUALITY_AUDIT"
   | "DATA_QUALITY_AUDIT_NOT_COMPLETED"
   | "DATA_QUALITY_GATE_FAILED"
+  | "FORECAST_COVERAGE_GATE_FAILED"
   | "DATA_QUALITY_AUDIT_STALE"
   | "NO_INCREMENTAL_INGESTION"
   | "INCREMENTAL_INGESTION_NOT_COMPLETED"
   | "INCREMENTAL_INGESTION_STALE"
+  | "INGESTION_FIXTURE_COUNT_MISMATCH"
   | "AUDIT_PREDATES_INGESTION";
 
 export type PlannerReadiness = {
@@ -26,7 +28,11 @@ export type PlannerReadiness = {
     id: string;
     status: string;
     gatePassed: boolean;
+    plannerGatePassed: boolean;
+    mode: "PRESEASON_FORECAST" | "FULL_DATA_QUALITY";
+    coverageThreshold: number;
     forecastCoverage: number;
+    finishedMatches: number;
     startedAt: string;
     completedAt: string | null;
     ageHours: number | null;
@@ -37,6 +43,7 @@ export type PlannerReadiness = {
     startedAt: string | null;
     finishedAt: string | null;
     ageHours: number | null;
+    upcomingFixturesDiscovered: number;
   } | null;
 };
 
@@ -51,7 +58,9 @@ export type PlannerReadinessEvaluationInput = {
     id: string;
     status: string;
     gatePassed: boolean;
+    coverageThreshold: number;
     forecastCoverage: number;
+    finishedMatches: number;
     startedAt: Date;
     completedAt: Date | null;
   } | null;
@@ -60,6 +69,7 @@ export type PlannerReadinessEvaluationInput = {
     status: string;
     startedAt: Date | null;
     finishedAt: Date | null;
+    upcomingFixturesDiscovered: number;
   } | null;
 };
 
@@ -75,7 +85,8 @@ export function evaluatePlannerReadiness(input: PlannerReadinessEvaluationInput)
     reasons.push("NO_DATA_QUALITY_AUDIT");
   } else {
     if (input.audit.status !== "COMPLETED" || !input.audit.completedAt) reasons.push("DATA_QUALITY_AUDIT_NOT_COMPLETED");
-    if (!input.audit.gatePassed) reasons.push("DATA_QUALITY_GATE_FAILED");
+    if (input.audit.forecastCoverage < input.audit.coverageThreshold) reasons.push("FORECAST_COVERAGE_GATE_FAILED");
+    if (input.audit.finishedMatches > 0 && !input.audit.gatePassed) reasons.push("DATA_QUALITY_GATE_FAILED");
     if (auditAgeHours === null || auditAgeHours < 0 || auditAgeHours > input.maximumAgeHours) reasons.push("DATA_QUALITY_AUDIT_STALE");
   }
 
@@ -84,6 +95,7 @@ export function evaluatePlannerReadiness(input: PlannerReadinessEvaluationInput)
   } else {
     if (input.ingestion.status !== "completed" || !input.ingestion.finishedAt) reasons.push("INCREMENTAL_INGESTION_NOT_COMPLETED");
     if (ingestionAgeHours === null || ingestionAgeHours < 0 || ingestionAgeHours > input.maximumAgeHours) reasons.push("INCREMENTAL_INGESTION_STALE");
+    if (input.ingestion.upcomingFixturesDiscovered !== input.upcomingFixtures) reasons.push("INGESTION_FIXTURE_COUNT_MISMATCH");
   }
 
   if (input.audit?.startedAt && input.ingestion?.finishedAt && input.audit.startedAt < input.ingestion.finishedAt) {
@@ -103,7 +115,14 @@ export function evaluatePlannerReadiness(input: PlannerReadinessEvaluationInput)
           id: input.audit.id,
           status: input.audit.status,
           gatePassed: input.audit.gatePassed,
+          plannerGatePassed:
+            input.audit.status === "COMPLETED"
+            && input.audit.forecastCoverage >= input.audit.coverageThreshold
+            && (input.audit.finishedMatches === 0 || input.audit.gatePassed),
+          mode: input.audit.finishedMatches === 0 ? "PRESEASON_FORECAST" : "FULL_DATA_QUALITY",
+          coverageThreshold: input.audit.coverageThreshold,
           forecastCoverage: input.audit.forecastCoverage,
+          finishedMatches: input.audit.finishedMatches,
           startedAt: input.audit.startedAt.toISOString(),
           completedAt: input.audit.completedAt?.toISOString() ?? null,
           ageHours: auditAgeHours
@@ -115,7 +134,8 @@ export function evaluatePlannerReadiness(input: PlannerReadinessEvaluationInput)
           status: input.ingestion.status,
           startedAt: input.ingestion.startedAt?.toISOString() ?? null,
           finishedAt: input.ingestion.finishedAt?.toISOString() ?? null,
-          ageHours: ingestionAgeHours
+          ageHours: ingestionAgeHours,
+          upcomingFixturesDiscovered: input.ingestion.upcomingFixturesDiscovered
         }
       : null
   };
@@ -128,10 +148,14 @@ export async function loadPlannerReadinessByScope(
 ) {
   const now = options.now ?? new Date();
   const maximumAgeHours = positiveHours(options.maximumAgeHours, 26);
-  const ingestion = await prisma.ingestionJob.findFirst({
-    where: { jobType: "incremental_update" },
+  const ingestionJobs = await prisma.ingestionJob.findMany({
+    where: {
+      jobType: "incremental_update",
+      status: { in: ["completed", "completed_with_errors", "failed"] },
+      finishedAt: { gte: new Date(now.getTime() - maximumAgeHours * 60 * 60 * 1000) }
+    },
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-    select: { id: true, status: true, startedAt: true, finishedAt: true }
+    select: { id: true, status: true, startedAt: true, finishedAt: true, currentSeason: true, metadata: true }
   });
 
   const entries = await Promise.all(
@@ -144,7 +168,9 @@ export async function loadPlannerReadinessByScope(
             id: true,
             status: true,
             gatePassed: true,
+            coverageThreshold: true,
             forecastCoverage: true,
+            finishedMatches: true,
             startedAt: true,
             completedAt: true
           }
@@ -162,6 +188,7 @@ export async function loadPlannerReadinessByScope(
           }
         })
       ]);
+      const scopeIngestion = selectLatestIngestionAttempt(ingestionJobs, scope.leagueId, scope.season);
       const readiness = evaluatePlannerReadiness({
         leagueId: scope.leagueId,
         season: scope.season,
@@ -170,13 +197,75 @@ export async function loadPlannerReadinessByScope(
         maximumAgeHours,
         now,
         audit,
-        ingestion
+        ingestion: scopeIngestion
+          ? {
+              id: scopeIngestion.job.id,
+              status: String(scopeIngestion.evidence.status),
+              startedAt: scopeIngestion.job.startedAt,
+              finishedAt: validDate(scopeIngestion.evidence?.finished_at) ?? scopeIngestion.job.finishedAt,
+              upcomingFixturesDiscovered: Number(scopeIngestion.evidence?.upcoming_fixtures_discovered ?? 0)
+            }
+          : null
       });
       return [plannerReadinessKey(scope), readiness] as const;
     })
   );
 
   return new Map(entries);
+}
+
+export function completedIngestionScope(metadataValue: unknown, leagueId: bigint, season: string) {
+  const metadata = metadataValue && typeof metadataValue === "object" && !Array.isArray(metadataValue)
+    ? metadataValue as Record<string, unknown>
+    : {};
+  const scopes = Array.isArray(metadata.completed_canonical_scopes) ? metadata.completed_canonical_scopes : [];
+  return scopes
+    .map((value) => value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null)
+    .find((scope) => scope
+      && String(scope.league_id) === String(leagueId)
+      && String(scope.season) === season) ?? null;
+}
+
+type IngestionAttemptJob = {
+  id: string;
+  status: string;
+  startedAt: Date | null;
+  finishedAt: Date | null;
+  currentSeason: string | null;
+  metadata: unknown;
+};
+
+export function selectLatestIngestionAttempt(jobs: IngestionAttemptJob[], leagueId: bigint, season: string) {
+  for (const job of jobs) {
+    const completedEvidence = completedIngestionScope(job.metadata, leagueId, season);
+    if (completedEvidence) return { job, evidence: completedEvidence };
+
+    const metadata = job.metadata && typeof job.metadata === "object" && !Array.isArray(job.metadata)
+      ? job.metadata as Record<string, unknown>
+      : {};
+    const currentCanonicalLeagueId = metadata.current_scope_canonical_league_id;
+    if (job.status === "failed"
+      && String(currentCanonicalLeagueId) === String(leagueId)
+      && job.currentSeason === season) {
+      return {
+        job,
+        evidence: {
+          league_id: String(leagueId),
+          season,
+          status: "failed",
+          upcoming_fixtures_discovered: 0,
+          finished_at: job.finishedAt?.toISOString() ?? null
+        }
+      };
+    }
+  }
+  return null;
+}
+
+function validDate(value: unknown) {
+  if (typeof value !== "string") return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
 export function selectPlannerSeason(

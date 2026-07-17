@@ -31,12 +31,14 @@ async function main() {
       const started = await start_initial_backfill(prisma, { startedByUserId: null, mode });
       console.info(`[ingestion:cli] ${started.started ? "Queued" : "Reusing active"} ${mode} initial backfill job ${started.job.id}.`);
     } else if (command === "incremental-update") {
-      const started = await run_incremental_update(prisma, { startedByUserId: null });
+      const targetLeagueIds = parseLeagueIds(process.argv[3]);
+      const started = await run_incremental_update(prisma, { startedByUserId: null, targetLeagueIds });
       console.info(`[ingestion:cli] ${started.started ? "Queued" : "Reusing active"} incremental update job ${started.job.id}.`);
       const result = await runIngestionWorkerTick(prisma);
       console.info(`[ingestion:cli] Finished runner for job ${result.job?.id ?? "none"} with status ${result.job?.status ?? "none"}.`);
     } else if (command === "queue-incremental-update") {
-      const started = await run_incremental_update(prisma, { startedByUserId: null });
+      const targetLeagueIds = parseLeagueIds(process.argv[3]);
+      const started = await run_incremental_update(prisma, { startedByUserId: null, targetLeagueIds });
       console.info(`[ingestion:cli] ${started.started ? "Queued" : "Reusing active"} incremental update job ${started.job.id}.`);
     } else if (command === "run-next") {
       const result = await runIngestionWorkerTick(prisma);
@@ -126,6 +128,15 @@ function parseInitialBackfillMode(value: string | null | undefined): InitialBack
   if (!normalized || normalized === "full") return "full";
   if (["current_league_47", "quick", "epl", "league47", "league_47"].includes(normalized)) return "current_league_47";
   throw new Error(`Unknown initial backfill mode "${value}". Use full or current_league_47.`);
+}
+
+function parseLeagueIds(value: string | null | undefined) {
+  if (!value?.trim()) return undefined;
+  const ids = value.split(/[\s,;]+/).filter(Boolean).map(Number);
+  if (ids.some((leagueId) => !Number.isSafeInteger(leagueId) || leagueId <= 0)) {
+    throw new Error(`Invalid target league ids "${value}". Use positive ids separated by commas.`);
+  }
+  return [...new Set(ids)].sort((a, b) => a - b);
 }
 
 function collectPayloadFiles(path: string): string[] {

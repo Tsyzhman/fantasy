@@ -1,4 +1,5 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
+import type { FotMobFixture } from "@/providers/fotmob/types";
 
 import { createFotMobClient, FotMobFixtureDetailsUnavailableError, type FotMobClient } from "./fotmob_client";
 import type { IngestionScope } from "./ingestion-scope";
@@ -168,6 +169,10 @@ export async function discover_matches_for_scope(client: FotMobClient, scope: In
   return discovered;
 }
 
+export function fixtureRequiresDetailedPayload(fixture: Pick<FotMobFixture, "status">) {
+  return fixture.status === "FINISHED" || fixture.status === "LIVE";
+}
+
 function parseFotMobSkipList(raw: string | undefined): Set<string> {
   if (!raw) return new Set();
   return new Set(raw.split(/[\s,;]+/).map((value) => value.trim()).filter(Boolean));
@@ -182,6 +187,7 @@ export async function ingest_scope(
   const fixtures = await discover_matches_for_scope(client, scope);
   let fetched = 0;
   let skipped = 0;
+  let fixtureOnly = 0;
   let failed = 0;
   const affectedMatchIds: bigint[] = [];
 
@@ -192,6 +198,10 @@ export async function ingest_scope(
     try {
       const canonicalLeagueId = BigInt(scope.canonical_league_id ?? scope.league_id);
       await upsert_discovered_fixture(prisma, fixture, canonicalLeagueId, scope.season);
+      if (!fixtureRequiresDetailedPayload(fixture)) {
+        fixtureOnly += 1;
+        continue;
+      }
       const result = await ingest_match(prisma, fixture.id, {
         client,
         leagueId: canonicalLeagueId,
@@ -216,6 +226,7 @@ export async function ingest_scope(
     matchesDiscovered: fixtures.length,
     fetched,
     skipped,
+    fixtureOnly,
     failed,
     affectedMatchIds
   };

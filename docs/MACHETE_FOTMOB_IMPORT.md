@@ -90,8 +90,10 @@ time but is undocumented), fall back to the signed `/api/data/matchDetails`
 
 ## Skipping broken fixtures
 
-For modes that set `require_detailed_payloads: true` (e.g. `current_league_47`),
-a single FotMob anomaly fails the whole job. Add the offending fixture id(s)
+For modes that set `require_detailed_payloads: true`, a single FotMob anomaly
+fails the whole job. The `current_league_47` quick backfill intentionally uses
+`require_detailed_payloads: false` because a pre-season fixture has no detailed
+match payload yet. Add genuinely broken finished fixture id(s)
 to `MACHETE_FOTMOB_SKIP_FIXTURE_IDS` in the host `.env`:
 
 ```env
@@ -102,6 +104,19 @@ MACHETE_FOTMOB_SKIP_FIXTURE_IDS="4813374,4813380"
 docker compose up -d --force-recreate web
 docker compose --profile setup run --rm db-setup npm run ingestion:queue-initial-backfill -- current_league_47
 ```
+
+Incremental ingestion retains upcoming fixtures. Scheduled fixtures are stored
+fixture-only and do not trigger unavailable `matchDetails` requests; live and
+finished fixtures still use the detailed normalization path. Operators can run
+one exact league without queueing all configured competitions:
+
+```bash
+npm run ingestion:incremental-update -- 47
+```
+
+The resulting job remains an `incremental_update`, records
+`target_league_ids` in metadata, and therefore supplies auditable current-scope
+freshness without pretending that other leagues were refreshed.
 
 ## Custom database credentials
 

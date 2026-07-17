@@ -4,11 +4,19 @@ import { FantasyPointsRepository } from "@/machete/fantasy_repositories";
 import { calculate_fantasy_points_for_match } from "@/machete/fantasy_points_engine";
 
 import { createFotMobClient, type FotMobClient } from "./fotmob_client";
-import { ingest_match, discover_matches_for_scope, reparse_match, upsert_discovered_fixture, type IngestMatchResult } from "./ingestion";
+import {
+  ingest_match,
+  discover_matches_for_scope,
+  fixtureRequiresDetailedPayload,
+  reparse_match,
+  upsert_discovered_fixture,
+  type IngestMatchResult
+} from "./ingestion";
 import type { IngestionScope } from "./ingestion-scope";
 import { canonicalLeagueIdForIdentity, dedupeAliases, expandScopesWithAliases, parseLeagueAliases, scopeCanonicalLeagueId, type LeagueAlias } from "./league-aliases";
 import {
   enabledLeagueIngestionConfigs,
+  configForLeague,
   INITIAL_BACKFILL_SEASON_WINDOW,
   scopesForCurrentSeasonLeagueBackfill,
   scopesForInitialBackfill,
@@ -38,6 +46,7 @@ type StartJobInput = {
   startedByUserId?: string | null;
   client?: FotMobClient;
   mode?: InitialBackfillMode;
+  targetLeagueIds?: readonly number[];
 };
 
 type RunJobInput = {
@@ -119,7 +128,8 @@ export async function run_incremental_update(prisma: PrismaClient, input: StartJ
   }
 
   const client = input.client ?? createFotMobClient();
-  const scopes = await buildIncrementalScopes(prisma, client);
+  const targetLeagueIds = normalizeTargetLeagueIds(input.targetLeagueIds);
+  const scopes = await buildIncrementalScopes(prisma, client, targetLeagueIds);
   const result = await createLockedJob(prisma, {
     jobType: "incremental_update",
     data: {
@@ -128,7 +138,10 @@ export async function run_incremental_update(prisma: PrismaClient, input: StartJ
       startedByUserId: input.startedByUserId ?? null,
       startedAt: new Date(),
       totalScopes: scopes.length,
-      metadata: jsonValue({ incremental_only: true })
+      metadata: jsonValue({
+        incremental_only: true,
+        ...(targetLeagueIds ? { target_league_ids: targetLeagueIds } : {})
+      })
     }
   });
 
@@ -213,6 +226,7 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: Ing
     return merged;
   };
   let processedScopes = Math.max(0, jobSnapshot.processedScopes ?? 0);
+  let hasScopeErrors = metadataBoolean(metadataRecord(jobMetadata), "has_scope_errors") ?? false;
   const canonicalLeagueIdsWithAliases = new Set(
     scopes
       .filter((scope) => scope.canonical_league_id && scope.canonical_league_id !== scope.league_id)
@@ -242,6 +256,10 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: Ing
       const isResumingSameScope = metadataNumber(currentMetadata, "current_scope_index") === scopeOrdinal;
       const knownScopeTotal = isResumingSameScope ? metadataNumber(currentMetadata, "current_scope_total_matches") : null;
       const knownScopeProcessed = isResumingSameScope ? metadataNumber(currentMetadata, "current_scope_processed_matches") ?? 0 : 0;
+      // A resumed scope is replayed from the beginning. Its previous attempt
+      // must not poison the replacement result after the underlying failure is fixed.
+      let scopeFixtureFailures = 0;
+      let rosterSynced = false;
 
       await prisma.ingestionJob.update({
         where: { id: jobId },
@@ -255,6 +273,8 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: Ing
             current_scope_canonical_league_id: canonicalLeagueId,
             current_scope_total_matches: knownScopeTotal,
             current_scope_processed_matches: knownScopeProcessed,
+            current_scope_fixture_failures: scopeFixtureFailures,
+            current_scope_roster_synced: null,
             current_scope_status: "syncing_rosters"
           })
         }
@@ -275,12 +295,22 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: Ing
           isCurrent: jobType === "incremental_update",
           deactivateMissing: !hasAliasScopeForCanonical
         });
+        rosterSynced = true;
+        await prisma.ingestionJob.update({
+          where: { id: jobId },
+          data: { metadata: mergeJobMetadata({ current_scope_roster_synced: true }) }
+        });
         console.info(`[ingestion] Scope ${scopeOrdinal}/${scopes.length}: rosters synced.`);
       } catch (error) {
+        hasScopeErrors = true;
         await prisma.ingestionJob.update({
           where: { id: jobId },
           data: {
-            errorMessage: error instanceof Error ? error.message : "Unknown roster sync error"
+            errorMessage: error instanceof Error ? error.message : "Unknown roster sync error",
+            metadata: mergeJobMetadata({
+              has_scope_errors: true,
+              current_scope_roster_synced: false
+            })
           }
         });
       }
@@ -289,7 +319,10 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: Ing
       const discoveredMatches = await discover_matches_for_scope(client, scope);
       console.info(`[ingestion] Scope ${scopeOrdinal}/${scopes.length}: discovered ${discoveredMatches.length} fixtures.`);
       const shouldIncrementTotalMatches = !isResumingSameScope || knownScopeTotal === null;
-      let currentScopeProcessedMatches = isResumingSameScope ? Math.min(knownScopeProcessed, discoveredMatches.length) : 0;
+      // Fixture lists can be inserted, removed, or reordered between attempts.
+      // Re-run the idempotent scope from the start instead of treating an old
+      // ordinal as a stable cursor and silently skipping a newly inserted id.
+      let currentScopeProcessedMatches = 0;
       await prisma.ingestionJob.update({
         where: { id: jobId },
         data: {
@@ -302,7 +335,7 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: Ing
         }
       });
 
-      for (const fixture of discoveredMatches.slice(currentScopeProcessedMatches)) {
+      for (const fixture of discoveredMatches) {
         if (await isCancelled(prisma, jobId)) return;
 
         const matchId = sourceIdToBigInt(fixture.id, "match");
@@ -324,6 +357,26 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: Ing
             );
           }
           await upsert_discovered_fixture(prisma, fixture, BigInt(canonicalLeagueId), scope.season);
+          if (!fixtureRequiresDetailedPayload(fixture)) {
+            await prisma.ingestionJob.update({
+              where: { id: jobId },
+              data: {
+                metadata: mergeJobMetadata({
+                  current_scope_processed_matches: ++currentScopeProcessedMatches,
+                  fixture_only_matches: (metadataNumber(metadataRecord(jobMetadata), "fixture_only_matches") ?? 0) + 1
+                })
+              }
+            });
+            await ingestionRepository.upsertCheckpoint({
+              jobType,
+              leagueId: BigInt(scope.league_id),
+              season: scope.season,
+              lastProcessedMatchId: matchId,
+              lastProcessedDate: new Date(),
+              cursor: { match_id: fixture.id }
+            });
+            continue;
+          }
           const result = await ingest_match(prisma, fixture.id, {
             client,
             leagueId: canonicalLeagueId,
@@ -360,6 +413,8 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: Ing
             cursor: { match_id: fixture.id }
           });
         } catch (error) {
+          scopeFixtureFailures += 1;
+          hasScopeErrors = true;
           console.error(
             `[ingestion] Scope ${scopeOrdinal}/${scopes.length}: match ${fixture.id} failed: ${
               error instanceof Error ? error.message : "Unknown match ingestion error"
@@ -371,7 +426,9 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: Ing
               failedMatches: { increment: 1 },
               errorMessage: error instanceof Error ? error.message : "Unknown match ingestion error",
               metadata: mergeJobMetadata({
-                current_scope_processed_matches: ++currentScopeProcessedMatches
+                current_scope_processed_matches: ++currentScopeProcessedMatches,
+                current_scope_fixture_failures: scopeFixtureFailures,
+                has_scope_errors: true
               })
             }
           });
@@ -380,6 +437,28 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: Ing
       }
 
       processedScopes = scopeIndex + 1;
+      const minimumMatches = scope.league_id === canonicalLeagueId
+        ? configForLeague(canonicalLeagueId)?.minimum_matches ?? 1
+        : 1;
+      const discoveryComplete = discoveredMatches.length >= minimumMatches;
+      if (!discoveryComplete) hasScopeErrors = true;
+      const scopeStatus = rosterSynced && scopeFixtureFailures === 0 && discoveryComplete ? "completed" : "completed_with_errors";
+      const completedScopes = upsertCompletedScope(metadataRecord(jobMetadata).completed_scopes, {
+        source_league_id: scope.league_id,
+        canonical_league_id: canonicalLeagueId,
+        season: scope.season,
+        status: scopeStatus,
+        roster_synced: rosterSynced,
+        fixture_failures: scopeFixtureFailures,
+        fixtures_discovered: discoveredMatches.length,
+        upcoming_fixtures_discovered: discoveredMatches.filter((fixture) => fixture.status === "SCHEDULED").length,
+        fixture_ids: discoveredMatches.map((fixture) => String(fixture.id)),
+        upcoming_fixture_ids: discoveredMatches
+          .filter((fixture) => fixture.status === "SCHEDULED")
+          .map((fixture) => String(fixture.id)),
+        minimum_fixtures_required: minimumMatches,
+        finished_at: new Date().toISOString()
+      });
       await prisma.ingestionJob.update({
         where: { id: jobId },
         data: {
@@ -389,17 +468,26 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: Ing
             current_scope_index: null,
             current_scope_total_matches: null,
             current_scope_processed_matches: null,
+            current_scope_fixture_failures: null,
+            current_scope_roster_synced: null,
+            completed_scopes: completedScopes,
+            has_scope_errors: hasScopeErrors,
             current_scope_status: "between_scopes"
-          })
+          }),
+          ...(!discoveryComplete
+            ? { errorMessage: `League ${canonicalLeagueId} / ${scope.season} returned ${discoveredMatches.length} fixtures; minimum ${minimumMatches} required.` }
+            : {})
         }
       });
       console.info(`[ingestion] Scope ${scopeOrdinal}/${scopes.length} completed.`);
     }
 
+    const completedCanonicalScopes = aggregateCompletedCanonicalScopes(scopes, metadataRecord(jobMetadata).completed_scopes);
+    const finalHasScopeErrors = completedCanonicalScopes.some((scope) => scope.status !== "completed");
     await prisma.ingestionJob.update({
       where: { id: jobId },
       data: {
-        status: "completed",
+        status: finalHasScopeErrors ? "completed_with_errors" : "completed",
         finishedAt: new Date(),
         currentLeagueId: null,
         currentSeason: null,
@@ -408,7 +496,9 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: Ing
           current_scope_index: null,
           current_scope_total_matches: null,
           current_scope_processed_matches: null,
-          current_scope_status: "completed"
+          current_scope_status: "completed",
+          has_scope_errors: finalHasScopeErrors,
+          completed_canonical_scopes: completedCanonicalScopes
         })
       }
     });
@@ -468,7 +558,7 @@ async function runningJob(prisma: PrismaClient) {
 
 async function scopesForJob(prisma: PrismaClient, job: IngestionJob, client: FotMobClient) {
   if (job.jobType === "initial_backfill") return scopesForInitialBackfillMode(prisma, backfillModeFromMetadata(job.metadata));
-  if (job.jobType === "incremental_update") return buildIncrementalScopes(prisma, client);
+  if (job.jobType === "incremental_update") return buildIncrementalScopes(prisma, client, incrementalTargetLeagueIds(job.metadata));
   throw new Error(`Unsupported ingestion job type: ${job.jobType}`);
 }
 
@@ -526,8 +616,20 @@ async function isCancelled(prisma: PrismaClient, jobId: string) {
   return job?.status === "cancelled";
 }
 
-async function buildIncrementalScopes(prisma: PrismaClient, client: FotMobClient) {
-  const configs = enabledLeagueIngestionConfigs();
+export async function buildIncrementalScopes(
+  prisma: PrismaClient,
+  client: FotMobClient,
+  targetLeagueIds?: readonly number[]
+) {
+  const requestedLeagueIds = normalizeTargetLeagueIds(targetLeagueIds);
+  const configs = requestedLeagueIds
+    ? enabledLeagueIngestionConfigs().filter((config) => requestedLeagueIds.includes(config.league_id))
+    : enabledLeagueIngestionConfigs();
+  if (requestedLeagueIds && configs.length !== requestedLeagueIds.length) {
+    const configured = new Set(configs.map((config) => config.league_id));
+    const missing = requestedLeagueIds.filter((leagueId) => !configured.has(leagueId));
+    throw new Error(`Incremental ingestion target contains disabled or unknown league ids: ${missing.join(", ")}.`);
+  }
   const baseScopes = scopesForIncrementalUpdate(configs);
   const sharedLeagueSeasons = await prisma.leagueSeason.findMany({
     where: {
@@ -554,12 +656,24 @@ async function buildIncrementalScopes(prisma: PrismaClient, client: FotMobClient
       ...scope,
       season: latestProviderSeason,
       include_live: true,
-      include_upcoming: false,
+      include_upcoming: true,
       force_refresh: false,
       force_reparse: false
     };
   }));
   return expandScopesWithAliases(resolvedBaseScopes, await loadLeagueAliases(prisma));
+}
+
+function incrementalTargetLeagueIds(metadataValue: unknown) {
+  const value = metadataRecord(metadataValue).target_league_ids;
+  return Array.isArray(value) ? normalizeTargetLeagueIds(value.map(Number)) : undefined;
+}
+
+function normalizeTargetLeagueIds(value: readonly number[] | undefined) {
+  if (value === undefined) return undefined;
+  const normalized = [...new Set(value.filter((leagueId) => Number.isSafeInteger(leagueId) && leagueId > 0))].sort((a, b) => a - b);
+  if (normalized.length === 0) throw new Error("At least one positive target league id is required.");
+  return normalized;
 }
 
 async function loadLeagueAliases(prisma: PrismaClient): Promise<LeagueAlias[]> {
@@ -636,4 +750,79 @@ function metadataNumber(metadata: Record<string, unknown>, key: string) {
     if (Number.isFinite(parsed)) return parsed;
   }
   return null;
+}
+
+function metadataBoolean(metadata: Record<string, unknown>, key: string) {
+  const value = metadata[key];
+  return typeof value === "boolean" ? value : null;
+}
+
+type CompletedScopeMetadata = {
+  source_league_id: number;
+  canonical_league_id: number;
+  season: string;
+  status: "completed" | "completed_with_errors";
+  roster_synced: boolean;
+  fixture_failures: number;
+  fixtures_discovered: number;
+  upcoming_fixtures_discovered: number;
+  fixture_ids?: string[];
+  upcoming_fixture_ids?: string[];
+  minimum_fixtures_required: number;
+  finished_at: string;
+};
+
+function upsertCompletedScope(value: unknown, next: CompletedScopeMetadata) {
+  const scopes = Array.isArray(value)
+    ? value.filter((item): item is CompletedScopeMetadata => Boolean(item) && typeof item === "object")
+    : [];
+  return [
+    ...scopes.filter((scope) => !(
+      Number(scope.source_league_id) === next.source_league_id
+      && String(scope.season) === next.season
+    )),
+    next
+  ];
+}
+
+export function aggregateCompletedCanonicalScopes(scopes: IngestionScope[], value: unknown) {
+  const completed = Array.isArray(value)
+    ? value.filter((item): item is CompletedScopeMetadata => Boolean(item) && typeof item === "object")
+    : [];
+  const keys = new Map<string, { canonicalLeagueId: number; season: string; sourceLeagueIds: number[] }>();
+  for (const scope of scopes) {
+    const canonicalLeagueId = scopeCanonicalLeagueId(scope);
+    const key = `${canonicalLeagueId}:${scope.season}`;
+    const entry = keys.get(key) ?? { canonicalLeagueId, season: scope.season, sourceLeagueIds: [] };
+    if (!entry.sourceLeagueIds.includes(scope.league_id)) entry.sourceLeagueIds.push(scope.league_id);
+    keys.set(key, entry);
+  }
+
+  return [...keys.values()].map((entry) => {
+    const rows = entry.sourceLeagueIds.map((sourceLeagueId) => completed.find((row) =>
+      Number(row.source_league_id) === sourceLeagueId
+      && Number(row.canonical_league_id) === entry.canonicalLeagueId
+      && String(row.season) === entry.season
+    ));
+    const successful = rows.length > 0 && rows.every((row) => row?.status === "completed");
+    const fixtureIds = new Set(rows.flatMap((row) => Array.isArray(row?.fixture_ids) ? row.fixture_ids.map(String) : []));
+    const upcomingFixtureIds = new Set(rows.flatMap((row) =>
+      Array.isArray(row?.upcoming_fixture_ids) ? row.upcoming_fixture_ids.map(String) : []
+    ));
+    const hasExactFixtureIds = rows.every((row) => Array.isArray(row?.fixture_ids));
+    const hasExactUpcomingFixtureIds = rows.every((row) => Array.isArray(row?.upcoming_fixture_ids));
+    return {
+      league_id: entry.canonicalLeagueId,
+      season: entry.season,
+      status: successful ? "completed" : "completed_with_errors",
+      source_league_ids: entry.sourceLeagueIds.sort((left, right) => left - right),
+      fixtures_discovered: hasExactFixtureIds
+        ? fixtureIds.size
+        : rows.reduce((total, row) => total + (row?.fixtures_discovered ?? 0), 0),
+      upcoming_fixtures_discovered: hasExactUpcomingFixtureIds
+        ? upcomingFixtureIds.size
+        : rows.reduce((total, row) => total + (row?.upcoming_fixtures_discovered ?? 0), 0),
+      finished_at: rows.map((row) => row?.finished_at).filter((item): item is string => Boolean(item)).sort().at(-1) ?? null
+    };
+  });
 }
