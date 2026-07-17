@@ -12,7 +12,7 @@ const apply = process.argv.includes("--apply");
 
 // Manually verified against Sports.ru identity data, live FotMob profiles and
 // the active production FotMob roster for this exact league season.
-const mappings = [
+const mappings: ReadonlyArray<readonly [providerPlayerId: string, playerId: string, overrideTeamId?: string]> = [
   ["67319", "1431809"], ["67351", "638772"], ["67397", "1382358"],
   ["67408", "1554116"], ["67416", "1792323"], ["67430", "1036575"],
   ["67438", "689051"], ["67444", "1213750"], ["67471", "1176214"],
@@ -25,12 +25,19 @@ const mappings = [
   ["67668", "1133755"], ["67675", "827669"], ["67683", "987142"],
   ["67687", "407765"], ["67690", "717557"], ["67697", "561200"],
   ["67730", "690096"], ["67732", "653592"], ["67750", "1636880"],
-  ["67752", "1606580"]
-] as const;
+  ["67752", "1606580"],
+  // Exact identities whose transfer is confirmed but the live FotMob team
+  // roster still lags. Third value is the verified current RPL team ID.
+  ["67354", "972117", "8708"], ["67418", "1524617", "1068353"],
+  ["67518", "560506", "8709"], ["67530", "880237", "8709"],
+  ["67568", "1797696", "1066681"], ["67722", "1076909", "1692"],
+  ["67756", "1783448", "9760"], ["67706", "1383530", "1692"]
+];
 
 async function main() {
   const providerPlayerIds = mappings.map(([providerPlayerId]) => providerPlayerId);
   const targetPlayerIds = mappings.map(([, playerId]) => BigInt(playerId));
+  const overrideTeamIds = mappings.flatMap(([, , teamId]) => teamId ? [BigInt(teamId)] : []);
   const prices = await prisma.fantasyPlayerPrice.findMany({
     where: { provider: "SPORTS_RU", leagueId, season, providerPlayerId: { in: providerPlayerIds } },
     orderBy: { providerPlayerId: "asc" }
@@ -39,24 +46,40 @@ async function main() {
     where: { leagueId, season, active: true, playerId: { in: targetPlayerIds } },
     include: { player: true, team: true }
   });
+  const [players, seasonTeams] = await Promise.all([
+    prisma.corePlayer.findMany({ where: { id: { in: targetPlayerIds } } }),
+    prisma.leagueSeasonTeam.findMany({
+      where: { leagueId, season, active: true, teamId: { in: overrideTeamIds } },
+      include: { team: true }
+    })
+  ]);
   const priceByProviderId = new Map(prices.map((price) => [price.providerPlayerId, price]));
   const rosterByPlayerId = new Map(roster.map((entry) => [String(entry.playerId), entry]));
+  const playerById = new Map(players.map((player) => [String(player.id), player]));
+  const seasonTeamById = new Map(seasonTeams.map((entry) => [String(entry.teamId), entry]));
   const errors: string[] = [];
-  const plan = mappings.map(([providerPlayerId, playerId]) => {
+  const plan = mappings.map(([providerPlayerId, playerId, overrideTeamId]) => {
     const price = priceByProviderId.get(providerPlayerId) ?? null;
-    const rosterEntry = rosterByPlayerId.get(playerId) ?? null;
+    const rosterEntry = overrideTeamId
+      ? roster.find((entry) => String(entry.playerId) === playerId && String(entry.teamId) === overrideTeamId) ?? null
+      : rosterByPlayerId.get(playerId) ?? null;
+    const player = rosterEntry?.player ?? playerById.get(playerId) ?? null;
+    const seasonTeam = overrideTeamId ? seasonTeamById.get(overrideTeamId) ?? null : null;
     if (!price) errors.push(`Sports.ru price ${providerPlayerId} was not found exactly once.`);
-    if (!rosterEntry) errors.push(`Active RPL roster player ${playerId} was not found exactly once.`);
+    if (!player) errors.push(`Core FotMob player ${playerId} was not found exactly once.`);
+    if (!rosterEntry && !seasonTeam) errors.push(`Active RPL roster or verified override team for player ${playerId} was not found.`);
+    const targetTeamId = rosterEntry ? String(rosterEntry.teamId) : overrideTeamId ?? null;
     return {
       providerPlayerId,
       playerId,
+      overrideTeamId: overrideTeamId ?? null,
       sportsName: price?.playerName ?? null,
-      fotmobName: rosterEntry?.player.name ?? null,
-      team: rosterEntry?.team.name ?? null,
+      fotmobName: player?.name ?? null,
+      team: rosterEntry?.team.name ?? seasonTeam?.team.name ?? null,
       priceId: price?.id ?? null,
       previousPlayerId: price?.playerId ? String(price.playerId) : null,
       previousTeamId: price?.teamId ? String(price.teamId) : null,
-      alreadyMapped: price?.playerId === BigInt(playerId) && price?.teamId === rosterEntry?.teamId
+      alreadyMapped: price?.playerId === BigInt(playerId) && (targetTeamId ? price?.teamId === BigInt(targetTeamId) : false)
     };
   });
 
@@ -83,7 +106,11 @@ async function main() {
 
   const results = [];
   for (const row of plan) {
-    results.push(await setSportsRuPlayerMapping(prisma, { priceId: row.priceId!, playerId: BigInt(row.playerId) }));
+    results.push(await setSportsRuPlayerMapping(prisma, {
+      priceId: row.priceId!,
+      playerId: BigInt(row.playerId),
+      teamId: row.overrideTeamId ? BigInt(row.overrideTeamId) : undefined
+    }));
   }
   console.log(JSON.stringify({ applied: results.length, results }, bigintJson, 2));
 }

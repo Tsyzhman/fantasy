@@ -108,6 +108,16 @@ export async function autoMapSportsRuFantasyPlayers(
 
   const mapsByPriceId = new Map(existingMaps.map((map) => [map.providerEntityId, map]));
   const rosterByPlayerId = new Map(roster.map((entry) => [String(entry.playerId), entry]));
+  const manualPlayerIds = [...new Set(existingMaps.filter((map) => map.matchedBy === "MANUAL" && map.internalEntityId).map((map) => BigInt(map.internalEntityId!)))];
+  const [manualPlayers, activeSeasonTeams] = await Promise.all([
+    prisma.corePlayer.findMany({ where: { id: { in: manualPlayerIds } }, select: { id: true } }),
+    prisma.leagueSeasonTeam.findMany({
+      where: { leagueId: input.leagueId, season: input.season, active: true },
+      select: { teamId: true }
+    })
+  ]);
+  const manualPlayerIdSet = new Set(manualPlayers.map((player) => String(player.id)));
+  const activeSeasonTeamIdSet = new Set(activeSeasonTeams.map((team) => String(team.teamId)));
   let matched = 0;
   let manual = 0;
   let unmatched = 0;
@@ -124,9 +134,19 @@ export async function autoMapSportsRuFantasyPlayers(
   for (const price of prices) {
     const existing = mapsByPriceId.get(price.id);
     if (existing?.matchedBy === "MANUAL" && existing.internalEntityId) {
-      const manualRosterEntry = rosterByPlayerId.get(existing.internalEntityId);
+      const manualRosterEntry = findManualRosterEntry(roster, existing.internalEntityId, price.teamId);
       if (manualRosterEntry) {
         addSelectionSync(await applyPriceRosterMapping(prisma, price, manualRosterEntry));
+        manual += 1;
+        continue;
+      }
+      // A verified admin override may legitimately lead a lagging FotMob team
+      // roster (new transfers are the common case). Keep it while both the
+      // player and selected league-season team still exist.
+      if (
+        price.playerId && String(price.playerId) === existing.internalEntityId && price.teamId &&
+        manualPlayerIdSet.has(existing.internalEntityId) && activeSeasonTeamIdSet.has(String(price.teamId))
+      ) {
         manual += 1;
         continue;
       }
@@ -258,6 +278,7 @@ export async function setSportsRuPlayerMapping(
   input: {
     priceId: string;
     playerId: bigint | null;
+    teamId?: bigint | null;
   }
 ) {
   const price = await prisma.fantasyPlayerPrice.findUnique({
@@ -265,12 +286,13 @@ export async function setSportsRuPlayerMapping(
   });
   if (!price) throw new Error("Sports.ru price row was not found.");
 
-  const rosterEntry = input.playerId
+  let rosterEntry: RosterEntry | null = input.playerId
     ? await prisma.teamPlayerSeason.findFirst({
         where: {
           leagueId: price.leagueId,
           season: price.season,
           playerId: input.playerId,
+          ...(input.teamId ? { teamId: input.teamId } : {}),
           active: true
         },
         include: {
@@ -281,7 +303,23 @@ export async function setSportsRuPlayerMapping(
     : null;
 
   if (input.playerId && !rosterEntry) {
-    throw new Error("FotMob roster player was not found in the same league season.");
+    if (!input.teamId) throw new Error("FotMob roster player was not found in the same league season.");
+    const [player, seasonTeam] = await Promise.all([
+      prisma.corePlayer.findUnique({ where: { id: input.playerId } }),
+      prisma.leagueSeasonTeam.findFirst({
+        where: { leagueId: price.leagueId, season: price.season, teamId: input.teamId, active: true },
+        include: { team: true }
+      })
+    ]);
+    if (!player) throw new Error("FotMob player was not found in the core player catalog.");
+    if (!seasonTeam) throw new Error("Target team was not found in the same active league season.");
+    rosterEntry = {
+      playerId: player.id,
+      teamId: seasonTeam.teamId,
+      position: price.position,
+      player,
+      team: seasonTeam.team
+    };
   }
 
   const confidence = rosterEntry ? scoreSportsRuCandidate(price, rosterEntry).confidence : 0;
@@ -336,6 +374,11 @@ export async function setSportsRuPlayerMapping(
     matchedBy: null,
     selectionSync: emptySelectionSync()
   };
+}
+
+export function findManualRosterEntry(roster: RosterEntry[], playerId: string, teamId: bigint | null) {
+  if (teamId) return roster.find((entry) => String(entry.playerId) === playerId && entry.teamId === teamId);
+  return roster.find((entry) => String(entry.playerId) === playerId);
 }
 
 export function buildSportsRuMappingCandidates(price: SportsRuPriceLike, roster: RosterEntry[]): SportsRuPlayerMappingCandidate[] {

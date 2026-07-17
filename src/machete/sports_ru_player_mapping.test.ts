@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { buildSportsRuMappingCandidates, planSportsRuSelectionRemap, scoreSportsRuCandidate } from "./sports_ru_player_mapping";
+import { buildSportsRuMappingCandidates, findManualRosterEntry, planSportsRuSelectionRemap, scoreSportsRuCandidate } from "./sports_ru_player_mapping";
 
 const liverpool = { name: "Liverpool" };
 const city = { name: "Manchester City" };
@@ -60,6 +60,14 @@ test("sports ru mapping remap moves stale squad picks and removes same-squad dup
 
   assert.deepEqual(plan.moveSelectionIds, ["stale-a"]);
   assert.deepEqual(plan.deleteSelectionIds, ["stale-b"]);
+});
+
+test("manual transfer override does not fall back to the player's stale active team", () => {
+  const stale = roster("Nikita Chernov", "CB", { name: "Spartak Moscow" }, 560506n);
+  const currentTeamId = 8709n;
+
+  assert.equal(findManualRosterEntry([stale], "560506", currentTeamId), undefined);
+  assert.equal(findManualRosterEntry([stale], "560506", null), stale);
 });
 
 function price(normalizedName: string, position: string) {
