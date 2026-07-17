@@ -153,7 +153,12 @@ server-recorded `submittedAt`. It deliberately performs no historical backfill
 and adds no constraint: a moderator review is not evidence that the participant
 submitted the run. Legacy reviewed rows therefore remain `submittedAt = null`,
 block the gate when marked valid, and are excluded from valid/primary participant
-counts. A later contract migration may add an invariant only after legacy rows
-have been explicitly resolved without inventing submission provenance.
-It is pending production deployment; production therefore still has 8/8
-applied migrations until the release containing this change is promoted.
+counts. It was applied to production on 2026-07-17 from the exact beta39 setup
+image, after a custom-format backup verified with `pg_restore --list`;
+production then reported 9 applied migrations, zero failed migrations, and
+unchanged application row counts.
+`000010_beta_test_submission_contract` adds a bounded-lock `CHECK ... NOT VALID`
+contract: new or updated real runs cannot be marked valid without `submittedAt`.
+It performs no backfill and deliberately does not validate historical rows, so
+no submission provenance is fabricated. Historical violations remain an explicit
+gate blocker until resolved from real evidence.

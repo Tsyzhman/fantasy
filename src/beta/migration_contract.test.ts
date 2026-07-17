@@ -16,6 +16,10 @@ const betaSubmissionMigration = readFileSync(
   resolve("prisma/migrations/000009_beta_test_submission/migration.sql"),
   "utf8"
 );
+const betaSubmissionContractMigration = readFileSync(
+  resolve("prisma/migrations/000010_beta_test_submission_contract/migration.sql"),
+  "utf8"
+);
 
 test("beta telemetry foreign key targets the canonical Prisma user table", () => {
   assert.match(initialMigration, /CREATE TABLE "User" \(/);
@@ -36,4 +40,24 @@ test("beta submission expand migration adds only a nullable provenance field", (
   assert.doesNotMatch(betaSubmissionMigration, /SET\s+"submitted_at"/i);
   assert.doesNotMatch(betaSubmissionMigration, /NOT NULL/i);
   assert.doesNotMatch(betaSubmissionMigration, /ADD CONSTRAINT/i);
+});
+
+test("beta submission contract rejects new real valid runs without inventing provenance", () => {
+  assert.match(betaSubmissionContractMigration, /SET lock_timeout = '5s'/);
+  assert.match(betaSubmissionContractMigration, /SET statement_timeout = '30s'/);
+  assert.match(
+    betaSubmissionContractMigration,
+    /ADD CONSTRAINT "beta_test_runs_real_valid_requires_submission_check"/
+  );
+  assert.match(betaSubmissionContractMigration, /"synthetic" IS TRUE/);
+  assert.match(betaSubmissionContractMigration, /"valid" IS DISTINCT FROM TRUE/);
+  assert.match(betaSubmissionContractMigration, /"submitted_at" IS NOT NULL/);
+  assert.match(betaSubmissionContractMigration, /\) NOT VALID/);
+  assert.doesNotMatch(betaSubmissionContractMigration, /UPDATE\s+"beta_test_runs"/i);
+  assert.doesNotMatch(betaSubmissionContractMigration, /SET\s+"submitted_at"/i);
+  assert.doesNotMatch(betaSubmissionContractMigration, /VALIDATE CONSTRAINT/i);
+  assert.doesNotMatch(
+    betaSubmissionContractMigration,
+    /ALTER\s+COLUMN\s+"?submitted_at"?\s+SET\s+NOT\s+NULL/i
+  );
 });
