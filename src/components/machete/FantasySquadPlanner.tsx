@@ -1231,7 +1231,7 @@ function PlayerPoolTable({
         onAdd={onAdd}
         onRemove={onRemove}
       />
-      <div className="hidden min-w-0 max-w-full overflow-hidden rounded border border-slate-200 bg-white md:block" data-testid="player-pool-table">
+      <div className="hidden min-w-0 max-w-full overflow-hidden rounded border border-slate-200 bg-white md:block [@media(pointer:coarse)]:!hidden" data-testid="player-pool-table">
         <div className="relative max-h-[720px] w-full max-w-full overflow-auto">
         <SortableTable className="w-full min-w-[720px] table-fixed divide-y divide-slate-200 text-xs">
           <colgroup>
@@ -1419,7 +1419,7 @@ function PlayerPoolMobileList({
   onRemove: (playerId: string) => void;
 }) {
   return (
-    <div className="space-y-2 md:hidden" data-testid="player-pool-mobile">
+    <div className="space-y-2 md:hidden [@media(pointer:coarse)]:!block" data-testid="player-pool-mobile">
       {players.map((player) => {
         const reason = addBlockReason(player);
         const isSelected = selectionsByPlayerId.has(player.playerId);
