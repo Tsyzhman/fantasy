@@ -9,6 +9,7 @@ import {
   parseBetaTelemetryCommand,
   summarizeBetaTechnicalRun,
   validateBetaReviewInput,
+  type BetaAcceptanceEvidence,
   type BetaTestRunForReport
 } from "./user-test";
 
@@ -86,9 +87,10 @@ test("beta gate passes exact SMART thresholds on first valid run per ten users",
   const runs = Array.from({ length: 10 }, (_, index) => makeRun(index + 1, {
     withoutHelp: index < 8,
     transferReasonUnderstood: index < 7,
-    usabilityRating: 4
+    usabilityRating: 4,
+    startedAtOffsetMs: index * 3 * 60 * 60 * 1_000
   }));
-  const report = buildBetaUserTestReport(runs);
+  const report = buildBetaUserTestReport(runs, passingAcceptanceEvidence());
   assert.equal(report.participants, 10);
   assert.equal(report.completionRate, 80);
   assert.equal(report.forecastFoundRate, 100);
@@ -99,7 +101,75 @@ test("beta gate passes exact SMART thresholds on first valid run per ten users",
   assert.deepEqual(report.rum.webVitals.LCP.ratings, { good: 10, needsImprovement: 0, poor: 0 });
   assert.deepEqual(report.physicalDeviceCoverage, { iosSafari: 1, androidChrome: 1, inconsistent: 0, passed: true });
   assert.equal(report.rum.gate.passed, true);
+  assert.equal(report.serverWindow.gate.passed, true);
   assert.equal(report.gate.passed, true);
+});
+
+test("beta gate fails closed without explicit server-window and RUM acceptance evidence", () => {
+  const report = buildBetaUserTestReport(spreadPassingRuns());
+
+  assert.equal(report.serverWindow.evidence, null);
+  assert.equal(report.serverWindow.gate.passed, false);
+  assert.match(report.gate.violations.join(" "), /fixed-window server error-rate evidence is missing/);
+  assert.match(report.rum.gate.violations.join(" "), /span and freshness requirements are missing/);
+  assert.equal(report.gate.passed, false);
+});
+
+test("server fixed-window evidence fails closed for every acceptance invariant", async (context) => {
+  const base = passingAcceptanceEvidence();
+  const variants: Array<[string, Partial<NonNullable<BetaAcceptanceEvidence["serverWindow"]>>, RegExp]> = [
+    ["insufficient", { status: "insufficient_data" }, /status must be ok; observed insufficient_data/],
+    ["breach", { status: "breach" }, /status must be ok; observed breach/],
+    ["stale", { generatedAt: "2026-07-16T12:00:00.000Z" }, /at most 90 minutes old/],
+    ["wrong start", { windowStart: "2026-07-15T12:01:00.000Z" }, /must exactly match/],
+    ["missing retention", { retentionCoversWindowStart: false }, /retention does not cover/],
+    ["short span", { observedSpanMinutes: 1_439 }, /observed span must be at least 1440/],
+    ["one percent", { serverErrors: 1, serverErrorRatePercent: 1 }, /5xx rate must be below 1%/],
+    ["inconsistent counts", { serverErrors: 1, serverErrorRatePercent: 0 }, /inconsistent with counts/]
+  ];
+
+  for (const [name, override, expectedViolation] of variants) {
+    await context.test(name, () => {
+      const report = buildBetaUserTestReport(spreadPassingRuns(), {
+        ...base,
+        serverWindow: { ...base.serverWindow!, ...override }
+      });
+      assert.equal(report.serverWindow.gate.passed, false);
+      assert.match(report.serverWindow.gate.violations.join(" "), expectedViolation);
+      assert.equal(report.gate.passed, false);
+    });
+  }
+});
+
+test("RUM gate requires a real observation span and a fresh final observation", () => {
+  const short = buildBetaUserTestReport(
+    Array.from({ length: 10 }, (_, index) => makeRun(index + 500)),
+    passingAcceptanceEvidence()
+  );
+  assert.equal(short.rum.gate.passed, false);
+  assert.match(short.rum.gate.violations.join(" "), /observation span must be at least 24 hours/);
+
+  const staleEvidence = passingAcceptanceEvidence();
+  staleEvidence.evaluatedAt = new Date("2026-07-18T18:00:00.000Z");
+  staleEvidence.serverWindow = {
+    ...staleEvidence.serverWindow!,
+    generatedAt: "2026-07-18T17:55:00.000Z",
+    observedSpanMinutes: 4_300
+  };
+  const stale = buildBetaUserTestReport(spreadPassingRuns(), staleEvidence);
+  assert.equal(stale.rum.gate.passed, false);
+  assert.match(stale.rum.gate.violations.join(" "), /last observation must be at most 24 hours old/);
+  assert.equal(stale.gate.passed, false);
+});
+
+test("any real client error blocks an otherwise passing overall gate", () => {
+  const runs = spreadPassingRuns();
+  runs[0] = makeRun(1, { startedAtOffsetMs: 0, clientErrorCount: 1 });
+  const report = buildBetaUserTestReport(runs, passingAcceptanceEvidence());
+
+  assert.equal(report.rum.clientErrors, 1);
+  assert.match(report.gate.violations.join(" "), /real beta client-error observations were recorded/);
+  assert.equal(report.gate.passed, false);
 });
 
 test("beta gate rejects slow or insufficient real-user RUM", () => {
@@ -327,5 +397,35 @@ function makeRun(
     submittedAt: overrides.submittedAt === undefined ? new Date(startedAt.getTime() + 160_000) : overrides.submittedAt,
     startedAt,
     observations
+  };
+}
+
+function spreadPassingRuns() {
+  return Array.from({ length: 10 }, (_, index) => makeRun(index + 1, {
+    startedAtOffsetMs: index * 3 * 60 * 60 * 1_000
+  }));
+}
+
+function passingAcceptanceEvidence(): BetaAcceptanceEvidence {
+  return {
+    evaluatedAt: new Date("2026-07-16T16:00:00.000Z"),
+    serverWindow: {
+      status: "ok",
+      generatedAt: "2026-07-16T15:55:00.000Z",
+      windowMode: "fixed_start",
+      windowStart: "2026-07-15T12:00:00.000Z",
+      retentionCoversWindowStart: true,
+      requests: 100,
+      serverErrors: 0,
+      serverErrorRatePercent: 0,
+      observedSpanMinutes: 1_620,
+      expectedStart: "2026-07-15T12:00:00.000Z",
+      minimumObservedSpanMinutes: 1_440,
+      maximumAgeMinutes: 90
+    },
+    rum: {
+      minimumObservationSpanHours: 24,
+      maximumLastObservationAgeHours: 24
+    }
   };
 }

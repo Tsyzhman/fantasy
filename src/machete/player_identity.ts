@@ -4,6 +4,7 @@ type PlayerIdentityRow = {
   id: string;
   name: string;
   teamName?: string | null;
+  teamShortName?: string | null;
   position: string | null;
 };
 
@@ -56,7 +57,7 @@ export function filterFantasyPlayerIdentityRows<T extends PlayerIdentityRow>(row
 
   const terms = query.split(" ").filter(Boolean);
   return rows.filter((row) => {
-    const haystack = normalizePlayerSearchValue(`${row.name} ${row.teamName ?? ""}`);
+    const haystack = normalizePlayerSearchValue(`${row.name} ${row.teamName ?? ""} ${row.teamShortName ?? ""}`);
     return terms.every((term) => haystack.includes(term));
   });
 }

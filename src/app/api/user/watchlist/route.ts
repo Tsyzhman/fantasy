@@ -5,6 +5,7 @@ import { jsonError, withApiHandler } from "@/lib/api-handler";
 import { requireApiUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { readJsonObject } from "@/lib/request-json";
+import { watchlistMetadataWithTeamShortName, watchlistTeamShortName } from "@/lib/players/watchlist-metadata";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -15,6 +16,7 @@ type WatchlistPlayerInput = {
   id: string;
   name: string;
   teamName: string | null;
+  teamShortName: string | null;
   position: string | null;
 };
 
@@ -44,7 +46,11 @@ export const POST = withApiHandler(async (request: Request) => {
   if (!player) return badRequest("player.id and player.name are required.");
 
   const metadata = inputJson(body.metadata);
-  const jsonData = metadata === undefined ? {} : { metadata };
+  const nextMetadata = watchlistMetadataWithTeamShortName(metadata, player.teamShortName);
+  const serializedMetadata = Object.keys(nextMetadata).length === 0 && metadata === undefined
+    ? undefined
+    : serializeJsonObject(nextMetadata);
+  const jsonData = serializedMetadata === undefined ? {} : { metadata: serializedMetadata };
 
   await prisma.userWatchlistPlayer.upsert({
     where: {
@@ -108,6 +114,7 @@ async function loadWatchlist(userId: string, source: WatchlistSource) {
     id: player.playerKey,
     name: player.playerName,
     teamName: player.teamName,
+    teamShortName: watchlistTeamShortName(player.metadata),
     position: player.position,
     savedAt: player.createdAt.toISOString(),
     updatedAt: player.updatedAt.toISOString()
@@ -144,6 +151,7 @@ function playerInput(value: unknown): WatchlistPlayerInput | null {
     id,
     name,
     teamName: optionalString(record.teamName, 120),
+    teamShortName: optionalString(record.teamShortName, 120),
     position: optionalString(record.position, 80)
   };
 }
@@ -169,6 +177,10 @@ function inputJson(value: unknown): Prisma.InputJsonValue | undefined {
   }
 
   return value as Prisma.InputJsonValue;
+}
+
+function serializeJsonObject(value: Record<string, unknown>): Prisma.InputJsonObject {
+  return JSON.parse(JSON.stringify(value)) as Prisma.InputJsonObject;
 }
 
 function badRequest(message: string) {

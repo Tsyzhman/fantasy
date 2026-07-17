@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { loadBetaAcceptanceEvidence } from "@/beta/acceptance-evidence";
 import { buildBetaUserTestReport } from "@/beta/user-test";
 import { withApiHandler } from "@/lib/api-handler";
 import { requireApiAdmin } from "@/lib/auth";
@@ -15,7 +16,7 @@ export const GET = withApiHandler(async () => {
   if (auth.response) return auth.response;
 
   const since = new Date(Date.now() - reportWindowDays * 24 * 60 * 60 * 1_000);
-  const runs = await prisma.betaTestRun.findMany({
+  const [runs, acceptanceEvidence] = await Promise.all([prisma.betaTestRun.findMany({
     where: { startedAt: { gte: since } },
     select: {
       id: true,
@@ -45,10 +46,10 @@ export const GET = withApiHandler(async () => {
       }
     },
     orderBy: [{ startedAt: "asc" }, { id: "asc" }]
-  });
+  }), loadBetaAcceptanceEvidence()]);
   const report = {
     scope: { since: since.toISOString(), sinceDays: reportWindowDays },
-    ...buildBetaUserTestReport(runs)
+    ...buildBetaUserTestReport(runs, acceptanceEvidence)
   };
   const date = new Date().toISOString().slice(0, 10);
 

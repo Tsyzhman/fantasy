@@ -7,11 +7,13 @@ import { SortableTable } from "@/components/sortable-table";
 import { PlayerHoverCard, type PlayerHoverCardData } from "@/components/ui/player-hover-card";
 import { ScoreHeatCell, computeRanks } from "@/components/ui/score-heat-cell";
 import { SparkLine } from "@/components/ui/spark-line";
+import { compactTeamDisplayName } from "@/lib/teams/display";
 
 export type MachetePlayerRow = {
   id: string;
   name: string;
   teamName?: string | null;
+  teamShortName?: string | null;
   leagueName?: string | null;
   position: string | null;
   age: number | null;
@@ -83,7 +85,9 @@ export function MachetePlayerTable({
                   </div>
                   <span className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[11px] font-normal text-slate-500">
                     {hasStarterColumn ? <StarterCell player={player} controls={starterControls} compact /> : null}
-                    <span className="min-w-0 truncate">{player.position ?? "—"}{showContext && player.teamName ? ` · ${player.teamName}` : ""}</span>
+                    <span className="min-w-0 truncate" title={showContext ? player.teamName ?? undefined : undefined}>
+                      {player.position ?? "—"}{showContext && player.teamName ? ` · ${machetePlayerTeamDisplayName(player)}` : ""}
+                    </span>
                     <SparkLine values={player.recentFp ?? []} width={44} height={16} className="shrink-0" />
                   </span>
                 </td>
@@ -130,7 +134,7 @@ export function MachetePlayerTable({
                 <td className="whitespace-nowrap px-4 py-3 font-medium text-ink">
                   <PlayerNameCell player={player} />
                 </td>
-                {showContext ? <td className="whitespace-nowrap px-4 py-3 text-slate-600">{player.teamName ?? "—"}</td> : null}
+                {showContext ? <TeamNameCell player={player} /> : null}
                 <td className="whitespace-nowrap px-4 py-3 text-slate-600">{player.position ?? "—"}</td>
                 {hasStarterColumn ? <td className="whitespace-nowrap px-4 py-3"><StarterCell player={player} controls={starterControls} /></td> : null}
                 <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600 num-tabular">{formatNumber(player.matchesPlayed)}</td>
@@ -191,7 +195,7 @@ export function MachetePlayerTable({
                 <td className="whitespace-nowrap px-4 py-3 font-medium text-ink">
                   <PlayerNameCell player={player} />
                 </td>
-                {showContext ? <td className="whitespace-nowrap px-4 py-3 text-slate-600">{player.teamName ?? "—"}</td> : null}
+                {showContext ? <TeamNameCell player={player} /> : null}
                 <td className="whitespace-nowrap px-4 py-3 text-slate-600">{player.position ?? "—"}</td>
                 {hasStarterColumn ? <td className="whitespace-nowrap px-4 py-3"><StarterCell player={player} controls={starterControls} /></td> : null}
                 <td className="px-1 py-2 text-right">
@@ -237,6 +241,7 @@ function PlayerNameCell({ player }: { player: MachetePlayerRow }) {
     name: player.name,
     position: player.position,
     teamName: player.teamName,
+    teamShortName: player.teamShortName,
     nationality: player.nationality,
     age: player.age,
     matchesPlayed: player.matchesPlayed,
@@ -266,12 +271,25 @@ function PlayerNameCell({ player }: { player: MachetePlayerRow }) {
   );
 }
 
+function TeamNameCell({ player }: { player: MachetePlayerRow }) {
+  return (
+    <td className="whitespace-nowrap px-4 py-3 text-slate-600" title={player.teamName ?? undefined}>
+      {machetePlayerTeamDisplayName(player) ?? "—"}
+    </td>
+  );
+}
+
+export function machetePlayerTeamDisplayName(player: Pick<MachetePlayerRow, "teamName" | "teamShortName">) {
+  return compactTeamDisplayName({ name: player.teamName, shortName: player.teamShortName });
+}
+
 function macheteWatchlistPlayer(player: MachetePlayerRow) {
   return {
     id: player.id,
     name: player.name,
     position: player.position,
-    teamName: player.teamName
+    teamName: player.teamName,
+    teamShortName: player.teamShortName
   };
 }
 
@@ -280,7 +298,8 @@ function macheteComparePlayer(player: MachetePlayerRow): ComparePlayer {
     id: player.id,
     name: player.name,
     position: player.position,
-    teamName: player.teamName
+    teamName: player.teamName,
+    teamShortName: player.teamShortName
   };
 }
 

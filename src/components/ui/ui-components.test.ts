@@ -63,8 +63,8 @@ test("FDR components clamp difficulty and render rows", () => {
   const rowHtml = renderToStaticMarkup(
     React.createElement(FdrRow, {
       fixtures: [
-        { label: "ARS", difficulty: 2 },
-        { label: "LEE", difficulty: null }
+        { label: "ARS", difficulty: 2, side: "home", title: "H ARS" },
+        { label: "LEE", difficulty: null, side: "away", title: "A LEE" }
       ]
     })
   );
@@ -73,6 +73,10 @@ test("FDR components clamp difficulty and render rows", () => {
   assert.match(rowHtml, /ARS/);
   assert.match(rowHtml, /LEE/);
   assert.match(rowHtml, /fdr-na/);
+  assert.match(rowHtml, /border-sky-300/);
+  assert.match(rowHtml, /border-violet-300/);
+  assert.match(rowHtml, /H ARS/);
+  assert.match(rowHtml, /A LEE/);
 });
 
 test("PlayerHoverCard renders player summary and fixture pills", () => {
@@ -81,7 +85,8 @@ test("PlayerHoverCard renders player summary and fixture pills", () => {
       player: {
         name: "Alex Forward",
         position: "FWD",
-        teamName: "Test FC",
+        teamName: "Test Football Club",
+        teamShortName: "Test FC",
         matchesPlayed: 12,
         minutesPlayed: 880,
         goals: 5,
@@ -99,6 +104,7 @@ test("PlayerHoverCard renders player summary and fixture pills", () => {
   assert.match(html, /role="tooltip"/);
   assert.match(html, /Alex Forward/);
   assert.match(html, /FWD · Test FC/);
+  assert.match(html, /title="Test Football Club"/);
   assert.match(html, /xFP/);
   assert.match(html, /ARS/);
 });

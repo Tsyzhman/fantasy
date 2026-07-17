@@ -8,11 +8,13 @@ export function FdrPill({
   difficulty,
   label,
   title,
+  side,
   className
 }: {
   difficulty: number | null | undefined;
   label?: string;
   title?: string;
+  side?: "home" | "away" | null;
   className?: string;
 }) {
   const safe = clampDifficulty(difficulty);
@@ -20,7 +22,16 @@ export function FdrPill({
   const visibleLabel = label ?? String(safe ?? "—");
   const accessibleLabel = title?.trim();
   return (
-    <span className={cn("fdr-pill", klass, className)} title={accessibleLabel}>
+    <span
+      className={cn(
+        "fdr-pill",
+        klass,
+        side === "home" && "border-2 border-sky-300",
+        side === "away" && "border-2 border-violet-300",
+        className
+      )}
+      title={accessibleLabel}
+    >
       {accessibleLabel && accessibleLabel !== visibleLabel ? (
         <>
           <span aria-hidden="true">{visibleLabel}</span>
@@ -35,7 +46,7 @@ export function FdrRow({
   fixtures,
   className
 }: {
-  fixtures: Array<{ label: string; difficulty: number | null | undefined; title?: string }>;
+  fixtures: Array<{ label: string; difficulty: number | null | undefined; title?: string; side?: "home" | "away" | null }>;
   className?: string;
 }) {
   if (fixtures.length === 0) return null;
@@ -47,6 +58,7 @@ export function FdrRow({
           difficulty={fixture.difficulty}
           label={fixture.label}
           title={fixture.title ?? fixture.label}
+          side={fixture.side}
         />
       ))}
     </div>

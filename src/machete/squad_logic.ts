@@ -32,6 +32,7 @@ export type FantasyPlannerPlayer = {
   price: number;
   priceSource: "SPORTS_RU" | "ESTIMATED";
   predictedFp: number | null;
+  alternativePredictedFp?: number | null;
   expectedMinutes?: number | null;
   startProbability?: number | null;
   forecastConfidence?: number | null;

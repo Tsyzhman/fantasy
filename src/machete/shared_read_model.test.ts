@@ -4,7 +4,7 @@ import test from "node:test";
 import type { PrismaClient } from "@prisma/client";
 
 import type { ActiveScoringModel } from "@/lib/scoring";
-import { loadSharedLeagueOptions, loadSharedLeagueSeason, loadSharedMachetePlayerRows, loadSharedMatchWindowSummary, loadSharedTeamMatchIds } from "./shared_read_model";
+import { loadSharedLeagueOptions, loadSharedLeagueSeason, loadSharedLeagueTeams, loadSharedMachetePlayerRows, loadSharedMatchWindowSummary, loadSharedTeamMatchIds } from "./shared_read_model";
 
 const scoringModel: ActiveScoringModel = {
   modelSource: "MACHETE",
@@ -64,6 +64,31 @@ test("shared league season falls back to the league default when requested seaso
 
   assert.equal(league?.leagueId, 47n);
   assert.equal(league?.season, "2024/2025");
+});
+
+test("shared team options expose the FotMob short name from season metadata", async () => {
+  const prisma = {
+    leagueSeasonTeam: {
+      async findMany() {
+        return [
+          {
+            metadata: { short_name: "Man United", logo_url: null },
+            team: {
+              id: 10n,
+              name: "Manchester United",
+              country: "England",
+              rawRef: "10260"
+            }
+          }
+        ];
+      }
+    }
+  } as unknown as PrismaClient;
+
+  const teams = await loadSharedLeagueTeams(prisma, 47n, "2026/2027");
+
+  assert.equal(teams[0].name, "Manchester United");
+  assert.equal(teams[0].shortName, "Man United");
 });
 
 test("shared team match ids keep all-loaded scoped to the selected competition season", async () => {
@@ -295,6 +320,7 @@ test("shared player rows push position filters into roster loading and normalize
   assert.equal(rows.length, 1);
   assert.equal(rows[0].id, "47:2024/2025:10:99");
   assert.equal(rows[0].position, "Goalkeeper");
+  assert.equal(rows[0].teamShortName, "Villa");
 
   const rosterCall = rosterCalls[0] as {
     where?: {
@@ -311,6 +337,111 @@ test("shared player rows push position filters into roster loading and normalize
   const positionTerms = rosterCall.where?.AND?.[1]?.OR?.map((item) => item.position?.contains).filter(Boolean);
   assert.deepEqual(positionTerms, ["GK", "keeper", "goalkeeper"]);
   assert.deepEqual(rosterCall.where?.AND?.[2]?.playerId?.in, [99n]);
+});
+
+test("explicit roster scopes do not leak the current competition or broad fallback history into exact history", async () => {
+  const matchScopes: string[] = [];
+  const statCalls: unknown[] = [];
+  const prisma = {
+    teamPlayerSeason: {
+      async findMany() {
+        return [
+          rosterRow({
+            leagueId: 47n,
+            season: "2026/2027",
+            teamId: 10n,
+            playerId: 99n,
+            position: "Goalkeeper",
+            playerName: "Exact History Player"
+          })
+        ];
+      }
+    },
+    coreMatch: {
+      async findMany(input: unknown) {
+        const where = (input as { where?: { leagueId?: bigint; season?: string } }).where;
+        matchScopes.push(`${where?.leagueId}:${where?.season}`);
+        return where?.leagueId === 42n && where.season === "2025/2026"
+          ? [{ id: 301n, matchDate: new Date("2026-05-01T16:00:00.000Z") }]
+          : [{ id: 999n, matchDate: new Date("2027-05-01T16:00:00.000Z") }];
+      }
+    },
+    matchPlayerStat: {
+      async findMany(input: unknown) {
+        statCalls.push(input);
+        return [playerStat(301n, 90)];
+      }
+    }
+  } as unknown as PrismaClient;
+
+  const rows = await loadSharedMachetePlayerRows(prisma, {
+    scopes: [{ leagueId: 42n, season: "2025/2026", teamId: 10n }],
+    rosterScopes: [{ leagueId: 47n, season: "2026/2027", teamId: 10n }],
+    matchWindow: { kind: "all" },
+    combineTeamCompetitions: true,
+    scoringModel
+  });
+
+  assert.deepEqual(matchScopes, ["42:2025/2026"]);
+  assert.equal(statCalls.length, 1);
+  assert.equal(rows[0].matchesPlayed, 1);
+  assert.equal(rows[0].minutesPlayed, 90);
+
+  const rowsWithoutMatchingHistory = await loadSharedMachetePlayerRows(prisma, {
+    scopes: [],
+    rosterScopes: [{ leagueId: 47n, season: "2026/2027", teamId: 10n }],
+    matchWindow: { kind: "all" },
+    combineTeamCompetitions: true,
+    scoringModel
+  });
+  assert.equal(rowsWithoutMatchingHistory.length, 1);
+  assert.equal(rowsWithoutMatchingHistory[0].matchesPlayed, 0);
+  assert.deepEqual(matchScopes, ["42:2025/2026"]);
+  assert.equal(statCalls.length, 1);
+});
+
+test("selected season without matching history keeps the current roster with zero aggregates", async () => {
+  const prisma = {
+    teamPlayerSeason: {
+      async findMany() {
+        return [
+          rosterRow({
+            leagueId: 47n,
+            season: "2026/2027",
+            teamId: 10n,
+            playerId: 99n,
+            position: "Midfielder",
+            playerName: "Current Roster Player"
+          })
+        ];
+      }
+    },
+    coreMatch: {
+      async findMany() {
+        throw new Error("empty exact history must not query a different competition");
+      }
+    },
+    matchPlayerStat: {
+      async findMany() {
+        throw new Error("empty exact history must not load broad player history");
+      }
+    }
+  } as unknown as PrismaClient;
+
+  const rows = await loadSharedMachetePlayerRows(prisma, {
+    scopes: [],
+    rosterScopes: [{ leagueId: 47n, season: "2026/2027", teamId: 10n }],
+    matchWindow: { kind: "all" },
+    combineTeamCompetitions: true,
+    scoringModel
+  });
+
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].name, "Current Roster Player");
+  assert.equal(rows[0].matchesPlayed, 0);
+  assert.equal(rows[0].minutesPlayed, 0);
+  assert.equal(rows[0].fantasyScore, 0);
+  assert.equal(rows[0].scoringScore, 0);
 });
 
 test("shared player rows can carry recent league history and position into an empty new season", async () => {
@@ -424,6 +555,7 @@ function rosterRow(input: {
     player: { name: input.playerName, country: "England" },
     team: { name: "Aston Villa" },
     seasonTeam: {
+      metadata: { short_name: "Villa" },
       leagueSeason: {
         name: "Premier League",
         country: "England",

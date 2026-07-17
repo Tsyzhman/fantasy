@@ -6,7 +6,9 @@ import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
 import { CopyCurrentLinkButton } from "@/components/ui/copy-current-link-button";
 import { SparkLine } from "@/components/ui/spark-line";
 import { prisma } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth";
 import { formatCurrency, formatNumber, formatScore, NULL_GLYPH } from "@/lib/format";
+import { compactTeamDisplayName } from "@/lib/teams/display";
 import { loadSportsRuFantasyPriceRefsByScopedPlayer, sportsRuFantasyPriceScopeKey, type SportsRuFantasyPriceRef } from "@/machete/squad_planner";
 import {
   loadSharedMachetePlayerRows,
@@ -27,6 +29,7 @@ type CompareRow = {
   id: string;
   name: string;
   teamName: string | null;
+  teamShortName: string | null;
   leagueName: string | null;
   position: string | null;
   matchesPlayed: number | null;
@@ -111,6 +114,7 @@ const METRIC_GROUPS: Array<{
 
 export default async function ComparePage({ searchParams }: { searchParams: Promise<SearchParams> }) {
   const params = await searchParams;
+  const currentUser = await getCurrentUser();
   const source = params.source === "baltika" ? "baltika" : "machete";
   const rawIds = (params.ids ?? "")
     .split(",")
@@ -122,7 +126,7 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
   const rows = rawIds.length === 0
     ? []
     : source === "machete"
-      ? await loadMacheteRows(rawIds, window)
+      ? await loadMacheteRows(rawIds, window, currentUser?.id)
       : await loadBaltikaRows(rawIds);
 
   const backHref = source === "machete" ? "/machete/players" : "/baltika/players";
@@ -197,8 +201,8 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
                     {rows.map((row) => (
                       <th key={row.id} className="min-w-[168px] px-3 py-3 text-center align-bottom">
                         <div className="text-sm font-bold text-ink">{row.name}</div>
-                        <div className="mt-0.5 text-[11px] font-normal normal-case tracking-normal text-slate-500">
-                          {[row.position, row.teamName].filter(Boolean).join(" · ") || NULL_GLYPH}
+                        <div className="mt-0.5 text-[11px] font-normal normal-case tracking-normal text-slate-500" title={row.teamName ?? undefined}>
+                          {[row.position, compareTeamDisplayName(row)].filter(Boolean).join(" · ") || NULL_GLYPH}
                         </div>
                         {row.leagueName ? (
                           <div className="text-[10px] font-normal normal-case tracking-normal text-slate-400">
@@ -275,8 +279,8 @@ function CompareSummaryCard({ row, isLeader }: { row: CompareRow; isLeader: bool
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 className="truncate text-base font-bold text-ink" title={row.name}>{row.name}</h2>
-          <p className="mt-1 truncate text-xs text-slate-500">
-            {[row.position, row.teamName].filter(Boolean).join(" · ") || NULL_GLYPH}
+          <p className="mt-1 truncate text-xs text-slate-500" title={row.teamName ?? undefined}>
+            {[row.position, compareTeamDisplayName(row)].filter(Boolean).join(" · ") || NULL_GLYPH}
           </p>
         </div>
         {isLeader ? (
@@ -502,7 +506,7 @@ function parseBigInt(value: string | undefined) {
   }
 }
 
-async function loadMacheteRows(ids: string[], window: MacheteMatchWindow): Promise<CompareRow[]> {
+async function loadMacheteRows(ids: string[], window: MacheteMatchWindow, userId?: string): Promise<CompareRow[]> {
   const parsed = ids.map(parseMacheteId);
   const scopes: SharedPlayerRowsScope[] = [];
   const seenScopeKeys = new Set<string>();
@@ -516,7 +520,7 @@ async function loadMacheteRows(ids: string[], window: MacheteMatchWindow): Promi
   if (scopes.length === 0) return [];
 
   const [rows, sportsPriceRefs] = await Promise.all([
-    loadSharedMachetePlayerRows(prisma, { scopes, matchWindow: window }),
+    loadSharedMachetePlayerRows(prisma, { scopes, matchWindow: window, userId }),
     loadSportsRuFantasyPriceRefsByScopedPlayer(prisma, { scopes })
   ]);
   const byScopePlayer = new Map<string, SharedMachetePlayerRow>();
@@ -544,6 +548,7 @@ function mapMacheteRow(id: string, row: SharedMachetePlayerRow, sportsPriceRefs:
     id,
     name: sportsRef?.playerName ?? row.name,
     teamName: row.teamName ?? null,
+    teamShortName: row.teamShortName ?? null,
     leagueName: row.leagueName ?? null,
     position: sportsRef?.position ?? row.position,
     matchesPlayed: row.matchesPlayed,
@@ -619,6 +624,7 @@ async function loadBaltikaRows(ids: string[]): Promise<CompareRow[]> {
         id: snapshot.id,
         name: snapshot.playerName,
         teamName: snapshot.team?.name ?? null,
+        teamShortName: null,
         leagueName: snapshot.league?.name ?? null,
         position: snapshot.positionGroup ?? null,
         matchesPlayed: snapshot.matchesPlayed ?? null,
@@ -638,4 +644,8 @@ async function loadBaltikaRows(ids: string[]): Promise<CompareRow[]> {
       return row;
     })
     .filter((row): row is CompareRow => row !== null);
+}
+
+function compareTeamDisplayName(row: Pick<CompareRow, "teamName" | "teamShortName">) {
+  return compactTeamDisplayName({ name: row.teamName, shortName: row.teamShortName });
 }

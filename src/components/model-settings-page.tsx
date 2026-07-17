@@ -51,7 +51,7 @@ const sourceConfig: Record<ScoringModelSource, { name: string; description: stri
   MACHETE: {
     name: "Machete Fantasy 2025/26",
     description: "Position-aware fantasy scoring for Machete/FotMob snapshots.",
-    path: "/machete/models"
+    path: "/admin/models/machete"
   }
 };
 

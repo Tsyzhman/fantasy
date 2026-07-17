@@ -1,6 +1,6 @@
 "use client";
 
-import { ClipboardCheck, DatabaseZap, Users } from "lucide-react";
+import { ClipboardCheck, DatabaseZap, Settings, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
@@ -20,6 +20,12 @@ const adminLinks = [
     label: <I18nText en="Users" ru="Пользователи" />,
     description: <I18nText en="Accounts and roles" ru="Аккаунты и роли" />,
     icon: <Users className="h-4 w-4" />
+  },
+  {
+    href: "/admin/models/machete",
+    label: <I18nText en="Machete defaults" ru="Настройки Machete" />,
+    description: <I18nText en="Global FP formulas" ru="Глобальные формулы FP" />,
+    icon: <Settings className="h-4 w-4" />
   },
   {
     href: "/admin/beta-test",

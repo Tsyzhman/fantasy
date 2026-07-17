@@ -18,6 +18,7 @@ import {
   recordBetaClientError,
   recordBetaPageView,
   recordBetaWebVital,
+  rememberBetaTestSubmissionReceipt,
   stopBetaTestSession,
   type StoredBetaTestSession
 } from "@/lib/beta-telemetry-client";
@@ -74,6 +75,7 @@ export function BetaTelemetryReporter() {
   const completed = betaSessionHasRecordedMilestone("SQUAD_RESTORED");
 
   async function endRun() {
+    if (!runId) return;
     if (!completionReached) {
       const confirmed = window.confirm(localizedText(
         language,
@@ -86,7 +88,13 @@ export function BetaTelemetryReporter() {
     setEndError(null);
     try {
       const sent = completionReached ? await finishBetaTestSession() : await stopBetaTestSession();
-      if (sent) return;
+      if (sent) {
+        if (completionReached) {
+          rememberBetaTestSubmissionReceipt(runId);
+          window.location.assign("/beta-test");
+        }
+        return;
+      }
       setEndError(localizedText(
         language,
         "The run has not been sent yet. Check the connection and try again.",

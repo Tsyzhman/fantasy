@@ -42,6 +42,7 @@ export const betaRequiredJourneyMilestones = [
 export const betaJourneyMaximumDurationMs = 5 * 60 * 1_000;
 export const betaRumMinimumLcpParticipants = 10;
 export const betaRumMaximumLcpP75Ms = 2_500;
+export const betaMaximumServerErrorRatePercentExclusive = 1;
 
 export type BetaTestMilestone = (typeof betaTestMilestones)[number];
 export type BetaWebVitalName = (typeof betaWebVitalNames)[number];
@@ -50,6 +51,30 @@ export type BetaClientErrorName = (typeof betaClientErrorNames)[number];
 export type BetaDeviceClass = "mobile" | "desktop";
 export type BetaModeratedEnvironment = (typeof betaModeratedEnvironments)[number];
 export type BetaObservationKind = "MILESTONE" | "PAGE_VIEW" | "WEB_VITAL" | "CLIENT_ERROR";
+
+export type BetaServerWindowEvidence = {
+  status: string;
+  generatedAt: string;
+  windowMode: string;
+  windowStart: string;
+  retentionCoversWindowStart: boolean;
+  requests: number;
+  serverErrors: number;
+  serverErrorRatePercent: number;
+  observedSpanMinutes: number;
+  expectedStart: string;
+  minimumObservedSpanMinutes: number;
+  maximumAgeMinutes: number;
+};
+
+export type BetaAcceptanceEvidence = {
+  evaluatedAt?: Date;
+  serverWindow?: BetaServerWindowEvidence;
+  rum?: {
+    minimumObservationSpanHours: number;
+    maximumLastObservationAgeHours: number;
+  };
+};
 
 export type BetaTelemetryCommand =
   | {
@@ -238,7 +263,8 @@ export function summarizeBetaTechnicalRun(run: BetaTestRunForReport): BetaTechni
   };
 }
 
-export function buildBetaUserTestReport(runs: BetaTestRunForReport[]) {
+export function buildBetaUserTestReport(runs: BetaTestRunForReport[], acceptanceEvidence?: BetaAcceptanceEvidence) {
+  const evaluatedAt = acceptanceEvidence?.evaluatedAt ?? new Date();
   const realRuns = runs.filter((run) => !run.synthetic);
   const unsubmittedRuns = realRuns
     .filter((run) => run.submittedAt === null && run.valid !== false)
@@ -294,7 +320,8 @@ export function buildBetaUserTestReport(runs: BetaTestRunForReport[]) {
   const forecastFoundRate = percentage(forecastSuccesses, participants);
   const transferUnderstandingRate = percentage(transferUnderstandingSuccesses, participants);
   const webVitals = summarizeWebVitals(primaryRuns);
-  const rum = summarizeRealBetaRum(realRuns);
+  const rum = summarizeRealBetaRum(realRuns, acceptanceEvidence?.rum, evaluatedAt);
+  const serverWindow = evaluateBetaServerWindow(acceptanceEvidence?.serverWindow, evaluatedAt);
   const violations: string[] = [];
   if (unsubmittedRuns.length > 0) violations.push(`${unsubmittedRuns.length} real beta-test runs are still open and not submitted.`);
   if (pendingRuns.length > 0) violations.push(`${pendingRuns.length} real beta-test runs are still awaiting moderator review.`);
@@ -309,7 +336,9 @@ export function buildBetaUserTestReport(runs: BetaTestRunForReport[]) {
   if (physicalIosSafariRuns < 1) violations.push("Need at least one moderator-confirmed physical Safari iOS primary run.");
   if (physicalAndroidChromeRuns < 1) violations.push("Need at least one moderator-confirmed physical Chrome Android primary run.");
   if (physicalEnvironmentMismatches > 0) violations.push(`${physicalEnvironmentMismatches} moderated environment reviews conflict with the recorded viewport device class.`);
+  if (rum.clientErrors > 0) violations.push(`${rum.clientErrors} real beta client-error observations were recorded.`);
   violations.push(...rum.gate.violations);
+  violations.push(...serverWindow.gate.violations);
 
   return {
     generatedAt: new Date().toISOString(),
@@ -381,6 +410,7 @@ export function buildBetaUserTestReport(runs: BetaTestRunForReport[]) {
     clientErrors: summaries.reduce((total, summary) => total + summary.technical.clientErrors, 0),
     webVitals,
     rum,
+    serverWindow,
     primaryRuns: summaries.map(({ run, technical }) => ({
       participantCode: run.id.slice(0, 8),
       startedAt: run.startedAt.toISOString(),
@@ -395,7 +425,11 @@ export function buildBetaUserTestReport(runs: BetaTestRunForReport[]) {
   };
 }
 
-function summarizeRealBetaRum(runs: BetaTestRunForReport[]) {
+function summarizeRealBetaRum(
+  runs: BetaTestRunForReport[],
+  requirements: BetaAcceptanceEvidence["rum"] | undefined,
+  evaluatedAt: Date
+) {
   const participantIds = new Set(runs.map((run) => run.userId));
   const lcpParticipantIds = new Set<string>();
   const runsWithClientErrors = new Set<string>();
@@ -405,10 +439,7 @@ function summarizeRealBetaRum(runs: BetaTestRunForReport[]) {
   let lastObservedAt: Date | null = null;
 
   for (const run of runs) {
-    firstObservedAt = earlierDate(firstObservedAt, run.startedAt);
-    lastObservedAt = laterDate(lastObservedAt, run.startedAt);
     for (const observation of run.observations) {
-      lastObservedAt = laterDate(lastObservedAt, observation.createdAt);
       if (observation.kind === "PAGE_VIEW") pageViews += 1;
       if (observation.kind === "CLIENT_ERROR") {
         clientErrors += 1;
@@ -416,6 +447,8 @@ function summarizeRealBetaRum(runs: BetaTestRunForReport[]) {
       }
       if (observation.kind === "WEB_VITAL" && observation.name === "LCP" && observation.value !== null) {
         lcpParticipantIds.add(run.userId);
+        firstObservedAt = earlierDate(firstObservedAt, observation.createdAt);
+        lastObservedAt = laterDate(lastObservedAt, observation.createdAt);
       }
     }
   }
@@ -433,6 +466,35 @@ function summarizeRealBetaRum(runs: BetaTestRunForReport[]) {
   } else if (lcp.p75 > betaRumMaximumLcpP75Ms) {
     violations.push(`RUM LCP p75 must be at most ${betaRumMaximumLcpP75Ms} ms; observed ${lcp.p75} ms.`);
   }
+  const observationWindowHours =
+    firstObservedAt && lastObservedAt
+      ? round(Math.max(0, lastObservedAt.getTime() - firstObservedAt.getTime()) / (60 * 60 * 1_000), 3)
+      : null;
+  if (!requirements) {
+    violations.push("RUM observation-span and freshness requirements are missing.");
+  } else {
+    if (!isPositiveFinite(requirements.minimumObservationSpanHours)) {
+      violations.push("RUM minimum observation span must be a positive finite number of hours.");
+    } else if (observationWindowHours === null || observationWindowHours < requirements.minimumObservationSpanHours) {
+      violations.push(
+        `RUM observation span must be at least ${requirements.minimumObservationSpanHours} hours; observed ${observationWindowHours ?? "not measured"} hours.`
+      );
+    }
+    if (!isPositiveFinite(requirements.maximumLastObservationAgeHours)) {
+      violations.push("RUM maximum observation age must be a positive finite number of hours.");
+    } else if (!lastObservedAt) {
+      violations.push("RUM last observation time is not measured.");
+    } else {
+      const ageHours = (evaluatedAt.getTime() - lastObservedAt.getTime()) / (60 * 60 * 1_000);
+      if (!Number.isFinite(ageHours) || ageHours < 0) {
+        violations.push("RUM last observation time is invalid or in the future.");
+      } else if (ageHours > requirements.maximumLastObservationAgeHours) {
+        violations.push(
+          `RUM last observation must be at most ${requirements.maximumLastObservationAgeHours} hours old; observed ${round(ageHours, 3)} hours.`
+        );
+      }
+    }
+  }
 
   return {
     realRuns: runs.length,
@@ -440,10 +502,7 @@ function summarizeRealBetaRum(runs: BetaTestRunForReport[]) {
     lcpParticipants: lcpParticipantIds.size,
     firstObservedAt: firstObservedAt?.toISOString() ?? null,
     lastObservedAt: lastObservedAt?.toISOString() ?? null,
-    observationWindowHours:
-      firstObservedAt && lastObservedAt
-        ? round(Math.max(0, lastObservedAt.getTime() - firstObservedAt.getTime()) / (60 * 60 * 1_000), 3)
-        : null,
+    observationWindowHours,
     pageViews,
     clientErrors,
     runsWithClientErrors: runsWithClientErrors.size,
@@ -453,6 +512,92 @@ function summarizeRealBetaRum(runs: BetaTestRunForReport[]) {
       passed: violations.length === 0,
       maximumLcpP75Ms: betaRumMaximumLcpP75Ms,
       minimumLcpParticipants: betaRumMinimumLcpParticipants,
+      minimumObservationSpanHours: requirements?.minimumObservationSpanHours ?? null,
+      maximumLastObservationAgeHours: requirements?.maximumLastObservationAgeHours ?? null,
+      violations
+    }
+  };
+}
+
+function evaluateBetaServerWindow(evidence: BetaServerWindowEvidence | undefined, evaluatedAt: Date) {
+  const violations: string[] = [];
+  if (!evidence) {
+    violations.push("Retained fixed-window server error-rate evidence is missing.");
+    return {
+      evidence: null,
+      gate: {
+        passed: false,
+        maximumServerErrorRatePercentExclusive: betaMaximumServerErrorRatePercentExclusive,
+        violations
+      }
+    };
+  }
+
+  if (evidence.status !== "ok") {
+    violations.push(`Retained fixed-window server error-rate status must be ok; observed ${evidence.status || "missing"}.`);
+  }
+  if (evidence.windowMode !== "fixed_start") {
+    violations.push(`Server error-rate evidence must use fixed_start mode; observed ${evidence.windowMode || "missing"}.`);
+  }
+  if (!validIsoDate(evidence.expectedStart)) {
+    violations.push("Expected server error-rate window start is missing or invalid.");
+  } else if (evidence.windowStart !== evidence.expectedStart) {
+    violations.push(`Server error-rate window start must exactly match ${evidence.expectedStart}; observed ${evidence.windowStart || "missing"}.`);
+  }
+  if (evidence.retentionCoversWindowStart !== true) {
+    violations.push("Server log retention does not cover the fixed-window start.");
+  }
+  if (!isPositiveFinite(evidence.minimumObservedSpanMinutes)) {
+    violations.push("Server minimum observed span must be a positive finite number of minutes.");
+  } else if (!isNonNegativeFinite(evidence.observedSpanMinutes) || evidence.observedSpanMinutes < evidence.minimumObservedSpanMinutes) {
+    violations.push(
+      `Server error-rate observed span must be at least ${evidence.minimumObservedSpanMinutes} minutes; observed ${formatFinite(evidence.observedSpanMinutes)} minutes.`
+    );
+  }
+  if (!isPositiveFinite(evidence.maximumAgeMinutes)) {
+    violations.push("Server evidence maximum age must be a positive finite number of minutes.");
+  } else {
+    const generatedAt = parseIsoDate(evidence.generatedAt);
+    const ageMinutes = generatedAt ? (evaluatedAt.getTime() - generatedAt.getTime()) / 60_000 : Number.NaN;
+    if (!Number.isFinite(ageMinutes) || ageMinutes < 0) {
+      violations.push("Server error-rate evidence generatedAt is missing, invalid, or in the future.");
+    } else if (ageMinutes > evidence.maximumAgeMinutes) {
+      violations.push(`Server error-rate evidence must be at most ${evidence.maximumAgeMinutes} minutes old; observed ${round(ageMinutes, 3)} minutes.`);
+    }
+  }
+  if (!Number.isInteger(evidence.requests) || evidence.requests <= 0) {
+    violations.push("Server error-rate evidence must contain a positive request count.");
+  }
+  if (!Number.isInteger(evidence.serverErrors) || evidence.serverErrors < 0 || evidence.serverErrors > evidence.requests) {
+    violations.push("Server error-rate evidence contains an invalid server-error count.");
+  }
+  if (!isNonNegativeFinite(evidence.serverErrorRatePercent)) {
+    violations.push("Server error-rate percentage is missing or invalid.");
+  } else if (evidence.serverErrorRatePercent >= betaMaximumServerErrorRatePercentExclusive) {
+    violations.push(
+      `Server 5xx rate must be below ${betaMaximumServerErrorRatePercentExclusive}%; observed ${evidence.serverErrorRatePercent}%.`
+    );
+  }
+  if (
+    Number.isInteger(evidence.requests) &&
+    evidence.requests > 0 &&
+    Number.isInteger(evidence.serverErrors) &&
+    evidence.serverErrors >= 0 &&
+    isNonNegativeFinite(evidence.serverErrorRatePercent)
+  ) {
+    const calculatedRate = round((evidence.serverErrors / evidence.requests) * 100, 3);
+    if (Math.abs(calculatedRate - evidence.serverErrorRatePercent) > 0.001) {
+      violations.push(
+        `Server error-rate percentage is inconsistent with counts; calculated ${calculatedRate}%, observed ${evidence.serverErrorRatePercent}%.`
+      );
+    }
+  }
+
+  return {
+    evidence,
+    gate: {
+      passed: violations.length === 0,
+      maximumServerErrorRatePercentExclusive: betaMaximumServerErrorRatePercentExclusive,
       violations
     }
   };
@@ -559,6 +704,28 @@ function finiteNumber(value: unknown) {
 function finiteInteger(value: unknown) {
   const number = finiteNumber(value);
   return number !== null && Number.isInteger(number) ? number : null;
+}
+
+function isPositiveFinite(value: number) {
+  return Number.isFinite(value) && value > 0;
+}
+
+function isNonNegativeFinite(value: number) {
+  return Number.isFinite(value) && value >= 0;
+}
+
+function parseIsoDate(value: string) {
+  if (typeof value !== "string" || value.length === 0) return null;
+  const timestamp = Date.parse(value);
+  return Number.isFinite(timestamp) ? new Date(timestamp) : null;
+}
+
+function validIsoDate(value: string) {
+  return parseIsoDate(value) !== null;
+}
+
+function formatFinite(value: number) {
+  return Number.isFinite(value) ? value : "invalid";
 }
 
 function isUuid(value: string) {

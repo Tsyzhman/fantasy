@@ -7,6 +7,7 @@ import { createPortal } from "react-dom";
 
 import { I18nText } from "@/components/i18n-text";
 import { LocalizedOption, localizedText, useLanguage } from "@/components/localized-option";
+import { compactSquadPlayerName, fixtureChipPresentations } from "@/components/machete/fantasy-squad-ui";
 import { SortableTable } from "@/components/sortable-table";
 import { FdrRow } from "@/components/ui/fdr-pill";
 import { SegmentedControl, type SegmentedOption } from "@/components/ui/segmented-control";
@@ -46,6 +47,15 @@ import {
 } from "@/machete/squad_logic";
 import type { SavedFantasySquad, SavedFantasySquadOption } from "@/machete/squad_planner";
 import type { PlannerReadiness } from "@/machete/planner_readiness";
+import {
+  applyFantasyHistorySearchParams,
+  fantasyHistoryScopes,
+  fantasyHistorySettingsKey,
+  fantasyHistoryWindows,
+  type FantasyHistoryScope,
+  type FantasyHistorySettings,
+  type FantasyHistoryWindow
+} from "@/machete/squad-history-settings";
 
 type FantasySquadPlannerProps = {
   leagueId: string;
@@ -62,6 +72,8 @@ type FantasySquadPlannerProps = {
     estimatedPrices: number;
     lastSyncedAt: string | null;
   };
+  historySettings: FantasyHistorySettings;
+  historySeasonOptions: string[];
 };
 
 const positionOrder: FantasyPositionGroup[] = ["GK", "DEF", "MID", "FWD", "UNK"];
@@ -186,7 +198,7 @@ type TransferSuggestionCalculation = {
   suggestions: TransferPlanSuggestion[];
 };
 
-export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: initialPlayers, playerPoolHref, initialSquad, savedSquads, readiness, priceStatus }: FantasySquadPlannerProps) {
+export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: initialPlayers, playerPoolHref, initialSquad, savedSquads, readiness, priceStatus, historySettings, historySeasonOptions }: FantasySquadPlannerProps) {
   const language = useLanguage();
   const router = useRouter();
   const budgetForecastRef = useRef<HTMLDivElement>(null);
@@ -194,6 +206,10 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
   const [players, setPlayers] = useState<FantasyPlannerPlayer[]>(initialPlayers);
   const [playerPoolPending, setPlayerPoolPending] = useState(Boolean(playerPoolHref));
   const [playerPoolFailed, setPlayerPoolFailed] = useState(false);
+  const [historyScopeDraft, setHistoryScopeDraft] = useState<FantasyHistoryScope>(historySettings.scope);
+  const [historyWindowDraft, setHistoryWindowDraft] = useState<FantasyHistoryWindow>(historySettings.window);
+  const [historySeasonsDraft, setHistorySeasonsDraft] = useState(historySettings.selectedSeasons);
+  const [historyApplying, setHistoryApplying] = useState(false);
   const [playerPoolRetry, setPlayerPoolRetry] = useState(0);
   const initialHorizon = normalizeFantasyHorizon(initialSquad.horizonRounds, rules.horizonOptions);
   const initialSelections = useMemo(() => normalizeInitialSelections(initialSquad.selections, players, rules), [initialSquad.selections, players, rules]);
@@ -222,6 +238,12 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
   const [autoPickPending, setAutoPickPending] = useState(false);
   const autoPickRevisionRef = useRef(0);
   const playerPoolReady = !playerPoolHref || (!playerPoolPending && !playerPoolFailed);
+  const historyDraft: FantasyHistorySettings = {
+    scope: historyScopeDraft,
+    window: historyWindowDraft,
+    selectedSeasons: historyWindowDraft === "SELECTED_SEASONS" ? historySeasonsDraft : []
+  };
+  const historySelectionChanged = fantasyHistorySettingsKey(historyDraft) !== fantasyHistorySettingsKey(historySettings);
   const hasRealRoundProjections = useMemo(
     () => rounds.length > 0 && players.some((player) => player.roundPoints.some((value) => Number.isFinite(value) && value !== 0)),
     [players, rounds.length]
@@ -392,6 +414,17 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
       controller.abort();
     };
   }, [playerPoolHref, playerPoolRetry, postLoadContentReady]);
+
+  function applyHistorySettings() {
+    if (historyWindowDraft === "SELECTED_SEASONS" && historySeasonsDraft.length === 0) {
+      setMessage(localizedText(language, "Choose at least one loaded season.", "Выберите хотя бы один загруженный сезон."));
+      return;
+    }
+    setHistoryApplying(true);
+    const url = new URL(window.location.href);
+    applyFantasyHistorySearchParams(url.searchParams, historyDraft);
+    router.replace(`${url.pathname}?${url.searchParams.toString()}`);
+  }
 
   useEffect(() => {
     if (!postLoadContentReady || !playerPoolReady || !plannerForecastReady) return;
@@ -723,6 +756,9 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
               squadId: asCopy ? null : activeSquadId,
               name: requestedName,
               horizonRounds: horizon,
+              historyScope: historySettings.scope,
+              historyWindow: historySettings.window,
+              historySeasons: historySettings.selectedSeasons,
               selections: selectionsToSave
             })
           });
@@ -769,7 +805,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
             : localizedText(language, `Saved ${savedPlayers} players.`, `Сохранено игроков: ${savedPlayers}.`)
         );
         void recordBetaMilestone("SQUAD_SAVED");
-        router.replace(squadVariantHref(leagueId, season, savedSquadId));
+        router.replace(squadVariantHref(leagueId, season, savedSquadId, historySettings));
       } finally {
         setSavePending(false);
       }
@@ -790,7 +826,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
 
   function selectSquadVariant(squadId: string) {
     if (!squadId || squadId === activeSquadId) return;
-    router.push(squadVariantHref(leagueId, season, squadId));
+    router.push(squadVariantHref(leagueId, season, squadId, historySettings));
   }
 
   function deleteSquadVariant() {
@@ -818,7 +854,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
         setSquadOptions(remaining);
         const next = remaining[0];
         if (next) {
-          router.replace(squadVariantHref(leagueId, season, next.id));
+          router.replace(squadVariantHref(leagueId, season, next.id, historySettings));
           return;
         }
         setActiveSquadId(null);
@@ -826,7 +862,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
         setSelections([]);
         setSavedSelections([]);
         setMessage(localizedText(language, "Squad deleted.", "Состав удалён."));
-        router.replace(squadVariantHref(leagueId, season, null));
+        router.replace(squadVariantHref(leagueId, season, null, historySettings));
       } finally {
         setDeletePending(false);
       }
@@ -854,17 +890,9 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
         <div className={cn(mobileTab === "squad" ? "block" : "hidden xl:block", "order-2 rounded border border-slate-200 bg-white p-4 shadow-soft")}>
           <div className="space-y-3">
             <div className="flex flex-wrap items-start justify-between gap-2">
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  <I18nText en="Squad builder" ru="Конструктор состава" />
-                </p>
-                <p className="mt-1 text-sm text-slate-600 num-tabular">
-                  <I18nText
-                    en={`${summary.selectedPlayers.length}/${rules.squadSize} players · ${summary.starterPlayers.length}/${rules.starterSize} starters · ${summary.benchPlayers.length}/${rules.benchSize} bench`}
-                    ru={`${summary.selectedPlayers.length}/${rules.squadSize} игроков · ${summary.starterPlayers.length}/${rules.starterSize} в старте · ${summary.benchPlayers.length}/${rules.benchSize} на скамейке`}
-                  />
-                </p>
-              </div>
+              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <I18nText en="Squad builder" ru="Конструктор состава" />
+              </p>
               <span className={cn(
                 "rounded-full px-2.5 py-1 text-xs font-semibold",
                 squadIsValid
@@ -1046,6 +1074,83 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                   </span>
                 ) : null}
               </div>
+              <div className="mt-4 border-t border-slate-200 pt-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  <I18nText en="Actual / FP history source" ru="Источник истории Actual / FP" />
+                </p>
+                <div className="mt-2 grid gap-3 md:grid-cols-[minmax(180px,1fr)_minmax(160px,0.8fr)_minmax(190px,1fr)_auto] md:items-end">
+                  <label className="text-sm">
+                    <span className="mb-1 block text-xs font-semibold text-slate-500"><I18nText en="Competitions" ru="Турниры" /></span>
+                    <select
+                      value={historyScopeDraft}
+                      onChange={(event) => setHistoryScopeDraft(event.target.value as FantasyHistoryScope)}
+                      className="w-full rounded border border-slate-200 bg-white px-3 py-2"
+                    >
+                      {fantasyHistoryScopes.map((scope) => (
+                        <option key={scope} value={scope}>{fantasyHistoryScopeLabel(scope, language)}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="text-sm">
+                    <span className="mb-1 block text-xs font-semibold text-slate-500"><I18nText en="Period" ru="Период" /></span>
+                    <select
+                      value={historyWindowDraft}
+                      onChange={(event) => {
+                        const next = event.target.value as FantasyHistoryWindow;
+                        setHistoryWindowDraft(next);
+                        if (next === "SELECTED_SEASONS" && historySeasonsDraft.length === 0 && historySeasonOptions[0]) {
+                          setHistorySeasonsDraft([historySeasonOptions[0]]);
+                        }
+                      }}
+                      className="w-full rounded border border-slate-200 bg-white px-3 py-2"
+                    >
+                      {fantasyHistoryWindows.map((window) => (
+                        <option key={window} value={window}>{fantasyHistoryWindowLabel(window, language)}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <fieldset className="text-sm">
+                    <span className="mb-1 block text-xs font-semibold text-slate-500"><I18nText en="Loaded seasons" ru="Загруженные сезоны" /></span>
+                    <div
+                      aria-label={localizedText(language, "History seasons", "Сезоны истории")}
+                      className={cn(
+                        "max-h-28 min-h-10 overflow-y-auto rounded border border-slate-200 bg-white px-2 py-1.5",
+                        historyWindowDraft !== "SELECTED_SEASONS" && "bg-slate-100 opacity-60"
+                      )}
+                    >
+                      {historySeasonOptions.length > 0 ? historySeasonOptions.map((option) => (
+                        <label key={option} className="flex min-h-8 cursor-pointer items-center gap-2 px-1 text-sm">
+                          <input
+                            type="checkbox"
+                            checked={historySeasonsDraft.includes(option)}
+                            disabled={historyWindowDraft !== "SELECTED_SEASONS"}
+                            onChange={(event) => setHistorySeasonsDraft((current) => (
+                              event.target.checked ? [...new Set([...current, option])] : current.filter((seasonOption) => seasonOption !== option)
+                            ))}
+                          />
+                          <span>{option}</span>
+                        </label>
+                      )) : (
+                        <span className="block px-1 py-1 text-xs text-slate-500"><I18nText en="No loaded seasons" ru="Нет загруженных сезонов" /></span>
+                      )}
+                    </div>
+                  </fieldset>
+                  <button
+                    type="button"
+                    onClick={applyHistorySettings}
+                    disabled={!historySelectionChanged || historyApplying || (historyWindowDraft === "SELECTED_SEASONS" && historySeasonsDraft.length === 0)}
+                    className="rounded border border-sky-200 bg-sky-50 px-4 py-2 text-sm font-semibold text-sky-800 hover:bg-sky-100 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    {historyApplying ? <I18nText en="Loading…" ru="Загрузка…" /> : <I18nText en="Apply history" ru="Применить историю" />}
+                  </button>
+                </div>
+                <p className="mt-2 text-xs text-slate-500">
+                  <I18nText
+                    en="This changes the matches used to calculate Actual and historical FP for every player in the planner. You can select several seasons."
+                    ru="Настройка меняет матчи, по которым считаются Actual и исторический FP всех игроков планировщика. Можно выбрать несколько сезонов."
+                  />
+                </p>
+              </div>
             </div>
           </details>
 
@@ -1067,7 +1172,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
           ) : null}
         </div>
 
-        <div ref={suggestionPanelRef} className={cn(mobileTab === "suggestions" ? "block" : "hidden xl:block", "order-4 rounded border border-slate-200 bg-white p-4 shadow-soft")}>
+        <div ref={suggestionPanelRef} className={cn(mobileTab === "suggestions" ? "block" : "hidden xl:block", "order-5 rounded border border-slate-200 bg-white p-4 shadow-soft")}>
           <div className="flex items-start justify-between gap-3">
             <div>
               <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500"><I18nText en="Transfer suggestions" ru="Подсказки трансферов" /></h3>
@@ -1191,7 +1296,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
         </div>
       </section>
 
-      <section className={cn(mobileTab === "suggestions" ? "hidden xl:block" : "block", "order-3 min-w-0 rounded border border-slate-200 bg-white p-3 shadow-soft sm:p-4")}>
+      <section className={cn(mobileTab === "suggestions" ? "hidden xl:block" : "block", "order-4 min-w-0 rounded border border-slate-200 bg-white p-3 shadow-soft sm:p-4")}>
         <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-[minmax(320px,0.72fr)_minmax(560px,1.28fr)] 2xl:grid-cols-[minmax(340px,0.68fr)_minmax(680px,1.32fr)]">
           <div className={cn(mobileTab === "squad" ? "block" : "hidden xl:block")}>
             <div className="mb-3">
@@ -1199,7 +1304,6 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
             </div>
             <SquadPitch
               summary={summary}
-              rules={rules}
               selectionsByPlayerId={selectionsByPlayerId}
               horizon={horizon}
               language={language}
@@ -1272,7 +1376,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
       </section>
 
       {rounds.length > 0 ? (
-        <section className="order-5 overflow-hidden rounded border border-slate-200 bg-white shadow-soft">
+        <section className="order-3 overflow-hidden rounded border border-slate-200 bg-white shadow-soft">
           <div className="border-b border-slate-200 px-4 py-3">
             <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
               <I18nText en="Round forecast" ru="Прогноз по турам" />
@@ -1352,14 +1456,15 @@ function PlayerPoolTable({
         <div className="relative max-h-[720px] w-full max-w-full overflow-auto">
         <SortableTable className="w-full min-w-[720px] table-fixed divide-y divide-slate-200 text-xs">
           <colgroup>
-            <col className="w-[20%]" />
-            <col className="w-[13%]" />
+            <col className="w-[19%]" />
+            <col className="w-[12%]" />
+            <col className="w-[6%]" />
             <col className="w-[7%]" />
-            <col className="w-[8%]" />
-            <col className="w-[7%]" />
-            <col className="w-[7%]" />
-            <col className="w-[7%]" />
-            <col className="w-[24%]" />
+            <col className="w-[6%]" />
+            <col className="w-[6%]" />
+            <col className="w-[6%]" />
+            <col className="w-[6%]" />
+            <col className="w-[25%]" />
             <col className="w-[7%]" />
           </colgroup>
           <thead className="sticky top-0 z-10 whitespace-nowrap bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
@@ -1369,6 +1474,7 @@ function PlayerPoolTable({
               <th className="px-1 py-2"><I18nText en="Pos" ru="Поз." /></th>
               <th className="px-1 py-2 text-right"><I18nText en="Price" ru="Цена" /></th>
               <th className="px-1 py-2 text-right"><I18nText en="Next" ru="След." /></th>
+              <th className="px-1 py-2 text-right" title={alternativePredictedFpTitle(language)}>Alt</th>
               <th className="px-1 py-2 text-right">{horizon}R</th>
               <th className="px-1 py-2 text-right">W xG</th>
               <th data-sort-disabled="true" className="px-2 py-2"><I18nText en="Fixtures" ru="Матчи" /></th>
@@ -1384,11 +1490,7 @@ function PlayerPoolTable({
               const isSelected = selectionsByPlayerId.has(player.playerId);
               const disabled = !isSelected && reason !== null;
               const localizedReason = reason ? localizeAddBlockReason(reason, language) : null;
-              const fixtureChips = player.fixtures
-                .slice(0, horizon)
-                .map((label, fixtureIdx) => ({ label, difficulty: player.fixtureDifficulties?.[fixtureIdx] ?? null }))
-                .filter((chip) => Boolean(chip.label))
-                .map((chip) => ({ label: compactFixtureLabel(chip.label), difficulty: chip.difficulty, title: chip.label }));
+              const fixtureChips = fixtureChipPresentations(player.fixtures, player.fixtureDifficulties ?? [], horizon);
               const visibleFixtureChips = fixtureChips.slice(0, 2);
               const hiddenFixtureCount = Math.max(0, fixtureChips.length - visibleFixtureChips.length);
               const hiddenFixtureLabels = fixtureChips.slice(visibleFixtureChips.length).map((chip) => chip.title ?? chip.label).join(", ");
@@ -1438,6 +1540,13 @@ function PlayerPoolTable({
                     {player.priceSource === "ESTIMATED" ? "~" : ""}{formatNumber(player.price, 1)}
                   </td>
                   <td data-sort-value={nextFantasyPoints(player)} className={`whitespace-nowrap px-2 py-1.5 text-right font-semibold ${muted ? "text-slate-600" : "text-emerald-700"}`}>{formatScore(nextFantasyPoints(player))}</td>
+                  <td
+                    data-sort-value={player.alternativePredictedFp ?? ""}
+                    className={`whitespace-nowrap px-2 py-1.5 text-right font-semibold ${muted ? "text-slate-600" : "text-amber-700"}`}
+                    title={alternativePredictedFpTitle(language)}
+                  >
+                    {formatScore(player.alternativePredictedFp)}
+                  </td>
                   <td data-sort-value={playerHorizonPoints(player, horizon)} className={`whitespace-nowrap px-2 py-1.5 text-right font-semibold ${muted ? "text-slate-600" : "text-sky-700"}`}>{formatScore(playerHorizonPoints(player, horizon))}</td>
                   <td data-sort-value={player.baltikaXg ?? ""} className={`whitespace-nowrap px-2 py-1.5 text-right text-[11px] font-semibold ${muted ? "text-slate-600" : "text-violet-700"}`}>
                     {player.baltikaXg !== null && player.baltikaXg !== undefined ? (
@@ -1542,11 +1651,7 @@ function PlayerPoolMobileList({
         const isSelected = selectionsByPlayerId.has(player.playerId);
         const disabled = !isSelected && reason !== null;
         const localizedReason = reason ? localizeAddBlockReason(reason, language) : null;
-        const fixtureChips = player.fixtures
-          .slice(0, horizon)
-          .map((label, fixtureIdx) => ({ label, difficulty: player.fixtureDifficulties?.[fixtureIdx] ?? null }))
-          .filter((chip) => Boolean(chip.label))
-          .map((chip) => ({ label: compactFixtureLabel(chip.label), difficulty: chip.difficulty, title: chip.label }));
+        const fixtureChips = fixtureChipPresentations(player.fixtures, player.fixtureDifficulties ?? [], horizon);
         const addLabel = disabled
           ? localizedText(language, `Cannot add ${player.name}: ${localizedReason ?? reason ?? ""}`, `Нельзя добавить ${player.name}: ${localizedReason ?? reason ?? ""}`)
           : localizedText(language, `Add ${player.name}`, `Добавить ${player.name}`);
@@ -1599,7 +1704,7 @@ function PlayerPoolMobileList({
               )}
             </div>
 
-            <dl className="mt-2 grid grid-cols-3 divide-x divide-slate-200 rounded bg-white/80 px-1 py-2 text-center">
+            <dl className="mt-2 grid grid-cols-4 divide-x divide-slate-200 rounded bg-white/80 px-1 py-2 text-center">
               <div className="min-w-0 px-1">
                 <dt className="text-[10px] font-semibold uppercase text-slate-500"><I18nText en="Next" ru="След." /></dt>
                 <dd className="truncate text-sm font-bold text-emerald-700 num-tabular">{formatScore(nextFantasyPoints(player))}</dd>
@@ -1611,6 +1716,10 @@ function PlayerPoolMobileList({
               <div className="min-w-0 px-1">
                 <dt className="text-[10px] font-semibold uppercase text-slate-500"><I18nText en="Price" ru="Цена" /></dt>
                 <dd className="truncate text-sm font-bold text-ink num-tabular">{player.priceSource === "ESTIMATED" ? "~" : ""}{formatNumber(player.price, 1)}</dd>
+              </div>
+              <div className="min-w-0 px-1" title={alternativePredictedFpTitle(language)}>
+                <dt className="text-[10px] font-semibold uppercase text-slate-500">Alt</dt>
+                <dd className="truncate text-sm font-bold text-amber-700 num-tabular">{formatScore(player.alternativePredictedFp)}</dd>
               </div>
             </dl>
 
@@ -1703,14 +1812,6 @@ function SquadDiffBadge({ diff, horizon }: { diff: SquadDiff; horizon: number })
   );
 }
 
-type LimitStatus = "bad" | "missing" | "good";
-
-function limitStatus(count: number, min: number, max: number): LimitStatus {
-  if (count > max) return "bad";
-  if (count < min) return "missing";
-  return "good";
-}
-
 function allowSquadDrop(event: DragEvent<HTMLElement>, canDrop: boolean) {
   if (!canDrop) return;
   event.preventDefault();
@@ -1724,7 +1825,6 @@ function readDraggedPlayerId(event: DragEvent<HTMLElement>) {
 
 function SquadPitch({
   summary,
-  rules,
   selectionsByPlayerId,
   horizon,
   language,
@@ -1742,7 +1842,6 @@ function SquadPitch({
   onDropToBench
 }: {
   summary: ReturnType<typeof summarizeFantasySquad>;
-  rules: FantasySquadRules;
   selectionsByPlayerId: Map<string, FantasySquadSelection>;
   horizon: number;
   language: UiLanguage;
@@ -1767,21 +1866,19 @@ function SquadPitch({
   const draggedSelection = draggedPlayerId ? selectionsByPlayerId.get(draggedPlayerId) : undefined;
 
   return (
-    <div className="space-y-2">
-      <div className="rounded border border-emerald-300 bg-emerald-900 p-2 shadow-inner">
-        <div className="mb-2">
+    <div className="space-y-1.5">
+      <div className="rounded border border-emerald-300 bg-emerald-900 p-1.5 shadow-inner">
+        <div className="mb-1">
           <h4 className="text-xs font-bold uppercase tracking-wide text-white"><I18nText en="Starting XI" ru="Стартовый состав" /></h4>
         </div>
-        <div className="relative overflow-hidden rounded border border-white/20 bg-emerald-800/80 px-1.5 py-2">
+        <div className="relative overflow-hidden rounded border border-white/20 bg-emerald-800/80 px-1 py-1.5">
           <div className="pointer-events-none absolute inset-x-3 top-1/2 border-t border-white/15" />
           <div className="pointer-events-none absolute left-1/2 top-1/2 h-16 w-16 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/15" />
-          <div className="relative space-y-2">
+          <div className="relative space-y-1.5">
             <SquadLine
               label={<I18nText en="Goalkeeper" ru="Вратарь" />}
-              position="GK"
               players={summary.starterPlayers.filter((player) => player.positionGroup === "GK")}
               selectionsByPlayerId={selectionsByPlayerId}
-              limit={rules.starterPositionLimits.GK}
               horizon={horizon}
               language={language}
               captainId={captainId}
@@ -1800,10 +1897,8 @@ function SquadPitch({
               <SquadLine
                 key={line.position}
                 label={line.label}
-                position={line.position}
                 players={summary.starterPlayers.filter((player) => player.positionGroup === line.position)}
                 selectionsByPlayerId={selectionsByPlayerId}
-                limit={rules.starterPositionLimits[line.position]}
                 horizon={horizon}
                 language={language}
                 captainId={captainId}
@@ -1873,10 +1968,8 @@ function SquadPitch({
 
 function SquadLine({
   label,
-  position,
   players,
   selectionsByPlayerId,
-  limit,
   horizon,
   language,
   captainId,
@@ -1892,10 +1985,8 @@ function SquadLine({
   onDropToStarter
 }: {
   label: React.ReactNode;
-  position: Exclude<FantasyPositionGroup, "UNK">;
   players: FantasyPlannerPlayer[];
   selectionsByPlayerId: Map<string, FantasySquadSelection>;
-  limit: { min: number; max: number };
   horizon: number;
   language: UiLanguage;
   captainId: string | null;
@@ -1910,24 +2001,12 @@ function SquadLine({
   onDragEnd: () => void;
   onDropToStarter: (playerId: string) => void;
 }) {
-  const status = limitStatus(players.length, limit.min, limit.max);
-  const countClass =
-    status === "bad"
-      ? "border-rose-200 bg-rose-100 text-rose-800"
-      : status === "missing"
-        ? "border-amber-200 bg-amber-100 text-amber-800"
-        : "border-emerald-200 bg-emerald-100 text-emerald-800";
-  const countLabel = limit.min === limit.max ? String(limit.max) : `${limit.min}-${limit.max}`;
-
   return (
     <div>
-      <div className="mb-1 flex items-center justify-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-white/85">
-        <span>{label}</span>
-        <span className={`rounded border px-1.5 py-0.5 ${countClass}`}>{players.length}/{countLabel}</span>
-      </div>
+      <div className="mb-0.5 text-center text-[10px] font-bold uppercase tracking-wide text-white/80">{label}</div>
       <div
         className={cn(
-          "flex min-h-16 flex-wrap items-stretch justify-center gap-1 rounded border border-dashed border-transparent p-0.5 transition-colors",
+          "flex min-h-14 flex-wrap items-stretch justify-center gap-1 rounded border border-dashed border-transparent p-0.5 transition-colors",
           draggedPlayerId && "border-white/30 bg-white/10"
         )}
         onDragOver={(event) => allowSquadDrop(event, Boolean(draggedPlayerId))}
@@ -2002,15 +2081,7 @@ function SquadPlayerTile({
   const mobileActionsTriggerRef = useRef<HTMLButtonElement>(null);
   const mobileActionsCloseRef = useRef<HTMLButtonElement>(null);
   const mobileActionsDialogRef = useRef<HTMLDivElement>(null);
-  const fixtureChips = player.fixtures
-    .slice(0, Math.min(horizon, 3))
-    .map((label, idx) => ({ label, difficulty: player.fixtureDifficulties?.[idx] ?? null }))
-    .filter((chip) => Boolean(chip.label))
-    .map((chip) => ({
-      label: compactFixtureLabel(chip.label),
-      difficulty: chip.difficulty,
-      title: chip.label
-    }));
+  const fixtureChips = fixtureChipPresentations(player.fixtures, player.fixtureDifficulties ?? [], Math.min(horizon, 3));
   const starterActionLabel = selection?.isStarter
     ? localizedText(language, "Move to bench", "Перевести в запас")
     : localizedText(language, "Move to starting XI", "Перевести в старт");
@@ -2079,9 +2150,10 @@ function SquadPlayerTile({
       }}
       onDragEnd={onDragEnd}
       title={fantasyForecastTitle(player, language)}
+      aria-label={localizedText(language, `Squad player ${player.name}`, `Игрок состава: ${player.name}`)}
       className={cn(
-        compact ? "w-[3.625rem] sm:w-[5.25rem]" : "w-[3.625rem] sm:w-[5.5rem]",
-        "relative cursor-grab rounded border bg-white px-1.5 py-1 text-center shadow-sm transition active:cursor-grabbing",
+        compact ? "w-[3.4rem] sm:w-[3.625rem]" : "w-[3.4rem] sm:w-[3.75rem]",
+        "relative cursor-grab rounded border bg-white px-1 py-0.5 text-center shadow-sm transition active:cursor-grabbing",
         isCaptain ? "border-amber-400 ring-2 ring-amber-200" : "border-white/70",
         isDragging && "opacity-55 ring-2 ring-sky-300"
       )}
@@ -2099,7 +2171,7 @@ function SquadPlayerTile({
         <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${positionPillClass(player.positionGroup)}`}>{player.positionGroup}</span>
         {selection?.isLocked ? <Lock className="h-2.5 w-2.5 text-slate-500" /> : null}
       </div>
-      <p className="mt-0.5 truncate text-[10px] font-bold text-ink" title={player.name}>{player.name}</p>
+      <p className="mt-0.5 truncate text-[10px] font-bold text-ink" title={player.name} aria-label={player.name}>{compactSquadPlayerName(player.name)}</p>
       <p className="truncate text-[9px] text-slate-500" title={player.teamName}>{fantasyPlayerTeamDisplayName(player)}</p>
       <p className="mt-0.5 text-[10px] font-semibold text-emerald-700 num-tabular">
         <Check className="mr-0.5 inline h-2.5 w-2.5" />
@@ -2123,11 +2195,11 @@ function SquadPlayerTile({
         ref={mobileActionsTriggerRef}
         type="button"
         onClick={() => setMobileActionsOpen(true)}
-        className="mt-1 hidden min-h-11 w-full items-center justify-center gap-1 rounded border border-slate-200 text-slate-700 hover:bg-slate-50 [@media(pointer:coarse)]:inline-flex"
+        className="mt-1 hidden min-h-11 w-full items-center justify-center rounded border border-slate-200 text-slate-700 hover:bg-slate-50 [@media(pointer:coarse)]:inline-flex"
         aria-label={mobileActionsLabel}
       >
         <MoreHorizontal className="h-5 w-5" />
-        <span className="text-[11px] font-semibold"><I18nText en="Actions" ru="Действия" /></span>
+        <span className="sr-only"><I18nText en="Actions" ru="Действия" /></span>
       </button>
       <div className="mt-1 flex justify-center gap-0.5 [@media(pointer:coarse)]:hidden">
         <button
@@ -2252,6 +2324,14 @@ function fantasyForecastTitle(player: FantasyPlannerPlayer, language: UiLanguage
   if (player.forecastCalculatedAt) lines.push(localizedText(language, `Calculated: ${formatDate(player.forecastCalculatedAt)}`, `Расчёт: ${formatDate(player.forecastCalculatedAt)}`));
   if (player.forecastDataUpdatedAt) lines.push(localizedText(language, `Data updated: ${formatDate(player.forecastDataUpdatedAt)}`, `Данные обновлены: ${formatDate(player.forecastDataUpdatedAt)}`));
   return lines.join("\n");
+}
+
+function alternativePredictedFpTitle(language: UiLanguage) {
+  return localizedText(
+    language,
+    "Alternative FP forecast for the next fixture. Display only: not used by auto-pick, value, transfers, or round points.",
+    "Альтернативный прогноз FP на следующий матч. Только для просмотра: не используется в автоподборе, ценности, трансферах и очках тура."
+  );
 }
 
 function localizeForecastNote(value: string, language: UiLanguage) {
@@ -2399,10 +2479,6 @@ function localizeAddBlockReason(reason: string, language: UiLanguage) {
   return reason;
 }
 
-function compactFixtureLabel(label: string) {
-  return label.replace(/\s*\(([HhAa])\)$/, (_, side: string) => ` ${side.toUpperCase()}`);
-}
-
 function fantasyPlayerTeamDisplayName(player: FantasyPlannerPlayer) {
   return player.teamShortName?.trim() || player.teamName;
 }
@@ -2538,10 +2614,24 @@ function promoteStarter(
   return null;
 }
 
-function squadVariantHref(leagueId: string, season: string, squadId: string | null) {
+function squadVariantHref(leagueId: string, season: string, squadId: string | null, historySettings: FantasyHistorySettings) {
   const params = new URLSearchParams({ leagueId, season });
+  applyFantasyHistorySearchParams(params, historySettings);
   if (squadId) params.set("squadId", squadId);
   return `/machete/squad?${params.toString()}`;
+}
+
+function fantasyHistoryScopeLabel(scope: FantasyHistoryScope, language: UiLanguage) {
+  if (scope === "ALL_LOADED") return localizedText(language, "All loaded competitions", "Все загруженные турниры");
+  if (scope === "SAME_COUNTRY_CLUB") return localizedText(language, "Team-country club competitions", "Клубные турниры страны команды");
+  if (scope === "SELECTED_PLUS_UEFA") return localizedText(language, "Selected + Champions / Europa League", "Выбранный + ЛЧ / ЛЕ");
+  return localizedText(language, "Selected competition", "Выбранный турнир");
+}
+
+function fantasyHistoryWindowLabel(window: FantasyHistoryWindow, language: UiLanguage) {
+  if (window === "SELECTED_SEASONS") return localizedText(language, "Selected seasons", "Выбранные сезоны");
+  if (window === "ALL_LOADED") return localizedText(language, "All loaded seasons", "Все загруженные сезоны");
+  return localizedText(language, "Last 5 matches", "Последние 5 матчей");
 }
 
 function localUniqueSquadName(existingNames: string[], baseName: string) {

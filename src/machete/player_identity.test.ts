@@ -4,7 +4,7 @@ import test from "node:test";
 import { applyFantasyPlayerIdentityRows, filterFantasyPlayerIdentityRows, type FantasyPlayerIdentityRef } from "./player_identity";
 
 const rows = [
-  { id: "47:2025/2026:10:101", name: "Erling Haaland", teamName: "Manchester City", position: "FWD" },
+  { id: "47:2025/2026:10:101", name: "Erling Haaland", teamName: "Manchester City", teamShortName: "Man City", position: "FWD" },
   { id: "47:2025/2026:11:102", name: "João Pedro", teamName: "Chelsea", position: "MID" },
   { id: "47:2025/2026:12:103", name: "Fallback Keeper", teamName: "Arsenal", position: "GK" }
 ];
@@ -42,5 +42,6 @@ test("player identities prefer mapped Sports.ru names and positions without hidi
 test("player search matches names and teams case-insensitively with accents normalized", () => {
   assert.deepEqual(filterFantasyPlayerIdentityRows(rows, "joao").map((row) => row.id), [rows[1].id]);
   assert.deepEqual(filterFantasyPlayerIdentityRows(rows, "HAALAND city").map((row) => row.id), [rows[0].id]);
+  assert.deepEqual(filterFantasyPlayerIdentityRows(rows, "Man City").map((row) => row.id), [rows[0].id]);
   assert.equal(filterFantasyPlayerIdentityRows(rows, "Tottenham").length, 0);
 });

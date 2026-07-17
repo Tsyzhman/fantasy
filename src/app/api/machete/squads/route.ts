@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { jsonError, withApiHandler } from "@/lib/api-handler";
 import { requireApiUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { macheteLeagueDisplayName } from "@/lib/leagues/display";
+import { isFantasySquadLeague, macheteLeagueDisplayName } from "@/lib/leagues/display";
 import { readJsonObject } from "@/lib/request-json";
 import {
   loadCachedFantasySquadPlayerPool,
@@ -19,6 +19,7 @@ import {
   validateFantasySquadForSave,
   type FantasySquadSelection
 } from "@/machete/squad_logic";
+import { parseFantasyHistorySettings } from "@/machete/squad-history";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -31,6 +32,11 @@ export const GET = withApiHandler(async (request: Request) => {
   const leagueId = parseBigInt(params.get("leagueId"));
   const season = params.get("season")?.trim() ?? "";
   const squadId = optionalId(params.get("squadId"));
+  const historySettings = parseFantasyHistorySettings({
+    historyScope: params.get("historyScope"),
+    historyWindow: params.get("historyWindow"),
+    historySeason: params.getAll("historySeason")
+  });
   if (!leagueId || !season) {
     return jsonError("BAD_REQUEST", "leagueId and season are required.", 400);
   }
@@ -46,7 +52,7 @@ export const GET = withApiHandler(async (request: Request) => {
       league: true
     }
   });
-  if (!leagueSeason) {
+  if (!leagueSeason || !isFantasySquadLeague({ providerLeagueId: String(leagueSeason.leagueId) })) {
     return jsonError("NOT_FOUND", "League season not found.", 404);
   }
 
@@ -80,7 +86,7 @@ export const GET = withApiHandler(async (request: Request) => {
       return jsonError("NOT_FOUND", "Squad variant not found for this league and season.", 404);
     }
   }
-  const players = await loadCachedFantasySquadPlayerPool(prisma, plannerLeague);
+  const players = await loadCachedFantasySquadPlayerPool(prisma, auth.user.id, plannerLeague, historySettings);
 
   return NextResponse.json(
     { players },
@@ -97,6 +103,11 @@ export const POST = withApiHandler(async (request: Request) => {
   const leagueId = parseBigInt(body.leagueId);
   const season = typeof body.season === "string" ? body.season : "";
   const squadId = optionalId(body.squadId);
+  const historySettings = parseFantasyHistorySettings({
+    historyScope: body.historyScope,
+    historyWindow: body.historyWindow,
+    historySeason: body.historySeasons
+  });
   if (!leagueId || !season) {
     return jsonError("BAD_REQUEST", "leagueId and season are required.", 400);
   }
@@ -112,7 +123,7 @@ export const POST = withApiHandler(async (request: Request) => {
       league: true
     }
   });
-  if (!leagueSeason) {
+  if (!leagueSeason || !isFantasySquadLeague({ providerLeagueId: String(leagueSeason.leagueId) })) {
     return jsonError("NOT_FOUND", "League season not found.", 404);
   }
 
@@ -131,7 +142,7 @@ export const POST = withApiHandler(async (request: Request) => {
     providerLeagueId: String(leagueSeason.leagueId),
     isCurrent: leagueSeason.isCurrent,
     updatedAt: leagueSeason.updatedAt
-  }, squadId);
+  }, squadId, { historySettings });
   if (squadId && plannerData.squad.id !== squadId) {
     return jsonError("NOT_FOUND", "Squad variant not found for this league and season.", 404);
   }

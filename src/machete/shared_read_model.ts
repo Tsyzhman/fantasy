@@ -1,9 +1,11 @@
 import type { PrismaClient } from "@prisma/client";
 
 import { calculateAlternativeScore, calculateFantasyScore, calculateScoringScore, getActiveScoringModelForSource, type ActiveScoringModel } from "@/lib/scoring";
+import { getUserScoringModelForSource } from "@/lib/scoring/user-preferences";
 import { leagueSeeds } from "@/lib/leagues/seed-data";
 import { compareMacheteLeagues, macheteLeagueDisplayName } from "@/lib/leagues/display";
 import { teamLogoUrlForSlug, validTeamLogoUrl } from "@/lib/teams/logo-assets";
+import { providerTeamShortName } from "@/lib/teams/display";
 import { normalizeName, slugify } from "@/lib/text";
 import { matchWindowSeasonLabel, type MacheteMatchWindow } from "@/scoring/machete/match-window";
 import { normalizeFantasyPosition, type FantasyPositionGroup } from "@/machete/squad_logic";
@@ -28,6 +30,7 @@ export type SharedTeamCompetitionOption = SharedLeagueSeasonOption & {
 export type SharedTeamOption = {
   id: bigint;
   name: string;
+  shortName: string | null;
   country: string | null;
   rawRef: string | null;
   logoUrl: string | null;
@@ -45,6 +48,7 @@ export type SharedMachetePlayerRow = {
   id: string;
   name: string;
   teamName?: string | null;
+  teamShortName?: string | null;
   leagueName?: string | null;
   position: string | null;
   age: number | null;
@@ -275,6 +279,7 @@ export async function loadSharedLeagueTeams(prisma: PrismaClient, leagueId: bigi
   return rows.map((row) => ({
     id: row.team.id,
     name: row.team.name,
+    shortName: providerTeamShortName({ metadata: row.metadata }),
     country: row.team.country,
     rawRef: row.team.rawRef,
     logoUrl: resolveSharedTeamLogoUrl({
@@ -333,6 +338,7 @@ export async function loadSharedMachetePlayerRows(
   prisma: PrismaClient,
   input: {
     scopes: SharedPlayerRowsScope[];
+    rosterScopes?: SharedPlayerRowsScope[];
     position?: string;
     minMinutes?: string;
     matchWindow: MacheteMatchWindow;
@@ -340,11 +346,13 @@ export async function loadSharedMachetePlayerRows(
     fallbackToRecentLeagueHistory?: boolean;
     fallbackToRecentPlayerHistory?: boolean;
     scoringModel?: ActiveScoringModel;
+    userId?: string | null;
     playerIds?: bigint[];
   }
 ): Promise<SharedMachetePlayerRow[]> {
   const scopes = input.scopes.filter((scope) => scope.leagueId && scope.season);
-  if (scopes.length === 0) return [];
+  const rosterScopes = (input.rosterScopes ?? scopes).filter((scope) => scope.leagueId && scope.season);
+  if (rosterScopes.length === 0) return [];
 
   const positionFilter = parseSharedPositionFilter(input.position);
   const rosterRowsFromDb = await prisma.teamPlayerSeason.findMany({
@@ -352,7 +360,7 @@ export async function loadSharedMachetePlayerRows(
       active: true,
       AND: [
         {
-          OR: scopes.map((scope) => ({
+          OR: rosterScopes.map((scope) => ({
             leagueId: scope.leagueId,
             season: scope.season,
             ...(scope.teamId ? { teamId: scope.teamId } : {})
@@ -402,9 +410,11 @@ export async function loadSharedMachetePlayerRows(
     if (!teamScopes.has(key)) teamScopes.set(key, { leagueId: scope.leagueId, season: scope.season, teamId: scope.teamId });
   }
 
-  for (const row of rosterRows) {
-    const key = teamScopeKey(row.leagueId, row.season, row.teamId);
-    if (!teamScopes.has(key)) teamScopes.set(key, { leagueId: row.leagueId, season: row.season, teamId: row.teamId });
+  if (!input.rosterScopes) {
+    for (const row of rosterRows) {
+      const key = teamScopeKey(row.leagueId, row.season, row.teamId);
+      if (!teamScopes.has(key)) teamScopes.set(key, { leagueId: row.leagueId, season: row.season, teamId: row.teamId });
+    }
   }
 
   const matchRefsByTeamScope = new Map<string, SharedTeamMatchRef[]>();
@@ -445,7 +455,9 @@ export async function loadSharedMachetePlayerRows(
     : [];
   for (const row of fallbackStats) matchDateById.set(String(row.matchId), row.match.matchDate);
   const fallbackStatsByPlayer = groupStatsByPlayer(fallbackStats);
-  const scoringModel = input.scoringModel ?? (await getActiveScoringModelForSource("MACHETE"));
+  const scoringModel = input.scoringModel ?? (input.userId
+    ? await getUserScoringModelForSource(prisma, input.userId, "MACHETE")
+    : await getActiveScoringModelForSource("MACHETE", prisma));
   const minimumMinutes = input.minMinutes ? Number(input.minMinutes) : null;
 
   if (input.combineTeamCompetitions) {
@@ -472,6 +484,7 @@ export async function loadSharedMachetePlayerRows(
           id: `combined:${first.teamId}:${first.playerId}:${rows.map((row) => `${row.leagueId}:${row.season}`).join("|")}`,
           name: first.player.name,
           teamName: first.team.name,
+          teamShortName: firstNonEmpty(rows.map((row) => providerTeamShortName({ metadata: row.seasonTeam.metadata }))),
           leagueName: formatCombinedLeagueNames(leagueNames),
           position,
           age: rows.find((row) => row.age !== null)?.age ?? null,
@@ -500,6 +513,7 @@ export async function loadSharedMachetePlayerRows(
         id: `${row.leagueId}:${row.season}:${row.teamId}:${row.playerId}`,
         name: row.player.name,
         teamName: row.team.name,
+        teamShortName: providerTeamShortName({ metadata: row.seasonTeam.metadata }),
         leagueName,
         position,
         age: row.age,

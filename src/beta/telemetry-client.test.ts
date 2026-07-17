@@ -7,7 +7,9 @@ import {
   finishBetaTestSession,
   flushBetaTelemetry,
   getBetaTestSession,
+  consumeBetaTestSubmissionReceipt,
   discardBetaTestSession,
+  rememberBetaTestSubmissionReceipt,
   startBetaTestSession,
   stopBetaTestSession,
   storedBetaSessionHasRecordedMilestone,
@@ -236,6 +238,31 @@ test("an explicit local discard clears an unsent run", { concurrency: false }, a
     assert.ok(getBetaTestSession()?.pending.length);
     assert.equal(discardBetaTestSession(), true);
     assert.equal(getBetaTestSession(), null);
+  });
+});
+
+test("submission receipt is tab-local, contains only the participant code, and is consumed once", { concurrency: false }, async () => {
+  await withBrowser(async () => {
+    rememberBetaTestSubmissionReceipt(runId);
+
+    const receipt = consumeBetaTestSubmissionReceipt();
+    assert.equal(receipt?.participantCode, runId.slice(0, 8));
+    assert.equal(receipt?.version, 1);
+    assert.equal(typeof receipt?.submittedAt, "number");
+    assert.equal(consumeBetaTestSubmissionReceipt(), null);
+  });
+});
+
+test("invalid submission receipt is removed without being shown", { concurrency: false }, async () => {
+  await withBrowser(async ({ storage }) => {
+    storage.setItem("fantasy-beta-test-submission-receipt-v1", JSON.stringify({
+      version: 1,
+      participantCode: "not a code",
+      submittedAt: Date.now()
+    }));
+
+    assert.equal(consumeBetaTestSubmissionReceipt(), null);
+    assert.equal(storage.getItem("fantasy-beta-test-submission-receipt-v1"), null);
   });
 });
 

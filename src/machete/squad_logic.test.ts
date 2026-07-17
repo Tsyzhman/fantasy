@@ -166,6 +166,34 @@ test("full-squad optimizer returns a legal squad within budget and respects lock
   assert.equal(optimized.filter((selection) => selection.isViceCaptain).length, 1);
 });
 
+test("display-only alternative predicted FP does not change optimizer output", () => {
+  const rules = { ...defaultFantasySquadRules, budgetLimit: 82, maxPlayersPerTeam: 3 };
+  const positions = ["GK", "DEF", "MID", "FWD"] as const;
+  const pool = positions.flatMap((position, positionIndex) =>
+    Array.from({ length: 20 }, (_, index) =>
+      player(
+        `${positionIndex + 1}${String(index).padStart(2, "0")}`,
+        `${position} candidate ${index}`,
+        String((index + positionIndex * 3) % 20),
+        position,
+        4 + (index % 5) * 0.5,
+        [2 + index * 0.35, 2 + index * 0.3, 2 + index * 0.25]
+      )
+    )
+  );
+  const withAlternativeDisplayValues = pool.map((candidate, index) => ({
+    ...candidate,
+    alternativePredictedFp: index % 2 === 0 ? 10_000 - index : -10_000 + index
+  }));
+
+  const baseline = optimizeFantasySquad({ pool, rules, horizon: 3 });
+  const withAlternative = optimizeFantasySquad({ pool: withAlternativeDisplayValues, rules, horizon: 3 });
+
+  assert.ok(baseline);
+  assert.ok(withAlternative);
+  assert.deepEqual(withAlternative, baseline);
+});
+
 test("full-squad optimizer spends available budget on a higher forecast without selecting an unaffordable star", () => {
   const rules = { ...defaultFantasySquadRules, budgetLimit: 76, maxPlayersPerTeam: 20 };
   const basePool = [

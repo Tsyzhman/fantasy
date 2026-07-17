@@ -73,10 +73,12 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
   if (!seasonTeam || !seasonTeam.active) notFound();
 
   const teamScope = { leagueId: league.leagueId, season: league.season, teamId: parsedTeamId };
-  const [playerRows, fixtures, rawPayloads, windowSummary, sportsRuMappings, rosterOptions, currentUser] = await Promise.all([
+  const currentUser = await getCurrentUser();
+  const [playerRows, fixtures, rawPayloads, windowSummary, sportsRuMappings, rosterOptions] = await Promise.all([
     loadSharedMachetePlayerRows(prisma, {
       scopes: [teamScope],
-      matchWindow
+      matchWindow,
+      userId: currentUser?.id
     }),
     loadSharedTeamFixtures(prisma, league.leagueId, league.season, parsedTeamId, 8),
     prisma.rawMatchPayload.findMany({
@@ -115,8 +117,7 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
         player: true
       },
       orderBy: [{ position: "asc" }, { player: { name: "asc" } }]
-    }),
-    getCurrentUser()
+    })
   ]);
   const players = filterByStarter(sortSharedMacheteRows(playerRows, "fantasyScore"), starterFilter);
   const fantasyPreview = players.map((player) => player.fantasyScore).filter((score): score is number => typeof score === "number");

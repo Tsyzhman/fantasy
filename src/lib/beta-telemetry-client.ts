@@ -9,6 +9,7 @@ import type {
 } from "@/beta/user-test";
 
 const betaSessionStorageKey = "fantasy-beta-test-session-v1";
+const betaSubmissionReceiptStorageKey = "fantasy-beta-test-submission-receipt-v1";
 export const betaSessionChangedEvent = "fantasy-beta-test-session-changed";
 
 type ObserveCommand = {
@@ -27,6 +28,12 @@ export type StoredBetaTestSession = {
   startedAt: number;
   recordedKeys: string[];
   pending: ObserveCommand[];
+};
+
+export type BetaTestSubmissionReceipt = {
+  version: 1;
+  participantCode: string;
+  submittedAt: number;
 };
 
 let activeFlush: Promise<void> | null = null;
@@ -192,6 +199,36 @@ export function discardBetaTestSession() {
   if (typeof window === "undefined" || !getBetaTestSession()) return false;
   clearBetaTestSession();
   return true;
+}
+
+export function rememberBetaTestSubmissionReceipt(runId: string) {
+  if (typeof window === "undefined") return;
+  const receipt: BetaTestSubmissionReceipt = {
+    version: 1,
+    participantCode: runId.slice(0, 8),
+    submittedAt: Date.now()
+  };
+  window.sessionStorage.setItem(betaSubmissionReceiptStorageKey, JSON.stringify(receipt));
+}
+
+export function consumeBetaTestSubmissionReceipt(): BetaTestSubmissionReceipt | null {
+  if (typeof window === "undefined") return null;
+  const raw = window.sessionStorage.getItem(betaSubmissionReceiptStorageKey);
+  window.sessionStorage.removeItem(betaSubmissionReceiptStorageKey);
+  if (!raw) return null;
+  try {
+    const receipt = JSON.parse(raw) as Partial<BetaTestSubmissionReceipt>;
+    if (
+      receipt.version !== 1 ||
+      typeof receipt.participantCode !== "string" ||
+      !/^[0-9a-f]{8}$/i.test(receipt.participantCode) ||
+      typeof receipt.submittedAt !== "number" ||
+      !Number.isFinite(receipt.submittedAt)
+    ) return null;
+    return receipt as BetaTestSubmissionReceipt;
+  } catch {
+    return null;
+  }
 }
 
 export function flushBetaTelemetry() {

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { I18nText } from "@/components/i18n-text";
 import { localizedText, useLanguage } from "@/components/localized-option";
 import { cn } from "@/lib/cn";
+import { compactTeamDisplayName } from "@/lib/teams/display";
 
 type WatchlistSource = "machete" | "baltika";
 
@@ -13,6 +14,7 @@ type WatchlistPlayer = {
   id: string;
   name: string;
   teamName?: string | null;
+  teamShortName?: string | null;
   position?: string | null;
   savedAt: string;
   updatedAt?: string;
@@ -100,8 +102,8 @@ export function PlayerWatchlistPanel({ source }: { source: WatchlistSource }) {
               <div key={player.id} className="flex items-center gap-2 rounded border border-slate-100 px-2 py-1.5">
                 <div className="min-w-0 flex-1">
                   <span className="block truncate font-semibold text-ink">{player.name}</span>
-                  <span className="block truncate text-xs text-slate-500">
-                    {[player.position, player.teamName].filter(Boolean).join(" / ")}
+                  <span className="block truncate text-xs text-slate-500" title={player.teamName ?? undefined}>
+                    {[player.position, compactTeamDisplayName({ name: player.teamName, shortName: player.teamShortName })].filter(Boolean).join(" / ")}
                   </span>
                 </div>
                 <button

@@ -5,17 +5,27 @@ import { useEffect, useState } from "react";
 
 import { I18nText } from "@/components/i18n-text";
 import { localizedText, useLanguage } from "@/components/localized-option";
-import { getBetaTestSession, startBetaTestSession, type StoredBetaTestSession } from "@/lib/beta-telemetry-client";
+import {
+  consumeBetaTestSubmissionReceipt,
+  getBetaTestSession,
+  startBetaTestSession,
+  type BetaTestSubmissionReceipt,
+  type StoredBetaTestSession
+} from "@/lib/beta-telemetry-client";
 
 export function BetaTestStart({ synthetic }: { synthetic: boolean }) {
   const language = useLanguage();
   const router = useRouter();
   const [session, setSession] = useState<StoredBetaTestSession | null>(null);
+  const [receipt, setReceipt] = useState<BetaTestSubmissionReceipt | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const handle = window.setTimeout(() => setSession(getBetaTestSession()), 0);
+    const handle = window.setTimeout(() => {
+      setSession(getBetaTestSession());
+      setReceipt(consumeBetaTestSubmissionReceipt());
+    }, 0);
     return () => window.clearTimeout(handle);
   }, []);
 
@@ -34,11 +44,24 @@ export function BetaTestStart({ synthetic }: { synthetic: boolean }) {
 
   return (
     <section className="rounded-xl border border-slate-200 bg-white p-6 shadow-soft">
+      {receipt ? (
+        <div className="mb-6 rounded-lg border border-emerald-300 bg-emerald-50 px-5 py-4 text-emerald-950" role="status" aria-live="polite">
+          <p className="font-bold"><I18nText en="Beta run submitted" ru="Beta-прогон отправлен" /></p>
+          <p className="mt-1 text-sm">
+            <I18nText
+              en={`The server accepted your result. Participant code: ${receipt.participantCode}. The moderator can now review it; you may close this page.`}
+              ru={`Сервер принял ваш результат. Код участника: ${receipt.participantCode}. Теперь модератор может проверить его; эту страницу можно закрыть.`}
+            />
+          </p>
+        </div>
+      ) : null}
       <p className="text-sm font-semibold uppercase tracking-wide text-emerald-700"><I18nText en="Closed beta measurement" ru="Измерение закрытой beta" /></p>
       <h1 className="mt-2 text-3xl font-bold text-ink"><I18nText en="Start a moderated test run" ru="Начать модерируемый прогон" /></h1>
       <div className="mt-4 space-y-3 text-sm leading-6 text-slate-600">
         <p><I18nText en="The five-minute timer starts only after you press the button. The moderator gives the task separately; this page does not reveal the next steps." ru="Пятиминутный таймер запускается только после нажатия кнопки. Задание отдельно даёт модератор; эта страница не подсказывает следующие шаги." /></p>
         <p><I18nText en="The app records an opaque run ID, page paths, required journey milestones, device class, Web Vitals, and coarse client-error categories. It does not record search text, typed content, email, or name in the report." ru="Приложение записывает непрозрачный ID прогона, пути страниц, контрольные этапы сценария, класс устройства, Web Vitals и категории клиентских ошибок. Поисковый текст, введённые данные, email и имя в отчёт не записываются." /></p>
+        <p><I18nText en="The server internally links the run to your signed-in account to enforce ownership and count unique participants. Administrators can access account details and the protected run/review data in separate views; the exported beta report does not include your email, name, or internal user ID." ru="Сервер внутри системы связывает прогон с вашей авторизованной учётной записью, чтобы проверять владельца и считать уникальных участников. Администраторы имеют доступ к данным аккаунта и защищённым данным прогона/review в отдельных разделах; выгружаемый beta-отчёт не содержит ваш email, имя или внутренний ID пользователя." /></p>
+        <p><I18nText en="Beta runs currently have no automatic deletion deadline or participant self-service deletion. You may decline by not starting. Ask the moderator about withdrawal or deletion before you start; deactivating the account blocks access and signs it out but does not itself erase stored run data." ru="Сейчас для beta-прогонов нет автоматического срока удаления и самостоятельного удаления участником. Можно отказаться, не начиная прогон. До старта уточните у модератора порядок отзыва согласия или удаления данных; отключение аккаунта блокирует доступ и завершает его сессии, но само по себе не стирает сохранённые данные прогона." /></p>
         <p><I18nText en="Completion is not accepted automatically: the moderator must separately confirm validity, no assistance, transfer understanding, usability rating, and critical issues." ru="Прохождение не принимается автоматически: модератор отдельно подтверждает валидность, отсутствие помощи, понимание трансфера, оценку удобства и критические проблемы." /></p>
       </div>
       {session ? (

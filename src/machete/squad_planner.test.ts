@@ -5,9 +5,11 @@ import {
   buildFantasyForecastExplanation,
   buildPlannerRoundFixtures,
   buildTeamStrengthProfilesFromMatches,
+  alternativePlayerFixturePoints,
   calibratedPlayerFixturePoints,
   compareFantasyPlannerPlayers,
   fantasyPlannerPosition,
+  fantasyPlannerSharedRowIdentity,
   fantasyTeamShortName,
   loadFantasySquadPlannerData,
   normalizeFantasySquadName,
@@ -24,6 +26,11 @@ import {
 import { fitFantasyProjectionCalibration } from "./fantasy_projection_calibration";
 import type { FantasyBacktestSample } from "./fantasy_backtest";
 import { defaultFantasySquadRules } from "./squad_logic";
+
+test("planner extracts team and player IDs from selected and combined history rows", () => {
+  assert.deepEqual(fantasyPlannerSharedRowIdentity("47:2025/2026:10:20"), { teamId: "10", playerId: "20" });
+  assert.deepEqual(fantasyPlannerSharedRowIdentity("combined:10:20:47:2025/2026"), { teamId: "10", playerId: "20" });
+});
 
 test("squad planner groups upcoming matches into fixture rounds", () => {
   const result = buildPlannerRoundFixtures(
@@ -121,6 +128,7 @@ test("squad planner normalizes saved forecast horizon on load", async () => {
     dataQualityAuditRun: { findFirst: async () => null },
     fantasyPlayerPrice: { findMany: async () => [] },
     fantasyModel: { findFirst: async () => null },
+    userScoringPreference: { findUnique: async () => null },
     playerSnapshot: { findMany: async () => [] },
     leagueSeasonTeam: { findMany: async () => [] },
     coreMatch: { findMany: async () => [], count: async () => 0 },
@@ -450,6 +458,26 @@ test("squad planner applies the fitted production calibration to upcoming fixtur
   const calibrated = calibratedPlayerFixturePoints(row, fixture, calibration);
   assert.equal(typeof calibrated, "number");
   assert.ok((calibrated ?? 0) > 8);
+});
+
+test("alternative predicted FP applies fixture difficulty without production calibration", () => {
+  const fixture = {
+    id: "fixture-1",
+    roundId: "round-1",
+    teamId: "team-1",
+    opponentTeamId: "team-2",
+    opponentName: "Opponent",
+    side: "H" as const,
+    kickoffAt: new Date("2026-08-15T12:00:00.000Z"),
+    projectedXg: 1.5,
+    projectedXga: 0.8,
+    attackMultiplier: 1.1,
+    defenseMultiplier: 1.1
+  };
+
+  assert.equal(alternativePlayerFixturePoints({ alternativeScore: 6 }, fixture, "MID"), 6.5);
+  assert.equal(alternativePlayerFixturePoints({ alternativeScore: 6 }, null, "MID"), 6);
+  assert.equal(alternativePlayerFixturePoints({ alternativeScore: null }, fixture, "MID"), null);
 });
 
 function match(input: {

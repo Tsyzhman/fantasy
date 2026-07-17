@@ -7,6 +7,7 @@ import { I18nText } from "@/components/i18n-text";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { formatDate, formatNumber } from "@/lib/format";
+import { compactTeamDisplayName, providerTeamShortName } from "@/lib/teams/display";
 import { macheteLeagueDisplayName } from "@/lib/leagues/display";
 
 export const dynamic = "force-dynamic";
@@ -346,6 +347,21 @@ async function loadNextRound(leagueId: bigint, season: string, teamIds: bigint[]
 
   const roundKey = firstFixture.round ? `round:${firstFixture.round}` : `date:${dateKey(firstFixture.matchDate)}`;
   const roundFixtures = fixtures.filter((fixture) => (fixture.round ? `round:${fixture.round}` : `date:${dateKey(fixture.matchDate)}`) === roundKey);
+  const fixtureTeamIds = uniqueBigInts(
+    roundFixtures.flatMap((fixture) => [fixture.homeTeamId, fixture.awayTeamId]).filter((teamId): teamId is bigint => teamId !== null)
+  );
+  const seasonTeams = fixtureTeamIds.length > 0
+    ? await prisma.leagueSeasonTeam.findMany({
+        where: { leagueId, season, teamId: { in: fixtureTeamIds } },
+        select: { teamId: true, metadata: true }
+      })
+    : [];
+  const teamShortNameById = new Map(
+    seasonTeams.flatMap((team) => {
+      const shortName = providerTeamShortName({ metadata: team.metadata });
+      return shortName ? [[String(team.teamId), shortName] as const] : [];
+    })
+  );
 
   return {
     label: firstFixture.round ?? formatDate(firstFixture.matchDate),
@@ -353,7 +369,9 @@ async function loadNextRound(leagueId: bigint, season: string, teamIds: bigint[]
     fixtures: roundFixtures.slice(0, 4).map((fixture) => ({
       id: String(fixture.id),
       homeTeamName: fixture.homeTeam?.name ?? "Home",
+      homeTeamShortName: fixture.homeTeamId ? teamShortNameById.get(String(fixture.homeTeamId)) ?? null : null,
       awayTeamName: fixture.awayTeam?.name ?? "Away",
+      awayTeamShortName: fixture.awayTeamId ? teamShortNameById.get(String(fixture.awayTeamId)) ?? null : null,
       kickoffAt: fixture.matchDate
     }))
   };
@@ -373,11 +391,13 @@ function MetricCard({ icon, labelEn, labelRu, value }: { icon: React.ReactNode; 
   );
 }
 
-function FixtureRow({ fixture }: { fixture: { homeTeamName: string; awayTeamName: string; kickoffAt: Date | null } }) {
+function FixtureRow({ fixture }: { fixture: { homeTeamName: string; homeTeamShortName: string | null; awayTeamName: string; awayTeamShortName: string | null; kickoffAt: Date | null } }) {
+  const homeTeam = compactTeamDisplayName({ name: fixture.homeTeamName, shortName: fixture.homeTeamShortName }) ?? fixture.homeTeamName;
+  const awayTeam = compactTeamDisplayName({ name: fixture.awayTeamName, shortName: fixture.awayTeamShortName }) ?? fixture.awayTeamName;
   return (
     <div className="flex items-center justify-between gap-3 rounded bg-white px-3 py-2 text-sm">
-      <span className="min-w-0 truncate font-semibold text-ink">
-        {fixture.homeTeamName} <span className="text-slate-400">vs</span> {fixture.awayTeamName}
+      <span className="min-w-0 truncate font-semibold text-ink" title={`${fixture.homeTeamName} vs ${fixture.awayTeamName}`}>
+        {homeTeam} <span className="text-slate-400">vs</span> {awayTeam}
       </span>
       <span className="shrink-0 text-xs text-slate-500">{formatDate(fixture.kickoffAt)}</span>
     </div>
@@ -420,7 +440,7 @@ function emptyNextRound() {
   return {
     label: "—",
     fixtureCount: 0,
-    fixtures: [] as Array<{ id: string; homeTeamName: string; awayTeamName: string; kickoffAt: Date | null }>
+    fixtures: [] as Array<{ id: string; homeTeamName: string; homeTeamShortName: string | null; awayTeamName: string; awayTeamShortName: string | null; kickoffAt: Date | null }>
   };
 }
 

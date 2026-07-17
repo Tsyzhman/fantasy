@@ -2,8 +2,10 @@ import type { CsvColumn } from "@/lib/csv";
 import { jsonError, requiredSearchParam, withApiHandler } from "@/lib/api-handler";
 import { requireApiUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { isFantasySquadLeague } from "@/lib/leagues/display";
 import { parseTableExportFormat, tableExportResponse } from "@/lib/table-export";
 import { loadSharedLeagueSeason } from "@/machete/shared_read_model";
+import { parseFantasyHistorySettings } from "@/machete/squad-history";
 import { loadFantasySquadPlannerData } from "@/machete/squad_planner";
 import type { FantasyPlannerPlayer, FantasySquadSelection } from "@/machete/squad_logic";
 
@@ -39,10 +41,15 @@ export const GET = withApiHandler(async (request: Request) => {
 
   const leagueId = requiredSearchParam(params, "leagueId");
   const league = await loadSharedLeagueSeason(prisma, leagueId, params.get("season"));
-  if (!league) return jsonError("LEAGUE_SEASON_NOT_FOUND", "League season not found.", 404);
+  if (!league || !isFantasySquadLeague(league)) return jsonError("NOT_FOUND", "League season not found.", 404);
 
   const squadId = params.get("squadId");
-  const data = await loadFantasySquadPlannerData(prisma, auth.user.id, league, squadId);
+  const historySettings = parseFantasyHistorySettings({
+    historyScope: params.get("historyScope"),
+    historyWindow: params.get("historyWindow"),
+    historySeason: params.getAll("historySeason")
+  });
+  const data = await loadFantasySquadPlannerData(prisma, auth.user.id, league, squadId, { historySettings });
   if (squadId && data.squad.id !== squadId) return jsonError("SQUAD_NOT_FOUND", "Squad variant not found.", 404);
   const roundCount = Math.min(data.squad.horizonRounds, data.rounds.length);
   const rows = squadExportRows(data.squad.selections, data.players, roundCount);

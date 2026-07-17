@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
+import { loadBetaAcceptanceEvidence } from "@/beta/acceptance-evidence";
 import {
   betaModeratedEnvironments,
   buildBetaUserTestReport,
@@ -32,7 +33,7 @@ export default async function AdminBetaTestPage({ searchParams }: PageProps) {
   await requireAdminUser();
   const resolvedSearchParams = (await searchParams) ?? {};
   const since = betaReportWindowStart();
-  const runs = await prisma.betaTestRun.findMany({
+  const [runs, acceptanceEvidence] = await Promise.all([prisma.betaTestRun.findMany({
     where: { startedAt: { gte: since } },
     select: {
       id: true,
@@ -62,8 +63,8 @@ export default async function AdminBetaTestPage({ searchParams }: PageProps) {
       }
     },
     orderBy: [{ startedAt: "asc" }, { id: "asc" }]
-  });
-  const report = buildBetaUserTestReport(runs);
+  }), loadBetaAcceptanceEvidence()]);
+  const report = buildBetaUserTestReport(runs, acceptanceEvidence);
   const errorMessage = betaReviewErrorMessage(resolvedSearchParams.error);
 
   return (
@@ -132,6 +133,8 @@ export default async function AdminBetaTestPage({ searchParams }: PageProps) {
           <MetricCard label={<I18nText en="Real RUM participants" ru="Реальные RUM-участники" />} value={`${report.rum.lcpParticipants} / ${report.rum.gate.minimumLcpParticipants}`} />
           <MetricCard label={<I18nText en="LCP p75" ru="LCP p75" />} value={formatMilliseconds(report.rum.webVitals.LCP.p75)} />
           <MetricCard label={<I18nText en="Client-error affected runs" ru="Прогоны с client error" />} value={formatPercentage(report.rum.clientErrorAffectedRunRate)} />
+          <MetricCard label={<I18nText en="Server 5xx" ru="Server 5xx" />} value={report.serverWindow.evidence ? formatPercentage(report.serverWindow.evidence.serverErrorRatePercent) : "—"} />
+          <MetricCard label={<I18nText en="Server window" ru="Окно сервера" />} value={report.serverWindow.evidence ? formatHours(report.serverWindow.evidence.observedSpanMinutes / 60) : "—"} />
           <MetricCard label={<I18nText en="Physical Safari iOS" ru="Физический Safari iOS" />} value={`${report.physicalDeviceCoverage.iosSafari} / 1`} />
           <MetricCard label={<I18nText en="Physical Chrome Android" ru="Физический Chrome Android" />} value={`${report.physicalDeviceCoverage.androidChrome} / 1`} />
         </div>
@@ -481,7 +484,7 @@ function formModeratedEnvironment(formData: FormData): BetaModeratedEnvironment 
 }
 
 function formatPercentage(value: number | null) {
-  return value === null ? "—" : `${value}%`;
+  return value === null || !Number.isFinite(value) ? "—" : `${value}%`;
 }
 
 function formatMilliseconds(value: number | null) {
@@ -489,7 +492,7 @@ function formatMilliseconds(value: number | null) {
 }
 
 function formatHours(value: number | null) {
-  return value === null ? "—" : `${value.toLocaleString("ru-RU")} h`;
+  return value === null || !Number.isFinite(value) ? "—" : `${value.toLocaleString("ru-RU")} h`;
 }
 
 function formatDuration(value: number | null) {

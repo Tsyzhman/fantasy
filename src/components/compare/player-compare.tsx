@@ -18,6 +18,7 @@ import {
 import { I18nText } from "@/components/i18n-text";
 import { localizedText, useLanguage } from "@/components/localized-option";
 import { cn } from "@/lib/cn";
+import { compactTeamDisplayName } from "@/lib/teams/display";
 
 export type CompareSource = "machete" | "baltika";
 
@@ -26,6 +27,7 @@ export type ComparePlayer = {
   name: string;
   position?: string | null;
   teamName?: string | null;
+  teamShortName?: string | null;
 };
 
 type CompareContextValue = {
@@ -310,8 +312,8 @@ function CompareSlot({
         <div className="truncate font-semibold text-ink" title={player.name}>
           {player.name}
         </div>
-        <div className="truncate text-[11px] text-slate-500">
-          {[player.position, player.teamName].filter(Boolean).join(" / ") || "-"}
+        <div className="truncate text-[11px] text-slate-500" title={player.teamName ?? undefined}>
+          {[player.position, compactTeamDisplayName({ name: player.teamName, shortName: player.teamShortName })].filter(Boolean).join(" / ") || "-"}
         </div>
       </div>
       <button

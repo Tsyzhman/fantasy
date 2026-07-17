@@ -17,6 +17,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { FilterShell } from "@/components/ui/filter-shell";
 import { ResultsToolbar } from "@/components/ui/results-toolbar";
 import { prisma } from "@/lib/db";
+import { getCurrentUser } from "@/lib/auth";
 import { NULL_GLYPH, formatNumber } from "@/lib/format";
 import { matchWindowLabel, matchWindowLabelRu, matchWindowModeValue, parseMacheteMatchWindow, type MacheteMatchWindow } from "@/scoring/machete/match-window";
 import { normalizeFantasyPosition, type FantasyPositionGroup } from "@/machete/squad_logic";
@@ -74,7 +75,11 @@ type PositionFilter = Exclude<FantasyPositionGroup, "UNK">;
 
 export default async function MachetePlayersPage({ searchParams }: PageProps) {
   const resolvedSearchParams = await searchParams;
-  const [loadedLeagues, leagueSeasonOptions] = await Promise.all([loadSharedLeagueOptions(prisma), loadSharedLeagueSeasonOptions(prisma)]);
+  const [loadedLeagues, leagueSeasonOptions, currentUser] = await Promise.all([
+    loadSharedLeagueOptions(prisma),
+    loadSharedLeagueSeasonOptions(prisma),
+    getCurrentUser()
+  ]);
   const readinessByScope = await loadPlannerReadinessByScope(prisma, leagueSeasonOptions);
   const sortedLeagues = loadedLeagues.flatMap((league) => {
     const seasons = leagueSeasonOptions.filter((option) => option.leagueId === league.leagueId);
@@ -129,7 +134,8 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
     page: requestedPage,
     pageSize,
     readyLeagueScopes: sortedLeagues,
-    leagueSeasonOptions
+    leagueSeasonOptions,
+    userId: currentUser?.id
   });
   const players = playersResult.players;
   const windowSummary = playersResult.windowSummary;
@@ -476,7 +482,8 @@ async function buildMatchWindowRows({
   page,
   pageSize,
   readyLeagueScopes,
-  leagueSeasonOptions
+  leagueSeasonOptions,
+  userId
 }: {
   selectedLeagueId: string;
   selectedSeason: string;
@@ -492,6 +499,7 @@ async function buildMatchWindowRows({
   pageSize: number;
   readyLeagueScopes: SharedLeagueSeasonOption[];
   leagueSeasonOptions: SharedLeagueSeasonOption[];
+  userId?: string;
 }) {
   if (!selectedLeagueId) {
     return {
@@ -517,7 +525,8 @@ async function buildMatchWindowRows({
       position: position ?? undefined,
       minMinutes,
       matchWindow,
-      combineTeamCompetitions
+      combineTeamCompetitions,
+      userId
     }),
     loadSharedMatchWindowSummary(prisma, scopes, matchWindow, combineTeamCompetitions),
     loadSportsRuFantasyPriceRefsByScopedPlayer(prisma, { scopes })

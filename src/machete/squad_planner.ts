@@ -5,6 +5,8 @@ import { ExpiringPromiseCache } from "@/lib/expiring-promise-cache";
 import { macheteLeagueDisplayName } from "@/lib/leagues/display";
 import { normalizeSportsRuPlayerName } from "@/lib/providers/sports-ru-fantasy";
 import { getActiveScoringModelBundleForSource } from "@/lib/scoring";
+import { applyUserScoringPreference } from "@/lib/scoring/user-preferences";
+import { providerTeamShortName } from "@/lib/teams/display";
 
 import type { FantasyBacktestSample } from "./fantasy_backtest";
 import {
@@ -15,7 +17,13 @@ import {
 import { loadFantasyProjectionCalibration } from "./fantasy_projection_service";
 import { loadPlannerReadinessByScope, plannerReadinessKey, type PlannerReadiness } from "./planner_readiness";
 import {
-  loadSharedLeagueTeams,
+  defaultFantasyHistorySettings,
+  fantasyHistorySettingsKey,
+  resolveFantasyHistory,
+  type FantasyHistorySettings,
+  type ResolvedFantasyHistory
+} from "./squad-history";
+import {
   loadSharedMachetePlayerRows,
   type SharedLeagueSeasonOption,
   type SharedMachetePlayerRow,
@@ -62,6 +70,7 @@ export type FantasySquadPlannerData = {
     estimatedPrices: number;
     lastSyncedAt: string | null;
   };
+  historySeasonOptions: string[];
 };
 
 type PlannerFixture = {
@@ -180,10 +189,19 @@ const fantasyPlayerPoolCacheTtlMs = 30_000;
 const fantasyPlayerPoolCache = new ExpiringPromiseCache<string, FantasyPlannerPlayer[]>(20);
 export const maxFantasySquadNameLength = 80;
 
-export function loadCachedFantasySquadPlayerPool(prisma: PrismaClient, league: SharedLeagueSeasonOption) {
-  const key = `${league.leagueId}:${league.season}:${league.updatedAt.toISOString()}`;
+export async function loadCachedFantasySquadPlayerPool(
+  prisma: PrismaClient,
+  userId: string,
+  league: SharedLeagueSeasonOption,
+  historySettings: FantasyHistorySettings = defaultFantasyHistorySettings
+) {
+  const preference = await prisma.userScoringPreference.findUnique({
+    where: { userId_modelSource: { userId, modelSource: "MACHETE" } },
+    select: { updatedAt: true }
+  });
+  const key = `${userId}:${league.leagueId}:${league.season}:${league.updatedAt.toISOString()}:${preference?.updatedAt.toISOString() ?? "global"}:${fantasyHistorySettingsKey(historySettings)}`;
   return fantasyPlayerPoolCache.getOrCreate(key, fantasyPlayerPoolCacheTtlMs, async () => {
-    const data = await loadFantasySquadPlannerData(prisma, "__shared_player_pool__", league);
+    const data = await loadFantasySquadPlannerData(prisma, userId, league, null, { historySettings });
     return data.players;
   });
 }
@@ -193,10 +211,11 @@ export async function loadFantasySquadPlannerData(
   userId: string,
   league: SharedLeagueSeasonOption,
   squadId?: string | null,
-  options?: { playerIds?: bigint[]; readiness?: PlannerReadiness }
+  options?: { playerIds?: bigint[]; readiness?: PlannerReadiness; historySettings?: FantasyHistorySettings }
 ): Promise<FantasySquadPlannerData> {
   const readiness = options?.readiness ?? (await loadPlannerReadinessByScope(prisma, [league])).get(plannerReadinessKey(league));
   if (!readiness) throw new Error(`Planner readiness could not be evaluated for ${league.leagueId}:${league.season}.`);
+  const history = await resolveFantasyHistory(prisma, league, options?.historySettings ?? defaultFantasyHistorySettings);
   const sportsRuSeasons = sportsRuSeasonAliases(league.season);
   const [contest, savedSquads, rosterRows, playerRows, roundsAndFixtures, priceRows, baltikaMetricsByName, rosterPlayerCount] = await Promise.all([
     prisma.sportsRuFantasyContest.findFirst({
@@ -233,7 +252,7 @@ export async function loadFantasySquadPlannerData(
       },
       orderBy: [{ team: { name: "asc" } }, { player: { name: "asc" } }]
     }),
-    loadProjectedPlayerRows(prisma, league, options?.playerIds),
+    loadProjectedPlayerRows(prisma, userId, league, history, options?.playerIds),
     loadUpcomingRoundFixtures(prisma, league),
     prisma.fantasyPlayerPrice.findMany({
       where: {
@@ -286,6 +305,9 @@ export async function loadFantasySquadPlannerData(
     const sportsPosition = sportsPositionsByPlayerId.get(String(row.playerId)) ?? (priceRow ? sportsRuPricePosition(priceRow) : null);
     const position = fantasyPlannerPosition(sportsPosition, row.position, projected?.position ?? null);
     const positionGroup = normalizeFantasyPosition(position);
+    const alternativePredictedFp = projected
+      ? alternativePlayerFixturePoints(projected, nextFixture, positionGroup)
+      : null;
     const price = resolveFantasyPlannerPrice(priceRow, predictedFp, positionGroup);
     const playerName = priceRow?.playerName ?? row.player.name;
     const baltikaMetric = baltikaMetricsByName.get(normalizeSportsRuPlayerName(playerName));
@@ -329,6 +351,7 @@ export async function loadFantasySquadPlannerData(
         price: price.price,
         priceSource: price.priceSource,
         predictedFp,
+        alternativePredictedFp,
         expectedMinutes: projected?.expectedMinutes ?? null,
         startProbability: projected?.startProbability ?? null,
         forecastConfidence: projected?.forecastConfidence ?? null,
@@ -392,7 +415,8 @@ export async function loadFantasySquadPlannerData(
       sportsRuPrices,
       estimatedPrices,
       lastSyncedAt: latestPriceSync?.toISOString() ?? null
-    }
+    },
+    historySeasonOptions: history.availableSeasons
   };
 }
 
@@ -618,23 +642,26 @@ export function fantasyRulesForLeague(
   };
 }
 
-async function loadProjectedPlayerRows(prisma: PrismaClient, league: SharedLeagueSeasonOption, playerIds?: bigint[]) {
-  const modelBundle = await getActiveScoringModelBundleForSource("MACHETE", prisma);
-  const teams = playerIds === undefined ? await loadSharedLeagueTeams(prisma, league.leagueId, league.season) : [];
-  const scopes = playerIds === undefined
-    ? teams.map((team) => ({
-        leagueId: league.leagueId,
-        season: league.season,
-        teamId: team.id
-      }))
-    : [{ leagueId: league.leagueId, season: league.season }];
+async function loadProjectedPlayerRows(
+  prisma: PrismaClient,
+  userId: string,
+  league: SharedLeagueSeasonOption,
+  history: ResolvedFantasyHistory,
+  playerIds?: bigint[]
+) {
+  const [modelBundle, preference] = await Promise.all([
+    getActiveScoringModelBundleForSource("MACHETE", prisma),
+    prisma.userScoringPreference.findUnique({ where: { userId_modelSource: { userId, modelSource: "MACHETE" } } })
+  ]);
+  const readTimeScoringModel = applyUserScoringPreference(modelBundle.model, preference);
   const baseModelVersion = `${modelBundle.identity.configuredModelSource}:${modelBundle.identity.configuredModelId ?? "built-in"}:v${modelBundle.identity.configuredModelVersion}`;
   const [rows, calibration] = await Promise.all([
     loadSharedMachetePlayerRows(prisma, {
-      scopes,
-      matchWindow: { kind: "last", matches: 5 },
-      fallbackToRecentPlayerHistory: true,
-      scoringModel: modelBundle.model,
+      scopes: history.historyScopes,
+      rosterScopes: history.rosterScopes,
+      matchWindow: history.matchWindow,
+      combineTeamCompetitions: true,
+      scoringModel: readTimeScoringModel,
       playerIds
     }),
     loadFantasyProjectionCalibration(prisma, {
@@ -652,14 +679,21 @@ async function loadProjectedPlayerRows(prisma: PrismaClient, league: SharedLeagu
       : `${baseModelVersion}+uncalibrated`,
     calibration,
     rows: rows.map((row) => {
-      const parts = row.id.split(":");
+      const { teamId, playerId } = fantasyPlannerSharedRowIdentity(row.id);
       return {
         ...row,
-        teamId: parts[2] ?? "",
-        playerId: parts[3] ?? ""
+        teamId,
+        playerId
       };
     })
   };
+}
+
+export function fantasyPlannerSharedRowIdentity(rowId: string) {
+  const parts = rowId.split(":");
+  return parts[0] === "combined"
+    ? { teamId: parts[1] ?? "", playerId: parts[2] ?? "" }
+    : { teamId: parts[2] ?? "", playerId: parts[3] ?? "" };
 }
 
 export function calibratedPlayerFixturePoints(
@@ -713,6 +747,16 @@ export function calibratedPlayerFixturePoints(
   };
 
   return predictCalibratedFantasyPoints(calibration, sample);
+}
+
+export function alternativePlayerFixturePoints(
+  row: Pick<SharedMachetePlayerRow, "alternativeScore">,
+  fixture: PlannerFixture | null,
+  positionGroup: FantasyPositionGroup
+) {
+  if (typeof row.alternativeScore !== "number" || !Number.isFinite(row.alternativeScore)) return null;
+  if (!fixture) return roundFantasyValue(row.alternativeScore);
+  return roundFantasyValue(projectFixtureFantasyPoints(row.alternativeScore, positionGroup, fixture));
 }
 
 export function buildFantasyForecastExplanation(input: {
@@ -1447,13 +1491,7 @@ function fixtureMultiplier(fixture: FantasyFixtureProjection, positionGroup: Fan
 }
 
 export function fantasyTeamShortName(metadata: unknown, fallback: string) {
-  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return fallback;
-  const record = metadata as Record<string, unknown>;
-  for (const key of ["short_name", "shortName"]) {
-    const value = record[key];
-    if (typeof value === "string" && value.trim()) return value.trim();
-  }
-  return fallback;
+  return providerTeamShortName({ metadata }) ?? fallback;
 }
 
 export function compareFantasyPlannerPlayers(left: FantasyPlannerPlayer, right: FantasyPlannerPlayer) {

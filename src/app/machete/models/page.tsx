@@ -1,29 +1,15 @@
-import { ModelSettingsPage } from "@/components/model-settings-page";
-import { I18nText } from "@/components/i18n-text";
+import { UserScoringPreferencesPage } from "@/components/user-scoring-preferences-page";
 
 type PageProps = {
   searchParams?: Promise<{
     error?: string;
     saved?: string;
+    reset?: string;
   }>;
 };
 
 export const dynamic = "force-dynamic";
 
 export default async function MacheteModelsPage({ searchParams }: PageProps) {
-  const resolvedSearchParams = await searchParams;
-  return ModelSettingsPage({
-    source: "MACHETE",
-    modeName: "Machete",
-    title: <I18nText en="Fantasy model" ru="Фэнтези-модель" />,
-    description: (
-      <I18nText
-        en="Machete model settings for FotMob snapshots. Expected FP, Actual FP and Alt FP can be tuned independently from Baltika."
-        ru="Настройки модели Machete для снапшотов FotMob. Expected FP, Реальные FP и Alt FP можно настраивать отдельно от Балтики."
-      />
-    ),
-    backHref: "/machete/leagues",
-    backLabel: <I18nText en="Back to Machete leagues" ru="Назад к лигам Machete" />,
-    searchParams: resolvedSearchParams
-  });
+  return UserScoringPreferencesPage({ searchParams: await searchParams });
 }

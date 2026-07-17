@@ -15,7 +15,7 @@ const macheteLeagueDisplayNamesByFotMobId: Record<string, string> = {
   "54": "Germany Bundesliga",
   "55": "Italy Serie A",
   "57": "Netherlands Eredivisie",
-  "61": "Portugal Primeira Liga",
+  "61": "Portugal Liga Portugal",
   "63": "Russia Premier League",
   "71": "Turkey Super Lig",
   "77": "FIFA World Cup 2026"
@@ -58,7 +58,7 @@ export function macheteLeagueDisplayName(league: LeagueDisplayInput) {
   return `${country} ${name}`;
 }
 
-const priorityMacheteLeagueFotMobIds = [
+export const fantasySquadLeagueFotMobIds = [
   "47",
   "87",
   "54",
@@ -70,14 +70,20 @@ const priorityMacheteLeagueFotMobIds = [
   "57",
   "42",
   "73",
-  "77"
+  "61"
 ] as const;
 
-const priorityMacheteLeagueRank: Map<string, number> = new Map(priorityMacheteLeagueFotMobIds.map((id, index) => [id, index]));
+const fantasySquadLeagueIdSet = new Set<string>(fantasySquadLeagueFotMobIds);
+const priorityMacheteLeagueRank: Map<string, number> = new Map(fantasySquadLeagueFotMobIds.map((id, index) => [id, index]));
+
+export function isFantasySquadLeague(league: LeagueDisplayInput) {
+  const providerLeagueId = league.providerLeagueId ?? null;
+  return providerLeagueId !== null && fantasySquadLeagueIdSet.has(providerLeagueId);
+}
 
 export function macheteLeagueSortRank(league: LeagueDisplayInput) {
   const providerLeagueId = league.providerLeagueId ?? null;
-  return providerLeagueId ? priorityMacheteLeagueRank.get(providerLeagueId) ?? priorityMacheteLeagueFotMobIds.length : priorityMacheteLeagueFotMobIds.length;
+  return providerLeagueId ? priorityMacheteLeagueRank.get(providerLeagueId) ?? fantasySquadLeagueFotMobIds.length : fantasySquadLeagueFotMobIds.length;
 }
 
 export function compareMacheteLeagues(left: LeagueDisplayInput, right: LeagueDisplayInput) {
