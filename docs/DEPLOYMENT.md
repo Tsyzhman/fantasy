@@ -25,27 +25,25 @@ npm run check
 The currently verified runtime is Docker, not the PM2 workflow described later
 in this document:
 
-- active image: `fantasy-scout-web:beta36-20260717T070721Z`;
+- active image: `fantasy-scout-web:beta38-20260717T093041Z`;
 - image ID:
-  `sha256:6590f96619d8b85ac9215d5a32a8e0b0e4046dea126f670dac108d7fed5141ca`;
-- source commit: `c0d969bec6f558de61f2dbdd277528dc53a8d7e1`;
+  `sha256:d0dbfd93e1055d7502cce16718698831595fd1340873398218fb3a22fb0eefc7`;
+- source commit: `cfc1bc9d70e3d44b627cc3cffffe278de70e11c7`;
 - release directory:
-  `/var/www/fantasy-scout-releases/20260717T070721Z-beta36-c0d969b-green-main`;
+  `/var/www/fantasy-scout-releases/20260717T093041Z-beta38-cfc1bc9-green-main`;
 - active container ID:
-  `16398e4b3103a2408b67414ced74e2df28d2ce72bb3f64d2b375afc5b90c6f94`;
+  `815ae6085d78e7b4887b4c012a27f21bc57de31a8e639541b0e4fcfacd5064c8`;
 - state after rollout: `running`, `healthy`, restart count `0`;
-- stopped immediate rollback container is exact bounded-log beta33:
+- stopped immediate rollback container is exact bounded-log beta36:
+  `fantasy-scout-web-beta36-rollback-pre-beta38-20260717T093041Z`
+  (container ID
+  `16398e4b3103a2408b67414ced74e2df28d2ce72bb3f64d2b375afc5b90c6f94`,
+  state `exited`);
+- preserved older rollback is exact bounded-log beta33:
   `fantasy-scout-web-beta33-rollback-pre-beta36-20260717T070721Z`
   (container ID
   `c2cea7a73bcc53df5e352cce6c9baee4bc51b02f21f7c65d5c804083851b21dd`,
   state `created`);
-- retained historical pre-log-fix beta32 rollback:
-  `fantasy-scout-web-beta32-unbounded-log-rollback-20260716T144424Z`
-  (container ID
-  `2eb8efb7a82284f68f2701033c542fb9f2b1da5efc18c0141c38835226dcaf7c`);
-- older stopped beta31 rollback:
-  `fantasy-scout-web-beta31-rollback-20260716T143434Z` (image ID
-  `sha256:61d5c13fb55df2723da311fea40bf5a845e72f79798a7fb7518e10ef1565ed4a`);
 - external liveness and data-quality health both return HTTP 200;
 - applied Prisma state: 8 migrations, including
   `000008_beta_test_moderated_environment`; failed/rolled-back migrations: 0;
@@ -55,7 +53,7 @@ in this document:
   `fantasy-scout_fantasy-scout-postgres` volume; it is healthy with bounded
   `json-file` logs (`max-size=20m`, `max-file=5`), and the swap preserved
   8 applied migrations plus 10,972 `matches` rows;
-- `/var/www/fantasy-scout-current` points to the beta36 immutable release;
+- `/var/www/fantasy-scout-current` points to the beta38 immutable release;
 - verified pre-beta32 backup (custom format, checked with `pg_restore --list`):
   `/var/backups/fantasy-scout/fantasy_scout_pre_beta32_20260716T141021Z.dump`,
   50,259,500 bytes, SHA-256
@@ -76,6 +74,41 @@ does not copy log rotation. The first beta32 candidate inherited an empty
 `LogConfig.Config`; a second guarded swap recreated the same image with explicit
 `json-file`, `max-size=20m`, `max-file=5`. That incident remains the reason for
 the mandatory exact log-config guard.
+
+Container identity checks must use `docker container inspect`; image checks must
+use `docker image inspect`. Generic `docker inspect` is forbidden in a swap
+state machine because, while the active container name is temporarily free,
+Docker can resolve the same string as an image repository and return an image ID.
+Compare the full normalized `HostConfig`, healthcheck, entrypoint/cmd/user/
+working directory, mounts, networks/aliases and env before stopping active. The
+current symlink must be an exact symlink target and must be replaced atomically
+through a sibling link plus `mv -Tf`.
+
+Beta38 used archive SHA-256
+`adcdfedda301307200e10cc00e08abc4884e3dfd46c0e38510cea2e10363dd52`.
+The exact canary passed health, structured logs and coarse portrait/landscape UI
+checks, then was removed with port 3418 free. CI `29570144902` was green.
+
+The first beta38 promotion attempt stopped and renamed beta36, then the generic
+inspect ambiguity above made the guard see image ID
+`sha256:cd96403927bcf6fafc2766c6040c2b613285b3604cfd873e18efa1145f31fe7f`
+instead of an empty container slot. Rollback refused the unknown identity; exact
+beta36 was manually restored. This caused a temporary production interruption;
+its duration was not instrumented. No candidate process had started and the DB
+was not changed by that attempt. After typed lookup fixes and another P0–P2
+audit, the successful swap restored HTTP in 1.835 seconds.
+
+The successful promotion compared a 13-table critical-data digest before/after,
+not a whole-database byte hash. App, PostgreSQL and Caddy critical logs were 0;
+Caddy 5xx during the successful swap were 0. Production Browser Smoke
+`29573697960` passed 5 checks with 2 expected skips and uploaded artifact
+`8404162521`; exact QA cleanup returned users/squads/players/beta rows to
+`4|2|30|1|20`. Production Monitor `29573699815` had 0 critical failures but one
+warning: access audit `insufficient_data` with 14 eligible requests and 2×5xx
+before beta38. The workflow is green by design for warnings; do not call this a
+clean monitor pass.
+
+The following beta36 paragraph is historical release evidence.
 
 Beta36 used clean archive SHA-256
 `1661d4096e0749a71835309029b6187cd60d30caac1a8bff0a209ac0cb5900df`, one

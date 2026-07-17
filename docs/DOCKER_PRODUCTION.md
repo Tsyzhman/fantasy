@@ -15,24 +15,23 @@ the 15-minute aggregate audit, and GitHub issue alert delivery are described in
 ## Current verified release
 
 As of 2026-07-17, production runs
-`fantasy-scout-web:beta36-20260717T070721Z` from
-`/var/www/fantasy-scout-releases/20260717T070721Z-beta36-c0d969b-green-main`. Its exact
+`fantasy-scout-web:beta38-20260717T093041Z` from
+`/var/www/fantasy-scout-releases/20260717T093041Z-beta38-cfc1bc9-green-main`. Its exact
 image ID is
-`sha256:6590f96619d8b85ac9215d5a32a8e0b0e4046dea126f670dac108d7fed5141ca`
-and source commit is `c0d969bec6f558de61f2dbdd277528dc53a8d7e1`.
+`sha256:d0dbfd93e1055d7502cce16718698831595fd1340873398218fb3a22fb0eefc7`
+and source commit is `cfc1bc9d70e3d44b627cc3cffffe278de70e11c7`.
 Active container ID
-`16398e4b3103a2408b67414ced74e2df28d2ce72bb3f64d2b375afc5b90c6f94`
+`815ae6085d78e7b4887b4c012a27f21bc57de31a8e639541b0e4fcfacd5064c8`
 is healthy with zero restarts and explicit `json-file` rotation
 (`max-size=20m`, `max-file=5`). The stopped immediate rollback is exact
-bounded-log beta33
+bounded-log beta36
+`fantasy-scout-web-beta36-rollback-pre-beta38-20260717T093041Z`, container ID
+`16398e4b3103a2408b67414ced74e2df28d2ce72bb3f64d2b375afc5b90c6f94`
+in `exited` state. The older beta33 rollback remains preserved as
 `fantasy-scout-web-beta33-rollback-pre-beta36-20260717T070721Z`, container ID
 `c2cea7a73bcc53df5e352cce6c9baee4bc51b02f21f7c65d5c804083851b21dd`
 in `created` state.
-The older beta32 image before its log-config correction remains retained as
-`fantasy-scout-web-beta32-unbounded-log-rollback-20260716T144424Z`, container ID
-`2eb8efb7a82284f68f2701033c542fb9f2b1da5efc18c0141c38835226dcaf7c`.
-The older beta31 rollback `fantasy-scout-web-beta31-rollback-20260716T143434Z`
-is also retained. Both liveness and data-quality health return HTTP 200.
+Both liveness and data-quality health return HTTP 200.
 Production has 8/8 applied Prisma migrations, 0 failed/rolled-back migrations,
 and a passing persisted 380-match data-quality audit.
 PostgreSQL container ID
@@ -43,7 +42,7 @@ bounded `json-file` logging (`max-size=20m`, `max-file=5`). Its controlled
 recreation preserved 8 applied migrations and 10,972 `matches` rows; the web
 container and both public health endpoints recovered successfully before the
 old container was removed. The
-`/var/www/fantasy-scout-current` symlink points to the immutable beta36
+`/var/www/fantasy-scout-current` symlink points to the immutable beta38
 release.
 
 The verified pre-beta32 custom-format backup is
@@ -65,6 +64,41 @@ The normal release sequence is:
 7. stop/rename the active container, rename/start the candidate, poll both HTTP
    and Docker health, and automatically restore the previous container on any
    failure.
+
+All state-machine lookups must be namespace-explicit: use
+`docker container inspect` for containers, `docker image inspect` for images and
+`docker network inspect` for networks. Generic `docker inspect` can resolve a
+temporarily free container name as an image repository and must not be used.
+The rollback trap must cover HUP/INT/TERM, ignore repeated signals while
+recovering, verify exact IDs after every stop/rename/start, restore the old app
+before atomically changing the release symlink, and separately report a changed
+critical-table digest because image rollback cannot undo PostgreSQL writes.
+
+Beta38 used archive SHA-256
+`adcdfedda301307200e10cc00e08abc4884e3dfd46c0e38510cea2e10363dd52`.
+Canary ID `6863525f00aefe9db76224564b3c2953747501d9bcf2f00da57bd8b55c4a3997`
+used the exact image/revision on port 3418 with resource limits and disabled
+schedulers. It passed health, structured-log and portrait/landscape coarse-
+pointer checks; exact QA cleanup completed and the canary was removed.
+
+The first promotion attempt temporarily stopped production. A generic
+`docker inspect` interpreted the free active container name as a same-named
+image; the guard correctly refused that unknown ID but could not perform its
+intended restore. Exact beta36 was restored manually. The interruption duration
+was not instrumented. Candidate had not started, and no candidate DB write was
+possible. After typed lookup fixes and a clean P0–P2 re-audit, promotion restored
+HTTP in 1.835 seconds. The 13-table critical digest, 8/0 migration state and
+protected beta2 containers matched before/after; this digest is not a claim of
+whole-database byte identity.
+
+Production Browser Smoke `29573697960` passed 5 checks with 2 expected skips;
+artifact `8404162521` was uploaded and the temporary QA squad was removed. From
+the successful beta38 start through that workflow, 206 Caddy requests had 0×5xx
+and app/PostgreSQL/Caddy critical logs remained 0. Monitor `29573699815` had
+0 critical failures but one warning (`insufficient_data`, 14 eligible requests,
+2×5xx before beta38); green workflow status alone is not a clean monitor pass.
+
+The following beta36 notes are historical.
 
 The first beta32 swap restored loopback HTTP in 2.351 seconds. Inspection then
 showed that the manual candidate had inherited `json-file` with an empty config,

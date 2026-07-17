@@ -2,7 +2,62 @@
 
 Дата проверки: 2026-07-17.
 
-## Beta36 production acceptance 2026-07-17
+## Beta38 production acceptance 2026-07-17
+
+Production работает на образе
+`fantasy-scout-web:beta38-20260717T093041Z`, image ID
+`sha256:d0dbfd93e1055d7502cce16718698831595fd1340873398218fb3a22fb0eefc7`,
+source commit `cfc1bc9d70e3d44b627cc3cffffe278de70e11c7`. Активный container ID —
+`815ae6085d78e7b4887b4c012a27f21bc57de31a8e639541b0e4fcfacd5064c8`;
+состояние после production smoke — `running|healthy|0`.
+
+GitHub Actions Playwright workflow `29573697960`, привязанный к тому же exact
+`headSha`, прошёл: 1 auth setup и 4 browser-проверки passed, 2 проверки expected
+skipped. Artifact `8404162521` (`production-browser-smoke-29573697960`) содержит
+sanitized screenshots/report. Write-сценарий загрузил реальный EPL pool, построил
+валидный 15/15, сохранил вариант, подтвердил server `squadId` и удалил QA-копию.
+После cleanup: users 4, squads 2, squad players 30, beta runs 1, observations 20,
+`E2E optimized …` squads 0.
+
+Отдельная touch-эмуляция exact beta38 canary проверила portrait 390×844 и
+landscape 844×390 с `pointer:coarse`: page overflow 0, mobile pool видим,
+desktop table скрыта, 140 видимых player actions имеют минимум 44×44 px. Вместо
+нескольких мелких row-controls показывается одна кнопка `Actions`; bottom sheet
+имеет focus trap, Tab/Shift+Tab wrap, Escape, focus restore, body scroll lock и
+safe-area. Все 6 focusable controls — минимум 44 px; console errors — 0.
+Canary удалён, port 3418 освобождён. Это Chromium/Edge touch-эмуляция, не
+физический Safari iOS или Chrome Android.
+
+После старта beta38 отдельно проверены 206 Caddy requests, 0×5xx и 0 critical
+app/PostgreSQL/Caddy lines. Production Monitor `29573699815` имеет green
+workflow только по availability (`criticalFailures=0`), но не чистый monitor
+PASS: `warnings=1`, `alertRequired=true`. Его access snapshot —
+`insufficient_data`: 14 eligible requests и две `500 POST /` в 10:13 UTC, до
+старта beta38 в 10:29 UTC. Synthetic browser smoke не используется для закрытия
+real-user error-rate gate.
+
+Первая попытка promotion временно остановила production: generic
+`docker inspect` разрешил свободное container name как одноимённый image, и
+защита отказалась продолжать. Exact beta36 был восстановлен; длительность
+перерыва не была инструментирована. После замены всех lookups на
+`docker container inspect` и повторного независимого аудита beta38 успешно
+продвинута, HTTP восстановлен за 1,835 с.
+
+## Текущий итог
+
+Технический основной сценарий работает в production, а запрошенная чистка
+`/machete/squad` подтверждена на desktop/tablet/mobile и coarse portrait/
+landscape. Было: landscape touch мог вернуть широкую desktop table, а строки
+содержали несколько мелких действий. Стало: touch всегда использует cards и одну
+44 px кнопку `Actions` с доступным bottom sheet. Pending real-user run без
+moderator review больше не проходит human gate.
+
+Это не означает готовность полноценной beta: длительный real-user error rate и
+RUM не собраны, физические iOS/Android не проверены, тест минимум на 10 реальных
+пользователях не проведён. Официальные цены временно исключены владельцем
+продукта и не подменяются оценочными.
+
+## Историческая beta36 production acceptance 2026-07-17
 
 Production работает на образе
 `fantasy-scout-web:beta36-20260717T070721Z`, image ID
@@ -40,9 +95,9 @@ compose-config и ротированы production DB password, `DATABASE_URL` и
 новый active остался на том же exact beta36 image/revision, public health —
 HTTP 200.
 
-## Текущий итог
+## Исторический итог beta36
 
-Технический основной сценарий работает в production: beta36 повторно
+Технический основной сценарий работал в production beta36 и повторно
 подтвердила поиск реального игрока с прогнозом, переход в планировщик, загрузку
 пула, допустимый auto-pick 15/15, реальную transfer-рекомендацию,
 save/reload/restore и отсутствие browser client errors. Desktop, tablet и mobile

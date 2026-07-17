@@ -76,6 +76,19 @@ counter is an HTTP denominator, not proof of 234 people or even exclusively
 human traffic. Neither snapshot closes the long-running real-user error-rate
 gate.
 
+The beta38 production run `29573699815` is deliberately not recorded as a clean
+pass merely because GitHub marked the workflow green. It reported
+`criticalFailures=0`, `warnings=1`, and `alertRequired=true`. The served snapshot
+was `insufficient_data`: 14 eligible requests, 2 server errors (14.286%), and a
+45.411-minute observed span. The two errors were `500 POST /` at 10:13 UTC;
+beta38 started at 10:29 UTC, so they predate that release. From the successful
+beta38 start through authenticated browser smoke, the raw Caddy window contained
+206 requests and 0×5xx, while app/PostgreSQL/Caddy critical logs were 0. That raw
+window includes tagged synthetic traffic and deployment diagnostics, so it is
+release evidence only and cannot close the real-user error-rate gate. Do not
+manufacture eligible requests to clear the warning; wait for genuine beta
+traffic and let the scheduled audit update the issue.
+
 Install or update the server integration only after recording the exact current
 Caddyfile SHA-256:
 
