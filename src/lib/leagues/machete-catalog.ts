@@ -42,6 +42,7 @@ export const macheteLeagueCatalog: MacheteLeagueCatalogItem[] = [
   league("turkish-super-lig", "Super Lig", "Turkey", "TSL", "71"),
   league("turkish-1-lig", "1. Lig", "Turkey", "T1L", "165"),
   league("russian-premier-league", "Premier League", "Russia", "RPL", "63"),
+  league("russian-first-league", "1. Division", "Russia", "FNL", "338"),
   league("russian-cup", "Russian Cup", "Russia", "RC", "193"),
   league("belgian-first-division-a", "First Division A", "Belgium", "BEL1", "40"),
   league("belgian-first-division-b", "First Division B", "Belgium", "BEL2", "264"),

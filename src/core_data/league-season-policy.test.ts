@@ -101,10 +101,10 @@ test("quick current league backfill follows new season after summer rollover", (
 test("production ingestion excludes non-target leagues", () => {
   const enabledIds = new Set(enabledLeagueIngestionConfigs().map((league) => league.league_id));
 
-  assert.equal(leagueIngestionConfig.length, 81);
-  assert.equal(enabledIds.size, 43);
+  assert.equal(leagueIngestionConfig.length, 82);
+  assert.equal(enabledIds.size, 44);
 
-  for (const leagueId of [44, 47, 48, 50, 77, 86, 108, 110, 140, 146]) {
+  for (const leagueId of [44, 47, 48, 50, 77, 86, 108, 110, 140, 146, 338]) {
     assert.equal(enabledIds.has(leagueId), true);
   }
 

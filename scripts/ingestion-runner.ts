@@ -22,13 +22,15 @@ async function main() {
   try {
     if (command === "initial-backfill") {
       const mode = parseInitialBackfillMode(process.argv[3]);
-      const started = await start_initial_backfill(prisma, { startedByUserId: null, mode });
+      const targetLeagueIds = parseLeagueIds(process.argv[4]);
+      const started = await start_initial_backfill(prisma, { startedByUserId: null, mode, targetLeagueIds });
       console.info(`[ingestion:cli] ${started.started ? "Queued" : "Reusing active"} ${mode} initial backfill job ${started.job.id}.`);
       const result = await runIngestionWorkerTick(prisma);
       console.info(`[ingestion:cli] Finished runner for job ${result.job?.id ?? "none"} with status ${result.job?.status ?? "none"}.`);
     } else if (command === "queue-initial-backfill") {
       const mode = parseInitialBackfillMode(process.argv[3]);
-      const started = await start_initial_backfill(prisma, { startedByUserId: null, mode });
+      const targetLeagueIds = parseLeagueIds(process.argv[4]);
+      const started = await start_initial_backfill(prisma, { startedByUserId: null, mode, targetLeagueIds });
       console.info(`[ingestion:cli] ${started.started ? "Queued" : "Reusing active"} ${mode} initial backfill job ${started.job.id}.`);
     } else if (command === "incremental-update") {
       const targetLeagueIds = parseLeagueIds(process.argv[3]);

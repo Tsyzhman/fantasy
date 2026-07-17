@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  addPromotedTeamStrengthProfiles,
   buildFantasyForecastExplanation,
   buildPlannerRoundFixtures,
   buildTeamStrengthProfilesFromMatches,
@@ -12,6 +13,8 @@ import {
   fantasyPlannerSharedRowIdentity,
   fantasyTeamShortName,
   fantasyTeamShortNamesByTeamId,
+  fixtureDifficultyFromMultipliers,
+  fixtureStrengthProjection,
   loadFantasySquadPlannerData,
   normalizeFantasySquadName,
   projectFixtureFantasyPoints,
@@ -435,6 +438,53 @@ test("team strength gives recent xG more weight and shrinks it toward the league
   assert.ok(recentWeighted > 1.2, `expected six-match shrinkage to retain a team signal, received ${recentWeighted}`);
 });
 
+test("fixture strength is normalized against the league instead of the team's own level", () => {
+  const profiles = buildTeamStrengthProfilesFromMatches([
+    strengthMatch("10", "20", 0.8, 2.0),
+    strengthMatch("20", "10", 2.0, 0.8),
+    strengthMatch("30", "40", 1.8, 0.7),
+    strengthMatch("40", "30", 0.7, 1.8)
+  ]);
+
+  const weakDefenseAgainstStrongAttack = fixtureStrengthProjection(
+    { teamId: "10", opponentTeamId: "20", side: "H" },
+    profiles
+  );
+  const strongDefenseAgainstWeakAttack = fixtureStrengthProjection(
+    { teamId: "30", opponentTeamId: "40", side: "H" },
+    profiles
+  );
+
+  assert.ok((weakDefenseAgainstStrongAttack.defenseMultiplier ?? 1) < 1);
+  assert.ok((strongDefenseAgainstWeakAttack.defenseMultiplier ?? 1) > 1);
+});
+
+test("fixture difficulty keeps easy fixtures green-side and hard fixtures red-side", () => {
+  assert.equal(fixtureDifficultyFromMultipliers({ attackMultiplier: 1.25, defenseMultiplier: 1.25, side: "A" }, "MID"), 1);
+  assert.equal(fixtureDifficultyFromMultipliers({ attackMultiplier: 0.75, defenseMultiplier: 0.75, side: "H" }, "MID"), 5);
+});
+
+test("promoted teams use compressed lower-league strength without overriding top-flight evidence", () => {
+  const topLeague = buildTeamStrengthProfilesFromMatches([
+    strengthMatch("10", "20", 1.5, 1.5),
+    strengthMatch("20", "10", 1.5, 1.5)
+  ]);
+  const feederLeague = buildTeamStrengthProfilesFromMatches([
+    strengthMatch("30", "40", 2.2, 0.6),
+    strengthMatch("30", "50", 2.0, 0.8),
+    strengthMatch("40", "50", 1.0, 1.0),
+    strengthMatch("10", "50", 2.4, 0.5)
+  ]);
+  const merged = addPromotedTeamStrengthProfiles(topLeague, feederLeague);
+  const promoted = merged.byTeamId.get("30")?.overall;
+  const weakerFeederTeam = merged.byTeamId.get("40")?.overall;
+
+  assert.ok(promoted);
+  assert.ok((promoted.xgForPerMatch ?? 0) > (weakerFeederTeam?.xgForPerMatch ?? 0));
+  assert.ok((promoted.xgForPerMatch ?? Infinity) < (feederLeague.byTeamId.get("30")?.overall.xgForPerMatch ?? 0));
+  assert.deepEqual(merged.byTeamId.get("10"), topLeague.byTeamId.get("10"));
+});
+
 test("fixture projection weights opponent difficulty by fantasy position", () => {
   const homeOnly = projectFixtureFantasyPoints(10, "FWD", {
     side: "H",
@@ -544,6 +594,18 @@ function match(input: {
     awayTeamName: `Away ${input.awayTeamId}`,
     finished: false,
     cancelled: false
+  };
+}
+
+function strengthMatch(homeTeamId: string, awayTeamId: string, homeXg: number, awayXg: number) {
+  return {
+    homeTeamId,
+    awayTeamId,
+    matchDate: "2025-05-01T12:00:00.000Z",
+    teamStats: [
+      { teamId: homeTeamId, isHome: true, xg: homeXg },
+      { teamId: awayTeamId, isHome: false, xg: awayXg }
+    ]
   };
 }
 

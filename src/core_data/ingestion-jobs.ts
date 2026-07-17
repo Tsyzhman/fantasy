@@ -68,7 +68,7 @@ export async function getIngestionAdminStatus(prisma: PrismaClient) {
       orderBy: { updatedAt: "desc" }
     })
   ]);
-  const latestInitialBackfill = latestCompletedInitialBackfills.find((job) => backfillModeFromMetadata(job.metadata) === "full") ?? null;
+  const latestInitialBackfill = latestCompletedInitialBackfills.find((job) => isCompleteFullBackfill(job.metadata)) ?? null;
   const configs = enabledLeagueIngestionConfigs();
   const initialScopes = await scopesForInitialBackfillMode(prisma, "full");
 
@@ -90,7 +90,8 @@ export async function getIngestionAdminStatus(prisma: PrismaClient) {
 
 export async function start_initial_backfill(prisma: PrismaClient, input: StartJobInput) {
   const mode = input.mode ?? "full";
-  const scopes = await scopesForInitialBackfillMode(prisma, mode);
+  const targetLeagueIds = normalizeTargetLeagueIds(input.targetLeagueIds);
+  const scopes = await scopesForInitialBackfillMode(prisma, mode, targetLeagueIds);
   const result = await createLockedJob(prisma, {
     jobType: "initial_backfill",
     data: {
@@ -101,6 +102,7 @@ export async function start_initial_backfill(prisma: PrismaClient, input: StartJ
       totalScopes: scopes.length,
       metadata: jsonValue({
         backfill_mode: mode,
+        ...(targetLeagueIds ? { target_league_ids: targetLeagueIds } : {}),
         start_seasons: {
           season_window: mode === "current_league_47" ? 1 : INITIAL_BACKFILL_SEASON_WINDOW,
           mode: mode === "current_league_47" ? "current_league_47_current_season" : "last_n_seasons",
@@ -122,7 +124,7 @@ export async function run_incremental_update(prisma: PrismaClient, input: StartJ
     orderBy: { finishedAt: "desc" },
     take: 100
   });
-  const completedInitialBackfill = completedInitialBackfills.find((job) => backfillModeFromMetadata(job.metadata) === "full") ?? null;
+  const completedInitialBackfill = completedInitialBackfills.find((job) => isCompleteFullBackfill(job.metadata)) ?? null;
   if (!completedInitialBackfill) {
     throw new Error("Initial backfill must complete before incremental updates.");
   }
@@ -557,18 +559,38 @@ async function runningJob(prisma: PrismaClient) {
 }
 
 async function scopesForJob(prisma: PrismaClient, job: IngestionJob, client: FotMobClient) {
-  if (job.jobType === "initial_backfill") return scopesForInitialBackfillMode(prisma, backfillModeFromMetadata(job.metadata));
+  if (job.jobType === "initial_backfill") {
+    return scopesForInitialBackfillMode(prisma, backfillModeFromMetadata(job.metadata), initialBackfillTargetLeagueIds(job.metadata));
+  }
   if (job.jobType === "incremental_update") return buildIncrementalScopes(prisma, client, incrementalTargetLeagueIds(job.metadata));
   throw new Error(`Unsupported ingestion job type: ${job.jobType}`);
 }
 
-async function scopesForInitialBackfillMode(prisma: PrismaClient, mode: InitialBackfillMode) {
-  const baseScopes = mode === "current_league_47" ? scopesForCurrentSeasonLeagueBackfill(47) : scopesForInitialBackfill();
+async function scopesForInitialBackfillMode(prisma: PrismaClient, mode: InitialBackfillMode, targetLeagueIds?: readonly number[]) {
+  if (mode === "current_league_47" && targetLeagueIds) throw new Error("Target league ids require full initial-backfill mode.");
+  const configs = targetLeagueIds
+    ? enabledLeagueIngestionConfigs().filter((config) => targetLeagueIds.includes(config.league_id))
+    : undefined;
+  if (targetLeagueIds && configs?.length !== targetLeagueIds.length) {
+    const configured = new Set(configs?.map((config) => config.league_id) ?? []);
+    const missing = targetLeagueIds.filter((leagueId) => !configured.has(leagueId));
+    throw new Error(`Initial backfill target contains disabled or unknown league ids: ${missing.join(", ")}.`);
+  }
+  const baseScopes = mode === "current_league_47" ? scopesForCurrentSeasonLeagueBackfill(47) : scopesForInitialBackfill(configs);
   return expandScopesWithAliases(baseScopes, await loadLeagueAliases(prisma));
+}
+
+function initialBackfillTargetLeagueIds(metadataValue: unknown) {
+  const value = metadataRecord(metadataValue).target_league_ids;
+  return Array.isArray(value) ? normalizeTargetLeagueIds(value.map(Number)) : undefined;
 }
 
 function backfillModeFromMetadata(metadataValue: unknown): InitialBackfillMode {
   return metadataRecord(metadataValue).backfill_mode === "current_league_47" ? "current_league_47" : "full";
+}
+
+function isCompleteFullBackfill(metadataValue: unknown) {
+  return backfillModeFromMetadata(metadataValue) === "full" && initialBackfillTargetLeagueIds(metadataValue) === undefined;
 }
 
 function canCurrentWorkerRunJob(_job: IngestionJob, _input: RunJobInput) {

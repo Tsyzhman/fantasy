@@ -190,6 +190,10 @@ const defaultTeamXgPerMatch = 1.25;
 const teamStrengthHalfLifeDays = 180;
 const teamStrengthOverallPriorMatches = 6;
 const teamStrengthVenuePriorMatches = 8;
+const promotedTeamPriorMatches = 8;
+const promotedTeamStrengthFactor = 0.85;
+const promotedTeamRatioExponent = 0.6;
+const teamStrengthFeederLeagueByTopLeague = new Map<string, bigint>([["63", 338n]]);
 const fantasyPlayerPoolCacheTtlMs = 30_000;
 const fantasyPlayerPoolCache = new ExpiringPromiseCache<string, FantasyPlannerPlayer[]>(20);
 export const maxFantasySquadNameLength = 80;
@@ -933,7 +937,7 @@ export function projectFixtureFantasyPoints(
   return basePoints * fixtureMultiplier(fixture, positionGroup);
 }
 
-function fixtureDifficultyFromMultipliers(
+export function fixtureDifficultyFromMultipliers(
   fixture: Pick<PlannerFixture, "attackMultiplier" | "defenseMultiplier" | "side">,
   positionGroup: FantasyPositionGroup
 ): number | null {
@@ -1026,7 +1030,7 @@ function applyFixtureStrength(fixtures: PlannerRoundFixtures, profiles: TeamStre
   return fixtures;
 }
 
-function fixtureStrengthProjection(
+export function fixtureStrengthProjection(
   fixture: Pick<PlannerFixture, "teamId" | "opponentTeamId" | "side">,
   profiles: TeamStrengthProfiles
 ) {
@@ -1036,12 +1040,12 @@ function fixtureStrengthProjection(
   const opponentProfile = fixture.opponentTeamId ? profiles.byTeamId.get(fixture.opponentTeamId) : undefined;
   const own = strengthBlockForSide(teamProfile, side, profiles.league);
   const opponent = strengthBlockForSide(opponentProfile, opponentSide, profiles.league);
-  const ownOverall = strengthBlockForSide(teamProfile, null, profiles.league);
+  const leagueSide = strengthBlockForSide(undefined, side, profiles.league);
 
   const projectedXg = averageKnown([own.xgForPerMatch, opponent.xgAgainstPerMatch]);
   const projectedXga = averageKnown([own.xgAgainstPerMatch, opponent.xgForPerMatch]);
-  const attackBase = own.xgForPerMatch ?? ownOverall.xgForPerMatch ?? profiles.league.overall.xgForPerMatch ?? defaultTeamXgPerMatch;
-  const defenseBase = own.xgAgainstPerMatch ?? ownOverall.xgAgainstPerMatch ?? profiles.league.overall.xgAgainstPerMatch ?? defaultTeamXgPerMatch;
+  const attackBase = leagueSide.xgForPerMatch ?? profiles.league.overall.xgForPerMatch ?? defaultTeamXgPerMatch;
+  const defenseBase = leagueSide.xgAgainstPerMatch ?? profiles.league.overall.xgAgainstPerMatch ?? defaultTeamXgPerMatch;
 
   return {
     projectedXg,
@@ -1052,6 +1056,18 @@ function fixtureStrengthProjection(
 }
 
 async function loadTeamStrengthProfiles(prisma: PrismaClient, leagueId: bigint) {
+  const feederLeagueId = teamStrengthFeederLeagueByTopLeague.get(String(leagueId));
+  const [matches, feederMatches] = await Promise.all([
+    loadTeamStrengthMatches(prisma, leagueId),
+    feederLeagueId ? loadTeamStrengthMatches(prisma, feederLeagueId) : Promise.resolve([])
+  ]);
+  const profiles = buildTeamStrengthProfilesFromMatches(matches);
+  if (!feederLeagueId || feederMatches.length === 0) return profiles;
+
+  return addPromotedTeamStrengthProfiles(profiles, buildTeamStrengthProfilesFromMatches(feederMatches));
+}
+
+async function loadTeamStrengthMatches(prisma: PrismaClient, leagueId: bigint): Promise<TeamStrengthMatchInput[]> {
   const matches = await prisma.coreMatch.findMany({
     where: {
       leagueId,
@@ -1063,6 +1079,8 @@ async function loadTeamStrengthProfiles(prisma: PrismaClient, leagueId: bigint) 
     select: {
       homeTeamId: true,
       awayTeamId: true,
+      homeScore: true,
+      awayScore: true,
       matchDate: true,
       teamStats: {
         select: {
@@ -1076,20 +1094,27 @@ async function loadTeamStrengthProfiles(prisma: PrismaClient, leagueId: bigint) 
     }
   });
 
-  return buildTeamStrengthProfilesFromMatches(
-    matches.map((match) => ({
+  return matches.map((match) => {
+    const parsedTeamStats = match.teamStats.map((stat) => ({
+      teamId: String(stat.teamId),
+      opponentTeamId: stringifyBigInt(stat.opponentTeamId),
+      isHome: stat.isHome,
+      xg: stat.xg,
+      goals: stat.goals
+    }));
+    const scoreTeamStats = parsedTeamStats.length === 0 && match.homeTeamId && match.awayTeamId && match.homeScore !== null && match.awayScore !== null
+      ? [
+          { teamId: String(match.homeTeamId), opponentTeamId: String(match.awayTeamId), isHome: true, xg: null, goals: match.homeScore },
+          { teamId: String(match.awayTeamId), opponentTeamId: String(match.homeTeamId), isHome: false, xg: null, goals: match.awayScore }
+        ]
+      : parsedTeamStats;
+    return {
       homeTeamId: stringifyBigInt(match.homeTeamId),
       awayTeamId: stringifyBigInt(match.awayTeamId),
       matchDate: match.matchDate,
-      teamStats: match.teamStats.map((stat) => ({
-        teamId: String(stat.teamId),
-        opponentTeamId: stringifyBigInt(stat.opponentTeamId),
-        isHome: stat.isHome,
-        xg: stat.xg,
-        goals: stat.goals
-      }))
-    }))
-  );
+      teamStats: scoreTeamStats
+    };
+  });
 }
 
 export async function loadSportsRuFantasyPositionsByPlayerId(
@@ -1369,6 +1394,42 @@ function profileFromSamples(samples: TeamStrengthSample[], leaguePrior?: TeamStr
     ),
     overall
   };
+}
+
+export function addPromotedTeamStrengthProfiles(topLeague: TeamStrengthProfiles, feederLeague: TeamStrengthProfiles): TeamStrengthProfiles {
+  const byTeamId = new Map(topLeague.byTeamId);
+  for (const [teamId, feederProfile] of feederLeague.byTeamId) {
+    if (byTeamId.has(teamId) || !hasStrengthSignal(feederProfile.overall)) continue;
+    byTeamId.set(teamId, {
+      home: promotedStrengthBlock(feederProfile.home, feederLeague.league.home, topLeague.league.home),
+      away: promotedStrengthBlock(feederProfile.away, feederLeague.league.away, topLeague.league.away),
+      overall: promotedStrengthBlock(feederProfile.overall, feederLeague.league.overall, topLeague.league.overall)
+    });
+  }
+  return { byTeamId, league: topLeague.league };
+}
+
+function promotedStrengthBlock(source: TeamStrengthBlock, feederAverage: TeamStrengthBlock, topAverage: TeamStrengthBlock): TeamStrengthBlock {
+  const attackRatio = strengthRatio(source.xgForPerMatch, feederAverage.xgForPerMatch);
+  const defenseRatio = strengthRatio(feederAverage.xgAgainstPerMatch, source.xgAgainstPerMatch);
+  const adjustedAttack = promotedStrengthRatio(attackRatio, source.matches);
+  const adjustedDefense = promotedStrengthRatio(defenseRatio, source.matches);
+  return {
+    matches: source.matches,
+    xgForPerMatch: (topAverage.xgForPerMatch ?? defaultTeamXgPerMatch) * adjustedAttack,
+    xgAgainstPerMatch: (topAverage.xgAgainstPerMatch ?? defaultTeamXgPerMatch) / adjustedDefense
+  };
+}
+
+function promotedStrengthRatio(ratio: number, matches: number) {
+  const sampleMatches = Math.max(0, matches);
+  const shrunkRatio = (sampleMatches * ratio + promotedTeamPriorMatches) / (sampleMatches + promotedTeamPriorMatches);
+  return promotedTeamStrengthFactor * shrunkRatio ** promotedTeamRatioExponent;
+}
+
+function strengthRatio(numerator: number | null, denominator: number | null) {
+  if (numerator === null || denominator === null || denominator <= 0) return 1;
+  return clamp(numerator / denominator, 0.5, 2);
 }
 
 function strengthBlock(samples: TeamStrengthSample[], prior?: TeamStrengthBlock, priorMatches = 0): TeamStrengthBlock {
