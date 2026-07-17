@@ -1,8 +1,9 @@
 "use client";
 
-import { Check, Copy, Crown, FilePlus2, Layers3, ListChecks, Lock, Plus, Save, Search, Sparkles, Star, Trash2, Unlock, Users } from "lucide-react";
+import { Check, Copy, Crown, FilePlus2, Layers3, ListChecks, Lock, MoreHorizontal, Plus, Save, Search, Sparkles, Star, Trash2, Unlock, Users, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type DragEvent, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { createPortal } from "react-dom";
 
 import { I18nText } from "@/components/i18n-text";
 import { LocalizedOption, localizedText, useLanguage } from "@/components/localized-option";
@@ -1109,10 +1110,10 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                   onChange={(event) => setQuery(event.target.value)}
                   placeholder={localizedText(language, "Search player or team", "Игрок или команда")}
                   aria-label={localizedText(language, "Search player or team", "Поиск игрока или команды")}
-                  className="w-full rounded border border-slate-200 py-2 pl-9 pr-3 text-xs"
+                  className="w-full rounded border border-slate-200 py-2 pl-9 pr-3 text-xs [@media(pointer:coarse)]:text-base"
                 />
               </label>
-              <select value={positionFilter} onChange={(event) => setPositionFilter(event.target.value)} aria-label={localizedText(language, "Position filter", "Фильтр позиции")} className="rounded border border-slate-200 px-3 py-2 text-xs">
+              <select value={positionFilter} onChange={(event) => setPositionFilter(event.target.value)} aria-label={localizedText(language, "Position filter", "Фильтр позиции")} className="rounded border border-slate-200 px-3 py-2 text-xs [@media(pointer:coarse)]:text-base">
                 <option value="ALL">{localizedText(language, "All positions", "Все позиции")}</option>
                 {positionOrder.map((position) => (
                   <option key={position} value={position}>
@@ -1120,7 +1121,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                   </option>
                 ))}
               </select>
-              <select value={starterPoolFilter} onChange={(event) => setStarterPoolFilter(event.target.value)} aria-label={localizedText(language, "Starter pool filter", "Фильтр старта")} className="rounded border border-slate-200 px-3 py-2 text-xs">
+              <select value={starterPoolFilter} onChange={(event) => setStarterPoolFilter(event.target.value)} aria-label={localizedText(language, "Starter pool filter", "Фильтр старта")} className="rounded border border-slate-200 px-3 py-2 text-xs [@media(pointer:coarse)]:text-base">
                 <option value="ALL">{localizedText(language, "All players", "Все игроки")}</option>
                 <option value="STARTER">{localizedText(language, "In starting XI", "В старте")}</option>
                 <option value="BENCH">{localizedText(language, "On bench", "На скамейке")}</option>
@@ -1465,7 +1466,7 @@ function PlayerPoolMobileList({
                 ) : null}
               </div>
               {isSelected ? (
-                <button type="button" onClick={() => onRemove(player.playerId)} aria-label={removeLabel} className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded border border-rose-200 bg-white text-rose-700 hover:bg-rose-50">
+                <button type="button" onClick={() => onRemove(player.playerId)} aria-label={removeLabel} className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded border border-rose-200 bg-white text-rose-700 hover:bg-rose-50">
                   <Trash2 className="h-4 w-4" />
                 </button>
               ) : (
@@ -1474,7 +1475,7 @@ function PlayerPoolMobileList({
                   onClick={() => onAdd(player)}
                   disabled={disabled}
                   aria-label={addLabel}
-                  className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
+                  className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
                 >
                   {disabled ? <Lock className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
                 </button>
@@ -1604,32 +1605,6 @@ function readDraggedPlayerId(event: DragEvent<HTMLElement>) {
   return event.dataTransfer.getData(squadDragDataType) || event.dataTransfer.getData("text/plain") || null;
 }
 
-function SquadActionLegend() {
-  const language = useLanguage();
-  const itemClassName = "inline-flex items-center gap-1.5 rounded border border-white/15 bg-white/10 px-2 py-1";
-  return (
-    <div className="mb-2 grid grid-cols-2 gap-1.5 text-[11px] font-semibold text-white/85 sm:hidden" role="group" aria-label={localizedText(language, "Actions", "Действия")}>
-      <span className={itemClassName}>
-        <Star className="h-3 w-3" />
-        <I18nText en="XI / bench" ru="Старт / скамейка" />
-      </span>
-      <span className={itemClassName}>
-        <Crown className="h-3 w-3" />
-        <I18nText en="Captain" ru="Капитан" />
-      </span>
-      <span className={itemClassName}>
-        <span className="text-[9px] font-black">VC</span>
-        <I18nText en="Vice" ru="Вице" />
-      </span>
-      <span className={itemClassName}>
-        <Lock className="h-3 w-3" />
-        <Trash2 className="h-3 w-3" />
-        <I18nText en="Lock / remove" ru="Лок / удалить" />
-      </span>
-    </div>
-  );
-}
-
 function SquadPitch({
   summary,
   rules,
@@ -1680,7 +1655,6 @@ function SquadPitch({
         <div className="mb-2">
           <h4 className="text-xs font-bold uppercase tracking-wide text-white"><I18nText en="Starting XI" ru="Стартовый состав" /></h4>
         </div>
-        <SquadActionLegend />
         <div className="relative overflow-hidden rounded border border-white/20 bg-emerald-800/80 px-1.5 py-2">
           <div className="pointer-events-none absolute inset-x-3 top-1/2 border-t border-white/15" />
           <div className="pointer-events-none absolute left-1/2 top-1/2 h-16 w-16 -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/15" />
@@ -1907,6 +1881,10 @@ function SquadPlayerTile({
   onDragStart: (playerId: string) => void;
   onDragEnd: () => void;
 }) {
+  const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
+  const mobileActionsTriggerRef = useRef<HTMLButtonElement>(null);
+  const mobileActionsCloseRef = useRef<HTMLButtonElement>(null);
+  const mobileActionsDialogRef = useRef<HTMLDivElement>(null);
   const fixtureChips = player.fixtures
     .slice(0, Math.min(horizon, 3))
     .map((label, idx) => ({ label, difficulty: player.fixtureDifficulties?.[idx] ?? null }))
@@ -1929,7 +1907,51 @@ function SquadPlayerTile({
     ? localizedText(language, "Unlock player", "Разблокировать игрока")
     : localizedText(language, "Lock player", "Заблокировать игрока");
   const removeActionLabel = localizedText(language, `Remove ${player.name}`, `Удалить ${player.name}`);
+  const closeActionsLabel = localizedText(language, "Close player actions", "Закрыть действия игрока");
+  const mobileActionsLabel = localizedText(language, `Actions for ${player.name}`, `Действия: ${player.name}`);
+  const mobileActionsTitleId = `mobile-player-actions-${player.playerId}`;
+  const runMobileAction = (action: () => void) => {
+    setMobileActionsOpen(false);
+    action();
+  };
+
+  useEffect(() => {
+    if (!mobileActionsOpen) return;
+    const trigger = mobileActionsTriggerRef.current;
+    const previousBodyOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const focusFrame = window.requestAnimationFrame(() => mobileActionsCloseRef.current?.focus());
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        setMobileActionsOpen(false);
+        return;
+      }
+      if (event.key !== "Tab") return;
+      const focusable = [...(mobileActionsDialogRef.current?.querySelectorAll<HTMLButtonElement>("button:not([disabled])") ?? [])]
+        .filter((element) => element.tabIndex >= 0);
+      const first = focusable[0];
+      const last = focusable.at(-1);
+      if (!first || !last) return;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.cancelAnimationFrame(focusFrame);
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = previousBodyOverflow;
+      trigger?.focus();
+    };
+  }, [mobileActionsOpen]);
+
   return (
+    <>
     <div
       draggable={Boolean(selection)}
       onDragStart={(event) => {
@@ -1975,7 +1997,17 @@ function SquadPlayerTile({
           <FdrRow fixtures={fixtureChips} />
         </div>
       ) : null}
-      <div className="mt-1 flex justify-center gap-0.5">
+      <button
+        ref={mobileActionsTriggerRef}
+        type="button"
+        onClick={() => setMobileActionsOpen(true)}
+        className="mt-1 hidden min-h-11 w-full items-center justify-center gap-1 rounded border border-slate-200 text-slate-700 hover:bg-slate-50 [@media(pointer:coarse)]:inline-flex"
+        aria-label={mobileActionsLabel}
+      >
+        <MoreHorizontal className="h-5 w-5" />
+        <span className="text-[11px] font-semibold"><I18nText en="Actions" ru="Действия" /></span>
+      </button>
+      <div className="mt-1 flex justify-center gap-0.5 [@media(pointer:coarse)]:hidden">
         <button
           type="button"
           onClick={() => onToggleStarter(player.playerId)}
@@ -2029,6 +2061,48 @@ function SquadPlayerTile({
         </button>
       </div>
     </div>
+    {mobileActionsOpen && typeof document !== "undefined"
+      ? createPortal(
+          <div ref={mobileActionsDialogRef} className="fixed inset-0 z-[80]" role="dialog" aria-modal="true" aria-labelledby={mobileActionsTitleId}>
+            <button type="button" tabIndex={-1} onClick={() => setMobileActionsOpen(false)} className="absolute inset-0 bg-slate-950/55" aria-label={closeActionsLabel} />
+            <section className="absolute inset-x-0 bottom-0 max-h-[calc(100vh-1rem)] overflow-y-auto overscroll-contain rounded-t-2xl bg-white px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 text-left shadow-2xl [@supports(height:100dvh)]:max-h-[calc(100dvh-1rem)]">
+              <div className="mb-3 flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500"><I18nText en="Player actions" ru="Действия игрока" /></p>
+                  <h5 id={mobileActionsTitleId} className="truncate text-base font-bold text-ink">{player.name}</h5>
+                </div>
+                <button ref={mobileActionsCloseRef} type="button" onClick={() => setMobileActionsOpen(false)} className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded border border-slate-200" aria-label={closeActionsLabel}>
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="grid gap-2">
+                <button type="button" onClick={() => runMobileAction(() => onToggleStarter(player.playerId))} className="flex min-h-11 items-center gap-3 rounded border border-slate-200 px-4 py-2 font-semibold text-slate-800">
+                  <Star className={cn("h-5 w-5", selection?.isStarter && "fill-current text-amber-600")} />
+                  {starterActionLabel}
+                </button>
+                <button type="button" onClick={() => runMobileAction(() => onToggleCaptain(player.playerId))} className="flex min-h-11 items-center gap-3 rounded border border-slate-200 px-4 py-2 font-semibold text-slate-800">
+                  <Crown className={cn("h-5 w-5", isCaptain && "fill-current text-amber-600")} />
+                  {captainActionLabel}
+                </button>
+                <button type="button" onClick={() => runMobileAction(() => onToggleVice(player.playerId))} className="flex min-h-11 items-center gap-3 rounded border border-slate-200 px-4 py-2 font-semibold text-slate-800">
+                  <span className="inline-flex h-5 w-5 items-center justify-center text-xs font-black">VC</span>
+                  {viceActionLabel}
+                </button>
+                <button type="button" onClick={() => runMobileAction(() => onToggleLock(player.playerId))} className="flex min-h-11 items-center gap-3 rounded border border-slate-200 px-4 py-2 font-semibold text-slate-800">
+                  {selection?.isLocked ? <Unlock className="h-5 w-5" /> : <Lock className="h-5 w-5" />}
+                  {lockActionLabel}
+                </button>
+                <button type="button" onClick={() => runMobileAction(() => onRemove(player.playerId))} className="flex min-h-11 items-center gap-3 rounded border border-rose-200 px-4 py-2 font-semibold text-rose-700">
+                  <Trash2 className="h-5 w-5" />
+                  {removeActionLabel}
+                </button>
+              </div>
+            </section>
+          </div>,
+          document.body
+        )
+      : null}
+    </>
   );
 }
 

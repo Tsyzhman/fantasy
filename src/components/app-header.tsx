@@ -103,7 +103,7 @@ export function AppHeader({ user }: AppHeaderProps) {
           }}
           className={cn(
             mobileMenuOpen ? "grid" : "hidden",
-            "absolute right-4 top-full z-30 mt-1 max-h-[calc(100vh-5rem)] w-[min(21rem,calc(100vw-2rem))] grid-cols-1 gap-1 overflow-y-auto rounded border border-slate-200 bg-white p-2 text-sm font-medium text-slate-600 shadow-xl sm:right-6 sm:grid-cols-2 [&_a]:justify-start [&_button]:justify-start",
+            "absolute right-4 top-full z-30 mt-1 max-h-[calc(100vh-5rem)] w-[min(21rem,calc(100vw-2rem))] grid-cols-1 gap-1 overflow-y-auto rounded border border-slate-200 bg-white p-2 text-sm font-medium text-slate-600 shadow-xl [@supports(height:100dvh)]:max-h-[calc(100dvh-5rem)] sm:right-6 sm:grid-cols-2 [&_a]:justify-start [&_button]:justify-start",
             "xl:static xl:mt-0 xl:flex xl:max-h-none xl:w-auto xl:flex-wrap xl:items-center xl:justify-end xl:overflow-visible xl:border-0 xl:bg-transparent xl:p-0 xl:shadow-none"
           )}
         >

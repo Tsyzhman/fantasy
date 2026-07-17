@@ -156,6 +156,17 @@ test("synthetic, invalid, and unreviewed runs never satisfy the participant gate
   assert.equal(report.gate.passed, false);
 });
 
+test("pending real attempts keep an otherwise passing beta gate closed", () => {
+  const passingRuns = Array.from({ length: 10 }, (_, index) => makeRun(index + 300));
+  const pending = makeRun(399, { valid: null });
+  const report = buildBetaUserTestReport([...passingRuns, pending]);
+
+  assert.equal(report.participants, 10);
+  assert.equal(report.pendingReviewRuns, 1);
+  assert.equal(report.gate.passed, false);
+  assert.match(report.gate.violations.join(" "), /awaiting moderator review/);
+});
+
 test("invalid attempts remain auditable with environment, reason, and technical evidence", () => {
   const report = buildBetaUserTestReport([
     makeRun(45, { valid: false, moderatedEnvironment: "ANDROID_CHROME_PHYSICAL" })

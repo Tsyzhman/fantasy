@@ -113,7 +113,7 @@ export function BetaTelemetryReporter() {
   }
 
   return (
-    <aside className="fixed bottom-3 left-3 right-3 z-50 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-emerald-300 bg-emerald-950 px-4 py-3 text-sm text-white shadow-xl sm:left-auto sm:max-w-lg" aria-labelledby="beta-telemetry-status">
+    <aside className="fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom))] left-[calc(0.75rem+env(safe-area-inset-left))] right-[calc(0.75rem+env(safe-area-inset-right))] z-50 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-emerald-300 bg-emerald-950 px-4 py-3 text-sm text-white shadow-xl sm:left-auto sm:max-w-lg" aria-labelledby="beta-telemetry-status">
       <div role="status" aria-live="polite">
         <p id="beta-telemetry-status" className="font-semibold">
           <I18nText
@@ -126,7 +126,7 @@ export function BetaTelemetryReporter() {
         </p>
       </div>
       <div className="flex flex-col items-stretch gap-2 sm:items-end">
-        <button type="button" disabled={ending} onClick={() => void endRun()} className="rounded border border-emerald-200 px-3 py-2 text-xs font-semibold hover:bg-emerald-900 disabled:cursor-wait disabled:opacity-60">
+        <button type="button" disabled={ending} onClick={() => void endRun()} className="rounded border border-emerald-200 px-3 py-2 text-xs font-semibold hover:bg-emerald-900 disabled:cursor-wait disabled:opacity-60 [@media(pointer:coarse)]:min-h-11 [@media(pointer:coarse)]:text-sm">
           {ending
             ? <I18nText en="Sending..." ru="Отправляем..." />
             : completionReached

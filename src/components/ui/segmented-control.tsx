@@ -56,8 +56,10 @@ export function SegmentedControl<T extends string>({
               focusSegmentedOption(event, nextIndex);
             }}
             className={cn(
-              "inline-flex items-center justify-center rounded font-semibold transition",
-              size === "sm" ? "px-2 py-1 text-xs" : "px-3 py-1.5 text-sm",
+              "inline-flex items-center justify-center rounded font-semibold transition [@media(pointer:coarse)]:min-h-11",
+              size === "sm"
+                ? "px-2 py-1 text-xs [@media(pointer:coarse)]:py-2 [@media(pointer:coarse)]:text-sm"
+                : "px-3 py-1.5 text-sm [@media(pointer:coarse)]:py-2",
               active ? "bg-brand-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-50"
             )}
           >

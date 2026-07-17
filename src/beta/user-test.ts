@@ -272,6 +272,7 @@ export function buildBetaUserTestReport(runs: BetaTestRunForReport[]) {
   const webVitals = summarizeWebVitals(primaryRuns);
   const rum = summarizeRealBetaRum(realRuns);
   const violations: string[] = [];
+  if (pendingRuns.length > 0) violations.push(`${pendingRuns.length} real beta-test runs are still awaiting moderator review.`);
   if (participants < 10) violations.push(`Need at least 10 distinct valid participants; observed ${participants}.`);
   if (incompleteReviews > 0) violations.push(`${incompleteReviews} primary participant reviews are incomplete.`);
   if (completionRate === null || completionRate < 80) violations.push(`Independent completion rate must be at least 80%; observed ${formatRate(completionRate)}.`);

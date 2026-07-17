@@ -187,6 +187,7 @@ transfer_understanding_rate = understood_primary_runs / distinct_valid_participa
 Gate проходит, только если:
 
 - валидных участников не меньше 10;
+- нет реальных прогонов, ожидающих moderator review;
 - `completion_rate >= 80%`;
 - `forecast_found_rate >= 80%`;
 - `transfer_understanding_rate >= 70%`;
