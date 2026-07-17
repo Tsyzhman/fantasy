@@ -426,6 +426,18 @@ model BetaTestObservation {
   @@map("beta_test_observations")
 }
 
+model ClientCriticalErrorEvent {
+  id             BigInt   @id @default(autoincrement())
+  kind           String
+  routeGroup     String   @map("route_group")
+  occurredMinute DateTime @map("occurred_minute")
+  count          Int      @default(1)
+
+  @@unique([kind, routeGroup, occurredMinute])
+  @@index([occurredMinute])
+  @@map("client_critical_error_events")
+}
+
 model SavedFilter {
   id        String   @id @default(cuid())
   userId    String?

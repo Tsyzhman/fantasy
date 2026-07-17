@@ -12,6 +12,7 @@ import { requireCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { loadSharedLeagueOptions, loadSharedLeagueSeasonOptions, type SharedLeagueSeasonOption } from "@/machete/shared_read_model";
 import { loadFantasySquadPlannerData } from "@/machete/squad_planner";
+import { loadPlannerReadinessByScope, selectPlannerSeason, type PlannerReadiness } from "@/machete/planner_readiness";
 
 export const dynamic = "force-dynamic";
 
@@ -34,12 +35,13 @@ export default async function MacheteSquadPage({ searchParams }: PageProps) {
         ? String(leagues[0].leagueId)
         : "";
   const seasonsForSelectedLeague = selectedLeagueId ? leagueSeasonOptions.filter((league) => String(league.leagueId) === selectedLeagueId) : [];
-  const selectedSeason = selectedSeasonValue(params.season, seasonsForSelectedLeague);
-  const selectedLeague =
-    leagueSeasonOptions.find((league) => String(league.leagueId) === selectedLeagueId && league.season === selectedSeason) ??
-    leagues.find((league) => String(league.leagueId) === selectedLeagueId) ??
-    null;
-  const data = selectedLeague ? await loadInitialFantasySquadPlannerData(user.id, selectedLeague, params.squadId) : null;
+  const readinessByScope = await loadPlannerReadinessByScope(prisma, seasonsForSelectedLeague);
+  const seasonSelection = selectPlannerSeason(params.season, seasonsForSelectedLeague, readinessByScope);
+  const selectedLeague = seasonSelection.option;
+  const selectedSeason = selectedLeague?.season ?? "";
+  const data = selectedLeague && seasonSelection.readiness
+    ? await loadInitialFantasySquadPlannerData(user.id, selectedLeague, seasonSelection.readiness, params.squadId)
+    : null;
 
   return (
     <MacheteShell compact>
@@ -116,30 +118,39 @@ export default async function MacheteSquadPage({ searchParams }: PageProps) {
       </section>
 
       {selectedLeague && data ? (
-        <FantasySquadPlanner
-          key={`${selectedLeague.leagueId}:${selectedLeague.season}:${data.squad.id ?? "new-squad"}`}
-          leagueId={String(selectedLeague.leagueId)}
-          season={selectedLeague.season}
-          rules={data.rules}
-          rounds={data.rounds}
-          players={initialSquadPlayers(data.players, data.squad.selections)}
-          playerPoolHref={squadPlayerPoolHref(selectedLeague, data.squad.id)}
-          initialSquad={data.squad}
-          savedSquads={data.squads}
-          priceStatus={data.priceStatus}
-        />
+        <>
+          {!data.readiness.ready ? (
+            <div role="status" className="mt-4 rounded border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
+              <I18nText
+                en={`This explicitly selected season is not forecast-ready: ${data.readiness.reasons.join(", ")}. Auto-pick and transfer recommendations are unavailable.`}
+                ru={`Явно выбранный сезон не готов для прогнозов: ${data.readiness.reasons.join(", ")}. Автоподбор и рекомендации по трансферам недоступны.`}
+              />
+            </div>
+          ) : null}
+          <FantasySquadPlanner
+            key={`${selectedLeague.leagueId}:${selectedLeague.season}:${data.squad.id ?? "new-squad"}`}
+            leagueId={String(selectedLeague.leagueId)}
+            season={selectedLeague.season}
+            rules={data.rules}
+            rounds={data.rounds}
+            players={initialSquadPlayers(data.players, data.squad.selections)}
+            playerPoolHref={squadPlayerPoolHref(selectedLeague, data.squad.id)}
+            initialSquad={data.squad}
+            savedSquads={data.squads}
+            readiness={data.readiness}
+            priceStatus={data.priceStatus}
+          />
+        </>
       ) : (
         <div className="mt-6 rounded border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">
-          <I18nText en="No Machete league data is loaded yet. Run the shared FotMob ingestion first." ru="Данные лиги Machete пока не загружены. Сначала запустите общий FotMob ingestion." />
+          <I18nText
+            en="No forecast-ready season is available. Load an explicit season to inspect its readiness blockers, or wait for fixtures, ingestion, and its exact data-quality audit."
+            ru="Нет сезона, готового для прогнозов. Выберите сезон явно, чтобы увидеть причины блокировки, либо дождитесь расписания, загрузки данных и точного аудита этого сезона."
+          />
         </div>
       )}
     </MacheteShell>
   );
-}
-
-function selectedSeasonValue(requestedSeason: string | undefined, seasons: SharedLeagueSeasonOption[]) {
-  if (requestedSeason && seasons.some((league) => league.season === requestedSeason)) return requestedSeason;
-  return seasons.find((league) => league.isCurrent)?.season ?? seasons[0]?.season ?? "";
 }
 
 function machetePlayersHref(league: SharedLeagueSeasonOption | null) {
@@ -178,7 +189,12 @@ function initialSquadPlayers<T extends { playerId: string }>(players: T[], selec
   return players.filter((player) => selectedPlayerIds.has(player.playerId));
 }
 
-async function loadInitialFantasySquadPlannerData(userId: string, league: SharedLeagueSeasonOption, squadId?: string | null) {
+async function loadInitialFantasySquadPlannerData(
+  userId: string,
+  league: SharedLeagueSeasonOption,
+  readiness: PlannerReadiness,
+  squadId?: string | null
+) {
   const requestedSquad = squadId
     ? await prisma.userFantasySquad.findFirst({
         where: {
@@ -205,6 +221,7 @@ async function loadInitialFantasySquadPlannerData(userId: string, league: Shared
   });
 
   return loadFantasySquadPlannerData(prisma, userId, league, squadId, {
-    playerIds: selectedSquad?.players.map((player) => player.playerId) ?? []
+    playerIds: selectedSquad?.players.map((player) => player.playerId) ?? [],
+    readiness
   });
 }

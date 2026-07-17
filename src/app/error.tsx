@@ -1,10 +1,16 @@
 "use client";
 
 import { RotateCcw } from "lucide-react";
+import { useEffect } from "react";
 
 import { I18nText } from "@/components/i18n-text";
+import { reportClientCriticalError } from "@/monitoring/report-client-critical-error";
 
 export default function Error({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
+  useEffect(() => {
+    reportClientCriticalError("REACT_ERROR_BOUNDARY");
+  }, []);
+
   return (
     <main className="mx-auto flex min-h-[calc(100vh-5rem)] max-w-3xl items-center px-4 py-12 sm:px-6 lg:px-8">
       <section className="w-full rounded border border-rose-200 bg-white p-6 shadow-soft">

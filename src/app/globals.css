@@ -473,6 +473,10 @@ summary:focus-visible,
   letter-spacing: 0.02em;
   color: #ffffff;
   font-variant-numeric: tabular-nums;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .fdr-1 { background: #16a34a; color: #0b1120; }

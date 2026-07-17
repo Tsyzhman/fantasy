@@ -1,29 +1,17 @@
-import {
-  optimizeFantasySquad,
-  type FantasySquadOptimizationInput,
-  type FantasySquadSelection
-} from "@/machete/squad_logic";
-
-type OptimizerWorkerRequest = {
-  input: FantasySquadOptimizationInput;
-};
-
-type OptimizerWorkerResponse = {
-  optimized: FantasySquadSelection[] | null;
-  error: boolean;
-};
+import type { FantasySquadWorkerRequest, FantasySquadWorkerResponse } from "./fantasy-squad-worker-contract";
+import { handleFantasySquadWorkerRequest } from "./fantasy-squad-worker-handler";
 
 type OptimizerWorkerScope = {
-  onmessage: ((event: MessageEvent<OptimizerWorkerRequest>) => void) | null;
-  postMessage: (response: OptimizerWorkerResponse) => void;
+  onmessage: ((event: MessageEvent<FantasySquadWorkerRequest>) => void) | null;
+  postMessage: (response: FantasySquadWorkerResponse) => void;
 };
 
 const workerScope = self as unknown as OptimizerWorkerScope;
 
 workerScope.onmessage = (event) => {
   try {
-    workerScope.postMessage({ optimized: optimizeFantasySquad(event.data.input), error: false });
+    workerScope.postMessage(handleFantasySquadWorkerRequest(event.data));
   } catch {
-    workerScope.postMessage({ optimized: null, error: true });
+    workerScope.postMessage({ kind: event.data.kind, error: true });
   }
 };

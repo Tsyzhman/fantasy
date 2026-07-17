@@ -9,6 +9,8 @@ quality gate must not restart an otherwise healthy web process.
 started manually. It checks:
 
 - `/api/health` and `/login` as critical availability checks;
+- `/api/health/client-errors` as a warning-level zero-tolerance check over the
+  recent sanitized browser-error window;
 - `/api/health/data-quality` as a warning-level freshness and coverage gate;
 - `/_monitor/access-audit.json` as a warning-level server-error and latency
   snapshot;
@@ -23,6 +25,19 @@ quality warnings keep the workflow green while the issue remains open.
 GitHub API reads (`GET`/`HEAD`) retry bounded network, 429 and 5xx failures.
 Mutating `POST`/`PATCH` calls are never automatically retried, so a transient
 response cannot duplicate issue mutations.
+
+The browser reporter is mounted for public and authenticated screens and also
+runs from both React error boundaries. It deduplicates each coarse kind/route
+group in memory and fails silently if collection is unavailable. The request
+omits credentials and referrer data. Collection intentionally stores no raw
+message, stack, detailed path/query, user/session identifier, IP or user agent;
+only minute-bucketed aggregate rows remain in PostgreSQL.
+Accepted reports delete buckets older than 30 days; this retention cleanup runs
+inside the same serialized transaction as the bounded write.
+Anonymous request work is bounded in memory before database access, and the
+database serializer uses a non-blocking advisory lock. Because a browser report
+cannot carry a server-held secret, this signal is explicitly unverified and may
+be spoofed; it opens a warning issue but cannot fail the availability workflow.
 
 The retained fixed-window check is intentionally not self-approving. Configure
 both repository variables before it can become `OK`:

@@ -1,4 +1,4 @@
-import { ImportStatus, type PrismaClient } from "@prisma/client";
+import { ImportStatus, Prisma, type PrismaClient } from "@prisma/client";
 
 import { formatDate } from "@/lib/format";
 import { ExpiringPromiseCache } from "@/lib/expiring-promise-cache";
@@ -13,6 +13,7 @@ import {
   type FantasyProjectionCalibrationModel
 } from "./fantasy_projection_calibration";
 import { loadFantasyProjectionCalibration } from "./fantasy_projection_service";
+import { loadPlannerReadinessByScope, plannerReadinessKey, type PlannerReadiness } from "./planner_readiness";
 import {
   loadSharedLeagueTeams,
   loadSharedMachetePlayerRows,
@@ -25,6 +26,7 @@ import {
   normalizeFantasyHorizon,
   normalizeFantasyPosition,
   roundFantasyValue,
+  summarizeFantasySquad,
   type FantasyPlannerPlayer,
   type FantasyPositionGroup,
   type FantasyRoundProjection,
@@ -49,6 +51,7 @@ export type SavedFantasySquadOption = {
 };
 
 export type FantasySquadPlannerData = {
+  readiness: PlannerReadiness;
   rules: FantasySquadRules;
   rounds: FantasyRoundProjection[];
   players: FantasyPlannerPlayer[];
@@ -190,8 +193,10 @@ export async function loadFantasySquadPlannerData(
   userId: string,
   league: SharedLeagueSeasonOption,
   squadId?: string | null,
-  options?: { playerIds?: bigint[] }
+  options?: { playerIds?: bigint[]; readiness?: PlannerReadiness }
 ): Promise<FantasySquadPlannerData> {
+  const readiness = options?.readiness ?? (await loadPlannerReadinessByScope(prisma, [league])).get(plannerReadinessKey(league));
+  if (!readiness) throw new Error(`Planner readiness could not be evaluated for ${league.leagueId}:${league.season}.`);
   const sportsRuSeasons = sportsRuSeasonAliases(league.season);
   const [contest, savedSquads, rosterRows, playerRows, roundsAndFixtures, priceRows, baltikaMetricsByName, rosterPlayerCount] = await Promise.all([
     prisma.sportsRuFantasyContest.findFirst({
@@ -356,6 +361,7 @@ export async function loadFantasySquadPlannerData(
   const horizonRounds = normalizeFantasyHorizon(savedSquad?.horizonRounds, rules.horizonOptions);
 
   return {
+    readiness,
     rules,
     rounds: roundsAndFixtures.rounds,
     players: players.sort(compareFantasyPlannerPlayers),
@@ -451,87 +457,126 @@ export async function saveFantasySquad(
     rules: FantasySquadRules;
   }
 ) {
-  const rosterRows = await prisma.teamPlayerSeason.findMany({
-    where: {
-      leagueId: input.leagueId,
-      season: input.season,
-      playerId: { in: input.selections.map((selection) => BigInt(selection.playerId)) },
-      active: true
-    },
-    select: {
-      playerId: true,
-      teamId: true,
-      position: true
-    }
-  });
-  const sportsPositionsByPlayerId = await loadSportsRuFantasyPositionsByPlayerId(prisma, {
-    leagueId: input.leagueId,
-    season: input.season
-  });
-  const rosterByPlayerId = new Map(rosterRows.map((row) => [String(row.playerId), row]));
   const horizonRounds = normalizeFantasyHorizon(input.horizonRounds, input.rules.horizonOptions);
   const name = normalizeFantasySquadName(input.name);
-  const bank = roundFantasyValue(
-    input.rules.budgetLimit - input.selections.reduce((total, selection) => total + (selection.purchasePrice ?? 0), 0)
-  );
-  let squad: { id: string; name: string };
-  if (input.squadId) {
-    const ownedSquad = await prisma.userFantasySquad.findFirst({
-      where: {
-        id: input.squadId,
-        userId: input.userId,
-        leagueId: input.leagueId,
-        season: input.season
-      },
-      select: { id: true }
+  return prisma.$transaction(async (tx) => {
+    const selectedPlayerIds = [...new Set(input.selections.map((selection) => selection.playerId))].map(BigInt);
+    const rosterRows = selectedPlayerIds.length === 0
+      ? []
+      : await tx.$queryRaw<Array<{ playerId: bigint; teamId: bigint; position: string | null }>>(Prisma.sql`
+          SELECT
+            "player_id" AS "playerId",
+            "team_id" AS "teamId",
+            "position"
+          FROM "team_player_seasons"
+          WHERE "league_id" = ${input.leagueId}
+            AND "season" = ${input.season}
+            AND "player_id" IN (${Prisma.join(selectedPlayerIds)})
+            AND "active" = TRUE
+          FOR SHARE
+        `);
+    if (selectedPlayerIds.length !== input.selections.length || rosterRows.length !== selectedPlayerIds.length) {
+      throw new Error("Fantasy squad contains a player who is no longer active in the selected league and season.");
+    }
+    const sportsPositionsByPlayerId = await loadSportsRuFantasyPositionsByPlayerId(tx, {
+      leagueId: input.leagueId,
+      season: input.season
     });
-    if (!ownedSquad) throw new Error("Fantasy squad does not belong to the selected user, league, and season.");
-    squad = await prisma.userFantasySquad.update({
-      where: { id: ownedSquad.id },
-      data: {
-        name,
-        budgetLimit: input.rules.budgetLimit,
-        bank,
-        horizonRounds
-      },
-      select: { id: true, name: true }
+    const rosterByPlayerId = new Map(rosterRows.map((row) => [String(row.playerId), row]));
+    const positionByPlayerId = new Map(
+      input.selections.map((selection) => [
+        selection.playerId,
+        sportsPositionsByPlayerId.get(selection.playerId) ?? rosterByPlayerId.get(selection.playerId)?.position ?? null
+      ])
+    );
+    if (input.selections.some((selection) => normalizeFantasyPosition(positionByPlayerId.get(selection.playerId)) === "UNK")) {
+      throw new Error("Fantasy squad contains a player without an authoritative fantasy position.");
+    }
+    const resolvedPool = input.selections.map((selection) => {
+      const position = positionByPlayerId.get(selection.playerId)!;
+      const teamId = String(rosterByPlayerId.get(selection.playerId)!.teamId);
+      return {
+        id: selection.playerId,
+        playerId: selection.playerId,
+        teamId,
+        name: `Player ${selection.playerId}`,
+        teamName: `Team ${teamId}`,
+        leagueName: String(input.leagueId),
+        position,
+        positionGroup: normalizeFantasyPosition(position),
+        price: selection.purchasePrice ?? 0,
+        priceSource: "ESTIMATED" as const,
+        predictedFp: null,
+        valueScore: 0,
+        roundPoints: [],
+        fixtures: [],
+        fixtureDifficulties: []
+      };
     });
-  } else {
-    squad = await prisma.userFantasySquad.create({
-      data: {
-        userId: input.userId,
-        leagueId: input.leagueId,
-        season: input.season,
-        name,
-        budgetLimit: input.rules.budgetLimit,
-        bank,
-        horizonRounds
-      },
-      select: { id: true, name: true }
-    });
-  }
-
-  await prisma.$transaction([
-    prisma.userFantasySquadPlayer.deleteMany({ where: { squadId: squad.id } }),
-    ...input.selections.map((selection, index) =>
-      prisma.userFantasySquadPlayer.create({
+    const resolvedSummary = summarizeFantasySquad(resolvedPool, input.selections, input.rules, horizonRounds);
+    if (resolvedSummary.violations.length > 0) {
+      throw new Error(`Fantasy squad changed during save: ${resolvedSummary.violations[0]}`);
+    }
+    const bank = resolvedSummary.bank;
+    let squad: { id: string; name: string };
+    if (input.squadId) {
+      const ownedSquad = await tx.userFantasySquad.findFirst({
+        where: {
+          id: input.squadId,
+          userId: input.userId,
+          leagueId: input.leagueId,
+          season: input.season
+        },
+        select: { id: true }
+      });
+      if (!ownedSquad) throw new Error("Fantasy squad does not belong to the selected user, league, and season.");
+      squad = await tx.userFantasySquad.update({
+        where: { id: ownedSquad.id },
         data: {
-          squadId: squad.id,
-          playerId: BigInt(selection.playerId),
-          teamId: rosterByPlayerId.get(selection.playerId)?.teamId ?? null,
-          position: sportsPositionsByPlayerId.get(selection.playerId) ?? rosterByPlayerId.get(selection.playerId)?.position ?? null,
-          isStarter: selection.isStarter,
-          isLocked: selection.isLocked,
-          isCaptain: selection.isCaptain,
-          isViceCaptain: selection.isViceCaptain,
-          slotIndex: selection.slotIndex ?? index,
-          purchasePrice: selection.purchasePrice
-        }
-      })
-    )
-  ]);
+          name,
+          budgetLimit: input.rules.budgetLimit,
+          bank,
+          horizonRounds
+        },
+        select: { id: true, name: true }
+      });
+    } else {
+      squad = await tx.userFantasySquad.create({
+        data: {
+          userId: input.userId,
+          leagueId: input.leagueId,
+          season: input.season,
+          name,
+          budgetLimit: input.rules.budgetLimit,
+          bank,
+          horizonRounds
+        },
+        select: { id: true, name: true }
+      });
+    }
 
-  return squad;
+    await tx.userFantasySquadPlayer.deleteMany({ where: { squadId: squad.id } });
+    await Promise.all(
+      input.selections.map((selection, index) =>
+        tx.userFantasySquadPlayer.create({
+          data: {
+            squadId: squad.id,
+            playerId: BigInt(selection.playerId),
+            teamId: rosterByPlayerId.get(selection.playerId)!.teamId,
+            position: positionByPlayerId.get(selection.playerId)!,
+            isStarter: selection.isStarter,
+            isLocked: selection.isLocked,
+            isCaptain: selection.isCaptain,
+            isViceCaptain: selection.isViceCaptain,
+            slotIndex: selection.slotIndex ?? index,
+            purchasePrice: selection.purchasePrice
+          }
+        })
+      )
+    );
+
+    return squad;
+  });
 }
 
 export function normalizeFantasySquadName(value: string | null | undefined, fallback = "My squad") {
@@ -985,7 +1030,7 @@ async function loadTeamStrengthProfiles(prisma: PrismaClient, leagueId: bigint, 
 }
 
 export async function loadSportsRuFantasyPositionsByPlayerId(
-  prisma: PrismaClient,
+  prisma: Pick<PrismaClient, "fantasyPlayerPrice" | "providerEntityMap">,
   input: {
     leagueId: bigint;
     season: string;

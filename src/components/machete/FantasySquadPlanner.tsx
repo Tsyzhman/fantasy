@@ -10,6 +10,11 @@ import { LocalizedOption, localizedText, useLanguage } from "@/components/locali
 import { SortableTable } from "@/components/sortable-table";
 import { FdrRow } from "@/components/ui/fdr-pill";
 import { SegmentedControl, type SegmentedOption } from "@/components/ui/segmented-control";
+import type {
+  FantasySquadWorkerRequest,
+  FantasySquadWorkerResponse,
+  TransferSuggestionWorkerInput
+} from "@/components/machete/fantasy-squad-worker-contract";
 import { formatDate, formatNumber, formatScore } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import {
@@ -18,7 +23,6 @@ import {
   recordBetaMilestone
 } from "@/lib/beta-telemetry-client";
 import {
-  buildTransferPlanSuggestions,
   canStartFantasyPlayer,
   countFantasySquadTransfers,
   fantasyAddBlockReason,
@@ -41,6 +45,7 @@ import {
   type TransferPlanSuggestion
 } from "@/machete/squad_logic";
 import type { SavedFantasySquad, SavedFantasySquadOption } from "@/machete/squad_planner";
+import type { PlannerReadiness } from "@/machete/planner_readiness";
 
 type FantasySquadPlannerProps = {
   leagueId: string;
@@ -51,6 +56,7 @@ type FantasySquadPlannerProps = {
   playerPoolHref?: string;
   initialSquad: SavedFantasySquad;
   savedSquads: SavedFantasySquadOption[];
+  readiness: PlannerReadiness;
   priceStatus: {
     sportsRuPrices: number;
     estimatedPrices: number;
@@ -69,11 +75,6 @@ type StoredSquadCaptains = {
   viceCaptainId: string | null;
 };
 
-type OptimizerWorkerResponse = {
-  optimized: FantasySquadSelection[] | null;
-  error: boolean;
-};
-
 function optimizeFantasySquadOffThread(input: FantasySquadOptimizationInput) {
   if (typeof Worker === "undefined") return Promise.resolve(optimizeFantasySquad(input));
 
@@ -90,9 +91,9 @@ function optimizeFantasySquadOffThread(input: FantasySquadOptimizationInput) {
       worker.terminate();
     };
 
-    worker.onmessage = (event: MessageEvent<OptimizerWorkerResponse>) => {
+    worker.onmessage = (event: MessageEvent<FantasySquadWorkerResponse>) => {
       finish();
-      if (event.data.error) {
+      if (event.data.error || event.data.kind !== "OPTIMIZE_SQUAD") {
         reject(new Error("FANTASY_SQUAD_OPTIMIZER_FAILED"));
         return;
       }
@@ -102,8 +103,66 @@ function optimizeFantasySquadOffThread(input: FantasySquadOptimizationInput) {
       finish();
       reject(new Error("FANTASY_SQUAD_OPTIMIZER_FAILED"));
     };
-    worker.postMessage({ input });
+    const request: FantasySquadWorkerRequest = { kind: "OPTIMIZE_SQUAD", input };
+    worker.postMessage(request);
   });
+}
+
+function buildTransferSuggestionsOffThread(input: TransferSuggestionWorkerInput) {
+  if (typeof Worker === "undefined") return failedTransferSuggestionTask("FANTASY_TRANSFER_SUGGESTIONS_WORKER_UNAVAILABLE");
+  let worker: Worker;
+  try {
+    worker = new Worker(new URL("./FantasySquadOptimizer.worker.ts", import.meta.url), {
+      name: "fantasy-transfer-suggestions"
+    });
+  } catch {
+    return failedTransferSuggestionTask("FANTASY_TRANSFER_SUGGESTIONS_WORKER_UNAVAILABLE");
+  }
+  let rejectTask: ((reason: Error) => void) | null = null;
+  let timeout: number | null = null;
+  const promise = new Promise<TransferPlanSuggestion[]>((resolve, reject) => {
+    rejectTask = reject;
+    timeout = window.setTimeout(() => {
+      worker.terminate();
+      reject(new Error("FANTASY_TRANSFER_SUGGESTIONS_TIMEOUT"));
+    }, fantasySquadOptimizationSafetyTimeoutMs);
+    const finish = () => {
+      if (timeout !== null) window.clearTimeout(timeout);
+      timeout = null;
+      worker.terminate();
+    };
+    worker.onmessage = (event: MessageEvent<FantasySquadWorkerResponse>) => {
+      finish();
+      if (event.data.error || event.data.kind !== "BUILD_TRANSFER_SUGGESTIONS") {
+        reject(new Error("FANTASY_TRANSFER_SUGGESTIONS_FAILED"));
+        return;
+      }
+      resolve(event.data.suggestions);
+    };
+    worker.onerror = () => {
+      finish();
+      reject(new Error("FANTASY_TRANSFER_SUGGESTIONS_FAILED"));
+    };
+    const request: FantasySquadWorkerRequest = { kind: "BUILD_TRANSFER_SUGGESTIONS", input };
+    worker.postMessage(request);
+  });
+  return {
+    promise,
+    cancel() {
+      if (timeout !== null) window.clearTimeout(timeout);
+      timeout = null;
+      worker.terminate();
+      rejectTask?.(new Error("FANTASY_TRANSFER_SUGGESTIONS_CANCELLED"));
+      rejectTask = null;
+    }
+  };
+}
+
+function failedTransferSuggestionTask(code: string) {
+  return {
+    promise: Promise.reject<TransferPlanSuggestion[]>(new Error(code)),
+    cancel() {}
+  };
 }
 
 type SquadDiff = {
@@ -127,7 +186,7 @@ type TransferSuggestionCalculation = {
   suggestions: TransferPlanSuggestion[];
 };
 
-export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: initialPlayers, playerPoolHref, initialSquad, savedSquads, priceStatus }: FantasySquadPlannerProps) {
+export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: initialPlayers, playerPoolHref, initialSquad, savedSquads, readiness, priceStatus }: FantasySquadPlannerProps) {
   const language = useLanguage();
   const router = useRouter();
   const budgetForecastRef = useRef<HTMLDivElement>(null);
@@ -152,6 +211,9 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
   const [autoPickStrategy, setAutoPickStrategy] = useState<FantasySquadStrategy>("balanced");
   const [message, setMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [savePending, setSavePending] = useState(false);
+  const [deletePending, setDeletePending] = useState(false);
+  const interactionPending = isPending || savePending || deletePending;
   const [mobileTab, setMobileTab] = useState<MobileTab>("squad");
   const [showAllSuggestions, setShowAllSuggestions] = useState(false);
   const [draggedPlayerId, setDraggedPlayerId] = useState<string | null>(null);
@@ -160,6 +222,11 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
   const [autoPickPending, setAutoPickPending] = useState(false);
   const autoPickRevisionRef = useRef(0);
   const playerPoolReady = !playerPoolHref || (!playerPoolPending && !playerPoolFailed);
+  const hasRealRoundProjections = useMemo(
+    () => rounds.length > 0 && players.some((player) => player.roundPoints.some((value) => Number.isFinite(value) && value !== 0)),
+    [players, rounds.length]
+  );
+  const plannerForecastReady = readiness.ready && hasRealRoundProjections;
 
   useEffect(() => {
     autoPickRevisionRef.current += 1;
@@ -182,6 +249,8 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
   const transferLimitIsActive = savedSelections.length === rules.squadSize;
   const availableSuggestionCount = transferLimitIsActive ? Math.max(0, transferLimit - squadDiff.transferCount) : transferLimit;
   const [suggestionCalculation, setSuggestionCalculation] = useState<TransferSuggestionCalculation | null>(null);
+  const [failedSuggestionCalculation, setFailedSuggestionCalculation] = useState<TransferSuggestionCalculation | null>(null);
+  const [suggestionRetry, setSuggestionRetry] = useState(0);
   const suggestionsAreCurrent =
     suggestionCalculation?.players === players &&
     suggestionCalculation.selections === selections &&
@@ -189,7 +258,13 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
     suggestionCalculation.horizon === horizon &&
     suggestionCalculation.availableSuggestionCount === availableSuggestionCount;
   const suggestions = suggestionsAreCurrent ? suggestionCalculation.suggestions : [];
-  const suggestionsPending = !suggestionsAreCurrent;
+  const suggestionsPending = plannerForecastReady && !suggestionsAreCurrent;
+  const suggestionsFailed =
+    failedSuggestionCalculation?.players === players &&
+    failedSuggestionCalculation.selections === selections &&
+    failedSuggestionCalculation.rules === rules &&
+    failedSuggestionCalculation.horizon === horizon &&
+    failedSuggestionCalculation.availableSuggestionCount === availableSuggestionCount;
   const displayedSuggestions = showAllSuggestions ? suggestions : suggestions.slice(0, 3);
   const transferCostUnconfigured = suggestions.some((suggestion) => suggestion.paidTransferLoss === null);
   const filteredPlayers = useMemo(() => {
@@ -319,33 +394,35 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
   }, [playerPoolHref, playerPoolRetry, postLoadContentReady]);
 
   useEffect(() => {
-    if (!postLoadContentReady || !playerPoolReady) return;
+    if (!postLoadContentReady || !playerPoolReady || !plannerForecastReady) return;
 
     let cancelled = false;
-    let calculationHandle: number | null = null;
-
-    const calculateSuggestions = () => {
-      calculationHandle = window.setTimeout(() => {
-        const nextSuggestions = buildTransferPlanSuggestions({
-          pool: players,
-          selections,
-          rules,
-          horizon,
-          transferCount: availableSuggestionCount,
-          maximumPlans: 6
-        });
+    const task = buildTransferSuggestionsOffThread({
+      pool: players,
+      selections,
+      rules,
+      horizon,
+      transferCount: availableSuggestionCount,
+      maximumPlans: 6
+    });
+    void task.promise
+      .then((nextSuggestions) => {
         if (cancelled) return;
+        setFailedSuggestionCalculation(null);
         setSuggestionCalculation({ players, selections, rules, horizon, availableSuggestionCount, suggestions: nextSuggestions });
-      }, 0);
-    };
-
-    calculateSuggestions();
+      })
+      .catch((error: unknown) => {
+        if (cancelled) return;
+        console.error("Failed to calculate fantasy transfer suggestions.", error);
+        setSuggestionCalculation({ players, selections, rules, horizon, availableSuggestionCount, suggestions: [] });
+        setFailedSuggestionCalculation({ players, selections, rules, horizon, availableSuggestionCount, suggestions: [] });
+      });
 
     return () => {
       cancelled = true;
-      if (calculationHandle !== null) window.clearTimeout(calculationHandle);
+      task.cancel();
     };
-  }, [availableSuggestionCount, players, selections, rules, horizon, playerPoolReady, postLoadContentReady]);
+  }, [availableSuggestionCount, players, selections, rules, horizon, playerPoolReady, plannerForecastReady, postLoadContentReady, suggestionRetry]);
 
   useEffect(() => {
     const handle = window.setTimeout(() => {
@@ -501,6 +578,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
   }
 
   function applySuggestion(suggestion: TransferPlanSuggestion) {
+    if (!plannerForecastReady) return;
     const replacements = new Map(suggestion.moves.map((move) => [move.outPlayerId, players.find((player) => player.playerId === move.inPlayerId)]));
     if ([...replacements.values()].some((player) => !player)) return;
     const nextSelections = selections.map((selection) => {
@@ -526,6 +604,10 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
   }
 
   function autoPickStarters() {
+    if (!plannerForecastReady) {
+      setMessage(localizedText(language, "Auto-pick is unavailable until this league season has fresh forecast data.", "Автоподбор недоступен, пока для сезона лиги нет свежих прогнозных данных."));
+      return;
+    }
     const optimized = optimizeFantasyStarters({
       pool: players,
       selections,
@@ -565,7 +647,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
   }
 
   async function autoPickSquad() {
-    if (autoPickPending) return;
+    if (autoPickPending || !plannerForecastReady) return;
     const revision = autoPickRevisionRef.current;
     const optimizerInput: FantasySquadOptimizationInput = {
       pool: players,
@@ -623,68 +705,74 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
   }
 
   function saveSquad(asCopy: boolean) {
+    if (savePending || deletePending) return;
+    setSavePending(true);
     startTransition(async () => {
-      setMessage(null);
-      const selectionsToSave = sanitizeCaptainRoles(selections);
-      const requestedName = asCopy ? `${squadName} copy` : squadName;
-      let response: Response;
       try {
-        response = await fetch("/api/machete/squads", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            leagueId,
-            season,
-            squadId: asCopy ? null : activeSquadId,
-            name: requestedName,
-            horizonRounds: horizon,
-            selections: selectionsToSave
-          })
-        });
-      } catch {
-        void recordBetaClientError("SQUAD_SAVE_FAILED");
-        setMessage(localizedText(language, "Failed to save squad.", "Не удалось сохранить состав."));
-        return;
-      }
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        void recordBetaClientError("SQUAD_SAVE_FAILED");
-        const serverMessage = typeof payload?.error?.message === "string" ? payload.error.message : null;
+        setMessage(null);
+        const selectionsToSave = sanitizeCaptainRoles(selections);
+        const requestedName = asCopy ? `${squadName} copy` : squadName;
+        let response: Response;
+        try {
+          response = await fetch("/api/machete/squads", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              leagueId,
+              season,
+              squadId: asCopy ? null : activeSquadId,
+              name: requestedName,
+              horizonRounds: horizon,
+              selections: selectionsToSave
+            })
+          });
+        } catch {
+          void recordBetaClientError("SQUAD_SAVE_FAILED");
+          setMessage(localizedText(language, "Failed to save squad.", "Не удалось сохранить состав."));
+          return;
+        }
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          void recordBetaClientError("SQUAD_SAVE_FAILED");
+          const serverMessage = typeof payload?.error?.message === "string" ? payload.error.message : null;
+          setMessage(
+            serverMessage
+              ? localizedText(language, serverMessage, `Не удалось сохранить состав: ${serverMessage}`)
+              : localizedText(language, "Failed to save squad.", "Не удалось сохранить состав.")
+          );
+          return;
+        }
+        const savedSquadId = typeof payload.squad?.id === "string" ? payload.squad.id : activeSquadId;
+        const savedSquadName = typeof payload.squad?.name === "string" ? payload.squad.name : requestedName;
+        if (!savedSquadId) {
+          void recordBetaClientError("SQUAD_SAVE_FAILED");
+          setMessage(localizedText(language, "The server did not return the saved squad ID.", "Сервер не вернул ID сохранённого состава."));
+          return;
+        }
+        setSelections(selectionsToSave);
+        setSavedSelections(selectionsToSave.map((selection) => ({ ...selection })));
+        setActiveSquadId(savedSquadId);
+        setSquadName(savedSquadName);
+        setSquadOptions((current) => [
+          {
+            id: savedSquadId,
+            name: savedSquadName,
+            playersCount: selectionsToSave.length,
+            updatedAt: new Date().toISOString()
+          },
+          ...current.filter((option) => option.id !== savedSquadId)
+        ]);
+        const savedPlayers = payload.squad?.savedPlayers ?? selectionsToSave.length;
         setMessage(
-          serverMessage
-            ? localizedText(language, serverMessage, `Не удалось сохранить состав: ${serverMessage}`)
-            : localizedText(language, "Failed to save squad.", "Не удалось сохранить состав.")
+          asCopy
+            ? localizedText(language, `Saved copy "${savedSquadName}" with ${savedPlayers} players.`, `Сохранена копия «${savedSquadName}», игроков: ${savedPlayers}.`)
+            : localizedText(language, `Saved ${savedPlayers} players.`, `Сохранено игроков: ${savedPlayers}.`)
         );
-        return;
+        void recordBetaMilestone("SQUAD_SAVED");
+        router.replace(squadVariantHref(leagueId, season, savedSquadId));
+      } finally {
+        setSavePending(false);
       }
-      const savedSquadId = typeof payload.squad?.id === "string" ? payload.squad.id : activeSquadId;
-      const savedSquadName = typeof payload.squad?.name === "string" ? payload.squad.name : requestedName;
-      if (!savedSquadId) {
-        void recordBetaClientError("SQUAD_SAVE_FAILED");
-        setMessage(localizedText(language, "The server did not return the saved squad ID.", "Сервер не вернул ID сохранённого состава."));
-        return;
-      }
-      setSelections(selectionsToSave);
-      setSavedSelections(selectionsToSave.map((selection) => ({ ...selection })));
-      setActiveSquadId(savedSquadId);
-      setSquadName(savedSquadName);
-      setSquadOptions((current) => [
-        {
-          id: savedSquadId,
-          name: savedSquadName,
-          playersCount: selectionsToSave.length,
-          updatedAt: new Date().toISOString()
-        },
-        ...current.filter((option) => option.id !== savedSquadId)
-      ]);
-      const savedPlayers = payload.squad?.savedPlayers ?? selectionsToSave.length;
-      setMessage(
-        asCopy
-          ? localizedText(language, `Saved copy "${savedSquadName}" with ${savedPlayers} players.`, `Сохранена копия «${savedSquadName}», игроков: ${savedPlayers}.`)
-          : localizedText(language, `Saved ${savedPlayers} players.`, `Сохранено игроков: ${savedPlayers}.`)
-      );
-      void recordBetaMilestone("SQUAD_SAVED");
-      router.replace(squadVariantHref(leagueId, season, savedSquadId));
     });
   }
 
@@ -706,31 +794,42 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
   }
 
   function deleteSquadVariant() {
-    if (!activeSquadId) return;
+    if (!activeSquadId || savePending || deletePending) return;
     if (!window.confirm(localizedText(language, `Delete squad "${squadName}"?`, `Удалить состав «${squadName}»?`))) return;
 
+    setDeletePending(true);
     startTransition(async () => {
-      const response = await fetch(`/api/machete/squads?squadId=${encodeURIComponent(activeSquadId)}`, { method: "DELETE" });
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        const serverMessage = typeof payload?.error?.message === "string" ? payload.error.message : null;
-        setMessage(serverMessage ?? localizedText(language, "Failed to delete squad.", "Не удалось удалить состав."));
-        return;
-      }
+      try {
+        let response: Response;
+        try {
+          response = await fetch(`/api/machete/squads?squadId=${encodeURIComponent(activeSquadId)}`, { method: "DELETE" });
+        } catch {
+          setMessage(localizedText(language, "Failed to delete squad. Check the connection and try again.", "Не удалось удалить состав. Проверьте соединение и повторите попытку."));
+          return;
+        }
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          const serverMessage = typeof payload?.error?.message === "string" ? payload.error.message : null;
+          setMessage(serverMessage ?? localizedText(language, "Failed to delete squad.", "Не удалось удалить состав."));
+          return;
+        }
 
-      const remaining = squadOptions.filter((option) => option.id !== activeSquadId);
-      setSquadOptions(remaining);
-      const next = remaining[0];
-      if (next) {
-        router.replace(squadVariantHref(leagueId, season, next.id));
-        return;
+        const remaining = squadOptions.filter((option) => option.id !== activeSquadId);
+        setSquadOptions(remaining);
+        const next = remaining[0];
+        if (next) {
+          router.replace(squadVariantHref(leagueId, season, next.id));
+          return;
+        }
+        setActiveSquadId(null);
+        setSquadName(localizedText(language, "My squad", "Мой состав"));
+        setSelections([]);
+        setSavedSelections([]);
+        setMessage(localizedText(language, "Squad deleted.", "Состав удалён."));
+        router.replace(squadVariantHref(leagueId, season, null));
+      } finally {
+        setDeletePending(false);
       }
-      setActiveSquadId(null);
-      setSquadName(localizedText(language, "My squad", "Мой состав"));
-      setSelections([]);
-      setSavedSelections([]);
-      setMessage(localizedText(language, "Squad deleted.", "Состав удалён."));
-      router.replace(squadVariantHref(leagueId, season, null));
     });
   }
 
@@ -812,7 +911,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                 <button
                   type="button"
                   onClick={() => void autoPickSquad()}
-                  disabled={isPending || autoPickPending || !playerPoolReady}
+                  disabled={interactionPending || autoPickPending || !playerPoolReady || !plannerForecastReady}
                   className="inline-flex items-center justify-center gap-2 rounded border border-sky-200 bg-sky-50 px-4 py-2 text-sm font-semibold text-sky-800 hover:bg-sky-100 disabled:opacity-60"
                 >
                   <Sparkles className="h-4 w-4" />
@@ -821,11 +920,11 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                 <button
                   type="button"
                   onClick={() => saveSquad(false)}
-                  disabled={isPending || autoPickPending || !squadIsValid}
+                  disabled={interactionPending || autoPickPending || !squadIsValid}
                   className="btn-brand inline-flex items-center justify-center gap-2 rounded px-4 py-2 text-sm font-semibold disabled:opacity-60"
                 >
                   <Save className="h-4 w-4" />
-                  {isPending ? <I18nText en="Saving" ru="Сохраняем" /> : <I18nText en="Save squad" ru="Сохранить состав" />}
+                  {savePending ? <I18nText en="Saving" ru="Сохраняем" /> : <I18nText en="Save squad" ru="Сохранить состав" />}
                 </button>
               </div>
 
@@ -837,7 +936,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                   <button
                     type="button"
                     onClick={autoPickStarters}
-                    disabled={isPending || autoPickPending}
+                    disabled={interactionPending || autoPickPending || !plannerForecastReady}
                     className="inline-flex items-center justify-center gap-2 rounded px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
                   >
                     <Sparkles className="h-4 w-4" />
@@ -846,7 +945,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                   <button
                     type="button"
                     onClick={() => saveSquad(true)}
-                    disabled={isPending || autoPickPending || !squadIsValid}
+                    disabled={interactionPending || autoPickPending || !squadIsValid}
                     className="inline-flex items-center justify-center gap-2 rounded px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
                   >
                     <Copy className="h-4 w-4" />
@@ -855,7 +954,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                   <button
                     type="button"
                     onClick={startBlankSquad}
-                    disabled={isPending || autoPickPending}
+                    disabled={interactionPending || autoPickPending}
                     className="inline-flex items-center justify-center gap-2 rounded px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-60"
                   >
                     <FilePlus2 className="h-4 w-4" />
@@ -864,7 +963,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                   <button
                     type="button"
                     onClick={deleteSquadVariant}
-                    disabled={isPending || autoPickPending || !activeSquadId}
+                    disabled={interactionPending || autoPickPending || !activeSquadId}
                     className="inline-flex items-center justify-center gap-2 rounded px-3 py-2 text-sm font-semibold text-rose-700 hover:bg-rose-50 disabled:opacity-50"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -1045,7 +1144,11 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                   : <I18nText en={`Show all ${suggestions.length}`} ru={`Показать все: ${suggestions.length}`} />}
               </button>
             ) : null}
-            {playerPoolFailed ? (
+            {!plannerForecastReady ? (
+              <p className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900" role="status">
+                <I18nText en="Transfer recommendations are unavailable until this league season has fresh non-zero round projections." ru="Трансферные рекомендации недоступны, пока для сезона лиги нет свежих ненулевых прогнозов по турам." />
+              </p>
+            ) : playerPoolFailed ? (
               <div className="space-y-2 rounded border border-rose-200 bg-rose-50 px-3 py-3 text-sm text-rose-700" role="alert">
                 <I18nText en="The player pool could not be loaded, so transfer recommendations are unavailable." ru="Не удалось загрузить пул игроков, поэтому трансферные рекомендации недоступны." />
                 <button
@@ -1054,6 +1157,20 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                     setPlayerPoolFailed(false);
                     setPlayerPoolPending(true);
                     setPlayerPoolRetry((value) => value + 1);
+                  }}
+                  className="block rounded border border-rose-300 bg-white px-3 py-1.5 text-xs font-semibold text-rose-700"
+                >
+                  <I18nText en="Retry" ru="Повторить" />
+                </button>
+              </div>
+            ) : suggestionsFailed ? (
+              <div className="space-y-2 rounded border border-rose-200 bg-rose-50 px-3 py-3 text-sm text-rose-700" role="alert">
+                <I18nText en="Transfer recommendations could not be calculated." ru="Не удалось рассчитать трансферные рекомендации." />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFailedSuggestionCalculation(null);
+                    setSuggestionRetry((value) => value + 1);
                   }}
                   className="block rounded border border-rose-300 bg-white px-3 py-1.5 text-xs font-semibold text-rose-700"
                 >
@@ -1272,7 +1389,7 @@ function PlayerPoolTable({
                 .map((label, fixtureIdx) => ({ label, difficulty: player.fixtureDifficulties?.[fixtureIdx] ?? null }))
                 .filter((chip) => Boolean(chip.label))
                 .map((chip) => ({ label: compactFixtureLabel(chip.label), difficulty: chip.difficulty, title: chip.label }));
-              const visibleFixtureChips = fixtureChips.slice(0, 3);
+              const visibleFixtureChips = fixtureChips.slice(0, 2);
               const hiddenFixtureCount = Math.max(0, fixtureChips.length - visibleFixtureChips.length);
               const hiddenFixtureLabels = fixtureChips.slice(visibleFixtureChips.length).map((chip) => chip.title ?? chip.label).join(", ");
               const fixtures = player.fixtures.slice(0, horizon).filter(Boolean).join(" / ");
@@ -1963,7 +2080,7 @@ function SquadPlayerTile({
       onDragEnd={onDragEnd}
       title={fantasyForecastTitle(player, language)}
       className={cn(
-        compact ? "w-[5.25rem]" : "w-[5.25rem] sm:w-[5.5rem]",
+        compact ? "w-[3.625rem] sm:w-[5.25rem]" : "w-[3.625rem] sm:w-[5.5rem]",
         "relative cursor-grab rounded border bg-white px-1.5 py-1 text-center shadow-sm transition active:cursor-grabbing",
         isCaptain ? "border-amber-400 ring-2 ring-amber-200" : "border-white/70",
         isDragging && "opacity-55 ring-2 ring-sky-300"
@@ -1993,8 +2110,13 @@ function SquadPlayerTile({
         <p className="text-[9px] font-semibold text-violet-700 num-tabular">W xG {formatScore(player.baltikaXg)}</p>
       ) : null}
       {fixtureChips.length > 0 ? (
-        <div className="mt-0.5 flex justify-center">
-          <FdrRow fixtures={fixtureChips} />
+        <div className="mt-0.5 flex min-w-0 items-center justify-center gap-0.5 overflow-hidden">
+          <FdrRow fixtures={fixtureChips.slice(0, 1)} className="min-w-0 flex-nowrap overflow-hidden" />
+          {fixtureChips.length > 1 ? (
+            <span className="inline-flex h-[18px] shrink-0 items-center rounded bg-slate-200 px-1 text-[9px] font-bold text-slate-700" title={fixtureChips.slice(1).map((fixture) => fixture.title).join(", ")}>
+              +{fixtureChips.length - 1}
+            </span>
+          ) : null}
         </div>
       ) : null}
       <button

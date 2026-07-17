@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { AppHeader } from "@/components/app-header";
 import { BetaTelemetryReporter } from "@/components/beta/BetaTelemetryReporter";
+import { ClientCriticalErrorReporter } from "@/components/ClientCriticalErrorReporter";
 import { getCurrentUser } from "@/lib/auth";
 
 import "./globals.css";
@@ -55,6 +56,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <div className="min-h-screen">
           <AppHeader user={user} />
           {children}
+          <ClientCriticalErrorReporter />
           {user ? <BetaTelemetryReporter /> : null}
         </div>
       </body>

@@ -38,6 +38,20 @@ const checks = await Promise.all([
     })
   }),
   checkJsonEndpoint({
+    name: "Client critical errors",
+    path: "/api/health/client-errors",
+    severity: "warning",
+    evaluate: ({ status, body }) => {
+      const total = numberValue(body?.total);
+      const healthy = status === 200 && body?.healthy === true && total === 0;
+      return {
+        ok: healthy,
+        detail: healthy ? `clean ${numberValue(body?.windowMinutes)}m window` : `HTTP ${status}; total=${total}; last=${stringValue(body?.lastSeenAt) || "unknown"}`,
+        fingerprint: `${status}:${Boolean(body?.healthy)}:${total}:${stringValue(body?.lastSeenAt)}`
+      };
+    }
+  }),
+  checkJsonEndpoint({
     name: "Data update gate",
     path: "/api/health/data-quality",
     severity: "warning",

@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
 import { isDatabaseConfigured, prisma } from "@/lib/db";
 import { evaluateDataQualityAuditRunHealth } from "@/machete/data_quality_monitor";
 import { readDataQualityAuditScheduleConfig } from "@/machete/data_quality_schedule";
+import { evaluatePlannerDefaultScope, loadPlannerReadinessByScope, plannerReadinessKey } from "@/machete/planner_readiness";
+import { loadSharedLeagueSeasonOptions } from "@/machete/shared_read_model";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -53,8 +55,26 @@ export async function GET() {
         };
       })
     );
-    const healthy = results.every((result) => result.healthy);
-    return NextResponse.json({ status: healthy ? "ok" : "error", healthy, results }, { status: healthy ? 200 : 503 });
+    const configuredLeagueIds = new Set(config.scopes.map((scope) => String(scope.leagueId)));
+    const leagueSeasons = (await loadSharedLeagueSeasonOptions(prisma)).filter((scope) => configuredLeagueIds.has(String(scope.leagueId)));
+    const plannerReadiness = await loadPlannerReadinessByScope(prisma, leagueSeasons, {
+      now: new Date(now),
+      maximumAgeHours: config.maximumRunAgeHours
+    });
+    const configuredScopeKeys = new Set(config.scopes.map(plannerReadinessKey));
+    const plannerDefaults = [...configuredLeagueIds].map((leagueId) =>
+      evaluatePlannerDefaultScope(
+        leagueId,
+        leagueSeasons.filter((scope) => String(scope.leagueId) === leagueId),
+        plannerReadiness,
+        configuredScopeKeys
+      )
+    );
+    const healthy = results.every((result) => result.healthy) && plannerDefaults.length > 0 && plannerDefaults.every((result) => result.healthy);
+    return NextResponse.json(
+      { status: healthy ? "ok" : "error", healthy, results, plannerDefaults },
+      { status: healthy ? 200 : 503 }
+    );
   } catch (error) {
     return NextResponse.json({ status: "error", reason: "QUERY_FAILED", message: errorMessage(error) }, { status: 503 });
   }

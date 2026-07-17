@@ -117,11 +117,13 @@ test("squad planner normalizes saved forecast horizon on load", async () => {
       ]
     },
     teamPlayerSeason: { findMany: async () => [], count: async () => 0 },
+    ingestionJob: { findFirst: async () => null },
+    dataQualityAuditRun: { findFirst: async () => null },
     fantasyPlayerPrice: { findMany: async () => [] },
     fantasyModel: { findFirst: async () => null },
     playerSnapshot: { findMany: async () => [] },
     leagueSeasonTeam: { findMany: async () => [] },
-    coreMatch: { findMany: async () => [] },
+    coreMatch: { findMany: async () => [], count: async () => 0 },
     macheteLeague: { findFirst: async () => null }
   };
 
@@ -148,19 +150,31 @@ test("squad planner normalizes saved forecast horizon on load", async () => {
 
 test("squad planner normalizes forecast horizon before creating a variant", async () => {
   const creates: Array<{ data: { horizonRounds: number; name: string } }> = [];
+  let insideTransaction = false;
   const prisma = {
     teamPlayerSeason: { findMany: async () => [] },
     fantasyPlayerPrice: { findMany: async () => [] },
     userFantasySquad: {
       create: async (args: { data: { horizonRounds: number; name: string } }) => {
+        assert.equal(insideTransaction, true, "parent squad creation must run inside the save transaction");
         creates.push(args);
         return { id: "squad-1", name: args.data.name };
       }
     },
     userFantasySquadPlayer: {
-      deleteMany: () => ({})
+      deleteMany: () => {
+        assert.equal(insideTransaction, true, "player replacement must run inside the save transaction");
+        return {};
+      }
     },
-    $transaction: async () => []
+    $transaction: async (callback: (tx: unknown) => Promise<unknown>) => {
+      insideTransaction = true;
+      try {
+        return await callback(prisma);
+      } finally {
+        insideTransaction = false;
+      }
+    }
   };
 
   await saveFantasySquad(prisma as never, {
@@ -178,18 +192,32 @@ test("squad planner normalizes forecast horizon before creating a variant", asyn
 
 test("squad planner updates only the requested owned variant", async () => {
   const updates: Array<{ where: { id: string }; data: { name: string } }> = [];
+  let insideTransaction = false;
   const prisma = {
     teamPlayerSeason: { findMany: async () => [] },
     fantasyPlayerPrice: { findMany: async () => [] },
     userFantasySquad: {
       findFirst: async () => ({ id: "squad-2" }),
       update: async (args: { where: { id: string }; data: { name: string } }) => {
+        assert.equal(insideTransaction, true, "parent squad update must run inside the save transaction");
         updates.push(args);
         return { id: args.where.id, name: args.data.name };
       }
     },
-    userFantasySquadPlayer: { deleteMany: () => ({}) },
-    $transaction: async () => []
+    userFantasySquadPlayer: {
+      deleteMany: () => {
+        assert.equal(insideTransaction, true, "player replacement must run inside the save transaction");
+        return {};
+      }
+    },
+    $transaction: async (callback: (tx: unknown) => Promise<unknown>) => {
+      insideTransaction = true;
+      try {
+        return await callback(prisma);
+      } finally {
+        insideTransaction = false;
+      }
+    }
   };
 
   const saved = await saveFantasySquad(prisma as never, {
@@ -206,6 +234,81 @@ test("squad planner updates only the requested owned variant", async () => {
   assert.equal(saved.id, "squad-2");
   assert.deepEqual(updates[0]?.where, { id: "squad-2" });
   assert.equal(updates[0]?.data.name, "Long horizon");
+});
+
+test("squad save rejects a player deactivated before the transactional lock", async () => {
+  let parentCreated = false;
+  const prisma = {
+    $queryRaw: async () => [],
+    fantasyPlayerPrice: { findMany: async () => [] },
+    userFantasySquad: {
+      create: async () => {
+        parentCreated = true;
+        return { id: "squad-1", name: "My squad" };
+      }
+    },
+    userFantasySquadPlayer: { deleteMany: async () => ({}) },
+    $transaction: async (callback: (tx: unknown) => Promise<unknown>) => callback(prisma)
+  };
+
+  await assert.rejects(
+    saveFantasySquad(prisma as never, {
+      userId: "user-1",
+      leagueId: 47n,
+      season: "2025/2026",
+      horizonRounds: 1,
+      selections: [{
+        playerId: "7",
+        isStarter: true,
+        isLocked: false,
+        isCaptain: false,
+        isViceCaptain: false,
+        slotIndex: 0,
+        purchasePrice: 5
+      }],
+      rules: defaultFantasySquadRules
+    }),
+    /no longer active/
+  );
+  assert.equal(parentCreated, false);
+});
+
+test("squad save rechecks position limits after locking the authoritative roster", async () => {
+  let parentCreated = false;
+  const prisma = {
+    $queryRaw: async () => [1n, 2n, 3n].map((playerId) => ({ playerId, teamId: playerId + 10n, position: "Goalkeeper" })),
+    fantasyPlayerPrice: { findMany: async () => [] },
+    userFantasySquad: {
+      create: async () => {
+        parentCreated = true;
+        return { id: "squad-1", name: "My squad" };
+      }
+    },
+    userFantasySquadPlayer: { deleteMany: async () => ({}) },
+    $transaction: async (callback: (tx: unknown) => Promise<unknown>) => callback(prisma)
+  };
+  const selections = ["1", "2", "3"].map((playerId, slotIndex) => ({
+    playerId,
+    isStarter: false,
+    isLocked: false,
+    isCaptain: false,
+    isViceCaptain: false,
+    slotIndex,
+    purchasePrice: 5
+  }));
+
+  await assert.rejects(
+    saveFantasySquad(prisma as never, {
+      userId: "user-1",
+      leagueId: 47n,
+      season: "2025/2026",
+      horizonRounds: 1,
+      selections,
+      rules: defaultFantasySquadRules
+    }),
+    /GK limit exceeded/
+  );
+  assert.equal(parentCreated, false);
 });
 
 test("squad variant names are normalized and copies receive a unique suffix", () => {

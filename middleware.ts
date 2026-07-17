@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { sessionCookieName } from "@/lib/auth-constants";
 import { isDatabaseConfigured } from "@/lib/database-url";
 
-const publicPaths = ["/login", "/setup", "/api/auth/logout", "/api/health"];
+const publicPaths = ["/login", "/setup", "/api/auth/logout", "/api/health", "/api/client-errors"];
 const publicPrefixes = ["/_next", "/favicon", "/team-logos", "/mode-logos", "/api/cron/", "/api/health/"];
 
 export function middleware(request: NextRequest) {

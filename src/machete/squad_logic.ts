@@ -448,6 +448,15 @@ export function validateFantasySquadForSave(input: {
   if (summary.violations.length > 0) {
     return { ok: false, error: summary.violations[0] };
   }
+  if (summary.selectedPlayers.length !== rules.squadSize) {
+    return { ok: false, error: `Squad must contain exactly ${rules.squadSize} players.` };
+  }
+  if (summary.starterPlayers.length !== rules.starterSize) {
+    return { ok: false, error: `Starting XI must contain exactly ${rules.starterSize} players.` };
+  }
+  if (summary.benchPlayers.length !== rules.benchSize) {
+    return { ok: false, error: `Bench must contain exactly ${rules.benchSize} players.` };
+  }
 
   return { ok: true, selections: canonicalSelections, summary };
 }

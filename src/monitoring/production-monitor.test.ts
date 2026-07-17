@@ -43,6 +43,23 @@ test("production monitor opens an issue and fails when application health is una
   }
 });
 
+test("production monitor reports unverified anonymous client errors as a warning", async () => {
+  const requests: CapturedRequest[] = [];
+  const server = createMonitorServer({ dataHealthy: true, appHealthy: true, clientErrorCount: 2, requests });
+  const origin = await listen(server);
+
+  try {
+    const result = await runMonitor(origin);
+    assert.equal(result.code, 0, result.stderr);
+    const createIssue = requests.find((request) => request.method === "POST" && request.path === "/repos/owner/repo/issues");
+    assert.ok(createIssue);
+    assert.match(String(createIssue.body?.body), /Client critical errors/);
+    assert.match(String(createIssue.body?.body), /warnings: \*\*1\*\*/);
+  } finally {
+    server.close();
+  }
+});
+
 test("production monitor retries transient GitHub API failures before synchronizing the issue", async () => {
   const requests: CapturedRequest[] = [];
   const server = createMonitorServer({ dataHealthy: false, appHealthy: true, requests, githubIssueListFailures: 2 });
@@ -134,6 +151,7 @@ function createMonitorServer(input: {
   fixedWindowStart?: string;
   fixedObservedSpanMinutes?: number;
   fixedRetentionCoversStart?: boolean;
+  clientErrorCount?: number;
 }) {
   let githubIssueListFailures = input.githubIssueListFailures ?? 0;
   return createServer(async (request, response) => {
@@ -145,6 +163,16 @@ function createMonitorServer(input: {
       return json(response, input.appHealthy ? 200 : 503, { status: input.appHealthy ? "ok" : "error" });
     }
     if (path === "/login") return text(response, 200, "login");
+    if (path === "/api/health/client-errors") {
+      const total = input.clientErrorCount ?? 0;
+      return json(response, total === 0 ? 200 : 503, {
+        status: total === 0 ? "ok" : "error",
+        healthy: total === 0,
+        windowMinutes: 60,
+        total,
+        lastSeenAt: total === 0 ? null : new Date().toISOString()
+      });
+    }
     if (path === "/api/health/data-quality") {
       return json(response, input.dataHealthy ? 200 : 503, {
         healthy: input.dataHealthy,

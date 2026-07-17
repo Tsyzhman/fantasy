@@ -22,6 +22,8 @@ import { matchWindowLabel, matchWindowLabelRu, matchWindowModeValue, parseMachet
 import { normalizeFantasyPosition, type FantasyPositionGroup } from "@/machete/squad_logic";
 import { loadSportsRuFantasyPriceRefsByScopedPlayer, sportsRuFantasyPriceScopeKey, type SportsRuFantasyPriceRef } from "@/machete/squad_planner";
 import { applyFantasyPlayerIdentityRows, filterFantasyPlayerIdentityRows } from "@/machete/player_identity";
+import { playerLeagueScopes } from "@/machete/player_scopes";
+import { loadPlannerReadinessByScope, selectPlannerSeason } from "@/machete/planner_readiness";
 import {
   loadSharedLeagueOptions,
   loadSharedLeagueSeasonOptions,
@@ -72,7 +74,13 @@ type PositionFilter = Exclude<FantasyPositionGroup, "UNK">;
 
 export default async function MachetePlayersPage({ searchParams }: PageProps) {
   const resolvedSearchParams = await searchParams;
-  const [sortedLeagues, leagueSeasonOptions] = await Promise.all([loadSharedLeagueOptions(prisma), loadSharedLeagueSeasonOptions(prisma)]);
+  const [loadedLeagues, leagueSeasonOptions] = await Promise.all([loadSharedLeagueOptions(prisma), loadSharedLeagueSeasonOptions(prisma)]);
+  const readinessByScope = await loadPlannerReadinessByScope(prisma, leagueSeasonOptions);
+  const sortedLeagues = loadedLeagues.flatMap((league) => {
+    const seasons = leagueSeasonOptions.filter((option) => option.leagueId === league.leagueId);
+    const selected = selectPlannerSeason(undefined, seasons, readinessByScope).option;
+    return selected ? [selected] : [];
+  });
   const requestedLeagueId = resolvedSearchParams.leagueId ?? ALL_LEAGUES_VALUE;
   const selectedLeagueId =
     requestedLeagueId === ALL_LEAGUES_VALUE || sortedLeagues.some((league) => String(league.leagueId) === requestedLeagueId) ? requestedLeagueId : "";
@@ -82,7 +90,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
       : [];
   const selectedSeason =
     selectedLeagueId && selectedLeagueId !== ALL_LEAGUES_VALUE
-      ? selectedSeasonValue(resolvedSearchParams.season, seasonsForSelectedLeague)
+      ? selectPlannerSeason(resolvedSearchParams.season, seasonsForSelectedLeague, readinessByScope).option?.season ?? ""
       : "";
   const teamLeagues = await loadTeamLeagueOptions(sortedLeagues, leagueSeasonOptions, selectedLeagueId, selectedSeason);
   const selectedTeamId =
@@ -119,7 +127,9 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
     matchWindow,
     sort,
     page: requestedPage,
-    pageSize
+    pageSize,
+    readyLeagueScopes: sortedLeagues,
+    leagueSeasonOptions
   });
   const players = playersResult.players;
   const windowSummary = playersResult.windowSummary;
@@ -464,7 +474,9 @@ async function buildMatchWindowRows({
   matchWindow,
   sort,
   page,
-  pageSize
+  pageSize,
+  readyLeagueScopes,
+  leagueSeasonOptions
 }: {
   selectedLeagueId: string;
   selectedSeason: string;
@@ -478,6 +490,8 @@ async function buildMatchWindowRows({
   sort: string;
   page: number;
   pageSize: number;
+  readyLeagueScopes: SharedLeagueSeasonOption[];
+  leagueSeasonOptions: SharedLeagueSeasonOption[];
 }) {
   if (!selectedLeagueId) {
     return {
@@ -488,7 +502,14 @@ async function buildMatchWindowRows({
     };
   }
 
-  const scopes = await buildPlayerScopes(selectedLeagueId, selectedSeason, selectedTeamId, competitionKeys);
+  const scopes = await buildPlayerScopes(
+    selectedLeagueId,
+    selectedSeason,
+    selectedTeamId,
+    competitionKeys,
+    readyLeagueScopes,
+    leagueSeasonOptions
+  );
   const combineTeamCompetitions = competitionKeys.length > 1;
   const [rawRows, windowSummary, sportsPriceRefs] = await Promise.all([
     loadSharedMachetePlayerRows(prisma, {
@@ -518,7 +539,14 @@ async function buildMatchWindowRows({
   };
 }
 
-async function buildPlayerScopes(selectedLeagueId: string, selectedSeason: string, selectedTeamId: string, competitionKeys: string[]): Promise<SharedPlayerRowsScope[]> {
+async function buildPlayerScopes(
+  selectedLeagueId: string,
+  selectedSeason: string,
+  selectedTeamId: string,
+  competitionKeys: string[],
+  readyLeagueScopes: SharedLeagueSeasonOption[],
+  leagueSeasonOptions: SharedLeagueSeasonOption[]
+): Promise<SharedPlayerRowsScope[]> {
   const teamId = parseSharedBigInt(selectedTeamId);
   const competitions = competitionKeys.map(parseSharedCompetitionKey).filter((competition): competition is { leagueId: bigint; season: string } => Boolean(competition));
   if (teamId && competitions.length > 0) {
@@ -532,17 +560,8 @@ async function buildPlayerScopes(selectedLeagueId: string, selectedSeason: strin
     }
   }
 
-  const leagues = selectedLeagueId === ALL_LEAGUES_VALUE ? await loadSharedLeagueOptions(prisma) : await loadSharedLeagueSeasonOptions(prisma);
-  const selectedLeagues =
-    selectedLeagueId === ALL_LEAGUES_VALUE
-      ? leagues
-      : leagues.filter((league) => String(league.leagueId) === selectedLeagueId && (!selectedSeason || league.season === selectedSeason));
-
-  return selectedLeagues.map((league) => ({
-    leagueId: league.leagueId,
-    season: league.season,
-    teamId
-  }));
+  return playerLeagueScopes({ selectedLeagueId, selectedSeason, readyLeagueScopes, leagueSeasonOptions })
+    .map((scope) => ({ ...scope, teamId }));
 }
 
 async function loadTeamLeagueOptions(
@@ -564,11 +583,6 @@ async function loadTeamLeagueOptions(
       teams: await loadSharedLeagueTeams(prisma, league.leagueId, league.season)
     }))
   ) as Promise<Array<SharedLeagueSeasonOption & { teams: SharedTeamOption[] }>>;
-}
-
-function selectedSeasonValue(requestedSeason: string | undefined, seasons: SharedLeagueSeasonOption[]) {
-  if (requestedSeason && seasons.some((league) => league.season === requestedSeason)) return requestedSeason;
-  return seasons.find((league) => league.isCurrent)?.season ?? seasons[0]?.season ?? "";
 }
 
 function selectedTeamCompetitionOptions(value: SearchParamValue, options: SharedTeamCompetitionOption[]) {

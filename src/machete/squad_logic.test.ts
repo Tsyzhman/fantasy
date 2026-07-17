@@ -277,8 +277,38 @@ test("save validation ignores client prices and enforces the authoritative budge
     rules: { ...defaultFantasySquadRules, budgetLimit: 10 },
     horizon: 1
   });
-  assert.equal(accepted.ok, true);
-  if (accepted.ok) assert.equal(accepted.selections[0].purchasePrice, 9);
+  assert.equal(accepted.ok, false);
+  if (!accepted.ok) assert.match(accepted.error, /exactly 15 players/);
+});
+
+test("save validation requires an exact full squad and canonicalizes server prices", () => {
+  const pool = [
+    ...rangePlayers("GK", 2, 1),
+    ...rangePlayers("DEF", 5, 10),
+    ...rangePlayers("MID", 5, 20),
+    ...rangePlayers("FWD", 3, 30)
+  ];
+  const starterIds = new Set(["1", "10", "11", "12", "13", "20", "21", "22", "23", "30", "31"]);
+  const validSelections = pool.map((candidate, index) => ({
+    ...selectionForPlayer(candidate, index, starterIds.has(candidate.playerId)),
+    purchasePrice: 0.1
+  }));
+
+  const empty = validateFantasySquadForSave({ pool, selections: [], rules: defaultFantasySquadRules, horizon: 1 });
+  const partial = validateFantasySquadForSave({
+    pool,
+    selections: validSelections.slice(0, 14),
+    rules: defaultFantasySquadRules,
+    horizon: 1
+  });
+  const valid = validateFantasySquadForSave({ pool, selections: validSelections, rules: defaultFantasySquadRules, horizon: 1 });
+
+  assert.equal(empty.ok, false);
+  if (!empty.ok) assert.match(empty.error, /exactly 15 players/);
+  assert.equal(partial.ok, false);
+  if (!partial.ok) assert.match(partial.error, /exactly 15 players/);
+  assert.equal(valid.ok, true);
+  if (valid.ok) assert.equal(valid.selections.every((selection) => selection.purchasePrice === 5), true);
 });
 
 test("save validation rejects players outside the active league-season pool", () => {

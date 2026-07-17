@@ -1,8 +1,15 @@
 "use client";
 
 import { I18nText } from "@/components/i18n-text";
+import { useEffect } from "react";
+
+import { reportClientCriticalError } from "@/monitoring/report-client-critical-error";
 
 export default function GlobalError({ reset }: { error: Error & { digest?: string }; reset: () => void }) {
+  useEffect(() => {
+    reportClientCriticalError("REACT_ERROR_BOUNDARY");
+  }, []);
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body>

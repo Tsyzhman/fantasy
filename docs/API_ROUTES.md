@@ -9,6 +9,27 @@ The app uses Next.js route handlers under `src/app/api`.
 Returns database configuration and connectivity status for deployment checks.
 When `DATABASE_URL` is missing it returns `503 DATABASE_NOT_CONFIGURED`.
 
+### `POST /api/client-errors`
+
+Public, write-only collection endpoint for critical browser failures. It accepts
+only `{ "kind": "WINDOW_ERROR|UNHANDLED_REJECTION|REACT_ERROR_BOUNDARY",
+"routeGroup": "root|login|setup|machete|admin|beta-test|other" }` and returns
+`202` without an event identifier. Unknown or additional fields are rejected;
+the 256-byte request limit and 100-event global minute limit bound ingestion.
+The request deliberately contains no error message, stack, query string, user,
+session, IP or user-agent field. The server does not persist request headers.
+Each accepted write removes minute buckets older than 30 days, so the anonymous
+aggregate does not become an indefinite activity history.
+
+### `GET /api/health/client-errors`
+
+Public aggregate over the recent critical-client-error window (60 minutes by
+default, configurable from 5 to 1,440 with
+`CLIENT_CRITICAL_ERROR_WINDOW_MINUTES`). It returns `200` only when the window
+contains zero events, and otherwise returns `503`. The response exposes only the
+total, counts by coarse kind and minute-coarsened latest occurrence; it never
+returns a message, stack, detailed URL or browser/user identity.
+
 ### `GET /api/health/fantasy-prices`
 
 Public freshness/completeness monitor for configured Sports.ru fantasy price

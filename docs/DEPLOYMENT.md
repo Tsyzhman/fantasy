@@ -25,19 +25,19 @@ npm run check
 The currently verified runtime is Docker, not the PM2 workflow described later
 in this document:
 
-- active image: `fantasy-scout-web:beta38-20260717T093041Z`;
+- active image: `fantasy-scout-web:beta39-20260717T114447Z`;
 - image ID:
-  `sha256:d0dbfd93e1055d7502cce16718698831595fd1340873398218fb3a22fb0eefc7`;
-- source commit: `cfc1bc9d70e3d44b627cc3cffffe278de70e11c7`;
+  `sha256:7fb33bf67c78e400bb66b66bc08bc2e4be1f59f97242143b0a7d9d0c77f3b038`;
+- source commit: `41e1515bedc54f96e46bf62d3971c118a41e9639`;
 - release directory:
-  `/var/www/fantasy-scout-releases/20260717T093041Z-beta38-cfc1bc9-green-main`;
+  `/var/www/fantasy-scout-releases/20260717T114447Z-beta39-41e1515-green-main`;
 - active container ID:
-  `815ae6085d78e7b4887b4c012a27f21bc57de31a8e639541b0e4fcfacd5064c8`;
+  `b423653045f0b31f831519669832a8e0bee8e668275d4ec2defdc976a51dcfb8`;
 - state after rollout: `running`, `healthy`, restart count `0`;
-- stopped immediate rollback container is exact bounded-log beta36:
-  `fantasy-scout-web-beta36-rollback-pre-beta38-20260717T093041Z`
+- stopped immediate rollback container is exact bounded-log beta38:
+  `fantasy-scout-web-beta38-rollback-pre-beta39-20260717T114447Z`
   (container ID
-  `16398e4b3103a2408b67414ced74e2df28d2ce72bb3f64d2b375afc5b90c6f94`,
+  `815ae6085d78e7b4887b4c012a27f21bc57de31a8e639541b0e4fcfacd5064c8`,
   state `exited`);
 - preserved older rollback is exact bounded-log beta33:
   `fantasy-scout-web-beta33-rollback-pre-beta36-20260717T070721Z`
@@ -45,15 +45,21 @@ in this document:
   `c2cea7a73bcc53df5e352cce6c9baee4bc51b02f21f7c65d5c804083851b21dd`,
   state `created`);
 - external liveness and data-quality health both return HTTP 200;
-- applied Prisma state: 8 migrations, including
-  `000008_beta_test_moderated_environment`; failed/rolled-back migrations: 0;
+- applied Prisma state: 10 migrations, including the expand-only
+  `000009_beta_test_submission` and the bounded-lock
+  `000010_beta_test_submission_contract`; failed/rolled-back migrations: 0;
 - PostgreSQL was controllably recreated as container ID
   `325e03666369215bd5b68c527a4b9b70421237c1b8f78b0040df6d94e571230f`
   with the same image, env, network and
   `fantasy-scout_fantasy-scout-postgres` volume; it is healthy with bounded
   `json-file` logs (`max-size=20m`, `max-file=5`), and the swap preserved
-  8 applied migrations plus 10,972 `matches` rows;
-- `/var/www/fantasy-scout-current` points to the beta38 immutable release;
+  10 applied migrations plus 10,972 `matches` rows;
+- `/var/www/fantasy-scout-current` points to the beta39 immutable release;
+- verified pre-contract backup (custom format, checked with
+  `pg_restore --list`):
+  `/var/backups/fantasy-scout/pre-beta40-contract-20260717T120353Z.dump`,
+  SHA-256
+  `9cf65938bb68000a79c5d5c74dd31ab856bfe7215f27bf0eed63a2e8687b3502`;
 - verified pre-beta32 backup (custom format, checked with `pg_restore --list`):
   `/var/backups/fantasy-scout/fantasy_scout_pre_beta32_20260716T141021Z.dump`,
   50,259,500 bytes, SHA-256
@@ -83,6 +89,8 @@ Compare the full normalized `HostConfig`, healthcheck, entrypoint/cmd/user/
 working directory, mounts, networks/aliases and env before stopping active. The
 current symlink must be an exact symlink target and must be replaced atomically
 through a sibling link plus `mv -Tf`.
+
+The following beta38 rollout notes are historical release evidence.
 
 Beta38 used archive SHA-256
 `adcdfedda301307200e10cc00e08abc4884e3dfd46c0e38510cea2e10363dd52`.

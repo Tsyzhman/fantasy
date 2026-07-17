@@ -20,6 +20,10 @@ const betaSubmissionContractMigration = readFileSync(
   resolve("prisma/migrations/000010_beta_test_submission_contract/migration.sql"),
   "utf8"
 );
+const clientCriticalErrorMigration = readFileSync(
+  resolve("prisma/migrations/000011_client_critical_error_events/migration.sql"),
+  "utf8"
+);
 
 test("beta telemetry foreign key targets the canonical Prisma user table", () => {
   assert.match(initialMigration, /CREATE TABLE "User" \(/);
@@ -60,4 +64,15 @@ test("beta submission contract rejects new real valid runs without inventing pro
     betaSubmissionContractMigration,
     /ALTER\s+COLUMN\s+"?submitted_at"?\s+SET\s+NOT\s+NULL/i
   );
+});
+
+test("client critical-error storage contains only coarse aggregate fields", () => {
+  assert.match(clientCriticalErrorMigration, /CREATE TABLE "client_critical_error_events"/);
+  assert.match(clientCriticalErrorMigration, /"kind" TEXT NOT NULL/);
+  assert.match(clientCriticalErrorMigration, /"route_group" TEXT NOT NULL/);
+  assert.match(clientCriticalErrorMigration, /"occurred_minute" TIMESTAMP\(3\) NOT NULL/);
+  assert.match(clientCriticalErrorMigration, /"count" INTEGER NOT NULL DEFAULT 1/);
+  assert.match(clientCriticalErrorMigration, /client_critical_error_events_kind_check/);
+  assert.match(clientCriticalErrorMigration, /client_critical_error_events_route_group_check/);
+  assert.doesNotMatch(clientCriticalErrorMigration, /message|stack|query|user_id|session|ip_address|user_agent/i);
 });

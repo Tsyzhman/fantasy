@@ -35,6 +35,13 @@ test("middleware lets nested health routes report operational status", () => {
   });
 });
 
+test("middleware lets anonymous client-error collection enforce its own bounds", () => {
+  return withEnv({ DATABASE_URL: "postgresql://user:pass@localhost:5432/app" }, () => {
+    const response = middleware(new NextRequest("http://localhost/api/client-errors", { method: "POST" }));
+    assert.equal(response.status, 200);
+  });
+});
+
 test("middleware lets cron routes enforce their bearer secret", () => {
   return withEnv({ DATABASE_URL: "postgresql://user:pass@localhost:5432/app" }, () => {
     const response = middleware(new NextRequest("http://localhost/api/cron/ingestion/daily"));
