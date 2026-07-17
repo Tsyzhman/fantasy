@@ -18,6 +18,9 @@ The monitor keeps one GitHub issue named
 when the failure fingerprint changes, reopens it on a recurring incident, and
 closes it after recovery. Critical availability failures also fail the workflow;
 quality warnings keep the workflow green while the issue remains open.
+GitHub API reads (`GET`/`HEAD`) retry bounded network, 429 and 5xx failures.
+Mutating `POST`/`PATCH` calls are never automatically retried, so a transient
+response cannot duplicate issue mutations.
 
 Official fantasy prices are intentionally outside this monitor until the source
 publishes them. The exception is explicit; no synthetic price health is reported
@@ -30,6 +33,10 @@ as green.
 redaction. The file rotates at 50 MiB or every 24 hours, keeps ten files, and
 removes files older than 30 days.
 
+The reverse proxy has a two-second retry window with a 100 ms interval for
+brief upstream disconnects. Caddy's default retry matcher keeps this to safe
+GET requests; non-idempotent writes are not replayed.
+
 `fantasy-access-audit.timer` runs every 15 minutes. The analyzer reads the last
 60 minutes from active and compressed rotated logs and publishes only aggregate,
 non-sensitive metrics:
@@ -41,7 +48,7 @@ non-sensitive metrics:
 - first/last included request and the actual observed span, so a requested
   24-hour window cannot be mistaken for 24 hours of evidence when the log is
   newer;
-- excluded monitor-request count.
+- excluded request count and its User-Agent subset.
 
 The state is `insufficient_data` below 20 requests, `breach` at a 5xx rate of
 1% or more, and `ok` otherwise. A breach makes the oneshot service fail. The
@@ -49,9 +56,25 @@ public aggregate is served from `/_monitor/access-audit.json`. Requests to the
 monitor path and the warning-only `/api/health/data-quality` and
 `/api/health/fantasy-prices` endpoints are excluded from user-traffic metrics in
 both Caddy and the analyzer. Their expected 503 responses therefore cannot
-manufacture a user-facing 5xx breach. The scheduled production monitor is
-excluded by its dedicated User-Agent, while genuine user visits to `/login`
+manufacture a user-facing 5xx breach. The scheduled production monitor and
+production browser smoke are excluded by their dedicated User-Agents
+(`fantasy-scout-production-monitor/1.0` and
+`fantasy-production-browser-smoke/*`), while genuine user visits to `/login`
 remain included in the user-traffic denominator.
+
+The first verified beta36 snapshot after post-deploy smoke excluded 393 tagged
+synthetic requests. It contained 2 eligible requests, 0 responses 5xx and an
+observed span of 2.415 minutes, so the correct state was
+`insufficient_data`. Production Monitor run `29563899169` remained green with
+0 critical failures and one warning for that insufficient sample.
+
+The fresh post-rotation snapshot used by run `29566962197` excluded 399 tagged
+synthetic requests and included 234 eligible requests, 0 responses 5xx,
+p75/p95 22.767/50.482 ms and a 51.834-minute observed span. The state was `ok`
+and the workflow had 0 critical failures and 0 warnings. The eligible-request
+counter is an HTTP denominator, not proof of 234 people or even exclusively
+human traffic. Neither snapshot closes the long-running real-user error-rate
+gate.
 
 Install or update the server integration only after recording the exact current
 Caddyfile SHA-256:

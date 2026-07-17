@@ -139,7 +139,7 @@ npm run beta:user-test -- review --run-id=<uuid> --valid=true --without-help=tru
    Для технически недействительного прогона:
 
 ```bash
-npm run beta:user-test -- review --run-id=<uuid> --valid=false --invalid-reason="конкретная техническая причина" --notes="краткая заметка"
+npm run beta:user-test -- review --run-id=<uuid> --valid=false --environment=DESKTOP_BROWSER --invalid-reason="конкретная техническая причина" --notes="краткая заметка"
 ```
 
 9. После каждой сессии и по итогам выборки сформируйте машинно читаемый отчёт:
@@ -149,7 +149,8 @@ npm run beta:user-test -- review --run-id=<uuid> --valid=false --invalid-reason=
    обезличенный отчёт непосредственно в runtime-приложении и отдаёт его с
    `Cache-Control: private, no-store`.
 
-   Production beta33 acceptance 2026-07-16 подтвердил этот контракт фактически:
+   Исторический production beta33 acceptance 2026-07-16 подтвердил этот контракт
+   фактически:
    USER получил 403/`FORBIDDEN`, ADMIN — 200, `application/json`,
    `Cache-Control: private, no-store` и
    `Content-Disposition: attachment; filename="beta-user-test-2026-07-16.json"`.
@@ -197,6 +198,11 @@ Gate проходит, только если:
   пяти минут.
 - LCP получен минимум от 10 разных реальных участников, а его RUM p75 не
   превышает 2,5 секунды.
+- за явно указанное реальное beta-окно доля server 5xx среди eligible
+  пользовательских запросов меньше 1%; в отчёте указаны начало, конец,
+  фактическая длительность и число запросов. Dedicated monitor и
+  browser-smoke User-Agent исключаются, обычные пользовательские запросы —
+  нет. Состояние `insufficient_data` не закрывает gate.
 
 Технически недействительные прогоны перечисляются отдельно с причиной и не
 входят ни в числитель, ни в знаменатель. Их доля также публикуется, чтобы
@@ -218,6 +224,7 @@ Gate проходит, только если:
 - transfer understanding rate: **не измерено**;
 - средняя оценка удобства: **не измерено**;
 - Web Vitals p75: **не измерено**;
+- server 5xx rate / окно / eligible requests: **не измерено**;
 - physical Safari iOS / Chrome Android: **не измерено / не измерено**;
 - открытых critical/blocker: **не измерено**;
 - решение beta-gate: **FAIL / тест не проведён**.

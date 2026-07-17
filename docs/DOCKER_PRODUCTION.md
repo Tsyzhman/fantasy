@@ -14,18 +14,20 @@ the 15-minute aggregate audit, and GitHub issue alert delivery are described in
 
 ## Current verified release
 
-As of 2026-07-16, production runs
-`fantasy-scout-web:beta33-20260716T162012Z` from
-`/var/www/fantasy-scout-releases/20260716T162012Z-beta33-c4019ca-green-main`. Its exact
+As of 2026-07-17, production runs
+`fantasy-scout-web:beta36-20260717T070721Z` from
+`/var/www/fantasy-scout-releases/20260717T070721Z-beta36-c0d969b-green-main`. Its exact
 image ID is
-`sha256:1632280efe40aac35139e56840fbc5d9be660471303839c0cc1cac63f6deeff4`
-and source commit is `c4019cae678638390a0bdc749ab1c5c6f8be7bec`.
+`sha256:6590f96619d8b85ac9215d5a32a8e0b0e4046dea126f670dac108d7fed5141ca`
+and source commit is `c0d969bec6f558de61f2dbdd277528dc53a8d7e1`.
 Active container ID
-`43937a69e4348431389473af4daa2600e2232d40e9d0f8d11fa0f5345d75a481`
+`16398e4b3103a2408b67414ced74e2df28d2ce72bb3f64d2b375afc5b90c6f94`
 is healthy with zero restarts and explicit `json-file` rotation
-(`max-size=20m`, `max-file=5`). The stopped immediate rollback is bounded-log
-beta32 `fantasy-scout-web-beta32-rollback-pre-beta33-20260716T162012Z`, container
-ID `6e25d4c55bf166e23aff2b99c65e4bb63b2b66fa28ca203c8580a27b22343958`.
+(`max-size=20m`, `max-file=5`). The stopped immediate rollback is exact
+bounded-log beta33
+`fantasy-scout-web-beta33-rollback-pre-beta36-20260717T070721Z`, container ID
+`c2cea7a73bcc53df5e352cce6c9baee4bc51b02f21f7c65d5c804083851b21dd`
+in `created` state.
 The older beta32 image before its log-config correction remains retained as
 `fantasy-scout-web-beta32-unbounded-log-rollback-20260716T144424Z`, container ID
 `2eb8efb7a82284f68f2701033c542fb9f2b1da5efc18c0141c38835226dcaf7c`.
@@ -38,9 +40,11 @@ PostgreSQL container ID
 uses the same `postgres:16-alpine` image and
 `fantasy-scout_fantasy-scout-postgres` volume as before, is healthy, and now has
 bounded `json-file` logging (`max-size=20m`, `max-file=5`). Its controlled
-recreation preserved 8 applied migrations and 10,971 `matches` rows; the web
+recreation preserved 8 applied migrations and 10,972 `matches` rows; the web
 container and both public health endpoints recovered successfully before the
-old container was removed.
+old container was removed. The
+`/var/www/fantasy-scout-current` symlink points to the immutable beta36
+release.
 
 The verified pre-beta32 custom-format backup is
 `/var/backups/fantasy-scout/fantasy_scout_pre_beta32_20260716T141021Z.dump`,
@@ -68,19 +72,32 @@ so the same image was recreated and promoted with explicit rotation; that
 log-fix swap restored HTTP in 1.909 seconds. This remains historical incident
 evidence and the reason explicit log options are mandatory.
 
-Beta33 used archive SHA-256
-`c75ac11c89273d321340b55af1985146c029c36f126790738a15faf0a4fe994c`. Canary
-ID `c97c8e5bcceae4f3983657b565b6bae04a7bf945c0131d6c1e0fb7b46860abf9`
-passed health, report-auth, worker-chunk and unchanged-DB checks, then was removed.
-Stopped candidate `fantasy-scout-web-beta33-candidate-20260716T162012Z` had exact
+Beta36 used archive SHA-256
+`1661d4096e0749a71835309029b6187cd60d30caac1a8bff0a209ac0cb5900df`. Canary
+ID `101881b3e44abf0dc3d5d521a43e9afe2cc3f1a57b00613fdfa80b1288040d69`
+used the exact image/revision, port `127.0.0.1:3416`, read-only uploads and
+disabled schedulers. It passed health, report-auth, runtime/log checks and the
+full Edge journey from real-player search through 15/15 auto-pick, a real
+transfer recommendation, save, server `squadId`, reload and restore. Exact QA
+cleanup completed and the canary was removed. The stopped candidate had exact
 env/network/port/RW upload volume/restart policy/healthcheck and bounded logs.
-Guarded swap restored HTTP in 2.242 seconds; the candidate became the active
-container and its old name is absent. DB signature stayed `8|0|10971`.
-Production browser run `29517734343` passed 5 checks with 2 expected skips,
-artifact `8383413207`; monitor `29517734277` reported 0 critical, 0 warning,
-227 requests and 0 responses 5xx, p75 37.322 ms and p95 218.53 ms. Final app log
-inspection found 0 critical-pattern lines over 20 minutes. Treat this as release
-evidence only; long-running RUM and real-user server error rate remain open.
+Guarded swap restored HTTP in 2.153 seconds. DB signature stayed
+`8|0|10972`; beta33 became the immediate rollback.
+
+A later security audit found current DB/cron credentials in a stale rendered
+`/tmp` compose-config with mode 0664. The exact file was removed. The
+PostgreSQL role password, web `DATABASE_URL`, and `CRON_SECRET` were rotated
+with an exact-guarded swap; HTTP recovered in 6.742 seconds and DB signature
+remained `8|0|10972`. The old active/rollback containers containing previous
+values were removed. The active/rollback IDs at the top of this section are the
+post-rotation IDs; the code image and OCI revision did not change.
+
+Post-rotation browser run `29566426370` passed 5 checks with 2 expected skips,
+sanitized artifact `8401309300`; monitor `29566962197` reported 0 critical
+and 0 warnings. Its fresh snapshot excluded 399 tagged synthetic requests,
+included 234 eligible requests, 0 responses 5xx, p75/p95 22.767/50.482 ms and a
+51.834-minute observed span. Treat this as release evidence only; long-running
+RUM and real-user server error rate remain open.
 During the first beta14 attempt, a
 CRLF/quoting defect occurred after production had been stopped, causing
 approximately 30–40 seconds of downtime before beta10 was restored. There was

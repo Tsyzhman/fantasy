@@ -20,24 +20,25 @@ for the branch is green:
 npm run check
 ```
 
-## Verified Docker production state (2026-07-16)
+## Verified Docker production state (2026-07-17)
 
 The currently verified runtime is Docker, not the PM2 workflow described later
 in this document:
 
-- active image: `fantasy-scout-web:beta33-20260716T162012Z`;
+- active image: `fantasy-scout-web:beta36-20260717T070721Z`;
 - image ID:
-  `sha256:1632280efe40aac35139e56840fbc5d9be660471303839c0cc1cac63f6deeff4`;
-- source commit: `c4019cae678638390a0bdc749ab1c5c6f8be7bec`;
+  `sha256:6590f96619d8b85ac9215d5a32a8e0b0e4046dea126f670dac108d7fed5141ca`;
+- source commit: `c0d969bec6f558de61f2dbdd277528dc53a8d7e1`;
 - release directory:
-  `/var/www/fantasy-scout-releases/20260716T162012Z-beta33-c4019ca-green-main`;
+  `/var/www/fantasy-scout-releases/20260717T070721Z-beta36-c0d969b-green-main`;
 - active container ID:
-  `43937a69e4348431389473af4daa2600e2232d40e9d0f8d11fa0f5345d75a481`;
+  `16398e4b3103a2408b67414ced74e2df28d2ce72bb3f64d2b375afc5b90c6f94`;
 - state after rollout: `running`, `healthy`, restart count `0`;
-- stopped immediate rollback container is bounded-log beta32:
-  `fantasy-scout-web-beta32-rollback-pre-beta33-20260716T162012Z`
+- stopped immediate rollback container is exact bounded-log beta33:
+  `fantasy-scout-web-beta33-rollback-pre-beta36-20260717T070721Z`
   (container ID
-  `6e25d4c55bf166e23aff2b99c65e4bb63b2b66fa28ca203c8580a27b22343958`);
+  `c2cea7a73bcc53df5e352cce6c9baee4bc51b02f21f7c65d5c804083851b21dd`,
+  state `created`);
 - retained historical pre-log-fix beta32 rollback:
   `fantasy-scout-web-beta32-unbounded-log-rollback-20260716T144424Z`
   (container ID
@@ -53,7 +54,8 @@ in this document:
   with the same image, env, network and
   `fantasy-scout_fantasy-scout-postgres` volume; it is healthy with bounded
   `json-file` logs (`max-size=20m`, `max-file=5`), and the swap preserved
-  8 applied migrations plus 10,971 `matches` rows;
+  8 applied migrations plus 10,972 `matches` rows;
+- `/var/www/fantasy-scout-current` points to the beta36 immutable release;
 - verified pre-beta32 backup (custom format, checked with `pg_restore --list`):
   `/var/backups/fantasy-scout/fantasy_scout_pre_beta32_20260716T141021Z.dump`,
   50,259,500 bytes, SHA-256
@@ -75,21 +77,31 @@ does not copy log rotation. The first beta32 candidate inherited an empty
 `json-file`, `max-size=20m`, `max-file=5`. That incident remains the reason for
 the mandatory exact log-config guard.
 
-Beta33 used clean archive SHA-256
-`c75ac11c89273d321340b55af1985146c029c36f126790738a15faf0a4fe994c`, one
+Beta36 used clean archive SHA-256
+`1661d4096e0749a71835309029b6187cd60d30caac1a8bff0a209ac0cb5900df`, one
 loopback canary with schedulers disabled and a read-only upload volume, then an
 exact stopped candidate. Canary ID
-`c97c8e5bcceae4f3983657b565b6bae04a7bf945c0131d6c1e0fb7b46860abf9` was
-removed before the swap; candidate
-`fantasy-scout-web-beta33-candidate-20260716T162012Z` became active container
-`43937a69e4348431389473af4daa2600e2232d40e9d0f8d11fa0f5345d75a481`, so the
-candidate-name is absent after promotion. Guarded swap restored loopback HTTP in 2.242 seconds,
-left DB signature `8|0|10971` unchanged, and retained beta32 as the immediate
-rollback. Browser workflow `29517734343` passed 5 checks with 2 expected skips;
-evidence is artifact `8383413207`. Monitor `29517734277` reported 0 critical,
-0 warning, 227 requests, 0 responses 5xx, p75 37.322 ms and p95 218.53 ms.
-Final app log inspection found 0 critical-pattern lines in the last 20 minutes.
-These are release checks, not long-running real-user RUM/error-rate evidence.
+`101881b3e44abf0dc3d5d521a43e9afe2cc3f1a57b00613fdfa80b1288040d69`
+passed health, report-auth, runtime, log and full Edge journey checks, then was
+removed before the swap. The journey covered real player search, 15/15
+auto-pick, a real transfer recommendation, save, server `squadId`, reload and
+restore. Guarded swap restored loopback HTTP in 2.153 seconds, left DB signature
+`8|0|10972` unchanged, and retained beta33 as the immediate rollback.
+
+A later security audit found a stale rendered compose-config in `/tmp` with
+mode 0664 and current production DB/cron credentials. The exact file was
+removed. The PostgreSQL role password, web `DATABASE_URL`, and `CRON_SECRET`
+were rotated without changing the beta36 image/revision or database contents.
+HTTP recovered in 6.742 seconds. Old active/rollback containers containing the
+previous values were removed; `/var/www/fantasy-scout/.env` remains mode 0600.
+The active and beta33 rollback container IDs above are the post-rotation IDs.
+
+Post-rotation browser workflow `29566426370` passed 5 checks with 2 expected
+skips; sanitized evidence is artifact `8401309300`. Monitor `29566962197`
+reported 0 critical and 0 warnings. Its fresh snapshot excluded 399 tagged
+synthetic requests and included 234 eligible requests, 0 responses 5xx,
+p75/p95 22.767/50.482 ms and a 51.834-minute span. These are release checks, not
+long-running real-user RUM/error-rate evidence.
 
 The authenticated beta22 release smoke ran 40 GET requests in batches of five:
 0 errors, SSR p75 369 ms, and full-pool API p75 238 ms. The longer beta17

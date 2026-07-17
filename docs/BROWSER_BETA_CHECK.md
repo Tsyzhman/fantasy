@@ -1,8 +1,61 @@
 # Browser Beta Check
 
-Дата проверки: 2026-07-16.
+Дата проверки: 2026-07-17.
 
-Финальная browser-проверка выполнена GitHub Actions Playwright Test workflow
+## Beta36 production acceptance 2026-07-17
+
+Production работает на образе
+`fantasy-scout-web:beta36-20260717T070721Z`, image ID
+`sha256:6590f96619d8b85ac9215d5a32a8e0b0e4046dea126f670dac108d7fed5141ca`,
+source commit `c0d969bec6f558de61f2dbdd277528dc53a8d7e1`. Активный container ID —
+`16398e4b3103a2408b67414ced74e2df28d2ce72bb3f64d2b375afc5b90c6f94`;
+состояние `running|healthy|0`.
+
+Post-rotation GitHub Actions Playwright workflow `29566426370` прошёл: 1 auth
+setup и 4 browser-проверки passed, 2 проверки expected skipped. Artifact
+`8401309300` содержит только 6 desktop/tablet/mobile screenshots, report index
+и 3 report images: нет
+`auth.setup`, password selector, QA env или auth-state. Пароль отдельного
+Production Beta QA пользователя после удаления старого небезопасного artifact
+ротирован.
+
+Перед promote тот же exact image/revision прошёл отдельный Edge canary на
+`127.0.0.1:3416`: поиск `Mbeumo` → planner → blank → Web Worker auto-pick
+15/15 → valid squad → применение реальной transfer-рекомендации → save → server
+`squadId` → reload → restore. Все 8 milestone записаны в правильном порядке,
+LCP `/machete/players` присутствует, `JOURNEY_ABORTED` и client errors
+отсутствуют. Серверное время до `SQUAD_RESTORED` — 39 375 мс, полный локальный
+сеанс — 83 с. Exact cleanup удалил QA user, 2 synthetic runs, 40 observations и
+2 QA squads; canary удалён, port 3416 освобождён.
+
+Caddy исключает dedicated browser-smoke User-Agent из real-user error-rate.
+Monitor `29566962197` после credential rotation дал 0 critical/0 warnings;
+свежий snapshot исключил 399 tagged synthetic-запросов, включил 234
+eligible, 0×5xx, p75/p95 22,767/50,482 мс и окно 51,834 минуты. Это release
+evidence, а не доказательство RUM реальных пользователей или длительного окна.
+
+Перед этой повторной проверкой удалён stale world-readable rendered
+compose-config и ротированы production DB password, `DATABASE_URL` и
+`CRON_SECRET`. Старые web/rollback containers с прежними значениями удалены;
+новый active остался на том же exact beta36 image/revision, public health —
+HTTP 200.
+
+## Текущий итог
+
+Технический основной сценарий работает в production: beta36 повторно
+подтвердила поиск реального игрока с прогнозом, переход в планировщик, загрузку
+пула, допустимый auto-pick 15/15, реальную transfer-рекомендацию,
+save/reload/restore и отсутствие browser client errors. Desktop, tablet и mobile
+проекты прошли smoke; clean-UI beta33 остаётся в runtime.
+
+Это не означает готовность полноценной beta: длительный beta error rate и RUM
+не собраны, физические iOS/Android не проверены, тест минимум на 10 реальных
+пользователях не проведён. Официальные цены Sports.ru временно исключены из
+объёма владельцем продукта и не подменяются оценочными.
+
+## Историческая browser-проверка beta33
+
+Историческая browser-проверка выполнена GitHub Actions Playwright Test workflow
 `29517734343` против production `https://fantasy.tsyzhman.ru` на образе
 `fantasy-scout-web:beta33-20260716T162012Z` с image ID
 `sha256:1632280efe40aac35139e56840fbc5d9be660471303839c0cc1cac63f6deeff4`
@@ -34,7 +87,7 @@ Playwright CLI `0.1.17`, browser engine WebKit `26.5`, с iPhone 13 UA и viewpo
 390 px. Инструмент сообщил `maxTouchPoints=0`, поэтому это проверка WebKit и
 мобильной геометрии, а не полноценная touch-эмуляция и не физический Safari iOS.
 
-## Итог
+## Исторический итог beta33
 
 Технический основной сценарий работает в production: поиск игрока возвращает
 реального игрока и прогноз, переход в планировщик доступен, полный пул
@@ -180,7 +233,7 @@ out; desktop primary controls не пересекаются по bounding boxes.
 прикладываются к CI artifacts. Desktop-проверка дополнительно открывает
 `Ctrl+K` и подтверждает, что смонтирован ровно один dialog палитры команд.
 
-## Проверенный production/canary-объём
+## Исторический проверенный production/canary-объём beta33
 
 | Сценарий | Viewport / выборка | Результат |
 |---|---:|---|
