@@ -62,8 +62,15 @@ def indented(value: str) -> str:
     return "\n".join(f"\t{line}" if line else "" for line in value.splitlines())
 
 
-def site_block(value: str) -> str:
-    return f"fantasy.tsyzhman.ru {{\n\timport ai_common\n\n{indented(value)}\n\n\treverse_proxy 127.0.0.1:3000\n}}"
+plain_proxy = "\treverse_proxy 127.0.0.1:3000"
+retrying_proxy = """\treverse_proxy 127.0.0.1:3000 {
+\t\tlb_try_duration 2s
+\t\tlb_try_interval 100ms
+\t}"""
+
+
+def site_block(value: str, proxy: str) -> str:
+    return f"fantasy.tsyzhman.ru {{\n\timport ai_common\n\n{indented(value)}\n\n{proxy}\n}}"
 
 
 plain_block = "fantasy.tsyzhman.ru {\n\timport ai_common\n\treverse_proxy 127.0.0.1:3000\n}"
@@ -85,8 +92,8 @@ handle_path /_monitor/* {
 \troot * /var/lib/fantasy-scout-monitor
 \tfile_server
 }"""
-legacy_block = site_block(legacy_snippet)
-desired_block = site_block(snippet)
+legacy_block = site_block(legacy_snippet, plain_proxy)
+desired_block = site_block(snippet, retrying_proxy)
 start_marker = "\t# fantasy-monitoring:start"
 end_marker = "\t# fantasy-monitoring:end"
 
@@ -100,6 +107,13 @@ elif text.count(start_marker) == 1 and text.count(end_marker) == 1:
     updated = text[:start] + indented(snippet) + text[end:]
 else:
     raise SystemExit("Refusing to edit: no unique supported fantasy monitoring block found")
+
+if updated.count(retrying_proxy) == 1:
+    pass
+elif updated.count(plain_proxy) == 1:
+    updated = updated.replace(plain_proxy, retrying_proxy)
+else:
+    raise SystemExit("Refusing to edit: no unique supported fantasy reverse_proxy block found")
 
 caddyfile.write_text(updated, encoding="utf-8")
 PY

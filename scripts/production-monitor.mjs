@@ -10,6 +10,8 @@ const githubToken = process.env.GITHUB_TOKEN ?? "";
 const dryRun = process.env.MONITOR_DRY_RUN === "true";
 const alertTitle = process.env.MONITOR_ALERT_TITLE ?? "[production-monitor] Fantasy Scout alert";
 const timeoutMs = positiveInteger(process.env.MONITOR_TIMEOUT_MS, 10_000);
+const githubMaximumAttempts = Math.min(5, positiveInteger(process.env.MONITOR_GITHUB_MAX_ATTEMPTS, 3));
+const githubRetryBaseMs = positiveInteger(process.env.MONITOR_GITHUB_RETRY_BASE_MS, 250);
 const now = new Date();
 
 const checks = await Promise.all([
@@ -204,22 +206,46 @@ async function synchronizeAlertIssue({ alertRequired: shouldAlert, fingerprint: 
 }
 
 async function githubRequest(path, init = {}) {
-  const response = await fetch(new URL(path, githubApiUrl), {
-    ...init,
-    headers: {
-      accept: "application/vnd.github+json",
-      authorization: `Bearer ${githubToken}`,
-      "content-type": "application/json",
-      "user-agent": "fantasy-scout-production-monitor/1.0",
-      "x-github-api-version": "2026-03-10",
-      ...init.headers
-    },
-    signal: AbortSignal.timeout(timeoutMs)
-  });
+  const method = String(init.method ?? "GET").toUpperCase();
+  const retryableMethod = method === "GET" || method === "HEAD";
+  let lastError = null;
+  for (let attempt = 1; attempt <= githubMaximumAttempts; attempt += 1) {
+    let response;
+    try {
+      response = await fetch(new URL(path, githubApiUrl), {
+        ...init,
+        headers: {
+          accept: "application/vnd.github+json",
+          authorization: `Bearer ${githubToken}`,
+          "content-type": "application/json",
+          "user-agent": "fantasy-scout-production-monitor/1.0",
+          "x-github-api-version": "2026-03-10",
+          ...init.headers
+        },
+        signal: AbortSignal.timeout(timeoutMs)
+      });
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      if (!retryableMethod || attempt === githubMaximumAttempts) throw lastError;
+      await delay(githubRetryBaseMs * 2 ** (attempt - 1));
+      continue;
+    }
 
-  const text = await response.text();
-  if (!response.ok) throw new Error(`GitHub API ${init.method ?? "GET"} ${path} returned ${response.status}: ${text.slice(0, 300)}`);
-  return text ? JSON.parse(text) : null;
+    const text = await response.text();
+    if (response.ok) return text ? JSON.parse(text) : null;
+    lastError = new Error(`GitHub API ${method} ${path} returned ${response.status}: ${text.slice(0, 300)}`);
+    if (!retryableMethod || !githubStatusIsRetryable(response.status) || attempt === githubMaximumAttempts) throw lastError;
+    await delay(githubRetryBaseMs * 2 ** (attempt - 1));
+  }
+  throw lastError ?? new Error(`GitHub API ${method} ${path} failed without a response.`);
+}
+
+function githubStatusIsRetryable(status) {
+  return status === 429 || status >= 500;
+}
+
+function delay(milliseconds) {
+  return new Promise((resolvePromise) => setTimeout(resolvePromise, milliseconds));
 }
 
 function monitorFingerprint(body) {

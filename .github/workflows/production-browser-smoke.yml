@@ -33,12 +33,19 @@ jobs:
       - name: Install Chromium
         run: npx playwright install --with-deps chromium
 
-      - name: Run authenticated desktop, tablet, and mobile checks
+      - name: Authenticate without an artifact reporter
         env:
           BETA_QA_EMAIL: ${{ secrets.BETA_QA_EMAIL }}
           BETA_QA_PASSWORD: ${{ secrets.BETA_QA_PASSWORD }}
           PLAYWRIGHT_BASE_URL: https://fantasy.tsyzhman.ru
-        run: npm run test:e2e
+          PLAYWRIGHT_USER_AGENT: fantasy-production-browser-smoke/${{ github.run_id }}
+        run: npx playwright test --project=auth-setup --reporter=line --output=output/playwright-auth-results
+
+      - name: Run authenticated desktop, tablet, and mobile checks
+        env:
+          PLAYWRIGHT_BASE_URL: https://fantasy.tsyzhman.ru
+          PLAYWRIGHT_USER_AGENT: fantasy-production-browser-smoke/${{ github.run_id }}
+        run: npx playwright test --no-deps --project=desktop-chromium --project=tablet-chromium --project=mobile-chromium
 
       - name: Upload browser evidence
         if: always()

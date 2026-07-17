@@ -43,7 +43,24 @@ test("production monitor opens an issue and fails when application health is una
   }
 });
 
-function createMonitorServer(input: { dataHealthy: boolean; appHealthy: boolean; requests: CapturedRequest[] }) {
+test("production monitor retries transient GitHub API failures before synchronizing the issue", async () => {
+  const requests: CapturedRequest[] = [];
+  const server = createMonitorServer({ dataHealthy: false, appHealthy: true, requests, githubIssueListFailures: 2 });
+  const origin = await listen(server);
+
+  try {
+    const result = await runMonitor(origin);
+    assert.equal(result.code, 0, result.stderr);
+    const issueListRequests = requests.filter((request) => request.method === "GET" && request.path === "/repos/owner/repo/issues");
+    assert.equal(issueListRequests.length, 3);
+    assert.ok(requests.some((request) => request.method === "POST" && request.path === "/repos/owner/repo/issues"));
+  } finally {
+    server.close();
+  }
+});
+
+function createMonitorServer(input: { dataHealthy: boolean; appHealthy: boolean; requests: CapturedRequest[]; githubIssueListFailures?: number }) {
+  let githubIssueListFailures = input.githubIssueListFailures ?? 0;
   return createServer(async (request, response) => {
     const body = await readBody(request);
     const path = new URL(request.url ?? "/", "http://127.0.0.1").pathname;
@@ -73,7 +90,13 @@ function createMonitorServer(input: { dataHealthy: boolean; appHealthy: boolean;
         durationMs: { p75: 100, p95: 200 }
       });
     }
-    if (path === "/repos/owner/repo/issues" && request.method === "GET") return json(response, 200, []);
+    if (path === "/repos/owner/repo/issues" && request.method === "GET") {
+      if (githubIssueListFailures > 0) {
+        githubIssueListFailures -= 1;
+        return text(response, 503, "transient GitHub API failure");
+      }
+      return json(response, 200, []);
+    }
     if (path === "/repos/owner/repo/issues" && request.method === "POST") return json(response, 201, { number: 1 });
     return json(response, 404, { message: "not found" });
   });
@@ -88,7 +111,8 @@ function runMonitor(origin: string) {
         GITHUB_REPOSITORY: "owner/repo",
         GITHUB_TOKEN: "test-token",
         MONITOR_BASE_URL: origin,
-        MONITOR_TIMEOUT_MS: "2000"
+        MONITOR_TIMEOUT_MS: "2000",
+        MONITOR_GITHUB_RETRY_BASE_MS: "1"
       },
       stdio: ["ignore", "pipe", "pipe"]
     });

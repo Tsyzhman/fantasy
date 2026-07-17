@@ -88,7 +88,7 @@ test("access-log audit excludes warning health endpoints from user error rate", 
   }
 });
 
-test("access-log audit excludes the production monitor by User-Agent without excluding real login traffic", () => {
+test("access-log audit excludes known synthetic probes by User-Agent without excluding real traffic", () => {
   const directory = mkdtempSync(join(tmpdir(), "fantasy-access-audit-"));
   try {
     const log = join(directory, "fantasy-access.log");
@@ -105,17 +105,26 @@ test("access-log audit excludes the production monitor by User-Agent without exc
         status: 200,
         duration: 0.02,
         request: { uri: index % 2 === 0 ? "/api/health" : "/login", headers: { "User-Agent": ["Fantasy-Scout-Production-Monitor/1.0"] } }
+      })),
+      ...Array.from({ length: 6 }, (_, index) => ({
+        ts: Date.parse("2026-07-16T07:51:00Z") / 1000 + index,
+        status: 502,
+        duration: 0.38,
+        request: { uri: `/_next/static/chunks/${index}.js`, headers: { "User-Agent": ["fantasy-production-browser-smoke/12345"] } }
       }))
     ];
     writeFileSync(log, `${entries.map((entry) => JSON.stringify(entry)).join("\n")}\n`, "utf8");
 
-    const result = runAudit(log, output, "20", [], ["fantasy-scout-production-monitor/1.0"]);
+    const result = runAudit(log, output, "20", [], [
+      "fantasy-scout-production-monitor/1.0",
+      "fantasy-production-browser-smoke/"
+    ]);
     assert.equal(result.status, 0, result.stderr);
     const report = JSON.parse(readFileSync(output, "utf8"));
     assert.equal(report.status, "ok");
     assert.equal(report.requests, 20);
-    assert.equal(report.excludedRequests, 5);
-    assert.equal(report.excludedUserAgentRequests, 5);
+    assert.equal(report.excludedRequests, 11);
+    assert.equal(report.excludedUserAgentRequests, 11);
     assert.equal(report.statusCounts["200"], 20);
   } finally {
     rmSync(directory, { recursive: true, force: true });
