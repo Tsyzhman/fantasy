@@ -10,6 +10,7 @@ import { StarterCheckbox } from "@/components/players/starter-checkbox";
 import { SortableTable } from "@/components/sortable-table";
 import { prisma } from "@/lib/db";
 import { formatCurrency, formatDate, formatNumber, formatScore } from "@/lib/format";
+import { compactPlayerDisplayName } from "@/lib/players/display-name";
 import { LeagueFlag } from "@/components/ui/league-flag";
 
 export const dynamic = "force-dynamic";
@@ -125,7 +126,7 @@ export default async function BaltikaTeamPage({ params, searchParams }: PageProp
           <SortableTable className="min-w-full table-fixed divide-y divide-slate-200 text-xs">
             <thead className="bg-slate-50 text-left font-semibold uppercase text-slate-500">
               <tr>
-                <th className="w-[42%] px-3 py-3"><I18nText en="Surname" ru="Фамилия" /></th>
+                <th className="w-[42%] px-3 py-3"><I18nText en="Player" ru="Игрок" /></th>
                 <th className="w-[29%] bg-emerald-50 px-3 py-3 text-right text-emerald-700"><I18nText en="Forecast" ru="Прогноз" /></th>
                 <th className="w-[29%] bg-sky-50 px-3 py-3 text-right text-sky-700"><I18nText en="Scoring" ru="Очки" /></th>
               </tr>
@@ -136,7 +137,7 @@ export default async function BaltikaTeamPage({ params, searchParams }: PageProp
                   <td className="max-w-[42vw] px-3 py-3 font-medium text-ink">
                     <div className="flex items-center gap-2">
                       <StarterCheckbox snapshotId={player.id} defaultChecked={player.isStarter} labelEn={`Starter: ${player.playerName}`} labelRu={`В старте: ${player.playerName}`} />
-                      <span className="block truncate" title={player.playerName}>{compactPlayerName(player.playerName)}</span>
+                      <span className="block truncate" title={player.playerName}>{compactPlayerDisplayName(player.playerName)}</span>
                     </div>
                     <span className="mt-0.5 block truncate pl-6 text-[11px] font-normal text-slate-500">{player.positionGroup ?? "-"} · {formatNumber(player.minutesPlayed)} min</span>
                   </td>
@@ -180,7 +181,7 @@ export default async function BaltikaTeamPage({ params, searchParams }: PageProp
                   <td className="whitespace-nowrap px-4 py-3 text-center">
                     <StarterCheckbox snapshotId={player.id} defaultChecked={player.isStarter} labelEn={`Starter: ${player.playerName}`} labelRu={`В старте: ${player.playerName}`} />
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 font-medium text-ink">{player.playerName}</td>
+                  <td className="whitespace-nowrap px-4 py-3 font-medium text-ink" title={player.playerName}>{compactPlayerDisplayName(player.playerName)}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-slate-600">{player.positionGroup ?? "-"}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatNumber(player.minutesPlayed)}</td>
                   <td className="hidden whitespace-nowrap px-4 py-3 text-right text-slate-600 lg:table-cell">{formatScore(player.goals)}</td>
@@ -231,7 +232,7 @@ export default async function BaltikaTeamPage({ params, searchParams }: PageProp
                   <td className="whitespace-nowrap px-4 py-3 text-center">
                     <StarterCheckbox snapshotId={player.id} defaultChecked={player.isStarter} labelEn={`Starter: ${player.playerName}`} labelRu={`В старте: ${player.playerName}`} />
                   </td>
-                  <td className="whitespace-nowrap px-4 py-3 font-medium text-ink">{player.playerName}</td>
+                  <td className="whitespace-nowrap px-4 py-3 font-medium text-ink" title={player.playerName}>{compactPlayerDisplayName(player.playerName)}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-slate-600">{player.positionGroup ?? "-"}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatNumber(player.age)}</td>
                   <td className="whitespace-nowrap px-4 py-3 text-right text-slate-600">{formatNumber(player.minutesPlayed)}</td>
@@ -374,9 +375,4 @@ function scoreLabel(stat: TeamFormRow) {
   const away = stat.fixture.awayScore;
   if (home === null || away === null) return "-";
   return stat.side === "HOME" ? `${home}:${away}` : `${away}:${home}`;
-}
-
-function compactPlayerName(name: string) {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  return parts.length > 1 ? parts[parts.length - 1] : name;
 }

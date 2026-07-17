@@ -25,6 +25,7 @@ import { ResultsToolbar } from "@/components/ui/results-toolbar";
 import { ScoreHeatCell, computeRanks } from "@/components/ui/score-heat-cell";
 import { formatCurrency, formatNumber, NULL_GLYPH } from "@/lib/format";
 import { prisma } from "@/lib/db";
+import { compactPlayerDisplayName } from "@/lib/players/display-name";
 
 export const dynamic = "force-dynamic";
 
@@ -272,7 +273,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
           <SortableTable serverSortParam="sort" defaultSort={sort} className="min-w-full table-fixed divide-y divide-slate-200 text-xs">
             <thead className="bg-slate-50 text-left font-semibold uppercase text-slate-500">
               <tr>
-                <th className="w-[42%] px-3 py-3" data-sort-key="playerName"><I18nText en="Surname" ru="Фамилия" /></th>
+                <th className="w-[42%] px-3 py-3" data-sort-key="playerName"><I18nText en="Player" ru="Игрок" /></th>
                 <th className="w-[29%] bg-emerald-50 px-3 py-3 text-right text-emerald-700" data-sort-key="fantasyScore">xFP</th>
                 <th className="w-[29%] bg-sky-50 px-3 py-3 text-right text-sky-700" data-sort-key="scoringScore">FP</th>
               </tr>
@@ -285,7 +286,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
                       <PlayerComparePickButton player={baltikaComparePlayer(player)} />
                       <PlayerWatchlistButton source="baltika" player={baltikaWatchlistPlayer(player)} />
                       <PlayerCompareDraggable player={baltikaComparePlayer(player)} className="min-w-0 flex-1">
-                        <span className="block truncate" title={player.playerName}>{compactPlayerName(player.playerName)}</span>
+                        <span className="block truncate" title={player.playerName}>{compactPlayerDisplayName(player.playerName)}</span>
                       </PlayerCompareDraggable>
                     </div>
                     <span className="mt-0.5 flex min-w-0 items-center gap-1 text-[11px] font-normal text-slate-500">
@@ -427,11 +428,6 @@ export default async function PlayersPage({ searchParams }: PageProps) {
       </PlayerCompareProvider>
     </main>
   );
-}
-
-function compactPlayerName(name: string) {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  return parts.length > 1 ? parts[parts.length - 1] : name;
 }
 
 function parseStarterFilter(starterFilter: string | undefined, starterOnly: string | undefined) {
@@ -609,7 +605,7 @@ function BaltikaPlayerNameCell({ player }: { player: BaltikaPlayerRow }) {
           player={data}
           trigger={
             <span className="cursor-help truncate border-b border-dashed border-slate-300" title={player.playerName}>
-              {player.playerName}
+              {compactPlayerDisplayName(player.playerName)}
             </span>
           }
         />

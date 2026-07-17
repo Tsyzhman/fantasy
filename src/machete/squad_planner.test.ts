@@ -11,6 +11,7 @@ import {
   fantasyPlannerPosition,
   fantasyPlannerSharedRowIdentity,
   fantasyTeamShortName,
+  fantasyTeamShortNamesByTeamId,
   loadFantasySquadPlannerData,
   normalizeFantasySquadName,
   projectFixtureFantasyPoints,
@@ -53,6 +54,25 @@ test("squad planner uses provider team short names with a full-name fallback", (
   assert.equal(fantasyTeamShortName({ short_name: "Man United" }, "Manchester United"), "Man United");
   assert.equal(fantasyTeamShortName({ shortName: "Nottm Forest" }, "Nottingham Forest"), "Nottm Forest");
   assert.equal(fantasyTeamShortName({ short_name: "  " }, "Brighton & Hove Albion"), "Brighton & Hove Albion");
+});
+
+test("squad planner keeps the selected-season short name and fills gaps from another season", () => {
+  const result = fantasyTeamShortNamesByTeamId(
+    [
+      { teamId: 10n, metadata: { short_name: "Current United" } },
+      { teamId: 20n, metadata: {} },
+      { teamId: 30n, metadata: null }
+    ],
+    [
+      { teamId: 10n, metadata: { short_name: "Old United" } },
+      { teamId: 20n, metadata: { short_name: "Fallback City" } },
+      { teamId: 30n, metadata: { short_name: "  " } }
+    ]
+  );
+
+  assert.equal(result.get("10"), "Current United");
+  assert.equal(result.get("20"), "Fallback City");
+  assert.equal(result.has("30"), false);
 });
 
 test("sports ru season aliases support long and compact FotMob season labels", () => {

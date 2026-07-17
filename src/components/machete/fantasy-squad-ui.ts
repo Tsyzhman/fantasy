@@ -7,20 +7,6 @@ export type FixtureChipPresentation = {
   difficulty: number | null | undefined;
 };
 
-const surnameParticles = new Set(["al", "bin", "da", "das", "de", "del", "della", "den", "der", "di", "dos", "du", "la", "le", "van", "von"]);
-
-export function compactSquadPlayerName(name: string) {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  if (parts.length < 2) return parts[0] ?? name;
-
-  let surnameStart = parts.length - 1;
-  while (surnameStart > 1 && surnameParticles.has(parts[surnameStart - 1].toLocaleLowerCase())) {
-    surnameStart -= 1;
-  }
-  const initial = Array.from(parts[0].replace(/[.]+$/g, ""))[0]?.toLocaleUpperCase();
-  return initial ? `${initial}. ${parts.slice(surnameStart).join(" ")}` : name;
-}
-
 export function fixtureChipPresentations(
   fixtures: string[],
   difficulties: Array<number | null | undefined>,

@@ -4,6 +4,7 @@ import { I18nText } from "@/components/i18n-text";
 import { FdrRow } from "@/components/ui/fdr-pill";
 import { formatNumber, formatScore } from "@/lib/format";
 import { cn } from "@/lib/cn";
+import { compactPlayerDisplayName } from "@/lib/players/display-name";
 import { compactTeamDisplayName } from "@/lib/teams/display";
 
 export type PlayerHoverCardData = {
@@ -37,7 +38,7 @@ export function PlayerHoverCard({
     <span className={cn("hover-card-trigger", className)} tabIndex={0}>
       {trigger}
       <span className="hover-card-panel" role="tooltip">
-        <span className="block text-sm font-bold text-ink">{player.name}</span>
+        <span className="block text-sm font-bold text-ink" title={player.name}>{compactPlayerDisplayName(player.name)}</span>
         <span className="mt-0.5 block text-xs text-slate-500" title={player.teamName ?? undefined}>
           {[player.position, compactTeamDisplayName({ name: player.teamName, shortName: player.teamShortName })].filter(Boolean).join(" · ") || (
             <I18nText en="No team data" ru="Нет данных о команде" />

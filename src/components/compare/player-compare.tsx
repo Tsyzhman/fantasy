@@ -18,6 +18,7 @@ import {
 import { I18nText } from "@/components/i18n-text";
 import { localizedText, useLanguage } from "@/components/localized-option";
 import { cn } from "@/lib/cn";
+import { compactPlayerDisplayName } from "@/lib/players/display-name";
 import { compactTeamDisplayName } from "@/lib/teams/display";
 
 export type CompareSource = "machete" | "baltika";
@@ -310,7 +311,7 @@ function CompareSlot({
     <div className="flex h-14 items-center justify-between rounded border border-brand-300 bg-white px-2 py-1 text-xs shadow-sm">
       <div className="min-w-0 flex-1">
         <div className="truncate font-semibold text-ink" title={player.name}>
-          {player.name}
+          {compactPlayerDisplayName(player.name)}
         </div>
         <div className="truncate text-[11px] text-slate-500" title={player.teamName ?? undefined}>
           {[player.position, compactTeamDisplayName({ name: player.teamName, shortName: player.teamShortName })].filter(Boolean).join(" / ") || "-"}

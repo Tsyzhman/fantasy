@@ -9,6 +9,7 @@ import { LocalizedOption, localizedText, useLanguage } from "@/components/locali
 import { SortableTable } from "@/components/sortable-table";
 import { FOTMOB_PITCH_LENGTH_METERS, FOTMOB_PITCH_WIDTH_METERS, normalized_shot_axis_coordinate } from "@/lib/shot-coordinates";
 import type { ShotMapShot } from "@/lib/shot-maps";
+import { compactPlayerDisplayName } from "@/lib/players/display-name";
 import { shotMatchesSituationFilter, type ShotSituationFilter } from "@/mixer/shot-filters";
 
 type ShotMapExplorerProps = {
@@ -230,7 +231,7 @@ export function ShotMapExplorer({
               <tbody className="divide-y divide-slate-100">
                 {topShooterSummaries.map((summary) => (
                   <tr key={summary.key} className="hover:bg-slate-50">
-                    <td className="whitespace-nowrap px-3 py-2 font-medium text-ink">{summary.playerName}</td>
+                    <td className="whitespace-nowrap px-3 py-2 font-medium text-ink" title={summary.playerName}>{compactPlayerDisplayName(summary.playerName)}</td>
                     <td className="whitespace-nowrap px-3 py-2 text-slate-600">{summary.position}</td>
                     <td className="whitespace-nowrap px-3 py-2 text-slate-600">{summary.teamName}</td>
                     <td className="whitespace-nowrap px-3 py-2 text-right font-semibold text-ink">{summary.shots}</td>

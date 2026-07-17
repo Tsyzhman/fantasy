@@ -8,6 +8,7 @@ import { SparkLine } from "@/components/ui/spark-line";
 import { prisma } from "@/lib/db";
 import { getCurrentUser } from "@/lib/auth";
 import { formatCurrency, formatNumber, formatScore, NULL_GLYPH } from "@/lib/format";
+import { compactPlayerDisplayName } from "@/lib/players/display-name";
 import { compactTeamDisplayName } from "@/lib/teams/display";
 import { loadSportsRuFantasyPriceRefsByScopedPlayer, sportsRuFantasyPriceScopeKey, type SportsRuFantasyPriceRef } from "@/machete/squad_planner";
 import {
@@ -200,7 +201,7 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
                     </th>
                     {rows.map((row) => (
                       <th key={row.id} className="min-w-[168px] px-3 py-3 text-center align-bottom">
-                        <div className="text-sm font-bold text-ink">{row.name}</div>
+                        <div className="text-sm font-bold text-ink" title={row.name}>{compactPlayerDisplayName(row.name)}</div>
                         <div className="mt-0.5 text-[11px] font-normal normal-case tracking-normal text-slate-500" title={row.teamName ?? undefined}>
                           {[row.position, compareTeamDisplayName(row)].filter(Boolean).join(" · ") || NULL_GLYPH}
                         </div>
@@ -278,7 +279,7 @@ function CompareSummaryCard({ row, isLeader }: { row: CompareRow; isLeader: bool
     <article className="rounded border border-slate-200 bg-white p-4 shadow-soft">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h2 className="truncate text-base font-bold text-ink" title={row.name}>{row.name}</h2>
+          <h2 className="truncate text-base font-bold text-ink" title={row.name}>{compactPlayerDisplayName(row.name)}</h2>
           <p className="mt-1 truncate text-xs text-slate-500" title={row.teamName ?? undefined}>
             {[row.position, compareTeamDisplayName(row)].filter(Boolean).join(" · ") || NULL_GLYPH}
           </p>

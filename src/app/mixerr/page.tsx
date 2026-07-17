@@ -8,6 +8,7 @@ import { CopyCurrentLinkButton } from "@/components/ui/copy-current-link-button"
 import { FilterShell } from "@/components/ui/filter-shell";
 import { ResultsToolbar } from "@/components/ui/results-toolbar";
 import { prisma } from "@/lib/db";
+import { compactPlayerDisplayName } from "@/lib/players/display-name";
 import Link from "next/link";
 import {
   loadSharedLeagueOptions,
@@ -212,7 +213,7 @@ export default async function MixerrPage({ searchParams }: PageProps) {
           <select name="playerId" defaultValue={playerId} disabled={!attackingTeam} className="w-full rounded border border-slate-200 px-3 py-2 disabled:bg-slate-100">
             {players.map((player) => (
               <option key={String(player.id)} value={String(player.id)}>
-                {player.name}{player.position ? ` - ${player.position}` : ""}
+                {compactPlayerDisplayName(player.name)}{player.position ? ` - ${player.position}` : ""}
               </option>
             ))}
           </select>
@@ -387,7 +388,7 @@ function buildMixerrActiveChips({
   if (searchParams.playerId && player) {
     chips.push({
       key: `player:${player.id}`,
-      label: <><I18nText en="Player" ru={"\u0418\u0433\u0440\u043e\u043a"} />: {player.name}</>,
+      label: <><I18nText en="Player" ru={"\u0418\u0433\u0440\u043e\u043a"} />: {compactPlayerDisplayName(player.name)}</>,
       removeHref: mixerrFilterHrefWithout(searchParams, "playerId")
     });
   }

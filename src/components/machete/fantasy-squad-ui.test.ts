@@ -3,17 +3,9 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import { formatScore, NULL_GLYPH } from "@/lib/format";
-import { compactSquadPlayerName, fixtureChipPresentations } from "./fantasy-squad-ui";
+import { fixtureChipPresentations } from "./fantasy-squad-ui";
 
 const squadPlannerSource = readFileSync(new URL("./FantasySquadPlanner.tsx", import.meta.url), "utf8");
-
-test("squad player names use an initial and surname while retaining surname particles", () => {
-  assert.equal(compactSquadPlayerName("Bryan Mbeumo"), "B. Mbeumo");
-  assert.equal(compactSquadPlayerName("Kevin De Bruyne"), "K. De Bruyne");
-  assert.equal(compactSquadPlayerName("Virgil van Dijk"), "V. van Dijk");
-  assert.equal(compactSquadPlayerName("Алексей Миранчук"), "А. Миранчук");
-  assert.equal(compactSquadPlayerName("Neymar"), "Neymar");
-});
 
 test("fixture chips hide H/A from visible labels but retain side and original title", () => {
   assert.deepEqual(

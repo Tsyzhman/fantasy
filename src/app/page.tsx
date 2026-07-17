@@ -7,6 +7,7 @@ import { I18nText } from "@/components/i18n-text";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { formatDate, formatNumber } from "@/lib/format";
+import { compactPlayerDisplayName } from "@/lib/players/display-name";
 import { compactTeamDisplayName, providerTeamShortName } from "@/lib/teams/display";
 import { macheteLeagueDisplayName } from "@/lib/leagues/display";
 
@@ -408,7 +409,7 @@ function PriceRow({ price }: { price: { playerName: string; teamName: string; po
   return (
     <Link href={price.href} className="flex items-center justify-between gap-3 rounded border border-slate-100 px-3 py-2 text-sm hover:bg-slate-50">
       <span className="min-w-0">
-        <span className="block truncate font-semibold text-ink">{price.playerName}</span>
+        <span className="block truncate font-semibold text-ink" title={price.playerName}>{compactPlayerDisplayName(price.playerName)}</span>
         <span className="block truncate text-xs text-slate-500">
           {[price.position, price.teamName || price.leagueName].filter(Boolean).join(" / ")}
         </span>

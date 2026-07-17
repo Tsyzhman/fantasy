@@ -831,11 +831,17 @@ async function loadUpcomingRoundFixtures(prisma: PrismaClient, league: SharedLea
       }
     })
   ]);
-  const shortNameByTeamId = new Map(
-    seasonTeams
-      .map((row) => [String(row.teamId), fantasyTeamShortName(row.metadata, "")] as const)
-      .filter((entry) => Boolean(entry[1]))
-  );
+  const missingShortNameTeamIds = seasonTeams
+    .filter((row) => !providerTeamShortName({ metadata: row.metadata }))
+    .map((row) => row.teamId);
+  const fallbackSeasonTeams = missingShortNameTeamIds.length > 0
+    ? await prisma.leagueSeasonTeam.findMany({
+        where: { teamId: { in: missingShortNameTeamIds } },
+        select: { teamId: true, metadata: true },
+        orderBy: { updatedAt: "desc" }
+      })
+    : [];
+  const shortNameByTeamId = fantasyTeamShortNamesByTeamId(seasonTeams, fallbackSeasonTeams);
   const coreFixtures = buildPlannerRoundFixtures(
     matches.map((match) => ({
       id: String(match.id),
@@ -1492,6 +1498,20 @@ function fixtureMultiplier(fixture: FantasyFixtureProjection, positionGroup: Fan
 
 export function fantasyTeamShortName(metadata: unknown, fallback: string) {
   return providerTeamShortName({ metadata }) ?? fallback;
+}
+
+export function fantasyTeamShortNamesByTeamId(
+  selectedSeasonTeams: Array<{ teamId: bigint; metadata: unknown }>,
+  fallbackSeasonTeams: Array<{ teamId: bigint; metadata: unknown }>
+) {
+  const result = new Map<string, string>();
+  for (const row of [...selectedSeasonTeams, ...fallbackSeasonTeams]) {
+    const teamId = String(row.teamId);
+    if (result.has(teamId)) continue;
+    const shortName = providerTeamShortName({ metadata: row.metadata });
+    if (shortName) result.set(teamId, shortName);
+  }
+  return result;
 }
 
 export function compareFantasyPlannerPlayers(left: FantasyPlannerPlayer, right: FantasyPlannerPlayer) {

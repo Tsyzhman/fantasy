@@ -18,7 +18,8 @@ export function FdrPill({
   className?: string;
 }) {
   const safe = clampDifficulty(difficulty);
-  const klass = safe === null ? "fdr-na" : `fdr-${safe}`;
+  const isFixtureLabel = label !== undefined;
+  const klass = isFixtureLabel ? "fixture-pill" : safe === null ? "fdr-na" : `fdr-${safe}`;
   const visibleLabel = label ?? String(safe ?? "—");
   const accessibleLabel = title?.trim();
   return (
@@ -26,8 +27,8 @@ export function FdrPill({
       className={cn(
         "fdr-pill",
         klass,
-        side === "home" && "border-2 border-sky-300",
-        side === "away" && "border-2 border-violet-300",
+        isFixtureLabel && side === "home" && "fixture-pill-home",
+        isFixtureLabel && side !== "home" && "fixture-pill-away",
         className
       )}
       title={accessibleLabel}

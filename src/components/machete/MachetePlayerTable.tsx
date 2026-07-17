@@ -7,6 +7,7 @@ import { SortableTable } from "@/components/sortable-table";
 import { PlayerHoverCard, type PlayerHoverCardData } from "@/components/ui/player-hover-card";
 import { ScoreHeatCell, computeRanks } from "@/components/ui/score-heat-cell";
 import { SparkLine } from "@/components/ui/spark-line";
+import { compactPlayerDisplayName } from "@/lib/players/display-name";
 import { compactTeamDisplayName } from "@/lib/teams/display";
 
 export type MachetePlayerRow = {
@@ -67,7 +68,7 @@ export function MachetePlayerTable({
         <SortableTable {...sortProps} className="min-w-full table-fixed divide-y divide-slate-200 text-xs">
           <thead className="bg-slate-50 text-left font-semibold uppercase text-slate-500">
             <tr>
-              <th className="w-[42%] px-3 py-3" data-sort-key="playerName"><I18nText en="Surname" ru="Фамилия" /></th>
+              <th className="w-[42%] px-3 py-3" data-sort-key="playerName"><I18nText en="Player" ru="Игрок" /></th>
               <th className="w-[29%] bg-emerald-50 px-3 py-3 text-right text-emerald-700" data-sort-key="fantasyScore">xFP</th>
               <th className="w-[29%] bg-sky-50 px-3 py-3 text-right text-sky-700" data-sort-key="scoringScore">FP</th>
             </tr>
@@ -80,7 +81,7 @@ export function MachetePlayerTable({
                     <PlayerComparePickButton player={macheteComparePlayer(player)} />
                     <PlayerWatchlistButton source="machete" player={macheteWatchlistPlayer(player)} />
                     <PlayerCompareDraggable player={macheteComparePlayer(player)} className="min-w-0 flex-1">
-                      <span className="block truncate" title={player.name}>{compactPlayerName(player.name)}</span>
+                      <span className="block truncate" title={player.name}>{compactPlayerDisplayName(player.name)}</span>
                     </PlayerCompareDraggable>
                   </div>
                   <span className="mt-0.5 flex min-w-0 items-center gap-1.5 text-[11px] font-normal text-slate-500">
@@ -262,7 +263,7 @@ function PlayerNameCell({ player }: { player: MachetePlayerRow }) {
           player={data}
           trigger={
             <span className="cursor-help truncate border-b border-dashed border-slate-300" title={player.name}>
-              {player.name}
+              {compactPlayerDisplayName(player.name)}
             </span>
           }
         />
@@ -301,11 +302,6 @@ function macheteComparePlayer(player: MachetePlayerRow): ComparePlayer {
     teamName: player.teamName,
     teamShortName: player.teamShortName
   };
-}
-
-function compactPlayerName(name: string) {
-  const parts = name.trim().split(/\s+/).filter(Boolean);
-  return parts.length > 1 ? parts[parts.length - 1] : name;
 }
 
 function StarterCell({

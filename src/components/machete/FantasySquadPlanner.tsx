@@ -7,7 +7,7 @@ import { createPortal } from "react-dom";
 
 import { I18nText } from "@/components/i18n-text";
 import { LocalizedOption, localizedText, useLanguage } from "@/components/localized-option";
-import { compactSquadPlayerName, fixtureChipPresentations } from "@/components/machete/fantasy-squad-ui";
+import { fixtureChipPresentations } from "@/components/machete/fantasy-squad-ui";
 import { SortableTable } from "@/components/sortable-table";
 import { FdrRow } from "@/components/ui/fdr-pill";
 import { SegmentedControl, type SegmentedOption } from "@/components/ui/segmented-control";
@@ -18,6 +18,7 @@ import type {
 } from "@/components/machete/fantasy-squad-worker-contract";
 import { formatDate, formatNumber, formatScore } from "@/lib/format";
 import { cn } from "@/lib/cn";
+import { compactPlayerDisplayName } from "@/lib/players/display-name";
 import {
   betaSessionHasMilestone,
   recordBetaClientError,
@@ -1206,7 +1207,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                     </p>
                     {suggestion.moves.map((move) => (
                       <p key={`${move.outPlayerId}:${move.inPlayerId}`} className="truncate text-xs text-slate-500">
-                        {move.outName} → <span className="font-semibold text-ink">{move.inName}</span> / {move.positionGroup}
+                        <span title={move.outName}>{compactPlayerDisplayName(move.outName)}</span> → <span className="font-semibold text-ink" title={move.inName}>{compactPlayerDisplayName(move.inName)}</span> / {move.positionGroup}
                       </p>
                     ))}
                   </div>
@@ -1511,7 +1512,7 @@ function PlayerPoolTable({
               return (
                 <tr key={player.playerId} className={rowClassName}>
                   <td className="px-2 py-1.5">
-                    <span className={`block truncate font-semibold ${muted ? "text-slate-500" : "text-ink"}`} title={forecastTitle}>{player.name}</span>
+                    <span className={`block truncate font-semibold ${muted ? "text-slate-500" : "text-ink"}`} title={forecastTitle}>{compactPlayerDisplayName(player.name)}</span>
                     <span className="block truncate text-[10px] text-slate-600" title={forecastTitle}>
                       <span className={isSelected ? "font-bold text-emerald-700" : muted ? "text-slate-600" : "text-slate-500"}>
                         {isSelected ? <I18nText en="Selected" ru="В составе" /> : `FP ${formatScore(player.predictedFp)}`}
@@ -1672,7 +1673,7 @@ function PlayerPoolMobileList({
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
                 <div className="flex min-w-0 items-center gap-2">
-                  <h4 className="truncate text-sm font-bold text-ink">{player.name}</h4>
+                  <h4 className="truncate text-sm font-bold text-ink" title={player.name}>{compactPlayerDisplayName(player.name)}</h4>
                   <span className={cn("shrink-0 rounded px-2 py-0.5 text-[10px] font-bold", disabled ? "bg-slate-200 text-slate-600" : positionPillClass(player.positionGroup))}>
                     {player.positionGroup}
                   </span>
@@ -2171,7 +2172,7 @@ function SquadPlayerTile({
         <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${positionPillClass(player.positionGroup)}`}>{player.positionGroup}</span>
         {selection?.isLocked ? <Lock className="h-2.5 w-2.5 text-slate-500" /> : null}
       </div>
-      <p className="mt-0.5 truncate text-[10px] font-bold text-ink" title={player.name} aria-label={player.name}>{compactSquadPlayerName(player.name)}</p>
+      <p className="mt-0.5 truncate text-[10px] font-bold text-ink" title={player.name} aria-label={player.name}>{compactPlayerDisplayName(player.name)}</p>
       <p className="truncate text-[9px] text-slate-500" title={player.teamName}>{fantasyPlayerTeamDisplayName(player)}</p>
       <p className="mt-0.5 text-[10px] font-semibold text-emerald-700 num-tabular">
         <Check className="mr-0.5 inline h-2.5 w-2.5" />
@@ -2263,7 +2264,7 @@ function SquadPlayerTile({
               <div className="mb-3 flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <p className="text-xs font-semibold uppercase tracking-wide text-slate-500"><I18nText en="Player actions" ru="Действия игрока" /></p>
-                  <h5 id={mobileActionsTitleId} className="truncate text-base font-bold text-ink">{player.name}</h5>
+                  <h5 id={mobileActionsTitleId} className="truncate text-base font-bold text-ink" title={player.name}>{compactPlayerDisplayName(player.name)}</h5>
                 </div>
                 <button ref={mobileActionsCloseRef} type="button" onClick={() => setMobileActionsOpen(false)} className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded border border-slate-200" aria-label={closeActionsLabel}>
                   <X className="h-5 w-5" />

@@ -485,6 +485,14 @@ summary:focus-visible,
 .fdr-4 { background: #f97316; color: #0b1120; }
 .fdr-5 { background: #dc2626; }
 .fdr-na { background: #94a3b8; color: #0b1120; }
+.fixture-pill { background: #cbd5e1; color: #0f172a; }
+.fixture-pill-home { font-weight: 800; }
+.fixture-pill-away { font-weight: 400; }
+
+:root[data-theme="dark"] .fixture-pill {
+  background: #475569;
+  color: #f8fafc;
+}
 
 :root[data-theme="dark"] .fdr-pill {
   box-shadow: inset 0 0 0 1px rgba(15, 23, 42, 0.32);
