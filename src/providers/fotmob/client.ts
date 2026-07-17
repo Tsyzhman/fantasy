@@ -695,6 +695,7 @@ function normalizeFixture(payload: unknown, leagueId: string): FotMobFixture | n
   const homeTeamId = stringValue(home.id);
   const awayTeamId = stringValue(away.id);
   const status = asRecord(data.status);
+  const statusScore = parseFixtureScore(stringValue(status.scoreStr));
 
   if (!id || !homeTeamId || !awayTeamId) return null;
 
@@ -706,9 +707,15 @@ function normalizeFixture(payload: unknown, leagueId: string): FotMobFixture | n
     kickoffAt: stringValue(status.utcTime) ?? stringValue(data.matchDate) ?? new Date(0).toISOString(),
     status: normalizeStatus(status),
     round: stringValue(data.round) ?? stringValue(data.roundName) ?? stringValue(data.roundLabel),
-    homeScore: numberValue(data.homeScore) ?? numberValue(home.score),
-    awayScore: numberValue(data.awayScore) ?? numberValue(away.score)
+    homeScore: numberValue(data.homeScore) ?? numberValue(home.score) ?? statusScore?.home,
+    awayScore: numberValue(data.awayScore) ?? numberValue(away.score) ?? statusScore?.away
   };
+}
+
+function parseFixtureScore(value: string | undefined) {
+  const match = value?.match(/^\s*(\d+)\s*[-\u2013:]\s*(\d+)/);
+  if (!match) return null;
+  return { home: Number(match[1]), away: Number(match[2]) };
 }
 
 function normalizeFixtures(payloads: unknown[], leagueId: string) {

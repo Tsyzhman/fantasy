@@ -329,7 +329,7 @@ test("unofficial client retries transient FotMob API failures", async () => {
   );
 });
 
-test("unofficial fixture discovery preserves league round numbers", async () => {
+test("unofficial fixture discovery preserves league round numbers and scoreStr results", async () => {
   await withEnv({ MACHETE_FOTMOB_REQUEST_INTERVAL_MS: "0" }, async () => {
     const originalFetch = globalThis.fetch;
     const urls: string[] = [];
@@ -344,9 +344,9 @@ test("unofficial fixture discovery preserves league round numbers", async () => 
             {
               id: 5795363,
               round: "1",
-              home: { id: 9825, score: 0 },
-              away: { id: 8669, score: 0 },
-              status: { finished: false, utcTime: "2026-08-21T19:00:00.000Z" }
+              home: { id: 9825 },
+              away: { id: 8669 },
+              status: { finished: true, scoreStr: "1 - 3", utcTime: "2026-08-21T19:00:00.000Z" }
             }
           ]
         }
@@ -358,6 +358,9 @@ test("unofficial fixture discovery preserves league round numbers", async () => 
 
       assert.equal(fixtures.length, 1);
       assert.equal(fixtures[0]?.round, "1");
+      assert.equal(fixtures[0]?.status, "FINISHED");
+      assert.equal(fixtures[0]?.homeScore, 1);
+      assert.equal(fixtures[0]?.awayScore, 3);
       assert.equal(urls.some((url) => url.includes("/api/data/fixtures?")), false);
     } finally {
       globalThis.fetch = originalFetch;
