@@ -29,6 +29,7 @@ export const GET = withApiHandler(async () => {
       criticalIssue: true,
       moderatedEnvironment: true,
       invalidReason: true,
+      submittedAt: true,
       startedAt: true,
       observations: {
         select: {

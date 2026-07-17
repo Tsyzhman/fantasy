@@ -29,15 +29,19 @@ Clears the current session cookie. This route is public so it can run even when
 ### `POST /api/beta/telemetry`
 
 Accepts opt-in telemetry only for a signed-in user after `/beta-test` starts a
-run. The bounded JSON body is either a `start` command with a client UUID,
-device class, viewport width and permanent `synthetic` flag, or one allowlisted
-`observe` command. Observations are limited to journey milestones, pathname-only
+run. The bounded JSON body is a `start` command with a client UUID, device class,
+viewport width and permanent `synthetic` flag, one allowlisted `observe`
+command, or an idempotent `finish` command. `finish` records server time in
+`submittedAt`; the endpoint rejects all later observations for a submitted or
+reviewed run. Observations are limited to journey milestones, pathname-only
 page views, named Web Vitals and coarse client-error categories. Arbitrary event
 names, query strings, fragments, text values, invalid JSON, and bodies over
 4 KiB are rejected.
 
 The endpoint permits at most 20 runs per account per rolling 24 hours and 250
-unique observations per run. A user can write only to their own run. Responses
+unique observations per run. Finish and observation mutations are serialized
+per run so a racing late observation cannot change a finalized result. A user
+can write only to their own run. Responses
 are `Cache-Control: private, no-store`. There is no public report endpoint;
 moderator review and aggregate reporting use the server-side
 `npm run beta:user-test` command so account identifiers never enter report JSON.

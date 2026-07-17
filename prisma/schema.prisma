@@ -392,6 +392,7 @@ model BetaTestRun {
   moderatedEnvironment     String?   @map("moderated_environment")
   invalidReason            String?   @map("invalid_reason")
   moderatorNotes           String?   @map("moderator_notes")
+  submittedAt              DateTime? @map("submitted_at")
   reviewedAt               DateTime? @map("reviewed_at")
   startedAt                DateTime  @default(now()) @map("started_at")
   createdAt                DateTime  @default(now()) @map("created_at")

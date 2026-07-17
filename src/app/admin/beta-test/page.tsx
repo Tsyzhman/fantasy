@@ -46,6 +46,7 @@ export default async function AdminBetaTestPage({ searchParams }: PageProps) {
       criticalIssue: true,
       moderatedEnvironment: true,
       invalidReason: true,
+      submittedAt: true,
       startedAt: true,
       observations: {
         select: {
@@ -142,6 +143,7 @@ export default async function AdminBetaTestPage({ searchParams }: PageProps) {
               <SummaryRow label={<I18nText en="All runs" ru="Все прогоны" />} value={report.totalRuns} />
               <SummaryRow label={<I18nText en="Real runs" ru="Реальные прогоны" />} value={report.rum.realRuns} />
               <SummaryRow label={<I18nText en="Synthetic QA" ru="Synthetic QA" />} value={report.syntheticRuns} />
+              <SummaryRow label={<I18nText en="Open, not submitted" ru="Открытые, не отправленные" />} value={report.unsubmittedRealRuns} />
               <SummaryRow label={<I18nText en="Pending review" ru="Ожидают review" />} value={report.pendingReviewRuns} />
               <SummaryRow label={<I18nText en="Invalid runs" ru="Invalid-прогоны" />} value={report.invalidRuns} />
               <SummaryRow label={<I18nText en="Repeat valid runs" ru="Повторные valid" />} value={report.repeatValidRuns} />
@@ -160,6 +162,62 @@ export default async function AdminBetaTestPage({ searchParams }: PageProps) {
             )}
           </section>
         </div>
+      </section>
+
+      <section aria-labelledby="open-runs-heading" className="mt-10">
+        <h2 id="open-runs-heading" className="text-xl font-bold text-ink">
+          <I18nText en={`Open, not submitted (${report.unsubmittedRuns.length})`} ru={`Открытые, не отправленные (${report.unsubmittedRuns.length})`} />
+        </h2>
+        <p className="mt-1 max-w-3xl text-sm text-slate-500">
+          <I18nText
+            en="These real runs block the gate. Ask the participant to submit; only a genuinely abandoned run may be closed as technically invalid with a concrete reason."
+            ru="Эти реальные прогоны блокируют gate. Попросите участника отправить результат; только действительно брошенный прогон можно закрыть как технически invalid с конкретной причиной."
+          />
+        </p>
+        {report.unsubmittedRuns.length === 0 ? (
+          <p className="mt-4 rounded border border-dashed border-slate-300 bg-slate-50 px-4 py-5 text-sm text-slate-600">
+            <I18nText en="No real runs remain open." ru="Нет незакрытых реальных прогонов." />
+          </p>
+        ) : (
+          <div className="mt-4 grid gap-4 lg:grid-cols-2">
+            {report.unsubmittedRuns.map((run) => (
+              <article key={run.runId} className="rounded border border-amber-200 bg-amber-50/40 p-4">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <strong className="text-ink">{run.participantCode}</strong>
+                  <span className="text-sm text-slate-500">{formatDate(new Date(run.startedAt))} · {run.deviceClass}</span>
+                </div>
+                <p className="mt-2 text-sm text-slate-600">
+                  <I18nText
+                    en={`Aborted milestone: ${run.aborted ? "yes" : "no"}. Client errors: ${run.clientErrors}. Missing: ${run.missingMilestones.join(", ") || "none"}.`}
+                    ru={`Этап прерывания: ${run.aborted ? "да" : "нет"}. Client errors: ${run.clientErrors}. Пропущено: ${run.missingMilestones.join(", ") || "нет"}.`}
+                  />
+                </p>
+                <form action={reviewBetaRunAction} className="mt-4">
+                  <input type="hidden" name="runId" value={run.runId} />
+                  <input type="hidden" name="intent" value="invalid" />
+                  <label className="block text-sm font-semibold text-slate-700">
+                    <I18nText en="Concrete abandonment or technical reason" ru="Конкретная причина прерывания или технической невалидности" />
+                    <input required name="invalidReason" maxLength={200} className="mt-1 w-full rounded border border-slate-200 bg-white px-3 py-2 font-normal" />
+                  </label>
+                  <label className="mt-3 block text-sm font-semibold text-slate-700">
+                    <I18nText en="Observed device/browser" ru="Проверенное устройство/браузер" />
+                    <select required name="moderatedEnvironment" defaultValue="" className="mt-1 w-full rounded border border-slate-200 bg-white px-3 py-2 font-normal">
+                      <LocalizedOption value="" disabled en="Select observed environment" ru="Выберите проверенную среду" />
+                      <LocalizedOption value="DESKTOP_BROWSER" en="Desktop browser" ru="Desktop-браузер" />
+                      <LocalizedOption value="IOS_SAFARI_PHYSICAL" en="Physical Safari iOS" ru="Физический Safari iOS" />
+                      <LocalizedOption value="ANDROID_CHROME_PHYSICAL" en="Physical Chrome Android" ru="Физический Chrome Android" />
+                      <LocalizedOption value="OTHER_MOBILE" en="Other mobile / emulator" ru="Другой телефон / эмулятор" />
+                    </select>
+                  </label>
+                  <ReviewNotes />
+                  <button type="submit" className="mt-3 rounded border border-amber-400 bg-white px-4 py-2 text-sm font-semibold text-amber-900 hover:bg-amber-100">
+                    <I18nText en="Submit and close as invalid" ru="Отправить и закрыть как invalid" />
+                  </button>
+                </form>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
 
       <section aria-labelledby="pending-reviews-heading" className="mt-10">
@@ -345,24 +403,33 @@ async function reviewBetaRunAction(formData: FormData) {
   const parsed = validateBetaReviewInput(input);
   if (!parsed.ok) redirect("/admin/beta-test?error=invalid_review");
 
-  const existing = await prisma.betaTestRun.findUnique({ where: { id: runId }, select: { id: true, synthetic: true } });
-  if (!existing) redirect("/admin/beta-test?error=not_found");
-  if (existing.synthetic) redirect("/admin/beta-test?error=synthetic");
+  const result = await prisma.$transaction(async (transaction) => {
+    await transaction.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${runId}, 0))`;
+    const existing = await transaction.betaTestRun.findUnique({
+      where: { id: runId },
+      select: { id: true, synthetic: true, submittedAt: true }
+    });
+    if (!existing) return "not_found" as const;
+    if (existing.synthetic) return "synthetic" as const;
+    if (!existing.submittedAt && parsed.value.valid) return "not_submitted" as const;
 
-  await prisma.betaTestRun.update({
-    where: { id: runId },
-    data: {
-      valid: parsed.value.valid,
-      withoutHelp: parsed.value.withoutHelp,
-      transferReasonUnderstood: parsed.value.transferReasonUnderstood,
-      usabilityRating: parsed.value.usabilityRating,
-      criticalIssue: parsed.value.criticalIssue,
-      moderatedEnvironment: parsed.value.moderatedEnvironment,
-      invalidReason: parsed.value.invalidReason,
-      moderatorNotes: parsed.value.moderatorNotes,
-      reviewedAt: new Date()
-    }
+    await transaction.betaTestRun.update({
+      where: { id: runId },
+      data: {
+        valid: parsed.value.valid,
+        withoutHelp: parsed.value.withoutHelp,
+        transferReasonUnderstood: parsed.value.transferReasonUnderstood,
+        usabilityRating: parsed.value.usabilityRating,
+        criticalIssue: parsed.value.criticalIssue,
+        moderatedEnvironment: parsed.value.moderatedEnvironment,
+        invalidReason: parsed.value.invalidReason,
+        moderatorNotes: parsed.value.moderatorNotes,
+        reviewedAt: new Date()
+      }
+    });
+    return "saved" as const;
   });
+  if (result !== "saved") redirect(`/admin/beta-test?error=${result}`);
 
   revalidatePath("/admin/beta-test");
   redirect(`/admin/beta-test?saved=${runId.slice(0, 8)}`);
@@ -452,7 +519,8 @@ function betaReviewErrorMessage(error: string | undefined) {
   const labels: Record<string, { en: string; ru: string }> = {
     invalid_review: { en: "Review fields are incomplete or invalid.", ru: "Поля review заполнены не полностью или некорректно." },
     not_found: { en: "The beta run no longer exists.", ru: "Beta-прогон больше не существует." },
-    synthetic: { en: "Synthetic QA runs cannot be moderator-approved.", ru: "Synthetic QA нельзя подтвердить как реального участника." }
+    synthetic: { en: "Synthetic QA runs cannot be moderator-approved.", ru: "Synthetic QA нельзя подтвердить как реального участника." },
+    not_submitted: { en: "The participant has not submitted this beta run yet.", ru: "Участник ещё не отправил этот beta-прогон." }
   };
   return labels[error] ?? { en: "Could not save the review.", ru: "Не удалось сохранить review." };
 }

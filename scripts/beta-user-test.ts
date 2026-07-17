@@ -60,6 +60,7 @@ async function printReport(prisma: PrismaClient, options: Map<string, string>) {
       criticalIssue: true,
       moderatedEnvironment: true,
       invalidReason: true,
+      submittedAt: true,
       startedAt: true,
       observations: {
         select: {
@@ -114,25 +115,36 @@ async function reviewRun(prisma: PrismaClient, options: Map<string, string>) {
   };
   const parsed = validateBetaReviewInput(input);
   if (!parsed.ok) throw new Error(parsed.error);
-  const existing = await prisma.betaTestRun.findUnique({ where: { id: input.runId }, select: { id: true, synthetic: true } });
-  if (!existing) throw new Error("Beta test run was not found.");
-  if (existing.synthetic) throw new Error("Synthetic runs cannot be moderator-approved for the user gate.");
-
   const reviewedAt = new Date();
-  await prisma.betaTestRun.update({
-    where: { id: input.runId },
-    data: {
-      valid: parsed.value.valid,
-      withoutHelp: parsed.value.withoutHelp,
-      transferReasonUnderstood: parsed.value.transferReasonUnderstood,
-      usabilityRating: parsed.value.usabilityRating,
-      criticalIssue: parsed.value.criticalIssue,
-      moderatedEnvironment: parsed.value.moderatedEnvironment,
-      invalidReason: parsed.value.invalidReason,
-      moderatorNotes: parsed.value.moderatorNotes,
-      reviewedAt
-    }
+  const reviewResult = await prisma.$transaction(async (transaction) => {
+    await transaction.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${input.runId}, 0))`;
+    const existing = await transaction.betaTestRun.findUnique({
+      where: { id: input.runId },
+      select: { id: true, synthetic: true, submittedAt: true }
+    });
+    if (!existing) return "not_found" as const;
+    if (existing.synthetic) return "synthetic" as const;
+    if (!existing.submittedAt && parsed.value.valid) return "not_submitted" as const;
+
+    await transaction.betaTestRun.update({
+      where: { id: input.runId },
+      data: {
+        valid: parsed.value.valid,
+        withoutHelp: parsed.value.withoutHelp,
+        transferReasonUnderstood: parsed.value.transferReasonUnderstood,
+        usabilityRating: parsed.value.usabilityRating,
+        criticalIssue: parsed.value.criticalIssue,
+        moderatedEnvironment: parsed.value.moderatedEnvironment,
+        invalidReason: parsed.value.invalidReason,
+        moderatorNotes: parsed.value.moderatorNotes,
+        reviewedAt
+      }
+    });
+    return "saved" as const;
   });
+  if (reviewResult === "not_found") throw new Error("Beta test run was not found.");
+  if (reviewResult === "synthetic") throw new Error("Synthetic runs cannot be moderator-approved for the user gate.");
+  if (reviewResult === "not_submitted") throw new Error("The participant has not submitted this beta test run yet.");
   console.log(JSON.stringify({
     reviewed: true,
     runId: input.runId,

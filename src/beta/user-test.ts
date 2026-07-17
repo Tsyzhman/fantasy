@@ -60,6 +60,10 @@ export type BetaTelemetryCommand =
       synthetic: boolean;
     }
   | {
+      action: "finish";
+      runId: string;
+    }
+  | {
       action: "observe";
       runId: string;
       kind: BetaObservationKind;
@@ -72,6 +76,14 @@ export type BetaTelemetryCommand =
 export type BetaTelemetryParseResult =
   | { ok: true; command: BetaTelemetryCommand }
   | { ok: false; error: string };
+
+export function classifyBetaTelemetryMutation(
+  action: "observe" | "finish",
+  state: { submittedAt: Date | null; reviewedAt: Date | null }
+) {
+  if (action === "observe" && (state.submittedAt || state.reviewedAt)) return "immutable" as const;
+  return "accepted" as const;
+}
 
 export function parseBetaTelemetryCommand(value: unknown): BetaTelemetryParseResult {
   const input = objectRecord(value);
@@ -97,7 +109,8 @@ export function parseBetaTelemetryCommand(value: unknown): BetaTelemetryParseRes
     };
   }
 
-  if (action !== "observe") return { ok: false, error: "action must be start or observe." };
+  if (action === "finish") return { ok: true, command: { action, runId } };
+  if (action !== "observe") return { ok: false, error: "action must be start, observe, or finish." };
   const route = parseBetaRoute(input.route);
   if (route === null) return { ok: false, error: "route must be a pathname without a query or fragment." };
   const kind = input.kind;
@@ -165,6 +178,7 @@ export type BetaTestRunForReport = {
   criticalIssue: boolean | null;
   moderatedEnvironment: string | null;
   invalidReason: string | null;
+  submittedAt: Date | null;
   startedAt: Date;
   observations: BetaTestObservationForReport[];
 };
@@ -226,11 +240,16 @@ export function summarizeBetaTechnicalRun(run: BetaTestRunForReport): BetaTechni
 
 export function buildBetaUserTestReport(runs: BetaTestRunForReport[]) {
   const realRuns = runs.filter((run) => !run.synthetic);
+  const unsubmittedRuns = realRuns
+    .filter((run) => run.submittedAt === null && run.valid !== false)
+    .sort((left, right) => left.startedAt.getTime() - right.startedAt.getTime() || left.id.localeCompare(right.id));
   const invalidRuns = realRuns.filter((run) => run.valid === false);
   const pendingRuns = realRuns
-    .filter((run) => run.valid === null)
+    .filter((run) => run.submittedAt !== null && run.valid === null)
     .sort((left, right) => left.startedAt.getTime() - right.startedAt.getTime() || left.id.localeCompare(right.id));
-  const validRuns = realRuns.filter((run) => run.valid === true).sort((left, right) => left.startedAt.getTime() - right.startedAt.getTime());
+  const validRuns = realRuns
+    .filter((run) => run.submittedAt !== null && run.valid === true)
+    .sort((left, right) => left.startedAt.getTime() - right.startedAt.getTime());
   const firstValidRunByUser = new Map<string, BetaTestRunForReport>();
   for (const run of validRuns) {
     if (!firstValidRunByUser.has(run.userId)) firstValidRunByUser.set(run.userId, run);
@@ -254,9 +273,14 @@ export function buildBetaUserTestReport(runs: BetaTestRunForReport[]) {
     ({ run }) => run.deviceClass === "mobile" && run.moderatedEnvironment === "ANDROID_CHROME_PHYSICAL"
   ).length;
   const physicalEnvironmentMismatches = summaries.filter(
-    ({ run }) =>
-      run.deviceClass !== "mobile" &&
-      (run.moderatedEnvironment === "IOS_SAFARI_PHYSICAL" || run.moderatedEnvironment === "ANDROID_CHROME_PHYSICAL")
+    ({ run }) => {
+      const reviewedAsMobile =
+        run.moderatedEnvironment === "IOS_SAFARI_PHYSICAL" ||
+        run.moderatedEnvironment === "ANDROID_CHROME_PHYSICAL" ||
+        run.moderatedEnvironment === "OTHER_MOBILE";
+      return (run.deviceClass === "desktop" && reviewedAsMobile) ||
+        (run.deviceClass === "mobile" && run.moderatedEnvironment === "DESKTOP_BROWSER");
+    }
   ).length;
   const incompleteReviews = summaries.filter(
     ({ run }) =>
@@ -272,6 +296,7 @@ export function buildBetaUserTestReport(runs: BetaTestRunForReport[]) {
   const webVitals = summarizeWebVitals(primaryRuns);
   const rum = summarizeRealBetaRum(realRuns);
   const violations: string[] = [];
+  if (unsubmittedRuns.length > 0) violations.push(`${unsubmittedRuns.length} real beta-test runs are still open and not submitted.`);
   if (pendingRuns.length > 0) violations.push(`${pendingRuns.length} real beta-test runs are still awaiting moderator review.`);
   if (participants < 10) violations.push(`Need at least 10 distinct valid participants; observed ${participants}.`);
   if (incompleteReviews > 0) violations.push(`${incompleteReviews} primary participant reviews are incomplete.`);
@@ -283,13 +308,26 @@ export function buildBetaUserTestReport(runs: BetaTestRunForReport[]) {
   if (mobileCriticalIssues > 0) violations.push(`${mobileCriticalIssues} mobile primary participants reported a critical/blocker issue.`);
   if (physicalIosSafariRuns < 1) violations.push("Need at least one moderator-confirmed physical Safari iOS primary run.");
   if (physicalAndroidChromeRuns < 1) violations.push("Need at least one moderator-confirmed physical Chrome Android primary run.");
-  if (physicalEnvironmentMismatches > 0) violations.push(`${physicalEnvironmentMismatches} physical-device reviews conflict with the recorded viewport device class.`);
+  if (physicalEnvironmentMismatches > 0) violations.push(`${physicalEnvironmentMismatches} moderated environment reviews conflict with the recorded viewport device class.`);
   violations.push(...rum.gate.violations);
 
   return {
     generatedAt: new Date().toISOString(),
     totalRuns: runs.length,
     syntheticRuns: runs.filter((run) => run.synthetic).length,
+    unsubmittedRealRuns: unsubmittedRuns.length,
+    unsubmittedRuns: unsubmittedRuns.map((run) => {
+      const technical = summarizeBetaTechnicalRun(run);
+      return {
+        runId: run.id,
+        participantCode: run.id.slice(0, 8),
+        startedAt: run.startedAt.toISOString(),
+        deviceClass: run.deviceClass,
+        aborted: technical.aborted,
+        missingMilestones: technical.missingMilestones,
+        clientErrors: technical.clientErrors
+      };
+    }),
     pendingReviewRuns: pendingRuns.length,
     pendingReviews: pendingRuns.map((run) => {
       const technical = summarizeBetaTechnicalRun(run);
@@ -297,6 +335,7 @@ export function buildBetaUserTestReport(runs: BetaTestRunForReport[]) {
         runId: run.id,
         participantCode: run.id.slice(0, 8),
         startedAt: run.startedAt.toISOString(),
+        submittedAt: run.submittedAt!.toISOString(),
         deviceClass: run.deviceClass,
         technicalComplete: technical.technicalComplete,
         aborted: technical.aborted,
@@ -336,7 +375,7 @@ export function buildBetaUserTestReport(runs: BetaTestRunForReport[]) {
       iosSafari: physicalIosSafariRuns,
       androidChrome: physicalAndroidChromeRuns,
       inconsistent: physicalEnvironmentMismatches,
-      passed: physicalIosSafariRuns > 0 && physicalAndroidChromeRuns > 0
+      passed: physicalIosSafariRuns > 0 && physicalAndroidChromeRuns > 0 && physicalEnvironmentMismatches === 0
     },
     incompleteReviews,
     clientErrors: summaries.reduce((total, summary) => total + summary.technical.clientErrors, 0),

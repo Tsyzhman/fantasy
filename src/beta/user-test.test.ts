@@ -5,6 +5,7 @@ import {
   betaRequiredJourneyMilestones,
   betaRumMaximumLcpP75Ms,
   buildBetaUserTestReport,
+  classifyBetaTelemetryMutation,
   parseBetaTelemetryCommand,
   summarizeBetaTechnicalRun,
   validateBetaReviewInput,
@@ -36,6 +37,21 @@ test("telemetry input accepts bounded allowlisted observations and rejects arbit
   assert.equal(parseBetaTelemetryCommand({ action: "observe", runId, kind: "MILESTONE", name: "FAKE_SUCCESS", route: "/" }).ok, false);
   assert.equal(parseBetaTelemetryCommand({ action: "observe", runId, kind: "PAGE_VIEW", name: "ROUTE", route: "/players?email=x" }).ok, false);
   assert.equal(parseBetaTelemetryCommand({ action: "start", runId, deviceClass: "tablet", viewportWidth: 800, synthetic: false }).ok, false);
+  assert.deepEqual(parseBetaTelemetryCommand({ action: "finish", runId }), {
+    ok: true,
+    command: { action: "finish", runId }
+  });
+});
+
+test("submitted or reviewed runs reject observations while finish remains idempotent", () => {
+  const open = { submittedAt: null, reviewedAt: null };
+  const submitted = { submittedAt: new Date(), reviewedAt: null };
+  const reviewed = { submittedAt: new Date(), reviewedAt: new Date() };
+
+  assert.equal(classifyBetaTelemetryMutation("observe", open), "accepted");
+  assert.equal(classifyBetaTelemetryMutation("observe", submitted), "immutable");
+  assert.equal(classifyBetaTelemetryMutation("observe", reviewed), "immutable");
+  assert.equal(classifyBetaTelemetryMutation("finish", submitted), "accepted");
 });
 
 test("technical completion requires every milestone, correct order, and five-minute limit", () => {
@@ -100,6 +116,7 @@ test("beta gate rejects slow or insufficient real-user RUM", () => {
 
 test("beta gate requires moderator-confirmed physical Safari iOS and Chrome Android", () => {
   const desktopOnly = Array.from({ length: 10 }, (_, index) => makeRun(index + 100, {
+    deviceClass: "desktop",
     moderatedEnvironment: "DESKTOP_BROWSER"
   }));
   const report = buildBetaUserTestReport(desktopOnly);
@@ -112,7 +129,15 @@ test("beta gate requires moderator-confirmed physical Safari iOS and Chrome Andr
   mismatchRuns[0] = { ...mismatchRuns[0]!, deviceClass: "desktop", moderatedEnvironment: "IOS_SAFARI_PHYSICAL" };
   const mismatch = buildBetaUserTestReport(mismatchRuns);
   assert.equal(mismatch.physicalDeviceCoverage.inconsistent, 1);
-  assert.match(mismatch.gate.violations.join(" "), /conflict with the recorded viewport device class/);
+  assert.equal(mismatch.physicalDeviceCoverage.passed, false);
+  assert.match(mismatch.gate.violations.join(" "), /environment reviews conflict with the recorded viewport device class/);
+
+  const inverseMismatchRuns = desktopOnly.map((run) => ({ ...run }));
+  inverseMismatchRuns[0] = { ...inverseMismatchRuns[0]!, deviceClass: "mobile", moderatedEnvironment: "DESKTOP_BROWSER" };
+  const inverseMismatch = buildBetaUserTestReport(inverseMismatchRuns);
+  assert.equal(inverseMismatch.physicalDeviceCoverage.inconsistent, 1);
+  assert.equal(inverseMismatch.gate.passed, false);
+  assert.match(inverseMismatch.gate.violations.join(" "), /environment reviews conflict with the recorded viewport device class/);
 });
 
 test("RUM includes every real run and excludes synthetic telemetry", () => {
@@ -167,6 +192,42 @@ test("pending real attempts keep an otherwise passing beta gate closed", () => {
   assert.match(report.gate.violations.join(" "), /awaiting moderator review/);
 });
 
+test("an open run remains in RUM but is distinct from a submitted run awaiting review", () => {
+  const open = makeRun(400, { valid: null, submittedAt: null });
+  const submitted = makeRun(401, { valid: null });
+  const report = buildBetaUserTestReport([open, submitted]);
+
+  assert.equal(report.rum.realRuns, 2);
+  assert.equal(report.unsubmittedRealRuns, 1);
+  assert.equal(report.unsubmittedRuns[0]?.runId, open.id);
+  assert.equal(report.pendingReviewRuns, 1);
+  assert.equal(report.pendingReviews[0]?.runId, submitted.id);
+  assert.equal(JSON.stringify(report).includes(open.userId), false);
+  assert.match(report.gate.violations.join(" "), /open and not submitted/);
+});
+
+test("a legacy valid review without participant submission remains a blocker and never becomes a participant", () => {
+  const legacyReviewed = makeRun(402, { valid: true, submittedAt: null });
+  const report = buildBetaUserTestReport([legacyReviewed]);
+
+  assert.equal(report.unsubmittedRealRuns, 1);
+  assert.equal(report.unsubmittedRuns[0]?.runId, legacyReviewed.id);
+  assert.equal(report.validRuns, 0);
+  assert.equal(report.participants, 0);
+  assert.equal(report.primaryRuns.length, 0);
+  assert.equal(report.gate.passed, false);
+  assert.match(report.gate.violations.join(" "), /open and not submitted/);
+});
+
+test("an invalid abandoned run is auditable without inventing participant submission", () => {
+  const invalidUnsubmitted = makeRun(403, { valid: false, submittedAt: null });
+  const report = buildBetaUserTestReport([invalidUnsubmitted]);
+
+  assert.equal(report.unsubmittedRealRuns, 0);
+  assert.equal(report.invalidRuns, 1);
+  assert.equal(report.participants, 0);
+});
+
 test("invalid attempts remain auditable with environment, reason, and technical evidence", () => {
   const report = buildBetaUserTestReport([
     makeRun(45, { valid: false, moderatedEnvironment: "ANDROID_CHROME_PHYSICAL" })
@@ -202,6 +263,7 @@ function makeRun(
   index: number,
   overrides: {
     userId?: string;
+    deviceClass?: BetaTestRunForReport["deviceClass"];
     synthetic?: boolean;
     valid?: boolean | null;
     withoutHelp?: boolean;
@@ -213,6 +275,7 @@ function makeRun(
     lcpMs?: number;
     clientErrorCount?: number;
     moderatedEnvironment?: BetaTestRunForReport["moderatedEnvironment"];
+    submittedAt?: Date | null;
   } = {}
 ): BetaTestRunForReport {
   const startedAt = new Date(Date.UTC(2026, 6, 15, 12, 0, 0) + (overrides.startedAtOffsetMs ?? index * 1_000));
@@ -250,7 +313,7 @@ function makeRun(
   return {
     id: `${index.toString(16).padStart(8, "0")}-1111-4111-8111-${index.toString(16).padStart(12, "0")}`,
     userId: overrides.userId ?? `user-${index}`,
-    deviceClass: index % 2 === 0 ? "mobile" : "desktop",
+    deviceClass: overrides.deviceClass ?? (index % 2 === 0 ? "mobile" : "desktop"),
     synthetic: overrides.synthetic ?? false,
     valid: overrides.valid === undefined ? true : overrides.valid,
     withoutHelp: overrides.withoutHelp ?? true,
@@ -261,6 +324,7 @@ function makeRun(
       overrides.moderatedEnvironment ??
       (index % 10 === 2 ? "IOS_SAFARI_PHYSICAL" : index % 10 === 4 ? "ANDROID_CHROME_PHYSICAL" : index % 2 === 0 ? "OTHER_MOBILE" : "DESKTOP_BROWSER"),
     invalidReason: overrides.valid === false ? "Technical environment failure" : null,
+    submittedAt: overrides.submittedAt === undefined ? new Date(startedAt.getTime() + 160_000) : overrides.submittedAt,
     startedAt,
     observations
   };

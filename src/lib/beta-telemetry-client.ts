@@ -31,11 +31,55 @@ export type StoredBetaTestSession = {
 
 let activeFlush: Promise<void> | null = null;
 
+type BetaDeviceViewport = {
+  viewportWidth: number;
+  viewportHeight: number;
+  coarsePointer: boolean;
+  maxTouchPoints: number;
+  mobileBrowser: boolean;
+};
+
+type BetaBrowserIdentity = {
+  userAgentDataMobile: unknown;
+  userAgent: string;
+};
+
+export function hasMobileBrowserSignal({ userAgentDataMobile, userAgent }: BetaBrowserIdentity) {
+  if (typeof userAgentDataMobile === "boolean") return userAgentDataMobile;
+  return /\b(?:iPhone|iPod)\b/i.test(userAgent) ||
+    (/\bAndroid\b/i.test(userAgent) && /\bMobile\b/i.test(userAgent));
+}
+
+export function classifyBetaDevice({
+  viewportWidth,
+  viewportHeight,
+  coarsePointer,
+  maxTouchPoints,
+  mobileBrowser
+}: BetaDeviceViewport): BetaDeviceClass {
+  if (viewportWidth < 768) return "mobile";
+  const hasTouchInput = coarsePointer || maxTouchPoints > 0;
+  const hasPhoneLandscapeGeometry =
+    viewportWidth > viewportHeight && viewportWidth <= 960 && viewportHeight <= 500;
+  return hasTouchInput && mobileBrowser && hasPhoneLandscapeGeometry ? "mobile" : "desktop";
+}
+
 export async function startBetaTestSession({ synthetic = false }: { synthetic?: boolean } = {}) {
   if (typeof window === "undefined") throw new Error("Beta test sessions can only start in a browser.");
   const runId = window.crypto.randomUUID();
   const viewportWidth = Math.round(window.innerWidth);
-  const deviceClass: BetaDeviceClass = viewportWidth < 768 ? "mobile" : "desktop";
+  const viewportHeight = Math.round(window.innerHeight);
+  const navigatorWithUaData = window.navigator as Navigator & { userAgentData?: { mobile?: unknown } };
+  const deviceClass = classifyBetaDevice({
+    viewportWidth,
+    viewportHeight,
+    coarsePointer: window.matchMedia?.("(pointer: coarse)").matches ?? false,
+    maxTouchPoints: window.navigator?.maxTouchPoints ?? 0,
+    mobileBrowser: hasMobileBrowserSignal({
+      userAgentDataMobile: navigatorWithUaData.userAgentData?.mobile,
+      userAgent: window.navigator.userAgent
+    })
+  });
   const response = await fetch("/api/beta/telemetry", {
     method: "POST",
     headers: { "Content-Type": "application/json", Accept: "application/json" },
@@ -112,6 +156,7 @@ export async function stopBetaTestSession() {
   await flushBetaTelemetry();
   const session = getBetaTestSession();
   if (session?.pending.length) return false;
+  if (session && !(await submitBetaTestSession(session))) return false;
   clearBetaTestSession();
   return true;
 }
@@ -122,8 +167,25 @@ export async function finishBetaTestSession() {
   const session = getBetaTestSession();
   if (!session) return true;
   if (session.pending.length || !storedBetaSessionHasRecordedMilestone(session, "SQUAD_RESTORED")) return false;
+  if (!(await submitBetaTestSession(session))) return false;
   clearBetaTestSession();
   return true;
+}
+
+async function submitBetaTestSession(session: StoredBetaTestSession) {
+  let response: Response;
+  try {
+    response = await fetch("/api/beta/telemetry", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      cache: "no-store",
+      keepalive: true,
+      body: JSON.stringify({ action: "finish", runId: session.runId })
+    });
+  } catch {
+    return false;
+  }
+  return response.ok;
 }
 
 export function discardBetaTestSession() {

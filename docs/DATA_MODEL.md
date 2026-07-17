@@ -100,7 +100,8 @@ team limits, and captain/vice-captain roles before persistence.
 
 - `BetaTestRun`: one opt-in moderated journey tied internally to a user for
   distinct-participant counting. Stores device class, synthetic exclusion,
-  moderator judgments and timestamps; it does not copy account email or name.
+  server-recorded submission time, moderator judgments and timestamps; it does
+  not copy account email or name. A valid review requires `submittedAt`.
 - `BetaTestObservation`: bounded allowlisted milestone, pathname page-view, Web
   Vital, or coarse client-error observation. The unique run/kind/name/route key
   makes client retries idempotent.
@@ -147,4 +148,12 @@ real 380-match refresh.
 `000008_beta_test_moderated_environment` adds nullable structured moderator
 environment evidence and a database allowlist CHECK. It was applied on
 2026-07-16 after a custom-format backup verified with `pg_restore --list`.
-Production has 8/8 applied migrations and no failed or rolled-back entry.
+`000009_beta_test_submission` is an expand-only migration that adds nullable,
+server-recorded `submittedAt`. It deliberately performs no historical backfill
+and adds no constraint: a moderator review is not evidence that the participant
+submitted the run. Legacy reviewed rows therefore remain `submittedAt = null`,
+block the gate when marked valid, and are excluded from valid/primary participant
+counts. A later contract migration may add an invariant only after legacy rows
+have been explicitly resolved without inventing submission provenance.
+It is pending production deployment; production therefore still has 8/8
+applied migrations until the release containing this change is promoted.

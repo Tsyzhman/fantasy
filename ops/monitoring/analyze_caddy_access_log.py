@@ -15,11 +15,19 @@ from glob import glob
 from pathlib import Path
 from typing import Iterable
 
+BREACH_EXIT_CODE = 3
+
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--log-pattern", required=True, help="Glob for active and rotated Caddy JSON logs.")
-    parser.add_argument("--since-minutes", type=positive_float, default=60.0)
+    window = parser.add_mutually_exclusive_group()
+    window.add_argument("--since-minutes", type=positive_float)
+    window.add_argument(
+        "--window-start",
+        type=parse_time,
+        help="Fixed ISO-8601 UTC window start. Unlike --since-minutes, this does not imply a requested duration.",
+    )
     parser.add_argument("--max-5xx-rate-percent", type=non_negative_float, default=1.0)
     parser.add_argument("--min-requests", type=positive_int, default=20)
     parser.add_argument("--exclude-path", action="append", default=[], help="Exact request path to omit from user-traffic metrics.")
@@ -37,7 +45,13 @@ def parse_args() -> argparse.Namespace:
 def main() -> int:
     args = parse_args()
     now = parse_time(args.now) if args.now else datetime.now(timezone.utc)
-    cutoff = now - timedelta(minutes=args.since_minutes)
+    if args.window_start is not None:
+        cutoff = args.window_start
+        if cutoff > now:
+            raise SystemExit("--window-start must not be later than --now/current time.")
+    else:
+        since_minutes = args.since_minutes if args.since_minutes is not None else 60.0
+        cutoff = now - timedelta(minutes=since_minutes)
     paths = sorted(Path(path) for path in glob(args.log_pattern) if Path(path).is_file())
 
     statuses: Counter[int] = Counter()
@@ -50,6 +64,8 @@ def main() -> int:
     excluded_user_agent_prefixes = tuple(prefix.casefold() for prefix in args.exclude_user_agent_prefix)
     first_observed_at: datetime | None = None
     last_observed_at: datetime | None = None
+    log_coverage_start: datetime | None = None
+    log_coverage_end: datetime | None = None
 
     for path in paths:
         for line in read_lines(path):
@@ -65,7 +81,11 @@ def main() -> int:
                 invalid_lines += 1
                 continue
 
-            if timestamp < cutoff or timestamp > now + timedelta(minutes=1):
+            if timestamp > now + timedelta(minutes=1):
+                continue
+            log_coverage_start = timestamp if log_coverage_start is None else min(log_coverage_start, timestamp)
+            log_coverage_end = timestamp if log_coverage_end is None else max(log_coverage_end, timestamp)
+            if timestamp < cutoff:
                 continue
             if request_path in excluded_paths:
                 excluded_requests += 1
@@ -95,7 +115,17 @@ def main() -> int:
     report = {
         "status": status,
         "generatedAt": iso_time(now),
-        "windowMinutes": args.since_minutes,
+        **(
+            {"windowMinutes": since_minutes}
+            if args.window_start is None
+            else {
+                "windowMode": "fixed_start",
+                "windowStart": iso_time(cutoff),
+                "logCoverageStart": iso_time(log_coverage_start) if log_coverage_start else None,
+                "logCoverageEnd": iso_time(log_coverage_end) if log_coverage_end else None,
+                "retentionCoversWindowStart": log_coverage_start is not None and log_coverage_start <= cutoff,
+            }
+        ),
         "cutoff": iso_time(cutoff),
         "thresholds": {
             "minimumRequests": args.min_requests,
@@ -127,7 +157,7 @@ def main() -> int:
 
     atomic_write_json(args.output, report)
     print(json.dumps(report, ensure_ascii=False, separators=(",", ":")))
-    return 2 if status == "breach" else 0
+    return BREACH_EXIT_CODE if status == "breach" else 0
 
 
 def read_lines(path: Path) -> Iterable[str]:

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { parseBetaTelemetryCommand } from "@/beta/user-test";
+import { classifyBetaTelemetryMutation, parseBetaTelemetryCommand } from "@/beta/user-test";
 import { jsonError, withApiHandler } from "@/lib/api-handler";
 import { requireApiUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -59,44 +59,66 @@ export const POST = withApiHandler(async (request: Request) => {
     return accepted(command.runId, existing ? 200 : 201);
   }
 
-  const run = await prisma.betaTestRun.findFirst({
-    where: { id: command.runId, userId: auth.user.id },
-    select: { id: true }
+  const result = await prisma.$transaction(async (transaction) => {
+    // Serialize finish and observation requests for this opaque run ID. Without
+    // the lock, an observation that read the open state immediately before a
+    // concurrent finish could mutate a supposedly immutable submitted run.
+    await transaction.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${command.runId}, 0))`;
+    const run = await transaction.betaTestRun.findFirst({
+      where: { id: command.runId, userId: auth.user.id },
+      select: { id: true, submittedAt: true, reviewedAt: true }
+    });
+    if (!run) return { status: "not_found" as const };
+
+    const mutationStatus = classifyBetaTelemetryMutation(command.action, run);
+    if (command.action === "finish") {
+      if (!run.submittedAt) {
+        await transaction.betaTestRun.update({
+          where: { id: command.runId },
+          data: { submittedAt: new Date() }
+        });
+      }
+      return { status: "accepted" as const };
+    }
+
+    if (mutationStatus === "immutable") return { status: mutationStatus };
+    const uniqueKey = {
+      runId_kind_name_route: {
+        runId: command.runId,
+        kind: command.kind,
+        name: command.name,
+        route: command.route
+      }
+    };
+    const existingObservation = await transaction.betaTestObservation.findUnique({ where: uniqueKey, select: { id: true } });
+    if (!existingObservation) {
+      const observationCount = await transaction.betaTestObservation.count({ where: { runId: command.runId } });
+      if (observationCount >= maximumObservationsPerRun) return { status: "rate_limited" as const };
+    }
+    await transaction.betaTestObservation.upsert({
+      where: uniqueKey,
+      create: {
+        runId: command.runId,
+        kind: command.kind,
+        name: command.name,
+        route: command.route,
+        value: command.value,
+        rating: command.rating
+      },
+      update: {
+        // The unique key is the client idempotency key. A lost response may make
+        // the browser retry the same observation, which must not invent another
+        // page view, milestone, or error.
+        route: command.route,
+        ...(command.kind === "WEB_VITAL" ? { value: command.value, rating: command.rating } : {})
+      }
+    });
+    return { status: "accepted" as const };
   });
-  if (!run) return jsonError("NOT_FOUND", "Beta test run not found for this account.", 404);
-  const uniqueKey = {
-    runId_kind_name_route: {
-      runId: command.runId,
-      kind: command.kind,
-      name: command.name,
-      route: command.route
-    }
-  };
-  const existingObservation = await prisma.betaTestObservation.findUnique({ where: uniqueKey, select: { id: true } });
-  if (!existingObservation) {
-    const observationCount = await prisma.betaTestObservation.count({ where: { runId: command.runId } });
-    if (observationCount >= maximumObservationsPerRun) {
-      return jsonError("RATE_LIMITED", "Beta test run has reached its observation limit.", 429);
-    }
-  }
-  await prisma.betaTestObservation.upsert({
-    where: uniqueKey,
-    create: {
-      runId: command.runId,
-      kind: command.kind,
-      name: command.name,
-      route: command.route,
-      value: command.value,
-      rating: command.rating
-    },
-    update: {
-      // The unique key is the client idempotency key. A lost response may make
-      // the browser retry the same observation, which must not invent another
-      // page view, milestone, or error.
-      route: command.route,
-      ...(command.kind === "WEB_VITAL" ? { value: command.value, rating: command.rating } : {})
-    }
-  });
+
+  if (result.status === "not_found") return jsonError("NOT_FOUND", "Beta test run not found for this account.", 404);
+  if (result.status === "immutable") return jsonError("RUN_FINALIZED", "Submitted beta test runs cannot accept more observations.", 409);
+  if (result.status === "rate_limited") return jsonError("RATE_LIMITED", "Beta test run has reached its observation limit.", 429);
   return accepted(command.runId, 200);
 });
 

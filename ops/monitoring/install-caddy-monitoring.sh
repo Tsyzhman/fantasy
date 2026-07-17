@@ -20,6 +20,7 @@ fi
 
 for required in \
 	"$payload_directory/analyze_caddy_access_log.py" \
+	"$payload_directory/run-caddy-access-audits.sh" \
 	"$payload_directory/fantasy-monitoring.caddy" \
 	"$payload_directory/fantasy-access-audit.service" \
 	"$payload_directory/fantasy-access-audit.timer"; do
@@ -34,6 +35,9 @@ install -d -o root -g root -m 0755 /usr/local/lib/fantasy-scout
 install -o root -g root -m 0755 \
 	"$payload_directory/analyze_caddy_access_log.py" \
 	/usr/local/lib/fantasy-scout/analyze-caddy-access-log.py
+install -o root -g root -m 0755 \
+	"$payload_directory/run-caddy-access-audits.sh" \
+	/usr/local/lib/fantasy-scout/run-caddy-access-audits.sh
 install -d -o caddy -g caddy -m 0755 /var/log/caddy
 if [[ ! -e /var/log/caddy/fantasy-access.log ]]; then
 	install -o caddy -g caddy -m 0640 /dev/null /var/log/caddy/fantasy-access.log

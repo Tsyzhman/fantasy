@@ -2,6 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  classifyBetaDevice,
+  hasMobileBrowserSignal,
   finishBetaTestSession,
   flushBetaTelemetry,
   getBetaTestSession,
@@ -14,6 +16,86 @@ import {
 } from "@/lib/beta-telemetry-client";
 
 const runId = "123e4567-e89b-42d3-a456-426614174000";
+
+test("classifies portrait and touch-capable phone landscape viewports as mobile", () => {
+  assert.equal(classifyBetaDevice({
+    viewportWidth: 390,
+    viewportHeight: 844,
+    coarsePointer: false,
+    maxTouchPoints: 0,
+    mobileBrowser: false
+  }), "mobile");
+  assert.equal(classifyBetaDevice({
+    viewportWidth: 844,
+    viewportHeight: 390,
+    coarsePointer: true,
+    maxTouchPoints: 0,
+    mobileBrowser: hasMobileBrowserSignal({
+      userAgentDataMobile: undefined,
+      userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)"
+    })
+  }), "mobile");
+  assert.equal(classifyBetaDevice({
+    viewportWidth: 915,
+    viewportHeight: 430,
+    coarsePointer: true,
+    maxTouchPoints: 0,
+    mobileBrowser: hasMobileBrowserSignal({
+      userAgentDataMobile: undefined,
+      userAgent: "Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 Mobile Safari/537.36"
+    })
+  }), "mobile");
+  assert.equal(classifyBetaDevice({
+    viewportWidth: 932,
+    viewportHeight: 430,
+    coarsePointer: false,
+    maxTouchPoints: 5,
+    mobileBrowser: true
+  }), "mobile");
+});
+
+test("does not classify non-touch windows or touch laptops as mobile", () => {
+  assert.equal(classifyBetaDevice({
+    viewportWidth: 844,
+    viewportHeight: 390,
+    coarsePointer: true,
+    maxTouchPoints: 10,
+    mobileBrowser: false
+  }), "desktop");
+  assert.equal(classifyBetaDevice({
+    viewportWidth: 1_024,
+    viewportHeight: 600,
+    coarsePointer: true,
+    maxTouchPoints: 10,
+    mobileBrowser: false
+  }), "desktop");
+  assert.equal(classifyBetaDevice({
+    viewportWidth: 1_366,
+    viewportHeight: 600,
+    coarsePointer: true,
+    maxTouchPoints: 10,
+    mobileBrowser: false
+  }), "desktop");
+});
+
+test("uses a narrow mobile-browser hint without treating desktop Android as a phone", () => {
+  assert.equal(hasMobileBrowserSignal({
+    userAgentDataMobile: undefined,
+    userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)"
+  }), true);
+  assert.equal(hasMobileBrowserSignal({
+    userAgentDataMobile: undefined,
+    userAgent: "Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 Mobile Safari/537.36"
+  }), true);
+  assert.equal(hasMobileBrowserSignal({
+    userAgentDataMobile: undefined,
+    userAgent: "Mozilla/5.0 (Linux; Android 15; Desktop Mode) AppleWebKit/537.36 Safari/537.36"
+  }), false);
+  assert.equal(hasMobileBrowserSignal({
+    userAgentDataMobile: false,
+    userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X)"
+  }), false);
+});
 
 test("a pending completion milestone is not presented as server-recorded", () => {
   const session = makeSession({
@@ -49,6 +131,7 @@ test("a pending completion milestone still selects the non-aborting finish path"
     assert.equal(betaSessionHasMilestone("SQUAD_RESTORED"), true);
     assert.equal(await finishBetaTestSession(), true);
     assert.equal(requests.some((request) => request.name === "JOURNEY_ABORTED"), false);
+    assert.equal(requests.some((request) => request.action === "finish"), true);
   });
 });
 
@@ -91,6 +174,23 @@ test("finishing an acknowledged run clears it without recording JOURNEY_ABORTED"
     assert.equal(await finishBetaTestSession(), true);
     assert.equal(getBetaTestSession(), null);
     assert.equal(requests.some((request) => request.name === "JOURNEY_ABORTED"), false);
+    assert.equal(requests.some((request) => request.action === "finish"), true);
+  });
+});
+
+test("finishing retains the local session until the server acknowledges submission", { concurrency: false }, async () => {
+  await withBrowser(async ({ requests, storage, failFinishRequests }) => {
+    await startBetaTestSession({ synthetic: true });
+    const session = getBetaTestSession();
+    assert.ok(session);
+    session.recordedKeys.push("MILESTONE:SQUAD_RESTORED:/machete/squad");
+    storage.replaceOnlyValue(session);
+    requests.length = 0;
+    failFinishRequests();
+
+    assert.equal(await finishBetaTestSession(), false);
+    assert.equal(getBetaTestSession()?.runId, runId);
+    assert.deepEqual(requests, [{ action: "finish", runId }]);
   });
 });
 
@@ -124,6 +224,7 @@ test("aborting records JOURNEY_ABORTED and clears only after acknowledgement", {
     assert.equal(await stopBetaTestSession(), true);
     assert.equal(getBetaTestSession(), null);
     assert.equal(requests.some((request) => request.name === "JOURNEY_ABORTED"), true);
+    assert.equal(requests.some((request) => request.action === "finish"), true);
   });
 });
 
@@ -154,6 +255,7 @@ async function withBrowser(
     requests: Array<Record<string, unknown>>;
     storage: MemoryStorage;
     failRequests: () => void;
+    failFinishRequests: () => void;
     deferObserveRequests: () => () => void;
   }) => Promise<void>
 ) {
@@ -163,6 +265,7 @@ async function withBrowser(
   const storage = new MemoryStorage();
   const requests: Array<Record<string, unknown>> = [];
   let shouldFail = false;
+  let shouldFailFinish = false;
   let observeGate: Promise<void> | null = null;
   let releaseObserveGate: (() => void) | null = null;
 
@@ -177,7 +280,10 @@ async function withBrowser(
     value: {
       crypto: { randomUUID: () => runId },
       innerWidth: 390,
+      innerHeight: 844,
       location: { pathname: "/beta-test" },
+      matchMedia: () => ({ matches: false }),
+      navigator: { maxTouchPoints: 0, userAgent: "test desktop" },
       sessionStorage: storage,
       dispatchEvent: () => true
     }
@@ -188,6 +294,7 @@ async function withBrowser(
       const body = typeof init?.body === "string" ? JSON.parse(init.body) as Record<string, unknown> : {};
       requests.push(body);
       if (shouldFail) throw new Error("offline");
+      if (shouldFailFinish && body.action === "finish") throw new Error("offline");
       if (body.action === "observe" && observeGate) await observeGate;
       return new Response("{}", { status: body.action === "start" ? 201 : 200, headers: { "content-type": "application/json" } });
     }
@@ -198,6 +305,7 @@ async function withBrowser(
       requests,
       storage,
       failRequests: () => { shouldFail = true; },
+      failFinishRequests: () => { shouldFailFinish = true; },
       deferObserveRequests: () => {
         observeGate = new Promise<void>((resolve) => { releaseObserveGate = resolve; });
         return () => {

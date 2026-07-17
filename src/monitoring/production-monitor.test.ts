@@ -59,7 +59,82 @@ test("production monitor retries transient GitHub API failures before synchroniz
   }
 });
 
-function createMonitorServer(input: { dataHealthy: boolean; appHealthy: boolean; requests: CapturedRequest[]; githubIssueListFailures?: number }) {
+test("production monitor keeps a retained beta-window breach visible as a warning", async () => {
+  const requests: CapturedRequest[] = [];
+  const server = createMonitorServer({ dataHealthy: true, appHealthy: true, fixedAuditStatus: "breach", requests });
+  const origin = await listen(server);
+
+  try {
+    const result = await runMonitor(origin);
+    assert.equal(result.code, 0, result.stderr);
+    const createIssue = requests.find((request) => request.method === "POST" && request.path === "/repos/owner/repo/issues");
+    assert.ok(createIssue);
+    assert.match(String(createIssue.body?.body), /Retained beta error-rate window/);
+    assert.match(String(createIssue.body?.body), /warnings: \*\*1\*\*/);
+  } finally {
+    server.close();
+  }
+});
+
+test("production monitor warns when fixed-window acceptance variables are absent", async () => {
+  const requests: CapturedRequest[] = [];
+  const server = createMonitorServer({ dataHealthy: true, appHealthy: true, requests });
+  const origin = await listen(server);
+
+  try {
+    const result = await runMonitor(origin, {
+      MONITOR_FIXED_WINDOW_EXPECTED_START: "",
+      MONITOR_FIXED_WINDOW_MIN_OBSERVED_SPAN_MINUTES: ""
+    });
+    assert.equal(result.code, 0, result.stderr);
+    const createIssue = requests.find((request) => request.method === "POST" && request.path === "/repos/owner/repo/issues");
+    assert.ok(createIssue);
+    assert.match(String(createIssue.body?.body), /expected-start=not configured/);
+    assert.match(String(createIssue.body?.body), /minimum-span=invalid\/missing/);
+  } finally {
+    server.close();
+  }
+});
+
+test("production monitor requires exact fixed start, minimum span, and retention coverage", async () => {
+  const requests: CapturedRequest[] = [];
+  const server = createMonitorServer({
+    dataHealthy: true,
+    appHealthy: true,
+    fixedWindowStart: "2026-07-17T10:29:00.000Z",
+    fixedObservedSpanMinutes: 1_439,
+    fixedRetentionCoversStart: false,
+    requests
+  });
+  const origin = await listen(server);
+
+  try {
+    const result = await runMonitor(origin, {
+      MONITOR_FIXED_WINDOW_EXPECTED_START: "2026-07-17T10:29:00Z",
+      MONITOR_FIXED_WINDOW_MIN_OBSERVED_SPAN_MINUTES: "1440"
+    });
+    assert.equal(result.code, 0, result.stderr);
+    const createIssue = requests.find((request) => request.method === "POST" && request.path === "/repos/owner/repo/issues");
+    assert.ok(createIssue);
+    const body = String(createIssue.body?.body);
+    assert.match(body, /\(mismatch\)/);
+    assert.match(body, /\(not reached\)/);
+    assert.match(body, /retention-covers-start=false/);
+  } finally {
+    server.close();
+  }
+});
+
+function createMonitorServer(input: {
+  dataHealthy: boolean;
+  appHealthy: boolean;
+  requests: CapturedRequest[];
+  githubIssueListFailures?: number;
+  fixedAuditStatus?: "ok" | "insufficient_data" | "breach";
+  fixedWindowStart?: string;
+  fixedObservedSpanMinutes?: number;
+  fixedRetentionCoversStart?: boolean;
+}) {
   let githubIssueListFailures = input.githubIssueListFailures ?? 0;
   return createServer(async (request, response) => {
     const body = await readBody(request);
@@ -90,6 +165,21 @@ function createMonitorServer(input: { dataHealthy: boolean; appHealthy: boolean;
         durationMs: { p75: 100, p95: 200 }
       });
     }
+    if (path === "/_monitor/beta-access-audit.json") {
+      const status = input.fixedAuditStatus ?? "ok";
+      return json(response, 200, {
+        status,
+        generatedAt: new Date().toISOString(),
+        windowMode: "fixed_start",
+        windowStart: input.fixedWindowStart ?? "2026-07-17T10:29:00.000Z",
+        retentionCoversWindowStart: input.fixedRetentionCoversStart ?? true,
+        requests: 100,
+        serverErrors: status === "breach" ? 2 : 0,
+        serverErrorRatePercent: status === "breach" ? 2 : 0,
+        observedSpanMinutes: input.fixedObservedSpanMinutes ?? 1_440,
+        durationMs: { p75: 100, p95: 200 }
+      });
+    }
     if (path === "/repos/owner/repo/issues" && request.method === "GET") {
       if (githubIssueListFailures > 0) {
         githubIssueListFailures -= 1;
@@ -102,7 +192,7 @@ function createMonitorServer(input: { dataHealthy: boolean; appHealthy: boolean;
   });
 }
 
-function runMonitor(origin: string) {
+function runMonitor(origin: string, monitorEnvironment: Record<string, string> = {}) {
   return new Promise<{ code: number | null; stdout: string; stderr: string }>((resolvePromise, reject) => {
     const child = spawn(process.execPath, [resolve(process.cwd(), "scripts/production-monitor.mjs")], {
       env: {
@@ -112,7 +202,10 @@ function runMonitor(origin: string) {
         GITHUB_TOKEN: "test-token",
         MONITOR_BASE_URL: origin,
         MONITOR_TIMEOUT_MS: "2000",
-        MONITOR_GITHUB_RETRY_BASE_MS: "1"
+        MONITOR_GITHUB_RETRY_BASE_MS: "1",
+        MONITOR_FIXED_WINDOW_EXPECTED_START: "2026-07-17T10:29:00.000Z",
+        MONITOR_FIXED_WINDOW_MIN_OBSERVED_SPAN_MINUTES: "1440",
+        ...monitorEnvironment
       },
       stdio: ["ignore", "pipe", "pipe"]
     });

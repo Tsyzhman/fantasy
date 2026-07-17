@@ -12,6 +12,8 @@ const alertTitle = process.env.MONITOR_ALERT_TITLE ?? "[production-monitor] Fant
 const timeoutMs = positiveInteger(process.env.MONITOR_TIMEOUT_MS, 10_000);
 const githubMaximumAttempts = Math.min(5, positiveInteger(process.env.MONITOR_GITHUB_MAX_ATTEMPTS, 3));
 const githubRetryBaseMs = positiveInteger(process.env.MONITOR_GITHUB_RETRY_BASE_MS, 250);
+const expectedFixedWindowStart = stringValue(process.env.MONITOR_FIXED_WINDOW_EXPECTED_START).trim();
+const minimumFixedWindowObservedSpan = configuredPositiveNumber(process.env.MONITOR_FIXED_WINDOW_MIN_OBSERVED_SPAN_MINUTES);
 const now = new Date();
 
 const checks = await Promise.all([
@@ -71,6 +73,40 @@ const checks = await Promise.all([
         ok,
         detail,
         fingerprint: `${status}:${auditStatus}:${fresh}:${numberValue(body?.serverErrorRatePercent)}`
+      };
+    }
+  }),
+  checkJsonEndpoint({
+    name: "Retained beta error-rate window",
+    path: "/_monitor/beta-access-audit.json",
+    severity: "warning",
+    evaluate: ({ status, body }) => {
+      const generatedAt = Date.parse(stringValue(body?.generatedAt));
+      const ageMinutes = Number.isFinite(generatedAt) ? Math.max(0, (now.getTime() - generatedAt) / 60_000) : Number.POSITIVE_INFINITY;
+      const auditStatus = stringValue(body?.status);
+      const windowMode = stringValue(body?.windowMode);
+      const windowStart = stringValue(body?.windowStart);
+      const observedSpanMinutes = numberValue(body?.observedSpanMinutes);
+      const retentionCoversWindowStart = body?.retentionCoversWindowStart === true;
+      const fresh = ageMinutes <= 90;
+      const hasFixedWindow = windowMode === "fixed_start" && Number.isFinite(Date.parse(windowStart));
+      const expectedStartConfigured = expectedFixedWindowStart.length > 0;
+      const expectedStartValid = expectedStartConfigured && Number.isFinite(Date.parse(expectedFixedWindowStart));
+      const exactStartMatches = expectedStartValid && windowStart === expectedFixedWindowStart;
+      const minimumSpanConfigured = minimumFixedWindowObservedSpan.configured && minimumFixedWindowObservedSpan.valid;
+      const minimumSpanReached = minimumSpanConfigured && observedSpanMinutes >= minimumFixedWindowObservedSpan.value;
+      const ok = status === 200 && auditStatus === "ok" && fresh && hasFixedWindow &&
+        retentionCoversWindowStart && exactStartMatches && minimumSpanReached;
+      const fixedGate = `expected-start=${expectedStartConfigured ? expectedFixedWindowStart : "not configured"} (${exactStartMatches ? "exact" : expectedStartValid ? "mismatch" : "invalid/missing"}); ` +
+        `minimum-span=${minimumSpanConfigured ? `${minimumFixedWindowObservedSpan.value}m` : "invalid/missing"} (${minimumSpanReached ? "reached" : "not reached"}); ` +
+        `retention-covers-start=${retentionCoversWindowStart}`;
+      const detail = status !== 200
+        ? `HTTP ${status}`
+        : `${auditStatus || "missing status"}; start=${windowStart || "missing"}; requests=${numberValue(body?.requests)}; 5xx=${numberValue(body?.serverErrors)} (${numberValue(body?.serverErrorRatePercent)}%); observed-span=${observedSpanMinutes}m; ${fixedGate}; age=${Number.isFinite(ageMinutes) ? ageMinutes.toFixed(1) : "unknown"}m`;
+      return {
+        ok,
+        detail,
+        fingerprint: `${status}:${auditStatus}:${fresh}:${windowMode}:${windowStart}:${retentionCoversWindowStart}:${expectedFixedWindowStart}:${minimumFixedWindowObservedSpan.raw}:${observedSpanMinutes}:${numberValue(body?.serverErrorRatePercent)}`
       };
     }
   })
@@ -269,6 +305,13 @@ function validateGitHubConfiguration(repo, token) {
 function positiveInteger(value, fallback) {
   const parsed = Number(value);
   return Number.isInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function configuredPositiveNumber(value) {
+  const raw = stringValue(value).trim();
+  if (!raw) return { configured: false, valid: false, value: Number.NaN, raw };
+  const parsed = Number(raw);
+  return { configured: true, valid: Number.isFinite(parsed) && parsed > 0, value: parsed, raw };
 }
 
 function stringValue(value) {
