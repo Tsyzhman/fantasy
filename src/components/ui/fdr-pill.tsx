@@ -21,12 +21,16 @@ export function FdrPill({
   const isFixtureLabel = label !== undefined;
   const klass = isFixtureLabel ? "fixture-pill" : safe === null ? "fdr-na" : `fdr-${safe}`;
   const visibleLabel = label ?? String(safe ?? "—");
-  const accessibleLabel = title?.trim();
+  const baseTitle = title?.trim();
+  const accessibleLabel = isFixtureLabel
+    ? [baseTitle, safe === null ? "FDR unavailable" : `FDR ${safe}/5`].filter(Boolean).join(" · ")
+    : baseTitle;
   return (
     <span
       className={cn(
         "fdr-pill",
         klass,
+        isFixtureLabel && `fixture-difficulty-${safe ?? "na"}`,
         isFixtureLabel && side === "home" && "fixture-pill-home",
         isFixtureLabel && side !== "home" && "fixture-pill-away",
         className

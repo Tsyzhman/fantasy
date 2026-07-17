@@ -404,8 +404,35 @@ test("team strength profiles derive attack and defense from parsed match xG", ()
 
   const team = profiles.byTeamId.get("20");
   assert.equal(team?.away.matches, 2);
-  assert.equal(team?.away.xgForPerMatch, 0.5);
-  assert.equal(team?.away.xgAgainstPerMatch, 1.75);
+  assert.ok((team?.away.xgForPerMatch ?? 0) > 0.4 && (team?.away.xgForPerMatch ?? 0) < 0.6);
+  assert.ok((team?.away.xgAgainstPerMatch ?? 0) > 1.85 && (team?.away.xgAgainstPerMatch ?? 0) < 2.05);
+});
+
+test("team strength gives recent xG more weight and shrinks it toward the league", () => {
+  const profiles = buildTeamStrengthProfilesFromMatches([
+    {
+      homeTeamId: "10",
+      awayTeamId: "20",
+      matchDate: "2025-01-01T12:00:00.000Z",
+      teamStats: [
+        { teamId: "10", isHome: true, xg: 3 },
+        { teamId: "20", isHome: false, xg: 0.5 }
+      ]
+    },
+    {
+      homeTeamId: "10",
+      awayTeamId: "30",
+      matchDate: "2025-06-30T12:00:00.000Z",
+      teamStats: [
+        { teamId: "10", isHome: true, xg: 0.5 },
+        { teamId: "30", isHome: false, xg: 1.5 }
+      ]
+    }
+  ]);
+
+  const recentWeighted = profiles.byTeamId.get("10")?.overall.xgForPerMatch ?? 0;
+  assert.ok(recentWeighted < 1.75, `expected recent weighting below the unweighted 1.75, received ${recentWeighted}`);
+  assert.ok(recentWeighted > 1.2, `expected six-match shrinkage to retain a team signal, received ${recentWeighted}`);
 });
 
 test("fixture projection weights opponent difficulty by fantasy position", () => {

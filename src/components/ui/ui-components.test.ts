@@ -58,7 +58,7 @@ test("buildCurrentLinkHref preserves query state", () => {
   assert.equal(buildCurrentLinkHref("/compare", ""), "/compare");
 });
 
-test("FDR components clamp numeric difficulty while fixtures use one fill and home-only emphasis", () => {
+test("FDR components keep one fixture fill while showing difficulty with a separate class", () => {
   const pillHtml = renderToStaticMarkup(React.createElement(FdrPill, { difficulty: 9 }));
   const rowHtml = renderToStaticMarkup(
     React.createElement(FdrRow, {
@@ -75,6 +75,10 @@ test("FDR components clamp numeric difficulty while fixtures use one fill and ho
   assert.match(rowHtml, /fixture-pill-home/);
   assert.match(rowHtml, /fixture-pill-away/);
   assert.doesNotMatch(rowHtml, /fdr-[1-5]/);
+  assert.match(rowHtml, /fixture-difficulty-2/);
+  assert.match(rowHtml, /fixture-difficulty-na/);
+  assert.match(rowHtml, /FDR 2\/5/);
+  assert.match(rowHtml, /FDR unavailable/);
   assert.doesNotMatch(rowHtml, /border-sky|border-violet/);
   assert.match(rowHtml, /H ARS/);
   assert.match(rowHtml, /A LEE/);

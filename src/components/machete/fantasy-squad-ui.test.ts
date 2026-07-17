@@ -19,6 +19,11 @@ test("fixture chips hide H/A from visible labels but retain side and original ti
   );
 });
 
+test("desktop fixture window uses five compact opponent codes before overflow", () => {
+  assert.match(squadPlannerSource, /visibleFixtureChips = fixtureChips\.slice\(0, 5\)/);
+  assert.match(squadPlannerSource, /flex-nowrap gap-0\.5 overflow-hidden/);
+});
+
 test("player pool renders display-only Alt FP on desktop and as the fourth mobile metric", () => {
   const desktopNext = squadPlannerSource.indexOf('en="Next"');
   const desktopAlt = squadPlannerSource.indexOf('title={alternativePredictedFpTitle(language)}>Alt', desktopNext);

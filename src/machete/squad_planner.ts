@@ -114,6 +114,7 @@ type TeamStrengthSample = {
   side: TeamStrengthSide;
   xgFor: number | null;
   xgAgainst: number | null;
+  weight: number;
 };
 
 type TeamStrengthBlock = {
@@ -136,6 +137,7 @@ type TeamStrengthProfiles = {
 type TeamStrengthMatchInput = {
   homeTeamId: string | null;
   awayTeamId: string | null;
+  matchDate?: Date | string | null;
   teamStats: Array<{
     teamId: string;
     opponentTeamId?: string | null;
@@ -185,6 +187,9 @@ export type SportsRuFantasyPriceRef = {
 
 const maxProjectionRounds = 10;
 const defaultTeamXgPerMatch = 1.25;
+const teamStrengthHalfLifeDays = 180;
+const teamStrengthOverallPriorMatches = 6;
+const teamStrengthVenuePriorMatches = 8;
 const fantasyPlayerPoolCacheTtlMs = 30_000;
 const fantasyPlayerPoolCache = new ExpiringPromiseCache<string, FantasyPlannerPlayer[]>(20);
 export const maxFantasySquadNameLength = 80;
@@ -818,7 +823,7 @@ async function loadUpcomingRoundFixtures(prisma: PrismaClient, league: SharedLea
       orderBy: [{ matchDate: "asc" }, { id: "asc" }],
       take: 180
     }),
-    loadTeamStrengthProfiles(prisma, league.leagueId, league.season),
+    loadTeamStrengthProfiles(prisma, league.leagueId),
     prisma.leagueSeasonTeam.findMany({
       where: {
         leagueId: league.leagueId,
@@ -966,8 +971,13 @@ function aggregateRoundDifficulty(
 
 export function buildTeamStrengthProfilesFromMatches(matches: TeamStrengthMatchInput[]): TeamStrengthProfiles {
   const samples: TeamStrengthSample[] = [];
+  const datedMatches = matches
+    .map((match) => teamStrengthMatchDateMs(match.matchDate))
+    .filter((value): value is number => value !== null);
+  const referenceDateMs = datedMatches.length > 0 ? Math.max(...datedMatches) : null;
 
   for (const match of matches) {
+    const weight = teamStrengthRecencyWeight(match.matchDate, referenceDateMs);
     for (const stat of match.teamStats) {
       const teamId = stat.teamId.trim();
       if (!teamId) continue;
@@ -980,21 +990,23 @@ export function buildTeamStrengthProfilesFromMatches(matches: TeamStrengthMatchI
         teamId,
         side,
         xgFor: numericOrNull(stat.xg) ?? numericOrNull(stat.goals),
-        xgAgainst: numericOrNull(opponent?.xg) ?? numericOrNull(opponent?.goals)
+        xgAgainst: numericOrNull(opponent?.xg) ?? numericOrNull(opponent?.goals),
+        weight
       });
     }
   }
 
   const teamIds = new Set(samples.map((sample) => sample.teamId));
+  const league = profileFromSamples(samples);
   const byTeamId = new Map<string, TeamStrengthProfile>();
   for (const teamId of teamIds) {
     const teamSamples = samples.filter((sample) => sample.teamId === teamId);
-    byTeamId.set(teamId, profileFromSamples(teamSamples));
+    byTeamId.set(teamId, profileFromSamples(teamSamples, league));
   }
 
   return {
     byTeamId,
-    league: profileFromSamples(samples)
+    league
   };
 }
 
@@ -1039,11 +1051,10 @@ function fixtureStrengthProjection(
   };
 }
 
-async function loadTeamStrengthProfiles(prisma: PrismaClient, leagueId: bigint, season: string) {
+async function loadTeamStrengthProfiles(prisma: PrismaClient, leagueId: bigint) {
   const matches = await prisma.coreMatch.findMany({
     where: {
       leagueId,
-      season,
       finished: true,
       cancelled: false
     },
@@ -1052,6 +1063,7 @@ async function loadTeamStrengthProfiles(prisma: PrismaClient, leagueId: bigint, 
     select: {
       homeTeamId: true,
       awayTeamId: true,
+      matchDate: true,
       teamStats: {
         select: {
           teamId: true,
@@ -1068,6 +1080,7 @@ async function loadTeamStrengthProfiles(prisma: PrismaClient, leagueId: bigint, 
     matches.map((match) => ({
       homeTeamId: stringifyBigInt(match.homeTeamId),
       awayTeamId: stringifyBigInt(match.awayTeamId),
+      matchDate: match.matchDate,
       teamStats: match.teamStats.map((stat) => ({
         teamId: String(stat.teamId),
         opponentTeamId: stringifyBigInt(stat.opponentTeamId),
@@ -1333,20 +1346,77 @@ function teamStatSide(match: TeamStrengthMatchInput, stat: TeamStrengthMatchInpu
   return null;
 }
 
-function profileFromSamples(samples: TeamStrengthSample[]): TeamStrengthProfile {
+function profileFromSamples(samples: TeamStrengthSample[], leaguePrior?: TeamStrengthProfile): TeamStrengthProfile {
+  if (!leaguePrior) {
+    return {
+      home: strengthBlock(samples.filter((sample) => sample.side === "home")),
+      away: strengthBlock(samples.filter((sample) => sample.side === "away")),
+      overall: strengthBlock(samples)
+    };
+  }
+
+  const overall = strengthBlock(samples, leaguePrior.overall, teamStrengthOverallPriorMatches);
   return {
-    home: strengthBlock(samples.filter((sample) => sample.side === "home")),
-    away: strengthBlock(samples.filter((sample) => sample.side === "away")),
-    overall: strengthBlock(samples)
+    home: strengthBlock(
+      samples.filter((sample) => sample.side === "home"),
+      venueAdjustedStrengthPrior(overall, leaguePrior.home, leaguePrior.overall),
+      teamStrengthVenuePriorMatches
+    ),
+    away: strengthBlock(
+      samples.filter((sample) => sample.side === "away"),
+      venueAdjustedStrengthPrior(overall, leaguePrior.away, leaguePrior.overall),
+      teamStrengthVenuePriorMatches
+    ),
+    overall
   };
 }
 
-function strengthBlock(samples: TeamStrengthSample[]): TeamStrengthBlock {
+function strengthBlock(samples: TeamStrengthSample[], prior?: TeamStrengthBlock, priorMatches = 0): TeamStrengthBlock {
   return {
     matches: samples.length,
-    xgForPerMatch: averageKnown(samples.map((sample) => sample.xgFor)),
-    xgAgainstPerMatch: averageKnown(samples.map((sample) => sample.xgAgainst))
+    xgForPerMatch: weightedStrengthAverage(samples, "xgFor", prior?.xgForPerMatch ?? null, priorMatches),
+    xgAgainstPerMatch: weightedStrengthAverage(samples, "xgAgainst", prior?.xgAgainstPerMatch ?? null, priorMatches)
   };
+}
+
+function weightedStrengthAverage(
+  samples: TeamStrengthSample[],
+  field: "xgFor" | "xgAgainst",
+  prior: number | null,
+  priorMatches: number
+) {
+  const known = samples.filter((sample) => sample[field] !== null);
+  const sampleWeight = sum(known.map((sample) => sample.weight));
+  const priorWeight = prior !== null ? priorMatches : 0;
+  if (sampleWeight + priorWeight <= 0) return null;
+  return (sum(known.map((sample) => (sample[field] ?? 0) * sample.weight)) + (prior ?? 0) * priorWeight) / (sampleWeight + priorWeight);
+}
+
+function venueAdjustedStrengthPrior(overall: TeamStrengthBlock, leagueVenue: TeamStrengthBlock, leagueOverall: TeamStrengthBlock): TeamStrengthBlock {
+  return {
+    matches: 0,
+    xgForPerMatch: venueAdjustedMetric(overall.xgForPerMatch, leagueVenue.xgForPerMatch, leagueOverall.xgForPerMatch),
+    xgAgainstPerMatch: venueAdjustedMetric(overall.xgAgainstPerMatch, leagueVenue.xgAgainstPerMatch, leagueOverall.xgAgainstPerMatch)
+  };
+}
+
+function venueAdjustedMetric(teamOverall: number | null, leagueVenue: number | null, leagueOverall: number | null) {
+  if (teamOverall === null) return leagueVenue ?? leagueOverall;
+  if (leagueVenue === null || leagueOverall === null || leagueOverall <= 0) return teamOverall;
+  return teamOverall * (leagueVenue / leagueOverall);
+}
+
+function teamStrengthRecencyWeight(value: Date | string | null | undefined, referenceDateMs: number | null) {
+  const valueMs = teamStrengthMatchDateMs(value);
+  if (valueMs === null || referenceDateMs === null) return 1;
+  const ageDays = Math.max(0, (referenceDateMs - valueMs) / 86_400_000);
+  return 0.5 ** (ageDays / teamStrengthHalfLifeDays);
+}
+
+function teamStrengthMatchDateMs(value: Date | string | null | undefined) {
+  if (!value) return null;
+  const time = value instanceof Date ? value.getTime() : new Date(value).getTime();
+  return Number.isFinite(time) ? time : null;
 }
 
 function strengthBlockForSide(

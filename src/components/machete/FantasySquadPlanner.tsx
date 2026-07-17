@@ -1492,7 +1492,7 @@ function PlayerPoolTable({
               const disabled = !isSelected && reason !== null;
               const localizedReason = reason ? localizeAddBlockReason(reason, language) : null;
               const fixtureChips = fixtureChipPresentations(player.fixtures, player.fixtureDifficulties ?? [], horizon);
-              const visibleFixtureChips = fixtureChips.slice(0, 2);
+              const visibleFixtureChips = fixtureChips.slice(0, 5);
               const hiddenFixtureCount = Math.max(0, fixtureChips.length - visibleFixtureChips.length);
               const hiddenFixtureLabels = fixtureChips.slice(visibleFixtureChips.length).map((chip) => chip.title ?? chip.label).join(", ");
               const fixtures = player.fixtures.slice(0, horizon).filter(Boolean).join(" / ");
@@ -1566,7 +1566,7 @@ function PlayerPoolTable({
                   <td className="overflow-hidden px-2 py-1.5 text-[11px] text-slate-500">
                     {visibleFixtureChips.length > 0 ? (
                       <div className="flex min-w-0 items-center gap-1 overflow-hidden" title={fixtures}>
-                        <FdrRow fixtures={visibleFixtureChips} className="min-w-0 flex-nowrap overflow-hidden" />
+                        <FdrRow fixtures={visibleFixtureChips} className="min-w-0 flex-nowrap gap-0.5 overflow-hidden" />
                         {hiddenFixtureCount > 0 ? (
                           <span
                             className="inline-flex h-[18px] shrink-0 items-center rounded bg-slate-200 px-1 text-[10px] font-bold text-slate-700"
