@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import { withEnv } from "../../test-utils/env";
-import { extractLeagueTeamsFromLeaguePayload, is_placeholder_team, UnofficialFotMobClient } from "./client";
+import { extractCompactTeamShortName, extractLeagueTeamsFromLeaguePayload, is_placeholder_team, UnofficialFotMobClient } from "./client";
 
 class InspectableUnofficialFotMobClient extends UnofficialFotMobClient {
   getRequestIntervalMs() {
@@ -190,6 +190,42 @@ test("unofficial client uses a safe request interval by default", async () => {
   await withEnv({ MACHETE_FOTMOB_REQUEST_INTERVAL_MS: undefined }, async () => {
     assert.equal(new InspectableUnofficialFotMobClient().getRequestIntervalMs(), 1500);
   });
+});
+
+test("team payload prefers FotMob compact fixture code for the requested team", () => {
+  const payload = {
+    details: { id: 9760, name: "CSKA Moscow", shortName: "CSKA" },
+    table: [
+      {
+        nextOpponent: {
+          9760: [
+            "49694",
+            "Baltika",
+            "5847120",
+            { id: "9760", name: "CSKA Moscow", shortName: "CSM" },
+            { id: "49694", name: "Baltika", shortName: "BAT" }
+          ]
+        }
+      }
+    ]
+  };
+
+  assert.equal(extractCompactTeamShortName(payload, "9760"), "CSM");
+  assert.equal(extractCompactTeamShortName(payload, "49694"), "BAT");
+});
+
+test("team payload ignores long or unrelated next-opponent labels", () => {
+  const payload = {
+    table: [
+      {
+        nextOpponent: {
+          1: [{ id: "1", shortName: "Manchester United" }, { id: "2", shortName: "ARS" }]
+        }
+      }
+    ]
+  };
+
+  assert.equal(extractCompactTeamShortName(payload, "1"), undefined);
 });
 
 test("unofficial client allows request throttling to be disabled explicitly", async () => {

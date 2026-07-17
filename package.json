@@ -45,6 +45,7 @@
     "fotmob:penalty-potential": "tsx scripts/penalty-potential-index.ts",
     "prices:import-sheet": "tsx scripts/import-fantasy-price-sheet.ts",
     "prices:sync-sports-ru": "tsx scripts/import-sports-ru-fantasy.ts",
+    "prices:map-rpl-2026-27": "tsx scripts/map-sports-ru-rpl-2026-27.ts",
     "scores:recalculate": "tsx prisma/recalculate-fantasy.ts",
     "model:backtest": "tsx scripts/backtest-fantasy-model.ts",
     "model:explore-calibration": "tsx scripts/explore-fantasy-projection-calibration.ts",

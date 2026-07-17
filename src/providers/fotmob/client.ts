@@ -597,7 +597,7 @@ function normalizeTeam(payload: unknown, leagueId: string, tableTeam: { id: stri
     id: teamId,
     leagueId,
     name: stringValue(details.name) ?? tableTeam.name,
-    shortName: stringValue(details.shortName) ?? tableTeam.shortName,
+    shortName: extractCompactTeamShortName(data, teamId) ?? stringValue(details.shortName) ?? tableTeam.shortName,
     country: stringValue(details.country),
     logoUrl: teamLogoUrl(teamId),
     players: extractSquadPlayers(data, teamId)
@@ -660,6 +660,31 @@ function normalizeSquadMember(member: unknown, teamId: string): FotMobPlayer | n
       redCards
     }
   };
+}
+
+/**
+ * FotMob exposes the human-readable short name in `details.shortName`, while
+ * its compact fixture code (ARS, MUN, ZEN, ...) lives in `table.nextOpponent`.
+ * Prefer only a space-free 2-5 character code belonging to the requested team.
+ */
+export function extractCompactTeamShortName(payload: unknown, teamId: string) {
+  const root = asRecord(payload);
+  const tables = Array.isArray(root.table) ? root.table : [];
+
+  for (const table of tables) {
+    const nextOpponent = asRecord(asRecord(table).nextOpponent);
+    for (const fixture of Object.values(nextOpponent)) {
+      if (!Array.isArray(fixture)) continue;
+      for (const value of fixture) {
+        const candidate = asRecord(value);
+        if (stringValue(candidate.id) !== teamId) continue;
+        const shortName = stringValue(candidate.shortName)?.trim();
+        if (shortName && /^[\p{L}\p{N}]{2,5}$/u.test(shortName)) return shortName;
+      }
+    }
+  }
+
+  return undefined;
 }
 
 function normalizeFixture(payload: unknown, leagueId: string): FotMobFixture | null {
