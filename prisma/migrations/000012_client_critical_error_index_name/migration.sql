@@ -1,0 +1,2 @@
+ALTER INDEX "client_critical_error_events_kind_route_group_occurred_minute_k"
+  RENAME TO "client_critical_error_events_kind_route_group_occurred_minu_key";

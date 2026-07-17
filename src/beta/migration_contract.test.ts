@@ -24,6 +24,10 @@ const clientCriticalErrorMigration = readFileSync(
   resolve("prisma/migrations/000011_client_critical_error_events/migration.sql"),
   "utf8"
 );
+const clientCriticalErrorIndexMigration = readFileSync(
+  resolve("prisma/migrations/000012_client_critical_error_index_name/migration.sql"),
+  "utf8"
+);
 
 test("beta telemetry foreign key targets the canonical Prisma user table", () => {
   assert.match(initialMigration, /CREATE TABLE "User" \(/);
@@ -75,4 +79,12 @@ test("client critical-error storage contains only coarse aggregate fields", () =
   assert.match(clientCriticalErrorMigration, /client_critical_error_events_kind_check/);
   assert.match(clientCriticalErrorMigration, /client_critical_error_events_route_group_check/);
   assert.doesNotMatch(clientCriticalErrorMigration, /message|stack|query|user_id|session|ip_address|user_agent/i);
+});
+
+test("client critical-error index rename matches Prisma's PostgreSQL identifier", () => {
+  assert.match(
+    clientCriticalErrorIndexMigration,
+    /ALTER INDEX "client_critical_error_events_kind_route_group_occurred_minute_k"\s+RENAME TO "client_critical_error_events_kind_route_group_occurred_minu_key"/i
+  );
+  assert.doesNotMatch(clientCriticalErrorIndexMigration, /DROP|CREATE TABLE|ALTER TABLE/i);
 });

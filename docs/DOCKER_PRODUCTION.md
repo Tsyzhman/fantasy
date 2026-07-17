@@ -15,35 +15,41 @@ the 15-minute aggregate audit, and GitHub issue alert delivery are described in
 ## Current verified release
 
 As of 2026-07-17, production runs
-`fantasy-scout-web:beta39-20260717T114447Z` from
-`/var/www/fantasy-scout-releases/20260717T114447Z-beta39-41e1515-green-main`. Its exact
+`fantasy-scout-web:beta41-20260717T125306Z` from
+`/var/www/fantasy-scout-releases/20260717T125306Z-beta41-1277abc-green-main`. Its exact
 image ID is
-`sha256:7fb33bf67c78e400bb66b66bc08bc2e4be1f59f97242143b0a7d9d0c77f3b038`
-and source commit is `41e1515bedc54f96e46bf62d3971c118a41e9639`.
+`sha256:c8c339b3256ede3780e0efe8725ba4f10fc27ce4279eb25910882b12f62de2f1`
+and source commit is `1277abcc7c6fe045ca46d08faee4d7825f03aa98`.
 Active container ID
-`b423653045f0b31f831519669832a8e0bee8e668275d4ec2defdc976a51dcfb8`
+`ccfac13ddff1db2364c8598d3242a201fc688245ce1bc69993588ecba6fb7614`
 is healthy with zero restarts and explicit `json-file` rotation
 (`max-size=20m`, `max-file=5`). The stopped immediate rollback is exact
-bounded-log beta38
-`fantasy-scout-web-beta38-rollback-pre-beta39-20260717T114447Z`, container ID
-`815ae6085d78e7b4887b4c012a27f21bc57de31a8e639541b0e4fcfacd5064c8`
+bounded-log beta39
+`fantasy-scout-web-beta39-rollback-pre-beta41-20260717T125306Z`, container ID
+`b423653045f0b31f831519669832a8e0bee8e668275d4ec2defdc976a51dcfb8`
 in `exited` state. The older beta33 rollback remains preserved as
 `fantasy-scout-web-beta33-rollback-pre-beta36-20260717T070721Z`, container ID
 `c2cea7a73bcc53df5e352cce6c9baee4bc51b02f21f7c65d5c804083851b21dd`
 in `created` state.
-Both liveness and data-quality health return HTTP 200.
-Production has 10/10 applied Prisma migrations, 0 failed/rolled-back migrations,
-and a passing persisted 380-match data-quality audit.
+Liveness, login and client-error health return HTTP 200. Data-quality returns
+HTTP 503 because no default season is forecast-ready; the persisted 380-match
+2025/2026 audit itself remains passing at 98.938% forecast coverage.
+Production has 11/11 applied Prisma migrations and 0 failed/rolled-back migrations.
 PostgreSQL container ID
 `325e03666369215bd5b68c527a4b9b70421237c1b8f78b0040df6d94e571230f`
 uses the same `postgres:16-alpine` image and
 `fantasy-scout_fantasy-scout-postgres` volume as before, is healthy, and now has
 bounded `json-file` logging (`max-size=20m`, `max-file=5`). Its controlled
-recreation preserved 10 applied migrations and 10,972 `matches` rows; the web
+recreation preserved 11 applied migrations and 10,972 `matches` rows; the web
 container and both public health endpoints recovered successfully before the
 old container was removed. The
-`/var/www/fantasy-scout-current` symlink points to the immutable beta39
+`/var/www/fantasy-scout-current` symlink points to the immutable beta41
 release.
+
+The verified pre-beta41 custom-format backup is
+`/var/backups/fantasy-scout/pre-beta41-client-errors-20260717T125306Z.dump`,
+49,756,880 bytes, SHA-256
+`646fe6ae4aa0e780e0c949cadcd88493dc99c4c042329dda81a808bf61ebd066`.
 
 The verified pre-contract custom-format backup is
 `/var/backups/fantasy-scout/pre-beta40-contract-20260717T120353Z.dump`,
