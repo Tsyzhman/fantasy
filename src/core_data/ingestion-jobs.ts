@@ -359,7 +359,7 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: Ing
             );
           }
           await upsert_discovered_fixture(prisma, fixture, BigInt(canonicalLeagueId), scope.season);
-          if (!fixtureRequiresDetailedPayload(fixture)) {
+          if (scope.require_detailed_payloads === false || !fixtureRequiresDetailedPayload(fixture)) {
             await prisma.ingestionJob.update({
               where: { id: jobId },
               data: {
