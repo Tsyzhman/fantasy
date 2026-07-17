@@ -25,19 +25,19 @@ npm run check
 The currently verified runtime is Docker, not the PM2 workflow described later
 in this document:
 
-- active image: `fantasy-scout-web:beta41-20260717T125306Z`;
+- active image: `fantasy-scout-web:beta42-20260717T131746Z`;
 - image ID:
-  `sha256:c8c339b3256ede3780e0efe8725ba4f10fc27ce4279eb25910882b12f62de2f1`;
-- source commit: `1277abcc7c6fe045ca46d08faee4d7825f03aa98`;
+  `sha256:d08313a7bc9e508d0028f5ada623f886b1108d5ad3c61828b07c022d27f74bb3`;
+- source commit: `787bf2141e01700a9166eefd28c6a338db5d0df4`;
 - release directory:
-  `/var/www/fantasy-scout-releases/20260717T125306Z-beta41-1277abc-green-main`;
+  `/var/www/fantasy-scout-releases/20260717T131746Z-beta42-787bf21-green-main`;
 - active container ID:
-  `ccfac13ddff1db2364c8598d3242a201fc688245ce1bc69993588ecba6fb7614`;
+  `3c42b4f3898fa047265f208d94d6e467e2528f6d907904a1bb2c7ca399bfbfa3`;
 - state after rollout: `running`, `healthy`, restart count `0`;
-- stopped immediate rollback container is exact bounded-log beta39:
-  `fantasy-scout-web-beta39-rollback-pre-beta41-20260717T125306Z`
+- stopped immediate rollback container is exact bounded-log beta41:
+  `fantasy-scout-web-beta41-rollback-pre-beta42-20260717T131746Z`
   (container ID
-  `b423653045f0b31f831519669832a8e0bee8e668275d4ec2defdc976a51dcfb8`,
+  `ccfac13ddff1db2364c8598d3242a201fc688245ce1bc69993588ecba6fb7614`,
   state `exited`);
 - preserved older rollback is exact bounded-log beta33:
   `fantasy-scout-web-beta33-rollback-pre-beta36-20260717T070721Z`
@@ -47,15 +47,20 @@ in this document:
 - external liveness, login and client-error health return HTTP 200. Data-quality
   returns HTTP 503 because no default season is forecast-ready; the persisted
   2025/2026 audit itself remains passing at 98.938% forecast coverage;
-- applied Prisma state: 11 migrations, including
-  `000011_client_critical_error_events`; failed/rolled-back migrations: 0;
+- applied Prisma state: 12 migrations, including the forward-only index rename
+  `000012_client_critical_error_index_name`; failed/rolled-back migrations: 0;
 - PostgreSQL was controllably recreated as container ID
   `325e03666369215bd5b68c527a4b9b70421237c1b8f78b0040df6d94e571230f`
   with the same image, env, network and
   `fantasy-scout_fantasy-scout-postgres` volume; it is healthy with bounded
-  `json-file` logs (`max-size=20m`, `max-file=5`), and the swap preserved
-  11 applied migrations plus 10,972 `matches` rows;
-- `/var/www/fantasy-scout-current` points to the beta41 immutable release;
+  `json-file` logs (`max-size=20m`, `max-file=5`); the preserved database now
+  has 12 applied migrations plus 10,972 `matches` rows;
+- `/var/www/fantasy-scout-current` points to the beta42 immutable release;
+- verified pre-beta42 backup (custom format, checked with
+  `pg_restore --list`):
+  `/var/backups/fantasy-scout/pre-beta42-index-rename-20260717T131746Z.dump`,
+  49,760,773 bytes, SHA-256
+  `e1e1be36faf96df2b364dfd5837738365827fe20d8f280dcf4e067b95d1530e2`;
 - verified pre-beta41 backup (custom format, checked with
   `pg_restore --list`):
   `/var/backups/fantasy-scout/pre-beta41-client-errors-20260717T125306Z.dump`,
