@@ -25,28 +25,29 @@ npm run check
 The currently verified runtime is Docker, not the PM2 workflow described later
 in this document:
 
-- active image: `fantasy-scout-web:beta42-20260717T131746Z`;
+- active image: `fantasy-scout-web:beta43-20260717T141402Z`;
 - image ID:
-  `sha256:d08313a7bc9e508d0028f5ada623f886b1108d5ad3c61828b07c022d27f74bb3`;
-- source commit: `787bf2141e01700a9166eefd28c6a338db5d0df4`;
+  `sha256:90cf7db97a46d701348580273e03e979859f00e142d53da5237734207e5d4814`;
+- source commit: `ecbb64360cf02f1ae9c0a3447ba20503d240c268`;
 - release directory:
-  `/var/www/fantasy-scout-releases/20260717T131746Z-beta42-787bf21-green-main`;
+  `/var/www/fantasy-scout-releases/20260717T141402Z-beta43-ecbb643-green-main`;
 - active container ID:
-  `3c42b4f3898fa047265f208d94d6e467e2528f6d907904a1bb2c7ca399bfbfa3`;
+  `6a4fc05c42f72a59bee22d8e4efc41ec3d5f923f8f774a28f95e00502be3fa12`;
 - state after rollout: `running`, `healthy`, restart count `0`;
-- stopped immediate rollback container is exact bounded-log beta41:
-  `fantasy-scout-web-beta41-rollback-pre-beta42-20260717T131746Z`
+- stopped immediate rollback container is exact bounded-log beta42:
+  `fantasy-scout-web-beta42-rollback-pre-beta43-20260717T141402Z`
   (container ID
-  `ccfac13ddff1db2364c8598d3242a201fc688245ce1bc69993588ecba6fb7614`,
+  `3c42b4f3898fa047265f208d94d6e467e2528f6d907904a1bb2c7ca399bfbfa3`,
   state `exited`);
 - preserved older rollback is exact bounded-log beta33:
   `fantasy-scout-web-beta33-rollback-pre-beta36-20260717T070721Z`
   (container ID
   `c2cea7a73bcc53df5e352cce6c9baee4bc51b02f21f7c65d5c804083851b21dd`,
   state `created`);
-- external liveness, login and client-error health return HTTP 200. Data-quality
-  returns HTTP 503 because no default season is forecast-ready; the persisted
-  2025/2026 audit itself remains passing at 98.938% forecast coverage;
+- external liveness, login and client-error health return HTTP 200. Overall
+  data-quality returns HTTP 503 because current season has 0 finished matches,
+  while planner default `47:2026/2027` is healthy in `PRESEASON_FORECAST` mode
+  with 98.548% forecast coverage and 380 future fixtures;
 - applied Prisma state: 12 migrations, including the forward-only index rename
   `000012_client_critical_error_index_name`; failed/rolled-back migrations: 0;
 - PostgreSQL was controllably recreated as container ID
@@ -54,9 +55,14 @@ in this document:
   with the same image, env, network and
   `fantasy-scout_fantasy-scout-postgres` volume; it is healthy with bounded
   `json-file` logs (`max-size=20m`, `max-file=5`); the preserved database now
-  has 12 applied migrations plus 10,972 `matches` rows;
-- `/var/www/fantasy-scout-current` points to the beta42 immutable release;
-- verified pre-beta42 backup (custom format, checked with
+  has 12 applied migrations plus 11,352 `matches` rows;
+- `/var/www/fantasy-scout-current` points to the beta43 immutable release;
+- verified pre-beta43 backup (custom format, checked with
+  `pg_restore --list`):
+  `/var/backups/fantasy-scout/pre-beta43-targeted-47-20260717T141402Z.dump`,
+  49,760,868 bytes, SHA-256
+  `33c8365c7c969b7a5d18a7fbf0db84404193362a5eeb5af034b6204fb3de3ad0`;
+- verified historical pre-beta42 backup (custom format, checked with
   `pg_restore --list`):
   `/var/backups/fantasy-scout/pre-beta42-index-rename-20260717T131746Z.dump`,
   49,760,773 bytes, SHA-256
@@ -192,7 +198,8 @@ Required runtime environment variables on the production host:
 
 - `DATABASE_URL`
 - `CRON_SECRET`
-- `DATA_QUALITY_AUDIT_SCOPES` (for example `47:2025/2026`)
+- `DATA_QUALITY_AUDIT_SCOPES` (current production:
+  `47:2025/2026;47:2026/2027`)
 - `MACHETE_STORE_RAW_PAYLOADS=true` (non-final payload retention; finalized
   bodies are pruned while timing evidence remains on `matches`)
 - `SPORTS_RU_FANTASY_SYNC_SCOPES` (for example

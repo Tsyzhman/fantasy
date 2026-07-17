@@ -8,40 +8,66 @@ Done. По просьбе владельца продукта готовност
 как оценочные. Это исключение не превращает отсутствующие официальные цены в
 выполненный факт.
 
-Текущий production после beta42 promote:
+Текущий production после beta43 promote:
 
-- image `fantasy-scout-web:beta42-20260717T131746Z`;
+- image `fantasy-scout-web:beta43-20260717T141402Z`;
 - image ID
-  `sha256:d08313a7bc9e508d0028f5ada623f886b1108d5ad3c61828b07c022d27f74bb3`;
-- source commit `787bf2141e01700a9166eefd28c6a338db5d0df4`;
+  `sha256:90cf7db97a46d701348580273e03e979859f00e142d53da5237734207e5d4814`;
+- source commit `ecbb64360cf02f1ae9c0a3447ba20503d240c268`;
 - release
-  `/var/www/fantasy-scout-releases/20260717T131746Z-beta42-787bf21-green-main`;
+  `/var/www/fantasy-scout-releases/20260717T141402Z-beta43-ecbb643-green-main`;
 - active container ID
-  `3c42b4f3898fa047265f208d94d6e467e2528f6d907904a1bb2c7ca399bfbfa3`;
+  `6a4fc05c42f72a59bee22d8e4efc41ec3d5f923f8f774a28f95e00502be3fa12`;
 - состояние `running|healthy|0`, port `127.0.0.1:3000`, network
   `fantasy-scout_default`, upload volume RW, restart policy `unless-stopped`,
   logs `json-file` / `max-size=20m` / `max-file=5`;
-- symlink `/var/www/fantasy-scout-current` атомарно указывает на beta42 release;
+- symlink `/var/www/fantasy-scout-current` атомарно указывает на beta43 release;
 - PostgreSQL container ID
   `325e03666369215bd5b68c527a4b9b70421237c1b8f78b0040df6d94e571230f`
   остался `running|healthy|0`; production DB содержит 12 применённых миграций,
-  0 failed/rolled-back, 10 972 строки `matches` и 0 client-error aggregates;
-- после production browser smoke: users 4, saved squads 2, squad players 30,
-  synthetic runs 1, real runs 0, reviewed real runs 0, observations 20; временный
-  `E2E optimized …` состав удалён;
-- immediate rollback — exact beta41 container
-  `fantasy-scout-web-beta41-rollback-pre-beta42-20260717T131746Z`, container ID
-  `ccfac13ddff1db2364c8598d3242a201fc688245ce1bc69993588ecba6fb7614`,
+  0 failed/rolled-back и 11 352 строки `matches`, включая 380 EPL 2026/2027;
+- immediate rollback — exact beta42 container
+  `fantasy-scout-web-beta42-rollback-pre-beta43-20260717T141402Z`, container ID
+  `3c42b4f3898fa047265f208d94d6e467e2528f6d907904a1bb2c7ca399bfbfa3`,
   state `exited`, restart count 0;
-- более старый exact beta33 rollback сохранён отдельно в state `created`:
-  `fantasy-scout-web-beta33-rollback-pre-beta36-20260717T070721Z`, container ID
-  `c2cea7a73bcc53df5e352cce6c9baee4bc51b02f21f7c65d5c804083851b21dd`;
+- exact beta41 rollback также сохранён в state `exited`, restart count 0:
+  `ccfac13ddff1db2364c8598d3242a201fc688245ce1bc69993588ecba6fb7614`;
 - exact beta2 web
   `afc89df340968fbdc32f26f45b63fe12e298405b4143a2d59f0abd6c714a68e9`
   и DB `8d92d999627a1d74d3ae9dca218aec176ff7ae4f4663c1c81e7b1dfd937d3c96`
   остались `running` и не изменялись этим rollout.
 
-## Beta42 release acceptance
+## Beta43 release acceptance
+
+- CI `29586859628` на exact commit `ecbb643` прошёл migration drift,
+  PostgreSQL integration и полный check: локально 327 tests passed,
+  1 expected skipped, lint/typecheck/build green;
+- canary beta43 дал health/login/client-errors 200 и ожидаемый data-quality 503;
+- pre-beta43 custom-format backup проверен через `pg_restore --list`:
+  `/var/backups/fantasy-scout/pre-beta43-targeted-47-20260717T141402Z.dump`,
+  49 760 868 байт, SHA-256
+  `33c8365c7c969b7a5d18a7fbf0db84404193362a5eeb5af034b6204fb3de3ad0`;
+- первая попытка promote безопасно вернула beta42 из-за проверки неверного
+  hostname `fantasy-scout.ru`; правильный production hostname —
+  `fantasy.tsyzhman.ru`. Повторный guarded promote прошёл с HTTPS 200;
+- targeted ingestion `cmrp11uo6000111vh1h62ct59` выполнен единственным
+  in-process worker: `completed`, scopes 1/1, failed matches 0, canonical
+  `47:2026/2027` содержит 380/380 upcoming fixtures;
+- exact audit `cmrp140pu0000s2hhltu9gjeu` завершён после ingestion: forecast
+  coverage 98,548% при пороге 98%, finished matches 0. Поэтому overall
+  data-quality остаётся 503, но planner default имеет `healthy=true`,
+  `ready=true`, mode `PRESEASON_FORECAST`, 620 active players и 380 fixtures;
+- Production Browser Smoke `29587891908` на exact revision дал 4 passed,
+  2 expected skipped и artifact `8409808945`: auth, player forecast search,
+  auto-pick 15/15, save по server `squadId`, exact cleanup и responsive checks;
+- read-only production calculation на 620-player pool и 10 турах построил
+  валидный состав без violations и 6 transfer plans для намеренно ослабленного
+  состава; первый план дал +14,3 на горизонте 5 туров;
+- bounded public health load: 1472 запросов за 30 секунд, 0 failures,
+  error rate 0%, p75 69 мс при лимите 500 мс; Production Monitor
+  `29588072708` завершён успешно.
+
+## Историческая beta42 release acceptance
 
 - clean archive SHA-256
   `95a07e406859130ad7b5f9476131b97078d2999f3905b369e681664b15f6591f`;
@@ -149,45 +175,42 @@ Done. По просьбе владельца продукта готовност
 
 ## Итог
 
-Полноценная beta пока не доказана. Beta38 исторически подтверждает путь от поиска
-игрока до сохранения валидного автосостава в production; beta36
-canary дополнительно подтвердил применение реальной transfer-рекомендации и
-reload/restore. Прогнозное покрытие выше 98%, пяти-туровый backtest пройден,
-установленные короткие performance-пороги выполнены. Beta38 убрала мелкие touch-
-цели и разрозненные действия игрока: на coarse pointer остаются mobile cards и
-одна кнопка `Actions` с доступным bottom sheet. Это закрывает технический и
-визуальный UI-gate, но не заменяет проверку понятности интерфейса реальными
-пользователями или физическими телефонами.
+Полноценная beta пока не доказана, но технический current-season контур закрыт.
+Beta43 подтверждает путь от поиска игрока до сохранения валидного автосостава в
+production default EPL 2026/2027, прогнозы 98,548%, автоподбор и transfer plans
+на 620-player real pool, 380 будущих fixtures и короткие performance-пороги.
+Responsive browser workflow закрывает технический и визуальный UI-gate, но не
+заменяет проверку понятности интерфейса реальными пользователями или физическими
+телефонами.
 На сервере включены ротация Caddy access log, 15-минутный агрегированный аудит
 5xx/latency, публичный обезличенный health snapshot и безопасные GET retry Caddy
 для кратких upstream EOF. Synthetic monitor/browser трафик теперь имеет явный
 User-Agent и исключается из real-user error-rate.
-После реального последовательного refresh 380 матчей production data-quality
-gate проходит, включая 100% raw→normalized latency coverage.
+Исторический full data-quality gate EPL 2025/2026 проходит. Для предсезонного
+EPL 2026/2027 full gate честно не проходит из-за 0 сыгранных матчей, при этом
+отдельный planner preseason gate проходит и не маскирует это различие.
 
 Оставшиеся блокеры:
 
 1. нет минимум 10 реальных участников и доказанного completion rate ≥80%;
 2. нет проверки на физических Safari iOS и Chrome Android;
 3. нет длительного RUM/Web Vitals и server error rate за период реальной beta;
-4. нет forecast-ready текущего сезона: EPL 2026/2027 имеет 626 активных игроков,
-   но 0 будущих fixtures и нет exact passing audit после свежего ingestion.
 
 ## Сводка по Definition of Done
 
 | # | Критерий | Статус | Проверенное доказательство | Что ещё требуется |
 |---|---|---|---|---|
-| 1 | Путь от поиска игрока до сохранения оптимизированного состава | Не выполнено для текущего default scope | Beta38 исторически прошёл полный production smoke, но beta42 честно блокирует optimizer при отсутствии ready season | Загрузить будущие fixtures текущего сезона, выполнить ingestion и exact passing audit после него; затем повторить current production journey |
+| 1 | Путь от поиска игрока до сохранения оптимизированного состава | Выполнено технически | Beta43 workflow `29587891908` на current default EPL 2026/2027: поиск forecast player, auto-pick 15/15, save, exact cleanup; 4 passed, 2 expected skipped | Human completion проверяется отдельно критерием 9 |
 | 2 | Сборщик не нарушает правила и бюджет | Выполнено для EPL-контура | Сервер заново загружает авторитетный pool и проверяет размер, позиции, схему старта, скамейку, клубный лимит, бюджет, капитана и transfer limit. UI-save принимается только после `Valid squad`; unit-тесты отклоняют недопустимые payload | Отдельная rule-matrix потребуется при добавлении других fantasy-турниров |
-| 3 | Прогнозы доступны всем основным игрокам | Частично, только исторический scope | EPL 2025/2026: 745/753 = 98,938%, 380/380 matches, gate PASS. EPL 2026/2027: 626 active players, 0 future fixtures, exact audit отсутствует | Получить расписание и пройти exact current-season audit |
-| 4 | Автоподбор и трансферы работают на реальных данных | Не выполнено для актуального scope | Исторические beta38/beta36 проверки зелёные; beta42 отключает optimizer/transfer при нуле fixture projections | Сначала закрыть ready-season gate; официальные цены по решению владельца остаются вне scope |
-| 5 | Полноценная работа на компьютере и телефоне | Частично | Beta38 workflow `29573697960`: desktop/tablet/mobile 5 passed, 2 expected skipped, artifact `8404162521`. Touch-эмуляция 390×844 и 844×390 подтвердила coarse-pointer cards, 44 px actions, accessible bottom sheet и 0 overflow. Это всё ещё эмуляция; физические счётчики — 0/1 и 0/1 | Нужны реальные прогоны на физических Safari iOS и Chrome Android; понятность пути для аудитории проверяется критерием 9 |
-| 6 | Выполнены показатели скорости | Частично только из-за real-user sample | Unit performance gates для 640-player auto-pick <5 с и 500-player transfer plans <10 с проходят. Исторический beta36 journey занял 83 с, до `SQUAD_RESTORED` — 39,375 с. Beta38 HTTP восстановлен за 1,835 с; после старта 206 Caddy requests, 0×5xx. RUM требует LCP минимум от 10 реальных участников, p75 ≤2,5 с | Сейчас реальных RUM-участников 0; production workflow и HTTP requests не доказывают людей и не заменяют фактическую beta-выборку |
-| 7 | Отсутствуют критические ошибки | Частично | Beta42 `running|healthy|0`, external health/login/client-errors 200, client-error aggregates 0; полный check, CI и независимый P0–P2 аудит зелёные | Короткий acceptance и анонимный warning-сигнал не доказывают длительную beta без critical/blocker |
+| 3 | Прогнозы доступны всем основным игрокам | Выполнено для current EPL scope | Audit `cmrp140pu0000s2hhltu9gjeu`: 98,548% при пороге 98%; planner pool 620/620 с numeric forecast, mode `PRESEASON_FORECAST` | Full match-data gate станет проверяемым после первых сыгранных матчей |
+| 4 | Автоподбор и трансферы работают на реальных данных | Выполнено для current EPL scope | Browser auto-pick/save зелёный; read-only real-pool check построил 6 transfer plans, первый +14,3 за 5 туров | Официальные цены по решению владельца остаются вне scope |
+| 5 | Полноценная работа на компьютере и телефоне | Частично | Beta43 workflow `29587891908`: current default desktop/tablet/mobile 4 passed, 2 expected skipped, artifact `8409808945`, 0 runtime/5xx/overflow failures | Нужны реальные прогоны на физических Safari iOS и Chrome Android; понятность проверяется критерием 9 |
+| 6 | Выполнены показатели скорости | Частично только из-за real-user sample | Unit gates auto-pick <5 с и transfers <10 с проходят. Beta43 public health load: 1472/1472 HTTP 200, 0% errors, p75 69 мс при лимите 500 мс | Реальных RUM-участников 0; нужен LCP p75 ≤2,5 с минимум для 10 людей |
+| 7 | Отсутствуют критические ошибки | Частично | Beta43 `running|healthy|0`, HTTPS health/login/client-errors 200, browser smoke и monitor `29588072708` green, полный check и независимый P0/P1-аудит зелёные | Короткий acceptance не доказывает длительную beta без critical/blocker |
 | 8 | Завершено историческое тестирование модели | Выполнено | Production run `cmrm6rgwx0000106radpcmtco`: `COMPLETED`, 380/380 EPL 2025/2026, `gate_passed=true`; пяти-туровый RMSE улучшен для GK/DEF/MID/FWD на 16,569/10,759/13,403/11,116% | Одноматчевый горизонт отдельно не достиг 10%; вывод относится к пяти-туровому планированию |
 | 9 | Не менее 80% тестовых пользователей проходят сценарий без помощи | Не выполнено | `/beta-test`, consent, bounded telemetry и `/admin/beta-test` готовы. Production DB: users 4, synthetic runs 1, real runs 0, reviewed real runs 0. Synthetic evidence исключается из human/RUM gates | Нужны ≥10 реальных участников, completion ≥80%, forecast found ≥80%, transfer understanding ≥70%, UI ≥4/5, physical iOS ≥1 и Android ≥1 |
-| 10 | Мониторинг, логи и контроль обновления данных | Выполнено технически | Caddy/systemd audit активны; app/PostgreSQL logs 5×20 MiB; DB 12 applied/0 failed; anonymous coarse client-error health 200/0. Data-quality 503 честно показывает отсутствие ready default season; access audits пока `insufficient_data` | Получить ready current-season data и длительное реальное окно; synthetic/anonymous сигналы не закрывают human gate |
-| 11 | Чистый UI без наложений, обрезанной навигации и лишнего повторяющегося шума | Выполнено технически и визуально | Предыдущие релизы убрали повторные checks и mobile-таблицу; beta42 ограничивает fixtures до 2 +N на desktop и 1 +N на телефоне, уменьшает phone tile и выносит transfer calculation в Worker с retry | Субъективную понятность и оценку ≥4/5 всё ещё должны подтвердить реальные участники в критерии 9 |
+| 10 | Мониторинг, логи и контроль обновления данных | Выполнено технически | Caddy/systemd audit активны; logs 5×20 MiB; DB 12/0; targeted ingestion 1/1, 0 failed, 380 fixtures; planner default healthy. Overall data-quality 503 честно отражает 0 finished current-season matches | Нужен длительный real-user monitoring window; synthetic/anonymous сигналы не закрывают human gate |
+| 11 | Чистый UI без наложений, обрезанной навигации и лишнего повторяющегося шума | Выполнено технически и визуально | Компактные fixture chips, short team names, mobile cards и Worker для transfers сохранены; beta43 workflow `29587891908` не нашёл overflow, overlap, runtime или 5xx ошибок на desktop/tablet/mobile | Субъективную понятность и оценку ≥4/5 всё ещё должны подтвердить реальные участники в критерии 9 |
 
 ## Clean-UI gate `/machete/squad` — закрыт технически и визуально
 

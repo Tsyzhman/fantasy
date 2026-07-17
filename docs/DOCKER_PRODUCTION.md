@@ -15,25 +15,26 @@ the 15-minute aggregate audit, and GitHub issue alert delivery are described in
 ## Current verified release
 
 As of 2026-07-17, production runs
-`fantasy-scout-web:beta42-20260717T131746Z` from
-`/var/www/fantasy-scout-releases/20260717T131746Z-beta42-787bf21-green-main`. Its exact
+`fantasy-scout-web:beta43-20260717T141402Z` from
+`/var/www/fantasy-scout-releases/20260717T141402Z-beta43-ecbb643-green-main`. Its exact
 image ID is
-`sha256:d08313a7bc9e508d0028f5ada623f886b1108d5ad3c61828b07c022d27f74bb3`
-and source commit is `787bf2141e01700a9166eefd28c6a338db5d0df4`.
+`sha256:90cf7db97a46d701348580273e03e979859f00e142d53da5237734207e5d4814`
+and source commit is `ecbb64360cf02f1ae9c0a3447ba20503d240c268`.
 Active container ID
-`3c42b4f3898fa047265f208d94d6e467e2528f6d907904a1bb2c7ca399bfbfa3`
+`6a4fc05c42f72a59bee22d8e4efc41ec3d5f923f8f774a28f95e00502be3fa12`
 is healthy with zero restarts and explicit `json-file` rotation
 (`max-size=20m`, `max-file=5`). The stopped immediate rollback is exact
-bounded-log beta41
-`fantasy-scout-web-beta41-rollback-pre-beta42-20260717T131746Z`, container ID
-`ccfac13ddff1db2364c8598d3242a201fc688245ce1bc69993588ecba6fb7614`
+bounded-log beta42
+`fantasy-scout-web-beta42-rollback-pre-beta43-20260717T141402Z`, container ID
+`3c42b4f3898fa047265f208d94d6e467e2528f6d907904a1bb2c7ca399bfbfa3`
 in `exited` state. The older beta33 rollback remains preserved as
 `fantasy-scout-web-beta33-rollback-pre-beta36-20260717T070721Z`, container ID
 `c2cea7a73bcc53df5e352cce6c9baee4bc51b02f21f7c65d5c804083851b21dd`
 in `created` state.
-Liveness, login and client-error health return HTTP 200. Data-quality returns
-HTTP 503 because no default season is forecast-ready; the persisted 380-match
-2025/2026 audit itself remains passing at 98.938% forecast coverage.
+Liveness, login and client-error health return HTTP 200. Overall data-quality
+returns HTTP 503 because current season has 0 finished matches. Planner default
+`47:2026/2027` is independently healthy in `PRESEASON_FORECAST` mode with
+98.548% forecast coverage, 620 active players and 380 future fixtures.
 Production has 12/12 applied Prisma migrations and 0 failed/rolled-back migrations.
 PostgreSQL container ID
 `325e03666369215bd5b68c527a4b9b70421237c1b8f78b0040df6d94e571230f`
@@ -41,13 +42,18 @@ uses the same `postgres:16-alpine` image and
 `fantasy-scout_fantasy-scout-postgres` volume as before, is healthy, and now has
 bounded `json-file` logging (`max-size=20m`, `max-file=5`). Its controlled
 recreation preserved the database, which now has 12 applied migrations and
-10,972 `matches` rows; the web
+11,352 `matches` rows; the web
 container and both public health endpoints recovered successfully before the
 old container was removed. The
-`/var/www/fantasy-scout-current` symlink points to the immutable beta42
+`/var/www/fantasy-scout-current` symlink points to the immutable beta43
 release.
 
-The verified pre-beta42 custom-format backup is
+The verified pre-beta43 custom-format backup is
+`/var/backups/fantasy-scout/pre-beta43-targeted-47-20260717T141402Z.dump`,
+49,760,868 bytes, SHA-256
+`33c8365c7c969b7a5d18a7fbf0db84404193362a5eeb5af034b6204fb3de3ad0`.
+
+The historical verified pre-beta42 custom-format backup is
 `/var/backups/fantasy-scout/pre-beta42-index-rename-20260717T131746Z.dump`,
 49,760,773 bytes, SHA-256
 `e1e1be36faf96df2b364dfd5837738365827fe20d8f280dcf4e067b95d1530e2`.
@@ -180,7 +186,7 @@ Create `.env` before running Compose. These values are mandatory:
 ```bash
 POSTGRES_PASSWORD=...
 CRON_SECRET=...
-DATA_QUALITY_AUDIT_SCOPES="47:2025/2026"
+DATA_QUALITY_AUDIT_SCOPES="47:2025/2026;47:2026/2027"
 ```
 
 `CRON_SECRET` protects `/api/cron/*` routes and has no Compose fallback. Use a
