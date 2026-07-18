@@ -2142,7 +2142,7 @@ function SquadPlayerTile({
       <p className="truncate text-[9px] text-slate-500" title={player.teamName}>{fantasyPlayerTeamDisplayName(player)}</p>
       <p className="mt-0.5 text-[10px] font-semibold text-emerald-700 num-tabular">
         <Check className="mr-0.5 inline h-2.5 w-2.5" />
-        {formatScore((player.roundPoints.length > 0 ? playerHorizonPoints(player, horizon) : player.predictedFp ?? 0) * (isCaptain ? 2 : 1))}
+        {formatScore(nextFantasyPoints(player) * (isCaptain ? 2 : 1))}
         {isCaptain ? <span className="ml-1 text-amber-800">×2</span> : null}
       </p>
       {player.baltikaXg !== null && player.baltikaXg !== undefined ? (
