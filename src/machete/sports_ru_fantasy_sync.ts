@@ -100,38 +100,50 @@ export async function syncSportsRuFantasy(prisma: PrismaClient, input: SportsRuF
 
     const importedIds: string[] = [];
     for (const row of snapshot.prices) {
-      const imported = await tx.fantasyPlayerPrice.upsert({
+      const existingProviderRow = row.providerPlayerId
+        ? await tx.fantasyPlayerPrice.findFirst({
+            where: {
+              provider: "SPORTS_RU",
+              leagueId: input.leagueId,
+              season: input.season,
+              providerPlayerId: row.providerPlayerId
+            },
+            select: { id: true }
+          })
+        : null;
+      const priceData = {
+        providerPlayerId: row.providerPlayerId,
+        playerName: row.playerName,
+        normalizedName: row.normalizedName,
+        teamName: row.teamName ?? "",
+        sportsTeamName: row.teamName ?? null,
+        position: row.position,
+        price: row.price,
+        sourceKind: row.sourceKind,
+        sourceRowIndex: row.sourceRowIndex,
+        lastSeenAt: new Date()
+      };
+      const imported = existingProviderRow
+        ? await tx.fantasyPlayerPrice.update({
+            where: { id: existingProviderRow.id },
+            data: priceData
+          })
+        : await tx.fantasyPlayerPrice.upsert({
         where: {
           provider_leagueId_season_normalizedName_teamName: {
             provider: "SPORTS_RU",
             leagueId: input.leagueId,
             season: input.season,
             normalizedName: row.normalizedName,
-            teamName: ""
+            teamName: row.teamName ?? ""
           }
         },
-        update: {
-          providerPlayerId: row.providerPlayerId,
-          playerName: row.playerName,
-          position: row.position,
-          price: row.price,
-          sourceKind: row.sourceKind,
-          sourceRowIndex: row.sourceRowIndex,
-          lastSeenAt: new Date()
-        },
+        update: priceData,
         create: {
           leagueId: input.leagueId,
           season: input.season,
           provider: "SPORTS_RU",
-          providerPlayerId: row.providerPlayerId,
-          playerName: row.playerName,
-          normalizedName: row.normalizedName,
-          teamName: "",
-          position: row.position,
-          price: row.price,
-          sourceKind: row.sourceKind,
-          sourceRowIndex: row.sourceRowIndex,
-          lastSeenAt: new Date()
+          ...priceData
         }
       });
       importedIds.push(imported.id);

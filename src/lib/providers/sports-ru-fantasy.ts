@@ -18,6 +18,7 @@ export type SportsRuFantasyPriceRow = {
   providerPlayerId?: string | null;
   playerName: string;
   normalizedName: string;
+  teamName?: string | null;
   position: string | null;
   price: number;
   sourceKind: string;
@@ -81,6 +82,7 @@ export async function fetchSportsRuFantasyGraphqlSnapshot(
               id?: string | null;
               name?: string | null;
               price?: number | null;
+              team?: { id?: string | null; name?: string | null } | null;
               statObject?: { lastName?: string | null } | null;
             }> | null;
           } | null;
@@ -97,7 +99,7 @@ export async function fetchSportsRuFantasyGraphqlSnapshot(
               sortType: BY_PRICE,
               role: ${role}
             }) {
-              list { id name price statObject { lastName } }
+              list { id name price team { id name } statObject { lastName } }
             }
           }
         }`,
@@ -114,6 +116,7 @@ export async function fetchSportsRuFantasyGraphqlSnapshot(
           providerPlayerId,
           playerName,
           normalizedName: normalizeSportsRuPlayerName(playerName),
+          teamName: cleanText(player.team?.name ?? "") || null,
           position,
           price,
           sourceKind: "graphql-current-season",

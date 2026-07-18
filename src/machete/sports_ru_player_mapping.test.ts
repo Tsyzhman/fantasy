@@ -39,7 +39,7 @@ test("sports ru mapping prefers same-position team roster candidate", () => {
   );
 
   assert.equal(candidates[0].playerName, "Alisson Becker");
-  assert.equal(candidates[0].confidence > candidates[1].confidence, true);
+  assert.equal(candidates.length, 1);
 });
 
 test("sports ru mapping penalizes known position mismatch", () => {
@@ -47,6 +47,42 @@ test("sports ru mapping penalizes known position mismatch", () => {
   const forward = scoreSportsRuCandidate(price("gabriel", "FWD"), roster("Gabriel Magalhaes", "DEF", { name: "Arsenal" }));
 
   assert.equal(defender.confidence > forward.confidence, true);
+});
+
+test("sports ru mapping rejects a similar name from another known team", () => {
+  const result = scoreSportsRuCandidate(
+    { ...price("nikita bocharov", "DEF"), teamName: "Ростов" },
+    roster("Nikita Chernov", "DEF", { name: "Spartak Moscow" })
+  );
+
+  assert.equal(result.confidence, 0);
+});
+
+test("sports ru mapping rejects an exact identity from a stale different-team roster", () => {
+  const result = scoreSportsRuCandidate(
+    { ...price("arseniy gerdt", "MID"), teamName: "Локомотив" },
+    roster("Arseniy Gerdt", "MID", { name: "Rodina Moscow" })
+  );
+
+  assert.equal(result.confidence, 0);
+});
+
+test("sports ru mapping recognizes transliterated Sports.ru team names", () => {
+  const result = scoreSportsRuCandidate(
+    { ...price("nikita bocharov", "GK"), teamName: "Ростов" },
+    roster("Nikita Bocharov", "GK", { name: "FC Rostov" })
+  );
+
+  assert.equal(result.confidence, 1);
+});
+
+test("sports ru mapping does not match a full two-part name by surname alone", () => {
+  const result = scoreSportsRuCandidate(
+    { ...price("maksim petrov", "MID"), teamName: "Балтика" },
+    roster("Ilya Petrov", "MID", { name: "Baltika" })
+  );
+
+  assert.equal(result.confidence, 0);
 });
 
 test("sports ru mapping remap moves stale squad picks and removes same-squad duplicates", () => {

@@ -118,6 +118,7 @@ export async function autoMapSportsRuFantasyPlayers(
   ]);
   const manualPlayerIdSet = new Set(manualPlayers.map((player) => String(player.id)));
   const activeSeasonTeamIdSet = new Set(activeSeasonTeams.map((team) => String(team.teamId)));
+  const claimedPlayerIds = new Set<string>();
   let matched = 0;
   let manual = 0;
   let unmatched = 0;
@@ -131,11 +132,22 @@ export async function autoMapSportsRuFantasyPlayers(
     removedDuplicateSelections += result.removedDuplicateSelections;
   }
 
-  for (const price of prices) {
+  const candidatesByPriceId = new Map(prices.map((price) => [price.id, buildSportsRuMappingCandidates(price, roster)]));
+  const orderedPrices = [...prices].sort((left, right) => {
+    const leftManual = mapsByPriceId.get(left.id)?.matchedBy === "MANUAL" ? 1 : 0;
+    const rightManual = mapsByPriceId.get(right.id)?.matchedBy === "MANUAL" ? 1 : 0;
+    const leftConfidence = candidatesByPriceId.get(left.id)?.[0]?.confidence ?? 0;
+    const rightConfidence = candidatesByPriceId.get(right.id)?.[0]?.confidence ?? 0;
+    return rightManual - leftManual || rightConfidence - leftConfidence || right.price - left.price || left.playerName.localeCompare(right.playerName);
+  });
+
+  for (const price of orderedPrices) {
     const existing = mapsByPriceId.get(price.id);
     if (existing?.matchedBy === "MANUAL" && existing.internalEntityId) {
       const manualRosterEntry = findManualRosterEntry(roster, existing.internalEntityId, price.teamId);
-      if (manualRosterEntry) {
+      const manualTeamMatches = manualRosterEntry && teamScoreAdjustment(price.teamName, manualRosterEntry.team.name) >= 0;
+      if (manualRosterEntry && manualTeamMatches) {
+        claimedPlayerIds.add(String(manualRosterEntry.playerId));
         addSelectionSync(await applyPriceRosterMapping(prisma, price, manualRosterEntry));
         manual += 1;
         continue;
@@ -144,7 +156,7 @@ export async function autoMapSportsRuFantasyPlayers(
       // roster (new transfers are the common case). Keep it while both the
       // player and selected league-season team still exist.
       if (
-        price.playerId && String(price.playerId) === existing.internalEntityId && price.teamId &&
+        !price.teamName && price.playerId && String(price.playerId) === existing.internalEntityId && price.teamId &&
         manualPlayerIdSet.has(existing.internalEntityId) && activeSeasonTeamIdSet.has(String(price.teamId))
       ) {
         manual += 1;
@@ -152,7 +164,7 @@ export async function autoMapSportsRuFantasyPlayers(
       }
     }
 
-    const candidates = buildSportsRuMappingCandidates(price, roster);
+    const candidates = (candidatesByPriceId.get(price.id) ?? []).filter((candidate) => !claimedPlayerIds.has(candidate.playerId));
     const best = candidates[0] ?? null;
     const second = candidates[1] ?? null;
     const confident = best && best.confidence >= autoConfidenceThreshold && (!second || best.confidence - second.confidence >= 0.04);
@@ -186,6 +198,7 @@ export async function autoMapSportsRuFantasyPlayers(
     });
 
     if (matchedRosterEntry) {
+      claimedPlayerIds.add(String(matchedRosterEntry.playerId));
       addSelectionSync(await applyPriceRosterMapping(prisma, price, matchedRosterEntry));
       matched += 1;
     } else {
@@ -406,10 +419,12 @@ export function scoreSportsRuCandidate(price: SportsRuPriceLike, entry: RosterEn
   const sportsNameScore = scoreNameMatch(sportsName, fotmobName);
   const fotmobHintScore = scoreNameMatch(fotmobHintName, fotmobName);
   const nameScore = Math.max(sportsNameScore, fotmobHintScore);
+  if (nameScore === 0) return { confidence: 0, reason: "name mismatch" };
   const pricePosition = normalizeFantasyPosition(price.position);
   const rosterPosition = normalizeFantasyPosition(entry.position);
   const positionAdjustment = positionScoreAdjustment(pricePosition, rosterPosition);
   const teamAdjustment = teamScoreAdjustment(price.teamName, entry.team.name);
+  if (teamAdjustment < 0) return { confidence: 0, reason: "team mismatch" };
   const confidence = clamp(round(nameScore + positionAdjustment + teamAdjustment), 0, 1);
   const matchedNameSource = fotmobHintScore >= sportsNameScore && fotmobHintScore > 0 ? "fotmob hint" : "name";
   const reason = [
@@ -648,9 +663,11 @@ function scoreNameMatch(sportsName: string, fotmobName: string) {
     }
   }
 
-  const lastToken = sportsTokens[sportsTokens.length - 1];
-  for (const token of fotmobTokens) {
-    best = Math.max(best, similarity(lastToken, token) * 0.96);
+  if (sportsTokens.length === 1) {
+    const onlyToken = sportsTokens[0];
+    for (const token of fotmobTokens) {
+      best = Math.max(best, similarity(onlyToken, token) * 0.96);
+    }
   }
 
   return best >= 0.68 ? best : 0;
@@ -662,12 +679,12 @@ function positionScoreAdjustment(pricePosition: FantasyPositionGroup, rosterPosi
 }
 
 function teamScoreAdjustment(sportsTeamName: string, fotmobTeamName: string) {
-  const sportsTeam = normalizeName(sportsTeamName);
-  const fotmobTeam = normalizeName(fotmobTeamName);
+  const sportsTeam = normalizeSportsRuPlayerName(sportsTeamName);
+  const fotmobTeam = normalizeSportsRuPlayerName(fotmobTeamName);
   if (!sportsTeam || !fotmobTeam) return 0;
   if (sportsTeam === fotmobTeam) return 0.04;
   if (sportsTeam.includes(fotmobTeam) || fotmobTeam.includes(sportsTeam)) return 0.02;
-  return -0.08;
+  return -1;
 }
 
 function similarity(left: string, right: string) {
