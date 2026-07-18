@@ -2149,13 +2149,8 @@ function SquadPlayerTile({
         <p className="text-[9px] font-semibold text-violet-700 num-tabular">W xG {formatScore(player.baltikaXg)}</p>
       ) : null}
       {fixtureChips.length > 0 ? (
-        <div className="mt-0.5 flex min-w-0 items-center justify-center gap-0.5 overflow-hidden">
+        <div className="mt-0.5 flex min-w-0 items-center justify-center overflow-hidden">
           <FdrRow fixtures={fixtureChips.slice(0, 1)} className="min-w-0 flex-nowrap overflow-hidden" />
-          {fixtureChips.length > 1 ? (
-            <span className="inline-flex h-[18px] shrink-0 items-center rounded bg-slate-200 px-1 text-[9px] font-bold text-slate-700" title={fixtureChips.slice(1).map((fixture) => fixture.title).join(", ")}>
-              +{fixtureChips.length - 1}
-            </span>
-          ) : null}
         </div>
       ) : null}
       <button

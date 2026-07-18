@@ -67,6 +67,14 @@ test("squad cards expose only captain and vice-captain controls with corner remo
   assert.match(squadPlannerSource, /onToggleVice\(player\.playerId\)/);
 });
 
+test("squad cards show only the next opponent without a remaining-fixtures counter", () => {
+  const tileStart = squadPlannerSource.indexOf("function SquadPlayerTile(");
+  const tileEnd = squadPlannerSource.indexOf("function fantasyForecastTitle(", tileStart);
+  const tileSource = squadPlannerSource.slice(tileStart, tileEnd);
+  assert.match(tileSource, /fixtures=\{fixtureChips\.slice\(0, 1\)\}/);
+  assert.doesNotMatch(tileSource, /\+\{fixtureChips\.length - 1\}/);
+});
+
 test("player pool renders display-only Alt FP on desktop and as the fourth mobile metric", () => {
   const desktopNext = squadPlannerSource.indexOf('en="Next"');
   const desktopAlt = squadPlannerSource.indexOf('title={columnTitles.alternative}><I18nText en="Alt"', desktopNext);
