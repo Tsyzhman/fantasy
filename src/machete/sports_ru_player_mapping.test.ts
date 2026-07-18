@@ -76,6 +76,22 @@ test("sports ru mapping recognizes transliterated Sports.ru team names", () => {
   assert.equal(result.confidence, 1);
 });
 
+test("sports ru mapping canonicalizes current RPL team transliteration variants", () => {
+  const cases = [
+    ["Ахмат", "Akhmat Grozny"],
+    ["Динамо Махачкала", "Dynamo Makhachkala"],
+    ["ЦСКА", "CSKA Moscow"]
+  ] as const;
+
+  for (const [sportsTeam, fotmobTeam] of cases) {
+    const result = scoreSportsRuCandidate(
+      { ...price("ivan player", "MID"), teamName: sportsTeam },
+      roster("Ivan Player", "MID", { name: fotmobTeam })
+    );
+    assert.equal(result.confidence, 1, `${sportsTeam} should match ${fotmobTeam}`);
+  }
+});
+
 test("sports ru mapping does not match a full two-part name by surname alone", () => {
   const result = scoreSportsRuCandidate(
     { ...price("maksim petrov", "MID"), teamName: "Балтика" },

@@ -679,12 +679,20 @@ function positionScoreAdjustment(pricePosition: FantasyPositionGroup, rosterPosi
 }
 
 function teamScoreAdjustment(sportsTeamName: string, fotmobTeamName: string) {
-  const sportsTeam = normalizeSportsRuPlayerName(sportsTeamName);
-  const fotmobTeam = normalizeSportsRuPlayerName(fotmobTeamName);
+  const sportsTeam = canonicalSportsRuTeamName(sportsTeamName);
+  const fotmobTeam = canonicalSportsRuTeamName(fotmobTeamName);
   if (!sportsTeam || !fotmobTeam) return 0;
   if (sportsTeam === fotmobTeam) return 0.04;
   if (sportsTeam.includes(fotmobTeam) || fotmobTeam.includes(sportsTeam)) return 0.02;
   return -1;
+}
+
+function canonicalSportsRuTeamName(value: string) {
+  return normalizeSportsRuPlayerName(value)
+    .replace(/\bahmat\b/g, "akhmat")
+    .replace(/\bdinamo\b/g, "dynamo")
+    .replace(/\bmahachkala\b/g, "makhachkala")
+    .replace(/\btsska\b/g, "cska");
 }
 
 function similarity(left: string, right: string) {
