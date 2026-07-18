@@ -23,6 +23,7 @@ import {
   sportsRuFantasyPriceRefsByScopedPlayer,
   sportsRuFantasyPriceScopeKey,
   sportsRuFantasyPositionsByPlayerId,
+  sportsRuPricedFantasyPlayers,
   sportsRuPricePosition,
   sportsRuSeasonAliases,
   uniqueFantasySquadName
@@ -105,6 +106,13 @@ test("squad planner ranks real Sports.ru prices before estimated price ties", ()
   const sportsRu = plannerPlayer({ name: "Sports", priceSource: "SPORTS_RU", valueScore: 1 });
 
   assert.deepEqual([estimated, sportsRu].sort(compareFantasyPlannerPlayers).map((player) => player.name), ["Sports", "Estimated"]);
+});
+
+test("squad planner exposes only players with a real Sports.ru price", () => {
+  const estimated = plannerPlayer({ name: "Estimated", priceSource: "ESTIMATED", valueScore: 9 });
+  const sportsRu = plannerPlayer({ name: "Sports", priceSource: "SPORTS_RU", valueScore: 1 });
+
+  assert.deepEqual(sportsRuPricedFantasyPlayers([estimated, sportsRu]).map((player) => player.name), ["Sports"]);
 });
 
 test("forecast explanation exposes positive factors and playing-time risks", () => {

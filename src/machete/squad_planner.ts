@@ -305,7 +305,7 @@ export async function loadFantasySquadPlannerData(
   const projectedByPlayerTeam = new Map(playerRows.rows.map((row) => [playerTeamKey(row.playerId, row.teamId), row]));
   const prices = priceLookup(priceRows, priceMaps);
   const sportsPositionsByPlayerId = sportsRuFantasyPositionsByPlayerId(priceRows, priceMaps);
-  const players: FantasyPlannerPlayer[] = rosterRows.flatMap((row) => {
+  const rosterPlayers: FantasyPlannerPlayer[] = rosterRows.flatMap((row) => {
     const projected = projectedByPlayerTeam.get(playerTeamKey(row.playerId, row.teamId));
     const nextFixture = roundsAndFixtures.rounds
       .flatMap((round) => roundsAndFixtures.fixturesByTeamRound.get(round.id)?.get(String(row.teamId)) ?? [])
@@ -389,6 +389,7 @@ export async function loadFantasySquadPlannerData(
     ];
   });
 
+  const players = sportsRuPricedFantasyPlayers(rosterPlayers);
   const sportsRuPrices = options?.playerIds !== undefined
     ? new Set(priceMaps.map((row) => row.internalEntityId).filter((playerId): playerId is string => Boolean(playerId))).size
     : players.filter((player) => player.priceSource === "SPORTS_RU").length;
@@ -418,7 +419,7 @@ export async function loadFantasySquadPlannerData(
       season: league.season,
       horizonRounds,
       selections:
-        savedSquad?.players.map((player) => ({
+        savedSquad?.players.filter((player) => playersById.has(String(player.playerId))).map((player) => ({
           playerId: String(player.playerId),
           isStarter: player.isStarter,
           isLocked: player.isLocked,
@@ -435,6 +436,10 @@ export async function loadFantasySquadPlannerData(
     },
     historySeasonOptions: history.availableSeasons
   };
+}
+
+export function sportsRuPricedFantasyPlayers(players: FantasyPlannerPlayer[]) {
+  return players.filter((player) => player.priceSource === "SPORTS_RU");
 }
 
 async function loadBaltikaPlayerMetricsByName(prisma: PrismaClient, seasonNames: string[]) {

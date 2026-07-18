@@ -1056,7 +1056,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                 ) : null}
                 {priceStatus.estimatedPrices > 0 ? (
                   <span className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800">
-                    <I18nText en={`Estimated prices ${priceStatus.estimatedPrices}`} ru={`Оценочные цены ${priceStatus.estimatedPrices}`} />
+                    <I18nText en={`Hidden without Sports.ru price ${priceStatus.estimatedPrices}`} ru={`Скрыто без цены Sports.ru: ${priceStatus.estimatedPrices}`} />
                   </span>
                 ) : null}
               </div>
