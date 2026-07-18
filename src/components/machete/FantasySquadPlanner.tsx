@@ -1298,7 +1298,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
       </section>
 
       <section className={cn(mobileTab === "suggestions" ? "hidden xl:block" : "block", "order-4 min-w-0 rounded border border-slate-200 bg-white p-3 shadow-soft sm:p-4")}>
-        <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-[minmax(320px,0.72fr)_minmax(560px,1.28fr)] 2xl:grid-cols-[minmax(340px,0.68fr)_minmax(680px,1.32fr)]">
+        <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-[minmax(360px,0.82fr)_minmax(560px,1.18fr)] 2xl:grid-cols-[minmax(400px,0.78fr)_minmax(680px,1.22fr)]">
           <div className={cn(mobileTab === "squad" ? "block" : "hidden xl:block")}>
             <div className="mb-3">
               <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500"><I18nText en="Your squad" ru="Ваш состав" /></h3>
@@ -1442,6 +1442,7 @@ function PlayerPoolTable({
   onAdd: (player: FantasyPlannerPlayer) => void;
   onRemove: (playerId: string) => void;
 }) {
+  const columnTitles = playerPoolColumnTitles(language, horizon);
   return (
     <>
       <PlayerPoolMobileList
@@ -1458,28 +1459,28 @@ function PlayerPoolTable({
         <SortableTable className="w-full min-w-[720px] table-fixed divide-y divide-slate-200 text-xs">
           <colgroup>
             <col className="w-[19%]" />
-            <col className="w-[12%]" />
+            <col className="w-[7%]" />
             <col className="w-[6%]" />
             <col className="w-[7%]" />
             <col className="w-[6%]" />
             <col className="w-[6%]" />
             <col className="w-[6%]" />
             <col className="w-[6%]" />
-            <col className="w-[25%]" />
+            <col className="w-[30%]" />
             <col className="w-[7%]" />
           </colgroup>
           <thead className="sticky top-0 z-10 whitespace-nowrap bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
             <tr>
-              <th className="px-2 py-2"><I18nText en="Player" ru="Игрок" /></th>
-              <th className="px-2 py-2"><I18nText en="Team" ru="Команда" /></th>
-              <th className="px-1 py-2"><I18nText en="Pos" ru="Поз." /></th>
-              <th className="px-1 py-2 text-right"><I18nText en="Price" ru="Цена" /></th>
-              <th className="px-1 py-2 text-right"><I18nText en="Next" ru="След." /></th>
-              <th className="px-1 py-2 text-right" title={alternativePredictedFpTitle(language)}>Alt</th>
-              <th className="px-1 py-2 text-right">{horizon}R</th>
-              <th className="px-1 py-2 text-right">W xG</th>
-              <th data-sort-disabled="true" className="px-2 py-2"><I18nText en="Fixtures" ru="Матчи" /></th>
-              <th data-sort-disabled="true" className="px-2 py-2 text-center">
+              <th className="px-2 py-2" title={columnTitles.player}><I18nText en="Player" ru="Игрок" /></th>
+              <th className="px-2 py-2" title={columnTitles.team}><I18nText en="Team" ru="Команда" /></th>
+              <th className="px-1 py-2" title={columnTitles.position}><I18nText en="Pos" ru="Поз." /></th>
+              <th className="px-1 py-2 text-right" title={columnTitles.price}><I18nText en="Price" ru="Цена" /></th>
+              <th className="px-1 py-2 text-right" title={columnTitles.next}><I18nText en="Next" ru="След." /></th>
+              <th className="px-1 py-2 text-right" title={columnTitles.alternative}>Alt</th>
+              <th className="px-1 py-2 text-right" title={columnTitles.horizon}>{horizon}R</th>
+              <th className="px-1 py-2 text-right" title={columnTitles.wyscoutXg}>W xG</th>
+              <th data-sort-disabled="true" className="px-2 py-2" title={columnTitles.fixtures}><I18nText en="Fixtures" ru="Матчи" /></th>
+              <th data-sort-disabled="true" className="px-2 py-2 text-center" title={columnTitles.action}>
                 <span aria-hidden="true">+</span>
                 <span className="sr-only"><I18nText en="Add or remove" ru="Добавить или убрать" /></span>
               </th>
@@ -1491,7 +1492,7 @@ function PlayerPoolTable({
               const isSelected = selectionsByPlayerId.has(player.playerId);
               const disabled = !isSelected && reason !== null;
               const localizedReason = reason ? localizeAddBlockReason(reason, language) : null;
-              const fixtureChips = fixtureChipPresentations(player.fixtures, player.fixtureDifficulties ?? [], horizon);
+              const fixtureChips = fixtureChipPresentations(player.fixtures, player.fixtureDifficulties ?? [], horizon, player.fixtureFullNames);
               const visibleFixtureChips = fixtureChips.slice(0, 5);
               const hiddenFixtureCount = Math.max(0, fixtureChips.length - visibleFixtureChips.length);
               const hiddenFixtureLabels = fixtureChips.slice(visibleFixtureChips.length).map((chip) => chip.title ?? chip.label).join(", ");
@@ -1652,7 +1653,7 @@ function PlayerPoolMobileList({
         const isSelected = selectionsByPlayerId.has(player.playerId);
         const disabled = !isSelected && reason !== null;
         const localizedReason = reason ? localizeAddBlockReason(reason, language) : null;
-        const fixtureChips = fixtureChipPresentations(player.fixtures, player.fixtureDifficulties ?? [], horizon);
+        const fixtureChips = fixtureChipPresentations(player.fixtures, player.fixtureDifficulties ?? [], horizon, player.fixtureFullNames);
         const addLabel = disabled
           ? localizedText(language, `Cannot add ${player.name}: ${localizedReason ?? reason ?? ""}`, `Нельзя добавить ${player.name}: ${localizedReason ?? reason ?? ""}`)
           : localizedText(language, `Add ${player.name}`, `Добавить ${player.name}`);
@@ -2082,7 +2083,7 @@ function SquadPlayerTile({
   const mobileActionsTriggerRef = useRef<HTMLButtonElement>(null);
   const mobileActionsCloseRef = useRef<HTMLButtonElement>(null);
   const mobileActionsDialogRef = useRef<HTMLDivElement>(null);
-  const fixtureChips = fixtureChipPresentations(player.fixtures, player.fixtureDifficulties ?? [], Math.min(horizon, 3));
+  const fixtureChips = fixtureChipPresentations(player.fixtures, player.fixtureDifficulties ?? [], Math.min(horizon, 3), player.fixtureFullNames);
   const starterActionLabel = selection?.isStarter
     ? localizedText(language, "Move to bench", "Перевести в запас")
     : localizedText(language, "Move to starting XI", "Перевести в старт");
@@ -2333,6 +2334,21 @@ function alternativePredictedFpTitle(language: UiLanguage) {
     "Alternative FP forecast for the next fixture. Display only: not used by auto-pick, value, transfers, or round points.",
     "Альтернативный прогноз FP на следующий матч. Только для просмотра: не используется в автоподборе, ценности, трансферах и очках тура."
   );
+}
+
+function playerPoolColumnTitles(language: UiLanguage, horizon: number) {
+  return {
+    player: localizedText(language, "Player name and primary fantasy-points forecast.", "Имя игрока и основной прогноз fantasy-очков."),
+    team: localizedText(language, "Player's club. The compact code is shown; hover a row value for the full name.", "Клуб игрока. Показан короткий код; полное название доступно при наведении на значение."),
+    position: localizedText(language, "Fantasy position: goalkeeper, defender, midfielder, or forward.", "Фэнтези-позиция: вратарь, защитник, полузащитник или нападающий."),
+    price: localizedText(language, "Current fantasy price. A tilde marks an estimated price.", "Текущая фэнтези-цена. Тильда означает оценочную цену."),
+    next: localizedText(language, "Primary fantasy-points forecast for the next fixture.", "Основной прогноз fantasy-очков на ближайший матч."),
+    alternative: alternativePredictedFpTitle(language),
+    horizon: localizedText(language, `Total primary forecast over the selected ${horizon}-round horizon.`, `Суммарный основной прогноз на выбранном горизонте в ${horizon} туров.`),
+    wyscoutXg: localizedText(language, "Wyscout expected goals and the number of matches in the sample.", "Ожидаемые голы Wyscout и количество матчей в выборке."),
+    fixtures: localizedText(language, "Upcoming opponents. Home fixtures are bold; underline colour shows difficulty from green (easy) to red (hard). Hover an opponent for the full club name.", "Ближайшие соперники. Домашние матчи выделены жирным; цвет нижней границы показывает сложность от зелёного (легко) до красного (сложно). Полное название клуба доступно при наведении."),
+    action: localizedText(language, "Add the player to the squad or remove the selected player.", "Добавить игрока в состав или убрать уже выбранного игрока.")
+  };
 }
 
 function localizeForecastNote(value: string, language: UiLanguage) {

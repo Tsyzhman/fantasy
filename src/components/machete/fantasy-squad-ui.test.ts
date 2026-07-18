@@ -19,14 +19,41 @@ test("fixture chips hide H/A from visible labels but retain side and original ti
   );
 });
 
+test("fixture chips keep compact labels but expose full opponent names", () => {
+  assert.deepEqual(
+    fixtureChipPresentations(
+      ["H MUN, A BHA"],
+      [3],
+      1,
+      ["H Manchester United, A Brighton & Hove Albion"]
+    ),
+    [
+      { label: "MUN", title: "H Manchester United", side: "home", difficulty: 3 },
+      { label: "BHA", title: "A Brighton & Hove Albion", side: "away", difficulty: 3 }
+    ]
+  );
+});
+
 test("desktop fixture window uses five compact opponent codes before overflow", () => {
   assert.match(squadPlannerSource, /visibleFixtureChips = fixtureChips\.slice\(0, 5\)/);
   assert.match(squadPlannerSource, /flex-nowrap gap-0\.5 overflow-hidden/);
 });
 
+test("desktop planner gives the pitch more width and keeps the compact team column", () => {
+  assert.match(squadPlannerSource, /xl:grid-cols-\[minmax\(360px,0\.82fr\)_minmax\(560px,1\.18fr\)\]/);
+  assert.match(squadPlannerSource, /<col className="w-\[7%\]" \/>/);
+  assert.match(squadPlannerSource, /<col className="w-\[30%\]" \/>/);
+});
+
+test("every desktop player-pool column has a tooltip", () => {
+  for (const key of ["player", "team", "position", "price", "next", "alternative", "horizon", "wyscoutXg", "fixtures", "action"]) {
+    assert.match(squadPlannerSource, new RegExp(`title=\\{columnTitles\\.${key}\\}`));
+  }
+});
+
 test("player pool renders display-only Alt FP on desktop and as the fourth mobile metric", () => {
   const desktopNext = squadPlannerSource.indexOf('en="Next"');
-  const desktopAlt = squadPlannerSource.indexOf('title={alternativePredictedFpTitle(language)}>Alt', desktopNext);
+  const desktopAlt = squadPlannerSource.indexOf('title={columnTitles.alternative}>Alt', desktopNext);
   const desktopHorizon = squadPlannerSource.indexOf('{horizon}R', desktopAlt);
   const mobileMetrics = squadPlannerSource.indexOf('grid-cols-4');
   const mobilePrice = squadPlannerSource.indexOf('formatNumber(player.price, 1)', mobileMetrics);

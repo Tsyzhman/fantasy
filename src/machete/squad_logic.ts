@@ -44,6 +44,7 @@ export type FantasyPlannerPlayer = {
   valueScore: number;
   roundPoints: number[];
   fixtures: string[];
+  fixtureFullNames?: string[];
   fixtureDifficulties: (number | null)[];
   baltikaXg?: number | null;
   baltikaXa?: number | null;

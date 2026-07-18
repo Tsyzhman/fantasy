@@ -79,6 +79,7 @@ type PlannerFixture = {
   teamId: string;
   opponentTeamId: string | null;
   opponentName: string;
+  opponentFullName: string;
   side: "H" | "A";
   kickoffAt: Date | null;
   projectedXg: number | null;
@@ -95,6 +96,8 @@ type PlannerMatch = {
   awayTeamId: string | null;
   homeTeamName: string | null;
   awayTeamName: string | null;
+  homeTeamFullName?: string | null;
+  awayTeamFullName?: string | null;
   finished: boolean;
   cancelled: boolean;
 };
@@ -333,6 +336,10 @@ export async function loadFantasySquadPlannerData(
       const teamFixtures = roundsAndFixtures.fixturesByTeamRound.get(round.id)?.get(String(row.teamId)) ?? [];
       return teamFixtures.map((fixture) => `${fixture.side} ${fixture.opponentName}`).join(", ");
     });
+    const fixtureFullNames = roundsAndFixtures.rounds.map((round) => {
+      const teamFixtures = roundsAndFixtures.fixturesByTeamRound.get(round.id)?.get(String(row.teamId)) ?? [];
+      return teamFixtures.map((fixture) => `${fixture.side} ${fixture.opponentFullName}`).join(", ");
+    });
     const fixtureDifficulties = roundsAndFixtures.rounds.map((round) => {
       const teamFixtures = roundsAndFixtures.fixturesByTeamRound.get(round.id)?.get(String(row.teamId)) ?? [];
       return aggregateRoundDifficulty(teamFixtures, positionGroup);
@@ -372,6 +379,7 @@ export async function loadFantasySquadPlannerData(
         valueScore: price.price > 0 ? roundFantasyValue((roundPoints[0] ?? predictedFp ?? 0) / price.price) : 0,
         roundPoints,
         fixtures,
+        fixtureFullNames,
         fixtureDifficulties,
         baltikaXg: baltikaMetric?.xg ?? null,
         baltikaXa: baltikaMetric?.xa ?? null,
@@ -860,6 +868,8 @@ async function loadUpcomingRoundFixtures(prisma: PrismaClient, league: SharedLea
       awayTeamId: match.awayTeamId ? String(match.awayTeamId) : null,
       homeTeamName: (match.homeTeamId ? shortNameByTeamId.get(String(match.homeTeamId)) : null) ?? match.homeTeam?.name ?? null,
       awayTeamName: (match.awayTeamId ? shortNameByTeamId.get(String(match.awayTeamId)) : null) ?? match.awayTeam?.name ?? null,
+      homeTeamFullName: match.homeTeam?.name ?? null,
+      awayTeamFullName: match.awayTeam?.name ?? null,
       finished: match.finished,
       cancelled: match.cancelled
     })),
@@ -896,6 +906,7 @@ export function buildPlannerRoundFixtures(matches: PlannerMatch[], now = new Dat
           teamId: match.homeTeamId,
           opponentTeamId: match.awayTeamId,
           opponentName: match.awayTeamName ?? "Opponent",
+          opponentFullName: match.awayTeamFullName ?? match.awayTeamName ?? "Opponent",
           side: "H",
           kickoffAt: match.matchDate,
           projectedXg: null,
@@ -911,6 +922,7 @@ export function buildPlannerRoundFixtures(matches: PlannerMatch[], now = new Dat
           teamId: match.awayTeamId,
           opponentTeamId: match.homeTeamId,
           opponentName: match.homeTeamName ?? "Opponent",
+          opponentFullName: match.homeTeamFullName ?? match.homeTeamName ?? "Opponent",
           side: "A",
           kickoffAt: match.matchDate,
           projectedXg: null,
@@ -1310,6 +1322,8 @@ async function loadLegacyMacheteUpcomingRoundFixtures(prisma: PrismaClient, leag
       awayTeamId: fixture.awayTeam?.providerTeamId ?? null,
       homeTeamName: fixture.homeTeam?.shortName ?? fixture.homeTeam?.name ?? null,
       awayTeamName: fixture.awayTeam?.shortName ?? fixture.awayTeam?.name ?? null,
+      homeTeamFullName: fixture.homeTeam?.name ?? null,
+      awayTeamFullName: fixture.awayTeam?.name ?? null,
       finished: fixture.status === "FINISHED" || fixture.status === "PLAYED",
       cancelled: fixture.status === "CANCELLED" || fixture.status === "POSTPONED"
     })),
