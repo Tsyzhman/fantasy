@@ -41,8 +41,9 @@ test("desktop fixture window uses five compact opponent codes before overflow", 
 
 test("desktop planner gives the pitch more width and keeps the compact team column", () => {
   assert.match(squadPlannerSource, /xl:grid-cols-\[minmax\(360px,0\.82fr\)_minmax\(560px,1\.18fr\)\]/);
-  assert.match(squadPlannerSource, /<col className="w-\[7%\]" \/>/);
-  assert.match(squadPlannerSource, /<col className="w-\[30%\]" \/>/);
+  assert.match(squadPlannerSource, /<col className="w-\[9%\]" \/>/);
+  assert.match(squadPlannerSource, /<col className="w-\[24%\]" \/>/);
+  assert.match(squadPlannerSource, /sm:w-16 2xl:w-\[4\.25rem\]/);
 });
 
 test("every desktop player-pool column has a tooltip", () => {
@@ -51,11 +52,12 @@ test("every desktop player-pool column has a tooltip", () => {
   }
 });
 
-test("Russian player-pool headers stay compact and clipped inside their columns", () => {
+test("Russian player-pool headers stay compact and contained inside their columns", () => {
   assert.match(squadPlannerSource, /en="Team" ru="Клуб"/);
   assert.match(squadPlannerSource, /en="Next" ru="ФО"/);
   assert.match(squadPlannerSource, /en="Alt" ru="Альт"/);
-  assert.ok((squadPlannerSource.match(/overflow-hidden text-ellipsis px-/g)?.length ?? 0) >= 10);
+  assert.ok((squadPlannerSource.match(/overflow-hidden px-/g)?.length ?? 0) >= 10);
+  assert.doesNotMatch(squadPlannerSource, /overflow-hidden text-ellipsis px-/);
 });
 
 test("squad cards expose only captain and vice-captain controls with corner removal", () => {

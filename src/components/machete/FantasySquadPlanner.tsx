@@ -1442,28 +1442,28 @@ function PlayerPoolTable({
         <SortableTable className="w-full min-w-[720px] table-fixed divide-y divide-slate-200 text-xs">
           <colgroup>
             <col className="w-[19%]" />
+            <col className="w-[9%]" />
+            <col className="w-[6%]" />
+            <col className="w-[8%]" />
+            <col className="w-[7%]" />
+            <col className="w-[7%]" />
             <col className="w-[7%]" />
             <col className="w-[6%]" />
-            <col className="w-[7%]" />
-            <col className="w-[6%]" />
-            <col className="w-[6%]" />
-            <col className="w-[6%]" />
-            <col className="w-[6%]" />
-            <col className="w-[30%]" />
+            <col className="w-[24%]" />
             <col className="w-[7%]" />
           </colgroup>
           <thead className="sticky top-0 z-10 whitespace-nowrap bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
             <tr>
-              <th className="overflow-hidden text-ellipsis px-2 py-2" title={columnTitles.player}><I18nText en="Player" ru="Игрок" /></th>
-              <th className="overflow-hidden text-ellipsis px-2 py-2" title={columnTitles.team}><I18nText en="Team" ru="Клуб" /></th>
-              <th className="overflow-hidden text-ellipsis px-1 py-2" title={columnTitles.position}><I18nText en="Pos" ru="Поз." /></th>
-              <th className="overflow-hidden text-ellipsis px-1 py-2 text-right" title={columnTitles.price}><I18nText en="Price" ru="Цена" /></th>
-              <th className="overflow-hidden text-ellipsis px-1 py-2 text-right" title={columnTitles.next}><I18nText en="Next" ru="ФО" /></th>
-              <th className="overflow-hidden text-ellipsis px-1 py-2 text-right" title={columnTitles.alternative}><I18nText en="Alt" ru="Альт" /></th>
-              <th className="overflow-hidden text-ellipsis px-1 py-2 text-right" title={columnTitles.horizon}><I18nText en={`${horizon}R`} ru={`${horizon}Т`} /></th>
-              <th className="overflow-hidden text-ellipsis px-1 py-2 text-right" title={columnTitles.wyscoutXg}>xG</th>
-              <th data-sort-disabled="true" className="overflow-hidden text-ellipsis px-2 py-2" title={columnTitles.fixtures}><I18nText en="Fixtures" ru="Матчи" /></th>
-              <th data-sort-disabled="true" className="overflow-hidden text-ellipsis px-2 py-2 text-center" title={columnTitles.action}>
+              <th className="overflow-hidden px-2 py-2" title={columnTitles.player}><I18nText en="Player" ru="Игрок" /></th>
+              <th className="overflow-hidden px-2 py-2" title={columnTitles.team}><I18nText en="Team" ru="Клуб" /></th>
+              <th className="overflow-hidden px-1 py-2" title={columnTitles.position}><I18nText en="Pos" ru="Поз." /></th>
+              <th className="overflow-hidden px-1 py-2 text-right" title={columnTitles.price}><I18nText en="Price" ru="Цена" /></th>
+              <th className="overflow-hidden px-1 py-2 text-right" title={columnTitles.next}><I18nText en="Next" ru="ФО" /></th>
+              <th className="overflow-hidden px-1 py-2 text-right" title={columnTitles.alternative}><I18nText en="Alt" ru="Альт" /></th>
+              <th className="overflow-hidden px-1 py-2 text-right" title={columnTitles.horizon}><I18nText en={`${horizon}R`} ru={`${horizon}Т`} /></th>
+              <th className="overflow-hidden px-1 py-2 text-right" title={columnTitles.wyscoutXg}>xG</th>
+              <th data-sort-disabled="true" className="overflow-hidden px-2 py-2" title={columnTitles.fixtures}><I18nText en="Fixtures" ru="Матчи" /></th>
+              <th data-sort-disabled="true" className="overflow-hidden px-2 py-2 text-center" title={columnTitles.action}>
                 <span aria-hidden="true">+</span>
                 <span className="sr-only"><I18nText en="Add or remove" ru="Добавить или убрать" /></span>
               </th>
@@ -2111,7 +2111,7 @@ function SquadPlayerTile({
       title={fantasyForecastTitle(player, language)}
       aria-label={localizedText(language, `Squad player ${player.name}`, `Игрок состава: ${player.name}`)}
       className={cn(
-        compact ? "w-[3.4rem] sm:w-[3.625rem]" : "w-[3.4rem] sm:w-[3.75rem]",
+        compact ? "w-[3.4rem] sm:w-16" : "w-[3.4rem] sm:w-16 2xl:w-[4.25rem]",
         "relative cursor-grab rounded border bg-white px-1 py-0.5 text-center shadow-sm transition active:cursor-grabbing",
         isCaptain ? "border-amber-400 ring-2 ring-amber-200" : "border-white/70",
         isDragging && "opacity-55 ring-2 ring-sky-300"
