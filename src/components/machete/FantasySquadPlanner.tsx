@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Copy, Crown, FilePlus2, Layers3, ListChecks, Lock, MoreHorizontal, Plus, Save, Search, Sparkles, Star, Trash2, Unlock, Users, X } from "lucide-react";
+import { Check, Copy, Crown, FilePlus2, Layers3, ListChecks, Lock, MoreHorizontal, Plus, Save, Search, Sparkles, Trash2, Users, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type DragEvent, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
@@ -523,21 +523,6 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
 
     setSelections(nextSelections);
     setMessage(null);
-  }
-
-  function toggleLock(playerId: string) {
-    setSelections((current) => current.map((selection) => (selection.playerId === playerId ? { ...selection, isLocked: !selection.isLocked } : selection)));
-  }
-
-  function toggleStarter(playerId: string) {
-    const selection = selectionsByPlayerId.get(playerId);
-    if (!selection) return;
-    if (selection.isStarter) {
-      movePlayerToBench(playerId);
-      return;
-    }
-
-    movePlayerToStarter(playerId);
   }
 
   function movePlayerToStarter(playerId: string) {
@@ -1312,8 +1297,6 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
               viceCaptainId={viceCaptainId}
               draggedPlayerId={draggedPlayerId}
               onRemove={removePlayer}
-              onToggleLock={toggleLock}
-              onToggleStarter={toggleStarter}
               onToggleCaptain={toggleCaptain}
               onToggleVice={toggleViceCaptain}
               onDragStart={setDraggedPlayerId}
@@ -1471,16 +1454,16 @@ function PlayerPoolTable({
           </colgroup>
           <thead className="sticky top-0 z-10 whitespace-nowrap bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
             <tr>
-              <th className="px-2 py-2" title={columnTitles.player}><I18nText en="Player" ru="Игрок" /></th>
-              <th className="px-2 py-2" title={columnTitles.team}><I18nText en="Team" ru="Команда" /></th>
-              <th className="px-1 py-2" title={columnTitles.position}><I18nText en="Pos" ru="Поз." /></th>
-              <th className="px-1 py-2 text-right" title={columnTitles.price}><I18nText en="Price" ru="Цена" /></th>
-              <th className="px-1 py-2 text-right" title={columnTitles.next}><I18nText en="Next" ru="След." /></th>
-              <th className="px-1 py-2 text-right" title={columnTitles.alternative}>Alt</th>
-              <th className="px-1 py-2 text-right" title={columnTitles.horizon}>{horizon}R</th>
-              <th className="px-1 py-2 text-right" title={columnTitles.wyscoutXg}>W xG</th>
-              <th data-sort-disabled="true" className="px-2 py-2" title={columnTitles.fixtures}><I18nText en="Fixtures" ru="Матчи" /></th>
-              <th data-sort-disabled="true" className="px-2 py-2 text-center" title={columnTitles.action}>
+              <th className="overflow-hidden text-ellipsis px-2 py-2" title={columnTitles.player}><I18nText en="Player" ru="Игрок" /></th>
+              <th className="overflow-hidden text-ellipsis px-2 py-2" title={columnTitles.team}><I18nText en="Team" ru="Клуб" /></th>
+              <th className="overflow-hidden text-ellipsis px-1 py-2" title={columnTitles.position}><I18nText en="Pos" ru="Поз." /></th>
+              <th className="overflow-hidden text-ellipsis px-1 py-2 text-right" title={columnTitles.price}><I18nText en="Price" ru="Цена" /></th>
+              <th className="overflow-hidden text-ellipsis px-1 py-2 text-right" title={columnTitles.next}><I18nText en="Next" ru="ФО" /></th>
+              <th className="overflow-hidden text-ellipsis px-1 py-2 text-right" title={columnTitles.alternative}><I18nText en="Alt" ru="Альт" /></th>
+              <th className="overflow-hidden text-ellipsis px-1 py-2 text-right" title={columnTitles.horizon}><I18nText en={`${horizon}R`} ru={`${horizon}Т`} /></th>
+              <th className="overflow-hidden text-ellipsis px-1 py-2 text-right" title={columnTitles.wyscoutXg}>xG</th>
+              <th data-sort-disabled="true" className="overflow-hidden text-ellipsis px-2 py-2" title={columnTitles.fixtures}><I18nText en="Fixtures" ru="Матчи" /></th>
+              <th data-sort-disabled="true" className="overflow-hidden text-ellipsis px-2 py-2 text-center" title={columnTitles.action}>
                 <span aria-hidden="true">+</span>
                 <span className="sr-only"><I18nText en="Add or remove" ru="Добавить или убрать" /></span>
               </th>
@@ -1834,8 +1817,6 @@ function SquadPitch({
   viceCaptainId,
   draggedPlayerId,
   onRemove,
-  onToggleLock,
-  onToggleStarter,
   onToggleCaptain,
   onToggleVice,
   onDragStart,
@@ -1851,8 +1832,6 @@ function SquadPitch({
   viceCaptainId: string | null;
   draggedPlayerId: string | null;
   onRemove: (playerId: string) => void;
-  onToggleLock: (playerId: string) => void;
-  onToggleStarter: (playerId: string) => void;
   onToggleCaptain: (playerId: string) => void;
   onToggleVice: (playerId: string) => void;
   onDragStart: (playerId: string) => void;
@@ -1887,8 +1866,6 @@ function SquadPitch({
               viceCaptainId={viceCaptainId}
               draggedPlayerId={draggedPlayerId}
               onRemove={onRemove}
-              onToggleLock={onToggleLock}
-              onToggleStarter={onToggleStarter}
               onToggleCaptain={onToggleCaptain}
               onToggleVice={onToggleVice}
               onDragStart={onDragStart}
@@ -1907,8 +1884,6 @@ function SquadPitch({
                 viceCaptainId={viceCaptainId}
                 draggedPlayerId={draggedPlayerId}
                 onRemove={onRemove}
-                onToggleLock={onToggleLock}
-                onToggleStarter={onToggleStarter}
                 onToggleCaptain={onToggleCaptain}
                 onToggleVice={onToggleVice}
                 onDragStart={onDragStart}
@@ -1949,8 +1924,6 @@ function SquadPitch({
               isDragging={draggedPlayerId === player.playerId}
               compact
               onRemove={onRemove}
-              onToggleLock={onToggleLock}
-              onToggleStarter={onToggleStarter}
               onToggleCaptain={onToggleCaptain}
               onToggleVice={onToggleVice}
               onDragStart={onDragStart}
@@ -1978,8 +1951,6 @@ function SquadLine({
   viceCaptainId,
   draggedPlayerId,
   onRemove,
-  onToggleLock,
-  onToggleStarter,
   onToggleCaptain,
   onToggleVice,
   onDragStart,
@@ -1995,8 +1966,6 @@ function SquadLine({
   viceCaptainId: string | null;
   draggedPlayerId: string | null;
   onRemove: (playerId: string) => void;
-  onToggleLock: (playerId: string) => void;
-  onToggleStarter: (playerId: string) => void;
   onToggleCaptain: (playerId: string) => void;
   onToggleVice: (playerId: string) => void;
   onDragStart: (playerId: string) => void;
@@ -2028,8 +1997,6 @@ function SquadLine({
             isVice={viceCaptainId === player.playerId}
             isDragging={draggedPlayerId === player.playerId}
             onRemove={onRemove}
-            onToggleLock={onToggleLock}
-            onToggleStarter={onToggleStarter}
             onToggleCaptain={onToggleCaptain}
             onToggleVice={onToggleVice}
             onDragStart={onDragStart}
@@ -2056,8 +2023,6 @@ function SquadPlayerTile({
   isDragging = false,
   compact = false,
   onRemove,
-  onToggleLock,
-  onToggleStarter,
   onToggleCaptain,
   onToggleVice,
   onDragStart,
@@ -2072,8 +2037,6 @@ function SquadPlayerTile({
   isDragging?: boolean;
   compact?: boolean;
   onRemove: (playerId: string) => void;
-  onToggleLock: (playerId: string) => void;
-  onToggleStarter: (playerId: string) => void;
   onToggleCaptain: (playerId: string) => void;
   onToggleVice: (playerId: string) => void;
   onDragStart: (playerId: string) => void;
@@ -2084,18 +2047,12 @@ function SquadPlayerTile({
   const mobileActionsCloseRef = useRef<HTMLButtonElement>(null);
   const mobileActionsDialogRef = useRef<HTMLDivElement>(null);
   const fixtureChips = fixtureChipPresentations(player.fixtures, player.fixtureDifficulties ?? [], Math.min(horizon, 3), player.fixtureFullNames);
-  const starterActionLabel = selection?.isStarter
-    ? localizedText(language, "Move to bench", "Перевести в запас")
-    : localizedText(language, "Move to starting XI", "Перевести в старт");
   const captainActionLabel = isCaptain
     ? localizedText(language, "Remove captain", "Снять капитана")
     : localizedText(language, "Make captain x2", "Сделать капитаном x2");
   const viceActionLabel = isVice
     ? localizedText(language, "Remove vice-captain", "Снять вице-капитана")
     : localizedText(language, "Make vice-captain", "Сделать вице-капитаном");
-  const lockActionLabel = selection?.isLocked
-    ? localizedText(language, "Unlock player", "Разблокировать игрока")
-    : localizedText(language, "Lock player", "Заблокировать игрока");
   const removeActionLabel = localizedText(language, `Remove ${player.name}`, `Удалить ${player.name}`);
   const closeActionsLabel = localizedText(language, "Close player actions", "Закрыть действия игрока");
   const mobileActionsLabel = localizedText(language, `Actions for ${player.name}`, `Действия: ${player.name}`);
@@ -2169,9 +2126,17 @@ function SquadPlayerTile({
           VC
         </span>
       ) : null}
+      <button
+        type="button"
+        onClick={() => onRemove(player.playerId)}
+        className="absolute right-0.5 top-0.5 z-10 inline-flex h-4 w-4 items-center justify-center rounded-full bg-white/90 text-rose-700 shadow-sm hover:bg-rose-50 [@media(pointer:coarse)]:h-6 [@media(pointer:coarse)]:w-6"
+        aria-label={removeActionLabel}
+      >
+        <X className="h-3 w-3" />
+        <span className="sr-only">{removeActionLabel}</span>
+      </button>
       <div className="flex items-center justify-center gap-1">
         <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${positionPillClass(player.positionGroup)}`}>{player.positionGroup}</span>
-        {selection?.isLocked ? <Lock className="h-2.5 w-2.5 text-slate-500" /> : null}
       </div>
       <p className="mt-0.5 truncate text-[10px] font-bold text-ink" title={player.name} aria-label={player.name}>{compactPlayerDisplayName(player.name)}</p>
       <p className="truncate text-[9px] text-slate-500" title={player.teamName}>{fantasyPlayerTeamDisplayName(player)}</p>
@@ -2206,15 +2171,6 @@ function SquadPlayerTile({
       <div className="mt-1 flex justify-center gap-0.5 [@media(pointer:coarse)]:hidden">
         <button
           type="button"
-          onClick={() => onToggleStarter(player.playerId)}
-          className={`inline-flex h-5 w-5 items-center justify-center rounded border border-slate-200 hover:bg-amber-50 ${selection?.isStarter ? "text-amber-600" : "text-slate-500"}`}
-          aria-label={starterActionLabel}
-        >
-          <Star className={`h-2.5 w-2.5 ${selection?.isStarter ? "fill-current" : ""}`} />
-          <span className="sr-only">{starterActionLabel}</span>
-        </button>
-        <button
-          type="button"
           onClick={() => onToggleCaptain(player.playerId)}
           className={cn(
             "inline-flex h-5 w-5 items-center justify-center rounded border border-slate-200 hover:bg-amber-50",
@@ -2237,24 +2193,6 @@ function SquadPlayerTile({
           <span className="text-[8px] font-black">VC</span>
           <span className="sr-only">{viceActionLabel}</span>
         </button>
-        <button
-          type="button"
-          onClick={() => onToggleLock(player.playerId)}
-          className="inline-flex h-5 w-5 items-center justify-center rounded border border-slate-200 text-slate-600 hover:bg-slate-50"
-          aria-label={lockActionLabel}
-        >
-          {selection?.isLocked ? <Lock className="h-2.5 w-2.5" /> : <Unlock className="h-2.5 w-2.5" />}
-          <span className="sr-only">{lockActionLabel}</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => onRemove(player.playerId)}
-          className="inline-flex h-5 w-5 items-center justify-center rounded border border-slate-200 text-rose-700 hover:bg-rose-50"
-          aria-label={removeActionLabel}
-        >
-          <Trash2 className="h-2.5 w-2.5" />
-          <span className="sr-only">{removeActionLabel}</span>
-        </button>
       </div>
     </div>
     {mobileActionsOpen && typeof document !== "undefined"
@@ -2272,10 +2210,6 @@ function SquadPlayerTile({
                 </button>
               </div>
               <div className="grid gap-2">
-                <button type="button" onClick={() => runMobileAction(() => onToggleStarter(player.playerId))} className="flex min-h-11 items-center gap-3 rounded border border-slate-200 px-4 py-2 font-semibold text-slate-800">
-                  <Star className={cn("h-5 w-5", selection?.isStarter && "fill-current text-amber-600")} />
-                  {starterActionLabel}
-                </button>
                 <button type="button" onClick={() => runMobileAction(() => onToggleCaptain(player.playerId))} className="flex min-h-11 items-center gap-3 rounded border border-slate-200 px-4 py-2 font-semibold text-slate-800">
                   <Crown className={cn("h-5 w-5", isCaptain && "fill-current text-amber-600")} />
                   {captainActionLabel}
@@ -2283,14 +2217,6 @@ function SquadPlayerTile({
                 <button type="button" onClick={() => runMobileAction(() => onToggleVice(player.playerId))} className="flex min-h-11 items-center gap-3 rounded border border-slate-200 px-4 py-2 font-semibold text-slate-800">
                   <span className="inline-flex h-5 w-5 items-center justify-center text-xs font-black">VC</span>
                   {viceActionLabel}
-                </button>
-                <button type="button" onClick={() => runMobileAction(() => onToggleLock(player.playerId))} className="flex min-h-11 items-center gap-3 rounded border border-slate-200 px-4 py-2 font-semibold text-slate-800">
-                  {selection?.isLocked ? <Unlock className="h-5 w-5" /> : <Lock className="h-5 w-5" />}
-                  {lockActionLabel}
-                </button>
-                <button type="button" onClick={() => runMobileAction(() => onRemove(player.playerId))} className="flex min-h-11 items-center gap-3 rounded border border-rose-200 px-4 py-2 font-semibold text-rose-700">
-                  <Trash2 className="h-5 w-5" />
-                  {removeActionLabel}
                 </button>
               </div>
             </section>

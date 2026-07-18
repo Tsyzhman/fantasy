@@ -51,10 +51,24 @@ test("every desktop player-pool column has a tooltip", () => {
   }
 });
 
+test("Russian player-pool headers stay compact and clipped inside their columns", () => {
+  assert.match(squadPlannerSource, /en="Team" ru="Клуб"/);
+  assert.match(squadPlannerSource, /en="Next" ru="ФО"/);
+  assert.match(squadPlannerSource, /en="Alt" ru="Альт"/);
+  assert.ok((squadPlannerSource.match(/overflow-hidden text-ellipsis px-/g)?.length ?? 0) >= 10);
+});
+
+test("squad cards expose only captain and vice-captain controls with corner removal", () => {
+  assert.doesNotMatch(squadPlannerSource, /onToggleLock|onToggleStarter|<Star|<Unlock/);
+  assert.match(squadPlannerSource, /onClick=\{\(\) => onRemove\(player\.playerId\)\}[\s\S]*?absolute right-0\.5 top-0\.5/);
+  assert.match(squadPlannerSource, /onToggleCaptain\(player\.playerId\)/);
+  assert.match(squadPlannerSource, /onToggleVice\(player\.playerId\)/);
+});
+
 test("player pool renders display-only Alt FP on desktop and as the fourth mobile metric", () => {
   const desktopNext = squadPlannerSource.indexOf('en="Next"');
-  const desktopAlt = squadPlannerSource.indexOf('title={columnTitles.alternative}>Alt', desktopNext);
-  const desktopHorizon = squadPlannerSource.indexOf('{horizon}R', desktopAlt);
+  const desktopAlt = squadPlannerSource.indexOf('title={columnTitles.alternative}><I18nText en="Alt"', desktopNext);
+  const desktopHorizon = squadPlannerSource.indexOf('title={columnTitles.horizon}', desktopAlt);
   const mobileMetrics = squadPlannerSource.indexOf('grid-cols-4');
   const mobilePrice = squadPlannerSource.indexOf('formatNumber(player.price, 1)', mobileMetrics);
   const mobileAlt = squadPlannerSource.indexOf('formatScore(player.alternativePredictedFp)', mobilePrice);
