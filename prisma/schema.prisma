@@ -83,6 +83,7 @@ model UserScoringPreference {
   alternativeFormulaMid     String?
   alternativeFormulaFwd     String?
   alternativeFormulaEnabled Boolean  @default(false)
+  alternativeProjectionFormulaConfig Json?
   createdAt                 DateTime @default(now())
   updatedAt                 DateTime @updatedAt
 
@@ -329,6 +330,7 @@ model FantasyModel {
   alternativeFormulaMid     String?
   alternativeFormulaFwd     String?
   alternativeFormulaEnabled Boolean            @default(false)
+  projectionFormulaConfig   Json?
   rules                     FantasyModelRule[]
   createdAt                 DateTime           @default(now())
   updatedAt                 DateTime           @updatedAt

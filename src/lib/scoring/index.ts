@@ -28,6 +28,7 @@ export type ActiveScoringModel = Pick<
   | "alternativeFormulaEnabled"
 > & {
   rules: ScoringRule[];
+  projectionFormulaConfig?: FantasyModel["projectionFormulaConfig"];
 };
 
 export type ActiveScoringModelIdentity = {
@@ -106,6 +107,7 @@ export async function getActiveScoringModelBundleForSource(source: ScoringModelS
       alternativeFormulaMid: null,
       alternativeFormulaFwd: null,
       alternativeFormulaEnabled: false,
+      projectionFormulaConfig: null,
       rules: seedScoringRules()
     },
     identity: {
@@ -155,6 +157,7 @@ function mapActiveModel(
     alternativeFormulaMid: model.alternativeFormulaMid,
     alternativeFormulaFwd: model.alternativeFormulaFwd,
     alternativeFormulaEnabled: model.alternativeFormulaEnabled,
+    projectionFormulaConfig: model.projectionFormulaConfig,
     rules: model.rules.length ? model.rules : seedScoringRules()
   };
 }

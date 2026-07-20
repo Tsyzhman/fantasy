@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { I18nText } from "@/components/i18n-text";
+import { ProjectionFormulaEditor } from "@/components/projection-formula-editor";
 import { SortableTable } from "@/components/sortable-table";
 import { prisma } from "@/lib/db";
 import { formatPositionPoints, scoringFieldGuide } from "@/lib/scoring/field-guide";
@@ -25,6 +26,11 @@ import { recalculateSnapshotsForSource } from "@/lib/scoring/recalculate-snapsho
 import { seedRules } from "@/lib/scoring/rules";
 import { formulaAlias, sourceFormulaFields, type SourceFormulaField } from "@/lib/scoring/source-field-guide";
 import { requireAdminUser } from "@/lib/auth";
+import {
+  expectedProjectionFormulaConfig,
+  parseProjectionFormulaConfig,
+  projectionFormulaConfigFromFormData
+} from "@/machete/projection-formula-config";
 
 type ModelSettingsPageProps = {
   source: ScoringModelSource;
@@ -64,10 +70,10 @@ const formulaExamples: Record<ScoringModelSource, { primary: string; scoring: st
     fields: ["{xG per 90}", "{xA per 90}", "{Key passes per 90}", "{Progressive passes per 90}", "{Round projected xG}"]
   },
   MACHETE: {
-    primary: "{Appearance FP} + {60+ minutes FP} + {Goal FP} + {Assist FP} + {Clean sheet FP}",
+    primary: "4 * {Expected goals} + 3 * {Expected assists} + {Expected recoveries} / 3",
     scoring: "{Matches played} + 4*{Goals} + 3*{Assists} + 0.2*{Shots on target} + 0.2*{Average rating}",
     alternative: "4*{Goals per match} + 2*{Assists per match} + 0.2*{Shots on target} + 0.1*{Key passes} + 0.2*{Average rating}",
-    fields: ["{Appearance FP}", "{60+ minutes FP}", "{Full match FP}", "{Goal FP}", "{Assist FP}", "{Clean sheet FP}", "{Save FP}", "{Recovery FP}", "{Goals conceded FP}", "{Yellow card FP}", "{Red card FP}"]
+    fields: ["{Expected goals}", "{Expected assists}", "{Expected recoveries}", "{Expected clean sheets}", "{Expected goals conceded}"]
   }
 };
 
@@ -93,6 +99,14 @@ export async function saveModelSettings(formData: FormData) {
     scoringFormulaFields.map((field) => [field.key, String(formData.get(field.key) ?? "").trim()])
   ) as Record<ScoringFieldKey, string>;
   const scoringEnabled = formData.get("scoringFormulaEnabled") === "on";
+  const projectionConfigResult = source === "MACHETE"
+    ? projectionFormulaConfigFromFormData(formData, "projection", expectedProjectionFormulaConfig)
+    : null;
+
+  if (projectionConfigResult?.issues.length) {
+    const issue = projectionConfigResult.issues[0];
+    redirect(`${config.path}?error=${encodeURIComponent(`Expected ${issue.path}: ${issue.message}`)}`);
+  }
 
   for (const field of customFormulaFields) {
     const validation = validateCustomFormula(formulas[field.key]);
@@ -154,8 +168,9 @@ export async function saveModelSettings(formData: FormData) {
       alternativeFormulaDef: alternativeFormulas.alternativeFormulaDef || null,
       alternativeFormulaMid: alternativeFormulas.alternativeFormulaMid || null,
       alternativeFormulaFwd: alternativeFormulas.alternativeFormulaFwd || null,
-      alternativeFormulaEnabled: alternativeEnabled && hasAlternativeFormula
-    })
+    alternativeFormulaEnabled: alternativeEnabled && hasAlternativeFormula
+    }),
+    ...(source === "MACHETE" ? { projectionFormulaConfig: projectionConfigResult!.config } : {})
   };
 
   if (model) {
@@ -220,6 +235,10 @@ export async function ModelSettingsPage({
   ]);
   const displayModel = model ?? wyscoutModel;
   const expectedDefaults = source === "MACHETE" ? componentFormulaByPosition : defaultFormulaByPosition;
+  const expectedProjectionConfig = parseProjectionFormulaConfig(
+    model?.projectionFormulaConfig,
+    expectedProjectionFormulaConfig
+  ).config;
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -263,10 +282,10 @@ export async function ModelSettingsPage({
           <div className="mt-5 rounded border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
             <I18nText
               en={source === "MACHETE"
-                ? "Saved. Global Expected FP and Actual FP were recalculated. Personal Alt FP formulas were not changed."
+                ? "Saved. The global Expected FP fixture pipeline is active in the squad planner. Actual FP was recalculated; personal Alt FP pipelines were not changed."
                 : "Saved. Expected FP, Actual FP and Alt FP were recalculated for existing player snapshots."}
               ru={source === "MACHETE"
-                ? "Сохранено. Глобальные Expected FP и Actual FP пересчитаны. Личные формулы Alt FP не изменены."
+                ? "Сохранено. Глобальный пайплайн Expected FP применяется в составе. Actual FP пересчитан; личные пайплайны Alt FP не изменены."
                 : "Сохранено. Expected FP, Actual FP и Alt FP пересчитаны для уже загруженных игроков."}
             />
           </div>
@@ -286,7 +305,11 @@ export async function ModelSettingsPage({
             </div>
 
             <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-2">
-              {displayModel?.customFormulaEnabled && hasAnyCustomFormula(displayModel)
+              {source === "MACHETE"
+                ? Object.entries(expectedProjectionConfig.scoreByPosition).map(([position, formula]) => (
+                    <FormulaPreview key={position} position={position}>{formula}</FormulaPreview>
+                  ))
+                : displayModel?.customFormulaEnabled && hasAnyCustomFormula(displayModel)
                 ? customFormulaFields.map((entry) => {
                     const formula = customFormulaForPosition(displayModel, entry.key);
 
@@ -306,10 +329,10 @@ export async function ModelSettingsPage({
             <p className="mt-3 text-xs text-slate-500">
               <I18nText
                 en={source === "MACHETE"
-                  ? "This formula is applied to each COMPONENT_XFP_V1 fixture projection, the green Expected FP column, five-round totals and squad optimization."
+                  ? "The complete four-stage pipeline below is applied independently to every fixture, the green Expected FP column, five-round totals and squad optimization."
                   : "This is the formula behind the green Expected FP column. If custom formulas are off, Expected FP uses the built-in predicted-round scoring."}
                 ru={source === "MACHETE"
-                  ? "Эта формула применяется к прогнозу COMPONENT_XFP_V1 каждого матча, зелёной колонке Expected FP, суммам за пять туров и оптимизации состава."
+                  ? "Полный четырёхэтапный конвейер ниже применяется отдельно к каждому матчу, зелёной колонке Expected FP, суммам за пять туров и оптимизации состава."
                   : "Это формула зеленой колонки Expected FP. Если свои формулы выключены, Expected FP считается по встроенным правилам прогноза тура."}
               />
             </p>
@@ -320,25 +343,38 @@ export async function ModelSettingsPage({
               <div>
                 <p className="text-sm font-semibold text-ink"><I18nText en="Edit Expected FP formulas" ru="Редактировать формулы Expected FP" /></p>
                 <p className="mt-1 text-xs text-slate-600">
-                  <I18nText en="These formulas replace the green Expected FP column for the positions you fill in." ru="Эти формулы заменяют зеленую колонку Expected FP для заполненных позиций." />
+                  <I18nText
+                    en={source === "MACHETE"
+                      ? "Every visible stage is editable: history weights, fixture context, player allocation and final points."
+                      : "These formulas replace the green Expected FP column for the positions you fill in."}
+                    ru={source === "MACHETE"
+                      ? "Редактируется каждый видимый этап: веса истории, контекст матча, распределение по игрокам и итоговые очки."
+                      : "Эти формулы заменяют зеленую колонку Expected FP для заполненных позиций."}
+                  />
                 </p>
               </div>
               <span className="rounded bg-white px-2 py-1 text-xs font-semibold text-emerald-700"><I18nText en="Primary score" ru="Основные очки" /></span>
             </div>
-            <div className="mt-2 grid grid-cols-1 gap-3 lg:grid-cols-2">
-              {customFormulaFields.map((field) => (
-                <FormulaTextarea key={field.key} field={field} defaultValue={editableExpectedFormula(displayModel, field.key, source)} />
-              ))}
+            <div className="mt-3">
+              {source === "MACHETE"
+                ? <ProjectionFormulaEditor config={expectedProjectionConfig} prefix="projection" />
+                : <>
+                    <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+                      {customFormulaFields.map((field) => (
+                        <FormulaTextarea key={field.key} field={field} defaultValue={editableExpectedFormula(displayModel, field.key, source)} />
+                      ))}
+                    </div>
+                    <label className="mt-3 flex items-center gap-3 text-sm font-medium text-ink">
+                      <input
+                        type="checkbox"
+                        name="customFormulaEnabled"
+                        defaultChecked={Boolean(displayModel?.customFormulaEnabled)}
+                        className="h-4 w-4 rounded border-slate-300"
+                      />
+                      <I18nText en="Use primary custom formulas" ru="Использовать свои основные формулы" />
+                    </label>
+                  </>}
             </div>
-            <label className="mt-3 flex items-center gap-3 text-sm font-medium text-ink">
-              <input
-                type="checkbox"
-                name="customFormulaEnabled"
-                defaultChecked={Boolean(displayModel?.customFormulaEnabled)}
-                className="h-4 w-4 rounded border-slate-300"
-              />
-              <I18nText en="Use primary custom formulas" ru="Использовать свои основные формулы" />
-            </label>
           </div>
 
           <div className="rounded border border-sky-200 bg-sky-50 p-4">
@@ -500,8 +536,12 @@ function ScoreMap({
         <h3 className="mt-1 text-base font-semibold text-ink"><I18nText en="Recalculate now" ru="Пересчет сразу" /></h3>
         <p className="mt-2 text-sm text-slate-700">
           <I18nText
-            en={<>Saving updates existing {source === "MACHETE" ? "Machete/FotMob" : "Baltika/Wyscout"} snapshots immediately. Future syncs and imports use the same formulas.</>}
-            ru={<>Сохранение сразу обновляет существующие снимки {source === "MACHETE" ? "Machete/FotMob" : "Baltika/Wyscout"}. Будущие синхронизации и импорты используют те же формулы.</>}
+            en={source === "MACHETE"
+              ? <>Saving applies the Expected pipeline to future fixture forecasts immediately. Historical Actual FP snapshots remain a separate calculation.</>
+              : <>Saving updates existing Baltika/Wyscout snapshots immediately. Future syncs and imports use the same formulas.</>}
+            ru={source === "MACHETE"
+              ? <>Сохранение сразу применяет пайплайн Expected к прогнозам будущих матчей. Исторические снимки Actual FP считаются отдельно.</>
+              : <>Сохранение сразу обновляет существующие снимки Baltika/Wyscout. Будущие синхронизации и импорты используют те же формулы.</>}
           />
         </p>
       </div>
@@ -520,8 +560,8 @@ function FormulaModeLabel({
     <I18nText en="Custom formulas by position" ru="Свои формулы по позициям" />
   ) : (
     <I18nText
-      en={source === "MACHETE" ? "Built-in COMPONENT_XFP_V1 components" : "Default predicted round rules"}
-      ru={source === "MACHETE" ? "Встроенные компоненты COMPONENT_XFP_V1" : "Встроенные правила прогноза тура"}
+      en={source === "MACHETE" ? "Editable global fixture pipeline" : "Default predicted round rules"}
+      ru={source === "MACHETE" ? "Редактируемый глобальный пайплайн матчей" : "Встроенные правила прогноза тура"}
     />
   );
 }
@@ -611,7 +651,7 @@ function FormulaHelp({ source }: { source: ScoringModelSource }) {
       <p className="mt-3">
         <I18nText
           en={source === "MACHETE"
-            ? <>Use numbers, <span className="font-mono">+ - * / ( )</span>, and fields in braces. Missing fields count as 0. Empty Expected FP and Actual FP formulas fall back to built-in global rules. Alt FP is edited only in personal settings.</>
+            ? <>The Expected example uses raw expected events, not pre-calculated FP modules. The complete syntax, powers, functions and stage-specific fields are shown directly beside the pipeline above. Actual FP stays a separate historical formula; Alt FP is edited only in personal settings.</>
             : <>Use numbers, <span className="font-mono">+ - * / ( )</span>, and fields in braces. Missing fields count as 0. Empty Expected FP and Actual FP formulas fall back to built-in rules; empty Alt FP formulas show no Alt FP for that position.</>}
           ru={source === "MACHETE"
             ? <>Используйте числа, <span className="font-mono">+ - * / ( )</span> и поля в фигурных скобках. Отсутствующие поля считаются как 0. Пустые формулы Expected FP и Actual FP возвращаются к встроенным глобальным правилам. Alt FP редактируется только в личных настройках.</>

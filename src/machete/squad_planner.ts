@@ -5,10 +5,17 @@ import { ExpiringPromiseCache } from "@/lib/expiring-promise-cache";
 import { macheteLeagueDisplayName } from "@/lib/leagues/display";
 import { normalizeSportsRuPlayerName } from "@/lib/providers/sports-ru-fantasy";
 import { calculateAlternativeScore, calculateFantasyScore, getActiveScoringModelBundleForSource, type ActiveScoringModel } from "@/lib/scoring";
+import { calculateCustomFormulaScore } from "@/lib/scoring/formula";
 import { friendAlternativeFormulaDefaults } from "@/lib/scoring/formula-display";
 import type { UserScoringFormulaPreference } from "@/lib/scoring/user-preferences";
 import { providerTeamShortName } from "@/lib/teams/display";
 import { playerPhotoPublicUrl } from "./player-photo-cache";
+import {
+  expectedProjectionFormulaConfig,
+  friendAltProjectionFormulaConfig,
+  parseProjectionFormulaConfig,
+  type ProjectionFormulaConfig
+} from "./projection-formula-config";
 import {
   ProjectionInputError,
   projectTeamPlayers,
@@ -88,7 +95,7 @@ export type FantasySquadPlannerData = {
   historySeasonOptions: string[];
 };
 
-type PlannerFixture = {
+export type PlannerFixture = {
   id: string;
   roundId: string;
   teamId: string;
@@ -127,7 +134,7 @@ type PlannerMatch = {
 
 export type FantasyFixtureProjection = Pick<PlannerFixture, "side" | "attackMultiplier" | "defenseMultiplier">;
 
-type PlannerRoundFixtures = {
+export type PlannerRoundFixtures = {
   rounds: FantasyRoundProjection[];
   fixturesByTeamRound: Map<string, Map<string, PlannerFixture[]>>;
   teamShortNameById: Map<string, string>;
@@ -137,6 +144,7 @@ export type FantasyProjectionEngine = "COMPONENT_XFP_V1" | "LEGACY_RIDGE19_V1";
 
 type ComponentProjectionIndex = {
   byFixturePlayer: Map<string, PlayerFixtureProjection>;
+  formulaMetricsByFixturePlayer: Map<string, Record<string, unknown>>;
   errorsByFixtureTeam: Map<string, string>;
 };
 
@@ -337,16 +345,18 @@ export async function loadFantasySquadPlannerData(
   const projectedByPlayerTeam = new Map(playerRows.rows.map((row) => [playerTeamKey(row.playerId, row.teamId), row]));
   const prices = priceLookup(priceRows, priceMaps);
   const sportsPositionsByPlayerId = sportsRuFantasyPositionsByPlayerId(priceRows, priceMaps);
-  const componentProjections = buildComponentProjectionIndex(
-    playerRows.rows,
-    roundsAndFixtures,
-    sportsPositionsByPlayerId
-  );
-  const friendAlternativeProjections = buildComponentProjectionIndex(
+  const componentProjections = buildFormulaProjectionIndex(
     playerRows.friendRows,
     roundsAndFixtures,
     sportsPositionsByPlayerId,
-    "FRIEND_ALT"
+    playerRows.expectedProjectionConfig
+  );
+  const friendAlternativeProjections = buildFormulaProjectionIndex(
+    playerRows.friendRows,
+    roundsAndFixtures,
+    sportsPositionsByPlayerId,
+    playerRows.alternativeProjectionConfig,
+    true
   );
   const preferredProjectionEngine = configuredFantasyProjectionEngine();
   const rosterPlayers: FantasyPlannerPlayer[] = rosterRows.flatMap((row) => {
@@ -365,7 +375,12 @@ export async function loadFantasySquadPlannerData(
       ? componentProjections.byFixturePlayer.get(fixturePlayerProjectionKey(nextFixture.id, String(row.playerId))) ?? null
       : null;
     const componentPredictedFp = nextComponentProjection
-      ? componentProjectionFantasyPoints(nextComponentProjection, nextFixture, playerRows.scoringModel)
+      ? projectionFormulaFantasyPoints(
+          nextComponentProjection,
+          nextFixture,
+          playerRows.expectedProjectionConfig,
+          componentProjections.formulaMetricsByFixturePlayer.get(fixturePlayerProjectionKey(nextFixture?.id ?? "", String(row.playerId)))
+        )
       : null;
     const projectionEngine: FantasyProjectionEngine =
       preferredProjectionEngine === "COMPONENT_XFP_V1" && componentPredictedFp !== null
@@ -376,7 +391,12 @@ export async function loadFantasySquadPlannerData(
       ? friendAlternativeProjections.byFixturePlayer.get(fixturePlayerProjectionKey(nextFixture.id, String(row.playerId))) ?? null
       : null;
     const alternativePredictedFp = nextFriendProjection
-      ? friendAlternativeProjectionFantasyPoints(nextFriendProjection, nextFixture, playerRows.scoringModel)
+      ? projectionFormulaFantasyPoints(
+          nextFriendProjection,
+          nextFixture,
+          playerRows.alternativeProjectionConfig,
+          friendAlternativeProjections.formulaMetricsByFixturePlayer.get(fixturePlayerProjectionKey(nextFixture?.id ?? "", String(row.playerId)))
+        )
       : null;
     const price = resolveFantasyPlannerPrice(priceRow, predictedFp, positionGroup);
     const playerName = priceRow?.playerName ?? row.player.name;
@@ -395,7 +415,13 @@ export async function loadFantasySquadPlannerData(
       if (fixtures.length === 0) return 0;
       const values = fixtures.map((fixture) => {
         const projection = componentProjections.byFixturePlayer.get(fixturePlayerProjectionKey(fixture.id, String(row.playerId)));
-        return projection ? componentProjectionFantasyPoints(projection, fixture, playerRows.scoringModel) : null;
+        const key = fixturePlayerProjectionKey(fixture.id, String(row.playerId));
+        return projection ? projectionFormulaFantasyPoints(
+          projection,
+          fixture,
+          playerRows.expectedProjectionConfig,
+          componentProjections.formulaMetricsByFixturePlayer.get(key)
+        ) : null;
       });
       return values.some((value) => value === null)
         ? null
@@ -411,7 +437,13 @@ export async function loadFantasySquadPlannerData(
       if (fixtures.length === 0) return 0;
       const values = fixtures.map((fixture) => {
         const projection = friendAlternativeProjections.byFixturePlayer.get(fixturePlayerProjectionKey(fixture.id, String(row.playerId)));
-        return projection ? friendAlternativeProjectionFantasyPoints(projection, fixture, playerRows.scoringModel) : null;
+        const key = fixturePlayerProjectionKey(fixture.id, String(row.playerId));
+        return projection ? projectionFormulaFantasyPoints(
+          projection,
+          fixture,
+          playerRows.alternativeProjectionConfig,
+          friendAlternativeProjections.formulaMetricsByFixturePlayer.get(key)
+        ) : null;
       });
       return values.some((value) => value === null)
         ? null
@@ -952,6 +984,39 @@ export function friendAlternativeScoringModel(
   };
 }
 
+export function resolvedExpectedProjectionConfig(model: ActiveScoringModel) {
+  const parsed = parseProjectionFormulaConfig(model.projectionFormulaConfig, expectedProjectionFormulaConfig).config;
+  if (model.projectionFormulaConfig || !model.customFormulaEnabled) return parsed;
+
+  return {
+    ...parsed,
+    scoreByPosition: {
+      GK: model.customFormulaGk?.trim() || model.customFormula?.trim() || parsed.scoreByPosition.GK,
+      DEF: model.customFormulaDef?.trim() || model.customFormula?.trim() || parsed.scoreByPosition.DEF,
+      MID: model.customFormulaMid?.trim() || model.customFormula?.trim() || parsed.scoreByPosition.MID,
+      FWD: model.customFormulaFwd?.trim() || model.customFormula?.trim() || parsed.scoreByPosition.FWD
+    }
+  };
+}
+
+export function resolvedAlternativeProjectionConfig(preference: UserScoringFormulaPreference | null | undefined) {
+  const parsed = parseProjectionFormulaConfig(
+    preference?.alternativeProjectionFormulaConfig,
+    friendAltProjectionFormulaConfig
+  ).config;
+  if (preference?.alternativeProjectionFormulaConfig || !preference?.alternativeFormulaEnabled) return parsed;
+
+  return {
+    ...parsed,
+    scoreByPosition: {
+      GK: preference.alternativeFormulaGk?.trim() || parsed.scoreByPosition.GK,
+      DEF: preference.alternativeFormulaDef?.trim() || parsed.scoreByPosition.DEF,
+      MID: preference.alternativeFormulaMid?.trim() || parsed.scoreByPosition.MID,
+      FWD: preference.alternativeFormulaFwd?.trim() || parsed.scoreByPosition.FWD
+    }
+  };
+}
+
 async function loadProjectedPlayerRows(
   prisma: PrismaClient,
   userId: string,
@@ -964,6 +1029,8 @@ async function loadProjectedPlayerRows(
     prisma.userScoringPreference.findUnique({ where: { userId_modelSource: { userId, modelSource: "MACHETE" } } })
   ]);
   const readTimeScoringModel = friendAlternativeScoringModel(modelBundle.model, preference);
+  const expectedProjectionConfig = resolvedExpectedProjectionConfig(modelBundle.model);
+  const alternativeProjectionConfig = resolvedAlternativeProjectionConfig(preference);
   const baseModelVersion = `${modelBundle.identity.configuredModelSource}:${modelBundle.identity.configuredModelId ?? "built-in"}:v${modelBundle.identity.configuredModelVersion}`;
   const [rows, friendRows, calibration] = await Promise.all([
     loadSharedMachetePlayerRows(prisma, {
@@ -996,6 +1063,8 @@ async function loadProjectedPlayerRows(
       : `${baseModelVersion}+uncalibrated`,
     calibration,
     scoringModel: readTimeScoringModel,
+    expectedProjectionConfig,
+    alternativeProjectionConfig,
     friendRows: friendRows.map((row) => {
       const { teamId, playerId } = fantasyPlannerSharedRowIdentity(row.id);
       return { ...row, teamId, playerId };
@@ -1029,6 +1098,7 @@ function buildComponentProjectionIndex(
   mode: ComponentProjectionMode = "PRIMARY"
 ): ComponentProjectionIndex {
   const byFixturePlayer = new Map<string, PlayerFixtureProjection>();
+  const formulaMetricsByFixturePlayer = new Map<string, Record<string, unknown>>();
   const errorsByFixtureTeam = new Map<string, string>();
   const rowsByTeam = new Map<string, Array<SharedMachetePlayerRow & { teamId: string; playerId: string }>>();
   for (const row of rows) {
@@ -1069,7 +1139,209 @@ function buildComponentProjectionIndex(
     }
   }
 
-  return { byFixturePlayer, errorsByFixtureTeam };
+  return { byFixturePlayer, formulaMetricsByFixturePlayer, errorsByFixtureTeam };
+}
+
+type PipelineParticipant = {
+  row: SharedMachetePlayerRow & { teamId: string; playerId: string };
+  input: ProbableParticipantInput;
+  metrics: Record<string, unknown>;
+};
+
+export function buildFormulaProjectionIndex(
+  rows: Array<SharedMachetePlayerRow & { teamId: string; playerId: string }>,
+  roundsAndFixtures: PlannerRoundFixtures,
+  sportsPositionsByPlayerId: Map<string, string>,
+  config: ProjectionFormulaConfig,
+  probableXiOnly = false
+): ComponentProjectionIndex {
+  const byFixturePlayer = new Map<string, PlayerFixtureProjection>();
+  const formulaMetricsByFixturePlayer = new Map<string, Record<string, unknown>>();
+  const errorsByFixtureTeam = new Map<string, string>();
+  const rowsByTeam = new Map<string, Array<SharedMachetePlayerRow & { teamId: string; playerId: string }>>();
+  for (const row of rows) {
+    const teamRows = rowsByTeam.get(row.teamId) ?? [];
+    teamRows.push(row);
+    rowsByTeam.set(row.teamId, teamRows);
+  }
+
+  const uniqueFixtures = new Map<string, PlannerFixture>();
+  for (const fixturesByTeam of roundsAndFixtures.fixturesByTeamRound.values()) {
+    for (const fixtures of fixturesByTeam.values()) {
+      for (const fixture of fixtures) uniqueFixtures.set(fixtureTeamProjectionKey(fixture.id, fixture.teamId), fixture);
+    }
+  }
+
+  for (const [fixtureTeamKey, fixture] of uniqueFixtures) {
+    try {
+      const rankedCandidates = (rowsByTeam.get(fixture.teamId) ?? [])
+        .map((row) => pipelineParticipant(row, sportsPositionsByPlayerId.get(row.playerId), config))
+        .filter((entry): entry is PipelineParticipant => entry !== null)
+        .sort((left, right) =>
+          Number(right.row.isStarter) - Number(left.row.isStarter) ||
+          right.input.probabilities.appearance! - left.input.probabilities.appearance! ||
+          right.input.expectedMinutes! - left.input.expectedMinutes! ||
+          right.row.minutesPlayed - left.row.minutesPlayed
+        );
+      const historyCandidates = probableXiOnly ? rankedCandidates.slice(0, 11) : rankedCandidates;
+      const teamContext = pipelineTeamContext(fixture, config);
+      const candidates = historyCandidates.map((entry) => pipelineAllocationParticipant(entry, teamContext, config));
+      const participants = candidates.map((entry) => entry.input);
+      const team = pipelineTeamTotals(fixture, participants, teamContext);
+      const projection = projectTeamPlayers(team, participants);
+
+      for (const player of projection.players) {
+        const key = fixturePlayerProjectionKey(fixture.id, player.playerId);
+        const candidate = candidates.find((entry) => entry.input.playerId === player.playerId);
+        byFixturePlayer.set(key, player);
+        formulaMetricsByFixturePlayer.set(key, {
+          ...(candidate?.metrics ?? {}),
+          ...teamContext,
+          goal_allocation_weight: player.allocationWeights.goals,
+          assist_allocation_weight: player.allocationWeights.assists,
+          recovery_allocation_weight: player.allocationWeights.recoveries,
+          save_allocation_weight: player.allocationWeights.saves
+        });
+      }
+    } catch (error) {
+      const message = error instanceof ProjectionInputError
+        ? error.issues.slice(0, 3).map((issue) => `${issue.path} ${issue.message}`).join("; ")
+        : error instanceof Error ? error.message : "unknown formula projection error";
+      errorsByFixtureTeam.set(fixtureTeamKey, message);
+    }
+  }
+
+  return { byFixturePlayer, formulaMetricsByFixturePlayer, errorsByFixtureTeam };
+}
+
+function pipelineParticipant(
+  row: SharedMachetePlayerRow & { teamId: string; playerId: string },
+  sportsPosition: string | undefined,
+  config: ProjectionFormulaConfig
+): PipelineParticipant | null {
+  const position = normalizeFantasyPosition(fantasyPlannerPosition(sportsPosition ?? null, null, row.position));
+  if (position === "UNK") return null;
+  const metrics: Record<string, unknown> = { ...(row.rawMetrics ?? {}) };
+  const expectedMinutes = clamp(formulaValue(config.history.expectedMinutes, metrics), 0, 90);
+  metrics.expected_minutes = expectedMinutes;
+  const appearance = clamp(formulaValue(config.history.appearanceProbability, metrics), 0, 1);
+  metrics.appearance_probability = appearance;
+  const sixtyMinutes = clamp(formulaValue(config.history.sixtyProbability, metrics), 0, appearance);
+  metrics.sixty_minute_probability = sixtyMinutes;
+  metrics["60_minute_probability"] = sixtyMinutes;
+  const fullMatch = clamp(formulaValue(config.history.fullMatchProbability, metrics), 0, sixtyMinutes);
+  metrics.full_match_probability = fullMatch;
+  const xg = nonNegativeFormulaValue(config.history.xgRate, metrics, "history.xgRate");
+  const xa = nonNegativeFormulaValue(config.history.xaRate, metrics, "history.xaRate");
+  const recoveries = nonNegativeFormulaValue(config.history.recoveryRate, metrics, "history.recoveryRate");
+  const saves = nonNegativeFormulaValue(config.history.saveRate, metrics, "history.saveRate");
+  const yellowCards = nonNegativeFormulaValue(config.history.yellowRate, metrics, "history.yellowRate");
+  const redCards = nonNegativeFormulaValue(config.history.redRate, metrics, "history.redRate");
+  Object.assign(metrics, {
+    blended_xg_per_90: xg,
+    blended_xa_per_90: xa,
+    blended_recoveries_per_90: recoveries,
+    blended_saves_per_90: saves,
+    blended_yellow_cards_per_90: yellowCards,
+    blended_red_cards_per_90: redCards
+  });
+
+  return {
+    row,
+    metrics,
+    input: {
+      playerId: row.playerId,
+      position,
+      expectedMinutes,
+      probabilities: { appearance, sixtyMinutes, fullMatch },
+      ratesPer90: { xg, xa, recoveries, saves, yellowCards, redCards }
+    }
+  };
+}
+
+function pipelineAllocationParticipant(
+  participant: PipelineParticipant,
+  teamContext: Record<string, unknown>,
+  config: ProjectionFormulaConfig
+): PipelineParticipant {
+  const metrics = { ...participant.metrics, ...teamContext };
+  const position = participant.input.position;
+  const allocationWeights = {
+    goals: nonNegativeFormulaValue(config.allocation.goals, metrics, "allocation.goals"),
+    assists: nonNegativeFormulaValue(config.allocation.assists, metrics, "allocation.assists"),
+    recoveries: position === "GK" ? 0 : nonNegativeFormulaValue(config.allocation.recoveries, metrics, "allocation.recoveries"),
+    saves: position === "GK" ? nonNegativeFormulaValue(config.allocation.saves, metrics, "allocation.saves") : 0
+  };
+  const cardExposureFactor = nonNegativeFormulaValue(config.allocation.cardExposure, metrics, "allocation.cardExposure");
+  Object.assign(metrics, {
+    goal_allocation_weight: allocationWeights.goals,
+    assist_allocation_weight: allocationWeights.assists,
+    recovery_allocation_weight: allocationWeights.recoveries,
+    save_allocation_weight: allocationWeights.saves,
+    card_exposure_factor: cardExposureFactor
+  });
+  return {
+    ...participant,
+    metrics,
+    input: { ...participant.input, allocationWeights, cardExposureFactor }
+  };
+}
+
+function pipelineTeamContext(
+  fixture: PlannerFixture,
+  config: ProjectionFormulaConfig
+) {
+  if (fixture.projectedXg === null || fixture.projectedXga === null) {
+    throw new Error("team xG/xGA is missing");
+  }
+  const bookmakerImpliedXg = inversePoissonOver15Probability(fixture.teamOver15Probability);
+  const bookmakerAvailable = bookmakerImpliedXg !== null && fixture.cleanSheetProbability !== null && fixture.cleanSheetProbability !== undefined;
+  const metrics: Record<string, unknown> = {
+    projected_xg: fixture.projectedXg,
+    projected_xga: fixture.projectedXga,
+    fotmob_team_xg: fixture.projectedXg,
+    fotmob_team_xga: fixture.projectedXga,
+    bookmaker_implied_xg: bookmakerImpliedXg ?? 0,
+    bookmaker_odds_available: bookmakerAvailable ? 1 : 0,
+    fixture_clean_sheet_probability: fixture.cleanSheetProbability ?? 0,
+    fixture_team_over_1_5_probability: fixture.teamOver15Probability ?? 0,
+    fixture_attack_multiplier: fixture.attackMultiplier ?? 1,
+    fixture_defense_multiplier: fixture.defenseMultiplier ?? 1,
+    is_home: fixture.side === "H" ? 1 : 0,
+    is_away: fixture.side === "A" ? 1 : 0
+  };
+  metrics.expected_goals = nonNegativeFormulaValue(config.team.expectedGoals, metrics, "team.expectedGoals");
+  metrics.expected_goals_against = nonNegativeFormulaValue(config.team.expectedGoalsAgainst, metrics, "team.expectedGoalsAgainst");
+  metrics.assists_per_goal = nonNegativeFormulaValue(config.team.assistsPerGoal, metrics, "team.assistsPerGoal");
+  metrics.clean_sheet_probability = clamp(formulaValue(config.team.cleanSheetProbability, metrics), 0, 1);
+  return metrics;
+}
+
+function pipelineTeamTotals(
+  fixture: PlannerFixture,
+  participants: ProbableParticipantInput[],
+  metrics: Record<string, unknown>
+): ProjectedTeamTotals {
+  const expectedGoals = numericOrNull(metrics.expected_goals) ?? 0;
+  return {
+    teamId: fixture.teamId,
+    expectedGoals,
+    expectedGoalsAgainst: numericOrNull(metrics.expected_goals_against) ?? 0,
+    expectedAssists: expectedGoals * (numericOrNull(metrics.assists_per_goal) ?? 0),
+    expectedRecoveries: participants.reduce((total, player) => total + (player.allocationWeights?.recoveries ?? 0), 0),
+    expectedSaves: participants.reduce((total, player) => total + (player.allocationWeights?.saves ?? 0), 0),
+    cleanSheetProbability: numericOrNull(metrics.clean_sheet_probability) ?? 0
+  };
+}
+
+function formulaValue(formula: string, metrics: Record<string, unknown>) {
+  return calculateCustomFormulaScore(formula, metrics);
+}
+
+function nonNegativeFormulaValue(formula: string, metrics: Record<string, unknown>, path: string) {
+  const value = formulaValue(formula, metrics);
+  if (value < 0) throw new Error(`${path} must return a non-negative number, received ${value}`);
+  return value;
 }
 
 function componentParticipant(
@@ -1217,11 +1489,13 @@ export function fixtureFormulaMetrics(
 
 export function componentProjectionFormulaMetrics(
   projection: PlayerFixtureProjection,
-  fixture: PlannerFixture | null
+  fixture: PlannerFixture | null,
+  extraMetrics?: Record<string, unknown>
 ): Record<string, unknown> {
   const { components, expectedEvents, probabilities } = projection;
 
   return fixtureFormulaMetrics({
+    ...(extraMetrics ?? {}),
     matches_played: 1,
     minutes_played: projection.expectedMinutes,
     appearance_probability: probabilities.appearance,
@@ -1235,6 +1509,14 @@ export function componentProjectionFormulaMetrics(
     clean_sheets: expectedEvents.cleanSheets,
     yellow_cards: expectedEvents.yellowCards,
     red_cards: expectedEvents.redCards,
+    expected_goals: expectedEvents.goals,
+    expected_assists: expectedEvents.assists,
+    expected_recoveries: expectedEvents.recoveries,
+    expected_saves: expectedEvents.saves,
+    expected_goals_conceded: expectedEvents.goalsConceded,
+    expected_clean_sheets: expectedEvents.cleanSheets,
+    expected_yellow_cards: expectedEvents.yellowCards,
+    expected_red_cards: expectedEvents.redCards,
     appearance_fp: components.appearance,
     "60_minutes_fp": components.sixtyMinutes,
     full_match_fp: components.fullMatch,
@@ -1247,6 +1529,18 @@ export function componentProjectionFormulaMetrics(
     yellow_card_fp: components.yellowCards,
     red_card_fp: components.redCards
   }, fixture);
+}
+
+export function projectionFormulaFantasyPoints(
+  projection: PlayerFixtureProjection,
+  fixture: PlannerFixture | null,
+  config: ProjectionFormulaConfig,
+  extraMetrics?: Record<string, unknown>
+) {
+  return roundFantasyValue(calculateCustomFormulaScore(
+    config.scoreByPosition[projection.position],
+    componentProjectionFormulaMetrics(projection, fixture, extraMetrics)
+  ));
 }
 
 export function componentProjectionFantasyPoints(

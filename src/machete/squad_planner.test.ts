@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   addPromotedTeamStrengthProfiles,
+  buildFormulaProjectionIndex,
   buildFantasyForecastExplanation,
   buildPlannerRoundFixtures,
   buildTeamStrengthProfilesFromMatches,
@@ -47,11 +48,88 @@ import type { ActiveScoringModel } from "@/lib/scoring";
 import { friendAlternativeFormulaDefaults } from "@/lib/scoring/formula-display";
 import type { SharedMachetePlayerRow } from "./shared_read_model";
 import { defaultFantasySquadRules } from "./squad_logic";
+import { expectedProjectionFormulaConfig } from "./projection-formula-config";
 
 test("component xFP is the default primary engine and legacy remains a one-flag rollback", () => {
   assert.equal(configuredFantasyProjectionEngine(undefined), "COMPONENT_XFP_V1");
   assert.equal(configuredFantasyProjectionEngine("component"), "COMPONENT_XFP_V1");
   assert.equal(configuredFantasyProjectionEngine("legacy"), "LEGACY_RIDGE19_V1");
+});
+
+test("editable pipeline applies history, fixture, allocation and final score formulas in order", () => {
+  const config = {
+    ...expectedProjectionFormulaConfig,
+    history: {
+      expectedMinutes: "90",
+      appearanceProbability: "1",
+      sixtyProbability: "1",
+      fullMatchProbability: "1",
+      xgRate: "{xG per 90 L1}",
+      xaRate: "0",
+      recoveryRate: "0",
+      saveRate: "0",
+      yellowRate: "0",
+      redRate: "0"
+    },
+    team: {
+      expectedGoals: "2",
+      expectedGoalsAgainst: "1",
+      assistsPerGoal: "0",
+      cleanSheetProbability: "0"
+    },
+    allocation: {
+      goals: "{Blended xG per 90} * {Expected goals}",
+      assists: "0",
+      recoveries: "0",
+      saves: "0",
+      cardExposure: "0"
+    },
+    scoreByPosition: {
+      GK: "{Expected goals}",
+      DEF: "{Expected goals}",
+      MID: "{Expected goals}",
+      FWD: "{Expected goals}"
+    }
+  };
+  const row = (playerId: string, xg: number) => ({
+    playerId,
+    teamId: "team-1",
+    position: "FWD",
+    isStarter: true,
+    startProbability: 1,
+    expectedMinutes: 90,
+    minutesPlayed: 90,
+    rawMetrics: { xg_per_90_l1: xg }
+  }) as never;
+  const fixture = {
+    id: "fixture-1",
+    roundId: "round-1",
+    teamId: "team-1",
+    opponentTeamId: "team-2",
+    opponentName: "OPP",
+    opponentFullName: "Opponent",
+    side: "H" as const,
+    kickoffAt: new Date("2026-07-25T12:00:00Z"),
+    projectedXg: 1,
+    projectedXga: 1,
+    attackMultiplier: 1,
+    defenseMultiplier: 1
+  };
+  const index = buildFormulaProjectionIndex(
+    [row("p1", 1), row("p2", 3)],
+    {
+      rounds: [],
+      fixturesByTeamRound: new Map([["round-1", new Map([["team-1", [fixture]]])]]),
+      teamShortNameById: new Map()
+    },
+    new Map([["p1", "FWD"], ["p2", "FWD"]]),
+    config
+  );
+
+  assert.deepEqual(index.errorsByFixtureTeam, new Map());
+  assert.equal(index.byFixturePlayer.get("fixture-1:p1")?.expectedEvents.goals, 0.5);
+  assert.equal(index.byFixturePlayer.get("fixture-1:p2")?.expectedEvents.goals, 1.5);
+  assert.equal(index.formulaMetricsByFixturePlayer.get("fixture-1:p1")?.expected_goals, 2);
 });
 
 test("friend Alt is shared in the squad while a personal formula overrides only its own position", () => {

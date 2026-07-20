@@ -14,7 +14,7 @@ export type UserScoringFormulaPreference = Pick<
   | "alternativeFormulaMid"
   | "alternativeFormulaFwd"
   | "alternativeFormulaEnabled"
->;
+> & { alternativeProjectionFormulaConfig?: UserScoringPreference["alternativeProjectionFormulaConfig"] };
 
 export async function getUserScoringModelForSource(
   client: PrismaClient,

@@ -84,6 +84,10 @@ export type ProbableParticipantInput = {
   ratesPer90: ParticipantRatesPer90Input;
   /** Defaults to expectedMinutes / 90. Set to 1 for methods that allocate directly from per-90 shares. */
   per90ExposureFactor?: number;
+  /** Optional formula-pipeline numerators. The engine still normalizes them across the probable XI. */
+  allocationWeights?: Partial<Record<"goals" | "assists" | "recoveries" | "saves", number>>;
+  /** Optional multiplier for annual yellow/red-card rates. */
+  cardExposureFactor?: number;
 };
 
 export type PlayerExpectedEvents = {
@@ -179,13 +183,13 @@ export function projectTeamPlayers(team: ProjectedTeamTotals, participants: read
   }
   throwIfIssues(issues);
 
-  const goalWeights = participants.map((player) => exposureWeight(player, player.ratesPer90.xg!));
-  const assistWeights = participants.map((player) => exposureWeight(player, player.ratesPer90.xa!));
+  const goalWeights = participants.map((player) => allocationWeight(player, "goals", player.ratesPer90.xg!));
+  const assistWeights = participants.map((player) => allocationWeight(player, "assists", player.ratesPer90.xa!));
   const recoveryWeights = participants.map((player) =>
-    player.position === "GK" ? 0 : exposureWeight(player, player.ratesPer90.recoveries!)
+    player.position === "GK" ? 0 : allocationWeight(player, "recoveries", player.ratesPer90.recoveries!)
   );
   const saveWeights = participants.map((player) =>
-    player.position === "GK" ? exposureWeight(player, player.ratesPer90.saves!) : 0
+    player.position === "GK" ? allocationWeight(player, "saves", player.ratesPer90.saves!) : 0
   );
 
   const goals = allocateExactly(team.expectedGoals, goalWeights);
@@ -196,7 +200,7 @@ export function projectTeamPlayers(team: ProjectedTeamTotals, participants: read
   const players = participants.map((player, index): PlayerFixtureProjection => {
     const minutes = player.expectedMinutes!;
     const minutesFactor = minutes / 90;
-    const eventExposureFactor = per90ExposureFactor(player);
+    const eventExposureFactor = player.cardExposureFactor ?? per90ExposureFactor(player);
     const probabilities = {
       appearance: player.probabilities.appearance!,
       sixtyMinutes: player.probabilities.sixtyMinutes!,
@@ -295,6 +299,10 @@ function validatePlayerProjectionInput(team: ProjectedTeamTotals, participants: 
     const sixty = probability(player.probabilities.sixtyMinutes, `${path}.probabilities.sixtyMinutes`, issues);
     const full = probability(player.probabilities.fullMatch, `${path}.probabilities.fullMatch`, issues);
     if (player.per90ExposureFactor !== undefined) probability(player.per90ExposureFactor, `${path}.per90ExposureFactor`, issues);
+    if (player.cardExposureFactor !== undefined) requiredNonNegative(player.cardExposureFactor, `${path}.cardExposureFactor`, issues);
+    for (const [metric, weight] of Object.entries(player.allocationWeights ?? {})) {
+      requiredNonNegative(weight, `${path}.allocationWeights.${metric}`, issues);
+    }
     if (sixty > appearance) issues.push({ path: `${path}.probabilities.sixtyMinutes`, message: "must not exceed appearance probability" });
     if (full > sixty) issues.push({ path: `${path}.probabilities.fullMatch`, message: "must not exceed sixty-minute probability" });
     if (minutes > 90 * appearance + MASS_BALANCE_EPSILON) {
@@ -322,7 +330,10 @@ function validateAllocationDenominator(
   issues: ProjectionInputIssue[]
 ) {
   if (total === 0) return;
-  const denominator = participants.reduce((sum, player) => sum + exposureWeight(player, player.ratesPer90[rate]!), 0);
+  const denominator = participants.reduce(
+    (sum, player) => sum + allocationWeight(player, label as keyof NonNullable<ProbableParticipantInput["allocationWeights"]>, player.ratesPer90[rate]!),
+    0
+  );
   if (denominator <= 0) {
     issues.push({ path: `allocation.${label}`, message: `cannot allocate positive team total ${total}: exposure-weighted ${rate} denominator is zero` });
   }
@@ -331,6 +342,15 @@ function validateAllocationDenominator(
 function exposureWeight(player: ProbableParticipantInput, ratePer90: number) {
   if ((player.expectedMinutes ?? 0) === 0) return 0;
   return ratePer90 * per90ExposureFactor(player);
+}
+
+function allocationWeight(
+  player: ProbableParticipantInput,
+  metric: keyof NonNullable<ProbableParticipantInput["allocationWeights"]>,
+  fallbackRatePer90: number
+) {
+  const explicit = player.allocationWeights?.[metric];
+  return explicit === undefined ? exposureWeight(player, fallbackRatePer90) : explicit;
 }
 
 function per90ExposureFactor(player: ProbableParticipantInput) {

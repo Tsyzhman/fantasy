@@ -196,6 +196,69 @@ test("friend window metrics renormalize reduced sample weights without rounding"
   assert.equal(metrics.friend_yellow_cards_per_90, 1 / 7);
 });
 
+test("friend window metrics expose stable raw primitives for every rolling window", () => {
+  const stats = Array.from({ length: 12 }, (_, index) => ({
+    matchId: BigInt(12 - index),
+    minutes: index === 0 ? 90 : index === 1 ? 60 : index === 2 ? 0 : 30,
+    xg: index + 1,
+    xa: (index + 1) / 2,
+    recoveries: index + 2,
+    saves: index,
+    yellowCards: index % 2,
+    redCards: index === 0 ? 1 : 0
+  }));
+
+  const metrics = calculateFriendWindowMetrics(stats);
+
+  assert.equal(metrics.matches_l1, 1);
+  assert.equal(metrics.minutes_l1, 90);
+  assert.equal(metrics.minutes_per_match_l1, 90);
+  assert.equal(metrics.appearance_rate_l1, 1);
+  assert.equal(metrics.sixty_rate_l1, 1);
+  assert.equal(metrics.full_match_rate_l1, 1);
+  assert.equal(metrics.xg_per_90_l1, 1);
+  assert.equal(metrics.xa_per_90_l1, 0.5);
+  assert.equal(metrics.recoveries_per_90_l1, 2);
+  assert.equal(metrics.saves_per_90_l1, 0);
+  assert.equal(metrics.yellow_cards_per_90_l1, 0);
+  assert.equal(metrics.red_cards_per_90_l1, 1);
+  assert.equal(metrics.has_data_l1, 1);
+
+  assert.equal(metrics.matches_l5, 5);
+  assert.equal(metrics.minutes_l5, 210);
+  assert.equal(metrics.minutes_per_match_l5, 42);
+  assert.equal(metrics.appearance_rate_l5, 0.8);
+  assert.equal(metrics.sixty_rate_l5, 0.4);
+  assert.equal(metrics.full_match_rate_l5, 0.2);
+  assert.equal(metrics.xg_per_90_l5, 15 * 90 / 210);
+
+  assert.equal(metrics.matches_l10, 10);
+  assert.equal(metrics.matches_365, 12);
+  assert.equal(metrics.minutes_365, 420);
+  assert.equal(metrics.has_data_l10, 1);
+  assert.equal(metrics.has_data_365, 1);
+});
+
+test("friend window primitive metrics use zeroes and an explicit no-data flag", () => {
+  const metrics = calculateFriendWindowMetrics([]);
+
+  for (const suffix of ["l1", "l5", "l10", "365"] as const) {
+    assert.equal(metrics[`matches_${suffix}`], 0);
+    assert.equal(metrics[`minutes_${suffix}`], 0);
+    assert.equal(metrics[`minutes_per_match_${suffix}`], 0);
+    assert.equal(metrics[`appearance_rate_${suffix}`], 0);
+    assert.equal(metrics[`sixty_rate_${suffix}`], 0);
+    assert.equal(metrics[`full_match_rate_${suffix}`], 0);
+    assert.equal(metrics[`xg_per_90_${suffix}`], 0);
+    assert.equal(metrics[`xa_per_90_${suffix}`], 0);
+    assert.equal(metrics[`recoveries_per_90_${suffix}`], 0);
+    assert.equal(metrics[`saves_per_90_${suffix}`], 0);
+    assert.equal(metrics[`yellow_cards_per_90_${suffix}`], 0);
+    assert.equal(metrics[`red_cards_per_90_${suffix}`], 0);
+    assert.equal(metrics[`has_data_${suffix}`], 0);
+  }
+});
+
 test("friend expected minutes uses the maximum minutes per match across rolling windows", () => {
   const stats = Array.from({ length: 10 }, (_, index) => ({
     matchId: BigInt(10 - index),

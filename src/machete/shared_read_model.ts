@@ -822,7 +822,10 @@ type FriendWindowStat = {
  * Builds the unrounded rolling inputs used by the friend-method Alt projection.
  * The caller is responsible for limiting the supplied history to 365 days.
  */
-export function calculateFriendWindowMetrics(stats: FriendWindowStat[], matchDateById?: Map<string, Date | null>) {
+export function calculateFriendWindowMetrics(
+  stats: FriendWindowStat[],
+  matchDateById?: Map<string, Date | null>
+): Record<string, number> {
   const ordered = [...stats].sort((left, right) => {
     const dateDifference = dateMs(matchDateById?.get(String(right.matchId)) ?? null) - dateMs(matchDateById?.get(String(left.matchId)) ?? null);
     return dateDifference || compareBigints(right.matchId, left.matchId);
@@ -844,6 +847,10 @@ export function calculateFriendWindowMetrics(stats: FriendWindowStat[], matchDat
       : 0;
 
   return {
+    ...friendWindowPrimitiveMetrics("l1", last1),
+    ...friendWindowPrimitiveMetrics("l5", last5),
+    ...friendWindowPrimitiveMetrics("l10", last10),
+    ...friendWindowPrimitiveMetrics("365", annual),
     friend_expected_minutes: Math.max(last1.minutesPerMatch, last5.minutesPerMatch, last10.minutesPerMatch, annual.minutesPerMatch),
     friend_xg_per_90: weightedPer90("xg"),
     friend_xa_per_90: weightedPer90("xa"),
@@ -857,6 +864,10 @@ export function calculateFriendWindowMetrics(stats: FriendWindowStat[], matchDat
 function friendWindowAggregate(stats: FriendWindowStat[]) {
   const minutes = sum(stats.map((stat) => stat.minutes));
   return {
+    matches: stats.length,
+    appearances: stats.filter((stat) => (stat.minutes ?? 0) > 0).length,
+    sixtyAppearances: stats.filter((stat) => (stat.minutes ?? 0) >= 60).length,
+    fullMatches: stats.filter((stat) => (stat.minutes ?? 0) >= 90).length,
     minutes,
     minutesPerMatch: stats.length > 0 ? minutes / stats.length : 0,
     xg: sum(stats.map((stat) => stat.xg)),
@@ -865,6 +876,30 @@ function friendWindowAggregate(stats: FriendWindowStat[]) {
     saves: sum(stats.map((stat) => stat.saves)),
     yellowCards: sum(stats.map((stat) => stat.yellowCards)),
     redCards: sum(stats.map((stat) => stat.redCards))
+  };
+}
+
+function friendWindowPrimitiveMetrics(
+  suffix: "l1" | "l5" | "l10" | "365",
+  sample: ReturnType<typeof friendWindowAggregate>
+) {
+  const rate = (value: number) => per90(value, sample.minutes);
+  const matchRate = (value: number) => sample.matches > 0 ? value / sample.matches : 0;
+
+  return {
+    [`matches_${suffix}`]: sample.matches,
+    [`minutes_${suffix}`]: sample.minutes,
+    [`minutes_per_match_${suffix}`]: sample.minutesPerMatch,
+    [`appearance_rate_${suffix}`]: matchRate(sample.appearances),
+    [`sixty_rate_${suffix}`]: matchRate(sample.sixtyAppearances),
+    [`full_match_rate_${suffix}`]: matchRate(sample.fullMatches),
+    [`xg_per_90_${suffix}`]: rate(sample.xg),
+    [`xa_per_90_${suffix}`]: rate(sample.xa),
+    [`recoveries_per_90_${suffix}`]: rate(sample.recoveries),
+    [`saves_per_90_${suffix}`]: rate(sample.saves),
+    [`yellow_cards_per_90_${suffix}`]: rate(sample.yellowCards),
+    [`red_cards_per_90_${suffix}`]: rate(sample.redCards),
+    [`has_data_${suffix}`]: sample.minutes > 0 ? 1 : 0
   };
 }
 

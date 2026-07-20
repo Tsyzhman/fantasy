@@ -10,10 +10,13 @@ test("Machete user settings are account-scoped and never trigger global snapshot
   assert.match(userPage, /requireCurrentUser\(\)/);
   assert.match(userPage, /userId_modelSource: \{ userId: user\.id, modelSource: "MACHETE" \}/);
   assert.doesNotMatch(userPage, /recalculateSnapshotsForSource|customFormulaGk|customFormulaEnabled/);
-  assert.doesNotMatch(userPage, /scoringFormulaFields|scoringFormulaEnabled|My Actual FP override/);
-  assert.match(userPage, /alternativeFormulaFields/);
-  assert.match(userPage, /friendAlternativeFormulaDefaults/);
-  assert.match(userPage, /defaults=\{friendAlternativeFormulaDefaults\}/);
+  assert.doesNotMatch(userPage, /scoringFormulaFields|My Actual FP override/);
+  assert.match(userPage, /scoringFormulaEnabled: false/);
+  assert.match(userPage, /ProjectionFormulaEditor/);
+  assert.match(userPage, /friendAltProjectionFormulaConfig/);
+  assert.match(userPage, /projectionFormulaConfigFromFormData/);
+  assert.match(userPage, /alternativeProjectionFormulaConfig: parsed\.config/);
+  assert.match(userPage, /prefix="alternativeProjection"/);
   assert.doesNotMatch(userPage, /getActiveScoringModelForSource/);
   assert.match(userPage, /shared adapted Alt method/);
   assert.match(macheteRoute, /UserScoringPreferencesPage/);
