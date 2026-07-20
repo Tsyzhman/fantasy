@@ -88,16 +88,16 @@ export function CommandPalette({ showAdmin = false }: CommandPaletteProps) {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+        className="ui-button shrink-0 text-sm"
         aria-label={localizedText(language, "Open command palette", "Открыть палитру команд")}
       >
-        <Search className="h-4 w-4" />
+        <Search className="h-4 w-4" aria-hidden="true" />
         <span className="hidden sm:inline"><I18nText en="Search" ru="Поиск" /></span>
       </button>
 
       {open ? (
-        <div className="fixed inset-0 z-50 bg-slate-950/45 px-3 py-16 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label={localizedText(language, "Command palette", "Палитра команд")}>
-          <div className="mx-auto max-w-xl overflow-hidden rounded border border-slate-200 bg-white shadow-2xl">
+        <div className="fixed inset-0 z-50 px-3 py-16" style={{ background: "var(--scrim)" }} role="dialog" aria-modal="true" aria-label={localizedText(language, "Command palette", "Палитра команд")}>
+          <div className="ui-surface-elevated mx-auto max-w-xl overflow-hidden">
             <div className="flex items-center gap-2 border-b border-slate-200 px-3 py-2">
               <Search className="h-4 w-4 shrink-0 text-slate-400" />
               <input
@@ -128,10 +128,10 @@ export function CommandPalette({ showAdmin = false }: CommandPaletteProps) {
               <button
                 type="button"
                 onClick={close}
-                className="inline-flex h-8 w-8 items-center justify-center rounded text-slate-500 hover:bg-slate-100"
+                className="ui-icon-button !h-8 !min-h-8 !w-8 !min-w-8 border-0 text-slate-500"
                 aria-label={localizedText(language, "Close", "Закрыть")}
               >
-                <X className="h-4 w-4" />
+                <X className="!h-4 !w-4" aria-hidden="true" />
               </button>
             </div>
             <div className="max-h-[420px] overflow-y-auto p-2">

@@ -41,10 +41,10 @@ export function MacheteShell({ children, compact = false }: { children: ReactNod
             href={item.href}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "inline-flex shrink-0 items-center justify-center gap-2 rounded border sm:justify-start",
+              "inline-flex shrink-0 items-center justify-center gap-2 rounded-sm border sm:justify-start",
               compact ? "px-2.5 py-1.5" : "px-3 py-2",
               active
-                ? "border-ink bg-ink text-white"
+                ? "border-brand-600 bg-brand-50 text-brand-700"
                 : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
             )}
           >
@@ -57,18 +57,18 @@ export function MacheteShell({ children, compact = false }: { children: ReactNod
   );
 
   return (
-    <main className={cn("mx-auto max-w-7xl px-4 sm:px-6 lg:px-8", compact ? "py-3 sm:py-4" : "py-5 sm:py-7")}>
+    <main className={cn("mx-auto max-w-7xl px-4 sm:px-5 lg:px-6 2xl:px-8", compact ? "py-3 sm:py-4" : "py-5 sm:py-7")}>
       {compact ? (
         <div className="flex min-w-0 items-center gap-3 border-b border-slate-200 pb-2.5">
-          <span className="hidden shrink-0 text-xs font-bold uppercase tracking-wide text-slate-500 sm:inline">Machete</span>
+          <span className="hidden shrink-0 text-xs font-semibold text-slate-500 sm:inline">Machete</span>
           {workspaceNavigation}
         </div>
       ) : (
         <div className="border-b border-slate-200 pb-3 sm:pb-4">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">Machete</p>
-              <h1 className="mt-1 text-xl font-bold text-ink sm:text-3xl">
+              <p className="text-sm font-semibold text-slate-500">Machete</p>
+              <h1 className="mt-1 text-[28px] font-bold leading-[34px] text-ink">
                 <I18nText en="FotMob data workspace" ru="Рабочее пространство FotMob" />
               </h1>
             </div>

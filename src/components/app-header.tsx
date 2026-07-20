@@ -81,15 +81,15 @@ export function AppHeader({ user }: AppHeaderProps) {
   const navigationProps = { isAdmin, isMixerr, pathname, user, logout };
 
   return (
-    <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/88 backdrop-blur">
-      <div className="relative mx-auto flex min-w-0 max-w-7xl items-center justify-between gap-3 px-4 py-3 sm:px-6 lg:px-8">
+    <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
+      <div className="relative mx-auto flex min-h-14 min-w-0 max-w-7xl items-center justify-between gap-3 px-4 sm:px-6 lg:px-8">
         <ModeBrand />
         <button
           type="button"
           aria-controls="global-navigation"
           aria-expanded={mobileMenuOpen}
           onClick={() => setMobileMenuOpen((isOpen) => !isOpen)}
-          className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 xl:hidden"
+          className="ui-button text-sm xl:hidden"
         >
           <Menu className="h-4 w-4" aria-hidden="true" />
           <I18nText en="Menu" ru="Меню" />
@@ -103,7 +103,7 @@ export function AppHeader({ user }: AppHeaderProps) {
           }}
           className={cn(
             mobileMenuOpen ? "grid" : "hidden",
-            "absolute right-4 top-full z-30 mt-1 max-h-[calc(100vh-5rem)] w-[min(21rem,calc(100vw-2rem))] grid-cols-1 gap-1 overflow-y-auto rounded border border-slate-200 bg-white p-2 text-sm font-medium text-slate-600 shadow-xl [@supports(height:100dvh)]:max-h-[calc(100dvh-5rem)] sm:right-6 sm:grid-cols-2 [&_a]:justify-start [&_button]:justify-start",
+            "ui-surface-elevated absolute right-4 top-full z-30 mt-1 max-h-[calc(100vh-5rem)] w-[min(21rem,calc(100vw-2rem))] grid-cols-1 gap-1 overflow-y-auto p-2 text-sm font-medium text-slate-600 [@supports(height:100dvh)]:max-h-[calc(100dvh-5rem)] sm:right-6 sm:grid-cols-2 [&_a]:justify-start [&_button:not([data-icon-button])]:justify-start",
             "xl:static xl:mt-0 xl:flex xl:max-h-none xl:w-auto xl:flex-wrap xl:items-center xl:justify-end xl:overflow-visible xl:border-0 xl:bg-transparent xl:p-0 xl:shadow-none"
           )}
         >

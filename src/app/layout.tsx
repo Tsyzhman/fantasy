@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Onest } from "next/font/google";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -8,6 +9,12 @@ import { ClientCriticalErrorReporter } from "@/components/ClientCriticalErrorRep
 import { getCurrentUser } from "@/lib/auth";
 
 import "./globals.css";
+
+const onest = Onest({
+  subsets: ["cyrillic", "latin"],
+  display: "swap",
+  variable: "--font-onest"
+});
 
 const earlyPreferenceScript = `
 try {
@@ -52,7 +59,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           }}
         />
       </head>
-      <body>
+      <body className={onest.variable}>
         <div className="min-h-screen">
           <AppHeader user={user} />
           {children}

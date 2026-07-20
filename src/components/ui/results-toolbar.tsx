@@ -18,7 +18,7 @@ export function ResultsToolbar({
   className?: string;
 }) {
   return (
-    <div className={cn("flex flex-col gap-3 rounded border border-slate-200 bg-white px-4 py-3 text-sm shadow-soft sm:flex-row sm:items-center sm:justify-between", className)}>
+    <div className={cn("ui-card flex flex-col gap-3 px-4 py-3 text-sm sm:flex-row sm:items-center sm:justify-between", className)}>
       <div>
         <p className="font-semibold text-ink">{title}</p>
         {meta ? <p className="mt-1 text-slate-500">{meta}</p> : null}
@@ -28,7 +28,7 @@ export function ResultsToolbar({
         {resetHref ? (
           <Link
             href={resetHref}
-            className="inline-flex items-center justify-center rounded border border-slate-200 bg-white px-3 py-2 font-semibold text-slate-700 hover:bg-slate-50"
+            className="ui-button"
           >
             <I18nText en="Reset filters" ru="Сбросить фильтры" />
           </Link>

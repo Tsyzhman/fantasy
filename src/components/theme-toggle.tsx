@@ -35,11 +35,12 @@ export function ThemeToggle() {
   return (
     <button
       type="button"
+      data-icon-button
       onClick={toggleTheme}
       aria-label={label}
-      className="inline-flex h-9 w-9 items-center justify-center rounded border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+      className="ui-icon-button !justify-center"
     >
-      <Icon className="h-4 w-4" />
+      <Icon aria-hidden="true" />
       <span className="sr-only">{label}</span>
     </button>
   );

@@ -31,7 +31,7 @@ export function SegmentedControl<T extends string>({
       aria-label={name}
       aria-orientation="horizontal"
       className={cn(
-        "inline-flex rounded-md border border-slate-200 bg-white p-0.5 shadow-elev",
+        "inline-flex rounded-sm border border-slate-200 bg-white p-0.5",
         className
       )}
     >
@@ -56,7 +56,7 @@ export function SegmentedControl<T extends string>({
               focusSegmentedOption(event, nextIndex);
             }}
             className={cn(
-              "inline-flex items-center justify-center rounded font-semibold transition [@media(pointer:coarse)]:min-h-11",
+              "inline-flex items-center justify-center rounded-sm font-semibold transition [@media(pointer:coarse)]:min-h-11",
               size === "sm"
                 ? "px-2 py-1 text-xs [@media(pointer:coarse)]:py-2 [@media(pointer:coarse)]:text-sm"
                 : "px-3 py-1.5 text-sm [@media(pointer:coarse)]:py-2",
