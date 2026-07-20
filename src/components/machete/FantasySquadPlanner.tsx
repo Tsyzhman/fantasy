@@ -2227,9 +2227,6 @@ function SquadPlayerTile({
         {formatScore(nextFantasyPoints(player) * (isCaptain ? 2 : 1))}
         {isCaptain ? <span className="ml-1 text-amber-800">×2</span> : null}
       </p>
-      {player.baltikaXg !== null && player.baltikaXg !== undefined ? (
-        <p className="text-[9px] font-semibold text-violet-700 num-tabular">W xG {formatScore(player.baltikaXg)}</p>
-      ) : null}
       {fixtureChips.length > 0 ? (
         <div className="mt-0.5 flex min-w-0 items-center justify-center overflow-hidden">
           <FdrRow

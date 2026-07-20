@@ -74,6 +74,7 @@ test("squad cards show three upcoming opponents without a remaining-fixtures cou
   assert.match(tileSource, /Math\.max\(horizon, 3\)/);
   assert.match(tileSource, /fixtures=\{fixtureChips\.slice\(0, 3\)\}/);
   assert.doesNotMatch(tileSource, /\+\{fixtureChips\.length - 1\}/);
+  assert.doesNotMatch(tileSource, /W xG|player\.baltikaXg/);
 });
 
 test("squad cards show next-round FP instead of the selected forecast horizon", () => {
