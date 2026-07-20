@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { fetchSportsRuFantasyGraphqlSnapshot, sportsRuTournamentHruFromUrl } from "./sports-ru-fantasy";
+import {
+  fetchSportsRuFantasyGraphqlSnapshot,
+  fetchSportsRuLatestPublishedSquad,
+  normalizeSportsRuProfileId,
+  sportsRuTournamentHruFromUrl
+} from "./sports-ru-fantasy";
 
 test("Sports.ru GraphQL snapshot loads every position from the current season", async () => {
   const roles = new Map([
@@ -67,6 +72,57 @@ test("Sports.ru snapshot keeps same-name players from different teams", async ()
 test("Sports.ru tournament HRU is derived from a fantasy URL", () => {
   assert.equal(sportsRuTournamentHruFromUrl("https://www.sports.ru/fantasy/football/england/"), "england");
   assert.equal(sportsRuTournamentHruFromUrl("https://www.sports.ru/fantasy/football/"), null);
+});
+
+test("Sports.ru profile accepts only a numeric ID or canonical profile URL", () => {
+  assert.equal(normalizeSportsRuProfileId("1090024123"), "1090024123");
+  assert.equal(normalizeSportsRuProfileId("https://www.sports.ru/profile/1090024123/"), "1090024123");
+  assert.equal(normalizeSportsRuProfileId("https://example.com/profile/1090024123/"), null);
+  assert.equal(normalizeSportsRuProfileId("1090024123/fantasy"), null);
+});
+
+test("latest published Sports.ru squad falls back from an open tour to the latest public tour", async () => {
+  const queries: string[] = [];
+  const fetchImpl = (async (_input: string | URL | Request, init?: RequestInit) => {
+    const query = JSON.parse(String(init?.body ?? "{}"))?.query as string;
+    queries.push(query);
+    if (query.includes("squads(input:")) {
+      return jsonResponse({ data: { fantasyQueries: { squads: [{
+        id: "squad-1",
+        name: "My team",
+        createdAt: "2026-07-17T10:00:00Z",
+        season: {
+          id: "75",
+          tournament: { name: "Russia", webName: "russia" },
+          currentTour: { id: "tour-2", name: "2 тур", status: "OPENED" },
+          tours: [
+            { id: "tour-1", name: "1 тур", status: "FINISHED", finishedAt: "2026-07-20T20:00:00Z" },
+            { id: "tour-2", name: "2 тур", status: "OPENED", startedAt: "2026-07-21T10:00:00Z" }
+          ]
+        },
+        currentTourInfo: null
+      }] } } });
+    }
+    if (query.includes('tourID: "tour-2"')) return jsonResponse({ data: { fantasyQueries: { squadTourInfo: null } } });
+    return jsonResponse({ data: { fantasyQueries: { squadTourInfo: {
+      tour: { id: "tour-1", name: "1 тур", status: "FINISHED", finishedAt: "2026-07-20T20:00:00Z" },
+      totalPrice: 96,
+      currentBalance: 4,
+      players: [{
+        seasonPlayer: { id: "player-1", name: "Иван Иванов", price: 6, role: "GOALKEEPER", team: { name: "Ростов" }, statObject: null },
+        isCaptain: false,
+        isViceCaptain: false,
+        isStarting: true,
+        substitutePriority: null
+      }]
+    } } } });
+  }) as typeof fetch;
+
+  const squad = await fetchSportsRuLatestPublishedSquad("1090024123", "75", { fetchImpl });
+
+  assert.equal(squad?.tourId, "tour-1");
+  assert.equal(squad?.players[0].providerPlayerId, "player-1");
+  assert.equal(queries.length, 3);
 });
 
 function jsonResponse(value: unknown) {

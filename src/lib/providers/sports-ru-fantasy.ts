@@ -32,6 +32,32 @@ export type SportsRuFantasyGraphqlSnapshot = {
   fetchedAt: string;
 };
 
+export type SportsRuPublishedSquadPlayer = {
+  providerPlayerId: string;
+  name: string;
+  teamName: string | null;
+  role: string | null;
+  price: number | null;
+  isStarter: boolean;
+  isCaptain: boolean;
+  isViceCaptain: boolean;
+  substitutePriority: number | null;
+};
+
+export type SportsRuPublishedSquad = {
+  providerSquadId: string;
+  squadName: string;
+  seasonId: string;
+  tournamentHru: string;
+  tournamentName: string;
+  tourId: string;
+  tourName: string;
+  tourFinishedAt: string | null;
+  totalPrice: number;
+  currentBalance: number;
+  players: SportsRuPublishedSquadPlayer[];
+};
+
 const defaultBudget = 100;
 const defaultSquadSize = 15;
 const sportsRuFantasyGraphqlEndpoint = "https://www.sports.ru/gql/graphql/";
@@ -133,6 +159,172 @@ export async function fetchSportsRuFantasyGraphqlSnapshot(
     prices,
     fetchedAt: new Date().toISOString()
   };
+}
+
+export function normalizeSportsRuProfileId(value: string) {
+  const normalized = value.trim();
+  if (/^\d{1,20}$/.test(normalized)) return normalized;
+  try {
+    const url = new URL(normalized);
+    if (url.hostname !== "sports.ru" && url.hostname !== "www.sports.ru") return null;
+    const match = url.pathname.match(/^\/profile\/(\d{1,20})(?:\/|$)/);
+    return match?.[1] ?? null;
+  } catch {
+    return null;
+  }
+}
+
+export async function fetchSportsRuLatestPublishedSquad(
+  profileId: string,
+  sportsRuSeasonId: string,
+  options: { endpoint?: string; fetchImpl?: typeof fetch } = {}
+): Promise<SportsRuPublishedSquad | null> {
+  const safeProfileId = normalizeSportsRuProfileId(profileId);
+  if (!safeProfileId) throw new Error("Invalid Sports.ru profile ID.");
+  const seasonId = sportsRuSeasonId.trim();
+  if (!seasonId || !/^\d{1,20}$/.test(seasonId)) throw new Error("Invalid Sports.ru fantasy season ID.");
+  const endpoint = options.endpoint ?? sportsRuFantasyGraphqlEndpoint;
+  const fetchImpl = options.fetchImpl ?? fetch;
+  const response = await sportsRuGraphqlRequest<{ fantasyQueries?: { squads?: SportsRuSquadNode[] | null } }>(
+    endpoint,
+    `{
+      fantasyQueries {
+        squads(input: { userID: ${JSON.stringify(safeProfileId)}, isActiveTournament: true }) {
+          id name createdAt
+          season {
+            id
+            tournament { id name webName }
+            currentTour { id name status startedAt finishedAt }
+            tours { id name status startedAt finishedAt }
+          }
+          currentTourInfo { ${sportsRuSquadTourInfoFields} }
+        }
+      }
+    }`,
+    fetchImpl
+  );
+  const candidates = (response.fantasyQueries?.squads ?? [])
+    .filter((squad) => squad.season?.id === seasonId)
+    .sort((left, right) => Date.parse(right.createdAt ?? "") - Date.parse(left.createdAt ?? ""));
+
+  for (const squad of candidates) {
+    const current = normalizeSportsRuSquadTourInfo(squad, squad.currentTourInfo);
+    if (current) return current;
+    const tours = [...(squad.season?.tours ?? [])]
+      .filter((tour) => tour.id)
+      .sort((left, right) => sportsRuTourTimestamp(right) - sportsRuTourTimestamp(left));
+    for (const tour of tours) {
+      const historic = await sportsRuGraphqlRequest<{ fantasyQueries?: { squadTourInfo?: SportsRuSquadTourInfoNode | null } }>(
+        endpoint,
+        `{
+          fantasyQueries {
+            squadTourInfo(input: { squadID: ${JSON.stringify(squad.id)}, tourID: ${JSON.stringify(tour.id)} }) {
+              ${sportsRuSquadTourInfoFields}
+            }
+          }
+        }`,
+        fetchImpl
+      );
+      const normalized = normalizeSportsRuSquadTourInfo(squad, historic.fantasyQueries?.squadTourInfo ?? null);
+      if (normalized) return normalized;
+    }
+  }
+  return null;
+}
+
+type SportsRuTourNode = {
+  id: string;
+  name?: string | null;
+  status?: string | null;
+  startedAt?: string | null;
+  finishedAt?: string | null;
+};
+
+type SportsRuSquadTourInfoNode = {
+  tour?: SportsRuTourNode | null;
+  totalPrice?: number | null;
+  currentBalance?: number | null;
+  players?: Array<{
+    seasonPlayer?: {
+      id?: string | null;
+      name?: string | null;
+      price?: number | null;
+      role?: string | null;
+      team?: { name?: string | null } | null;
+      statObject?: { name?: string | null; firstName?: string | null; lastName?: string | null } | null;
+    } | null;
+    isCaptain?: boolean | null;
+    isViceCaptain?: boolean | null;
+    isStarting?: boolean | null;
+    substitutePriority?: number | null;
+  }> | null;
+};
+
+type SportsRuSquadNode = {
+  id: string;
+  name?: string | null;
+  createdAt?: string | null;
+  season?: {
+    id?: string | null;
+    tournament?: { name?: string | null; webName?: string | null } | null;
+    currentTour?: SportsRuTourNode | null;
+    tours?: SportsRuTourNode[] | null;
+  } | null;
+  currentTourInfo?: SportsRuSquadTourInfoNode | null;
+};
+
+const sportsRuSquadTourInfoFields = `
+  tour { id name status startedAt finishedAt }
+  totalPrice
+  currentBalance
+  players {
+    seasonPlayer { id name price role team { name } statObject { name firstName lastName } }
+    isCaptain
+    isViceCaptain
+    isStarting
+    substitutePriority
+  }
+`;
+
+function normalizeSportsRuSquadTourInfo(squad: SportsRuSquadNode, info: SportsRuSquadTourInfoNode | null | undefined) {
+  const tour = info?.tour;
+  const rawPlayers = info?.players ?? [];
+  if (!tour?.id || rawPlayers.length === 0 || !squad.season?.id) return null;
+  const players = rawPlayers.flatMap((row): SportsRuPublishedSquadPlayer[] => {
+    const player = row.seasonPlayer;
+    const providerPlayerId = player?.id?.trim();
+    if (!providerPlayerId) return [];
+    const statName = [player?.statObject?.firstName, player?.statObject?.lastName].filter(Boolean).join(" ");
+    return [{
+      providerPlayerId,
+      name: cleanText(player?.name || player?.statObject?.name || statName || providerPlayerId),
+      teamName: cleanText(player?.team?.name ?? "") || null,
+      role: player?.role ?? null,
+      price: Number.isFinite(Number(player?.price)) ? Number(player?.price) : null,
+      isStarter: row.isStarting === true,
+      isCaptain: row.isCaptain === true,
+      isViceCaptain: row.isViceCaptain === true,
+      substitutePriority: Number.isInteger(row.substitutePriority) ? row.substitutePriority! : null
+    }];
+  });
+  if (players.length === 0) return null;
+  return {
+    providerSquadId: squad.id,
+    squadName: cleanText(squad.name ?? "") || "Sports.ru squad",
+    seasonId: squad.season.id,
+    tournamentHru: squad.season.tournament?.webName?.trim() ?? "",
+    tournamentName: cleanText(squad.season.tournament?.name ?? "") || "Sports.ru fantasy",
+    tourId: tour.id,
+    tourName: cleanText(tour.name ?? "") || tour.id,
+    tourFinishedAt: tour.finishedAt ?? null,
+    totalPrice: Number(info?.totalPrice) || 0,
+    currentBalance: Number(info?.currentBalance) || 0,
+    players
+  } satisfies SportsRuPublishedSquad;
+}
+
+function sportsRuTourTimestamp(tour: SportsRuTourNode) {
+  return Date.parse(tour.finishedAt || tour.startedAt || "") || 0;
 }
 
 export function sportsRuTournamentHruFromUrl(value: string) {

@@ -7,7 +7,11 @@ import { createPortal } from "react-dom";
 
 import { I18nText } from "@/components/i18n-text";
 import { LocalizedOption, localizedText, useLanguage } from "@/components/localized-option";
-import { fixtureChipPresentations } from "@/components/machete/fantasy-squad-ui";
+import {
+  fixtureChipPresentations,
+  orderSquadSelectionsWithBenchGoalkeeperLast,
+  swapSquadSelectionCards
+} from "@/components/machete/fantasy-squad-ui";
 import { SortableTable } from "@/components/sortable-table";
 import { FdrRow } from "@/components/ui/fdr-pill";
 import { SegmentedControl, type SegmentedOption } from "@/components/ui/segmented-control";
@@ -605,6 +609,30 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
     setDraggedPlayerId(null);
   }
 
+  function handleDropOnPlayer(sourcePlayerId: string, targetPlayerId: string) {
+    const result = swapSquadSelectionCards(selections, players, sourcePlayerId, targetPlayerId);
+    setDraggedPlayerId(null);
+    if (!result.ok) {
+      setMessage(result.reason === "GOALKEEPER_MISMATCH"
+        ? localizedText(language, "A goalkeeper can only swap with another goalkeeper.", "Вратаря можно менять местами только с другим вратарём.")
+        : localizedText(language, "Could not find both players in the squad.", "Не удалось найти обоих игроков в составе."));
+      return;
+    }
+
+    const nextSelections = sanitizeCaptainRoles(result.selections);
+    if (summarizeFantasySquad(players, nextSelections, rules, horizon).violations.length > 0) {
+      setMessage(localizedText(
+        language,
+        "This swap would break the starting XI formation rules.",
+        "Такая перестановка нарушит правила расстановки стартового состава."
+      ));
+      return;
+    }
+
+    setSelections(nextSelections);
+    setMessage(null);
+  }
+
   function toggleCaptain(playerId: string) {
     const selection = selectionsByPlayerId.get(playerId);
     if (!selection?.isStarter) {
@@ -778,7 +806,8 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
               historyWindow: historySettings.window,
               historySeasons: historySettings.selectedSeasons,
               selections: roundPlansToSave[0].selections,
-              roundPlans: roundPlansToSave
+              roundPlans: roundPlansToSave,
+              roundPlanRoundIds: rounds.map((round) => round.id)
             })
           });
         } catch {
@@ -1384,6 +1413,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
               onDragEnd={() => setDraggedPlayerId(null)}
               onDropToStarter={handleDropToStarter}
               onDropToBench={handleDropToBench}
+              onDropOnPlayer={handleDropOnPlayer}
             />
           </div>
 
@@ -1896,7 +1926,8 @@ function SquadPitch({
   onDragStart,
   onDragEnd,
   onDropToStarter,
-  onDropToBench
+  onDropToBench,
+  onDropOnPlayer
 }: {
   summary: ReturnType<typeof summarizeFantasySquad>;
   selectionsByPlayerId: Map<string, FantasySquadSelection>;
@@ -1912,6 +1943,7 @@ function SquadPitch({
   onDragEnd: () => void;
   onDropToStarter: (playerId: string) => void;
   onDropToBench: (playerId: string) => void;
+  onDropOnPlayer: (sourcePlayerId: string, targetPlayerId: string) => void;
 }) {
   const starterLines: Array<{ position: Exclude<FantasyPositionGroup, "UNK">; label: React.ReactNode }> = [
     { position: "DEF", label: <I18nText en="Defenders" ru="Защитники" /> },
@@ -1919,6 +1951,9 @@ function SquadPitch({
     { position: "FWD", label: <I18nText en="Forwards" ru="Нападающие" /> }
   ];
   const draggedSelection = draggedPlayerId ? selectionsByPlayerId.get(draggedPlayerId) : undefined;
+  const orderedBenchPlayers = [...summary.benchPlayers].sort((left, right) =>
+    Number(left.positionGroup === "GK") - Number(right.positionGroup === "GK")
+  );
 
   return (
     <div className="space-y-1.5">
@@ -1944,6 +1979,7 @@ function SquadPitch({
               onToggleVice={onToggleVice}
               onDragStart={onDragStart}
               onDragEnd={onDragEnd}
+              onDropOnPlayer={onDropOnPlayer}
               onDropToStarter={onDropToStarter}
             />
             {starterLines.map((line) => (
@@ -1962,6 +1998,7 @@ function SquadPitch({
                 onToggleVice={onToggleVice}
                 onDragStart={onDragStart}
                 onDragEnd={onDragEnd}
+                onDropOnPlayer={onDropOnPlayer}
                 onDropToStarter={onDropToStarter}
               />
             ))}
@@ -1986,7 +2023,7 @@ function SquadPitch({
             if (playerId) onDropToBench(playerId);
           }}
         >
-          {summary.benchPlayers.map((player) => (
+          {orderedBenchPlayers.map((player) => (
             <SquadPlayerTile
               key={player.playerId}
               player={player}
@@ -2002,9 +2039,10 @@ function SquadPitch({
               onToggleVice={onToggleVice}
               onDragStart={onDragStart}
               onDragEnd={onDragEnd}
+              onDropOnPlayer={onDropOnPlayer}
             />
           ))}
-          {summary.benchPlayers.length === 0 ? (
+          {orderedBenchPlayers.length === 0 ? (
             <div className="rounded border border-dashed border-slate-300 bg-white px-4 py-6 text-center text-sm text-slate-500">
               <I18nText en="Empty" ru="Пусто" />
             </div>
@@ -2029,6 +2067,7 @@ function SquadLine({
   onToggleVice,
   onDragStart,
   onDragEnd,
+  onDropOnPlayer,
   onDropToStarter
 }: {
   label: React.ReactNode;
@@ -2044,6 +2083,7 @@ function SquadLine({
   onToggleVice: (playerId: string) => void;
   onDragStart: (playerId: string) => void;
   onDragEnd: () => void;
+  onDropOnPlayer: (sourcePlayerId: string, targetPlayerId: string) => void;
   onDropToStarter: (playerId: string) => void;
 }) {
   return (
@@ -2075,6 +2115,7 @@ function SquadLine({
             onToggleVice={onToggleVice}
             onDragStart={onDragStart}
             onDragEnd={onDragEnd}
+            onDropOnPlayer={onDropOnPlayer}
           />
         ))}
         {players.length === 0 ? (
@@ -2100,7 +2141,8 @@ function SquadPlayerTile({
   onToggleCaptain,
   onToggleVice,
   onDragStart,
-  onDragEnd
+  onDragEnd,
+  onDropOnPlayer
 }: {
   player: FantasyPlannerPlayer;
   selection: FantasySquadSelection | undefined;
@@ -2115,6 +2157,7 @@ function SquadPlayerTile({
   onToggleVice: (playerId: string) => void;
   onDragStart: (playerId: string) => void;
   onDragEnd: () => void;
+  onDropOnPlayer: (sourcePlayerId: string, targetPlayerId: string) => void;
 }) {
   const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
   const mobileActionsTriggerRef = useRef<HTMLButtonElement>(null);
@@ -2182,6 +2225,12 @@ function SquadPlayerTile({
         onDragStart(player.playerId);
       }}
       onDragEnd={onDragEnd}
+      onDragOver={(event) => allowSquadDrop(event, Boolean(selection))}
+      onDrop={(event) => {
+        event.stopPropagation();
+        const sourcePlayerId = readDraggedPlayerId(event);
+        if (sourcePlayerId && sourcePlayerId !== player.playerId) onDropOnPlayer(sourcePlayerId, player.playerId);
+      }}
       title={fantasyForecastTitle(player, language)}
       aria-label={localizedText(language, `Squad player ${player.name}`, `Игрок состава: ${player.name}`)}
       className={cn(
@@ -2648,7 +2697,7 @@ function normalizeInitialSelections(selections: FantasySquadSelection[], players
     }
   }
 
-  return sanitizeCaptainRoles(normalized);
+  return sanitizeCaptainRoles(orderSquadSelectionsWithBenchGoalkeeperLast(normalized, players));
 }
 
 function fantasyPlayerAtRoundOffset(player: FantasyPlannerPlayer, roundOffset: number): FantasyPlannerPlayer {

@@ -32,11 +32,14 @@ import {
 } from "./shared_read_model";
 import {
   defaultFantasySquadRules,
+  countFantasySquadTransfers,
+  fantasyTransferLimitForHorizon,
   normalizeFantasyHorizon,
   normalizeFantasyPosition,
   roundFantasyValue,
   summarizeFantasySquad,
   createFantasySquadRoundPlans,
+  validateFantasySquadForSave,
   type FantasyPlannerPlayer,
   type FantasyPositionGroup,
   type FantasyRoundProjection,
@@ -420,7 +423,19 @@ export async function loadFantasySquadPlannerData(
       slotIndex: player.slotIndex,
       purchasePrice: playersById.get(String(player.playerId))?.price ?? player.purchasePrice
     })) ?? [];
-  const roundPlans = fantasySquadRoundPlansFromFilters(savedSquad?.filters, savedSelections, playersById);
+  const storedRoundPlans = fantasySquadRoundPlansFromFilters(savedSquad?.filters, savedSelections, playersById);
+  const roundShift = fantasySquadRoundShift(
+    fantasySquadRoundIdsFromFilters(savedSquad?.filters),
+    roundsAndFixtures.rounds.map((round) => round.id)
+  );
+  const roundPlans = rolloverFantasySquadRoundPlans({
+    plans: storedRoundPlans,
+    shift: roundShift,
+    fallbackSelections: savedSelections,
+    pool: players,
+    rules
+  });
+  const currentSelections = roundPlans[0]?.selections ?? savedSelections;
 
   return {
     readiness,
@@ -439,7 +454,7 @@ export async function loadFantasySquadPlannerData(
       leagueId: String(league.leagueId),
       season: league.season,
       horizonRounds,
-      selections: savedSelections,
+      selections: currentSelections,
       roundPlans
     },
     priceStatus: {
@@ -514,6 +529,7 @@ export async function saveFantasySquad(
     horizonRounds: number;
     selections: FantasySquadSelection[];
     roundPlans?: FantasySquadRoundPlan[];
+    roundPlanRoundIds?: string[];
     rules: FantasySquadRules;
   }
 ) {
@@ -597,7 +613,10 @@ export async function saveFantasySquad(
           budgetLimit: input.rules.budgetLimit,
           bank,
           horizonRounds,
-          filters: { roundPlans: input.roundPlans ?? createFantasySquadRoundPlans(input.selections) }
+          filters: {
+            roundPlans: input.roundPlans ?? createFantasySquadRoundPlans(input.selections),
+            roundPlanRoundIds: normalizeFantasySquadRoundIds(input.roundPlanRoundIds)
+          }
         },
         select: { id: true, name: true }
       });
@@ -611,7 +630,10 @@ export async function saveFantasySquad(
           budgetLimit: input.rules.budgetLimit,
           bank,
           horizonRounds,
-          filters: { roundPlans: input.roundPlans ?? createFantasySquadRoundPlans(input.selections) }
+          filters: {
+            roundPlans: input.roundPlans ?? createFantasySquadRoundPlans(input.selections),
+            roundPlanRoundIds: normalizeFantasySquadRoundIds(input.roundPlanRoundIds)
+          }
         },
         select: { id: true, name: true }
       });
@@ -679,6 +701,98 @@ export function fantasySquadRoundPlansFromFilters(
       selections: selections.length > 0 || fallbackSelections.length === 0 ? selections : fallbackPlan.selections
     };
   });
+}
+
+export function fantasySquadRoundIdsFromFilters(filters: unknown) {
+  if (!filters || typeof filters !== "object" || Array.isArray(filters)) return [];
+  return normalizeFantasySquadRoundIds((filters as { roundPlanRoundIds?: unknown }).roundPlanRoundIds);
+}
+
+export function fantasySquadRoundShift(storedRoundIds: string[], currentRoundIds: string[]) {
+  const currentRoundId = currentRoundIds[0];
+  if (!currentRoundId || storedRoundIds.length === 0 || storedRoundIds[0] === currentRoundId) return 0;
+
+  const exactIndex = storedRoundIds.indexOf(currentRoundId);
+  if (exactIndex > 0) return exactIndex;
+
+  const storedRoundNumber = fantasyRoundNumber(storedRoundIds[0]);
+  const currentRoundNumber = fantasyRoundNumber(currentRoundId);
+  if (storedRoundNumber === null || currentRoundNumber === null || currentRoundNumber <= storedRoundNumber) return 0;
+  return currentRoundNumber - storedRoundNumber;
+}
+
+export function rolloverFantasySquadRoundPlans(input: {
+  plans: FantasySquadRoundPlan[];
+  shift: number;
+  fallbackSelections: FantasySquadSelection[];
+  pool: FantasyPlannerPlayer[];
+  rules: FantasySquadRules;
+}) {
+  const plans = input.plans.length > 0 ? input.plans : createFantasySquadRoundPlans(input.fallbackSelections);
+  const shift = Math.max(0, Math.floor(input.shift));
+  if (shift === 0) return plans.map(cloneFantasySquadRoundPlan);
+
+  const validate = (selections: FantasySquadSelection[]) =>
+    validateFantasySquadForSave({ pool: input.pool, selections, rules: input.rules, horizon: 1 });
+  const preferredStartIndex = Math.min(shift, plans.length - 1);
+  const startCandidates = [
+    ...plans.slice(0, preferredStartIndex + 1).reverse(),
+    ...plans.slice(preferredStartIndex + 1),
+    { roundOffset: 0, linkedToPrevious: false, selections: input.fallbackSelections }
+  ];
+  const validStart = startCandidates
+    .map((plan) => validate(plan.selections))
+    .find((result) => result.ok);
+  const startSelections = validStart?.ok ? validStart.selections : [];
+  const rolled = createFantasySquadRoundPlans(startSelections);
+  const perRoundTransferLimit = fantasyTransferLimitForHorizon(1);
+
+  for (let roundOffset = 1; roundOffset < rolled.length; roundOffset += 1) {
+    const sourceIndex = roundOffset + shift;
+    if (sourceIndex >= plans.length) {
+      rolled[roundOffset].selections = rolled[roundOffset - 1].selections.map((selection) => ({ ...selection }));
+      continue;
+    }
+
+    const sourcePlan = plans[sourceIndex];
+    const validated = validate(sourcePlan.selections);
+    const previousSelections = rolled[roundOffset - 1].selections;
+    if (!validated.ok || countFantasySquadTransfers(previousSelections, validated.selections) > perRoundTransferLimit) {
+      rolled[roundOffset].selections = previousSelections.map((selection) => ({ ...selection }));
+      rolled[roundOffset].linkedToPrevious = true;
+      continue;
+    }
+
+    rolled[roundOffset] = {
+      roundOffset,
+      linkedToPrevious: sourcePlan.linkedToPrevious,
+      selections: validated.selections.map((selection) => ({ ...selection }))
+    };
+  }
+
+  return rolled;
+}
+
+function normalizeFantasySquadRoundIds(value: unknown) {
+  if (!Array.isArray(value)) return [];
+  return value
+    .filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+    .map((item) => item.trim().slice(0, 128))
+    .slice(0, 5);
+}
+
+function fantasyRoundNumber(roundId: string) {
+  const match = roundId.match(/^round:(\d+)$/);
+  if (!match) return null;
+  const value = Number(match[1]);
+  return Number.isSafeInteger(value) ? value : null;
+}
+
+function cloneFantasySquadRoundPlan(plan: FantasySquadRoundPlan): FantasySquadRoundPlan {
+  return {
+    ...plan,
+    selections: plan.selections.map((selection) => ({ ...selection }))
+  };
 }
 
 export function normalizeFantasySquadName(value: string | null | undefined, fallback = "My squad") {

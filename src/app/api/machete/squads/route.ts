@@ -8,7 +8,10 @@ import { readJsonObject } from "@/lib/request-json";
 import {
   loadCachedFantasySquadPlayerPool,
   loadFantasySquadPlannerData,
+  fantasySquadRoundIdsFromFilters,
+  fantasySquadRoundShift,
   normalizeFantasySquadName,
+  rolloverFantasySquadRoundPlans,
   saveFantasySquad,
   uniqueFantasySquadName
 } from "@/machete/squad_planner";
@@ -150,19 +153,19 @@ export const POST = withApiHandler(async (request: Request) => {
   }
   const rules = plannerData.rules;
   const horizonRounds = normalizeFantasyHorizon(body.horizonRounds, rules.horizonOptions);
-  const validation = validateFantasySquadForSave({
+  const requestedSelections = parseSelections(body.selections);
+  const parsedRoundPlans = parseRoundPlans(body.roundPlans, requestedSelections);
+  const clientRoundIds = fantasySquadRoundIdsFromFilters({ roundPlanRoundIds: body.roundPlanRoundIds });
+  const currentRoundIds = plannerData.rounds.map((round) => round.id);
+  const plansForCurrentRound = rolloverFantasySquadRoundPlans({
+    plans: parsedRoundPlans,
+    shift: fantasySquadRoundShift(clientRoundIds, currentRoundIds),
+    fallbackSelections: requestedSelections,
     pool: plannerData.players,
-    selections: parseSelections(body.selections),
-    rules,
-    horizon: horizonRounds
+    rules
   });
-  if (!validation.ok) {
-    return jsonError("BAD_REQUEST", validation.error, 400);
-  }
-  const safeSelections = validation.selections;
-  const parsedRoundPlans = parseRoundPlans(body.roundPlans, safeSelections);
   const safeRoundPlans: FantasySquadRoundPlan[] = [];
-  for (const plan of parsedRoundPlans) {
+  for (const plan of plansForCurrentRound) {
     const planValidation = validateFantasySquadForSave({
       pool: plannerData.players,
       selections: plan.selections,
@@ -174,6 +177,7 @@ export const POST = withApiHandler(async (request: Request) => {
     }
     safeRoundPlans.push({ ...plan, selections: planValidation.selections });
   }
+  const safeSelections = safeRoundPlans[0]?.selections ?? [];
   for (let index = 1; index < safeRoundPlans.length; index += 1) {
     const transferCount = countFantasySquadTransfers(safeRoundPlans[index - 1].selections, safeRoundPlans[index].selections);
     const perRoundLimit = fantasyTransferLimitForHorizon(1);
@@ -209,6 +213,7 @@ export const POST = withApiHandler(async (request: Request) => {
     horizonRounds,
     selections: safeSelections,
     roundPlans: safeRoundPlans,
+    roundPlanRoundIds: currentRoundIds,
     rules
   });
 

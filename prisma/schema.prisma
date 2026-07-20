@@ -45,8 +45,28 @@ model User {
   savedViews         UserSavedView[]
   watchlistPlayers   UserWatchlistPlayer[]
   scoringPreferences UserScoringPreference[]
+  externalProfiles   UserExternalProfile[]
   createdAt          DateTime                @default(now())
   updatedAt          DateTime                @updatedAt
+}
+
+model UserExternalProfile {
+  id             String    @id @default(cuid())
+  userId         String    @map("user_id")
+  provider       String
+  providerUserId String    @map("provider_user_id")
+  profileUrl     String    @map("profile_url")
+  lastImportedAt DateTime? @map("last_imported_at")
+  lastError      String?   @map("last_error")
+  metadata       Json?
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, provider])
+  @@index([provider, providerUserId])
+  @@map("user_external_profiles")
 }
 
 model UserScoringPreference {

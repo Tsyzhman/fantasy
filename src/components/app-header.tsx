@@ -1,6 +1,6 @@
 "use client";
 
-import { Crosshair, DatabaseZap, Layers3, Menu, ShieldCheck, Users } from "lucide-react";
+import { Crosshair, DatabaseZap, Layers3, Menu, ShieldCheck, UserRound, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
@@ -177,14 +177,19 @@ function HeaderNavigationItems({
       )}
       <CommandPalette showAdmin={user?.role === "ADMIN" || isAdmin} />
       {user ? (
-        <button
-          type="button"
-          onClick={logout}
-          className="shrink-0 rounded px-3 py-2 text-slate-600 hover:bg-slate-100"
-          aria-label={localizedText(language, `Sign out ${user.name ?? user.email}`, `Выйти: ${user.name ?? user.email}`)}
-        >
-          <I18nText en="Sign out" ru="Выйти" />
-        </button>
+        <>
+          <HeaderLink href="/profile" active={pathname === "/profile"} icon={<UserRound className="h-4 w-4" />}>
+            <I18nText en="Profile" ru="Профиль" />
+          </HeaderLink>
+          <button
+            type="button"
+            onClick={logout}
+            className="shrink-0 rounded px-3 py-2 text-slate-600 hover:bg-slate-100"
+            aria-label={localizedText(language, `Sign out ${user.name ?? user.email}`, `Выйти: ${user.name ?? user.email}`)}
+          >
+            <I18nText en="Sign out" ru="Выйти" />
+          </button>
+        </>
       ) : null}
       <LanguageToggle />
       <ThemeToggle />

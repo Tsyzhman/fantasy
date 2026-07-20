@@ -13,6 +13,8 @@ import {
   fantasyPlannerPosition,
   fantasyPlannerSharedRowIdentity,
   fantasySquadRoundPlansFromFilters,
+  fantasySquadRoundIdsFromFilters,
+  fantasySquadRoundShift,
   fantasyTeamShortName,
   fantasyTeamShortNamesByTeamId,
   fixtureDifficultyFromMultipliers,
@@ -21,6 +23,7 @@ import {
   normalizeFantasySquadName,
   projectFixtureFantasyPoints,
   resolveFantasyPlannerPrice,
+  rolloverFantasySquadRoundPlans,
   saveFantasySquad,
   sportsRuFantasyPriceRefsByScopedPlayer,
   sportsRuFantasyPriceScopeKey,
@@ -53,6 +56,50 @@ test("legacy squads expand to five linked planning rounds and saved round plans 
   assert.equal(stored[1].linkedToPrevious, false);
   assert.equal(stored[1].selections[0].playerId, "2");
   assert.equal(stored[2].linkedToPrevious, true);
+});
+
+test("saved five-round plans roll forward and keep only valid future variants", () => {
+  const pool = rolloverPlayerPool();
+  const base = rolloverSelections();
+  const roundOne = replaceSelection(base, "8", "16");
+  const overBudget = replaceSelection(roundOne, "15", "17");
+  const validAfterRejectedRound = replaceSelection(roundOne, "9", "18");
+  const tooManyTransfers = [
+    ["3", "19"],
+    ["4", "20"],
+    ["10", "21"],
+    ["13", "22"]
+  ].reduce((selections, [outId, inId]) => replaceSelection(selections, outId, inId), validAfterRejectedRound);
+  const plans = [base, roundOne, overBudget, validAfterRejectedRound, tooManyTransfers].map((selections, roundOffset) => ({
+    roundOffset,
+    linkedToPrevious: roundOffset > 0 ? roundOffset !== 1 : false,
+    selections
+  }));
+
+  const rolled = rolloverFantasySquadRoundPlans({
+    plans,
+    shift: 1,
+    fallbackSelections: base,
+    pool,
+    rules: defaultFantasySquadRules
+  });
+
+  assert.deepEqual(rolled[0].selections.map((selection) => selection.playerId), roundOne.map((selection) => selection.playerId));
+  assert.equal(rolled[0].linkedToPrevious, false);
+  assert.deepEqual(rolled[1].selections.map((selection) => selection.playerId), roundOne.map((selection) => selection.playerId));
+  assert.equal(rolled[1].linkedToPrevious, true, "over-budget plan must inherit the previous valid plan");
+  assert.deepEqual(rolled[2].selections.map((selection) => selection.playerId), validAfterRejectedRound.map((selection) => selection.playerId));
+  assert.deepEqual(rolled[3].selections.map((selection) => selection.playerId), validAfterRejectedRound.map((selection) => selection.playerId));
+  assert.equal(rolled[3].linkedToPrevious, true, "plan with more than three transfers must be rejected");
+  assert.deepEqual(rolled[4].selections.map((selection) => selection.playerId), validAfterRejectedRound.map((selection) => selection.playerId));
+});
+
+test("round rollover resolves exact stored rounds, numeric gaps, and legacy filters safely", () => {
+  assert.equal(fantasySquadRoundShift(["round:12", "round:13", "round:14"], ["round:13", "round:14"]), 1);
+  assert.equal(fantasySquadRoundShift(["round:12", "round:13"], ["round:17"]), 5);
+  assert.equal(fantasySquadRoundShift(["date:2026-08-01"], ["date:2026-08-08"]), 0);
+  assert.deepEqual(fantasySquadRoundIdsFromFilters({ roundPlanRoundIds: [" round:12 ", 7, "", "round:13"] }), ["round:12", "round:13"]);
+  assert.deepEqual(fantasySquadRoundIdsFromFilters({ roundPlans: [] }), []);
 });
 
 test("planner extracts team and player IDs from selected and combined history rows", () => {
@@ -210,14 +257,14 @@ test("squad planner normalizes saved forecast horizon on load", async () => {
   assert.deepEqual(data.squads.map((squad) => squad.name), ["Newer squad", "Saved squad"]);
 });
 
-test("squad planner normalizes forecast horizon before creating a variant", async () => {
-  const creates: Array<{ data: { horizonRounds: number; name: string } }> = [];
+test("squad planner normalizes forecast horizon and stores its round anchors before creating a variant", async () => {
+  const creates: Array<{ data: { horizonRounds: number; name: string; filters: unknown } }> = [];
   let insideTransaction = false;
   const prisma = {
     teamPlayerSeason: { findMany: async () => [] },
     fantasyPlayerPrice: { findMany: async () => [] },
     userFantasySquad: {
-      create: async (args: { data: { horizonRounds: number; name: string } }) => {
+      create: async (args: { data: { horizonRounds: number; name: string; filters: unknown } }) => {
         assert.equal(insideTransaction, true, "parent squad creation must run inside the save transaction");
         creates.push(args);
         return { id: "squad-1", name: args.data.name };
@@ -245,11 +292,16 @@ test("squad planner normalizes forecast horizon before creating a variant", asyn
     season: "2025/2026",
     horizonRounds: 999,
     selections: [],
+    roundPlanRoundIds: ["round:12", "round:13"],
     rules: defaultFantasySquadRules
   });
 
   assert.equal(creates[0]?.data.horizonRounds, 5);
   assert.equal(creates[0]?.data.name, "My squad");
+  assert.deepEqual(creates[0]?.data.filters, {
+    roundPlans: Array.from({ length: 5 }, (_, roundOffset) => ({ roundOffset, linkedToPrevious: roundOffset > 0, selections: [] })),
+    roundPlanRoundIds: ["round:12", "round:13"]
+  });
 });
 
 test("squad planner updates only the requested owned variant", async () => {
@@ -677,6 +729,58 @@ function plannerPlayer(input: { name: string; priceSource: "SPORTS_RU" | "ESTIMA
     fixtures: [],
     fixtureDifficulties: []
   };
+}
+
+function rolloverPlayerPool() {
+  const positions = [
+    "GK", "GK",
+    "DEF", "DEF", "DEF", "DEF", "DEF",
+    "MID", "MID", "MID", "MID", "MID",
+    "FWD", "FWD", "FWD",
+    "MID", "FWD", "MID", "DEF", "DEF", "MID", "FWD"
+  ] as const;
+  return positions.map((positionGroup, index) => {
+    const playerId = String(index + 1);
+    return {
+      id: playerId,
+      playerId,
+      teamId: `team-${playerId}`,
+      name: `Player ${playerId}`,
+      teamName: `Team ${playerId}`,
+      leagueName: "League",
+      position: positionGroup,
+      positionGroup,
+      price: playerId === "17" ? 50 : 5,
+      priceSource: "SPORTS_RU" as const,
+      predictedFp: 5,
+      valueScore: 1,
+      roundPoints: [5, 5, 5, 5, 5],
+      fixtures: [],
+      fixtureDifficulties: []
+    };
+  });
+}
+
+function rolloverSelections() {
+  const starters = new Set(["1", "3", "4", "5", "6", "8", "9", "10", "11", "13", "14"]);
+  return Array.from({ length: 15 }, (_, index) => {
+    const playerId = String(index + 1);
+    return {
+      playerId,
+      isStarter: starters.has(playerId),
+      isLocked: false,
+      isCaptain: playerId === "1",
+      isViceCaptain: playerId === "3",
+      slotIndex: index,
+      purchasePrice: 5
+    };
+  });
+}
+
+function replaceSelection<T extends ReturnType<typeof rolloverSelections>>(selections: T, outPlayerId: string, inPlayerId: string): T {
+  return selections.map((selection) =>
+    selection.playerId === outPlayerId ? { ...selection, playerId: inPlayerId } : { ...selection }
+  ) as T;
 }
 
 function calibrationSample(index: number): FantasyBacktestSample {

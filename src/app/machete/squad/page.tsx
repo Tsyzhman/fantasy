@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { FantasyPriceSheetImportForm } from "@/components/machete/FantasyPriceSheetImportForm";
 import { FantasySquadPlanner } from "@/components/machete/FantasySquadPlanner";
+import { SportsRuSquadImport } from "@/components/machete/SportsRuSquadImport";
 import { I18nText } from "@/components/i18n-text";
 import { MacheteShell } from "@/components/machete/MacheteShell";
 import { AutoSubmitForm } from "@/components/players/auto-submit-form";
@@ -114,6 +115,9 @@ export default async function MacheteSquadPage({ searchParams }: PageProps) {
             <I18nText en="Load" ru="Загрузить" />
           </button>
         </AutoSubmitForm>
+        {selectedLeague && data ? (
+          <SportsRuSquadImport leagueId={String(selectedLeague.leagueId)} season={selectedLeague.season} squadId={data.squad.id} />
+        ) : null}
       </section>
 
       {selectedLeague && data ? (

@@ -3,7 +3,22 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import { formatScore, NULL_GLYPH } from "@/lib/format";
-import { fixtureChipPresentations } from "./fantasy-squad-ui";
+import {
+  fixtureChipPresentations,
+  orderSquadSelectionsWithBenchGoalkeeperLast,
+  swapSquadSelectionCards
+} from "./fantasy-squad-ui";
+
+const squadPlayers = [
+  { playerId: "starter-gk", positionGroup: "GK" },
+  { playerId: "bench-gk", positionGroup: "GK" },
+  { playerId: "def", positionGroup: "DEF" },
+  { playerId: "mid", positionGroup: "MID" }
+] as const;
+
+function squadSelection(playerId: string, isStarter: boolean, slotIndex: number) {
+  return { playerId, isStarter, slotIndex, isLocked: false, isCaptain: false, isViceCaptain: false, purchasePrice: 5 };
+}
 
 const squadPlannerSource = readFileSync(new URL("./FantasySquadPlanner.tsx", import.meta.url), "utf8");
 
@@ -32,6 +47,65 @@ test("fixture chips keep compact labels but expose full opponent names", () => {
       { label: "BHA", title: "A Brighton & Hove Albion", side: "away", difficulty: 3 }
     ]
   );
+});
+
+test("bench order is persisted by slot and always places its goalkeeper last", () => {
+  const ordered = orderSquadSelectionsWithBenchGoalkeeperLast([
+    squadSelection("starter-gk", true, 0),
+    squadSelection("bench-gk", false, 1),
+    squadSelection("mid", false, 3),
+    squadSelection("def", false, 2)
+  ], squadPlayers);
+
+  assert.deepEqual(ordered.map((selection) => selection.playerId), ["starter-gk", "def", "mid", "bench-gk"]);
+  assert.deepEqual(ordered.map((selection) => selection.slotIndex), [0, 1, 2, 3]);
+});
+
+test("dropping a bench card on another swaps their persisted order", () => {
+  const result = swapSquadSelectionCards([
+    squadSelection("starter-gk", true, 0),
+    squadSelection("def", false, 1),
+    squadSelection("mid", false, 2),
+    squadSelection("bench-gk", false, 3)
+  ], squadPlayers, "def", "mid");
+
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  assert.deepEqual(result.selections.map((selection) => selection.playerId), ["starter-gk", "mid", "def", "bench-gk"]);
+});
+
+test("dropping a starter on a bench player swaps their roles", () => {
+  const result = swapSquadSelectionCards([
+    squadSelection("starter-gk", true, 0),
+    squadSelection("def", true, 1),
+    squadSelection("mid", false, 2),
+    squadSelection("bench-gk", false, 3)
+  ], squadPlayers, "def", "mid");
+
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  assert.equal(result.selections.find((selection) => selection.playerId === "def")?.isStarter, false);
+  assert.equal(result.selections.find((selection) => selection.playerId === "mid")?.isStarter, true);
+  assert.equal(result.selections.at(-1)?.playerId, "bench-gk");
+});
+
+test("goalkeepers can swap only with goalkeepers and the bench goalkeeper stays rightmost", () => {
+  const selections = [
+    squadSelection("starter-gk", true, 0),
+    squadSelection("def", true, 1),
+    squadSelection("mid", false, 2),
+    squadSelection("bench-gk", false, 3)
+  ];
+  assert.deepEqual(swapSquadSelectionCards(selections, squadPlayers, "bench-gk", "mid"), {
+    ok: false,
+    reason: "GOALKEEPER_MISMATCH"
+  });
+
+  const result = swapSquadSelectionCards(selections, squadPlayers, "starter-gk", "bench-gk");
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  assert.equal(result.selections.find((selection) => selection.playerId === "bench-gk")?.isStarter, true);
+  assert.equal(result.selections.at(-1)?.playerId, "starter-gk");
 });
 
 test("desktop fixture window uses five compact opponent codes before overflow", () => {

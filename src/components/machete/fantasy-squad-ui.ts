@@ -1,3 +1,5 @@
+import type { FantasyPlannerPlayer, FantasySquadSelection } from "@/machete/squad_logic";
+
 export type FixtureChipSide = "home" | "away" | null;
 
 export type FixtureChipPresentation = {
@@ -51,4 +53,56 @@ function fixtureChipPresentation(rawLabel: string, difficulty: number | null | u
   }
 
   return { label: labelText, title, side: null, difficulty };
+}
+
+export type SquadCardSwapResult =
+  | { ok: true; selections: FantasySquadSelection[] }
+  | { ok: false; reason: "PLAYER_NOT_FOUND" | "GOALKEEPER_MISMATCH" };
+
+export function swapSquadSelectionCards(
+  selections: FantasySquadSelection[],
+  players: ReadonlyArray<Pick<FantasyPlannerPlayer, "playerId" | "positionGroup">>,
+  sourcePlayerId: string,
+  targetPlayerId: string
+): SquadCardSwapResult {
+  const playersById = new Map(players.map((player) => [player.playerId, player]));
+  const source = selections.find((selection) => selection.playerId === sourcePlayerId);
+  const target = selections.find((selection) => selection.playerId === targetPlayerId);
+  const sourcePlayer = playersById.get(sourcePlayerId);
+  const targetPlayer = playersById.get(targetPlayerId);
+  if (!source || !target || !sourcePlayer || !targetPlayer) return { ok: false, reason: "PLAYER_NOT_FOUND" };
+
+  const sourceIsGoalkeeper = sourcePlayer.positionGroup === "GK";
+  const targetIsGoalkeeper = targetPlayer.positionGroup === "GK";
+  if (sourceIsGoalkeeper !== targetIsGoalkeeper) return { ok: false, reason: "GOALKEEPER_MISMATCH" };
+  if (sourcePlayerId === targetPlayerId) return { ok: true, selections };
+
+  const swapped = selections.map((selection) => {
+    if (selection.playerId === sourcePlayerId) {
+      return { ...selection, isStarter: target.isStarter, slotIndex: target.slotIndex };
+    }
+    if (selection.playerId === targetPlayerId) {
+      return { ...selection, isStarter: source.isStarter, slotIndex: source.slotIndex };
+    }
+    return selection;
+  });
+
+  return { ok: true, selections: orderSquadSelectionsWithBenchGoalkeeperLast(swapped, players) };
+}
+
+export function orderSquadSelectionsWithBenchGoalkeeperLast(
+  selections: FantasySquadSelection[],
+  players: ReadonlyArray<Pick<FantasyPlannerPlayer, "playerId" | "positionGroup">>
+) {
+  const positionsByPlayerId = new Map(players.map((player) => [player.playerId, player.positionGroup]));
+  const ordered = [...selections].sort((left, right) => left.slotIndex - right.slotIndex);
+  const starters = ordered.filter((selection) => selection.isStarter);
+  const bench = ordered.filter((selection) => !selection.isStarter);
+  const benchOutfield = bench.filter((selection) => positionsByPlayerId.get(selection.playerId) !== "GK");
+  const benchGoalkeepers = bench.filter((selection) => positionsByPlayerId.get(selection.playerId) === "GK");
+
+  return [...starters, ...benchOutfield, ...benchGoalkeepers].map((selection, slotIndex) => ({
+    ...selection,
+    slotIndex
+  }));
 }
