@@ -41,9 +41,18 @@ test("desktop fixture window uses five compact opponent codes before overflow", 
 
 test("desktop planner gives wider squad cards enough pitch width", () => {
   assert.match(squadPlannerSource, /xl:grid-cols-\[minmax\(360px,0\.82fr\)_minmax\(560px,1\.18fr\)\]/);
-  assert.match(squadPlannerSource, /<col className="w-\[9%\]" \/>/);
-  assert.match(squadPlannerSource, /<col className="w-\[24%\]" \/>/);
+  assert.match(squadPlannerSource, /<col className="w-\[21%\]" \/>/);
+  assert.match(squadPlannerSource, /<col className="w-\[5%\]" \/>/);
+  assert.match(squadPlannerSource, /<col className="w-\[25%\]" \/>/);
   assert.match(squadPlannerSource, /w-\[4\.5rem\] sm:w-20 2xl:w-\[5\.5rem\]/);
+});
+
+test("desktop player pool fits its container without a horizontal scrollbar", () => {
+  assert.match(squadPlannerSource, /min-w-0 max-h-\[720px\] w-full max-w-full overflow-x-hidden overflow-y-auto/);
+  assert.match(squadPlannerSource, /w-full min-w-0 table-fixed/);
+  assert.doesNotMatch(squadPlannerSource, /min-w-\[720px\]/);
+  assert.match(squadPlannerSource, /text-left text-\[10px\] font-semibold uppercase/);
+  assert.match(squadPlannerSource, /<td colSpan=\{10\}/);
 });
 
 test("every desktop player-pool column has a tooltip", () => {
@@ -140,13 +149,14 @@ test("planner exposes five persisted round snapshots and shifts forecasts to the
 
 test("display-only Alt FP renders in the desktop pool, mobile pool, and squad card", () => {
   const desktopNext = squadPlannerSource.indexOf('en="Next"');
-  const desktopAlt = squadPlannerSource.indexOf('title={columnTitles.alternative}><I18nText en="Alt"', desktopNext);
-  const desktopHorizon = squadPlannerSource.indexOf('title={columnTitles.horizon}', desktopAlt);
+  const desktopHorizon = squadPlannerSource.indexOf('title={columnTitles.horizon}', desktopNext);
+  const desktopAlt = squadPlannerSource.indexOf('title={columnTitles.alternative}><I18nText en="Alt"', desktopHorizon);
+  const desktopAltFive = squadPlannerSource.indexOf('title={columnTitles.alternativeFive}', desktopAlt);
   const mobileMetrics = squadPlannerSource.indexOf('grid-cols-4');
   const mobilePrice = squadPlannerSource.indexOf('formatNumber(player.price, 1)', mobileMetrics);
   const mobileAlt = squadPlannerSource.indexOf('formatScore(player.alternativePredictedFp)', mobilePrice);
 
-  assert.ok(desktopNext >= 0 && desktopAlt > desktopNext && desktopHorizon > desktopAlt);
+  assert.ok(desktopNext >= 0 && desktopHorizon > desktopNext && desktopAlt > desktopHorizon && desktopAltFive > desktopAlt);
   assert.ok(mobileMetrics >= 0 && mobilePrice > mobileMetrics && mobileAlt > mobilePrice);
   assert.equal(squadPlannerSource.match(/formatScore\(player\.alternativePredictedFp\)/g)?.length, 3);
   assert.match(squadPlannerSource, /Display only: not used by auto-pick, value, transfers, or round points\./);

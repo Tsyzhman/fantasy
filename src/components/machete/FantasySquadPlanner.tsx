@@ -1519,30 +1519,30 @@ function PlayerPoolTable({
         onRemove={onRemove}
       />
       <div className="hidden min-w-0 max-w-full overflow-hidden rounded border border-slate-200 bg-white md:block [@media(pointer:coarse)]:!hidden" data-testid="player-pool-table">
-        <div className="relative max-h-[720px] w-full max-w-full overflow-auto">
-        <SortableTable className="w-full min-w-[720px] table-fixed divide-y divide-slate-200 text-xs">
+        <div className="relative min-w-0 max-h-[720px] w-full max-w-full overflow-x-hidden overflow-y-auto">
+        <SortableTable className="w-full min-w-0 table-fixed divide-y divide-slate-200 text-xs">
           <colgroup>
-            <col className="w-[19%]" />
-            <col className="w-[9%]" />
+            <col className="w-[21%]" />
+            <col className="w-[5%]" />
             <col className="w-[6%]" />
             <col className="w-[8%]" />
             <col className="w-[7%]" />
             <col className="w-[7%]" />
             <col className="w-[7%]" />
-            <col className="w-[6%]" />
-            <col className="w-[24%]" />
+            <col className="w-[7%]" />
+            <col className="w-[25%]" />
             <col className="w-[7%]" />
           </colgroup>
-          <thead className="sticky top-0 z-10 whitespace-nowrap bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
+          <thead className="sticky top-0 z-10 whitespace-nowrap bg-slate-50 text-left text-[10px] font-semibold uppercase text-slate-500">
             <tr>
               <th className="overflow-hidden px-2 py-2" title={columnTitles.player}><I18nText en="Player" ru="Игрок" /></th>
               <th className="overflow-hidden px-2 py-2" title={columnTitles.team}><I18nText en="Team" ru="Клуб" /></th>
               <th className="overflow-hidden px-1 py-2" title={columnTitles.position}><I18nText en="Pos" ru="Поз." /></th>
               <th className="overflow-hidden px-1 py-2 text-right" title={columnTitles.price}><I18nText en="Price" ru="Цена" /></th>
               <th className="overflow-hidden px-1 py-2 text-right" title={columnTitles.next}><I18nText en="Next" ru="ФО" /></th>
+              <th className="overflow-hidden px-1 py-2 text-right" title={columnTitles.horizon}><I18nText en={`${horizon}R`} ru={`${horizon}Т`} /></th>
               <th className="overflow-hidden px-1 py-2 text-right" title={columnTitles.alternative}><I18nText en="Alt" ru="Альт" /></th>
               <th className="overflow-hidden px-1 py-2 text-right" title={columnTitles.alternativeFive}><I18nText en="Alt 5R" ru="Альт 5Т" /></th>
-              <th className="overflow-hidden px-1 py-2 text-right" title={columnTitles.horizon}><I18nText en={`${horizon}R`} ru={`${horizon}Т`} /></th>
               <th data-sort-disabled="true" className="overflow-hidden px-2 py-2" title={columnTitles.fixtures}><I18nText en="Fixtures" ru="Матчи" /></th>
               <th data-sort-disabled="true" className="overflow-hidden px-2 py-2 text-center" title={columnTitles.action}>
                 <span aria-hidden="true">+</span>
@@ -1592,35 +1592,35 @@ function PlayerPoolTable({
                       ) : null}
                     </span>
                   </td>
-                  <td className="px-2 py-1.5 text-slate-600">
+                  <td className="overflow-hidden px-1 py-1.5 text-slate-600">
                     <span className="block truncate" title={player.teamName}>{teamDisplayName}</span>
                   </td>
-                  <td className="px-2 py-1.5">
-                    <span className={`rounded px-2 py-0.5 text-[11px] font-bold ${muted ? "border border-slate-300 bg-slate-200 text-slate-700" : positionPillClass(player.positionGroup)}`}>{player.positionGroup}</span>
+                  <td className="overflow-hidden px-1 py-1.5">
+                    <span className={`inline-block max-w-full truncate rounded px-1 py-0.5 text-[10px] font-bold ${muted ? "border border-slate-300 bg-slate-200 text-slate-700" : positionPillClass(player.positionGroup)}`}>{player.positionGroup}</span>
                   </td>
                   <td
                     data-sort-value={player.price}
-                    className={`whitespace-nowrap px-2 py-1.5 text-right font-semibold ${muted ? "text-slate-600" : "text-ink"}`}
+                    className={`overflow-hidden whitespace-nowrap px-1 py-1.5 text-right font-semibold ${muted ? "text-slate-600" : "text-ink"}`}
                     title={player.priceSource === "ESTIMATED" ? localizedText(language, "Estimated price", "Оценочная цена") : undefined}
                   >
                     {player.priceSource === "ESTIMATED" ? "~" : ""}{formatNumber(player.price, 1)}
                   </td>
-                  <td data-sort-value={nextFantasyPoints(player)} className={`whitespace-nowrap px-2 py-1.5 text-right font-semibold ${muted ? "text-slate-600" : "text-emerald-700"}`}>{formatScore(nextFantasyPoints(player))}</td>
+                  <td data-sort-value={nextFantasyPoints(player)} className={`overflow-hidden whitespace-nowrap px-1 py-1.5 text-right font-semibold ${muted ? "text-slate-600" : "text-emerald-700"}`}>{formatScore(nextFantasyPoints(player))}</td>
+                  <td data-sort-value={playerHorizonPoints(player, horizon)} className={`overflow-hidden whitespace-nowrap px-1 py-1.5 text-right font-semibold ${muted ? "text-slate-600" : "text-sky-700"}`}>{formatScore(playerHorizonPoints(player, horizon))}</td>
                   <td
                     data-sort-value={player.alternativePredictedFp ?? ""}
-                    className={`whitespace-nowrap px-2 py-1.5 text-right font-semibold ${muted ? "text-slate-600" : "text-amber-700"}`}
+                    className={`overflow-hidden whitespace-nowrap px-1 py-1.5 text-right font-semibold ${muted ? "text-slate-600" : "text-amber-700"}`}
                     title={alternativePredictedFpTitle(language)}
                   >
                     {formatScore(player.alternativePredictedFp)}
                   </td>
                   <td
                     data-sort-value={playerAlternativeHorizonPoints(player, 5) ?? ""}
-                    className={`whitespace-nowrap px-2 py-1.5 text-right font-semibold ${muted ? "text-slate-600" : "text-violet-700"}`}
+                    className={`overflow-hidden whitespace-nowrap px-1 py-1.5 text-right font-semibold ${muted ? "text-slate-600" : "text-violet-700"}`}
                     title={alternativeFiveRoundFpTitle(language)}
                   >
                     {formatScore(playerAlternativeHorizonPoints(player, 5))}
                   </td>
-                  <td data-sort-value={playerHorizonPoints(player, horizon)} className={`whitespace-nowrap px-2 py-1.5 text-right font-semibold ${muted ? "text-slate-600" : "text-sky-700"}`}>{formatScore(playerHorizonPoints(player, horizon))}</td>
                   <td className="overflow-hidden px-2 py-1.5 text-[11px] text-slate-500">
                     {visibleFixtureChips.length > 0 ? (
                       <div className="flex min-w-0 items-center gap-1 overflow-hidden" title={fixtures}>
@@ -1639,7 +1639,7 @@ function PlayerPoolTable({
                       <span className="block truncate" title={fixtures}><I18nText en="No fixture loaded" ru="Матч не загружен" /></span>
                     )}
                   </td>
-                  <td className="px-1 py-1.5 text-center">
+                  <td className="overflow-hidden px-1 py-1.5 text-center">
                     {isSelected ? (
                       <button type="button" onClick={() => onRemove(player.playerId)} aria-label={removeLabel} className="inline-flex h-7 w-7 items-center justify-center rounded border border-rose-200 bg-white text-rose-700 hover:bg-rose-50">
                         <Trash2 className="h-4 w-4" />
@@ -1673,7 +1673,7 @@ function PlayerPoolTable({
             })}
             {players.length === 0 ? (
               <tr>
-                <td colSpan={9} className="px-4 py-10 text-center text-sm text-slate-500">
+                <td colSpan={10} className="px-4 py-10 text-center text-sm text-slate-500">
                   <I18nText en="No players match the selected filters." ru="Нет игроков под выбранные фильтры." />
                 </td>
               </tr>
