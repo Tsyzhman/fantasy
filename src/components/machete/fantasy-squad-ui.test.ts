@@ -81,12 +81,21 @@ test("squad player pool does not expose Wyscout xG", () => {
   assert.doesNotMatch(squadPlannerSource, /Wyscout xG|W xG|columnTitles\.wyscoutXg/);
 });
 
-test("squad cards show next-round FP instead of the selected forecast horizon", () => {
+test("squad cards distinguish next-round FP from a three-round forecast", () => {
   const tileStart = squadPlannerSource.indexOf("function SquadPlayerTile(");
   const tileEnd = squadPlannerSource.indexOf("function fantasyForecastTitle(", tileStart);
   const tileSource = squadPlannerSource.slice(tileStart, tileEnd);
   assert.match(tileSource, /formatScore\(nextFantasyPoints\(player\) \* \(isCaptain \? 2 : 1\)\)/);
+  assert.match(tileSource, /playerHorizonPoints\(player, 3\)/);
+  assert.match(tileSource, /text-sky-700/);
   assert.doesNotMatch(tileSource, /playerHorizonPoints\(player, horizon\)/);
+});
+
+test("squad cards place the compact team name in the top-left corner", () => {
+  const tileStart = squadPlannerSource.indexOf("function SquadPlayerTile(");
+  const tileEnd = squadPlannerSource.indexOf("function fantasyForecastTitle(", tileStart);
+  const tileSource = squadPlannerSource.slice(tileStart, tileEnd);
+  assert.match(tileSource, /absolute left-0\.5 top-0\.5[\s\S]*?fantasyPlayerTeamDisplayName\(player\)/);
 });
 
 test("squad cards lazy-load locally cached FotMob player photos with a fallback", () => {

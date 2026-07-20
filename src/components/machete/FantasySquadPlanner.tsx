@@ -2188,6 +2188,12 @@ function SquadPlayerTile({
           VC
         </span>
       ) : null}
+      <span
+        className="absolute left-0.5 top-0.5 max-w-5 truncate text-[8px] font-bold text-slate-500"
+        title={player.teamName}
+      >
+        {fantasyPlayerTeamDisplayName(player)}
+      </span>
       <button
         type="button"
         onClick={() => onRemove(player.playerId)}
@@ -2202,11 +2208,16 @@ function SquadPlayerTile({
       </div>
       <SquadPlayerPhoto player={player} />
       <p className="mt-0.5 truncate text-[10px] font-bold text-ink" title={player.name} aria-label={player.name}>{compactPlayerDisplayName(player.name)}</p>
-      <p className="truncate text-[9px] text-slate-500" title={player.teamName}>{fantasyPlayerTeamDisplayName(player)}</p>
       <p className="mt-0.5 text-[10px] font-semibold text-emerald-700 num-tabular">
         <Check className="mr-0.5 inline h-2.5 w-2.5" />
         {formatScore(nextFantasyPoints(player) * (isCaptain ? 2 : 1))}
         {isCaptain ? <span className="ml-1 text-amber-800">×2</span> : null}
+      </p>
+      <p
+        className="text-[9px] font-semibold text-sky-700 num-tabular"
+        title={localizedText(language, "Forecast for the next three rounds", "Прогноз на следующие три тура")}
+      >
+        <I18nText en="3R" ru="3Т" /> {formatScore(playerHorizonPoints(player, 3))}
       </p>
       {fixtureChips.length > 0 ? (
         <div className="mt-0.5 flex min-w-0 items-center justify-center overflow-hidden">
