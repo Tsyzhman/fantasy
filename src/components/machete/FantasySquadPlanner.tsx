@@ -2209,7 +2209,21 @@ function SquadPlayerTile({
       <div className="flex items-center justify-center gap-1">
         <span className={`rounded px-1 py-px text-[8px] font-bold ${positionPillClass(player.positionGroup)}`}>{player.positionGroup}</span>
       </div>
-      <SquadPlayerPhoto player={player} />
+      <div className="relative mx-auto w-fit">
+        {isCaptain || isVice ? (
+          <span
+            className={cn(
+              "absolute right-full top-1/2 z-10 mr-0.5 -translate-y-1/2 rounded px-1 py-0.5 text-[8px] font-black text-white shadow-sm",
+              isCaptain ? "bg-amber-700" : "bg-slate-700"
+            )}
+            title={isCaptain ? captainActionLabel : viceActionLabel}
+            aria-label={isCaptain ? localizedText(language, "Captain", "Капитан") : localizedText(language, "Vice-captain", "Вице-капитан")}
+          >
+            {isCaptain ? "C" : "VC"}
+          </span>
+        ) : null}
+        <SquadPlayerPhoto player={player} />
+      </div>
       <p className="mt-0.5 truncate text-[10px] font-bold text-ink" title={player.name} aria-label={player.name}>{compactPlayerDisplayName(player.name)}</p>
       <dl className="mt-0.5 grid grid-cols-2 gap-x-1 gap-y-px text-[8px] leading-tight num-tabular">
         <div title={localizedText(language, "Primary forecast for the next round", "Основной прогноз на следующий тур")}>

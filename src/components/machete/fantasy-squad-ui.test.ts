@@ -115,6 +115,13 @@ test("squad cards place the compact team name in the top-left corner", () => {
   assert.match(tileSource, /absolute left-0\.5 top-0\.5[\s\S]*?fantasyPlayerTeamDisplayName\(player\)/);
 });
 
+test("squad cards show the assigned captain role to the left of the player photo", () => {
+  const tileStart = squadPlannerSource.indexOf("function SquadPlayerTile(");
+  const tileEnd = squadPlannerSource.indexOf("function fantasyForecastTitle(", tileStart);
+  const tileSource = squadPlannerSource.slice(tileStart, tileEnd);
+  assert.match(tileSource, /absolute right-full top-1\/2[\s\S]*?isCaptain \? "C" : "VC"[\s\S]*?<SquadPlayerPhoto player=\{player\} \/>/);
+});
+
 test("squad cards lazy-load locally cached FotMob player photos with a fallback", () => {
   assert.match(squadPlannerSource, /<SquadPlayerPhoto player=\{player\} \/>/);
   assert.match(squadPlannerSource, /src=\{player\.photoUrl\}/);
