@@ -26,42 +26,42 @@ const baseModel: ActiveScoringModel = {
   rules: []
 };
 
-test("user preference overlays only Actual FP and Alt FP while Expected FP stays global", () => {
-  const resolved = applyUserScoringPreference(baseModel, preference({
-    scoringFormulaMid: "30 + {Goals}",
-    alternativeFormulaMid: "40 + {Goals}"
-  }));
+test("user preference overlays only Alt FP while Expected FP and Actual FP stay global", () => {
+  const resolved = applyUserScoringPreference(baseModel, {
+    ...preference({ alternativeFormulaMid: "40 + {Goals}" }),
+    scoringFormulaMid: "999 + {Goals}",
+    scoringFormulaEnabled: true
+  } as UserScoringFormulaPreference);
   const metrics = { goals: 2, matches_played: 1, minutes_played: 90 };
 
   assert.equal(calculateFantasyScore(metrics, "MID", resolved), 102);
-  assert.equal(calculateScoringScore(metrics, "MID", resolved), 32);
+  assert.equal(calculateScoringScore(metrics, "MID", resolved), 12);
   assert.equal(calculateAlternativeScore(metrics, "MID", resolved), 42);
   assert.equal(resolved.customFormulaMid, baseModel.customFormulaMid);
 });
 
-test("empty user positions inherit global formulas and disabled preferences use the complete global model", () => {
-  const partial = applyUserScoringPreference(baseModel, preference({ scoringFormulaFwd: "50 + {Goals}" }));
-  assert.equal(partial.scoringFormulaMid, baseModel.scoringFormulaMid);
-  assert.equal(partial.scoringFormulaFwd, "50 + {Goals}");
+test("empty user positions inherit global Alt formulas and disabled preferences use the complete global model", () => {
+  const partial = applyUserScoringPreference(baseModel, preference({ alternativeFormulaFwd: "50 + {Goals}" }));
+  assert.equal(partial.alternativeFormulaMid, baseModel.alternativeFormulaMid);
+  assert.equal(partial.alternativeFormulaFwd, "50 + {Goals}");
 
   const disabled = applyUserScoringPreference(baseModel, preference({
-    scoringFormulaEnabled: false,
     alternativeFormulaEnabled: false,
-    scoringFormulaMid: "999"
+    alternativeFormulaMid: "999"
   }));
   assert.deepEqual(disabled, baseModel);
 });
 
 test("resolving one user's model does not mutate the global model or another user's result", () => {
-  const first = applyUserScoringPreference(baseModel, preference({ scoringFormulaMid: "1" }));
-  const second = applyUserScoringPreference(baseModel, preference({ scoringFormulaMid: "2" }));
+  const first = applyUserScoringPreference(baseModel, preference({ alternativeFormulaMid: "1" }));
+  const second = applyUserScoringPreference(baseModel, preference({ alternativeFormulaMid: "2" }));
 
-  assert.equal(first.scoringFormulaMid, "1");
-  assert.equal(second.scoringFormulaMid, "2");
-  assert.equal(baseModel.scoringFormulaMid, "10 + {Goals}");
+  assert.equal(first.alternativeFormulaMid, "1");
+  assert.equal(second.alternativeFormulaMid, "2");
+  assert.equal(baseModel.alternativeFormulaMid, "20 + {Goals}");
 });
 
-test("user settings parser accepts only Actual and Alt formula fields and validates enabled sections", () => {
+test("user settings parser accepts only Alt fields and clears stale personal Actual fields", () => {
   const form = new FormData();
   form.set("scoringFormulaEnabled", "on");
   form.set("scoringFormulaMid", "2*{Goals}");
@@ -72,12 +72,13 @@ test("user settings parser accepts only Actual and Alt formula fields and valida
 
   assert.equal(parsed.ok, true);
   if (!parsed.ok) return;
-  assert.equal(parsed.data.scoringFormulaMid, "2*{Goals}");
+  assert.equal(parsed.data.scoringFormulaMid, null);
+  assert.equal(parsed.data.scoringFormulaEnabled, false);
   assert.equal(parsed.data.alternativeFormulaFwd, "3*{xG}");
   assert.equal("customFormulaMid" in parsed.data, false);
 
   const emptyEnabled = new FormData();
-  emptyEnabled.set("scoringFormulaEnabled", "on");
+  emptyEnabled.set("alternativeFormulaEnabled", "on");
   const emptyResult = parseUserScoringPreferenceForm(emptyEnabled);
   assert.equal(emptyResult.ok, false);
   if (!emptyResult.ok) assert.match(emptyResult.error, /needs at least one formula/);
@@ -95,7 +96,7 @@ test("database resolver reads only the requested user and source", async () => {
     userScoringPreference: {
       findUnique: async (args: { where: unknown }) => {
         receivedWhere = args.where;
-        return preference({ scoringFormulaMid: "77" });
+        return preference({ alternativeFormulaMid: "77" });
       }
     }
   };
@@ -103,16 +104,12 @@ test("database resolver reads only the requested user and source", async () => {
   const resolved = await getUserScoringModelForSource(client as never, "user-7", "MACHETE");
   assert.deepEqual(receivedWhere, { userId_modelSource: { userId: "user-7", modelSource: "MACHETE" } });
   assert.equal(resolved.modelSource, "MACHETE");
-  assert.equal(resolved.scoringFormulaMid, "77");
+  assert.equal(resolved.scoringFormulaMid, null);
+  assert.equal(resolved.alternativeFormulaMid, "77");
 });
 
 function preference(overrides: Partial<UserScoringFormulaPreference> = {}): UserScoringFormulaPreference {
   return {
-    scoringFormulaGk: null,
-    scoringFormulaDef: null,
-    scoringFormulaMid: null,
-    scoringFormulaFwd: null,
-    scoringFormulaEnabled: true,
     alternativeFormulaGk: null,
     alternativeFormulaDef: null,
     alternativeFormulaMid: null,

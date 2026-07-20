@@ -355,7 +355,9 @@ export async function loadFantasySquadPlannerData(
     const nextComponentProjection = nextFixture
       ? componentProjections.byFixturePlayer.get(fixturePlayerProjectionKey(nextFixture.id, String(row.playerId))) ?? null
       : null;
-    const componentPredictedFp = nextComponentProjection?.components.total ?? null;
+    const componentPredictedFp = nextComponentProjection
+      ? componentProjectionFantasyPoints(nextComponentProjection, nextFixture, playerRows.scoringModel)
+      : null;
     const projectionEngine: FantasyProjectionEngine =
       preferredProjectionEngine === "COMPONENT_XFP_V1" && componentPredictedFp !== null
         ? "COMPONENT_XFP_V1"
@@ -379,9 +381,10 @@ export async function loadFantasySquadPlannerData(
     const componentRoundPoints = roundsAndFixtures.rounds.map((round) => {
       const fixtures = roundsAndFixtures.fixturesByTeamRound.get(round.id)?.get(String(row.teamId)) ?? [];
       if (fixtures.length === 0) return 0;
-      const values = fixtures.map((fixture) =>
-        componentProjections.byFixturePlayer.get(fixturePlayerProjectionKey(fixture.id, String(row.playerId)))?.components.total ?? null
-      );
+      const values = fixtures.map((fixture) => {
+        const projection = componentProjections.byFixturePlayer.get(fixturePlayerProjectionKey(fixture.id, String(row.playerId)));
+        return projection ? componentProjectionFantasyPoints(projection, fixture, playerRows.scoringModel) : null;
+      });
       return values.some((value) => value === null)
         ? null
         : roundFantasyValue(values.reduce<number>((total, value) => total + (value ?? 0), 0));
@@ -1115,6 +1118,59 @@ export function fixtureFormulaMetrics(
     next_is_home: fixture?.side === "H" ? 1 : 0,
     next_is_away: fixture?.side === "A" ? 1 : 0
   };
+}
+
+export function componentProjectionFormulaMetrics(
+  projection: PlayerFixtureProjection,
+  fixture: PlannerFixture | null
+): Record<string, unknown> {
+  const { components, expectedEvents, probabilities } = projection;
+
+  return fixtureFormulaMetrics({
+    matches_played: 1,
+    minutes_played: projection.expectedMinutes,
+    appearance_probability: probabilities.appearance,
+    sixty_minute_probability: probabilities.sixtyMinutes,
+    full_match_probability: probabilities.fullMatch,
+    xg: expectedEvents.goals,
+    xa: expectedEvents.assists,
+    recoveries: expectedEvents.recoveries,
+    saves: expectedEvents.saves,
+    goals_conceded: expectedEvents.goalsConceded,
+    clean_sheets: expectedEvents.cleanSheets,
+    yellow_cards: expectedEvents.yellowCards,
+    red_cards: expectedEvents.redCards,
+    appearance_fp: components.appearance,
+    "60_minutes_fp": components.sixtyMinutes,
+    full_match_fp: components.fullMatch,
+    goal_fp: components.goals,
+    assist_fp: components.assists,
+    clean_sheet_fp: components.cleanSheet,
+    save_fp: components.saves,
+    recovery_fp: components.recoveries,
+    goals_conceded_fp: components.goalsConceded,
+    yellow_card_fp: components.yellowCards,
+    red_card_fp: components.redCards
+  }, fixture);
+}
+
+export function componentProjectionFantasyPoints(
+  projection: PlayerFixtureProjection,
+  fixture: PlannerFixture | null,
+  scoringModel: ActiveScoringModel
+) {
+  const positionFormula =
+    projection.position === "GK"
+      ? scoringModel.customFormulaGk
+      : projection.position === "DEF"
+        ? scoringModel.customFormulaDef
+        : projection.position === "MID"
+          ? scoringModel.customFormulaMid
+          : scoringModel.customFormulaFwd;
+  const formula = positionFormula?.trim() || scoringModel.customFormula?.trim();
+
+  if (!scoringModel.customFormulaEnabled || !formula) return projection.components.total;
+  return calculateFantasyScore(componentProjectionFormulaMetrics(projection, fixture), projection.position, scoringModel);
 }
 
 export function bookmakerFixtureMultiplier(

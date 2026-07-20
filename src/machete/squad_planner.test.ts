@@ -7,6 +7,8 @@ import {
   buildPlannerRoundFixtures,
   buildTeamStrengthProfilesFromMatches,
   bookmakerFixtureMultiplier,
+  componentProjectionFantasyPoints,
+  componentProjectionFormulaMetrics,
   alternativePlayerFixturePoints,
   alternativePlayerRoundPoints,
   calibratedPlayerFixturePoints,
@@ -39,6 +41,8 @@ import {
 
 import { fitFantasyProjectionCalibration } from "./fantasy_projection_calibration";
 import type { FantasyBacktestSample } from "./fantasy_backtest";
+import type { PlayerFixtureProjection } from "./deterministic_fantasy_projection";
+import type { ActiveScoringModel } from "@/lib/scoring";
 import { defaultFantasySquadRules } from "./squad_logic";
 
 test("component xFP is the default primary engine and legacy remains a one-flag rollback", () => {
@@ -67,6 +71,51 @@ test("fixture formula metrics expose direct de-vigged bookmaker inputs without r
   assert.equal(metrics.fixture_clean_sheet_probability, 0.407);
   assert.equal(metrics.fixture_bookmaker_odds_available, 1);
   assert.equal(metrics.fixture_bookmaker_odds_age_hours, 3);
+});
+
+test("admin Expected FP formula overrides COMPONENT_XFP_V1 totals with visible component fields", () => {
+  const projection: PlayerFixtureProjection = {
+    playerId: "player-1",
+    position: "FWD",
+    expectedMinutes: 72,
+    probabilities: { appearance: 0.9, sixtyMinutes: 0.75, fullMatch: 0.2 },
+    allocationWeights: { goals: 0.2, assists: 0.15, recoveries: 0.1, saves: 0 },
+    expectedEvents: {
+      goals: 0.3, assists: 0.2, recoveries: 4, saves: 0, yellowCards: 0.1,
+      redCards: 0.01, goalsConceded: 0, cleanSheets: 0
+    },
+    components: {
+      appearance: 0.9, sixtyMinutes: 0.75, fullMatch: 0.2, goals: 1.2, assists: 0.6,
+      cleanSheet: 0, saves: 0, recoveries: 1, goalsConceded: 0, yellowCards: -0.1,
+      redCards: -0.03, total: 4.52
+    }
+  };
+  const model = {
+    modelSource: "MACHETE",
+    customFormula: null,
+    customFormulaGk: null,
+    customFormulaDef: null,
+    customFormulaMid: null,
+    customFormulaFwd: "{Goal FP} * 2 + {Appearance FP}",
+    customFormulaEnabled: true,
+    scoringFormulaGk: null,
+    scoringFormulaDef: null,
+    scoringFormulaMid: null,
+    scoringFormulaFwd: null,
+    scoringFormulaEnabled: false,
+    alternativeFormulaGk: null,
+    alternativeFormulaDef: null,
+    alternativeFormulaMid: null,
+    alternativeFormulaFwd: null,
+    alternativeFormulaEnabled: false,
+    rules: []
+  } satisfies ActiveScoringModel;
+
+  const metrics = componentProjectionFormulaMetrics(projection, null);
+  assert.equal(metrics.goal_fp, 1.2);
+  assert.equal(metrics["60_minutes_fp"], 0.75);
+  assert.equal(componentProjectionFantasyPoints(projection, null, model), 3.3);
+  assert.equal(componentProjectionFantasyPoints(projection, null, { ...model, customFormulaEnabled: false }), 4.52);
 });
 
 test("default forecasts use only the bookmaker delta from the FotMob xG baseline", () => {

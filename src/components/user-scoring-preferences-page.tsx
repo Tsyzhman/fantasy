@@ -6,11 +6,11 @@ import type { ReactNode } from "react";
 import { I18nText } from "@/components/i18n-text";
 import { requireCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
-import { alternativeFormulaFields, scoringFormulaFields } from "@/lib/scoring/formula-display";
+import { alternativeFormulaFields } from "@/lib/scoring/formula-display";
 import { parseUserScoringPreferenceForm } from "@/lib/scoring/user-preferences";
 
 type SearchParams = { error?: string; saved?: string; reset?: string };
-type FormulaField = (typeof scoringFormulaFields)[number] | (typeof alternativeFormulaFields)[number];
+type FormulaField = (typeof alternativeFormulaFields)[number];
 
 export async function saveUserMacheteScoringPreferences(formData: FormData) {
   "use server";
@@ -47,29 +47,20 @@ export async function UserScoringPreferencesPage({ searchParams }: { searchParam
       </Link>
       <div className="mt-5">
         <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">Machete</p>
-        <h1 className="mt-2 text-3xl font-bold text-ink"><I18nText en="My FP formulas" ru="Мои формулы FP" /></h1>
+        <h1 className="mt-2 text-3xl font-bold text-ink"><I18nText en="My Alt FP formula" ru="Моя формула Alt FP" /></h1>
         <p className="mt-2 max-w-3xl text-sm text-slate-600">
           <I18nText
-            en="These overrides affect only Actual FP and Alt FP shown to your account. Expected FP and administrator defaults are not changed, and no global snapshots are recalculated. Empty positions inherit the administrator default."
-            ru="Эти настройки меняют только Actual FP и Alt FP для вашей учётной записи. Expected FP и глобальные настройки администратора не меняются, глобальные снапшоты не пересчитываются. Пустые позиции наследуют настройку администратора."
+            en="This override affects only Alt FP shown to your account. Expected FP and Actual FP are controlled globally by the administrator. Empty positions inherit the administrator default."
+            ru="Эта настройка меняет только Alt FP для вашей учётной записи. Expected FP и Actual FP задаются глобально администратором. Пустые позиции наследуют настройку администратора."
           />
         </p>
       </div>
 
       {searchParams?.error ? <Notice tone="error">{searchParams.error}</Notice> : null}
-      {searchParams?.saved ? <Notice tone="success"><I18nText en="Your formulas were saved." ru="Ваши формулы сохранены." /></Notice> : null}
+      {searchParams?.saved ? <Notice tone="success"><I18nText en="Your Alt FP formula was saved." ru="Ваша формула Alt FP сохранена." /></Notice> : null}
       {searchParams?.reset ? <Notice tone="success"><I18nText en="Personal overrides were removed; global defaults are active." ru="Личные настройки удалены; используются глобальные значения." /></Notice> : null}
 
       <form action={saveUserMacheteScoringPreferences} className="mt-6 space-y-6">
-        <FormulaSection
-          title={<I18nText en="My Actual FP override" ru="Моя формула Actual FP" />}
-          description={<I18nText en="Enable this to replace the blue Actual FP score at read time." ru="Включите, чтобы заменить синий Actual FP при отображении данных." />}
-          fields={scoringFormulaFields}
-          preference={preference}
-          enabledName="scoringFormulaEnabled"
-          enabled={preference?.scoringFormulaEnabled ?? false}
-          accent="sky"
-        />
         <FormulaSection
           title={<I18nText en="My Alt FP override" ru="Моя формула Alt FP" />}
           description={<I18nText en="Enable this to replace the amber Alt FP comparison score at read time." ru="Включите, чтобы заменить жёлтый сравнительный показатель Alt FP при отображении данных." />}
@@ -77,12 +68,11 @@ export async function UserScoringPreferencesPage({ searchParams }: { searchParam
           preference={preference}
           enabledName="alternativeFormulaEnabled"
           enabled={preference?.alternativeFormulaEnabled ?? false}
-          accent="amber"
         />
 
         <div className="flex flex-wrap gap-3">
           <button type="submit" name="intent" value="save" className="rounded bg-emerald-700 px-5 py-3 font-semibold text-white hover:bg-emerald-800">
-            <I18nText en="Save my formulas" ru="Сохранить мои формулы" />
+            <I18nText en="Save my Alt FP" ru="Сохранить мою Alt FP" />
           </button>
           <button type="submit" name="intent" value="reset" formNoValidate className="rounded border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-700 hover:bg-slate-50">
             <I18nText en="Use global defaults" ru="Использовать глобальные значения" />
@@ -99,20 +89,17 @@ function FormulaSection({
   fields,
   preference,
   enabledName,
-  enabled,
-  accent
+  enabled
 }: {
   title: ReactNode;
   description: ReactNode;
   fields: readonly FormulaField[];
   preference: Partial<Record<FormulaField["key"], string | null>> | null;
-  enabledName: "scoringFormulaEnabled" | "alternativeFormulaEnabled";
+  enabledName: "alternativeFormulaEnabled";
   enabled: boolean;
-  accent: "sky" | "amber";
 }) {
-  const colors = accent === "sky" ? "border-sky-200 bg-sky-50" : "border-amber-200 bg-amber-50";
   return (
-    <section className={`rounded border p-5 ${colors}`}>
+    <section className="rounded border border-amber-200 bg-amber-50 p-5">
       <h2 className="text-lg font-bold text-ink">{title}</h2>
       <p className="mt-1 text-sm text-slate-600">{description}</p>
       <div className="mt-4 grid gap-4 md:grid-cols-2">

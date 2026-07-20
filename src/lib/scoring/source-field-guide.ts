@@ -151,7 +151,18 @@ const rawFields = [
   ["Bookmaker", "Fixture bookmaker odds available", "number", "1 when a current direct bookmaker team-total line is available for this fixture, otherwise 0."],
   ["Bookmaker", "Fixture bookmaker odds age hours", "number", "Age of the stored bookmaker line in hours; 0 when no line is available."],
   ["Bookmaker", "Fixture projected xG", "number", "Team projected xG for the exact fixture currently being scored."],
-  ["Bookmaker", "Fixture projected xGA", "number", "Team projected xGA for the exact fixture currently being scored."]
+  ["Bookmaker", "Fixture projected xGA", "number", "Team projected xGA for the exact fixture currently being scored."],
+  ["Component xFP", "Appearance FP", "number", "Expected fantasy points for appearing in this fixture."],
+  ["Component xFP", "60+ minutes FP", "number", "Expected fantasy points for reaching 60 minutes in this fixture."],
+  ["Component xFP", "Full match FP", "number", "Expected fantasy points for completing this fixture."],
+  ["Component xFP", "Goal FP", "number", "Expected fantasy points from goals in this fixture."],
+  ["Component xFP", "Assist FP", "number", "Expected fantasy points from assists in this fixture."],
+  ["Component xFP", "Clean sheet FP", "number", "Expected fantasy points from a clean sheet in this fixture."],
+  ["Component xFP", "Save FP", "number", "Expected fantasy points from goalkeeper saves in this fixture."],
+  ["Component xFP", "Recovery FP", "number", "Expected fantasy points from ball recoveries in this fixture."],
+  ["Component xFP", "Goals conceded FP", "number", "Expected fantasy-point penalty from goals conceded in this fixture."],
+  ["Component xFP", "Yellow card FP", "number", "Expected fantasy-point penalty from yellow cards in this fixture."],
+  ["Component xFP", "Red card FP", "number", "Expected fantasy-point penalty from red cards in this fixture."]
 ] satisfies Array<[string, string, SourceFormulaField["type"], string]>;
 
 export const sourceFormulaFields: SourceFormulaField[] = rawFields.map(([category, label, type, meaning]) => ({

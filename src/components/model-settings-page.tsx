@@ -9,6 +9,7 @@ import { prisma } from "@/lib/db";
 import { formatPositionPoints, scoringFieldGuide } from "@/lib/scoring/field-guide";
 import {
   alternativeFormulaFields,
+  componentFormulaByPosition,
   customFormulaFields,
   customFormulaForPosition,
   defaultFormulaByPosition,
@@ -63,10 +64,10 @@ const formulaExamples: Record<ScoringModelSource, { primary: string; scoring: st
     fields: ["{xG per 90}", "{xA per 90}", "{Key passes per 90}", "{Progressive passes per 90}", "{Round projected xG}"]
   },
   MACHETE: {
-    primary: "1 + {Minutes factor} + 4*{Goals per match} + 3*{Assists per match} - {Yellow cards}",
+    primary: "{Appearance FP} + {60+ minutes FP} + {Goal FP} + {Assist FP} + {Clean sheet FP}",
     scoring: "{Matches played} + 4*{Goals} + 3*{Assists} + 0.2*{Shots on target} + 0.2*{Average rating}",
     alternative: "4*{Goals per match} + 2*{Assists per match} + 0.2*{Shots on target} + 0.1*{Key passes} + 0.2*{Average rating}",
-    fields: ["{Goals}", "{Goals per match}", "{Assists}", "{Assists per match}", "{Shots on target}", "{Key passes}", "{Average rating}"]
+    fields: ["{Appearance FP}", "{60+ minutes FP}", "{Full match FP}", "{Goal FP}", "{Assist FP}", "{Clean sheet FP}", "{Save FP}", "{Recovery FP}", "{Goals conceded FP}", "{Yellow card FP}", "{Red card FP}"]
   }
 };
 
@@ -100,10 +101,12 @@ export async function saveModelSettings(formData: FormData) {
     }
   }
 
-  for (const field of alternativeFormulaFields) {
-    const validation = validateCustomFormula(alternativeFormulas[field.key]);
-    if (!validation.ok) {
-      redirect(`${config.path}?error=${encodeURIComponent(`Alt ${field.position}: ${validation.message}`)}`);
+  if (source !== "MACHETE") {
+    for (const field of alternativeFormulaFields) {
+      const validation = validateCustomFormula(alternativeFormulas[field.key]);
+      if (!validation.ok) {
+        redirect(`${config.path}?error=${encodeURIComponent(`Alt ${field.position}: ${validation.message}`)}`);
+      }
     }
   }
 
@@ -122,7 +125,7 @@ export async function saveModelSettings(formData: FormData) {
     redirect(`${config.path}?error=${encodeURIComponent("Expected FP custom mode needs at least one formula.")}`);
   }
 
-  if (alternativeEnabled && !hasAlternativeFormula) {
+  if (source !== "MACHETE" && alternativeEnabled && !hasAlternativeFormula) {
     redirect(`${config.path}?error=${encodeURIComponent("Alt FP needs at least one formula.")}`);
   }
 
@@ -146,11 +149,13 @@ export async function saveModelSettings(formData: FormData) {
     scoringFormulaMid: scoringFormulas.scoringFormulaMid || null,
     scoringFormulaFwd: scoringFormulas.scoringFormulaFwd || null,
     scoringFormulaEnabled: scoringEnabled && hasScoringFormula,
-    alternativeFormulaGk: alternativeFormulas.alternativeFormulaGk || null,
-    alternativeFormulaDef: alternativeFormulas.alternativeFormulaDef || null,
-    alternativeFormulaMid: alternativeFormulas.alternativeFormulaMid || null,
-    alternativeFormulaFwd: alternativeFormulas.alternativeFormulaFwd || null,
-    alternativeFormulaEnabled: alternativeEnabled && hasAlternativeFormula
+    ...(source === "MACHETE" ? {} : {
+      alternativeFormulaGk: alternativeFormulas.alternativeFormulaGk || null,
+      alternativeFormulaDef: alternativeFormulas.alternativeFormulaDef || null,
+      alternativeFormulaMid: alternativeFormulas.alternativeFormulaMid || null,
+      alternativeFormulaFwd: alternativeFormulas.alternativeFormulaFwd || null,
+      alternativeFormulaEnabled: alternativeEnabled && hasAlternativeFormula
+    })
   };
 
   if (model) {
@@ -214,6 +219,7 @@ export async function ModelSettingsPage({
       : null
   ]);
   const displayModel = model ?? wyscoutModel;
+  const expectedDefaults = source === "MACHETE" ? componentFormulaByPosition : defaultFormulaByPosition;
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -232,8 +238,12 @@ export async function ModelSettingsPage({
             <h2 className="text-lg font-semibold text-ink">{model?.name ?? sourceConfig[source].name}</h2>
             <p className="mt-1 text-sm text-slate-600">
               <I18nText
-                en={<>These settings belong only to {modeName}. Baltika and Machete can use different primary and alternative formulas.</>}
-                ru={<>Эти настройки относятся только к режиму {modeName}. Балтика и Machete могут использовать разные основные и альтернативные формулы.</>}
+                en={source === "MACHETE"
+                  ? <>These administrator settings are global for every Machete user. Personal settings contain only Alt FP.</>
+                  : <>These settings belong only to {modeName}. Baltika and Machete can use different formulas.</>}
+                ru={source === "MACHETE"
+                  ? <>Эти настройки администратора глобальны для всех пользователей Machete. В личных настройках остаётся только Alt FP.</>
+                  : <>Эти настройки относятся только к режиму {modeName}. Балтика и Machete могут использовать разные формулы.</>}
               />
               {!model && source === "MACHETE" && wyscoutModel ? " Machete is currently inheriting the Baltika formulas until you save its own settings." : ""}
             </p>
@@ -251,7 +261,14 @@ export async function ModelSettingsPage({
 
         {searchParams?.saved ? (
           <div className="mt-5 rounded border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-            <I18nText en="Saved. Expected FP, Actual FP and Alt FP were recalculated for existing player snapshots." ru="Сохранено. Expected FP, Actual FP и Alt FP пересчитаны для уже загруженных игроков." />
+            <I18nText
+              en={source === "MACHETE"
+                ? "Saved. Global Expected FP and Actual FP were recalculated. Personal Alt FP formulas were not changed."
+                : "Saved. Expected FP, Actual FP and Alt FP were recalculated for existing player snapshots."}
+              ru={source === "MACHETE"
+                ? "Сохранено. Глобальные Expected FP и Actual FP пересчитаны. Личные формулы Alt FP не изменены."
+                : "Сохранено. Expected FP, Actual FP и Alt FP пересчитаны для уже загруженных игроков."}
+            />
           </div>
         ) : null}
 
@@ -264,7 +281,7 @@ export async function ModelSettingsPage({
             <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-sm font-semibold text-ink"><I18nText en="Current Expected FP calculation" ru="Текущий расчет Expected FP" /></p>
               <span className="rounded bg-white px-2 py-1 text-xs font-semibold text-slate-600">
-                <FormulaModeLabel model={displayModel} />
+                <FormulaModeLabel model={displayModel} source={source} />
               </span>
             </div>
 
@@ -279,7 +296,7 @@ export async function ModelSettingsPage({
                       </FormulaPreview>
                     );
                   })
-                : defaultFormulaByPosition.map((entry) => (
+                : expectedDefaults.map((entry) => (
                     <FormulaPreview key={entry.position} position={entry.position}>
                       {entry.formula}
                     </FormulaPreview>
@@ -288,8 +305,12 @@ export async function ModelSettingsPage({
 
             <p className="mt-3 text-xs text-slate-500">
               <I18nText
-                en="This is the formula behind the green Expected FP column. If custom formulas are off, Expected FP uses the built-in predicted-round scoring."
-                ru="Это формула зеленой колонки Expected FP. Если свои формулы выключены, Expected FP считается по встроенным правилам прогноза тура."
+                en={source === "MACHETE"
+                  ? "This formula is applied to each COMPONENT_XFP_V1 fixture projection, the green Expected FP column, five-round totals and squad optimization."
+                  : "This is the formula behind the green Expected FP column. If custom formulas are off, Expected FP uses the built-in predicted-round scoring."}
+                ru={source === "MACHETE"
+                  ? "Эта формула применяется к прогнозу COMPONENT_XFP_V1 каждого матча, зелёной колонке Expected FP, суммам за пять туров и оптимизации состава."
+                  : "Это формула зеленой колонки Expected FP. Если свои формулы выключены, Expected FP считается по встроенным правилам прогноза тура."}
               />
             </p>
           </div>
@@ -306,7 +327,7 @@ export async function ModelSettingsPage({
             </div>
             <div className="mt-2 grid grid-cols-1 gap-3 lg:grid-cols-2">
               {customFormulaFields.map((field) => (
-                <FormulaTextarea key={field.key} field={field} defaultValue={editableExpectedFormula(displayModel, field.key)} />
+                <FormulaTextarea key={field.key} field={field} defaultValue={editableExpectedFormula(displayModel, field.key, source)} />
               ))}
             </div>
             <label className="mt-3 flex items-center gap-3 text-sm font-medium text-ink">
@@ -359,7 +380,7 @@ export async function ModelSettingsPage({
             </label>
           </div>
 
-          <div className="rounded border border-amber-200 bg-amber-50 p-4">
+          {source !== "MACHETE" ? <div className="rounded border border-amber-200 bg-amber-50 p-4">
             <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm font-semibold text-ink"><I18nText en="Edit Alt FP formulas" ru="Редактировать формулы Alt FP" /></p>
@@ -389,7 +410,7 @@ export async function ModelSettingsPage({
               />
               <I18nText en="Calculate Alt FP" ru="Считать Alt FP" />
             </label>
-          </div>
+          </div> : null}
 
           <FormulaHelp source={source} />
 
@@ -444,7 +465,7 @@ function ScoreMap({
             ru="Основные прогнозные очки. Используют встроенные правила прогноза тура или ваши основные формулы."
           />
         </p>
-        <p className="mt-3 text-xs font-semibold text-emerald-700"><FormulaModeLabel model={displayModel} /></p>
+        <p className="mt-3 text-xs font-semibold text-emerald-700"><FormulaModeLabel model={displayModel} source={source} /></p>
       </div>
       <div className="rounded border border-sky-200 bg-sky-50 p-4">
         <p className="text-xs font-semibold uppercase text-sky-700"><I18nText en="Blue table column" ru="Синяя колонка таблицы" /></p>
@@ -462,11 +483,17 @@ function ScoreMap({
         <h3 className="mt-1 text-base font-semibold text-ink">Alt FP</h3>
         <p className="mt-2 text-sm text-slate-700">
           <I18nText
-            en="Optional second score for comparison. It appears only when Alt FP is enabled and has a formula."
-            ru="Дополнительные очки для сравнения. Появляются, когда Alt FP включен и есть формула."
+            en={source === "MACHETE"
+              ? "Personal comparison score. Every user manages it in their own settings; administrators do not overwrite it here."
+              : "Optional second score for comparison. It appears only when Alt FP is enabled and has a formula."}
+            ru={source === "MACHETE"
+              ? "Личные очки для сравнения. Каждый пользователь настраивает их у себя; администратор здесь их не перезаписывает."
+              : "Дополнительные очки для сравнения. Появляются, когда Alt FP включен и есть формула."}
           />
         </p>
-        <p className="mt-3 text-xs font-semibold text-amber-700"><AltStatusLabel enabled={altEnabled} /></p>
+        <p className="mt-3 text-xs font-semibold text-amber-700">
+          {source === "MACHETE" ? <I18nText en="Managed per user" ru="Настраивается пользователем" /> : <AltStatusLabel enabled={altEnabled} />}
+        </p>
       </div>
       <div className="rounded border border-slate-200 bg-slate-50 p-4">
         <p className="text-xs font-semibold uppercase text-slate-500"><I18nText en="Save behavior" ru="После сохранения" /></p>
@@ -482,11 +509,20 @@ function ScoreMap({
   );
 }
 
-function FormulaModeLabel({ model }: { model?: Parameters<typeof hasAnyCustomFormula>[0] }) {
+function FormulaModeLabel({
+  model,
+  source
+}: {
+  model?: Parameters<typeof hasAnyCustomFormula>[0];
+  source: ScoringModelSource;
+}) {
   return model?.customFormulaEnabled && hasAnyCustomFormula(model) ? (
     <I18nText en="Custom formulas by position" ru="Свои формулы по позициям" />
   ) : (
-    <I18nText en="Default predicted round rules" ru="Встроенные правила прогноза тура" />
+    <I18nText
+      en={source === "MACHETE" ? "Built-in COMPONENT_XFP_V1 components" : "Default predicted round rules"}
+      ru={source === "MACHETE" ? "Встроенные компоненты COMPONENT_XFP_V1" : "Встроенные правила прогноза тура"}
+    />
   );
 }
 
@@ -511,8 +547,13 @@ function FormulaPreview({ position, children }: { position: string; children: Re
   );
 }
 
-function editableExpectedFormula(model: Parameters<typeof customFormulaForPosition>[0], key: string) {
-  return customFormulaForPosition(model, key).trim() || defaultFormulaByPosition.find((entry) => entry.key === key)?.formula || "";
+function editableExpectedFormula(
+  model: Parameters<typeof customFormulaForPosition>[0],
+  key: string,
+  source: ScoringModelSource
+) {
+  const defaults = source === "MACHETE" ? componentFormulaByPosition : defaultFormulaByPosition;
+  return customFormulaForPosition(model, key).trim() || defaults.find((entry) => entry.key === key)?.formula || "";
 }
 
 function editableScoringFormula(model: Parameters<typeof customFormulaForPosition>[0], key: string) {
@@ -553,7 +594,7 @@ function FormulaHelp({ source }: { source: ScoringModelSource }) {
   return (
     <div className="rounded border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
       <p className="font-semibold text-ink"><I18nText en="Formula syntax and examples" ru="Синтаксис формул и примеры" /></p>
-      <div className="mt-3 grid grid-cols-1 gap-3 lg:grid-cols-3">
+      <div className={`mt-3 grid grid-cols-1 gap-3 ${source === "MACHETE" ? "lg:grid-cols-2" : "lg:grid-cols-3"}`}>
         <div className="rounded bg-white p-3">
           <p className="text-xs font-semibold uppercase text-slate-500"><I18nText en="Expected FP example" ru="Пример Expected FP" /></p>
           <pre className="mt-2 whitespace-pre-wrap break-words font-mono text-xs leading-5 text-slate-700">{examples.primary}</pre>
@@ -562,15 +603,19 @@ function FormulaHelp({ source }: { source: ScoringModelSource }) {
           <p className="text-xs font-semibold uppercase text-slate-500"><I18nText en="Actual FP example" ru="Пример Actual FP" /></p>
           <pre className="mt-2 whitespace-pre-wrap break-words font-mono text-xs leading-5 text-slate-700">{examples.scoring}</pre>
         </div>
-        <div className="rounded bg-white p-3">
+        {source !== "MACHETE" ? <div className="rounded bg-white p-3">
           <p className="text-xs font-semibold uppercase text-slate-500"><I18nText en="Alt FP example" ru="Пример Alt FP" /></p>
           <pre className="mt-2 whitespace-pre-wrap break-words font-mono text-xs leading-5 text-slate-700">{examples.alternative}</pre>
-        </div>
+        </div> : null}
       </div>
       <p className="mt-3">
         <I18nText
-          en={<>Use numbers, <span className="font-mono">+ - * / ( )</span>, and fields in braces. Missing fields count as 0. Empty Expected FP and Actual FP formulas fall back to built-in rules; empty Alt FP formulas show no Alt FP for that position.</>}
-          ru={<>Используйте числа, <span className="font-mono">+ - * / ( )</span> и поля в фигурных скобках. Отсутствующие поля считаются как 0. Пустые формулы Expected FP и Actual FP возвращаются к встроенным правилам; пустые формулы Alt FP не показывают Alt FP для позиции.</>}
+          en={source === "MACHETE"
+            ? <>Use numbers, <span className="font-mono">+ - * / ( )</span>, and fields in braces. Missing fields count as 0. Empty Expected FP and Actual FP formulas fall back to built-in global rules. Alt FP is edited only in personal settings.</>
+            : <>Use numbers, <span className="font-mono">+ - * / ( )</span>, and fields in braces. Missing fields count as 0. Empty Expected FP and Actual FP formulas fall back to built-in rules; empty Alt FP formulas show no Alt FP for that position.</>}
+          ru={source === "MACHETE"
+            ? <>Используйте числа, <span className="font-mono">+ - * / ( )</span> и поля в фигурных скобках. Отсутствующие поля считаются как 0. Пустые формулы Expected FP и Actual FP возвращаются к встроенным глобальным правилам. Alt FP редактируется только в личных настройках.</>
+            : <>Используйте числа, <span className="font-mono">+ - * / ( )</span> и поля в фигурных скобках. Отсутствующие поля считаются как 0. Пустые формулы Expected FP и Actual FP возвращаются к встроенным правилам; пустые формулы Alt FP не показывают Alt FP для позиции.</>}
         />
       </p>
       <div className="mt-3 flex flex-wrap gap-1.5">
