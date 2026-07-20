@@ -90,9 +90,9 @@ export function buildFantasyBacktestHorizonSamples(samples: FantasyBacktestSampl
       result.push({
         ...first,
         matchId: `${first.matchId}:h${horizon}`,
-        predictedPoints: round(first.predictedPoints * horizon),
-        baselinePoints: round(first.baselinePoints * horizon),
-        seasonBaselinePoints: round(first.seasonBaselinePoints * horizon),
+        predictedPoints: round(window.reduce((total, sample) => total + sample.predictedPoints, 0)),
+        baselinePoints: round(window.reduce((total, sample) => total + sample.baselinePoints, 0)),
+        seasonBaselinePoints: round(window.reduce((total, sample) => total + sample.seasonBaselinePoints, 0)),
         actualPoints: round(window.reduce((total, sample) => total + sample.actualPoints, 0))
       });
     }

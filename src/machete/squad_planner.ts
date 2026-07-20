@@ -8,6 +8,13 @@ import { calculateFantasyScore, getActiveScoringModelBundleForSource, type Activ
 import { applyUserScoringPreference } from "@/lib/scoring/user-preferences";
 import { providerTeamShortName } from "@/lib/teams/display";
 import { playerPhotoPublicUrl } from "./player-photo-cache";
+import {
+  ProjectionInputError,
+  projectTeamPlayers,
+  type PlayerFixtureProjection,
+  type ProbableParticipantInput,
+  type ProjectedTeamTotals
+} from "./deterministic_fantasy_projection";
 
 import type { FantasyBacktestSample } from "./fantasy_backtest";
 import {
@@ -123,6 +130,13 @@ type PlannerRoundFixtures = {
   rounds: FantasyRoundProjection[];
   fixturesByTeamRound: Map<string, Map<string, PlannerFixture[]>>;
   teamShortNameById: Map<string, string>;
+};
+
+export type FantasyProjectionEngine = "COMPONENT_XFP_V1" | "LEGACY_RIDGE19_V1";
+
+type ComponentProjectionIndex = {
+  byFixturePlayer: Map<string, PlayerFixtureProjection>;
+  errorsByFixtureTeam: Map<string, string>;
 };
 
 type TeamStrengthSide = "home" | "away";
@@ -320,25 +334,40 @@ export async function loadFantasySquadPlannerData(
   const projectedByPlayerTeam = new Map(playerRows.rows.map((row) => [playerTeamKey(row.playerId, row.teamId), row]));
   const prices = priceLookup(priceRows, priceMaps);
   const sportsPositionsByPlayerId = sportsRuFantasyPositionsByPlayerId(priceRows, priceMaps);
+  const componentProjections = buildComponentProjectionIndex(
+    playerRows.rows,
+    roundsAndFixtures,
+    sportsPositionsByPlayerId
+  );
+  const preferredProjectionEngine = configuredFantasyProjectionEngine();
   const rosterPlayers: FantasyPlannerPlayer[] = rosterRows.flatMap((row) => {
     const projected = projectedByPlayerTeam.get(playerTeamKey(row.playerId, row.teamId));
     const nextFixture = roundsAndFixtures.rounds
       .flatMap((round) => roundsAndFixtures.fixturesByTeamRound.get(round.id)?.get(String(row.teamId)) ?? [])
       .at(0) ?? null;
-    const predictedFp = projected
+    const legacyPredictedFp = projected
       ? calibratedPlayerFixturePoints(projected, nextFixture, playerRows.calibration?.model ?? null, playerRows.scoringModel)
       : null;
     const priceRow = prices.byPlayerId.get(String(row.playerId));
     const sportsPosition = sportsPositionsByPlayerId.get(String(row.playerId)) ?? (priceRow ? sportsRuPricePosition(priceRow) : null);
     const position = fantasyPlannerPosition(sportsPosition, row.position, projected?.position ?? null);
     const positionGroup = normalizeFantasyPosition(position);
+    const nextComponentProjection = nextFixture
+      ? componentProjections.byFixturePlayer.get(fixturePlayerProjectionKey(nextFixture.id, String(row.playerId))) ?? null
+      : null;
+    const componentPredictedFp = nextComponentProjection?.components.total ?? null;
+    const projectionEngine: FantasyProjectionEngine =
+      preferredProjectionEngine === "COMPONENT_XFP_V1" && componentPredictedFp !== null
+        ? "COMPONENT_XFP_V1"
+        : "LEGACY_RIDGE19_V1";
+    const predictedFp = projectionEngine === "COMPONENT_XFP_V1" ? componentPredictedFp : legacyPredictedFp;
     const alternativePredictedFp = projected
       ? alternativePlayerFixturePoints(projected, nextFixture, positionGroup)
       : null;
     const price = resolveFantasyPlannerPrice(priceRow, predictedFp, positionGroup);
     const playerName = priceRow?.playerName ?? row.player.name;
     const baltikaMetric = baltikaMetricsByName.get(normalizeSportsRuPlayerName(playerName));
-    const roundPoints = roundsAndFixtures.rounds.map((round) => {
+    const legacyRoundPoints = roundsAndFixtures.rounds.map((round) => {
       const fixtures = roundsAndFixtures.fixturesByTeamRound.get(round.id)?.get(String(row.teamId)) ?? [];
       return roundFantasyValue(
         fixtures.reduce((total, fixture) => {
@@ -347,6 +376,21 @@ export async function loadFantasySquadPlannerData(
         }, 0)
       );
     });
+    const componentRoundPoints = roundsAndFixtures.rounds.map((round) => {
+      const fixtures = roundsAndFixtures.fixturesByTeamRound.get(round.id)?.get(String(row.teamId)) ?? [];
+      if (fixtures.length === 0) return 0;
+      const values = fixtures.map((fixture) =>
+        componentProjections.byFixturePlayer.get(fixturePlayerProjectionKey(fixture.id, String(row.playerId)))?.components.total ?? null
+      );
+      return values.some((value) => value === null)
+        ? null
+        : roundFantasyValue(values.reduce<number>((total, value) => total + (value ?? 0), 0));
+    });
+    const roundPoints = roundsAndFixtures.rounds.map((_, index) =>
+      projectionEngine === "COMPONENT_XFP_V1" && componentRoundPoints[index] !== null
+        ? componentRoundPoints[index] ?? 0
+        : legacyRoundPoints[index] ?? 0
+    );
     const alternativeRoundPoints = roundsAndFixtures.rounds.map((round) => {
       const fixtures = roundsAndFixtures.fixturesByTeamRound.get(round.id)?.get(String(row.teamId)) ?? [];
       return alternativePlayerRoundPoints(projected, fixtures, positionGroup);
@@ -371,6 +415,20 @@ export async function loadFantasySquadPlannerData(
       fixtureDifficulties,
       isStarter: row.isStarter
     });
+    if (projectionEngine === "COMPONENT_XFP_V1") {
+      forecastExplanation.factors.unshift("Component xFP: team forecast allocated by player xG/xA and expected minutes");
+      if (nextFixture?.teamOver15Probability !== null && nextFixture?.teamOver15Probability !== undefined) {
+        forecastExplanation.factors.push("Fresh bookmaker team-goal probability included");
+      }
+      if (nextFixture?.cleanSheetProbability !== null && nextFixture?.cleanSheetProbability !== undefined) {
+        forecastExplanation.factors.push("Fresh bookmaker clean-sheet probability included");
+      }
+    } else if (preferredProjectionEngine === "COMPONENT_XFP_V1") {
+      const reason = nextFixture
+        ? componentProjections.errorsByFixtureTeam.get(fixtureTeamProjectionKey(nextFixture.id, String(row.teamId)))
+        : "No upcoming fixture";
+      forecastExplanation.risks.unshift(`Component xFP unavailable; legacy fallback${reason ? `: ${reason}` : ""}`);
+    }
 
     return [
       {
@@ -387,6 +445,10 @@ export async function loadFantasySquadPlannerData(
         price: price.price,
         priceSource: price.priceSource,
         predictedFp,
+        legacyPredictedFp,
+        componentPredictedFp,
+        projectionEngine,
+        projectionComponents: nextComponentProjection?.components ?? null,
         alternativePredictedFp,
         alternativeRoundPoints,
         expectedMinutes: projected?.expectedMinutes ?? null,
@@ -396,7 +458,7 @@ export async function loadFantasySquadPlannerData(
         forecastRisks: forecastExplanation.risks,
         forecastCalculatedAt: playerRows.calculatedAt,
         forecastDataUpdatedAt: projected?.dataUpdatedAt?.toISOString() ?? null,
-        forecastModelVersion: playerRows.modelVersion,
+        forecastModelVersion: projectionEngine === "COMPONENT_XFP_V1" ? "COMPONENT_XFP_V1" : playerRows.modelVersion,
         valueScore: price.price > 0 ? roundFantasyValue((roundPoints[0] ?? predictedFp ?? 0) / price.price) : 0,
         roundPoints,
         fixtures,
@@ -897,6 +959,137 @@ export function fantasyPlannerSharedRowIdentity(rowId: string) {
     : { teamId: parts[2] ?? "", playerId: parts[3] ?? "" };
 }
 
+export function configuredFantasyProjectionEngine(envValue = process.env.FANTASY_PROJECTION_ENGINE): FantasyProjectionEngine {
+  return envValue?.trim().toLowerCase() === "legacy" ? "LEGACY_RIDGE19_V1" : "COMPONENT_XFP_V1";
+}
+
+function buildComponentProjectionIndex(
+  rows: Array<SharedMachetePlayerRow & { teamId: string; playerId: string }>,
+  roundsAndFixtures: PlannerRoundFixtures,
+  sportsPositionsByPlayerId: Map<string, string>
+): ComponentProjectionIndex {
+  const byFixturePlayer = new Map<string, PlayerFixtureProjection>();
+  const errorsByFixtureTeam = new Map<string, string>();
+  const rowsByTeam = new Map<string, Array<SharedMachetePlayerRow & { teamId: string; playerId: string }>>();
+  for (const row of rows) {
+    const teamRows = rowsByTeam.get(row.teamId) ?? [];
+    teamRows.push(row);
+    rowsByTeam.set(row.teamId, teamRows);
+  }
+
+  const uniqueFixtures = new Map<string, PlannerFixture>();
+  for (const fixturesByTeam of roundsAndFixtures.fixturesByTeamRound.values()) {
+    for (const fixtures of fixturesByTeam.values()) {
+      for (const fixture of fixtures) uniqueFixtures.set(fixtureTeamProjectionKey(fixture.id, fixture.teamId), fixture);
+    }
+  }
+
+  for (const [fixtureTeamKey, fixture] of uniqueFixtures) {
+    const participants = (rowsByTeam.get(fixture.teamId) ?? [])
+      .map((row) => componentParticipant(row, sportsPositionsByPlayerId.get(row.playerId)))
+      .filter((row): row is ProbableParticipantInput => row !== null);
+    const team = componentTeamTotals(fixture, participants);
+    if (!team) {
+      errorsByFixtureTeam.set(fixtureTeamKey, "team xG/xGA is missing");
+      continue;
+    }
+
+    try {
+      const projection = projectTeamPlayers(team, participants);
+      for (const player of projection.players) {
+        byFixturePlayer.set(fixturePlayerProjectionKey(fixture.id, player.playerId), player);
+      }
+    } catch (error) {
+      const message = error instanceof ProjectionInputError
+        ? error.issues.slice(0, 2).map((issue) => `${issue.path} ${issue.message}`).join("; ")
+        : error instanceof Error ? error.message : "unknown projection error";
+      errorsByFixtureTeam.set(fixtureTeamKey, message);
+    }
+  }
+
+  return { byFixturePlayer, errorsByFixtureTeam };
+}
+
+function componentParticipant(
+  row: SharedMachetePlayerRow & { teamId: string; playerId: string },
+  sportsPosition?: string
+): ProbableParticipantInput | null {
+  const position = normalizeFantasyPosition(fantasyPlannerPosition(sportsPosition ?? null, null, row.position));
+  if (position === "UNK") return null;
+  const expectedMinutes = clamp(row.expectedMinutes ?? 0, 0, 90);
+  const appearance = clamp(Math.max(componentMetric(row, "appearance_probability"), expectedMinutes / 90), 0, 1);
+  const sixtyMinutes = clamp(Math.min(componentMetric(row, "sixty_minute_probability"), appearance), 0, 1);
+  const fullMatch = clamp(Math.min(componentMetric(row, "full_match_probability"), sixtyMinutes), 0, 1);
+  const rate = (key: string) => componentRatePer90(row, key);
+
+  return {
+    playerId: row.playerId,
+    position,
+    expectedMinutes,
+    probabilities: { appearance, sixtyMinutes, fullMatch },
+    ratesPer90: {
+      xg: expectedMinutes > 0 ? rate("xg") : undefined,
+      xa: expectedMinutes > 0 ? rate("xa") : undefined,
+      recoveries: position !== "GK" && expectedMinutes > 0 ? rate("recoveries") : undefined,
+      saves: position === "GK" && expectedMinutes > 0 ? rate("saves") : undefined,
+      yellowCards: expectedMinutes > 0 ? rate("yellow_cards") : undefined,
+      redCards: expectedMinutes > 0 ? rate("red_cards") : undefined
+    }
+  };
+}
+
+function componentTeamTotals(fixture: PlannerFixture, participants: ProbableParticipantInput[]): ProjectedTeamTotals | null {
+  if (fixture.projectedXg === null || fixture.projectedXga === null) return null;
+  const modelGoals = fixture.projectedXg;
+  const oddsGoals = inversePoissonOver15Probability(fixture.teamOver15Probability);
+  const expectedGoals = oddsGoals === null
+    ? modelGoals
+    : clamp(modelGoals * 0.55 + oddsGoals * 0.45, modelGoals * 0.7, modelGoals * 1.35);
+  const expectedRecoveries = participants.reduce((total, player) =>
+    total + (player.position === "GK" ? 0 : (player.ratesPer90.recoveries ?? 0) * player.expectedMinutes! / 90), 0);
+  const expectedSaves = participants.reduce((total, player) =>
+    total + (player.position === "GK" ? (player.ratesPer90.saves ?? 0) * player.expectedMinutes! / 90 : 0), 0);
+
+  return {
+    teamId: fixture.teamId,
+    expectedGoals,
+    expectedGoalsAgainst: fixture.projectedXga,
+    expectedAssists: expectedGoals * 0.8,
+    expectedRecoveries,
+    expectedSaves,
+    cleanSheetProbability: fixture.cleanSheetProbability ?? Math.exp(-fixture.projectedXga)
+  };
+}
+
+function componentMetric(row: Pick<SharedMachetePlayerRow, "rawMetrics">, key: string) {
+  return numericOrNull(row.rawMetrics?.[key]) ?? 0;
+}
+
+function componentRatePer90(row: Pick<SharedMachetePlayerRow, "rawMetrics" | "minutesPlayed">, key: string) {
+  if (row.minutesPlayed <= 0) return 0;
+  return componentMetric(row, key) * 90 / row.minutesPlayed;
+}
+
+function inversePoissonOver15Probability(probabilityValue: number | null | undefined) {
+  if (typeof probabilityValue !== "number" || !Number.isFinite(probabilityValue) || probabilityValue <= 0 || probabilityValue >= 1) return null;
+  let low = 0;
+  let high = 8;
+  for (let index = 0; index < 60; index += 1) {
+    const middle = (low + high) / 2;
+    if ((poissonOver15Probability(middle) ?? 0) < probabilityValue) low = middle;
+    else high = middle;
+  }
+  return (low + high) / 2;
+}
+
+function fixtureTeamProjectionKey(fixtureId: string, teamId: string) {
+  return `${fixtureId}:${teamId}`;
+}
+
+function fixturePlayerProjectionKey(fixtureId: string, playerId: string) {
+  return `${fixtureId}:${playerId}`;
+}
+
 export function fixtureFormulaMetrics(
   rawMetrics: Record<string, unknown> | undefined,
   fixture: PlannerFixture | null,
@@ -1276,8 +1469,8 @@ export function buildTeamStrengthProfilesFromMatches(matches: TeamStrengthMatchI
       samples.push({
         teamId,
         side,
-        xgFor: numericOrNull(stat.xg) ?? numericOrNull(stat.goals),
-        xgAgainst: numericOrNull(opponent?.xg) ?? numericOrNull(opponent?.goals),
+        xgFor: numericOrNull(stat.xg),
+        xgAgainst: numericOrNull(opponent?.xg),
         weight
       });
     }
@@ -1324,11 +1517,17 @@ export function fixtureStrengthProjection(
   const own = strengthBlockForSide(teamProfile, side, profiles.league);
   const opponent = strengthBlockForSide(opponentProfile, opponentSide, profiles.league);
   const leagueSide = strengthBlockForSide(undefined, side, profiles.league);
-
-  const projectedXg = averageKnown([own.xgForPerMatch, opponent.xgAgainstPerMatch]);
-  const projectedXga = averageKnown([own.xgAgainstPerMatch, opponent.xgForPerMatch]);
+  const leagueOpponentSide = strengthBlockForSide(undefined, opponentSide, profiles.league);
   const attackBase = leagueSide.xgForPerMatch ?? profiles.league.overall.xgForPerMatch ?? defaultTeamXgPerMatch;
   const defenseBase = leagueSide.xgAgainstPerMatch ?? profiles.league.overall.xgAgainstPerMatch ?? defaultTeamXgPerMatch;
+  const opponentAttackBase = leagueOpponentSide.xgForPerMatch ?? profiles.league.overall.xgForPerMatch ?? defaultTeamXgPerMatch;
+  const opponentDefenseBase = leagueOpponentSide.xgAgainstPerMatch ?? profiles.league.overall.xgAgainstPerMatch ?? defaultTeamXgPerMatch;
+  const projectedXg = attackBase
+    * strengthRatio(own.xgForPerMatch, attackBase)
+    * strengthRatio(opponent.xgAgainstPerMatch, opponentDefenseBase);
+  const projectedXga = opponentAttackBase
+    * strengthRatio(opponent.xgForPerMatch, opponentAttackBase)
+    * strengthRatio(own.xgAgainstPerMatch, defenseBase);
 
   return {
     projectedXg,

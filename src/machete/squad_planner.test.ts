@@ -11,6 +11,7 @@ import {
   alternativePlayerRoundPoints,
   calibratedPlayerFixturePoints,
   compareFantasyPlannerPlayers,
+  configuredFantasyProjectionEngine,
   fantasyPlannerPosition,
   fantasyPlannerSharedRowIdentity,
   fantasySquadRoundPlansFromFilters,
@@ -39,6 +40,12 @@ import {
 import { fitFantasyProjectionCalibration } from "./fantasy_projection_calibration";
 import type { FantasyBacktestSample } from "./fantasy_backtest";
 import { defaultFantasySquadRules } from "./squad_logic";
+
+test("component xFP is the default primary engine and legacy remains a one-flag rollback", () => {
+  assert.equal(configuredFantasyProjectionEngine(undefined), "COMPONENT_XFP_V1");
+  assert.equal(configuredFantasyProjectionEngine("component"), "COMPONENT_XFP_V1");
+  assert.equal(configuredFantasyProjectionEngine("legacy"), "LEGACY_RIDGE19_V1");
+});
 
 test("fixture formula metrics expose direct de-vigged bookmaker inputs without replacing FotMob xG", () => {
   const metrics = fixtureFormulaMetrics(

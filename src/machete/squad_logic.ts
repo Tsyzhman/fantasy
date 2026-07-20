@@ -33,6 +33,23 @@ export type FantasyPlannerPlayer = {
   price: number;
   priceSource: "SPORTS_RU" | "ESTIMATED";
   predictedFp: number | null;
+  legacyPredictedFp?: number | null;
+  componentPredictedFp?: number | null;
+  projectionEngine?: "COMPONENT_XFP_V1" | "LEGACY_RIDGE19_V1";
+  projectionComponents?: {
+    appearance: number;
+    sixtyMinutes: number;
+    fullMatch: number;
+    goals: number;
+    assists: number;
+    cleanSheet: number;
+    saves: number;
+    recoveries: number;
+    goalsConceded: number;
+    yellowCards: number;
+    redCards: number;
+    total: number;
+  } | null;
   alternativePredictedFp?: number | null;
   alternativeRoundPoints?: Array<number | null>;
   expectedMinutes?: number | null;

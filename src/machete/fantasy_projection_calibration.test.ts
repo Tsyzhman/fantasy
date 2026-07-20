@@ -27,8 +27,8 @@ test("five-observation horizon uses only complete chronological player windows",
   const horizons = buildFantasyBacktestHorizonSamples(rows, 5);
 
   assert.equal(horizons.length, 2);
-  assert.equal(horizons[0].predictedPoints, rows[0].predictedPoints * 5);
-  assert.equal(horizons[0].baselinePoints, rows[0].baselinePoints * 5);
+  assert.equal(horizons[0].predictedPoints, rows.slice(0, 5).reduce((total, row) => total + row.predictedPoints, 0));
+  assert.equal(horizons[0].baselinePoints, rows.slice(0, 5).reduce((total, row) => total + row.baselinePoints, 0));
   assert.equal(horizons[0].actualPoints, 15);
 });
 
