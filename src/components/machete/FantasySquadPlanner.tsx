@@ -2127,7 +2127,7 @@ function SquadPlayerTile({
   const mobileActionsTriggerRef = useRef<HTMLButtonElement>(null);
   const mobileActionsCloseRef = useRef<HTMLButtonElement>(null);
   const mobileActionsDialogRef = useRef<HTMLDivElement>(null);
-  const fixtureChips = fixtureChipPresentations(player.fixtures, player.fixtureDifficulties ?? [], Math.min(horizon, 3), player.fixtureFullNames);
+  const fixtureChips = fixtureChipPresentations(player.fixtures, player.fixtureDifficulties ?? [], Math.max(horizon, 3), player.fixtureFullNames);
   const captainActionLabel = isCaptain
     ? localizedText(language, "Remove captain", "Снять капитана")
     : localizedText(language, "Make captain x2", "Сделать капитаном x2");
@@ -2192,7 +2192,7 @@ function SquadPlayerTile({
       title={fantasyForecastTitle(player, language)}
       aria-label={localizedText(language, `Squad player ${player.name}`, `Игрок состава: ${player.name}`)}
       className={cn(
-        compact ? "w-[3.4rem] sm:w-16" : "w-[3.4rem] sm:w-16 2xl:w-[4.25rem]",
+        compact ? "w-[4.5rem] sm:w-20" : "w-[4.5rem] sm:w-20 2xl:w-[5.5rem]",
         "relative cursor-grab rounded border bg-white px-1 py-0.5 text-center shadow-sm transition active:cursor-grabbing",
         isCaptain ? "border-amber-400 ring-2 ring-amber-200" : "border-white/70",
         isDragging && "opacity-55 ring-2 ring-sky-300"
@@ -2232,7 +2232,10 @@ function SquadPlayerTile({
       ) : null}
       {fixtureChips.length > 0 ? (
         <div className="mt-0.5 flex min-w-0 items-center justify-center overflow-hidden">
-          <FdrRow fixtures={fixtureChips.slice(0, 1)} className="min-w-0 flex-nowrap overflow-hidden" />
+          <FdrRow
+            fixtures={fixtureChips.slice(0, 3)}
+            className="min-w-0 flex-nowrap gap-0.5 overflow-hidden [&_.fdr-pill]:min-w-0 [&_.fdr-pill]:max-w-5 [&_.fdr-pill]:px-0.5 [&_.fdr-pill]:text-[9px]"
+          />
         </div>
       ) : null}
       <button

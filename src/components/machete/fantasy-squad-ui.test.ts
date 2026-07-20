@@ -39,11 +39,11 @@ test("desktop fixture window uses five compact opponent codes before overflow", 
   assert.match(squadPlannerSource, /flex-nowrap gap-0\.5 overflow-hidden/);
 });
 
-test("desktop planner gives the pitch more width and keeps the compact team column", () => {
+test("desktop planner gives wider squad cards enough pitch width", () => {
   assert.match(squadPlannerSource, /xl:grid-cols-\[minmax\(360px,0\.82fr\)_minmax\(560px,1\.18fr\)\]/);
   assert.match(squadPlannerSource, /<col className="w-\[9%\]" \/>/);
   assert.match(squadPlannerSource, /<col className="w-\[24%\]" \/>/);
-  assert.match(squadPlannerSource, /sm:w-16 2xl:w-\[4\.25rem\]/);
+  assert.match(squadPlannerSource, /w-\[4\.5rem\] sm:w-20 2xl:w-\[5\.5rem\]/);
 });
 
 test("every desktop player-pool column has a tooltip", () => {
@@ -67,11 +67,12 @@ test("squad cards expose only captain and vice-captain controls with corner remo
   assert.match(squadPlannerSource, /onToggleVice\(player\.playerId\)/);
 });
 
-test("squad cards show only the next opponent without a remaining-fixtures counter", () => {
+test("squad cards show three upcoming opponents without a remaining-fixtures counter", () => {
   const tileStart = squadPlannerSource.indexOf("function SquadPlayerTile(");
   const tileEnd = squadPlannerSource.indexOf("function fantasyForecastTitle(", tileStart);
   const tileSource = squadPlannerSource.slice(tileStart, tileEnd);
-  assert.match(tileSource, /fixtures=\{fixtureChips\.slice\(0, 1\)\}/);
+  assert.match(tileSource, /Math\.max\(horizon, 3\)/);
+  assert.match(tileSource, /fixtures=\{fixtureChips\.slice\(0, 3\)\}/);
   assert.doesNotMatch(tileSource, /\+\{fixtureChips\.length - 1\}/);
 });
 
