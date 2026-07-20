@@ -6,6 +6,7 @@ import {
   buildFantasyForecastExplanation,
   buildPlannerRoundFixtures,
   buildTeamStrengthProfilesFromMatches,
+  bookmakerFixtureMultiplier,
   alternativePlayerFixturePoints,
   alternativePlayerRoundPoints,
   calibratedPlayerFixturePoints,
@@ -59,6 +60,32 @@ test("fixture formula metrics expose direct de-vigged bookmaker inputs without r
   assert.equal(metrics.fixture_clean_sheet_probability, 0.407);
   assert.equal(metrics.fixture_bookmaker_odds_available, 1);
   assert.equal(metrics.fixture_bookmaker_odds_age_hours, 3);
+});
+
+test("default forecasts use only the bookmaker delta from the FotMob xG baseline", () => {
+  const projectedXg = 1.5;
+  const projectedXga = 1;
+  const baselineOver15 = 1 - Math.exp(-projectedXg) * (1 + projectedXg);
+  const baselineCleanSheet = Math.exp(-projectedXga);
+  const neutral = {
+    projectedXg,
+    projectedXga,
+    teamOver15Probability: baselineOver15,
+    cleanSheetProbability: baselineCleanSheet
+  };
+  assert.ok(Math.abs(bookmakerFixtureMultiplier(neutral, "FWD") - 1) < 1e-12);
+
+  const attackMoreOptimistic = {
+    ...neutral,
+    teamOver15Probability: baselineOver15 * 1.2,
+  };
+  assert.ok(bookmakerFixtureMultiplier(attackMoreOptimistic, "FWD") > bookmakerFixtureMultiplier(attackMoreOptimistic, "DEF"));
+
+  const defenseMoreOptimistic = {
+    ...neutral,
+    cleanSheetProbability: baselineCleanSheet * 1.2
+  };
+  assert.ok(bookmakerFixtureMultiplier(defenseMoreOptimistic, "DEF") > bookmakerFixtureMultiplier(defenseMoreOptimistic, "FWD"));
 });
 
 test("legacy squads expand to five linked planning rounds and saved round plans stay independent", () => {

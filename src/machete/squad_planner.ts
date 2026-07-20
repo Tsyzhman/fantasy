@@ -924,19 +924,41 @@ export function fixtureFormulaMetrics(
   };
 }
 
+export function bookmakerFixtureMultiplier(
+  fixture: Pick<PlannerFixture, "projectedXg" | "projectedXga" | "teamOver15Probability" | "cleanSheetProbability"> | null,
+  positionGroup: FantasyPositionGroup
+) {
+  if (!fixture) return 1;
+  const attackSignal = relativeProbabilitySignal(
+    fixture.teamOver15Probability,
+    poissonOver15Probability(fixture.projectedXg)
+  );
+  const defenseSignal = relativeProbabilitySignal(
+    fixture.cleanSheetProbability,
+    poissonCleanSheetProbability(fixture.projectedXga)
+  );
+  const weights = bookmakerSignalWeights(positionGroup);
+  return clamp(1 + (attackSignal - 1) * weights.attack + (defenseSignal - 1) * weights.defense, 0.85, 1.15);
+}
+
 export function calibratedPlayerFixturePoints(
   row: SharedMachetePlayerRow & { teamId: string; playerId: string },
   fixture: PlannerFixture | null,
   calibration: FantasyProjectionCalibrationModel | null,
   scoringModel?: ActiveScoringModel
 ) {
-  const fixtureScore = scoringModel
+  const rawFixtureScore = scoringModel
     ? calculateFantasyScore(fixtureFormulaMetrics(row.rawMetrics, fixture), row.position, scoringModel)
     : row.fantasyScore;
-  if (typeof fixtureScore !== "number" || !Number.isFinite(fixtureScore)) return null;
+  if (typeof rawFixtureScore !== "number" || !Number.isFinite(rawFixtureScore)) return null;
+  const position = normalizeFantasyPosition(row.position);
+  const fixtureScore = rawFixtureScore * (
+    scoringModel && expectedFormulaUsesBookmaker(scoringModel, position)
+      ? 1
+      : bookmakerFixtureMultiplier(fixture, position)
+  );
   if (!calibration) return fixtureScore;
 
-  const position = normalizeFantasyPosition(row.position);
   if (position === "UNK") return fixtureScore;
   const recentPoints = row.recentFp.filter(Number.isFinite);
   const baselinePoints = recentPoints.length > 0 ? average(recentPoints) : fixtureScore;
@@ -988,7 +1010,9 @@ export function alternativePlayerFixturePoints(
 ) {
   if (typeof row.alternativeScore !== "number" || !Number.isFinite(row.alternativeScore)) return null;
   if (!fixture) return roundFantasyValue(row.alternativeScore);
-  return roundFantasyValue(projectFixtureFantasyPoints(row.alternativeScore, positionGroup, fixture));
+  return roundFantasyValue(
+    projectFixtureFantasyPoints(row.alternativeScore, positionGroup, fixture) * bookmakerFixtureMultiplier(fixture, positionGroup)
+  );
 }
 
 export function alternativePlayerRoundPoints(
@@ -1988,6 +2012,44 @@ function averageKnown(values: Array<number | null | undefined>) {
   const known = values.filter((value): value is number => typeof value === "number" && Number.isFinite(value));
   if (known.length === 0) return null;
   return sum(known) / known.length;
+}
+
+function expectedFormulaUsesBookmaker(model: ActiveScoringModel, position: FantasyPositionGroup) {
+  if (!model.customFormulaEnabled) return false;
+  const positionFormula = position === "GK"
+    ? model.customFormulaGk
+    : position === "DEF"
+      ? model.customFormulaDef
+      : position === "MID"
+        ? model.customFormulaMid
+        : position === "FWD"
+          ? model.customFormulaFwd
+          : null;
+  const formula = positionFormula?.trim() || model.customFormula?.trim() || "";
+  const normalized = formula.toLowerCase().replace(/[^a-z0-9]+/g, "_");
+  return normalized.includes("fixture_team_over_1_5_probability") || normalized.includes("fixture_clean_sheet_probability");
+}
+
+function poissonOver15Probability(projectedXg: number | null) {
+  if (projectedXg === null || !Number.isFinite(projectedXg) || projectedXg < 0) return null;
+  return 1 - Math.exp(-projectedXg) * (1 + projectedXg);
+}
+
+function poissonCleanSheetProbability(projectedXga: number | null) {
+  if (projectedXga === null || !Number.isFinite(projectedXga) || projectedXga < 0) return null;
+  return Math.exp(-projectedXga);
+}
+
+function relativeProbabilitySignal(actual: number | null | undefined, baseline: number | null) {
+  if (actual === null || actual === undefined || !Number.isFinite(actual) || baseline === null || baseline <= 0) return 1;
+  return clamp(actual / baseline, 0.8, 1.2);
+}
+
+function bookmakerSignalWeights(position: FantasyPositionGroup) {
+  if (position === "GK" || position === "DEF") return { attack: 0.1, defense: 0.55 };
+  if (position === "MID") return { attack: 0.45, defense: 0.15 };
+  if (position === "FWD") return { attack: 0.6, defense: 0.05 };
+  return { attack: 0.25, defense: 0.25 };
 }
 
 function clamp(value: number, min: number, max: number) {
