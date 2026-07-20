@@ -1041,15 +1041,6 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                   <Sparkles className="h-4 w-4" />
                   {autoPickPending ? <I18nText en="Optimizing…" ru="Подбираем…" /> : <I18nText en="Auto-pick squad" ru="Автоподбор состава" />}
                 </button>
-                <button
-                  type="button"
-                  onClick={() => saveSquad(false)}
-                  disabled={interactionPending || autoPickPending || !squadIsValid}
-                  className="btn-brand inline-flex items-center justify-center gap-2 rounded px-4 py-2 text-sm font-semibold disabled:opacity-60"
-                >
-                  <Save className="h-4 w-4" />
-                  {savePending ? <I18nText en="Saving" ru="Сохраняем" /> : <I18nText en="Save squad" ru="Сохранить состав" />}
-                </button>
               </div>
 
               <details className="relative">
@@ -1395,8 +1386,17 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
       <section className={cn(mobileTab === "suggestions" ? "hidden xl:block" : "block", "order-4 min-w-0 rounded border border-slate-200 bg-white p-3 shadow-soft sm:p-4")}>
         <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-[minmax(360px,0.82fr)_minmax(560px,1.18fr)] 2xl:grid-cols-[minmax(400px,0.78fr)_minmax(680px,1.22fr)]">
           <div className={cn(mobileTab === "squad" ? "block" : "hidden xl:block")}>
-            <div className="mb-3">
+            <div className="mb-3 flex items-center justify-between gap-3">
               <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500"><I18nText en="Your squad" ru="Ваш состав" /></h3>
+              <button
+                type="button"
+                onClick={() => saveSquad(false)}
+                disabled={interactionPending || autoPickPending || !squadIsValid}
+                className="btn-brand inline-flex shrink-0 items-center justify-center gap-2 rounded px-3 py-1.5 text-xs font-semibold sm:px-4 sm:py-2 sm:text-sm disabled:opacity-60"
+              >
+                <Save className="h-4 w-4" />
+                {savePending ? <I18nText en="Saving" ru="Сохраняем" /> : <I18nText en="Save squad" ru="Сохранить состав" />}
+              </button>
             </div>
             <SquadPitch
               summary={summary}

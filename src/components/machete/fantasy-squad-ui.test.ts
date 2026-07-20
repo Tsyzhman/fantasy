@@ -22,6 +22,16 @@ function squadSelection(playerId: string, isStarter: boolean, slotIndex: number)
 
 const squadPlannerSource = readFileSync(new URL("./FantasySquadPlanner.tsx", import.meta.url), "utf8");
 
+test("primary squad save action sits beside the Your squad heading without a duplicate", () => {
+  const squadHeading = squadPlannerSource.indexOf('<I18nText en="Your squad" ru="Ваш состав" />');
+  const pitch = squadPlannerSource.indexOf("<SquadPitch", squadHeading);
+  const headingBlock = squadPlannerSource.slice(squadHeading, pitch);
+
+  assert.ok(squadHeading >= 0);
+  assert.match(headingBlock, /onClick=\{\(\) => saveSquad\(false\)\}/);
+  assert.equal(squadPlannerSource.match(/onClick=\{\(\) => saveSquad\(false\)\}/g)?.length, 1);
+});
+
 test("fixture chips hide H/A from visible labels but retain side and original title", () => {
   assert.deepEqual(
     fixtureChipPresentations(["H Arsenal", "Chelsea (A)", "H Fulham, A Everton"], [2, 4, 3], 3),
