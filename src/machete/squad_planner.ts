@@ -4,7 +4,7 @@ import { formatDate } from "@/lib/format";
 import { ExpiringPromiseCache } from "@/lib/expiring-promise-cache";
 import { macheteLeagueDisplayName } from "@/lib/leagues/display";
 import { normalizeSportsRuPlayerName } from "@/lib/providers/sports-ru-fantasy";
-import { getActiveScoringModelBundleForSource } from "@/lib/scoring";
+import { calculateFantasyScore, getActiveScoringModelBundleForSource, type ActiveScoringModel } from "@/lib/scoring";
 import { applyUserScoringPreference } from "@/lib/scoring/user-preferences";
 import { providerTeamShortName } from "@/lib/teams/display";
 import { playerPhotoPublicUrl } from "./player-photo-cache";
@@ -93,6 +93,9 @@ type PlannerFixture = {
   projectedXga: number | null;
   attackMultiplier: number | null;
   defenseMultiplier: number | null;
+  teamOver15Probability?: number | null;
+  cleanSheetProbability?: number | null;
+  oddsFetchedAt?: Date | null;
 };
 
 type PlannerMatch = {
@@ -107,6 +110,11 @@ type PlannerMatch = {
   awayTeamFullName?: string | null;
   finished: boolean;
   cancelled: boolean;
+  homeOver15Probability?: number | null;
+  awayOver15Probability?: number | null;
+  homeCleanSheetProbability?: number | null;
+  awayCleanSheetProbability?: number | null;
+  oddsFetchedAt?: Date | null;
 };
 
 export type FantasyFixtureProjection = Pick<PlannerFixture, "side" | "attackMultiplier" | "defenseMultiplier">;
@@ -318,7 +326,7 @@ export async function loadFantasySquadPlannerData(
       .flatMap((round) => roundsAndFixtures.fixturesByTeamRound.get(round.id)?.get(String(row.teamId)) ?? [])
       .at(0) ?? null;
     const predictedFp = projected
-      ? calibratedPlayerFixturePoints(projected, nextFixture, playerRows.calibration?.model ?? null)
+      ? calibratedPlayerFixturePoints(projected, nextFixture, playerRows.calibration?.model ?? null, playerRows.scoringModel)
       : null;
     const priceRow = prices.byPlayerId.get(String(row.playerId));
     const sportsPosition = sportsPositionsByPlayerId.get(String(row.playerId)) ?? (priceRow ? sportsRuPricePosition(priceRow) : null);
@@ -334,7 +342,7 @@ export async function loadFantasySquadPlannerData(
       const fixtures = roundsAndFixtures.fixturesByTeamRound.get(round.id)?.get(String(row.teamId)) ?? [];
       return roundFantasyValue(
         fixtures.reduce((total, fixture) => {
-          const fixturePoints = projected ? calibratedPlayerFixturePoints(projected, fixture, playerRows.calibration?.model ?? null) ?? 0 : 0;
+          const fixturePoints = projected ? calibratedPlayerFixturePoints(projected, fixture, playerRows.calibration?.model ?? null, playerRows.scoringModel) ?? 0 : 0;
           return total + (playerRows.calibration ? fixturePoints : projectFixtureFantasyPoints(fixturePoints, positionGroup, fixture));
         }, 0)
       );
@@ -870,6 +878,7 @@ async function loadProjectedPlayerRows(
       ? `${baseModelVersion}+${FANTASY_PROJECTION_CALIBRATION.featureVersion}@${calibration.trainingSeason}`
       : `${baseModelVersion}+uncalibrated`,
     calibration,
+    scoringModel: modelBundle.model,
     rows: rows.map((row) => {
       const { teamId, playerId } = fantasyPlannerSharedRowIdentity(row.id);
       return {
@@ -888,18 +897,49 @@ export function fantasyPlannerSharedRowIdentity(rowId: string) {
     : { teamId: parts[2] ?? "", playerId: parts[3] ?? "" };
 }
 
+export function fixtureFormulaMetrics(
+  rawMetrics: Record<string, unknown> | undefined,
+  fixture: PlannerFixture | null,
+  now = new Date()
+): Record<string, unknown> {
+  const oddsAgeHours = fixture?.oddsFetchedAt
+    ? Math.max(0, (now.getTime() - fixture.oddsFetchedAt.getTime()) / (60 * 60 * 1_000))
+    : 0;
+  const oddsAvailable = fixture?.teamOver15Probability !== null && fixture?.teamOver15Probability !== undefined &&
+    fixture.cleanSheetProbability !== null && fixture.cleanSheetProbability !== undefined;
+
+  return {
+    ...(rawMetrics ?? {}),
+    fixture_team_over_1_5_probability: fixture?.teamOver15Probability ?? 0,
+    fixture_clean_sheet_probability: fixture?.cleanSheetProbability ?? 0,
+    fixture_bookmaker_odds_available: oddsAvailable ? 1 : 0,
+    fixture_bookmaker_odds_age_hours: oddsAvailable ? oddsAgeHours : 0,
+    fixture_projected_xg: fixture?.projectedXg ?? 0,
+    fixture_projected_xga: fixture?.projectedXga ?? 0,
+    next_projected_xg: fixture?.projectedXg ?? 0,
+    next_projected_xga: fixture?.projectedXga ?? 0,
+    next_fixture_count: fixture ? 1 : 0,
+    next_is_home: fixture?.side === "H" ? 1 : 0,
+    next_is_away: fixture?.side === "A" ? 1 : 0
+  };
+}
+
 export function calibratedPlayerFixturePoints(
   row: SharedMachetePlayerRow & { teamId: string; playerId: string },
   fixture: PlannerFixture | null,
-  calibration: FantasyProjectionCalibrationModel | null
+  calibration: FantasyProjectionCalibrationModel | null,
+  scoringModel?: ActiveScoringModel
 ) {
-  if (typeof row.fantasyScore !== "number" || !Number.isFinite(row.fantasyScore)) return null;
-  if (!calibration) return row.fantasyScore;
+  const fixtureScore = scoringModel
+    ? calculateFantasyScore(fixtureFormulaMetrics(row.rawMetrics, fixture), row.position, scoringModel)
+    : row.fantasyScore;
+  if (typeof fixtureScore !== "number" || !Number.isFinite(fixtureScore)) return null;
+  if (!calibration) return fixtureScore;
 
   const position = normalizeFantasyPosition(row.position);
-  if (position === "UNK") return row.fantasyScore;
+  if (position === "UNK") return fixtureScore;
   const recentPoints = row.recentFp.filter(Number.isFinite);
-  const baselinePoints = recentPoints.length > 0 ? average(recentPoints) : row.fantasyScore;
+  const baselinePoints = recentPoints.length > 0 ? average(recentPoints) : fixtureScore;
   const expectedMinutes = row.expectedMinutes ?? 0;
   const startRate = row.startProbability ?? 0;
   const minutesDeviation = row.minutesDeviation ?? 0;
@@ -932,7 +972,7 @@ export function calibratedPlayerFixturePoints(
       recentPointsDeviation: standardDeviation(recentPoints, baselinePoints),
       recentPointsTrend: recentTrend(recentPoints)
     },
-    predictedPoints: row.fantasyScore,
+    predictedPoints: fixtureScore,
     baselinePoints,
     seasonBaselinePoints: baselinePoints,
     actualPoints: 0
@@ -1017,7 +1057,12 @@ async function loadUpcomingRoundFixtures(prisma: PrismaClient, league: SharedLea
       },
       include: {
         homeTeam: { select: { name: true } },
-        awayTeam: { select: { name: true } }
+        awayTeam: { select: { name: true } },
+        oddsSnapshots: {
+          where: { provider: "FONBET", status: "AVAILABLE" },
+          orderBy: { fetchedAt: "desc" },
+          take: 1
+        }
       },
       orderBy: [{ matchDate: "asc" }, { id: "asc" }],
       take: 180
@@ -1047,7 +1092,10 @@ async function loadUpcomingRoundFixtures(prisma: PrismaClient, league: SharedLea
     : [];
   const shortNameByTeamId = fantasyTeamShortNamesByTeamId(seasonTeams, fallbackSeasonTeams);
   const coreFixtures = buildPlannerRoundFixtures(
-    matches.map((match) => ({
+    matches.map((match) => {
+      const odds = match.oddsSnapshots[0];
+      const freshOdds = odds && now.getTime() - odds.fetchedAt.getTime() <= 24 * 60 * 60 * 1_000 ? odds : null;
+      return {
       id: String(match.id),
       round: match.round,
       matchDate: match.matchDate,
@@ -1058,8 +1106,14 @@ async function loadUpcomingRoundFixtures(prisma: PrismaClient, league: SharedLea
       homeTeamFullName: match.homeTeam?.name ?? null,
       awayTeamFullName: match.awayTeam?.name ?? null,
       finished: match.finished,
-      cancelled: match.cancelled
-    })),
+      cancelled: match.cancelled,
+      homeOver15Probability: freshOdds?.homeOver15Probability ?? null,
+      awayOver15Probability: freshOdds?.awayOver15Probability ?? null,
+      homeCleanSheetProbability: freshOdds?.homeCleanSheetProbability ?? null,
+      awayCleanSheetProbability: freshOdds?.awayCleanSheetProbability ?? null,
+      oddsFetchedAt: freshOdds?.fetchedAt ?? null
+      };
+    }),
     now
   );
 
@@ -1099,7 +1153,10 @@ export function buildPlannerRoundFixtures(matches: PlannerMatch[], now = new Dat
           projectedXg: null,
           projectedXga: null,
           attackMultiplier: null,
-          defenseMultiplier: null
+          defenseMultiplier: null,
+          teamOver15Probability: match.homeOver15Probability ?? null,
+          cleanSheetProbability: match.homeCleanSheetProbability ?? null,
+          oddsFetchedAt: match.oddsFetchedAt ?? null
         });
       }
       if (match.awayTeamId) {
@@ -1115,7 +1172,10 @@ export function buildPlannerRoundFixtures(matches: PlannerMatch[], now = new Dat
           projectedXg: null,
           projectedXga: null,
           attackMultiplier: null,
-          defenseMultiplier: null
+          defenseMultiplier: null,
+          teamOver15Probability: match.awayOver15Probability ?? null,
+          cleanSheetProbability: match.awayCleanSheetProbability ?? null,
+          oddsFetchedAt: match.oddsFetchedAt ?? null
         });
       }
     }

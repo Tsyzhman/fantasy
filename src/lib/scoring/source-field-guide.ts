@@ -145,7 +145,13 @@ const rawFields = [
   ["Schedule", "Round projected xG", "number", "Projected team xG summed across all fixtures in the next round."],
   ["Schedule", "Round projected xGA", "number", "Projected team xGA summed across all fixtures in the next round."],
   ["Schedule", "Round projected xG avg", "number", "Average projected team xG across next-round fixtures."],
-  ["Schedule", "Round projected xGA avg", "number", "Average projected team xGA across next-round fixtures."]
+  ["Schedule", "Round projected xGA avg", "number", "Average projected team xGA across next-round fixtures."],
+  ["Bookmaker", "Fixture team over 1.5 probability", "number", "Margin-free probability that the player's team scores at least two goals in this fixture; 0 when no current line is available."],
+  ["Bookmaker", "Fixture clean sheet probability", "number", "Margin-free probability that the opponent scores no goals in this fixture; 0 when no current line is available."],
+  ["Bookmaker", "Fixture bookmaker odds available", "number", "1 when a current direct bookmaker team-total line is available for this fixture, otherwise 0."],
+  ["Bookmaker", "Fixture bookmaker odds age hours", "number", "Age of the stored bookmaker line in hours; 0 when no line is available."],
+  ["Bookmaker", "Fixture projected xG", "number", "Team projected xG for the exact fixture currently being scored."],
+  ["Bookmaker", "Fixture projected xGA", "number", "Team projected xGA for the exact fixture currently being scored."]
 ] satisfies Array<[string, string, SourceFormulaField["type"], string]>;
 
 export const sourceFormulaFields: SourceFormulaField[] = rawFields.map(([category, label, type, meaning]) => ({

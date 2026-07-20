@@ -18,6 +18,7 @@ import {
   fantasyTeamShortName,
   fantasyTeamShortNamesByTeamId,
   fixtureDifficultyFromMultipliers,
+  fixtureFormulaMetrics,
   fixtureStrengthProjection,
   loadFantasySquadPlannerData,
   normalizeFantasySquadName,
@@ -37,6 +38,28 @@ import {
 import { fitFantasyProjectionCalibration } from "./fantasy_projection_calibration";
 import type { FantasyBacktestSample } from "./fantasy_backtest";
 import { defaultFantasySquadRules } from "./squad_logic";
+
+test("fixture formula metrics expose direct de-vigged bookmaker inputs without replacing FotMob xG", () => {
+  const metrics = fixtureFormulaMetrics(
+    { xg: 4.2, matches_played: 3 },
+    {
+      id: "fixture-1", roundId: "round-1", teamId: "1", opponentTeamId: "2", opponentName: "BAL",
+      opponentFullName: "Baltika", side: "H", kickoffAt: new Date("2026-07-24T17:00:00.000Z"),
+      projectedXg: 1.44, projectedXga: 0.98, attackMultiplier: 1.1, defenseMultiplier: 1.05,
+      teamOver15Probability: 0.431, cleanSheetProbability: 0.407,
+      oddsFetchedAt: new Date("2026-07-20T12:00:00.000Z")
+    },
+    new Date("2026-07-20T15:00:00.000Z")
+  );
+
+  assert.equal(metrics.xg, 4.2);
+  assert.equal(metrics.fixture_projected_xg, 1.44);
+  assert.equal(metrics.fixture_projected_xga, 0.98);
+  assert.equal(metrics.fixture_team_over_1_5_probability, 0.431);
+  assert.equal(metrics.fixture_clean_sheet_probability, 0.407);
+  assert.equal(metrics.fixture_bookmaker_odds_available, 1);
+  assert.equal(metrics.fixture_bookmaker_odds_age_hours, 3);
+});
 
 test("legacy squads expand to five linked planning rounds and saved round plans stay independent", () => {
   const base = [{ playerId: "1", isStarter: true, isLocked: false, isCaptain: true, isViceCaptain: false, slotIndex: 0, purchasePrice: 7 }];

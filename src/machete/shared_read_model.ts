@@ -72,6 +72,7 @@ export type SharedMachetePlayerRow = {
   forecastConfidence: number | null;
   dataUpdatedAt: Date | null;
   hasBasicStats: boolean;
+  rawMetrics?: Record<string, unknown>;
 };
 
 export type SharedPlayerRowsScope = {
@@ -900,7 +901,8 @@ function aggregateSharedStats(
     startProbability,
     forecastConfidence,
     dataUpdatedAt,
-    hasBasicStats: stats.some((stat) => isSharedBasicStatComplete(stat, position))
+    hasBasicStats: stats.some((stat) => isSharedBasicStatComplete(stat, position)),
+    rawMetrics
   };
 }
 

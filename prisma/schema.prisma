@@ -905,6 +905,7 @@ model CoreMatch {
   shots                  MatchShot[]
   fantasyPoints          FantasyPoint[]
   fantasyPointBreakdowns FantasyPointBreakdown[]
+  oddsSnapshots          FixtureOddsSnapshot[]
 
   @@index([leagueId, season], map: "idx_matches_league_season")
   @@index([finished, matchDate], map: "idx_matches_finished_date")
@@ -912,6 +913,32 @@ model CoreMatch {
   @@index([awayTeamId, matchDate], map: "idx_matches_away_team_date")
   @@index([source, rawRef])
   @@map("matches")
+}
+
+model FixtureOddsSnapshot {
+  id                        String   @id @default(cuid())
+  matchId                   BigInt   @map("match_id")
+  provider                  String
+  providerEventId           String   @map("provider_event_id")
+  status                    String   @default("AVAILABLE")
+  homeOver15Odds            Float?   @map("home_over_15_odds")
+  homeUnder15Odds           Float?   @map("home_under_15_odds")
+  awayOver15Odds            Float?   @map("away_over_15_odds")
+  awayUnder15Odds           Float?   @map("away_under_15_odds")
+  homeOver15Probability     Float?   @map("home_over_15_probability")
+  awayOver15Probability     Float?   @map("away_over_15_probability")
+  homeCleanSheetProbability Float?   @map("home_clean_sheet_probability")
+  awayCleanSheetProbability Float?   @map("away_clean_sheet_probability")
+  fetchedAt                 DateTime @map("fetched_at")
+  createdAt                 DateTime @default(now()) @map("created_at")
+  updatedAt                 DateTime @updatedAt @map("updated_at")
+
+  match CoreMatch @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@unique([matchId, provider])
+  @@index([provider, fetchedAt])
+  @@index([status, fetchedAt])
+  @@map("fixture_odds_snapshots")
 }
 
 model RawMatchPayload {
