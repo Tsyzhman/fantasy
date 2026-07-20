@@ -336,6 +336,10 @@ export async function loadFantasySquadPlannerData(
         }, 0)
       );
     });
+    const alternativeRoundPoints = roundsAndFixtures.rounds.map((round) => {
+      const fixtures = roundsAndFixtures.fixturesByTeamRound.get(round.id)?.get(String(row.teamId)) ?? [];
+      return alternativePlayerRoundPoints(projected, fixtures, positionGroup);
+    });
     const fixtures = roundsAndFixtures.rounds.map((round) => {
       const teamFixtures = roundsAndFixtures.fixturesByTeamRound.get(round.id)?.get(String(row.teamId)) ?? [];
       return teamFixtures.map((fixture) => `${fixture.side} ${fixture.opponentName}`).join(", ");
@@ -373,6 +377,7 @@ export async function loadFantasySquadPlannerData(
         priceSource: price.priceSource,
         predictedFp,
         alternativePredictedFp,
+        alternativeRoundPoints,
         expectedMinutes: projected?.expectedMinutes ?? null,
         startProbability: projected?.startProbability ?? null,
         forecastConfidence: projected?.forecastConfidence ?? null,
@@ -830,6 +835,18 @@ export function alternativePlayerFixturePoints(
   if (typeof row.alternativeScore !== "number" || !Number.isFinite(row.alternativeScore)) return null;
   if (!fixture) return roundFantasyValue(row.alternativeScore);
   return roundFantasyValue(projectFixtureFantasyPoints(row.alternativeScore, positionGroup, fixture));
+}
+
+export function alternativePlayerRoundPoints(
+  row: Pick<SharedMachetePlayerRow, "alternativeScore"> | undefined,
+  fixtures: PlannerFixture[],
+  positionGroup: FantasyPositionGroup
+) {
+  if (!row || typeof row.alternativeScore !== "number" || !Number.isFinite(row.alternativeScore)) return null;
+  return roundFantasyValue(fixtures.reduce(
+    (total, fixture) => total + (alternativePlayerFixturePoints(row, fixture, positionGroup) ?? 0),
+    0
+  ));
 }
 
 export function buildFantasyForecastExplanation(input: {

@@ -1522,14 +1522,15 @@ function PlayerPoolTable({
         <div className="relative max-h-[720px] w-full max-w-full overflow-auto">
         <SortableTable className="w-full min-w-[720px] table-fixed divide-y divide-slate-200 text-xs">
           <colgroup>
-            <col className="w-[21%]" />
+            <col className="w-[19%]" />
             <col className="w-[9%]" />
             <col className="w-[6%]" />
             <col className="w-[8%]" />
             <col className="w-[7%]" />
             <col className="w-[7%]" />
             <col className="w-[7%]" />
-            <col className="w-[28%]" />
+            <col className="w-[6%]" />
+            <col className="w-[24%]" />
             <col className="w-[7%]" />
           </colgroup>
           <thead className="sticky top-0 z-10 whitespace-nowrap bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
@@ -1540,6 +1541,7 @@ function PlayerPoolTable({
               <th className="overflow-hidden px-1 py-2 text-right" title={columnTitles.price}><I18nText en="Price" ru="Цена" /></th>
               <th className="overflow-hidden px-1 py-2 text-right" title={columnTitles.next}><I18nText en="Next" ru="ФО" /></th>
               <th className="overflow-hidden px-1 py-2 text-right" title={columnTitles.alternative}><I18nText en="Alt" ru="Альт" /></th>
+              <th className="overflow-hidden px-1 py-2 text-right" title={columnTitles.alternativeFive}><I18nText en="Alt 5R" ru="Альт 5Т" /></th>
               <th className="overflow-hidden px-1 py-2 text-right" title={columnTitles.horizon}><I18nText en={`${horizon}R`} ru={`${horizon}Т`} /></th>
               <th data-sort-disabled="true" className="overflow-hidden px-2 py-2" title={columnTitles.fixtures}><I18nText en="Fixtures" ru="Матчи" /></th>
               <th data-sort-disabled="true" className="overflow-hidden px-2 py-2 text-center" title={columnTitles.action}>
@@ -1610,6 +1612,13 @@ function PlayerPoolTable({
                     title={alternativePredictedFpTitle(language)}
                   >
                     {formatScore(player.alternativePredictedFp)}
+                  </td>
+                  <td
+                    data-sort-value={playerAlternativeHorizonPoints(player, 5) ?? ""}
+                    className={`whitespace-nowrap px-2 py-1.5 text-right font-semibold ${muted ? "text-slate-600" : "text-violet-700"}`}
+                    title={alternativeFiveRoundFpTitle(language)}
+                  >
+                    {formatScore(playerAlternativeHorizonPoints(player, 5))}
                   </td>
                   <td data-sort-value={playerHorizonPoints(player, horizon)} className={`whitespace-nowrap px-2 py-1.5 text-right font-semibold ${muted ? "text-slate-600" : "text-sky-700"}`}>{formatScore(playerHorizonPoints(player, horizon))}</td>
                   <td className="overflow-hidden px-2 py-1.5 text-[11px] text-slate-500">
@@ -1773,10 +1782,13 @@ function PlayerPoolMobileList({
               </div>
             </dl>
 
-            <div className="mt-2 min-w-0 overflow-hidden">
+            <div className="mt-2 flex min-w-0 items-center justify-between gap-2 overflow-hidden">
               <div className="min-w-0 overflow-hidden">
                 {fixtureChips.length > 0 ? <FdrRow fixtures={fixtureChips} /> : <span className="text-[11px] text-slate-500"><I18nText en="No fixture loaded" ru="Матч не загружен" /></span>}
               </div>
+              <span className="shrink-0 text-[11px] font-semibold text-violet-700 num-tabular" title={alternativeFiveRoundFpTitle(language)}>
+                <I18nText en="Alt 5R" ru="Альт 5Т" /> {formatScore(playerAlternativeHorizonPoints(player, 5))}
+              </span>
             </div>
 
             {disabled ? (
@@ -2353,6 +2365,21 @@ function alternativePredictedFpTitle(language: UiLanguage) {
   );
 }
 
+function alternativeFiveRoundFpTitle(language: UiLanguage) {
+  return localizedText(
+    language,
+    "Total alternative FP forecast over the next five rounds, calculated from each round's fixtures.",
+    "Суммарный альтернативный прогноз FP на следующие пять туров, рассчитанный по матчам каждого тура."
+  );
+}
+
+function playerAlternativeHorizonPoints(player: FantasyPlannerPlayer, horizon: number) {
+  if (!player.alternativeRoundPoints) return null;
+  const values = player.alternativeRoundPoints.slice(0, horizon).filter((value): value is number => typeof value === "number" && Number.isFinite(value));
+  if (values.length === 0) return null;
+  return Math.round(values.reduce((total, value) => total + value, 0) * 100) / 100;
+}
+
 function playerPoolColumnTitles(language: UiLanguage, horizon: number) {
   return {
     player: localizedText(language, "Player name and primary fantasy-points forecast.", "Имя игрока и основной прогноз fantasy-очков."),
@@ -2361,6 +2388,7 @@ function playerPoolColumnTitles(language: UiLanguage, horizon: number) {
     price: localizedText(language, "Current fantasy price. A tilde marks an estimated price.", "Текущая фэнтези-цена. Тильда означает оценочную цену."),
     next: localizedText(language, "Primary fantasy-points forecast for the next fixture.", "Основной прогноз fantasy-очков на ближайший матч."),
     alternative: alternativePredictedFpTitle(language),
+    alternativeFive: alternativeFiveRoundFpTitle(language),
     horizon: localizedText(language, `Total primary forecast over the selected ${horizon}-round horizon.`, `Суммарный основной прогноз на выбранном горизонте в ${horizon} туров.`),
     fixtures: localizedText(language, "Upcoming opponents. Home fixtures are bold; underline colour shows difficulty from green (easy) to red (hard). Hover an opponent for the full club name.", "Ближайшие соперники. Домашние матчи выделены жирным; цвет нижней границы показывает сложность от зелёного (легко) до красного (сложно). Полное название клуба доступно при наведении."),
     action: localizedText(language, "Add the player to the squad or remove the selected player.", "Добавить игрока в состав или убрать уже выбранного игрока.")
@@ -2618,7 +2646,8 @@ function fantasyPlayerAtRoundOffset(player: FantasyPlannerPlayer, roundOffset: n
   return {
     ...player,
     predictedFp: player.roundPoints[roundOffset] ?? null,
-    alternativePredictedFp: null,
+    alternativePredictedFp: player.alternativeRoundPoints?.[roundOffset] ?? null,
+    alternativeRoundPoints: player.alternativeRoundPoints?.slice(roundOffset),
     roundPoints: player.roundPoints.slice(roundOffset),
     fixtures: player.fixtures.slice(roundOffset),
     fixtureFullNames: player.fixtureFullNames?.slice(roundOffset),

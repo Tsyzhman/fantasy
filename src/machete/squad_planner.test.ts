@@ -7,6 +7,7 @@ import {
   buildPlannerRoundFixtures,
   buildTeamStrengthProfilesFromMatches,
   alternativePlayerFixturePoints,
+  alternativePlayerRoundPoints,
   calibratedPlayerFixturePoints,
   compareFantasyPlannerPlayers,
   fantasyPlannerPosition,
@@ -607,6 +608,23 @@ test("alternative predicted FP applies fixture difficulty without production cal
   assert.equal(alternativePlayerFixturePoints({ alternativeScore: 6 }, fixture, "MID"), 6.5);
   assert.equal(alternativePlayerFixturePoints({ alternativeScore: 6 }, null, "MID"), 6);
   assert.equal(alternativePlayerFixturePoints({ alternativeScore: null }, fixture, "MID"), null);
+});
+
+test("alternative round FP sums its fixtures instead of multiplying the next fixture", () => {
+  const fixtures = [
+    {
+      id: "1", roundId: "round-1", teamId: "1", opponentTeamId: "2", opponentName: "A", opponentFullName: "Alpha",
+      side: "H", kickoffAt: null, projectedXg: 1.5, projectedXga: 0.8, attackMultiplier: 1.1, defenseMultiplier: 1.1
+    },
+    {
+      id: "2", roundId: "round-1", teamId: "1", opponentTeamId: "3", opponentName: "B", opponentFullName: "Beta",
+      side: "A", kickoffAt: null, projectedXg: 0.9, projectedXga: 1.4, attackMultiplier: 0.9, defenseMultiplier: 0.9
+    }
+  ] as const;
+
+  const expected = fixtures.reduce((total, fixture) => total + (alternativePlayerFixturePoints({ alternativeScore: 6 }, fixture, "MID") ?? 0), 0);
+  assert.equal(alternativePlayerRoundPoints({ alternativeScore: 6 }, [...fixtures], "MID"), Math.round(expected * 100) / 100);
+  assert.equal(alternativePlayerRoundPoints(undefined, [...fixtures], "MID"), null);
 });
 
 function match(input: {
