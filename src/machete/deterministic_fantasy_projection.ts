@@ -82,6 +82,8 @@ export type ProbableParticipantInput = {
   expectedMinutes: number | null | undefined;
   probabilities: ParticipantProbabilityInput;
   ratesPer90: ParticipantRatesPer90Input;
+  /** Defaults to expectedMinutes / 90. Set to 1 for methods that allocate directly from per-90 shares. */
+  per90ExposureFactor?: number;
 };
 
 export type PlayerExpectedEvents = {
@@ -194,6 +196,7 @@ export function projectTeamPlayers(team: ProjectedTeamTotals, participants: read
   const players = participants.map((player, index): PlayerFixtureProjection => {
     const minutes = player.expectedMinutes!;
     const minutesFactor = minutes / 90;
+    const eventExposureFactor = per90ExposureFactor(player);
     const probabilities = {
       appearance: player.probabilities.appearance!,
       sixtyMinutes: player.probabilities.sixtyMinutes!,
@@ -204,8 +207,8 @@ export function projectTeamPlayers(team: ProjectedTeamTotals, participants: read
       assists: assists[index],
       recoveries: recoveries[index],
       saves: saves[index],
-      yellowCards: minutesFactor === 0 ? 0 : player.ratesPer90.yellowCards! * minutesFactor,
-      redCards: minutesFactor === 0 ? 0 : player.ratesPer90.redCards! * minutesFactor,
+      yellowCards: eventExposureFactor === 0 ? 0 : player.ratesPer90.yellowCards! * eventExposureFactor,
+      redCards: eventExposureFactor === 0 ? 0 : player.ratesPer90.redCards! * eventExposureFactor,
       goalsConceded: player.position === "GK" || player.position === "DEF" ? team.expectedGoalsAgainst * minutesFactor : 0,
       cleanSheets: cleanSheetEligible(player.position) ? team.cleanSheetProbability * probabilities.sixtyMinutes : 0
     };
@@ -291,6 +294,7 @@ function validatePlayerProjectionInput(team: ProjectedTeamTotals, participants: 
     const appearance = probability(player.probabilities.appearance, `${path}.probabilities.appearance`, issues);
     const sixty = probability(player.probabilities.sixtyMinutes, `${path}.probabilities.sixtyMinutes`, issues);
     const full = probability(player.probabilities.fullMatch, `${path}.probabilities.fullMatch`, issues);
+    if (player.per90ExposureFactor !== undefined) probability(player.per90ExposureFactor, `${path}.per90ExposureFactor`, issues);
     if (sixty > appearance) issues.push({ path: `${path}.probabilities.sixtyMinutes`, message: "must not exceed appearance probability" });
     if (full > sixty) issues.push({ path: `${path}.probabilities.fullMatch`, message: "must not exceed sixty-minute probability" });
     if (minutes > 90 * appearance + MASS_BALANCE_EPSILON) {
@@ -326,7 +330,11 @@ function validateAllocationDenominator(
 
 function exposureWeight(player: ProbableParticipantInput, ratePer90: number) {
   if ((player.expectedMinutes ?? 0) === 0) return 0;
-  return ratePer90 * (player.expectedMinutes! / 90);
+  return ratePer90 * per90ExposureFactor(player);
+}
+
+function per90ExposureFactor(player: ProbableParticipantInput) {
+  return player.per90ExposureFactor ?? player.expectedMinutes! / 90;
 }
 
 function allocateExactly(total: number, weights: readonly number[]) {

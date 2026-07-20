@@ -140,6 +140,33 @@ export const alternativeFormulaFields = [
   }
 ] as const;
 
+export const friendAlternativeFormulaByPosition = [
+  {
+    key: "alternativeFormulaGk",
+    position: "GK",
+    formula: "{Appearance FP} + {60+ minutes FP} + 6*{xG} + 3*{xA} + 4*{Clean sheets} + {Saves}/3 - {Yellow cards} - 3*{Red cards}"
+  },
+  {
+    key: "alternativeFormulaDef",
+    position: "DEF",
+    formula: "{Appearance FP} + {60+ minutes FP} + 6*{xG} + 3*{xA} + 4*{Clean sheets} + {Recoveries}/3 - {Yellow cards} - 3*{Red cards}"
+  },
+  {
+    key: "alternativeFormulaMid",
+    position: "MID",
+    formula: "{Appearance FP} + {60+ minutes FP} + {Full match FP} + 5*{xG} + 3*{xA} + {Clean sheets} + {Recoveries}/3 - {Yellow cards} - 3*{Red cards}"
+  },
+  {
+    key: "alternativeFormulaFwd",
+    position: "FWD",
+    formula: "{Appearance FP} + {60+ minutes FP} + {Full match FP} + 4*{xG} + 3*{xA} + {Recoveries}/3 - {Yellow cards} - 3*{Red cards}"
+  }
+] as const;
+
+export const friendAlternativeFormulaDefaults = Object.fromEntries(
+  friendAlternativeFormulaByPosition.map((entry) => [entry.key, entry.formula])
+) as Record<(typeof friendAlternativeFormulaByPosition)[number]["key"], string>;
+
 export const scoringFormulaFields = [
   {
     key: "scoringFormulaGk",

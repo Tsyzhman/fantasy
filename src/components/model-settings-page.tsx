@@ -484,15 +484,15 @@ function ScoreMap({
         <p className="mt-2 text-sm text-slate-700">
           <I18nText
             en={source === "MACHETE"
-              ? "Personal comparison score. Every user manages it in their own settings; administrators do not overwrite it here."
+              ? "Shared adapted squad forecast by default. Every user can replace its formula in their own settings; administrators do not overwrite personal overrides here."
               : "Optional second score for comparison. It appears only when Alt FP is enabled and has a formula."}
             ru={source === "MACHETE"
-              ? "Личные очки для сравнения. Каждый пользователь настраивает их у себя; администратор здесь их не перезаписывает."
+              ? "По умолчанию в планировщике состава используется общий адаптированный прогноз. Каждый пользователь может заменить его формулу у себя; администратор здесь не перезаписывает личные настройки."
               : "Дополнительные очки для сравнения. Появляются, когда Alt FP включен и есть формула."}
           />
         </p>
         <p className="mt-3 text-xs font-semibold text-amber-700">
-          {source === "MACHETE" ? <I18nText en="Managed per user" ru="Настраивается пользователем" /> : <AltStatusLabel enabled={altEnabled} />}
+          {source === "MACHETE" ? <I18nText en="Shared baseline + personal override" ru="Общая база + личная настройка" /> : <AltStatusLabel enabled={altEnabled} />}
         </p>
       </div>
       <div className="rounded border border-slate-200 bg-slate-50 p-4">

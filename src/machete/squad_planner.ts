@@ -4,8 +4,9 @@ import { formatDate } from "@/lib/format";
 import { ExpiringPromiseCache } from "@/lib/expiring-promise-cache";
 import { macheteLeagueDisplayName } from "@/lib/leagues/display";
 import { normalizeSportsRuPlayerName } from "@/lib/providers/sports-ru-fantasy";
-import { calculateFantasyScore, getActiveScoringModelBundleForSource, type ActiveScoringModel } from "@/lib/scoring";
-import { applyUserScoringPreference } from "@/lib/scoring/user-preferences";
+import { calculateAlternativeScore, calculateFantasyScore, getActiveScoringModelBundleForSource, type ActiveScoringModel } from "@/lib/scoring";
+import { friendAlternativeFormulaDefaults } from "@/lib/scoring/formula-display";
+import type { UserScoringFormulaPreference } from "@/lib/scoring/user-preferences";
 import { providerTeamShortName } from "@/lib/teams/display";
 import { playerPhotoPublicUrl } from "./player-photo-cache";
 import {
@@ -138,6 +139,8 @@ type ComponentProjectionIndex = {
   byFixturePlayer: Map<string, PlayerFixtureProjection>;
   errorsByFixtureTeam: Map<string, string>;
 };
+
+type ComponentProjectionMode = "PRIMARY" | "FRIEND_ALT";
 
 type TeamStrengthSide = "home" | "away";
 
@@ -339,6 +342,12 @@ export async function loadFantasySquadPlannerData(
     roundsAndFixtures,
     sportsPositionsByPlayerId
   );
+  const friendAlternativeProjections = buildComponentProjectionIndex(
+    playerRows.friendRows,
+    roundsAndFixtures,
+    sportsPositionsByPlayerId,
+    "FRIEND_ALT"
+  );
   const preferredProjectionEngine = configuredFantasyProjectionEngine();
   const rosterPlayers: FantasyPlannerPlayer[] = rosterRows.flatMap((row) => {
     const projected = projectedByPlayerTeam.get(playerTeamKey(row.playerId, row.teamId));
@@ -363,8 +372,11 @@ export async function loadFantasySquadPlannerData(
         ? "COMPONENT_XFP_V1"
         : "LEGACY_RIDGE19_V1";
     const predictedFp = projectionEngine === "COMPONENT_XFP_V1" ? componentPredictedFp : legacyPredictedFp;
-    const alternativePredictedFp = projected
-      ? alternativePlayerFixturePoints(projected, nextFixture, positionGroup)
+    const nextFriendProjection = nextFixture
+      ? friendAlternativeProjections.byFixturePlayer.get(fixturePlayerProjectionKey(nextFixture.id, String(row.playerId))) ?? null
+      : null;
+    const alternativePredictedFp = nextFriendProjection
+      ? friendAlternativeProjectionFantasyPoints(nextFriendProjection, nextFixture, playerRows.scoringModel)
       : null;
     const price = resolveFantasyPlannerPrice(priceRow, predictedFp, positionGroup);
     const playerName = priceRow?.playerName ?? row.player.name;
@@ -396,7 +408,14 @@ export async function loadFantasySquadPlannerData(
     );
     const alternativeRoundPoints = roundsAndFixtures.rounds.map((round) => {
       const fixtures = roundsAndFixtures.fixturesByTeamRound.get(round.id)?.get(String(row.teamId)) ?? [];
-      return alternativePlayerRoundPoints(projected, fixtures, positionGroup);
+      if (fixtures.length === 0) return 0;
+      const values = fixtures.map((fixture) => {
+        const projection = friendAlternativeProjections.byFixturePlayer.get(fixturePlayerProjectionKey(fixture.id, String(row.playerId)));
+        return projection ? friendAlternativeProjectionFantasyPoints(projection, fixture, playerRows.scoringModel) : null;
+      });
+      return values.some((value) => value === null)
+        ? null
+        : roundFantasyValue(values.reduce<number>((total, value) => total + (value ?? 0), 0));
     });
     const fixtures = roundsAndFixtures.rounds.map((round) => {
       const teamFixtures = roundsAndFixtures.fixturesByTeamRound.get(round.id)?.get(String(row.teamId)) ?? [];
@@ -907,6 +926,32 @@ export function fantasyRulesForLeague(
   };
 }
 
+export function friendAlternativeScoringModel(
+  baseModel: ActiveScoringModel,
+  preference: UserScoringFormulaPreference | null | undefined
+): ActiveScoringModel {
+  const personalEnabled = Boolean(
+    preference?.alternativeFormulaEnabled &&
+    [
+      preference.alternativeFormulaGk,
+      preference.alternativeFormulaDef,
+      preference.alternativeFormulaMid,
+      preference.alternativeFormulaFwd
+    ].some((formula) => formula?.trim())
+  );
+  const formula = (personal: string | null | undefined, fallback: string) =>
+    personalEnabled ? personal?.trim() || fallback : fallback;
+
+  return {
+    ...baseModel,
+    alternativeFormulaGk: formula(preference?.alternativeFormulaGk, friendAlternativeFormulaDefaults.alternativeFormulaGk),
+    alternativeFormulaDef: formula(preference?.alternativeFormulaDef, friendAlternativeFormulaDefaults.alternativeFormulaDef),
+    alternativeFormulaMid: formula(preference?.alternativeFormulaMid, friendAlternativeFormulaDefaults.alternativeFormulaMid),
+    alternativeFormulaFwd: formula(preference?.alternativeFormulaFwd, friendAlternativeFormulaDefaults.alternativeFormulaFwd),
+    alternativeFormulaEnabled: true
+  };
+}
+
 async function loadProjectedPlayerRows(
   prisma: PrismaClient,
   userId: string,
@@ -918,16 +963,23 @@ async function loadProjectedPlayerRows(
     getActiveScoringModelBundleForSource("MACHETE", prisma),
     prisma.userScoringPreference.findUnique({ where: { userId_modelSource: { userId, modelSource: "MACHETE" } } })
   ]);
-  const readTimeScoringModel = applyUserScoringPreference(modelBundle.model, preference);
+  const readTimeScoringModel = friendAlternativeScoringModel(modelBundle.model, preference);
   const baseModelVersion = `${modelBundle.identity.configuredModelSource}:${modelBundle.identity.configuredModelId ?? "built-in"}:v${modelBundle.identity.configuredModelVersion}`;
-  const [rows, calibration] = await Promise.all([
+  const [rows, friendRows, calibration] = await Promise.all([
     loadSharedMachetePlayerRows(prisma, {
       scopes: history.historyScopes,
       rosterScopes: history.rosterScopes,
       matchWindow: history.matchWindow,
       combineTeamCompetitions: true,
-      scoringModel: readTimeScoringModel,
+      scoringModel: modelBundle.model,
       playerIds
+    }),
+    loadSharedMachetePlayerRows(prisma, {
+      scopes: history.historyScopes,
+      rosterScopes: history.rosterScopes,
+      matchWindow: { kind: "days", days: 365 },
+      combineTeamCompetitions: true,
+      scoringModel: modelBundle.model
     }),
     loadFantasyProjectionCalibration(prisma, {
       leagueId: league.leagueId,
@@ -943,7 +995,11 @@ async function loadProjectedPlayerRows(
       ? `${baseModelVersion}+${FANTASY_PROJECTION_CALIBRATION.featureVersion}@${calibration.trainingSeason}`
       : `${baseModelVersion}+uncalibrated`,
     calibration,
-    scoringModel: modelBundle.model,
+    scoringModel: readTimeScoringModel,
+    friendRows: friendRows.map((row) => {
+      const { teamId, playerId } = fantasyPlannerSharedRowIdentity(row.id);
+      return { ...row, teamId, playerId };
+    }),
     rows: rows.map((row) => {
       const { teamId, playerId } = fantasyPlannerSharedRowIdentity(row.id);
       return {
@@ -969,7 +1025,8 @@ export function configuredFantasyProjectionEngine(envValue = process.env.FANTASY
 function buildComponentProjectionIndex(
   rows: Array<SharedMachetePlayerRow & { teamId: string; playerId: string }>,
   roundsAndFixtures: PlannerRoundFixtures,
-  sportsPositionsByPlayerId: Map<string, string>
+  sportsPositionsByPlayerId: Map<string, string>,
+  mode: ComponentProjectionMode = "PRIMARY"
 ): ComponentProjectionIndex {
   const byFixturePlayer = new Map<string, PlayerFixtureProjection>();
   const errorsByFixtureTeam = new Map<string, string>();
@@ -988,10 +1045,12 @@ function buildComponentProjectionIndex(
   }
 
   for (const [fixtureTeamKey, fixture] of uniqueFixtures) {
-    const participants = (rowsByTeam.get(fixture.teamId) ?? [])
-      .map((row) => componentParticipant(row, sportsPositionsByPlayerId.get(row.playerId)))
+    const teamRows = rowsByTeam.get(fixture.teamId) ?? [];
+    const projectionRows = mode === "FRIEND_ALT" ? friendStartingRows(teamRows) : teamRows;
+    const participants = projectionRows
+      .map((row) => componentParticipant(row, sportsPositionsByPlayerId.get(row.playerId), mode))
       .filter((row): row is ProbableParticipantInput => row !== null);
-    const team = componentTeamTotals(fixture, participants);
+    const team = componentTeamTotals(fixture, participants, mode);
     if (!team) {
       errorsByFixtureTeam.set(fixtureTeamKey, "team xG/xGA is missing");
       continue;
@@ -1015,20 +1074,35 @@ function buildComponentProjectionIndex(
 
 function componentParticipant(
   row: SharedMachetePlayerRow & { teamId: string; playerId: string },
-  sportsPosition?: string
+  sportsPosition?: string,
+  mode: ComponentProjectionMode = "PRIMARY"
 ): ProbableParticipantInput | null {
   const position = normalizeFantasyPosition(fantasyPlannerPosition(sportsPosition ?? null, null, row.position));
   if (position === "UNK") return null;
-  const expectedMinutes = clamp(row.expectedMinutes ?? 0, 0, 90);
-  const appearance = clamp(Math.max(componentMetric(row, "appearance_probability"), expectedMinutes / 90), 0, 1);
-  const sixtyMinutes = clamp(Math.min(componentMetric(row, "sixty_minute_probability"), appearance), 0, 1);
-  const fullMatch = clamp(Math.min(componentMetric(row, "full_match_probability"), sixtyMinutes), 0, 1);
-  const rate = (key: string) => componentRatePer90(row, key);
+  const friendMode = mode === "FRIEND_ALT";
+  const expectedMinutes = clamp(
+    friendMode ? componentMetric(row, "friend_expected_minutes") : row.expectedMinutes ?? 0,
+    0,
+    90
+  );
+  const appearance = friendMode
+    ? (expectedMinutes > 0 ? 1 : 0)
+    : clamp(Math.max(componentMetric(row, "appearance_probability"), expectedMinutes / 90), 0, 1);
+  const sixtyMinutes = friendMode
+    ? (expectedMinutes >= 60 ? 1 : 0)
+    : clamp(Math.min(componentMetric(row, "sixty_minute_probability"), appearance), 0, 1);
+  const fullMatch = friendMode
+    ? (expectedMinutes >= 90 ? 1 : 0)
+    : clamp(Math.min(componentMetric(row, "full_match_probability"), sixtyMinutes), 0, 1);
+  const rate = (key: string) => friendMode
+    ? componentMetric(row, `friend_${key}_per_90`)
+    : componentRatePer90(row, key);
 
   return {
     playerId: row.playerId,
     position,
     expectedMinutes,
+    per90ExposureFactor: friendMode ? (expectedMinutes > 0 ? 1 : 0) : undefined,
     probabilities: { appearance, sixtyMinutes, fullMatch },
     ratesPer90: {
       xg: expectedMinutes > 0 ? rate("xg") : undefined,
@@ -1041,17 +1115,21 @@ function componentParticipant(
   };
 }
 
-function componentTeamTotals(fixture: PlannerFixture, participants: ProbableParticipantInput[]): ProjectedTeamTotals | null {
+function componentTeamTotals(
+  fixture: PlannerFixture,
+  participants: ProbableParticipantInput[],
+  mode: ComponentProjectionMode = "PRIMARY"
+): ProjectedTeamTotals | null {
   if (fixture.projectedXg === null || fixture.projectedXga === null) return null;
   const modelGoals = fixture.projectedXg;
   const oddsGoals = inversePoissonOver15Probability(fixture.teamOver15Probability);
-  const expectedGoals = oddsGoals === null
+  const expectedGoals = mode === "FRIEND_ALT" || oddsGoals === null
     ? modelGoals
     : clamp(modelGoals * 0.55 + oddsGoals * 0.45, modelGoals * 0.7, modelGoals * 1.35);
   const expectedRecoveries = participants.reduce((total, player) =>
-    total + (player.position === "GK" ? 0 : (player.ratesPer90.recoveries ?? 0) * player.expectedMinutes! / 90), 0);
+    total + (player.position === "GK" ? 0 : (player.ratesPer90.recoveries ?? 0) * participantExposureFactor(player)), 0);
   const expectedSaves = participants.reduce((total, player) =>
-    total + (player.position === "GK" ? (player.ratesPer90.saves ?? 0) * player.expectedMinutes! / 90 : 0), 0);
+    total + (player.position === "GK" ? (player.ratesPer90.saves ?? 0) * participantExposureFactor(player) : 0), 0);
 
   return {
     teamId: fixture.teamId,
@@ -1060,8 +1138,25 @@ function componentTeamTotals(fixture: PlannerFixture, participants: ProbablePart
     expectedAssists: expectedGoals * 0.8,
     expectedRecoveries,
     expectedSaves,
-    cleanSheetProbability: fixture.cleanSheetProbability ?? Math.exp(-fixture.projectedXga)
+    cleanSheetProbability: mode === "FRIEND_ALT"
+      ? Math.exp(-fixture.projectedXga)
+      : fixture.cleanSheetProbability ?? Math.exp(-fixture.projectedXga)
   };
+}
+
+function participantExposureFactor(player: ProbableParticipantInput) {
+  return player.per90ExposureFactor ?? (player.expectedMinutes ?? 0) / 90;
+}
+
+export function friendStartingRows<T extends SharedMachetePlayerRow>(rows: T[]) {
+  return [...rows]
+    .sort((left, right) =>
+      Number(right.isStarter) - Number(left.isStarter) ||
+      (right.startProbability ?? 0) - (left.startProbability ?? 0) ||
+      (right.expectedMinutes ?? 0) - (left.expectedMinutes ?? 0) ||
+      right.minutesPlayed - left.minutesPlayed
+    )
+    .slice(0, 11);
 }
 
 function componentMetric(row: Pick<SharedMachetePlayerRow, "rawMetrics">, key: string) {
@@ -1173,6 +1268,18 @@ export function componentProjectionFantasyPoints(
   return calculateFantasyScore(componentProjectionFormulaMetrics(projection, fixture), projection.position, scoringModel);
 }
 
+export function friendAlternativeProjectionFantasyPoints(
+  projection: PlayerFixtureProjection,
+  fixture: PlannerFixture | null,
+  scoringModel: ActiveScoringModel
+) {
+  return calculateAlternativeScore(
+    componentProjectionFormulaMetrics(projection, fixture),
+    projection.position,
+    scoringModel
+  );
+}
+
 export function bookmakerFixtureMultiplier(
   fixture: Pick<PlannerFixture, "projectedXg" | "projectedXga" | "teamOver15Probability" | "cleanSheetProbability"> | null,
   positionGroup: FantasyPositionGroup
@@ -1250,30 +1357,6 @@ export function calibratedPlayerFixturePoints(
   };
 
   return predictCalibratedFantasyPoints(calibration, sample);
-}
-
-export function alternativePlayerFixturePoints(
-  row: Pick<SharedMachetePlayerRow, "alternativeScore">,
-  fixture: PlannerFixture | null,
-  positionGroup: FantasyPositionGroup
-) {
-  if (typeof row.alternativeScore !== "number" || !Number.isFinite(row.alternativeScore)) return null;
-  if (!fixture) return roundFantasyValue(row.alternativeScore);
-  return roundFantasyValue(
-    projectFixtureFantasyPoints(row.alternativeScore, positionGroup, fixture) * bookmakerFixtureMultiplier(fixture, positionGroup)
-  );
-}
-
-export function alternativePlayerRoundPoints(
-  row: Pick<SharedMachetePlayerRow, "alternativeScore"> | undefined,
-  fixtures: PlannerFixture[],
-  positionGroup: FantasyPositionGroup
-) {
-  if (!row || typeof row.alternativeScore !== "number" || !Number.isFinite(row.alternativeScore)) return null;
-  return roundFantasyValue(fixtures.reduce(
-    (total, fixture) => total + (alternativePlayerFixturePoints(row, fixture, positionGroup) ?? 0),
-    0
-  ));
 }
 
 export function buildFantasyForecastExplanation(input: {

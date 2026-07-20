@@ -7,7 +7,7 @@ import { compareMacheteLeagues, macheteLeagueDisplayName } from "@/lib/leagues/d
 import { teamLogoUrlForSlug, validTeamLogoUrl } from "@/lib/teams/logo-assets";
 import { providerTeamShortName } from "@/lib/teams/display";
 import { normalizeName, slugify } from "@/lib/text";
-import { matchWindowSeasonLabel, type MacheteMatchWindow } from "@/scoring/machete/match-window";
+import { daysAgo, matchWindowSeasonLabel, type MacheteMatchWindow } from "@/scoring/machete/match-window";
 import { normalizeFantasyPosition, type FantasyPositionGroup } from "@/machete/squad_logic";
 
 export type SharedLeagueSeasonOption = {
@@ -479,7 +479,7 @@ export async function loadSharedMachetePlayerRows(
         const playerStats = mergeRecentPlayerStats(scopedStats, fallbackStatsByPlayer.get(String(first.playerId)) ?? [], matchDateById, input.matchWindow);
         const position = inferSharedPosition(firstNonEmpty(rows.map((row) => row.position)), playerStats, matchDateById);
         const leagueNames = uniqueStrings(rows.map(leagueNameForRosterRow));
-        const aggregate = aggregateSharedStats(playerStats, position, scoringModel, matchDateById);
+        const aggregate = aggregateSharedStats(playerStats, position, scoringModel, matchDateById, input.matchWindow);
 
         return {
           id: `combined:${first.teamId}:${first.playerId}:${rows.map((row) => `${row.leagueId}:${row.season}`).join("|")}`,
@@ -507,7 +507,7 @@ export async function loadSharedMachetePlayerRows(
       const scopedStats = (statsByTeamPlayer.get(teamPlayerKey(row.teamId, row.playerId)) ?? []).filter((stat) => allowedMatchIds.has(String(stat.matchId)));
       const playerStats = mergeRecentPlayerStats(scopedStats, fallbackStatsByPlayer.get(String(row.playerId)) ?? [], matchDateById, input.matchWindow);
       const position = inferSharedPosition(row.position, playerStats, matchDateById);
-      const aggregate = aggregateSharedStats(playerStats, position, scoringModel, matchDateById);
+      const aggregate = aggregateSharedStats(playerStats, position, scoringModel, matchDateById, input.matchWindow);
       const leagueName = leagueNameForRosterRow(row);
 
       return {
@@ -603,11 +603,13 @@ async function loadSharedTeamMatchRefs(
   options: { deferLastLimit?: boolean } = {}
 ) {
   const seasonFilter = window.kind === "season" ? matchWindowSeasonLabel(season, window.offset, String(leagueId)) : null;
+  const dateFilter = window.kind === "days" ? { gte: daysAgo(window.days) } : undefined;
   const matches = await prisma.coreMatch.findMany({
     where: {
       finished: true,
       leagueId,
       ...(seasonFilter ? { season: seasonFilter } : {}),
+      ...(dateFilter ? { matchDate: dateFilter } : {}),
       OR: [{ homeTeamId: teamId }, { awayTeamId: teamId }]
     },
     orderBy: { matchDate: "desc" },
@@ -777,17 +779,19 @@ function mergeRecentPlayerStats(
   matchDateById: Map<string, Date | null>,
   matchWindow: MacheteMatchWindow
 ) {
-  if (matchWindow.kind !== "last" || fallbackStats.length === 0) return scopedStats;
+  if ((matchWindow.kind !== "last" && matchWindow.kind !== "days") || fallbackStats.length === 0) return scopedStats;
 
   const byMatchId = new Map<string, MatchPlayerStatRecord>();
   for (const stat of [...fallbackStats, ...scopedStats]) byMatchId.set(String(stat.matchId), stat);
-  return [...byMatchId.values()]
+  const ordered = [...byMatchId.values()]
     .sort(
       (left, right) =>
         dateMs(matchDateById.get(String(left.matchId)) ?? null) - dateMs(matchDateById.get(String(right.matchId)) ?? null) ||
         compareBigints(left.matchId, right.matchId)
-    )
-    .slice(-matchWindow.matches);
+    );
+  if (matchWindow.kind === "last") return ordered.slice(-matchWindow.matches);
+  const cutoff = daysAgo(matchWindow.days).getTime();
+  return ordered.filter((stat) => dateMs(matchDateById.get(String(stat.matchId)) ?? null) >= cutoff);
 }
 
 function inferSharedPosition(position: string | null | undefined, stats: MatchPlayerStatRecord[], matchDateById: Map<string, Date | null>) {
@@ -803,11 +807,77 @@ function inferSharedPosition(position: string | null | undefined, stats: MatchPl
 
 const RECENT_FP_WINDOW = 5;
 
+type FriendWindowStat = {
+  matchId: bigint;
+  minutes: number | null;
+  xg: number | null;
+  xa: number | null;
+  recoveries: number | null;
+  saves: number | null;
+  yellowCards: number | null;
+  redCards: number | null;
+};
+
+/**
+ * Builds the unrounded rolling inputs used by the friend-method Alt projection.
+ * The caller is responsible for limiting the supplied history to 365 days.
+ */
+export function calculateFriendWindowMetrics(stats: FriendWindowStat[], matchDateById?: Map<string, Date | null>) {
+  const ordered = [...stats].sort((left, right) => {
+    const dateDifference = dateMs(matchDateById?.get(String(right.matchId)) ?? null) - dateMs(matchDateById?.get(String(left.matchId)) ?? null);
+    return dateDifference || compareBigints(right.matchId, left.matchId);
+  });
+  const annual = friendWindowAggregate(ordered);
+  const last10 = friendWindowAggregate(ordered.slice(0, 10));
+  const last5 = friendWindowAggregate(ordered.slice(0, 5));
+  const last1 = friendWindowAggregate(ordered.slice(0, 1));
+
+  const effectiveWeights = [
+    { sample: annual, weight: annual.minutes > 0 ? 0.4 : 0 },
+    { sample: last10, weight: last10.minutes > 0 ? 0.35 * Math.min(last10.minutes / 900, 1) : 0 },
+    { sample: last5, weight: last5.minutes > 0 ? 0.25 * Math.min(last5.minutes / 450, 1) : 0 }
+  ];
+  const totalWeight = sum(effectiveWeights.map((entry) => entry.weight));
+  const weightedPer90 = (field: "xg" | "xa" | "recoveries" | "saves") =>
+    totalWeight > 0
+      ? sum(effectiveWeights.map(({ sample, weight }) => weight * per90(sample[field], sample.minutes))) / totalWeight
+      : 0;
+
+  return {
+    friend_expected_minutes: Math.max(last1.minutesPerMatch, last5.minutesPerMatch, last10.minutesPerMatch, annual.minutesPerMatch),
+    friend_xg_per_90: weightedPer90("xg"),
+    friend_xa_per_90: weightedPer90("xa"),
+    friend_recoveries_per_90: weightedPer90("recoveries"),
+    friend_saves_per_90: weightedPer90("saves"),
+    friend_yellow_cards_per_90: per90(annual.yellowCards, annual.minutes),
+    friend_red_cards_per_90: per90(annual.redCards, annual.minutes)
+  };
+}
+
+function friendWindowAggregate(stats: FriendWindowStat[]) {
+  const minutes = sum(stats.map((stat) => stat.minutes));
+  return {
+    minutes,
+    minutesPerMatch: stats.length > 0 ? minutes / stats.length : 0,
+    xg: sum(stats.map((stat) => stat.xg)),
+    xa: sum(stats.map((stat) => stat.xa)),
+    recoveries: sum(stats.map((stat) => stat.recoveries)),
+    saves: sum(stats.map((stat) => stat.saves)),
+    yellowCards: sum(stats.map((stat) => stat.yellowCards)),
+    redCards: sum(stats.map((stat) => stat.redCards))
+  };
+}
+
+function per90(value: number, minutes: number) {
+  return minutes > 0 ? (value * 90) / minutes : 0;
+}
+
 function aggregateSharedStats(
   stats: MatchPlayerStatRecord[],
   position: string | null | undefined,
   model: ActiveScoringModel,
-  matchDateById?: Map<string, Date | null>
+  matchDateById?: Map<string, Date | null>,
+  matchWindow?: MacheteMatchWindow
 ) {
   const matchesPlayed = stats.length;
   const appearances = stats.filter(isPlayerAppearance).length;
@@ -877,7 +947,8 @@ function aggregateSharedStats(
     clean_sheet: cleanSheets,
     yellow_cards: yellowCards,
     red_cards: redCards,
-    average_rating: averageRating ?? 0
+    average_rating: averageRating ?? 0,
+    ...(matchWindow?.kind === "days" && matchWindow.days === 365 ? calculateFriendWindowMetrics(stats, matchDateById) : {})
   };
   const positionGroup = machetePositionGroup(position);
 

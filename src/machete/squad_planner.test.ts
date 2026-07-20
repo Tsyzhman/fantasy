@@ -9,8 +9,6 @@ import {
   bookmakerFixtureMultiplier,
   componentProjectionFantasyPoints,
   componentProjectionFormulaMetrics,
-  alternativePlayerFixturePoints,
-  alternativePlayerRoundPoints,
   calibratedPlayerFixturePoints,
   compareFantasyPlannerPlayers,
   configuredFantasyProjectionEngine,
@@ -24,6 +22,9 @@ import {
   fixtureDifficultyFromMultipliers,
   fixtureFormulaMetrics,
   fixtureStrengthProjection,
+  friendAlternativeProjectionFantasyPoints,
+  friendAlternativeScoringModel,
+  friendStartingRows,
   loadFantasySquadPlannerData,
   normalizeFantasySquadName,
   projectFixtureFantasyPoints,
@@ -43,12 +44,32 @@ import { fitFantasyProjectionCalibration } from "./fantasy_projection_calibratio
 import type { FantasyBacktestSample } from "./fantasy_backtest";
 import type { PlayerFixtureProjection } from "./deterministic_fantasy_projection";
 import type { ActiveScoringModel } from "@/lib/scoring";
+import { friendAlternativeFormulaDefaults } from "@/lib/scoring/formula-display";
+import type { SharedMachetePlayerRow } from "./shared_read_model";
 import { defaultFantasySquadRules } from "./squad_logic";
 
 test("component xFP is the default primary engine and legacy remains a one-flag rollback", () => {
   assert.equal(configuredFantasyProjectionEngine(undefined), "COMPONENT_XFP_V1");
   assert.equal(configuredFantasyProjectionEngine("component"), "COMPONENT_XFP_V1");
   assert.equal(configuredFantasyProjectionEngine("legacy"), "LEGACY_RIDGE19_V1");
+});
+
+test("friend Alt is shared in the squad while a personal formula overrides only its own position", () => {
+  const base = componentFormulaModel();
+  const shared = friendAlternativeScoringModel(base, null);
+  assert.equal(shared.alternativeFormulaEnabled, true);
+  assert.equal(shared.alternativeFormulaGk, friendAlternativeFormulaDefaults.alternativeFormulaGk);
+
+  const personal = friendAlternativeScoringModel(base, {
+    alternativeFormulaGk: "9*{Saves}",
+    alternativeFormulaDef: null,
+    alternativeFormulaMid: null,
+    alternativeFormulaFwd: null,
+    alternativeFormulaEnabled: true
+  });
+  assert.equal(personal.alternativeFormulaGk, "9*{Saves}");
+  assert.equal(personal.alternativeFormulaDef, friendAlternativeFormulaDefaults.alternativeFormulaDef);
+  assert.equal(base.alternativeFormulaEnabled, false);
 });
 
 test("fixture formula metrics expose direct de-vigged bookmaker inputs without replacing FotMob xG", () => {
@@ -117,6 +138,72 @@ test("admin Expected FP formula overrides COMPONENT_XFP_V1 totals with visible c
   assert.equal(componentProjectionFantasyPoints(projection, null, model), 3.3);
   assert.equal(componentProjectionFantasyPoints(projection, null, { ...model, customFormulaEnabled: false }), 4.52);
 });
+
+test("friend Alt uses fixture components without bookmaker or goals-conceded penalties", () => {
+  const projection: PlayerFixtureProjection = {
+    playerId: "gk-1",
+    position: "GK",
+    expectedMinutes: 90,
+    probabilities: { appearance: 1, sixtyMinutes: 1, fullMatch: 1 },
+    allocationWeights: { goals: 0.01, assists: 0.02, recoveries: 0, saves: 3 },
+    expectedEvents: {
+      goals: 0.1, assists: 0.1, recoveries: 0, saves: 3, yellowCards: 0.1,
+      redCards: 0.01, goalsConceded: 4, cleanSheets: 0.4
+    },
+    components: {
+      appearance: 1, sixtyMinutes: 1, fullMatch: 0, goals: 0.6, assists: 0.3,
+      cleanSheet: 1.6, saves: 1, recoveries: 0, goalsConceded: -2, yellowCards: -0.1,
+      redCards: -0.03, total: 3.37
+    }
+  };
+  const model = {
+    ...componentFormulaModel(),
+    alternativeFormulaGk: friendAlternativeFormulaDefaults.alternativeFormulaGk,
+    alternativeFormulaDef: friendAlternativeFormulaDefaults.alternativeFormulaDef,
+    alternativeFormulaMid: friendAlternativeFormulaDefaults.alternativeFormulaMid,
+    alternativeFormulaFwd: friendAlternativeFormulaDefaults.alternativeFormulaFwd,
+    alternativeFormulaEnabled: true
+  } satisfies ActiveScoringModel;
+
+  assert.equal(friendAlternativeProjectionFantasyPoints(projection, null, model), 5.37);
+});
+
+test("friend Alt probable XI prioritizes starter flags and is capped at eleven", () => {
+  const rows = Array.from({ length: 14 }, (_, index) => ({
+    id: String(index),
+    isStarter: index >= 10,
+    startProbability: index / 20,
+    expectedMinutes: index,
+    minutesPlayed: index * 90
+  })) as unknown as SharedMachetePlayerRow[];
+  const selected = friendStartingRows(rows);
+
+  assert.equal(selected.length, 11);
+  assert.deepEqual(selected.slice(0, 4).map((row) => row.id), ["13", "12", "11", "10"]);
+});
+
+function componentFormulaModel(): ActiveScoringModel {
+  return {
+    modelSource: "MACHETE",
+    customFormula: null,
+    customFormulaGk: null,
+    customFormulaDef: null,
+    customFormulaMid: null,
+    customFormulaFwd: null,
+    customFormulaEnabled: false,
+    scoringFormulaGk: null,
+    scoringFormulaDef: null,
+    scoringFormulaMid: null,
+    scoringFormulaFwd: null,
+    scoringFormulaEnabled: false,
+    alternativeFormulaGk: null,
+    alternativeFormulaDef: null,
+    alternativeFormulaMid: null,
+    alternativeFormulaFwd: null,
+    alternativeFormulaEnabled: false,
+    rules: []
+  };
+}
 
 test("default forecasts use only the bookmaker delta from the FotMob xG baseline", () => {
   const projectedXg = 1.5;
@@ -745,44 +832,6 @@ test("squad planner applies the fitted production calibration to upcoming fixtur
   const calibrated = calibratedPlayerFixturePoints(row, fixture, calibration);
   assert.equal(typeof calibrated, "number");
   assert.ok((calibrated ?? 0) > 8);
-});
-
-test("alternative predicted FP applies fixture difficulty without production calibration", () => {
-  const fixture = {
-    id: "fixture-1",
-    roundId: "round-1",
-    teamId: "team-1",
-    opponentTeamId: "team-2",
-    opponentName: "Opponent",
-    opponentFullName: "Opponent Football Club",
-    side: "H" as const,
-    kickoffAt: new Date("2026-08-15T12:00:00.000Z"),
-    projectedXg: 1.5,
-    projectedXga: 0.8,
-    attackMultiplier: 1.1,
-    defenseMultiplier: 1.1
-  };
-
-  assert.equal(alternativePlayerFixturePoints({ alternativeScore: 6 }, fixture, "MID"), 6.5);
-  assert.equal(alternativePlayerFixturePoints({ alternativeScore: 6 }, null, "MID"), 6);
-  assert.equal(alternativePlayerFixturePoints({ alternativeScore: null }, fixture, "MID"), null);
-});
-
-test("alternative round FP sums its fixtures instead of multiplying the next fixture", () => {
-  const fixtures = [
-    {
-      id: "1", roundId: "round-1", teamId: "1", opponentTeamId: "2", opponentName: "A", opponentFullName: "Alpha",
-      side: "H", kickoffAt: null, projectedXg: 1.5, projectedXga: 0.8, attackMultiplier: 1.1, defenseMultiplier: 1.1
-    },
-    {
-      id: "2", roundId: "round-1", teamId: "1", opponentTeamId: "3", opponentName: "B", opponentFullName: "Beta",
-      side: "A", kickoffAt: null, projectedXg: 0.9, projectedXga: 1.4, attackMultiplier: 0.9, defenseMultiplier: 0.9
-    }
-  ] as const;
-
-  const expected = fixtures.reduce((total, fixture) => total + (alternativePlayerFixturePoints({ alternativeScore: 6 }, fixture, "MID") ?? 0), 0);
-  assert.equal(alternativePlayerRoundPoints({ alternativeScore: 6 }, [...fixtures], "MID"), Math.round(expected * 100) / 100);
-  assert.equal(alternativePlayerRoundPoints(undefined, [...fixtures], "MID"), null);
 });
 
 function match(input: {

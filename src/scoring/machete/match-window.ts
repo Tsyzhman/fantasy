@@ -1,5 +1,6 @@
 export type MacheteMatchWindow =
   | { kind: "last"; matches: number }
+  | { kind: "days"; days: number }
   | { kind: "season"; offset: 0 | -1 }
   | { kind: "all" };
 
@@ -28,6 +29,7 @@ export function parseMacheteMatchWindow({ mode, customMatches, legacyRecentMatch
 export function matchWindowModeValue(window: MacheteMatchWindow) {
   if (window.kind === "all") return "all";
   if (window.kind === "season") return window.offset === 0 ? "current" : "previous";
+  if (window.kind === "days") return `days${window.days}`;
   if (window.matches === 3) return "last3";
   if (window.matches === 10) return "last10";
   if (window.matches === 15) return "last15";
@@ -38,12 +40,14 @@ export function matchWindowModeValue(window: MacheteMatchWindow) {
 export function matchWindowLabel(window: MacheteMatchWindow) {
   if (window.kind === "all") return "all loaded matches";
   if (window.kind === "season") return window.offset === 0 ? "current season" : "previous season";
+  if (window.kind === "days") return `last ${window.days} days`;
   return `last ${window.matches} played team matches`;
 }
 
 export function matchWindowLabelRu(window: MacheteMatchWindow) {
   if (window.kind === "all") return "все загруженные матчи";
   if (window.kind === "season") return window.offset === 0 ? "текущий сезон" : "предыдущий сезон";
+  if (window.kind === "days") return `последние ${window.days} дней`;
   return `последние ${window.matches} матчей команды`;
 }
 
@@ -94,11 +98,20 @@ export function fixtureInMatchWindow(
   fixture: { kickoffAt: Date | null },
   window: MacheteMatchWindow,
   currentSeason: string | null | undefined,
-  providerLeagueId?: string | null
+  providerLeagueId?: string | null,
+  referenceDate = new Date()
 ) {
   if (window.kind === "all" || window.kind === "last") return true;
+  if (window.kind === "days") {
+    if (!fixture.kickoffAt) return false;
+    return fixture.kickoffAt >= daysAgo(window.days, referenceDate) && fixture.kickoffAt <= referenceDate;
+  }
 
   return fixtureInSeason(fixture, matchWindowSeasonLabel(currentSeason, window.offset, providerLeagueId));
+}
+
+export function daysAgo(days: number, referenceDate = new Date()) {
+  return new Date(referenceDate.getTime() - Math.max(0, days) * 24 * 60 * 60 * 1000);
 }
 
 export function fixtureSyncSeasons(currentSeason: string | null | undefined, providerLeagueId?: string | null) {

@@ -4,7 +4,7 @@ import test from "node:test";
 import type { PrismaClient } from "@prisma/client";
 
 import type { ActiveScoringModel } from "@/lib/scoring";
-import { loadSharedLeagueOptions, loadSharedLeagueSeason, loadSharedLeagueTeams, loadSharedMachetePlayerRows, loadSharedMatchWindowSummary, loadSharedTeamMatchIds } from "./shared_read_model";
+import { calculateFriendWindowMetrics, loadSharedLeagueOptions, loadSharedLeagueSeason, loadSharedLeagueTeams, loadSharedMachetePlayerRows, loadSharedMatchWindowSummary, loadSharedTeamMatchIds } from "./shared_read_model";
 
 const scoringModel: ActiveScoringModel = {
   modelSource: "MACHETE",
@@ -151,6 +151,66 @@ test("shared team season windows remain scoped to current or previous season", a
 
   assert.equal((calls[0] as { where?: { season?: string } }).where?.season, "2025/2026");
   assert.equal((calls[1] as { where?: { season?: string } }).where?.season, "2024/2025");
+});
+
+test("shared team day windows apply a rolling date cutoff", async () => {
+  const calls: unknown[] = [];
+  const prisma = {
+    coreMatch: {
+      async findMany(input: unknown) {
+        calls.push(input);
+        return [];
+      }
+    }
+  } as unknown as PrismaClient;
+
+  const before = Date.now();
+  await loadSharedTeamMatchIds(prisma, 47n, "2025/2026", 10n, { kind: "days", days: 365 });
+  const after = Date.now();
+
+  const call = calls[0] as { where?: { season?: string; matchDate?: { gte?: Date } }; take?: number };
+  const cutoff = call.where?.matchDate?.gte?.getTime() ?? 0;
+  assert.equal(call.where?.season, undefined);
+  assert.equal(call.take, undefined);
+  assert.ok(cutoff >= before - 365 * 24 * 60 * 60 * 1000);
+  assert.ok(cutoff <= after - 365 * 24 * 60 * 60 * 1000);
+});
+
+test("friend window metrics renormalize reduced sample weights without rounding", () => {
+  const stats = Array.from({ length: 7 }, (_, index) => ({
+    matchId: BigInt(7 - index),
+    minutes: 90,
+    xg: index < 5 ? 1 : 0,
+    xa: 0,
+    recoveries: 0,
+    saves: 0,
+    yellowCards: index === 6 ? 1 : 0,
+    redCards: 0
+  }));
+
+  const metrics = calculateFriendWindowMetrics(stats);
+  const annualRate = 5 / 7;
+  const expectedXg = (0.4 * annualRate + 0.35 * 0.7 * annualRate + 0.25) / (0.4 + 0.35 * 0.7 + 0.25);
+
+  assert.ok(Math.abs(metrics.friend_xg_per_90 - expectedXg) < 1e-12);
+  assert.equal(metrics.friend_yellow_cards_per_90, 1 / 7);
+});
+
+test("friend expected minutes uses the maximum minutes per match across rolling windows", () => {
+  const stats = Array.from({ length: 10 }, (_, index) => ({
+    matchId: BigInt(10 - index),
+    minutes: index === 0 ? 90 : 10,
+    xg: 0,
+    xa: 0,
+    recoveries: 0,
+    saves: 0,
+    yellowCards: 0,
+    redCards: 0
+  }));
+
+  const metrics = calculateFriendWindowMetrics(stats);
+
+  assert.equal(metrics.friend_expected_minutes, 90);
 });
 
 test("combined player rows aggregate all selected team scope matches even when roster exists only in one season", async () => {

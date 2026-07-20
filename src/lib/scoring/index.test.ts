@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { calculateFantasyScore, calculateScoringScore, type ActiveScoringModel } from "./index";
+import { calculateFantasyScore, calculateScoringScore, getActiveScoringModelForSource, type ActiveScoringModel } from "./index";
 
 const customExpectedModel: ActiveScoringModel = {
   modelSource: "MACHETE",
@@ -62,4 +62,12 @@ test("default Expected FP prefers xG and xA when projection stats are available"
   };
 
   assert.equal(calculateFantasyScore(rawMetrics, "FWD", { ...customExpectedModel, customFormulaEnabled: false }), 5);
+});
+
+test("built-in Machete model does not leak fixture Alt formulas into historical aggregates", async () => {
+  const client = { fantasyModel: { findFirst: async () => null } };
+  const model = await getActiveScoringModelForSource("MACHETE", client as never);
+
+  assert.equal(model.alternativeFormulaEnabled, false);
+  assert.equal(model.alternativeFormulaGk, null);
 });

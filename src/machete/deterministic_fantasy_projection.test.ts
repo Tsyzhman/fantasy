@@ -42,6 +42,17 @@ test("minutes-weighted participant shares conserve every forecast team total", (
   assert.equal(result.players.find((player) => player.playerId === "gk")!.expectedEvents.recoveries, 0);
 });
 
+test("explicit full per-90 exposure supports the friend's rate-only shares and annual card rates", () => {
+  const rows = participants().map((player) => ({ ...player, per90ExposureFactor: 1 }));
+  const result = projectTeamPlayers(projectedTeam(), rows);
+  const defender = result.players.find((player) => player.playerId === "def")!;
+  const midfielder = result.players.find((player) => player.playerId === "mid")!;
+
+  assert.equal(midfielder.expectedEvents.goals / defender.expectedEvents.goals, 4);
+  assert.equal(midfielder.expectedEvents.yellowCards, 0.1);
+  assert.equal(midfielder.expectedEvents.redCards, 0.02);
+});
+
 test("Sports.ru components use P(appearance), P60, P90 and P60 clean-sheet eligibility", () => {
   const result = projectTeamPlayers(projectedTeam(), participants());
   const midfielder = result.players.find((player) => player.playerId === "mid")!;
