@@ -83,6 +83,22 @@ test("squad cards show next-round FP instead of the selected forecast horizon", 
   assert.doesNotMatch(tileSource, /playerHorizonPoints\(player, horizon\)/);
 });
 
+test("squad cards lazy-load locally cached FotMob player photos with a fallback", () => {
+  assert.match(squadPlannerSource, /<SquadPlayerPhoto player=\{player\} \/>/);
+  assert.match(squadPlannerSource, /src=\{player\.photoUrl\}/);
+  assert.match(squadPlannerSource, /loading="lazy"/);
+  assert.match(squadPlannerSource, /onError=\{\(\) => setFailed\(true\)\}/);
+});
+
+test("planner exposes five persisted round snapshots and shifts forecasts to the active round", () => {
+  assert.match(squadPlannerSource, /roundPlans\.map\(\(plan\) =>/);
+  assert.match(squadPlannerSource, /plan\.roundOffset === 0 \? <I18nText en="Next" ru="Следующий" \/> : `\+\$\{plan\.roundOffset\}`/);
+  assert.match(squadPlannerSource, /roundPlans: roundPlansToSave/);
+  assert.match(squadPlannerSource, /roundPoints: player\.roundPoints\.slice\(roundOffset\)/);
+  assert.match(squadPlannerSource, /fixtureDifficulties: player\.fixtureDifficulties\.slice\(roundOffset\)/);
+  assert.match(squadPlannerSource, /Inherit previous/);
+});
+
 test("player pool renders display-only Alt FP on desktop and as the fourth mobile metric", () => {
   const desktopNext = squadPlannerSource.indexOf('en="Next"');
   const desktopAlt = squadPlannerSource.indexOf('title={columnTitles.alternative}><I18nText en="Alt"', desktopNext);

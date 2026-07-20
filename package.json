@@ -51,7 +51,8 @@
     "model:explore-calibration": "tsx scripts/explore-fantasy-projection-calibration.ts",
     "beta:load": "tsx scripts/beta-load-test.ts",
     "beta:user-test": "tsx scripts/beta-user-test.ts",
-    "logos:download": "tsx scripts/download-team-logos.ts"
+    "logos:download": "tsx scripts/download-team-logos.ts",
+    "photos:cache-fotmob": "tsx scripts/cache-fotmob-player-photos.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

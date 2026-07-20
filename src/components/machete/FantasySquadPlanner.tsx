@@ -2,7 +2,7 @@
 
 import { Check, Copy, Crown, FilePlus2, Layers3, ListChecks, Lock, MoreHorizontal, Plus, Save, Search, Sparkles, Trash2, Users, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { type DragEvent, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { type DragEvent, type SetStateAction, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 
 import { I18nText } from "@/components/i18n-text";
@@ -27,6 +27,7 @@ import {
 import {
   canStartFantasyPlayer,
   countFantasySquadTransfers,
+  createFantasySquadRoundPlans,
   fantasyAddBlockReason,
   fantasyTransferLimitForHorizon,
   nextFantasyPoints,
@@ -37,10 +38,12 @@ import {
   selectionForPlayer,
   selectionForNewPlayer,
   summarizeFantasySquad,
+  updateFantasySquadRoundPlan,
   type FantasyPlannerPlayer,
   type FantasyPositionGroup,
   type FantasyRoundProjection,
   type FantasySquadRules,
+  type FantasySquadRoundPlan,
   type FantasySquadOptimizationInput,
   type FantasySquadSelection,
   type FantasySquadStrategy,
@@ -204,7 +207,12 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
   const router = useRouter();
   const budgetForecastRef = useRef<HTMLDivElement>(null);
   const suggestionPanelRef = useRef<HTMLDivElement>(null);
-  const [players, setPlayers] = useState<FantasyPlannerPlayer[]>(initialPlayers);
+  const [sourcePlayers, setSourcePlayers] = useState<FantasyPlannerPlayer[]>(initialPlayers);
+  const [activeRoundOffset, setActiveRoundOffset] = useState(0);
+  const players = useMemo(
+    () => sourcePlayers.map((player) => fantasyPlayerAtRoundOffset(player, activeRoundOffset)),
+    [activeRoundOffset, sourcePlayers]
+  );
   const [playerPoolPending, setPlayerPoolPending] = useState(Boolean(playerPoolHref));
   const [playerPoolFailed, setPlayerPoolFailed] = useState(false);
   const [historyScopeDraft, setHistoryScopeDraft] = useState<FantasyHistoryScope>(historySettings.scope);
@@ -213,13 +221,16 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
   const [historyApplying, setHistoryApplying] = useState(false);
   const [playerPoolRetry, setPlayerPoolRetry] = useState(0);
   const initialHorizon = normalizeFantasyHorizon(initialSquad.horizonRounds, rules.horizonOptions);
-  const initialSelections = useMemo(() => normalizeInitialSelections(initialSquad.selections, players, rules), [initialSquad.selections, players, rules]);
-  const [selections, setSelections] = useState<FantasySquadSelection[]>(() => initialSelections);
-  const [savedSelections, setSavedSelections] = useState<FantasySquadSelection[]>(() => initialSelections);
+  const initialSelections = useMemo(() => normalizeInitialSelections(initialSquad.selections, sourcePlayers, rules), [initialSquad.selections, rules, sourcePlayers]);
+  const initialRoundPlans = normalizePlannerRoundPlans(initialSquad.roundPlans, initialSelections, sourcePlayers, rules);
+  const [roundPlans, setRoundPlans] = useState<FantasySquadRoundPlan[]>(() => initialRoundPlans);
+  const [savedRoundPlans, setSavedRoundPlans] = useState<FantasySquadRoundPlan[]>(() => cloneFantasyRoundPlans(initialRoundPlans));
+  const selections = roundPlans[activeRoundOffset]?.selections ?? [];
+  const savedSelections = savedRoundPlans[activeRoundOffset]?.selections ?? [];
   const [activeSquadId, setActiveSquadId] = useState<string | null>(initialSquad.id);
   const [squadName, setSquadName] = useState(initialSquad.name);
   const [squadOptions, setSquadOptions] = useState<SavedFantasySquadOption[]>(savedSquads);
-  const captainStorageKey = `fantasy-squad-captains:${leagueId}:${season}:${activeSquadId ?? "new"}`;
+  const captainStorageKey = `fantasy-squad-captains:${leagueId}:${season}:${activeSquadId ?? "new"}:${activeRoundOffset}`;
   const [horizon, setHorizon] = useState(initialHorizon);
   const [query, setQuery] = useState("");
   const [positionFilter, setPositionFilter] = useState("ALL");
@@ -251,6 +262,23 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
   );
   const plannerForecastReady = readiness.ready && hasRealRoundProjections;
 
+  function setSelections(action: SetStateAction<FantasySquadSelection[]>) {
+    setRoundPlans((current) => {
+      const currentSelections = current[activeRoundOffset]?.selections ?? [];
+      const nextSelections = typeof action === "function" ? action(currentSelections) : action;
+      if (nextSelections === currentSelections) return current;
+      return updateFantasySquadRoundPlan(current, activeRoundOffset, nextSelections);
+    });
+  }
+
+  function inheritPreviousRound() {
+    if (activeRoundOffset === 0) return;
+    setRoundPlans((current) => {
+      return updateFantasySquadRoundPlan(current, activeRoundOffset, current[activeRoundOffset - 1].selections, true);
+    });
+    setMessage(localizedText(language, "This round now inherits the previous squad.", "Этот тур снова наследует предыдущий состав."));
+  }
+
   useEffect(() => {
     autoPickRevisionRef.current += 1;
   }, [autoPickStrategy, horizon, players, rules, selections]);
@@ -262,15 +290,17 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
   const summary = useMemo(() => summarizeFantasySquad(players, selections, rules, horizon), [players, selections, rules, horizon]);
   const savedSummary = useMemo(() => summarizeFantasySquad(players, savedSelections, rules, horizon), [players, savedSelections, rules, horizon]);
   const squadDiff = useMemo(() => buildSquadDiff(savedSelections, selections, savedSummary, summary), [savedSelections, selections, savedSummary, summary]);
+  const transferBaselineSelections = activeRoundOffset > 0 ? roundPlans[activeRoundOffset - 1].selections : savedSelections;
   const hasFullSquad = summary.selectedPlayers.length === rules.squadSize;
   const squadIsValid =
     hasFullSquad &&
     summary.starterPlayers.length === rules.starterSize &&
     summary.benchPlayers.length === rules.benchSize &&
     summary.violations.length === 0;
-  const transferLimit = fantasyTransferLimitForHorizon(horizon);
-  const transferLimitIsActive = savedSelections.length === rules.squadSize;
-  const availableSuggestionCount = transferLimitIsActive ? Math.max(0, transferLimit - squadDiff.transferCount) : transferLimit;
+  const transferLimit = fantasyTransferLimitForHorizon(activeRoundOffset > 0 ? 1 : horizon);
+  const transferLimitIsActive = transferBaselineSelections.length === rules.squadSize;
+  const plannedTransferCount = countFantasySquadTransfers(transferBaselineSelections, selections);
+  const availableSuggestionCount = transferLimitIsActive ? Math.max(0, transferLimit - plannedTransferCount) : transferLimit;
   const [suggestionCalculation, setSuggestionCalculation] = useState<TransferSuggestionCalculation | null>(null);
   const [failedSuggestionCalculation, setFailedSuggestionCalculation] = useState<TransferSuggestionCalculation | null>(null);
   const [suggestionRetry, setSuggestionRetry] = useState(0);
@@ -395,7 +425,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
         if (!response.ok || !Array.isArray(payload.players)) throw new Error("PLAYER_POOL_LOAD_FAILED");
         if (lifecycleCancelled) return;
         requestCompleted = true;
-        setPlayers(payload.players);
+        setSourcePlayers(payload.players);
         setPlayerPoolFailed(false);
         setPlayerPoolPending(false);
       })
@@ -486,7 +516,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
 
   function transferLimitBlockReason(nextSelections: FantasySquadSelection[]) {
     if (!transferLimitIsActive) return null;
-    if (countFantasySquadTransfers(savedSelections, nextSelections) <= transferLimit) return null;
+    if (countFantasySquadTransfers(transferBaselineSelections, nextSelections) <= transferLimit) return null;
 
     return localizedText(
       language,
@@ -730,6 +760,8 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
       try {
         setMessage(null);
         const selectionsToSave = sanitizeCaptainRoles(selections);
+        const roundPlansToSave = cloneFantasyRoundPlans(roundPlans);
+        roundPlansToSave[activeRoundOffset].selections = selectionsToSave;
         const requestedName = asCopy ? `${squadName} copy` : squadName;
         let response: Response;
         try {
@@ -745,7 +777,8 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
               historyScope: historySettings.scope,
               historyWindow: historySettings.window,
               historySeasons: historySettings.selectedSeasons,
-              selections: selectionsToSave
+              selections: roundPlansToSave[0].selections,
+              roundPlans: roundPlansToSave
             })
           });
         } catch {
@@ -771,8 +804,8 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
           setMessage(localizedText(language, "The server did not return the saved squad ID.", "Сервер не вернул ID сохранённого состава."));
           return;
         }
-        setSelections(selectionsToSave);
-        setSavedSelections(selectionsToSave.map((selection) => ({ ...selection })));
+        setRoundPlans(roundPlansToSave);
+        setSavedRoundPlans(cloneFantasyRoundPlans(roundPlansToSave));
         setActiveSquadId(savedSquadId);
         setSquadName(savedSquadName);
         setSquadOptions((current) => [
@@ -805,8 +838,10 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
     );
     setActiveSquadId(null);
     setSquadName(nextName);
-    setSelections([]);
-    setSavedSelections([]);
+    const blankPlans = createFantasySquadRoundPlans([]);
+    setRoundPlans(blankPlans);
+    setSavedRoundPlans(cloneFantasyRoundPlans(blankPlans));
+    setActiveRoundOffset(0);
     setMessage(localizedText(language, "Blank squad variant started. Save it to keep it.", "Создан пустой вариант. Сохраните его, чтобы не потерять."));
   }
 
@@ -845,8 +880,10 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
         }
         setActiveSquadId(null);
         setSquadName(localizedText(language, "My squad", "Мой состав"));
-        setSelections([]);
-        setSavedSelections([]);
+        const blankPlans = createFantasySquadRoundPlans([]);
+        setRoundPlans(blankPlans);
+        setSavedRoundPlans(cloneFantasyRoundPlans(blankPlans));
+        setActiveRoundOffset(0);
         setMessage(localizedText(language, "Squad deleted.", "Состав удалён."));
         router.replace(squadVariantHref(leagueId, season, null, historySettings));
       } finally {
@@ -875,6 +912,50 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
       <section className="contents">
         <div className={cn(mobileTab === "squad" ? "block" : "hidden xl:block", "order-2 rounded border border-slate-200 bg-white p-4 shadow-soft")}>
           <div className="space-y-3">
+            <div className="rounded border border-slate-200 bg-slate-50 p-2">
+              <div className="flex gap-1 overflow-x-auto" aria-label={localizedText(language, "Squad planning round", "Тур плана состава")}>
+                {roundPlans.map((plan) => {
+                  const round = rounds[plan.roundOffset];
+                  const selected = plan.roundOffset === activeRoundOffset;
+                  const transfers = plan.roundOffset === 0 ? 0 : countFantasySquadTransfers(roundPlans[plan.roundOffset - 1].selections, plan.selections);
+                  return (
+                    <button
+                      key={plan.roundOffset}
+                      type="button"
+                      onClick={() => setActiveRoundOffset(plan.roundOffset)}
+                      title={round?.label ?? localizedText(language, `Round +${plan.roundOffset}`, `Тур +${plan.roundOffset}`)}
+                      className={cn(
+                        "min-w-[5.25rem] rounded px-2.5 py-2 text-left text-xs font-semibold transition",
+                        selected ? "bg-brand text-white shadow-sm" : "bg-white text-slate-700 hover:bg-slate-100"
+                      )}
+                    >
+                      <span className="block whitespace-nowrap">
+                        {plan.roundOffset === 0 ? <I18nText en="Next" ru="Следующий" /> : `+${plan.roundOffset}`}
+                      </span>
+                      <span className={cn("block truncate text-[10px]", selected ? "text-white/75" : "text-slate-400")}>
+                        {plan.roundOffset === 0
+                          ? round?.label ?? "—"
+                          : plan.linkedToPrevious
+                            ? localizedText(language, "linked", "связан")
+                            : localizedText(language, `${transfers} tr.`, `${transfers} тр.`)}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+              {activeRoundOffset > 0 ? (
+                <div className="mt-2 flex items-center justify-between gap-2 text-xs text-slate-500">
+                  <span>
+                    {roundPlans[activeRoundOffset].linkedToPrevious
+                      ? <I18nText en="Changes from the previous round are inherited." ru="Изменения прошлого тура наследуются." />
+                      : <I18nText en="This round has its own saved changes." ru="У этого тура есть собственные изменения." />}
+                  </span>
+                  <button type="button" onClick={inheritPreviousRound} className="shrink-0 rounded border border-slate-200 bg-white px-2 py-1 font-semibold text-slate-700 hover:bg-slate-100">
+                    <I18nText en="Inherit previous" ru="Взять предыдущий" />
+                  </button>
+                </div>
+              ) : null}
+            </div>
             <div className="flex flex-wrap items-start justify-between gap-2">
               <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                 <I18nText en="Squad builder" ru="Конструктор состава" />
@@ -1000,7 +1081,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
             <summary className="flex cursor-pointer list-none items-center justify-between gap-3 px-3 py-2.5 text-sm [&::-webkit-details-marker]:hidden">
               <span className="font-semibold text-slate-700"><I18nText en="Planning settings" ru="Настройки планирования" /></span>
               <span className="truncate text-xs text-slate-500 num-tabular">
-                {autoPickStrategyCopy.label} · {horizon}R · {transferLimitIsActive ? `${squadDiff.transferCount}/${transferLimit}` : transferLimit} <I18nText en="transfers" ru="трансферов" />
+                {autoPickStrategyCopy.label} · {horizon}R · {transferLimitIsActive ? `${plannedTransferCount}/${transferLimit}` : transferLimit} <I18nText en="transfers" ru="трансферов" />
               </span>
             </summary>
             <div className="border-t border-slate-200 p-3">
@@ -1037,11 +1118,11 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                   <output
                     className={cn(
                       "block rounded border bg-white px-3 py-2 font-semibold text-slate-700 num-tabular",
-                      transferLimitIsActive && squadDiff.transferCount >= transferLimit ? "border-amber-200 bg-amber-50 text-amber-800" : "border-slate-200"
+                      transferLimitIsActive && plannedTransferCount >= transferLimit ? "border-amber-200 bg-amber-50 text-amber-800" : "border-slate-200"
                     )}
                     aria-labelledby="transfer-count-label"
                   >
-                    {transferLimitIsActive ? `${squadDiff.transferCount}/${transferLimit}` : transferLimit}
+                    {transferLimitIsActive ? `${plannedTransferCount}/${transferLimit}` : transferLimit}
                   </output>
                 </div>
                 {priceStatus.lastSyncedAt ? (
@@ -2138,6 +2219,7 @@ function SquadPlayerTile({
       <div className="flex items-center justify-center gap-1">
         <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${positionPillClass(player.positionGroup)}`}>{player.positionGroup}</span>
       </div>
+      <SquadPlayerPhoto player={player} />
       <p className="mt-0.5 truncate text-[10px] font-bold text-ink" title={player.name} aria-label={player.name}>{compactPlayerDisplayName(player.name)}</p>
       <p className="truncate text-[9px] text-slate-500" title={player.teamName}>{fantasyPlayerTeamDisplayName(player)}</p>
       <p className="mt-0.5 text-[10px] font-semibold text-emerald-700 num-tabular">
@@ -2220,6 +2302,28 @@ function SquadPlayerTile({
         )
       : null}
     </>
+  );
+}
+
+function SquadPlayerPhoto({ player }: { player: FantasyPlannerPlayer }) {
+  const [failed, setFailed] = useState(false);
+  if (!player.photoUrl || failed) {
+    return (
+      <div aria-hidden="true" className="mx-auto mt-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-[10px] font-black text-slate-500 ring-1 ring-white">
+        {player.name.trim().slice(0, 1).toUpperCase()}
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={player.photoUrl}
+      alt=""
+      loading="lazy"
+      decoding="async"
+      onError={() => setFailed(true)}
+      className="mx-auto mt-0.5 h-8 w-8 rounded-full bg-slate-100 object-cover object-top ring-1 ring-white"
+    />
   );
 }
 
@@ -2516,6 +2620,40 @@ function normalizeInitialSelections(selections: FantasySquadSelection[], players
   }
 
   return sanitizeCaptainRoles(normalized);
+}
+
+function fantasyPlayerAtRoundOffset(player: FantasyPlannerPlayer, roundOffset: number): FantasyPlannerPlayer {
+  if (roundOffset <= 0) return player;
+  return {
+    ...player,
+    predictedFp: player.roundPoints[roundOffset] ?? null,
+    alternativePredictedFp: null,
+    roundPoints: player.roundPoints.slice(roundOffset),
+    fixtures: player.fixtures.slice(roundOffset),
+    fixtureFullNames: player.fixtureFullNames?.slice(roundOffset),
+    fixtureDifficulties: player.fixtureDifficulties.slice(roundOffset)
+  };
+}
+
+function cloneFantasyRoundPlans(plans: FantasySquadRoundPlan[]) {
+  return plans.map((plan) => ({
+    ...plan,
+    selections: plan.selections.map((selection) => ({ ...selection }))
+  }));
+}
+
+function normalizePlannerRoundPlans(
+  plans: FantasySquadRoundPlan[] | undefined,
+  fallbackSelections: FantasySquadSelection[],
+  players: FantasyPlannerPlayer[],
+  rules: FantasySquadRules
+) {
+  const source = plans?.length === 5 ? plans : createFantasySquadRoundPlans(fallbackSelections);
+  return source.map((plan, roundOffset) => ({
+    roundOffset,
+    linkedToPrevious: roundOffset > 0 && plan.linkedToPrevious,
+    selections: normalizeInitialSelections(plan.selections, players, rules)
+  }));
 }
 
 function promoteStarter(

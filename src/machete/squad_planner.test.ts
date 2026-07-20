@@ -11,6 +11,7 @@ import {
   compareFantasyPlannerPlayers,
   fantasyPlannerPosition,
   fantasyPlannerSharedRowIdentity,
+  fantasySquadRoundPlansFromFilters,
   fantasyTeamShortName,
   fantasyTeamShortNamesByTeamId,
   fixtureDifficultyFromMultipliers,
@@ -28,9 +29,30 @@ import {
   sportsRuSeasonAliases,
   uniqueFantasySquadName
 } from "./squad_planner";
+
 import { fitFantasyProjectionCalibration } from "./fantasy_projection_calibration";
 import type { FantasyBacktestSample } from "./fantasy_backtest";
 import { defaultFantasySquadRules } from "./squad_logic";
+
+test("legacy squads expand to five linked planning rounds and saved round plans stay independent", () => {
+  const base = [{ playerId: "1", isStarter: true, isLocked: false, isCaptain: true, isViceCaptain: false, slotIndex: 0, purchasePrice: 7 }];
+  const legacy = fantasySquadRoundPlansFromFilters(null, base);
+  assert.equal(legacy.length, 5);
+  assert.equal(legacy[0].linkedToPrevious, false);
+  assert.equal(legacy[4].linkedToPrevious, true);
+  assert.deepEqual(legacy[4].selections, base);
+  assert.notEqual(legacy[4].selections, base);
+
+  const stored = fantasySquadRoundPlansFromFilters({
+    roundPlans: [
+      { roundOffset: 0, linkedToPrevious: false, selections: base },
+      { roundOffset: 1, linkedToPrevious: false, selections: [{ ...base[0], playerId: "2", isCaptain: false }] }
+    ]
+  }, base);
+  assert.equal(stored[1].linkedToPrevious, false);
+  assert.equal(stored[1].selections[0].playerId, "2");
+  assert.equal(stored[2].linkedToPrevious, true);
+});
 
 test("planner extracts team and player IDs from selected and combined history rows", () => {
   assert.deepEqual(fantasyPlannerSharedRowIdentity("47:2025/2026:10:20"), { teamId: "10", playerId: "20" });

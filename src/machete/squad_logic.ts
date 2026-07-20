@@ -26,6 +26,7 @@ export type FantasyPlannerPlayer = {
   name: string;
   teamName: string;
   teamShortName?: string | null;
+  photoUrl?: string | null;
   leagueName: string;
   position: string | null;
   positionGroup: FantasyPositionGroup;
@@ -61,6 +62,45 @@ export type FantasySquadSelection = {
   slotIndex: number;
   purchasePrice: number | null;
 };
+
+export type FantasySquadRoundPlan = {
+  roundOffset: number;
+  linkedToPrevious: boolean;
+  selections: FantasySquadSelection[];
+};
+
+export const fantasySquadPlanningRounds = 5;
+
+export function createFantasySquadRoundPlans(selections: FantasySquadSelection[]): FantasySquadRoundPlan[] {
+  return Array.from({ length: fantasySquadPlanningRounds }, (_, roundOffset) => ({
+    roundOffset,
+    linkedToPrevious: roundOffset > 0,
+    selections: selections.map((selection) => ({ ...selection }))
+  }));
+}
+
+export function updateFantasySquadRoundPlan(
+  plans: FantasySquadRoundPlan[],
+  roundOffset: number,
+  selections: FantasySquadSelection[],
+  linkedToPrevious = false
+) {
+  if (!plans[roundOffset]) return plans;
+  const next = plans.map((plan) => ({
+    ...plan,
+    selections: plan.selections.map((selection) => ({ ...selection }))
+  }));
+  next[roundOffset] = {
+    roundOffset,
+    linkedToPrevious: roundOffset > 0 && linkedToPrevious,
+    selections: selections.map((selection) => ({ ...selection }))
+  };
+  for (let offset = roundOffset + 1; offset < next.length; offset += 1) {
+    if (!next[offset].linkedToPrevious) break;
+    next[offset].selections = next[offset - 1].selections.map((selection) => ({ ...selection }));
+  }
+  return next;
+}
 
 export type FantasySquadSummary = {
   selectedPlayers: FantasyPlannerPlayer[];

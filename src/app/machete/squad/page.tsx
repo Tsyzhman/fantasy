@@ -149,7 +149,7 @@ export default async function MacheteSquadPage({ searchParams }: PageProps) {
             season={selectedLeague.season}
             rules={data.rules}
             rounds={data.rounds}
-            players={initialSquadPlayers(data.players, data.squad.selections)}
+            players={initialSquadPlayers(data.players, data.squad.roundPlans.flatMap((plan) => plan.selections))}
             playerPoolHref={squadPlayerPoolHref(selectedLeague, historySettings, data.squad.id)}
             initialSquad={data.squad}
             savedSquads={data.squads}

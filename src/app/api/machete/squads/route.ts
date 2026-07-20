@@ -16,8 +16,10 @@ import {
   countFantasySquadTransfers,
   fantasyTransferLimitForHorizon,
   normalizeFantasyHorizon,
+  fantasySquadPlanningRounds,
   validateFantasySquadForSave,
-  type FantasySquadSelection
+  type FantasySquadSelection,
+  type FantasySquadRoundPlan
 } from "@/machete/squad_logic";
 import { parseFantasyHistorySettings } from "@/machete/squad-history";
 
@@ -158,6 +160,27 @@ export const POST = withApiHandler(async (request: Request) => {
     return jsonError("BAD_REQUEST", validation.error, 400);
   }
   const safeSelections = validation.selections;
+  const parsedRoundPlans = parseRoundPlans(body.roundPlans, safeSelections);
+  const safeRoundPlans: FantasySquadRoundPlan[] = [];
+  for (const plan of parsedRoundPlans) {
+    const planValidation = validateFantasySquadForSave({
+      pool: plannerData.players,
+      selections: plan.selections,
+      rules,
+      horizon: 1
+    });
+    if (!planValidation.ok) {
+      return jsonError("BAD_REQUEST", `Round +${plan.roundOffset}: ${planValidation.error}`, 400);
+    }
+    safeRoundPlans.push({ ...plan, selections: planValidation.selections });
+  }
+  for (let index = 1; index < safeRoundPlans.length; index += 1) {
+    const transferCount = countFantasySquadTransfers(safeRoundPlans[index - 1].selections, safeRoundPlans[index].selections);
+    const perRoundLimit = fantasyTransferLimitForHorizon(1);
+    if (transferCount > perRoundLimit) {
+      return jsonError("BAD_REQUEST", `Round +${index}: ${transferCount} transfers planned; per-round limit is ${perRoundLimit}.`, 400);
+    }
+  }
 
   const savedSelections = squadId ? plannerData.squad.selections : [];
   const transferLimit = fantasyTransferLimitForHorizon(horizonRounds);
@@ -185,6 +208,7 @@ export const POST = withApiHandler(async (request: Request) => {
     name,
     horizonRounds,
     selections: safeSelections,
+    roundPlans: safeRoundPlans,
     rules
   });
 
@@ -237,6 +261,18 @@ function parseSelections(value: unknown): FantasySquadSelection[] {
   }
 
   return selections;
+}
+
+function parseRoundPlans(value: unknown, fallbackSelections: FantasySquadSelection[]): FantasySquadRoundPlan[] {
+  const values = Array.isArray(value) ? value : [];
+  return Array.from({ length: fantasySquadPlanningRounds }, (_, roundOffset) => {
+    const record = values.find((item) => item && typeof item === "object" && !Array.isArray(item) && Number((item as { roundOffset?: unknown }).roundOffset) === roundOffset) as Record<string, unknown> | undefined;
+    return {
+      roundOffset,
+      linkedToPrevious: roundOffset > 0 && record?.linkedToPrevious !== false,
+      selections: record ? parseSelections(record.selections) : fallbackSelections.map((selection) => ({ ...selection }))
+    };
+  });
 }
 
 function parseBigInt(value: unknown) {

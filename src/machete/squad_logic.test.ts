@@ -16,6 +16,8 @@ import {
   optimizeFantasyStarters,
   selectionForPlayer,
   summarizeFantasySquad,
+  createFantasySquadRoundPlans,
+  updateFantasySquadRoundPlan,
   validateFantasySquadForSave,
   type FantasyPlannerPlayer
 } from "./squad_logic";
@@ -33,6 +35,26 @@ test("squad summary enforces budget and max players per team", () => {
   assert.equal(summary.spent, 21);
   assert.equal(summary.violations.some((violation) => violation.includes("Budget exceeded")), true);
   assert.equal(summary.violations.some((violation) => violation.includes("Team 10")), true);
+});
+
+test("round plans inherit forward until a later round has its own changes", () => {
+  const first = { playerId: "1", isStarter: true, isLocked: false, isCaptain: false, isViceCaptain: false, slotIndex: 0, purchasePrice: 5 };
+  const second = { ...first, playerId: "2" };
+  const third = { ...first, playerId: "3" };
+  const initial = createFantasySquadRoundPlans([first]);
+  const detachedRoundTwo = updateFantasySquadRoundPlan(initial, 2, [second]);
+  assert.equal(detachedRoundTwo[1].selections[0].playerId, "1");
+  assert.equal(detachedRoundTwo[2].linkedToPrevious, false);
+  assert.equal(detachedRoundTwo[4].selections[0].playerId, "2");
+
+  const changedCurrent = updateFantasySquadRoundPlan(detachedRoundTwo, 0, [third]);
+  assert.equal(changedCurrent[1].selections[0].playerId, "3");
+  assert.equal(changedCurrent[2].selections[0].playerId, "2");
+  assert.equal(changedCurrent[4].selections[0].playerId, "2");
+
+  const relinkedRoundTwo = updateFantasySquadRoundPlan(changedCurrent, 2, changedCurrent[1].selections, true);
+  assert.equal(relinkedRoundTwo[2].linkedToPrevious, true);
+  assert.equal(relinkedRoundTwo[4].selections[0].playerId, "3");
 });
 
 test("can add rejects players that break a team cap", () => {

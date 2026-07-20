@@ -7,6 +7,7 @@ import { normalizeSportsRuPlayerName } from "@/lib/providers/sports-ru-fantasy";
 import { getActiveScoringModelBundleForSource } from "@/lib/scoring";
 import { applyUserScoringPreference } from "@/lib/scoring/user-preferences";
 import { providerTeamShortName } from "@/lib/teams/display";
+import { playerPhotoPublicUrl } from "./player-photo-cache";
 
 import type { FantasyBacktestSample } from "./fantasy_backtest";
 import {
@@ -35,11 +36,13 @@ import {
   normalizeFantasyPosition,
   roundFantasyValue,
   summarizeFantasySquad,
+  createFantasySquadRoundPlans,
   type FantasyPlannerPlayer,
   type FantasyPositionGroup,
   type FantasyRoundProjection,
   type FantasySquadRules,
-  type FantasySquadSelection
+  type FantasySquadSelection,
+  type FantasySquadRoundPlan
 } from "./squad_logic";
 
 export type SavedFantasySquad = {
@@ -49,6 +52,7 @@ export type SavedFantasySquad = {
   season: string;
   horizonRounds: number;
   selections: FantasySquadSelection[];
+  roundPlans: FantasySquadRoundPlan[];
 };
 
 export type SavedFantasySquadOption = {
@@ -361,6 +365,7 @@ export async function loadFantasySquadPlannerData(
         name: playerName,
         teamName: row.team.name,
         teamShortName: roundsAndFixtures.teamShortNameById.get(String(row.teamId)) ?? row.team.name,
+        photoUrl: row.photoUrl ? playerPhotoPublicUrl(String(row.playerId)) : null,
         leagueName: league.displayName,
         position,
         positionGroup,
@@ -400,6 +405,17 @@ export async function loadFantasySquadPlannerData(
   }, null);
   const playersById = new Map(players.map((player) => [player.playerId, player]));
   const horizonRounds = normalizeFantasyHorizon(savedSquad?.horizonRounds, rules.horizonOptions);
+  const savedSelections =
+    savedSquad?.players.filter((player) => playersById.has(String(player.playerId))).map((player) => ({
+      playerId: String(player.playerId),
+      isStarter: player.isStarter,
+      isLocked: player.isLocked,
+      isCaptain: player.isCaptain,
+      isViceCaptain: player.isViceCaptain,
+      slotIndex: player.slotIndex,
+      purchasePrice: playersById.get(String(player.playerId))?.price ?? player.purchasePrice
+    })) ?? [];
+  const roundPlans = fantasySquadRoundPlansFromFilters(savedSquad?.filters, savedSelections, playersById);
 
   return {
     readiness,
@@ -418,16 +434,8 @@ export async function loadFantasySquadPlannerData(
       leagueId: String(league.leagueId),
       season: league.season,
       horizonRounds,
-      selections:
-        savedSquad?.players.filter((player) => playersById.has(String(player.playerId))).map((player) => ({
-          playerId: String(player.playerId),
-          isStarter: player.isStarter,
-          isLocked: player.isLocked,
-          isCaptain: player.isCaptain,
-          isViceCaptain: player.isViceCaptain,
-          slotIndex: player.slotIndex,
-          purchasePrice: playersById.get(String(player.playerId))?.price ?? player.purchasePrice
-        })) ?? []
+      selections: savedSelections,
+      roundPlans
     },
     priceStatus: {
       sportsRuPrices,
@@ -500,6 +508,7 @@ export async function saveFantasySquad(
     name?: string;
     horizonRounds: number;
     selections: FantasySquadSelection[];
+    roundPlans?: FantasySquadRoundPlan[];
     rules: FantasySquadRules;
   }
 ) {
@@ -582,7 +591,8 @@ export async function saveFantasySquad(
           name,
           budgetLimit: input.rules.budgetLimit,
           bank,
-          horizonRounds
+          horizonRounds,
+          filters: { roundPlans: input.roundPlans ?? createFantasySquadRoundPlans(input.selections) }
         },
         select: { id: true, name: true }
       });
@@ -595,7 +605,8 @@ export async function saveFantasySquad(
           name,
           budgetLimit: input.rules.budgetLimit,
           bank,
-          horizonRounds
+          horizonRounds,
+          filters: { roundPlans: input.roundPlans ?? createFantasySquadRoundPlans(input.selections) }
         },
         select: { id: true, name: true }
       });
@@ -622,6 +633,46 @@ export async function saveFantasySquad(
     );
 
     return squad;
+  });
+}
+
+export function fantasySquadRoundPlansFromFilters(
+  filters: unknown,
+  fallbackSelections: FantasySquadSelection[],
+  playersById?: ReadonlyMap<string, FantasyPlannerPlayer>
+) {
+  const fallback = createFantasySquadRoundPlans(fallbackSelections);
+  if (!filters || typeof filters !== "object" || Array.isArray(filters)) return fallback;
+  const rawPlans = (filters as { roundPlans?: unknown }).roundPlans;
+  if (!Array.isArray(rawPlans)) return fallback;
+
+  return fallback.map((fallbackPlan, roundOffset) => {
+    const raw = rawPlans.find((item) => item && typeof item === "object" && !Array.isArray(item) && Number((item as { roundOffset?: unknown }).roundOffset) === roundOffset);
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return fallbackPlan;
+    const rawSelections = Array.isArray((raw as { selections?: unknown }).selections) ? (raw as { selections: unknown[] }).selections : [];
+    const seen = new Set<string>();
+    const selections = rawSelections.flatMap((item, index): FantasySquadSelection[] => {
+      if (!item || typeof item !== "object" || Array.isArray(item)) return [];
+      const record = item as Record<string, unknown>;
+      const playerId = typeof record.playerId === "string" && /^\d+$/.test(record.playerId) ? record.playerId : null;
+      if (!playerId || seen.has(playerId) || (playersById && !playersById.has(playerId))) return [];
+      seen.add(playerId);
+      const purchasePrice = Number(record.purchasePrice);
+      return [{
+        playerId,
+        isStarter: record.isStarter !== false,
+        isLocked: record.isLocked === true,
+        isCaptain: record.isCaptain === true,
+        isViceCaptain: record.isViceCaptain === true,
+        slotIndex: Number.isInteger(Number(record.slotIndex)) ? Math.max(0, Number(record.slotIndex)) : index,
+        purchasePrice: Number.isFinite(purchasePrice) ? purchasePrice : null
+      }];
+    });
+    return {
+      roundOffset,
+      linkedToPrevious: roundOffset > 0 && (raw as { linkedToPrevious?: unknown }).linkedToPrevious !== false,
+      selections: selections.length > 0 || fallbackSelections.length === 0 ? selections : fallbackPlan.selections
+    };
   });
 }
 
