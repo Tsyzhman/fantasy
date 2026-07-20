@@ -1522,15 +1522,14 @@ function PlayerPoolTable({
         <div className="relative max-h-[720px] w-full max-w-full overflow-auto">
         <SortableTable className="w-full min-w-[720px] table-fixed divide-y divide-slate-200 text-xs">
           <colgroup>
-            <col className="w-[19%]" />
+            <col className="w-[21%]" />
             <col className="w-[9%]" />
             <col className="w-[6%]" />
             <col className="w-[8%]" />
             <col className="w-[7%]" />
             <col className="w-[7%]" />
             <col className="w-[7%]" />
-            <col className="w-[6%]" />
-            <col className="w-[24%]" />
+            <col className="w-[28%]" />
             <col className="w-[7%]" />
           </colgroup>
           <thead className="sticky top-0 z-10 whitespace-nowrap bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
@@ -1542,7 +1541,6 @@ function PlayerPoolTable({
               <th className="overflow-hidden px-1 py-2 text-right" title={columnTitles.next}><I18nText en="Next" ru="ФО" /></th>
               <th className="overflow-hidden px-1 py-2 text-right" title={columnTitles.alternative}><I18nText en="Alt" ru="Альт" /></th>
               <th className="overflow-hidden px-1 py-2 text-right" title={columnTitles.horizon}><I18nText en={`${horizon}R`} ru={`${horizon}Т`} /></th>
-              <th className="overflow-hidden px-1 py-2 text-right" title={columnTitles.wyscoutXg}>xG</th>
               <th data-sort-disabled="true" className="overflow-hidden px-2 py-2" title={columnTitles.fixtures}><I18nText en="Fixtures" ru="Матчи" /></th>
               <th data-sort-disabled="true" className="overflow-hidden px-2 py-2 text-center" title={columnTitles.action}>
                 <span aria-hidden="true">+</span>
@@ -1614,20 +1612,6 @@ function PlayerPoolTable({
                     {formatScore(player.alternativePredictedFp)}
                   </td>
                   <td data-sort-value={playerHorizonPoints(player, horizon)} className={`whitespace-nowrap px-2 py-1.5 text-right font-semibold ${muted ? "text-slate-600" : "text-sky-700"}`}>{formatScore(playerHorizonPoints(player, horizon))}</td>
-                  <td data-sort-value={player.baltikaXg ?? ""} className={`whitespace-nowrap px-2 py-1.5 text-right text-[11px] font-semibold ${muted ? "text-slate-600" : "text-violet-700"}`}>
-                    {player.baltikaXg !== null && player.baltikaXg !== undefined ? (
-                      <span
-                        className="num-tabular"
-                        title={player.baltikaMatchesPlayed
-                          ? localizedText(language, `Wyscout xG over ${player.baltikaMatchesPlayed} matches`, `Wyscout xG за ${player.baltikaMatchesPlayed} матчей`)
-                          : "Wyscout xG"}
-                      >
-                        {formatScore(player.baltikaXg)}{player.baltikaMatchesPlayed ? ` · ${player.baltikaMatchesPlayed}` : ""}
-                      </span>
-                    ) : (
-                      <span className="text-slate-600">—</span>
-                    )}
-                  </td>
                   <td className="overflow-hidden px-2 py-1.5 text-[11px] text-slate-500">
                     {visibleFixtureChips.length > 0 ? (
                       <div className="flex min-w-0 items-center gap-1 overflow-hidden" title={fixtures}>
@@ -1789,13 +1773,10 @@ function PlayerPoolMobileList({
               </div>
             </dl>
 
-            <div className="mt-2 flex min-w-0 items-center justify-between gap-2">
+            <div className="mt-2 min-w-0 overflow-hidden">
               <div className="min-w-0 overflow-hidden">
                 {fixtureChips.length > 0 ? <FdrRow fixtures={fixtureChips} /> : <span className="text-[11px] text-slate-500"><I18nText en="No fixture loaded" ru="Матч не загружен" /></span>}
               </div>
-              {player.baltikaXg !== null && player.baltikaXg !== undefined ? (
-                <span className="shrink-0 text-[11px] font-semibold text-violet-700 num-tabular">W xG {formatScore(player.baltikaXg)}</span>
-              ) : null}
             </div>
 
             {disabled ? (
@@ -2370,7 +2351,6 @@ function playerPoolColumnTitles(language: UiLanguage, horizon: number) {
     next: localizedText(language, "Primary fantasy-points forecast for the next fixture.", "Основной прогноз fantasy-очков на ближайший матч."),
     alternative: alternativePredictedFpTitle(language),
     horizon: localizedText(language, `Total primary forecast over the selected ${horizon}-round horizon.`, `Суммарный основной прогноз на выбранном горизонте в ${horizon} туров.`),
-    wyscoutXg: localizedText(language, "Wyscout expected goals and the number of matches in the sample.", "Ожидаемые голы Wyscout и количество матчей в выборке."),
     fixtures: localizedText(language, "Upcoming opponents. Home fixtures are bold; underline colour shows difficulty from green (easy) to red (hard). Hover an opponent for the full club name.", "Ближайшие соперники. Домашние матчи выделены жирным; цвет нижней границы показывает сложность от зелёного (легко) до красного (сложно). Полное название клуба доступно при наведении."),
     action: localizedText(language, "Add the player to the squad or remove the selected player.", "Добавить игрока в состав или убрать уже выбранного игрока.")
   };

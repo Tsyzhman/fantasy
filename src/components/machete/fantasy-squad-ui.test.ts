@@ -42,12 +42,12 @@ test("desktop fixture window uses five compact opponent codes before overflow", 
 test("desktop planner gives wider squad cards enough pitch width", () => {
   assert.match(squadPlannerSource, /xl:grid-cols-\[minmax\(360px,0\.82fr\)_minmax\(560px,1\.18fr\)\]/);
   assert.match(squadPlannerSource, /<col className="w-\[9%\]" \/>/);
-  assert.match(squadPlannerSource, /<col className="w-\[24%\]" \/>/);
+  assert.match(squadPlannerSource, /<col className="w-\[28%\]" \/>/);
   assert.match(squadPlannerSource, /w-\[4\.5rem\] sm:w-20 2xl:w-\[5\.5rem\]/);
 });
 
 test("every desktop player-pool column has a tooltip", () => {
-  for (const key of ["player", "team", "position", "price", "next", "alternative", "horizon", "wyscoutXg", "fixtures", "action"]) {
+  for (const key of ["player", "team", "position", "price", "next", "alternative", "horizon", "fixtures", "action"]) {
     assert.match(squadPlannerSource, new RegExp(`title=\\{columnTitles\\.${key}\\}`));
   }
 });
@@ -75,6 +75,10 @@ test("squad cards show three upcoming opponents without a remaining-fixtures cou
   assert.match(tileSource, /fixtures=\{fixtureChips\.slice\(0, 3\)\}/);
   assert.doesNotMatch(tileSource, /\+\{fixtureChips\.length - 1\}/);
   assert.doesNotMatch(tileSource, /W xG|player\.baltikaXg/);
+});
+
+test("squad player pool does not expose Wyscout xG", () => {
+  assert.doesNotMatch(squadPlannerSource, /Wyscout xG|W xG|columnTitles\.wyscoutXg/);
 });
 
 test("squad cards show next-round FP instead of the selected forecast horizon", () => {
