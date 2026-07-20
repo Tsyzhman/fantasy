@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-import { formatScore, NULL_GLYPH } from "@/lib/format";
+import { formatAlternativeScore, formatScore, NULL_GLYPH } from "@/lib/format";
 import {
   fixtureChipPresentations,
   orderSquadSelectionsWithBenchGoalkeeperLast,
@@ -189,7 +189,7 @@ test("squad cards distinguish next-round FP from a three-round forecast", () => 
   const tileSource = squadPlannerSource.slice(tileStart, tileEnd);
   assert.match(tileSource, /formatScore\(nextFantasyPoints\(player\) \* \(isCaptain \? 2 : 1\)\)/);
   assert.match(tileSource, /playerHorizonPoints\(player, 3\)/);
-  assert.match(tileSource, /formatScore\(player\.alternativePredictedFp\)/);
+  assert.match(tileSource, /formatAlternativeScore\(player\.alternativePredictedFp\)/);
   assert.match(tileSource, /playerAlternativeHorizonPoints\(player, 3\)/);
   assert.match(tileSource, /Alt 1/);
   assert.match(tileSource, /Alt 3/);
@@ -239,13 +239,14 @@ test("display-only Alt FP renders in the desktop pool, mobile pool, and squad ca
   const desktopAltFive = squadPlannerSource.indexOf('title={columnTitles.alternativeFive}', desktopAlt);
   const mobileMetrics = squadPlannerSource.indexOf('grid-cols-4');
   const mobilePrice = squadPlannerSource.indexOf('formatNumber(player.price, 1)', mobileMetrics);
-  const mobileAlt = squadPlannerSource.indexOf('formatScore(player.alternativePredictedFp)', mobilePrice);
+  const mobileAlt = squadPlannerSource.indexOf('formatAlternativeScore(player.alternativePredictedFp)', mobilePrice);
 
   assert.ok(desktopNext >= 0 && desktopHorizon > desktopNext && desktopAlt > desktopHorizon && desktopAltFive > desktopAlt);
   assert.ok(mobileMetrics >= 0 && mobilePrice > mobileMetrics && mobileAlt > mobilePrice);
-  assert.equal(squadPlannerSource.match(/formatScore\(player\.alternativePredictedFp\)/g)?.length, 3);
+  assert.equal(squadPlannerSource.match(/formatAlternativeScore\(player\.alternativePredictedFp\)/g)?.length, 3);
   assert.match(squadPlannerSource, /Display only: not used by auto-pick, value, transfers, or round points\./);
   assert.equal(formatScore(null), NULL_GLYPH);
+  assert.equal(formatAlternativeScore(null), "0");
 });
 
 test("planner exposes mobile-safe history controls and sends the applied settings when saving", () => {

@@ -349,7 +349,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
                     <ScoreHeatCell value={player.scoringScore} rank={fpRanks[idx]} tone="sky" />
                   </td>
                   <td className="px-1 py-2 text-right">
-                    <ScoreHeatCell value={player.alternativeScore} rank={altRanks[idx]} tone="amber" />
+                    <ScoreHeatCell value={player.alternativeScore ?? 0} rank={altRanks[idx]} tone="amber" />
                   </td>
                 </tr>
               ))}
@@ -407,7 +407,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
                     <ScoreHeatCell value={player.scoringScore} rank={fpRanks[idx]} tone="sky" />
                   </td>
                   <td className="px-1 py-2 text-right">
-                    <ScoreHeatCell value={player.alternativeScore} rank={altRanks[idx]} tone="amber" />
+                    <ScoreHeatCell value={player.alternativeScore ?? 0} rank={altRanks[idx]} tone="amber" />
                   </td>
                 </tr>
               ))}

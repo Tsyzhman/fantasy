@@ -21,6 +21,10 @@ export function formatScore(value?: number | null) {
   return formatNumber(value, 2);
 }
 
+export function formatAlternativeScore(value?: number | null) {
+  return formatScore(value ?? 0);
+}
+
 export function formatCurrency(value?: number | null) {
   if (value === null || value === undefined || Number.isNaN(value)) return NULL_GLYPH;
   if (value >= 1_000_000) return `EUR ${formatNumber(value / 1_000_000, 1)}m`;

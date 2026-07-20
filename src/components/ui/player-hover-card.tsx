@@ -161,7 +161,7 @@ export function PlayerHoverCardContent({ player }: { player: PlayerHoverCardData
         <div className="mt-2 grid grid-cols-3 gap-2 text-[11px]">
           <ScoreBlock tone="emerald" label="xFP" value={player.xFp} />
           <ScoreBlock tone="sky" label="FP" value={player.actualFp} />
-          <ScoreBlock tone="amber" label="vFP" value={player.altFp} />
+          <ScoreBlock tone="amber" label="vFP" value={player.altFp ?? 0} />
         </div>
 
         {player.fixtures && player.fixtures.length > 0 ? (

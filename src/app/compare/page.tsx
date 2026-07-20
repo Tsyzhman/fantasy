@@ -294,7 +294,7 @@ function CompareSummaryCard({ row, isLeader }: { row: CompareRow; isLeader: bool
       <dl className="mt-4 grid grid-cols-3 gap-2">
         <SummaryStat tone="emerald" label="xFP" value={row.fantasyScore} />
         <SummaryStat tone="sky" label="FP" value={row.scoringScore} />
-        <SummaryStat tone="amber" label="vFP" value={row.alternativeScore} />
+        <SummaryStat tone="amber" label="vFP" value={row.alternativeScore ?? 0} />
       </dl>
       <div className="mt-3 flex items-center justify-between gap-3 text-xs text-slate-500">
         <span className="num-tabular"><I18nText en="Min" ru="Мин" />: {formatNumber(row.minutesPlayed)}</span>
@@ -389,7 +389,7 @@ function MetricValueCell({
         isBest ? toneClasses(metric.tone) : "text-slate-700"
       }`}
     >
-      <span className="block font-semibold">{formatMetric(value, metric.format, metric.digits)}</span>
+      <span className="block font-semibold">{formatMetric(metric.key === "alternativeScore" ? value ?? 0 : value, metric.format, metric.digits)}</span>
       {isBest ? (
         <span className="mt-0.5 block text-[10px] font-bold uppercase tracking-wide">
           <I18nText en="Best" ru="Лучший" />

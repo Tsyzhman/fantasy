@@ -20,7 +20,7 @@ import type {
   FantasySquadWorkerResponse,
   TransferSuggestionWorkerInput
 } from "@/components/machete/fantasy-squad-worker-contract";
-import { formatDate, formatNumber, formatScore } from "@/lib/format";
+import { formatAlternativeScore, formatDate, formatNumber, formatScore } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import { compactPlayerDisplayName } from "@/lib/players/display-name";
 import {
@@ -1638,18 +1638,18 @@ function PlayerPoolTable({
                   <td data-sort-value={nextFantasyPoints(player)} className={`overflow-hidden whitespace-nowrap px-1 py-1.5 text-right font-semibold ${muted ? "text-slate-600" : "text-emerald-700"}`}>{formatScore(nextFantasyPoints(player))}</td>
                   <td data-sort-value={playerHorizonPoints(player, horizon)} className={`overflow-hidden whitespace-nowrap px-1 py-1.5 text-right font-semibold ${muted ? "text-slate-600" : "text-sky-700"}`}>{formatScore(playerHorizonPoints(player, horizon))}</td>
                   <td
-                    data-sort-value={player.alternativePredictedFp ?? ""}
+                    data-sort-value={player.alternativePredictedFp ?? 0}
                     className={`overflow-hidden whitespace-nowrap px-1 py-1.5 text-right font-semibold ${muted ? "text-slate-600" : "text-amber-700"}`}
                     title={alternativePredictedFpTitle(language)}
                   >
-                    {formatScore(player.alternativePredictedFp)}
+                    {formatAlternativeScore(player.alternativePredictedFp)}
                   </td>
                   <td
                     data-sort-value={playerAlternativeHorizonPoints(player, 5) ?? ""}
                     className={`overflow-hidden whitespace-nowrap px-1 py-1.5 text-right font-semibold ${muted ? "text-slate-600" : "text-violet-700"}`}
                     title={alternativeFiveRoundFpTitle(language)}
                   >
-                    {formatScore(playerAlternativeHorizonPoints(player, 5))}
+                    {formatAlternativeScore(playerAlternativeHorizonPoints(player, 5))}
                   </td>
                   <td className="overflow-hidden px-2 py-1.5 text-[11px] text-slate-500">
                     {visibleFixtureChips.length > 0 ? (
@@ -1808,7 +1808,7 @@ function PlayerPoolMobileList({
               </div>
               <div className="min-w-0 px-1" title={alternativePredictedFpTitle(language)}>
                 <dt className="text-[10px] font-semibold uppercase text-slate-500">Alt</dt>
-                <dd className="truncate text-sm font-bold text-amber-700 num-tabular">{formatScore(player.alternativePredictedFp)}</dd>
+                <dd className="truncate text-sm font-bold text-amber-700 num-tabular">{formatAlternativeScore(player.alternativePredictedFp)}</dd>
               </div>
             </dl>
 
@@ -1817,7 +1817,7 @@ function PlayerPoolMobileList({
                 {fixtureChips.length > 0 ? <FdrRow fixtures={fixtureChips} /> : <span className="text-[11px] text-slate-500"><I18nText en="No fixture loaded" ru="Матч не загружен" /></span>}
               </div>
               <span className="shrink-0 text-[11px] font-semibold text-violet-700 num-tabular" title={alternativeFiveRoundFpTitle(language)}>
-                <I18nText en="Alt 5R" ru="Альт 5Т" /> {formatScore(playerAlternativeHorizonPoints(player, 5))}
+                <I18nText en="Alt 5R" ru="Альт 5Т" /> {formatAlternativeScore(playerAlternativeHorizonPoints(player, 5))}
               </span>
             </div>
 
@@ -2292,11 +2292,11 @@ function SquadPlayerTile({
         </div>
         <div title={localizedText(language, "Alternative forecast for the next round", "Альтернативный прогноз на следующий тур")}>
           <dt className="text-[7px] font-semibold uppercase text-slate-500">Alt 1</dt>
-          <dd className="truncate text-[9px] font-bold text-amber-700">{formatScore(player.alternativePredictedFp)}</dd>
+          <dd className="truncate text-[9px] font-bold text-amber-700">{formatAlternativeScore(player.alternativePredictedFp)}</dd>
         </div>
         <div title={localizedText(language, "Alternative forecast for the next three rounds", "Альтернативный прогноз на следующие три тура")}>
           <dt className="text-[7px] font-semibold uppercase text-slate-500">Alt 3</dt>
-          <dd className="truncate text-[9px] font-bold text-violet-700">{formatScore(playerAlternativeHorizonPoints(player, 3))}</dd>
+          <dd className="truncate text-[9px] font-bold text-violet-700">{formatAlternativeScore(playerAlternativeHorizonPoints(player, 3))}</dd>
         </div>
       </dl>
       {fixtureChips.length > 0 ? (

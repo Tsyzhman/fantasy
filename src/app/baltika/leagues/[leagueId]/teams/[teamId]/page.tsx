@@ -193,7 +193,7 @@ export default async function BaltikaTeamPage({ params, searchParams }: PageProp
                     {formatScore(player.scoringScore)}
                   </td>
                   <td className="whitespace-nowrap bg-amber-50/70 px-4 py-3 text-right font-semibold text-amber-700">
-                    {formatScore(player.alternativeScore)}
+                    {formatScore(player.alternativeScore ?? 0)}
                   </td>
                 </tr>
               ))}
@@ -247,7 +247,7 @@ export default async function BaltikaTeamPage({ params, searchParams }: PageProp
                     {formatScore(player.scoringScore)}
                   </td>
                   <td className="whitespace-nowrap bg-amber-50/70 px-4 py-3 text-right font-semibold text-amber-700">
-                    {formatScore(player.alternativeScore)}
+                    {formatScore(player.alternativeScore ?? 0)}
                   </td>
                 </tr>
               ))}

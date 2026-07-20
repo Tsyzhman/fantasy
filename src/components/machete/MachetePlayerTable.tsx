@@ -149,7 +149,7 @@ export function MachetePlayerTable({
                   <ScoreHeatCell value={player.scoringScore ?? null} rank={fpRanks[idx]} tone="sky" />
                 </td>
                 <td className="px-1 py-2 text-right">
-                  <ScoreHeatCell value={player.alternativeScore ?? null} rank={altRanks[idx]} tone="amber" />
+                  <ScoreHeatCell value={player.alternativeScore ?? 0} rank={altRanks[idx]} tone="amber" />
                 </td>
                 <td className="whitespace-nowrap px-3 py-2 text-center">
                   <SparkLine values={player.recentFp ?? []} width={64} height={20} />
@@ -206,7 +206,7 @@ export function MachetePlayerTable({
                   <ScoreHeatCell value={player.scoringScore ?? null} rank={fpRanks[idx]} tone="sky" />
                 </td>
                 <td className="px-1 py-2 text-right">
-                  <ScoreHeatCell value={player.alternativeScore ?? null} rank={altRanks[idx]} tone="amber" />
+                  <ScoreHeatCell value={player.alternativeScore ?? 0} rank={altRanks[idx]} tone="amber" />
                 </td>
                 <td className="whitespace-nowrap px-3 py-2 text-center">
                   <SparkLine values={player.recentFp ?? []} width={64} height={20} />
