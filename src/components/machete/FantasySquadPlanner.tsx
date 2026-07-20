@@ -1553,14 +1553,14 @@ function PlayerPoolTable({
         <SortableTable className="w-full min-w-0 table-fixed divide-y divide-slate-200 text-xs">
           <colgroup>
             <col className="w-[21%]" />
-            <col className="w-[5%]" />
+            <col className="w-[7%]" />
             <col className="w-[6%]" />
             <col className="w-[8%]" />
             <col className="w-[7%]" />
             <col className="w-[7%]" />
             <col className="w-[7%]" />
             <col className="w-[7%]" />
-            <col className="w-[25%]" />
+            <col className="w-[23%]" />
             <col className="w-[7%]" />
           </colgroup>
           <thead className="sticky top-0 z-10 whitespace-nowrap bg-slate-50 text-left text-[10px] font-semibold uppercase text-slate-500">

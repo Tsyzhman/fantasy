@@ -113,11 +113,11 @@ test("desktop fixture window uses five compact opponent codes before overflow", 
   assert.match(squadPlannerSource, /flex-nowrap gap-0\.5 overflow-hidden/);
 });
 
-test("desktop planner gives wider squad cards enough pitch width", () => {
+test("desktop planner keeps the club column readable without horizontal overflow", () => {
   assert.match(squadPlannerSource, /xl:grid-cols-\[minmax\(360px,0\.82fr\)_minmax\(560px,1\.18fr\)\]/);
   assert.match(squadPlannerSource, /<col className="w-\[21%\]" \/>/);
-  assert.match(squadPlannerSource, /<col className="w-\[5%\]" \/>/);
-  assert.match(squadPlannerSource, /<col className="w-\[25%\]" \/>/);
+  assert.match(squadPlannerSource, /<col className="w-\[7%\]" \/>/);
+  assert.match(squadPlannerSource, /<col className="w-\[23%\]" \/>/);
   assert.match(squadPlannerSource, /w-\[4\.5rem\] sm:w-20 2xl:w-\[5\.5rem\]/);
 });
 
