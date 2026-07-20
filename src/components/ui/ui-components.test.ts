@@ -7,7 +7,7 @@ import { ActiveFilterChips } from "./active-filter-chips";
 import { buildCurrentLinkHref } from "./copy-current-link-button";
 import { FdrPill, FdrRow } from "./fdr-pill";
 import { LeagueFlag } from "./league-flag";
-import { PlayerHoverCard } from "./player-hover-card";
+import { PlayerHoverCardContent } from "./player-hover-card";
 import { ScoreHeatCell, computeRanks } from "./score-heat-cell";
 
 test("LeagueFlag renders an accessible SVG flag", () => {
@@ -84,9 +84,9 @@ test("FDR components keep one fixture fill while showing difficulty with a separ
   assert.match(rowHtml, /A LEE/);
 });
 
-test("PlayerHoverCard renders player summary and fixture pills", () => {
+test("PlayerHoverCard content renders player summary and fixture pills", () => {
   const html = renderToStaticMarkup(
-    React.createElement(PlayerHoverCard, {
+    React.createElement(PlayerHoverCardContent, {
       player: {
         name: "Alex Forward",
         position: "FWD",
@@ -101,12 +101,10 @@ test("PlayerHoverCard renders player summary and fixture pills", () => {
         actualFp: 7.3,
         altFp: 6.5,
         fixtures: [{ label: "ARS", difficulty: 4 }]
-      },
-      trigger: React.createElement("span", null, "Alex")
+      }
     })
   );
 
-  assert.match(html, /role="tooltip"/);
   assert.match(html, /Alex Forward/);
   assert.match(html, /FWD · Test FC/);
   assert.match(html, /title="Test Football Club"/);
