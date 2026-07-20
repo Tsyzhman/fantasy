@@ -91,7 +91,7 @@ test("shared team options expose the FotMob short name from season metadata", as
   assert.equal(teams[0].shortName, "Man United");
 });
 
-test("shared team match ids keep all-loaded scoped to the selected competition season", async () => {
+test("shared team match ids load all finished matches across seasons", async () => {
   const calls: unknown[] = [];
   const prisma = {
     coreMatch: {
@@ -107,8 +107,50 @@ test("shared team match ids keep all-loaded scoped to the selected competition s
   assert.deepEqual(ids, [201n]);
   const call = calls[0] as { where?: { leagueId?: bigint; season?: string } };
   assert.equal(call.where?.leagueId, 47n);
-  assert.equal(call.where?.season, "2024/2025");
+  assert.equal(call.where?.season, undefined);
   assert.equal((call.where as { playerStats?: unknown }).playerStats, undefined);
+  assert.equal((call as { take?: number }).take, undefined);
+});
+
+test("shared team match ids take the last N finished matches across seasons", async () => {
+  const calls: unknown[] = [];
+  const prisma = {
+    coreMatch: {
+      async findMany(input: unknown) {
+        calls.push(input);
+        return [
+          { id: 301n, matchDate: new Date("2025-08-16T16:00:00.000Z") },
+          { id: 201n, matchDate: new Date("2025-05-25T16:00:00.000Z") }
+        ];
+      }
+    }
+  } as unknown as PrismaClient;
+
+  const ids = await loadSharedTeamMatchIds(prisma, 47n, "2025/2026", 10n, { kind: "last", matches: 10 });
+
+  assert.deepEqual(ids, [301n, 201n]);
+  const call = calls[0] as { where?: { leagueId?: bigint; season?: string }; take?: number };
+  assert.equal(call.where?.leagueId, 47n);
+  assert.equal(call.where?.season, undefined);
+  assert.equal(call.take, 10);
+});
+
+test("shared team season windows remain scoped to current or previous season", async () => {
+  const calls: unknown[] = [];
+  const prisma = {
+    coreMatch: {
+      async findMany(input: unknown) {
+        calls.push(input);
+        return [];
+      }
+    }
+  } as unknown as PrismaClient;
+
+  await loadSharedTeamMatchIds(prisma, 47n, "2025/2026", 10n, { kind: "season", offset: 0 });
+  await loadSharedTeamMatchIds(prisma, 47n, "2025/2026", 10n, { kind: "season", offset: -1 });
+
+  assert.equal((calls[0] as { where?: { season?: string } }).where?.season, "2025/2026");
+  assert.equal((calls[1] as { where?: { season?: string } }).where?.season, "2024/2025");
 });
 
 test("combined player rows aggregate all selected team scope matches even when roster exists only in one season", async () => {
@@ -145,15 +187,11 @@ test("combined player rows aggregate all selected team scope matches even when r
     coreMatch: {
       async findMany(input: unknown) {
         coreMatchCalls.push(input);
-        const season = (input as { where?: { season?: string } }).where?.season;
-        if (season === "2023/2024") {
-          return [
-            { id: 101n, matchDate: new Date("2024-04-01T16:00:00.000Z") },
-            { id: 102n, matchDate: new Date("2024-04-08T16:00:00.000Z") }
-          ];
-        }
-        if (season === "2024/2025") return [{ id: 201n, matchDate: new Date("2025-04-01T16:00:00.000Z") }];
-        return [];
+        return [
+          { id: 201n, matchDate: new Date("2025-04-01T16:00:00.000Z") },
+          { id: 102n, matchDate: new Date("2024-04-08T16:00:00.000Z") },
+          { id: 101n, matchDate: new Date("2024-04-01T16:00:00.000Z") }
+        ];
       }
     },
     matchPlayerStat: {
@@ -177,10 +215,8 @@ test("combined player rows aggregate all selected team scope matches even when r
   assert.equal(rows.length, 1);
   assert.equal(rows[0].matchesPlayed, 3);
   assert.equal(rows[0].minutesPlayed, 225);
-  assert.deepEqual(
-    coreMatchCalls.map((call) => (call as { where?: { season?: string } }).where?.season).sort(),
-    ["2023/2024", "2024/2025"]
-  );
+  assert.equal(coreMatchCalls.length, 2);
+  assert.equal(coreMatchCalls.every((call) => (call as { where?: { season?: string } }).where?.season === undefined), true);
   const statCall = statCalls[0] as {
     where?: {
       matchId?: { in?: bigint[] };
@@ -188,7 +224,7 @@ test("combined player rows aggregate all selected team scope matches even when r
       playerId?: { in?: bigint[] };
     };
   };
-  assert.deepEqual(statCall.where?.matchId?.in, [101n, 102n, 201n]);
+  assert.deepEqual(statCall.where?.matchId?.in, [201n, 102n, 101n]);
   assert.deepEqual(statCall.where?.teamId?.in, [10n]);
   assert.deepEqual(statCall.where?.playerId?.in, [99n]);
 });
@@ -227,21 +263,13 @@ test("combined last match window is applied across selected competitions without
     coreMatch: {
       async findMany(input: unknown) {
         coreMatchCalls.push(input);
-        const season = (input as { where?: { season?: string } }).where?.season;
-        if (season === "2023/2024") {
-          return [
-            { id: 101n, matchDate: new Date("2024-05-01T16:00:00.000Z") },
-            { id: 102n, matchDate: new Date("2024-05-08T16:00:00.000Z") }
-          ];
-        }
-        if (season === "2024/2025") {
-          return [
-            { id: 203n, matchDate: new Date("2025-05-15T16:00:00.000Z") },
-            { id: 201n, matchDate: new Date("2025-05-01T16:00:00.000Z") },
-            { id: 202n, matchDate: new Date("2025-05-08T16:00:00.000Z") }
-          ];
-        }
-        return [];
+        return [
+          { id: 203n, matchDate: new Date("2025-05-15T16:00:00.000Z") },
+          { id: 202n, matchDate: new Date("2025-05-08T16:00:00.000Z") },
+          { id: 201n, matchDate: new Date("2025-05-01T16:00:00.000Z") },
+          { id: 102n, matchDate: new Date("2024-05-08T16:00:00.000Z") },
+          { id: 101n, matchDate: new Date("2024-05-01T16:00:00.000Z") }
+        ];
       }
     },
     matchPlayerStat: {
@@ -266,6 +294,7 @@ test("combined last match window is applied across selected competitions without
   assert.equal(rows[0].matchesPlayed, 2);
   assert.equal(rows[0].minutesPlayed, 180);
   assert.equal(coreMatchCalls.every((call) => (call as { take?: number }).take === undefined), true);
+  assert.equal(coreMatchCalls.every((call) => (call as { where?: { season?: string } }).where?.season === undefined), true);
   assert.equal(coreMatchCalls.every((call) => (call as { where?: { playerStats?: unknown } }).where?.playerStats === undefined), true);
   const statCall = statCalls[0] as { where?: { matchId?: { in?: bigint[] } } };
   assert.deepEqual(statCall.where?.matchId?.in, [203n, 202n, 201n]);
@@ -339,7 +368,7 @@ test("shared player rows push position filters into roster loading and normalize
   assert.deepEqual(rosterCall.where?.AND?.[2]?.playerId?.in, [99n]);
 });
 
-test("explicit roster scopes do not leak the current competition or broad fallback history into exact history", async () => {
+test("explicit roster scopes keep all-season history inside the selected competition", async () => {
   const matchScopes: string[] = [];
   const statCalls: unknown[] = [];
   const prisma = {
@@ -361,7 +390,7 @@ test("explicit roster scopes do not leak the current competition or broad fallba
       async findMany(input: unknown) {
         const where = (input as { where?: { leagueId?: bigint; season?: string } }).where;
         matchScopes.push(`${where?.leagueId}:${where?.season}`);
-        return where?.leagueId === 42n && where.season === "2025/2026"
+        return where?.leagueId === 42n && where.season === undefined
           ? [{ id: 301n, matchDate: new Date("2026-05-01T16:00:00.000Z") }]
           : [{ id: 999n, matchDate: new Date("2027-05-01T16:00:00.000Z") }];
       }
@@ -382,7 +411,7 @@ test("explicit roster scopes do not leak the current competition or broad fallba
     scoringModel
   });
 
-  assert.deepEqual(matchScopes, ["42:2025/2026"]);
+  assert.deepEqual(matchScopes, ["42:undefined"]);
   assert.equal(statCalls.length, 1);
   assert.equal(rows[0].matchesPlayed, 1);
   assert.equal(rows[0].minutesPlayed, 90);
@@ -396,7 +425,7 @@ test("explicit roster scopes do not leak the current competition or broad fallba
   });
   assert.equal(rowsWithoutMatchingHistory.length, 1);
   assert.equal(rowsWithoutMatchingHistory[0].matchesPlayed, 0);
-  assert.deepEqual(matchScopes, ["42:2025/2026"]);
+  assert.deepEqual(matchScopes, ["42:undefined"]);
   assert.equal(statCalls.length, 1);
 });
 

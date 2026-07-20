@@ -18,7 +18,6 @@ import { formatDate, formatNumber, formatScore } from "@/lib/format";
 import { matchWindowLabel, matchWindowLabelRu, matchWindowModeValue, parseMacheteMatchWindow } from "@/scoring/machete/match-window";
 import {
   loadSharedLeagueSeason,
-  loadSharedLeagueSeasonOptions,
   loadSharedMachetePlayerRows,
   loadSharedMatchWindowSummary,
   loadSharedTeamFixtures,
@@ -36,7 +35,6 @@ type PageProps = {
     teamId: string;
   }>;
   searchParams?: Promise<{
-    season?: string;
     recentMatches?: string;
     matchWindow?: string;
     customMatches?: string;
@@ -53,10 +51,9 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
     legacyRecentMatches: resolvedSearchParams.recentMatches
   });
   const starterFilter = parseStarterFilter(resolvedSearchParams.starterFilter);
-  const [league, leagueSeasonOptions] = await Promise.all([loadSharedLeagueSeason(prisma, leagueId, resolvedSearchParams.season), loadSharedLeagueSeasonOptions(prisma)]);
+  const league = await loadSharedLeagueSeason(prisma, leagueId);
   const parsedTeamId = parseSharedBigInt(teamId);
   if (!league || !parsedTeamId) notFound();
-  const seasonsForLeague = leagueSeasonOptions.filter((option) => option.leagueId === league.leagueId);
 
   const seasonTeam = await prisma.leagueSeasonTeam.findUnique({
     where: {
@@ -139,7 +136,7 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
             { label: "Machete", href: "/machete/leagues" },
             { label: <I18nText en="Leagues" ru="Лиги" />, href: "/machete/leagues" },
             { label: league.displayName, href: macheteLeagueHref(league.leagueId, league.season) },
-            { label: seasonTeam.team.name, href: macheteTeamHref(league.leagueId, league.season, seasonTeam.teamId) }
+            { label: seasonTeam.team.name, href: macheteTeamHref(league.leagueId, seasonTeam.teamId) }
           ]}
       />
 
@@ -161,22 +158,6 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
               </p>
             </div>
           </div>
-          <AutoSubmitForm className="w-full sm:w-56">
-            {resolvedSearchParams.matchWindow ? <input type="hidden" name="matchWindow" value={matchWindowModeValue(matchWindow)} /> : null}
-            {resolvedSearchParams.customMatches ? <input type="hidden" name="customMatches" value={resolvedSearchParams.customMatches} /> : null}
-            {starterFilter ? <input type="hidden" name="starterFilter" value={starterFilter} /> : null}
-            <label className="text-sm">
-              <span className="mb-1 block font-medium text-slate-600"><I18nText en="Season" ru="РЎРµР·РѕРЅ" /></span>
-              <select name="season" defaultValue={league.season} className="w-full rounded border border-slate-200 px-3 py-2">
-                {seasonsForLeague.map((option) => (
-                  <option key={`${option.leagueId}:${option.season}`} value={option.season}>
-                    {option.season}{option.isCurrent ? " - current" : ""}
-                  </option>
-                ))}
-                {seasonsForLeague.length === 0 ? <LocalizedOption value={league.season} en={league.season} ru={league.season} /> : null}
-              </select>
-            </label>
-          </AutoSubmitForm>
         </div>
 
         <dl className="mt-6 grid grid-cols-1 gap-4 text-sm sm:grid-cols-2 lg:grid-cols-5">
@@ -235,7 +216,6 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
           />
         </p>
         <AutoSubmitForm className="mb-3 grid w-full gap-3 sm:max-w-xl sm:grid-cols-2">
-          <input type="hidden" name="season" value={league.season} />
           <label className="text-sm">
             <span className="mb-1 block font-medium text-slate-600"><I18nText en="Stats window" ru="Окно статистики" /></span>
             <select name="matchWindow" defaultValue={matchWindowModeValue(matchWindow)} className="w-full rounded border border-slate-200 px-3 py-2">
@@ -382,8 +362,8 @@ function macheteLeagueHref(leagueId: bigint, season: string) {
   return `/machete/leagues/${leagueId}?season=${encodeURIComponent(season)}`;
 }
 
-function macheteTeamHref(leagueId: bigint, season: string, teamId: bigint) {
-  return `/machete/leagues/${leagueId}/teams/${teamId}?season=${encodeURIComponent(season)}`;
+function macheteTeamHref(leagueId: bigint, teamId: bigint) {
+  return `/machete/leagues/${leagueId}/teams/${teamId}`;
 }
 
 function rawPayloadMatchDate(payload: unknown) {

@@ -5,15 +5,14 @@ import Link from "next/link";
 import { FantasyPriceSheetImportForm } from "@/components/machete/FantasyPriceSheetImportForm";
 import { FantasySquadPlanner } from "@/components/machete/FantasySquadPlanner";
 import { I18nText } from "@/components/i18n-text";
-import { LocalizedOption } from "@/components/localized-option";
 import { MacheteShell } from "@/components/machete/MacheteShell";
 import { AutoSubmitForm } from "@/components/players/auto-submit-form";
 import { requireCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { isFantasySquadLeague } from "@/lib/leagues/display";
-import { loadSharedLeagueOptions, loadSharedLeagueSeasonOptions, type SharedLeagueSeasonOption } from "@/machete/shared_read_model";
+import { loadSharedLeagueOptions, type SharedLeagueSeasonOption } from "@/machete/shared_read_model";
 import { loadFantasySquadPlannerData } from "@/machete/squad_planner";
-import { loadPlannerReadinessByScope, selectPlannerSeason, type PlannerReadiness } from "@/machete/planner_readiness";
+import { loadPlannerReadinessByScope, plannerReadinessKey, type PlannerReadiness } from "@/machete/planner_readiness";
 import {
   applyFantasyHistorySearchParams,
   fantasyHistorySettingsKey,
@@ -26,7 +25,6 @@ export const dynamic = "force-dynamic";
 type PageProps = {
   searchParams: Promise<{
     leagueId?: string;
-    season?: string;
     squadId?: string;
     historyScope?: string;
     historyWindow?: string;
@@ -38,22 +36,18 @@ export default async function MacheteSquadPage({ searchParams }: PageProps) {
   const user = await requireCurrentUser();
   const params = await searchParams;
   const historySettings = parseFantasyHistorySettings(params);
-  const [allLeagues, allLeagueSeasonOptions] = await Promise.all([loadSharedLeagueOptions(prisma), loadSharedLeagueSeasonOptions(prisma)]);
-  const leagues = allLeagues.filter(isFantasySquadLeague);
-  const leagueSeasonOptions = allLeagueSeasonOptions.filter(isFantasySquadLeague);
+  const leagues = (await loadSharedLeagueOptions(prisma)).filter(isFantasySquadLeague);
   const selectedLeagueId =
     params.leagueId && leagues.some((league) => String(league.leagueId) === params.leagueId)
       ? params.leagueId
       : leagues[0]
         ? String(leagues[0].leagueId)
         : "";
-  const seasonsForSelectedLeague = selectedLeagueId ? leagueSeasonOptions.filter((league) => String(league.leagueId) === selectedLeagueId) : [];
-  const readinessByScope = await loadPlannerReadinessByScope(prisma, seasonsForSelectedLeague);
-  const seasonSelection = selectPlannerSeason(params.season, seasonsForSelectedLeague, readinessByScope);
-  const selectedLeague = seasonSelection.option;
-  const selectedSeason = selectedLeague?.season ?? "";
-  const data = selectedLeague && seasonSelection.readiness
-    ? await loadInitialFantasySquadPlannerData(user.id, selectedLeague, seasonSelection.readiness, historySettings, params.squadId)
+  const selectedLeague = leagues.find((league) => String(league.leagueId) === selectedLeagueId) ?? null;
+  const readinessByScope = await loadPlannerReadinessByScope(prisma, selectedLeague ? [selectedLeague] : []);
+  const selectedReadiness = selectedLeague ? readinessByScope.get(plannerReadinessKey(selectedLeague)) ?? null : null;
+  const data = selectedLeague && selectedReadiness
+    ? await loadInitialFantasySquadPlannerData(user.id, selectedLeague, selectedReadiness, historySettings, params.squadId)
     : null;
 
   return (
@@ -102,27 +96,16 @@ export default async function MacheteSquadPage({ searchParams }: PageProps) {
           </details>
         </div>
 
-        <AutoSubmitForm className="mt-4 grid grid-cols-[minmax(0,1fr)_auto] gap-2 sm:max-w-3xl sm:grid-cols-[minmax(240px,1fr)_minmax(150px,0.55fr)_auto]">
+        <AutoSubmitForm className="mt-4 grid grid-cols-[minmax(0,1fr)_auto] gap-2 sm:max-w-xl">
           <input type="hidden" name="historyScope" value={historySettings.scope} />
           <input type="hidden" name="historyWindow" value={historySettings.window} />
           {historySettings.selectedSeasons.map((season) => <input key={season} type="hidden" name="historySeason" value={season} />)}
-          <label className="col-span-2 text-sm sm:col-span-1">
+          <label className="text-sm">
             <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500"><I18nText en="League" ru="Лига" /></span>
             <select name="leagueId" defaultValue={selectedLeagueId} className="w-full rounded border border-slate-200 bg-white px-3 py-2">
               {leagues.map((league) => (
                 <option key={String(league.leagueId)} value={String(league.leagueId)}>
                   {league.displayName}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="min-w-0 text-sm">
-            <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500"><I18nText en="Season" ru="Сезон" /></span>
-            <select name="season" defaultValue={selectedSeason} disabled={!selectedLeagueId} className="w-full rounded border border-slate-200 bg-white px-3 py-2 disabled:bg-slate-100">
-              <LocalizedOption value="" en="Choose league first" ru="Сначала выберите лигу" />
-              {seasonsForSelectedLeague.map((league) => (
-                <option key={`${league.leagueId}:${league.season}`} value={league.season}>
-                  {league.season}{league.isCurrent ? " - current" : ""}
                 </option>
               ))}
             </select>
@@ -138,8 +121,8 @@ export default async function MacheteSquadPage({ searchParams }: PageProps) {
           {!data.readiness.ready ? (
             <div role="status" className="mt-4 rounded border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
               <I18nText
-                en={`This explicitly selected season is not forecast-ready: ${data.readiness.reasons.join(", ")}. Auto-pick and transfer recommendations are unavailable.`}
-                ru={`Явно выбранный сезон не готов для прогнозов: ${data.readiness.reasons.join(", ")}. Автоподбор и рекомендации по трансферам недоступны.`}
+                en={`The current season is not forecast-ready: ${data.readiness.reasons.join(", ")}. Auto-pick and transfer recommendations are unavailable.`}
+                ru={`Текущий сезон не готов для прогнозов: ${data.readiness.reasons.join(", ")}. Автоподбор и рекомендации по трансферам недоступны.`}
               />
             </div>
           ) : null}
@@ -162,8 +145,8 @@ export default async function MacheteSquadPage({ searchParams }: PageProps) {
       ) : (
         <div className="mt-6 rounded border border-dashed border-slate-300 bg-white p-10 text-center text-slate-500">
           <I18nText
-            en="No forecast-ready season is available. Load an explicit season to inspect its readiness blockers, or wait for fixtures, ingestion, and its exact data-quality audit."
-            ru="Нет сезона, готового для прогнозов. Выберите сезон явно, чтобы увидеть причины блокировки, либо дождитесь расписания, загрузки данных и точного аудита этого сезона."
+            en="The current season is unavailable. Wait for its roster and league data to be loaded."
+            ru="Текущий сезон недоступен. Дождитесь загрузки его состава и данных лиги."
           />
         </div>
       )}

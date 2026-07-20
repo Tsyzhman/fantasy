@@ -601,7 +601,7 @@ async function loadSharedTeamMatchRefs(
   window: MacheteMatchWindow,
   options: { deferLastLimit?: boolean } = {}
 ) {
-  const seasonFilter = window.kind === "season" ? matchWindowSeasonLabel(season, window.offset, String(leagueId)) : season;
+  const seasonFilter = window.kind === "season" ? matchWindowSeasonLabel(season, window.offset, String(leagueId)) : null;
   const matches = await prisma.coreMatch.findMany({
     where: {
       finished: true,

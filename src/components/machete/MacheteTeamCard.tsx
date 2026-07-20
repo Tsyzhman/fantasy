@@ -74,7 +74,7 @@ export function MacheteTeamCard({ team }: { team: MacheteTeamCardDto }) {
 
       <div className="mt-auto flex flex-col gap-2 pt-5">
         <Link
-          href={`/machete/leagues/${team.leagueId}/teams/${team.id}${team.season ? `?season=${encodeURIComponent(team.season)}` : ""}`}
+          href={`/machete/leagues/${team.leagueId}/teams/${team.id}`}
           className="inline-flex items-center justify-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
         >
           <I18nText en="View details" ru="Открыть детали" />
