@@ -96,7 +96,7 @@ function semanticPalette(name: "info" | "success" | "warning" | "danger" | "expe
     700: `rgb(var(--${name}-rgb) / <alpha-value>)`,
     800: `rgb(var(--${name}-rgb) / <alpha-value>)`,
     900: `rgb(var(--${name}-rgb) / <alpha-value>)`,
-    950: `rgb(var(--${name}-soft-rgb) / <alpha-value>)`
+    950: `rgb(var(--${name}-rgb) / <alpha-value>)`
   };
 }
 

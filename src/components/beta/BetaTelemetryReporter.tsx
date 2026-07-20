@@ -121,7 +121,7 @@ export function BetaTelemetryReporter() {
   }
 
   return (
-    <aside className="fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom))] left-[calc(0.75rem+env(safe-area-inset-left))] right-[calc(0.75rem+env(safe-area-inset-right))] z-50 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-emerald-300 bg-emerald-950 px-4 py-3 text-sm text-white shadow-xl sm:left-auto sm:max-w-lg" aria-labelledby="beta-telemetry-status">
+    <aside className="fixed bottom-[calc(0.75rem+env(safe-area-inset-bottom))] left-[calc(0.75rem+env(safe-area-inset-left))] right-[calc(0.75rem+env(safe-area-inset-right))] z-50 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-800 shadow-xl sm:left-auto sm:max-w-lg" aria-labelledby="beta-telemetry-status">
       <div role="status" aria-live="polite">
         <p id="beta-telemetry-status" className="font-semibold">
           <I18nText

@@ -6,6 +6,7 @@ const globals = readFileSync(new URL("../app/globals.css", import.meta.url), "ut
 const layout = readFileSync(new URL("../app/layout.tsx", import.meta.url), "utf8");
 const themeToggle = readFileSync(new URL("./theme-toggle.tsx", import.meta.url), "utf8");
 const appHeader = readFileSync(new URL("./app-header.tsx", import.meta.url), "utf8");
+const tailwindConfig = readFileSync(new URL("../../tailwind.config.ts", import.meta.url), "utf8");
 
 test("Soft Signal semantic tokens define both complete themes", () => {
   for (const token of [
@@ -48,3 +49,23 @@ test("Onest is self-hosted by Next instead of relying on a system font", () => {
   assert.match(layout, /className=\{onest\.variable\}/);
   assert.match(globals, /font-family: var\(--font-onest\)/);
 });
+
+test("semantic 950 text cannot collapse onto its soft alert background", () => {
+  assert.match(tailwindConfig, /950: `rgb\(var\(--\$\{name\}-rgb\)/);
+  assert.doesNotMatch(tailwindConfig, /950: `rgb\(var\(--\$\{name\}-soft-rgb\)/);
+
+  assert.ok(contrastRatio("#8a5a10", "#fff5d8") >= 4.5);
+  assert.ok(contrastRatio("#f3c76d", "#3b311a") >= 4.5);
+});
+
+function contrastRatio(foreground: string, background: string) {
+  const lighter = Math.max(relativeLuminance(foreground), relativeLuminance(background));
+  const darker = Math.min(relativeLuminance(foreground), relativeLuminance(background));
+  return (lighter + 0.05) / (darker + 0.05);
+}
+
+function relativeLuminance(hex: string) {
+  const channels = hex.match(/[a-f\d]{2}/gi)?.map((value) => Number.parseInt(value, 16) / 255) ?? [];
+  const linear = channels.map((value) => (value <= 0.04045 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * linear[0] + 0.7152 * linear[1] + 0.0722 * linear[2];
+}

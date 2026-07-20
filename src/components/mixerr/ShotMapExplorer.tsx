@@ -449,7 +449,7 @@ function ShotPitchPanel({
       <div className={frameClassName}>
         <ShotPitchSvg layers={layers} activeShotId={activeShotId} language={language} />
         {shotCount === 0 ? (
-          <div className="absolute inset-0 grid place-items-center bg-emerald-950/35 text-sm font-semibold text-white">
+          <div className="absolute inset-0 grid place-items-center bg-[#121619]/75 text-sm font-semibold text-[#f3f1ea]">
             <I18nText en="No shots for current filters" ru="Нет ударов по текущим фильтрам" />
           </div>
         ) : null}
