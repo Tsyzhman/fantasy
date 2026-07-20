@@ -198,11 +198,12 @@ test("squad cards place the compact team name in the top-left corner", () => {
   assert.match(tileSource, /absolute left-0\.5 top-0\.5[\s\S]*?fantasyPlayerTeamDisplayName\(player\)/);
 });
 
-test("squad cards show the assigned captain role to the left of the player photo", () => {
+test("squad cards show captain to the left and price to the right of the player photo", () => {
   const tileStart = squadPlannerSource.indexOf("function SquadPlayerTile(");
   const tileEnd = squadPlannerSource.indexOf("function fantasyForecastTitle(", tileStart);
   const tileSource = squadPlannerSource.slice(tileStart, tileEnd);
-  assert.match(tileSource, /absolute right-full top-1\/2[\s\S]*?isCaptain \? "C" : "VC"[\s\S]*?<SquadPlayerPhoto player=\{player\} \/>/);
+  assert.match(tileSource, /grid-cols-\[1fr_2rem_1fr\][\s\S]*?isCaptain \? "C" : "VC"[\s\S]*?<SquadPlayerPhoto player=\{player\} \/>[\s\S]*?Fantasy price[\s\S]*?formatNumber\(player\.price, 1\)/);
+  assert.match(tileSource, /player\.priceSource === "ESTIMATED" \? "~" : ""/);
 });
 
 test("squad cards lazy-load locally cached FotMob player photos with a fallback", () => {

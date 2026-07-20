@@ -2258,11 +2258,11 @@ function SquadPlayerTile({
       <div className="flex items-center justify-center gap-1">
         <span className={`rounded px-1 py-px text-[8px] font-bold ${positionPillClass(player.positionGroup)}`}>{player.positionGroup}</span>
       </div>
-      <div className="relative mx-auto w-fit">
+      <div className="relative mx-auto grid w-full grid-cols-[1fr_2rem_1fr] items-center">
         {isCaptain || isVice ? (
           <span
             className={cn(
-              "absolute right-full top-1/2 z-10 mr-0.5 -translate-y-1/2 rounded px-1 py-0.5 text-[8px] font-black text-white shadow-sm",
+              "z-10 mr-0.5 justify-self-end rounded px-1 py-0.5 text-[8px] font-black text-white shadow-sm",
               isCaptain ? "bg-amber-700" : "bg-slate-700"
             )}
             title={isCaptain ? captainActionLabel : viceActionLabel}
@@ -2270,8 +2270,15 @@ function SquadPlayerTile({
           >
             {isCaptain ? "C" : "VC"}
           </span>
-        ) : null}
+        ) : <span aria-hidden="true" />}
         <SquadPlayerPhoto player={player} />
+        <span
+          className="ml-0.5 justify-self-start whitespace-nowrap text-[8px] font-black text-ink num-tabular"
+          title={localizedText(language, `Fantasy price: ${formatNumber(player.price, 1)}`, `Фэнтези-цена: ${formatNumber(player.price, 1)}`)}
+          aria-label={localizedText(language, `Fantasy price ${formatNumber(player.price, 1)}`, `Фэнтези-цена ${formatNumber(player.price, 1)}`)}
+        >
+          {player.priceSource === "ESTIMATED" ? "~" : ""}{formatNumber(player.price, 1)}
+        </span>
       </div>
       <p className="mt-0.5 truncate text-[10px] font-bold text-ink" title={player.name} aria-label={player.name}>{compactPlayerDisplayName(player.name)}</p>
       <dl className="mt-0.5 grid grid-cols-2 gap-x-1 gap-y-px text-[8px] leading-tight num-tabular">
