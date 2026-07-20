@@ -101,8 +101,8 @@ function sortTableBody(table: HTMLTableElement, header: HTMLTableCellElement) {
   const pinnedRows = rows.filter((row) => !rowCanSort(row, columnIndex));
 
   sortableRows.sort((left, right) => {
-    const result = compareValues(left.value, right.value);
-    return (nextDirection === "asc" ? result : -result) || left.index - right.index;
+    const result = compareSortableValues(left.value, right.value, nextDirection);
+    return result || left.index - right.index;
   });
 
   for (const entry of sortableRows) body.appendChild(entry.row);
@@ -185,13 +185,15 @@ function comparableValue(value: string): ComparableValue {
   return { kind: "text", text: text.toLocaleLowerCase() };
 }
 
-function compareValues(left: ComparableValue, right: ComparableValue) {
+export function compareSortableValues(left: ComparableValue, right: ComparableValue, direction: SortDirection) {
   if (left.kind === "empty" && right.kind === "empty") return 0;
   if (left.kind === "empty") return 1;
   if (right.kind === "empty") return -1;
 
-  if ("number" in left && "number" in right) return left.number - right.number;
-  return left.text.localeCompare(right.text, undefined, { numeric: true, sensitivity: "base" });
+  const result = "number" in left && "number" in right
+    ? left.number - right.number
+    : left.text.localeCompare(right.text, undefined, { numeric: true, sensitivity: "base" });
+  return direction === "asc" ? result : -result;
 }
 
 function parseDateValue(text: string) {

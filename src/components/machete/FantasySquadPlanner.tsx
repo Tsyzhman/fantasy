@@ -1645,7 +1645,7 @@ function PlayerPoolTable({
                     {formatAlternativeScore(player.alternativePredictedFp)}
                   </td>
                   <td
-                    data-sort-value={playerAlternativeHorizonPoints(player, 5) ?? ""}
+                    data-sort-value={playerAlternativeHorizonPoints(player, 5) ?? 0}
                     className={`overflow-hidden whitespace-nowrap px-1 py-1.5 text-right font-semibold ${muted ? "text-slate-600" : "text-violet-700"}`}
                     title={alternativeFiveRoundFpTitle(language)}
                   >
