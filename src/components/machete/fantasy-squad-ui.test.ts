@@ -65,6 +65,9 @@ test("squad cards expose only captain and vice-captain controls with corner remo
   assert.match(squadPlannerSource, /onClick=\{\(\) => onRemove\(player\.playerId\)\}[\s\S]*?absolute right-0\.5 top-0\.5/);
   assert.match(squadPlannerSource, /onToggleCaptain\(player\.playerId\)/);
   assert.match(squadPlannerSource, /onToggleVice\(player\.playerId\)/);
+  assert.match(squadPlannerSource, /absolute bottom-0\.5 left-0\.5[\s\S]*?>\s*C\s*/);
+  assert.match(squadPlannerSource, /absolute bottom-0\.5 right-0\.5[\s\S]*?>\s*VC\s*/);
+  assert.doesNotMatch(squadPlannerSource, /absolute -top-1\.5 left-1\/2/);
 });
 
 test("squad cards show three upcoming opponents without a remaining-fixtures counter", () => {
@@ -93,8 +96,16 @@ test("squad cards distinguish next-round FP from a three-round forecast", () => 
   const tileSource = squadPlannerSource.slice(tileStart, tileEnd);
   assert.match(tileSource, /formatScore\(nextFantasyPoints\(player\) \* \(isCaptain \? 2 : 1\)\)/);
   assert.match(tileSource, /playerHorizonPoints\(player, 3\)/);
+  assert.match(tileSource, /formatScore\(player\.alternativePredictedFp\)/);
+  assert.match(tileSource, /playerAlternativeHorizonPoints\(player, 3\)/);
+  assert.match(tileSource, /Alt 1/);
+  assert.match(tileSource, /Alt 3/);
   assert.match(tileSource, /text-sky-700/);
   assert.doesNotMatch(tileSource, /playerHorizonPoints\(player, horizon\)/);
+});
+
+test("squad cards use a smaller position badge", () => {
+  assert.match(squadPlannerSource, /rounded px-1 py-px text-\[8px\] font-bold/);
 });
 
 test("squad cards place the compact team name in the top-left corner", () => {
@@ -120,7 +131,7 @@ test("planner exposes five persisted round snapshots and shifts forecasts to the
   assert.match(squadPlannerSource, /Inherit previous/);
 });
 
-test("player pool renders display-only Alt FP on desktop and as the fourth mobile metric", () => {
+test("display-only Alt FP renders in the desktop pool, mobile pool, and squad card", () => {
   const desktopNext = squadPlannerSource.indexOf('en="Next"');
   const desktopAlt = squadPlannerSource.indexOf('title={columnTitles.alternative}><I18nText en="Alt"', desktopNext);
   const desktopHorizon = squadPlannerSource.indexOf('title={columnTitles.horizon}', desktopAlt);
@@ -130,7 +141,7 @@ test("player pool renders display-only Alt FP on desktop and as the fourth mobil
 
   assert.ok(desktopNext >= 0 && desktopAlt > desktopNext && desktopHorizon > desktopAlt);
   assert.ok(mobileMetrics >= 0 && mobilePrice > mobileMetrics && mobileAlt > mobilePrice);
-  assert.equal(squadPlannerSource.match(/formatScore\(player\.alternativePredictedFp\)/g)?.length, 2);
+  assert.equal(squadPlannerSource.match(/formatScore\(player\.alternativePredictedFp\)/g)?.length, 3);
   assert.match(squadPlannerSource, /Display only: not used by auto-pick, value, transfers, or round points\./);
   assert.equal(formatScore(null), NULL_GLYPH);
 });

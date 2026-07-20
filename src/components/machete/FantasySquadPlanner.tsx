@@ -1,6 +1,6 @@
 "use client";
 
-import { Check, Copy, Crown, FilePlus2, Layers3, ListChecks, Lock, MoreHorizontal, Plus, Save, Search, Sparkles, Trash2, Users, X } from "lucide-react";
+import { Copy, Crown, FilePlus2, Layers3, ListChecks, Lock, MoreHorizontal, Plus, Save, Search, Sparkles, Trash2, Users, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type DragEvent, type SetStateAction, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
@@ -2186,20 +2186,11 @@ function SquadPlayerTile({
       aria-label={localizedText(language, `Squad player ${player.name}`, `Игрок состава: ${player.name}`)}
       className={cn(
         compact ? "w-[4.5rem] sm:w-20" : "w-[4.5rem] sm:w-20 2xl:w-[5.5rem]",
-        "relative cursor-grab rounded border bg-white px-1 py-0.5 text-center shadow-sm transition active:cursor-grabbing",
+        "relative cursor-grab rounded border bg-white px-1 py-0.5 text-center shadow-sm transition active:cursor-grabbing [@media(pointer:fine)]:pb-6",
         isCaptain ? "border-amber-400 ring-2 ring-amber-200" : "border-white/70",
         isDragging && "opacity-55 ring-2 ring-sky-300"
       )}
     >
-      {isCaptain ? (
-        <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 rounded bg-amber-800 px-1.5 py-0.5 text-[8px] font-black text-white shadow">
-          C
-        </span>
-      ) : isVice ? (
-        <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 rounded bg-slate-700 px-1.5 py-0.5 text-[8px] font-black text-white shadow">
-          VC
-        </span>
-      ) : null}
       <span
         className="absolute left-0.5 top-0.5 max-w-5 truncate text-[8px] font-bold text-slate-500"
         title={player.teamName}
@@ -2216,21 +2207,28 @@ function SquadPlayerTile({
         <span className="sr-only">{removeActionLabel}</span>
       </button>
       <div className="flex items-center justify-center gap-1">
-        <span className={`rounded px-1.5 py-0.5 text-[9px] font-bold ${positionPillClass(player.positionGroup)}`}>{player.positionGroup}</span>
+        <span className={`rounded px-1 py-px text-[8px] font-bold ${positionPillClass(player.positionGroup)}`}>{player.positionGroup}</span>
       </div>
       <SquadPlayerPhoto player={player} />
       <p className="mt-0.5 truncate text-[10px] font-bold text-ink" title={player.name} aria-label={player.name}>{compactPlayerDisplayName(player.name)}</p>
-      <p className="mt-0.5 text-[10px] font-semibold text-emerald-700 num-tabular">
-        <Check className="mr-0.5 inline h-2.5 w-2.5" />
-        {formatScore(nextFantasyPoints(player) * (isCaptain ? 2 : 1))}
-        {isCaptain ? <span className="ml-1 text-amber-800">×2</span> : null}
-      </p>
-      <p
-        className="text-[9px] font-semibold text-sky-700 num-tabular"
-        title={localizedText(language, "Forecast for the next three rounds", "Прогноз на следующие три тура")}
-      >
-        <I18nText en="3R" ru="3Т" /> {formatScore(playerHorizonPoints(player, 3))}
-      </p>
+      <dl className="mt-0.5 grid grid-cols-2 gap-x-1 gap-y-px text-[8px] leading-tight num-tabular">
+        <div title={localizedText(language, "Primary forecast for the next round", "Основной прогноз на следующий тур")}>
+          <dt className="text-[7px] font-semibold uppercase text-slate-500"><I18nText en="FP 1" ru="ФО 1" /></dt>
+          <dd className="truncate text-[9px] font-bold text-emerald-700">{formatScore(nextFantasyPoints(player) * (isCaptain ? 2 : 1))}</dd>
+        </div>
+        <div title={localizedText(language, "Primary forecast for the next three rounds", "Основной прогноз на следующие три тура")}>
+          <dt className="text-[7px] font-semibold uppercase text-slate-500"><I18nText en="FP 3" ru="ФО 3" /></dt>
+          <dd className="truncate text-[9px] font-bold text-sky-700">{formatScore(playerHorizonPoints(player, 3))}</dd>
+        </div>
+        <div title={localizedText(language, "Alternative forecast for the next round", "Альтернативный прогноз на следующий тур")}>
+          <dt className="text-[7px] font-semibold uppercase text-slate-500">Alt 1</dt>
+          <dd className="truncate text-[9px] font-bold text-amber-700">{formatScore(player.alternativePredictedFp)}</dd>
+        </div>
+        <div title={localizedText(language, "Alternative forecast for the next three rounds", "Альтернативный прогноз на следующие три тура")}>
+          <dt className="text-[7px] font-semibold uppercase text-slate-500">Alt 3</dt>
+          <dd className="truncate text-[9px] font-bold text-violet-700">{formatScore(playerAlternativeHorizonPoints(player, 3))}</dd>
+        </div>
+      </dl>
       {fixtureChips.length > 0 ? (
         <div className="mt-0.5 flex min-w-0 items-center justify-center overflow-hidden">
           <FdrRow
@@ -2249,32 +2247,30 @@ function SquadPlayerTile({
         <MoreHorizontal className="h-5 w-5" />
         <span className="sr-only"><I18nText en="Actions" ru="Действия" /></span>
       </button>
-      <div className="mt-1 flex justify-center gap-0.5 [@media(pointer:coarse)]:hidden">
-        <button
-          type="button"
-          onClick={() => onToggleCaptain(player.playerId)}
-          className={cn(
-            "inline-flex h-5 w-5 items-center justify-center rounded border border-slate-200 hover:bg-amber-50",
-            isCaptain ? "text-amber-600" : "text-slate-500"
-          )}
-          aria-label={captainActionLabel}
-        >
-          <Crown className={`h-2.5 w-2.5 ${isCaptain ? "fill-current" : ""}`} />
-          <span className="sr-only">{captainActionLabel}</span>
-        </button>
-        <button
-          type="button"
-          onClick={() => onToggleVice(player.playerId)}
-          className={cn(
-            "inline-flex h-5 w-5 items-center justify-center rounded border border-slate-200 hover:bg-slate-50",
-            isVice ? "text-slate-900 font-extrabold" : "text-slate-500"
-          )}
-          aria-label={viceActionLabel}
-        >
-          <span className="text-[8px] font-black">VC</span>
-          <span className="sr-only">{viceActionLabel}</span>
-        </button>
-      </div>
+      <button
+        type="button"
+        onClick={() => onToggleCaptain(player.playerId)}
+        className={cn(
+          "absolute bottom-0.5 left-0.5 hidden h-5 w-5 items-center justify-center rounded border border-slate-200 text-[8px] font-black hover:bg-amber-50 [@media(pointer:fine)]:inline-flex",
+          isCaptain ? "bg-amber-100 text-amber-700" : "bg-white text-slate-500"
+        )}
+        aria-label={captainActionLabel}
+      >
+        C
+        <span className="sr-only">{captainActionLabel}</span>
+      </button>
+      <button
+        type="button"
+        onClick={() => onToggleVice(player.playerId)}
+        className={cn(
+          "absolute bottom-0.5 right-0.5 hidden h-5 w-5 items-center justify-center rounded border border-slate-200 text-[8px] font-black hover:bg-slate-50 [@media(pointer:fine)]:inline-flex",
+          isVice ? "bg-slate-200 text-slate-950" : "bg-white text-slate-500"
+        )}
+        aria-label={viceActionLabel}
+      >
+        VC
+        <span className="sr-only">{viceActionLabel}</span>
+      </button>
     </div>
     {mobileActionsOpen && typeof document !== "undefined"
       ? createPortal(
