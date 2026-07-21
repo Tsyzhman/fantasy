@@ -19,7 +19,26 @@ export type FantasyRoundProjection = {
   fixtureCount: number;
 };
 
+export type FantasyProjectionFixtureInputs = {
+  expectedMinutes: number | null;
+  appearanceProbability: number | null;
+  sixtyMinutesProbability: number | null;
+  fullMatchProbability: number | null;
+  expectedGoals: number | null;
+  expectedAssists: number | null;
+  expectedRecoveries: number | null;
+  expectedSaves: number | null;
+  expectedYellowCards: number | null;
+  expectedRedCards: number | null;
+  expectedGoalsConceded: number | null;
+  expectedCleanSheets: number | null;
+};
+
 export type FantasyPlannerPlayer = {
+  // Raw per-match decomposition used only for transparent user-facing tooltips.
+  // These values come from the component projection pipeline and are optional to
+  // keep backward compatibility with legacy data flows.
+  projectedFixtureComponents?: FantasyProjectionFixtureInputs | null;
   id: string;
   playerId: string;
   teamId: string | null;
@@ -37,6 +56,21 @@ export type FantasyPlannerPlayer = {
   componentPredictedFp?: number | null;
   projectionEngine?: "COMPONENT_XFP_V1" | "LEGACY_RIDGE19_V1";
   projectionComponents?: {
+    appearance: number;
+    sixtyMinutes: number;
+    fullMatch: number;
+    goals: number;
+    assists: number;
+    cleanSheet: number;
+    saves: number;
+    recoveries: number;
+    goalsConceded: number;
+    yellowCards: number;
+    redCards: number;
+    total: number;
+  } | null;
+  alternativeProjectedFixtureComponents?: FantasyProjectionFixtureInputs | null;
+  alternativeProjectionComponents?: {
     appearance: number;
     sixtyMinutes: number;
     fullMatch: number;

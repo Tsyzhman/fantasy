@@ -46,6 +46,7 @@ import {
   type FantasyPlannerPlayer,
   type FantasyPositionGroup,
   type FantasyRoundProjection,
+  type FantasyProjectionFixtureInputs,
   type FantasySquadRules,
   type FantasySquadRoundPlan,
   type FantasySquadOptimizationInput,
@@ -2469,41 +2470,381 @@ function averageForecastValue(baseForecast: number | null, alternativeForecast: 
   return Math.round(((baseForecast + alternativeForecast) / 2) * 100) / 100;
 }
 
-function playerForecastComponentLines(value: number | null | undefined, label: string, language: UiLanguage) {
+function addProjectionTermLine(
+  lines: string[],
+  language: UiLanguage,
+  label: string,
+  value: number | null | undefined,
+  formula?: string
+) {
+  if (value === null || value === undefined || Number.isNaN(value)) return;
+  const valueText = formatScore(value);
+  if (!formula) {
+    lines.push(localizedText(language, `- ${label}: ${valueText} FP`, `- ${label}: ${valueText} FP`));
+    return;
+  }
+  lines.push(localizedText(language, `- ${label}: ${valueText} FP = ${formula}`, `- ${label}: ${valueText} FP = ${formula}`));
+}
+
+function formatProjectionMetric(value: number | null | undefined, digits = 3) {
   if (value === null || value === undefined || Number.isNaN(value)) return null;
-  return localizedText(language, `- ${label}: ${formatScore(value)}`, `- ${label}: ${formatScore(value)}`);
+  return formatNumber(value, digits);
+}
+
+function addProjectionWeightedTermLine(
+  lines: string[],
+  language: UiLanguage,
+  label: string,
+  value: number | null | undefined,
+  weight: number,
+  variableName: string,
+  variableValue: number | null | undefined
+) {
+  if (value === null || value === undefined || Number.isNaN(value)) return;
+  const metric = formatProjectionMetric(variableValue);
+  const formula = metric === null ? `${weight} * ${variableName}` : `${weight} * ${variableName} (${metric})`;
+  addProjectionTermLine(lines, language, label, value, formula);
+}
+
+function addPoissonProjectionTermLine(
+  lines: string[],
+  language: UiLanguage,
+  label: string,
+  value: number | null | undefined,
+  groupSize: 2 | 3,
+  variableName: string,
+  variableValue: number | null | undefined,
+  fallback = 0
+) {
+  if (value === null || value === undefined || Number.isNaN(value)) return;
+  const metric = formatProjectionMetric(variableValue);
+  const formula = metric === null
+    ? `${fallback} (from ${variableName} when unavailable)`
+    : `poisson_groups(${metric}, ${groupSize})`;
+  addProjectionTermLine(lines, language, label, value, formula);
+}
+
+function buildProjectionBreakdownLines(
+  player: FantasyPlannerPlayer,
+  language: UiLanguage,
+  components: NonNullable<FantasyPlannerPlayer["projectionComponents"]>,
+  fixtureInputs: FantasyProjectionFixtureInputs | null | undefined
+) {
+  const lines: string[] = [];
+  const goalWeight = player.positionGroup === "MID" ? 5 : player.positionGroup === "FWD" ? 4 : 6;
+  const cleanSheetWeight = player.positionGroup === "GK" || player.positionGroup === "DEF" ? 4 : 1;
+  const showFullMatch = player.positionGroup === "MID" || player.positionGroup === "FWD";
+  const showSaves = player.positionGroup === "GK";
+  const showRecoveries = player.positionGroup !== "GK";
+  const showGoalsConceded = player.positionGroup === "GK" || player.positionGroup === "DEF";
+
+  if (fixtureInputs?.expectedMinutes !== null && fixtureInputs?.expectedMinutes !== undefined) {
+    const expectedMinutes = formatProjectionMetric(fixtureInputs.expectedMinutes, 1);
+    if (expectedMinutes) lines.push(localizedText(language, `- Expected minutes: ${expectedMinutes}`, `- Expected minutes: ${expectedMinutes}`));
+  }
+
+  addProjectionWeightedTermLine(
+    lines,
+    language,
+    "Appearance FP",
+    components.appearance,
+    1,
+    "P(appearance)",
+    fixtureInputs?.appearanceProbability
+  );
+  addProjectionWeightedTermLine(
+    lines,
+    language,
+    "60+ minutes FP",
+    components.sixtyMinutes,
+    1,
+    "P(60+ min)",
+    fixtureInputs?.sixtyMinutesProbability
+  );
+  if (showFullMatch) {
+    addProjectionWeightedTermLine(
+      lines,
+      language,
+      "Full match FP",
+      components.fullMatch,
+      1,
+      "P(full match)",
+      fixtureInputs?.fullMatchProbability
+    );
+  } else {
+    addProjectionTermLine(lines, language, "Full match FP", components.fullMatch, "not awarded for this position");
+  }
+
+  addProjectionWeightedTermLine(
+    lines,
+    language,
+    "Goal FP",
+    components.goals,
+    goalWeight,
+    "Expected goals",
+    fixtureInputs?.expectedGoals
+  );
+  addProjectionWeightedTermLine(
+    lines,
+    language,
+    "Assist FP",
+    components.assists,
+    3,
+    "Expected assists",
+    fixtureInputs?.expectedAssists
+  );
+  addProjectionWeightedTermLine(
+    lines,
+    language,
+    "Clean sheet FP",
+    components.cleanSheet,
+    cleanSheetWeight,
+    "Expected clean sheets",
+    fixtureInputs?.expectedCleanSheets
+  );
+
+  if (showSaves) {
+    addPoissonProjectionTermLine(
+      lines,
+      language,
+      "Save FP",
+      components.saves,
+      3,
+      "Expected saves",
+      fixtureInputs?.expectedSaves,
+      0
+    );
+  } else {
+    addProjectionTermLine(lines, language, "Save FP", components.saves, "not applicable for this position");
+  }
+
+  if (showRecoveries) {
+    addPoissonProjectionTermLine(
+      lines,
+      language,
+      "Recovery FP",
+      components.recoveries,
+      3,
+      "Expected recoveries",
+      fixtureInputs?.expectedRecoveries,
+      0
+    );
+  } else {
+    addProjectionTermLine(lines, language, "Recovery FP", components.recoveries, "not applicable for this position");
+  }
+
+  if (showGoalsConceded) {
+    if (fixtureInputs?.expectedGoalsConceded !== null && fixtureInputs?.expectedGoalsConceded !== undefined && Number.isFinite(fixtureInputs.expectedGoalsConceded)) {
+      const expected = fixtureInputs.expectedGoalsConceded;
+      const formula = `-poisson_groups(${formatProjectionMetric(expected, 3)}, 2)`;
+      addProjectionTermLine(lines, language, "Goals conceded FP", components.goalsConceded, formula);
+    } else {
+      addProjectionTermLine(lines, language, "Goals conceded FP", components.goalsConceded, "not available");
+    }
+  } else {
+    addProjectionTermLine(lines, language, "Goals conceded FP", components.goalsConceded, "not awarded for this position");
+  }
+
+  addProjectionWeightedTermLine(
+    lines,
+    language,
+    "Yellow card FP",
+    components.yellowCards,
+    -1,
+    "Expected yellow cards",
+    fixtureInputs?.expectedYellowCards
+  );
+  addProjectionWeightedTermLine(
+    lines,
+    language,
+    "Red card FP",
+    components.redCards,
+    -3,
+    "Expected red cards",
+    fixtureInputs?.expectedRedCards
+  );
+  addProjectionTermLine(lines, language, "Total", components.total);
+
+  const computedTotal = (
+    (components.appearance ?? 0)
+    + (components.sixtyMinutes ?? 0)
+    + (components.fullMatch ?? 0)
+    + (components.goals ?? 0)
+    + (components.assists ?? 0)
+    + (components.cleanSheet ?? 0)
+    + (components.saves ?? 0)
+    + (components.recoveries ?? 0)
+    + (components.goalsConceded ?? 0)
+    + (components.yellowCards ?? 0)
+    + (components.redCards ?? 0)
+  );
+  if (Math.abs(computedTotal - components.total) > 0.001) {
+    lines.push(localizedText(language, "Total differs from module sum: custom weights/order were applied during scoring.", "Total differs from module sum: custom weights/order were applied during scoring."));
+  }
+
+  return lines;
+}
+
+function buildAlternativeProjectionBreakdownLines(
+  player: FantasyPlannerPlayer,
+  language: UiLanguage,
+  components: NonNullable<FantasyPlannerPlayer["alternativeProjectionComponents"]>,
+  fixtureInputs: FantasyProjectionFixtureInputs | null | undefined
+) {
+  const lines: string[] = [];
+  const goalWeight = player.positionGroup === "MID" ? 5 : player.positionGroup === "FWD" ? 4 : 6;
+  const cleanSheetWeight = player.positionGroup === "GK" || player.positionGroup === "DEF" ? 4 : 1;
+  const showFullMatch = player.positionGroup === "MID" || player.positionGroup === "FWD";
+  const showSaves = player.positionGroup === "GK";
+  const showRecoveries = player.positionGroup !== "GK";
+
+  if (fixtureInputs?.expectedMinutes !== null && fixtureInputs?.expectedMinutes !== undefined) {
+    const expectedMinutes = formatProjectionMetric(fixtureInputs.expectedMinutes, 1);
+    if (expectedMinutes) lines.push(localizedText(language, `- Expected minutes: ${expectedMinutes}`, `- Expected minutes: ${expectedMinutes}`));
+  }
+
+  addProjectionWeightedTermLine(
+    lines,
+    language,
+    "Appearance FP",
+    components.appearance,
+    1,
+    "P(appearance)",
+    fixtureInputs?.appearanceProbability
+  );
+  addProjectionWeightedTermLine(
+    lines,
+    language,
+    "60+ minutes FP",
+    components.sixtyMinutes,
+    1,
+    "P(60+ min)",
+    fixtureInputs?.sixtyMinutesProbability
+  );
+  if (showFullMatch) {
+    addProjectionWeightedTermLine(
+      lines,
+      language,
+      "Full match FP",
+      components.fullMatch,
+      1,
+      "P(full match)",
+      fixtureInputs?.fullMatchProbability
+    );
+  } else {
+    addProjectionTermLine(lines, language, "Full match FP", components.fullMatch, "not awarded for this position");
+  }
+
+  addProjectionWeightedTermLine(
+    lines,
+    language,
+    "Goal FP",
+    components.goals,
+    goalWeight,
+    "Expected goals",
+    fixtureInputs?.expectedGoals
+  );
+  addProjectionWeightedTermLine(
+    lines,
+    language,
+    "Assist FP",
+    components.assists,
+    3,
+    "Expected assists",
+    fixtureInputs?.expectedAssists
+  );
+  addProjectionWeightedTermLine(
+    lines,
+    language,
+    "Clean sheet FP",
+    components.cleanSheet,
+    cleanSheetWeight,
+    "Expected clean sheets",
+    fixtureInputs?.expectedCleanSheets
+  );
+
+  if (showSaves) {
+    const savesMetric = formatProjectionMetric(fixtureInputs?.expectedSaves);
+    const savesFormula = savesMetric === null ? "Expected saves / 3" : `${savesMetric} / 3`;
+    addProjectionTermLine(lines, language, "Save FP", components.saves, `${savesFormula}`);
+  } else {
+    addProjectionTermLine(lines, language, "Save FP", components.saves, "not applicable for this position");
+  }
+
+  if (showRecoveries) {
+    const recoveriesMetric = formatProjectionMetric(fixtureInputs?.expectedRecoveries);
+    const recoveriesFormula = recoveriesMetric === null ? "Expected recoveries / 3" : `${recoveriesMetric} / 3`;
+    addProjectionTermLine(lines, language, "Recovery FP", components.recoveries, recoveriesFormula);
+  } else {
+    addProjectionTermLine(lines, language, "Recovery FP", components.recoveries, "not applicable for this position");
+  }
+
+  addProjectionTermLine(
+    lines,
+    language,
+    "Goals conceded FP",
+    components.goalsConceded,
+    "not used in alternative score"
+  );
+
+  addProjectionWeightedTermLine(
+    lines,
+    language,
+    "Yellow card FP",
+    components.yellowCards,
+    -1,
+    "Expected yellow cards",
+    fixtureInputs?.expectedYellowCards
+  );
+  addProjectionWeightedTermLine(
+    lines,
+    language,
+    "Red card FP",
+    components.redCards,
+    -3,
+    "Expected red cards",
+    fixtureInputs?.expectedRedCards
+  );
+  addProjectionTermLine(lines, language, "Total", components.total);
+
+  const computedTotal = (
+    (components.appearance ?? 0)
+    + (components.sixtyMinutes ?? 0)
+    + (components.fullMatch ?? 0)
+    + (components.goals ?? 0)
+    + (components.assists ?? 0)
+    + (components.cleanSheet ?? 0)
+    + (components.saves ?? 0)
+    + (components.recoveries ?? 0)
+    + (components.goalsConceded ?? 0)
+    + (components.yellowCards ?? 0)
+    + (components.redCards ?? 0)
+  );
+  if (Math.abs(computedTotal - components.total) > 0.001) {
+    lines.push(localizedText(language, "Total differs from module sum: custom weights/order were applied during scoring.", "Total differs from module sum: custom weights/order were applied during scoring."));
+  }
+
+  return lines;
 }
 
 function playerPrimaryNextForecastTitle(player: FantasyPlannerPlayer, language: UiLanguage, nextForecast: number | null) {
   const lines = [
     localizedText(language, `Primary forecast for next fixture: ${formatScore(nextForecast)} FP`, `Primary forecast for next fixture: ${formatScore(nextForecast)} FP`),
-    localizedText(language, "Source: component-level prediction", "Source: component-level prediction")
+    localizedText(language, "Source: COMPONENT_XFP_V1", "Source: COMPONENT_XFP_V1")
   ];
   if (player.projectionComponents) {
-    const components = player.projectionComponents;
-    const componentLines = [
-      playerForecastComponentLines(components.appearance, "Appearance FP", language),
-      playerForecastComponentLines(components.sixtyMinutes, "60+ minutes FP", language),
-      playerForecastComponentLines(components.fullMatch, "Full match FP", language),
-      playerForecastComponentLines(components.goals, "Goal FP", language),
-      playerForecastComponentLines(components.assists, "Assist FP", language),
-      playerForecastComponentLines(components.cleanSheet, "Clean sheet FP", language),
-      playerForecastComponentLines(components.saves, "Save FP", language),
-      playerForecastComponentLines(components.recoveries, "Recovery FP", language),
-      playerForecastComponentLines(components.goalsConceded, "Goals conceded FP", language),
-      playerForecastComponentLines(components.yellowCards, "Yellow card FP", language),
-      playerForecastComponentLines(components.redCards, "Red card FP", language),
-      playerForecastComponentLines(components.total, "Total", language)
-    ].filter((value): value is string => typeof value === "string");
-
-    lines.push(...componentLines);
-    lines.push(
-      localizedText(
-        language,
-        "If any component is unavailable, fallback uses legacy projection path.",
-        "If any component is unavailable, fallback uses legacy projection path."
-      )
-    );
+    lines.push(localizedText(language, "Component-by-component (for transparency):", "Component-by-component (for transparency):"));
+    lines.push(...buildProjectionBreakdownLines(player, language, player.projectionComponents, player.projectedFixtureComponents));
+    lines.push(localizedText(language, "Context:", "Context:"));
+    if (player.forecastModelVersion) {
+      lines.push(localizedText(language, `Model: ${player.forecastModelVersion}`, `Model: ${player.forecastModelVersion}`));
+    }
+    if (player.forecastCalculatedAt) lines.push(localizedText(language, `Calculated: ${formatDate(player.forecastCalculatedAt)}`, `Calculated: ${formatDate(player.forecastCalculatedAt)}`));
+    if (player.forecastDataUpdatedAt) lines.push(localizedText(language, `Data updated: ${formatDate(player.forecastDataUpdatedAt)}`, `Data updated: ${formatDate(player.forecastDataUpdatedAt)}`));
+    if (player.forecastFactors?.length) {
+      lines.push(localizedText(language, "Model hints:", "Model hints:"));
+      lines.push(...player.forecastFactors.map((factor) => `- ${localizeForecastNote(factor, language)}`));
+    }
   } else if (player.forecastFactors?.length) {
     lines.push(localizedText(language, "Positive factors:", "Positive factors:"));
     lines.push(...player.forecastFactors.map((factor) => `+ ${localizeForecastNote(factor, language)}`));
@@ -2559,6 +2900,7 @@ function playerAverageForecastTitle(
 function alternativePlayerForecastTitle(player: FantasyPlannerPlayer, language: UiLanguage) {
   const nextAlternative = player.alternativePredictedFp ?? null;
   const lines = [localizedText(language, `Alternative forecast for next fixture: ${formatScore(nextAlternative)} FP`, `Alternative forecast for next fixture: ${formatScore(nextAlternative)} FP`)];
+  lines.push(localizedText(language, "Source: COMPONENT_XFP_V1 (friend module, editable in formula settings)", "Source: COMPONENT_XFP_V1 (friend module, editable in formula settings)"));
   lines.push(
     localizedText(
       language,
@@ -2566,6 +2908,19 @@ function alternativePlayerForecastTitle(player: FantasyPlannerPlayer, language: 
       "Display only value. Not used by auto-pick, budget forecast, transfer suggestions, or round points."
     )
   );
+  if (player.alternativeProjectionComponents) {
+    lines.push(localizedText(language, "Component-by-component (for transparency):", "Component-by-component (for transparency):"));
+    lines.push(
+      ...buildAlternativeProjectionBreakdownLines(
+        player,
+        language,
+        player.alternativeProjectionComponents,
+        player.alternativeProjectedFixtureComponents
+      )
+    );
+  } else {
+    lines.push(localizedText(language, "This player does not expose component-level alternative decomposition.", "This player does not expose component-level alternative decomposition."));
+  }
   if (player.projectionEngine) {
     const projectionSource = player.forecastModelVersion ?? player.projectionEngine;
     lines.push(

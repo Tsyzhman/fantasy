@@ -55,6 +55,7 @@ import {
   summarizeFantasySquad,
   createFantasySquadRoundPlans,
   validateFantasySquadForSave,
+  type FantasyProjectionFixtureInputs,
   type FantasyPlannerPlayer,
   type FantasyPositionGroup,
   type FantasyRoundProjection,
@@ -112,6 +113,25 @@ export type PlannerFixture = {
   cleanSheetProbability?: number | null;
   oddsFetchedAt?: Date | null;
 };
+
+function buildFixtureComponentInputs(projection: PlayerFixtureProjection | null): FantasyProjectionFixtureInputs | null {
+  if (!projection) return null;
+
+  return {
+    expectedMinutes: projection.expectedMinutes ?? null,
+    appearanceProbability: projection.probabilities?.appearance ?? null,
+    sixtyMinutesProbability: projection.probabilities?.sixtyMinutes ?? null,
+    fullMatchProbability: projection.probabilities?.fullMatch ?? null,
+    expectedGoals: projection.expectedEvents?.goals ?? null,
+    expectedAssists: projection.expectedEvents?.assists ?? null,
+    expectedRecoveries: projection.expectedEvents?.recoveries ?? null,
+    expectedSaves: projection.expectedEvents?.saves ?? null,
+    expectedYellowCards: projection.expectedEvents?.yellowCards ?? null,
+    expectedRedCards: projection.expectedEvents?.redCards ?? null,
+    expectedGoalsConceded: projection.expectedEvents?.goalsConceded ?? null,
+    expectedCleanSheets: projection.expectedEvents?.cleanSheets ?? null
+  };
+}
 
 type PlannerMatch = {
   id: string;
@@ -491,6 +511,7 @@ export async function loadFantasySquadPlannerData(
         teamId: String(row.teamId),
         name: playerName,
         teamName: row.team.name,
+        projectedFixtureComponents: buildFixtureComponentInputs(nextComponentProjection),
         teamShortName: roundsAndFixtures.teamShortNameById.get(String(row.teamId)) ?? row.team.name,
         photoUrl: row.photoUrl ? playerPhotoPublicUrl(String(row.playerId)) : null,
         leagueName: league.displayName,
@@ -503,6 +524,8 @@ export async function loadFantasySquadPlannerData(
         componentPredictedFp,
         projectionEngine,
         projectionComponents: nextComponentProjection?.components ?? null,
+        alternativeProjectedFixtureComponents: buildFixtureComponentInputs(nextFriendProjection),
+        alternativeProjectionComponents: nextFriendProjection?.components ?? null,
         alternativePredictedFp,
         alternativeRoundPoints,
         expectedMinutes: projected?.expectedMinutes ?? null,
