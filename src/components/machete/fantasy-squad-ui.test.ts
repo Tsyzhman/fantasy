@@ -125,9 +125,11 @@ test("desktop fixture window uses five compact opponent codes before overflow", 
 
 test("desktop planner keeps the club column readable without horizontal overflow", () => {
   assert.match(squadPlannerSource, /xl:grid-cols-\[minmax\(360px,0\.82fr\)_minmax\(560px,1\.18fr\)\]/);
-  assert.match(squadPlannerSource, /<col className="w-\[21%\]" \/>/);
-  assert.match(squadPlannerSource, /<col className="w-\[7%\]" \/>/);
-  assert.match(squadPlannerSource, /<col className="w-\[23%\]" \/>/);
+  assert.match(squadPlannerSource, /<col className="w-\[19%\]" \/>/);
+  assert.match(squadPlannerSource, /<col className="w-\[8%\]" \/>/);
+  assert.match(squadPlannerSource, /<col className="w-\[5%\]" \/>/);
+  assert.match(squadPlannerSource, /<col className="w-\[6%\]" \/>/);
+  assert.match(squadPlannerSource, /<col className="w-\[18%\]" \/>/);
   assert.match(squadPlannerSource, /w-\[4\.5rem\] sm:w-20 2xl:w-\[5\.5rem\]/);
 });
 
@@ -136,11 +138,24 @@ test("desktop player pool fits its container without a horizontal scrollbar", ()
   assert.match(squadPlannerSource, /w-full min-w-0 table-fixed/);
   assert.doesNotMatch(squadPlannerSource, /min-w-\[720px\]/);
   assert.match(squadPlannerSource, /text-left text-\[10px\] font-semibold uppercase/);
-  assert.match(squadPlannerSource, /<td colSpan=\{10\}/);
+  assert.match(squadPlannerSource, /<td colSpan=\{12\}/);
 });
 
 test("every desktop player-pool column has a tooltip", () => {
-  for (const key of ["player", "team", "position", "price", "next", "alternative", "alternativeFive", "horizon", "fixtures", "action"]) {
+  for (const key of [
+    "player",
+    "team",
+    "position",
+    "price",
+    "next",
+    "averageNext",
+    "horizon",
+    "averageFive",
+    "alternative",
+    "alternativeFive",
+    "fixtures",
+    "action"
+  ]) {
     assert.match(squadPlannerSource, new RegExp(`title=\\{columnTitles\\.${key}\\}`));
   }
 });

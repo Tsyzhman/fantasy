@@ -1552,16 +1552,18 @@ function PlayerPoolTable({
         <div className="relative min-w-0 max-h-[720px] w-full max-w-full overflow-x-hidden overflow-y-auto">
         <SortableTable className="w-full min-w-0 table-fixed divide-y divide-slate-200 text-xs">
           <colgroup>
-            <col className="w-[21%]" />
+            <col className="w-[19%]" />
+            <col className="w-[8%]" />
+            <col className="w-[5%]" />
+            <col className="w-[5%]" />
+            <col className="w-[6%]" />
+            <col className="w-[6%]" />
+            <col className="w-[6%]" />
             <col className="w-[7%]" />
             <col className="w-[6%]" />
-            <col className="w-[8%]" />
             <col className="w-[7%]" />
-            <col className="w-[7%]" />
-            <col className="w-[7%]" />
-            <col className="w-[7%]" />
-            <col className="w-[23%]" />
-            <col className="w-[7%]" />
+            <col className="w-[18%]" />
+            <col className="w-[5%]" />
           </colgroup>
           <thead className="sticky top-0 z-10 whitespace-nowrap bg-slate-50 text-left text-[10px] font-semibold uppercase text-slate-500">
             <tr>
@@ -1570,7 +1572,9 @@ function PlayerPoolTable({
               <th className="overflow-hidden px-1 py-2" title={columnTitles.position}><I18nText en="Pos" ru="Поз." /></th>
               <th className="overflow-hidden px-1 py-2 text-right" title={columnTitles.price}><I18nText en="Price" ru="Цена" /></th>
               <th className="overflow-hidden px-1 py-2 text-right" title={columnTitles.next}><I18nText en="Next" ru="ФО" /></th>
+              <th className="overflow-hidden px-1 py-2 text-right" title={columnTitles.averageNext}><I18nText en="Avg 1" ru="Avg 1" /></th>
               <th className="overflow-hidden px-1 py-2 text-right" title={columnTitles.horizon}><I18nText en={`${horizon}R`} ru={`${horizon}Т`} /></th>
+              <th className="overflow-hidden px-1 py-2 text-right" title={columnTitles.averageFive}><I18nText en="Avg 5R" ru="Avg 5R" /></th>
               <th className="overflow-hidden px-1 py-2 text-right" title={columnTitles.alternative}><I18nText en="Alt" ru="Альт" /></th>
               <th className="overflow-hidden px-1 py-2 text-right" title={columnTitles.alternativeFive}><I18nText en="Alt 5R" ru="Альт 5Т" /></th>
               <th data-sort-disabled="true" className="overflow-hidden px-2 py-2" title={columnTitles.fixtures}><I18nText en="Fixtures" ru="Матчи" /></th>
@@ -1603,6 +1607,16 @@ function PlayerPoolTable({
                 : localizedText(language, `Add ${player.name}`, `Добавить ${player.name}`);
               const removeLabel = localizedText(language, `Remove ${player.name}`, `Удалить ${player.name}`);
               const forecastTitle = fantasyForecastTitle(player, language);
+              const nextRoundForecast = nextFantasyPoints(player);
+              const primaryHorizonForecast = playerHorizonPoints(player, horizon);
+              const primaryFiveRoundForecast = playerHorizonPoints(player, 5);
+              const alternativeHorizonForecast = playerAlternativeHorizonPoints(player, 5);
+              const nextPrimaryForecastTitle = playerPrimaryNextForecastTitle(player, language, nextRoundForecast);
+              const horizonPrimaryForecastTitle = playerPrimaryHorizonForecastTitle(player, language, primaryHorizonForecast, horizon);
+              const averageFiveForecast = averageForecastValue(primaryFiveRoundForecast, alternativeHorizonForecast);
+              const averageNextForecast = averageForecastValue(nextRoundForecast, player.alternativePredictedFp ?? null);
+              const averageNextForecastTitle = playerAverageForecastTitle(language, averageNextForecast, nextRoundForecast, player.alternativePredictedFp ?? null, 1);
+              const averageFiveForecastTitle = playerAverageForecastTitle(language, averageFiveForecast, primaryFiveRoundForecast, alternativeHorizonForecast, 5);
 
               return (
                 <tr key={player.playerId} className={rowClassName}>
@@ -1635,21 +1649,47 @@ function PlayerPoolTable({
                   >
                     {player.priceSource === "ESTIMATED" ? "~" : ""}{formatNumber(player.price, 1)}
                   </td>
-                  <td data-sort-value={nextFantasyPoints(player)} className={`overflow-hidden whitespace-nowrap px-1 py-1.5 text-right font-semibold ${muted ? "text-slate-600" : "text-emerald-700"}`}>{formatScore(nextFantasyPoints(player))}</td>
-                  <td data-sort-value={playerHorizonPoints(player, horizon)} className={`overflow-hidden whitespace-nowrap px-1 py-1.5 text-right font-semibold ${muted ? "text-slate-600" : "text-sky-700"}`}>{formatScore(playerHorizonPoints(player, horizon))}</td>
+                  <td
+                    data-sort-value={nextRoundForecast}
+                    className={`overflow-hidden whitespace-nowrap px-1 py-1.5 text-right text-[9px] font-semibold ${muted ? "text-slate-600" : "text-emerald-700"}`}
+                    title={nextPrimaryForecastTitle}
+                  >
+                    {formatScore(nextRoundForecast)}
+                  </td>
+                  <td
+                    data-sort-value={averageNextForecast ?? 0}
+                    className={`overflow-hidden whitespace-nowrap px-1 py-1.5 text-right text-[9px] font-semibold ${muted ? "text-slate-600" : "text-cyan-700"}`}
+                    title={averageNextForecastTitle}
+                  >
+                    {formatAlternativeScore(averageNextForecast)}
+                  </td>
+                  <td
+                    data-sort-value={primaryHorizonForecast}
+                    className={`overflow-hidden whitespace-nowrap px-1 py-1.5 text-right text-[9px] font-semibold ${muted ? "text-slate-600" : "text-sky-700"}`}
+                    title={horizonPrimaryForecastTitle}
+                  >
+                    {formatScore(primaryHorizonForecast)}
+                  </td>
+                  <td
+                    data-sort-value={averageFiveForecast ?? 0}
+                    className={`overflow-hidden whitespace-nowrap px-1 py-1.5 text-right text-[9px] font-semibold ${muted ? "text-slate-600" : "text-violet-700"}`}
+                    title={averageFiveForecastTitle}
+                  >
+                    {formatAlternativeScore(averageFiveForecast)}
+                  </td>
                   <td
                     data-sort-value={player.alternativePredictedFp ?? 0}
-                    className={`overflow-hidden whitespace-nowrap px-1 py-1.5 text-right font-semibold ${muted ? "text-slate-600" : "text-amber-700"}`}
-                    title={alternativePredictedFpTitle(language)}
+                    className={`overflow-hidden whitespace-nowrap px-1 py-1.5 text-right text-[9px] font-semibold ${muted ? "text-slate-600" : "text-amber-700"}`}
+                    title={alternativePlayerForecastTitle(player, language)}
                   >
                     {formatAlternativeScore(player.alternativePredictedFp)}
                   </td>
                   <td
-                    data-sort-value={playerAlternativeHorizonPoints(player, 5) ?? 0}
-                    className={`overflow-hidden whitespace-nowrap px-1 py-1.5 text-right font-semibold ${muted ? "text-slate-600" : "text-violet-700"}`}
-                    title={alternativeFiveRoundFpTitle(language)}
+                    data-sort-value={alternativeHorizonForecast ?? 0}
+                    className={`overflow-hidden whitespace-nowrap px-1 py-1.5 text-right text-[9px] font-semibold ${muted ? "text-slate-600" : "text-purple-700"}`}
+                    title={alternativePlayerHorizonForecastTitle(player, language)}
                   >
-                    {formatAlternativeScore(playerAlternativeHorizonPoints(player, 5))}
+                    {formatAlternativeScore(alternativeHorizonForecast)}
                   </td>
                   <td className="overflow-hidden px-2 py-1.5 text-[11px] text-slate-500">
                     {visibleFixtureChips.length > 0 ? (
@@ -1703,7 +1743,7 @@ function PlayerPoolTable({
             })}
             {players.length === 0 ? (
               <tr>
-                <td colSpan={10} className="px-4 py-10 text-center text-sm text-slate-500">
+                <td colSpan={12} className="px-4 py-10 text-center text-sm text-slate-500">
                   <I18nText en="No players match the selected filters." ru="Нет игроков под выбранные фильтры." />
                 </td>
               </tr>
@@ -2423,6 +2463,138 @@ function fantasyForecastTitle(player: FantasyPlannerPlayer, language: UiLanguage
   return lines.join("\n");
 }
 
+function averageForecastValue(baseForecast: number | null, alternativeForecast: number | null) {
+  if (baseForecast === null || alternativeForecast === null) return null;
+  if (!Number.isFinite(baseForecast) || !Number.isFinite(alternativeForecast)) return null;
+  return Math.round(((baseForecast + alternativeForecast) / 2) * 100) / 100;
+}
+
+function playerForecastComponentLines(value: number | null | undefined, label: string, language: UiLanguage) {
+  if (value === null || value === undefined || Number.isNaN(value)) return null;
+  return localizedText(language, `- ${label}: ${formatScore(value)}`, `- ${label}: ${formatScore(value)}`);
+}
+
+function playerPrimaryNextForecastTitle(player: FantasyPlannerPlayer, language: UiLanguage, nextForecast: number | null) {
+  const lines = [
+    localizedText(language, `Primary forecast for next fixture: ${formatScore(nextForecast)} FP`, `Primary forecast for next fixture: ${formatScore(nextForecast)} FP`),
+    localizedText(language, "Source: component-level prediction", "Source: component-level prediction")
+  ];
+  if (player.projectionComponents) {
+    const components = player.projectionComponents;
+    const componentLines = [
+      playerForecastComponentLines(components.appearance, "Appearance FP", language),
+      playerForecastComponentLines(components.sixtyMinutes, "60+ minutes FP", language),
+      playerForecastComponentLines(components.fullMatch, "Full match FP", language),
+      playerForecastComponentLines(components.goals, "Goal FP", language),
+      playerForecastComponentLines(components.assists, "Assist FP", language),
+      playerForecastComponentLines(components.cleanSheet, "Clean sheet FP", language),
+      playerForecastComponentLines(components.saves, "Save FP", language),
+      playerForecastComponentLines(components.recoveries, "Recovery FP", language),
+      playerForecastComponentLines(components.goalsConceded, "Goals conceded FP", language),
+      playerForecastComponentLines(components.yellowCards, "Yellow card FP", language),
+      playerForecastComponentLines(components.redCards, "Red card FP", language),
+      playerForecastComponentLines(components.total, "Total", language)
+    ].filter((value): value is string => typeof value === "string");
+
+    lines.push(...componentLines);
+    lines.push(
+      localizedText(
+        language,
+        "If any component is unavailable, fallback uses legacy projection path.",
+        "If any component is unavailable, fallback uses legacy projection path."
+      )
+    );
+  } else if (player.forecastFactors?.length) {
+    lines.push(localizedText(language, "Positive factors:", "Positive factors:"));
+    lines.push(...player.forecastFactors.map((factor) => `+ ${localizeForecastNote(factor, language)}`));
+    lines.push(localizedText(language, "This player does not expose component-level primary decomposition.", "This player does not expose component-level primary decomposition."));
+  } else {
+    lines.push(localizedText(language, "This player does not expose component-level primary decomposition.", "This player does not expose component-level primary decomposition."));
+  }
+  return lines.join("\n");
+}
+
+function playerPrimaryHorizonForecastTitle(
+  player: FantasyPlannerPlayer,
+  language: UiLanguage,
+  primaryHorizonForecast: number | null,
+  horizon: number
+) {
+  const available = player.roundPoints.slice(0, horizon).filter((value): value is number => typeof value === "number" && Number.isFinite(value));
+  const lines = [localizedText(language, `Primary forecast total over ${horizon} rounds: ${formatScore(primaryHorizonForecast)} FP`, `Primary forecast total over ${horizon} rounds: ${formatScore(primaryHorizonForecast)} FP`)];
+  if (available.length > 0) {
+    lines.push(localizedText(language, "Round-by-round values:", "Round-by-round values:"));
+    available.forEach((value, index) => lines.push(localizedText(language, `Round ${index + 1}: ${formatScore(value)} FP`, `Round ${index + 1}: ${formatScore(value)} FP`)));
+  }
+  if (available.length === 0) {
+    lines.push(localizedText(language, "No round-by-round values available yet.", "No round-by-round values available yet."));
+  }
+  if (player.forecastModelVersion) {
+    lines.push(localizedText(language, `Model: ${player.forecastModelVersion}`, `Model: ${player.forecastModelVersion}`));
+  }
+  return lines.join("\n");
+}
+
+function playerAverageForecastTitle(
+  language: UiLanguage,
+  averageForecast: number | null,
+  primaryForecast: number | null,
+  alternativeForecast: number | null,
+  horizon: number
+) {
+  const base = formatScore(primaryForecast);
+  const alternative = formatScore(alternativeForecast);
+  const lines = [
+    localizedText(language, `Average forecast (${horizon} rounds): ${formatScore(averageForecast)} FP`, `Average forecast (${horizon} rounds): ${formatScore(averageForecast)} FP`),
+    localizedText(language, `Formula: (primary ${base} + alternative ${alternative}) / 2`, `Formula: (primary ${base} + alternative ${alternative}) / 2`)
+  ];
+  if (primaryForecast === null || alternativeForecast === null) {
+    lines.push(
+      localizedText(language, "Average is not available because one source is missing for this player.", "Average is not available because one source is missing for this player.")
+    );
+  }
+  return lines.join("\n");
+}
+
+function alternativePlayerForecastTitle(player: FantasyPlannerPlayer, language: UiLanguage) {
+  const nextAlternative = player.alternativePredictedFp ?? null;
+  const lines = [localizedText(language, `Alternative forecast for next fixture: ${formatScore(nextAlternative)} FP`, `Alternative forecast for next fixture: ${formatScore(nextAlternative)} FP`)];
+  lines.push(
+    localizedText(
+      language,
+      "Display only value. Not used by auto-pick, budget forecast, transfer suggestions, or round points.",
+      "Display only value. Not used by auto-pick, budget forecast, transfer suggestions, or round points."
+    )
+  );
+  if (player.projectionEngine) {
+    const projectionSource = player.forecastModelVersion ?? player.projectionEngine;
+    lines.push(
+      localizedText(
+        language,
+        `Projection source: ${projectionSource ?? "—"}`,
+        `Projection source: ${projectionSource ?? "—"}`
+      )
+    );
+  }
+  if (player.forecastFactors?.length) {
+    lines.push(localizedText(language, "Recent context:", "Recent context:"));
+    lines.push(...player.forecastFactors.map((factor) => `+ ${localizeForecastNote(factor, language)}`));
+  }
+  return lines.join("\n");
+}
+
+function alternativePlayerHorizonForecastTitle(player: FantasyPlannerPlayer, language: UiLanguage) {
+  const alternativeFive = playerAlternativeHorizonPoints(player, 5);
+  const values = player.alternativeRoundPoints?.slice(0, 5).filter((value): value is number => value !== null && Number.isFinite(value)) ?? [];
+  const lines = [localizedText(language, `Alternative forecast total over 5 rounds: ${formatScore(alternativeFive)} FP`, `Alternative forecast total over 5 rounds: ${formatScore(alternativeFive)} FP`)];
+  if (values.length > 0) {
+    lines.push(localizedText(language, "Round-by-round values:", "Round-by-round values:"));
+    values.forEach((value, index) => lines.push(localizedText(language, `Round ${index + 1}: ${formatScore(value)} FP`, `Round ${index + 1}: ${formatScore(value)} FP`)));
+  }
+  lines.push(localizedText(language, "Display only value. Not used by optimizer and transfer suggestions.", "Display only value. Not used by optimizer and transfer suggestions."));
+  return lines.join("\n");
+}
+
 function alternativePredictedFpTitle(language: UiLanguage) {
   return localizedText(
     language,
@@ -2453,8 +2625,10 @@ function playerPoolColumnTitles(language: UiLanguage, horizon: number) {
     position: localizedText(language, "Fantasy position: goalkeeper, defender, midfielder, or forward.", "Фэнтези-позиция: вратарь, защитник, полузащитник или нападающий."),
     price: localizedText(language, "Current fantasy price. A tilde marks an estimated price.", "Текущая фэнтези-цена. Тильда означает оценочную цену."),
     next: localizedText(language, "Primary fantasy-points forecast for the next fixture.", "Основной прогноз fantasy-очков на ближайший матч."),
+    averageNext: localizedText(language, "Average primary/alternative forecast for the next fixture.", "Average primary/alternative forecast for the next fixture."),
     alternative: alternativePredictedFpTitle(language),
     alternativeFive: alternativeFiveRoundFpTitle(language),
+    averageFive: localizedText(language, "Average primary and alternative forecast over five rounds.", "Average primary and alternative forecast over five rounds."),
     horizon: localizedText(language, `Total primary forecast over the selected ${horizon}-round horizon.`, `Суммарный основной прогноз на выбранном горизонте в ${horizon} туров.`),
     fixtures: localizedText(language, "Upcoming opponents. Home fixtures are bold; underline colour shows difficulty from green (easy) to red (hard). Hover an opponent for the full club name.", "Ближайшие соперники. Домашние матчи выделены жирным; цвет нижней границы показывает сложность от зелёного (легко) до красного (сложно). Полное название клуба доступно при наведении."),
     action: localizedText(language, "Add the player to the squad or remove the selected player.", "Добавить игрока в состав или убрать уже выбранного игрока.")
