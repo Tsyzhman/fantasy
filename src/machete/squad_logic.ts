@@ -43,12 +43,16 @@ export type FantasyPlannerPlayer = {
   playerId: string;
   teamId: string | null;
   name: string;
+  fotmobName?: string | null;
   teamName: string;
   teamShortName?: string | null;
   photoUrl?: string | null;
   leagueName: string;
   position: string | null;
   positionGroup: FantasyPositionGroup;
+  age?: number | null;
+  nationality?: string | null;
+  isStarter?: boolean;
   price: number;
   priceSource: "SPORTS_RU" | "ESTIMATED";
   predictedFp: number | null;
@@ -69,6 +73,16 @@ export type FantasyPlannerPlayer = {
     redCards: number;
     total: number;
   } | null;
+  projectionFormula?: {
+    formula: string;
+    total: number;
+    terms: {
+      expression: string;
+      resolvedExpression: string;
+      value: number;
+      fixtureLabel?: string;
+    }[];
+  } | null;
   alternativeProjectedFixtureComponents?: FantasyProjectionFixtureInputs | null;
   alternativeProjectionComponents?: {
     appearance: number;
@@ -84,8 +98,26 @@ export type FantasyPlannerPlayer = {
     redCards: number;
     total: number;
   } | null;
+  alternativeProjectionFormula?: {
+    formula: string;
+    total: number;
+    terms: {
+      expression: string;
+      resolvedExpression: string;
+      value: number;
+      fixtureLabel?: string;
+    }[];
+  } | null;
   alternativePredictedFp?: number | null;
   alternativeRoundPoints?: Array<number | null>;
+  foontasyPoints?: number | null;
+  foontasyHorizonPoints?: number | null;
+  foontasyFetchedAt?: string | null;
+  modelT3Points?: number | null;
+  modelT5Points?: number | null;
+  modelT3Status?: string | null;
+  modelT5Status?: string | null;
+  modelForecastCalculatedAt?: string | null;
   expectedMinutes?: number | null;
   startProbability?: number | null;
   forecastConfidence?: number | null;
@@ -94,6 +126,8 @@ export type FantasyPlannerPlayer = {
   forecastCalculatedAt?: string | null;
   forecastDataUpdatedAt?: string | null;
   forecastModelVersion?: string | null;
+  recentFp?: number[];
+  historicalStats?: Record<string, number | null>;
   valueScore: number;
   roundPoints: number[];
   fixtures: string[];
@@ -342,7 +376,8 @@ export function summarizeFantasySquad(
     })
     .filter((pair): pair is { selection: FantasySquadSelection; player: FantasyPlannerPlayer } => Boolean(pair));
   const selectedPlayers = selectedPairs.map((pair) => pair.player);
-  const starterPlayers = selectedPairs.filter((pair) => pair.selection.isStarter).map((pair) => pair.player);
+  const starterPairs = selectedPairs.filter((pair) => pair.selection.isStarter);
+  const starterPlayers = starterPairs.map((pair) => pair.player);
   const benchPlayers = selectedPairs.filter((pair) => !pair.selection.isStarter).map((pair) => pair.player);
   const spent = roundFantasyValue(selectedPlayers.reduce((total, player) => total + player.price, 0));
   const bank = roundFantasyValue(rules.budgetLimit - spent);
@@ -425,8 +460,14 @@ export function summarizeFantasySquad(
     benchPlayers,
     spent,
     bank,
-    projectedNext: roundFantasyValue(starterPlayers.reduce((total, player) => total + nextFantasyPoints(player), 0)),
-    projectedHorizon: roundFantasyValue(starterPlayers.reduce((total, player) => total + playerHorizonPoints(player, horizon), 0)),
+    projectedNext: roundFantasyValue(starterPairs.reduce(
+      (total, pair) => total + nextFantasyPoints(pair.player) * fantasyCaptainMultiplier(pair.selection),
+      0
+    )),
+    projectedHorizon: roundFantasyValue(starterPairs.reduce(
+      (total, pair) => total + playerHorizonPoints(pair.player, horizon) * fantasyCaptainMultiplier(pair.selection),
+      0
+    )),
     byPosition,
     startersByPosition,
     benchByPosition,
@@ -451,21 +492,229 @@ export function fantasyAddBlockReason(
   selections: FantasySquadSelection[],
   rules: FantasySquadRules
 ) {
-  if (selections.some((selection) => selection.playerId === player.playerId)) return "Already in squad";
-  const summary = summarizeFantasySquad(pool, selections, rules, 1);
-  if (summary.selectedPlayers.length >= rules.squadSize) return "Squad is full";
-  const positionLimit = player.positionGroup === "UNK" ? 0 : rules.positionLimits[player.positionGroup];
-  if (player.positionGroup === "UNK" || summary.byPosition[player.positionGroup] >= positionLimit) {
-    return `${player.positionGroup} limit reached`;
-  }
-  if (player.teamId && (summary.byTeam[player.teamId] ?? 0) >= rules.maxPlayersPerTeam) {
-    return `${player.teamName} limit reached`;
-  }
-  if (roundFantasyValue(summary.spent + player.price) > rules.budgetLimit) return "Budget limit";
+  return createFantasyAddEvaluator(pool, selections, rules).reason(player);
+}
 
-  const nextSelections = [...selections, selectionForNewPlayer(player, pool, selections, rules)];
-  const violations = summarizeFantasySquad(pool, nextSelections, rules, 1).violations;
-  return violations[0] ?? null;
+export type FantasyAddEvaluator = {
+  reason: (player: FantasyPlannerPlayer) => string | null;
+  evaluatedGroups: () => number;
+};
+
+/**
+ * Reuses the current squad summary and equivalent-candidate results while the
+ * player pool is rendered. This keeps add-button validation exact without
+ * rebuilding the whole squad two times for every visible table/card row.
+ */
+export function createFantasyAddEvaluator(
+  pool: FantasyPlannerPlayer[],
+  selections: FantasySquadSelection[],
+  rules: FantasySquadRules
+): FantasyAddEvaluator {
+  const selectedIds = new Set(selections.map((selection) => selection.playerId));
+  const summary = summarizeFantasySquad(pool, selections, rules, 1);
+  const reasons = new Map<string, string | null>();
+
+  return {
+    reason(player) {
+      if (selectedIds.has(player.playerId)) return "Already in squad";
+      const key = `${player.teamId ?? player.playerId}:${player.positionGroup}:${player.price}`;
+      if (reasons.has(key)) return reasons.get(key) ?? null;
+
+      let reason: string | null = null;
+      if (summary.selectedPlayers.length >= rules.squadSize) reason = "Squad is full";
+      else {
+        const positionLimit = player.positionGroup === "UNK" ? 0 : rules.positionLimits[player.positionGroup];
+        if (player.positionGroup === "UNK" || summary.byPosition[player.positionGroup] >= positionLimit) {
+          reason = `${player.positionGroup} limit reached`;
+        } else if (player.teamId && (summary.byTeam[player.teamId] ?? 0) >= rules.maxPlayersPerTeam) {
+          reason = `${player.teamName} limit reached`;
+        } else if (roundFantasyValue(summary.spent + player.price) > rules.budgetLimit) {
+          reason = "Budget limit";
+        }
+      }
+
+      if (reason === null) {
+        const nextSelections = [...selections, selectionForNewPlayer(player, pool, selections, rules)];
+        reason = summarizeFantasySquad(pool, nextSelections, rules, 1).violations[0] ?? null;
+      }
+      reasons.set(key, reason);
+      return reason;
+    },
+    evaluatedGroups: () => reasons.size
+  };
+}
+
+/**
+ * Applies the stricter meaning used by the "Fits" pool filter: the candidate
+ * must be legal now and still leave at least one legal, affordable way to fill
+ * every remaining position. Team caps are included in the minimum-cost fill.
+ */
+export function fantasyFitBlockReason(
+  player: FantasyPlannerPlayer,
+  pool: FantasyPlannerPlayer[],
+  selections: FantasySquadSelection[],
+  rules: FantasySquadRules
+) {
+  return createFantasyFitEvaluator(pool, selections, rules).reason(player);
+}
+
+export type FantasyFitEvaluator = {
+  reason: (player: FantasyPlannerPlayer) => string | null;
+  evaluatedGroups: () => number;
+};
+
+/**
+ * Reuses the current squad summary and equivalent-candidate results while the
+ * pool is filtered. Players with the same team, position and price have the
+ * same effect on the completion problem, so the expensive DP only runs once.
+ */
+export function createFantasyFitEvaluator(
+  pool: FantasyPlannerPlayer[],
+  selections: FantasySquadSelection[],
+  rules: FantasySquadRules
+): FantasyFitEvaluator {
+  const selectedIds = new Set(selections.map((selection) => selection.playerId));
+  const summary = summarizeFantasySquad(pool, selections, rules, 1);
+  const reasons = new Map<string, string | null>();
+
+  return {
+    reason(player) {
+      if (selectedIds.has(player.playerId)) return null;
+      const key = `${player.teamId ?? player.playerId}:${player.positionGroup}:${player.price}`;
+      if (reasons.has(key)) return reasons.get(key) ?? null;
+
+      let reason: string | null = null;
+      if (summary.selectedPlayers.length >= rules.squadSize) reason = "Squad is full";
+      else {
+        const positionLimit = player.positionGroup === "UNK" ? 0 : rules.positionLimits[player.positionGroup];
+        if (player.positionGroup === "UNK" || summary.byPosition[player.positionGroup] >= positionLimit) {
+          reason = `${player.positionGroup} limit reached`;
+        } else if (player.teamId && (summary.byTeam[player.teamId] ?? 0) >= rules.maxPlayersPerTeam) {
+          reason = `${player.teamName} limit reached`;
+        } else if (roundFantasyValue(summary.spent + player.price) > rules.budgetLimit) {
+          reason = "Budget limit";
+        }
+      }
+
+      if (reason === null) {
+        const nextSelections = [...selections, selectionForNewPlayer(player, pool, selections, rules)];
+        const nextSummary = summarizeFantasySquad(pool, nextSelections, rules, 1);
+        reason = nextSummary.violations[0] ?? null;
+        if (reason === null) {
+          const completion = minimumFantasySquadCompletionCostFromSummary(pool, nextSelections, rules, nextSummary);
+          if (completion === null) reason = "No valid squad completion";
+          else if (roundFantasyValue(nextSummary.spent + completion) > rules.budgetLimit) reason = "Budget cannot be completed";
+        }
+      }
+
+      reasons.set(key, reason);
+      return reason;
+    },
+    evaluatedGroups: () => reasons.size
+  };
+}
+
+export function minimumFantasySquadCompletionCost(
+  pool: FantasyPlannerPlayer[],
+  selections: FantasySquadSelection[],
+  rules: FantasySquadRules
+) {
+  const summary = summarizeFantasySquad(pool, selections, rules, 1);
+  return minimumFantasySquadCompletionCostFromSummary(pool, selections, rules, summary);
+}
+
+function minimumFantasySquadCompletionCostFromSummary(
+  pool: FantasyPlannerPlayer[],
+  selections: FantasySquadSelection[],
+  rules: FantasySquadRules,
+  summary: FantasySquadSummary
+) {
+  if (summary.violations.length > 0) return null;
+
+  const positions = ["GK", "DEF", "MID", "FWD"] as const;
+  const required = positions.map((position) => rules.positionLimits[position] - summary.byPosition[position]);
+  if (required.some((count) => count < 0)) return null;
+  if (required.reduce((total, count) => total + count, 0) !== rules.squadSize - summary.selectedPlayers.length) return null;
+  if (required.every((count) => count === 0)) return 0;
+
+  const selectedIds = new Set(selections.map((selection) => selection.playerId));
+  const candidatesByTeam = new Map<string, FantasyPlannerPlayer[]>();
+  for (const candidate of pool) {
+    if (selectedIds.has(candidate.playerId) || candidate.positionGroup === "UNK") continue;
+    const positionIndex = positions.indexOf(candidate.positionGroup);
+    if (positionIndex < 0 || required[positionIndex] === 0) continue;
+    const teamKey = candidate.teamId ? `team:${candidate.teamId}` : `player:${candidate.playerId}`;
+    const candidates = candidatesByTeam.get(teamKey) ?? [];
+    candidates.push(candidate);
+    candidatesByTeam.set(teamKey, candidates);
+  }
+
+  const selectedByTeam = summary.byTeam;
+  let states = new Map<string, number>([[completionStateKey([0, 0, 0, 0]), 0]]);
+  for (const [teamKey, teamCandidates] of candidatesByTeam) {
+    const teamId = teamKey.startsWith("team:") ? teamKey.slice(5) : null;
+    const capacity = teamId ? rules.maxPlayersPerTeam - (selectedByTeam[teamId] ?? 0) : 1;
+    if (capacity <= 0) continue;
+    const options = fantasyTeamCompletionOptions(teamCandidates, positions, required, capacity);
+    const nextStates = new Map(states);
+    for (const [stateKey, stateCost] of states) {
+      const state = parseCompletionStateKey(stateKey);
+      for (const option of options) {
+        const counts = state.map((count, index) => count + option.counts[index]) as [number, number, number, number];
+        if (counts.some((count, index) => count > required[index])) continue;
+        const key = completionStateKey(counts);
+        const cost = stateCost + option.cost;
+        if (cost < (nextStates.get(key) ?? Number.POSITIVE_INFINITY)) nextStates.set(key, cost);
+      }
+    }
+    states = nextStates;
+  }
+
+  return states.get(completionStateKey(required as [number, number, number, number])) ?? null;
+}
+
+function fantasyTeamCompletionOptions(
+  players: FantasyPlannerPlayer[],
+  positions: readonly ["GK", "DEF", "MID", "FWD"],
+  required: number[],
+  capacity: number
+) {
+  const pricesByPosition = positions.map((position, index) => players
+    .filter((player) => player.positionGroup === position)
+    .map((player) => player.price)
+    .sort((left, right) => left - right)
+    .slice(0, Math.min(capacity, required[index])));
+  const options = new Map<string, { counts: [number, number, number, number]; cost: number }>();
+
+  function visit(index: number, remaining: number, counts: [number, number, number, number], cost: number) {
+    if (index === positions.length) {
+      const key = completionStateKey(counts);
+      const existing = options.get(key);
+      if (!existing || cost < existing.cost) options.set(key, { counts: [...counts], cost });
+      return;
+    }
+    const prices = pricesByPosition[index];
+    const maximum = Math.min(remaining, prices.length, required[index]);
+    let positionCost = 0;
+    for (let count = 0; count <= maximum; count += 1) {
+      if (count > 0) positionCost += prices[count - 1];
+      counts[index] = count;
+      visit(index + 1, remaining - count, counts, cost + positionCost);
+    }
+    counts[index] = 0;
+  }
+
+  visit(0, capacity, [0, 0, 0, 0], 0);
+  options.delete("0:0:0:0");
+  return [...options.values()];
+}
+
+function completionStateKey(counts: readonly number[]) {
+  return counts.join(":");
+}
+
+function parseCompletionStateKey(value: string) {
+  return value.split(":").map(Number) as [number, number, number, number];
 }
 
 export function selectionForNewPlayer(
@@ -1377,4 +1626,27 @@ function outPlayerIndex(selections: FantasySquadSelection[], playerId: string) {
 
 export function nextFantasyPoints(player: Pick<FantasyPlannerPlayer, "predictedFp" | "roundPoints">) {
   return player.roundPoints.length > 0 ? (player.roundPoints[0] ?? 0) : (player.predictedFp ?? 0);
+}
+
+export function nextAlternativeFantasyPoints(
+  player: Pick<FantasyPlannerPlayer, "alternativePredictedFp" | "alternativeRoundPoints">
+) {
+  if (player.alternativeRoundPoints && player.alternativeRoundPoints.length > 0) {
+    return player.alternativeRoundPoints[0] ?? null;
+  }
+  return player.alternativePredictedFp ?? null;
+}
+
+export function playerAlternativeHorizonPoints(
+  player: Pick<FantasyPlannerPlayer, "alternativePredictedFp" | "alternativeRoundPoints">,
+  horizon: number
+) {
+  const requestedHorizon = Math.max(1, horizon);
+  const values = player.alternativeRoundPoints?.slice(0, requestedHorizon) ?? [];
+  if (values.length < requestedHorizon || values.some((value) => typeof value !== "number" || !Number.isFinite(value))) return null;
+  return roundFantasyValue((values as number[]).reduce((total, value) => total + value, 0));
+}
+
+export function fantasyCaptainMultiplier(selection: Pick<FantasySquadSelection, "isStarter" | "isCaptain">) {
+  return selection.isStarter && selection.isCaptain ? 2 : 1;
 }

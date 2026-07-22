@@ -185,6 +185,7 @@ export function PlayerComparePickButton({
       onClick={handleClick}
       disabled={isFull}
       aria-label={label}
+      title={label}
       aria-pressed={isSelected}
       className={cn(
         "inline-flex h-6 w-6 shrink-0 items-center justify-center rounded border text-xs transition",

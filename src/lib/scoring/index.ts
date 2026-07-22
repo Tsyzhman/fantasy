@@ -224,7 +224,7 @@ export function calculatePredictedRoundScore(rawMetrics: Record<string, unknown>
   const minutesFactor = expectedMinutes / 90;
   const likelyAppearance = clamp(readOptionalMetric(rawMetrics, "appearance_probability") ?? (expectedMinutes > 0 ? 1 : 0), 0, 1);
   const likelySixty = clamp(readOptionalMetric(rawMetrics, "sixty_minute_probability") ?? (expectedMinutes >= 60 ? 1 : 0), 0, 1);
-  const likelyFullMatch = clamp(readOptionalMetric(rawMetrics, "full_match_probability") ?? (expectedMinutes >= 89.5 ? 1 : 0), 0, 1);
+  const likelyFullMatch = clamp(readOptionalMetric(rawMetrics, "full_match_probability") ?? (expectedMinutes >= 80 ? 1 : 0), 0, 1);
 
   let total = 0;
 

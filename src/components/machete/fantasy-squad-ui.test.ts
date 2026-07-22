@@ -6,6 +6,10 @@ import { formatAlternativeScore, formatScore, NULL_GLYPH } from "@/lib/format";
 import {
   fixtureChipPresentations,
   orderSquadSelectionsWithBenchGoalkeeperLast,
+  startingXiFoontasyPoints,
+  startingXiAlternativeHorizonPoints,
+  startingXiAlternativeRoundPoints,
+  startingXiRoundPoints,
   swapSquadSelectionCards
 } from "./fantasy-squad-ui";
 
@@ -21,6 +25,57 @@ function squadSelection(playerId: string, isStarter: boolean, slotIndex: number)
 }
 
 const squadPlannerSource = readFileSync(new URL("./FantasySquadPlanner.tsx", import.meta.url), "utf8");
+const squadPageSource = readFileSync(new URL("../../app/machete/squad/page.tsx", import.meta.url), "utf8");
+const playerTableExportRouteSource = readFileSync(new URL("../../app/api/machete/squads/export-table/route.ts", import.meta.url), "utf8");
+const globalStylesSource = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
+
+test("round forecast totals the alternative starting-XI projection for every round", () => {
+  const players = [
+    { playerId: "captain", alternativePredictedFp: 4.5, alternativeRoundPoints: [4.5, 5, null] },
+    { playerId: "starter", alternativePredictedFp: 3, alternativeRoundPoints: [null, 2.5, 4] }
+  ];
+
+  assert.equal(startingXiAlternativeRoundPoints(players, 0), 7.5);
+  assert.equal(startingXiAlternativeRoundPoints(players, 1), 7.5);
+  assert.equal(startingXiAlternativeRoundPoints(players, 2), 4);
+  assert.equal(startingXiAlternativeHorizonPoints(players, 3), 19);
+  assert.equal(startingXiAlternativeRoundPoints(players, 0, "captain"), 12);
+  assert.equal(startingXiAlternativeHorizonPoints(players, 3, "captain"), 28.5);
+  assert.match(squadPlannerSource, /en="Starting XI Alt FP" ru="Альт FP старта"/);
+  assert.match(squadPlannerSource, /startingXiAlternativeRoundPoints\(summary\.starterPlayers, index, captainId\)/);
+});
+
+test("primary round forecast doubles only the captain", () => {
+  const players = [
+    { playerId: "captain", predictedFp: 4, roundPoints: [4, 5] },
+    { playerId: "starter", predictedFp: 3, roundPoints: [3, 2] }
+  ];
+
+  assert.equal(startingXiRoundPoints(players, 0, "captain"), 11);
+  assert.equal(startingXiRoundPoints(players, 1, "captain"), 12);
+});
+
+test("Foontasy total doubles the captain and never treats a missing forecast as zero", () => {
+  assert.deepEqual(startingXiFoontasyPoints([
+    { playerId: "captain", foontasyPoints: 5 },
+    { playerId: "starter", foontasyPoints: 3 }
+  ], "captain"), { available: 2, total: 13 });
+
+  assert.deepEqual(startingXiFoontasyPoints([
+    { playerId: "captain", foontasyPoints: 5 },
+    { playerId: "starter", foontasyPoints: null }
+  ], "captain"), { available: 1, total: null });
+});
+
+test("top forecast metrics use only the starting XI and expose Alt totals", () => {
+  assert.match(squadPlannerSource, /value=\{formatScore\(summary\.projectedNext\)\}/);
+  assert.doesNotMatch(squadPlannerSource, /summary\.projectedNext\s*\+\s*\(captainBonus/);
+  assert.match(squadPlannerSource, /startingXiAlternativeRoundPoints\(summary\.starterPlayers, 0, captainId\)/);
+  assert.match(squadPlannerSource, /startingXiAlternativeHorizonPoints\(summary\.starterPlayers, horizon, captainId\)/);
+  assert.match(squadPlannerSource, /startingXiFoontasyPoints\(summary\.starterPlayers, captainId\)/);
+  assert.match(squadPlannerSource, /tertiaryLabel="FFO"/);
+  assert.match(squadPlannerSource, /summary\.starterPlayers\.length === rules\.starterSize/);
+});
 
 test("primary squad save action sits beside the Your squad heading without a duplicate", () => {
   const squadHeading = squadPlannerSource.indexOf('<I18nText en="Your squad" ru="Ваш состав" />');
@@ -124,21 +179,22 @@ test("desktop fixture window uses five compact opponent codes before overflow", 
 });
 
 test("desktop planner keeps the club column readable without horizontal overflow", () => {
-  assert.match(squadPlannerSource, /xl:grid-cols-\[minmax\(360px,0\.82fr\)_minmax\(560px,1\.18fr\)\]/);
-  assert.match(squadPlannerSource, /<col className="w-\[19%\]" \/>/);
-  assert.match(squadPlannerSource, /<col className="w-\[8%\]" \/>/);
+  assert.match(squadPlannerSource, /xl:grid-cols-\[minmax\(360px,0\.76fr\)_minmax\(620px,1\.24fr\)\]/);
+  assert.match(squadPlannerSource, /<col className="w-\[15%\]" \/>/);
+  assert.match(squadPlannerSource, /<col className="w-\[7%\]" \/>/);
   assert.match(squadPlannerSource, /<col className="w-\[5%\]" \/>/);
-  assert.match(squadPlannerSource, /<col className="w-\[6%\]" \/>/);
-  assert.match(squadPlannerSource, /<col className="w-\[18%\]" \/>/);
-  assert.match(squadPlannerSource, /w-\[4\.5rem\] sm:w-20 2xl:w-\[5\.5rem\]/);
+  assert.match(squadPlannerSource, /<col className="w-\[19%\]" \/>/);
+  assert.match(squadPlannerSource, /w-\[3\.6rem\] sm:w-\[3\.8rem\] 2xl:w-\[4\.25rem\]/);
+  assert.match(squadPlannerSource, /sm:flex-nowrap/);
 });
 
-test("desktop player pool fits its container without a horizontal scrollbar", () => {
-  assert.match(squadPlannerSource, /min-w-0 max-h-\[720px\] w-full max-w-full overflow-x-hidden overflow-y-auto/);
-  assert.match(squadPlannerSource, /w-full min-w-0 table-fixed/);
+test("custom player pool uses horizontal scrolling when selected columns exceed the container", () => {
+  assert.match(squadPlannerSource, /max-h-\[720px\] w-full max-w-full overflow-auto/);
+  assert.match(squadPlannerSource, /table-fixed divide-y/);
+  assert.match(squadPlannerSource, /minWidth: `\$\{tableWidth\}px`/);
   assert.doesNotMatch(squadPlannerSource, /min-w-\[720px\]/);
   assert.match(squadPlannerSource, /text-left text-\[10px\] font-semibold uppercase/);
-  assert.match(squadPlannerSource, /<td colSpan=\{12\}/);
+  assert.match(squadPlannerSource, /colSpan=\{5 \+ visibleColumns\.length\}/);
 });
 
 test("every desktop player-pool column has a tooltip", () => {
@@ -148,9 +204,8 @@ test("every desktop player-pool column has a tooltip", () => {
     "position",
     "price",
     "next",
-    "averageNext",
     "horizon",
-    "averageFive",
+    "foontasyNext",
     "alternative",
     "alternativeFive",
     "fixtures",
@@ -158,12 +213,15 @@ test("every desktop player-pool column has a tooltip", () => {
   ]) {
     assert.match(squadPlannerSource, new RegExp(`title=\\{columnTitles\\.${key}\\}`));
   }
+  assert.doesNotMatch(squadPlannerSource, /columnTitles\.foontasyHorizon|FFO \$\{horizon\}T/);
+  assert.match(squadPlannerSource, /initialVisiblePlayerPoolColumns/);
+  assert.match(squadPlannerSource, /\/api\/user\/squad-table-columns/);
 });
 
 test("Russian player-pool headers stay compact and contained inside their columns", () => {
   assert.match(squadPlannerSource, /en="Team" ru="Клуб"/);
-  assert.match(squadPlannerSource, /en="Next" ru="ФО"/);
-  assert.match(squadPlannerSource, /en="Alt" ru="Альт"/);
+  assert.match(squadPlannerSource, /en="FP" ru="ФО"/);
+  assert.match(squadPlannerSource, /en="ALT" ru="Альт"/);
   assert.ok((squadPlannerSource.match(/overflow-hidden px-/g)?.length ?? 0) >= 10);
   assert.doesNotMatch(squadPlannerSource, /overflow-hidden text-ellipsis px-/);
 });
@@ -188,8 +246,53 @@ test("squad cards show three upcoming opponents without a remaining-fixtures cou
   assert.doesNotMatch(tileSource, /W xG|player\.baltikaXg/);
 });
 
-test("squad player pool does not expose Wyscout xG", () => {
-  assert.doesNotMatch(squadPlannerSource, /Wyscout xG|W xG|columnTitles\.wyscoutXg/);
+test("squad player pool offers imported Wyscout aggregates as optional columns", () => {
+  assert.match(squadPlannerSource, /column\("baltikaXg", "W xG"/);
+  assert.match(squadPlannerSource, /column\("baltikaXa", "W xA"/);
+});
+
+test("custom player table keeps one-line headers and the action as fixed column five", () => {
+  assert.match(squadPlannerSource, /player-pool-sortable table-fixed/);
+  assert.match(squadPlannerSource, /whitespace-nowrap/);
+  assert.match(globalStylesSource, /\.player-pool-sortable th\[data-sortable="true"\]::after[\s\S]*?position: absolute/);
+
+  const rowStart = squadPlannerSource.indexOf("function CustomPlayerPoolRow");
+  const priceCell = squadPlannerSource.indexOf("data-sort-value={player.price}", rowStart);
+  const actionCell = squadPlannerSource.indexOf('onClick={() => onRemove(player.playerId)}', priceCell);
+  const optionalCells = squadPlannerSource.indexOf("columns.map((column) => customPlayerPoolCell", actionCell);
+  assert.ok(rowStart >= 0 && priceCell > rowStart && actionCell > priceCell && optionalCells > actionCell);
+});
+
+test("player table exposes per-field advanced filters and detailed forecast cell tooltips", () => {
+  assert.match(squadPlannerSource, /ru="Расширенные фильтры"/);
+  assert.match(squadPlannerSource, /playerPoolAdvancedFilterColumns/);
+  assert.match(squadPlannerSource, /squadTableValueMatchesFilter/);
+  assert.match(squadPlannerSource, /playerPrimaryNextForecastTitle\(player, language, numericValue\)/);
+  assert.match(squadPlannerSource, /alternativePlayerForecastTitle\(player, language\)/);
+  assert.match(squadPlannerSource, /`\$\{horizon\}Т ФФО`/);
+});
+
+test("custom player pool restores minutes and confidence under the name with detailed column help", () => {
+  assert.match(squadPlannerSource, /playerMetadata[\s\S]*player\.expectedMinutes[\s\S]*player\.forecastConfidence/);
+  assert.match(squadPlannerSource, /Уверенность — не вероятность точности прогноза/);
+  assert.match(squadPlannerSource, /55% — полнота выборки/);
+  assert.match(squadPlannerSource, /30% — стабильность минут/);
+  assert.match(squadPlannerSource, /15% — доля матчей/);
+  assert.match(squadPlannerSource, /function PlayerPoolHeaderLabel/);
+  assert.doesNotMatch(squadPlannerSource, /CircleHelp/);
+  assert.match(squadPlannerSource, /<td className="overflow-hidden px-2 py-1\.5" title=\{fixedColumnTitles\.player\}>/);
+  assert.match(squadPlannerSource, /title=\{fixedColumnTitles\.team\}/);
+  assert.match(squadPlannerSource, /title=\{fixedColumnTitles\.position\}/);
+  assert.match(squadPlannerSource, /title=\{fixedColumnTitles\.price\}/);
+  assert.match(squadPlannerSource, /title=\{column\.title\}/);
+});
+
+test("each account can resize player-pool columns and persist the widths", () => {
+  assert.match(squadPlannerSource, /data-column-resize-handle="true"/);
+  assert.match(squadPlannerSource, /startColumnResize/);
+  assert.match(squadPlannerSource, /body: JSON\.stringify\(\{ columns: visibleColumnKeys, widths: columnWidths \}\)/);
+  assert.match(squadPlannerSource, /initialPlayerPoolColumnWidths/);
+  assert.match(squadPlannerSource, /ru="Сбросить ширину"/);
 });
 
 test("squad player pool exposes a real five-round alternative forecast", () => {
@@ -202,18 +305,30 @@ test("squad cards distinguish next-round FP from a three-round forecast", () => 
   const tileStart = squadPlannerSource.indexOf("function SquadPlayerTile(");
   const tileEnd = squadPlannerSource.indexOf("function fantasyForecastTitle(", tileStart);
   const tileSource = squadPlannerSource.slice(tileStart, tileEnd);
-  assert.match(tileSource, /formatScore\(nextFantasyPoints\(player\) \* \(isCaptain \? 2 : 1\)\)/);
-  assert.match(tileSource, /playerHorizonPoints\(player, 3\)/);
-  assert.match(tileSource, /formatAlternativeScore\(player\.alternativePredictedFp\)/);
-  assert.match(tileSource, /playerAlternativeHorizonPoints\(player, 3\)/);
-  assert.match(tileSource, /Alt 1/);
-  assert.match(tileSource, /Alt 3/);
+  assert.match(tileSource, /cardPrimaryNextForecast = nextFantasyPoints\(player\)/);
+  assert.match(tileSource, /formatCompactScore\(cardPrimaryNextForecast \* \(isCaptain \? 2 : 1\)\)/);
+  assert.match(tileSource, /cardPrimaryHorizonForecast = playerHorizonPoints\(player, 3\)/);
+  assert.match(tileSource, /scaleCaptainForecast\(cardAlternativeNextForecast, isCaptain\)/);
+  assert.match(tileSource, /scaleCaptainForecast\(cardAlternativeHorizonForecast, isCaptain\)/);
+  assert.match(tileSource, /cardFoontasyForecast = scaleCaptainForecast\(player\.foontasyPoints, isCaptain\)/);
+  assert.match(tileSource, /formatCompactScore\(cardFoontasyForecast\)/);
+  assert.match(tileSource, />FFO<\/dt>/);
+  assert.match(tileSource, />ALT1<\/dt>/);
+  assert.match(tileSource, />ALT3<\/dt>/);
+  assert.match(tileSource, /grid grid-cols-3 gap-x-px/);
+  assert.match(tileSource, /grid grid-cols-2 gap-x-px px-1/);
+  assert.match(tileSource, /playerPrimaryNextForecastTitle\(player, language, cardPrimaryNextForecast\)/);
+  assert.match(tileSource, /playerPrimaryHorizonForecastTitle\(player, language, cardPrimaryHorizonForecast, 3\)/);
+  assert.match(tileSource, /alternativePlayerForecastTitle\(player, language\)/);
+  assert.match(tileSource, /alternativePlayerHorizonForecastTitle\(player, language, 3\)/);
+  assert.match(tileSource, /title=\{cardPrimaryNextTitle\}/);
+  assert.match(tileSource, /title=\{cardAlternativeNextTitle\}/);
   assert.match(tileSource, /text-sky-700/);
   assert.doesNotMatch(tileSource, /playerHorizonPoints\(player, horizon\)/);
 });
 
 test("squad cards use a smaller position badge", () => {
-  assert.match(squadPlannerSource, /rounded px-1 py-px text-\[8px\] font-bold/);
+  assert.match(squadPlannerSource, /rounded px-0\.5 py-px text-\[7px\] font-bold/);
 });
 
 test("squad cards place the compact team name in the top-left corner", () => {
@@ -227,7 +342,7 @@ test("squad cards show captain to the left and price to the right of the player 
   const tileStart = squadPlannerSource.indexOf("function SquadPlayerTile(");
   const tileEnd = squadPlannerSource.indexOf("function fantasyForecastTitle(", tileStart);
   const tileSource = squadPlannerSource.slice(tileStart, tileEnd);
-  assert.match(tileSource, /grid-cols-\[1fr_2rem_1fr\][\s\S]*?isCaptain \? "C" : "VC"[\s\S]*?<SquadPlayerPhoto player=\{player\} \/>[\s\S]*?Fantasy price[\s\S]*?formatNumber\(player\.price, 1\)/);
+  assert.match(tileSource, /grid-cols-\[1fr_1\.75rem_1fr\][\s\S]*?isCaptain \? "C" : "VC"[\s\S]*?<SquadPlayerPhoto player=\{player\} \/>[\s\S]*?Fantasy price[\s\S]*?formatNumber\(player\.price, 1\)/);
   assert.match(tileSource, /player\.priceSource === "ESTIMATED" \? "~" : ""/);
 });
 
@@ -248,9 +363,9 @@ test("planner exposes five persisted round snapshots and shifts forecasts to the
 });
 
 test("display-only Alt FP renders in the desktop pool, mobile pool, and squad card", () => {
-  const desktopNext = squadPlannerSource.indexOf('en="Next"');
+  const desktopNext = squadPlannerSource.indexOf('title={columnTitles.next}');
   const desktopHorizon = squadPlannerSource.indexOf('title={columnTitles.horizon}', desktopNext);
-  const desktopAlt = squadPlannerSource.indexOf('title={columnTitles.alternative}><I18nText en="Alt"', desktopHorizon);
+  const desktopAlt = squadPlannerSource.indexOf('title={columnTitles.alternative}', desktopHorizon);
   const desktopAltFive = squadPlannerSource.indexOf('title={columnTitles.alternativeFive}', desktopAlt);
   const mobileMetrics = squadPlannerSource.indexOf('grid-cols-4');
   const mobilePrice = squadPlannerSource.indexOf('formatNumber(player.price, 1)', mobileMetrics);
@@ -258,8 +373,9 @@ test("display-only Alt FP renders in the desktop pool, mobile pool, and squad ca
 
   assert.ok(desktopNext >= 0 && desktopHorizon > desktopNext && desktopAlt > desktopHorizon && desktopAltFive > desktopAlt);
   assert.ok(mobileMetrics >= 0 && mobilePrice > mobileMetrics && mobileAlt > mobilePrice);
-  assert.equal(squadPlannerSource.match(/formatAlternativeScore\(player\.alternativePredictedFp\)/g)?.length, 3);
-  assert.match(squadPlannerSource, /Display only: not used by auto-pick, value, transfers, or round points\./);
+  assert.equal(squadPlannerSource.match(/formatAlternativeScore\(player\.alternativePredictedFp\)/g)?.length, 2);
+  assert.match(squadPlannerSource, /formatCompactScore\(scaleCaptainForecast\(cardAlternativeNextForecast, isCaptain\), "0"\)/);
+  assert.match(squadPlannerSource, /Alternative forecast for next fixture/);
   assert.equal(formatScore(null), NULL_GLYPH);
   assert.equal(formatAlternativeScore(null), "0");
 });
@@ -268,8 +384,78 @@ test("planner exposes mobile-safe history controls and sends the applied setting
   assert.match(squadPlannerSource, /fantasyHistoryScopes\.map/);
   assert.match(squadPlannerSource, /fantasyHistoryWindows\.map/);
   assert.match(squadPlannerSource, /type="checkbox"/);
-  assert.match(squadPlannerSource, /applyFantasyHistorySearchParams\(url\.searchParams, historyDraft\)/);
-  assert.match(squadPlannerSource, /historyScope: historySettings\.scope/);
-  assert.match(squadPlannerSource, /historyWindow: historySettings\.window/);
-  assert.match(squadPlannerSource, /historySeasons: historySettings\.selectedSeasons/);
+  assert.match(squadPlannerSource, /requestHistorySettings\(historyDraft\)/);
+  assert.match(squadPlannerSource, /window\.history\.replaceState/);
+  assert.match(squadPlannerSource, /fetch\(playerPoolRequestHref/);
+  assert.match(squadPlannerSource, /historyScope: appliedHistorySettings\.scope/);
+  assert.match(squadPlannerSource, /historyWindow: appliedHistorySettings\.window/);
+  assert.match(squadPlannerSource, /historySeasons: appliedHistorySettings\.selectedSeasons/);
+});
+
+test("player pool exposes team, price, local match-scope and typed XLSX export controls", () => {
+  assert.match(squadPlannerSource, /value=\{teamFilter\}/);
+  assert.match(squadPlannerSource, /value=\{minimumPrice \?\? "ALL"\}/);
+  assert.match(squadPlannerSource, /value=\{maximumPrice \?\? "ALL"\}/);
+  assert.match(squadPlannerSource, /applyQuickHistoryScope\("ALL_PLAYER_MATCHES"\)/);
+  assert.match(squadPlannerSource, /downloadPlayerPoolXlsx\(matchingPlayers, tableHorizon/);
+  assert.match(squadPlannerSource, /player: player\.fotmobName \?\? player\.name/);
+  assert.match(playerTableExportRouteSource, /body\.rows\.length > 1_000/);
+  assert.doesNotMatch(playerTableExportRouteSource, /at most 140/);
+  assert.match(squadPlannerSource, /const filteredPlayers = matchingPlayers/);
+  assert.doesNotMatch(squadPlannerSource, /slice\(0, 140\)/);
+  assert.match(squadPlannerSource, /\/api\/machete\/squads\/export-table/);
+  assert.match(squadPlannerSource, /\.xlsx`/);
+  assert.doesNotMatch(squadPlannerSource, /starterPoolFilter/);
+  assert.match(squadPlannerSource, /createFantasyFitEvaluator/);
+  assert.match(squadPlannerSource, /setTimeout\(resolve, 0\)/);
+  assert.match(squadPlannerSource, /Calculating\.\.\./);
+});
+
+test("player-pool XLSX follows the selected optional-column order", () => {
+  assert.match(squadPlannerSource, /const \[exportColumnKeys, setExportColumnKeys\] = useState\(initialVisiblePlayerPoolColumns\)/);
+  assert.match(squadPlannerSource, /onVisibleColumnsChange=\{setExportColumnKeys\}/);
+  assert.match(squadPlannerSource, /downloadPlayerPoolXlsx\(matchingPlayers, tableHorizon, language, leagueId, season, exportColumnKeys\)/);
+  assert.match(squadPlannerSource, /visibleColumnKeys[\s\S]*optionalColumnsByKey\.get\(key\)/);
+  assert.match(squadPlannerSource, /\.\.\.selectedColumns\.map\(\(column\) => \(\{ key: column\.key, header: column\.label \}\)\)/);
+  assert.match(squadPlannerSource, /Object\.fromEntries\(selectedColumns\.map/);
+  assert.match(playerTableExportRouteSource, /fixedColumnKeys = \["player", "team", "position", "price"\]/);
+  assert.match(playerTableExportRouteSource, /isSquadTableColumnsInput\(columns\.slice/);
+  assert.match(playerTableExportRouteSource, /requestedColumns\.map/);
+  assert.match(playerTableExportRouteSource, /typeof value === "number"/);
+});
+
+test("player-pool controls use two desktop rows and the search targets only player names", () => {
+  assert.match(squadPlannerSource, /mb-2 flex flex-nowrap items-center justify-between gap-2 overflow-x-auto/);
+  assert.match(squadPlannerSource, /flex shrink-0 flex-nowrap items-center justify-end gap-2/);
+  assert.match(squadPlannerSource, /whitespace-nowrap rounded border border-emerald-200/);
+  assert.match(squadPlannerSource, /toolbar={\(/);
+  assert.match(squadPlannerSource, /mb-3 flex min-w-0 flex-wrap items-start gap-2 xl:flex-nowrap/);
+  assert.match(squadPlannerSource, /placeholder=\{localizedText\(language, "Name", "Имя"\)\}/);
+  assert.match(squadPlannerSource, /player\.name\.toLowerCase\(\)\.includes\(normalizedQuery\)/);
+  assert.doesNotMatch(squadPlannerSource, /`\$\{player\.name\} \$\{player\.teamName\}/);
+  assert.match(squadPlannerSource, /grid-cols-2 gap-2 lg:grid-cols-5/);
+  assert.match(squadPlannerSource, /en="Fits" ru="Проходит"/);
+  assert.match(squadPlannerSource, /<details className="relative shrink-0">[\s\S]*?<I18nText en="Columns" ru="Столбцы"/);
+  assert.match(squadPlannerSource, /className="col-span-full hidden min-w-0 max-w-full/);
+});
+
+test("table forecast tooltips and compact controls cover both English and Russian", () => {
+  assert.match(squadPlannerSource, /"Appearance FP": "ФО за выход"/);
+  assert.ok(squadPlannerSource.includes("`- Expected minutes: ${expectedMinutes}`"));
+  assert.ok(squadPlannerSource.includes("`- Ожидаемые минуты: ${expectedMinutes}`"));
+  assert.match(squadPlannerSource, /"No round-by-round values available yet\."/);
+  assert.match(squadPlannerSource, /"Значений по отдельным турам пока нет\."/);
+  assert.match(squadPlannerSource, /en="Export table" ru="Выгрузить таблицу"/);
+  assert.match(squadPlannerSource, /en="Presets" ru="Пресеты"/);
+});
+
+test("player-pool columns use compact padding and allow narrow saved widths", () => {
+  assert.match(squadPlannerSource, /width = 72/);
+  assert.match(squadPlannerSource, /const minimumPlayerPoolColumnWidth = 40/);
+  assert.match(squadPlannerSource, /action: 40/);
+  assert.match(squadPlannerSource, /overflow-hidden text-ellipsis whitespace-nowrap px-1 py-1\.5/);
+});
+
+test("Sports.ru XLSX price import is not exposed on the squad page", () => {
+  assert.doesNotMatch(squadPageSource, /FantasyPriceSheetImportForm/);
 });

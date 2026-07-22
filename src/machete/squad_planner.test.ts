@@ -10,6 +10,7 @@ import {
   bookmakerFixtureMultiplier,
   componentProjectionFantasyPoints,
   componentProjectionFormulaMetrics,
+  countsAsFullFantasyMatch,
   calibratedPlayerFixturePoints,
   compareFantasyPlannerPlayers,
   configuredFantasyProjectionEngine,
@@ -20,9 +21,11 @@ import {
   fantasySquadRoundShift,
   fantasyTeamShortName,
   fantasyTeamShortNamesByTeamId,
+  fillTeamStrengthStatsFromScore,
   fixtureDifficultyFromMultipliers,
   fixtureFormulaMetrics,
   fixtureStrengthProjection,
+  fixtureStrengthWithBookmaker,
   friendAlternativeProjectionFantasyPoints,
   friendAlternativeScoringModel,
   friendStartingRows,
@@ -130,6 +133,66 @@ test("editable pipeline applies history, fixture, allocation and final score for
   assert.equal(index.byFixturePlayer.get("fixture-1:p1")?.expectedEvents.goals, 0.5);
   assert.equal(index.byFixturePlayer.get("fixture-1:p2")?.expectedEvents.goals, 1.5);
   assert.equal(index.formulaMetricsByFixturePlayer.get("fixture-1:p1")?.expected_goals, 2);
+});
+
+test("formula pipeline scales a raw per-90 allocation by expected minutes", () => {
+  const config = {
+    ...expectedProjectionFormulaConfig,
+    history: {
+      ...expectedProjectionFormulaConfig.history,
+      expectedMinutes: "{Minutes per match 365}",
+      appearanceProbability: "1",
+      sixtyProbability: "gte({Expected minutes}, 60)",
+      fullMatchProbability: "gte({Expected minutes}, 80)",
+      xgRate: "1",
+      xaRate: "1",
+      recoveryRate: "1",
+      saveRate: "1",
+      yellowRate: "0",
+      redRate: "0"
+    },
+    team: {
+      expectedGoals: "1",
+      expectedGoalsAgainst: "0",
+      assistsPerGoal: "0",
+      cleanSheetProbability: "0"
+    },
+    allocation: {
+      goals: "{Blended xG per 90}",
+      assists: "0",
+      recoveries: "{Blended recoveries per 90}",
+      saves: "{Blended saves per 90}",
+      cardExposure: "1"
+    }
+  };
+  const row = (playerId: string, minutes: number) => ({
+    playerId,
+    teamId: "team-1",
+    position: "FWD",
+    isStarter: true,
+    startProbability: 1,
+    expectedMinutes: minutes,
+    minutesPlayed: minutes,
+    rawMetrics: { minutes_per_match_365: minutes }
+  }) as never;
+  const fixture = {
+    id: "fixture-1", roundId: "round-1", teamId: "team-1", opponentTeamId: "team-2",
+    opponentName: "OPP", opponentFullName: "Opponent", side: "H" as const,
+    kickoffAt: new Date("2026-07-25T12:00:00Z"), projectedXg: 1, projectedXga: 0,
+    attackMultiplier: 1, defenseMultiplier: 1
+  };
+  const index = buildFormulaProjectionIndex(
+    [row("p60", 60), row("p90", 90)],
+    { rounds: [], fixturesByTeamRound: new Map([["round-1", new Map([["team-1", [fixture]]])]]), teamShortNameById: new Map() },
+    new Map([["p60", "FWD"], ["p90", "FWD"]]),
+    config
+  );
+
+  assert.deepEqual(index.errorsByFixtureTeam, new Map());
+  assert.ok(Math.abs((index.byFixturePlayer.get("fixture-1:p60")?.allocationWeights.goals ?? 0) - 2 / 3) < 1e-12);
+  assert.equal(index.byFixturePlayer.get("fixture-1:p90")?.allocationWeights.goals, 1);
+  assert.ok(Math.abs((index.byFixturePlayer.get("fixture-1:p60")?.expectedEvents.goals ?? 0) - 0.4) < 1e-12);
+  assert.ok(Math.abs((index.byFixturePlayer.get("fixture-1:p90")?.expectedEvents.goals ?? 0) - 0.6) < 1e-12);
 });
 
 test("friend Alt is shared in the squad while a personal formula overrides only its own position", () => {
@@ -499,6 +562,8 @@ test("squad planner normalizes saved forecast horizon on load", async () => {
     ingestionJob: { findMany: async () => [] },
     dataQualityAuditRun: { findFirst: async () => null },
     fantasyPlayerPrice: { findMany: async () => [] },
+    foontasyForecast: { findMany: async () => [] },
+    fantasyModelForecast: { findMany: async () => [] },
     fantasyModel: { findFirst: async () => null },
     userScoringPreference: { findUnique: async () => null },
     playerSnapshot: { findMany: async () => [] },
@@ -545,7 +610,8 @@ test("squad planner normalizes forecast horizon and stores its round anchors bef
       deleteMany: () => {
         assert.equal(insideTransaction, true, "player replacement must run inside the save transaction");
         return {};
-      }
+      },
+      createMany: async () => ({ count: 0 })
     },
     $transaction: async (callback: (tx: unknown) => Promise<unknown>) => {
       insideTransaction = true;
@@ -593,7 +659,8 @@ test("squad planner updates only the requested owned variant", async () => {
       deleteMany: () => {
         assert.equal(insideTransaction, true, "player replacement must run inside the save transaction");
         return {};
-      }
+      },
+      createMany: async () => ({ count: 0 })
     },
     $transaction: async (callback: (tx: unknown) => Promise<unknown>) => {
       insideTransaction = true;
@@ -739,6 +806,12 @@ test("squad planner recovers Sports.ru positions from typed price metadata", () 
   assert.equal(sportsRuPricePosition({ position: null, sourceKind: "featured-field-fallback", sourceRowIndex: 9 }), "FWD");
 });
 
+test("full-match minute threshold starts at 80 minutes", () => {
+  assert.equal(countsAsFullFantasyMatch(79.999), false);
+  assert.equal(countsAsFullFantasyMatch(80), true);
+  assert.equal(countsAsFullFantasyMatch(90), true);
+});
+
 test("team strength profiles derive attack and defense from parsed match xG", () => {
   const profiles = buildTeamStrengthProfilesFromMatches([
     {
@@ -813,6 +886,25 @@ test("fixture strength is normalized against the league instead of the team's ow
   assert.ok((strongDefenseAgainstWeakAttack.defenseMultiplier ?? 1) > 1);
 });
 
+test("fixture strength blends bookmaker attack and clean-sheet expectations into its multipliers", () => {
+  const model = {
+    projectedXg: 1,
+    projectedXga: 1.5,
+    attackBase: 1.4,
+    defenseBase: 1.4
+  };
+  const withoutOdds = fixtureStrengthWithBookmaker(model, { teamOver15Probability: null, cleanSheetProbability: null });
+  const marketFavorsTeam = fixtureStrengthWithBookmaker(model, {
+    teamOver15Probability: 0.594,
+    cleanSheetProbability: Math.exp(-0.6)
+  });
+
+  assert.equal(withoutOdds.marketProjectedXg, model.projectedXg);
+  assert.equal(withoutOdds.marketProjectedXga, model.projectedXga);
+  assert.ok((marketFavorsTeam.attackMultiplier ?? 0) > (withoutOdds.attackMultiplier ?? 0));
+  assert.ok((marketFavorsTeam.defenseMultiplier ?? 0) > (withoutOdds.defenseMultiplier ?? 0));
+});
+
 test("fixture difficulty keeps easy fixtures green-side and hard fixtures red-side", () => {
   assert.equal(fixtureDifficultyFromMultipliers({ attackMultiplier: 1.25, defenseMultiplier: 1.25, side: "A" }, "MID"), 1);
   assert.equal(fixtureDifficultyFromMultipliers({ attackMultiplier: 0.75, defenseMultiplier: 0.75, side: "H" }, "MID"), 5);
@@ -837,6 +929,57 @@ test("promoted teams use compressed lower-league strength without overriding top
   assert.ok((promoted.xgForPerMatch ?? 0) > (weakerFeederTeam?.xgForPerMatch ?? 0));
   assert.ok((promoted.xgForPerMatch ?? Infinity) < (feederLeague.byTeamId.get("30")?.overall.xgForPerMatch ?? 0));
   assert.deepEqual(merged.byTeamId.get("10"), topLeague.byTeamId.get("10"));
+});
+
+test("an average FNL newcomer is discounted to 81 percent of RPL strength", () => {
+  const topLeague = buildTeamStrengthProfilesFromMatches([
+    strengthMatch("10", "20", 1.5, 1.5),
+    strengthMatch("20", "10", 1.5, 1.5)
+  ]);
+  const feederLeague = buildTeamStrengthProfilesFromMatches([
+    strengthMatch("30", "40", 1.2, 1.2),
+    strengthMatch("40", "30", 1.2, 1.2)
+  ]);
+  const promoted = addPromotedTeamStrengthProfiles(topLeague, feederLeague).byTeamId.get("30")?.overall;
+
+  assert.ok(promoted);
+  assert.ok(Math.abs((promoted.xgForPerMatch ?? 0) - 1.5 * 0.81) < 1e-12);
+  assert.ok(Math.abs((promoted.xgAgainstPerMatch ?? 0) - 1.5 / 0.81) < 1e-12);
+});
+
+test("promoted teams fall back to lower-league goals when xG is unavailable", () => {
+  const matches = [
+    {
+      homeTeamId: "30",
+      awayTeamId: "40",
+      teamStats: [
+        { teamId: "30", isHome: true, xg: null, goals: 2 },
+        { teamId: "40", isHome: false, xg: null, goals: 0 }
+      ]
+    }
+  ];
+
+  const withoutFallback = buildTeamStrengthProfilesFromMatches(matches);
+  const withFallback = buildTeamStrengthProfilesFromMatches(matches, { fallbackToGoals: true });
+
+  assert.equal(withoutFallback.byTeamId.get("30")?.overall.xgForPerMatch, null);
+  assert.ok((withFallback.byTeamId.get("30")?.overall.xgForPerMatch ?? 0) > 0);
+  assert.ok((withFallback.byTeamId.get("40")?.overall.xgAgainstPerMatch ?? 0) > 0);
+});
+
+test("team strength fills missing team-stat goals from the official score", () => {
+  const match = fillTeamStrengthStatsFromScore({
+    homeTeamId: "30",
+    awayTeamId: "40",
+    homeScore: 2,
+    awayScore: 1,
+    teamStats: [{ teamId: "30", opponentTeamId: "40", isHome: true, xg: null, goals: null }]
+  });
+
+  assert.deepEqual(match.teamStats.map((row) => [row.teamId, row.goals]), [["30", 2], ["40", 1]]);
+  const profiles = buildTeamStrengthProfilesFromMatches([match], { fallbackToGoals: true });
+  assert.ok((profiles.byTeamId.get("30")?.overall.xgForPerMatch ?? 0) > 0);
+  assert.ok((profiles.byTeamId.get("40")?.overall.xgAgainstPerMatch ?? 0) > 0);
 });
 
 test("fixture projection weights opponent difficulty by fantasy position", () => {

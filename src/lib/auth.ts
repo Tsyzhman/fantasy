@@ -1,7 +1,7 @@
 import { randomBytes, scrypt as scryptCallback, timingSafeEqual, createHash } from "node:crypto";
 import { promisify } from "node:util";
 
-import { UserRole } from "@prisma/client";
+import { UserFranchise, UserRole } from "@prisma/client";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import type { NextResponse } from "next/server";
@@ -20,6 +20,7 @@ export type AuthUser = {
   email: string;
   name: string | null;
   role: UserRole;
+  franchise: UserFranchise | null;
   isActive: boolean;
 };
 
@@ -88,6 +89,7 @@ async function getCurrentUserForSessionToken(token: string | null | undefined): 
           email: true,
           name: true,
           role: true,
+          franchise: true,
           isActive: true
         }
       }

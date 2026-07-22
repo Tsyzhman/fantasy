@@ -12,6 +12,11 @@ enum UserRole {
   USER
 }
 
+enum UserFranchise {
+  MACHETE
+  BALTIKA
+}
+
 enum ImportStatus {
   EMPTY
   UPLOADING
@@ -37,6 +42,9 @@ model User {
   name               String?
   passwordHash       String?
   role               UserRole                @default(USER)
+  franchise          UserFranchise?
+  squadTableColumns  Json?                   @map("squad_table_columns")
+  squadTableColumnWidths Json?                @map("squad_table_column_widths")
   isActive           Boolean                 @default(true)
   lastLoginAt        DateTime?
   sessions           UserSession[]
@@ -70,22 +78,22 @@ model UserExternalProfile {
 }
 
 model UserScoringPreference {
-  id                        String   @id @default(cuid())
-  userId                    String
-  modelSource               String
-  scoringFormulaGk          String?
-  scoringFormulaDef         String?
-  scoringFormulaMid         String?
-  scoringFormulaFwd         String?
-  scoringFormulaEnabled     Boolean  @default(false)
-  alternativeFormulaGk      String?
-  alternativeFormulaDef     String?
-  alternativeFormulaMid     String?
-  alternativeFormulaFwd     String?
-  alternativeFormulaEnabled Boolean  @default(false)
+  id                                 String   @id @default(cuid())
+  userId                             String
+  modelSource                        String
+  scoringFormulaGk                   String?
+  scoringFormulaDef                  String?
+  scoringFormulaMid                  String?
+  scoringFormulaFwd                  String?
+  scoringFormulaEnabled              Boolean  @default(false)
+  alternativeFormulaGk               String?
+  alternativeFormulaDef              String?
+  alternativeFormulaMid              String?
+  alternativeFormulaFwd              String?
+  alternativeFormulaEnabled          Boolean  @default(false)
   alternativeProjectionFormulaConfig Json?
-  createdAt                 DateTime @default(now())
-  updatedAt                 DateTime @updatedAt
+  createdAt                          DateTime @default(now())
+  updatedAt                          DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -603,11 +611,13 @@ model CoreLeague {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  matches         CoreMatch[]
-  seasons         LeagueSeason[]
-  fantasyContests SportsRuFantasyContest[]
-  fantasyPrices   FantasyPlayerPrice[]
-  fantasySquads   UserFantasySquad[]
+  matches           CoreMatch[]
+  seasons           LeagueSeason[]
+  fantasyContests   SportsRuFantasyContest[]
+  fantasyPrices     FantasyPlayerPrice[]
+  foontasyForecasts FoontasyForecast[]
+  fantasyModelForecasts FantasyModelForecast[]
+  fantasySquads     UserFantasySquad[]
 
   @@index([source, rawRef])
   @@map("leagues")
@@ -659,10 +669,64 @@ model CorePlayer {
   fantasyPointBreakdowns FantasyPointBreakdown[]
   seasonRosterEntries    TeamPlayerSeason[]
   fantasyPrices          FantasyPlayerPrice[]
+  foontasyForecasts      FoontasyForecast[]
+  fantasyModelForecasts  FantasyModelForecast[]
   fantasySquadPlayers    UserFantasySquadPlayer[]
 
   @@index([source, rawRef])
   @@map("players")
+}
+
+model FoontasyForecast {
+  id                String   @id @default(cuid())
+  leagueId          BigInt   @map("league_id")
+  season            String
+  roundNumber       Int      @map("round_number")
+  sourcePlayerId    String   @map("source_player_id")
+  playerId          BigInt?  @map("player_id")
+  playerName        String   @map("player_name")
+  teamName          String   @map("team_name")
+  position          String?
+  points            Float
+  attackingPoints   Float?   @map("attacking_points")
+  price             Float?
+  selectedByPercent Float?   @map("selected_by_percent")
+  breakdown         String?
+  fetchedAt         DateTime @default(now()) @map("fetched_at")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  league CoreLeague  @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  player CorePlayer? @relation(fields: [playerId], references: [id], onDelete: SetNull)
+
+  @@unique([leagueId, season, roundNumber, sourcePlayerId])
+  @@index([leagueId, season, playerId, roundNumber])
+  @@map("foontasy_forecasts")
+}
+
+model FantasyModelForecast {
+  id                String   @id @default(cuid())
+  leagueId          BigInt   @map("league_id")
+  season            String
+  playerId          BigInt   @map("player_id")
+  horizon           Int
+  points            Float?
+  fixturesAvailable Int      @map("fixtures_available")
+  fixturesRequired  Int      @map("fixtures_required")
+  status            String
+  modelVersion      String   @map("model_version")
+  inputSources      Json     @map("input_sources")
+  breakdown         Json
+  calculatedAt      DateTime @map("calculated_at")
+  createdAt         DateTime @default(now()) @map("created_at")
+  updatedAt         DateTime @updatedAt @map("updated_at")
+
+  league CoreLeague @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  player CorePlayer @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@unique([leagueId, season, playerId, horizon, modelVersion])
+  @@index([leagueId, season, horizon, calculatedAt])
+  @@map("fantasy_model_forecasts")
 }
 
 model SportsRuFantasyContest {
@@ -804,17 +868,19 @@ model UserWatchlistPlayer {
 }
 
 model LeagueSeason {
-  leagueId       BigInt   @map("league_id")
-  season         String
-  source         String   @default("fotmob")
-  calendarType   String?  @map("calendar_type")
-  isCurrent      Boolean  @default(false) @map("is_current")
-  providerSeason String?  @map("provider_season")
-  name           String?
-  country        String?
-  metadata       Json?
-  createdAt      DateTime @default(now()) @map("created_at")
-  updatedAt      DateTime @updatedAt @map("updated_at")
+  leagueId                BigInt    @map("league_id")
+  season                  String
+  source                  String    @default("fotmob")
+  calendarType            String?   @map("calendar_type")
+  isCurrent               Boolean   @default(false) @map("is_current")
+  providerSeason          String?   @map("provider_season")
+  name                    String?
+  country                 String?
+  startingXiResetRound    String?   @map("starting_xi_reset_round")
+  startingXiResetAt       DateTime? @map("starting_xi_reset_at")
+  metadata                Json?
+  createdAt               DateTime  @default(now()) @map("created_at")
+  updatedAt               DateTime  @updatedAt @map("updated_at")
 
   league CoreLeague         @relation(fields: [leagueId], references: [id], onDelete: Cascade)
   teams  LeagueSeasonTeam[]
@@ -825,16 +891,17 @@ model LeagueSeason {
 }
 
 model LeagueSeasonTeam {
-  leagueId    BigInt   @map("league_id")
-  season      String
-  teamId      BigInt   @map("team_id")
-  source      String   @default("fotmob")
-  active      Boolean  @default(true)
-  firstSeenAt DateTime @default(now()) @map("first_seen_at")
-  lastSeenAt  DateTime @default(now()) @map("last_seen_at")
-  metadata    Json?
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
+  leagueId            BigInt    @map("league_id")
+  season              String
+  teamId              BigInt    @map("team_id")
+  source              String    @default("fotmob")
+  active              Boolean   @default(true)
+  firstSeenAt         DateTime  @default(now()) @map("first_seen_at")
+  lastSeenAt          DateTime  @default(now()) @map("last_seen_at")
+  startingXiChangedAt DateTime? @map("starting_xi_changed_at")
+  metadata            Json?
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
 
   leagueSeason LeagueSeason       @relation(fields: [leagueId, season], references: [leagueId, season], onDelete: Cascade)
   team         CoreTeam           @relation(fields: [teamId], references: [id], onDelete: Cascade)

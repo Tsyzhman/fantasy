@@ -64,6 +64,20 @@ test("default Expected FP prefers xG and xA when projection stats are available"
   assert.equal(calculateFantasyScore(rawMetrics, "FWD", { ...customExpectedModel, customFormulaEnabled: false }), 5);
 });
 
+test("80-minute full-match bonus does not inflate per-90 event rates to 90 minutes", () => {
+  const score = calculateFantasyScore({
+    expected_minutes: 80,
+    xg_per_90: 0.9,
+    xa_per_90: 0,
+    recoveries_per_90: 0,
+    yellow_cards_per_90: 0,
+    red_cards_per_90: 0
+  }, "FWD", { ...customExpectedModel, customFormulaEnabled: false });
+
+  // 1 appearance + 1 for 60+ + 1 full-match bonus + (0.9 * 80/90) * 4 goal points.
+  assert.equal(score, 6.2);
+});
+
 test("built-in Machete model does not leak fixture Alt formulas into historical aggregates", async () => {
   const client = { fantasyModel: { findFirst: async () => null } };
   const model = await getActiveScoringModelForSource("MACHETE", client as never);

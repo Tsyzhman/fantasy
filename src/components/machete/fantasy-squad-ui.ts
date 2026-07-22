@@ -9,6 +9,68 @@ export type FixtureChipPresentation = {
   difficulty: number | null | undefined;
 };
 
+type SquadForecastPlayer = Pick<
+  FantasyPlannerPlayer,
+  "playerId" | "predictedFp" | "roundPoints" | "alternativeRoundPoints" | "alternativePredictedFp"
+>;
+
+function captainMultiplier(playerId: string, captainId?: string | null) {
+  return playerId === captainId ? 2 : 1;
+}
+
+export function startingXiRoundPoints(
+  players: ReadonlyArray<Pick<SquadForecastPlayer, "playerId" | "predictedFp" | "roundPoints">>,
+  roundIndex: number,
+  captainId?: string | null
+) {
+  return players.reduce(
+    (total, player) => total +
+      (player.roundPoints[roundIndex] ?? (roundIndex === 0 ? player.predictedFp ?? 0 : 0)) * captainMultiplier(player.playerId, captainId),
+    0
+  );
+}
+
+export function startingXiAlternativeRoundPoints(
+  players: ReadonlyArray<Pick<SquadForecastPlayer, "playerId" | "alternativeRoundPoints" | "alternativePredictedFp">>,
+  roundIndex: number,
+  captainId?: string | null
+) {
+  return players.reduce(
+    (total, player) =>
+      total +
+      (player.alternativeRoundPoints?.[roundIndex] ??
+        (roundIndex === 0 ? player.alternativePredictedFp ?? 0 : 0)) * captainMultiplier(player.playerId, captainId),
+    0
+  );
+}
+
+export function startingXiAlternativeHorizonPoints(
+  players: ReadonlyArray<Pick<SquadForecastPlayer, "playerId" | "alternativeRoundPoints" | "alternativePredictedFp">>,
+  horizon: number,
+  captainId?: string | null
+) {
+  const safeHorizon = Number.isFinite(horizon) ? Math.max(0, Math.floor(horizon)) : 0;
+  return Array.from({ length: safeHorizon }, (_, roundIndex) =>
+    startingXiAlternativeRoundPoints(players, roundIndex, captainId)
+  ).reduce((total, value) => total + value, 0);
+}
+
+export function startingXiFoontasyPoints(
+  players: ReadonlyArray<Pick<FantasyPlannerPlayer, "playerId" | "foontasyPoints">>,
+  captainId?: string | null
+) {
+  const availablePlayers = players.filter((player) => typeof player.foontasyPoints === "number");
+  return {
+    available: availablePlayers.length,
+    total: availablePlayers.length === players.length
+      ? availablePlayers.reduce(
+        (total, player) => total + (player.foontasyPoints ?? 0) * captainMultiplier(player.playerId, captainId),
+        0
+      )
+      : null
+  };
+}
+
 export function fixtureChipPresentations(
   fixtures: string[],
   difficulties: Array<number | null | undefined>,

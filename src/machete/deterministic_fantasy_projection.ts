@@ -82,7 +82,7 @@ export type ProbableParticipantInput = {
   expectedMinutes: number | null | undefined;
   probabilities: ParticipantProbabilityInput;
   ratesPer90: ParticipantRatesPer90Input;
-  /** Defaults to expectedMinutes / 90. Set to 1 for methods that allocate directly from per-90 shares. */
+  /** Defaults to expectedMinutes / 90 and must never exceed that minutes-based exposure. */
   per90ExposureFactor?: number;
   /** Optional formula-pipeline numerators. The engine still normalizes them across the probable XI. */
   allocationWeights?: Partial<Record<"goals" | "assists" | "recoveries" | "saves", number>>;
@@ -298,8 +298,18 @@ function validatePlayerProjectionInput(team: ProjectedTeamTotals, participants: 
     const appearance = probability(player.probabilities.appearance, `${path}.probabilities.appearance`, issues);
     const sixty = probability(player.probabilities.sixtyMinutes, `${path}.probabilities.sixtyMinutes`, issues);
     const full = probability(player.probabilities.fullMatch, `${path}.probabilities.fullMatch`, issues);
-    if (player.per90ExposureFactor !== undefined) probability(player.per90ExposureFactor, `${path}.per90ExposureFactor`, issues);
-    if (player.cardExposureFactor !== undefined) requiredNonNegative(player.cardExposureFactor, `${path}.cardExposureFactor`, issues);
+    if (player.per90ExposureFactor !== undefined) {
+      probability(player.per90ExposureFactor, `${path}.per90ExposureFactor`, issues);
+      if (player.per90ExposureFactor > minutes / 90 + MASS_BALANCE_EPSILON) {
+        issues.push({ path: `${path}.per90ExposureFactor`, message: "must not exceed expectedMinutes / 90" });
+      }
+    }
+    if (player.cardExposureFactor !== undefined) {
+      requiredNonNegative(player.cardExposureFactor, `${path}.cardExposureFactor`, issues);
+      if (player.cardExposureFactor > minutes / 90 + MASS_BALANCE_EPSILON) {
+        issues.push({ path: `${path}.cardExposureFactor`, message: "must not exceed expectedMinutes / 90" });
+      }
+    }
     for (const [metric, weight] of Object.entries(player.allocationWeights ?? {})) {
       requiredNonNegative(weight, `${path}.allocationWeights.${metric}`, issues);
     }

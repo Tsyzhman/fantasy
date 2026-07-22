@@ -7,6 +7,8 @@ import {
 import { syncSportsRuFantasy } from "@/machete/sports_ru_fantasy_sync";
 
 const logger = createLogger("sports-ru-fantasy:scheduler");
+const POST_FOTMOB_BUSY_WAIT_MS = 5_000;
+const POST_FOTMOB_BUSY_MAX_WAIT_MS = 30 * 60 * 1000;
 
 type SchedulerState = {
   running: boolean;
@@ -26,9 +28,7 @@ export function startSportsRuFantasySyncScheduler() {
     return;
   }
 
-  const state =
-    globalForScheduler.sportsRuFantasySyncScheduler ??
-    ({ running: false, started: false } satisfies SchedulerState);
+  const state = sportsRuFantasySchedulerState();
   if (state.started) return;
   state.started = true;
   globalForScheduler.sportsRuFantasySyncScheduler = state;
@@ -37,16 +37,30 @@ export function startSportsRuFantasySyncScheduler() {
 
 function scheduleNextRun(state: SchedulerState, delayMs = syncIntervalMilliseconds()) {
   state.timer = setTimeout(async () => {
-    await runScheduledSync(state);
+    await runSportsRuFantasySyncNow("interval");
     scheduleNextRun(state);
   }, delayMs);
   state.timer.unref?.();
   logger.info("Scheduled Sports.ru fantasy price sync.", { delayMs });
 }
 
-async function runScheduledSync(state: SchedulerState) {
-  if (state.running) return;
+export async function runSportsRuFantasySyncNow(trigger: "interval" | "post-fotmob") {
+  if (process.env.SPORTS_RU_FANTASY_SYNC_ENABLED === "false") return { started: false, succeeded: 0, failed: 0 };
+  const state = sportsRuFantasySchedulerState();
+  if (state.running && trigger === "post-fotmob") {
+    logger.info("Waiting for the active Sports.ru sync before the required post-FotMob refresh.");
+    const deadline = Date.now() + POST_FOTMOB_BUSY_MAX_WAIT_MS;
+    while (state.running && Date.now() < deadline) {
+      await new Promise<void>((resolve) => setTimeout(resolve, POST_FOTMOB_BUSY_WAIT_MS));
+    }
+  }
+  if (state.running) {
+    logger.info("Sports.ru fantasy price sync is already running; the trigger was skipped.", { trigger });
+    return { started: false, succeeded: 0, failed: 0 };
+  }
   state.running = true;
+  let succeeded = 0;
+  let failed = 0;
   try {
     const scopes = parseSportsRuFantasySyncScopes(process.env.SPORTS_RU_FANTASY_SYNC_SCOPES ?? "");
     for (const scope of scopes) {
@@ -60,16 +74,26 @@ async function runScheduledSync(state: SchedulerState) {
           prices: result.prices
         };
         if (result.status === "UNAVAILABLE") logger.warn("Sports.ru current fantasy season is not available; existing prices were preserved.", fields);
-        else logger.info("Sports.ru fantasy prices synchronized.", { ...fields, mapping: result.mapping, deletedStalePrices: result.deletedStalePrices });
+        else {
+          succeeded += 1;
+          logger.info("Sports.ru fantasy prices synchronized.", { ...fields, trigger, mapping: result.mapping, deletedStalePrices: result.deletedStalePrices });
+        }
       } catch (error) {
-        logger.error("Scheduled Sports.ru fantasy price scope failed; existing prices were preserved.", { ...scope, error });
+        failed += 1;
+        logger.error("Scheduled Sports.ru fantasy price scope failed; existing prices were preserved.", { ...scope, trigger, error });
       }
     }
   } finally {
     state.running = false;
   }
+  return { started: true, succeeded, failed };
 }
 
 function syncIntervalMilliseconds() {
   return sportsRuFantasySyncIntervalMilliseconds(process.env.SPORTS_RU_FANTASY_SYNC_INTERVAL_HOURS);
+}
+
+function sportsRuFantasySchedulerState() {
+  return globalForScheduler.sportsRuFantasySyncScheduler ??
+    (globalForScheduler.sportsRuFantasySyncScheduler = { running: false, started: false });
 }

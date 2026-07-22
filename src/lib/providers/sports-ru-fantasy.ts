@@ -109,7 +109,7 @@ export async function fetchSportsRuFantasyGraphqlSnapshot(
               name?: string | null;
               price?: number | null;
               team?: { id?: string | null; name?: string | null } | null;
-              statObject?: { lastName?: string | null } | null;
+              statObject?: { name?: string | null; firstName?: string | null; lastName?: string | null } | null;
             }> | null;
           } | null;
         };
@@ -125,7 +125,7 @@ export async function fetchSportsRuFantasyGraphqlSnapshot(
               sortType: BY_PRICE,
               role: ${role}
             }) {
-              list { id name price team { id name } statObject { lastName } }
+              list { id name price team { id name } statObject { name firstName lastName } }
             }
           }
         }`,
@@ -134,7 +134,7 @@ export async function fetchSportsRuFantasyGraphqlSnapshot(
       const players = response.fantasyQueries?.players?.list ?? [];
       for (const player of players) {
         const providerPlayerId = player.id?.trim();
-        const playerName = cleanText(player.name || player.statObject?.lastName || "");
+        const playerName = sportsRuFantasyDisplayName(player);
         const price = Number(player.price);
         if (!providerPlayerId || seenPlayerIds.has(providerPlayerId) || !playerName || !Number.isFinite(price)) continue;
         seenPlayerIds.add(providerPlayerId);
@@ -159,6 +159,19 @@ export async function fetchSportsRuFantasyGraphqlSnapshot(
     prices,
     fetchedAt: new Date().toISOString()
   };
+}
+
+function sportsRuFantasyDisplayName(player: {
+  name?: string | null;
+  statObject?: { name?: string | null; firstName?: string | null; lastName?: string | null } | null;
+}) {
+  const firstName = cleanText(player.statObject?.firstName ?? "");
+  const lastName = cleanText(player.statObject?.lastName ?? "");
+  // Sports.ru uses an empty firstName plus the public mononym in lastName for
+  // players such as Wendel. Its season-player name may contain an unwanted
+  // legal surname ("Вендел Вале"), while the fantasy UI shows "Вендел".
+  if (!firstName && lastName) return lastName;
+  return cleanText(player.name || player.statObject?.name || [firstName, lastName].filter(Boolean).join(" "));
 }
 
 export function normalizeSportsRuProfileId(value: string) {

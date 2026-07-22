@@ -2,6 +2,7 @@ import { Prisma, type IngestionJob, type PrismaClient } from "@prisma/client";
 
 import { FantasyPointsRepository } from "@/machete/fantasy_repositories";
 import { calculate_fantasy_points_for_match } from "@/machete/fantasy_points_engine";
+import { resetStartingXiForLatestCompletedRound } from "@/machete/starting-xi-round-reset";
 
 import { createFotMobClient, type FotMobClient } from "./fotmob_client";
 import {
@@ -445,6 +446,17 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: Ing
       const discoveryComplete = discoveredMatches.length >= minimumMatches;
       if (!discoveryComplete) hasScopeErrors = true;
       const scopeStatus = rosterSynced && scopeFixtureFailures === 0 && discoveryComplete ? "completed" : "completed_with_errors";
+      if (jobType === "incremental_update") {
+        const starterReset = await resetStartingXiForLatestCompletedRound(prisma, {
+          leagueId: BigInt(canonicalLeagueId),
+          season: scope.season
+        });
+        console.info(
+          `[ingestion] Starting-XI round reset for league ${canonicalLeagueId} / ${scope.season}: ${starterReset.reason}`
+          + `${starterReset.round ? `, round ${starterReset.round}` : ""}`
+          + `, players ${starterReset.playersReset}, teams ${starterReset.teamsChanged}.`
+        );
+      }
       const completedScopes = upsertCompletedScope(metadataRecord(jobMetadata).completed_scopes, {
         source_league_id: scope.league_id,
         canonical_league_id: canonicalLeagueId,

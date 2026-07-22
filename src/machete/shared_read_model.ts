@@ -34,6 +34,7 @@ export type SharedTeamOption = {
   country: string | null;
   rawRef: string | null;
   logoUrl: string | null;
+  startingXiChangedAt: Date | null;
 };
 
 export type SharedPlayerOption = {
@@ -95,6 +96,10 @@ type SharedTeamMatchRef = {
 
 export async function loadSharedLeagueOptions(prisma: PrismaClient): Promise<SharedLeagueSeasonOption[]> {
   const options = await loadSharedLeagueSeasonOptions(prisma);
+  return selectSharedLeagueOptions(options);
+}
+
+export function selectSharedLeagueOptions(options: SharedLeagueSeasonOption[]): SharedLeagueSeasonOption[] {
   const latestByLeagueId = new Map<string, SharedLeagueSeasonOption>();
   for (const option of options) {
     const key = String(option.leagueId);
@@ -283,6 +288,7 @@ export async function loadSharedLeagueTeams(prisma: PrismaClient, leagueId: bigi
     shortName: providerTeamShortName({ metadata: row.metadata }),
     country: row.team.country,
     rawRef: row.team.rawRef,
+    startingXiChangedAt: row.startingXiChangedAt,
     logoUrl: resolveSharedTeamLogoUrl({
       providerLeagueId: String(leagueId),
       teamName: row.team.name,
@@ -929,12 +935,17 @@ function aggregateSharedStats(
   const tackles = sum(stats.map((stat) => stat.tacklesWon));
   const interceptions = sum(stats.map((stat) => stat.interceptions));
   const clearances = sum(stats.map((stat) => stat.clearances));
+  const duelsWon = sum(stats.map((stat) => stat.duelsWon));
+  const aerialsWon = sum(stats.map((stat) => stat.aerialsWon));
   const saves = sum(stats.map((stat) => stat.saves));
   const goalsConceded = sum(stats.map((stat) => stat.goalsConceded));
   const yellowCards = sum(stats.map((stat) => stat.yellowCards));
   const redCards = sum(stats.map((stat) => stat.redCards));
   const cleanSheets = stats.filter((stat) => stat.cleanSheet === true).length;
   const recoveries = sum(stats.map((stat) => stat.recoveries));
+  const touchesInOppBox = sum(stats.map((stat) => stat.touchesInOppBox));
+  const foulsWon = sum(stats.map((stat) => stat.foulsWon));
+  const penaltiesWon = sum(stats.map((stat) => stat.penaltiesWon));
   const ratings = stats.map((stat) => stat.rating).filter((rating): rating is number => typeof rating === "number" && Number.isFinite(rating));
   const averageRating = ratings.length ? round(sum(ratings) / ratings.length) : null;
   const expectedMinutes = matchesPlayed > 0 ? round(clamp(minutesPlayed / matchesPlayed, 0, 90)) : null;
@@ -973,6 +984,8 @@ function aggregateSharedStats(
     tackles_won: tackles,
     interceptions,
     clearances,
+    duels_won: duelsWon,
+    aerials_won: aerialsWon,
     recoveries,
     possession_recoveries: recoveries,
     saves,
@@ -982,6 +995,9 @@ function aggregateSharedStats(
     clean_sheet: cleanSheets,
     yellow_cards: yellowCards,
     red_cards: redCards,
+    touches_in_opposition_box: touchesInOppBox,
+    fouls_won: foulsWon,
+    penalties_won: penaltiesWon,
     average_rating: averageRating ?? 0,
     ...(matchWindow?.kind === "days" && matchWindow.days === 365 ? calculateFriendWindowMetrics(stats, matchDateById) : {})
   };

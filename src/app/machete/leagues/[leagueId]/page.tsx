@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation";
 import type { ReactNode } from "react";
+import { Download } from "lucide-react";
 
 import { I18nText } from "@/components/i18n-text";
 import { MacheteShell } from "@/components/machete/MacheteShell";
@@ -100,7 +101,8 @@ export default async function MacheteLeaguePage({ params, searchParams }: PagePr
         playersSynced,
         fixturesSynced: teamFixtures,
         expectedFantasyPoints: teamFantasy._avg.points ?? null,
-        lastSyncedAt: league.updatedAt
+        lastSyncedAt: league.updatedAt,
+        startingXiChangedAt: team.startingXiChangedAt
       };
     })
   );
@@ -138,19 +140,28 @@ export default async function MacheteLeaguePage({ params, searchParams }: PagePr
               {[leagueSubtitle(flagInput, league.season), "Provider FOTMOB"].filter(Boolean).join(" / ")}
             </p>
           </div>
-          <AutoSubmitForm className="w-full sm:w-56">
-            <label className="text-sm">
-              <span className="mb-1 block font-medium text-slate-600"><I18nText en="Season" ru="Сезон" /></span>
-              <select name="season" defaultValue={league.season} className="w-full rounded border border-slate-200 px-3 py-2">
-                {seasonsForLeague.map((option) => (
-                  <option key={`${option.leagueId}:${option.season}`} value={option.season}>
-                    {option.season}{option.isCurrent ? " · current" : ""}
-                  </option>
-                ))}
-                {seasonsForLeague.length === 0 ? <LocalizedOption value={league.season} en={league.season} ru={league.season} /> : null}
-              </select>
-            </label>
-          </AutoSubmitForm>
+          <div className="flex w-full flex-col gap-2 sm:w-56">
+            <AutoSubmitForm>
+              <label className="text-sm">
+                <span className="mb-1 block font-medium text-slate-600"><I18nText en="Season" ru="Сезон" /></span>
+                <select name="season" defaultValue={league.season} className="w-full rounded border border-slate-200 px-3 py-2">
+                  {seasonsForLeague.map((option) => (
+                    <option key={`${option.leagueId}:${option.season}`} value={option.season}>
+                      {option.season}{option.isCurrent ? " · current" : ""}
+                    </option>
+                  ))}
+                  {seasonsForLeague.length === 0 ? <LocalizedOption value={league.season} en={league.season} ru={league.season} /> : null}
+                </select>
+              </label>
+            </AutoSubmitForm>
+            <a
+              href={startingXiExportHref(league.leagueId, league.season)}
+              className="inline-flex items-center justify-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+            >
+              <Download className="h-4 w-4" aria-hidden="true" />
+              <I18nText en="Export starting XI" ru="Выгрузить игроков старта" />
+            </a>
+          </div>
           <dl className="grid grid-cols-2 gap-4 text-sm sm:grid-cols-5">
             <Metric label={<I18nText en="Teams" ru="Команды" />} value={formatNumber(teams.length)} />
             <Metric
@@ -192,4 +203,8 @@ function Metric({ label, value, accent = false }: { label: ReactNode; value: str
 
 function macheteLeagueHref(leagueId: bigint, season: string) {
   return `/machete/leagues/${leagueId}?season=${encodeURIComponent(season)}`;
+}
+
+function startingXiExportHref(leagueId: bigint, season: string) {
+  return `/api/machete/leagues/${leagueId}/export-starting-xi?season=${encodeURIComponent(season)}`;
 }

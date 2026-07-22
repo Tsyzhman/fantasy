@@ -16,10 +16,35 @@ test("Expected and friend Alt defaults contain valid formulas for the full pipel
   assert.deepEqual(validateProjectionFormulaConfig(friendAltProjectionFormulaConfig), []);
   assert.match(expectedProjectionFormulaConfig.team.expectedGoals, /Bookmaker implied xG/);
   assert.doesNotMatch(friendAltProjectionFormulaConfig.team.expectedGoals, /Bookmaker/);
-  assert.match(friendAltProjectionFormulaConfig.history.expectedMinutes, /^max\(/);
+  assert.match(friendAltProjectionFormulaConfig.history.expectedMinutes, /0\.65 \* min\(\{Matches 365\}/);
   assert.match(friendAltProjectionFormulaConfig.history.xgRate, /Minutes L10/);
   assert.match(friendAltProjectionFormulaConfig.history.xgRate, /safe_div/);
+  assert.match(friendAltProjectionFormulaConfig.allocation.goals, /Expected minutes/);
+  assert.equal(calculateCustomFormulaScore(friendAltProjectionFormulaConfig.allocation.goals, {
+    blended_xg_per_90: 0.9,
+    expected_minutes: 60
+  }), 0.6);
+  assert.equal(calculateCustomFormulaScore(friendAltProjectionFormulaConfig.allocation.cardExposure, {
+    expected_minutes: 60
+  }), 2 / 3);
   assert.doesNotMatch(friendAltProjectionFormulaConfig.scoreByPosition.DEF, /goals conceded/i);
+});
+
+test("legacy Alt per-90 allocations fall back to minute-scaled formulas", () => {
+  const parsed = parseProjectionFormulaConfig({
+    ...friendAltProjectionFormulaConfig,
+    allocation: {
+      goals: "{Blended xG per 90}",
+      assists: "{Blended xA per 90}",
+      recoveries: "{Blended recoveries per 90}",
+      saves: "{Blended saves per 90}",
+      cardExposure: "1"
+    }
+  }, friendAltProjectionFormulaConfig);
+
+  assert.deepEqual(parsed.config.allocation, friendAltProjectionFormulaConfig.allocation);
+  assert.equal(parsed.issues.length, 5);
+  assert.ok(parsed.issues.every((issue) => issue.message.includes("Expected minutes")));
 });
 
 test("friend Alt history formula reproduces minute-adjusted 40/35/25 weighting", () => {
@@ -35,6 +60,39 @@ test("friend Alt history formula reproduces minute-adjusted 40/35/25 weighting",
   });
 
   assert.ok(Math.abs(score - (1.25 / 0.7)) < 1e-12);
+});
+
+test("expected minutes are stabilized instead of taking a recent-window maximum", () => {
+  const score = calculateCustomFormulaScore(expectedProjectionFormulaConfig.history.expectedMinutes, {
+    matches_365: 20,
+    matches_l10: 10,
+    matches_l5: 5,
+    minutes_per_match_365: 45,
+    minutes_per_match_l10: 72,
+    minutes_per_match_l5: 90
+  });
+
+  assert.equal(score, 56.25);
+  assert.ok(score < 90);
+});
+
+test("80 expected minutes count as a full match in both projection defaults", () => {
+  for (const config of [expectedProjectionFormulaConfig, friendAltProjectionFormulaConfig]) {
+    assert.equal(calculateCustomFormulaScore(config.history.fullMatchProbability, {
+      expected_minutes: 79,
+      "60_minute_probability": 1,
+      full_match_rate_l5: 0,
+      full_match_rate_l10: 0,
+      full_match_rate_365: 0
+    }), 0);
+    assert.equal(calculateCustomFormulaScore(config.history.fullMatchProbability, {
+      expected_minutes: 80,
+      "60_minute_probability": 1,
+      full_match_rate_l5: 0,
+      full_match_rate_l10: 0,
+      full_match_rate_365: 0
+    }), 1);
+  }
 });
 
 test("Expected team formula uses bookmaker xG only when the line is available", () => {
@@ -116,6 +174,6 @@ test("parser clones its fallback and never mutates shared defaults", () => {
   const parsed = parseProjectionFormulaConfig({ history: { expectedMinutes: "75" } }, friendAltProjectionFormulaConfig);
   parsed.config.team.expectedGoals = "123";
 
-  assert.match(friendAltProjectionFormulaConfig.history.expectedMinutes, /^max\(/);
+  assert.match(friendAltProjectionFormulaConfig.history.expectedMinutes, /safe_div/);
   assert.equal(friendAltProjectionFormulaConfig.team.expectedGoals, "{Projected xG}");
 });

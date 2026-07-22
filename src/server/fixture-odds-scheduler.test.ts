@@ -11,21 +11,12 @@ import {
 const firstKickoff = new Date("2026-07-24T17:00:00.000Z");
 const secondKickoff = new Date("2026-07-25T14:00:00.000Z");
 
-test("fixture odds are scheduled daily for a week and finally three hours before the first match of a round", () => {
+test("fixture odds are scheduled daily for a month and finally three hours before the first match of a round", () => {
   const triggers = fixtureOddsSyncTriggers(roundMatches());
-  assert.deepEqual(
-    triggers.map((trigger) => [trigger.kind, trigger.dueAt.toISOString()]),
-    [
-      ["ROUND_DAILY", "2026-07-17T17:00:00.000Z"],
-      ["ROUND_DAILY", "2026-07-18T17:00:00.000Z"],
-      ["ROUND_DAILY", "2026-07-19T17:00:00.000Z"],
-      ["ROUND_DAILY", "2026-07-20T17:00:00.000Z"],
-      ["ROUND_DAILY", "2026-07-21T17:00:00.000Z"],
-      ["ROUND_DAILY", "2026-07-22T17:00:00.000Z"],
-      ["ROUND_DAILY", "2026-07-23T17:00:00.000Z"],
-      ["ROUND_FINAL", "2026-07-24T14:00:00.000Z"]
-    ]
-  );
+  assert.equal(triggers.length, 31);
+  assert.deepEqual([triggers[0].kind, triggers[0].dueAt.toISOString()], ["ROUND_DAILY", "2026-06-24T17:00:00.000Z"]);
+  assert.deepEqual([triggers.at(-2)?.kind, triggers.at(-2)?.dueAt.toISOString()], ["ROUND_DAILY", "2026-07-23T17:00:00.000Z"]);
+  assert.deepEqual([triggers.at(-1)?.kind, triggers.at(-1)?.dueAt.toISOString()], ["ROUND_FINAL", "2026-07-24T14:00:00.000Z"]);
   assert.ok(triggers.every((trigger) => trigger.matchIds.map(String).join(",") === "1,2"));
 });
 
@@ -50,11 +41,11 @@ test("overdue unavailable lines retry later without hiding an earlier future tri
   assert.equal(nextFixtureOddsSyncAt(futureSoon, now, retryAt)?.toISOString(), "2026-07-23T17:20:00.000Z");
 });
 
-test("matches without a provider round use an independent week-long schedule", () => {
+test("matches without a provider round use an independent month-long schedule", () => {
   const matches = roundMatches().map((match) => ({ ...match, round: null }));
   const triggers = fixtureOddsSyncTriggers(matches);
-  assert.equal(triggers.length, 16);
-  assert.equal(triggers.filter((trigger) => trigger.kind === "ROUND_DAILY").length, 14);
+  assert.equal(triggers.length, 62);
+  assert.equal(triggers.filter((trigger) => trigger.kind === "ROUND_DAILY").length, 60);
   assert.equal(triggers.filter((trigger) => trigger.kind === "ROUND_FINAL").length, 2);
 });
 

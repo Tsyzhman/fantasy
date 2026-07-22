@@ -430,6 +430,14 @@ option {
   background-color: var(--bg-surface-muted);
 }
 
+.player-pool-sortable th[data-sortable="true"]::after {
+  position: absolute;
+  right: 0.65rem;
+  top: 50%;
+  margin-left: 0;
+  transform: translateY(-50%);
+}
+
 .sticky-first-col tbody tr:hover td:first-child {
   background-color: var(--bg-surface-hover);
 }

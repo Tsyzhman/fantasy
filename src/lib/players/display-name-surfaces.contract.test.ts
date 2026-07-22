@@ -3,10 +3,10 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const userPlayerSurfaces = [
-  ["../../components/machete/MachetePlayerTable.tsx", 2],
+  ["../../components/machete/MachetePlayerTable.tsx", 1],
   ["../../app/baltika/players/page.tsx", 2],
   ["../../app/baltika/leagues/[leagueId]/teams/[teamId]/page.tsx", 3],
-  ["../../components/machete/FantasySquadPlanner.tsx", 6],
+  ["../../components/machete/FantasySquadPlanner.tsx", 7],
   ["../../components/compare/player-compare.tsx", 1],
   ["../../app/compare/page.tsx", 2],
   ["../../components/players/player-watchlist.tsx", 1],

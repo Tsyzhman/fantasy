@@ -18,19 +18,22 @@ const mappings: ReadonlyArray<readonly [providerPlayerId: string, playerId: stri
   ["67438", "689051"], ["67444", "1213750"], ["67471", "1176214"],
   ["67472", "846063"], ["67473", "1320168"], ["67474", "1458712"],
   ["67477", "1271367"], ["67488", "975220"], ["67489", "493731"],
-  ["67497", "1108837"], ["67504", "206825"], ["67506", "890503"],
+  ["67495", "1280732"], ["67497", "1108837"], ["67504", "206825"],
+  ["67506", "890503"],
   ["67525", "884395"], ["67560", "678629"], ["67583", "1235639"],
   ["67585", "1252233"], ["67591", "1668308"], ["67592", "729187"],
   ["67631", "267367"], ["67650", "1693155"], ["67665", "1245978"],
   ["67668", "1133755"], ["67675", "827669"], ["67683", "987142"],
-  ["67687", "407765"], ["67690", "717557"], ["67697", "561200"],
+  ["67687", "407765"], ["67690", "717557"], ["67692", "857270"],
+  ["67697", "561200"],
   ["67730", "690096"], ["67732", "653592"], ["67750", "1636880"],
   ["67752", "1606580"],
   // Exact identities whose transfer is confirmed but the live FotMob team
   // roster still lags. Third value is the verified current RPL team ID.
   ["67354", "972117", "8708"], ["67418", "1524617", "1068353"],
-  ["67518", "560506", "8709"], ["67530", "880237", "8709"],
-  ["67568", "1797696", "1066681"], ["67722", "1076909", "1692"],
+  ["67509", "1696362", "168719"], ["67518", "560506", "8709"],
+  ["67530", "880237", "8709"], ["67568", "1797696", "1066681"],
+  ["67605", "1457533", "1066681"], ["67722", "1076909", "1692"],
   ["67756", "1783448", "9760"], ["67706", "1383530", "1692"]
 ];
 
@@ -58,18 +61,22 @@ async function main() {
   const playerById = new Map(players.map((player) => [String(player.id), player]));
   const seasonTeamById = new Map(seasonTeams.map((entry) => [String(entry.teamId), entry]));
   const errors: string[] = [];
-  const plan = mappings.map(([providerPlayerId, playerId, overrideTeamId]) => {
+  const skippedProviderPlayerIds: string[] = [];
+  const plan = mappings.flatMap(([providerPlayerId, playerId, overrideTeamId]) => {
     const price = priceByProviderId.get(providerPlayerId) ?? null;
+    if (!price) {
+      skippedProviderPlayerIds.push(providerPlayerId);
+      return [];
+    }
     const rosterEntry = overrideTeamId
       ? roster.find((entry) => String(entry.playerId) === playerId && String(entry.teamId) === overrideTeamId) ?? null
       : rosterByPlayerId.get(playerId) ?? null;
     const player = rosterEntry?.player ?? playerById.get(playerId) ?? null;
     const seasonTeam = overrideTeamId ? seasonTeamById.get(overrideTeamId) ?? null : null;
-    if (!price) errors.push(`Sports.ru price ${providerPlayerId} was not found exactly once.`);
     if (!player) errors.push(`Core FotMob player ${playerId} was not found exactly once.`);
     if (!rosterEntry && !seasonTeam) errors.push(`Active RPL roster or verified override team for player ${playerId} was not found.`);
     const targetTeamId = rosterEntry ? String(rosterEntry.teamId) : overrideTeamId ?? null;
-    return {
+    return [{
       providerPlayerId,
       playerId,
       overrideTeamId: overrideTeamId ?? null,
@@ -80,10 +87,17 @@ async function main() {
       previousPlayerId: price?.playerId ? String(price.playerId) : null,
       previousTeamId: price?.teamId ? String(price.teamId) : null,
       alreadyMapped: price?.playerId === BigInt(playerId) && (targetTeamId ? price?.teamId === BigInt(targetTeamId) : false)
-    };
+    }];
   });
 
-  console.log(JSON.stringify({ apply, mappings: mappings.length, errors, changes: plan.filter((row) => !row.alreadyMapped).length, plan }, null, 2));
+  console.log(JSON.stringify({
+    apply,
+    mappings: mappings.length,
+    skippedProviderPlayerIds,
+    errors,
+    changes: plan.filter((row) => !row.alreadyMapped).length,
+    plan
+  }, null, 2));
   if (errors.length > 0) throw new Error(`Mapping plan failed validation with ${errors.length} error(s).`);
   if (!apply) return;
 

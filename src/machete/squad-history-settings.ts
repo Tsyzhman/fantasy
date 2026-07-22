@@ -1,4 +1,4 @@
-export const fantasyHistoryScopes = ["ALL_LOADED", "SAME_COUNTRY_CLUB", "SELECTED_COMPETITION", "SELECTED_PLUS_UEFA"] as const;
+export const fantasyHistoryScopes = ["ALL_LOADED", "ALL_PLAYER_MATCHES", "SAME_COUNTRY_CLUB", "SELECTED_COMPETITION", "SELECTED_PLUS_UEFA"] as const;
 export type FantasyHistoryScope = (typeof fantasyHistoryScopes)[number];
 
 export const fantasyHistoryWindows = ["LAST_5", "SELECTED_SEASONS", "ALL_LOADED"] as const;
@@ -11,7 +11,7 @@ export type FantasyHistorySettings = {
 };
 
 export const defaultFantasyHistorySettings: FantasyHistorySettings = {
-  scope: "SELECTED_COMPETITION",
+  scope: "ALL_LOADED",
   window: "LAST_5",
   selectedSeasons: []
 };

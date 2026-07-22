@@ -1,8 +1,8 @@
 "use client";
 
-import { Copy, Crown, FilePlus2, Layers3, ListChecks, Lock, MoreHorizontal, Plus, Save, Search, Sparkles, Trash2, Users, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Bookmark, Check, Columns3, Copy, Crown, Download, FilePlus2, Layers3, ListChecks, Lock, MoreHorizontal, Plus, Save, Search, SlidersHorizontal, Sparkles, Trash2, Users, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { type DragEvent, type SetStateAction, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { type DragEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type SetStateAction, useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 
 import { I18nText } from "@/components/i18n-text";
@@ -10,6 +10,10 @@ import { LocalizedOption, localizedText, useLanguage } from "@/components/locali
 import {
   fixtureChipPresentations,
   orderSquadSelectionsWithBenchGoalkeeperLast,
+  startingXiAlternativeHorizonPoints,
+  startingXiAlternativeRoundPoints,
+  startingXiFoontasyPoints,
+  startingXiRoundPoints,
   swapSquadSelectionCards
 } from "@/components/machete/fantasy-squad-ui";
 import { SortableTable } from "@/components/sortable-table";
@@ -20,7 +24,7 @@ import type {
   FantasySquadWorkerResponse,
   TransferSuggestionWorkerInput
 } from "@/components/machete/fantasy-squad-worker-contract";
-import { formatAlternativeScore, formatDate, formatNumber, formatScore } from "@/lib/format";
+import { formatAlternativeScore, formatCompactScore, formatDate, formatNumber, formatScore } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import { compactPlayerDisplayName } from "@/lib/players/display-name";
 import {
@@ -31,8 +35,9 @@ import {
 import {
   canStartFantasyPlayer,
   countFantasySquadTransfers,
+  createFantasyAddEvaluator,
+  createFantasyFitEvaluator,
   createFantasySquadRoundPlans,
-  fantasyAddBlockReason,
   fantasyTransferLimitForHorizon,
   nextFantasyPoints,
   normalizeFantasyHorizon,
@@ -43,6 +48,7 @@ import {
   selectionForNewPlayer,
   summarizeFantasySquad,
   updateFantasySquadRoundPlan,
+  type FantasyFitEvaluator,
   type FantasyPlannerPlayer,
   type FantasyPositionGroup,
   type FantasyRoundProjection,
@@ -56,6 +62,15 @@ import {
 } from "@/machete/squad_logic";
 import type { SavedFantasySquad, SavedFantasySquadOption } from "@/machete/squad_planner";
 import type { PlannerReadiness } from "@/machete/planner_readiness";
+import type { SquadFilterPreset, SquadFilterPresetFilters } from "@/machete/squad-filter-presets";
+import {
+  defaultSquadTableColumns,
+  emptySquadTableValueFilter,
+  moveSquadTableColumn,
+  squadTableValueFilterIsActive,
+  squadTableValueMatchesFilter,
+  type SquadTableValueFilter
+} from "@/machete/squad-table-columns";
 import {
   applyFantasyHistorySearchParams,
   fantasyHistoryScopes,
@@ -83,6 +98,8 @@ type FantasySquadPlannerProps = {
   };
   historySettings: FantasyHistorySettings;
   historySeasonOptions: string[];
+  initialVisiblePlayerPoolColumns: string[];
+  initialPlayerPoolColumnWidths: Record<string, number>;
 };
 
 const positionOrder: FantasyPositionGroup[] = ["GK", "DEF", "MID", "FWD", "UNK"];
@@ -207,12 +224,14 @@ type TransferSuggestionCalculation = {
   suggestions: TransferPlanSuggestion[];
 };
 
-export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: initialPlayers, playerPoolHref, initialSquad, savedSquads, readiness, priceStatus, historySettings, historySeasonOptions }: FantasySquadPlannerProps) {
+export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: initialPlayers, playerPoolHref, initialSquad, savedSquads, readiness, priceStatus, historySettings, historySeasonOptions, initialVisiblePlayerPoolColumns, initialPlayerPoolColumnWidths }: FantasySquadPlannerProps) {
   const language = useLanguage();
   const router = useRouter();
   const budgetForecastRef = useRef<HTMLDivElement>(null);
   const suggestionPanelRef = useRef<HTMLDivElement>(null);
   const [sourcePlayers, setSourcePlayers] = useState<FantasyPlannerPlayer[]>(initialPlayers);
+  const [appliedHistorySettings, setAppliedHistorySettings] = useState(historySettings);
+  const [playerPoolRequestHref, setPlayerPoolRequestHref] = useState(playerPoolHref);
   const [activeRoundOffset, setActiveRoundOffset] = useState(0);
   const players = useMemo(
     () => sourcePlayers.map((player) => fantasyPlayerAtRoundOffset(player, activeRoundOffset)),
@@ -230,22 +249,36 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
   const initialRoundPlans = normalizePlannerRoundPlans(initialSquad.roundPlans, initialSelections, sourcePlayers, rules);
   const [roundPlans, setRoundPlans] = useState<FantasySquadRoundPlan[]>(() => initialRoundPlans);
   const [savedRoundPlans, setSavedRoundPlans] = useState<FantasySquadRoundPlan[]>(() => cloneFantasyRoundPlans(initialRoundPlans));
-  const selections = roundPlans[activeRoundOffset]?.selections ?? [];
-  const savedSelections = savedRoundPlans[activeRoundOffset]?.selections ?? [];
+  const selections = useMemo(() => roundPlans[activeRoundOffset]?.selections ?? [], [activeRoundOffset, roundPlans]);
+  const savedSelections = useMemo(() => savedRoundPlans[activeRoundOffset]?.selections ?? [], [activeRoundOffset, savedRoundPlans]);
   const [activeSquadId, setActiveSquadId] = useState<string | null>(initialSquad.id);
   const [squadName, setSquadName] = useState(initialSquad.name);
   const [squadOptions, setSquadOptions] = useState<SavedFantasySquadOption[]>(savedSquads);
   const captainStorageKey = `fantasy-squad-captains:${leagueId}:${season}:${activeSquadId ?? "new"}:${activeRoundOffset}`;
   const [horizon, setHorizon] = useState(initialHorizon);
+  const [tableHorizon, setTableHorizon] = useState<3 | 5>(5);
+  const [exportColumnKeys, setExportColumnKeys] = useState(initialVisiblePlayerPoolColumns);
   const [query, setQuery] = useState("");
+  const [teamFilter, setTeamFilter] = useState("ALL");
   const [positionFilter, setPositionFilter] = useState("ALL");
-  const [starterPoolFilter, setStarterPoolFilter] = useState("ALL");
+  const [minimumPrice, setMinimumPrice] = useState<number | null>(null);
+  const [maximumPrice, setMaximumPrice] = useState<number | null>(null);
+  const [advancedTableFilters, setAdvancedTableFilters] = useState<Record<string, SquadTableValueFilter>>({});
   const [onlyAffordable, setOnlyAffordable] = useState(false);
+  const [filterPresets, setFilterPresets] = useState<SquadFilterPreset[]>([]);
+  const [filterPresetsPending, setFilterPresetsPending] = useState(false);
+  const [selectedFilterPresetId, setSelectedFilterPresetId] = useState<string | null>(null);
+  const [fitsPreparing, setFitsPreparing] = useState(false);
+  const [fitCalculation, setFitCalculation] = useState<{
+    evaluator: FantasyFitEvaluator;
+    eligiblePlayerIds: Set<string>;
+  } | null>(null);
   const [autoPickStrategy, setAutoPickStrategy] = useState<FantasySquadStrategy>("balanced");
   const [message, setMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [savePending, setSavePending] = useState(false);
   const [deletePending, setDeletePending] = useState(false);
+  const [tableExportPending, setTableExportPending] = useState(false);
   const interactionPending = isPending || savePending || deletePending;
   const [mobileTab, setMobileTab] = useState<MobileTab>("squad");
   const [showAllSuggestions, setShowAllSuggestions] = useState(false);
@@ -254,13 +287,13 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
   const [betaAutoPickComplete, setBetaAutoPickComplete] = useState(false);
   const [autoPickPending, setAutoPickPending] = useState(false);
   const autoPickRevisionRef = useRef(0);
-  const playerPoolReady = !playerPoolHref || (!playerPoolPending && !playerPoolFailed);
+  const playerPoolReady = !playerPoolRequestHref || (!playerPoolPending && !playerPoolFailed);
   const historyDraft: FantasyHistorySettings = {
     scope: historyScopeDraft,
     window: historyWindowDraft,
     selectedSeasons: historyWindowDraft === "SELECTED_SEASONS" ? historySeasonsDraft : []
   };
-  const historySelectionChanged = fantasyHistorySettingsKey(historyDraft) !== fantasyHistorySettingsKey(historySettings);
+  const historySelectionChanged = fantasyHistorySettingsKey(historyDraft) !== fantasyHistorySettingsKey(appliedHistorySettings);
   const hasRealRoundProjections = useMemo(
     () => rounds.length > 0 && players.some((player) => player.roundPoints.some((value) => Number.isFinite(value) && value !== 0)),
     [players, rounds.length]
@@ -325,27 +358,84 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
     failedSuggestionCalculation.availableSuggestionCount === availableSuggestionCount;
   const displayedSuggestions = showAllSuggestions ? suggestions : suggestions.slice(0, 3);
   const transferCostUnconfigured = suggestions.some((suggestion) => suggestion.paidTransferLoss === null);
-  const filteredPlayers = useMemo(() => {
-    const normalizedQuery = query.trim().toLowerCase();
+  const teamFilterOptions = useMemo(() => [...new Map(players
+    .filter((player) => player.teamId)
+    .map((player) => [player.teamId!, { id: player.teamId!, name: player.teamName }])).values()]
+    .sort((left, right) => left.name.localeCompare(right.name)), [players]);
+  const priceFilterOptions = useMemo(() => [...new Set(players.map((player) => player.price))].sort((left, right) => left - right), [players]);
+  const playerPoolColumns = useMemo(() => playerPoolOptionalColumns(players, tableHorizon, language), [language, players, tableHorizon]);
+  const advancedFilterColumns = useMemo(() => playerPoolColumns.map(({ key, label, title, numeric }) => ({ key, label, title, numeric })), [playerPoolColumns]);
+  const deferredQuery = useDeferredValue(query);
+  const deferredAdvancedTableFilters = useDeferredValue(advancedTableFilters);
+  const activeAdvancedFilterColumns = useMemo(() => advancedFilterColumns.filter((column) =>
+    squadTableValueFilterIsActive(deferredAdvancedTableFilters[column.key] ?? emptySquadTableValueFilter, column.numeric)
+  ), [advancedFilterColumns, deferredAdvancedTableFilters]);
+  const activeAdvancedFilterCount = activeAdvancedFilterColumns.length;
+  const fantasyAddEvaluator = useMemo(() => createFantasyAddEvaluator(players, selections, rules), [players, rules, selections]);
+  const fantasyFitEvaluator = useMemo(() => createFantasyFitEvaluator(players, selections, rules), [players, rules, selections]);
+
+  useEffect(() => {
+    if (!onlyAffordable) return;
+    let cancelled = false;
+
+    async function calculateFits() {
+      await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
+      if (cancelled) return;
+      setFitsPreparing(true);
+      const eligiblePlayerIds = new Set<string>();
+      for (let index = 0; index < players.length; index += 1) {
+        const player = players[index];
+        if (fantasyFitEvaluator.reason(player) === null) eligiblePlayerIds.add(player.playerId);
+        if (index > 0 && index % 48 === 0) {
+          await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
+          if (cancelled) return;
+        }
+      }
+      if (cancelled) return;
+      setFitCalculation({ evaluator: fantasyFitEvaluator, eligiblePlayerIds });
+      setFitsPreparing(false);
+    }
+
+    void calculateFits();
+    return () => {
+      cancelled = true;
+    };
+  }, [fantasyFitEvaluator, onlyAffordable, players]);
+
+  const baseMatchingPlayers = useMemo(() => {
+    const normalizedQuery = deferredQuery.trim().toLowerCase();
     return players
       .filter((player) => (positionFilter === "ALL" ? true : player.positionGroup === positionFilter))
+      .filter((player) => (teamFilter === "ALL" ? true : player.teamId === teamFilter))
+      .filter((player) => minimumPrice === null || player.price >= minimumPrice)
+      .filter((player) => maximumPrice === null || player.price <= maximumPrice)
       .filter((player) =>
         normalizedQuery
-          ? `${player.name} ${player.teamName} ${player.teamShortName ?? ""} ${player.position ?? ""}`.toLowerCase().includes(normalizedQuery)
+          ? player.name.toLowerCase().includes(normalizedQuery)
           : true
       )
-      .filter((player) => {
-        const selection = selectionsByPlayerId.get(player.playerId);
-        if (starterPoolFilter === "STARTER") return selection?.isStarter === true;
-        if (starterPoolFilter === "BENCH") return selection?.isStarter === false;
-        return true;
-      })
-      .filter((player) => (onlyAffordable ? fantasyAddBlockReason(player, players, selections, rules) === null || selectionsByPlayerId.has(player.playerId) : true))
-      .slice(0, 140);
-  }, [onlyAffordable, players, positionFilter, query, rules, selections, selectionsByPlayerId, starterPoolFilter]);
+      .filter((player) => activeAdvancedFilterColumns.every((column) => squadTableValueMatchesFilter(
+        playerPoolFilterValue(column.key, player, tableHorizon),
+        deferredAdvancedTableFilters[column.key] ?? emptySquadTableValueFilter,
+        column.numeric
+      )));
+  }, [activeAdvancedFilterColumns, deferredAdvancedTableFilters, deferredQuery, maximumPrice, minimumPrice, players, positionFilter, tableHorizon, teamFilter]);
+  const matchingPlayers = useMemo(() => {
+    if (!onlyAffordable || fitCalculation?.evaluator !== fantasyFitEvaluator) return baseMatchingPlayers;
+    return baseMatchingPlayers.filter((player) => selectionsByPlayerId.has(player.playerId) || fitCalculation.eligiblePlayerIds.has(player.playerId));
+  }, [baseMatchingPlayers, fantasyFitEvaluator, fitCalculation, onlyAffordable, selectionsByPlayerId]);
+  const filteredPlayers = matchingPlayers;
 
   useEffect(() => {
     void recordBetaMilestone("PLANNER_OPENED");
+  }, []);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    void loadSquadFilterPresets(controller.signal).then((presets) => {
+      if (presets) setFilterPresets(presets);
+    });
+    return () => controller.abort();
   }, []);
 
   useEffect(() => {
@@ -382,25 +472,12 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
   }, [betaAutoPickComplete, playerPoolFailed, playerPoolPending, squadIsValid, suggestionsPending]);
 
   useEffect(() => {
-    let revealHandle: number | null = null;
-    const revealPostLoadContent = () => {
-      revealHandle = window.setTimeout(() => setPostLoadContentReady(true), 0);
-    };
-
-    if (document.readyState === "complete") {
-      revealPostLoadContent();
-    } else {
-      window.addEventListener("load", revealPostLoadContent, { once: true });
-    }
-
-    return () => {
-      window.removeEventListener("load", revealPostLoadContent);
-      if (revealHandle !== null) window.clearTimeout(revealHandle);
-    };
+    const revealHandle = window.setTimeout(() => setPostLoadContentReady(true), 0);
+    return () => window.clearTimeout(revealHandle);
   }, []);
 
   useEffect(() => {
-    if (!postLoadContentReady || !playerPoolHref) return;
+    if (!postLoadContentReady || !playerPoolRequestHref) return;
 
     let lifecycleCancelled = false;
     let requestCompleted = false;
@@ -420,7 +497,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
     };
     window.addEventListener("pagehide", handlePageHide);
     window.addEventListener("pageshow", handlePageShow);
-    void fetch(playerPoolHref, {
+    void fetch(playerPoolRequestHref, {
       cache: "no-store",
       headers: { Accept: "application/json" },
       signal: controller.signal
@@ -433,6 +510,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
         setSourcePlayers(payload.players);
         setPlayerPoolFailed(false);
         setPlayerPoolPending(false);
+        setHistoryApplying(false);
       })
       .catch((error: unknown) => {
         if (lifecycleCancelled || controller.signal.aborted || (error instanceof Error && error.name === "AbortError")) return;
@@ -441,6 +519,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
         void recordBetaClientError("PLAYER_POOL_LOAD_FAILED");
         setPlayerPoolFailed(true);
         setPlayerPoolPending(false);
+        setHistoryApplying(false);
       });
 
     return () => {
@@ -449,17 +528,96 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
       lifecycleCancelled = true;
       controller.abort();
     };
-  }, [playerPoolHref, playerPoolRetry, postLoadContentReady]);
+  }, [playerPoolRequestHref, playerPoolRetry, postLoadContentReady]);
 
   function applyHistorySettings() {
     if (historyWindowDraft === "SELECTED_SEASONS" && historySeasonsDraft.length === 0) {
       setMessage(localizedText(language, "Choose at least one loaded season.", "Выберите хотя бы один загруженный сезон."));
       return;
     }
+    requestHistorySettings(historyDraft);
+  }
+
+  function applyQuickHistoryScope(scope: FantasyHistoryScope) {
+    if (scope === appliedHistorySettings.scope) return;
+    setHistoryScopeDraft(scope);
+    requestHistorySettings({ ...appliedHistorySettings, scope });
+  }
+
+  function requestHistorySettings(nextSettings: FantasyHistorySettings) {
+    if (!playerPoolHref) return;
+    setAppliedHistorySettings(nextSettings);
     setHistoryApplying(true);
-    const url = new URL(window.location.href);
-    applyFantasyHistorySearchParams(url.searchParams, historyDraft);
-    router.replace(`${url.pathname}?${url.searchParams.toString()}`);
+    setPlayerPoolFailed(false);
+    setPlayerPoolPending(true);
+
+    const pageUrl = new URL(window.location.href);
+    applyFantasyHistorySearchParams(pageUrl.searchParams, nextSettings);
+    window.history.replaceState(window.history.state, "", `${pageUrl.pathname}?${pageUrl.searchParams.toString()}`);
+
+    const poolUrl = new URL(playerPoolHref, window.location.origin);
+    applyFantasyHistorySearchParams(poolUrl.searchParams, nextSettings);
+    setPlayerPoolRequestHref(`${poolUrl.pathname}?${poolUrl.searchParams.toString()}`);
+  }
+
+  function currentFilterPresetValue(): SquadFilterPresetFilters {
+    return {
+      version: 1,
+      query,
+      teamName: teamFilter === "ALL" ? null : teamFilterOptions.find((team) => team.id === teamFilter)?.name ?? null,
+      position: positionFilter as SquadFilterPresetFilters["position"],
+      minimumPrice,
+      maximumPrice,
+      horizon: tableHorizon,
+      onlyAffordable,
+      historyScope: appliedHistorySettings.scope === "ALL_PLAYER_MATCHES" ? "ALL_PLAYER_MATCHES" : "ALL_LOADED",
+      advancedFilters: advancedTableFilters
+    };
+  }
+
+  function applyFilterPreset(preset: SquadFilterPreset) {
+    const filters = preset.filters;
+    const matchingTeam = filters.teamName
+      ? teamFilterOptions.find((team) => team.name.localeCompare(filters.teamName!, undefined, { sensitivity: "base" }) === 0)
+      : null;
+    setQuery(filters.query);
+    setTeamFilter(matchingTeam?.id ?? "ALL");
+    setPositionFilter(filters.position);
+    setMinimumPrice(filters.minimumPrice);
+    setMaximumPrice(filters.maximumPrice);
+    setTableHorizon(filters.horizon);
+    setOnlyAffordable(filters.onlyAffordable);
+    setFitsPreparing(filters.onlyAffordable);
+    if (!filters.onlyAffordable) setFitCalculation(null);
+    setAdvancedTableFilters(filters.advancedFilters);
+    setSelectedFilterPresetId(preset.id);
+    applyQuickHistoryScope(filters.historyScope);
+  }
+
+  async function saveFilterPreset(name: string) {
+    setFilterPresetsPending(true);
+    const presets = await saveSquadFilterPreset(name, currentFilterPresetValue());
+    setFilterPresetsPending(false);
+    if (!presets) {
+      setMessage(localizedText(language, "Could not save the filter preset.", "Не удалось сохранить пресет фильтров."));
+      return false;
+    }
+    setFilterPresets(presets);
+    const saved = presets.find((preset) => preset.name.localeCompare(name.trim(), undefined, { sensitivity: "base" }) === 0);
+    setSelectedFilterPresetId(saved?.id ?? null);
+    return true;
+  }
+
+  async function deleteFilterPreset(id: string) {
+    setFilterPresetsPending(true);
+    const presets = await removeSquadFilterPreset(id);
+    setFilterPresetsPending(false);
+    if (!presets) {
+      setMessage(localizedText(language, "Could not delete the filter preset.", "Не удалось удалить пресет фильтров."));
+      return;
+    }
+    setFilterPresets(presets);
+    if (selectedFilterPresetId === id) setSelectedFilterPresetId(null);
   }
 
   useEffect(() => {
@@ -531,7 +689,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
   }
 
   function addPlayer(player: FantasyPlannerPlayer) {
-    const blockReason = fantasyAddBlockReason(player, players, selections, rules);
+    const blockReason = fantasyAddEvaluator.reason(player);
     if (blockReason) {
       setMessage(localizeAddBlockReason(blockReason, language));
       return;
@@ -803,9 +961,9 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
               squadId: asCopy ? null : activeSquadId,
               name: requestedName,
               horizonRounds: horizon,
-              historyScope: historySettings.scope,
-              historyWindow: historySettings.window,
-              historySeasons: historySettings.selectedSeasons,
+              historyScope: appliedHistorySettings.scope,
+              historyWindow: appliedHistorySettings.window,
+              historySeasons: appliedHistorySettings.selectedSeasons,
               selections: roundPlansToSave[0].selections,
               roundPlans: roundPlansToSave,
               roundPlanRoundIds: rounds.map((round) => round.id)
@@ -854,7 +1012,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
             : localizedText(language, `Saved ${savedPlayers} players.`, `Сохранено игроков: ${savedPlayers}.`)
         );
         void recordBetaMilestone("SQUAD_SAVED");
-        router.replace(squadVariantHref(leagueId, season, savedSquadId, historySettings));
+        router.replace(squadVariantHref(leagueId, season, savedSquadId, appliedHistorySettings));
       } finally {
         setSavePending(false);
       }
@@ -877,7 +1035,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
 
   function selectSquadVariant(squadId: string) {
     if (!squadId || squadId === activeSquadId) return;
-    router.push(squadVariantHref(leagueId, season, squadId, historySettings));
+    router.push(squadVariantHref(leagueId, season, squadId, appliedHistorySettings));
   }
 
   function deleteSquadVariant() {
@@ -905,7 +1063,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
         setSquadOptions(remaining);
         const next = remaining[0];
         if (next) {
-          router.replace(squadVariantHref(leagueId, season, next.id, historySettings));
+          router.replace(squadVariantHref(leagueId, season, next.id, appliedHistorySettings));
           return;
         }
         setActiveSquadId(null);
@@ -915,7 +1073,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
         setSavedRoundPlans(cloneFantasyRoundPlans(blankPlans));
         setActiveRoundOffset(0);
         setMessage(localizedText(language, "Squad deleted.", "Состав удалён."));
-        router.replace(squadVariantHref(leagueId, season, null, historySettings));
+        router.replace(squadVariantHref(leagueId, season, null, appliedHistorySettings));
       } finally {
         setDeletePending(false);
       }
@@ -933,6 +1091,8 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
     { value: "upside", label: <I18nText en="Upside" ru="Потенциал" />, ariaLabel: localizedText(language, "Upside auto-pick", "Автоподбор с потенциалом") }
   ];
   const autoPickStrategyCopy = squadStrategyCopy(language, autoPickStrategy);
+  const nextRoundFoontasy = startingXiFoontasyPoints(summary.starterPlayers, captainId);
+  const nextRoundFoontasyTotal = summary.starterPlayers.length === rules.starterSize ? nextRoundFoontasy.total : null;
 
   return (
     <div className="mt-4 flex flex-col gap-4">
@@ -1091,8 +1251,22 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
           </div>
 
           <div ref={budgetForecastRef} className="mt-3 grid grid-cols-2 overflow-hidden rounded border border-slate-200 bg-slate-50 [&>dl:nth-child(odd)]:border-r [&>dl:nth-child(n+3)]:border-b-0 md:grid-cols-4 md:divide-x md:divide-slate-200 md:[&>dl]:border-r-0">
-            <Metric label={<I18nText en="Next round" ru="След. тур" />} value={formatScore(summary.projectedNext + (captainBonus(summary, captainId)))} tone="good" />
-            <Metric label={<I18nText en={`Horizon ${horizon}R`} ru={`Горизонт ${horizon}т`} />} value={formatScore(summary.projectedHorizon)} tone="accent" />
+            <Metric
+              label={<I18nText en="Next round" ru="След. тур" />}
+              value={formatScore(summary.projectedNext)}
+              secondaryLabel={<I18nText en="Alt" ru="Альт" />}
+              secondaryValue={formatAlternativeScore(startingXiAlternativeRoundPoints(summary.starterPlayers, 0, captainId))}
+              tertiaryLabel="FFO"
+              tertiaryValue={formatScore(nextRoundFoontasyTotal)}
+              tone="good"
+            />
+            <Metric
+              label={<I18nText en={`Horizon ${horizon}R`} ru={`Горизонт ${horizon}т`} />}
+              value={formatScore(summary.projectedHorizon)}
+              secondaryLabel={<I18nText en="Alt" ru="Альт" />}
+              secondaryValue={formatAlternativeScore(startingXiAlternativeHorizonPoints(summary.starterPlayers, horizon, captainId))}
+              tone="accent"
+            />
             <Metric label={<I18nText en="Budget" ru="Бюджет" />} value={`${formatNumber(summary.spent, 1)} / ${formatNumber(rules.budgetLimit, 1)}`} tone={summary.spent > rules.budgetLimit ? "bad" : summary.bank < 0 ? "bad" : "default"} />
             <Metric label={<I18nText en="Bank" ru="Банк" />} value={formatNumber(summary.bank, 1)} tone={summary.bank < 0 ? "bad" : "good"} />
           </div>
@@ -1385,7 +1559,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
       </section>
 
       <section className={cn(mobileTab === "suggestions" ? "hidden xl:block" : "block", "order-4 min-w-0 rounded border border-slate-200 bg-white p-3 shadow-soft sm:p-4")}>
-        <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-[minmax(360px,0.82fr)_minmax(560px,1.18fr)] 2xl:grid-cols-[minmax(400px,0.78fr)_minmax(680px,1.22fr)]">
+        <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-[minmax(360px,0.76fr)_minmax(620px,1.24fr)] 2xl:grid-cols-[minmax(390px,0.72fr)_minmax(760px,1.28fr)]">
           <div className={cn(mobileTab === "squad" ? "block" : "hidden xl:block")}>
             <div className="mb-3 flex items-center justify-between gap-3">
               <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500"><I18nText en="Your squad" ru="Ваш состав" /></h3>
@@ -1419,51 +1593,132 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
           </div>
 
           <div className={cn(mobileTab === "pool" ? "block" : "hidden xl:block", "min-w-0")}>
-            <div className="mb-3 grid grid-cols-2 gap-2 md:grid-cols-[1fr_auto_auto_auto]">
-              <label className="relative col-span-2 md:col-span-1">
-                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  placeholder={localizedText(language, "Search player or team", "Игрок или команда")}
-                  aria-label={localizedText(language, "Search player or team", "Поиск игрока или команды")}
-                  className="w-full rounded border border-slate-200 py-2 pl-9 pr-3 text-xs [@media(pointer:coarse)]:text-base"
+            <div className="mb-2 flex flex-nowrap items-center justify-between gap-2 overflow-x-auto pb-1">
+              <div className="flex shrink-0 flex-nowrap items-center gap-2">
+                <div className="inline-flex rounded border border-slate-200 bg-slate-50 p-0.5" aria-label={localizedText(language, "Player match scope", "Какие матчи учитывать")}>
+                  <button
+                    type="button"
+                    onClick={() => applyQuickHistoryScope("ALL_LOADED")}
+                    disabled={historyApplying}
+                    className={cn("rounded px-3 py-1.5 text-xs font-semibold", appliedHistorySettings.scope !== "ALL_PLAYER_MATCHES" ? "bg-white text-sky-800 shadow-sm" : "text-slate-600")}
+                  >
+                    <I18nText en="Clubs only" ru="Только клубы" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => applyQuickHistoryScope("ALL_PLAYER_MATCHES")}
+                    disabled={historyApplying}
+                    className={cn("rounded px-3 py-1.5 text-xs font-semibold", appliedHistorySettings.scope === "ALL_PLAYER_MATCHES" ? "bg-white text-sky-800 shadow-sm" : "text-slate-600")}
+                  >
+                    <I18nText en="All matches" ru="Все матчи" />
+                  </button>
+                </div>
+                <select
+                  value={minimumPrice ?? "ALL"}
+                  onChange={(event) => setMinimumPrice(event.target.value === "ALL" ? null : Number(event.target.value))}
+                  aria-label={localizedText(language, "Minimum price", "Минимальная цена")}
+                  className="rounded border border-slate-200 px-2 py-1.5 text-xs font-semibold text-slate-700 [@media(pointer:coarse)]:text-base"
+                >
+                  <option value="ALL">{localizedText(language, "Min price", "Цена от")}</option>
+                  {priceFilterOptions.filter((price) => maximumPrice === null || price <= maximumPrice).map((price) => <option key={price} value={price}>{formatNumber(price, 1)}</option>)}
+                </select>
+                <select
+                  value={maximumPrice ?? "ALL"}
+                  onChange={(event) => setMaximumPrice(event.target.value === "ALL" ? null : Number(event.target.value))}
+                  aria-label={localizedText(language, "Maximum price", "Максимальная цена")}
+                  className="rounded border border-slate-200 px-2 py-1.5 text-xs font-semibold text-slate-700 [@media(pointer:coarse)]:text-base"
+                >
+                  <option value="ALL">{localizedText(language, "Max price", "Цена до")}</option>
+                  {priceFilterOptions.filter((price) => minimumPrice === null || price >= minimumPrice).map((price) => <option key={price} value={price}>{formatNumber(price, 1)}</option>)}
+                </select>
+              </div>
+              <div className="flex shrink-0 flex-nowrap items-center justify-end gap-2">
+                <PlayerPoolFilterPresets
+                  presets={filterPresets}
+                  selectedId={selectedFilterPresetId}
+                  pending={filterPresetsPending}
+                  language={language}
+                  onApply={applyFilterPreset}
+                  onSave={saveFilterPreset}
+                  onDelete={deleteFilterPreset}
                 />
-              </label>
-              <select value={positionFilter} onChange={(event) => setPositionFilter(event.target.value)} aria-label={localizedText(language, "Position filter", "Фильтр позиции")} className="rounded border border-slate-200 px-3 py-2 text-xs [@media(pointer:coarse)]:text-base">
-                <option value="ALL">{localizedText(language, "All positions", "Все позиции")}</option>
-                {positionOrder.map((position) => (
-                  <option key={position} value={position}>
-                    {position}
-                  </option>
-                ))}
-              </select>
-              <select value={starterPoolFilter} onChange={(event) => setStarterPoolFilter(event.target.value)} aria-label={localizedText(language, "Starter pool filter", "Фильтр старта")} className="rounded border border-slate-200 px-3 py-2 text-xs [@media(pointer:coarse)]:text-base">
-                <option value="ALL">{localizedText(language, "All players", "Все игроки")}</option>
-                <option value="STARTER">{localizedText(language, "In starting XI", "В старте")}</option>
-                <option value="BENCH">{localizedText(language, "On bench", "На скамейке")}</option>
-              </select>
-              <label className="col-span-2 flex items-center gap-2 rounded border border-slate-200 px-3 py-2 text-xs text-slate-700 md:col-span-1">
-                <input type="checkbox" checked={onlyAffordable} onChange={(event) => setOnlyAffordable(event.target.checked)} className="h-4 w-4 rounded border-slate-300" />
-                <I18nText en="Fits" ru="Проходит" />
-              </label>
+                <PlayerPoolAdvancedFilterMenu
+                  columns={advancedFilterColumns}
+                  filters={advancedTableFilters}
+                  activeCount={activeAdvancedFilterCount}
+                  language={language}
+                  onChange={(key, filter) => setAdvancedTableFilters((current) => ({ ...current, [key]: filter }))}
+                  onReset={() => setAdvancedTableFilters({})}
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setTableExportPending(true);
+                    void downloadPlayerPoolXlsx(matchingPlayers, tableHorizon, language, leagueId, season, exportColumnKeys)
+                      .catch(() => setMessage(localizedText(language, "Could not export the player table.", "Не удалось выгрузить таблицу игроков.")))
+                      .finally(() => setTableExportPending(false));
+                  }}
+                  disabled={matchingPlayers.length === 0 || tableExportPending || fitsPreparing}
+                  className="inline-flex items-center gap-2 whitespace-nowrap rounded border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-800 hover:bg-emerald-100 disabled:opacity-50"
+                >
+                  <Download className="h-4 w-4" />
+                  {tableExportPending ? <I18nText en="Exporting…" ru="Выгрузка…" /> : <I18nText en="Export table" ru="Выгрузить таблицу" />}
+                </button>
+              </div>
             </div>
             {playerPoolReady && postLoadContentReady ? (
-              <PlayerPoolTable
-                players={filteredPlayers}
-                horizon={horizon}
-                language={language}
-                addBlockReason={(player) => fantasyAddBlockReason(player, players, selections, rules)}
-                selectionsByPlayerId={selectionsByPlayerId}
-                onAdd={addPlayer}
-                onRemove={removePlayer}
-              />
+              <>
+                <CustomizablePlayerPoolTable
+                  players={filteredPlayers}
+                  availableColumns={playerPoolColumns}
+                  horizon={tableHorizon}
+                  language={language}
+                  addBlockReason={fantasyAddEvaluator.reason}
+                  selectionsByPlayerId={selectionsByPlayerId}
+                  onAdd={addPlayer}
+                  onRemove={removePlayer}
+                  initialVisibleColumns={initialVisiblePlayerPoolColumns}
+                  initialColumnWidths={initialPlayerPoolColumnWidths}
+                  onVisibleColumnsChange={setExportColumnKeys}
+                  toolbar={(
+                    <>
+                      <label className="relative min-w-0">
+                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={localizedText(language, "Name", "Имя")} aria-label={localizedText(language, "Search by player name", "Поиск по имени игрока")} className="w-full rounded border border-slate-200 py-2 pl-9 pr-3 text-xs [@media(pointer:coarse)]:text-base" />
+                      </label>
+                      <select value={teamFilter} onChange={(event) => setTeamFilter(event.target.value)} aria-label={localizedText(language, "Team filter", "Фильтр по команде")} className="min-w-0 rounded border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 [@media(pointer:coarse)]:text-base">
+                        <option value="ALL">{localizedText(language, "All teams", "Все команды")}</option>
+                        {teamFilterOptions.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
+                      </select>
+                      <select value={positionFilter} onChange={(event) => setPositionFilter(event.target.value)} aria-label={localizedText(language, "Position filter", "Фильтр позиции")} className="min-w-0 rounded border border-slate-200 px-3 py-2 text-xs [@media(pointer:coarse)]:text-base">
+                        <option value="ALL">{localizedText(language, "All positions", "Все позиции")}</option>
+                        {positionOrder.map((position) => <option key={position} value={position}>{position}</option>)}
+                      </select>
+                      <select value={tableHorizon} onChange={(event) => setTableHorizon(event.target.value === "3" ? 3 : 5)} aria-label={localizedText(language, "Player table forecast horizon", "Горизонт таблицы игроков")} className="min-w-0 rounded border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 [@media(pointer:coarse)]:text-base">
+                        <option value="3">{localizedText(language, "3 rounds", "3 тура")}</option>
+                        <option value="5">{localizedText(language, "5 rounds", "5 туров")}</option>
+                      </select>
+                      <label className="flex min-w-0 items-center gap-2 rounded border border-slate-200 px-3 py-2 text-xs text-slate-700">
+                        <input type="checkbox" checked={onlyAffordable} onChange={(event) => { const enabled = event.target.checked; setOnlyAffordable(enabled); setFitsPreparing(enabled); if (!enabled) setFitCalculation(null); }} className="h-4 w-4 shrink-0 rounded border-slate-300" />
+                        <span className="truncate">{fitsPreparing ? <I18nText en="Calculating..." ru="Считаем..." /> : <I18nText en="Fits" ru="Проходит" />}</span>
+                      </label>
+                    </>
+                  )}
+                />
+                {matchingPlayers.length > 0 ? (
+                  <div className="col-span-full mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+                    <span>
+                    {matchingPlayers.length} {localizedText(language, "players", "игроков")}
+                  </span>
+                </div>
+                ) : null}
+              </>
             ) : playerPoolFailed ? (
-              <div className="rounded border border-rose-200 bg-rose-50 px-3 py-4 text-sm text-rose-700" role="alert">
+              <div className="col-span-full rounded border border-rose-200 bg-rose-50 px-3 py-4 text-sm text-rose-700" role="alert">
                 <I18nText en="The player pool could not be loaded. Retry from the Tips tab." ru="Не удалось загрузить пул игроков. Повторите загрузку на вкладке «Советы»." />
               </div>
             ) : (
-              <p className="rounded border border-slate-200 bg-slate-50 px-3 py-4 text-sm text-slate-500" role="status" aria-live="polite">
+              <p className="col-span-full rounded border border-slate-200 bg-slate-50 px-3 py-4 text-sm text-slate-500" role="status" aria-live="polite">
                 <I18nText en="Loading player pool..." ru="Загружаем пул игроков..." />
               </p>
             )}
@@ -1497,7 +1752,17 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                   </td>
                   {rounds.map((round, index) => (
                     <td key={round.id} className="px-4 py-3 text-right font-semibold text-emerald-700 num-tabular">
-                      {formatScore(summary.starterPlayers.reduce((total, player) => total + (player.roundPoints[index] ?? (index === 0 ? player.predictedFp ?? 0 : 0)), 0))}
+                      {formatScore(startingXiRoundPoints(summary.starterPlayers, index, captainId))}
+                    </td>
+                  ))}
+                </tr>
+                <tr className="border-t border-slate-100">
+                  <td className="px-4 py-3 font-semibold text-ink">
+                    <I18nText en="Starting XI Alt FP" ru="Альт FP старта" />
+                  </td>
+                  {rounds.map((round, index) => (
+                    <td key={round.id} className="px-4 py-3 text-right font-semibold text-amber-700 num-tabular">
+                      {formatAlternativeScore(startingXiAlternativeRoundPoints(summary.starterPlayers, index, captainId))}
                     </td>
                   ))}
                 </tr>
@@ -1520,7 +1785,642 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
   );
 }
 
-function PlayerPoolTable({
+type PlayerPoolTableProps = {
+  players: FantasyPlannerPlayer[];
+  horizon: number;
+  language: UiLanguage;
+  addBlockReason: (player: FantasyPlannerPlayer) => string | null;
+  selectionsByPlayerId: Map<string, FantasySquadSelection>;
+  onAdd: (player: FantasyPlannerPlayer) => void;
+  onRemove: (playerId: string) => void;
+};
+
+type PlayerPoolOptionalColumn = {
+  key: string;
+  label: string;
+  title: string;
+  numeric: boolean;
+  width: number;
+};
+
+type PlayerPoolAdvancedFilterColumn = Pick<PlayerPoolOptionalColumn, "key" | "label" | "title" | "numeric">;
+
+const playerPoolFixedColumnWidths = {
+  player: 190,
+  team: 110,
+  position: 64,
+  price: 72,
+  action: 40
+} as const;
+const minimumPlayerPoolColumnWidth = 40;
+const maximumPlayerPoolColumnWidth = 640;
+
+function PlayerPoolFilterPresets({ presets, selectedId, pending, language, onApply, onSave, onDelete }: {
+  presets: SquadFilterPreset[];
+  selectedId: string | null;
+  pending: boolean;
+  language: UiLanguage;
+  onApply: (preset: SquadFilterPreset) => void;
+  onSave: (name: string) => Promise<boolean>;
+  onDelete: (id: string) => Promise<void>;
+}) {
+  const [name, setName] = useState("");
+  const [saved, setSaved] = useState(false);
+
+  async function handleSave() {
+    const normalizedName = name.trim().slice(0, 60);
+    if (!normalizedName) return;
+    if (!await onSave(normalizedName)) return;
+    setName("");
+    setSaved(true);
+    window.setTimeout(() => setSaved(false), 1200);
+  }
+
+  return (
+    <details className="relative">
+      <summary className="inline-flex cursor-pointer list-none items-center gap-2 whitespace-nowrap rounded border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
+        <Bookmark className="h-4 w-4" />
+        <I18nText en="Presets" ru="Пресеты" />
+        {presets.length > 0 ? <span className="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] leading-none text-slate-600">{presets.length}</span> : null}
+      </summary>
+      <div className="absolute right-0 z-40 mt-2 w-[min(24rem,calc(100vw-2rem))] rounded border border-slate-200 bg-white p-3 shadow-elev">
+        <p className="text-sm font-bold text-ink"><I18nText en="Personal filter presets" ru="Личные пресеты фильтров" /></p>
+        <p className="mt-1 text-xs text-slate-500">
+          <I18nText en="Available in every tournament in your account." ru="Доступны во всех турнирах вашего аккаунта." />
+        </p>
+        <div className="mt-3 flex gap-2">
+          <input
+            value={name}
+            maxLength={60}
+            onChange={(event) => setName(event.target.value)}
+            onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); void handleSave(); } }}
+            placeholder={localizedText(language, "Preset name", "Название пресета")}
+            aria-label={localizedText(language, "Filter preset name", "Название пресета фильтров")}
+            className="min-w-0 flex-1 rounded border border-slate-200 px-3 py-2 text-sm"
+          />
+          <button type="button" onClick={() => void handleSave()} disabled={pending || !name.trim()} className="inline-flex items-center gap-1.5 rounded bg-ink px-3 py-2 text-xs font-semibold text-white disabled:opacity-50">
+            {saved ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}
+            <I18nText en="Save" ru="Сохранить" />
+          </button>
+        </div>
+        <div className="mt-3 max-h-64 space-y-1 overflow-y-auto">
+          {presets.map((preset) => (
+            <div key={preset.id} className={cn("flex items-center gap-2 rounded border px-2 py-1.5", selectedId === preset.id ? "border-sky-200 bg-sky-50" : "border-slate-100")}>
+              <button type="button" onClick={() => onApply(preset)} disabled={pending} className="min-w-0 flex-1 truncate text-left text-sm font-semibold text-ink disabled:opacity-50">
+                {preset.name}
+              </button>
+              <button type="button" onClick={() => void onDelete(preset.id)} disabled={pending} aria-label={localizedText(language, `Delete ${preset.name}`, `Удалить ${preset.name}`)} className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded text-rose-700 hover:bg-rose-50 disabled:opacity-50">
+                <Trash2 className="h-4 w-4" />
+              </button>
+            </div>
+          ))}
+          {presets.length === 0 ? <p className="rounded bg-slate-50 px-3 py-3 text-center text-xs text-slate-500"><I18nText en="No presets yet." ru="Пресетов пока нет." /></p> : null}
+        </div>
+      </div>
+    </details>
+  );
+}
+
+function PlayerPoolAdvancedFilterMenu({ columns, filters, activeCount, language, onChange, onReset }: {
+  columns: PlayerPoolAdvancedFilterColumn[];
+  filters: Record<string, SquadTableValueFilter>;
+  activeCount: number;
+  language: UiLanguage;
+  onChange: (key: string, filter: SquadTableValueFilter) => void;
+  onReset: () => void;
+}) {
+  return (
+    <details className="relative">
+      <summary className="inline-flex cursor-pointer list-none items-center gap-2 whitespace-nowrap rounded border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
+        <SlidersHorizontal className="h-4 w-4" />
+        <I18nText en="Advanced filters" ru="Расширенные фильтры" />
+        {activeCount > 0 ? <span className="rounded-full bg-sky-700 px-1.5 py-0.5 text-[10px] leading-none text-white">{activeCount}</span> : null}
+      </summary>
+      <div className="absolute right-0 z-40 mt-2 w-[min(54rem,calc(100vw-2rem))] rounded border border-slate-200 bg-white p-4 shadow-elev">
+        <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
+          <div>
+            <p className="text-sm font-bold text-ink"><I18nText en="Filter every table field" ru="Фильтры по каждому полю таблицы" /></p>
+            <p className="text-xs text-slate-500"><I18nText en="Numeric fields use a minimum/maximum range; text fields search by a contained fragment." ru="Для чисел задаётся диапазон от/до, для текста — содержащийся фрагмент." /></p>
+          </div>
+          <button type="button" onClick={onReset} disabled={activeCount === 0} className="shrink-0 rounded border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-40"><I18nText en="Reset" ru="Сбросить" /></button>
+        </div>
+        <div className="mt-3 grid max-h-[60vh] grid-cols-1 gap-2 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3">
+          {columns.map((column) => {
+            const filter = filters[column.key] ?? emptySquadTableValueFilter;
+            return (
+              <fieldset key={column.key} className="min-w-0 rounded border border-slate-200 p-2" title={column.title}>
+                <legend className="max-w-full truncate px-1 text-[11px] font-semibold text-slate-700">{column.label}</legend>
+                {column.numeric ? (
+                  <div className="grid grid-cols-2 gap-1.5">
+                    <input type="number" inputMode="decimal" step="any" value={filter.minimum} onChange={(event) => onChange(column.key, { ...filter, minimum: event.target.value })} placeholder={localizedText(language, "Min", "От")} aria-label={`${column.label}: ${localizedText(language, "minimum", "от")}`} className="min-w-0 rounded border border-slate-200 px-2 py-1.5 text-xs" />
+                    <input type="number" inputMode="decimal" step="any" value={filter.maximum} onChange={(event) => onChange(column.key, { ...filter, maximum: event.target.value })} placeholder={localizedText(language, "Max", "До")} aria-label={`${column.label}: ${localizedText(language, "maximum", "до")}`} className="min-w-0 rounded border border-slate-200 px-2 py-1.5 text-xs" />
+                  </div>
+                ) : (
+                  <input type="text" value={filter.query} onChange={(event) => onChange(column.key, { ...filter, query: event.target.value })} placeholder={localizedText(language, "Contains…", "Содержит…")} aria-label={`${column.label}: ${localizedText(language, "contains", "содержит")}`} className="w-full min-w-0 rounded border border-slate-200 px-2 py-1.5 text-xs" />
+                )}
+              </fieldset>
+            );
+          })}
+        </div>
+      </div>
+    </details>
+  );
+}
+
+function CustomizablePlayerPoolTable({
+  initialVisibleColumns,
+  initialColumnWidths,
+  onVisibleColumnsChange,
+  toolbar,
+  availableColumns,
+  ...props
+}: PlayerPoolTableProps & { availableColumns: PlayerPoolOptionalColumn[]; initialVisibleColumns: string[]; initialColumnWidths: Record<string, number>; onVisibleColumnsChange: (columns: string[]) => void; toolbar: ReactNode }) {
+  const { players, horizon, language } = props;
+  const columns = availableColumns;
+  const [visibleColumnKeys, setVisibleColumnKeys] = useState(initialVisibleColumns);
+  const [columnWidths, setColumnWidths] = useState(initialColumnWidths);
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [compactViewport, setCompactViewport] = useState<boolean | null>(null);
+  const preferencesMounted = useRef(false);
+  const tableContainerRef = useRef<HTMLDivElement>(null);
+  const columnsByKey = useMemo(() => new Map(columns.map((column) => [column.key, column])), [columns]);
+  const visibleColumns = visibleColumnKeys
+    .map((key) => columnsByKey.get(key))
+    .filter((column): column is PlayerPoolOptionalColumn => Boolean(column));
+  const fixedColumnTitles = playerPoolFixedColumnTitles(language);
+  const widthFor = (key: string, fallback: number) => columnWidths[key] ?? fallback;
+  const tableWidth = widthFor("action", playerPoolFixedColumnWidths.action)
+    + widthFor("player", playerPoolFixedColumnWidths.player)
+    + widthFor("team", playerPoolFixedColumnWidths.team)
+    + widthFor("position", playerPoolFixedColumnWidths.position)
+    + widthFor("price", playerPoolFixedColumnWidths.price)
+    + visibleColumns.reduce((total, column) => total + widthFor(column.key, column.width), 0);
+
+  useEffect(() => {
+    onVisibleColumnsChange(visibleColumnKeys);
+  }, [onVisibleColumnsChange, visibleColumnKeys]);
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 767px), (pointer: coarse)");
+    const update = () => setCompactViewport(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+
+  useEffect(() => {
+    if (!preferencesMounted.current) {
+      preferencesMounted.current = true;
+      return;
+    }
+    setSaveState("saving");
+    const controller = new AbortController();
+    const timeout = window.setTimeout(() => {
+      void fetch("/api/user/squad-table-columns", {
+        method: "PUT",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ columns: visibleColumnKeys, widths: columnWidths }),
+        signal: controller.signal
+      }).then((response) => {
+        if (!response.ok) throw new Error("COLUMN_PREFERENCES_SAVE_FAILED");
+        setSaveState("saved");
+      }).catch((error) => {
+        if ((error as Error).name !== "AbortError") setSaveState("error");
+      });
+    }, 400);
+    return () => {
+      window.clearTimeout(timeout);
+      controller.abort();
+    };
+  }, [columnWidths, visibleColumnKeys]);
+
+  function toggleColumn(key: string) {
+    setVisibleColumnKeys((current) => current.includes(key) ? current.filter((item) => item !== key) : [...current, key]);
+  }
+
+  function moveVisibleColumn(key: string, direction: -1 | 1) {
+    setVisibleColumnKeys((current) => moveSquadTableColumn(current, key, direction));
+  }
+
+  function startColumnResize(event: ReactPointerEvent<HTMLElement>, key: string, fallbackWidth: number) {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    event.stopPropagation();
+    const startX = event.clientX;
+    const startWidth = widthFor(key, fallbackWidth);
+    const startTableWidth = tableWidth;
+    let latestWidth = startWidth;
+    const previousCursor = document.body.style.cursor;
+    const previousSelection = document.body.style.userSelect;
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+
+    const move = (pointerEvent: PointerEvent) => {
+      const nextWidth = Math.round(Math.min(maximumPlayerPoolColumnWidth, Math.max(minimumPlayerPoolColumnWidth, startWidth + pointerEvent.clientX - startX)));
+      if (nextWidth === latestWidth) return;
+      latestWidth = nextWidth;
+      const escapedKey = CSS.escape(key);
+      const table = tableContainerRef.current?.querySelector<HTMLTableElement>("table");
+      const column = table?.querySelector<HTMLTableColElement>(`col[data-column-key="${escapedKey}"]`);
+      const header = table?.querySelector<HTMLTableCellElement>(`th[data-column-key="${escapedKey}"]`);
+      if (column) column.style.width = `${nextWidth}px`;
+      if (header) header.style.width = `${nextWidth}px`;
+      if (table) {
+        const nextTableWidth = startTableWidth + nextWidth - startWidth;
+        table.style.width = `${nextTableWidth}px`;
+        table.style.minWidth = `${nextTableWidth}px`;
+      }
+    };
+    const finish = () => {
+      window.removeEventListener("pointermove", move);
+      window.removeEventListener("pointerup", finish);
+      window.removeEventListener("pointercancel", finish);
+      document.body.style.cursor = previousCursor;
+      document.body.style.userSelect = previousSelection;
+      if (latestWidth !== startWidth) {
+        setColumnWidths((current) => current[key] === latestWidth ? current : { ...current, [key]: latestWidth });
+      }
+    };
+    window.addEventListener("pointermove", move);
+    window.addEventListener("pointerup", finish);
+    window.addEventListener("pointercancel", finish);
+  }
+
+  function resetColumnWidth(key: string) {
+    setColumnWidths((current) => {
+      if (!(key in current)) return current;
+      const next = { ...current };
+      delete next[key];
+      return next;
+    });
+  }
+
+  return (
+    <>
+      <div className="mb-3 flex min-w-0 flex-wrap items-start gap-2 xl:flex-nowrap">
+        <div className="grid min-w-0 flex-[1_1_34rem] grid-cols-2 gap-2 lg:grid-cols-5">
+          {toolbar}
+        </div>
+        <details className="relative shrink-0">
+          <summary className="inline-flex cursor-pointer list-none items-center gap-2 whitespace-nowrap rounded border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
+            <Columns3 className="h-4 w-4" />
+            <I18nText en="Columns" ru="Столбцы" />
+            <span className="text-slate-400">{visibleColumns.length}</span>
+          </summary>
+          <div className="absolute right-0 z-30 mt-2 w-[min(42rem,calc(100vw-2rem))] rounded border border-slate-200 bg-white p-4 shadow-elev">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
+              <div>
+                <p className="text-sm font-bold text-ink"><I18nText en="Player table columns" ru="Столбцы таблицы игроков" /></p>
+                <p className="text-xs text-slate-500"><I18nText en="Player, club, position, price, and the squad action are always the five leftmost columns." ru="Игрок, клуб, позиция, цена и кнопка состава — всегда первые пять столбцов слева." /></p>
+                <p className="mt-1 text-[11px] text-slate-500"><I18nText en="Drag a header's right edge to change its width; double-click the edge to reset it." ru="Тяните правую границу заголовка, чтобы изменить ширину; двойной клик по границе сбрасывает её." /></p>
+              </div>
+              <span className={cn("text-xs font-semibold", saveState === "error" ? "text-rose-700" : "text-slate-500")}>
+                {saveState === "saving" ? <I18nText en="Saving…" ru="Сохраняем…" /> : null}
+                {saveState === "saved" ? <I18nText en="Saved" ru="Сохранено" /> : null}
+                {saveState === "error" ? <I18nText en="Not saved" ru="Не сохранено" /> : null}
+              </span>
+            </div>
+            <div className="mt-3 flex flex-wrap gap-2">
+              <button type="button" onClick={() => setVisibleColumnKeys(columns.map((column) => column.key))} className="rounded border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"><I18nText en="Select all" ru="Выбрать все" /></button>
+              <button type="button" onClick={() => setVisibleColumnKeys([...defaultSquadTableColumns])} className="rounded border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"><I18nText en="Reset" ru="Сбросить" /></button>
+              <button type="button" onClick={() => setColumnWidths({})} className="rounded border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"><I18nText en="Reset widths" ru="Сбросить ширину" /></button>
+              <button type="button" onClick={() => setVisibleColumnKeys([])} className="rounded border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"><I18nText en="Hide optional" ru="Скрыть дополнительные" /></button>
+            </div>
+            {visibleColumns.length > 0 ? (
+              <div className="mt-3 rounded border border-slate-200 bg-slate-50 p-3">
+                <p className="text-xs font-semibold text-slate-700"><I18nText en="Visible column order" ru="Порядок видимых столбцов" /></p>
+                <p className="mt-0.5 text-[11px] text-slate-500"><I18nText en="Move optional columns left or right. The first five columns stay fixed." ru="Перемещайте дополнительные столбцы влево или вправо. Первые пять столбцов закреплены." /></p>
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {visibleColumns.map((column, index) => (
+                    <span key={column.key} className="inline-flex items-center overflow-hidden rounded border border-slate-200 bg-white text-xs text-slate-700 shadow-sm">
+                      <button type="button" disabled={index === 0} onClick={() => moveVisibleColumn(column.key, -1)} className="inline-flex h-7 w-7 items-center justify-center border-r border-slate-200 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30" aria-label={localizedText(language, `Move ${column.label} left`, `Переместить ${column.label} влево`)}><ArrowLeft className="h-3.5 w-3.5" /></button>
+                      <span className="px-2 font-semibold">{column.label}</span>
+                      <button type="button" disabled={index === visibleColumns.length - 1} onClick={() => moveVisibleColumn(column.key, 1)} className="inline-flex h-7 w-7 items-center justify-center border-l border-slate-200 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-30" aria-label={localizedText(language, `Move ${column.label} right`, `Переместить ${column.label} вправо`)}><ArrowRight className="h-3.5 w-3.5" /></button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            ) : null}
+            <div className="mt-3 grid max-h-[55vh] grid-cols-1 gap-1 overflow-y-auto pr-1 sm:grid-cols-2 lg:grid-cols-3">
+              {columns.map((column) => (
+                <label key={column.key} className="flex items-start gap-2 rounded px-2 py-1.5 text-xs text-slate-700 hover:bg-slate-50" title={column.title}>
+                  <input type="checkbox" checked={visibleColumnKeys.includes(column.key)} onChange={() => toggleColumn(column.key)} className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300" />
+                  <span>{column.label}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        </details>
+      </div>
+
+      {compactViewport !== false ? <div className="col-span-full">
+        <PlayerPoolMobileList {...props} />
+      </div> : null}
+
+      {compactViewport !== true ? <div className="col-span-full hidden min-w-0 max-w-full overflow-hidden rounded border border-slate-200 bg-white md:block [@media(pointer:coarse)]:!hidden" data-testid="player-pool-table">
+        <div ref={tableContainerRef} className="relative max-h-[720px] w-full max-w-full overflow-auto [scrollbar-gutter:stable]">
+          <SortableTable
+            sortRefreshKey={`${horizon}:${visibleColumnKeys.join(",")}`}
+            className="player-pool-sortable table-fixed divide-y divide-slate-200 text-xs"
+            style={{ minWidth: `${tableWidth}px`, width: `${tableWidth}px` }}
+          >
+            <colgroup>
+              <col data-column-key="player" style={{ width: widthFor("player", playerPoolFixedColumnWidths.player) }} />
+              <col data-column-key="team" style={{ width: widthFor("team", playerPoolFixedColumnWidths.team) }} />
+              <col data-column-key="position" style={{ width: widthFor("position", playerPoolFixedColumnWidths.position) }} />
+              <col data-column-key="price" style={{ width: widthFor("price", playerPoolFixedColumnWidths.price) }} />
+              <col data-column-key="action" style={{ width: widthFor("action", playerPoolFixedColumnWidths.action) }} />
+              {visibleColumns.map((column) => <col key={column.key} data-column-key={column.key} style={{ width: widthFor(column.key, column.width) }} />)}
+            </colgroup>
+            <thead className="sticky top-0 z-10 whitespace-nowrap bg-slate-50 text-left text-[10px] font-semibold uppercase text-slate-500">
+              <tr>
+                <th className="relative overflow-hidden px-2 py-2" title={fixedColumnTitles.player} style={{ width: widthFor("player", playerPoolFixedColumnWidths.player) }}><PlayerPoolHeaderLabel label={localizedText(language, "Player", "Игрок")} /><ColumnResizeHandle label={localizedText(language, "player", "игрока")} onPointerDown={(event) => startColumnResize(event, "player", playerPoolFixedColumnWidths.player)} onDoubleClick={() => resetColumnWidth("player")} /></th>
+                <th className="relative overflow-hidden px-2 py-2" title={fixedColumnTitles.team} style={{ width: widthFor("team", playerPoolFixedColumnWidths.team) }}><PlayerPoolHeaderLabel label={localizedText(language, "Team", "Клуб")} /><ColumnResizeHandle label={localizedText(language, "team", "клуба")} onPointerDown={(event) => startColumnResize(event, "team", playerPoolFixedColumnWidths.team)} onDoubleClick={() => resetColumnWidth("team")} /></th>
+                <th className="relative overflow-hidden px-1 py-2" title={fixedColumnTitles.position} style={{ width: widthFor("position", playerPoolFixedColumnWidths.position) }}><PlayerPoolHeaderLabel label={localizedText(language, "Pos", "Поз.")} /><ColumnResizeHandle label={localizedText(language, "position", "позиции")} onPointerDown={(event) => startColumnResize(event, "position", playerPoolFixedColumnWidths.position)} onDoubleClick={() => resetColumnWidth("position")} /></th>
+                <th className="relative overflow-hidden px-1 py-2 text-right" title={fixedColumnTitles.price} style={{ width: widthFor("price", playerPoolFixedColumnWidths.price) }}><PlayerPoolHeaderLabel label={localizedText(language, "Price", "Цена")} numeric /><ColumnResizeHandle label={localizedText(language, "price", "цены")} onPointerDown={(event) => startColumnResize(event, "price", playerPoolFixedColumnWidths.price)} onDoubleClick={() => resetColumnWidth("price")} /></th>
+                <th data-sort-disabled="true" className="relative overflow-hidden px-1 py-2 text-center" style={{ width: widthFor("action", playerPoolFixedColumnWidths.action) }} title={localizedText(language, "Add the player to the squad or remove a selected player. Disabled means a budget, position, or club limit would be exceeded.", "Добавить игрока в состав или убрать выбранного. Неактивная кнопка означает превышение бюджета, лимита позиции или клуба.")}><span aria-hidden="true">+</span><span className="sr-only"><I18nText en="Add or remove" ru="Добавить или убрать" /></span><ColumnResizeHandle label={localizedText(language, "squad action", "кнопки состава")} onPointerDown={(event) => startColumnResize(event, "action", playerPoolFixedColumnWidths.action)} onDoubleClick={() => resetColumnWidth("action")} /></th>
+                {visibleColumns.map((column) => (
+                  <th key={column.key} data-sort-disabled={column.key === "fixtures" ? "true" : undefined} className={cn("relative overflow-hidden px-1 py-2", column.numeric && "text-center")} title={column.title} style={{ width: widthFor(column.key, column.width) }}><PlayerPoolHeaderLabel label={column.label} numeric={column.numeric} /><ColumnResizeHandle label={column.label} onPointerDown={(event) => startColumnResize(event, column.key, column.width)} onDoubleClick={() => resetColumnWidth(column.key)} /></th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {players.map((player) => <CustomPlayerPoolRow key={player.playerId} player={player} columns={visibleColumns} {...props} />)}
+              {players.length === 0 ? <tr><td colSpan={5 + visibleColumns.length} className="px-4 py-10 text-center text-sm text-slate-500"><I18nText en="No players match the selected filters." ru="Нет игроков под выбранные фильтры." /></td></tr> : null}
+            </tbody>
+          </SortableTable>
+        </div>
+      </div> : null}
+    </>
+  );
+}
+
+function PlayerPoolHeaderLabel({ label, numeric = false }: { label: string; numeric?: boolean }) {
+  return (
+    <span className={cn("block min-w-0 truncate pr-4 leading-4", numeric && "text-center")}>
+      <span className="whitespace-nowrap">{label}</span>
+    </span>
+  );
+}
+
+function ColumnResizeHandle({ label, onPointerDown, onDoubleClick }: {
+  label: string;
+  onPointerDown: (event: ReactPointerEvent<HTMLElement>) => void;
+  onDoubleClick: () => void;
+}) {
+  return (
+    <span
+      data-column-resize-handle="true"
+      role="separator"
+      aria-label={`Resize ${label}`}
+      aria-orientation="vertical"
+      onPointerDown={onPointerDown}
+      onDoubleClick={(event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        onDoubleClick();
+      }}
+      className="absolute inset-y-0 right-0 z-10 w-2 cursor-col-resize touch-none border-r border-transparent hover:border-sky-500"
+    />
+  );
+}
+
+function playerPoolFixedColumnTitles(language: UiLanguage) {
+  return {
+    player: localizedText(
+      language,
+      "Sports.ru fantasy display name. The second line shows expected minutes and the confidence heuristic. Confidence is not a probability that the forecast will be correct: 55% comes from sample size (full at 5 matches), 30% from minute stability, and 15% from the share of matches with a known starting-XI flag.",
+      "Имя игрока в формате фэнтези Sports.ru. Во второй строке показаны ожидаемые минуты и эвристика уверенности. Уверенность — не вероятность точности прогноза: 55% дают полнота выборки (максимум при 5 матчах), 30% — стабильность минут, 15% — доля матчей с известной отметкой выхода в старте."
+    ),
+    team: localizedText(language, "The player's current club in the selected league and season.", "Текущий клуб игрока в выбранной лиге и сезоне."),
+    position: localizedText(language, "Fantasy position used for formation limits: goalkeeper, defender, midfielder, or forward.", "Фэнтези-позиция, по которой применяются лимиты состава: вратарь, защитник, полузащитник или нападающий."),
+    price: localizedText(language, "Current Sports.ru fantasy price. A tilde means the price is estimated because no verified Sports.ru value is available.", "Текущая цена в фэнтези Sports.ru. Тильда означает оценочную цену: подтверждённой цены Sports.ru для игрока нет.")
+  };
+}
+
+function CustomPlayerPoolRow({ player, columns, horizon, language, addBlockReason, selectionsByPlayerId, onAdd, onRemove }: Omit<PlayerPoolTableProps, "players"> & { player: FantasyPlannerPlayer; columns: PlayerPoolOptionalColumn[] }) {
+  const reason = addBlockReason(player);
+  const isSelected = selectionsByPlayerId.has(player.playerId);
+  const disabled = !isSelected && reason !== null;
+  const localizedReason = reason ? localizeAddBlockReason(reason, language) : null;
+  const muted = disabled;
+  const addLabel = disabled
+    ? localizedText(language, `Cannot add ${player.name}: ${localizedReason ?? reason ?? ""}`, `Нельзя добавить ${player.name}: ${localizedReason ?? reason ?? ""}`)
+    : localizedText(language, `Add ${player.name}`, `Добавить ${player.name}`);
+  const removeLabel = localizedText(language, `Remove ${player.name}`, `Удалить ${player.name}`);
+  const playerMetadata = [
+    player.expectedMinutes !== null && player.expectedMinutes !== undefined
+      ? `${Math.round(player.expectedMinutes)} ${localizedText(language, "min", "мин")}`
+      : null,
+    player.forecastConfidence !== null && player.forecastConfidence !== undefined
+      ? `${Math.round(player.forecastConfidence * 100)}%`
+      : null
+  ].filter((value): value is string => value !== null).join(" · ");
+  const fixedColumnTitles = playerPoolFixedColumnTitles(language);
+
+  return (
+    <tr className={isSelected ? "bg-emerald-50 text-slate-700" : disabled ? "bg-slate-50 text-slate-500" : "hover:bg-slate-50"}>
+      <td className="overflow-hidden px-2 py-1.5" title={fixedColumnTitles.player}>
+        <span className={cn("block truncate font-semibold", muted ? "text-slate-500" : "text-ink")}>{compactPlayerDisplayName(player.name)}</span>
+        {playerMetadata ? <span className="block truncate text-[10px] text-slate-500">{playerMetadata}</span> : null}
+      </td>
+      <td className="overflow-hidden px-2 py-1.5 text-slate-600" title={fixedColumnTitles.team}><span className="block truncate">{fantasyPlayerTeamDisplayName(player)}</span></td>
+      <td className="overflow-hidden px-1 py-1.5" title={fixedColumnTitles.position}><span className={cn("inline-block max-w-full truncate rounded px-1 py-0.5 text-[10px] font-bold", muted ? "border border-slate-300 bg-slate-200 text-slate-700" : positionPillClass(player.positionGroup))}>{player.positionGroup}</span></td>
+      <td data-sort-value={player.price} className={cn("overflow-hidden whitespace-nowrap px-1 py-1.5 text-right font-semibold", muted ? "text-slate-600" : "text-ink")} title={fixedColumnTitles.price}>{player.priceSource === "ESTIMATED" ? "~" : ""}{formatNumber(player.price, 1)}</td>
+      <td className="px-1 py-1.5 text-center">
+        {isSelected ? (
+          <button type="button" onClick={() => onRemove(player.playerId)} aria-label={removeLabel} className="inline-flex h-7 w-7 items-center justify-center rounded border border-rose-200 bg-white text-rose-700 hover:bg-rose-50"><Trash2 className="h-4 w-4" /></button>
+        ) : disabled ? (
+          <span role="button" aria-disabled="true" tabIndex={0} aria-label={addLabel} title={localizedReason ?? undefined} className="inline-flex h-7 w-7 items-center justify-center rounded border border-slate-200 bg-slate-100 text-slate-400"><Lock className="h-4 w-4" /></span>
+        ) : (
+          <button type="button" onClick={() => onAdd(player)} aria-label={addLabel} className="inline-flex h-7 w-7 items-center justify-center rounded border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"><Plus className="h-4 w-4" /></button>
+        )}
+      </td>
+      {columns.map((column) => customPlayerPoolCell(column, player, horizon, language, muted))}
+    </tr>
+  );
+}
+
+function playerPoolOptionalColumns(players: FantasyPlannerPlayer[], horizon: number, language: UiLanguage): PlayerPoolOptionalColumn[] {
+  const column = (key: string, en: string, ru: string, titleEn = en, titleRu = ru, numeric = true, width = 72): PlayerPoolOptionalColumn => ({
+    key,
+    label: localizedText(language, en, ru),
+    title: localizedText(language, titleEn, titleRu),
+    numeric,
+    width
+  });
+  const standard = [
+    column("nextFp", "FP", "ФО", "Expected fantasy points in the next round from expected minutes, player event rates, opponent strength, bookmaker inputs, and the active scoring formula.", "Ожидаемые фэнтези-очки в следующем туре: учитываются ожидаемые минуты, игровые показатели футболиста, сила соперника, букмекерские данные и активная формула начисления.", true, 64),
+    column("horizonFp", `${horizon}R FP`, `${horizon}Т ФО`, `Sum of independently calculated primary forecasts for the next ${horizon} rounds; the current-round value is not simply multiplied.`, `Сумма отдельно рассчитанных основных прогнозов на следующие ${horizon} туров; значение текущего тура не умножается механически.`),
+    column("foontasy", "FFO", "FFO", "Foontasy's external forecast for the current round, matched strictly through the Sports.ru player identifier. Foontasy does not publish a multi-round forecast; missing data is shown as a dash.", "Внешний прогноз Foontasy на текущий тур, сопоставленный строго через идентификатор игрока Sports.ru. Foontasy не публикует прогноз на несколько туров; отсутствие данных показывается прочерком."),
+    column("modelHorizon", `${horizon}R FFO`, `${horizon}Т ФФО`, `Our reproducible Foontasy-style forecast for the selected ${horizon}-round horizon. Every fixture is calculated separately from expected minutes, smoothed player rates, and fresh odds, xG form, or goals fallback. It is our model, not Foontasy's external forecast.`, `Наш воспроизводимый прогноз в стиле Foontasy на выбранный горизонт ${horizon} туров. Каждый матч считается отдельно по ожидаемым минутам, сглаженным показателям игрока и свежим коэффициентам, xG-форме или голам. Это наша модель, а не внешний прогноз Foontasy.`),
+    column("alternative", "Alt", "Альт", "Alternative next-round fantasy forecast calculated with this user's personal Alt formula and the same minute-aware player inputs.", "Альтернативный прогноз фэнтези-очков на следующий тур по личной формуле Alt пользователя и с учётом ожидаемых минут игрока."),
+    column("alternativeHorizon", `Alt ${horizon}R`, `Альт ${horizon}Т`, `Sum of independently calculated personal Alt forecasts for the next ${horizon} rounds.`, `Сумма отдельно рассчитанных личных прогнозов Alt на следующие ${horizon} туров.`),
+    column("fixtures", "Fixtures", "Матчи", "The next opponents in the selected horizon. Chip colour represents fixture difficulty; hover a chip for the full opponent name and home/away context.", "Следующие соперники на выбранном горизонте. Цвет плашки показывает сложность матча; при наведении доступны полное имя соперника и поле дома/в гостях.", false, 230),
+    column("age", "Age", "Возраст", "Player age from the current FotMob profile.", "Возраст игрока из текущего профиля FotMob."),
+    column("nationality", "Nationality", "Гражданство", "Player nationality from FotMob metadata.", "Гражданство игрока из метаданных FotMob.", false, 120),
+    column("rosterStarter", "XI flag", "Старт", "The club's current starting-XI flag edited on the team page. This is a shared roster marker, not the model's start probability.", "Текущая отметка стартовых 11 клуба, установленная на странице команды. Это общий признак состава, а не вероятность старта модели.", false),
+    column("expectedMinutes", "Exp min", "Ож. мин", "Expected playing time in the next match, from 0 to 90 minutes. It scales all per-90 event rates; 80 or more minutes count as a full fantasy match.", "Ожидаемое игровое время в следующем матче от 0 до 90 минут. Им масштабируются все показатели per 90; 80 минут и больше считаются полным фэнтези-матчем."),
+    column("startProbability", "Start %", "Старт %", "Share of matches with a starting-XI appearance among matches where the start flag is known in the selected history scope.", "Доля выходов в стартовом составе среди матчей, где отметка старта известна, в выбранном историческом диапазоне."),
+    column("sixtyProbability", "60 min %", "60 мин %", "Estimated probability of reaching 60 minutes. It controls the fantasy threshold for the higher appearance score and is not assumed to be 100% for every attacker.", "Оценка вероятности провести не менее 60 минут. Она управляет порогом повышенных очков за участие и не считается автоматически равной 100% для всех атакующих игроков."),
+    column("fullMatchProbability", "Full %", "Фулл %", "Estimated probability of a full fantasy match. In the forecast pipeline, 80 expected minutes already count as full time to absorb normal prediction error.", "Оценка вероятности полного фэнтези-матча. В прогнозном пайплайне 80 ожидаемых минут уже считаются полным матчем с учётом обычной погрешности модели."),
+    column("forecastConfidence", "Confidence", "Уверенность", "Data-reliability heuristic, not forecast accuracy: 55% sample completeness (reaches maximum at 5 matches) + 30% minute stability (standard deviation, worst at 45+ minutes) + 15% completeness of known starting-XI flags.", "Эвристика надёжности данных, а не точность прогноза: 55% — полнота выборки (максимум при 5 матчах), 30% — стабильность минут (по стандартному отклонению, минимум при 45+ минутах), 15% — полнота известных отметок выхода в старте."),
+    column("valueScore", "FP/price", "ФО/цена", "Next-round primary expected fantasy points divided by the player's current price; a relative value indicator, not a separate forecast.", "Основной прогноз ФО на следующий тур, делённый на текущую цену игрока; показатель относительной выгодности, а не отдельный прогноз."),
+    column("recentFp", "Recent FP", "Недавние ФО", "Average actual fantasy points over up to the last 5 stored matches in the selected history scope.", "Средние фактические фэнтези-очки максимум за 5 последних сохранённых матчей в выбранном историческом диапазоне."),
+    column("projectedGoals", "Exp goals", "Ож. голы", "Expected goals allocated to the player for the next fixture after scaling his scoring rate by expected minutes and team attacking forecast.", "Ожидаемые голы игрока в следующем матче после масштабирования его голевого темпа на ожидаемые минуты и атакующий прогноз команды."),
+    column("projectedAssists", "Exp assists", "Ож. ассисты", "Expected assists for the next fixture after minute scaling and team-event allocation.", "Ожидаемые ассисты в следующем матче после учёта минут и распределения командных событий между игроками."),
+    column("projectedRecoveries", "Exp rec.", "Ож. возвраты", "Expected recoveries in the next fixture, scaled to the player's expected minutes; used only where the scoring model rewards them.", "Ожидаемые возвраты мяча в следующем матче с учётом ожидаемых минут; используются только если активная формула начисляет за них очки."),
+    column("projectedSaves", "Exp saves", "Ож. сейвы", "Expected goalkeeper saves in the next fixture from the player's save rate, expected minutes, and opponent shot forecast.", "Ожидаемые сейвы вратаря в следующем матче на основе его темпа сейвов, ожидаемых минут и прогноза ударов соперника."),
+    column("projectedCleanSheets", "Exp CS", "Ож. сухарь", "Expected clean-sheet contribution for the next fixture, weighted by team defensive forecast and the player's playing-time exposure.", "Ожидаемый вклад сухого матча в следующем туре, взвешенный по защитному прогнозу команды и игровому времени футболиста."),
+    column("projectedGoalsConceded", "Exp GC", "Ож. пропущ.", "Expected goals conceded while the player is on the pitch in the next fixture. The primary formula may subtract points from defenders and goalkeepers; Alt excludes this penalty.", "Ожидаемые пропущенные голы, пока игрок находится на поле в следующем матче. Основная формула может вычитать их у защитников и вратарей; в Alt этот штраф исключён."),
+    column("projectedYellowCards", "Exp YC", "Ож. ЖК", "Expected yellow cards in the next fixture from the player's card rate scaled by expected minutes.", "Ожидаемые жёлтые карточки в следующем матче: карточный темп игрока масштабируется на ожидаемые минуты."),
+    column("projectedRedCards", "Exp RC", "Ож. КК", "Expected red cards in the next fixture from the player's card rate scaled by expected minutes.", "Ожидаемые красные карточки в следующем матче: карточный темп игрока масштабируется на ожидаемые минуты."),
+    column("baltikaXg", "W xG", "W xG", "Total Wyscout xG from the imported Baltika workbook for the selected sample; shown only when that source is available.", "Суммарный xG Wyscout из загруженного файла «Балтики» для выбранной выборки; показывается только при наличии этого источника."),
+    column("baltikaXa", "W xA", "W xA", "Total Wyscout xA from the imported Baltika workbook for the selected sample; shown only when that source is available.", "Суммарный xA Wyscout из загруженного файла «Балтики» для выбранной выборки; показывается только при наличии этого источника."),
+    column("baltikaMatches", "W matches", "W матчи", "Number of matches represented in the imported Wyscout aggregate.", "Количество матчей, вошедших в загруженный агрегат Wyscout.")
+  ];
+  const ignoredAliases = new Set(["observed_rounds", "tackles", "possession_recoveries", "conceded_goals", "clean_sheet"]);
+  const statKeys = [...new Set(players.flatMap((player) => Object.keys(player.historicalStats ?? {})))]
+    .filter((key) => !ignoredAliases.has(key))
+    .sort((left, right) => historicalStatRank(left) - historicalStatRank(right) || left.localeCompare(right));
+  return [...standard, ...statKeys.map((key) => column(`stat:${key}`, historicalStatLabel(key, language), historicalStatLabel(key, language), historicalStatTitle(key, language), historicalStatTitle(key, language)))];
+}
+
+function playerPoolAdvancedFilterColumns(players: FantasyPlannerPlayer[], horizon: number, language: UiLanguage): PlayerPoolAdvancedFilterColumn[] {
+  const fixedTitles = playerPoolFixedColumnTitles(language);
+  return [
+    { key: "player", label: localizedText(language, "Player", "Игрок"), title: fixedTitles.player, numeric: false },
+    { key: "team", label: localizedText(language, "Club", "Клуб"), title: fixedTitles.team, numeric: false },
+    { key: "position", label: localizedText(language, "Position", "Позиция"), title: fixedTitles.position, numeric: false },
+    { key: "price", label: localizedText(language, "Price", "Цена"), title: fixedTitles.price, numeric: true },
+    ...playerPoolOptionalColumns(players, horizon, language)
+  ];
+}
+
+function historicalStatTitle(key: string, language: UiLanguage) {
+  const normalized = key.replace(/_/g, " ");
+  const per90 = key.includes("per_90");
+  return localizedText(
+    language,
+    `Historical metric “${normalized}” for the history scope selected above. ${per90 ? "Per-90 values are normalized by actual played minutes and are not used unscaled when forecast minutes are below 90." : "Totals and averages use only the matches included by the current club/all-matches and window filters."}`,
+    `Исторический показатель «${normalized}» для выбранной выше исторической выборки. ${per90 ? "Значения per 90 нормализованы по фактически сыгранным минутам и не применяются без масштабирования, если прогноз минут меньше 90." : "Суммы и средние учитывают только матчи, попавшие под текущие фильтры «клубы/все матчи» и периода."}`
+  );
+}
+
+function customPlayerPoolCell(column: PlayerPoolOptionalColumn, player: FantasyPlannerPlayer, horizon: number, language: UiLanguage, muted: boolean) {
+  if (column.key === "fixtures") {
+    const chips = fixtureChipPresentations(player.fixtures, player.fixtureDifficulties ?? [], horizon, player.fixtureFullNames).slice(0, 5);
+    return (
+      <td key={column.key} className="overflow-hidden px-1 py-1.5 text-[11px] text-slate-500" title={column.title}>
+        {chips.length > 0 ? <FdrRow fixtures={chips} className="min-w-0 flex-nowrap gap-0.5" /> : <I18nText en="No fixture" ru="Нет матча" />}
+      </td>
+    );
+  }
+
+  const rawValue = customPlayerPoolColumnValue(column.key, player, horizon);
+  const display = customPlayerPoolColumnDisplay(column.key, rawValue, language);
+  const tone = column.key === "nextFp" ? "text-emerald-700"
+    : column.key === "horizonFp" ? "text-sky-700"
+      : column.key === "foontasy" ? "text-cyan-700"
+        : column.key.startsWith("alternative") ? "text-amber-700"
+          : "text-slate-700";
+  const cellTitle = playerPoolValueCellTitle(column, player, horizon, language, rawValue);
+  return (
+    <td key={column.key} data-sort-value={rawValue ?? ""} className={cn("overflow-hidden text-ellipsis whitespace-nowrap px-1 py-1.5", column.numeric && "text-center num-tabular", muted ? "text-slate-500" : tone)} title={cellTitle}>
+      {display}
+    </td>
+  );
+}
+
+function playerPoolValueCellTitle(column: PlayerPoolOptionalColumn, player: FantasyPlannerPlayer, horizon: number, language: UiLanguage, rawValue: string | number | null) {
+  const numericValue = typeof rawValue === "number" && Number.isFinite(rawValue) ? rawValue : null;
+  if (column.key === "nextFp") return playerPrimaryNextForecastTitle(player, language, numericValue);
+  if (column.key === "horizonFp") return playerPrimaryHorizonForecastTitle(player, language, numericValue, horizon);
+  if (column.key === "foontasy") return foontasyForecastTitle(player, language, 1);
+  if (column.key === "alternative") return alternativePlayerForecastTitle(player, language);
+  if (column.key === "alternativeHorizon") return alternativePlayerHorizonForecastTitle(player, language, horizon);
+  return column.title;
+}
+
+function playerPoolFilterValue(key: string, player: FantasyPlannerPlayer, horizon: number) {
+  if (key === "player") return player.name;
+  if (key === "team") return `${player.teamName} ${fantasyPlayerTeamDisplayName(player)}`;
+  if (key === "position") return player.positionGroup;
+  if (key === "price") return player.price;
+  return customPlayerPoolColumnValue(key, player, horizon);
+}
+
+function customPlayerPoolColumnValue(key: string, player: FantasyPlannerPlayer, horizon: number): string | number | null {
+  const projected = player.projectedFixtureComponents;
+  if (key.startsWith("stat:")) return player.historicalStats?.[key.slice(5)] ?? null;
+  switch (key) {
+    case "nextFp": return nextFantasyPoints(player);
+    case "horizonFp": return playerHorizonPoints(player, horizon);
+    case "foontasy": return player.foontasyPoints ?? null;
+    case "modelHorizon": return horizon === 3 ? player.modelT3Points ?? null : player.modelT5Points ?? null;
+    case "alternative": return player.alternativePredictedFp ?? null;
+    case "alternativeHorizon": return playerAlternativeHorizonPoints(player, horizon);
+    case "fixtures": return [...(player.fixtureFullNames ?? []), ...(player.fixtures ?? [])].join(" ");
+    case "age": return player.age ?? null;
+    case "nationality": return player.nationality ?? null;
+    case "rosterStarter": return player.isStarter ? 1 : 0;
+    case "expectedMinutes": return player.expectedMinutes ?? null;
+    case "startProbability": return player.startProbability ?? null;
+    case "sixtyProbability": return projected?.sixtyMinutesProbability ?? null;
+    case "fullMatchProbability": return projected?.fullMatchProbability ?? null;
+    case "forecastConfidence": return player.forecastConfidence ?? null;
+    case "valueScore": return player.valueScore;
+    case "recentFp": return average(player.recentFp ?? []);
+    case "projectedGoals": return projected?.expectedGoals ?? null;
+    case "projectedAssists": return projected?.expectedAssists ?? null;
+    case "projectedRecoveries": return projected?.expectedRecoveries ?? null;
+    case "projectedSaves": return projected?.expectedSaves ?? null;
+    case "projectedCleanSheets": return projected?.expectedCleanSheets ?? null;
+    case "projectedGoalsConceded": return projected?.expectedGoalsConceded ?? null;
+    case "projectedYellowCards": return projected?.expectedYellowCards ?? null;
+    case "projectedRedCards": return projected?.expectedRedCards ?? null;
+    case "baltikaXg": return player.baltikaXg ?? null;
+    case "baltikaXa": return player.baltikaXa ?? null;
+    case "baltikaMatches": return player.baltikaMatchesPlayed ?? null;
+    default: return null;
+  }
+}
+
+function customPlayerPoolColumnDisplay(key: string, value: string | number | null, language: UiLanguage) {
+  if (value === null || value === undefined) return "—";
+  if (typeof value === "string") return value;
+  if (key === "rosterStarter") return value ? localizedText(language, "Yes", "Да") : localizedText(language, "No", "Нет");
+  if (["startProbability", "sixtyProbability", "fullMatchProbability", "forecastConfidence"].includes(key) || /(?:appearance|sixty|full_match)_(?:probability|rate)/.test(key)) {
+    return `${formatNumber(value * 100, 0)}%`;
+  }
+  if (key === "age" || key === "expectedMinutes" || key === "baltikaMatches" || /^stat:(?:matches|minutes|appearances|full_matches|goals|assists|shots|saves|cards)/.test(key)) return formatNumber(value, 0);
+  return formatNumber(value, 2);
+}
+
+function historicalStatLabel(key: string, language: UiLanguage) {
+  const ru: Record<string, string> = {
+    matches_played: "Матчи", minutes_played: "Минуты", appearance_probability: "Выход %", sixty_minute_probability: "60 мин %", full_match_probability: "Полный матч %",
+    appearances_60: "Матчи 60+", full_matches: "Полные матчи", goals: "Голы", assists: "Ассисты", xg: "xG", xa: "xA", xgot: "xGOT", shots: "Удары",
+    shots_on_target: "Удары в створ", key_passes: "Ключевые передачи", chances_created: "Созданные моменты", tackles_won: "Отборы", interceptions: "Перехваты",
+    clearances: "Выносы", duels_won: "Выигранные дуэли", aerials_won: "Верховые дуэли", recoveries: "Возвраты", saves: "Сейвы", goals_conceded: "Пропущенные",
+    clean_sheets: "Сухие матчи", yellow_cards: "ЖК", red_cards: "КК", average_rating: "Рейтинг", touches_in_opposition_box: "Касания в штрафной",
+    fouls_won: "Заработанные фолы", penalties_won: "Заработанные пенальти"
+  };
+  if (language === "ru" && ru[key]) return ru[key];
+  return key.replace(/_/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+}
+
+function historicalStatRank(key: string) {
+  const order = ["matches_played", "minutes_played", "appearance_probability", "sixty_minute_probability", "full_match_probability", "goals", "assists", "xg", "xa", "xgot", "shots", "shots_on_target", "key_passes", "chances_created", "tackles_won", "interceptions", "clearances", "duels_won", "aerials_won", "recoveries", "touches_in_opposition_box", "fouls_won", "penalties_won", "saves", "goals_conceded", "clean_sheets", "yellow_cards", "red_cards", "average_rating"];
+  const index = order.indexOf(key);
+  return index === -1 ? order.length : index;
+}
+
+function average(values: number[]) {
+  return values.length > 0 ? values.reduce((total, value) => total + value, 0) / values.length : null;
+}
+
+export function PlayerPoolTable({
   players,
   horizon,
   language,
@@ -1550,20 +2450,20 @@ function PlayerPoolTable({
         onRemove={onRemove}
       />
       <div className="hidden min-w-0 max-w-full overflow-hidden rounded border border-slate-200 bg-white md:block [@media(pointer:coarse)]:!hidden" data-testid="player-pool-table">
-        <div className="relative min-w-0 max-h-[720px] w-full max-w-full overflow-x-hidden overflow-y-auto">
-        <SortableTable className="w-full min-w-0 table-fixed divide-y divide-slate-200 text-xs">
+        <div className="relative min-w-0 max-h-[720px] w-full max-w-full overflow-x-hidden overflow-y-auto [scrollbar-gutter:stable]">
+        <SortableTable sortRefreshKey={horizon} className="w-full min-w-0 table-fixed divide-y divide-slate-200 text-xs">
           <colgroup>
+            <col className="w-[15%]" />
+            <col className="w-[7%]" />
+            <col className="w-[7%]" />
+            <col className="w-[5%]" />
+            <col className="w-[7%]" />
+            <col className="w-[7%]" />
+            <col className="w-[7%]" />
+            <col className="w-[7%]" />
+            <col className="w-[7%]" />
+            <col className="w-[7%]" />
             <col className="w-[19%]" />
-            <col className="w-[8%]" />
-            <col className="w-[5%]" />
-            <col className="w-[5%]" />
-            <col className="w-[6%]" />
-            <col className="w-[6%]" />
-            <col className="w-[6%]" />
-            <col className="w-[7%]" />
-            <col className="w-[6%]" />
-            <col className="w-[7%]" />
-            <col className="w-[18%]" />
             <col className="w-[5%]" />
           </colgroup>
           <thead className="sticky top-0 z-10 whitespace-nowrap bg-slate-50 text-left text-[10px] font-semibold uppercase text-slate-500">
@@ -1572,14 +2472,13 @@ function PlayerPoolTable({
               <th className="overflow-hidden px-2 py-2" title={columnTitles.team}><I18nText en="Team" ru="Клуб" /></th>
               <th className="overflow-hidden px-1 py-2" title={columnTitles.position}><I18nText en="Pos" ru="Поз." /></th>
               <th className="overflow-hidden px-1 py-2 text-right" title={columnTitles.price}><I18nText en="Price" ru="Цена" /></th>
-              <th className="overflow-hidden px-1 py-2 text-right" title={columnTitles.next}><I18nText en="Next" ru="ФО" /></th>
-              <th className="overflow-hidden px-1 py-2 text-right" title={columnTitles.averageNext}><I18nText en="Avg 1" ru="Avg 1" /></th>
-              <th className="overflow-hidden px-1 py-2 text-right" title={columnTitles.horizon}><I18nText en={`${horizon}R`} ru={`${horizon}Т`} /></th>
-              <th className="overflow-hidden px-1 py-2 text-right" title={columnTitles.averageFive}><I18nText en="Avg 5R" ru="Avg 5R" /></th>
-              <th className="overflow-hidden px-1 py-2 text-right" title={columnTitles.alternative}><I18nText en="Alt" ru="Альт" /></th>
-              <th className="overflow-hidden px-1 py-2 text-right" title={columnTitles.alternativeFive}><I18nText en="Alt 5R" ru="Альт 5Т" /></th>
+              <th className="overflow-hidden px-1 py-2 text-right" title={columnTitles.next}><I18nText en="FP" ru="ФО" /></th>
+              <th className="overflow-hidden px-1 py-2 text-right" title={columnTitles.horizon}><I18nText en={`${horizon}R FP`} ru={`${horizon}Т` + " ФО"} /></th>
+              <th className="overflow-hidden px-1 py-2 text-right" title={columnTitles.foontasyNext}>FFO</th>
+              <th className="overflow-hidden px-1 py-2 text-right" title={columnTitles.alternative}><I18nText en="ALT" ru="Альт" /></th>
+              <th className="overflow-hidden px-1 py-2 text-right" title={columnTitles.alternativeFive}><I18nText en={`Alt ${horizon}R`} ru={`Альт ${horizon}Т`} /></th>
               <th data-sort-disabled="true" className="overflow-hidden px-2 py-2" title={columnTitles.fixtures}><I18nText en="Fixtures" ru="Матчи" /></th>
-              <th data-sort-disabled="true" className="overflow-hidden px-2 py-2 text-center" title={columnTitles.action}>
+              <th data-sort-disabled="true" className="overflow-hidden pl-2 pr-3 py-2 text-center" title={columnTitles.action}>
                 <span aria-hidden="true">+</span>
                 <span className="sr-only"><I18nText en="Add or remove" ru="Добавить или убрать" /></span>
               </th>
@@ -1610,32 +2509,24 @@ function PlayerPoolTable({
               const forecastTitle = fantasyForecastTitle(player, language);
               const nextRoundForecast = nextFantasyPoints(player);
               const primaryHorizonForecast = playerHorizonPoints(player, horizon);
-              const primaryFiveRoundForecast = playerHorizonPoints(player, 5);
-              const alternativeHorizonForecast = playerAlternativeHorizonPoints(player, 5);
+              const alternativeHorizonForecast = playerAlternativeHorizonPoints(player, horizon);
               const nextPrimaryForecastTitle = playerPrimaryNextForecastTitle(player, language, nextRoundForecast);
               const horizonPrimaryForecastTitle = playerPrimaryHorizonForecastTitle(player, language, primaryHorizonForecast, horizon);
-              const averageFiveForecast = averageForecastValue(primaryFiveRoundForecast, alternativeHorizonForecast);
-              const averageNextForecast = averageForecastValue(nextRoundForecast, player.alternativePredictedFp ?? null);
-              const averageNextForecastTitle = playerAverageForecastTitle(language, averageNextForecast, nextRoundForecast, player.alternativePredictedFp ?? null, 1);
-              const averageFiveForecastTitle = playerAverageForecastTitle(language, averageFiveForecast, primaryFiveRoundForecast, alternativeHorizonForecast, 5);
+              const foontasyNextForecast = player.foontasyPoints ?? null;
+              const playerMetadata = [
+                player.expectedMinutes !== null && player.expectedMinutes !== undefined
+                  ? `${Math.round(player.expectedMinutes)}${language === "ru" ? "м" : "m"}`
+                  : null,
+                player.forecastConfidence !== null && player.forecastConfidence !== undefined
+                  ? `${Math.round(player.forecastConfidence * 100)}%`
+                  : null
+              ].filter((value): value is string => value !== null).join(" · ");
 
               return (
                 <tr key={player.playerId} className={rowClassName}>
                   <td className="px-2 py-1.5">
                     <span className={`block truncate font-semibold ${muted ? "text-slate-500" : "text-ink"}`} title={forecastTitle}>{compactPlayerDisplayName(player.name)}</span>
-                    <span className="block truncate text-[10px] text-slate-600" title={forecastTitle}>
-                      <span className={isSelected ? "font-bold text-emerald-700" : muted ? "text-slate-600" : "text-slate-500"}>
-                        {isSelected ? <I18nText en="Selected" ru="В составе" /> : `FP ${formatScore(player.predictedFp)}`}
-                      </span>
-                      {player.expectedMinutes !== null && player.expectedMinutes !== undefined ? (
-                        <>
-                          {` · ${Math.round(player.expectedMinutes)}`}<I18nText en="m" ru="м" />
-                          {player.forecastConfidence !== null && player.forecastConfidence !== undefined
-                            ? ` · ${Math.round(player.forecastConfidence * 100)}%`
-                            : ""}
-                        </>
-                      ) : null}
-                    </span>
+                    {playerMetadata ? <span className="block truncate text-[10px] text-slate-600" title={forecastTitle}>{playerMetadata}</span> : null}
                   </td>
                   <td className="overflow-hidden px-1 py-1.5 text-slate-600">
                     <span className="block truncate" title={player.teamName}>{teamDisplayName}</span>
@@ -1652,43 +2543,36 @@ function PlayerPoolTable({
                   </td>
                   <td
                     data-sort-value={nextRoundForecast}
-                    className={`overflow-hidden whitespace-nowrap px-1 py-1.5 text-right text-[9px] font-semibold ${muted ? "text-slate-600" : "text-emerald-700"}`}
+                    className={`overflow-hidden whitespace-nowrap px-1 py-1.5 text-right text-[11px] font-semibold ${muted ? "text-slate-600" : "text-emerald-700"}`}
                     title={nextPrimaryForecastTitle}
                   >
                     {formatScore(nextRoundForecast)}
                   </td>
                   <td
-                    data-sort-value={averageNextForecast ?? 0}
-                    className={`overflow-hidden whitespace-nowrap px-1 py-1.5 text-right text-[9px] font-semibold ${muted ? "text-slate-600" : "text-cyan-700"}`}
-                    title={averageNextForecastTitle}
-                  >
-                    {formatAlternativeScore(averageNextForecast)}
-                  </td>
-                  <td
                     data-sort-value={primaryHorizonForecast}
-                    className={`overflow-hidden whitespace-nowrap px-1 py-1.5 text-right text-[9px] font-semibold ${muted ? "text-slate-600" : "text-sky-700"}`}
+                    className={`overflow-hidden whitespace-nowrap px-1 py-1.5 text-right text-[11px] font-semibold ${muted ? "text-slate-600" : "text-sky-700"}`}
                     title={horizonPrimaryForecastTitle}
                   >
                     {formatScore(primaryHorizonForecast)}
                   </td>
                   <td
-                    data-sort-value={averageFiveForecast ?? 0}
-                    className={`overflow-hidden whitespace-nowrap px-1 py-1.5 text-right text-[9px] font-semibold ${muted ? "text-slate-600" : "text-violet-700"}`}
-                    title={averageFiveForecastTitle}
+                    data-sort-value={foontasyNextForecast ?? 0}
+                    className={`overflow-hidden whitespace-nowrap px-1 py-1.5 text-right text-[11px] font-semibold ${muted ? "text-slate-600" : "text-cyan-700"}`}
+                    title={foontasyForecastTitle(player, language, 1)}
                   >
-                    {formatAlternativeScore(averageFiveForecast)}
+                    {foontasyNextForecast === null ? "—" : formatNumber(foontasyNextForecast, 1)}
                   </td>
                   <td
                     data-sort-value={player.alternativePredictedFp ?? 0}
-                    className={`overflow-hidden whitespace-nowrap px-1 py-1.5 text-right text-[9px] font-semibold ${muted ? "text-slate-600" : "text-amber-700"}`}
+                    className={`overflow-hidden whitespace-nowrap px-1 py-1.5 text-right text-[11px] font-semibold ${muted ? "text-slate-600" : "text-amber-700"}`}
                     title={alternativePlayerForecastTitle(player, language)}
                   >
                     {formatAlternativeScore(player.alternativePredictedFp)}
                   </td>
                   <td
                     data-sort-value={alternativeHorizonForecast ?? 0}
-                    className={`overflow-hidden whitespace-nowrap px-1 py-1.5 text-right text-[9px] font-semibold ${muted ? "text-slate-600" : "text-purple-700"}`}
-                    title={alternativePlayerHorizonForecastTitle(player, language)}
+                    className={`overflow-hidden whitespace-nowrap px-1 py-1.5 text-right text-[11px] font-semibold ${muted ? "text-slate-600" : "text-purple-700"}`}
+                    title={alternativePlayerHorizonForecastTitle(player, language, horizon)}
                   >
                     {formatAlternativeScore(alternativeHorizonForecast)}
                   </td>
@@ -1710,7 +2594,7 @@ function PlayerPoolTable({
                       <span className="block truncate" title={fixtures}><I18nText en="No fixture loaded" ru="Матч не загружен" /></span>
                     )}
                   </td>
-                  <td className="overflow-hidden px-1 py-1.5 text-center">
+                  <td className="overflow-hidden pl-1 pr-3 py-1.5 text-center">
                     {isSelected ? (
                       <button type="button" onClick={() => onRemove(player.playerId)} aria-label={removeLabel} className="inline-flex h-7 w-7 items-center justify-center rounded border border-rose-200 bg-white text-rose-700 hover:bg-rose-50">
                         <Trash2 className="h-4 w-4" />
@@ -1744,7 +2628,7 @@ function PlayerPoolTable({
             })}
             {players.length === 0 ? (
               <tr>
-                <td colSpan={12} className="px-4 py-10 text-center text-sm text-slate-500">
+                <td colSpan={11} className="px-4 py-10 text-center text-sm text-slate-500">
                   <I18nText en="No players match the selected filters." ru="Нет игроков под выбранные фильтры." />
                 </td>
               </tr>
@@ -1880,21 +2764,42 @@ function PlayerPoolMobileList({
   );
 }
 
-function Metric({ label, value, tone = "default" }: { label: React.ReactNode; value: string; tone?: "default" | "good" | "bad" | "accent" }) {
+function Metric({
+  label,
+  value,
+  secondaryLabel,
+  secondaryValue,
+  tertiaryLabel,
+  tertiaryValue,
+  tone = "default"
+}: {
+  label: React.ReactNode;
+  value: string;
+  secondaryLabel?: React.ReactNode;
+  secondaryValue?: string;
+  tertiaryLabel?: React.ReactNode;
+  tertiaryValue?: string;
+  tone?: "default" | "good" | "bad" | "accent";
+}) {
   const color = tone === "good" ? "text-emerald-700" : tone === "bad" ? "text-rose-700" : tone === "accent" ? "text-sky-700" : "text-ink";
   return (
     <dl className="min-w-0 border-b border-slate-200 px-3 py-2 last:border-b-0 md:border-b-0">
       <dt className="truncate text-[11px] font-semibold uppercase tracking-wide text-slate-500">{label}</dt>
       <dd className={cn("mt-0.5 truncate text-lg font-bold num-tabular", color)}>{value}</dd>
+      {secondaryValue !== undefined ? (
+        <dd className="mt-0.5 flex items-baseline gap-1.5 truncate text-xs font-semibold text-amber-700 num-tabular">
+          <span className="uppercase tracking-wide text-slate-500">{secondaryLabel}</span>
+          <span>{secondaryValue}</span>
+        </dd>
+      ) : null}
+      {tertiaryValue !== undefined ? (
+        <dd className="mt-0.5 flex items-baseline gap-1.5 truncate text-xs font-semibold text-cyan-700 num-tabular">
+          <span className="uppercase tracking-wide text-slate-500">{tertiaryLabel}</span>
+          <span>{tertiaryValue}</span>
+        </dd>
+      ) : null}
     </dl>
   );
-}
-
-function captainBonus(summary: ReturnType<typeof summarizeFantasySquad>, captainId: string | null) {
-  if (!captainId) return 0;
-  const captain = summary.starterPlayers.find((p) => p.playerId === captainId);
-  if (!captain) return 0;
-  return nextFantasyPoints(captain);
 }
 
 function SquadDiffBadge({ diff, horizon }: { diff: SquadDiff; horizon: number }) {
@@ -2055,7 +2960,7 @@ function SquadPitch({
         </div>
         <div
           className={cn(
-            "flex min-h-16 flex-wrap justify-center gap-1 rounded border border-dashed border-transparent p-0.5 transition-colors",
+            "flex min-h-16 flex-wrap justify-center gap-1 rounded border border-dashed border-transparent p-0.5 transition-colors sm:flex-nowrap",
             draggedSelection?.isStarter && "border-sky-300 bg-sky-50"
           )}
           onDragOver={(event) => allowSquadDrop(event, Boolean(draggedPlayerId))}
@@ -2132,7 +3037,7 @@ function SquadLine({
       <div className="mb-0.5 text-center text-[10px] font-bold uppercase tracking-wide text-white/80">{label}</div>
       <div
         className={cn(
-          "flex min-h-14 flex-wrap items-stretch justify-center gap-1 rounded border border-dashed border-transparent p-0.5 transition-colors",
+          "flex min-h-14 flex-wrap items-stretch justify-center gap-1 rounded border border-dashed border-transparent p-0.5 transition-colors sm:flex-nowrap",
           draggedPlayerId && "border-white/30 bg-white/10"
         )}
         onDragOver={(event) => allowSquadDrop(event, Boolean(draggedPlayerId))}
@@ -2215,6 +3120,39 @@ function SquadPlayerTile({
   const closeActionsLabel = localizedText(language, "Close player actions", "Закрыть действия игрока");
   const mobileActionsLabel = localizedText(language, `Actions for ${player.name}`, `Действия: ${player.name}`);
   const mobileActionsTitleId = `mobile-player-actions-${player.playerId}`;
+  const cardPrimaryNextForecast = nextFantasyPoints(player);
+  const cardPrimaryHorizonForecast = playerHorizonPoints(player, 3);
+  const cardAlternativeNextForecast = player.alternativePredictedFp ?? null;
+  const cardAlternativeHorizonForecast = playerAlternativeHorizonPoints(player, 3);
+  const cardPrimaryNextTitle = squadCardForecastTitle(
+    playerPrimaryNextForecastTitle(player, language, cardPrimaryNextForecast),
+    cardPrimaryNextForecast,
+    isCaptain,
+    language
+  );
+  const cardPrimaryHorizonTitle = squadCardForecastTitle(
+    playerPrimaryHorizonForecastTitle(player, language, cardPrimaryHorizonForecast, 3),
+    cardPrimaryHorizonForecast,
+    isCaptain,
+    language
+  );
+  const cardAlternativeNextTitle = squadCardForecastTitle(
+    alternativePlayerForecastTitle(player, language),
+    cardAlternativeNextForecast,
+    isCaptain,
+    language
+  );
+  const cardAlternativeHorizonTitle = squadCardForecastTitle(
+    alternativePlayerHorizonForecastTitle(player, language, 3),
+    cardAlternativeHorizonForecast,
+    isCaptain,
+    language
+  );
+  const cardFoontasyForecast = scaleCaptainForecast(player.foontasyPoints, isCaptain);
+  const cardFoontasyTitle = [
+    foontasyForecastTitle(player, language, 1),
+    isCaptain ? localizedText(language, "Captain multiplier x2 is applied on this card.", "На карточке применён капитанский коэффициент x2.") : null
+  ].filter((line): line is string => Boolean(line)).join("\n");
   const runMobileAction = (action: () => void) => {
     setMobileActionsOpen(false);
     action();
@@ -2275,14 +3213,14 @@ function SquadPlayerTile({
       title={fantasyForecastTitle(player, language)}
       aria-label={localizedText(language, `Squad player ${player.name}`, `Игрок состава: ${player.name}`)}
       className={cn(
-        compact ? "w-[4.5rem] sm:w-20" : "w-[4.5rem] sm:w-20 2xl:w-[5.5rem]",
-        "relative cursor-grab rounded border bg-white px-1 py-0.5 text-center shadow-sm transition active:cursor-grabbing [@media(pointer:fine)]:pb-6",
+        compact ? "w-[3.6rem] sm:w-[3.8rem] 2xl:w-16" : "w-[3.6rem] sm:w-[3.8rem] 2xl:w-[4.25rem]",
+        "relative cursor-grab rounded border bg-white px-1 py-0.5 text-center shadow-sm transition active:cursor-grabbing [@media(pointer:fine)]:pb-5",
         isCaptain ? "border-amber-400 ring-2 ring-amber-200" : "border-white/70",
         isDragging && "opacity-55 ring-2 ring-sky-300"
       )}
     >
       <span
-        className="absolute left-0.5 top-0.5 max-w-5 truncate text-[8px] font-bold text-slate-500"
+        className="absolute left-0.5 top-0.5 max-w-4 truncate text-[7px] font-bold text-slate-500"
         title={player.teamName}
       >
         {fantasyPlayerTeamDisplayName(player)}
@@ -2290,20 +3228,20 @@ function SquadPlayerTile({
       <button
         type="button"
         onClick={() => onRemove(player.playerId)}
-        className="absolute right-0.5 top-0.5 z-10 inline-flex h-4 w-4 items-center justify-center rounded-full bg-white/90 text-rose-700 shadow-sm hover:bg-rose-50 [@media(pointer:coarse)]:h-6 [@media(pointer:coarse)]:w-6"
+        className="absolute right-0.5 top-0.5 z-10 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full bg-white/90 text-rose-700 shadow-sm hover:bg-rose-50 [@media(pointer:coarse)]:h-6 [@media(pointer:coarse)]:w-6"
         aria-label={removeActionLabel}
       >
-        <X className="h-3 w-3" />
+        <X className="h-2.5 w-2.5" />
         <span className="sr-only">{removeActionLabel}</span>
       </button>
       <div className="flex items-center justify-center gap-1">
-        <span className={`rounded px-1 py-px text-[8px] font-bold ${positionPillClass(player.positionGroup)}`}>{player.positionGroup}</span>
+        <span className={`rounded px-0.5 py-px text-[7px] font-bold ${positionPillClass(player.positionGroup)}`}>{player.positionGroup}</span>
       </div>
-      <div className="relative mx-auto grid w-full grid-cols-[1fr_2rem_1fr] items-center">
+      <div className="relative mx-auto grid w-full grid-cols-[1fr_1.75rem_1fr] items-center">
         {isCaptain || isVice ? (
           <span
             className={cn(
-              "z-10 mr-0.5 justify-self-end rounded px-1 py-0.5 text-[8px] font-black text-white shadow-sm",
+              "z-10 mr-0.5 justify-self-end rounded px-0.5 py-px text-[7px] font-black text-white shadow-sm",
               isCaptain ? "bg-amber-700" : "bg-slate-700"
             )}
             title={isCaptain ? captainActionLabel : viceActionLabel}
@@ -2314,37 +3252,45 @@ function SquadPlayerTile({
         ) : <span aria-hidden="true" />}
         <SquadPlayerPhoto player={player} />
         <span
-          className="ml-0.5 justify-self-start whitespace-nowrap text-[8px] font-black text-ink num-tabular"
+          className="ml-0.5 justify-self-start whitespace-nowrap text-[7px] font-black text-ink num-tabular"
           title={localizedText(language, `Fantasy price: ${formatNumber(player.price, 1)}`, `Фэнтези-цена: ${formatNumber(player.price, 1)}`)}
           aria-label={localizedText(language, `Fantasy price ${formatNumber(player.price, 1)}`, `Фэнтези-цена ${formatNumber(player.price, 1)}`)}
         >
           {player.priceSource === "ESTIMATED" ? "~" : ""}{formatNumber(player.price, 1)}
         </span>
       </div>
-      <p className="mt-0.5 truncate text-[10px] font-bold text-ink" title={player.name} aria-label={player.name}>{compactPlayerDisplayName(player.name)}</p>
-      <dl className="mt-0.5 grid grid-cols-2 gap-x-1 gap-y-px text-[8px] leading-tight num-tabular">
-        <div title={localizedText(language, "Primary forecast for the next round", "Основной прогноз на следующий тур")}>
-          <dt className="text-[7px] font-semibold uppercase text-slate-500"><I18nText en="FP 1" ru="ФО 1" /></dt>
-          <dd className="truncate text-[9px] font-bold text-emerald-700">{formatScore(nextFantasyPoints(player) * (isCaptain ? 2 : 1))}</dd>
+      <p className="mt-0.5 truncate text-[9px] font-bold text-ink" title={player.name} aria-label={player.name}>{compactPlayerDisplayName(player.name)}</p>
+      <dl className="mt-0.5 text-[7px] leading-tight num-tabular">
+        <div className="grid grid-cols-3 gap-x-px">
+          <div className="min-w-0">
+            <dt className="whitespace-nowrap text-[6px] font-semibold uppercase text-slate-500"><I18nText en="FP1" ru="ФО1" /></dt>
+            <dd className="cursor-help whitespace-nowrap text-[8px] font-bold text-emerald-700" title={cardPrimaryNextTitle}>{formatCompactScore(cardPrimaryNextForecast * (isCaptain ? 2 : 1))}</dd>
+          </div>
+          <div className="min-w-0">
+            <dt className="whitespace-nowrap text-[6px] font-semibold uppercase text-slate-500"><I18nText en="FP3" ru="ФО3" /></dt>
+            <dd className="cursor-help whitespace-nowrap text-[8px] font-bold text-sky-700" title={cardPrimaryHorizonTitle}>{formatCompactScore(cardPrimaryHorizonForecast * (isCaptain ? 2 : 1))}</dd>
+          </div>
+          <div className="min-w-0" title={cardFoontasyTitle}>
+            <dt className="whitespace-nowrap text-[6px] font-semibold uppercase text-slate-500">FFO</dt>
+            <dd className="cursor-help whitespace-nowrap text-[8px] font-bold text-cyan-700" title={cardFoontasyTitle}>{formatCompactScore(cardFoontasyForecast)}</dd>
+          </div>
         </div>
-        <div title={localizedText(language, "Primary forecast for the next three rounds", "Основной прогноз на следующие три тура")}>
-          <dt className="text-[7px] font-semibold uppercase text-slate-500"><I18nText en="FP 3" ru="ФО 3" /></dt>
-          <dd className="truncate text-[9px] font-bold text-sky-700">{formatScore(playerHorizonPoints(player, 3))}</dd>
-        </div>
-        <div title={localizedText(language, "Alternative forecast for the next round", "Альтернативный прогноз на следующий тур")}>
-          <dt className="text-[7px] font-semibold uppercase text-slate-500">Alt 1</dt>
-          <dd className="truncate text-[9px] font-bold text-amber-700">{formatAlternativeScore(player.alternativePredictedFp)}</dd>
-        </div>
-        <div title={localizedText(language, "Alternative forecast for the next three rounds", "Альтернативный прогноз на следующие три тура")}>
-          <dt className="text-[7px] font-semibold uppercase text-slate-500">Alt 3</dt>
-          <dd className="truncate text-[9px] font-bold text-violet-700">{formatAlternativeScore(playerAlternativeHorizonPoints(player, 3))}</dd>
+        <div className="mt-px grid grid-cols-2 gap-x-px px-1">
+          <div className="min-w-0">
+            <dt className="whitespace-nowrap text-[6px] font-semibold uppercase text-slate-500">ALT1</dt>
+            <dd className="cursor-help whitespace-nowrap text-[8px] font-bold text-amber-700" title={cardAlternativeNextTitle}>{formatCompactScore(scaleCaptainForecast(cardAlternativeNextForecast, isCaptain), "0")}</dd>
+          </div>
+          <div className="min-w-0">
+            <dt className="whitespace-nowrap text-[6px] font-semibold uppercase text-slate-500">ALT3</dt>
+            <dd className="cursor-help whitespace-nowrap text-[8px] font-bold text-violet-700" title={cardAlternativeHorizonTitle}>{formatCompactScore(scaleCaptainForecast(cardAlternativeHorizonForecast, isCaptain), "0")}</dd>
+          </div>
         </div>
       </dl>
       {fixtureChips.length > 0 ? (
         <div className="mt-0.5 flex min-w-0 items-center justify-center overflow-hidden">
           <FdrRow
             fixtures={fixtureChips.slice(0, 3)}
-            className="min-w-0 flex-nowrap gap-0.5 overflow-hidden [&_.fdr-pill]:min-w-0 [&_.fdr-pill]:max-w-5 [&_.fdr-pill]:px-0.5 [&_.fdr-pill]:text-[9px]"
+            className="min-w-0 flex-nowrap gap-px overflow-hidden [&_.fdr-pill]:min-w-0 [&_.fdr-pill]:max-w-[1.1rem] [&_.fdr-pill]:px-px [&_.fdr-pill]:text-[8px]"
           />
         </div>
       ) : null}
@@ -2362,7 +3308,7 @@ function SquadPlayerTile({
         type="button"
         onClick={() => onToggleCaptain(player.playerId)}
         className={cn(
-          "absolute bottom-0.5 left-0.5 hidden h-5 w-5 items-center justify-center rounded border border-slate-200 text-[8px] font-black hover:bg-amber-50 [@media(pointer:fine)]:inline-flex",
+          "absolute bottom-0.5 left-0.5 hidden h-4 w-4 items-center justify-center rounded border border-slate-200 text-[7px] font-black hover:bg-amber-50 [@media(pointer:fine)]:inline-flex",
           isCaptain ? "bg-amber-100 text-amber-700" : "bg-white text-slate-500"
         )}
         aria-label={captainActionLabel}
@@ -2374,7 +3320,7 @@ function SquadPlayerTile({
         type="button"
         onClick={() => onToggleVice(player.playerId)}
         className={cn(
-          "absolute bottom-0.5 right-0.5 hidden h-5 w-5 items-center justify-center rounded border border-slate-200 text-[8px] font-black hover:bg-slate-50 [@media(pointer:fine)]:inline-flex",
+          "absolute bottom-0.5 right-0.5 hidden h-4 w-4 items-center justify-center rounded border border-slate-200 text-[7px] font-black hover:bg-slate-50 [@media(pointer:fine)]:inline-flex",
           isVice ? "bg-slate-200 text-slate-950" : "bg-white text-slate-500"
         )}
         aria-label={viceActionLabel}
@@ -2420,7 +3366,7 @@ function SquadPlayerPhoto({ player }: { player: FantasyPlannerPlayer }) {
   const [failed, setFailed] = useState(false);
   if (!player.photoUrl || failed) {
     return (
-      <div aria-hidden="true" className="mx-auto mt-0.5 flex h-8 w-8 items-center justify-center rounded-full bg-slate-200 text-[10px] font-black text-slate-500 ring-1 ring-white">
+      <div aria-hidden="true" className="mx-auto mt-0.5 flex h-7 w-7 items-center justify-center rounded-full bg-slate-200 text-[9px] font-black text-slate-500 ring-1 ring-white">
         {player.name.trim().slice(0, 1).toUpperCase()}
       </div>
     );
@@ -2433,7 +3379,7 @@ function SquadPlayerPhoto({ player }: { player: FantasyPlannerPlayer }) {
       loading="lazy"
       decoding="async"
       onError={() => setFailed(true)}
-      className="mx-auto mt-0.5 h-8 w-8 rounded-full bg-slate-100 object-cover object-top ring-1 ring-white"
+      className="mx-auto mt-0.5 h-7 w-7 rounded-full bg-slate-100 object-cover object-top ring-1 ring-white"
     />
   );
 }
@@ -2479,11 +3425,47 @@ function addProjectionTermLine(
 ) {
   if (value === null || value === undefined || Number.isNaN(value)) return;
   const valueText = formatScore(value);
+  const localizedLabel = projectionBreakdownText(label, language);
+  const localizedFormula = formula ? projectionBreakdownText(formula, language) : null;
   if (!formula) {
-    lines.push(localizedText(language, `- ${label}: ${valueText} FP`, `- ${label}: ${valueText} FP`));
+    lines.push(localizedText(language, `- ${localizedLabel}: ${valueText} FP`, `- ${localizedLabel}: ${valueText} ФО`));
     return;
   }
-  lines.push(localizedText(language, `- ${label}: ${valueText} FP = ${formula}`, `- ${label}: ${valueText} FP = ${formula}`));
+  lines.push(localizedText(language, `- ${localizedLabel}: ${valueText} FP = ${localizedFormula}`, `- ${localizedLabel}: ${valueText} ФО = ${localizedFormula}`));
+}
+
+function projectionBreakdownText(value: string, language: UiLanguage) {
+  if (language !== "ru") return value;
+  const exact: Record<string, string> = {
+    "Appearance FP": "ФО за выход",
+    "60+ minutes FP": "ФО за 60+ минут",
+    "Full match FP": "ФО за полный матч",
+    "Goal FP": "ФО за голы",
+    "Assist FP": "ФО за ассисты",
+    "Clean sheet FP": "ФО за сухой матч",
+    "Save FP": "ФО за сейвы",
+    "Recovery FP": "ФО за возвраты",
+    "Goals conceded FP": "ФО за пропущенные голы",
+    "Yellow card FP": "ФО за жёлтые карточки",
+    "Red card FP": "ФО за красные карточки",
+    "Total": "Итого",
+    "Alternative total": "Итого Альт",
+    "not awarded for this position": "не начисляется для этой позиции",
+    "not applicable for this position": "не применяется для этой позиции",
+    "not used in alternative score": "не используется в формуле Альт",
+    "not available": "нет данных"
+  };
+  if (exact[value]) return exact[value];
+  return value
+    .replaceAll("Expected clean sheets", "Ожидаемые сухие матчи")
+    .replaceAll("Expected recoveries", "Ожидаемые возвраты")
+    .replaceAll("Expected yellow cards", "Ожидаемые жёлтые карточки")
+    .replaceAll("Expected red cards", "Ожидаемые красные карточки")
+    .replaceAll("Expected assists", "Ожидаемые ассисты")
+    .replaceAll("Expected goals", "Ожидаемые голы")
+    .replaceAll("Expected saves", "Ожидаемые сейвы")
+    .replaceAll("when unavailable", "если данных нет")
+    .replaceAll("from", "из");
 }
 
 function formatProjectionMetric(value: number | null | undefined, digits = 3) {
@@ -2506,6 +3488,14 @@ function addProjectionWeightedTermLine(
   addProjectionTermLine(lines, language, label, value, formula);
 }
 
+function foontasyForecastTitle(player: FantasyPlannerPlayer, language: UiLanguage, horizon: number) {
+  const value = horizon === 1 ? player.foontasyPoints : player.foontasyHorizonPoints;
+  if (value === null || value === undefined) {
+    return localizedText(language, `FFO ${horizon === 1 ? "" : `T${horizon} `}is unavailable. Foontasy currently publishes only the current-round forecast.`, `FFO${horizon === 1 ? "" : ` Т${horizon}`} недоступен: Foontasy сейчас публикует прогноз только текущего тура.`);
+  }
+  return localizedText(language, `FFO${horizon === 1 ? "" : ` T${horizon}`}: ${formatScore(value)} FP.`, `FFO${horizon === 1 ? "" : ` Т${horizon}`}: ${formatScore(value)} ФО.`);
+}
+
 function addPoissonProjectionTermLine(
   lines: string[],
   language: UiLanguage,
@@ -2524,6 +3514,63 @@ function addPoissonProjectionTermLine(
   addProjectionTermLine(lines, language, label, value, formula);
 }
 
+function buildFormulaBreakdownLines(
+  language: UiLanguage,
+  formulaData: NonNullable<FantasyPlannerPlayer["projectionFormula"]> | NonNullable<FantasyPlannerPlayer["alternativeProjectionFormula"]>,
+  totalLabel: string,
+  totalOverride: number | null
+) {
+  const lines: string[] = [];
+
+  if (formulaData.terms.length === 0) {
+    lines.push(localizedText(language, "- No formula terms available.", "- Нет доступных слагаемых формулы."));
+  } else {
+    formulaData.terms.forEach((term) => {
+      const valueText = formatScore(term.value);
+      const moduleLabel = formulaTermLabel(term.expression, language);
+      const fixturePrefix = term.fixtureLabel ? `${term.fixtureLabel} — ` : "";
+      lines.push(localizedText(
+        language,
+        `- ${fixturePrefix}${moduleLabel}: ${term.resolvedExpression} = ${valueText} FP`,
+        `- ${fixturePrefix}${moduleLabel}: ${term.resolvedExpression} = ${valueText} ФО`
+      ));
+    });
+  }
+
+  const total = totalOverride === null ? formulaData.total : totalOverride;
+  lines.push(localizedText(language, `- ${totalLabel}: ${formatScore(total)} FP`, `- ${projectionBreakdownText(totalLabel, language)}: ${formatScore(total)} ФО`));
+  return lines;
+}
+
+function formulaTermLabel(expression: string, language: UiLanguage) {
+  const normalized = expression.toLowerCase();
+  const english = normalized.includes("expected goals conceded") ? "Goals conceded"
+    : normalized.includes("expected goals") ? "Goals"
+    : normalized.includes("expected assists") ? "Assists"
+    : normalized.includes("expected clean sheets") ? "Clean sheet"
+    : normalized.includes("expected saves") ? "Saves"
+    : normalized.includes("expected recoveries") ? "Recoveries"
+    : normalized.includes("expected yellow cards") ? "Yellow cards"
+    : normalized.includes("expected red cards") ? "Red cards"
+    : normalized.includes("full match probability") ? "Full match"
+    : normalized.includes("60 minute probability") ? "60+ minutes"
+    : normalized.includes("appearance probability") ? "Appearance"
+    : "Formula module";
+  if (language !== "ru") return english;
+  return english === "Goals conceded" ? "Пропущенные голы"
+    : english === "Goals" ? "Голы"
+    : english === "Assists" ? "Ассисты"
+    : english === "Clean sheet" ? "Сухой матч"
+    : english === "Saves" ? "Сейвы"
+    : english === "Recoveries" ? "Возвраты"
+    : english === "Yellow cards" ? "Жёлтые карточки"
+    : english === "Red cards" ? "Красные карточки"
+    : english === "Full match" ? "Полный матч"
+    : english === "60+ minutes" ? "60+ минут"
+    : english === "Appearance" ? "Выход на поле"
+    : "Модуль формулы";
+}
+
 function buildProjectionBreakdownLines(
   player: FantasyPlannerPlayer,
   language: UiLanguage,
@@ -2540,7 +3587,7 @@ function buildProjectionBreakdownLines(
 
   if (fixtureInputs?.expectedMinutes !== null && fixtureInputs?.expectedMinutes !== undefined) {
     const expectedMinutes = formatProjectionMetric(fixtureInputs.expectedMinutes, 1);
-    if (expectedMinutes) lines.push(localizedText(language, `- Expected minutes: ${expectedMinutes}`, `- Expected minutes: ${expectedMinutes}`));
+    if (expectedMinutes) lines.push(localizedText(language, `- Expected minutes: ${expectedMinutes}`, `- Ожидаемые минуты: ${expectedMinutes}`));
   }
 
   addProjectionWeightedTermLine(
@@ -2679,7 +3726,7 @@ function buildProjectionBreakdownLines(
     + (components.redCards ?? 0)
   );
   if (Math.abs(computedTotal - components.total) > 0.001) {
-    lines.push(localizedText(language, "Total differs from module sum: custom weights/order were applied during scoring.", "Total differs from module sum: custom weights/order were applied during scoring."));
+    lines.push(localizedText(language, "Total differs from module sum: custom weights/order were applied during scoring.", "Итог отличается от суммы модулей: применены пользовательские веса или порядок расчёта."));
   }
 
   return lines;
@@ -2700,7 +3747,7 @@ function buildAlternativeProjectionBreakdownLines(
 
   if (fixtureInputs?.expectedMinutes !== null && fixtureInputs?.expectedMinutes !== undefined) {
     const expectedMinutes = formatProjectionMetric(fixtureInputs.expectedMinutes, 1);
-    if (expectedMinutes) lines.push(localizedText(language, `- Expected minutes: ${expectedMinutes}`, `- Expected minutes: ${expectedMinutes}`));
+    if (expectedMinutes) lines.push(localizedText(language, `- Expected minutes: ${expectedMinutes}`, `- Ожидаемые минуты: ${expectedMinutes}`));
   }
 
   addProjectionWeightedTermLine(
@@ -2821,36 +3868,18 @@ function buildAlternativeProjectionBreakdownLines(
     + (components.redCards ?? 0)
   );
   if (Math.abs(computedTotal - components.total) > 0.001) {
-    lines.push(localizedText(language, "Total differs from module sum: custom weights/order were applied during scoring.", "Total differs from module sum: custom weights/order were applied during scoring."));
+    lines.push(localizedText(language, "Total differs from module sum: custom weights/order were applied during scoring.", "Итог отличается от суммы модулей: применены пользовательские веса или порядок расчёта."));
   }
 
   return lines;
 }
 
 function playerPrimaryNextForecastTitle(player: FantasyPlannerPlayer, language: UiLanguage, nextForecast: number | null) {
-  const lines = [
-    localizedText(language, `Primary forecast for next fixture: ${formatScore(nextForecast)} FP`, `Primary forecast for next fixture: ${formatScore(nextForecast)} FP`),
-    localizedText(language, "Source: COMPONENT_XFP_V1", "Source: COMPONENT_XFP_V1")
-  ];
-  if (player.projectionComponents) {
-    lines.push(localizedText(language, "Component-by-component (for transparency):", "Component-by-component (for transparency):"));
+  const lines = [localizedText(language, `Primary forecast for next fixture: ${formatScore(nextForecast)} FP`, `Основной прогноз на следующий матч: ${formatScore(nextForecast)} ФО`)];
+  if (player.projectionFormula) {
+    lines.push(...buildFormulaBreakdownLines(language, player.projectionFormula, "Total", nextForecast));
+  } else if (player.projectionComponents) {
     lines.push(...buildProjectionBreakdownLines(player, language, player.projectionComponents, player.projectedFixtureComponents));
-    lines.push(localizedText(language, "Context:", "Context:"));
-    if (player.forecastModelVersion) {
-      lines.push(localizedText(language, `Model: ${player.forecastModelVersion}`, `Model: ${player.forecastModelVersion}`));
-    }
-    if (player.forecastCalculatedAt) lines.push(localizedText(language, `Calculated: ${formatDate(player.forecastCalculatedAt)}`, `Calculated: ${formatDate(player.forecastCalculatedAt)}`));
-    if (player.forecastDataUpdatedAt) lines.push(localizedText(language, `Data updated: ${formatDate(player.forecastDataUpdatedAt)}`, `Data updated: ${formatDate(player.forecastDataUpdatedAt)}`));
-    if (player.forecastFactors?.length) {
-      lines.push(localizedText(language, "Model hints:", "Model hints:"));
-      lines.push(...player.forecastFactors.map((factor) => `- ${localizeForecastNote(factor, language)}`));
-    }
-  } else if (player.forecastFactors?.length) {
-    lines.push(localizedText(language, "Positive factors:", "Positive factors:"));
-    lines.push(...player.forecastFactors.map((factor) => `+ ${localizeForecastNote(factor, language)}`));
-    lines.push(localizedText(language, "This player does not expose component-level primary decomposition.", "This player does not expose component-level primary decomposition."));
-  } else {
-    lines.push(localizedText(language, "This player does not expose component-level primary decomposition.", "This player does not expose component-level primary decomposition."));
   }
   return lines.join("\n");
 }
@@ -2862,16 +3891,16 @@ function playerPrimaryHorizonForecastTitle(
   horizon: number
 ) {
   const available = player.roundPoints.slice(0, horizon).filter((value): value is number => typeof value === "number" && Number.isFinite(value));
-  const lines = [localizedText(language, `Primary forecast total over ${horizon} rounds: ${formatScore(primaryHorizonForecast)} FP`, `Primary forecast total over ${horizon} rounds: ${formatScore(primaryHorizonForecast)} FP`)];
+  const lines = [localizedText(language, `Primary forecast total over ${horizon} rounds: ${formatScore(primaryHorizonForecast)} FP`, `Основной прогноз на ${horizon} тура: ${formatScore(primaryHorizonForecast)} ФО`)];
   if (available.length > 0) {
-    lines.push(localizedText(language, "Round-by-round values:", "Round-by-round values:"));
-    available.forEach((value, index) => lines.push(localizedText(language, `Round ${index + 1}: ${formatScore(value)} FP`, `Round ${index + 1}: ${formatScore(value)} FP`)));
+    lines.push(localizedText(language, "Round-by-round values:", "По турам:"));
+    available.forEach((value, index) => lines.push(localizedText(language, `Round ${index + 1}: ${formatScore(value)} FP`, `Тур ${index + 1}: ${formatScore(value)} ФО`)));
   }
   if (available.length === 0) {
-    lines.push(localizedText(language, "No round-by-round values available yet.", "No round-by-round values available yet."));
+    lines.push(localizedText(language, "No round-by-round values available yet.", "Значений по отдельным турам пока нет."));
   }
   if (player.forecastModelVersion) {
-    lines.push(localizedText(language, `Model: ${player.forecastModelVersion}`, `Model: ${player.forecastModelVersion}`));
+    lines.push(localizedText(language, `Model: ${player.forecastModelVersion}`, `Модель: ${player.forecastModelVersion}`));
   }
   return lines.join("\n");
 }
@@ -2886,12 +3915,11 @@ function playerAverageForecastTitle(
   const base = formatScore(primaryForecast);
   const alternative = formatScore(alternativeForecast);
   const lines = [
-    localizedText(language, `Average forecast (${horizon} rounds): ${formatScore(averageForecast)} FP`, `Average forecast (${horizon} rounds): ${formatScore(averageForecast)} FP`),
-    localizedText(language, `Formula: (primary ${base} + alternative ${alternative}) / 2`, `Formula: (primary ${base} + alternative ${alternative}) / 2`)
+    localizedText(language, `Average forecast (${horizon} rounds): ${formatScore(averageForecast)} FP`, `Средний прогноз (${horizon} туров): ${formatScore(averageForecast)} ФО`),
   ];
   if (primaryForecast === null || alternativeForecast === null) {
     lines.push(
-      localizedText(language, "Average is not available because one source is missing for this player.", "Average is not available because one source is missing for this player.")
+      localizedText(language, "Average is not available because one source is missing for this player.", "Среднее недоступно: для игрока отсутствует один из источников.")
     );
   }
   return lines.join("\n");
@@ -2899,17 +3927,15 @@ function playerAverageForecastTitle(
 
 function alternativePlayerForecastTitle(player: FantasyPlannerPlayer, language: UiLanguage) {
   const nextAlternative = player.alternativePredictedFp ?? null;
-  const lines = [localizedText(language, `Alternative forecast for next fixture: ${formatScore(nextAlternative)} FP`, `Alternative forecast for next fixture: ${formatScore(nextAlternative)} FP`)];
-  lines.push(localizedText(language, "Source: COMPONENT_XFP_V1 (friend module, editable in formula settings)", "Source: COMPONENT_XFP_V1 (friend module, editable in formula settings)"));
-  lines.push(
-    localizedText(
+  const lines = [localizedText(language, `Alternative forecast for next fixture: ${formatScore(nextAlternative)} FP`, `Альтернативный прогноз на следующий матч: ${formatScore(nextAlternative)} ФО`)];
+  if (player.alternativeProjectionFormula) {
+    lines.push(...buildFormulaBreakdownLines(
       language,
-      "Display only value. Not used by auto-pick, budget forecast, transfer suggestions, or round points.",
-      "Display only value. Not used by auto-pick, budget forecast, transfer suggestions, or round points."
-    )
-  );
-  if (player.alternativeProjectionComponents) {
-    lines.push(localizedText(language, "Component-by-component (for transparency):", "Component-by-component (for transparency):"));
+      player.alternativeProjectionFormula,
+      "Alternative total",
+      nextAlternative
+    ));
+  } else if (player.alternativeProjectionComponents) {
     lines.push(
       ...buildAlternativeProjectionBreakdownLines(
         player,
@@ -2919,49 +3945,46 @@ function alternativePlayerForecastTitle(player: FantasyPlannerPlayer, language: 
       )
     );
   } else {
-    lines.push(localizedText(language, "This player does not expose component-level alternative decomposition.", "This player does not expose component-level alternative decomposition."));
-  }
-  if (player.projectionEngine) {
-    const projectionSource = player.forecastModelVersion ?? player.projectionEngine;
-    lines.push(
-      localizedText(
-        language,
-        `Projection source: ${projectionSource ?? "—"}`,
-        `Projection source: ${projectionSource ?? "—"}`
-      )
-    );
-  }
-  if (player.forecastFactors?.length) {
-    lines.push(localizedText(language, "Recent context:", "Recent context:"));
-    lines.push(...player.forecastFactors.map((factor) => `+ ${localizeForecastNote(factor, language)}`));
+    lines.push(localizedText(language, "This player does not expose component-level alternative decomposition.", "Для этого игрока нет покомпонентной расшифровки Альт."));
   }
   return lines.join("\n");
 }
 
-function alternativePlayerHorizonForecastTitle(player: FantasyPlannerPlayer, language: UiLanguage) {
-  const alternativeFive = playerAlternativeHorizonPoints(player, 5);
-  const values = player.alternativeRoundPoints?.slice(0, 5).filter((value): value is number => value !== null && Number.isFinite(value)) ?? [];
-  const lines = [localizedText(language, `Alternative forecast total over 5 rounds: ${formatScore(alternativeFive)} FP`, `Alternative forecast total over 5 rounds: ${formatScore(alternativeFive)} FP`)];
+function alternativePlayerHorizonForecastTitle(player: FantasyPlannerPlayer, language: UiLanguage, horizon: number) {
+  const alternativeTotal = playerAlternativeHorizonPoints(player, horizon);
+  const values = player.alternativeRoundPoints?.slice(0, horizon).filter((value): value is number => value !== null && Number.isFinite(value)) ?? [];
+  const lines = [localizedText(language, `Alternative forecast total over ${horizon} rounds: ${formatScore(alternativeTotal)} FP`, `Альтернативный прогноз на ${horizon} тура: ${formatScore(alternativeTotal)} ФО`)];
   if (values.length > 0) {
-    lines.push(localizedText(language, "Round-by-round values:", "Round-by-round values:"));
-    values.forEach((value, index) => lines.push(localizedText(language, `Round ${index + 1}: ${formatScore(value)} FP`, `Round ${index + 1}: ${formatScore(value)} FP`)));
+    lines.push(localizedText(language, "Round-by-round values:", "По турам:"));
+    values.forEach((value, index) => lines.push(localizedText(language, `Round ${index + 1}: ${formatScore(value)} FP`, `Тур ${index + 1}: ${formatScore(value)} ФО`)));
   }
-  lines.push(localizedText(language, "Display only value. Not used by optimizer and transfer suggestions.", "Display only value. Not used by optimizer and transfer suggestions."));
   return lines.join("\n");
+}
+
+function squadCardForecastTitle(details: string, baseValue: number | null, isCaptain: boolean, language: UiLanguage) {
+  if (!isCaptain || baseValue === null || !Number.isFinite(baseValue)) return details;
+  return [
+    details,
+    localizedText(
+      language,
+      `Captain: ${formatScore(baseValue)} × 2 = ${formatScore(baseValue * 2)} FP`,
+      `Капитан: ${formatScore(baseValue)} × 2 = ${formatScore(baseValue * 2)} ФО`
+    )
+  ].join("\n");
 }
 
 function alternativePredictedFpTitle(language: UiLanguage) {
   return localizedText(
     language,
-    "Alternative FP forecast for the next fixture. Display only: not used by auto-pick, value, transfers, or round points.",
+    "Alternative forecast for the next fixture.",
     "Альтернативный прогноз FP на следующий матч. Только для просмотра: не используется в автоподборе, ценности, трансферах и очках тура."
   );
 }
 
-function alternativeFiveRoundFpTitle(language: UiLanguage) {
+function alternativeFiveRoundFpTitle(language: UiLanguage, horizon = 5) {
   return localizedText(
     language,
-    "Total alternative FP forecast over the next five rounds, calculated from each round's fixtures.",
+    `Total alternative forecast over ${horizon} rounds.`,
     "Суммарный альтернативный прогноз FP на следующие пять туров, рассчитанный по матчам каждого тура."
   );
 }
@@ -2980,10 +4003,9 @@ function playerPoolColumnTitles(language: UiLanguage, horizon: number) {
     position: localizedText(language, "Fantasy position: goalkeeper, defender, midfielder, or forward.", "Фэнтези-позиция: вратарь, защитник, полузащитник или нападающий."),
     price: localizedText(language, "Current fantasy price. A tilde marks an estimated price.", "Текущая фэнтези-цена. Тильда означает оценочную цену."),
     next: localizedText(language, "Primary fantasy-points forecast for the next fixture.", "Основной прогноз fantasy-очков на ближайший матч."),
-    averageNext: localizedText(language, "Average primary/alternative forecast for the next fixture.", "Average primary/alternative forecast for the next fixture."),
+    foontasyNext: localizedText(language, "Foontasy current-round forecast (FFO).", "Прогноз Foontasy на текущий тур (FFO)."),
     alternative: alternativePredictedFpTitle(language),
-    alternativeFive: alternativeFiveRoundFpTitle(language),
-    averageFive: localizedText(language, "Average primary and alternative forecast over five rounds.", "Average primary and alternative forecast over five rounds."),
+    alternativeFive: alternativeFiveRoundFpTitle(language, horizon),
     horizon: localizedText(language, `Total primary forecast over the selected ${horizon}-round horizon.`, `Суммарный основной прогноз на выбранном горизонте в ${horizon} туров.`),
     fixtures: localizedText(language, "Upcoming opponents. Home fixtures are bold; underline colour shows difficulty from green (easy) to red (hard). Hover an opponent for the full club name.", "Ближайшие соперники. Домашние матчи выделены жирным; цвет нижней границы показывает сложность от зелёного (легко) до красного (сложно). Полное название клуба доступно при наведении."),
     action: localizedText(language, "Add the player to the squad or remove the selected player.", "Добавить игрока в состав или убрать уже выбранного игрока.")
@@ -3314,6 +4336,7 @@ function squadVariantHref(leagueId: string, season: string, squadId: string | nu
 
 function fantasyHistoryScopeLabel(scope: FantasyHistoryScope, language: UiLanguage) {
   if (scope === "ALL_LOADED") return localizedText(language, "All loaded competitions", "Все загруженные турниры");
+  if (scope === "ALL_PLAYER_MATCHES") return localizedText(language, "All player matches, including national teams", "Все матчи игрока, включая сборные");
   if (scope === "SAME_COUNTRY_CLUB") return localizedText(language, "Team-country club competitions", "Клубные турниры страны команды");
   if (scope === "SELECTED_PLUS_UEFA") return localizedText(language, "Selected + Champions / Europa League", "Выбранный + ЛЧ / ЛЕ");
   return localizedText(language, "Selected competition", "Выбранный турнир");
@@ -3333,4 +4356,120 @@ function localUniqueSquadName(existingNames: string[], baseName: string) {
     if (!used.has(candidate.toLocaleLowerCase())) return candidate;
   }
   return `${baseName} ${Date.now()}`;
+}
+
+function scaleCaptainForecast(value: number | null | undefined, isCaptain: boolean) {
+  return typeof value === "number" && Number.isFinite(value) ? value * (isCaptain ? 2 : 1) : null;
+}
+
+async function downloadPlayerPoolXlsx(
+  players: FantasyPlannerPlayer[],
+  horizon: number,
+  language: UiLanguage,
+  leagueId: string,
+  season: string,
+  visibleColumnKeys: string[]
+) {
+  const optionalColumnsByKey = new Map(playerPoolOptionalColumns(players, horizon, language).map((column) => [column.key, column]));
+  const selectedColumns = visibleColumnKeys
+    .map((key) => optionalColumnsByKey.get(key))
+    .filter((column): column is PlayerPoolOptionalColumn => Boolean(column));
+  const columns = [
+    { key: "player", header: localizedText(language, "Player", "Игрок") },
+    { key: "team", header: localizedText(language, "Team", "Команда") },
+    { key: "position", header: localizedText(language, "Position", "Позиция") },
+    { key: "price", header: localizedText(language, "Price", "Цена") },
+    ...selectedColumns.map((column) => ({ key: column.key, header: column.label }))
+  ];
+  const response = await fetch("/api/machete/squads/export-table", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Accept: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" },
+    body: JSON.stringify({
+      leagueId,
+      season,
+      language,
+      horizon,
+      columns,
+      rows: players.map((player) => ({
+        player: player.fotmobName ?? player.name,
+        team: player.teamName,
+        position: player.positionGroup,
+        price: player.price,
+        ...Object.fromEntries(selectedColumns.map((column) => [
+          column.key,
+          playerPoolExportCellValue(column.key, player, horizon)
+        ]))
+      }))
+    })
+  });
+  if (!response.ok) throw new Error("PLAYER_TABLE_EXPORT_FAILED");
+
+  const blob = await response.blob();
+  const href = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = href;
+  link.download = `players-${leagueId}-${season.replaceAll("/", "-")}.xlsx`;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(href);
+}
+
+async function loadSquadFilterPresets(signal?: AbortSignal) {
+  try {
+    const response = await fetch("/api/user/saved-views?source=squad", { cache: "no-store", signal });
+    if (!response.ok) return null;
+    return squadFilterPresetsFromPayload(await response.json());
+  } catch (error) {
+    if ((error as Error).name === "AbortError") return null;
+    return null;
+  }
+}
+
+async function saveSquadFilterPreset(name: string, filters: SquadFilterPresetFilters) {
+  try {
+    const href = `squad-filter:${encodeURIComponent(name.trim().toLocaleLowerCase())}`;
+    const response = await fetch("/api/user/saved-views", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ source: "squad", name: name.trim().slice(0, 60), href, filters })
+    });
+    if (!response.ok) return null;
+    return squadFilterPresetsFromPayload(await response.json());
+  } catch {
+    return null;
+  }
+}
+
+async function removeSquadFilterPreset(id: string) {
+  try {
+    const params = new URLSearchParams({ source: "squad", id });
+    const response = await fetch(`/api/user/saved-views?${params.toString()}`, { method: "DELETE" });
+    if (!response.ok) return null;
+    return squadFilterPresetsFromPayload(await response.json());
+  } catch {
+    return null;
+  }
+}
+
+function squadFilterPresetsFromPayload(payload: unknown): SquadFilterPreset[] | null {
+  if (!payload || typeof payload !== "object" || !Array.isArray((payload as { views?: unknown }).views)) return null;
+  const result: SquadFilterPreset[] = [];
+  for (const item of (payload as { views: unknown[] }).views) {
+    if (!item || typeof item !== "object") continue;
+    const preset = item as Partial<SquadFilterPreset>;
+    if (typeof preset.id !== "string" || typeof preset.name !== "string" || typeof preset.createdAt !== "string" || typeof preset.updatedAt !== "string" || !preset.filters) continue;
+    result.push(preset as SquadFilterPreset);
+  }
+  return result.slice(0, 20);
+}
+
+function playerPoolExportCellValue(key: string, player: FantasyPlannerPlayer, horizon: number) {
+  if (key === "fixtures") return player.fixtures.slice(0, horizon).join(" | ");
+  const value = customPlayerPoolColumnValue(key, player, horizon);
+  if (typeof value !== "number") return value;
+  if (["startProbability", "sixtyProbability", "fullMatchProbability", "forecastConfidence"].includes(key) || /(?:appearance|sixty|full_match)_(?:probability|rate)/.test(key)) {
+    return value * 100;
+  }
+  return value;
 }

@@ -9,6 +9,8 @@ type SortDirection = "asc" | "desc";
 type SortableTableProps = TableHTMLAttributes<HTMLTableElement> & {
   serverSortParam?: string;
   defaultSort?: string;
+  sortRefreshKey?: string | number;
+  onClientSortChange?: (sort: { key: string; direction: SortDirection }) => void;
 };
 
 type ComparableValue =
@@ -17,7 +19,7 @@ type ComparableValue =
   | { kind: "date"; number: number; text: string }
   | { kind: "text"; text: string };
 
-export function SortableTable({ className, serverSortParam, defaultSort, children, ...props }: SortableTableProps) {
+export function SortableTable({ className, serverSortParam, defaultSort, sortRefreshKey, onClientSortChange, children, ...props }: SortableTableProps) {
   const language = useLanguage();
   const tableRef = useRef<HTMLTableElement>(null);
 
@@ -26,12 +28,32 @@ export function SortableTable({ className, serverSortParam, defaultSort, childre
     if (!table) return;
 
     initializeHeaders(table, language);
-    if (serverSortParam) syncServerSortHeaders(table, serverSortParam, defaultSort);
+    if (serverSortParam) {
+      syncServerSortHeaders(table, serverSortParam, defaultSort);
+      return;
+    }
+
+    const activeHeader = Array.from(table.tHead?.querySelectorAll("th[data-sort-direction]") ?? []).find(
+      (header): header is HTMLTableCellElement => header instanceof HTMLTableCellElement
+    );
+    const direction = activeHeader ? readSortDirection(activeHeader.dataset.sortDirection) : null;
+    if (activeHeader && direction) sortTableBody(table, activeHeader, direction);
   }, [serverSortParam, defaultSort, children, language]);
+
+  useEffect(() => {
+    const table = tableRef.current;
+    if (!table || sortRefreshKey === undefined) return;
+    const activeHeader = Array.from(table.tHead?.querySelectorAll("th[data-sort-direction]") ?? []).find(
+      (header): header is HTMLTableCellElement => header instanceof HTMLTableCellElement
+    );
+    const direction = activeHeader ? readSortDirection(activeHeader.dataset.sortDirection) : null;
+    if (activeHeader && direction) sortTableBody(table, activeHeader, direction);
+  }, [sortRefreshKey]);
 
   function sortFromEvent(target: EventTarget | null) {
     const table = tableRef.current;
     if (!table || !(target instanceof Element)) return;
+    if (target.closest("[data-column-resize-handle]")) return;
 
     const header = target.closest("th");
     if (!header || !table.contains(header) || header.closest("table") !== table) return;
@@ -43,6 +65,14 @@ export function SortableTable({ className, serverSortParam, defaultSort, childre
     }
 
     sortTableBody(table, header);
+    const direction = readSortDirection(header.dataset.sortDirection);
+    if (direction) {
+      onClientSortChange?.({ key: header.dataset.sortKey ?? header.textContent?.trim() ?? "", direction });
+      table.dispatchEvent(new CustomEvent("sortable-table:sort-change", {
+        bubbles: true,
+        detail: { key: header.dataset.sortKey ?? header.textContent?.trim() ?? "", direction }
+      }));
+    }
   }
 
   function handleClick(event: MouseEvent<HTMLTableElement>) {
@@ -86,14 +116,14 @@ function initializeHeaders(table: HTMLTableElement, language: "en" | "ru") {
   }
 }
 
-function sortTableBody(table: HTMLTableElement, header: HTMLTableCellElement) {
+function sortTableBody(table: HTMLTableElement, header: HTMLTableCellElement, forcedDirection?: SortDirection) {
   const body = table.tBodies[0];
   if (!body) return;
 
   const columnIndex = header.cellIndex;
   const currentDirection = readSortDirection(header.dataset.sortDirection);
   const defaultDirection = defaultDirectionForColumn(table, columnIndex, header);
-  const nextDirection = currentDirection ? reverseDirection(currentDirection) : defaultDirection;
+  const nextDirection = forcedDirection ?? (currentDirection ? reverseDirection(currentDirection) : defaultDirection);
   const rows = Array.from(body.rows);
   const sortableRows = rows
     .map((row, index) => ({ row, index, value: comparableValue(cellSortValue(row.cells[columnIndex])) }))

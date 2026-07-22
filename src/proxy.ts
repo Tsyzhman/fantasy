@@ -6,7 +6,7 @@ import { isDatabaseConfigured } from "@/lib/database-url";
 const publicPaths = ["/login", "/setup", "/api/auth/logout", "/api/health", "/api/client-errors"];
 const publicPrefixes = ["/_next", "/favicon", "/team-logos", "/mode-logos", "/api/cron/", "/api/health/"];
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-pathname", pathname);

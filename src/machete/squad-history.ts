@@ -15,6 +15,7 @@ export type ResolvedFantasyHistory = {
   historyScopes: SharedPlayerRowsScope[];
   matchWindow: MacheteMatchWindow;
   availableSeasons: string[];
+  includePlayerHistory: boolean;
 };
 
 export async function resolveFantasyHistory(
@@ -29,7 +30,7 @@ export async function resolveFantasyHistory(
   const rosterScopes = rosterTeams.map((row) => ({ leagueId: league.leagueId, season: league.season, teamId: row.teamId }));
   const matchWindow: MacheteMatchWindow = settings.window === "LAST_5" ? { kind: "last", matches: 5 } : { kind: "all" };
   if (rosterTeams.length === 0) {
-    return { rosterScopes, historyScopes: rosterScopes, matchWindow, availableSeasons: [] };
+    return { rosterScopes, historyScopes: rosterScopes, matchWindow, availableSeasons: [], includePlayerHistory: settings.scope === "ALL_PLAYER_MATCHES" };
   }
 
   const teamIds = rosterTeams.map((row) => row.teamId);
@@ -72,7 +73,8 @@ export async function resolveFantasyHistory(
     rosterScopes,
     historyScopes,
     matchWindow,
-    availableSeasons
+    availableSeasons,
+    includePlayerHistory: settings.scope === "ALL_PLAYER_MATCHES"
   };
 }
 
@@ -83,7 +85,7 @@ function historyCompetitionMatches(
   match: { leagueId: bigint | null; league: { name: string; country: string | null } | null }
 ) {
   if (!match.leagueId) return false;
-  if (scope === "ALL_LOADED") return true;
+  if (scope === "ALL_LOADED" || scope === "ALL_PLAYER_MATCHES") return true;
   if (scope === "SELECTED_COMPETITION") return match.leagueId === selectedLeagueId;
   if (scope === "SELECTED_PLUS_UEFA") return match.leagueId === selectedLeagueId || isUefaClubCompetition(match.league?.name);
   const competitionCountry = normalizeCountry(match.league?.country);

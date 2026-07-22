@@ -155,10 +155,13 @@ export async function autoMapSportsRuFantasyPlayers(
       // A verified admin override may legitimately lead a lagging FotMob team
       // roster (new transfers are the common case). Keep it while both the
       // player and selected league-season team still exist.
-      if (
-        !price.teamName && price.playerId && String(price.playerId) === existing.internalEntityId && price.teamId &&
-        manualPlayerIdSet.has(existing.internalEntityId) && activeSeasonTeamIdSet.has(String(price.teamId))
-      ) {
+      if (shouldRetainManualOverride({
+        pricePlayerId: price.playerId,
+        priceTeamId: price.teamId,
+        mappedPlayerId: existing.internalEntityId,
+        existingPlayerIds: manualPlayerIdSet,
+        activeTeamIds: activeSeasonTeamIdSet
+      })) {
         manual += 1;
         continue;
       }
@@ -218,6 +221,22 @@ export async function autoMapSportsRuFantasyPlayers(
     refreshedSelections,
     removedDuplicateSelections
   };
+}
+
+export function shouldRetainManualOverride(input: {
+  pricePlayerId: bigint | null;
+  priceTeamId: bigint | null;
+  mappedPlayerId: string;
+  existingPlayerIds: ReadonlySet<string>;
+  activeTeamIds: ReadonlySet<string>;
+}) {
+  return Boolean(
+    input.pricePlayerId &&
+    String(input.pricePlayerId) === input.mappedPlayerId &&
+    input.priceTeamId &&
+    input.existingPlayerIds.has(input.mappedPlayerId) &&
+    input.activeTeamIds.has(String(input.priceTeamId))
+  );
 }
 
 export async function loadSportsRuTeamPlayerMappings(
@@ -654,6 +673,17 @@ function scoreNameMatch(sportsName: string, fotmobName: string) {
   const sportsTokens = sportsName.split(" ").filter(Boolean);
   const fotmobTokens = fotmobName.split(" ").filter(Boolean);
   if (sportsTokens.length === 0 || fotmobTokens.length === 0) return 0;
+
+  const sameSurname = sportsTokens.length >= 2
+    && fotmobTokens.length >= 2
+    && sportsTokens.at(-1) === fotmobTokens.at(-1);
+  const firstNameScore = similarity(sportsTokens[0], fotmobTokens[0]);
+  if (sameSurname && firstNameScore >= 0.7) {
+    // Covers harmless transliteration and omitted middle names, for example
+    // Sports.ru "Huan Boselli" vs FotMob "Juan Manuel Boselli", without
+    // accepting unrelated players who merely share a surname.
+    return firstNameScore >= 0.95 ? 0.96 : 0.88;
+  }
 
   let best = 0;
   for (let size = 1; size <= Math.min(sportsTokens.length + 1, fotmobTokens.length); size += 1) {

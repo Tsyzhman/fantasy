@@ -6,14 +6,19 @@ import {
   buildTransferPlanSuggestions,
   canAddFantasyPlayer,
   countFantasySquadTransfers,
+  createFantasyAddEvaluator,
+  createFantasyFitEvaluator,
   defaultFantasySquadRules,
   fantasyAddBlockReason,
+  fantasyFitBlockReason,
   fantasyTransferLimitForHorizon,
+  nextAlternativeFantasyPoints,
   nextFantasyPoints,
   normalizeFantasyHorizon,
   normalizeFantasyPosition,
   optimizeFantasySquad,
   optimizeFantasyStarters,
+  playerAlternativeHorizonPoints,
   selectionForPlayer,
   summarizeFantasySquad,
   createFantasySquadRoundPlans,
@@ -80,6 +85,23 @@ test("squad summary counts projected points from starters only", () => {
   assert.equal(summary.projectedHorizon, 9);
   assert.deepEqual(summary.starterPlayers.map((item) => item.playerId), ["1"]);
   assert.deepEqual(summary.benchPlayers.map((item) => item.playerId), ["2"]);
+});
+
+test("squad summary doubles the starting captain in next-round and horizon totals", () => {
+  const rules = { ...defaultFantasySquadRules, maxPlayersPerTeam: 3 };
+  const captain = player("1", "Captain", "10", "MID", 5, [4, 5]);
+  const teammate = player("2", "Starter", "11", "FWD", 5, [3, 2]);
+  const bench = player("3", "Bench captain flag", "12", "DEF", 5, [20, 20]);
+  const captainSelection = { ...selectionForPlayer(captain, 0, true), isCaptain: true };
+  const summary = summarizeFantasySquad(
+    [captain, teammate, bench],
+    [captainSelection, selectionForPlayer(teammate, 1, true), { ...selectionForPlayer(bench, 2, false), isCaptain: true }],
+    rules,
+    2
+  );
+
+  assert.equal(summary.projectedNext, 11);
+  assert.equal(summary.projectedHorizon, 23);
 });
 
 test("full squad enforces roster shape and starting formation", () => {
@@ -391,6 +413,68 @@ test("player additions are blocked when position or team slots are full", () => 
   );
 });
 
+test("add evaluator preserves validation and reuses equivalent candidate work", () => {
+  const pool = [
+    ...rangePlayers("GK", 2, 1),
+    ...rangePlayers("DEF", 5, 10),
+    player("90", "Equivalent A", "90", "MID", 7, [5]),
+    player("91", "Equivalent B", "90", "MID", 7, [5])
+  ];
+  const evaluator = createFantasyAddEvaluator(pool, [], defaultFantasySquadRules);
+
+  assert.equal(evaluator.reason(pool.at(-2)!), fantasyAddBlockReason(pool.at(-2)!, pool, [], defaultFantasySquadRules));
+  assert.equal(evaluator.reason(pool.at(-1)!), evaluator.reason(pool.at(-2)!));
+  assert.equal(evaluator.evaluatedGroups(), 1);
+});
+
+test("Fits reserves enough budget to complete every remaining position", () => {
+  const pool = [
+    ...rangePlayers("GK", 2, 1),
+    ...rangePlayers("DEF", 5, 10),
+    ...rangePlayers("MID", 5, 20),
+    ...rangePlayers("FWD", 3, 30),
+    player("90", "Too expensive", "90", "MID", 31, [10]),
+    player("91", "Exactly affordable", "91", "MID", 30, [9])
+  ];
+
+  assert.equal(fantasyFitBlockReason(pool.at(-2)!, pool, [], defaultFantasySquadRules), "Budget cannot be completed");
+  assert.equal(fantasyFitBlockReason(pool.at(-1)!, pool, [], defaultFantasySquadRules), null);
+});
+
+test("Fits includes team limits when pricing the remaining squad", () => {
+  const rules = { ...defaultFantasySquadRules, budgetLimit: 86, maxPlayersPerTeam: 2 };
+  const cheap = [
+    ...rangePlayers("GK", 2, 1),
+    ...rangePlayers("DEF", 5, 10),
+    ...rangePlayers("MID", 5, 20),
+    ...rangePlayers("FWD", 3, 30)
+  ].map((candidate) => ({ ...candidate, teamId: "cheap", teamName: "Cheap FC" }));
+  const alternatives = [
+    ...rangePlayers("GK", 2, 101),
+    ...rangePlayers("DEF", 5, 110),
+    ...rangePlayers("MID", 5, 120),
+    ...rangePlayers("FWD", 3, 130)
+  ].map((candidate) => ({ ...candidate, price: 6 }));
+  const pool = [...cheap, ...alternatives, player("180", "Candidate", "180", "MID", 5, [9])];
+
+  assert.equal(fantasyFitBlockReason(pool.at(-1)!, pool, [], rules), "Budget cannot be completed");
+});
+
+test("Fits evaluator reuses the result for equivalent candidates", () => {
+  const pool = [
+    ...rangePlayers("GK", 2, 1),
+    ...rangePlayers("DEF", 5, 10),
+    ...rangePlayers("MID", 5, 20),
+    ...rangePlayers("FWD", 3, 30),
+    player("90", "Equivalent A", "90", "MID", 7, [5]),
+    player("91", "Equivalent B", "90", "MID", 7, [5])
+  ];
+  const evaluator = createFantasyFitEvaluator(pool, [], defaultFantasySquadRules);
+
+  assert.equal(evaluator.reason(pool.at(-2)!), evaluator.reason(pool.at(-1)!));
+  assert.equal(evaluator.evaluatedGroups(), 1);
+});
+
 test("transfer suggestions improve next round and stay non-negative over horizon", () => {
   const rules = { ...defaultFantasySquadRules, budgetLimit: 100, maxPlayersPerTeam: 3 };
   const out = player("1", "Old Mid", "10", "MID", 6, [4, 4, 4]);
@@ -551,6 +635,14 @@ test("transfer counter treats a paired out and in as one move", () => {
 test("next fantasy points fall back to predicted FP when no fixture rounds are loaded", () => {
   assert.equal(nextFantasyPoints(player("1", "No Fixtures", "10", "MID", 5, [])), 0);
   assert.equal(nextFantasyPoints({ ...player("2", "Projected", "10", "MID", 5, []), predictedFp: 6.4 }), 6.4);
+});
+
+test("alternative forecasts preserve missing values and sum only available round projections", () => {
+  assert.equal(nextAlternativeFantasyPoints({ alternativePredictedFp: null, alternativeRoundPoints: [] }), null);
+  assert.equal(nextAlternativeFantasyPoints({ alternativePredictedFp: 4.2, alternativeRoundPoints: [null] }), null);
+  assert.equal(nextAlternativeFantasyPoints({ alternativePredictedFp: null, alternativeRoundPoints: [3.1] }), 3.1);
+  assert.equal(playerAlternativeHorizonPoints({ alternativePredictedFp: null, alternativeRoundPoints: [3.1, null, 4.2] }, 3), null);
+  assert.equal(playerAlternativeHorizonPoints({ alternativePredictedFp: null, alternativeRoundPoints: [] }, 5), null);
 });
 
 test("position normalizer accepts Sports.ru labels", () => {

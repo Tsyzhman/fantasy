@@ -5,7 +5,10 @@ import { ExpiringPromiseCache } from "@/lib/expiring-promise-cache";
 import { macheteLeagueDisplayName } from "@/lib/leagues/display";
 import { normalizeSportsRuPlayerName } from "@/lib/providers/sports-ru-fantasy";
 import { calculateAlternativeScore, calculateFantasyScore, getActiveScoringModelBundleForSource, type ActiveScoringModel } from "@/lib/scoring";
-import { calculateCustomFormulaScore } from "@/lib/scoring/formula";
+import {
+  calculateCustomFormulaScore,
+  calculateCustomFormulaScoreWithBreakdown
+} from "@/lib/scoring/formula";
 import { friendAlternativeFormulaDefaults } from "@/lib/scoring/formula-display";
 import type { UserScoringFormulaPreference } from "@/lib/scoring/user-preferences";
 import { providerTeamShortName } from "@/lib/teams/display";
@@ -31,6 +34,7 @@ import {
   type FantasyProjectionCalibrationModel
 } from "./fantasy_projection_calibration";
 import { loadFantasyProjectionCalibration } from "./fantasy_projection_service";
+import { FANTASY_MODEL_VERSION } from "./foontasy_style_model";
 import { loadPlannerReadinessByScope, plannerReadinessKey, type PlannerReadiness } from "./planner_readiness";
 import {
   defaultFantasyHistorySettings,
@@ -254,11 +258,13 @@ const teamStrengthHalfLifeDays = 180;
 const teamStrengthOverallPriorMatches = 6;
 const teamStrengthVenuePriorMatches = 8;
 const promotedTeamPriorMatches = 8;
-const promotedTeamStrengthFactor = 0.85;
+const promotedTeamStrengthFactor = 0.81;
 const promotedTeamRatioExponent = 0.6;
 const teamStrengthFeederLeagueByTopLeague = new Map<string, bigint>([["63", 338n]]);
-const fantasyPlayerPoolCacheTtlMs = 30_000;
+const fantasyPlayerPoolCacheTtlMs = 5 * 60_000;
 const fantasyPlayerPoolCache = new ExpiringPromiseCache<string, FantasyPlannerPlayer[]>(20);
+const upcomingRoundFixturesCacheTtlMs = 5 * 60_000;
+const upcomingRoundFixturesCache = new ExpiringPromiseCache<string, PlannerRoundFixtures>(20);
 export const maxFantasySquadNameLength = 80;
 
 export async function loadCachedFantasySquadPlayerPool(
@@ -269,9 +275,10 @@ export async function loadCachedFantasySquadPlayerPool(
 ) {
   const preference = await prisma.userScoringPreference.findUnique({
     where: { userId_modelSource: { userId, modelSource: "MACHETE" } },
-    select: { updatedAt: true }
+    select: { id: true, updatedAt: true }
   });
-  const key = `${userId}:${league.leagueId}:${league.season}:${league.updatedAt.toISOString()}:${preference?.updatedAt.toISOString() ?? "global"}:${fantasyHistorySettingsKey(historySettings)}`;
+  const preferenceKey = preference ? `${preference.id}:${preference.updatedAt.toISOString()}` : "global";
+  const key = `${league.leagueId}:${league.season}:${league.updatedAt.toISOString()}:${preferenceKey}:${fantasyHistorySettingsKey(historySettings)}`;
   return fantasyPlayerPoolCache.getOrCreate(key, fantasyPlayerPoolCacheTtlMs, async () => {
     const data = await loadFantasySquadPlannerData(prisma, userId, league, null, { historySettings });
     return data.players;
@@ -283,13 +290,18 @@ export async function loadFantasySquadPlannerData(
   userId: string,
   league: SharedLeagueSeasonOption,
   squadId?: string | null,
-  options?: { playerIds?: bigint[]; readiness?: PlannerReadiness; historySettings?: FantasyHistorySettings }
+  options?: {
+    playerIds?: bigint[];
+    readiness?: PlannerReadiness;
+    historySettings?: FantasyHistorySettings;
+    deferFormulaProjections?: boolean;
+  }
 ): Promise<FantasySquadPlannerData> {
   const readiness = options?.readiness ?? (await loadPlannerReadinessByScope(prisma, [league])).get(plannerReadinessKey(league));
   if (!readiness) throw new Error(`Planner readiness could not be evaluated for ${league.leagueId}:${league.season}.`);
   const history = await resolveFantasyHistory(prisma, league, options?.historySettings ?? defaultFantasyHistorySettings);
   const sportsRuSeasons = sportsRuSeasonAliases(league.season);
-  const [contest, savedSquads, rosterRows, playerRows, roundsAndFixtures, priceRows, baltikaMetricsByName, rosterPlayerCount] = await Promise.all([
+  const [contest, savedSquads, rosterRows, playerRows, roundsAndFixtures, priceRows, foontasyRows, modelForecastRows, baltikaMetricsByName, rosterPlayerCount] = await Promise.all([
     prisma.sportsRuFantasyContest.findFirst({
       where: {
         provider: "SPORTS_RU",
@@ -324,7 +336,7 @@ export async function loadFantasySquadPlannerData(
       },
       orderBy: [{ team: { name: "asc" } }, { player: { name: "asc" } }]
     }),
-    loadProjectedPlayerRows(prisma, userId, league, history, options?.playerIds),
+    loadProjectedPlayerRows(prisma, userId, league, history, options?.playerIds, options?.deferFormulaProjections),
     loadUpcomingRoundFixtures(prisma, league),
     prisma.fantasyPlayerPrice.findMany({
       where: {
@@ -334,6 +346,16 @@ export async function loadFantasySquadPlannerData(
       },
       orderBy: { lastSeenAt: "desc" }
     }),
+    prisma.foontasyForecast.findMany({
+      where: { leagueId: league.leagueId, season: league.season, playerId: { not: null } },
+      orderBy: [{ fetchedAt: "desc" }, { updatedAt: "desc" }],
+      distinct: ["playerId"],
+      select: { playerId: true, points: true, fetchedAt: true }
+    }),
+    prisma.fantasyModelForecast?.findMany({
+      where: { leagueId: league.leagueId, season: league.season, modelVersion: FANTASY_MODEL_VERSION, horizon: { in: [3, 5] } },
+      select: { playerId: true, horizon: true, points: true, status: true, calculatedAt: true }
+    }) ?? Promise.resolve([]),
     loadBaltikaPlayerMetricsByName(prisma, sportsRuSeasons),
     prisma.teamPlayerSeason.count({
       where: {
@@ -364,20 +386,26 @@ export async function loadFantasySquadPlannerData(
   const rules = fantasyRulesForLeague(league, contest ?? null);
   const projectedByPlayerTeam = new Map(playerRows.rows.map((row) => [playerTeamKey(row.playerId, row.teamId), row]));
   const prices = priceLookup(priceRows, priceMaps);
+  const foontasyByPlayerId = new Map(foontasyRows.flatMap((row) => row.playerId ? [[String(row.playerId), row] as const] : []));
+  const modelForecastByPlayerHorizon = new Map(modelForecastRows.map((row) => [`${row.playerId}:${row.horizon}`, row] as const));
   const sportsPositionsByPlayerId = sportsRuFantasyPositionsByPlayerId(priceRows, priceMaps);
-  const componentProjections = buildFormulaProjectionIndex(
-    playerRows.friendRows,
-    roundsAndFixtures,
-    sportsPositionsByPlayerId,
-    playerRows.expectedProjectionConfig
-  );
-  const friendAlternativeProjections = buildFormulaProjectionIndex(
-    playerRows.friendRows,
-    roundsAndFixtures,
-    sportsPositionsByPlayerId,
-    playerRows.alternativeProjectionConfig,
-    true
-  );
+  const componentProjections = options?.deferFormulaProjections
+    ? emptyComponentProjectionIndex()
+    : buildFormulaProjectionIndex(
+        playerRows.friendRows,
+        roundsAndFixtures,
+        sportsPositionsByPlayerId,
+        playerRows.expectedProjectionConfig
+      );
+  const friendAlternativeProjections = options?.deferFormulaProjections
+    ? emptyComponentProjectionIndex()
+    : buildFormulaProjectionIndex(
+        playerRows.friendRows,
+        roundsAndFixtures,
+        sportsPositionsByPlayerId,
+        playerRows.alternativeProjectionConfig,
+        true
+      );
   const preferredProjectionEngine = configuredFantasyProjectionEngine();
   const rosterPlayers: FantasyPlannerPlayer[] = rosterRows.flatMap((row) => {
     const projected = projectedByPlayerTeam.get(playerTeamKey(row.playerId, row.teamId));
@@ -391,17 +419,21 @@ export async function loadFantasySquadPlannerData(
     const sportsPosition = sportsPositionsByPlayerId.get(String(row.playerId)) ?? (priceRow ? sportsRuPricePosition(priceRow) : null);
     const position = fantasyPlannerPosition(sportsPosition, row.position, projected?.position ?? null);
     const positionGroup = normalizeFantasyPosition(position);
+    const foontasy = foontasyByPlayerId.get(String(row.playerId)) ?? null;
+    const modelT3 = modelForecastByPlayerHorizon.get(`${row.playerId}:3`) ?? null;
+    const modelT5 = modelForecastByPlayerHorizon.get(`${row.playerId}:5`) ?? null;
     const nextComponentProjection = nextFixture
       ? componentProjections.byFixturePlayer.get(fixturePlayerProjectionKey(nextFixture.id, String(row.playerId))) ?? null
       : null;
-    const componentPredictedFp = nextComponentProjection
-      ? projectionFormulaFantasyPoints(
+    const nextComponentFormula = nextComponentProjection
+      ? projectionFormulaWithBreakdown(
           nextComponentProjection,
           nextFixture,
           playerRows.expectedProjectionConfig,
           componentProjections.formulaMetricsByFixturePlayer.get(fixturePlayerProjectionKey(nextFixture?.id ?? "", String(row.playerId)))
         )
       : null;
+    const componentPredictedFp = nextComponentFormula?.total ?? null;
     const projectionEngine: FantasyProjectionEngine =
       preferredProjectionEngine === "COMPONENT_XFP_V1" && componentPredictedFp !== null
         ? "COMPONENT_XFP_V1"
@@ -410,14 +442,30 @@ export async function loadFantasySquadPlannerData(
     const nextFriendProjection = nextFixture
       ? friendAlternativeProjections.byFixturePlayer.get(fixturePlayerProjectionKey(nextFixture.id, String(row.playerId))) ?? null
       : null;
-    const alternativePredictedFp = nextFriendProjection
-      ? projectionFormulaFantasyPoints(
+    const nextFriendFormula = nextFriendProjection
+      ? projectionFormulaWithBreakdown(
           nextFriendProjection,
           nextFixture,
           playerRows.alternativeProjectionConfig,
           friendAlternativeProjections.formulaMetricsByFixturePlayer.get(fixturePlayerProjectionKey(nextFixture?.id ?? "", String(row.playerId)))
         )
       : null;
+    const nextRoundFixtures = roundsAndFixtures.rounds.length > 0
+      ? roundsAndFixtures.fixturesByTeamRound.get(roundsAndFixtures.rounds[0].id)?.get(String(row.teamId)) ?? []
+      : [];
+    const nextComponentRoundFormula = projectionRoundFormulaWithBreakdown(
+      nextRoundFixtures,
+      String(row.playerId),
+      componentProjections,
+      playerRows.expectedProjectionConfig
+    );
+    const nextFriendRoundFormula = projectionRoundFormulaWithBreakdown(
+      nextRoundFixtures,
+      String(row.playerId),
+      friendAlternativeProjections,
+      playerRows.alternativeProjectionConfig
+    );
+    const alternativePredictedFp = nextFriendFormula?.total ?? null;
     const price = resolveFantasyPlannerPrice(priceRow, predictedFp, positionGroup);
     const playerName = priceRow?.playerName ?? row.player.name;
     const baltikaMetric = baltikaMetricsByName.get(normalizeSportsRuPlayerName(playerName));
@@ -483,7 +531,7 @@ export async function loadFantasySquadPlannerData(
     });
     const forecastExplanation = buildFantasyForecastExplanation({
       matchesPlayed: projected?.matchesPlayed ?? 0,
-      expectedMinutes: projected?.expectedMinutes ?? null,
+      expectedMinutes: nextComponentProjection?.expectedMinutes ?? projected?.expectedMinutes ?? null,
       forecastConfidence: projected?.forecastConfidence ?? null,
       recentFp: projected?.recentFp ?? [],
       fixtureDifficulties,
@@ -510,6 +558,7 @@ export async function loadFantasySquadPlannerData(
         playerId: String(row.playerId),
         teamId: String(row.teamId),
         name: playerName,
+        fotmobName: row.player.name,
         teamName: row.team.name,
         projectedFixtureComponents: buildFixtureComponentInputs(nextComponentProjection),
         teamShortName: roundsAndFixtures.teamShortNameById.get(String(row.teamId)) ?? row.team.name,
@@ -517,6 +566,9 @@ export async function loadFantasySquadPlannerData(
         leagueName: league.displayName,
         position,
         positionGroup,
+        age: projected?.age ?? null,
+        nationality: projected?.nationality ?? null,
+        isStarter: row.isStarter,
         price: price.price,
         priceSource: price.priceSource,
         predictedFp,
@@ -524,18 +576,33 @@ export async function loadFantasySquadPlannerData(
         componentPredictedFp,
         projectionEngine,
         projectionComponents: nextComponentProjection?.components ?? null,
+        projectionFormula: projectionEngine === "COMPONENT_XFP_V1" ? nextComponentRoundFormula : null,
         alternativeProjectedFixtureComponents: buildFixtureComponentInputs(nextFriendProjection),
         alternativeProjectionComponents: nextFriendProjection?.components ?? null,
+        alternativeProjectionFormula: nextFriendRoundFormula,
         alternativePredictedFp,
         alternativeRoundPoints,
-        expectedMinutes: projected?.expectedMinutes ?? null,
-        startProbability: projected?.startProbability ?? null,
+        foontasyPoints: foontasy?.points ?? null,
+        // Foontasy publishes its current round only. Do not invent a T3/T5
+        // total from one matchweek; this becomes numeric only when the source
+        // supplies projections for every round in the selected horizon.
+        foontasyHorizonPoints: null,
+        foontasyFetchedAt: foontasy?.fetchedAt.toISOString() ?? null,
+        modelT3Points: modelT3?.points ?? null,
+        modelT5Points: modelT5?.points ?? null,
+        modelT3Status: modelT3?.status ?? null,
+        modelT5Status: modelT5?.status ?? null,
+        modelForecastCalculatedAt: (modelT5?.calculatedAt ?? modelT3?.calculatedAt)?.toISOString() ?? null,
+        expectedMinutes: nextComponentProjection?.expectedMinutes ?? projected?.expectedMinutes ?? null,
+        startProbability: nextComponentProjection?.probabilities.appearance ?? projected?.startProbability ?? null,
         forecastConfidence: projected?.forecastConfidence ?? null,
         forecastFactors: forecastExplanation.factors,
         forecastRisks: forecastExplanation.risks,
         forecastCalculatedAt: playerRows.calculatedAt,
         forecastDataUpdatedAt: projected?.dataUpdatedAt?.toISOString() ?? null,
         forecastModelVersion: projectionEngine === "COMPONENT_XFP_V1" ? "COMPONENT_XFP_V1" : playerRows.modelVersion,
+        recentFp: projected?.recentFp ?? [],
+        historicalStats: numericHistoricalStats(projected?.rawMetrics),
         valueScore: price.price > 0 ? roundFantasyValue((roundPoints[0] ?? predictedFp ?? 0) / price.price) : 0,
         roundPoints,
         fixtures,
@@ -611,6 +678,13 @@ export async function loadFantasySquadPlannerData(
     },
     historySeasonOptions: history.availableSeasons
   };
+}
+
+function numericHistoricalStats(metrics: Record<string, unknown> | undefined) {
+  if (!metrics) return {};
+  return Object.fromEntries(Object.entries(metrics).flatMap(([key, value]) =>
+    typeof value === "number" && Number.isFinite(value) ? [[key, value]] : []
+  ));
 }
 
 export function sportsRuPricedFantasyPlayers(players: FantasyPlannerPlayer[]) {
@@ -787,24 +861,20 @@ export async function saveFantasySquad(
     }
 
     await tx.userFantasySquadPlayer.deleteMany({ where: { squadId: squad.id } });
-    await Promise.all(
-      input.selections.map((selection, index) =>
-        tx.userFantasySquadPlayer.create({
-          data: {
-            squadId: squad.id,
-            playerId: BigInt(selection.playerId),
-            teamId: rosterByPlayerId.get(selection.playerId)!.teamId,
-            position: positionByPlayerId.get(selection.playerId)!,
-            isStarter: selection.isStarter,
-            isLocked: selection.isLocked,
-            isCaptain: selection.isCaptain,
-            isViceCaptain: selection.isViceCaptain,
-            slotIndex: selection.slotIndex ?? index,
-            purchasePrice: selection.purchasePrice
-          }
-        })
-      )
-    );
+    await tx.userFantasySquadPlayer.createMany({
+      data: input.selections.map((selection, index) => ({
+        squadId: squad.id,
+        playerId: BigInt(selection.playerId),
+        teamId: rosterByPlayerId.get(selection.playerId)!.teamId,
+        position: positionByPlayerId.get(selection.playerId)!,
+        isStarter: selection.isStarter,
+        isLocked: selection.isLocked,
+        isCaptain: selection.isCaptain,
+        isViceCaptain: selection.isViceCaptain,
+        slotIndex: selection.slotIndex ?? index,
+        purchasePrice: selection.purchasePrice
+      }))
+    });
 
     return squad;
   });
@@ -1045,7 +1115,8 @@ async function loadProjectedPlayerRows(
   userId: string,
   league: SharedLeagueSeasonOption,
   history: ResolvedFantasyHistory,
-  playerIds?: bigint[]
+  playerIds?: bigint[],
+  deferFormulaProjections = false
 ) {
   const [modelBundle, preference] = await Promise.all([
     getActiveScoringModelBundleForSource("MACHETE", prisma),
@@ -1061,16 +1132,20 @@ async function loadProjectedPlayerRows(
       rosterScopes: history.rosterScopes,
       matchWindow: history.matchWindow,
       combineTeamCompetitions: true,
+      fallbackToRecentPlayerHistory: history.includePlayerHistory,
       scoringModel: modelBundle.model,
       playerIds
     }),
-    loadSharedMachetePlayerRows(prisma, {
-      scopes: history.historyScopes,
-      rosterScopes: history.rosterScopes,
-      matchWindow: { kind: "days", days: 365 },
-      combineTeamCompetitions: true,
-      scoringModel: modelBundle.model
-    }),
+    deferFormulaProjections
+      ? Promise.resolve([])
+      : loadSharedMachetePlayerRows(prisma, {
+          scopes: history.historyScopes,
+          rosterScopes: history.rosterScopes,
+          matchWindow: { kind: "days", days: 365 },
+          combineTeamCompetitions: true,
+          fallbackToRecentPlayerHistory: history.includePlayerHistory,
+          scoringModel: modelBundle.model
+        }),
     loadFantasyProjectionCalibration(prisma, {
       leagueId: league.leagueId,
       currentSeason: league.season,
@@ -1237,6 +1312,14 @@ export function buildFormulaProjectionIndex(
   return { byFixturePlayer, formulaMetricsByFixturePlayer, errorsByFixtureTeam };
 }
 
+function emptyComponentProjectionIndex(): ComponentProjectionIndex {
+  return {
+    byFixturePlayer: new Map(),
+    formulaMetricsByFixturePlayer: new Map(),
+    errorsByFixtureTeam: new Map()
+  };
+}
+
 function pipelineParticipant(
   row: SharedMachetePlayerRow & { teamId: string; playerId: string },
   sportsPosition: string | undefined,
@@ -1247,12 +1330,13 @@ function pipelineParticipant(
   const metrics: Record<string, unknown> = { ...(row.rawMetrics ?? {}) };
   const expectedMinutes = clamp(formulaValue(config.history.expectedMinutes, metrics), 0, 90);
   metrics.expected_minutes = expectedMinutes;
-  const appearance = clamp(formulaValue(config.history.appearanceProbability, metrics), 0, 1);
+  const countsAsFullMatch = countsAsFullFantasyMatch(expectedMinutes);
+  const appearance = countsAsFullMatch ? 1 : clamp(formulaValue(config.history.appearanceProbability, metrics), 0, 1);
   metrics.appearance_probability = appearance;
-  const sixtyMinutes = clamp(formulaValue(config.history.sixtyProbability, metrics), 0, appearance);
+  const sixtyMinutes = countsAsFullMatch ? 1 : clamp(formulaValue(config.history.sixtyProbability, metrics), 0, appearance);
   metrics.sixty_minute_probability = sixtyMinutes;
   metrics["60_minute_probability"] = sixtyMinutes;
-  const fullMatch = clamp(formulaValue(config.history.fullMatchProbability, metrics), 0, sixtyMinutes);
+  const fullMatch = countsAsFullMatch ? 1 : clamp(formulaValue(config.history.fullMatchProbability, metrics), 0, sixtyMinutes);
   metrics.full_match_probability = fullMatch;
   const xg = nonNegativeFormulaValue(config.history.xgRate, metrics, "history.xgRate");
   const xa = nonNegativeFormulaValue(config.history.xaRate, metrics, "history.xaRate");
@@ -1282,6 +1366,10 @@ function pipelineParticipant(
   };
 }
 
+export function countsAsFullFantasyMatch(expectedMinutes: number) {
+  return Number.isFinite(expectedMinutes) && expectedMinutes >= 80;
+}
+
 function pipelineAllocationParticipant(
   participant: PipelineParticipant,
   teamContext: Record<string, unknown>,
@@ -1290,12 +1378,16 @@ function pipelineAllocationParticipant(
   const metrics = { ...participant.metrics, ...teamContext };
   const position = participant.input.position;
   const allocationWeights = {
-    goals: nonNegativeFormulaValue(config.allocation.goals, metrics, "allocation.goals"),
-    assists: nonNegativeFormulaValue(config.allocation.assists, metrics, "allocation.assists"),
-    recoveries: position === "GK" ? 0 : nonNegativeFormulaValue(config.allocation.recoveries, metrics, "allocation.recoveries"),
-    saves: position === "GK" ? nonNegativeFormulaValue(config.allocation.saves, metrics, "allocation.saves") : 0
+    goals: per90AwareAllocationValue(config.allocation.goals, metrics, "allocation.goals"),
+    assists: per90AwareAllocationValue(config.allocation.assists, metrics, "allocation.assists"),
+    recoveries: position === "GK" ? 0 : per90AwareAllocationValue(config.allocation.recoveries, metrics, "allocation.recoveries"),
+    saves: position === "GK" ? per90AwareAllocationValue(config.allocation.saves, metrics, "allocation.saves") : 0
   };
-  const cardExposureFactor = nonNegativeFormulaValue(config.allocation.cardExposure, metrics, "allocation.cardExposure");
+  const minutesExposure = (numericOrNull(metrics.expected_minutes) ?? 0) / 90;
+  const cardExposureFactor = Math.min(
+    nonNegativeFormulaValue(config.allocation.cardExposure, metrics, "allocation.cardExposure"),
+    minutesExposure
+  );
   Object.assign(metrics, {
     goal_allocation_weight: allocationWeights.goals,
     assist_allocation_weight: allocationWeights.assists,
@@ -1367,6 +1459,14 @@ function nonNegativeFormulaValue(formula: string, metrics: Record<string, unknow
   return value;
 }
 
+function per90AwareAllocationValue(formula: string, metrics: Record<string, unknown>, path: string) {
+  const value = nonNegativeFormulaValue(formula, metrics, path);
+  const usesPer90 = /\{[^}]*per 90[^}]*\}/i.test(formula);
+  const alreadyUsesExpectedMinutes = /\{Expected minutes\}/i.test(formula);
+  if (!usesPer90 || alreadyUsesExpectedMinutes) return value;
+  return value * ((numericOrNull(metrics.expected_minutes) ?? 0) / 90);
+}
+
 function componentParticipant(
   row: SharedMachetePlayerRow & { teamId: string; playerId: string },
   sportsPosition?: string,
@@ -1387,7 +1487,7 @@ function componentParticipant(
     ? (expectedMinutes >= 60 ? 1 : 0)
     : clamp(Math.min(componentMetric(row, "sixty_minute_probability"), appearance), 0, 1);
   const fullMatch = friendMode
-    ? (expectedMinutes >= 90 ? 1 : 0)
+    ? (countsAsFullFantasyMatch(expectedMinutes) ? 1 : 0)
     : clamp(Math.min(componentMetric(row, "full_match_probability"), sixtyMinutes), 0, 1);
   const rate = (key: string) => friendMode
     ? componentMetric(row, `friend_${key}_per_90`)
@@ -1397,7 +1497,7 @@ function componentParticipant(
     playerId: row.playerId,
     position,
     expectedMinutes,
-    per90ExposureFactor: friendMode ? (expectedMinutes > 0 ? 1 : 0) : undefined,
+    per90ExposureFactor: friendMode ? expectedMinutes / 90 : undefined,
     probabilities: { appearance, sixtyMinutes, fullMatch },
     ratesPer90: {
       xg: expectedMinutes > 0 ? rate("xg") : undefined,
@@ -1566,6 +1666,55 @@ export function projectionFormulaFantasyPoints(
   ));
 }
 
+function projectionFormulaWithBreakdown(
+  projection: PlayerFixtureProjection,
+  fixture: PlannerFixture | null,
+  config: ProjectionFormulaConfig,
+  extraMetrics?: Record<string, unknown>
+) {
+  const formula = config.scoreByPosition[projection.position];
+  const breakdown = calculateCustomFormulaScoreWithBreakdown(
+    formula,
+    componentProjectionFormulaMetrics(projection, fixture, extraMetrics)
+  );
+  return {
+    formula,
+    total: roundFantasyValue(breakdown.value),
+    terms: breakdown.terms
+  };
+}
+
+function projectionRoundFormulaWithBreakdown(
+  fixtures: PlannerFixture[],
+  playerId: string,
+  index: ReturnType<typeof buildFormulaProjectionIndex>,
+  config: ProjectionFormulaConfig
+) {
+  const fixtureBreakdowns = fixtures.flatMap((fixture) => {
+    const key = fixturePlayerProjectionKey(fixture.id, playerId);
+    const projection = index.byFixturePlayer.get(key);
+    if (!projection) return [];
+    const breakdown = projectionFormulaWithBreakdown(
+      projection,
+      fixture,
+      config,
+      index.formulaMetricsByFixturePlayer.get(key)
+    );
+    return [{ fixture, breakdown }];
+  });
+  if (fixtureBreakdowns.length === 0) return null;
+
+  const hasMultipleFixtures = fixtureBreakdowns.length > 1;
+  return {
+    formula: fixtureBreakdowns[0].breakdown.formula,
+    total: roundFantasyValue(fixtureBreakdowns.reduce((total, item) => total + item.breakdown.total, 0)),
+    terms: fixtureBreakdowns.flatMap(({ fixture, breakdown }) => breakdown.terms.map((term) => ({
+      ...term,
+      fixtureLabel: hasMultipleFixtures ? `${fixture.side} ${fixture.opponentName}` : undefined
+    })))
+  };
+}
+
 export function componentProjectionFantasyPoints(
   projection: PlayerFixtureProjection,
   fixture: PlannerFixture | null,
@@ -1719,6 +1868,13 @@ function standardDeviation(values: number[], mean: number) {
 }
 
 async function loadUpcomingRoundFixtures(prisma: PrismaClient, league: SharedLeagueSeasonOption) {
+  const key = `${league.leagueId}:${league.season}`;
+  return upcomingRoundFixturesCache.getOrCreate(key, upcomingRoundFixturesCacheTtlMs, () =>
+    loadUpcomingRoundFixturesUncached(prisma, league)
+  );
+}
+
+async function loadUpcomingRoundFixturesUncached(prisma: PrismaClient, league: SharedLeagueSeasonOption) {
   const now = new Date();
   const [matches, teamStrengthProfiles, seasonTeams] = await Promise.all([
     prisma.coreMatch.findMany({
@@ -1905,7 +2061,10 @@ function aggregateRoundDifficulty(
   return max;
 }
 
-export function buildTeamStrengthProfilesFromMatches(matches: TeamStrengthMatchInput[]): TeamStrengthProfiles {
+export function buildTeamStrengthProfilesFromMatches(
+  matches: TeamStrengthMatchInput[],
+  options: { fallbackToGoals?: boolean } = {}
+): TeamStrengthProfiles {
   const samples: TeamStrengthSample[] = [];
   const datedMatches = matches
     .map((match) => teamStrengthMatchDateMs(match.matchDate))
@@ -1925,8 +2084,8 @@ export function buildTeamStrengthProfilesFromMatches(matches: TeamStrengthMatchI
       samples.push({
         teamId,
         side,
-        xgFor: numericOrNull(stat.xg),
-        xgAgainst: numericOrNull(opponent?.xg),
+        xgFor: numericOrNull(stat.xg) ?? (options.fallbackToGoals ? numericOrNull(stat.goals) : null),
+        xgAgainst: numericOrNull(opponent?.xg) ?? (options.fallbackToGoals ? numericOrNull(opponent?.goals) : null),
         weight
       });
     }
@@ -1953,8 +2112,9 @@ function applyFixtureStrength(fixtures: PlannerRoundFixtures, profiles: TeamStre
         const projection = fixtureStrengthProjection(fixture, profiles);
         fixture.projectedXg = projection.projectedXg;
         fixture.projectedXga = projection.projectedXga;
-        fixture.attackMultiplier = projection.attackMultiplier;
-        fixture.defenseMultiplier = projection.defenseMultiplier;
+        const marketProjection = fixtureStrengthWithBookmaker(projection, fixture);
+        fixture.attackMultiplier = marketProjection.attackMultiplier;
+        fixture.defenseMultiplier = marketProjection.defenseMultiplier;
       }
     }
   }
@@ -1988,9 +2148,40 @@ export function fixtureStrengthProjection(
   return {
     projectedXg,
     projectedXga,
+    attackBase,
+    defenseBase,
     attackMultiplier: ratioMultiplier(projectedXg, attackBase),
     defenseMultiplier: ratioMultiplier(defenseBase, projectedXga)
   };
+}
+
+export function fixtureStrengthWithBookmaker(
+  projection: Pick<ReturnType<typeof fixtureStrengthProjection>, "projectedXg" | "projectedXga" | "attackBase" | "defenseBase">,
+  odds: Pick<PlannerFixture, "teamOver15Probability" | "cleanSheetProbability">
+) {
+  const bookmakerXg = inversePoissonOver15Probability(odds.teamOver15Probability);
+  const bookmakerXga = bookmakerImpliedGoalsAgainst(odds.cleanSheetProbability);
+  const marketProjectedXg = blendModelAndBookmakerExpectation(projection.projectedXg, bookmakerXg);
+  const marketProjectedXga = blendModelAndBookmakerExpectation(projection.projectedXga, bookmakerXga);
+
+  return {
+    marketProjectedXg,
+    marketProjectedXga,
+    attackMultiplier: ratioMultiplier(marketProjectedXg, projection.attackBase),
+    defenseMultiplier: ratioMultiplier(projection.defenseBase, marketProjectedXga)
+  };
+}
+
+function bookmakerImpliedGoalsAgainst(cleanSheetProbability: number | null | undefined) {
+  if (typeof cleanSheetProbability !== "number" || !Number.isFinite(cleanSheetProbability) || cleanSheetProbability <= 0 || cleanSheetProbability > 1) {
+    return null;
+  }
+  return -Math.log(cleanSheetProbability);
+}
+
+function blendModelAndBookmakerExpectation(model: number, bookmaker: number | null) {
+  if (bookmaker === null) return model;
+  return clamp(model * 0.55 + bookmaker * 0.45, model * 0.7, model * 1.35);
 }
 
 async function loadTeamStrengthProfiles(prisma: PrismaClient, leagueId: bigint) {
@@ -2002,7 +2193,7 @@ async function loadTeamStrengthProfiles(prisma: PrismaClient, leagueId: bigint) 
   const profiles = buildTeamStrengthProfilesFromMatches(matches);
   if (!feederLeagueId || feederMatches.length === 0) return profiles;
 
-  return addPromotedTeamStrengthProfiles(profiles, buildTeamStrengthProfilesFromMatches(feederMatches));
+  return addPromotedTeamStrengthProfiles(profiles, buildTeamStrengthProfilesFromMatches(feederMatches, { fallbackToGoals: true }));
 }
 
 async function loadTeamStrengthMatches(prisma: PrismaClient, leagueId: bigint): Promise<TeamStrengthMatchInput[]> {
@@ -2040,19 +2231,46 @@ async function loadTeamStrengthMatches(prisma: PrismaClient, leagueId: bigint): 
       xg: stat.xg,
       goals: stat.goals
     }));
-    const scoreTeamStats = parsedTeamStats.length === 0 && match.homeTeamId && match.awayTeamId && match.homeScore !== null && match.awayScore !== null
-      ? [
-          { teamId: String(match.homeTeamId), opponentTeamId: String(match.awayTeamId), isHome: true, xg: null, goals: match.homeScore },
-          { teamId: String(match.awayTeamId), opponentTeamId: String(match.homeTeamId), isHome: false, xg: null, goals: match.awayScore }
-        ]
-      : parsedTeamStats;
-    return {
+    return fillTeamStrengthStatsFromScore({
       homeTeamId: stringifyBigInt(match.homeTeamId),
       awayTeamId: stringifyBigInt(match.awayTeamId),
       matchDate: match.matchDate,
-      teamStats: scoreTeamStats
-    };
+      teamStats: parsedTeamStats,
+      homeScore: match.homeScore,
+      awayScore: match.awayScore
+    });
   });
+}
+
+export function fillTeamStrengthStatsFromScore(
+  match: TeamStrengthMatchInput & { homeScore?: number | null; awayScore?: number | null }
+): TeamStrengthMatchInput {
+  const homeTeamId = match.homeTeamId?.trim() || null;
+  const awayTeamId = match.awayTeamId?.trim() || null;
+  const scoreRows = homeTeamId && awayTeamId && match.homeScore !== null && match.homeScore !== undefined
+    && match.awayScore !== null && match.awayScore !== undefined
+    ? [
+        { teamId: homeTeamId, opponentTeamId: awayTeamId, isHome: true, xg: null, goals: match.homeScore },
+        { teamId: awayTeamId, opponentTeamId: homeTeamId, isHome: false, xg: null, goals: match.awayScore }
+      ]
+    : [];
+  const byTeamId = new Map<string, TeamStrengthMatchInput["teamStats"][number]>(scoreRows.map((row) => [row.teamId, row]));
+
+  for (const stat of match.teamStats) {
+    const scoreRow = byTeamId.get(stat.teamId);
+    byTeamId.set(stat.teamId, {
+      ...scoreRow,
+      ...stat,
+      goals: numericOrNull(stat.goals) ?? scoreRow?.goals ?? null
+    });
+  }
+
+  return {
+    homeTeamId: match.homeTeamId,
+    awayTeamId: match.awayTeamId,
+    matchDate: match.matchDate,
+    teamStats: [...byTeamId.values()]
+  };
 }
 
 export async function loadSportsRuFantasyPositionsByPlayerId(

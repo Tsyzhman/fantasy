@@ -42,15 +42,18 @@ test("minutes-weighted participant shares conserve every forecast team total", (
   assert.equal(result.players.find((player) => player.playerId === "gk")!.expectedEvents.recoveries, 0);
 });
 
-test("explicit full per-90 exposure supports the friend's rate-only shares and annual card rates", () => {
+test("per-90 exposure cannot exceed the player's expected-minutes share", () => {
   const rows = participants().map((player) => ({ ...player, per90ExposureFactor: 1 }));
-  const result = projectTeamPlayers(projectedTeam(), rows);
-  const defender = result.players.find((player) => player.playerId === "def")!;
-  const midfielder = result.players.find((player) => player.playerId === "mid")!;
-
-  assert.equal(midfielder.expectedEvents.goals / defender.expectedEvents.goals, 4);
-  assert.equal(midfielder.expectedEvents.yellowCards, 0.1);
-  assert.equal(midfielder.expectedEvents.redCards, 0.02);
+  assert.throws(
+    () => projectTeamPlayers(projectedTeam(), rows),
+    (error: unknown) => {
+      assert.ok(error instanceof ProjectionInputError);
+      assert.ok(error.issues.some((issue) =>
+        issue.path === "participants[2].per90ExposureFactor" && issue.message.includes("expectedMinutes / 90")
+      ));
+      return true;
+    }
+  );
 });
 
 test("Sports.ru components use P(appearance), P60, P90 and P60 clean-sheet eligibility", () => {

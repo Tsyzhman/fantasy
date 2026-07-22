@@ -7,11 +7,13 @@ export async function register() {
   const { startDataQualityAuditScheduler } = await import("./server/data-quality-audit-scheduler");
   const { startSportsRuFantasySyncScheduler } = await import("./server/sports-ru-fantasy-sync-scheduler");
   const { startFixtureOddsScheduler } = await import("./server/fixture-odds-scheduler");
+  const { startFoontasyForecastScheduler } = await import("./server/foontasy-forecast-scheduler");
 
   startMacheteDailyFotMobSyncScheduler();
   startLeagueSeasonRetentionScheduler();
   startDataQualityAuditScheduler();
   startSportsRuFantasySyncScheduler();
   startFixtureOddsScheduler();
+  startFoontasyForecastScheduler();
   startIngestionWorkerLoop();
 }

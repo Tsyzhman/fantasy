@@ -1,9 +1,8 @@
-import { UserRole } from "@prisma/client";
 import { ChevronDown, Download, Wrench } from "lucide-react";
 import Link from "next/link";
 
-import { FantasyPriceSheetImportForm } from "@/components/machete/FantasyPriceSheetImportForm";
 import { FantasySquadPlanner } from "@/components/machete/FantasySquadPlanner";
+import { FranchiseSquadsPanel } from "@/components/machete/FranchiseSquadsPanel";
 import { SportsRuSquadImport } from "@/components/machete/SportsRuSquadImport";
 import { I18nText } from "@/components/i18n-text";
 import { MacheteShell } from "@/components/machete/MacheteShell";
@@ -13,6 +12,8 @@ import { prisma } from "@/lib/db";
 import { isFantasySquadLeague } from "@/lib/leagues/display";
 import { loadSharedLeagueOptions, type SharedLeagueSeasonOption } from "@/machete/shared_read_model";
 import { loadFantasySquadPlannerData } from "@/machete/squad_planner";
+import { parseSquadTableColumns, parseSquadTableColumnWidths } from "@/machete/squad-table-columns";
+import { canSwitchFranchise, resolveVisibleFranchise } from "@/machete/franchise-access";
 import { loadPlannerReadinessByScope, plannerReadinessKey, type PlannerReadiness } from "@/machete/planner_readiness";
 import {
   applyFantasyHistorySearchParams,
@@ -30,14 +31,22 @@ type PageProps = {
     historyScope?: string;
     historyWindow?: string;
     historySeason?: string | string[];
+    franchise?: string;
   }>;
 };
 
 export default async function MacheteSquadPage({ searchParams }: PageProps) {
   const user = await requireCurrentUser();
-  const params = await searchParams;
+  const [tablePreference, params, allLeagues] = await Promise.all([
+    prisma.user.findUnique({
+      where: { id: user.id },
+      select: { squadTableColumns: true, squadTableColumnWidths: true }
+    }),
+    searchParams,
+    loadSharedLeagueOptions(prisma)
+  ]);
   const historySettings = parseFantasyHistorySettings(params);
-  const leagues = (await loadSharedLeagueOptions(prisma)).filter(isFantasySquadLeague);
+  const leagues = allLeagues.filter(isFantasySquadLeague);
   const selectedLeagueId =
     params.leagueId && leagues.some((league) => String(league.leagueId) === params.leagueId)
       ? params.leagueId
@@ -88,11 +97,6 @@ export default async function MacheteSquadPage({ searchParams }: PageProps) {
                   </>
                 ) : null}
               </div>
-              {selectedLeague && user.role === UserRole.ADMIN ? (
-                <div className="mt-3 border-t border-slate-200 pt-3">
-                  <FantasyPriceSheetImportForm leagueId={String(selectedLeague.leagueId)} season={selectedLeague.season} canImport />
-                </div>
-              ) : null}
             </div>
           </details>
         </div>
@@ -120,6 +124,15 @@ export default async function MacheteSquadPage({ searchParams }: PageProps) {
         ) : null}
       </section>
 
+      {selectedLeague ? (
+        <FranchiseSquadsPanel
+          leagueId={String(selectedLeague.leagueId)}
+          season={selectedLeague.season}
+          initialFranchise={resolveVisibleFranchise(user, params.franchise)}
+          canSwitch={canSwitchFranchise(user)}
+        />
+      ) : null}
+
       {selectedLeague && data ? (
         <>
           {!data.readiness.ready ? (
@@ -144,6 +157,8 @@ export default async function MacheteSquadPage({ searchParams }: PageProps) {
             priceStatus={data.priceStatus}
             historySettings={historySettings}
             historySeasonOptions={data.historySeasonOptions}
+            initialVisiblePlayerPoolColumns={parseSquadTableColumns(tablePreference?.squadTableColumns)}
+            initialPlayerPoolColumnWidths={parseSquadTableColumnWidths(tablePreference?.squadTableColumnWidths)}
           />
         </>
       ) : (
@@ -231,6 +246,7 @@ async function loadInitialFantasySquadPlannerData(
   return loadFantasySquadPlannerData(prisma, userId, league, squadId, {
     playerIds: selectedSquad?.players.map((player) => player.playerId) ?? [],
     readiness,
-    historySettings
+    historySettings,
+    deferFormulaProjections: true
   });
 }

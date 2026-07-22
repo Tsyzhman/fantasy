@@ -1,9 +1,12 @@
 import { run_incremental_update } from "@/core_data/ingestion-jobs";
 import { prisma } from "@/lib/db";
 import { createLogger } from "@/lib/logger";
+import { runSportsRuFantasySyncNow } from "@/server/sports-ru-fantasy-sync-scheduler";
 
 const DEFAULT_SYNC_TIME = "03:00";
 const DEFAULT_TIME_ZONE = "Europe/Moscow";
+const INGESTION_POLL_INTERVAL_MS = 30_000;
+const INGESTION_MAX_WAIT_MS = 12 * 60 * 60 * 1000;
 const logger = createLogger("ingestion");
 
 type SchedulerState = {
@@ -51,13 +54,47 @@ async function runScheduledSync(state: SchedulerState, scheduledFor: string) {
   state.running = true;
   try {
     logger.info("Queueing scheduled shared FotMob incremental update.", { scheduledFor });
-    await run_incremental_update(prisma, { startedByUserId: null });
-    logger.info("Scheduled shared FotMob incremental update queued for the ingestion worker loop.");
+    const queued = await run_incremental_update(prisma, { startedByUserId: null });
+    logger.info("Scheduled shared FotMob incremental update queued for the ingestion worker loop.", { jobId: queued.job.id });
+    const terminalStatus = await waitForIngestionJobTerminal(prisma, queued.job.id);
+    if (terminalStatus === "completed" || terminalStatus === "completed_with_errors") {
+      const sportsRu = await runSportsRuFantasySyncNow("post-fotmob");
+      logger.info("Post-FotMob Sports.ru fantasy price sync finished.", {
+        jobId: queued.job.id,
+        ingestionStatus: terminalStatus,
+        ...sportsRu
+      });
+    } else {
+      logger.warn("Post-FotMob Sports.ru fantasy price sync was not started because ingestion did not complete.", {
+        jobId: queued.job.id,
+        ingestionStatus: terminalStatus
+      });
+    }
   } catch (error) {
     logger.error("Scheduled shared FotMob incremental update crashed.", { error });
   } finally {
     state.running = false;
   }
+}
+
+export async function waitForIngestionJobTerminal(
+  database: Pick<typeof prisma, "ingestionJob">,
+  jobId: string,
+  options: { pollIntervalMs?: number; maximumWaitMs?: number; wait?: (delayMs: number) => Promise<void> } = {}
+) {
+  const pollIntervalMs = options.pollIntervalMs ?? INGESTION_POLL_INTERVAL_MS;
+  const maximumWaitMs = options.maximumWaitMs ?? INGESTION_MAX_WAIT_MS;
+  const wait = options.wait ?? ((delayMs: number) => new Promise<void>((resolve) => setTimeout(resolve, delayMs)));
+  const startedAt = Date.now();
+
+  while (Date.now() - startedAt <= maximumWaitMs) {
+    const job = await database.ingestionJob.findUnique({ where: { id: jobId }, select: { status: true } });
+    if (!job) return "missing";
+    if (["completed", "completed_with_errors", "failed", "cancelled"].includes(job.status)) return job.status;
+    await wait(pollIntervalMs);
+  }
+
+  return "timeout";
 }
 
 function nextDailyRun() {

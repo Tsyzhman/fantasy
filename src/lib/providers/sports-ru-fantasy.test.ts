@@ -69,6 +69,24 @@ test("Sports.ru snapshot keeps same-name players from different teams", async ()
   ]);
 });
 
+test("Sports.ru snapshot uses the public mononym instead of an unwanted legal surname", async () => {
+  const fetchImpl = (async (_input: string | URL | Request, init?: RequestInit) => {
+    const query = JSON.parse(String(init?.body ?? "{}"))?.query as string;
+    if (query.includes("tournament(")) return jsonResponse({ data: { fantasyQueries: { tournament: { currentSeason: { id: "75" } } } } });
+    if (!query.includes("role: MIDFIELDER")) return jsonResponse({ data: { fantasyQueries: { players: { list: [] } } } });
+    return jsonResponse({ data: { fantasyQueries: { players: { list: [{
+      id: "67472",
+      name: "Вендел Вале",
+      price: 8.5,
+      team: { id: "1", name: "Зенит" },
+      statObject: { name: "Вендел Вале", firstName: "", lastName: "Вендел" }
+    }] } } } });
+  }) as typeof fetch;
+
+  const snapshot = await fetchSportsRuFantasyGraphqlSnapshot("russia", { fetchImpl, pageSize: 10 });
+  assert.equal(snapshot.prices[0]?.playerName, "Вендел");
+});
+
 test("Sports.ru tournament HRU is derived from a fantasy URL", () => {
   assert.equal(sportsRuTournamentHruFromUrl("https://www.sports.ru/fantasy/football/england/"), "england");
   assert.equal(sportsRuTournamentHruFromUrl("https://www.sports.ru/fantasy/football/"), null);

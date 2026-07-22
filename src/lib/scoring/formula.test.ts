@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { calculateCustomFormulaScore, normalizeFormulaMetric, validateCustomFormula } from "./formula";
+import { calculateCustomFormulaScore, calculateCustomFormulaScoreWithBreakdown, normalizeFormulaMetric, validateCustomFormula } from "./formula";
 
 test("keeps arithmetic precedence, parentheses, unary operators and metric normalization", () => {
   assert.equal(calculateCustomFormulaScore("2 + 3 * 4", {}), 14);
@@ -77,6 +77,23 @@ test("reports runtime domain, division and finite-result errors", () => {
   assert.throws(() => calculateCustomFormulaScore("log(0)", {}), /positive/);
   assert.throws(() => calculateCustomFormulaScore("clamp(1, 3, 2)", {}), /min to be less/);
   assert.throws(() => calculateCustomFormulaScore("exp(10000)", {}), /finite number/);
+});
+
+test("returns both value and term-by-term decomposition", () => {
+  const breakdown = calculateCustomFormulaScoreWithBreakdown("({goals} + {assists}) - {penalties}", {
+    goals: 5,
+    assists: 2.5,
+    penalties: 1
+  });
+  assert.equal(breakdown.value, 6.5);
+  assert.equal(breakdown.terms.length, 3);
+  assert.equal(breakdown.terms[0].expression, "{goals}");
+  assert.equal(breakdown.terms[0].resolvedExpression, "goals (5)");
+  assert.equal(breakdown.terms[1].expression, "{assists}");
+  assert.equal(breakdown.terms[2].expression, "{penalties}");
+  assert.equal(breakdown.terms[0].value, 5);
+  assert.equal(breakdown.terms[1].value, 2.5);
+  assert.equal(breakdown.terms[2].value, -1);
 });
 
 test("enforces formula length, token and nesting limits", () => {

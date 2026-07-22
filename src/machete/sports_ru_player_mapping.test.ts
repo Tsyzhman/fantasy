@@ -1,7 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { buildSportsRuMappingCandidates, findManualRosterEntry, planSportsRuSelectionRemap, scoreSportsRuCandidate } from "./sports_ru_player_mapping";
+import {
+  buildSportsRuMappingCandidates,
+  findManualRosterEntry,
+  planSportsRuSelectionRemap,
+  scoreSportsRuCandidate,
+  shouldRetainManualOverride
+} from "./sports_ru_player_mapping";
 
 const liverpool = { name: "Liverpool" };
 const city = { name: "Manchester City" };
@@ -101,6 +107,15 @@ test("sports ru mapping does not match a full two-part name by surname alone", (
   assert.equal(result.confidence, 0);
 });
 
+test("sports ru mapping accepts a transliterated first name and omitted middle name", () => {
+  const result = scoreSportsRuCandidate(
+    { ...price("huan boselli", "MID"), teamName: "Краснодар" },
+    roster("Juan Manuel Boselli", "ST,RW,CAM", { name: "FC Krasnodar" })
+  );
+
+  assert.equal(result.confidence >= 0.78, true);
+});
+
 test("sports ru mapping remap moves stale squad picks and removes same-squad duplicates", () => {
   const plan = planSportsRuSelectionRemap(
     [
@@ -120,6 +135,16 @@ test("manual transfer override does not fall back to the player's stale active t
 
   assert.equal(findManualRosterEntry([stale], "560506", currentTeamId), undefined);
   assert.equal(findManualRosterEntry([stale], "560506", null), stale);
+});
+
+test("manual transfer override survives a Sports.ru resync with a non-empty team name", () => {
+  assert.equal(shouldRetainManualOverride({
+    pricePlayerId: 560506n,
+    priceTeamId: 8709n,
+    mappedPlayerId: "560506",
+    existingPlayerIds: new Set(["560506"]),
+    activeTeamIds: new Set(["8709"])
+  }), true);
 });
 
 function price(normalizedName: string, position: string) {

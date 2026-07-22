@@ -119,7 +119,7 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
   const players = filterByStarter(sortSharedMacheteRows(playerRows, "fantasyScore"), starterFilter);
   const fantasyPreview = players.map((player) => player.fantasyScore).filter((score): score is number => typeof score === "number");
   const averageFantasyScore = fantasyPreview.length ? fantasyPreview.reduce((total, score) => total + score, 0) / fantasyPreview.length : null;
-  const canEditRoster = currentUser?.role === UserRole.ADMIN;
+  const canEditRoster = Boolean(currentUser);
   const teamLogoUrl = resolveSharedTeamLogoUrl({
     providerLeagueId: league.providerLeagueId,
     teamName: seasonTeam.team.name,
@@ -253,7 +253,11 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
             leagueId: String(league.leagueId),
             season: league.season,
             teamId: String(parsedTeamId),
-            canEdit: canEditRoster
+            canEdit: canEditRoster,
+            roster: playerRows.map((player) => ({
+              position: player.position,
+              isStarter: player.isStarter
+            }))
           }}
         />
       </section>

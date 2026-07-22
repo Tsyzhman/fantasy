@@ -145,7 +145,7 @@ export function fixtureOddsSyncTriggers(matches: FixtureOddsScheduleMatch[]): Fi
     const futureMatches = roundMatches.filter((match) => !match.finished && match.matchDate !== null);
     if (futureMatches.length === 0) continue;
     const firstKickoff = Math.min(...roundMatches.map((match) => match.matchDate!.getTime()));
-    for (let daysBefore = 7; daysBefore >= 1; daysBefore -= 1) {
+    for (let daysBefore = 30; daysBefore >= 1; daysBefore -= 1) {
       triggers.push({
         key: `round:${key}:${daysBefore}-days-before`,
         kind: "ROUND_DAILY",

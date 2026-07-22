@@ -5,7 +5,7 @@ import { applyFantasyHistorySearchParams, parseFantasyHistorySettings, resolveFa
 
 test("history settings default safely and preserve repeated exact seasons", () => {
   assert.deepEqual(parseFantasyHistorySettings({}), {
-    scope: "SELECTED_COMPETITION",
+    scope: "ALL_LOADED",
     window: "LAST_5",
     selectedSeasons: []
   });
@@ -17,6 +17,17 @@ test("history settings default safely and preserve repeated exact seasons", () =
   assert.deepEqual(settings.selectedSeasons, ["2025/2026", "2024/2025"]);
   const params = applyFantasyHistorySearchParams(new URLSearchParams("leagueId=47"), settings);
   assert.deepEqual(params.getAll("historySeason"), ["2025/2026", "2024/2025"]);
+});
+
+test("all-player history explicitly enables cross-team matches such as national teams", async () => {
+  const resolved = await resolveFantasyHistory(historyPrisma() as never, league(47n), {
+    scope: "ALL_PLAYER_MATCHES",
+    window: "LAST_5",
+    selectedSeasons: []
+  });
+
+  assert.equal(resolved.includePlayerHistory, true);
+  assert.equal(resolved.historyScopes.length, 5);
 });
 
 test("empty selected-season mode falls back to last five", () => {

@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { type FormHTMLAttributes, useRef, useTransition } from "react";
+import { type FormHTMLAttributes, useCallback, useEffect, useRef, useTransition } from "react";
 
 import { I18nText } from "@/components/i18n-text";
 import { cn } from "@/lib/cn";
@@ -13,7 +13,30 @@ export function AutoSubmitForm({ children, className, onChange, onSubmit, ...pro
   const router = useRouter();
   const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
+  const formRef = useRef<HTMLFormElement | null>(null);
   const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const cancelScheduledUpdate = useCallback(() => {
+    if (!timeoutRef.current) return;
+    clearTimeout(timeoutRef.current);
+    timeoutRef.current = null;
+  }, []);
+
+  useEffect(() => {
+    function cancelBeforeAnotherAction(event: MouseEvent) {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      const action = target.closest("a[href], button, [role='button']");
+      if (!action || formRef.current?.contains(action)) return;
+      cancelScheduledUpdate();
+    }
+
+    document.addEventListener("click", cancelBeforeAnotherAction, true);
+    return () => {
+      document.removeEventListener("click", cancelBeforeAnotherAction, true);
+      cancelScheduledUpdate();
+    };
+  }, [cancelScheduledUpdate]);
 
   function updateUrl(form: HTMLFormElement) {
     const params = new URLSearchParams();
@@ -35,10 +58,12 @@ export function AutoSubmitForm({ children, className, onChange, onSubmit, ...pro
   return (
     <form
       {...props}
+      ref={formRef}
       aria-busy={isPending}
       className={cn("auto-submit-form", className)}
       onSubmit={(event) => {
         event.preventDefault();
+        cancelScheduledUpdate();
         onSubmit?.(event);
         updateUrl(event.currentTarget);
       }}
@@ -47,7 +72,7 @@ export function AutoSubmitForm({ children, className, onChange, onSubmit, ...pro
         const form = event.currentTarget;
         const target = event.target;
 
-        if (target instanceof HTMLSelectElement && target.name === "leagueId") {
+        if (isNamedControlChange(target, "leagueId")) {
           clearNamedControls(form, "season");
           clearNamedControls(form, "teamId");
           clearNamedControls(form, "competitionKey");
@@ -85,7 +110,7 @@ export function AutoSubmitForm({ children, className, onChange, onSubmit, ...pro
           clearNamedControls(form, "playerId");
         }
 
-        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        cancelScheduledUpdate();
         const requestedDelay =
           target instanceof HTMLInputElement ? Number.parseInt(target.dataset.autoSubmitDelay ?? "", 10) : Number.NaN;
         const delay = Number.isFinite(requestedDelay)
@@ -94,6 +119,7 @@ export function AutoSubmitForm({ children, className, onChange, onSubmit, ...pro
             ? 600
             : 150;
         timeoutRef.current = setTimeout(() => {
+          timeoutRef.current = null;
           updateUrl(form);
         }, delay);
       }}

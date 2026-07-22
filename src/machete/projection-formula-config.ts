@@ -58,6 +58,8 @@ export type ProjectionFormulaConfigParseResult = {
 
 const maximumFormulaLength = 4_000;
 
+const stableExpectedMinutesFormula = "clamp(safe_div(0.65 * min({Matches 365} / 20, 1) * {Minutes per match 365} + 0.25 * min({Matches L10} / 10, 1) * {Minutes per match L10} + 0.10 * min({Matches L5} / 5, 1) * {Minutes per match L5}, 0.65 * min({Matches 365} / 20, 1) + 0.25 * min({Matches L10} / 10, 1) + 0.10 * min({Matches L5} / 5, 1), 0), 0, 90)";
+
 /**
  * Global Expected FP baseline. Bookmaker inputs are gated by the explicit
  * availability flag, so a missing line deterministically falls back to the
@@ -66,10 +68,10 @@ const maximumFormulaLength = 4_000;
 export const expectedProjectionFormulaConfig: ProjectionFormulaConfig = {
   version: projectionFormulaConfigVersion,
   history: {
-    expectedMinutes: "clamp(max({Minutes per match L1}, {Minutes per match L5}, {Minutes per match L10}, {Minutes per match 365}), 0, 90)",
+    expectedMinutes: stableExpectedMinutesFormula,
     appearanceProbability: "clamp(max({Appearance rate L5}, {Appearance rate L10}, {Appearance rate 365}, {Expected minutes} / 90), 0, 1)",
     sixtyProbability: "min({Appearance probability}, clamp(max({Sixty rate L5}, {Sixty rate L10}, {Sixty rate 365}), 0, 1))",
-    fullMatchProbability: "min({60 minute probability}, clamp(max({Full match rate L5}, {Full match rate L10}, {Full match rate 365}), 0, 1))",
+    fullMatchProbability: "if(gte({Expected minutes}, 80), 1, min({60 minute probability}, clamp(max({Full match rate L5}, {Full match rate L10}, {Full match rate 365}), 0, 1)))",
     xgRate: friendRateBlendFormula("xG"),
     xaRate: friendRateBlendFormula("xA"),
     recoveryRate: friendRateBlendFormula("Recoveries"),
@@ -100,16 +102,16 @@ export const expectedProjectionFormulaConfig: ProjectionFormulaConfig = {
 
 /**
  * Personal Alt FP baseline adapted from the friend method. The rolling-window
- * blend is supplied by the history stage, allocations use rate-only shares of
- * the probable XI, and bookmaker/conceded-goal modules are intentionally absent.
+ * blend is supplied by the history stage, per-90 allocations are scaled by the
+ * player's expected minutes, and bookmaker/conceded-goal modules are intentionally absent.
  */
 export const friendAltProjectionFormulaConfig: ProjectionFormulaConfig = {
   version: projectionFormulaConfigVersion,
   history: {
-    expectedMinutes: "max({Minutes per match L1}, {Minutes per match L5}, {Minutes per match L10}, {Minutes per match 365})",
+    expectedMinutes: stableExpectedMinutesFormula,
     appearanceProbability: "gte({Expected minutes}, 0.000001)",
     sixtyProbability: "gte({Expected minutes}, 60)",
-    fullMatchProbability: "gte({Expected minutes}, 90)",
+    fullMatchProbability: "gte({Expected minutes}, 80)",
     xgRate: friendRateBlendFormula("xG"),
     xaRate: friendRateBlendFormula("xA"),
     recoveryRate: friendRateBlendFormula("Recoveries"),
@@ -124,11 +126,11 @@ export const friendAltProjectionFormulaConfig: ProjectionFormulaConfig = {
     cleanSheetProbability: "exp(-{Expected goals against})"
   },
   allocation: {
-    goals: "{Blended xG per 90}",
-    assists: "{Blended xA per 90}",
-    recoveries: "{Blended recoveries per 90}",
-    saves: "{Blended saves per 90}",
-    cardExposure: "1"
+    goals: "{Blended xG per 90} * {Expected minutes} / 90",
+    assists: "{Blended xA per 90} * {Expected minutes} / 90",
+    recoveries: "{Blended recoveries per 90} * {Expected minutes} / 90",
+    saves: "{Blended saves per 90} * {Expected minutes} / 90",
+    cardExposure: "{Expected minutes} / 90"
   },
   scoreByPosition: {
     GK: "{Appearance probability} + {60 minute probability} + 6 * {Expected goals} + 3 * {Expected assists} + 4 * {Expected clean sheets} + {Expected saves} / 3 - {Expected yellow cards} - 3 * {Expected red cards}",
@@ -191,7 +193,12 @@ export function validateProjectionFormulaConfig(value: unknown): ProjectionFormu
       continue;
     }
     const validation = validateCustomFormula(formula);
-    if (!validation.ok) issues.push({ path, message: validation.message });
+    if (!validation.ok) {
+      issues.push({ path, message: validation.message });
+      continue;
+    }
+    const exposureProblem = validateExpectedMinutesExposure(section, key, formula);
+    if (exposureProblem) issues.push({ path, message: exposureProblem });
   }
   return issues;
 }
@@ -244,7 +251,7 @@ export function parseProjectionFormulaConfig(
       continue;
     }
     const path = `${section}.${key}`;
-    const problem = validateFormulaCandidate(candidate);
+    const problem = validateFormulaCandidate(candidate, section, key);
     if (problem) {
       issues.push({ path, message: problem });
       usedFallback = true;
@@ -271,11 +278,24 @@ export function projectionFormulaConfigFromFormData(
   return { config: issues.length === 0 ? value as ProjectionFormulaConfig : cloneConfig(fallback), issues };
 }
 
-function validateFormulaCandidate(value: unknown) {
+function validateFormulaCandidate(value: unknown, section?: string, key?: string) {
   if (typeof value !== "string" || !value.trim()) return "must be a non-empty formula";
   if (value.length > maximumFormulaLength) return `must not exceed ${maximumFormulaLength} characters`;
   const validation = validateCustomFormula(value);
-  return validation.ok ? null : validation.message;
+  if (!validation.ok) return validation.message;
+  return section && key ? validateExpectedMinutesExposure(section, key, value) : null;
+}
+
+function validateExpectedMinutesExposure(section: string, key: string, formula: string) {
+  if (section !== "allocation") return null;
+  const usesExpectedMinutes = /\{Expected minutes\}/i.test(formula);
+  if (/\{[^}]*per 90[^}]*\}/i.test(formula) && !usesExpectedMinutes) {
+    return "per-90 allocation formulas must include {Expected minutes}";
+  }
+  if (key === "cardExposure" && formula.trim() !== "0" && !usesExpectedMinutes) {
+    return "card exposure must include {Expected minutes}";
+  }
+  return null;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

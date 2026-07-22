@@ -1,8 +1,8 @@
 "use client";
 
-import { BarChart3, Layers3, ListChecks, Settings, Users } from "lucide-react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { BarChart3, Layers3, ListChecks, Loader2, Settings, Users, type LucideIcon } from "lucide-react";
+import Link, { useLinkStatus } from "next/link";
+import { usePathname, useRouter } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { I18nText } from "@/components/i18n-text";
@@ -18,6 +18,7 @@ const navItems = [
 
 export function MacheteShell({ children, compact = false }: { children: ReactNode; compact?: boolean }) {
   const pathname = usePathname();
+  const router = useRouter();
   const workspaceNavigation = (
     <nav
       aria-labelledby="machete-workspace-nav-label"
@@ -33,12 +34,17 @@ export function MacheteShell({ children, compact = false }: { children: ReactNod
       </span>
       {navItems.map((item) => {
         const Icon = item.icon;
-        const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+        const active = pathname === item.href
+          || pathname.startsWith(`${item.href}/`)
+          || (item.href === "/machete/squad" && pathname.startsWith("/machete/franchise-squads"));
 
         return (
           <Link
             key={item.href}
             href={item.href}
+            prefetch={false}
+            onPointerEnter={() => router.prefetch(item.href)}
+            onFocus={() => router.prefetch(item.href)}
             aria-current={active ? "page" : undefined}
             className={cn(
               "inline-flex shrink-0 items-center justify-center gap-2 rounded-sm border sm:justify-start",
@@ -48,7 +54,7 @@ export function MacheteShell({ children, compact = false }: { children: ReactNod
                 : "border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
             )}
           >
-            <Icon className="h-4 w-4 shrink-0" />
+            <MacheteNavigationIcon icon={Icon} />
             <span className="whitespace-nowrap">{item.label}</span>
           </Link>
         );
@@ -85,4 +91,11 @@ export function MacheteShell({ children, compact = false }: { children: ReactNod
       {children}
     </main>
   );
+}
+
+function MacheteNavigationIcon({ icon: Icon }: { icon: LucideIcon }) {
+  const { pending } = useLinkStatus();
+  return pending
+    ? <Loader2 className="h-4 w-4 shrink-0 animate-spin" aria-hidden="true" />
+    : <Icon className="h-4 w-4 shrink-0" />;
 }

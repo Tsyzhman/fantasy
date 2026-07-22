@@ -24,6 +24,17 @@ type FormulaNode =
   | { type: "binary"; operator: Operator; left: FormulaNode; right: FormulaNode }
   | { type: "call"; name: FunctionName; args: FormulaNode[] };
 
+export type FormulaBreakdownTerm = {
+  expression: string;
+  resolvedExpression: string;
+  value: number;
+};
+
+export type FormulaBreakdown = {
+  value: number;
+  terms: FormulaBreakdownTerm[];
+};
+
 type ParseState = {
   tokens: Token[];
   index: number;
@@ -60,6 +71,22 @@ export function calculateCustomFormulaScore(formula: string, rawMetrics: Record<
   }
 
   return numericValue;
+}
+
+export function calculateCustomFormulaScoreWithBreakdown(formula: string, rawMetrics: Record<string, unknown>): FormulaBreakdown {
+  const tree = parseFormula(formula);
+  const terms: FormulaBreakdownTerm[] = [];
+  const value = extractFormulaTerms(tree, rawMetrics, 1, terms);
+  const numericValue = value ?? 0;
+
+  if (!Number.isFinite(numericValue)) {
+    throw new Error("Formula result is not a finite number.");
+  }
+
+  return {
+    value: numericValue,
+    terms
+  };
 }
 
 export function validateCustomFormula(formula: string) {
@@ -257,6 +284,80 @@ function parseFunctionCall(state: ParseState, rawName: string): FormulaNode {
     validateFunctionArity(name, args.length);
     return { type: "call", name, args };
   });
+}
+
+function extractFormulaTerms(
+  node: FormulaNode,
+  rawMetrics: Record<string, unknown>,
+  sign: 1 | -1,
+  terms: FormulaBreakdownTerm[]
+): number {
+  if (node.type === "binary" && node.operator !== "*" && node.operator !== "/" && node.operator !== "^") {
+    if (node.operator === "+") {
+      return (
+        extractFormulaTerms(node.left, rawMetrics, sign, terms) +
+        extractFormulaTerms(node.right, rawMetrics, sign, terms)
+      );
+    }
+
+    const invertedSign: 1 | -1 = sign === 1 ? -1 : 1;
+    return (
+      extractFormulaTerms(node.left, rawMetrics, sign, terms) +
+      extractFormulaTerms(node.right, rawMetrics, invertedSign, terms)
+    );
+  }
+
+  const value = evaluateNode(node, rawMetrics);
+  const numericValue = (value ?? 0) * sign;
+  terms.push({
+    expression: formulaNodeToString(node),
+    resolvedExpression: formulaNodeToResolvedString(node, rawMetrics),
+    value: numericValue
+  });
+  return numericValue;
+}
+
+function formulaNodeToString(node: FormulaNode): string {
+  if (node.type === "number") return formatFormulaNumber(node.value);
+  if (node.type === "metric") return `{${formatFormulaMetricLabel(node.value)}}`;
+  if (node.type === "unary") return `${node.operator}${formulaNodeToString(node.operand)}`;
+  if (node.type === "binary") {
+    return `(${formulaNodeToString(node.left)} ${node.operator} ${formulaNodeToString(node.right)})`;
+  }
+
+  const args = node.args.map(formulaNodeToString).join(", ");
+  return `${node.name}(${args})`;
+}
+
+/**
+ * Keeps the editable formula readable while showing the actual inputs used for
+ * this player and fixture. This is intentionally only used for explanation;
+ * scoring always evaluates the parsed formula tree above.
+ */
+function formulaNodeToResolvedString(node: FormulaNode, rawMetrics: Record<string, unknown>): string {
+  if (node.type === "number") return formatFormulaNumber(node.value);
+  if (node.type === "metric") {
+    const value = nullableNumericMetric(rawMetrics[node.value]);
+    const renderedValue = value === null ? "no data -> 0" : formatFormulaNumber(value);
+    return `${formatFormulaMetricLabel(node.value)} (${renderedValue})`;
+  }
+  if (node.type === "unary") return `${node.operator}${formulaNodeToResolvedString(node.operand, rawMetrics)}`;
+  if (node.type === "binary") {
+    return `(${formulaNodeToResolvedString(node.left, rawMetrics)} ${node.operator} ${formulaNodeToResolvedString(node.right, rawMetrics)})`;
+  }
+
+  const args = node.args.map((arg) => formulaNodeToResolvedString(arg, rawMetrics)).join(", ");
+  return `${node.name}(${args})`;
+}
+
+function formatFormulaNumber(value: number) {
+  return Number.isInteger(value) ? String(value) : String(value);
+}
+
+function formatFormulaMetricLabel(metric: string) {
+  return metric
+    .replace(/_/g, " ")
+    .replace(/\bper 90\b/g, "per 90");
 }
 
 function validateFunctionArity(name: FunctionName, count: number) {

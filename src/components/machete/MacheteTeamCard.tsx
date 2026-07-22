@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 
 import { I18nText } from "@/components/i18n-text";
-import { formatDate, formatNumber, formatScore } from "@/lib/format";
+import { formatDate, formatDateTime, formatNumber, formatScore } from "@/lib/format";
 import { initials } from "@/lib/text";
 
 import { MacheteStatusBadge } from "./MacheteStatusBadge";
@@ -22,6 +22,7 @@ export type MacheteTeamCardDto = {
   fixturesSynced: number;
   expectedFantasyPoints: number | null;
   lastSyncedAt: Date | string | null;
+  startingXiChangedAt: Date | string | null;
 };
 
 export function MacheteTeamCard({ team }: { team: MacheteTeamCardDto }) {
@@ -69,6 +70,12 @@ export function MacheteTeamCard({ team }: { team: MacheteTeamCardDto }) {
         <div>
           <dt className="text-xs font-medium uppercase text-slate-400"><I18nText en="Expected FP" ru="Прогноз FP" /></dt>
           <dd className="mt-1 font-semibold text-emerald-700">{formatScore(team.expectedFantasyPoints)}</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-medium uppercase text-slate-400">
+            <I18nText en="Starting XI changed" ru="Стартовые изменены" />
+          </dt>
+          <dd className="mt-1 whitespace-nowrap text-slate-700">{formatDateTime(team.startingXiChangedAt)}</dd>
         </div>
       </dl>
 

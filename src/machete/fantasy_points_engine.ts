@@ -217,7 +217,7 @@ function buildPredictedRoundBreakdown(rawMetrics: Record<string, number>, positi
   const minutesFactor = expectedMinutes / 90;
   const likelyAppearance = expectedMinutes > 0 ? 1 : 0;
   const likelySixty = expectedMinutes >= 60 ? 1 : 0;
-  const likelyFullMatch = expectedMinutes >= 89.5 ? 1 : 0;
+  const likelyFullMatch = expectedMinutes >= 80 ? 1 : 0;
   const rows: Array<{ category: string; value: number; points: number }> = [];
   const add = (category: string, value: number, points: number) => {
     if (value !== 0 || points !== 0) rows.push({ category, value: round(value), points: round(points) });
