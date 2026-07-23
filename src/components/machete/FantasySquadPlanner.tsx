@@ -2284,7 +2284,7 @@ function playerPoolOptionalColumns(players: FantasyPlannerPlayer[], horizon: num
     column("baltikaXa", "W xA", "W xA", "Total Wyscout xA from the imported Baltika workbook for the selected sample; shown only when that source is available.", "Суммарный xA Wyscout из загруженного файла «Балтики» для выбранной выборки; показывается только при наличии этого источника."),
     column("baltikaMatches", "W matches", "W матчи", "Number of matches represented in the imported Wyscout aggregate.", "Количество матчей, вошедших в загруженный агрегат Wyscout.")
   ];
-  const ignoredAliases = new Set(["observed_rounds", "tackles", "possession_recoveries", "conceded_goals", "clean_sheet"]);
+  const ignoredAliases = new Set(["observed_rounds", "tackles", "possession_recoveries", "conceded_goals", "clean_sheet", "average_rating_10_sample_size"]);
   const statKeys = [...new Set(players.flatMap((player) => Object.keys(player.historicalStats ?? {})))]
     .filter((key) => !ignoredAliases.has(key))
     .sort((left, right) => historicalStatRank(left) - historicalStatRank(right) || left.localeCompare(right));
@@ -2303,6 +2303,13 @@ function playerPoolAdvancedFilterColumns(players: FantasyPlannerPlayer[], horizo
 }
 
 function historicalStatTitle(key: string, language: UiLanguage) {
+  if (key === "average_rating") {
+    return localizedText(
+      language,
+      "Average FotMob rating over the player's latest 10 matches in the selected club/all-matches scope. Other historical metrics keep the selected period filter.",
+      "Средний рейтинг FotMob за последние 10 матчей игрока в выбранном контексте «клубы/все матчи». Остальные исторические показатели сохраняют выбранный фильтр периода."
+    );
+  }
   const normalized = key.replace(/_/g, " ");
   const per90 = key.includes("per_90");
   return localizedText(
@@ -2461,6 +2468,15 @@ function appendHistoricalMetricCalculation(lines: string[], key: string, value: 
     sixty_minute_probability: "appearances_60",
     full_match_probability: "full_matches"
   };
+  if (key === "average_rating") {
+    const ratedMatches = finiteMetric(stats.average_rating_10_sample_size);
+    lines.push(localizedText(
+      language,
+      `FotMob rating window: the player's latest 10 matches in the selected club/all-matches scope. Arithmetic mean over ${ratedMatches === null ? "matches with a supplied rating" : `${formatNumber(ratedMatches, 0)} rated matches`}; result ${formatNumber(value, 2)}. Other metrics keep the selected history period.`,
+      `Окно рейтинга FotMob: последние 10 матчей игрока в выбранном контексте «клубы/все матчи». Среднее арифметическое по ${ratedMatches === null ? "матчам с доступным рейтингом" : `${formatNumber(ratedMatches, 0)} матчам с рейтингом`}; результат ${formatNumber(value, 2)}. Остальные показатели сохраняют выбранный исторический период.`
+    ));
+    return;
+  }
   if (countByProbability[key] && matches !== null && matches > 0) {
     const numerator = countByProbability[key] === "matches_played" ? matches : finiteMetric(stats[countByProbability[key]]);
     if (numerator !== null) lines.push(`${formatNumber(numerator, 0)} / ${formatNumber(matches, 0)} = ${formatNumber(value * 100, 1)}%`);

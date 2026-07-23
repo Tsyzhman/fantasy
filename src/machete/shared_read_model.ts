@@ -63,6 +63,7 @@ export type SharedMachetePlayerRow = {
   keyPasses: number;
   tackles: number;
   averageRating: number | null;
+  averageRating10?: number | null;
   fantasyScore: number | null;
   scoringScore: number | null;
   alternativeScore: number | null;
@@ -93,6 +94,8 @@ type SharedTeamMatchRef = {
   id: bigint;
   matchDate: Date | null;
 };
+
+const AVERAGE_RATING_WINDOW = { kind: "last", matches: 10 } satisfies MacheteMatchWindow;
 
 export async function loadSharedLeagueOptions(prisma: PrismaClient): Promise<SharedLeagueSeasonOption[]> {
   const options = await loadSharedLeagueSeasonOptions(prisma);
@@ -430,18 +433,48 @@ export async function loadSharedMachetePlayerRows(
       );
     })
   );
+  const ratingMatchRefsByTeamScope = new Map<string, SharedTeamMatchRef[]>();
+  const selectedWindowAlreadyCoversRating =
+    input.matchWindow.kind === "all" ||
+    (input.matchWindow.kind === "last" && input.matchWindow.matches >= AVERAGE_RATING_WINDOW.matches);
+  if (selectedWindowAlreadyCoversRating) {
+    for (const [key, refs] of matchRefsByTeamScope) {
+      ratingMatchRefsByTeamScope.set(
+        key,
+        uniqueMatchRefs(refs)
+          .sort((left, right) => dateMs(right.matchDate) - dateMs(left.matchDate))
+          .slice(0, AVERAGE_RATING_WINDOW.matches)
+      );
+    }
+  } else {
+    await Promise.all(
+      [...teamScopes.values()].map(async (scope) => {
+        if (!scope.teamId) return;
+        const key = teamScopeKey(scope.leagueId, scope.season, scope.teamId);
+        ratingMatchRefsByTeamScope.set(
+          key,
+          await loadSharedTeamMatchRefs(prisma, scope.leagueId, scope.season, scope.teamId, AVERAGE_RATING_WINDOW)
+        );
+      })
+    );
+  }
 
   const matchIdsByTeamScope = new Map([...matchRefsByTeamScope.entries()].map(([key, matches]) => [key, matches.map((match) => match.id)]));
+  const ratingMatchIdsByTeamScope = new Map([...ratingMatchRefsByTeamScope.entries()].map(([key, matches]) => [key, matches.map((match) => match.id)]));
   const matchDateById = new Map<string, Date | null>();
-  for (const matches of matchRefsByTeamScope.values()) {
+  for (const matches of [...matchRefsByTeamScope.values(), ...ratingMatchRefsByTeamScope.values()]) {
     for (const match of matches) matchDateById.set(String(match.id), match.matchDate);
   }
   const limitedMatchIdsByTeam = groupScopeMatchIdsByTeam(teamScopes.values(), matchRefsByTeamScope, input.matchWindow);
+  const ratingMatchIdsByTeam = groupScopeMatchIdsByTeam(teamScopes.values(), ratingMatchRefsByTeamScope, AVERAGE_RATING_WINDOW);
   const allMatchIds = uniqueBigints([...matchIdsByTeamScope.values()].flat());
   const scopedMatchIds = input.combineTeamCompetitions && input.matchWindow.kind === "last" ? uniqueBigints([...limitedMatchIdsByTeam.values()].flat()) : allMatchIds;
+  const ratingMatchIds = uniqueBigints([
+    ...(input.combineTeamCompetitions ? ratingMatchIdsByTeam.values() : ratingMatchIdsByTeamScope.values())
+  ].flat());
   const stats = await loadStatsForMatchIds(
     prisma,
-    scopedMatchIds,
+    uniqueBigints([...scopedMatchIds, ...ratingMatchIds]),
     uniqueBigints(rosterRows.map((row) => row.teamId)),
     uniqueBigints(rosterRows.map((row) => row.playerId))
   );
@@ -473,12 +506,15 @@ export async function loadSharedMachetePlayerRows(
       .map((rows) => {
         const first = rows[0];
         const allowedMatchIds = new Set((limitedMatchIdsByTeam.get(String(first.teamId)) ?? []).map(String));
+        const allowedRatingMatchIds = new Set((ratingMatchIdsByTeam.get(String(first.teamId)) ?? []).map(String));
 
         const scopedStats = (statsByTeamPlayer.get(teamPlayerKey(first.teamId, first.playerId)) ?? []).filter((stat) => allowedMatchIds.has(String(stat.matchId)));
+        const scopedRatingStats = (statsByTeamPlayer.get(teamPlayerKey(first.teamId, first.playerId)) ?? []).filter((stat) => allowedRatingMatchIds.has(String(stat.matchId)));
         const playerStats = mergeRecentPlayerStats(scopedStats, fallbackStatsByPlayer.get(String(first.playerId)) ?? [], matchDateById, input.matchWindow);
+        const ratingStats = mergeRecentPlayerStats(scopedRatingStats, fallbackStatsByPlayer.get(String(first.playerId)) ?? [], matchDateById, AVERAGE_RATING_WINDOW);
         const position = inferSharedPosition(firstNonEmpty(rows.map((row) => row.position)), playerStats, matchDateById);
         const leagueNames = uniqueStrings(rows.map(leagueNameForRosterRow));
-        const aggregate = aggregateSharedStats(playerStats, position, scoringModel, matchDateById, input.matchWindow);
+        const aggregate = aggregateSharedStats(playerStats, position, scoringModel, matchDateById, input.matchWindow, ratingStats);
 
         return {
           id: `combined:${first.teamId}:${first.playerId}:${rows.map((row) => `${row.leagueId}:${row.season}`).join("|")}`,
@@ -503,10 +539,13 @@ export async function loadSharedMachetePlayerRows(
     .map((row) => {
       const teamKey = teamScopeKey(row.leagueId, row.season, row.teamId);
       const allowedMatchIds = new Set((matchIdsByTeamScope.get(teamKey) ?? []).map(String));
+      const allowedRatingMatchIds = new Set((ratingMatchIdsByTeamScope.get(teamKey) ?? []).map(String));
       const scopedStats = (statsByTeamPlayer.get(teamPlayerKey(row.teamId, row.playerId)) ?? []).filter((stat) => allowedMatchIds.has(String(stat.matchId)));
+      const scopedRatingStats = (statsByTeamPlayer.get(teamPlayerKey(row.teamId, row.playerId)) ?? []).filter((stat) => allowedRatingMatchIds.has(String(stat.matchId)));
       const playerStats = mergeRecentPlayerStats(scopedStats, fallbackStatsByPlayer.get(String(row.playerId)) ?? [], matchDateById, input.matchWindow);
+      const ratingStats = mergeRecentPlayerStats(scopedRatingStats, fallbackStatsByPlayer.get(String(row.playerId)) ?? [], matchDateById, AVERAGE_RATING_WINDOW);
       const position = inferSharedPosition(row.position, playerStats, matchDateById);
-      const aggregate = aggregateSharedStats(playerStats, position, scoringModel, matchDateById, input.matchWindow);
+      const aggregate = aggregateSharedStats(playerStats, position, scoringModel, matchDateById, input.matchWindow, ratingStats);
       const leagueName = leagueNameForRosterRow(row);
 
       return {
@@ -898,7 +937,8 @@ function aggregateSharedStats(
   position: string | null | undefined,
   model: ActiveScoringModel,
   matchDateById?: Map<string, Date | null>,
-  matchWindow?: MacheteMatchWindow
+  matchWindow?: MacheteMatchWindow,
+  ratingStats: MatchPlayerStatRecord[] = stats
 ) {
   const matchesPlayed = stats.length;
   const appearances = stats.filter(isPlayerAppearance).length;
@@ -927,7 +967,9 @@ function aggregateSharedStats(
   const foulsWon = sum(stats.map((stat) => stat.foulsWon));
   const penaltiesWon = sum(stats.map((stat) => stat.penaltiesWon));
   const ratings = stats.map((stat) => stat.rating).filter((rating): rating is number => typeof rating === "number" && Number.isFinite(rating));
+  const ratings10 = ratingStats.map((stat) => stat.rating).filter((rating): rating is number => typeof rating === "number" && Number.isFinite(rating));
   const averageRating = ratings.length ? round(sum(ratings) / ratings.length) : null;
+  const averageRating10 = ratings10.length ? round(sum(ratings10) / ratings10.length) : null;
   const expectedMinutes = matchesPlayed > 0 ? round(clamp(minutesPlayed / matchesPlayed, 0, 90)) : null;
   const knownStarts = stats.filter((stat) => stat.started !== null);
   const startProbability = knownStarts.length > 0 ? round(knownStarts.filter((stat) => stat.started).length / knownStarts.length) : null;
@@ -979,6 +1021,7 @@ function aggregateSharedStats(
     fouls_won: foulsWon,
     penalties_won: penaltiesWon,
     average_rating: averageRating ?? 0,
+    average_rating_10_sample_size: ratings10.length,
     ...(matchWindow?.kind === "days" && matchWindow.days === 365 ? calculateFriendWindowMetrics(stats, matchDateById) : {})
   };
   const positionGroup = machetePositionGroup(position);
@@ -994,6 +1037,7 @@ function aggregateSharedStats(
     keyPasses,
     tackles,
     averageRating,
+    averageRating10,
     fantasyScore: calculateFantasyScore(rawMetrics, positionGroup, model),
     scoringScore: calculateScoringScore(rawMetrics, positionGroup, model),
     alternativeScore: calculateAlternativeScore(rawMetrics, positionGroup, model),

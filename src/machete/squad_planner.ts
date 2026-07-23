@@ -602,7 +602,10 @@ export async function loadFantasySquadPlannerData(
         forecastDataUpdatedAt: projected?.dataUpdatedAt?.toISOString() ?? null,
         forecastModelVersion: projectionEngine === "COMPONENT_XFP_V1" ? "COMPONENT_XFP_V1" : playerRows.modelVersion,
         recentFp: projected?.recentFp ?? [],
-        historicalStats: numericHistoricalStats(projected?.rawMetrics),
+        historicalStats: numericHistoricalStats({
+          ...(projected?.rawMetrics ?? {}),
+          average_rating: projected?.averageRating10 ?? projected?.averageRating ?? null
+        }),
         valueScore: price.price > 0 ? roundFantasyValue((roundPoints[0] ?? predictedFp ?? 0) / price.price) : 0,
         roundPoints,
         fixtures,

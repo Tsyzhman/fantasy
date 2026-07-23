@@ -459,8 +459,13 @@ export function machetePlayerCellTitle(column: Column, player: MachetePlayerRow,
       lines.push(`${formatNumber(value, 2)} / ${player.matchesPlayed} = ${formatNumber(value / player.matchesPlayed, 3)} ${localizedText(language, "per parsed stat row", "на строку статистики")}.`);
     }
   } else if (column.key === "averageRating") {
-    lines.push(localizedText(language, `Source: FotMob ratings. ${shown} is the arithmetic mean only over matches where FotMob supplied a rating; the rated-match count is not stored in this row, so it is not replaced with the total ${player.matchesPlayed}.`, `Источник: рейтинги FotMob. ${shown} — среднее арифметическое только по матчам, где FotMob отдал рейтинг; число матчей с рейтингом в этой строке не сохранено, поэтому оно не подменяется общим числом ${player.matchesPlayed}.`));
-    lines.push(sample);
+    const ratedMatchesValue = scalar(player.rawMetrics?.average_rating_10_sample_size);
+    const ratedMatches = typeof ratedMatchesValue === "number" ? ratedMatchesValue : null;
+    lines.push(localizedText(
+      language,
+      `Source: FotMob ratings from the player's latest 10 matches in the selected club/all-matches scope. ${shown} is the arithmetic mean over ${ratedMatches === null ? "the matches where FotMob supplied a rating" : `${formatNumber(ratedMatches, 0)} rated matches`}; other columns keep the statistics window selected above.`,
+      `Источник: рейтинги FotMob за последние 10 матчей игрока в выбранном контексте «клубы/все матчи». ${shown} — среднее арифметическое по ${ratedMatches === null ? "матчам, где FotMob отдал рейтинг" : `${formatNumber(ratedMatches, 0)} матчам с рейтингом`}; остальные столбцы сохраняют выбранное выше окно статистики.`
+    ));
   } else if (column.key === "expectedMinutes") {
     const input = player.projectedFixtureComponents?.expectedMinutes;
     lines.push(localizedText(language, `Source: ${player.forecastSource === "planner" ? "next-fixture planner model" : "selected historical window fallback"}. Value: ${shown} minutes.`, `Источник: ${player.forecastSource === "planner" ? "модель следующего матча из подбора состава" : "резервный расчёт по выбранному историческому окну"}. Значение: ${shown} минут.`));
@@ -658,13 +663,13 @@ function macheteColumns(players: MachetePlayerRow[], language: "en" | "ru", hori
     column("shotsOnTarget", "SOT", "Уд. в створ", "Shots on target in the selected statistics window.", "Удары в створ в выбранном окне статистики.", 86, true, (p) => p.shotsOnTarget),
     column("keyPasses", "Key passes", "Ключ. пасы", "Key passes in the selected statistics window.", "Ключевые передачи в выбранном окне статистики.", 92, true, (p) => p.keyPasses),
     column("tackles", "Tackles", "Отборы", "Successful tackles in the selected statistics window.", "Успешные отборы в выбранном окне статистики.", 78, true, (p) => p.tackles),
-    column("averageRating", "Rating", "Рейтинг", "Average FotMob match rating over matches where it is available.", "Средний рейтинг FotMob по матчам, где он доступен.", 78, true, (p) => p.averageRating),
+    column("averageRating", "Rating", "Рейтинг", "Average FotMob rating over the player's latest 10 matches in the selected club/all-matches scope.", "Средний рейтинг FotMob за последние 10 матчей игрока в выбранном контексте «клубы/все матчи».", 78, true, (p) => p.averageRating),
     column("age", "Age", "Возраст", "Player age from the provider profile.", "Возраст игрока из профиля провайдера.", 64, true, (p) => p.age),
     column("nationality", "Nation", "Страна", "Player nationality from the provider profile.", "Национальность игрока из профиля провайдера.", 110, false, (p) => p.nationality),
     column("leagueName", "League", "Лига", "League used for this player-statistics row.", "Лига, к которой относится строка статистики игрока.", 130, false, (p) => p.leagueName ?? null),
     column("form", "Form", "Форма", "Recent match-by-match fantasy-points trend.", "Динамика фэнтези-очков по последним матчам.", 90, false, () => null)
   ];
-  const representedMetricKeys = new Set(["player", "team", "position", "price", ...base.map((item) => normalizeMetricKey(item.key))]);
+  const representedMetricKeys = new Set(["player", "team", "position", "price", "averagerating10samplesize", ...base.map((item) => normalizeMetricKey(item.key))]);
   const rawKeys = [...new Set(players.flatMap((player) => Object.keys(player.rawMetrics ?? {})))].sort();
   return [...base, ...rawKeys.filter((key) => !representedMetricKeys.has(normalizeMetricKey(key)) && players.some((player) => scalar(player.rawMetrics?.[key]) !== null)).map((key) => {
     const values = players.map((player) => player.rawMetrics?.[key]).filter((value) => value !== null && value !== undefined);

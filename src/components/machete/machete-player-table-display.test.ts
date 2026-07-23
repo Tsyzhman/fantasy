@@ -59,3 +59,12 @@ test("raw appearance probability never invents a matches over matches numerator"
   assert.match(title, /appearance numerator is not retained/);
   assert.doesNotMatch(title, /5 \/ 5 = 60/);
 });
+
+test("rating tooltip explains its independent 10-match FotMob sample", () => {
+  const ratedPlayer = { ...player, rawMetrics: { average_rating_10_sample_size: 8 } };
+  const rating = column("averageRating", "Rating", (row) => row.averageRating);
+  const title = machetePlayerCellTitle(rating, ratedPlayer, rating.value(ratedPlayer), 5, "en");
+  assert.match(title, /latest 10 matches/);
+  assert.match(title, /8 rated matches/);
+  assert.match(title, /other columns keep the statistics window/);
+});

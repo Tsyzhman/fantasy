@@ -530,6 +530,7 @@ async function buildMatchWindowRows({
       .find(Boolean) ?? null;
     return {
       ...row,
+      averageRating: row.averageRating10 ?? row.averageRating,
       price: sportsRuPriceRefForMacheteRow(row.id, sportsPriceRefs)?.price ?? null,
       predictedFp: forecast?.predictedFp ?? null,
       roundPoints: forecast?.roundPoints ?? null,

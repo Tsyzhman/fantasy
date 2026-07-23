@@ -416,11 +416,12 @@ test("combined last match window is applied across selected competitions without
   assert.equal(rows.length, 1);
   assert.equal(rows[0].matchesPlayed, 2);
   assert.equal(rows[0].minutesPlayed, 180);
-  assert.equal(coreMatchCalls.every((call) => (call as { take?: number }).take === undefined), true);
+  assert.equal(coreMatchCalls.filter((call) => (call as { take?: number }).take === undefined).length, 2);
+  assert.equal(coreMatchCalls.filter((call) => (call as { take?: number }).take === 10).length, 2);
   assert.equal(coreMatchCalls.every((call) => (call as { where?: { season?: string } }).where?.season === undefined), true);
   assert.equal(coreMatchCalls.every((call) => (call as { where?: { playerStats?: unknown } }).where?.playerStats === undefined), true);
   const statCall = statCalls[0] as { where?: { matchId?: { in?: bigint[] } } };
-  assert.deepEqual(statCall.where?.matchId?.in, [203n, 202n, 201n]);
+  assert.deepEqual(statCall.where?.matchId?.in, [203n, 202n, 201n, 102n, 101n]);
 });
 
 test("shared player rows normalize FotMob positions before applying the position filter", async () => {
@@ -505,6 +506,56 @@ test("shared player rows normalize FotMob positions before applying the position
     assert.equal(clauses.some((clause) => clause.OR?.some((item) => item.position)), false);
     assert.deepEqual(clauses[1]?.playerId?.in, [99n, 100n, 101n]);
   }
+});
+
+test("shared player rows calculate visible FotMob rating over 10 matches without widening other metrics", async () => {
+  const matches = Array.from({ length: 10 }, (_, index) => ({
+    id: BigInt(110 - index),
+    matchDate: new Date(`2026-05-${String(20 - index).padStart(2, "0")}T16:00:00.000Z`)
+  }));
+  const prisma = {
+    teamPlayerSeason: {
+      async findMany() {
+        return [
+          rosterRow({
+            leagueId: 47n,
+            season: "2025/2026",
+            teamId: 10n,
+            playerId: 99n,
+            position: "CB",
+            playerName: "Ten Match Rating"
+          })
+        ];
+      }
+    },
+    coreMatch: {
+      async findMany(input: { take?: number }) {
+        return matches.slice(0, input.take ?? matches.length);
+      }
+    },
+    matchPlayerStat: {
+      async findMany(input: { where?: { matchId?: { in?: bigint[] } } }) {
+        const selected = new Set((input.where?.matchId?.in ?? []).map(String));
+        return matches
+          .filter((match) => selected.has(String(match.id)))
+          .map((match, index) => playerStat(match.id, 90, 7 - index * 0.1, 1));
+      }
+    }
+  } as unknown as PrismaClient;
+
+  const rows = await loadSharedMachetePlayerRows(prisma, {
+    scopes: [{ leagueId: 47n, season: "2025/2026", teamId: 10n }],
+    matchWindow: { kind: "last", matches: 5 },
+    scoringModel
+  });
+
+  assert.equal(rows.length, 1);
+  assert.equal(rows[0].matchesPlayed, 5);
+  assert.equal(rows[0].goals, 5);
+  assert.equal(rows[0].averageRating, 6.8);
+  assert.equal(rows[0].averageRating10, 6.55);
+  assert.equal(rows[0].rawMetrics?.average_rating, 6.8);
+  assert.equal(rows[0].rawMetrics?.average_rating_10_sample_size, 10);
 });
 
 test("explicit roster scopes keep all-season history inside the selected competition", async () => {
@@ -736,7 +787,7 @@ function rosterRow(input: {
   };
 }
 
-function playerStat(matchId: bigint, minutes: number) {
+function playerStat(matchId: bigint, minutes: number, rating = 7, goals = 0) {
   return {
     matchId,
     playerId: 99n,
@@ -749,7 +800,7 @@ function playerStat(matchId: bigint, minutes: number) {
     minutes,
     position: "GK",
     shirtNumber: 1,
-    goals: 0,
+    goals,
     assists: 0,
     yellowCards: 0,
     redCards: 0,
@@ -772,6 +823,6 @@ function playerStat(matchId: bigint, minutes: number) {
     touchesInOppBox: 0,
     foulsWon: 0,
     penaltiesWon: 0,
-    rating: 7
+    rating
   };
 }
