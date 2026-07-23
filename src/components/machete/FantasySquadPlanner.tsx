@@ -3757,11 +3757,19 @@ function minuteHistoryProvenanceLines(
   }
   const previousTeam = inputs.previousClubHistoryTeam || localizedText(language, "previous club", "предыдущий клуб");
   const factor = inputs.previousClubPenaltyFactor ?? 0.9;
-  return [localizedText(
+  const lines = [localizedText(
     language,
     `Transfer fallback: ${formatNumber(currentMatches, 0)} current-club matches + ${formatNumber(previousMatches, 0)} matches for ${previousTeam}. Previous-club minutes and forecast event volumes are weighted by ${formatNumber(factor, 2)} until five current-club matches are available.`,
     `Резервная выборка трансфера: ${formatNumber(currentMatches, 0)} матчей за текущий клуб + ${formatNumber(previousMatches, 0)} матчей за ${previousTeam}. Минуты и объёмы прогнозных событий прошлого клуба учитываются с коэффициентом ${formatNumber(factor, 2)}, пока не накопится пять матчей за текущий клуб.`
   )];
+  if (inputs.transferRatePenalty !== null && inputs.transferRatePenalty !== undefined && inputs.transferRatePenalty < 0.999) {
+    lines.push(localizedText(
+      language,
+      `Effective per-90 transfer penalty: raw forecast rates × ${formatNumber(inputs.transferRatePenalty, 3)}. Unlike the old calculation, this factor no longer cancels between event totals and minutes.`,
+      `Итоговый трансферный штраф per 90: исходные прогнозные темпы × ${formatNumber(inputs.transferRatePenalty, 3)}. В отличие от старого расчёта, коэффициент больше не сокращается между объёмом событий и минутами.`
+    ));
+  }
+  return lines;
 }
 
 function starterMinuteFloorLines(
@@ -3776,11 +3784,23 @@ function starterMinuteFloorLines(
     inputs.expectedMinutes === undefined
   ) return [];
   const adjustment = inputs.rosterStarterMinutesUplift ?? inputs.expectedMinutes - inputs.baseExpectedMinutes;
-  return [localizedText(
+  const lines = [localizedText(
     language,
     `Nearest-fixture starter floor: max(base ${formatNumber(inputs.baseExpectedMinutes, 1)}, 60) = ${formatNumber(inputs.expectedMinutes, 1)} expected minutes; adjustment ${adjustment >= 0 ? "+" : ""}${formatNumber(adjustment, 1)}. It is not applied to later fixtures.`,
     `Минимум основы только на ближайший матч: max(базовые ${formatNumber(inputs.baseExpectedMinutes, 1)}, 60) = ${formatNumber(inputs.expectedMinutes, 1)} ожидаемых минут; корректировка ${adjustment >= 0 ? "+" : ""}${formatNumber(adjustment, 1)}. На последующие матчи правило не переносится.`
   )];
+  if (
+    inputs.eventExposureMinutes !== null &&
+    inputs.eventExposureMinutes !== undefined &&
+    inputs.eventExposureMinutes < inputs.expectedMinutes - 0.01
+  ) {
+    lines.push(localizedText(
+      language,
+      `Cautious per-90 exposure: base ${formatNumber(inputs.baseExpectedMinutes, 1)} + starter uplift ${formatNumber(adjustment, 1)} × sample reliability ${formatNumber((inputs.per90UpliftReliability ?? 0) * 100, 1)}% = ${formatNumber(inputs.eventExposureMinutes, 1)} event minutes. Appearance and 60-minute points still use ${formatNumber(inputs.expectedMinutes, 1)} minutes; xG/xA, recoveries, saves and cards use the cautious exposure because the history contains only ${formatNumber(inputs.per90SampleMinutes ?? 0, 0)} minutes.`,
+      `Осторожная экспозиция per 90: базовые ${formatNumber(inputs.baseExpectedMinutes, 1)} + прибавка старта ${formatNumber(adjustment, 1)} × надёжность выборки ${formatNumber((inputs.per90UpliftReliability ?? 0) * 100, 1)}% = ${formatNumber(inputs.eventExposureMinutes, 1)} минуты событий. Очки за выход и 60 минут по-прежнему используют ${formatNumber(inputs.expectedMinutes, 1)} минуты; xG/xA, возвраты, сейвы и карточки используют осторожную экспозицию, потому что в истории только ${formatNumber(inputs.per90SampleMinutes ?? 0, 0)} минут.`
+    ));
+  }
+  return lines;
 }
 
 function addProjectionWeightedTermLine(

@@ -290,6 +290,139 @@ test("primary and Alt apply a 60-minute starter floor only to the chronologicall
   assert.equal(highMinuteIndex.formulaMetricsByFixturePlayer.get("fixture-nearest:starter")?.roster_starter_minutes_uplift, 0);
 });
 
+test("a short history sample applies the starter uplift cautiously to per-90 events", () => {
+  const config = {
+    ...expectedProjectionFormulaConfig,
+    history: {
+      ...expectedProjectionFormulaConfig.history,
+      expectedMinutes: "28",
+      appearanceProbability: "1",
+      sixtyProbability: "gte({Expected minutes}, 60)",
+      fullMatchProbability: "0",
+      xgRate: "1",
+      xaRate: "1",
+      recoveryRate: "1",
+      saveRate: "1",
+      yellowRate: "1",
+      redRate: "0"
+    },
+    team: {
+      expectedGoals: "1",
+      expectedGoalsAgainst: "0",
+      assistsPerGoal: "0",
+      cleanSheetProbability: "0"
+    }
+  };
+  const row = (playerId: string, historyMinutes: number) => ({
+    playerId,
+    teamId: "team-1",
+    position: "FWD",
+    isStarter: true,
+    startProbability: 0,
+    expectedMinutes: 28,
+    minutesPlayed: historyMinutes,
+    rawMetrics: { minutes_365: historyMinutes }
+  }) as never;
+  const nearestFixture = {
+    id: "fixture-nearest", roundId: "round-1", teamId: "team-1", opponentTeamId: "team-2",
+    opponentName: "OPP", opponentFullName: "Opponent", side: "H" as const,
+    kickoffAt: new Date("2026-07-25T12:00:00Z"), projectedXg: 1, projectedXga: 0,
+    attackMultiplier: 1, defenseMultiplier: 1
+  };
+  const laterFixture = { ...nearestFixture, id: "fixture-later", roundId: "round-2", kickoffAt: new Date("2026-08-01T12:00:00Z") };
+  const fixtures = {
+    rounds: [],
+    fixturesByTeamRound: new Map([
+      ["round-1", new Map([["team-1", [nearestFixture]]])],
+      ["round-2", new Map([["team-1", [laterFixture]]])]
+    ]),
+    teamShortNameById: new Map()
+  };
+
+  for (const formulaConfig of [config, { ...config, ...friendAltProjectionFormulaConfig, history: config.history, team: config.team }]) {
+    const shortSample = buildFormulaProjectionIndex(
+      [row("short", 140)],
+      fixtures,
+      new Map([["short", "FWD"]]),
+      formulaConfig
+    );
+    const expectedReliability = 140 / 450;
+    const expectedEventMinutes = 28 + (60 - 28) * expectedReliability;
+    const nearestMetrics = shortSample.formulaMetricsByFixturePlayer.get("fixture-nearest:short");
+
+    assert.equal(shortSample.byFixturePlayer.get("fixture-nearest:short")?.expectedMinutes, 60);
+    assert.ok(Math.abs(Number(nearestMetrics?.per90_uplift_reliability) - expectedReliability) < 1e-12);
+    assert.ok(Math.abs(Number(nearestMetrics?.event_exposure_minutes) - expectedEventMinutes) < 1e-12);
+    assert.ok(Math.abs((shortSample.byFixturePlayer.get("fixture-nearest:short")?.allocationWeights.goals ?? 0) - expectedEventMinutes / 90) < 1e-12);
+    assert.ok(Math.abs((shortSample.byFixturePlayer.get("fixture-nearest:short")?.expectedEvents.yellowCards ?? 0) - expectedEventMinutes / 90) < 1e-12);
+    assert.equal(shortSample.formulaMetricsByFixturePlayer.get("fixture-later:short")?.event_exposure_minutes, 28);
+    assert.ok(Math.abs((shortSample.byFixturePlayer.get("fixture-later:short")?.allocationWeights.goals ?? 0) - 28 / 90) < 1e-12);
+  }
+
+  const stableSample = buildFormulaProjectionIndex(
+    [row("stable", 450)],
+    fixtures,
+    new Map([["stable", "FWD"]]),
+    config
+  );
+  assert.equal(stableSample.formulaMetricsByFixturePlayer.get("fixture-nearest:stable")?.event_exposure_minutes, 60);
+  assert.ok(Math.abs((stableSample.byFixturePlayer.get("fixture-nearest:stable")?.allocationWeights.goals ?? 0) - 2 / 3) < 1e-12);
+});
+
+test("previous-club fallback applies a real penalty to per-90 forecast rates", () => {
+  const config = {
+    ...expectedProjectionFormulaConfig,
+    history: {
+      ...expectedProjectionFormulaConfig.history,
+      expectedMinutes: "60",
+      appearanceProbability: "1",
+      sixtyProbability: "1",
+      fullMatchProbability: "0",
+      xgRate: "1",
+      xaRate: "1",
+      recoveryRate: "1",
+      saveRate: "1",
+      yellowRate: "1",
+      redRate: "1"
+    },
+    team: { expectedGoals: "1", expectedGoalsAgainst: "0", assistsPerGoal: "0", cleanSheetProbability: "0" }
+  };
+  const fixture = {
+    id: "fixture-1", roundId: "round-1", teamId: "team-1", opponentTeamId: "team-2",
+    opponentName: "OPP", opponentFullName: "Opponent", side: "H" as const,
+    kickoffAt: new Date("2026-07-25T12:00:00Z"), projectedXg: 1, projectedXga: 0,
+    attackMultiplier: 1, defenseMultiplier: 1
+  };
+  const index = buildFormulaProjectionIndex(
+    [{
+      playerId: "transfer",
+      teamId: "team-1",
+      position: "FWD",
+      isStarter: false,
+      startProbability: 1,
+      expectedMinutes: 60,
+      minutesPlayed: 405,
+      rawMetrics: { minutes_365: 405 },
+      minuteHistoryProvenance: {
+        source: "PREVIOUS_CLUB_FALLBACK",
+        currentClubMatches: 0,
+        previousClubMatches: 5,
+        previousClubName: "Previous",
+        previousClubPenaltyFactor: 0.9
+      }
+    } as never],
+    { rounds: [], fixturesByTeamRound: new Map([["round-1", new Map([["team-1", [fixture]]])]]), teamShortNameById: new Map() },
+    new Map([["transfer", "FWD"]]),
+    config
+  );
+  const metrics = index.formulaMetricsByFixturePlayer.get("fixture-1:transfer");
+
+  assert.equal(metrics?.transfer_rate_penalty, 0.9);
+  assert.equal(metrics?.blended_xg_per_90, 0.9);
+  assert.equal(metrics?.blended_xa_per_90, 0.9);
+  assert.ok(Math.abs((index.byFixturePlayer.get("fixture-1:transfer")?.allocationWeights.goals ?? 0) - 0.6) < 1e-12);
+});
+
 test("friend Alt is shared in the squad while a personal formula overrides only its own position", () => {
   const base = componentFormulaModel();
   const shared = friendAlternativeScoringModel(base, null);

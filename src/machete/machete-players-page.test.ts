@@ -87,6 +87,8 @@ test("value-cell tooltips explain the concrete player value instead of repeating
   assert.match(tableSource, /term-level decomposition/);
   assert.match(tableSource, /× 90 \//);
   assert.match(tableSource, /It is not a starting-XI probability/);
+  assert.match(tableSource, /Per-90 event exposure is limited to/);
+  assert.match(tableSource, /Экспозиция событий per 90 ограничена/);
   assert.match(tableSource, /title=\{machetePlayerCellTitle\(column, player, column\.value\(player\), horizon, language\)\}/);
   assert.match(pageSource, /projectionFormula: forecast\?\.projectionFormula/);
   assert.match(pageSource, /projectedFixtureComponents: forecast\?\.projectedFixtureComponents/);

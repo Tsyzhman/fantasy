@@ -569,6 +569,17 @@ function appendProjectionInputLines(lines: string[], inputs: MachetePlayerRow["p
     [localizedText(language, "Expected red cards", "Ожидаемые КК"), inputs.expectedRedCards, "× −3 FP"]
   ];
   lines.push(localizedText(language, "Concrete next-fixture inputs:", "Конкретные входы следующего матча:"));
+  if (
+    inputs.eventExposureMinutes != null &&
+    inputs.expectedMinutes != null &&
+    inputs.eventExposureMinutes < inputs.expectedMinutes - 0.01
+  ) {
+    lines.push(localizedText(
+      language,
+      `Per-90 event exposure is limited to ${formatNumber(inputs.eventExposureMinutes, 1)} minutes from a ${formatNumber(inputs.per90SampleMinutes ?? 0, 0)}-minute history sample (${formatNumber((inputs.per90UpliftReliability ?? 0) * 100, 1)}% reliability for the manual starter uplift). Appearance thresholds still use ${formatNumber(inputs.expectedMinutes, 1)} expected minutes.`,
+      `Экспозиция событий per 90 ограничена ${formatNumber(inputs.eventExposureMinutes, 1)} минуты по выборке из ${formatNumber(inputs.per90SampleMinutes ?? 0, 0)} минут (${formatNumber((inputs.per90UpliftReliability ?? 0) * 100, 1)}% надёжности ручной прибавки старта). Пороги выхода на поле по-прежнему используют ${formatNumber(inputs.expectedMinutes, 1)} ожидаемых минут.`
+    ));
+  }
   values.forEach(([label, amount, operation]) => {
     if (amount != null) lines.push(`- ${label}: ${formatNumber(amount, 3)} (${operation})`);
   });

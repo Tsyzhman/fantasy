@@ -131,6 +131,10 @@ function buildFixtureComponentInputs(
       ? null
       : numericProjectionMetric(formulaMetrics?.roster_starter) === 1,
     rosterStarterMinutesUplift: numericProjectionMetric(formulaMetrics?.roster_starter_minutes_uplift),
+    eventExposureMinutes: numericProjectionMetric(formulaMetrics?.event_exposure_minutes),
+    per90SampleMinutes: numericProjectionMetric(formulaMetrics?.per90_sample_minutes),
+    per90UpliftReliability: numericProjectionMetric(formulaMetrics?.per90_uplift_reliability),
+    transferRatePenalty: numericProjectionMetric(formulaMetrics?.transfer_rate_penalty),
     minuteHistorySource: minuteHistorySourceMetric(formulaMetrics?.minute_history_source),
     currentClubHistoryMatches: numericProjectionMetric(formulaMetrics?.current_club_history_matches),
     previousClubHistoryMatches: numericProjectionMetric(formulaMetrics?.previous_club_history_matches),
@@ -1283,6 +1287,9 @@ type PipelineParticipant = {
   metrics: Record<string, unknown>;
 };
 
+const starterPer90FullReliabilityMinutes = 450;
+const starterPer90MinimumReliability = 0.25;
+
 export function buildFormulaProjectionIndex(
   rows: Array<SharedMachetePlayerRow & { teamId: string; playerId: string }>,
   roundsAndFixtures: PlannerRoundFixtures,
@@ -1385,9 +1392,25 @@ function pipelineParticipant(
   const baseExpectedMinutes = clamp(formulaValue(config.history.expectedMinutes, metrics), 0, 90);
   metrics.roster_starter = rosterStarterApplies ? 1 : 0;
   const expectedMinutes = rosterStarterApplies ? Math.max(baseExpectedMinutes, 60) : baseExpectedMinutes;
+  const historyMinutes = Math.max(0, numericOrNull(metrics.minutes_365) ?? row.minutesPlayed ?? 0);
+  // A manual XI mark is strong evidence of availability, but it does not turn a
+  // short historical sample into a reliable per-90 event rate. Appearance
+  // thresholds use the full 60-minute floor; only the uplift applied to event
+  // rates is phased in until five full matches (450 minutes) are observed.
+  const per90UpliftReliability = rosterStarterApplies
+    ? clamp(historyMinutes / starterPer90FullReliabilityMinutes, starterPer90MinimumReliability, 1)
+    : 1;
+  const eventExposureMinutes = rosterStarterApplies
+    ? baseExpectedMinutes + (expectedMinutes - baseExpectedMinutes) * per90UpliftReliability
+    : expectedMinutes;
+  const transferRatePenalty = blendedTransferRatePenalty(row.minuteHistoryProvenance);
   metrics.base_expected_minutes = baseExpectedMinutes;
   metrics.roster_starter_minutes_uplift = expectedMinutes - baseExpectedMinutes;
   metrics.expected_minutes = expectedMinutes;
+  metrics.per90_sample_minutes = historyMinutes;
+  metrics.per90_uplift_reliability = per90UpliftReliability;
+  metrics.event_exposure_minutes = eventExposureMinutes;
+  metrics.transfer_rate_penalty = transferRatePenalty;
   const countsAsFullMatch = countsAsFullFantasyMatch(expectedMinutes);
   const appearance = countsAsFullMatch ? 1 : clamp(formulaValue(config.history.appearanceProbability, metrics), 0, 1);
   metrics.appearance_probability = appearance;
@@ -1396,12 +1419,12 @@ function pipelineParticipant(
   metrics["60_minute_probability"] = sixtyMinutes;
   const fullMatch = countsAsFullMatch ? 1 : clamp(formulaValue(config.history.fullMatchProbability, metrics), 0, sixtyMinutes);
   metrics.full_match_probability = fullMatch;
-  const xg = nonNegativeFormulaValue(config.history.xgRate, metrics, "history.xgRate");
-  const xa = nonNegativeFormulaValue(config.history.xaRate, metrics, "history.xaRate");
-  const recoveries = nonNegativeFormulaValue(config.history.recoveryRate, metrics, "history.recoveryRate");
-  const saves = nonNegativeFormulaValue(config.history.saveRate, metrics, "history.saveRate");
-  const yellowCards = nonNegativeFormulaValue(config.history.yellowRate, metrics, "history.yellowRate");
-  const redCards = nonNegativeFormulaValue(config.history.redRate, metrics, "history.redRate");
+  const xg = nonNegativeFormulaValue(config.history.xgRate, metrics, "history.xgRate") * transferRatePenalty;
+  const xa = nonNegativeFormulaValue(config.history.xaRate, metrics, "history.xaRate") * transferRatePenalty;
+  const recoveries = nonNegativeFormulaValue(config.history.recoveryRate, metrics, "history.recoveryRate") * transferRatePenalty;
+  const saves = nonNegativeFormulaValue(config.history.saveRate, metrics, "history.saveRate") * transferRatePenalty;
+  const yellowCards = nonNegativeFormulaValue(config.history.yellowRate, metrics, "history.yellowRate") * transferRatePenalty;
+  const redCards = nonNegativeFormulaValue(config.history.redRate, metrics, "history.redRate") * transferRatePenalty;
   Object.assign(metrics, {
     blended_xg_per_90: xg,
     blended_xa_per_90: xa,
@@ -1422,6 +1445,14 @@ function pipelineParticipant(
       ratesPer90: { xg, xa, recoveries, saves, yellowCards, redCards }
     }
   };
+}
+
+function blendedTransferRatePenalty(provenance: SharedMachetePlayerRow["minuteHistoryProvenance"]) {
+  const previousMatches = provenance?.previousClubMatches ?? 0;
+  if (previousMatches <= 0) return 1;
+  const currentMatches = provenance?.currentClubMatches ?? 0;
+  const previousPenalty = clamp(provenance?.previousClubPenaltyFactor ?? 1, 0, 1);
+  return (currentMatches + previousMatches * previousPenalty) / Math.max(1, currentMatches + previousMatches);
 }
 
 function nearestFixtureIdsByTeam(fixtures: Iterable<PlannerFixture>) {
@@ -1464,9 +1495,13 @@ function pipelineAllocationParticipant(
     saves: position === "GK" ? per90AwareAllocationValue(config.allocation.saves, metrics, "allocation.saves") : 0
   };
   const minutesExposure = (numericOrNull(metrics.expected_minutes) ?? 0) / 90;
+  const eventExposure = Math.min(
+    minutesExposure,
+    (numericOrNull(metrics.event_exposure_minutes) ?? numericOrNull(metrics.expected_minutes) ?? 0) / 90
+  );
   const cardExposureFactor = Math.min(
     nonNegativeFormulaValue(config.allocation.cardExposure, metrics, "allocation.cardExposure"),
-    minutesExposure
+    eventExposure
   );
   Object.assign(metrics, {
     goal_allocation_weight: allocationWeights.goals,
@@ -1543,8 +1578,14 @@ function per90AwareAllocationValue(formula: string, metrics: Record<string, unkn
   const value = nonNegativeFormulaValue(formula, metrics, path);
   const usesPer90 = /\{[^}]*per 90[^}]*\}/i.test(formula);
   const alreadyUsesExpectedMinutes = /\{Expected minutes\}/i.test(formula);
-  if (!usesPer90 || alreadyUsesExpectedMinutes) return value;
-  return value * ((numericOrNull(metrics.expected_minutes) ?? 0) / 90);
+  if (!usesPer90) return value;
+  const expectedMinutes = numericOrNull(metrics.expected_minutes) ?? 0;
+  const eventExposureMinutes = Math.min(
+    expectedMinutes,
+    numericOrNull(metrics.event_exposure_minutes) ?? expectedMinutes
+  );
+  if (!alreadyUsesExpectedMinutes) return value * (eventExposureMinutes / 90);
+  return expectedMinutes > 0 ? value * (eventExposureMinutes / expectedMinutes) : 0;
 }
 
 function componentParticipant(

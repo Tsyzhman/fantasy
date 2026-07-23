@@ -481,6 +481,9 @@ test("table forecast tooltips and compact controls cover both English and Russia
   assert.match(squadPlannerSource, /"Значений по отдельным турам пока нет\."/);
   assert.match(squadPlannerSource, /Nearest-fixture starter floor/);
   assert.match(squadPlannerSource, /Минимум основы только на ближайший матч/);
+  assert.match(squadPlannerSource, /Cautious per-90 exposure/);
+  assert.match(squadPlannerSource, /Осторожная экспозиция per 90/);
+  assert.match(squadPlannerSource, /Effective per-90 transfer penalty/);
   assert.match(squadPlannerSource, /negative Poisson groups of 2 from expected goals conceded/);
   assert.doesNotMatch(squadPlannerSource, /not used in alternative score/);
   assert.doesNotMatch(squadPlannerSource, /не используется в формуле Альт/);
