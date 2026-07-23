@@ -1419,6 +1419,7 @@ type PipelineParticipant = {
 
 const starterPer90FullReliabilityMinutes = 450;
 const starterPer90MinimumReliability = 0.25;
+const alternativeHorizonMinimumExpectedMinutes = 45;
 
 export function buildFormulaProjectionIndex(
   rows: Array<SharedMachetePlayerRow & { teamId: string; playerId: string }>,
@@ -1452,12 +1453,18 @@ export function buildFormulaProjectionIndex(
         .map((row) => pipelineParticipant(row, sportsPositionsByPlayerId.get(row.playerId), config, starterFloorApplies))
         .filter((entry): entry is PipelineParticipant => entry !== null)
         .sort((left, right) =>
-          Number(right.metrics.roster_starter) - Number(left.metrics.roster_starter) ||
+          Number(right.metrics.roster_starter_marked) - Number(left.metrics.roster_starter_marked) ||
           right.input.probabilities.appearance! - left.input.probabilities.appearance! ||
           right.input.expectedMinutes! - left.input.expectedMinutes! ||
           right.row.minutesPlayed - left.row.minutesPlayed
         );
-      const historyCandidates = probableXiOnly ? rankedCandidates.slice(0, 11) : rankedCandidates;
+      const historyCandidates = probableXiOnly
+        ? starterFloorApplies
+          ? rankedCandidates.slice(0, 11)
+          : rankedCandidates.filter((entry) =>
+              (entry.input.expectedMinutes ?? 0) > alternativeHorizonMinimumExpectedMinutes
+            )
+        : rankedCandidates;
       const teamContext = pipelineTeamContext(fixture, config);
       const candidates = historyCandidates.map((entry) => pipelineAllocationParticipant(entry, teamContext, config));
       const participants = candidates.map((entry) => entry.input);

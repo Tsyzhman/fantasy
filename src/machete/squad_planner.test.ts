@@ -314,6 +314,113 @@ test("primary and Alt apply position-specific starter minutes only to the chrono
   assert.equal(highMinuteIndex.formulaMetricsByFixturePlayer.get("fixture-nearest:starter")?.roster_starter_minutes_uplift, 0);
 });
 
+test("Alt uses the marked XI for the nearest fixture and every player above 45 ordinary minutes later", () => {
+  const config = {
+    ...friendAltProjectionFormulaConfig,
+    history: {
+      ...friendAltProjectionFormulaConfig.history,
+      expectedMinutes: "{minutes}",
+      appearanceProbability: "1",
+      sixtyProbability: "gte({Expected minutes}, 60)",
+      fullMatchProbability: "0",
+      xgRate: "0",
+      xaRate: "0",
+      recoveryRate: "0",
+      saveRate: "0",
+      yellowRate: "0",
+      redRate: "0"
+    },
+    team: {
+      expectedGoals: "0",
+      expectedGoalsAgainst: "0",
+      assistsPerGoal: "0",
+      cleanSheetProbability: "0"
+    },
+    allocation: {
+      goals: "0",
+      assists: "0",
+      recoveries: "0",
+      saves: "0",
+      cardExposure: "0"
+    }
+  };
+  const rows = [
+    ...Array.from({ length: 10 }, (_, index) => ({
+      playerId: `starter-${index}`,
+      teamId: "team-1",
+      position: "FWD",
+      isStarter: true,
+      startProbability: 1,
+      expectedMinutes: 80,
+      minutesPlayed: 900,
+      rawMetrics: { minutes: 80 }
+    })),
+    {
+      playerId: "marked-horizon-player",
+      teamId: "team-1",
+      position: "FWD",
+      isStarter: true,
+      startProbability: 0.4,
+      expectedMinutes: 64,
+      minutesPlayed: 576,
+      rawMetrics: { minutes: 64 }
+    },
+    {
+      playerId: "unmarked-high-minutes",
+      teamId: "team-1",
+      position: "FWD",
+      isStarter: false,
+      startProbability: 1,
+      expectedMinutes: 85,
+      minutesPlayed: 900,
+      rawMetrics: { minutes: 85 }
+    },
+    {
+      playerId: "marked-45-minutes",
+      teamId: "team-1",
+      position: "FWD",
+      isStarter: true,
+      startProbability: 0.4,
+      expectedMinutes: 45,
+      minutesPlayed: 405,
+      rawMetrics: { minutes: 45 }
+    }
+  ];
+  const nearestFixture = {
+    id: "fixture-nearest", roundId: "round-1", teamId: "team-1", opponentTeamId: "team-2",
+    opponentName: "OPP", opponentFullName: "Opponent", side: "H" as const,
+    kickoffAt: new Date("2026-07-25T12:00:00Z"), projectedXg: 0, projectedXga: 0,
+    attackMultiplier: 1, defenseMultiplier: 1
+  };
+  const laterFixture = {
+    ...nearestFixture,
+    id: "fixture-later",
+    roundId: "round-2",
+    kickoffAt: new Date("2026-08-01T12:00:00Z")
+  };
+  const positions = new Map(rows.map((row: { playerId: string }) => [row.playerId, "FWD"]));
+  const index = buildFormulaProjectionIndex(
+    rows as never,
+    {
+      rounds: [],
+      fixturesByTeamRound: new Map([
+        ["round-1", new Map([["team-1", [nearestFixture]]])],
+        ["round-2", new Map([["team-1", [laterFixture]]])]
+      ]),
+      teamShortNameById: new Map()
+    },
+    positions,
+    config,
+    true
+  );
+
+  assert.equal(index.byFixturePlayer.get("fixture-nearest:marked-horizon-player")?.expectedMinutes, 64);
+  assert.equal(index.byFixturePlayer.get("fixture-later:marked-horizon-player")?.expectedMinutes, 64);
+  assert.equal(index.byFixturePlayer.has("fixture-nearest:unmarked-high-minutes"), false);
+  assert.equal(index.byFixturePlayer.get("fixture-later:unmarked-high-minutes")?.expectedMinutes, 85);
+  assert.equal(index.byFixturePlayer.has("fixture-later:marked-45-minutes"), false);
+});
+
 test("a short history sample applies the starter uplift cautiously to per-90 events", () => {
   const config = {
     ...expectedProjectionFormulaConfig,
