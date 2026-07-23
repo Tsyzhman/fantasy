@@ -410,10 +410,7 @@ function MetricCell({ column, player, rank, horizon }: { column: Column; player:
   if (column.key === "fantasyScore") return <td className="px-1 py-1 text-right" title={title}><ScoreHeatCell value={numberOrNull(value)} rank={rank ?? null} tone="emerald" /></td>;
   if (column.key === "scoringScore") return <td className="px-1 py-1 text-right" title={title}><ScoreHeatCell value={numberOrNull(value)} rank={rank ?? null} tone="sky" /></td>;
   if (column.key === "alternativeScore") return <td className="px-1 py-1 text-right" title={title}><ScoreHeatCell value={numberOrNull(value)} rank={rank ?? null} tone="amber" /></td>;
-  const inlineEfficiency = ["predictedFp", "foontasy", "alternativePredictedFp"].includes(column.key)
-    ? forecastPointsPerPrice(typeof value === "number" ? value : null, player.price)
-    : null;
-  return <td className={cn("overflow-hidden px-2 py-2 text-slate-600", column.numeric && "text-right num-tabular")} title={title}><span className="block truncate">{displayColumnValue(column.key, value)}{inlineEfficiency === null ? null : <span className="ml-1 text-[9px] font-semibold opacity-75">· {formatNumber(inlineEfficiency, 3)}{localizedText(language, "/P", "/ц")}</span>}</span></td>;
+  return <td className={cn("overflow-hidden px-2 py-2 text-slate-600", column.numeric && "text-right num-tabular")} title={title}><span className="block truncate">{displayColumnValue(column.key, value)}</span></td>;
 }
 
 export function machetePlayerCellTitle(column: Column, player: MachetePlayerRow, value: string | number | null, horizon: number, language: "en" | "ru") {
@@ -462,7 +459,6 @@ export function machetePlayerCellTitle(column: Column, player: MachetePlayerRow,
     }
   } else if (column.key === "foontasy") {
     lines.push(localizedText(language, "Source: Foontasy current-round export matched by the Sports.ru player identifier.", "Источник: выгрузка Foontasy на текущий тур, сопоставленная по идентификатору игрока Sports.ru."));
-    appendPlayerAssetEfficiency(lines, player, player.foontasyPoints ?? null, "FFO", language);
   } else if (column.key === "predictedFp" || column.key === "alternativePredictedFp") {
     const formula = column.key === "predictedFp" ? player.projectionFormula : player.alternativeProjectionFormula;
     const components = column.key === "predictedFp" ? player.projectionComponents : player.alternativeProjectionComponents;
@@ -479,13 +475,6 @@ export function machetePlayerCellTitle(column: Column, player: MachetePlayerRow,
     }
     appendProjectionInputLines(lines, column.key === "predictedFp" ? player.projectedFixtureComponents : player.alternativeProjectedFixtureComponents, player.position, language);
     appendPlayerForecastMeta(lines, player, language);
-    appendPlayerAssetEfficiency(
-      lines,
-      player,
-      column.key === "predictedFp" ? playerNextForecast(player) : playerNextAlternativeForecast(player),
-      column.key === "predictedFp" ? "FP" : "Alt",
-      language
-    );
   } else if (column.key === "forecastHorizonFp" || column.key === "alternativeForecastHorizon") {
     const points = column.key === "forecastHorizonFp" ? player.roundPoints ?? [] : player.alternativeRoundPoints ?? [];
     const selected = points.slice(0, horizon).filter((point): point is number => typeof point === "number" && Number.isFinite(point));
@@ -776,15 +765,6 @@ function numberOrNull(value: string | number | null) { return typeof value === "
 function scalar(value: unknown): string | number | null { return typeof value === "number" && Number.isFinite(value) ? value : typeof value === "string" ? value : null; }
 function displayValue(value: string | number | null) { return value == null || value === "" ? "—" : typeof value === "number" ? formatNumber(value, Number.isInteger(value) ? 0 : 2) : value; }
 function displayColumnValue(key: string, value: string | number | null) { return key.endsWith("PerPrice") && typeof value === "number" ? formatNumber(value, 3) : displayValue(value); }
-function appendPlayerAssetEfficiency(lines: string[], player: MachetePlayerRow, forecast: number | null, label: string, language: "en" | "ru") {
-  const efficiency = forecastPointsPerPrice(forecast, player.price);
-  if (efficiency === null) {
-    lines.push(localizedText(language, `${label}/price is unavailable because the forecast or verified positive price is missing.`, `${label}/цена недоступна: отсутствует прогноз или подтверждённая положительная цена.`));
-    return;
-  }
-  lines.push(`${formatNumber(forecast, 2)} ÷ ${formatNumber(player.price, 2)} = ${formatNumber(efficiency, 3)}`);
-  lines.push(localizedText(language, "Asset efficiency: expected points per one Sports.ru price unit.", "Эффективность ассета: ожидаемые очки на одну единицу цены Sports.ru."));
-}
 function filterIsActive(filter: ValueFilter | undefined, numeric: boolean) { if (!filter) return false; return numeric ? Boolean(filter.min.trim() || filter.max.trim()) : Boolean(filter.query.trim()); }
 function valueMatches(value: string | number | null, filter: ValueFilter, numeric: boolean) { if (!filterIsActive(filter, numeric)) return true; if (numeric) { if (typeof value !== "number") return false; const min = Number(filter.min.replace(",", ".")); const max = Number(filter.max.replace(",", ".")); return (!filter.min.trim() || value >= min) && (!filter.max.trim() || value <= max); } return String(value ?? "").toLocaleLowerCase().includes(filter.query.trim().toLocaleLowerCase()); }
 function compareColumnValues(left: string | number | null, right: string | number | null, direction: "asc" | "desc") {

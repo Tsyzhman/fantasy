@@ -2530,9 +2530,6 @@ function customPlayerPoolCell(column: PlayerPoolOptionalColumn, player: FantasyP
 
   const rawValue = customPlayerPoolColumnValue(column.key, player, horizon);
   const display = customPlayerPoolColumnDisplay(column.key, rawValue, language);
-  const inlineEfficiency = ["nextFp", "foontasy", "alternative"].includes(column.key)
-    ? forecastPointsPerPrice(typeof rawValue === "number" ? rawValue : null, player.price)
-    : null;
   const tone = column.key === "nextFp" || column.key === "nextFpPerPrice" ? "text-emerald-700"
     : column.key === "horizonFp" ? "text-sky-700"
       : column.key === "foontasy" || column.key === "foontasyPerPrice" ? "text-cyan-700"
@@ -2541,19 +2538,19 @@ function customPlayerPoolCell(column: PlayerPoolOptionalColumn, player: FantasyP
   const cellTitle = playerPoolValueCellTitle(column, player, horizon, language, rawValue);
   return (
     <td key={column.key} data-sort-value={rawValue ?? ""} className={cn("overflow-hidden text-ellipsis whitespace-nowrap px-1 py-1.5", column.numeric && "text-center num-tabular", muted ? "text-slate-500" : tone)} title={cellTitle}>
-      {display}{inlineEfficiency === null ? null : <span className="ml-1 text-[9px] font-semibold opacity-75">· {formatNumber(inlineEfficiency, 3)}{localizedText(language, "/P", "/ц")}</span>}
+      {display}
     </td>
   );
 }
 
 function playerPoolValueCellTitle(column: PlayerPoolOptionalColumn, player: FantasyPlannerPlayer, horizon: number, language: UiLanguage, rawValue: string | number | null) {
   const numericValue = typeof rawValue === "number" && Number.isFinite(rawValue) ? rawValue : null;
-  if (column.key === "nextFp") return `${playerPrimaryNextForecastTitle(player, language, numericValue)}\n\n${forecastEfficiencyTitle(player, language, "FP", numericValue, forecastPointsPerPrice(numericValue, player.price))}`;
+  if (column.key === "nextFp") return playerPrimaryNextForecastTitle(player, language, numericValue);
   if (column.key === "nextFpPerPrice") return forecastEfficiencyTitle(player, language, "FP", nextFantasyPoints(player), numericValue);
   if (column.key === "horizonFp") return playerPrimaryHorizonForecastTitle(player, language, numericValue, horizon);
-  if (column.key === "foontasy") return `${foontasyForecastTitle(player, language, 1)}\n\n${forecastEfficiencyTitle(player, language, "FFO", player.foontasyPoints ?? null, forecastPointsPerPrice(player.foontasyPoints, player.price))}`;
+  if (column.key === "foontasy") return foontasyForecastTitle(player, language, 1);
   if (column.key === "foontasyPerPrice") return forecastEfficiencyTitle(player, language, "FFO", player.foontasyPoints ?? null, numericValue);
-  if (column.key === "alternative") return `${alternativePlayerForecastTitle(player, language)}\n\n${forecastEfficiencyTitle(player, language, "Alt", player.alternativePredictedFp ?? null, forecastPointsPerPrice(player.alternativePredictedFp, player.price))}`;
+  if (column.key === "alternative") return alternativePlayerForecastTitle(player, language);
   if (column.key === "alternativePerPrice") return forecastEfficiencyTitle(player, language, "Alt", player.alternativePredictedFp ?? null, numericValue);
   if (column.key === "alternativeHorizon") return alternativePlayerHorizonForecastTitle(player, language, horizon);
   return playerPoolMetricValueTitle(column, player, language, rawValue);

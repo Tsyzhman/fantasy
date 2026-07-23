@@ -477,7 +477,7 @@ test("every one-round forecast exposes sortable points-per-price asset efficienc
   assert.match(squadPlannerSource, /forecastPointsPerPrice\(nextFantasyPoints\(player\), player\.price\)/);
   assert.match(squadPlannerSource, /forecastPointsPerPrice\(player\.foontasyPoints, player\.price\)/);
   assert.match(squadPlannerSource, /forecastPointsPerPrice\(player\.alternativePredictedFp, player\.price\)/);
-  assert.match(squadPlannerSource, /formatNumber\(inlineEfficiency, 3\)/);
+  assert.doesNotMatch(squadPlannerSource, /inlineEfficiency/);
 });
 
 test("player-pool controls use two desktop rows and the search targets only player names", () => {
