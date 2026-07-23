@@ -471,8 +471,8 @@ test("player-pool XLSX follows the selected optional-column order", () => {
 });
 
 test("player-pool controls use two desktop rows and the search targets only player names", () => {
-  assert.match(squadPlannerSource, /mb-2 flex flex-nowrap items-center justify-between gap-2 overflow-x-auto/);
-  assert.match(squadPlannerSource, /flex shrink-0 flex-nowrap items-center justify-end gap-2/);
+  assert.match(squadPlannerSource, /relative z-30 mb-2 flex flex-wrap items-center justify-between gap-2 overflow-visible/);
+  assert.match(squadPlannerSource, /flex min-w-0 flex-wrap items-center justify-end gap-2/);
   assert.match(squadPlannerSource, /whitespace-nowrap rounded border border-emerald-200/);
   assert.match(squadPlannerSource, /toolbar={\(/);
   assert.match(squadPlannerSource, /mb-3 flex min-w-0 flex-wrap items-start gap-2 xl:flex-nowrap/);
@@ -483,6 +483,12 @@ test("player-pool controls use two desktop rows and the search targets only play
   assert.match(squadPlannerSource, /en="Fits" ru="Проходит"/);
   assert.match(squadPlannerSource, /<details className="relative shrink-0">[\s\S]*?<I18nText en="Columns" ru="Столбцы"/);
   assert.match(squadPlannerSource, /className="col-span-full hidden min-w-0 max-w-full/);
+});
+
+test("preset and advanced-filter popovers are not clipped by the player-pool toolbar", () => {
+  assert.match(squadPlannerSource, /relative z-30 mb-2 flex flex-wrap items-center justify-between gap-2 overflow-visible/);
+  assert.doesNotMatch(squadPlannerSource, /mb-2 flex flex-nowrap items-center justify-between gap-2 overflow-x-auto/);
+  assert.equal((squadPlannerSource.match(/<details className="relative open:z-50">/g) ?? []).length, 2);
 });
 
 test("name search masks cached player rows without rerendering the planner and export applies the same query", () => {

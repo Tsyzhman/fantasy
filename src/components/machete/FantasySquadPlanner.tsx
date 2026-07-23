@@ -1676,8 +1676,8 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
           </div>
 
           <div className={cn(mobileTab === "pool" ? "block" : "hidden xl:block", "min-w-0")}>
-            <div className="mb-2 flex flex-nowrap items-center justify-between gap-2 overflow-x-auto pb-1">
-              <div className="flex shrink-0 flex-nowrap items-center gap-2">
+            <div className="relative z-30 mb-2 flex flex-wrap items-center justify-between gap-2 overflow-visible pb-1">
+              <div className="flex min-w-0 flex-wrap items-center gap-2">
                 <div className="inline-flex rounded border border-slate-200 bg-slate-50 p-0.5" aria-label={localizedText(language, "Player match scope", "Какие матчи учитывать")}>
                   <button
                     type="button"
@@ -1715,7 +1715,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                   {priceFilterOptions.filter((price) => minimumPrice === null || price >= minimumPrice).map((price) => <option key={price} value={price}>{formatNumber(price, 1)}</option>)}
                 </select>
               </div>
-              <div className="flex shrink-0 flex-nowrap items-center justify-end gap-2">
+              <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
                 <PlayerPoolFilterPresets
                   presets={filterPresets}
                   selectedId={selectedFilterPresetId}
@@ -1924,7 +1924,7 @@ function PlayerPoolFilterPresets({ presets, selectedId, pending, language, onApp
   }
 
   return (
-    <details className="relative">
+    <details className="relative open:z-50">
       <summary className="inline-flex cursor-pointer list-none items-center gap-2 whitespace-nowrap rounded border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
         <Bookmark className="h-4 w-4" />
         <I18nText en="Presets" ru="Пресеты" />
@@ -1977,7 +1977,7 @@ function PlayerPoolAdvancedFilterMenu({ columns, filters, activeCount, language,
   onReset: () => void;
 }) {
   return (
-    <details className="relative">
+    <details className="relative open:z-50">
       <summary className="inline-flex cursor-pointer list-none items-center gap-2 whitespace-nowrap rounded border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
         <SlidersHorizontal className="h-4 w-4" />
         <I18nText en="Advanced filters" ru="Расширенные фильтры" />
