@@ -37,25 +37,25 @@ enum DataSourceType {
 }
 
 model User {
-  id                 String                  @id @default(cuid())
-  email              String                  @unique
-  name               String?
-  passwordHash       String?
-  role               UserRole                @default(USER)
-  franchise          UserFranchise?
-  squadTableColumns  Json?                   @map("squad_table_columns")
-  squadTableColumnWidths Json?                @map("squad_table_column_widths")
-  isActive           Boolean                 @default(true)
-  lastLoginAt        DateTime?
-  sessions           UserSession[]
-  fantasySquads      UserFantasySquad[]
-  betaTestRuns       BetaTestRun[]
-  savedViews         UserSavedView[]
-  watchlistPlayers   UserWatchlistPlayer[]
-  scoringPreferences UserScoringPreference[]
-  externalProfiles   UserExternalProfile[]
-  createdAt          DateTime                @default(now())
-  updatedAt          DateTime                @updatedAt
+  id                     String                  @id @default(cuid())
+  email                  String                  @unique
+  name                   String?
+  passwordHash           String?
+  role                   UserRole                @default(USER)
+  franchise              UserFranchise?
+  squadTableColumns      Json?                   @map("squad_table_columns")
+  squadTableColumnWidths Json?                   @map("squad_table_column_widths")
+  isActive               Boolean                 @default(true)
+  lastLoginAt            DateTime?
+  sessions               UserSession[]
+  fantasySquads          UserFantasySquad[]
+  betaTestRuns           BetaTestRun[]
+  savedViews             UserSavedView[]
+  watchlistPlayers       UserWatchlistPlayer[]
+  scoringPreferences     UserScoringPreference[]
+  externalProfiles       UserExternalProfile[]
+  createdAt              DateTime                @default(now())
+  updatedAt              DateTime                @updatedAt
 }
 
 model UserExternalProfile {
@@ -611,13 +611,14 @@ model CoreLeague {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  matches           CoreMatch[]
-  seasons           LeagueSeason[]
-  fantasyContests   SportsRuFantasyContest[]
-  fantasyPrices     FantasyPlayerPrice[]
-  foontasyForecasts FoontasyForecast[]
+  matches               CoreMatch[]
+  seasons               LeagueSeason[]
+  fantasyContests       SportsRuFantasyContest[]
+  fantasyPrices         FantasyPlayerPrice[]
+  foontasyForecasts     FoontasyForecast[]
   fantasyModelForecasts FantasyModelForecast[]
-  fantasySquads     UserFantasySquad[]
+  fantasySquads         UserFantasySquad[]
+  archivedPlayerStats   PlayerSeasonArchive[]
 
   @@index([source, rawRef])
   @@map("leagues")
@@ -644,6 +645,7 @@ model CoreTeam {
   shotsAgainst        MatchShot[]              @relation("MatchShotOpponentTeam")
   leagueSeasonTeams   LeagueSeasonTeam[]
   seasonRosterEntries TeamPlayerSeason[]
+  archivedPlayerStats PlayerSeasonArchive[]
   fantasyPrices       FantasyPlayerPrice[]
   fantasySquadPlayers UserFantasySquadPlayer[]
 
@@ -668,6 +670,8 @@ model CorePlayer {
   fantasyPoints          FantasyPoint[]
   fantasyPointBreakdowns FantasyPointBreakdown[]
   seasonRosterEntries    TeamPlayerSeason[]
+  archivedSeasonStats    PlayerSeasonArchive[]
+  archiveFetchState      PlayerArchiveFetchState?
   fantasyPrices          FantasyPlayerPrice[]
   foontasyForecasts      FoontasyForecast[]
   fantasyModelForecasts  FantasyModelForecast[]
@@ -868,19 +872,19 @@ model UserWatchlistPlayer {
 }
 
 model LeagueSeason {
-  leagueId                BigInt    @map("league_id")
-  season                  String
-  source                  String    @default("fotmob")
-  calendarType            String?   @map("calendar_type")
-  isCurrent               Boolean   @default(false) @map("is_current")
-  providerSeason          String?   @map("provider_season")
-  name                    String?
-  country                 String?
-  startingXiResetRound    String?   @map("starting_xi_reset_round")
-  startingXiResetAt       DateTime? @map("starting_xi_reset_at")
-  metadata                Json?
-  createdAt               DateTime  @default(now()) @map("created_at")
-  updatedAt               DateTime  @updatedAt @map("updated_at")
+  leagueId             BigInt    @map("league_id")
+  season               String
+  source               String    @default("fotmob")
+  calendarType         String?   @map("calendar_type")
+  isCurrent            Boolean   @default(false) @map("is_current")
+  providerSeason       String?   @map("provider_season")
+  name                 String?
+  country              String?
+  startingXiResetRound String?   @map("starting_xi_reset_round")
+  startingXiResetAt    DateTime? @map("starting_xi_reset_at")
+  metadata             Json?
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
 
   league CoreLeague         @relation(fields: [leagueId], references: [id], onDelete: Cascade)
   teams  LeagueSeasonTeam[]
@@ -939,6 +943,62 @@ model TeamPlayerSeason {
   @@index([teamId, leagueId, season])
   @@index([isStarter])
   @@map("team_player_seasons")
+}
+
+model PlayerSeasonArchive {
+  id               String   @id @default(cuid())
+  playerId         BigInt   @map("player_id")
+  teamId           BigInt   @map("team_id")
+  leagueId         BigInt   @map("league_id")
+  season           String
+  aggregateScope   String   @default("LEAGUE") @map("aggregate_scope")
+  competitionName  String   @map("competition_name")
+  provider         String   @default("FOTMOB")
+  providerPlayerId String   @map("provider_player_id")
+  providerTeamId   String   @map("provider_team_id")
+  providerLeagueId String?  @map("provider_league_id")
+  appearances      Int?
+  starts           Int?
+  minutes          Int?
+  goals            Int?
+  assists          Int?
+  yellowCards      Int?     @map("yellow_cards")
+  redCards         Int?     @map("red_cards")
+  teamMatches      Int?     @map("team_matches")
+  sourceEndpoint   String   @default("/data/playerData") @map("source_endpoint")
+  provenance       Json?
+  fetchedAt        DateTime @map("fetched_at")
+  firstSeenAt      DateTime @default(now()) @map("first_seen_at")
+  lastSeenAt       DateTime @default(now()) @map("last_seen_at")
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  player CorePlayer @relation(fields: [playerId], references: [id], onDelete: Cascade)
+  team   CoreTeam   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  league CoreLeague @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, leagueId, season, teamId, playerId, aggregateScope])
+  @@index([leagueId, season, teamId])
+  @@index([playerId, season, fetchedAt])
+  @@index([provider, providerPlayerId, season])
+  @@map("player_season_archives")
+}
+
+model PlayerArchiveFetchState {
+  playerId         BigInt    @id @map("player_id")
+  providerPlayerId String    @unique @map("provider_player_id")
+  lastAttemptAt    DateTime  @map("last_attempt_at")
+  lastSuccessAt    DateTime? @map("last_success_at")
+  lastError        String?   @map("last_error")
+  payloadHash      String?   @map("payload_hash")
+  archivedRows     Int       @default(0) @map("archived_rows")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  player CorePlayer @relation(fields: [playerId], references: [id], onDelete: Cascade)
+
+  @@index([lastSuccessAt, lastAttemptAt])
+  @@map("player_archive_fetch_states")
 }
 
 model CoreMatch {

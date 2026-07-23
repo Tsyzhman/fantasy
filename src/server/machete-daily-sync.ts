@@ -2,6 +2,7 @@ import { run_incremental_update } from "@/core_data/ingestion-jobs";
 import { prisma } from "@/lib/db";
 import { createLogger } from "@/lib/logger";
 import { runSportsRuFantasySyncNow } from "@/server/sports-ru-fantasy-sync-scheduler";
+import { syncMissingFotMobPlayerSeasonArchives } from "@/providers/fotmob/sync-player-season-archives";
 
 const DEFAULT_SYNC_TIME = "03:00";
 const DEFAULT_TIME_ZONE = "Europe/Moscow";
@@ -58,6 +59,12 @@ async function runScheduledSync(state: SchedulerState, scheduledFor: string) {
     logger.info("Scheduled shared FotMob incremental update queued for the ingestion worker loop.", { jobId: queued.job.id });
     const terminalStatus = await waitForIngestionJobTerminal(prisma, queued.job.id);
     if (terminalStatus === "completed" || terminalStatus === "completed_with_errors") {
+      try {
+        const archiveResult = await syncMissingFotMobPlayerSeasonArchives(prisma);
+        logger.info("Post-FotMob gap-only player archive sync finished.", archiveResult);
+      } catch (error) {
+        logger.error("Post-FotMob player archive sync failed; continuing with Sports.ru sync.", { error });
+      }
       const sportsRu = await runSportsRuFantasySyncNow("post-fotmob");
       logger.info("Post-FotMob Sports.ru fantasy price sync finished.", {
         jobId: queued.job.id,

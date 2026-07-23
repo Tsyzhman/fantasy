@@ -21,6 +21,24 @@ export type FotMobPlayer = {
   raw?: unknown;
 };
 
+export type FotMobPlayerSeasonAggregate = {
+  playerId: string;
+  teamId: string;
+  teamName: string | null;
+  season: string;
+  providerLeagueId: string | null;
+  competitionName: string;
+  aggregateScope: "LEAGUE" | "TEAM_SEASON";
+  appearances: number | null;
+  starts: number | null;
+  minutes: number | null;
+  goals: number | null;
+  assists: number | null;
+  yellowCards: number | null;
+  redCards: number | null;
+  raw: unknown;
+};
+
 export type FotMobTeam = {
   id: string;
   leagueId: string;

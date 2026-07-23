@@ -1,6 +1,6 @@
 import { mockFotMobFixtures, mockFotMobLeague, mockFotMobTeams } from "./mock-data";
 import { createXMasHeader, xMasSigningPath } from "./signing";
-import type { FotMobFixture, FotMobFixtureDetails, FotMobLeague, FotMobPlayer, FotMobPlayerMatchStat, FotMobTeam } from "./types";
+import type { FotMobFixture, FotMobFixtureDetails, FotMobLeague, FotMobPlayer, FotMobPlayerMatchStat, FotMobPlayerSeasonAggregate, FotMobTeam } from "./types";
 
 import { createLogger } from "@/lib/logger";
 
@@ -12,6 +12,7 @@ export interface FotMobClient {
   getFixtures(leagueId: string, season?: string): Promise<FotMobFixture[]>;
   getFixtureDetails(fixtureId: string): Promise<FotMobFixtureDetails>;
   getPlayer(playerId: string): Promise<FotMobPlayer>;
+  getPlayerSeasonAggregates?(playerId: string): Promise<FotMobPlayerSeasonAggregate[]>;
 }
 
 export class FotMobFixtureDetailsUnavailableError extends Error {
@@ -47,6 +48,10 @@ export class MockFotMobClient implements FotMobClient {
     const player = mockFotMobTeams.flatMap((team) => team.players).find((item) => item.id === playerId);
     if (!player) throw new Error(`Mock FotMob player not found: ${playerId}`);
     return player;
+  }
+
+  async getPlayerSeasonAggregates() {
+    return [];
   }
 }
 
@@ -275,8 +280,14 @@ export class UnofficialFotMobClient implements FotMobClient {
       nationality: stringValue(playerInformation.country),
       height: formatHeight(numberValue(playerInformation.height)),
       foot: stringValue(playerInformation.foot),
-      photoUrl: playerPhotoUrl(playerId)
+      photoUrl: playerPhotoUrl(playerId),
+      raw: payload
     };
+  }
+
+  async getPlayerSeasonAggregates(playerId: string): Promise<FotMobPlayerSeasonAggregate[]> {
+    const payload = await this.getJson("/data/playerData", { id: playerId });
+    return extractPlayerSeasonAggregates(payload, playerId);
   }
 
   protected async getJson(path: string, params: Record<string, string | number | undefined>): Promise<unknown> {
@@ -434,6 +445,10 @@ export class RealFotMobClient implements FotMobClient {
   }
 
   async getPlayer(): Promise<FotMobPlayer> {
+    return this.unconfigured();
+  }
+
+  async getPlayerSeasonAggregates(): Promise<FotMobPlayerSeasonAggregate[]> {
     return this.unconfigured();
   }
 
@@ -726,6 +741,106 @@ function normalizeStatus(status: JsonRecord): FotMobFixture["status"] {
   if (status.finished === true) return "FINISHED";
   if (status.started === true || status.ongoing === true) return "LIVE";
   return "SCHEDULED";
+}
+
+export function extractPlayerSeasonAggregates(payload: unknown, playerId: string): FotMobPlayerSeasonAggregate[] {
+  const data = asRecord(payload);
+  const senior = asRecord(asRecord(asRecord(data.careerHistory).careerItems).senior);
+  const seasonEntries = Array.isArray(senior.seasonEntries) ? senior.seasonEntries : [];
+  const rows: FotMobPlayerSeasonAggregate[] = [];
+
+  for (const rawEntry of seasonEntries) {
+    const entry = asRecord(rawEntry);
+    const teamId = stringValue(entry.teamId);
+    const season = stringValue(entry.seasonName) ?? stringValue(entry.season);
+    if (!teamId || !season) continue;
+    const teamName = stringValue(entry.team) ?? stringValue(entry.teamName) ?? null;
+    const tournamentStats = Array.isArray(entry.tournamentStats) ? entry.tournamentStats : [];
+
+    if (tournamentStats.length === 0) {
+      rows.push(playerSeasonAggregateFromRecord({
+        playerId,
+        teamId,
+        teamName,
+        season,
+        record: entry,
+        competitionName: "All competitions",
+        providerLeagueId: null,
+        aggregateScope: "TEAM_SEASON",
+        raw: rawEntry
+      }));
+      continue;
+    }
+
+    for (const rawTournament of tournamentStats) {
+      const tournament = asRecord(rawTournament);
+      if (tournament.isFriendly === true) continue;
+      const record =
+        tournamentStats.length === 1 && nullableInteger(tournament.assists) === null
+          ? { ...tournament, assists: entry.assists }
+          : tournament;
+      rows.push(playerSeasonAggregateFromRecord({
+        playerId,
+        teamId,
+        teamName,
+        season,
+        record,
+        competitionName:
+          stringValue(tournament.leagueName) ??
+          stringValue(tournament.tournamentName) ??
+          stringValue(tournament.name) ??
+          "Unknown competition",
+        providerLeagueId:
+          stringValue(tournament.leagueId) ??
+          stringValue(tournament.tournamentId) ??
+          null,
+        aggregateScope: "LEAGUE",
+        raw: rawTournament
+      }));
+    }
+  }
+
+  return rows;
+}
+
+function playerSeasonAggregateFromRecord(input: {
+  playerId: string;
+  teamId: string;
+  teamName: string | null;
+  season: string;
+  record: JsonRecord;
+  competitionName: string;
+  providerLeagueId: string | null;
+  aggregateScope: "LEAGUE" | "TEAM_SEASON";
+  raw: unknown;
+}): FotMobPlayerSeasonAggregate {
+  return {
+    playerId: input.playerId,
+    teamId: input.teamId,
+    teamName: input.teamName,
+    season: normalizeFotMobSeason(input.season),
+    providerLeagueId: validProviderLeagueId(input.providerLeagueId),
+    competitionName: input.competitionName,
+    aggregateScope: input.aggregateScope,
+    appearances: nullableInteger(input.record.appearances),
+    starts: nullableInteger(input.record.starts),
+    minutes: nullableInteger(input.record.minutes),
+    goals: nullableInteger(input.record.goals),
+    assists: nullableInteger(input.record.assists),
+    yellowCards: nullableInteger(input.record.yellowCards),
+    redCards: nullableInteger(input.record.redCards),
+    raw: input.raw
+  };
+}
+
+function validProviderLeagueId(value: string | null) {
+  if (!value || value === "-1" || value === "0") return null;
+  return value;
+}
+
+function nullableInteger(value: unknown) {
+  const number = numberValue(value);
+  return number === undefined || number < 0 ? null : Math.round(number);
 }
 
 function normalizeFotMobSeason(season: string) {

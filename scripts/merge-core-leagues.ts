@@ -219,6 +219,41 @@ async function mergeLeague(tx: Prisma.TransactionClient, item: PlannedMerge): Pr
       updated_at = now()
   `;
 
+  counts.playerSeasonArchives = await tx.$executeRaw`
+    INSERT INTO player_season_archives (
+      id, player_id, team_id, league_id, season, aggregate_scope, competition_name,
+      provider, provider_player_id, provider_team_id, provider_league_id,
+      appearances, starts, minutes, goals, assists, yellow_cards, red_cards,
+      team_matches, source_endpoint, provenance, fetched_at, first_seen_at,
+      last_seen_at, created_at, updated_at
+    )
+    SELECT
+      'merge_' || md5(id || ':' || ${targetId}::text), player_id, team_id, ${targetId},
+      season, aggregate_scope, competition_name, provider, provider_player_id,
+      provider_team_id, provider_league_id, appearances, starts, minutes, goals,
+      assists, yellow_cards, red_cards, team_matches, source_endpoint, provenance,
+      fetched_at, first_seen_at, last_seen_at, created_at, now()
+    FROM player_season_archives
+    WHERE league_id = ${sourceId}
+    ${seasonFilter}
+    ON CONFLICT (provider, league_id, season, team_id, player_id, aggregate_scope) DO UPDATE SET
+      competition_name = EXCLUDED.competition_name,
+      provider_league_id = COALESCE(EXCLUDED.provider_league_id, player_season_archives.provider_league_id),
+      appearances = COALESCE(EXCLUDED.appearances, player_season_archives.appearances),
+      starts = COALESCE(EXCLUDED.starts, player_season_archives.starts),
+      minutes = COALESCE(EXCLUDED.minutes, player_season_archives.minutes),
+      goals = COALESCE(EXCLUDED.goals, player_season_archives.goals),
+      assists = COALESCE(EXCLUDED.assists, player_season_archives.assists),
+      yellow_cards = COALESCE(EXCLUDED.yellow_cards, player_season_archives.yellow_cards),
+      red_cards = COALESCE(EXCLUDED.red_cards, player_season_archives.red_cards),
+      team_matches = COALESCE(EXCLUDED.team_matches, player_season_archives.team_matches),
+      provenance = COALESCE(EXCLUDED.provenance, player_season_archives.provenance),
+      fetched_at = GREATEST(EXCLUDED.fetched_at, player_season_archives.fetched_at),
+      first_seen_at = LEAST(EXCLUDED.first_seen_at, player_season_archives.first_seen_at),
+      last_seen_at = GREATEST(EXCLUDED.last_seen_at, player_season_archives.last_seen_at),
+      updated_at = now()
+  `;
+
   counts.matches = await tx.$executeRaw`
     UPDATE matches
     SET league_id = ${targetId}, updated_at = now()
@@ -297,6 +332,12 @@ async function mergeLeague(tx: Prisma.TransactionClient, item: PlannedMerge): Pr
 
   counts.sourceTeamPlayersDeleted = await tx.$executeRaw`
     DELETE FROM team_player_seasons
+    WHERE league_id = ${sourceId}
+    ${seasonFilter}
+  `;
+
+  counts.sourcePlayerSeasonArchivesDeleted = await tx.$executeRaw`
+    DELETE FROM player_season_archives
     WHERE league_id = ${sourceId}
     ${seasonFilter}
   `;

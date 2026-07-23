@@ -43,6 +43,7 @@
     "fotmob:inspect": "tsx scripts/fotmob-inspect.ts",
     "fotmob:reset": "tsx scripts/reset-fotmob-matches.ts",
     "fotmob:penalty-potential": "tsx scripts/penalty-potential-index.ts",
+    "fotmob:sync-player-archives": "tsx scripts/sync-fotmob-player-season-archives.ts",
     "prices:import-sheet": "tsx scripts/import-fantasy-price-sheet.ts",
     "prices:sync-sports-ru": "tsx scripts/import-sports-ru-fantasy.ts",
     "prices:map-rpl-2026-27": "tsx scripts/map-sports-ru-rpl-2026-27.ts",

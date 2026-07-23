@@ -35,6 +35,7 @@ import {
 } from "./fantasy_projection_calibration";
 import { loadFantasyProjectionCalibration } from "./fantasy_projection_service";
 import { FANTASY_MODEL_VERSION } from "./foontasy_style_model";
+import { archivedExpectedMinutes, blendArchivedEventRate, FNL_TO_RPL_EVENT_FACTOR } from "./player-season-prior";
 import { loadPlannerReadinessByScope, plannerReadinessKey, type PlannerReadiness } from "./planner_readiness";
 import {
   defaultFantasyHistorySettings,
@@ -1165,7 +1166,7 @@ async function loadProjectedPlayerRows(
   const expectedProjectionConfig = resolvedExpectedProjectionConfig(modelBundle.model);
   const alternativeProjectionConfig = resolvedAlternativeProjectionConfig(preference);
   const baseModelVersion = `${modelBundle.identity.configuredModelSource}:${modelBundle.identity.configuredModelId ?? "built-in"}:v${modelBundle.identity.configuredModelVersion}`;
-  const [rows, friendRows, calibration] = await Promise.all([
+  const [rawRows, rawFriendRows, calibration] = await Promise.all([
     loadSharedMachetePlayerRows(prisma, {
       scopes: history.historyScopes,
       rosterScopes: history.rosterScopes,
@@ -1194,6 +1195,12 @@ async function loadProjectedPlayerRows(
       modelCacheKey: `${baseModelVersion}:${modelBundle.identity.configuredModelUpdatedAt?.toISOString() ?? "built-in"}`
     })
   ]);
+  const [rows, friendRows] = await Promise.all([
+    addArchivedPlayerSeasonMetrics(prisma, rawRows, league),
+    deferFormulaProjections
+      ? Promise.resolve(rawFriendRows)
+      : addArchivedPlayerSeasonMetrics(prisma, rawFriendRows, league)
+  ]);
 
   return {
     calculatedAt: new Date().toISOString(),
@@ -1217,6 +1224,99 @@ async function loadProjectedPlayerRows(
       };
     })
   };
+}
+
+async function addArchivedPlayerSeasonMetrics(
+  prisma: PrismaClient,
+  rows: SharedMachetePlayerRow[],
+  league: SharedLeagueSeasonOption
+) {
+  if (rows.length === 0) return rows;
+  const identities = rows.map((row) => fantasyPlannerSharedRowIdentity(row.id));
+  const playerIds = [...new Set(identities.map((identity) => identity.playerId))]
+    .filter((value) => /^\d+$/.test(value))
+    .map(BigInt);
+  const [archives, currentStats, teamStatRows] = await Promise.all([
+    prisma.playerSeasonArchive.findMany({
+      where: {
+        playerId: { in: playerIds },
+        season: { not: league.season },
+        aggregateScope: "LEAGUE"
+      },
+      orderBy: [{ season: "desc" }, { fetchedAt: "desc" }]
+    }),
+    prisma.matchPlayerStat.findMany({
+      where: {
+        playerId: { in: playerIds },
+        match: { leagueId: league.leagueId, season: league.season }
+      },
+      select: { playerId: true, teamId: true, matchId: true, minutes: true, xg: true, xa: true }
+    }),
+    prisma.matchPlayerStat.findMany({
+      where: {
+        teamId: { in: [...new Set(identities.map((identity) => identity.teamId))].filter((value) => /^\d+$/.test(value)).map(BigInt) },
+        match: { leagueId: league.leagueId, season: league.season }
+      },
+      select: { teamId: true, matchId: true }
+    })
+  ]);
+  const archivesByPlayer = new Map<string, typeof archives>();
+  for (const archive of archives) {
+    const key = String(archive.playerId);
+    const values = archivesByPlayer.get(key) ?? [];
+    values.push(archive);
+    archivesByPlayer.set(key, values);
+  }
+  const currentByPlayer = new Map<string, { minutes: number; xg: number; xa: number; appearances: Set<string> }>();
+  for (const stat of currentStats) {
+    const key = String(stat.playerId);
+    const current = currentByPlayer.get(key) ?? { minutes: 0, xg: 0, xa: 0, appearances: new Set<string>() };
+    current.minutes += Math.max(0, stat.minutes ?? 0);
+    current.xg += Math.max(0, stat.xg ?? 0);
+    current.xa += Math.max(0, stat.xa ?? 0);
+    if ((stat.minutes ?? 0) > 0 || stat.xg !== null || stat.xa !== null) current.appearances.add(String(stat.matchId));
+    currentByPlayer.set(key, current);
+  }
+  const statMatchesByTeam = new Map<string, Set<string>>();
+  for (const stat of teamStatRows) {
+    if (!stat.teamId) continue;
+    const key = String(stat.teamId);
+    const matches = statMatchesByTeam.get(key) ?? new Set<string>();
+    matches.add(String(stat.matchId));
+    statMatchesByTeam.set(key, matches);
+  }
+
+  return rows.map((row) => {
+    const identity = fantasyPlannerSharedRowIdentity(row.id);
+    const options = archivesByPlayer.get(identity.playerId) ?? [];
+    const archive =
+      options.find((candidate) => String(candidate.teamId) === identity.teamId) ??
+      options[0] ??
+      null;
+    if (!archive || !archive.appearances || archive.appearances <= 0) return row;
+    const current = currentByPlayer.get(identity.playerId);
+    const tierFactor = archive.leagueId === 338n && league.leagueId === 63n ? FNL_TO_RPL_EVENT_FACTOR : 1;
+    return {
+      ...row,
+      rawMetrics: {
+        ...(row.rawMetrics ?? {}),
+        current_season_minutes: current?.minutes ?? 0,
+        current_season_appearances: current?.appearances.size ?? 0,
+        current_season_xg: current?.xg ?? 0,
+        current_season_xa: current?.xa ?? 0,
+        current_team_stat_matches: statMatchesByTeam.get(identity.teamId)?.size ?? 0,
+        archive_prior_season: archive.season,
+        archive_prior_league_id: Number(archive.leagueId),
+        archive_prior_team_id: Number(archive.teamId),
+        archive_prior_appearances: archive.appearances,
+        archive_prior_goals: archive.goals,
+        archive_prior_assists: archive.assists,
+        archive_prior_team_matches: archive.teamMatches,
+        archive_prior_same_team: String(archive.teamId) === identity.teamId ? 1 : 0,
+        archive_tier_factor: tierFactor
+      }
+    };
+  });
 }
 
 export function fantasyPlannerSharedRowIdentity(rowId: string) {
@@ -1389,7 +1489,14 @@ function pipelineParticipant(
   // The manually marked club XI is a one-fixture availability signal, not a
   // permanent history input. Evaluate the user's formula without the flag,
   // then apply an exact 60-minute floor only to the nearest fixture.
-  const baseExpectedMinutes = clamp(formulaValue(config.history.expectedMinutes, metrics), 0, 90);
+  const formulaExpectedMinutes = clamp(formulaValue(config.history.expectedMinutes, metrics), 0, 90);
+  const baseExpectedMinutes = archivedExpectedMinutes({
+    existingMinutes: formulaExpectedMinutes,
+    priorAppearances: numericOrNull(metrics.archive_prior_appearances) ?? 0,
+    priorTeamMatches: numericOrNull(metrics.archive_prior_team_matches) ?? 0,
+    currentTeamStatMatches: numericOrNull(metrics.current_team_stat_matches) ?? 0,
+    sameTeam: numericOrNull(metrics.archive_prior_same_team) === 1
+  });
   metrics.roster_starter = rosterStarterApplies ? 1 : 0;
   const expectedMinutes = rosterStarterApplies ? Math.max(baseExpectedMinutes, 60) : baseExpectedMinutes;
   const historyMinutes = Math.max(0, numericOrNull(metrics.minutes_365) ?? row.minutesPlayed ?? 0);
@@ -1419,8 +1526,33 @@ function pipelineParticipant(
   metrics["60_minute_probability"] = sixtyMinutes;
   const fullMatch = countsAsFullMatch ? 1 : clamp(formulaValue(config.history.fullMatchProbability, metrics), 0, sixtyMinutes);
   metrics.full_match_probability = fullMatch;
-  const xg = nonNegativeFormulaValue(config.history.xgRate, metrics, "history.xgRate") * transferRatePenalty;
-  const xa = nonNegativeFormulaValue(config.history.xaRate, metrics, "history.xaRate") * transferRatePenalty;
+  const formulaXg = nonNegativeFormulaValue(config.history.xgRate, metrics, "history.xgRate");
+  const formulaXa = nonNegativeFormulaValue(config.history.xaRate, metrics, "history.xaRate");
+  const currentSeasonMinutes = numericOrNull(metrics.current_season_minutes) ?? 0;
+  const currentSeasonXg = numericOrNull(metrics.current_season_xg) ?? 0;
+  const currentSeasonXa = numericOrNull(metrics.current_season_xa) ?? 0;
+  const goalBlend = blendArchivedEventRate({
+    position,
+    event: "goals",
+    currentRatePer90: currentSeasonMinutes > 0 ? currentSeasonXg * 90 / currentSeasonMinutes : formulaXg,
+    currentMinutes: currentSeasonMinutes,
+    currentEvents: currentSeasonXg,
+    priorAppearances: numericOrNull(metrics.archive_prior_appearances) ?? 0,
+    priorEvents: numericOrNull(metrics.archive_prior_goals),
+    tierFactor: numericOrNull(metrics.archive_tier_factor) ?? 1
+  });
+  const assistBlend = blendArchivedEventRate({
+    position,
+    event: "assists",
+    currentRatePer90: currentSeasonMinutes > 0 ? currentSeasonXa * 90 / currentSeasonMinutes : formulaXa,
+    currentMinutes: currentSeasonMinutes,
+    currentEvents: currentSeasonXa,
+    priorAppearances: numericOrNull(metrics.archive_prior_appearances) ?? 0,
+    priorEvents: numericOrNull(metrics.archive_prior_assists),
+    tierFactor: numericOrNull(metrics.archive_tier_factor) ?? 1
+  });
+  const xg = goalBlend?.ratePer90 ?? formulaXg * transferRatePenalty;
+  const xa = assistBlend?.ratePer90 ?? formulaXa * transferRatePenalty;
   const recoveries = nonNegativeFormulaValue(config.history.recoveryRate, metrics, "history.recoveryRate") * transferRatePenalty;
   const saves = nonNegativeFormulaValue(config.history.saveRate, metrics, "history.saveRate") * transferRatePenalty;
   const yellowCards = nonNegativeFormulaValue(config.history.yellowRate, metrics, "history.yellowRate") * transferRatePenalty;
@@ -1433,6 +1565,22 @@ function pipelineParticipant(
     blended_yellow_cards_per_90: yellowCards,
     blended_red_cards_per_90: redCards
   });
+  if (goalBlend) {
+    Object.assign(metrics, {
+      archive_goal_blend_fade: goalBlend.fade,
+      archive_goal_effective_appearances: goalBlend.effectivePriorAppearances,
+      archive_goal_position_prior_appearances: goalBlend.positionPriorAppearances,
+      archive_blended_xg_per_90: goalBlend.ratePer90
+    });
+  }
+  if (assistBlend) {
+    Object.assign(metrics, {
+      archive_assist_blend_fade: assistBlend.fade,
+      archive_assist_effective_appearances: assistBlend.effectivePriorAppearances,
+      archive_assist_position_prior_appearances: assistBlend.positionPriorAppearances,
+      archive_blended_xa_per_90: assistBlend.ratePer90
+    });
+  }
 
   return {
     row,
