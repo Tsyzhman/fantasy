@@ -413,7 +413,12 @@ export function machetePlayerCellTitle(column: Column, player: MachetePlayerRow,
   if (column.key === "player") {
     lines.push(localizedText(language, `Forecast inputs: ${player.expectedMinutes == null ? "—" : `${formatNumber(player.expectedMinutes, 1)} min`}; confidence ${player.forecastConfidence == null ? "—" : `${formatNumber(player.forecastConfidence * 100, 0)}%`}.`, `Входы прогноза: ${player.expectedMinutes == null ? "—" : `${formatNumber(player.expectedMinutes, 1)} мин`}; уверенность ${player.forecastConfidence == null ? "—" : `${formatNumber(player.forecastConfidence * 100, 0)}%`}.`));
   } else if (column.key === "team") {
-    lines.push(localizedText(language, `Current club in this league/season: ${shown}.`, `Текущий клуб в этой лиге/сезоне: ${shown}.`));
+    const fullTeamName = player.teamName?.trim() || shown;
+    lines.push(localizedText(
+      language,
+      `Full club name: ${fullTeamName}.${fullTeamName !== shown ? ` Shown in the cell as ${shown}.` : ""}`,
+      `Полное название клуба: ${fullTeamName}.${fullTeamName !== shown ? ` В ячейке показано как ${shown}.` : ""}`
+    ));
   } else if (column.key === "position") {
     lines.push(localizedText(language, `Fantasy position group used by scoring and squad limits: ${shown}.`, `Фэнтези-позиция, используемая формулой очков и лимитами состава: ${shown}.`));
   } else if (column.key === "price") {

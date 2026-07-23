@@ -14,6 +14,15 @@ test("compact Machete player table displays provider short names with full-name 
   );
 });
 
+test("team cell tooltip expands the compact club name", () => {
+  const teamPlayer = { ...player, teamName: "Football Club Rostov", teamShortName: "ROS" };
+  const team = { ...column("team", "Club", (row) => machetePlayerTeamDisplayName(row)), numeric: false };
+  const title = machetePlayerCellTitle(team, teamPlayer, team.value(teamPlayer), 1, "en");
+  assert.match(title, /Club: ROS/);
+  assert.match(title, /Full club name: Football Club Rostov/);
+  assert.match(title, /Shown in the cell as ROS/);
+});
+
 const player: MachetePlayerRow = {
   id: "p1",
   name: "Test Player",

@@ -286,7 +286,10 @@ test("custom player pool restores minutes and confidence under the name with det
   assert.match(squadPlannerSource, /function PlayerPoolHeaderLabel/);
   assert.doesNotMatch(squadPlannerSource, /CircleHelp/);
   assert.match(squadPlannerSource, /sticky left-0 z-\[5\][\s\S]*?Forecast inputs:/);
-  assert.match(squadPlannerSource, /fantasyPlayerTeamDisplayName\(player\)\}\\n\$\{fixedColumnTitles\.team\}/);
+  assert.match(squadPlannerSource, /Full club name/);
+  assert.match(squadPlannerSource, /Полное название клуба/);
+  assert.match(squadPlannerSource, /const fullTeamName = player\.teamName\.trim\(\) \|\| teamDisplayName/);
+  assert.match(squadPlannerSource, /title=\{teamCellTitle\}/);
   assert.match(squadPlannerSource, /player\.positionGroup\}\\n\$\{fixedColumnTitles\.position\}/);
   assert.match(squadPlannerSource, /verified Sports\.ru fantasy price/);
   assert.match(squadPlannerSource, /title=\{column\.title\}/);

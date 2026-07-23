@@ -2222,6 +2222,9 @@ function CustomPlayerPoolRow({ player, columns, horizon, language, addBlockReaso
       : null
   ].filter((value): value is string => value !== null).join(" · ");
   const fixedColumnTitles = playerPoolFixedColumnTitles(language);
+  const teamDisplayName = fantasyPlayerTeamDisplayName(player);
+  const fullTeamName = player.teamName.trim() || teamDisplayName;
+  const teamCellTitle = `${player.name} · ${localizedText(language, "club", "клуб")}: ${teamDisplayName}\n${localizedText(language, "Full club name", "Полное название клуба")}: ${fullTeamName}\n${fixedColumnTitles.team}`;
 
   return (
     <tr className={cn("group", isSelected ? "bg-emerald-50 text-slate-700" : disabled ? "bg-slate-50 text-slate-500" : "hover:bg-slate-50")}>
@@ -2229,7 +2232,7 @@ function CustomPlayerPoolRow({ player, columns, horizon, language, addBlockReaso
         <span className={cn("block truncate font-semibold", muted ? "text-slate-500" : "text-ink")}>{compactPlayerDisplayName(player.name)}</span>
         {playerMetadata ? <span className="block truncate text-[10px] text-slate-500">{playerMetadata}</span> : null}
       </td>
-      <td className="overflow-hidden px-2 py-1.5 text-slate-600" title={`${player.name} · ${localizedText(language, "club", "клуб")}: ${fantasyPlayerTeamDisplayName(player)}\n${fixedColumnTitles.team}`}><span className="block truncate">{fantasyPlayerTeamDisplayName(player)}</span></td>
+      <td className="overflow-hidden px-2 py-1.5 text-slate-600" title={teamCellTitle}><span className="block truncate">{teamDisplayName}</span></td>
       <td className="overflow-hidden px-1 py-1.5" title={`${player.name} · ${localizedText(language, "position", "позиция")}: ${player.positionGroup}\n${fixedColumnTitles.position}`}><span className={cn("inline-block max-w-full truncate rounded px-1 py-0.5 text-[10px] font-bold", muted ? "border border-slate-300 bg-slate-200 text-slate-700" : positionPillClass(player.positionGroup))}>{player.positionGroup}</span></td>
       <td data-sort-value={player.price} className={cn("overflow-hidden whitespace-nowrap px-1 py-1.5 text-right font-semibold", muted ? "text-slate-600" : "text-ink")} title={`${player.name} · ${localizedText(language, "price", "цена")}: ${formatNumber(player.price, 1)}\n${localizedText(language, `Source: ${player.priceSource === "SPORTS_RU" ? "verified Sports.ru fantasy price" : "estimate; no verified Sports.ru mapping"}.`, `Источник: ${player.priceSource === "SPORTS_RU" ? "подтверждённая цена фэнтези Sports.ru" : "оценка; подтверждённого сопоставления Sports.ru нет"}.`)}`}>{player.priceSource === "ESTIMATED" ? "~" : ""}{formatNumber(player.price, 1)}</td>
       <td className="px-1 py-1.5 text-center">
