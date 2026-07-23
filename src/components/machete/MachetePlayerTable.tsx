@@ -14,6 +14,7 @@ import { PlayerHoverCard, type PlayerHoverCardData } from "@/components/ui/playe
 import { ScoreHeatCell, computeRanks } from "@/components/ui/score-heat-cell";
 import { SparkLine } from "@/components/ui/spark-line";
 import { FdrRow } from "@/components/ui/fdr-pill";
+import { compactPriceHeaderThreshold, responsivePriceHeaderLabel } from "@/components/machete/responsive-price-label";
 import { cn } from "@/lib/cn";
 import { formatNumber } from "@/lib/format";
 import { compactPlayerDisplayName } from "@/lib/players/display-name";
@@ -257,6 +258,11 @@ export function MachetePlayerTable({
       const table = tableContainerRef.current?.querySelector<HTMLTableElement>("table");
       const col = table?.querySelector<HTMLTableColElement>(`col[data-column-key="${CSS.escape(column.key)}"]`);
       if (col) col.style.width = `${latestWidth}px`;
+      if (column.key === "price") {
+        const header = table?.querySelector<HTMLTableCellElement>('th[data-column-key="price"]');
+        const priceLabel = header?.querySelector<HTMLElement>("[data-price-header-label]");
+        if (priceLabel) priceLabel.textContent = latestWidth < compactPriceHeaderThreshold ? "$" : priceLabel.dataset.fullPriceLabel ?? "Price";
+      }
       if (table) {
         table.style.width = `${startTableWidth + latestWidth - startWidth}px`;
         table.style.minWidth = table.style.width;
@@ -363,7 +369,8 @@ export function MachetePlayerTable({
 }
 
 function ResizableHeader({ column, width, onResize, language }: { column: Column; width: number; onResize: (event: ReactPointerEvent<HTMLElement>, column: Column) => void; language: "en" | "ru" }) {
-  return <th data-sort-key={column.key} className={cn("relative overflow-hidden px-2 py-2 whitespace-nowrap", column.numeric && "text-right")} title={column.title} style={{ width }}><span className="block truncate pr-3">{column.label}</span><button type="button" data-column-resize-handle="true" aria-label={localizedText(language, `Resize ${column.label}`, `Изменить ширину столбца «${column.label}»`)} onPointerDown={(event) => onResize(event, column)} className="absolute inset-y-0 right-0 w-2 cursor-col-resize border-r border-transparent hover:border-emerald-400" /></th>;
+  const label = column.key === "price" ? responsivePriceHeaderLabel(width, language) : column.label;
+  return <th data-sort-key={column.key} data-column-key={column.key} aria-label={column.label} className={cn("relative overflow-hidden px-2 py-2 whitespace-nowrap", column.numeric && "text-right")} title={column.title} style={{ width }}><span className="block truncate pr-3" data-price-header-label={column.key === "price" ? "true" : undefined} data-full-price-label={column.key === "price" ? column.label : undefined}>{label}</span><button type="button" data-column-resize-handle="true" aria-label={localizedText(language, `Resize ${column.label}`, `Изменить ширину столбца «${column.label}»`)} onPointerDown={(event) => onResize(event, column)} className="absolute inset-y-0 right-0 w-2 cursor-col-resize border-r border-transparent hover:border-emerald-400" /></th>;
 }
 
 function FixedCell({ column, player }: { column: Column; player: MachetePlayerRow }) {

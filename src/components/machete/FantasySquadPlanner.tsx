@@ -19,6 +19,7 @@ import {
 import { SortableTable } from "@/components/sortable-table";
 import { FdrRow } from "@/components/ui/fdr-pill";
 import { SegmentedControl, type SegmentedOption } from "@/components/ui/segmented-control";
+import { compactPriceHeaderThreshold, responsivePriceHeaderLabel } from "@/components/machete/responsive-price-label";
 import type {
   FantasySquadWorkerRequest,
   FantasySquadWorkerResponse,
@@ -2025,6 +2026,10 @@ function CustomizablePlayerPoolTable({
       const header = table?.querySelector<HTMLTableCellElement>(`th[data-column-key="${escapedKey}"]`);
       if (column) column.style.width = `${nextWidth}px`;
       if (header) header.style.width = `${nextWidth}px`;
+      if (key === "price") {
+        const priceLabel = header?.querySelector<HTMLElement>("[data-price-header-label]");
+        if (priceLabel) priceLabel.textContent = nextWidth < compactPriceHeaderThreshold ? "$" : priceLabel.dataset.fullPriceLabel ?? "Price";
+      }
       if (table) {
         const nextTableWidth = startTableWidth + nextWidth - startWidth;
         table.style.width = `${nextTableWidth}px`;
@@ -2137,7 +2142,7 @@ function CustomizablePlayerPoolTable({
                 <th className="sticky left-0 z-20 overflow-hidden border-r border-slate-200 bg-slate-50 px-2 py-2" title={fixedColumnTitles.player} style={{ width: widthFor("player", playerPoolFixedColumnWidths.player) }}><PlayerPoolHeaderLabel label={localizedText(language, "Player", "Игрок")} /><ColumnResizeHandle label={localizedText(language, "player", "игрока")} onPointerDown={(event) => startColumnResize(event, "player", playerPoolFixedColumnWidths.player)} onDoubleClick={() => resetColumnWidth("player")} /></th>
                 <th className="relative overflow-hidden px-2 py-2" title={fixedColumnTitles.team} style={{ width: widthFor("team", playerPoolFixedColumnWidths.team) }}><PlayerPoolHeaderLabel label={localizedText(language, "Team", "Клуб")} /><ColumnResizeHandle label={localizedText(language, "team", "клуба")} onPointerDown={(event) => startColumnResize(event, "team", playerPoolFixedColumnWidths.team)} onDoubleClick={() => resetColumnWidth("team")} /></th>
                 <th className="relative overflow-hidden px-1 py-2" title={fixedColumnTitles.position} style={{ width: widthFor("position", playerPoolFixedColumnWidths.position) }}><PlayerPoolHeaderLabel label={localizedText(language, "Pos", "Поз.")} /><ColumnResizeHandle label={localizedText(language, "position", "позиции")} onPointerDown={(event) => startColumnResize(event, "position", playerPoolFixedColumnWidths.position)} onDoubleClick={() => resetColumnWidth("position")} /></th>
-                <th className="relative overflow-hidden px-1 py-2 text-right" title={fixedColumnTitles.price} style={{ width: widthFor("price", playerPoolFixedColumnWidths.price) }}><PlayerPoolHeaderLabel label={localizedText(language, "Price", "Цена")} numeric /><ColumnResizeHandle label={localizedText(language, "price", "цены")} onPointerDown={(event) => startColumnResize(event, "price", playerPoolFixedColumnWidths.price)} onDoubleClick={() => resetColumnWidth("price")} /></th>
+                <th data-column-key="price" aria-label={localizedText(language, "Price", "Цена")} className="relative overflow-hidden px-1 py-2 text-right" title={fixedColumnTitles.price} style={{ width: widthFor("price", playerPoolFixedColumnWidths.price) }}><PlayerPoolHeaderLabel label={responsivePriceHeaderLabel(widthFor("price", playerPoolFixedColumnWidths.price), language)} numeric priceLabel fullLabel={localizedText(language, "Price", "Цена")} /><ColumnResizeHandle label={localizedText(language, "price", "цены")} onPointerDown={(event) => startColumnResize(event, "price", playerPoolFixedColumnWidths.price)} onDoubleClick={() => resetColumnWidth("price")} /></th>
                 <th data-sort-disabled="true" className="relative overflow-hidden px-1 py-2 text-center" style={{ width: widthFor("action", playerPoolFixedColumnWidths.action) }} title={localizedText(language, "Add the player to the squad or remove a selected player. Disabled means a budget, position, or club limit would be exceeded.", "Добавить игрока в состав или убрать выбранного. Неактивная кнопка означает превышение бюджета, лимита позиции или клуба.")}><span aria-hidden="true">+</span><span className="sr-only"><I18nText en="Add or remove" ru="Добавить или убрать" /></span><ColumnResizeHandle label={localizedText(language, "squad action", "кнопки состава")} onPointerDown={(event) => startColumnResize(event, "action", playerPoolFixedColumnWidths.action)} onDoubleClick={() => resetColumnWidth("action")} /></th>
                 {visibleColumns.map((column) => (
                   <th key={column.key} data-sort-disabled={column.key === "fixtures" ? "true" : undefined} className={cn("relative overflow-hidden px-1 py-2", column.numeric && "text-center")} title={column.title} style={{ width: widthFor(column.key, column.width) }}><PlayerPoolHeaderLabel label={column.label} numeric={column.numeric} /><ColumnResizeHandle label={column.label} onPointerDown={(event) => startColumnResize(event, column.key, column.width)} onDoubleClick={() => resetColumnWidth(column.key)} /></th>
@@ -2155,10 +2160,10 @@ function CustomizablePlayerPoolTable({
   );
 }
 
-function PlayerPoolHeaderLabel({ label, numeric = false }: { label: string; numeric?: boolean }) {
+function PlayerPoolHeaderLabel({ label, numeric = false, priceLabel = false, fullLabel }: { label: string; numeric?: boolean; priceLabel?: boolean; fullLabel?: string }) {
   return (
     <span className={cn("block min-w-0 truncate pr-4 leading-4", numeric && "text-center")}>
-      <span className="whitespace-nowrap">{label}</span>
+      <span className="whitespace-nowrap" data-price-header-label={priceLabel ? "true" : undefined} data-full-price-label={priceLabel ? fullLabel : undefined}>{label}</span>
     </span>
   );
 }
