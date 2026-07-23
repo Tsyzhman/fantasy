@@ -2,7 +2,7 @@
 
 import { ArrowLeft, ArrowRight, Bookmark, Check, Columns3, Copy, Crown, Download, FilePlus2, Layers3, ListChecks, Lock, MoreHorizontal, Plus, Save, Search, SlidersHorizontal, Sparkles, Trash2, Users, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { type DragEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type SetStateAction, useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { type DragEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject, type SetStateAction, useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 
 import { I18nText } from "@/components/i18n-text";
@@ -259,7 +259,10 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
   const [horizon, setHorizon] = useState(initialHorizon);
   const [tableHorizon, setTableHorizon] = useState<3 | 5>(5);
   const [exportColumnKeys, setExportColumnKeys] = useState(initialVisiblePlayerPoolColumns);
-  const [query, setQuery] = useState("");
+  const playerNameQueryRef = useRef("");
+  const playerPoolMaskRootRef = useRef<HTMLDivElement>(null);
+  const [presetNameQuery, setPresetNameQuery] = useState("");
+  const [presetNameQueryRevision, setPresetNameQueryRevision] = useState(0);
   const [teamFilter, setTeamFilter] = useState("ALL");
   const [positionFilter, setPositionFilter] = useState("ALL");
   const [minimumPrice, setMinimumPrice] = useState<number | null>(null);
@@ -366,7 +369,6 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
   const priceFilterOptions = useMemo(() => [...new Set(players.map((player) => player.price))].sort((left, right) => left - right), [players]);
   const playerPoolColumns = useMemo(() => playerPoolOptionalColumns(players, tableHorizon, language), [language, players, tableHorizon]);
   const advancedFilterColumns = useMemo(() => playerPoolColumns.map(({ key, label, title, numeric }) => ({ key, label, title, numeric })), [playerPoolColumns]);
-  const deferredQuery = useDeferredValue(query);
   const deferredAdvancedTableFilters = useDeferredValue(advancedTableFilters);
   const activeAdvancedFilterColumns = useMemo(() => advancedFilterColumns.filter((column) =>
     squadTableValueFilterIsActive(deferredAdvancedTableFilters[column.key] ?? emptySquadTableValueFilter, column.numeric)
@@ -404,23 +406,17 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
   }, [fantasyFitEvaluator, onlyAffordable, players]);
 
   const baseMatchingPlayers = useMemo(() => {
-    const normalizedQuery = deferredQuery.trim().toLowerCase();
     return players
       .filter((player) => (positionFilter === "ALL" ? true : player.positionGroup === positionFilter))
       .filter((player) => (teamFilter === "ALL" ? true : player.teamId === teamFilter))
       .filter((player) => minimumPrice === null || player.price >= minimumPrice)
       .filter((player) => maximumPrice === null || player.price <= maximumPrice)
-      .filter((player) =>
-        normalizedQuery
-          ? player.name.toLowerCase().includes(normalizedQuery)
-          : true
-      )
       .filter((player) => activeAdvancedFilterColumns.every((column) => squadTableValueMatchesFilter(
         playerPoolFilterValue(column.key, player, tableHorizon),
         deferredAdvancedTableFilters[column.key] ?? emptySquadTableValueFilter,
         column.numeric
       )));
-  }, [activeAdvancedFilterColumns, deferredAdvancedTableFilters, deferredQuery, maximumPrice, minimumPrice, players, positionFilter, tableHorizon, teamFilter]);
+  }, [activeAdvancedFilterColumns, deferredAdvancedTableFilters, maximumPrice, minimumPrice, players, positionFilter, tableHorizon, teamFilter]);
   const matchingPlayers = useMemo(() => {
     if (!onlyAffordable || fitCalculation?.evaluator !== fantasyFitEvaluator) return baseMatchingPlayers;
     return baseMatchingPlayers.filter((player) => selectionsByPlayerId.has(player.playerId) || fitCalculation.eligiblePlayerIds.has(player.playerId));
@@ -564,7 +560,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
   function currentFilterPresetValue(): SquadFilterPresetFilters {
     return {
       version: 1,
-      query,
+      query: playerNameQueryRef.current,
       teamName: teamFilter === "ALL" ? null : teamFilterOptions.find((team) => team.id === teamFilter)?.name ?? null,
       position: positionFilter as SquadFilterPresetFilters["position"],
       minimumPrice,
@@ -581,7 +577,9 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
     const matchingTeam = filters.teamName
       ? teamFilterOptions.find((team) => team.name.localeCompare(filters.teamName!, undefined, { sensitivity: "base" }) === 0)
       : null;
-    setQuery(filters.query);
+    playerNameQueryRef.current = filters.query;
+    setPresetNameQuery(filters.query);
+    setPresetNameQueryRevision((current) => current + 1);
     setTeamFilter(matchingTeam?.id ?? "ALL");
     setPositionFilter(filters.position);
     setMinimumPrice(filters.minimumPrice);
@@ -1654,8 +1652,13 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                 <button
                   type="button"
                   onClick={() => {
+                    const exportPlayers = filterPlayerPoolByNameQuery(matchingPlayers, playerNameQueryRef.current);
+                    if (exportPlayers.length === 0) {
+                      setMessage(localizedText(language, "No players match the selected filters.", "Нет игроков под выбранные фильтры."));
+                      return;
+                    }
                     setTableExportPending(true);
-                    void downloadPlayerPoolXlsx(matchingPlayers, tableHorizon, language, leagueId, season, exportColumnKeys)
+                    void downloadPlayerPoolXlsx(exportPlayers, tableHorizon, language, leagueId, season, exportColumnKeys)
                       .catch(() => setMessage(localizedText(language, "Could not export the player table.", "Не удалось выгрузить таблицу игроков.")))
                       .finally(() => setTableExportPending(false));
                   }}
@@ -1681,12 +1684,18 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                   initialVisibleColumns={initialVisiblePlayerPoolColumns}
                   initialColumnWidths={initialPlayerPoolColumnWidths}
                   onVisibleColumnsChange={setExportColumnKeys}
+                  maskRootRef={playerPoolMaskRootRef}
+                  nameQueryRef={playerNameQueryRef}
                   toolbar={(
                     <>
-                      <label className="relative min-w-0">
-                        <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                        <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder={localizedText(language, "Name", "Имя")} aria-label={localizedText(language, "Search by player name", "Поиск по имени игрока")} className="w-full rounded border border-slate-200 py-2 pl-9 pr-3 text-xs [@media(pointer:coarse)]:text-base" />
-                      </label>
+                      <PlayerPoolMaskedNameSearch
+                        key={presetNameQueryRevision}
+                        language={language}
+                        players={matchingPlayers}
+                        presetQuery={presetNameQuery}
+                        queryRef={playerNameQueryRef}
+                        rootRef={playerPoolMaskRootRef}
+                      />
                       <select value={teamFilter} onChange={(event) => setTeamFilter(event.target.value)} aria-label={localizedText(language, "Team filter", "Фильтр по команде")} className="min-w-0 rounded border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 [@media(pointer:coarse)]:text-base">
                         <option value="ALL">{localizedText(language, "All teams", "Все команды")}</option>
                         {teamFilterOptions.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}
@@ -1706,13 +1715,6 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                     </>
                   )}
                 />
-                {matchingPlayers.length > 0 ? (
-                  <div className="col-span-full mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
-                    <span>
-                    {matchingPlayers.length} {localizedText(language, "players", "игроков")}
-                  </span>
-                </div>
-                ) : null}
               </>
             ) : playerPoolFailed ? (
               <div className="col-span-full rounded border border-rose-200 bg-rose-50 px-3 py-4 text-sm text-rose-700" role="alert">
@@ -1928,14 +1930,93 @@ function PlayerPoolAdvancedFilterMenu({ columns, filters, activeCount, language,
   );
 }
 
+function normalizedPlayerPoolNameQuery(value: string) {
+  return value.trim().toLowerCase();
+}
+
+export function filterPlayerPoolByNameQuery(players: FantasyPlannerPlayer[], query: string) {
+  const normalizedQuery = normalizedPlayerPoolNameQuery(query);
+  if (!normalizedQuery) return players;
+  return players.filter((player) => player.name.toLowerCase().includes(normalizedQuery));
+}
+
+function applyPlayerPoolNameMask(root: HTMLDivElement | null, query: string) {
+  if (!root) return;
+  const normalizedQuery = normalizedPlayerPoolNameQuery(query);
+  const matchingPlayerIds = new Set<string>();
+  root.querySelectorAll<HTMLElement>("[data-player-search-row]").forEach((row) => {
+    const matches = !normalizedQuery || (row.dataset.playerSearchName ?? "").includes(normalizedQuery);
+    row.hidden = !matches;
+    row.setAttribute("aria-hidden", matches ? "false" : "true");
+    if (matches && row.dataset.playerSearchId) matchingPlayerIds.add(row.dataset.playerSearchId);
+  });
+  root.querySelectorAll<HTMLElement>("[data-player-search-empty]").forEach((emptyState) => {
+    emptyState.hidden = matchingPlayerIds.size > 0;
+  });
+  root.querySelectorAll<HTMLElement>("[data-player-search-count]").forEach((counter) => {
+    counter.textContent = String(matchingPlayerIds.size);
+  });
+}
+
+function PlayerPoolMaskedNameSearch({ language, players, presetQuery, queryRef, rootRef }: {
+  language: UiLanguage;
+  players: FantasyPlannerPlayer[];
+  presetQuery: string;
+  queryRef: { current: string };
+  rootRef: RefObject<HTMLDivElement>;
+}) {
+  const [value, setValue] = useState(presetQuery);
+  const frameRef = useRef<number | null>(null);
+
+  function scheduleMask(query: string) {
+    queryRef.current = query;
+    if (frameRef.current !== null) window.cancelAnimationFrame(frameRef.current);
+    frameRef.current = window.requestAnimationFrame(() => {
+      frameRef.current = null;
+      applyPlayerPoolNameMask(rootRef.current, query);
+    });
+  }
+
+  useEffect(() => {
+    queryRef.current = presetQuery;
+    applyPlayerPoolNameMask(rootRef.current, presetQuery);
+    return () => {
+      if (frameRef.current !== null) window.cancelAnimationFrame(frameRef.current);
+    };
+  }, [presetQuery, queryRef, rootRef]);
+
+  useEffect(() => {
+    applyPlayerPoolNameMask(rootRef.current, queryRef.current);
+  }, [players, rootRef, queryRef]);
+
+  return (
+    <label className="relative min-w-0">
+      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+      <input
+        value={value}
+        onChange={(event) => {
+          const nextValue = event.target.value;
+          setValue(nextValue);
+          scheduleMask(nextValue);
+        }}
+        placeholder={localizedText(language, "Name", "Имя")}
+        aria-label={localizedText(language, "Search by player name", "Поиск по имени игрока")}
+        className="w-full rounded border border-slate-200 py-2 pl-9 pr-3 text-xs [@media(pointer:coarse)]:text-base"
+      />
+    </label>
+  );
+}
+
 function CustomizablePlayerPoolTable({
   initialVisibleColumns,
   initialColumnWidths,
   onVisibleColumnsChange,
+  maskRootRef,
+  nameQueryRef,
   toolbar,
   availableColumns,
   ...props
-}: PlayerPoolTableProps & { availableColumns: PlayerPoolOptionalColumn[]; initialVisibleColumns: string[]; initialColumnWidths: Record<string, number>; onVisibleColumnsChange: (columns: string[]) => void; toolbar: ReactNode }) {
+}: PlayerPoolTableProps & { availableColumns: PlayerPoolOptionalColumn[]; initialVisibleColumns: string[]; initialColumnWidths: Record<string, number>; onVisibleColumnsChange: (columns: string[]) => void; maskRootRef: RefObject<HTMLDivElement>; nameQueryRef: { current: string }; toolbar: ReactNode }) {
   const { players, horizon, language } = props;
   const columns = availableColumns;
   const [visibleColumnKeys, setVisibleColumnKeys] = useState(initialVisibleColumns);
@@ -1960,6 +2041,10 @@ function CustomizablePlayerPoolTable({
   useEffect(() => {
     onVisibleColumnsChange(visibleColumnKeys);
   }, [onVisibleColumnsChange, visibleColumnKeys]);
+
+  useEffect(() => {
+    applyPlayerPoolNameMask(maskRootRef.current, nameQueryRef.current);
+  }, [compactViewport, maskRootRef, nameQueryRef, players, visibleColumnKeys]);
 
   useEffect(() => {
     const media = window.matchMedia("(max-width: 767px), (pointer: coarse)");
@@ -2061,7 +2146,7 @@ function CustomizablePlayerPoolTable({
   }
 
   return (
-    <>
+    <div ref={maskRootRef} className="contents">
       <div className="mb-3 flex min-w-0 flex-wrap items-start gap-2 xl:flex-nowrap">
         <div className="grid min-w-0 flex-[1_1_34rem] grid-cols-2 gap-2 lg:grid-cols-5">
           {toolbar}
@@ -2151,12 +2236,15 @@ function CustomizablePlayerPoolTable({
             </thead>
             <tbody className="divide-y divide-slate-100">
               {players.map((player) => <CustomPlayerPoolRow key={player.playerId} player={player} columns={visibleColumns} {...props} />)}
-              {players.length === 0 ? <tr><td colSpan={5 + visibleColumns.length} className="px-4 py-10 text-center text-sm text-slate-500"><I18nText en="No players match the selected filters." ru="Нет игроков под выбранные фильтры." /></td></tr> : null}
+              <tr data-player-search-empty hidden={players.length > 0}><td colSpan={5 + visibleColumns.length} className="px-4 py-10 text-center text-sm text-slate-500"><I18nText en="No players match the selected filters." ru="Нет игроков под выбранные фильтры." /></td></tr>
             </tbody>
           </SortableTable>
         </div>
       </div> : null}
-    </>
+      <div className="col-span-full mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+        <span><span data-player-search-count>{players.length}</span> {localizedText(language, "players", "игроков")}</span>
+      </div>
+    </div>
   );
 }
 
@@ -2227,7 +2315,12 @@ function CustomPlayerPoolRow({ player, columns, horizon, language, addBlockReaso
   const teamCellTitle = `${player.name} · ${localizedText(language, "club", "клуб")}: ${teamDisplayName}\n${localizedText(language, "Full club name", "Полное название клуба")}: ${fullTeamName}\n${fixedColumnTitles.team}`;
 
   return (
-    <tr className={cn("group", isSelected ? "bg-emerald-50 text-slate-700" : disabled ? "bg-slate-50 text-slate-500" : "hover:bg-slate-50")}>
+    <tr
+      data-player-search-row
+      data-player-search-id={player.playerId}
+      data-player-search-name={player.name.toLowerCase()}
+      className={cn("group", isSelected ? "bg-emerald-50 text-slate-700" : disabled ? "bg-slate-50 text-slate-500" : "hover:bg-slate-50")}
+    >
       <td className={cn("sticky left-0 z-[5] overflow-hidden border-r border-slate-200 px-2 py-1.5", isSelected ? "bg-emerald-50" : disabled ? "bg-slate-50" : "bg-white group-hover:bg-slate-50")} title={`${player.name}\n${fixedColumnTitles.player}\n${localizedText(language, `Forecast inputs: ${player.expectedMinutes == null ? "—" : `${formatNumber(player.expectedMinutes, 0)} min`}; confidence ${player.forecastConfidence == null ? "—" : `${formatNumber(player.forecastConfidence * 100, 0)}%`}.`, `Входы прогноза: ${player.expectedMinutes == null ? "—" : `${formatNumber(player.expectedMinutes, 0)} мин`}; уверенность ${player.forecastConfidence == null ? "—" : `${formatNumber(player.forecastConfidence * 100, 0)}%`}.`)}`}>
         <span className={cn("block truncate font-semibold", muted ? "text-slate-500" : "text-ink")}>{compactPlayerDisplayName(player.name)}</span>
         {playerMetadata ? <span className="block truncate text-[10px] text-slate-500">{playerMetadata}</span> : null}
@@ -2846,6 +2939,9 @@ function PlayerPoolMobileList({
         return (
           <article
             key={player.playerId}
+            data-player-search-row
+            data-player-search-id={player.playerId}
+            data-player-search-name={player.name.toLowerCase()}
             className={cn(
               "rounded border p-3",
               isSelected
@@ -2927,11 +3023,9 @@ function PlayerPoolMobileList({
           </article>
         );
       })}
-      {players.length === 0 ? (
-        <p className="rounded border border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
-          <I18nText en="No players match the selected filters." ru="Нет игроков под выбранные фильтры." />
-        </p>
-      ) : null}
+      <p data-player-search-empty hidden={players.length > 0} className="rounded border border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+        <I18nText en="No players match the selected filters." ru="Нет игроков под выбранные фильтры." />
+      </p>
     </div>
   );
 }

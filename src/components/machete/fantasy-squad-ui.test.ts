@@ -419,7 +419,7 @@ test("player pool exposes team, price, local match-scope and typed XLSX export c
   assert.match(squadPlannerSource, /value=\{minimumPrice \?\? "ALL"\}/);
   assert.match(squadPlannerSource, /value=\{maximumPrice \?\? "ALL"\}/);
   assert.match(squadPlannerSource, /applyQuickHistoryScope\("ALL_PLAYER_MATCHES"\)/);
-  assert.match(squadPlannerSource, /downloadPlayerPoolXlsx\(matchingPlayers, tableHorizon/);
+  assert.match(squadPlannerSource, /downloadPlayerPoolXlsx\(exportPlayers, tableHorizon/);
   assert.match(squadPlannerSource, /player: player\.fotmobName \?\? player\.name/);
   assert.match(playerTableExportRouteSource, /body\.rows\.length > 1_000/);
   assert.doesNotMatch(playerTableExportRouteSource, /at most 140/);
@@ -436,7 +436,7 @@ test("player pool exposes team, price, local match-scope and typed XLSX export c
 test("player-pool XLSX follows the selected optional-column order", () => {
   assert.match(squadPlannerSource, /const \[exportColumnKeys, setExportColumnKeys\] = useState\(initialVisiblePlayerPoolColumns\)/);
   assert.match(squadPlannerSource, /onVisibleColumnsChange=\{setExportColumnKeys\}/);
-  assert.match(squadPlannerSource, /downloadPlayerPoolXlsx\(matchingPlayers, tableHorizon, language, leagueId, season, exportColumnKeys\)/);
+  assert.match(squadPlannerSource, /downloadPlayerPoolXlsx\(exportPlayers, tableHorizon, language, leagueId, season, exportColumnKeys\)/);
   assert.match(squadPlannerSource, /visibleColumnKeys[\s\S]*optionalColumnsByKey\.get\(key\)/);
   assert.match(squadPlannerSource, /\.\.\.selectedColumns\.map\(\(column\) => \(\{ key: column\.key, header: column\.label \}\)\)/);
   assert.match(squadPlannerSource, /Object\.fromEntries\(selectedColumns\.map/);
@@ -459,6 +459,18 @@ test("player-pool controls use two desktop rows and the search targets only play
   assert.match(squadPlannerSource, /en="Fits" ru="Проходит"/);
   assert.match(squadPlannerSource, /<details className="relative shrink-0">[\s\S]*?<I18nText en="Columns" ru="Столбцы"/);
   assert.match(squadPlannerSource, /className="col-span-full hidden min-w-0 max-w-full/);
+});
+
+test("name search masks cached player rows without rerendering the planner and export applies the same query", () => {
+  assert.match(squadPlannerSource, /function PlayerPoolMaskedNameSearch/);
+  assert.match(squadPlannerSource, /queryRef\.current = query/);
+  assert.match(squadPlannerSource, /requestAnimationFrame/);
+  assert.match(squadPlannerSource, /querySelectorAll<HTMLElement>\("\[data-player-search-row\]"\)/);
+  assert.match(squadPlannerSource, /row\.hidden = !matches/);
+  assert.match(squadPlannerSource, /data-player-search-name=\{player\.name\.toLowerCase\(\)\}/);
+  assert.match(squadPlannerSource, /filterPlayerPoolByNameQuery\(matchingPlayers, playerNameQueryRef\.current\)/);
+  assert.doesNotMatch(squadPlannerSource, /const \[query, setQuery\] = useState/);
+  assert.doesNotMatch(squadPlannerSource, /deferredQuery/);
 });
 
 test("table forecast tooltips and compact controls cover both English and Russian", () => {
