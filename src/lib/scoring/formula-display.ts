@@ -144,12 +144,12 @@ export const friendAlternativeFormulaByPosition = [
   {
     key: "alternativeFormulaGk",
     position: "GK",
-    formula: "{Appearance FP} + {60+ minutes FP} + 6*{xG} + 3*{xA} + 4*{Clean sheets} + {Saves}/3 - {Yellow cards} - 3*{Red cards}"
+    formula: "{Appearance FP} + {60+ minutes FP} + 6*{xG} + 3*{xA} + 4*{Clean sheets} + {Saves}/3 + {Goals conceded FP} - {Yellow cards} - 3*{Red cards}"
   },
   {
     key: "alternativeFormulaDef",
     position: "DEF",
-    formula: "{Appearance FP} + {60+ minutes FP} + 6*{xG} + 3*{xA} + 4*{Clean sheets} + {Recoveries}/3 - {Yellow cards} - 3*{Red cards}"
+    formula: "{Appearance FP} + {60+ minutes FP} + 6*{xG} + 3*{xA} + 4*{Clean sheets} + {Recoveries}/3 + {Goals conceded FP} - {Yellow cards} - 3*{Red cards}"
   },
   {
     key: "alternativeFormulaMid",

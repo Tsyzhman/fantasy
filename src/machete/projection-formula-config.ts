@@ -59,6 +59,7 @@ export type ProjectionFormulaConfigParseResult = {
 const maximumFormulaLength = 4_000;
 
 const stableExpectedMinutesFormula = "clamp(safe_div(0.65 * min({Matches 365} / 20, 1) * {Minutes per match 365} + 0.25 * min({Matches L10} / 10, 1) * {Minutes per match L10} + 0.10 * min({Matches L5} / 5, 1) * {Minutes per match L5}, 0.65 * min({Matches 365} / 20, 1) + 0.25 * min({Matches L10} / 10, 1) + 0.10 * min({Matches L5} / 5, 1), 0), 0, 90)";
+const starterAdjustedExpectedMinutesFormula = `clamp(${stableExpectedMinutesFormula} + 10 * {Roster starter}, 0, 90)`;
 
 /**
  * Global Expected FP baseline. Bookmaker inputs are gated by the explicit
@@ -103,12 +104,13 @@ export const expectedProjectionFormulaConfig: ProjectionFormulaConfig = {
 /**
  * Personal Alt FP baseline adapted from the friend method. The rolling-window
  * blend is supplied by the history stage, per-90 allocations are scaled by the
- * player's expected minutes, and bookmaker/conceded-goal modules are intentionally absent.
+ * player's expected minutes. Bookmaker adjustments are intentionally absent,
+ * while defender and goalkeeper conceded-goal penalties follow the fantasy rules.
  */
 export const friendAltProjectionFormulaConfig: ProjectionFormulaConfig = {
   version: projectionFormulaConfigVersion,
   history: {
-    expectedMinutes: stableExpectedMinutesFormula,
+    expectedMinutes: starterAdjustedExpectedMinutesFormula,
     appearanceProbability: "gte({Expected minutes}, 0.000001)",
     sixtyProbability: "gte({Expected minutes}, 60)",
     fullMatchProbability: "gte({Expected minutes}, 80)",
@@ -133,8 +135,8 @@ export const friendAltProjectionFormulaConfig: ProjectionFormulaConfig = {
     cardExposure: "{Expected minutes} / 90"
   },
   scoreByPosition: {
-    GK: "{Appearance probability} + {60 minute probability} + 6 * {Expected goals} + 3 * {Expected assists} + 4 * {Expected clean sheets} + {Expected saves} / 3 - {Expected yellow cards} - 3 * {Expected red cards}",
-    DEF: "{Appearance probability} + {60 minute probability} + 6 * {Expected goals} + 3 * {Expected assists} + 4 * {Expected clean sheets} + {Expected recoveries} / 3 - {Expected yellow cards} - 3 * {Expected red cards}",
+    GK: "{Appearance probability} + {60 minute probability} + 6 * {Expected goals} + 3 * {Expected assists} + 4 * {Expected clean sheets} + {Expected saves} / 3 - poisson_groups({Expected goals conceded}, 2) - {Expected yellow cards} - 3 * {Expected red cards}",
+    DEF: "{Appearance probability} + {60 minute probability} + 6 * {Expected goals} + 3 * {Expected assists} + 4 * {Expected clean sheets} + {Expected recoveries} / 3 - poisson_groups({Expected goals conceded}, 2) - {Expected yellow cards} - 3 * {Expected red cards}",
     MID: "{Appearance probability} + {60 minute probability} + {Full match probability} + 5 * {Expected goals} + 3 * {Expected assists} + {Expected clean sheets} + {Expected recoveries} / 3 - {Expected yellow cards} - 3 * {Expected red cards}",
     FWD: "{Appearance probability} + {60 minute probability} + {Full match probability} + 4 * {Expected goals} + 3 * {Expected assists} + {Expected recoveries} / 3 - {Expected yellow cards} - 3 * {Expected red cards}"
   }

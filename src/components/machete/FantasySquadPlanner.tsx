@@ -2280,7 +2280,7 @@ function playerPoolOptionalColumns(players: FantasyPlannerPlayer[], horizon: num
     column("projectedRecoveries", "Exp rec.", "Ож. возвраты", "Expected recoveries in the next fixture, scaled to the player's expected minutes; used only where the scoring model rewards them.", "Ожидаемые возвраты мяча в следующем матче с учётом ожидаемых минут; используются только если активная формула начисляет за них очки."),
     column("projectedSaves", "Exp saves", "Ож. сейвы", "Expected goalkeeper saves in the next fixture from the player's save rate, expected minutes, and opponent shot forecast.", "Ожидаемые сейвы вратаря в следующем матче на основе его темпа сейвов, ожидаемых минут и прогноза ударов соперника."),
     column("projectedCleanSheets", "Exp CS", "Ож. сухарь", "Expected clean-sheet contribution for the next fixture, weighted by team defensive forecast and the player's playing-time exposure.", "Ожидаемый вклад сухого матча в следующем туре, взвешенный по защитному прогнозу команды и игровому времени футболиста."),
-    column("projectedGoalsConceded", "Exp GC", "Ож. пропущ.", "Expected goals conceded while the player is on the pitch in the next fixture. The primary formula may subtract points from defenders and goalkeepers; Alt excludes this penalty.", "Ожидаемые пропущенные голы, пока игрок находится на поле в следующем матче. Основная формула может вычитать их у защитников и вратарей; в Alt этот штраф исключён."),
+    column("projectedGoalsConceded", "Exp GC", "Ож. пропущ.", "Expected goals conceded while the player is on the pitch in the next fixture. Both primary FP and default Alt subtract one fantasy point per Poisson group of two for defenders and goalkeepers.", "Ожидаемые пропущенные голы, пока игрок находится на поле в следующем матче. Основное ФО и стандартный Альт вычитают по одному фэнтези-очку за каждую пуассоновскую группу из двух голов у защитников и вратарей."),
     column("projectedYellowCards", "Exp YC", "Ож. ЖК", "Expected yellow cards in the next fixture from the player's card rate scaled by expected minutes.", "Ожидаемые жёлтые карточки в следующем матче: карточный темп игрока масштабируется на ожидаемые минуты."),
     column("projectedRedCards", "Exp RC", "Ож. КК", "Expected red cards in the next fixture from the player's card rate scaled by expected minutes.", "Ожидаемые красные карточки в следующем матче: карточный темп игрока масштабируется на ожидаемые минуты."),
     column("baltikaXg", "W xG", "W xG", "Total Wyscout xG from the imported Baltika workbook for the selected sample; shown only when that source is available.", "Суммарный xG Wyscout из загруженного файла «Балтики» для выбранной выборки; показывается только при наличии этого источника."),
@@ -3614,7 +3614,7 @@ function projectionBreakdownText(value: string, language: UiLanguage) {
     "Alternative total": "Итого Альт",
     "not awarded for this position": "не начисляется для этой позиции",
     "not applicable for this position": "не применяется для этой позиции",
-    "not used in alternative score": "не используется в формуле Альт",
+    "negative Poisson groups of 2 from expected goals conceded": "отрицательные пуассоновские группы по 2 из ожидаемых пропущенных голов",
     "not available": "нет данных"
   };
   if (exact[value]) return exact[value];
@@ -3988,12 +3988,15 @@ function buildAlternativeProjectionBreakdownLines(
     addProjectionTermLine(lines, language, "Recovery FP", components.recoveries, "not applicable for this position");
   }
 
+  const concededPenaltyApplies = player.positionGroup === "GK" || player.positionGroup === "DEF";
   addProjectionTermLine(
     lines,
     language,
     "Goals conceded FP",
     components.goalsConceded,
-    "not used in alternative score"
+    concededPenaltyApplies
+      ? "negative Poisson groups of 2 from expected goals conceded"
+      : "not applicable for this position"
   );
 
   addProjectionWeightedTermLine(
@@ -4090,6 +4093,20 @@ function playerAverageForecastTitle(
 function alternativePlayerForecastTitle(player: FantasyPlannerPlayer, language: UiLanguage) {
   const nextAlternative = player.alternativePredictedFp ?? null;
   const lines = [localizedText(language, `Alternative forecast for next fixture: ${formatScore(nextAlternative)} FP`, `Альтернативный прогноз на следующий матч: ${formatScore(nextAlternative)} ФО`)];
+  const minuteInputs = player.alternativeProjectedFixtureComponents;
+  if (
+    minuteInputs?.baseExpectedMinutes !== null &&
+    minuteInputs?.baseExpectedMinutes !== undefined &&
+    minuteInputs.expectedMinutes !== null &&
+    minuteInputs.expectedMinutes !== undefined
+  ) {
+    const uplift = minuteInputs.rosterStarterMinutesUplift ?? 0;
+    lines.push(localizedText(
+      language,
+      `Base weighted minutes ${formatNumber(minuteInputs.baseExpectedMinutes, 1)} + club starting-XI uplift ${formatNumber(uplift, 1)} = ${formatNumber(minuteInputs.expectedMinutes, 1)} expected minutes (capped at 90). Manual club starter: ${minuteInputs.rosterStarter ? "yes" : "no"}.`,
+      `Базовые взвешенные минуты ${formatNumber(minuteInputs.baseExpectedMinutes, 1)} + надбавка за основу клуба ${formatNumber(uplift, 1)} = ${formatNumber(minuteInputs.expectedMinutes, 1)} ожидаемых минут (ограничение 90). Ручная отметка основы клуба: ${minuteInputs.rosterStarter ? "да" : "нет"}.`
+    ));
+  }
   if (player.alternativeProjectionFormula) {
     lines.push(...buildFormulaBreakdownLines(
       language,

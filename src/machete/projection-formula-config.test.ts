@@ -17,6 +17,7 @@ test("Expected and friend Alt defaults contain valid formulas for the full pipel
   assert.match(expectedProjectionFormulaConfig.team.expectedGoals, /Bookmaker implied xG/);
   assert.doesNotMatch(friendAltProjectionFormulaConfig.team.expectedGoals, /Bookmaker/);
   assert.match(friendAltProjectionFormulaConfig.history.expectedMinutes, /0\.65 \* min\(\{Matches 365\}/);
+  assert.match(friendAltProjectionFormulaConfig.history.expectedMinutes, /10 \* \{Roster starter\}/);
   assert.match(friendAltProjectionFormulaConfig.history.xgRate, /Minutes L10/);
   assert.match(friendAltProjectionFormulaConfig.history.xgRate, /safe_div/);
   assert.match(friendAltProjectionFormulaConfig.allocation.goals, /Expected minutes/);
@@ -27,7 +28,22 @@ test("Expected and friend Alt defaults contain valid formulas for the full pipel
   assert.equal(calculateCustomFormulaScore(friendAltProjectionFormulaConfig.allocation.cardExposure, {
     expected_minutes: 60
   }), 2 / 3);
-  assert.doesNotMatch(friendAltProjectionFormulaConfig.scoreByPosition.DEF, /goals conceded/i);
+  assert.match(friendAltProjectionFormulaConfig.scoreByPosition.GK, /poisson_groups\(\{Expected goals conceded\}, 2\)/);
+  assert.match(friendAltProjectionFormulaConfig.scoreByPosition.DEF, /poisson_groups\(\{Expected goals conceded\}, 2\)/);
+  assert.doesNotMatch(friendAltProjectionFormulaConfig.scoreByPosition.MID, /goals conceded/i);
+  assert.doesNotMatch(friendAltProjectionFormulaConfig.scoreByPosition.FWD, /goals conceded/i);
+  const goalkeeperConcededOnlyScore = calculateCustomFormulaScore(friendAltProjectionFormulaConfig.scoreByPosition.GK, {
+    appearance_probability: 0,
+    "60_minute_probability": 0,
+    expected_goals: 0,
+    expected_assists: 0,
+    expected_clean_sheets: 0,
+    expected_saves: 0,
+    expected_goals_conceded: 4,
+    expected_yellow_cards: 0,
+    expected_red_cards: 0
+  });
+  assert.ok(goalkeeperConcededOnlyScore < -1.7 && goalkeeperConcededOnlyScore > -1.8);
 });
 
 test("legacy Alt per-90 allocations fall back to minute-scaled formulas", () => {
@@ -74,6 +90,32 @@ test("expected minutes are stabilized instead of taking a recent-window maximum"
 
   assert.equal(score, 56.25);
   assert.ok(score < 90);
+});
+
+test("friend Alt adds ten expected minutes for a manually selected club starter and caps at 90", () => {
+  const history = {
+    matches_365: 20,
+    matches_l10: 10,
+    matches_l5: 5,
+    minutes_per_match_365: 45,
+    minutes_per_match_l10: 45,
+    minutes_per_match_l5: 45
+  };
+  assert.equal(calculateCustomFormulaScore(friendAltProjectionFormulaConfig.history.expectedMinutes, {
+    ...history,
+    roster_starter: 0
+  }), 45);
+  assert.equal(calculateCustomFormulaScore(friendAltProjectionFormulaConfig.history.expectedMinutes, {
+    ...history,
+    roster_starter: 1
+  }), 55);
+  assert.equal(calculateCustomFormulaScore(friendAltProjectionFormulaConfig.history.expectedMinutes, {
+    ...history,
+    minutes_per_match_365: 82,
+    minutes_per_match_l10: 82,
+    minutes_per_match_l5: 82,
+    roster_starter: 1
+  }), 90);
 });
 
 test("80 expected minutes count as a full match in both projection defaults", () => {

@@ -118,11 +118,19 @@ export type PlannerFixture = {
   oddsFetchedAt?: Date | null;
 };
 
-function buildFixtureComponentInputs(projection: PlayerFixtureProjection | null): FantasyProjectionFixtureInputs | null {
+function buildFixtureComponentInputs(
+  projection: PlayerFixtureProjection | null,
+  formulaMetrics?: Record<string, unknown>
+): FantasyProjectionFixtureInputs | null {
   if (!projection) return null;
 
   return {
     expectedMinutes: projection.expectedMinutes ?? null,
+    baseExpectedMinutes: numericProjectionMetric(formulaMetrics?.base_expected_minutes),
+    rosterStarter: numericProjectionMetric(formulaMetrics?.roster_starter) === null
+      ? null
+      : numericProjectionMetric(formulaMetrics?.roster_starter) === 1,
+    rosterStarterMinutesUplift: numericProjectionMetric(formulaMetrics?.roster_starter_minutes_uplift),
     appearanceProbability: projection.probabilities?.appearance ?? null,
     sixtyMinutesProbability: projection.probabilities?.sixtyMinutes ?? null,
     fullMatchProbability: projection.probabilities?.fullMatch ?? null,
@@ -135,6 +143,10 @@ function buildFixtureComponentInputs(projection: PlayerFixtureProjection | null)
     expectedGoalsConceded: projection.expectedEvents?.goalsConceded ?? null,
     expectedCleanSheets: projection.expectedEvents?.cleanSheets ?? null
   };
+}
+
+function numericProjectionMetric(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
 type PlannerMatch = {
@@ -577,7 +589,12 @@ export async function loadFantasySquadPlannerData(
         projectionEngine,
         projectionComponents: nextComponentProjection?.components ?? null,
         projectionFormula: projectionEngine === "COMPONENT_XFP_V1" ? nextComponentRoundFormula : null,
-        alternativeProjectedFixtureComponents: buildFixtureComponentInputs(nextFriendProjection),
+        alternativeProjectedFixtureComponents: buildFixtureComponentInputs(
+          nextFriendProjection,
+          nextFixture
+            ? friendAlternativeProjections.formulaMetricsByFixturePlayer.get(fixturePlayerProjectionKey(nextFixture.id, String(row.playerId)))
+            : undefined
+        ),
         alternativeProjectionComponents: nextFriendProjection?.components ?? null,
         alternativeProjectionFormula: nextFriendRoundFormula,
         alternativePredictedFp,
@@ -1330,8 +1347,19 @@ function pipelineParticipant(
 ): PipelineParticipant | null {
   const position = normalizeFantasyPosition(fantasyPlannerPosition(sportsPosition ?? null, null, row.position));
   if (position === "UNK") return null;
-  const metrics: Record<string, unknown> = { ...(row.rawMetrics ?? {}) };
+  const metrics: Record<string, unknown> = {
+    ...(row.rawMetrics ?? {}),
+    roster_starter: row.isStarter ? 1 : 0
+  };
+  const usesRosterStarterMinutes = /\{Roster starter\}/i.test(config.history.expectedMinutes);
+  const baseExpectedMinutes = usesRosterStarterMinutes
+    ? clamp(formulaValue(expectedProjectionFormulaConfig.history.expectedMinutes, metrics), 0, 90)
+    : null;
   const expectedMinutes = clamp(formulaValue(config.history.expectedMinutes, metrics), 0, 90);
+  if (baseExpectedMinutes !== null) {
+    metrics.base_expected_minutes = baseExpectedMinutes;
+    metrics.roster_starter_minutes_uplift = expectedMinutes - baseExpectedMinutes;
+  }
   metrics.expected_minutes = expectedMinutes;
   const countsAsFullMatch = countsAsFullFantasyMatch(expectedMinutes);
   const appearance = countsAsFullMatch ? 1 : clamp(formulaValue(config.history.appearanceProbability, metrics), 0, 1);

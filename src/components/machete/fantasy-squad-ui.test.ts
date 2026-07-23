@@ -455,6 +455,11 @@ test("table forecast tooltips and compact controls cover both English and Russia
   assert.ok(squadPlannerSource.includes("`- Ожидаемые минуты: ${expectedMinutes}`"));
   assert.match(squadPlannerSource, /"No round-by-round values available yet\."/);
   assert.match(squadPlannerSource, /"Значений по отдельным турам пока нет\."/);
+  assert.match(squadPlannerSource, /Base weighted minutes/);
+  assert.match(squadPlannerSource, /надбавка за основу клуба/);
+  assert.match(squadPlannerSource, /negative Poisson groups of 2 from expected goals conceded/);
+  assert.doesNotMatch(squadPlannerSource, /not used in alternative score/);
+  assert.doesNotMatch(squadPlannerSource, /не используется в формуле Альт/);
   assert.match(squadPlannerSource, /en="Export table" ru="Выгрузить таблицу"/);
   assert.match(squadPlannerSource, /en="Presets" ru="Пресеты"/);
 });

@@ -51,7 +51,7 @@ import type { ActiveScoringModel } from "@/lib/scoring";
 import { friendAlternativeFormulaDefaults } from "@/lib/scoring/formula-display";
 import type { SharedMachetePlayerRow } from "./shared_read_model";
 import { defaultFantasySquadRules } from "./squad_logic";
-import { expectedProjectionFormulaConfig } from "./projection-formula-config";
+import { expectedProjectionFormulaConfig, friendAltProjectionFormulaConfig } from "./projection-formula-config";
 
 test("component xFP is the default primary engine and legacy remains a one-flag rollback", () => {
   assert.equal(configuredFantasyProjectionEngine(undefined), "COMPONENT_XFP_V1");
@@ -195,6 +195,66 @@ test("formula pipeline scales a raw per-90 allocation by expected minutes", () =
   assert.ok(Math.abs((index.byFixturePlayer.get("fixture-1:p90")?.expectedEvents.goals ?? 0) - 0.6) < 1e-12);
 });
 
+test("formula pipeline exposes the club starting-XI flag and applies the Alt minute uplift", () => {
+  const config = {
+    ...friendAltProjectionFormulaConfig,
+    history: {
+      ...friendAltProjectionFormulaConfig.history,
+      expectedMinutes: "clamp(40 + 10 * {Roster starter}, 0, 90)",
+      appearanceProbability: "1",
+      sixtyProbability: "0",
+      fullMatchProbability: "0",
+      xgRate: "0",
+      xaRate: "0",
+      recoveryRate: "0",
+      saveRate: "0",
+      yellowRate: "0",
+      redRate: "0"
+    },
+    team: {
+      expectedGoals: "0",
+      expectedGoalsAgainst: "0",
+      assistsPerGoal: "0",
+      cleanSheetProbability: "0"
+    },
+    allocation: {
+      goals: "0 * {Expected minutes}",
+      assists: "0 * {Expected minutes}",
+      recoveries: "0 * {Expected minutes}",
+      saves: "0 * {Expected minutes}",
+      cardExposure: "0 * {Expected minutes}"
+    }
+  };
+  const row = (playerId: string, isStarter: boolean) => ({
+    playerId,
+    teamId: "team-1",
+    position: "FWD",
+    isStarter,
+    startProbability: 0,
+    expectedMinutes: 40,
+    minutesPlayed: 360,
+    rawMetrics: {}
+  }) as never;
+  const fixture = {
+    id: "fixture-1", roundId: "round-1", teamId: "team-1", opponentTeamId: "team-2",
+    opponentName: "OPP", opponentFullName: "Opponent", side: "H" as const,
+    kickoffAt: new Date("2026-07-25T12:00:00Z"), projectedXg: 0, projectedXga: 0,
+    attackMultiplier: 1, defenseMultiplier: 1
+  };
+  const index = buildFormulaProjectionIndex(
+    [row("starter", true), row("bench", false)],
+    { rounds: [], fixturesByTeamRound: new Map([["round-1", new Map([["team-1", [fixture]]])]]), teamShortNameById: new Map() },
+    new Map([["starter", "FWD"], ["bench", "FWD"]]),
+    config
+  );
+
+  assert.deepEqual(index.errorsByFixtureTeam, new Map());
+  assert.equal(index.byFixturePlayer.get("fixture-1:starter")?.expectedMinutes, 50);
+  assert.equal(index.byFixturePlayer.get("fixture-1:bench")?.expectedMinutes, 40);
+  assert.equal(index.formulaMetricsByFixturePlayer.get("fixture-1:starter")?.roster_starter, 1);
+  assert.equal(index.formulaMetricsByFixturePlayer.get("fixture-1:bench")?.roster_starter, 0);
+});
+
 test("friend Alt is shared in the squad while a personal formula overrides only its own position", () => {
   const base = componentFormulaModel();
   const shared = friendAlternativeScoringModel(base, null);
@@ -280,7 +340,7 @@ test("admin Expected FP formula overrides COMPONENT_XFP_V1 totals with visible c
   assert.equal(componentProjectionFantasyPoints(projection, null, { ...model, customFormulaEnabled: false }), 4.52);
 });
 
-test("friend Alt uses fixture components without bookmaker or goals-conceded penalties", () => {
+test("friend Alt uses fixture components without bookmaker adjustment and includes goals-conceded penalties", () => {
   const projection: PlayerFixtureProjection = {
     playerId: "gk-1",
     position: "GK",
@@ -306,7 +366,7 @@ test("friend Alt uses fixture components without bookmaker or goals-conceded pen
     alternativeFormulaEnabled: true
   } satisfies ActiveScoringModel;
 
-  assert.equal(friendAlternativeProjectionFantasyPoints(projection, null, model), 5.37);
+  assert.equal(friendAlternativeProjectionFantasyPoints(projection, null, model), 3.37);
 });
 
 test("friend Alt probable XI prioritizes starter flags and is capped at eleven", () => {

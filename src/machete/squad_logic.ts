@@ -21,6 +21,9 @@ export type FantasyRoundProjection = {
 
 export type FantasyProjectionFixtureInputs = {
   expectedMinutes: number | null;
+  baseExpectedMinutes?: number | null;
+  rosterStarter?: boolean | null;
+  rosterStarterMinutesUplift?: number | null;
   appearanceProbability: number | null;
   sixtyMinutesProbability: number | null;
   fullMatchProbability: number | null;
