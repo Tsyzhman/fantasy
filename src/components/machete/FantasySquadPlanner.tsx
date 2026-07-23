@@ -2220,13 +2220,13 @@ function CustomPlayerPoolRow({ player, columns, horizon, language, addBlockReaso
 
   return (
     <tr className={cn("group", isSelected ? "bg-emerald-50 text-slate-700" : disabled ? "bg-slate-50 text-slate-500" : "hover:bg-slate-50")}>
-      <td className={cn("sticky left-0 z-[5] overflow-hidden border-r border-slate-200 px-2 py-1.5", isSelected ? "bg-emerald-50" : disabled ? "bg-slate-50" : "bg-white group-hover:bg-slate-50")} title={fixedColumnTitles.player}>
+      <td className={cn("sticky left-0 z-[5] overflow-hidden border-r border-slate-200 px-2 py-1.5", isSelected ? "bg-emerald-50" : disabled ? "bg-slate-50" : "bg-white group-hover:bg-slate-50")} title={`${player.name}\n${fixedColumnTitles.player}\n${localizedText(language, `Forecast inputs: ${player.expectedMinutes == null ? "—" : `${formatNumber(player.expectedMinutes, 0)} min`}; confidence ${player.forecastConfidence == null ? "—" : `${formatNumber(player.forecastConfidence * 100, 0)}%`}.`, `Входы прогноза: ${player.expectedMinutes == null ? "—" : `${formatNumber(player.expectedMinutes, 0)} мин`}; уверенность ${player.forecastConfidence == null ? "—" : `${formatNumber(player.forecastConfidence * 100, 0)}%`}.`)}`}>
         <span className={cn("block truncate font-semibold", muted ? "text-slate-500" : "text-ink")}>{compactPlayerDisplayName(player.name)}</span>
         {playerMetadata ? <span className="block truncate text-[10px] text-slate-500">{playerMetadata}</span> : null}
       </td>
-      <td className="overflow-hidden px-2 py-1.5 text-slate-600" title={fixedColumnTitles.team}><span className="block truncate">{fantasyPlayerTeamDisplayName(player)}</span></td>
-      <td className="overflow-hidden px-1 py-1.5" title={fixedColumnTitles.position}><span className={cn("inline-block max-w-full truncate rounded px-1 py-0.5 text-[10px] font-bold", muted ? "border border-slate-300 bg-slate-200 text-slate-700" : positionPillClass(player.positionGroup))}>{player.positionGroup}</span></td>
-      <td data-sort-value={player.price} className={cn("overflow-hidden whitespace-nowrap px-1 py-1.5 text-right font-semibold", muted ? "text-slate-600" : "text-ink")} title={fixedColumnTitles.price}>{player.priceSource === "ESTIMATED" ? "~" : ""}{formatNumber(player.price, 1)}</td>
+      <td className="overflow-hidden px-2 py-1.5 text-slate-600" title={`${player.name} · ${localizedText(language, "club", "клуб")}: ${fantasyPlayerTeamDisplayName(player)}\n${fixedColumnTitles.team}`}><span className="block truncate">{fantasyPlayerTeamDisplayName(player)}</span></td>
+      <td className="overflow-hidden px-1 py-1.5" title={`${player.name} · ${localizedText(language, "position", "позиция")}: ${player.positionGroup}\n${fixedColumnTitles.position}`}><span className={cn("inline-block max-w-full truncate rounded px-1 py-0.5 text-[10px] font-bold", muted ? "border border-slate-300 bg-slate-200 text-slate-700" : positionPillClass(player.positionGroup))}>{player.positionGroup}</span></td>
+      <td data-sort-value={player.price} className={cn("overflow-hidden whitespace-nowrap px-1 py-1.5 text-right font-semibold", muted ? "text-slate-600" : "text-ink")} title={`${player.name} · ${localizedText(language, "price", "цена")}: ${formatNumber(player.price, 1)}\n${localizedText(language, `Source: ${player.priceSource === "SPORTS_RU" ? "verified Sports.ru fantasy price" : "estimate; no verified Sports.ru mapping"}.`, `Источник: ${player.priceSource === "SPORTS_RU" ? "подтверждённая цена фэнтези Sports.ru" : "оценка; подтверждённого сопоставления Sports.ru нет"}.`)}`}>{player.priceSource === "ESTIMATED" ? "~" : ""}{formatNumber(player.price, 1)}</td>
       <td className="px-1 py-1.5 text-center">
         {isSelected ? (
           <button type="button" onClick={() => onRemove(player.playerId)} aria-label={removeLabel} className="inline-flex h-7 w-7 items-center justify-center rounded border border-rose-200 bg-white text-rose-700 hover:bg-rose-50"><Trash2 className="h-4 w-4" /></button>
@@ -2261,7 +2261,7 @@ function playerPoolOptionalColumns(players: FantasyPlannerPlayer[], horizon: num
     column("nationality", "Nationality", "Гражданство", "Player nationality from FotMob metadata.", "Гражданство игрока из метаданных FotMob.", false, 120),
     column("rosterStarter", "XI flag", "Старт", "The club's current starting-XI flag edited on the team page. This is a shared roster marker, not the model's start probability.", "Текущая отметка стартовых 11 клуба, установленная на странице команды. Это общий признак состава, а не вероятность старта модели.", false),
     column("expectedMinutes", "Exp min", "Ож. мин", "Expected playing time in the next match, from 0 to 90 minutes. It scales all per-90 event rates; 80 or more minutes count as a full fantasy match.", "Ожидаемое игровое время в следующем матче от 0 до 90 минут. Им масштабируются все показатели per 90; 80 минут и больше считаются полным фэнтези-матчем."),
-    column("startProbability", "Start %", "Старт %", "Share of matches with a starting-XI appearance among matches where the start flag is known in the selected history scope.", "Доля выходов в стартовом составе среди матчей, где отметка старта известна, в выбранном историческом диапазоне."),
+    column("startProbability", "Appearance %", "Выход %", "Model probability that the player appears on the pitch in the next fixture. This stored forecast field is not a starting-XI probability.", "Вероятность модели, что игрок появится на поле в следующем матче. Это сохранённое поле прогноза не является вероятностью выхода в стартовом составе."),
     column("sixtyProbability", "60 min %", "60 мин %", "Estimated probability of reaching 60 minutes. It controls the fantasy threshold for the higher appearance score and is not assumed to be 100% for every attacker.", "Оценка вероятности провести не менее 60 минут. Она управляет порогом повышенных очков за участие и не считается автоматически равной 100% для всех атакующих игроков."),
     column("fullMatchProbability", "Full %", "Фулл %", "Estimated probability of a full fantasy match. In the forecast pipeline, 80 expected minutes already count as full time to absorb normal prediction error.", "Оценка вероятности полного фэнтези-матча. В прогнозном пайплайне 80 ожидаемых минут уже считаются полным матчем с учётом обычной погрешности модели."),
     column("forecastConfidence", "Confidence", "Уверенность", "Data-reliability heuristic, not forecast accuracy: 55% sample completeness (reaches maximum at 5 matches) + 30% minute stability (standard deviation, worst at 45+ minutes) + 15% completeness of known starting-XI flags.", "Эвристика надёжности данных, а не точность прогноза: 55% — полнота выборки (максимум при 5 матчах), 30% — стабильность минут (по стандартному отклонению, минимум при 45+ минутах), 15% — полнота известных отметок выхода в старте."),
@@ -2310,8 +2310,14 @@ function historicalStatTitle(key: string, language: UiLanguage) {
 function customPlayerPoolCell(column: PlayerPoolOptionalColumn, player: FantasyPlannerPlayer, horizon: number, language: UiLanguage, muted: boolean) {
   if (column.key === "fixtures") {
     const chips = fixtureChipPresentations(player.fixtures, player.fixtureDifficulties ?? [], horizon, player.fixtureFullNames).slice(0, 5);
+    const fixtureTitle = chips.length > 0
+      ? [
+          localizedText(language, `${player.name}: next fixtures`, `${player.name}: ближайшие матчи`),
+          ...chips.map((chip, index) => `${index + 1}. ${chip.title ?? chip.label}`)
+        ].join("\n")
+      : localizedText(language, `${player.name}: no fixture in the selected horizon.`, `${player.name}: в выбранном горизонте матчей нет.`);
     return (
-      <td key={column.key} className="overflow-hidden px-1 py-1.5 text-[11px] text-slate-500" title={column.title}>
+      <td key={column.key} className="overflow-hidden px-1 py-1.5 text-[11px] text-slate-500" title={fixtureTitle}>
         {chips.length > 0 ? <FdrRow fixtures={chips} className="min-w-0 flex-nowrap gap-0.5" /> : <I18nText en="No fixture" ru="Нет матча" />}
       </td>
     );
@@ -2339,7 +2345,139 @@ function playerPoolValueCellTitle(column: PlayerPoolOptionalColumn, player: Fant
   if (column.key === "foontasy") return foontasyForecastTitle(player, language, 1);
   if (column.key === "alternative") return alternativePlayerForecastTitle(player, language);
   if (column.key === "alternativeHorizon") return alternativePlayerHorizonForecastTitle(player, language, horizon);
-  return column.title;
+  return playerPoolMetricValueTitle(column, player, language, rawValue);
+}
+
+function playerPoolMetricValueTitle(column: PlayerPoolOptionalColumn, player: FantasyPlannerPlayer, language: UiLanguage, rawValue: string | number | null) {
+  const display = customPlayerPoolColumnDisplay(column.key, rawValue, language);
+  const stats = player.historicalStats ?? {};
+  const matches = finiteMetric(stats.matches_played);
+  const minutes = finiteMetric(stats.minutes_played);
+  const sample = localizedText(
+    language,
+    `History sample: ${matches === null ? "unknown number of" : formatNumber(matches, 0)} stat rows${minutes === null ? "" : `, ${formatNumber(minutes, 0)} played minutes`} under the selected club/all-matches and period filters.`,
+    `Историческая выборка: ${matches === null ? "число строк статистики неизвестно" : `${formatNumber(matches, 0)} строк статистики`}${minutes === null ? "" : `, ${formatNumber(minutes, 0)} сыгранных минут`} с учётом выбранных фильтров «клубы/все матчи» и периода.`
+  );
+  const lines = [`${player.name} · ${column.label}: ${display}`, column.title];
+
+  if (rawValue === null || rawValue === undefined) {
+    lines.push(localizedText(language, "No value was produced for this player and source.", "Для этого игрока источник не вернул значение."));
+    if (column.key === "modelHorizon") {
+      const status = horizonModelStatus(player, column.label);
+      lines.push(localizedText(language, `Source: Machete Foontasy-style model${status ? `; status ${status}` : ""}.`, `Источник: Foontasy-style модель Machete${status ? `; статус ${status}` : ""}.`));
+    } else if (column.key.startsWith("projected")) {
+      lines.push(localizedText(language, "The next-fixture component pipeline did not return this event input.", "Компонентный прогноз следующего матча не вернул этот событийный вход."));
+    } else if (column.key.startsWith("stat:")) {
+      lines.push(sample);
+      lines.push(localizedText(language, "FotMob has no finite aggregate for this metric in the selected history sample.", "В выбранной исторической выборке FotMob нет конечного агрегата этой метрики."));
+    } else if (column.key.startsWith("baltika")) {
+      lines.push(localizedText(language, "The imported Wyscout workbook has no matched value for this player.", "В загруженной книге Wyscout нет сопоставленного значения для этого игрока."));
+    }
+    return lines.join("\n");
+  }
+
+  if (column.key === "modelHorizon") {
+    const status = horizonModelStatus(player, column.label);
+    lines.push(localizedText(language, "Source: Machete Foontasy-style model; every future fixture is calculated separately.", "Источник: собственная Foontasy-style модель Machete; каждый будущий матч считается отдельно."));
+    if (status) lines.push(localizedText(language, `Calculation status: ${status}.`, `Статус расчёта: ${status}.`));
+    if (player.modelForecastCalculatedAt) lines.push(localizedText(language, `Calculated: ${player.modelForecastCalculatedAt}.`, `Рассчитано: ${player.modelForecastCalculatedAt}.`));
+  } else if (column.key === "expectedMinutes") {
+    lines.push(localizedText(language, `Model input for the next fixture: ${display} minutes. Exposure ratio: ${display}/90 = ${formatNumber(Number(rawValue) / 90, 3)}. The component model also balances goals, assists, saves and recoveries against team totals, so this ratio is not a universal direct multiplier.`, `Вход модели на следующий матч: ${display} минут. Доля игрового времени: ${display}/90 = ${formatNumber(Number(rawValue) / 90, 3)}. Компонентная модель дополнительно распределяет голы, ассисты, сейвы и возвраты относительно командных итогов, поэтому эта доля не является универсальным прямым множителем.`));
+  } else if (column.key === "startProbability") {
+    lines.push(player.projectedFixtureComponents
+      ? localizedText(language, `Component-model probability of appearing on the pitch in the next fixture: ${display}. It is not a starting-XI probability.`, `Вероятность компонентной модели, что игрок появится на поле в следующем матче: ${display}. Это не вероятность выхода в стартовом составе.`)
+      : localizedText(language, `Fallback value from history: share of starts among matches with a known XI flag: ${display}. A next-fixture appearance probability was not available.`, `Резервное значение из истории: доля стартов среди матчей с известной отметкой XI: ${display}. Прогноз вероятности появления в следующем матче недоступен.`));
+    lines.push(sample);
+  } else if (column.key === "sixtyProbability" || column.key === "fullMatchProbability") {
+    const countKey = column.key === "sixtyProbability" ? "appearances_60" : "full_matches";
+    const count = finiteMetric(stats[countKey]);
+    if (count !== null && matches !== null && matches > 0) {
+      lines.push(localizedText(language, `Historical check: ${formatNumber(count, 0)} / ${formatNumber(matches, 0)} = ${formatNumber(count / matches * 100, 1)}%. The displayed value is the next-fixture model estimate.`, `Проверка по истории: ${formatNumber(count, 0)} / ${formatNumber(matches, 0)} = ${formatNumber(count / matches * 100, 1)}%. В ячейке показана оценка модели на следующий матч.`));
+    }
+    if (column.key === "fullMatchProbability" && player.expectedMinutes !== null && player.expectedMinutes !== undefined) {
+      lines.push(localizedText(language, `Full-time rule: expected minutes ${formatNumber(player.expectedMinutes, 1)} ${player.expectedMinutes >= 80 ? "meet" : "do not meet"} the 80-minute threshold.`, `Правило полного матча: ${formatNumber(player.expectedMinutes, 1)} ожидаемых минут ${player.expectedMinutes >= 80 ? "достигают" : "не достигают"} порога 80 минут.`));
+    }
+    lines.push(sample);
+  } else if (column.key === "forecastConfidence") {
+    lines.push(localizedText(language, "Heuristic = 55% sample completeness + 30% minute stability + 15% completeness of known XI flags. It measures data reliability, not the probability that the forecast is correct.", "Эвристика = 55% полноты выборки + 30% стабильности минут + 15% полноты известных отметок старта. Это надёжность данных, а не вероятность точности прогноза."));
+    lines.push(sample);
+    if (matches !== null) lines.push(`55% × min(${formatNumber(matches, 0)}/5, 1) = ${formatNumber(.55 * Math.min(matches / 5, 1) * 100, 1)} ${localizedText(language, "percentage points", "п.п.")}`);
+    lines.push(localizedText(language, "Minute deviation and the exact known-XI numerator are not retained in this table row, so those substitutions are not invented.", "Отклонение минут и точный числитель известных отметок XI в этой строке не сохраняются, поэтому их подстановка не выдумывается."));
+    appendForecastNotes(lines, player, language);
+  } else if (column.key === "valueScore") {
+    const next = nextFantasyPoints(player);
+    lines.push(next === null || player.price <= 0
+      ? localizedText(language, "The ratio cannot be expanded because forecast or price is missing.", "Нельзя разложить отношение: отсутствует прогноз или цена.")
+      : `${formatNumber(next, 2)} / ${formatNumber(player.price, 1)} = ${formatNumber(next / player.price, 2)}`);
+  } else if (column.key === "recentFp") {
+    const values = (player.recentFp ?? []).filter(Number.isFinite);
+    const sum = values.reduce((total, value) => total + value, 0);
+    lines.push(values.length === 0
+      ? localizedText(language, "No stored match scores in the selected sample.", "В выбранной выборке нет сохранённых очков по матчам.")
+      : localizedText(language, `Matches: ${values.map((value) => formatNumber(value, 2)).join(" + ")} = ${formatNumber(sum, 2)}; ${formatNumber(sum, 2)} / ${values.length} = ${display}.`, `Матчи: ${values.map((value) => formatNumber(value, 2)).join(" + ")} = ${formatNumber(sum, 2)}; ${formatNumber(sum, 2)} / ${values.length} = ${display}.`));
+  } else if (column.key.startsWith("projected")) {
+    lines.push(localizedText(language, `Next-fixture component produced by the minute-aware projection. Expected minutes: ${player.expectedMinutes == null ? "—" : formatNumber(player.expectedMinutes, 1)}; component value: ${display}.`, `Компонент прогноза на следующий матч с учётом минут. Ожидаемые минуты: ${player.expectedMinutes == null ? "—" : formatNumber(player.expectedMinutes, 1)}; значение компонента: ${display}.`));
+    lines.push(sample);
+  } else if (column.key === "baltikaXg" || column.key === "baltikaXa") {
+    const sampleSize = player.baltikaMatchesPlayed ?? null;
+    lines.push(localizedText(language, `Source: imported Wyscout workbook${player.baltikaTeamName ? ` (${player.baltikaTeamName})` : ""}.`, `Источник: загруженная книга Wyscout${player.baltikaTeamName ? ` (${player.baltikaTeamName})` : ""}.`));
+    if (sampleSize && typeof rawValue === "number") lines.push(`${formatNumber(rawValue, 2)} / ${sampleSize} = ${formatNumber(rawValue / sampleSize, 3)} ${localizedText(language, "per match", "за матч")}.`);
+  } else if (column.key === "baltikaMatches") {
+    lines.push(localizedText(language, `Source: imported Wyscout workbook; ${display} matches are represented in its aggregate.`, `Источник: загруженная книга Wyscout; в агрегат вошло матчей: ${display}.`));
+  } else if (column.key.startsWith("stat:")) {
+    lines.push(localizedText(language, "Source: FotMob match statistics aggregated only over the selected history scope.", "Источник: статистика матчей FotMob, агрегированная только по выбранной исторической выборке."));
+    lines.push(sample);
+    appendHistoricalMetricCalculation(lines, column.key.slice(5), Number(rawValue), stats, language);
+  } else if (column.key === "age" || column.key === "nationality") {
+    lines.push(localizedText(language, "Source: current FotMob player profile.", "Источник: текущий профиль игрока FotMob."));
+  } else if (column.key === "rosterStarter") {
+    lines.push(localizedText(language, `Shared manually edited club XI flag: ${display}. It is not a model probability.`, `Общая ручная отметка стартовых 11 клуба: ${display}. Это не вероятность модели.`));
+  }
+  return lines.join("\n");
+}
+
+function finiteMetric(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function horizonModelStatus(player: FantasyPlannerPlayer, label: string) {
+  return label.includes("3") ? player.modelT3Status ?? null : player.modelT5Status ?? null;
+}
+
+function appendForecastNotes(lines: string[], player: FantasyPlannerPlayer, language: UiLanguage) {
+  if (player.forecastFactors?.length) lines.push(localizedText(language, `Factors: ${player.forecastFactors.join("; ")}`, `Факторы модели: ${player.forecastFactors.map((note) => localizeForecastNote(note, language)).join("; ")}`));
+  if (player.forecastRisks?.length) lines.push(localizedText(language, `Risks: ${player.forecastRisks.join("; ")}`, `Риски модели: ${player.forecastRisks.map((note) => localizeForecastNote(note, language)).join("; ")}`));
+}
+
+function appendHistoricalMetricCalculation(lines: string[], key: string, value: number, stats: Record<string, number | null>, language: UiLanguage) {
+  const matches = finiteMetric(stats.matches_played);
+  const minutes = finiteMetric(stats.minutes_played);
+  const countByProbability: Record<string, string> = {
+    sixty_minute_probability: "appearances_60",
+    full_match_probability: "full_matches"
+  };
+  if (countByProbability[key] && matches !== null && matches > 0) {
+    const numerator = countByProbability[key] === "matches_played" ? matches : finiteMetric(stats[countByProbability[key]]);
+    if (numerator !== null) lines.push(`${formatNumber(numerator, 0)} / ${formatNumber(matches, 0)} = ${formatNumber(value * 100, 1)}%`);
+    return;
+  }
+  if (key === "appearance_probability") {
+    lines.push(localizedText(language, "The appearance numerator is not retained in this row, so the displayed probability is not reconstructed with a false matches/matches fraction.", "Числитель выходов на поле в этой строке не сохраняется, поэтому показатель не раскладывается через ложную дробь «матчи/матчи»."));
+    return;
+  }
+  const per90Match = key.match(/^(.*?)(?:_per_90|_per90)(?:_(l1|l5|l10|365))?$/);
+  if (per90Match && minutes !== null && minutes > 0) {
+    const totalKey = per90Match[2] ? `${per90Match[1]}_${per90Match[2]}` : per90Match[1];
+    const total = finiteMetric(stats[totalKey]);
+    if (total !== null) lines.push(`${formatNumber(total, 2)} × 90 / ${formatNumber(minutes, 0)} = ${formatNumber(value, 3)}`);
+    return;
+  }
+  const additiveMetrics = /^(goals|assists|xg|xa|xgot|shots|shots_on_target|key_passes|chances_created|tackles_won|interceptions|clearances|duels_won|aerials_won|recoveries|saves|goals_conceded|clean_sheets|yellow_cards|red_cards|touches_in_opposition_box|fouls_won|penalties_won)$/;
+  if (matches !== null && matches > 0 && additiveMetrics.test(key)) {
+    lines.push(localizedText(language, `Aggregate: ${formatNumber(value, 2)} across ${formatNumber(matches, 0)} stat rows (${formatNumber(value / matches, 3)} per row).`, `Агрегат: ${formatNumber(value, 2)} по ${formatNumber(matches, 0)} строкам статистики (${formatNumber(value / matches, 3)} на строку).`));
+  } else if (key === "average_rating") {
+    lines.push(localizedText(language, "Arithmetic mean over matches where FotMob supplied a rating. The rated-match count is not retained here, so the denominator is not replaced with all stat rows.", "Среднее арифметическое по матчам, где FotMob отдал рейтинг. Число матчей с рейтингом здесь не сохраняется, поэтому знаменатель не подменяется всеми строками статистики."));
+  }
 }
 
 function playerPoolFilterValue(key: string, player: FantasyPlannerPlayer, horizon: number) {

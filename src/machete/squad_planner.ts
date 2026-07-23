@@ -594,7 +594,7 @@ export async function loadFantasySquadPlannerData(
         modelT5Status: modelT5?.status ?? null,
         modelForecastCalculatedAt: (modelT5?.calculatedAt ?? modelT3?.calculatedAt)?.toISOString() ?? null,
         expectedMinutes: nextComponentProjection?.expectedMinutes ?? projected?.expectedMinutes ?? null,
-        startProbability: nextComponentProjection?.probabilities.appearance ?? projected?.startProbability ?? null,
+        startProbability: nextComponentProjection?.probabilities.appearance ?? null,
         forecastConfidence: projected?.forecastConfidence ?? null,
         forecastFactors: forecastExplanation.factors,
         forecastRisks: forecastExplanation.risks,

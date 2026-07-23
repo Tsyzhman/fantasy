@@ -79,3 +79,15 @@ test("players table reuses squad forecasts for 1 round and 3, 5 or 10 round hori
   assert.match(tableSource, /<FdrRow/);
   assert.doesNotMatch(tableSource, /player\.alternativeScore \?\? 0/);
 });
+
+test("value-cell tooltips explain the concrete player value instead of repeating header help", () => {
+  assert.match(tableSource, /machetePlayerCellTitle\(column, player, value, horizon, language\)/);
+  assert.match(tableSource, /Selected statistics window:/);
+  assert.match(tableSource, /Stored match scores:/);
+  assert.match(tableSource, /term-level decomposition/);
+  assert.match(tableSource, /× 90 \//);
+  assert.match(tableSource, /It is not a starting-XI probability/);
+  assert.match(tableSource, /title=\{machetePlayerCellTitle\(column, player, column\.value\(player\), horizon, language\)\}/);
+  assert.match(pageSource, /projectionFormula: forecast\?\.projectionFormula/);
+  assert.match(pageSource, /projectedFixtureComponents: forecast\?\.projectedFixtureComponents/);
+});

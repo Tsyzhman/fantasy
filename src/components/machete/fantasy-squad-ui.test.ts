@@ -285,10 +285,10 @@ test("custom player pool restores minutes and confidence under the name with det
   assert.match(squadPlannerSource, /15% — доля матчей/);
   assert.match(squadPlannerSource, /function PlayerPoolHeaderLabel/);
   assert.doesNotMatch(squadPlannerSource, /CircleHelp/);
-  assert.match(squadPlannerSource, /sticky left-0 z-\[5\][\s\S]*?title=\{fixedColumnTitles\.player\}/);
-  assert.match(squadPlannerSource, /title=\{fixedColumnTitles\.team\}/);
-  assert.match(squadPlannerSource, /title=\{fixedColumnTitles\.position\}/);
-  assert.match(squadPlannerSource, /title=\{fixedColumnTitles\.price\}/);
+  assert.match(squadPlannerSource, /sticky left-0 z-\[5\][\s\S]*?Forecast inputs:/);
+  assert.match(squadPlannerSource, /fantasyPlayerTeamDisplayName\(player\)\}\\n\$\{fixedColumnTitles\.team\}/);
+  assert.match(squadPlannerSource, /player\.positionGroup\}\\n\$\{fixedColumnTitles\.position\}/);
+  assert.match(squadPlannerSource, /verified Sports\.ru fantasy price/);
   assert.match(squadPlannerSource, /title=\{column\.title\}/);
 });
 
@@ -454,6 +454,18 @@ test("table forecast tooltips and compact controls cover both English and Russia
   assert.match(squadPlannerSource, /"Значений по отдельным турам пока нет\."/);
   assert.match(squadPlannerSource, /en="Export table" ru="Выгрузить таблицу"/);
   assert.match(squadPlannerSource, /en="Presets" ru="Пресеты"/);
+});
+
+test("every player-pool value cell gets player-specific provenance and arithmetic", () => {
+  assert.match(squadPlannerSource, /return playerPoolMetricValueTitle\(column, player, language, rawValue\)/);
+  assert.match(squadPlannerSource, /History sample:/);
+  assert.match(squadPlannerSource, /Exposure ratio:/);
+  assert.match(squadPlannerSource, /not a universal direct multiplier/);
+  assert.match(squadPlannerSource, /55% sample completeness \+ 30% minute stability \+ 15% completeness/);
+  assert.match(squadPlannerSource, /appendHistoricalMetricCalculation/);
+  assert.match(squadPlannerSource, /× 90 \//);
+  assert.match(squadPlannerSource, /next fixtures/);
+  assert.doesNotMatch(squadPlannerSource, /if \(column\.key === "alternativeHorizon"\)[^\n]+\n  return column\.title/);
 });
 
 test("player-pool columns use compact padding and allow narrow saved widths", () => {
