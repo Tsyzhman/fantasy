@@ -19,7 +19,7 @@ test("player table settings retain ordered columns and clamp per-user widths", (
   assert.equal(parseMachetePlayerTableSettings({ version: 1, columns: ["unsafe"], widths: {} }), null);
   assert.deepEqual(parseMachetePlayerTableSettings({ version: 1, columns: ["goals"], widths: {} }), {
     version: 2,
-    columns: ["predictedFp", "forecastHorizonFp", "alternativePredictedFp", "alternativeForecastHorizon", "fixtures", "goals"],
+    columns: ["predictedFp", "predictedFpPerPrice", "forecastHorizonFp", "foontasy", "foontasyPerPrice", "alternativePredictedFp", "alternativePredictedFpPerPrice", "alternativeForecastHorizon", "fixtures", "goals"],
     widths: {},
     horizon: 5
   });

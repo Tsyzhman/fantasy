@@ -470,6 +470,16 @@ test("player-pool XLSX follows the selected optional-column order", () => {
   assert.match(playerTableExportRouteSource, /typeof value === "number"/);
 });
 
+test("every one-round forecast exposes sortable points-per-price asset efficiency", () => {
+  assert.match(squadPlannerSource, /column\("nextFpPerPrice", "FP\/price", "ФО\/цена"/);
+  assert.match(squadPlannerSource, /column\("foontasyPerPrice", "FFO\/price", "ФФО\/цена"/);
+  assert.match(squadPlannerSource, /column\("alternativePerPrice", "Alt\/price", "Альт\/цена"/);
+  assert.match(squadPlannerSource, /forecastPointsPerPrice\(nextFantasyPoints\(player\), player\.price\)/);
+  assert.match(squadPlannerSource, /forecastPointsPerPrice\(player\.foontasyPoints, player\.price\)/);
+  assert.match(squadPlannerSource, /forecastPointsPerPrice\(player\.alternativePredictedFp, player\.price\)/);
+  assert.match(squadPlannerSource, /formatNumber\(inlineEfficiency, 3\)/);
+});
+
 test("player-pool controls use two desktop rows and the search targets only player names", () => {
   assert.match(squadPlannerSource, /relative z-30 mb-2 flex flex-wrap items-center justify-between gap-2 overflow-visible/);
   assert.match(squadPlannerSource, /flex min-w-0 flex-wrap items-center justify-end gap-2/);

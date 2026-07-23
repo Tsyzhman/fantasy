@@ -25,13 +25,24 @@ const staticColumnKeys = new Set([
   "expectedMinutes", "startProbability", "forecastConfidence", "minutesDeviation", "matchesPlayed",
   "minutesPlayed", "goals", "assists", "shotsOnTarget", "keyPasses", "tackles", "averageRating",
   "age", "nationality", "leagueName", "form", "predictedFp", "forecastHorizonFp",
-  "alternativePredictedFp", "alternativeForecastHorizon", "fixtures"
+  "predictedFpPerPrice", "foontasy", "foontasyPerPrice", "alternativePredictedFp",
+  "alternativePredictedFpPerPrice", "alternativeForecastHorizon", "fixtures"
 ]);
 const rawColumnPattern = /^raw:[a-z0-9_.-]{1,120}$/i;
 const maximumColumns = 120;
 const minimumWidth = 44;
 const maximumWidth = 640;
-const forecastColumnKeys = ["predictedFp", "forecastHorizonFp", "alternativePredictedFp", "alternativeForecastHorizon", "fixtures"];
+const forecastColumnKeys = [
+  "predictedFp",
+  "predictedFpPerPrice",
+  "forecastHorizonFp",
+  "foontasy",
+  "foontasyPerPrice",
+  "alternativePredictedFp",
+  "alternativePredictedFpPerPrice",
+  "alternativeForecastHorizon",
+  "fixtures"
+];
 
 export function parseMachetePlayerTableSettings(value: unknown): MachetePlayerTableSettings | null {
   if (!isRecord(value) || (value.version !== 1 && value.version !== 2) || !Array.isArray(value.columns) || !isRecord(value.widths)) return null;

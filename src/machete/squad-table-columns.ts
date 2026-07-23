@@ -1,9 +1,12 @@
 export const defaultSquadTableColumns = [
   "nextFp",
+  "nextFpPerPrice",
   "horizonFp",
   "foontasy",
+  "foontasyPerPrice",
   "modelHorizon",
   "alternative",
+  "alternativePerPrice",
   "alternativeHorizon",
   "fixtures"
 ] as const;

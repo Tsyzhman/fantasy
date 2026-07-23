@@ -7,6 +7,9 @@ import { defaultSquadTableColumns, isSquadTableColumnsInput, isSquadTableColumnW
 test("squad table columns default excludes the invented Foontasy horizon", () => {
   assert.deepEqual(parseSquadTableColumns(null), [...defaultSquadTableColumns]);
   assert.ok(defaultSquadTableColumns.includes("foontasy"));
+  assert.ok(defaultSquadTableColumns.includes("nextFpPerPrice"));
+  assert.ok(defaultSquadTableColumns.includes("foontasyPerPrice"));
+  assert.ok(defaultSquadTableColumns.includes("alternativePerPrice"));
   assert.ok(defaultSquadTableColumns.includes("modelHorizon"));
   assert.ok(!defaultSquadTableColumns.some((key) => key.toLowerCase().includes("foontasyhorizon")));
 });

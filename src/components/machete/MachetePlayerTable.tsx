@@ -28,6 +28,7 @@ import {
   type MachetePlayerTableSettings,
   type MachetePlayerTableValueFilter
 } from "@/machete/machete-player-table-preferences";
+import { forecastPointsPerPrice } from "@/machete/fantasy-value-efficiency";
 import { nextAlternativeFantasyPoints, nextFantasyPoints, playerAlternativeHorizonPoints, playerHorizonPoints, type FantasyPlannerPlayer } from "@/machete/squad_logic";
 import { startingXiSelectionBlockReason, type StartingXiLimitCode } from "@/machete/starting-xi-limits";
 
@@ -72,6 +73,7 @@ export type MachetePlayerRow = {
   forecastSource?: "planner" | "history";
   predictedFp?: number | null;
   roundPoints?: number[] | null;
+  foontasyPoints?: number | null;
   alternativePredictedFp?: number | null;
   alternativeRoundPoints?: Array<number | null> | null;
   fixtures?: string[];
@@ -94,7 +96,22 @@ type FilterPreset = { id: string; name: string; filters: MachetePlayerFilterPres
 
 const emptyFilter: ValueFilter = { min: "", max: "", query: "" };
 const fixedWidths = { player: 190, team: 120, position: 64 } as const;
-const defaultColumns = ["predictedFp", "forecastHorizonFp", "alternativePredictedFp", "alternativeForecastHorizon", "fixtures", "fantasyScore", "scoringScore", "expectedMinutes", "forecastConfidence", "averageRating"];
+const defaultColumns = [
+  "predictedFp",
+  "predictedFpPerPrice",
+  "forecastHorizonFp",
+  "foontasy",
+  "foontasyPerPrice",
+  "alternativePredictedFp",
+  "alternativePredictedFpPerPrice",
+  "alternativeForecastHorizon",
+  "fixtures",
+  "fantasyScore",
+  "scoringScore",
+  "expectedMinutes",
+  "forecastConfidence",
+  "averageRating"
+];
 const storageKey = "machete-player-table:v2";
 
 export function MachetePlayerTable({
@@ -361,7 +378,7 @@ export function MachetePlayerTable({
 
       {exportError ? <p role="alert" className="mb-3 rounded border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{exportError}</p> : null}
 
-      {compactViewport !== false ? <div className="space-y-2 md:hidden [@media(pointer:coarse)]:!block">{displayedPlayers.map((player) => <article key={player.id} className="rounded border border-slate-200 bg-white p-3"><div className="flex items-start justify-between gap-2"><PlayerNameCell player={player} /><span className="rounded bg-slate-100 px-2 py-1 text-xs font-bold">{player.position ?? "—"}</span></div><div className="mt-1 flex items-center justify-between gap-3 text-xs text-slate-500"><span className="min-w-0 truncate">{machetePlayerTeamDisplayName(player) ?? "—"}</span><span className="shrink-0 font-semibold text-ink"><I18nText en="Price" ru="Цена" />: {displayValue(player.price ?? null)}</span></div>{showStarterStatus ? <div className="mt-2"><StarterCell player={player} controls={starterControls} language={language} /></div> : null}<div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">{visibleColumns.map((column) => <dl key={column.key} className={cn("min-w-0 rounded bg-slate-50 p-2", column.key === "fixtures" && "col-span-2 sm:col-span-3")} title={machetePlayerCellTitle(column, player, column.value(player), horizon, language)}><dt className="truncate text-[10px] font-semibold uppercase text-slate-500">{column.label}</dt><dd className="mt-1 min-w-0 text-sm font-bold num-tabular">{column.key === "fixtures" ? (playerFixtureChips(player, horizon).length > 0 ? <FdrRow fixtures={playerFixtureChips(player, horizon)} /> : "—") : displayValue(column.value(player))}</dd></dl>)}</div></article>)}</div> : null}
+      {compactViewport !== false ? <div className="space-y-2 md:hidden [@media(pointer:coarse)]:!block">{displayedPlayers.map((player) => <article key={player.id} className="rounded border border-slate-200 bg-white p-3"><div className="flex items-start justify-between gap-2"><PlayerNameCell player={player} /><span className="rounded bg-slate-100 px-2 py-1 text-xs font-bold">{player.position ?? "—"}</span></div><div className="mt-1 flex items-center justify-between gap-3 text-xs text-slate-500"><span className="min-w-0 truncate">{machetePlayerTeamDisplayName(player) ?? "—"}</span><span className="shrink-0 font-semibold text-ink"><I18nText en="Price" ru="Цена" />: {displayValue(player.price ?? null)}</span></div>{showStarterStatus ? <div className="mt-2"><StarterCell player={player} controls={starterControls} language={language} /></div> : null}<div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">{visibleColumns.map((column) => <dl key={column.key} className={cn("min-w-0 rounded bg-slate-50 p-2", column.key === "fixtures" && "col-span-2 sm:col-span-3")} title={machetePlayerCellTitle(column, player, column.value(player), horizon, language)}><dt className="truncate text-[10px] font-semibold uppercase text-slate-500">{column.label}</dt><dd className="mt-1 min-w-0 text-sm font-bold num-tabular">{column.key === "fixtures" ? (playerFixtureChips(player, horizon).length > 0 ? <FdrRow fixtures={playerFixtureChips(player, horizon)} /> : "—") : displayColumnValue(column.key, column.value(player))}</dd></dl>)}</div></article>)}</div> : null}
 
       {compactViewport !== true ? <div className="hidden overflow-hidden rounded border border-slate-200 bg-white md:block [@media(pointer:coarse)]:!hidden"><div ref={tableContainerRef} className="max-h-[720px] overflow-auto [scrollbar-gutter:stable]"><SortableTable sortRefreshKey={`${visibleKeys.join(",")}:${clientSort?.key ?? ""}:${clientSort?.direction ?? ""}`} className="sticky-first-col player-pool-sortable table-fixed divide-y divide-slate-200 text-xs" style={{ width: tableWidth, minWidth: tableWidth }}><colgroup>{fixedColumns.map((column) => <col key={column.key} data-column-key={column.key} style={{ width: widthFor(column) }} />)}{showStarterStatus ? <col style={{ width: 76 }} /> : null}{visibleColumns.map((column) => <col key={column.key} data-column-key={column.key} style={{ width: widthFor(column) }} />)}</colgroup><thead className="sticky top-0 z-10 bg-slate-50 text-left text-[10px] font-semibold uppercase text-slate-500"><tr>{fixedColumns.map((column) => <ResizableHeader key={column.key} column={column} width={widthFor(column)} onResize={startResize} language={language} />)}{showStarterStatus ? <th className="relative px-2 py-2" data-sort-key="isStarter" title={localizedText(language, "Manual starting XI status.", "Ручной статус игрока в стартовом составе.")}><I18nText en="Start" ru="Старт" /></th> : null}{visibleColumns.map((column) => <ResizableHeader key={column.key} column={column} width={widthFor(column)} onResize={startResize} language={language} />)}</tr></thead><tbody className="divide-y divide-slate-100">{displayedPlayers.map((player, index) => <tr key={player.id} className="hover:bg-slate-50">{fixedColumns.map((column) => <FixedCell key={column.key} column={column} player={player} />)}{showStarterStatus ? <td className="px-2 py-2"><StarterCell player={player} controls={starterControls} language={language} /></td> : null}{visibleColumns.map((column) => <MetricCell key={column.key} column={column} player={player} rank={column.key === "fantasyScore" ? xRanks[index] : column.key === "scoringScore" ? fpRanks[index] : column.key === "alternativeScore" ? altRanks[index] : undefined} horizon={horizon} />)}</tr>)}{displayedPlayers.length === 0 ? <tr><td colSpan={fixedColumns.length + visibleColumns.length + (showStarterStatus ? 1 : 0)} className="px-4 py-10 text-center text-slate-500"><I18nText en="No players match the selected filters." ru="Нет игроков под выбранные фильтры." /></td></tr> : null}</tbody></SortableTable></div></div> : null}
     </div>
@@ -393,11 +410,14 @@ function MetricCell({ column, player, rank, horizon }: { column: Column; player:
   if (column.key === "fantasyScore") return <td className="px-1 py-1 text-right" title={title}><ScoreHeatCell value={numberOrNull(value)} rank={rank ?? null} tone="emerald" /></td>;
   if (column.key === "scoringScore") return <td className="px-1 py-1 text-right" title={title}><ScoreHeatCell value={numberOrNull(value)} rank={rank ?? null} tone="sky" /></td>;
   if (column.key === "alternativeScore") return <td className="px-1 py-1 text-right" title={title}><ScoreHeatCell value={numberOrNull(value)} rank={rank ?? null} tone="amber" /></td>;
-  return <td className={cn("overflow-hidden px-2 py-2 text-slate-600", column.numeric && "text-right num-tabular")} title={title}><span className="block truncate">{displayValue(value)}</span></td>;
+  const inlineEfficiency = ["predictedFp", "foontasy", "alternativePredictedFp"].includes(column.key)
+    ? forecastPointsPerPrice(typeof value === "number" ? value : null, player.price)
+    : null;
+  return <td className={cn("overflow-hidden px-2 py-2 text-slate-600", column.numeric && "text-right num-tabular")} title={title}><span className="block truncate">{displayColumnValue(column.key, value)}{inlineEfficiency === null ? null : <span className="ml-1 text-[9px] font-semibold opacity-75">· {formatNumber(inlineEfficiency, 3)}{localizedText(language, "/P", "/ц")}</span>}</span></td>;
 }
 
 export function machetePlayerCellTitle(column: Column, player: MachetePlayerRow, value: string | number | null, horizon: number, language: "en" | "ru") {
-  const shown = displayValue(value);
+  const shown = displayColumnValue(column.key, value);
   const lines = [`${player.name} · ${column.label}: ${shown}`, column.title];
   const sample = localizedText(
     language,
@@ -425,6 +445,24 @@ export function machetePlayerCellTitle(column: Column, player: MachetePlayerRow,
     lines.push(value == null
       ? localizedText(language, "No verified Sports.ru fantasy price is available for this player.", "Для этого игрока нет подтверждённой цены фэнтези Sports.ru.")
       : localizedText(language, "Source: verified Sports.ru fantasy price.", "Источник: подтверждённая цена фэнтези Sports.ru."));
+  } else if (column.key.endsWith("PerPrice")) {
+    const forecast = column.key === "predictedFpPerPrice"
+      ? playerNextForecast(player)
+      : column.key === "foontasyPerPrice"
+        ? player.foontasyPoints ?? null
+        : playerNextAlternativeForecast(player);
+    const forecastLabel = column.key === "predictedFpPerPrice" ? "FP" : column.key === "foontasyPerPrice" ? "FFO" : "Alt";
+    if (forecast === null || !Number.isFinite(forecast)) {
+      lines.push(localizedText(language, `No ${forecastLabel} forecast is available.`, `Прогноз ${forecastLabel} отсутствует.`));
+    } else if (typeof player.price !== "number" || !Number.isFinite(player.price) || player.price <= 0) {
+      lines.push(localizedText(language, "A positive verified Sports.ru price is required.", "Нужна положительная подтверждённая цена Sports.ru."));
+    } else {
+      lines.push(`${formatNumber(forecast, 2)} ÷ ${formatNumber(player.price, 2)} = ${formatNumber(value as number, 3)}`);
+      lines.push(localizedText(language, "Higher means more expected points per one price unit; this is not an additional points forecast.", "Чем выше значение, тем больше ожидаемых очков на одну единицу стоимости; это не дополнительный прогноз очков."));
+    }
+  } else if (column.key === "foontasy") {
+    lines.push(localizedText(language, "Source: Foontasy current-round export matched by the Sports.ru player identifier.", "Источник: выгрузка Foontasy на текущий тур, сопоставленная по идентификатору игрока Sports.ru."));
+    appendPlayerAssetEfficiency(lines, player, player.foontasyPoints ?? null, "FFO", language);
   } else if (column.key === "predictedFp" || column.key === "alternativePredictedFp") {
     const formula = column.key === "predictedFp" ? player.projectionFormula : player.alternativeProjectionFormula;
     const components = column.key === "predictedFp" ? player.projectionComponents : player.alternativeProjectionComponents;
@@ -441,6 +479,13 @@ export function machetePlayerCellTitle(column: Column, player: MachetePlayerRow,
     }
     appendProjectionInputLines(lines, column.key === "predictedFp" ? player.projectedFixtureComponents : player.alternativeProjectedFixtureComponents, player.position, language);
     appendPlayerForecastMeta(lines, player, language);
+    appendPlayerAssetEfficiency(
+      lines,
+      player,
+      column.key === "predictedFp" ? playerNextForecast(player) : playerNextAlternativeForecast(player),
+      column.key === "predictedFp" ? "FP" : "Alt",
+      language
+    );
   } else if (column.key === "forecastHorizonFp" || column.key === "alternativeForecastHorizon") {
     const points = column.key === "forecastHorizonFp" ? player.roundPoints ?? [] : player.alternativeRoundPoints ?? [];
     const selected = points.slice(0, horizon).filter((point): point is number => typeof point === "number" && Number.isFinite(point));
@@ -661,8 +706,12 @@ function macheteColumns(players: MachetePlayerRow[], language: "en" | "ru", hori
   const column = (key: string, en: string, ru: string, titleEn: string, titleRu: string, width: number, numeric: boolean, value: Column["value"]): Column => ({ key, label: localizedText(language, en, ru), title: localizedText(language, titleEn, titleRu), width, numeric, value });
   const base = [
     column("predictedFp", "FP 1R", "ФО 1Т", "Machete fantasy-points forecast for the next round. It uses the same projection as the squad planner, including expected minutes and the next opponent.", "Прогноз фэнтези-очков Machete на следующий тур. Используется тот же расчёт, что в подборе состава: с ожидаемыми минутами и следующим соперником.", 76, true, playerNextForecast),
+    column("predictedFpPerPrice", "FP/price", "ФО/цена", "Next-round Machete forecast divided by the current Sports.ru price. Higher means more expected points per one price unit.", "Прогноз Machete на следующий тур, делённый на текущую цену Sports.ru. Чем выше значение, тем больше ожидаемых очков на одну единицу стоимости.", 82, true, (p) => forecastPointsPerPrice(playerNextForecast(p), p.price)),
     column("forecastHorizonFp", `FP ${horizon}R`, `ФО ${horizon}Т`, `Sum of the Machete round forecasts for the next ${horizon} rounds. Double rounds are already combined inside their round.`, `Сумма прогнозов Machete на следующие ${horizon} туров. Матчи двойного тура уже объединены внутри соответствующего тура.`, 82, true, (p) => playerForecastHorizon(p, horizon)),
+    column("foontasy", "FFO", "ФФО", "Foontasy current-round forecast matched through the Sports.ru player identifier.", "Прогноз Foontasy на текущий тур, сопоставленный через идентификатор игрока Sports.ru.", 72, true, (p) => p.foontasyPoints ?? null),
+    column("foontasyPerPrice", "FFO/price", "ФФО/цена", "Foontasy current-round forecast divided by the current Sports.ru price. Higher means more FFO per one price unit.", "Прогноз Foontasy на текущий тур, делённый на текущую цену Sports.ru. Чем выше значение, тем больше ФФО на одну единицу стоимости.", 86, true, (p) => forecastPointsPerPrice(p.foontasyPoints, p.price)),
     column("alternativePredictedFp", "Alt 1R", "Альт 1Т", "Alternative-formula fantasy-points forecast for the next round, using the same future fixture and expected-minutes data as the squad planner.", "Прогноз фэнтези-очков по альтернативной формуле на следующий тур: с тем же будущим соперником и ожидаемыми минутами, что в подборе состава.", 78, true, playerNextAlternativeForecast),
+    column("alternativePredictedFpPerPrice", "Alt/price", "Альт/цена", "Alternative next-round forecast divided by the current Sports.ru price. Higher means more Alt points per one price unit.", "Альтернативный прогноз на следующий тур, делённый на текущую цену Sports.ru. Чем выше значение, тем больше Альт-очков на одну единицу стоимости.", 86, true, (p) => forecastPointsPerPrice(playerNextAlternativeForecast(p), p.price)),
     column("alternativeForecastHorizon", `Alt ${horizon}R`, `Альт ${horizon}Т`, `Sum of the alternative-formula forecasts for the next ${horizon} rounds. Missing projections remain empty rather than becoming zero.`, `Сумма прогнозов по альтернативной формуле на следующие ${horizon} туров. Отсутствующий прогноз остаётся пустым и не превращается в ноль.`, 86, true, (p) => playerAlternativeForecastHorizon(p, horizon)),
     column("fixtures", `Opp ${horizon}R`, `Соп. ${horizon}Т`, `Upcoming opponents for the next ${horizon} rounds. H means home, A means away; colour shows fixture difficulty.`, `Соперники на следующие ${horizon} туров. H — дома, A — в гостях; цвет показывает сложность матча.`, 320, false, (p) => playerFixtureExportValue(p, horizon)),
     column("fantasyScore", "xFP", "xFP", "Machete expected fantasy points for the selected statistics window.", "Ожидаемые фэнтези-очки Machete по выбранному окну статистики.", 76, true, (p) => p.fantasyScore),
@@ -726,6 +775,16 @@ function percentage(value: number | null | undefined) { return value == null ? n
 function numberOrNull(value: string | number | null) { return typeof value === "number" ? value : null; }
 function scalar(value: unknown): string | number | null { return typeof value === "number" && Number.isFinite(value) ? value : typeof value === "string" ? value : null; }
 function displayValue(value: string | number | null) { return value == null || value === "" ? "—" : typeof value === "number" ? formatNumber(value, Number.isInteger(value) ? 0 : 2) : value; }
+function displayColumnValue(key: string, value: string | number | null) { return key.endsWith("PerPrice") && typeof value === "number" ? formatNumber(value, 3) : displayValue(value); }
+function appendPlayerAssetEfficiency(lines: string[], player: MachetePlayerRow, forecast: number | null, label: string, language: "en" | "ru") {
+  const efficiency = forecastPointsPerPrice(forecast, player.price);
+  if (efficiency === null) {
+    lines.push(localizedText(language, `${label}/price is unavailable because the forecast or verified positive price is missing.`, `${label}/цена недоступна: отсутствует прогноз или подтверждённая положительная цена.`));
+    return;
+  }
+  lines.push(`${formatNumber(forecast, 2)} ÷ ${formatNumber(player.price, 2)} = ${formatNumber(efficiency, 3)}`);
+  lines.push(localizedText(language, "Asset efficiency: expected points per one Sports.ru price unit.", "Эффективность ассета: ожидаемые очки на одну единицу цены Sports.ru."));
+}
 function filterIsActive(filter: ValueFilter | undefined, numeric: boolean) { if (!filter) return false; return numeric ? Boolean(filter.min.trim() || filter.max.trim()) : Boolean(filter.query.trim()); }
 function valueMatches(value: string | number | null, filter: ValueFilter, numeric: boolean) { if (!filterIsActive(filter, numeric)) return true; if (numeric) { if (typeof value !== "number") return false; const min = Number(filter.min.replace(",", ".")); const max = Number(filter.max.replace(",", ".")); return (!filter.min.trim() || value >= min) && (!filter.max.trim() || value <= max); } return String(value ?? "").toLocaleLowerCase().includes(filter.query.trim().toLocaleLowerCase()); }
 function compareColumnValues(left: string | number | null, right: string | number | null, direction: "asc" | "desc") {

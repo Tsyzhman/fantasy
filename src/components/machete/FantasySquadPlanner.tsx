@@ -62,6 +62,7 @@ import {
   type FantasySquadStrategy,
   type TransferPlanSuggestion
 } from "@/machete/squad_logic";
+import { forecastPointsPerPrice } from "@/machete/fantasy-value-efficiency";
 import type { SavedFantasySquad, SavedFantasySquadOption } from "@/machete/squad_planner";
 import type { PlannerReadiness } from "@/machete/planner_readiness";
 import type { SquadFilterPreset, SquadFilterPresetFilters } from "@/machete/squad-filter-presets";
@@ -2436,10 +2437,13 @@ function playerPoolOptionalColumns(players: FantasyPlannerPlayer[], horizon: num
   });
   const standard = [
     column("nextFp", "FP", "ФО", "Expected fantasy points in the next round from expected minutes, player event rates, opponent strength, bookmaker inputs, and the active scoring formula.", "Ожидаемые фэнтези-очки в следующем туре: учитываются ожидаемые минуты, игровые показатели футболиста, сила соперника, букмекерские данные и активная формула начисления.", true, 64),
+    column("nextFpPerPrice", "FP/price", "ФО/цена", "Primary next-round expected fantasy points divided by the current Sports.ru price. Higher means more forecast points per one price unit.", "Основные ожидаемые ФО на следующий тур, делённые на текущую цену Sports.ru. Чем выше значение, тем больше прогнозных очков на одну единицу стоимости.", true, 78),
     column("horizonFp", `${horizon}R FP`, `${horizon}Т ФО`, `Sum of independently calculated primary forecasts for the next ${horizon} rounds; the current-round value is not simply multiplied.`, `Сумма отдельно рассчитанных основных прогнозов на следующие ${horizon} туров; значение текущего тура не умножается механически.`),
     column("foontasy", "FFO", "FFO", "Foontasy's external forecast for the current round, matched strictly through the Sports.ru player identifier. Foontasy does not publish a multi-round forecast; missing data is shown as a dash.", "Внешний прогноз Foontasy на текущий тур, сопоставленный строго через идентификатор игрока Sports.ru. Foontasy не публикует прогноз на несколько туров; отсутствие данных показывается прочерком."),
+    column("foontasyPerPrice", "FFO/price", "ФФО/цена", "Foontasy current-round forecast divided by the current Sports.ru price. Higher means more FFO per one price unit.", "Прогноз Foontasy на текущий тур, делённый на текущую цену Sports.ru. Чем выше значение, тем больше ФФО на одну единицу стоимости.", true, 82),
     column("modelHorizon", `${horizon}R FFO`, `${horizon}Т ФФО`, `Our reproducible Foontasy-style forecast for the selected ${horizon}-round horizon. Every fixture is calculated separately from expected minutes, smoothed player rates, and fresh odds, xG form, or goals fallback. It is our model, not Foontasy's external forecast.`, `Наш воспроизводимый прогноз в стиле Foontasy на выбранный горизонт ${horizon} туров. Каждый матч считается отдельно по ожидаемым минутам, сглаженным показателям игрока и свежим коэффициентам, xG-форме или голам. Это наша модель, а не внешний прогноз Foontasy.`),
     column("alternative", "Alt", "Альт", "Alternative next-round fantasy forecast calculated with this user's personal Alt formula and the same minute-aware player inputs.", "Альтернативный прогноз фэнтези-очков на следующий тур по личной формуле Alt пользователя и с учётом ожидаемых минут игрока."),
+    column("alternativePerPrice", "Alt/price", "Альт/цена", "Alternative next-round expected fantasy points divided by the current Sports.ru price. Higher means more Alt points per one price unit.", "Альтернативные ожидаемые ФО на следующий тур, делённые на текущую цену Sports.ru. Чем выше значение, тем больше Альт-очков на одну единицу стоимости.", true, 82),
     column("alternativeHorizon", `Alt ${horizon}R`, `Альт ${horizon}Т`, `Sum of independently calculated personal Alt forecasts for the next ${horizon} rounds.`, `Сумма отдельно рассчитанных личных прогнозов Alt на следующие ${horizon} туров.`),
     column("fixtures", "Fixtures", "Матчи", "The next opponents in the selected horizon. Chip colour represents fixture difficulty; hover a chip for the full opponent name and home/away context.", "Следующие соперники на выбранном горизонте. Цвет плашки показывает сложность матча; при наведении доступны полное имя соперника и поле дома/в гостях.", false, 230),
     column("age", "Age", "Возраст", "Player age from the current FotMob profile.", "Возраст игрока из текущего профиля FotMob."),
@@ -2526,25 +2530,31 @@ function customPlayerPoolCell(column: PlayerPoolOptionalColumn, player: FantasyP
 
   const rawValue = customPlayerPoolColumnValue(column.key, player, horizon);
   const display = customPlayerPoolColumnDisplay(column.key, rawValue, language);
-  const tone = column.key === "nextFp" ? "text-emerald-700"
+  const inlineEfficiency = ["nextFp", "foontasy", "alternative"].includes(column.key)
+    ? forecastPointsPerPrice(typeof rawValue === "number" ? rawValue : null, player.price)
+    : null;
+  const tone = column.key === "nextFp" || column.key === "nextFpPerPrice" ? "text-emerald-700"
     : column.key === "horizonFp" ? "text-sky-700"
-      : column.key === "foontasy" ? "text-cyan-700"
+      : column.key === "foontasy" || column.key === "foontasyPerPrice" ? "text-cyan-700"
         : column.key.startsWith("alternative") ? "text-amber-700"
           : "text-slate-700";
   const cellTitle = playerPoolValueCellTitle(column, player, horizon, language, rawValue);
   return (
     <td key={column.key} data-sort-value={rawValue ?? ""} className={cn("overflow-hidden text-ellipsis whitespace-nowrap px-1 py-1.5", column.numeric && "text-center num-tabular", muted ? "text-slate-500" : tone)} title={cellTitle}>
-      {display}
+      {display}{inlineEfficiency === null ? null : <span className="ml-1 text-[9px] font-semibold opacity-75">· {formatNumber(inlineEfficiency, 3)}{localizedText(language, "/P", "/ц")}</span>}
     </td>
   );
 }
 
 function playerPoolValueCellTitle(column: PlayerPoolOptionalColumn, player: FantasyPlannerPlayer, horizon: number, language: UiLanguage, rawValue: string | number | null) {
   const numericValue = typeof rawValue === "number" && Number.isFinite(rawValue) ? rawValue : null;
-  if (column.key === "nextFp") return playerPrimaryNextForecastTitle(player, language, numericValue);
+  if (column.key === "nextFp") return `${playerPrimaryNextForecastTitle(player, language, numericValue)}\n\n${forecastEfficiencyTitle(player, language, "FP", numericValue, forecastPointsPerPrice(numericValue, player.price))}`;
+  if (column.key === "nextFpPerPrice") return forecastEfficiencyTitle(player, language, "FP", nextFantasyPoints(player), numericValue);
   if (column.key === "horizonFp") return playerPrimaryHorizonForecastTitle(player, language, numericValue, horizon);
-  if (column.key === "foontasy") return foontasyForecastTitle(player, language, 1);
-  if (column.key === "alternative") return alternativePlayerForecastTitle(player, language);
+  if (column.key === "foontasy") return `${foontasyForecastTitle(player, language, 1)}\n\n${forecastEfficiencyTitle(player, language, "FFO", player.foontasyPoints ?? null, forecastPointsPerPrice(player.foontasyPoints, player.price))}`;
+  if (column.key === "foontasyPerPrice") return forecastEfficiencyTitle(player, language, "FFO", player.foontasyPoints ?? null, numericValue);
+  if (column.key === "alternative") return `${alternativePlayerForecastTitle(player, language)}\n\n${forecastEfficiencyTitle(player, language, "Alt", player.alternativePredictedFp ?? null, forecastPointsPerPrice(player.alternativePredictedFp, player.price))}`;
+  if (column.key === "alternativePerPrice") return forecastEfficiencyTitle(player, language, "Alt", player.alternativePredictedFp ?? null, numericValue);
   if (column.key === "alternativeHorizon") return alternativePlayerHorizonForecastTitle(player, language, horizon);
   return playerPoolMetricValueTitle(column, player, language, rawValue);
 }
@@ -2704,10 +2714,13 @@ function customPlayerPoolColumnValue(key: string, player: FantasyPlannerPlayer, 
   if (key.startsWith("stat:")) return player.historicalStats?.[key.slice(5)] ?? null;
   switch (key) {
     case "nextFp": return nextFantasyPoints(player);
+    case "nextFpPerPrice": return forecastPointsPerPrice(nextFantasyPoints(player), player.price);
     case "horizonFp": return playerHorizonPoints(player, horizon);
     case "foontasy": return player.foontasyPoints ?? null;
+    case "foontasyPerPrice": return forecastPointsPerPrice(player.foontasyPoints, player.price);
     case "modelHorizon": return horizon === 3 ? player.modelT3Points ?? null : player.modelT5Points ?? null;
     case "alternative": return player.alternativePredictedFp ?? null;
+    case "alternativePerPrice": return forecastPointsPerPrice(player.alternativePredictedFp, player.price);
     case "alternativeHorizon": return playerAlternativeHorizonPoints(player, horizon);
     case "fixtures": return [...(player.fixtureFullNames ?? []), ...(player.fixtures ?? [])].join(" ");
     case "age": return player.age ?? null;
@@ -2738,6 +2751,7 @@ function customPlayerPoolColumnValue(key: string, player: FantasyPlannerPlayer, 
 function customPlayerPoolColumnDisplay(key: string, value: string | number | null, language: UiLanguage) {
   if (value === null || value === undefined) return "—";
   if (typeof value === "string") return value;
+  if (key.endsWith("PerPrice")) return formatNumber(value, 3);
   if (key === "rosterStarter") return value ? localizedText(language, "Yes", "Да") : localizedText(language, "No", "Нет");
   if (["startProbability", "sixtyProbability", "fullMatchProbability", "forecastConfidence"].includes(key) || /(?:appearance|sixty|full_match)_(?:probability|rate)/.test(key)) {
     return `${formatNumber(value * 100, 0)}%`;
@@ -3994,6 +4008,36 @@ function addProjectionWeightedTermLine(
   const metric = formatProjectionMetric(variableValue);
   const formula = metric === null ? `${variableName} * ${weight}` : `${variableName} (${metric}) * ${weight}`;
   addProjectionTermLine(lines, language, label, value, formula);
+}
+
+function forecastEfficiencyTitle(
+  player: FantasyPlannerPlayer,
+  language: UiLanguage,
+  forecastLabel: string,
+  forecast: number | null,
+  efficiency: number | null
+) {
+  const price = typeof player.price === "number" && Number.isFinite(player.price) && player.price > 0 ? player.price : null;
+  const lines = [
+    localizedText(
+      language,
+      `${player.name} · ${forecastLabel} asset efficiency: ${efficiency === null ? "—" : formatNumber(efficiency, 3)} points per price unit.`,
+      `${player.name} · эффективность ${forecastLabel}: ${efficiency === null ? "—" : formatNumber(efficiency, 3)} очка на единицу стоимости.`
+    )
+  ];
+  if (forecast === null || !Number.isFinite(forecast)) {
+    lines.push(localizedText(language, `No ${forecastLabel} forecast is available.`, `Прогноз ${forecastLabel} отсутствует.`));
+  } else if (price === null) {
+    lines.push(localizedText(language, "A positive verified Sports.ru price is required.", "Нужна положительная подтверждённая цена Sports.ru."));
+  } else {
+    lines.push(`${formatNumber(forecast, 2)} ÷ ${formatNumber(price, 2)} = ${formatNumber(efficiency, 3)}`);
+    lines.push(localizedText(
+      language,
+      "This is a relative asset-value indicator for the next round, not an additional points forecast.",
+      "Это относительный показатель выгодности ассета на следующий тур, а не дополнительный прогноз очков."
+    ));
+  }
+  return lines.join("\n");
 }
 
 function foontasyForecastTitle(player: FantasyPlannerPlayer, language: UiLanguage, horizon: number) {

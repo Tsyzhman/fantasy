@@ -77,3 +77,11 @@ test("rating tooltip explains its independent 10-match FotMob sample", () => {
   assert.match(title, /8 rated matches/);
   assert.match(title, /other columns keep the statistics window/);
 });
+
+test("forecast efficiency tooltip shows the exact points divided by price arithmetic", () => {
+  const pricedPlayer = { ...player, price: 10, predictedFp: 7.5, roundPoints: [7.5] };
+  const efficiency = column("predictedFpPerPrice", "FP/price", () => 0.75);
+  const title = machetePlayerCellTitle(efficiency, pricedPlayer, 0.75, 1, "en");
+  assert.match(title, /7\.5 ÷ 10 = 0\.75/);
+  assert.match(title, /expected points per one price unit/);
+});
