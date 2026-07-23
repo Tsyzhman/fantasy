@@ -45,6 +45,7 @@ import {
   normalizeFantasyHorizon,
   optimizeFantasySquad,
   optimizeFantasyStarters,
+  playerAlternativeHorizonPoints,
   playerHorizonPoints,
   selectionForPlayer,
   selectionForNewPlayer,
@@ -3973,10 +3974,11 @@ function starterMinuteFloorLines(
     inputs.expectedMinutes === undefined
   ) return [];
   const adjustment = inputs.rosterStarterMinutesUplift ?? inputs.expectedMinutes - inputs.baseExpectedMinutes;
+  const minuteFloor = inputs.rosterStarterMinuteFloor ?? 60;
   const lines = [localizedText(
     language,
-    `Nearest-fixture starter floor: max(base ${formatNumber(inputs.baseExpectedMinutes, 1)}, 60) = ${formatNumber(inputs.expectedMinutes, 1)} expected minutes; adjustment ${adjustment >= 0 ? "+" : ""}${formatNumber(adjustment, 1)}. It is not applied to later fixtures.`,
-    `Минимум основы только на ближайший матч: max(базовые ${formatNumber(inputs.baseExpectedMinutes, 1)}, 60) = ${formatNumber(inputs.expectedMinutes, 1)} ожидаемых минут; корректировка ${adjustment >= 0 ? "+" : ""}${formatNumber(adjustment, 1)}. На последующие матчи правило не переносится.`
+    `Nearest-fixture starter floor: max(base ${formatNumber(inputs.baseExpectedMinutes, 1)}, ${formatNumber(minuteFloor, 0)}) = ${formatNumber(inputs.expectedMinutes, 1)} expected minutes; adjustment ${adjustment >= 0 ? "+" : ""}${formatNumber(adjustment, 1)}. Goalkeepers marked as starters use 90 minutes; outfield starters use at least 60. It is not applied to later fixtures.`,
+    `Минимум основы только на ближайший матч: max(базовые ${formatNumber(inputs.baseExpectedMinutes, 1)}, ${formatNumber(minuteFloor, 0)}) = ${formatNumber(inputs.expectedMinutes, 1)} ожидаемых минут; корректировка ${adjustment >= 0 ? "+" : ""}${formatNumber(adjustment, 1)}. У отмеченного вратаря используются 90 минут, у полевого — минимум 60. На последующие матчи правило не переносится.`
   )];
   if (
     inputs.eventExposureMinutes !== null &&
@@ -4575,11 +4577,30 @@ function alternativePlayerForecastTitle(player: FantasyPlannerPlayer, language: 
 
 function alternativePlayerHorizonForecastTitle(player: FantasyPlannerPlayer, language: UiLanguage, horizon: number) {
   const alternativeTotal = playerAlternativeHorizonPoints(player, horizon);
-  const values = player.alternativeRoundPoints?.slice(0, horizon).filter((value): value is number => value !== null && Number.isFinite(value)) ?? [];
+  const values = player.alternativeRoundPoints?.slice(0, horizon) ?? [];
   const lines = [localizedText(language, `Alternative forecast total over ${horizon} rounds: ${formatScore(alternativeTotal)} FP`, `Альтернативный прогноз на ${horizon} тура: ${formatScore(alternativeTotal)} ФО`)];
-  if (values.length > 0) {
-    lines.push(localizedText(language, "Round-by-round values:", "По турам:"));
-    values.forEach((value, index) => lines.push(localizedText(language, `Round ${index + 1}: ${formatScore(value)} FP`, `Тур ${index + 1}: ${formatScore(value)} ФО`)));
+  lines.push(localizedText(language, "Round-by-round values:", "По турам:"));
+  for (let index = 0; index < horizon; index += 1) {
+    const value = values[index];
+    lines.push(
+      typeof value === "number" && Number.isFinite(value)
+        ? localizedText(language, `Round ${index + 1}: ${formatScore(value)} FP`, `Тур ${index + 1}: ${formatScore(value)} ФО`)
+        : localizedText(language, `Round ${index + 1}: unavailable`, `Тур ${index + 1}: нет прогноза`)
+    );
+  }
+  if (alternativeTotal === null) {
+    lines.push(localizedText(
+      language,
+      "The horizon total is withheld because at least one requested round has no valid Alt projection. Missing rounds are not silently treated as zero.",
+      "Итог горизонта не показывается: хотя бы для одного выбранного тура нет корректного прогноза Alt. Пропущенные туры не подменяются нулём."
+    ));
+  }
+  if (horizon > 1) {
+    lines.push(localizedText(
+      language,
+      "The manual starting-XI minute floor affects only Round 1; later rounds use the player's ordinary expected minutes.",
+      "Ручная отметка основы повышает минуты только в туре 1; дальнейшие туры используют обычный прогноз минут игрока."
+    ));
   }
   return lines.join("\n");
 }
@@ -4610,13 +4631,6 @@ function alternativeFiveRoundFpTitle(language: UiLanguage, horizon = 5) {
     `Total alternative forecast over ${horizon} rounds.`,
     "Суммарный альтернативный прогноз FP на следующие пять туров, рассчитанный по матчам каждого тура."
   );
-}
-
-function playerAlternativeHorizonPoints(player: FantasyPlannerPlayer, horizon: number) {
-  if (!player.alternativeRoundPoints) return null;
-  const values = player.alternativeRoundPoints.slice(0, horizon).filter((value): value is number => typeof value === "number" && Number.isFinite(value));
-  if (values.length === 0) return null;
-  return Math.round(values.reduce((total, value) => total + value, 0) * 100) / 100;
 }
 
 function playerPoolColumnTitles(language: UiLanguage, horizon: number) {

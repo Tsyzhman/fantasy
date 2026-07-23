@@ -11,9 +11,9 @@ test("Alt warning checks only the starting XI and ignores the bench", () => {
     { playerId: 4n, isStarter: true }
   ];
   const players = new Map([
-    ["1", { name: "Starter Null", alternativePredictedFp: null }],
+    ["1", { name: "Starter Null", alternativePredictedFp: 4, alternativeRoundPoints: [null] }],
     ["2", { name: "Bench Zero", alternativePredictedFp: 0 }],
-    ["3", { name: "Positive", alternativePredictedFp: 3.2 }]
+    ["3", { name: "Positive", alternativePredictedFp: 3.2, alternativeRoundPoints: [3.2] }]
   ]);
 
   assert.deepEqual(franchiseSquadAlternativeIssues(selections, players), [

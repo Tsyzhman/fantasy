@@ -42,6 +42,7 @@ export const GET = withApiHandler(async (request: Request) => {
       captainName: row.captainName,
       fp: row.fp,
       alternativeFp: row.alternativeFp,
+      alternativeBreakdown: row.alternativeBreakdown,
       foontasyFp: row.foontasyFp,
       foontasyAvailable: row.foontasyAvailable,
       alternativeIssuePlayerNames: row.alternativeIssuePlayerNames,

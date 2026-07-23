@@ -131,6 +131,7 @@ function buildFixtureComponentInputs(
     rosterStarter: numericProjectionMetric(formulaMetrics?.roster_starter) === null
       ? null
       : numericProjectionMetric(formulaMetrics?.roster_starter) === 1,
+    rosterStarterMinuteFloor: numericProjectionMetric(formulaMetrics?.roster_starter_minute_floor),
     rosterStarterMinutesUplift: numericProjectionMetric(formulaMetrics?.roster_starter_minutes_uplift),
     eventExposureMinutes: numericProjectionMetric(formulaMetrics?.event_exposure_minutes),
     per90SampleMinutes: numericProjectionMetric(formulaMetrics?.per90_sample_minutes),
@@ -305,12 +306,19 @@ export async function loadCachedFantasySquadPlayerPool(
   league: SharedLeagueSeasonOption,
   historySettings: FantasyHistorySettings = defaultFantasyHistorySettings
 ) {
-  const preference = await prisma.userScoringPreference.findUnique({
-    where: { userId_modelSource: { userId, modelSource: "MACHETE" } },
-    select: { id: true, updatedAt: true }
-  });
+  const [preference, latestStartingXiChange] = await Promise.all([
+    prisma.userScoringPreference.findUnique({
+      where: { userId_modelSource: { userId, modelSource: "MACHETE" } },
+      select: { id: true, updatedAt: true }
+    }),
+    prisma.leagueSeasonTeam.aggregate({
+      where: { leagueId: league.leagueId, season: league.season, active: true },
+      _max: { startingXiChangedAt: true }
+    })
+  ]);
   const preferenceKey = preference ? `${preference.id}:${preference.updatedAt.toISOString()}` : "global";
-  const key = `${league.leagueId}:${league.season}:${league.updatedAt.toISOString()}:${preferenceKey}:${fantasyHistorySettingsKey(historySettings)}`;
+  const startingXiRevision = latestStartingXiChange._max.startingXiChangedAt?.toISOString() ?? "no-xi-change";
+  const key = `${league.leagueId}:${league.season}:${league.updatedAt.toISOString()}:${startingXiRevision}:${preferenceKey}:${fantasyHistorySettingsKey(historySettings)}`;
   return fantasyPlayerPoolCache.getOrCreate(key, fantasyPlayerPoolCacheTtlMs, async () => {
     const data = await loadFantasySquadPlannerData(prisma, userId, league, null, { historySettings });
     return data.players;
@@ -1510,7 +1518,7 @@ function pipelineParticipant(
   };
   // The manually marked club XI is a one-fixture availability signal, not a
   // permanent history input. Evaluate the user's formula without the flag,
-  // then apply an exact 60-minute floor only to the nearest fixture.
+  // then apply the position-specific floor only to the nearest fixture.
   const formulaExpectedMinutes = clamp(formulaValue(config.history.expectedMinutes, metrics), 0, 90);
   const baseExpectedMinutes = archivedExpectedMinutes({
     existingMinutes: formulaExpectedMinutes,
@@ -1520,7 +1528,8 @@ function pipelineParticipant(
     sameTeam: numericOrNull(metrics.archive_prior_same_team) === 1
   });
   metrics.roster_starter = rosterStarterApplies ? 1 : 0;
-  const expectedMinutes = rosterStarterApplies ? Math.max(baseExpectedMinutes, 60) : baseExpectedMinutes;
+  const starterMinuteFloor = position === "GK" ? 90 : 60;
+  const expectedMinutes = rosterStarterApplies ? Math.max(baseExpectedMinutes, starterMinuteFloor) : baseExpectedMinutes;
   const historyMinutes = Math.max(0, numericOrNull(metrics.minutes_365) ?? row.minutesPlayed ?? 0);
   // A manual XI mark is strong evidence of availability, but it does not turn a
   // short historical sample into a reliable per-90 event rate. Appearance
@@ -1534,6 +1543,7 @@ function pipelineParticipant(
     : expectedMinutes;
   const transferRatePenalty = blendedTransferRatePenalty(row.minuteHistoryProvenance);
   metrics.base_expected_minutes = baseExpectedMinutes;
+  metrics.roster_starter_minute_floor = rosterStarterApplies ? starterMinuteFloor : 0;
   metrics.roster_starter_minutes_uplift = expectedMinutes - baseExpectedMinutes;
   metrics.expected_minutes = expectedMinutes;
   metrics.per90_sample_minutes = historyMinutes;

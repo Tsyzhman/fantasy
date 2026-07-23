@@ -42,6 +42,7 @@ export type FranchiseSquadRow = {
   captainName: string | null;
   fp: number | null;
   alternativeFp: number | null;
+  alternativeBreakdown?: Array<{ name: string; points: number; multiplier: number }>;
   foontasyFp: number | null;
   foontasyAvailable: number;
   alternativeIssuePlayerNames: string[];
@@ -192,7 +193,7 @@ function FranchiseSquadTable({ rows, language }: { rows: FranchiseSquadRow[]; la
               <td data-sort-value={row.starterCount} className="px-4 py-3 text-center font-semibold text-slate-700">{row.squadName ? row.starterCount : NULL_GLYPH}</td>
               <td className="px-4 py-3 text-slate-600">{row.captainName ?? NULL_GLYPH}</td>
               <MetricCell value={row.fp} />
-              <MetricCell value={row.alternativeFp} />
+              <MetricCell value={row.alternativeFp} title={alternativeSquadTooltip(row, language)} />
               <td data-sort-value={row.foontasyFp ?? ""} className="px-4 py-3 text-right font-semibold text-sky-700">{formatScore(row.foontasyFp)}</td>
             </tr>
           ))}
@@ -225,8 +226,27 @@ function NumberRangeFilter({ label, minimum, maximum, onMinimum, onMaximum }: { 
   );
 }
 
-function MetricCell({ value }: { value: number | null }) {
-  return <td data-sort-value={value ?? ""} className="px-4 py-3 text-right font-semibold text-emerald-700">{formatScore(value)}</td>;
+function MetricCell({ value, title }: { value: number | null; title?: string }) {
+  return <td title={title} data-sort-value={value ?? ""} className="px-4 py-3 text-right font-semibold text-emerald-700">{formatScore(value)}</td>;
+}
+
+function alternativeSquadTooltip(row: FranchiseSquadRow, language: UiLanguage) {
+  const lines = [localizedText(
+    language,
+    "Alt for the saved starting XI only; bench players are excluded and the captain is doubled.",
+    "Alt только для сохранённых стартовых 11; лавка не учитывается, капитан считается x2."
+  )];
+  for (const player of row.alternativeBreakdown ?? []) {
+    lines.push(`${player.name}: ${formatScore(player.points)}${player.multiplier === 2 ? " × 2" : ""}`);
+  }
+  if (row.alternativeIssuePlayerNames.length > 0) {
+    lines.push(localizedText(
+      language,
+      `Total unavailable because these starters have Alt 0/no forecast: ${row.alternativeIssuePlayerNames.join(", ")}.`,
+      `Итог недоступен: у игроков основы Alt равен 0 или отсутствует — ${row.alternativeIssuePlayerNames.join(", ")}.`
+    ));
+  }
+  return lines.join("\n");
 }
 
 function franchiseLabel(franchise: Franchise) {

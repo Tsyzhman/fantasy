@@ -23,6 +23,8 @@ test("navigation prefetches only the link the user intends to open", () => {
 
 test("shared fixture and full player-pool work is coalesced for five minutes", () => {
   assert.match(plannerSource, /fantasyPlayerPoolCacheTtlMs = 5 \* 60_000/);
+  assert.match(plannerSource, /_max: \{ startingXiChangedAt: true \}/);
+  assert.match(plannerSource, /startingXiRevision/);
   assert.match(plannerSource, /upcomingRoundFixturesCacheTtlMs = 5 \* 60_000/);
   assert.match(plannerSource, /upcomingRoundFixturesCache\.getOrCreate/);
 });

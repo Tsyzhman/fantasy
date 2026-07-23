@@ -205,7 +205,7 @@ test("formula pipeline scales a raw per-90 allocation by expected minutes", () =
   assert.ok(Math.abs((index.byFixturePlayer.get("fixture-1:p90")?.expectedEvents.goals ?? 0) - 0.6) < 1e-12);
 });
 
-test("primary and Alt apply a 60-minute starter floor only to the chronologically nearest fixture", () => {
+test("primary and Alt apply position-specific starter minutes only to the chronologically nearest fixture", () => {
   const configFor = (base: typeof expectedProjectionFormulaConfig, ordinaryMinutes = 40) => ({
     ...base,
     history: {
@@ -236,10 +236,10 @@ test("primary and Alt apply a 60-minute starter floor only to the chronologicall
       cardExposure: "0 * {Expected minutes}"
     }
   });
-  const row = (playerId: string, isStarter: boolean) => ({
+  const row = (playerId: string, isStarter: boolean, position = "FWD") => ({
     playerId,
     teamId: "team-1",
-    position: "FWD",
+    position,
     isStarter,
     startProbability: 0,
     expectedMinutes: 40,
@@ -283,10 +283,24 @@ test("primary and Alt apply a 60-minute starter floor only to the chronologicall
     assert.equal(index.byFixturePlayer.get("fixture-nearest:bench")?.expectedMinutes, 40);
     assert.equal(index.byFixturePlayer.get("fixture-later:bench")?.expectedMinutes, 40);
     assert.equal(index.formulaMetricsByFixturePlayer.get("fixture-nearest:starter")?.base_expected_minutes, 40);
+    assert.equal(index.formulaMetricsByFixturePlayer.get("fixture-nearest:starter")?.roster_starter_minute_floor, 60);
     assert.equal(index.formulaMetricsByFixturePlayer.get("fixture-nearest:starter")?.roster_starter_minutes_uplift, 20);
     assert.equal(index.formulaMetricsByFixturePlayer.get("fixture-nearest:starter")?.roster_starter, 1);
     assert.equal(index.formulaMetricsByFixturePlayer.get("fixture-later:starter")?.roster_starter, 0);
     assert.equal(index.formulaMetricsByFixturePlayer.get("fixture-later:starter")?.roster_starter_minutes_uplift, 0);
+  }
+
+  for (const config of [configFor(expectedProjectionFormulaConfig), configFor(friendAltProjectionFormulaConfig)]) {
+    const goalkeeperIndex = buildFormulaProjectionIndex(
+      [row("goalkeeper", true, "GK")],
+      fixtures,
+      new Map([["goalkeeper", "GK"]]),
+      config
+    );
+    assert.equal(goalkeeperIndex.byFixturePlayer.get("fixture-nearest:goalkeeper")?.expectedMinutes, 90);
+    assert.equal(goalkeeperIndex.byFixturePlayer.get("fixture-later:goalkeeper")?.expectedMinutes, 40);
+    assert.equal(goalkeeperIndex.formulaMetricsByFixturePlayer.get("fixture-nearest:goalkeeper")?.roster_starter_minute_floor, 90);
+    assert.equal(goalkeeperIndex.formulaMetricsByFixturePlayer.get("fixture-nearest:goalkeeper")?.roster_starter_minutes_uplift, 50);
   }
 
   const highMinuteIndex = buildFormulaProjectionIndex(
