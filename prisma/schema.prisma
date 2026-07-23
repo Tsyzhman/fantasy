@@ -616,6 +616,7 @@ model CoreLeague {
   fantasyContests       SportsRuFantasyContest[]
   fantasyPrices         FantasyPlayerPrice[]
   foontasyForecasts     FoontasyForecast[]
+  foontasySamples       FoontasyForecastSample[]
   fantasyModelForecasts FantasyModelForecast[]
   fantasySquads         UserFantasySquad[]
   archivedPlayerStats   PlayerSeasonArchive[]
@@ -674,6 +675,7 @@ model CorePlayer {
   archiveFetchState      PlayerArchiveFetchState?
   fantasyPrices          FantasyPlayerPrice[]
   foontasyForecasts      FoontasyForecast[]
+  foontasySamples        FoontasyForecastSample[]
   fantasyModelForecasts  FantasyModelForecast[]
   fantasySquadPlayers    UserFantasySquadPlayer[]
 
@@ -706,6 +708,36 @@ model FoontasyForecast {
   @@unique([leagueId, season, roundNumber, sourcePlayerId])
   @@index([leagueId, season, playerId, roundNumber])
   @@map("foontasy_forecasts")
+}
+
+model FoontasyForecastSample {
+  id                String   @id @default(cuid())
+  leagueId          BigInt   @map("league_id")
+  season            String
+  roundNumber       Int      @map("round_number")
+  sourcePlayerId    String   @map("source_player_id")
+  playerId          BigInt?  @map("player_id")
+  playerName        String   @map("player_name")
+  teamName          String   @map("team_name")
+  position          String?
+  foontasyPoints    Float    @map("foontasy_points")
+  attackingPoints   Float?   @map("attacking_points")
+  price             Float?
+  selectedByPercent Float?   @map("selected_by_percent")
+  breakdown         String?
+  modelNextPoints   Float?   @map("model_next_points")
+  modelVersion      String?  @map("model_version")
+  featureSnapshot   Json?    @map("feature_snapshot")
+  capturedAt        DateTime @map("captured_at")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  league CoreLeague  @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  player CorePlayer? @relation(fields: [playerId], references: [id], onDelete: SetNull)
+
+  @@unique([leagueId, season, roundNumber, sourcePlayerId])
+  @@index([leagueId, season, roundNumber])
+  @@index([leagueId, season, playerId, roundNumber])
+  @@map("foontasy_forecast_samples")
 }
 
 model FantasyModelForecast {
