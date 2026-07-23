@@ -336,6 +336,8 @@ test("squad cards place the compact team name in the top-left corner", () => {
   const tileEnd = squadPlannerSource.indexOf("function fantasyForecastTitle(", tileStart);
   const tileSource = squadPlannerSource.slice(tileStart, tileEnd);
   assert.match(tileSource, /absolute left-0\.5 top-0\.5[\s\S]*?fantasyPlayerTeamDisplayName\(player\)/);
+  assert.match(tileSource, /max-w-\[1\.45rem\]/);
+  assert.match(tileSource, /flex translate-x-1 items-center justify-center/);
 });
 
 test("squad cards show captain to the left and price to the right of the player photo", () => {

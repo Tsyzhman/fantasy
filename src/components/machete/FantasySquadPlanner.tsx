@@ -3220,7 +3220,7 @@ function SquadPlayerTile({
       )}
     >
       <span
-        className="absolute left-0.5 top-0.5 max-w-4 truncate text-[7px] font-bold text-slate-500"
+        className="absolute left-0.5 top-0.5 max-w-[1.45rem] truncate text-[7px] font-bold text-slate-500"
         title={player.teamName}
       >
         {fantasyPlayerTeamDisplayName(player)}
@@ -3234,7 +3234,7 @@ function SquadPlayerTile({
         <X className="h-2.5 w-2.5" />
         <span className="sr-only">{removeActionLabel}</span>
       </button>
-      <div className="flex items-center justify-center gap-1">
+      <div className="flex translate-x-1 items-center justify-center gap-1">
         <span className={`rounded px-0.5 py-px text-[7px] font-bold ${positionPillClass(player.positionGroup)}`}>{player.positionGroup}</span>
       </div>
       <div className="relative mx-auto grid w-full grid-cols-[1fr_1.75rem_1fr] items-center">
