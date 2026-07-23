@@ -131,6 +131,11 @@ function buildFixtureComponentInputs(
       ? null
       : numericProjectionMetric(formulaMetrics?.roster_starter) === 1,
     rosterStarterMinutesUplift: numericProjectionMetric(formulaMetrics?.roster_starter_minutes_uplift),
+    minuteHistorySource: minuteHistorySourceMetric(formulaMetrics?.minute_history_source),
+    currentClubHistoryMatches: numericProjectionMetric(formulaMetrics?.current_club_history_matches),
+    previousClubHistoryMatches: numericProjectionMetric(formulaMetrics?.previous_club_history_matches),
+    previousClubHistoryTeam: stringProjectionMetric(formulaMetrics?.previous_club_history_team),
+    previousClubPenaltyFactor: numericProjectionMetric(formulaMetrics?.previous_club_penalty_factor),
     appearanceProbability: projection.probabilities?.appearance ?? null,
     sixtyMinutesProbability: projection.probabilities?.sixtyMinutes ?? null,
     fullMatchProbability: projection.probabilities?.fullMatch ?? null,
@@ -147,6 +152,16 @@ function buildFixtureComponentInputs(
 
 function numericProjectionMetric(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+function stringProjectionMetric(value: unknown) {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
+
+function minuteHistorySourceMetric(value: unknown): FantasyProjectionFixtureInputs["minuteHistorySource"] {
+  return value === "NONE" || value === "CURRENT_CLUB" || value === "PREVIOUS_CLUB_FALLBACK" || value === "MIXED"
+    ? value
+    : null;
 }
 
 type PlannerMatch = {
@@ -572,7 +587,12 @@ export async function loadFantasySquadPlannerData(
         name: playerName,
         fotmobName: row.player.name,
         teamName: row.team.name,
-        projectedFixtureComponents: buildFixtureComponentInputs(nextComponentProjection),
+        projectedFixtureComponents: buildFixtureComponentInputs(
+          nextComponentProjection,
+          nextFixture
+            ? componentProjections.formulaMetricsByFixturePlayer.get(fixturePlayerProjectionKey(nextFixture.id, String(row.playerId)))
+            : undefined
+        ),
         teamShortName: roundsAndFixtures.teamShortNameById.get(String(row.teamId)) ?? row.team.name,
         photoUrl: row.photoUrl ? playerPhotoPublicUrl(String(row.playerId)) : null,
         leagueName: league.displayName,
@@ -1153,6 +1173,7 @@ async function loadProjectedPlayerRows(
       matchWindow: history.matchWindow,
       combineTeamCompetitions: true,
       fallbackToRecentPlayerHistory: history.includePlayerHistory,
+      fallbackToRecentClubHistory: true,
       scoringModel: modelBundle.model,
       playerIds
     }),
@@ -1164,6 +1185,7 @@ async function loadProjectedPlayerRows(
           matchWindow: { kind: "days", days: 365 },
           combineTeamCompetitions: true,
           fallbackToRecentPlayerHistory: history.includePlayerHistory,
+          fallbackToRecentClubHistory: true,
           scoringModel: modelBundle.model
         }),
     loadFantasyProjectionCalibration(prisma, {
@@ -1349,7 +1371,12 @@ function pipelineParticipant(
   if (position === "UNK") return null;
   const metrics: Record<string, unknown> = {
     ...(row.rawMetrics ?? {}),
-    roster_starter: row.isStarter ? 1 : 0
+    roster_starter: row.isStarter ? 1 : 0,
+    minute_history_source: row.minuteHistoryProvenance?.source ?? "NONE",
+    current_club_history_matches: row.minuteHistoryProvenance?.currentClubMatches ?? 0,
+    previous_club_history_matches: row.minuteHistoryProvenance?.previousClubMatches ?? 0,
+    previous_club_history_team: row.minuteHistoryProvenance?.previousClubName ?? "",
+    previous_club_penalty_factor: row.minuteHistoryProvenance?.previousClubPenaltyFactor ?? 1
   };
   const usesRosterStarterMinutes = /\{Roster starter\}/i.test(config.history.expectedMinutes);
   const baseExpectedMinutes = usesRosterStarterMinutes

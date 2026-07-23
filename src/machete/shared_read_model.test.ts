@@ -663,10 +663,28 @@ test("selected season without matching history keeps the current roster with zer
   assert.equal(rows[0].scoringScore, 0);
 });
 
-test("shared player rows can carry recent league history and position into an empty new season", async () => {
+test("new transfers use five recent previous-club matches with a ten-percent penalty and exclude national-team history", async () => {
+  let rosterQueryCount = 0;
   const prisma = {
     teamPlayerSeason: {
-      async findMany() {
+      async findMany(input: { select?: { seasonTeam?: unknown } }) {
+        rosterQueryCount += 1;
+        if (input.select?.seasonTeam) {
+          return [
+            {
+              playerId: 99n,
+              teamId: 5n,
+              team: { name: "Previous FC", country: "England" },
+              seasonTeam: { leagueSeason: { league: { name: "Premier League", country: "England" } } }
+            },
+            {
+              playerId: 99n,
+              teamId: 6n,
+              team: { name: "England", country: "England" },
+              seasonTeam: { leagueSeason: { league: { name: "UEFA Nations League", country: null } } }
+            }
+          ];
+        }
         return [
           rosterRow({
             leagueId: 47n,
@@ -687,7 +705,8 @@ test("shared player rows can carry recent league history and position into an em
     matchPlayerStat: {
       async findMany(input: { include?: { match?: unknown } }) {
         if (!input.include?.match) return [];
-        return Array.from({ length: 5 }, (_, index) => ({
+        return [
+          ...Array.from({ length: 5 }, (_, index) => ({
           ...playerStat(BigInt(100 + index), 90),
           teamId: 5n,
           position: "Defender",
@@ -695,7 +714,14 @@ test("shared player rows can carry recent league history and position into an em
             matchDate: new Date(`2025-05-${String(index + 1).padStart(2, "0")}T16:00:00.000Z`),
             status: "FINISHED"
           }
-        }));
+          })),
+          {
+            ...playerStat(999n, 90),
+            teamId: 6n,
+            position: "Defender",
+            match: { matchDate: new Date("2025-06-01T16:00:00.000Z"), status: "FINISHED" }
+          }
+        ];
       }
     }
   } as unknown as PrismaClient;
@@ -703,14 +729,25 @@ test("shared player rows can carry recent league history and position into an em
   const rows = await loadSharedMachetePlayerRows(prisma, {
     scopes: [{ leagueId: 47n, season: "2025/2026", teamId: 10n }],
     matchWindow: { kind: "last", matches: 5 },
-    fallbackToRecentLeagueHistory: true,
+    fallbackToRecentClubHistory: true,
     scoringModel
   });
 
+  assert.equal(rosterQueryCount, 2);
   assert.equal(rows[0].position, "Defender");
   assert.equal(rows[0].matchesPlayed, 5);
-  assert.equal(rows[0].expectedMinutes, 90);
+  assert.equal(rows[0].minutesPlayed, 405);
+  assert.equal(rows[0].expectedMinutes, 81);
   assert.equal(rows[0].recentFp.length, 5);
+  assert.deepEqual(rows[0].minuteHistoryProvenance, {
+    source: "PREVIOUS_CLUB_FALLBACK",
+    currentClubMatches: 0,
+    previousClubMatches: 5,
+    previousClubName: "Previous FC",
+    previousClubPenaltyFactor: 0.9
+  });
+  assert.equal(rows[0].rawMetrics?.previous_club_fallback_matches, 5);
+  assert.equal(rows[0].rawMetrics?.previous_club_penalty_factor, 0.9);
 });
 
 test("match window summary reports official matches separately from parsed player-stat coverage", async () => {

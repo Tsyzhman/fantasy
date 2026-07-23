@@ -24,6 +24,11 @@ export type FantasyProjectionFixtureInputs = {
   baseExpectedMinutes?: number | null;
   rosterStarter?: boolean | null;
   rosterStarterMinutesUplift?: number | null;
+  minuteHistorySource?: "NONE" | "CURRENT_CLUB" | "PREVIOUS_CLUB_FALLBACK" | "MIXED" | null;
+  currentClubHistoryMatches?: number | null;
+  previousClubHistoryMatches?: number | null;
+  previousClubHistoryTeam?: string | null;
+  previousClubPenaltyFactor?: number | null;
   appearanceProbability: number | null;
   sixtyMinutesProbability: number | null;
   fullMatchProbability: number | null;

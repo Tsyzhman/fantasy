@@ -64,6 +64,7 @@ export type SharedMachetePlayerRow = {
   tackles: number;
   averageRating: number | null;
   averageRating10?: number | null;
+  minuteHistoryProvenance?: SharedMinuteHistoryProvenance | null;
   fantasyScore: number | null;
   scoringScore: number | null;
   alternativeScore: number | null;
@@ -75,6 +76,14 @@ export type SharedMachetePlayerRow = {
   dataUpdatedAt: Date | null;
   hasBasicStats: boolean;
   rawMetrics?: Record<string, unknown>;
+};
+
+export type SharedMinuteHistoryProvenance = {
+  source: "NONE" | "CURRENT_CLUB" | "PREVIOUS_CLUB_FALLBACK" | "MIXED";
+  currentClubMatches: number;
+  previousClubMatches: number;
+  previousClubName: string | null;
+  previousClubPenaltyFactor: number;
 };
 
 export type SharedPlayerRowsScope = {
@@ -355,6 +364,7 @@ export async function loadSharedMachetePlayerRows(
     combineTeamCompetitions?: boolean;
     fallbackToRecentLeagueHistory?: boolean;
     fallbackToRecentPlayerHistory?: boolean;
+    fallbackToRecentClubHistory?: boolean;
     scoringModel?: ActiveScoringModel;
     userId?: string | null;
     playerIds?: bigint[];
@@ -479,13 +489,19 @@ export async function loadSharedMachetePlayerRows(
     uniqueBigints(rosterRows.map((row) => row.playerId))
   );
   const statsByTeamPlayer = groupStatsByTeamPlayer(stats);
-  const fallbackStats = input.fallbackToRecentLeagueHistory || input.fallbackToRecentPlayerHistory
+  const clubHistory = input.fallbackToRecentClubHistory && !input.fallbackToRecentPlayerHistory
+    ? await loadRecentClubPlayerHistory(
+        prisma,
+        uniqueBigints(rosterRows.map((row) => row.playerId))
+      )
+    : null;
+  const fallbackStats = clubHistory?.stats ?? (input.fallbackToRecentLeagueHistory || input.fallbackToRecentPlayerHistory
     ? await loadRecentPlayerHistory(
         prisma,
         uniqueBigints(rosterRows.map((row) => row.playerId)),
         input.fallbackToRecentPlayerHistory ? [] : uniqueBigints(scopes.map((scope) => scope.leagueId))
       )
-    : [];
+    : []);
   for (const row of fallbackStats) matchDateById.set(String(row.matchId), row.match.matchDate);
   const fallbackStatsByPlayer = groupStatsByPlayer(fallbackStats);
   const scoringModel = input.scoringModel ?? (input.userId
@@ -510,11 +526,24 @@ export async function loadSharedMachetePlayerRows(
 
         const scopedStats = (statsByTeamPlayer.get(teamPlayerKey(first.teamId, first.playerId)) ?? []).filter((stat) => allowedMatchIds.has(String(stat.matchId)));
         const scopedRatingStats = (statsByTeamPlayer.get(teamPlayerKey(first.teamId, first.playerId)) ?? []).filter((stat) => allowedRatingMatchIds.has(String(stat.matchId)));
-        const playerStats = mergeRecentPlayerStats(scopedStats, fallbackStatsByPlayer.get(String(first.playerId)) ?? [], matchDateById, input.matchWindow);
+        const mergedHistory = clubHistory
+          ? mergeTransferPlayerStats(
+              scopedStats,
+              fallbackStatsByPlayer.get(String(first.playerId)) ?? [],
+              first.teamId,
+              clubHistory?.teamNameById ?? new Map(),
+              matchDateById,
+              input.matchWindow
+            )
+          : {
+              stats: mergeRecentPlayerStats(scopedStats, fallbackStatsByPlayer.get(String(first.playerId)) ?? [], matchDateById, input.matchWindow),
+              provenance: minuteHistoryProvenance(scopedStats.length, 0, null)
+            };
+        const playerStats = mergedHistory.stats;
         const ratingStats = mergeRecentPlayerStats(scopedRatingStats, fallbackStatsByPlayer.get(String(first.playerId)) ?? [], matchDateById, AVERAGE_RATING_WINDOW);
         const position = inferSharedPosition(firstNonEmpty(rows.map((row) => row.position)), playerStats, matchDateById);
         const leagueNames = uniqueStrings(rows.map(leagueNameForRosterRow));
-        const aggregate = aggregateSharedStats(playerStats, position, scoringModel, matchDateById, input.matchWindow, ratingStats);
+        const aggregate = aggregateSharedStats(playerStats, position, scoringModel, matchDateById, input.matchWindow, ratingStats, mergedHistory.provenance);
 
         return {
           id: `combined:${first.teamId}:${first.playerId}:${rows.map((row) => `${row.leagueId}:${row.season}`).join("|")}`,
@@ -542,10 +571,23 @@ export async function loadSharedMachetePlayerRows(
       const allowedRatingMatchIds = new Set((ratingMatchIdsByTeamScope.get(teamKey) ?? []).map(String));
       const scopedStats = (statsByTeamPlayer.get(teamPlayerKey(row.teamId, row.playerId)) ?? []).filter((stat) => allowedMatchIds.has(String(stat.matchId)));
       const scopedRatingStats = (statsByTeamPlayer.get(teamPlayerKey(row.teamId, row.playerId)) ?? []).filter((stat) => allowedRatingMatchIds.has(String(stat.matchId)));
-      const playerStats = mergeRecentPlayerStats(scopedStats, fallbackStatsByPlayer.get(String(row.playerId)) ?? [], matchDateById, input.matchWindow);
+      const mergedHistory = clubHistory
+        ? mergeTransferPlayerStats(
+            scopedStats,
+            fallbackStatsByPlayer.get(String(row.playerId)) ?? [],
+            row.teamId,
+            clubHistory?.teamNameById ?? new Map(),
+            matchDateById,
+            input.matchWindow
+          )
+        : {
+            stats: mergeRecentPlayerStats(scopedStats, fallbackStatsByPlayer.get(String(row.playerId)) ?? [], matchDateById, input.matchWindow),
+            provenance: minuteHistoryProvenance(scopedStats.length, 0, null)
+          };
+      const playerStats = mergedHistory.stats;
       const ratingStats = mergeRecentPlayerStats(scopedRatingStats, fallbackStatsByPlayer.get(String(row.playerId)) ?? [], matchDateById, AVERAGE_RATING_WINDOW);
       const position = inferSharedPosition(row.position, playerStats, matchDateById);
-      const aggregate = aggregateSharedStats(playerStats, position, scoringModel, matchDateById, input.matchWindow, ratingStats);
+      const aggregate = aggregateSharedStats(playerStats, position, scoringModel, matchDateById, input.matchWindow, ratingStats, mergedHistory.provenance);
       const leagueName = leagueNameForRosterRow(row);
 
       return {
@@ -775,6 +817,59 @@ async function loadRecentPlayerHistory(prisma: PrismaClient, playerIds: bigint[]
   return rows.filter((row) => row.match.status !== "SEASON_AGGREGATE");
 }
 
+async function loadRecentClubPlayerHistory(prisma: PrismaClient, playerIds: bigint[]) {
+  if (playerIds.length === 0) return { stats: [], teamNameById: new Map<string, string>() };
+
+  const memberships = await prisma.teamPlayerSeason.findMany({
+    where: { playerId: { in: playerIds } },
+    select: {
+      playerId: true,
+      teamId: true,
+      team: { select: { name: true, country: true } },
+      seasonTeam: {
+        select: {
+          leagueSeason: {
+            select: {
+              league: { select: { name: true, country: true } }
+            }
+          }
+        }
+      }
+    }
+  });
+  const allowedPairs = new Set(
+    memberships
+      .filter(isClubRosterMembership)
+      .map((row) => teamPlayerKey(row.teamId, row.playerId))
+  );
+  const teamNameById = new Map(
+    memberships
+      .filter(isClubRosterMembership)
+      .map((row) => [String(row.teamId), row.team.name] as const)
+  );
+  const stats = await loadRecentPlayerHistory(prisma, playerIds, []);
+  return {
+    stats: stats.filter((stat) => stat.teamId && allowedPairs.has(teamPlayerKey(stat.teamId, stat.playerId))),
+    teamNameById
+  };
+}
+
+function isClubRosterMembership(row: {
+  team: { name: string; country: string | null };
+  seasonTeam: { leagueSeason: { league: { name: string; country: string | null } } };
+}) {
+  const league = row.seasonTeam.leagueSeason.league;
+  if (/(?:world cup|nations league|international friendly|euro(?:pean)? championship|qualification)/i.test(league.name)) return false;
+  if (/(?:champions|europa|conference) league|libertadores|sudamericana/i.test(league.name)) return true;
+  const leagueCountry = normalizeCountryName(league.country);
+  if (!leagueCountry) return false;
+  return normalizeCountryName(row.team.name) !== leagueCountry;
+}
+
+function normalizeCountryName(value: string | null | undefined) {
+  return value?.trim().toLocaleLowerCase() || null;
+}
+
 function groupStatsByTeamPlayer(stats: MatchPlayerStatRecord[]) {
   const grouped = new Map<string, MatchPlayerStatRecord[]>();
   for (const stat of stats) {
@@ -817,6 +912,115 @@ function mergeRecentPlayerStats(
   if (matchWindow.kind === "last") return ordered.slice(-matchWindow.matches);
   const cutoff = daysAgo(matchWindow.days).getTime();
   return ordered.filter((stat) => dateMs(matchDateById.get(String(stat.matchId)) ?? null) >= cutoff);
+}
+
+const TRANSFER_HISTORY_MATCHES = 5;
+const TRANSFER_HISTORY_PENALTY = 0.9;
+
+function mergeTransferPlayerStats(
+  scopedStats: MatchPlayerStatRecord[],
+  fallbackStats: MatchPlayerStatRecord[],
+  currentTeamId: bigint,
+  teamNameById: Map<string, string>,
+  matchDateById: Map<string, Date | null>,
+  matchWindow: MacheteMatchWindow
+) {
+  const currentStats = uniquePlayerStats(scopedStats);
+  if (
+    (matchWindow.kind !== "last" && matchWindow.kind !== "days") ||
+    currentStats.length >= TRANSFER_HISTORY_MATCHES ||
+    fallbackStats.length === 0
+  ) {
+    return {
+      stats: currentStats,
+      provenance: minuteHistoryProvenance(currentStats.length, 0, null)
+    };
+  }
+
+  const cutoff = matchWindow.kind === "days" ? daysAgo(matchWindow.days).getTime() : Number.NEGATIVE_INFINITY;
+  const previousByTeam = new Map<string, MatchPlayerStatRecord[]>();
+  for (const stat of fallbackStats) {
+    if (!stat.teamId || stat.teamId === currentTeamId) continue;
+    if (dateMs(matchDateById.get(String(stat.matchId)) ?? null) < cutoff) continue;
+    const key = String(stat.teamId);
+    const rows = previousByTeam.get(key) ?? [];
+    rows.push(stat);
+    previousByTeam.set(key, rows);
+  }
+  const previousTeam = [...previousByTeam.entries()]
+    .sort((left, right) => latestStatDate(right[1], matchDateById) - latestStatDate(left[1], matchDateById))[0];
+  if (!previousTeam) {
+    return {
+      stats: currentStats,
+      provenance: minuteHistoryProvenance(currentStats.length, 0, null)
+    };
+  }
+
+  const missingMatches = TRANSFER_HISTORY_MATCHES - currentStats.length;
+  const previousStats = uniquePlayerStats(previousTeam[1])
+    .sort((left, right) =>
+      dateMs(matchDateById.get(String(right.matchId)) ?? null) - dateMs(matchDateById.get(String(left.matchId)) ?? null) ||
+      compareBigints(right.matchId, left.matchId)
+    )
+    .slice(0, missingMatches)
+    .map(applyTransferHistoryPenalty);
+  const byMatchId = new Map<string, MatchPlayerStatRecord>();
+  for (const stat of [...previousStats, ...currentStats]) byMatchId.set(String(stat.matchId), stat);
+  const stats = [...byMatchId.values()].sort((left, right) =>
+    dateMs(matchDateById.get(String(left.matchId)) ?? null) - dateMs(matchDateById.get(String(right.matchId)) ?? null) ||
+    compareBigints(left.matchId, right.matchId)
+  );
+  return {
+    stats,
+    provenance: minuteHistoryProvenance(
+      currentStats.length,
+      previousStats.length,
+      teamNameById.get(previousTeam[0]) ?? null
+    )
+  };
+}
+
+function uniquePlayerStats(stats: MatchPlayerStatRecord[]) {
+  return [...new Map(stats.map((stat) => [String(stat.matchId), stat])).values()];
+}
+
+function latestStatDate(stats: MatchPlayerStatRecord[], matchDateById: Map<string, Date | null>) {
+  return Math.max(...stats.map((stat) => dateMs(matchDateById.get(String(stat.matchId)) ?? null)), Number.NEGATIVE_INFINITY);
+}
+
+function applyTransferHistoryPenalty(stat: MatchPlayerStatRecord): MatchPlayerStatRecord {
+  const penalized = <T extends number | null>(value: T) =>
+    typeof value === "number" && Number.isFinite(value) ? value * TRANSFER_HISTORY_PENALTY : value;
+  return {
+    ...stat,
+    minutes: penalized(stat.minutes),
+    xg: penalized(stat.xg),
+    xa: penalized(stat.xa),
+    recoveries: penalized(stat.recoveries),
+    saves: penalized(stat.saves),
+    yellowCards: penalized(stat.yellowCards),
+    redCards: penalized(stat.redCards)
+  };
+}
+
+function minuteHistoryProvenance(
+  currentClubMatches: number,
+  previousClubMatches: number,
+  previousClubName: string | null
+): SharedMinuteHistoryProvenance {
+  return {
+    source: previousClubMatches > 0
+      ? currentClubMatches > 0 ? "MIXED" : "PREVIOUS_CLUB_FALLBACK"
+      : currentClubMatches > 0 ? "CURRENT_CLUB" : "NONE",
+    currentClubMatches,
+    previousClubMatches,
+    previousClubName,
+    previousClubPenaltyFactor: TRANSFER_HISTORY_PENALTY
+  };
+}
+
+function minuteHistoryProvenanceForStats(stats: MatchPlayerStatRecord[]) {
+  return minuteHistoryProvenance(stats.length, 0, null);
 }
 
 function inferSharedPosition(position: string | null | undefined, stats: MatchPlayerStatRecord[], matchDateById: Map<string, Date | null>) {
@@ -938,7 +1142,8 @@ function aggregateSharedStats(
   model: ActiveScoringModel,
   matchDateById?: Map<string, Date | null>,
   matchWindow?: MacheteMatchWindow,
-  ratingStats: MatchPlayerStatRecord[] = stats
+  ratingStats: MatchPlayerStatRecord[] = stats,
+  minuteHistoryProvenance: SharedMinuteHistoryProvenance = minuteHistoryProvenanceForStats(stats)
 ) {
   const matchesPlayed = stats.length;
   const appearances = stats.filter(isPlayerAppearance).length;
@@ -1022,6 +1227,10 @@ function aggregateSharedStats(
     penalties_won: penaltiesWon,
     average_rating: averageRating ?? 0,
     average_rating_10_sample_size: ratings10.length,
+    previous_club_fallback_matches: minuteHistoryProvenance.previousClubMatches,
+    previous_club_penalty_factor: minuteHistoryProvenance.previousClubMatches > 0
+      ? minuteHistoryProvenance.previousClubPenaltyFactor
+      : 1,
     ...(matchWindow?.kind === "days" && matchWindow.days === 365 ? calculateFriendWindowMetrics(stats, matchDateById) : {})
   };
   const positionGroup = machetePositionGroup(position);
@@ -1038,6 +1247,7 @@ function aggregateSharedStats(
     tackles,
     averageRating,
     averageRating10,
+    minuteHistoryProvenance,
     fantasyScore: calculateFantasyScore(rawMetrics, positionGroup, model),
     scoringScore: calculateScoringScore(rawMetrics, positionGroup, model),
     alternativeScore: calculateAlternativeScore(rawMetrics, positionGroup, model),

@@ -2287,7 +2287,16 @@ function playerPoolOptionalColumns(players: FantasyPlannerPlayer[], horizon: num
     column("baltikaXa", "W xA", "W xA", "Total Wyscout xA from the imported Baltika workbook for the selected sample; shown only when that source is available.", "Суммарный xA Wyscout из загруженного файла «Балтики» для выбранной выборки; показывается только при наличии этого источника."),
     column("baltikaMatches", "W matches", "W матчи", "Number of matches represented in the imported Wyscout aggregate.", "Количество матчей, вошедших в загруженный агрегат Wyscout.")
   ];
-  const ignoredAliases = new Set(["observed_rounds", "tackles", "possession_recoveries", "conceded_goals", "clean_sheet", "average_rating_10_sample_size"]);
+  const ignoredAliases = new Set([
+    "observed_rounds",
+    "tackles",
+    "possession_recoveries",
+    "conceded_goals",
+    "clean_sheet",
+    "average_rating_10_sample_size",
+    "previous_club_fallback_matches",
+    "previous_club_penalty_factor"
+  ]);
   const statKeys = [...new Set(players.flatMap((player) => Object.keys(player.historicalStats ?? {})))]
     .filter((key) => !ignoredAliases.has(key))
     .sort((left, right) => historicalStatRank(left) - historicalStatRank(right) || left.localeCompare(right));
@@ -2398,6 +2407,7 @@ function playerPoolMetricValueTitle(column: PlayerPoolOptionalColumn, player: Fa
     if (player.modelForecastCalculatedAt) lines.push(localizedText(language, `Calculated: ${player.modelForecastCalculatedAt}.`, `Рассчитано: ${player.modelForecastCalculatedAt}.`));
   } else if (column.key === "expectedMinutes") {
     lines.push(localizedText(language, `Model input for the next fixture: ${display} minutes. Exposure ratio: ${display}/90 = ${formatNumber(Number(rawValue) / 90, 3)}. The component model also balances goals, assists, saves and recoveries against team totals, so this ratio is not a universal direct multiplier.`, `Вход модели на следующий матч: ${display} минут. Доля игрового времени: ${display}/90 = ${formatNumber(Number(rawValue) / 90, 3)}. Компонентная модель дополнительно распределяет голы, ассисты, сейвы и возвраты относительно командных итогов, поэтому эта доля не является универсальным прямым множителем.`));
+    lines.push(...minuteHistoryProvenanceLines(player.projectedFixtureComponents, language));
   } else if (column.key === "startProbability") {
     lines.push(player.projectedFixtureComponents
       ? localizedText(language, `Component-model probability of appearing on the pitch in the next fixture: ${display}. It is not a starting-XI probability.`, `Вероятность компонентной модели, что игрок появится на поле в следующем матче: ${display}. Это не вероятность выхода в стартовом составе.`)
@@ -3635,6 +3645,31 @@ function formatProjectionMetric(value: number | null | undefined, digits = 3) {
   return formatNumber(value, digits);
 }
 
+function minuteHistoryProvenanceLines(
+  inputs: FantasyProjectionFixtureInputs | null | undefined,
+  language: UiLanguage
+) {
+  if (!inputs) return [];
+  const currentMatches = inputs.currentClubHistoryMatches ?? 0;
+  const previousMatches = inputs.previousClubHistoryMatches ?? 0;
+  if (previousMatches <= 0) {
+    return currentMatches > 0
+      ? [localizedText(
+          language,
+          `Minutes history: ${formatNumber(currentMatches, 0)} current-club matches; no transfer fallback was used.`,
+          `История минут: ${formatNumber(currentMatches, 0)} матчей за текущий клуб; резервная выборка трансфера не использовалась.`
+        )]
+      : [];
+  }
+  const previousTeam = inputs.previousClubHistoryTeam || localizedText(language, "previous club", "предыдущий клуб");
+  const factor = inputs.previousClubPenaltyFactor ?? 0.9;
+  return [localizedText(
+    language,
+    `Transfer fallback: ${formatNumber(currentMatches, 0)} current-club matches + ${formatNumber(previousMatches, 0)} matches for ${previousTeam}. Previous-club minutes and forecast event volumes are weighted by ${formatNumber(factor, 2)} until five current-club matches are available.`,
+    `Резервная выборка трансфера: ${formatNumber(currentMatches, 0)} матчей за текущий клуб + ${formatNumber(previousMatches, 0)} матчей за ${previousTeam}. Минуты и объёмы прогнозных событий прошлого клуба учитываются с коэффициентом ${formatNumber(factor, 2)}, пока не накопится пять матчей за текущий клуб.`
+  )];
+}
+
 function addProjectionWeightedTermLine(
   lines: string[],
   language: UiLanguage,
@@ -3751,6 +3786,7 @@ function buildProjectionBreakdownLines(
     const expectedMinutes = formatProjectionMetric(fixtureInputs.expectedMinutes, 1);
     if (expectedMinutes) lines.push(localizedText(language, `- Expected minutes: ${expectedMinutes}`, `- Ожидаемые минуты: ${expectedMinutes}`));
   }
+  lines.push(...minuteHistoryProvenanceLines(fixtureInputs, language));
 
   addProjectionWeightedTermLine(
     lines,
@@ -3911,6 +3947,7 @@ function buildAlternativeProjectionBreakdownLines(
     const expectedMinutes = formatProjectionMetric(fixtureInputs.expectedMinutes, 1);
     if (expectedMinutes) lines.push(localizedText(language, `- Expected minutes: ${expectedMinutes}`, `- Ожидаемые минуты: ${expectedMinutes}`));
   }
+  lines.push(...minuteHistoryProvenanceLines(fixtureInputs, language));
 
   addProjectionWeightedTermLine(
     lines,
@@ -4042,6 +4079,7 @@ function buildAlternativeProjectionBreakdownLines(
 function playerPrimaryNextForecastTitle(player: FantasyPlannerPlayer, language: UiLanguage, nextForecast: number | null) {
   const lines = [localizedText(language, `Primary forecast for next fixture: ${formatScore(nextForecast)} FP`, `Основной прогноз на следующий матч: ${formatScore(nextForecast)} ФО`)];
   if (player.projectionFormula) {
+    lines.push(...minuteHistoryProvenanceLines(player.projectedFixtureComponents, language));
     lines.push(...buildFormulaBreakdownLines(language, player.projectionFormula, "Total", nextForecast));
   } else if (player.projectionComponents) {
     lines.push(...buildProjectionBreakdownLines(player, language, player.projectionComponents, player.projectedFixtureComponents));
@@ -4108,6 +4146,7 @@ function alternativePlayerForecastTitle(player: FantasyPlannerPlayer, language: 
     ));
   }
   if (player.alternativeProjectionFormula) {
+    lines.push(...minuteHistoryProvenanceLines(player.alternativeProjectedFixtureComponents, language));
     lines.push(...buildFormulaBreakdownLines(
       language,
       player.alternativeProjectionFormula,
