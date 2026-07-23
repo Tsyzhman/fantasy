@@ -3596,14 +3596,14 @@ function addProjectionTermLine(
   formula?: string
 ) {
   if (value === null || value === undefined || Number.isNaN(value)) return;
-  const valueText = formatScore(value);
+  const valueText = formatNumber(value, 4);
   const localizedLabel = projectionBreakdownText(label, language);
   const localizedFormula = formula ? projectionBreakdownText(formula, language) : null;
   if (!formula) {
     lines.push(localizedText(language, `- ${localizedLabel}: ${valueText} FP`, `- ${localizedLabel}: ${valueText} ФО`));
     return;
   }
-  lines.push(localizedText(language, `- ${localizedLabel}: ${valueText} FP = ${localizedFormula}`, `- ${localizedLabel}: ${valueText} ФО = ${localizedFormula}`));
+  lines.push(localizedText(language, `- ${localizedLabel}: ${localizedFormula} = ${valueText} FP`, `- ${localizedLabel}: ${localizedFormula} = ${valueText} ФО`));
 }
 
 function projectionBreakdownText(value: string, language: UiLanguage) {
@@ -3681,7 +3681,7 @@ function addProjectionWeightedTermLine(
 ) {
   if (value === null || value === undefined || Number.isNaN(value)) return;
   const metric = formatProjectionMetric(variableValue);
-  const formula = metric === null ? `${weight} * ${variableName}` : `${weight} * ${variableName} (${metric})`;
+  const formula = metric === null ? `${variableName} * ${weight}` : `${variableName} (${metric}) * ${weight}`;
   addProjectionTermLine(lines, language, label, value, formula);
 }
 
@@ -3723,20 +3723,72 @@ function buildFormulaBreakdownLines(
     lines.push(localizedText(language, "- No formula terms available.", "- Нет доступных слагаемых формулы."));
   } else {
     formulaData.terms.forEach((term) => {
-      const valueText = formatScore(term.value);
+      const valueText = formatNumber(term.value, 4);
       const moduleLabel = formulaTermLabel(term.expression, language);
       const fixturePrefix = term.fixtureLabel ? `${term.fixtureLabel} — ` : "";
+      const resolvedExpression = readableResolvedFormulaExpression(term.resolvedExpression, language);
+      const signedExpression = term.sign === -1
+        ? `-(${resolvedExpression})`
+        : resolvedExpression;
       lines.push(localizedText(
         language,
-        `- ${fixturePrefix}${moduleLabel}: ${term.resolvedExpression} = ${valueText} FP`,
-        `- ${fixturePrefix}${moduleLabel}: ${term.resolvedExpression} = ${valueText} ФО`
+        `- ${fixturePrefix}${moduleLabel}: ${signedExpression} = ${valueText} FP`,
+        `- ${fixturePrefix}${moduleLabel}: ${signedExpression} = ${valueText} ФО`
       ));
     });
   }
 
   const total = totalOverride === null ? formulaData.total : totalOverride;
-  lines.push(localizedText(language, `- ${totalLabel}: ${formatScore(total)} FP`, `- ${projectionBreakdownText(totalLabel, language)}: ${formatScore(total)} ФО`));
+  lines.push(formulaContributionTotalLine(
+    language,
+    totalLabel,
+    formulaData.terms.map((term) => term.value),
+    total
+  ));
   return lines;
+}
+
+function readableResolvedFormulaExpression(expression: string, language: UiLanguage) {
+  const readable = expression
+    .replaceAll(" * ", " × ")
+    .replaceAll(" / ", " ÷ ");
+  if (language !== "ru") return readable;
+  return projectionBreakdownText(readable, language)
+    .replaceAll("expected goals conceded", "ожидаемые пропущенные голы")
+    .replaceAll("expected clean sheets", "ожидаемые сухие матчи")
+    .replaceAll("expected recoveries", "ожидаемые возвраты")
+    .replaceAll("expected yellow cards", "ожидаемые жёлтые карточки")
+    .replaceAll("expected red cards", "ожидаемые красные карточки")
+    .replaceAll("expected assists", "ожидаемые ассисты")
+    .replaceAll("expected goals", "ожидаемые голы")
+    .replaceAll("expected saves", "ожидаемые сейвы")
+    .replaceAll("full match probability", "вероятность полного матча")
+    .replaceAll("60 minute probability", "вероятность 60+ минут")
+    .replaceAll("appearance probability", "вероятность выхода");
+}
+
+function formulaContributionTotalLine(
+  language: UiLanguage,
+  totalLabel: string,
+  contributions: number[],
+  total: number
+) {
+  const arithmetic = contributions.length > 0
+    ? contributions.map((value, index) => {
+        const absolute = formatNumber(Math.abs(value), 4);
+        if (index === 0) return value < 0 || Object.is(value, -0) ? `-${absolute}` : absolute;
+        return value < 0 || Object.is(value, -0) ? `- ${absolute}` : `+ ${absolute}`;
+      }).join(" ")
+    : "0";
+  const unroundedTotal = contributions.reduce((sum, value) => sum + value, 0);
+  const totalArithmetic = Math.abs(unroundedTotal - total) > 0.00005
+    ? `${arithmetic} = ${formatNumber(unroundedTotal, 4)} → ${formatScore(total)}`
+    : `${arithmetic} = ${formatScore(total)}`;
+  return localizedText(
+    language,
+    `- ${totalLabel}: ${totalArithmetic} FP`,
+    `- ${projectionBreakdownText(totalLabel, language)}: ${totalArithmetic} ФО`
+  );
 }
 
 function formulaTermLabel(expression: string, language: UiLanguage) {
@@ -3908,21 +3960,22 @@ function buildProjectionBreakdownLines(
     "Expected red cards",
     fixtureInputs?.expectedRedCards
   );
-  addProjectionTermLine(lines, language, "Total", components.total);
+  const contributions = [
+    components.appearance,
+    components.sixtyMinutes,
+    components.fullMatch,
+    components.goals,
+    components.assists,
+    components.cleanSheet,
+    components.saves,
+    components.recoveries,
+    components.goalsConceded,
+    components.yellowCards,
+    components.redCards
+  ];
+  lines.push(formulaContributionTotalLine(language, "Total", contributions, components.total));
 
-  const computedTotal = (
-    (components.appearance ?? 0)
-    + (components.sixtyMinutes ?? 0)
-    + (components.fullMatch ?? 0)
-    + (components.goals ?? 0)
-    + (components.assists ?? 0)
-    + (components.cleanSheet ?? 0)
-    + (components.saves ?? 0)
-    + (components.recoveries ?? 0)
-    + (components.goalsConceded ?? 0)
-    + (components.yellowCards ?? 0)
-    + (components.redCards ?? 0)
-  );
+  const computedTotal = contributions.reduce((total, value) => total + (value ?? 0), 0);
   if (Math.abs(computedTotal - components.total) > 0.001) {
     lines.push(localizedText(language, "Total differs from module sum: custom weights/order were applied during scoring.", "Итог отличается от суммы модулей: применены пользовательские веса или порядок расчёта."));
   }
@@ -4026,13 +4079,16 @@ function buildAlternativeProjectionBreakdownLines(
   }
 
   const concededPenaltyApplies = player.positionGroup === "GK" || player.positionGroup === "DEF";
+  const expectedGoalsConceded = formatProjectionMetric(fixtureInputs?.expectedGoalsConceded);
   addProjectionTermLine(
     lines,
     language,
     "Goals conceded FP",
     components.goalsConceded,
     concededPenaltyApplies
-      ? "negative Poisson groups of 2 from expected goals conceded"
+      ? expectedGoalsConceded === null
+        ? "negative Poisson groups of 2 from expected goals conceded"
+        : `-poisson_groups(${expectedGoalsConceded}, 2)`
       : "not applicable for this position"
   );
 
@@ -4054,21 +4110,22 @@ function buildAlternativeProjectionBreakdownLines(
     "Expected red cards",
     fixtureInputs?.expectedRedCards
   );
-  addProjectionTermLine(lines, language, "Total", components.total);
+  const contributions = [
+    components.appearance,
+    components.sixtyMinutes,
+    components.fullMatch,
+    components.goals,
+    components.assists,
+    components.cleanSheet,
+    components.saves,
+    components.recoveries,
+    components.goalsConceded,
+    components.yellowCards,
+    components.redCards
+  ];
+  lines.push(formulaContributionTotalLine(language, "Alternative total", contributions, components.total));
 
-  const computedTotal = (
-    (components.appearance ?? 0)
-    + (components.sixtyMinutes ?? 0)
-    + (components.fullMatch ?? 0)
-    + (components.goals ?? 0)
-    + (components.assists ?? 0)
-    + (components.cleanSheet ?? 0)
-    + (components.saves ?? 0)
-    + (components.recoveries ?? 0)
-    + (components.goalsConceded ?? 0)
-    + (components.yellowCards ?? 0)
-    + (components.redCards ?? 0)
-  );
+  const computedTotal = contributions.reduce((total, value) => total + (value ?? 0), 0);
   if (Math.abs(computedTotal - components.total) > 0.001) {
     lines.push(localizedText(language, "Total differs from module sum: custom weights/order were applied during scoring.", "Итог отличается от суммы модулей: применены пользовательские веса или порядок расчёта."));
   }
@@ -4077,12 +4134,18 @@ function buildAlternativeProjectionBreakdownLines(
 }
 
 function playerPrimaryNextForecastTitle(player: FantasyPlannerPlayer, language: UiLanguage, nextForecast: number | null) {
-  const lines = [localizedText(language, `Primary forecast for next fixture: ${formatScore(nextForecast)} FP`, `Основной прогноз на следующий матч: ${formatScore(nextForecast)} ФО`)];
-  if (player.projectionFormula) {
+  const lines = [localizedText(language, `Primary forecast for next round: ${formatScore(nextForecast)} FP`, `Основной прогноз на следующий тур: ${formatScore(nextForecast)} ФО`)];
+  if (player.projectionEngine === "COMPONENT_XFP_V1" && player.projectionFormula) {
     lines.push(...minuteHistoryProvenanceLines(player.projectedFixtureComponents, language));
     lines.push(...buildFormulaBreakdownLines(language, player.projectionFormula, "Total", nextForecast));
-  } else if (player.projectionComponents) {
+  } else if (player.projectionEngine === "COMPONENT_XFP_V1" && player.projectionComponents) {
     lines.push(...buildProjectionBreakdownLines(player, language, player.projectionComponents, player.projectedFixtureComponents));
+  } else if (player.projectionEngine === "LEGACY_RIDGE19_V1") {
+    lines.push(localizedText(
+      language,
+      "The legacy calibrated forecast does not expose a component-level arithmetic breakdown; component-model values are intentionally not shown as if they formed this total.",
+      "Калиброванный legacy-прогноз не сохраняет арифметический разбор по компонентам; значения компонентной модели намеренно не показываются так, будто из них получен этот итог."
+    ));
   }
   return lines.join("\n");
 }

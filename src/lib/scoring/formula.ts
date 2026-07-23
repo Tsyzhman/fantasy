@@ -27,6 +27,7 @@ type FormulaNode =
 export type FormulaBreakdownTerm = {
   expression: string;
   resolvedExpression: string;
+  sign: 1 | -1;
   value: number;
 };
 
@@ -312,6 +313,7 @@ function extractFormulaTerms(
   terms.push({
     expression: formulaNodeToString(node),
     resolvedExpression: formulaNodeToResolvedString(node, rawMetrics),
+    sign,
     value: numericValue
   });
   return numericValue;
@@ -351,7 +353,9 @@ function formulaNodeToResolvedString(node: FormulaNode, rawMetrics: Record<strin
 }
 
 function formatFormulaNumber(value: number) {
-  return Number.isInteger(value) ? String(value) : String(value);
+  if (Number.isInteger(value)) return String(value);
+  const rounded = Math.round(value * 10_000) / 10_000;
+  return String(Object.is(rounded, -0) ? 0 : rounded);
 }
 
 function formatFormulaMetricLabel(metric: string) {

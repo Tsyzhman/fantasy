@@ -25,6 +25,7 @@ function squadSelection(playerId: string, isStarter: boolean, slotIndex: number)
 }
 
 const squadPlannerSource = readFileSync(new URL("./FantasySquadPlanner.tsx", import.meta.url), "utf8");
+const squadPlannerBackendSource = readFileSync(new URL("../../machete/squad_planner.ts", import.meta.url), "utf8");
 const squadPageSource = readFileSync(new URL("../../app/machete/squad/page.tsx", import.meta.url), "utf8");
 const playerTableExportRouteSource = readFileSync(new URL("../../app/api/machete/squads/export-table/route.ts", import.meta.url), "utf8");
 const globalStylesSource = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
@@ -274,6 +275,13 @@ test("player table exposes per-field advanced filters and detailed forecast cell
   assert.match(squadPlannerSource, /squadTableValueMatchesFilter/);
   assert.match(squadPlannerSource, /playerPrimaryNextForecastTitle\(player, language, numericValue\)/);
   assert.match(squadPlannerSource, /alternativePlayerForecastTitle\(player, language\)/);
+  assert.match(squadPlannerSource, /readableResolvedFormulaExpression/);
+  assert.match(squadPlannerSource, /formulaContributionTotalLine/);
+  assert.match(squadPlannerSource, /term\.sign === -1/);
+  assert.match(squadPlannerSource, /Ожидаемые голы/);
+  assert.match(squadPlannerSource, /-poisson_groups\(\$\{expectedGoalsConceded\}, 2\)/);
+  assert.match(squadPlannerSource, /legacy calibrated forecast does not expose a component-level arithmetic breakdown/);
+  assert.match(squadPlannerBackendSource, /alternativeProjectionFormula: nextFriendFormula/);
   assert.match(squadPlannerSource, /`\$\{horizon\}Т ФФО`/);
 });
 

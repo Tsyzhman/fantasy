@@ -89,11 +89,41 @@ test("returns both value and term-by-term decomposition", () => {
   assert.equal(breakdown.terms.length, 3);
   assert.equal(breakdown.terms[0].expression, "{goals}");
   assert.equal(breakdown.terms[0].resolvedExpression, "goals (5)");
+  assert.equal(breakdown.terms[0].sign, 1);
   assert.equal(breakdown.terms[1].expression, "{assists}");
   assert.equal(breakdown.terms[2].expression, "{penalties}");
+  assert.equal(breakdown.terms[2].sign, -1);
   assert.equal(breakdown.terms[0].value, 5);
   assert.equal(breakdown.terms[1].value, 2.5);
   assert.equal(breakdown.terms[2].value, -1);
+});
+
+test("breakdown preserves the structural sign even for double negatives", () => {
+  const breakdown = calculateCustomFormulaScoreWithBreakdown(
+    "1 - -{bonus} - 3 * {red cards}",
+    { bonus: 2, red_cards: 0.1 }
+  );
+
+  assert.deepEqual(breakdown.terms.map((term) => term.sign), [1, -1, -1]);
+  assert.equal(breakdown.terms[1].resolvedExpression, "-bonus (2)");
+  assert.equal(breakdown.terms[1].value, 2);
+  assert.equal(breakdown.terms[2].resolvedExpression, "(3 * red cards (0.1))");
+  assert.equal(breakdown.terms[2].value, -0.30000000000000004);
+  assert.equal(breakdown.value, 2.7);
+});
+
+test("resolved formula arithmetic keeps real inputs readable to four decimal places", () => {
+  const breakdown = calculateCustomFormulaScoreWithBreakdown(
+    "6 * {expected goals} + 3 * {expected assists}",
+    {
+      expected_goals: 0.123456,
+      expected_assists: 0.234567
+    }
+  );
+
+  assert.equal(breakdown.terms[0].resolvedExpression, "(6 * expected goals (0.1235))");
+  assert.equal(breakdown.terms[1].resolvedExpression, "(3 * expected assists (0.2346))");
+  assert.equal(breakdown.value, 1.444437);
 });
 
 test("enforces formula length, token and nesting limits", () => {

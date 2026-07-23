@@ -87,6 +87,7 @@ export type FantasyPlannerPlayer = {
     terms: {
       expression: string;
       resolvedExpression: string;
+      sign: 1 | -1;
       value: number;
       fixtureLabel?: string;
     }[];
@@ -112,6 +113,7 @@ export type FantasyPlannerPlayer = {
     terms: {
       expression: string;
       resolvedExpression: string;
+      sign: 1 | -1;
       value: number;
       fixtureLabel?: string;
     }[];

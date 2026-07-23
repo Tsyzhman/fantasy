@@ -486,12 +486,6 @@ export async function loadFantasySquadPlannerData(
       componentProjections,
       playerRows.expectedProjectionConfig
     );
-    const nextFriendRoundFormula = projectionRoundFormulaWithBreakdown(
-      nextRoundFixtures,
-      String(row.playerId),
-      friendAlternativeProjections,
-      playerRows.alternativeProjectionConfig
-    );
     const alternativePredictedFp = nextFriendFormula?.total ?? null;
     const price = resolveFantasyPlannerPrice(priceRow, predictedFp, positionGroup);
     const playerName = priceRow?.playerName ?? row.player.name;
@@ -616,7 +610,7 @@ export async function loadFantasySquadPlannerData(
             : undefined
         ),
         alternativeProjectionComponents: nextFriendProjection?.components ?? null,
-        alternativeProjectionFormula: nextFriendRoundFormula,
+        alternativeProjectionFormula: nextFriendFormula,
         alternativePredictedFp,
         alternativeRoundPoints,
         foontasyPoints: foontasy?.points ?? null,
