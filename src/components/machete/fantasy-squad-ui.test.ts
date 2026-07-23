@@ -263,6 +263,11 @@ test("custom player table keeps one-line headers and the action as fixed column 
   assert.ok(rowStart >= 0 && priceCell > rowStart && actionCell > priceCell && optionalCells > actionCell);
 });
 
+test("custom player table keeps the player name visible during horizontal scrolling", () => {
+  assert.match(squadPlannerSource, /<th className="sticky left-0 z-20[\s\S]*?PlayerPoolHeaderLabel/);
+  assert.match(squadPlannerSource, /sticky left-0 z-\[5\][\s\S]*?fixedColumnTitles\.player/);
+});
+
 test("player table exposes per-field advanced filters and detailed forecast cell tooltips", () => {
   assert.match(squadPlannerSource, /ru="Расширенные фильтры"/);
   assert.match(squadPlannerSource, /playerPoolAdvancedFilterColumns/);
@@ -280,7 +285,7 @@ test("custom player pool restores minutes and confidence under the name with det
   assert.match(squadPlannerSource, /15% — доля матчей/);
   assert.match(squadPlannerSource, /function PlayerPoolHeaderLabel/);
   assert.doesNotMatch(squadPlannerSource, /CircleHelp/);
-  assert.match(squadPlannerSource, /<td className="overflow-hidden px-2 py-1\.5" title=\{fixedColumnTitles\.player\}>/);
+  assert.match(squadPlannerSource, /sticky left-0 z-\[5\][\s\S]*?title=\{fixedColumnTitles\.player\}/);
   assert.match(squadPlannerSource, /title=\{fixedColumnTitles\.team\}/);
   assert.match(squadPlannerSource, /title=\{fixedColumnTitles\.position\}/);
   assert.match(squadPlannerSource, /title=\{fixedColumnTitles\.price\}/);

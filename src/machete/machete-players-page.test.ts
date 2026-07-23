@@ -5,6 +5,7 @@ import test from "node:test";
 const pageSource = readFileSync(new URL("../app/machete/players/page.tsx", import.meta.url), "utf8");
 const tableSource = readFileSync(new URL("../components/machete/MachetePlayerTable.tsx", import.meta.url), "utf8");
 const exportSource = readFileSync(new URL("../app/api/machete/players/export-table/route.ts", import.meta.url), "utf8");
+const globalStylesSource = readFileSync(new URL("../app/globals.css", import.meta.url), "utf8");
 
 test("Machete players does not load player statistics until explicit leagues are selected", () => {
   assert.doesNotMatch(pageSource, /resolvedSearchParams\.leagueId\s*\?\?\s*["']all["']/);
@@ -33,6 +34,8 @@ test("Machete player table matches the planner customization controls", () => {
   assert.match(tableSource, /player-pool-sortable table-fixed/);
   assert.match(tableSource, /border-sky-300 bg-sky-50/);
   assert.match(tableSource, /overflow-auto/);
+  assert.match(tableSource, /sticky-first-col player-pool-sortable/);
+  assert.match(globalStylesSource, /\.sticky-first-col thead th:first-child[\s\S]*?position: sticky/);
 });
 
 test("Machete player cards keep the complete selected metric set and report export failures", () => {
