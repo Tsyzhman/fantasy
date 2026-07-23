@@ -1289,10 +1289,7 @@ async function addArchivedPlayerSeasonMetrics(
   return rows.map((row) => {
     const identity = fantasyPlannerSharedRowIdentity(row.id);
     const options = archivesByPlayer.get(identity.playerId) ?? [];
-    const archive =
-      options.find((candidate) => String(candidate.teamId) === identity.teamId) ??
-      options[0] ??
-      null;
+    const archive = preferredArchivedSeason(options, identity.teamId, league.leagueId);
     if (!archive || !archive.appearances || archive.appearances <= 0) return row;
     const current = currentByPlayer.get(identity.playerId);
     const tierFactor = archive.leagueId === 338n && league.leagueId === 63n ? FNL_TO_RPL_EVENT_FACTOR : 1;
@@ -1317,6 +1314,31 @@ async function addArchivedPlayerSeasonMetrics(
       }
     };
   });
+}
+
+export function preferredArchivedSeason<T extends {
+  season: string;
+  teamId: bigint;
+  leagueId: bigint;
+  appearances: number | null;
+}>(options: T[], currentTeamId: string, currentLeagueId: bigint) {
+  const latestSeason = options[0]?.season;
+  if (!latestSeason) return null;
+  const latest = options.filter((candidate) => candidate.season === latestSeason);
+  const feederLeagueId = teamStrengthFeederLeagueByTopLeague.get(String(currentLeagueId));
+  return (
+    (feederLeagueId
+      ? latest.find((candidate) => candidate.teamId === BigInt(currentTeamId) && candidate.leagueId === feederLeagueId)
+      : null) ??
+    (feederLeagueId ? latest.find((candidate) => candidate.leagueId === feederLeagueId) : null) ??
+    latest.find((candidate) => candidate.teamId === BigInt(currentTeamId) && candidate.leagueId === currentLeagueId) ??
+    latest.find((candidate) => candidate.leagueId === currentLeagueId) ??
+    latest
+      .filter((candidate) => String(candidate.teamId) === currentTeamId)
+      .sort((left, right) => (right.appearances ?? 0) - (left.appearances ?? 0))[0] ??
+    [...latest].sort((left, right) => (right.appearances ?? 0) - (left.appearances ?? 0))[0] ??
+    null
+  );
 }
 
 export function fantasyPlannerSharedRowIdentity(rowId: string) {

@@ -31,6 +31,7 @@ import {
   friendStartingRows,
   loadFantasySquadPlannerData,
   normalizeFantasySquadName,
+  preferredArchivedSeason,
   projectFixtureFantasyPoints,
   resolveFantasyPlannerPrice,
   rolloverFantasySquadRoundPlans,
@@ -57,6 +58,15 @@ test("component xFP is the default primary engine and legacy remains a one-flag 
   assert.equal(configuredFantasyProjectionEngine(undefined), "COMPONENT_XFP_V1");
   assert.equal(configuredFantasyProjectionEngine("component"), "COMPONENT_XFP_V1");
   assert.equal(configuredFantasyProjectionEngine("legacy"), "LEGACY_RIDGE19_V1");
+});
+
+test("promoted-player archive prefers the feeder league over a one-match cup row", () => {
+  const archive = preferredArchivedSeason([
+    { season: "2025/2026", teamId: 1066681n, leagueId: 193n, appearances: 1 },
+    { season: "2025/2026", teamId: 1066681n, leagueId: 338n, appearances: 34 }
+  ], "1066681", 63n);
+  assert.equal(archive?.leagueId, 338n);
+  assert.equal(archive?.appearances, 34);
 });
 
 test("editable pipeline applies history, fixture, allocation and final score formulas in order", () => {
