@@ -449,6 +449,7 @@ test("shallow FotMob payloads are not marked final raw payloads", async () => {
 test("match payload persistence creates placeholder teams for player stat team references", async () => {
   const placeholderCalls: unknown[] = [];
   const playerStatCalls: unknown[] = [];
+  const teamPlayerSeasonCalls: unknown[] = [];
   const promotionTimingCalls: unknown[] = [];
   const prisma = {
     coreLeague: {
@@ -482,6 +483,22 @@ test("match payload persistence creates placeholder teams for player stat team r
       },
       async update(input: unknown) {
         promotionTimingCalls.push(input);
+        return {};
+      }
+    },
+    leagueSeason: {
+      async upsert() {
+        return {};
+      }
+    },
+    leagueSeasonTeam: {
+      async upsert() {
+        return {};
+      }
+    },
+    teamPlayerSeason: {
+      async upsert(input: unknown) {
+        teamPlayerSeasonCalls.push(input);
         return {};
       }
     },
@@ -524,6 +541,7 @@ test("match payload persistence creates placeholder teams for player stat team r
     {
       id: 1002,
       leagueId: 47,
+      season: "2026/2027",
       home: { id: 10, name: "Home FC", score: 1 },
       away: { id: 20, name: "Away FC", score: 0 },
       status: { finished: true, started: true, utcTime: "2026-05-01T18:00:00.000Z" },
@@ -542,6 +560,15 @@ test("match payload persistence creates placeholder teams for player stat team r
   assert.equal(promotionTiming.where?.id, 1002n);
   assert.equal(promotionTiming.data?.rawReceivedAt?.toISOString(), "2026-05-01T18:00:01.000Z");
   assert.ok((promotionTiming.data?.normalizedAt?.getTime() ?? 0) >= new Date("2026-05-01T18:00:01.000Z").getTime());
+  const seasonLink = teamPlayerSeasonCalls[0] as {
+    update?: { active?: boolean; lastSeenAt?: Date };
+    create?: { active?: boolean; teamId?: bigint; playerId?: bigint };
+  };
+  assert.equal(seasonLink.update?.active, undefined);
+  assert.equal(seasonLink.update?.lastSeenAt instanceof Date, true);
+  assert.equal(seasonLink.create?.active, false);
+  assert.equal(seasonLink.create?.teamId, 30n);
+  assert.equal(seasonLink.create?.playerId, 999n);
 });
 
 test("match payload persistence repairs player stat team links from shot ownership", async () => {

@@ -373,13 +373,6 @@ export async function loadSharedMachetePlayerRows(
             ...(scope.teamId ? { teamId: scope.teamId } : {})
           }))
         },
-        ...(positionFilter
-          ? [
-              {
-                OR: sharedPositionWhereClauses(positionFilter)
-              }
-            ]
-          : []),
         ...(input.playerIds !== undefined
           ? [
               {
@@ -692,19 +685,6 @@ function defaultSharedLeagueSeason(options: SharedLeagueSeasonOption[]) {
 function parseSharedPositionFilter(position: string | null | undefined): SharedPositionFilter | null {
   const normalized = normalizeFantasyPosition(position);
   return normalized === "UNK" ? null : normalized;
-}
-
-function sharedPositionWhereClauses(position: SharedPositionFilter) {
-  const terms: Record<SharedPositionFilter, string[]> = {
-    GK: ["GK", "keeper", "goalkeeper"],
-    DEF: ["DEF", "defender", "back"],
-    MID: ["MID", "midfielder"],
-    FWD: ["FW", "FWD", "forward", "striker", "winger"]
-  };
-
-  return terms[position].map((term) => ({
-    position: { contains: term, mode: "insensitive" as const }
-  }));
 }
 
 function preferSharedLeagueSeason(candidate: SharedLeagueSeasonOption, current: SharedLeagueSeasonOption) {

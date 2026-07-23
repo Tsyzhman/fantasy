@@ -423,7 +423,7 @@ test("combined last match window is applied across selected competitions without
   assert.deepEqual(statCall.where?.matchId?.in, [203n, 202n, 201n]);
 });
 
-test("shared player rows push position filters into roster loading and normalize returned rows", async () => {
+test("shared player rows normalize FotMob positions before applying the position filter", async () => {
   const rosterCalls: unknown[] = [];
   const prisma = {
     teamPlayerSeason: {
@@ -435,16 +435,24 @@ test("shared player rows push position filters into roster loading and normalize
             season: "2024/2025",
             teamId: 10n,
             playerId: 99n,
-            position: "Goalkeeper",
-            playerName: "Emiliano Martinez"
+            position: "CB",
+            playerName: "Nikita Chernov"
           }),
           rosterRow({
             leagueId: 47n,
             season: "2024/2025",
             teamId: 10n,
             playerId: 100n,
-            position: "Defender",
-            playerName: "Pau Torres"
+            position: "CM",
+            playerName: "Central Midfielder"
+          }),
+          rosterRow({
+            leagueId: 47n,
+            season: "2024/2025",
+            teamId: 10n,
+            playerId: 101n,
+            position: "ST",
+            playerName: "Centre Forward"
           })
         ];
       }
@@ -461,34 +469,42 @@ test("shared player rows push position filters into roster loading and normalize
     }
   } as unknown as PrismaClient;
 
-  const rows = await loadSharedMachetePlayerRows(prisma, {
-    scopes: [{ leagueId: 47n, season: "2024/2025", teamId: 10n }],
-    position: "GK",
-    playerIds: [99n],
-    matchWindow: { kind: "all" },
-    scoringModel
-  });
+  const cases = [
+    ["DEF", "47:2024/2025:10:99", "CB"],
+    ["MID", "47:2024/2025:10:100", "CM"],
+    ["FWD", "47:2024/2025:10:101", "ST"]
+  ] as const;
+  for (const [position, expectedId, expectedPosition] of cases) {
+    const rows = await loadSharedMachetePlayerRows(prisma, {
+      scopes: [{ leagueId: 47n, season: "2024/2025", teamId: 10n }],
+      position,
+      playerIds: [99n, 100n, 101n],
+      matchWindow: { kind: "all" },
+      scoringModel
+    });
 
-  assert.equal(rows.length, 1);
-  assert.equal(rows[0].id, "47:2024/2025:10:99");
-  assert.equal(rows[0].position, "Goalkeeper");
-  assert.equal(rows[0].teamShortName, "Villa");
+    assert.equal(rows.length, 1);
+    assert.equal(rows[0].id, expectedId);
+    assert.equal(rows[0].position, expectedPosition);
+    assert.equal(rows[0].teamShortName, "Villa");
+    assert.equal(rows[0].matchesPlayed, 0);
+    assert.equal(rows[0].minutesPlayed, 0);
+  }
 
-  const rosterCall = rosterCalls[0] as {
-    where?: {
-      AND?: Array<{
-        OR?: Array<{
-          position?: {
-            contains?: string;
-          };
+  assert.equal(rosterCalls.length, 3);
+  for (const rosterCallValue of rosterCalls) {
+    const rosterCall = rosterCallValue as {
+      where?: {
+        AND?: Array<{
+          OR?: Array<{ position?: unknown }>;
+          playerId?: { in?: bigint[] };
         }>;
-        playerId?: { in?: bigint[] };
-      }>;
+      };
     };
-  };
-  const positionTerms = rosterCall.where?.AND?.[1]?.OR?.map((item) => item.position?.contains).filter(Boolean);
-  assert.deepEqual(positionTerms, ["GK", "keeper", "goalkeeper"]);
-  assert.deepEqual(rosterCall.where?.AND?.[2]?.playerId?.in, [99n]);
+    const clauses = rosterCall.where?.AND ?? [];
+    assert.equal(clauses.some((clause) => clause.OR?.some((item) => item.position)), false);
+    assert.deepEqual(clauses[1]?.playerId?.in, [99n, 100n, 101n]);
+  }
 });
 
 test("explicit roster scopes keep all-season history inside the selected competition", async () => {

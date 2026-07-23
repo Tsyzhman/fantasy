@@ -559,8 +559,10 @@ async function upsertMatchDerivedSeasonLinks(prisma: PrismaIngestionClient, pars
           playerId: row.playerId
         }
       },
+      // Match payloads describe the club a player represented in that match,
+      // not the player's current club. Only the FotMob season-roster sync may
+      // activate a TeamPlayerSeason row.
       update: {
-        active: true,
         lastSeenAt: now
       },
       create: {
@@ -569,7 +571,7 @@ async function upsertMatchDerivedSeasonLinks(prisma: PrismaIngestionClient, pars
         teamId: row.teamId,
         playerId: row.playerId,
         source: FOTMOB_SOURCE,
-        active: true,
+        active: false,
         position: row.position,
         shirtNumber: row.shirtNumber,
         nationality: null,
