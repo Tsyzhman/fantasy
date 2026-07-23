@@ -5,6 +5,7 @@ import test from "node:test";
 import { formatAlternativeScore, formatScore, NULL_GLYPH } from "@/lib/format";
 import {
   fixtureChipPresentations,
+  isSquadReplacementTarget,
   orderSquadSelectionsWithBenchGoalkeeperLast,
   startingXiFoontasyPoints,
   startingXiAlternativeHorizonPoints,
@@ -172,6 +173,29 @@ test("goalkeepers can swap only with goalkeepers and the bench goalkeeper stays 
   if (!result.ok) return;
   assert.equal(result.selections.find((selection) => selection.playerId === "bench-gk")?.isStarter, true);
   assert.equal(result.selections.at(-1)?.playerId, "starter-gk");
+});
+
+test("click replacement targets only the opposite squad group and the same goalkeeper class", () => {
+  const starter = squadSelection("def", true, 1);
+  const bench = squadSelection("mid", false, 2);
+  const benchGoalkeeper = squadSelection("bench-gk", false, 3);
+
+  assert.equal(isSquadReplacementTarget(starter, bench, "DEF", "MID"), true);
+  assert.equal(isSquadReplacementTarget(starter, starter, "DEF", "DEF"), false);
+  assert.equal(isSquadReplacementTarget(starter, benchGoalkeeper, "DEF", "GK"), false);
+  assert.equal(isSquadReplacementTarget(
+    squadSelection("starter-gk", true, 0),
+    benchGoalkeeper,
+    "GK",
+    "GK"
+  ), true);
+});
+
+test("squad exposes a localized click replacement mode and reuses formation validation", () => {
+  assert.match(squadPlannerSource, /<I18nText en="Replace" ru="Замена" \/>/);
+  assert.match(squadPlannerSource, /onReplacementPlayerClick\(player\.playerId\)/);
+  assert.match(squadPlannerSource, /summarizeFantasySquad\(players, nextSelections, rules, horizon\)\.violations\.length > 0/);
+  assert.match(squadPlannerSource, /if \(swapPlayers\(replacementSourcePlayerId, playerId\)\)/);
 });
 
 test("desktop fixture window uses five compact opponent codes before overflow", () => {

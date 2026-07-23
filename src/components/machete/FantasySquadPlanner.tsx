@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ArrowRight, Bookmark, Check, Columns3, Copy, Crown, Download, FilePlus2, Layers3, ListChecks, Lock, MoreHorizontal, Plus, Save, Search, SlidersHorizontal, Sparkles, Trash2, Users, X } from "lucide-react";
+import { ArrowLeft, ArrowLeftRight, ArrowRight, Bookmark, Check, Columns3, Copy, Crown, Download, FilePlus2, Layers3, ListChecks, Lock, MoreHorizontal, Plus, Save, Search, SlidersHorizontal, Sparkles, Trash2, Users, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type DragEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject, type SetStateAction, useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
@@ -9,6 +9,7 @@ import { I18nText } from "@/components/i18n-text";
 import { LocalizedOption, localizedText, useLanguage } from "@/components/localized-option";
 import {
   fixtureChipPresentations,
+  isSquadReplacementTarget,
   orderSquadSelectionsWithBenchGoalkeeperLast,
   startingXiAlternativeHorizonPoints,
   startingXiAlternativeRoundPoints,
@@ -287,6 +288,8 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
   const [mobileTab, setMobileTab] = useState<MobileTab>("squad");
   const [showAllSuggestions, setShowAllSuggestions] = useState(false);
   const [draggedPlayerId, setDraggedPlayerId] = useState<string | null>(null);
+  const [replacementMode, setReplacementMode] = useState(false);
+  const [replacementSourcePlayerId, setReplacementSourcePlayerId] = useState<string | null>(null);
   const [postLoadContentReady, setPostLoadContentReady] = useState(false);
   const [betaAutoPickComplete, setBetaAutoPickComplete] = useState(false);
   const [autoPickPending, setAutoPickPending] = useState(false);
@@ -324,6 +327,25 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
   useEffect(() => {
     autoPickRevisionRef.current += 1;
   }, [autoPickStrategy, horizon, players, rules, selections]);
+
+  useEffect(() => {
+    if (!replacementMode) return;
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "Escape") return;
+      setReplacementMode(false);
+      setReplacementSourcePlayerId(null);
+      setMessage(null);
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [replacementMode]);
+
+  function selectActiveRoundOffset(roundOffset: number) {
+    setActiveRoundOffset(roundOffset);
+    setReplacementMode(false);
+    setReplacementSourcePlayerId(null);
+    setDraggedPlayerId(null);
+  }
 
   const selectionsByPlayerId = useMemo(() => new Map(selections.map((selection) => [selection.playerId, selection])), [selections]);
   const selectedPlayerIds = useMemo(() => new Set(selections.map((selection) => selection.playerId)), [selections]);
@@ -767,14 +789,14 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
     setDraggedPlayerId(null);
   }
 
-  function handleDropOnPlayer(sourcePlayerId: string, targetPlayerId: string) {
+  function swapPlayers(sourcePlayerId: string, targetPlayerId: string) {
     const result = swapSquadSelectionCards(selections, players, sourcePlayerId, targetPlayerId);
     setDraggedPlayerId(null);
     if (!result.ok) {
       setMessage(result.reason === "GOALKEEPER_MISMATCH"
         ? localizedText(language, "A goalkeeper can only swap with another goalkeeper.", "Вратаря можно менять местами только с другим вратарём.")
         : localizedText(language, "Could not find both players in the squad.", "Не удалось найти обоих игроков в составе."));
-      return;
+      return false;
     }
 
     const nextSelections = sanitizeCaptainRoles(result.selections);
@@ -784,11 +806,69 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
         "This swap would break the starting XI formation rules.",
         "Такая перестановка нарушит правила расстановки стартового состава."
       ));
-      return;
+      return false;
     }
 
     setSelections(nextSelections);
     setMessage(null);
+    return true;
+  }
+
+  function handleDropOnPlayer(sourcePlayerId: string, targetPlayerId: string) {
+    swapPlayers(sourcePlayerId, targetPlayerId);
+  }
+
+  function toggleReplacementMode() {
+    setReplacementMode((current) => !current);
+    setReplacementSourcePlayerId(null);
+    setDraggedPlayerId(null);
+    setMessage(replacementMode
+      ? null
+      : localizedText(
+          language,
+          "Select a player in the starting XI or on the bench, then select a player in the other group.",
+          "Выберите игрока основы или запаса, затем игрока из другой части состава."
+        ));
+  }
+
+  function handleReplacementPlayerClick(playerId: string) {
+    const clickedSelection = selectionsByPlayerId.get(playerId);
+    if (!replacementMode || !clickedSelection) return;
+
+    if (!replacementSourcePlayerId) {
+      setReplacementSourcePlayerId(playerId);
+      setMessage(clickedSelection.isStarter
+        ? localizedText(language, "Now select a bench player.", "Теперь выберите игрока запаса.")
+        : localizedText(language, "Now select a starting XI player.", "Теперь выберите игрока основы."));
+      return;
+    }
+
+    if (replacementSourcePlayerId === playerId) {
+      setReplacementSourcePlayerId(null);
+      setMessage(localizedText(
+        language,
+        "Selection cleared. Choose the first player again.",
+        "Выбор снят. Выберите первого игрока заново."
+      ));
+      return;
+    }
+
+    const sourceSelection = selectionsByPlayerId.get(replacementSourcePlayerId);
+    if (!sourceSelection) {
+      setReplacementSourcePlayerId(playerId);
+      return;
+    }
+    if (sourceSelection.isStarter === clickedSelection.isStarter) {
+      setMessage(sourceSelection.isStarter
+        ? localizedText(language, "The second player must be on the bench.", "Второй игрок должен быть в запасе.")
+        : localizedText(language, "The second player must be in the starting XI.", "Второй игрок должен быть в основе."));
+      return;
+    }
+
+    if (swapPlayers(replacementSourcePlayerId, playerId)) {
+      setReplacementMode(false);
+      setReplacementSourcePlayerId(null);
+    }
   }
 
   function toggleCaptain(playerId: string) {
@@ -1028,7 +1108,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
     const blankPlans = createFantasySquadRoundPlans([]);
     setRoundPlans(blankPlans);
     setSavedRoundPlans(cloneFantasyRoundPlans(blankPlans));
-    setActiveRoundOffset(0);
+    selectActiveRoundOffset(0);
     setMessage(localizedText(language, "Blank squad variant started. Save it to keep it.", "Создан пустой вариант. Сохраните его, чтобы не потерять."));
   }
 
@@ -1070,7 +1150,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
         const blankPlans = createFantasySquadRoundPlans([]);
         setRoundPlans(blankPlans);
         setSavedRoundPlans(cloneFantasyRoundPlans(blankPlans));
-        setActiveRoundOffset(0);
+        selectActiveRoundOffset(0);
         setMessage(localizedText(language, "Squad deleted.", "Состав удалён."));
         router.replace(squadVariantHref(leagueId, season, null, appliedHistorySettings));
       } finally {
@@ -1111,7 +1191,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                     <button
                       key={plan.roundOffset}
                       type="button"
-                      onClick={() => setActiveRoundOffset(plan.roundOffset)}
+                      onClick={() => selectActiveRoundOffset(plan.roundOffset)}
                       title={round?.label ?? localizedText(language, `Round +${plan.roundOffset}`, `Тур +${plan.roundOffset}`)}
                       className={cn(
                         "min-w-[5.25rem] rounded px-2.5 py-2 text-left text-xs font-semibold transition",
@@ -1580,6 +1660,8 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
               captainId={captainId}
               viceCaptainId={viceCaptainId}
               draggedPlayerId={draggedPlayerId}
+              replacementMode={replacementMode}
+              replacementSourcePlayerId={replacementSourcePlayerId}
               onRemove={removePlayer}
               onToggleCaptain={toggleCaptain}
               onToggleVice={toggleViceCaptain}
@@ -1588,6 +1670,8 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
               onDropToStarter={handleDropToStarter}
               onDropToBench={handleDropToBench}
               onDropOnPlayer={handleDropOnPlayer}
+              onToggleReplacementMode={toggleReplacementMode}
+              onReplacementPlayerClick={handleReplacementPlayerClick}
             />
           </div>
 
@@ -3132,6 +3216,8 @@ function SquadPitch({
   captainId,
   viceCaptainId,
   draggedPlayerId,
+  replacementMode,
+  replacementSourcePlayerId,
   onRemove,
   onToggleCaptain,
   onToggleVice,
@@ -3139,7 +3225,9 @@ function SquadPitch({
   onDragEnd,
   onDropToStarter,
   onDropToBench,
-  onDropOnPlayer
+  onDropOnPlayer,
+  onToggleReplacementMode,
+  onReplacementPlayerClick
 }: {
   summary: ReturnType<typeof summarizeFantasySquad>;
   selectionsByPlayerId: Map<string, FantasySquadSelection>;
@@ -3148,6 +3236,8 @@ function SquadPitch({
   captainId: string | null;
   viceCaptainId: string | null;
   draggedPlayerId: string | null;
+  replacementMode: boolean;
+  replacementSourcePlayerId: string | null;
   onRemove: (playerId: string) => void;
   onToggleCaptain: (playerId: string) => void;
   onToggleVice: (playerId: string) => void;
@@ -3156,6 +3246,8 @@ function SquadPitch({
   onDropToStarter: (playerId: string) => void;
   onDropToBench: (playerId: string) => void;
   onDropOnPlayer: (sourcePlayerId: string, targetPlayerId: string) => void;
+  onToggleReplacementMode: () => void;
+  onReplacementPlayerClick: (playerId: string) => void;
 }) {
   const starterLines: Array<{ position: Exclude<FantasyPositionGroup, "UNK">; label: React.ReactNode }> = [
     { position: "DEF", label: <I18nText en="Defenders" ru="Защитники" /> },
@@ -3163,6 +3255,10 @@ function SquadPitch({
     { position: "FWD", label: <I18nText en="Forwards" ru="Нападающие" /> }
   ];
   const draggedSelection = draggedPlayerId ? selectionsByPlayerId.get(draggedPlayerId) : undefined;
+  const replacementSourceSelection = replacementSourcePlayerId ? selectionsByPlayerId.get(replacementSourcePlayerId) : undefined;
+  const replacementSourcePosition = replacementSourcePlayerId
+    ? [...summary.starterPlayers, ...summary.benchPlayers].find((player) => player.playerId === replacementSourcePlayerId)?.positionGroup
+    : undefined;
   const orderedBenchPlayers = [...summary.benchPlayers].sort((left, right) =>
     Number(left.positionGroup === "GK") - Number(right.positionGroup === "GK")
   );
@@ -3186,6 +3282,10 @@ function SquadPitch({
               captainId={captainId}
               viceCaptainId={viceCaptainId}
               draggedPlayerId={draggedPlayerId}
+              replacementMode={replacementMode}
+              replacementSourcePlayerId={replacementSourcePlayerId}
+              replacementSourceSelection={replacementSourceSelection}
+              replacementSourcePosition={replacementSourcePosition}
               onRemove={onRemove}
               onToggleCaptain={onToggleCaptain}
               onToggleVice={onToggleVice}
@@ -3193,6 +3293,7 @@ function SquadPitch({
               onDragEnd={onDragEnd}
               onDropOnPlayer={onDropOnPlayer}
               onDropToStarter={onDropToStarter}
+              onReplacementPlayerClick={onReplacementPlayerClick}
             />
             {starterLines.map((line) => (
               <SquadLine
@@ -3205,6 +3306,10 @@ function SquadPitch({
                 captainId={captainId}
                 viceCaptainId={viceCaptainId}
                 draggedPlayerId={draggedPlayerId}
+                replacementMode={replacementMode}
+                replacementSourcePlayerId={replacementSourcePlayerId}
+                replacementSourceSelection={replacementSourceSelection}
+                replacementSourcePosition={replacementSourcePosition}
                 onRemove={onRemove}
                 onToggleCaptain={onToggleCaptain}
                 onToggleVice={onToggleVice}
@@ -3212,6 +3317,7 @@ function SquadPitch({
                 onDragEnd={onDragEnd}
                 onDropOnPlayer={onDropOnPlayer}
                 onDropToStarter={onDropToStarter}
+                onReplacementPlayerClick={onReplacementPlayerClick}
               />
             ))}
           </div>
@@ -3221,8 +3327,22 @@ function SquadPitch({
       <div className="h-px bg-slate-300" />
 
       <div className="rounded border border-slate-200 bg-slate-50 p-2">
-        <div className="mb-2">
+        <div className="mb-2 flex items-center justify-between gap-2">
           <h4 className="text-xs font-bold uppercase tracking-wide text-slate-500"><I18nText en="Bench" ru="Запас" /></h4>
+          <button
+            type="button"
+            onClick={onToggleReplacementMode}
+            aria-pressed={replacementMode}
+            className={cn(
+              "inline-flex min-h-8 items-center gap-1.5 rounded border px-2.5 py-1 text-xs font-semibold transition",
+              replacementMode
+                ? "border-sky-400 bg-sky-100 text-sky-900"
+                : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
+            )}
+          >
+            {replacementMode ? <X className="h-3.5 w-3.5" /> : <ArrowLeftRight className="h-3.5 w-3.5" />}
+            {replacementMode ? <I18nText en="Cancel" ru="Отмена" /> : <I18nText en="Replace" ru="Замена" />}
+          </button>
         </div>
         <div
           className={cn(
@@ -3245,6 +3365,10 @@ function SquadPitch({
               isCaptain={captainId === player.playerId}
               isVice={viceCaptainId === player.playerId}
               isDragging={draggedPlayerId === player.playerId}
+              replacementMode={replacementMode}
+              replacementSourcePlayerId={replacementSourcePlayerId}
+              replacementSourceSelection={replacementSourceSelection}
+              replacementSourcePosition={replacementSourcePosition}
               compact
               onRemove={onRemove}
               onToggleCaptain={onToggleCaptain}
@@ -3252,6 +3376,7 @@ function SquadPitch({
               onDragStart={onDragStart}
               onDragEnd={onDragEnd}
               onDropOnPlayer={onDropOnPlayer}
+              onReplacementPlayerClick={onReplacementPlayerClick}
             />
           ))}
           {orderedBenchPlayers.length === 0 ? (
@@ -3274,13 +3399,18 @@ function SquadLine({
   captainId,
   viceCaptainId,
   draggedPlayerId,
+  replacementMode,
+  replacementSourcePlayerId,
+  replacementSourceSelection,
+  replacementSourcePosition,
   onRemove,
   onToggleCaptain,
   onToggleVice,
   onDragStart,
   onDragEnd,
   onDropOnPlayer,
-  onDropToStarter
+  onDropToStarter,
+  onReplacementPlayerClick
 }: {
   label: React.ReactNode;
   players: FantasyPlannerPlayer[];
@@ -3290,6 +3420,10 @@ function SquadLine({
   captainId: string | null;
   viceCaptainId: string | null;
   draggedPlayerId: string | null;
+  replacementMode: boolean;
+  replacementSourcePlayerId: string | null;
+  replacementSourceSelection: FantasySquadSelection | undefined;
+  replacementSourcePosition: FantasyPositionGroup | undefined;
   onRemove: (playerId: string) => void;
   onToggleCaptain: (playerId: string) => void;
   onToggleVice: (playerId: string) => void;
@@ -3297,6 +3431,7 @@ function SquadLine({
   onDragEnd: () => void;
   onDropOnPlayer: (sourcePlayerId: string, targetPlayerId: string) => void;
   onDropToStarter: (playerId: string) => void;
+  onReplacementPlayerClick: (playerId: string) => void;
 }) {
   return (
     <div>
@@ -3322,12 +3457,17 @@ function SquadLine({
             isCaptain={captainId === player.playerId}
             isVice={viceCaptainId === player.playerId}
             isDragging={draggedPlayerId === player.playerId}
+            replacementMode={replacementMode}
+            replacementSourcePlayerId={replacementSourcePlayerId}
+            replacementSourceSelection={replacementSourceSelection}
+            replacementSourcePosition={replacementSourcePosition}
             onRemove={onRemove}
             onToggleCaptain={onToggleCaptain}
             onToggleVice={onToggleVice}
             onDragStart={onDragStart}
             onDragEnd={onDragEnd}
             onDropOnPlayer={onDropOnPlayer}
+            onReplacementPlayerClick={onReplacementPlayerClick}
           />
         ))}
         {players.length === 0 ? (
@@ -3349,12 +3489,17 @@ function SquadPlayerTile({
   isVice = false,
   isDragging = false,
   compact = false,
+  replacementMode = false,
+  replacementSourcePlayerId = null,
+  replacementSourceSelection,
+  replacementSourcePosition,
   onRemove,
   onToggleCaptain,
   onToggleVice,
   onDragStart,
   onDragEnd,
-  onDropOnPlayer
+  onDropOnPlayer,
+  onReplacementPlayerClick
 }: {
   player: FantasyPlannerPlayer;
   selection: FantasySquadSelection | undefined;
@@ -3364,12 +3509,17 @@ function SquadPlayerTile({
   isVice?: boolean;
   isDragging?: boolean;
   compact?: boolean;
+  replacementMode?: boolean;
+  replacementSourcePlayerId?: string | null;
+  replacementSourceSelection?: FantasySquadSelection;
+  replacementSourcePosition?: FantasyPositionGroup;
   onRemove: (playerId: string) => void;
   onToggleCaptain: (playerId: string) => void;
   onToggleVice: (playerId: string) => void;
   onDragStart: (playerId: string) => void;
   onDragEnd: () => void;
   onDropOnPlayer: (sourcePlayerId: string, targetPlayerId: string) => void;
+  onReplacementPlayerClick: (playerId: string) => void;
 }) {
   const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
   const mobileActionsTriggerRef = useRef<HTMLButtonElement>(null);
@@ -3386,6 +3536,15 @@ function SquadPlayerTile({
   const closeActionsLabel = localizedText(language, "Close player actions", "Закрыть действия игрока");
   const mobileActionsLabel = localizedText(language, `Actions for ${player.name}`, `Действия: ${player.name}`);
   const mobileActionsTitleId = `mobile-player-actions-${player.playerId}`;
+  const isReplacementSource = replacementSourcePlayerId === player.playerId;
+  const replacementTargetAllowed = !replacementSourcePlayerId
+    || isReplacementSource
+    || isSquadReplacementTarget(replacementSourceSelection, selection, replacementSourcePosition, player.positionGroup);
+  const replacementActionLabel = !replacementSourcePlayerId
+    ? localizedText(language, `Select ${player.name} for replacement`, `Выбрать ${player.name} для замены`)
+    : isReplacementSource
+      ? localizedText(language, `Clear ${player.name} selection`, `Снять выбор с ${player.name}`)
+      : localizedText(language, `Swap with ${player.name}`, `Заменить на ${player.name}`);
   const cardPrimaryNextForecast = nextFantasyPoints(player);
   const cardPrimaryHorizonForecast = playerHorizonPoints(player, 3);
   const cardAlternativeNextForecast = player.alternativePredictedFp ?? null;
@@ -3462,7 +3621,7 @@ function SquadPlayerTile({
   return (
     <>
     <div
-      draggable={Boolean(selection)}
+      draggable={Boolean(selection) && !replacementMode}
       onDragStart={(event) => {
         event.dataTransfer.effectAllowed = "move";
         event.dataTransfer.setData(squadDragDataType, player.playerId);
@@ -3480,11 +3639,30 @@ function SquadPlayerTile({
       aria-label={localizedText(language, `Squad player ${player.name}`, `Игрок состава: ${player.name}`)}
       className={cn(
         compact ? "w-[3.6rem] sm:w-[3.8rem] 2xl:w-16" : "w-[3.6rem] sm:w-[3.8rem] 2xl:w-[4.25rem]",
-        "relative cursor-grab rounded border bg-white px-1 py-0.5 text-center shadow-sm transition active:cursor-grabbing [@media(pointer:fine)]:pb-5",
+        "relative rounded border bg-white px-1 py-0.5 text-center shadow-sm transition [@media(pointer:fine)]:pb-5",
+        replacementMode ? "cursor-pointer" : "cursor-grab active:cursor-grabbing",
         isCaptain ? "border-amber-400 ring-2 ring-amber-200" : "border-white/70",
         isDragging && "opacity-55 ring-2 ring-sky-300"
       )}
     >
+      {replacementMode ? (
+        <button
+          type="button"
+          onClick={() => onReplacementPlayerClick(player.playerId)}
+          aria-label={replacementActionLabel}
+          title={replacementActionLabel}
+          className={cn(
+            "absolute inset-0 z-30 rounded border-2 transition",
+            isReplacementSource
+              ? "border-amber-400 bg-amber-100/20 ring-2 ring-amber-200"
+              : replacementTargetAllowed
+                ? "border-sky-400 bg-sky-100/10 hover:bg-sky-100/25"
+                : "border-rose-300 bg-rose-100/20"
+          )}
+        >
+          <span className="sr-only">{replacementActionLabel}</span>
+        </button>
+      ) : null}
       <span
         className="absolute left-0.5 top-0.5 max-w-[1.45rem] truncate text-[7px] font-bold text-slate-500"
         title={player.teamName}

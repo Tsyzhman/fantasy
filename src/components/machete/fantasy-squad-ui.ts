@@ -1,4 +1,4 @@
-import type { FantasyPlannerPlayer, FantasySquadSelection } from "@/machete/squad_logic";
+import type { FantasyPlannerPlayer, FantasyPositionGroup, FantasySquadSelection } from "@/machete/squad_logic";
 
 export type FixtureChipSide = "home" | "away" | null;
 
@@ -120,6 +120,17 @@ function fixtureChipPresentation(rawLabel: string, difficulty: number | null | u
 export type SquadCardSwapResult =
   | { ok: true; selections: FantasySquadSelection[] }
   | { ok: false; reason: "PLAYER_NOT_FOUND" | "GOALKEEPER_MISMATCH" };
+
+export function isSquadReplacementTarget(
+  source: Pick<FantasySquadSelection, "isStarter"> | undefined,
+  target: Pick<FantasySquadSelection, "isStarter"> | undefined,
+  sourcePosition: FantasyPositionGroup | undefined,
+  targetPosition: FantasyPositionGroup
+) {
+  if (!source || !target || !sourcePosition) return false;
+  if (source.isStarter === target.isStarter) return false;
+  return (sourcePosition === "GK") === (targetPosition === "GK");
+}
 
 export function swapSquadSelectionCards(
   selections: FantasySquadSelection[],
