@@ -281,6 +281,10 @@ test("player table exposes per-field advanced filters and detailed forecast cell
   assert.match(squadPlannerSource, /Ожидаемые голы/);
   assert.match(squadPlannerSource, /-poisson_groups\(\$\{expectedGoalsConceded\}, 2\)/);
   assert.match(squadPlannerSource, /legacy calibrated forecast does not expose a component-level arithmetic breakdown/);
+  assert.match(squadPlannerSource, /Nearest-fixture starter floor: max\(base/);
+  assert.match(squadPlannerSource, /Минимум основы только на ближайший матч: max\(базовые/);
+  assert.match(squadPlannerSource, /It is not applied to later fixtures/);
+  assert.doesNotMatch(squadPlannerSource, /club starting-XI uplift/);
   assert.match(squadPlannerBackendSource, /alternativeProjectionFormula: nextFriendFormula/);
   assert.match(squadPlannerSource, /`\$\{horizon\}Т ФФО`/);
 });
@@ -463,8 +467,8 @@ test("table forecast tooltips and compact controls cover both English and Russia
   assert.ok(squadPlannerSource.includes("`- Ожидаемые минуты: ${expectedMinutes}`"));
   assert.match(squadPlannerSource, /"No round-by-round values available yet\."/);
   assert.match(squadPlannerSource, /"Значений по отдельным турам пока нет\."/);
-  assert.match(squadPlannerSource, /Base weighted minutes/);
-  assert.match(squadPlannerSource, /надбавка за основу клуба/);
+  assert.match(squadPlannerSource, /Nearest-fixture starter floor/);
+  assert.match(squadPlannerSource, /Минимум основы только на ближайший матч/);
   assert.match(squadPlannerSource, /negative Poisson groups of 2 from expected goals conceded/);
   assert.doesNotMatch(squadPlannerSource, /not used in alternative score/);
   assert.doesNotMatch(squadPlannerSource, /не используется в формуле Альт/);

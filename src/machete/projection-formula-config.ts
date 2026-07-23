@@ -59,7 +59,6 @@ export type ProjectionFormulaConfigParseResult = {
 const maximumFormulaLength = 4_000;
 
 const stableExpectedMinutesFormula = "clamp(safe_div(0.65 * min({Matches 365} / 20, 1) * {Minutes per match 365} + 0.25 * min({Matches L10} / 10, 1) * {Minutes per match L10} + 0.10 * min({Matches L5} / 5, 1) * {Minutes per match L5}, 0.65 * min({Matches 365} / 20, 1) + 0.25 * min({Matches L10} / 10, 1) + 0.10 * min({Matches L5} / 5, 1), 0), 0, 90)";
-const starterAdjustedExpectedMinutesFormula = `clamp(${stableExpectedMinutesFormula} + 10 * {Roster starter}, 0, 90)`;
 
 /**
  * Global Expected FP baseline. Bookmaker inputs are gated by the explicit
@@ -110,7 +109,7 @@ export const expectedProjectionFormulaConfig: ProjectionFormulaConfig = {
 export const friendAltProjectionFormulaConfig: ProjectionFormulaConfig = {
   version: projectionFormulaConfigVersion,
   history: {
-    expectedMinutes: starterAdjustedExpectedMinutesFormula,
+    expectedMinutes: stableExpectedMinutesFormula,
     appearanceProbability: "gte({Expected minutes}, 0.000001)",
     sixtyProbability: "gte({Expected minutes}, 60)",
     fullMatchProbability: "gte({Expected minutes}, 80)",

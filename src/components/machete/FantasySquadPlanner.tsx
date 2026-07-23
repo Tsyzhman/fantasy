@@ -3670,6 +3670,25 @@ function minuteHistoryProvenanceLines(
   )];
 }
 
+function starterMinuteFloorLines(
+  inputs: FantasyProjectionFixtureInputs | null | undefined,
+  language: UiLanguage
+) {
+  if (
+    !inputs?.rosterStarter ||
+    inputs.baseExpectedMinutes === null ||
+    inputs.baseExpectedMinutes === undefined ||
+    inputs.expectedMinutes === null ||
+    inputs.expectedMinutes === undefined
+  ) return [];
+  const adjustment = inputs.rosterStarterMinutesUplift ?? inputs.expectedMinutes - inputs.baseExpectedMinutes;
+  return [localizedText(
+    language,
+    `Nearest-fixture starter floor: max(base ${formatNumber(inputs.baseExpectedMinutes, 1)}, 60) = ${formatNumber(inputs.expectedMinutes, 1)} expected minutes; adjustment ${adjustment >= 0 ? "+" : ""}${formatNumber(adjustment, 1)}. It is not applied to later fixtures.`,
+    `Минимум основы только на ближайший матч: max(базовые ${formatNumber(inputs.baseExpectedMinutes, 1)}, 60) = ${formatNumber(inputs.expectedMinutes, 1)} ожидаемых минут; корректировка ${adjustment >= 0 ? "+" : ""}${formatNumber(adjustment, 1)}. На последующие матчи правило не переносится.`
+  )];
+}
+
 function addProjectionWeightedTermLine(
   lines: string[],
   language: UiLanguage,
@@ -3838,6 +3857,7 @@ function buildProjectionBreakdownLines(
     const expectedMinutes = formatProjectionMetric(fixtureInputs.expectedMinutes, 1);
     if (expectedMinutes) lines.push(localizedText(language, `- Expected minutes: ${expectedMinutes}`, `- Ожидаемые минуты: ${expectedMinutes}`));
   }
+  lines.push(...starterMinuteFloorLines(fixtureInputs, language));
   lines.push(...minuteHistoryProvenanceLines(fixtureInputs, language));
 
   addProjectionWeightedTermLine(
@@ -4136,6 +4156,7 @@ function buildAlternativeProjectionBreakdownLines(
 function playerPrimaryNextForecastTitle(player: FantasyPlannerPlayer, language: UiLanguage, nextForecast: number | null) {
   const lines = [localizedText(language, `Primary forecast for next round: ${formatScore(nextForecast)} FP`, `Основной прогноз на следующий тур: ${formatScore(nextForecast)} ФО`)];
   if (player.projectionEngine === "COMPONENT_XFP_V1" && player.projectionFormula) {
+    lines.push(...starterMinuteFloorLines(player.projectedFixtureComponents, language));
     lines.push(...minuteHistoryProvenanceLines(player.projectedFixtureComponents, language));
     lines.push(...buildFormulaBreakdownLines(language, player.projectionFormula, "Total", nextForecast));
   } else if (player.projectionEngine === "COMPONENT_XFP_V1" && player.projectionComponents) {
@@ -4195,19 +4216,7 @@ function alternativePlayerForecastTitle(player: FantasyPlannerPlayer, language: 
   const nextAlternative = player.alternativePredictedFp ?? null;
   const lines = [localizedText(language, `Alternative forecast for next fixture: ${formatScore(nextAlternative)} FP`, `Альтернативный прогноз на следующий матч: ${formatScore(nextAlternative)} ФО`)];
   const minuteInputs = player.alternativeProjectedFixtureComponents;
-  if (
-    minuteInputs?.baseExpectedMinutes !== null &&
-    minuteInputs?.baseExpectedMinutes !== undefined &&
-    minuteInputs.expectedMinutes !== null &&
-    minuteInputs.expectedMinutes !== undefined
-  ) {
-    const uplift = minuteInputs.rosterStarterMinutesUplift ?? 0;
-    lines.push(localizedText(
-      language,
-      `Base weighted minutes ${formatNumber(minuteInputs.baseExpectedMinutes, 1)} + club starting-XI uplift ${formatNumber(uplift, 1)} = ${formatNumber(minuteInputs.expectedMinutes, 1)} expected minutes (capped at 90). Manual club starter: ${minuteInputs.rosterStarter ? "yes" : "no"}.`,
-      `Базовые взвешенные минуты ${formatNumber(minuteInputs.baseExpectedMinutes, 1)} + надбавка за основу клуба ${formatNumber(uplift, 1)} = ${formatNumber(minuteInputs.expectedMinutes, 1)} ожидаемых минут (ограничение 90). Ручная отметка основы клуба: ${minuteInputs.rosterStarter ? "да" : "нет"}.`
-    ));
-  }
+  lines.push(...starterMinuteFloorLines(minuteInputs, language));
   if (player.alternativeProjectionFormula) {
     lines.push(...minuteHistoryProvenanceLines(player.alternativeProjectedFixtureComponents, language));
     lines.push(...buildFormulaBreakdownLines(

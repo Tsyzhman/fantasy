@@ -195,14 +195,15 @@ test("formula pipeline scales a raw per-90 allocation by expected minutes", () =
   assert.ok(Math.abs((index.byFixturePlayer.get("fixture-1:p90")?.expectedEvents.goals ?? 0) - 0.6) < 1e-12);
 });
 
-test("formula pipeline exposes the club starting-XI flag and applies the Alt minute uplift", () => {
-  const config = {
-    ...friendAltProjectionFormulaConfig,
+test("primary and Alt apply a 60-minute starter floor only to the chronologically nearest fixture", () => {
+  const configFor = (base: typeof expectedProjectionFormulaConfig, ordinaryMinutes = 40) => ({
+    ...base,
     history: {
-      ...friendAltProjectionFormulaConfig.history,
-      expectedMinutes: "clamp(40 + 10 * {Roster starter}, 0, 90)",
+      ...base.history,
+      // The product invariant must ignore persisted/custom starter arithmetic.
+      expectedMinutes: `clamp(${ordinaryMinutes} + 10 * {Roster starter}, 0, 90)`,
       appearanceProbability: "1",
-      sixtyProbability: "0",
+      sixtyProbability: "gte({Expected minutes}, 60)",
       fullMatchProbability: "0",
       xgRate: "0",
       xaRate: "0",
@@ -224,7 +225,7 @@ test("formula pipeline exposes the club starting-XI flag and applies the Alt min
       saves: "0 * {Expected minutes}",
       cardExposure: "0 * {Expected minutes}"
     }
-  };
+  });
   const row = (playerId: string, isStarter: boolean) => ({
     playerId,
     teamId: "team-1",
@@ -235,24 +236,58 @@ test("formula pipeline exposes the club starting-XI flag and applies the Alt min
     minutesPlayed: 360,
     rawMetrics: {}
   }) as never;
-  const fixture = {
-    id: "fixture-1", roundId: "round-1", teamId: "team-1", opponentTeamId: "team-2",
+  const nearestFixture = {
+    id: "fixture-nearest", roundId: "round-1", teamId: "team-1", opponentTeamId: "team-2",
     opponentName: "OPP", opponentFullName: "Opponent", side: "H" as const,
     kickoffAt: new Date("2026-07-25T12:00:00Z"), projectedXg: 0, projectedXga: 0,
     attackMultiplier: 1, defenseMultiplier: 1
   };
-  const index = buildFormulaProjectionIndex(
-    [row("starter", true), row("bench", false)],
-    { rounds: [], fixturesByTeamRound: new Map([["round-1", new Map([["team-1", [fixture]]])]]), teamShortNameById: new Map() },
-    new Map([["starter", "FWD"], ["bench", "FWD"]]),
-    config
-  );
+  const laterFixture = {
+    ...nearestFixture,
+    id: "fixture-later",
+    roundId: "round-2",
+    kickoffAt: new Date("2026-08-01T12:00:00Z")
+  };
+  const fixtures = {
+    rounds: [],
+    // Deliberately insert the later fixture first: chronology, not map order,
+    // decides where the one-match floor applies.
+    fixturesByTeamRound: new Map([
+      ["round-2", new Map([["team-1", [laterFixture]]])],
+      ["round-1", new Map([["team-1", [nearestFixture]]])]
+    ]),
+    teamShortNameById: new Map()
+  };
 
-  assert.deepEqual(index.errorsByFixtureTeam, new Map());
-  assert.equal(index.byFixturePlayer.get("fixture-1:starter")?.expectedMinutes, 50);
-  assert.equal(index.byFixturePlayer.get("fixture-1:bench")?.expectedMinutes, 40);
-  assert.equal(index.formulaMetricsByFixturePlayer.get("fixture-1:starter")?.roster_starter, 1);
-  assert.equal(index.formulaMetricsByFixturePlayer.get("fixture-1:bench")?.roster_starter, 0);
+  for (const config of [configFor(expectedProjectionFormulaConfig), configFor(friendAltProjectionFormulaConfig)]) {
+    const index = buildFormulaProjectionIndex(
+      [row("starter", true), row("bench", false)],
+      fixtures,
+      new Map([["starter", "FWD"], ["bench", "FWD"]]),
+      config
+    );
+
+    assert.deepEqual(index.errorsByFixtureTeam, new Map());
+    assert.equal(index.byFixturePlayer.get("fixture-nearest:starter")?.expectedMinutes, 60);
+    assert.equal(index.byFixturePlayer.get("fixture-later:starter")?.expectedMinutes, 40);
+    assert.equal(index.byFixturePlayer.get("fixture-nearest:bench")?.expectedMinutes, 40);
+    assert.equal(index.byFixturePlayer.get("fixture-later:bench")?.expectedMinutes, 40);
+    assert.equal(index.formulaMetricsByFixturePlayer.get("fixture-nearest:starter")?.base_expected_minutes, 40);
+    assert.equal(index.formulaMetricsByFixturePlayer.get("fixture-nearest:starter")?.roster_starter_minutes_uplift, 20);
+    assert.equal(index.formulaMetricsByFixturePlayer.get("fixture-nearest:starter")?.roster_starter, 1);
+    assert.equal(index.formulaMetricsByFixturePlayer.get("fixture-later:starter")?.roster_starter, 0);
+    assert.equal(index.formulaMetricsByFixturePlayer.get("fixture-later:starter")?.roster_starter_minutes_uplift, 0);
+  }
+
+  const highMinuteIndex = buildFormulaProjectionIndex(
+    [row("starter", true)],
+    fixtures,
+    new Map([["starter", "FWD"]]),
+    configFor(expectedProjectionFormulaConfig, 82)
+  );
+  assert.equal(highMinuteIndex.byFixturePlayer.get("fixture-nearest:starter")?.expectedMinutes, 82);
+  assert.equal(highMinuteIndex.byFixturePlayer.get("fixture-later:starter")?.expectedMinutes, 82);
+  assert.equal(highMinuteIndex.formulaMetricsByFixturePlayer.get("fixture-nearest:starter")?.roster_starter_minutes_uplift, 0);
 });
 
 test("friend Alt is shared in the squad while a personal formula overrides only its own position", () => {

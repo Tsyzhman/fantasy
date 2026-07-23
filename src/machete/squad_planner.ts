@@ -436,9 +436,10 @@ export async function loadFantasySquadPlannerData(
   const preferredProjectionEngine = configuredFantasyProjectionEngine();
   const rosterPlayers: FantasyPlannerPlayer[] = rosterRows.flatMap((row) => {
     const projected = projectedByPlayerTeam.get(playerTeamKey(row.playerId, row.teamId));
-    const nextFixture = roundsAndFixtures.rounds
-      .flatMap((round) => roundsAndFixtures.fixturesByTeamRound.get(round.id)?.get(String(row.teamId)) ?? [])
-      .at(0) ?? null;
+    const nextFixture = nearestPlannerFixture(
+      roundsAndFixtures.rounds
+        .flatMap((round) => roundsAndFixtures.fixturesByTeamRound.get(round.id)?.get(String(row.teamId)) ?? [])
+    );
     const legacyPredictedFp = projected
       ? calibratedPlayerFixturePoints(projected, nextFixture, playerRows.calibration?.model ?? null, playerRows.scoringModel)
       : null;
@@ -1305,14 +1306,16 @@ export function buildFormulaProjectionIndex(
       for (const fixture of fixtures) uniqueFixtures.set(fixtureTeamProjectionKey(fixture.id, fixture.teamId), fixture);
     }
   }
+  const nearestFixtureIdByTeam = nearestFixtureIdsByTeam(uniqueFixtures.values());
 
   for (const [fixtureTeamKey, fixture] of uniqueFixtures) {
     try {
+      const starterFloorApplies = nearestFixtureIdByTeam.get(fixture.teamId) === fixture.id;
       const rankedCandidates = (rowsByTeam.get(fixture.teamId) ?? [])
-        .map((row) => pipelineParticipant(row, sportsPositionsByPlayerId.get(row.playerId), config))
+        .map((row) => pipelineParticipant(row, sportsPositionsByPlayerId.get(row.playerId), config, starterFloorApplies))
         .filter((entry): entry is PipelineParticipant => entry !== null)
         .sort((left, right) =>
-          Number(right.row.isStarter) - Number(left.row.isStarter) ||
+          Number(right.metrics.roster_starter) - Number(left.metrics.roster_starter) ||
           right.input.probabilities.appearance! - left.input.probabilities.appearance! ||
           right.input.expectedMinutes! - left.input.expectedMinutes! ||
           right.row.minutesPlayed - left.row.minutesPlayed
@@ -1359,28 +1362,31 @@ function emptyComponentProjectionIndex(): ComponentProjectionIndex {
 function pipelineParticipant(
   row: SharedMachetePlayerRow & { teamId: string; playerId: string },
   sportsPosition: string | undefined,
-  config: ProjectionFormulaConfig
+  config: ProjectionFormulaConfig,
+  starterFloorApplies: boolean
 ): PipelineParticipant | null {
   const position = normalizeFantasyPosition(fantasyPlannerPosition(sportsPosition ?? null, null, row.position));
   if (position === "UNK") return null;
+  const rosterStarterApplies = row.isStarter && starterFloorApplies;
   const metrics: Record<string, unknown> = {
     ...(row.rawMetrics ?? {}),
-    roster_starter: row.isStarter ? 1 : 0,
+    roster_starter: 0,
+    roster_starter_marked: row.isStarter ? 1 : 0,
+    roster_starter_floor_applies: rosterStarterApplies ? 1 : 0,
     minute_history_source: row.minuteHistoryProvenance?.source ?? "NONE",
     current_club_history_matches: row.minuteHistoryProvenance?.currentClubMatches ?? 0,
     previous_club_history_matches: row.minuteHistoryProvenance?.previousClubMatches ?? 0,
     previous_club_history_team: row.minuteHistoryProvenance?.previousClubName ?? "",
     previous_club_penalty_factor: row.minuteHistoryProvenance?.previousClubPenaltyFactor ?? 1
   };
-  const usesRosterStarterMinutes = /\{Roster starter\}/i.test(config.history.expectedMinutes);
-  const baseExpectedMinutes = usesRosterStarterMinutes
-    ? clamp(formulaValue(expectedProjectionFormulaConfig.history.expectedMinutes, metrics), 0, 90)
-    : null;
-  const expectedMinutes = clamp(formulaValue(config.history.expectedMinutes, metrics), 0, 90);
-  if (baseExpectedMinutes !== null) {
-    metrics.base_expected_minutes = baseExpectedMinutes;
-    metrics.roster_starter_minutes_uplift = expectedMinutes - baseExpectedMinutes;
-  }
+  // The manually marked club XI is a one-fixture availability signal, not a
+  // permanent history input. Evaluate the user's formula without the flag,
+  // then apply an exact 60-minute floor only to the nearest fixture.
+  const baseExpectedMinutes = clamp(formulaValue(config.history.expectedMinutes, metrics), 0, 90);
+  metrics.roster_starter = rosterStarterApplies ? 1 : 0;
+  const expectedMinutes = rosterStarterApplies ? Math.max(baseExpectedMinutes, 60) : baseExpectedMinutes;
+  metrics.base_expected_minutes = baseExpectedMinutes;
+  metrics.roster_starter_minutes_uplift = expectedMinutes - baseExpectedMinutes;
   metrics.expected_minutes = expectedMinutes;
   const countsAsFullMatch = countsAsFullFantasyMatch(expectedMinutes);
   const appearance = countsAsFullMatch ? 1 : clamp(formulaValue(config.history.appearanceProbability, metrics), 0, 1);
@@ -1416,6 +1422,28 @@ function pipelineParticipant(
       ratesPer90: { xg, xa, recoveries, saves, yellowCards, redCards }
     }
   };
+}
+
+function nearestFixtureIdsByTeam(fixtures: Iterable<PlannerFixture>) {
+  const nearest = new Map<string, PlannerFixture>();
+  for (const fixture of fixtures) {
+    const current = nearest.get(fixture.teamId);
+    if (!current || comparePlannerFixtures(fixture, current) < 0) nearest.set(fixture.teamId, fixture);
+  }
+  return new Map([...nearest].map(([teamId, fixture]) => [teamId, fixture.id]));
+}
+
+function nearestPlannerFixture(fixtures: PlannerFixture[]) {
+  return fixtures.reduce<PlannerFixture | null>(
+    (nearest, fixture) => !nearest || comparePlannerFixtures(fixture, nearest) < 0 ? fixture : nearest,
+    null
+  );
+}
+
+function comparePlannerFixtures(left: PlannerFixture, right: PlannerFixture) {
+  const leftKickoff = left.kickoffAt?.getTime() ?? Number.POSITIVE_INFINITY;
+  const rightKickoff = right.kickoffAt?.getTime() ?? Number.POSITIVE_INFINITY;
+  return leftKickoff - rightKickoff || left.id.localeCompare(right.id);
 }
 
 export function countsAsFullFantasyMatch(expectedMinutes: number) {

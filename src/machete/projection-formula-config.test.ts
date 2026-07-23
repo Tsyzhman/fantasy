@@ -17,7 +17,7 @@ test("Expected and friend Alt defaults contain valid formulas for the full pipel
   assert.match(expectedProjectionFormulaConfig.team.expectedGoals, /Bookmaker implied xG/);
   assert.doesNotMatch(friendAltProjectionFormulaConfig.team.expectedGoals, /Bookmaker/);
   assert.match(friendAltProjectionFormulaConfig.history.expectedMinutes, /0\.65 \* min\(\{Matches 365\}/);
-  assert.match(friendAltProjectionFormulaConfig.history.expectedMinutes, /10 \* \{Roster starter\}/);
+  assert.doesNotMatch(friendAltProjectionFormulaConfig.history.expectedMinutes, /Roster starter/);
   assert.match(friendAltProjectionFormulaConfig.history.xgRate, /Minutes L10/);
   assert.match(friendAltProjectionFormulaConfig.history.xgRate, /safe_div/);
   assert.match(friendAltProjectionFormulaConfig.allocation.goals, /Expected minutes/);
@@ -92,7 +92,7 @@ test("expected minutes are stabilized instead of taking a recent-window maximum"
   assert.ok(score < 90);
 });
 
-test("friend Alt adds ten expected minutes for a manually selected club starter and caps at 90", () => {
+test("default primary and Alt history formulas stay neutral to the fixture-scoped starter floor", () => {
   const history = {
     matches_365: 20,
     matches_l10: 10,
@@ -101,21 +101,16 @@ test("friend Alt adds ten expected minutes for a manually selected club starter 
     minutes_per_match_l10: 45,
     minutes_per_match_l5: 45
   };
-  assert.equal(calculateCustomFormulaScore(friendAltProjectionFormulaConfig.history.expectedMinutes, {
-    ...history,
-    roster_starter: 0
-  }), 45);
-  assert.equal(calculateCustomFormulaScore(friendAltProjectionFormulaConfig.history.expectedMinutes, {
-    ...history,
-    roster_starter: 1
-  }), 55);
-  assert.equal(calculateCustomFormulaScore(friendAltProjectionFormulaConfig.history.expectedMinutes, {
-    ...history,
-    minutes_per_match_365: 82,
-    minutes_per_match_l10: 82,
-    minutes_per_match_l5: 82,
-    roster_starter: 1
-  }), 90);
+  for (const config of [expectedProjectionFormulaConfig, friendAltProjectionFormulaConfig]) {
+    assert.equal(calculateCustomFormulaScore(config.history.expectedMinutes, {
+      ...history,
+      roster_starter: 0
+    }), 45);
+    assert.equal(calculateCustomFormulaScore(config.history.expectedMinutes, {
+      ...history,
+      roster_starter: 1
+    }), 45);
+  }
 });
 
 test("80 expected minutes count as a full match in both projection defaults", () => {
