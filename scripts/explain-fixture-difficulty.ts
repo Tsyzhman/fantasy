@@ -8,6 +8,7 @@ import {
   buildTeamStrengthProfilesFromMatches,
   fillTeamStrengthStatsFromScore,
   fixtureDifficultyFromMultipliers,
+  fixtureOddsAreFresh,
   fixtureStrengthProjection,
   fixtureStrengthWithBookmaker
 } from "../src/machete/squad_planner";
@@ -24,7 +25,13 @@ async function main() {
 
   const leagueId = BigInt(argument("--league") ?? "63");
   const season = argument("--season") ?? "2026/2027";
-  const teamNeedle = (argument("--team") ?? "Балтика").toLocaleLowerCase("ru-RU");
+  const requestedTeam = argument("--team") ?? "Baltika";
+  const teamNeedle = ({
+    "балтика": "baltika",
+    "родина": "rodina",
+    "факел": "fakel",
+    "зенит": "zenit"
+  }[requestedTeam.toLocaleLowerCase("ru-RU")] ?? requestedTeam).toLocaleLowerCase("ru-RU");
   const limit = Math.max(1, Number(argument("--limit") ?? "5"));
   const feederLeagueId = leagueId === 63n ? 338n : null;
   const prisma = new PrismaClient();
@@ -79,7 +86,7 @@ async function main() {
         profiles
       );
       const odds = fixture.oddsSnapshots[0];
-      const freshOdds = odds && Date.now() - odds.fetchedAt.getTime() <= 24 * 60 * 60 * 1_000 ? odds : null;
+      const freshOdds = odds && fixtureOddsAreFresh(odds.fetchedAt) ? odds : null;
       const marketProjection = fixtureStrengthWithBookmaker(projection, {
         teamOver15Probability: isHome ? freshOdds?.homeOver15Probability : freshOdds?.awayOver15Probability,
         cleanSheetProbability: isHome ? freshOdds?.homeCleanSheetProbability : freshOdds?.awayCleanSheetProbability
@@ -93,8 +100,8 @@ async function main() {
         opponent: isHome ? fixture.awayTeam?.name : fixture.homeTeam?.name,
         projectedXg: rounded(projection.projectedXg),
         projectedXga: rounded(projection.projectedXga),
-        bookmakerXg: rounded(marketProjection.marketProjectedXg),
-        bookmakerXga: rounded(marketProjection.marketProjectedXga),
+        blendedXg: rounded(marketProjection.marketProjectedXg),
+        blendedXga: rounded(marketProjection.marketProjectedXga),
         attackMultiplier: rounded(marketProjection.attackMultiplier),
         defenseMultiplier: rounded(marketProjection.defenseMultiplier),
         difficultyGkDef: fixtureDifficultyFromMultipliers(difficultyFixture, "DEF"),

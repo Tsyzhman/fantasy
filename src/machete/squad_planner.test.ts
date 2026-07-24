@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   addPromotedTeamStrengthProfiles,
+  aggregateRoundDifficulty,
   buildFormulaProjectionIndex,
   buildFantasyForecastExplanation,
   buildPlannerRoundFixtures,
@@ -24,6 +25,7 @@ import {
   fillTeamStrengthStatsFromScore,
   fixtureDifficultyFromMultipliers,
   fixtureFormulaMetrics,
+  fixtureOddsAreFresh,
   fixtureStrengthProjection,
   fixtureStrengthWithBookmaker,
   friendAlternativeProjectionFantasyPoints,
@@ -1315,6 +1317,73 @@ test("fixture strength blends bookmaker attack and clean-sheet expectations into
 test("fixture difficulty keeps easy fixtures green-side and hard fixtures red-side", () => {
   assert.equal(fixtureDifficultyFromMultipliers({ attackMultiplier: 1.25, defenseMultiplier: 1.25, side: "A" }, "MID"), 1);
   assert.equal(fixtureDifficultyFromMultipliers({ attackMultiplier: 0.75, defenseMultiplier: 0.75, side: "H" }, "MID"), 5);
+});
+
+test("fixture multipliers use overall league xG and xGA averages without a second venue adjustment", () => {
+  const profiles = buildTeamStrengthProfilesFromMatches([
+    strengthMatch("10", "20", 1.7, 1.1),
+    strengthMatch("30", "40", 1.5, 0.9)
+  ]);
+  const home = fixtureStrengthProjection(
+    { teamId: "average-home", opponentTeamId: "average-away", side: "H" },
+    profiles
+  );
+  const away = fixtureStrengthProjection(
+    { teamId: "average-away", opponentTeamId: "average-home", side: "A" },
+    profiles
+  );
+  const leagueXg = profiles.league.overall.xgForPerMatch ?? 0;
+  const leagueXga = profiles.league.overall.xgAgainstPerMatch ?? 0;
+
+  assert.ok(Math.abs((home.attackMultiplier ?? 0) - Math.min(1.28, home.projectedXg / leagueXg)) < 1e-12);
+  assert.ok(Math.abs((home.defenseMultiplier ?? 0) - Math.min(1.28, leagueXga / home.projectedXga)) < 1e-12);
+  assert.ok((home.attackMultiplier ?? 0) > (away.attackMultiplier ?? 0));
+  assert.ok((home.defenseMultiplier ?? 0) > (away.defenseMultiplier ?? 0));
+  assert.ok(
+    (fixtureDifficultyFromMultipliers({ ...home, side: "H" }, "MID") ?? 0)
+      < (fixtureDifficultyFromMultipliers({ ...away, side: "A" }, "MID") ?? 0)
+  );
+});
+
+test("forward fixture difficulty ignores clean-sheet strength just like the forward forecast multiplier", () => {
+  const poorDefense = fixtureDifficultyFromMultipliers(
+    { attackMultiplier: 1, defenseMultiplier: 0.72, side: "H" },
+    "FWD"
+  );
+  const strongDefense = fixtureDifficultyFromMultipliers(
+    { attackMultiplier: 1, defenseMultiplier: 1.28, side: "A" },
+    "FWD"
+  );
+
+  assert.equal(poorDefense, strongDefense);
+});
+
+test("double-round difficulty averages both fixtures instead of keeping only the hardest one", () => {
+  const fixture = (id: string, multiplier: number) => ({
+    id,
+    roundId: "round-1",
+    teamId: "10",
+    opponentTeamId: "20",
+    opponentName: "Opponent",
+    opponentFullName: "Opponent",
+    side: "H" as const,
+    kickoffAt: null,
+    projectedXg: 1,
+    projectedXga: 1,
+    attackMultiplier: multiplier,
+    defenseMultiplier: multiplier
+  });
+
+  assert.equal(aggregateRoundDifficulty([fixture("easy", 1.25), fixture("hard", 0.75)], "MID"), 3);
+});
+
+test("bookmaker snapshots remain usable across the month-long fixture horizon and then expire", () => {
+  const now = new Date("2026-09-07T12:00:00.000Z");
+
+  assert.equal(fixtureOddsAreFresh(new Date("2026-08-04T12:00:00.000Z"), now), true);
+  assert.equal(fixtureOddsAreFresh(new Date("2026-08-03T12:00:00.000Z"), now), true);
+  assert.equal(fixtureOddsAreFresh(new Date("2026-08-03T11:59:59.999Z"), now), false);
+  assert.equal(fixtureOddsAreFresh(new Date("2026-09-07T12:00:00.001Z"), now), false);
 });
 
 test("promoted teams use compressed lower-league strength without overriding top-flight evidence", () => {

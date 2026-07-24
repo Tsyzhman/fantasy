@@ -299,6 +299,7 @@ const promotedTeamPriorMatches = 8;
 const promotedTeamStrengthFactor = 0.81;
 const promotedTeamRatioExponent = 0.6;
 const teamStrengthFeederLeagueByTopLeague = new Map<string, bigint>([["63", 338n]]);
+const fixtureOddsMaximumAgeMs = 35 * 24 * 60 * 60_000;
 const fantasyPlayerPoolCacheTtlMs = 5 * 60_000;
 const fantasyPlayerPoolCache = new ExpiringPromiseCache<string, FantasyPlannerPlayer[]>(20);
 const upcomingRoundFixturesCacheTtlMs = 5 * 60_000;
@@ -2298,7 +2299,7 @@ async function loadUpcomingRoundFixturesUncached(prisma: PrismaClient, league: S
   const coreFixtures = buildPlannerRoundFixtures(
     matches.map((match) => {
       const odds = match.oddsSnapshots[0];
-      const freshOdds = odds && now.getTime() - odds.fetchedAt.getTime() <= 24 * 60 * 60 * 1_000 ? odds : null;
+      const freshOdds = odds && fixtureOddsAreFresh(odds.fetchedAt, now) ? odds : null;
       return {
       id: String(match.id),
       round: match.round,
@@ -2408,13 +2409,13 @@ export function fixtureDifficultyFromMultipliers(
   const defense = fixture.defenseMultiplier;
   if (attack === null && defense === null) return null;
 
-  const attackWeight = positionGroup === "GK" || positionGroup === "DEF" ? 0.35 : 0.7;
-  const defenseWeight = 1 - attackWeight;
+  const weights = fixtureSignalWeights(positionGroup);
+  const weightTotal = weights.attack + weights.defense;
   const attackComponent = attack ?? defense ?? 1;
   const defenseComponent = defense ?? attack ?? 1;
-  const combined = attackComponent * attackWeight + defenseComponent * defenseWeight;
-  const homeBoost = fixture.side === "H" ? 0.04 : -0.04;
-  const score = combined + homeBoost;
+  const score = weightTotal > 0
+    ? (attackComponent * weights.attack + defenseComponent * weights.defense) / weightTotal
+    : 1;
 
   if (score >= 1.18) return 1;
   if (score >= 1.06) return 2;
@@ -2423,7 +2424,7 @@ export function fixtureDifficultyFromMultipliers(
   return 5;
 }
 
-function aggregateRoundDifficulty(
+export function aggregateRoundDifficulty(
   teamFixtures: PlannerFixture[],
   positionGroup: FantasyPositionGroup
 ): number | null {
@@ -2432,8 +2433,7 @@ function aggregateRoundDifficulty(
     .map((fixture) => fixtureDifficultyFromMultipliers(fixture, positionGroup))
     .filter((value): value is number => value !== null);
   if (values.length === 0) return null;
-  const max = Math.max(...values);
-  return max;
+  return Math.round(sum(values) / values.length);
 }
 
 export function buildTeamStrengthProfilesFromMatches(
@@ -2509,8 +2509,10 @@ export function fixtureStrengthProjection(
   const opponent = strengthBlockForSide(opponentProfile, opponentSide, profiles.league);
   const leagueSide = strengthBlockForSide(undefined, side, profiles.league);
   const leagueOpponentSide = strengthBlockForSide(undefined, opponentSide, profiles.league);
-  const attackBase = leagueSide.xgForPerMatch ?? profiles.league.overall.xgForPerMatch ?? defaultTeamXgPerMatch;
-  const defenseBase = leagueSide.xgAgainstPerMatch ?? profiles.league.overall.xgAgainstPerMatch ?? defaultTeamXgPerMatch;
+  const leagueAttackAverage = profiles.league.overall.xgForPerMatch ?? defaultTeamXgPerMatch;
+  const leagueDefenseAverage = profiles.league.overall.xgAgainstPerMatch ?? defaultTeamXgPerMatch;
+  const attackBase = leagueSide.xgForPerMatch ?? leagueAttackAverage;
+  const defenseBase = leagueSide.xgAgainstPerMatch ?? leagueDefenseAverage;
   const opponentAttackBase = leagueOpponentSide.xgForPerMatch ?? profiles.league.overall.xgForPerMatch ?? defaultTeamXgPerMatch;
   const opponentDefenseBase = leagueOpponentSide.xgAgainstPerMatch ?? profiles.league.overall.xgAgainstPerMatch ?? defaultTeamXgPerMatch;
   const projectedXg = attackBase
@@ -2523,10 +2525,10 @@ export function fixtureStrengthProjection(
   return {
     projectedXg,
     projectedXga,
-    attackBase,
-    defenseBase,
-    attackMultiplier: ratioMultiplier(projectedXg, attackBase),
-    defenseMultiplier: ratioMultiplier(defenseBase, projectedXga)
+    attackBase: leagueAttackAverage,
+    defenseBase: leagueDefenseAverage,
+    attackMultiplier: ratioMultiplier(projectedXg, leagueAttackAverage),
+    defenseMultiplier: ratioMultiplier(leagueDefenseAverage, projectedXga)
   };
 }
 
@@ -3145,19 +3147,12 @@ function estimateFantasyPrice(score: number | null, positionGroup: FantasyPositi
 }
 
 function fixtureMultiplier(fixture: FantasyFixtureProjection, positionGroup: FantasyPositionGroup) {
-  const venueMultiplier = fixture.side === "H" ? 1.04 : 0.96;
   const attack = fixture.attackMultiplier ?? 1;
   const defense = fixture.defenseMultiplier ?? 1;
-  const positionBlend =
-    positionGroup === "GK" || positionGroup === "DEF"
-      ? 1 + (attack - 1) * 0.12 + (defense - 1) * 0.42
-      : positionGroup === "MID"
-        ? 1 + (attack - 1) * 0.32 + (defense - 1) * 0.12
-        : positionGroup === "FWD"
-          ? 1 + (attack - 1) * 0.48
-          : 1 + (attack - 1) * 0.24 + (defense - 1) * 0.12;
+  const weights = fixtureSignalWeights(positionGroup);
+  const positionBlend = 1 + (attack - 1) * weights.attack + (defense - 1) * weights.defense;
 
-  return clamp(venueMultiplier * positionBlend, 0.68, 1.35);
+  return clamp(positionBlend, 0.68, 1.35);
 }
 
 export function fantasyTeamShortName(metadata: unknown, fallback: string) {
@@ -3298,6 +3293,19 @@ function bookmakerSignalWeights(position: FantasyPositionGroup) {
   if (position === "MID") return { attack: 0.45, defense: 0.15 };
   if (position === "FWD") return { attack: 0.6, defense: 0.05 };
   return { attack: 0.25, defense: 0.25 };
+}
+
+function fixtureSignalWeights(position: FantasyPositionGroup) {
+  if (position === "GK" || position === "DEF") return { attack: 0.12, defense: 0.42 };
+  if (position === "MID") return { attack: 0.32, defense: 0.12 };
+  if (position === "FWD") return { attack: 0.48, defense: 0 };
+  return { attack: 0.24, defense: 0.12 };
+}
+
+export function fixtureOddsAreFresh(fetchedAt: Date | null | undefined, now = new Date()) {
+  if (!fetchedAt) return false;
+  const ageMs = now.getTime() - fetchedAt.getTime();
+  return Number.isFinite(ageMs) && ageMs >= 0 && ageMs <= fixtureOddsMaximumAgeMs;
 }
 
 function clamp(value: number, min: number, max: number) {
