@@ -1,13 +1,15 @@
 "use client";
 
-import { AlertTriangle, ChevronDown, Filter, RotateCcw, Users } from "lucide-react";
-import { useMemo, useState, type SyntheticEvent } from "react";
+import { AlertTriangle, ChevronDown, ChevronRight, Filter, RotateCcw, Users } from "lucide-react";
+import { Fragment, useMemo, useState, type SyntheticEvent } from "react";
 
 import { I18nText } from "@/components/i18n-text";
 import { localizedText, useLanguage } from "@/components/localized-option";
+import { FranchiseSquadPreview } from "@/components/machete/FranchiseSquadPreview";
 import { SortableTable } from "@/components/sortable-table";
 import { cn } from "@/lib/cn";
 import { formatDateTime, formatScore, NULL_GLYPH } from "@/lib/format";
+import type { AdminFranchiseSquadPreviewPlayer } from "@/machete/admin-franchise-squads";
 
 type Franchise = "MACHETE" | "BALTIKA";
 type UiLanguage = ReturnType<typeof useLanguage>;
@@ -46,6 +48,7 @@ export type FranchiseSquadRow = {
   foontasyFp: number | null;
   foontasyAvailable: number;
   alternativeIssuePlayerNames: string[];
+  previewPlayers: AdminFranchiseSquadPreviewPlayer[];
   error: string | null;
 };
 
@@ -112,7 +115,7 @@ export function FranchiseSquadsPanel({ leagueId, season, initialFranchise, canSw
         )}
         {loading ? <p className="mt-4 text-sm text-slate-500"><I18nText en="Loading squads…" ru="Загрузка составов…" /></p> : null}
         {error ? <p role="alert" className="mt-4 rounded border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800">{error}</p> : null}
-        {rows ? <FranchiseSquadTable rows={rows} language={language} /> : null}
+        {rows ? <FranchiseSquadTable key={franchise ?? "unassigned"} rows={rows} language={language} /> : null}
       </div>
     </details>
   );
@@ -121,11 +124,21 @@ export function FranchiseSquadsPanel({ leagueId, season, initialFranchise, canSw
 function FranchiseSquadTable({ rows, language }: { rows: FranchiseSquadRow[]; language: UiLanguage }) {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState<FranchiseSquadTableFilters>(emptyTableFilters);
+  const [expandedUserIds, setExpandedUserIds] = useState<Set<string>>(() => new Set());
   const filteredRows = useMemo(() => filterFranchiseSquadRows(rows, filters), [filters, rows]);
   const activeFilterCount = Object.values(filters).filter((value) => value.trim() !== "").length;
 
   function updateFilter(key: keyof FranchiseSquadTableFilters, value: string) {
     setFilters((current) => ({ ...current, [key]: value }));
+  }
+
+  function togglePreview(userId: string) {
+    setExpandedUserIds((current) => {
+      const next = new Set(current);
+      if (next.has(userId)) next.delete(userId);
+      else next.add(userId);
+      return next;
+    });
   }
 
   return (
@@ -160,7 +173,11 @@ function FranchiseSquadTable({ rows, language }: { rows: FranchiseSquadRow[]; la
       ) : null}
 
       <div className="mt-3 overflow-x-auto rounded border border-slate-200">
-      <SortableTable sortRefreshKey={filteredRows.length} className="min-w-[900px] w-full text-left text-sm">
+      <SortableTable
+        sortRefreshKey={filteredRows.length}
+        onClientSortChange={() => setExpandedUserIds(new Set())}
+        className="min-w-[900px] w-full text-left text-sm"
+      >
         <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
           <tr>
             <th data-sort-disabled="true" className="px-4 py-3"><I18nText en="User" ru="Пользователь" /></th>
@@ -173,11 +190,38 @@ function FranchiseSquadTable({ rows, language }: { rows: FranchiseSquadRow[]; la
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
-          {filteredRows.map((row) => (
-            <tr key={row.userId} className={row.isActive === false ? "opacity-55" : ""}>
+          {filteredRows.map((row) => {
+            const expanded = expandedUserIds.has(row.userId);
+            const canPreview = Boolean(row.squadName && row.previewPlayers.length > 0);
+            const toggleId = `franchise-squad-toggle-${row.userId}`;
+            const previewId = `franchise-squad-preview-${row.userId}`;
+            return (
+            <Fragment key={row.userId}>
+            <tr
+              data-sort-row-key={row.userId}
+              onClick={canPreview ? () => togglePreview(row.userId) : undefined}
+              className={cn(
+                row.isActive === false && "opacity-55",
+                canPreview && "cursor-pointer transition-colors hover:bg-slate-50",
+                expanded && "bg-sky-50/60"
+              )}
+            >
               <td className="px-4 py-3">
-                <p className="font-semibold text-ink">{row.userName}</p>
-                {row.email ? <p className="text-xs text-slate-500">{row.email}{row.isActive === false ? localizedText(language, " · disabled", " · отключён") : ""}</p> : null}
+                <button
+                  id={toggleId}
+                  type="button"
+                  aria-expanded={expanded}
+                  aria-controls={previewId}
+                  disabled={!canPreview}
+                  title={canPreview ? localizedText(language, "Open squad preview", "Открыть предпросмотр состава") : undefined}
+                  className="flex w-full items-start gap-2 text-left disabled:cursor-default"
+                >
+                  <ChevronRight className={cn("mt-0.5 h-4 w-4 shrink-0 text-slate-400 transition-transform", expanded && "rotate-90 text-sky-700", !canPreview && "invisible")} aria-hidden="true" />
+                  <span className="min-w-0">
+                    <span className="block font-semibold text-ink">{row.userName}</span>
+                    {row.email ? <span className="block text-xs text-slate-500">{row.email}{row.isActive === false ? localizedText(language, " · disabled", " · отключён") : ""}</span> : null}
+                  </span>
+                </button>
               </td>
               <td className="px-4 py-3">
                 <p className="font-medium text-slate-700">{row.squadName ?? localizedText(language, "No squad", "Нет состава")}</p>
@@ -196,7 +240,18 @@ function FranchiseSquadTable({ rows, language }: { rows: FranchiseSquadRow[]; la
               <MetricCell value={row.alternativeFp} title={alternativeSquadTooltip(row, language)} />
               <td data-sort-value={row.foontasyFp ?? ""} className="px-4 py-3 text-right font-semibold text-sky-700">{formatScore(row.foontasyFp)}</td>
             </tr>
-          ))}
+            {expanded ? (
+              <tr data-sort-detail-row="true">
+                <td colSpan={7} className="bg-slate-50 p-3">
+                  <div id={previewId} role="region" aria-labelledby={toggleId}>
+                    <FranchiseSquadPreview players={row.previewPlayers} ownerName={row.userName} />
+                  </div>
+                </td>
+              </tr>
+            ) : null}
+            </Fragment>
+            );
+          })}
           {filteredRows.length === 0 ? <tr><td colSpan={7} className="px-4 py-10 text-center text-slate-500"><I18nText en="No squads match the current filters." ru="Нет составов, подходящих под текущие фильтры." /></td></tr> : null}
         </tbody>
       </SortableTable>

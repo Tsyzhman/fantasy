@@ -12,12 +12,12 @@ const rows: FranchiseSquadRow[] = [
   {
     userId: "1", userName: "Алексей", email: "admin@example.com", squadName: "Первый", squadUpdatedAt: null,
     starterCount: 11, captainName: "Вендел", fp: 63, alternativeFp: 58, foontasyFp: 61, foontasyAvailable: 11,
-    alternativeIssuePlayerNames: ["Боселли"], error: null
+    alternativeIssuePlayerNames: ["Боселли"], previewPlayers: [], error: null
   },
   {
     userId: "2", userName: "Борис", squadName: "Второй", squadUpdatedAt: null,
     starterCount: 10, captainName: "Глушенков", fp: 49, alternativeFp: null, foontasyFp: 45, foontasyAvailable: 10,
-    alternativeIssuePlayerNames: [], error: null
+    alternativeIssuePlayerNames: [], previewPlayers: [], error: null
   }
 ];
 

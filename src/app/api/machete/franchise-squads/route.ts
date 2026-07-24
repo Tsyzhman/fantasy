@@ -46,6 +46,7 @@ export const GET = withApiHandler(async (request: Request) => {
       foontasyFp: row.foontasyFp,
       foontasyAvailable: row.foontasyAvailable,
       alternativeIssuePlayerNames: row.alternativeIssuePlayerNames,
+      previewPlayers: row.previewPlayers,
       error: row.error
     }))
   });
