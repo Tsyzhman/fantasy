@@ -421,6 +421,54 @@ test("Alt uses the marked XI for the nearest fixture and every player above 45 o
   assert.equal(index.byFixturePlayer.has("fixture-later:marked-45-minutes"), false);
 });
 
+test("Alt keeps a promoted club marked XI calculable when every personal xG/xA weight is zero", () => {
+  const positions = ["GK", ...Array(4).fill("DEF"), ...Array(4).fill("MID"), ...Array(2).fill("FWD")];
+  const rows = positions.map((position, index) => ({
+    playerId: `promoted-starter-${index}`,
+    teamId: "promoted-team",
+    position,
+    isStarter: true,
+    startProbability: 0,
+    expectedMinutes: null,
+    minutesPlayed: 0,
+    rawMetrics: {}
+  }));
+  const nearestFixture = {
+    id: "promoted-nearest", roundId: "round-1", teamId: "promoted-team", opponentTeamId: "opponent",
+    opponentName: "OPP", opponentFullName: "Opponent", side: "H" as const,
+    kickoffAt: new Date("2026-07-25T12:00:00Z"), projectedXg: 1.08, projectedXga: 0.89,
+    attackMultiplier: 1, defenseMultiplier: 1
+  };
+  const index = buildFormulaProjectionIndex(
+    rows as never,
+    {
+      rounds: [],
+      fixturesByTeamRound: new Map([
+        ["round-1", new Map([["promoted-team", [nearestFixture]]])]
+      ]),
+      teamShortNameById: new Map()
+    },
+    new Map(rows.map((row) => [row.playerId, row.position])),
+    friendAltProjectionFormulaConfig,
+    true
+  );
+
+  assert.deepEqual(index.errorsByFixtureTeam, new Map());
+  assert.equal(index.byFixturePlayer.size, 11);
+  assert.equal(index.byFixturePlayer.get("promoted-nearest:promoted-starter-0")?.expectedMinutes, 90);
+  assert.equal(index.byFixturePlayer.get("promoted-nearest:promoted-starter-1")?.expectedMinutes, 60);
+  assert.equal(
+    index.formulaMetricsByFixturePlayer.get("promoted-nearest:promoted-starter-1")?.goal_allocation_sparse_history_fallback,
+    1
+  );
+  const allocatedGoals = [...index.byFixturePlayer.values()]
+    .reduce((total, player) => total + player.expectedEvents.goals, 0);
+  const allocatedAssists = [...index.byFixturePlayer.values()]
+    .reduce((total, player) => total + player.expectedEvents.assists, 0);
+  assert.ok(Math.abs(allocatedGoals - 1.08) < 1e-12);
+  assert.ok(Math.abs(allocatedAssists - 1.08 * 0.8) < 1e-12);
+});
+
 test("a short history sample applies the starter uplift cautiously to per-90 events", () => {
   const config = {
     ...expectedProjectionFormulaConfig,

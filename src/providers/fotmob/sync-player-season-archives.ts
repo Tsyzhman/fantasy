@@ -243,7 +243,7 @@ function competitionMatchesLeague(competitionName: string, leagueName: string, l
 
 async function resolveArchiveSyncScopes(prisma: PrismaClient, options: PlayerSeasonArchiveSyncOptions) {
   if (options.leagueId && options.season) return [{ leagueId: options.leagueId, season: options.season }];
-  return prisma.leagueSeason.findMany({
+  const currentScopes = await prisma.leagueSeason.findMany({
     where: {
       isCurrent: true,
       ...(options.leagueId ? { leagueId: options.leagueId } : {}),
@@ -251,6 +251,19 @@ async function resolveArchiveSyncScopes(prisma: PrismaClient, options: PlayerSea
     },
     select: { leagueId: true, season: true }
   });
+  if (currentScopes.length === 0) return [];
+
+  const fantasyScopes = await prisma.sportsRuFantasyContest.findMany({
+    where: {
+      provider: "SPORTS_RU",
+      OR: currentScopes.map((scope) => ({ leagueId: scope.leagueId, season: scope.season }))
+    },
+    select: { leagueId: true, season: true },
+    orderBy: { lastSyncedAt: "desc" }
+  });
+  return fantasyScopes.length > 0
+    ? [...new Map(fantasyScopes.map((scope) => [`${scope.leagueId}:${scope.season}`, scope])).values()]
+    : currentScopes;
 }
 
 function aggregatePayloadHash(aggregates: FotMobPlayerSeasonAggregate[]) {

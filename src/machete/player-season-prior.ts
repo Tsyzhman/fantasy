@@ -14,6 +14,13 @@ const POSITION_EVENT_PRIORS: Record<Exclude<FantasyPositionGroup, "UNK">, { goal
   FWD: { goals: 0.22, assists: 0.08 }
 };
 
+export function positionEventPriorPer90(
+  position: Exclude<FantasyPositionGroup, "UNK">,
+  event: "goals" | "assists"
+) {
+  return POSITION_EVENT_PRIORS[position][event] * 90 / ASSUMED_MINUTES_PER_APPEARANCE;
+}
+
 export type ArchivedRateBlendInput = {
   position: Exclude<FantasyPositionGroup, "UNK">;
   event: "goals" | "assists";
@@ -21,6 +28,7 @@ export type ArchivedRateBlendInput = {
   currentMinutes: number;
   currentEvents: number;
   priorAppearances: number;
+  priorMinutes: number | null;
   priorEvents: number | null;
   tierFactor: number;
 };
@@ -46,22 +54,25 @@ export function blendArchivedEventRate(input: ArchivedRateBlendInput): ArchivedR
   const effectivePriorAppearances = Math.min(input.priorAppearances, MAX_PRIOR_APPEARANCES) * fade;
   const positionPriorAppearances = POSITION_PRIOR_APPEARANCES * fade;
   const currentAppearances = Math.max(0, input.currentMinutes) / ASSUMED_MINUTES_PER_APPEARANCE;
-  const currentEventEquivalent =
-    input.currentMinutes > 0
-      ? Math.max(0, input.currentRatePer90) * input.currentMinutes / 90
-      : Math.max(0, input.currentEvents);
-  const priorRate = Math.max(0, input.priorEvents / input.priorAppearances) * clamp(input.tierFactor, 0, 1);
-  const positionRate = POSITION_EVENT_PRIORS[input.position][input.event];
+  const currentRatePer90 = input.currentMinutes > 0
+    ? Math.max(0, input.currentRatePer90)
+    : Math.max(0, input.currentEvents) * 90 / ASSUMED_MINUTES_PER_APPEARANCE;
+  const priorRatePer90 = (
+    input.priorMinutes !== null && input.priorMinutes > 0
+      ? Math.max(0, input.priorEvents) * 90 / input.priorMinutes
+      : Math.max(0, input.priorEvents / input.priorAppearances) * 90 / ASSUMED_MINUTES_PER_APPEARANCE
+  ) * clamp(input.tierFactor, 0, 1);
+  const positionRatePer90 = positionEventPriorPer90(input.position, input.event);
   const denominator = currentAppearances + effectivePriorAppearances + positionPriorAppearances;
-  const ratePerAppearance = denominator > 0
+  const ratePer90 = denominator > 0
     ? (
-        currentEventEquivalent +
-        effectivePriorAppearances * priorRate +
-        positionPriorAppearances * positionRate
+        currentAppearances * currentRatePer90 +
+        effectivePriorAppearances * priorRatePer90 +
+        positionPriorAppearances * positionRatePer90
       ) / denominator
     : 0;
   return {
-    ratePer90: ratePerAppearance * 90 / ASSUMED_MINUTES_PER_APPEARANCE,
+    ratePer90,
     fade,
     effectivePriorAppearances,
     positionPriorAppearances

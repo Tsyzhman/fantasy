@@ -35,7 +35,12 @@ import {
 } from "./fantasy_projection_calibration";
 import { loadFantasyProjectionCalibration } from "./fantasy_projection_service";
 import { FANTASY_MODEL_VERSION } from "./foontasy_style_model";
-import { archivedExpectedMinutes, blendArchivedEventRate, FNL_TO_RPL_EVENT_FACTOR } from "./player-season-prior";
+import {
+  archivedExpectedMinutes,
+  blendArchivedEventRate,
+  FNL_TO_RPL_EVENT_FACTOR,
+  positionEventPriorPer90
+} from "./player-season-prior";
 import { loadPlannerReadinessByScope, plannerReadinessKey, type PlannerReadiness } from "./planner_readiness";
 import {
   defaultFantasyHistorySettings,
@@ -1314,6 +1319,7 @@ async function addArchivedPlayerSeasonMetrics(
         archive_prior_league_id: Number(archive.leagueId),
         archive_prior_team_id: Number(archive.teamId),
         archive_prior_appearances: archive.appearances,
+        archive_prior_minutes: archive.minutes,
         archive_prior_goals: archive.goals,
         archive_prior_assists: archive.assists,
         archive_prior_team_matches: archive.teamMatches,
@@ -1466,7 +1472,10 @@ export function buildFormulaProjectionIndex(
             )
         : rankedCandidates;
       const teamContext = pipelineTeamContext(fixture, config);
-      const candidates = historyCandidates.map((entry) => pipelineAllocationParticipant(entry, teamContext, config));
+      const candidates = applySparseHistoryAllocationFallbacks(
+        historyCandidates.map((entry) => pipelineAllocationParticipant(entry, teamContext, config)),
+        teamContext
+      );
       const participants = candidates.map((entry) => entry.input);
       const team = pipelineTeamTotals(fixture, participants, teamContext);
       const projection = projectTeamPlayers(team, participants);
@@ -1577,6 +1586,7 @@ function pipelineParticipant(
     currentMinutes: currentSeasonMinutes,
     currentEvents: currentSeasonXg,
     priorAppearances: numericOrNull(metrics.archive_prior_appearances) ?? 0,
+    priorMinutes: numericOrNull(metrics.archive_prior_minutes),
     priorEvents: numericOrNull(metrics.archive_prior_goals),
     tierFactor: numericOrNull(metrics.archive_tier_factor) ?? 1
   });
@@ -1587,6 +1597,7 @@ function pipelineParticipant(
     currentMinutes: currentSeasonMinutes,
     currentEvents: currentSeasonXa,
     priorAppearances: numericOrNull(metrics.archive_prior_appearances) ?? 0,
+    priorMinutes: numericOrNull(metrics.archive_prior_minutes),
     priorEvents: numericOrNull(metrics.archive_prior_assists),
     tierFactor: numericOrNull(metrics.archive_tier_factor) ?? 1
   });
@@ -1702,6 +1713,62 @@ function pipelineAllocationParticipant(
     metrics,
     input: { ...participant.input, allocationWeights, cardExposureFactor }
   };
+}
+
+function applySparseHistoryAllocationFallbacks(
+  participants: PipelineParticipant[],
+  teamContext: Record<string, unknown>
+) {
+  if (participants.length === 0) return participants;
+  const expectedGoals = numericOrNull(teamContext.expected_goals) ?? 0;
+  const expectedAssists = expectedGoals * (numericOrNull(teamContext.assists_per_goal) ?? 0);
+  let result = participants;
+  if (expectedGoals > 0 && allocationWeightTotal(result, "goals") <= 0) {
+    result = applyPositionAllocationFallback(result, "goals");
+  }
+  if (expectedAssists > 0 && allocationWeightTotal(result, "assists") <= 0) {
+    result = applyPositionAllocationFallback(result, "assists");
+  }
+  return result;
+}
+
+function allocationWeightTotal(
+  participants: PipelineParticipant[],
+  metric: "goals" | "assists"
+) {
+  return participants.reduce(
+    (total, participant) => total + (participant.input.allocationWeights?.[metric] ?? 0),
+    0
+  );
+}
+
+function applyPositionAllocationFallback(
+  participants: PipelineParticipant[],
+  metric: "goals" | "assists"
+) {
+  return participants.map((participant) => {
+    const expectedMinutes = participant.input.expectedMinutes ?? 0;
+    const eventExposureMinutes = Math.min(
+      expectedMinutes,
+      numericOrNull(participant.metrics.event_exposure_minutes) ?? expectedMinutes
+    );
+    const weight = positionEventPriorPer90(participant.input.position, metric) * eventExposureMinutes / 90;
+    return {
+      ...participant,
+      metrics: {
+        ...participant.metrics,
+        [`${metric === "goals" ? "goal" : "assist"}_allocation_sparse_history_fallback`]: weight > 0 ? 1 : 0,
+        [`${metric === "goals" ? "goal" : "assist"}_allocation_weight`]: weight
+      },
+      input: {
+        ...participant.input,
+        allocationWeights: {
+          ...participant.input.allocationWeights,
+          [metric]: weight
+        }
+      }
+    };
+  });
 }
 
 function pipelineTeamContext(
