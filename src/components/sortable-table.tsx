@@ -125,20 +125,38 @@ function sortTableBody(table: HTMLTableElement, header: HTMLTableCellElement, fo
   const defaultDirection = defaultDirectionForColumn(table, columnIndex, header);
   const nextDirection = forcedDirection ?? (currentDirection ? reverseDirection(currentDirection) : defaultDirection);
   const rows = Array.from(body.rows);
-  const sortableRows = rows
-    .map((row, index) => ({ row, index, value: comparableValue(cellSortValue(row.cells[columnIndex])) }))
-    .filter((entry) => rowCanSort(entry.row, columnIndex));
-  const pinnedRows = rows.filter((row) => !rowCanSort(row, columnIndex));
+  const rowGroups = groupTableRows(rows);
+  const sortableRows = rowGroups
+    .map((group, index) => ({ group, index, value: comparableValue(cellSortValue(group.row.cells[columnIndex])) }))
+    .filter((entry) => rowCanSort(entry.group.row, columnIndex));
+  const pinnedRows = rowGroups.filter((group) => !rowCanSort(group.row, columnIndex));
 
   sortableRows.sort((left, right) => {
     const result = compareSortableValues(left.value, right.value, nextDirection);
     return result || left.index - right.index;
   });
 
-  for (const entry of sortableRows) body.appendChild(entry.row);
-  for (const row of pinnedRows) body.appendChild(row);
+  for (const entry of sortableRows) appendRowGroup(body, entry.group);
+  for (const group of pinnedRows) appendRowGroup(body, group);
 
   markActiveHeader(table, header, nextDirection);
+}
+
+function groupTableRows(rows: HTMLTableRowElement[]) {
+  const groups: Array<{ row: HTMLTableRowElement; detailRows: HTMLTableRowElement[] }> = [];
+  for (const row of rows) {
+    if (row.dataset.sortDetailRow === "true" && groups.length > 0) {
+      groups[groups.length - 1].detailRows.push(row);
+    } else {
+      groups.push({ row, detailRows: [] });
+    }
+  }
+  return groups;
+}
+
+function appendRowGroup(body: HTMLTableSectionElement, group: { row: HTMLTableRowElement; detailRows: HTMLTableRowElement[] }) {
+  body.appendChild(group.row);
+  for (const detailRow of group.detailRows) body.appendChild(detailRow);
 }
 
 function navigateToServerSort(table: HTMLTableElement, header: HTMLTableCellElement, sortParam: string) {

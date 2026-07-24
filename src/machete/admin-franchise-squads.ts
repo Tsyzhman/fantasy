@@ -50,6 +50,38 @@ export type AdminFranchiseSquadSummary = {
   error: string | null;
 };
 
+export async function franchiseSquadRevision(
+  prisma: PrismaClient,
+  leagueId: bigint,
+  season: string,
+  franchise: UserFranchise,
+  options: { includeInactive?: boolean } = {}
+) {
+  const userWhere = { franchise, ...(options.includeInactive ? {} : { isActive: true }) };
+  const [users, squads] = await Promise.all([
+    prisma.user.aggregate({
+      where: userWhere,
+      _count: { id: true },
+      _max: { updatedAt: true }
+    }),
+    prisma.userFantasySquad.aggregate({
+      where: {
+        leagueId,
+        season,
+        user: userWhere
+      },
+      _count: { id: true },
+      _max: { updatedAt: true }
+    })
+  ]);
+  return [
+    users._count.id,
+    users._max.updatedAt?.getTime() ?? 0,
+    squads._count.id,
+    squads._max.updatedAt?.getTime() ?? 0
+  ].join(":");
+}
+
 export async function loadAdminFranchiseSquadSummaries(
   prisma: PrismaClient,
   league: SharedLeagueSeasonOption,

@@ -4,7 +4,7 @@ import { jsonError, withApiHandler } from "@/lib/api-handler";
 import { requireApiUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { isFantasySquadLeague } from "@/lib/leagues/display";
-import { loadAdminFranchiseSquadSummaries } from "@/machete/admin-franchise-squads";
+import { franchiseSquadRevision, loadAdminFranchiseSquadSummaries } from "@/machete/admin-franchise-squads";
 import { canSwitchFranchise, resolveVisibleFranchise } from "@/machete/franchise-access";
 import { loadSharedLeagueOptions } from "@/machete/shared_read_model";
 
@@ -29,9 +29,18 @@ export const GET = withApiHandler(async (request: Request) => {
   if (!franchise) return NextResponse.json({ rows: [], franchise: null });
 
   const adminCanSwitch = canSwitchFranchise(auth.user);
+  const revision = await franchiseSquadRevision(prisma, league.leagueId, league.season, franchise, { includeInactive: adminCanSwitch });
+  if (params.get("revisionOnly") === "1") {
+    return NextResponse.json(
+      { franchise, revision },
+      { headers: { "Cache-Control": "private, no-store" } }
+    );
+  }
   const rows = await loadAdminFranchiseSquadSummaries(prisma, league, franchise, { includeInactive: adminCanSwitch });
   return NextResponse.json({
     franchise,
+    revision,
+    generatedAt: new Date().toISOString(),
     rows: rows.map((row) => ({
       userId: row.userId,
       userName: adminCanSwitch ? row.userName : row.userName === row.email ? "Пользователь" : row.userName,
@@ -49,7 +58,7 @@ export const GET = withApiHandler(async (request: Request) => {
       previewPlayers: row.previewPlayers,
       error: row.error
     }))
-  });
+  }, { headers: { "Cache-Control": "private, no-store" } });
 });
 
 function parseBigInt(value: string | null) {

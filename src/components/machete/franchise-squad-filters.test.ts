@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { filterFranchiseSquadRows, type FranchiseSquadRow, type FranchiseSquadTableFilters } from "./FranchiseSquadsPanel";
+import {
+  filterFranchiseSquadRows,
+  sortFranchiseSquadRows,
+  type FranchiseSquadRow,
+  type FranchiseSquadTableFilters
+} from "./FranchiseSquadsPanel";
 
 const emptyFilters: FranchiseSquadTableFilters = {
   user: "", squad: "", starterMin: "", starterMax: "", captain: "",
@@ -39,4 +44,20 @@ test("advanced panel filters every visible franchise-squad column", () => {
 test("numeric ranges exclude missing values only when that column is filtered", () => {
   assert.equal(filterFranchiseSquadRows(rows, emptyFilters).length, 2);
   assert.deepEqual(filterFranchiseSquadRows(rows, { ...emptyFilters, alternativeMax: "100" }).map((row) => row.userId), ["1"]);
+});
+
+test("live rows are re-sorted by the active metric and missing values stay last", () => {
+  assert.deepEqual(
+    sortFranchiseSquadRows(rows, { key: "fp", direction: "desc" }).map((row) => row.userId),
+    ["1", "2"]
+  );
+  const refreshedRows = rows.map((row) => row.userId === "2" ? { ...row, fp: 70 } : row);
+  assert.deepEqual(
+    sortFranchiseSquadRows(refreshedRows, { key: "fp", direction: "desc" }).map((row) => row.userId),
+    ["2", "1"]
+  );
+  assert.deepEqual(
+    sortFranchiseSquadRows(rows, { key: "alternativeFp", direction: "asc" }).map((row) => row.userId),
+    ["1", "2"]
+  );
 });

@@ -22,8 +22,20 @@ test("franchise squads are lazy-loaded inside the selected squad league", () => 
   assert.match(panel, /aria-expanded=\{expanded\}/);
   assert.match(panel, /aria-controls=\{previewId\}/);
   assert.match(panel, /<FranchiseSquadPreview players=\{row\.previewPlayers\}/);
-  assert.match(panel, /onClientSortChange=\{\(\) => setExpandedUserIds\(new Set\(\)\)\}/);
+  assert.match(panel, /onClientSortChange=\{\(next\) =>/);
   assert.match(api, /previewPlayers: row\.previewPlayers/);
+});
+
+test("franchise squads refresh live without repeatedly loading the heavy table", () => {
+  assert.match(panel, /const franchiseLivePollMs = 5_000/);
+  assert.match(panel, /revisionOnly: "1"/);
+  assert.match(panel, /document\.visibilityState/);
+  assert.match(panel, /window\.addEventListener\("machete:squad-saved"/);
+  assert.match(panel, /sortFranchiseSquadRows\(filteredRows, sort\)/);
+  assert.doesNotMatch(panel, /setInterval/);
+  assert.match(api, /franchiseSquadRevision/);
+  assert.match(api, /params\.get\("revisionOnly"\) === "1"/);
+  assert.match(api, /"Cache-Control": "private, no-store"/);
 });
 
 test("franchise API enforces viewer access and hides private user fields", () => {

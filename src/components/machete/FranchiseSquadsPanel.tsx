@@ -1,7 +1,7 @@
 "use client";
 
 import { AlertTriangle, ChevronDown, ChevronRight, Filter, RotateCcw, Users } from "lucide-react";
-import { Fragment, useMemo, useState, type SyntheticEvent } from "react";
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState, type SyntheticEvent } from "react";
 
 import { I18nText } from "@/components/i18n-text";
 import { localizedText, useLanguage } from "@/components/localized-option";
@@ -13,6 +13,11 @@ import type { AdminFranchiseSquadPreviewPlayer } from "@/machete/admin-franchise
 
 type Franchise = "MACHETE" | "BALTIKA";
 type UiLanguage = ReturnType<typeof useLanguage>;
+export type FranchiseSquadSortKey = "starterCount" | "fp" | "alternativeFp" | "foontasyFp";
+export type FranchiseSquadSort = { key: FranchiseSquadSortKey; direction: "asc" | "desc" };
+
+const franchiseLivePollMs = 5_000;
+const defaultFranchiseSquadSort: FranchiseSquadSort = { key: "fp", direction: "desc" };
 
 export type FranchiseSquadTableFilters = {
   user: string;
@@ -61,30 +66,163 @@ export function FranchiseSquadsPanel({ leagueId, season, initialFranchise, canSw
   const language = useLanguage();
   const [franchise, setFranchise] = useState<Franchise | null>(initialFranchise);
   const [rows, setRows] = useState<FranchiseSquadRow[] | null>(null);
+  const [loadedFranchise, setLoadedFranchise] = useState<Franchise | null>(null);
+  const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [liveError, setLiveError] = useState(false);
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null);
+  const [rowsRevision, setRowsRevision] = useState(0);
+  const revisionRef = useRef<string | null>(null);
+  const activeFranchiseRef = useRef<Franchise | null>(initialFranchise);
+  const requestRef = useRef<{ id: number; controller: AbortController } | null>(null);
+  const requestSequenceRef = useRef(0);
 
   function handleToggle(event: SyntheticEvent<HTMLDetailsElement>) {
-    if (event.currentTarget.open && rows === null && franchise) void load(franchise);
+    const nextOpen = event.currentTarget.open;
+    setOpen(nextOpen);
+    if (!nextOpen) {
+      requestRef.current?.controller.abort();
+      return;
+    }
+    if (franchise && (rows === null || loadedFranchise !== franchise)) void loadRows(franchise);
   }
 
-  async function load(nextFranchise: Franchise) {
-    setFranchise(nextFranchise);
-    setLoading(true);
-    setError(null);
+  const loadRows = useCallback(async (nextFranchise: Franchise, background = false) => {
+    const id = ++requestSequenceRef.current;
+    requestRef.current?.controller.abort();
+    const controller = new AbortController();
+    requestRef.current = { id, controller };
+    if (background) {
+      setRefreshing(true);
+      setLiveError(false);
+    } else {
+      setLoading(true);
+      setError(null);
+      setRows(null);
+      setLoadedFranchise(null);
+    }
     try {
       const query = new URLSearchParams({ leagueId, season, franchise: nextFranchise });
-      const response = await fetch(`/api/machete/franchise-squads?${query.toString()}`, { cache: "no-store", headers: { Accept: "application/json" } });
-      const payload = await response.json().catch(() => ({})) as { rows?: FranchiseSquadRow[]; error?: { message?: string } };
+      const response = await fetch(`/api/machete/franchise-squads?${query.toString()}`, {
+        cache: "no-store",
+        headers: { Accept: "application/json" },
+        signal: controller.signal
+      });
+      const payload = await response.json().catch(() => ({})) as {
+        rows?: FranchiseSquadRow[];
+        revision?: string;
+        generatedAt?: string;
+        error?: { message?: string };
+      };
       if (!response.ok || !payload.rows) throw new Error(payload.error?.message ?? "Не удалось загрузить составы франшизы.");
+      if (requestRef.current?.id !== id || activeFranchiseRef.current !== nextFranchise) return;
       setRows(payload.rows);
+      setLoadedFranchise(nextFranchise);
+      revisionRef.current = payload.revision ?? null;
+      setRowsRevision((current) => current + 1);
+      setLastUpdatedAt(payload.generatedAt ? new Date(payload.generatedAt) : new Date());
+      setLiveError(false);
     } catch (loadError) {
-      setRows(null);
-      setError(loadError instanceof Error ? loadError.message : "Не удалось загрузить составы франшизы.");
+      if (controller.signal.aborted || requestRef.current?.id !== id) return;
+      if (background) {
+        setLiveError(true);
+      } else {
+        setRows(null);
+        setLoadedFranchise(null);
+        setError(loadError instanceof Error ? loadError.message : "Не удалось загрузить составы франшизы.");
+      }
     } finally {
-      setLoading(false);
+      if (requestRef.current?.id === id) {
+        requestRef.current = null;
+        setLoading(false);
+        setRefreshing(false);
+      }
     }
+  }, [leagueId, season]);
+
+  function selectFranchise(nextFranchise: Franchise) {
+    if (nextFranchise === franchise && rows !== null) return;
+    requestRef.current?.controller.abort();
+    activeFranchiseRef.current = nextFranchise;
+    revisionRef.current = null;
+    setFranchise(nextFranchise);
+    setRows(null);
+    setLoadedFranchise(null);
+    setLastUpdatedAt(null);
+    setError(null);
+    setLiveError(false);
+    if (open) void loadRows(nextFranchise);
   }
+
+  useEffect(() => () => requestRef.current?.controller.abort(), []);
+
+  useEffect(() => {
+    if (!open || !franchise || loadedFranchise !== franchise || rows === null) return;
+    let cancelled = false;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let controller: AbortController | null = null;
+    let checking = false;
+
+    const schedule = () => {
+      if (cancelled) return;
+      timer = setTimeout(() => void checkRevision(), franchiseLivePollMs);
+    };
+    const checkRevision = async () => {
+      if (cancelled || checking) return;
+      checking = true;
+      if (timer) clearTimeout(timer);
+      timer = null;
+      if (document.visibilityState !== "visible") {
+        checking = false;
+        schedule();
+        return;
+      }
+      controller?.abort();
+      controller = new AbortController();
+      try {
+        const query = new URLSearchParams({ leagueId, season, franchise, revisionOnly: "1" });
+        const response = await fetch(`/api/machete/franchise-squads?${query.toString()}`, {
+          cache: "no-store",
+          headers: { Accept: "application/json" },
+          signal: controller.signal
+        });
+        const payload = await response.json().catch(() => ({})) as { revision?: string };
+        if (!response.ok || typeof payload.revision !== "string") throw new Error("Revision check failed");
+        if (payload.revision !== revisionRef.current) await loadRows(franchise, true);
+        else setLiveError(false);
+      } catch {
+        if (!controller.signal.aborted && !cancelled) setLiveError(true);
+      } finally {
+        checking = false;
+        schedule();
+      }
+    };
+    const handleVisibility = () => {
+      if (document.visibilityState !== "visible") {
+        controller?.abort();
+        if (timer) clearTimeout(timer);
+        timer = null;
+        return;
+      }
+      if (timer) clearTimeout(timer);
+      timer = null;
+      void checkRevision();
+    };
+    const handleLocalSave = () => void checkRevision();
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("machete:squad-saved", handleLocalSave);
+    schedule();
+    return () => {
+      cancelled = true;
+      if (timer) clearTimeout(timer);
+      controller?.abort();
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("machete:squad-saved", handleLocalSave);
+    };
+  }, [franchise, leagueId, loadRows, loadedFranchise, open, rows, season]);
 
   return (
     <details id="franchise-squads" onToggle={handleToggle} className="mt-5 rounded border border-slate-200 bg-white shadow-sm">
@@ -103,7 +241,7 @@ export function FranchiseSquadsPanel({ leagueId, season, initialFranchise, canSw
         {canSwitch ? (
           <div className="mt-3 flex gap-2" aria-label="Франшиза">
             {(["MACHETE", "BALTIKA"] as const).map((option) => (
-              <button key={option} type="button" onClick={() => void load(option)} className={cn("rounded border px-3 py-2 text-sm font-semibold", franchise === option ? "border-ink bg-ink text-white" : "border-slate-200 text-slate-600 hover:border-slate-400")}>
+              <button key={option} type="button" onClick={() => selectFranchise(option)} className={cn("rounded border px-3 py-2 text-sm font-semibold", franchise === option ? "border-ink bg-ink text-white" : "border-slate-200 text-slate-600 hover:border-slate-400")}>
                 {franchiseLabel(option)}
               </button>
             ))}
@@ -115,17 +253,31 @@ export function FranchiseSquadsPanel({ leagueId, season, initialFranchise, canSw
         )}
         {loading ? <p className="mt-4 text-sm text-slate-500"><I18nText en="Loading squads…" ru="Загрузка составов…" /></p> : null}
         {error ? <p role="alert" className="mt-4 rounded border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-800">{error}</p> : null}
-        {rows ? <FranchiseSquadTable key={franchise ?? "unassigned"} rows={rows} language={language} /> : null}
+        {rows && loadedFranchise === franchise ? (
+          <>
+            <p aria-live="polite" className={cn("mt-3 text-xs", liveError ? "text-amber-700" : "text-emerald-700")}>
+              <span aria-hidden="true">●</span>{" "}
+              {liveError
+                ? localizedText(language, "Live update is temporarily unavailable; retrying automatically.", "Live-обновление временно недоступно; повторяем автоматически.")
+                : refreshing
+                  ? localizedText(language, "Updating teammates…", "Обновляем составы сокомандников…")
+                  : `${localizedText(language, "Live updates", "Live-обновление")}${lastUpdatedAt ? ` · ${formatDateTime(lastUpdatedAt)}` : ""}`}
+            </p>
+            <FranchiseSquadTable key={franchise ?? "unassigned"} rows={rows} language={language} rowsRevision={rowsRevision} />
+          </>
+        ) : null}
       </div>
     </details>
   );
 }
 
-function FranchiseSquadTable({ rows, language }: { rows: FranchiseSquadRow[]; language: UiLanguage }) {
+function FranchiseSquadTable({ rows, language, rowsRevision }: { rows: FranchiseSquadRow[]; language: UiLanguage; rowsRevision: number }) {
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState<FranchiseSquadTableFilters>(emptyTableFilters);
   const [expandedUserIds, setExpandedUserIds] = useState<Set<string>>(() => new Set());
+  const [sort, setSort] = useState<FranchiseSquadSort>(defaultFranchiseSquadSort);
   const filteredRows = useMemo(() => filterFranchiseSquadRows(rows, filters), [filters, rows]);
+  const sortedRows = useMemo(() => sortFranchiseSquadRows(filteredRows, sort), [filteredRows, sort]);
   const activeFilterCount = Object.values(filters).filter((value) => value.trim() !== "").length;
 
   function updateFilter(key: keyof FranchiseSquadTableFilters, value: string) {
@@ -174,23 +326,25 @@ function FranchiseSquadTable({ rows, language }: { rows: FranchiseSquadRow[]; la
 
       <div className="mt-3 overflow-x-auto rounded border border-slate-200">
       <SortableTable
-        sortRefreshKey={filteredRows.length}
-        onClientSortChange={() => setExpandedUserIds(new Set())}
+        sortRefreshKey={`${rowsRevision}:${sort.key}:${sort.direction}`}
+        onClientSortChange={(next) => {
+          if (isFranchiseSquadSortKey(next.key)) setSort({ key: next.key, direction: next.direction });
+        }}
         className="min-w-[900px] w-full text-left text-sm"
       >
         <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
           <tr>
             <th data-sort-disabled="true" className="px-4 py-3"><I18nText en="User" ru="Пользователь" /></th>
             <th data-sort-disabled="true" className="px-4 py-3"><I18nText en="Squad" ru="Состав" /></th>
-            <th className="px-4 py-3 text-center"><I18nText en="Starting XI" ru="Старт" /></th>
+            <th data-sort-key="starterCount" data-sort-direction={sort.key === "starterCount" ? sort.direction : undefined} className="px-4 py-3 text-center"><I18nText en="Starting XI" ru="Старт" /></th>
             <th data-sort-disabled="true" className="px-4 py-3"><I18nText en="Captain" ru="Капитан" /></th>
-            <th data-sort-default-direction="desc" className="px-4 py-3 text-right"><I18nText en="FP" ru="ФО" /></th>
-            <th data-sort-default-direction="desc" className="px-4 py-3 text-right"><I18nText en="Alt" ru="Альт" /></th>
-            <th data-sort-default-direction="desc" className="px-4 py-3 text-right">FFO</th>
+            <th data-sort-key="fp" data-sort-default-direction="desc" data-sort-direction={sort.key === "fp" ? sort.direction : undefined} className="px-4 py-3 text-right"><I18nText en="FP" ru="ФО" /></th>
+            <th data-sort-key="alternativeFp" data-sort-default-direction="desc" data-sort-direction={sort.key === "alternativeFp" ? sort.direction : undefined} className="px-4 py-3 text-right"><I18nText en="Alt" ru="Альт" /></th>
+            <th data-sort-key="foontasyFp" data-sort-default-direction="desc" data-sort-direction={sort.key === "foontasyFp" ? sort.direction : undefined} className="px-4 py-3 text-right">FFO</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
-          {filteredRows.map((row) => {
+          {sortedRows.map((row) => {
             const expanded = expandedUserIds.has(row.userId);
             const canPreview = Boolean(row.squadName && row.previewPlayers.length > 0);
             const toggleId = `franchise-squad-toggle-${row.userId}`;
@@ -337,4 +491,25 @@ export function filterFranchiseSquadRows(rows: FranchiseSquadRow[], filters: Fra
     && numberMatches(row.alternativeFp, filters.alternativeMin, filters.alternativeMax)
     && numberMatches(row.foontasyFp, filters.foontasyMin, filters.foontasyMax)
   );
+}
+
+export function sortFranchiseSquadRows(rows: FranchiseSquadRow[], sort: FranchiseSquadSort) {
+  return rows
+    .map((row, index) => ({ row, index }))
+    .sort((left, right) => {
+      const leftValue = left.row[sort.key];
+      const rightValue = right.row[sort.key];
+      if (leftValue === null && rightValue === null) return left.index - right.index;
+      if (leftValue === null) return 1;
+      if (rightValue === null) return -1;
+      const result = leftValue - rightValue;
+      if (result !== 0) return sort.direction === "asc" ? result : -result;
+      const nameResult = left.row.userName.localeCompare(right.row.userName, undefined, { sensitivity: "base" });
+      return nameResult || left.index - right.index;
+    })
+    .map(({ row }) => row);
+}
+
+function isFranchiseSquadSortKey(value: string): value is FranchiseSquadSortKey {
+  return value === "starterCount" || value === "fp" || value === "alternativeFp" || value === "foontasyFp";
 }

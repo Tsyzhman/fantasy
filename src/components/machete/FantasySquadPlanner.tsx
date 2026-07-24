@@ -1093,6 +1093,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
             : localizedText(language, `Saved ${savedPlayers} players.`, `Сохранено игроков: ${savedPlayers}.`)
         );
         void recordBetaMilestone("SQUAD_SAVED");
+        window.dispatchEvent(new CustomEvent("machete:squad-saved"));
         router.replace(squadVariantHref(leagueId, season, savedSquadId, appliedHistorySettings));
       } finally {
         setSavePending(false);
