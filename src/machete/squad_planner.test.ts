@@ -331,7 +331,7 @@ test("primary and Alt apply position-specific starter minutes only to the chrono
   assert.equal(highMinuteIndex.formulaMetricsByFixturePlayer.get("fixture-nearest:starter")?.roster_starter_minutes_uplift, 0);
 });
 
-test("Alt uses the marked XI for the nearest fixture and every player above 45 ordinary minutes later", () => {
+test("Alt limits only the nearest fixture to the marked XI and uses every player's ordinary minutes later", () => {
   const config = {
     ...friendAltProjectionFormulaConfig,
     history: {
@@ -362,7 +362,7 @@ test("Alt uses the marked XI for the nearest fixture and every player above 45 o
     }
   };
   const rows = [
-    ...Array.from({ length: 10 }, (_, index) => ({
+    ...Array.from({ length: 9 }, (_, index) => ({
       playerId: `starter-${index}`,
       teamId: "team-1",
       position: "FWD",
@@ -401,6 +401,16 @@ test("Alt uses the marked XI for the nearest fixture and every player above 45 o
       expectedMinutes: 45,
       minutesPlayed: 405,
       rawMetrics: { minutes: 45 }
+    },
+    {
+      playerId: "marked-below-top-eleven",
+      teamId: "team-1",
+      position: "FWD",
+      isStarter: true,
+      startProbability: 0.2,
+      expectedMinutes: 20,
+      minutesPlayed: 180,
+      rawMetrics: { minutes: 20 }
     }
   ];
   const nearestFixture = {
@@ -409,12 +419,12 @@ test("Alt uses the marked XI for the nearest fixture and every player above 45 o
     kickoffAt: new Date("2026-07-25T12:00:00Z"), projectedXg: 0, projectedXga: 0,
     attackMultiplier: 1, defenseMultiplier: 1
   };
-  const laterFixture = {
+  const laterFixtures = Array.from({ length: 4 }, (_, index) => ({
     ...nearestFixture,
-    id: "fixture-later",
-    roundId: "round-2",
-    kickoffAt: new Date("2026-08-01T12:00:00Z")
-  };
+    id: `fixture-later-${index + 2}`,
+    roundId: `round-${index + 2}`,
+    kickoffAt: new Date(Date.UTC(2026, 7, 1 + index * 7, 12))
+  }));
   const positions = new Map(rows.map((row: { playerId: string }) => [row.playerId, "FWD"]));
   const index = buildFormulaProjectionIndex(
     rows as never,
@@ -422,7 +432,10 @@ test("Alt uses the marked XI for the nearest fixture and every player above 45 o
       rounds: [],
       fixturesByTeamRound: new Map([
         ["round-1", new Map([["team-1", [nearestFixture]]])],
-        ["round-2", new Map([["team-1", [laterFixture]]])]
+        ...laterFixtures.map((fixture) => [
+          fixture.roundId,
+          new Map([["team-1", [fixture]]])
+        ] as const)
       ]),
       teamShortNameById: new Map()
     },
@@ -432,10 +445,15 @@ test("Alt uses the marked XI for the nearest fixture and every player above 45 o
   );
 
   assert.equal(index.byFixturePlayer.get("fixture-nearest:marked-horizon-player")?.expectedMinutes, 64);
-  assert.equal(index.byFixturePlayer.get("fixture-later:marked-horizon-player")?.expectedMinutes, 64);
   assert.equal(index.byFixturePlayer.has("fixture-nearest:unmarked-high-minutes"), false);
-  assert.equal(index.byFixturePlayer.get("fixture-later:unmarked-high-minutes")?.expectedMinutes, 85);
-  assert.equal(index.byFixturePlayer.has("fixture-later:marked-45-minutes"), false);
+  assert.equal(index.byFixturePlayer.get("fixture-nearest:marked-45-minutes")?.expectedMinutes, 60);
+  assert.equal(index.byFixturePlayer.has("fixture-nearest:marked-below-top-eleven"), false);
+  for (const fixture of laterFixtures) {
+    assert.equal(index.byFixturePlayer.get(`${fixture.id}:marked-horizon-player`)?.expectedMinutes, 64);
+    assert.equal(index.byFixturePlayer.get(`${fixture.id}:unmarked-high-minutes`)?.expectedMinutes, 85);
+    assert.equal(index.byFixturePlayer.get(`${fixture.id}:marked-45-minutes`)?.expectedMinutes, 45);
+    assert.equal(index.byFixturePlayer.get(`${fixture.id}:marked-below-top-eleven`)?.expectedMinutes, 20);
+  }
 });
 
 test("Alt keeps a promoted club marked XI calculable when every personal xG/xA weight is zero", () => {
