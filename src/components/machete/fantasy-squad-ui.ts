@@ -35,15 +35,11 @@ export function startingXiAlternativeRoundPoints(
   roundIndex: number,
   captainId?: string | null
 ) {
-  const values = players.map((player) => ({
-    player,
-    value: player.alternativeRoundPoints && player.alternativeRoundPoints.length > roundIndex
-      ? player.alternativeRoundPoints[roundIndex]
-      : roundIndex === 0 ? player.alternativePredictedFp ?? null : null
-  }));
-  if (values.some(({ value }) => typeof value !== "number" || !Number.isFinite(value))) return null;
-  return values.reduce(
-    (total, { player, value }) => total + (value as number) * captainMultiplier(player.playerId, captainId),
+  return players.reduce(
+    (total, player) =>
+      total +
+      (player.alternativeRoundPoints?.[roundIndex] ??
+        (roundIndex === 0 ? player.alternativePredictedFp ?? 0 : 0)) * captainMultiplier(player.playerId, captainId),
     0
   );
 }
@@ -54,11 +50,9 @@ export function startingXiAlternativeHorizonPoints(
   captainId?: string | null
 ) {
   const safeHorizon = Number.isFinite(horizon) ? Math.max(0, Math.floor(horizon)) : 0;
-  const values = Array.from({ length: safeHorizon }, (_, roundIndex) =>
+  return Array.from({ length: safeHorizon }, (_, roundIndex) =>
     startingXiAlternativeRoundPoints(players, roundIndex, captainId)
-  );
-  if (values.some((value) => value === null)) return null;
-  return values.reduce<number>((total, value) => total + (value ?? 0), 0);
+  ).reduce((total, value) => total + value, 0);
 }
 
 export function startingXiFoontasyPoints(

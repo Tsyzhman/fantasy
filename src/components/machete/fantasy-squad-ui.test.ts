@@ -31,18 +31,18 @@ const squadPageSource = readFileSync(new URL("../../app/machete/squad/page.tsx",
 const playerTableExportRouteSource = readFileSync(new URL("../../app/api/machete/squads/export-table/route.ts", import.meta.url), "utf8");
 const globalStylesSource = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
 
-test("round forecast refuses to turn a missing alternative starting-XI projection into zero", () => {
+test("round forecast totals available alternative projections and keeps missing players visible through warnings", () => {
   const players = [
     { playerId: "captain", alternativePredictedFp: 4.5, alternativeRoundPoints: [4.5, 5, null] },
     { playerId: "starter", alternativePredictedFp: 3, alternativeRoundPoints: [null, 2.5, 4] }
   ];
 
-  assert.equal(startingXiAlternativeRoundPoints(players, 0), null);
+  assert.equal(startingXiAlternativeRoundPoints(players, 0), 7.5);
   assert.equal(startingXiAlternativeRoundPoints(players, 1), 7.5);
-  assert.equal(startingXiAlternativeRoundPoints(players, 2), null);
-  assert.equal(startingXiAlternativeHorizonPoints(players, 3), null);
-  assert.equal(startingXiAlternativeRoundPoints(players, 0, "captain"), null);
-  assert.equal(startingXiAlternativeHorizonPoints(players, 3, "captain"), null);
+  assert.equal(startingXiAlternativeRoundPoints(players, 2), 4);
+  assert.equal(startingXiAlternativeHorizonPoints(players, 3), 19);
+  assert.equal(startingXiAlternativeRoundPoints(players, 0, "captain"), 12);
+  assert.equal(startingXiAlternativeHorizonPoints(players, 3, "captain"), 28.5);
   assert.match(squadPlannerSource, /en="Starting XI Alt FP" ru="Альт FP старта"/);
   assert.match(squadPlannerSource, /startingXiAlternativeRoundPoints\(summary\.starterPlayers, index, captainId\)/);
   assert.doesNotMatch(squadPlannerSource, /function playerAlternativeHorizonPoints/);
@@ -554,4 +554,13 @@ test("player-pool columns use compact padding and allow narrow saved widths", ()
 
 test("Sports.ru XLSX price import is not exposed on the squad page", () => {
   assert.doesNotMatch(squadPageSource, /FantasyPriceSheetImportForm/);
+});
+
+test("squad page shows source freshness and has no data-tools menu", () => {
+  assert.match(squadPageSource, /Стата FotMob:/);
+  assert.match(squadPageSource, /Цены Sports\.ru:/);
+  assert.match(squadPageSource, /Кэфы букмекера:/);
+  assert.match(squadPageSource, /formatDateTime\(freshness\.fotmobStatsAt\)/);
+  assert.match(squadPageSource, /formatDateTime\(freshness\.bookmakerOddsAt\)/);
+  assert.doesNotMatch(squadPageSource, /Data tools|Инструменты|squadExportHref/);
 });

@@ -1,6 +1,3 @@
-import { ChevronDown, Download, Wrench } from "lucide-react";
-import Link from "next/link";
-
 import { FantasySquadPlanner } from "@/components/machete/FantasySquadPlanner";
 import { FranchiseSquadsPanel } from "@/components/machete/FranchiseSquadsPanel";
 import { SportsRuSquadImport } from "@/components/machete/SportsRuSquadImport";
@@ -9,6 +6,7 @@ import { MacheteShell } from "@/components/machete/MacheteShell";
 import { AutoSubmitForm } from "@/components/players/auto-submit-form";
 import { requireCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { formatDateTime } from "@/lib/format";
 import { isFantasySquadLeague } from "@/lib/leagues/display";
 import { loadSharedLeagueOptions, type SharedLeagueSeasonOption } from "@/machete/shared_read_model";
 import { loadFantasySquadPlannerData } from "@/machete/squad_planner";
@@ -56,9 +54,12 @@ export default async function MacheteSquadPage({ searchParams }: PageProps) {
   const selectedLeague = leagues.find((league) => String(league.leagueId) === selectedLeagueId) ?? null;
   const readinessByScope = await loadPlannerReadinessByScope(prisma, selectedLeague ? [selectedLeague] : []);
   const selectedReadiness = selectedLeague ? readinessByScope.get(plannerReadinessKey(selectedLeague)) ?? null : null;
-  const data = selectedLeague && selectedReadiness
-    ? await loadInitialFantasySquadPlannerData(user.id, selectedLeague, selectedReadiness, historySettings, params.squadId)
-    : null;
+  const [data, freshness] = selectedLeague && selectedReadiness
+    ? await Promise.all([
+        loadInitialFantasySquadPlannerData(user.id, selectedLeague, selectedReadiness, historySettings, params.squadId),
+        loadSquadDataFreshness(selectedLeague)
+      ])
+    : [null, null];
 
   return (
     <MacheteShell compact>
@@ -72,33 +73,6 @@ export default async function MacheteSquadPage({ searchParams }: PageProps) {
               <I18nText en="Squad planner" ru="Планировщик состава" />
             </h1>
           </div>
-
-          <details className="relative">
-            <summary className="inline-flex cursor-pointer list-none items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
-              <Wrench className="h-4 w-4" aria-hidden="true" />
-              <I18nText en="Data tools" ru="Инструменты" />
-              <ChevronDown className="h-4 w-4" aria-hidden="true" />
-            </summary>
-            <div className="mt-2 rounded border border-slate-200 bg-white p-3 shadow-elev sm:absolute sm:right-0 sm:z-20 sm:w-[min(36rem,calc(100vw-3rem))]">
-              <div className="flex flex-wrap gap-2">
-                <Link href={machetePlayersHref(selectedLeague)} className="inline-flex items-center justify-center rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-                  <I18nText en="Player explorer" ru="Таблица игроков" />
-                </Link>
-                {selectedLeague ? (
-                  <>
-                    <a href={squadExportHref(selectedLeague, "csv", historySettings, data?.squad.id)} className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-                      <Download className="h-4 w-4" aria-hidden="true" />
-                      CSV
-                    </a>
-                    <a href={squadExportHref(selectedLeague, "xlsx", historySettings, data?.squad.id)} className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
-                      <Download className="h-4 w-4" aria-hidden="true" />
-                      XLSX
-                    </a>
-                  </>
-                ) : null}
-              </div>
-            </div>
-          </details>
         </div>
 
         <AutoSubmitForm className="mt-4 grid grid-cols-[minmax(0,1fr)_auto] gap-2 sm:max-w-xl">
@@ -121,6 +95,22 @@ export default async function MacheteSquadPage({ searchParams }: PageProps) {
         </AutoSubmitForm>
         {selectedLeague && data ? (
           <SportsRuSquadImport leagueId={String(selectedLeague.leagueId)} season={selectedLeague.season} squadId={data.squad.id} />
+        ) : null}
+        {freshness ? (
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-600">
+            <span className="font-semibold uppercase tracking-wide text-slate-500">
+              <I18nText en="Data updated · Moscow time" ru="Обновление данных · МСК" />
+            </span>
+            <span className="rounded border border-slate-200 bg-white px-2.5 py-1.5" title="Latest FotMob statistics used for a current-roster player / Последняя статистика FotMob, используемая для игрока текущего ростера">
+              <I18nText en={`FotMob stats: ${formatDateTime(freshness.fotmobStatsAt)}`} ru={`Стата FotMob: ${formatDateTime(freshness.fotmobStatsAt)}`} />
+            </span>
+            <span className="rounded border border-slate-200 bg-white px-2.5 py-1.5" title="Latest Sports.ru fantasy-price snapshot for this league and season / Последний снимок цен Sports.ru для этой лиги и сезона">
+              <I18nText en={`Sports.ru prices: ${formatDateTime(data?.priceStatus.lastSyncedAt)}`} ru={`Цены Sports.ru: ${formatDateTime(data?.priceStatus.lastSyncedAt)}`} />
+            </span>
+            <span className="rounded border border-slate-200 bg-white px-2.5 py-1.5" title="Latest bookmaker-odds snapshot for this league and season / Последний снимок коэффициентов для этой лиги и сезона">
+              <I18nText en={`Bookmaker odds: ${formatDateTime(freshness.bookmakerOddsAt)}`} ru={`Кэфы букмекера: ${formatDateTime(freshness.bookmakerOddsAt)}`} />
+            </span>
+          </div>
         ) : null}
       </section>
 
@@ -173,29 +163,6 @@ export default async function MacheteSquadPage({ searchParams }: PageProps) {
   );
 }
 
-function machetePlayersHref(league: SharedLeagueSeasonOption | null) {
-  if (!league) return "/machete/players";
-
-  const query = new URLSearchParams({
-    leagueId: String(league.leagueId),
-    season: league.season
-  });
-
-  return `/machete/players?${query.toString()}`;
-}
-
-function squadExportHref(league: SharedLeagueSeasonOption, format: "csv" | "xlsx", historySettings: FantasyHistorySettings, squadId?: string | null) {
-  const query = new URLSearchParams({
-    leagueId: String(league.leagueId),
-    season: league.season,
-    format
-  });
-  applyFantasyHistorySearchParams(query, historySettings);
-  if (squadId) query.set("squadId", squadId);
-
-  return `/api/machete/squads/export?${query.toString()}`;
-}
-
 function squadPlayerPoolHref(league: SharedLeagueSeasonOption, historySettings: FantasyHistorySettings, squadId?: string | null) {
   const query = new URLSearchParams({
     leagueId: String(league.leagueId),
@@ -204,6 +171,39 @@ function squadPlayerPoolHref(league: SharedLeagueSeasonOption, historySettings: 
   applyFantasyHistorySearchParams(query, historySettings);
   if (squadId) query.set("squadId", squadId);
   return `/api/machete/squads?${query.toString()}`;
+}
+
+async function loadSquadDataFreshness(league: SharedLeagueSeasonOption) {
+  const [fotmobStats, bookmakerOdds] = await Promise.all([
+    prisma.matchPlayerStat.aggregate({
+      where: {
+        player: {
+          seasonRosterEntries: {
+            some: {
+              leagueId: league.leagueId,
+              season: league.season,
+              active: true
+            }
+          }
+        }
+      },
+      _max: { updatedAt: true }
+    }),
+    prisma.fixtureOddsSnapshot.aggregate({
+      where: {
+        match: {
+          leagueId: league.leagueId,
+          season: league.season
+        }
+      },
+      _max: { fetchedAt: true }
+    })
+  ]);
+
+  return {
+    fotmobStatsAt: fotmobStats._max.updatedAt?.toISOString() ?? null,
+    bookmakerOddsAt: bookmakerOdds._max.fetchedAt?.toISOString() ?? null
+  };
 }
 
 function initialSquadPlayers<T extends { playerId: string }>(players: T[], selections: Array<{ playerId: string }>) {

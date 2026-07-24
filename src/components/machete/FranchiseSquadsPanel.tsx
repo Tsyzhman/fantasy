@@ -242,8 +242,8 @@ function alternativeSquadTooltip(row: FranchiseSquadRow, language: UiLanguage) {
   if (row.alternativeIssuePlayerNames.length > 0) {
     lines.push(localizedText(
       language,
-      `Total unavailable because these starters have Alt 0/no forecast: ${row.alternativeIssuePlayerNames.join(", ")}.`,
-      `Итог недоступен: у игроков основы Alt равен 0 или отсутствует — ${row.alternativeIssuePlayerNames.join(", ")}.`
+      `These starters have Alt 0/no forecast and contribute 0 to the displayed total: ${row.alternativeIssuePlayerNames.join(", ")}.`,
+      `У этих игроков основы Alt равен 0 или отсутствует, поэтому их вклад в показанную сумму равен 0: ${row.alternativeIssuePlayerNames.join(", ")}.`
     ));
   }
   return lines.join("\n");

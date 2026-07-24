@@ -1401,11 +1401,6 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                     {transferLimitIsActive ? `${plannedTransferCount}/${transferLimit}` : transferLimit}
                   </output>
                 </div>
-                {priceStatus.lastSyncedAt ? (
-                  <span className="pb-2 text-sm text-slate-500">
-                    <I18nText en={`Prices synced ${formatDate(priceStatus.lastSyncedAt)}`} ru={`Цены обновлены ${formatDate(priceStatus.lastSyncedAt)}`} />
-                  </span>
-                ) : null}
                 {priceStatus.sportsRuPrices > 0 ? (
                   <span className="rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700">
                     <I18nText en={`Sports.ru prices ${priceStatus.sportsRuPrices}`} ru={`Цены Sports.ru ${priceStatus.sportsRuPrices}`} />
