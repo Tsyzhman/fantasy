@@ -16,6 +16,7 @@ import {
   compareFantasyPlannerPlayers,
   configuredFantasyProjectionEngine,
   fantasyPlannerPosition,
+  fantasyPlayerPoolPreferenceGroups,
   fantasyPlannerSharedRowIdentity,
   fantasySquadRoundPlansFromFilters,
   fantasySquadRoundIdsFromFilters,
@@ -60,6 +61,20 @@ test("component xFP is the default primary engine and legacy remains a one-flag 
   assert.equal(configuredFantasyProjectionEngine(undefined), "COMPONENT_XFP_V1");
   assert.equal(configuredFantasyProjectionEngine("component"), "COMPONENT_XFP_V1");
   assert.equal(configuredFantasyProjectionEngine("legacy"), "LEGACY_RIDGE19_V1");
+});
+
+test("franchise previews share the global player pool but isolate personal formulas", () => {
+  const groups = fantasyPlayerPoolPreferenceGroups(
+    ["global-1", "custom-1", "global-2", "custom-2", "global-1"],
+    [
+      { userId: "custom-1", id: "formula-a", updatedAt: new Date("2026-07-24T08:00:00Z") },
+      { userId: "custom-2", id: "formula-b", updatedAt: new Date("2026-07-24T08:00:00Z") }
+    ]
+  );
+  assert.deepEqual(groups.get("global")?.userIds, ["global-1", "global-2"]);
+  assert.deepEqual(groups.get("formula-a:2026-07-24T08:00:00.000Z")?.userIds, ["custom-1"]);
+  assert.deepEqual(groups.get("formula-b:2026-07-24T08:00:00.000Z")?.userIds, ["custom-2"]);
+  assert.equal(groups.size, 3);
 });
 
 test("promoted-player archive prefers the feeder league over a one-match cup row", () => {

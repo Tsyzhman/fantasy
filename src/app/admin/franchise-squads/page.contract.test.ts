@@ -7,6 +7,8 @@ const squadPage = fs.readFileSync(path.join(process.cwd(), "src/app/machete/squa
 const panel = fs.readFileSync(path.join(process.cwd(), "src/components/machete/FranchiseSquadsPanel.tsx"), "utf8");
 const preview = fs.readFileSync(path.join(process.cwd(), "src/components/machete/FranchiseSquadPreview.tsx"), "utf8");
 const api = fs.readFileSync(path.join(process.cwd(), "src/app/api/machete/franchise-squads/route.ts"), "utf8");
+const squadPlanner = fs.readFileSync(path.join(process.cwd(), "src/machete/squad_planner.ts"), "utf8");
+const franchiseLoader = fs.readFileSync(path.join(process.cwd(), "src/machete/admin-franchise-squads.ts"), "utf8");
 const legacyPage = fs.readFileSync(path.join(process.cwd(), "src/app/machete/franchise-squads/page.tsx"), "utf8");
 const legacyAdminPage = fs.readFileSync(path.join(process.cwd(), "src/app/admin/franchise-squads/page.tsx"), "utf8");
 
@@ -36,6 +38,14 @@ test("franchise squads refresh live without repeatedly loading the heavy table",
   assert.match(api, /franchiseSquadRevision/);
   assert.match(api, /params\.get\("revisionOnly"\) === "1"/);
   assert.match(api, /"Cache-Control": "private, no-store"/);
+});
+
+test("franchise previews batch shared pool metadata and skip irrelevant saved-squad reads", () => {
+  assert.match(franchiseLoader, /loadCachedFantasySquadPlayerPools/);
+  assert.match(squadPlanner, /userScoringPreference\.findMany/);
+  assert.match(squadPlanner, /fantasyPlayerPoolPreferenceGroups/);
+  assert.match(squadPlanner, /skipSavedSquads: true/);
+  assert.match(squadPlanner, /options\?\.skipSavedSquads\s*\?\s*Promise\.resolve\(\[\]\)/);
 });
 
 test("franchise API enforces viewer access and hides private user fields", () => {

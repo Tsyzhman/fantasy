@@ -324,9 +324,86 @@ export async function loadCachedFantasySquadPlayerPool(
   ]);
   const preferenceKey = preference ? `${preference.id}:${preference.updatedAt.toISOString()}` : "global";
   const startingXiRevision = latestStartingXiChange._max.startingXiChangedAt?.toISOString() ?? "no-xi-change";
+  return loadCachedFantasySquadPlayerPoolWithMetadata(
+    prisma,
+    userId,
+    league,
+    historySettings,
+    preferenceKey,
+    startingXiRevision
+  );
+}
+
+export type CachedFantasySquadPlayerPoolResult =
+  | { players: FantasyPlannerPlayer[]; error: null }
+  | { players: null; error: unknown };
+
+export async function loadCachedFantasySquadPlayerPools(
+  prisma: PrismaClient,
+  userIds: string[],
+  league: SharedLeagueSeasonOption,
+  historySettings: FantasyHistorySettings = defaultFantasyHistorySettings
+) {
+  const uniqueUserIds = [...new Set(userIds)];
+  if (uniqueUserIds.length === 0) return new Map<string, CachedFantasySquadPlayerPoolResult>();
+  const [preferences, latestStartingXiChange] = await Promise.all([
+    prisma.userScoringPreference.findMany({
+      where: { userId: { in: uniqueUserIds }, modelSource: "MACHETE" },
+      select: { userId: true, id: true, updatedAt: true }
+    }),
+    prisma.leagueSeasonTeam.aggregate({
+      where: { leagueId: league.leagueId, season: league.season, active: true },
+      _max: { startingXiChangedAt: true }
+    })
+  ]);
+  const startingXiRevision = latestStartingXiChange._max.startingXiChangedAt?.toISOString() ?? "no-xi-change";
+  const groups = fantasyPlayerPoolPreferenceGroups(uniqueUserIds, preferences);
+  const results = new Map<string, CachedFantasySquadPlayerPoolResult>();
+  await Promise.all([...groups.entries()].map(async ([preferenceKey, group]) => {
+    try {
+      const players = await loadCachedFantasySquadPlayerPoolWithMetadata(
+        prisma,
+        group.representativeUserId,
+        league,
+        historySettings,
+        preferenceKey,
+        startingXiRevision
+      );
+      for (const userId of group.userIds) results.set(userId, { players, error: null });
+    } catch (error) {
+      for (const userId of group.userIds) results.set(userId, { players: null, error });
+    }
+  }));
+  return results;
+}
+
+export function fantasyPlayerPoolPreferenceGroups(
+  userIds: string[],
+  preferences: Array<{ userId: string; id: string; updatedAt: Date }>
+) {
+  const preferenceByUserId = new Map(preferences.map((preference) => [preference.userId, preference]));
+  const groups = new Map<string, { representativeUserId: string; userIds: string[] }>();
+  for (const userId of [...new Set(userIds)]) {
+    const preference = preferenceByUserId.get(userId);
+    const preferenceKey = preference ? `${preference.id}:${preference.updatedAt.toISOString()}` : "global";
+    const group = groups.get(preferenceKey);
+    if (group) group.userIds.push(userId);
+    else groups.set(preferenceKey, { representativeUserId: userId, userIds: [userId] });
+  }
+  return groups;
+}
+
+function loadCachedFantasySquadPlayerPoolWithMetadata(
+  prisma: PrismaClient,
+  userId: string,
+  league: SharedLeagueSeasonOption,
+  historySettings: FantasyHistorySettings,
+  preferenceKey: string,
+  startingXiRevision: string
+) {
   const key = `${league.leagueId}:${league.season}:${league.updatedAt.toISOString()}:${startingXiRevision}:${preferenceKey}:${fantasyHistorySettingsKey(historySettings)}`;
   return fantasyPlayerPoolCache.getOrCreate(key, fantasyPlayerPoolCacheTtlMs, async () => {
-    const data = await loadFantasySquadPlannerData(prisma, userId, league, null, { historySettings });
+    const data = await loadFantasySquadPlannerData(prisma, userId, league, null, { historySettings, skipSavedSquads: true });
     return data.players;
   });
 }
@@ -341,6 +418,7 @@ export async function loadFantasySquadPlannerData(
     readiness?: PlannerReadiness;
     historySettings?: FantasyHistorySettings;
     deferFormulaProjections?: boolean;
+    skipSavedSquads?: boolean;
   }
 ): Promise<FantasySquadPlannerData> {
   const readiness = options?.readiness ?? (await loadPlannerReadinessByScope(prisma, [league])).get(plannerReadinessKey(league));
@@ -356,19 +434,21 @@ export async function loadFantasySquadPlannerData(
       },
       orderBy: { lastSyncedAt: "desc" }
     }),
-    prisma.userFantasySquad.findMany({
-      where: {
-        userId,
-        leagueId: league.leagueId,
-        season: league.season
-      },
-      include: {
-        players: {
-          orderBy: { slotIndex: "asc" }
-        }
-      },
-      orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }]
-    }),
+    options?.skipSavedSquads
+      ? Promise.resolve([])
+      : prisma.userFantasySquad.findMany({
+          where: {
+            userId,
+            leagueId: league.leagueId,
+            season: league.season
+          },
+          include: {
+            players: {
+              orderBy: { slotIndex: "asc" }
+            }
+          },
+          orderBy: [{ updatedAt: "desc" }, { createdAt: "desc" }]
+        }),
     prisma.teamPlayerSeason.findMany({
       where: {
         leagueId: league.leagueId,

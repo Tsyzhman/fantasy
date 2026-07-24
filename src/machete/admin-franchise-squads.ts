@@ -4,7 +4,7 @@ import { startingXiAlternativeRoundPoints, startingXiFoontasyPoints, startingXiR
 import { nextAlternativeFantasyPoints } from "@/machete/squad_logic";
 import type { FantasyPlannerPlayer } from "@/machete/squad_logic";
 import type { SharedLeagueSeasonOption } from "@/machete/shared_read_model";
-import { loadCachedFantasySquadPlayerPool } from "@/machete/squad_planner";
+import { loadCachedFantasySquadPlayerPools } from "@/machete/squad_planner";
 
 export type AdminFranchiseSquadPreviewPlayer = {
   playerId: string;
@@ -108,6 +108,11 @@ export async function loadAdminFranchiseSquadSummaries(
   for (const squad of squads) {
     if (!latestSquadByUser.has(squad.userId)) latestSquadByUser.set(squad.userId, squad);
   }
+  const poolsByUserId = await loadCachedFantasySquadPlayerPools(
+    prisma,
+    [...latestSquadByUser.keys()],
+    league
+  );
 
   return Promise.all(users.map(async (user) => {
     const squad = latestSquadByUser.get(user.id);
@@ -124,7 +129,11 @@ export async function loadAdminFranchiseSquadSummaries(
     if (!squad) return { ...base, captainName: null, fp: null, alternativeFp: null, alternativeBreakdown: [], foontasyFp: null, foontasyAvailable: 0, alternativeIssuePlayerNames: [], previewPlayers: [], error: null };
 
     try {
-      const pool = await loadCachedFantasySquadPlayerPool(prisma, user.id, league);
+      const poolResult = poolsByUserId.get(user.id);
+      if (!poolResult || poolResult.error || !poolResult.players) {
+        throw poolResult?.error ?? new Error("Player pool was not loaded.");
+      }
+      const pool = poolResult.players;
       const poolById = new Map(pool.map((player) => [player.playerId, player]));
       const starterSelections = squad.players.filter((player) => player.isStarter);
       const starters = starterSelections.flatMap((selection) => {
