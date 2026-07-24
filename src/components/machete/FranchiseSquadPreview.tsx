@@ -4,6 +4,7 @@ import { Eye } from "lucide-react";
 
 import { I18nText } from "@/components/i18n-text";
 import { localizedText, useLanguage } from "@/components/localized-option";
+import { FdrRow } from "@/components/ui/fdr-pill";
 import { cn } from "@/lib/cn";
 import { formatNumber, formatScore, NULL_GLYPH } from "@/lib/format";
 import { compactPlayerDisplayName } from "@/lib/players/display-name";
@@ -164,15 +165,10 @@ function PreviewPlayerCard({ player, compact = false }: { player: AdminFranchise
       </dl>
       {fixtures.length > 0 ? (
         <div className="mt-0.5 flex min-w-0 items-center justify-center gap-px overflow-hidden">
-          {fixtures.slice(0, 3).map((fixture, index) => (
-            <span
-              key={`${fixture.label}:${index}`}
-              title={fixture.title}
-              className={cn("min-w-0 max-w-[1.1rem] truncate rounded px-px text-[8px] font-bold", fixtureDifficultyClass(fixture.difficulty))}
-            >
-              {fixture.label}
-            </span>
-          ))}
+          <FdrRow
+            fixtures={fixtures.slice(0, 3)}
+            className="min-w-0 flex-nowrap gap-px overflow-hidden [&_.fdr-pill]:min-w-0 [&_.fdr-pill]:max-w-[1.1rem] [&_.fdr-pill]:px-px [&_.fdr-pill]:text-[8px]"
+          />
         </div>
       ) : null}
     </article>
@@ -217,11 +213,4 @@ function positionPillClass(position: AdminFranchiseSquadPreviewPlayer["positionG
   if (position === "MID") return "bg-emerald-100 text-emerald-800";
   if (position === "FWD") return "bg-rose-100 text-rose-800";
   return "bg-slate-100 text-slate-700";
-}
-
-function fixtureDifficultyClass(difficulty: number | null | undefined) {
-  if (difficulty == null) return "bg-slate-100 text-slate-600";
-  if (difficulty <= 2) return "bg-emerald-100 text-emerald-800";
-  if (difficulty === 3) return "bg-amber-100 text-amber-800";
-  return "bg-rose-100 text-rose-800";
 }

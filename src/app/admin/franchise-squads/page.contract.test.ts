@@ -60,6 +60,9 @@ test("expanded franchise squad is a read-only starting XI and bench preview", ()
   assert.match(preview, /Read only/);
   assert.match(preview, /Только просмотр/);
   assert.match(preview, /data-read-only-player-card="true"/);
+  assert.match(preview, /<FdrRow/);
+  assert.match(preview, /fixtures=\{fixtures\.slice\(0, 3\)\}/);
+  assert.doesNotMatch(preview, /fixtureDifficultyClass/);
   assert.doesNotMatch(preview, /onRemove|onToggleCaptain|onToggleVice|onDrop|draggable|Замена/);
 });
 
