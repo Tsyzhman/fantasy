@@ -140,7 +140,8 @@ test("latest published Sports.ru squad falls back from an open tour to the lates
 
   assert.equal(squad?.tourId, "tour-1");
   assert.equal(squad?.players[0].providerPlayerId, "player-1");
-  assert.equal(queries.length, 3);
+  assert.equal(queries.length, 2);
+  assert.equal(queries.some((query) => query.includes('tourID: "tour-2"')), false);
 });
 
 function jsonResponse(value: unknown) {

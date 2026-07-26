@@ -225,7 +225,13 @@ export async function fetchSportsRuLatestPublishedSquad(
     if (current) return current;
     const tours = [...(squad.season?.tours ?? [])]
       .filter((tour) => tour.id)
-      .sort((left, right) => sportsRuTourTimestamp(right) - sportsRuTourTimestamp(left));
+      // currentTourInfo is already empty above. Prefer completed tours, whose
+      // lineups are public, before asking Sports.ru for an open-tour payload
+      // that it will withhold until the deadline.
+      .sort((left, right) =>
+        sportsRuTourPublicationPriority(right) - sportsRuTourPublicationPriority(left)
+        || sportsRuTourTimestamp(right) - sportsRuTourTimestamp(left)
+      );
     for (const tour of tours) {
       const historic = await sportsRuGraphqlRequest<{ fantasyQueries?: { squadTourInfo?: SportsRuSquadTourInfoNode | null } }>(
         endpoint,
@@ -338,6 +344,11 @@ function normalizeSportsRuSquadTourInfo(squad: SportsRuSquadNode, info: SportsRu
 
 function sportsRuTourTimestamp(tour: SportsRuTourNode) {
   return Date.parse(tour.finishedAt || tour.startedAt || "") || 0;
+}
+
+function sportsRuTourPublicationPriority(tour: SportsRuTourNode) {
+  if (tour.finishedAt) return 1;
+  return ["FINISHED", "COMPLETED", "CLOSED"].includes(tour.status?.toUpperCase() ?? "") ? 1 : 0;
 }
 
 export function sportsRuTournamentHruFromUrl(value: string) {

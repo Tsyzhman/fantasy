@@ -892,9 +892,10 @@ export async function saveFantasySquad(
   const name = normalizeFantasySquadName(input.name);
   return prisma.$transaction(async (tx) => {
     const selectedPlayerIds = [...new Set(input.selections.map((selection) => selection.playerId))].map(BigInt);
-    const rosterRows = selectedPlayerIds.length === 0
-      ? []
-      : await tx.$queryRaw<Array<{ playerId: bigint; teamId: bigint; position: string | null }>>(Prisma.sql`
+    const [rosterRows, sportsPositionsByPlayerId] = await Promise.all([
+      selectedPlayerIds.length === 0
+        ? Promise.resolve([] as Array<{ playerId: bigint; teamId: bigint; position: string | null }>)
+        : tx.$queryRaw<Array<{ playerId: bigint; teamId: bigint; position: string | null }>>(Prisma.sql`
           SELECT
             "player_id" AS "playerId",
             "team_id" AS "teamId",
@@ -905,14 +906,15 @@ export async function saveFantasySquad(
             AND "player_id" IN (${Prisma.join(selectedPlayerIds)})
             AND "active" = TRUE
           FOR SHARE
-        `);
+        `),
+      loadSportsRuFantasyPositionsByPlayerId(tx, {
+        leagueId: input.leagueId,
+        season: input.season
+      })
+    ]);
     if (selectedPlayerIds.length !== input.selections.length || rosterRows.length !== selectedPlayerIds.length) {
       throw new Error("Fantasy squad contains a player who is no longer active in the selected league and season.");
     }
-    const sportsPositionsByPlayerId = await loadSportsRuFantasyPositionsByPlayerId(tx, {
-      leagueId: input.leagueId,
-      season: input.season
-    });
     const rosterByPlayerId = new Map(rosterRows.map((row) => [String(row.playerId), row]));
     const positionByPlayerId = new Map(
       input.selections.map((selection) => [
