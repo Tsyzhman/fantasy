@@ -2,7 +2,6 @@
 
 import { Download, ExternalLink } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { I18nText } from "@/components/i18n-text";
@@ -20,7 +19,6 @@ type ImportPreview = {
 
 export function SportsRuSquadImport({ leagueId, season, squadId }: { leagueId: string; season: string; squadId: string | null }) {
   const language = useLanguage();
-  const router = useRouter();
   const [preview, setPreview] = useState<ImportPreview | null>(null);
   const [pending, setPending] = useState(false);
   const [errorCode, setErrorCode] = useState<string | null>(null);
@@ -55,8 +53,10 @@ export function SportsRuSquadImport({ leagueId, season, squadId }: { leagueId: s
     }
     const url = new URL(window.location.href);
     if (payload.squad?.id) url.searchParams.set("squadId", payload.squad.id);
-    router.replace(`${url.pathname}?${url.searchParams.toString()}`);
-    router.refresh();
+    // A client-router refresh can race the preceding replace and revalidate the
+    // old squad URL. Navigate the document once instead, so the server renders
+    // the just-saved squad before the planner is shown again.
+    window.location.replace(`${url.pathname}?${url.searchParams.toString()}`);
   }
 
   return (
