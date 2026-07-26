@@ -2336,13 +2336,16 @@ async function loadUpcomingRoundFixtures(prisma: PrismaClient, league: SharedLea
 
 async function loadUpcomingRoundFixturesUncached(prisma: PrismaClient, league: SharedLeagueSeasonOption) {
   const now = new Date();
+  const activeRoundLookback = new Date(now.getTime() - 21 * 24 * 60 * 60 * 1000);
   const [matches, teamStrengthProfiles, seasonTeams] = await Promise.all([
     prisma.coreMatch.findMany({
       where: {
         leagueId: league.leagueId,
         season: league.season,
         cancelled: false,
-        OR: [{ finished: false }, { matchDate: { gte: now } }]
+        // Keep the beginning of an in-progress round. Its already completed
+        // fixtures must stay in the round total alongside the remaining ones.
+        OR: [{ finished: false }, { matchDate: { gte: activeRoundLookback } }]
       },
       include: {
         homeTeam: { select: { name: true } },
@@ -2415,8 +2418,22 @@ async function loadUpcomingRoundFixturesUncached(prisma: PrismaClient, league: S
 }
 
 export function buildPlannerRoundFixtures(matches: PlannerMatch[], now = new Date()): PlannerRoundFixtures {
-  const upcoming = matches.filter((match) => !match.finished && !match.cancelled && (!match.matchDate || match.matchDate >= startOfTodayUtc(now)));
-  const grouped = groupMatchesByRound(upcoming.length > 0 ? upcoming : matches.filter((match) => !match.finished && !match.cancelled));
+  const eligible = matches.filter((match) => !match.cancelled);
+  const upcoming = eligible.filter((match) => !match.finished && (!match.matchDate || match.matchDate >= startOfTodayUtc(now)));
+  const upcomingGroups = groupMatchesByRound(upcoming);
+  const firstUpcomingRoundId = upcomingGroups[0]?.id ?? null;
+  const allGroups = groupMatchesByRound(eligible);
+  const firstUpcomingIndex = firstUpcomingRoundId === null ? -1 : allGroups.findIndex((group) => group.id === firstUpcomingRoundId);
+  // For the first still-open round retain its finished fixtures too. Otherwise
+  // a split round becomes a forecast for only the remaining games, which makes
+  // the displayed squad total collapse mid-tour. Subsequent rounds keep only
+  // their unplayed fixtures; fully completed earlier rounds stay excluded.
+  const grouped = firstUpcomingIndex >= 0
+    ? allGroups.slice(firstUpcomingIndex).map((group) => ({
+        ...group,
+        matches: group.id === firstUpcomingRoundId ? group.matches : group.matches.filter((match) => !match.finished)
+      })).filter((group) => group.matches.length > 0)
+    : groupMatchesByRound(eligible.filter((match) => !match.finished));
   const rounds = grouped.slice(0, maxProjectionRounds).map((group, index) => ({
     id: group.id,
     label: group.label || `Round ${index + 1}`,

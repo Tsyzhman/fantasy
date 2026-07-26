@@ -900,6 +900,23 @@ test("squad planner groups upcoming matches into fixture rounds", () => {
   assert.equal(result.fixturesByTeamRound.get("round:12")?.get("10")?.[0].opponentTeamId, "20");
 });
 
+test("squad planner retains completed fixtures in an active split round", () => {
+  const completed = match({ id: "1", round: "12", date: "2026-05-21T17:00:00.000Z", homeTeamId: "10", awayTeamId: "20" });
+  completed.finished = true;
+  const result = buildPlannerRoundFixtures(
+    [
+      completed,
+      match({ id: "2", round: "12", date: "2026-05-23T19:00:00.000Z", homeTeamId: "30", awayTeamId: "40" }),
+      match({ id: "3", round: "13", date: "2026-05-30T17:00:00.000Z", homeTeamId: "10", awayTeamId: "30" })
+    ],
+    new Date("2026-05-22T00:00:00.000Z")
+  );
+
+  assert.equal(result.rounds[0]?.id, "round:12");
+  assert.equal(result.rounds[0]?.fixtureCount, 2);
+  assert.equal(result.fixturesByTeamRound.get("round:12")?.get("10")?.[0].id, "1");
+});
+
 test("squad planner uses provider team short names with a full-name fallback", () => {
   assert.equal(fantasyTeamShortName({ short_name: "Man United" }, "Manchester United"), "Man United");
   assert.equal(fantasyTeamShortName({ shortName: "Nottm Forest" }, "Nottingham Forest"), "Nottm Forest");
