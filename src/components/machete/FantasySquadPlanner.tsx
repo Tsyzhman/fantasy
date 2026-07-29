@@ -50,6 +50,8 @@ import {
   selectionForPlayer,
   selectionForNewPlayer,
   summarizeFantasySquad,
+  transferSuggestionForecastHorizonPoints,
+  transferSuggestionForecastNextPoints,
   updateFantasySquadRoundPlan,
   type FantasyFitEvaluator,
   type FantasyPlannerPlayer,
@@ -61,11 +63,12 @@ import {
   type FantasySquadOptimizationInput,
   type FantasySquadSelection,
   type FantasySquadStrategy,
-  type TransferPlanSuggestion
+  type TransferPlanSuggestion,
+  type TransferSuggestionForecastSource
 } from "@/machete/squad_logic";
 import { forecastPointsPerPrice } from "@/machete/fantasy-value-efficiency";
 import type { SavedFantasySquad, SavedFantasySquadOption } from "@/machete/squad_planner";
-import type { PlannerReadiness } from "@/machete/planner_readiness";
+import { plannerReadinessBlocksTransferSuggestions, type PlannerReadiness } from "@/machete/planner_readiness";
 import type { SquadFilterPreset, SquadFilterPresetFilters } from "@/machete/squad-filter-presets";
 import {
   defaultSquadTableColumns,
@@ -224,6 +227,7 @@ type TransferSuggestionCalculation = {
   selections: FantasySquadSelection[];
   rules: FantasySquadRules;
   horizon: number;
+  forecastSource: TransferSuggestionForecastSource;
   availableSuggestionCount: number;
   suggestions: TransferPlanSuggestion[];
 };
@@ -260,6 +264,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
   const [squadOptions, setSquadOptions] = useState<SavedFantasySquadOption[]>(savedSquads);
   const captainStorageKey = `fantasy-squad-captains:${leagueId}:${season}:${activeSquadId ?? "new"}:${activeRoundOffset}`;
   const [horizon, setHorizon] = useState(initialHorizon);
+  const [transferSuggestionForecastSource, setTransferSuggestionForecastSource] = useState<TransferSuggestionForecastSource>("FO");
   const [tableHorizon, setTableHorizon] = useState<3 | 5>(5);
   const [exportColumnKeys, setExportColumnKeys] = useState(initialVisiblePlayerPoolColumns);
   const playerNameQueryRef = useRef("");
@@ -308,6 +313,18 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
     [players, rounds.length]
   );
   const plannerForecastReady = readiness.ready && hasRealRoundProjections;
+  const transferSuggestionHorizon = transferSuggestionForecastSource === "FFO" ? 1 : horizon;
+  const transferSuggestionsBlockedByReadiness = plannerReadinessBlocksTransferSuggestions(readiness);
+  const hasSelectedTransferSourceForecasts = useMemo(() => {
+    if (transferSuggestionForecastSource === "FFO" && activeRoundOffset > 0) return false;
+    return players.some((player) => {
+      const nextPoints = transferSuggestionForecastNextPoints(player, transferSuggestionForecastSource);
+      return nextPoints !== null
+        && nextPoints !== 0
+        && transferSuggestionForecastHorizonPoints(player, transferSuggestionForecastSource, transferSuggestionHorizon) !== null;
+    });
+  }, [activeRoundOffset, players, transferSuggestionForecastSource, transferSuggestionHorizon]);
+  const transferSuggestionsReady = !transferSuggestionsBlockedByReadiness && hasSelectedTransferSourceForecasts;
 
   function setSelections(action: SetStateAction<FantasySquadSelection[]>) {
     setRoundPlans((current) => {
@@ -374,15 +391,17 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
     suggestionCalculation?.players === players &&
     suggestionCalculation.selections === selections &&
     suggestionCalculation.rules === rules &&
-    suggestionCalculation.horizon === horizon &&
+    suggestionCalculation.horizon === transferSuggestionHorizon &&
+    suggestionCalculation.forecastSource === transferSuggestionForecastSource &&
     suggestionCalculation.availableSuggestionCount === availableSuggestionCount;
   const suggestions = suggestionsAreCurrent ? suggestionCalculation.suggestions : [];
-  const suggestionsPending = plannerForecastReady && !suggestionsAreCurrent;
+  const suggestionsPending = transferSuggestionsReady && !suggestionsAreCurrent;
   const suggestionsFailed =
     failedSuggestionCalculation?.players === players &&
     failedSuggestionCalculation.selections === selections &&
     failedSuggestionCalculation.rules === rules &&
-    failedSuggestionCalculation.horizon === horizon &&
+    failedSuggestionCalculation.horizon === transferSuggestionHorizon &&
+    failedSuggestionCalculation.forecastSource === transferSuggestionForecastSource &&
     failedSuggestionCalculation.availableSuggestionCount === availableSuggestionCount;
   const displayedSuggestions = showAllSuggestions ? suggestions : suggestions.slice(0, 3);
   const transferCostUnconfigured = suggestions.some((suggestion) => suggestion.paidTransferLoss === null);
@@ -644,14 +663,15 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
   }
 
   useEffect(() => {
-    if (!postLoadContentReady || !playerPoolReady || !plannerForecastReady) return;
+    if (!postLoadContentReady || !playerPoolReady || !transferSuggestionsReady) return;
 
     let cancelled = false;
     const task = buildTransferSuggestionsOffThread({
       pool: players,
       selections,
       rules,
-      horizon,
+      horizon: transferSuggestionHorizon,
+      forecastSource: transferSuggestionForecastSource,
       transferCount: availableSuggestionCount,
       maximumPlans: 6
     });
@@ -659,20 +679,20 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
       .then((nextSuggestions) => {
         if (cancelled) return;
         setFailedSuggestionCalculation(null);
-        setSuggestionCalculation({ players, selections, rules, horizon, availableSuggestionCount, suggestions: nextSuggestions });
+        setSuggestionCalculation({ players, selections, rules, horizon: transferSuggestionHorizon, forecastSource: transferSuggestionForecastSource, availableSuggestionCount, suggestions: nextSuggestions });
       })
       .catch((error: unknown) => {
         if (cancelled) return;
         console.error("Failed to calculate fantasy transfer suggestions.", error);
-        setSuggestionCalculation({ players, selections, rules, horizon, availableSuggestionCount, suggestions: [] });
-        setFailedSuggestionCalculation({ players, selections, rules, horizon, availableSuggestionCount, suggestions: [] });
+        setSuggestionCalculation({ players, selections, rules, horizon: transferSuggestionHorizon, forecastSource: transferSuggestionForecastSource, availableSuggestionCount, suggestions: [] });
+        setFailedSuggestionCalculation({ players, selections, rules, horizon: transferSuggestionHorizon, forecastSource: transferSuggestionForecastSource, availableSuggestionCount, suggestions: [] });
       });
 
     return () => {
       cancelled = true;
       task.cancel();
     };
-  }, [availableSuggestionCount, players, selections, rules, horizon, playerPoolReady, plannerForecastReady, postLoadContentReady, suggestionRetry]);
+  }, [availableSuggestionCount, players, selections, rules, playerPoolReady, postLoadContentReady, suggestionRetry, transferSuggestionForecastSource, transferSuggestionHorizon, transferSuggestionsReady]);
 
   useEffect(() => {
     const handle = window.setTimeout(() => {
@@ -895,7 +915,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
   }
 
   function applySuggestion(suggestion: TransferPlanSuggestion) {
-    if (!plannerForecastReady) return;
+    if (!transferSuggestionsReady) return;
     const replacements = new Map(suggestion.moves.map((move) => [move.outPlayerId, players.find((player) => player.playerId === move.inPlayerId)]));
     if ([...replacements.values()].some((player) => !player)) return;
     const nextSelections = selections.map((selection) => {
@@ -1171,6 +1191,11 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
     { value: "balanced", label: <I18nText en="Balanced" ru="Баланс" />, ariaLabel: localizedText(language, "Balanced auto-pick", "Сбалансированный автоподбор") },
     { value: "reliable", label: <I18nText en="Reliable" ru="Надёжность" />, ariaLabel: localizedText(language, "Reliable auto-pick", "Надёжный автоподбор") },
     { value: "upside", label: <I18nText en="Upside" ru="Потенциал" />, ariaLabel: localizedText(language, "Upside auto-pick", "Автоподбор с потенциалом") }
+  ];
+  const transferSuggestionForecastSourceOptions: SegmentedOption<TransferSuggestionForecastSource>[] = [
+    { value: "FO", label: "FO", ariaLabel: localizedText(language, "FO transfer forecasts", "Трансферные прогнозы FO") },
+    { value: "ALT", label: "ALT", ariaLabel: localizedText(language, "ALT transfer forecasts", "Трансферные прогнозы ALT") },
+    { value: "FFO", label: "FFO", ariaLabel: localizedText(language, "Foontasy transfer forecasts", "Трансферные прогнозы Foontasy") }
   ];
   const autoPickStrategyCopy = squadStrategyCopy(language, autoPickStrategy);
   const nextRoundFoontasy = startingXiFoontasyPoints(summary.starterPlayers, captainId);
@@ -1515,13 +1540,35 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
           <div className="flex items-start justify-between gap-3">
             <div>
               <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500"><I18nText en="Transfer suggestions" ru="Подсказки трансферов" /></h3>
-              <p className="mt-1 text-xs text-slate-500"><I18nText en="Ranked by the selected forecast horizon." ru="Ранжированы по выбранному горизонту прогноза." /></p>
+              <p className="mt-1 text-xs text-slate-500"><I18nText en="Ranked by the selected formula and forecast horizon." ru="Ранжированы по выбранной формуле и горизонту прогноза." /></p>
             </div>
-            <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 num-tabular">
-              <Sparkles className="h-3.5 w-3.5" />
-              {suggestions.length}
-            </span>
+            <div className="flex shrink-0 flex-col items-end gap-2">
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 num-tabular">
+                <Sparkles className="h-3.5 w-3.5" />
+                {suggestions.length}
+              </span>
+              <SegmentedControl
+                name={localizedText(language, "Transfer forecast formula", "Формула прогноза трансферов")}
+                value={transferSuggestionForecastSource}
+                onChange={(source) => {
+                  setTransferSuggestionForecastSource(source);
+                  setShowAllSuggestions(false);
+                }}
+                options={transferSuggestionForecastSourceOptions}
+                size="sm"
+              />
+            </div>
           </div>
+          {transferSuggestionForecastSource === "FFO" ? (
+            <p className="mt-3 rounded border border-cyan-200 bg-cyan-50 px-3 py-2 text-xs text-cyan-900">
+              <I18nText en="FFO is published only for the current round, so these suggestions are ranked over 1 round." ru="FFO публикуется только на текущий тур, поэтому эти подсказки ранжированы на 1 тур." />
+            </p>
+          ) : null}
+          {!readiness.ready && !transferSuggestionsBlockedByReadiness ? (
+            <p className="mt-3 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
+              <I18nText en="The data-quality audit needs attention. Transfer suggestions use the available forecasts; auto-pick remains disabled." ru="Аудит качества данных требует внимания. Подсказки трансферов используют доступные прогнозы; автоподбор остаётся выключенным." />
+            </p>
+          ) : null}
           {transferCostUnconfigured && suggestions.length > 0 ? (
             <p className="mt-3 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
               <I18nText
@@ -1559,7 +1606,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                     <dd className="font-semibold text-ink num-tabular">{signedScore(suggestion.round1Delta)}</dd>
                   </div>
                   <div>
-                    <dt className="text-slate-500">{horizon}R</dt>
+                    <dt className="text-slate-500">{transferSuggestionHorizon}R</dt>
                     <dd className="font-semibold text-ink num-tabular">{signedScore(suggestion.horizonDelta)}</dd>
                   </div>
                   <div>
@@ -1568,7 +1615,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                   </div>
                 </dl>
                 <p className="mt-1 text-xs font-medium text-slate-600">
-                  <I18nText en={suggestion.reason} ru={`Прогнозный выигрыш ${signedScore(suggestion.horizonDelta)} за ${horizon} тур.`} />
+                  <I18nText en={suggestion.reason} ru={`Прогнозный выигрыш ${signedScore(suggestion.horizonDelta)} по ${suggestion.forecastSource} за ${transferSuggestionHorizon} тур.`} />
                 </p>
                 {actionableTransferRisks(suggestion.risks).length > 0 ? (
                   <p className="mt-1 text-[11px] text-rose-700">
@@ -1588,9 +1635,20 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                   : <I18nText en={`Show all ${suggestions.length}`} ru={`Показать все: ${suggestions.length}`} />}
               </button>
             ) : null}
-            {!plannerForecastReady ? (
+            {!transferSuggestionsReady ? (
               <p className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900" role="status">
-                <I18nText en="Transfer recommendations are unavailable until this league season has fresh non-zero round projections." ru="Трансферные рекомендации недоступны, пока для сезона лиги нет свежих ненулевых прогнозов по турам." />
+                <I18nText
+                  en={transferSuggestionsBlockedByReadiness
+                    ? "Transfer recommendations are unavailable until this league season has fresh player and fixture data."
+                    : transferSuggestionForecastSource === "FFO" && activeRoundOffset > 0
+                      ? "FFO transfer recommendations are available only for the current round. Choose FO or ALT for a later round."
+                      : `Transfer recommendations are unavailable until this league season has fresh non-zero ${transferSuggestionForecastSource} forecasts.`}
+                  ru={transferSuggestionsBlockedByReadiness
+                    ? "Трансферные рекомендации недоступны, пока для сезона лиги нет свежих данных по игрокам и календарю."
+                    : transferSuggestionForecastSource === "FFO" && activeRoundOffset > 0
+                      ? "Подсказки FFO доступны только для текущего тура. Для следующего тура выберите FO или ALT."
+                      : `Трансферные рекомендации недоступны, пока для сезона лиги нет свежих ненулевых прогнозов ${transferSuggestionForecastSource}.`}
+                />
               </p>
             ) : playerPoolFailed ? (
               <div className="space-y-2 rounded border border-rose-200 bg-rose-50 px-3 py-3 text-sm text-rose-700" role="alert">
@@ -4771,6 +4829,7 @@ function localizeTransferRisk(value: string) {
   if (value === "Paid-transfer point cost is not configured") return "стоимость платного трансфера не настроена";
   if (value === "At least one move loses projected points next round") return "хотя бы один ход теряет очки в следующем туре";
   if (value === "The loaded schedule does not cover every 3/5-round comparison") return "календарь не покрывает весь горизонт 3/5 туров";
+  if (value === "Foontasy covers only the current round") return "Foontasy покрывает только текущий тур";
   if (value === "At least one incoming player has low forecast confidence") return "у одного из новых игроков низкая уверенность прогноза";
   if (value === "At least one incoming player has fewer than 60 expected minutes") return "у одного из новых игроков ожидается меньше 60 минут";
   return value;

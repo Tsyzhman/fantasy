@@ -526,6 +526,51 @@ test("transfer plans return at least three alternatives when three valid upgrade
   assert.equal(plans.every((plan) => plan.transferCount === 1 && plan.round1Delta > 0 && (plan.round5Delta ?? 0) > 0), true);
 });
 
+test("transfer plans use the selected FO, ALT, or FFO forecast without treating FFO as a multi-round source", () => {
+  const rules = { ...defaultFantasySquadRules, budgetLimit: 20, maxPlayersPerTeam: 3 };
+  const out = {
+    ...player("1", "Current Mid", "10", "MID", 5, [3, 3, 3]),
+    alternativeRoundPoints: [7, 7, 7],
+    foontasyPoints: 9
+  };
+  const foUpgrade = {
+    ...player("2", "FO Upgrade", "11", "MID", 5, [6, 6, 6]),
+    alternativeRoundPoints: [1, 1, 1],
+    foontasyPoints: 1
+  };
+  const altUpgrade = {
+    ...player("3", "ALT Upgrade", "12", "MID", 5, [4, 4, 4]),
+    alternativeRoundPoints: [10, 10, 10],
+    foontasyPoints: 2
+  };
+  const ffoUpgrade = {
+    ...player("4", "FFO Upgrade", "13", "MID", 5, [5, 5, 5]),
+    alternativeRoundPoints: [2, 2, 2],
+    foontasyPoints: 15
+  };
+  const base = {
+    pool: [out, foUpgrade, altUpgrade, ffoUpgrade],
+    selections: [selectionForPlayer(out, 0)],
+    rules,
+    transferCount: 1,
+    maximumPlans: 3
+  };
+
+  const foPlans = buildTransferPlanSuggestions({ ...base, forecastSource: "FO", horizon: 3 });
+  const altPlans = buildTransferPlanSuggestions({ ...base, forecastSource: "ALT", horizon: 3 });
+  const ffoPlans = buildTransferPlanSuggestions({ ...base, forecastSource: "FFO", horizon: 1 });
+
+  assert.equal(foPlans[0]?.forecastSource, "FO");
+  assert.equal(foPlans[0]?.moves[0]?.inPlayerId, foUpgrade.playerId);
+  assert.equal(altPlans[0]?.forecastSource, "ALT");
+  assert.equal(altPlans[0]?.moves[0]?.inPlayerId, altUpgrade.playerId);
+  assert.equal(ffoPlans[0]?.forecastSource, "FFO");
+  assert.equal(ffoPlans[0]?.moves[0]?.inPlayerId, ffoUpgrade.playerId);
+  assert.equal(ffoPlans[0]?.round3Delta, null);
+  assert.equal(ffoPlans[0]?.risks.includes("Foontasy covers only the current round"), true);
+  assert.deepEqual(buildTransferPlanSuggestions({ ...base, forecastSource: "FFO", horizon: 3 }), []);
+});
+
 test("linked transfer plan can fund an upgrade that is invalid as a single move", () => {
   const rules = { ...defaultFantasySquadRules, budgetLimit: 10, maxPlayersPerTeam: 3 };
   const expensiveOut = player("1", "Old Forward", "10", "FWD", 8, [2, 2, 2, 2, 2]);

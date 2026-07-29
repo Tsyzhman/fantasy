@@ -47,6 +47,19 @@ export type PlannerReadiness = {
   } | null;
 };
 
+const transferSuggestionBlockingReadinessReasons = new Set<PlannerReadinessReason>([
+  "NO_ACTIVE_PLAYERS",
+  "NO_UPCOMING_FIXTURES",
+  "NO_INCREMENTAL_INGESTION",
+  "INCREMENTAL_INGESTION_NOT_COMPLETED",
+  "INCREMENTAL_INGESTION_STALE",
+  "INGESTION_FIXTURE_COUNT_MISMATCH"
+]);
+
+export function plannerReadinessBlocksTransferSuggestions(readiness: Pick<PlannerReadiness, "reasons">) {
+  return readiness.reasons.some((reason) => transferSuggestionBlockingReadinessReasons.has(reason));
+}
+
 export type PlannerReadinessEvaluationInput = {
   leagueId: bigint;
   season: string;

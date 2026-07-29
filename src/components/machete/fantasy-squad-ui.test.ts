@@ -71,6 +71,17 @@ test("Foontasy total doubles the captain and never treats a missing forecast as 
   ], "captain"), { available: 1, total: null });
 });
 
+test("transfer suggestions expose FO, ALT, and FFO, while FFO remains a current-round source", () => {
+  assert.match(squadPlannerSource, /transferSuggestionForecastSourceOptions/);
+  assert.match(squadPlannerSource, /value: "FO", label: "FO"/);
+  assert.match(squadPlannerSource, /value: "ALT", label: "ALT"/);
+  assert.match(squadPlannerSource, /value: "FFO", label: "FFO"/);
+  assert.match(squadPlannerSource, /FFO is published only for the current round/);
+  assert.match(squadPlannerSource, /horizon: transferSuggestionHorizon/);
+  assert.match(squadPlannerSource, /plannerReadinessBlocksTransferSuggestions/);
+  assert.match(squadPageSource, /transfer recommendations use the available forecasts/);
+});
+
 test("top forecast metrics use only the starting XI and expose Alt totals", () => {
   assert.match(squadPlannerSource, /value=\{formatScore\(summary\.projectedNext\)\}/);
   assert.doesNotMatch(squadPlannerSource, /summary\.projectedNext\s*\+\s*\(captainBonus/);

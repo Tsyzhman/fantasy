@@ -5,6 +5,7 @@ import {
   evaluatePlannerDefaultScope,
   evaluatePlannerReadiness,
   completedIngestionScope,
+  plannerReadinessBlocksTransferSuggestions,
   plannerReadinessKey,
   selectPlannerSeason,
   type PlannerReadiness
@@ -42,6 +43,17 @@ test("planner readiness requires fixtures, an exact passing audit, and a fresh c
 
   assert.equal(ready.ready, true);
   assert.deepEqual(ready.reasons, []);
+});
+
+test("transfer suggestions stay available for audit-only warnings but stop for missing or stale source data", () => {
+  assert.equal(
+    plannerReadinessBlocksTransferSuggestions({
+      reasons: ["FORECAST_COVERAGE_GATE_FAILED", "DATA_QUALITY_GATE_FAILED", "AUDIT_PREDATES_INGESTION"]
+    }),
+    false
+  );
+  assert.equal(plannerReadinessBlocksTransferSuggestions({ reasons: ["NO_UPCOMING_FIXTURES"] }), true);
+  assert.equal(plannerReadinessBlocksTransferSuggestions({ reasons: ["INCREMENTAL_INGESTION_STALE"] }), true);
 });
 
 test("a fresh audit cannot hide missing fixtures, a failed latest ingestion, or an audit made before ingestion", () => {

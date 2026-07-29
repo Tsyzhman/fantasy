@@ -12,6 +12,7 @@ test("worker handler calculates transfer suggestions without using the UI thread
       selections: [],
       rules: defaultFantasySquadRules,
       horizon: 5,
+      forecastSource: "FO",
       transferCount: 3,
       maximumPlans: 6
     }
