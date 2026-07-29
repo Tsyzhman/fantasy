@@ -59,6 +59,7 @@ import {
   defaultFantasySquadRules,
   countFantasySquadTransfers,
   fantasyTransferLimitForHorizon,
+  transfersPerFantasyRound,
   normalizeFantasyHorizon,
   normalizeFantasyPosition,
   roundFantasyValue,
@@ -1098,7 +1099,7 @@ export function rolloverFantasySquadRoundPlans(input: {
     .find((result) => result.ok);
   const startSelections = validStart?.ok ? validStart.selections : [];
   const rolled = createFantasySquadRoundPlans(startSelections);
-  const perRoundTransferLimit = fantasyTransferLimitForHorizon(1);
+  const perRoundTransferLimit = fantasyTransferLimitForHorizon(1, input.rules.transferLimitPerRound);
 
   for (let roundOffset = 1; roundOffset < rolled.length; roundOffset += 1) {
     const sourceIndex = roundOffset + shift;
@@ -1183,6 +1184,7 @@ export function fantasyRulesForLeague(
     budgetLimit: contest?.budgetLimit ?? 100,
     squadSize: contest?.squadSize ?? defaultFantasySquadRules.squadSize,
     maxPlayersPerTeam: contest?.maxPlayersPerTeam ?? inferredMaxPlayers,
+    transferLimitPerRound: league.leagueId === 63n ? transfersPerFantasyRound : null,
     sourceLabel: contest ? `Sports.ru: ${contest.name}` : isTopFiveLeague(league) ? "Inferred top-five league rules" : "Inferred default Sports.ru rules"
   };
 }

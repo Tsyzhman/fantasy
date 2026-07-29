@@ -367,6 +367,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
   }
 
   const selectionsByPlayerId = useMemo(() => new Map(selections.map((selection) => [selection.playerId, selection])), [selections]);
+  const playersById = useMemo(() => new Map(players.map((player) => [player.playerId, player])), [players]);
   const selectedPlayerIds = useMemo(() => new Set(selections.map((selection) => selection.playerId)), [selections]);
   const captainId = useMemo(() => selections.find((selection) => selection.isCaptain)?.playerId ?? null, [selections]);
   const viceCaptainId = useMemo(() => selections.find((selection) => selection.isViceCaptain)?.playerId ?? null, [selections]);
@@ -380,7 +381,8 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
     summary.starterPlayers.length === rules.starterSize &&
     summary.benchPlayers.length === rules.benchSize &&
     summary.violations.length === 0;
-  const transferLimit = fantasyTransferLimitForHorizon(activeRoundOffset > 0 ? 1 : horizon);
+  const transferLimit = fantasyTransferLimitForHorizon(activeRoundOffset > 0 ? 1 : horizon, rules.transferLimitPerRound);
+  const usesRplTransferRules = rules.transferLimitPerRound === 3;
   const transferLimitIsActive = transferBaselineSelections.length === rules.squadSize;
   const plannedTransferCount = countFantasySquadTransfers(transferBaselineSelections, selections);
   const availableSuggestionCount = transferLimitIsActive ? Math.max(0, transferLimit - plannedTransferCount) : transferLimit;
@@ -404,7 +406,6 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
     failedSuggestionCalculation.forecastSource === transferSuggestionForecastSource &&
     failedSuggestionCalculation.availableSuggestionCount === availableSuggestionCount;
   const displayedSuggestions = showAllSuggestions ? suggestions : suggestions.slice(0, 3);
-  const transferCostUnconfigured = suggestions.some((suggestion) => suggestion.paidTransferLoss === null);
   const teamFilterOptions = useMemo(() => [...new Map(players
     .filter((player) => player.teamId)
     .map((player) => [player.teamId!, { id: player.teamId!, name: player.teamName }])).values()]
@@ -673,7 +674,9 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
       horizon: transferSuggestionHorizon,
       forecastSource: transferSuggestionForecastSource,
       transferCount: availableSuggestionCount,
-      maximumPlans: 6
+      maximumPlans: 6,
+      freeTransfers: usesRplTransferRules ? transferLimit : undefined,
+      paidTransferPointCost: usesRplTransferRules ? 0 : undefined
     });
     void task.promise
       .then((nextSuggestions) => {
@@ -692,7 +695,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
       cancelled = true;
       task.cancel();
     };
-  }, [availableSuggestionCount, players, selections, rules, playerPoolReady, postLoadContentReady, suggestionRetry, transferSuggestionForecastSource, transferSuggestionHorizon, transferSuggestionsReady]);
+  }, [availableSuggestionCount, players, selections, rules, playerPoolReady, postLoadContentReady, suggestionRetry, transferLimit, transferSuggestionForecastSource, transferSuggestionHorizon, transferSuggestionsReady, usesRplTransferRules]);
 
   useEffect(() => {
     const handle = window.setTimeout(() => {
@@ -726,8 +729,8 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
 
     return localizedText(
       language,
-      `Transfer limit reached: ${transferLimit} for the selected forecast.`,
-      `Лимит замен: ${transferLimit} на выбранный прогноз.`
+      `Transfer limit reached: ${transferLimit} for this round.`,
+      `Лимит замен на этот тур: ${transferLimit}.`
     );
   }
 
@@ -932,6 +935,24 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
     const limitReason = transferLimitBlockReason(nextSelections);
     if (limitReason) {
       setMessage(limitReason);
+      return;
+    }
+
+    const nextSummary = summarizeFantasySquad(players, nextSelections, rules, horizon);
+    if (nextSummary.spent > rules.budgetLimit) {
+      setMessage(localizedText(
+        language,
+        `This recommendation would exceed the budget: ${formatNumber(nextSummary.spent, 1)} / ${formatNumber(rules.budgetLimit, 1)}.`,
+        `Эта рекомендация превышает бюджет: ${formatNumber(nextSummary.spent, 1)} / ${formatNumber(rules.budgetLimit, 1)}.`
+      ));
+      return;
+    }
+    if (nextSummary.violations.length > 0) {
+      setMessage(localizedText(
+        language,
+        "This recommendation no longer fits the current squad rules. Recalculate the suggestions.",
+        "Эта рекомендация больше не соответствует текущим правилам состава. Пересчитайте подсказки."
+      ));
       return;
     }
 
@@ -1564,66 +1585,109 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
               <I18nText en="FFO is published only for the current round, so these suggestions are ranked over 1 round." ru="FFO публикуется только на текущий тур, поэтому эти подсказки ранжированы на 1 тур." />
             </p>
           ) : null}
-          {!readiness.ready && !transferSuggestionsBlockedByReadiness ? (
-            <p className="mt-3 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
-              <I18nText en="The data-quality audit needs attention. Transfer suggestions use the available forecasts; auto-pick remains disabled." ru="Аудит качества данных требует внимания. Подсказки трансферов используют доступные прогнозы; автоподбор остаётся выключенным." />
+          {usesRplTransferRules ? (
+            <p className="mt-3 text-xs text-slate-500">
+              <I18nText en="RPL allows up to three transfers in a round; no point penalties apply." ru="В РПЛ — до трёх замен за тур, без штрафов по очкам." />
             </p>
           ) : null}
-          {transferCostUnconfigured && suggestions.length > 0 ? (
-            <p className="mt-3 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-              <I18nText
-                en="Paid-transfer cost is not configured. Gains below are shown before transfer penalties."
-                ru="Стоимость платных трансферов не настроена. Выигрыш ниже указан без трансферных штрафов."
-              />
-            </p>
-          ) : null}
-          <div className="mt-3 grid gap-2 xl:grid-cols-3">
-            {displayedSuggestions.map((suggestion) => (
-              <button
-                key={suggestion.id}
-                type="button"
-                onClick={() => applySuggestion(suggestion)}
-                className="block w-full rounded border border-slate-200 bg-white px-3 py-2 text-left hover:bg-slate-50"
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-ink">
-                      <I18nText en={`${suggestion.transferCount} transfer${suggestion.transferCount === 1 ? "" : "s"}`} ru={`${suggestion.transferCount} трансфер${suggestion.transferCount === 1 ? "" : suggestion.transferCount < 5 ? "а" : "ов"}`} />
-                    </p>
-                    {suggestion.moves.map((move) => (
-                      <p key={`${move.outPlayerId}:${move.inPlayerId}`} className="truncate text-xs text-slate-500">
-                        <span title={move.outName}>{compactPlayerDisplayName(move.outName)}</span> → <span className="font-semibold text-ink" title={move.inName}>{compactPlayerDisplayName(move.inName)}</span> / {move.positionGroup}
+          <div className="mt-3 grid gap-3 xl:grid-cols-2">
+            {displayedSuggestions.map((suggestion) => {
+              const captain = suggestion.captainPlayerId ? playersById.get(suggestion.captainPlayerId) ?? null : null;
+              return (
+                <button
+                  key={suggestion.id}
+                  type="button"
+                  onClick={() => applySuggestion(suggestion)}
+                  className="block w-full rounded border border-slate-200 bg-white p-3 text-left shadow-sm transition hover:border-sky-200 hover:bg-sky-50/30"
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-sm font-semibold text-ink">
+                        <I18nText en={`${suggestion.transferCount} transfer${suggestion.transferCount === 1 ? "" : "s"}`} ru={`${suggestion.transferCount} трансфер${suggestion.transferCount === 1 ? "" : suggestion.transferCount < 5 ? "а" : "ов"}`} />
                       </p>
-                    ))}
+                      <p className="mt-0.5 text-xs text-slate-500"><I18nText en="Players, prices, forecasts and fixtures after this plan." ru="Игроки, цены, прогнозы и ближайшие матчи после этого плана." /></p>
+                    </div>
+                    <span className="whitespace-nowrap rounded bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700 num-tabular">
+                      {signedScore(suggestion.round1Delta)}
+                    </span>
                   </div>
-                  <span className="whitespace-nowrap rounded bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700">
-                    {signedScore(suggestion.round1Delta)}
-                  </span>
-                </div>
-                <dl className="mt-2 grid grid-cols-3 gap-2 rounded bg-slate-50 px-2 py-1.5 text-xs">
-                  <div>
-                    <dt className="text-slate-500"><I18nText en="Next" ru="Следующий" /></dt>
-                    <dd className="font-semibold text-ink num-tabular">{signedScore(suggestion.round1Delta)}</dd>
+
+                  {suggestion.priorityReplacementCount > 0 ? (
+                    <p className="mt-2 rounded bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800">
+                      <I18nText
+                        en={`Priority: ${suggestion.priorityReplacementCount} starting outfield player with 0 projected FP.`}
+                        ru={`В приоритете: ${suggestion.priorityReplacementCount} полевой игрок основы с прогнозом 0 ФО.`}
+                      />
+                    </p>
+                  ) : null}
+
+                  <div className="mt-3 space-y-2">
+                    {suggestion.moves.map((move) => {
+                      const outPlayer = playersById.get(move.outPlayerId);
+                      const inPlayer = playersById.get(move.inPlayerId);
+                      const outSelection = selectionsByPlayerId.get(move.outPlayerId);
+                      const outForecast = outPlayer ? transferSuggestionForecastNextPoints(outPlayer, suggestion.forecastSource) : null;
+                      const isPriorityReplacement = Boolean(outSelection?.isStarter && outPlayer?.positionGroup !== "GK" && outForecast === 0);
+                      const isStartingGoalkeeperZero = Boolean(outSelection?.isStarter && outPlayer?.positionGroup === "GK" && outForecast === 0);
+
+                      return (
+                        <div key={`${move.outPlayerId}:${move.inPlayerId}`} className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-stretch gap-1.5">
+                          {outPlayer ? (
+                            <TransferSuggestionPlayerCard
+                              player={outPlayer}
+                              direction="out"
+                              source={suggestion.forecastSource}
+                              language={language}
+                              isPriorityReplacement={isPriorityReplacement}
+                              isStartingGoalkeeperZero={isStartingGoalkeeperZero}
+                            />
+                          ) : (
+                            <TransferSuggestionPlayerFallback name={move.outName} teamName={move.outTeamName} positionGroup={move.positionGroup} direction="out" />
+                          )}
+                          <span aria-hidden="true" className="flex items-center justify-center text-slate-400"><ArrowRight className="h-4 w-4" /></span>
+                          {inPlayer ? (
+                            <TransferSuggestionPlayerCard player={inPlayer} direction="in" source={suggestion.forecastSource} language={language} />
+                          ) : (
+                            <TransferSuggestionPlayerFallback name={move.inName} teamName={move.inTeamName} positionGroup={move.positionGroup} direction="in" />
+                          )}
+                        </div>
+                      );
+                    })}
                   </div>
-                  <div>
-                    <dt className="text-slate-500">{transferSuggestionHorizon}R</dt>
-                    <dd className="font-semibold text-ink num-tabular">{signedScore(suggestion.horizonDelta)}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-slate-500"><I18nText en="Budget" ru="Бюджет" /></dt>
-                    <dd className="font-semibold text-ink num-tabular">{signedNumber(suggestion.priceDelta)}</dd>
-                  </div>
-                </dl>
-                <p className="mt-1 text-xs font-medium text-slate-600">
-                  <I18nText en={suggestion.reason} ru={`Прогнозный выигрыш ${signedScore(suggestion.horizonDelta)} по ${suggestion.forecastSource} за ${transferSuggestionHorizon} тур.`} />
-                </p>
-                {actionableTransferRisks(suggestion.risks).length > 0 ? (
-                  <p className="mt-1 text-[11px] text-rose-700">
-                    <I18nText en={`Risks: ${actionableTransferRisks(suggestion.risks).join("; ")}`} ru={`Риски: ${actionableTransferRisks(suggestion.risks).map(localizeTransferRisk).join("; ")}`} />
+
+                  <dl className="mt-3 grid grid-cols-2 gap-2 rounded bg-slate-50 px-2 py-2 text-xs sm:grid-cols-4">
+                    <div>
+                      <dt className="text-slate-500">{transferSuggestionRoundLabel(suggestion.forecastSource, 1, language)}</dt>
+                      <dd className="font-semibold text-ink num-tabular">{signedScore(suggestion.round1Delta)}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-slate-500">{transferSuggestionRoundLabel(suggestion.forecastSource, transferSuggestionHorizon, language)}</dt>
+                      <dd className="font-semibold text-ink num-tabular">{signedScore(suggestion.horizonDelta)}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-slate-500"><I18nText en="Squad" ru="Состав" /></dt>
+                      <dd className="font-semibold text-ink num-tabular">{formatNumber(suggestion.squadCostAfter, 1)} / {formatNumber(rules.budgetLimit, 1)}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-slate-500"><I18nText en="Bank" ru="В банке" /></dt>
+                      <dd className="font-semibold text-emerald-700 num-tabular">{formatNumber(suggestion.bankAfter, 1)}</dd>
+                    </div>
+                  </dl>
+
+                  {captain ? <TransferSuggestionCaptain player={captain} source={suggestion.forecastSource} language={language} /> : null}
+
+                  <p className="mt-2 text-xs font-medium text-slate-600">
+                    <I18nText en={suggestion.reason} ru={`Прогнозный выигрыш ${signedScore(suggestion.horizonDelta)} по ${suggestion.forecastSource} за ${transferSuggestionHorizon} тур.`} />
                   </p>
-                ) : null}
-              </button>
-            ))}
+                  {suggestion.risks.length > 0 ? (
+                    <p className="mt-1 text-[11px] text-rose-700">
+                      <I18nText en={`Risks: ${suggestion.risks.join("; ")}`} ru={`Риски: ${suggestion.risks.map(localizeTransferRisk).join("; ")}`} />
+                    </p>
+                  ) : null}
+                  <p className="mt-2 text-[11px] font-semibold text-sky-700"><I18nText en="Click to apply this plan" ru="Нажмите, чтобы применить план" /></p>
+                </button>
+              );
+            })}
             {suggestions.length > 3 ? (
               <button
                 type="button"
@@ -3872,6 +3936,132 @@ function SquadPlayerTile({
   );
 }
 
+function transferSuggestionRoundLabel(source: TransferSuggestionForecastSource, rounds: number, language: UiLanguage) {
+  return localizedText(language, `${source} ${rounds}R`, `${source === "FO" ? "ФО" : source} ${rounds}Т`);
+}
+
+function TransferSuggestionPlayerCard({
+  player,
+  direction,
+  source,
+  language,
+  isPriorityReplacement = false,
+  isStartingGoalkeeperZero = false
+}: {
+  player: FantasyPlannerPlayer;
+  direction: "out" | "in";
+  source: TransferSuggestionForecastSource;
+  language: UiLanguage;
+  isPriorityReplacement?: boolean;
+  isStartingGoalkeeperZero?: boolean;
+}) {
+  const foNext = transferSuggestionForecastNextPoints(player, "FO");
+  const foThreeRounds = transferSuggestionForecastHorizonPoints(player, "FO", 3);
+  const selectedNext = transferSuggestionForecastNextPoints(player, source);
+  const selectedThreeRounds = transferSuggestionForecastHorizonPoints(player, source, 3);
+  const fixtures = fixtureChipPresentations(player.fixtures, player.fixtureDifficulties ?? [], 3, player.fixtureFullNames).slice(0, 3);
+  const foNextLabel = transferSuggestionRoundLabel("FO", 1, language);
+  const foThreeRoundsLabel = transferSuggestionRoundLabel("FO", 3, language);
+  const selectedNextLabel = transferSuggestionRoundLabel(source, 1, language);
+  const selectedThreeRoundsLabel = transferSuggestionRoundLabel(source, 3, language);
+  const directionLabel = direction === "out"
+    ? localizedText(language, "Out", "Убрать")
+    : localizedText(language, "In", "Взять");
+
+  return (
+    <article className={cn("min-w-0 rounded border p-2", direction === "out" ? "border-rose-200 bg-rose-50/50" : "border-emerald-200 bg-emerald-50/50")}>
+      <div className="flex min-w-0 items-start gap-2">
+        <div className="shrink-0"><SquadPlayerPhoto player={player} /></div>
+        <div className="min-w-0">
+          <span className={cn("inline-flex rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide", direction === "out" ? "bg-rose-100 text-rose-700" : "bg-emerald-100 text-emerald-700")}>{directionLabel}</span>
+          <p className="mt-1 truncate text-xs font-bold text-ink" title={player.name}>{compactPlayerDisplayName(player.name)}</p>
+          <p className="truncate text-[11px] text-slate-600" title={player.teamName}>{player.teamShortName ?? player.teamName} <span className={cn("ml-1 inline-flex rounded px-1 py-px text-[9px] font-bold", positionPillClass(player.positionGroup))}>{player.positionGroup}</span></p>
+        </div>
+      </div>
+
+      {isPriorityReplacement ? (
+        <p className="mt-2 rounded bg-amber-100 px-1.5 py-1 text-[10px] font-bold text-amber-900"><I18nText en={`0 ${source} FP in the starting XI — replace first.`} ru={`0 ФО по ${source} в основе — заменить в первую очередь.`} /></p>
+      ) : null}
+      {isStartingGoalkeeperZero ? (
+        <p className="mt-2 rounded bg-slate-200 px-1.5 py-1 text-[10px] font-semibold text-slate-700"><I18nText en={`Starting goalkeeper has 0 ${source} FP — eligible only for that reason.`} ru={`Стартовый вратарь с 0 ФО по ${source} — замена допустима только поэтому.`} /></p>
+      ) : null}
+
+      <dl className="mt-2 grid grid-cols-3 gap-1 text-[10px]">
+        <div>
+          <dt className="text-slate-500"><I18nText en="Price" ru="Цена" /></dt>
+          <dd className="font-semibold text-ink num-tabular">{player.priceSource === "ESTIMATED" ? "~" : ""}{formatNumber(player.price, 1)}</dd>
+        </div>
+        <div>
+          <dt className="text-slate-500">{foNextLabel}</dt>
+          <dd className="font-semibold text-ink num-tabular">{formatScore(foNext)}</dd>
+        </div>
+        <div>
+          <dt className="text-slate-500">{foThreeRoundsLabel}</dt>
+          <dd className="font-semibold text-ink num-tabular">{formatScore(foThreeRounds)}</dd>
+        </div>
+      </dl>
+
+      {source !== "FO" ? (
+        <p className="mt-1 text-[10px] text-slate-600 num-tabular">
+          {selectedNextLabel}: <span className="font-semibold text-ink">{formatScore(selectedNext)}</span>{selectedThreeRounds === null ? "" : <> · {selectedThreeRoundsLabel}: <span className="font-semibold text-ink">{formatScore(selectedThreeRounds)}</span></>}
+        </p>
+      ) : null}
+      {fixtures.length > 0 ? (
+        <div className="mt-2 min-w-0 overflow-hidden">
+          <FdrRow fixtures={fixtures} className="flex-nowrap gap-0.5 overflow-hidden [&_.fdr-pill]:max-w-[3.25rem] [&_.fdr-pill]:px-1 [&_.fdr-pill]:text-[9px]" />
+        </div>
+      ) : null}
+      {(player.expectedMinutes !== null && player.expectedMinutes !== undefined) || (player.forecastConfidence !== null && player.forecastConfidence !== undefined) ? (
+        <p className="mt-2 text-[10px] text-slate-500">
+          {player.expectedMinutes !== null && player.expectedMinutes !== undefined ? <><I18nText en="Min" ru="Мин" /> {formatNumber(player.expectedMinutes, 0)}</> : null}
+          {player.expectedMinutes !== null && player.expectedMinutes !== undefined && player.forecastConfidence !== null && player.forecastConfidence !== undefined ? " · " : null}
+          {player.forecastConfidence !== null && player.forecastConfidence !== undefined ? <><I18nText en="Confidence" ru="Уверенность" /> {formatNumber(player.forecastConfidence * 100, 0)}%</> : null}
+        </p>
+      ) : null}
+    </article>
+  );
+}
+
+function TransferSuggestionPlayerFallback({
+  name,
+  teamName,
+  positionGroup,
+  direction
+}: {
+  name: string;
+  teamName: string;
+  positionGroup: FantasyPositionGroup;
+  direction: "out" | "in";
+}) {
+  return (
+    <div className={cn("min-w-0 rounded border p-2", direction === "out" ? "border-rose-200 bg-rose-50/50" : "border-emerald-200 bg-emerald-50/50")}>
+      <p className="truncate text-xs font-bold text-ink" title={name}>{compactPlayerDisplayName(name)}</p>
+      <p className="truncate text-[11px] text-slate-600" title={teamName}>{teamName} · {positionGroup}</p>
+    </div>
+  );
+}
+
+function TransferSuggestionCaptain({ player, source, language }: { player: FantasyPlannerPlayer; source: TransferSuggestionForecastSource; language: UiLanguage }) {
+  const foNext = transferSuggestionForecastNextPoints(player, "FO");
+  const foThreeRounds = transferSuggestionForecastHorizonPoints(player, "FO", 3);
+  const selectedNext = transferSuggestionForecastNextPoints(player, source);
+  const captainPoints = selectedNext === null ? null : selectedNext * 2;
+  const foNextLabel = transferSuggestionRoundLabel("FO", 1, language);
+  const foThreeRoundsLabel = transferSuggestionRoundLabel("FO", 3, language);
+
+  return (
+    <div className="mt-3 flex items-start gap-2 rounded border border-amber-200 bg-amber-50 px-2.5 py-2 text-left">
+      <Crown className="mt-0.5 h-4 w-4 shrink-0 fill-amber-500 text-amber-600" />
+      <div className="min-w-0">
+        <p className="text-xs font-bold text-amber-950"><I18nText en="Captain for the next round" ru="Капитан на ближайший тур" /> · <span title={player.name}>{compactPlayerDisplayName(player.name)}</span></p>
+        <p className="mt-0.5 text-[11px] text-amber-900">
+          {player.teamShortName ?? player.teamName} · <I18nText en="Price" ru="Цена" /> {player.priceSource === "ESTIMATED" ? "~" : ""}{formatNumber(player.price, 1)} · {foNextLabel} {formatScore(foNext)} · {foThreeRoundsLabel} {formatScore(foThreeRounds)} · {source} x2 {formatScore(captainPoints)}
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function SquadPlayerPhoto({ player }: { player: FantasyPlannerPlayer }) {
   const [failed, setFailed] = useState(false);
   if (!player.photoUrl || failed) {
@@ -4811,22 +5001,12 @@ function squadStrategyCopy(language: UiLanguage, strategy: FantasySquadStrategy)
   };
 }
 
-function signedNumber(value: number) {
-  if (value > 0) return `+${formatNumber(value, 1)}`;
-  return formatNumber(value, 1);
-}
-
 function signedScore(value: number) {
   if (value > 0) return `+${formatScore(value)}`;
   return formatScore(value);
 }
 
-function actionableTransferRisks(risks: readonly string[]) {
-  return risks.filter((risk) => risk !== "Paid-transfer point cost is not configured");
-}
-
 function localizeTransferRisk(value: string) {
-  if (value === "Paid-transfer point cost is not configured") return "стоимость платного трансфера не настроена";
   if (value === "At least one move loses projected points next round") return "хотя бы один ход теряет очки в следующем туре";
   if (value === "The loaded schedule does not cover every 3/5-round comparison") return "календарь не покрывает весь горизонт 3/5 туров";
   if (value === "Foontasy covers only the current round") return "Foontasy покрывает только текущий тур";

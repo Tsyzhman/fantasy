@@ -15,6 +15,8 @@ export type TransferSuggestionWorkerInput = {
   forecastSource?: TransferSuggestionForecastSource;
   transferCount: number;
   maximumPlans: number;
+  freeTransfers?: number | null;
+  paidTransferPointCost?: number | null;
 };
 
 export type FantasySquadWorkerRequest =

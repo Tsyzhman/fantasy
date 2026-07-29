@@ -79,7 +79,14 @@ test("transfer suggestions expose FO, ALT, and FFO, while FFO remains a current-
   assert.match(squadPlannerSource, /FFO is published only for the current round/);
   assert.match(squadPlannerSource, /horizon: transferSuggestionHorizon/);
   assert.match(squadPlannerSource, /plannerReadinessBlocksTransferSuggestions/);
-  assert.match(squadPageSource, /transfer recommendations use the available forecasts/);
+  assert.match(squadPlannerSource, /freeTransfers: usesRplTransferRules \? transferLimit : undefined/);
+  assert.match(squadPlannerSource, /paidTransferPointCost: usesRplTransferRules \? 0 : undefined/);
+  assert.match(squadPlannerSource, /TransferSuggestionPlayerCard/);
+  assert.match(squadPlannerSource, /TransferSuggestionCaptain/);
+  assert.match(squadPlannerSource, /captainPlayerId/);
+  assert.doesNotMatch(squadPlannerSource, /Paid-transfer cost is not configured/);
+  assert.doesNotMatch(squadPlannerSource, /The data-quality audit needs attention/);
+  assert.doesNotMatch(squadPageSource, /transfer recommendations use the available forecasts/);
 });
 
 test("top forecast metrics use only the starting XI and expose Alt totals", () => {

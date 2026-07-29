@@ -126,11 +126,11 @@ export default async function MacheteSquadPage({ searchParams }: PageProps) {
 
       {selectedLeague && data ? (
         <>
-          {!data.readiness.ready ? (
+          {!data.readiness.ready && transferSuggestionsBlockedByReadiness ? (
             <div role="status" className="mt-4 rounded border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
               <I18nText
-                en={`The current season is not forecast-ready: ${data.readiness.reasons.join(", ")}. ${transferSuggestionsBlockedByReadiness ? "Auto-pick and transfer recommendations are unavailable." : "Auto-pick is unavailable; transfer recommendations use the available forecasts."}`}
-                ru={`Текущий сезон не готов для прогнозов: ${data.readiness.reasons.join(", ")}. ${transferSuggestionsBlockedByReadiness ? "Автоподбор и рекомендации по трансферам недоступны." : "Автоподбор недоступен; рекомендации по трансферам используют доступные прогнозы."}`}
+                en={`The current season is not forecast-ready: ${data.readiness.reasons.join(", ")}. Auto-pick and transfer recommendations are unavailable.`}
+                ru={`Текущий сезон не готов для прогнозов: ${data.readiness.reasons.join(", ")}. Автоподбор и рекомендации по трансферам недоступны.`}
               />
             </div>
           ) : null}
