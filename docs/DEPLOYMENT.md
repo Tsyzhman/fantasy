@@ -180,6 +180,30 @@ unavailable for approximately 30–40 seconds before beta10 was restored. No dat
 was lost. This incident is why direct `stop` followed by an unvalidated
 `docker run` is no longer an accepted rollout method.
 
+## Release and build-cache retention
+
+Run the bounded cleanup after a successful rollout:
+
+```bash
+scripts/prune-production-artifacts.sh
+scripts/prune-production-artifacts.sh --apply
+```
+
+The first command is a dry run. Apply mode keeps the active symlink target,
+every release and image referenced by a remaining container, the newest three
+release directories, and the newest stopped web rollback. It removes only
+older exact `fantasy-scout` release directories, obsolete stopped web rollback
+containers, and unused `fantasy-scout` image tags. Docker build cache is capped
+at 1 GB; database volumes, uploads, database backups, and images from other
+applications are outside the cleanup scope.
+
+The release root and current-link paths are hard-bound to
+`/var/www/fantasy-scout-releases` and `/var/www/fantasy-scout-current`. After
+validating every deletion target as a direct child of that release root, apply
+mode uses non-interactive `sudo` for release removal when the invoking account
+has it. This is required for historical releases created by `root`; all Docker
+and cache operations still run as the invoking deployment account.
+
 ## GitHub Actions deploy
 
 The repository includes a manual `Deploy Production` workflow. It is dry-run by

@@ -6,23 +6,39 @@ import { parseMachetePlayerFilterPresetValue, parseMachetePlayerTableSettings } 
 
 test("player table settings retain ordered columns and clamp per-user widths", () => {
   assert.deepEqual(parseMachetePlayerTableSettings({
-    version: 2,
+    version: 3,
     columns: ["goals", "raw:expected_goals", "goals"],
     widths: { player: 10, goals: 900, "raw:expected_goals": 101.4 },
     horizon: 10
   }), {
-    version: 2,
+    version: 3,
     columns: ["goals", "raw:expected_goals"],
     widths: { player: 44, goals: 640, "raw:expected_goals": 101 },
     horizon: 10
   });
   assert.equal(parseMachetePlayerTableSettings({ version: 1, columns: ["unsafe"], widths: {} }), null);
   assert.deepEqual(parseMachetePlayerTableSettings({ version: 1, columns: ["goals"], widths: {} }), {
-    version: 2,
-    columns: ["predictedFp", "predictedFpPerPrice", "forecastHorizonFp", "foontasy", "foontasyPerPrice", "alternativePredictedFp", "alternativePredictedFpPerPrice", "alternativeForecastHorizon", "fixtures", "goals"],
+    version: 3,
+    columns: ["predictedFp", "predictedFpPerPrice", "forecastHorizonFp", "foontasy", "foontasyPerPrice", "alternativePredictedFp", "alternativePredictedFpPerPrice", "alternativeForecastHorizon", "foPositionCalibratedFp", "altPositionCalibratedFp", "altJointAllFp", "foJointAllFp", "altJointAcceptedFp", "foJointAcceptedFp", "fixtures", "goals"],
     widths: {},
     horizon: 5
   });
+  assert.deepEqual(parseMachetePlayerTableSettings({
+    version: 2,
+    columns: ["predictedFp", "alternativeForecastHorizon", "fixtures"],
+    widths: {},
+    horizon: 5
+  })?.columns, [
+    "predictedFp",
+    "alternativeForecastHorizon",
+    "foPositionCalibratedFp",
+    "altPositionCalibratedFp",
+    "altJointAllFp",
+    "foJointAllFp",
+    "altJointAcceptedFp",
+    "foJointAcceptedFp",
+    "fixtures"
+  ]);
 });
 
 test("advanced player-table presets validate every field and reject unsafe keys", () => {

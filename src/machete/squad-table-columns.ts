@@ -1,3 +1,12 @@
+export const formulaAdaptationSquadTableColumns = [
+  "foPositionCalibratedFp",
+  "altPositionCalibratedFp",
+  "altJointAllFp",
+  "foJointAllFp",
+  "altJointAcceptedFp",
+  "foJointAcceptedFp"
+] as const;
+
 export const defaultSquadTableColumns = [
   "nextFp",
   "nextFpPerPrice",
@@ -8,6 +17,7 @@ export const defaultSquadTableColumns = [
   "alternative",
   "alternativePerPrice",
   "alternativeHorizon",
+  ...formulaAdaptationSquadTableColumns,
   "fixtures"
 ] as const;
 
@@ -77,8 +87,23 @@ const maximumColumns = 100;
 const resizableFixedColumnKeys = new Set(["player", "team", "position", "price", "action"]);
 const minimumColumnWidth = 40;
 const maximumColumnWidth = 640;
+const squadTableColumnsPreferenceVersion = 2;
 
 export function parseSquadTableColumns(value: unknown): string[] {
+  const preference = storedSquadTableColumnsPreference(value);
+  if (!preference) return [...defaultSquadTableColumns];
+  const columns = parseSquadTableColumnList(preference.columns);
+  return preference.legacy ? addFormulaAdaptationColumns(columns) : columns;
+}
+
+export function squadTableColumnsPreference(value: unknown) {
+  return {
+    version: squadTableColumnsPreferenceVersion,
+    columns: parseSquadTableColumnList(value)
+  };
+}
+
+function parseSquadTableColumnList(value: unknown): string[] {
   if (!Array.isArray(value)) return [...defaultSquadTableColumns];
   const columns: string[] = [];
   for (const item of value) {
@@ -89,6 +114,27 @@ export function parseSquadTableColumns(value: unknown): string[] {
     if (columns.length >= maximumColumns) break;
   }
   return columns;
+}
+
+function storedSquadTableColumnsPreference(value: unknown) {
+  if (Array.isArray(value)) return { columns: value, legacy: true };
+  if (!value || typeof value !== "object") return null;
+  const preference = value as { version?: unknown; columns?: unknown };
+  if (preference.version !== squadTableColumnsPreferenceVersion || !Array.isArray(preference.columns)) return null;
+  return { columns: preference.columns, legacy: false };
+}
+
+function addFormulaAdaptationColumns(columns: string[]) {
+  const withoutAdaptations = columns.filter(
+    (key) => !formulaAdaptationSquadTableColumns.includes(key as typeof formulaAdaptationSquadTableColumns[number])
+  );
+  const fixturesIndex = withoutAdaptations.indexOf("fixtures");
+  const insertionIndex = fixturesIndex < 0 ? withoutAdaptations.length : fixturesIndex;
+  return [
+    ...withoutAdaptations.slice(0, insertionIndex),
+    ...formulaAdaptationSquadTableColumns,
+    ...withoutAdaptations.slice(insertionIndex)
+  ];
 }
 
 export function isSquadTableColumnsInput(value: unknown) {

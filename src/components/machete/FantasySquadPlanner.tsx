@@ -17,6 +17,7 @@ import {
   startingXiRoundPoints,
   swapSquadSelectionCards
 } from "@/components/machete/fantasy-squad-ui";
+import { FormulaAdaptationHoverCard } from "@/components/machete/FormulaAdaptationHoverCard";
 import { SortableTable } from "@/components/sortable-table";
 import { FdrRow } from "@/components/ui/fdr-pill";
 import { SegmentedControl, type SegmentedOption } from "@/components/ui/segmented-control";
@@ -64,6 +65,7 @@ import {
   type TransferPlanSuggestion
 } from "@/machete/squad_logic";
 import { forecastPointsPerPrice } from "@/machete/fantasy-value-efficiency";
+import type { FormulaAdaptationForecastKey } from "@/machete/formula_adaptations";
 import type { SavedFantasySquad, SavedFantasySquadOption } from "@/machete/squad_planner";
 import type { PlannerReadiness } from "@/machete/planner_readiness";
 import type { SquadFilterPreset, SquadFilterPresetFilters } from "@/machete/squad-filter-presets";
@@ -270,6 +272,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
   const [positionFilter, setPositionFilter] = useState("ALL");
   const [minimumPrice, setMinimumPrice] = useState<number | null>(null);
   const [maximumPrice, setMaximumPrice] = useState<number | null>(null);
+  const [detailedFormulaTooltips, setDetailedFormulaTooltips] = useState(false);
   const [advancedTableFilters, setAdvancedTableFilters] = useState<Record<string, SquadTableValueFilter>>({});
   const [onlyAffordable, setOnlyAffordable] = useState(false);
   const [filterPresets, setFilterPresets] = useState<SquadFilterPreset[]>([]);
@@ -1712,6 +1715,15 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                   <option value="ALL">{localizedText(language, "Max price", "Цена до")}</option>
                   {priceFilterOptions.filter((price) => minimumPrice === null || price >= minimumPrice).map((price) => <option key={price} value={price}>{formatNumber(price, 1)}</option>)}
                 </select>
+                <label className="inline-flex cursor-pointer items-center gap-1.5 whitespace-nowrap rounded border border-slate-200 bg-white px-2 py-1.5 text-xs font-semibold text-slate-700">
+                  <input
+                    type="checkbox"
+                    checked={detailedFormulaTooltips}
+                    onChange={(event) => setDetailedFormulaTooltips(event.target.checked)}
+                    className="h-4 w-4 rounded border-slate-300 text-sky-700"
+                  />
+                  <I18nText en="Detailed tooltips" ru="Подробные подсказки" />
+                </label>
               </div>
               <div className="flex min-w-0 flex-wrap items-center justify-end gap-2">
                 <PlayerPoolFilterPresets
@@ -1763,6 +1775,8 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                   selectionsByPlayerId={selectionsByPlayerId}
                   onAdd={addPlayer}
                   onRemove={removePlayer}
+                  formulaAdaptationSourceHref={playerPoolRequestHref}
+                  detailedFormulaTooltips={detailedFormulaTooltips}
                   initialVisibleColumns={initialVisiblePlayerPoolColumns}
                   initialColumnWidths={initialPlayerPoolColumnWidths}
                   onVisibleColumnsChange={setExportColumnKeys}
@@ -1874,6 +1888,8 @@ type PlayerPoolTableProps = {
   players: FantasyPlannerPlayer[];
   horizon: number;
   language: UiLanguage;
+  formulaAdaptationSourceHref?: string;
+  detailedFormulaTooltips: boolean;
   addBlockReason: (player: FantasyPlannerPlayer) => string | null;
   selectionsByPlayerId: Map<string, FantasySquadSelection>;
   onAdd: (player: FantasyPlannerPlayer) => void;
@@ -2373,7 +2389,7 @@ function playerPoolFixedColumnTitles(language: UiLanguage) {
   };
 }
 
-function CustomPlayerPoolRow({ player, columns, horizon, language, addBlockReason, selectionsByPlayerId, onAdd, onRemove }: Omit<PlayerPoolTableProps, "players"> & { player: FantasyPlannerPlayer; columns: PlayerPoolOptionalColumn[] }) {
+function CustomPlayerPoolRow({ player, columns, horizon, language, formulaAdaptationSourceHref, detailedFormulaTooltips, addBlockReason, selectionsByPlayerId, onAdd, onRemove }: Omit<PlayerPoolTableProps, "players"> & { player: FantasyPlannerPlayer; columns: PlayerPoolOptionalColumn[] }) {
   const reason = addBlockReason(player);
   const isSelected = selectionsByPlayerId.has(player.playerId);
   const disabled = !isSelected && reason !== null;
@@ -2419,7 +2435,7 @@ function CustomPlayerPoolRow({ player, columns, horizon, language, addBlockReaso
           <button type="button" onClick={() => onAdd(player)} aria-label={addLabel} className="inline-flex h-7 w-7 items-center justify-center rounded border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"><Plus className="h-4 w-4" /></button>
         )}
       </td>
-      {columns.map((column) => customPlayerPoolCell(column, player, horizon, language, muted))}
+      {columns.map((column) => customPlayerPoolCell(column, player, horizon, language, muted, formulaAdaptationSourceHref, detailedFormulaTooltips))}
     </tr>
   );
 }
@@ -2442,6 +2458,12 @@ function playerPoolOptionalColumns(players: FantasyPlannerPlayer[], horizon: num
     column("alternative", "Alt", "Альт", "Alternative next-round fantasy forecast calculated with this user's personal Alt formula and the same minute-aware player inputs.", "Альтернативный прогноз фэнтези-очков на следующий тур по личной формуле Alt пользователя и с учётом ожидаемых минут игрока."),
     column("alternativePerPrice", "Alt/price", "Альт/цена", "Alternative next-round expected fantasy points divided by the current Sports.ru price. Higher means more Alt points per one price unit.", "Альтернативные ожидаемые ФО на следующий тур, делённые на текущую цену Sports.ru. Чем выше значение, тем больше Альт-очков на одну единицу стоимости.", true, 82),
     column("alternativeHorizon", `Alt ${horizon}R`, `Альт ${horizon}Т`, `Sum of independently calculated personal Alt forecasts for the next ${horizon} rounds.`, `Сумма отдельно рассчитанных личных прогнозов Alt на следующие ${horizon} туров.`),
+    column("foPositionCalibratedFp", "FO position cal.", "FO калибр. позиции", "FO calibrated independently by fantasy position on the complete 2024/25–2025/26 retro sample: actual starters who played over 60 minutes. Weather is not used.", "FO, независимо откалиброванный по фэнтези-позиции на полной ретро-выборке 2024/25–2025/26: фактический старт и больше 60 минут. Погода не используется.", true, 116),
+    column("altPositionCalibratedFp", "Alt position cal.", "Alt калибр. позиции", "Alt calibrated independently by fantasy position on the complete 2024/25–2025/26 retro sample: actual starters who played over 60 minutes. Weather is not used.", "Alt, независимо откалиброванный по фэнтези-позиции на полной ретро-выборке 2024/25–2025/26: фактический старт и больше 60 минут. Погода не используется.", true, 116),
+    column("altJointAllFp", "Alt Joint all", "Alt Joint всех", "Alt joint Ridge adaptation with every researched non-weather hypothesis. Missing live inputs are handled by the trained missing-value model rather than invented.", "Joint-адаптация Alt со всеми исследованными гипотезами, кроме погоды. Недоступные live-признаки обрабатываются обученной моделью пропусков, а не выдумываются.", true, 108),
+    column("foJointAllFp", "FO Joint all", "FO Joint всех", "FO joint Ridge adaptation with every researched non-weather hypothesis. Missing live inputs are handled by the trained missing-value model rather than invented.", "Joint-адаптация FO со всеми исследованными гипотезами, кроме погоды. Недоступные live-признаки обрабатываются обученной моделью пропусков, а не выдумываются.", true, 108),
+    column("altJointAcceptedFp", "Alt Joint accepted", "Alt Joint accepted", "Alt joint Ridge adaptation restricted to hypotheses accepted on the 2024/25 selection folds. Weather is excluded.", "Joint-адаптация Alt только по гипотезам, принятым на фолдах 2024/25. Погода исключена.", true, 126),
+    column("foJointAcceptedFp", "FO Joint accepted", "FO Joint accepted", "FO joint Ridge adaptation restricted to hypotheses accepted on the 2024/25 selection folds. Weather is excluded.", "Joint-адаптация FO только по гипотезам, принятым на фолдах 2024/25. Погода исключена.", true, 126),
     column("fixtures", "Fixtures", "Матчи", "The next opponents in the selected horizon. Chip colour represents fixture difficulty; hover a chip for the full opponent name and home/away context.", "Следующие соперники на выбранном горизонте. Цвет плашки показывает сложность матча; при наведении доступны полное имя соперника и поле дома/в гостях.", false, 230),
     column("age", "Age", "Возраст", "Player age from the current FotMob profile.", "Возраст игрока из текущего профиля FotMob."),
     column("nationality", "Nationality", "Гражданство", "Player nationality from FotMob metadata.", "Гражданство игрока из метаданных FotMob.", false, 120),
@@ -2509,7 +2531,15 @@ function historicalStatTitle(key: string, language: UiLanguage) {
   );
 }
 
-function customPlayerPoolCell(column: PlayerPoolOptionalColumn, player: FantasyPlannerPlayer, horizon: number, language: UiLanguage, muted: boolean) {
+function customPlayerPoolCell(
+  column: PlayerPoolOptionalColumn,
+  player: FantasyPlannerPlayer,
+  horizon: number,
+  language: UiLanguage,
+  muted: boolean,
+  formulaAdaptationSourceHref: string | undefined,
+  detailedFormulaTooltips: boolean
+) {
   if (column.key === "fixtures") {
     const chips = fixtureChipPresentations(player.fixtures, player.fixtureDifficulties ?? [], horizon, player.fixtureFullNames).slice(0, 5);
     const fixtureTitle = chips.length > 0
@@ -2530,14 +2560,43 @@ function customPlayerPoolCell(column: PlayerPoolOptionalColumn, player: FantasyP
   const tone = column.key === "nextFp" || column.key === "nextFpPerPrice" ? "text-emerald-700"
     : column.key === "horizonFp" ? "text-sky-700"
       : column.key === "foontasy" || column.key === "foontasyPerPrice" ? "text-cyan-700"
-        : column.key.startsWith("alternative") ? "text-amber-700"
-          : "text-slate-700";
+        : column.key.startsWith("alt") ? "text-amber-700"
+          : column.key.startsWith("foPosition") || column.key.startsWith("foJoint") ? "text-emerald-700"
+            : "text-slate-700";
   const cellTitle = playerPoolValueCellTitle(column, player, horizon, language, rawValue);
+  const formulaAdaptationKey = formulaAdaptationForecastKey(column.key);
   return (
-    <td key={column.key} data-sort-value={rawValue ?? ""} className={cn("overflow-hidden text-ellipsis whitespace-nowrap px-1 py-1.5", column.numeric && "text-center num-tabular", muted ? "text-slate-500" : tone)} title={cellTitle}>
-      {display}
+    <td key={column.key} data-sort-value={rawValue ?? ""} className={cn("overflow-hidden text-ellipsis whitespace-nowrap px-1 py-1.5", column.numeric && "text-center num-tabular", muted ? "text-slate-500" : tone)} title={formulaAdaptationKey ? undefined : cellTitle}>
+      {formulaAdaptationKey ? (
+        <FormulaAdaptationHoverCard
+          playerId={player.playerId}
+          playerName={player.name}
+          columnLabel={column.label}
+          columnKey={formulaAdaptationKey}
+          sourceHref={formulaAdaptationSourceHref}
+          language={language}
+          detailed={detailedFormulaTooltips}
+        >
+          {display}
+        </FormulaAdaptationHoverCard>
+      ) : display}
     </td>
   );
+}
+
+const formulaAdaptationForecastKeys = new Set<FormulaAdaptationForecastKey>([
+  "foPositionCalibratedFp",
+  "altPositionCalibratedFp",
+  "altJointAllFp",
+  "foJointAllFp",
+  "altJointAcceptedFp",
+  "foJointAcceptedFp"
+]);
+
+function formulaAdaptationForecastKey(value: string): FormulaAdaptationForecastKey | null {
+  return formulaAdaptationForecastKeys.has(value as FormulaAdaptationForecastKey)
+    ? value as FormulaAdaptationForecastKey
+    : null;
 }
 
 function playerPoolValueCellTitle(column: PlayerPoolOptionalColumn, player: FantasyPlannerPlayer, horizon: number, language: UiLanguage, rawValue: string | number | null) {
@@ -2716,6 +2775,12 @@ function customPlayerPoolColumnValue(key: string, player: FantasyPlannerPlayer, 
     case "alternative": return player.alternativePredictedFp ?? null;
     case "alternativePerPrice": return forecastPointsPerPrice(player.alternativePredictedFp, player.price);
     case "alternativeHorizon": return playerAlternativeHorizonPoints(player, horizon);
+    case "foPositionCalibratedFp": return player.foPositionCalibratedFp ?? null;
+    case "altPositionCalibratedFp": return player.altPositionCalibratedFp ?? null;
+    case "altJointAllFp": return player.altJointAllFp ?? null;
+    case "foJointAllFp": return player.foJointAllFp ?? null;
+    case "altJointAcceptedFp": return player.altJointAcceptedFp ?? null;
+    case "foJointAcceptedFp": return player.foJointAcceptedFp ?? null;
     case "fixtures": return [...(player.fixtureFullNames ?? []), ...(player.fixtures ?? [])].join(" ");
     case "age": return player.age ?? null;
     case "nationality": return player.nationality ?? null;

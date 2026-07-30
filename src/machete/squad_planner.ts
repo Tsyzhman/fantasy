@@ -34,6 +34,20 @@ import {
   type FantasyProjectionCalibrationModel
 } from "./fantasy_projection_calibration";
 import { loadFantasyProjectionCalibration } from "./fantasy_projection_service";
+import {
+  addPromotedFormulaAdaptationTeamProfiles,
+  addFormulaAdaptationInteractions,
+  buildFormulaAdaptationTeamProfiles,
+  formulaAdaptationMinuteFeatures,
+  formulaAdaptationFixtureFeatures,
+  predictFormulaAdaptations,
+  predictFormulaAdaptationsWithBreakdowns,
+  type FormulaAdaptationBreakdowns,
+  type FormulaAdaptationFeatures,
+  type FormulaAdaptationShot,
+  type FormulaAdaptationTeamProfiles,
+  type FormulaAdaptationTeamStat
+} from "./formula_adaptations";
 import { FANTASY_MODEL_VERSION } from "./foontasy_style_model";
 import {
   archivedExpectedMinutes,
@@ -104,6 +118,7 @@ export type FantasySquadPlannerData = {
     lastSyncedAt: string | null;
   };
   historySeasonOptions: string[];
+  formulaAdaptationBreakdownsByPlayerId: Record<string, FormulaAdaptationBreakdowns>;
 };
 
 export type PlannerFixture = {
@@ -200,6 +215,7 @@ export type PlannerRoundFixtures = {
   rounds: FantasyRoundProjection[];
   fixturesByTeamRound: Map<string, Map<string, PlannerFixture[]>>;
   teamShortNameById: Map<string, string>;
+  formulaAdaptationTeamProfiles?: FormulaAdaptationTeamProfiles;
 };
 
 export type FantasyProjectionEngine = "COMPONENT_XFP_V1" | "LEGACY_RIDGE19_V1";
@@ -243,13 +259,8 @@ type TeamStrengthMatchInput = {
   homeTeamId: string | null;
   awayTeamId: string | null;
   matchDate?: Date | string | null;
-  teamStats: Array<{
-    teamId: string;
-    opponentTeamId?: string | null;
-    isHome?: boolean | null;
-    xg?: number | null;
-    goals?: number | null;
-  }>;
+  teamStats: FormulaAdaptationTeamStat[];
+  shots?: FormulaAdaptationShot[];
 };
 
 type SportsRuPositionPriceRow = {
@@ -302,6 +313,7 @@ const teamStrengthFeederLeagueByTopLeague = new Map<string, bigint>([["63", 338n
 const fixtureOddsMaximumAgeMs = 35 * 24 * 60 * 60_000;
 const fantasyPlayerPoolCacheTtlMs = 5 * 60_000;
 const fantasyPlayerPoolCache = new ExpiringPromiseCache<string, FantasyPlannerPlayer[]>(20);
+const fantasyFormulaAdaptationBreakdownCache = new ExpiringPromiseCache<string, FormulaAdaptationBreakdowns | null>(120);
 const upcomingRoundFixturesCacheTtlMs = 5 * 60_000;
 const upcomingRoundFixturesCache = new ExpiringPromiseCache<string, PlannerRoundFixtures>(20);
 export const maxFantasySquadNameLength = 80;
@@ -419,6 +431,7 @@ export async function loadFantasySquadPlannerData(
     historySettings?: FantasyHistorySettings;
     deferFormulaProjections?: boolean;
     skipSavedSquads?: boolean;
+    includeFormulaAdaptationBreakdowns?: boolean;
   }
 ): Promise<FantasySquadPlannerData> {
   const readiness = options?.readiness ?? (await loadPlannerReadinessByScope(prisma, [league])).get(plannerReadinessKey(league));
@@ -511,6 +524,7 @@ export async function loadFantasySquadPlannerData(
       : [];
   const rules = fantasyRulesForLeague(league, contest ?? null);
   const projectedByPlayerTeam = new Map(playerRows.rows.map((row) => [playerTeamKey(row.playerId, row.teamId), row]));
+  const friendByPlayerTeam = new Map(playerRows.friendRows.map((row) => [playerTeamKey(row.playerId, row.teamId), row]));
   const prices = priceLookup(priceRows, priceMaps);
   const foontasyByPlayerId = new Map(foontasyRows.flatMap((row) => row.playerId ? [[String(row.playerId), row] as const] : []));
   const modelForecastByPlayerHorizon = new Map(modelForecastRows.map((row) => [`${row.playerId}:${row.horizon}`, row] as const));
@@ -533,6 +547,7 @@ export async function loadFantasySquadPlannerData(
         true
       );
   const preferredProjectionEngine = configuredFantasyProjectionEngine();
+  const formulaAdaptationBreakdownsByPlayerId: Record<string, FormulaAdaptationBreakdowns> = {};
   const rosterPlayers: FantasyPlannerPlayer[] = rosterRows.flatMap((row) => {
     const projected = projectedByPlayerTeam.get(playerTeamKey(row.playerId, row.teamId));
     const nextFixture = nearestPlannerFixture(
@@ -549,15 +564,19 @@ export async function loadFantasySquadPlannerData(
     const foontasy = foontasyByPlayerId.get(String(row.playerId)) ?? null;
     const modelT3 = modelForecastByPlayerHorizon.get(`${row.playerId}:3`) ?? null;
     const modelT5 = modelForecastByPlayerHorizon.get(`${row.playerId}:5`) ?? null;
+    const nextFixturePlayerKey = fixturePlayerProjectionKey(nextFixture?.id ?? "", String(row.playerId));
     const nextComponentProjection = nextFixture
-      ? componentProjections.byFixturePlayer.get(fixturePlayerProjectionKey(nextFixture.id, String(row.playerId))) ?? null
+      ? componentProjections.byFixturePlayer.get(nextFixturePlayerKey) ?? null
       : null;
+    const nextComponentFormulaMetrics = nextFixture
+      ? componentProjections.formulaMetricsByFixturePlayer.get(nextFixturePlayerKey)
+      : undefined;
     const nextComponentFormula = nextComponentProjection
       ? projectionFormulaWithBreakdown(
           nextComponentProjection,
           nextFixture,
           playerRows.expectedProjectionConfig,
-          componentProjections.formulaMetricsByFixturePlayer.get(fixturePlayerProjectionKey(nextFixture?.id ?? "", String(row.playerId)))
+          nextComponentFormulaMetrics
         )
       : null;
     const componentPredictedFp = nextComponentFormula?.total ?? null;
@@ -567,14 +586,17 @@ export async function loadFantasySquadPlannerData(
         : "LEGACY_RIDGE19_V1";
     const predictedFp = projectionEngine === "COMPONENT_XFP_V1" ? componentPredictedFp : legacyPredictedFp;
     const nextFriendProjection = nextFixture
-      ? friendAlternativeProjections.byFixturePlayer.get(fixturePlayerProjectionKey(nextFixture.id, String(row.playerId))) ?? null
+      ? friendAlternativeProjections.byFixturePlayer.get(nextFixturePlayerKey) ?? null
       : null;
+    const nextFriendFormulaMetrics = nextFixture
+      ? friendAlternativeProjections.formulaMetricsByFixturePlayer.get(nextFixturePlayerKey)
+      : undefined;
     const nextFriendFormula = nextFriendProjection
       ? projectionFormulaWithBreakdown(
           nextFriendProjection,
           nextFixture,
           playerRows.alternativeProjectionConfig,
-          friendAlternativeProjections.formulaMetricsByFixturePlayer.get(fixturePlayerProjectionKey(nextFixture?.id ?? "", String(row.playerId)))
+          nextFriendFormulaMetrics
         )
       : null;
     const nextRoundFixtures = roundsAndFixtures.rounds.length > 0
@@ -590,6 +612,44 @@ export async function loadFantasySquadPlannerData(
     const price = resolveFantasyPlannerPrice(priceRow, predictedFp, positionGroup);
     const playerName = priceRow?.playerName ?? row.player.name;
     const baltikaMetric = baltikaMetricsByName.get(normalizeSportsRuPlayerName(playerName));
+    const friendHistory = friendByPlayerTeam.get(playerTeamKey(row.playerId, row.teamId));
+    const formulaAdaptationFeatures: FormulaAdaptationFeatures = addFormulaAdaptationInteractions({
+      ...(friendHistory?.formulaAdaptationFeatures ?? {}),
+      ...formulaAdaptationFixtureFeatures({
+        profiles: roundsAndFixtures.formulaAdaptationTeamProfiles,
+        teamId: String(row.teamId),
+        opponentTeamId: nextFixture?.opponentTeamId ?? null,
+        kickoffAt: nextFixture?.kickoffAt ?? null,
+        side: nextFixture?.side ?? null
+      }),
+      ...formulaAdaptationMinuteFeatures(
+        "fo",
+        predictedFp,
+        buildFixtureComponentInputs(nextComponentProjection, nextComponentFormulaMetrics)
+      ),
+      ...formulaAdaptationMinuteFeatures(
+        "alt",
+        alternativePredictedFp,
+        buildFixtureComponentInputs(nextFriendProjection, nextFriendFormulaMetrics)
+      ),
+      age: projected?.age ?? row.age ?? null,
+      role_side: positionGroup === "GK" ? "center" : "unknown"
+    });
+    const formulaAdaptationInput = {
+      leagueId: league.leagueId,
+      position: positionGroup,
+      fo: predictedFp,
+      alt: alternativePredictedFp,
+      features: formulaAdaptationFeatures
+    };
+    const detailedFormulaAdaptations = options?.includeFormulaAdaptationBreakdowns
+      ? predictFormulaAdaptationsWithBreakdowns(formulaAdaptationInput)
+      : null;
+    const formulaAdaptations = detailedFormulaAdaptations?.forecasts
+      ?? predictFormulaAdaptations(formulaAdaptationInput);
+    if (detailedFormulaAdaptations) {
+      formulaAdaptationBreakdownsByPlayerId[String(row.playerId)] = detailedFormulaAdaptations.breakdowns;
+    }
     const legacyRoundPoints = roundsAndFixtures.rounds.map((round) => {
       const fixtures = roundsAndFixtures.fixturesByTeamRound.get(round.id)?.get(String(row.teamId)) ?? [];
       return roundFantasyValue(
@@ -713,6 +773,7 @@ export async function loadFantasySquadPlannerData(
         alternativeProjectionFormula: nextFriendFormula,
         alternativePredictedFp,
         alternativeRoundPoints,
+        ...formulaAdaptations,
         foontasyPoints: foontasy?.points ?? null,
         // Foontasy publishes its current round only. Do not invent a T3/T5
         // total from one matchweek; this becomes numeric only when the source
@@ -810,8 +871,49 @@ export async function loadFantasySquadPlannerData(
       estimatedPrices,
       lastSyncedAt: latestPriceSync?.toISOString() ?? null
     },
-    historySeasonOptions: history.availableSeasons
+    historySeasonOptions: history.availableSeasons,
+    formulaAdaptationBreakdownsByPlayerId
   };
+}
+
+export async function loadFantasySquadFormulaAdaptationBreakdowns(
+  prisma: PrismaClient,
+  userId: string,
+  league: SharedLeagueSeasonOption,
+  playerId: bigint,
+  historySettings: FantasyHistorySettings = defaultFantasyHistorySettings
+) {
+  const [preference, latestStartingXiChange] = await Promise.all([
+    prisma.userScoringPreference.findUnique({
+      where: { userId_modelSource: { userId, modelSource: "MACHETE" } },
+      select: { id: true, updatedAt: true }
+    }),
+    prisma.leagueSeasonTeam.aggregate({
+      where: { leagueId: league.leagueId, season: league.season, active: true },
+      _max: { startingXiChangedAt: true }
+    })
+  ]);
+  const preferenceRevision = preference ? `${preference.id}:${preference.updatedAt.toISOString()}` : "global";
+  const startingXiRevision = latestStartingXiChange._max.startingXiChangedAt?.toISOString() ?? "no-xi-change";
+  const key = [
+    league.leagueId,
+    league.season,
+    league.updatedAt.toISOString(),
+    playerId,
+    userId,
+    preferenceRevision,
+    startingXiRevision,
+    fantasyHistorySettingsKey(historySettings)
+  ].join(":");
+  return fantasyFormulaAdaptationBreakdownCache.getOrCreate(key, fantasyPlayerPoolCacheTtlMs, async () => {
+    const data = await loadFantasySquadPlannerData(prisma, userId, league, null, {
+      playerIds: [playerId],
+      historySettings,
+      skipSavedSquads: true,
+      includeFormulaAdaptationBreakdowns: true
+    });
+    return data.formulaAdaptationBreakdownsByPlayerId[String(playerId)] ?? null;
+  });
 }
 
 function numericHistoricalStats(metrics: Record<string, unknown> | undefined) {
@@ -2337,7 +2439,7 @@ async function loadUpcomingRoundFixtures(prisma: PrismaClient, league: SharedLea
 async function loadUpcomingRoundFixturesUncached(prisma: PrismaClient, league: SharedLeagueSeasonOption) {
   const now = new Date();
   const activeRoundLookback = new Date(now.getTime() - 21 * 24 * 60 * 60 * 1000);
-  const [matches, teamStrengthProfiles, seasonTeams] = await Promise.all([
+  const [matches, teamStrength, seasonTeams] = await Promise.all([
     prisma.coreMatch.findMany({
       where: {
         leagueId: league.leagueId,
@@ -2410,11 +2512,17 @@ async function loadUpcomingRoundFixturesUncached(prisma: PrismaClient, league: S
   );
 
   if (coreFixtures.rounds.length > 0) {
-    return applyFixtureStrength({ ...coreFixtures, teamShortNameById: shortNameByTeamId }, teamStrengthProfiles);
+    return {
+      ...applyFixtureStrength({ ...coreFixtures, teamShortNameById: shortNameByTeamId }, teamStrength.profiles),
+      formulaAdaptationTeamProfiles: teamStrength.formulaAdaptationTeamProfiles
+    };
   }
 
   const legacyFixtures = await loadLegacyMacheteUpcomingRoundFixtures(prisma, league, now);
-  return applyFixtureStrength({ ...legacyFixtures, teamShortNameById: shortNameByTeamId }, teamStrengthProfiles);
+  return {
+    ...applyFixtureStrength({ ...legacyFixtures, teamShortNameById: shortNameByTeamId }, teamStrength.profiles),
+    formulaAdaptationTeamProfiles: teamStrength.formulaAdaptationTeamProfiles
+  };
 }
 
 export function buildPlannerRoundFixtures(matches: PlannerMatch[], now = new Date()): PlannerRoundFixtures {
@@ -2669,9 +2777,25 @@ async function loadTeamStrengthProfiles(prisma: PrismaClient, leagueId: bigint) 
     feederLeagueId ? loadTeamStrengthMatches(prisma, feederLeagueId) : Promise.resolve([])
   ]);
   const profiles = buildTeamStrengthProfilesFromMatches(matches);
-  if (!feederLeagueId || feederMatches.length === 0) return profiles;
+  const formulaAdaptationTeamProfiles = buildFormulaAdaptationTeamProfiles(matches);
+  if (!feederLeagueId || feederMatches.length === 0) {
+    return { profiles, formulaAdaptationTeamProfiles };
+  }
 
-  return addPromotedTeamStrengthProfiles(profiles, buildTeamStrengthProfilesFromMatches(feederMatches, { fallbackToGoals: true }));
+  const feederProfiles = buildTeamStrengthProfilesFromMatches(feederMatches, { fallbackToGoals: true });
+  const feederFormulaProfiles = buildFormulaAdaptationTeamProfiles(feederMatches);
+  return {
+    profiles: addPromotedTeamStrengthProfiles(profiles, feederProfiles),
+    formulaAdaptationTeamProfiles: addPromotedFormulaAdaptationTeamProfiles(
+      formulaAdaptationTeamProfiles,
+      feederFormulaProfiles,
+      {
+        strengthFactor: promotedTeamStrengthFactor,
+        ratioExponent: promotedTeamRatioExponent,
+        priorMatches: promotedTeamPriorMatches
+      }
+    )
+  };
 }
 
 async function loadTeamStrengthMatches(prisma: PrismaClient, leagueId: bigint): Promise<TeamStrengthMatchInput[]> {
@@ -2689,13 +2813,28 @@ async function loadTeamStrengthMatches(prisma: PrismaClient, leagueId: bigint): 
       homeScore: true,
       awayScore: true,
       matchDate: true,
+      shots: {
+        select: {
+          teamId: true,
+          normalizedY: true,
+          xg: true
+        }
+      },
       teamStats: {
         select: {
           teamId: true,
           opponentTeamId: true,
           isHome: true,
           xg: true,
-          goals: true
+          goals: true,
+          shots: true,
+          shotsOnTarget: true,
+          bigChances: true,
+          touchesInOppBox: true,
+          possession: true,
+          passes: true,
+          accuratePasses: true,
+          passAccuracy: true
         }
       }
     }
@@ -2707,13 +2846,26 @@ async function loadTeamStrengthMatches(prisma: PrismaClient, leagueId: bigint): 
       opponentTeamId: stringifyBigInt(stat.opponentTeamId),
       isHome: stat.isHome,
       xg: stat.xg,
-      goals: stat.goals
+      goals: stat.goals,
+      shots: stat.shots,
+      shotsOnTarget: stat.shotsOnTarget,
+      bigChances: stat.bigChances,
+      touchesInOppBox: stat.touchesInOppBox,
+      possession: stat.possession,
+      passes: stat.passes,
+      accuratePasses: stat.accuratePasses,
+      passAccuracy: stat.passAccuracy
     }));
     return fillTeamStrengthStatsFromScore({
       homeTeamId: stringifyBigInt(match.homeTeamId),
       awayTeamId: stringifyBigInt(match.awayTeamId),
       matchDate: match.matchDate,
       teamStats: parsedTeamStats,
+      shots: match.shots.map((shot) => ({
+        teamId: stringifyBigInt(shot.teamId),
+        normalizedY: shot.normalizedY,
+        xg: shot.xg
+      })),
       homeScore: match.homeScore,
       awayScore: match.awayScore
     });
@@ -2747,7 +2899,8 @@ export function fillTeamStrengthStatsFromScore(
     homeTeamId: match.homeTeamId,
     awayTeamId: match.awayTeamId,
     matchDate: match.matchDate,
-    teamStats: [...byTeamId.values()]
+    teamStats: [...byTeamId.values()],
+    shots: match.shots
   };
 }
 

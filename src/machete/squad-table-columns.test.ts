@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-import { defaultSquadTableColumns, isSquadTableColumnsInput, isSquadTableColumnWidthsInput, isSquadTableFilterKey, moveSquadTableColumn, parseSquadTableColumns, parseSquadTableColumnWidths, squadTableValueFilterIsActive, squadTableValueMatchesFilter } from "./squad-table-columns";
+import { defaultSquadTableColumns, formulaAdaptationSquadTableColumns, isSquadTableColumnsInput, isSquadTableColumnWidthsInput, isSquadTableFilterKey, moveSquadTableColumn, parseSquadTableColumns, parseSquadTableColumnWidths, squadTableColumnsPreference, squadTableValueFilterIsActive, squadTableValueMatchesFilter } from "./squad-table-columns";
 
 test("squad table columns default excludes the invented Foontasy horizon", () => {
   assert.deepEqual(parseSquadTableColumns(null), [...defaultSquadTableColumns]);
@@ -11,12 +11,34 @@ test("squad table columns default excludes the invented Foontasy horizon", () =>
   assert.ok(defaultSquadTableColumns.includes("foontasyPerPrice"));
   assert.ok(defaultSquadTableColumns.includes("alternativePerPrice"));
   assert.ok(defaultSquadTableColumns.includes("modelHorizon"));
+  assert.deepEqual(
+    defaultSquadTableColumns.slice(
+      defaultSquadTableColumns.indexOf("alternativeHorizon") + 1,
+      defaultSquadTableColumns.indexOf("fixtures")
+    ),
+    formulaAdaptationSquadTableColumns
+  );
   assert.ok(!defaultSquadTableColumns.some((key) => key.toLowerCase().includes("foontasyhorizon")));
 });
 
+test("legacy squad column preferences gain formula adaptations exactly once", () => {
+  const legacy = ["nextFp", "alternative", "fixtures"];
+  assert.deepEqual(parseSquadTableColumns(legacy), [
+    "nextFp",
+    "alternative",
+    ...formulaAdaptationSquadTableColumns,
+    "fixtures"
+  ]);
+
+  const current = squadTableColumnsPreference(legacy);
+  assert.deepEqual(current, { version: 2, columns: legacy });
+  assert.deepEqual(parseSquadTableColumns(current), legacy);
+});
+
 test("squad table columns accept known and dynamic player stats but reject arbitrary keys", () => {
-  assert.deepEqual(parseSquadTableColumns(["nextFp", "stat:xg_per_90_l5", "bad", "nextFp"]), ["nextFp", "stat:xg_per_90_l5"]);
+  assert.deepEqual(parseSquadTableColumns(squadTableColumnsPreference(["nextFp", "stat:xg_per_90_l5", "bad", "nextFp"])), ["nextFp", "stat:xg_per_90_l5"]);
   assert.equal(isSquadTableColumnsInput(["nextFp", "stat:shots_on_target"]), true);
+  assert.equal(isSquadTableColumnsInput([...formulaAdaptationSquadTableColumns]), true);
   assert.equal(isSquadTableColumnsInput(["bad"]), false);
 });
 
@@ -29,7 +51,10 @@ test("visible squad table columns can be reordered without mutating the saved pr
 });
 
 test("legacy 3R and 5R model columns migrate to one stable horizon column", () => {
-  assert.deepEqual(parseSquadTableColumns(["nextFp", "modelT5", "alternative", "modelT3"]), ["nextFp", "modelHorizon", "alternative"]);
+  assert.deepEqual(
+    parseSquadTableColumns(squadTableColumnsPreference(["nextFp", "modelT5", "alternative", "modelT3"])),
+    ["nextFp", "modelHorizon", "alternative"]
+  );
   assert.deepEqual(parseSquadTableColumnWidths({ modelT5: 118 }), { modelHorizon: 118 });
 });
 
