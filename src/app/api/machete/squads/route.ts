@@ -180,14 +180,14 @@ export const POST = withApiHandler(async (request: Request) => {
   const safeSelections = safeRoundPlans[0]?.selections ?? [];
   for (let index = 1; index < safeRoundPlans.length; index += 1) {
     const transferCount = countFantasySquadTransfers(safeRoundPlans[index - 1].selections, safeRoundPlans[index].selections);
-    const perRoundLimit = fantasyTransferLimitForHorizon(1);
+    const perRoundLimit = fantasyTransferLimitForHorizon(1, rules.transferLimitPerRound);
     if (transferCount > perRoundLimit) {
       return jsonError("BAD_REQUEST", `Round +${index}: ${transferCount} transfers planned; per-round limit is ${perRoundLimit}.`, 400);
     }
   }
 
   const savedSelections = squadId ? plannerData.squad.selections : [];
-  const transferLimit = fantasyTransferLimitForHorizon(horizonRounds);
+  const transferLimit = fantasyTransferLimitForHorizon(horizonRounds, rules.transferLimitPerRound);
   const transferCount = countFantasySquadTransfers(savedSelections, safeSelections);
   if (savedSelections.length === rules.squadSize && transferCount > transferLimit) {
     return jsonError("BAD_REQUEST", `You made ${transferCount} transfers; limit for this forecast is ${transferLimit}.`, 400);

@@ -3,7 +3,8 @@ import type {
   FantasySquadOptimizationInput,
   FantasySquadSelection,
   FantasySquadRules,
-  TransferPlanSuggestion
+  TransferPlanSuggestion,
+  TransferSuggestionForecastSource
 } from "@/machete/squad_logic";
 
 export type TransferSuggestionWorkerInput = {
@@ -11,8 +12,11 @@ export type TransferSuggestionWorkerInput = {
   selections: FantasySquadSelection[];
   rules: FantasySquadRules;
   horizon: number;
+  forecastSource?: TransferSuggestionForecastSource;
   transferCount: number;
   maximumPlans: number;
+  freeTransfers?: number | null;
+  paidTransferPointCost?: number | null;
 };
 
 export type FantasySquadWorkerRequest =

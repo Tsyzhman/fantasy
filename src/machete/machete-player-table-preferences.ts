@@ -9,7 +9,7 @@ export type MachetePlayerTableValueFilter = {
 };
 
 export type MachetePlayerTableSettings = {
-  version: 2;
+  version: 3;
   columns: string[];
   widths: Record<string, number>;
   horizon: 3 | 5 | 10;
@@ -26,7 +26,9 @@ const staticColumnKeys = new Set([
   "minutesPlayed", "goals", "assists", "shotsOnTarget", "keyPasses", "tackles", "averageRating",
   "age", "nationality", "leagueName", "form", "predictedFp", "forecastHorizonFp",
   "predictedFpPerPrice", "foontasy", "foontasyPerPrice", "alternativePredictedFp",
-  "alternativePredictedFpPerPrice", "alternativeForecastHorizon", "fixtures"
+  "alternativePredictedFpPerPrice", "alternativeForecastHorizon",
+  "foPositionCalibratedFp", "altPositionCalibratedFp", "altJointAllFp", "foJointAllFp",
+  "altJointAcceptedFp", "foJointAcceptedFp", "fixtures"
 ]);
 const rawColumnPattern = /^raw:[a-z0-9_.-]{1,120}$/i;
 const maximumColumns = 120;
@@ -41,11 +43,25 @@ const forecastColumnKeys = [
   "alternativePredictedFp",
   "alternativePredictedFpPerPrice",
   "alternativeForecastHorizon",
+  "foPositionCalibratedFp",
+  "altPositionCalibratedFp",
+  "altJointAllFp",
+  "foJointAllFp",
+  "altJointAcceptedFp",
+  "foJointAcceptedFp",
   "fixtures"
+];
+const formulaAdaptationColumnKeys = [
+  "foPositionCalibratedFp",
+  "altPositionCalibratedFp",
+  "altJointAllFp",
+  "foJointAllFp",
+  "altJointAcceptedFp",
+  "foJointAcceptedFp"
 ];
 
 export function parseMachetePlayerTableSettings(value: unknown): MachetePlayerTableSettings | null {
-  if (!isRecord(value) || (value.version !== 1 && value.version !== 2) || !Array.isArray(value.columns) || !isRecord(value.widths)) return null;
+  if (!isRecord(value) || (value.version !== 1 && value.version !== 2 && value.version !== 3) || !Array.isArray(value.columns) || !isRecord(value.widths)) return null;
   if (value.columns.length > maximumColumns) return null;
 
   const columns: string[] = [];
@@ -64,9 +80,11 @@ export function parseMachetePlayerTableSettings(value: unknown): MachetePlayerTa
 
   const migratedColumns = value.version === 1
     ? [...forecastColumnKeys, ...columns.filter((key) => !forecastColumnKeys.includes(key))]
-    : columns;
+    : value.version === 2
+      ? insertFormulaAdaptationColumns(columns)
+      : columns;
   const horizon = value.horizon === 3 || value.horizon === 10 ? value.horizon : 5;
-  return { version: 2, columns: migratedColumns, widths, horizon };
+  return { version: 3, columns: migratedColumns, widths, horizon };
 }
 
 export function parseMachetePlayerFilterPresetValue(value: unknown): MachetePlayerFilterPresetValue | null {
@@ -87,6 +105,17 @@ export function parseMachetePlayerFilterPresetValue(value: unknown): MachetePlay
 
 function isColumnKey(value: unknown): value is string {
   return typeof value === "string" && (staticColumnKeys.has(value) || rawColumnPattern.test(value));
+}
+
+function insertFormulaAdaptationColumns(columns: string[]) {
+  const withoutAdaptations = columns.filter((key) => !formulaAdaptationColumnKeys.includes(key));
+  const anchor = withoutAdaptations.indexOf("alternativeForecastHorizon");
+  if (anchor < 0) return [...formulaAdaptationColumnKeys, ...withoutAdaptations];
+  return [
+    ...withoutAdaptations.slice(0, anchor + 1),
+    ...formulaAdaptationColumnKeys,
+    ...withoutAdaptations.slice(anchor + 1)
+  ];
 }
 
 function boundedString(value: unknown, max: number) {

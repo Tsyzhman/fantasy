@@ -144,6 +144,104 @@ test("scheduled fixture-only ingestion persists the match and never requests det
   assert.equal(result.failed, 0);
 });
 
+test("finished fixture metadata is re-applied after detailed ingestion", async () => {
+  const operations: string[] = [];
+  const matchUpserts: Array<{
+    update?: {
+      round?: string | null;
+      status?: string | null;
+      homeScore?: number | null;
+      awayScore?: number | null;
+    };
+  }> = [];
+  let detailsRequested = false;
+  const prisma = {
+    coreLeague: {
+      async upsert() { return {}; },
+      async createMany() { return { count: 0 }; }
+    },
+    coreTeam: {
+      async createMany() { return { count: 2 }; }
+    },
+    coreMatch: {
+      async findUnique() {
+        operations.push("detail-check");
+        return {
+          id: 5847120n,
+          finished: true,
+          rawReceivedAt: new Date("2026-07-26T20:00:00.000Z"),
+          normalizedAt: new Date("2026-07-26T20:00:01.000Z")
+        };
+      },
+      async upsert(input: {
+        update?: {
+          round?: string | null;
+          status?: string | null;
+          homeScore?: number | null;
+          awayScore?: number | null;
+        };
+      }) {
+        operations.push("fixture-upsert");
+        matchUpserts.push(input);
+        return {};
+      }
+    },
+    rawMatchPayload: {
+      async findUnique() {
+        return { payloadHash: "existing" };
+      }
+    },
+    matchTeamStat: {
+      async count() { return 2; }
+    },
+    matchPlayerStat: {
+      async count() { return 44; }
+    },
+    matchShot: {
+      async count() { return 12; }
+    }
+  } as unknown as PrismaClient;
+  const client: FotMobClient = {
+    async getLeague() { throw new Error("not used"); },
+    async getTeams() { throw new Error("not used"); },
+    async getFixtures(leagueId) {
+      return [{
+        id: "5847120",
+        leagueId,
+        homeTeamId: "9766",
+        awayTeamId: "10012",
+        kickoffAt: "2026-07-26T17:00:00.000Z",
+        status: "FINISHED",
+        round: "1",
+        homeScore: 2,
+        awayScore: 1
+      }];
+    },
+    async getFixtureDetails() {
+      detailsRequested = true;
+      throw new Error("an already normalized match should be skipped");
+    },
+    async getPlayer() { throw new Error("not used"); }
+  };
+
+  const result = await ingest_scope(
+    prisma,
+    createIngestionScope({ league_id: 63, season: "2026/2027", include_upcoming: true }),
+    { client }
+  );
+
+  assert.equal(detailsRequested, false);
+  assert.deepEqual(operations, ["fixture-upsert", "detail-check", "fixture-upsert"]);
+  assert.equal(matchUpserts.length, 2);
+  assert.equal(matchUpserts[1]?.update?.round, "1");
+  assert.equal(matchUpserts[1]?.update?.status, "FINISHED");
+  assert.equal(matchUpserts[1]?.update?.homeScore, 2);
+  assert.equal(matchUpserts[1]?.update?.awayScore, 1);
+  assert.equal(result.fetched, 0);
+  assert.equal(result.skipped, 1);
+  assert.equal(result.failed, 0);
+});
+
 test("unavailable FotMob matchDetails are skipped instead of failed", async () => {
   const prisma = {
     coreMatch: {

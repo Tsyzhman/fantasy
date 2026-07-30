@@ -80,6 +80,23 @@ test("players table reuses squad forecasts for 1 round and 3, 5 or 10 round hori
   assert.doesNotMatch(tableSource, /player\.alternativeScore \?\? 0/);
 });
 
+test("players table exposes all six independent non-weather formula adaptations", () => {
+  for (const key of [
+    "foPositionCalibratedFp",
+    "altPositionCalibratedFp",
+    "altJointAllFp",
+    "foJointAllFp",
+    "altJointAcceptedFp",
+    "foJointAcceptedFp"
+  ]) {
+    assert.match(pageSource, new RegExp(`${key}: forecast\\?\\.${key}`));
+    assert.match(tableSource, new RegExp(`column\\("${key}"`));
+  }
+  assert.match(tableSource, /FO калибр\. позиции/);
+  assert.match(tableSource, /Alt Joint всех/);
+  assert.match(tableSource, /Погода исключена/);
+});
+
 test("value-cell tooltips explain the concrete player value instead of repeating header help", () => {
   assert.match(tableSource, /machetePlayerCellTitle\(column, player, value, horizon, language\)/);
   assert.match(tableSource, /Selected statistics window:/);

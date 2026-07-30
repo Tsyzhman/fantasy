@@ -12,7 +12,7 @@ import { loadSharedLeagueOptions, type SharedLeagueSeasonOption } from "@/machet
 import { loadFantasySquadPlannerData } from "@/machete/squad_planner";
 import { parseSquadTableColumns, parseSquadTableColumnWidths } from "@/machete/squad-table-columns";
 import { canSwitchFranchise, resolveVisibleFranchise } from "@/machete/franchise-access";
-import { loadPlannerReadinessByScope, plannerReadinessKey, type PlannerReadiness } from "@/machete/planner_readiness";
+import { loadPlannerReadinessByScope, plannerReadinessBlocksTransferSuggestions, plannerReadinessKey, type PlannerReadiness } from "@/machete/planner_readiness";
 import {
   applyFantasyHistorySearchParams,
   fantasyHistorySettingsKey,
@@ -60,6 +60,7 @@ export default async function MacheteSquadPage({ searchParams }: PageProps) {
         loadSquadDataFreshness(selectedLeague)
       ])
     : [null, null];
+  const transferSuggestionsBlockedByReadiness = data ? plannerReadinessBlocksTransferSuggestions(data.readiness) : true;
 
   return (
     <MacheteShell compact>
@@ -125,7 +126,7 @@ export default async function MacheteSquadPage({ searchParams }: PageProps) {
 
       {selectedLeague && data ? (
         <>
-          {!data.readiness.ready ? (
+          {!data.readiness.ready && transferSuggestionsBlockedByReadiness ? (
             <div role="status" className="mt-4 rounded border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-950">
               <I18nText
                 en={`The current season is not forecast-ready: ${data.readiness.reasons.join(", ")}. Auto-pick and transfer recommendations are unavailable.`}

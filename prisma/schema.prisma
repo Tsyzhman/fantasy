@@ -705,8 +705,8 @@ model FoontasyForecast {
   league CoreLeague  @relation(fields: [leagueId], references: [id], onDelete: Cascade)
   player CorePlayer? @relation(fields: [playerId], references: [id], onDelete: SetNull)
 
-  @@unique([leagueId, season, roundNumber, sourcePlayerId])
-  @@index([leagueId, season, playerId, roundNumber])
+  @@unique([leagueId, season, roundNumber, sourcePlayerId], map: "foontasy_forecasts_league_id_season_round_number_source_player_")
+  @@index([leagueId, season, playerId, roundNumber], map: "foontasy_forecasts_league_id_season_player_id_round_number_idx")
   @@map("foontasy_forecasts")
 }
 
@@ -734,9 +734,9 @@ model FoontasyForecastSample {
   league CoreLeague  @relation(fields: [leagueId], references: [id], onDelete: Cascade)
   player CorePlayer? @relation(fields: [playerId], references: [id], onDelete: SetNull)
 
-  @@unique([leagueId, season, roundNumber, sourcePlayerId])
-  @@index([leagueId, season, roundNumber])
-  @@index([leagueId, season, playerId, roundNumber])
+  @@unique([leagueId, season, roundNumber, sourcePlayerId], map: "foontasy_forecast_samples_league_id_season_round_number_source_")
+  @@index([leagueId, season, roundNumber], map: "foontasy_forecast_samples_league_id_season_round_number_idx")
+  @@index([leagueId, season, playerId, roundNumber], map: "foontasy_forecast_samples_league_id_season_player_id_round_numb")
   @@map("foontasy_forecast_samples")
 }
 
@@ -760,8 +760,8 @@ model FantasyModelForecast {
   league CoreLeague @relation(fields: [leagueId], references: [id], onDelete: Cascade)
   player CorePlayer @relation(fields: [playerId], references: [id], onDelete: Cascade)
 
-  @@unique([leagueId, season, playerId, horizon, modelVersion])
-  @@index([leagueId, season, horizon, calculatedAt])
+  @@unique([leagueId, season, playerId, horizon, modelVersion], map: "fantasy_model_forecasts_league_id_season_player_id_horizon_mode")
+  @@index([leagueId, season, horizon, calculatedAt], map: "fantasy_model_forecasts_league_id_season_horizon_calculated_at_")
   @@map("fantasy_model_forecasts")
 }
 
@@ -1009,10 +1009,10 @@ model PlayerSeasonArchive {
   team   CoreTeam   @relation(fields: [teamId], references: [id], onDelete: Cascade)
   league CoreLeague @relation(fields: [leagueId], references: [id], onDelete: Cascade)
 
-  @@unique([provider, leagueId, season, teamId, playerId, aggregateScope])
-  @@index([leagueId, season, teamId])
-  @@index([playerId, season, fetchedAt])
-  @@index([provider, providerPlayerId, season])
+  @@unique([provider, leagueId, season, teamId, playerId, aggregateScope], map: "player_season_archives_provider_league_season_team_player_scope")
+  @@index([leagueId, season, teamId], map: "player_season_archives_league_id_season_team_id_idx")
+  @@index([playerId, season, fetchedAt], map: "player_season_archives_player_id_season_fetched_at_idx")
+  @@index([provider, providerPlayerId, season], map: "player_season_archives_provider_provider_player_id_season_idx")
   @@map("player_season_archives")
 }
 

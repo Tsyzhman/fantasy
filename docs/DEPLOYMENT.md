@@ -1,5 +1,39 @@
 # Deployment
 
+## Canonical immutable Docker deployment
+
+The only supported production source is a clean Git commit already present on
+`origin`. Before packaging locally, run:
+
+```bash
+npm run check
+npm run release:verify-source
+```
+
+The `Deploy Production` GitHub Actions workflow is the canonical promoter. It
+packages `git archive HEAD`, verifies the archive checksum, builds an
+immutable Docker image with the exact version and commit labels, runs a
+database-backed canary with schedulers disabled, and swaps both web and worker
+with automatic rollback.
+
+The workflow rejects a ref that does not contain current `main`. Once the
+current production release has a `.release-commit` manifest, it also rejects a
+candidate that is not its descendant. The old remote `git pull` plus PM2
+workflow has been removed.
+
+Verify the exact running revision after every deployment:
+
+```bash
+curl -fsS http://127.0.0.1:3000/api/health
+docker image inspect "$(docker container inspect fantasy-scout-web --format '{{.Config.Image}}')" \
+  --format '{{index .Config.Labels "org.opencontainers.image.revision"}}'
+cat /var/www/fantasy-scout-current/.release-commit
+```
+
+All three commit values must be identical. See
+`docs/PRODUCTION_RELEASES.md` for the version policy and reconstructed release
+history.
+
 Legacy checkout path (currently dirty; not the active build source):
 
 ```bash
@@ -180,6 +214,30 @@ unavailable for approximately 30–40 seconds before beta10 was restored. No dat
 was lost. This incident is why direct `stop` followed by an unvalidated
 `docker run` is no longer an accepted rollout method.
 
+## Release and build-cache retention
+
+Run the bounded cleanup after a successful rollout:
+
+```bash
+scripts/prune-production-artifacts.sh
+scripts/prune-production-artifacts.sh --apply
+```
+
+The first command is a dry run. Apply mode keeps the active symlink target,
+every release and image referenced by a remaining container, the newest three
+release directories, and the newest stopped web rollback. It removes only
+older exact `fantasy-scout` release directories, obsolete stopped web rollback
+containers, and unused `fantasy-scout` image tags. Docker build cache is capped
+at 1 GB; database volumes, uploads, database backups, and images from other
+applications are outside the cleanup scope.
+
+The release root and current-link paths are hard-bound to
+`/var/www/fantasy-scout-releases` and `/var/www/fantasy-scout-current`. After
+validating every deletion target as a direct child of that release root, apply
+mode uses non-interactive `sudo` for release removal when the invoking account
+has it. This is required for historical releases created by `root`; all Docker
+and cache operations still run as the invoking deployment account.
+
 ## GitHub Actions deploy
 
 The repository includes a manual `Deploy Production` workflow. It is dry-run by
@@ -190,8 +248,6 @@ Required GitHub environment secrets for `production`:
 - `DEPLOY_HOST`
 - `DEPLOY_USER`
 - `DEPLOY_SSH_KEY`
-- `DEPLOY_PATH` (for example `/var/www/fantasy-scout`)
-- `DEPLOY_PM2_PROCESS` (for example `fantasy-scout`)
 - `DEPLOY_PORT` (optional; defaults to `22`)
 
 Required runtime environment variables on the production host:
@@ -220,9 +276,11 @@ container log settings. Installation, verification, privacy rules, and the
 explicit temporary price exception are documented in
 `docs/PRODUCTION_MONITORING.md`.
 
-The workflow runs checks, SSHes into the host, pulls the requested ref, installs
-dependencies, runs Prisma deploy migrations, rebuilds Next.js, verifies
-`.next/prerender-manifest.json`, and restarts PM2.
+The workflow runs checks, archives the exact committed tree, retains that
+archive for 30 days, verifies all existing Prisma migrations are already
+applied, builds and canary-tests the Docker image, and performs the guarded
+web/worker swap. Application deployment deliberately refuses unapplied
+migrations; database migrations remain a separately backed-up operation.
 
 For an existing production database that was created before Prisma migrations,
 baseline the initial migration once on the server before enabling non-dry-run

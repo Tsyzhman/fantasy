@@ -1,11 +1,15 @@
 export type FantasyPositionGroup = "GK" | "DEF" | "MID" | "FWD" | "UNK";
 
+export const transferSuggestionForecastSources = ["FO", "ALT", "FFO"] as const;
+export type TransferSuggestionForecastSource = typeof transferSuggestionForecastSources[number];
+
 export type FantasySquadRules = {
   budgetLimit: number;
   squadSize: number;
   starterSize: number;
   benchSize: number;
   maxPlayersPerTeam: number;
+  transferLimitPerRound?: number | null;
   positionLimits: Record<Exclude<FantasyPositionGroup, "UNK">, number>;
   starterPositionLimits: Record<Exclude<FantasyPositionGroup, "UNK">, { min: number; max: number }>;
   horizonOptions: number[];
@@ -125,6 +129,12 @@ export type FantasyPlannerPlayer = {
   } | null;
   alternativePredictedFp?: number | null;
   alternativeRoundPoints?: Array<number | null>;
+  foPositionCalibratedFp?: number | null;
+  altPositionCalibratedFp?: number | null;
+  altJointAllFp?: number | null;
+  foJointAllFp?: number | null;
+  altJointAcceptedFp?: number | null;
+  foJointAcceptedFp?: number | null;
   foontasyPoints?: number | null;
   foontasyHorizonPoints?: number | null;
   foontasyFetchedAt?: string | null;
@@ -249,9 +259,14 @@ export type TransferPlanMove = {
 
 export type TransferPlanSuggestion = {
   id: string;
+  forecastSource: TransferSuggestionForecastSource;
   moves: TransferPlanMove[];
   transferCount: number;
+  priorityReplacementCount: number;
+  captainPlayerId: string | null;
   priceDelta: number;
+  squadCostAfter: number;
+  bankAfter: number;
   round1Delta: number;
   round3Delta: number | null;
   round5Delta: number | null;
@@ -340,7 +355,10 @@ export function roundFantasyValue(value: number) {
   return Math.round(value * 10) / 10;
 }
 
-export function fantasyTransferLimitForHorizon(horizon: number) {
+export function fantasyTransferLimitForHorizon(horizon: number, transferLimitPerRound?: number | null) {
+  if (typeof transferLimitPerRound === "number" && Number.isInteger(transferLimitPerRound) && transferLimitPerRound > 0) {
+    return transferLimitPerRound;
+  }
   const safeHorizon = Number.isFinite(horizon) ? Math.max(1, Math.floor(horizon)) : 1;
   return safeHorizon * transfersPerFantasyRound;
 }
@@ -1331,12 +1349,14 @@ export function buildTransferPlanSuggestions(input: {
   selections: FantasySquadSelection[];
   rules: FantasySquadRules;
   horizon: number;
+  forecastSource?: TransferSuggestionForecastSource;
   transferCount: number;
   maximumPlans?: number;
   freeTransfers?: number | null;
   paidTransferPointCost?: number | null;
 }) {
   const { pool, selections, rules, horizon } = input;
+  const forecastSource = input.forecastSource ?? "FO";
   const maximumPlans = Math.max(3, Math.min(12, Math.floor(input.maximumPlans ?? 6)));
   const maximumMoves = Math.min(3, Math.max(0, Math.floor(input.transferCount)));
   if (maximumMoves === 0 || selections.length === 0) return [];
@@ -1358,14 +1378,22 @@ export function buildTransferPlanSuggestions(input: {
       const player = playersById.get(selection.playerId);
       return player ? { selection, player } : null;
     })
-    .filter((pair): pair is { selection: FantasySquadSelection; player: FantasyPlannerPlayer } => Boolean(pair));
+    .filter((pair): pair is { selection: FantasySquadSelection; player: FantasyPlannerPlayer } => Boolean(pair))
+    .filter((pair) => {
+      if (!hasTransferSuggestionForecast(pair.player, forecastSource, horizon)) return false;
+      if (pair.player.positionGroup !== "GK") return true;
+
+      // A bench goalkeeper is never a transfer candidate. The starting goalkeeper
+      // enters the pool only when the selected formula projects zero points.
+      return pair.selection.isStarter && transferSuggestionForecastNextPoints(pair.player, forecastSource) === 0;
+    });
   const candidatesByPosition = new Map<FantasyPositionGroup, FantasyPlannerPlayer[]>();
   for (const position of ["GK", "DEF", "MID", "FWD"] as const) {
     candidatesByPosition.set(
       position,
       pool
-        .filter((player) => !selectedIds.has(player.playerId) && player.positionGroup === position)
-        .sort((left, right) => transferCandidateScore(right, horizon) - transferCandidateScore(left, horizon) || left.price - right.price)
+        .filter((player) => !selectedIds.has(player.playerId) && player.positionGroup === position && hasTransferSuggestionForecast(player, forecastSource, horizon))
+        .sort((left, right) => transferCandidateScore(right, horizon, forecastSource) - transferCandidateScore(left, horizon, forecastSource) || left.price - right.price)
         .slice(0, 8)
     );
   }
@@ -1388,9 +1416,11 @@ export function buildTransferPlanSuggestions(input: {
           selections,
           rules,
           horizon,
+          forecastSource,
           outgoing: outgoingSet,
           incoming,
           validationContext,
+          currentSpent: currentSummary.spent,
           freeTransfers: input.freeTransfers,
           paidTransferPointCost: input.paidTransferPointCost
         });
@@ -1429,9 +1459,11 @@ function evaluateTransferPlan(input: {
   selections: FantasySquadSelection[];
   rules: FantasySquadRules;
   horizon: number;
+  forecastSource: TransferSuggestionForecastSource;
   outgoing: Array<{ selection: FantasySquadSelection; player: FantasyPlannerPlayer }>;
   incoming: FantasyPlannerPlayer[];
   validationContext: TransferPlanValidationContext | null;
+  currentSpent: number;
   freeTransfers?: number | null;
   paidTransferPointCost?: number | null;
 }): TransferPlanSuggestion | null {
@@ -1452,9 +1484,19 @@ function evaluateTransferPlan(input: {
     : summarizeFantasySquad(input.pool, nextSelections, input.rules, input.horizon).violations.length === 0;
   if (!isValid) return null;
 
-  const moves = input.outgoing.map((pair, index): TransferPlanMove => {
+  const priceDelta = roundFantasyValue(
+    input.incoming.reduce((total, player) => total + player.price, 0) - input.outgoing.reduce((total, pair) => total + pair.player.price, 0)
+  );
+  const squadCostAfter = roundFantasyValue(input.currentSpent + priceDelta);
+  if (squadCostAfter > input.rules.budgetLimit) return null;
+  const bankAfter = roundFantasyValue(input.rules.budgetLimit - squadCostAfter);
+
+  const moves: TransferPlanMove[] = [];
+  for (const [index, pair] of input.outgoing.entries()) {
     const incoming = input.incoming[index];
-    return {
+    const round1Delta = transferSuggestionRoundDelta(incoming, pair.player, input.forecastSource, 1);
+    if (round1Delta === null) return null;
+    moves.push({
       outPlayerId: pair.player.playerId,
       inPlayerId: incoming.playerId,
       outName: pair.player.name,
@@ -1463,23 +1505,24 @@ function evaluateTransferPlan(input: {
       outTeamName: pair.player.teamName,
       inTeamName: incoming.teamName,
       priceDelta: roundFantasyValue(incoming.price - pair.player.price),
-      round1Delta: roundFantasyValue(nextFantasyPoints(incoming) - nextFantasyPoints(pair.player)),
-      round3Delta: projectionDelta(incoming, pair.player, 3),
-      round5Delta: projectionDelta(incoming, pair.player, 5)
-    };
-  });
+      round1Delta,
+      round3Delta: transferSuggestionRoundDelta(incoming, pair.player, input.forecastSource, 3),
+      round5Delta: transferSuggestionRoundDelta(incoming, pair.player, input.forecastSource, 5)
+    });
+  }
   const round1Delta = roundFantasyValue(sumPlanValues(moves.map((move) => move.round1Delta)) ?? 0);
   const rawRound3Delta = sumPlanValues(moves.map((move) => move.round3Delta));
   const rawRound5Delta = sumPlanValues(moves.map((move) => move.round5Delta));
   const round3Delta = rawRound3Delta === null ? null : roundFantasyValue(rawRound3Delta);
   const round5Delta = rawRound5Delta === null ? null : roundFantasyValue(rawRound5Delta);
   const horizonDelta = roundFantasyValue(
-    input.incoming.reduce((total, player) => total + playerHorizonPoints(player, input.horizon), 0) -
-      input.outgoing.reduce((total, pair) => total + playerHorizonPoints(pair.player, input.horizon), 0)
+    input.incoming.reduce((total, player) => total + (transferSuggestionForecastHorizonPoints(player, input.forecastSource, input.horizon) ?? 0), 0) -
+      input.outgoing.reduce((total, pair) => total + (transferSuggestionForecastHorizonPoints(pair.player, input.forecastSource, input.horizon) ?? 0), 0)
   );
   if (horizonDelta <= 0 && round1Delta <= 0 && (round3Delta ?? 0) <= 0 && (round5Delta ?? 0) <= 0) return null;
 
-  const priceDelta = roundFantasyValue(sumPlanValues(moves.map((move) => move.priceDelta)) ?? 0);
+  const priorityReplacementCount = input.outgoing.filter((pair) => isPriorityTransferReplacement(pair, input.forecastSource)).length;
+  const captainPlayerId = transferPlanCaptainPlayerId(input.pool, nextSelections, input.forecastSource, input.horizon);
   const transferCostConfigured = isNonNegativeInteger(input.freeTransfers) && isNonNegativeNumber(input.paidTransferPointCost);
   const paidTransferLoss = transferCostConfigured
     ? roundFantasyValue(Math.max(0, moves.length - (input.freeTransfers ?? 0)) * (input.paidTransferPointCost ?? 0))
@@ -1487,8 +1530,8 @@ function evaluateTransferPlan(input: {
   const netHorizonDelta = paidTransferLoss === null ? null : roundFantasyValue(horizonDelta - paidTransferLoss);
   if (netHorizonDelta !== null && netHorizonDelta <= 0) return null;
 
-  const risks = transferPlanRisks(input.incoming, moves, paidTransferLoss);
-  const reason = `Projected gain ${signedFantasyValue(horizonDelta)} over ${input.horizon} round${input.horizon === 1 ? "" : "s"}${priceDelta <= 0 ? ` while saving ${roundFantasyValue(-priceDelta)}` : ""}`;
+  const risks = transferPlanRisks(input.incoming, moves, paidTransferLoss, input.forecastSource);
+  const reason = `${input.forecastSource} projected gain ${signedFantasyValue(horizonDelta)} over ${input.horizon} round${input.horizon === 1 ? "" : "s"}${priceDelta <= 0 ? ` while saving ${roundFantasyValue(-priceDelta)}` : ""}`;
   const score = roundFantasyValue(
     (netHorizonDelta ?? horizonDelta) + round1Delta * 0.7 + (round3Delta ?? 0) * 0.15 + (round5Delta ?? 0) * 0.08 + Math.max(0, -priceDelta) * 0.05 - risks.length * 0.05
   );
@@ -1498,10 +1541,15 @@ function evaluateTransferPlan(input: {
     .join("|");
 
   return {
-    id,
+    id: `${input.forecastSource}:${id}`,
+    forecastSource: input.forecastSource,
     moves,
     transferCount: moves.length,
+    priorityReplacementCount,
+    captainPlayerId,
     priceDelta,
+    squadCostAfter,
+    bankAfter,
     round1Delta,
     round3Delta,
     round5Delta,
@@ -1512,6 +1560,44 @@ function evaluateTransferPlan(input: {
     risks,
     score
   };
+}
+
+function isPriorityTransferReplacement(
+  pair: { selection: FantasySquadSelection; player: FantasyPlannerPlayer },
+  forecastSource: TransferSuggestionForecastSource
+) {
+  return pair.selection.isStarter
+    && pair.player.positionGroup !== "GK"
+    && transferSuggestionForecastNextPoints(pair.player, forecastSource) === 0;
+}
+
+function transferPlanCaptainPlayerId(
+  pool: FantasyPlannerPlayer[],
+  selections: FantasySquadSelection[],
+  forecastSource: TransferSuggestionForecastSource,
+  horizon: number
+) {
+  const playersById = new Map(pool.map((player) => [player.playerId, player]));
+  let best: { playerId: string; nextPoints: number; horizonPoints: number } | null = null;
+
+  for (const selection of selections) {
+    if (!selection.isStarter) continue;
+    const player = playersById.get(selection.playerId);
+    if (!player) continue;
+    const nextPoints = transferSuggestionForecastNextPoints(player, forecastSource);
+    if (nextPoints === null) continue;
+    const horizonPoints = transferSuggestionForecastHorizonPoints(player, forecastSource, horizon) ?? Number.NEGATIVE_INFINITY;
+    if (
+      !best
+      || nextPoints > best.nextPoints
+      || (nextPoints === best.nextPoints && horizonPoints > best.horizonPoints)
+      || (nextPoints === best.nextPoints && horizonPoints === best.horizonPoints && player.playerId.localeCompare(best.playerId) < 0)
+    ) {
+      best = { playerId: player.playerId, nextPoints, horizonPoints };
+    }
+  }
+
+  return best?.playerId ?? null;
 }
 
 function transferPlanFitsValidatedSquad(
@@ -1540,11 +1626,20 @@ function transferPlanFitsValidatedSquad(
   return Object.values(byTeam).every((count) => count <= rules.maxPlayersPerTeam);
 }
 
-function transferPlanRisks(incoming: FantasyPlannerPlayer[], moves: TransferPlanMove[], paidTransferLoss: number | null) {
+function transferPlanRisks(
+  incoming: FantasyPlannerPlayer[],
+  moves: TransferPlanMove[],
+  paidTransferLoss: number | null,
+  forecastSource: TransferSuggestionForecastSource
+) {
   const risks: string[] = [];
   if (paidTransferLoss === null) risks.push("Paid-transfer point cost is not configured");
   if (moves.some((move) => move.round1Delta < 0)) risks.push("At least one move loses projected points next round");
-  if (moves.some((move) => move.round3Delta === null || move.round5Delta === null)) risks.push("The loaded schedule does not cover every 3/5-round comparison");
+  if (forecastSource === "FFO") {
+    risks.push("Foontasy covers only the current round");
+  } else if (moves.some((move) => move.round3Delta === null || move.round5Delta === null)) {
+    risks.push("The loaded schedule does not cover every 3/5-round comparison");
+  }
   if (incoming.some((player) => player.forecastConfidence !== null && player.forecastConfidence !== undefined && player.forecastConfidence < 0.6)) {
     risks.push("At least one incoming player has low forecast confidence");
   }
@@ -1554,7 +1649,28 @@ function transferPlanRisks(incoming: FantasyPlannerPlayer[], moves: TransferPlan
   return risks;
 }
 
-function projectionDelta(incoming: FantasyPlannerPlayer, outgoing: FantasyPlannerPlayer, rounds: number) {
+function transferSuggestionRoundDelta(
+  incoming: FantasyPlannerPlayer,
+  outgoing: FantasyPlannerPlayer,
+  forecastSource: TransferSuggestionForecastSource,
+  rounds: number
+) {
+  if (forecastSource === "FFO") {
+    if (rounds !== 1) return null;
+    const incomingPoints = transferSuggestionForecastNextPoints(incoming, forecastSource);
+    const outgoingPoints = transferSuggestionForecastNextPoints(outgoing, forecastSource);
+    return incomingPoints === null || outgoingPoints === null ? null : roundFantasyValue(incomingPoints - outgoingPoints);
+  }
+  if (forecastSource === "ALT") {
+    const incomingPoints = playerAlternativeHorizonPoints(incoming, rounds);
+    const outgoingPoints = playerAlternativeHorizonPoints(outgoing, rounds);
+    return incomingPoints === null || outgoingPoints === null ? null : roundFantasyValue(incomingPoints - outgoingPoints);
+  }
+  if (rounds === 1) {
+    const incomingPoints = transferSuggestionForecastNextPoints(incoming, forecastSource);
+    const outgoingPoints = transferSuggestionForecastNextPoints(outgoing, forecastSource);
+    return incomingPoints === null || outgoingPoints === null ? null : roundFantasyValue(incomingPoints - outgoingPoints);
+  }
   if (incoming.roundPoints.length < rounds || outgoing.roundPoints.length < rounds) return null;
   return roundFantasyValue(
     incoming.roundPoints.slice(0, rounds).reduce((total, value) => total + value, 0) -
@@ -1567,8 +1683,11 @@ function sumPlanValues(values: Array<number | null>) {
   return values.reduce<number>((total, value) => total + (value ?? 0), 0);
 }
 
-function transferCandidateScore(player: FantasyPlannerPlayer, horizon: number) {
-  return playerHorizonPoints(player, horizon) + nextFantasyPoints(player) * 1.5 + (player.forecastConfidence ?? 0) - player.price * 0.02;
+function transferCandidateScore(player: FantasyPlannerPlayer, horizon: number, forecastSource: TransferSuggestionForecastSource) {
+  return (transferSuggestionForecastHorizonPoints(player, forecastSource, horizon) ?? 0)
+    + (transferSuggestionForecastNextPoints(player, forecastSource) ?? 0) * 1.5
+    + (player.forecastConfidence ?? 0)
+    - player.price * 0.02;
 }
 
 function combinations<T>(values: T[], count: number): T[][] {
@@ -1619,7 +1738,14 @@ function retainBestTransferPlan(plans: TransferPlanSuggestion[], plan: TransferP
 }
 
 function compareTransferPlans(left: TransferPlanSuggestion, right: TransferPlanSuggestion) {
-  return right.score - left.score || right.horizonDelta - left.horizonDelta || left.transferCount - right.transferCount || left.id.localeCompare(right.id);
+  const leftGoalkeeperReplacements = left.moves.filter((move) => move.positionGroup === "GK").length;
+  const rightGoalkeeperReplacements = right.moves.filter((move) => move.positionGroup === "GK").length;
+  return right.priorityReplacementCount - left.priorityReplacementCount
+    || leftGoalkeeperReplacements - rightGoalkeeperReplacements
+    || right.score - left.score
+    || right.horizonDelta - left.horizonDelta
+    || left.transferCount - right.transferCount
+    || left.id.localeCompare(right.id);
 }
 
 function signedFantasyValue(value: number) {
@@ -1650,6 +1776,46 @@ export function nextAlternativeFantasyPoints(
     return player.alternativeRoundPoints[0] ?? null;
   }
   return player.alternativePredictedFp ?? null;
+}
+
+type TransferSuggestionForecastPlayer = Pick<
+  FantasyPlannerPlayer,
+  "predictedFp" | "roundPoints" | "alternativePredictedFp" | "alternativeRoundPoints" | "foontasyPoints"
+>;
+
+export function transferSuggestionForecastNextPoints(
+  player: TransferSuggestionForecastPlayer,
+  source: TransferSuggestionForecastSource
+) {
+  if (source === "ALT") return finiteTransferForecast(nextAlternativeFantasyPoints(player));
+  if (source === "FFO") return finiteTransferForecast(player.foontasyPoints);
+  return finiteTransferForecast(nextFantasyPoints(player));
+}
+
+export function transferSuggestionForecastHorizonPoints(
+  player: TransferSuggestionForecastPlayer,
+  source: TransferSuggestionForecastSource,
+  horizon: number
+) {
+  const requestedHorizon = Math.max(1, Math.floor(horizon));
+  if (source === "ALT") return playerAlternativeHorizonPoints(player, requestedHorizon);
+  if (source === "FFO") {
+    return requestedHorizon === 1 ? transferSuggestionForecastNextPoints(player, source) : null;
+  }
+  return finiteTransferForecast(playerHorizonPoints(player, requestedHorizon));
+}
+
+function hasTransferSuggestionForecast(
+  player: FantasyPlannerPlayer,
+  source: TransferSuggestionForecastSource,
+  horizon: number
+) {
+  return transferSuggestionForecastNextPoints(player, source) !== null
+    && transferSuggestionForecastHorizonPoints(player, source, horizon) !== null;
+}
+
+function finiteTransferForecast(value: number | null | undefined) {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
 }
 
 export function playerAlternativeHorizonPoints(

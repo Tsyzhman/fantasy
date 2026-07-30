@@ -123,7 +123,7 @@ export function mergeImportedSquadWithFuturePlans(input: {
   rules: FantasySquadRules;
 }) {
   const merged = createFantasySquadRoundPlans(input.importedSelections);
-  const perRoundLimit = fantasyTransferLimitForHorizon(1);
+  const perRoundLimit = fantasyTransferLimitForHorizon(1, input.rules.transferLimitPerRound);
   for (let roundOffset = 1; roundOffset < merged.length; roundOffset += 1) {
     const existing = input.existingPlans[roundOffset];
     const previous = merged[roundOffset - 1].selections;

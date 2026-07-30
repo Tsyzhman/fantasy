@@ -526,6 +526,54 @@ test("transfer plans return at least three alternatives when three valid upgrade
   assert.equal(plans.every((plan) => plan.transferCount === 1 && plan.round1Delta > 0 && (plan.round5Delta ?? 0) > 0), true);
 });
 
+test("transfer plans use the selected FO, ALT, or FFO forecast without treating FFO as a multi-round source", () => {
+  const rules = { ...defaultFantasySquadRules, budgetLimit: 20, maxPlayersPerTeam: 3 };
+  const out = {
+    ...player("1", "Current Mid", "10", "MID", 5, [3, 3, 3]),
+    alternativeRoundPoints: [7, 7, 7],
+    foontasyPoints: 9
+  };
+  const foUpgrade = {
+    ...player("2", "FO Upgrade", "11", "MID", 5, [6, 6, 6]),
+    alternativeRoundPoints: [1, 1, 1],
+    foontasyPoints: 1
+  };
+  const altUpgrade = {
+    ...player("3", "ALT Upgrade", "12", "MID", 5, [4, 4, 4]),
+    alternativeRoundPoints: [10, 10, 10],
+    foontasyPoints: 2
+  };
+  const ffoUpgrade = {
+    ...player("4", "FFO Upgrade", "13", "MID", 5, [5, 5, 5]),
+    alternativeRoundPoints: [2, 2, 2],
+    foontasyPoints: 15
+  };
+  const base = {
+    pool: [out, foUpgrade, altUpgrade, ffoUpgrade],
+    selections: [selectionForPlayer(out, 0)],
+    rules,
+    transferCount: 1,
+    maximumPlans: 3
+  };
+
+  const foPlans = buildTransferPlanSuggestions({ ...base, forecastSource: "FO", horizon: 3 });
+  const altPlans = buildTransferPlanSuggestions({ ...base, forecastSource: "ALT", horizon: 3 });
+  const ffoPlans = buildTransferPlanSuggestions({ ...base, forecastSource: "FFO", horizon: 1 });
+
+  assert.equal(foPlans[0]?.forecastSource, "FO");
+  assert.equal(foPlans[0]?.moves[0]?.inPlayerId, foUpgrade.playerId);
+  assert.equal(foPlans[0]?.captainPlayerId, foUpgrade.playerId);
+  assert.equal(altPlans[0]?.forecastSource, "ALT");
+  assert.equal(altPlans[0]?.moves[0]?.inPlayerId, altUpgrade.playerId);
+  assert.equal(altPlans[0]?.captainPlayerId, altUpgrade.playerId);
+  assert.equal(ffoPlans[0]?.forecastSource, "FFO");
+  assert.equal(ffoPlans[0]?.moves[0]?.inPlayerId, ffoUpgrade.playerId);
+  assert.equal(ffoPlans[0]?.captainPlayerId, ffoUpgrade.playerId);
+  assert.equal(ffoPlans[0]?.round3Delta, null);
+  assert.equal(ffoPlans[0]?.risks.includes("Foontasy covers only the current round"), true);
+  assert.deepEqual(buildTransferPlanSuggestions({ ...base, forecastSource: "FFO", horizon: 3 }), []);
+});
+
 test("linked transfer plan can fund an upgrade that is invalid as a single move", () => {
   const rules = { ...defaultFantasySquadRules, budgetLimit: 10, maxPlayersPerTeam: 3 };
   const expensiveOut = player("1", "Old Forward", "10", "FWD", 8, [2, 2, 2, 2, 2]);
@@ -550,6 +598,106 @@ test("linked transfer plan can fund an upgrade that is invalid as a single move"
   assert.equal(linked.round5Delta, 17.5);
   assert.equal(linked.paidTransferLoss, 4);
   assert.equal(linked.netHorizonDelta, 13.5);
+  assert.equal(linked.squadCostAfter, 10);
+  assert.equal(linked.bankAfter, 0);
+});
+
+test("transfer plans put zero-FP starting outfield players ahead of higher raw gains", () => {
+  const rules = { ...defaultFantasySquadRules, budgetLimit: 40, maxPlayersPerTeam: 3 };
+  const zeroStarter = player("1", "Zero Def", "10", "DEF", 5, [0, 0, 0]);
+  const projectedStarter = player("2", "Projected Mid", "20", "MID", 5, [4, 4, 4]);
+  const defUpgrade = player("3", "Def Upgrade", "30", "DEF", 5, [4, 4, 4]);
+  const midUpgrade = player("4", "Mid Upgrade", "40", "MID", 5, [20, 20, 20]);
+
+  const plans = buildTransferPlanSuggestions({
+    pool: [zeroStarter, projectedStarter, defUpgrade, midUpgrade],
+    selections: [selectionForPlayer(zeroStarter, 0, true), selectionForPlayer(projectedStarter, 1, true)],
+    rules,
+    forecastSource: "FO",
+    horizon: 3,
+    transferCount: 1,
+    maximumPlans: 1,
+    freeTransfers: 3,
+    paidTransferPointCost: 0
+  });
+
+  assert.equal(plans.length > 0, true);
+  assert.equal(plans[0]?.moves[0]?.outPlayerId, zeroStarter.playerId);
+  assert.equal(plans[0]?.priorityReplacementCount, 1);
+});
+
+test("transfer plans never replace the bench goalkeeper and consider the starter only at zero FP", () => {
+  const rules = { ...defaultFantasySquadRules, budgetLimit: 30, maxPlayersPerTeam: 3 };
+  const zeroStartingGk = player("1", "Zero Starting GK", "10", "GK", 5, [0, 0, 0]);
+  const benchGk = player("2", "Bench GK", "20", "GK", 5, [0, 0, 0]);
+  const gkUpgrade = player("3", "GK Upgrade", "30", "GK", 5, [5, 5, 5]);
+  const zeroPlans = buildTransferPlanSuggestions({
+    pool: [zeroStartingGk, benchGk, gkUpgrade],
+    selections: [selectionForPlayer(zeroStartingGk, 0, true), selectionForPlayer(benchGk, 1, false)],
+    rules,
+    forecastSource: "FO",
+    horizon: 3,
+    transferCount: 1,
+    maximumPlans: 3
+  });
+
+  assert.equal(zeroPlans.length > 0, true);
+  assert.equal(zeroPlans.every((plan) => plan.moves.every((move) => move.outPlayerId === zeroStartingGk.playerId)), true);
+
+  const nonZeroStartingGk = { ...zeroStartingGk, roundPoints: [2, 2, 2], predictedFp: 2 };
+  const nonZeroPlans = buildTransferPlanSuggestions({
+    pool: [nonZeroStartingGk, benchGk, gkUpgrade],
+    selections: [selectionForPlayer(nonZeroStartingGk, 0, true), selectionForPlayer(benchGk, 1, false)],
+    rules,
+    forecastSource: "FO",
+    horizon: 3,
+    transferCount: 1,
+    maximumPlans: 3
+  });
+
+  assert.deepEqual(nonZeroPlans, []);
+});
+
+test("an eligible zero-FP starting goalkeeper stays below field-player transfers", () => {
+  const rules = { ...defaultFantasySquadRules, budgetLimit: 40, maxPlayersPerTeam: 3 };
+  const zeroStartingGk = player("1", "Zero Starting GK", "10", "GK", 5, [0, 0, 0]);
+  const benchGk = player("2", "Bench GK", "20", "GK", 5, [0, 0, 0]);
+  const fieldStarter = player("3", "Current Mid", "30", "MID", 5, [3, 3, 3]);
+  const gkUpgrade = player("4", "GK Upgrade", "40", "GK", 5, [12, 12, 12]);
+  const fieldUpgrade = player("5", "Mid Upgrade", "50", "MID", 5, [4, 4, 4]);
+  const plans = buildTransferPlanSuggestions({
+    pool: [zeroStartingGk, benchGk, fieldStarter, gkUpgrade, fieldUpgrade],
+    selections: [
+      selectionForPlayer(zeroStartingGk, 0, true),
+      selectionForPlayer(benchGk, 1, false),
+      selectionForPlayer(fieldStarter, 2, true)
+    ],
+    rules,
+    forecastSource: "FO",
+    horizon: 3,
+    transferCount: 1,
+    maximumPlans: 3
+  });
+
+  assert.equal(plans[0]?.moves[0]?.outPlayerId, fieldStarter.playerId);
+});
+
+test("transfer plan recommends the best projected starter as captain after transfers", () => {
+  const rules = { ...defaultFantasySquadRules, budgetLimit: 30, maxPlayersPerTeam: 3 };
+  const zeroStarter = player("1", "Zero Def", "10", "DEF", 5, [0, 0, 0]);
+  const captainCandidate = player("2", "Existing Forward", "20", "FWD", 5, [9, 9, 9]);
+  const defUpgrade = player("3", "Def Upgrade", "30", "DEF", 5, [4, 4, 4]);
+  const plans = buildTransferPlanSuggestions({
+    pool: [zeroStarter, captainCandidate, defUpgrade],
+    selections: [selectionForPlayer(zeroStarter, 0, true), selectionForPlayer(captainCandidate, 1, true)],
+    rules,
+    forecastSource: "FO",
+    horizon: 3,
+    transferCount: 1,
+    maximumPlans: 1
+  });
+
+  assert.equal(plans[0]?.captainPlayerId, captainCandidate.playerId);
 });
 
 test("transfer plans reject fast-path candidates that break the budget or team cap", () => {
@@ -614,6 +762,11 @@ test("transfer limit scales with forecast horizon", () => {
   assert.equal(fantasyTransferLimitForHorizon(1), 3);
   assert.equal(fantasyTransferLimitForHorizon(5), 15);
   assert.equal(fantasyTransferLimitForHorizon(0), 3);
+});
+
+test("configured RPL transfer limit remains three regardless of forecast horizon", () => {
+  assert.equal(fantasyTransferLimitForHorizon(1, 3), 3);
+  assert.equal(fantasyTransferLimitForHorizon(5, 3), 3);
 });
 
 test("forecast horizon accepts only configured options", () => {

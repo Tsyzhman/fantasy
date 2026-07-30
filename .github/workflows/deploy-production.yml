@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       dry_run:
-        description: Print the remote deployment command without executing it.
+        description: Build and verify the immutable release without changing production.
         required: true
         default: "true"
         type: choice
@@ -12,21 +12,35 @@ on:
           - "true"
           - "false"
       ref:
-        description: Git ref to deploy on the production host.
+        description: Git ref to package. It must contain the current main branch.
         required: true
         default: main
 
+permissions:
+  contents: read
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
 jobs:
-  deploy:
+  package-and-deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 45
     environment: production
 
     steps:
-      - name: Checkout
+      - name: Checkout exact requested ref
         uses: actions/checkout@v6
         with:
           ref: ${{ inputs.ref }}
+          fetch-depth: 0
+
+      - name: Fetch canonical branch history
+        run: git fetch --prune origin '+refs/heads/*:refs/remotes/origin/*'
+
+      - name: Reject refs that omit current main
+        run: git merge-base --is-ancestor origin/main HEAD
 
       - name: Setup Node.js
         uses: actions/setup-node@v6
@@ -40,57 +54,139 @@ jobs:
       - name: Generate Prisma client
         run: npm run prisma:generate
 
-      - name: Run checks before deploy
+      - name: Verify committed release source
+        run: npm run release:verify-source -- --ci
+
+      - name: Run checks before packaging
         run: npm run check
 
+      - name: Package exact Git commit
+        id: release
+        shell: bash
+        run: |
+          set -euo pipefail
+          commit="$(git rev-parse HEAD)"
+          tree="$(git rev-parse 'HEAD^{tree}')"
+          version="$(node -p "require('./package.json').version")"
+          timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
+          release="${timestamp}-v${version}-${commit:0:7}"
+          archive="$RUNNER_TEMP/fantasy-scout-release-${release}.tar.gz"
+          checksum_file="${archive}.sha256"
+          git archive --format=tar.gz --output="$archive" HEAD
+          checksum="$(sha256sum "$archive" | awk '{print $1}')"
+          printf '%s  %s\n' "$checksum" "$(basename "$archive")" > "$checksum_file"
+          {
+            echo "archive=$archive"
+            echo "checksum_file=$checksum_file"
+            echo "checksum=$checksum"
+            echo "commit=$commit"
+            echo "tree=$tree"
+            echo "version=$version"
+            echo "release=$release"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Retain immutable release archive
+        uses: actions/upload-artifact@v6
+        with:
+          name: production-release-${{ steps.release.outputs.release }}
+          path: |
+            ${{ steps.release.outputs.archive }}
+            ${{ steps.release.outputs.checksum_file }}
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Report dry run
+        if: inputs.dry_run == 'true'
+        run: |
+          printf 'DRY_RUN release=%s version=%s commit=%s tree=%s sha256=%s\n' \
+            '${{ steps.release.outputs.release }}' \
+            '${{ steps.release.outputs.version }}' \
+            '${{ steps.release.outputs.commit }}' \
+            '${{ steps.release.outputs.tree }}' \
+            '${{ steps.release.outputs.checksum }}'
+
       - name: Prepare SSH key
+        if: inputs.dry_run == 'false'
         env:
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
         run: |
-          test -n "$DEPLOY_SSH_KEY"
+          set -euo pipefail
+          : "${DEPLOY_SSH_KEY:?DEPLOY_SSH_KEY secret is required}"
+          : "${DEPLOY_HOST:?DEPLOY_HOST secret is required}"
+          DEPLOY_PORT="${DEPLOY_PORT:-22}"
           mkdir -p ~/.ssh
           chmod 700 ~/.ssh
           printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
-
-      - name: Deploy over SSH
-        env:
-          DEPLOY_DRY_RUN: ${{ inputs.dry_run }}
-          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
-          DEPLOY_PATH: ${{ secrets.DEPLOY_PATH }}
-          DEPLOY_PM2_PROCESS: ${{ secrets.DEPLOY_PM2_PROCESS }}
-          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
-          DEPLOY_REF: ${{ inputs.ref }}
-          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
-        run: |
-          set -euo pipefail
-          : "${DEPLOY_HOST:?DEPLOY_HOST secret is required}"
-          : "${DEPLOY_PATH:?DEPLOY_PATH secret is required}"
-          : "${DEPLOY_PM2_PROCESS:?DEPLOY_PM2_PROCESS secret is required}"
-          : "${DEPLOY_USER:?DEPLOY_USER secret is required}"
-          DEPLOY_PORT="${DEPLOY_PORT:-22}"
-
           ssh-keyscan -p "$DEPLOY_PORT" "$DEPLOY_HOST" >> ~/.ssh/known_hosts
 
-          remote_command=$(cat <<EOF
+      - name: Reject production history rollback
+        if: inputs.dry_run == 'false'
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          CANDIDATE_COMMIT: ${{ steps.release.outputs.commit }}
+        run: |
           set -euo pipefail
-          cd "$DEPLOY_PATH"
-          git fetch origin "$DEPLOY_REF"
-          git checkout "$DEPLOY_REF"
-          git pull --ff-only origin "$DEPLOY_REF"
-          npm ci --no-audit --no-fund
-          npm run prisma:generate
-          npm run prisma:migrate:deploy
-          npm run build
-          test -f .next/prerender-manifest.json
-          pm2 restart "$DEPLOY_PM2_PROCESS" --update-env
-          pm2 save
-          EOF
-          )
-
-          if [ "$DEPLOY_DRY_RUN" = "true" ]; then
-            printf '%s\n' "$remote_command"
-            exit 0
+          : "${DEPLOY_USER:?DEPLOY_USER secret is required}"
+          DEPLOY_PORT="${DEPLOY_PORT:-22}"
+          current_commit="$(
+            ssh -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
+              "test -f /var/www/fantasy-scout-current/.release-commit && cat /var/www/fantasy-scout-current/.release-commit || true"
+          )"
+          if [[ "$current_commit" =~ ^[0-9a-f]{40}$ ]]; then
+            git cat-file -e "${current_commit}^{commit}"
+            git merge-base --is-ancestor "$current_commit" "$CANDIDATE_COMMIT"
+          else
+            printf 'Current production predates commit manifests; first guarded deployment is allowed.\n'
           fi
 
-          ssh -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" "$remote_command"
+      - name: Transfer immutable archive
+        if: inputs.dry_run == 'false'
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          LOCAL_ARCHIVE: ${{ steps.release.outputs.archive }}
+          RELEASE: ${{ steps.release.outputs.release }}
+        run: |
+          set -euo pipefail
+          DEPLOY_PORT="${DEPLOY_PORT:-22}"
+          scp -i ~/.ssh/deploy_key -P "$DEPLOY_PORT" \
+            "$LOCAL_ARCHIVE" \
+            "$DEPLOY_USER@$DEPLOY_HOST:/tmp/fantasy-scout-release-${RELEASE}.tar.gz"
+
+      - name: Promote Docker release
+        if: inputs.dry_run == 'false'
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          RELEASE: ${{ steps.release.outputs.release }}
+          RELEASE_CHECKSUM: ${{ steps.release.outputs.checksum }}
+          RELEASE_COMMIT: ${{ steps.release.outputs.commit }}
+          RELEASE_TREE: ${{ steps.release.outputs.tree }}
+          RELEASE_VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          set -euo pipefail
+          DEPLOY_PORT="${DEPLOY_PORT:-22}"
+          remote_archive="/tmp/fantasy-scout-release-${RELEASE}.tar.gz"
+          ssh -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
+            "bash -s -- '$remote_archive' '$RELEASE_CHECKSUM' '$RELEASE' '$RELEASE_COMMIT' '$RELEASE_TREE' '$RELEASE_VERSION'" \
+            < scripts/deploy-production-docker.sh
+
+      - name: Verify exact production revision
+        if: inputs.dry_run == 'false'
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          RELEASE_COMMIT: ${{ steps.release.outputs.commit }}
+        run: |
+          set -euo pipefail
+          DEPLOY_PORT="${DEPLOY_PORT:-22}"
+          ssh -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
+            "docker exec fantasy-scout-web node -e \"fetch('http://127.0.0.1:3000/api/health').then(async r=>{const p=await r.json();console.log(JSON.stringify(p));process.exit(r.ok&&p.release?.commit===process.argv[1]?0:1)}).catch(()=>process.exit(1))\" '$RELEASE_COMMIT'"

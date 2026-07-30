@@ -388,6 +388,10 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: Ing
             forceReparse: scope.force_reparse,
             requireDetailedPayload: scope.require_detailed_payloads
           });
+          // Detailed match page data may omit round, score and status even
+          // though the league fixture list has them. Keep fixture metadata
+          // authoritative after detailed stats have been persisted.
+          await upsert_discovered_fixture(prisma, fixture, BigInt(canonicalLeagueId), scope.season);
           const shouldCalculateFantasy = await ensureNormalizedForFantasy(prisma, result, ruleset.id);
           if (shouldCalculateFantasy) {
             await calculate_fantasy_points_for_match(prisma, result.matchId, ruleset.id);

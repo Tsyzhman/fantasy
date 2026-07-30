@@ -1,16 +1,44 @@
 import { prisma } from "@/lib/db";
 import { createLogger } from "@/lib/logger";
-import { foontasySyncConfigFromEnv, syncFoontasyForecasts } from "@/machete/foontasy_forecasts";
+import {
+  foontasySyncConfigFromEnv,
+  syncFoontasyForecasts,
+  type FoontasySyncConfig
+} from "@/machete/foontasy_forecasts";
 
-const DEFAULT_WEEKDAY = 4;
-const DEFAULT_SYNC_TIME = "04:30";
 const DEFAULT_TIME_ZONE = "Europe/Moscow";
+const SYNC_LEAD_TIME_MS = 10 * 60 * 60 * 1_000;
+const RETRY_DELAY_MS = 30 * 60 * 1_000;
+const MAXIMUM_PLANNING_SLEEP_MS = 6 * 60 * 60 * 1_000;
+const SCHEDULE_LOOKBACK_MS = 14 * 24 * 60 * 60 * 1_000;
 const logger = createLogger("foontasy:scheduler");
 
 type SchedulerState = {
   running: boolean;
   started: boolean;
+  retryRoundNumber?: number;
+  retryNotBefore?: Date;
   timer?: ReturnType<typeof setTimeout>;
+};
+
+export type FoontasyScheduleMatch = {
+  round: string | null;
+  matchDate: Date | null;
+  finished: boolean;
+  cancelled: boolean;
+};
+
+export type FoontasyRoundForecastFetch = {
+  roundNumber: number;
+  fetchedAt: Date | null;
+};
+
+export type FoontasyRoundRun = {
+  roundNumber: number;
+  firstKickoffAt: Date;
+  dueAt: Date;
+  delayMs: number;
+  label: string;
 };
 
 const globalForScheduler = globalThis as unknown as {
@@ -19,9 +47,12 @@ const globalForScheduler = globalThis as unknown as {
 
 export function startFoontasyForecastScheduler() {
   if (process.env.FOONTASY_SYNC_ENABLED !== "true") return;
-  if (!process.env.FOONTASY_EMAIL?.trim() || !process.env.FOONTASY_PASSWORD?.trim()) {
+  try {
+    foontasySyncConfigFromEnv();
+  } catch (error) {
     logger.warn("Scheduled Foontasy sync is not configured.", {
-      requiredEnvironment: ["FOONTASY_EMAIL", "FOONTASY_PASSWORD"]
+      requiredEnvironment: ["FOONTASY_EMAIL", "FOONTASY_PASSWORD"],
+      error
     });
     return;
   }
@@ -30,112 +61,180 @@ export function startFoontasyForecastScheduler() {
   if (state.started) return;
   state.started = true;
   globalForScheduler.foontasyForecastScheduler = state;
-  scheduleNextRun(state);
+  void planNextRun(state);
 }
 
-function scheduleNextRun(state: SchedulerState) {
-  const schedule = nextFoontasyWeeklyRun(new Date(), {
-    weekday: parseWeekday(process.env.FOONTASY_SYNC_WEEKDAY),
-    time: process.env.FOONTASY_SYNC_TIME ?? DEFAULT_SYNC_TIME,
-    timeZone: process.env.FOONTASY_SYNC_TIMEZONE ?? DEFAULT_TIME_ZONE
-  });
+async function planNextRun(state: SchedulerState) {
+  try {
+    const now = new Date();
+    const config = foontasySyncConfigFromEnv();
+    const schedule = await loadNextFoontasyRoundRun(now, config);
+    if (!schedule) {
+      state.retryRoundNumber = undefined;
+      state.retryNotBefore = undefined;
+      scheduleTimer(state, MAXIMUM_PLANNING_SLEEP_MS);
+      logger.info("No pending Foontasy round was found; the fixture schedule will be checked again.", {
+        recheckInMs: MAXIMUM_PLANNING_SLEEP_MS
+      });
+      return;
+    }
+
+    if (state.retryRoundNumber !== schedule.roundNumber) {
+      state.retryRoundNumber = undefined;
+      state.retryNotBefore = undefined;
+    }
+
+    const isDue = schedule.dueAt.getTime() <= now.getTime();
+    const retryAt = isDue && state.retryRoundNumber === schedule.roundNumber && state.retryNotBefore && state.retryNotBefore > now
+      ? state.retryNotBefore
+      : null;
+    const wakeAt = retryAt ?? (isDue ? now : schedule.dueAt);
+    const delayMs = Math.min(Math.max(wakeAt.getTime() - now.getTime(), 0), MAXIMUM_PLANNING_SLEEP_MS);
+    scheduleTimer(state, delayMs, isDue ? schedule.roundNumber : undefined);
+    logger.info("Scheduled Foontasy forecast sync before the first match of the round.", {
+      roundNumber: schedule.roundNumber,
+      firstKickoffAt: schedule.firstKickoffAt.toISOString(),
+      dueAt: schedule.dueAt.toISOString(),
+      scheduledFor: schedule.label,
+      delayMs,
+      retryAt: retryAt?.toISOString() ?? null
+    });
+  } catch (error) {
+    logger.error("Foontasy schedule planning failed; existing forecasts were preserved.", { error });
+    scheduleTimer(state, RETRY_DELAY_MS);
+  }
+}
+
+function scheduleTimer(state: SchedulerState, delayMs: number, expectedRoundNumber?: number) {
   state.timer = setTimeout(async () => {
-    await runFoontasyForecastSyncNow(state);
-    scheduleNextRun(state);
-  }, schedule.delayMs);
+    if (expectedRoundNumber !== undefined) {
+      const succeeded = await runFoontasyForecastSyncNow(state, expectedRoundNumber);
+      if (succeeded) {
+        state.retryRoundNumber = undefined;
+        state.retryNotBefore = undefined;
+      } else {
+        state.retryRoundNumber = expectedRoundNumber;
+        state.retryNotBefore = new Date(Date.now() + RETRY_DELAY_MS);
+      }
+    }
+    await planNextRun(state);
+  }, delayMs);
   state.timer.unref?.();
-  logger.info("Scheduled weekly Foontasy forecast sync.", { scheduledFor: schedule.label });
 }
 
-async function runFoontasyForecastSyncNow(state: SchedulerState) {
-  if (state.running) return;
+async function runFoontasyForecastSyncNow(state: SchedulerState, expectedRoundNumber: number) {
+  if (state.running) return false;
   state.running = true;
   try {
     const result = await syncFoontasyForecasts(prisma, foontasySyncConfigFromEnv());
-    logger.info("Foontasy forecasts synchronized.", result);
+    if (result.roundNumber !== expectedRoundNumber) {
+      logger.warn("Foontasy source did not return the scheduled round; it will be retried.", {
+        expectedRoundNumber,
+        returnedRoundNumber: result.roundNumber,
+        rows: result.rows
+      });
+      return false;
+    }
+    logger.info("Foontasy forecasts synchronized.", { expectedRoundNumber, ...result });
+    return true;
   } catch (error) {
-    logger.error("Weekly Foontasy forecast sync failed; existing forecasts were preserved.", { error });
+    logger.error("Foontasy forecast sync failed; existing forecasts were preserved.", { expectedRoundNumber, error });
+    return false;
   } finally {
     state.running = false;
   }
 }
 
-export function nextFoontasyWeeklyRun(
+async function loadNextFoontasyRoundRun(now: Date, config: FoontasySyncConfig) {
+  const matches = await prisma.coreMatch.findMany({
+    where: {
+      leagueId: config.leagueId,
+      season: config.season,
+      cancelled: false,
+      matchDate: { gte: new Date(now.getTime() - SCHEDULE_LOOKBACK_MS) }
+    },
+    select: { round: true, matchDate: true, finished: true, cancelled: true }
+  });
+  const roundNumbers = [...new Set(matches.flatMap((match) => {
+    const roundNumber = parseRoundNumber(match.round);
+    return roundNumber === null ? [] : [roundNumber];
+  }))];
+  const forecasts = roundNumbers.length === 0
+    ? []
+    : await prisma.foontasyForecast.groupBy({
+      by: ["roundNumber"],
+      where: { leagueId: config.leagueId, season: config.season, roundNumber: { in: roundNumbers } },
+      _max: { fetchedAt: true }
+    });
+  return nextFoontasyRoundRun(
+    matches,
+    forecasts.map((forecast) => ({ roundNumber: forecast.roundNumber, fetchedAt: forecast._max.fetchedAt })),
+    now,
+    { timeZone: process.env.FOONTASY_SYNC_TIMEZONE ?? DEFAULT_TIME_ZONE }
+  );
+}
+
+/**
+ * Chooses the earliest active RPL round whose Foontasy snapshot has not yet
+ * been captured at or after the required cutoff: ten hours before kickoff.
+ */
+export function nextFoontasyRoundRun(
+  matches: readonly FoontasyScheduleMatch[],
+  forecasts: readonly FoontasyRoundForecastFetch[],
   now: Date,
-  options: { weekday?: number; time?: string; timeZone?: string } = {}
-) {
-  const weekday = normalizeWeekday(options.weekday ?? DEFAULT_WEEKDAY);
+  options: { timeZone?: string } = {}
+): FoontasyRoundRun | null {
+  const rounds = new Map<number, { firstKickoffAt: Date; hasOpenMatch: boolean }>();
+  for (const match of matches) {
+    const roundNumber = parseRoundNumber(match.round);
+    if (roundNumber === null || match.cancelled || !match.matchDate) continue;
+    const existing = rounds.get(roundNumber);
+    rounds.set(roundNumber, {
+      firstKickoffAt: !existing || match.matchDate < existing.firstKickoffAt ? match.matchDate : existing.firstKickoffAt,
+      hasOpenMatch: Boolean(existing?.hasOpenMatch || !match.finished)
+    });
+  }
+
+  const fetchedAtByRound = new Map<number, Date>();
+  for (const forecast of forecasts) {
+    if (!forecast.fetchedAt) continue;
+    const previous = fetchedAtByRound.get(forecast.roundNumber);
+    if (!previous || forecast.fetchedAt > previous) fetchedAtByRound.set(forecast.roundNumber, forecast.fetchedAt);
+  }
+
   const timeZone = options.timeZone ?? DEFAULT_TIME_ZONE;
-  const { hour, minute } = parseSyncTime(options.time ?? DEFAULT_SYNC_TIME);
-  const nowParts = getZonedParts(now, timeZone);
-  const currentWeekday = new Date(Date.UTC(nowParts.year, nowParts.month - 1, nowParts.day)).getUTCDay();
-  const daysAhead = (weekday - currentWeekday + 7) % 7;
-  let target = zonedDateTimeToUtc(nowParts.year, nowParts.month, nowParts.day + daysAhead, hour, minute, timeZone);
-  if (target.getTime() <= now.getTime()) {
-    target = zonedDateTimeToUtc(nowParts.year, nowParts.month, nowParts.day + daysAhead + 7, hour, minute, timeZone);
+  for (const [roundNumber, round] of [...rounds.entries()].sort((left, right) => left[1].firstKickoffAt.getTime() - right[1].firstKickoffAt.getTime())) {
+    if (!round.hasOpenMatch) continue;
+    const dueAt = new Date(round.firstKickoffAt.getTime() - SYNC_LEAD_TIME_MS);
+    const fetchedAt = fetchedAtByRound.get(roundNumber);
+    if (fetchedAt && fetchedAt.getTime() >= dueAt.getTime()) continue;
+    return {
+      roundNumber,
+      firstKickoffAt: round.firstKickoffAt,
+      dueAt,
+      delayMs: Math.max(dueAt.getTime() - now.getTime(), 0),
+      label: `${formatZonedDateTime(dueAt, timeZone)} ${timeZone}`
+    };
   }
-  return {
-    delayMs: target.getTime() - now.getTime(),
-    label: `${formatZonedDate(target, timeZone)} ${pad(hour)}:${pad(minute)} ${timeZone}`
-  };
+  return null;
 }
 
-function parseWeekday(value: string | undefined) {
-  if (!value?.trim()) return DEFAULT_WEEKDAY;
-  return normalizeWeekday(Number.parseInt(value, 10));
+function parseRoundNumber(value: string | null) {
+  const match = /\d+/.exec(value ?? "");
+  if (!match) return null;
+  const roundNumber = Number(match[0]);
+  return Number.isSafeInteger(roundNumber) && roundNumber > 0 ? roundNumber : null;
 }
 
-function normalizeWeekday(value: number) {
-  return Number.isInteger(value) && value >= 0 && value <= 6 ? value : DEFAULT_WEEKDAY;
-}
-
-function parseSyncTime(value: string) {
-  const match = /^(\d{1,2}):(\d{2})$/.exec(value);
-  if (!match) return { hour: 4, minute: 30 };
-  const hour = Number(match[1]);
-  const minute = Number(match[2]);
-  return hour <= 23 && minute <= 59 ? { hour, minute } : { hour: 4, minute: 30 };
-}
-
-function zonedDateTimeToUtc(year: number, month: number, day: number, hour: number, minute: number, timeZone: string) {
-  let utc = Date.UTC(year, month - 1, day, hour, minute, 0);
-  for (let index = 0; index < 2; index += 1) {
-    utc = Date.UTC(year, month - 1, day, hour, minute, 0) - getTimeZoneOffsetMs(new Date(utc), timeZone);
-  }
-  return new Date(utc);
-}
-
-function getTimeZoneOffsetMs(date: Date, timeZone: string) {
-  const parts = getZonedParts(date, timeZone);
-  return Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second) - date.getTime();
-}
-
-function getZonedParts(date: Date, timeZone: string) {
+function formatZonedDateTime(date: Date, timeZone: string) {
   const values = Object.fromEntries(new Intl.DateTimeFormat("en-US", {
     day: "2-digit",
     hour: "2-digit",
     hourCycle: "h23",
     minute: "2-digit",
     month: "2-digit",
-    second: "2-digit",
     timeZone,
     year: "numeric"
   }).formatToParts(date).map((part) => [part.type, part.value]));
-  return {
-    year: Number(values.year),
-    month: Number(values.month),
-    day: Number(values.day),
-    hour: Number(values.hour),
-    minute: Number(values.minute),
-    second: Number(values.second)
-  };
-}
-
-function formatZonedDate(date: Date, timeZone: string) {
-  const parts = getZonedParts(date, timeZone);
-  return `${parts.year}-${pad(parts.month)}-${pad(parts.day)}`;
-}
-
-function pad(value: number) {
-  return String(value).padStart(2, "0");
+  return `${values.year}-${values.month}-${values.day} ${values.hour}:${values.minute}`;
 }

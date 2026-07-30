@@ -212,6 +212,10 @@ export async function ingest_scope(
         forceReparse: scope.force_reparse,
         requireDetailedPayload: scope.require_detailed_payloads
       });
+      // The unsigned detailed FotMob payload can omit fixture-list metadata
+      // such as round, score and status. Re-apply the authoritative fixture
+      // entry after parsing so null detail fields cannot erase those values.
+      await upsert_discovered_fixture(prisma, fixture, canonicalLeagueId, scope.season);
       if (result.skipped) skipped += 1;
       else fetched += result.fetched ? 1 : 0;
       if (!result.skipped) affectedMatchIds.push(result.matchId);

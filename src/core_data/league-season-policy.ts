@@ -52,6 +52,10 @@ const tournamentMaxMatches = new Map<number, number>([
 ]);
 
 const disabledLeagueIngestionIds = new Set([
+  // Temporarily disabled: FotMob ignores requested season labels for this
+  // tournament and can abort the shared incremental ingestion before later leagues.
+  "supercopa-de-espana",
+
   // National-team competitions except World Cup, EURO, and Copa America.
   "uefa-nations-league-a",
   "world-cup-qualification-uefa",
@@ -164,7 +168,11 @@ export function scopesForCurrentSeasonLeagueBackfill(leagueId = QUICK_BACKFILL_L
 }
 
 export function scopesForIncrementalUpdate(configs: readonly LeagueIngestionConfig[] = enabledLeagueIngestionConfigs(), referenceDate = new Date()): IngestionScope[] {
-  return configs.flatMap((config) => {
+  const eligibleConfigs = isNationalLeagueOnlyIncrementalWindow(referenceDate)
+    ? configs.filter((config) => config.calendar_type !== "tournament")
+    : configs;
+
+  return eligibleConfigs.flatMap((config) => {
     const seasons = config.calendar_type === "tournament" ? seasonsForInitialBackfill(config, referenceDate) : [seasonForIncrementalUpdate(config, referenceDate)];
     return seasons.map((season) =>
       createIngestionScope({
@@ -180,6 +188,13 @@ export function scopesForIncrementalUpdate(configs: readonly LeagueIngestionConf
       })
     );
   });
+}
+
+export function isNationalLeagueOnlyIncrementalWindow(referenceDate: Date) {
+  const month = referenceDate.getUTCMonth() + 1;
+  const day = referenceDate.getUTCDate();
+  const monthDay = month * 100 + day;
+  return monthDay >= 605 && monthDay <= 901;
 }
 
 export function seasonsForInitialBackfill(config: LeagueIngestionConfig, referenceDate = new Date()): readonly string[] {

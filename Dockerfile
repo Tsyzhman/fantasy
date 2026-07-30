@@ -34,10 +34,18 @@ FROM node:20-bookworm-slim AS runtime
 
 WORKDIR /app
 
+ARG APP_RELEASE_VERSION=development
+ARG APP_RELEASE_COMMIT=unknown
+
+LABEL org.opencontainers.image.version="${APP_RELEASE_VERSION}"
+LABEL org.opencontainers.image.revision="${APP_RELEASE_COMMIT}"
+
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV HOSTNAME=0.0.0.0
 ENV PORT=3000
+ENV APP_RELEASE_VERSION="${APP_RELEASE_VERSION}"
+ENV APP_RELEASE_COMMIT="${APP_RELEASE_COMMIT}"
 
 RUN apt-get update \
   && apt-get install -y --no-install-recommends ca-certificates openssl \
