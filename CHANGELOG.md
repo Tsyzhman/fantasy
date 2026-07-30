@@ -5,6 +5,17 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.2.4 - 2026-07-30
+
+### Fixed
+
+- Auto-pick now uses the same operational source-data readiness gate as
+  transfer suggestions. Audit-only warnings no longer disable a planner that
+  has fresh player/fixture ingestion and real non-zero projections.
+- The production squad journey reads the rendered league-season scope instead
+  of waiting for the season selector that the current one-season UI no longer
+  renders.
+
 ## 0.2.3 - 2026-07-30
 
 ### Fixed

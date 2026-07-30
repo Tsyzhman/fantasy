@@ -70,7 +70,7 @@ import {
 import { forecastPointsPerPrice } from "@/machete/fantasy-value-efficiency";
 import type { FormulaAdaptationForecastKey } from "@/machete/formula_adaptations";
 import type { SavedFantasySquad, SavedFantasySquadOption } from "@/machete/squad_planner";
-import { plannerReadinessBlocksTransferSuggestions, type PlannerReadiness } from "@/machete/planner_readiness";
+import { plannerReadinessBlocksForecastActions, type PlannerReadiness } from "@/machete/planner_readiness";
 import type { SquadFilterPreset, SquadFilterPresetFilters } from "@/machete/squad-filter-presets";
 import {
   defaultSquadTableColumns,
@@ -315,9 +315,10 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
     () => rounds.length > 0 && players.some((player) => player.roundPoints.some((value) => Number.isFinite(value) && value !== 0)),
     [players, rounds.length]
   );
-  const plannerForecastReady = readiness.ready && hasRealRoundProjections;
+  const forecastActionsBlockedByReadiness = plannerReadinessBlocksForecastActions(readiness);
+  const plannerForecastReady = !forecastActionsBlockedByReadiness && hasRealRoundProjections;
   const transferSuggestionHorizon = transferSuggestionForecastSource === "FFO" ? 1 : horizon;
-  const transferSuggestionsBlockedByReadiness = plannerReadinessBlocksTransferSuggestions(readiness);
+  const transferSuggestionsBlockedByReadiness = forecastActionsBlockedByReadiness;
   const hasSelectedTransferSourceForecasts = useMemo(() => {
     if (transferSuggestionForecastSource === "FFO" && activeRoundOffset > 0) return false;
     return players.some((player) => {
@@ -1226,7 +1227,12 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
   const nextRoundFoontasyTotal = summary.starterPlayers.length === rules.starterSize ? nextRoundFoontasy.total : null;
 
   return (
-    <div className="mt-4 flex flex-col gap-4">
+    <div
+      className="mt-4 flex flex-col gap-4"
+      data-fantasy-squad-planner
+      data-league-id={leagueId}
+      data-season={season}
+    >
       <div className="order-1 xl:hidden">
         <SegmentedControl value={mobileTab} onChange={setMobileTab} options={mobileTabs} className="w-full justify-between" size="sm" />
       </div>

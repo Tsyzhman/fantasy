@@ -79,7 +79,7 @@ test("transfer suggestions expose FO, ALT, and FFO, while FFO remains a current-
   assert.match(squadPlannerSource, /value: "FFO", label: "FFO"/);
   assert.match(squadPlannerSource, /FFO is published only for the current round/);
   assert.match(squadPlannerSource, /horizon: transferSuggestionHorizon/);
-  assert.match(squadPlannerSource, /plannerReadinessBlocksTransferSuggestions/);
+  assert.match(squadPlannerSource, /plannerReadinessBlocksForecastActions/);
   assert.match(squadPlannerSource, /freeTransfers: usesRplTransferRules \? transferLimit : undefined/);
   assert.match(squadPlannerSource, /paidTransferPointCost: usesRplTransferRules \? 0 : undefined/);
   assert.match(squadPlannerSource, /TransferSuggestionPlayerCard/);
@@ -88,6 +88,12 @@ test("transfer suggestions expose FO, ALT, and FFO, while FFO remains a current-
   assert.doesNotMatch(squadPlannerSource, /Paid-transfer cost is not configured/);
   assert.doesNotMatch(squadPlannerSource, /The data-quality audit needs attention/);
   assert.doesNotMatch(squadPageSource, /transfer recommendations use the available forecasts/);
+});
+
+test("auto-pick ignores audit-only warnings but still requires real projections and fresh source data", () => {
+  assert.match(squadPlannerSource, /const forecastActionsBlockedByReadiness = plannerReadinessBlocksForecastActions\(readiness\)/);
+  assert.match(squadPlannerSource, /const plannerForecastReady = !forecastActionsBlockedByReadiness && hasRealRoundProjections/);
+  assert.doesNotMatch(squadPlannerSource, /const plannerForecastReady = readiness\.ready/);
 });
 
 test("top forecast metrics use only the starting XI and expose Alt totals", () => {

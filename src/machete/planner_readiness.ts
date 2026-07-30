@@ -47,7 +47,7 @@ export type PlannerReadiness = {
   } | null;
 };
 
-const transferSuggestionBlockingReadinessReasons = new Set<PlannerReadinessReason>([
+const forecastActionBlockingReadinessReasons = new Set<PlannerReadinessReason>([
   "NO_ACTIVE_PLAYERS",
   "NO_UPCOMING_FIXTURES",
   "NO_INCREMENTAL_INGESTION",
@@ -56,8 +56,12 @@ const transferSuggestionBlockingReadinessReasons = new Set<PlannerReadinessReaso
   "INGESTION_FIXTURE_COUNT_MISMATCH"
 ]);
 
+export function plannerReadinessBlocksForecastActions(readiness: Pick<PlannerReadiness, "reasons">) {
+  return readiness.reasons.some((reason) => forecastActionBlockingReadinessReasons.has(reason));
+}
+
 export function plannerReadinessBlocksTransferSuggestions(readiness: Pick<PlannerReadiness, "reasons">) {
-  return readiness.reasons.some((reason) => transferSuggestionBlockingReadinessReasons.has(reason));
+  return plannerReadinessBlocksForecastActions(readiness);
 }
 
 export type PlannerReadinessEvaluationInput = {

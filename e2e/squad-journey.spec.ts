@@ -16,10 +16,13 @@ test("search a forecast, auto-pick a valid squad, save it, and remove the QA cop
   await page.goto("/machete/squad");
   await removeStaleQaSquads(page);
 
-  const leagueId = await page.locator('select[name="leagueId"]').inputValue();
-  const season = await page.locator('select[name="season"]').inputValue();
+  const plannerScope = page.locator("[data-fantasy-squad-planner]");
+  await expect(plannerScope).toHaveCount(1);
+  const leagueId = await plannerScope.getAttribute("data-league-id");
+  const season = await plannerScope.getAttribute("data-season");
   expect(leagueId).toMatch(/^\d+$/);
-  expect(season).not.toBe("");
+  expect(season).toMatch(/^\d{4}(?:\/\d{4})?$/);
+  if (!leagueId || !season) return;
 
   const poolResult = await page.evaluate(async (requestPath) => {
     const response = await fetch(requestPath, { cache: "no-store" });
