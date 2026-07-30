@@ -18,6 +18,9 @@ image labels `org.opencontainers.image.version` and
 
 - Release manifests now store the semantic app version in `.release-version`
   and the timestamped deployment identifier separately in `.release-name`.
+- Prisma now maps long forecast and archive index names to their existing
+  PostgreSQL identifiers, so migration drift checks no longer request
+  destructive no-op renames.
 
 ## 0.2.1 - 2026-07-30
 
