@@ -1,10 +1,13 @@
 import { expect, test, type Locator, type Page, type TestInfo } from "@playwright/test";
 
+const productionSmokeLeagueId = "63";
+
 test("squad controls stay usable without page-level horizontal clipping", async ({ page }, testInfo) => {
   const failures = captureRuntimeFailures(page);
 
-  await page.goto("/machete/squad");
+  await page.goto(`/machete/squad?leagueId=${productionSmokeLeagueId}`);
   await expect(page.getByRole("heading", { name: /Squad planner/i })).toBeVisible();
+  await expect(page.locator("[data-fantasy-squad-planner]")).toHaveAttribute("data-league-id", productionSmokeLeagueId);
   await expect(page.getByRole("button", { name: /Auto-pick squad/i })).toBeEnabled({ timeout: 30_000 });
 
   await expect
@@ -21,20 +24,13 @@ test("squad controls stay usable without page-level horizontal clipping", async 
     await page.getByText("More actions", { exact: true }).click();
     await expect(page.getByRole("button", { name: /Auto-pick XI/i })).toBeVisible();
     await page.getByText("More actions", { exact: true }).click();
-    await expect(page.getByRole("textbox", { name: /Search player or team/i })).toBeVisible();
-
-    await page.keyboard.press("Control+K");
-    const commandPalette = page.getByRole("dialog", { name: /Command palette/i });
-    await expect(commandPalette).toHaveCount(1);
-    await expect(commandPalette).toBeVisible();
-    await page.keyboard.press("Escape");
-    await expect(commandPalette).toBeHidden();
+    await expect(page.getByRole("textbox", { name: /Search by player name/i })).toBeVisible();
   } else {
     const poolTab = page.getByRole("radio", { name: /Pool/i });
     await expect(poolTab).toBeVisible();
     await assertInsideViewport(poolTab, page);
     await poolTab.click();
-    await expect(page.getByRole("textbox", { name: /Search player or team/i })).toBeVisible();
+    await expect(page.getByRole("textbox", { name: /Search by player name/i })).toBeVisible();
 
     const header = page.getByRole("banner");
     const menu = header.getByText("Menu", { exact: true });

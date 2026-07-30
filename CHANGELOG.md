@@ -5,6 +5,16 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.2.5 - 2026-07-30
+
+### Changed
+
+- The authenticated production browser journey now exercises the current RPL
+  season explicitly instead of the pre-season EPL scope that has no Sports.ru
+  prices or played matches yet.
+- Browser checks follow the current accessible player-search controls and no
+  longer expect the command palette component that is absent from the shell.
+
 ## 0.2.4 - 2026-07-30
 
 ### Fixed
