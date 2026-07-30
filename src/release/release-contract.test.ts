@@ -45,6 +45,8 @@ test("server promoter verifies formula files, migrations, active jobs, and exact
   assert.match(promoter, /p\.release\?\.commit===process\.argv\[1\]/);
   assert.match(promoter, /PRODUCTION_HISTORY\.tsv/);
   assert.match(promoter, /rollback_swap/);
+  assert.match(promoter, /"\$release" > "\$target\/\.release-name"/);
+  assert.match(promoter, /"\$version" > "\$target\/\.release-version"/);
   assert.match(promoter, /if \[\[ "\$phase" == "deployed" \]\]; then\s+exit "\$exit_code"/);
   assert.match(promoter, /mv -Tf "\$link_tmp" "\$current_link"\s+phase="deployed"/);
   assert.match(promoter, /fantasy-scout-current-rollback-\$release/);

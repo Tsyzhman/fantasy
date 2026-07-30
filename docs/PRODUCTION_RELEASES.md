@@ -27,6 +27,7 @@ Successful promotions append a tab-separated record to:
 
 Each immutable release also contains:
 
+- `.release-name`
 - `.release-version`
 - `.release-commit`
 - `.release-tree`

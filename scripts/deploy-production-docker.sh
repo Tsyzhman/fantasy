@@ -161,7 +161,8 @@ archive_version="$(
   exit 1
 }
 
-printf '%s\n' "$release" > "$target/.release-version"
+printf '%s\n' "$release" > "$target/.release-name"
+printf '%s\n' "$version" > "$target/.release-version"
 printf '%s\n' "$commit" > "$target/.release-commit"
 printf '%s\n' "$tree" > "$target/.release-tree"
 printf '%s\n' "$expected_sha" > "$target/.release-archive-sha256"

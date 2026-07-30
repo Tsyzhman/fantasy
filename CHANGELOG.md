@@ -5,6 +5,20 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.2.2 - 2026-07-30
+
+### Security
+
+- Updated Next.js, PostCSS, Sharp, and vulnerable transitive
+  `brace-expansion` versions reported by the production dependency audit.
+  Legacy minimatch consumers use a callable compatibility adapter backed by
+  the safe `brace-expansion` 5.0.9 implementation.
+
+### Fixed
+
+- Release manifests now store the semantic app version in `.release-version`
+  and the timestamped deployment identifier separately in `.release-name`.
+
 ## 0.2.1 - 2026-07-30
 
 ### Fixed
