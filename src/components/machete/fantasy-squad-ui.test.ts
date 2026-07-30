@@ -106,14 +106,21 @@ test("top forecast metrics use only the starting XI and expose Alt totals", () =
   assert.match(squadPlannerSource, /summary\.starterPlayers\.length === rules\.starterSize/);
 });
 
-test("primary squad save action sits beside the Your squad heading without a duplicate", () => {
+test("stored Sports squad action sits immediately left of save in the one-line squad header", () => {
   const squadHeading = squadPlannerSource.indexOf('<I18nText en="Your squad" ru="Ваш состав" />');
   const pitch = squadPlannerSource.indexOf("<SquadPitch", squadHeading);
   const headingBlock = squadPlannerSource.slice(squadHeading, pitch);
+  const sportsButton = headingBlock.indexOf("onClick={importStoredSportsRuSquad}");
+  const saveButton = headingBlock.indexOf("onClick={() => saveSquad(false)}");
 
   assert.ok(squadHeading >= 0);
-  assert.match(headingBlock, /onClick=\{\(\) => saveSquad\(false\)\}/);
+  assert.ok(sportsButton >= 0);
+  assert.ok(saveButton > sportsButton);
+  assert.match(squadPlannerSource, /grid-cols-\[minmax\(0,1fr\)_auto\]/);
+  assert.match(headingBlock, /en="Sports squad" ru="Состав Sports"/);
+  assert.match(headingBlock, /whitespace-nowrap/);
   assert.equal(squadPlannerSource.match(/onClick=\{\(\) => saveSquad\(false\)\}/g)?.length, 1);
+  assert.doesNotMatch(squadPageSource, /SportsRuSquadImport/);
 });
 
 test("fixture chips hide H/A from visible labels but retain side and original title", () => {

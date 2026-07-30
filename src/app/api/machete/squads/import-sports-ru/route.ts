@@ -6,10 +6,10 @@ import { prisma } from "@/lib/db";
 import { isFantasySquadLeague, macheteLeagueDisplayName } from "@/lib/leagues/display";
 import { readJsonObject } from "@/lib/request-json";
 import {
-  loadSportsRuSquadImportPreview,
   mergeImportedSquadWithFuturePlans,
   SportsRuSquadImportError
 } from "@/machete/sports_ru_squad_import";
+import { loadStoredSportsRuSquadImportPreview } from "@/machete/sports_ru_squad_snapshots";
 import { validateFantasySquadForSave } from "@/machete/squad_logic";
 import { loadFantasySquadPlannerData, saveFantasySquad, uniqueFantasySquadName } from "@/machete/squad_planner";
 
@@ -23,7 +23,6 @@ export const POST = withApiHandler(async (request: Request) => {
   const leagueId = parseBigInt(body.leagueId);
   const season = typeof body.season === "string" ? body.season.trim() : "";
   const squadId = typeof body.squadId === "string" && body.squadId.trim() ? body.squadId.trim() : null;
-  const apply = body.apply === true;
   if (!leagueId || !season) return jsonError("BAD_REQUEST", "leagueId and season are required.", 400);
 
   const leagueSeason = await prisma.leagueSeason.findUnique({
@@ -53,7 +52,7 @@ export const POST = withApiHandler(async (request: Request) => {
 
   let preview;
   try {
-    preview = await loadSportsRuSquadImportPreview(prisma, {
+    preview = await loadStoredSportsRuSquadImportPreview(prisma, {
       userId: auth.user.id,
       leagueId,
       season,
@@ -63,9 +62,7 @@ export const POST = withApiHandler(async (request: Request) => {
     if (error instanceof SportsRuSquadImportError) {
       const status = error.code === "SPORTS_PROFILE_REQUIRED"
         ? 412
-        : error.code === "NO_PUBLISHED_SQUAD"
-          ? 404
-          : ["SPORTS_SEASON_UNAVAILABLE", "INCOMPLETE_PUBLISHED_SQUAD"].includes(error.code)
+        : ["SPORTS_SNAPSHOT_PENDING", "STORED_SPORTS_SQUAD_INVALID"].includes(error.code)
             ? 409
             : 502;
       return jsonError(error.code, error.message, status);
@@ -86,7 +83,6 @@ export const POST = withApiHandler(async (request: Request) => {
     horizon: 1
   });
   if (!validation.ok) return jsonError("SPORTS_SQUAD_INVALID", validation.error, 409);
-  if (!apply) return NextResponse.json({ preview: publicPreview(preview) });
 
   const roundPlans = mergeImportedSquadWithFuturePlans({
     importedSelections: validation.selections,
@@ -129,7 +125,7 @@ export const POST = withApiHandler(async (request: Request) => {
   });
 });
 
-function publicPreview(preview: Awaited<ReturnType<typeof loadSportsRuSquadImportPreview>>) {
+function publicPreview(preview: Awaited<ReturnType<typeof loadStoredSportsRuSquadImportPreview>>) {
   return {
     providerSquadId: preview.providerSquadId,
     squadName: preview.squadName,

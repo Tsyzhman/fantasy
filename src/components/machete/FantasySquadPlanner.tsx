@@ -71,6 +71,7 @@ import { forecastPointsPerPrice } from "@/machete/fantasy-value-efficiency";
 import type { FormulaAdaptationForecastKey } from "@/machete/formula_adaptations";
 import type { SavedFantasySquad, SavedFantasySquadOption } from "@/machete/squad_planner";
 import { plannerReadinessBlocksForecastActions, type PlannerReadiness } from "@/machete/planner_readiness";
+import type { SportsRuSquadSnapshotStatus } from "@/machete/sports_ru_squad_snapshots";
 import type { SquadFilterPreset, SquadFilterPresetFilters } from "@/machete/squad-filter-presets";
 import {
   defaultSquadTableColumns,
@@ -105,6 +106,7 @@ type FantasySquadPlannerProps = {
     estimatedPrices: number;
     lastSyncedAt: string | null;
   };
+  sportsRuSquadStatus: SportsRuSquadSnapshotStatus | null;
   historySettings: FantasyHistorySettings;
   historySeasonOptions: string[];
   initialVisiblePlayerPoolColumns: string[];
@@ -234,7 +236,7 @@ type TransferSuggestionCalculation = {
   suggestions: TransferPlanSuggestion[];
 };
 
-export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: initialPlayers, playerPoolHref, initialSquad, savedSquads, readiness, priceStatus, historySettings, historySeasonOptions, initialVisiblePlayerPoolColumns, initialPlayerPoolColumnWidths }: FantasySquadPlannerProps) {
+export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: initialPlayers, playerPoolHref, initialSquad, savedSquads, readiness, priceStatus, sportsRuSquadStatus, historySettings, historySeasonOptions, initialVisiblePlayerPoolColumns, initialPlayerPoolColumnWidths }: FantasySquadPlannerProps) {
   const language = useLanguage();
   const router = useRouter();
   const budgetForecastRef = useRef<HTMLDivElement>(null);
@@ -292,9 +294,10 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
   const [message, setMessage] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [savePending, setSavePending] = useState(false);
+  const [sportsImportPending, setSportsImportPending] = useState(false);
   const [deletePending, setDeletePending] = useState(false);
   const [tableExportPending, setTableExportPending] = useState(false);
-  const interactionPending = isPending || savePending || deletePending;
+  const interactionPending = isPending || savePending || sportsImportPending || deletePending;
   const [mobileTab, setMobileTab] = useState<MobileTab>("squad");
   const [showAllSuggestions, setShowAllSuggestions] = useState(false);
   const [draggedPlayerId, setDraggedPlayerId] = useState<string | null>(null);
@@ -1146,6 +1149,47 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
     });
   }
 
+  async function importStoredSportsRuSquad() {
+    if (interactionPending || autoPickPending) return;
+    setSportsImportPending(true);
+    setMessage(null);
+    try {
+      const response = await fetch("/api/machete/squads/import-sports-ru", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          leagueId,
+          season,
+          squadId: activeSquadId
+        })
+      });
+      const payload = await response.json().catch(() => ({})) as {
+        error?: { code?: string; message?: string };
+        code?: string;
+        message?: string;
+        squad?: { id?: string };
+      };
+      if (!response.ok) {
+        const code = payload.error?.code ?? payload.code ?? "SPORTS_IMPORT_FAILED";
+        const fallback = payload.error?.message ?? payload.message ?? null;
+        setMessage(localizedSportsRuImportError(language, code, fallback));
+        return;
+      }
+      const savedSquadId = payload.squad?.id;
+      if (!savedSquadId) {
+        setMessage(localizedText(language, "The server did not return the imported squad ID.", "Сервер не вернул ID импортированного состава."));
+        return;
+      }
+      const url = new URL(window.location.href);
+      url.searchParams.set("squadId", savedSquadId);
+      window.location.replace(`${url.pathname}?${url.searchParams.toString()}`);
+    } catch {
+      setMessage(localizedText(language, "Could not load the stored Sports squad.", "Не удалось загрузить сохранённый состав Sports."));
+    } finally {
+      setSportsImportPending(false);
+    }
+  }
+
   function startBlankSquad() {
     const nextName = localUniqueSquadName(
       squadOptions.map((option) => option.name),
@@ -1769,17 +1813,34 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
       <section className={cn(mobileTab === "suggestions" ? "hidden xl:block" : "block", "order-4 min-w-0 rounded border border-slate-200 bg-white p-3 shadow-soft sm:p-4")}>
         <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-[minmax(360px,0.76fr)_minmax(620px,1.24fr)] 2xl:grid-cols-[minmax(390px,0.72fr)_minmax(760px,1.28fr)]">
           <div className={cn(mobileTab === "squad" ? "block" : "hidden xl:block")}>
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500"><I18nText en="Your squad" ru="Ваш состав" /></h3>
-              <button
-                type="button"
-                onClick={() => saveSquad(false)}
-                disabled={interactionPending || autoPickPending || !squadIsValid}
-                className="btn-brand inline-flex shrink-0 items-center justify-center gap-2 rounded px-3 py-1.5 text-xs font-semibold sm:px-4 sm:py-2 sm:text-sm disabled:opacity-60"
-              >
-                <Save className="h-4 w-4" />
-                {savePending ? <I18nText en="Saving" ru="Сохраняем" /> : <I18nText en="Save squad" ru="Сохранить состав" />}
-              </button>
+            <div className="mb-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+              <h3 className="truncate text-xs font-semibold uppercase tracking-wide text-slate-500 sm:text-sm"><I18nText en="Your squad" ru="Ваш состав" /></h3>
+              <div className="flex shrink-0 items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={importStoredSportsRuSquad}
+                  disabled={interactionPending || autoPickPending}
+                  title={sportsRuSquadButtonTitle(language, sportsRuSquadStatus)}
+                  className="inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded border border-sky-200 bg-sky-50 px-2 py-1.5 text-[11px] font-semibold text-sky-800 hover:bg-sky-100 sm:px-3 sm:text-xs disabled:opacity-60"
+                >
+                  <Download className="h-3.5 w-3.5" aria-hidden="true" />
+                  {sportsImportPending ? <I18nText en="Loading" ru="Загрузка" /> : <I18nText en="Sports squad" ru="Состав Sports" />}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => saveSquad(false)}
+                  disabled={interactionPending || autoPickPending || !squadIsValid}
+                  className="btn-brand inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded px-2 py-1.5 text-[11px] font-semibold sm:px-3 sm:text-xs disabled:opacity-60"
+                >
+                  <Save className="h-3.5 w-3.5" />
+                  {savePending ? <I18nText en="Saving" ru="Сохраняем" /> : (
+                    <>
+                      <span className="sm:hidden"><I18nText en="Save" ru="Сохранить" /></span>
+                      <span className="hidden sm:inline"><I18nText en="Save squad" ru="Сохранить состав" /></span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
             <SquadPitch
               summary={summary}
@@ -2010,6 +2071,41 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
       ) : null}
     </div>
   );
+}
+
+function sportsRuSquadButtonTitle(language: UiLanguage, status: SportsRuSquadSnapshotStatus | null) {
+  if (!status?.linked) {
+    return localizedText(language, "Link a public Sports.ru profile in your profile settings first.", "Сначала привяжите публичный профиль Sports.ru в настройках профиля.");
+  }
+  if (status.available) {
+    const tour = status.tourName ? ` · ${status.tourName}` : "";
+    return localizedText(language, `Apply the stored Sports.ru squad${tour}.`, `Применить сохранённый состав Sports.ru${tour}.`);
+  }
+  if (status.status === "UNAVAILABLE") {
+    return localizedText(language, "The current tour squad was not published after the scheduled retries.", "Состав текущего тура не появился после запланированных повторных попыток.");
+  }
+  return localizedText(
+    language,
+    "The squad is fetched automatically 30 minutes after the first match starts.",
+    "Состав загружается автоматически через 30 минут после начала первого матча."
+  );
+}
+
+function localizedSportsRuImportError(language: UiLanguage, code: string, fallback: string | null) {
+  if (code === "SPORTS_PROFILE_REQUIRED") {
+    return localizedText(language, "Link a public Sports.ru profile in your profile settings first.", "Сначала привяжите публичный профиль Sports.ru в настройках профиля.");
+  }
+  if (code === "SPORTS_SNAPSHOT_PENDING") {
+    return localizedText(
+      language,
+      "The current Sports.ru squad has not been stored yet. The background loader starts 30 minutes after the first match.",
+      "Текущий состав Sports ещё не сохранён. Фоновая загрузка запускается через 30 минут после начала первого матча."
+    );
+  }
+  if (["STORED_SPORTS_SQUAD_INVALID", "SPORTS_PLAYERS_UNMAPPED", "SPORTS_SQUAD_INVALID"].includes(code)) {
+    return localizedText(language, "The stored Sports.ru squad is incomplete or cannot be mapped to the player pool.", "Сохранённый состав Sports неполный или не сопоставляется с пулом игроков.");
+  }
+  return fallback ?? localizedText(language, "Could not load the stored Sports squad.", "Не удалось загрузить сохранённый состав Sports.");
 }
 
 type PlayerPoolTableProps = {

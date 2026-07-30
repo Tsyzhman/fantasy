@@ -54,6 +54,7 @@ model User {
   watchlistPlayers       UserWatchlistPlayer[]
   scoringPreferences     UserScoringPreference[]
   externalProfiles       UserExternalProfile[]
+  sportsRuSquadSnapshots SportsRuSquadSnapshot[]
   createdAt              DateTime                @default(now())
   updatedAt              DateTime                @updatedAt
 }
@@ -619,6 +620,7 @@ model CoreLeague {
   foontasySamples       FoontasyForecastSample[]
   fantasyModelForecasts FantasyModelForecast[]
   fantasySquads         UserFantasySquad[]
+  sportsRuSquadSnapshots SportsRuSquadSnapshot[]
   archivedPlayerStats   PlayerSeasonArchive[]
 
   @@index([source, rawRef])
@@ -787,6 +789,47 @@ model SportsRuFantasyContest {
   @@unique([provider, leagueId, season])
   @@index([leagueId, season])
   @@map("sports_ru_fantasy_contests")
+}
+
+model SportsRuSquadSnapshot {
+  id                  String    @id @default(cuid())
+  userId              String    @map("user_id")
+  leagueId            BigInt    @map("league_id")
+  season              String
+  roundKey            String    @map("round_key")
+  roundLabel          String?   @map("round_label")
+  firstMatchAt        DateTime  @map("first_match_at")
+  availableAfter      DateTime  @map("available_after")
+  providerProfileId   String    @map("provider_profile_id")
+  providerSeasonId    String    @map("provider_season_id")
+  providerSquadId     String?   @map("provider_squad_id")
+  providerTourId      String?   @map("provider_tour_id")
+  squadName           String?   @map("squad_name")
+  tournamentName      String?   @map("tournament_name")
+  tourName            String?   @map("tour_name")
+  status              String    @default("PENDING")
+  attemptCount        Int       @default(0) @map("attempt_count")
+  lastAttemptAt       DateTime? @map("last_attempt_at")
+  nextAttemptAt       DateTime? @map("next_attempt_at")
+  syncLeaseUntil      DateTime? @map("sync_lease_until")
+  playersCount        Int       @default(0) @map("players_count")
+  mappedPlayersCount  Int       @default(0) @map("mapped_players_count")
+  selections          Json?
+  providerPayload     Json?     @map("provider_payload")
+  unmappedPlayers     Json?     @map("unmapped_players")
+  fetchedAt           DateTime? @map("fetched_at")
+  completedAt         DateTime? @map("completed_at")
+  lastError           String?   @map("last_error")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  league CoreLeague @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, providerProfileId, leagueId, season, roundKey], map: "sports_ru_squad_snapshot_scope_key")
+  @@index([status, availableAfter, nextAttemptAt], map: "sports_ru_squad_snapshot_due_idx")
+  @@index([userId, leagueId, season, completedAt], map: "sports_ru_squad_snapshot_latest_idx")
+  @@map("sports_ru_squad_snapshots")
 }
 
 model FantasyPlayerPrice {

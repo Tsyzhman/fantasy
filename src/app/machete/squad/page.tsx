@@ -1,6 +1,5 @@
 import { FantasySquadPlanner } from "@/components/machete/FantasySquadPlanner";
 import { FranchiseSquadsPanel } from "@/components/machete/FranchiseSquadsPanel";
-import { SportsRuSquadImport } from "@/components/machete/SportsRuSquadImport";
 import { I18nText } from "@/components/i18n-text";
 import { MacheteShell } from "@/components/machete/MacheteShell";
 import { AutoSubmitForm } from "@/components/players/auto-submit-form";
@@ -10,6 +9,7 @@ import { formatDateTime } from "@/lib/format";
 import { isFantasySquadLeague } from "@/lib/leagues/display";
 import { loadSharedLeagueOptions, type SharedLeagueSeasonOption } from "@/machete/shared_read_model";
 import { loadFantasySquadPlannerData } from "@/machete/squad_planner";
+import { loadSportsRuSquadSnapshotStatus } from "@/machete/sports_ru_squad_snapshots";
 import { parseSquadTableColumns, parseSquadTableColumnWidths } from "@/machete/squad-table-columns";
 import { canSwitchFranchise, resolveVisibleFranchise } from "@/machete/franchise-access";
 import { loadPlannerReadinessByScope, plannerReadinessBlocksTransferSuggestions, plannerReadinessKey, type PlannerReadiness } from "@/machete/planner_readiness";
@@ -54,12 +54,17 @@ export default async function MacheteSquadPage({ searchParams }: PageProps) {
   const selectedLeague = leagues.find((league) => String(league.leagueId) === selectedLeagueId) ?? null;
   const readinessByScope = await loadPlannerReadinessByScope(prisma, selectedLeague ? [selectedLeague] : []);
   const selectedReadiness = selectedLeague ? readinessByScope.get(plannerReadinessKey(selectedLeague)) ?? null : null;
-  const [data, freshness] = selectedLeague && selectedReadiness
+  const [data, freshness, sportsRuSquadStatus] = selectedLeague && selectedReadiness
     ? await Promise.all([
         loadInitialFantasySquadPlannerData(user.id, selectedLeague, selectedReadiness, historySettings, params.squadId),
-        loadSquadDataFreshness(selectedLeague)
+        loadSquadDataFreshness(selectedLeague),
+        loadSportsRuSquadSnapshotStatus(prisma, {
+          userId: user.id,
+          leagueId: selectedLeague.leagueId,
+          season: selectedLeague.season
+        })
       ])
-    : [null, null];
+    : [null, null, null];
   const transferSuggestionsBlockedByReadiness = data ? plannerReadinessBlocksTransferSuggestions(data.readiness) : true;
 
   return (
@@ -94,9 +99,6 @@ export default async function MacheteSquadPage({ searchParams }: PageProps) {
             <I18nText en="Load" ru="Загрузить" />
           </button>
         </AutoSubmitForm>
-        {selectedLeague && data ? (
-          <SportsRuSquadImport leagueId={String(selectedLeague.leagueId)} season={selectedLeague.season} squadId={data.squad.id} />
-        ) : null}
         {freshness ? (
           <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-600">
             <span className="font-semibold uppercase tracking-wide text-slate-500">
@@ -146,6 +148,7 @@ export default async function MacheteSquadPage({ searchParams }: PageProps) {
             savedSquads={data.squads}
             readiness={data.readiness}
             priceStatus={data.priceStatus}
+            sportsRuSquadStatus={sportsRuSquadStatus}
             historySettings={historySettings}
             historySeasonOptions={data.historySeasonOptions}
             initialVisiblePlayerPoolColumns={parseSquadTableColumns(tablePreference?.squadTableColumns)}
