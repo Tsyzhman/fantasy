@@ -7,20 +7,22 @@ type PlayerPoolPayload = {
   }>;
 };
 
+const productionSmokeLeagueId = "63";
+
 test("search a forecast, auto-pick a valid squad, save it, and remove the QA copy", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "desktop-chromium", "The full mutation journey runs once; responsive projects are read-only.");
   test.slow();
 
   let createdSquadId: string | null = null;
   const qaSquadName = `E2E optimized ${Date.now()}`;
-  await page.goto("/machete/squad");
+  await page.goto(`/machete/squad?leagueId=${productionSmokeLeagueId}`);
   await removeStaleQaSquads(page);
 
   const plannerScope = page.locator("[data-fantasy-squad-planner]");
   await expect(plannerScope).toHaveCount(1);
   const leagueId = await plannerScope.getAttribute("data-league-id");
   const season = await plannerScope.getAttribute("data-season");
-  expect(leagueId).toMatch(/^\d+$/);
+  expect(leagueId).toBe(productionSmokeLeagueId);
   expect(season).toMatch(/^\d{4}(?:\/\d{4})?$/);
   if (!leagueId || !season) return;
 

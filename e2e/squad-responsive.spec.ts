@@ -1,10 +1,13 @@
 import { expect, test, type Locator, type Page, type TestInfo } from "@playwright/test";
 
+const productionSmokeLeagueId = "63";
+
 test("squad controls stay usable without page-level horizontal clipping", async ({ page }, testInfo) => {
   const failures = captureRuntimeFailures(page);
 
-  await page.goto("/machete/squad");
+  await page.goto(`/machete/squad?leagueId=${productionSmokeLeagueId}`);
   await expect(page.getByRole("heading", { name: /Squad planner/i })).toBeVisible();
+  await expect(page.locator("[data-fantasy-squad-planner]")).toHaveAttribute("data-league-id", productionSmokeLeagueId);
   await expect(page.getByRole("button", { name: /Auto-pick squad/i })).toBeEnabled({ timeout: 30_000 });
 
   await expect
