@@ -129,6 +129,12 @@ export type FantasyPlannerPlayer = {
   } | null;
   alternativePredictedFp?: number | null;
   alternativeRoundPoints?: Array<number | null>;
+  foPositionCalibratedFp?: number | null;
+  altPositionCalibratedFp?: number | null;
+  altJointAllFp?: number | null;
+  foJointAllFp?: number | null;
+  altJointAcceptedFp?: number | null;
+  foJointAcceptedFp?: number | null;
   foontasyPoints?: number | null;
   foontasyHorizonPoints?: number | null;
   foontasyFetchedAt?: string | null;

@@ -26,6 +26,7 @@ function squadSelection(playerId: string, isStarter: boolean, slotIndex: number)
 }
 
 const squadPlannerSource = readFileSync(new URL("./FantasySquadPlanner.tsx", import.meta.url), "utf8");
+const formulaAdaptationHoverCardSource = readFileSync(new URL("./FormulaAdaptationHoverCard.tsx", import.meta.url), "utf8");
 const squadPlannerBackendSource = readFileSync(new URL("../../machete/squad_planner.ts", import.meta.url), "utf8");
 const squadPageSource = readFileSync(new URL("../../app/machete/squad/page.tsx", import.meta.url), "utf8");
 const playerTableExportRouteSource = readFileSync(new URL("../../app/api/machete/squads/export-table/route.ts", import.meta.url), "utf8");
@@ -462,6 +463,9 @@ test("player pool exposes team, price, local match-scope and typed XLSX export c
   assert.match(squadPlannerSource, /value=\{teamFilter\}/);
   assert.match(squadPlannerSource, /value=\{minimumPrice \?\? "ALL"\}/);
   assert.match(squadPlannerSource, /value=\{maximumPrice \?\? "ALL"\}/);
+  assert.match(squadPlannerSource, /const \[detailedFormulaTooltips, setDetailedFormulaTooltips\] = useState\(false\)/);
+  assert.match(squadPlannerSource, /checked=\{detailedFormulaTooltips\}/);
+  assert.match(squadPlannerSource, /ru="Подробные подсказки"/);
   assert.match(squadPlannerSource, /applyQuickHistoryScope\("ALL_PLAYER_MATCHES"\)/);
   assert.match(squadPlannerSource, /downloadPlayerPoolXlsx\(exportPlayers, tableHorizon/);
   assert.match(squadPlannerSource, /player: player\.fotmobName \?\? player\.name/);
@@ -498,6 +502,31 @@ test("every one-round forecast exposes sortable points-per-price asset efficienc
   assert.match(squadPlannerSource, /forecastPointsPerPrice\(player\.foontasyPoints, player\.price\)/);
   assert.match(squadPlannerSource, /forecastPointsPerPrice\(player\.alternativePredictedFp, player\.price\)/);
   assert.doesNotMatch(squadPlannerSource, /inlineEfficiency/);
+});
+
+test("squad player pool exposes every formula-adaptation forecast as a separate column", () => {
+  for (const [key, label] of [
+    ["foPositionCalibratedFp", "FO position cal."],
+    ["altPositionCalibratedFp", "Alt position cal."],
+    ["altJointAllFp", "Alt Joint all"],
+    ["foJointAllFp", "FO Joint all"],
+    ["altJointAcceptedFp", "Alt Joint accepted"],
+    ["foJointAcceptedFp", "FO Joint accepted"]
+  ]) {
+    assert.match(squadPlannerSource, new RegExp(`column\\("${key}", "${label.replaceAll(".", "\\.")}"`));
+    assert.match(squadPlannerSource, new RegExp(`case "${key}": return player\\.${key} \\?\\? null`));
+  }
+  assert.match(squadPlannerSource, /Weather is not used/);
+  assert.match(squadPlannerSource, /Weather is excluded/);
+  assert.match(squadPlannerSource, /<FormulaAdaptationHoverCard/);
+  assert.match(squadPlannerSource, /detailed=\{detailedFormulaTooltips\}/);
+  assert.match(squadPlannerSource, /formulaAdaptationForecastKeys/);
+  assert.match(formulaAdaptationHoverCardSource, /numericTerms\.map/);
+  assert.match(formulaAdaptationHoverCardSource, /categoricalTerms\.map/);
+  assert.match(formulaAdaptationHoverCardSource, /numericContributionTotal/);
+  assert.match(formulaAdaptationHoverCardSource, /missingContribution/);
+  assert.match(formulaAdaptationHoverCardSource, /trainedMedian/);
+  assert.match(formulaAdaptationHoverCardSource, /requestCacheMaximumEntries = 80/);
 });
 
 test("player-pool controls use two desktop rows and the search targets only player names", () => {

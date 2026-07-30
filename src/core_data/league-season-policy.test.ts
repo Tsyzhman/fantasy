@@ -3,6 +3,7 @@ import test from "node:test";
 
 import {
   enabledLeagueIngestionConfigs,
+  isNationalLeagueOnlyIncrementalWindow,
   leagueIngestionConfig,
   scopesForInitialBackfill,
   scopesForCurrentSeasonLeagueBackfill,
@@ -80,6 +81,38 @@ test("incremental updates use current seasons instead of initial backfill season
   assert.equal(scopes.every((scope) => scope.include_upcoming), true);
 });
 
+test("summer incremental updates scan national leagues and omit every tournament", () => {
+  const configs: LeagueIngestionConfig[] = [
+    config(42, "Champions League", "tournament"),
+    config(47, "Premier League", "autumn_spring"),
+    config(130, "MLS", "spring_autumn"),
+    config(132, "FA Cup", "tournament")
+  ];
+
+  for (const referenceDate of [new Date("2026-06-05T00:00:00.000Z"), new Date("2026-09-01T23:59:59.999Z")]) {
+    assert.equal(isNationalLeagueOnlyIncrementalWindow(referenceDate), true);
+    assert.deepEqual(
+      scopesForIncrementalUpdate(configs, referenceDate).map((scope) => scope.league_id),
+      [47, 130]
+    );
+  }
+});
+
+test("incremental tournament scans resume outside the June 5 through September 1 window", () => {
+  const configs: LeagueIngestionConfig[] = [
+    config(42, "Champions League", "tournament"),
+    config(47, "Premier League", "autumn_spring")
+  ];
+
+  for (const referenceDate of [new Date("2026-06-04T23:59:59.999Z"), new Date("2026-09-02T00:00:00.000Z")]) {
+    assert.equal(isNationalLeagueOnlyIncrementalWindow(referenceDate), false);
+    assert.deepEqual(
+      scopesForIncrementalUpdate(configs, referenceDate).map((scope) => scope.league_id),
+      [42, 47]
+    );
+  }
+});
+
 test("quick current league backfill uses only Premier League current season", () => {
   const referenceDate = new Date("2026-05-19T00:00:00.000Z");
   const scopes = scopesForCurrentSeasonLeagueBackfill(47, referenceDate);
@@ -102,13 +135,13 @@ test("production ingestion excludes non-target leagues", () => {
   const enabledIds = new Set(enabledLeagueIngestionConfigs().map((league) => league.league_id));
 
   assert.equal(leagueIngestionConfig.length, 82);
-  assert.equal(enabledIds.size, 44);
+  assert.equal(enabledIds.size, 43);
 
   for (const leagueId of [44, 47, 48, 50, 77, 86, 108, 110, 140, 146, 338]) {
     assert.equal(enabledIds.has(leagueId), true);
   }
 
-  for (const leagueId of [109, 111, 119, 130, 163, 165, 264, 441, 536, 9806, 10195]) {
+  for (const leagueId of [109, 111, 119, 130, 139, 163, 165, 264, 441, 536, 9806, 10195]) {
     assert.equal(enabledIds.has(leagueId), false);
   }
 });
