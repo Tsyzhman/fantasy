@@ -1,6 +1,6 @@
 import type { PrismaClient } from "@prisma/client";
 
-import { fetchSportsRuLatestPublishedSquad } from "@/lib/providers/sports-ru-fantasy";
+import type { SportsRuPublishedSquad } from "@/lib/providers/sports-ru-fantasy";
 
 import {
   countFantasySquadTransfers,
@@ -25,39 +25,17 @@ export type SportsRuSquadImportPreview = {
   unmapped: Array<{ providerPlayerId: string; name: string; teamName: string | null }>;
 };
 
-export async function loadSportsRuSquadImportPreview(
+export async function mapSportsRuPublishedSquad(
   prisma: PrismaClient,
-  input: { userId: string; leagueId: bigint; season: string; expectedSquadSize: number }
+  input: {
+    profileId: string;
+    leagueId: bigint;
+    season: string;
+    expectedSquadSize: number;
+    published: SportsRuPublishedSquad;
+  }
 ): Promise<SportsRuSquadImportPreview> {
-  const externalProfile = await prisma.userExternalProfile.findUnique({
-    where: { userId_provider: { userId: input.userId, provider: "SPORTS_RU" } }
-  });
-  if (!externalProfile) throw new SportsRuSquadImportError("SPORTS_PROFILE_REQUIRED", "Save a Sports.ru profile in your profile settings first.");
-
-  const contest = await prisma.sportsRuFantasyContest.findFirst({
-    where: { provider: "SPORTS_RU", leagueId: input.leagueId, season: { in: sportsRuSeasonAliases(input.season) } },
-    orderBy: { lastSyncedAt: "desc" }
-  });
-  const sportsRuSeasonId = readSportsRuSeasonId(contest?.rules);
-  if (!sportsRuSeasonId) throw new SportsRuSquadImportError("SPORTS_SEASON_UNAVAILABLE", "This league season has no Sports.ru season mapping.");
-
-  let published;
-  try {
-    published = await fetchSportsRuLatestPublishedSquad(externalProfile.providerUserId, sportsRuSeasonId);
-  } catch (error) {
-    await prisma.userExternalProfile.update({
-      where: { id: externalProfile.id },
-      data: { lastError: error instanceof Error ? error.message.slice(0, 500) : "Sports.ru request failed." }
-    }).catch(() => undefined);
-    throw new SportsRuSquadImportError("SPORTS_REQUEST_FAILED", "Sports.ru did not return the published squad.");
-  }
-  if (!published) {
-    throw new SportsRuSquadImportError(
-      "NO_PUBLISHED_SQUAD",
-      "No published squad is available for this tournament yet. Sports.ru hides the open tour before its deadline."
-    );
-  }
-
+  const published = input.published;
   const providerPlayerIds = [...new Set(published.players.map((player) => player.providerPlayerId))];
   const priceRows = await prisma.fantasyPlayerPrice.findMany({
     where: {
@@ -105,7 +83,7 @@ export async function loadSportsRuSquadImportPreview(
     );
   }
   return {
-    profileId: externalProfile.providerUserId,
+    profileId: input.profileId,
     providerSquadId: published.providerSquadId,
     squadName: published.squadName,
     tournamentName: published.tournamentName,
@@ -149,7 +127,7 @@ export class SportsRuSquadImportError extends Error {
   }
 }
 
-function readSportsRuSeasonId(rules: unknown) {
+export function readSportsRuSeasonId(rules: unknown) {
   if (!rules || typeof rules !== "object" || Array.isArray(rules)) return null;
   const value = (rules as { sportsRuSeasonId?: unknown }).sportsRuSeasonId;
   return typeof value === "string" && /^\d{1,20}$/.test(value) ? value : null;

@@ -10,6 +10,10 @@ test("squad controls stay usable without page-level horizontal clipping", async 
   await expect(page.locator("[data-fantasy-squad-planner]")).toHaveAttribute("data-league-id", productionSmokeLeagueId);
   await expect(page.getByRole("button", { name: /Auto-pick squad/i })).toBeEnabled({ timeout: 30_000 });
 
+  const sportsSquadButton = page.getByRole("button", { name: /^Sports squad$/i });
+  const saveSquadButton = page.getByRole("button", { name: /^Save(?: squad)?$/i });
+  await assertSameRowInOrder(sportsSquadButton, saveSquadButton);
+
   await expect
     .poll(() => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth))
     .toBeLessThanOrEqual(1);
@@ -91,6 +95,17 @@ async function assertInsideViewport(locator: Locator, page: Page) {
   if (!box || !viewport) return;
   expect(box.x).toBeGreaterThanOrEqual(0);
   expect(box.x + box.width).toBeLessThanOrEqual(viewport.width + 1);
+}
+
+async function assertSameRowInOrder(left: Locator, right: Locator) {
+  await expect(left).toBeVisible();
+  await expect(right).toBeVisible();
+  const [leftBox, rightBox] = await Promise.all([left.boundingBox(), right.boundingBox()]);
+  expect(leftBox).not.toBeNull();
+  expect(rightBox).not.toBeNull();
+  if (!leftBox || !rightBox) return;
+  expect(Math.abs(leftBox.y - rightBox.y)).toBeLessThanOrEqual(1);
+  expect(leftBox.x + leftBox.width).toBeLessThanOrEqual(rightBox.x);
 }
 
 async function attachViewportScreenshot(page: Page, testInfo: TestInfo) {
