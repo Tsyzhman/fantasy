@@ -1,6 +1,6 @@
 {
   "name": "fantasy-scout",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "engines": {
     "node": ">=20.9.0"
@@ -13,6 +13,7 @@
     "test:db": "tsx scripts/run-test-files.ts .db-test.ts",
     "test:e2e": "playwright test",
     "audit:prod": "npm audit --omit=dev --audit-level=moderate",
+    "release:verify-source": "node scripts/verify-release-source.mjs",
     "lint": "eslint .",
     "typecheck": "next typegen && tsc --noEmit",
     "check": "npm run test && npm run lint && npm run typecheck && npm run build",

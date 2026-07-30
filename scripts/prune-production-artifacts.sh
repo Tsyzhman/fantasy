@@ -54,33 +54,35 @@ echo "MODE=$mode"
 echo "RELEASE_ROOT=$release_root"
 echo "CURRENT_RELEASE=$current_target"
 
-mapfile -t rollback_rows < <(
-  docker container ls -a --format '{{.Names}}|{{.CreatedAt}}' |
-    awk -F'|' '$1 ~ /^fantasy-scout-web-rollback-/ { print }' |
-    sort -t'|' -k2,2r
-)
+for service in web worker; do
+  mapfile -t rollback_rows < <(
+    docker container ls -a --format '{{.Names}}|{{.CreatedAt}}' |
+      awk -F'|' -v prefix="fantasy-scout-${service}-rollback-" 'index($1, prefix) == 1 { print }' |
+      sort -t'|' -k2,2r
+  )
 
-if (( ${#rollback_rows[@]} > 0 )); then
-  echo "KEEP_ROLLBACK=${rollback_rows[0]%%|*}"
-fi
-for row in "${rollback_rows[@]:1}"; do
-  rollback_name="${row%%|*}"
-  [[ "$rollback_name" =~ ^fantasy-scout-web-rollback-[a-zA-Z0-9._-]+$ ]] || {
-    echo "Refusing unexpected rollback name: $rollback_name" >&2
-    exit 1
-  }
-  rollback_state="$(
-    docker container inspect "$rollback_name" |
-      python3 -c 'import json,sys; print(json.load(sys.stdin)[0]["State"]["Status"])'
-  )"
-  if [[ "$rollback_state" != "created" && "$rollback_state" != "exited" && "$rollback_state" != "dead" ]]; then
-    echo "SKIP_ROLLBACK=$rollback_name|state=$rollback_state"
-    continue
+  if (( ${#rollback_rows[@]} > 0 )); then
+    echo "KEEP_ROLLBACK=${rollback_rows[0]%%|*}"
   fi
-  echo "REMOVE_ROLLBACK=$rollback_name|state=$rollback_state"
-  if [[ "$mode" == "apply" ]]; then
-    docker container rm "$rollback_name" >/dev/null
-  fi
+  for row in "${rollback_rows[@]:1}"; do
+    rollback_name="${row%%|*}"
+    [[ "$rollback_name" =~ ^fantasy-scout-(web|worker)-rollback-[a-zA-Z0-9._-]+$ ]] || {
+      echo "Refusing unexpected rollback name: $rollback_name" >&2
+      exit 1
+    }
+    rollback_state="$(
+      docker container inspect "$rollback_name" |
+        python3 -c 'import json,sys; print(json.load(sys.stdin)[0]["State"]["Status"])'
+    )"
+    if [[ "$rollback_state" != "created" && "$rollback_state" != "exited" && "$rollback_state" != "dead" ]]; then
+      echo "SKIP_ROLLBACK=$rollback_name|state=$rollback_state"
+      continue
+    fi
+    echo "REMOVE_ROLLBACK=$rollback_name|state=$rollback_state"
+    if [[ "$mode" == "apply" ]]; then
+      docker container rm "$rollback_name" >/dev/null
+    fi
+  done
 done
 
 declare -A protected_releases=()
