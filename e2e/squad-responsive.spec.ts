@@ -24,7 +24,7 @@ test("squad controls stay usable without page-level horizontal clipping", async 
     await page.getByText("More actions", { exact: true }).click();
     await expect(page.getByRole("button", { name: /Auto-pick XI/i })).toBeVisible();
     await page.getByText("More actions", { exact: true }).click();
-    await expect(page.getByRole("textbox", { name: /Search player or team/i })).toBeVisible();
+    await expect(page.getByRole("textbox", { name: /Search by player name/i })).toBeVisible();
 
     await page.keyboard.press("Control+K");
     const commandPalette = page.getByRole("dialog", { name: /Command palette/i });
@@ -37,7 +37,7 @@ test("squad controls stay usable without page-level horizontal clipping", async 
     await expect(poolTab).toBeVisible();
     await assertInsideViewport(poolTab, page);
     await poolTab.click();
-    await expect(page.getByRole("textbox", { name: /Search player or team/i })).toBeVisible();
+    await expect(page.getByRole("textbox", { name: /Search by player name/i })).toBeVisible();
 
     const header = page.getByRole("banner");
     const menu = header.getByText("Menu", { exact: true });

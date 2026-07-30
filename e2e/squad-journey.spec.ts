@@ -49,7 +49,7 @@ test("search a forecast, auto-pick a valid squad, save it, and remove the QA cop
   });
   await page.goto(`/machete/players?${playerSearch}`);
   await expect(page.getByRole("heading", { name: /Player search and forecasts/i })).toBeVisible();
-  await expect(page.locator("tbody:visible").getByText(forecastPlayer.name, { exact: true }).first()).toBeVisible();
+  await expect(page.getByRole("button", { name: `Add ${forecastPlayer.name} to comparison`, exact: true }).first()).toBeVisible();
 
   try {
     await page.goto(`/machete/squad?${new URLSearchParams({ leagueId, season })}`);
