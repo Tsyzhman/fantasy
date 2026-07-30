@@ -5,6 +5,7 @@ import {
   evaluatePlannerDefaultScope,
   evaluatePlannerReadiness,
   completedIngestionScope,
+  plannerReadinessBlocksForecastActions,
   plannerReadinessBlocksTransferSuggestions,
   plannerReadinessKey,
   selectPlannerSeason,
@@ -54,6 +55,26 @@ test("transfer suggestions stay available for audit-only warnings but stop for m
   );
   assert.equal(plannerReadinessBlocksTransferSuggestions({ reasons: ["NO_UPCOMING_FIXTURES"] }), true);
   assert.equal(plannerReadinessBlocksTransferSuggestions({ reasons: ["INCREMENTAL_INGESTION_STALE"] }), true);
+});
+
+test("auto-pick and transfer suggestions share the same source-data blockers", () => {
+  const auditOnlyWarnings: Pick<PlannerReadiness, "reasons"> = {
+    reasons: ["FORECAST_COVERAGE_GATE_FAILED", "DATA_QUALITY_GATE_FAILED", "AUDIT_PREDATES_INGESTION"]
+  };
+  const staleIngestion: Pick<PlannerReadiness, "reasons"> = {
+    reasons: ["INCREMENTAL_INGESTION_STALE"]
+  };
+
+  assert.equal(plannerReadinessBlocksForecastActions(auditOnlyWarnings), false);
+  assert.equal(plannerReadinessBlocksForecastActions(staleIngestion), true);
+  assert.equal(
+    plannerReadinessBlocksForecastActions(auditOnlyWarnings),
+    plannerReadinessBlocksTransferSuggestions(auditOnlyWarnings)
+  );
+  assert.equal(
+    plannerReadinessBlocksForecastActions(staleIngestion),
+    plannerReadinessBlocksTransferSuggestions(staleIngestion)
+  );
 });
 
 test("a fresh audit cannot hide missing fixtures, a failed latest ingestion, or an audit made before ingestion", () => {
