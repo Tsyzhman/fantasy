@@ -190,12 +190,17 @@ export function normalizeSportsRuProfileId(value: string) {
 export async function fetchSportsRuLatestPublishedSquad(
   profileId: string,
   sportsRuSeasonId: string,
-  options: { endpoint?: string; fetchImpl?: typeof fetch } = {}
+  options: { endpoint?: string; fetchImpl?: typeof fetch; expectedTourNumber?: number } = {}
 ): Promise<SportsRuPublishedSquad | null> {
   const safeProfileId = normalizeSportsRuProfileId(profileId);
   if (!safeProfileId) throw new Error("Invalid Sports.ru profile ID.");
   const seasonId = sportsRuSeasonId.trim();
   if (!seasonId || !/^\d{1,20}$/.test(seasonId)) throw new Error("Invalid Sports.ru fantasy season ID.");
+  const expectedTourNumber = options.expectedTourNumber;
+  if (
+    expectedTourNumber !== undefined
+    && (!Number.isSafeInteger(expectedTourNumber) || expectedTourNumber <= 0)
+  ) throw new Error("Invalid expected Sports.ru tour number.");
   const endpoint = options.endpoint ?? sportsRuFantasyGraphqlEndpoint;
   const fetchImpl = options.fetchImpl ?? fetch;
   const response = await sportsRuGraphqlRequest<{ fantasyQueries?: { squads?: SportsRuSquadNode[] | null } }>(
@@ -222,9 +227,10 @@ export async function fetchSportsRuLatestPublishedSquad(
 
   for (const squad of candidates) {
     const current = normalizeSportsRuSquadTourInfo(squad, squad.currentTourInfo);
-    if (current) return current;
+    if (current && sportsRuSquadMatchesExpectedTour(current, expectedTourNumber)) return current;
     const tours = [...(squad.season?.tours ?? [])]
       .filter((tour) => tour.id)
+      .filter((tour) => sportsRuTourNameMatchesExpectedTour(tour.name, expectedTourNumber))
       // currentTourInfo is already empty above. Prefer completed tours, whose
       // lineups are public, before asking Sports.ru for an open-tour payload
       // that it will withhold until the deadline.
@@ -245,7 +251,7 @@ export async function fetchSportsRuLatestPublishedSquad(
         fetchImpl
       );
       const normalized = normalizeSportsRuSquadTourInfo(squad, historic.fantasyQueries?.squadTourInfo ?? null);
-      if (normalized) return normalized;
+      if (normalized && sportsRuSquadMatchesExpectedTour(normalized, expectedTourNumber)) return normalized;
     }
   }
   return null;
@@ -349,6 +355,16 @@ function sportsRuTourTimestamp(tour: SportsRuTourNode) {
 function sportsRuTourPublicationPriority(tour: SportsRuTourNode) {
   if (tour.finishedAt) return 1;
   return ["FINISHED", "COMPLETED", "CLOSED"].includes(tour.status?.toUpperCase() ?? "") ? 1 : 0;
+}
+
+function sportsRuSquadMatchesExpectedTour(squad: SportsRuPublishedSquad, expectedTourNumber: number | undefined) {
+  return sportsRuTourNameMatchesExpectedTour(squad.tourName, expectedTourNumber);
+}
+
+function sportsRuTourNameMatchesExpectedTour(tourName: string | null | undefined, expectedTourNumber: number | undefined) {
+  if (expectedTourNumber === undefined) return true;
+  const match = tourName?.match(/\d+/);
+  return match ? Number(match[0]) === expectedTourNumber : false;
 }
 
 export function sportsRuTournamentHruFromUrl(value: string) {

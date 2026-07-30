@@ -233,7 +233,9 @@ async function syncOneSportsRuSquadSnapshot(
     : null;
   if (!published) {
     try {
-      published = await input.fetchPublishedSquad(input.profileId, snapshot.providerSeasonId);
+      published = await input.fetchPublishedSquad(input.profileId, snapshot.providerSeasonId, {
+        expectedTourNumber: firstPositiveInteger(snapshot.roundLabel) ?? undefined
+      });
     } catch (error) {
       return markPublicationRetry(prisma, snapshot, input.now, errorMessage(error, "Sports.ru request failed."));
     }
