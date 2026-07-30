@@ -34,6 +34,11 @@ Each immutable release also contains:
 
 Production tags use `production-v<version>-<UTC timestamp>`.
 
+After the `current` symlink is atomically switched, the promoter treats the
+release as committed. A later SSH/output failure preserves the active image and
+release directory. A failure before that commit point restores both containers
+and the prior symlink target.
+
 ## Reconciled 2026-07 production line
 
 | Order | Commit/release | Meaning |
@@ -52,7 +57,7 @@ built from committed server branches that did not contain the uncommitted local
 formula overlay. The database retained the version-2 column preference, but the
 older runtime neither recognized that object nor contained the formula model.
 
-The 0.2.0 release prevents the same failure mode in four ways:
+The 0.2.x release line prevents the same failure mode in four ways:
 
 - every formula runtime artifact and regression test is tracked;
 - a release cannot be packaged from a dirty tree;

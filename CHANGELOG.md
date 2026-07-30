@@ -5,6 +5,15 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.2.1 - 2026-07-30
+
+### Fixed
+
+- A lost deploy connection after a successful container swap can no longer
+  delete the active immutable release directory or its image.
+- A failure during the swap restores both the previous web/worker containers
+  and the previous `current` symlink target.
+
 ## 0.2.0 - 2026-07-30
 
 ### Added

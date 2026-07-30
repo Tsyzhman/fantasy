@@ -33,6 +33,7 @@ old_web_renamed=0
 old_worker_renamed=0
 target_created=0
 image_created=0
+old_current_target=""
 
 validate_inputs() {
   [[ "$release" =~ ^[0-9]{8}T[0-9]{6}Z-v[0-9]+\.[0-9]+\.[0-9]+-[0-9a-f]{7,40}$ ]] || {
@@ -93,8 +94,18 @@ cleanup() {
   rm -f -- "$web_env" "$worker_env"
 
   if (( exit_code != 0 )); then
+    if [[ "$phase" == "deployed" ]]; then
+      exit "$exit_code"
+    fi
     if [[ "$phase" == "swap" ]]; then
       rollback_swap
+      if [[ -n "$old_current_target" ]] \
+        && [[ "$(readlink -f "$current_link" 2>/dev/null || true)" == "$target" ]]
+      then
+        rollback_link="/var/www/.fantasy-scout-current-rollback-$release"
+        ln -s "$old_current_target" "$rollback_link"
+        mv -Tf "$rollback_link" "$current_link"
+      fi
     fi
     if (( image_created == 1 )); then
       docker image rm "$image" >/dev/null 2>&1 || true
@@ -246,6 +257,11 @@ for active in "$web" "$worker"; do
     exit 1
   }
 done
+old_current_target="$(readlink -f "$current_link")"
+[[ "$old_current_target" == "$release_root/"* && -d "$old_current_target" ]] || {
+  echo "Current release target is invalid: $old_current_target" >&2
+  exit 1
+}
 [[ -z "$(docker ps -aq --filter "name=^/${web_rollback}$")" ]] || {
   echo "Rollback name already exists: $web_rollback" >&2
   exit 1
@@ -316,6 +332,7 @@ done
 link_tmp="/var/www/.fantasy-scout-current-$release"
 ln -s "$target" "$link_tmp"
 mv -Tf "$link_tmp" "$current_link"
+phase="deployed"
 
 previous_release="$(basename "$(docker container inspect "$web_rollback" --format '{{.Config.Image}}')")"
 image_id="$(docker image inspect "$image" --format '{{.Id}}')"
@@ -328,7 +345,6 @@ printf '%s\t%s\t%s\t%s\t%s\t%s\n' \
   "$image_id" \
   >> "$release_root/PRODUCTION_HISTORY.tsv"
 
-phase="deployed"
 printf 'DEPLOYED_RELEASE=%s\n' "$release"
 printf 'DEPLOYED_VERSION=%s\n' "$version"
 printf 'DEPLOYED_COMMIT=%s\n' "$commit"
