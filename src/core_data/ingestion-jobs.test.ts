@@ -3,9 +3,64 @@ import test from "node:test";
 import type { PrismaClient } from "@prisma/client";
 
 import type { FotMobClient } from "./fotmob_client";
-import { aggregateCompletedCanonicalScopes, buildIncrementalScopes } from "./ingestion-jobs";
+import { aggregateCompletedCanonicalScopes, buildIncrementalScopes, runSequentialScopesIndependently } from "./ingestion-jobs";
 import { selectLatestIngestionAttempt } from "../machete/planner_readiness";
 import { createIngestionScope } from "./ingestion-scope";
+
+test("league scopes run sequentially and a failed league does not stop later leagues", async () => {
+  const events: string[] = [];
+  let activeScopes = 0;
+  let maximumConcurrentScopes = 0;
+
+  const result = await runSequentialScopesIndependently(
+    [42, 63, 47],
+    0,
+    async (leagueId) => {
+      activeScopes += 1;
+      maximumConcurrentScopes = Math.max(maximumConcurrentScopes, activeScopes);
+      events.push(`start:${leagueId}`);
+      try {
+        await Promise.resolve();
+        if (leagueId === 63) throw new Error("league 63 failed");
+        events.push(`complete:${leagueId}`);
+      } finally {
+        activeScopes -= 1;
+      }
+    },
+    async (leagueId, _scopeIndex, error) => {
+      events.push(`error:${leagueId}:${error instanceof Error ? error.message : "unknown"}`);
+    }
+  );
+
+  assert.equal(result.stopped, false);
+  assert.equal(maximumConcurrentScopes, 1);
+  assert.deepEqual(events, [
+    "start:42",
+    "complete:42",
+    "start:63",
+    "error:63:league 63 failed",
+    "start:47",
+    "complete:47"
+  ]);
+});
+
+test("explicit cancellation still stops the sequential scope runner", async () => {
+  const visited: number[] = [];
+  const result = await runSequentialScopesIndependently(
+    [42, 63, 47],
+    0,
+    async (leagueId) => {
+      visited.push(leagueId);
+      return leagueId === 63 ? "stop" : "continue";
+    },
+    async () => {
+      throw new Error("cancellation is not a scope failure");
+    }
+  );
+
+  assert.equal(result.stopped, true);
+  assert.deepEqual(visited, [42, 63]);
+});
 
 test("job-level incremental scopes retain upcoming fixtures for a targeted league", async () => {
   const prisma = {
@@ -166,4 +221,26 @@ test("a newer failed exact ingestion attempt invalidates an older success", () =
 
   assert.equal(selected?.job.id, "failure");
   assert.equal(selected?.evidence.status, "failed");
+});
+
+test("a failed tournament does not invalidate successful RPL evidence from the same job", () => {
+  const mixedJob = {
+    id: "mixed-result",
+    status: "completed_with_errors",
+    startedAt: new Date("2026-07-30T00:00:00.000Z"),
+    finishedAt: new Date("2026-07-30T00:20:00.000Z"),
+    currentSeason: null,
+    metadata: {
+      completed_canonical_scopes: [
+        { league_id: 42, season: "2026/2027", status: "completed_with_errors", upcoming_fixtures_discovered: 0 },
+        { league_id: 63, season: "2026/2027", status: "completed", upcoming_fixtures_discovered: 232 }
+      ]
+    }
+  };
+
+  const selected = selectLatestIngestionAttempt([mixedJob], 63n, "2026/2027");
+
+  assert.equal(selected?.job.id, "mixed-result");
+  assert.equal(selected?.evidence.status, "completed");
+  assert.equal(selected?.evidence.upcoming_fixtures_discovered, 232);
 });
