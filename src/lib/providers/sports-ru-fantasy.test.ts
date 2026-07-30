@@ -144,6 +144,65 @@ test("latest published Sports.ru squad falls back from an open tour to the lates
   assert.equal(queries.some((query) => query.includes('tourID: "tour-2"')), false);
 });
 
+test("expected Sports.ru tour skips an exposed future current squad and loads the matching archive", async () => {
+  const queries: string[] = [];
+  const fetchImpl = (async (_input: string | URL | Request, init?: RequestInit) => {
+    const query = JSON.parse(String(init?.body ?? "{}"))?.query as string;
+    queries.push(query);
+    if (query.includes("squads(input:")) {
+      return jsonResponse({ data: { fantasyQueries: { squads: [{
+        id: "squad-1",
+        name: "My team",
+        createdAt: "2026-07-30T10:00:00Z",
+        season: {
+          id: "75",
+          tournament: { name: "Russia", webName: "russia" },
+          currentTour: { id: "tour-2", name: "2 тур", status: "OPENED" },
+          tours: [
+            { id: "tour-1", name: "1 тур", status: "FINISHED", finishedAt: "2026-07-25T20:00:00Z" },
+            { id: "tour-2", name: "2 тур", status: "OPENED", startedAt: "2026-07-31T10:00:00Z" }
+          ]
+        },
+        currentTourInfo: {
+          tour: { id: "tour-2", name: "2 тур", status: "OPENED" },
+          totalPrice: 100,
+          currentBalance: 0,
+          players: [{
+            seasonPlayer: { id: "future-player", name: "Future Player", price: 7, role: "FORWARD", team: { name: "Future" }, statObject: null },
+            isCaptain: true,
+            isViceCaptain: false,
+            isStarting: true,
+            substitutePriority: null
+          }]
+        }
+      }] } } });
+    }
+    assert.match(query, /tourID: "tour-1"/);
+    return jsonResponse({ data: { fantasyQueries: { squadTourInfo: {
+      tour: { id: "tour-1", name: "1 тур", status: "FINISHED", finishedAt: "2026-07-25T20:00:00Z" },
+      totalPrice: 96,
+      currentBalance: 4,
+      players: [{
+        seasonPlayer: { id: "published-player", name: "Published Player", price: 6, role: "GOALKEEPER", team: { name: "Published" }, statObject: null },
+        isCaptain: false,
+        isViceCaptain: false,
+        isStarting: true,
+        substitutePriority: null
+      }]
+    } } } });
+  }) as typeof fetch;
+
+  const squad = await fetchSportsRuLatestPublishedSquad("1090024123", "75", {
+    fetchImpl,
+    expectedTourNumber: 1
+  });
+
+  assert.equal(squad?.tourId, "tour-1");
+  assert.equal(squad?.players[0].providerPlayerId, "published-player");
+  assert.equal(queries.length, 2);
+  assert.equal(queries.some((query) => query.includes('tourID: "tour-2"')), false);
+});
+
 function jsonResponse(value: unknown) {
   return new Response(JSON.stringify(value), {
     status: 200,
