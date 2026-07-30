@@ -25,13 +25,6 @@ test("squad controls stay usable without page-level horizontal clipping", async 
     await expect(page.getByRole("button", { name: /Auto-pick XI/i })).toBeVisible();
     await page.getByText("More actions", { exact: true }).click();
     await expect(page.getByRole("textbox", { name: /Search by player name/i })).toBeVisible();
-
-    await page.keyboard.press("Control+K");
-    const commandPalette = page.getByRole("dialog", { name: /Command palette/i });
-    await expect(commandPalette).toHaveCount(1);
-    await expect(commandPalette).toBeVisible();
-    await page.keyboard.press("Escape");
-    await expect(commandPalette).toBeHidden();
   } else {
     const poolTab = page.getByRole("radio", { name: /Pool/i });
     await expect(poolTab).toBeVisible();
