@@ -5,6 +5,16 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.2.3 - 2026-07-30
+
+### Fixed
+
+- Sequential ingestion now isolates every league-season scope. A failed
+  tournament or league is recorded in `scope_errors`, the shared job finishes
+  as `completed_with_errors`, and later leagues continue updating normally.
+- Successful league evidence remains usable for planner and transfer
+  readiness even when another league in the same ingestion job fails.
+
 ## 0.2.2 - 2026-07-30
 
 ### Security
