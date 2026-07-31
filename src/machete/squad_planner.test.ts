@@ -5,6 +5,7 @@ import {
   addPromotedTeamStrengthProfiles,
   aggregateRoundDifficulty,
   buildFormulaProjectionIndex,
+  buildBookmakerFavorites,
   buildFantasyForecastExplanation,
   buildPlannerRoundFixtures,
   buildTeamStrengthProfilesFromMatches,
@@ -915,6 +916,67 @@ test("squad planner retains completed fixtures in an active split round", () => 
   assert.equal(result.rounds[0]?.id, "round:12");
   assert.equal(result.rounds[0]?.fixtureCount, 2);
   assert.equal(result.fixturesByTeamRound.get("round:12")?.get("10")?.[0].id, "1");
+});
+
+test("bookmaker favorites select one team per unfinished fixture by team over 1.5 probability", () => {
+  const awayFavorite = Object.assign(
+    match({ id: "1", round: "12", date: "2026-05-25T17:00:00.000Z", homeTeamId: "10", awayTeamId: "20" }),
+    {
+      homeOver15Probability: 0.48,
+      awayOver15Probability: 0.62,
+      homeCleanSheetProbability: 0.55,
+      awayCleanSheetProbability: 0.32,
+      oddsFetchedAt: new Date("2026-05-22T09:00:00.000Z")
+    }
+  );
+  const homeFavorite = Object.assign(
+    match({ id: "2", round: "12", date: "2026-05-25T19:00:00.000Z", homeTeamId: "30", awayTeamId: "40" }),
+    {
+      homeOver15Probability: 0.7,
+      awayOver15Probability: 0.3,
+      homeCleanSheetProbability: 0.2,
+      awayCleanSheetProbability: 0.5,
+      oddsFetchedAt: new Date("2026-05-22T10:00:00.000Z")
+    }
+  );
+  const incomplete = Object.assign(
+    match({ id: "3", round: "12", date: "2026-05-26T17:00:00.000Z", homeTeamId: "50", awayTeamId: "60" }),
+    {
+      homeOver15Probability: 0.8,
+      awayOver15Probability: null,
+      homeCleanSheetProbability: 0.6,
+      awayCleanSheetProbability: null,
+      oddsFetchedAt: new Date("2026-05-22T10:00:00.000Z")
+    }
+  );
+  const completed = Object.assign(
+    match({ id: "4", round: "12", date: "2026-05-21T17:00:00.000Z", homeTeamId: "70", awayTeamId: "80" }),
+    {
+      finished: true,
+      homeOver15Probability: 0.9,
+      awayOver15Probability: 0.1,
+      homeCleanSheetProbability: 0.7,
+      awayCleanSheetProbability: 0.1,
+      oddsFetchedAt: new Date("2026-05-21T10:00:00.000Z")
+    }
+  );
+  const fixtures = buildPlannerRoundFixtures(
+    [awayFavorite, homeFavorite, incomplete, completed],
+    new Date("2026-05-22T00:00:00.000Z")
+  );
+
+  const favorites = buildBookmakerFavorites(fixtures);
+
+  assert.deepEqual(favorites.map((row) => [row.fixtureId, row.teamId, row.side]), [
+    ["2", "30", "H"],
+    ["1", "20", "A"]
+  ]);
+  assert.deepEqual(
+    favorites.map((row) => [row.teamOver15Probability, row.cleanSheetProbability]),
+    [[0.7, 0.2], [0.62, 0.32]]
+  );
+  assert.equal(favorites[0].source, "FONBET");
+  assert.equal(favorites[0].oddsFetchedAt, "2026-05-22T10:00:00.000Z");
 });
 
 test("squad planner uses provider team short names with a full-name fallback", () => {
