@@ -115,12 +115,13 @@ test("Sports.ru snapshot uses the public mononym instead of an unwanted legal su
       name: "Вендел Вале",
       price: 8.5,
       team: { id: "1", name: "Зенит" },
-      statObject: { name: "Вендел Вале", firstName: "", lastName: "Вендел" }
+      statObject: { name: "Вендел Вале", firstName: "", lastName: "Вендел", coalesceName: "Marcus Wendel Valle da Silva" }
     }] } } } });
   }) as typeof fetch;
 
   const snapshot = await fetchSportsRuFantasyGraphqlSnapshot("russia", { fetchImpl, pageSize: 10 });
   assert.equal(snapshot.prices[0]?.playerName, "Вендел");
+  assert.equal(snapshot.prices[0]?.providerCanonicalName, "Marcus Wendel Valle da Silva");
 });
 
 test("Sports.ru tournament HRU is derived from a fantasy URL", () => {

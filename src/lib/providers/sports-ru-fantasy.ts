@@ -17,6 +17,7 @@ export type SportsRuFantasyContestRules = {
 export type SportsRuFantasyPriceRow = {
   providerPlayerId?: string | null;
   playerName: string;
+  providerCanonicalName?: string | null;
   normalizedName: string;
   teamName?: string | null;
   position: string | null;
@@ -120,7 +121,12 @@ export async function fetchSportsRuFantasyGraphqlSnapshot(
               name?: string | null;
               price?: number | null;
               team?: { id?: string | null; name?: string | null } | null;
-              statObject?: { name?: string | null; firstName?: string | null; lastName?: string | null } | null;
+              statObject?: {
+                name?: string | null;
+                firstName?: string | null;
+                lastName?: string | null;
+                coalesceName?: string | null;
+              } | null;
             }> | null;
           } | null;
         };
@@ -136,7 +142,7 @@ export async function fetchSportsRuFantasyGraphqlSnapshot(
               sortType: BY_PRICE,
               role: ${role}
             }) {
-              list { id name price team { id name } statObject { name firstName lastName } }
+              list { id name price team { id name } statObject { name firstName lastName coalesceName } }
             }
           }
         }`,
@@ -155,6 +161,7 @@ export async function fetchSportsRuFantasyGraphqlSnapshot(
         prices.push({
           providerPlayerId,
           playerName,
+          providerCanonicalName: cleanText(player.statObject?.coalesceName ?? "") || null,
           normalizedName: normalizeSportsRuPlayerName(playerName),
           teamName: cleanText(player.team?.name ?? "") || null,
           position,

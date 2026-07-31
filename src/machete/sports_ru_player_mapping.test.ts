@@ -34,6 +34,41 @@ test("sports ru mapping uses FotMob player-name hints from imported sheets", () 
   assert.equal(result.reason.includes("fotmob hint"), true);
 });
 
+test("sports ru mapping matches a public name contained in a provider legal name", () => {
+  const result = scoreSportsRuCandidate(
+    {
+      ...price("nolan courtens", "MID"),
+      teamName: "Херенвен",
+      fotmobPlayerName: "Nolhan Allan Courtens Mabeneyshi"
+    },
+    roster("Nolhan Courtens", "ST", { name: "SC Heerenveen" })
+  );
+
+  assert.equal(result.confidence >= 0.78, true);
+});
+
+test("sports ru mapping matches a provider legal name to a FotMob mononym", () => {
+  const result = scoreSportsRuCandidate(
+    {
+      ...price("zhamiru", "MID"),
+      teamName: "НЕК",
+      fotmobPlayerName: "Jamiro Gregory Monteiro Alvarenga"
+    },
+    roster("Jamiro", "CM", { name: "NEC Nijmegen" })
+  );
+
+  assert.equal(result.confidence >= 0.78, true);
+});
+
+test("sports ru mapping does not confuse players who only share a first name", () => {
+  const result = scoreSportsRuCandidate(
+    { ...price("gustavo cunha", "MID"), teamName: "Витория Гимараэш" },
+    roster("Gustavo Silva", "CAM", { name: "Vitoria de Guimaraes" })
+  );
+
+  assert.equal(result.confidence < 0.78, true);
+});
+
 test("sports ru mapping prefers same-position team roster candidate", () => {
   const candidates = buildSportsRuMappingCandidates(
     price("alisson", "GK"),
@@ -53,6 +88,15 @@ test("sports ru mapping penalizes known position mismatch", () => {
   const forward = scoreSportsRuCandidate(price("gabriel", "FWD"), roster("Gabriel Magalhaes", "DEF", { name: "Arsenal" }));
 
   assert.equal(defender.confidence > forward.confidence, true);
+});
+
+test("sports ru mapping treats a FotMob winger as a Sports.ru fantasy midfielder", () => {
+  const result = scoreSportsRuCandidate(
+    { ...price("anis hadj moussa", "MID"), teamName: "Фейеноорд" },
+    roster("Anis Hadj Moussa", "RW,LW", { name: "Feyenoord" })
+  );
+
+  assert.equal(result.confidence, 1);
 });
 
 test("sports ru mapping rejects a similar name from another known team", () => {
@@ -93,6 +137,33 @@ test("sports ru mapping canonicalizes current RPL team transliteration variants"
     const result = scoreSportsRuCandidate(
       { ...price("ivan player", "MID"), teamName: sportsTeam },
       roster("Ivan Player", "MID", { name: fotmobTeam })
+    );
+    assert.equal(result.confidence, 1, `${sportsTeam} should match ${fotmobTeam}`);
+  }
+});
+
+test("sports ru mapping canonicalizes every current Eredivisie and Liga Portugal team", () => {
+  const cases = [
+    ["АЗ Алкмар", "AZ Alkmaar"], ["Аякс", "Ajax"], ["Виллем II", "Willem II"],
+    ["Гоу Эхед Иглс", "Go Ahead Eagles"], ["Гронинген", "FC Groningen"],
+    ["Ден Хааг", "ADO Den Haag"], ["Зволле", "PEC Zwolle"], ["Камбюр", "Cambuur"],
+    ["НЕК", "NEC Nijmegen"], ["ПСВ", "PSV Eindhoven"], ["Спарта", "Sparta Rotterdam"],
+    ["Твенте", "FC Twente"], ["Телстар", "Telstar"], ["Утрехт", "FC Utrecht"],
+    ["Фейеноорд", "Feyenoord"], ["Фортуна Ситтард", "Fortuna Sittard"],
+    ["Херенвен", "SC Heerenveen"], ["Эксельсиор", "Excelsior"],
+    ["Академику де Визеу", "Academico Viseu"], ["Алверка", "Alverca"],
+    ["Арука", "Arouca"], ["Бенфика", "Benfica"], ["Брага", "Braga"],
+    ["Витория Гимараэш", "Vitoria de Guimaraes"], ["Жил Висенте", "Gil Vicente"],
+    ["Каза Пия", "Casa Pia AC"], ["Маритиму", "Maritimo"], ["Морейренсе", "Moreirense"],
+    ["Насьонал", "Nacional"], ["Порту", "FC Porto"], ["Риу Аве", "Rio Ave"],
+    ["Санта-Клара", "Santa Clara"], ["Спортинг", "Sporting CP"],
+    ["Фамаликан", "Famalicao"], ["Эшторил", "Estoril"], ["Эштрела", "Estrela da Amadora"]
+  ] as const;
+
+  for (const [sportsTeam, fotmobTeam] of cases) {
+    const result = scoreSportsRuCandidate(
+      { ...price("verified player", "MID"), teamName: sportsTeam },
+      roster("Verified Player", "MID", { name: fotmobTeam })
     );
     assert.equal(result.confidence, 1, `${sportsTeam} should match ${fotmobTeam}`);
   }
