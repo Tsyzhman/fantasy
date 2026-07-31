@@ -69,6 +69,16 @@ const sportsRuFantasyRoles = [
   ["FORWARD", "FWD"]
 ] as const;
 
+// Sports.ru currently publishes Eredivisie season-player 68274 with Hakeem
+// Agboluaje's display name. It is a separate Feyenoord midfielder: Arman
+// Nahany. Correct the provider typo before the normalized-name uniqueness key
+// is applied, otherwise his row overwrites Hakeem's defender price.
+const sportsRuFantasyPlayerNameCorrections: Readonly<Record<string, Readonly<Record<string, string>>>> = {
+  netherlands: {
+    "68274": "Арман Нахани"
+  }
+};
+
 export async function fetchSportsRuFantasyGraphqlSnapshot(
   tournamentHru: string,
   options: {
@@ -135,7 +145,10 @@ export async function fetchSportsRuFantasyGraphqlSnapshot(
       const players = response.fantasyQueries?.players?.list ?? [];
       for (const player of players) {
         const providerPlayerId = player.id?.trim();
-        const playerName = sportsRuFantasyDisplayName(player);
+        const correctedPlayerName = providerPlayerId
+          ? sportsRuFantasyPlayerNameCorrections[hru]?.[providerPlayerId]
+          : null;
+        const playerName = correctedPlayerName ?? sportsRuFantasyDisplayName(player);
         const price = Number(player.price);
         if (!providerPlayerId || seenPlayerIds.has(providerPlayerId) || !playerName || !Number.isFinite(price)) continue;
         seenPlayerIds.add(providerPlayerId);
@@ -146,7 +159,7 @@ export async function fetchSportsRuFantasyGraphqlSnapshot(
           teamName: cleanText(player.team?.name ?? "") || null,
           position,
           price,
-          sourceKind: "graphql-current-season",
+          sourceKind: correctedPlayerName ? "graphql-current-season-corrected" : "graphql-current-season",
           sourceRowIndex: prices.length
         });
       }
