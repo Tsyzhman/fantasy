@@ -116,6 +116,10 @@ export async function syncSportsRuFantasy(prisma: PrismaClient, input: SportsRuF
       const priceData = {
         providerPlayerId: row.providerPlayerId,
         playerName: row.playerName,
+        // Sports.ru's stat object exposes the canonical Latin identity name.
+        // Persist it in the existing cross-provider name-hint column so the
+        // FotMob matcher does not have to guess from Russian transliteration.
+        fotmobPlayerName: row.providerCanonicalName ?? null,
         normalizedName: row.normalizedName,
         teamName: row.teamName ?? "",
         sportsTeamName: row.teamName ?? null,

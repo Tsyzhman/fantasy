@@ -78,6 +78,54 @@ const internalPlayerEntityType = "PLAYER";
 const autoConfidenceThreshold = 0.78;
 const displayCandidateThreshold = 0.58;
 
+// Sports.ru exposes localized club names while FotMob keeps the provider's
+// Latin club names. A known team must be canonicalized before player-name
+// scoring; otherwise an exact player identity is rejected as a team mismatch.
+const sportsRuTeamNamePairs = [
+  ["АЗ Алкмар", "AZ Alkmaar"],
+  ["Аякс", "Ajax"],
+  ["Виллем II", "Willem II"],
+  ["Гоу Эхед Иглс", "Go Ahead Eagles"],
+  ["Гронинген", "FC Groningen"],
+  ["Ден Хааг", "ADO Den Haag"],
+  ["Зволле", "PEC Zwolle"],
+  ["Камбюр", "Cambuur"],
+  ["НЕК", "NEC Nijmegen"],
+  ["ПСВ", "PSV Eindhoven"],
+  ["Спарта", "Sparta Rotterdam"],
+  ["Твенте", "FC Twente"],
+  ["Телстар", "Telstar"],
+  ["Утрехт", "FC Utrecht"],
+  ["Фейеноорд", "Feyenoord"],
+  ["Фортуна Ситтард", "Fortuna Sittard"],
+  ["Херенвен", "SC Heerenveen"],
+  ["Эксельсиор", "Excelsior"],
+  ["Академику де Визеу", "Academico Viseu"],
+  ["Алверка", "Alverca"],
+  ["Арука", "Arouca"],
+  ["Бенфика", "Benfica"],
+  ["Брага", "Braga"],
+  ["Витория Гимараэш", "Vitoria de Guimaraes"],
+  ["Жил Висенте", "Gil Vicente"],
+  ["Каза Пия", "Casa Pia AC"],
+  ["Маритиму", "Maritimo"],
+  ["Морейренсе", "Moreirense"],
+  ["Насьонал", "Nacional"],
+  ["Порту", "FC Porto"],
+  ["Риу Аве", "Rio Ave"],
+  ["Санта-Клара", "Santa Clara"],
+  ["Спортинг", "Sporting CP"],
+  ["Фамаликан", "Famalicao"],
+  ["Эшторил", "Estoril"],
+  ["Эштрела", "Estrela da Amadora"]
+] as const;
+const sportsRuCanonicalTeamNames = new Map<string, string>();
+for (const [sportsName, fotmobName] of sportsRuTeamNamePairs) {
+  const canonicalName = normalizeSportsRuPlayerName(fotmobName);
+  sportsRuCanonicalTeamNames.set(normalizeSportsRuPlayerName(sportsName), canonicalName);
+  sportsRuCanonicalTeamNames.set(canonicalName, canonicalName);
+}
+
 export async function autoMapSportsRuFantasyPlayers(
   prisma: PrismaClient,
   input: {
@@ -441,7 +489,7 @@ export function scoreSportsRuCandidate(price: SportsRuPriceLike, entry: RosterEn
   if (nameScore === 0) return { confidence: 0, reason: "name mismatch" };
   const pricePosition = normalizeFantasyPosition(price.position);
   const rosterPosition = normalizeFantasyPosition(entry.position);
-  const positionAdjustment = positionScoreAdjustment(pricePosition, rosterPosition);
+  const positionAdjustment = positionScoreAdjustment(pricePosition, rosterPosition, entry.position);
   const teamAdjustment = teamScoreAdjustment(price.teamName, entry.team.name);
   if (teamAdjustment < 0) return { confidence: 0, reason: "team mismatch" };
   const confidence = clamp(round(nameScore + positionAdjustment + teamAdjustment), 0, 1);
@@ -674,6 +722,24 @@ function scoreNameMatch(sportsName: string, fotmobName: string) {
   const fotmobTokens = fotmobName.split(" ").filter(Boolean);
   if (sportsTokens.length === 0 || fotmobTokens.length === 0) return 0;
 
+  // Sports.ru's canonical identity can be a full legal name while FotMob
+  // shows only the public two-part name (or the other way around). Compare
+  // token sequences in both directions instead of requiring the long name to
+  // fit into a window taken only from the short one.
+  const shorterTokens = sportsTokens.length <= fotmobTokens.length ? sportsTokens : fotmobTokens;
+  const longerTokens = sportsTokens.length <= fotmobTokens.length ? fotmobTokens : sportsTokens;
+  if (shorterTokens.length >= 2 && containsTokenSequence(longerTokens, shorterTokens)) return 0.96;
+
+  const aligned = alignedTokenSimilarity(shorterTokens, longerTokens);
+  if (shorterTokens.length >= 2 && aligned.minimum >= 0.72 && aligned.average >= 0.87) {
+    if (aligned.average >= 0.96) return 0.95;
+    return aligned.average >= 0.91 ? 0.91 : 0.86;
+  }
+  if (shorterTokens.length === 1 && shorterTokens[0].length >= 5) {
+    if (aligned.minimum === 1) return 0.91;
+    if (aligned.minimum >= 0.9) return 0.84;
+  }
+
   const sameSurname = sportsTokens.length >= 2
     && fotmobTokens.length >= 2
     && sportsTokens.at(-1) === fotmobTokens.at(-1);
@@ -684,7 +750,6 @@ function scoreNameMatch(sportsName: string, fotmobName: string) {
     // accepting unrelated players who merely share a surname.
     return firstNameScore >= 0.95 ? 0.96 : 0.88;
   }
-
   let best = 0;
   for (let size = 1; size <= Math.min(sportsTokens.length + 1, fotmobTokens.length); size += 1) {
     for (let index = 0; index <= fotmobTokens.length - size; index += 1) {
@@ -700,11 +765,95 @@ function scoreNameMatch(sportsName: string, fotmobName: string) {
     }
   }
 
-  return best >= 0.68 ? best : 0;
+  // With two multi-part names, a shared given name is not enough evidence.
+  // Require a stronger whole-window resemblance if family-name token
+  // alignment did not already prove the identity above.
+  const minimumWindowScore = sportsTokens.length >= 2 && fotmobTokens.length >= 2 ? 0.72 : 0.68;
+  return best >= minimumWindowScore ? best : 0;
 }
 
-function positionScoreAdjustment(pricePosition: FantasyPositionGroup, rosterPosition: FantasyPositionGroup) {
+function containsTokenSequence(haystack: string[], needle: string[]) {
+  if (needle.length > haystack.length) return false;
+  for (let index = 0; index <= haystack.length - needle.length; index += 1) {
+    if (needle.every((token, offset) => token === haystack[index + offset])) return true;
+  }
+  return false;
+}
+
+function alignedTokenSimilarity(shorter: string[], longer: string[]) {
+  const used = new Set<number>();
+  const scores = shorter.map((shortToken) => {
+    let bestIndex = -1;
+    let bestScore = 0;
+    for (let index = 0; index < longer.length; index += 1) {
+      if (used.has(index)) continue;
+      const score = tokenSimilarity(shortToken, longer[index]);
+      if (score > bestScore) {
+        bestScore = score;
+        bestIndex = index;
+      }
+    }
+    if (bestIndex >= 0) used.add(bestIndex);
+    return bestScore;
+  });
+  return {
+    minimum: Math.min(...scores),
+    average: scores.reduce((sum, score) => sum + score, 0) / scores.length
+  };
+}
+
+function tokenSimilarity(left: string, right: string) {
+  return Math.max(similarity(left, right), jaroWinkler(left, right));
+}
+
+function jaroWinkler(left: string, right: string) {
+  if (!left || !right) return 0;
+  if (left === right) return 1;
+  const range = Math.max(0, Math.floor(Math.max(left.length, right.length) / 2) - 1);
+  const leftMatches = Array.from({ length: left.length }, () => false);
+  const rightMatches = Array.from({ length: right.length }, () => false);
+  let matches = 0;
+
+  for (let leftIndex = 0; leftIndex < left.length; leftIndex += 1) {
+    const start = Math.max(0, leftIndex - range);
+    const end = Math.min(right.length, leftIndex + range + 1);
+    for (let rightIndex = start; rightIndex < end; rightIndex += 1) {
+      if (rightMatches[rightIndex] || left[leftIndex] !== right[rightIndex]) continue;
+      leftMatches[leftIndex] = true;
+      rightMatches[rightIndex] = true;
+      matches += 1;
+      break;
+    }
+  }
+  if (matches === 0) return 0;
+
+  const matchedLeft = [...left].filter((_char, index) => leftMatches[index]);
+  const matchedRight = [...right].filter((_char, index) => rightMatches[index]);
+  let transpositions = 0;
+  for (let index = 0; index < matchedLeft.length; index += 1) {
+    if (matchedLeft[index] !== matchedRight[index]) transpositions += 1;
+  }
+  const jaro = (
+    matches / left.length
+    + matches / right.length
+    + (matches - transpositions / 2) / matches
+  ) / 3;
+  let prefix = 0;
+  while (prefix < Math.min(4, left.length, right.length) && left[prefix] === right[prefix]) prefix += 1;
+  return jaro + prefix * 0.1 * (1 - jaro);
+}
+
+function positionScoreAdjustment(
+  pricePosition: FantasyPositionGroup,
+  rosterPosition: FantasyPositionGroup,
+  rawRosterPosition: string | null
+) {
   if (pricePosition === "UNK" || rosterPosition === "UNK") return 0;
+  // Sports.ru fantasy classifies wide attackers as midfielders in these
+  // tournaments, while FotMob's primary LW/RW code normalizes to FWD.
+  // Treat that provider-taxonomy difference as a match, not a contradiction.
+  const primaryRosterCode = rawRosterPosition?.split(/[,;|]+/)[0]?.trim().toUpperCase() ?? "";
+  if (pricePosition === "MID" && ["LW", "RW"].includes(primaryRosterCode)) return 0.05;
   return pricePosition === rosterPosition ? 0.05 : -0.1;
 }
 
@@ -718,11 +867,12 @@ function teamScoreAdjustment(sportsTeamName: string, fotmobTeamName: string) {
 }
 
 function canonicalSportsRuTeamName(value: string) {
-  return normalizeSportsRuPlayerName(value)
+  const normalized = normalizeSportsRuPlayerName(value)
     .replace(/\bahmat\b/g, "akhmat")
     .replace(/\bdinamo\b/g, "dynamo")
     .replace(/\bmahachkala\b/g, "makhachkala")
     .replace(/\btsska\b/g, "cska");
+  return sportsRuCanonicalTeamNames.get(normalized) ?? normalized;
 }
 
 function similarity(left: string, right: string) {

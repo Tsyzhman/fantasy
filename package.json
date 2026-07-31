@@ -1,6 +1,6 @@
 {
   "name": "fantasy-scout",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "private": true,
   "engines": {
     "node": ">=20.9.0"
@@ -51,6 +51,7 @@
     "prices:import-sheet": "tsx scripts/import-fantasy-price-sheet.ts",
     "prices:sync-sports-ru": "tsx scripts/import-sports-ru-fantasy.ts",
     "prices:map-rpl-2026-27": "tsx scripts/map-sports-ru-rpl-2026-27.ts",
+    "prices:map-nl-pt-2026-27": "tsx scripts/map-sports-ru-nl-pt-2026-27.ts",
     "forecasts:sync-foontasy": "tsx scripts/sync-foontasy-forecasts.ts",
     "forecasts:analyze-foontasy": "tsx scripts/analyze-foontasy-archive.ts",
     "benchmark:squad-interactions": "tsx scripts/benchmark-squad-interactions.ts",
