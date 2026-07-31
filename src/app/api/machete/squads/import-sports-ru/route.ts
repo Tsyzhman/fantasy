@@ -9,7 +9,11 @@ import {
   mergeImportedSquadWithFuturePlans,
   SportsRuSquadImportError
 } from "@/machete/sports_ru_squad_import";
-import { loadStoredSportsRuSquadImportPreview } from "@/machete/sports_ru_squad_snapshots";
+import {
+  loadStoredSportsRuSquadImportPreview,
+  syncSportsRuSquadSnapshotOnDemand,
+  type SportsRuSquadSnapshotStatus
+} from "@/machete/sports_ru_squad_snapshots";
 import { validateFantasySquadForSave } from "@/machete/squad_logic";
 import { loadFantasySquadPlannerData, saveFantasySquad, uniqueFantasySquadName } from "@/machete/squad_planner";
 
@@ -50,7 +54,25 @@ export const POST = withApiHandler(async (request: Request) => {
   const plannerData = await loadFantasySquadPlannerData(prisma, auth.user.id, league, squadId);
   if (squadId && plannerData.squad.id !== squadId) return jsonError("NOT_FOUND", "Squad variant not found.", 404);
 
-  let preview;
+  let snapshotStatus: SportsRuSquadSnapshotStatus | null = null;
+  try {
+    snapshotStatus = await syncSportsRuSquadSnapshotOnDemand(prisma, {
+      userId: auth.user.id,
+      leagueId,
+      season,
+      expectedSquadSize: plannerData.rules.squadSize
+    });
+  } catch (error) {
+    if (error instanceof SportsRuSquadImportError) {
+      if (error.code === "SPORTS_SNAPSHOT_PENDING") {
+        return pendingSportsRuResponse(error, snapshotStatus);
+      }
+      return sportsRuImportErrorResponse(error);
+    }
+    throw error;
+  }
+
+  let preview: Awaited<ReturnType<typeof loadStoredSportsRuSquadImportPreview>>;
   try {
     preview = await loadStoredSportsRuSquadImportPreview(prisma, {
       userId: auth.user.id,
@@ -60,12 +82,10 @@ export const POST = withApiHandler(async (request: Request) => {
     });
   } catch (error) {
     if (error instanceof SportsRuSquadImportError) {
-      const status = error.code === "SPORTS_PROFILE_REQUIRED"
-        ? 412
-        : ["SPORTS_SNAPSHOT_PENDING", "STORED_SPORTS_SQUAD_INVALID"].includes(error.code)
-            ? 409
-            : 502;
-      return jsonError(error.code, error.message, status);
+      if (error.code === "SPORTS_SNAPSHOT_PENDING") {
+        return pendingSportsRuResponse(error, snapshotStatus);
+      }
+      return sportsRuImportErrorResponse(error);
     }
     throw error;
   }
@@ -135,6 +155,28 @@ function publicPreview(preview: Awaited<ReturnType<typeof loadStoredSportsRuSqua
     playersCount: preview.selections.length,
     unmapped: preview.unmapped
   };
+}
+
+function pendingSportsRuResponse(
+  error: SportsRuSquadImportError,
+  snapshot: SportsRuSquadSnapshotStatus | null
+) {
+  return NextResponse.json({
+    imported: false,
+    pending: true,
+    code: error.code,
+    message: error.message,
+    snapshot
+  }, { status: 202 });
+}
+
+function sportsRuImportErrorResponse(error: SportsRuSquadImportError) {
+  const status = error.code === "SPORTS_PROFILE_REQUIRED"
+    ? 412
+    : error.code === "STORED_SPORTS_SQUAD_INVALID"
+        ? 409
+        : 502;
+  return jsonError(error.code, error.message, status);
 }
 
 function parseBigInt(value: unknown) {

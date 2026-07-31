@@ -119,6 +119,10 @@ test("stored Sports squad action sits immediately left of save in the one-line s
   assert.match(squadPlannerSource, /grid-cols-\[minmax\(0,1fr\)_auto\]/);
   assert.match(headingBlock, /en="Sports squad" ru="Состав Sports"/);
   assert.match(headingBlock, /whitespace-nowrap/);
+  assert.match(headingBlock, /id="sports-ru-import-status"/);
+  assert.match(headingBlock, /role="status"/);
+  assert.match(squadPlannerSource, /Requesting the published Sports\.ru squad and matching its players/);
+  assert.match(squadPlannerSource, /response\.status === 202 && payload\.pending/);
   assert.equal(squadPlannerSource.match(/onClick=\{\(\) => saveSquad\(false\)\}/g)?.length, 1);
   assert.doesNotMatch(squadPageSource, /SportsRuSquadImport/);
 });

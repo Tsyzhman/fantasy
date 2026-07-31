@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ArrowLeftRight, ArrowRight, Bookmark, Check, Columns3, Copy, Crown, Download, FilePlus2, Layers3, ListChecks, Lock, MoreHorizontal, Plus, Save, Search, SlidersHorizontal, Sparkles, Trash2, Users, X } from "lucide-react";
+import { ArrowLeft, ArrowLeftRight, ArrowRight, Bookmark, Check, Columns3, Copy, Crown, Download, FilePlus2, Layers3, ListChecks, LoaderCircle, Lock, MoreHorizontal, Plus, Save, Search, SlidersHorizontal, Sparkles, Trash2, Users, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type DragEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject, type SetStateAction, useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
@@ -119,6 +119,10 @@ const fantasySquadOptimizationSafetyTimeoutMs = 15_000;
 
 type UiLanguage = ReturnType<typeof useLanguage>;
 type MobileTab = "squad" | "pool" | "suggestions";
+type SportsImportNotice = {
+  tone: "progress" | "waiting" | "error";
+  text: string;
+};
 type StoredSquadCaptains = {
   captainId: string | null;
   viceCaptainId: string | null;
@@ -295,6 +299,8 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
   const [isPending, startTransition] = useTransition();
   const [savePending, setSavePending] = useState(false);
   const [sportsImportPending, setSportsImportPending] = useState(false);
+  const [sportsSnapshotStatus, setSportsSnapshotStatus] = useState(sportsRuSquadStatus);
+  const [sportsImportNotice, setSportsImportNotice] = useState<SportsImportNotice | null>(null);
   const [deletePending, setDeletePending] = useState(false);
   const [tableExportPending, setTableExportPending] = useState(false);
   const interactionPending = isPending || savePending || sportsImportPending || deletePending;
@@ -1152,6 +1158,14 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
   async function importStoredSportsRuSquad() {
     if (interactionPending || autoPickPending) return;
     setSportsImportPending(true);
+    setSportsImportNotice({
+      tone: "progress",
+      text: localizedText(
+        language,
+        "Requesting the published Sports.ru squad and matching its players…",
+        "Запрашиваем опубликованный состав Sports.ru и сопоставляем игроков…"
+      )
+    });
     setMessage(null);
     try {
       const response = await fetch("/api/machete/squads/import-sports-ru", {
@@ -1167,24 +1181,47 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
         error?: { code?: string; message?: string };
         code?: string;
         message?: string;
+        pending?: boolean;
+        snapshot?: SportsRuSquadSnapshotStatus | null;
         squad?: { id?: string };
       };
+      if (payload.snapshot) setSportsSnapshotStatus(payload.snapshot);
+      if (response.status === 202 && payload.pending) {
+        setSportsImportNotice({
+          tone: "waiting",
+          text: localizedSportsRuPendingStatus(language, payload.snapshot ?? null)
+        });
+        return;
+      }
       if (!response.ok) {
         const code = payload.error?.code ?? payload.code ?? "SPORTS_IMPORT_FAILED";
         const fallback = payload.error?.message ?? payload.message ?? null;
-        setMessage(localizedSportsRuImportError(language, code, fallback));
+        setSportsImportNotice({
+          tone: "error",
+          text: localizedSportsRuImportError(language, code, fallback)
+        });
         return;
       }
       const savedSquadId = payload.squad?.id;
       if (!savedSquadId) {
-        setMessage(localizedText(language, "The server did not return the imported squad ID.", "Сервер не вернул ID импортированного состава."));
+        setSportsImportNotice({
+          tone: "error",
+          text: localizedText(language, "The server did not return the imported squad ID.", "Сервер не вернул ID импортированного состава.")
+        });
         return;
       }
+      setSportsImportNotice({
+        tone: "progress",
+        text: localizedText(language, "Squad loaded. Applying it to the planner…", "Состав загружен. Применяем его в планировщике…")
+      });
       const url = new URL(window.location.href);
       url.searchParams.set("squadId", savedSquadId);
       window.location.replace(`${url.pathname}?${url.searchParams.toString()}`);
     } catch {
-      setMessage(localizedText(language, "Could not load the stored Sports squad.", "Не удалось загрузить сохранённый состав Sports."));
+      setSportsImportNotice({
+        tone: "error",
+        text: localizedText(language, "Could not request the Sports.ru squad.", "Не удалось запросить состав Sports.ru.")
+      });
     } finally {
       setSportsImportPending(false);
     }
@@ -1813,34 +1850,57 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
       <section className={cn(mobileTab === "suggestions" ? "hidden xl:block" : "block", "order-4 min-w-0 rounded border border-slate-200 bg-white p-3 shadow-soft sm:p-4")}>
         <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-[minmax(360px,0.76fr)_minmax(620px,1.24fr)] 2xl:grid-cols-[minmax(390px,0.72fr)_minmax(760px,1.28fr)]">
           <div className={cn(mobileTab === "squad" ? "block" : "hidden xl:block")}>
-            <div className="mb-3 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
-              <h3 className="truncate text-xs font-semibold uppercase tracking-wide text-slate-500 sm:text-sm"><I18nText en="Your squad" ru="Ваш состав" /></h3>
-              <div className="flex shrink-0 items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={importStoredSportsRuSquad}
-                  disabled={interactionPending || autoPickPending}
-                  title={sportsRuSquadButtonTitle(language, sportsRuSquadStatus)}
-                  className="inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded border border-sky-200 bg-sky-50 px-2 py-1.5 text-[11px] font-semibold text-sky-800 hover:bg-sky-100 sm:px-3 sm:text-xs disabled:opacity-60"
-                >
-                  <Download className="h-3.5 w-3.5" aria-hidden="true" />
-                  {sportsImportPending ? <I18nText en="Loading" ru="Загрузка" /> : <I18nText en="Sports squad" ru="Состав Sports" />}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => saveSquad(false)}
-                  disabled={interactionPending || autoPickPending || !squadIsValid}
-                  className="btn-brand inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded px-2 py-1.5 text-[11px] font-semibold sm:px-3 sm:text-xs disabled:opacity-60"
-                >
-                  <Save className="h-3.5 w-3.5" />
-                  {savePending ? <I18nText en="Saving" ru="Сохраняем" /> : (
-                    <>
-                      <span className="sm:hidden"><I18nText en="Save" ru="Сохранить" /></span>
-                      <span className="hidden sm:inline"><I18nText en="Save squad" ru="Сохранить состав" /></span>
-                    </>
-                  )}
-                </button>
+            <div className="mb-3">
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+                <h3 className="truncate text-xs font-semibold uppercase tracking-wide text-slate-500 sm:text-sm"><I18nText en="Your squad" ru="Ваш состав" /></h3>
+                <div className="flex shrink-0 items-center gap-1.5">
+                  <button
+                    type="button"
+                    onClick={importStoredSportsRuSquad}
+                    disabled={interactionPending || autoPickPending}
+                    title={sportsRuSquadButtonTitle(language, sportsSnapshotStatus)}
+                    aria-describedby={sportsImportNotice ? "sports-ru-import-status" : undefined}
+                    className="inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded border border-sky-200 bg-sky-50 px-2 py-1.5 text-[11px] font-semibold text-sky-800 hover:bg-sky-100 sm:px-3 sm:text-xs disabled:opacity-60"
+                  >
+                    {sportsImportPending
+                      ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
+                      : <Download className="h-3.5 w-3.5" aria-hidden="true" />}
+                    {sportsImportPending ? <I18nText en="Loading" ru="Загрузка" /> : <I18nText en="Sports squad" ru="Состав Sports" />}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => saveSquad(false)}
+                    disabled={interactionPending || autoPickPending || !squadIsValid}
+                    className="btn-brand inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded px-2 py-1.5 text-[11px] font-semibold sm:px-3 sm:text-xs disabled:opacity-60"
+                  >
+                    <Save className="h-3.5 w-3.5" />
+                    {savePending ? <I18nText en="Saving" ru="Сохраняем" /> : (
+                      <>
+                        <span className="sm:hidden"><I18nText en="Save" ru="Сохранить" /></span>
+                        <span className="hidden sm:inline"><I18nText en="Save squad" ru="Сохранить состав" /></span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
+              {sportsImportNotice ? (
+                <div
+                  id="sports-ru-import-status"
+                  role="status"
+                  aria-live="polite"
+                  className={cn(
+                    "mt-2 flex items-start gap-2 rounded border px-2.5 py-2 text-xs",
+                    sportsImportNotice.tone === "error"
+                      ? "border-rose-200 bg-rose-50 text-rose-800"
+                      : sportsImportNotice.tone === "waiting"
+                          ? "border-amber-200 bg-amber-50 text-amber-800"
+                          : "border-sky-200 bg-sky-50 text-sky-800"
+                  )}
+                >
+                  {sportsImportNotice.tone === "progress" ? <LoaderCircle className="mt-0.5 h-3.5 w-3.5 shrink-0 animate-spin" aria-hidden="true" /> : null}
+                  <span>{sportsImportNotice.text}</span>
+                </div>
+              ) : null}
             </div>
             <SquadPitch
               summary={summary}
@@ -2081,13 +2141,79 @@ function sportsRuSquadButtonTitle(language: UiLanguage, status: SportsRuSquadSna
     const tour = status.tourName ? ` · ${status.tourName}` : "";
     return localizedText(language, `Apply the stored Sports.ru squad${tour}.`, `Применить сохранённый состав Sports.ru${tour}.`);
   }
+  if (status.inProgress) {
+    return localizedText(language, "The server is downloading and matching this Sports.ru squad.", "Сервер скачивает и сопоставляет этот состав Sports.ru.");
+  }
   if (status.status === "UNAVAILABLE") {
-    return localizedText(language, "The current tour squad was not published after the scheduled retries.", "Состав текущего тура не появился после запланированных повторных попыток.");
+    return localizedText(language, "Start a fresh check for the current Sports.ru squad.", "Запустить новую проверку текущего состава Sports.ru.");
   }
   return localizedText(
     language,
-    "The squad is fetched automatically 30 minutes after the first match starts.",
-    "Состав загружается автоматически через 30 минут после начала первого матча."
+    "Check for the squad now. Automatic loading starts 30 minutes after the first match.",
+    "Проверить состав сейчас. Автоматическая загрузка начинается через 30 минут после первого матча."
+  );
+}
+
+function localizedSportsRuPendingStatus(
+  language: UiLanguage,
+  status: SportsRuSquadSnapshotStatus | null
+) {
+  if (status?.inProgress) {
+    return localizedText(
+      language,
+      "The server is already downloading this squad. Wait a few seconds and press the button again.",
+      "Сервер уже скачивает этот состав. Подождите несколько секунд и нажмите кнопку ещё раз."
+    );
+  }
+  if (status?.status === "WAITING_FOR_FIRST_MATCH") {
+    return localizedText(
+      language,
+      "The first match has not started yet. The squad becomes public after the deadline; the first automatic request will run 30 minutes after kickoff.",
+      "Первый матч ещё не начался. Состав станет публичным после дедлайна; первая автоматическая загрузка запустится через 30 минут после стартового свистка."
+    );
+  }
+  if (status?.status === "MAPPING_INCOMPLETE") {
+    return localizedText(
+      language,
+      `Sports.ru returned the squad. ${status.mappedPlayersCount}/${status.playersCount} players are matched; the server will retry the remaining mappings automatically.`,
+      `Sports.ru вернул состав. Сопоставлено ${status.mappedPlayersCount} из ${status.playersCount} игроков; оставшиеся сопоставления сервер повторит автоматически.`
+    );
+  }
+  const availableAfter = parseClientDate(status?.availableAfter);
+  if (availableAfter && availableAfter.getTime() > Date.now()) {
+    const formatted = localizedClientDateTime(language, availableAfter);
+    return localizedText(
+      language,
+      `The squad is not public yet. The first automatic request is scheduled for ${formatted}, 30 minutes after the first match starts.`,
+      `Состав ещё не открыт. Первая автоматическая загрузка запланирована на ${formatted} — через 30 минут после начала первого матча.`
+    );
+  }
+  if (status?.status === "RETRY") {
+    const nextAttempt = parseClientDate(status.nextAttemptAt);
+    const suffix = nextAttempt
+      ? localizedText(
+          language,
+          ` The next automatic attempt is scheduled for ${localizedClientDateTime(language, nextAttempt)}.`,
+          ` Следующая автоматическая попытка запланирована на ${localizedClientDateTime(language, nextAttempt)}.`
+        )
+      : "";
+    return localizedText(
+      language,
+      `The complete published squad has not been received from Sports.ru yet.${suffix}`,
+      `Полный опубликованный состав от Sports.ru пока не получен.${suffix}`
+    );
+  }
+  if (status?.status === "UNAVAILABLE") {
+    return localizedText(
+      language,
+      "Sports.ru still does not expose this tour squad. Press the button later to start a fresh check.",
+      "Sports.ru всё ещё не отдаёт состав этого тура. Нажмите кнопку позже — она запустит новую проверку."
+    );
+  }
+  return localizedText(
+    language,
+    "The request is prepared, but no published squad is available yet. The server will keep checking automatically.",
+    "Загрузка подготовлена, но опубликованного состава пока нет. Сервер продолжит автоматические проверки."
   );
 }
 
@@ -2102,10 +2228,30 @@ function localizedSportsRuImportError(language: UiLanguage, code: string, fallba
       "Текущий состав Sports ещё не сохранён. Фоновая загрузка запускается через 30 минут после начала первого матча."
     );
   }
+  if (code === "SPORTS_TOURNAMENT_NOT_CONFIGURED") {
+    return localizedText(
+      language,
+      "Sports.ru squad import is not configured for this league season.",
+      "Импорт состава Sports.ru для этой лиги и сезона пока не настроен."
+    );
+  }
   if (["STORED_SPORTS_SQUAD_INVALID", "SPORTS_PLAYERS_UNMAPPED", "SPORTS_SQUAD_INVALID"].includes(code)) {
     return localizedText(language, "The stored Sports.ru squad is incomplete or cannot be mapped to the player pool.", "Сохранённый состав Sports неполный или не сопоставляется с пулом игроков.");
   }
   return fallback ?? localizedText(language, "Could not load the stored Sports squad.", "Не удалось загрузить сохранённый состав Sports.");
+}
+
+function parseClientDate(value: string | null | undefined) {
+  if (!value) return null;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function localizedClientDateTime(language: UiLanguage, value: Date) {
+  return new Intl.DateTimeFormat(language === "ru" ? "ru-RU" : "en-GB", {
+    dateStyle: "short",
+    timeStyle: "short"
+  }).format(value);
 }
 
 type PlayerPoolTableProps = {

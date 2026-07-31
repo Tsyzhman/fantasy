@@ -20,6 +20,7 @@ const SPORTS_RU_SQUAD_RETRY_DELAY_MS = 15 * 60 * 1_000;
 const SPORTS_RU_SQUAD_MAPPING_RETRY_DELAY_MS = 60 * 60 * 1_000;
 const SPORTS_RU_SQUAD_LEASE_MS = 10 * 60 * 1_000;
 const SPORTS_RU_SQUAD_MAX_PUBLICATION_ATTEMPTS = 8;
+const SPORTS_RU_SQUAD_MANUAL_RETRY_COOLDOWN_MS = 60 * 1_000;
 
 export type SportsRuSquadScheduleMatch = {
   id: bigint;
@@ -42,6 +43,11 @@ export type SportsRuSquadSnapshotStatus = {
   tourName: string | null;
   fetchedAt: string | null;
   availableAfter: string | null;
+  nextAttemptAt: string | null;
+  inProgress: boolean;
+  attemptCount: number;
+  playersCount: number;
+  mappedPlayersCount: number;
   lastError: string | null;
 };
 
@@ -197,6 +203,110 @@ export async function syncSportsRuSquadSnapshots(
   return result;
 }
 
+/**
+ * Creates the current-round snapshot immediately for one linked user and,
+ * once the 30-minute publication delay has elapsed, tries to fill it during
+ * the button request. A manual request can revive an exhausted snapshot, but
+ * the one-minute cooldown and the database lease prevent click-spam and
+ * duplicate cross-process Sports.ru requests.
+ */
+export async function syncSportsRuSquadSnapshotOnDemand(
+  prisma: PrismaClient,
+  input: {
+    userId: string;
+    leagueId: bigint;
+    season: string;
+    expectedSquadSize: number;
+    now?: Date;
+    fetchPublishedSquad?: FetchPublishedSquad;
+  }
+): Promise<SportsRuSquadSnapshotStatus> {
+  const now = input.now ?? new Date();
+  const profile = await prisma.userExternalProfile.findUnique({
+    where: { userId_provider: { userId: input.userId, provider: "SPORTS_RU" } },
+    select: { providerUserId: true }
+  });
+  if (!profile) {
+    throw new SportsRuSquadImportError(
+      "SPORTS_PROFILE_REQUIRED",
+      "Save a Sports.ru profile in your profile settings first."
+    );
+  }
+  const contest = await prisma.sportsRuFantasyContest.findFirst({
+    where: {
+      provider: "SPORTS_RU",
+      leagueId: input.leagueId,
+      season: { in: sportsRuSeasonAliases(input.season) }
+    },
+    orderBy: { lastSyncedAt: "desc" }
+  });
+  const providerSeasonId = readSportsRuSeasonId(contest?.rules);
+  if (!contest || !providerSeasonId) {
+    throw new SportsRuSquadImportError(
+      "SPORTS_TOURNAMENT_NOT_CONFIGURED",
+      "Sports.ru squad import is not configured for this league season yet."
+    );
+  }
+  const matches = await prisma.coreMatch.findMany({
+    where: {
+      leagueId: input.leagueId,
+      season: { in: sportsRuSeasonAliases(input.season) },
+      cancelled: false,
+      matchDate: { lte: now }
+    },
+    select: { id: true, round: true, matchDate: true, cancelled: true }
+  });
+  const schedule = latestStartedSportsRuSquadRound(matches, now);
+  if (!schedule) {
+    const status = await loadSportsRuSquadSnapshotStatus(prisma, {
+      userId: input.userId,
+      leagueId: input.leagueId,
+      season: input.season
+    });
+    return { ...status, status: "WAITING_FOR_FIRST_MATCH" };
+  }
+  const snapshot = await prisma.sportsRuSquadSnapshot.upsert({
+    where: {
+      userId_providerProfileId_leagueId_season_roundKey: {
+        userId: input.userId,
+        providerProfileId: profile.providerUserId,
+        leagueId: input.leagueId,
+        season: input.season,
+        roundKey: schedule.roundKey
+      }
+    },
+    create: {
+      userId: input.userId,
+      leagueId: input.leagueId,
+      season: input.season,
+      roundKey: schedule.roundKey,
+      roundLabel: schedule.roundLabel,
+      firstMatchAt: schedule.firstMatchAt,
+      availableAfter: schedule.availableAfter,
+      providerProfileId: profile.providerUserId,
+      providerSeasonId
+    },
+    update: {
+      roundLabel: schedule.roundLabel,
+      firstMatchAt: schedule.firstMatchAt,
+      availableAfter: schedule.availableAfter,
+      providerSeasonId
+    }
+  });
+  await syncOneSportsRuSquadSnapshot(prisma, snapshot.id, {
+    expectedSquadSize: input.expectedSquadSize,
+    now,
+    profileId: profile.providerUserId,
+    fetchPublishedSquad: input.fetchPublishedSquad ?? fetchSportsRuLatestPublishedSquad,
+    manualRetry: true
+  });
+  return loadSportsRuSquadSnapshotStatus(prisma, {
+    userId: input.userId,
+    leagueId: input.leagueId,
+    season: input.season
+  });
+}
+
 async function syncOneSportsRuSquadSnapshot(
   prisma: PrismaClient,
   snapshotId: string,
@@ -205,15 +315,28 @@ async function syncOneSportsRuSquadSnapshot(
     now: Date;
     profileId: string;
     fetchPublishedSquad: FetchPublishedSquad;
+    manualRetry?: boolean;
   }
 ): Promise<"stored" | "retried" | "unavailable" | "skipped"> {
+  const retryEligibility: Prisma.SportsRuSquadSnapshotWhereInput = input.manualRetry
+    ? {
+        OR: [
+          { lastAttemptAt: null },
+          { lastAttemptAt: { lte: new Date(input.now.getTime() - SPORTS_RU_SQUAD_MANUAL_RETRY_COOLDOWN_MS) } }
+        ]
+      }
+    : { OR: [{ nextAttemptAt: null }, { nextAttemptAt: { lte: input.now } }] };
   const claimed = await prisma.sportsRuSquadSnapshot.updateMany({
     where: {
       id: snapshotId,
-      status: { in: ["PENDING", "RETRY", "MAPPING_INCOMPLETE"] },
+      status: {
+        in: input.manualRetry
+          ? ["PENDING", "RETRY", "MAPPING_INCOMPLETE", "UNAVAILABLE"]
+          : ["PENDING", "RETRY", "MAPPING_INCOMPLETE"]
+      },
       availableAfter: { lte: input.now },
       AND: [
-        { OR: [{ nextAttemptAt: null }, { nextAttemptAt: { lte: input.now } }] },
+        retryEligibility,
         { OR: [{ syncLeaseUntil: null }, { syncLeaseUntil: { lte: input.now } }] }
       ]
     },
@@ -431,6 +554,11 @@ export async function loadSportsRuSquadSnapshotStatus(
         tourName: true,
         fetchedAt: true,
         availableAfter: true,
+        nextAttemptAt: true,
+        syncLeaseUntil: true,
+        attemptCount: true,
+        playersCount: true,
+        mappedPlayersCount: true,
         lastError: true
       }
     })
@@ -442,6 +570,11 @@ export async function loadSportsRuSquadSnapshotStatus(
     tourName: snapshot?.tourName ?? null,
     fetchedAt: snapshot?.fetchedAt?.toISOString() ?? null,
     availableAfter: snapshot?.availableAfter.toISOString() ?? null,
+    nextAttemptAt: snapshot?.nextAttemptAt?.toISOString() ?? null,
+    inProgress: Boolean(snapshot?.syncLeaseUntil && snapshot.syncLeaseUntil > new Date()),
+    attemptCount: snapshot?.attemptCount ?? 0,
+    playersCount: snapshot?.playersCount ?? 0,
+    mappedPlayersCount: snapshot?.mappedPlayersCount ?? 0,
     lastError: snapshot?.lastError ?? null
   };
 }

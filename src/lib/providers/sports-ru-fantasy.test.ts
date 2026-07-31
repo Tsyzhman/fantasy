@@ -16,6 +16,7 @@ test("Sports.ru GraphQL snapshot loads every position from the current season", 
     ["FORWARD", { id: "fwd-1", name: "Goal Scorer", price: 10, team: { id: "4", name: "Динамо" } }]
   ]);
   const fetchImpl = (async (_input: string | URL | Request, init?: RequestInit) => {
+    assert.ok(init?.signal, "Sports.ru requests must have a timeout signal");
     const query = JSON.parse(String(init?.body ?? "{}"))?.query as string;
     if (query.includes("tournament(")) return jsonResponse({ data: { fantasyQueries: { tournament: { currentSeason: { id: "season-1" } } } } });
     assert.match(query, /team \{ id name \}/);
