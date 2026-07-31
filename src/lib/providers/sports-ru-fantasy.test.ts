@@ -70,6 +70,41 @@ test("Sports.ru snapshot keeps same-name players from different teams", async ()
   ]);
 });
 
+test("Sports.ru snapshot corrects Arman Nahany before a provider typo can overwrite Hakeem Agboluaje", async () => {
+  const fetchImpl = (async (_input: string | URL | Request, init?: RequestInit) => {
+    const query = JSON.parse(String(init?.body ?? "{}"))?.query as string;
+    if (query.includes("tournament(")) {
+      return jsonResponse({ data: { fantasyQueries: { tournament: { currentSeason: { id: "76" } } } } });
+    }
+    if (query.includes("role: DEFENDER")) {
+      return jsonResponse({ data: { fantasyQueries: { players: { list: [{
+        id: "68255",
+        name: "Хаким Агболуайе",
+        price: 4,
+        team: { id: "10235", name: "Фейеноорд" }
+      }] } } } });
+    }
+    if (query.includes("role: MIDFIELDER")) {
+      return jsonResponse({ data: { fantasyQueries: { players: { list: [{
+        id: "68274",
+        name: "Хаким Агболуайе",
+        price: 4.5,
+        team: { id: "10235", name: "Фейеноорд" }
+      }] } } } });
+    }
+    return jsonResponse({ data: { fantasyQueries: { players: { list: [] } } } });
+  }) as typeof fetch;
+
+  const snapshot = await fetchSportsRuFantasyGraphqlSnapshot("netherlands", { fetchImpl, pageSize: 10 });
+
+  assert.deepEqual(snapshot.prices.map((row) => [row.providerPlayerId, row.playerName, row.position, row.price]), [
+    ["68255", "Хаким Агболуайе", "DEF", 4],
+    ["68274", "Арман Нахани", "MID", 4.5]
+  ]);
+  assert.notEqual(snapshot.prices[0]?.normalizedName, snapshot.prices[1]?.normalizedName);
+  assert.equal(snapshot.prices[1]?.sourceKind, "graphql-current-season-corrected");
+});
+
 test("Sports.ru snapshot uses the public mononym instead of an unwanted legal surname", async () => {
   const fetchImpl = (async (_input: string | URL | Request, init?: RequestInit) => {
     const query = JSON.parse(String(init?.body ?? "{}"))?.query as string;
