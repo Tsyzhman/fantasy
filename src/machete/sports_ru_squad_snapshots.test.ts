@@ -49,6 +49,8 @@ test("Sports.ru published tour must match the FotMob round when both expose a ro
 test("the one-click import route reuses a stored snapshot or starts a targeted on-demand sync", () => {
   assert.match(importRouteSource, /loadStoredSportsRuSquadImportPreview/);
   assert.match(importRouteSource, /syncSportsRuSquadSnapshotOnDemand/);
+  assert.match(importRouteSource, /selections: validation\.selections/);
+  assert.match(importRouteSource, /roundPlans,/);
   assert.doesNotMatch(importRouteSource, /fetchSportsRuLatestPublishedSquad|loadSportsRuSquadImportPreview/);
   assert.ok(
     importRouteSource.indexOf("snapshotStatus = await syncSportsRuSquadSnapshotOnDemand")
