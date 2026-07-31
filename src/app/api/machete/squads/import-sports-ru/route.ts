@@ -140,7 +140,16 @@ export const POST = withApiHandler(async (request: Request) => {
   });
   return NextResponse.json({
     imported: true,
-    squad: { id: saved.id, name: saved.name },
+    squad: {
+      id: saved.id,
+      name: saved.name,
+      savedPlayers: validation.selections.length,
+      horizonRounds: plannerData.squad.horizonRounds,
+      selections: validation.selections,
+      roundPlans,
+      updatedAt: new Date().toISOString()
+    },
+    snapshot: snapshotStatus,
     preview: publicPreview(preview)
   });
 });

@@ -120,7 +120,7 @@ const fantasySquadOptimizationSafetyTimeoutMs = 15_000;
 type UiLanguage = ReturnType<typeof useLanguage>;
 type MobileTab = "squad" | "pool" | "suggestions";
 type SportsImportNotice = {
-  tone: "progress" | "waiting" | "error";
+  tone: "progress" | "waiting" | "success" | "error";
   text: string;
 };
 type StoredSquadCaptains = {
@@ -1183,7 +1183,15 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
         message?: string;
         pending?: boolean;
         snapshot?: SportsRuSquadSnapshotStatus | null;
-        squad?: { id?: string };
+        squad?: {
+          id?: string;
+          name?: string;
+          savedPlayers?: number;
+          horizonRounds?: number;
+          selections?: FantasySquadSelection[];
+          roundPlans?: FantasySquadRoundPlan[];
+          updatedAt?: string;
+        };
       };
       if (payload.snapshot) setSportsSnapshotStatus(payload.snapshot);
       if (response.status === 202 && payload.pending) {
@@ -1203,20 +1211,61 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
         return;
       }
       const savedSquadId = payload.squad?.id;
-      if (!savedSquadId) {
+      const importedSelections = Array.isArray(payload.squad?.selections)
+        ? normalizeInitialSelections(payload.squad.selections, sourcePlayers, rules)
+        : [];
+      const importedRoundPlans = Array.isArray(payload.squad?.roundPlans)
+        ? normalizePlannerRoundPlans(payload.squad.roundPlans, importedSelections, sourcePlayers, rules)
+        : [];
+      if (
+        !savedSquadId
+        || importedSelections.length !== rules.squadSize
+        || importedRoundPlans.length !== 5
+        || importedRoundPlans[0]?.selections.length !== rules.squadSize
+      ) {
         setSportsImportNotice({
           tone: "error",
-          text: localizedText(language, "The server did not return the imported squad ID.", "Сервер не вернул ID импортированного состава.")
+          text: localizedText(language, "The server returned an incomplete imported squad.", "Сервер вернул неполный импортированный состав.")
         });
         return;
       }
+      const savedSquadName = payload.squad?.name?.trim() || squadName;
+      const savedPlayers = payload.squad?.savedPlayers ?? importedSelections.length;
+      const updatedAt = payload.squad?.updatedAt ?? new Date().toISOString();
+      const importedHorizon = normalizeFantasyHorizon(payload.squad?.horizonRounds ?? horizon, rules.horizonOptions);
+      setActiveRoundOffset(0);
+      setRoundPlans(importedRoundPlans);
+      setSavedRoundPlans(cloneFantasyRoundPlans(importedRoundPlans));
+      setActiveSquadId(savedSquadId);
+      setSquadName(savedSquadName);
+      setHorizon(importedHorizon);
+      setReplacementMode(false);
+      setReplacementSourcePlayerId(null);
+      setDraggedPlayerId(null);
+      setSquadOptions((current) => [
+        {
+          id: savedSquadId,
+          name: savedSquadName,
+          playersCount: savedPlayers,
+          updatedAt
+        },
+        ...current.filter((option) => option.id !== savedSquadId)
+      ]);
       setSportsImportNotice({
-        tone: "progress",
-        text: localizedText(language, "Squad loaded. Applying it to the planner…", "Состав загружен. Применяем его в планировщике…")
+        tone: "success",
+        text: localizedText(
+          language,
+          `Sports.ru squad loaded and saved: ${savedPlayers} players.`,
+          `Состав Sports.ru загружен и сохранён: ${savedPlayers} игроков.`
+        )
       });
-      const url = new URL(window.location.href);
-      url.searchParams.set("squadId", savedSquadId);
-      window.location.replace(`${url.pathname}?${url.searchParams.toString()}`);
+      void recordBetaMilestone("SQUAD_SAVED");
+      window.dispatchEvent(new CustomEvent("machete:squad-saved"));
+      window.history.replaceState(
+        window.history.state,
+        "",
+        squadVariantHref(leagueId, season, savedSquadId, appliedHistorySettings)
+      );
     } catch {
       setSportsImportNotice({
         tone: "error",
@@ -1892,6 +1941,8 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                     "mt-2 flex items-start gap-2 rounded border px-2.5 py-2 text-xs",
                     sportsImportNotice.tone === "error"
                       ? "border-rose-200 bg-rose-50 text-rose-800"
+                      : sportsImportNotice.tone === "success"
+                          ? "border-emerald-200 bg-emerald-50 text-emerald-800"
                       : sportsImportNotice.tone === "waiting"
                           ? "border-amber-200 bg-amber-50 text-amber-800"
                           : "border-sky-200 bg-sky-50 text-sky-800"

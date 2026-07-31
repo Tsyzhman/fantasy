@@ -123,6 +123,10 @@ test("stored Sports squad action sits immediately left of save in the one-line s
   assert.match(headingBlock, /role="status"/);
   assert.match(squadPlannerSource, /Requesting the published Sports\.ru squad and matching its players/);
   assert.match(squadPlannerSource, /response\.status === 202 && payload\.pending/);
+  assert.match(squadPlannerSource, /setRoundPlans\(importedRoundPlans\)/);
+  assert.match(squadPlannerSource, /setSavedRoundPlans\(cloneFantasyRoundPlans\(importedRoundPlans\)\)/);
+  assert.match(squadPlannerSource, /window\.history\.replaceState/);
+  assert.doesNotMatch(squadPlannerSource, /window\.location\.replace/);
   assert.equal(squadPlannerSource.match(/onClick=\{\(\) => saveSquad\(false\)\}/g)?.length, 1);
   assert.doesNotMatch(squadPageSource, /SportsRuSquadImport/);
 });
