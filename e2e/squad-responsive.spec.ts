@@ -52,6 +52,30 @@ test("squad controls stay usable without page-level horizontal clipping", async 
     }
   }
 
+  if (testInfo.project.name !== "desktop-chromium") {
+    const tipsTab = page.getByRole("radio", { name: /Tips/i });
+    await expect(tipsTab).toBeVisible();
+    await tipsTab.click();
+  }
+
+  const bookmakerFavorites = page.locator('section[aria-label="Bookmaker favorites"]');
+  await expect(bookmakerFavorites).toBeVisible();
+  await expect(bookmakerFavorites.getByText("Clean sheet", { exact: true })).toBeVisible();
+  await expect(bookmakerFavorites.getByText("Team O1.5", { exact: true })).toBeVisible();
+  const cleanSheetProbabilities = bookmakerFavorites.locator('[aria-label^="Clean-sheet chance for"]');
+  const teamOver15Probabilities = bookmakerFavorites.locator('[aria-label^="Chance "]');
+  const [cleanSheetCount, teamOver15Count] = await Promise.all([
+    cleanSheetProbabilities.count(),
+    teamOver15Probabilities.count()
+  ]);
+  expect(cleanSheetCount).toBeGreaterThan(0);
+  expect(teamOver15Count).toBe(cleanSheetCount);
+  await assertInsideViewport(bookmakerFavorites, page);
+  await expect
+    .poll(() => page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth))
+    .toBeLessThanOrEqual(1);
+  await attachBookmakerFavoritesScreenshot(bookmakerFavorites, testInfo);
+
   expect(failures.pageErrors, failures.pageErrors.join("\n")).toEqual([]);
   expect(failures.serverErrors, failures.serverErrors.join("\n")).toEqual([]);
   await attachViewportScreenshot(page, testInfo);
@@ -112,4 +136,10 @@ async function attachViewportScreenshot(page: Page, testInfo: TestInfo) {
   const path = testInfo.outputPath(`squad-${testInfo.project.name}.png`);
   await page.screenshot({ path, animations: "disabled" });
   await testInfo.attach(`squad-${testInfo.project.name}`, { path, contentType: "image/png" });
+}
+
+async function attachBookmakerFavoritesScreenshot(bookmakerFavorites: Locator, testInfo: TestInfo) {
+  const path = testInfo.outputPath(`bookmaker-favorites-${testInfo.project.name}.png`);
+  await bookmakerFavorites.screenshot({ path, animations: "disabled" });
+  await testInfo.attach(`bookmaker-favorites-${testInfo.project.name}`, { path, contentType: "image/png" });
 }
