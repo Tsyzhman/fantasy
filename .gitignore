@@ -11,6 +11,7 @@ __pycache__/
 /.playwright-cli/
 /playwright-report/
 /test-results/
+/public/downloads/*.zip
 tmp_*
 .tmp-fotmob-js
 tmp_*.json

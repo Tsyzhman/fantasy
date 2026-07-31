@@ -5,6 +5,31 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.0 - 2026-07-31
+
+### Added
+
+- Chromium and Firefox WebExtension packages that add a one-click
+  `Fantasy -> Sports.ru` squad-transfer widget to football fantasy pages.
+- A session-authenticated, no-store API that exports the user's latest saved
+  squad with current Sports.ru player IDs.
+- Atomic Sports.ru squad updates covering all 15 players, the starting XI,
+  captain, vice-captain, and substitute priorities.
+
+### Security
+
+- The HttpOnly `fantasy_session` cookie is read only in the extension
+  background context. The Sports.ru content script and page DOM never receive
+  the session token.
+- Extension host access is limited to `fantasy.tsyzhman.ru` and Sports.ru
+  football fantasy pages; the extension contains no remote executable code
+  and sends no telemetry.
+
+### Changed
+
+- Sports.ru contest metadata now stores the structured tournament HRU while
+  retaining the existing source-URL fallback.
+
 ## 0.2.5 - 2026-07-30
 
 ### Changed

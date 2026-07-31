@@ -175,6 +175,26 @@ export async function requireApiUser(request?: Request): Promise<ApiUserAuth> {
   return { user, response: null };
 }
 
+export async function requireBrowserExtensionUser(request: Request): Promise<ApiUserAuth> {
+  if (!isDatabaseConfigured()) {
+    return {
+      user: null,
+      response: jsonError("DATABASE_NOT_CONFIGURED", "Configure DATABASE_URL before using the API.", 503)
+    };
+  }
+
+  const token = browserExtensionSessionToken(request.headers.get("authorization"));
+  const user = await getCurrentUserForSessionToken(token);
+  if (!user) {
+    return {
+      user: null,
+      response: jsonError("UNAUTHORIZED", "Sign in to fantasy.tsyzhman.ru before using the browser extension.", 401)
+    };
+  }
+
+  return { user, response: null };
+}
+
 export async function requireApiAdmin(): Promise<ApiAdminAuth> {
   const auth = await requireApiUser();
   if (auth.response) return auth;
@@ -207,4 +227,9 @@ function readSessionTokenFromRequest(request: Request) {
   }
 
   return null;
+}
+
+function browserExtensionSessionToken(authorization: string | null) {
+  const match = authorization?.match(/^Bearer ([A-Za-z0-9_-]{43})$/);
+  return match?.[1] ?? null;
 }

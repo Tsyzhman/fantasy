@@ -72,6 +72,7 @@ export async function syncSportsRuFantasy(prisma: PrismaClient, input: SportsRuF
         rules: {
           parsedMaxPlayersPerTeam: parsed.contest.maxPlayersPerTeam,
           sportsRuSeasonId: snapshot.seasonId,
+          tournamentHru: input.tournamentHru,
           priceSource: "graphql-current-season",
           transfersPerRound: 3,
           importedAt: new Date().toISOString()
@@ -90,6 +91,7 @@ export async function syncSportsRuFantasy(prisma: PrismaClient, input: SportsRuF
         rules: {
           parsedMaxPlayersPerTeam: parsed.contest.maxPlayersPerTeam,
           sportsRuSeasonId: snapshot.seasonId,
+          tournamentHru: input.tournamentHru,
           priceSource: "graphql-current-season",
           transfersPerRound: 3,
           importedAt: new Date().toISOString()

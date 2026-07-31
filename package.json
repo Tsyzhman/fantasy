@@ -1,13 +1,16 @@
 {
   "name": "fantasy-scout",
-  "version": "0.2.9",
+  "version": "0.3.0",
   "private": true,
   "engines": {
     "node": ">=20.9.0"
   },
   "scripts": {
     "dev": "next dev",
+    "prebuild": "npm run extension:build",
     "build": "next build --webpack",
+    "extension:build": "node scripts/build-browser-extension.mjs",
+    "extension:smoke": "npm run extension:build && node scripts/smoke-browser-extension.mjs",
     "start": "next start -H 0.0.0.0",
     "test": "tsx scripts/run-test-files.ts .test.ts",
     "test:db": "tsx scripts/run-test-files.ts .db-test.ts",
