@@ -57,6 +57,25 @@ test("middleware does not make cron-like API paths public", async () => {
   });
 });
 
+test("middleware lets the exact browser extension endpoint enforce its bearer session", () => {
+  return withEnv({ DATABASE_URL: "postgresql://user:pass@localhost:5432/app" }, () => {
+    const response = proxy(
+      new NextRequest("http://localhost/api/browser-extension/sports-squad?tournamentHru=russia", {
+        headers: { authorization: `Bearer ${"a".repeat(43)}` }
+      })
+    );
+    assert.equal(response.status, 200);
+  });
+});
+
+test("middleware does not make browser-extension-like API paths public", async () => {
+  await withEnv({ DATABASE_URL: "postgresql://user:pass@localhost:5432/app" }, async () => {
+    const response = proxy(new NextRequest("http://localhost/api/browser-extension/other"));
+    assert.equal(response.status, 401);
+    assert.equal((await response.json()).error.code, "UNAUTHORIZED");
+  });
+});
+
 test("middleware redirects every anonymous service page to login and preserves the destination", () => {
   return withEnv({ DATABASE_URL: "postgresql://user:pass@localhost:5432/app" }, () => {
     const response = proxy(new NextRequest("http://localhost/machete/leagues/63/teams/9760?starterFilter=starter"));

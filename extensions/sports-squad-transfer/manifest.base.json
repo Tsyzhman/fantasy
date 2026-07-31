@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "Fantasy → Sports.ru",
+  "version": "0.1.0",
+  "description": "Переносит последний сохранённый состав с fantasy.tsyzhman.ru в фэнтези Sports.ru.",
+  "permissions": [
+    "cookies"
+  ],
+  "host_permissions": [
+    "https://fantasy.tsyzhman.ru/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.sports.ru/fantasy/football/*"
+      ],
+      "js": [
+        "content.js"
+      ],
+      "run_at": "document_idle"
+    }
+  ],
+  "action": {
+    "default_title": "Fantasy → Sports.ru"
+  }
+}
