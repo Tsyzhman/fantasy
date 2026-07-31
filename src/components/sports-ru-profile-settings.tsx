@@ -74,7 +74,12 @@ export function SportsRuProfileSettings({ initialValue }: { initialValue: string
       </div>
       {status !== "idle" ? (
         <p role="status" className={`mt-3 text-sm ${status === "error" ? "text-rose-700" : "text-emerald-700"}`}>
-          {status === "saved" ? <I18nText en="Sports.ru profile saved." ru="Профиль Sports.ru сохранён." /> : null}
+          {status === "saved" ? (
+            <I18nText
+              en="Sports.ru profile saved. The “Sports squad” button in the squad planner will now start an immediate check."
+              ru="Профиль Sports.ru сохранён. Теперь кнопка «Состав Sports» в планировщике сразу запустит проверку."
+            />
+          ) : null}
           {status === "deleted" ? <I18nText en="Sports.ru profile removed." ru="Профиль Sports.ru удалён." /> : null}
           {status === "error" ? <I18nText en="Could not save this profile. Check the ID or URL." ru="Не удалось сохранить профиль. Проверьте ID или ссылку." /> : null}
         </p>

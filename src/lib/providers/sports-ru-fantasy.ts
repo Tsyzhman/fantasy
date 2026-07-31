@@ -61,6 +61,7 @@ export type SportsRuPublishedSquad = {
 const defaultBudget = 100;
 const defaultSquadSize = 15;
 const sportsRuFantasyGraphqlEndpoint = "https://www.sports.ru/gql/graphql/";
+const sportsRuFantasyRequestTimeoutMs = 15_000;
 const sportsRuFantasyRoles = [
   ["GOALKEEPER", "GK"],
   ["DEFENDER", "DEF"],
@@ -386,6 +387,7 @@ async function sportsRuGraphqlRequest<T>(endpoint: string, query: string, fetchI
       "x-appname": "frontend-fantasy-landing",
       "x-appversion": "v1.0.6"
     },
+    signal: AbortSignal.timeout(sportsRuFantasyRequestTimeoutMs),
     body: JSON.stringify({ query })
   });
   if (!response.ok) throw new Error(`Sports.ru GraphQL request failed: ${response.status} ${response.statusText}`);
