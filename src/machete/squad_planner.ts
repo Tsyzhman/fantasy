@@ -110,6 +110,7 @@ export type FantasySquadPlannerData = {
   readiness: PlannerReadiness;
   rules: FantasySquadRules;
   rounds: FantasyRoundProjection[];
+  bookmakerFavorites: FantasyBookmakerFavorite[];
   players: FantasyPlannerPlayer[];
   squad: SavedFantasySquad;
   squads: SavedFantasySquadOption[];
@@ -122,10 +123,30 @@ export type FantasySquadPlannerData = {
   formulaAdaptationBreakdownsByPlayerId: Record<string, FormulaAdaptationBreakdowns>;
 };
 
+export type FantasyBookmakerFavorite = {
+  fixtureId: string;
+  roundId: string;
+  roundLabel: string;
+  kickoffAt: string | null;
+  teamId: string;
+  teamName: string;
+  teamFullName: string;
+  opponentTeamId: string | null;
+  opponentName: string;
+  opponentFullName: string;
+  side: "H" | "A";
+  teamOver15Probability: number;
+  cleanSheetProbability: number;
+  oddsFetchedAt: string;
+  source: "FONBET";
+};
+
 export type PlannerFixture = {
   id: string;
   roundId: string;
   teamId: string;
+  teamName?: string;
+  teamFullName?: string;
   opponentTeamId: string | null;
   opponentName: string;
   opponentFullName: string;
@@ -138,6 +159,7 @@ export type PlannerFixture = {
   teamOver15Probability?: number | null;
   cleanSheetProbability?: number | null;
   oddsFetchedAt?: Date | null;
+  finished?: boolean;
 };
 
 function buildFixtureComponentInputs(
@@ -851,6 +873,7 @@ export async function loadFantasySquadPlannerData(
     readiness,
     rules,
     rounds: roundsAndFixtures.rounds,
+    bookmakerFavorites: buildBookmakerFavorites(roundsAndFixtures),
     players: players.sort(compareFantasyPlannerPlayers),
     squads: savedSquads.map((squad) => ({
       id: squad.id,
@@ -2561,6 +2584,8 @@ export function buildPlannerRoundFixtures(matches: PlannerMatch[], now = new Dat
           id: match.id,
           roundId: group.id,
           teamId: match.homeTeamId,
+          teamName: match.homeTeamName ?? "Team",
+          teamFullName: match.homeTeamFullName ?? match.homeTeamName ?? "Team",
           opponentTeamId: match.awayTeamId,
           opponentName: match.awayTeamName ?? "Opponent",
           opponentFullName: match.awayTeamFullName ?? match.awayTeamName ?? "Opponent",
@@ -2572,7 +2597,8 @@ export function buildPlannerRoundFixtures(matches: PlannerMatch[], now = new Dat
           defenseMultiplier: null,
           teamOver15Probability: match.homeOver15Probability ?? null,
           cleanSheetProbability: match.homeCleanSheetProbability ?? null,
-          oddsFetchedAt: match.oddsFetchedAt ?? null
+          oddsFetchedAt: match.oddsFetchedAt ?? null,
+          finished: match.finished
         });
       }
       if (match.awayTeamId) {
@@ -2580,6 +2606,8 @@ export function buildPlannerRoundFixtures(matches: PlannerMatch[], now = new Dat
           id: match.id,
           roundId: group.id,
           teamId: match.awayTeamId,
+          teamName: match.awayTeamName ?? "Team",
+          teamFullName: match.awayTeamFullName ?? match.awayTeamName ?? "Team",
           opponentTeamId: match.homeTeamId,
           opponentName: match.homeTeamName ?? "Opponent",
           opponentFullName: match.homeTeamFullName ?? match.homeTeamName ?? "Opponent",
@@ -2591,7 +2619,8 @@ export function buildPlannerRoundFixtures(matches: PlannerMatch[], now = new Dat
           defenseMultiplier: null,
           teamOver15Probability: match.awayOver15Probability ?? null,
           cleanSheetProbability: match.awayCleanSheetProbability ?? null,
-          oddsFetchedAt: match.oddsFetchedAt ?? null
+          oddsFetchedAt: match.oddsFetchedAt ?? null,
+          finished: match.finished
         });
       }
     }
@@ -2602,6 +2631,88 @@ export function buildPlannerRoundFixtures(matches: PlannerMatch[], now = new Dat
     fixturesByTeamRound,
     teamShortNameById: new Map()
   };
+}
+
+export function buildBookmakerFavorites(fixtures: PlannerRoundFixtures): FantasyBookmakerFavorite[] {
+  const roundOrder = new Map(fixtures.rounds.map((round, index) => [round.id, index]));
+  const roundLabel = new Map(fixtures.rounds.map((round) => [round.id, round.label]));
+  const favorites: FantasyBookmakerFavorite[] = [];
+
+  for (const round of fixtures.rounds) {
+    const fixtureSides = new Map<string, Map<string, PlannerFixture>>();
+    for (const teamFixtures of fixtures.fixturesByTeamRound.get(round.id)?.values() ?? []) {
+      for (const fixture of teamFixtures) {
+        if (fixture.finished) continue;
+        const sides = fixtureSides.get(fixture.id) ?? new Map<string, PlannerFixture>();
+        sides.set(fixture.teamId, fixture);
+        fixtureSides.set(fixture.id, sides);
+      }
+    }
+
+    for (const sidesByTeam of fixtureSides.values()) {
+      const sides = [...sidesByTeam.values()];
+      const pricedSides = sides.filter(hasCompleteBookmakerMarket);
+      if (pricedSides.length < 2) continue;
+      pricedSides.sort(compareBookmakerFavoriteSides);
+
+      const favorite = pricedSides[0];
+      const opponentSide = sides.find((side) => side.teamId === favorite.opponentTeamId) ?? null;
+      const teamName = favorite.teamName
+        ?? fixtures.teamShortNameById.get(favorite.teamId)
+        ?? opponentSide?.opponentName
+        ?? favorite.teamId;
+      const teamFullName = favorite.teamFullName ?? opponentSide?.opponentFullName ?? teamName;
+
+      favorites.push({
+        fixtureId: favorite.id,
+        roundId: favorite.roundId,
+        roundLabel: roundLabel.get(favorite.roundId) ?? favorite.roundId,
+        kickoffAt: favorite.kickoffAt?.toISOString() ?? null,
+        teamId: favorite.teamId,
+        teamName,
+        teamFullName,
+        opponentTeamId: favorite.opponentTeamId,
+        opponentName: favorite.opponentName,
+        opponentFullName: favorite.opponentFullName,
+        side: favorite.side,
+        teamOver15Probability: favorite.teamOver15Probability,
+        cleanSheetProbability: favorite.cleanSheetProbability,
+        oddsFetchedAt: favorite.oddsFetchedAt.toISOString(),
+        source: "FONBET"
+      });
+    }
+  }
+
+  return favorites.sort((left, right) =>
+    (roundOrder.get(left.roundId) ?? Number.MAX_SAFE_INTEGER) - (roundOrder.get(right.roundId) ?? Number.MAX_SAFE_INTEGER)
+    || right.teamOver15Probability - left.teamOver15Probability
+    || right.cleanSheetProbability - left.cleanSheetProbability
+    || left.teamName.localeCompare(right.teamName)
+  );
+}
+
+function hasCompleteBookmakerMarket(fixture: PlannerFixture): fixture is PlannerFixture & {
+  teamOver15Probability: number;
+  cleanSheetProbability: number;
+  oddsFetchedAt: Date;
+} {
+  return validProbability(fixture.teamOver15Probability)
+    && validProbability(fixture.cleanSheetProbability)
+    && fixture.oddsFetchedAt instanceof Date
+    && !Number.isNaN(fixture.oddsFetchedAt.getTime());
+}
+
+function compareBookmakerFavoriteSides(
+  left: PlannerFixture & { teamOver15Probability: number; cleanSheetProbability: number },
+  right: PlannerFixture & { teamOver15Probability: number; cleanSheetProbability: number }
+) {
+  return right.teamOver15Probability - left.teamOver15Probability
+    || right.cleanSheetProbability - left.cleanSheetProbability
+    || Number(left.side === "A") - Number(right.side === "A");
+}
+
+function validProbability(value: number | null | undefined): value is number {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 1;
 }
 
 export function projectFixtureFantasyPoints(

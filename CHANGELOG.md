@@ -5,6 +5,23 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.1 - 2026-07-31
+
+### Added
+
+- A current-round Fonbet favorites table below transfer recommendations with
+  separate de-vigged clean-sheet and team-over-1.5 probabilities.
+- Honest empty-state handling when a fixture has no fresh complete bookmaker
+  market for both teams.
+
+### Changed
+
+- The top three transfer recommendations use a denser three-column desktop
+  layout with tighter cards, metrics, player rows, and controls.
+- Each fixture favorite is selected by the higher available team-over-1.5
+  probability; clean-sheet probability remains an independent displayed
+  market and is used only as a tie-breaker.
+
 ## 0.3.0 - 2026-07-31
 
 ### Added

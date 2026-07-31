@@ -90,6 +90,18 @@ test("transfer suggestions expose FO, ALT, and FFO, while FFO remains a current-
   assert.doesNotMatch(squadPageSource, /transfer recommendations use the available forecasts/);
 });
 
+test("compact transfer suggestions include bookmaker favorites with separate clean-sheet and over-1.5 probabilities", () => {
+  assert.match(squadPlannerSource, /xl:grid-cols-3/);
+  assert.match(squadPlannerSource, /BookmakerFavoritesTable/);
+  assert.match(squadPlannerSource, /en="Bookmaker favorites" ru="Рыночные фавориты"/);
+  assert.match(squadPlannerSource, /en="Clean sheet" ru="Сухарь"/);
+  assert.match(squadPlannerSource, /en="Team O1\.5" ru="ИТБ 1\.5"/);
+  assert.match(squadPlannerSource, /activeRoundBookmakerFavorites/);
+  assert.match(squadPlannerBackendSource, /bookmakerFavorites: buildBookmakerFavorites\(roundsAndFixtures\)/);
+  assert.match(squadPlannerBackendSource, /pricedSides\.length < 2/);
+  assert.match(squadPlannerBackendSource, /if \(fixture\.finished\) continue/);
+});
+
 test("auto-pick ignores audit-only warnings but still requires real projections and fresh source data", () => {
   assert.match(squadPlannerSource, /const forecastActionsBlockedByReadiness = plannerReadinessBlocksForecastActions\(readiness\)/);
   assert.match(squadPlannerSource, /const plannerForecastReady = !forecastActionsBlockedByReadiness && hasRealRoundProjections/);

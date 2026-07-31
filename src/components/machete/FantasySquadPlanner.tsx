@@ -27,7 +27,7 @@ import type {
   FantasySquadWorkerResponse,
   TransferSuggestionWorkerInput
 } from "@/components/machete/fantasy-squad-worker-contract";
-import { formatAlternativeScore, formatCompactScore, formatDate, formatNumber, formatScore } from "@/lib/format";
+import { formatAlternativeScore, formatCompactScore, formatDate, formatDateTime, formatNumber, formatScore } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import { compactPlayerDisplayName } from "@/lib/players/display-name";
 import {
@@ -69,7 +69,7 @@ import {
 } from "@/machete/squad_logic";
 import { forecastPointsPerPrice } from "@/machete/fantasy-value-efficiency";
 import type { FormulaAdaptationForecastKey } from "@/machete/formula_adaptations";
-import type { SavedFantasySquad, SavedFantasySquadOption } from "@/machete/squad_planner";
+import type { FantasyBookmakerFavorite, SavedFantasySquad, SavedFantasySquadOption } from "@/machete/squad_planner";
 import { plannerReadinessBlocksForecastActions, type PlannerReadiness } from "@/machete/planner_readiness";
 import type { SportsRuSquadSnapshotStatus } from "@/machete/sports_ru_squad_snapshots";
 import type { SquadFilterPreset, SquadFilterPresetFilters } from "@/machete/squad-filter-presets";
@@ -96,6 +96,7 @@ type FantasySquadPlannerProps = {
   season: string;
   rules: FantasySquadRules;
   rounds: FantasyRoundProjection[];
+  bookmakerFavorites: FantasyBookmakerFavorite[];
   players: FantasyPlannerPlayer[];
   playerPoolHref?: string;
   initialSquad: SavedFantasySquad;
@@ -240,7 +241,7 @@ type TransferSuggestionCalculation = {
   suggestions: TransferPlanSuggestion[];
 };
 
-export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: initialPlayers, playerPoolHref, initialSquad, savedSquads, readiness, priceStatus, sportsRuSquadStatus, historySettings, historySeasonOptions, initialVisiblePlayerPoolColumns, initialPlayerPoolColumnWidths }: FantasySquadPlannerProps) {
+export function FantasySquadPlanner({ leagueId, season, rules, rounds, bookmakerFavorites, players: initialPlayers, playerPoolHref, initialSquad, savedSquads, readiness, priceStatus, sportsRuSquadStatus, historySettings, historySeasonOptions, initialVisiblePlayerPoolColumns, initialPlayerPoolColumnWidths }: FantasySquadPlannerProps) {
   const language = useLanguage();
   const router = useRouter();
   const budgetForecastRef = useRef<HTMLDivElement>(null);
@@ -419,6 +420,10 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
     failedSuggestionCalculation.forecastSource === transferSuggestionForecastSource &&
     failedSuggestionCalculation.availableSuggestionCount === availableSuggestionCount;
   const displayedSuggestions = showAllSuggestions ? suggestions : suggestions.slice(0, 3);
+  const activeRoundBookmakerFavorites = useMemo(() => {
+    const roundId = rounds[activeRoundOffset]?.id;
+    return roundId ? bookmakerFavorites.filter((row) => row.roundId === roundId) : [];
+  }, [activeRoundOffset, bookmakerFavorites, rounds]);
   const teamFilterOptions = useMemo(() => [...new Map(players
     .filter((player) => player.teamId)
     .map((player) => [player.teamId!, { id: player.teamId!, name: player.teamName }])).values()]
@@ -1696,14 +1701,14 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
           ) : null}
         </div>
 
-        <div ref={suggestionPanelRef} className={cn(mobileTab === "suggestions" ? "block" : "hidden xl:block", "order-5 rounded border border-slate-200 bg-white p-4 shadow-soft")}>
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <h3 className="text-sm font-semibold uppercase tracking-wide text-slate-500"><I18nText en="Transfer suggestions" ru="Подсказки трансферов" /></h3>
-              <p className="mt-1 text-xs text-slate-500"><I18nText en="Ranked by the selected formula and forecast horizon." ru="Ранжированы по выбранной формуле и горизонту прогноза." /></p>
+        <div ref={suggestionPanelRef} className={cn(mobileTab === "suggestions" ? "block" : "hidden xl:block", "order-5 rounded border border-slate-200 bg-white p-3 shadow-soft")}>
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="min-w-0">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 sm:text-sm"><I18nText en="Transfer suggestions" ru="Подсказки трансферов" /></h3>
+              <p className="mt-0.5 text-[11px] text-slate-500"><I18nText en="Ranked by formula and horizon." ru="По формуле и горизонту прогноза." /></p>
             </div>
-            <div className="flex shrink-0 flex-col items-end gap-2">
-              <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-1 text-xs font-semibold text-amber-800 num-tabular">
+            <div className="flex shrink-0 items-center gap-2">
+              <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2 py-1 text-[11px] font-semibold text-amber-800 num-tabular">
                 <Sparkles className="h-3.5 w-3.5" />
                 {suggestions.length}
               </span>
@@ -1720,16 +1725,16 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
             </div>
           </div>
           {transferSuggestionForecastSource === "FFO" ? (
-            <p className="mt-3 rounded border border-cyan-200 bg-cyan-50 px-3 py-2 text-xs text-cyan-900">
+            <p className="mt-2 rounded border border-cyan-200 bg-cyan-50 px-2 py-1.5 text-[11px] text-cyan-900">
               <I18nText en="FFO is published only for the current round, so these suggestions are ranked over 1 round." ru="FFO публикуется только на текущий тур, поэтому эти подсказки ранжированы на 1 тур." />
             </p>
           ) : null}
           {usesRplTransferRules ? (
-            <p className="mt-3 text-xs text-slate-500">
+            <p className="mt-2 text-[11px] text-slate-500">
               <I18nText en="RPL allows up to three transfers in a round; no point penalties apply." ru="В РПЛ — до трёх замен за тур, без штрафов по очкам." />
             </p>
           ) : null}
-          <div className="mt-3 grid gap-3 xl:grid-cols-2">
+          <div className="mt-2 grid gap-2 xl:grid-cols-3">
             {displayedSuggestions.map((suggestion) => {
               const captain = suggestion.captainPlayerId ? playersById.get(suggestion.captainPlayerId) ?? null : null;
               return (
@@ -1737,14 +1742,14 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                   key={suggestion.id}
                   type="button"
                   onClick={() => applySuggestion(suggestion)}
-                  className="block w-full rounded border border-slate-200 bg-white p-3 text-left shadow-sm transition hover:border-sky-200 hover:bg-sky-50/30"
+                  className="block w-full rounded border border-slate-200 bg-white p-2 text-left shadow-sm transition hover:border-sky-200 hover:bg-sky-50/30"
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-ink">
                         <I18nText en={`${suggestion.transferCount} transfer${suggestion.transferCount === 1 ? "" : "s"}`} ru={`${suggestion.transferCount} трансфер${suggestion.transferCount === 1 ? "" : suggestion.transferCount < 5 ? "а" : "ов"}`} />
                       </p>
-                      <p className="mt-0.5 text-xs text-slate-500"><I18nText en="Players, prices, forecasts and fixtures after this plan." ru="Игроки, цены, прогнозы и ближайшие матчи после этого плана." /></p>
+                      <p className="mt-0.5 text-[10px] text-slate-500"><I18nText en="Squad after applying the plan" ru="Состав после применения плана" /></p>
                     </div>
                     <span className="whitespace-nowrap rounded bg-emerald-50 px-2 py-1 text-xs font-semibold text-emerald-700 num-tabular">
                       {signedScore(suggestion.round1Delta)}
@@ -1752,7 +1757,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                   </div>
 
                   {suggestion.priorityReplacementCount > 0 ? (
-                    <p className="mt-2 rounded bg-amber-50 px-2 py-1 text-xs font-semibold text-amber-800">
+                    <p className="mt-1.5 rounded bg-amber-50 px-1.5 py-1 text-[10px] font-semibold text-amber-800">
                       <I18nText
                         en={`Priority: ${suggestion.priorityReplacementCount} starting outfield player with 0 projected FP.`}
                         ru={`В приоритете: ${suggestion.priorityReplacementCount} полевой игрок основы с прогнозом 0 ФО.`}
@@ -1760,7 +1765,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                     </p>
                   ) : null}
 
-                  <div className="mt-3 space-y-2">
+                  <div className="mt-2 space-y-1.5">
                     {suggestion.moves.map((move) => {
                       const outPlayer = playersById.get(move.outPlayerId);
                       const inPlayer = playersById.get(move.inPlayerId);
@@ -1770,7 +1775,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                       const isStartingGoalkeeperZero = Boolean(outSelection?.isStarter && outPlayer?.positionGroup === "GK" && outForecast === 0);
 
                       return (
-                        <div key={`${move.outPlayerId}:${move.inPlayerId}`} className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-stretch gap-1.5">
+                        <div key={`${move.outPlayerId}:${move.inPlayerId}`} className="grid grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-stretch gap-1">
                           {outPlayer ? (
                             <TransferSuggestionPlayerCard
                               player={outPlayer}
@@ -1783,7 +1788,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                           ) : (
                             <TransferSuggestionPlayerFallback name={move.outName} teamName={move.outTeamName} positionGroup={move.positionGroup} direction="out" />
                           )}
-                          <span aria-hidden="true" className="flex items-center justify-center text-slate-400"><ArrowRight className="h-4 w-4" /></span>
+                          <span aria-hidden="true" className="flex items-center justify-center text-slate-400"><ArrowRight className="h-3.5 w-3.5" /></span>
                           {inPlayer ? (
                             <TransferSuggestionPlayerCard player={inPlayer} direction="in" source={suggestion.forecastSource} language={language} />
                           ) : (
@@ -1794,7 +1799,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
                     })}
                   </div>
 
-                  <dl className="mt-3 grid grid-cols-2 gap-2 rounded bg-slate-50 px-2 py-2 text-xs sm:grid-cols-4">
+                  <dl className="mt-2 grid grid-cols-2 gap-1 rounded bg-slate-50 px-1.5 py-1.5 text-[10px] sm:grid-cols-4">
                     <div>
                       <dt className="text-slate-500">{transferSuggestionRoundLabel(suggestion.forecastSource, 1, language)}</dt>
                       <dd className="font-semibold text-ink num-tabular">{signedScore(suggestion.round1Delta)}</dd>
@@ -1815,15 +1820,15 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
 
                   {captain ? <TransferSuggestionCaptain player={captain} source={suggestion.forecastSource} language={language} /> : null}
 
-                  <p className="mt-2 text-xs font-medium text-slate-600">
+                  <p className="mt-1.5 text-[11px] font-medium text-slate-600">
                     <I18nText en={suggestion.reason} ru={`Прогнозный выигрыш ${signedScore(suggestion.horizonDelta)} по ${suggestion.forecastSource} за ${transferSuggestionHorizon} тур.`} />
                   </p>
                   {suggestion.risks.length > 0 ? (
-                    <p className="mt-1 text-[11px] text-rose-700">
+                    <p className="mt-0.5 text-[10px] text-rose-700">
                       <I18nText en={`Risks: ${suggestion.risks.join("; ")}`} ru={`Риски: ${suggestion.risks.map(localizeTransferRisk).join("; ")}`} />
                     </p>
                   ) : null}
-                  <p className="mt-2 text-[11px] font-semibold text-sky-700"><I18nText en="Click to apply this plan" ru="Нажмите, чтобы применить план" /></p>
+                  <p className="mt-1 text-[10px] font-semibold text-sky-700"><I18nText en="Click to apply" ru="Нажмите, чтобы применить" /></p>
                 </button>
               );
             })}
@@ -1831,7 +1836,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
               <button
                 type="button"
                 onClick={() => setShowAllSuggestions((value) => !value)}
-                className="w-full rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                className="w-full rounded border border-slate-200 bg-white px-2 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50"
               >
                 {showAllSuggestions
                   ? <I18nText en="Show top 3" ru="Показать топ-3" />
@@ -1893,6 +1898,12 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, players: 
               <p className="text-sm text-slate-500"><I18nText en="No clean upgrade found for the selected filters." ru="Для выбранных фильтров чистое улучшение не найдено." /></p>
             ) : null}
           </div>
+
+          <BookmakerFavoritesTable
+            rows={activeRoundBookmakerFavorites}
+            roundLabel={rounds[activeRoundOffset]?.label ?? null}
+            language={language}
+          />
         </div>
       </section>
 
@@ -4300,6 +4311,90 @@ function SquadPlayerTile({
   );
 }
 
+function BookmakerFavoritesTable({
+  rows,
+  roundLabel,
+  language
+}: {
+  rows: FantasyBookmakerFavorite[];
+  roundLabel: string | null;
+  language: UiLanguage;
+}) {
+  const newestOddsAt = rows.reduce<string | null>((latest, row) => (
+    !latest || new Date(row.oddsFetchedAt).getTime() > new Date(latest).getTime() ? row.oddsFetchedAt : latest
+  ), null);
+  const selectionExplanation = localizedText(
+    language,
+    "The favorite in each fixture is the team with the higher bookmaker probability of scoring over 1.5 goals. Clean-sheet probability is shown independently.",
+    "Фаворит каждого матча — команда с большей букмекерской вероятностью забить больше 1.5 голов. Вероятность сухаря показана отдельно."
+  );
+
+  return (
+    <section className="mt-3 overflow-hidden rounded border border-slate-200 bg-white" aria-label={localizedText(language, "Bookmaker favorites", "Рыночные фавориты")}>
+      <div className="flex flex-wrap items-start justify-between gap-2 border-b border-slate-200 bg-slate-50/80 px-3 py-2">
+        <div className="min-w-0">
+          <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-600"><I18nText en="Bookmaker favorites" ru="Рыночные фавориты" /></h4>
+          <p className="mt-0.5 text-[10px] text-slate-500" title={selectionExplanation}>
+            <I18nText en="One favorite per fixture · selected by P(team over 1.5)" ru="Один фаворит на матч · выбор по шансу ИТБ 1.5" />
+          </p>
+        </div>
+        <div className="shrink-0 text-right text-[10px] text-slate-500">
+          <p className="font-semibold text-slate-700">Fonbet{roundLabel ? ` · ${roundLabel}` : ""}</p>
+          {newestOddsAt ? <p title={localizedText(language, "Latest bookmaker update", "Последнее обновление линии")}>{formatDateTime(newestOddsAt)}</p> : null}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-[minmax(0,1fr)_4.25rem_4.75rem] border-b border-slate-200 bg-slate-50 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500 sm:grid-cols-[minmax(0,1fr)_5.5rem_6rem]">
+        <span><I18nText en="Favorite" ru="Фаворит" /></span>
+        <span className="text-right"><I18nText en="Clean sheet" ru="Сухарь" /></span>
+        <span className="text-right"><I18nText en="Team O1.5" ru="ИТБ 1.5" /></span>
+      </div>
+
+      {rows.length > 0 ? (
+        <div className="divide-y divide-slate-100">
+          {rows.map((row) => (
+            <div key={row.fixtureId} className="grid grid-cols-[minmax(0,1fr)_4.25rem_4.75rem] items-center gap-x-2 px-3 py-2 sm:grid-cols-[minmax(0,1fr)_5.5rem_6rem]">
+              <div className="flex min-w-0 items-center gap-2">
+                <span aria-hidden="true" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-sky-100 bg-sky-50 text-[10px] font-black text-sky-800">
+                  {teamMarketInitials(row.teamName)}
+                </span>
+                <div className="min-w-0">
+                  <p className="truncate text-xs font-semibold text-ink" title={row.teamFullName}>{row.teamName}</p>
+                  <p className="truncate text-[10px] text-slate-500" title={row.opponentFullName}>
+                    <span className="mr-1 font-semibold text-slate-400">{row.side === "H" ? "vs" : "@"}</span>{row.opponentName}
+                  </p>
+                </div>
+              </div>
+              <MarketProbabilityCell probability={row.cleanSheetProbability} tone="sky" label={localizedText(language, `Clean-sheet chance for ${row.teamFullName}`, `Шанс сухаря: ${row.teamFullName}`)} />
+              <MarketProbabilityCell probability={row.teamOver15Probability} tone="emerald" label={localizedText(language, `Chance ${row.teamFullName} scores over 1.5`, `Шанс ${row.teamFullName} забить больше 1.5`)} />
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="px-3 py-4 text-center text-xs text-slate-500" role="status">
+          <I18nText en="No fresh complete bookmaker lines for this round." ru="На этот тур нет свежих полных букмекерских линий." />
+        </p>
+      )}
+    </section>
+  );
+}
+
+function MarketProbabilityCell({ probability, tone, label }: { probability: number; tone: "sky" | "emerald"; label: string }) {
+  const percent = Math.round(probability * 100);
+  return (
+    <div className="min-w-0 text-right" aria-label={`${label}: ${percent}%`} title={`${label}: ${percent}%`}>
+      <span className={cn("text-xs font-bold num-tabular", tone === "sky" ? "text-sky-700" : "text-emerald-700")}>{percent}%</span>
+      <span className="mt-1 block h-1 overflow-hidden rounded-full bg-slate-100">
+        <span className={cn("block h-full rounded-full", tone === "sky" ? "bg-sky-500" : "bg-emerald-500")} style={{ width: `${percent}%` }} />
+      </span>
+    </div>
+  );
+}
+
+function teamMarketInitials(name: string) {
+  return name.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "?";
+}
+
 function transferSuggestionRoundLabel(source: TransferSuggestionForecastSource, rounds: number, language: UiLanguage) {
   return localizedText(language, `${source} ${rounds}R`, `${source === "FO" ? "ФО" : source} ${rounds}Т`);
 }
@@ -4333,24 +4428,24 @@ function TransferSuggestionPlayerCard({
     : localizedText(language, "In", "Взять");
 
   return (
-    <article className={cn("min-w-0 rounded border p-2", direction === "out" ? "border-rose-200 bg-rose-50/50" : "border-emerald-200 bg-emerald-50/50")}>
-      <div className="flex min-w-0 items-start gap-2">
+    <article className={cn("min-w-0 rounded border p-1.5", direction === "out" ? "border-rose-200 bg-rose-50/50" : "border-emerald-200 bg-emerald-50/50")}>
+      <div className="flex min-w-0 items-start gap-1.5">
         <div className="shrink-0"><SquadPlayerPhoto player={player} /></div>
         <div className="min-w-0">
           <span className={cn("inline-flex rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide", direction === "out" ? "bg-rose-100 text-rose-700" : "bg-emerald-100 text-emerald-700")}>{directionLabel}</span>
-          <p className="mt-1 truncate text-xs font-bold text-ink" title={player.name}>{compactPlayerDisplayName(player.name)}</p>
+          <p className="mt-0.5 truncate text-[11px] font-bold text-ink" title={player.name}>{compactPlayerDisplayName(player.name)}</p>
           <p className="truncate text-[11px] text-slate-600" title={player.teamName}>{player.teamShortName ?? player.teamName} <span className={cn("ml-1 inline-flex rounded px-1 py-px text-[9px] font-bold", positionPillClass(player.positionGroup))}>{player.positionGroup}</span></p>
         </div>
       </div>
 
       {isPriorityReplacement ? (
-        <p className="mt-2 rounded bg-amber-100 px-1.5 py-1 text-[10px] font-bold text-amber-900"><I18nText en={`0 ${source} FP in the starting XI — replace first.`} ru={`0 ФО по ${source} в основе — заменить в первую очередь.`} /></p>
+        <p className="mt-1.5 rounded bg-amber-100 px-1.5 py-1 text-[10px] font-bold text-amber-900"><I18nText en={`0 ${source} FP in the starting XI — replace first.`} ru={`0 ФО по ${source} в основе — заменить в первую очередь.`} /></p>
       ) : null}
       {isStartingGoalkeeperZero ? (
-        <p className="mt-2 rounded bg-slate-200 px-1.5 py-1 text-[10px] font-semibold text-slate-700"><I18nText en={`Starting goalkeeper has 0 ${source} FP — eligible only for that reason.`} ru={`Стартовый вратарь с 0 ФО по ${source} — замена допустима только поэтому.`} /></p>
+        <p className="mt-1.5 rounded bg-slate-200 px-1.5 py-1 text-[10px] font-semibold text-slate-700"><I18nText en={`Starting goalkeeper has 0 ${source} FP — eligible only for that reason.`} ru={`Стартовый вратарь с 0 ФО по ${source} — замена допустима только поэтому.`} /></p>
       ) : null}
 
-      <dl className="mt-2 grid grid-cols-3 gap-1 text-[10px]">
+      <dl className="mt-1.5 grid grid-cols-3 gap-1 text-[10px]">
         <div>
           <dt className="text-slate-500"><I18nText en="Price" ru="Цена" /></dt>
           <dd className="font-semibold text-ink num-tabular">{player.priceSource === "ESTIMATED" ? "~" : ""}{formatNumber(player.price, 1)}</dd>
@@ -4366,17 +4461,17 @@ function TransferSuggestionPlayerCard({
       </dl>
 
       {source !== "FO" ? (
-        <p className="mt-1 text-[10px] text-slate-600 num-tabular">
+        <p className="mt-0.5 text-[10px] text-slate-600 num-tabular">
           {selectedNextLabel}: <span className="font-semibold text-ink">{formatScore(selectedNext)}</span>{selectedThreeRounds === null ? "" : <> · {selectedThreeRoundsLabel}: <span className="font-semibold text-ink">{formatScore(selectedThreeRounds)}</span></>}
         </p>
       ) : null}
       {fixtures.length > 0 ? (
-        <div className="mt-2 min-w-0 overflow-hidden">
+        <div className="mt-1.5 min-w-0 overflow-hidden">
           <FdrRow fixtures={fixtures} className="flex-nowrap gap-0.5 overflow-hidden [&_.fdr-pill]:max-w-[3.25rem] [&_.fdr-pill]:px-1 [&_.fdr-pill]:text-[9px]" />
         </div>
       ) : null}
       {(player.expectedMinutes !== null && player.expectedMinutes !== undefined) || (player.forecastConfidence !== null && player.forecastConfidence !== undefined) ? (
-        <p className="mt-2 text-[10px] text-slate-500">
+        <p className="mt-1 text-[10px] text-slate-500">
           {player.expectedMinutes !== null && player.expectedMinutes !== undefined ? <><I18nText en="Min" ru="Мин" /> {formatNumber(player.expectedMinutes, 0)}</> : null}
           {player.expectedMinutes !== null && player.expectedMinutes !== undefined && player.forecastConfidence !== null && player.forecastConfidence !== undefined ? " · " : null}
           {player.forecastConfidence !== null && player.forecastConfidence !== undefined ? <><I18nText en="Confidence" ru="Уверенность" /> {formatNumber(player.forecastConfidence * 100, 0)}%</> : null}
@@ -4398,8 +4493,8 @@ function TransferSuggestionPlayerFallback({
   direction: "out" | "in";
 }) {
   return (
-    <div className={cn("min-w-0 rounded border p-2", direction === "out" ? "border-rose-200 bg-rose-50/50" : "border-emerald-200 bg-emerald-50/50")}>
-      <p className="truncate text-xs font-bold text-ink" title={name}>{compactPlayerDisplayName(name)}</p>
+    <div className={cn("min-w-0 rounded border p-1.5", direction === "out" ? "border-rose-200 bg-rose-50/50" : "border-emerald-200 bg-emerald-50/50")}>
+      <p className="truncate text-[11px] font-bold text-ink" title={name}>{compactPlayerDisplayName(name)}</p>
       <p className="truncate text-[11px] text-slate-600" title={teamName}>{teamName} · {positionGroup}</p>
     </div>
   );
@@ -4414,7 +4509,7 @@ function TransferSuggestionCaptain({ player, source, language }: { player: Fanta
   const foThreeRoundsLabel = transferSuggestionRoundLabel("FO", 3, language);
 
   return (
-    <div className="mt-3 flex items-start gap-2 rounded border border-amber-200 bg-amber-50 px-2.5 py-2 text-left">
+    <div className="mt-2 flex items-start gap-2 rounded border border-amber-200 bg-amber-50 px-2 py-1.5 text-left">
       <Crown className="mt-0.5 h-4 w-4 shrink-0 fill-amber-500 text-amber-600" />
       <div className="min-w-0">
         <p className="text-xs font-bold text-amber-950"><I18nText en="Captain for the next round" ru="Капитан на ближайший тур" /> · <span title={player.name}>{compactPlayerDisplayName(player.name)}</span></p>
