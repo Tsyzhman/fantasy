@@ -1755,8 +1755,12 @@ function pipelineParticipant(
   const baseExpectedMinutes = archivedExpectedMinutes({
     existingMinutes: formulaExpectedMinutes,
     priorAppearances: numericOrNull(metrics.archive_prior_appearances) ?? 0,
+    priorMinutes: numericOrNull(metrics.archive_prior_minutes),
     priorTeamMatches: numericOrNull(metrics.archive_prior_team_matches) ?? 0,
     currentTeamStatMatches: numericOrNull(metrics.current_team_stat_matches) ?? 0,
+    detailedClubHistoryMatches:
+      (numericOrNull(metrics.current_club_history_matches) ?? 0) +
+      (numericOrNull(metrics.previous_club_history_matches) ?? 0),
     sameTeam: numericOrNull(metrics.archive_prior_same_team) === 1
   });
   metrics.roster_starter = rosterStarterApplies ? 1 : 0;

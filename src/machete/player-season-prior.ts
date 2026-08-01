@@ -82,15 +82,21 @@ export function blendArchivedEventRate(input: ArchivedRateBlendInput): ArchivedR
 export function archivedExpectedMinutes(input: {
   existingMinutes: number;
   priorAppearances: number;
+  priorMinutes?: number | null;
   priorTeamMatches: number;
   currentTeamStatMatches: number;
+  detailedClubHistoryMatches?: number;
   sameTeam: boolean;
 }) {
+  if ((input.detailedClubHistoryMatches ?? 0) >= 5) return input.existingMinutes;
   if (input.priorAppearances <= 0 || input.priorTeamMatches <= 0) return input.existingMinutes;
   const appearanceRate = clamp(input.priorAppearances / input.priorTeamMatches, 0, 1);
   const coverageFade = clamp(1 - input.currentTeamStatMatches / ARCHIVE_MINUTES_FADE_TEAM_MATCHES, 0, 1);
   const transferFactor = input.sameTeam ? 1 : 0.9;
-  const archiveMinutes = ASSUMED_MINUTES_PER_APPEARANCE * appearanceRate * coverageFade * transferFactor;
+  const priorMinutesPerTeamMatch = typeof input.priorMinutes === "number" && Number.isFinite(input.priorMinutes)
+    ? Math.max(0, input.priorMinutes) / input.priorTeamMatches
+    : ASSUMED_MINUTES_PER_APPEARANCE * appearanceRate;
+  const archiveMinutes = priorMinutesPerTeamMatch * coverageFade * transferFactor;
   return Math.max(input.existingMinutes, archiveMinutes);
 }
 

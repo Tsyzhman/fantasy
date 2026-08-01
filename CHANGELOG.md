@@ -26,6 +26,9 @@ image labels `org.opencontainers.image.version` and
   recent match calendar, including matches the player missed. The existing
   ten-percent transfer penalty remains applied; 365-day formula inputs use up
   to ten club matches while the visible last-five history remains five matches.
+- Detailed five-plus-match club history now takes precedence over the coarse
+  season archive for expected minutes. Short archive fallbacks use real FotMob
+  season minutes when available instead of assuming 70 minutes per appearance.
 
 ## 0.3.1 - 2026-07-31
 
