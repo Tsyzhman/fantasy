@@ -87,6 +87,15 @@ test("promoted-player archive prefers the feeder league over a one-match cup row
   assert.equal(archive?.appearances, 34);
 });
 
+test("Eredivisie promoted-player archive prefers Eerste Divisie over a one-match KNVB Cup row", () => {
+  const archive = preferredArchivedSeason([
+    { season: "2025/2026", teamId: 9830n, leagueId: 235n, appearances: 1 },
+    { season: "2025/2026", teamId: 9830n, leagueId: 111n, appearances: 25 }
+  ], "9830", 57n);
+  assert.equal(archive?.leagueId, 111n);
+  assert.equal(archive?.appearances, 25);
+});
+
 test("editable pipeline applies history, fixture, allocation and final score formulas in order", () => {
   const config = {
     ...expectedProjectionFormulaConfig,

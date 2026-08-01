@@ -101,3 +101,28 @@ test("archive appearance share supports minutes and fades after eight covered te
   assert.ok(afterOne > 53 && afterOne < 55);
   assert.equal(covered, 0);
 });
+
+test("detailed club-match minutes take precedence over a coarse season appearance archive", () => {
+  assert.equal(archivedExpectedMinutes({
+    existingMinutes: 10.1,
+    priorAppearances: 25,
+    priorMinutes: 378,
+    priorTeamMatches: 38,
+    currentTeamStatMatches: 0,
+    detailedClubHistoryMatches: 39,
+    sameTeam: true
+  }), 10.1);
+});
+
+test("short history archive uses real prior minutes instead of assuming 70 minutes per appearance", () => {
+  const minutes = archivedExpectedMinutes({
+    existingMinutes: 0,
+    priorAppearances: 25,
+    priorMinutes: 378,
+    priorTeamMatches: 38,
+    currentTeamStatMatches: 0,
+    detailedClubHistoryMatches: 1,
+    sameTeam: true
+  });
+  assert.ok(minutes > 9.9 && minutes < 10);
+});

@@ -424,6 +424,142 @@ test("combined last match window is applied across selected competitions without
   assert.deepEqual(statCall.where?.matchId?.in, [203n, 202n, 201n, 102n, 101n]);
 });
 
+test("club-minute history counts every recent club match instead of only the player's appearances", async () => {
+  const matches = Array.from({ length: 5 }, (_, index) => ({
+    id: BigInt(201 + index),
+    matchDate: new Date(`2026-05-${String(index + 1).padStart(2, "0")}T16:00:00.000Z`),
+    season: "2025/2026",
+    homeTeamId: 10n,
+    awayTeamId: 20n
+  }));
+  const appearance = playerStat(205n, 90);
+  const prisma = {
+    teamPlayerSeason: {
+      async findMany(input: { select?: { seasonTeam?: unknown } }) {
+        if (input.select?.seasonTeam) {
+          return [{
+            playerId: 99n,
+            teamId: 10n,
+            team: { name: "Current FC", country: "England" },
+            seasonTeam: { leagueSeason: { league: { name: "Premier League", country: "England" } } }
+          }];
+        }
+        return [rosterRow({
+          leagueId: 47n,
+          season: "2025/2026",
+          teamId: 10n,
+          playerId: 99n,
+          position: "Midfielder",
+          playerName: "Rare Starter"
+        })];
+      }
+    },
+    coreMatch: {
+      async findMany(input: { select?: { homeTeamId?: unknown } }) {
+        return input.select?.homeTeamId
+          ? matches
+          : matches.map(({ homeTeamId: _homeTeamId, awayTeamId: _awayTeamId, ...match }) => match);
+      }
+    },
+    matchPlayerStat: {
+      async findMany(input: { include?: { match?: unknown } }) {
+        return input.include?.match
+          ? [{ ...appearance, match: { matchDate: matches[4].matchDate, status: "FINISHED" } }]
+          : [appearance];
+      }
+    }
+  } as unknown as PrismaClient;
+
+  const rows = await loadSharedMachetePlayerRows(prisma, {
+    scopes: [{ leagueId: 47n, season: "2025/2026", teamId: 10n }],
+    matchWindow: { kind: "last", matches: 5 },
+    combineTeamCompetitions: true,
+    fallbackToRecentClubHistory: true,
+    scoringModel
+  });
+
+  assert.equal(rows[0].matchesPlayed, 5);
+  assert.equal(rows[0].minutesPlayed, 90);
+  assert.equal(rows[0].expectedMinutes, 18);
+  assert.equal(rows[0].startProbability, 0.2);
+  assert.equal(rows[0].rawMetrics?.appearance_probability, 0.2);
+  assert.deepEqual(rows[0].minuteHistoryProvenance, {
+    source: "CURRENT_CLUB",
+    currentClubMatches: 5,
+    previousClubMatches: 0,
+    previousClubName: null,
+    previousClubPenaltyFactor: 0.9
+  });
+});
+
+test("a new player uses the previous club's recent match calendar including matches he missed", async () => {
+  const previousMatches = Array.from({ length: 5 }, (_, index) => ({
+    id: BigInt(301 + index),
+    matchDate: new Date(`2026-05-${String(index + 1).padStart(2, "0")}T16:00:00.000Z`),
+    season: "2025/2026",
+    homeTeamId: 5n,
+    awayTeamId: 20n
+  }));
+  const previousAppearance = {
+    ...playerStat(305n, 90),
+    teamId: 5n,
+    position: "Midfielder"
+  };
+  const prisma = {
+    teamPlayerSeason: {
+      async findMany(input: { select?: { seasonTeam?: unknown } }) {
+        if (input.select?.seasonTeam) {
+          return [{
+            playerId: 99n,
+            teamId: 5n,
+            team: { name: "Previous FC", country: "Netherlands" },
+            seasonTeam: { leagueSeason: { league: { name: "Eerste Divisie", country: "Netherlands" } } }
+          }];
+        }
+        return [rosterRow({
+          leagueId: 57n,
+          season: "2026/2027",
+          teamId: 10n,
+          playerId: 99n,
+          position: "Midfielder",
+          playerName: "Transferred Substitute"
+        })];
+      }
+    },
+    coreMatch: {
+      async findMany(input: { select?: { homeTeamId?: unknown } }) {
+        return input.select?.homeTeamId ? previousMatches : [];
+      }
+    },
+    matchPlayerStat: {
+      async findMany(input: { include?: { match?: unknown } }) {
+        return input.include?.match
+          ? [{ ...previousAppearance, match: { matchDate: previousMatches[4].matchDate, status: "FINISHED" } }]
+          : [];
+      }
+    }
+  } as unknown as PrismaClient;
+
+  const rows = await loadSharedMachetePlayerRows(prisma, {
+    scopes: [{ leagueId: 57n, season: "2026/2027", teamId: 10n }],
+    matchWindow: { kind: "last", matches: 5 },
+    fallbackToRecentClubHistory: true,
+    scoringModel
+  });
+
+  assert.equal(rows[0].matchesPlayed, 5);
+  assert.equal(rows[0].minutesPlayed, 81);
+  assert.equal(rows[0].expectedMinutes, 16.2);
+  assert.equal(rows[0].startProbability, 0.2);
+  assert.deepEqual(rows[0].minuteHistoryProvenance, {
+    source: "PREVIOUS_CLUB_FALLBACK",
+    currentClubMatches: 0,
+    previousClubMatches: 5,
+    previousClubName: "Previous FC",
+    previousClubPenaltyFactor: 0.9
+  });
+});
+
 test("shared player rows normalize FotMob positions before applying the position filter", async () => {
   const rosterCalls: unknown[] = [];
   const prisma = {

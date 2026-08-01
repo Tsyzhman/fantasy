@@ -99,11 +99,14 @@ export type SharedMatchWindowSummary = {
   matchesWithPlayerStats: number;
 };
 
-type MatchPlayerStatRecord = Awaited<ReturnType<typeof loadStatsForMatchIds>>[number];
+type MatchPlayerStatRecord = Awaited<ReturnType<typeof loadStatsForMatchIds>>[number] & {
+  syntheticClubAbsence?: boolean;
+};
 type SharedPositionFilter = Exclude<FantasyPositionGroup, "UNK">;
 type SharedTeamMatchRef = {
   id: bigint;
   matchDate: Date | null;
+  season: string | null;
 };
 
 const AVERAGE_RATING_WINDOW = { kind: "last", matches: 10 } satisfies MacheteMatchWindow;
@@ -477,8 +480,10 @@ export async function loadSharedMachetePlayerRows(
   for (const matches of [...matchRefsByTeamScope.values(), ...ratingMatchRefsByTeamScope.values()]) {
     for (const match of matches) matchDateById.set(String(match.id), match.matchDate);
   }
-  const limitedMatchIdsByTeam = groupScopeMatchIdsByTeam(teamScopes.values(), matchRefsByTeamScope, input.matchWindow);
-  const ratingMatchIdsByTeam = groupScopeMatchIdsByTeam(teamScopes.values(), ratingMatchRefsByTeamScope, AVERAGE_RATING_WINDOW);
+  const limitedMatchRefsByTeam = groupScopeMatchRefsByTeam(teamScopes.values(), matchRefsByTeamScope, input.matchWindow);
+  const ratingMatchRefsByTeam = groupScopeMatchRefsByTeam(teamScopes.values(), ratingMatchRefsByTeamScope, AVERAGE_RATING_WINDOW);
+  const limitedMatchIdsByTeam = matchIdsByTeam(limitedMatchRefsByTeam);
+  const ratingMatchIdsByTeam = matchIdsByTeam(ratingMatchRefsByTeam);
   const allMatchIds = uniqueBigints([...matchIdsByTeamScope.values()].flat());
   const scopedMatchIds = input.combineTeamCompetitions && input.matchWindow.kind === "last" ? uniqueBigints([...limitedMatchIdsByTeam.values()].flat()) : allMatchIds;
   const ratingMatchIds = uniqueBigints([
@@ -505,6 +510,9 @@ export async function loadSharedMachetePlayerRows(
       )
     : []);
   for (const row of fallbackStats) matchDateById.set(String(row.matchId), row.match.matchDate);
+  for (const refs of clubHistory?.matchRefsByTeamId.values() ?? []) {
+    for (const ref of refs) matchDateById.set(String(ref.id), ref.matchDate);
+  }
   const fallbackStatsByPlayer = groupStatsByPlayer(fallbackStats);
   const scoringModel = input.scoringModel ?? (input.userId
     ? await getUserScoringModelForSource(prisma, input.userId, "MACHETE")
@@ -533,6 +541,10 @@ export async function loadSharedMachetePlayerRows(
               scopedStats,
               fallbackStatsByPlayer.get(String(first.playerId)) ?? [],
               first.teamId,
+              first.playerId,
+              first.season,
+              limitedMatchRefsByTeam.get(String(first.teamId)) ?? [],
+              clubHistory.matchRefsByTeamId,
               clubHistory?.teamNameById ?? new Map(),
               matchDateById,
               input.matchWindow
@@ -578,6 +590,10 @@ export async function loadSharedMachetePlayerRows(
             scopedStats,
             fallbackStatsByPlayer.get(String(row.playerId)) ?? [],
             row.teamId,
+            row.playerId,
+            row.season,
+            matchRefsByTeamScope.get(teamKey) ?? [],
+            clubHistory.matchRefsByTeamId,
             clubHistory?.teamNameById ?? new Map(),
             matchDateById,
             input.matchWindow
@@ -696,7 +712,7 @@ async function loadSharedTeamMatchRefs(
     },
     orderBy: { matchDate: "desc" },
     take: window.kind === "last" && !options.deferLastLimit ? window.matches : undefined,
-    select: { id: true, matchDate: true }
+    select: { id: true, matchDate: true, season: true }
   });
 
   return matches;
@@ -820,7 +836,13 @@ async function loadRecentPlayerHistory(prisma: PrismaClient, playerIds: bigint[]
 }
 
 async function loadRecentClubPlayerHistory(prisma: PrismaClient, playerIds: bigint[]) {
-  if (playerIds.length === 0) return { stats: [], teamNameById: new Map<string, string>() };
+  if (playerIds.length === 0) {
+    return {
+      stats: [],
+      teamNameById: new Map<string, string>(),
+      matchRefsByTeamId: new Map<string, SharedTeamMatchRef[]>()
+    };
+  }
 
   const memberships = await prisma.teamPlayerSeason.findMany({
     where: { playerId: { in: playerIds } },
@@ -849,10 +871,38 @@ async function loadRecentClubPlayerHistory(prisma: PrismaClient, playerIds: bigi
       .filter(isClubRosterMembership)
       .map((row) => [String(row.teamId), row.team.name] as const)
   );
-  const stats = await loadRecentPlayerHistory(prisma, playerIds, []);
+  const clubMemberships = memberships.filter(isClubRosterMembership);
+  const clubTeamIds = uniqueBigints(clubMemberships.map((row) => row.teamId));
+  const [stats, clubMatches] = await Promise.all([
+    loadRecentPlayerHistory(prisma, playerIds, []),
+    clubTeamIds.length > 0
+      ? prisma.coreMatch.findMany({
+          where: {
+            finished: true,
+            cancelled: false,
+            matchDate: { not: null },
+            OR: [{ homeTeamId: { in: clubTeamIds } }, { awayTeamId: { in: clubTeamIds } }]
+          },
+          select: { id: true, matchDate: true, season: true, homeTeamId: true, awayTeamId: true },
+          orderBy: [{ matchDate: "asc" }, { id: "asc" }]
+        })
+      : Promise.resolve([])
+  ]);
+  const matchRefsByTeamId = new Map<string, SharedTeamMatchRef[]>();
+  const clubTeamIdSet = new Set(clubTeamIds.map(String));
+  for (const match of clubMatches) {
+    for (const teamId of [match.homeTeamId, match.awayTeamId]) {
+      if (!teamId || !clubTeamIdSet.has(String(teamId))) continue;
+      const key = String(teamId);
+      const refs = matchRefsByTeamId.get(key) ?? [];
+      refs.push({ id: match.id, matchDate: match.matchDate, season: match.season });
+      matchRefsByTeamId.set(key, refs);
+    }
+  }
   return {
     stats: stats.filter((stat) => stat.teamId && allowedPairs.has(teamPlayerKey(stat.teamId, stat.playerId))),
-    teamNameById
+    teamNameById,
+    matchRefsByTeamId
   };
 }
 
@@ -917,28 +967,23 @@ function mergeRecentPlayerStats(
 }
 
 const TRANSFER_HISTORY_MATCHES = 5;
+const FORMULA_HISTORY_MATCHES = 10;
 const TRANSFER_HISTORY_PENALTY = 0.9;
 
 function mergeTransferPlayerStats(
   scopedStats: MatchPlayerStatRecord[],
   fallbackStats: MatchPlayerStatRecord[],
   currentTeamId: bigint,
+  playerId: bigint,
+  currentSeason: string,
+  currentMatchRefs: SharedTeamMatchRef[],
+  matchRefsByTeamId: Map<string, SharedTeamMatchRef[]>,
   teamNameById: Map<string, string>,
   matchDateById: Map<string, Date | null>,
   matchWindow: MacheteMatchWindow
 ) {
-  const currentStats = uniquePlayerStats(scopedStats);
-  if (
-    (matchWindow.kind !== "last" && matchWindow.kind !== "days") ||
-    currentStats.length >= TRANSFER_HISTORY_MATCHES ||
-    fallbackStats.length === 0
-  ) {
-    return {
-      stats: currentStats,
-      provenance: minuteHistoryProvenance(currentStats.length, 0, null)
-    };
-  }
-
+  const targetMatches = transferHistoryTargetMatches(matchWindow);
+  const currentRawStats = uniquePlayerStats(scopedStats);
   const cutoff = matchWindow.kind === "days" ? daysAgo(matchWindow.days).getTime() : Number.NEGATIVE_INFINITY;
   const previousByTeam = new Map<string, MatchPlayerStatRecord[]>();
   for (const stat of fallbackStats) {
@@ -951,6 +996,24 @@ function mergeTransferPlayerStats(
   }
   const previousTeam = [...previousByTeam.entries()]
     .sort((left, right) => latestStatDate(right[1], matchDateById) - latestStatDate(left[1], matchDateById))[0];
+  const selectedCurrentRefs = selectCurrentClubMatchRefs(
+    currentMatchRefs,
+    currentRawStats,
+    previousTeam?.[1] ?? [],
+    currentSeason,
+    matchDateById
+  );
+  const currentStats = selectedCurrentRefs.length > 0
+    ? clubMatchObservations(currentRawStats, selectedCurrentRefs, playerId, currentTeamId)
+    : currentRawStats;
+
+  if (targetMatches === 0 || currentStats.length >= targetMatches || fallbackStats.length === 0) {
+    return {
+      stats: currentStats,
+      provenance: minuteHistoryProvenance(currentStats.length, 0, null)
+    };
+  }
+
   if (!previousTeam) {
     return {
       stats: currentStats,
@@ -958,14 +1021,26 @@ function mergeTransferPlayerStats(
     };
   }
 
-  const missingMatches = TRANSFER_HISTORY_MATCHES - currentStats.length;
-  const previousStats = uniquePlayerStats(previousTeam[1])
-    .sort((left, right) =>
-      dateMs(matchDateById.get(String(right.matchId)) ?? null) - dateMs(matchDateById.get(String(left.matchId)) ?? null) ||
-      compareBigints(right.matchId, left.matchId)
-    )
-    .slice(0, missingMatches)
-    .map(applyTransferHistoryPenalty);
+  const missingMatches = targetMatches - currentStats.length;
+  const previousTeamId = BigInt(previousTeam[0]);
+  const previousMatchRefs = selectPreviousClubMatchRefs(
+    matchRefsByTeamId.get(previousTeam[0]) ?? [],
+    previousTeam[1],
+    selectedCurrentRefs,
+    currentSeason,
+    matchDateById,
+    cutoff,
+    missingMatches
+  );
+  const previousStats = (previousMatchRefs.length > 0
+    ? clubMatchObservations(previousTeam[1], previousMatchRefs, playerId, previousTeamId)
+    : uniquePlayerStats(previousTeam[1])
+        .sort((left, right) =>
+          dateMs(matchDateById.get(String(right.matchId)) ?? null) - dateMs(matchDateById.get(String(left.matchId)) ?? null) ||
+          compareBigints(right.matchId, left.matchId)
+        )
+        .slice(0, missingMatches)
+  ).map(applyTransferHistoryPenalty);
   const byMatchId = new Map<string, MatchPlayerStatRecord>();
   for (const stat of [...previousStats, ...currentStats]) byMatchId.set(String(stat.matchId), stat);
   const stats = [...byMatchId.values()].sort((left, right) =>
@@ -980,6 +1055,128 @@ function mergeTransferPlayerStats(
       teamNameById.get(previousTeam[0]) ?? null
     )
   };
+}
+
+function transferHistoryTargetMatches(matchWindow: MacheteMatchWindow) {
+  if (matchWindow.kind === "last") return Math.min(matchWindow.matches, TRANSFER_HISTORY_MATCHES);
+  if (matchWindow.kind === "days") return FORMULA_HISTORY_MATCHES;
+  return 0;
+}
+
+function selectCurrentClubMatchRefs(
+  refs: SharedTeamMatchRef[],
+  currentStats: MatchPlayerStatRecord[],
+  previousStats: MatchPlayerStatRecord[],
+  currentSeason: string,
+  matchDateById: Map<string, Date | null>
+) {
+  const ordered = uniqueMatchRefs(refs).sort(compareMatchRefsAscending);
+  if (ordered.length === 0 || previousStats.length === 0) return ordered;
+
+  const previousLatest = latestStatDate(previousStats, matchDateById);
+  if (currentStats.length > 0) {
+    return ordered.filter((ref) => dateMs(ref.matchDate) > previousLatest);
+  }
+  return ordered.filter((ref) => ref.season === currentSeason && dateMs(ref.matchDate) > previousLatest);
+}
+
+function selectPreviousClubMatchRefs(
+  refs: SharedTeamMatchRef[],
+  previousStats: MatchPlayerStatRecord[],
+  currentRefs: SharedTeamMatchRef[],
+  currentSeason: string,
+  matchDateById: Map<string, Date | null>,
+  cutoff: number,
+  limit: number
+) {
+  if (limit <= 0) return [];
+  const previousLatestStat = [...previousStats].sort((left, right) =>
+    dateMs(matchDateById.get(String(right.matchId)) ?? null) - dateMs(matchDateById.get(String(left.matchId)) ?? null) ||
+    compareBigints(right.matchId, left.matchId)
+  )[0];
+  const previousSeason = previousLatestStat
+    ? refs.find((ref) => ref.id === previousLatestStat.matchId)?.season ?? null
+    : null;
+  const currentEvidenceDate = currentRefs.reduce(
+    (earliest, ref) => Math.min(earliest, dateMs(ref.matchDate) || Number.POSITIVE_INFINITY),
+    Number.POSITIVE_INFINITY
+  );
+  const seasonBoundary = autumnSpringSeasonStart(currentSeason)?.getTime() ?? Number.POSITIVE_INFINITY;
+  const transferBoundary = Math.min(currentEvidenceDate, seasonBoundary);
+  return uniqueMatchRefs(refs)
+    .filter((ref) => {
+      const matchDate = dateMs(ref.matchDate);
+      return (!previousSeason || ref.season === previousSeason) && matchDate >= cutoff && matchDate < transferBoundary;
+    })
+    .sort((left, right) => compareMatchRefsAscending(right, left))
+    .slice(0, limit)
+    .sort(compareMatchRefsAscending);
+}
+
+function clubMatchObservations(
+  stats: MatchPlayerStatRecord[],
+  refs: SharedTeamMatchRef[],
+  playerId: bigint,
+  teamId: bigint
+) {
+  const statByMatchId = new Map(uniquePlayerStats(stats).map((stat) => [String(stat.matchId), stat]));
+  return uniqueMatchRefs(refs)
+    .sort(compareMatchRefsAscending)
+    .map((ref) => statByMatchId.get(String(ref.id)) ?? syntheticClubAbsence(ref, playerId, teamId));
+}
+
+function syntheticClubAbsence(ref: SharedTeamMatchRef, playerId: bigint, teamId: bigint): MatchPlayerStatRecord {
+  return {
+    matchId: ref.id,
+    playerId,
+    teamId,
+    opponentTeamId: null,
+    isHome: null,
+    started: false,
+    substitutedIn: false,
+    substitutedOut: false,
+    minutes: 0,
+    position: null,
+    shirtNumber: null,
+    goals: 0,
+    assists: 0,
+    yellowCards: 0,
+    redCards: 0,
+    saves: 0,
+    goalsConceded: 0,
+    cleanSheet: false,
+    xg: 0,
+    xgot: 0,
+    xa: 0,
+    shots: 0,
+    shotsOnTarget: 0,
+    keyPasses: 0,
+    chancesCreated: 0,
+    tacklesWon: 0,
+    interceptions: 0,
+    clearances: 0,
+    duelsWon: 0,
+    aerialsWon: 0,
+    recoveries: 0,
+    touchesInOppBox: 0,
+    foulsWon: 0,
+    penaltiesWon: 0,
+    rating: null,
+    createdAt: new Date(0),
+    updatedAt: new Date(0),
+    syntheticClubAbsence: true
+  };
+}
+
+function compareMatchRefsAscending(left: SharedTeamMatchRef, right: SharedTeamMatchRef) {
+  return dateMs(left.matchDate) - dateMs(right.matchDate) || compareBigints(left.id, right.id);
+}
+
+function autumnSpringSeasonStart(season: string) {
+  const match = season.match(/^(\d{4})\s*[/-]/);
+  if (!match) return null;
+  const year = Number(match[1]);
+  return Number.isInteger(year) ? new Date(Date.UTC(year, 6, 1)) : null;
 }
 
 function uniquePlayerStats(stats: MatchPlayerStatRecord[]) {
@@ -1187,6 +1384,7 @@ function aggregateSharedStats(
   const startDataConfidence = matchesPlayed > 0 ? knownStarts.length / matchesPlayed : 0;
   const forecastConfidence = matchesPlayed > 0 ? round(clamp(sampleConfidence * 0.55 + stabilityConfidence * 0.3 + startDataConfidence * 0.15, 0, 1)) : null;
   const dataUpdatedAt = stats.reduce<Date | null>((latest, stat) => {
+    if (stat.syntheticClubAbsence) return latest;
     if (!(stat.updatedAt instanceof Date)) return latest;
     return !latest || stat.updatedAt > latest ? stat.updatedAt : latest;
   }, null);
@@ -1287,6 +1485,7 @@ function isPlayerAppearance(stat: MatchPlayerStatRecord) {
 }
 
 function isSharedBasicStatComplete(stat: MatchPlayerStatRecord, fallbackPosition: string | null | undefined) {
+  if (stat.syntheticClubAbsence) return false;
   if (normalizeFantasyPosition(stat.position ?? fallbackPosition) === "UNK") return false;
   if (stat.started === false && stat.substitutedIn !== true && (stat.minutes === null || stat.minutes === 0)) return true;
   if (typeof stat.minutes !== "number" || !Number.isFinite(stat.minutes)) return false;
@@ -1459,8 +1658,8 @@ function teamPlayerKey(teamId: bigint, playerId: bigint) {
   return `${teamId}:${playerId}`;
 }
 
-function groupScopeMatchIdsByTeam(scopes: Iterable<SharedPlayerRowsScope>, matchRefsByTeamScope: Map<string, SharedTeamMatchRef[]>, window: MacheteMatchWindow) {
-  const grouped = new Map<string, bigint[]>();
+function groupScopeMatchRefsByTeam(scopes: Iterable<SharedPlayerRowsScope>, matchRefsByTeamScope: Map<string, SharedTeamMatchRef[]>, window: MacheteMatchWindow) {
+  const grouped = new Map<string, SharedTeamMatchRef[]>();
   const refsByTeam = new Map<string, SharedTeamMatchRef[]>();
 
   for (const scope of scopes) {
@@ -1473,10 +1672,18 @@ function groupScopeMatchIdsByTeam(scopes: Iterable<SharedPlayerRowsScope>, match
   for (const [teamKey, refs] of refsByTeam) {
     const sorted = uniqueMatchRefs(refs).sort((left, right) => dateMs(right.matchDate) - dateMs(left.matchDate));
     const limited = window.kind === "last" ? sorted.slice(0, window.matches) : sorted;
-    grouped.set(teamKey, limited.map((match) => match.id));
+    grouped.set(teamKey, limited);
   }
 
   return grouped;
+}
+
+function groupScopeMatchIdsByTeam(scopes: Iterable<SharedPlayerRowsScope>, matchRefsByTeamScope: Map<string, SharedTeamMatchRef[]>, window: MacheteMatchWindow) {
+  return matchIdsByTeam(groupScopeMatchRefsByTeam(scopes, matchRefsByTeamScope, window));
+}
+
+function matchIdsByTeam(refsByTeam: Map<string, SharedTeamMatchRef[]>) {
+  return new Map([...refsByTeam].map(([teamId, refs]) => [teamId, refs.map((match) => match.id)]));
 }
 
 function uniqueMatchRefs(values: SharedTeamMatchRef[]) {
