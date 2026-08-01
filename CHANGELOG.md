@@ -5,6 +5,16 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.5 - 2026-08-01
+
+### Changed
+
+- A successful production deployment now runs bounded artifact retention
+  automatically instead of relying on a separate manual operator command.
+- Production retains the active Fantasy image and exactly one stopped rollback;
+  older rollback containers, images, and release directories are removed.
+- BuildKit cache is capped at 1 GB after every successful production rollout.
+
 ## 0.3.4 - 2026-08-01
 
 ### Added

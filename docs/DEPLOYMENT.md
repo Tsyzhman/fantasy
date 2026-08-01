@@ -216,7 +216,8 @@ was lost. This incident is why direct `stop` followed by an unvalidated
 
 ## Release and build-cache retention
 
-Run the bounded cleanup after a successful rollout:
+The production deploy runs the bounded cleanup automatically after a successful
+rollout. Operators can still inspect or re-run it manually:
 
 ```bash
 scripts/prune-production-artifacts.sh
@@ -224,12 +225,13 @@ scripts/prune-production-artifacts.sh --apply
 ```
 
 The first command is a dry run. Apply mode keeps the active symlink target,
-every release and image referenced by a remaining container, the newest three
-release directories, and the newest stopped web rollback. It removes only
+every release and image referenced by a remaining container, the newest two
+release directories (current plus one rollback), and the newest stopped web and
+worker rollback pair. It removes only
 older exact `fantasy-scout` release directories, obsolete stopped web rollback
-containers, and unused `fantasy-scout` image tags. Docker build cache is capped
-at 1 GB; database volumes, uploads, database backups, and images from other
-applications are outside the cleanup scope.
+containers, their worker counterparts, and unused `fantasy-scout` image tags.
+Docker build cache is capped at 1 GB; database volumes, uploads, database
+backups, and images from other applications are outside the cleanup scope.
 
 The release root and current-link paths are hard-bound to
 `/var/www/fantasy-scout-releases` and `/var/www/fantasy-scout-current`. After

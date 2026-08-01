@@ -346,6 +346,11 @@ printf '%s\t%s\t%s\t%s\t%s\t%s\n' \
   "$image_id" \
   >> "$release_root/PRODUCTION_HISTORY.tsv"
 
+# Retention is part of a successful promotion, not a separate operator task.
+# Keep the active release plus exactly one stopped rollback and bound BuildKit
+# cache growth after every production image build.
+"$target/scripts/prune-production-artifacts.sh" --apply
+
 printf 'DEPLOYED_RELEASE=%s\n' "$release"
 printf 'DEPLOYED_VERSION=%s\n' "$version"
 printf 'DEPLOYED_COMMIT=%s\n' "$commit"

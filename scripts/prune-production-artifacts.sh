@@ -13,7 +13,7 @@ fi
 
 release_root_input="${FANTASY_RELEASE_ROOT:-/var/www/fantasy-scout-releases}"
 current_link="${FANTASY_CURRENT_LINK:-/var/www/fantasy-scout-current}"
-keep_recent="${FANTASY_RELEASE_KEEP_RECENT:-3}"
+keep_recent="${FANTASY_RELEASE_KEEP_RECENT:-2}"
 build_cache_limit="${FANTASY_BUILD_CACHE_LIMIT:-1GB}"
 
 if [[ ! "$keep_recent" =~ ^[1-9][0-9]*$ ]]; then
