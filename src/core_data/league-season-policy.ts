@@ -92,7 +92,6 @@ const disabledLeagueIngestionIds = new Set([
   // Lower divisions outside the top-five European second tiers, plus Ukraine.
   "england-league-two",
   "liga-portugal-2",
-  "eerste-divisie",
   "turkish-1-lig",
   "belgian-first-division-b",
   "scottish-championship",

@@ -135,13 +135,13 @@ test("production ingestion excludes non-target leagues", () => {
   const enabledIds = new Set(enabledLeagueIngestionConfigs().map((league) => league.league_id));
 
   assert.equal(leagueIngestionConfig.length, 82);
-  assert.equal(enabledIds.size, 43);
+  assert.equal(enabledIds.size, 44);
 
-  for (const leagueId of [44, 47, 48, 50, 77, 86, 108, 110, 140, 146, 338]) {
+  for (const leagueId of [44, 47, 48, 50, 77, 86, 108, 110, 111, 140, 146, 338]) {
     assert.equal(enabledIds.has(leagueId), true);
   }
 
-  for (const leagueId of [109, 111, 119, 130, 139, 163, 165, 264, 441, 536, 9806, 10195]) {
+  for (const leagueId of [109, 119, 130, 139, 163, 165, 264, 441, 536, 9806, 10195]) {
     assert.equal(enabledIds.has(leagueId), false);
   }
 });

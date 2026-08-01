@@ -5,6 +5,28 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.4 - 2026-08-01
+
+### Added
+
+- Detailed FotMob ingestion for Eerste Divisie, including its complete match
+  calendar and player-level payloads, as the feeder competition for
+  Eredivisie.
+- Eerste Divisie history in promoted-team strength profiles and promoted-player
+  archive selection, matching the existing FNL-to-RPL path.
+
+### Fixed
+
+- Expected minutes now use every recent match played by the player's club,
+  including explicit zero-minute observations when the player was absent from
+  the match sheet. Previously those club matches disappeared from the
+  denominator, so one isolated 90-minute cup appearance could produce a
+  90-minute projection.
+- A new signing now fills missing current-club history from the previous club's
+  recent match calendar, including matches the player missed. The existing
+  ten-percent transfer penalty remains applied; 365-day formula inputs use up
+  to ten club matches while the visible last-five history remains five matches.
+
 ## 0.3.1 - 2026-07-31
 
 ### Added

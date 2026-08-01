@@ -332,7 +332,10 @@ const teamStrengthVenuePriorMatches = 8;
 const promotedTeamPriorMatches = 8;
 const promotedTeamStrengthFactor = 0.81;
 const promotedTeamRatioExponent = 0.6;
-const teamStrengthFeederLeagueByTopLeague = new Map<string, bigint>([["63", 338n]]);
+const teamStrengthFeederLeagueByTopLeague = new Map<string, bigint>([
+  ["57", 111n],
+  ["63", 338n]
+]);
 const fixtureOddsMaximumAgeMs = 35 * 24 * 60 * 60_000;
 const fantasyPlayerPoolCacheTtlMs = 5 * 60_000;
 const fantasyPlayerPoolCache = new ExpiringPromiseCache<string, FantasyPlannerPlayer[]>(20);
@@ -1515,7 +1518,8 @@ async function addArchivedPlayerSeasonMetrics(
     const archive = preferredArchivedSeason(options, identity.teamId, league.leagueId);
     if (!archive || !archive.appearances || archive.appearances <= 0) return row;
     const current = currentByPlayer.get(identity.playerId);
-    const tierFactor = archive.leagueId === 338n && league.leagueId === 63n ? FNL_TO_RPL_EVENT_FACTOR : 1;
+    const feederLeagueId = teamStrengthFeederLeagueByTopLeague.get(String(league.leagueId));
+    const tierFactor = feederLeagueId === archive.leagueId ? FNL_TO_RPL_EVENT_FACTOR : 1;
     return {
       ...row,
       rawMetrics: {
