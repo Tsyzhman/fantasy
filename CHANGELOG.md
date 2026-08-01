@@ -9,9 +9,9 @@ image labels `org.opencontainers.image.version` and
 
 ### Added
 
-- Detailed FotMob ingestion for Eerste Divisie, including its complete match
-  calendar and player-level payloads, as the feeder competition for
-  Eredivisie.
+- Detailed FotMob ingestion for Eerste Divisie, including two complete feeder
+  seasons, the upcoming-season calendar, and player-level payloads, as the
+  feeder competition for Eredivisie.
 - Eerste Divisie history in promoted-team strength profiles and promoted-player
   archive selection, matching the existing FNL-to-RPL path.
 

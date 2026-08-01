@@ -7,6 +7,12 @@ export const AUTUMN_SPRING_START_SEASON = "2023/2024";
 export const SPRING_AUTUMN_START_SEASON = "2023";
 export const QUICK_BACKFILL_LEAGUE_ID = 47;
 
+const initialBackfillSeasonWindows = new Map<number, number>([
+  // Retain two completed Eerste Divisie seasons while the new Eredivisie
+  // campaign has not produced player history yet.
+  [111, 3]
+]);
+
 export type LeagueIngestionConfig = Readonly<{
   league_id: number;
   name: string;
@@ -198,7 +204,10 @@ export function isNationalLeagueOnlyIncrementalWindow(referenceDate: Date) {
 
 export function seasonsForInitialBackfill(config: LeagueIngestionConfig, referenceDate = new Date()): readonly string[] {
   if (config.calendar_type === "autumn_spring") {
-    return latestAutumnSpringSeasons(seasonForIncrementalUpdate(config, referenceDate), INITIAL_BACKFILL_SEASON_WINDOW);
+    return latestAutumnSpringSeasons(
+      seasonForIncrementalUpdate(config, referenceDate),
+      initialBackfillSeasonWindows.get(config.league_id) ?? INITIAL_BACKFILL_SEASON_WINDOW
+    );
   }
   if (config.calendar_type === "spring_autumn") {
     return latestCalendarYearSeasons(seasonForIncrementalUpdate(config, referenceDate), INITIAL_BACKFILL_SEASON_WINDOW);

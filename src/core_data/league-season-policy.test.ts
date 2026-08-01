@@ -131,6 +131,17 @@ test("quick current league backfill follows new season after summer rollover", (
   assert.deepEqual(scopes.map((scope) => [scope.league_id, scope.season]), [[47, "2026/2027"]]);
 });
 
+test("Eerste Divisie backfill keeps two complete feeder seasons plus the upcoming season", () => {
+  const eersteDivisie = leagueIngestionConfig.find((league) => league.league_id === 111);
+  assert.ok(eersteDivisie);
+  assert.equal(eersteDivisie.enabled, true);
+  assert.equal(eersteDivisie.require_detailed_payloads, true);
+  assert.deepEqual(
+    seasonsForInitialBackfill(eersteDivisie, new Date("2026-08-01T00:00:00.000Z")),
+    ["2024/2025", "2025/2026", "2026/2027"]
+  );
+});
+
 test("production ingestion excludes non-target leagues", () => {
   const enabledIds = new Set(enabledLeagueIngestionConfigs().map((league) => league.league_id));
 
