@@ -94,6 +94,54 @@ export type SharedPlayerRowsScope = {
   teamId?: bigint | null;
 };
 
+export type SharedRosterOverride = {
+  leagueId: bigint;
+  season: string;
+  teamId: bigint;
+  playerId: bigint;
+  position: string | null;
+  playerName: string;
+  playerCountry: string | null;
+  teamName: string;
+  leagueName: string;
+  leagueCountry: string | null;
+  age?: number | null;
+  nationality?: string | null;
+  photoUrl?: string | null;
+  isStarter?: boolean;
+  teamMetadata?: unknown;
+};
+
+export type SharedRosterRow = {
+  leagueId: bigint;
+  season: string;
+  teamId: bigint;
+  playerId: bigint;
+  position: string | null;
+  age: number | null;
+  nationality: string | null;
+  photoUrl: string | null;
+  isStarter: boolean;
+  player: {
+    name: string;
+    country: string | null;
+  };
+  team: {
+    name: string;
+  };
+  seasonTeam: {
+    metadata: unknown;
+    leagueSeason: {
+      name: string | null;
+      country: string | null;
+      league: {
+        name: string;
+        country: string | null;
+      };
+    };
+  };
+};
+
 export type SharedMatchWindowSummary = {
   officialMatches: number;
   matchesWithPlayerStats: number;
@@ -373,6 +421,7 @@ export async function loadSharedMachetePlayerRows(
     scoringModel?: ActiveScoringModel;
     userId?: string | null;
     playerIds?: bigint[];
+    rosterOverrides?: SharedRosterOverride[];
   }
 ): Promise<SharedMachetePlayerRow[]> {
   const scopes = input.scopes.filter((scope) => scope.leagueId && scope.season);
@@ -380,7 +429,7 @@ export async function loadSharedMachetePlayerRows(
   if (rosterScopes.length === 0) return [];
 
   const positionFilter = parseSharedPositionFilter(input.position);
-  const rosterRowsFromDb = await prisma.teamPlayerSeason.findMany({
+  const rosterRowsFromDb: SharedRosterRow[] = await prisma.teamPlayerSeason.findMany({
     where: {
       active: true,
       AND: [
@@ -415,9 +464,21 @@ export async function loadSharedMachetePlayerRows(
     },
     orderBy: [{ team: { name: "asc" } }, { player: { name: "asc" } }]
   });
+  const requestedPlayerIds = input.playerIds === undefined
+    ? null
+    : new Set(uniqueBigints(input.playerIds).map(String));
+  const rosterOverrides = (input.rosterOverrides ?? []).filter((override) =>
+    (!requestedPlayerIds || requestedPlayerIds.has(String(override.playerId)))
+    && rosterScopes.some((scope) =>
+      scope.leagueId === override.leagueId
+      && scope.season === override.season
+      && (!scope.teamId || scope.teamId === override.teamId)
+    )
+  );
+  const effectiveRosterRows = applySharedRosterOverrides(rosterRowsFromDb, rosterOverrides);
   const rosterRows = positionFilter
-    ? rosterRowsFromDb.filter((row) => normalizeFantasyPosition(row.position) === positionFilter)
-    : rosterRowsFromDb;
+    ? effectiveRosterRows.filter((row) => normalizeFantasyPosition(row.position) === positionFilter)
+    : effectiveRosterRows;
 
   if (rosterRows.length === 0) return [];
 
@@ -625,6 +686,67 @@ export async function loadSharedMachetePlayerRows(
       };
     })
     .filter((row) => (minimumMinutes !== null && Number.isFinite(minimumMinutes) ? row.minutesPlayed >= minimumMinutes : true));
+}
+
+export function applySharedRosterOverrides(
+  rosterRows: SharedRosterRow[],
+  overrides: SharedRosterOverride[]
+): SharedRosterRow[] {
+  if (overrides.length === 0) return rosterRows;
+
+  const overrideByPlayerScope = new Map<string, SharedRosterOverride>();
+  for (const override of overrides) {
+    overrideByPlayerScope.set(rosterPlayerScopeKey(override.leagueId, override.season, override.playerId), override);
+  }
+
+  const sourceByPlayerScope = new Map<string, SharedRosterRow>();
+  for (const row of rosterRows) {
+    const key = rosterPlayerScopeKey(row.leagueId, row.season, row.playerId);
+    const override = overrideByPlayerScope.get(key);
+    const current = sourceByPlayerScope.get(key);
+    if (!current || (override && row.teamId === override.teamId)) sourceByPlayerScope.set(key, row);
+  }
+
+  const result = rosterRows.filter((row) =>
+    !overrideByPlayerScope.has(rosterPlayerScopeKey(row.leagueId, row.season, row.playerId))
+  );
+  for (const [key, override] of overrideByPlayerScope) {
+    const source = sourceByPlayerScope.get(key);
+    result.push({
+      leagueId: override.leagueId,
+      season: override.season,
+      teamId: override.teamId,
+      playerId: override.playerId,
+      position: override.position ?? source?.position ?? null,
+      age: source?.age ?? override.age ?? null,
+      nationality: source?.nationality ?? override.nationality ?? override.playerCountry,
+      photoUrl: source?.photoUrl ?? override.photoUrl ?? null,
+      isStarter: source?.isStarter ?? override.isStarter ?? false,
+      player: {
+        name: override.playerName,
+        country: override.playerCountry
+      },
+      team: {
+        name: override.teamName
+      },
+      seasonTeam: {
+        metadata: override.teamMetadata ?? null,
+        leagueSeason: {
+          name: override.leagueName,
+          country: override.leagueCountry,
+          league: {
+            name: override.leagueName,
+            country: override.leagueCountry
+          }
+        }
+      }
+    });
+  }
+  return result;
+}
+
+function rosterPlayerScopeKey(leagueId: bigint, season: string, playerId: bigint) {
+  return `${leagueId}:${season}:${playerId}`;
 }
 
 export function sortSharedMacheteRows<T extends SharedMachetePlayerRow>(rows: T[], sort: string) {

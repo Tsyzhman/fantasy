@@ -4,7 +4,7 @@ import test from "node:test";
 import type { PrismaClient } from "@prisma/client";
 
 import type { ActiveScoringModel } from "@/lib/scoring";
-import { calculateFriendWindowMetrics, loadSharedLeagueOptions, loadSharedLeagueSeason, loadSharedLeagueTeams, loadSharedMachetePlayerRows, loadSharedMatchWindowSummary, loadSharedTeamMatchIds } from "./shared_read_model";
+import { applySharedRosterOverrides, calculateFriendWindowMetrics, loadSharedLeagueOptions, loadSharedLeagueSeason, loadSharedLeagueTeams, loadSharedMachetePlayerRows, loadSharedMatchWindowSummary, loadSharedTeamMatchIds } from "./shared_read_model";
 
 const scoringModel: ActiveScoringModel = {
   modelSource: "MACHETE",
@@ -26,6 +26,50 @@ const scoringModel: ActiveScoringModel = {
   alternativeFormulaEnabled: false,
   rules: []
 };
+
+test("shared projections move history inputs to the Sports.ru authoritative team", () => {
+  const effective = applySharedRosterOverrides(
+    [{
+      leagueId: 57n,
+      season: "2026/2027",
+      teamId: 8614n,
+      playerId: 637741n,
+      position: "CDM,CM",
+      age: 30,
+      nationality: "Netherlands",
+      photoUrl: null,
+      isStarter: true,
+      player: { name: "Pelle Clement", country: "Netherlands" },
+      team: { name: "Sparta Rotterdam" },
+      seasonTeam: {
+        metadata: { short_name: "Sparta" },
+        leagueSeason: {
+          name: "Eredivisie",
+          country: "Netherlands",
+          league: { name: "Eredivisie", country: "Netherlands" }
+        }
+      }
+    }],
+    [{
+      leagueId: 57n,
+      season: "2026/2027",
+      teamId: 8674n,
+      playerId: 637741n,
+      position: "MID",
+      playerName: "Pelle Clement",
+      playerCountry: "Netherlands",
+      teamName: "FC Groningen",
+      leagueName: "Eredivisie",
+      leagueCountry: "Netherlands"
+    }]
+  );
+
+  assert.equal(effective.length, 1);
+  assert.equal(effective[0].teamId, 8674n);
+  assert.equal(effective[0].team.name, "FC Groningen");
+  assert.equal(effective[0].position, "MID");
+  assert.equal(effective[0].isStarter, true);
+});
 
 test("shared league options collapse seasons and prefer the default season per league", async () => {
   const prisma = {

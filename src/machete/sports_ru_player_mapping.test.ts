@@ -1,10 +1,14 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import type { PrismaClient } from "@prisma/client";
+
 import {
+  autoMapSportsRuFantasyPlayers,
   buildSportsRuMappingCandidates,
   findManualRosterEntry,
   planSportsRuSelectionRemap,
+  resolveSportsRuSeasonTeam,
   scoreSportsRuCandidate,
   shouldRetainManualOverride
 } from "./sports_ru_player_mapping";
@@ -115,6 +119,75 @@ test("sports ru mapping rejects an exact identity from a stale different-team ro
   );
 
   assert.equal(result.confidence, 0);
+});
+
+test("sports ru mapping accepts an exact stale-roster identity when Sports.ru supplies an active target team", () => {
+  const result = scoreSportsRuCandidate(
+    { ...price("pelle clement", "MID"), teamName: "\u0413\u0440\u043e\u043d\u0438\u043d\u0433\u0435\u043d" },
+    roster("Pelle Clement", "CDM,CM", { name: "Sparta Rotterdam" }, 637741n),
+    8674n
+  );
+
+  assert.equal(result.confidence >= 0.78, true);
+});
+
+test("sports ru mapping resolves the authoritative current-season team uniquely", () => {
+  const team = resolveSportsRuSeasonTeam("\u0413\u0440\u043e\u043d\u0438\u043d\u0433\u0435\u043d", [
+    { teamId: 8674n, team: { name: "FC Groningen" } },
+    { teamId: 8614n, team: { name: "Sparta Rotterdam" } }
+  ]);
+
+  assert.equal(team?.teamId, 8674n);
+});
+
+test("Sports.ru resync moves a verified manual mapping away from the stale FotMob club", async () => {
+  const updatedTeams: bigint[] = [];
+  const storedPrice = {
+    ...price("pelle clement", "MID"),
+    id: "pelle-price",
+    leagueId: 57n,
+    season: "2026/2027",
+    playerId: 637741n,
+    teamId: 8614n,
+    teamName: "\u0413\u0440\u043e\u043d\u0438\u043d\u0433\u0435\u043d"
+  };
+  const prisma = {
+    fantasyPlayerPrice: {
+      findMany: async () => [storedPrice],
+      update: async ({ data }: { data: { teamId: bigint } }) => {
+        updatedTeams.push(data.teamId);
+        return storedPrice;
+      }
+    },
+    teamPlayerSeason: {
+      findMany: async () => [roster("Pelle Clement", "CDM,CM", { name: "Sparta Rotterdam" }, 637741n)]
+    },
+    providerEntityMap: {
+      findMany: async () => [{
+        providerEntityId: "pelle-price",
+        internalEntityId: "637741",
+        matchedBy: "MANUAL"
+      }]
+    },
+    corePlayer: {
+      findMany: async () => [{ id: 637741n, name: "Pelle Clement" }]
+    },
+    leagueSeasonTeam: {
+      findMany: async () => [
+        { teamId: 8674n, team: { name: "FC Groningen" } },
+        { teamId: 8614n, team: { name: "Sparta Rotterdam" } }
+      ]
+    },
+    userFantasySquad: {
+      findMany: async () => []
+    }
+  } as unknown as PrismaClient;
+
+  const result = await autoMapSportsRuFantasyPlayers(prisma, { leagueId: 57n, season: "2026/2027" });
+
+  assert.deepEqual(updatedTeams, [8674n]);
+  assert.equal(result.manual, 1);
+  assert.equal(result.unmatched, 0);
 });
 
 test("sports ru mapping recognizes transliterated Sports.ru team names", () => {

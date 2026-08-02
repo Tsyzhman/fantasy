@@ -34,6 +34,13 @@ type RosterEntry = {
   };
 };
 
+export type ActiveSeasonTeam = {
+  teamId: bigint;
+  team: {
+    name: string;
+  };
+};
+
 export type SportsRuPlayerMappingCandidate = {
   playerId: string;
   teamId: string;
@@ -158,14 +165,21 @@ export async function autoMapSportsRuFantasyPlayers(
   const rosterByPlayerId = new Map(roster.map((entry) => [String(entry.playerId), entry]));
   const manualPlayerIds = [...new Set(existingMaps.filter((map) => map.matchedBy === "MANUAL" && map.internalEntityId).map((map) => BigInt(map.internalEntityId!)))];
   const [manualPlayers, activeSeasonTeams] = await Promise.all([
-    prisma.corePlayer.findMany({ where: { id: { in: manualPlayerIds } }, select: { id: true } }),
+    prisma.corePlayer.findMany({ where: { id: { in: manualPlayerIds } }, select: { id: true, name: true } }),
     prisma.leagueSeasonTeam.findMany({
       where: { leagueId: input.leagueId, season: input.season, active: true },
-      select: { teamId: true }
+      select: { teamId: true, team: { select: { name: true } } }
     })
   ]);
-  const manualPlayerIdSet = new Set(manualPlayers.map((player) => String(player.id)));
+  const manualPlayerById = new Map(manualPlayers.map((player) => [String(player.id), player]));
+  const manualPlayerIdSet = new Set(manualPlayerById.keys());
   const activeSeasonTeamIdSet = new Set(activeSeasonTeams.map((team) => String(team.teamId)));
+  const authoritativeTeamByPriceId = new Map(
+    prices.flatMap((price) => {
+      const team = resolveSportsRuSeasonTeam(price.teamName, activeSeasonTeams);
+      return team ? [[price.id, team] as const] : [];
+    })
+  );
   const claimedPlayerIds = new Set<string>();
   let matched = 0;
   let manual = 0;
@@ -180,7 +194,10 @@ export async function autoMapSportsRuFantasyPlayers(
     removedDuplicateSelections += result.removedDuplicateSelections;
   }
 
-  const candidatesByPriceId = new Map(prices.map((price) => [price.id, buildSportsRuMappingCandidates(price, roster)]));
+  const candidatesByPriceId = new Map(prices.map((price) => [
+    price.id,
+    buildSportsRuMappingCandidates(price, roster, authoritativeTeamByPriceId.get(price.id)?.teamId ?? null)
+  ]));
   const orderedPrices = [...prices].sort((left, right) => {
     const leftManual = mapsByPriceId.get(left.id)?.matchedBy === "MANUAL" ? 1 : 0;
     const rightManual = mapsByPriceId.get(right.id)?.matchedBy === "MANUAL" ? 1 : 0;
@@ -192,7 +209,22 @@ export async function autoMapSportsRuFantasyPlayers(
   for (const price of orderedPrices) {
     const existing = mapsByPriceId.get(price.id);
     if (existing?.matchedBy === "MANUAL" && existing.internalEntityId) {
-      const manualRosterEntry = findManualRosterEntry(roster, existing.internalEntityId, price.teamId);
+      const authoritativeTeam = authoritativeTeamByPriceId.get(price.id) ?? null;
+      const manualRosterEntry = findManualRosterEntry(roster, existing.internalEntityId, null);
+      const manualPlayer = manualPlayerById.get(existing.internalEntityId) ?? null;
+      if (authoritativeTeam && manualPlayer) {
+        const targetRosterEntry: RosterEntry = {
+          playerId: manualPlayer.id,
+          teamId: authoritativeTeam.teamId,
+          position: manualRosterEntry?.position ?? price.position,
+          player: manualRosterEntry?.player ?? manualPlayer,
+          team: authoritativeTeam.team
+        };
+        claimedPlayerIds.add(String(targetRosterEntry.playerId));
+        addSelectionSync(await applyPriceRosterMapping(prisma, price, targetRosterEntry));
+        manual += 1;
+        continue;
+      }
       const manualTeamMatches = manualRosterEntry && teamScoreAdjustment(price.teamName, manualRosterEntry.team.name) >= 0;
       if (manualRosterEntry && manualTeamMatches) {
         claimedPlayerIds.add(String(manualRosterEntry.playerId));
@@ -219,7 +251,15 @@ export async function autoMapSportsRuFantasyPlayers(
     const best = candidates[0] ?? null;
     const second = candidates[1] ?? null;
     const confident = best && best.confidence >= autoConfidenceThreshold && (!second || best.confidence - second.confidence >= 0.04);
-    const matchedRosterEntry = confident ? rosterByPlayerId.get(best.playerId) ?? null : null;
+    const baseRosterEntry = confident ? rosterByPlayerId.get(best.playerId) ?? null : null;
+    const authoritativeTeam = authoritativeTeamByPriceId.get(price.id) ?? null;
+    const matchedRosterEntry = baseRosterEntry && authoritativeTeam
+      ? {
+          ...baseRosterEntry,
+          teamId: authoritativeTeam.teamId,
+          team: authoritativeTeam.team
+        }
+      : baseRosterEntry;
 
     await prisma.providerEntityMap.upsert({
       where: {
@@ -461,10 +501,14 @@ export function findManualRosterEntry(roster: RosterEntry[], playerId: string, t
   return roster.find((entry) => String(entry.playerId) === playerId);
 }
 
-export function buildSportsRuMappingCandidates(price: SportsRuPriceLike, roster: RosterEntry[]): SportsRuPlayerMappingCandidate[] {
+export function buildSportsRuMappingCandidates(
+  price: SportsRuPriceLike,
+  roster: RosterEntry[],
+  authoritativeTeamId: bigint | null = null
+): SportsRuPlayerMappingCandidate[] {
   return roster
     .map((entry) => {
-      const result = scoreSportsRuCandidate(price, entry);
+      const result = scoreSportsRuCandidate(price, entry, authoritativeTeamId);
       return {
         playerId: String(entry.playerId),
         teamId: String(entry.teamId),
@@ -479,7 +523,11 @@ export function buildSportsRuMappingCandidates(price: SportsRuPriceLike, roster:
     .sort((left, right) => right.confidence - left.confidence || left.playerName.localeCompare(right.playerName));
 }
 
-export function scoreSportsRuCandidate(price: SportsRuPriceLike, entry: RosterEntry) {
+export function scoreSportsRuCandidate(
+  price: SportsRuPriceLike,
+  entry: RosterEntry,
+  authoritativeTeamId: bigint | null = null
+) {
   const sportsName = normalizedSportsRuName(price.playerName, price.normalizedName);
   const fotmobHintName = normalizeName(price.fotmobPlayerName ?? "");
   const fotmobName = normalizeName(entry.player.name);
@@ -490,7 +538,9 @@ export function scoreSportsRuCandidate(price: SportsRuPriceLike, entry: RosterEn
   const pricePosition = normalizeFantasyPosition(price.position);
   const rosterPosition = normalizeFantasyPosition(entry.position);
   const positionAdjustment = positionScoreAdjustment(pricePosition, rosterPosition, entry.position);
-  const teamAdjustment = teamScoreAdjustment(price.teamName, entry.team.name);
+  const teamAdjustment = authoritativeTeamId
+    ? entry.teamId === authoritativeTeamId ? 0.04 : 0
+    : teamScoreAdjustment(price.teamName, entry.team.name);
   if (teamAdjustment < 0) return { confidence: 0, reason: "team mismatch" };
   const confidence = clamp(round(nameScore + positionAdjustment + teamAdjustment), 0, 1);
   const matchedNameSource = fotmobHintScore >= sportsNameScore && fotmobHintScore > 0 ? "fotmob hint" : "name";
@@ -506,6 +556,16 @@ export function scoreSportsRuCandidate(price: SportsRuPriceLike, entry: RosterEn
     confidence,
     reason
   };
+}
+
+export function resolveSportsRuSeasonTeam<T extends ActiveSeasonTeam>(sportsTeamName: string, teams: T[]) {
+  const candidates = teams
+    .map((team) => ({ team, score: teamScoreAdjustment(sportsTeamName, team.team.name) }))
+    .filter((candidate) => candidate.score > 0)
+    .sort((left, right) => right.score - left.score || left.team.team.name.localeCompare(right.team.team.name));
+  if (candidates.length === 0) return null;
+  if (candidates.length > 1 && candidates[0].score === candidates[1].score) return null;
+  return candidates[0].team;
 }
 
 export function planSportsRuSelectionRemap(staleSelections: SquadSelectionRef[], targetSelections: SquadSelectionRef[]) {

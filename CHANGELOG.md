@@ -5,6 +5,19 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.6 - 2026-08-02
+
+### Fixed
+
+- Mapped Sports.ru prices now define a player's current fantasy team when
+  FotMob still exposes the previous club or omits the player from its active
+  roster. Player form and minutes continue to use FotMob match history,
+  including the existing previous-club fallback for new transfers.
+- Squad forecasts, fixtures, team limits, saved selections, auto-pick, and
+  transfer suggestions use the same Sports.ru-authoritative team assignment.
+- A later Sports.ru price sync moves verified mappings to the newly published
+  team instead of retaining the stale FotMob club.
+
 ## 0.3.5 - 2026-08-01
 
 ### Changed
