@@ -67,7 +67,8 @@ import {
   loadSharedMachetePlayerRows,
   type SharedLeagueSeasonOption,
   type SharedMachetePlayerRow,
-  type SharedPlayerRowsScope
+  type SharedPlayerRowsScope,
+  type SharedRosterOverride
 } from "./shared_read_model";
 import {
   defaultFantasySquadRules,
@@ -307,6 +308,40 @@ type SportsRuScopedPriceRow = SportsRuPositionPriceRow & {
   price: number;
 };
 
+export type SportsRuRosterPriceRow = SportsRuPositionPriceRow & {
+  leagueId: bigint;
+  season: string;
+  teamId: bigint | null;
+  lastSeenAt: Date;
+  player: {
+    id: bigint;
+    name: string;
+    country: string | null;
+  } | null;
+  team: {
+    id: bigint;
+    name: string;
+  } | null;
+};
+
+export type FantasyPlannerRosterRow = {
+  leagueId: bigint;
+  season: string;
+  teamId: bigint;
+  playerId: bigint;
+  position: string | null;
+  age: number | null;
+  nationality: string | null;
+  photoUrl: string | null;
+  isStarter: boolean;
+  player: {
+    name: string;
+  };
+  team: {
+    name: string;
+  };
+};
+
 type BaltikaPlayerMetric = {
   xg: number | null;
   xa: number | null;
@@ -464,7 +499,41 @@ export async function loadFantasySquadPlannerData(
   if (!readiness) throw new Error(`Planner readiness could not be evaluated for ${league.leagueId}:${league.season}.`);
   const history = await resolveFantasyHistory(prisma, league, options?.historySettings ?? defaultFantasyHistorySettings);
   const sportsRuSeasons = sportsRuSeasonAliases(league.season);
-  const [contest, savedSquads, rosterRows, playerRows, roundsAndFixtures, priceRows, foontasyRows, modelForecastRows, baltikaMetricsByName, rosterPlayerCount] = await Promise.all([
+  const priceRows = await prisma.fantasyPlayerPrice.findMany({
+    where: {
+      provider: "SPORTS_RU",
+      leagueId: league.leagueId,
+      season: { in: sportsRuSeasons }
+    },
+    include: {
+      player: true,
+      team: true
+    },
+    orderBy: { lastSeenAt: "desc" }
+  });
+  const priceMaps =
+    priceRows.length > 0
+      ? await prisma.providerEntityMap.findMany({
+          where: {
+            provider: "SPORTS_RU",
+            providerEntityType: "FANTASY_PLAYER_PRICE",
+            providerEntityId: { in: priceRows.map((row) => row.id) },
+            internalEntityType: "PLAYER",
+            internalEntityId: { not: null }
+          },
+          select: {
+            providerEntityId: true,
+            internalEntityId: true
+          }
+        })
+      : [];
+  const rosterOverrides = sportsRuAuthoritativeRosterOverrides(
+    priceRows,
+    priceMaps,
+    league,
+    options?.playerIds
+  );
+  const [contest, savedSquads, fotmobRosterRows, playerRows, roundsAndFixtures, foontasyRows, modelForecastRows, baltikaMetricsByName] = await Promise.all([
     prisma.sportsRuFantasyContest.findFirst({
       where: {
         provider: "SPORTS_RU",
@@ -501,16 +570,16 @@ export async function loadFantasySquadPlannerData(
       },
       orderBy: [{ team: { name: "asc" } }, { player: { name: "asc" } }]
     }),
-    loadProjectedPlayerRows(prisma, userId, league, history, options?.playerIds, options?.deferFormulaProjections),
+    loadProjectedPlayerRows(
+      prisma,
+      userId,
+      league,
+      history,
+      options?.playerIds,
+      options?.deferFormulaProjections,
+      rosterOverrides
+    ),
     loadUpcomingRoundFixtures(prisma, league),
-    prisma.fantasyPlayerPrice.findMany({
-      where: {
-        provider: "SPORTS_RU",
-        leagueId: league.leagueId,
-        season: { in: sportsRuSeasons }
-      },
-      orderBy: { lastSeenAt: "desc" }
-    }),
     prisma.foontasyForecast.findMany({
       where: { leagueId: league.leagueId, season: league.season, playerId: { not: null } },
       orderBy: [{ fetchedAt: "desc" }, { updatedAt: "desc" }],
@@ -521,33 +590,26 @@ export async function loadFantasySquadPlannerData(
       where: { leagueId: league.leagueId, season: league.season, modelVersion: FANTASY_MODEL_VERSION, horizon: { in: [3, 5] } },
       select: { playerId: true, horizon: true, points: true, status: true, calculatedAt: true }
     }) ?? Promise.resolve([]),
-    loadBaltikaPlayerMetricsByName(prisma, sportsRuSeasons),
-    prisma.teamPlayerSeason.count({
-      where: {
-        leagueId: league.leagueId,
-        season: league.season,
-        active: true
-      }
-    })
+    loadBaltikaPlayerMetricsByName(prisma, sportsRuSeasons)
   ]);
+  const rosterRows = applySportsRuRosterOverrides(
+    fotmobRosterRows.map((row) => ({
+      leagueId: row.leagueId,
+      season: row.season,
+      teamId: row.teamId,
+      playerId: row.playerId,
+      position: row.position,
+      age: row.age,
+      nationality: row.nationality,
+      photoUrl: row.photoUrl,
+      isStarter: row.isStarter,
+      player: { name: row.player.name },
+      team: { name: row.team.name }
+    })),
+    rosterOverrides
+  );
+  const rosterPlayerCount = rosterRows.length;
   const savedSquad = (squadId ? savedSquads.find((squad) => squad.id === squadId) : null) ?? savedSquads[0] ?? null;
-
-  const priceMaps =
-    priceRows.length > 0
-      ? await prisma.providerEntityMap.findMany({
-          where: {
-            provider: "SPORTS_RU",
-            providerEntityType: "FANTASY_PLAYER_PRICE",
-            providerEntityId: { in: priceRows.map((row) => row.id) },
-            internalEntityType: "PLAYER",
-            internalEntityId: { not: null }
-          },
-          select: {
-            providerEntityId: true,
-            internalEntityId: true
-          }
-        })
-      : [];
   const rules = fantasyRulesForLeague(league, contest ?? null);
   const projectedByPlayerTeam = new Map(playerRows.rows.map((row) => [playerTeamKey(row.playerId, row.teamId), row]));
   const friendByPlayerTeam = new Map(playerRows.friendRows.map((row) => [playerTeamKey(row.playerId, row.teamId), row]));
@@ -1021,7 +1083,8 @@ export async function saveFantasySquad(
   const name = normalizeFantasySquadName(input.name);
   return prisma.$transaction(async (tx) => {
     const selectedPlayerIds = [...new Set(input.selections.map((selection) => selection.playerId))].map(BigInt);
-    const [rosterRows, sportsPositionsByPlayerId] = await Promise.all([
+    const sportsSeasons = sportsRuSeasonAliases(input.season);
+    const [fotmobRosterRows, sportsRosterRows, sportsPositionsByPlayerId] = await Promise.all([
       selectedPlayerIds.length === 0
         ? Promise.resolve([] as Array<{ playerId: bigint; teamId: bigint; position: string | null }>)
         : tx.$queryRaw<Array<{ playerId: bigint; teamId: bigint; position: string | null }>>(Prisma.sql`
@@ -1036,15 +1099,36 @@ export async function saveFantasySquad(
             AND "active" = TRUE
           FOR SHARE
         `),
+      selectedPlayerIds.length === 0
+        ? Promise.resolve([] as Array<{ playerId: bigint; teamId: bigint; position: string | null }>)
+        : tx.$queryRaw<Array<{ playerId: bigint; teamId: bigint; position: string | null }>>(Prisma.sql`
+          SELECT
+            prices."player_id" AS "playerId",
+            prices."team_id" AS "teamId",
+            prices."position"
+          FROM "fantasy_player_prices" prices
+          INNER JOIN "league_season_teams" season_team
+            ON season_team."league_id" = ${input.leagueId}
+            AND season_team."season" = ${input.season}
+            AND season_team."team_id" = prices."team_id"
+            AND season_team."active" = TRUE
+          WHERE prices."provider" = 'SPORTS_RU'
+            AND prices."league_id" = ${input.leagueId}
+            AND prices."season" IN (${Prisma.join(sportsSeasons)})
+            AND prices."player_id" IN (${Prisma.join(selectedPlayerIds)})
+            AND prices."team_id" IS NOT NULL
+          ORDER BY prices."last_seen_at" DESC
+          FOR SHARE OF prices, season_team
+        `),
       loadSportsRuFantasyPositionsByPlayerId(tx, {
         leagueId: input.leagueId,
         season: input.season
       })
     ]);
-    if (selectedPlayerIds.length !== input.selections.length || rosterRows.length !== selectedPlayerIds.length) {
+    const rosterByPlayerId = authoritativeFantasyRosterByPlayerId(fotmobRosterRows, sportsRosterRows);
+    if (selectedPlayerIds.length !== input.selections.length || rosterByPlayerId.size !== selectedPlayerIds.length) {
       throw new Error("Fantasy squad contains a player who is no longer active in the selected league and season.");
     }
-    const rosterByPlayerId = new Map(rosterRows.map((row) => [String(row.playerId), row]));
     const positionByPlayerId = new Map(
       input.selections.map((selection) => [
         selection.playerId,
@@ -1143,6 +1227,22 @@ export async function saveFantasySquad(
 
     return squad;
   });
+}
+
+export function authoritativeFantasyRosterByPlayerId<T extends {
+  playerId: bigint;
+  teamId: bigint;
+  position: string | null;
+}>(fotmobRows: T[], sportsRows: T[]) {
+  const rosterByPlayerId = new Map(fotmobRows.map((row) => [String(row.playerId), row]));
+  const sportsPlayerIds = new Set<string>();
+  for (const row of sportsRows) {
+    const playerId = String(row.playerId);
+    if (sportsPlayerIds.has(playerId)) continue;
+    sportsPlayerIds.add(playerId);
+    rosterByPlayerId.set(playerId, row);
+  }
+  return rosterByPlayerId;
 }
 
 export function fantasySquadRoundPlansFromFilters(
@@ -1382,7 +1482,8 @@ async function loadProjectedPlayerRows(
   league: SharedLeagueSeasonOption,
   history: ResolvedFantasyHistory,
   playerIds?: bigint[],
-  deferFormulaProjections = false
+  deferFormulaProjections = false,
+  rosterOverrides: SharedRosterOverride[] = []
 ) {
   const [modelBundle, preference] = await Promise.all([
     getActiveScoringModelBundleForSource("MACHETE", prisma),
@@ -1401,7 +1502,8 @@ async function loadProjectedPlayerRows(
       fallbackToRecentPlayerHistory: history.includePlayerHistory,
       fallbackToRecentClubHistory: true,
       scoringModel: modelBundle.model,
-      playerIds
+      playerIds,
+      rosterOverrides
     }),
     deferFormulaProjections
       ? Promise.resolve([])
@@ -1412,7 +1514,8 @@ async function loadProjectedPlayerRows(
           combineTeamCompetitions: true,
           fallbackToRecentPlayerHistory: history.includePlayerHistory,
           fallbackToRecentClubHistory: true,
-          scoringModel: modelBundle.model
+          scoringModel: modelBundle.model,
+          rosterOverrides
         }),
     loadFantasyProjectionCalibration(prisma, {
       leagueId: league.leagueId,
@@ -3451,6 +3554,88 @@ function sportsRuPriceScopes(scopes: SharedPlayerRowsScope[]) {
   }
 
   return priceScopes;
+}
+
+export function sportsRuAuthoritativeRosterOverrides(
+  priceRows: SportsRuRosterPriceRow[],
+  priceMaps: SportsRuPositionMapRow[],
+  league: Pick<SharedLeagueSeasonOption, "leagueId" | "season" | "name" | "country">,
+  requestedPlayerIds?: bigint[]
+): SharedRosterOverride[] {
+  const mappedPlayerIdsByPriceId = new Map(
+    priceMaps
+      .filter((row) => row.internalEntityId)
+      .map((row) => [row.providerEntityId, row.internalEntityId as string])
+  );
+  const requested = requestedPlayerIds === undefined ? null : new Set(requestedPlayerIds.map(String));
+  const acceptedSeasons = new Set(sportsRuSeasonAliases(league.season));
+  const seenPlayerIds = new Set<string>();
+  const overrides: SharedRosterOverride[] = [];
+
+  for (const row of priceRows) {
+    if (row.leagueId !== league.leagueId || !acceptedSeasons.has(row.season) || !row.teamId || !row.team || !row.player) continue;
+    const mappedPlayerId = mappedPlayerIdsByPriceId.get(row.id) ?? (row.playerId ? String(row.playerId) : null);
+    if (!mappedPlayerId || String(row.player.id) !== mappedPlayerId || (requested && !requested.has(mappedPlayerId))) continue;
+    if (seenPlayerIds.has(mappedPlayerId)) continue;
+    seenPlayerIds.add(mappedPlayerId);
+    overrides.push({
+      leagueId: league.leagueId,
+      season: league.season,
+      teamId: row.teamId,
+      playerId: row.player.id,
+      position: sportsRuPricePosition(row),
+      playerName: row.player.name,
+      playerCountry: row.player.country,
+      teamName: row.team.name,
+      leagueName: league.name,
+      leagueCountry: league.country
+    });
+  }
+
+  return overrides;
+}
+
+export function applySportsRuRosterOverrides(
+  rosterRows: FantasyPlannerRosterRow[],
+  overrides: SharedRosterOverride[]
+): FantasyPlannerRosterRow[] {
+  if (overrides.length === 0) return rosterRows;
+
+  const overridesByPlayer = new Map(
+    overrides.map((override) => [playerScopeKey(override.leagueId, override.season, override.playerId), override])
+  );
+  const sourceByPlayer = new Map<string, FantasyPlannerRosterRow>();
+  for (const row of rosterRows) {
+    const key = playerScopeKey(row.leagueId, row.season, row.playerId);
+    const override = overridesByPlayer.get(key);
+    const current = sourceByPlayer.get(key);
+    if (!current || (override && row.teamId === override.teamId)) sourceByPlayer.set(key, row);
+  }
+
+  const effectiveRows = rosterRows.filter((row) =>
+    !overridesByPlayer.has(playerScopeKey(row.leagueId, row.season, row.playerId))
+  );
+  for (const [key, override] of overridesByPlayer) {
+    const source = sourceByPlayer.get(key);
+    effectiveRows.push({
+      leagueId: override.leagueId,
+      season: override.season,
+      teamId: override.teamId,
+      playerId: override.playerId,
+      position: override.position ?? source?.position ?? null,
+      age: source?.age ?? override.age ?? null,
+      nationality: source?.nationality ?? override.nationality ?? override.playerCountry,
+      photoUrl: source?.photoUrl ?? override.photoUrl ?? null,
+      isStarter: source?.isStarter ?? override.isStarter ?? false,
+      player: { name: override.playerName },
+      team: { name: override.teamName }
+    });
+  }
+  return effectiveRows;
+}
+
+function playerScopeKey(leagueId: bigint, season: string, playerId: bigint) {
+  return `${leagueId}:${season}:${playerId}`;
 }
 
 function priceLookup(

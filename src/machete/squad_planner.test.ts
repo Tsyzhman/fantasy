@@ -2,8 +2,10 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  applySportsRuRosterOverrides,
   addPromotedTeamStrengthProfiles,
   aggregateRoundDifficulty,
+  authoritativeFantasyRosterByPlayerId,
   buildFormulaProjectionIndex,
   buildBookmakerFavorites,
   buildFantasyForecastExplanation,
@@ -40,6 +42,7 @@ import {
   resolveFantasyPlannerPrice,
   rolloverFantasySquadRoundPlans,
   saveFantasySquad,
+  sportsRuAuthoritativeRosterOverrides,
   sportsRuFantasyPriceRefsByScopedPlayer,
   sportsRuFantasyPriceScopeKey,
   sportsRuFantasyPositionsByPlayerId,
@@ -1022,6 +1025,84 @@ test("squad planner prefers Sports.ru position over FotMob roster position", () 
   assert.equal(fantasyPlannerPosition("DEF", "Midfielder", "Forward"), "DEF");
   assert.equal(fantasyPlannerPosition(null, "Midfielder", "Forward"), "Midfielder");
   assert.equal(fantasyPlannerPosition("unknown", "Defender", "Forward"), "Defender");
+});
+
+test("squad planner uses Sports.ru teams for stale and missing FotMob roster transfers", () => {
+  const league = {
+    leagueId: 57n,
+    season: "2026/2027",
+    name: "Eredivisie",
+    country: "Netherlands"
+  };
+  const groningen = { id: 8674n, name: "FC Groningen" };
+  const overrides = sportsRuAuthoritativeRosterOverrides(
+    [
+      {
+        id: "pelle-price",
+        leagueId: 57n,
+        season: "2026/2027",
+        teamId: 8674n,
+        playerId: 637741n,
+        position: "MID",
+        lastSeenAt: new Date("2026-08-02T00:00:00Z"),
+        player: { id: 637741n, name: "Pelle Clement", country: "Netherlands" },
+        team: groningen
+      },
+      {
+        id: "hernes-price",
+        leagueId: 57n,
+        season: "2026/2027",
+        teamId: 8674n,
+        playerId: 1400979n,
+        position: "MID",
+        lastSeenAt: new Date("2026-08-02T00:00:00Z"),
+        player: { id: 1400979n, name: "Travis Hernes", country: "Norway" },
+        team: groningen
+      }
+    ],
+    [
+      { providerEntityId: "pelle-price", internalEntityId: "637741" },
+      { providerEntityId: "hernes-price", internalEntityId: "1400979" }
+    ],
+    league
+  );
+  const effective = applySportsRuRosterOverrides(
+    [{
+      leagueId: 57n,
+      season: "2026/2027",
+      teamId: 8614n,
+      playerId: 637741n,
+      position: "CDM,CM",
+      age: 30,
+      nationality: "Netherlands",
+      photoUrl: "/pelle.png",
+      isStarter: true,
+      player: { name: "Pelle Clement" },
+      team: { name: "Sparta Rotterdam" }
+    }],
+    overrides
+  );
+
+  assert.deepEqual(effective.map((row) => [row.player.name, row.team.name, String(row.teamId)]).sort(), [
+    ["Pelle Clement", "FC Groningen", "8674"],
+    ["Travis Hernes", "FC Groningen", "8674"]
+  ]);
+  assert.equal(effective.find((row) => row.playerId === 637741n)?.isStarter, true);
+  assert.equal(effective.find((row) => row.playerId === 1400979n)?.isStarter, false);
+});
+
+test("squad save validation lets Sports.ru override or supply the locked roster team", () => {
+  const roster = authoritativeFantasyRosterByPlayerId(
+    [{ playerId: 637741n, teamId: 8614n, position: "CDM,CM" }],
+    [
+      { playerId: 637741n, teamId: 8674n, position: "MID" },
+      { playerId: 1400979n, teamId: 8674n, position: "MID" }
+    ]
+  );
+
+  assert.equal(roster.get("637741")?.teamId, 8674n);
+  assert.equal(roster.get("1400979")?.teamId, 8674n);
+  assert.equal(roster.size, 2);
 });
 
 test("squad planner falls back to estimated prices when Sports.ru price is missing", () => {

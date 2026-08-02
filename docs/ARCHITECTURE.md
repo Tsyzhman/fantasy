@@ -85,7 +85,9 @@ Admin uploads price workbook
 -> workbook parser normalizes names, teams, positions, prices
 -> rows are stored in fantasy_player_prices
 -> automatic and manual mappings connect prices to FotMob players
--> squad planner uses mapped positions/prices before estimates
+-> mapped Sports.ru team, position, and price override a lagging FotMob roster
+-> FotMob match history still supplies minutes, form, and event rates
+-> squad planner uses the same assignment for forecasts and transactional save validation
 ```
 
 ### Baltika Excel imports
