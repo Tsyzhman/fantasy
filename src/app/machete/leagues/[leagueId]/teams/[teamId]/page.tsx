@@ -26,6 +26,7 @@ import {
   sortSharedMacheteRows
 } from "@/machete/shared_read_model";
 import { loadSportsRuTeamPlayerMappings, sportsRuDisplayNamesByPlayerId } from "@/machete/sports_ru_player_mapping";
+import { loadSportsRuAuthoritativeRosterContext } from "@/machete/squad_planner";
 
 export const dynamic = "force-dynamic";
 
@@ -71,12 +72,14 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
 
   const teamScope = { leagueId: league.leagueId, season: league.season, teamId: parsedTeamId };
   const currentUser = await getCurrentUser();
-  const [playerRows, fixtures, rawPayloads, windowSummary, sportsRuMappings, rosterOptions] = await Promise.all([
-    loadSharedMachetePlayerRows(prisma, {
+  const authoritativeRosterPromise = loadSportsRuAuthoritativeRosterContext(prisma, league);
+  const [playerRows, fixtures, rawPayloads, windowSummary, sportsRuMappings] = await Promise.all([
+    authoritativeRosterPromise.then(({ rosterOverrides }) => loadSharedMachetePlayerRows(prisma, {
       scopes: [teamScope],
       matchWindow,
-      userId: currentUser?.id
-    }),
+      userId: currentUser?.id,
+      rosterOverrides
+    })),
     loadSharedTeamFixtures(prisma, league.leagueId, league.season, parsedTeamId, 8),
     prisma.rawMatchPayload.findMany({
       where: {
@@ -102,18 +105,6 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
       leagueId: league.leagueId,
       season: league.season,
       teamId: parsedTeamId
-    }),
-    prisma.teamPlayerSeason.findMany({
-      where: {
-        leagueId: league.leagueId,
-        season: league.season,
-        teamId: parsedTeamId,
-        active: true
-      },
-      include: {
-        player: true
-      },
-      orderBy: [{ position: "asc" }, { player: { name: "asc" } }]
     })
   ]);
   const sportsNamesByPlayerId = sportsRuDisplayNamesByPlayerId(sportsRuMappings);
@@ -338,11 +329,10 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
       {canEditRoster ? (
         <SportsRuPlayerMappingPanel
           rows={sportsRuMappings}
-          roster={rosterOptions.map((row) => ({
-            playerId: String(row.playerId),
-            name: row.player.name,
-            position: row.position
-          }))}
+          roster={playerRows.flatMap((row) => {
+            const playerId = macheteTeamRowPlayerId(row.id);
+            return playerId ? [{ playerId, name: row.name, position: row.position }] : [];
+          })}
           canEdit
         />
       ) : null}

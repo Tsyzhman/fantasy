@@ -5,9 +5,13 @@ import { jsonError, withApiHandler } from "@/lib/api-handler";
 import { requireApiUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { readJsonObjectOrNull } from "@/lib/request-json";
+import { loadSportsRuAuthoritativeStarterCandidate } from "@/machete/sports_ru_player_mapping";
+import { sportsRuSeasonAliases } from "@/machete/squad_planner";
 import { startingXiSelectionBlockReason, type StartingXiLimitCode } from "@/machete/starting-xi-limits";
 
 export const dynamic = "force-dynamic";
+
+const sportsRuRosterSource = "sports.ru";
 
 type StarterPayload = {
   leagueId?: unknown;
@@ -39,24 +43,105 @@ export const PATCH = withApiHandler(async (request: Request) => {
 
       const roster = await tx.teamPlayerSeason.findMany({
         where: { leagueId, season, teamId, active: true },
-        select: { playerId: true, position: true, isStarter: true }
+        select: { playerId: true, position: true, isStarter: true, source: true }
       });
-      const candidate = roster.find((player) => player.playerId === playerId);
+      const activeCandidate = roster.find((player) => player.playerId === playerId) ?? null;
+      const persistedCandidate = activeCandidate
+        ? null
+        : await tx.teamPlayerSeason.findUnique({
+            where: {
+              leagueId_season_teamId_playerId: {
+                leagueId,
+                season,
+                teamId,
+                playerId
+              }
+            },
+            select: { active: true, isStarter: true, position: true, source: true }
+          });
+      const sportsRuCandidate = activeCandidate && activeCandidate.source !== sportsRuRosterSource
+        ? null
+        : await loadSportsRuAuthoritativeStarterCandidate(tx, {
+            leagueId,
+            seasons: sportsRuSeasonAliases(season),
+            teamId,
+            playerId
+          });
+      const candidate = activeCandidate?.source === sportsRuRosterSource && !sportsRuCandidate
+        ? null
+        : activeCandidate ?? (sportsRuCandidate
+        ? {
+            playerId: sportsRuCandidate.playerId,
+            position: persistedCandidate?.position ?? sportsRuCandidate.position,
+            isStarter: persistedCandidate?.isStarter ?? false
+          }
+        : null);
       if (!candidate) return null;
 
-      const limitCode = isStarter ? startingXiSelectionBlockReason(roster, candidate) : null;
+      const effectiveRoster = activeCandidate ? roster : [...roster, candidate];
+
+      const limitCode = isStarter ? startingXiSelectionBlockReason(effectiveRoster, candidate) : null;
       if (limitCode) throw new StarterLimitError(limitCode);
 
-      const update = await tx.teamPlayerSeason.updateMany({
-        where: {
-          leagueId,
-          season,
-          teamId,
-          playerId,
-          isStarter: !isStarter
-        },
-        data: { isStarter }
-      });
+      let changed = false;
+      if (sportsRuCandidate) {
+        const staleMemberships = await tx.teamPlayerSeason.updateMany({
+          where: {
+            leagueId,
+            season,
+            playerId,
+            teamId: { not: teamId },
+            active: true
+          },
+          data: { active: false, isStarter: false }
+        });
+        changed = staleMemberships.count > 0;
+      }
+      if (activeCandidate) {
+        const update = await tx.teamPlayerSeason.updateMany({
+          where: {
+            leagueId,
+            season,
+            teamId,
+            playerId,
+            isStarter: !isStarter
+          },
+          data: { isStarter }
+        });
+        changed = changed || update.count > 0;
+      } else if (sportsRuCandidate) {
+        const now = new Date();
+        changed = changed || !persistedCandidate || !persistedCandidate.active || persistedCandidate.isStarter !== isStarter;
+        await tx.teamPlayerSeason.upsert({
+          where: {
+            leagueId_season_teamId_playerId: {
+              leagueId,
+              season,
+              teamId,
+              playerId
+            }
+          },
+          update: {
+            source: sportsRuRosterSource,
+            active: true,
+            isStarter,
+            position: persistedCandidate?.position ?? sportsRuCandidate.position,
+            lastSeenAt: now
+          },
+          create: {
+            leagueId,
+            season,
+            teamId,
+            playerId,
+            source: sportsRuRosterSource,
+            active: true,
+            isStarter,
+            position: sportsRuCandidate.position,
+            firstSeenAt: now,
+            lastSeenAt: now
+          }
+        });
+      }
 
       const row = await tx.teamPlayerSeason.findUnique({
         where: {
@@ -77,7 +162,7 @@ export const PATCH = withApiHandler(async (request: Request) => {
       });
       if (!row) return null;
 
-      if (update.count > 0) {
+      if (changed) {
         await tx.leagueSeasonTeam.update({
           where: {
             leagueId_season_teamId: {

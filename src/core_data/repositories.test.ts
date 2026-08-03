@@ -3,7 +3,7 @@ import test from "node:test";
 
 import type { PrismaClient } from "@prisma/client";
 
-import { CoreTeamRepository } from "./repositories";
+import { CoreSeasonRosterRepository, CoreTeamRepository } from "./repositories";
 
 test("core team repository does not overwrite a named team with a FotMob placeholder", async () => {
   const upserts: unknown[] = [];
@@ -65,4 +65,61 @@ test("core team repository does not overwrite a named team with a FotMob placeho
       source: "fotmob"
     }
   });
+});
+
+test("FotMob roster deactivation preserves Sports.ru authoritative starter rows", async () => {
+  const updates: unknown[] = [];
+  const prisma = {
+    teamPlayerSeason: {
+      async updateMany(input: unknown) {
+        updates.push(input);
+        return { count: 0 };
+      }
+    }
+  } as unknown as PrismaClient;
+
+  const repository = new CoreSeasonRosterRepository(prisma);
+  await repository.deactivateMissingTeamPlayers(57n, "2026/2027", 10229n, [1n, 2n]);
+
+  assert.deepEqual(updates, [{
+    where: {
+      leagueId: 57n,
+      season: "2026/2027",
+      teamId: 10229n,
+      source: "fotmob",
+      playerId: { notIn: [1n, 2n] },
+      active: true
+    },
+    data: { active: false }
+  }]);
+});
+
+test("FotMob roster sync takes ownership when an authoritative Sports.ru row appears in FotMob", async () => {
+  const upserts: Array<{ update: { source?: string } }> = [];
+  const prisma = {
+    coreTeam: { createMany: async () => ({ count: 0 }) },
+    corePlayer: { createMany: async () => ({ count: 0 }) },
+    teamPlayerSeason: {
+      async upsert(input: { update: { source?: string } }) {
+        upserts.push(input);
+        return {};
+      }
+    }
+  } as unknown as PrismaClient;
+
+  const repository = new CoreSeasonRosterRepository(prisma);
+  await repository.upsertTeamPlayers([{
+    leagueId: 57n,
+    season: "2026/2027",
+    teamId: 10229n,
+    playerId: 1352213n,
+    active: true,
+    position: "MID",
+    shirtNumber: null,
+    nationality: null,
+    age: null,
+    photoUrl: null
+  }]);
+
+  assert.equal(upserts[0]?.update.source, "fotmob");
 });

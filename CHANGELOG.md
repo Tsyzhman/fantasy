@@ -14,6 +14,20 @@ image labels `org.opencontainers.image.version` and
   identity and is included in the name tooltip; rows without a confirmed
   Sports.ru mapping keep their FotMob name.
 
+### Fixed
+
+- A verified Sports.ru player now becomes an effective team-roster row on the
+  starting-XI page even when FotMob keeps that player in a reserve/youth team
+  or omits the senior-season roster. Ro-Zangelo Daal therefore appears for AZ
+  Alkmaar instead of existing only as a price mapping.
+- The starting-XI API can now persist such an authoritative Sports.ru roster
+  row after validating the price, matched provider map, player, and team. A
+  later FotMob roster refresh preserves the manual starter row until FotMob
+  itself takes ownership of that exact player-team row.
+- The mapping panel no longer reports `MATCHED` when neither the active FotMob
+  roster nor a verified Sports.ru price resolves an effective player row;
+  price foreign keys alone are no longer treated as proof of a match.
+
 ## 0.3.8 - 2026-08-03
 
 ### Fixed

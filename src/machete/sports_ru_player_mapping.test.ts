@@ -7,6 +7,8 @@ import {
   autoMapSportsRuFantasyPlayers,
   buildSportsRuMappingCandidates,
   findManualRosterEntry,
+  loadSportsRuAuthoritativeStarterCandidate,
+  loadSportsRuTeamPlayerMappings,
   planSportsRuSelectionRemap,
   resolveSportsRuSeasonTeam,
   scoreSportsRuCandidate,
@@ -26,6 +28,210 @@ test("team roster exposes only verified Sports.ru player names", () => {
   ]);
 
   assert.deepEqual([...names], [["1352213", "Ро-Зангело Дал"]]);
+});
+
+test("team mapping treats a verified Sports.ru price as an effective roster row when FotMob keeps the player in the reserve team", async () => {
+  const rows = await loadSportsRuTeamPlayerMappings({
+    fantasyPlayerPrice: {
+      findMany: async () => [{
+        id: "daal-price",
+        leagueId: 57n,
+        season: "2026/2027",
+        provider: "SPORTS_RU",
+        playerId: 1352213n,
+        teamId: 10229n,
+        playerName: "Ро-Зангело Дал",
+        normalizedName: "ro zangelo dal",
+        teamName: "АЗ Алкмар",
+        fotmobPlayerName: "Ro-Zangelo Daal",
+        position: "MID",
+        price: 6.5,
+        player: { id: 1352213n, name: "Ro-Zangelo Daal" },
+        team: { id: 10229n, name: "AZ Alkmaar" }
+      }]
+    },
+    teamPlayerSeason: { findMany: async () => [] },
+    providerEntityMap: {
+      findMany: async () => [{
+        providerEntityId: "daal-price",
+        internalEntityId: "1352213",
+        status: "MATCHED",
+        confidence: 1,
+        matchedBy: "MANUAL"
+      }]
+    }
+  } as unknown as PrismaClient, { leagueId: 57n, season: "2026/2027", teamId: 10229n });
+
+  assert.deepEqual(rows.map((row) => [row.sportsName, row.mappedPlayerId, row.mappedPlayerName, row.status]), [
+    ["Ро-Зангело Дал", "1352213", "Ro-Zangelo Daal", "MATCHED"]
+  ]);
+});
+
+test("starter candidate resolves Daal only through a consistent matched price, player and AZ team", async () => {
+  const candidate = await loadSportsRuAuthoritativeStarterCandidate({
+    fantasyPlayerPrice: {
+      findMany: async () => [{
+        id: "daal-price",
+        leagueId: 57n,
+        season: "2026/2027",
+        playerId: 1352213n,
+        teamId: 10229n,
+        position: "MID",
+        player: { id: 1352213n, name: "Ro-Zangelo Daal" },
+        team: { id: 10229n, name: "AZ Alkmaar" }
+      }]
+    },
+    providerEntityMap: {
+      findMany: async () => [{ providerEntityId: "daal-price", internalEntityId: "1352213" }]
+    }
+  } as unknown as PrismaClient, {
+    leagueId: 57n,
+    seasons: ["2026/2027", "2026/27"],
+    teamId: 10229n,
+    playerId: 1352213n
+  });
+
+  assert.deepEqual(candidate, {
+    priceId: "daal-price",
+    playerId: 1352213n,
+    teamId: 10229n,
+    position: "MID"
+  });
+});
+
+test("starter candidate rejects a false matched map whose internal player differs from the price relation", async () => {
+  const candidate = await loadSportsRuAuthoritativeStarterCandidate({
+    fantasyPlayerPrice: {
+      findMany: async () => [{
+        id: "false-price",
+        leagueId: 57n,
+        season: "2026/2027",
+        playerId: 1352213n,
+        teamId: 10229n,
+        position: "MID",
+        player: { id: 1352213n, name: "Ro-Zangelo Daal" },
+        team: { id: 10229n, name: "AZ Alkmaar" }
+      }]
+    },
+    providerEntityMap: {
+      findMany: async () => [{ providerEntityId: "false-price", internalEntityId: "999999" }]
+    }
+  } as unknown as PrismaClient, {
+    leagueId: 57n,
+    seasons: ["2026/2027"],
+    teamId: 10229n,
+    playerId: 1352213n
+  });
+
+  assert.equal(candidate, null);
+});
+
+test("team mapping does not report MATCHED when neither FotMob nor the verified price resolves an effective roster row", async () => {
+  const rows = await loadSportsRuTeamPlayerMappings({
+    fantasyPlayerPrice: {
+      findMany: async () => [{
+        id: "broken-price",
+        leagueId: 57n,
+        season: "2026/2027",
+        provider: "SPORTS_RU",
+        playerId: null,
+        teamId: 10229n,
+        playerName: "Broken",
+        normalizedName: "broken",
+        teamName: "AZ Alkmaar",
+        fotmobPlayerName: null,
+        position: "MID",
+        price: 5,
+        player: null,
+        team: { id: 10229n, name: "AZ Alkmaar" }
+      }]
+    },
+    teamPlayerSeason: { findMany: async () => [] },
+    providerEntityMap: {
+      findMany: async () => [{
+        providerEntityId: "broken-price",
+        internalEntityId: "999",
+        status: "MATCHED",
+        confidence: 1,
+        matchedBy: "MANUAL"
+      }]
+    }
+  } as unknown as PrismaClient, { leagueId: 57n, season: "2026/2027", teamId: 10229n });
+
+  assert.equal(rows[0]?.mappedPlayerId, null);
+  assert.equal(rows[0]?.status, "UNMATCHED");
+});
+
+test("team mapping does not infer MATCHED from price foreign keys without a verified map", async () => {
+  const rows = await loadSportsRuTeamPlayerMappings({
+    fantasyPlayerPrice: {
+      findMany: async () => [{
+        id: "unverified-price",
+        leagueId: 57n,
+        season: "2026/2027",
+        provider: "SPORTS_RU",
+        playerId: 1352213n,
+        teamId: 10229n,
+        playerName: "Ro-Zangelo Daal",
+        normalizedName: "ro zangelo daal",
+        teamName: "AZ Alkmaar",
+        fotmobPlayerName: "Ro-Zangelo Daal",
+        position: "MID",
+        price: 6.5,
+        player: { id: 1352213n, name: "Ro-Zangelo Daal" },
+        team: { id: 10229n, name: "AZ Alkmaar" }
+      }]
+    },
+    teamPlayerSeason: { findMany: async () => [] },
+    providerEntityMap: { findMany: async () => [] }
+  } as unknown as PrismaClient, { leagueId: 57n, season: "2026/2027", teamId: 10229n });
+
+  assert.equal(rows[0]?.mappedPlayerId, null);
+  assert.equal(rows[0]?.status, "UNMATCHED");
+});
+
+test("team mapping rejects a matched map that disagrees with price identity even when that mapped player is in the roster", async () => {
+  const rows = await loadSportsRuTeamPlayerMappings({
+    fantasyPlayerPrice: {
+      findMany: async () => [{
+        id: "false-map-price",
+        leagueId: 57n,
+        season: "2026/2027",
+        provider: "SPORTS_RU",
+        playerId: 1352213n,
+        teamId: 10229n,
+        playerName: "Ro-Zangelo Daal",
+        normalizedName: "ro zangelo daal",
+        teamName: "AZ Alkmaar",
+        fotmobPlayerName: "Ro-Zangelo Daal",
+        position: "MID",
+        price: 6.5,
+        player: { id: 1352213n, name: "Ro-Zangelo Daal" },
+        team: { id: 10229n, name: "AZ Alkmaar" }
+      }]
+    },
+    teamPlayerSeason: {
+      findMany: async () => [{
+        playerId: 999999n,
+        teamId: 10229n,
+        position: "MID",
+        player: { name: "Different Player" },
+        team: { name: "AZ Alkmaar" }
+      }]
+    },
+    providerEntityMap: {
+      findMany: async () => [{
+        providerEntityId: "false-map-price",
+        internalEntityId: "999999",
+        status: "MATCHED",
+        confidence: 1,
+        matchedBy: "MANUAL"
+      }]
+    }
+  } as unknown as PrismaClient, { leagueId: 57n, season: "2026/2027", teamId: 10229n });
+
+  assert.equal(rows[0]?.mappedPlayerId, null);
+  assert.equal(rows[0]?.status, "UNMATCHED");
 });
 
 test("sports ru mapping matches transliterated surname to FotMob roster name", () => {

@@ -1091,6 +1091,31 @@ test("squad planner uses Sports.ru teams for stale and missing FotMob roster tra
   assert.equal(effective.find((row) => row.playerId === 1400979n)?.isStarter, false);
 });
 
+test("squad planner does not create an authoritative roster row from an unverified price foreign key", () => {
+  const overrides = sportsRuAuthoritativeRosterOverrides(
+    [{
+      id: "unverified-price",
+      leagueId: 57n,
+      season: "2026/2027",
+      teamId: 10229n,
+      playerId: 1352213n,
+      position: "MID",
+      lastSeenAt: new Date("2026-08-02T00:00:00Z"),
+      player: { id: 1352213n, name: "Ro-Zangelo Daal", country: "Netherlands" },
+      team: { id: 10229n, name: "AZ Alkmaar" }
+    }],
+    [],
+    {
+      leagueId: 57n,
+      season: "2026/2027",
+      name: "Eredivisie",
+      country: "Netherlands"
+    }
+  );
+
+  assert.deepEqual(overrides, []);
+});
+
 test("squad save validation lets Sports.ru override or supply the locked roster team", () => {
   const roster = authoritativeFantasyRosterByPlayerId(
     [{ playerId: 637741n, teamId: 8614n, position: "CDM,CM" }],
