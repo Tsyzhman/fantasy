@@ -57,7 +57,7 @@ import type { FantasyBacktestSample } from "./fantasy_backtest";
 import type { PlayerFixtureProjection } from "./deterministic_fantasy_projection";
 import type { ActiveScoringModel } from "@/lib/scoring";
 import { friendAlternativeFormulaDefaults } from "@/lib/scoring/formula-display";
-import type { SharedMachetePlayerRow } from "./shared_read_model";
+import { calculateFriendWindowMetrics, type SharedMachetePlayerRow } from "./shared_read_model";
 import { defaultFantasySquadRules } from "./squad_logic";
 import { expectedProjectionFormulaConfig, friendAltProjectionFormulaConfig } from "./projection-formula-config";
 
@@ -515,6 +515,58 @@ test("Alt keeps a promoted club marked XI calculable when every personal xG/xA w
     .reduce((total, player) => total + player.expectedEvents.assists, 0);
   assert.ok(Math.abs(allocatedGoals - 1.08) < 1e-12);
   assert.ok(Math.abs(allocatedAssists - 1.08 * 0.8) < 1e-12);
+});
+
+test("missing lower-league xG/xA cannot allocate the whole team attack to one sparse top-flight profile", () => {
+  const history = (matches: number, input: { minutes: number; xg: number | null; xa: number | null; goals: number; assists: number }) =>
+    calculateFriendWindowMetrics(Array.from({ length: matches }, (_, index) => ({
+      matchId: BigInt(matches - index),
+      minutes: input.minutes,
+      goals: input.goals,
+      assists: input.assists,
+      xg: input.xg,
+      xa: input.xa,
+      recoveries: 0,
+      saves: 0,
+      yellowCards: 0,
+      redCards: 0
+    })));
+  const rows = [
+    {
+      playerId: "sparse-top-flight",
+      teamId: "promoted-team",
+      position: "MID",
+      isStarter: false,
+      minutesPlayed: 150,
+      rawMetrics: history(5, { minutes: 30, xg: 0.04, xa: 0.02, goals: 0, assists: 0 })
+    },
+    {
+      playerId: "basic-only-scorer",
+      teamId: "promoted-team",
+      position: "FWD",
+      isStarter: false,
+      minutesPlayed: 900,
+      rawMetrics: history(10, { minutes: 90, xg: null, xa: null, goals: 0.5, assists: 0.2 })
+    }
+  ] as never;
+  const fixture = {
+    id: "promoted-fixture", roundId: "round-1", teamId: "promoted-team", opponentTeamId: "opponent",
+    opponentName: "OPP", opponentFullName: "Opponent", side: "H" as const,
+    kickoffAt: new Date("2026-08-01T12:00:00Z"), projectedXg: 1.2, projectedXga: 1,
+    attackMultiplier: 1, defenseMultiplier: 1
+  };
+  const index = buildFormulaProjectionIndex(
+    rows,
+    { rounds: [], fixturesByTeamRound: new Map([["round-1", new Map([["promoted-team", [fixture]]])]]), teamShortNameById: new Map() },
+    new Map([["sparse-top-flight", "MID"], ["basic-only-scorer", "FWD"]]),
+    friendAltProjectionFormulaConfig
+  );
+  const sparseGoals = index.byFixturePlayer.get("promoted-fixture:sparse-top-flight")?.expectedEvents.goals ?? 0;
+  const scorerGoals = index.byFixturePlayer.get("promoted-fixture:basic-only-scorer")?.expectedEvents.goals ?? 0;
+
+  assert.ok(scorerGoals > sparseGoals);
+  assert.ok(sparseGoals < 0.2);
+  assert.ok(Math.abs(sparseGoals + scorerGoals - 1.2) < 1e-12);
 });
 
 test("a short history sample applies the starter uplift cautiously to per-90 events", () => {
