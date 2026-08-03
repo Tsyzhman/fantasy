@@ -5,6 +5,27 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.7 - 2026-08-03
+
+### Added
+
+- Sports.ru-only core identities for nine academy or reserve players in the
+  Eredivisie and Liga Portugal price lists. They remain selectable for their
+  verified senior fantasy club without fabricated FotMob history; missing
+  match metrics are zero.
+- An explicit transferred-out state for stale fantasy prices. Kian Fitz-Jim's
+  Ajax row is retained for auditability but excluded from the Eredivisie pool
+  after his permanent transfer to Torino.
+
+### Fixed
+
+- Verified club overrides now survive later price syncs. Rafik El Arguioui is
+  assigned to Cambuur for his 2026/27 loan instead of being moved back to the
+  stale Utrecht label published by Sports.ru.
+- The remaining exact FotMob identities in the Netherlands and Portugal price
+  lists, including Ro-Zangelo Daal, are stored as durable manual mappings
+  instead of being cleared by the next scheduled Sports.ru import.
+
 ## 0.3.6 - 2026-08-02
 
 ### Fixed

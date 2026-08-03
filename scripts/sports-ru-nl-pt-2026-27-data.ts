@@ -2,7 +2,8 @@ export type SportsRuVerifiedMapping = readonly [
   leagueId: "57" | "61",
   providerPlayerId: string,
   playerId: string,
-  targetTeamName: string
+  targetTeamName: string,
+  mappingMode?: "TEAM_OVERRIDE"
 ];
 
 export type FotMobSeedPlayer = readonly [
@@ -11,6 +12,28 @@ export type FotMobSeedPlayer = readonly [
   birthDate: string,
   countryCode: string
 ];
+
+export type SportsRuSeedPlayer = readonly [
+  playerId: string,
+  playerName: string,
+  birthDate: string | null,
+  countryCode: string,
+  providerPlayerId: string
+];
+
+export type SportsRuExcludedPlayer = readonly [
+  leagueId: "57" | "61",
+  providerPlayerId: string,
+  verifiedFotMobPlayerId: string,
+  reason: string
+];
+
+const sportsRuSyntheticPlayerIdBase = 8_000_000_000_000_000n;
+
+export function sportsRuSyntheticPlayerId(providerPlayerId: string) {
+  if (!/^\d+$/.test(providerPlayerId)) throw new Error(`Invalid Sports.ru player id: ${providerPlayerId}`);
+  return String(sportsRuSyntheticPlayerIdBase + BigInt(providerPlayerId));
+}
 
 // Order is deliberate: repair the three known false AUTO mappings first.
 // In particular, move the young Sorriso before assigning the older Sorriso.
@@ -220,7 +243,37 @@ export const sportsRuNetherlandsPortugal2026Mappings = [
   ["61","68681","887683","Nacional"],
   ["61","68382","1282311","Academico Viseu"],
   ["57","68274","1888960","Feyenoord"],
+  // Verified 2 August 2026: Sports.ru has not yet followed the season-start
+  // loan from FC Utrecht, so Cambuur must remain an explicit team override.
+  ["57","68229","1344244","Cambuur","TEAM_OVERRIDE"],
+  ["57","67903",sportsRuSyntheticPlayerId("67903"),"Willem II"],
+  ["57","68012",sportsRuSyntheticPlayerId("68012"),"PEC Zwolle"],
+  ["57","68024",sportsRuSyntheticPlayerId("68024"),"Cambuur"],
+  ["57","68061",sportsRuSyntheticPlayerId("68061"),"NEC Nijmegen"],
+  ["57","68233",sportsRuSyntheticPlayerId("68233"),"FC Utrecht"],
+  ["57","68253",sportsRuSyntheticPlayerId("68253"),"Feyenoord"],
+  ["57","68261",sportsRuSyntheticPlayerId("68261"),"Feyenoord"],
+  ["61","68370","1427859","Academico Viseu"],
+  ["61","68378","1228061","Academico Viseu"],
+  ["61","68423","1356299","Arouca"],
+  ["61","68497","1362439","Braga"],
+  ["61","68505","1524671","Braga"],
+  ["61","68507","1666020","Braga"],
+  ["61","68517","1372284","Vitoria de Guimaraes"],
+  ["61","68547",sportsRuSyntheticPlayerId("68547"),"Vitoria de Guimaraes"],
+  ["61","68581","1714836","Gil Vicente"],
+  ["61","68607",sportsRuSyntheticPlayerId("68607"),"Casa Pia AC"],
+  ["61","68639","1150871","Moreirense"],
+  ["61","68843","1356599","Famalicao"],
+  ["61","68873","1525164","Estoril"],
 ] as const satisfies readonly SportsRuVerifiedMapping[];
+
+// The price list still labels Fitz-Jim as Ajax, but FotMob records his
+// permanent Ajax -> Torino transfer on 31 July 2026. Keep the source row for
+// auditability, but never expose it as an Eredivisie fantasy option.
+export const sportsRuNetherlandsPortugal2026ExcludedPlayers = [
+  ["57", "67866", "1218556", "Permanent transfer from Ajax to Torino on 2026-07-31"]
+] as const satisfies readonly SportsRuExcludedPlayer[];
 
 // These live FotMob profiles were absent from the production core catalog.
 // They are created only when missing; existing core players are never overwritten.
@@ -265,4 +318,32 @@ export const sportsRuNetherlandsPortugal2026SeedPlayers = [
   ["1927888","Sorriso","2006-04-15","BRA"],
   ["1965094","Ilian Hadidi","2009-03-06","BEL"],
   ["1965668","Wessel van der Goot","2008-04-29","NED"],
+  ["1150871","Kiko Bondoso","1995-11-17","POR"],
+  ["1228061","Pedro Barcelos","1996-01-19","BRA"],
+  ["1344244","Rafik El Arguioui","2005-07-31","MAR"],
+  ["1356299","Pedro Santos","2000-10-12","POR"],
+  ["1356599","Pedro Santos","2003-02-10","POR"],
+  ["1362439","Bernardo Fontes","2002-07-23","BRA"],
+  ["1372284","Beni","2002-05-21","ANG"],
+  ["1427859","Tomas Silva","2003-10-25","POR"],
+  ["1524671","Francisco Chissumba","2005-05-29","POR"],
+  ["1525164","Pedro Carvalho","2003-02-14","POR"],
+  ["1666020","Yanis da Rocha","2004-05-10","POR"],
+  ["1714836","Diogo Costa","2003-05-04","POR"],
 ] as const satisfies readonly FotMobSeedPlayer[];
+
+// Sports.ru includes these academy/reserve players in the senior fantasy
+// price lists, but FotMob currently exposes no stable player profile id for
+// them. Their deterministic core ids keep the rows selectable without
+// inventing match history; all historical metrics therefore remain zero.
+export const sportsRuNetherlandsPortugal2026SportsOnlySeedPlayers = [
+  [sportsRuSyntheticPlayerId("67903"), "Stef Schreuders", "2007-05-12", "NED", "67903"],
+  [sportsRuSyntheticPlayerId("68012"), "Lasse Aelbers", "2007-11-01", "NED", "68012"],
+  [sportsRuSyntheticPlayerId("68024"), "Buddy Vogelzang", "2005-11-23", "NED", "68024"],
+  [sportsRuSyntheticPlayerId("68061"), "Jesaja Riga Mustapha", "2007-03-15", "NED", "68061"],
+  [sportsRuSyntheticPlayerId("68233"), "Dani Bouchta", null, "NED", "68233"],
+  [sportsRuSyntheticPlayerId("68253"), "Twan Schens", "2007-03-12", "NED", "68253"],
+  [sportsRuSyntheticPlayerId("68261"), "Izu Onunta", "2008-01-20", "NED", "68261"],
+  [sportsRuSyntheticPlayerId("68547"), "Francisco Miranda Fernandes", "2006-10-23", "POR", "68547"],
+  [sportsRuSyntheticPlayerId("68607"), "Miguel Neves", "2007-06-06", "POR", "68607"]
+] as const satisfies readonly SportsRuSeedPlayer[];

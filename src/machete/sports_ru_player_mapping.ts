@@ -82,6 +82,9 @@ type SportsRuSelectionSyncResult = {
 const sportsRuProvider = "SPORTS_RU";
 const sportsRuPlayerEntityType = "FANTASY_PLAYER_PRICE";
 const internalPlayerEntityType = "PLAYER";
+const manualMappingMethod = "MANUAL";
+const manualTeamOverrideMethod = "MANUAL_TEAM_OVERRIDE";
+const manualTransferredOutMethod = "MANUAL_TRANSFERRED_OUT";
 const autoConfidenceThreshold = 0.78;
 const displayCandidateThreshold = 0.58;
 
@@ -163,7 +166,9 @@ export async function autoMapSportsRuFantasyPlayers(
 
   const mapsByPriceId = new Map(existingMaps.map((map) => [map.providerEntityId, map]));
   const rosterByPlayerId = new Map(roster.map((entry) => [String(entry.playerId), entry]));
-  const manualPlayerIds = [...new Set(existingMaps.filter((map) => map.matchedBy === "MANUAL" && map.internalEntityId).map((map) => BigInt(map.internalEntityId!)))];
+  const manualPlayerIds = [...new Set(existingMaps
+    .filter((map) => isManualPlayerMapping(map.matchedBy) && map.internalEntityId)
+    .map((map) => BigInt(map.internalEntityId!)))];
   const [manualPlayers, activeSeasonTeams] = await Promise.all([
     prisma.corePlayer.findMany({ where: { id: { in: manualPlayerIds } }, select: { id: true, name: true } }),
     prisma.leagueSeasonTeam.findMany({
@@ -174,6 +179,7 @@ export async function autoMapSportsRuFantasyPlayers(
   const manualPlayerById = new Map(manualPlayers.map((player) => [String(player.id), player]));
   const manualPlayerIdSet = new Set(manualPlayerById.keys());
   const activeSeasonTeamIdSet = new Set(activeSeasonTeams.map((team) => String(team.teamId)));
+  const activeSeasonTeamById = new Map(activeSeasonTeams.map((team) => [String(team.teamId), team]));
   const authoritativeTeamByPriceId = new Map(
     prices.flatMap((price) => {
       const team = resolveSportsRuSeasonTeam(price.teamName, activeSeasonTeams);
@@ -183,6 +189,7 @@ export async function autoMapSportsRuFantasyPlayers(
   const claimedPlayerIds = new Set<string>();
   let matched = 0;
   let manual = 0;
+  let excluded = 0;
   let unmatched = 0;
   let movedSelections = 0;
   let refreshedSelections = 0;
@@ -199,8 +206,8 @@ export async function autoMapSportsRuFantasyPlayers(
     buildSportsRuMappingCandidates(price, roster, authoritativeTeamByPriceId.get(price.id)?.teamId ?? null)
   ]));
   const orderedPrices = [...prices].sort((left, right) => {
-    const leftManual = mapsByPriceId.get(left.id)?.matchedBy === "MANUAL" ? 1 : 0;
-    const rightManual = mapsByPriceId.get(right.id)?.matchedBy === "MANUAL" ? 1 : 0;
+    const leftManual = isManualMapping(mapsByPriceId.get(left.id)?.matchedBy) ? 1 : 0;
+    const rightManual = isManualMapping(mapsByPriceId.get(right.id)?.matchedBy) ? 1 : 0;
     const leftConfidence = candidatesByPriceId.get(left.id)?.[0]?.confidence ?? 0;
     const rightConfidence = candidatesByPriceId.get(right.id)?.[0]?.confidence ?? 0;
     return rightManual - leftManual || rightConfidence - leftConfidence || right.price - left.price || left.playerName.localeCompare(right.playerName);
@@ -208,10 +215,40 @@ export async function autoMapSportsRuFantasyPlayers(
 
   for (const price of orderedPrices) {
     const existing = mapsByPriceId.get(price.id);
-    if (existing?.matchedBy === "MANUAL" && existing.internalEntityId) {
+    if (existing?.matchedBy === manualTransferredOutMethod) {
+      if (price.playerId || price.teamId) await clearPriceRosterMapping(prisma, price.id);
+      excluded += 1;
+      continue;
+    }
+    if (isManualPlayerMapping(existing?.matchedBy) && existing?.internalEntityId) {
       const authoritativeTeam = authoritativeTeamByPriceId.get(price.id) ?? null;
       const manualRosterEntry = findManualRosterEntry(roster, existing.internalEntityId, null);
       const manualPlayer = manualPlayerById.get(existing.internalEntityId) ?? null;
+      const lockedTeam = price.teamId ? activeSeasonTeamById.get(String(price.teamId)) ?? null : null;
+      if (
+        existing.matchedBy === manualTeamOverrideMethod
+        && lockedTeam
+        && manualPlayer
+        && shouldRetainManualOverride({
+          pricePlayerId: price.playerId,
+          priceTeamId: price.teamId,
+          mappedPlayerId: existing.internalEntityId,
+          existingPlayerIds: manualPlayerIdSet,
+          activeTeamIds: activeSeasonTeamIdSet
+        })
+      ) {
+        const targetRosterEntry: RosterEntry = {
+          playerId: manualPlayer.id,
+          teamId: lockedTeam.teamId,
+          position: manualRosterEntry?.position ?? price.position,
+          player: manualRosterEntry?.player ?? manualPlayer,
+          team: lockedTeam.team
+        };
+        claimedPlayerIds.add(String(targetRosterEntry.playerId));
+        addSelectionSync(await applyPriceRosterMapping(prisma, price, targetRosterEntry));
+        manual += 1;
+        continue;
+      }
       if (authoritativeTeam && manualPlayer) {
         const targetRosterEntry: RosterEntry = {
           playerId: manualPlayer.id,
@@ -304,6 +341,7 @@ export async function autoMapSportsRuFantasyPlayers(
     total: prices.length,
     matched,
     manual,
+    excluded,
     unmatched,
     movedSelections,
     refreshedSelections,
@@ -399,8 +437,12 @@ export async function setSportsRuPlayerMapping(
     priceId: string;
     playerId: bigint | null;
     teamId?: bigint | null;
+    lockTeam?: boolean;
   }
 ) {
+  if (input.lockTeam && (!input.playerId || !input.teamId)) {
+    throw new Error("A locked Sports.ru team override requires both playerId and teamId.");
+  }
   const price = await prisma.fantasyPlayerPrice.findUnique({
     where: { id: input.priceId }
   });
@@ -443,6 +485,9 @@ export async function setSportsRuPlayerMapping(
   }
 
   const confidence = rosterEntry ? scoreSportsRuCandidate(price, rosterEntry).confidence : 0;
+  const matchedBy = rosterEntry
+    ? input.lockTeam ? manualTeamOverrideMethod : manualMappingMethod
+    : null;
   await prisma.providerEntityMap.upsert({
     where: {
       provider_providerEntityType_providerEntityId_internalEntityType: {
@@ -455,7 +500,7 @@ export async function setSportsRuPlayerMapping(
     update: {
       internalEntityId: rosterEntry ? String(rosterEntry.playerId) : null,
       confidence,
-      matchedBy: rosterEntry ? "MANUAL" : null,
+      matchedBy,
       status: rosterEntry ? "MATCHED" : "UNMATCHED"
     },
     create: {
@@ -465,7 +510,7 @@ export async function setSportsRuPlayerMapping(
       internalEntityType: internalPlayerEntityType,
       internalEntityId: rosterEntry ? String(rosterEntry.playerId) : null,
       confidence,
-      matchedBy: rosterEntry ? "MANUAL" : null,
+      matchedBy,
       status: rosterEntry ? "MATCHED" : "UNMATCHED"
     }
   });
@@ -478,7 +523,7 @@ export async function setSportsRuPlayerMapping(
       teamId: String(rosterEntry.teamId),
       confidence,
       status: "MATCHED",
-      matchedBy: "MANUAL",
+      matchedBy,
       selectionSync
     };
   } else {
@@ -494,6 +539,62 @@ export async function setSportsRuPlayerMapping(
     matchedBy: null,
     selectionSync: emptySelectionSync()
   };
+}
+
+export async function excludeTransferredSportsRuPlayer(
+  prisma: PrismaClient,
+  input: {
+    priceId: string;
+  }
+) {
+  const price = await prisma.fantasyPlayerPrice.findUnique({ where: { id: input.priceId } });
+  if (!price) throw new Error("Sports.ru price row was not found.");
+
+  await prisma.providerEntityMap.upsert({
+    where: {
+      provider_providerEntityType_providerEntityId_internalEntityType: {
+        provider: sportsRuProvider,
+        providerEntityType: sportsRuPlayerEntityType,
+        providerEntityId: price.id,
+        internalEntityType: internalPlayerEntityType
+      }
+    },
+    update: {
+      internalEntityId: null,
+      confidence: 1,
+      matchedBy: manualTransferredOutMethod,
+      status: "EXCLUDED"
+    },
+    create: {
+      provider: sportsRuProvider,
+      providerEntityType: sportsRuPlayerEntityType,
+      providerEntityId: price.id,
+      internalEntityType: internalPlayerEntityType,
+      internalEntityId: null,
+      confidence: 1,
+      matchedBy: manualTransferredOutMethod,
+      status: "EXCLUDED"
+    }
+  });
+  await clearPriceRosterMapping(prisma, price.id);
+
+  return {
+    priceId: price.id,
+    playerId: null,
+    teamId: null,
+    confidence: 1,
+    status: "EXCLUDED",
+    matchedBy: manualTransferredOutMethod,
+    selectionSync: emptySelectionSync()
+  };
+}
+
+function isManualPlayerMapping(matchedBy: string | null | undefined) {
+  return matchedBy === manualMappingMethod || matchedBy === manualTeamOverrideMethod;
+}
+
+function isManualMapping(matchedBy: string | null | undefined) {
+  return isManualPlayerMapping(matchedBy) || matchedBy === manualTransferredOutMethod;
 }
 
 export function findManualRosterEntry(roster: RosterEntry[], playerId: string, teamId: bigint | null) {

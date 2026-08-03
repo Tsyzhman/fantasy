@@ -3,11 +3,16 @@ import path from "node:path";
 
 import { PrismaClient } from "@prisma/client";
 
-import { setSportsRuPlayerMapping } from "@/machete/sports_ru_player_mapping";
+import {
+  excludeTransferredSportsRuPlayer,
+  setSportsRuPlayerMapping
+} from "@/machete/sports_ru_player_mapping";
 
 import {
+  sportsRuNetherlandsPortugal2026ExcludedPlayers,
   sportsRuNetherlandsPortugal2026Mappings,
-  sportsRuNetherlandsPortugal2026SeedPlayers
+  sportsRuNetherlandsPortugal2026SeedPlayers,
+  sportsRuNetherlandsPortugal2026SportsOnlySeedPlayers
 } from "./sports-ru-nl-pt-2026-27-data";
 
 const prisma = new PrismaClient();
@@ -17,6 +22,7 @@ const apply = process.argv.includes("--apply");
 const correctionProviderIds = ["68907", "68765", "68764"] as const;
 
 const countryNameByCode: Readonly<Record<string, string>> = {
+  ANG: "Angola",
   BEL: "Belgium",
   BRA: "Brazil",
   CIV: "Ivory Coast",
@@ -39,6 +45,8 @@ async function main() {
     apply,
     mappings: plan.rows.length,
     changes: plan.rows.filter((row) => !row.alreadyMapped).length,
+    exclusions: plan.exclusionRows.length,
+    exclusionChanges: plan.exclusionRows.filter((row) => !row.alreadyExcluded).length,
     plannedPlayerSeeds: plan.playerSeeds.length,
     errors: plan.errors,
     corrections: plan.rows.slice(0, correctionProviderIds.length),
@@ -58,12 +66,19 @@ async function main() {
       data: {
         id: BigInt(seed.playerId),
         name: seed.playerName,
-        birthDate: new Date(`${seed.birthDate}T00:00:00.000Z`),
+        birthDate: seed.birthDate ? new Date(`${seed.birthDate}T00:00:00.000Z`) : null,
         country: countryNameByCode[seed.countryCode] ?? seed.countryCode,
-        source: "fotmob",
-        rawRef: seed.playerId
+        source: seed.source,
+        rawRef: seed.rawRef
       }
     });
+  }
+
+  const exclusionResults = [];
+  for (const row of plan.exclusionRows) {
+    exclusionResults.push(await excludeTransferredSportsRuPlayer(prisma, {
+      priceId: row.priceId
+    }));
   }
 
   const results = [];
@@ -71,12 +86,14 @@ async function main() {
     results.push(await setSportsRuPlayerMapping(prisma, {
       priceId: row.priceId,
       playerId: BigInt(row.playerId),
-      teamId: BigInt(row.targetTeamId)
+      teamId: BigInt(row.targetTeamId),
+      lockTeam: row.mappingMode === "TEAM_OVERRIDE"
     }));
   }
 
   console.log(JSON.stringify({
     applied: results.length,
+    excluded: exclusionResults.length,
     seededPlayers: plan.playerSeeds.length,
     movedSelections: results.reduce((sum, row) => sum + row.selectionSync.movedSelections, 0),
     removedDuplicateSelections: results.reduce((sum, row) => sum + row.selectionSync.removedDuplicateSelections, 0)
@@ -84,8 +101,14 @@ async function main() {
 }
 
 async function buildPlan() {
-  const leagueIds = [...new Set(sportsRuNetherlandsPortugal2026Mappings.map(([leagueId]) => BigInt(leagueId)))];
-  const providerPlayerIds = sportsRuNetherlandsPortugal2026Mappings.map(([, providerPlayerId]) => providerPlayerId);
+  const leagueIds = [...new Set([
+    ...sportsRuNetherlandsPortugal2026Mappings.map(([leagueId]) => BigInt(leagueId)),
+    ...sportsRuNetherlandsPortugal2026ExcludedPlayers.map(([leagueId]) => BigInt(leagueId))
+  ])];
+  const providerPlayerIds = [
+    ...sportsRuNetherlandsPortugal2026Mappings.map(([, providerPlayerId]) => providerPlayerId),
+    ...sportsRuNetherlandsPortugal2026ExcludedPlayers.map(([, providerPlayerId]) => providerPlayerId)
+  ];
   const targetPlayerIds = sportsRuNetherlandsPortugal2026Mappings.map(([, , playerId]) => BigInt(playerId));
   const [prices, players, seasonTeams] = await Promise.all([
     prisma.fantasyPlayerPrice.findMany({
@@ -105,9 +128,25 @@ async function buildPlan() {
 
   const priceByKey = new Map(prices.map((price) => [mappingKey(price.leagueId, price.providerPlayerId), price]));
   const playerById = new Map(players.map((player) => [String(player.id), player]));
-  const seedById = new Map<string, (typeof sportsRuNetherlandsPortugal2026SeedPlayers)[number]>(
-    sportsRuNetherlandsPortugal2026SeedPlayers.map((seed) => [seed[0], seed])
-  );
+  const seedProfiles = [
+    ...sportsRuNetherlandsPortugal2026SeedPlayers.map((seed) => ({
+      playerId: seed[0],
+      playerName: seed[1],
+      birthDate: seed[2] as string | null,
+      countryCode: seed[3],
+      source: "fotmob",
+      rawRef: seed[0]
+    })),
+    ...sportsRuNetherlandsPortugal2026SportsOnlySeedPlayers.map((seed) => ({
+      playerId: seed[0],
+      playerName: seed[1],
+      birthDate: seed[2],
+      countryCode: seed[3],
+      source: "sports_ru",
+      rawRef: seed[4]
+    }))
+  ] as const;
+  const seedById = new Map(seedProfiles.map((seed) => [seed.playerId, seed]));
   const teamByKey = new Map(seasonTeams.map((entry) => [teamKey(entry.leagueId, entry.team.name), entry]));
   const errors: string[] = [];
 
@@ -115,14 +154,11 @@ async function buildPlan() {
     if (playerById.has(playerId)) return [];
     const seed = seedById.get(playerId);
     if (!seed) {
-      errors.push(`Core FotMob player ${playerId} is missing and has no verified seed profile.`);
+      errors.push(`Core player ${playerId} is missing and has no verified seed profile.`);
       return [];
     }
     return [{
-      playerId: seed[0],
-      playerName: seed[1],
-      birthDate: seed[2],
-      countryCode: seed[3]
+      ...seed
     }];
   });
 
@@ -130,14 +166,15 @@ async function buildPlan() {
     leagueId,
     providerPlayerId,
     playerId,
-    targetTeamName
+    targetTeamName,
+    mappingMode
   ]) => {
     const price = priceByKey.get(mappingKey(BigInt(leagueId), providerPlayerId));
     const team = teamByKey.get(teamKey(BigInt(leagueId), targetTeamName));
     if (!price) errors.push(`Sports.ru price ${leagueId}/${providerPlayerId} was not found.`);
     if (!team) errors.push(`Active target team ${leagueId}/${targetTeamName} was not found.`);
     if (!playerById.has(playerId) && !seedById.has(playerId)) {
-      errors.push(`FotMob player ${playerId} was neither found nor seedable.`);
+      errors.push(`Core player ${playerId} was neither found nor seedable.`);
     }
     if (!price || !team) return [];
     return [{
@@ -151,14 +188,53 @@ async function buildPlan() {
       currentTeamId: price.teamId ? String(price.teamId) : null,
       targetTeamId: String(team.teamId),
       targetTeamName: team.team.name,
+      mappingMode: mappingMode ?? null,
       alreadyMapped: price.playerId === BigInt(playerId) && price.teamId === team.teamId
+    }];
+  });
+
+  const providerMaps = await prisma.providerEntityMap.findMany({
+    where: {
+      provider,
+      providerEntityType: "FANTASY_PLAYER_PRICE",
+      providerEntityId: { in: prices.map((price) => price.id) },
+      internalEntityType: "PLAYER"
+    }
+  });
+  const providerMapByPriceId = new Map(providerMaps.map((row) => [row.providerEntityId, row]));
+  const exclusionRows = sportsRuNetherlandsPortugal2026ExcludedPlayers.flatMap(([
+    leagueId,
+    providerPlayerId,
+    verifiedFotMobPlayerId,
+    reason
+  ]) => {
+    const price = priceByKey.get(mappingKey(BigInt(leagueId), providerPlayerId));
+    if (!price) {
+      errors.push(`Sports.ru exclusion ${leagueId}/${providerPlayerId} was not found.`);
+      return [];
+    }
+    const providerMap = providerMapByPriceId.get(price.id);
+    return [{
+      leagueId,
+      providerPlayerId,
+      verifiedFotMobPlayerId,
+      reason,
+      sportsName: price.playerName,
+      sportsTeamName: price.teamName,
+      priceId: price.id,
+      currentPlayerId: price.playerId ? String(price.playerId) : null,
+      currentTeamId: price.teamId ? String(price.teamId) : null,
+      alreadyExcluded: providerMap?.status === "EXCLUDED" && providerMap.matchedBy === "MANUAL_TRANSFERRED_OUT"
     }];
   });
 
   if (rows.length !== sportsRuNetherlandsPortugal2026Mappings.length) {
     errors.push(`Resolved ${rows.length} of ${sportsRuNetherlandsPortugal2026Mappings.length} mapping rows.`);
   }
-  return { rows, prices, playerSeeds, errors };
+  if (exclusionRows.length !== sportsRuNetherlandsPortugal2026ExcludedPlayers.length) {
+    errors.push(`Resolved ${exclusionRows.length} of ${sportsRuNetherlandsPortugal2026ExcludedPlayers.length} exclusion rows.`);
+  }
+  return { rows, exclusionRows, prices, playerSeeds, errors };
 }
 
 async function writeBackup(plan: Awaited<ReturnType<typeof buildPlan>>) {
@@ -186,6 +262,7 @@ async function writeBackup(plan: Awaited<ReturnType<typeof buildPlan>>) {
     createdAt: new Date().toISOString(),
     season,
     mappings: sportsRuNetherlandsPortugal2026Mappings,
+    exclusions: sportsRuNetherlandsPortugal2026ExcludedPlayers,
     plannedPlayerSeeds: plan.playerSeeds,
     prices: plan.prices,
     providerMaps,
@@ -195,9 +272,15 @@ async function writeBackup(plan: Awaited<ReturnType<typeof buildPlan>>) {
 }
 
 function validateStaticData() {
-  assertUnique("league/provider", sportsRuNetherlandsPortugal2026Mappings.map(([leagueId, providerId]) => `${leagueId}/${providerId}`));
+  assertUnique("league/provider", [
+    ...sportsRuNetherlandsPortugal2026Mappings.map(([leagueId, providerId]) => `${leagueId}/${providerId}`),
+    ...sportsRuNetherlandsPortugal2026ExcludedPlayers.map(([leagueId, providerId]) => `${leagueId}/${providerId}`)
+  ]);
   assertUnique("target player", sportsRuNetherlandsPortugal2026Mappings.map(([, , playerId]) => playerId));
-  assertUnique("seed player", sportsRuNetherlandsPortugal2026SeedPlayers.map(([playerId]) => playerId));
+  assertUnique("seed player", [
+    ...sportsRuNetherlandsPortugal2026SeedPlayers.map(([playerId]) => playerId),
+    ...sportsRuNetherlandsPortugal2026SportsOnlySeedPlayers.map(([playerId]) => playerId)
+  ]);
   const actualCorrections = sportsRuNetherlandsPortugal2026Mappings
     .slice(0, correctionProviderIds.length)
     .map(([, providerPlayerId]) => providerPlayerId);

@@ -123,7 +123,8 @@ async function main() {
     results.push(await setSportsRuPlayerMapping(prisma, {
       priceId: row.priceId!,
       playerId: BigInt(row.playerId),
-      teamId: row.overrideTeamId ? BigInt(row.overrideTeamId) : undefined
+      teamId: row.overrideTeamId ? BigInt(row.overrideTeamId) : undefined,
+      lockTeam: Boolean(row.overrideTeamId)
     }));
   }
   console.log(JSON.stringify({ applied: results.length, results }, bigintJson, 2));
