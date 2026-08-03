@@ -1,7 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { machetePlayerCellTitle, machetePlayerTeamDisplayName, type Column, type MachetePlayerRow } from "./MachetePlayerTable";
+import { machetePlayerCellTitle, machetePlayerDisplayName, machetePlayerTeamDisplayName, type Column, type MachetePlayerRow } from "./MachetePlayerTable";
+
+test("verified Sports.ru name replaces the FotMob label without losing the fallback", () => {
+  assert.equal(machetePlayerDisplayName({ name: "Ro-Zangelo Daal", sportsName: "Ро-Зангело Дал" }), "Ро-Зангело Дал");
+  assert.equal(machetePlayerDisplayName({ name: "Ro-Zangelo Daal", sportsName: null }), "Ro-Zangelo Daal");
+  assert.equal(machetePlayerDisplayName({ name: "Ro-Zangelo Daal", sportsName: "   " }), "Ro-Zangelo Daal");
+});
 
 test("compact Machete player table displays provider short names with full-name fallback", () => {
   assert.equal(

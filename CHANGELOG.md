@@ -5,6 +5,15 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.9 - 2026-08-03
+
+### Changed
+
+- Team roster pages with starting-XI controls now show the verified Sports.ru
+  fantasy name as the primary player label. FotMob remains the internal player
+  identity and is included in the name tooltip; rows without a confirmed
+  Sports.ru mapping keep their FotMob name.
+
 ## 0.3.8 - 2026-08-03
 
 ### Fixed

@@ -25,7 +25,7 @@ import {
   resolveSharedTeamLogoUrl,
   sortSharedMacheteRows
 } from "@/machete/shared_read_model";
-import { loadSportsRuTeamPlayerMappings } from "@/machete/sports_ru_player_mapping";
+import { loadSportsRuTeamPlayerMappings, sportsRuDisplayNamesByPlayerId } from "@/machete/sports_ru_player_mapping";
 
 export const dynamic = "force-dynamic";
 
@@ -116,7 +116,11 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
       orderBy: [{ position: "asc" }, { player: { name: "asc" } }]
     })
   ]);
-  const players = filterByStarter(sortSharedMacheteRows(playerRows, "fantasyScore"), starterFilter);
+  const sportsNamesByPlayerId = sportsRuDisplayNamesByPlayerId(sportsRuMappings);
+  const players = filterByStarter(sortSharedMacheteRows(playerRows, "fantasyScore"), starterFilter).map((player) => ({
+    ...player,
+    sportsName: sportsNamesByPlayerId.get(macheteTeamRowPlayerId(player.id) ?? "") ?? null
+  }));
   const fantasyPreview = players.map((player) => player.fantasyScore).filter((score): score is number => typeof score === "number");
   const averageFantasyScore = fantasyPreview.length ? fantasyPreview.reduce((total, score) => total + score, 0) / fantasyPreview.length : null;
   const canEditRoster = Boolean(currentUser);
@@ -360,6 +364,12 @@ function filterByStarter<T extends { isStarter?: boolean | null }>(rows: T[], st
   if (starterFilter === "starter") return rows.filter((row) => row.isStarter);
   if (starterFilter === "bench") return rows.filter((row) => !row.isStarter);
   return rows;
+}
+
+function macheteTeamRowPlayerId(rowId: string) {
+  if (rowId.startsWith("combined:")) return null;
+  const parts = rowId.split(":");
+  return parts.length === 4 ? parts[3] || null : null;
 }
 
 function macheteLeagueHref(leagueId: bigint, season: string) {

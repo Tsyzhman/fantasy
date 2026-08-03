@@ -68,6 +68,23 @@ export type SportsRuTeamMappingRow = {
   candidates: SportsRuPlayerMappingCandidate[];
 };
 
+export function sportsRuDisplayNamesByPlayerId(
+  rows: ReadonlyArray<Pick<SportsRuTeamMappingRow, "mappedPlayerId" | "sportsName" | "status" | "price">>
+) {
+  const selected = new Map<string, { name: string; price: number }>();
+
+  for (const row of rows) {
+    const playerId = row.mappedPlayerId?.trim();
+    const sportsName = row.sportsName.trim();
+    if (row.status !== "MATCHED" || !playerId || !sportsName) continue;
+
+    const current = selected.get(playerId);
+    if (!current || row.price > current.price) selected.set(playerId, { name: sportsName, price: row.price });
+  }
+
+  return new Map([...selected].map(([playerId, value]) => [playerId, value.name]));
+}
+
 type SquadSelectionRef = {
   id: string;
   squadId: string;

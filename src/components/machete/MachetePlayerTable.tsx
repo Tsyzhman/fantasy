@@ -35,6 +35,7 @@ import { startingXiSelectionBlockReason, type StartingXiLimitCode } from "@/mach
 export type MachetePlayerRow = {
   id: string;
   name: string;
+  sportsName?: string | null;
   teamName?: string | null;
   teamShortName?: string | null;
   leagueName?: string | null;
@@ -164,7 +165,7 @@ export function MachetePlayerTable({
   const deferredFilters = useDeferredValue(filters);
   const visibleColumns = visibleKeys.map((key) => columnsByKey.get(key)).filter((column): column is Column => Boolean(column));
   const fixedColumns = useMemo<Column[]>(() => [
-    { key: "player", label: localizedText(language, "Player", "Игрок"), title: localizedText(language, "Player name. Minutes and forecast confidence are shown below it.", "Имя игрока. Под ним показаны ожидаемые минуты и уверенность прогноза."), width: fixedWidths.player, numeric: false, value: (player) => player.name },
+    { key: "player", label: localizedText(language, "Player", "Игрок"), title: localizedText(language, "Sports.ru player name when a verified mapping exists; otherwise FotMob name. Minutes and forecast confidence are shown below it.", "Имя игрока Sports.ru при наличии подтверждённой привязки; иначе имя FotMob. Под ним показаны ожидаемые минуты и уверенность прогноза."), width: fixedWidths.player, numeric: false, value: machetePlayerDisplayName },
     ...(showContext ? [{ key: "team", label: localizedText(language, "Team", "Клуб"), title: localizedText(language, "Current club and selected league context.", "Текущий клуб и контекст выбранной лиги."), width: fixedWidths.team, numeric: false, value: (player: MachetePlayerRow) => machetePlayerTeamDisplayName(player) ?? null }] : []),
     { key: "position", label: localizedText(language, "Pos", "Поз."), title: localizedText(language, "Fantasy position group.", "Позиционная группа фэнтези."), width: fixedWidths.position, numeric: false, value: (player) => player.position },
     { key: "price", label: localizedText(language, "Price", "Цена"), title: localizedText(language, "Current Sports.ru fantasy price. Missing means no verified price mapping.", "Текущая цена фэнтези Sports.ru. Пустое значение означает отсутствие подтверждённого сопоставления цены."), width: 72, numeric: true, value: (player) => player.price ?? null }
@@ -427,7 +428,7 @@ function MetricCell({ column, player, rank, horizon }: { column: Column; player:
 
 export function machetePlayerCellTitle(column: Column, player: MachetePlayerRow, value: string | number | null, horizon: number, language: "en" | "ru") {
   const shown = displayColumnValue(column.key, value);
-  const lines = [`${player.name} · ${column.label}: ${shown}`, column.title];
+  const lines = [`${machetePlayerDisplayName(player)} · ${column.label}: ${shown}`, column.title];
   const sample = localizedText(
     language,
     `Selected statistics window: ${player.matchesPlayed} parsed player-stat rows, ${formatNumber(player.minutesPlayed, 0)} played minutes.`,
@@ -752,20 +753,23 @@ function macheteColumns(players: MachetePlayerRow[], language: "en" | "ru", hori
 }
 
 function PlayerNameCell({ player }: { player: MachetePlayerRow }) {
+  const displayName = machetePlayerDisplayName(player);
   const comparePlayer = macheteComparePlayer(player);
-  const data: PlayerHoverCardData = { name: player.name, position: player.position, teamName: player.teamName, teamShortName: player.teamShortName, nationality: player.nationality, age: player.age, matchesPlayed: player.matchesPlayed, minutesPlayed: player.minutesPlayed, goals: player.goals, assists: player.assists, averageRating: player.averageRating, xFp: player.fantasyScore, actualFp: player.scoringScore ?? null, altFp: player.alternativeScore ?? null };
-  return <div className="flex min-w-0 items-center gap-1.5"><PlayerComparePickButton player={comparePlayer} /><PlayerWatchlistButton source="machete" player={macheteWatchlistPlayer(player)} /><PlayerCompareDraggable player={comparePlayer} className="min-w-0 flex-1"><PlayerHoverCard player={data} trigger={<span className="block min-w-0 cursor-help"><span className="block truncate border-b border-dashed border-slate-300" title={player.name}>{compactPlayerDisplayName(player.name)}</span>{player.expectedMinutes != null ? <span className="mt-0.5 block truncate text-[10px] font-normal text-slate-500">{Math.round(player.expectedMinutes)} <I18nText en="min" ru="мин" />{player.forecastConfidence != null ? ` · ${Math.round(player.forecastConfidence * 100)}%` : ""}</span> : null}</span>} /></PlayerCompareDraggable></div>;
+  const data: PlayerHoverCardData = { name: displayName, position: player.position, teamName: player.teamName, teamShortName: player.teamShortName, nationality: player.nationality, age: player.age, matchesPlayed: player.matchesPlayed, minutesPlayed: player.minutesPlayed, goals: player.goals, assists: player.assists, averageRating: player.averageRating, xFp: player.fantasyScore, actualFp: player.scoringScore ?? null, altFp: player.alternativeScore ?? null };
+  return <div className="flex min-w-0 items-center gap-1.5"><PlayerComparePickButton player={comparePlayer} /><PlayerWatchlistButton source="machete" player={macheteWatchlistPlayer(player)} /><PlayerCompareDraggable player={comparePlayer} className="min-w-0 flex-1"><PlayerHoverCard player={data} trigger={<span className="block min-w-0 cursor-help"><span className="block truncate border-b border-dashed border-slate-300" title={machetePlayerIdentityTitle(player)}>{compactPlayerDisplayName(displayName)}</span>{player.expectedMinutes != null ? <span className="mt-0.5 block truncate text-[10px] font-normal text-slate-500">{Math.round(player.expectedMinutes)} <I18nText en="min" ru="мин" />{player.forecastConfidence != null ? ` · ${Math.round(player.forecastConfidence * 100)}%` : ""}</span> : null}</span>} /></PlayerCompareDraggable></div>;
 }
 
+export function machetePlayerDisplayName(player: Pick<MachetePlayerRow, "name" | "sportsName">) { return player.sportsName?.trim() || player.name; }
 export function machetePlayerTeamDisplayName(player: Pick<MachetePlayerRow, "teamName" | "teamShortName">) { return compactTeamDisplayName({ name: player.teamName, shortName: player.teamShortName }); }
-function macheteWatchlistPlayer(player: MachetePlayerRow) { return { id: player.id, name: player.name, position: player.position, teamName: player.teamName, teamShortName: player.teamShortName }; }
-function macheteComparePlayer(player: MachetePlayerRow): ComparePlayer { return { id: player.id, name: player.name, position: player.position, teamName: player.teamName, teamShortName: player.teamShortName }; }
+function machetePlayerIdentityTitle(player: Pick<MachetePlayerRow, "name" | "sportsName">) { const displayName = machetePlayerDisplayName(player); return displayName === player.name ? player.name : `Sports.ru: ${displayName} · FotMob: ${player.name}`; }
+function macheteWatchlistPlayer(player: MachetePlayerRow) { return { id: player.id, name: machetePlayerDisplayName(player), position: player.position, teamName: player.teamName, teamShortName: player.teamShortName }; }
+function macheteComparePlayer(player: MachetePlayerRow): ComparePlayer { return { id: player.id, name: machetePlayerDisplayName(player), position: player.position, teamName: player.teamName, teamShortName: player.teamShortName }; }
 
 function StarterCell({ player, controls, language }: { player: MachetePlayerRow; controls?: { leagueId: string; season: string; teamId: string; canEdit?: boolean; roster: Array<{ position: string | null; isStarter: boolean }> }; language: "en" | "ru" }) {
   const identity = machetePlayerRowIdentity(player.id);
   if (controls?.canEdit && identity) {
     const message = starterLimitMessage(startingXiSelectionBlockReason(controls.roster, player));
-    return <MacheteStarterCheckbox leagueId={identity.leagueId} season={identity.season} teamId={identity.teamId} playerId={identity.playerId} defaultChecked={Boolean(player.isStarter)} label={localizedText(language, `In starting XI: ${player.name}`, `В старте: ${player.name}`)} disabledReasonEn={message?.en} disabledReasonRu={message?.ru} />;
+    return <MacheteStarterCheckbox leagueId={identity.leagueId} season={identity.season} teamId={identity.teamId} playerId={identity.playerId} defaultChecked={Boolean(player.isStarter)} label={localizedText(language, `In starting XI: ${machetePlayerDisplayName(player)}`, `В старте: ${machetePlayerDisplayName(player)}`)} disabledReasonEn={message?.en} disabledReasonRu={message?.ru} />;
   }
   return <span className={cn("inline-flex rounded border px-2 py-0.5 text-[10px] font-semibold", player.isStarter ? "border-emerald-200 bg-emerald-50 text-emerald-700" : "border-slate-200 bg-slate-50 text-slate-500")}><I18nText en={player.isStarter ? "Start" : "Bench"} ru={player.isStarter ? "Старт" : "Запас"} /></span>;
 }

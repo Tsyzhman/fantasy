@@ -10,11 +10,23 @@ import {
   planSportsRuSelectionRemap,
   resolveSportsRuSeasonTeam,
   scoreSportsRuCandidate,
+  sportsRuDisplayNamesByPlayerId,
   shouldRetainManualOverride
 } from "./sports_ru_player_mapping";
 
 const liverpool = { name: "Liverpool" };
 const city = { name: "Manchester City" };
+
+test("team roster exposes only verified Sports.ru player names", () => {
+  const names = sportsRuDisplayNamesByPlayerId([
+    { mappedPlayerId: "1352213", sportsName: "Ро-Зангело Дал", status: "MATCHED", price: 6.5 },
+    { mappedPlayerId: "1352213", sportsName: "Старая строка", status: "MATCHED", price: 5 },
+    { mappedPlayerId: "unmatched", sportsName: "Не подтверждён", status: "UNMATCHED", price: 9 },
+    { mappedPlayerId: null, sportsName: "Без игрока", status: "MATCHED", price: 8 }
+  ]);
+
+  assert.deepEqual([...names], [["1352213", "Ро-Зангело Дал"]]);
+});
 
 test("sports ru mapping matches transliterated surname to FotMob roster name", () => {
   const result = scoreSportsRuCandidate(
