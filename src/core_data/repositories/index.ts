@@ -220,6 +220,7 @@ export class CoreSeasonRosterRepository {
           }
         },
         update: {
+          source: FOTMOB_SOURCE,
           active: row.active,
           position: row.position,
           shirtNumber: row.shirtNumber,
@@ -243,6 +244,7 @@ export class CoreSeasonRosterRepository {
         leagueId,
         season,
         teamId,
+        source: FOTMOB_SOURCE,
         playerId: { notIn: activePlayerIds },
         active: true
       },

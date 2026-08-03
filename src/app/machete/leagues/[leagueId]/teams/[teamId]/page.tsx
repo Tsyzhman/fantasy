@@ -25,7 +25,8 @@ import {
   resolveSharedTeamLogoUrl,
   sortSharedMacheteRows
 } from "@/machete/shared_read_model";
-import { loadSportsRuTeamPlayerMappings } from "@/machete/sports_ru_player_mapping";
+import { loadSportsRuTeamPlayerMappings, sportsRuDisplayNamesByPlayerId } from "@/machete/sports_ru_player_mapping";
+import { loadSportsRuAuthoritativeRosterContext } from "@/machete/squad_planner";
 
 export const dynamic = "force-dynamic";
 
@@ -71,12 +72,14 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
 
   const teamScope = { leagueId: league.leagueId, season: league.season, teamId: parsedTeamId };
   const currentUser = await getCurrentUser();
-  const [playerRows, fixtures, rawPayloads, windowSummary, sportsRuMappings, rosterOptions] = await Promise.all([
-    loadSharedMachetePlayerRows(prisma, {
+  const authoritativeRosterPromise = loadSportsRuAuthoritativeRosterContext(prisma, league);
+  const [playerRows, fixtures, rawPayloads, windowSummary, sportsRuMappings] = await Promise.all([
+    authoritativeRosterPromise.then(({ rosterOverrides }) => loadSharedMachetePlayerRows(prisma, {
       scopes: [teamScope],
       matchWindow,
-      userId: currentUser?.id
-    }),
+      userId: currentUser?.id,
+      rosterOverrides
+    })),
     loadSharedTeamFixtures(prisma, league.leagueId, league.season, parsedTeamId, 8),
     prisma.rawMatchPayload.findMany({
       where: {
@@ -102,21 +105,13 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
       leagueId: league.leagueId,
       season: league.season,
       teamId: parsedTeamId
-    }),
-    prisma.teamPlayerSeason.findMany({
-      where: {
-        leagueId: league.leagueId,
-        season: league.season,
-        teamId: parsedTeamId,
-        active: true
-      },
-      include: {
-        player: true
-      },
-      orderBy: [{ position: "asc" }, { player: { name: "asc" } }]
     })
   ]);
-  const players = filterByStarter(sortSharedMacheteRows(playerRows, "fantasyScore"), starterFilter);
+  const sportsNamesByPlayerId = sportsRuDisplayNamesByPlayerId(sportsRuMappings);
+  const players = filterByStarter(sortSharedMacheteRows(playerRows, "fantasyScore"), starterFilter).map((player) => ({
+    ...player,
+    sportsName: sportsNamesByPlayerId.get(macheteTeamRowPlayerId(player.id) ?? "") ?? null
+  }));
   const fantasyPreview = players.map((player) => player.fantasyScore).filter((score): score is number => typeof score === "number");
   const averageFantasyScore = fantasyPreview.length ? fantasyPreview.reduce((total, score) => total + score, 0) / fantasyPreview.length : null;
   const canEditRoster = Boolean(currentUser);
@@ -334,11 +329,10 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
       {canEditRoster ? (
         <SportsRuPlayerMappingPanel
           rows={sportsRuMappings}
-          roster={rosterOptions.map((row) => ({
-            playerId: String(row.playerId),
-            name: row.player.name,
-            position: row.position
-          }))}
+          roster={playerRows.flatMap((row) => {
+            const playerId = macheteTeamRowPlayerId(row.id);
+            return playerId ? [{ playerId, name: row.name, position: row.position }] : [];
+          })}
           canEdit
         />
       ) : null}
@@ -360,6 +354,12 @@ function filterByStarter<T extends { isStarter?: boolean | null }>(rows: T[], st
   if (starterFilter === "starter") return rows.filter((row) => row.isStarter);
   if (starterFilter === "bench") return rows.filter((row) => !row.isStarter);
   return rows;
+}
+
+function macheteTeamRowPlayerId(rowId: string) {
+  if (rowId.startsWith("combined:")) return null;
+  const parts = rowId.split(":");
+  return parts.length === 4 ? parts[3] || null : null;
 }
 
 function macheteLeagueHref(leagueId: bigint, season: string) {

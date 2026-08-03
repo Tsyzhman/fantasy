@@ -22,6 +22,20 @@ type SportsRuStoredPrice = SportsRuPriceLike & {
   teamId: bigint | null;
 };
 
+type SportsRuStoredPriceWithRoster = SportsRuStoredPrice & {
+  player: { id: bigint; name: string } | null;
+  team: { id: bigint; name: string } | null;
+};
+
+type SportsRuStarterRosterPrisma = Pick<PrismaClient, "fantasyPlayerPrice" | "providerEntityMap">;
+
+export type SportsRuAuthoritativeStarterCandidate = {
+  priceId: string;
+  playerId: bigint;
+  teamId: bigint;
+  position: string | null;
+};
+
 type RosterEntry = {
   playerId: bigint;
   teamId: bigint;
@@ -67,6 +81,23 @@ export type SportsRuTeamMappingRow = {
   matchedBy: string | null;
   candidates: SportsRuPlayerMappingCandidate[];
 };
+
+export function sportsRuDisplayNamesByPlayerId(
+  rows: ReadonlyArray<Pick<SportsRuTeamMappingRow, "mappedPlayerId" | "sportsName" | "status" | "price">>
+) {
+  const selected = new Map<string, { name: string; price: number }>();
+
+  for (const row of rows) {
+    const playerId = row.mappedPlayerId?.trim();
+    const sportsName = row.sportsName.trim();
+    if (row.status !== "MATCHED" || !playerId || !sportsName) continue;
+
+    const current = selected.get(playerId);
+    if (!current || row.price > current.price) selected.set(playerId, { name: sportsName, price: row.price });
+  }
+
+  return new Map([...selected].map(([playerId, value]) => [playerId, value.name]));
+}
 
 type SquadSelectionRef = {
   id: string;
@@ -380,6 +411,10 @@ export async function loadSportsRuTeamPlayerMappings(
         leagueId: input.leagueId,
         season: input.season
       },
+      include: {
+        player: true,
+        team: true
+      },
       orderBy: [{ price: "desc" }, { playerName: "asc" }]
     }),
     loadTeamRoster(prisma, input.leagueId, input.season, input.teamId)
@@ -399,8 +434,13 @@ export async function loadSportsRuTeamPlayerMappings(
   return prices
     .map((price) => {
       const map = mapsByPriceId.get(price.id);
-      const mappedPlayerId = map?.internalEntityId ?? (price.playerId ? String(price.playerId) : null);
-      const mappedRosterEntry = mappedPlayerId ? rosterByPlayerId.get(mappedPlayerId) ?? null : null;
+      const mappedPlayerId = map?.status === "MATCHED" ? map.internalEntityId : null;
+      const authoritativeRosterEntry = mappedPlayerId
+        ? authoritativePriceRosterEntry(price, mappedPlayerId, input.teamId)
+        : null;
+      const mappedRosterEntry = authoritativeRosterEntry
+        ? rosterByPlayerId.get(String(authoritativeRosterEntry.playerId)) ?? authoritativeRosterEntry
+        : null;
       const candidates = buildSportsRuMappingCandidates(price, roster).filter((candidate) => candidate.confidence >= displayCandidateThreshold);
       const mappedToAnotherTeam = price.teamId !== null && price.teamId !== input.teamId && !mappedRosterEntry;
       if (mappedToAnotherTeam) return null;
@@ -421,7 +461,7 @@ export async function loadSportsRuTeamPlayerMappings(
         mappedPlayerId: mappedRosterEntry ? String(mappedRosterEntry.playerId) : null,
         mappedPlayerName: mappedRosterEntry?.player.name ?? null,
         mappedTeamName: mappedRosterEntry?.team.name ?? null,
-        status: map?.status ?? (mappedRosterEntry ? "MATCHED" : "UNMATCHED"),
+        status: mappedRosterEntry ? "MATCHED" : map?.status === "EXCLUDED" ? "EXCLUDED" : "UNMATCHED",
         confidence: map?.confidence ?? null,
         matchedBy: map?.matchedBy ?? null,
         candidates
@@ -429,6 +469,66 @@ export async function loadSportsRuTeamPlayerMappings(
     })
     .filter((row): row is SportsRuTeamMappingRow => Boolean(row))
     .sort(compareMappingRows);
+}
+
+export async function loadSportsRuAuthoritativeStarterCandidate(
+  prisma: SportsRuStarterRosterPrisma,
+  input: {
+    leagueId: bigint;
+    seasons: string[];
+    teamId: bigint;
+    playerId: bigint;
+  }
+): Promise<SportsRuAuthoritativeStarterCandidate | null> {
+  const prices = await prisma.fantasyPlayerPrice.findMany({
+    where: {
+      provider: sportsRuProvider,
+      leagueId: input.leagueId,
+      season: { in: input.seasons },
+      teamId: input.teamId,
+      playerId: input.playerId
+    },
+    include: {
+      player: true,
+      team: true
+    },
+    orderBy: { lastSeenAt: "desc" }
+  });
+  if (prices.length === 0) return null;
+
+  const maps = await prisma.providerEntityMap.findMany({
+    where: {
+      provider: sportsRuProvider,
+      providerEntityType: sportsRuPlayerEntityType,
+      providerEntityId: { in: prices.map((price) => price.id) },
+      internalEntityType: internalPlayerEntityType,
+      internalEntityId: String(input.playerId),
+      status: "MATCHED"
+    },
+    select: {
+      providerEntityId: true,
+      internalEntityId: true
+    }
+  });
+  const verifiedPriceIds = new Set(
+    maps
+      .filter((map) => map.internalEntityId === String(input.playerId))
+      .map((map) => map.providerEntityId)
+  );
+
+  for (const price of prices) {
+    if (!verifiedPriceIds.has(price.id)) continue;
+    const entry = authoritativePriceRosterEntry(price, String(input.playerId), input.teamId);
+    if (!entry) continue;
+    return {
+      priceId: price.id,
+      playerId: entry.playerId,
+      teamId: entry.teamId,
+      position: entry.position
+    };
+  }
+
+  return null;
 }
 
 export async function setSportsRuPlayerMapping(
@@ -716,6 +816,29 @@ async function loadTeamRoster(prisma: PrismaClient, leagueId: bigint, season: st
     },
     orderBy: [{ position: "asc" }, { player: { name: "asc" } }]
   });
+}
+
+function authoritativePriceRosterEntry(
+  price: SportsRuStoredPriceWithRoster,
+  mappedPlayerId: string,
+  requestedTeamId: bigint
+): RosterEntry | null {
+  if (
+    !price.player ||
+    !price.team ||
+    price.teamId !== requestedTeamId ||
+    String(price.playerId) !== mappedPlayerId ||
+    String(price.player.id) !== mappedPlayerId ||
+    price.team.id !== requestedTeamId
+  ) return null;
+
+  return {
+    playerId: price.player.id,
+    teamId: price.team.id,
+    position: price.position,
+    player: { name: price.player.name },
+    team: { name: price.team.name }
+  };
 }
 
 async function updatePriceFromRoster(prisma: PrismaClient, priceId: string, rosterEntry: RosterEntry) {
