@@ -146,7 +146,6 @@ export const sportsRuNetherlandsPortugal2026Mappings = [
   ["61","68754","1173684","Santa Clara"],
   ["61","68831","1257305","Famalicao"],
   ["61","68799","1691190","Sporting CP"],
-  ["61","68833","1395482","Famalicao"],
   ["61","68516","667952","Vitoria de Guimaraes"],
   ["61","68662","1075457","Nacional"],
   ["61","68362","1401581","Academico Viseu"],

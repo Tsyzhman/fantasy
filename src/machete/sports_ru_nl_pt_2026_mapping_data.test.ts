@@ -7,11 +7,11 @@ import {
 } from "../../scripts/sports-ru-nl-pt-2026-27-data";
 
 test("Netherlands and Portugal verified mapping plan is complete and unambiguous", () => {
-  assert.equal(sportsRuNetherlandsPortugal2026Mappings.length, 226);
+  assert.equal(sportsRuNetherlandsPortugal2026Mappings.length, 225);
   assert.equal(sportsRuNetherlandsPortugal2026Mappings.filter(([leagueId]) => leagueId === "57").length, 99);
-  assert.equal(sportsRuNetherlandsPortugal2026Mappings.filter(([leagueId]) => leagueId === "61").length, 127);
-  assert.equal(new Set(sportsRuNetherlandsPortugal2026Mappings.map(([leagueId, providerId]) => `${leagueId}/${providerId}`)).size, 226);
-  assert.equal(new Set(sportsRuNetherlandsPortugal2026Mappings.map(([, , playerId]) => playerId)).size, 226);
+  assert.equal(sportsRuNetherlandsPortugal2026Mappings.filter(([leagueId]) => leagueId === "61").length, 126);
+  assert.equal(new Set(sportsRuNetherlandsPortugal2026Mappings.map(([leagueId, providerId]) => `${leagueId}/${providerId}`)).size, 225);
+  assert.equal(new Set(sportsRuNetherlandsPortugal2026Mappings.map(([, , playerId]) => playerId)).size, 225);
 });
 
 test("known false automatic mappings are repaired before the remaining plan", () => {

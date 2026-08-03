@@ -5,6 +5,15 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.8 - 2026-08-03
+
+### Fixed
+
+- Removed Gustavo Sa's obsolete Famalicao mapping from the required 2026/27
+  Liga Portugal plan. Sports.ru has removed the price row and FotMob now lists
+  him outside Portugal, so the deployment script no longer fails while looking
+  for a fantasy option that does not exist.
+
 ## 0.3.7 - 2026-08-03
 
 ### Added
