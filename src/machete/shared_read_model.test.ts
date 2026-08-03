@@ -240,6 +240,61 @@ test("friend window metrics renormalize reduced sample weights without rounding"
   assert.equal(metrics.friend_yellow_cards_per_90, 1 / 7);
 });
 
+test("friend window metrics use actual goals and assists only where FotMob xG/xA is missing", () => {
+  const metrics = calculateFriendWindowMetrics([
+    {
+      matchId: 2n,
+      minutes: 90,
+      goals: 2,
+      assists: 1,
+      xg: null,
+      xa: null,
+      recoveries: 0,
+      saves: 0,
+      yellowCards: 0,
+      redCards: 0
+    },
+    {
+      matchId: 1n,
+      minutes: 90,
+      goals: 1,
+      assists: 1,
+      xg: 0,
+      xa: 0,
+      recoveries: 0,
+      saves: 0,
+      yellowCards: 0,
+      redCards: 0
+    }
+  ]);
+
+  assert.equal(metrics.xg_per_90_365, 1);
+  assert.equal(metrics.xa_per_90_365, 0.5);
+  assert.equal(metrics.xg_expected_matches_365, 1);
+  assert.equal(metrics.xa_expected_matches_365, 1);
+  assert.equal(metrics.xg_actual_fallback_events_365, 2);
+  assert.equal(metrics.xa_actual_fallback_events_365, 1);
+});
+
+test("friend actual-event fallback preserves the previous-club rate penalty denominator", () => {
+  const metrics = calculateFriendWindowMetrics([{
+    matchId: 1n,
+    minutes: 81,
+    goals: 1,
+    assists: 1,
+    xg: null,
+    xa: null,
+    recoveries: 0,
+    saves: 0,
+    yellowCards: 0,
+    redCards: 0,
+    transferHistoryPenaltyFactor: 0.9
+  }]);
+
+  assert.equal(metrics.xg_per_90_365, 1);
+  assert.equal(metrics.xa_per_90_365, 1);
+});
+
 test("friend window metrics expose stable raw primitives for every rolling window", () => {
   const stats = Array.from({ length: 12 }, (_, index) => ({
     matchId: BigInt(12 - index),

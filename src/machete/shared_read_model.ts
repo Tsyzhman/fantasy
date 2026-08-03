@@ -149,6 +149,7 @@ export type SharedMatchWindowSummary = {
 
 type MatchPlayerStatRecord = Awaited<ReturnType<typeof loadStatsForMatchIds>>[number] & {
   syntheticClubAbsence?: boolean;
+  transferHistoryPenaltyFactor?: number;
 };
 type SharedPositionFilter = Exclude<FantasyPositionGroup, "UNK">;
 type SharedTeamMatchRef = {
@@ -1314,6 +1315,7 @@ function applyTransferHistoryPenalty(stat: MatchPlayerStatRecord): MatchPlayerSt
     typeof value === "number" && Number.isFinite(value) ? value * TRANSFER_HISTORY_PENALTY : value;
   return {
     ...stat,
+    transferHistoryPenaltyFactor: TRANSFER_HISTORY_PENALTY,
     minutes: penalized(stat.minutes),
     xg: penalized(stat.xg),
     xa: penalized(stat.xa),
@@ -1360,12 +1362,15 @@ const RECENT_FP_WINDOW = 5;
 type FriendWindowStat = {
   matchId: bigint;
   minutes: number | null;
+  goals?: number | null;
+  assists?: number | null;
   xg: number | null;
   xa: number | null;
   recoveries: number | null;
   saves: number | null;
   yellowCards: number | null;
   redCards: number | null;
+  transferHistoryPenaltyFactor?: number;
 };
 
 /**
@@ -1413,6 +1418,36 @@ export function calculateFriendWindowMetrics(
 
 function friendWindowAggregate(stats: FriendWindowStat[]) {
   const minutes = sum(stats.map((stat) => stat.minutes));
+  const expectedOrObservedEvent = (
+    expected: "xg" | "xa",
+    observed: "goals" | "assists"
+  ) => sum(stats.map((stat) => {
+    const expectedValue = stat[expected];
+    if (typeof expectedValue === "number" && Number.isFinite(expectedValue)) return expectedValue;
+    const observedValue = stat[observed];
+    const transferFactor = typeof stat.transferHistoryPenaltyFactor === "number"
+      ? stat.transferHistoryPenaltyFactor
+      : 1;
+    return typeof observedValue === "number" && Number.isFinite(observedValue)
+      ? observedValue * transferFactor
+      : 0;
+  }));
+  const expectedCoverage = (expected: "xg" | "xa") => stats.filter((stat) =>
+    typeof stat[expected] === "number" && Number.isFinite(stat[expected])
+  ).length;
+  const actualFallbackEvents = (
+    expected: "xg" | "xa",
+    observed: "goals" | "assists"
+  ) => sum(stats.map((stat) => {
+    if (typeof stat[expected] === "number" && Number.isFinite(stat[expected])) return 0;
+    const observedValue = stat[observed];
+    const transferFactor = typeof stat.transferHistoryPenaltyFactor === "number"
+      ? stat.transferHistoryPenaltyFactor
+      : 1;
+    return typeof observedValue === "number" && Number.isFinite(observedValue)
+      ? observedValue * transferFactor
+      : 0;
+  }));
   return {
     matches: stats.length,
     appearances: stats.filter((stat) => (stat.minutes ?? 0) > 0).length,
@@ -1420,8 +1455,16 @@ function friendWindowAggregate(stats: FriendWindowStat[]) {
     fullMatches: stats.filter((stat) => (stat.minutes ?? 0) >= 90).length,
     minutes,
     minutesPerMatch: stats.length > 0 ? minutes / stats.length : 0,
-    xg: sum(stats.map((stat) => stat.xg)),
-    xa: sum(stats.map((stat) => stat.xa)),
+    // FotMob does not expose xG/xA for every competition (for example Eerste
+    // Divisie). A missing expected-event cell is not a zero: use the matching
+    // observed goal/assist only for that cell, while preserving an explicit
+    // zero xG/xA as real source data.
+    xg: expectedOrObservedEvent("xg", "goals"),
+    xa: expectedOrObservedEvent("xa", "assists"),
+    xgExpectedMatches: expectedCoverage("xg"),
+    xaExpectedMatches: expectedCoverage("xa"),
+    xgActualFallbackEvents: actualFallbackEvents("xg", "goals"),
+    xaActualFallbackEvents: actualFallbackEvents("xa", "assists"),
     recoveries: sum(stats.map((stat) => stat.recoveries)),
     saves: sum(stats.map((stat) => stat.saves)),
     yellowCards: sum(stats.map((stat) => stat.yellowCards)),
@@ -1445,6 +1488,10 @@ function friendWindowPrimitiveMetrics(
     [`full_match_rate_${suffix}`]: matchRate(sample.fullMatches),
     [`xg_per_90_${suffix}`]: rate(sample.xg),
     [`xa_per_90_${suffix}`]: rate(sample.xa),
+    [`xg_expected_matches_${suffix}`]: sample.xgExpectedMatches,
+    [`xa_expected_matches_${suffix}`]: sample.xaExpectedMatches,
+    [`xg_actual_fallback_events_${suffix}`]: sample.xgActualFallbackEvents,
+    [`xa_actual_fallback_events_${suffix}`]: sample.xaActualFallbackEvents,
     [`recoveries_per_90_${suffix}`]: rate(sample.recoveries),
     [`saves_per_90_${suffix}`]: rate(sample.saves),
     [`yellow_cards_per_90_${suffix}`]: rate(sample.yellowCards),

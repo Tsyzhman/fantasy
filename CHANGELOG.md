@@ -5,6 +5,22 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.10 - 2026-08-03
+
+### Fixed
+
+- Player goal and assist allocation now distinguishes a missing FotMob xG/xA
+  value from an explicit zero. Where a competition does not publish xG/xA,
+  the rolling formula uses that match's observed goals/assists as the best
+  available allocation signal; supplied FotMob xG/xA remains authoritative.
+- Promoted teams with complete basic statistics but unavailable player xG/xA
+  no longer assign almost the entire team attack to one player who happens to
+  have a small top-flight xG/xA sample. This fixes Jaden Slory's inflated Alt
+  forecast at Willem II and applies equally to the Eerste Divisie-to-Eredivisie
+  and FNL-to-RPL paths.
+- Previous-club actual-event fallbacks retain the existing transfer penalty
+  instead of cancelling it through the penalized-minutes denominator.
+
 ## 0.3.9 - 2026-08-03
 
 ### Changed
