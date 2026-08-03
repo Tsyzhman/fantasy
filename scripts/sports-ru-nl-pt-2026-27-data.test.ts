@@ -40,3 +40,9 @@ test("Ro-Zangelo Daal remains explicitly mapped to the AZ first-team identity", 
 
   assert.deepEqual(mapping, ["57", "67823", "1352213", "AZ Alkmaar"]);
 });
+
+test("Gustavo Sa is not required after Sports.ru removed his transferred-out price", () => {
+  const mappedProviderIds = new Set<string>(sportsRuNetherlandsPortugal2026Mappings.map(([, providerPlayerId]) => providerPlayerId));
+
+  assert.equal(mappedProviderIds.has("68833"), false);
+});
