@@ -190,6 +190,105 @@ test("Sports.ru resync moves a verified manual mapping away from the stale FotMo
   assert.equal(result.unmatched, 0);
 });
 
+test("Sports.ru resync retains a verified current-team transfer override", async () => {
+  const updatedTeams: bigint[] = [];
+  const storedPrice = {
+    ...price("rafik el arguioui", "MID"),
+    id: "rafik-price",
+    leagueId: 57n,
+    season: "2026/2027",
+    playerId: 1344244n,
+    teamId: 7788n,
+    teamName: "\u0423\u0442\u0440\u0435\u0445\u0442"
+  };
+  const staleRosterEntry = {
+    ...roster("Rafik El Arguioui", "CM", { name: "FC Utrecht" }, 1344244n),
+    teamId: 9908n
+  };
+  const prisma = {
+    fantasyPlayerPrice: {
+      findMany: async () => [storedPrice],
+      update: async ({ data }: { data: { teamId: bigint } }) => {
+        updatedTeams.push(data.teamId);
+        return storedPrice;
+      }
+    },
+    teamPlayerSeason: {
+      findMany: async () => [staleRosterEntry]
+    },
+    providerEntityMap: {
+      findMany: async () => [{
+        providerEntityId: "rafik-price",
+        internalEntityId: "1344244",
+        matchedBy: "MANUAL_TEAM_OVERRIDE"
+      }]
+    },
+    corePlayer: {
+      findMany: async () => [{ id: 1344244n, name: "Rafik El Arguioui" }]
+    },
+    leagueSeasonTeam: {
+      findMany: async () => [
+        { teamId: 7788n, team: { name: "Cambuur" } },
+        { teamId: 9908n, team: { name: "FC Utrecht" } }
+      ]
+    },
+    userFantasySquad: {
+      findMany: async () => []
+    }
+  } as unknown as PrismaClient;
+
+  const result = await autoMapSportsRuFantasyPlayers(prisma, { leagueId: 57n, season: "2026/2027" });
+
+  assert.deepEqual(updatedTeams, [7788n]);
+  assert.equal(result.manual, 1);
+  assert.equal(result.excluded, 0);
+  assert.equal(result.unmatched, 0);
+});
+
+test("Sports.ru resync keeps a verified transferred-out price excluded", async () => {
+  const cleared: Array<{ playerId: null; teamId: null }> = [];
+  const storedPrice = {
+    ...price("kian fitz jim", "MID"),
+    id: "kian-price",
+    leagueId: 57n,
+    season: "2026/2027",
+    playerId: 1218556n,
+    teamId: 8593n,
+    teamName: "\u0410\u044f\u043a\u0441"
+  };
+  const prisma = {
+    fantasyPlayerPrice: {
+      findMany: async () => [storedPrice],
+      update: async ({ data }: { data: { playerId: null; teamId: null } }) => {
+        cleared.push(data);
+        return storedPrice;
+      }
+    },
+    teamPlayerSeason: {
+      findMany: async () => []
+    },
+    providerEntityMap: {
+      findMany: async () => [{
+        providerEntityId: "kian-price",
+        internalEntityId: null,
+        matchedBy: "MANUAL_TRANSFERRED_OUT"
+      }]
+    },
+    corePlayer: {
+      findMany: async () => []
+    },
+    leagueSeasonTeam: {
+      findMany: async () => [{ teamId: 8593n, team: { name: "Ajax" } }]
+    }
+  } as unknown as PrismaClient;
+
+  const result = await autoMapSportsRuFantasyPlayers(prisma, { leagueId: 57n, season: "2026/2027" });
+
+  assert.deepEqual(cleared, [{ playerId: null, teamId: null }]);
+  assert.equal(result.excluded, 1);
+  assert.equal(result.unmatched, 0);
+});
+
 test("sports ru mapping recognizes transliterated Sports.ru team names", () => {
   const result = scoreSportsRuCandidate(
     { ...price("nikita bocharov", "GK"), teamName: "Ростов" },

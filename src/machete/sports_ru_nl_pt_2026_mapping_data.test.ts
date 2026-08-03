@@ -7,11 +7,11 @@ import {
 } from "../../scripts/sports-ru-nl-pt-2026-27-data";
 
 test("Netherlands and Portugal verified mapping plan is complete and unambiguous", () => {
-  assert.equal(sportsRuNetherlandsPortugal2026Mappings.length, 205);
-  assert.equal(sportsRuNetherlandsPortugal2026Mappings.filter(([leagueId]) => leagueId === "57").length, 91);
-  assert.equal(sportsRuNetherlandsPortugal2026Mappings.filter(([leagueId]) => leagueId === "61").length, 114);
-  assert.equal(new Set(sportsRuNetherlandsPortugal2026Mappings.map(([leagueId, providerId]) => `${leagueId}/${providerId}`)).size, 205);
-  assert.equal(new Set(sportsRuNetherlandsPortugal2026Mappings.map(([, , playerId]) => playerId)).size, 205);
+  assert.equal(sportsRuNetherlandsPortugal2026Mappings.length, 226);
+  assert.equal(sportsRuNetherlandsPortugal2026Mappings.filter(([leagueId]) => leagueId === "57").length, 99);
+  assert.equal(sportsRuNetherlandsPortugal2026Mappings.filter(([leagueId]) => leagueId === "61").length, 127);
+  assert.equal(new Set(sportsRuNetherlandsPortugal2026Mappings.map(([leagueId, providerId]) => `${leagueId}/${providerId}`)).size, 226);
+  assert.equal(new Set(sportsRuNetherlandsPortugal2026Mappings.map(([, , playerId]) => playerId)).size, 226);
 });
 
 test("known false automatic mappings are repaired before the remaining plan", () => {
@@ -29,8 +29,8 @@ test("known false automatic mappings are repaired before the remaining plan", ()
 });
 
 test("verified missing FotMob profiles have unique seed records", () => {
-  assert.equal(sportsRuNetherlandsPortugal2026SeedPlayers.length, 40);
-  assert.equal(new Set(sportsRuNetherlandsPortugal2026SeedPlayers.map(([playerId]) => playerId)).size, 40);
+  assert.equal(sportsRuNetherlandsPortugal2026SeedPlayers.length, 52);
+  assert.equal(new Set(sportsRuNetherlandsPortugal2026SeedPlayers.map(([playerId]) => playerId)).size, 52);
   assert.deepEqual(
     sportsRuNetherlandsPortugal2026Mappings.find(([, providerId]) => providerId === "68274"),
     ["57", "68274", "1888960", "Feyenoord"]
