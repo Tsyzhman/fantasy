@@ -179,7 +179,17 @@ function buildFixtureComponentInputs(
     rosterStarterMinutesUplift: numericProjectionMetric(formulaMetrics?.roster_starter_minutes_uplift),
     eventExposureMinutes: numericProjectionMetric(formulaMetrics?.event_exposure_minutes),
     per90SampleMinutes: numericProjectionMetric(formulaMetrics?.per90_sample_minutes),
+    per90SampleReliability: numericProjectionMetric(formulaMetrics?.per90_sample_reliability),
+    starterRoleReliability: numericProjectionMetric(formulaMetrics?.starter_role_reliability),
+    starterBaseMinuteReliability: numericProjectionMetric(formulaMetrics?.starter_base_minute_reliability),
+    historicalStartProbability: numericProjectionMetric(formulaMetrics?.historical_start_probability),
     per90UpliftReliability: numericProjectionMetric(formulaMetrics?.per90_uplift_reliability),
+    preRoleXgRatePer90: numericProjectionMetric(formulaMetrics?.pre_role_xg_per_90),
+    preRoleXaRatePer90: numericProjectionMetric(formulaMetrics?.pre_role_xa_per_90),
+    positionXgPriorPer90: numericProjectionMetric(formulaMetrics?.starter_role_position_xg_prior_per_90),
+    positionXaPriorPer90: numericProjectionMetric(formulaMetrics?.starter_role_position_xa_prior_per_90),
+    roleAdjustedXgRatePer90: numericProjectionMetric(formulaMetrics?.blended_xg_per_90),
+    roleAdjustedXaRatePer90: numericProjectionMetric(formulaMetrics?.blended_xa_per_90),
     transferRatePenalty: numericProjectionMetric(formulaMetrics?.transfer_rate_penalty),
     minuteHistorySource: minuteHistorySourceMetric(formulaMetrics?.minute_history_source),
     currentClubHistoryMatches: numericProjectionMetric(formulaMetrics?.current_club_history_matches),
@@ -1842,11 +1852,25 @@ function pipelineParticipant(
   const expectedMinutes = rosterStarterApplies ? Math.max(baseExpectedMinutes, starterMinuteFloor) : baseExpectedMinutes;
   const historyMinutes = Math.max(0, numericOrNull(metrics.minutes_365) ?? row.minutesPlayed ?? 0);
   // A manual XI mark is strong evidence of availability, but it does not turn a
-  // short historical sample into a reliable per-90 event rate. Appearance
-  // thresholds use the full 60-minute floor; only the uplift applied to event
-  // rates is phased in until five full matches (450 minutes) are observed.
-  const per90UpliftReliability = rosterStarterApplies
+  // short or substitute-heavy historical sample into a reliable starter per-90
+  // event rate. Appearance thresholds use the full starter floor; event-rate
+  // uplift is capped by both sample size and the player's historical role.
+  const historicalStartProbability = clamp(row.startProbability ?? 0, 0, 1);
+  const baseMinuteRoleReliability = starterMinuteFloor > 0
+    ? clamp(baseExpectedMinutes / starterMinuteFloor, 0, 1)
+    : 1;
+  const sampleReliability = rosterStarterApplies
     ? clamp(historyMinutes / starterPer90FullReliabilityMinutes, starterPer90MinimumReliability, 1)
+    : 1;
+  const roleReliability = rosterStarterApplies
+    ? clamp(
+      Math.max(historicalStartProbability, baseMinuteRoleReliability),
+      starterPer90MinimumReliability,
+      1
+    )
+    : 1;
+  const per90UpliftReliability = rosterStarterApplies
+    ? Math.min(sampleReliability, roleReliability)
     : 1;
   const eventExposureMinutes = rosterStarterApplies
     ? baseExpectedMinutes + (expectedMinutes - baseExpectedMinutes) * per90UpliftReliability
@@ -1857,6 +1881,10 @@ function pipelineParticipant(
   metrics.roster_starter_minutes_uplift = expectedMinutes - baseExpectedMinutes;
   metrics.expected_minutes = expectedMinutes;
   metrics.per90_sample_minutes = historyMinutes;
+  metrics.per90_sample_reliability = sampleReliability;
+  metrics.historical_start_probability = historicalStartProbability;
+  metrics.starter_base_minute_reliability = baseMinuteRoleReliability;
+  metrics.starter_role_reliability = roleReliability;
   metrics.per90_uplift_reliability = per90UpliftReliability;
   metrics.event_exposure_minutes = eventExposureMinutes;
   metrics.transfer_rate_penalty = transferRatePenalty;
@@ -1895,13 +1923,25 @@ function pipelineParticipant(
     priorEvents: numericOrNull(metrics.archive_prior_assists),
     tierFactor: numericOrNull(metrics.archive_tier_factor) ?? 1
   });
-  const xg = goalBlend?.ratePer90 ?? formulaXg * transferRatePenalty;
-  const xa = assistBlend?.ratePer90 ?? formulaXa * transferRatePenalty;
+  const preRoleXg = goalBlend?.ratePer90 ?? formulaXg * transferRatePenalty;
+  const preRoleXa = assistBlend?.ratePer90 ?? formulaXa * transferRatePenalty;
+  const positionXgPrior = positionEventPriorPer90(position, "goals");
+  const positionXaPrior = positionEventPriorPer90(position, "assists");
+  const xg = rosterStarterApplies
+    ? blendStarterRoleRate(preRoleXg, positionXgPrior, roleReliability)
+    : preRoleXg;
+  const xa = rosterStarterApplies
+    ? blendStarterRoleRate(preRoleXa, positionXaPrior, roleReliability)
+    : preRoleXa;
   const recoveries = nonNegativeFormulaValue(config.history.recoveryRate, metrics, "history.recoveryRate") * transferRatePenalty;
   const saves = nonNegativeFormulaValue(config.history.saveRate, metrics, "history.saveRate") * transferRatePenalty;
   const yellowCards = nonNegativeFormulaValue(config.history.yellowRate, metrics, "history.yellowRate") * transferRatePenalty;
   const redCards = nonNegativeFormulaValue(config.history.redRate, metrics, "history.redRate") * transferRatePenalty;
   Object.assign(metrics, {
+    pre_role_xg_per_90: preRoleXg,
+    pre_role_xa_per_90: preRoleXa,
+    starter_role_position_xg_prior_per_90: positionXgPrior,
+    starter_role_position_xa_prior_per_90: positionXaPrior,
     blended_xg_per_90: xg,
     blended_xa_per_90: xa,
     blended_recoveries_per_90: recoveries,
@@ -1937,6 +1977,11 @@ function pipelineParticipant(
       ratesPer90: { xg, xa, recoveries, saves, yellowCards, redCards }
     }
   };
+}
+
+function blendStarterRoleRate(observedRate: number, positionPrior: number, roleReliability: number) {
+  const reliability = clamp(roleReliability, 0, 1);
+  return positionPrior + (Math.max(0, observedRate) - positionPrior) * reliability;
 }
 
 function blendedTransferRatePenalty(provenance: SharedMachetePlayerRow["minuteHistoryProvenance"]) {

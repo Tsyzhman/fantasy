@@ -621,11 +621,21 @@ function appendProjectionInputLines(lines: string[], inputs: MachetePlayerRow["p
     inputs.expectedMinutes != null &&
     inputs.eventExposureMinutes < inputs.expectedMinutes - 0.01
   ) {
+    const finalReliability = inputs.per90UpliftReliability ?? 0;
+    const sampleReliability = inputs.per90SampleReliability ?? finalReliability;
+    const roleReliability = inputs.starterRoleReliability ?? finalReliability;
     lines.push(localizedText(
       language,
-      `Per-90 event exposure is limited to ${formatNumber(inputs.eventExposureMinutes, 1)} minutes from a ${formatNumber(inputs.per90SampleMinutes ?? 0, 0)}-minute history sample (${formatNumber((inputs.per90UpliftReliability ?? 0) * 100, 1)}% reliability for the manual starter uplift). Appearance thresholds still use ${formatNumber(inputs.expectedMinutes, 1)} expected minutes.`,
-      `Экспозиция событий per 90 ограничена ${formatNumber(inputs.eventExposureMinutes, 1)} минуты по выборке из ${formatNumber(inputs.per90SampleMinutes ?? 0, 0)} минут (${formatNumber((inputs.per90UpliftReliability ?? 0) * 100, 1)}% надёжности ручной прибавки старта). Пороги выхода на поле по-прежнему используют ${formatNumber(inputs.expectedMinutes, 1)} ожидаемых минут.`
+      `Per-90 event exposure is limited to ${formatNumber(inputs.eventExposureMinutes, 1)} minutes: sample reliability ${formatNumber(sampleReliability * 100, 1)}%, historical-role reliability ${formatNumber(roleReliability * 100, 1)}%, final starter-uplift reliability ${formatNumber(finalReliability * 100, 1)}%. Appearance thresholds still use ${formatNumber(inputs.expectedMinutes, 1)} expected minutes.`,
+      `Экспозиция событий per 90 ограничена ${formatNumber(inputs.eventExposureMinutes, 1)} минуты: надёжность выборки ${formatNumber(sampleReliability * 100, 1)}%, надёжность исторической роли ${formatNumber(roleReliability * 100, 1)}%, итоговая надёжность прибавки старта ${formatNumber(finalReliability * 100, 1)}%. Пороги выхода на поле по-прежнему используют ${formatNumber(inputs.expectedMinutes, 1)} ожидаемых минут.`
     ));
+    if (inputs.preRoleXgRatePer90 != null && inputs.roleAdjustedXgRatePer90 != null) {
+      lines.push(localizedText(
+        language,
+        `Starter-role xG/90 blend: ${formatNumber(inputs.preRoleXgRatePer90, 3)} → ${formatNumber(inputs.roleAdjustedXgRatePer90, 3)}; xA/90: ${formatNumber(inputs.preRoleXaRatePer90 ?? 0, 3)} → ${formatNumber(inputs.roleAdjustedXaRatePer90 ?? 0, 3)}.`,
+        `Смешивание темпа для роли стартера: xG/90 ${formatNumber(inputs.preRoleXgRatePer90, 3)} → ${formatNumber(inputs.roleAdjustedXgRatePer90, 3)}; xA/90 ${formatNumber(inputs.preRoleXaRatePer90 ?? 0, 3)} → ${formatNumber(inputs.roleAdjustedXaRatePer90 ?? 0, 3)}.`
+      ));
+    }
   }
   values.forEach(([label, amount, operation]) => {
     if (amount != null) lines.push(`- ${label}: ${formatNumber(amount, 3)} (${operation})`);

@@ -360,6 +360,10 @@ test("player table exposes per-field advanced filters and detailed forecast cell
   assert.match(squadPlannerSource, /-poisson_groups\(\$\{expectedGoalsConceded\}, 2\)/);
   assert.match(squadPlannerSource, /legacy calibrated forecast does not expose a component-level arithmetic breakdown/);
   assert.match(squadPlannerSource, /Nearest-fixture starter floor: max\(base/);
+  assert.match(squadPlannerSource, /final reliability min\(sample/);
+  assert.match(squadPlannerSource, /Starter-role rate blend/);
+  assert.match(squadPlannerBackendSource, /starter_role_reliability/);
+  assert.match(squadPlannerBackendSource, /blendStarterRoleRate/);
   assert.match(squadPlannerSource, /Минимум основы только на ближайший матч: max\(базовые/);
   assert.match(squadPlannerSource, /It is not applied to later fixtures/);
   assert.doesNotMatch(squadPlannerSource, /club starting-XI uplift/);

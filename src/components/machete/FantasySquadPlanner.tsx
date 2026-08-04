@@ -4678,6 +4678,13 @@ function starterMinuteFloorLines(
   ) return [];
   const adjustment = inputs.rosterStarterMinutesUplift ?? inputs.expectedMinutes - inputs.baseExpectedMinutes;
   const minuteFloor = inputs.rosterStarterMinuteFloor ?? 60;
+  const finalReliability = inputs.per90UpliftReliability ?? 0;
+  const sampleReliability = inputs.per90SampleReliability ?? finalReliability;
+  const roleReliability = inputs.starterRoleReliability ?? finalReliability;
+  const historicalStartProbability = inputs.historicalStartProbability ?? 0;
+  const baseMinuteReliability = inputs.starterBaseMinuteReliability ?? (
+    minuteFloor > 0 ? Math.min(1, Math.max(0, inputs.baseExpectedMinutes / minuteFloor)) : 1
+  );
   const lines = [localizedText(
     language,
     `Nearest-fixture starter floor: max(base ${formatNumber(inputs.baseExpectedMinutes, 1)}, ${formatNumber(minuteFloor, 0)}) = ${formatNumber(inputs.expectedMinutes, 1)} expected minutes; adjustment ${adjustment >= 0 ? "+" : ""}${formatNumber(adjustment, 1)}. Goalkeepers marked as starters use 90 minutes; outfield starters use at least 60. It is not applied to later fixtures.`,
@@ -4690,9 +4697,19 @@ function starterMinuteFloorLines(
   ) {
     lines.push(localizedText(
       language,
-      `Cautious per-90 exposure: base ${formatNumber(inputs.baseExpectedMinutes, 1)} + starter uplift ${formatNumber(adjustment, 1)} × sample reliability ${formatNumber((inputs.per90UpliftReliability ?? 0) * 100, 1)}% = ${formatNumber(inputs.eventExposureMinutes, 1)} event minutes. Appearance and 60-minute points still use ${formatNumber(inputs.expectedMinutes, 1)} minutes; xG/xA, recoveries, saves and cards use the cautious exposure because the history contains only ${formatNumber(inputs.per90SampleMinutes ?? 0, 0)} minutes.`,
-      `Осторожная экспозиция per 90: базовые ${formatNumber(inputs.baseExpectedMinutes, 1)} + прибавка старта ${formatNumber(adjustment, 1)} × надёжность выборки ${formatNumber((inputs.per90UpliftReliability ?? 0) * 100, 1)}% = ${formatNumber(inputs.eventExposureMinutes, 1)} минуты событий. Очки за выход и 60 минут по-прежнему используют ${formatNumber(inputs.expectedMinutes, 1)} минуты; xG/xA, возвраты, сейвы и карточки используют осторожную экспозицию, потому что в истории только ${formatNumber(inputs.per90SampleMinutes ?? 0, 0)} минут.`
+      `Cautious per-90 exposure: base ${formatNumber(inputs.baseExpectedMinutes, 1)} + starter uplift ${formatNumber(adjustment, 1)} × final reliability min(sample ${formatNumber(sampleReliability * 100, 1)}% from ${formatNumber(inputs.per90SampleMinutes ?? 0, 0)} historical minutes; role ${formatNumber(roleReliability * 100, 1)}% from max(historical starts ${formatNumber(historicalStartProbability * 100, 1)}%, base/floor ${formatNumber(baseMinuteReliability * 100, 1)}%)) = ${formatNumber(finalReliability * 100, 1)}% = ${formatNumber(inputs.eventExposureMinutes, 1)} event minutes. Appearance and 60-minute points still use ${formatNumber(inputs.expectedMinutes, 1)} minutes; xG/xA, recoveries, saves and cards use the cautious exposure.`,
+      `Осторожная экспозиция per 90: базовые ${formatNumber(inputs.baseExpectedMinutes, 1)} + прибавка старта ${formatNumber(adjustment, 1)} × итоговая надёжность min(выборка ${formatNumber(sampleReliability * 100, 1)}% по ${formatNumber(inputs.per90SampleMinutes ?? 0, 0)} минутам истории; роль ${formatNumber(roleReliability * 100, 1)}% из max(исторические старты ${formatNumber(historicalStartProbability * 100, 1)}%, базовые минуты/минимум ${formatNumber(baseMinuteReliability * 100, 1)}%)) = ${formatNumber(finalReliability * 100, 1)}% = ${formatNumber(inputs.eventExposureMinutes, 1)} минуты событий. Очки за выход и 60 минут по-прежнему используют ${formatNumber(inputs.expectedMinutes, 1)} минуты; xG/xA, возвраты, сейвы и карточки используют осторожную экспозицию.`
     ));
+    if (
+      inputs.preRoleXgRatePer90 != null && inputs.roleAdjustedXgRatePer90 != null && inputs.positionXgPriorPer90 != null &&
+      inputs.preRoleXaRatePer90 != null && inputs.roleAdjustedXaRatePer90 != null && inputs.positionXaPriorPer90 != null
+    ) {
+      lines.push(localizedText(
+        language,
+        `Starter-role rate blend (${formatNumber(roleReliability * 100, 1)}% historical-role reliability): xG/90 ${formatNumber(inputs.preRoleXgRatePer90, 3)} → ${formatNumber(inputs.roleAdjustedXgRatePer90, 3)} toward the ${formatNumber(inputs.positionXgPriorPer90, 3)} position prior; xA/90 ${formatNumber(inputs.preRoleXaRatePer90, 3)} → ${formatNumber(inputs.roleAdjustedXaRatePer90, 3)} toward ${formatNumber(inputs.positionXaPriorPer90, 3)}. This prevents substitute per-90 production from being copied unchanged into a new starter role.`,
+        `Смешивание темпа при смене роли (${formatNumber(roleReliability * 100, 1)}% надёжности исторической роли): xG/90 ${formatNumber(inputs.preRoleXgRatePer90, 3)} → ${formatNumber(inputs.roleAdjustedXgRatePer90, 3)} к позиционному prior ${formatNumber(inputs.positionXgPriorPer90, 3)}; xA/90 ${formatNumber(inputs.preRoleXaRatePer90, 3)} → ${formatNumber(inputs.roleAdjustedXaRatePer90, 3)} к ${formatNumber(inputs.positionXaPriorPer90, 3)}. Так темп запасного per 90 не переносится без изменений в новую роль стартера.`
+      ));
+    }
   }
   return lines;
 }

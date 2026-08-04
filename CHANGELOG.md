@@ -5,6 +5,21 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.11 - 2026-08-04
+
+### Fixed
+
+- Manual starting-XI marks now use the same role-aware per-90 protection in
+  every league and in both FO and Alt. Accumulated substitute minutes no longer
+  count as proof that a player's starter event rate is fully reliable.
+- Goal and assist rates are blended toward a position prior when a player is
+  manually promoted from a historically limited role. Stable starters remain
+  unchanged, while low-minute outliers no longer take an implausible share of
+  the team's projected goals.
+- Detailed forecast tooltips expose sample reliability, historical-role
+  reliability, the final event-minute exposure, and the before/after xG/xA
+  rates used by the role adjustment.
+
 ## 0.3.10 - 2026-08-03
 
 ### Fixed
