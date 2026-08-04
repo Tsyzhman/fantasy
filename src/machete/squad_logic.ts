@@ -31,7 +31,17 @@ export type FantasyProjectionFixtureInputs = {
   rosterStarterMinutesUplift?: number | null;
   eventExposureMinutes?: number | null;
   per90SampleMinutes?: number | null;
+  per90SampleReliability?: number | null;
+  starterRoleReliability?: number | null;
+  starterBaseMinuteReliability?: number | null;
+  historicalStartProbability?: number | null;
   per90UpliftReliability?: number | null;
+  preRoleXgRatePer90?: number | null;
+  preRoleXaRatePer90?: number | null;
+  positionXgPriorPer90?: number | null;
+  positionXaPriorPer90?: number | null;
+  roleAdjustedXgRatePer90?: number | null;
+  roleAdjustedXaRatePer90?: number | null;
   transferRatePenalty?: number | null;
   minuteHistorySource?: "NONE" | "CURRENT_CLUB" | "PREVIOUS_CLUB_FALLBACK" | "MIXED" | null;
   currentClubHistoryMatches?: number | null;

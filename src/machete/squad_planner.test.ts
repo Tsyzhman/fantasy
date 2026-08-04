@@ -60,6 +60,7 @@ import { friendAlternativeFormulaDefaults } from "@/lib/scoring/formula-display"
 import { calculateFriendWindowMetrics, type SharedMachetePlayerRow } from "./shared_read_model";
 import { defaultFantasySquadRules } from "./squad_logic";
 import { expectedProjectionFormulaConfig, friendAltProjectionFormulaConfig } from "./projection-formula-config";
+import { positionEventPriorPer90 } from "./player-season-prior";
 
 test("component xFP is the default primary engine and legacy remains a one-flag rollback", () => {
   assert.equal(configuredFantasyProjectionEngine(undefined), "COMPONENT_XFP_V1");
@@ -469,7 +470,7 @@ test("Alt limits only the nearest fixture to the marked XI and uses every player
   }
 });
 
-test("Alt keeps a promoted club marked XI calculable when every personal xG/xA weight is zero", () => {
+test("Alt keeps a promoted club marked XI calculable with role priors when personal xG/xA is zero", () => {
   const positions = ["GK", ...Array(4).fill("DEF"), ...Array(4).fill("MID"), ...Array(2).fill("FWD")];
   const rows = positions.map((position, index) => ({
     playerId: `promoted-starter-${index}`,
@@ -505,10 +506,10 @@ test("Alt keeps a promoted club marked XI calculable when every personal xG/xA w
   assert.equal(index.byFixturePlayer.size, 11);
   assert.equal(index.byFixturePlayer.get("promoted-nearest:promoted-starter-0")?.expectedMinutes, 90);
   assert.equal(index.byFixturePlayer.get("promoted-nearest:promoted-starter-1")?.expectedMinutes, 60);
-  assert.equal(
-    index.formulaMetricsByFixturePlayer.get("promoted-nearest:promoted-starter-1")?.goal_allocation_sparse_history_fallback,
-    1
-  );
+  const promotedDefenderMetrics = index.formulaMetricsByFixturePlayer.get("promoted-nearest:promoted-starter-1");
+  assert.equal(promotedDefenderMetrics?.pre_role_xg_per_90, 0);
+  assert.ok(Number(promotedDefenderMetrics?.blended_xg_per_90) > 0);
+  assert.equal(promotedDefenderMetrics?.starter_role_reliability, 0.25);
   const allocatedGoals = [...index.byFixturePlayer.values()]
     .reduce((total, player) => total + player.expectedEvents.goals, 0);
   const allocatedAssists = [...index.byFixturePlayer.values()]
@@ -592,12 +593,12 @@ test("a short history sample applies the starter uplift cautiously to per-90 eve
       cleanSheetProbability: "0"
     }
   };
-  const row = (playerId: string, historyMinutes: number) => ({
+  const row = (playerId: string, historyMinutes: number, startProbability = 0) => ({
     playerId,
     teamId: "team-1",
     position: "FWD",
     isStarter: true,
-    startProbability: 0,
+    startProbability,
     expectedMinutes: 28,
     minutesPlayed: historyMinutes,
     rawMetrics: { minutes_365: historyMinutes }
@@ -627,25 +628,104 @@ test("a short history sample applies the starter uplift cautiously to per-90 eve
     );
     const expectedReliability = 140 / 450;
     const expectedEventMinutes = 28 + (60 - 28) * expectedReliability;
+    const expectedRoleReliability = 28 / 60;
+    const positionGoalPrior = positionEventPriorPer90("FWD", "goals");
+    const expectedRoleAdjustedXg = positionGoalPrior + (1 - positionGoalPrior) * expectedRoleReliability;
     const nearestMetrics = shortSample.formulaMetricsByFixturePlayer.get("fixture-nearest:short");
 
     assert.equal(shortSample.byFixturePlayer.get("fixture-nearest:short")?.expectedMinutes, 60);
     assert.ok(Math.abs(Number(nearestMetrics?.per90_uplift_reliability) - expectedReliability) < 1e-12);
     assert.ok(Math.abs(Number(nearestMetrics?.event_exposure_minutes) - expectedEventMinutes) < 1e-12);
-    assert.ok(Math.abs((shortSample.byFixturePlayer.get("fixture-nearest:short")?.allocationWeights.goals ?? 0) - expectedEventMinutes / 90) < 1e-12);
+    assert.ok(Math.abs(Number(nearestMetrics?.starter_role_reliability) - expectedRoleReliability) < 1e-12);
+    assert.ok(Math.abs(Number(nearestMetrics?.blended_xg_per_90) - expectedRoleAdjustedXg) < 1e-12);
+    assert.ok(Math.abs((shortSample.byFixturePlayer.get("fixture-nearest:short")?.allocationWeights.goals ?? 0) - expectedRoleAdjustedXg * expectedEventMinutes / 90) < 1e-12);
     assert.ok(Math.abs((shortSample.byFixturePlayer.get("fixture-nearest:short")?.expectedEvents.yellowCards ?? 0) - expectedEventMinutes / 90) < 1e-12);
     assert.equal(shortSample.formulaMetricsByFixturePlayer.get("fixture-later:short")?.event_exposure_minutes, 28);
     assert.ok(Math.abs((shortSample.byFixturePlayer.get("fixture-later:short")?.allocationWeights.goals ?? 0) - 28 / 90) < 1e-12);
   }
 
   const stableSample = buildFormulaProjectionIndex(
-    [row("stable", 450)],
+    [row("stable", 450, 1)],
     fixtures,
     new Map([["stable", "FWD"]]),
     config
   );
   assert.equal(stableSample.formulaMetricsByFixturePlayer.get("fixture-nearest:stable")?.event_exposure_minutes, 60);
   assert.ok(Math.abs((stableSample.byFixturePlayer.get("fixture-nearest:stable")?.allocationWeights.goals ?? 0) - 2 / 3) < 1e-12);
+});
+
+test("a substitute-heavy history caps the manual starter uplift in every formula", () => {
+  const baseExpectedMinutes = 17.48;
+  const historicalStartProbability = 2 / 38;
+  const config = {
+    ...expectedProjectionFormulaConfig,
+    history: {
+      ...expectedProjectionFormulaConfig.history,
+      expectedMinutes: String(baseExpectedMinutes),
+      appearanceProbability: "1",
+      sixtyProbability: "gte({Expected minutes}, 60)",
+      fullMatchProbability: "0",
+      xgRate: "1",
+      xaRate: "1",
+      recoveryRate: "1",
+      saveRate: "1",
+      yellowRate: "1",
+      redRate: "0"
+    },
+    team: {
+      expectedGoals: "1",
+      expectedGoalsAgainst: "0",
+      assistsPerGoal: "0",
+      cleanSheetProbability: "0"
+    }
+  };
+  const row = {
+    playerId: "substitute-heavy",
+    teamId: "team-1",
+    position: "FWD",
+    isStarter: true,
+    startProbability: historicalStartProbability,
+    expectedMinutes: baseExpectedMinutes,
+    minutesPlayed: 573,
+    rawMetrics: { minutes_365: 573 }
+  } as never;
+  const fixture = {
+    id: "fixture-1", roundId: "round-1", teamId: "team-1", opponentTeamId: "team-2",
+    opponentName: "OPP", opponentFullName: "Opponent", side: "H" as const,
+    kickoffAt: new Date("2026-07-25T12:00:00Z"), projectedXg: 1, projectedXga: 0,
+    attackMultiplier: 1, defenseMultiplier: 1
+  };
+  const fixtures = {
+    rounds: [],
+    fixturesByTeamRound: new Map([["round-1", new Map([["team-1", [fixture]]])]]),
+    teamShortNameById: new Map()
+  };
+  const expectedRoleReliability = baseExpectedMinutes / 60;
+  const expectedEventMinutes = baseExpectedMinutes + (60 - baseExpectedMinutes) * expectedRoleReliability;
+  const positionGoalPrior = positionEventPriorPer90("FWD", "goals");
+  const expectedRoleAdjustedXg = positionGoalPrior + (1 - positionGoalPrior) * expectedRoleReliability;
+
+  for (const formulaConfig of [config, { ...config, ...friendAltProjectionFormulaConfig, history: config.history, team: config.team }]) {
+    const index = buildFormulaProjectionIndex(
+      [row],
+      fixtures,
+      new Map([["substitute-heavy", "FWD"]]),
+      formulaConfig
+    );
+    const metrics = index.formulaMetricsByFixturePlayer.get("fixture-1:substitute-heavy");
+
+    assert.equal(index.byFixturePlayer.get("fixture-1:substitute-heavy")?.expectedMinutes, 60);
+    assert.equal(metrics?.per90_sample_reliability, 1);
+    assert.equal(metrics?.historical_start_probability, historicalStartProbability);
+    assert.ok(Math.abs(Number(metrics?.starter_base_minute_reliability) - expectedRoleReliability) < 1e-12);
+    assert.ok(Math.abs(Number(metrics?.starter_role_reliability) - expectedRoleReliability) < 1e-12);
+    assert.ok(Math.abs(Number(metrics?.per90_uplift_reliability) - expectedRoleReliability) < 1e-12);
+    assert.ok(Math.abs(Number(metrics?.event_exposure_minutes) - expectedEventMinutes) < 1e-12);
+    assert.equal(metrics?.pre_role_xg_per_90, 1);
+    assert.equal(metrics?.starter_role_position_xg_prior_per_90, positionGoalPrior);
+    assert.ok(Math.abs(Number(metrics?.blended_xg_per_90) - expectedRoleAdjustedXg) < 1e-12);
+    assert.ok(Math.abs((index.byFixturePlayer.get("fixture-1:substitute-heavy")?.expectedEvents.yellowCards ?? 0) - expectedEventMinutes / 90) < 1e-12);
+  }
 });
 
 test("previous-club fallback applies a real penalty to per-90 forecast rates", () => {
