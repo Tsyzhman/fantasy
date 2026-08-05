@@ -43,6 +43,15 @@ export type FantasyProjectionFixtureInputs = {
   roleAdjustedXgRatePer90?: number | null;
   roleAdjustedXaRatePer90?: number | null;
   transferRatePenalty?: number | null;
+  sparseTeamAttackAllocationGuard?: boolean | null;
+  teamAttackAllocationCandidates?: number | null;
+  teamAttackMeaningfulPlayers?: number | null;
+  teamAttackEventExposureMinutes?: number | null;
+  teamAttackMinuteCoverage?: number | null;
+  teamAttackGoalReferenceWeight?: number | null;
+  teamAttackAssistReferenceWeight?: number | null;
+  teamAttackGoalReserveWeight?: number | null;
+  teamAttackAssistReserveWeight?: number | null;
   minuteHistorySource?: "NONE" | "CURRENT_CLUB" | "PREVIOUS_CLUB_FALLBACK" | "MIXED" | null;
   currentClubHistoryMatches?: number | null;
   previousClubHistoryMatches?: number | null;

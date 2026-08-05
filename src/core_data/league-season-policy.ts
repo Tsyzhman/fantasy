@@ -10,7 +10,10 @@ export const QUICK_BACKFILL_LEAGUE_ID = 47;
 const initialBackfillSeasonWindows = new Map<number, number>([
   // Retain two completed Eerste Divisie seasons while the new Eredivisie
   // campaign has not produced player history yet.
-  [111, 3]
+  [111, 3],
+  // Liga Portugal fantasy needs the same promoted-club bridge. Maritimo's
+  // top-flight roster otherwise has no domestic player history before round 1.
+  [185, 3]
 ]);
 
 export type LeagueIngestionConfig = Readonly<{
@@ -95,9 +98,8 @@ const disabledLeagueIngestionIds = new Set([
   "kings-cup",
   "saudi-super-cup",
 
-  // Lower divisions outside the top-five European second tiers, plus Ukraine.
+  // Lower divisions outside supported fantasy feeder paths, plus Ukraine.
   "england-league-two",
-  "liga-portugal-2",
   "turkish-1-lig",
   "belgian-first-division-b",
   "scottish-championship",

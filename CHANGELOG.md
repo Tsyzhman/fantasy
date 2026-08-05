@@ -5,6 +5,25 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.12 - 2026-08-05
+
+### Fixed
+
+- A sparse club history can no longer allocate the complete team xG/xA to the
+  only player with a non-zero event sample. The shared FO/Alt pipeline now
+  reserves the missing allocation share for unmodelled teammates whenever a
+  real roster has fewer than seven meaningful player exposures or fewer than
+  360 aggregate event minutes. Complete team histories remain unchanged.
+- Gabor Szalai's live Maritimo calculation now keeps his evidenced 38.9-minute
+  share instead of inheriting the attack of 35 teammates without domestic
+  history. The detailed tooltip exposes the player count, minute coverage, and
+  reserved goal/assist weights used by this guard.
+- Feeder-to-top-flight history adaptation is now shared by the supported
+  national leagues instead of being hard-coded only for RPL and Eredivisie.
+  Liga Portugal 2 is enabled with two completed seasons plus the upcoming
+  season, allowing Maritimo's prior domestic minutes and event history to fill
+  the current Liga Portugal roster after backfill.
+
 ## 0.3.11 - 2026-08-04
 
 ### Fixed

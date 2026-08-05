@@ -142,13 +142,24 @@ test("Eerste Divisie backfill keeps two complete feeder seasons plus the upcomin
   );
 });
 
+test("Liga Portugal 2 backfill keeps two complete feeder seasons plus the upcoming season", () => {
+  const ligaPortugal2 = leagueIngestionConfig.find((league) => league.league_id === 185);
+  assert.ok(ligaPortugal2);
+  assert.equal(ligaPortugal2.enabled, true);
+  assert.equal(ligaPortugal2.require_detailed_payloads, true);
+  assert.deepEqual(
+    seasonsForInitialBackfill(ligaPortugal2, new Date("2026-08-01T00:00:00.000Z")),
+    ["2024/2025", "2025/2026", "2026/2027"]
+  );
+});
+
 test("production ingestion excludes non-target leagues", () => {
   const enabledIds = new Set(enabledLeagueIngestionConfigs().map((league) => league.league_id));
 
   assert.equal(leagueIngestionConfig.length, 82);
-  assert.equal(enabledIds.size, 44);
+  assert.equal(enabledIds.size, 45);
 
-  for (const leagueId of [44, 47, 48, 50, 77, 86, 108, 110, 111, 140, 146, 338]) {
+  for (const leagueId of [44, 47, 48, 50, 77, 86, 108, 110, 111, 140, 146, 185, 338]) {
     assert.equal(enabledIds.has(leagueId), true);
   }
 
