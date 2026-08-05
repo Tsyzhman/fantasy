@@ -637,6 +637,13 @@ function appendProjectionInputLines(lines: string[], inputs: MachetePlayerRow["p
       ));
     }
   }
+  if (inputs.sparseTeamAttackAllocationGuard) {
+    lines.push(localizedText(
+      language,
+      `Sparse team-history guard: ${formatNumber(inputs.teamAttackMeaningfulPlayers ?? 0, 0)} of ${formatNumber(inputs.teamAttackAllocationCandidates ?? 0, 0)} candidates have at least 15 event minutes; known exposure ${formatNumber(inputs.teamAttackEventExposureMinutes ?? 0, 1)}/990 minutes (${formatNumber((inputs.teamAttackMinuteCoverage ?? 0) * 100, 1)}%). Unmodelled teammates reserve goal weight ${formatNumber(inputs.teamAttackGoalReserveWeight ?? 0, 3)} and assist weight ${formatNumber(inputs.teamAttackAssistReserveWeight ?? 0, 3)}.`,
+      `Защита от неполной истории команды: ${formatNumber(inputs.teamAttackMeaningfulPlayers ?? 0, 0)} из ${formatNumber(inputs.teamAttackAllocationCandidates ?? 0, 0)} кандидатов имеют хотя бы 15 минут экспозиции; известная экспозиция ${formatNumber(inputs.teamAttackEventExposureMinutes ?? 0, 1)}/990 минут (${formatNumber((inputs.teamAttackMinuteCoverage ?? 0) * 100, 1)}%). Неописанные игроки резервируют вес голов ${formatNumber(inputs.teamAttackGoalReserveWeight ?? 0, 3)} и ассистов ${formatNumber(inputs.teamAttackAssistReserveWeight ?? 0, 3)}.`
+    ));
+  }
   values.forEach(([label, amount, operation]) => {
     if (amount != null) lines.push(`- ${label}: ${formatNumber(amount, 3)} (${operation})`);
   });

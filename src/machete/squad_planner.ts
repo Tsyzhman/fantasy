@@ -52,7 +52,7 @@ import { FANTASY_MODEL_VERSION } from "./foontasy_style_model";
 import {
   archivedExpectedMinutes,
   blendArchivedEventRate,
-  FNL_TO_RPL_EVENT_FACTOR,
+  FEEDER_TO_TOP_EVENT_FACTOR,
   positionEventPriorPer90
 } from "./player-season-prior";
 import { loadPlannerReadinessByScope, plannerReadinessKey, type PlannerReadiness } from "./planner_readiness";
@@ -191,6 +191,15 @@ function buildFixtureComponentInputs(
     roleAdjustedXgRatePer90: numericProjectionMetric(formulaMetrics?.blended_xg_per_90),
     roleAdjustedXaRatePer90: numericProjectionMetric(formulaMetrics?.blended_xa_per_90),
     transferRatePenalty: numericProjectionMetric(formulaMetrics?.transfer_rate_penalty),
+    sparseTeamAttackAllocationGuard: numericProjectionMetric(formulaMetrics?.sparse_team_attack_allocation_guard) === 1,
+    teamAttackAllocationCandidates: numericProjectionMetric(formulaMetrics?.team_attack_allocation_candidates),
+    teamAttackMeaningfulPlayers: numericProjectionMetric(formulaMetrics?.team_attack_meaningful_players),
+    teamAttackEventExposureMinutes: numericProjectionMetric(formulaMetrics?.team_attack_event_exposure_minutes),
+    teamAttackMinuteCoverage: numericProjectionMetric(formulaMetrics?.team_attack_minute_coverage),
+    teamAttackGoalReferenceWeight: numericProjectionMetric(formulaMetrics?.team_attack_goal_reference_weight),
+    teamAttackAssistReferenceWeight: numericProjectionMetric(formulaMetrics?.team_attack_assist_reference_weight),
+    teamAttackGoalReserveWeight: numericProjectionMetric(formulaMetrics?.team_attack_goal_reserve_weight),
+    teamAttackAssistReserveWeight: numericProjectionMetric(formulaMetrics?.team_attack_assist_reserve_weight),
     minuteHistorySource: minuteHistorySourceMetric(formulaMetrics?.minute_history_source),
     currentClubHistoryMatches: numericProjectionMetric(formulaMetrics?.current_club_history_matches),
     previousClubHistoryMatches: numericProjectionMetric(formulaMetrics?.previous_club_history_matches),
@@ -378,8 +387,20 @@ const promotedTeamPriorMatches = 8;
 const promotedTeamStrengthFactor = 0.81;
 const promotedTeamRatioExponent = 0.6;
 const teamStrengthFeederLeagueByTopLeague = new Map<string, bigint>([
+  ["38", 119n],
+  ["40", 264n],
+  ["47", 48n],
+  ["48", 108n],
+  ["53", 110n],
+  ["54", 146n],
+  ["55", 86n],
   ["57", 111n],
-  ["63", 338n]
+  ["61", 185n],
+  ["63", 338n],
+  ["64", 123n],
+  ["69", 163n],
+  ["71", 165n],
+  ["87", 140n]
 ]);
 const fixtureOddsMaximumAgeMs = 35 * 24 * 60 * 60_000;
 const fantasyPlayerPoolCacheTtlMs = 5 * 60_000;
@@ -1603,7 +1624,7 @@ async function addArchivedPlayerSeasonMetrics(
     if (!archive || !archive.appearances || archive.appearances <= 0) return row;
     const current = currentByPlayer.get(identity.playerId);
     const feederLeagueId = teamStrengthFeederLeagueByTopLeague.get(String(league.leagueId));
-    const tierFactor = feederLeagueId === archive.leagueId ? FNL_TO_RPL_EVENT_FACTOR : 1;
+    const tierFactor = feederLeagueId === archive.leagueId ? FEEDER_TO_TOP_EVENT_FACTOR : 1;
     return {
       ...row,
       rawMetrics: {
@@ -1723,6 +1744,18 @@ type PipelineParticipant = {
 
 const starterPer90FullReliabilityMinutes = 450;
 const starterPer90MinimumReliability = 0.25;
+const completeTeamPlayerMinutes = 11 * 90;
+const minimumSparseGuardRosterSize = 11;
+const minimumMeaningfulAllocationPlayers = 7;
+const meaningfulAllocationMinutes = 15;
+const minimumTeamAllocationEventMinutes = 360;
+const teamAttackAllocationReservePlayerId = "__team_attack_allocation_reserve__";
+const standardAttackAllocationPositions = [
+  "GK",
+  "DEF", "DEF", "DEF", "DEF",
+  "MID", "MID", "MID", "MID",
+  "FWD", "FWD"
+] as const;
 
 export function buildFormulaProjectionIndex(
   rows: Array<SharedMachetePlayerRow & { teamId: string; playerId: string }>,
@@ -1767,17 +1800,20 @@ export function buildFormulaProjectionIndex(
         historyCandidates.map((entry) => pipelineAllocationParticipant(entry, teamContext, config)),
         teamContext
       );
-      const participants = candidates.map((entry) => entry.input);
+      const guardedAllocation = applySparseTeamAttackAllocationGuard(candidates, teamContext);
+      const participants = guardedAllocation.participants;
       const team = pipelineTeamTotals(fixture, participants, teamContext);
       const projection = projectTeamPlayers(team, participants);
 
       for (const player of projection.players) {
+        if (player.playerId === teamAttackAllocationReservePlayerId) continue;
         const key = fixturePlayerProjectionKey(fixture.id, player.playerId);
         const candidate = candidates.find((entry) => entry.input.playerId === player.playerId);
         byFixturePlayer.set(key, player);
         formulaMetricsByFixturePlayer.set(key, {
           ...(candidate?.metrics ?? {}),
           ...teamContext,
+          ...guardedAllocation.metrics,
           goal_allocation_weight: player.allocationWeights.goals,
           assist_allocation_weight: player.allocationWeights.assists,
           recovery_allocation_weight: player.allocationWeights.recoveries,
@@ -2069,6 +2105,75 @@ function applySparseHistoryAllocationFallbacks(
     result = applyPositionAllocationFallback(result, "assists");
   }
   return result;
+}
+
+function applySparseTeamAttackAllocationGuard(
+  candidates: PipelineParticipant[],
+  teamContext: Record<string, unknown>
+) {
+  const eventExposureMinutes = candidates.map((candidate) => Math.min(
+    candidate.input.expectedMinutes ?? 0,
+    numericOrNull(candidate.metrics.event_exposure_minutes) ?? candidate.input.expectedMinutes ?? 0
+  ));
+  const totalEventExposureMinutes = eventExposureMinutes.reduce((total, minutes) => total + minutes, 0);
+  const meaningfulPlayers = eventExposureMinutes.filter((minutes) => minutes >= meaningfulAllocationMinutes).length;
+  const expectedGoals = numericOrNull(teamContext.expected_goals) ?? 0;
+  const expectedAssists = expectedGoals * (numericOrNull(teamContext.assists_per_goal) ?? 0);
+  const sparseGuardApplies = candidates.length >= minimumSparseGuardRosterSize &&
+    (expectedGoals > 0 || expectedAssists > 0) &&
+    (meaningfulPlayers < minimumMeaningfulAllocationPlayers || totalEventExposureMinutes < minimumTeamAllocationEventMinutes);
+  const referenceGoalWeight = standardAttackAllocationPositions.reduce(
+    (total, position) => total + positionEventPriorPer90(position, "goals"),
+    0
+  );
+  const referenceAssistWeight = standardAttackAllocationPositions.reduce(
+    (total, position) => total + positionEventPriorPer90(position, "assists"),
+    0
+  );
+  const positionGoalCoverage = candidates.reduce((total, candidate, index) =>
+    total + positionEventPriorPer90(candidate.input.position, "goals") * eventExposureMinutes[index] / 90,
+  0);
+  const positionAssistCoverage = candidates.reduce((total, candidate, index) =>
+    total + positionEventPriorPer90(candidate.input.position, "assists") * eventExposureMinutes[index] / 90,
+  0);
+  const minuteCoverage = clamp(totalEventExposureMinutes / completeTeamPlayerMinutes, 0, 1);
+  const goalReserveWeight = sparseGuardApplies
+    ? Math.max(0, referenceGoalWeight - positionGoalCoverage, referenceGoalWeight * (1 - minuteCoverage))
+    : 0;
+  const assistReserveWeight = sparseGuardApplies
+    ? Math.max(0, referenceAssistWeight - positionAssistCoverage, referenceAssistWeight * (1 - minuteCoverage))
+    : 0;
+  const metrics: Record<string, unknown> = {
+    sparse_team_attack_allocation_guard: sparseGuardApplies ? 1 : 0,
+    team_attack_allocation_candidates: candidates.length,
+    team_attack_meaningful_players: meaningfulPlayers,
+    team_attack_event_exposure_minutes: totalEventExposureMinutes,
+    team_attack_minute_coverage: minuteCoverage,
+    team_attack_goal_reference_weight: referenceGoalWeight,
+    team_attack_assist_reference_weight: referenceAssistWeight,
+    team_attack_goal_reserve_weight: goalReserveWeight,
+    team_attack_assist_reserve_weight: assistReserveWeight
+  };
+
+  if (goalReserveWeight <= 0 && assistReserveWeight <= 0) {
+    return { participants: candidates.map((candidate) => candidate.input), metrics };
+  }
+
+  const reserve: ProbableParticipantInput = {
+    playerId: teamAttackAllocationReservePlayerId,
+    position: "FWD",
+    expectedMinutes: 0,
+    probabilities: { appearance: 0, sixtyMinutes: 0, fullMatch: 0 },
+    ratesPer90: { xg: 0, xa: 0, recoveries: 0, saves: 0, yellowCards: 0, redCards: 0 },
+    allocationWeights: {
+      goals: goalReserveWeight,
+      assists: assistReserveWeight,
+      recoveries: 0,
+      saves: 0
+    },
+    cardExposureFactor: 0
+  };
+  return { participants: [...candidates.map((candidate) => candidate.input), reserve], metrics };
 }
 
 function allocationWeightTotal(

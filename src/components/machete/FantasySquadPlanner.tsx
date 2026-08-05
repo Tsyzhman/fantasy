@@ -4665,6 +4665,24 @@ function minuteHistoryProvenanceLines(
   return lines;
 }
 
+function sparseTeamAttackAllocationLines(
+  inputs: FantasyProjectionFixtureInputs | null | undefined,
+  language: UiLanguage
+) {
+  if (!inputs?.sparseTeamAttackAllocationGuard) return [];
+  const meaningfulPlayers = inputs.teamAttackMeaningfulPlayers ?? 0;
+  const candidates = inputs.teamAttackAllocationCandidates ?? 0;
+  const eventMinutes = inputs.teamAttackEventExposureMinutes ?? 0;
+  const coverage = (inputs.teamAttackMinuteCoverage ?? 0) * 100;
+  const goalReserve = inputs.teamAttackGoalReserveWeight ?? 0;
+  const assistReserve = inputs.teamAttackAssistReserveWeight ?? 0;
+  return [localizedText(
+    language,
+    `Sparse team-history guard: only ${formatNumber(meaningfulPlayers, 0)} of ${formatNumber(candidates, 0)} candidates have at least 15 event minutes; known roster exposure is ${formatNumber(eventMinutes, 1)} of 990 minutes (${formatNumber(coverage, 1)}%). Unmodelled teammates reserve goal-allocation weight ${formatNumber(goalReserve, 3)} and assist-allocation weight ${formatNumber(assistReserve, 3)}, so this player receives only the evidenced share of team xG/xA instead of inheriting the missing players' share.`,
+    `Защита от неполной истории команды: только ${formatNumber(meaningfulPlayers, 0)} из ${formatNumber(candidates, 0)} кандидатов имеют хотя бы 15 минут экспозиции событий; известная экспозиция состава — ${formatNumber(eventMinutes, 1)} из 990 минут (${formatNumber(coverage, 1)}%). Неописанные игроки резервируют вес распределения голов ${formatNumber(goalReserve, 3)} и ассистов ${formatNumber(assistReserve, 3)}, поэтому футболист получает только подтверждённую долю командных xG/xA, а не долю отсутствующих в истории партнёров.`
+  )];
+}
+
 function starterMinuteFloorLines(
   inputs: FantasyProjectionFixtureInputs | null | undefined,
   language: UiLanguage
@@ -4914,6 +4932,7 @@ function buildProjectionBreakdownLines(
   }
   lines.push(...starterMinuteFloorLines(fixtureInputs, language));
   lines.push(...minuteHistoryProvenanceLines(fixtureInputs, language));
+  lines.push(...sparseTeamAttackAllocationLines(fixtureInputs, language));
 
   addProjectionWeightedTermLine(
     lines,
@@ -5076,6 +5095,7 @@ function buildAlternativeProjectionBreakdownLines(
     if (expectedMinutes) lines.push(localizedText(language, `- Expected minutes: ${expectedMinutes}`, `- Ожидаемые минуты: ${expectedMinutes}`));
   }
   lines.push(...minuteHistoryProvenanceLines(fixtureInputs, language));
+  lines.push(...sparseTeamAttackAllocationLines(fixtureInputs, language));
 
   addProjectionWeightedTermLine(
     lines,
@@ -5213,6 +5233,7 @@ function playerPrimaryNextForecastTitle(player: FantasyPlannerPlayer, language: 
   if (player.projectionEngine === "COMPONENT_XFP_V1" && player.projectionFormula) {
     lines.push(...starterMinuteFloorLines(player.projectedFixtureComponents, language));
     lines.push(...minuteHistoryProvenanceLines(player.projectedFixtureComponents, language));
+    lines.push(...sparseTeamAttackAllocationLines(player.projectedFixtureComponents, language));
     lines.push(...buildFormulaBreakdownLines(language, player.projectionFormula, "Total", nextForecast));
   } else if (player.projectionEngine === "COMPONENT_XFP_V1" && player.projectionComponents) {
     lines.push(...buildProjectionBreakdownLines(player, language, player.projectionComponents, player.projectedFixtureComponents));
@@ -5274,6 +5295,7 @@ function alternativePlayerForecastTitle(player: FantasyPlannerPlayer, language: 
   lines.push(...starterMinuteFloorLines(minuteInputs, language));
   if (player.alternativeProjectionFormula) {
     lines.push(...minuteHistoryProvenanceLines(player.alternativeProjectedFixtureComponents, language));
+    lines.push(...sparseTeamAttackAllocationLines(player.alternativeProjectedFixtureComponents, language));
     lines.push(...buildFormulaBreakdownLines(
       language,
       player.alternativeProjectionFormula,

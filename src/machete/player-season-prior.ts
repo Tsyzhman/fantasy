@@ -5,7 +5,10 @@ const MAX_PRIOR_APPEARANCES = 12;
 const POSITION_PRIOR_APPEARANCES = 4;
 const PRIOR_FADE_MINUTES = 900;
 const ARCHIVE_MINUTES_FADE_TEAM_MATCHES = 8;
-export const FNL_TO_RPL_EVENT_FACTOR = 0.78;
+export const FEEDER_TO_TOP_EVENT_FACTOR = 0.78;
+// Backward-compatible name for callers and reports created before feeder
+// adaptation was shared by every supported top division.
+export const FNL_TO_RPL_EVENT_FACTOR = FEEDER_TO_TOP_EVENT_FACTOR;
 
 const POSITION_EVENT_PRIORS: Record<Exclude<FantasyPositionGroup, "UNK">, { goals: number; assists: number }> = {
   GK: { goals: 0.003, assists: 0.002 },

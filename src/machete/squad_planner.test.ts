@@ -100,6 +100,15 @@ test("Eredivisie promoted-player archive prefers Eerste Divisie over a one-match
   assert.equal(archive?.appearances, 25);
 });
 
+test("Liga Portugal promoted-player archive prefers Liga Portugal 2 over a cup cameo", () => {
+  const archive = preferredArchivedSeason([
+    { season: "2025/2026", teamId: 10212n, leagueId: 186n, appearances: 1 },
+    { season: "2025/2026", teamId: 10212n, leagueId: 185n, appearances: 31 }
+  ], "10212", 61n);
+  assert.equal(archive?.leagueId, 185n);
+  assert.equal(archive?.appearances, 31);
+});
+
 test("editable pipeline applies history, fixture, allocation and final score formulas in order", () => {
   const config = {
     ...expectedProjectionFormulaConfig,
@@ -470,7 +479,7 @@ test("Alt limits only the nearest fixture to the marked XI and uses every player
   }
 });
 
-test("Alt keeps a promoted club marked XI calculable with role priors when personal xG/xA is zero", () => {
+test("Alt keeps a promoted club marked XI calculable without assigning all missing attack to zero-history starters", () => {
   const positions = ["GK", ...Array(4).fill("DEF"), ...Array(4).fill("MID"), ...Array(2).fill("FWD")];
   const rows = positions.map((position, index) => ({
     playerId: `promoted-starter-${index}`,
@@ -510,12 +519,14 @@ test("Alt keeps a promoted club marked XI calculable with role priors when perso
   assert.equal(promotedDefenderMetrics?.pre_role_xg_per_90, 0);
   assert.ok(Number(promotedDefenderMetrics?.blended_xg_per_90) > 0);
   assert.equal(promotedDefenderMetrics?.starter_role_reliability, 0.25);
+  assert.equal(promotedDefenderMetrics?.sparse_team_attack_allocation_guard, 1);
+  assert.ok(Number(promotedDefenderMetrics?.team_attack_goal_reserve_weight) > 0);
   const allocatedGoals = [...index.byFixturePlayer.values()]
     .reduce((total, player) => total + player.expectedEvents.goals, 0);
   const allocatedAssists = [...index.byFixturePlayer.values()]
     .reduce((total, player) => total + player.expectedEvents.assists, 0);
-  assert.ok(Math.abs(allocatedGoals - 1.08) < 1e-12);
-  assert.ok(Math.abs(allocatedAssists - 1.08 * 0.8) < 1e-12);
+  assert.ok(allocatedGoals > 0 && allocatedGoals < 1.08);
+  assert.ok(allocatedAssists > 0 && allocatedAssists < 1.08 * 0.8);
 });
 
 test("missing lower-league xG/xA cannot allocate the whole team attack to one sparse top-flight profile", () => {
@@ -568,6 +579,90 @@ test("missing lower-league xG/xA cannot allocate the whole team attack to one sp
   assert.ok(scorerGoals > sparseGoals);
   assert.ok(sparseGoals < 0.2);
   assert.ok(Math.abs(sparseGoals + scorerGoals - 1.2) < 1e-12);
+});
+
+test("an incomplete team history cannot give all team xG and xA to its only evidenced player", () => {
+  const config = {
+    ...expectedProjectionFormulaConfig,
+    history: {
+      ...expectedProjectionFormulaConfig.history,
+      expectedMinutes: "{minutes}",
+      appearanceProbability: "gte({Expected minutes}, 0.000001)",
+      sixtyProbability: "gte({Expected minutes}, 60)",
+      fullMatchProbability: "gte({Expected minutes}, 80)",
+      xgRate: "{xg rate}",
+      xaRate: "{xa rate}",
+      recoveryRate: "0",
+      saveRate: "0",
+      yellowRate: "0",
+      redRate: "0"
+    },
+    team: {
+      expectedGoals: "1.6",
+      expectedGoalsAgainst: "1",
+      assistsPerGoal: "0.8",
+      cleanSheetProbability: "0"
+    }
+  };
+  const positions = ["GK", ...Array(4).fill("DEF"), ...Array(4).fill("MID"), ...Array(2).fill("FWD")];
+  const rows = positions.map((position, index) => {
+    const evidenced = index === 1;
+    const minutes = evidenced ? 39 : 0;
+    return {
+      playerId: `player-${index}`,
+      teamId: "sparse-team",
+      position,
+      isStarter: false,
+      startProbability: evidenced ? 0.5 : 0,
+      expectedMinutes: minutes,
+      minutesPlayed: minutes,
+      rawMetrics: {
+        minutes,
+        minutes_365: minutes,
+        xg_rate: evidenced ? 0.02 : 0,
+        xa_rate: evidenced ? 0.01 : 0
+      }
+    };
+  });
+  const fixture = {
+    id: "sparse-team-fixture", roundId: "round-1", teamId: "sparse-team", opponentTeamId: "opponent",
+    opponentName: "OPP", opponentFullName: "Opponent", side: "H" as const,
+    kickoffAt: new Date("2026-08-07T12:00:00Z"), projectedXg: 1.6, projectedXga: 1,
+    attackMultiplier: 1, defenseMultiplier: 1
+  };
+  const fixtures = {
+    rounds: [],
+    fixturesByTeamRound: new Map([["round-1", new Map([["sparse-team", [fixture]]])]]),
+    teamShortNameById: new Map()
+  };
+  const positionsByPlayer = new Map(rows.map((row) => [row.playerId, row.position]));
+  const sparse = buildFormulaProjectionIndex(rows as never, fixtures, positionsByPlayer, config);
+  const evidenced = sparse.byFixturePlayer.get("sparse-team-fixture:player-1");
+  const sparseMetrics = sparse.formulaMetricsByFixturePlayer.get("sparse-team-fixture:player-1");
+
+  assert.deepEqual(sparse.errorsByFixtureTeam, new Map());
+  assert.equal(sparse.byFixturePlayer.size, 11);
+  assert.equal(sparseMetrics?.sparse_team_attack_allocation_guard, 1);
+  assert.equal(sparseMetrics?.team_attack_meaningful_players, 1);
+  assert.ok(Number(sparseMetrics?.team_attack_goal_reserve_weight) > 1);
+  assert.ok((evidenced?.expectedEvents.goals ?? Infinity) < 0.05);
+  assert.ok((evidenced?.expectedEvents.assists ?? Infinity) < 0.03);
+  assert.ok([...sparse.byFixturePlayer.values()].reduce((total, player) => total + player.expectedEvents.goals, 0) < 0.1);
+
+  const completeRows = rows.map((row) => ({
+    ...row,
+    expectedMinutes: 90,
+    minutesPlayed: 900,
+    rawMetrics: { ...row.rawMetrics, minutes: 90, minutes_365: 900, xg_rate: 0.1, xa_rate: 0.08 }
+  }));
+  const complete = buildFormulaProjectionIndex(completeRows as never, fixtures, positionsByPlayer, config);
+  const completeMetrics = complete.formulaMetricsByFixturePlayer.get("sparse-team-fixture:player-1");
+  const completeGoals = [...complete.byFixturePlayer.values()]
+    .reduce((total, player) => total + player.expectedEvents.goals, 0);
+
+  assert.equal(completeMetrics?.sparse_team_attack_allocation_guard, 0);
+  assert.equal(completeMetrics?.team_attack_goal_reserve_weight, 0);
+  assert.ok(Math.abs(completeGoals - 1.6) < 1e-12);
 });
 
 test("a short history sample applies the starter uplift cautiously to per-90 events", () => {
