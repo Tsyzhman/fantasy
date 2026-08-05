@@ -1,7 +1,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { fixtureNameScore, fonbetSportNameToFotMobLeagueId, matchFonbetOddsToMatches } from "./fixture-odds-sync";
+import {
+  fixtureNameScore,
+  fonbetSportNameToFotMobLeagueId,
+  hasAtLeastOneCompleteDirectMarket,
+  matchFonbetOddsToMatches
+} from "./fixture-odds-sync";
 import type { FonbetFixtureOdds } from "@/providers/fonbet/odds";
 
 test("maps supported Fonbet competition labels and rejects outright/result groups", () => {
@@ -35,6 +40,16 @@ test("does not guess when two candidates have effectively equal names", () => {
   const first = fixture({ eventId: "1", homeTeamName: "Динамо", awayTeamName: "Спартак" });
   const second = fixture({ eventId: "2", homeTeamName: "Динамо", awayTeamName: "Спартак" });
   assert.deepEqual(matchFonbetOddsToMatches([match], [first, second]), []);
+});
+
+test("keeps a fixture when only one team has both direct markets", () => {
+  assert.equal(hasAtLeastOneCompleteDirectMarket(fixture({
+    away: { teamOver15Probability: null, cleanSheetProbability: 0.24 }
+  })), true);
+  assert.equal(hasAtLeastOneCompleteDirectMarket(fixture({
+    home: { teamOver15Probability: null, cleanSheetProbability: 0.41 },
+    away: { teamOver15Probability: 0.26, cleanSheetProbability: null }
+  })), false);
 });
 
 function fixture(overrides: Partial<FonbetFixtureOdds> = {}): FonbetFixtureOdds {

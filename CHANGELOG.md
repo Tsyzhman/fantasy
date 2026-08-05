@@ -5,6 +5,17 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.13 - 2026-08-05
+
+### Fixed
+
+- Fixture odds ingestion now keeps a match when at least one team has both
+  required direct markets. A missing opponent team-total line no longer drops
+  the complete favorite side from the bookmaker table or its FO forecast.
+- Benfica versus Academico Viseu is retained with Benfica's available clean
+  sheet and over-1.5 probabilities even while Fonbet does not quote the
+  Academico Viseu over-1.5 team total.
+
 ## 0.3.12 - 2026-08-05
 
 ### Fixed

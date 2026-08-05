@@ -48,7 +48,7 @@ export async function syncFonbetFixtureOdds(
     })
   ]);
 
-  const eligibleEvents = events.filter(hasCompleteDirectMarkets);
+  const eligibleEvents = events.filter(hasAtLeastOneCompleteDirectMarket);
   const matched = matchFonbetOddsToMatches(matches, eligibleEvents);
   let stored = 0;
   for (const item of matched) {
@@ -121,9 +121,12 @@ export function fixtureNameScore(match: MatchCandidate, event: Pick<FonbetFixtur
   return (home + away) / 2;
 }
 
-function hasCompleteDirectMarkets(event: FonbetFixtureOdds) {
-  return event.home.teamOver15Probability !== null && event.away.teamOver15Probability !== null &&
-    event.home.cleanSheetProbability !== null && event.away.cleanSheetProbability !== null;
+export function hasAtLeastOneCompleteDirectMarket(event: FonbetFixtureOdds) {
+  return hasCompleteTeamMarket(event.home) || hasCompleteTeamMarket(event.away);
+}
+
+function hasCompleteTeamMarket(team: FonbetFixtureOdds["home"]) {
+  return team.teamOver15Probability !== null && team.cleanSheetProbability !== null;
 }
 
 function snapshotData(matchId: bigint, event: FonbetFixtureOdds) {
