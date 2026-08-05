@@ -98,7 +98,7 @@ test("compact transfer suggestions include bookmaker favorites with separate cle
   assert.match(squadPlannerSource, /en="Team O1\.5" ru="ИТБ 1\.5"/);
   assert.match(squadPlannerSource, /activeRoundBookmakerFavorites/);
   assert.match(squadPlannerBackendSource, /bookmakerFavorites: buildBookmakerFavorites\(roundsAndFixtures\)/);
-  assert.match(squadPlannerBackendSource, /pricedSides\.length < 2/);
+  assert.match(squadPlannerBackendSource, /pricedSides\.length === 0/);
   assert.match(squadPlannerBackendSource, /if \(fixture\.finished\) continue/);
 });
 

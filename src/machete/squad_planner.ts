@@ -2884,7 +2884,7 @@ export function buildBookmakerFavorites(fixtures: PlannerRoundFixtures): Fantasy
     for (const sidesByTeam of fixtureSides.values()) {
       const sides = [...sidesByTeam.values()];
       const pricedSides = sides.filter(hasCompleteBookmakerMarket);
-      if (pricedSides.length < 2) continue;
+      if (pricedSides.length === 0) continue;
       pricedSides.sort(compareBookmakerFavoriteSides);
 
       const favorite = pricedSides[0];

@@ -1157,7 +1157,7 @@ test("squad planner retains completed fixtures in an active split round", () => 
   assert.equal(result.fixturesByTeamRound.get("round:12")?.get("10")?.[0].id, "1");
 });
 
-test("bookmaker favorites select one team per unfinished fixture by team over 1.5 probability", () => {
+test("bookmaker favorites select one available team per unfinished fixture by team over 1.5 probability", () => {
   const awayFavorite = Object.assign(
     match({ id: "1", round: "12", date: "2026-05-25T17:00:00.000Z", homeTeamId: "10", awayTeamId: "20" }),
     {
@@ -1207,12 +1207,13 @@ test("bookmaker favorites select one team per unfinished fixture by team over 1.
   const favorites = buildBookmakerFavorites(fixtures);
 
   assert.deepEqual(favorites.map((row) => [row.fixtureId, row.teamId, row.side]), [
+    ["3", "50", "H"],
     ["2", "30", "H"],
     ["1", "20", "A"]
   ]);
   assert.deepEqual(
     favorites.map((row) => [row.teamOver15Probability, row.cleanSheetProbability]),
-    [[0.7, 0.2], [0.62, 0.32]]
+    [[0.8, 0.6], [0.7, 0.2], [0.62, 0.32]]
   );
   assert.equal(favorites[0].source, "FONBET");
   assert.equal(favorites[0].oddsFetchedAt, "2026-05-22T10:00:00.000Z");
