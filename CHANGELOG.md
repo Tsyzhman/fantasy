@@ -5,6 +5,19 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.19 - 2026-08-09
+
+### Changed
+
+- Foontasy forecasts and historical samples now use their source variant,
+  Sports.ru phase, phase round, and player ID as the writer identity. The
+  previous round-based unique keys remain alongside the new keys for one
+  rollback-compatible release.
+- Placeholder source fields are backfilled again immediately before the new
+  keys are created, covering any rows written during a rollback to 0.3.17.
+- UEFA writes remain closed until the previous writer has left the rollback
+  slot and the old unique keys can be removed safely.
+
 ## 0.3.18 - 2026-08-09
 
 ### Added

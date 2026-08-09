@@ -12,18 +12,23 @@ import {
   responseCookieHeader
 } from "@/machete/foontasy_forecasts";
 
-test("Foontasy source expansion keeps the previous writer and rollback image compatible", () => {
+test("Foontasy source-key rollout keeps the 0.3.18 rollback writer compatible", () => {
   const root = process.cwd();
-  const migration = readFileSync(path.join(root, "prisma/migrations/000029_foontasy_source_variants/migration.sql"), "utf8");
+  const expandMigration = readFileSync(path.join(root, "prisma/migrations/000029_foontasy_source_variants/migration.sql"), "utf8");
+  const keyMigration = readFileSync(path.join(root, "prisma/migrations/000030_foontasy_source_unique/migration.sql"), "utf8");
   const schema = readFileSync(path.join(root, "prisma/schema.prisma"), "utf8");
   const importer = readFileSync(path.join(root, "src/machete/foontasy_forecasts.ts"), "utf8");
 
-  assert.doesNotMatch(migration, /DROP INDEX/);
-  assert.doesNotMatch(migration, /CREATE UNIQUE INDEX "foontasy_(?:forecasts|forecast_samples)_source_round_player_key"/);
+  assert.doesNotMatch(expandMigration, /DROP INDEX/);
+  assert.doesNotMatch(keyMigration, /DROP INDEX/);
+  assert.match(keyMigration, /CREATE UNIQUE INDEX "foontasy_forecasts_source_round_player_key"/);
+  assert.match(keyMigration, /CREATE UNIQUE INDEX "foontasy_forecast_samples_source_round_player_key"/);
   assert.match(schema, /@@unique\(\[leagueId, season, roundNumber, sourcePlayerId\]/);
-  assert.doesNotMatch(schema, /@@unique\(\[leagueId, season, sourceVariant, sourceSeasonId, sourceRoundNumber, sourcePlayerId\]/);
-  assert.match(importer, /leagueId_season_roundNumber_sourcePlayerId/);
-  assert.doesNotMatch(importer, /leagueId_season_sourceVariant_sourceSeasonId_sourceRoundNumber_sourcePlayerId/);
+  assert.match(schema, /@@unique\(\[leagueId, season, sourceVariant, sourceSeasonId, sourceRoundNumber, sourcePlayerId\]/);
+  assert.match(importer, /leagueId_season_sourceVariant_sourceSeasonId_sourceRoundNumber_sourcePlayerId/);
+  assert.match(importer, /sourceVariant: input\.sourceVariant/);
+  assert.match(importer, /sourceRoundNumber: phase\.sourceRoundNumber/);
+  assert.match(importer, /storage is prepared but remains disabled/);
 });
 
 test("Foontasy round parser recognizes the Russian tour heading without source-encoding ambiguity", () => {
