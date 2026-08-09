@@ -439,11 +439,13 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: Ing
           if (jobType === "incremental_update") {
             const startingXi = await applyStartingXiFromCompletedMatch(prisma, { matchId: result.matchId });
             const changedTeams = startingXi.teams.filter((team) => team.reason === "APPLIED");
-            const incompleteTeams = startingXi.teams.filter((team) => team.reason === "INCOMPLETE_LINEUP");
-            if (changedTeams.length > 0 || incompleteTeams.length > 0) {
+            const teamsWithoutStarters = startingXi.teams.filter((team) => team.reason === "NO_STARTERS");
+            const oversizedTeams = startingXi.teams.filter((team) => team.reason === "TOO_MANY_STARTERS");
+            if (changedTeams.length > 0 || teamsWithoutStarters.length > 0 || oversizedTeams.length > 0) {
               console.info(
                 `[ingestion] Starting XI from match ${result.matchId}: applied to ${changedTeams.length} team(s), `
-                + `preserved ${incompleteTeams.length} team(s) with incomplete lineups.`
+                + `preserved ${teamsWithoutStarters.length} team(s) without starter data and `
+                + `${oversizedTeams.length} team(s) with more than 11 starters.`
               );
             }
           }
