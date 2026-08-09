@@ -187,10 +187,12 @@ export async function importFoontasyForecasts(prisma: PrismaClient, input: Foont
   const fetchedAt = new Date();
   await prisma.$transaction(input.rows.map((row) => prisma.foontasyForecast.upsert({
     where: {
-      leagueId_season_roundNumber_sourcePlayerId: {
+      leagueId_season_sourceVariant_sourceSeasonId_sourceRoundNumber_sourcePlayerId: {
         leagueId: input.leagueId,
         season: input.season,
-        roundNumber: phase.roundNumber,
+        sourceVariant: input.sourceVariant,
+        sourceSeasonId: phase.sourceSeasonId,
+        sourceRoundNumber: phase.sourceRoundNumber,
         sourcePlayerId: row.external_id
       }
     },
