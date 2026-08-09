@@ -32,6 +32,8 @@ image labels `org.opencontainers.image.version` and
 
 - The first completed match of a new round no longer clears starter flags for
   every team in the league.
+- The production dependency graph pins patched `nanoid` 3.3.17, removing the
+  high-severity infinite-loop advisory affecting earlier 3.x releases.
 
 ## 0.3.13 - 2026-08-05
 

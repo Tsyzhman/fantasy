@@ -97,6 +97,7 @@
   },
   "overrides": {
     "brace-expansion": "$brace-expansion",
+    "nanoid": "3.3.17",
     "postcss": "8.5.25",
     "sharp": "0.35.0",
     "tmp": "^0.2.6",
