@@ -31,8 +31,17 @@ export type SportsRuFantasyPriceRow = {
 export type SportsRuFantasyGraphqlSnapshot = {
   tournamentHru: string;
   seasonId: string | null;
+  tours: SportsRuFantasyTour[];
   prices: SportsRuFantasyPriceRow[];
   fetchedAt: string;
+};
+
+export type SportsRuFantasyTour = {
+  id: string;
+  name: string;
+  status: string | null;
+  startedAt: string | null;
+  finishedAt: string | null;
 };
 
 export type SportsRuPublishedSquadPlayer = {
@@ -96,20 +105,48 @@ export async function fetchSportsRuFantasyGraphqlSnapshot(
   const endpoint = options.endpoint ?? sportsRuFantasyGraphqlEndpoint;
   const pageSize = Number.isInteger(options.pageSize) && (options.pageSize ?? 0) > 0 ? options.pageSize! : 100;
   const seasonResponse = await sportsRuGraphqlRequest<{
-    fantasyQueries?: { tournament?: { currentSeason?: { id?: string | null } | null } | null };
+    fantasyQueries?: {
+      tournament?: {
+        currentSeason?: {
+          id?: string | null;
+          tours?: Array<{
+            id?: string | null;
+            name?: string | null;
+            status?: string | null;
+            startedAt?: string | null;
+            finishedAt?: string | null;
+          }> | null;
+        } | null;
+      } | null;
+    };
   }>(
     endpoint,
     `{
       fantasyQueries {
         tournament(id: ${JSON.stringify(hru)}, source: HRU) {
-          currentSeason { id }
+          currentSeason {
+            id
+            tours { id name status startedAt finishedAt }
+          }
         }
       }
     }`,
     fetchImpl
   );
-  const seasonId = seasonResponse.fantasyQueries?.tournament?.currentSeason?.id?.trim() || null;
-  if (!seasonId) return { tournamentHru: hru, seasonId: null, prices: [], fetchedAt: new Date().toISOString() };
+  const currentSeason = seasonResponse.fantasyQueries?.tournament?.currentSeason;
+  const seasonId = currentSeason?.id?.trim() || null;
+  const tours = (currentSeason?.tours ?? []).flatMap((tour): SportsRuFantasyTour[] => {
+    const id = tour.id?.trim();
+    const name = cleanText(tour.name ?? "");
+    return id && name ? [{
+      id,
+      name,
+      status: cleanText(tour.status ?? "") || null,
+      startedAt: tour.startedAt ?? null,
+      finishedAt: tour.finishedAt ?? null
+    }] : [];
+  });
+  if (!seasonId) return { tournamentHru: hru, seasonId: null, tours: [], prices: [], fetchedAt: new Date().toISOString() };
 
   const prices: SportsRuFantasyPriceRow[] = [];
   const seenPlayerIds = new Set<string>();
@@ -186,6 +223,7 @@ export async function fetchSportsRuFantasyGraphqlSnapshot(
   return {
     tournamentHru: hru,
     seasonId,
+    tours,
     prices,
     fetchedAt: new Date().toISOString()
   };

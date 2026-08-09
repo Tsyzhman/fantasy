@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-import { syncSportsRuFantasy } from "./sports_ru_fantasy_sync";
+import { sportsRuContestRules, syncSportsRuFantasy } from "./sports_ru_fantasy_sync";
 
 test("Sports.ru sync preserves the database when the current season is unavailable", async () => {
   let databaseReads = 0;
@@ -60,6 +60,19 @@ test("routine price refreshes send only previously unmapped rows to identity mat
   assert.doesNotMatch(source, /autoMapSportsRuFantasyPlayers\(prisma, \{ leagueId: input\.leagueId, season: input\.season \}\)/);
 });
 
+test("Sports.ru contest rules preserve phase history and continue cup round offsets", () => {
+  const group = sportsRuContestRules(null, sportsSnapshot("70", 8), "champions-league");
+  const playoffs = sportsRuContestRules(group, sportsSnapshot("72", 9), "champions-league");
+  assert.deepEqual((playoffs.sportsRuSeasons as Array<{ seasonId: string; canonicalOffset: number }>).map((phase) => [
+    phase.seasonId,
+    phase.canonicalOffset
+  ]), [["70", 0], ["72", 8]]);
+
+  const transientEmptyTours = sportsRuContestRules(playoffs, sportsSnapshot("72", 0), "champions-league");
+  const current = (transientEmptyTours.sportsRuSeasons as Array<{ seasonId: string; tours: unknown[] }>).find((phase) => phase.seasonId === "72");
+  assert.equal(current?.tours.length, 9);
+});
+
 function sportsRuFetch(seasonId: string | null, playersPerRole: number): typeof fetch {
   return async (input, init) => {
     const url = String(input);
@@ -77,5 +90,21 @@ function sportsRuFetch(seasonId: string | null, playersPerRole: number): typeof 
       statObject: { lastName: `Player ${index}` }
     }));
     return Response.json({ data: { fantasyQueries: { players: { list } } } });
+  };
+}
+
+function sportsSnapshot(seasonId: string, tourCount: number) {
+  return {
+    tournamentHru: "champions-league",
+    seasonId,
+    tours: Array.from({ length: tourCount }, (_, index) => ({
+      id: `${seasonId}-${index + 1}`,
+      name: `${index + 1} тур`,
+      status: null,
+      startedAt: null,
+      finishedAt: null
+    })),
+    prices: [],
+    fetchedAt: "2026-08-09T00:00:00.000Z"
   };
 }

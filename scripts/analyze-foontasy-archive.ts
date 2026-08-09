@@ -7,8 +7,9 @@ const prisma = new PrismaClient();
 async function main() {
   const leagueId = BigInt(process.env.FOONTASY_LEAGUE_ID ?? "63");
   const season = process.env.FOONTASY_SEASON ?? "2026/2027";
+  const sourceVariant = process.env.FOONTASY_SOURCE_VARIANT === "uefa" ? "uefa" : "sports";
   const rows = await prisma.foontasyForecastSample.findMany({
-    where: { leagueId, season, modelNextPoints: { not: null } },
+    where: { leagueId, season, sourceVariant, modelNextPoints: { not: null } },
     select: {
       roundNumber: true,
       position: true,

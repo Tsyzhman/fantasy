@@ -689,6 +689,10 @@ model FoontasyForecast {
   id                String   @id @default(cuid())
   leagueId          BigInt   @map("league_id")
   season            String
+  sourceVariant     String   @default("sports") @map("source_variant")
+  sourceSeasonId    String   @default("legacy") @map("source_season_id")
+  sourceRoundLabel  String   @default("") @map("source_round_label")
+  sourceRoundNumber Int      @default(0) @map("source_round_number")
   roundNumber       Int      @map("round_number")
   sourcePlayerId    String   @map("source_player_id")
   playerId          BigInt?  @map("player_id")
@@ -709,6 +713,7 @@ model FoontasyForecast {
 
   @@unique([leagueId, season, roundNumber, sourcePlayerId], map: "foontasy_forecasts_league_id_season_round_number_source_player_")
   @@index([leagueId, season, playerId, roundNumber], map: "foontasy_forecasts_league_id_season_player_id_round_number_idx")
+  @@index([leagueId, season, sourceVariant, playerId, roundNumber], map: "foontasy_forecasts_scope_player_round_idx")
   @@map("foontasy_forecasts")
 }
 
@@ -716,6 +721,10 @@ model FoontasyForecastSample {
   id                String   @id @default(cuid())
   leagueId          BigInt   @map("league_id")
   season            String
+  sourceVariant     String   @default("sports") @map("source_variant")
+  sourceSeasonId    String   @default("legacy") @map("source_season_id")
+  sourceRoundLabel  String   @default("") @map("source_round_label")
+  sourceRoundNumber Int      @default(0) @map("source_round_number")
   roundNumber       Int      @map("round_number")
   sourcePlayerId    String   @map("source_player_id")
   playerId          BigInt?  @map("player_id")
@@ -739,6 +748,8 @@ model FoontasyForecastSample {
   @@unique([leagueId, season, roundNumber, sourcePlayerId], map: "foontasy_forecast_samples_league_id_season_round_number_source_")
   @@index([leagueId, season, roundNumber], map: "foontasy_forecast_samples_league_id_season_round_number_idx")
   @@index([leagueId, season, playerId, roundNumber], map: "foontasy_forecast_samples_league_id_season_player_id_round_numb")
+  @@index([leagueId, season, sourceVariant, roundNumber], map: "foontasy_forecast_samples_scope_round_idx")
+  @@index([leagueId, season, sourceVariant, playerId, roundNumber], map: "foontasy_forecast_samples_scope_player_round_idx")
   @@map("foontasy_forecast_samples")
 }
 

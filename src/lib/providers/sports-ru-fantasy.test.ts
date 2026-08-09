@@ -18,7 +18,13 @@ test("Sports.ru GraphQL snapshot loads every position from the current season", 
   const fetchImpl = (async (_input: string | URL | Request, init?: RequestInit) => {
     assert.ok(init?.signal, "Sports.ru requests must have a timeout signal");
     const query = JSON.parse(String(init?.body ?? "{}"))?.query as string;
-    if (query.includes("tournament(")) return jsonResponse({ data: { fantasyQueries: { tournament: { currentSeason: { id: "season-1" } } } } });
+    if (query.includes("tournament(")) {
+      assert.match(query, /tours \{ id name status startedAt finishedAt \}/);
+      return jsonResponse({ data: { fantasyQueries: { tournament: { currentSeason: {
+        id: "season-1",
+        tours: [{ id: "tour-1", name: "1 тур", status: "OPENED", startedAt: "2026-08-14T17:00:00Z", finishedAt: null }]
+      } } } } });
+    }
     assert.match(query, /team \{ id name \}/);
     const role = [...roles.keys()].find((value) => query.includes(`role: ${value}`));
     const player = role ? roles.get(role) : null;
@@ -28,6 +34,13 @@ test("Sports.ru GraphQL snapshot loads every position from the current season", 
   const snapshot = await fetchSportsRuFantasyGraphqlSnapshot("england", { fetchImpl, pageSize: 10 });
 
   assert.equal(snapshot.seasonId, "season-1");
+  assert.deepEqual(snapshot.tours, [{
+    id: "tour-1",
+    name: "1 тур",
+    status: "OPENED",
+    startedAt: "2026-08-14T17:00:00Z",
+    finishedAt: null
+  }]);
   assert.deepEqual(snapshot.prices.map((row) => row.position), ["GK", "DEF", "MID", "FWD"]);
   assert.deepEqual(snapshot.prices.map((row) => row.providerPlayerId), ["gk-1", "def-1", "mid-1", "fwd-1"]);
   assert.deepEqual(snapshot.prices.map((row) => row.teamName), ["Ростов", "Спартак", "Зенит", "Динамо"]);

@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db";
 import { createLogger } from "@/lib/logger";
 import {
+  FoontasySourceUnavailableError,
   foontasySyncConfigFromEnv,
   syncFoontasyForecasts,
   type FoontasySyncConfig
@@ -148,17 +149,20 @@ async function runFoontasyForecastSyncNow(state: SchedulerState, expectedRoundNu
 export async function runSelectedFoontasyForecastSyncNow(configs: readonly FoontasySyncConfig[]) {
   const state = globalForScheduler.foontasyForecastScheduler ?? { running: false, started: false };
   globalForScheduler.foontasyForecastScheduler = state;
-  if (state.running) return { started: false, succeeded: 0, failed: 0, scopes: [] };
+  if (state.running) return { started: false, succeeded: 0, failed: 0, unavailable: 0, scopes: [] };
   state.running = true;
   let succeeded = 0;
   let failed = 0;
+  let unavailable = 0;
   const scopes: Array<Record<string, unknown>> = [];
   try {
     for (const config of configs) {
       const fields = {
         leagueId: String(config.leagueId),
         season: config.season,
-        assistantPath: safeAssistantPath(config.url)
+        sourceKey: config.sourceKey,
+        sourceVariant: config.sourceVariant,
+        assistantLocation: safeAssistantLocation(config.url)
       };
       try {
         const result = await syncFoontasyForecasts(prisma, config);
@@ -166,6 +170,12 @@ export async function runSelectedFoontasyForecastSyncNow(configs: readonly Foont
         scopes.push({ ...fields, status: "SYNCED", ...result });
         logger.info("Manually selected Foontasy forecasts synchronized.", { ...fields, ...result });
       } catch (error) {
+        if (error instanceof FoontasySourceUnavailableError) {
+          unavailable += 1;
+          scopes.push({ ...fields, status: "UNAVAILABLE", error: error.message });
+          logger.warn("Selected Foontasy scope is not ready; other selected leagues will continue.", { ...fields, error });
+          continue;
+        }
         failed += 1;
         scopes.push({
           ...fields,
@@ -178,7 +188,7 @@ export async function runSelectedFoontasyForecastSyncNow(configs: readonly Foont
   } finally {
     state.running = false;
   }
-  return { started: true, succeeded, failed, scopes };
+  return { started: true, succeeded, failed, unavailable, scopes };
 }
 
 async function loadNextFoontasyRoundRun(now: Date, config: FoontasySyncConfig) {
@@ -199,7 +209,12 @@ async function loadNextFoontasyRoundRun(now: Date, config: FoontasySyncConfig) {
     ? []
     : await prisma.foontasyForecast.groupBy({
       by: ["roundNumber"],
-      where: { leagueId: config.leagueId, season: config.season, roundNumber: { in: roundNumbers } },
+      where: {
+        leagueId: config.leagueId,
+        season: config.season,
+        sourceVariant: config.sourceVariant,
+        roundNumber: { in: roundNumbers }
+      },
       _max: { fetchedAt: true }
     });
   return nextFoontasyRoundRun(
@@ -275,9 +290,10 @@ function formatZonedDateTime(date: Date, timeZone: string) {
   return `${values.year}-${values.month}-${values.day} ${values.hour}:${values.minute}`;
 }
 
-function safeAssistantPath(url: string) {
+function safeAssistantLocation(url: string) {
   try {
-    return new URL(url).pathname;
+    const parsed = new URL(url);
+    return `${parsed.pathname}${parsed.search}`;
   } catch {
     return "invalid";
   }
