@@ -5,6 +5,18 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.15 - 2026-08-09
+
+### Fixed
+
+- Automatic Sports.ru player mapping now requires strong name identity when
+  FotMob has no confirming birth date. Team and position bonuses can no longer
+  turn weak pairs such as Lewis Orford / Lewis O'Brien into an accepted link.
+- A conflicting provider birth date no longer rejects an otherwise exact
+  player identity. The conflict remains visible in the candidate reason, while
+  only near-exact names may pass this exception; this covers verified Sports.ru
+  birthday errors without weakening namesake protection.
+
 ## 0.3.14 - 2026-08-09
 
 ### Added
