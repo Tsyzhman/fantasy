@@ -1,11 +1,12 @@
 import { Prisma, type PrismaClient } from "@prisma/client";
 
-const REQUIRED_STARTERS = 11;
+const MAX_STARTERS = 11;
 
 export type StartingXiTeamApplyReason =
   | "APPLIED"
   | "ALREADY_APPLIED"
-  | "INCOMPLETE_LINEUP"
+  | "NO_STARTERS"
+  | "TOO_MANY_STARTERS"
   | "OLDER_MATCH"
   | "SEASON_TEAM_NOT_FOUND";
 
@@ -65,13 +66,14 @@ export async function applyStartingXiFromCompletedMatch(
     const starters = uniqueStarters(match.playerStats
       .filter((row) => row.teamId === teamId)
       .map((row) => ({ playerId: row.playerId, position: row.position, shirtNumber: row.shirtNumber })));
-    if (!isCompleteStartingXi(starters)) {
+    const lineupBlockReason = startingXiLineupBlockReason(starters);
+    if (lineupBlockReason) {
       teams.push({
         teamId,
         startersFound: starters.length,
         startersApplied: 0,
         flagsCleared: 0,
-        reason: "INCOMPLETE_LINEUP"
+        reason: lineupBlockReason
       });
       continue;
     }
@@ -105,12 +107,13 @@ export async function applyStartingXiFromCompletedMatches(
     orderBy: [{ matchDate: "asc" }, { id: "asc" }],
     select: { id: true }
   });
-  const totals = { matches: matches.length, teamsApplied: 0, incompleteTeams: 0, skippedTeams: 0 };
+  const totals = { matches: matches.length, teamsApplied: 0, noStarterTeams: 0, oversizedTeams: 0, skippedTeams: 0 };
   for (const match of matches) {
     const result = await applyStartingXiFromCompletedMatch(prisma, { matchId: match.id });
     for (const team of result.teams) {
       if (team.reason === "APPLIED") totals.teamsApplied += 1;
-      else if (team.reason === "INCOMPLETE_LINEUP") totals.incompleteTeams += 1;
+      else if (team.reason === "NO_STARTERS") totals.noStarterTeams += 1;
+      else if (team.reason === "TOO_MANY_STARTERS") totals.oversizedTeams += 1;
       else totals.skippedTeams += 1;
     }
   }
@@ -269,8 +272,13 @@ export function startingXiMatchOrderDecision(input: {
   return input.nextMatchId > (input.previousMatchId ?? -1n) ? "APPLY" : "OLDER_MATCH";
 }
 
-export function isCompleteStartingXi(starters: ReadonlyArray<Pick<StarterRow, "playerId">>) {
-  return starters.length === REQUIRED_STARTERS && new Set(starters.map((starter) => starter.playerId)).size === REQUIRED_STARTERS;
+export function startingXiLineupBlockReason(
+  starters: ReadonlyArray<Pick<StarterRow, "playerId">>
+): Extract<StartingXiTeamApplyReason, "NO_STARTERS" | "TOO_MANY_STARTERS"> | null {
+  const uniqueStarterCount = new Set(starters.map((starter) => starter.playerId)).size;
+  if (uniqueStarterCount === 0) return "NO_STARTERS";
+  if (uniqueStarterCount > MAX_STARTERS) return "TOO_MANY_STARTERS";
+  return null;
 }
 
 function uniqueStarters(rows: StarterRow[]) {
@@ -279,7 +287,7 @@ function uniqueStarters(rows: StarterRow[]) {
 
 function emptyTeamResult(
   input: { teamId: bigint; starters: StarterRow[] },
-  reason: Exclude<StartingXiTeamApplyReason, "APPLIED" | "INCOMPLETE_LINEUP">
+  reason: Exclude<StartingXiTeamApplyReason, "APPLIED" | "NO_STARTERS" | "TOO_MANY_STARTERS">
 ): StartingXiTeamApplyResult {
   return {
     teamId: input.teamId,

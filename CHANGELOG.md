@@ -5,6 +5,15 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.17 - 2026-08-09
+
+### Fixed
+
+- Completed-match starter synchronization now accepts every non-empty FotMob
+  lineup containing at most 11 unique starters. Partial source lineups replace
+  the previous flags with the players actually present; empty or oversized
+  lineups preserve the previous flags.
+
 ## 0.3.16 - 2026-08-09
 
 ### Fixed
