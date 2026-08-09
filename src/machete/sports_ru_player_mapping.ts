@@ -64,6 +64,9 @@ export type SportsRuPlayerMappingCandidate = {
   teamName: string;
   position: string | null;
   confidence: number;
+  nameConfidence: number;
+  birthDateMatches: boolean;
+  birthDateConflicts: boolean;
   reason: string;
 };
 
@@ -119,6 +122,9 @@ const manualMappingMethod = "MANUAL";
 const manualTeamOverrideMethod = "MANUAL_TEAM_OVERRIDE";
 const manualTransferredOutMethod = "MANUAL_TRANSFERRED_OUT";
 const autoConfidenceThreshold = 0.78;
+const autoNameConfidenceThreshold = 0.91;
+const autoConflictingBirthDateNameThreshold = 0.96;
+const autoMatchingBirthDateNameThreshold = 0.58;
 const displayCandidateThreshold = 0.58;
 
 // Sports.ru exposes localized club names while FotMob keeps the provider's
@@ -382,7 +388,7 @@ export async function autoMapSportsRuFantasyPlayers(
     const candidates = (candidatesByPriceId.get(price.id) ?? []).filter((candidate) => !claimedPlayerIds.has(candidate.playerId));
     const best = candidates[0] ?? null;
     const second = candidates[1] ?? null;
-    const confident = best && best.confidence >= autoConfidenceThreshold && (!second || best.confidence - second.confidence >= 0.04);
+    const confident = isSafeAutomaticSportsRuCandidate(best, second);
     const baseRosterEntry = confident ? rosterByPlayerId.get(best.playerId) ?? null : null;
     const authoritativeTeam = authoritativeTeamByPriceId.get(price.id) ?? null;
     const matchedRosterEntry = baseRosterEntry && authoritativeTeam
@@ -781,6 +787,9 @@ export function buildSportsRuMappingCandidates(
         teamName: entry.team.name,
         position: entry.position,
         confidence: result.confidence,
+        nameConfidence: result.nameConfidence,
+        birthDateMatches: result.birthDateMatches,
+        birthDateConflicts: result.birthDateConflicts,
         reason: result.reason
       };
     })
@@ -803,19 +812,42 @@ export function scoreSportsRuCandidate(
     && entry.player.birthDate
     && dateOnly(price.providerBirthDate) === dateOnly(entry.player.birthDate)
   );
-  if (price.providerBirthDate && entry.player.birthDate && !birthDateMatches) {
-    return { confidence: 0, reason: "birth date mismatch" };
-  }
   const rawNameScore = Math.max(sportsNameScore, fotmobHintScore);
+  const birthDateConflicts = Boolean(price.providerBirthDate && entry.player.birthDate && !birthDateMatches);
+  if (birthDateConflicts && rawNameScore < autoConflictingBirthDateNameThreshold) {
+    return {
+      confidence: 0,
+      nameConfidence: rawNameScore,
+      birthDateMatches,
+      birthDateConflicts,
+      reason: "birth date mismatch"
+    };
+  }
   const nameScore = rawNameScore || (birthDateMatches ? 0.7 : 0);
-  if (nameScore === 0) return { confidence: 0, reason: "name mismatch" };
+  if (nameScore === 0) {
+    return {
+      confidence: 0,
+      nameConfidence: rawNameScore,
+      birthDateMatches,
+      birthDateConflicts,
+      reason: "name mismatch"
+    };
+  }
   const pricePosition = normalizeFantasyPosition(price.position);
   const rosterPosition = normalizeFantasyPosition(entry.position);
   const positionAdjustment = positionScoreAdjustment(pricePosition, rosterPosition, entry.position);
   const teamAdjustment = authoritativeTeamId
     ? entry.teamId === authoritativeTeamId ? 0.04 : 0
     : teamScoreAdjustment(price.teamName, entry.team.name);
-  if (teamAdjustment < 0) return { confidence: 0, reason: "team mismatch" };
+  if (teamAdjustment < 0) {
+    return {
+      confidence: 0,
+      nameConfidence: rawNameScore,
+      birthDateMatches,
+      birthDateConflicts,
+      reason: "team mismatch"
+    };
+  }
   const birthDateAdjustment = birthDateMatches ? 0.12 : 0;
   const confidence = clamp(round(nameScore + positionAdjustment + teamAdjustment + birthDateAdjustment), 0, 1);
   const matchedNameSource = fotmobHintScore >= sportsNameScore && fotmobHintScore > 0 ? "fotmob hint" : "name";
@@ -823,15 +855,30 @@ export function scoreSportsRuCandidate(
     nameScore >= 0.92 ? matchedNameSource : nameScore >= 0.74 ? `fuzzy ${matchedNameSource}` : `weak ${matchedNameSource}`,
     pricePosition !== "UNK" && rosterPosition !== "UNK" ? `position ${pricePosition}/${rosterPosition}` : null,
     teamAdjustment > 0 ? "team" : null,
-    birthDateMatches ? "birth date" : null
+    birthDateMatches ? "birth date" : null,
+    birthDateConflicts ? "provider birth date conflict" : null
   ]
     .filter(Boolean)
     .join(", ");
 
   return {
     confidence,
+    nameConfidence: rawNameScore,
+    birthDateMatches,
+    birthDateConflicts,
     reason
   };
+}
+
+export function isSafeAutomaticSportsRuCandidate(
+  best: SportsRuPlayerMappingCandidate | null | undefined,
+  second: SportsRuPlayerMappingCandidate | null | undefined
+) {
+  if (!best || best.confidence < autoConfidenceThreshold) return false;
+  if (second && best.confidence - second.confidence < 0.04) return false;
+  if (best.birthDateMatches) return best.nameConfidence >= autoMatchingBirthDateNameThreshold;
+  if (best.birthDateConflicts) return best.nameConfidence >= autoConflictingBirthDateNameThreshold;
+  return best.nameConfidence >= autoNameConfidenceThreshold;
 }
 
 export function resolveSportsRuSeasonTeam<T extends ActiveSeasonTeam>(sportsTeamName: string, teams: T[]) {

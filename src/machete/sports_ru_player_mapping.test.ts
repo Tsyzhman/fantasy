@@ -7,6 +7,7 @@ import {
   autoMapSportsRuFantasyPlayers,
   buildSportsRuMappingCandidates,
   findManualRosterEntry,
+  isSafeAutomaticSportsRuCandidate,
   loadSportsRuAuthoritativeStarterCandidate,
   loadSportsRuTeamPlayerMappings,
   planSportsRuSelectionRemap,
@@ -57,6 +58,39 @@ test("an exact birth date safely bridges poor transliteration and rejects a conf
   assert.ok(matching.confidence >= 0.9);
   assert.match(matching.reason, /birth date/);
   assert.equal(conflicting.confidence, 0);
+});
+
+test("automatic mapping rejects a weak same-first-name candidate even when team and position add bonuses", () => {
+  const [candidate] = buildSportsRuMappingCandidates(
+    {
+      ...price("lewis orford", "MID"),
+      fotmobPlayerName: "Lewis Orford",
+      teamName: "West Ham"
+    },
+    [roster("Lewis O'Brien", "CM", { name: "West Ham" })],
+    1n
+  );
+
+  assert.equal(isSafeAutomaticSportsRuCandidate(candidate, null), false);
+});
+
+test("automatic mapping retains an exact identity when the provider birthday conflicts", () => {
+  const [candidate] = buildSportsRuMappingCandidates(
+    {
+      ...price("malick diouf", "DEF"),
+      fotmobPlayerName: "Malick Diouf",
+      providerBirthDate: new Date("2004-12-29T00:00:00.000Z"),
+      teamName: "West Ham"
+    },
+    [{
+      ...roster("Malick Diouf", "LB", { name: "West Ham" }),
+      player: { name: "Malick Diouf", birthDate: new Date("2004-12-28T00:00:00.000Z") }
+    }],
+    1n
+  );
+
+  assert.equal(candidate.birthDateConflicts, true);
+  assert.equal(isSafeAutomaticSportsRuCandidate(candidate, null), true);
 });
 
 test("team roster exposes only verified Sports.ru player names", () => {
