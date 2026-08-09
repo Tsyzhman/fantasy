@@ -2,7 +2,7 @@ import { Prisma, type IngestionJob, type PrismaClient } from "@prisma/client";
 
 import { FantasyPointsRepository } from "@/machete/fantasy_repositories";
 import { calculate_fantasy_points_for_match } from "@/machete/fantasy_points_engine";
-import { resetStartingXiForLatestCompletedRound } from "@/machete/starting-xi-round-reset";
+import { applyStartingXiFromCompletedMatch } from "@/machete/starting-xi-from-match";
 
 import { createFotMobClient, type FotMobClient } from "./fotmob_client";
 import {
@@ -436,6 +436,17 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: Ing
           if (shouldCalculateFantasy) {
             await calculate_fantasy_points_for_match(prisma, result.matchId, ruleset.id);
           }
+          if (jobType === "incremental_update") {
+            const startingXi = await applyStartingXiFromCompletedMatch(prisma, { matchId: result.matchId });
+            const changedTeams = startingXi.teams.filter((team) => team.reason === "APPLIED");
+            const incompleteTeams = startingXi.teams.filter((team) => team.reason === "INCOMPLETE_LINEUP");
+            if (changedTeams.length > 0 || incompleteTeams.length > 0) {
+              console.info(
+                `[ingestion] Starting XI from match ${result.matchId}: applied to ${changedTeams.length} team(s), `
+                + `preserved ${incompleteTeams.length} team(s) with incomplete lineups.`
+              );
+            }
+          }
           await prisma.ingestionJob.update({
             where: { id: jobId },
             data: {
@@ -490,18 +501,6 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: Ing
       const discoveryComplete = discoveredMatches.length >= minimumMatches;
       if (!discoveryComplete) hasScopeErrors = true;
       const scopeStatus = attempt.rosterSynced && attempt.fixtureFailures === 0 && discoveryComplete ? "completed" : "completed_with_errors";
-      if (jobType === "incremental_update") {
-        attempt.stage = "resetting_starting_xi";
-        const starterReset = await resetStartingXiForLatestCompletedRound(prisma, {
-          leagueId: BigInt(canonicalLeagueId),
-          season: scope.season
-        });
-        console.info(
-          `[ingestion] Starting-XI round reset for league ${canonicalLeagueId} / ${scope.season}: ${starterReset.reason}`
-          + `${starterReset.round ? `, round ${starterReset.round}` : ""}`
-          + `, players ${starterReset.playersReset}, teams ${starterReset.teamsChanged}.`
-        );
-      }
       const completedScopes = upsertCompletedScope(metadataRecord(jobMetadata).completed_scopes, {
         source_league_id: scope.league_id,
         canonical_league_id: canonicalLeagueId,

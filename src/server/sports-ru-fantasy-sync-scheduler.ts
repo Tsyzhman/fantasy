@@ -2,7 +2,8 @@ import { prisma } from "@/lib/db";
 import { createLogger } from "@/lib/logger";
 import {
   parseSportsRuFantasySyncScopes,
-  sportsRuFantasySyncIntervalMilliseconds
+  sportsRuFantasySyncIntervalMilliseconds,
+  type SportsRuFantasySyncScope
 } from "@/machete/sports_ru_fantasy_config";
 import { syncSportsRuFantasy } from "@/machete/sports_ru_fantasy_sync";
 
@@ -44,8 +45,13 @@ function scheduleNextRun(state: SchedulerState, delayMs = syncIntervalMillisecon
   logger.info("Scheduled Sports.ru fantasy price sync.", { delayMs });
 }
 
-export async function runSportsRuFantasySyncNow(trigger: "interval" | "post-fotmob") {
-  if (process.env.SPORTS_RU_FANTASY_SYNC_ENABLED === "false") return { started: false, succeeded: 0, failed: 0 };
+export async function runSportsRuFantasySyncNow(
+  trigger: "interval" | "post-fotmob" | "manual",
+  requestedScopes?: readonly SportsRuFantasySyncScope[]
+) {
+  if (trigger !== "manual" && process.env.SPORTS_RU_FANTASY_SYNC_ENABLED === "false") {
+    return { started: false, succeeded: 0, failed: 0, unavailable: 0, scopes: [] };
+  }
   const state = sportsRuFantasySchedulerState();
   if (state.running && trigger === "post-fotmob") {
     logger.info("Waiting for the active Sports.ru sync before the required post-FotMob refresh.");
@@ -56,13 +62,17 @@ export async function runSportsRuFantasySyncNow(trigger: "interval" | "post-fotm
   }
   if (state.running) {
     logger.info("Sports.ru fantasy price sync is already running; the trigger was skipped.", { trigger });
-    return { started: false, succeeded: 0, failed: 0 };
+    return { started: false, succeeded: 0, failed: 0, unavailable: 0, scopes: [] };
   }
   state.running = true;
   let succeeded = 0;
   let failed = 0;
+  let unavailable = 0;
+  const scopeResults: Array<Record<string, unknown>> = [];
   try {
-    const scopes = parseSportsRuFantasySyncScopes(process.env.SPORTS_RU_FANTASY_SYNC_SCOPES ?? "");
+    const scopes = requestedScopes
+      ? [...requestedScopes]
+      : parseSportsRuFantasySyncScopes(process.env.SPORTS_RU_FANTASY_SYNC_SCOPES ?? "");
     for (const scope of scopes) {
       try {
         const result = await syncSportsRuFantasy(prisma, scope);
@@ -73,20 +83,36 @@ export async function runSportsRuFantasySyncNow(trigger: "interval" | "post-fotm
           sportsRuSeasonId: result.seasonId,
           prices: result.prices
         };
-        if (result.status === "UNAVAILABLE") logger.warn("Sports.ru current fantasy season is not available; existing prices were preserved.", fields);
-        else {
+        if (result.status === "UNAVAILABLE") {
+          unavailable += 1;
+          scopeResults.push({ ...fields, status: result.status });
+          logger.warn("Sports.ru current fantasy season is not available; existing prices were preserved.", fields);
+        } else {
           succeeded += 1;
+          scopeResults.push({
+            ...fields,
+            status: result.status,
+            mapping: result.mapping,
+            deletedStalePrices: result.deletedStalePrices
+          });
           logger.info("Sports.ru fantasy prices synchronized.", { ...fields, trigger, mapping: result.mapping, deletedStalePrices: result.deletedStalePrices });
         }
       } catch (error) {
         failed += 1;
+        scopeResults.push({
+          leagueId: String(scope.leagueId),
+          season: scope.season,
+          tournamentHru: scope.tournamentHru,
+          status: "FAILED",
+          error: error instanceof Error ? error.message : "Unknown Sports.ru sync error"
+        });
         logger.error("Scheduled Sports.ru fantasy price scope failed; existing prices were preserved.", { ...scope, trigger, error });
       }
     }
   } finally {
     state.running = false;
   }
-  return { started: true, succeeded, failed };
+  return { started: true, succeeded, failed, unavailable, scopes: scopeResults };
 }
 
 function syncIntervalMilliseconds() {

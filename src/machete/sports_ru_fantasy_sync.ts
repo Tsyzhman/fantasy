@@ -115,6 +115,8 @@ export async function syncSportsRuFantasy(prisma: PrismaClient, input: SportsRuF
         : null;
       const priceData = {
         providerPlayerId: row.providerPlayerId,
+        providerStatPlayerId: row.providerStatPlayerId,
+        providerBirthDate: row.providerBirthDate ? new Date(`${row.providerBirthDate}T00:00:00.000Z`) : null,
         playerName: row.playerName,
         // Sports.ru's stat object exposes the canonical Latin identity name.
         // Persist it in the existing cross-provider name-hint column so the
@@ -174,7 +176,14 @@ export async function syncSportsRuFantasy(prisma: PrismaClient, input: SportsRuF
     return staleRows.length;
   });
 
-  const mapping = await autoMapSportsRuFantasyPlayers(prisma, { leagueId: input.leagueId, season: input.season });
+  // A routine price refresh may update names, clubs and prices, but it must
+  // never reinterpret an identity that an earlier automatic or manual review
+  // has already accepted. Only genuinely unmapped rows enter the matcher.
+  const mapping = await autoMapSportsRuFantasyPlayers(prisma, {
+    leagueId: input.leagueId,
+    season: input.season,
+    onlyUnmapped: true
+  });
   return {
     status: "SYNCED" as const,
     seasonId: snapshot.seasonId,

@@ -42,6 +42,31 @@ test("Sports.ru snapshot fails closed when no current season exists", async () =
   assert.deepEqual(snapshot.prices, []);
 });
 
+test("Sports.ru snapshot retains the hidden stat-player identity and birth date", async () => {
+  const fetchImpl = (async (_input: string | URL | Request, init?: RequestInit) => {
+    const query = JSON.parse(String(init?.body ?? "{}"))?.query as string;
+    if (query.includes("tournament(")) {
+      return jsonResponse({ data: { fantasyQueries: { tournament: { currentSeason: { id: "80" } } } } });
+    }
+    assert.match(query, /statObject \{ id name firstName lastName coalesceName dateOfBirth \}/);
+    if (!query.includes("role: MIDFIELDER")) {
+      return jsonResponse({ data: { fantasyQueries: { players: { list: [] } } } });
+    }
+    return jsonResponse({ data: { fantasyQueries: { players: { list: [{
+      id: "70332",
+      name: "Nico Williams",
+      price: 8,
+      team: { id: "8315", name: "Athletic Club" },
+      statObject: { id: "nicholas_williams_arthuer", name: "Nico Williams", dateOfBirth: "2002-07-12" }
+    }] } } } });
+  }) as typeof fetch;
+
+  const snapshot = await fetchSportsRuFantasyGraphqlSnapshot("spain", { fetchImpl, pageSize: 10 });
+  assert.equal(snapshot.prices[0]?.providerStatPlayerId, "nicholas_williams_arthuer");
+  assert.equal(snapshot.prices[0]?.providerBirthDate, "2002-07-12");
+  assert.equal(snapshot.prices[0]?.providerCanonicalName, "nicholas williams arthuer");
+});
+
 test("Sports.ru snapshot keeps same-name players from different teams", async () => {
   const fetchImpl = (async (_input: string | URL | Request, init?: RequestInit) => {
     const query = JSON.parse(String(init?.body ?? "{}"))?.query as string;

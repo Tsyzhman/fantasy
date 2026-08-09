@@ -16,6 +16,8 @@ export type SportsRuFantasyContestRules = {
 
 export type SportsRuFantasyPriceRow = {
   providerPlayerId?: string | null;
+  providerStatPlayerId?: string | null;
+  providerBirthDate?: string | null;
   playerName: string;
   providerCanonicalName?: string | null;
   normalizedName: string;
@@ -122,10 +124,12 @@ export async function fetchSportsRuFantasyGraphqlSnapshot(
               price?: number | null;
               team?: { id?: string | null; name?: string | null } | null;
               statObject?: {
+                id?: string | null;
                 name?: string | null;
                 firstName?: string | null;
                 lastName?: string | null;
                 coalesceName?: string | null;
+                dateOfBirth?: string | null;
               } | null;
             }> | null;
           } | null;
@@ -142,7 +146,7 @@ export async function fetchSportsRuFantasyGraphqlSnapshot(
               sortType: BY_PRICE,
               role: ${role}
             }) {
-              list { id name price team { id name } statObject { name firstName lastName coalesceName } }
+              list { id name price team { id name } statObject { id name firstName lastName coalesceName dateOfBirth } }
             }
           }
         }`,
@@ -160,8 +164,13 @@ export async function fetchSportsRuFantasyGraphqlSnapshot(
         seenPlayerIds.add(providerPlayerId);
         prices.push({
           providerPlayerId,
+          providerStatPlayerId: cleanText(player.statObject?.id ?? "") || null,
+          providerBirthDate: sportsRuDateOnly(player.statObject?.dateOfBirth),
           playerName,
-          providerCanonicalName: cleanText(player.statObject?.coalesceName ?? "") || null,
+          providerCanonicalName:
+            cleanText(player.statObject?.coalesceName ?? "")
+            || sportsRuStatPlayerName(player.statObject?.id)
+            || null,
           normalizedName: normalizeSportsRuPlayerName(playerName),
           teamName: cleanText(player.team?.name ?? "") || null,
           position,
@@ -180,6 +189,16 @@ export async function fetchSportsRuFantasyGraphqlSnapshot(
     prices,
     fetchedAt: new Date().toISOString()
   };
+}
+
+function sportsRuDateOnly(value: string | null | undefined) {
+  const match = /^(\d{4}-\d{2}-\d{2})/.exec(value?.trim() ?? "");
+  return match?.[1] ?? null;
+}
+
+function sportsRuStatPlayerName(value: string | null | undefined) {
+  const normalized = value?.trim().replace(/[_-]+/g, " ").replace(/\s+/g, " ") ?? "";
+  return /[a-z]/i.test(normalized) ? normalized : "";
 }
 
 function sportsRuFantasyDisplayName(player: {
