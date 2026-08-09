@@ -2,6 +2,7 @@ import { DatabaseZap } from "lucide-react";
 import type { ReactNode } from "react";
 
 import { AdminNav } from "@/components/admin/AdminNav";
+import { FantasySourceSyncControls } from "@/components/admin/FantasySourceSyncControls";
 import { I18nText } from "@/components/i18n-text";
 import { IngestionAutoRefresh } from "@/components/admin/IngestionAutoRefresh";
 import { IngestionControls } from "@/components/admin/IngestionControls";
@@ -9,12 +10,22 @@ import { getIngestionAdminStatus } from "@/core_data/ingestion-jobs";
 import { requireAdminUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { formatDate, formatNumber } from "@/lib/format";
+import {
+  foontasyScopeOption,
+  loadFoontasySyncScopes,
+  loadSportsRuPriceSyncScopes,
+  sportsRuScopeOption
+} from "@/machete/fantasy-source-sync-config";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminIngestionPage() {
   await requireAdminUser();
-  const status = await getIngestionAdminStatus(prisma);
+  const [status, priceScopes, foontasyScopes] = await Promise.all([
+    getIngestionAdminStatus(prisma),
+    loadSportsRuPriceSyncScopes(prisma),
+    loadFoontasySyncScopes(prisma)
+  ]);
   const job = status.active_job ?? status.latest_job;
   const progress = calculateProgress(job);
   const dataQuality = summarizeDataQuality(job?.metadata);
@@ -40,6 +51,11 @@ export default async function AdminIngestionPage() {
           <IngestionControls hasActiveJob={Boolean(status.active_job)} initialBackfillCompleted={status.initial_backfill_completed} />
         </div>
       </section>
+
+      <FantasySourceSyncControls
+        priceOptions={priceScopes.map(sportsRuScopeOption)}
+        foontasyOptions={foontasyScopes.map(foontasyScopeOption)}
+      />
 
       <section className="mt-6 rounded border border-slate-200 bg-white p-5 shadow-soft">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">

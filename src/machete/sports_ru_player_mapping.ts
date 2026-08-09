@@ -11,6 +11,7 @@ type SportsRuPriceLike = {
   normalizedName: string;
   teamName: string;
   fotmobPlayerName?: string | null;
+  providerBirthDate?: Date | null;
   position: string | null;
   price: number;
 };
@@ -23,7 +24,7 @@ type SportsRuStoredPrice = SportsRuPriceLike & {
 };
 
 type SportsRuStoredPriceWithRoster = SportsRuStoredPrice & {
-  player: { id: bigint; name: string } | null;
+  player: { id: bigint; name: string; birthDate?: Date | null } | null;
   team: { id: bigint; name: string } | null;
 };
 
@@ -42,6 +43,7 @@ type RosterEntry = {
   position: string | null;
   player: {
     name: string;
+    birthDate?: Date | null;
   };
   team: {
     name: string;
@@ -158,7 +160,69 @@ const sportsRuTeamNamePairs = [
   ["Спортинг", "Sporting CP"],
   ["Фамаликан", "Famalicao"],
   ["Эшторил", "Estoril"],
-  ["Эштрела", "Estrela da Amadora"]
+  ["Эштрела", "Estrela da Amadora"],
+  ["Бернли", "Burnley"],
+  ["Бирмингем", "Birmingham City"],
+  ["Блэкберн", "Blackburn Rovers"],
+  ["Болтон", "Bolton Wanderers"],
+  ["Бристоль Сити", "Bristol City"],
+  ["Вест Бромвич", "West Bromwich Albion"],
+  ["Вест Хэм", "West Ham United"],
+  ["Вулверхэмптон", "Wolverhampton Wanderers"],
+  ["Дерби Каунти", "Derby County"],
+  ["КПР", "Queens Park Rangers"],
+  ["Кардифф", "Cardiff City"],
+  ["Линкольн Сити", "Lincoln City"],
+  ["Мидлсбро", "Middlesbrough"],
+  ["Миллуолл", "Millwall"],
+  ["Норвич", "Norwich City"],
+  ["Портсмут", "Portsmouth"],
+  ["Престон", "Preston North End"],
+  ["Рексхэм", "Wrexham"],
+  ["Саутгемптон", "Southampton"],
+  ["Сток Сити", "Stoke City"],
+  ["Суонси", "Swansea City"],
+  ["Уотфорд", "Watford"],
+  ["Чарльтон", "Charlton Athletic"],
+  ["Шеффилд Юнайтед", "Sheffield United"],
+  ["Аланьяспор", "Alanyaspor"],
+  ["Амед", "Amed Sportif"],
+  ["Бешикташ", "Beşiktaş"],
+  ["Газиантеп", "Gaziantep FK"],
+  ["Галатасарай", "Galatasaray"],
+  ["Гезтепе", "Göztepe"],
+  ["Генчлербирлиги", "Gençlerbirliği"],
+  ["Еюпспор", "Eyüpspor"],
+  ["Истанбул", "Başakşehir"],
+  ["Касымпаша", "Kasımpaşa"],
+  ["Коджаелиспор", "Kocaelispor"],
+  ["Коньяспор", "Konyaspor"],
+  ["Ризеспор", "Rizespor"],
+  ["Самсунспор", "Samsunspor"],
+  ["Трабзонспор", "Trabzonspor"],
+  ["Фенербахче", "Fenerbahçe"],
+  ["Чорум", "Çorum FK"],
+  ["Эрзурумспор", "Erzurumspor FK"],
+  ["Алавес", "Deportivo Alaves"],
+  ["Атлетик", "Athletic Club"],
+  ["Атлетико", "Atletico Madrid"],
+  ["Барселона", "Barcelona"],
+  ["Бетис", "Real Betis"],
+  ["Валенсия", "Valencia"],
+  ["Вильярреал", "Villarreal"],
+  ["Депортиво", "Deportivo A Coruña"],
+  ["Леванте", "Levante"],
+  ["Малага", "Malaga"],
+  ["Осасуна", "Osasuna"],
+  ["Райо Вальекано", "Rayo Vallecano"],
+  ["Расинг", "Racing Santander"],
+  ["Реал Мадрид", "Real Madrid"],
+  ["Реал Сосьедад", "Real Sociedad"],
+  ["Севилья", "Sevilla"],
+  ["Сельта", "Celta Vigo"],
+  ["Хетафе", "Getafe"],
+  ["Эльче", "Elche"],
+  ["Эспаньол", "Espanyol"]
 ] as const;
 const sportsRuCanonicalTeamNames = new Map<string, string>();
 for (const [sportsName, fotmobName] of sportsRuTeamNamePairs) {
@@ -201,7 +265,7 @@ export async function autoMapSportsRuFantasyPlayers(
     .filter((map) => isManualPlayerMapping(map.matchedBy) && map.internalEntityId)
     .map((map) => BigInt(map.internalEntityId!)))];
   const [manualPlayers, activeSeasonTeams] = await Promise.all([
-    prisma.corePlayer.findMany({ where: { id: { in: manualPlayerIds } }, select: { id: true, name: true } }),
+    prisma.corePlayer.findMany({ where: { id: { in: manualPlayerIds } }, select: { id: true, name: true, birthDate: true } }),
     prisma.leagueSeasonTeam.findMany({
       where: { leagueId: input.leagueId, season: input.season, active: true },
       select: { teamId: true, team: { select: { name: true } } }
@@ -734,7 +798,16 @@ export function scoreSportsRuCandidate(
   const fotmobName = normalizeName(entry.player.name);
   const sportsNameScore = scoreNameMatch(sportsName, fotmobName);
   const fotmobHintScore = scoreNameMatch(fotmobHintName, fotmobName);
-  const nameScore = Math.max(sportsNameScore, fotmobHintScore);
+  const birthDateMatches = Boolean(
+    price.providerBirthDate
+    && entry.player.birthDate
+    && dateOnly(price.providerBirthDate) === dateOnly(entry.player.birthDate)
+  );
+  if (price.providerBirthDate && entry.player.birthDate && !birthDateMatches) {
+    return { confidence: 0, reason: "birth date mismatch" };
+  }
+  const rawNameScore = Math.max(sportsNameScore, fotmobHintScore);
+  const nameScore = rawNameScore || (birthDateMatches ? 0.7 : 0);
   if (nameScore === 0) return { confidence: 0, reason: "name mismatch" };
   const pricePosition = normalizeFantasyPosition(price.position);
   const rosterPosition = normalizeFantasyPosition(entry.position);
@@ -743,12 +816,14 @@ export function scoreSportsRuCandidate(
     ? entry.teamId === authoritativeTeamId ? 0.04 : 0
     : teamScoreAdjustment(price.teamName, entry.team.name);
   if (teamAdjustment < 0) return { confidence: 0, reason: "team mismatch" };
-  const confidence = clamp(round(nameScore + positionAdjustment + teamAdjustment), 0, 1);
+  const birthDateAdjustment = birthDateMatches ? 0.12 : 0;
+  const confidence = clamp(round(nameScore + positionAdjustment + teamAdjustment + birthDateAdjustment), 0, 1);
   const matchedNameSource = fotmobHintScore >= sportsNameScore && fotmobHintScore > 0 ? "fotmob hint" : "name";
   const reason = [
     nameScore >= 0.92 ? matchedNameSource : nameScore >= 0.74 ? `fuzzy ${matchedNameSource}` : `weak ${matchedNameSource}`,
     pricePosition !== "UNK" && rosterPosition !== "UNK" ? `position ${pricePosition}/${rosterPosition}` : null,
-    teamAdjustment > 0 ? "team" : null
+    teamAdjustment > 0 ? "team" : null,
+    birthDateMatches ? "birth date" : null
   ]
     .filter(Boolean)
     .join(", ");
@@ -836,7 +911,7 @@ function authoritativePriceRosterEntry(
     playerId: price.player.id,
     teamId: price.team.id,
     position: price.position,
-    player: { name: price.player.name },
+    player: { name: price.player.name, birthDate: price.player.birthDate ?? null },
     team: { name: price.team.name }
   };
 }
@@ -1190,6 +1265,10 @@ function levenshtein(left: string, right: string) {
 
 function round(value: number) {
   return Math.round(value * 100) / 100;
+}
+
+function dateOnly(value: Date) {
+  return value.toISOString().slice(0, 10);
 }
 
 function clamp(value: number, min: number, max: number) {

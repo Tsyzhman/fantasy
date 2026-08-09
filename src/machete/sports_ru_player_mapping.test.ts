@@ -19,6 +19,46 @@ import {
 const liverpool = { name: "Liverpool" };
 const city = { name: "Manchester City" };
 
+test("Spain, Championship and Turkey Sports.ru club names resolve to their FotMob season teams", () => {
+  const teams = [
+    { teamId: 1n, team: { name: "Deportivo Alaves" } },
+    { teamId: 2n, team: { name: "Queens Park Rangers" } },
+    { teamId: 3n, team: { name: "Başakşehir" } }
+  ];
+  assert.equal(resolveSportsRuSeasonTeam("Алавес", teams)?.teamId, 1n);
+  assert.equal(resolveSportsRuSeasonTeam("КПР", teams)?.teamId, 2n);
+  assert.equal(resolveSportsRuSeasonTeam("Истанбул", teams)?.teamId, 3n);
+});
+
+test("an exact birth date safely bridges poor transliteration and rejects a conflicting birthday", () => {
+  const entry = {
+    playerId: 70332n,
+    teamId: 8315n,
+    position: "LW",
+    player: { name: "Nico Williams", birthDate: new Date("2002-07-12T00:00:00.000Z") },
+    team: { name: "Athletic Club" }
+  };
+  const basePrice = {
+    id: "sports-nico",
+    playerName: "Нико Уильямс",
+    normalizedName: "niko uilyams",
+    teamName: "Атлетик",
+    position: "MID",
+    price: 8
+  };
+  const matching = scoreSportsRuCandidate({
+    ...basePrice,
+    providerBirthDate: new Date("2002-07-12T00:00:00.000Z")
+  }, entry, 8315n);
+  const conflicting = scoreSportsRuCandidate({
+    ...basePrice,
+    providerBirthDate: new Date("2003-07-12T00:00:00.000Z")
+  }, entry, 8315n);
+  assert.ok(matching.confidence >= 0.9);
+  assert.match(matching.reason, /birth date/);
+  assert.equal(conflicting.confidence, 0);
+});
+
 test("team roster exposes only verified Sports.ru player names", () => {
   const names = sportsRuDisplayNamesByPlayerId([
     { mappedPlayerId: "1352213", sportsName: "Ро-Зангело Дал", status: "MATCHED", price: 6.5 },

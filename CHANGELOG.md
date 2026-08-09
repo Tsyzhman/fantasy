@@ -5,6 +5,34 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.14 - 2026-08-09
+
+### Added
+
+- The ingestion admin page now has independent multi-league controls for
+  Sports.ru price imports and Foontasy FFO imports. Each selected league is
+  processed independently and reports its own result.
+- Sports.ru current prices are supported for Spain, the Championship and
+  Turkey, including explicit Sports.ru-to-FotMob club aliases and a guarded
+  deep-mapping workflow.
+- Sports.ru imports retain the provider stat-player identity and date of birth
+  so poor transliterations and namesakes can be resolved without weakening the
+  global matching threshold.
+
+### Changed
+
+- Routine price refreshes update source fields and prices but send only
+  previously unmapped rows to identity matching. An accepted automatic or
+  manual player mapping is no longer reinterpreted by a later refresh.
+- A completed match now moves each team's starter flags to the eleven players
+  who actually started that match. The update is chronological and idempotent;
+  a ten-player or otherwise incomplete FotMob lineup preserves existing flags.
+
+### Fixed
+
+- The first completed match of a new round no longer clears starter flags for
+  every team in the league.
+
 ## 0.3.13 - 2026-08-05
 
 ### Fixed

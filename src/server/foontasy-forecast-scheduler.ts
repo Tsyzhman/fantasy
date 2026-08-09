@@ -145,6 +145,42 @@ async function runFoontasyForecastSyncNow(state: SchedulerState, expectedRoundNu
   }
 }
 
+export async function runSelectedFoontasyForecastSyncNow(configs: readonly FoontasySyncConfig[]) {
+  const state = globalForScheduler.foontasyForecastScheduler ?? { running: false, started: false };
+  globalForScheduler.foontasyForecastScheduler = state;
+  if (state.running) return { started: false, succeeded: 0, failed: 0, scopes: [] };
+  state.running = true;
+  let succeeded = 0;
+  let failed = 0;
+  const scopes: Array<Record<string, unknown>> = [];
+  try {
+    for (const config of configs) {
+      const fields = {
+        leagueId: String(config.leagueId),
+        season: config.season,
+        assistantPath: safeAssistantPath(config.url)
+      };
+      try {
+        const result = await syncFoontasyForecasts(prisma, config);
+        succeeded += 1;
+        scopes.push({ ...fields, status: "SYNCED", ...result });
+        logger.info("Manually selected Foontasy forecasts synchronized.", { ...fields, ...result });
+      } catch (error) {
+        failed += 1;
+        scopes.push({
+          ...fields,
+          status: "FAILED",
+          error: error instanceof Error ? error.message : "Unknown Foontasy sync error"
+        });
+        logger.error("Selected Foontasy scope failed; other selected leagues will continue.", { ...fields, error });
+      }
+    }
+  } finally {
+    state.running = false;
+  }
+  return { started: true, succeeded, failed, scopes };
+}
+
 async function loadNextFoontasyRoundRun(now: Date, config: FoontasySyncConfig) {
   const matches = await prisma.coreMatch.findMany({
     where: {
@@ -237,4 +273,12 @@ function formatZonedDateTime(date: Date, timeZone: string) {
     year: "numeric"
   }).formatToParts(date).map((part) => [part.type, part.value]));
   return `${values.year}-${values.month}-${values.day} ${values.hour}:${values.minute}`;
+}
+
+function safeAssistantPath(url: string) {
+  try {
+    return new URL(url).pathname;
+  } catch {
+    return "invalid";
+  }
 }

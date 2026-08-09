@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 
 import { syncSportsRuFantasy } from "./sports_ru_fantasy_sync";
@@ -51,6 +52,12 @@ test("Sports.ru sync rejects an implausibly small current-season snapshot before
     }),
     /returned only 96 current-season prices.*required at least 100/
   );
+});
+
+test("routine price refreshes send only previously unmapped rows to identity matching", () => {
+  const source = readFileSync(new URL("./sports_ru_fantasy_sync.ts", import.meta.url), "utf8");
+  assert.match(source, /autoMapSportsRuFantasyPlayers\(prisma,[\s\S]*onlyUnmapped: true/);
+  assert.doesNotMatch(source, /autoMapSportsRuFantasyPlayers\(prisma, \{ leagueId: input\.leagueId, season: input\.season \}\)/);
 });
 
 function sportsRuFetch(seasonId: string | null, playersPerRole: number): typeof fetch {
