@@ -88,22 +88,31 @@ export async function syncFoontasyForecasts(prisma: PrismaClient, config: Foonta
   if (new URL(page.url).pathname === "/signin") throw new Error("Foontasy authentication failed.");
 
   const html = await page.text();
+  const rows = parseFoontasyForecastPage(html, config.leagueId);
+  if (config.sourceVariant === "uefa") {
+    const sportsUrl = new URL(config.url);
+    sportsUrl.searchParams.delete("game");
+    const sportsPage = await fetch(sportsUrl, { headers: { cookie: sessionCookie } });
+    if (!sportsPage.ok || new URL(sportsPage.url).pathname === "/signin") {
+      throw new FoontasySourceUnavailableError(
+        "Foontasy UEFA variant cannot be distinguished from the Sports assistant because the comparison page is unavailable; existing data was preserved."
+      );
+    }
+    const sportsRows = parseFoontasyForecastPage(await sportsPage.text(), config.leagueId);
+    assertFoontasyUefaVariant(config.url, page.url, rows, sportsRows, config.leagueId);
+  }
   const round = parseFoontasyRoundDescriptor(html, config.leagueId);
   return importFoontasyForecasts(prisma, {
     leagueId: config.leagueId,
     season: config.season,
     sourceVariant: config.sourceVariant,
     ...round,
-    rows: parseFoontasyForecastPage(html, config.leagueId)
+    rows
   });
 }
 
 export function parseFoontasyForecastPage(html: string, leagueId = 63n) {
-  const match = /let data = (\[.*?\]);\s*let/s.exec(html);
-  if (!match) throw new FoontasySourceUnavailableError("Foontasy page does not contain a published forecast array; existing data was preserved.");
-  const raw: unknown = JSON.parse(match[1]);
-  if (!Array.isArray(raw)) throw new Error("Foontasy forecast payload is not an array.");
-  const rows = raw.filter(isFoontasySourceRow);
+  const rows = extractFoontasyForecastRows(html);
   const minimumRows = minimumFoontasyRows(leagueId);
   if (rows.length < minimumRows) {
     throw new FoontasySourceUnavailableError(`Foontasy returned only ${rows.length} valid forecast rows; existing data was preserved.`);
@@ -118,6 +127,42 @@ export function parseFoontasyForecastPage(html: string, leagueId = 63n) {
     );
   }
   return rows;
+}
+
+function extractFoontasyForecastRows(html: string) {
+  const match = /let data = (\[.*?\]);\s*let/s.exec(html);
+  if (!match) throw new FoontasySourceUnavailableError("Foontasy page does not contain a published forecast array; existing data was preserved.");
+  const raw: unknown = JSON.parse(match[1]);
+  if (!Array.isArray(raw)) throw new Error("Foontasy forecast payload is not an array.");
+  return raw.filter(isFoontasySourceRow);
+}
+
+export function assertFoontasyUefaVariant(
+  requestUrl: string,
+  responseUrl: string,
+  uefaRows: readonly FoontasySourceRow[],
+  sportsRows: readonly FoontasySourceRow[],
+  leagueId = 42n
+) {
+  const request = new URL(requestUrl);
+  const response = new URL(responseUrl);
+  const minimumRows = minimumFoontasyRows(leagueId);
+  if (
+    request.searchParams.get("game") !== "uefa"
+    || response.searchParams.get("game") !== "uefa"
+    || response.origin !== request.origin
+    || response.pathname !== request.pathname
+    || sportsRows.length < minimumRows
+  ) {
+    throw new FoontasySourceUnavailableError(
+      "Foontasy did not positively identify the UEFA assistant; existing data was preserved."
+    );
+  }
+  if (foontasyPayloadSignature(uefaRows) === foontasyPayloadSignature(sportsRows)) {
+    throw new FoontasySourceUnavailableError(
+      "Foontasy returned the Sports payload for the UEFA assistant; the duplicate was not imported."
+    );
+  }
 }
 
 export function parseFoontasyRound(html: string, leagueId = 63n) {
@@ -138,11 +183,6 @@ export function parseFoontasyRoundDescriptor(html: string, leagueId = 63n): Foon
 }
 
 export async function importFoontasyForecasts(prisma: PrismaClient, input: FoontasyImportInput) {
-  if (input.sourceVariant === "uefa") {
-    throw new FoontasySourceUnavailableError(
-      "Foontasy UEFA storage is prepared but remains disabled until the compatible source-variant index rollout is complete."
-    );
-  }
   const phase = await resolveFoontasySportsPhase(prisma, input);
   const sourceIds = input.rows.map((row) => row.external_id);
   const prices = await prisma.fantasyPlayerPrice.findMany({
@@ -297,6 +337,17 @@ function isMeaningfulFoontasyForecast(row: FoontasySourceRow) {
   return row.points !== 0
     || (typeof row.attacking_points === "number" && row.attacking_points !== 0)
     || Boolean(row.desc?.trim());
+}
+
+function foontasyPayloadSignature(rows: readonly FoontasySourceRow[]) {
+  return JSON.stringify([...rows]
+    .sort((left, right) => left.external_id.localeCompare(right.external_id))
+    .map((row) => [
+      row.external_id,
+      row.points,
+      row.attacking_points ?? null,
+      row.desc?.trim() ?? ""
+    ]));
 }
 
 export function assertFoontasyMappingReadiness(mappedRows: number, totalRows: number, leagueId = 63n) {

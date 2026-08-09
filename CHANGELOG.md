@@ -5,6 +5,24 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.20 - 2026-08-09
+
+### Added
+
+- The prepared Champions League UEFA assistant can now be imported into its
+  own source namespace. It still fails closed unless at least 90 percent of
+  its player IDs overlap the current Sports.ru phase and at least 90 percent
+  resolve to internal players. The final URL must retain the UEFA marker and
+  its normalized payload must differ from the companion Sports assistant, so
+  an ignored query cannot create a mislabeled duplicate.
+
+### Changed
+
+- The legacy flat Foontasy round keys and their redundant query indexes are
+  removed after the source-aware writer has occupied the rollback slot.
+  Version 0.3.19 remains a compatible rollback because it already writes and
+  reads the new source-aware identity.
+
 ## 0.3.19 - 2026-08-09
 
 ### Changed

@@ -6,16 +6,18 @@ import test from "node:test";
 import {
   assertFoontasyMappingReadiness,
   assertFoontasyProviderOverlap,
+  assertFoontasyUefaVariant,
   parseFoontasyForecastPage,
   parseFoontasyRound,
   resolveFoontasySportsRound,
   responseCookieHeader
 } from "@/machete/foontasy_forecasts";
 
-test("Foontasy source-key rollout keeps the 0.3.18 rollback writer compatible", () => {
+test("Foontasy source contract keeps the 0.3.19 rollback writer compatible", () => {
   const root = process.cwd();
   const expandMigration = readFileSync(path.join(root, "prisma/migrations/000029_foontasy_source_variants/migration.sql"), "utf8");
   const keyMigration = readFileSync(path.join(root, "prisma/migrations/000030_foontasy_source_unique/migration.sql"), "utf8");
+  const contractMigration = readFileSync(path.join(root, "prisma/migrations/000031_foontasy_source_contract/migration.sql"), "utf8");
   const schema = readFileSync(path.join(root, "prisma/schema.prisma"), "utf8");
   const importer = readFileSync(path.join(root, "src/machete/foontasy_forecasts.ts"), "utf8");
 
@@ -23,12 +25,14 @@ test("Foontasy source-key rollout keeps the 0.3.18 rollback writer compatible", 
   assert.doesNotMatch(keyMigration, /DROP INDEX/);
   assert.match(keyMigration, /CREATE UNIQUE INDEX "foontasy_forecasts_source_round_player_key"/);
   assert.match(keyMigration, /CREATE UNIQUE INDEX "foontasy_forecast_samples_source_round_player_key"/);
-  assert.match(schema, /@@unique\(\[leagueId, season, roundNumber, sourcePlayerId\]/);
+  assert.match(contractMigration, /DROP INDEX "foontasy_forecasts_league_id_season_round_number_source_player_"/);
+  assert.match(contractMigration, /DROP INDEX "foontasy_forecast_samples_league_id_season_round_number_source_"/);
+  assert.doesNotMatch(schema, /@@unique\(\[leagueId, season, roundNumber, sourcePlayerId\]/);
   assert.match(schema, /@@unique\(\[leagueId, season, sourceVariant, sourceSeasonId, sourceRoundNumber, sourcePlayerId\]/);
   assert.match(importer, /leagueId_season_sourceVariant_sourceSeasonId_sourceRoundNumber_sourcePlayerId/);
   assert.match(importer, /sourceVariant: input\.sourceVariant/);
   assert.match(importer, /sourceRoundNumber: phase\.sourceRoundNumber/);
-  assert.match(importer, /storage is prepared but remains disabled/);
+  assert.doesNotMatch(importer, /storage is prepared but remains disabled/);
 });
 
 test("Foontasy round parser recognizes the Russian tour heading without source-encoding ambiguity", () => {
@@ -62,6 +66,49 @@ test("Foontasy cup gate accepts a calculated final-sized squad pool but still re
   );
   assert.doesNotThrow(() => assertFoontasyProviderOverlap(45, 50, 42n));
   assert.doesNotThrow(() => assertFoontasyMappingReadiness(45, 50, 42n));
+});
+
+test("Foontasy UEFA import requires a distinct payload and a preserved source marker", () => {
+  const sportsRows = Array.from({ length: 50 }, (_, index) => foontasyRow(index, 1));
+  const uefaRows = sportsRows.map((row, index) => ({ ...row, points: index === 0 ? 2 : row.points }));
+
+  assert.doesNotThrow(() => assertFoontasyUefaVariant(
+    "https://foontasy.ru/assistant/champions-league?game=uefa",
+    "https://foontasy.ru/assistant/champions-league?game=uefa",
+    uefaRows,
+    sportsRows
+  ));
+  assert.throws(
+    () => assertFoontasyUefaVariant(
+      "https://foontasy.ru/assistant/champions-league?game=uefa",
+      "https://foontasy.ru/assistant/champions-league",
+      uefaRows,
+      sportsRows
+    ),
+    /did not positively identify/
+  );
+  assert.throws(
+    () => assertFoontasyUefaVariant(
+      "https://foontasy.ru/assistant/champions-league?game=uefa",
+      "https://foontasy.ru/assistant/champions-league?game=uefa",
+      sportsRows,
+      [...sportsRows].reverse()
+    ),
+    /Sports payload/
+  );
+  assert.throws(
+    () => assertFoontasyUefaVariant(
+      "https://foontasy.ru/assistant/champions-league?game=uefa",
+      "https://foontasy.ru/assistant/europa-league?game=uefa",
+      uefaRows,
+      sportsRows
+    ),
+    /did not positively identify/
+  );
+  assert.throws(
+    () => parseFoontasyForecastPage(foontasyHtml(sportsRows.map((row) => ({ ...row, points: 0 }))), 42n),
+    /only 0 calculated forecast rows/
+  );
 });
 
 test("Foontasy round parser understands domestic ordinals and cup stages", () => {

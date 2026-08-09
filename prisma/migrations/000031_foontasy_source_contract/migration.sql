@@ -1,0 +1,6 @@
+DROP INDEX "foontasy_forecasts_league_id_season_round_number_source_player_";
+DROP INDEX "foontasy_forecast_samples_league_id_season_round_number_source_";
+
+DROP INDEX "foontasy_forecasts_league_id_season_player_id_round_number_idx";
+DROP INDEX "foontasy_forecast_samples_league_id_season_round_number_idx";
+DROP INDEX "foontasy_forecast_samples_league_id_season_player_id_round_numb";
