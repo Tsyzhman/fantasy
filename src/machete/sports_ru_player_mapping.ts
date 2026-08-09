@@ -974,15 +974,42 @@ async function updatePriceFromRoster(prisma: PrismaClient, priceId: string, rost
 }
 
 async function applyPriceRosterMapping(prisma: PrismaClient, price: SportsRuStoredPrice, rosterEntry: RosterEntry) {
+  const otherPriceClaims = price.playerId && price.playerId !== rosterEntry.playerId
+    ? await prisma.fantasyPlayerPrice.count({
+        where: {
+          id: { not: price.id },
+          provider: sportsRuProvider,
+          leagueId: price.leagueId,
+          season: price.season,
+          playerId: price.playerId
+        }
+      })
+    : 0;
   await updatePriceFromRoster(prisma, price.id, rosterEntry);
   return syncSquadSelectionsForSportsRuMapping(prisma, {
     leagueId: price.leagueId,
     season: price.season,
-    previousPlayerId: price.playerId,
+    previousPlayerId: shouldMovePreviousSportsRuSelection({
+      previousPlayerId: price.playerId,
+      targetPlayerId: rosterEntry.playerId,
+      otherPriceClaims
+    }) ? price.playerId : null,
     rosterEntry,
     sportsPosition: price.position,
     price: price.price
   });
+}
+
+export function shouldMovePreviousSportsRuSelection(input: {
+  previousPlayerId: bigint | null;
+  targetPlayerId: bigint;
+  otherPriceClaims: number;
+}) {
+  return Boolean(
+    input.previousPlayerId
+    && input.previousPlayerId !== input.targetPlayerId
+    && input.otherPriceClaims === 0
+  );
 }
 
 async function clearPriceRosterMapping(prisma: PrismaClient, priceId: string) {

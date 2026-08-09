@@ -192,8 +192,9 @@ export async function fetchSportsRuFantasyGraphqlSnapshot(
 }
 
 function sportsRuDateOnly(value: string | null | undefined) {
-  const match = /^(\d{4}-\d{2}-\d{2})/.exec(value?.trim() ?? "");
-  return match?.[1] ?? null;
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value?.trim() ?? "");
+  if (!match || Number(match[1]) < 1900) return null;
+  return `${match[1]}-${match[2]}-${match[3]}`;
 }
 
 function sportsRuStatPlayerName(value: string | null | undefined) {
