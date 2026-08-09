@@ -52,19 +52,29 @@ test("Sports.ru snapshot retains the hidden stat-player identity and birth date"
     if (!query.includes("role: MIDFIELDER")) {
       return jsonResponse({ data: { fantasyQueries: { players: { list: [] } } } });
     }
-    return jsonResponse({ data: { fantasyQueries: { players: { list: [{
-      id: "70332",
-      name: "Nico Williams",
-      price: 8,
-      team: { id: "8315", name: "Athletic Club" },
-      statObject: { id: "nicholas_williams_arthuer", name: "Nico Williams", dateOfBirth: "2002-07-12" }
-    }] } } } });
+    return jsonResponse({ data: { fantasyQueries: { players: { list: [
+      {
+        id: "70332",
+        name: "Nico Williams",
+        price: 8,
+        team: { id: "8315", name: "Athletic Club" },
+        statObject: { id: "nicholas_williams_arthuer", name: "Nico Williams", dateOfBirth: "2002-07-12" }
+      },
+      {
+        id: "70333",
+        name: "Unknown Birthday",
+        price: 4,
+        team: { id: "8315", name: "Athletic Club" },
+        statObject: { id: "unknown_birthday", name: "Unknown Birthday", dateOfBirth: "0001-01-01" }
+      }
+    ] } } } });
   }) as typeof fetch;
 
   const snapshot = await fetchSportsRuFantasyGraphqlSnapshot("spain", { fetchImpl, pageSize: 10 });
   assert.equal(snapshot.prices[0]?.providerStatPlayerId, "nicholas_williams_arthuer");
   assert.equal(snapshot.prices[0]?.providerBirthDate, "2002-07-12");
   assert.equal(snapshot.prices[0]?.providerCanonicalName, "nicholas williams arthuer");
+  assert.equal(snapshot.prices[1]?.providerBirthDate, null);
 });
 
 test("Sports.ru snapshot keeps same-name players from different teams", async () => {

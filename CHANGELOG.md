@@ -5,6 +5,17 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.16 - 2026-08-09
+
+### Fixed
+
+- Sports.ru placeholder birth dates such as `0001-01-01` are now treated as
+  missing identity evidence. They can no longer confirm or reject an automatic
+  Sports.ru-to-FotMob player mapping.
+- Correcting a false player link no longer moves a user's squad selection away
+  from an identity that is still legitimately used by another Sports.ru price
+  row.
+
 ## 0.3.15 - 2026-08-09
 
 ### Fixed

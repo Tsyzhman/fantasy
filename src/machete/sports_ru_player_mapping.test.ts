@@ -14,6 +14,7 @@ import {
   resolveSportsRuSeasonTeam,
   scoreSportsRuCandidate,
   sportsRuDisplayNamesByPlayerId,
+  shouldMovePreviousSportsRuSelection,
   shouldRetainManualOverride
 } from "./sports_ru_player_mapping";
 
@@ -662,6 +663,19 @@ test("sports ru mapping remap moves stale squad picks and removes same-squad dup
 
   assert.deepEqual(plan.moveSelectionIds, ["stale-a"]);
   assert.deepEqual(plan.deleteSelectionIds, ["stale-b"]);
+});
+
+test("sports ru mapping does not move a squad selection from an identity still claimed by another price", () => {
+  assert.equal(shouldMovePreviousSportsRuSelection({
+    previousPlayerId: 1585726n,
+    targetPlayerId: 8_000_000_000_070_368n,
+    otherPriceClaims: 1
+  }), false);
+  assert.equal(shouldMovePreviousSportsRuSelection({
+    previousPlayerId: 914134n,
+    targetPlayerId: 1805046n,
+    otherPriceClaims: 0
+  }), true);
 });
 
 test("manual transfer override does not fall back to the player's stale active team", () => {
