@@ -583,7 +583,7 @@ export async function loadFantasySquadPlannerData(
     ),
     loadUpcomingRoundFixtures(prisma, league),
     prisma.foontasyForecast.findMany({
-      where: { leagueId: league.leagueId, season: league.season, playerId: { not: null } },
+      where: { leagueId: league.leagueId, season: league.season, sourceVariant: "sports", playerId: { not: null } },
       orderBy: [{ fetchedAt: "desc" }, { updatedAt: "desc" }],
       distinct: ["playerId"],
       select: { playerId: true, points: true, fetchedAt: true }

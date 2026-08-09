@@ -10,6 +10,8 @@ import type { FantasySourceSyncOption } from "@/machete/fantasy-source-sync-conf
 type SyncScopeResult = {
   leagueId?: string;
   season?: string;
+  sourceKey?: string;
+  tournamentHru?: string;
   status?: string;
   prices?: number;
   rows?: number;
@@ -172,7 +174,7 @@ function SourcePanel({
 
 function SourceResult({ result, options, kind }: { result: SyncResult; options: FantasySourceSyncOption[]; kind: "prices" | "foontasy" }) {
   const language = useLanguage();
-  const optionByScope = new Map(options.map((option) => [`${option.leagueId}:${option.season}`, option]));
+  const optionByKey = new Map(options.map((option) => [option.key, option]));
   return (
     <div className="mt-4 space-y-2 border-t border-slate-200 pt-3 text-xs">
       <p className="font-semibold text-slate-700">
@@ -180,14 +182,20 @@ function SourceResult({ result, options, kind }: { result: SyncResult; options: 
         {result.unavailable ? `; ${language === "ru" ? "недоступно" : "unavailable"}: ${result.unavailable}` : ""}
       </p>
       {result.scopes.map((scope, index) => {
-        const option = optionByScope.get(`${scope.leagueId}:${scope.season}`);
+        const resultSourceKey = kind === "prices" ? scope.tournamentHru : scope.sourceKey;
+        const option = resultSourceKey
+          ? optionByKey.get(`${scope.leagueId}:${scope.season}:${resultSourceKey}`)
+          : undefined;
         const label = option ? (language === "ru" ? option.labelRu : option.labelEn) : `${scope.leagueId ?? "-"}`;
         const success = scope.status === "SYNCED";
+        const unavailable = scope.status === "UNAVAILABLE";
         const details = kind === "prices"
           ? `${scope.prices ?? 0} ${language === "ru" ? "цен" : "prices"}; ${language === "ru" ? "новых связей" : "new mappings"}: ${scope.mapping?.matched ?? 0}; ${language === "ru" ? "осталось" : "remaining"}: ${scope.mapping?.unmatched ?? 0}`
           : `${language === "ru" ? "тур" : "round"} ${scope.roundNumber ?? "-"}; ${scope.rows ?? 0} ${language === "ru" ? "строк" : "rows"}; ${language === "ru" ? "связано" : "mapped"}: ${scope.mapped ?? 0}`;
         return (
-          <div key={`${scope.leagueId}:${scope.season}:${index}`} className={`rounded px-3 py-2 ${success ? "bg-emerald-50 text-emerald-800" : "bg-rose-50 text-rose-700"}`}>
+          <div key={`${scope.leagueId}:${scope.season}:${resultSourceKey ?? index}`} className={`rounded px-3 py-2 ${
+            success ? "bg-emerald-50 text-emerald-800" : unavailable ? "bg-amber-50 text-amber-800" : "bg-rose-50 text-rose-700"
+          }`}>
             <span className="font-semibold">{label}</span>: {success ? details : scope.error || scope.status || "FAILED"}
           </div>
         );

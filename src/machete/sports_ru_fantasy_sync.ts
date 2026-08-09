@@ -61,6 +61,11 @@ export async function syncSportsRuFantasy(prisma: PrismaClient, input: SportsRuF
   );
   const contestName = parsed.contest.name === "Фэнтези" ? `Sports.ru ${leagueSeason.league.name}` : parsed.contest.name;
   const deletedStalePrices = await prisma.$transaction(async (tx) => {
+    const existingContest = await tx.sportsRuFantasyContest.findUnique({
+      where: { provider_leagueId_season: { provider: "SPORTS_RU", leagueId: input.leagueId, season: input.season } },
+      select: { rules: true }
+    });
+    const contestRules = sportsRuContestRules(existingContest?.rules, snapshot, input.tournamentHru);
     await tx.sportsRuFantasyContest.upsert({
       where: { provider_leagueId_season: { provider: "SPORTS_RU", leagueId: input.leagueId, season: input.season } },
       update: {
@@ -69,14 +74,7 @@ export async function syncSportsRuFantasy(prisma: PrismaClient, input: SportsRuF
         squadSize: parsed.contest.squadSize,
         maxPlayersPerTeam,
         sourceUrl,
-        rules: {
-          parsedMaxPlayersPerTeam: parsed.contest.maxPlayersPerTeam,
-          sportsRuSeasonId: snapshot.seasonId,
-          tournamentHru: input.tournamentHru,
-          priceSource: "graphql-current-season",
-          transfersPerRound: 3,
-          importedAt: new Date().toISOString()
-        },
+        rules: { ...contestRules, parsedMaxPlayersPerTeam: parsed.contest.maxPlayersPerTeam },
         lastSyncedAt: new Date()
       },
       create: {
@@ -88,14 +86,7 @@ export async function syncSportsRuFantasy(prisma: PrismaClient, input: SportsRuF
         squadSize: parsed.contest.squadSize,
         maxPlayersPerTeam,
         sourceUrl,
-        rules: {
-          parsedMaxPlayersPerTeam: parsed.contest.maxPlayersPerTeam,
-          sportsRuSeasonId: snapshot.seasonId,
-          tournamentHru: input.tournamentHru,
-          priceSource: "graphql-current-season",
-          transfersPerRound: 3,
-          importedAt: new Date().toISOString()
-        },
+        rules: { ...contestRules, parsedMaxPlayersPerTeam: parsed.contest.maxPlayersPerTeam },
         lastSyncedAt: new Date()
       }
     });
@@ -192,6 +183,69 @@ export async function syncSportsRuFantasy(prisma: PrismaClient, input: SportsRuF
     mapping,
     databaseChanged: true
   };
+}
+
+type StoredSportsRuSeason = {
+  seasonId: string;
+  canonicalOffset: number;
+  tours: Array<{
+    id: string;
+    name: string;
+    status: string | null;
+    startedAt: string | null;
+    finishedAt: string | null;
+  }>;
+};
+
+export function sportsRuContestRules(
+  previousRules: unknown,
+  snapshot: Awaited<ReturnType<typeof fetchSportsRuFantasyGraphqlSnapshot>>,
+  tournamentHru: string
+) {
+  const previous = storedSportsRuSeasons(previousRules);
+  const existing = previous.find((season) => season.seasonId === snapshot.seasonId);
+  const canonicalOffset = existing?.canonicalOffset
+    ?? previous.reduce((maximum, season) => Math.max(maximum, season.canonicalOffset + season.tours.length), 0);
+  const current: StoredSportsRuSeason = {
+    seasonId: snapshot.seasonId!,
+    canonicalOffset,
+    tours: snapshot.tours.length > 0 ? snapshot.tours : existing?.tours ?? []
+  };
+  const sportsRuSeasons = [...previous.filter((season) => season.seasonId !== current.seasonId), current]
+    .sort((left, right) => left.canonicalOffset - right.canonicalOffset)
+    .slice(-4);
+  return {
+    sportsRuSeasonId: snapshot.seasonId,
+    sportsRuSeasons,
+    tournamentHru,
+    priceSource: "graphql-current-season",
+    transfersPerRound: 3,
+    importedAt: new Date().toISOString()
+  };
+}
+
+function storedSportsRuSeasons(value: unknown): StoredSportsRuSeason[] {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return [];
+  const rows = (value as Record<string, unknown>).sportsRuSeasons;
+  if (!Array.isArray(rows)) return [];
+  return rows.flatMap((row): StoredSportsRuSeason[] => {
+    if (!row || typeof row !== "object" || Array.isArray(row)) return [];
+    const record = row as Record<string, unknown>;
+    if (typeof record.seasonId !== "string" || !Number.isSafeInteger(record.canonicalOffset) || !Array.isArray(record.tours)) return [];
+    const tours = record.tours.flatMap((tour): StoredSportsRuSeason["tours"] => {
+      if (!tour || typeof tour !== "object" || Array.isArray(tour)) return [];
+      const item = tour as Record<string, unknown>;
+      if (typeof item.id !== "string" || typeof item.name !== "string") return [];
+      return [{
+        id: item.id,
+        name: item.name,
+        status: typeof item.status === "string" ? item.status : null,
+        startedAt: typeof item.startedAt === "string" ? item.startedAt : null,
+        finishedAt: typeof item.finishedAt === "string" ? item.finishedAt : null
+      }];
+    });
+    return [{ seasonId: record.seasonId, canonicalOffset: Number(record.canonicalOffset), tours }];
+  });
 }
 
 async function fetchSportsRuPage(url: string, fetchImpl: typeof fetch = fetch) {

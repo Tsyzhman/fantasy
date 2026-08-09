@@ -5,6 +5,33 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.18 - 2026-08-09
+
+### Added
+
+- The Foontasy admin catalog now covers all ten published national assistants:
+  RPL, Premier League, LaLiga, Bundesliga, Serie A, Ligue 1, Eredivisie,
+  Liga Portugal, Super Lig, and the Championship. Sports.ru price scopes cover
+  the same leagues.
+- Sports.ru Champions League, UEFA Champions League, Europa League, and World
+  Cup Foontasy variants have distinct source identities. European cup scopes
+  stay closed while the database still exposes an outdated current season;
+  UEFA writes remain closed during the rollback-compatible schema expansion.
+- Foontasy rows now retain their source variant, Sports.ru phase ID, original
+  round label, phase round, and canonical round. Sports.ru price refreshes
+  retain the tour history needed when European knockout phases restart at
+  round one.
+
+### Fixed
+
+- Uncalculated Foontasy pages with hundreds of all-zero player rows are no
+  longer accepted as successful imports. National leagues require at least
+  100 calculated rows; cup stages use a lower adaptive floor so valid finals
+  remain importable. Every scope still requires 90-percent current Sports.ru
+  ID overlap and 90-percent internal mapping coverage before any write.
+- A missing or unpublished assistant is reported as unavailable per league,
+  without stopping the remaining selected scopes or replacing stored FFO.
+
 ## 0.3.17 - 2026-08-09
 
 ### Fixed

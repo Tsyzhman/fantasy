@@ -23,6 +23,8 @@ export const POST = withApiHandler(async (request: Request) => {
       ...credentials,
       leagueId: scope.leagueId,
       season: scope.season,
+      sourceKey: scope.sourceKey,
+      sourceVariant: scope.sourceVariant,
       url: scope.url
     })));
     if (!result.started) return jsonError("FOONTASY_SYNC_BUSY", "Foontasy synchronization is already running.", 409);
