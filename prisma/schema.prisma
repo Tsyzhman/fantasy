@@ -712,8 +712,6 @@ model FoontasyForecast {
   player CorePlayer? @relation(fields: [playerId], references: [id], onDelete: SetNull)
 
   @@unique([leagueId, season, sourceVariant, sourceSeasonId, sourceRoundNumber, sourcePlayerId], map: "foontasy_forecasts_source_round_player_key")
-  @@unique([leagueId, season, roundNumber, sourcePlayerId], map: "foontasy_forecasts_league_id_season_round_number_source_player_")
-  @@index([leagueId, season, playerId, roundNumber], map: "foontasy_forecasts_league_id_season_player_id_round_number_idx")
   @@index([leagueId, season, sourceVariant, playerId, roundNumber], map: "foontasy_forecasts_scope_player_round_idx")
   @@map("foontasy_forecasts")
 }
@@ -747,9 +745,6 @@ model FoontasyForecastSample {
   player CorePlayer? @relation(fields: [playerId], references: [id], onDelete: SetNull)
 
   @@unique([leagueId, season, sourceVariant, sourceSeasonId, sourceRoundNumber, sourcePlayerId], map: "foontasy_forecast_samples_source_round_player_key")
-  @@unique([leagueId, season, roundNumber, sourcePlayerId], map: "foontasy_forecast_samples_league_id_season_round_number_source_")
-  @@index([leagueId, season, roundNumber], map: "foontasy_forecast_samples_league_id_season_round_number_idx")
-  @@index([leagueId, season, playerId, roundNumber], map: "foontasy_forecast_samples_league_id_season_player_id_round_numb")
   @@index([leagueId, season, sourceVariant, roundNumber], map: "foontasy_forecast_samples_scope_round_idx")
   @@index([leagueId, season, sourceVariant, playerId, roundNumber], map: "foontasy_forecast_samples_scope_player_round_idx")
   @@map("foontasy_forecast_samples")
