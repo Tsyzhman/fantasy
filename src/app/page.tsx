@@ -239,9 +239,15 @@ export default async function HomePage() {
 }
 
 async function loadHomeDashboard(userId: string) {
+  const sportsContest = await prisma.fantasyContest.findFirst({
+    where: { provider: "SPORTS_RU" },
+    orderBy: { lastSyncedAt: "desc" },
+    select: { id: true }
+  });
+  const sportsContestId = sportsContest?.id ?? "__missing_sports_contest__";
   const [latestSquad, recentPrices, freshLeagues, savedViewsCount, watchlistCount] = await Promise.all([
     prisma.userFantasySquad.findFirst({
-      where: { userId },
+      where: { userId, provider: "SPORTS_RU", contestId: sportsContestId },
       include: {
         league: true,
         players: {
@@ -255,6 +261,7 @@ async function loadHomeDashboard(userId: string) {
       orderBy: { updatedAt: "desc" }
     }),
     prisma.fantasyPlayerPrice.findMany({
+      where: { provider: "SPORTS_RU", contestId: sportsContestId },
       include: { league: true },
       orderBy: { lastSeenAt: "desc" },
       take: 5

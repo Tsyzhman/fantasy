@@ -2,6 +2,8 @@ import type { FantasyPlannerPlayer, FantasyPositionGroup, FantasySquadSelection 
 
 export type FixtureChipSide = "home" | "away" | null;
 
+export type FantasyActiveChip = "BENCH_BOOST" | "TRIPLE_CAPTAIN" | "WILDCARD" | "FREE_HIT" | null;
+
 export type FixtureChipPresentation = {
   label: string;
   title: string;
@@ -14,18 +16,19 @@ type SquadForecastPlayer = Pick<
   "playerId" | "predictedFp" | "roundPoints" | "alternativeRoundPoints" | "alternativePredictedFp"
 >;
 
-function captainMultiplier(playerId: string, captainId?: string | null) {
-  return playerId === captainId ? 2 : 1;
+function captainMultiplier(playerId: string, captainId?: string | null, activeChip: FantasyActiveChip = null) {
+  return playerId === captainId ? (activeChip === "TRIPLE_CAPTAIN" ? 3 : 2) : 1;
 }
 
 export function startingXiRoundPoints(
   players: ReadonlyArray<Pick<SquadForecastPlayer, "playerId" | "predictedFp" | "roundPoints">>,
   roundIndex: number,
-  captainId?: string | null
+  captainId?: string | null,
+  activeChip: FantasyActiveChip = null
 ) {
   return players.reduce(
     (total, player) => total +
-      (player.roundPoints[roundIndex] ?? (roundIndex === 0 ? player.predictedFp ?? 0 : 0)) * captainMultiplier(player.playerId, captainId),
+      (player.roundPoints[roundIndex] ?? (roundIndex === 0 ? player.predictedFp ?? 0 : 0)) * captainMultiplier(player.playerId, captainId, activeChip),
     0
   );
 }
@@ -33,13 +36,14 @@ export function startingXiRoundPoints(
 export function startingXiAlternativeRoundPoints(
   players: ReadonlyArray<Pick<SquadForecastPlayer, "playerId" | "alternativeRoundPoints" | "alternativePredictedFp">>,
   roundIndex: number,
-  captainId?: string | null
+  captainId?: string | null,
+  activeChip: FantasyActiveChip = null
 ) {
   return players.reduce(
     (total, player) =>
       total +
       (player.alternativeRoundPoints?.[roundIndex] ??
-        (roundIndex === 0 ? player.alternativePredictedFp ?? 0 : 0)) * captainMultiplier(player.playerId, captainId),
+        (roundIndex === 0 ? player.alternativePredictedFp ?? 0 : 0)) * captainMultiplier(player.playerId, captainId, activeChip),
     0
   );
 }
@@ -47,12 +51,35 @@ export function startingXiAlternativeRoundPoints(
 export function startingXiAlternativeHorizonPoints(
   players: ReadonlyArray<Pick<SquadForecastPlayer, "playerId" | "alternativeRoundPoints" | "alternativePredictedFp">>,
   horizon: number,
-  captainId?: string | null
+  captainId?: string | null,
+  activeChip: FantasyActiveChip = null
 ) {
   const safeHorizon = Number.isFinite(horizon) ? Math.max(0, Math.floor(horizon)) : 0;
   return Array.from({ length: safeHorizon }, (_, roundIndex) =>
-    startingXiAlternativeRoundPoints(players, roundIndex, captainId)
+    startingXiAlternativeRoundPoints(players, roundIndex, captainId, activeChip)
   ).reduce((total, value) => total + value, 0);
+}
+
+export function fantasyRoundPointsWithActiveChip(
+  starters: ReadonlyArray<Pick<SquadForecastPlayer, "playerId" | "predictedFp" | "roundPoints">>,
+  bench: ReadonlyArray<Pick<SquadForecastPlayer, "playerId" | "predictedFp" | "roundPoints">>,
+  roundIndex: number,
+  captainId?: string | null,
+  activeChip: FantasyActiveChip = null
+) {
+  const players = activeChip === "BENCH_BOOST" ? [...starters, ...bench] : starters;
+  return startingXiRoundPoints(players, roundIndex, captainId, activeChip);
+}
+
+export function fantasyAlternativeRoundPointsWithActiveChip(
+  starters: ReadonlyArray<Pick<SquadForecastPlayer, "playerId" | "alternativeRoundPoints" | "alternativePredictedFp">>,
+  bench: ReadonlyArray<Pick<SquadForecastPlayer, "playerId" | "alternativeRoundPoints" | "alternativePredictedFp">>,
+  roundIndex: number,
+  captainId?: string | null,
+  activeChip: FantasyActiveChip = null
+) {
+  const players = activeChip === "BENCH_BOOST" ? [...starters, ...bench] : starters;
+  return startingXiAlternativeRoundPoints(players, roundIndex, captainId, activeChip);
 }
 
 export function startingXiFoontasyPoints(

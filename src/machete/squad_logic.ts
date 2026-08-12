@@ -14,6 +14,8 @@ export type FantasySquadRules = {
   starterPositionLimits: Record<Exclude<FantasyPositionGroup, "UNK">, { min: number; max: number }>;
   horizonOptions: number[];
   sourceLabel: string;
+  supportsBenchBoost?: boolean;
+  supportsTripleCaptain?: boolean;
 };
 
 export type FantasyRoundProjection = {
@@ -90,7 +92,7 @@ export type FantasyPlannerPlayer = {
   nationality?: string | null;
   isStarter?: boolean;
   price: number;
-  priceSource: "SPORTS_RU" | "ESTIMATED";
+  priceSource: "SPORTS_RU" | "FPL" | "ESTIMATED";
   predictedFp: number | null;
   legacyPredictedFp?: number | null;
   componentPredictedFp?: number | null;
@@ -109,6 +111,23 @@ export type FantasyPlannerPlayer = {
     redCards: number;
     total: number;
   } | null;
+  fplForecastBreakdown?: {
+    appearance: number;
+    goals: number;
+    assists: number;
+    cleanSheets: number;
+    saves: number;
+    goalsConceded: number;
+    yellowCards: number;
+    redCards: number;
+    penaltySaves: number;
+    penaltyMisses: number;
+    ownGoals: number;
+    bonus: number;
+    defensiveContributions: number;
+    total: number;
+  } | null;
+  fplForecastStatus?: string | null;
   projectionFormula?: {
     formula: string;
     total: number;
@@ -334,7 +353,9 @@ export const defaultFantasySquadRules: FantasySquadRules = {
     FWD: { min: 1, max: 3 }
   },
   horizonOptions: [1, 3, 5, 10],
-  sourceLabel: "Machete default"
+  sourceLabel: "Machete default",
+  supportsBenchBoost: false,
+  supportsTripleCaptain: false
 };
 
 export function normalizeFantasyPosition(position: string | null | undefined): FantasyPositionGroup {

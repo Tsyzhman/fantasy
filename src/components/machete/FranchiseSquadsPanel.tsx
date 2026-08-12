@@ -57,9 +57,10 @@ export type FranchiseSquadRow = {
   error: string | null;
 };
 
-export function FranchiseSquadsPanel({ leagueId, season, initialFranchise, canSwitch }: {
+export function FranchiseSquadsPanel({ leagueId, season, provider, initialFranchise, canSwitch }: {
   leagueId: string;
   season: string;
+  provider: "SPORTS_RU" | "FPL";
   initialFranchise: Franchise | null;
   canSwitch: boolean;
 }) {
@@ -104,7 +105,7 @@ export function FranchiseSquadsPanel({ leagueId, season, initialFranchise, canSw
       setLoadedFranchise(null);
     }
     try {
-      const query = new URLSearchParams({ leagueId, season, franchise: nextFranchise });
+      const query = new URLSearchParams({ leagueId, season, provider, franchise: nextFranchise });
       const response = await fetch(`/api/machete/franchise-squads?${query.toString()}`, {
         cache: "no-store",
         headers: { Accept: "application/json" },
@@ -140,7 +141,7 @@ export function FranchiseSquadsPanel({ leagueId, season, initialFranchise, canSw
         setRefreshing(false);
       }
     }
-  }, [leagueId, season]);
+  }, [leagueId, provider, season]);
 
   function selectFranchise(nextFranchise: Franchise) {
     if (nextFranchise === franchise && rows !== null) return;
@@ -182,7 +183,7 @@ export function FranchiseSquadsPanel({ leagueId, season, initialFranchise, canSw
       controller?.abort();
       controller = new AbortController();
       try {
-        const query = new URLSearchParams({ leagueId, season, franchise, revisionOnly: "1" });
+        const query = new URLSearchParams({ leagueId, season, provider, franchise, revisionOnly: "1" });
         const response = await fetch(`/api/machete/franchise-squads?${query.toString()}`, {
           cache: "no-store",
           headers: { Accept: "application/json" },
@@ -222,7 +223,7 @@ export function FranchiseSquadsPanel({ leagueId, season, initialFranchise, canSw
       document.removeEventListener("visibilitychange", handleVisibility);
       window.removeEventListener("machete:squad-saved", handleLocalSave);
     };
-  }, [franchise, leagueId, loadRows, loadedFranchise, open, rows, season]);
+  }, [franchise, leagueId, loadRows, loadedFranchise, open, provider, rows, season]);
 
   return (
     <details id="franchise-squads" onToggle={handleToggle} className="mt-5 rounded border border-slate-200 bg-white shadow-sm">

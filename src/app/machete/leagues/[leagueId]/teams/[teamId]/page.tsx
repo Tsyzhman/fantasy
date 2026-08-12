@@ -26,7 +26,7 @@ import {
   sortSharedMacheteRows
 } from "@/machete/shared_read_model";
 import { loadSportsRuTeamPlayerMappings, sportsRuDisplayNamesByPlayerId } from "@/machete/sports_ru_player_mapping";
-import { loadSportsRuAuthoritativeRosterContext } from "@/machete/squad_planner";
+import { loadSportsRuAuthoritativeRosterContext, sportsRuSeasonAliases } from "@/machete/squad_planner";
 
 export const dynamic = "force-dynamic";
 
@@ -72,7 +72,16 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
 
   const teamScope = { leagueId: league.leagueId, season: league.season, teamId: parsedTeamId };
   const currentUser = await getCurrentUser();
-  const authoritativeRosterPromise = loadSportsRuAuthoritativeRosterContext(prisma, league);
+  const teamContest = await prisma.fantasyContest.findFirst({
+    where: {
+      provider: "SPORTS_RU",
+      leagueId: league.leagueId,
+      season: { in: sportsRuSeasonAliases(league.season) }
+    },
+    orderBy: { lastSyncedAt: "desc" },
+    select: { id: true }
+  });
+  const authoritativeRosterPromise = loadSportsRuAuthoritativeRosterContext(prisma, league, undefined, teamContest?.id ?? null);
   const [playerRows, fixtures, rawPayloads, windowSummary, sportsRuMappings] = await Promise.all([
     authoritativeRosterPromise.then(({ rosterOverrides }) => loadSharedMachetePlayerRows(prisma, {
       scopes: [teamScope],
@@ -104,7 +113,8 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
     loadSportsRuTeamPlayerMappings(prisma, {
       leagueId: league.leagueId,
       season: league.season,
-      teamId: parsedTeamId
+      teamId: parsedTeamId,
+      contestId: teamContest?.id ?? null
     })
   ]);
   const sportsNamesByPlayerId = sportsRuDisplayNamesByPlayerId(sportsRuMappings);
@@ -334,6 +344,7 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
             return playerId ? [{ playerId, name: row.name, position: row.position }] : [];
           })}
           canEdit
+          contestId={teamContest?.id ?? null}
         />
       ) : null}
     </main>

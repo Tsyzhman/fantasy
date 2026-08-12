@@ -5,6 +5,7 @@ import { requireApiUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { isFantasySquadLeague, macheteLeagueDisplayName } from "@/lib/leagues/display";
 import { readJsonObject } from "@/lib/request-json";
+import { FPL_PROVIDER } from "@/lib/providers/fpl";
 import {
   loadCachedFantasySquadPlayerPool,
   loadFantasySquadPlannerData,
@@ -37,6 +38,7 @@ export const GET = withApiHandler(async (request: Request) => {
   const leagueId = parseBigInt(params.get("leagueId"));
   const season = params.get("season")?.trim() ?? "";
   const squadId = optionalId(params.get("squadId"));
+  const provider = normalizeProvider(params.get("provider"));
   const historySettings = parseFantasyHistorySettings({
     historyScope: params.get("historyScope"),
     historyWindow: params.get("historyWindow"),
@@ -78,10 +80,16 @@ export const GET = withApiHandler(async (request: Request) => {
     updatedAt: leagueSeason.updatedAt
   };
   if (squadId) {
+    const contest = await prisma.fantasyContest.findUnique({
+      where: { provider_leagueId_season: { provider, leagueId, season } },
+      select: { id: true }
+    });
     const ownedSquad = await prisma.userFantasySquad.findFirst({
       where: {
         id: squadId,
         userId: auth.user.id,
+        provider,
+        ...(contest ? { contestId: contest.id } : {}),
         leagueId,
         season
       },
@@ -91,7 +99,12 @@ export const GET = withApiHandler(async (request: Request) => {
       return jsonError("NOT_FOUND", "Squad variant not found for this league and season.", 404);
     }
   }
-  const players = await loadCachedFantasySquadPlayerPool(prisma, auth.user.id, plannerLeague, historySettings);
+  const contest = await prisma.fantasyContest.findUnique({
+    where: { provider_leagueId_season: { provider, leagueId, season } },
+    select: { id: true }
+  });
+  if (!contest) return jsonError("CONTEST_NOT_SYNCED", "The selected fantasy provider contest is not synchronized yet.", 503);
+  const players = await loadCachedFantasySquadPlayerPool(prisma, auth.user.id, plannerLeague, historySettings, provider, contest.id);
 
   return NextResponse.json(
     { players },
@@ -108,6 +121,7 @@ export const POST = withApiHandler(async (request: Request) => {
   const leagueId = parseBigInt(body.leagueId);
   const season = typeof body.season === "string" ? body.season : "";
   const squadId = optionalId(body.squadId);
+  const provider = normalizeProvider(typeof body.provider === "string" ? body.provider : null);
   const historySettings = parseFantasyHistorySettings({
     historyScope: body.historyScope,
     historyWindow: body.historyWindow,
@@ -147,7 +161,7 @@ export const POST = withApiHandler(async (request: Request) => {
     providerLeagueId: String(leagueSeason.leagueId),
     isCurrent: leagueSeason.isCurrent,
     updatedAt: leagueSeason.updatedAt
-  }, squadId, { historySettings });
+      }, squadId, { historySettings, provider });
   if (squadId && plannerData.squad.id !== squadId) {
     return jsonError("NOT_FOUND", "Squad variant not found for this league and season.", 404);
   }
@@ -214,7 +228,9 @@ export const POST = withApiHandler(async (request: Request) => {
     selections: safeSelections,
     roundPlans: safeRoundPlans,
     roundPlanRoundIds: currentRoundIds,
-    rules
+    rules,
+    provider,
+    contestId: plannerData.contestId
   });
 
   return NextResponse.json({
@@ -230,13 +246,25 @@ export const DELETE = withApiHandler(async (request: Request) => {
   const auth = await requireApiUser();
   if (auth.response) return auth.response;
 
-  const squadId = optionalId(new URL(request.url).searchParams.get("squadId"));
+  const params = new URL(request.url).searchParams;
+  const squadId = optionalId(params.get("squadId"));
+  const provider = normalizeProvider(params.get("provider"));
   if (!squadId) return jsonError("BAD_REQUEST", "squadId is required.", 400);
+
+  const squad = await prisma.userFantasySquad.findUnique({
+    where: { id: squadId },
+    select: { contestId: true, provider: true, userId: true }
+  });
+  if (!squad || squad.userId !== auth.user.id || squad.provider !== provider) {
+    return jsonError("NOT_FOUND", "Squad variant not found.", 404);
+  }
 
   const deleted = await prisma.userFantasySquad.deleteMany({
     where: {
       id: squadId,
-      userId: auth.user.id
+      userId: auth.user.id,
+      provider,
+      contestId: squad.contestId
     }
   });
   if (deleted.count === 0) return jsonError("NOT_FOUND", "Squad variant not found.", 404);
@@ -303,4 +331,8 @@ function optionalId(value: unknown) {
   if (typeof value !== "string") return null;
   const trimmed = value.trim();
   return trimmed && trimmed.length <= 128 ? trimmed : null;
+}
+
+function normalizeProvider(value: string | null) {
+  return value?.trim().toUpperCase() === FPL_PROVIDER ? FPL_PROVIDER : "SPORTS_RU";
 }

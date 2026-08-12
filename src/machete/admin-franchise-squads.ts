@@ -55,8 +55,14 @@ export async function franchiseSquadRevision(
   leagueId: bigint,
   season: string,
   franchise: UserFranchise,
-  options: { includeInactive?: boolean } = {}
+  options: { includeInactive?: boolean; provider?: string } = {}
 ) {
+  const provider = options.provider ?? "SPORTS_RU";
+  const contest = await prisma.fantasyContest.findFirst({
+    where: { provider, leagueId, season },
+    orderBy: { lastSyncedAt: "desc" },
+    select: { id: true }
+  });
   const userWhere = { franchise, ...(options.includeInactive ? {} : { isActive: true }) };
   const [users, squads] = await Promise.all([
     prisma.user.aggregate({
@@ -68,6 +74,8 @@ export async function franchiseSquadRevision(
       where: {
         leagueId,
         season,
+        provider,
+        contestId: contest?.id ?? "__missing_fantasy_contest__",
         user: userWhere
       },
       _count: { id: true },
@@ -86,8 +94,14 @@ export async function loadAdminFranchiseSquadSummaries(
   prisma: PrismaClient,
   league: SharedLeagueSeasonOption,
   franchise: UserFranchise,
-  options: { includeInactive?: boolean } = {}
+  options: { includeInactive?: boolean; provider?: string } = {}
 ): Promise<AdminFranchiseSquadSummary[]> {
+  const provider = options.provider ?? "SPORTS_RU";
+  const contest = await prisma.fantasyContest.findFirst({
+    where: { provider, leagueId: league.leagueId, season: league.season },
+    orderBy: { lastSyncedAt: "desc" },
+    select: { id: true }
+  });
   const users = await prisma.user.findMany({
     where: { franchise, ...(options.includeInactive ? {} : { isActive: true }) },
     orderBy: [{ isActive: "desc" }, { name: "asc" }, { email: "asc" }],
@@ -98,6 +112,8 @@ export async function loadAdminFranchiseSquadSummaries(
   const squads = await prisma.userFantasySquad.findMany({
     where: {
       userId: { in: users.map((user) => user.id) },
+      provider,
+      contestId: contest?.id ?? "__missing_fantasy_contest__",
       leagueId: league.leagueId,
       season: league.season
     },
@@ -111,7 +127,10 @@ export async function loadAdminFranchiseSquadSummaries(
   const poolsByUserId = await loadCachedFantasySquadPlayerPools(
     prisma,
     [...latestSquadByUser.keys()],
-    league
+    league,
+    undefined,
+    provider,
+    contest?.id ?? null
   );
 
   return Promise.all(users.map(async (user) => {

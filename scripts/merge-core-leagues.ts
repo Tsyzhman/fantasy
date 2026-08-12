@@ -261,22 +261,50 @@ async function mergeLeague(tx: Prisma.TransactionClient, item: PlannedMerge): Pr
     ${seasonFilter}
   `;
 
+  counts.fantasyContests = await tx.$executeRaw`
+    INSERT INTO fantasy_contests (
+      id, league_id, season, provider, provider_contest_id, slug, name,
+      budget_limit, squad_size, max_players_per_team, rules, source_url,
+      last_synced_at, created_at, updated_at
+    )
+    SELECT
+      'merge_' || md5(id || ':' || ${targetId}::text), ${targetId}, season, provider,
+      provider_contest_id, slug, name, budget_limit, squad_size, max_players_per_team,
+      rules, source_url, last_synced_at, created_at, now()
+    FROM fantasy_contests
+    WHERE league_id = ${sourceId}
+    ${seasonFilter}
+    ON CONFLICT (provider, league_id, season) DO UPDATE SET
+      provider_contest_id = COALESCE(fantasy_contests.provider_contest_id, EXCLUDED.provider_contest_id),
+      slug = COALESCE(fantasy_contests.slug, EXCLUDED.slug),
+      rules = COALESCE(fantasy_contests.rules, EXCLUDED.rules),
+      source_url = COALESCE(fantasy_contests.source_url, EXCLUDED.source_url),
+      last_synced_at = GREATEST(fantasy_contests.last_synced_at, EXCLUDED.last_synced_at),
+      updated_at = now()
+  `;
+
   counts.fantasyPrices = await tx.$executeRaw`
     INSERT INTO fantasy_player_prices (
-      id, league_id, season, team_id, player_id, provider, provider_player_id,
+      id, contest_id, league_id, season, team_id, player_id, provider, provider_player_id,
       player_name, normalized_name, team_name, sports_team_name, fotmob_player_name,
       position_label, source_kind, source_row_index, position, price,
       first_seen_at, last_seen_at
     )
     SELECT
-      'merge_' || md5(id || ':' || ${targetId}::text), ${targetId}, season, team_id, player_id,
-      provider, provider_player_id, player_name, normalized_name, team_name, sports_team_name,
-      fotmob_player_name, position_label, source_kind, source_row_index, position, price,
-      first_seen_at, last_seen_at
-    FROM fantasy_player_prices
-    WHERE league_id = ${sourceId}
+      'merge_' || md5(source_price.id || ':' || ${targetId}::text), target_contest.id, ${targetId}, source_price.season, source_price.team_id, source_price.player_id,
+      source_price.provider, source_price.provider_player_id, source_price.player_name, source_price.normalized_name, source_price.team_name, source_price.sports_team_name,
+      source_price.fotmob_player_name, source_price.position_label, source_price.source_kind, source_price.source_row_index, source_price.position, source_price.price,
+      source_price.first_seen_at, source_price.last_seen_at
+    FROM fantasy_player_prices source_price
+    JOIN fantasy_contests source_contest ON source_contest.id = source_price.contest_id
+    JOIN fantasy_contests target_contest
+      ON target_contest.provider = source_contest.provider
+      AND target_contest.league_id = ${targetId}
+      AND target_contest.season = source_contest.season
+    WHERE source_price.league_id = ${sourceId}
     ${seasonFilter}
-    ON CONFLICT (provider, league_id, season, normalized_name, team_name) DO UPDATE SET
+    ON CONFLICT (contest_id, normalized_name, team_name) DO UPDATE SET
+      contest_id = EXCLUDED.contest_id,
       team_id = COALESCE(fantasy_player_prices.team_id, EXCLUDED.team_id),
       player_id = COALESCE(fantasy_player_prices.player_id, EXCLUDED.player_id),
       provider_player_id = COALESCE(fantasy_player_prices.provider_player_id, EXCLUDED.provider_player_id),
@@ -294,27 +322,7 @@ async function mergeLeague(tx: Prisma.TransactionClient, item: PlannedMerge): Pr
       last_seen_at = GREATEST(fantasy_player_prices.last_seen_at, EXCLUDED.last_seen_at)
   `;
 
-  counts.fantasyContests = await tx.$executeRaw`
-    INSERT INTO sports_ru_fantasy_contests (
-      id, league_id, season, provider, provider_contest_id, slug, name,
-      budget_limit, squad_size, max_players_per_team, rules, source_url,
-      last_synced_at, created_at, updated_at
-    )
-    SELECT
-      'merge_' || md5(id || ':' || ${targetId}::text), ${targetId}, season, provider,
-      provider_contest_id, slug, name, budget_limit, squad_size, max_players_per_team,
-      rules, source_url, last_synced_at, created_at, now()
-    FROM sports_ru_fantasy_contests
-    WHERE league_id = ${sourceId}
-    ${seasonFilter}
-    ON CONFLICT (provider, league_id, season) DO UPDATE SET
-      provider_contest_id = COALESCE(sports_ru_fantasy_contests.provider_contest_id, EXCLUDED.provider_contest_id),
-      slug = COALESCE(sports_ru_fantasy_contests.slug, EXCLUDED.slug),
-      rules = COALESCE(sports_ru_fantasy_contests.rules, EXCLUDED.rules),
-      source_url = COALESCE(sports_ru_fantasy_contests.source_url, EXCLUDED.source_url),
-      last_synced_at = GREATEST(sports_ru_fantasy_contests.last_synced_at, EXCLUDED.last_synced_at),
-      updated_at = now()
-  `;
+  await mergeFantasyProviderArtifacts(tx, sourceId, targetId);
 
   await mergeFantasySquads(tx, sourceId, targetId, seasonFilter);
 
@@ -325,7 +333,7 @@ async function mergeLeague(tx: Prisma.TransactionClient, item: PlannedMerge): Pr
   `;
 
   counts.sourceFantasyContestsDeleted = await tx.$executeRaw`
-    DELETE FROM sports_ru_fantasy_contests
+    DELETE FROM fantasy_contests
     WHERE league_id = ${sourceId}
     ${seasonFilter}
   `;
@@ -401,24 +409,342 @@ async function mergeLeague(tx: Prisma.TransactionClient, item: PlannedMerge): Pr
   return counts;
 }
 
+async function mergeFantasyProviderArtifacts(tx: Prisma.TransactionClient, sourceId: bigint, targetId: bigint) {
+  const providerSeasonFilter = cli.seasons.length > 0
+    ? Prisma.sql`AND source_contest.season IN (${Prisma.join(cli.seasons)})`
+    : Prisma.empty;
+
+  await tx.$executeRaw`
+    UPDATE fantasy_rulesets source_ruleset
+    SET contest_id = target_contest.id
+    FROM fantasy_contests source_contest
+    JOIN fantasy_contests target_contest
+      ON target_contest.provider = source_contest.provider
+      AND target_contest.league_id = ${targetId}
+      AND target_contest.season = source_contest.season
+    WHERE source_ruleset.contest_id = source_contest.id
+      AND source_contest.league_id = ${sourceId}
+      ${providerSeasonFilter}
+      AND NOT EXISTS (
+        SELECT 1
+        FROM fantasy_rulesets existing_ruleset
+        WHERE existing_ruleset.provider = source_ruleset.provider
+          AND existing_ruleset.name = source_ruleset.name
+          AND existing_ruleset.version = source_ruleset.version
+          AND existing_ruleset.id <> source_ruleset.id
+      )
+  `;
+
+  await tx.$executeRaw`
+    INSERT INTO fantasy_player_price_snapshots (
+      id, contest_id, provider, league_id, season, snapshot_key, status,
+      source_url, payload_hash, prices, fetched_at, created_at
+    )
+    SELECT
+      'merge_' || md5(source_snapshot.id || ':' || ${targetId}::text), target_contest.id,
+      source_snapshot.provider, ${targetId}, source_snapshot.season, source_snapshot.snapshot_key,
+      source_snapshot.status, source_snapshot.source_url, source_snapshot.payload_hash,
+      source_snapshot.prices, source_snapshot.fetched_at, source_snapshot.created_at
+    FROM fantasy_player_price_snapshots source_snapshot
+    JOIN fantasy_contests source_contest ON source_contest.id = source_snapshot.contest_id
+    JOIN fantasy_contests target_contest
+      ON target_contest.provider = source_contest.provider
+      AND target_contest.league_id = ${targetId}
+      AND target_contest.season = source_contest.season
+    WHERE source_contest.league_id = ${sourceId}
+      ${providerSeasonFilter}
+    ON CONFLICT (contest_id, snapshot_key) DO UPDATE SET
+      status = EXCLUDED.status,
+      source_url = COALESCE(EXCLUDED.source_url, fantasy_player_price_snapshots.source_url),
+      payload_hash = COALESCE(EXCLUDED.payload_hash, fantasy_player_price_snapshots.payload_hash),
+      prices = CASE WHEN EXCLUDED.fetched_at >= fantasy_player_price_snapshots.fetched_at THEN EXCLUDED.prices ELSE fantasy_player_price_snapshots.prices END,
+      fetched_at = GREATEST(fantasy_player_price_snapshots.fetched_at, EXCLUDED.fetched_at)
+  `;
+
+  await tx.$executeRaw`
+    INSERT INTO fantasy_provider_sync_runs (
+      id, contest_id, provider, league_id, season, job_type, trigger,
+      idempotency_key, status, started_at, finished_at, source_url,
+      payload_hash, counts, error_message, created_at
+    )
+    SELECT
+      'merge_' || md5(source_run.id || ':' || ${targetId}::text), target_contest.id,
+      source_run.provider, ${targetId}, source_run.season, source_run.job_type, source_run.trigger,
+      source_run.idempotency_key, source_run.status, source_run.started_at, source_run.finished_at,
+      source_run.source_url, source_run.payload_hash, source_run.counts, source_run.error_message,
+      source_run.created_at
+    FROM fantasy_provider_sync_runs source_run
+    JOIN fantasy_contests source_contest ON source_contest.id = source_run.contest_id
+    JOIN fantasy_contests target_contest
+      ON target_contest.provider = source_contest.provider
+      AND target_contest.league_id = ${targetId}
+      AND target_contest.season = source_contest.season
+    WHERE source_contest.league_id = ${sourceId}
+      ${providerSeasonFilter}
+    ON CONFLICT (provider, contest_id, idempotency_key) DO UPDATE SET
+      status = EXCLUDED.status,
+      finished_at = COALESCE(EXCLUDED.finished_at, fantasy_provider_sync_runs.finished_at),
+      source_url = COALESCE(EXCLUDED.source_url, fantasy_provider_sync_runs.source_url),
+      payload_hash = COALESCE(EXCLUDED.payload_hash, fantasy_provider_sync_runs.payload_hash),
+      counts = COALESCE(EXCLUDED.counts, fantasy_provider_sync_runs.counts),
+      error_message = COALESCE(EXCLUDED.error_message, fantasy_provider_sync_runs.error_message)
+  `;
+
+  await tx.$executeRaw`
+    INSERT INTO fantasy_provider_squad_snapshots (
+      id, user_id, contest_id, provider, league_id, season, gameweek,
+      provider_squad_id, status, published_at, imported_at, players_count,
+      mapped_players_count, selections, provider_payload, unmapped_players,
+      last_error, created_at, updated_at
+    )
+    SELECT
+      'merge_' || md5(source_snapshot.id || ':' || ${targetId}::text), source_snapshot.user_id,
+      target_contest.id, source_snapshot.provider, ${targetId}, source_snapshot.season,
+      source_snapshot.gameweek, source_snapshot.provider_squad_id, source_snapshot.status,
+      source_snapshot.published_at, source_snapshot.imported_at, source_snapshot.players_count,
+      source_snapshot.mapped_players_count, source_snapshot.selections, source_snapshot.provider_payload,
+      source_snapshot.unmapped_players, source_snapshot.last_error, source_snapshot.created_at, now()
+    FROM fantasy_provider_squad_snapshots source_snapshot
+    JOIN fantasy_contests source_contest ON source_contest.id = source_snapshot.contest_id
+    JOIN fantasy_contests target_contest
+      ON target_contest.provider = source_contest.provider
+      AND target_contest.league_id = ${targetId}
+      AND target_contest.season = source_contest.season
+    WHERE source_contest.league_id = ${sourceId}
+      ${providerSeasonFilter}
+    ON CONFLICT (user_id, contest_id, gameweek, provider_squad_id) DO UPDATE SET
+      status = EXCLUDED.status,
+      published_at = COALESCE(EXCLUDED.published_at, fantasy_provider_squad_snapshots.published_at),
+      imported_at = COALESCE(EXCLUDED.imported_at, fantasy_provider_squad_snapshots.imported_at),
+      players_count = EXCLUDED.players_count,
+      mapped_players_count = EXCLUDED.mapped_players_count,
+      selections = COALESCE(EXCLUDED.selections, fantasy_provider_squad_snapshots.selections),
+      provider_payload = COALESCE(EXCLUDED.provider_payload, fantasy_provider_squad_snapshots.provider_payload),
+      unmapped_players = COALESCE(EXCLUDED.unmapped_players, fantasy_provider_squad_snapshots.unmapped_players),
+      last_error = COALESCE(EXCLUDED.last_error, fantasy_provider_squad_snapshots.last_error),
+      updated_at = now()
+  `;
+
+  await tx.$executeRaw`
+    INSERT INTO fantasy_user_gameweek_states (
+      id, user_id, contest_id, provider, league_id, season, gameweek,
+      banked_free_transfers, transfers_made, transfer_cost, bank_value,
+      team_value, points, captain_provider_id, vice_captain_provider_id,
+      chip_code, chip_status, transfers, source_snapshot_id, observed_at,
+      created_at, updated_at
+    )
+    SELECT
+      'merge_' || md5(source_state.id || ':' || ${targetId}::text), source_state.user_id,
+      target_contest.id, source_state.provider, ${targetId}, source_state.season, source_state.gameweek,
+      source_state.banked_free_transfers, source_state.transfers_made, source_state.transfer_cost,
+      source_state.bank_value, source_state.team_value, source_state.points, source_state.captain_provider_id,
+      source_state.vice_captain_provider_id, source_state.chip_code, source_state.chip_status, source_state.transfers,
+      target_snapshot.id, source_state.observed_at, source_state.created_at, now()
+    FROM fantasy_user_gameweek_states source_state
+    JOIN fantasy_contests source_contest ON source_contest.id = source_state.contest_id
+    JOIN fantasy_contests target_contest
+      ON target_contest.provider = source_contest.provider
+      AND target_contest.league_id = ${targetId}
+      AND target_contest.season = source_contest.season
+    LEFT JOIN fantasy_provider_squad_snapshots source_snapshot ON source_snapshot.id = source_state.source_snapshot_id
+    LEFT JOIN fantasy_provider_squad_snapshots target_snapshot
+      ON target_snapshot.user_id = source_state.user_id
+      AND target_snapshot.contest_id = target_contest.id
+      AND target_snapshot.gameweek = source_snapshot.gameweek
+      AND target_snapshot.provider_squad_id = source_snapshot.provider_squad_id
+    WHERE source_contest.league_id = ${sourceId}
+      ${providerSeasonFilter}
+    ON CONFLICT (user_id, contest_id, gameweek) DO UPDATE SET
+      banked_free_transfers = EXCLUDED.banked_free_transfers,
+      transfers_made = EXCLUDED.transfers_made,
+      transfer_cost = EXCLUDED.transfer_cost,
+      bank_value = COALESCE(EXCLUDED.bank_value, fantasy_user_gameweek_states.bank_value),
+      team_value = COALESCE(EXCLUDED.team_value, fantasy_user_gameweek_states.team_value),
+      points = COALESCE(EXCLUDED.points, fantasy_user_gameweek_states.points),
+      captain_provider_id = COALESCE(EXCLUDED.captain_provider_id, fantasy_user_gameweek_states.captain_provider_id),
+      vice_captain_provider_id = COALESCE(EXCLUDED.vice_captain_provider_id, fantasy_user_gameweek_states.vice_captain_provider_id),
+      chip_code = COALESCE(EXCLUDED.chip_code, fantasy_user_gameweek_states.chip_code),
+      chip_status = COALESCE(EXCLUDED.chip_status, fantasy_user_gameweek_states.chip_status),
+      transfers = COALESCE(EXCLUDED.transfers, fantasy_user_gameweek_states.transfers),
+      source_snapshot_id = COALESCE(EXCLUDED.source_snapshot_id, fantasy_user_gameweek_states.source_snapshot_id),
+      observed_at = COALESCE(EXCLUDED.observed_at, fantasy_user_gameweek_states.observed_at),
+      updated_at = now()
+  `;
+
+  await tx.$executeRaw`
+    INSERT INTO fantasy_chip_definitions (
+      id, contest_id, provider, season, code, half, max_uses, rules, created_at, updated_at
+    )
+    SELECT
+      'merge_' || md5(source_definition.id || ':' || ${targetId}::text), target_contest.id,
+      source_definition.provider, source_definition.season, source_definition.code,
+      source_definition.half, source_definition.max_uses, source_definition.rules,
+      source_definition.created_at, now()
+    FROM fantasy_chip_definitions source_definition
+    JOIN fantasy_contests source_contest ON source_contest.id = source_definition.contest_id
+    JOIN fantasy_contests target_contest
+      ON target_contest.provider = source_contest.provider
+      AND target_contest.league_id = ${targetId}
+      AND target_contest.season = source_contest.season
+    WHERE source_contest.league_id = ${sourceId}
+      ${providerSeasonFilter}
+    ON CONFLICT (contest_id, code, half) DO UPDATE SET
+      max_uses = EXCLUDED.max_uses,
+      rules = EXCLUDED.rules,
+      updated_at = now()
+  `;
+
+  await tx.$executeRaw`
+    INSERT INTO fantasy_chip_usages (
+      id, user_id, contest_id, provider, season, gameweek, code, status,
+      source, observed_at, metadata, created_at, updated_at
+    )
+    SELECT
+      'merge_' || md5(source_usage.id || ':' || ${targetId}::text), source_usage.user_id,
+      target_contest.id, source_usage.provider, source_usage.season, source_usage.gameweek,
+      source_usage.code, source_usage.status, source_usage.source, source_usage.observed_at,
+      source_usage.metadata, source_usage.created_at, now()
+    FROM fantasy_chip_usages source_usage
+    JOIN fantasy_contests source_contest ON source_contest.id = source_usage.contest_id
+    JOIN fantasy_contests target_contest
+      ON target_contest.provider = source_contest.provider
+      AND target_contest.league_id = ${targetId}
+      AND target_contest.season = source_contest.season
+    WHERE source_contest.league_id = ${sourceId}
+      ${providerSeasonFilter}
+    ON CONFLICT (user_id, contest_id, gameweek) DO UPDATE SET
+      code = EXCLUDED.code,
+      status = EXCLUDED.status,
+      source = EXCLUDED.source,
+      observed_at = COALESCE(EXCLUDED.observed_at, fantasy_chip_usages.observed_at),
+      metadata = COALESCE(EXCLUDED.metadata, fantasy_chip_usages.metadata),
+      updated_at = now()
+  `;
+
+  await tx.$executeRaw`
+    INSERT INTO fantasy_provider_player_match_scores (
+      id, contest_id, provider, provider_event_id, provider_player_id, gameweek,
+      league_id, season, player_id, match_id, points, breakdown, status,
+      source_url, fetched_at, created_at, updated_at
+    )
+    SELECT
+      'merge_' || md5(source_score.id || ':' || ${targetId}::text), target_contest.id,
+      source_score.provider, source_score.provider_event_id, source_score.provider_player_id,
+      source_score.gameweek, ${targetId}, source_score.season, source_score.player_id,
+      source_score.match_id, source_score.points, source_score.breakdown, source_score.status,
+      source_score.source_url, source_score.fetched_at, source_score.created_at, now()
+    FROM fantasy_provider_player_match_scores source_score
+    JOIN fantasy_contests source_contest ON source_contest.id = source_score.contest_id
+    JOIN fantasy_contests target_contest
+      ON target_contest.provider = source_contest.provider
+      AND target_contest.league_id = ${targetId}
+      AND target_contest.season = source_contest.season
+    WHERE source_contest.league_id = ${sourceId}
+      ${providerSeasonFilter}
+    ON CONFLICT (contest_id, provider_event_id, provider_player_id) DO UPDATE SET
+      player_id = COALESCE(EXCLUDED.player_id, fantasy_provider_player_match_scores.player_id),
+      match_id = COALESCE(EXCLUDED.match_id, fantasy_provider_player_match_scores.match_id),
+      points = EXCLUDED.points,
+      breakdown = EXCLUDED.breakdown,
+      status = EXCLUDED.status,
+      source_url = COALESCE(EXCLUDED.source_url, fantasy_provider_player_match_scores.source_url),
+      fetched_at = GREATEST(fantasy_provider_player_match_scores.fetched_at, EXCLUDED.fetched_at),
+      updated_at = now()
+  `;
+
+  await tx.$executeRaw`
+    INSERT INTO "ProviderEntityMap" (
+      "id", "contest_id", "provider", "provider_season", "provider_entity_code",
+      "providerEntityType", "providerEntityId", "internalEntityType", "internalEntityId",
+      "confidence", "matchedBy", "status", "createdAt", "updatedAt"
+    )
+    SELECT
+      'merge_' || md5(source_map."id" || ':' || ${targetId}::text), target_contest.id,
+      source_map."provider", source_map."provider_season", source_map."provider_entity_code",
+      source_map."providerEntityType", source_map."providerEntityId", source_map."internalEntityType",
+      source_map."internalEntityId", source_map."confidence", source_map."matchedBy", source_map."status",
+      source_map."createdAt", now()
+    FROM "ProviderEntityMap" source_map
+    JOIN fantasy_contests source_contest ON source_contest.id = source_map."contest_id"
+    JOIN fantasy_contests target_contest
+      ON target_contest.provider = source_contest.provider
+      AND target_contest.league_id = ${targetId}
+      AND target_contest.season = source_contest.season
+    WHERE source_contest.league_id = ${sourceId}
+      AND source_map."providerEntityType" <> 'FANTASY_PLAYER_PRICE'
+      ${providerSeasonFilter}
+    ON CONFLICT ("provider", "provider_season", "providerEntityType", "providerEntityId", "internalEntityType") DO UPDATE SET
+      "contest_id" = COALESCE("ProviderEntityMap"."contest_id", EXCLUDED."contest_id"),
+      "internalEntityId" = COALESCE("ProviderEntityMap"."internalEntityId", EXCLUDED."internalEntityId"),
+      "confidence" = GREATEST("ProviderEntityMap"."confidence", EXCLUDED."confidence"),
+      "matchedBy" = COALESCE("ProviderEntityMap"."matchedBy", EXCLUDED."matchedBy"),
+      "status" = CASE WHEN "ProviderEntityMap"."status" = 'MATCHED' THEN 'MATCHED' ELSE EXCLUDED."status" END,
+      "updatedAt" = now()
+  `;
+
+  await tx.$executeRaw`
+    INSERT INTO "ProviderEntityMap" (
+      "id", "contest_id", "provider", "provider_season", "provider_entity_code",
+      "providerEntityType", "providerEntityId", "internalEntityType", "internalEntityId",
+      "confidence", "matchedBy", "status", "createdAt", "updatedAt"
+    )
+    SELECT
+      'merge_' || md5(source_map."id" || ':' || ${targetId}::text), target_contest.id,
+      source_map."provider", source_map."provider_season", source_map."provider_entity_code",
+      source_map."providerEntityType", target_price.id, source_map."internalEntityType",
+      source_map."internalEntityId", source_map."confidence", source_map."matchedBy", source_map."status",
+      source_map."createdAt", now()
+    FROM "ProviderEntityMap" source_map
+    JOIN fantasy_player_prices source_price
+      ON source_map."providerEntityType" = 'FANTASY_PLAYER_PRICE'
+      AND source_map."providerEntityId" = source_price.id
+    JOIN fantasy_contests source_contest ON source_contest.id = source_price.contest_id
+    JOIN fantasy_contests target_contest
+      ON target_contest.provider = source_contest.provider
+      AND target_contest.league_id = ${targetId}
+      AND target_contest.season = source_contest.season
+    JOIN fantasy_player_prices target_price
+      ON target_price.contest_id = target_contest.id
+      AND target_price.provider = source_price.provider
+      AND (
+        (source_price.provider_player_id IS NOT NULL AND target_price.provider_player_id = source_price.provider_player_id)
+        OR (source_price.provider_player_id IS NULL AND target_price.normalized_name = source_price.normalized_name AND target_price.team_name = source_price.team_name)
+      )
+    WHERE source_contest.league_id = ${sourceId}
+      ${providerSeasonFilter}
+    ON CONFLICT ("provider", "provider_season", "providerEntityType", "providerEntityId", "internalEntityType") DO UPDATE SET
+      "contest_id" = COALESCE("ProviderEntityMap"."contest_id", EXCLUDED."contest_id"),
+      "internalEntityId" = COALESCE("ProviderEntityMap"."internalEntityId", EXCLUDED."internalEntityId"),
+      "confidence" = GREATEST("ProviderEntityMap"."confidence", EXCLUDED."confidence"),
+      "matchedBy" = COALESCE("ProviderEntityMap"."matchedBy", EXCLUDED."matchedBy"),
+      "status" = CASE WHEN "ProviderEntityMap"."status" = 'MATCHED' THEN 'MATCHED' ELSE EXCLUDED."status" END,
+      "updatedAt" = now()
+  `;
+}
+
 async function mergeFantasySquads(tx: Prisma.TransactionClient, sourceId: bigint, targetId: bigint, seasonFilter: Prisma.Sql) {
   const sourceSquadSeasonFilter = cli.seasons.length > 0 ? Prisma.sql`AND source_squad.season IN (${Prisma.join(cli.seasons)})` : Prisma.empty;
 
   await tx.$executeRaw`
     INSERT INTO user_fantasy_squads (
-      id, user_id, league_id, season, name, budget_limit, bank,
+      id, user_id, provider, contest_id, league_id, season, name, budget_limit, bank,
       horizon_rounds, filters, created_at, updated_at
     )
     SELECT
-      'merge_' || md5(id || ':' || ${targetId}::text), user_id, ${targetId}, season,
-      name, budget_limit, bank, horizon_rounds, filters, created_at, now()
-    FROM user_fantasy_squads
-    WHERE league_id = ${sourceId}
+      'merge_' || md5(source_squad.id || ':' || ${targetId}::text), source_squad.user_id, source_squad.provider, target_contest.id, ${targetId}, source_squad.season,
+      source_squad.name, source_squad.budget_limit, source_squad.bank, source_squad.horizon_rounds, source_squad.filters, source_squad.created_at, now()
+    FROM user_fantasy_squads source_squad
+    JOIN fantasy_contests source_contest ON source_contest.id = source_squad.contest_id
+    JOIN fantasy_contests target_contest
+      ON target_contest.provider = source_contest.provider
+      AND target_contest.league_id = ${targetId}
+      AND target_contest.season = source_contest.season
+    WHERE source_squad.league_id = ${sourceId}
     ${seasonFilter}
-    ON CONFLICT (user_id, league_id, season) DO UPDATE SET
-      budget_limit = user_fantasy_squads.budget_limit,
-      bank = user_fantasy_squads.bank,
-      horizon_rounds = user_fantasy_squads.horizon_rounds,
+    ON CONFLICT (user_id, contest_id, name) DO UPDATE SET
+      budget_limit = EXCLUDED.budget_limit,
+      bank = EXCLUDED.bank,
+      horizon_rounds = EXCLUDED.horizon_rounds,
       filters = COALESCE(user_fantasy_squads.filters, EXCLUDED.filters),
       updated_at = now()
   `;
@@ -445,8 +771,14 @@ async function mergeFantasySquads(tx: Prisma.TransactionClient, sourceId: bigint
     JOIN user_fantasy_squads source_squad ON source_squad.id = player.squad_id
     JOIN user_fantasy_squads target_squad
       ON target_squad.user_id = source_squad.user_id
-      AND target_squad.league_id = ${targetId}
-      AND target_squad.season = source_squad.season
+      AND target_squad.provider = source_squad.provider
+      AND target_squad.contest_id = (
+        SELECT target_contest.id
+        FROM fantasy_contests target_contest
+        WHERE target_contest.provider = source_squad.provider
+          AND target_contest.league_id = ${targetId}
+          AND target_contest.season = source_squad.season
+      )
     WHERE source_squad.league_id = ${sourceId}
     ${sourceSquadSeasonFilter}
     ON CONFLICT (squad_id, player_id) DO UPDATE SET

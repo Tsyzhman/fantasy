@@ -24,6 +24,7 @@ const syntheticPlayerIdBase = 8_000_000_000_000_000n;
 
 type MappingPlan = {
   leagueId: bigint;
+  contestId: string;
   priceId: string;
   providerPlayerId: string | null;
   sportsName: string;
@@ -47,11 +48,22 @@ async function main() {
   const unresolved: Array<Record<string, unknown>> = [];
   const conflicts: Array<Record<string, unknown>> = [];
   const summaries: Array<Record<string, unknown>> = [];
+  const contests = await prisma.fantasyContest.findMany({
+    where: { provider: "SPORTS_RU", season, leagueId: { in: leagueIds } },
+    select: { id: true, leagueId: true }
+  });
+  const contestByLeagueId = new Map(contests.map((contest) => [String(contest.leagueId), contest.id]));
+  const missingContests = leagueIds.filter((leagueId) => !contestByLeagueId.has(String(leagueId)));
+  if (missingContests.length > 0) {
+    throw new Error(`Sports.ru fantasy contest is not synchronized for league(s): ${missingContests.join(", ")}.`);
+  }
 
   for (const leagueId of leagueIds) {
+    const contestId = contestByLeagueId.get(String(leagueId));
+    if (!contestId) throw new Error(`Sports.ru fantasy contest is not synchronized for ${leagueId}/${season}.`);
     const [prices, roster, seasonTeams] = await Promise.all([
       prisma.fantasyPlayerPrice.findMany({
-        where: { provider: "SPORTS_RU", leagueId, season },
+        where: { provider: "SPORTS_RU", contestId, leagueId, season },
         include: { player: true, team: true },
         orderBy: [{ teamName: "asc" }, { price: "desc" }, { playerName: "asc" }]
       }),
@@ -131,6 +143,7 @@ async function main() {
           : active ? "MAP_ACTIVE" : "MAP_GLOBAL";
         plans.push({
           leagueId,
+          contestId,
           priceId: price.id,
           providerPlayerId: price.providerPlayerId,
           sportsName: price.playerName,
@@ -162,6 +175,7 @@ async function main() {
         const syntheticId = syntheticPlayerId(price.providerPlayerId);
         plans.push({
           leagueId,
+          contestId,
           priceId: price.id,
           providerPlayerId: price.providerPlayerId,
           sportsName: price.playerName,
@@ -227,6 +241,7 @@ async function main() {
     }
     await setSportsRuPlayerMapping(prisma, {
       priceId: plan.priceId,
+      contestId: plan.contestId,
       playerId: plan.targetPlayerId,
       teamId: plan.targetTeamId,
       lockTeam: plan.action !== "MAP_ACTIVE"
@@ -304,9 +319,10 @@ function unresolvedRow(price: {
 
 async function writeBackup(plans: MappingPlan[]) {
   const priceIds = plans.map((plan) => plan.priceId);
+  const contestIds = [...new Set(plans.map((plan) => plan.contestId))];
   const [prices, maps] = await Promise.all([
-    prisma.fantasyPlayerPrice.findMany({ where: { id: { in: priceIds } } }),
-    prisma.providerEntityMap.findMany({ where: { provider: "SPORTS_RU", providerEntityId: { in: priceIds } } })
+    prisma.fantasyPlayerPrice.findMany({ where: { id: { in: priceIds }, provider: "SPORTS_RU", contestId: { in: contestIds } } }),
+    prisma.providerEntityMap.findMany({ where: { provider: "SPORTS_RU", contestId: { in: contestIds }, providerEntityId: { in: priceIds } } })
   ]);
   const directory = process.env.MAPPING_BACKUP_DIR || path.join(process.cwd(), "output", "mapping-backups");
   await mkdir(directory, { recursive: true });

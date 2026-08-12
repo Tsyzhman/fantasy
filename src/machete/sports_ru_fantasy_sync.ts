@@ -60,13 +60,13 @@ export async function syncSportsRuFantasy(prisma: PrismaClient, input: SportsRuF
     parsed.contest.maxPlayersPerTeam ?? inferredMaxPlayersPerTeam(leagueSeason.league.name)
   );
   const contestName = parsed.contest.name === "Фэнтези" ? `Sports.ru ${leagueSeason.league.name}` : parsed.contest.name;
-  const deletedStalePrices = await prisma.$transaction(async (tx) => {
-    const existingContest = await tx.sportsRuFantasyContest.findUnique({
+  const syncResult = await prisma.$transaction(async (tx) => {
+    const existingContest = await tx.fantasyContest.findUnique({
       where: { provider_leagueId_season: { provider: "SPORTS_RU", leagueId: input.leagueId, season: input.season } },
       select: { rules: true }
     });
     const contestRules = sportsRuContestRules(existingContest?.rules, snapshot, input.tournamentHru);
-    await tx.sportsRuFantasyContest.upsert({
+    const contest = await tx.fantasyContest.upsert({
       where: { provider_leagueId_season: { provider: "SPORTS_RU", leagueId: input.leagueId, season: input.season } },
       update: {
         name: contestName,
@@ -97,6 +97,7 @@ export async function syncSportsRuFantasy(prisma: PrismaClient, input: SportsRuF
         ? await tx.fantasyPlayerPrice.findFirst({
             where: {
               provider: "SPORTS_RU",
+              contestId: contest.id,
               leagueId: input.leagueId,
               season: input.season,
               providerPlayerId: row.providerPlayerId
@@ -129,16 +130,15 @@ export async function syncSportsRuFantasy(prisma: PrismaClient, input: SportsRuF
           })
         : await tx.fantasyPlayerPrice.upsert({
         where: {
-          provider_leagueId_season_normalizedName_teamName: {
-            provider: "SPORTS_RU",
-            leagueId: input.leagueId,
-            season: input.season,
+          contestId_normalizedName_teamName: {
+            contestId: contest.id,
             normalizedName: row.normalizedName,
             teamName: row.teamName ?? ""
           }
         },
         update: priceData,
         create: {
+          contestId: contest.id,
           leagueId: input.leagueId,
           season: input.season,
           provider: "SPORTS_RU",
@@ -149,7 +149,7 @@ export async function syncSportsRuFantasy(prisma: PrismaClient, input: SportsRuF
     }
 
     const staleRows = await tx.fantasyPlayerPrice.findMany({
-      where: { provider: "SPORTS_RU", leagueId: input.leagueId, season: input.season, id: { notIn: importedIds } },
+      where: { provider: "SPORTS_RU", contestId: contest.id, leagueId: input.leagueId, season: input.season, id: { notIn: importedIds } },
       select: { id: true }
     });
     if (staleRows.length > 0) {
@@ -157,15 +157,17 @@ export async function syncSportsRuFantasy(prisma: PrismaClient, input: SportsRuF
       await tx.providerEntityMap.deleteMany({
         where: {
           provider: "SPORTS_RU",
+          contestId: contest.id,
           providerEntityType: "FANTASY_PLAYER_PRICE",
           providerEntityId: { in: staleIds },
           internalEntityType: "PLAYER"
         }
       });
-      await tx.fantasyPlayerPrice.deleteMany({ where: { id: { in: staleIds } } });
+      await tx.fantasyPlayerPrice.deleteMany({ where: { id: { in: staleIds }, provider: "SPORTS_RU", contestId: contest.id } });
     }
-    return staleRows.length;
+    return { deletedStalePrices: staleRows.length, contestId: contest.id };
   });
+  const { deletedStalePrices, contestId } = syncResult;
 
   // A routine price refresh may update names, clubs and prices, but it must
   // never reinterpret an identity that an earlier automatic or manual review
@@ -173,6 +175,7 @@ export async function syncSportsRuFantasy(prisma: PrismaClient, input: SportsRuF
   const mapping = await autoMapSportsRuFantasyPlayers(prisma, {
     leagueId: input.leagueId,
     season: input.season,
+    contestId,
     onlyUnmapped: true
   });
   return {

@@ -1,5 +1,6 @@
 import { jsonError, withApiHandler } from "@/lib/api-handler";
 import { requireApiUser } from "@/lib/auth";
+import { FPL_PROVIDER } from "@/lib/providers/fpl";
 import type { CsvColumn } from "@/lib/csv";
 import { readJsonObject } from "@/lib/request-json";
 import { tableExportResponse } from "@/lib/table-export";
@@ -33,6 +34,7 @@ export const POST = withApiHandler(async (request: Request) => {
   }
 
   const language = body.language === "en" ? "en" : "ru";
+  const provider = normalizeProvider(body.provider);
   const leagueId = boundedText(body.leagueId, 32) || "league";
   const season = boundedText(body.season, 32).replaceAll("/", "-") || "season";
   const columns: CsvColumn<PlayerTableExportRow>[] = requestedColumns.map((column) => ({
@@ -44,10 +46,14 @@ export const POST = withApiHandler(async (request: Request) => {
     rows: rows as PlayerTableExportRow[],
     columns,
     format: "xlsx",
-    filename: `players-${leagueId}-${season}`,
+    filename: `players-${provider.toLowerCase()}-${leagueId}-${season}`,
     sheetName: language === "en" ? "Players" : "Игроки"
   });
 });
+
+function normalizeProvider(value: unknown) {
+  return typeof value === "string" && value.trim().toUpperCase() === FPL_PROVIDER ? FPL_PROVIDER : "SPORTS_RU";
+}
 
 function parseColumns(value: unknown): PlayerTableExportColumn[] | null {
   if (!Array.isArray(value) || value.length < fixedColumnKeys.length || value.length > 104) return null;

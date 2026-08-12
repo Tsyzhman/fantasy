@@ -66,7 +66,7 @@ type SeasonScopedTable = {
 const DIRECT_DELETE_TABLES: readonly SeasonScopedTable[] = [
   { key: "userFantasySquads", table: "user_fantasy_squads" },
   { key: "fantasyPlayerPrices", table: "fantasy_player_prices" },
-  { key: "sportsRuFantasyContests", table: "sports_ru_fantasy_contests" },
+  { key: "fantasyContests", table: "fantasy_contests" },
   { key: "ingestionCheckpoints", table: "ingestion_checkpoints" },
   { key: "coreMatches", table: "matches" },
   { key: "leagueSeasons", table: "league_seasons" }

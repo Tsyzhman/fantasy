@@ -77,7 +77,8 @@ async function main() {
   const exclusionResults = [];
   for (const row of plan.exclusionRows) {
     exclusionResults.push(await excludeTransferredSportsRuPlayer(prisma, {
-      priceId: row.priceId
+      priceId: row.priceId,
+      contestId: row.contestId
     }));
   }
 
@@ -85,6 +86,7 @@ async function main() {
   for (const row of plan.rows) {
     results.push(await setSportsRuPlayerMapping(prisma, {
       priceId: row.priceId,
+      contestId: row.contestId,
       playerId: BigInt(row.playerId),
       teamId: BigInt(row.targetTeamId),
       lockTeam: row.mappingMode === "TEAM_OVERRIDE"
@@ -109,11 +111,22 @@ async function buildPlan() {
     ...sportsRuNetherlandsPortugal2026Mappings.map(([, providerPlayerId]) => providerPlayerId),
     ...sportsRuNetherlandsPortugal2026ExcludedPlayers.map(([, providerPlayerId]) => providerPlayerId)
   ];
+  const contests = await prisma.fantasyContest.findMany({
+    where: { provider, season, leagueId: { in: leagueIds } },
+    select: { id: true, leagueId: true }
+  });
+  if (contests.length !== leagueIds.length) {
+    const found = new Set(contests.map((contest) => String(contest.leagueId)));
+    const missing = leagueIds.filter((leagueId) => !found.has(String(leagueId)));
+    throw new Error(`Sports.ru fantasy contest is not synchronized for league(s): ${missing.join(", ")}.`);
+  }
+  const contestIds = contests.map((contest) => contest.id);
   const targetPlayerIds = sportsRuNetherlandsPortugal2026Mappings.map(([, , playerId]) => BigInt(playerId));
   const [prices, players, seasonTeams] = await Promise.all([
     prisma.fantasyPlayerPrice.findMany({
       where: {
         provider,
+        contestId: { in: contestIds },
         season,
         leagueId: { in: leagueIds },
         providerPlayerId: { in: providerPlayerIds }
@@ -188,6 +201,7 @@ async function buildPlan() {
       currentTeamId: price.teamId ? String(price.teamId) : null,
       targetTeamId: String(team.teamId),
       targetTeamName: team.team.name,
+      contestId: price.contestId,
       mappingMode: mappingMode ?? null,
       alreadyMapped: price.playerId === BigInt(playerId) && price.teamId === team.teamId
     }];
@@ -196,6 +210,7 @@ async function buildPlan() {
   const providerMaps = await prisma.providerEntityMap.findMany({
     where: {
       provider,
+      contestId: { in: contestIds },
       providerEntityType: "FANTASY_PLAYER_PRICE",
       providerEntityId: { in: prices.map((price) => price.id) },
       internalEntityType: "PLAYER"
@@ -222,6 +237,7 @@ async function buildPlan() {
       sportsName: price.playerName,
       sportsTeamName: price.teamName,
       priceId: price.id,
+      contestId: price.contestId,
       currentPlayerId: price.playerId ? String(price.playerId) : null,
       currentTeamId: price.teamId ? String(price.teamId) : null,
       alreadyExcluded: providerMap?.status === "EXCLUDED" && providerMap.matchedBy === "MANUAL_TRANSFERRED_OUT"
@@ -234,7 +250,7 @@ async function buildPlan() {
   if (exclusionRows.length !== sportsRuNetherlandsPortugal2026ExcludedPlayers.length) {
     errors.push(`Resolved ${exclusionRows.length} of ${sportsRuNetherlandsPortugal2026ExcludedPlayers.length} exclusion rows.`);
   }
-  return { rows, exclusionRows, prices, playerSeeds, errors };
+  return { rows, exclusionRows, prices, playerSeeds, errors, contestIds };
 }
 
 async function writeBackup(plan: Awaited<ReturnType<typeof buildPlan>>) {
@@ -244,13 +260,14 @@ async function writeBackup(plan: Awaited<ReturnType<typeof buildPlan>>) {
     prisma.providerEntityMap.findMany({
       where: {
         provider,
+        contestId: { in: plan.contestIds },
         providerEntityType: "FANTASY_PLAYER_PRICE",
         providerEntityId: { in: affectedPriceIds },
         internalEntityType: "PLAYER"
       }
     }),
     prisma.userFantasySquad.findMany({
-      where: { leagueId: { in: leagueIds }, season },
+      where: { provider, contestId: { in: plan.contestIds }, leagueId: { in: leagueIds }, season },
       include: { players: true }
     })
   ]);

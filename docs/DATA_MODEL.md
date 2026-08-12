@@ -81,20 +81,24 @@ Machete has legacy provider-state tables plus read-model snapshots.
 Current player explorer pages increasingly read from the shared FotMob core and
 Machete read models instead of treating Wyscout snapshots as the primary source.
 
-## Sports.ru Prices And Squads
+## Fantasy Provider Prices And Squads
 
-- `SportsRuFantasyContest`: league/season fantasy contest settings, such as
-  budget, squad size, and max players per team.
-- `FantasyPlayerPrice`: imported Sports.ru price rows and optional mapping to
-  normalized FotMob players and teams.
-- `UserFantasySquad`: a named saved squad variant. A user can keep multiple
-  variants for the same league and season and select them by id.
+- `FantasyContest`: provider/league/season contest settings, such as budget,
+  squad size, max players per team, official rule source, and sync freshness.
+  Sports.ru and FPL contests can coexist over CoreLeague 47.
+- `FantasyPlayerPrice`: provider price rows scoped by contest and optional
+  mapping to normalized FotMob players and teams.
+- `UserFantasySquad`: a provider/contest-scoped named saved squad variant. A
+  user can keep multiple variants for the same contest and select them by id.
 - `UserFantasySquadPlayer`: selected squad players with starter, lock, captain,
   vice-captain, slot, and purchase-price fields.
+- FPL-specific snapshots, gameweek/transfer state, chip definitions/usages,
+  and official provider score rows retain the same contest scope. FPL official
+  rows are intentionally separate from shared `FantasyPoint` rows.
 
-Database constraints enforce a unique variant name per user/league/season and
-one player per squad. Application validation enforces budget, roster shape,
-team limits, and captain/vice-captain roles before persistence.
+Database constraints enforce a unique variant name per user/contest and one
+player per squad. Application validation enforces provider-specific budget,
+roster shape, team limits, and captain/vice-captain roles before persistence.
 
 ## Moderated Beta Measurement
 

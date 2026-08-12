@@ -38,11 +38,16 @@ const mappings: ReadonlyArray<readonly [providerPlayerId: string, playerId: stri
 ];
 
 async function main() {
+  const contest = await prisma.fantasyContest.findUnique({
+    where: { provider_leagueId_season: { provider: "SPORTS_RU", leagueId, season } },
+    select: { id: true }
+  });
+  if (!contest) throw new Error(`Sports.ru fantasy contest is not synchronized for ${leagueId}/${season}.`);
   const providerPlayerIds = mappings.map(([providerPlayerId]) => providerPlayerId);
   const targetPlayerIds = mappings.map(([, playerId]) => BigInt(playerId));
   const overrideTeamIds = mappings.flatMap(([, , teamId]) => teamId ? [BigInt(teamId)] : []);
   const prices = await prisma.fantasyPlayerPrice.findMany({
-    where: { provider: "SPORTS_RU", leagueId, season, providerPlayerId: { in: providerPlayerIds } },
+    where: { provider: "SPORTS_RU", contestId: contest.id, leagueId, season, providerPlayerId: { in: providerPlayerIds } },
     orderBy: { providerPlayerId: "asc" }
   });
   const roster = await prisma.teamPlayerSeason.findMany({
@@ -104,10 +109,10 @@ async function main() {
   const affectedPriceIds = prices.map((price) => price.id);
   const [providerMaps, squads] = await Promise.all([
     prisma.providerEntityMap.findMany({
-      where: { provider: "SPORTS_RU", providerEntityType: "FANTASY_PLAYER_PRICE", providerEntityId: { in: affectedPriceIds }, internalEntityType: "PLAYER" }
+      where: { provider: "SPORTS_RU", contestId: contest.id, providerEntityType: "FANTASY_PLAYER_PRICE", providerEntityId: { in: affectedPriceIds }, internalEntityType: "PLAYER" }
     }),
     prisma.userFantasySquad.findMany({
-      where: { leagueId, season },
+      where: { provider: "SPORTS_RU", contestId: contest.id, leagueId, season },
       include: { players: true }
     })
   ]);
@@ -122,6 +127,7 @@ async function main() {
   for (const row of plan) {
     results.push(await setSportsRuPlayerMapping(prisma, {
       priceId: row.priceId!,
+      contestId: contest.id,
       playerId: BigInt(row.playerId),
       teamId: row.overrideTeamId ? BigInt(row.overrideTeamId) : undefined,
       lockTeam: Boolean(row.overrideTeamId)

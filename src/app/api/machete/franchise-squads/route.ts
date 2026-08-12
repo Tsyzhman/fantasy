@@ -7,6 +7,7 @@ import { isFantasySquadLeague } from "@/lib/leagues/display";
 import { franchiseSquadRevision, loadAdminFranchiseSquadSummaries } from "@/machete/admin-franchise-squads";
 import { canSwitchFranchise, resolveVisibleFranchise } from "@/machete/franchise-access";
 import { loadSharedLeagueOptions } from "@/machete/shared_read_model";
+import { FPL_PROVIDER } from "@/lib/providers/fpl";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -18,6 +19,7 @@ export const GET = withApiHandler(async (request: Request) => {
   const params = new URL(request.url).searchParams;
   const leagueId = parseBigInt(params.get("leagueId"));
   const season = params.get("season")?.trim() ?? "";
+  const provider = normalizeProvider(params.get("provider"));
   if (!leagueId || !season) return jsonError("BAD_REQUEST", "leagueId and season are required.", 400);
 
   const league = (await loadSharedLeagueOptions(prisma)).find((option) =>
@@ -29,14 +31,14 @@ export const GET = withApiHandler(async (request: Request) => {
   if (!franchise) return NextResponse.json({ rows: [], franchise: null });
 
   const adminCanSwitch = canSwitchFranchise(auth.user);
-  const revision = await franchiseSquadRevision(prisma, league.leagueId, league.season, franchise, { includeInactive: adminCanSwitch });
+  const revision = await franchiseSquadRevision(prisma, league.leagueId, league.season, franchise, { includeInactive: adminCanSwitch, provider });
   if (params.get("revisionOnly") === "1") {
     return NextResponse.json(
       { franchise, revision },
       { headers: { "Cache-Control": "private, no-store" } }
     );
   }
-  const rows = await loadAdminFranchiseSquadSummaries(prisma, league, franchise, { includeInactive: adminCanSwitch });
+  const rows = await loadAdminFranchiseSquadSummaries(prisma, league, franchise, { includeInactive: adminCanSwitch, provider });
   return NextResponse.json({
     franchise,
     revision,
@@ -68,4 +70,8 @@ function parseBigInt(value: string | null) {
   } catch {
     return null;
   }
+}
+
+function normalizeProvider(value: string | null) {
+  return value?.trim().toUpperCase() === FPL_PROVIDER ? FPL_PROVIDER : "SPORTS_RU";
 }

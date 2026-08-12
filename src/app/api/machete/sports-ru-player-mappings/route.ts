@@ -16,9 +16,13 @@ export const PATCH = withApiHandler(async (request: Request) => {
   const body = await readJsonObject(request);
   const priceId = typeof body.priceId === "string" ? body.priceId : "";
   const playerId = body.playerId === null || body.playerId === "" ? null : parseBigInt(body.playerId);
+  const contestId = typeof body.contestId === "string" ? body.contestId.trim() : "";
 
   if (!priceId) {
     return badRequest("priceId is required.");
+  }
+  if (!contestId) {
+    return badRequest("contestId is required.");
   }
   if (body.playerId !== null && body.playerId !== "" && !playerId) {
     return badRequest("playerId must be empty or integer-like.");
@@ -27,7 +31,8 @@ export const PATCH = withApiHandler(async (request: Request) => {
   try {
     const mapping = await setSportsRuPlayerMapping(prisma, {
       priceId,
-      playerId
+      playerId,
+      contestId
     });
     return NextResponse.json({ mapping });
   } catch (error) {

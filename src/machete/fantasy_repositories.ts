@@ -81,18 +81,26 @@ export class FantasyPointsRepository {
     }
   }
 
-  async createRuleset(input: { name: string; version: string; rules: unknown }) {
+  async createRuleset(input: { provider?: string; contestId?: string | null; name: string; version: string; rules: unknown }) {
+    const provider = input.provider ?? "CORE";
+    if (provider !== "CORE" && !input.contestId) {
+      throw new Error("Fantasy provider rulesets require contestId.");
+    }
     return this.prisma.fantasyRuleset.upsert({
       where: {
-        name_version: {
+        provider_name_version: {
+          provider,
           name: input.name,
           version: input.version
         }
       },
       update: {
+        contestId: input.contestId ?? undefined,
         rules: jsonValue(input.rules)
       },
       create: {
+        provider,
+        contestId: input.contestId ?? undefined,
         name: input.name,
         version: input.version,
         rules: jsonValue(input.rules)

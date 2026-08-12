@@ -17,6 +17,7 @@ type SportsRuPriceLike = {
 };
 
 type SportsRuStoredPrice = SportsRuPriceLike & {
+  contestId?: string | null;
   leagueId: bigint;
   season: string;
   playerId: bigint | null;
@@ -72,6 +73,7 @@ export type SportsRuPlayerMappingCandidate = {
 
 export type SportsRuTeamMappingRow = {
   priceId: string;
+  contestId?: string | null;
   sportsName: string;
   sportsNormalizedName: string;
   fotmobHintName: string | null;
@@ -242,12 +244,14 @@ export async function autoMapSportsRuFantasyPlayers(
   input: {
     leagueId: bigint;
     season: string;
+    contestId?: string | null;
     onlyUnmapped?: boolean;
   }
 ) {
   const prices = await prisma.fantasyPlayerPrice.findMany({
     where: {
       provider: sportsRuProvider,
+      ...(input.contestId ? { contestId: input.contestId } : {}),
       leagueId: input.leagueId,
       season: input.season,
       ...(input.onlyUnmapped ? { playerId: null } : {})
@@ -258,6 +262,7 @@ export async function autoMapSportsRuFantasyPlayers(
     prisma.providerEntityMap.findMany({
       where: {
         provider: sportsRuProvider,
+        ...(input.contestId ? { contestId: input.contestId } : {}),
         providerEntityType: sportsRuPlayerEntityType,
         providerEntityId: { in: prices.map((price) => price.id) },
         internalEntityType: internalPlayerEntityType
@@ -346,7 +351,7 @@ export async function autoMapSportsRuFantasyPlayers(
           team: lockedTeam.team
         };
         claimedPlayerIds.add(String(targetRosterEntry.playerId));
-        addSelectionSync(await applyPriceRosterMapping(prisma, price, targetRosterEntry));
+        addSelectionSync(await applyPriceRosterMapping(prisma, price, targetRosterEntry, input.contestId));
         manual += 1;
         continue;
       }
@@ -359,14 +364,14 @@ export async function autoMapSportsRuFantasyPlayers(
           team: authoritativeTeam.team
         };
         claimedPlayerIds.add(String(targetRosterEntry.playerId));
-        addSelectionSync(await applyPriceRosterMapping(prisma, price, targetRosterEntry));
+        addSelectionSync(await applyPriceRosterMapping(prisma, price, targetRosterEntry, input.contestId));
         manual += 1;
         continue;
       }
       const manualTeamMatches = manualRosterEntry && teamScoreAdjustment(price.teamName, manualRosterEntry.team.name) >= 0;
       if (manualRosterEntry && manualTeamMatches) {
         claimedPlayerIds.add(String(manualRosterEntry.playerId));
-        addSelectionSync(await applyPriceRosterMapping(prisma, price, manualRosterEntry));
+        addSelectionSync(await applyPriceRosterMapping(prisma, price, manualRosterEntry, input.contestId));
         manual += 1;
         continue;
       }
@@ -401,14 +406,16 @@ export async function autoMapSportsRuFantasyPlayers(
 
     await prisma.providerEntityMap.upsert({
       where: {
-        provider_providerEntityType_providerEntityId_internalEntityType: {
+        provider_providerSeason_providerEntityType_providerEntityId_internalEntityType: {
           provider: sportsRuProvider,
+          providerSeason: price.season,
           providerEntityType: sportsRuPlayerEntityType,
           providerEntityId: price.id,
           internalEntityType: internalPlayerEntityType
         }
       },
       update: {
+        contestId: input.contestId ?? undefined,
         internalEntityId: matchedRosterEntry ? String(matchedRosterEntry.playerId) : null,
         confidence: best?.confidence ?? 0,
         matchedBy: matchedRosterEntry ? "AUTO_NAME_POSITION" : null,
@@ -416,6 +423,8 @@ export async function autoMapSportsRuFantasyPlayers(
       },
       create: {
         provider: sportsRuProvider,
+        contestId: input.contestId ?? undefined,
+        providerSeason: price.season,
         providerEntityType: sportsRuPlayerEntityType,
         providerEntityId: price.id,
         internalEntityType: internalPlayerEntityType,
@@ -428,7 +437,7 @@ export async function autoMapSportsRuFantasyPlayers(
 
     if (matchedRosterEntry) {
       claimedPlayerIds.add(String(matchedRosterEntry.playerId));
-      addSelectionSync(await applyPriceRosterMapping(prisma, price, matchedRosterEntry));
+      addSelectionSync(await applyPriceRosterMapping(prisma, price, matchedRosterEntry, input.contestId));
       matched += 1;
     } else {
       if (price.playerId || price.teamId) {
@@ -472,12 +481,15 @@ export async function loadSportsRuTeamPlayerMappings(
     leagueId: bigint;
     season: string;
     teamId: bigint;
+    contestId?: string | null;
   }
 ): Promise<SportsRuTeamMappingRow[]> {
+  if (input.contestId === null) return [];
   const [prices, roster] = await Promise.all([
     prisma.fantasyPlayerPrice.findMany({
       where: {
         provider: sportsRuProvider,
+        ...(input.contestId ? { contestId: input.contestId } : {}),
         leagueId: input.leagueId,
         season: input.season
       },
@@ -492,6 +504,7 @@ export async function loadSportsRuTeamPlayerMappings(
   const maps = await prisma.providerEntityMap.findMany({
     where: {
       provider: sportsRuProvider,
+      ...(input.contestId ? { contestId: input.contestId } : {}),
       providerEntityType: sportsRuPlayerEntityType,
       providerEntityId: { in: prices.map((price) => price.id) },
       internalEntityType: internalPlayerEntityType
@@ -522,6 +535,7 @@ export async function loadSportsRuTeamPlayerMappings(
 
       return {
         priceId: price.id,
+        contestId: price.contestId ?? input.contestId ?? null,
         sportsName: price.playerName,
         sportsNormalizedName: price.normalizedName,
         fotmobHintName: price.fotmobPlayerName ?? null,
@@ -537,7 +551,7 @@ export async function loadSportsRuTeamPlayerMappings(
         candidates
       };
     })
-    .filter((row): row is SportsRuTeamMappingRow => Boolean(row))
+    .filter((row): row is NonNullable<typeof row> => Boolean(row))
     .sort(compareMappingRows);
 }
 
@@ -548,11 +562,14 @@ export async function loadSportsRuAuthoritativeStarterCandidate(
     seasons: string[];
     teamId: bigint;
     playerId: bigint;
+    contestId?: string | null;
   }
 ): Promise<SportsRuAuthoritativeStarterCandidate | null> {
+  if (input.contestId === null) return null;
   const prices = await prisma.fantasyPlayerPrice.findMany({
     where: {
       provider: sportsRuProvider,
+      ...(input.contestId ? { contestId: input.contestId } : {}),
       leagueId: input.leagueId,
       season: { in: input.seasons },
       teamId: input.teamId,
@@ -569,6 +586,7 @@ export async function loadSportsRuAuthoritativeStarterCandidate(
   const maps = await prisma.providerEntityMap.findMany({
     where: {
       provider: sportsRuProvider,
+      ...(input.contestId ? { contestId: input.contestId } : {}),
       providerEntityType: sportsRuPlayerEntityType,
       providerEntityId: { in: prices.map((price) => price.id) },
       internalEntityType: internalPlayerEntityType,
@@ -608,6 +626,7 @@ export async function setSportsRuPlayerMapping(
     playerId: bigint | null;
     teamId?: bigint | null;
     lockTeam?: boolean;
+    contestId: string;
   }
 ) {
   if (input.lockTeam && (!input.playerId || !input.teamId)) {
@@ -617,6 +636,12 @@ export async function setSportsRuPlayerMapping(
     where: { id: input.priceId }
   });
   if (!price) throw new Error("Sports.ru price row was not found.");
+  if (price.provider !== sportsRuProvider) {
+    throw new Error("The selected price row does not belong to Sports.ru.");
+  }
+  if (price.contestId !== input.contestId) {
+    throw new Error("Sports.ru price row does not belong to the selected fantasy contest.");
+  }
 
   let rosterEntry: RosterEntry | null = input.playerId
     ? await prisma.teamPlayerSeason.findFirst({
@@ -660,14 +685,16 @@ export async function setSportsRuPlayerMapping(
     : null;
   await prisma.providerEntityMap.upsert({
     where: {
-      provider_providerEntityType_providerEntityId_internalEntityType: {
+      provider_providerSeason_providerEntityType_providerEntityId_internalEntityType: {
         provider: sportsRuProvider,
+        providerSeason: price.season,
         providerEntityType: sportsRuPlayerEntityType,
         providerEntityId: price.id,
         internalEntityType: internalPlayerEntityType
       }
     },
     update: {
+      contestId: price.contestId ?? undefined,
       internalEntityId: rosterEntry ? String(rosterEntry.playerId) : null,
       confidence,
       matchedBy,
@@ -675,6 +702,8 @@ export async function setSportsRuPlayerMapping(
     },
     create: {
       provider: sportsRuProvider,
+      contestId: price.contestId ?? undefined,
+      providerSeason: price.season,
       providerEntityType: sportsRuPlayerEntityType,
       providerEntityId: price.id,
       internalEntityType: internalPlayerEntityType,
@@ -686,7 +715,7 @@ export async function setSportsRuPlayerMapping(
   });
 
   if (rosterEntry) {
-    const selectionSync = await applyPriceRosterMapping(prisma, price, rosterEntry);
+    const selectionSync = await applyPriceRosterMapping(prisma, price, rosterEntry, input.contestId);
     return {
       priceId: price.id,
       playerId: String(rosterEntry.playerId),
@@ -715,21 +744,30 @@ export async function excludeTransferredSportsRuPlayer(
   prisma: PrismaClient,
   input: {
     priceId: string;
+    contestId: string;
   }
 ) {
   const price = await prisma.fantasyPlayerPrice.findUnique({ where: { id: input.priceId } });
   if (!price) throw new Error("Sports.ru price row was not found.");
+  if (price.provider !== sportsRuProvider) {
+    throw new Error("The selected price row does not belong to Sports.ru.");
+  }
+  if (price.contestId !== input.contestId) {
+    throw new Error("Sports.ru price row does not belong to the selected fantasy contest.");
+  }
 
   await prisma.providerEntityMap.upsert({
     where: {
-      provider_providerEntityType_providerEntityId_internalEntityType: {
+      provider_providerSeason_providerEntityType_providerEntityId_internalEntityType: {
         provider: sportsRuProvider,
+        providerSeason: price.season,
         providerEntityType: sportsRuPlayerEntityType,
         providerEntityId: price.id,
         internalEntityType: internalPlayerEntityType
       }
     },
     update: {
+      contestId: price.contestId ?? undefined,
       internalEntityId: null,
       confidence: 1,
       matchedBy: manualTransferredOutMethod,
@@ -737,6 +775,8 @@ export async function excludeTransferredSportsRuPlayer(
     },
     create: {
       provider: sportsRuProvider,
+      contestId: price.contestId ?? undefined,
+      providerSeason: price.season,
       providerEntityType: sportsRuPlayerEntityType,
       providerEntityId: price.id,
       internalEntityType: internalPlayerEntityType,
@@ -973,12 +1013,18 @@ async function updatePriceFromRoster(prisma: PrismaClient, priceId: string, rost
   });
 }
 
-async function applyPriceRosterMapping(prisma: PrismaClient, price: SportsRuStoredPrice, rosterEntry: RosterEntry) {
+async function applyPriceRosterMapping(
+  prisma: PrismaClient,
+  price: SportsRuStoredPrice,
+  rosterEntry: RosterEntry,
+  contestId?: string | null
+) {
   const otherPriceClaims = price.playerId && price.playerId !== rosterEntry.playerId
     ? await prisma.fantasyPlayerPrice.count({
         where: {
           id: { not: price.id },
           provider: sportsRuProvider,
+          ...(contestId || price.contestId ? { contestId: contestId ?? price.contestId! } : {}),
           leagueId: price.leagueId,
           season: price.season,
           playerId: price.playerId
@@ -989,6 +1035,7 @@ async function applyPriceRosterMapping(prisma: PrismaClient, price: SportsRuStor
   return syncSquadSelectionsForSportsRuMapping(prisma, {
     leagueId: price.leagueId,
     season: price.season,
+    contestId: contestId ?? price.contestId ?? null,
     previousPlayerId: shouldMovePreviousSportsRuSelection({
       previousPlayerId: price.playerId,
       targetPlayerId: rosterEntry.playerId,
@@ -1027,6 +1074,7 @@ async function syncSquadSelectionsForSportsRuMapping(
   input: {
     leagueId: bigint;
     season: string;
+    contestId?: string | null;
     previousPlayerId: bigint | null;
     rosterEntry: RosterEntry;
     sportsPosition: string | null;
@@ -1035,6 +1083,8 @@ async function syncSquadSelectionsForSportsRuMapping(
 ): Promise<SportsRuSelectionSyncResult> {
   const squads = await prisma.userFantasySquad.findMany({
     where: {
+      provider: sportsRuProvider,
+      ...(input.contestId ? { contestId: input.contestId } : {}),
       leagueId: input.leagueId,
       season: input.season
     },

@@ -5,6 +5,8 @@ import test from "node:test";
 import { formatAlternativeScore, formatScore, NULL_GLYPH } from "@/lib/format";
 import {
   fixtureChipPresentations,
+  fantasyAlternativeRoundPointsWithActiveChip,
+  fantasyRoundPointsWithActiveChip,
   isSquadReplacementTarget,
   orderSquadSelectionsWithBenchGoalkeeperLast,
   startingXiFoontasyPoints,
@@ -60,6 +62,22 @@ test("primary round forecast doubles only the captain", () => {
   assert.equal(startingXiRoundPoints(players, 1, "captain"), 12);
 });
 
+test("FPL chips change only the documented forecast scope", () => {
+  const starters = [
+    { playerId: "captain", predictedFp: 4, roundPoints: [4, 5], alternativePredictedFp: 3, alternativeRoundPoints: [3, 4] },
+    { playerId: "starter", predictedFp: 3, roundPoints: [3, 2], alternativePredictedFp: 2, alternativeRoundPoints: [2, 3] }
+  ];
+  const bench = [
+    { playerId: "bench", predictedFp: 2, roundPoints: [2, 1], alternativePredictedFp: 1.5, alternativeRoundPoints: [1.5, 1] }
+  ];
+
+  assert.equal(fantasyRoundPointsWithActiveChip(starters, bench, 0, "captain", "BENCH_BOOST"), 13);
+  assert.equal(fantasyRoundPointsWithActiveChip(starters, bench, 0, "captain", "TRIPLE_CAPTAIN"), 15);
+  assert.equal(fantasyRoundPointsWithActiveChip(starters, bench, 0, "captain", "WILDCARD"), 11);
+  assert.equal(fantasyRoundPointsWithActiveChip(starters, bench, 0, "captain", "FREE_HIT"), 11);
+  assert.equal(fantasyAlternativeRoundPointsWithActiveChip(starters, bench, 0, "captain", "BENCH_BOOST"), 9.5);
+});
+
 test("Foontasy total doubles the captain and never treats a missing forecast as zero", () => {
   assert.deepEqual(startingXiFoontasyPoints([
     { playerId: "captain", foontasyPoints: 5 },
@@ -109,10 +127,11 @@ test("auto-pick ignores audit-only warnings but still requires real projections 
 });
 
 test("top forecast metrics use only the starting XI and expose Alt totals", () => {
-  assert.match(squadPlannerSource, /value=\{formatScore\(summary\.projectedNext\)\}/);
+  assert.match(squadPlannerSource, /const previewNextRound = provider === "FPL"/);
+  assert.match(squadPlannerSource, /value=\{formatScore\(previewNextRound\)\}/);
   assert.doesNotMatch(squadPlannerSource, /summary\.projectedNext\s*\+\s*\(captainBonus/);
-  assert.match(squadPlannerSource, /startingXiAlternativeRoundPoints\(summary\.starterPlayers, 0, captainId\)/);
-  assert.match(squadPlannerSource, /startingXiAlternativeHorizonPoints\(summary\.starterPlayers, horizon, captainId\)/);
+  assert.match(squadPlannerSource, /const previewNextRoundAlternative = provider === "FPL"/);
+  assert.match(squadPlannerSource, /const previewHorizonAlternative = provider === "FPL"/);
   assert.match(squadPlannerSource, /startingXiFoontasyPoints\(summary\.starterPlayers, captainId\)/);
   assert.match(squadPlannerSource, /tertiaryLabel="FFO"/);
   assert.match(squadPlannerSource, /summary\.starterPlayers\.length === rules\.starterSize/);
@@ -385,7 +404,7 @@ test("custom player pool restores minutes and confidence under the name with det
   assert.match(squadPlannerSource, /const fullTeamName = player\.teamName\.trim\(\) \|\| teamDisplayName/);
   assert.match(squadPlannerSource, /title=\{teamCellTitle\}/);
   assert.match(squadPlannerSource, /player\.positionGroup\}\\n\$\{fixedColumnTitles\.position\}/);
-  assert.match(squadPlannerSource, /verified Sports\.ru fantasy price/);
+  assert.match(squadPlannerSource, /verified \$\{priceProviderLabel\} fantasy price/);
   assert.match(squadPlannerSource, /title=\{column\.title\}/);
 });
 
@@ -521,7 +540,7 @@ test("player pool exposes team, price, local match-scope and typed XLSX export c
 test("player-pool XLSX follows the selected optional-column order", () => {
   assert.match(squadPlannerSource, /const \[exportColumnKeys, setExportColumnKeys\] = useState\(initialVisiblePlayerPoolColumns\)/);
   assert.match(squadPlannerSource, /onVisibleColumnsChange=\{setExportColumnKeys\}/);
-  assert.match(squadPlannerSource, /downloadPlayerPoolXlsx\(exportPlayers, tableHorizon, language, leagueId, season, exportColumnKeys\)/);
+  assert.match(squadPlannerSource, /downloadPlayerPoolXlsx\(exportPlayers, tableHorizon, language, leagueId, season, exportColumnKeys, provider\)/);
   assert.match(squadPlannerSource, /visibleColumnKeys[\s\S]*optionalColumnsByKey\.get\(key\)/);
   assert.match(squadPlannerSource, /\.\.\.selectedColumns\.map\(\(column\) => \(\{ key: column\.key, header: column\.label \}\)\)/);
   assert.match(squadPlannerSource, /Object\.fromEntries\(selectedColumns\.map/);
@@ -642,7 +661,7 @@ test("Sports.ru XLSX price import is not exposed on the squad page", () => {
 
 test("squad page shows source freshness and has no data-tools menu", () => {
   assert.match(squadPageSource, /Стата FotMob:/);
-  assert.match(squadPageSource, /Цены Sports\.ru:/);
+  assert.match(squadPageSource, /provider === "FPL" \? "Цены FPL" : "Цены Sports\.ru"/);
   assert.match(squadPageSource, /Кэфы букмекера:/);
   assert.match(squadPageSource, /formatDateTime\(freshness\.fotmobStatsAt\)/);
   assert.match(squadPageSource, /formatDateTime\(freshness\.bookmakerOddsAt\)/);

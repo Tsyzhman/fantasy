@@ -29,6 +29,7 @@ export async function mapSportsRuPublishedSquad(
   prisma: PrismaClient,
   input: {
     profileId: string;
+    contestId: string;
     leagueId: bigint;
     season: string;
     expectedSquadSize: number;
@@ -40,6 +41,7 @@ export async function mapSportsRuPublishedSquad(
   const priceRows = await prisma.fantasyPlayerPrice.findMany({
     where: {
       provider: "SPORTS_RU",
+      contestId: input.contestId,
       leagueId: input.leagueId,
       season: { in: sportsRuSeasonAliases(input.season) },
       providerPlayerId: { in: providerPlayerIds }

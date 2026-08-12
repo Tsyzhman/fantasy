@@ -57,7 +57,7 @@ export async function importFantasyPriceWorkbook(
 
   const season = leagueSeason.season;
   const importedAt = new Date();
-  await prisma.sportsRuFantasyContest.upsert({
+  const contest = await prisma.fantasyContest.upsert({
     where: {
       provider_leagueId_season: {
         provider,
@@ -100,10 +100,8 @@ export async function importFantasyPriceWorkbook(
   for (const row of parsed.rows) {
     const price = await prisma.fantasyPlayerPrice.upsert({
       where: {
-        provider_leagueId_season_normalizedName_teamName: {
-          provider,
-          leagueId: input.leagueId,
-          season,
+        contestId_normalizedName_teamName: {
+          contestId: contest.id,
           normalizedName: row.normalizedName,
           teamName: row.teamName
         }
@@ -120,6 +118,7 @@ export async function importFantasyPriceWorkbook(
         lastSeenAt: importedAt
       },
       create: {
+        contestId: contest.id,
         leagueId: input.leagueId,
         season,
         provider,
@@ -139,8 +138,10 @@ export async function importFantasyPriceWorkbook(
     importedIds.push(price.id);
   }
 
-  const deleted = input.replace && importedIds.length > 0 ? await deleteRowsNotInImport(prisma, provider, input.leagueId, season, importedIds) : 0;
-  const mapping = await autoMapSportsRuFantasyPlayers(prisma, { leagueId: input.leagueId, season });
+  const deleted = input.replace && importedIds.length > 0 ? await deleteRowsNotInImport(prisma, provider, contest.id, input.leagueId, season, importedIds) : 0;
+  const mapping = provider === "SPORTS_RU"
+    ? await autoMapSportsRuFantasyPlayers(prisma, { leagueId: input.leagueId, season, contestId: contest.id })
+    : null;
 
   return {
     leagueName: leagueSeason.league.name,
@@ -148,9 +149,9 @@ export async function importFantasyPriceWorkbook(
     sheetName: parsed.sheetName,
     imported: parsed.rows.length,
     deleted,
-    mapped: mapping.matched,
-    manual: mapping.manual,
-    unmatched: mapping.unmatched
+    mapped: mapping?.matched ?? 0,
+    manual: mapping?.manual ?? 0,
+    unmatched: mapping?.unmatched ?? parsed.rows.length
   };
 }
 
@@ -292,11 +293,12 @@ async function findLeagueSeason(prisma: PrismaClient, leagueId: bigint, requeste
   });
 }
 
-function deleteRowsNotInImport(prisma: PrismaClient, provider: string, leagueId: bigint, season: string, importedIds: string[]) {
+function deleteRowsNotInImport(prisma: PrismaClient, provider: string, contestId: string, leagueId: bigint, season: string, importedIds: string[]) {
   return prisma.$transaction(async (tx) => {
     const staleRows = await tx.fantasyPlayerPrice.findMany({
       where: {
         provider,
+        contestId,
         leagueId,
         season,
         id: { notIn: importedIds }
@@ -311,6 +313,7 @@ function deleteRowsNotInImport(prisma: PrismaClient, provider: string, leagueId:
     await tx.providerEntityMap.deleteMany({
       where: {
         provider,
+        contestId,
         providerEntityType: "FANTASY_PLAYER_PRICE",
         providerEntityId: { in: staleIds },
         internalEntityType: "PLAYER"
@@ -318,7 +321,9 @@ function deleteRowsNotInImport(prisma: PrismaClient, provider: string, leagueId:
     });
     await tx.fantasyPlayerPrice.deleteMany({
       where: {
-        id: { in: staleIds }
+        id: { in: staleIds },
+        provider,
+        contestId
       }
     });
     return staleRows.length;

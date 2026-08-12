@@ -274,11 +274,11 @@ async function main() {
   }
 
   for (const clear of plan.resolvedClears) {
-    await setSportsRuPlayerMapping(prisma, { priceId: clear.priceId, playerId: null });
+    await setSportsRuPlayerMapping(prisma, { priceId: clear.priceId, playerId: null, contestId: plan.contestId });
   }
 
   for (const mapping of plan.resolvedMaps) {
-    await setSportsRuPlayerMapping(prisma, { priceId: mapping.priceId, playerId: BigInt(mapping.targetPlayerId) });
+    await setSportsRuPlayerMapping(prisma, { priceId: mapping.priceId, playerId: BigInt(mapping.targetPlayerId), contestId: plan.contestId });
   }
 
   console.log("Applied mapping updates.");
@@ -287,6 +287,12 @@ async function main() {
 async function buildPlan() {
   assertUnique("map", mapItems.map((item) => rowKey(item.sports, item.team)));
   assertUnique("clear", clearItems.map((item) => rowKey(item.sports, item.team)));
+
+  const contest = await prisma.fantasyContest.findUnique({
+    where: { provider_leagueId_season: { provider, leagueId, season } },
+    select: { id: true }
+  });
+  if (!contest) throw new Error(`Sports.ru fantasy contest is not synchronized for ${leagueId}/${season}.`);
 
   const activeRoster = await prisma.teamPlayerSeason.findMany({
     where: { leagueId, season, active: true },
@@ -299,7 +305,7 @@ async function buildPlan() {
   }
 
   const priceRows = await prisma.fantasyPlayerPrice.findMany({
-    where: { provider, leagueId, season },
+    where: { provider, contestId: contest.id, leagueId, season },
     include: { player: true, team: true }
   });
   const priceByKey = new Map(priceRows.map((price) => [rowKey(price.playerName, price.teamName), price]));
@@ -373,6 +379,7 @@ async function buildPlan() {
   const affectedMaps = await prisma.providerEntityMap.findMany({
     where: {
       provider,
+      contestId: contest.id,
       providerEntityType: "FANTASY_PLAYER_PRICE",
       providerEntityId: { in: affectedPriceIds },
       internalEntityType: "PLAYER"
@@ -380,6 +387,7 @@ async function buildPlan() {
   });
 
   return {
+    contestId: contest.id,
     errors,
     teamUpdates,
     resolvedMaps,

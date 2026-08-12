@@ -19,9 +19,10 @@ type SportsRuPlayerMappingPanelProps = {
   rows: SportsRuTeamMappingRow[];
   roster: FotMobRosterOption[];
   canEdit: boolean;
+  contestId?: string | null;
 };
 
-export function SportsRuPlayerMappingPanel({ rows, roster, canEdit }: SportsRuPlayerMappingPanelProps) {
+export function SportsRuPlayerMappingPanel({ rows, roster, canEdit, contestId }: SportsRuPlayerMappingPanelProps) {
   const language = useLanguage();
   const [drafts, setDrafts] = useState<Record<string, string>>(
     Object.fromEntries(rows.map((row) => [row.priceId, row.mappedPlayerId ?? ""]))
@@ -42,6 +43,11 @@ export function SportsRuPlayerMappingPanel({ rows, roster, canEdit }: SportsRuPl
   }
 
   function saveMapping(row: SportsRuTeamMappingRow) {
+    const selectedContestId = row.contestId ?? contestId ?? null;
+    if (!selectedContestId) {
+      setMessage(localizedText(language, "Fantasy contest is not synchronized.", "Фэнтези-контест ещё не синхронизирован."));
+      return;
+    }
     startTransition(async () => {
       setMessage(null);
       const response = await fetch("/api/machete/sports-ru-player-mappings", {
@@ -49,7 +55,8 @@ export function SportsRuPlayerMappingPanel({ rows, roster, canEdit }: SportsRuPl
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           priceId: row.priceId,
-          playerId: drafts[row.priceId] || null
+          playerId: drafts[row.priceId] || null,
+          contestId: selectedContestId
         })
       });
       const payload = await response.json().catch(() => ({}));

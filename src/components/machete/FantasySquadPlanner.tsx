@@ -8,6 +8,8 @@ import { createPortal } from "react-dom";
 import { I18nText } from "@/components/i18n-text";
 import { LocalizedOption, localizedText, useLanguage } from "@/components/localized-option";
 import {
+  fantasyAlternativeRoundPointsWithActiveChip,
+  fantasyRoundPointsWithActiveChip,
   fixtureChipPresentations,
   isSquadReplacementTarget,
   orderSquadSelectionsWithBenchGoalkeeperLast,
@@ -15,7 +17,8 @@ import {
   startingXiAlternativeRoundPoints,
   startingXiFoontasyPoints,
   startingXiRoundPoints,
-  swapSquadSelectionCards
+  swapSquadSelectionCards,
+  type FantasyActiveChip
 } from "@/components/machete/fantasy-squad-ui";
 import { FormulaAdaptationHoverCard } from "@/components/machete/FormulaAdaptationHoverCard";
 import { SortableTable } from "@/components/sortable-table";
@@ -94,6 +97,7 @@ import {
 type FantasySquadPlannerProps = {
   leagueId: string;
   season: string;
+  provider: string;
   rules: FantasySquadRules;
   rounds: FantasyRoundProjection[];
   bookmakerFavorites: FantasyBookmakerFavorite[];
@@ -104,6 +108,7 @@ type FantasySquadPlannerProps = {
   readiness: PlannerReadiness;
   priceStatus: {
     sportsRuPrices: number;
+    fplPrices: number;
     estimatedPrices: number;
     lastSyncedAt: string | null;
   };
@@ -241,7 +246,7 @@ type TransferSuggestionCalculation = {
   suggestions: TransferPlanSuggestion[];
 };
 
-export function FantasySquadPlanner({ leagueId, season, rules, rounds, bookmakerFavorites, players: initialPlayers, playerPoolHref, initialSquad, savedSquads, readiness, priceStatus, sportsRuSquadStatus, historySettings, historySeasonOptions, initialVisiblePlayerPoolColumns, initialPlayerPoolColumnWidths }: FantasySquadPlannerProps) {
+export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds, bookmakerFavorites, players: initialPlayers, playerPoolHref, initialSquad, savedSquads, readiness, priceStatus, sportsRuSquadStatus, historySettings, historySeasonOptions, initialVisiblePlayerPoolColumns, initialPlayerPoolColumnWidths }: FantasySquadPlannerProps) {
   const language = useLanguage();
   const router = useRouter();
   const budgetForecastRef = useRef<HTMLDivElement>(null);
@@ -273,6 +278,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, bookmaker
   const [squadOptions, setSquadOptions] = useState<SavedFantasySquadOption[]>(savedSquads);
   const captainStorageKey = `fantasy-squad-captains:${leagueId}:${season}:${activeSquadId ?? "new"}:${activeRoundOffset}`;
   const [horizon, setHorizon] = useState(initialHorizon);
+  const [activeFplChip, setActiveFplChip] = useState<FantasyActiveChip>(null);
   const [transferSuggestionForecastSource, setTransferSuggestionForecastSource] = useState<TransferSuggestionForecastSource>("FO");
   const [tableHorizon, setTableHorizon] = useState<3 | 5>(5);
   const [exportColumnKeys, setExportColumnKeys] = useState(initialVisiblePlayerPoolColumns);
@@ -300,11 +306,12 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, bookmaker
   const [isPending, startTransition] = useTransition();
   const [savePending, setSavePending] = useState(false);
   const [sportsImportPending, setSportsImportPending] = useState(false);
+  const [fplImportPending, setFplImportPending] = useState(false);
   const [sportsSnapshotStatus, setSportsSnapshotStatus] = useState(sportsRuSquadStatus);
   const [sportsImportNotice, setSportsImportNotice] = useState<SportsImportNotice | null>(null);
   const [deletePending, setDeletePending] = useState(false);
   const [tableExportPending, setTableExportPending] = useState(false);
-  const interactionPending = isPending || savePending || sportsImportPending || deletePending;
+  const interactionPending = isPending || savePending || sportsImportPending || fplImportPending || deletePending;
   const [mobileTab, setMobileTab] = useState<MobileTab>("squad");
   const [showAllSuggestions, setShowAllSuggestions] = useState(false);
   const [draggedPlayerId, setDraggedPlayerId] = useState<string | null>(null);
@@ -429,7 +436,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, bookmaker
     .map((player) => [player.teamId!, { id: player.teamId!, name: player.teamName }])).values()]
     .sort((left, right) => left.name.localeCompare(right.name)), [players]);
   const priceFilterOptions = useMemo(() => [...new Set(players.map((player) => player.price))].sort((left, right) => left - right), [players]);
-  const playerPoolColumns = useMemo(() => playerPoolOptionalColumns(players, tableHorizon, language), [language, players, tableHorizon]);
+  const playerPoolColumns = useMemo(() => playerPoolOptionalColumns(players, tableHorizon, language, provider), [language, players, provider, tableHorizon]);
   const advancedFilterColumns = useMemo(() => playerPoolColumns.map(({ key, label, title, numeric }) => ({ key, label, title, numeric })), [playerPoolColumns]);
   const deferredAdvancedTableFilters = useDeferredValue(advancedTableFilters);
   const activeAdvancedFilterColumns = useMemo(() => advancedFilterColumns.filter((column) =>
@@ -1104,6 +1111,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, bookmaker
               historyScope: appliedHistorySettings.scope,
               historyWindow: appliedHistorySettings.window,
               historySeasons: appliedHistorySettings.selectedSeasons,
+              provider,
               selections: roundPlansToSave[0].selections,
               roundPlans: roundPlansToSave,
               roundPlanRoundIds: rounds.map((round) => round.id)
@@ -1153,7 +1161,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, bookmaker
         );
         void recordBetaMilestone("SQUAD_SAVED");
         window.dispatchEvent(new CustomEvent("machete:squad-saved"));
-        router.replace(squadVariantHref(leagueId, season, savedSquadId, appliedHistorySettings));
+        router.replace(squadVariantHref(leagueId, season, savedSquadId, appliedHistorySettings, provider));
       } finally {
         setSavePending(false);
       }
@@ -1269,7 +1277,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, bookmaker
       window.history.replaceState(
         window.history.state,
         "",
-        squadVariantHref(leagueId, season, savedSquadId, appliedHistorySettings)
+        squadVariantHref(leagueId, season, savedSquadId, appliedHistorySettings, provider)
       );
     } catch {
       setSportsImportNotice({
@@ -1278,6 +1286,44 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, bookmaker
       });
     } finally {
       setSportsImportPending(false);
+    }
+  }
+
+  async function importFplSquad() {
+    if (interactionPending || autoPickPending || provider !== "FPL") return;
+    setMessage(null);
+    setFplImportPending(true);
+    try {
+      const response = await fetch("/api/machete/squads/import-fpl", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ leagueId, season, squadId: activeSquadId, horizonRounds: horizon })
+      });
+      const payload = await response.json().catch(() => ({})) as {
+        result?: {
+          squadId?: string;
+          squadName?: string;
+          selections?: FantasySquadSelection[];
+          roundPlans?: FantasySquadRoundPlan[];
+          gameweek?: number;
+        };
+        message?: string;
+      };
+      if (!response.ok || !payload.result?.squadId || !Array.isArray(payload.result.selections) || !Array.isArray(payload.result.roundPlans)) {
+        setMessage(payload.message ?? "FPL published squad is unavailable or could not be mapped; the current squad was not changed.");
+        return;
+      }
+      const importedSelections = normalizeInitialSelections(payload.result.selections, sourcePlayers, rules);
+      const importedPlans = normalizePlannerRoundPlans(payload.result.roundPlans, importedSelections, sourcePlayers, rules);
+      setActiveRoundOffset(0);
+      setRoundPlans(importedPlans);
+      setSavedRoundPlans(cloneFantasyRoundPlans(importedPlans));
+      setActiveSquadId(payload.result.squadId);
+      setSquadName(payload.result.squadName?.trim() || squadName);
+      setSquadOptions((current) => [{ id: payload.result!.squadId!, name: payload.result!.squadName?.trim() || squadName, playersCount: importedSelections.length, updatedAt: new Date().toISOString() }, ...current.filter((option) => option.id !== payload.result!.squadId)]);
+      setMessage(`FPL GW${payload.result.gameweek ?? ""} published squad imported: ${importedSelections.length} players.`);
+    } finally {
+      setFplImportPending(false);
     }
   }
 
@@ -1297,7 +1343,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, bookmaker
 
   function selectSquadVariant(squadId: string) {
     if (!squadId || squadId === activeSquadId) return;
-    router.push(squadVariantHref(leagueId, season, squadId, appliedHistorySettings));
+        router.push(squadVariantHref(leagueId, season, squadId, appliedHistorySettings, provider));
   }
 
   function deleteSquadVariant() {
@@ -1309,7 +1355,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, bookmaker
       try {
         let response: Response;
         try {
-          response = await fetch(`/api/machete/squads?squadId=${encodeURIComponent(activeSquadId)}`, { method: "DELETE" });
+          response = await fetch(`/api/machete/squads?squadId=${encodeURIComponent(activeSquadId)}&provider=${encodeURIComponent(provider)}`, { method: "DELETE" });
         } catch {
           setMessage(localizedText(language, "Failed to delete squad. Check the connection and try again.", "Не удалось удалить состав. Проверьте соединение и повторите попытку."));
           return;
@@ -1325,7 +1371,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, bookmaker
         setSquadOptions(remaining);
         const next = remaining[0];
         if (next) {
-          router.replace(squadVariantHref(leagueId, season, next.id, appliedHistorySettings));
+          router.replace(squadVariantHref(leagueId, season, next.id, appliedHistorySettings, provider));
           return;
         }
         setActiveSquadId(null);
@@ -1335,7 +1381,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, bookmaker
         setSavedRoundPlans(cloneFantasyRoundPlans(blankPlans));
         selectActiveRoundOffset(0);
         setMessage(localizedText(language, "Squad deleted.", "Состав удалён."));
-        router.replace(squadVariantHref(leagueId, season, null, appliedHistorySettings));
+        router.replace(squadVariantHref(leagueId, season, null, appliedHistorySettings, provider));
       } finally {
         setDeletePending(false);
       }
@@ -1359,7 +1405,21 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, bookmaker
   ];
   const autoPickStrategyCopy = squadStrategyCopy(language, autoPickStrategy);
   const nextRoundFoontasy = startingXiFoontasyPoints(summary.starterPlayers, captainId);
-  const nextRoundFoontasyTotal = summary.starterPlayers.length === rules.starterSize ? nextRoundFoontasy.total : null;
+  const nextRoundFoontasyTotal = provider === "FPL" || summary.starterPlayers.length !== rules.starterSize ? null : nextRoundFoontasy.total;
+  const previewNextRound = provider === "FPL"
+    ? fantasyRoundPointsWithActiveChip(summary.starterPlayers, summary.benchPlayers, 0, captainId, activeFplChip)
+    : summary.projectedNext;
+  const previewHorizon = provider === "FPL"
+    ? Array.from({ length: Math.max(0, Math.floor(horizon)) }, (_, roundIndex) => fantasyRoundPointsWithActiveChip(summary.starterPlayers, summary.benchPlayers, roundIndex, captainId, activeFplChip)).reduce((total, value) => total + value, 0)
+    : summary.projectedHorizon;
+  const nextRoundAlternative = startingXiAlternativeRoundPoints(summary.starterPlayers, 0, captainId);
+  const horizonAlternative = startingXiAlternativeHorizonPoints(summary.starterPlayers, horizon, captainId);
+  const previewNextRoundAlternative = provider === "FPL"
+    ? fantasyAlternativeRoundPointsWithActiveChip(summary.starterPlayers, summary.benchPlayers, 0, captainId, activeFplChip)
+    : nextRoundAlternative;
+  const previewHorizonAlternative = provider === "FPL"
+    ? Array.from({ length: Math.max(0, Math.floor(horizon)) }, (_, roundIndex) => fantasyAlternativeRoundPointsWithActiveChip(summary.starterPlayers, summary.benchPlayers, roundIndex, captainId, activeFplChip)).reduce((total, value) => total + value, 0)
+    : horizonAlternative;
 
   return (
     <div
@@ -1525,18 +1585,18 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, bookmaker
           <div ref={budgetForecastRef} className="mt-3 grid grid-cols-2 overflow-hidden rounded border border-slate-200 bg-slate-50 [&>dl:nth-child(odd)]:border-r [&>dl:nth-child(n+3)]:border-b-0 md:grid-cols-4 md:divide-x md:divide-slate-200 md:[&>dl]:border-r-0">
             <Metric
               label={<I18nText en="Next round" ru="След. тур" />}
-              value={formatScore(summary.projectedNext)}
+              value={formatScore(previewNextRound)}
               secondaryLabel={<I18nText en="Alt" ru="Альт" />}
-              secondaryValue={formatAlternativeScore(startingXiAlternativeRoundPoints(summary.starterPlayers, 0, captainId))}
+              secondaryValue={formatAlternativeScore(previewNextRoundAlternative)}
               tertiaryLabel="FFO"
               tertiaryValue={formatScore(nextRoundFoontasyTotal)}
               tone="good"
             />
             <Metric
               label={<I18nText en={`Horizon ${horizon}R`} ru={`Горизонт ${horizon}т`} />}
-              value={formatScore(summary.projectedHorizon)}
+              value={formatScore(previewHorizon)}
               secondaryLabel={<I18nText en="Alt" ru="Альт" />}
-              secondaryValue={formatAlternativeScore(startingXiAlternativeHorizonPoints(summary.starterPlayers, horizon, captainId))}
+              secondaryValue={formatAlternativeScore(previewHorizonAlternative)}
               tone="accent"
             />
             <Metric label={<I18nText en="Budget" ru="Бюджет" />} value={`${formatNumber(summary.spent, 1)} / ${formatNumber(rules.budgetLimit, 1)}`} tone={summary.spent > rules.budgetLimit ? "bad" : summary.bank < 0 ? "bad" : "default"} />
@@ -1580,6 +1640,23 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, bookmaker
                     ))}
                   </select>
                 </label>
+                {provider === "FPL" ? (
+                  <label className="text-sm">
+                    <span className="mb-1 block text-xs font-semibold uppercase text-slate-500"><I18nText en="Active chip preview" ru="Предпросмотр чипа" /></span>
+                    <select
+                      value={activeFplChip ?? "NONE"}
+                      onChange={(event) => setActiveFplChip(event.target.value === "NONE" ? null : event.target.value as Exclude<FantasyActiveChip, null>)}
+                      aria-label={localizedText(language, "Active FPL chip preview", "Предпросмотр активного чипа FPL")}
+                      className="rounded border border-slate-200 bg-white px-3 py-2"
+                    >
+                      <LocalizedOption value="NONE" en="No chip" ru="Без чипа" />
+                      {rules.supportsBenchBoost ? <LocalizedOption value="BENCH_BOOST" en="Bench Boost" ru="Bench Boost" /> : null}
+                      {rules.supportsTripleCaptain ? <LocalizedOption value="TRIPLE_CAPTAIN" en="Triple Captain" ru="Triple Captain" /> : null}
+                      <LocalizedOption value="WILDCARD" en="Wildcard" ru="Wildcard" />
+                      <LocalizedOption value="FREE_HIT" en="Free Hit" ru="Free Hit" />
+                    </select>
+                  </label>
+                ) : null}
                 <div className="text-sm">
                   <span id="transfer-count-label" className="mb-1 block text-xs font-semibold uppercase text-slate-500"><I18nText en="Transfers" ru="Трансферы" /></span>
                   <output
@@ -1592,12 +1669,17 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, bookmaker
                     {transferLimitIsActive ? `${plannedTransferCount}/${transferLimit}` : transferLimit}
                   </output>
                 </div>
+                {priceStatus.fplPrices > 0 ? (
+                  <span className="rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700">
+                    <I18nText en={`FPL prices ${priceStatus.fplPrices}`} ru={`Цены FPL ${priceStatus.fplPrices}`} />
+                  </span>
+                ) : null}
                 {priceStatus.sportsRuPrices > 0 ? (
                   <span className="rounded border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700">
                     <I18nText en={`Sports.ru prices ${priceStatus.sportsRuPrices}`} ru={`Цены Sports.ru ${priceStatus.sportsRuPrices}`} />
                   </span>
                 ) : null}
-                {priceStatus.estimatedPrices > 0 ? (
+                {provider !== "FPL" && priceStatus.estimatedPrices > 0 ? (
                   <span className="rounded border border-amber-200 bg-amber-50 px-3 py-2 text-sm font-semibold text-amber-800">
                     <I18nText en={`Hidden without Sports.ru price ${priceStatus.estimatedPrices}`} ru={`Скрыто без цены Sports.ru: ${priceStatus.estimatedPrices}`} />
                   </span>
@@ -1920,13 +2002,25 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, bookmaker
                     disabled={interactionPending || autoPickPending}
                     title={sportsRuSquadButtonTitle(language, sportsSnapshotStatus)}
                     aria-describedby={sportsImportNotice ? "sports-ru-import-status" : undefined}
-                    className="inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded border border-sky-200 bg-sky-50 px-2 py-1.5 text-[11px] font-semibold text-sky-800 hover:bg-sky-100 sm:px-3 sm:text-xs disabled:opacity-60"
+                    className={cn("inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded border border-sky-200 bg-sky-50 px-2 py-1.5 text-[11px] font-semibold text-sky-800 hover:bg-sky-100 sm:px-3 sm:text-xs disabled:opacity-60", provider === "FPL" && "hidden")}
                   >
                     {sportsImportPending
                       ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" aria-hidden="true" />
                       : <Download className="h-3.5 w-3.5" aria-hidden="true" />}
                     {sportsImportPending ? <I18nText en="Loading" ru="Загрузка" /> : <I18nText en="Sports squad" ru="Состав Sports" />}
                   </button>
+                  {provider === "FPL" ? (
+                    <button
+                      type="button"
+                      onClick={importFplSquad}
+                      disabled={interactionPending || autoPickPending}
+                      title={localizedText(language, "Import the latest published FPL gameweek squad", "Импортировать последний опубликованный состав FPL")}
+                      className="inline-flex shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded border border-violet-200 bg-violet-50 px-2 py-1.5 text-[11px] font-semibold text-violet-800 hover:bg-violet-100 sm:px-3 sm:text-xs disabled:opacity-60"
+                    >
+                      {fplImportPending ? <LoaderCircle className="h-3.5 w-3.5 animate-spin" aria-hidden="true" /> : <Download className="h-3.5 w-3.5" aria-hidden="true" />}
+                      <I18nText en={fplImportPending ? "Loading" : "FPL squad"} ru={fplImportPending ? "Загрузка" : "FPL squad"} />
+                    </button>
+                  ) : null}
                   <button
                     type="button"
                     onClick={() => saveSquad(false)}
@@ -2063,7 +2157,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, bookmaker
                       return;
                     }
                     setTableExportPending(true);
-                    void downloadPlayerPoolXlsx(exportPlayers, tableHorizon, language, leagueId, season, exportColumnKeys)
+                    void downloadPlayerPoolXlsx(exportPlayers, tableHorizon, language, leagueId, season, exportColumnKeys, provider)
                       .catch(() => setMessage(localizedText(language, "Could not export the player table.", "Не удалось выгрузить таблицу игроков.")))
                       .finally(() => setTableExportPending(false));
                   }}
@@ -2082,6 +2176,7 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, bookmaker
                   availableColumns={playerPoolColumns}
                   horizon={tableHorizon}
                   language={language}
+                  provider={provider}
                   addBlockReason={fantasyAddEvaluator.reason}
                   selectionsByPlayerId={selectionsByPlayerId}
                   onAdd={addPlayer}
@@ -2162,7 +2257,9 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, bookmaker
                   </td>
                   {rounds.map((round, index) => (
                     <td key={round.id} className="px-4 py-3 text-right font-semibold text-emerald-700 num-tabular">
-                      {formatScore(startingXiRoundPoints(summary.starterPlayers, index, captainId))}
+                      {formatScore(provider === "FPL"
+                        ? fantasyRoundPointsWithActiveChip(summary.starterPlayers, summary.benchPlayers, index, captainId, activeFplChip)
+                        : startingXiRoundPoints(summary.starterPlayers, index, captainId))}
                     </td>
                   ))}
                 </tr>
@@ -2172,7 +2269,9 @@ export function FantasySquadPlanner({ leagueId, season, rules, rounds, bookmaker
                   </td>
                   {rounds.map((round, index) => (
                     <td key={round.id} className="px-4 py-3 text-right font-semibold text-amber-700 num-tabular">
-                      {formatAlternativeScore(startingXiAlternativeRoundPoints(summary.starterPlayers, index, captainId))}
+                      {formatAlternativeScore(provider === "FPL"
+                        ? fantasyAlternativeRoundPointsWithActiveChip(summary.starterPlayers, summary.benchPlayers, index, captainId, activeFplChip)
+                        : startingXiAlternativeRoundPoints(summary.starterPlayers, index, captainId))}
                     </td>
                   ))}
                 </tr>
@@ -2320,6 +2419,7 @@ type PlayerPoolTableProps = {
   players: FantasyPlannerPlayer[];
   horizon: number;
   language: UiLanguage;
+  provider?: string;
   formulaAdaptationSourceHref?: string;
   detailedFormulaTooltips: boolean;
   addBlockReason: (player: FantasyPlannerPlayer) => string | null;
@@ -2559,7 +2659,7 @@ function CustomizablePlayerPoolTable({
   const visibleColumns = visibleColumnKeys
     .map((key) => columnsByKey.get(key))
     .filter((column): column is PlayerPoolOptionalColumn => Boolean(column));
-  const fixedColumnTitles = playerPoolFixedColumnTitles(language);
+  const fixedColumnTitles = playerPoolFixedColumnTitles(language, props.provider);
   const widthFor = (key: string, fallback: number) => columnWidths[key] ?? fallback;
   const tableWidth = widthFor("action", playerPoolFixedColumnWidths.action)
     + widthFor("player", playerPoolFixedColumnWidths.player)
@@ -2808,20 +2908,22 @@ function ColumnResizeHandle({ label, onPointerDown, onDoubleClick }: {
   );
 }
 
-function playerPoolFixedColumnTitles(language: UiLanguage) {
+function playerPoolFixedColumnTitles(language: UiLanguage, provider = "SPORTS_RU") {
+  const isFpl = provider === "FPL";
+  const providerLabel = isFpl ? "FPL" : "Sports.ru";
   return {
     player: localizedText(
       language,
-      "Sports.ru fantasy display name. The second line shows expected minutes and the confidence heuristic. Confidence is not a probability that the forecast will be correct: 55% comes from sample size (full at 5 matches), 30% from minute stability, and 15% from the share of matches with a known starting-XI flag.",
-      "Имя игрока в формате фэнтези Sports.ru. Во второй строке показаны ожидаемые минуты и эвристика уверенности. Уверенность — не вероятность точности прогноза: 55% дают полнота выборки (максимум при 5 матчах), 30% — стабильность минут, 15% — доля матчей с известной отметкой выхода в старте."
+      `${providerLabel} fantasy display name. The second line shows expected minutes and the confidence heuristic. Confidence is not a probability that the forecast will be correct: 55% comes from sample size (full at 5 matches), 30% from minute stability, and 15% from the share of matches with a known starting-XI flag.`,
+      `Имя игрока в формате фэнтези ${providerLabel}. Во второй строке показаны ожидаемые минуты и эвристика уверенности. Уверенность — не вероятность точности прогноза: 55% дают полнота выборки (максимум при 5 матчах), 30% — стабильность минут, 15% — доля матчей с известной отметкой выхода в старте.`
     ),
     team: localizedText(language, "The player's current club in the selected league and season.", "Текущий клуб игрока в выбранной лиге и сезоне."),
     position: localizedText(language, "Fantasy position used for formation limits: goalkeeper, defender, midfielder, or forward.", "Фэнтези-позиция, по которой применяются лимиты состава: вратарь, защитник, полузащитник или нападающий."),
-    price: localizedText(language, "Current Sports.ru fantasy price. A tilde means the price is estimated because no verified Sports.ru value is available.", "Текущая цена в фэнтези Sports.ru. Тильда означает оценочную цену: подтверждённой цены Sports.ru для игрока нет.")
+    price: localizedText(language, `Current ${providerLabel} fantasy price. A tilde means the price is estimated because no verified ${providerLabel} value is available.`, `Текущая цена в фэнтези ${providerLabel}. Тильда означает оценочную цену: подтверждённой цены ${providerLabel} для игрока нет.`)
   };
 }
 
-function CustomPlayerPoolRow({ player, columns, horizon, language, formulaAdaptationSourceHref, detailedFormulaTooltips, addBlockReason, selectionsByPlayerId, onAdd, onRemove }: Omit<PlayerPoolTableProps, "players"> & { player: FantasyPlannerPlayer; columns: PlayerPoolOptionalColumn[] }) {
+function CustomPlayerPoolRow({ player, columns, horizon, language, provider, formulaAdaptationSourceHref, detailedFormulaTooltips, addBlockReason, selectionsByPlayerId, onAdd, onRemove }: Omit<PlayerPoolTableProps, "players"> & { player: FantasyPlannerPlayer; columns: PlayerPoolOptionalColumn[] }) {
   const reason = addBlockReason(player);
   const isSelected = selectionsByPlayerId.has(player.playerId);
   const disabled = !isSelected && reason !== null;
@@ -2839,7 +2941,9 @@ function CustomPlayerPoolRow({ player, columns, horizon, language, formulaAdapta
       ? `${Math.round(player.forecastConfidence * 100)}%`
       : null
   ].filter((value): value is string => value !== null).join(" · ");
-  const fixedColumnTitles = playerPoolFixedColumnTitles(language);
+  const fixedColumnTitles = playerPoolFixedColumnTitles(language, provider);
+  const isVerifiedPrice = player.priceSource === "SPORTS_RU" || player.priceSource === "FPL";
+  const priceProviderLabel = provider === "FPL" ? "FPL" : "Sports.ru";
   const teamDisplayName = fantasyPlayerTeamDisplayName(player);
   const fullTeamName = player.teamName.trim() || teamDisplayName;
   const teamCellTitle = `${player.name} · ${localizedText(language, "club", "клуб")}: ${teamDisplayName}\n${localizedText(language, "Full club name", "Полное название клуба")}: ${fullTeamName}\n${fixedColumnTitles.team}`;
@@ -2857,7 +2961,7 @@ function CustomPlayerPoolRow({ player, columns, horizon, language, formulaAdapta
       </td>
       <td className="overflow-hidden px-2 py-1.5 text-slate-600" title={teamCellTitle}><span className="block truncate">{teamDisplayName}</span></td>
       <td className="overflow-hidden px-1 py-1.5" title={`${player.name} · ${localizedText(language, "position", "позиция")}: ${player.positionGroup}\n${fixedColumnTitles.position}`}><span className={cn("inline-block max-w-full truncate rounded px-1 py-0.5 text-[10px] font-bold", muted ? "border border-slate-300 bg-slate-200 text-slate-700" : positionPillClass(player.positionGroup))}>{player.positionGroup}</span></td>
-      <td data-sort-value={player.price} className={cn("overflow-hidden whitespace-nowrap px-1 py-1.5 text-right font-semibold", muted ? "text-slate-600" : "text-ink")} title={`${player.name} · ${localizedText(language, "price", "цена")}: ${formatNumber(player.price, 1)}\n${localizedText(language, `Source: ${player.priceSource === "SPORTS_RU" ? "verified Sports.ru fantasy price" : "estimate; no verified Sports.ru mapping"}.`, `Источник: ${player.priceSource === "SPORTS_RU" ? "подтверждённая цена фэнтези Sports.ru" : "оценка; подтверждённого сопоставления Sports.ru нет"}.`)}`}>{player.priceSource === "ESTIMATED" ? "~" : ""}{formatNumber(player.price, 1)}</td>
+      <td data-sort-value={player.price} className={cn("overflow-hidden whitespace-nowrap px-1 py-1.5 text-right font-semibold", muted ? "text-slate-600" : "text-ink")} title={`${player.name} · ${localizedText(language, "price", "цена")}: ${formatNumber(player.price, 1)}\n${localizedText(language, `Source: ${isVerifiedPrice ? `verified ${priceProviderLabel} fantasy price` : `estimate; no verified ${priceProviderLabel} mapping`}.`, `Источник: ${isVerifiedPrice ? `подтверждённая цена фэнтези ${priceProviderLabel}` : `оценка; подтверждённого сопоставления ${priceProviderLabel} нет`}.`)}`}>{player.priceSource === "ESTIMATED" ? "~" : ""}{formatNumber(player.price, 1)}</td>
       <td className="px-1 py-1.5 text-center">
         {isSelected ? (
           <button type="button" onClick={() => onRemove(player.playerId)} aria-label={removeLabel} className="inline-flex h-7 w-7 items-center justify-center rounded border border-rose-200 bg-white text-rose-700 hover:bg-rose-50"><Trash2 className="h-4 w-4" /></button>
@@ -2867,12 +2971,13 @@ function CustomPlayerPoolRow({ player, columns, horizon, language, formulaAdapta
           <button type="button" onClick={() => onAdd(player)} aria-label={addLabel} className="inline-flex h-7 w-7 items-center justify-center rounded border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"><Plus className="h-4 w-4" /></button>
         )}
       </td>
-      {columns.map((column) => customPlayerPoolCell(column, player, horizon, language, muted, formulaAdaptationSourceHref, detailedFormulaTooltips))}
+      {columns.map((column) => customPlayerPoolCell(column, player, horizon, language, muted, formulaAdaptationSourceHref, detailedFormulaTooltips, provider ?? "SPORTS_RU"))}
     </tr>
   );
 }
 
-function playerPoolOptionalColumns(players: FantasyPlannerPlayer[], horizon: number, language: UiLanguage): PlayerPoolOptionalColumn[] {
+function playerPoolOptionalColumns(players: FantasyPlannerPlayer[], horizon: number, language: UiLanguage, provider = "SPORTS_RU"): PlayerPoolOptionalColumn[] {
+  const priceProviderLabel = provider === "FPL" ? "FPL" : "Sports.ru";
   const column = (key: string, en: string, ru: string, titleEn = en, titleRu = ru, numeric = true, width = 72): PlayerPoolOptionalColumn => ({
     key,
     label: localizedText(language, en, ru),
@@ -2882,13 +2987,13 @@ function playerPoolOptionalColumns(players: FantasyPlannerPlayer[], horizon: num
   });
   const standard = [
     column("nextFp", "FP", "ФО", "Expected fantasy points in the next round from expected minutes, player event rates, opponent strength, bookmaker inputs, and the active scoring formula.", "Ожидаемые фэнтези-очки в следующем туре: учитываются ожидаемые минуты, игровые показатели футболиста, сила соперника, букмекерские данные и активная формула начисления.", true, 64),
-    column("nextFpPerPrice", "FP/price", "ФО/цена", "Primary next-round expected fantasy points divided by the current Sports.ru price. Higher means more forecast points per one price unit.", "Основные ожидаемые ФО на следующий тур, делённые на текущую цену Sports.ru. Чем выше значение, тем больше прогнозных очков на одну единицу стоимости.", true, 78),
+    column("nextFpPerPrice", "FP/price", "ФО/цена", `Primary next-round expected fantasy points divided by the current ${priceProviderLabel} price. Higher means more forecast points per one price unit.`, `Основные ожидаемые ФО на следующий тур, делённые на текущую цену ${priceProviderLabel}. Чем выше значение, тем больше прогнозных очков на одну единицу стоимости.`, true, 78),
     column("horizonFp", `${horizon}R FP`, `${horizon}Т ФО`, `Sum of independently calculated primary forecasts for the next ${horizon} rounds; the current-round value is not simply multiplied.`, `Сумма отдельно рассчитанных основных прогнозов на следующие ${horizon} туров; значение текущего тура не умножается механически.`),
     column("foontasy", "FFO", "FFO", "Foontasy's external forecast for the current round, matched strictly through the Sports.ru player identifier. Foontasy does not publish a multi-round forecast; missing data is shown as a dash.", "Внешний прогноз Foontasy на текущий тур, сопоставленный строго через идентификатор игрока Sports.ru. Foontasy не публикует прогноз на несколько туров; отсутствие данных показывается прочерком."),
-    column("foontasyPerPrice", "FFO/price", "ФФО/цена", "Foontasy current-round forecast divided by the current Sports.ru price. Higher means more FFO per one price unit.", "Прогноз Foontasy на текущий тур, делённый на текущую цену Sports.ru. Чем выше значение, тем больше ФФО на одну единицу стоимости.", true, 82),
+    column("foontasyPerPrice", "FFO/price", "ФФО/цена", `Foontasy current-round forecast divided by the current ${priceProviderLabel} price. Higher means more FFO per one price unit.`, `Прогноз Foontasy на текущий тур, делённый на текущую цену ${priceProviderLabel}. Чем выше значение, тем больше ФФО на одну единицу стоимости.`, true, 82),
     column("modelHorizon", `${horizon}R FFO`, `${horizon}Т ФФО`, `Our reproducible Foontasy-style forecast for the selected ${horizon}-round horizon. Every fixture is calculated separately from expected minutes, smoothed player rates, and fresh odds, xG form, or goals fallback. It is our model, not Foontasy's external forecast.`, `Наш воспроизводимый прогноз в стиле Foontasy на выбранный горизонт ${horizon} туров. Каждый матч считается отдельно по ожидаемым минутам, сглаженным показателям игрока и свежим коэффициентам, xG-форме или голам. Это наша модель, а не внешний прогноз Foontasy.`),
     column("alternative", "Alt", "Альт", "Alternative next-round fantasy forecast calculated with this user's personal Alt formula and the same minute-aware player inputs.", "Альтернативный прогноз фэнтези-очков на следующий тур по личной формуле Alt пользователя и с учётом ожидаемых минут игрока."),
-    column("alternativePerPrice", "Alt/price", "Альт/цена", "Alternative next-round expected fantasy points divided by the current Sports.ru price. Higher means more Alt points per one price unit.", "Альтернативные ожидаемые ФО на следующий тур, делённые на текущую цену Sports.ru. Чем выше значение, тем больше Альт-очков на одну единицу стоимости.", true, 82),
+    column("alternativePerPrice", "Alt/price", "Альт/цена", `Alternative next-round expected fantasy points divided by the current ${priceProviderLabel} price. Higher means more Alt points per one price unit.`, `Альтернативные ожидаемые ФО на следующий тур, делённые на текущую цену ${priceProviderLabel}. Чем выше значение, тем больше Альт-очков на одну единицу стоимости.`, true, 82),
     column("alternativeHorizon", `Alt ${horizon}R`, `Альт ${horizon}Т`, `Sum of independently calculated personal Alt forecasts for the next ${horizon} rounds.`, `Сумма отдельно рассчитанных личных прогнозов Alt на следующие ${horizon} туров.`),
     column("foPositionCalibratedFp", "FO position cal.", "FO калибр. позиции", "FO calibrated independently by fantasy position on the complete 2024/25–2025/26 retro sample: actual starters who played over 60 minutes. Weather is not used.", "FO, независимо откалиброванный по фэнтези-позиции на полной ретро-выборке 2024/25–2025/26: фактический старт и больше 60 минут. Погода не используется.", true, 116),
     column("altPositionCalibratedFp", "Alt position cal.", "Alt калибр. позиции", "Alt calibrated independently by fantasy position on the complete 2024/25–2025/26 retro sample: actual starters who played over 60 minutes. Weather is not used.", "Alt, независимо откалиброванный по фэнтези-позиции на полной ретро-выборке 2024/25–2025/26: фактический старт и больше 60 минут. Погода не используется.", true, 116),
@@ -2935,14 +3040,14 @@ function playerPoolOptionalColumns(players: FantasyPlannerPlayer[], horizon: num
   return [...standard, ...statKeys.map((key) => column(`stat:${key}`, historicalStatLabel(key, language), historicalStatLabel(key, language), historicalStatTitle(key, language), historicalStatTitle(key, language)))];
 }
 
-function playerPoolAdvancedFilterColumns(players: FantasyPlannerPlayer[], horizon: number, language: UiLanguage): PlayerPoolAdvancedFilterColumn[] {
-  const fixedTitles = playerPoolFixedColumnTitles(language);
+function playerPoolAdvancedFilterColumns(players: FantasyPlannerPlayer[], horizon: number, language: UiLanguage, provider = "SPORTS_RU"): PlayerPoolAdvancedFilterColumn[] {
+  const fixedTitles = playerPoolFixedColumnTitles(language, provider);
   return [
     { key: "player", label: localizedText(language, "Player", "Игрок"), title: fixedTitles.player, numeric: false },
     { key: "team", label: localizedText(language, "Club", "Клуб"), title: fixedTitles.team, numeric: false },
     { key: "position", label: localizedText(language, "Position", "Позиция"), title: fixedTitles.position, numeric: false },
     { key: "price", label: localizedText(language, "Price", "Цена"), title: fixedTitles.price, numeric: true },
-    ...playerPoolOptionalColumns(players, horizon, language)
+    ...playerPoolOptionalColumns(players, horizon, language, provider)
   ];
 }
 
@@ -2970,7 +3075,8 @@ function customPlayerPoolCell(
   language: UiLanguage,
   muted: boolean,
   formulaAdaptationSourceHref: string | undefined,
-  detailedFormulaTooltips: boolean
+  detailedFormulaTooltips: boolean,
+  provider: string
 ) {
   if (column.key === "fixtures") {
     const chips = fixtureChipPresentations(player.fixtures, player.fixtureDifficulties ?? [], horizon, player.fixtureFullNames).slice(0, 5);
@@ -3006,6 +3112,7 @@ function customPlayerPoolCell(
           columnLabel={column.label}
           columnKey={formulaAdaptationKey}
           sourceHref={formulaAdaptationSourceHref}
+          provider={provider}
           language={language}
           detailed={detailedFormulaTooltips}
         >
@@ -5697,8 +5804,9 @@ function promoteStarter(
   return null;
 }
 
-function squadVariantHref(leagueId: string, season: string, squadId: string | null, historySettings: FantasyHistorySettings) {
+function squadVariantHref(leagueId: string, season: string, squadId: string | null, historySettings: FantasyHistorySettings, provider = "SPORTS_RU") {
   const params = new URLSearchParams({ leagueId, season });
+  params.set("provider", provider);
   applyFantasyHistorySearchParams(params, historySettings);
   if (squadId) params.set("squadId", squadId);
   return `/machete/squad?${params.toString()}`;
@@ -5738,9 +5846,10 @@ async function downloadPlayerPoolXlsx(
   language: UiLanguage,
   leagueId: string,
   season: string,
-  visibleColumnKeys: string[]
+  visibleColumnKeys: string[],
+  provider = "SPORTS_RU"
 ) {
-  const optionalColumnsByKey = new Map(playerPoolOptionalColumns(players, horizon, language).map((column) => [column.key, column]));
+  const optionalColumnsByKey = new Map(playerPoolOptionalColumns(players, horizon, language, provider).map((column) => [column.key, column]));
   const selectedColumns = visibleColumnKeys
     .map((key) => optionalColumnsByKey.get(key))
     .filter((column): column is PlayerPoolOptionalColumn => Boolean(column));
@@ -5757,6 +5866,7 @@ async function downloadPlayerPoolXlsx(
     body: JSON.stringify({
       leagueId,
       season,
+      provider,
       language,
       horizon,
       columns,

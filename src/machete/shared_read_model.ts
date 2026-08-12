@@ -423,6 +423,7 @@ export async function loadSharedMachetePlayerRows(
     userId?: string | null;
     playerIds?: bigint[];
     rosterOverrides?: SharedRosterOverride[];
+    ignoreStarterFlags?: boolean;
   }
 ): Promise<SharedMachetePlayerRow[]> {
   const scopes = input.scopes.filter((scope) => scope.leagueId && scope.season);
@@ -476,7 +477,9 @@ export async function loadSharedMachetePlayerRows(
       && (!scope.teamId || scope.teamId === override.teamId)
     )
   );
-  const effectiveRosterRows = applySharedRosterOverrides(rosterRowsFromDb, rosterOverrides);
+  const effectiveRosterRows = input.ignoreStarterFlags
+    ? applySharedRosterOverrides(rosterRowsFromDb, rosterOverrides).map((row) => ({ ...row, isStarter: false }))
+    : applySharedRosterOverrides(rosterRowsFromDb, rosterOverrides);
   const rosterRows = positionFilter
     ? effectiveRosterRows.filter((row) => normalizeFantasyPosition(row.position) === positionFilter)
     : effectiveRosterRows;

@@ -4,6 +4,7 @@ import { jsonError, withApiHandler } from "@/lib/api-handler";
 import { requireApiUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { isFantasySquadLeague, macheteLeagueDisplayName } from "@/lib/leagues/display";
+import { FPL_PROVIDER } from "@/lib/providers/fpl";
 import { loadFantasySquadFormulaAdaptationBreakdowns } from "@/machete/squad_planner";
 import { parseFantasyHistorySettings } from "@/machete/squad-history";
 
@@ -18,6 +19,7 @@ export const GET = withApiHandler(async (request: Request) => {
   const leagueId = parseBigInt(params.get("leagueId"));
   const playerId = parseBigInt(params.get("playerId"));
   const season = params.get("season")?.trim() ?? "";
+  const provider = normalizeProvider(params.get("provider"));
   const historySettings = parseFantasyHistorySettings({
     historyScope: params.get("historyScope"),
     historyWindow: params.get("historyWindow"),
@@ -61,7 +63,8 @@ export const GET = withApiHandler(async (request: Request) => {
       updatedAt: leagueSeason.updatedAt
     },
     playerId,
-    historySettings
+    historySettings,
+    provider
   );
   if (!breakdowns) {
     return jsonError("NOT_FOUND", "Player formula-adaptation breakdown not found in this league season.", 404);
@@ -85,4 +88,8 @@ function parseBigInt(value: unknown) {
   } catch {
     return null;
   }
+}
+
+function normalizeProvider(value: string | null) {
+  return value?.trim().toUpperCase() === FPL_PROVIDER ? FPL_PROVIDER : "SPORTS_RU";
 }

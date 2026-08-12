@@ -29,6 +29,7 @@ type TransferPrice = {
 };
 
 type TransferContest = {
+  id: string;
   leagueId: bigint;
   season: string;
   name: string;
@@ -82,10 +83,11 @@ export async function loadSportsRuExtensionTransferPlan(
     throw new SportsRuExtensionTransferError("INVALID_TOURNAMENT", "Не удалось определить турнир Sports.ru.", 400);
   }
 
-  const contests = await prisma.sportsRuFantasyContest.findMany({
+  const contests = await prisma.fantasyContest.findMany({
     where: { provider: sportsRuProvider },
     orderBy: { lastSyncedAt: "desc" },
     select: {
+      id: true,
       leagueId: true,
       season: true,
       name: true,
@@ -130,6 +132,8 @@ export async function loadSportsRuExtensionTransferPlan(
   const squad = await prisma.userFantasySquad.findFirst({
     where: {
       userId: input.userId,
+      provider: sportsRuProvider,
+      contestId: contest.id,
       leagueId: contest.leagueId,
       season: contest.season
     },
@@ -172,6 +176,7 @@ export async function loadSportsRuExtensionTransferPlan(
   const playerIds = squad.players.map((player) => player.playerId);
   const prices = await prisma.fantasyPlayerPrice.findMany({
     where: {
+      contestId: contest.id,
       provider: sportsRuProvider,
       leagueId: contest.leagueId,
       season: { in: sportsRuSeasonAliases(contest.season) },

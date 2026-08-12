@@ -127,6 +127,7 @@ test("Sports.ru contest HRU uses structured rules and retains the source URL fal
 
 test("Sports.ru extension selects the current contest even when an archived season was synced later", () => {
   const archived = {
+    id: "archived-contest",
     leagueId: 63n,
     season: "2025/2026",
     name: "Archived RPL",

@@ -185,13 +185,18 @@ export function parseFoontasyRoundDescriptor(html: string, leagueId = 63n): Foon
 export async function importFoontasyForecasts(prisma: PrismaClient, input: FoontasyImportInput) {
   const phase = await resolveFoontasySportsPhase(prisma, input);
   const sourceIds = input.rows.map((row) => row.external_id);
+  const contest = await prisma.fantasyContest.findUnique({
+    where: { provider_leagueId_season: { provider: "SPORTS_RU", leagueId: input.leagueId, season: input.season } },
+    select: { id: true }
+  });
+  if (!contest) throw new FoontasySourceUnavailableError("Sports.ru fantasy contest is not configured for this league season.");
   const prices = await prisma.fantasyPlayerPrice.findMany({
-    where: { provider: "SPORTS_RU", leagueId: input.leagueId, season: input.season, providerPlayerId: { in: sourceIds } },
+    where: { provider: "SPORTS_RU", contestId: contest.id, leagueId: input.leagueId, season: input.season, providerPlayerId: { in: sourceIds } },
     select: { id: true, providerPlayerId: true, playerId: true }
   });
   assertFoontasyProviderOverlap(prices.length, input.rows.length, input.leagueId);
   const maps = prices.length === 0 ? [] : await prisma.providerEntityMap.findMany({
-    where: { provider: "SPORTS_RU", providerEntityType: "FANTASY_PLAYER_PRICE", providerEntityId: { in: prices.map((price) => price.id) }, internalEntityType: "PLAYER", internalEntityId: { not: null } },
+    where: { provider: "SPORTS_RU", contestId: contest.id, providerEntityType: "FANTASY_PLAYER_PRICE", providerEntityId: { in: prices.map((price) => price.id) }, internalEntityType: "PLAYER", internalEntityId: { not: null } },
     select: { providerEntityId: true, internalEntityId: true }
   });
   const mappedByPriceId = new Map(maps.map((item) => [item.providerEntityId, item.internalEntityId]));
@@ -378,7 +383,7 @@ async function resolveFoontasySportsPhase(
   prisma: PrismaClient,
   input: FoontasyImportInput
 ): Promise<ResolvedFoontasyPhase> {
-  const contest = await prisma.sportsRuFantasyContest.findUnique({
+  const contest = await prisma.fantasyContest.findUnique({
     where: {
       provider_leagueId_season: {
         provider: "SPORTS_RU",

@@ -17,8 +17,9 @@ export async function runMacheteEntityMatching(prisma: PrismaClient, leagueId: s
 
     const match = await prisma.providerEntityMap.upsert({
       where: {
-        provider_providerEntityType_providerEntityId_internalEntityType: {
+        provider_providerSeason_providerEntityType_providerEntityId_internalEntityType: {
           provider: "FOTMOB",
+          providerSeason: "LEGACY",
           providerEntityType: "TEAM",
           providerEntityId: macheteTeam.providerTeamId,
           internalEntityType: "TEAM"
@@ -32,6 +33,7 @@ export async function runMacheteEntityMatching(prisma: PrismaClient, leagueId: s
       },
       create: {
         provider: "FOTMOB",
+        providerSeason: "LEGACY",
         providerEntityType: "TEAM",
         providerEntityId: macheteTeam.providerTeamId,
         internalEntityType: "TEAM",

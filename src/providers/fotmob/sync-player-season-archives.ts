@@ -253,7 +253,7 @@ async function resolveArchiveSyncScopes(prisma: PrismaClient, options: PlayerSea
   });
   if (currentScopes.length === 0) return [];
 
-  const fantasyScopes = await prisma.sportsRuFantasyContest.findMany({
+  const fantasyScopes = await prisma.fantasyContest.findMany({
     where: {
       provider: "SPORTS_RU",
       OR: currentScopes.map((scope) => ({ leagueId: scope.leagueId, season: scope.season }))

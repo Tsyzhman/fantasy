@@ -65,7 +65,16 @@ export const PATCH = withApiHandler(async (request: Request) => {
             leagueId,
             seasons: sportsRuSeasonAliases(season),
             teamId,
-            playerId
+            playerId,
+            contestId: (await tx.fantasyContest.findFirst({
+              where: {
+                provider: "SPORTS_RU",
+                leagueId,
+                season: { in: sportsRuSeasonAliases(season) }
+              },
+              orderBy: { lastSyncedAt: "desc" },
+              select: { id: true }
+            }))?.id ?? null
           });
       const candidate = activeCandidate?.source === sportsRuRosterSource && !sportsRuCandidate
         ? null

@@ -5,7 +5,7 @@ import test from "node:test";
 const pageSource = readFileSync(new URL("../app/machete/leagues/[leagueId]/teams/[teamId]/page.tsx", import.meta.url), "utf8");
 
 test("team starting-XI table attaches verified Sports.ru names to FotMob roster rows", () => {
-  assert.match(pageSource, /loadSportsRuAuthoritativeRosterContext\(prisma, league\)/);
+  assert.match(pageSource, /loadSportsRuAuthoritativeRosterContext\(prisma, league, undefined, teamContest\?\.id/);
   assert.match(pageSource, /rosterOverrides/);
   assert.match(pageSource, /sportsRuDisplayNamesByPlayerId\(sportsRuMappings\)/);
   assert.match(pageSource, /sportsName: sportsNamesByPlayerId\.get\(macheteTeamRowPlayerId\(player\.id\)/);

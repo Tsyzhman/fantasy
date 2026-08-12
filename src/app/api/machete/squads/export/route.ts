@@ -3,6 +3,7 @@ import { jsonError, requiredSearchParam, withApiHandler } from "@/lib/api-handle
 import { requireApiUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { isFantasySquadLeague } from "@/lib/leagues/display";
+import { FPL_PROVIDER } from "@/lib/providers/fpl";
 import { parseTableExportFormat, tableExportResponse } from "@/lib/table-export";
 import { loadSharedLeagueSeason } from "@/machete/shared_read_model";
 import { parseFantasyHistorySettings } from "@/machete/squad-history";
@@ -44,12 +45,13 @@ export const GET = withApiHandler(async (request: Request) => {
   if (!league || !isFantasySquadLeague(league)) return jsonError("NOT_FOUND", "League season not found.", 404);
 
   const squadId = params.get("squadId");
+  const provider = normalizeProvider(params.get("provider"));
   const historySettings = parseFantasyHistorySettings({
     historyScope: params.get("historyScope"),
     historyWindow: params.get("historyWindow"),
     historySeason: params.getAll("historySeason")
   });
-  const data = await loadFantasySquadPlannerData(prisma, auth.user.id, league, squadId, { historySettings });
+  const data = await loadFantasySquadPlannerData(prisma, auth.user.id, league, squadId, { historySettings, provider });
   if (squadId && data.squad.id !== squadId) return jsonError("SQUAD_NOT_FOUND", "Squad variant not found.", 404);
   const roundCount = Math.min(data.squad.horizonRounds, data.rounds.length);
   const rows = squadExportRows(data.squad.selections, data.players, roundCount);
@@ -63,6 +65,10 @@ export const GET = withApiHandler(async (request: Request) => {
     sheetName: "Squad"
   });
 });
+
+function normalizeProvider(value: string | null) {
+  return value?.trim().toUpperCase() === FPL_PROVIDER ? FPL_PROVIDER : "SPORTS_RU";
+}
 
 function squadExportRows(selections: FantasySquadSelection[], players: FantasyPlannerPlayer[], roundCount: number): SquadExportRow[] {
   const playersById = new Map(players.map((player) => [player.playerId, player]));

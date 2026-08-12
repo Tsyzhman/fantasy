@@ -126,7 +126,7 @@ export async function syncSportsRuSquadSnapshots(
 
   for (const scope of scopes) {
     try {
-      const contest = await prisma.sportsRuFantasyContest.findFirst({
+      const contest = await fantasyContestClient(prisma).findFirst({
         where: {
           provider: "SPORTS_RU",
           leagueId: scope.leagueId,
@@ -187,6 +187,7 @@ export async function syncSportsRuSquadSnapshots(
           result.scheduled += 1;
           const outcome = await syncOneSportsRuSquadSnapshot(prisma, snapshot.id, {
             expectedSquadSize: contest.squadSize,
+            contestId: contest.id,
             now,
             profileId: profile.providerUserId,
             fetchPublishedSquad
@@ -232,7 +233,7 @@ export async function syncSportsRuSquadSnapshotOnDemand(
       "Save a Sports.ru profile in your profile settings first."
     );
   }
-  const contest = await prisma.sportsRuFantasyContest.findFirst({
+      const contest = await fantasyContestClient(prisma).findFirst({
     where: {
       provider: "SPORTS_RU",
       leagueId: input.leagueId,
@@ -295,6 +296,7 @@ export async function syncSportsRuSquadSnapshotOnDemand(
   });
   await syncOneSportsRuSquadSnapshot(prisma, snapshot.id, {
     expectedSquadSize: input.expectedSquadSize,
+    contestId: contest.id,
     now,
     profileId: profile.providerUserId,
     fetchPublishedSquad: input.fetchPublishedSquad ?? fetchSportsRuLatestPublishedSquad,
@@ -312,6 +314,7 @@ async function syncOneSportsRuSquadSnapshot(
   snapshotId: string,
   input: {
     expectedSquadSize: number;
+    contestId: string;
     now: Date;
     profileId: string;
     fetchPublishedSquad: FetchPublishedSquad;
@@ -401,6 +404,7 @@ async function syncOneSportsRuSquadSnapshot(
   try {
     preview = await mapSportsRuPublishedSquad(prisma, {
       profileId: input.profileId,
+      contestId: input.contestId,
       leagueId: snapshot.leagueId,
       season: snapshot.season,
       expectedSquadSize: input.expectedSquadSize,
@@ -649,4 +653,14 @@ function firstPositiveInteger(value: string | null) {
 
 function errorMessage(error: unknown, fallback: string) {
   return error instanceof Error && error.message ? error.message : fallback;
+}
+
+function fantasyContestClient(prisma: PrismaClient) {
+  const candidate = prisma as unknown as {
+    fantasyContest?: Pick<PrismaClient["fantasyContest"], "findFirst">;
+    sportsRuFantasyContest?: Pick<PrismaClient["fantasyContest"], "findFirst">;
+  };
+  return candidate.fantasyContest ?? candidate.sportsRuFantasyContest ?? {
+    findFirst: async () => null
+  };
 }

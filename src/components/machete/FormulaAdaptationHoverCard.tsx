@@ -18,12 +18,13 @@ type FormulaAdaptationResponse = {
 const requestCache = new Map<string, Promise<FormulaAdaptationResponse>>();
 const requestCacheMaximumEntries = 80;
 
-export function formulaAdaptationBreakdownHref(sourceHref: string | undefined, playerId: string) {
+export function formulaAdaptationBreakdownHref(sourceHref: string | undefined, playerId: string, provider?: string) {
   if (!sourceHref) return null;
   const source = new URL(sourceHref, "http://formula-adaptation.local");
   source.pathname = "/api/machete/squads/formula-adaptations";
   source.searchParams.delete("squadId");
   source.searchParams.set("playerId", playerId);
+  if (provider) source.searchParams.set("provider", provider);
   return `${source.pathname}?${source.searchParams.toString()}`;
 }
 
@@ -33,6 +34,7 @@ export function FormulaAdaptationHoverCard({
   columnLabel,
   columnKey,
   sourceHref,
+  provider,
   language,
   detailed,
   children
@@ -42,6 +44,7 @@ export function FormulaAdaptationHoverCard({
   columnLabel: string;
   columnKey: FormulaAdaptationForecastKey;
   sourceHref?: string;
+  provider?: string;
   language: Language;
   detailed: boolean;
   children: ReactNode;
@@ -55,7 +58,7 @@ export function FormulaAdaptationHoverCard({
   const [responseState, setResponseState] = useState<{ href: string; response: FormulaAdaptationResponse } | null>(null);
   const [failedHref, setFailedHref] = useState<string | null>(null);
   const [position, setPosition] = useState({ left: 8, top: 8 });
-  const requestHref = formulaAdaptationBreakdownHref(sourceHref, playerId);
+  const requestHref = formulaAdaptationBreakdownHref(sourceHref, playerId, provider);
   const response = responseState?.href === requestHref ? responseState.response : null;
   const failed = requestHref ? failedHref === requestHref : true;
 
