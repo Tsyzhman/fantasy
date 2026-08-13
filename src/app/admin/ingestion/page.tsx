@@ -55,6 +55,7 @@ export default async function AdminIngestionPage() {
       <FantasySourceSyncControls
         priceOptions={priceScopes.map(sportsRuScopeOption)}
         foontasyOptions={foontasyScopes.map(foontasyScopeOption)}
+        fplEnabled={process.env.FPL_ENABLED !== "false" && process.env.FPL_PRICE_SYNC_ENABLED !== "false"}
       />
 
       <section className="mt-6 rounded border border-slate-200 bg-white p-5 shadow-soft">

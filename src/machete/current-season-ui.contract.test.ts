@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-const squadPage = readFileSync(new URL("../app/machete/squad/page.tsx", import.meta.url), "utf8");
+const squadPage = readFileSync(new URL("../app/machete/fantasy-squad-page.tsx", import.meta.url), "utf8");
 const teamPage = readFileSync(new URL("../app/machete/leagues/[leagueId]/teams/[teamId]/page.tsx", import.meta.url), "utf8");
 const teamCard = readFileSync(new URL("../components/machete/MacheteTeamCard.tsx", import.meta.url), "utf8");
 

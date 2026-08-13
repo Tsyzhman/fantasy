@@ -99,6 +99,9 @@ function HeaderNavigationItems({ pathname, user, logout }: {
       <HeaderLink href="/machete/squad" active={pathname.startsWith("/machete/squad")} icon={<Users className="h-4 w-4" />}>
         <I18nText en="Squad" ru="Состав" />
       </HeaderLink>
+      <HeaderLink href="/machete/fpl/squad" active={pathname.startsWith("/machete/fpl/squad")} icon={<Users className="h-4 w-4" />}>
+        <I18nText en="FPL" ru="FPL" />
+      </HeaderLink>
       <HeaderLink href="/machete/players" active={pathname.startsWith("/machete/players")} icon={<UserRound className="h-4 w-4" />}>
         <I18nText en="Players" ru="Игроки" />
       </HeaderLink>

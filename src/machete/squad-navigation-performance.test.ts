@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import test from "node:test";
 
 const plannerSource = readFileSync(new URL("./squad_planner.ts", import.meta.url), "utf8");
-const pageSource = readFileSync(new URL("../app/machete/squad/page.tsx", import.meta.url), "utf8");
+const pageSource = readFileSync(new URL("../app/machete/fantasy-squad-page.tsx", import.meta.url), "utf8");
 const headerSource = readFileSync(new URL("../components/app-header.tsx", import.meta.url), "utf8");
 const shellSource = readFileSync(new URL("../components/machete/MacheteShell.tsx", import.meta.url), "utf8");
 

@@ -3,7 +3,7 @@ import fs from "node:fs";
 import path from "node:path";
 import test from "node:test";
 
-const squadPage = fs.readFileSync(path.join(process.cwd(), "src/app/machete/squad/page.tsx"), "utf8");
+const squadPage = fs.readFileSync(path.join(process.cwd(), "src/app/machete/fantasy-squad-page.tsx"), "utf8");
 const panel = fs.readFileSync(path.join(process.cwd(), "src/components/machete/FranchiseSquadsPanel.tsx"), "utf8");
 const preview = fs.readFileSync(path.join(process.cwd(), "src/components/machete/FranchiseSquadPreview.tsx"), "utf8");
 const api = fs.readFileSync(path.join(process.cwd(), "src/app/api/machete/franchise-squads/route.ts"), "utf8");

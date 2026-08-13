@@ -31,6 +31,7 @@ const squadPlannerSource = readFileSync(new URL("./FantasySquadPlanner.tsx", imp
 const formulaAdaptationHoverCardSource = readFileSync(new URL("./FormulaAdaptationHoverCard.tsx", import.meta.url), "utf8");
 const squadPlannerBackendSource = readFileSync(new URL("../../machete/squad_planner.ts", import.meta.url), "utf8");
 const squadPageSource = readFileSync(new URL("../../app/machete/squad/page.tsx", import.meta.url), "utf8");
+const fantasySquadPageSource = readFileSync(new URL("../../app/machete/fantasy-squad-page.tsx", import.meta.url), "utf8");
 const playerTableExportRouteSource = readFileSync(new URL("../../app/api/machete/squads/export-table/route.ts", import.meta.url), "utf8");
 const globalStylesSource = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
 
@@ -660,10 +661,10 @@ test("Sports.ru XLSX price import is not exposed on the squad page", () => {
 });
 
 test("squad page shows source freshness and has no data-tools menu", () => {
-  assert.match(squadPageSource, /Стата FotMob:/);
-  assert.match(squadPageSource, /provider === "FPL" \? "Цены FPL" : "Цены Sports\.ru"/);
-  assert.match(squadPageSource, /Кэфы букмекера:/);
-  assert.match(squadPageSource, /formatDateTime\(freshness\.fotmobStatsAt\)/);
-  assert.match(squadPageSource, /formatDateTime\(freshness\.bookmakerOddsAt\)/);
-  assert.doesNotMatch(squadPageSource, /Data tools|Инструменты|squadExportHref/);
+  assert.match(fantasySquadPageSource, /Стата FotMob:/);
+  assert.match(fantasySquadPageSource, /provider === "FPL" \? "Цены FPL" : "Цены Sports\.ru"/);
+  assert.match(fantasySquadPageSource, /Кэфы букмекера:/);
+  assert.match(fantasySquadPageSource, /formatDateTime\(freshness\.fotmobStatsAt\)/);
+  assert.match(fantasySquadPageSource, /formatDateTime\(freshness\.bookmakerOddsAt\)/);
+  assert.doesNotMatch(fantasySquadPageSource, /Data tools|Инструменты|squadExportHref/);
 });

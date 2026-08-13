@@ -103,6 +103,8 @@ type FantasySquadPlannerProps = {
   bookmakerFavorites: FantasyBookmakerFavorite[];
   players: FantasyPlannerPlayer[];
   playerPoolHref?: string;
+  squadApiPath?: string;
+  squadRoutePath?: string;
   initialSquad: SavedFantasySquad;
   savedSquads: SavedFantasySquadOption[];
   readiness: PlannerReadiness;
@@ -246,7 +248,7 @@ type TransferSuggestionCalculation = {
   suggestions: TransferPlanSuggestion[];
 };
 
-export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds, bookmakerFavorites, players: initialPlayers, playerPoolHref, initialSquad, savedSquads, readiness, priceStatus, sportsRuSquadStatus, historySettings, historySeasonOptions, initialVisiblePlayerPoolColumns, initialPlayerPoolColumnWidths }: FantasySquadPlannerProps) {
+export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds, bookmakerFavorites, players: initialPlayers, playerPoolHref, squadApiPath = "/api/machete/squads", squadRoutePath = "/machete/squad", initialSquad, savedSquads, readiness, priceStatus, sportsRuSquadStatus, historySettings, historySeasonOptions, initialVisiblePlayerPoolColumns, initialPlayerPoolColumnWidths }: FantasySquadPlannerProps) {
   const language = useLanguage();
   const router = useRouter();
   const budgetForecastRef = useRef<HTMLDivElement>(null);
@@ -1099,7 +1101,7 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
         const requestedName = asCopy ? `${squadName} copy` : squadName;
         let response: Response;
         try {
-          response = await fetch("/api/machete/squads", {
+          response = await fetch(squadApiPath, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -1161,7 +1163,7 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
         );
         void recordBetaMilestone("SQUAD_SAVED");
         window.dispatchEvent(new CustomEvent("machete:squad-saved"));
-        router.replace(squadVariantHref(leagueId, season, savedSquadId, appliedHistorySettings, provider));
+        router.replace(squadVariantHref(squadRoutePath, leagueId, season, savedSquadId, appliedHistorySettings));
       } finally {
         setSavePending(false);
       }
@@ -1277,7 +1279,7 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
       window.history.replaceState(
         window.history.state,
         "",
-        squadVariantHref(leagueId, season, savedSquadId, appliedHistorySettings, provider)
+        squadVariantHref(squadRoutePath, leagueId, season, savedSquadId, appliedHistorySettings)
       );
     } catch {
       setSportsImportNotice({
@@ -1343,7 +1345,7 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
 
   function selectSquadVariant(squadId: string) {
     if (!squadId || squadId === activeSquadId) return;
-        router.push(squadVariantHref(leagueId, season, squadId, appliedHistorySettings, provider));
+        router.push(squadVariantHref(squadRoutePath, leagueId, season, squadId, appliedHistorySettings));
   }
 
   function deleteSquadVariant() {
@@ -1355,7 +1357,7 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
       try {
         let response: Response;
         try {
-          response = await fetch(`/api/machete/squads?squadId=${encodeURIComponent(activeSquadId)}&provider=${encodeURIComponent(provider)}`, { method: "DELETE" });
+          response = await fetch(`${squadApiPath}?squadId=${encodeURIComponent(activeSquadId)}&provider=${encodeURIComponent(provider)}`, { method: "DELETE" });
         } catch {
           setMessage(localizedText(language, "Failed to delete squad. Check the connection and try again.", "Не удалось удалить состав. Проверьте соединение и повторите попытку."));
           return;
@@ -1371,7 +1373,7 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
         setSquadOptions(remaining);
         const next = remaining[0];
         if (next) {
-          router.replace(squadVariantHref(leagueId, season, next.id, appliedHistorySettings, provider));
+          router.replace(squadVariantHref(squadRoutePath, leagueId, season, next.id, appliedHistorySettings));
           return;
         }
         setActiveSquadId(null);
@@ -1381,7 +1383,7 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
         setSavedRoundPlans(cloneFantasyRoundPlans(blankPlans));
         selectActiveRoundOffset(0);
         setMessage(localizedText(language, "Squad deleted.", "Состав удалён."));
-        router.replace(squadVariantHref(leagueId, season, null, appliedHistorySettings, provider));
+        router.replace(squadVariantHref(squadRoutePath, leagueId, season, null, appliedHistorySettings));
       } finally {
         setDeletePending(false);
       }
@@ -5804,12 +5806,11 @@ function promoteStarter(
   return null;
 }
 
-function squadVariantHref(leagueId: string, season: string, squadId: string | null, historySettings: FantasyHistorySettings, provider = "SPORTS_RU") {
+function squadVariantHref(routePath: string, leagueId: string, season: string, squadId: string | null, historySettings: FantasyHistorySettings) {
   const params = new URLSearchParams({ leagueId, season });
-  params.set("provider", provider);
   applyFantasyHistorySearchParams(params, historySettings);
   if (squadId) params.set("squadId", squadId);
-  return `/machete/squad?${params.toString()}`;
+  return `${routePath}?${params.toString()}`;
 }
 
 function fantasyHistoryScopeLabel(scope: FantasyHistoryScope, language: UiLanguage) {

@@ -12,6 +12,7 @@ const navItems = [
   { href: "/machete/leagues", icon: Layers3, label: <I18nText en="Leagues" ru="Лиги" /> },
   { href: "/machete/players", icon: BarChart3, label: <I18nText en="Players" ru="Игроки" /> },
   { href: "/machete/squad", icon: Users, label: <I18nText en="Squad" ru="Состав" /> },
+  { href: "/machete/fpl/squad", icon: Users, label: <I18nText en="FPL" ru="FPL" /> },
   { href: "/machete/sync-jobs", icon: ListChecks, label: <I18nText en="Data jobs" ru="Задачи данных" /> },
   { href: "/machete/models", icon: Settings, label: <I18nText en="Model" ru="Модель" /> }
 ] as const;

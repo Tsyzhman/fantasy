@@ -1,6 +1,6 @@
 "use client";
 
-import { Coins, RefreshCw, Sigma } from "lucide-react";
+import { Coins, RefreshCw, Sigma, Trophy } from "lucide-react";
 import { useState } from "react";
 
 import { I18nText } from "@/components/i18n-text";
@@ -28,12 +28,28 @@ type SyncResult = {
   scopes: SyncScopeResult[];
 };
 
+type FplSyncResult = {
+  started?: boolean;
+  result?: {
+    prices: number;
+    mappedPlayers: number;
+    mappedTeams: number;
+    unmatchedPlayers: number;
+    unmatchedTeams: number;
+    latestPublishedGameweek: number | null;
+  };
+  error?: string;
+  officialScoreError?: string;
+};
+
 export function FantasySourceSyncControls({
   priceOptions,
-  foontasyOptions
+  foontasyOptions,
+  fplEnabled = true
 }: {
   priceOptions: FantasySourceSyncOption[];
   foontasyOptions: FantasySourceSyncOption[];
+  fplEnabled?: boolean;
 }) {
   return (
     <section className="mt-6 rounded border border-slate-200 bg-white p-5 shadow-soft">
@@ -48,7 +64,7 @@ export function FantasySourceSyncControls({
           />
         </p>
       </div>
-      <div className="mt-5 grid gap-5 lg:grid-cols-2">
+      <div className="mt-5 grid gap-5 lg:grid-cols-3">
         <SourcePanel
           icon={<Coins className="h-4 w-4" />}
           title={<I18nText en="Sports.ru prices" ru="Цены Sports.ru" />}
@@ -67,8 +83,63 @@ export function FantasySourceSyncControls({
           actionLabel={<I18nText en="Update FFO" ru="Обновить FFO" />}
           resultKind="foontasy"
         />
+        <FplPriceSyncPanel enabled={fplEnabled} />
       </div>
     </section>
+  );
+}
+
+function FplPriceSyncPanel({ enabled }: { enabled: boolean }) {
+  const language = useLanguage();
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<FplSyncResult | null>(null);
+
+  async function run() {
+    setPending(true);
+    setError(null);
+    setResult(null);
+    try {
+      const response = await fetch("/api/admin/fantasy-sources/fpl/start", { method: "POST" });
+      const body = await response.json().catch(() => null) as (Omit<FplSyncResult, "error"> & { error?: string | { message?: string } }) | null;
+      const errorMessage = body && typeof body.error === "object"
+        ? body.error.message
+        : typeof body?.error === "string"
+          ? body.error
+          : null;
+      if (!response.ok) throw new Error(errorMessage ?? (language === "ru" ? "Синхронизация FPL не запустилась." : "FPL synchronization could not be started."));
+      setResult(body as FplSyncResult);
+    } catch (runError) {
+      setError(runError instanceof Error ? runError.message : language === "ru" ? "Неизвестная ошибка." : "Unknown error.");
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <div className="rounded border border-slate-200 bg-field p-4">
+      <div className="flex items-center gap-2 text-sm font-bold text-ink"><Trophy className="h-4 w-4" /><I18nText en="FPL prices" ru="Цены FPL" /></div>
+      <p className="mt-1 text-xs leading-5 text-slate-500">
+        <I18nText en="Load the official FPL bootstrap price snapshot for CoreLeague 47. Player and club mappings are preserved and unmatched rows remain visible." ru="Загрузить официальный снимок цен FPL для CoreLeague 47. Связи игроков и клубов сохраняются, несопоставленные строки остаются видимыми." />
+      </p>
+      <button
+        type="button"
+        disabled={!enabled || pending}
+        onClick={run}
+        className="mt-4 inline-flex items-center gap-2 rounded bg-ink px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-45"
+      >
+        <RefreshCw className={`h-4 w-4 ${pending ? "animate-spin" : ""}`} />
+        {pending ? <I18nText en="Updating..." ru="Обновление..." /> : <I18nText en="Update FPL prices" ru="Обновить цены FPL" />}
+      </button>
+      {!enabled ? <p className="mt-3 rounded bg-amber-50 px-3 py-2 text-xs text-amber-800"><I18nText en="FPL price sync is disabled by configuration." ru="Синхронизация цен FPL отключена конфигурацией." /></p> : null}
+      {error ? <p className="mt-3 rounded bg-rose-50 px-3 py-2 text-xs text-rose-700">{error}</p> : null}
+      {result?.result ? (
+        <p className="mt-3 rounded bg-emerald-50 px-3 py-2 text-xs text-emerald-800">
+          <I18nText en="Loaded" ru="Загружено" />: {result.result.prices}; <I18nText en="mapped players" ru="сопоставлено игроков" />: {result.result.mappedPlayers}; <I18nText en="unmatched" ru="без связи" />: {result.result.unmatchedPlayers}
+        </p>
+      ) : null}
+      {result?.officialScoreError ? <p className="mt-3 rounded bg-amber-50 px-3 py-2 text-xs text-amber-800"><I18nText en="Prices loaded; official score refresh was unavailable." ru="Цены загружены; обновление официальных очков недоступно." /></p> : null}
+    </div>
   );
 }
 
