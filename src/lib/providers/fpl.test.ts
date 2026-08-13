@@ -7,6 +7,8 @@ import {
   FPL_SEASON,
   FplProviderError,
   FplPublicClient,
+  fplRelayPathAllowed,
+  fplRelayRequestPath,
   fplChipDefinitions,
   fplPlayerEntityIdentity,
   fplPriceRows,
@@ -131,6 +133,23 @@ test("FPL public client does not retry permanent HTTP errors", async () => {
   });
   await assert.rejects(() => client.getBootstrap(), (error: unknown) => error instanceof FplProviderError && error.reason === "HTTP" && error.status === 403);
   assert.equal(attempts, 1);
+});
+
+test("FPL relay derives only allowlisted paths from official URLs", () => {
+  assert.equal(fplRelayRequestPath("https://fantasy.premierleague.com/api/bootstrap-static/"), "/api/bootstrap-static/");
+  assert.equal(fplRelayRequestPath("https://fantasy.premierleague.com/api/fixtures/?event=1"), "/api/fixtures/?event=1");
+  assert.equal(fplRelayPathAllowed("/api/bootstrap-static/"), true);
+  assert.equal(fplRelayPathAllowed("/api/fixtures/"), true);
+  assert.equal(fplRelayPathAllowed("/api/teams/"), false);
+  assert.equal(fplRelayPathAllowed("/api/entry/123/event/2/picks/"), true);
+  assert.equal(fplRelayPathAllowed("/api/not-official/"), false);
+});
+
+test("FPL relay refuses invalid socket paths, credentials, hosts, and paths", () => {
+  assert.throws(() => new FplPublicClient({ relaySocketPath: "relative/fpl.sock" }), /absolute Unix socket path/);
+  assert.throws(() => fplRelayRequestPath("https://user:password@fantasy.premierleague.com/api/bootstrap-static/"), /non-official source URL/);
+  assert.throws(() => fplRelayRequestPath("https://example.test/api/bootstrap-static/"), /non-official source URL/);
+  assert.throws(() => fplRelayRequestPath("https://fantasy.premierleague.com/api/not-official/"), /non-allowlisted official path/);
 });
 
 test("FPL picks parser accepts only a complete published 15-player snapshot", () => {

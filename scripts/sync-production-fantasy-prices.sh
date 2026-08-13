@@ -19,6 +19,10 @@ expected_archive="/tmp/fantasy-scout-price-sync-$release.tar.gz"
 web="fantasy-scout-web"
 image="fantasy-scout-price-sync:$release"
 container="fantasy-scout-price-sync-$release"
+relay_container="fantasy-scout-fpl-relay-$release"
+vpn_container="${FPL_VPN_CONTAINER_NAME:-sharovik-vpn}"
+relay_volume="fantasy-scout-fpl-relay-$release"
+relay_socket="/run/fpl-relay/fpl.sock"
 web_env="$(mktemp)"
 build_log="$(mktemp)"
 target_created=0
@@ -28,6 +32,8 @@ cleanup() {
   local exit_code=$?
   set +e
   docker container rm -f "$container" >/dev/null 2>&1 || true
+  docker container rm -f "$relay_container" >/dev/null 2>&1 || true
+  docker volume rm "$relay_volume" >/dev/null 2>&1 || true
   if (( image_created == 1 )); then
     docker image rm "$image" >/dev/null 2>&1 || true
   fi
@@ -50,6 +56,10 @@ trap cleanup EXIT
 }
 [[ "$commit" =~ ^[0-9a-f]{40}$ ]] || {
   echo "Invalid commit." >&2
+  exit 2
+}
+[[ "$vpn_container" =~ ^[a-zA-Z0-9][a-zA-Z0-9_.-]*$ ]] || {
+  echo "Invalid VPN container name." >&2
   exit 2
 }
 [[ "$archive" == "$expected_archive" ]] || {
@@ -76,6 +86,18 @@ if docker container inspect "$container" >/dev/null 2>&1; then
   echo "Price-sync container name is already in use." >&2
   exit 1
 fi
+docker container inspect "$vpn_container" >/dev/null 2>&1 || {
+  echo "FPL VPN container is missing: $vpn_container" >&2
+  exit 1
+}
+[[ "$(docker container inspect "$vpn_container" --format '{{.State.Running}}')" == "true" ]] || {
+  echo "FPL VPN container is not running: $vpn_container" >&2
+  exit 1
+}
+if docker container inspect "$relay_container" >/dev/null 2>&1; then
+  echo "FPL relay container name is already in use." >&2
+  exit 1
+fi
 
 actual_sha="$(sha256sum "$archive" | awk '{print $1}')"
 [[ "$actual_sha" == "$expected_sha" ]] || {
@@ -94,6 +116,10 @@ tar --extract --gzip --file "$archive" --directory "$target" --no-same-owner
   echo "Price-sync entrypoint is missing from the archive." >&2
   exit 1
 }
+[[ -f "$target/scripts/fpl-vpn-relay.mjs" ]] || {
+  echo "FPL VPN relay entrypoint is missing from the archive." >&2
+  exit 1
+}
 
 docker container inspect "$web" --format '{{range .Config.Env}}{{println .}}{{end}}' > "$web_env"
 chmod 600 "$web_env"
@@ -108,12 +134,53 @@ if ! docker build --target setup --tag "$image" "$target" > "$build_log" 2>&1; t
   exit 1
 fi
 image_created=1
+docker volume create "$relay_volume" >/dev/null
 
-docker run --rm \
+docker run -d \
+  --name "$relay_container" \
+  --network "container:$vpn_container" \
+  -e "FPL_RELAY_SOCKET_PATH=$relay_socket" \
+  -e "FPL_RELAY_UPSTREAM_TIMEOUT_MS=${FPL_PRICE_SYNC_TIMEOUT_MS:-15000}" \
+  --mount "type=volume,src=$relay_volume,dst=/run/fpl-relay" \
+  --read-only \
+  --cap-drop ALL \
+  --security-opt no-new-privileges:true \
+  --entrypoint node \
+  "$image" \
+  scripts/fpl-vpn-relay.mjs >/dev/null
+
+relay_healthy=0
+for attempt in $(seq 1 20); do
+  if docker run --rm \
+    --network none \
+    --mount "type=volume,src=$relay_volume,dst=/run/fpl-relay,readonly" \
+    --read-only \
+    --cap-drop ALL \
+    --security-opt no-new-privileges:true \
+    --entrypoint node \
+    "$image" \
+    -e "const h=require('node:http');const q=h.request({socketPath:'$relay_socket',path:'/healthz'},r=>process.exit(r.statusCode===200?0:1));q.on('error',()=>process.exit(1));q.end()" >/dev/null 2>&1
+  then
+    relay_healthy=1
+    break
+  fi
+  sleep 1
+done
+[[ "$relay_healthy" -eq 1 ]] || {
+  docker logs --tail 40 "$relay_container" >&2 || true
+  echo "FPL VPN relay did not become healthy." >&2
+  exit 1
+}
+
+docker create \
   --name "$container" \
   --env-file "$web_env" \
   --network fantasy-scout_default \
+  -e "FPL_RELAY_SOCKET_PATH=$relay_socket" \
+  --mount "type=volume,src=$relay_volume,dst=/run/fpl-relay,readonly" \
   "$image" \
-  npm run prices:sync-fpl-and-epl
+  npm run prices:sync-fpl-and-epl >/dev/null
+
+docker container start --attach "$container"
 
 echo "PRICE_SYNC_COMPLETED release=$release commit=$commit"

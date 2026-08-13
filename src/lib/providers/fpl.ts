@@ -4,6 +4,7 @@ export const FPL_PROVIDER = "FPL" as const;
 export const FPL_LEAGUE_ID = 47n;
 export const FPL_SEASON = "2026/2027";
 export const FPL_TIME_ZONE = "Europe/London";
+export const FPL_ORIGIN = "https://fantasy.premierleague.com";
 export const FPL_BOOTSTRAP_URL = "https://fantasy.premierleague.com/api/bootstrap-static/";
 export const FPL_ENTRY_URL = "https://fantasy.premierleague.com/api/entry";
 export const FPL_EVENT_LIVE_URL = "https://fantasy.premierleague.com/api/event";
@@ -176,6 +177,7 @@ export class FplProviderError extends Error {
 export type FplClientOptions = {
   endpoint?: string;
   entryEndpoint?: string;
+  relaySocketPath?: string | null;
   fetchImpl?: typeof fetch;
   timeoutMs?: number;
   maxAttempts?: number;
@@ -185,8 +187,9 @@ export type FplClientOptions = {
   sleep?: (milliseconds: number) => Promise<void>;
 };
 
-export function fplClientOptionsFromEnv(): Pick<FplClientOptions, "timeoutMs" | "maxAttempts" | "retryBaseDelayMs" | "minimumIntervalMs"> {
+export function fplClientOptionsFromEnv(): Pick<FplClientOptions, "relaySocketPath" | "timeoutMs" | "maxAttempts" | "retryBaseDelayMs" | "minimumIntervalMs"> {
   return {
+    relaySocketPath: process.env.FPL_RELAY_SOCKET_PATH?.trim() || null,
     timeoutMs: environmentInteger("FPL_PRICE_SYNC_TIMEOUT_MS", 15_000, 1),
     maxAttempts: environmentInteger("FPL_PRICE_SYNC_MAX_ATTEMPTS", 3, 1, 5),
     retryBaseDelayMs: environmentInteger("FPL_PRICE_SYNC_RETRY_BASE_DELAY_MS", 500, 0),
@@ -197,6 +200,7 @@ export function fplClientOptionsFromEnv(): Pick<FplClientOptions, "timeoutMs" | 
 export class FplPublicClient {
   private readonly endpoint: string;
   private readonly entryEndpoint: string;
+  private readonly relaySocketPath: string | null;
   private readonly fetchImpl: typeof fetch;
   private readonly timeoutMs: number;
   private readonly maxAttempts: number;
@@ -210,6 +214,9 @@ export class FplPublicClient {
     const environmentOptions = fplClientOptionsFromEnv();
     this.endpoint = options.endpoint ?? FPL_BOOTSTRAP_URL;
     this.entryEndpoint = options.entryEndpoint ?? FPL_ENTRY_URL;
+    this.relaySocketPath = normalizeFplRelaySocketPath(
+      options.relaySocketPath === undefined ? environmentOptions.relaySocketPath : options.relaySocketPath
+    );
     this.fetchImpl = options.fetchImpl ?? fetch;
     this.timeoutMs = positiveInteger(options.timeoutMs, environmentOptions.timeoutMs ?? 15_000);
     this.maxAttempts = boundedInteger(options.maxAttempts, environmentOptions.maxAttempts ?? 3, 1, 5);
@@ -257,7 +264,7 @@ export class FplPublicClient {
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), this.timeoutMs);
       try {
-        const response = await this.fetchImpl(url, {
+        const requestInit = {
           method: "GET",
           headers: {
             accept: "application/json",
@@ -265,7 +272,10 @@ export class FplPublicClient {
           },
           credentials: "omit",
           signal: controller.signal
-        });
+        } satisfies RequestInit;
+        const response = this.relaySocketPath
+          ? await fetchFplViaRelaySocket(url, this.relaySocketPath, requestInit)
+          : await this.fetchImpl(url, requestInit);
         this.lastRequestAt = Date.now();
         if (!response.ok) {
           const error = new FplProviderError(
@@ -302,6 +312,93 @@ export class FplPublicClient {
     const waitMs = this.minimumIntervalMs - (Date.now() - this.lastRequestAt);
     if (waitMs > 0) await this.sleep(waitMs);
   }
+}
+
+function normalizeFplRelaySocketPath(value: string | null | undefined) {
+  if (!value?.trim()) return null;
+  const result = value.trim();
+  if (!result.startsWith("/") || result.includes("\0") || result.length > 100) {
+    throw new FplProviderError("FPL_RELAY_SOCKET_PATH must be an absolute Unix socket path of at most 100 characters.", "MALFORMED");
+  }
+  return result;
+}
+
+export function fplRelayRequestPath(sourceUrl: string) {
+  let source: URL;
+  try {
+    source = new URL(sourceUrl);
+  } catch {
+    throw new FplProviderError("FPL source URL is invalid.", "MALFORMED");
+  }
+  if (source.origin !== FPL_ORIGIN || source.username || source.password || source.hash) {
+    throw new FplProviderError("FPL relay refused a non-official source URL.", "MALFORMED");
+  }
+  if (!fplRelayPathAllowed(source.pathname)) {
+    throw new FplProviderError("FPL relay refused a non-allowlisted official path.", "MALFORMED");
+  }
+  return `${source.pathname}${source.search}`;
+}
+
+export function fplRelayPathAllowed(pathname: string) {
+  return FPL_RELAY_PATHS.some((pattern) => pattern.test(pathname));
+}
+
+const FPL_RELAY_PATHS = [
+  /^\/api\/bootstrap-static\/$/,
+  /^\/api\/fixtures(?:\/)?$/,
+  /^\/api\/event\/[1-9]\d*\/live\/$/,
+  /^\/api\/entry\/[1-9]\d*\/$/,
+  /^\/api\/entry\/[1-9]\d*\/event\/[1-9]\d*\/picks\/$/
+] as const;
+
+async function fetchFplViaRelaySocket(sourceUrl: string, socketPath: string, init: RequestInit): Promise<Response> {
+  const requestPath = fplRelayRequestPath(sourceUrl);
+  const { request } = await import("node:http");
+  return new Promise<Response>((resolve, reject) => {
+    let settled = false;
+    const finish = (callback: () => void) => {
+      if (settled) return;
+      settled = true;
+      init.signal?.removeEventListener("abort", abort);
+      callback();
+    };
+    const relayRequest = request({
+      socketPath,
+      path: requestPath,
+      method: "GET",
+      headers: Object.fromEntries(new Headers(init.headers).entries())
+    }, (relayResponse) => {
+      const chunks: Buffer[] = [];
+      let totalBytes = 0;
+      relayResponse.on("data", (chunk: Buffer) => {
+        totalBytes += chunk.length;
+        if (totalBytes > 8 * 1024 * 1024) {
+          relayResponse.destroy(new FplProviderError("FPL relay response exceeded 8 MiB.", "MALFORMED"));
+          return;
+        }
+        chunks.push(chunk);
+      });
+      relayResponse.on("end", () => finish(() => {
+        const responseHeaders = new Headers();
+        for (const [name, value] of Object.entries(relayResponse.headers)) {
+          if (Array.isArray(value)) value.forEach((item) => responseHeaders.append(name, item));
+          else if (value !== undefined) responseHeaders.set(name, value);
+        }
+        const body = Buffer.concat(chunks);
+        resolve(new Response(body.length === 0 ? null : body, {
+          status: relayResponse.statusCode ?? 502,
+          statusText: relayResponse.statusMessage,
+          headers: responseHeaders
+        }));
+      }));
+      relayResponse.on("error", (error) => finish(() => reject(error)));
+    });
+    const abort = () => relayRequest.destroy(new DOMException("The operation was aborted.", "AbortError"));
+    init.signal?.addEventListener("abort", abort, { once: true });
+    relayRequest.on("error", (error) => finish(() => reject(error)));
+    if (init.signal?.aborted) abort();
+    else relayRequest.end();
+  });
 }
 
 export function parseFplBootstrap(payload: unknown, fetchedAt = new Date()): FplBootstrap {

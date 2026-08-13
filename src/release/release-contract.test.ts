@@ -48,6 +48,13 @@ test("production fantasy price sync is an exact, non-runtime operator job", () =
   assert.match(runner, /--target setup/);
   assert.match(runner, /npm run prices:sync-fpl-and-epl/);
   assert.match(runner, /--network fantasy-scout_default/);
+  assert.match(runner, /--network "container:\$vpn_container"/);
+  assert.match(runner, /FPL_RELAY_SOCKET_PATH=\$relay_socket/);
+  assert.match(runner, /type=volume,src=\$relay_volume,dst=\/run\/fpl-relay/);
+  assert.doesNotMatch(runner, /docker network connect/);
+  assert.match(runner, /--cap-drop ALL/);
+  assert.match(runner, /--security-opt no-new-privileges:true/);
+  assert.match(runner, /scripts\/fpl-vpn-relay\.mjs/);
   assert.match(entrypoint, /syncFplPrices/);
   assert.match(entrypoint, /syncSportsRuFantasy/);
   assert.match(entrypoint, /tournamentHru: "england"/);
@@ -68,11 +75,20 @@ test("server promoter verifies formula files, rehearses migrations, and checks e
   assert.doesNotMatch(promoter, /cat "\$backup_path" \| docker exec/);
   assert.match(promoter, /run_canary "Pre-migration"/);
   assert.match(promoter, /run_canary "Post-migration"/);
+  assert.match(promoter, /FPL_PRICE_SYNC_ENABLED=false/);
   assert.match(promoter, /schema_migration_started/);
   assert.match(promoter, /status IN \('queued','running'\)/);
   assert.match(promoter, /p\.release\?\.commit===process\.argv\[1\]/);
   assert.match(promoter, /PRODUCTION_HISTORY\.tsv/);
   assert.match(promoter, /rollback_swap/);
+  assert.match(promoter, /start_fpl_relay "\$fpl_relay_candidate" "\$fpl_relay_candidate_volume"/);
+  assert.match(promoter, /wait_for_fpl_relay "\$fpl_relay_candidate_volume" 100000/);
+  assert.match(promoter, /--network "container:\$fpl_vpn_container"/);
+  assert.match(promoter, /FPL_RELAY_SOCKET_PATH=\$fpl_relay_socket/);
+  assert.match(promoter, /type=volume,src=\$fpl_relay_volume,dst=\/run\/fpl-relay,readonly/);
+  assert.doesNotMatch(promoter, /docker network connect/);
+  assert.match(promoter, /fpl_relay_rollback="fantasy-scout-fpl-relay-rollback-pre-\$release"/);
+  assert.match(promoter, /old_fpl_relay_renamed/);
   assert.match(promoter, /"\$release" > "\$target\/\.release-name"/);
   assert.match(promoter, /"\$version" > "\$target\/\.release-version"/);
   assert.match(promoter, /if \[\[ "\$phase" == "deployed" \]\]; then\s+exit "\$exit_code"/);
@@ -85,6 +101,7 @@ test("release-source verifier requires every formula runtime artifact to be trac
 
   for (const required of [
     "src/app/api/machete/squads/formula-adaptations/route.ts",
+    "scripts/fpl-vpn-relay.mjs",
     "src/components/machete/FormulaAdaptationHoverCard.tsx",
     "src/machete/formula-adaptation-models.generated.json",
     "src/machete/formula_adaptations.ts"

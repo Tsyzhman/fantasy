@@ -54,7 +54,7 @@ echo "MODE=$mode"
 echo "RELEASE_ROOT=$release_root"
 echo "CURRENT_RELEASE=$current_target"
 
-for service in web worker; do
+for service in web worker fpl-relay; do
   mapfile -t rollback_rows < <(
     docker container ls -a --format '{{.Names}}|{{.CreatedAt}}' |
       awk -F'|' -v prefix="fantasy-scout-${service}-rollback-" 'index($1, prefix) == 1 { print }' |
@@ -66,7 +66,7 @@ for service in web worker; do
   fi
   for row in "${rollback_rows[@]:1}"; do
     rollback_name="${row%%|*}"
-    [[ "$rollback_name" =~ ^fantasy-scout-(web|worker)-rollback-[a-zA-Z0-9._-]+$ ]] || {
+    [[ "$rollback_name" =~ ^fantasy-scout-(web|worker|fpl-relay)-rollback-[a-zA-Z0-9._-]+$ ]] || {
       echo "Refusing unexpected rollback name: $rollback_name" >&2
       exit 1
     }

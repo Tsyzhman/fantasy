@@ -18,6 +18,7 @@ const requiredTrackedFiles = [
   "Dockerfile",
   "scripts/deploy-production-docker.sh",
   "scripts/export-formula-adaptation-models.py",
+  "scripts/fpl-vpn-relay.mjs",
   "scripts/prune-production-artifacts.sh",
   "scripts/verify-release-source.mjs",
   "src/app/api/machete/squads/formula-adaptations/route.ts",
