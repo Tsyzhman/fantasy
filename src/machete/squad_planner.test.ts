@@ -35,6 +35,7 @@ import {
   friendAlternativeProjectionFantasyPoints,
   friendAlternativeScoringModel,
   friendStartingRows,
+  fantasyPlayerPoolCacheKey,
   loadFantasySquadPlannerData,
   normalizeFantasySquadName,
   preferredArchivedSeason,
@@ -61,6 +62,25 @@ import { calculateFriendWindowMetrics, type SharedMachetePlayerRow } from "./sha
 import { defaultFantasySquadRules } from "./squad_logic";
 import { expectedProjectionFormulaConfig, friendAltProjectionFormulaConfig } from "./projection-formula-config";
 import { positionEventPriorPer90 } from "./player-season-prior";
+
+test("a new Foontasy fetch timestamp creates a new fantasy player pool cache key", () => {
+  const base = {
+    provider: "SPORTS_RU",
+    contestId: "contest-47",
+    leagueId: 47n,
+    season: "2026/2027",
+    leagueUpdatedAt: new Date("2026-08-13T08:00:00.000Z"),
+    startingXiRevision: "no-xi-change",
+    preferenceKey: "global",
+    historySettingsKey: "LAST_5"
+  };
+  const first = fantasyPlayerPoolCacheKey({ ...base, foontasyRevision: "2026-08-13T08:01:00.000Z" });
+  const same = fantasyPlayerPoolCacheKey({ ...base, foontasyRevision: "2026-08-13T08:01:00.000Z" });
+  const refreshed = fantasyPlayerPoolCacheKey({ ...base, foontasyRevision: "2026-08-13T12:01:00.000Z" });
+
+  assert.equal(first, same);
+  assert.notEqual(first, refreshed);
+});
 
 test("component xFP is the default primary engine and legacy remains a one-flag rollback", () => {
   assert.equal(configuredFantasyProjectionEngine(undefined), "COMPONENT_XFP_V1");

@@ -429,7 +429,7 @@ export async function loadCachedFantasySquadPlayerPool(
     orderBy: { lastSyncedAt: "desc" },
     select: { id: true }
   }))?.id ?? null;
-  const [preference, latestStartingXiChange] = await Promise.all([
+  const [preference, latestStartingXiChange, foontasyRevision] = await Promise.all([
     prisma.userScoringPreference.findUnique({
       where: { userId_modelSource: { userId, modelSource: "MACHETE" } },
       select: { id: true, updatedAt: true }
@@ -437,7 +437,8 @@ export async function loadCachedFantasySquadPlayerPool(
     prisma.leagueSeasonTeam.aggregate({
       where: { leagueId: league.leagueId, season: league.season, active: true },
       _max: { startingXiChangedAt: true }
-    })
+    }),
+    loadLatestFoontasyForecastRevision(prisma, league)
   ]);
   const preferenceKey = preference ? `${preference.id}:${preference.updatedAt.toISOString()}` : "global";
   const startingXiRevision = latestStartingXiChange._max.startingXiChangedAt?.toISOString() ?? "no-xi-change";
@@ -448,6 +449,7 @@ export async function loadCachedFantasySquadPlayerPool(
     historySettings,
     preferenceKey,
     startingXiRevision,
+    foontasyRevision,
     provider,
     resolvedContestId
   );
@@ -472,7 +474,7 @@ export async function loadCachedFantasySquadPlayerPools(
     orderBy: { lastSyncedAt: "desc" },
     select: { id: true }
   }))?.id ?? null;
-  const [preferences, latestStartingXiChange] = await Promise.all([
+  const [preferences, latestStartingXiChange, foontasyRevision] = await Promise.all([
     prisma.userScoringPreference.findMany({
       where: { userId: { in: uniqueUserIds }, modelSource: "MACHETE" },
       select: { userId: true, id: true, updatedAt: true }
@@ -480,7 +482,8 @@ export async function loadCachedFantasySquadPlayerPools(
     prisma.leagueSeasonTeam.aggregate({
       where: { leagueId: league.leagueId, season: league.season, active: true },
       _max: { startingXiChangedAt: true }
-    })
+    }),
+    loadLatestFoontasyForecastRevision(prisma, league)
   ]);
   const startingXiRevision = latestStartingXiChange._max.startingXiChangedAt?.toISOString() ?? "no-xi-change";
   const groups = fantasyPlayerPoolPreferenceGroups(uniqueUserIds, preferences);
@@ -494,6 +497,7 @@ export async function loadCachedFantasySquadPlayerPools(
         historySettings,
         preferenceKey,
         startingXiRevision,
+        foontasyRevision,
         provider,
         resolvedContestId
       );
@@ -528,10 +532,21 @@ function loadCachedFantasySquadPlayerPoolWithMetadata(
   historySettings: FantasyHistorySettings,
   preferenceKey: string,
   startingXiRevision: string,
+  foontasyRevision: string,
   provider: string,
   contestId?: string | null
 ) {
-  const key = `${provider}:${contestId ?? "no-contest"}:${league.leagueId}:${league.season}:${league.updatedAt.toISOString()}:${startingXiRevision}:${preferenceKey}:${fantasyHistorySettingsKey(historySettings)}`;
+  const key = fantasyPlayerPoolCacheKey({
+    provider,
+    contestId,
+    leagueId: league.leagueId,
+    season: league.season,
+    leagueUpdatedAt: league.updatedAt,
+    startingXiRevision,
+    foontasyRevision,
+    preferenceKey,
+    historySettingsKey: fantasyHistorySettingsKey(historySettings)
+  });
   return fantasyPlayerPoolCache.getOrCreate(key, fantasyPlayerPoolCacheTtlMs, async () => {
     const data = await loadFantasySquadPlannerData(prisma, userId, league, null, { historySettings, skipSavedSquads: true, provider, contestId });
     return data.players;
@@ -1085,6 +1100,18 @@ export async function loadFantasySquadPlannerData(
   };
 }
 
+async function loadLatestFoontasyForecastRevision(prisma: PrismaClient, league: SharedLeagueSeasonOption) {
+  const latest = await prisma.foontasyForecast.aggregate({
+    where: {
+      leagueId: league.leagueId,
+      season: league.season,
+      sourceVariant: "sports"
+    },
+    _max: { fetchedAt: true }
+  });
+  return latest._max.fetchedAt?.toISOString() ?? "no-foontasy";
+}
+
 export function buildFplRecentOfficialPoints(
   rows: ReadonlyArray<{ playerId: bigint | null; gameweek: number; points: number; status: string }>,
   limit = 5
@@ -1108,7 +1135,7 @@ export async function loadFantasySquadFormulaAdaptationBreakdowns(
   historySettings: FantasyHistorySettings = defaultFantasyHistorySettings,
   provider = "SPORTS_RU"
 ) {
-  const [preference, latestStartingXiChange, contest] = await Promise.all([
+  const [preference, latestStartingXiChange, foontasyRevision, contest] = await Promise.all([
     prisma.userScoringPreference.findUnique({
       where: { userId_modelSource: { userId, modelSource: "MACHETE" } },
       select: { id: true, updatedAt: true }
@@ -1117,6 +1144,7 @@ export async function loadFantasySquadFormulaAdaptationBreakdowns(
       where: { leagueId: league.leagueId, season: league.season, active: true },
       _max: { startingXiChangedAt: true }
     }),
+    loadLatestFoontasyForecastRevision(prisma, league),
     fantasyContestClient(prisma).findFirst({
       where: {
         provider,
@@ -1139,6 +1167,7 @@ export async function loadFantasySquadFormulaAdaptationBreakdowns(
     userId,
     preferenceRevision,
     startingXiRevision,
+    foontasyRevision,
     fantasyHistorySettingsKey(historySettings)
   ].join(":");
   return fantasyFormulaAdaptationBreakdownCache.getOrCreate(key, fantasyPlayerPoolCacheTtlMs, async () => {
@@ -1226,6 +1255,20 @@ async function ensureFantasyContest(
     },
     select: { id: true }
   });
+}
+
+export function fantasyPlayerPoolCacheKey(input: {
+  provider: string;
+  contestId?: string | null;
+  leagueId: bigint;
+  season: string;
+  leagueUpdatedAt: Date;
+  startingXiRevision: string;
+  foontasyRevision: string;
+  preferenceKey: string;
+  historySettingsKey: string;
+}) {
+  return `${input.provider}:${input.contestId ?? "no-contest"}:${input.leagueId}:${input.season}:${input.leagueUpdatedAt.toISOString()}:${input.startingXiRevision}:${input.foontasyRevision}:${input.preferenceKey}:${input.historySettingsKey}`;
 }
 
 export function sportsRuPricedFantasyPlayers(players: FantasyPlannerPlayer[]) {
