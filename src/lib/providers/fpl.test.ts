@@ -36,21 +36,40 @@ function bootstrapPayload() {
       { id: 2, name: "Gameweek 2", deadline_time: "2026-08-28T17:30:00Z", finished: true, is_previous: true, is_current: false, is_next: false, released: true, data_checked: true }
     ],
     teams: [{ id: 1, name: "Arsenal", short_name: "ARS", code: 3 }],
-    elements: [{
-      id: 101,
-      code: 10001,
-      team: 1,
-      element_type: 3,
-      web_name: "Saka",
-      first_name: "Bukayo",
-      second_name: "Saka",
-      now_cost: 100,
-      status: "a",
-      chance_of_playing_this_round: null,
-      selected_by_percent: "12.3",
-      photo: "saka.jpg"
-    }],
-    element_types: [{ id: 3, singular_name_short: "MID", squad_select: 5, squad_min_play: 2, squad_max_play: 5 }],
+    elements: [
+      {
+        id: 101,
+        code: 10001,
+        team: 1,
+        element_type: 3,
+        web_name: "Saka",
+        first_name: "Bukayo",
+        second_name: "Saka",
+        now_cost: 100,
+        status: "a",
+        chance_of_playing_this_round: null,
+        selected_by_percent: "12.3",
+        photo: "saka.jpg"
+      },
+      {
+        id: 102,
+        code: 154561,
+        team: 1,
+        element_type: 1,
+        web_name: "Raya",
+        first_name: "David",
+        second_name: "Raya Martin",
+        now_cost: 60,
+        status: "a",
+        chance_of_playing_this_round: null,
+        selected_by_percent: "25.7",
+        photo: "154561.jpg"
+      }
+    ],
+    element_types: [
+      { id: 1, singular_name_short: "GKP", squad_select: 2, squad_min_play: 1, squad_max_play: 1 },
+      { id: 3, singular_name_short: "MID", squad_select: 5, squad_min_play: 2, squad_max_play: 5 }
+    ],
     chips: [
       { id: 3, name: "freehit", number: 1, start_event: 2, stop_event: 19, chip_type: "transfer" },
       { id: 4, name: "bboost", number: 1, start_event: 1, stop_event: 19, chip_type: "team" }
@@ -70,7 +89,7 @@ test("FPL bootstrap preserves provider ids/codes and never derives identity from
     providerEntityCode: "10001",
     providerTeamId: "1",
     providerTeamCode: "ARS",
-    playerName: "Bukayo Saka",
+    playerName: "Saka",
     fullName: "Bukayo Saka",
     normalizedName: "bukayo saka",
     position: "MID",
@@ -86,6 +105,21 @@ test("FPL bootstrap preserves provider ids/codes and never derives identity from
     providerEntityType: "PLAYER",
     providerEntityId: "101",
     providerEntityCode: "10001"
+  });
+  assert.deepEqual(rows[1], {
+    providerPlayerId: "102",
+    providerEntityCode: "154561",
+    providerTeamId: "1",
+    providerTeamCode: "ARS",
+    playerName: "Raya",
+    fullName: "David Raya Martin",
+    normalizedName: "david raya martin",
+    position: "GK",
+    price: 6,
+    status: "a",
+    chanceOfPlayingThisRound: null,
+    selectedByPercent: 25.7,
+    photo: "154561.jpg"
   });
 });
 

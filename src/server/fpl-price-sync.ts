@@ -25,6 +25,7 @@ import { fpl202627Rules, fplRulesetJson, FPL_RULESET_NAME, FPL_RULESET_VERSION }
 
 const FPL_LOCK_KEY = "fantasy-scout:fpl:price-sync";
 const FPL_JOB_TYPE = "FPL_PRICE_SYNC";
+const FPL_PRICE_SYNC_FORMAT_VERSION = "web-name-v1";
 
 export type FplPriceSyncResult = {
   status: "SYNCED" | "SKIPPED";
@@ -88,7 +89,7 @@ export async function syncFplPrices(
       },
       select: { id: true }
     });
-    const idempotencyKey = `${snapshotKey}:${payloadHash}`;
+    const idempotencyKey = `${snapshotKey}:${payloadHash}:${FPL_PRICE_SYNC_FORMAT_VERSION}`;
     const existingRun = await tx.fantasyProviderSyncRun.findUnique({
       where: { provider_contestId_idempotencyKey: { provider: FPL_PROVIDER, contestId: contest.id, idempotencyKey } },
       select: { status: true }

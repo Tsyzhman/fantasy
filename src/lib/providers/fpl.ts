@@ -437,8 +437,7 @@ export function fplPriceRows(bootstrap: FplBootstrap): FplPriceRow[] {
     const position = FPL_POSITION_BY_ELEMENT_TYPE[element.elementType];
     if (!team || !position) throw new FplProviderError(`FPL element ${element.id} has no authoritative position/team.`, "MALFORMED");
     const fullName = [element.firstName, element.secondName].filter(Boolean).join(" ").trim();
-    const playerName = fullName || element.webName;
-    if (!playerName) throw new FplProviderError(`FPL element ${element.id} has no display name.`, "MALFORMED");
+    const playerName = element.webName;
     return {
       providerPlayerId: String(element.id),
       providerEntityCode: String(element.code),

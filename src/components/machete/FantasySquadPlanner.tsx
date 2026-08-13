@@ -5923,7 +5923,7 @@ async function downloadPlayerPoolXlsx(
       horizon,
       columns,
       rows: players.map((player) => ({
-        player: player.fotmobName ?? player.name,
+        player: provider === "FPL" ? player.name : player.fotmobName ?? player.name,
         team: player.teamName,
         position: player.positionGroup,
         price: player.price,
