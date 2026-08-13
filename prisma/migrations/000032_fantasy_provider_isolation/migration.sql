@@ -2,25 +2,6 @@
 -- This migration is deliberately additive and backfills all legacy Sports.ru rows
 -- before making the new contest dimension mandatory.
 
-DO $$
-BEGIN
-  IF EXISTS (
-    SELECT 1
-    FROM pg_constraint
-    WHERE conname = 'sports_ru_fantasy_contests_league_id_fkey'
-      AND conrelid = 'sports_ru_fantasy_contests'::regclass
-  ) AND NOT EXISTS (
-    SELECT 1
-    FROM pg_constraint
-    WHERE conname = 'fantasy_contests_league_id_fkey'
-      AND conrelid = 'sports_ru_fantasy_contests'::regclass
-  ) THEN
-    ALTER TABLE "sports_ru_fantasy_contests"
-      RENAME CONSTRAINT "sports_ru_fantasy_contests_league_id_fkey"
-      TO "fantasy_contests_league_id_fkey";
-  END IF;
-END $$;
-
 ALTER TABLE "fantasy_player_prices"
   ADD COLUMN IF NOT EXISTS "contest_id" TEXT;
 
