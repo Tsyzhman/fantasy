@@ -814,9 +814,9 @@ model FantasyContest {
   officialScores         FantasyProviderPlayerMatchScore[]
   providerEntityMaps     ProviderEntityMap[]
 
-  @@unique([provider, leagueId, season])
-  @@index([leagueId, season])
-  @@map("fantasy_contests")
+  @@unique([provider, leagueId, season], map: "sports_ru_fantasy_contests_provider_league_id_season_key")
+  @@index([leagueId, season], map: "sports_ru_fantasy_contests_league_id_season_idx")
+  @@map("sports_ru_fantasy_contests")
 }
 
 model SportsRuSquadSnapshot {
@@ -891,7 +891,7 @@ model FantasyPlayerPrice {
 
   @@unique([contestId, normalizedName, teamName], map: "fantasy_player_prices_contest_normalized_name_team_name_key")
   @@unique([contestId, providerPlayerId], map: "fantasy_player_prices_contest_provider_player_id_key")
-  @@index([contestId, lastSeenAt])
+  @@index([contestId, lastSeenAt], map: "fantasy_player_prices_contest_last_seen_at_idx")
   @@index([playerId, leagueId, season])
   @@index([teamId, leagueId, season])
   @@index([leagueId, season, providerBirthDate], map: "fantasy_player_prices_provider_birth_date_idx")
@@ -1384,7 +1384,7 @@ model FantasyRuleset {
   breakdowns FantasyPointBreakdown[]
 
   @@unique([provider, name, version], map: "fantasy_rulesets_provider_name_version_key")
-  @@index([provider, contestId, name, version])
+  @@index([provider, contestId], map: "fantasy_rulesets_provider_contest_id_idx")
   @@map("fantasy_rulesets")
 }
 
@@ -1635,6 +1635,7 @@ model ProviderEntityMap {
   contest FantasyContest? @relation(fields: [contestId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerSeason, providerEntityType, providerEntityId, internalEntityType], map: "provider_entity_map_provider_season_entity_key")
+  @@index([contestId], map: "ProviderEntityMap_contest_id_idx")
   @@index([internalEntityType, internalEntityId])
 }
 
@@ -1656,7 +1657,7 @@ model FantasyPlayerPriceSnapshot {
   league  CoreLeague     @relation(fields: [leagueId], references: [id], onDelete: Cascade)
 
   @@unique([contestId, snapshotKey], map: "fantasy_price_snapshots_contest_snapshot_key")
-  @@index([provider, leagueId, season, fetchedAt])
+  @@index([provider, leagueId, season, fetchedAt], map: "fantasy_price_snapshots_provider_league_season_fetched_idx")
   @@map("fantasy_player_price_snapshots")
 }
 
@@ -1682,7 +1683,7 @@ model FantasyProviderSyncRun {
   league  CoreLeague     @relation(fields: [leagueId], references: [id], onDelete: Cascade)
 
   @@unique([provider, contestId, idempotencyKey], map: "fantasy_provider_sync_runs_idempotency_key")
-  @@index([provider, leagueId, season, jobType, startedAt])
+  @@index([provider, leagueId, season, jobType, startedAt], map: "fantasy_provider_sync_runs_scope_idx")
   @@map("fantasy_provider_sync_runs")
 }
 
@@ -1712,7 +1713,7 @@ model FantasyProviderSquadSnapshot {
   league  CoreLeague     @relation(fields: [leagueId], references: [id], onDelete: Cascade)
 
   @@unique([userId, contestId, gameweek, providerSquadId], map: "fantasy_provider_squad_snapshot_scope_key")
-  @@index([provider, leagueId, season, gameweek, status])
+  @@index([provider, leagueId, season, gameweek, status], map: "fantasy_provider_squad_snapshots_scope_idx")
   @@map("fantasy_provider_squad_snapshots")
 }
 
@@ -1745,7 +1746,7 @@ model FantasyUserGameweekState {
   league  CoreLeague     @relation(fields: [leagueId], references: [id], onDelete: Cascade)
 
   @@unique([userId, contestId, gameweek], map: "fantasy_user_gameweek_state_scope_key")
-  @@index([provider, leagueId, season, gameweek])
+  @@index([provider, leagueId, season, gameweek], map: "fantasy_user_gameweek_states_scope_idx")
   @@map("fantasy_user_gameweek_states")
 }
 
@@ -1816,8 +1817,8 @@ model FantasyProviderPlayerMatchScore {
   match   CoreMatch?     @relation(fields: [matchId], references: [id], onDelete: SetNull)
 
   @@unique([contestId, providerEventId, providerPlayerId], map: "fantasy_provider_player_match_score_key")
-  @@index([provider, leagueId, season, gameweek])
-  @@index([playerId, season, gameweek])
+  @@index([provider, leagueId, season, gameweek], map: "fantasy_provider_player_match_scores_scope_idx")
+  @@index([playerId, season, gameweek], map: "fantasy_provider_player_match_scores_player_idx")
   @@map("fantasy_provider_player_match_scores")
 }
 

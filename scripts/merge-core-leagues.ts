@@ -262,7 +262,7 @@ async function mergeLeague(tx: Prisma.TransactionClient, item: PlannedMerge): Pr
   `;
 
   counts.fantasyContests = await tx.$executeRaw`
-    INSERT INTO fantasy_contests (
+    INSERT INTO sports_ru_fantasy_contests (
       id, league_id, season, provider, provider_contest_id, slug, name,
       budget_limit, squad_size, max_players_per_team, rules, source_url,
       last_synced_at, created_at, updated_at
@@ -271,15 +271,15 @@ async function mergeLeague(tx: Prisma.TransactionClient, item: PlannedMerge): Pr
       'merge_' || md5(id || ':' || ${targetId}::text), ${targetId}, season, provider,
       provider_contest_id, slug, name, budget_limit, squad_size, max_players_per_team,
       rules, source_url, last_synced_at, created_at, now()
-    FROM fantasy_contests
+    FROM sports_ru_fantasy_contests
     WHERE league_id = ${sourceId}
     ${seasonFilter}
     ON CONFLICT (provider, league_id, season) DO UPDATE SET
-      provider_contest_id = COALESCE(fantasy_contests.provider_contest_id, EXCLUDED.provider_contest_id),
-      slug = COALESCE(fantasy_contests.slug, EXCLUDED.slug),
-      rules = COALESCE(fantasy_contests.rules, EXCLUDED.rules),
-      source_url = COALESCE(fantasy_contests.source_url, EXCLUDED.source_url),
-      last_synced_at = GREATEST(fantasy_contests.last_synced_at, EXCLUDED.last_synced_at),
+      provider_contest_id = COALESCE(sports_ru_fantasy_contests.provider_contest_id, EXCLUDED.provider_contest_id),
+      slug = COALESCE(sports_ru_fantasy_contests.slug, EXCLUDED.slug),
+      rules = COALESCE(sports_ru_fantasy_contests.rules, EXCLUDED.rules),
+      source_url = COALESCE(sports_ru_fantasy_contests.source_url, EXCLUDED.source_url),
+      last_synced_at = GREATEST(sports_ru_fantasy_contests.last_synced_at, EXCLUDED.last_synced_at),
       updated_at = now()
   `;
 
@@ -296,8 +296,8 @@ async function mergeLeague(tx: Prisma.TransactionClient, item: PlannedMerge): Pr
       source_price.fotmob_player_name, source_price.position_label, source_price.source_kind, source_price.source_row_index, source_price.position, source_price.price,
       source_price.first_seen_at, source_price.last_seen_at
     FROM fantasy_player_prices source_price
-    JOIN fantasy_contests source_contest ON source_contest.id = source_price.contest_id
-    JOIN fantasy_contests target_contest
+    JOIN sports_ru_fantasy_contests source_contest ON source_contest.id = source_price.contest_id
+    JOIN sports_ru_fantasy_contests target_contest
       ON target_contest.provider = source_contest.provider
       AND target_contest.league_id = ${targetId}
       AND target_contest.season = source_contest.season
@@ -333,7 +333,7 @@ async function mergeLeague(tx: Prisma.TransactionClient, item: PlannedMerge): Pr
   `;
 
   counts.sourceFantasyContestsDeleted = await tx.$executeRaw`
-    DELETE FROM fantasy_contests
+    DELETE FROM sports_ru_fantasy_contests
     WHERE league_id = ${sourceId}
     ${seasonFilter}
   `;
@@ -417,8 +417,8 @@ async function mergeFantasyProviderArtifacts(tx: Prisma.TransactionClient, sourc
   await tx.$executeRaw`
     UPDATE fantasy_rulesets source_ruleset
     SET contest_id = target_contest.id
-    FROM fantasy_contests source_contest
-    JOIN fantasy_contests target_contest
+    FROM sports_ru_fantasy_contests source_contest
+    JOIN sports_ru_fantasy_contests target_contest
       ON target_contest.provider = source_contest.provider
       AND target_contest.league_id = ${targetId}
       AND target_contest.season = source_contest.season
@@ -446,8 +446,8 @@ async function mergeFantasyProviderArtifacts(tx: Prisma.TransactionClient, sourc
       source_snapshot.status, source_snapshot.source_url, source_snapshot.payload_hash,
       source_snapshot.prices, source_snapshot.fetched_at, source_snapshot.created_at
     FROM fantasy_player_price_snapshots source_snapshot
-    JOIN fantasy_contests source_contest ON source_contest.id = source_snapshot.contest_id
-    JOIN fantasy_contests target_contest
+    JOIN sports_ru_fantasy_contests source_contest ON source_contest.id = source_snapshot.contest_id
+    JOIN sports_ru_fantasy_contests target_contest
       ON target_contest.provider = source_contest.provider
       AND target_contest.league_id = ${targetId}
       AND target_contest.season = source_contest.season
@@ -474,8 +474,8 @@ async function mergeFantasyProviderArtifacts(tx: Prisma.TransactionClient, sourc
       source_run.source_url, source_run.payload_hash, source_run.counts, source_run.error_message,
       source_run.created_at
     FROM fantasy_provider_sync_runs source_run
-    JOIN fantasy_contests source_contest ON source_contest.id = source_run.contest_id
-    JOIN fantasy_contests target_contest
+    JOIN sports_ru_fantasy_contests source_contest ON source_contest.id = source_run.contest_id
+    JOIN sports_ru_fantasy_contests target_contest
       ON target_contest.provider = source_contest.provider
       AND target_contest.league_id = ${targetId}
       AND target_contest.season = source_contest.season
@@ -505,8 +505,8 @@ async function mergeFantasyProviderArtifacts(tx: Prisma.TransactionClient, sourc
       source_snapshot.mapped_players_count, source_snapshot.selections, source_snapshot.provider_payload,
       source_snapshot.unmapped_players, source_snapshot.last_error, source_snapshot.created_at, now()
     FROM fantasy_provider_squad_snapshots source_snapshot
-    JOIN fantasy_contests source_contest ON source_contest.id = source_snapshot.contest_id
-    JOIN fantasy_contests target_contest
+    JOIN sports_ru_fantasy_contests source_contest ON source_contest.id = source_snapshot.contest_id
+    JOIN sports_ru_fantasy_contests target_contest
       ON target_contest.provider = source_contest.provider
       AND target_contest.league_id = ${targetId}
       AND target_contest.season = source_contest.season
@@ -541,8 +541,8 @@ async function mergeFantasyProviderArtifacts(tx: Prisma.TransactionClient, sourc
       source_state.vice_captain_provider_id, source_state.chip_code, source_state.chip_status, source_state.transfers,
       target_snapshot.id, source_state.observed_at, source_state.created_at, now()
     FROM fantasy_user_gameweek_states source_state
-    JOIN fantasy_contests source_contest ON source_contest.id = source_state.contest_id
-    JOIN fantasy_contests target_contest
+    JOIN sports_ru_fantasy_contests source_contest ON source_contest.id = source_state.contest_id
+    JOIN sports_ru_fantasy_contests target_contest
       ON target_contest.provider = source_contest.provider
       AND target_contest.league_id = ${targetId}
       AND target_contest.season = source_contest.season
@@ -581,8 +581,8 @@ async function mergeFantasyProviderArtifacts(tx: Prisma.TransactionClient, sourc
       source_definition.half, source_definition.max_uses, source_definition.rules,
       source_definition.created_at, now()
     FROM fantasy_chip_definitions source_definition
-    JOIN fantasy_contests source_contest ON source_contest.id = source_definition.contest_id
-    JOIN fantasy_contests target_contest
+    JOIN sports_ru_fantasy_contests source_contest ON source_contest.id = source_definition.contest_id
+    JOIN sports_ru_fantasy_contests target_contest
       ON target_contest.provider = source_contest.provider
       AND target_contest.league_id = ${targetId}
       AND target_contest.season = source_contest.season
@@ -605,8 +605,8 @@ async function mergeFantasyProviderArtifacts(tx: Prisma.TransactionClient, sourc
       source_usage.code, source_usage.status, source_usage.source, source_usage.observed_at,
       source_usage.metadata, source_usage.created_at, now()
     FROM fantasy_chip_usages source_usage
-    JOIN fantasy_contests source_contest ON source_contest.id = source_usage.contest_id
-    JOIN fantasy_contests target_contest
+    JOIN sports_ru_fantasy_contests source_contest ON source_contest.id = source_usage.contest_id
+    JOIN sports_ru_fantasy_contests target_contest
       ON target_contest.provider = source_contest.provider
       AND target_contest.league_id = ${targetId}
       AND target_contest.season = source_contest.season
@@ -634,8 +634,8 @@ async function mergeFantasyProviderArtifacts(tx: Prisma.TransactionClient, sourc
       source_score.match_id, source_score.points, source_score.breakdown, source_score.status,
       source_score.source_url, source_score.fetched_at, source_score.created_at, now()
     FROM fantasy_provider_player_match_scores source_score
-    JOIN fantasy_contests source_contest ON source_contest.id = source_score.contest_id
-    JOIN fantasy_contests target_contest
+    JOIN sports_ru_fantasy_contests source_contest ON source_contest.id = source_score.contest_id
+    JOIN sports_ru_fantasy_contests target_contest
       ON target_contest.provider = source_contest.provider
       AND target_contest.league_id = ${targetId}
       AND target_contest.season = source_contest.season
@@ -665,8 +665,8 @@ async function mergeFantasyProviderArtifacts(tx: Prisma.TransactionClient, sourc
       source_map."internalEntityId", source_map."confidence", source_map."matchedBy", source_map."status",
       source_map."createdAt", now()
     FROM "ProviderEntityMap" source_map
-    JOIN fantasy_contests source_contest ON source_contest.id = source_map."contest_id"
-    JOIN fantasy_contests target_contest
+    JOIN sports_ru_fantasy_contests source_contest ON source_contest.id = source_map."contest_id"
+    JOIN sports_ru_fantasy_contests target_contest
       ON target_contest.provider = source_contest.provider
       AND target_contest.league_id = ${targetId}
       AND target_contest.season = source_contest.season
@@ -698,8 +698,8 @@ async function mergeFantasyProviderArtifacts(tx: Prisma.TransactionClient, sourc
     JOIN fantasy_player_prices source_price
       ON source_map."providerEntityType" = 'FANTASY_PLAYER_PRICE'
       AND source_map."providerEntityId" = source_price.id
-    JOIN fantasy_contests source_contest ON source_contest.id = source_price.contest_id
-    JOIN fantasy_contests target_contest
+    JOIN sports_ru_fantasy_contests source_contest ON source_contest.id = source_price.contest_id
+    JOIN sports_ru_fantasy_contests target_contest
       ON target_contest.provider = source_contest.provider
       AND target_contest.league_id = ${targetId}
       AND target_contest.season = source_contest.season
@@ -734,8 +734,8 @@ async function mergeFantasySquads(tx: Prisma.TransactionClient, sourceId: bigint
       'merge_' || md5(source_squad.id || ':' || ${targetId}::text), source_squad.user_id, source_squad.provider, target_contest.id, ${targetId}, source_squad.season,
       source_squad.name, source_squad.budget_limit, source_squad.bank, source_squad.horizon_rounds, source_squad.filters, source_squad.created_at, now()
     FROM user_fantasy_squads source_squad
-    JOIN fantasy_contests source_contest ON source_contest.id = source_squad.contest_id
-    JOIN fantasy_contests target_contest
+    JOIN sports_ru_fantasy_contests source_contest ON source_contest.id = source_squad.contest_id
+    JOIN sports_ru_fantasy_contests target_contest
       ON target_contest.provider = source_contest.provider
       AND target_contest.league_id = ${targetId}
       AND target_contest.season = source_contest.season
@@ -774,7 +774,7 @@ async function mergeFantasySquads(tx: Prisma.TransactionClient, sourceId: bigint
       AND target_squad.provider = source_squad.provider
       AND target_squad.contest_id = (
         SELECT target_contest.id
-        FROM fantasy_contests target_contest
+        FROM sports_ru_fantasy_contests target_contest
         WHERE target_contest.provider = source_squad.provider
           AND target_contest.league_id = ${targetId}
           AND target_contest.season = source_squad.season

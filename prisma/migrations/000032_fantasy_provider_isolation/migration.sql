@@ -4,28 +4,22 @@
 
 DO $$
 BEGIN
-  IF to_regclass('"sports_ru_fantasy_contests"') IS NOT NULL
-     AND to_regclass('"fantasy_contests"') IS NULL THEN
-    ALTER TABLE "sports_ru_fantasy_contests" RENAME TO "fantasy_contests";
-  END IF;
-END $$;
-
-DO $$
-BEGIN
   IF EXISTS (
-    SELECT 1 FROM pg_constraint
-    WHERE conname = 'sports_ru_fantasy_contests_pkey'
-      AND conrelid = 'fantasy_contests'::regclass
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'sports_ru_fantasy_contests_league_id_fkey'
+      AND conrelid = 'sports_ru_fantasy_contests'::regclass
+  ) AND NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'fantasy_contests_league_id_fkey'
+      AND conrelid = 'sports_ru_fantasy_contests'::regclass
   ) THEN
-    ALTER TABLE "fantasy_contests"
-      RENAME CONSTRAINT "sports_ru_fantasy_contests_pkey" TO "fantasy_contests_pkey";
+    ALTER TABLE "sports_ru_fantasy_contests"
+      RENAME CONSTRAINT "sports_ru_fantasy_contests_league_id_fkey"
+      TO "fantasy_contests_league_id_fkey";
   END IF;
 END $$;
-
-ALTER INDEX IF EXISTS "sports_ru_fantasy_contests_provider_league_id_season_key"
-  RENAME TO "fantasy_contests_provider_league_id_season_key";
-ALTER INDEX IF EXISTS "sports_ru_fantasy_contests_league_id_season_idx"
-  RENAME TO "fantasy_contests_league_id_season_idx";
 
 ALTER TABLE "fantasy_player_prices"
   ADD COLUMN IF NOT EXISTS "contest_id" TEXT;
@@ -73,7 +67,7 @@ ALTER TABLE "ProviderEntityMap"
 
 -- Existing deployments can contain prices or squads created before a contest
 -- row was required. Give each legacy scope a deterministic contest identity.
-INSERT INTO "fantasy_contests" (
+INSERT INTO "sports_ru_fantasy_contests" (
   "id", "league_id", "season", "provider", "name", "budget_limit",
   "squad_size", "max_players_per_team", "created_at", "updated_at"
 )
@@ -95,7 +89,7 @@ FROM (
 ) AS scope
 WHERE NOT EXISTS (
   SELECT 1
-  FROM "fantasy_contests" contest
+  FROM "sports_ru_fantasy_contests" contest
   WHERE contest."provider" = scope."provider"
     AND contest."league_id" = scope."league_id"
     AND contest."season" = scope."season"
@@ -104,7 +98,7 @@ ON CONFLICT ("provider", "league_id", "season") DO NOTHING;
 
 UPDATE "fantasy_player_prices" prices
 SET "contest_id" = contests."id"
-FROM "fantasy_contests" contests
+FROM "sports_ru_fantasy_contests" contests
 WHERE prices."contest_id" IS NULL
   AND contests."provider" = prices."provider"
   AND contests."league_id" = prices."league_id"
@@ -112,7 +106,7 @@ WHERE prices."contest_id" IS NULL
 
 UPDATE "user_fantasy_squads" squads
 SET "contest_id" = contests."id"
-FROM "fantasy_contests" contests
+FROM "sports_ru_fantasy_contests" contests
 WHERE squads."contest_id" IS NULL
   AND contests."provider" = squads."provider"
   AND contests."league_id" = squads."league_id"
@@ -144,6 +138,7 @@ ALTER TABLE "user_fantasy_squads" ALTER COLUMN "contest_id" SET NOT NULL;
 
 DROP INDEX IF EXISTS "user_fantasy_squads_user_id_league_id_season_key";
 DROP INDEX IF EXISTS "user_fantasy_squads_user_id_league_id_season_name_key";
+DROP INDEX IF EXISTS "user_fantasy_squads_user_id_league_id_season_updated_at_idx";
 CREATE UNIQUE INDEX IF NOT EXISTS "user_fantasy_squads_user_id_contest_id_name_key"
   ON "user_fantasy_squads" ("user_id", "contest_id", "name");
 CREATE INDEX IF NOT EXISTS "user_fantasy_squads_user_id_contest_id_updated_at_idx"
@@ -179,7 +174,7 @@ BEGIN
   ) THEN
     ALTER TABLE "fantasy_player_prices"
       ADD CONSTRAINT "fantasy_player_prices_contest_id_fkey"
-      FOREIGN KEY ("contest_id") REFERENCES "fantasy_contests"("id")
+      FOREIGN KEY ("contest_id") REFERENCES "sports_ru_fantasy_contests"("id")
       ON DELETE CASCADE ON UPDATE CASCADE;
   END IF;
   IF NOT EXISTS (
@@ -187,7 +182,7 @@ BEGIN
   ) THEN
     ALTER TABLE "user_fantasy_squads"
       ADD CONSTRAINT "user_fantasy_squads_contest_id_fkey"
-      FOREIGN KEY ("contest_id") REFERENCES "fantasy_contests"("id")
+      FOREIGN KEY ("contest_id") REFERENCES "sports_ru_fantasy_contests"("id")
       ON DELETE CASCADE ON UPDATE CASCADE;
   END IF;
   IF NOT EXISTS (
@@ -195,7 +190,7 @@ BEGIN
   ) THEN
     ALTER TABLE "fantasy_rulesets"
       ADD CONSTRAINT "fantasy_rulesets_contest_id_fkey"
-      FOREIGN KEY ("contest_id") REFERENCES "fantasy_contests"("id")
+      FOREIGN KEY ("contest_id") REFERENCES "sports_ru_fantasy_contests"("id")
       ON DELETE SET NULL ON UPDATE CASCADE;
   END IF;
   IF NOT EXISTS (
@@ -203,7 +198,7 @@ BEGIN
   ) THEN
     ALTER TABLE "ProviderEntityMap"
       ADD CONSTRAINT "ProviderEntityMap_contest_id_fkey"
-      FOREIGN KEY ("contest_id") REFERENCES "fantasy_contests"("id")
+      FOREIGN KEY ("contest_id") REFERENCES "sports_ru_fantasy_contests"("id")
       ON DELETE CASCADE ON UPDATE CASCADE;
   END IF;
 END $$;
@@ -378,13 +373,13 @@ CREATE INDEX "fantasy_provider_player_match_scores_player_idx"
 DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fantasy_player_price_snapshots_contest_id_fkey') THEN
-    ALTER TABLE "fantasy_player_price_snapshots" ADD CONSTRAINT "fantasy_player_price_snapshots_contest_id_fkey" FOREIGN KEY ("contest_id") REFERENCES "fantasy_contests"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    ALTER TABLE "fantasy_player_price_snapshots" ADD CONSTRAINT "fantasy_player_price_snapshots_contest_id_fkey" FOREIGN KEY ("contest_id") REFERENCES "sports_ru_fantasy_contests"("id") ON DELETE CASCADE ON UPDATE CASCADE;
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fantasy_player_price_snapshots_league_id_fkey') THEN
     ALTER TABLE "fantasy_player_price_snapshots" ADD CONSTRAINT "fantasy_player_price_snapshots_league_id_fkey" FOREIGN KEY ("league_id") REFERENCES "leagues"("id") ON DELETE CASCADE ON UPDATE CASCADE;
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fantasy_provider_sync_runs_contest_id_fkey') THEN
-    ALTER TABLE "fantasy_provider_sync_runs" ADD CONSTRAINT "fantasy_provider_sync_runs_contest_id_fkey" FOREIGN KEY ("contest_id") REFERENCES "fantasy_contests"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    ALTER TABLE "fantasy_provider_sync_runs" ADD CONSTRAINT "fantasy_provider_sync_runs_contest_id_fkey" FOREIGN KEY ("contest_id") REFERENCES "sports_ru_fantasy_contests"("id") ON DELETE CASCADE ON UPDATE CASCADE;
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fantasy_provider_sync_runs_league_id_fkey') THEN
     ALTER TABLE "fantasy_provider_sync_runs" ADD CONSTRAINT "fantasy_provider_sync_runs_league_id_fkey" FOREIGN KEY ("league_id") REFERENCES "leagues"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -393,7 +388,7 @@ BEGIN
     ALTER TABLE "fantasy_provider_squad_snapshots" ADD CONSTRAINT "fantasy_provider_squad_snapshots_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fantasy_provider_squad_snapshots_contest_id_fkey') THEN
-    ALTER TABLE "fantasy_provider_squad_snapshots" ADD CONSTRAINT "fantasy_provider_squad_snapshots_contest_id_fkey" FOREIGN KEY ("contest_id") REFERENCES "fantasy_contests"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    ALTER TABLE "fantasy_provider_squad_snapshots" ADD CONSTRAINT "fantasy_provider_squad_snapshots_contest_id_fkey" FOREIGN KEY ("contest_id") REFERENCES "sports_ru_fantasy_contests"("id") ON DELETE CASCADE ON UPDATE CASCADE;
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fantasy_provider_squad_snapshots_league_id_fkey') THEN
     ALTER TABLE "fantasy_provider_squad_snapshots" ADD CONSTRAINT "fantasy_provider_squad_snapshots_league_id_fkey" FOREIGN KEY ("league_id") REFERENCES "leagues"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -402,22 +397,22 @@ BEGIN
     ALTER TABLE "fantasy_user_gameweek_states" ADD CONSTRAINT "fantasy_user_gameweek_states_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fantasy_user_gameweek_states_contest_id_fkey') THEN
-    ALTER TABLE "fantasy_user_gameweek_states" ADD CONSTRAINT "fantasy_user_gameweek_states_contest_id_fkey" FOREIGN KEY ("contest_id") REFERENCES "fantasy_contests"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    ALTER TABLE "fantasy_user_gameweek_states" ADD CONSTRAINT "fantasy_user_gameweek_states_contest_id_fkey" FOREIGN KEY ("contest_id") REFERENCES "sports_ru_fantasy_contests"("id") ON DELETE CASCADE ON UPDATE CASCADE;
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fantasy_user_gameweek_states_league_id_fkey') THEN
     ALTER TABLE "fantasy_user_gameweek_states" ADD CONSTRAINT "fantasy_user_gameweek_states_league_id_fkey" FOREIGN KEY ("league_id") REFERENCES "leagues"("id") ON DELETE CASCADE ON UPDATE CASCADE;
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fantasy_chip_definitions_contest_id_fkey') THEN
-    ALTER TABLE "fantasy_chip_definitions" ADD CONSTRAINT "fantasy_chip_definitions_contest_id_fkey" FOREIGN KEY ("contest_id") REFERENCES "fantasy_contests"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    ALTER TABLE "fantasy_chip_definitions" ADD CONSTRAINT "fantasy_chip_definitions_contest_id_fkey" FOREIGN KEY ("contest_id") REFERENCES "sports_ru_fantasy_contests"("id") ON DELETE CASCADE ON UPDATE CASCADE;
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fantasy_chip_usages_user_id_fkey') THEN
     ALTER TABLE "fantasy_chip_usages" ADD CONSTRAINT "fantasy_chip_usages_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "User"("id") ON DELETE CASCADE ON UPDATE CASCADE;
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fantasy_chip_usages_contest_id_fkey') THEN
-    ALTER TABLE "fantasy_chip_usages" ADD CONSTRAINT "fantasy_chip_usages_contest_id_fkey" FOREIGN KEY ("contest_id") REFERENCES "fantasy_contests"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    ALTER TABLE "fantasy_chip_usages" ADD CONSTRAINT "fantasy_chip_usages_contest_id_fkey" FOREIGN KEY ("contest_id") REFERENCES "sports_ru_fantasy_contests"("id") ON DELETE CASCADE ON UPDATE CASCADE;
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fantasy_provider_player_match_scores_contest_id_fkey') THEN
-    ALTER TABLE "fantasy_provider_player_match_scores" ADD CONSTRAINT "fantasy_provider_player_match_scores_contest_id_fkey" FOREIGN KEY ("contest_id") REFERENCES "fantasy_contests"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+    ALTER TABLE "fantasy_provider_player_match_scores" ADD CONSTRAINT "fantasy_provider_player_match_scores_contest_id_fkey" FOREIGN KEY ("contest_id") REFERENCES "sports_ru_fantasy_contests"("id") ON DELETE CASCADE ON UPDATE CASCADE;
   END IF;
   IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'fantasy_provider_player_match_scores_league_id_fkey') THEN
     ALTER TABLE "fantasy_provider_player_match_scores" ADD CONSTRAINT "fantasy_provider_player_match_scores_league_id_fkey" FOREIGN KEY ("league_id") REFERENCES "leagues"("id") ON DELETE CASCADE ON UPDATE CASCADE;

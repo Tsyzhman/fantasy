@@ -279,10 +279,15 @@ explicit temporary price exception are documented in
 `docs/PRODUCTION_MONITORING.md`.
 
 The workflow runs checks, archives the exact committed tree, retains that
-archive for 30 days, verifies all existing Prisma migrations are already
-applied, builds and canary-tests the Docker image, and performs the guarded
-web/worker swap. Application deployment deliberately refuses unapplied
-migrations; database migrations remain a separately backed-up operation.
+archive for 30 days, builds and canary-tests the Docker image, and performs the
+guarded web/worker swap. If the release contains unapplied Prisma migrations,
+the server promoter first checks that ingestion is idle, writes and verifies a
+custom-format backup under `/var/backups/fantasy-scout/`, restores that backup
+into a temporary database, runs `prisma migrate deploy` there, and only then
+applies the same migration set to production. The migration backup is retained
+for operator recovery. A Docker image rollback cannot undo an applied database
+migration, so a failed post-migration promotion is a database incident rather
+than an automatic schema rollback.
 
 For an existing production database that was created before Prisma migrations,
 baseline the initial migration once on the server before enabling non-dry-run

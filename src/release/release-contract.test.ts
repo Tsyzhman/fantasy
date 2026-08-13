@@ -36,11 +36,16 @@ test("production workflow packages committed Git source and never deploys the le
   assert.doesNotMatch(workflow, /\bpm2\b/i);
 });
 
-test("server promoter verifies formula files, migrations, active jobs, and exact runtime commit", () => {
+test("server promoter verifies formula files, rehearses migrations, and checks exact runtime commit", () => {
   const promoter = source("scripts/deploy-production-docker.sh");
 
   assert.match(promoter, /src\/machete\/formula_adaptations\.ts/);
-  assert.match(promoter, /Refusing application deploy with unapplied migration/);
+  assert.match(promoter, /Verified production backup/);
+  assert.match(promoter, /Migration rehearsal did not apply the complete migration set/);
+  assert.match(promoter, /npm run prisma:migrate:deploy/);
+  assert.match(promoter, /run_canary "Pre-migration"/);
+  assert.match(promoter, /run_canary "Post-migration"/);
+  assert.match(promoter, /schema_migration_started/);
   assert.match(promoter, /status IN \('queued','running'\)/);
   assert.match(promoter, /p\.release\?\.commit===process\.argv\[1\]/);
   assert.match(promoter, /PRODUCTION_HISTORY\.tsv/);

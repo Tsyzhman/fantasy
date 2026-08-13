@@ -37,7 +37,10 @@ test("FPL schema is provider/contest-scoped over the existing fantasy tables", (
 });
 
 test("provider isolation migration backfills before enforcing contest keys", () => {
-  assert.match(migration, /RENAME TO "fantasy_contests"/);
+  assert.match(schema, /@@map\("sports_ru_fantasy_contests"\)/);
+  assert.doesNotMatch(migration, /RENAME TO "fantasy_contests"/);
+  assert.doesNotMatch(migration, /"fantasy_contests"/);
+  assert.match(migration, /REFERENCES "sports_ru_fantasy_contests"\("id"\)/);
   assert.match(migration, /UPDATE "fantasy_player_prices" prices[\s\S]*contest_id/);
   assert.match(migration, /UPDATE "user_fantasy_squads" squads[\s\S]*contest_id/);
   assert.match(migration, /price rows without a contest remain/);
