@@ -29,6 +29,7 @@ worker_rollback="fantasy-scout-worker-rollback-pre-$release"
 web_env="$(mktemp)"
 worker_env="$(mktemp)"
 rehearsal_env="$(mktemp)"
+build_log="$(mktemp)"
 phase="prepare"
 old_web_renamed=0
 old_worker_renamed=0
@@ -79,6 +80,19 @@ validate_inputs() {
 
 container_exists() {
   docker container inspect "$1" >/dev/null 2>&1
+}
+
+run_docker_build() {
+  local label="$1"
+  shift
+
+  if ! docker build "$@" >"$build_log" 2>&1; then
+    tail -n 120 "$build_log" >&2 || true
+    echo "$label Docker build failed." >&2
+    return 1
+  fi
+  : > "$build_log"
+  echo "$label Docker build completed." >&2
 }
 
 run_canary() {
@@ -154,7 +168,7 @@ cleanup() {
     docker exec "$postgres" psql -U fantasy_app -d postgres -v ON_ERROR_STOP=1 \
       -c "DROP DATABASE IF EXISTS \"$rehearsal_db\" WITH (FORCE)" >/dev/null 2>&1 || true
   fi
-  rm -f -- "$web_env" "$worker_env" "$rehearsal_env"
+  rm -f -- "$web_env" "$worker_env" "$rehearsal_env" "$build_log"
 
   if (( exit_code != 0 )); then
     if [[ "$phase" == "deployed" ]]; then
@@ -274,7 +288,7 @@ for migration in "${expected_migrations[@]}"; do
   fi
 done
 
-docker build \
+run_docker_build "Runtime" \
   --target runtime \
   --build-arg "APP_RELEASE_VERSION=$version" \
   --build-arg "APP_RELEASE_COMMIT=$commit" \
@@ -322,7 +336,7 @@ if (( ${#pending_migrations[@]} > 0 )); then
   echo "Verified production backup: $backup_path ($backup_sha)"
 
   setup_image="$image-setup"
-  docker build \
+  run_docker_build "Migration setup" \
     --target setup \
     --tag "$setup_image" \
     "$target"
