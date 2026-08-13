@@ -50,6 +50,7 @@
     "fotmob:sync-player-archives": "tsx scripts/sync-fotmob-player-season-archives.ts",
     "prices:import-sheet": "tsx scripts/import-fantasy-price-sheet.ts",
     "prices:sync-sports-ru": "tsx scripts/import-sports-ru-fantasy.ts",
+    "prices:sync-fpl-and-epl": "tsx scripts/sync-production-fantasy-prices.ts",
     "prices:map-rpl-2026-27": "tsx scripts/map-sports-ru-rpl-2026-27.ts",
     "prices:map-nl-pt-2026-27": "tsx scripts/map-sports-ru-nl-pt-2026-27.ts",
     "prices:deep-map-current": "tsx scripts/deep-map-sports-ru-current.ts",

@@ -1,0 +1,100 @@
+name: Sync Production Fantasy Prices
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Git ref to package. It must contain the current main branch.
+        required: true
+        default: main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-price-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    environment: production
+
+    steps:
+      - name: Checkout exact requested ref
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+
+      - name: Fetch canonical branch history
+        run: git fetch --prune origin '+refs/heads/*:refs/remotes/origin/*'
+
+      - name: Reject refs that omit current main
+        run: git merge-base --is-ancestor origin/main HEAD
+
+      - name: Package exact Git commit
+        id: release
+        shell: bash
+        run: |
+          set -euo pipefail
+          commit="$(git rev-parse HEAD)"
+          version="$(node -p "require('./package.json').version")"
+          timestamp="$(date -u +%Y%m%dT%H%M%SZ)"
+          release="${timestamp}-v${version}-${commit:0:7}"
+          archive="$RUNNER_TEMP/fantasy-scout-price-sync-${release}.tar.gz"
+          git archive --format=tar.gz --output="$archive" HEAD
+          checksum="$(sha256sum "$archive" | awk '{print $1}')"
+          {
+            echo "archive=$archive"
+            echo "checksum=$checksum"
+            echo "commit=$commit"
+            echo "release=$release"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Prepare SSH key
+        env:
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+        run: |
+          set -euo pipefail
+          : "${DEPLOY_SSH_KEY:?DEPLOY_SSH_KEY secret is required}"
+          : "${DEPLOY_HOST:?DEPLOY_HOST secret is required}"
+          DEPLOY_PORT="${DEPLOY_PORT:-22}"
+          mkdir -p ~/.ssh
+          chmod 700 ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          ssh-keyscan -p "$DEPLOY_PORT" "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+
+      - name: Transfer price-sync archive
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          LOCAL_ARCHIVE: ${{ steps.release.outputs.archive }}
+          RELEASE: ${{ steps.release.outputs.release }}
+        run: |
+          set -euo pipefail
+          DEPLOY_PORT="${DEPLOY_PORT:-22}"
+          scp -i ~/.ssh/deploy_key -P "$DEPLOY_PORT" \
+            "$LOCAL_ARCHIVE" \
+            "$DEPLOY_USER@$DEPLOY_HOST:/tmp/fantasy-scout-price-sync-${RELEASE}.tar.gz"
+
+      - name: Run FPL and Sports.ru EPL price sync
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          RELEASE: ${{ steps.release.outputs.release }}
+          RELEASE_CHECKSUM: ${{ steps.release.outputs.checksum }}
+          RELEASE_COMMIT: ${{ steps.release.outputs.commit }}
+        run: |
+          set -euo pipefail
+          DEPLOY_PORT="${DEPLOY_PORT:-22}"
+          remote_archive="/tmp/fantasy-scout-price-sync-${RELEASE}.tar.gz"
+          ssh -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
+            "bash -s -- '$remote_archive' '$RELEASE_CHECKSUM' '$RELEASE' '$RELEASE_COMMIT'" \
+            < scripts/sync-production-fantasy-prices.sh

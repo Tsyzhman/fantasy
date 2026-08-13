@@ -36,6 +36,25 @@ test("production workflow packages committed Git source and never deploys the le
   assert.doesNotMatch(workflow, /\bpm2\b/i);
 });
 
+test("production fantasy price sync is an exact, non-runtime operator job", () => {
+  const workflow = source(".github/workflows/sync-production-fantasy-prices.yml");
+  const runner = source("scripts/sync-production-fantasy-prices.sh");
+  const entrypoint = source("scripts/sync-production-fantasy-prices.ts");
+
+  assert.match(workflow, /git merge-base --is-ancestor origin\/main HEAD/);
+  assert.match(workflow, /git archive --format=tar\.gz/);
+  assert.match(workflow, /scripts\/sync-production-fantasy-prices\.sh/);
+  assert.match(runner, /sha256sum/);
+  assert.match(runner, /--target setup/);
+  assert.match(runner, /npm run prices:sync-fpl-and-epl/);
+  assert.match(runner, /--network fantasy-scout_default/);
+  assert.match(entrypoint, /syncFplPrices/);
+  assert.match(entrypoint, /syncSportsRuFantasy/);
+  assert.match(entrypoint, /tournamentHru: "england"/);
+  assert.doesNotMatch(runner, /docker container restart/);
+  assert.doesNotMatch(runner, /docker compose (up|down)/);
+});
+
 test("server promoter verifies formula files, rehearses migrations, and checks exact runtime commit", () => {
   const promoter = source("scripts/deploy-production-docker.sh");
 
