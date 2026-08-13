@@ -45,6 +45,8 @@ test("server promoter verifies formula files, rehearses migrations, and checks e
   assert.match(promoter, /npm run prisma:migrate:deploy/);
   assert.match(promoter, /run_docker_build "Runtime"/);
   assert.match(promoter, /run_docker_build "Migration setup"/);
+  assert.match(promoter, /migration_in_list/);
+  assert.doesNotMatch(promoter, /cat "\$backup_path" \| docker exec/);
   assert.match(promoter, /run_canary "Pre-migration"/);
   assert.match(promoter, /run_canary "Post-migration"/);
   assert.match(promoter, /schema_migration_started/);

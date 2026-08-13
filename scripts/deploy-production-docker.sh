@@ -82,6 +82,16 @@ container_exists() {
   docker container inspect "$1" >/dev/null 2>&1
 }
 
+migration_in_list() {
+  local needle="$1"
+  shift
+  local candidate
+  for candidate in "$@"; do
+    [[ "$candidate" == "$needle" ]] && return 0
+  done
+  return 1
+}
+
 run_docker_build() {
   local label="$1"
   shift
@@ -283,7 +293,7 @@ chmod 600 "$web_env" "$worker_env"
 
 pending_migrations=()
 for migration in "${expected_migrations[@]}"; do
-  if ! printf '%s\n' "${applied_migrations[@]}" | grep -Fxq "$migration"; then
+  if ! migration_in_list "$migration" "${applied_migrations[@]}"; then
     pending_migrations+=("$migration")
   fi
 done
@@ -331,7 +341,7 @@ if (( ${#pending_migrations[@]} > 0 )); then
     echo "Production database backup is empty: $backup_path" >&2
     exit 1
   }
-  cat "$backup_path" | docker exec -i "$postgres" pg_restore --list >/dev/null
+  docker exec -i "$postgres" pg_restore --list < "$backup_path" >/dev/null
   backup_sha="$(sha256sum "$backup_path" | awk '{print $1}')"
   echo "Verified production backup: $backup_path ($backup_sha)"
 
@@ -346,8 +356,9 @@ if (( ${#pending_migrations[@]} > 0 )); then
   docker exec "$postgres" psql -U fantasy_app -d postgres -v ON_ERROR_STOP=1 \
     -c "CREATE DATABASE \"$rehearsal_db\""
   rehearsal_created=1
-  cat "$backup_path" | docker exec -i "$postgres" pg_restore \
-    -U fantasy_app -d "$rehearsal_db" --no-owner --no-acl --exit-on-error
+  docker exec -i "$postgres" pg_restore \
+    -U fantasy_app -d "$rehearsal_db" --no-owner --no-acl --exit-on-error \
+    < "$backup_path"
 
   python3 - "$web_env" "$rehearsal_env" "$rehearsal_db" <<'PY'
 import sys
@@ -404,7 +415,7 @@ PY
       'SELECT migration_name FROM "_prisma_migrations" WHERE finished_at IS NOT NULL AND rolled_back_at IS NULL ORDER BY migration_name'
   )
   for migration in "${expected_migrations[@]}"; do
-    printf '%s\n' "${applied_migrations[@]}" | grep -Fxq "$migration" || {
+    migration_in_list "$migration" "${applied_migrations[@]}" || {
       echo "Production migration did not apply: $migration" >&2
       exit 1
     }
