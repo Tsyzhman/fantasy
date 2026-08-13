@@ -22,20 +22,44 @@ export type FplForecastBreakdown = {
 export type FplForecastResult = {
   points: number;
   breakdown: FplForecastBreakdown;
-  status: "BETA_UNMODELED_BONUS_AND_DEFENSIVE_CONTRIBUTIONS";
+  status:
+    | "OFFICIAL_SCORING_WITH_ROLLING_BONUS_AND_DEFENSIVE_CONTRIBUTIONS"
+    | "OFFICIAL_SCORING_WITH_PARTIAL_BONUS_AND_DEFENSIVE_CONTRIBUTIONS";
   coverage: {
     bonus: number;
     defensiveContributions: number;
   };
 };
 
+export type FplForecastAdjustments = {
+  /** Expected 0..3 bonus points, conditional on appearing, from finalized official FPL matches. */
+  expectedBonusPerAppearance?: number | null;
+  /** Expected 0..2 defensive-contribution points, conditional on appearing, from finalized official FPL matches. */
+  expectedDefensiveContributionPointsPerAppearance?: number | null;
+  /** Share of the requested official history window available for this player. */
+  bonusCoverage?: number | null;
+  /** Share of the requested official history window containing the official DC field. */
+  defensiveContributionCoverage?: number | null;
+};
+
 /**
- * Converts the shared minutes/team-event projection into FPL points. The
- * official score adapter remains separate: bonus and defensive contribution
- * forecasts are explicitly zero until a legal historical training set exists.
+ * Converts the shared minutes/team-event projection into FPL points. Generic
+ * recoveries never score here: FPL defensive contributions are a separate,
+ * capped threshold award and are supplied only from official FPL history.
  */
-export function fplForecastPointsFromProjection(projection: PlayerFixtureProjection): FplForecastResult {
+export function fplForecastPointsFromProjection(
+  projection: PlayerFixtureProjection,
+  adjustments: FplForecastAdjustments = {}
+): FplForecastResult {
   const { position, probabilities, expectedEvents } = projection;
+  const bonus = probabilities.appearance * clampExpectedPoints(adjustments.expectedBonusPerAppearance, 3);
+  const defensiveContributions = position === "GK"
+    ? 0
+    : probabilities.appearance * clampExpectedPoints(adjustments.expectedDefensiveContributionPointsPerAppearance, 2);
+  const bonusCoverage = clampCoverage(adjustments.bonusCoverage);
+  const defensiveContributionCoverage = position === "GK"
+    ? 1
+    : clampCoverage(adjustments.defensiveContributionCoverage);
   const breakdown: FplForecastBreakdown = {
     appearance: probabilities.appearance * fpl202627Rules.scoring.appearance.upTo60Minutes
       + probabilities.sixtyMinutes * (fpl202627Rules.scoring.appearance.from60Minutes - fpl202627Rules.scoring.appearance.upTo60Minutes),
@@ -51,8 +75,8 @@ export function fplForecastPointsFromProjection(projection: PlayerFixtureProject
     penaltySaves: 0,
     penaltyMisses: 0,
     ownGoals: 0,
-    bonus: 0,
-    defensiveContributions: 0,
+    bonus,
+    defensiveContributions,
     total: 0
   };
   breakdown.total = Object.entries(breakdown)
@@ -61,9 +85,23 @@ export function fplForecastPointsFromProjection(projection: PlayerFixtureProject
   return {
     points: breakdown.total,
     breakdown,
-    status: "BETA_UNMODELED_BONUS_AND_DEFENSIVE_CONTRIBUTIONS",
-    coverage: { bonus: 0, defensiveContributions: 0 }
+    status: bonusCoverage === 1 && defensiveContributionCoverage === 1
+      ? "OFFICIAL_SCORING_WITH_ROLLING_BONUS_AND_DEFENSIVE_CONTRIBUTIONS"
+      : "OFFICIAL_SCORING_WITH_PARTIAL_BONUS_AND_DEFENSIVE_CONTRIBUTIONS",
+    coverage: { bonus: bonusCoverage, defensiveContributions: defensiveContributionCoverage }
   };
+}
+
+function clampExpectedPoints(value: number | null | undefined, maximum: number) {
+  return typeof value === "number" && Number.isFinite(value)
+    ? Math.max(0, Math.min(maximum, value))
+    : 0;
+}
+
+function clampCoverage(value: number | null | undefined) {
+  return typeof value === "number" && Number.isFinite(value)
+    ? Math.max(0, Math.min(1, value))
+    : 0;
 }
 
 export function fplOfficialScoreInputFromStats(

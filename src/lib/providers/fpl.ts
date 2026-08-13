@@ -146,6 +146,13 @@ export type FplLivePlayerScore = {
   providerPlayerId: string;
   stats: Record<string, number>;
   points: number;
+  /** Official per-fixture scoring rows; required to avoid merging a double gameweek into one sample. */
+  fixtureBreakdowns: FplLiveFixtureBreakdown[];
+};
+
+export type FplLiveFixtureBreakdown = {
+  fixtureId: string;
+  stats: Record<string, { value: number; points: number }>;
 };
 
 export type FplLiveEvent = {
@@ -559,12 +566,42 @@ export function parseFplLiveEvent(payload: unknown, gameweek: number): FplLiveEv
     if (!Number.isInteger(stats.total_points)) {
       throw new FplProviderError(`FPL live player ${providerPlayerId} has no total_points value.`, "MALFORMED");
     }
-    return { providerPlayerId, stats, points: stats.total_points } satisfies FplLivePlayerScore;
+    const fixtureBreakdowns = parseFplLiveFixtureBreakdowns(row.explain, gameweek, providerPlayerId, stats.minutes);
+    return { providerPlayerId, stats, points: stats.total_points, fixtureBreakdowns } satisfies FplLivePlayerScore;
   });
   if (new Set(elements.map((element) => element.providerPlayerId)).size !== elements.length) {
     throw new FplProviderError(`FPL event ${gameweek} live payload has duplicate player IDs.`, "MALFORMED");
   }
   return { gameweek, elements, payload: root };
+}
+
+function parseFplLiveFixtureBreakdowns(
+  value: unknown,
+  gameweek: number,
+  providerPlayerId: string,
+  minutes: number | undefined
+): FplLiveFixtureBreakdown[] {
+  const rows = parseArray(value, `event ${gameweek} player ${providerPlayerId} explain`);
+  if (rows.length === 0) {
+    if (minutes === 0) return [];
+    throw new FplProviderError(`FPL event ${gameweek} player ${providerPlayerId} has no fixture explanation rows.`, "MALFORMED");
+  }
+  const fixtures = rows.map((entry, fixtureIndex) => {
+    const row = parseRecord(entry, `event ${gameweek} player ${providerPlayerId} explain[${fixtureIndex}]`);
+    const fixtureId = String(positiveIntegerValue(row.fixture, `event ${gameweek} player ${providerPlayerId} explain[${fixtureIndex}].fixture`));
+    const stats = Object.fromEntries(parseArray(row.stats, `event ${gameweek} player ${providerPlayerId} explain[${fixtureIndex}].stats`).map((stat, statIndex) => {
+      const statRow = parseRecord(stat, `event ${gameweek} player ${providerPlayerId} explain[${fixtureIndex}].stats[${statIndex}]`);
+      const identifier = requiredString(statRow.identifier, `event ${gameweek} player ${providerPlayerId} explain[${fixtureIndex}].stats[${statIndex}].identifier`);
+      const points = finiteNumericValue(statRow.points, `event ${gameweek} player ${providerPlayerId} explain[${fixtureIndex}].stats[${statIndex}].points`);
+      const statValue = finiteNumericValue(statRow.value, `event ${gameweek} player ${providerPlayerId} explain[${fixtureIndex}].stats[${statIndex}].value`);
+      return [identifier, { value: statValue, points }] as const;
+    }));
+    return { fixtureId, stats };
+  });
+  if (new Set(fixtures.map((fixture) => fixture.fixtureId)).size !== fixtures.length) {
+    throw new FplProviderError(`FPL event ${gameweek} player ${providerPlayerId} has duplicate fixture explanations.`, "MALFORMED");
+  }
+  return fixtures;
 }
 
 const FPL_INTEGER_LIVE_STAT_KEYS = new Set([
@@ -765,6 +802,12 @@ function retryDelay(baseDelayMs: number, attempt: number, retryAfter: string | n
   const retryAfterSeconds = retryAfter ? Number(retryAfter) : NaN;
   if (Number.isFinite(retryAfterSeconds) && retryAfterSeconds >= 0) return Math.min(30_000, retryAfterSeconds * 1_000);
   return Math.min(30_000, baseDelayMs * 2 ** attempt);
+}
+
+function finiteNumericValue(value: unknown, label: string) {
+  const result = typeof value === "number" ? value : typeof value === "string" && value.trim() !== "" ? Number(value) : Number.NaN;
+  if (!Number.isFinite(result)) throw new FplProviderError(`FPL ${label} is not numeric.`, "MALFORMED");
+  return result;
 }
 
 function positiveInteger(value: number | undefined, fallback: number) {

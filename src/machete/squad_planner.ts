@@ -6,7 +6,7 @@ import { macheteLeagueDisplayName } from "@/lib/leagues/display";
 import { normalizeSportsRuPlayerName } from "@/lib/providers/sports-ru-fantasy";
 import { FPL_PROVIDER, FPL_SEASON } from "@/lib/providers/fpl";
 import { fpl202627Rules } from "@/lib/providers/fpl-rules";
-import { fplForecastPointsFromProjection } from "@/lib/providers/fpl-scoring";
+import { fplForecastPointsFromProjection, type FplForecastAdjustments } from "@/lib/providers/fpl-scoring";
 import { calculateAlternativeScore, calculateFantasyScore, getActiveScoringModelBundleForSource, type ActiveScoringModel } from "@/lib/scoring";
 import {
   calculateCustomFormulaScore,
@@ -438,7 +438,9 @@ export async function loadCachedFantasySquadPlayerPool(
       where: { leagueId: league.leagueId, season: league.season, active: true },
       _max: { startingXiChangedAt: true }
     }),
-    loadLatestFoontasyForecastRevision(prisma, league)
+    provider === FPL_PROVIDER && resolvedContestId
+      ? loadLatestFplOfficialScoreRevision(prisma, resolvedContestId)
+      : loadLatestFoontasyForecastRevision(prisma, league)
   ]);
   const preferenceKey = preference ? `${preference.id}:${preference.updatedAt.toISOString()}` : "global";
   const startingXiRevision = latestStartingXiChange._max.startingXiChangedAt?.toISOString() ?? "no-xi-change";
@@ -483,7 +485,9 @@ export async function loadCachedFantasySquadPlayerPools(
       where: { leagueId: league.leagueId, season: league.season, active: true },
       _max: { startingXiChangedAt: true }
     }),
-    loadLatestFoontasyForecastRevision(prisma, league)
+    provider === FPL_PROVIDER && resolvedContestId
+      ? loadLatestFplOfficialScoreRevision(prisma, resolvedContestId)
+      : loadLatestFoontasyForecastRevision(prisma, league)
   ]);
   const startingXiRevision = latestStartingXiChange._max.startingXiChangedAt?.toISOString() ?? "no-xi-change";
   const groups = fantasyPlayerPoolPreferenceGroups(uniqueUserIds, preferences);
@@ -643,16 +647,20 @@ export async function loadFantasySquadPlannerData(
       isFpl && !starterStatusKnown
     ),
     loadUpcomingRoundFixtures(prisma, league, provider, scopedContest?.id ?? null),
-    prisma.foontasyForecast.findMany({
-      where: { leagueId: league.leagueId, season: league.season, sourceVariant: "sports", playerId: { not: null } },
-      orderBy: [{ fetchedAt: "desc" }, { updatedAt: "desc" }],
-      distinct: ["playerId"],
-      select: { playerId: true, points: true, fetchedAt: true }
-    }),
-    prisma.fantasyModelForecast?.findMany({
-      where: { leagueId: league.leagueId, season: league.season, modelVersion: FANTASY_MODEL_VERSION, horizon: { in: [3, 5] } },
-      select: { playerId: true, horizon: true, points: true, status: true, calculatedAt: true }
-    }) ?? Promise.resolve([]),
+    isFpl
+      ? Promise.resolve([])
+      : prisma.foontasyForecast.findMany({
+          where: { leagueId: league.leagueId, season: league.season, sourceVariant: "sports", playerId: { not: null } },
+          orderBy: [{ fetchedAt: "desc" }, { updatedAt: "desc" }],
+          distinct: ["playerId"],
+          select: { playerId: true, points: true, fetchedAt: true }
+        }),
+    isFpl
+      ? Promise.resolve([])
+      : prisma.fantasyModelForecast?.findMany({
+          where: { leagueId: league.leagueId, season: league.season, modelVersion: FANTASY_MODEL_VERSION, horizon: { in: [3, 5] } },
+          select: { playerId: true, horizon: true, points: true, status: true, calculatedAt: true }
+        }) ?? Promise.resolve([]),
     loadBaltikaPlayerMetricsByName(prisma, sportsRuSeasons),
     isFpl && scopedContest
       ? prisma.fantasyProviderPlayerMatchScore.findMany({
@@ -663,7 +671,7 @@ export async function loadFantasySquadPlannerData(
             ...(options?.playerIds !== undefined ? { playerId: { in: options.playerIds } } : { playerId: { not: null } })
           },
           orderBy: [{ gameweek: "desc" }, { fetchedAt: "desc" }],
-          select: { playerId: true, gameweek: true, points: true, status: true }
+          select: { playerId: true, gameweek: true, points: true, breakdown: true, status: true }
         })
       : Promise.resolve([])
   ]);
@@ -704,7 +712,18 @@ export async function loadFantasySquadPlannerData(
   const foontasyByPlayerId = new Map(foontasyRows.flatMap((row) => row.playerId ? [[String(row.playerId), row] as const] : []));
   const modelForecastByPlayerHorizon = new Map(modelForecastRows.map((row) => [`${row.playerId}:${row.horizon}`, row] as const));
   const officialFplPointsByPlayerId = isFpl ? buildFplRecentOfficialPoints(fplOfficialScoreRows) : new Map<string, number[]>();
-  const sportsPositionsByPlayerId = sportsRuFantasyPositionsByPlayerId(priceRows, priceMaps);
+  const fplPositionsByPlayerId = new Map<string, Exclude<FantasyPositionGroup, "UNK">>(isFpl
+    ? [...prices.byPlayerId.entries()].flatMap(([playerId, row]) => {
+        const position = normalizeFantasyPosition(row.position);
+        return position === "UNK" ? [] : [[playerId, position] as const];
+      })
+    : []);
+  const officialFplForecastAdjustmentsByPlayerId = isFpl
+    ? buildFplOfficialForecastAdjustments(fplOfficialScoreRows, fplPositionsByPlayerId)
+    : new Map<string, FplForecastAdjustments>();
+  const providerPositionsByPlayerId = isFpl
+    ? new Map([...fplPositionsByPlayerId].map(([playerId, position]) => [playerId, position]))
+    : sportsRuFantasyPositionsByPlayerId(priceRows, priceMaps);
   const projectionRows = isFpl && !starterStatusKnown
     ? {
         ...playerRows,
@@ -720,17 +739,20 @@ export async function loadFantasySquadPlannerData(
     : buildFormulaProjectionIndex(
         effectivePlayerRows.friendRows,
         roundsAndFixtures,
-        sportsPositionsByPlayerId,
-        effectivePlayerRows.expectedProjectionConfig
+        providerPositionsByPlayerId,
+        effectivePlayerRows.expectedProjectionConfig,
+        false,
+        isFpl ? "FPL" : "GENERIC"
       );
   const friendAlternativeProjections = options?.deferFormulaProjections
     ? emptyComponentProjectionIndex()
     : buildFormulaProjectionIndex(
         effectivePlayerRows.friendRows,
         roundsAndFixtures,
-        sportsPositionsByPlayerId,
+        providerPositionsByPlayerId,
         effectivePlayerRows.alternativeProjectionConfig,
-        true
+        true,
+        isFpl ? "FPL" : "GENERIC"
       );
   const preferredProjectionEngine = configuredFantasyProjectionEngine();
   const formulaAdaptationBreakdownsByPlayerId: Record<string, FormulaAdaptationBreakdowns> = {};
@@ -740,12 +762,12 @@ export async function loadFantasySquadPlannerData(
       roundsAndFixtures.rounds
         .flatMap((round) => roundsAndFixtures.fixturesByTeamRound.get(round.id)?.get(String(row.teamId)) ?? [])
     );
-    const legacyPredictedFp = projected
+    const legacyPredictedFp = !isFpl && projected
       ? calibratedPlayerFixturePoints(projected, nextFixture, playerRows.calibration?.model ?? null, playerRows.scoringModel)
       : null;
     const priceRow = prices.byPlayerId.get(String(row.playerId));
-    const sportsPosition = sportsPositionsByPlayerId.get(String(row.playerId)) ?? (priceRow ? sportsRuPricePosition(priceRow) : null);
-    const position = fantasyPlannerPosition(sportsPosition, row.position, projected?.position ?? null);
+    const providerPosition = providerPositionsByPlayerId.get(String(row.playerId)) ?? (priceRow ? sportsRuPricePosition(priceRow) : null);
+    const position = fantasyPlannerPosition(providerPosition, row.position, projected?.position ?? null);
     const positionGroup = normalizeFantasyPosition(position);
     const foontasy = foontasyByPlayerId.get(String(row.playerId)) ?? null;
     const modelT3 = modelForecastByPlayerHorizon.get(`${row.playerId}:3`) ?? null;
@@ -766,13 +788,16 @@ export async function loadFantasySquadPlannerData(
         )
       : null;
     const nextFplForecast = isFpl && nextComponentProjection
-      ? fplForecastPointsFromProjection(nextComponentProjection)
+      ? fplForecastPointsFromProjection(
+          nextComponentProjection,
+          officialFplForecastAdjustmentsByPlayerId.get(String(row.playerId))
+        )
       : null;
     const componentPredictedFp = isFpl
       ? nextFplForecast?.points ?? null
       : nextComponentFormula?.total ?? null;
     const projectionEngine: FantasyProjectionEngine =
-      preferredProjectionEngine === "COMPONENT_XFP_V1" && componentPredictedFp !== null
+      isFpl || (preferredProjectionEngine === "COMPONENT_XFP_V1" && componentPredictedFp !== null)
         ? "COMPONENT_XFP_V1"
         : "LEGACY_RIDGE19_V1";
     const predictedFp = isFpl
@@ -802,7 +827,10 @@ export async function loadFantasySquadPlannerData(
         effectivePlayerRows.expectedProjectionConfig
     );
     const nextFplAlternativeForecast = isFpl && nextFriendProjection
-      ? fplForecastPointsFromProjection(nextFriendProjection)
+      ? fplForecastPointsFromProjection(
+          nextFriendProjection,
+          officialFplForecastAdjustmentsByPlayerId.get(String(row.playerId))
+        )
       : null;
     const alternativePredictedFp = isFpl
       ? nextFplAlternativeForecast?.points ?? null
@@ -843,12 +871,13 @@ export async function loadFantasySquadPlannerData(
       alt: alternativePredictedFp,
       features: formulaAdaptationFeatures
     };
-    const detailedFormulaAdaptations = options?.includeFormulaAdaptationBreakdowns
+    const detailedFormulaAdaptations = !isFpl && options?.includeFormulaAdaptationBreakdowns
       ? predictFormulaAdaptationsWithBreakdowns(formulaAdaptationInput)
       : null;
-    const formulaAdaptations = detailedFormulaAdaptations?.forecasts
-      ?? predictFormulaAdaptations(formulaAdaptationInput);
-    if (detailedFormulaAdaptations) {
+    const formulaAdaptations = isFpl
+      ? emptyFormulaAdaptationForecasts()
+      : detailedFormulaAdaptations?.forecasts ?? predictFormulaAdaptations(formulaAdaptationInput);
+    if (!isFpl && detailedFormulaAdaptations) {
       formulaAdaptationBreakdownsByPlayerId[String(row.playerId)] = detailedFormulaAdaptations.breakdowns;
     }
     const legacyRoundPoints = roundsAndFixtures.rounds.map((round) => {
@@ -867,7 +896,10 @@ export async function loadFantasySquadPlannerData(
         const projection = componentProjections.byFixturePlayer.get(fixturePlayerProjectionKey(fixture.id, String(row.playerId)));
         const key = fixturePlayerProjectionKey(fixture.id, String(row.playerId));
         if (!projection) return null;
-        if (isFpl) return fplForecastPointsFromProjection(projection).points;
+        if (isFpl) return fplForecastPointsFromProjection(
+          projection,
+          officialFplForecastAdjustmentsByPlayerId.get(String(row.playerId))
+        ).points;
         return projectionFormulaFantasyPoints(
           projection,
           fixture,
@@ -892,7 +924,10 @@ export async function loadFantasySquadPlannerData(
         const projection = friendAlternativeProjections.byFixturePlayer.get(fixturePlayerProjectionKey(fixture.id, String(row.playerId)));
         const key = fixturePlayerProjectionKey(fixture.id, String(row.playerId));
         if (!projection) return null;
-        if (isFpl) return fplForecastPointsFromProjection(projection).points;
+        if (isFpl) return fplForecastPointsFromProjection(
+          projection,
+          officialFplForecastAdjustmentsByPlayerId.get(String(row.playerId))
+        ).points;
         return projectionFormulaFantasyPoints(
           projection,
           fixture,
@@ -924,7 +959,7 @@ export async function loadFantasySquadPlannerData(
       fixtureDifficulties,
       isStarter: row.isStarter === true
     });
-    if (projectionEngine === "COMPONENT_XFP_V1") {
+    if (projectionEngine === "COMPONENT_XFP_V1" && componentPredictedFp !== null) {
       forecastExplanation.factors.unshift("Component xFP: team forecast allocated by player xG/xA and expected minutes");
       if (nextFixture?.teamOver15Probability !== null && nextFixture?.teamOver15Probability !== undefined) {
         forecastExplanation.factors.push("Fresh bookmaker team-goal probability included");
@@ -932,16 +967,33 @@ export async function loadFantasySquadPlannerData(
       if (nextFixture?.cleanSheetProbability !== null && nextFixture?.cleanSheetProbability !== undefined) {
         forecastExplanation.factors.push("Fresh bookmaker clean-sheet probability included");
       }
-    } else if (preferredProjectionEngine === "COMPONENT_XFP_V1") {
+    } else if (!isFpl && preferredProjectionEngine === "COMPONENT_XFP_V1") {
       const reason = nextFixture
         ? componentProjections.errorsByFixtureTeam.get(fixtureTeamProjectionKey(nextFixture.id, String(row.teamId)))
         : "No upcoming fixture";
       forecastExplanation.risks.unshift(`Component xFP unavailable; legacy fallback${reason ? `: ${reason}` : ""}`);
     }
     if (isFpl) {
-      forecastExplanation.factors.unshift("FPL scoring adapter: official appearance, goals, assists, clean sheets, saves, cards and goals-conceded weights");
+      if (componentPredictedFp === null) {
+        const reason = nextFixture
+          ? componentProjections.errorsByFixtureTeam.get(fixtureTeamProjectionKey(nextFixture.id, String(row.teamId)))
+          : "No upcoming fixture";
+        forecastExplanation.risks.unshift(`FPL component forecast unavailable; no generic scoring fallback${reason ? `: ${reason}` : ""}`);
+      }
+      forecastExplanation.factors.unshift("FPL scoring adapter: official appearance, goals, assists, clean sheets, saves, cards, goals-conceded and defensive-contribution rules");
       if (recentFp.length > 0) forecastExplanation.factors.unshift("Recent FPL points are sourced from finalized official provider results");
-      forecastExplanation.risks.unshift("FPL forecast beta: bonus, penalty events, own goals and defensive contributions are not forecast without an official historical training archive");
+      const adjustments = officialFplForecastAdjustmentsByPlayerId.get(String(row.playerId));
+      if ((adjustments?.bonusCoverage ?? 0) > 0) {
+        forecastExplanation.factors.unshift("Expected FPL bonus is the appearance-weighted rolling mean from finalized official FPL matches");
+      } else {
+        forecastExplanation.risks.unshift("FPL bonus forecast is zero until this player has finalized official FPL history; BPS is not converted directly into points");
+      }
+      if (positionGroup !== "GK" && (adjustments?.defensiveContributionCoverage ?? 0) > 0) {
+        forecastExplanation.factors.unshift("Expected FPL defensive-contribution points use the official 10-CBIT/12-CBIRT threshold outcomes from finalized FPL matches");
+      } else if (positionGroup !== "GK") {
+        forecastExplanation.risks.unshift("FPL defensive-contribution forecast is zero until finalized official FPL threshold outcomes exist; generic recoveries never score directly");
+      }
+      forecastExplanation.risks.unshift("FPL penalty events and own goals are not forecast without official player-level event probabilities");
     }
 
     return [
@@ -972,7 +1024,7 @@ export async function loadFantasySquadPlannerData(
         legacyPredictedFp,
         componentPredictedFp,
         projectionEngine,
-        projectionComponents: nextComponentProjection?.components ?? null,
+        projectionComponents: isFpl ? null : nextComponentProjection?.components ?? null,
         fplForecastBreakdown: nextFplForecast?.breakdown ?? null,
         fplForecastStatus: nextFplForecast?.status ?? null,
         projectionFormula: !isFpl && projectionEngine === "COMPONENT_XFP_V1" ? nextComponentRoundFormula : null,
@@ -982,7 +1034,8 @@ export async function loadFantasySquadPlannerData(
             ? friendAlternativeProjections.formulaMetricsByFixturePlayer.get(fixturePlayerProjectionKey(nextFixture.id, String(row.playerId)))
             : undefined
         ),
-        alternativeProjectionComponents: nextFriendProjection?.components ?? null,
+        alternativeProjectionComponents: isFpl ? null : nextFriendProjection?.components ?? null,
+        alternativeFplForecastBreakdown: nextFplAlternativeForecast?.breakdown ?? null,
         alternativeProjectionFormula: nextFriendFormula,
         alternativePredictedFp,
         alternativeRoundPoints,
@@ -1006,7 +1059,7 @@ export async function loadFantasySquadPlannerData(
         forecastCalculatedAt: playerRows.calculatedAt,
         forecastDataUpdatedAt: projected?.dataUpdatedAt?.toISOString() ?? null,
         forecastModelVersion: isFpl
-          ? "FPL_SCORING_ADAPTER_BETA_V1"
+          ? "FPL_2026_27_OFFICIAL_SCORING_V2"
           : projectionEngine === "COMPONENT_XFP_V1" ? "COMPONENT_XFP_V1" : playerRows.modelVersion,
         recentFp,
         historicalStats: numericHistoricalStats({
@@ -1127,6 +1180,147 @@ export function buildFplRecentOfficialPoints(
   return pointsByPlayerId;
 }
 
+async function loadLatestFplOfficialScoreRevision(prisma: PrismaClient, contestId: string) {
+  const latest = await prisma.fantasyProviderPlayerMatchScore.aggregate({
+    where: { contestId, provider: FPL_PROVIDER, status: "OFFICIAL" },
+    _max: { fetchedAt: true }
+  });
+  return latest._max.fetchedAt?.toISOString() ?? "no-fpl-official-scores";
+}
+
+type FplOfficialForecastHistoryRow = {
+  playerId: bigint | null;
+  gameweek: number;
+  points: number;
+  breakdown?: unknown;
+  status: string;
+};
+
+type FplOfficialAppearanceSample = {
+  bonus: number;
+  /** Raw contribution count, retained only for legacy aggregate rows. */
+  defensiveContribution: number | null;
+  /** Official awarded points from a per-fixture explanation row. */
+  defensiveContributionPoints: number | null;
+};
+
+/**
+ * Builds leakage-safe forecast adjustments from finalized official FPL rows.
+ * Per-fixture explanation values take precedence, so double gameweeks remain
+ * separate samples; older aggregate-only rows retain a conservative fallback.
+ * Bonus is a match-level rank award, so it is learned from the official bonus
+ * outcome rather than reconstructed from incomplete third-party BPS inputs.
+ * For current per-fixture rows, both bonus and defensive-contribution points
+ * come from the official awarded-points explanation. A missing scoring
+ * identifier means zero awarded points for that fixture, not missing data.
+ * Legacy aggregate rows convert the official raw contribution count using
+ * the position-specific 10-CBIT/12-CBIRT threshold. Generic ball recoveries
+ * are deliberately ignored in both paths.
+ */
+export function buildFplOfficialForecastAdjustments(
+  rows: ReadonlyArray<FplOfficialForecastHistoryRow>,
+  positionsByPlayerId: ReadonlyMap<string, Exclude<FantasyPositionGroup, "UNK">>,
+  limit = 5
+) {
+  const historyLimit = Math.max(1, Math.floor(limit));
+  const historyByPlayerId = new Map<string, FplOfficialAppearanceSample[]>();
+  for (const row of rows) {
+    if (row.status !== "OFFICIAL" || !row.playerId) continue;
+    const breakdown = numericRecord(row.breakdown);
+    if (!breakdown) continue;
+    const key = String(row.playerId);
+    const history = historyByPlayerId.get(key) ?? [];
+    for (const sample of fplOfficialAppearanceSamples(breakdown)) {
+      if (history.length >= historyLimit) break;
+      history.push(sample);
+    }
+    historyByPlayerId.set(key, history);
+  }
+
+  const adjustmentsByPlayerId = new Map<string, FplForecastAdjustments>();
+  for (const [playerId, history] of historyByPlayerId) {
+    const position = positionsByPlayerId.get(playerId);
+    const defensiveRule = position === "DEF" || position === "MID" || position === "FWD"
+      ? fpl202627Rules.scoring.defensiveContributions[position]
+      : null;
+    const defensiveRows = defensiveRule
+      ? history.filter((row) => row.defensiveContributionPoints !== null || row.defensiveContribution !== null)
+      : [];
+    adjustmentsByPlayerId.set(playerId, {
+      expectedBonusPerAppearance: averageKnown(history.map((row) => row.bonus)),
+      expectedDefensiveContributionPointsPerAppearance: defensiveRule ? averageKnown(defensiveRows.map((row) =>
+        row.defensiveContributionPoints
+          ?? ((row.defensiveContribution ?? 0) >= defensiveRule.threshold ? defensiveRule.points : 0)
+      )) : null,
+      bonusCoverage: history.length / historyLimit,
+      defensiveContributionCoverage: defensiveRule ? defensiveRows.length / historyLimit : position === "GK" ? 1 : 0
+    });
+  }
+  return adjustmentsByPlayerId;
+}
+
+function emptyFormulaAdaptationForecasts() {
+  return {
+    foPositionCalibratedFp: null,
+    altPositionCalibratedFp: null,
+    altJointAllFp: null,
+    foJointAllFp: null,
+    altJointAcceptedFp: null,
+    foJointAcceptedFp: null
+  };
+}
+
+function fplOfficialAppearanceSamples(breakdown: Record<string, unknown>): FplOfficialAppearanceSample[] {
+  const fixtureBreakdowns = Array.isArray(breakdown.fixture_breakdowns)
+    ? breakdown.fixture_breakdowns.flatMap((value) => {
+        const fixture = numericRecord(value);
+        const stats = numericRecord(fixture?.stats);
+        if (!stats) return [];
+        const minutes = fplFixtureStatValue(stats.minutes);
+        if (minutes === null || minutes <= 0) return [];
+        return [{
+          bonus: clamp(fplFixtureStatPoints(stats.bonus) ?? 0, 0, fpl202627Rules.scoring.bonus.max),
+          defensiveContribution: null,
+          defensiveContributionPoints: clamp(
+            fplFixtureStatPoints(stats.defensive_contribution) ?? 0,
+            0,
+            fpl202627Rules.scoring.defensiveContributions.DEF.points
+          )
+        }];
+      })
+    : [];
+  if (fixtureBreakdowns.length > 0) return fixtureBreakdowns;
+
+  const minutes = finiteNumber(breakdown.minutes);
+  const bonus = finiteNumber(breakdown.bonus);
+  if (minutes === null || minutes <= 0 || bonus === null) return [];
+  return [{
+    bonus: clamp(bonus, 0, fpl202627Rules.scoring.bonus.max),
+    defensiveContribution: finiteNumber(breakdown.defensive_contribution),
+    defensiveContributionPoints: null
+  }];
+}
+
+function fplFixtureStatValue(value: unknown) {
+  const stat = numericRecord(value);
+  return finiteNumber(stat?.value);
+}
+
+function fplFixtureStatPoints(value: unknown) {
+  const stat = numericRecord(value);
+  return finiteNumber(stat?.points);
+}
+
+function numericRecord(value: unknown): Record<string, unknown> | null {
+  return value !== null && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
+}
+
+function finiteNumber(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
 export async function loadFantasySquadFormulaAdaptationBreakdowns(
   prisma: PrismaClient,
   userId: string,
@@ -1135,6 +1329,9 @@ export async function loadFantasySquadFormulaAdaptationBreakdowns(
   historySettings: FantasyHistorySettings = defaultFantasyHistorySettings,
   provider = "SPORTS_RU"
 ) {
+  // These Ridge adaptations were trained against generic/Sports.ru fantasy
+  // points. Returning them in FPL would reintroduce the wrong scoring target.
+  if (provider === FPL_PROVIDER) return null;
   const [preference, latestStartingXiChange, foontasyRevision, contest] = await Promise.all([
     prisma.userScoringPreference.findUnique({
       where: { userId_modelSource: { userId, modelSource: "MACHETE" } },
@@ -2122,7 +2319,8 @@ export function buildFormulaProjectionIndex(
   roundsAndFixtures: PlannerRoundFixtures,
   sportsPositionsByPlayerId: Map<string, string>,
   config: ProjectionFormulaConfig,
-  probableXiOnly = false
+  probableXiOnly = false,
+  scoringScope: "GENERIC" | "FPL" = "GENERIC"
 ): ComponentProjectionIndex {
   const byFixturePlayer = new Map<string, PlayerFixtureProjection>();
   const formulaMetricsByFixturePlayer = new Map<string, Record<string, unknown>>();
@@ -2147,7 +2345,7 @@ export function buildFormulaProjectionIndex(
       const starterFloorApplies = nearestFixtureIdByTeam.get(fixture.teamId) === fixture.id;
       const rankedCandidates = rankPipelineCandidates(
         (rowsByTeam.get(fixture.teamId) ?? [])
-          .map((row) => pipelineParticipant(row, sportsPositionsByPlayerId.get(row.playerId), config, starterFloorApplies))
+          .map((row) => pipelineParticipant(row, sportsPositionsByPlayerId.get(row.playerId), config, starterFloorApplies, scoringScope))
           .filter((entry): entry is PipelineParticipant => entry !== null)
       );
       const historyCandidates = probableXiOnly
@@ -2157,7 +2355,7 @@ export function buildFormulaProjectionIndex(
         : rankedCandidates;
       const teamContext = pipelineTeamContext(fixture, config);
       const candidates = applySparseHistoryAllocationFallbacks(
-        historyCandidates.map((entry) => pipelineAllocationParticipant(entry, teamContext, config)),
+        historyCandidates.map((entry) => pipelineAllocationParticipant(entry, teamContext, config, scoringScope)),
         teamContext
       );
       const guardedAllocation = applySparseTeamAttackAllocationGuard(candidates, teamContext);
@@ -2212,7 +2410,8 @@ function pipelineParticipant(
   row: SharedMachetePlayerRow & { teamId: string; playerId: string },
   sportsPosition: string | undefined,
   config: ProjectionFormulaConfig,
-  starterFloorApplies: boolean
+  starterFloorApplies: boolean,
+  scoringScope: "GENERIC" | "FPL"
 ): PipelineParticipant | null {
   const position = normalizeFantasyPosition(fantasyPlannerPosition(sportsPosition ?? null, null, row.position));
   if (position === "UNK") return null;
@@ -2329,7 +2528,9 @@ function pipelineParticipant(
   const xa = rosterStarterApplies
     ? blendStarterRoleRate(preRoleXa, positionXaPrior, roleReliability)
     : preRoleXa;
-  const recoveries = nonNegativeFormulaValue(config.history.recoveryRate, metrics, "history.recoveryRate") * transferRatePenalty;
+  const recoveries = scoringScope === "FPL"
+    ? 0
+    : nonNegativeFormulaValue(config.history.recoveryRate, metrics, "history.recoveryRate") * transferRatePenalty;
   const saves = nonNegativeFormulaValue(config.history.saveRate, metrics, "history.saveRate") * transferRatePenalty;
   const yellowCards = nonNegativeFormulaValue(config.history.yellowRate, metrics, "history.yellowRate") * transferRatePenalty;
   const redCards = nonNegativeFormulaValue(config.history.redRate, metrics, "history.redRate") * transferRatePenalty;
@@ -2417,14 +2618,17 @@ export function countsAsFullFantasyMatch(expectedMinutes: number) {
 function pipelineAllocationParticipant(
   participant: PipelineParticipant,
   teamContext: Record<string, unknown>,
-  config: ProjectionFormulaConfig
+  config: ProjectionFormulaConfig,
+  scoringScope: "GENERIC" | "FPL"
 ): PipelineParticipant {
   const metrics = { ...participant.metrics, ...teamContext };
   const position = participant.input.position;
   const allocationWeights = {
     goals: per90AwareAllocationValue(config.allocation.goals, metrics, "allocation.goals"),
     assists: per90AwareAllocationValue(config.allocation.assists, metrics, "allocation.assists"),
-    recoveries: position === "GK" ? 0 : per90AwareAllocationValue(config.allocation.recoveries, metrics, "allocation.recoveries"),
+    recoveries: position === "GK" || scoringScope === "FPL"
+      ? 0
+      : per90AwareAllocationValue(config.allocation.recoveries, metrics, "allocation.recoveries"),
     saves: position === "GK" ? per90AwareAllocationValue(config.allocation.saves, metrics, "allocation.saves") : 0
   };
   const minutesExposure = (numericOrNull(metrics.expected_minutes) ?? 0) / 90;

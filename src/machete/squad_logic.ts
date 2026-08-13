@@ -154,6 +154,7 @@ export type FantasyPlannerPlayer = {
     redCards: number;
     total: number;
   } | null;
+  alternativeFplForecastBreakdown?: FantasyPlannerPlayer["fplForecastBreakdown"];
   alternativeProjectionFormula?: {
     formula: string;
     total: number;

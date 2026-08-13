@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import type { PlayerFixtureProjection } from "@/machete/deterministic_fantasy_projection";
+import { expectedPoissonGroups, type PlayerFixtureProjection } from "@/machete/deterministic_fantasy_projection";
 
 import { fplForecastPointsFromProjection, fplOfficialScoreInputFromStats } from "./fpl-scoring";
 
@@ -37,16 +37,87 @@ const projection: PlayerFixtureProjection = {
   }
 };
 
-test("FPL forecast adapter uses FPL weights and marks missing bonus/defcontribution coverage", () => {
+test("FPL forecast adapter uses FPL weights, excludes recoveries and marks missing official history", () => {
   const result = fplForecastPointsFromProjection(projection);
   assert.ok(Math.abs(result.breakdown.goals - 2.4) < 1e-9);
   assert.equal(result.breakdown.cleanSheets, 2);
   assert.equal(Object.hasOwn(result.breakdown, "recoveries"), false);
   assert.equal(result.breakdown.bonus, 0);
+  assert.equal(result.breakdown.defensiveContributions, 0);
   assert.equal(result.coverage.bonus, 0);
-  assert.equal(result.status, "BETA_UNMODELED_BONUS_AND_DEFENSIVE_CONTRIBUTIONS");
+  assert.equal(result.status, "OFFICIAL_SCORING_WITH_PARTIAL_BONUS_AND_DEFENSIVE_CONTRIBUTIONS");
   assert.ok(result.points > 5);
   assert.ok(Math.abs(result.points - Object.entries(result.breakdown).filter(([key]) => key !== "total").reduce((sum, [, value]) => sum + value, 0)) < 1e-9);
+});
+
+test("FPL forecast recoveries never create points directly", () => {
+  const noRecoveries = fplForecastPointsFromProjection({
+    ...projection,
+    expectedEvents: { ...projection.expectedEvents, recoveries: 0 }
+  });
+  const manyRecoveries = fplForecastPointsFromProjection({
+    ...projection,
+    expectedEvents: { ...projection.expectedEvents, recoveries: 100 }
+  });
+  assert.equal(manyRecoveries.points, noRecoveries.points);
+  assert.equal(Object.hasOwn(manyRecoveries.breakdown, "recoveries"), false);
+});
+
+test("official-history bonus and defensive-contribution estimates are appearance weighted and capped", () => {
+  const result = fplForecastPointsFromProjection({
+    ...projection,
+    probabilities: { appearance: 0.5, sixtyMinutes: 0.4, fullMatch: 0.3 }
+  }, {
+    expectedBonusPerAppearance: 10,
+    expectedDefensiveContributionPointsPerAppearance: 10,
+    bonusCoverage: 2,
+    defensiveContributionCoverage: 2
+  });
+  assert.equal(result.breakdown.bonus, 1.5);
+  assert.equal(result.breakdown.defensiveContributions, 1);
+  assert.deepEqual(result.coverage, { bonus: 1, defensiveContributions: 1 });
+  assert.equal(result.status, "OFFICIAL_SCORING_WITH_ROLLING_BONUS_AND_DEFENSIVE_CONTRIBUTIONS");
+});
+
+test("FPL position scoring matches the 2026/27 direct-points table", () => {
+  const expectedGoalPoints = { GK: 10, DEF: 6, MID: 5, FWD: 4 } as const;
+  const expectedCleanSheetPoints = { GK: 4, DEF: 4, MID: 1, FWD: 0 } as const;
+  for (const position of ["GK", "DEF", "MID", "FWD"] as const) {
+    const result = fplForecastPointsFromProjection({
+      ...projection,
+      position,
+      expectedEvents: {
+        ...projection.expectedEvents,
+        goals: 1,
+        assists: 1,
+        cleanSheets: 1,
+        saves: 3,
+        goalsConceded: 2,
+        yellowCards: 1,
+        redCards: 1,
+        recoveries: 100
+      }
+    });
+    assert.equal(result.breakdown.goals, expectedGoalPoints[position]);
+    assert.equal(result.breakdown.assists, 3);
+    assert.equal(result.breakdown.cleanSheets, expectedCleanSheetPoints[position]);
+    assert.equal(result.breakdown.saves, position === "GK" ? expectedPoissonGroups(3, 3) : 0);
+    assert.equal(result.breakdown.goalsConceded, position === "GK" || position === "DEF" ? -expectedPoissonGroups(2, 2) : 0);
+    assert.equal(result.breakdown.yellowCards, -1);
+    assert.equal(result.breakdown.redCards, -3);
+  }
+});
+
+test("goalkeeper never receives defensive-contribution forecast points", () => {
+  const result = fplForecastPointsFromProjection({ ...projection, position: "GK" }, {
+    expectedBonusPerAppearance: 2,
+    expectedDefensiveContributionPointsPerAppearance: 2,
+    bonusCoverage: 1,
+    defensiveContributionCoverage: 1
+  });
+  assert.equal(result.breakdown.bonus, 2);
+  assert.equal(result.breakdown.defensiveContributions, 0);
+  assert.equal(result.coverage.defensiveContributions, 1);
 });
 
 test("FPL official live stats map to the versioned rules input", () => {

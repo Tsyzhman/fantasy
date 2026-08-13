@@ -7,6 +7,7 @@ import {
   aggregateRoundDifficulty,
   authoritativeFantasyRosterByPlayerId,
   buildFormulaProjectionIndex,
+  buildFplOfficialForecastAdjustments,
   buildBookmakerFavorites,
   buildFantasyForecastExplanation,
   buildPlannerRoundFixtures,
@@ -62,6 +63,91 @@ import { calculateFriendWindowMetrics, type SharedMachetePlayerRow } from "./sha
 import { defaultFantasySquadRules } from "./squad_logic";
 import { expectedProjectionFormulaConfig, friendAltProjectionFormulaConfig } from "./projection-formula-config";
 import { positionEventPriorPer90 } from "./player-season-prior";
+
+test("FPL official forecast history applies position thresholds instead of recoveries groups", () => {
+  const adjustments = buildFplOfficialForecastAdjustments([
+    { playerId: 1n, gameweek: 3, points: 8, status: "OFFICIAL", breakdown: { minutes: 90, bonus: 3, defensive_contribution: 10 } },
+    { playerId: 1n, gameweek: 2, points: 4, status: "OFFICIAL", breakdown: { minutes: 90, bonus: 1, defensive_contribution: 9 } },
+    { playerId: 1n, gameweek: 1, points: 0, status: "OFFICIAL", breakdown: { minutes: 0, bonus: 0, defensive_contribution: 10 } },
+    { playerId: 2n, gameweek: 3, points: 5, status: "OFFICIAL", breakdown: { minutes: 75, bonus: 0, defensive_contribution: 10 } },
+    { playerId: 2n, gameweek: 2, points: 7, status: "OFFICIAL", breakdown: { minutes: 90, bonus: 2, defensive_contribution: 12 } },
+    { playerId: 3n, gameweek: 3, points: 6, status: "OFFICIAL", breakdown: { minutes: 90, bonus: 1, defensive_contribution: 100 } },
+    { playerId: 4n, gameweek: 3, points: 6, status: "PROVISIONAL", breakdown: { minutes: 90, bonus: 3, defensive_contribution: 12 } }
+  ], new Map([
+    ["1", "DEF"],
+    ["2", "MID"],
+    ["3", "GK"]
+  ]), 2);
+
+  assert.deepEqual(adjustments.get("1"), {
+    expectedBonusPerAppearance: 2,
+    expectedDefensiveContributionPointsPerAppearance: 1,
+    bonusCoverage: 1,
+    defensiveContributionCoverage: 1
+  });
+  assert.deepEqual(adjustments.get("2"), {
+    expectedBonusPerAppearance: 1,
+    expectedDefensiveContributionPointsPerAppearance: 1,
+    bonusCoverage: 1,
+    defensiveContributionCoverage: 1
+  });
+  assert.deepEqual(adjustments.get("3"), {
+    expectedBonusPerAppearance: 1,
+    expectedDefensiveContributionPointsPerAppearance: null,
+    bonusCoverage: 0.5,
+    defensiveContributionCoverage: 1
+  });
+  assert.equal(adjustments.has("4"), false);
+});
+
+test("FPL forecast history keeps double-gameweek fixtures as separate appearances", () => {
+  const adjustments = buildFplOfficialForecastAdjustments([{
+    playerId: 1n,
+    gameweek: 8,
+    points: 16,
+    status: "OFFICIAL",
+    breakdown: {
+      minutes: 180,
+      bonus: 4,
+      defensive_contribution: 21,
+      fixture_breakdowns: [
+        { fixtureId: "801", stats: { minutes: { value: 90, points: 2 }, bonus: { value: 3, points: 3 }, defensive_contribution: { value: 10, points: 2 } } },
+        { fixtureId: "802", stats: { minutes: { value: 90, points: 2 }, bonus: { value: 1, points: 1 }, defensive_contribution: { value: 11, points: 2 } } }
+      ]
+    }
+  }], new Map([["1", "DEF"]]), 2);
+
+  assert.deepEqual(adjustments.get("1"), {
+    expectedBonusPerAppearance: 2,
+    expectedDefensiveContributionPointsPerAppearance: 2,
+    bonusCoverage: 1,
+    defensiveContributionCoverage: 1
+  });
+});
+
+test("FPL per-fixture history treats omitted bonus and defensive-contribution awards as zero", () => {
+  const adjustments = buildFplOfficialForecastAdjustments([{
+    playerId: 1n,
+    gameweek: 1,
+    points: 2,
+    status: "OFFICIAL",
+    breakdown: {
+      minutes: 90,
+      bonus: 0,
+      fixture_breakdowns: [{
+        fixtureId: "101",
+        stats: { minutes: { value: 90, points: 2 } }
+      }]
+    }
+  }], new Map([["1", "DEF"]]), 1);
+
+  assert.deepEqual(adjustments.get("1"), {
+    expectedBonusPerAppearance: 0,
+    expectedDefensiveContributionPointsPerAppearance: 0,
+    bonusCoverage: 1,
+    defensiveContributionCoverage: 1
+  });
+});
 
 test("a new Foontasy fetch timestamp creates a new fantasy player pool cache key", () => {
   const base = {
@@ -263,6 +349,65 @@ test("formula pipeline scales a raw per-90 allocation by expected minutes", () =
   assert.equal(index.byFixturePlayer.get("fixture-1:p90")?.allocationWeights.goals, 1);
   assert.ok(Math.abs((index.byFixturePlayer.get("fixture-1:p60")?.expectedEvents.goals ?? 0) - 0.4) < 1e-12);
   assert.ok(Math.abs((index.byFixturePlayer.get("fixture-1:p90")?.expectedEvents.goals ?? 0) - 0.6) < 1e-12);
+});
+
+test("FPL projection scope does not evaluate or allocate generic recoveries", () => {
+  const config = {
+    ...expectedProjectionFormulaConfig,
+    history: {
+      ...expectedProjectionFormulaConfig.history,
+      expectedMinutes: "90",
+      appearanceProbability: "1",
+      sixtyProbability: "1",
+      fullMatchProbability: "1",
+      xgRate: "0",
+      xaRate: "0",
+      recoveryRate: "1 / 0",
+      saveRate: "0",
+      yellowRate: "0",
+      redRate: "0"
+    },
+    team: {
+      expectedGoals: "0",
+      expectedGoalsAgainst: "0",
+      assistsPerGoal: "0",
+      cleanSheetProbability: "0"
+    },
+    allocation: {
+      goals: "0",
+      assists: "0",
+      recoveries: "1 / 0",
+      saves: "0",
+      cardExposure: "1"
+    }
+  };
+  const fixture = {
+    id: "fixture-1", roundId: "round-1", teamId: "team-1", opponentTeamId: "team-2",
+    opponentName: "OPP", opponentFullName: "Opponent", side: "H" as const,
+    kickoffAt: new Date("2026-08-22T12:00:00Z"), projectedXg: 0, projectedXga: 0,
+    attackMultiplier: 1, defenseMultiplier: 1
+  };
+  const index = buildFormulaProjectionIndex(
+    [{
+      playerId: "p1",
+      teamId: "team-1",
+      position: "DEF",
+      isStarter: false,
+      startProbability: 1,
+      expectedMinutes: 90,
+      minutesPlayed: 90,
+      rawMetrics: {}
+    } as never],
+    { rounds: [], fixturesByTeamRound: new Map([["round-1", new Map([["team-1", [fixture]]])]]), teamShortNameById: new Map() },
+    new Map([["p1", "DEF"]]),
+    config,
+    false,
+    "FPL"
+  );
+
+  assert.deepEqual(index.errorsByFixtureTeam, new Map());
+  assert.equal(index.byFixturePlayer.get("fixture-1:p1")?.allocationWeights.recoveries, 0);
+  assert.equal(index.byFixturePlayer.get("fixture-1:p1")?.expectedEvents.recoveries, 0);
 });
 
 test("primary and Alt apply position-specific starter minutes only to the chronologically nearest fixture", () => {

@@ -4713,6 +4713,11 @@ function projectionBreakdownText(value: string, language: UiLanguage) {
     "Clean sheet FP": "ФО за сухой матч",
     "Save FP": "ФО за сейвы",
     "Recovery FP": "ФО за возвраты",
+    "Penalty save FP": "ФО за отражённые пенальти",
+    "Penalty miss FP": "ФО за незабитые пенальти",
+    "Own goal FP": "ФО за автоголы",
+    "Bonus FP": "Бонусные ФО",
+    "Defensive contribution FP": "ФО за защитные действия",
     "Goals conceded FP": "ФО за пропущенные голы",
     "Yellow card FP": "ФО за жёлтые карточки",
     "Red card FP": "ФО за красные карточки",
@@ -5186,6 +5191,48 @@ function buildProjectionBreakdownLines(
   return lines;
 }
 
+function buildFplForecastBreakdownLines(
+  player: FantasyPlannerPlayer,
+  language: UiLanguage,
+  breakdown: NonNullable<FantasyPlannerPlayer["fplForecastBreakdown"]>,
+  totalLabel: string
+) {
+  const lines: string[] = [];
+  const defensiveThreshold = player.positionGroup === "DEF" ? 10
+    : player.positionGroup === "MID" || player.positionGroup === "FWD" ? 12
+    : null;
+  const defensiveMetric = player.positionGroup === "DEF" ? "CBIT" : "CBIRT";
+  const explanation = (en: string, ru: string) => localizedText(language, en, ru);
+  const componentRows: Array<[string, number, string]> = [
+    ["Appearance FP", breakdown.appearance, explanation("official FPL appearance probabilities", "официальные правила FPL и вероятности выхода")],
+    ["Goal FP", breakdown.goals, explanation("expected goals × official position weight", "ожидаемые голы × официальный вес позиции")],
+    ["Assist FP", breakdown.assists, explanation("expected assists × 3", "ожидаемые ассисты × 3")],
+    ["Clean sheet FP", breakdown.cleanSheets, explanation("expected clean sheets × official position weight", "ожидаемые сухие матчи × официальный вес позиции")],
+    ["Save FP", breakdown.saves, player.positionGroup === "GK" ? explanation("expected complete groups of 3 saves", "ожидаемые полные группы по 3 сейва") : "not applicable for this position"],
+    ["Goals conceded FP", breakdown.goalsConceded, player.positionGroup === "GK" || player.positionGroup === "DEF" ? explanation("negative expected complete groups of 2 conceded", "штраф за ожидаемые полные группы по 2 пропущенных гола") : "not applicable for this position"],
+    ["Yellow card FP", breakdown.yellowCards, explanation("expected yellow cards × −1", "ожидаемые жёлтые карточки × −1")],
+    ["Red card FP", breakdown.redCards, explanation("expected red cards × −3", "ожидаемые красные карточки × −3")],
+    ["Penalty save FP", breakdown.penaltySaves, player.positionGroup === "GK" ? explanation("not forecast without official event probability", "нет прогноза без официальной вероятности события") : "not applicable for this position"],
+    ["Penalty miss FP", breakdown.penaltyMisses, explanation("not forecast without official event probability", "нет прогноза без официальной вероятности события")],
+    ["Own goal FP", breakdown.ownGoals, explanation("not forecast without official event probability", "нет прогноза без официальной вероятности события")],
+    ["Bonus FP", breakdown.bonus, explanation("appearance probability × official finalized bonus mean", "вероятность выхода × среднее официальных итоговых бонусов")],
+    ["Defensive contribution FP", breakdown.defensiveContributions, defensiveThreshold === null
+      ? "not applicable for this position"
+      : explanation(
+          `appearance probability × official finalized ${defensiveThreshold}-${defensiveMetric} threshold outcomes; capped at +2`,
+          `вероятность выхода × доля официальных матчей с порогом ${defensiveThreshold} ${defensiveMetric}; максимум +2`
+        )]
+  ];
+  componentRows.forEach(([label, value, formula]) => addProjectionTermLine(lines, language, label, value, formula));
+  lines.push(formulaContributionTotalLine(language, totalLabel, componentRows.map(([, value]) => value), breakdown.total));
+  lines.push(localizedText(
+    language,
+    "Generic recoveries are excluded: FPL does not award one point per three recoveries.",
+    "Обычные возвраты исключены: в FPL нет начисления одного очка за три возврата."
+  ));
+  return lines;
+}
+
 function buildAlternativeProjectionBreakdownLines(
   player: FantasyPlannerPlayer,
   language: UiLanguage,
@@ -5339,7 +5386,9 @@ function buildAlternativeProjectionBreakdownLines(
 
 function playerPrimaryNextForecastTitle(player: FantasyPlannerPlayer, language: UiLanguage, nextForecast: number | null) {
   const lines = [localizedText(language, `Primary forecast for next round: ${formatScore(nextForecast)} FP`, `Основной прогноз на следующий тур: ${formatScore(nextForecast)} ФО`)];
-  if (player.projectionEngine === "COMPONENT_XFP_V1" && player.projectionFormula) {
+  if (player.fplForecastBreakdown) {
+    lines.push(...buildFplForecastBreakdownLines(player, language, player.fplForecastBreakdown, "Total"));
+  } else if (player.projectionEngine === "COMPONENT_XFP_V1" && player.projectionFormula) {
     lines.push(...starterMinuteFloorLines(player.projectedFixtureComponents, language));
     lines.push(...minuteHistoryProvenanceLines(player.projectedFixtureComponents, language));
     lines.push(...sparseTeamAttackAllocationLines(player.projectedFixtureComponents, language));
@@ -5402,7 +5451,9 @@ function alternativePlayerForecastTitle(player: FantasyPlannerPlayer, language: 
   const lines = [localizedText(language, `Alternative forecast for next fixture: ${formatScore(nextAlternative)} FP`, `Альтернативный прогноз на следующий матч: ${formatScore(nextAlternative)} ФО`)];
   const minuteInputs = player.alternativeProjectedFixtureComponents;
   lines.push(...starterMinuteFloorLines(minuteInputs, language));
-  if (player.alternativeProjectionFormula) {
+  if (player.alternativeFplForecastBreakdown) {
+    lines.push(...buildFplForecastBreakdownLines(player, language, player.alternativeFplForecastBreakdown, "Alternative total"));
+  } else if (player.alternativeProjectionFormula) {
     lines.push(...minuteHistoryProvenanceLines(player.alternativeProjectedFixtureComponents, language));
     lines.push(...sparseTeamAttackAllocationLines(player.alternativeProjectedFixtureComponents, language));
     lines.push(...buildFormulaBreakdownLines(

@@ -252,6 +252,30 @@ test("FPL chip validation and scoring are provider-specific", () => {
     defensiveContributions: 10
   });
   assert.equal(score.points, 20);
+  const defensiveContributionPoints = (position: "GK" | "DEF" | "MID" | "FWD", defensiveContributions: number) =>
+    calculateFplOfficialPoints({
+      position,
+      minutes: 90,
+      goals: 0,
+      assists: 0,
+      cleanSheet: false,
+      saves: 0,
+      penaltySaves: 0,
+      penaltyMisses: 0,
+      ownGoals: 0,
+      yellowCards: 0,
+      redCards: 0,
+      goalsConceded: 0,
+      bonus: 0,
+      defensiveContributions
+    }).breakdown.defensive_contributions ?? 0;
+  assert.equal(defensiveContributionPoints("DEF", 9), 0);
+  assert.equal(defensiveContributionPoints("DEF", 10), 2);
+  assert.equal(defensiveContributionPoints("DEF", 20), 2);
+  assert.equal(defensiveContributionPoints("MID", 11), 0);
+  assert.equal(defensiveContributionPoints("MID", 12), 2);
+  assert.equal(defensiveContributionPoints("FWD", 12), 2);
+  assert.equal(defensiveContributionPoints("GK", 100), 0);
   assert.equal(calculateFplOfficialPoints({
     position: "MID",
     minutes: 90,
@@ -271,26 +295,50 @@ test("FPL chip validation and scoring are provider-specific", () => {
   assert.equal(fpl202627Rules.maxBankedFreeTransfers, 5);
 });
 
-test("FPL live event parser keeps official total_points and every raw stat", () => {
+test("FPL live event parser keeps official totals, raw stats and per-fixture explanations", () => {
   const live = parseFplLiveEvent({
-    elements: [{ id: 101, stats: { minutes: 90, goals_scored: 1, total_points: 10, bps: 75, defensive_contribution: 12 } }]
+    elements: [{
+      id: 101,
+      stats: { minutes: 90, goals_scored: 1, total_points: 10, bps: 75, defensive_contribution: 12 },
+      explain: [{ fixture: 501, stats: [
+        { identifier: "minutes", points: 2, value: 90 },
+        { identifier: "bonus", points: 3, value: 3 },
+        { identifier: "defensive_contribution", points: 2, value: 12 }
+      ] }]
+    }]
   }, 1);
   assert.equal(live.gameweek, 1);
   assert.equal(live.elements[0].points, 10);
   assert.equal(live.elements[0].stats.defensive_contribution, 12);
+  assert.deepEqual(live.elements[0].fixtureBreakdowns, [{
+    fixtureId: "501",
+    stats: {
+      minutes: { points: 2, value: 90 },
+      bonus: { points: 3, value: 3 },
+      defensive_contribution: { points: 2, value: 12 }
+    }
+  }]);
   assert.throws(() => parseFplLiveEvent({ elements: [{ id: 101, stats: { minutes: 90 } }] }, 1), /total_points/);
 });
 
 test("FPL live parser accepts numeric ancillary metrics but protects scoring fields", () => {
   const live = parseFplLiveEvent({
-    elements: [{ id: 101, stats: { minutes: "90", total_points: "10", bps: "75.5", influence: 12.3 } }]
+    elements: [{ id: 101, stats: { minutes: "90", total_points: "10", bps: "75.5", influence: 12.3 }, explain: [{ fixture: 501, stats: [{ identifier: "minutes", points: 2, value: 90 }] }] }]
   }, 1);
   assert.equal(live.elements[0].stats.minutes, 90);
   assert.equal(live.elements[0].stats.total_points, 10);
   assert.equal(live.elements[0].stats.bps, 75.5);
   assert.equal(live.elements[0].stats.influence, 12.3);
+  const didNotPlay = parseFplLiveEvent({
+    elements: [{ id: 102, stats: { minutes: 0, total_points: 0 }, explain: [] }]
+  }, 1);
+  assert.deepEqual(didNotPlay.elements[0].fixtureBreakdowns, []);
   assert.throws(
-    () => parseFplLiveEvent({ elements: [{ id: 101, stats: { minutes: 90, total_points: 10.5 } }] }, 1),
+    () => parseFplLiveEvent({ elements: [{ id: 101, stats: { minutes: 90, total_points: 10.5 }, explain: [{ fixture: 501, stats: [{ identifier: "minutes", points: 2, value: 90 }] }] }] }, 1),
     /scoring stat total_points/
+  );
+  assert.throws(
+    () => parseFplLiveEvent({ elements: [{ id: 101, stats: { minutes: 90, total_points: 2 } }] }, 1),
+    /explain/
   );
 });

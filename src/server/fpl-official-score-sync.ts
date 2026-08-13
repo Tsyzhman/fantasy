@@ -108,6 +108,10 @@ export async function syncFplOfficialScores(
     for (const element of live.elements) {
       const priceRow = mappedByProviderId.get(element.providerPlayerId);
       if (priceRow?.playerId && priceRow.position) mappedRows += 1;
+      const scoringBreakdown = {
+        ...element.stats,
+        fixture_breakdowns: element.fixtureBreakdowns
+      } as Prisma.InputJsonValue;
       await tx.fantasyProviderPlayerMatchScore.upsert({
         where: { contestId_providerEventId_providerPlayerId: { contestId: contest.id, providerEventId: String(options.gameweek), providerPlayerId: element.providerPlayerId } },
         update: {
@@ -117,7 +121,7 @@ export async function syncFplOfficialScores(
           season: FPL_SEASON,
           playerId: priceRow?.playerId ?? null,
           points: element.points,
-          breakdown: element.stats as Prisma.InputJsonValue,
+          breakdown: scoringBreakdown,
           status: "OFFICIAL",
           sourceUrl: `${FPL_EVENT_LIVE_URL}/${options.gameweek}/live/`,
           fetchedAt: now
@@ -132,7 +136,7 @@ export async function syncFplOfficialScores(
           season: FPL_SEASON,
           playerId: priceRow?.playerId ?? null,
           points: element.points,
-          breakdown: element.stats as Prisma.InputJsonValue,
+          breakdown: scoringBreakdown,
           status: "OFFICIAL",
           sourceUrl: `${FPL_EVENT_LIVE_URL}/${options.gameweek}/live/`,
           fetchedAt: now
