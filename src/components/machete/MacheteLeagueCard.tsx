@@ -6,7 +6,9 @@ import { LeagueFlag } from "@/components/ui/league-flag";
 import { formatDate, formatNumber, formatScore } from "@/lib/format";
 import { macheteCatalogByFotMobId } from "@/lib/leagues/machete-catalog";
 import { leagueSubtitle, macheteLeagueDisplayName } from "@/lib/leagues/display";
+import type { RosterCoverageSummary } from "@/machete/roster-coverage";
 
+import { MacheteRosterCoverageSummary } from "./MacheteRosterCoverageSummary";
 import { MacheteStatusBadge } from "./MacheteStatusBadge";
 
 export type MacheteLeagueCardDto = {
@@ -21,6 +23,7 @@ export type MacheteLeagueCardDto = {
   playersSynced: number;
   fixturesSynced: number;
   expectedFantasyPoints: number | null;
+  rosterCoverage: RosterCoverageSummary;
 };
 
 export function MacheteLeagueCard({ league }: { league: MacheteLeagueCardDto }) {
@@ -57,6 +60,10 @@ export function MacheteLeagueCard({ league }: { league: MacheteLeagueCardDto }) 
           <CalendarDays className="h-4 w-4" />
           {formatDate(league.lastSyncedAt)}
         </p>
+      </div>
+
+      <div className="mt-5 rounded border border-slate-200 bg-field p-3">
+        <MacheteRosterCoverageSummary coverage={league.rosterCoverage} />
       </div>
 
       <dl className="mt-5 grid grid-cols-4 gap-3 text-sm">

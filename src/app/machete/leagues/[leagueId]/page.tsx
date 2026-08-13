@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { Download } from "lucide-react";
 
 import { I18nText } from "@/components/i18n-text";
+import { MacheteRosterCoverageSummary } from "@/components/machete/MacheteRosterCoverageSummary";
 import { MacheteShell } from "@/components/machete/MacheteShell";
 import { MacheteStatusBadge } from "@/components/machete/MacheteStatusBadge";
 import { MacheteTeamCard } from "@/components/machete/MacheteTeamCard";
@@ -13,6 +14,7 @@ import { prisma } from "@/lib/db";
 import { formatDate, formatNumber, formatScore } from "@/lib/format";
 import { leagueSubtitle } from "@/lib/leagues/display";
 import { LeagueFlag } from "@/components/ui/league-flag";
+import { loadRosterCoverage, summarizeRosterCoverage } from "@/machete/roster-coverage";
 import { loadSharedLeagueSeason, loadSharedLeagueSeasonOptions, loadSharedLeagueTeams } from "@/machete/shared_read_model";
 
 export const dynamic = "force-dynamic";
@@ -36,7 +38,7 @@ export default async function MacheteLeaguePage({ params, searchParams }: PagePr
   if (!league) notFound();
   const seasonsForLeague = leagueSeasonOptions.filter((option) => option.leagueId === league.leagueId);
 
-  const [teams, fixturesCount, fantasyAggregate] = await Promise.all([
+  const [teams, fixturesCount, fantasyAggregate, coverageRows] = await Promise.all([
     loadSharedLeagueTeams(prisma, league.leagueId, league.season),
     prisma.coreMatch.count({
       where: {
@@ -54,10 +56,19 @@ export default async function MacheteLeaguePage({ params, searchParams }: PagePr
       _avg: {
         points: true
       }
-    })
+    }),
+    loadRosterCoverage(prisma, league.leagueId, league.season)
   ]);
+  const rosterCoverageByTeam = new Map(coverageRows.map((row) => [String(row.teamId), row]));
+  const rosterCoverage = summarizeRosterCoverage(coverageRows);
   const teamCards = await Promise.all(
     teams.map(async (team) => {
+      const coverage = rosterCoverageByTeam.get(String(team.id)) ?? {
+        playersCount: 0,
+        startersCount: 0,
+        forecastPlayers: 0,
+        startingXiChangedAt: null
+      };
       const [playersSynced, teamFixtures, teamFantasy] = await Promise.all([
         prisma.teamPlayerSeason.count({
           where: {
@@ -102,7 +113,9 @@ export default async function MacheteLeaguePage({ params, searchParams }: PagePr
         fixturesSynced: teamFixtures,
         expectedFantasyPoints: teamFantasy._avg.points ?? null,
         lastSyncedAt: league.updatedAt,
-        startingXiChangedAt: team.startingXiChangedAt
+        startingXiChangedAt: coverage.startingXiChangedAt,
+        startersCount: coverage.startersCount,
+        forecastPlayers: coverage.forecastPlayers
       };
     })
   );
@@ -139,6 +152,9 @@ export default async function MacheteLeaguePage({ params, searchParams }: PagePr
             <p className="mt-2 text-sm text-slate-600">
               {[leagueSubtitle(flagInput, league.season), "Provider FOTMOB"].filter(Boolean).join(" / ")}
             </p>
+            <div className="mt-5 rounded border border-slate-200 bg-field p-3">
+              <MacheteRosterCoverageSummary coverage={rosterCoverage} />
+            </div>
           </div>
           <div className="flex w-full flex-col gap-2 sm:w-56">
             <AutoSubmitForm>

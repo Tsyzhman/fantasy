@@ -2,6 +2,7 @@ import { MacheteLeagueCard } from "@/components/machete/MacheteLeagueCard";
 import { MacheteShell } from "@/components/machete/MacheteShell";
 import { I18nText } from "@/components/i18n-text";
 import { prisma } from "@/lib/db";
+import { loadRosterCoverage, summarizeRosterCoverage } from "@/machete/roster-coverage";
 import { loadSharedLeagueOptions } from "@/machete/shared_read_model";
 
 export const dynamic = "force-dynamic";
@@ -42,7 +43,7 @@ async function loadSharedLeagueCards() {
   const leagues = await loadSharedLeagueOptions(prisma);
   return Promise.all(
     leagues.map(async (league) => {
-      const [teamsSynced, playersSynced, fixturesSynced, fantasyAggregate] = await Promise.all([
+      const [teamsSynced, playersSynced, fixturesSynced, fantasyAggregate, coverageRows] = await Promise.all([
         prisma.leagueSeasonTeam.count({
           where: {
             leagueId: league.leagueId,
@@ -73,7 +74,8 @@ async function loadSharedLeagueCards() {
           _avg: {
             points: true
           }
-        })
+        }),
+        loadRosterCoverage(prisma, league.leagueId, league.season)
       ]);
 
       return {
@@ -87,7 +89,8 @@ async function loadSharedLeagueCards() {
         teamsSynced,
         playersSynced,
         fixturesSynced,
-        expectedFantasyPoints: fantasyAggregate._avg.points ?? null
+        expectedFantasyPoints: fantasyAggregate._avg.points ?? null,
+        rosterCoverage: summarizeRosterCoverage(coverageRows)
       };
     })
   );

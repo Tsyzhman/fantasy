@@ -5,6 +5,12 @@ import Link from "next/link";
 import { I18nText } from "@/components/i18n-text";
 import { formatDate, formatDateTime, formatNumber, formatScore } from "@/lib/format";
 import { initials } from "@/lib/text";
+import {
+  forecastCoverageStatus,
+  startingXiCoverageStatus,
+  type ForecastCoverageStatus,
+  type StartingXiCoverageStatus
+} from "@/machete/roster-coverage";
 
 import { MacheteStatusBadge } from "./MacheteStatusBadge";
 
@@ -23,11 +29,23 @@ export type MacheteTeamCardDto = {
   expectedFantasyPoints: number | null;
   lastSyncedAt: Date | string | null;
   startingXiChangedAt: Date | string | null;
+  startersCount: number;
+  forecastPlayers: number;
 };
 
 export function MacheteTeamCard({ team }: { team: MacheteTeamCardDto }) {
+  const xiStatus = startingXiCoverageStatus({ playersCount: team.playersSynced, startersCount: team.startersCount });
+  const forecastStatus = forecastCoverageStatus({ playersCount: team.playersSynced, forecastPlayers: team.forecastPlayers });
+  const coverageClassName = team.playersSynced === 0 || xiStatus === "NONE" || xiStatus === "EMPTY"
+    ? "border-rose-200 bg-rose-50/40"
+    : forecastStatus === "NONE"
+      ? "border-orange-200 bg-orange-50/40"
+      : xiStatus === "FULL" && forecastStatus === "FULL"
+        ? "border-emerald-200 bg-emerald-50/40"
+        : "border-amber-200 bg-amber-50/40";
+
   return (
-    <article className="flex min-h-[280px] flex-col rounded border border-slate-200 bg-white p-4 shadow-soft">
+    <article className={`flex min-h-[310px] flex-col rounded border p-4 shadow-soft ${coverageClassName}`}>
       <div className="flex items-start justify-between gap-3">
         <div className="flex min-w-0 items-center gap-3">
           <MacheteTeamLogo logoUrl={team.logoUrl} name={team.name} />
@@ -38,7 +56,11 @@ export function MacheteTeamCard({ team }: { team: MacheteTeamCardDto }) {
             </p>
           </div>
         </div>
-        <MacheteStatusBadge status={team.status} />
+        <div className="flex max-w-[58%] flex-wrap justify-end gap-1.5">
+          <MacheteStatusBadge status={team.status} />
+          <MacheteStatusBadge status={xiBadgeStatus(xiStatus)} />
+          <MacheteStatusBadge status={forecastBadgeStatus(forecastStatus)} />
+        </div>
       </div>
 
       <dl className="mt-4 grid grid-cols-2 gap-3 text-sm">
@@ -73,7 +95,19 @@ export function MacheteTeamCard({ team }: { team: MacheteTeamCardDto }) {
         </div>
         <div>
           <dt className="text-xs font-medium uppercase text-slate-400">
-            <I18nText en="Starting XI changed" ru="Стартовые изменены" />
+            <I18nText en="Starting XI" ru="Стартовый XI" />
+          </dt>
+          <dd className="mt-1 font-semibold text-ink">{formatNumber(team.startersCount)}/11</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-medium uppercase text-slate-400">
+            <I18nText en="Forecast players" ru="Игроки с прогнозом" />
+          </dt>
+          <dd className="mt-1 font-semibold text-ink">{formatNumber(team.forecastPlayers)}/{formatNumber(team.playersSynced)}</dd>
+        </div>
+        <div>
+          <dt className="text-xs font-medium uppercase text-slate-400">
+            <I18nText en="XI flags updated" ru="Флаги XI обновлены" />
           </dt>
           <dd className="mt-1 whitespace-nowrap text-slate-700">{formatDateTime(team.startingXiChangedAt)}</dd>
         </div>
@@ -91,6 +125,25 @@ export function MacheteTeamCard({ team }: { team: MacheteTeamCardDto }) {
     </article>
   );
 }
+
+function xiBadgeStatus(status: StartingXiCoverageStatus) {
+  return {
+    FULL: "XI_COMPLETE",
+    PARTIAL: "XI_PARTIAL",
+    NONE: "XI_NONE",
+    EMPTY: "XI_EMPTY",
+    OVERSIZED: "XI_OVERSIZED"
+  }[status];
+}
+
+function forecastBadgeStatus(status: ForecastCoverageStatus) {
+  return {
+    FULL: "FORECAST_FULL",
+    PARTIAL: "FORECAST_PARTIAL",
+    NONE: "FORECAST_NONE"
+  }[status];
+}
+
 export function MacheteTeamLogo({ logoUrl, name, size = "md" }: { logoUrl: string | null; name: string; size?: "md" | "lg" }) {
   const frameSize = size === "lg" ? "h-16 w-16" : "h-12 w-12";
   const imageSize = size === "lg" ? "h-14 w-14" : "h-10 w-10";
