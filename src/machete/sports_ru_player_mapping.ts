@@ -133,6 +133,42 @@ const displayCandidateThreshold = 0.58;
 // Latin club names. A known team must be canonicalized before player-name
 // scoring; otherwise an exact player identity is rejected as a team mismatch.
 const sportsRuTeamNamePairs = [
+  ["Арсенал", "Arsenal"],
+  ["Астон Вилла", "Aston Villa"],
+  ["Борнмут", "AFC Bournemouth"],
+  ["Брайтон", "Brighton & Hove Albion"],
+  ["Брентфорд", "Brentford"],
+  ["Ипсвич", "Ipswich Town"],
+  ["Ковентри", "Coventry City"],
+  ["Кристал Пэлас", "Crystal Palace"],
+  ["Ливерпуль", "Liverpool"],
+  ["Лидс", "Leeds United"],
+  ["Манчестер Сити", "Manchester City"],
+  ["Манчестер Юнайтед", "Manchester United"],
+  ["Ноттингем Форест", "Nottingham Forest"],
+  ["Ньюкасл", "Newcastle United"],
+  ["Сандерленд", "Sunderland"],
+  ["Тоттенхэм", "Tottenham Hotspur"],
+  ["Фулхэм", "Fulham"],
+  ["Халл", "Hull City"],
+  ["Челси", "Chelsea"],
+  ["Эвертон", "Everton"],
+  ["Акрон", "Akron Togliatti"],
+  ["Ахмат", "Akhmat"],
+  ["Балтика", "Baltika"],
+  ["Динамо", "Dinamo Moscow"],
+  ["Динамо Махачкала", "Dynamo Makhachkala"],
+  ["Зенит", "Zenit St. Petersburg"],
+  ["Краснодар", "FC Krasnodar"],
+  ["Крылья Советов", "Krylya Sovetov Samara"],
+  ["Локомотив", "Lokomotiv Moscow"],
+  ["Оренбург", "FC Orenburg"],
+  ["Родина", "Rodina"],
+  ["Ростов", "FC Rostov"],
+  ["Рубин", "Rubin Kazan"],
+  ["Спартак", "Spartak Moscow"],
+  ["Факел", "Fakel"],
+  ["ЦСКА", "CSKA Moscow"],
   ["АЗ Алкмар", "AZ Alkmaar"],
   ["Аякс", "Ajax"],
   ["Виллем II", "Willem II"],
@@ -234,8 +270,8 @@ const sportsRuTeamNamePairs = [
 ] as const;
 const sportsRuCanonicalTeamNames = new Map<string, string>();
 for (const [sportsName, fotmobName] of sportsRuTeamNamePairs) {
-  const canonicalName = normalizeSportsRuPlayerName(fotmobName);
-  sportsRuCanonicalTeamNames.set(normalizeSportsRuPlayerName(sportsName), canonicalName);
+  const canonicalName = normalizedSportsRuTeamKey(fotmobName);
+  sportsRuCanonicalTeamNames.set(normalizedSportsRuTeamKey(sportsName), canonicalName);
   sportsRuCanonicalTeamNames.set(canonicalName, canonicalName);
 }
 
@@ -257,17 +293,30 @@ export async function autoMapSportsRuFantasyPlayers(
       ...(input.onlyUnmapped ? { playerId: null } : {})
     }
   });
-  const [roster, existingMaps] = await Promise.all([
+  const [roster, existingMaps, existingClaims] = await Promise.all([
     loadLeagueRoster(prisma, input.leagueId, input.season),
     prisma.providerEntityMap.findMany({
       where: {
         provider: sportsRuProvider,
         ...(input.contestId ? { contestId: input.contestId } : {}),
+        providerSeason: input.season,
         providerEntityType: sportsRuPlayerEntityType,
         providerEntityId: { in: prices.map((price) => price.id) },
         internalEntityType: internalPlayerEntityType
       }
-    })
+    }),
+    input.onlyUnmapped
+      ? prisma.fantasyPlayerPrice.findMany({
+          where: {
+            provider: sportsRuProvider,
+            ...(input.contestId ? { contestId: input.contestId } : {}),
+            leagueId: input.leagueId,
+            season: input.season,
+            playerId: { not: null }
+          },
+          select: { playerId: true }
+        })
+      : Promise.resolve([])
   ]);
 
   const mapsByPriceId = new Map(existingMaps.map((map) => [map.providerEntityId, map]));
@@ -292,7 +341,7 @@ export async function autoMapSportsRuFantasyPlayers(
       return team ? [[price.id, team] as const] : [];
     })
   );
-  const claimedPlayerIds = new Set<string>();
+  const claimedPlayerIds = new Set(existingClaims.flatMap((row) => row.playerId ? [String(row.playerId)] : []));
   let matched = 0;
   let manual = 0;
   let excluded = 0;
@@ -505,6 +554,7 @@ export async function loadSportsRuTeamPlayerMappings(
     where: {
       provider: sportsRuProvider,
       ...(input.contestId ? { contestId: input.contestId } : {}),
+      providerSeason: input.season,
       providerEntityType: sportsRuPlayerEntityType,
       providerEntityId: { in: prices.map((price) => price.id) },
       internalEntityType: internalPlayerEntityType
@@ -587,6 +637,7 @@ export async function loadSportsRuAuthoritativeStarterCandidate(
     where: {
       provider: sportsRuProvider,
       ...(input.contestId ? { contestId: input.contestId } : {}),
+      providerSeason: { in: input.seasons },
       providerEntityType: sportsRuPlayerEntityType,
       providerEntityId: { in: prices.map((price) => price.id) },
       internalEntityType: internalPlayerEntityType,
@@ -683,6 +734,22 @@ export async function setSportsRuPlayerMapping(
   const matchedBy = rosterEntry
     ? input.lockTeam ? manualTeamOverrideMethod : manualMappingMethod
     : null;
+  if (rosterEntry) {
+    const conflictingPrice = await prisma.fantasyPlayerPrice.findFirst({
+      where: {
+        id: { not: price.id },
+        provider: sportsRuProvider,
+        contestId: price.contestId,
+        playerId: rosterEntry.playerId
+      },
+      select: { id: true, providerPlayerId: true, playerName: true }
+    });
+    if (conflictingPrice) {
+      throw new Error(
+        `FotMob player ${rosterEntry.playerId} is already mapped to Sports.ru ${conflictingPrice.providerPlayerId ?? conflictingPrice.id} (${conflictingPrice.playerName}).`
+      );
+    }
+  }
   await prisma.providerEntityMap.upsert({
     where: {
       provider_providerSeason_providerEntityType_providerEntityId_internalEntityType: {
@@ -1350,12 +1417,16 @@ function teamScoreAdjustment(sportsTeamName: string, fotmobTeamName: string) {
 }
 
 function canonicalSportsRuTeamName(value: string) {
-  const normalized = normalizeSportsRuPlayerName(value)
+  const normalized = normalizedSportsRuTeamKey(value);
+  return sportsRuCanonicalTeamNames.get(normalized) ?? normalized;
+}
+
+function normalizedSportsRuTeamKey(value: string) {
+  return normalizeSportsRuPlayerName(value)
     .replace(/\bahmat\b/g, "akhmat")
     .replace(/\bdinamo\b/g, "dynamo")
     .replace(/\bmahachkala\b/g, "makhachkala")
     .replace(/\btsska\b/g, "cska");
-  return sportsRuCanonicalTeamNames.get(normalized) ?? normalized;
 }
 
 function similarity(left: string, right: string) {

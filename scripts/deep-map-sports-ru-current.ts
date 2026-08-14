@@ -15,7 +15,7 @@ const prisma = new PrismaClient();
 const apply = process.argv.includes("--apply");
 const seedSportsOnly = process.argv.includes("--seed-sports-only");
 const season = stringArgument("--season") ?? "2026/2027";
-const leagueIds = (stringArgument("--league-ids") ?? "87,48,71")
+const leagueIds = (stringArgument("--league-ids") ?? "47,48,57,61,63,71,87")
   .split(",")
   .map((value) => value.trim())
   .filter((value) => /^\d+$/.test(value))
@@ -346,6 +346,8 @@ function dateOnly(value: Date) {
 }
 
 function stringArgument(name: string) {
+  const inline = process.argv.find((value) => value.startsWith(`${name}=`));
+  if (inline) return inline.slice(name.length + 1).trim() || null;
   const index = process.argv.indexOf(name);
   return index >= 0 ? process.argv[index + 1]?.trim() || null : null;
 }

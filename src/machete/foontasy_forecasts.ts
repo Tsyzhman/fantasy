@@ -196,7 +196,7 @@ export async function importFoontasyForecasts(prisma: PrismaClient, input: Foont
   });
   assertFoontasyProviderOverlap(prices.length, input.rows.length, input.leagueId);
   const maps = prices.length === 0 ? [] : await prisma.providerEntityMap.findMany({
-    where: { provider: "SPORTS_RU", contestId: contest.id, providerEntityType: "FANTASY_PLAYER_PRICE", providerEntityId: { in: prices.map((price) => price.id) }, internalEntityType: "PLAYER", internalEntityId: { not: null } },
+    where: { provider: "SPORTS_RU", contestId: contest.id, providerSeason: input.season, providerEntityType: "FANTASY_PLAYER_PRICE", providerEntityId: { in: prices.map((price) => price.id) }, internalEntityType: "PLAYER", internalEntityId: { not: null } },
     select: { providerEntityId: true, internalEntityId: true }
   });
   const mappedByPriceId = new Map(maps.map((item) => [item.providerEntityId, item.internalEntityId]));

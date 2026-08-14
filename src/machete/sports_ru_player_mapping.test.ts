@@ -594,6 +594,7 @@ test("sports ru mapping recognizes transliterated Sports.ru team names", () => {
 test("sports ru mapping canonicalizes current RPL team transliteration variants", () => {
   const cases = [
     ["Ахмат", "Akhmat Grozny"],
+    ["Динамо", "Dinamo Moscow"],
     ["Динамо Махачкала", "Dynamo Makhachkala"],
     ["ЦСКА", "CSKA Moscow"]
   ] as const;
@@ -602,6 +603,37 @@ test("sports ru mapping canonicalizes current RPL team transliteration variants"
     const result = scoreSportsRuCandidate(
       { ...price("ivan player", "MID"), teamName: sportsTeam },
       roster("Ivan Player", "MID", { name: fotmobTeam })
+    );
+    assert.equal(result.confidence, 1, `${sportsTeam} should match ${fotmobTeam}`);
+  }
+});
+
+test("sports ru mapping resolves Moscow Dinamo without tying Makhachkala", () => {
+  const result = resolveSportsRuSeasonTeam("Динамо", [
+    { teamId: 9763n, team: { name: "Dinamo Moscow" } },
+    { teamId: 1068353n, team: { name: "Dynamo Makhachkala" } }
+  ]);
+
+  assert.equal(result?.teamId, 9763n);
+});
+
+test("sports ru mapping canonicalizes every current EPL team", () => {
+  const cases = [
+    ["Арсенал", "Arsenal"], ["Астон Вилла", "Aston Villa"],
+    ["Борнмут", "AFC Bournemouth"], ["Брайтон", "Brighton & Hove Albion"],
+    ["Брентфорд", "Brentford"], ["Ипсвич", "Ipswich Town"],
+    ["Ковентри", "Coventry City"], ["Кристал Пэлас", "Crystal Palace"],
+    ["Ливерпуль", "Liverpool"], ["Лидс", "Leeds United"],
+    ["Манчестер Сити", "Manchester City"], ["Манчестер Юнайтед", "Manchester United"],
+    ["Ноттингем Форест", "Nottingham Forest"], ["Ньюкасл", "Newcastle United"],
+    ["Сандерленд", "Sunderland"], ["Тоттенхэм", "Tottenham Hotspur"],
+    ["Фулхэм", "Fulham"], ["Халл", "Hull City"], ["Челси", "Chelsea"], ["Эвертон", "Everton"]
+  ] as const;
+
+  for (const [sportsTeam, fotmobTeam] of cases) {
+    const result = scoreSportsRuCandidate(
+      { ...price("verified player", "MID"), teamName: sportsTeam },
+      roster("Verified Player", "MID", { name: fotmobTeam })
     );
     assert.equal(result.confidence, 1, `${sportsTeam} should match ${fotmobTeam}`);
   }

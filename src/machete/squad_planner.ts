@@ -3849,6 +3849,7 @@ export async function loadSportsRuFantasyPositionsByPlayerId(
     where: {
       provider: "SPORTS_RU",
       ...(input.contestId ? { contestId: input.contestId } : {}),
+      providerSeason: { in: sportsRuSeasonAliases(input.season) },
       providerEntityType: "FANTASY_PLAYER_PRICE",
       providerEntityId: { in: priceRows.map((row) => row.id) },
       internalEntityType: "PLAYER",
@@ -3910,6 +3911,7 @@ export async function loadSportsRuFantasyPriceRefsByScopedPlayer(
     where: {
       provider: "SPORTS_RU",
       contestId: { in: contestIds },
+      providerSeason: { in: [...new Set(priceRows.map((row) => row.season))] },
       providerEntityType: "FANTASY_PLAYER_PRICE",
       providerEntityId: { in: priceRows.map((row) => row.id) },
       internalEntityType: "PLAYER",
@@ -4333,6 +4335,7 @@ export async function loadSportsRuAuthoritativeRosterContext(
         where: {
           provider: "SPORTS_RU",
           contestId: resolvedContestId,
+          providerSeason: { in: sportsRuSeasonAliases(league.season) },
           providerEntityType: "FANTASY_PLAYER_PRICE",
           providerEntityId: { in: priceRows.map((row) => row.id) },
           internalEntityType: "PLAYER",

@@ -54,6 +54,8 @@
     "prices:map-rpl-2026-27": "tsx scripts/map-sports-ru-rpl-2026-27.ts",
     "prices:map-nl-pt-2026-27": "tsx scripts/map-sports-ru-nl-pt-2026-27.ts",
     "prices:deep-map-current": "tsx scripts/deep-map-sports-ru-current.ts",
+    "prices:audit-sports-ru": "tsx scripts/audit-sports-ru-player-mappings.ts",
+    "prices:finalize-sports-ru": "tsx scripts/finalize-sports-ru-current-mappings.ts",
     "forecasts:sync-foontasy": "tsx scripts/sync-foontasy-forecasts.ts",
     "starters:sync-completed": "tsx scripts/sync-starting-xi-from-completed-matches.ts",
     "forecasts:analyze-foontasy": "tsx scripts/analyze-foontasy-archive.ts",
