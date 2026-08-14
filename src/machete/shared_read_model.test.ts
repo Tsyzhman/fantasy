@@ -900,6 +900,8 @@ test("selected season without matching history keeps the current roster with zer
 
 test("new transfers use five recent previous-club matches with a ten-percent penalty and exclude national-team history", async () => {
   let rosterQueryCount = 0;
+  const fallbackMatchQueries: unknown[] = [];
+  const fallbackStatQueries: unknown[] = [];
   const prisma = {
     teamPlayerSeason: {
       async findMany(input: { select?: { seasonTeam?: unknown } }) {
@@ -933,13 +935,15 @@ test("new transfers use five recent previous-club matches with a ten-percent pen
       }
     },
     coreMatch: {
-      async findMany() {
+      async findMany(input: unknown) {
+        fallbackMatchQueries.push(input);
         return [];
       }
     },
     matchPlayerStat: {
       async findMany(input: { include?: { match?: unknown } }) {
         if (!input.include?.match) return [];
+        fallbackStatQueries.push(input);
         return [
           ...Array.from({ length: 5 }, (_, index) => ({
           ...playerStat(BigInt(100 + index), 90),
@@ -965,6 +969,7 @@ test("new transfers use five recent previous-club matches with a ten-percent pen
     scopes: [{ leagueId: 47n, season: "2025/2026", teamId: 10n }],
     matchWindow: { kind: "last", matches: 5 },
     fallbackToRecentClubHistory: true,
+    fallbackLeagueIds: [47n],
     scoringModel
   });
 
@@ -983,6 +988,8 @@ test("new transfers use five recent previous-club matches with a ten-percent pen
   });
   assert.equal(rows[0].rawMetrics?.previous_club_fallback_matches, 5);
   assert.equal(rows[0].rawMetrics?.previous_club_penalty_factor, 0.9);
+  assert.deepEqual((fallbackMatchQueries.at(-1) as { where: { leagueId: { in: bigint[] } } }).where.leagueId.in, [47n]);
+  assert.deepEqual((fallbackStatQueries[0] as { where: { match: { leagueId: { in: bigint[] } } } }).where.match.leagueId.in, [47n]);
 });
 
 test("match window summary reports official matches separately from parsed player-stat coverage", async () => {

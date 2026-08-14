@@ -2066,12 +2066,13 @@ async function loadProjectedPlayerRows(
     deferFormulaProjections
       ? Promise.resolve([])
       : loadSharedMachetePlayerRows(prisma, {
-          scopes: history.historyScopes,
+          scopes: history.projectionScopes,
           rosterScopes: history.rosterScopes,
           matchWindow: { kind: "days", days: 365 },
           combineTeamCompetitions: true,
-          fallbackToRecentPlayerHistory: history.includePlayerHistory,
+          fallbackToRecentPlayerHistory: false,
           fallbackToRecentClubHistory: true,
+          fallbackLeagueIds: [...new Set(history.projectionScopes.map((scope) => scope.leagueId))],
           scoringModel: modelBundle.model,
           rosterOverrides,
           ignoreStarterFlags

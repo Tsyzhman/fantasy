@@ -419,6 +419,7 @@ export async function loadSharedMachetePlayerRows(
     fallbackToRecentLeagueHistory?: boolean;
     fallbackToRecentPlayerHistory?: boolean;
     fallbackToRecentClubHistory?: boolean;
+    fallbackLeagueIds?: bigint[];
     scoringModel?: ActiveScoringModel;
     userId?: string | null;
     playerIds?: bigint[];
@@ -564,7 +565,8 @@ export async function loadSharedMachetePlayerRows(
   const clubHistory = input.fallbackToRecentClubHistory && !input.fallbackToRecentPlayerHistory
     ? await loadRecentClubPlayerHistory(
         prisma,
-        uniqueBigints(rosterRows.map((row) => row.playerId))
+        uniqueBigints(rosterRows.map((row) => row.playerId)),
+        uniqueBigints(input.fallbackLeagueIds ?? [])
       )
     : null;
   const fallbackStats = clubHistory?.stats ?? (input.fallbackToRecentLeagueHistory || input.fallbackToRecentPlayerHistory
@@ -961,7 +963,7 @@ async function loadRecentPlayerHistory(prisma: PrismaClient, playerIds: bigint[]
   return rows.filter((row) => row.match.status !== "SEASON_AGGREGATE");
 }
 
-async function loadRecentClubPlayerHistory(prisma: PrismaClient, playerIds: bigint[]) {
+async function loadRecentClubPlayerHistory(prisma: PrismaClient, playerIds: bigint[], leagueIds: bigint[] = []) {
   if (playerIds.length === 0) {
     return {
       stats: [],
@@ -1000,13 +1002,14 @@ async function loadRecentClubPlayerHistory(prisma: PrismaClient, playerIds: bigi
   const clubMemberships = memberships.filter(isClubRosterMembership);
   const clubTeamIds = uniqueBigints(clubMemberships.map((row) => row.teamId));
   const [stats, clubMatches] = await Promise.all([
-    loadRecentPlayerHistory(prisma, playerIds, []),
+    loadRecentPlayerHistory(prisma, playerIds, leagueIds),
     clubTeamIds.length > 0
       ? prisma.coreMatch.findMany({
           where: {
             finished: true,
             cancelled: false,
             matchDate: { not: null },
+            ...(leagueIds.length > 0 ? { leagueId: { in: leagueIds } } : {}),
             OR: [{ homeTeamId: { in: clubTeamIds } }, { awayTeamId: { in: clubTeamIds } }]
           },
           select: { id: true, matchDate: true, season: true, homeTeamId: true, awayTeamId: true },
