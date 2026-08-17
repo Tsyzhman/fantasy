@@ -115,20 +115,20 @@ export const leagueSeeds: LeagueSeed[] = [
       { name: "Auxerre", aliases: ["AJ Auxerre"] },
       { name: "Brest", aliases: ["Stade Brestois"] },
       { name: "Le Havre", aliases: ["Le Havre AC"] },
+      { name: "Le Mans", aliases: ["Le Mans FC"] },
       { name: "Lens", aliases: ["RC Lens"] },
       { name: "Lille", aliases: ["LOSC Lille"] },
       { name: "Lorient", aliases: ["FC Lorient"] },
       { name: "Lyon", aliases: ["Olympique Lyonnais"] },
       { name: "Marseille", aliases: ["Olympique Marseille"] },
-      { name: "Metz", aliases: ["FC Metz"] },
       { name: "Monaco", aliases: ["AS Monaco"] },
-      { name: "Nantes", aliases: ["FC Nantes"] },
       { name: "Nice", aliases: ["OGC Nice"] },
       { name: "Paris FC" },
       { name: "Paris Saint-Germain", aliases: ["PSG"] },
       { name: "Rennes", aliases: ["Stade Rennais"] },
       { name: "Strasbourg", aliases: ["RC Strasbourg"] },
-      { name: "Toulouse", aliases: ["Toulouse FC"] }
+      { name: "Toulouse", aliases: ["Toulouse FC"] },
+      { name: "Troyes", aliases: ["ESTAC Troyes", "ES Troyes AC"] }
     ]
   },
   {

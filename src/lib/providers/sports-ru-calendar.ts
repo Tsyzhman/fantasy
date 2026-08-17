@@ -119,7 +119,9 @@ const sourceByLeagueId: Record<string, SportsRuCalendarSource> = {
       "Осер": "Auxerre",
       "Анже": "Angers",
       "Гавр": "Le Havre",
-      "Париж": "Paris FC"
+      "Париж": "Paris FC",
+      "Ле-Ман": "Le Mans",
+      "Труа": "Troyes"
     }
   },
   "serie-a": {

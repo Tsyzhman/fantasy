@@ -266,7 +266,27 @@ const sportsRuTeamNamePairs = [
   ["Сельта", "Celta Vigo"],
   ["Хетафе", "Getafe"],
   ["Эльче", "Elche"],
-  ["Эспаньол", "Espanyol"]
+  ["Эспаньол", "Espanyol"],
+  ["Анже", "Angers"],
+  ["Брест", "Brest"],
+  ["Гавр", "Le Havre"],
+  ["Ланс", "Lens"],
+  ["Ле-Ман", "Le Mans"],
+  ["Лилль", "Lille"],
+  ["Лион", "Lyon"],
+  ["Лорьян", "Lorient"],
+  ["Марсель", "Marseille"],
+  ["Мец", "Metz"],
+  ["Монако", "Monaco"],
+  ["Нант", "Nantes"],
+  ["Ницца", "Nice"],
+  ["Осер", "Auxerre"],
+  ["Париж", "Paris FC"],
+  ["ПСЖ", "Paris Saint-Germain"],
+  ["Ренн", "Rennes"],
+  ["Страсбур", "Strasbourg"],
+  ["Труа", "Troyes"],
+  ["Тулуза", "Toulouse"]
 ] as const;
 const sportsRuCanonicalTeamNames = new Map<string, string>();
 for (const [sportsName, fotmobName] of sportsRuTeamNamePairs) {

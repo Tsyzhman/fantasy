@@ -639,6 +639,43 @@ test("sports ru mapping canonicalizes every current EPL team", () => {
   }
 });
 
+test("sports ru mapping canonicalizes every current Ligue 1 team", () => {
+  const cases = [
+    ["Анже", "Angers"], ["Брест", "Brest"], ["Гавр", "Le Havre"],
+    ["Ланс", "Lens"], ["Ле-Ман", "Le Mans"], ["Лилль", "Lille"],
+    ["Лион", "Lyon"], ["Лорьян", "Lorient"], ["Марсель", "Marseille"],
+    ["Монако", "Monaco"], ["Ницца", "Nice"], ["Осер", "Auxerre"],
+    ["Париж", "Paris FC"], ["ПСЖ", "Paris Saint-Germain"], ["Ренн", "Rennes"],
+    ["Страсбур", "Strasbourg"], ["Труа", "Troyes"], ["Тулуза", "Toulouse"]
+  ] as const;
+
+  for (const [sportsTeam, fotmobTeam] of cases) {
+    const result = scoreSportsRuCandidate(
+      { ...price("verified player", "MID"), teamName: sportsTeam },
+      roster("Verified Player", "MID", { name: fotmobTeam })
+    );
+    assert.equal(result.confidence, 1, `${sportsTeam} should match ${fotmobTeam}`);
+  }
+});
+
+test("sports ru mapping keeps Paris, Le Havre and Le Mans distinct", () => {
+  const teams = [
+    { teamId: 1n, team: { name: "Paris FC" } },
+    { teamId: 2n, team: { name: "Paris Saint-Germain" } },
+    { teamId: 3n, team: { name: "Le Havre" } },
+    { teamId: 4n, team: { name: "Le Mans" } }
+  ];
+
+  assert.equal(resolveSportsRuSeasonTeam("Париж", teams)?.teamId, 1n);
+  assert.equal(resolveSportsRuSeasonTeam("ПСЖ", teams)?.teamId, 2n);
+  assert.equal(resolveSportsRuSeasonTeam("Гавр", teams)?.teamId, 3n);
+  assert.equal(resolveSportsRuSeasonTeam("Ле-Ман", teams)?.teamId, 4n);
+  assert.equal(resolveSportsRuSeasonTeam("Труа", [
+    { teamId: 5n, team: { name: "Troyes" } },
+    { teamId: 6n, team: { name: "Toulouse" } }
+  ])?.teamId, 5n);
+});
+
 test("sports ru mapping canonicalizes every current Eredivisie and Liga Portugal team", () => {
   const cases = [
     ["АЗ Алкмар", "AZ Alkmaar"], ["Аякс", "Ajax"], ["Виллем II", "Willem II"],

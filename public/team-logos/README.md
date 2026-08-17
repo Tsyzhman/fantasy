@@ -81,20 +81,20 @@ Recommended: square transparent PNG, 128x128 or larger.
 - public/team-logos/ligue-1/auxerre.png  -- Auxerre
 - public/team-logos/ligue-1/brest.png  -- Brest
 - public/team-logos/ligue-1/le-havre.png  -- Le Havre
+- public/team-logos/ligue-1/le-mans.png  -- Le Mans
 - public/team-logos/ligue-1/lens.png  -- Lens
 - public/team-logos/ligue-1/lille.png  -- Lille
 - public/team-logos/ligue-1/lorient.png  -- Lorient
 - public/team-logos/ligue-1/lyon.png  -- Lyon
 - public/team-logos/ligue-1/marseille.png  -- Marseille
-- public/team-logos/ligue-1/metz.png  -- Metz
 - public/team-logos/ligue-1/monaco.png  -- Monaco
-- public/team-logos/ligue-1/nantes.png  -- Nantes
 - public/team-logos/ligue-1/nice.png  -- Nice
 - public/team-logos/ligue-1/paris-fc.png  -- Paris FC
 - public/team-logos/ligue-1/paris-saint-germain.png  -- Paris Saint-Germain
 - public/team-logos/ligue-1/rennes.png  -- Rennes
 - public/team-logos/ligue-1/strasbourg.png  -- Strasbourg
 - public/team-logos/ligue-1/toulouse.png  -- Toulouse
+- public/team-logos/ligue-1/troyes.png  -- Troyes
 
 ## Serie A (serie-a)
 
