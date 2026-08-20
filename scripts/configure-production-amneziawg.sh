@@ -274,6 +274,7 @@ docker run -d \
   --name "$candidate_container" \
   --restart unless-stopped \
   --cap-drop ALL \
+  --cap-add DAC_OVERRIDE \
   --cap-add NET_ADMIN \
   --device /dev/net/tun \
   --sysctl net.ipv4.conf.all.src_valid_mark=1 \
