@@ -17,12 +17,16 @@ web_container="fantasy-scout-web"
 relay_volume="fantasy-scout-fpl-relay"
 relay_socket="/run/fpl-relay/fpl.sock"
 config_root="/var/backups/fantasy-scout/fpl-vpn-config"
-awg_image="amneziavpn/amneziawg-go@sha256:ee66ed505325b4825e291ae94a34fe2876f1ad0225aab870e9a6bf178e77f947"
+# AYastrebov/docker-amneziawg v1.0.20260223, linux/amd64, source revision
+# cb83840e9d34a5e0d6b874dcb42bc2ca23cd3ea4. Pin the platform manifest rather
+# than the mutable release tag, which was rebuilt with a different client.
+awg_image="ghcr.io/ayastrebov/docker-amneziawg@sha256:cac6c54caf5d749267386629cd827fc711524092156cd8097c8f464797a903be"
+awg_image_revision="cb83840e9d34a5e0d6b874dcb42bc2ca23cd3ea4"
 stamp="$(date -u +%Y%m%dT%H%M%SZ)-$$"
 candidate_container="${vpn_container}-candidate-${stamp}"
+candidate_config_volume="${vpn_container}-config-${stamp}"
 rollback_container="${vpn_container}-rollback-${stamp}"
-stored_config="$config_root/awg0-${stamp}-${expected_sha:0:12}.conf"
-config_created=0
+config_volume_created=0
 candidate_started=0
 old_vpn_renamed=0
 new_vpn_active=0
@@ -106,10 +110,10 @@ probe_vpn_namespace() {
   local target_container="$1"
   local probe="const c=new AbortController();const t=setTimeout(()=>c.abort(),10000);fetch('https://fantasy.premierleague.com/api/bootstrap-static/',{signal:c.signal}).then(async r=>{const b=await r.arrayBuffer();clearTimeout(t);process.exit(r.status===200&&b.byteLength>=100000?0:1)}).catch(()=>process.exit(1))"
   local attempt
-  local max_attempts=12
+  local max_attempts=6
   local latest_handshake transfer rx_bytes tx_bytes handshake
   for attempt in $(seq 1 "$max_attempts"); do
-    if docker run --rm \
+    if timeout --signal=TERM --kill-after=5s 15s docker run --rm \
       --network "container:$target_container" \
       --read-only \
       --cap-drop ALL \
@@ -161,8 +165,8 @@ start_relay() {
 probe_relay() {
   local probe="const h=require('node:http');const q=h.request({socketPath:'$relay_socket',path:'/api/bootstrap-static/'},r=>{let n=0;r.on('data',c=>n+=c.length);r.on('end',()=>process.exit(r.statusCode===200&&n>=100000?0:1))});q.on('error',()=>process.exit(1));q.end()"
   local attempt
-  for attempt in $(seq 1 30); do
-    if docker run --rm \
+  for attempt in $(seq 1 6); do
+    if timeout --signal=TERM --kill-after=5s 12s docker run --rm \
       --network none \
       --mount "type=volume,src=$relay_volume,dst=/run/fpl-relay,readonly" \
       --read-only \
@@ -193,6 +197,9 @@ restore_old_runtime() {
   if container_exists "$candidate_container"; then
     docker container rm -f "$candidate_container" >/dev/null 2>&1 || true
   fi
+  if (( config_volume_created == 1 )); then
+    docker volume rm "$candidate_config_volume" >/dev/null 2>&1 || true
+  fi
 }
 
 cleanup() {
@@ -205,8 +212,8 @@ cleanup() {
     elif (( candidate_started == 1 )) && container_exists "$candidate_container"; then
       docker container rm -f "$candidate_container" >/dev/null 2>&1 || true
     fi
-    if (( config_created == 1 )) && [[ "$(realpath -m -- "$stored_config")" == "$config_root/"* ]]; then
-      rm -f -- "$stored_config"
+    if (( config_volume_created == 1 )); then
+      docker volume rm "$candidate_config_volume" >/dev/null 2>&1 || true
     fi
   fi
   exit "$exit_code"
@@ -265,8 +272,19 @@ while IFS= read -r stale_candidate; do
   docker container rm -f "$stale_candidate" >/dev/null
   echo "Removed stale bounded AmneziaWG candidate $stale_candidate."
 done < <(docker ps -a --format '{{.Names}}')
+config_volume_pattern="^${vpn_container}-config-[0-9]{8}T[0-9]{6}Z-[0-9]+$"
+while IFS= read -r stale_volume; do
+  [[ "$stale_volume" =~ $config_volume_pattern ]] || continue
+  if docker volume rm "$stale_volume" >/dev/null 2>&1; then
+    echo "Removed stale bounded AmneziaWG config volume $stale_volume."
+  fi
+done < <(docker volume ls --filter label=com.fantasy-scout.role=fpl-vpn-config --format '{{.Name}}')
 [[ -z "$(docker ps -aq --filter "name=^/${candidate_container}$")" ]] || {
   echo "AmneziaWG candidate container already exists." >&2
+  exit 1
+}
+[[ -z "$(docker volume ls -q --filter "name=^${candidate_config_volume}$")" ]] || {
+  echo "AmneziaWG candidate config volume already exists." >&2
   exit 1
 }
 
@@ -278,47 +296,45 @@ if [[ "$configured_timeout" =~ ^[0-9]+$ && "$configured_timeout" -ge 1000 && "$c
   relay_timeout_ms="$configured_timeout"
 fi
 
-install -d -m 700 "$config_root"
-umask 077
-awk '{ sub(/\r$/, ""); if ($0 !~ /^[[:space:]]*DNS[[:space:]]*=/) print }' \
-  "$uploaded_config" > "$stored_config"
-chmod 600 "$stored_config"
-config_created=1
-
 docker pull "$awg_image" >/dev/null
-vpn_command='set -Eeuo pipefail
-config=/etc/amnezia/amneziawg/awg0.conf
-sysctl() {
-  if [[ "$#" -eq 2 && "$1" == "-q" && "$2" == "net.ipv4.conf.all.src_valid_mark=1" ]] \
-    && [[ "$(< /proc/sys/net/ipv4/conf/all/src_valid_mark)" == "1" ]]; then
-    return 0
-  fi
-  command sysctl "$@"
+[[ "$(docker image inspect "$awg_image" --format '{{.Architecture}}')" == "amd64" ]] || {
+  echo "Pinned AmneziaWG image is not linux/amd64." >&2
+  exit 1
 }
-export -f sysctl
-cleanup() { awg-quick down "$config" >/dev/null 2>&1 || true; }
-trap "cleanup; exit 0" TERM INT
-awg-quick up "$config"
-trap cleanup EXIT
-while :; do sleep 3600 & wait "$!"; done'
+[[ "$(docker image inspect "$awg_image" --format '{{ index .Config.Labels "org.opencontainers.image.revision" }}')" == "$awg_image_revision" ]] || {
+  echo "Pinned AmneziaWG image revision does not match the reviewed source." >&2
+  exit 1
+}
+
+docker volume create \
+  --label com.fantasy-scout.role=fpl-vpn-config \
+  --label "com.fantasy-scout.config-sha256=$expected_sha" \
+  "$candidate_config_volume" >/dev/null
+config_volume_created=1
+docker run --rm -i \
+  --network none \
+  --read-only \
+  --cap-drop ALL \
+  --security-opt no-new-privileges:true \
+  --mount "type=volume,src=$candidate_config_volume,dst=/config" \
+  --entrypoint /bin/sh \
+  "$awg_image" \
+  -c 'set -eu; umask 077; mkdir -p /config/wg_confs; cat > /config/wg_confs/awg0.conf; chmod 600 /config/wg_confs/awg0.conf' \
+  < "$uploaded_config"
+
 docker run -d \
   --name "$candidate_container" \
   --restart unless-stopped \
-  --cap-drop ALL \
-  --cap-add DAC_OVERRIDE \
   --cap-add NET_ADMIN \
   --device /dev/net/tun \
   --sysctl net.ipv4.conf.all.src_valid_mark=1 \
-  --security-opt no-new-privileges:true \
-  --read-only \
-  --tmpfs /tmp:rw,nosuid,nodev,noexec,size=16m \
-  --tmpfs /run:rw,nosuid,nodev,noexec,size=16m \
-  --mount "type=bind,src=$stored_config,dst=/etc/amnezia/amneziawg/awg0.conf,readonly" \
+  --sysctl net.ipv4.ip_forward=1 \
+  --mount "type=volume,src=$candidate_config_volume,dst=/config" \
+  -e LOG_CONFS=false \
   --label com.fantasy-scout.role=fpl-vpn \
   --label "com.fantasy-scout.config-sha256=$expected_sha" \
-  --entrypoint /bin/bash \
-  "$awg_image" \
-  -ec "$vpn_command" >/dev/null
+  --label "com.fantasy-scout.source-revision=$awg_image_revision" \
+  "$awg_image" >/dev/null
 candidate_started=1
 
 probe_vpn_namespace "$candidate_container" || {
@@ -345,12 +361,20 @@ probe_relay || {
 docker container rm -f "$rollback_container" >/dev/null
 old_vpn_renamed=0
 new_vpn_active=0
+config_volume_created=0
 completed=1
 
-while IFS= read -r old_config; do
-  [[ "$(realpath -m -- "$old_config")" == "$config_root/"* ]] || continue
-  rm -f -- "$old_config" || echo "Warning: could not remove stale bounded VPN config." >&2
-done < <(find "$config_root" -maxdepth 1 -type f -name 'awg0-*.conf' ! -path "$stored_config" -print)
+if [[ -d "$config_root" ]]; then
+  while IFS= read -r old_config; do
+    [[ "$(realpath -m -- "$old_config")" == "$config_root/"* ]] || continue
+    rm -f -- "$old_config" || echo "Warning: could not remove stale bounded VPN config." >&2
+  done < <(find "$config_root" -maxdepth 1 -type f -name 'awg0-*.conf' -print)
+fi
+while IFS= read -r old_volume; do
+  [[ "$old_volume" == "$candidate_config_volume" ]] && continue
+  [[ "$old_volume" =~ $config_volume_pattern ]] || continue
+  docker volume rm "$old_volume" >/dev/null 2>&1 || true
+done < <(docker volume ls --filter label=com.fantasy-scout.role=fpl-vpn-config --format '{{.Name}}')
 
 printf '{"status":"ok","container":"%s","configSha256":"%s","image":"%s","fplProbe":"ok"}\n' \
   "$vpn_container" "$expected_sha" "$awg_image"
