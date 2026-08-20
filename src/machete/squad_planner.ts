@@ -242,6 +242,9 @@ function minuteHistorySourceMetric(value: unknown): FantasyProjectionFixtureInpu
 type PlannerMatch = {
   id: string;
   round: string | null;
+  providerRoundId?: string | null;
+  providerRoundLabel?: string | null;
+  providerRoundOrdinal?: number | null;
   matchDate: Date | null;
   homeTeamId: string | null;
   awayTeamId: string | null;
@@ -646,7 +649,13 @@ export async function loadFantasySquadPlannerData(
       rosterOverrides,
       isFpl && !starterStatusKnown
     ),
-    loadUpcomingRoundFixtures(prisma, league, provider, scopedContest?.id ?? null),
+    loadUpcomingRoundFixtures(
+      prisma,
+      league,
+      provider,
+      scopedContest?.id ?? null,
+      scopedContest?.scheduleRevision ?? null
+    ),
     isFpl
       ? Promise.resolve([])
       : prisma.foontasyForecast.findMany({
@@ -1903,7 +1912,7 @@ function normalizeFantasySquadRoundIds(value: unknown) {
 }
 
 function fantasyRoundNumber(roundId: string) {
-  const match = roundId.match(/^round:(\d+)$/);
+  const match = roundId.match(/^(?:round:|fpl:event:|sports-ru:tour:|[a-z0-9-]+:round:)(\d+)(?::|$)/i);
   if (!match) return null;
   const value = Number(match[1]);
   return Number.isSafeInteger(value) ? value : null;
@@ -3255,17 +3264,27 @@ async function loadUpcomingRoundFixtures(
   prisma: PrismaClient,
   league: SharedLeagueSeasonOption,
   provider = "SPORTS_RU",
-  contestId: string | null = null
+  contestId: string | null = null,
+  scheduleRevision: string | null = null
 ) {
-  const key = `${provider}:${contestId ?? "no-contest"}:${league.leagueId}:${league.season}`;
+  const key = `${provider}:${contestId ?? "no-contest"}:${scheduleRevision ?? "no-schedule"}:${league.leagueId}:${league.season}`;
   return upcomingRoundFixturesCache.getOrCreate(key, upcomingRoundFixturesCacheTtlMs, () =>
-    loadUpcomingRoundFixturesUncached(prisma, league)
+    loadUpcomingRoundFixturesUncached(prisma, league, provider, contestId)
   );
 }
 
-async function loadUpcomingRoundFixturesUncached(prisma: PrismaClient, league: SharedLeagueSeasonOption) {
+async function loadUpcomingRoundFixturesUncached(
+  prisma: PrismaClient,
+  league: SharedLeagueSeasonOption,
+  provider: string,
+  contestId: string | null
+) {
   const now = new Date();
   const activeRoundLookback = new Date(now.getTime() - 21 * 24 * 60 * 60 * 1000);
+  const providerMatches = await loadProviderPlannerMatches(prisma, provider, contestId, activeRoundLookback, now);
+  if (providerMatches !== null) {
+    return finalizeProviderPlannerMatches(prisma, league, providerMatches, now);
+  }
   const [matches, teamStrength, seasonTeams] = await Promise.all([
     prisma.coreMatch.findMany({
       where: {
@@ -3350,6 +3369,120 @@ async function loadUpcomingRoundFixturesUncached(prisma: PrismaClient, league: S
     ...applyFixtureStrength({ ...legacyFixtures, teamShortNameById: shortNameByTeamId }, teamStrength.profiles),
     formulaAdaptationTeamProfiles: teamStrength.formulaAdaptationTeamProfiles
   };
+}
+
+async function loadProviderPlannerMatches(
+  prisma: PrismaClient,
+  provider: string,
+  contestId: string | null,
+  activeRoundLookback: Date,
+  now: Date
+): Promise<PlannerMatch[] | null> {
+  if (!contestId || !["SPORTS_RU", FPL_PROVIDER].includes(provider)) return null;
+  const delegate = (prisma as unknown as {
+    fantasyProviderFixture?: PrismaClient["fantasyProviderFixture"];
+  }).fantasyProviderFixture;
+  // Old narrow unit-test doubles do not expose the newly generated delegate.
+  // The real Prisma client always does; an empty real table therefore returns
+  // an empty schedule and never falls back to FotMob rounds.
+  if (!delegate) return null;
+
+  const fixtures = await delegate.findMany({
+    where: {
+      contestId,
+      roundId: { not: null },
+      OR: [
+        { kickoffAt: { gte: activeRoundLookback } },
+        { status: null },
+        { status: { notIn: ["FINISHED", "COMPLETED", "PLAYED", "CANCELLED", "POSTPONED"] } }
+      ]
+    },
+    include: {
+      round: true,
+      homeTeam: { select: { name: true } },
+      awayTeam: { select: { name: true } },
+      match: {
+        include: {
+          oddsSnapshots: {
+            where: { provider: "FONBET", status: "AVAILABLE" },
+            orderBy: { fetchedAt: "desc" },
+            take: 1
+          }
+        }
+      }
+    },
+    orderBy: [{ kickoffAt: "asc" }, { providerFixtureId: "asc" }],
+    take: 500
+  });
+
+  return fixtures.flatMap((fixture): PlannerMatch[] => {
+    if (!fixture.round) return [];
+    const odds = fixture.match?.oddsSnapshots[0];
+    const freshOdds = odds && fixtureOddsAreFresh(odds.fetchedAt, now) ? odds : null;
+    const status = fixture.status?.toUpperCase() ?? "";
+    return [{
+      id: `provider-fixture:${provider.toLocaleLowerCase("en-US")}:${fixture.providerFixtureId}`,
+      round: fixture.sourceRoundLabel,
+      providerRoundId: fantasyProviderRoundKey(provider, fixture.round.ordinal, fixture.round.providerRoundId),
+      providerRoundLabel: fixture.round.name,
+      providerRoundOrdinal: fixture.round.ordinal,
+      matchDate: fixture.kickoffAt ?? fixture.match?.matchDate ?? null,
+      homeTeamId: fixture.homeTeamId ? String(fixture.homeTeamId) : null,
+      awayTeamId: fixture.awayTeamId ? String(fixture.awayTeamId) : null,
+      homeTeamName: fixture.homeTeam?.name ?? null,
+      awayTeamName: fixture.awayTeam?.name ?? null,
+      homeTeamFullName: fixture.homeTeam?.name ?? null,
+      awayTeamFullName: fixture.awayTeam?.name ?? null,
+      finished: fixture.match?.finished === true || ["FINISHED", "COMPLETED", "PLAYED"].includes(status),
+      cancelled: fixture.match?.cancelled === true || ["CANCELLED", "POSTPONED"].includes(status),
+      homeOver15Probability: freshOdds?.homeOver15Probability ?? null,
+      awayOver15Probability: freshOdds?.awayOver15Probability ?? null,
+      homeCleanSheetProbability: freshOdds?.homeCleanSheetProbability ?? null,
+      awayCleanSheetProbability: freshOdds?.awayCleanSheetProbability ?? null,
+      oddsFetchedAt: freshOdds?.fetchedAt ?? null
+    }];
+  });
+}
+
+async function finalizeProviderPlannerMatches(
+  prisma: PrismaClient,
+  league: SharedLeagueSeasonOption,
+  matches: PlannerMatch[],
+  now: Date
+) {
+  const [teamStrength, seasonTeams] = await Promise.all([
+    loadTeamStrengthProfiles(prisma, league.leagueId),
+    prisma.leagueSeasonTeam.findMany({
+      where: { leagueId: league.leagueId, season: league.season, active: true },
+      select: { teamId: true, metadata: true }
+    })
+  ]);
+  const missingShortNameTeamIds = seasonTeams
+    .filter((row) => !providerTeamShortName({ metadata: row.metadata }))
+    .map((row) => row.teamId);
+  const fallbackSeasonTeams = missingShortNameTeamIds.length > 0
+    ? await prisma.leagueSeasonTeam.findMany({
+        where: { teamId: { in: missingShortNameTeamIds } },
+        select: { teamId: true, metadata: true },
+        orderBy: { updatedAt: "desc" }
+      })
+    : [];
+  const shortNameByTeamId = fantasyTeamShortNamesByTeamId(seasonTeams, fallbackSeasonTeams);
+  const rounds = buildPlannerRoundFixtures(matches.map((match) => ({
+    ...match,
+    homeTeamName: (match.homeTeamId ? shortNameByTeamId.get(match.homeTeamId) : null) ?? match.homeTeamName,
+    awayTeamName: (match.awayTeamId ? shortNameByTeamId.get(match.awayTeamId) : null) ?? match.awayTeamName
+  })), now);
+  return {
+    ...applyFixtureStrength({ ...rounds, teamShortNameById: shortNameByTeamId }, teamStrength.profiles),
+    formulaAdaptationTeamProfiles: teamStrength.formulaAdaptationTeamProfiles
+  };
+}
+
+export function fantasyProviderRoundKey(provider: string, ordinal: number, providerRoundId: string) {
+  if (provider === FPL_PROVIDER) return `fpl:event:${ordinal}`;
+  if (provider === "SPORTS_RU") return `sports-ru:tour:${ordinal}:${encodeURIComponent(providerRoundId)}`;
+  return `${provider.toLocaleLowerCase("en-US").replace(/_/g, "-")}:round:${ordinal}:${encodeURIComponent(providerRoundId)}`;
 }
 
 export function buildPlannerRoundFixtures(matches: PlannerMatch[], now = new Date()): PlannerRoundFixtures {
@@ -4038,13 +4171,20 @@ async function loadLegacyMacheteUpcomingRoundFixtures(prisma: PrismaClient, leag
   );
 }
 
-function groupMatchesByRound<T extends { id: string; round: string | null; matchDate: Date | null }>(matches: T[]) {
+function groupMatchesByRound<T extends {
+  id: string;
+  round: string | null;
+  matchDate: Date | null;
+  providerRoundId?: string | null;
+  providerRoundLabel?: string | null;
+  providerRoundOrdinal?: number | null;
+}>(matches: T[]) {
   const groups = new Map<string, { id: string; label: string; startsAt: Date | null; rank: number; matches: T[] }>();
   for (const match of matches) {
     const roundLabel = normalizeRoundLabel(match.round);
     const dateKey = match.matchDate ? match.matchDate.toISOString().slice(0, 10) : `fixture-${match.id}`;
-    const id = roundLabel ? `round:${roundLabel}` : `date:${dateKey}`;
-    const label = roundLabel ? `Round ${roundLabel}` : formatDate(match.matchDate);
+    const id = match.providerRoundId ?? (roundLabel ? `round:${roundLabel}` : `date:${dateKey}`);
+    const label = match.providerRoundLabel ?? (roundLabel ? `Round ${roundLabel}` : formatDate(match.matchDate));
     const existing = groups.get(id);
     if (existing) {
       existing.matches.push(match);
@@ -4056,7 +4196,7 @@ function groupMatchesByRound<T extends { id: string; round: string | null; match
       id,
       label,
       startsAt: match.matchDate,
-      rank: roundLabel ? Number(roundLabel) || dateMs(match.matchDate) : dateMs(match.matchDate),
+      rank: match.providerRoundOrdinal ?? (roundLabel ? Number(roundLabel) || dateMs(match.matchDate) : dateMs(match.matchDate)),
       matches: [match]
     });
   }

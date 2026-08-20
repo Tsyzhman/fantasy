@@ -5,12 +5,13 @@ import type { PrismaClient } from "@prisma/client";
 
 import {
   latestStartedSportsRuSquadRound,
+  latestStartedSportsRuProviderRound,
   SPORTS_RU_SQUAD_PUBLICATION_DELAY_MS,
-  syncSportsRuSquadSnapshotOnDemand,
-  sportsRuTourMatchesFotMobRound
+  syncSportsRuSquadSnapshotOnDemand
 } from "./sports_ru_squad_snapshots";
 
 const importRouteSource = readFileSync(new URL("../app/api/machete/squads/import-sports-ru/route.ts", import.meta.url), "utf8");
+const snapshotSource = readFileSync(new URL("./sports_ru_squad_snapshots.ts", import.meta.url), "utf8");
 
 test("Sports.ru squad publication is scheduled 30 minutes after the first match of the latest started round", () => {
   const now = new Date("2026-07-30T17:00:00.000Z");
@@ -40,10 +41,35 @@ test("Sports.ru squad schedule ignores cancelled, future, and roundless fixtures
   assert.equal(schedule, null);
 });
 
-test("Sports.ru published tour must match the FotMob round when both expose a round number", () => {
-  assert.equal(sportsRuTourMatchesFotMobRound("Regular Season - 1", "1 тур"), true);
-  assert.equal(sportsRuTourMatchesFotMobRound("2", "Тур 1"), false);
-  assert.equal(sportsRuTourMatchesFotMobRound("Final", "Final"), true);
+test("Sports.ru snapshots select the exact provider tour ID and never compare it with a FotMob round", () => {
+  assert.match(snapshotSource, /expectedTourId: snapshot\.providerTourId/);
+  assert.doesNotMatch(snapshotSource, /sportsRuTourMatchesFotMobRound/);
+});
+
+test("Sports.ru snapshot schedule follows provider tour 3 even when it contains a league-round-6 fixture", () => {
+  const schedule = latestStartedSportsRuProviderRound([
+    {
+      providerRoundId: "2462",
+      ordinal: 2,
+      name: "2 тур",
+      startsAt: new Date("2026-08-25T17:00:00Z"),
+      fixtures: [{ kickoffAt: new Date("2026-08-25T17:00:00Z"), status: "FINISHED" }]
+    },
+    {
+      providerRoundId: "2463",
+      ordinal: 3,
+      name: "3 тур",
+      startsAt: new Date("2026-09-03T18:00:00Z"),
+      fixtures: [
+        { kickoffAt: new Date("2026-09-03T18:00:00Z"), status: "STARTED" },
+        { kickoffAt: new Date("2026-09-12T14:00:00Z"), status: "SCHEDULED" }
+      ]
+    }
+  ], new Date("2026-09-03T19:00:00Z"));
+
+  assert.equal(schedule?.roundKey, "sports-ru:tour:3:2463");
+  assert.equal(schedule?.providerTourId, "2463");
+  assert.equal(schedule?.roundLabel, "3 тур");
 });
 
 test("the one-click import route reuses a stored snapshot or starts a targeted on-demand sync", () => {

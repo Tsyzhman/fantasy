@@ -17,6 +17,8 @@ export type SportsRuFantasyContestRules = {
 export type SportsRuFantasyPriceRow = {
   providerPlayerId?: string | null;
   providerStatPlayerId?: string | null;
+  providerTeamId?: string | null;
+  providerStatTeamId?: string | null;
   providerBirthDate?: string | null;
   playerName: string;
   providerCanonicalName?: string | null;
@@ -42,6 +44,18 @@ export type SportsRuFantasyTour = {
   status: string | null;
   startedAt: string | null;
   finishedAt: string | null;
+  fixtures: SportsRuFantasyFixture[];
+};
+
+export type SportsRuFantasyFixture = {
+  id: string;
+  scheduledAt: string | null;
+  status: string | null;
+  sourceRoundLabel: string | null;
+  homeTeamId: string;
+  homeTeamName: string | null;
+  awayTeamId: string;
+  awayTeamName: string | null;
 };
 
 export type SportsRuPublishedSquadPlayer = {
@@ -115,6 +129,14 @@ export async function fetchSportsRuFantasyGraphqlSnapshot(
             status?: string | null;
             startedAt?: string | null;
             finishedAt?: string | null;
+            matches?: Array<{
+              id?: string | null;
+              scheduledAt?: string | null;
+              roundName?: string | null;
+              matchStatus?: string | null;
+              home?: { team?: { id?: string | null; name?: string | null } | null } | null;
+              away?: { team?: { id?: string | null; name?: string | null } | null } | null;
+            }> | null;
           }> | null;
         } | null;
       } | null;
@@ -126,7 +148,14 @@ export async function fetchSportsRuFantasyGraphqlSnapshot(
         tournament(id: ${JSON.stringify(hru)}, source: HRU) {
           currentSeason {
             id
-            tours { id name status startedAt finishedAt }
+            tours {
+              id name status startedAt finishedAt
+              matches {
+                id scheduledAt roundName matchStatus
+                home { team { id name } }
+                away { team { id name } }
+              }
+            }
           }
         }
       }
@@ -138,12 +167,29 @@ export async function fetchSportsRuFantasyGraphqlSnapshot(
   const tours = (currentSeason?.tours ?? []).flatMap((tour): SportsRuFantasyTour[] => {
     const id = tour.id?.trim();
     const name = cleanText(tour.name ?? "");
+    const fixtures = (tour.matches ?? []).flatMap((match): SportsRuFantasyFixture[] => {
+      const fixtureId = match.id?.trim();
+      const homeTeamId = match.home?.team?.id?.trim();
+      const awayTeamId = match.away?.team?.id?.trim();
+      if (!fixtureId || !homeTeamId || !awayTeamId) return [];
+      return [{
+        id: fixtureId,
+        scheduledAt: match.scheduledAt ?? null,
+        status: cleanText(match.matchStatus ?? "") || null,
+        sourceRoundLabel: cleanText(match.roundName ?? "") || null,
+        homeTeamId,
+        homeTeamName: cleanText(match.home?.team?.name ?? "") || null,
+        awayTeamId,
+        awayTeamName: cleanText(match.away?.team?.name ?? "") || null
+      }];
+    });
     return id && name ? [{
       id,
       name,
       status: cleanText(tour.status ?? "") || null,
       startedAt: tour.startedAt ?? null,
-      finishedAt: tour.finishedAt ?? null
+      finishedAt: tour.finishedAt ?? null,
+      fixtures
     }] : [];
   });
   if (!seasonId) return { tournamentHru: hru, seasonId: null, tours: [], prices: [], fetchedAt: new Date().toISOString() };
@@ -159,7 +205,11 @@ export async function fetchSportsRuFantasyGraphqlSnapshot(
               id?: string | null;
               name?: string | null;
               price?: number | null;
-              team?: { id?: string | null; name?: string | null } | null;
+              team?: {
+                id?: string | null;
+                name?: string | null;
+                statObject?: { id?: string | null; name?: string | null } | null;
+              } | null;
               statObject?: {
                 id?: string | null;
                 name?: string | null;
@@ -183,7 +233,11 @@ export async function fetchSportsRuFantasyGraphqlSnapshot(
               sortType: BY_PRICE,
               role: ${role}
             }) {
-              list { id name price team { id name } statObject { id name firstName lastName coalesceName dateOfBirth } }
+              list {
+                id name price
+                team { id name statObject { id name } }
+                statObject { id name firstName lastName coalesceName dateOfBirth }
+              }
             }
           }
         }`,
@@ -202,6 +256,8 @@ export async function fetchSportsRuFantasyGraphqlSnapshot(
         prices.push({
           providerPlayerId,
           providerStatPlayerId: cleanText(player.statObject?.id ?? "") || null,
+          providerTeamId: cleanText(player.team?.id ?? "") || null,
+          providerStatTeamId: cleanText(player.team?.statObject?.id ?? "") || null,
           providerBirthDate: sportsRuDateOnly(player.statObject?.dateOfBirth),
           playerName,
           providerCanonicalName:
@@ -269,13 +325,15 @@ export function normalizeSportsRuProfileId(value: string) {
 export async function fetchSportsRuLatestPublishedSquad(
   profileId: string,
   sportsRuSeasonId: string,
-  options: { endpoint?: string; fetchImpl?: typeof fetch; expectedTourNumber?: number } = {}
+  options: { endpoint?: string; fetchImpl?: typeof fetch; expectedTourId?: string; expectedTourNumber?: number } = {}
 ): Promise<SportsRuPublishedSquad | null> {
   const safeProfileId = normalizeSportsRuProfileId(profileId);
   if (!safeProfileId) throw new Error("Invalid Sports.ru profile ID.");
   const seasonId = sportsRuSeasonId.trim();
   if (!seasonId || !/^\d{1,20}$/.test(seasonId)) throw new Error("Invalid Sports.ru fantasy season ID.");
   const expectedTourNumber = options.expectedTourNumber;
+  const expectedTourId = options.expectedTourId?.trim() || undefined;
+  if (expectedTourId && !/^[a-z0-9_-]{1,100}$/i.test(expectedTourId)) throw new Error("Invalid expected Sports.ru tour ID.");
   if (
     expectedTourNumber !== undefined
     && (!Number.isSafeInteger(expectedTourNumber) || expectedTourNumber <= 0)
@@ -306,9 +364,10 @@ export async function fetchSportsRuLatestPublishedSquad(
 
   for (const squad of candidates) {
     const current = normalizeSportsRuSquadTourInfo(squad, squad.currentTourInfo);
-    if (current && sportsRuSquadMatchesExpectedTour(current, expectedTourNumber)) return current;
+    if (current && sportsRuSquadMatchesExpectedTour(current, expectedTourId, expectedTourNumber)) return current;
     const tours = [...(squad.season?.tours ?? [])]
       .filter((tour) => tour.id)
+      .filter((tour) => !expectedTourId || tour.id === expectedTourId)
       .filter((tour) => sportsRuTourNameMatchesExpectedTour(tour.name, expectedTourNumber))
       // currentTourInfo is already empty above. Prefer completed tours, whose
       // lineups are public, before asking Sports.ru for an open-tour payload
@@ -330,7 +389,7 @@ export async function fetchSportsRuLatestPublishedSquad(
         fetchImpl
       );
       const normalized = normalizeSportsRuSquadTourInfo(squad, historic.fantasyQueries?.squadTourInfo ?? null);
-      if (normalized && sportsRuSquadMatchesExpectedTour(normalized, expectedTourNumber)) return normalized;
+      if (normalized && sportsRuSquadMatchesExpectedTour(normalized, expectedTourId, expectedTourNumber)) return normalized;
     }
   }
   return null;
@@ -436,8 +495,13 @@ function sportsRuTourPublicationPriority(tour: SportsRuTourNode) {
   return ["FINISHED", "COMPLETED", "CLOSED"].includes(tour.status?.toUpperCase() ?? "") ? 1 : 0;
 }
 
-function sportsRuSquadMatchesExpectedTour(squad: SportsRuPublishedSquad, expectedTourNumber: number | undefined) {
-  return sportsRuTourNameMatchesExpectedTour(squad.tourName, expectedTourNumber);
+function sportsRuSquadMatchesExpectedTour(
+  squad: SportsRuPublishedSquad,
+  expectedTourId: string | undefined,
+  expectedTourNumber: number | undefined
+) {
+  return (!expectedTourId || squad.tourId === expectedTourId)
+    && sportsRuTourNameMatchesExpectedTour(squad.tourName, expectedTourNumber);
 }
 
 function sportsRuTourNameMatchesExpectedTour(tourName: string | null | undefined, expectedTourNumber: number | undefined) {

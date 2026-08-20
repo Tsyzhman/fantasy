@@ -19,13 +19,27 @@ test("Sports.ru GraphQL snapshot loads every position from the current season", 
     assert.ok(init?.signal, "Sports.ru requests must have a timeout signal");
     const query = JSON.parse(String(init?.body ?? "{}"))?.query as string;
     if (query.includes("tournament(")) {
-      assert.match(query, /tours \{ id name status startedAt finishedAt \}/);
+      assert.match(query, /matches \{/);
       return jsonResponse({ data: { fantasyQueries: { tournament: { currentSeason: {
         id: "season-1",
-        tours: [{ id: "tour-1", name: "1 тур", status: "OPENED", startedAt: "2026-08-14T17:00:00Z", finishedAt: null }]
+        tours: [{
+          id: "tour-1",
+          name: "1 тур",
+          status: "OPENED",
+          startedAt: "2026-08-14T17:00:00Z",
+          finishedAt: null,
+          matches: [{
+            id: "match-1",
+            scheduledAt: "2026-08-14T18:00:00Z",
+            roundName: "2",
+            matchStatus: "NOT_STARTED",
+            home: { team: { id: "rostov", name: "Ростов" } },
+            away: { team: { id: "spartak", name: "Спартак" } }
+          }]
+        }]
       } } } } });
     }
-    assert.match(query, /team \{ id name \}/);
+    assert.match(query, /team \{ id name statObject \{ id name \} \}/);
     const role = [...roles.keys()].find((value) => query.includes(`role: ${value}`));
     const player = role ? roles.get(role) : null;
     return jsonResponse({ data: { fantasyQueries: { players: { list: player ? [player] : [] } } } });
@@ -39,7 +53,17 @@ test("Sports.ru GraphQL snapshot loads every position from the current season", 
     name: "1 тур",
     status: "OPENED",
     startedAt: "2026-08-14T17:00:00Z",
-    finishedAt: null
+    finishedAt: null,
+    fixtures: [{
+      id: "match-1",
+      scheduledAt: "2026-08-14T18:00:00Z",
+      status: "NOT_STARTED",
+      sourceRoundLabel: "2",
+      homeTeamId: "rostov",
+      homeTeamName: "Ростов",
+      awayTeamId: "spartak",
+      awayTeamName: "Спартак"
+    }]
   }]);
   assert.deepEqual(snapshot.prices.map((row) => row.position), ["GK", "DEF", "MID", "FWD"]);
   assert.deepEqual(snapshot.prices.map((row) => row.providerPlayerId), ["gk-1", "def-1", "mid-1", "fwd-1"]);
@@ -229,7 +253,7 @@ test("latest published Sports.ru squad falls back from an open tour to the lates
   assert.equal(queries.some((query) => query.includes('tourID: "tour-2"')), false);
 });
 
-test("expected Sports.ru tour skips an exposed future current squad and loads the matching archive", async () => {
+test("expected Sports.ru tour ID skips an exposed future current squad and loads the matching archive", async () => {
   const queries: string[] = [];
   const fetchImpl = (async (_input: string | URL | Request, init?: RequestInit) => {
     const query = JSON.parse(String(init?.body ?? "{}"))?.query as string;
@@ -279,7 +303,7 @@ test("expected Sports.ru tour skips an exposed future current squad and loads th
 
   const squad = await fetchSportsRuLatestPublishedSquad("1090024123", "75", {
     fetchImpl,
-    expectedTourNumber: 1
+    expectedTourId: "tour-1"
   });
 
   assert.equal(squad?.tourId, "tour-1");

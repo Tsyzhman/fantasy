@@ -645,20 +645,22 @@ model CoreTeam {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
-  homeMatches         CoreMatch[]              @relation("CoreMatchHomeTeam")
-  awayMatches         CoreMatch[]              @relation("CoreMatchAwayTeam")
-  teamStats           MatchTeamStat[]          @relation("MatchTeamStatsTeam")
-  opponentTeamStats   MatchTeamStat[]          @relation("MatchTeamStatsOpponentTeam")
-  playerStats         MatchPlayerStat[]        @relation("MatchPlayerStatsTeam")
-  opponentPlayerStats MatchPlayerStat[]        @relation("MatchPlayerStatsOpponentTeam")
-  events              MatchEvent[]
-  shotsFor            MatchShot[]              @relation("MatchShotTeam")
-  shotsAgainst        MatchShot[]              @relation("MatchShotOpponentTeam")
-  leagueSeasonTeams   LeagueSeasonTeam[]
-  seasonRosterEntries TeamPlayerSeason[]
-  archivedPlayerStats PlayerSeasonArchive[]
-  fantasyPrices       FantasyPlayerPrice[]
-  fantasySquadPlayers UserFantasySquadPlayer[]
+  homeMatches          CoreMatch[]              @relation("CoreMatchHomeTeam")
+  awayMatches          CoreMatch[]              @relation("CoreMatchAwayTeam")
+  teamStats            MatchTeamStat[]          @relation("MatchTeamStatsTeam")
+  opponentTeamStats    MatchTeamStat[]          @relation("MatchTeamStatsOpponentTeam")
+  playerStats          MatchPlayerStat[]        @relation("MatchPlayerStatsTeam")
+  opponentPlayerStats  MatchPlayerStat[]        @relation("MatchPlayerStatsOpponentTeam")
+  events               MatchEvent[]
+  shotsFor             MatchShot[]              @relation("MatchShotTeam")
+  shotsAgainst         MatchShot[]              @relation("MatchShotOpponentTeam")
+  leagueSeasonTeams    LeagueSeasonTeam[]
+  seasonRosterEntries  TeamPlayerSeason[]
+  archivedPlayerStats  PlayerSeasonArchive[]
+  fantasyPrices        FantasyPlayerPrice[]
+  fantasySquadPlayers  UserFantasySquadPlayer[]
+  providerHomeFixtures FantasyProviderFixture[] @relation("FantasyProviderFixtureHomeTeam")
+  providerAwayFixtures FantasyProviderFixture[] @relation("FantasyProviderFixtureAwayTeam")
 
   @@index([source, rawRef])
   @@map("teams")
@@ -798,6 +800,8 @@ model FantasyContest {
   rules             Json?
   sourceUrl         String?   @map("source_url")
   lastSyncedAt      DateTime? @map("last_synced_at")
+  scheduleRevision  String?   @map("schedule_revision")
+  scheduleSyncedAt  DateTime? @map("schedule_synced_at")
   createdAt         DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt @map("updated_at")
 
@@ -813,10 +817,70 @@ model FantasyContest {
   chipUsages             FantasyChipUsage[]
   officialScores         FantasyProviderPlayerMatchScore[]
   providerEntityMaps     ProviderEntityMap[]
+  providerRounds         FantasyProviderRound[]
+  providerFixtures       FantasyProviderFixture[]
 
   @@unique([provider, leagueId, season], map: "sports_ru_fantasy_contests_provider_league_id_season_key")
   @@index([leagueId, season], map: "sports_ru_fantasy_contests_league_id_season_idx")
   @@map("sports_ru_fantasy_contests")
+}
+
+model FantasyProviderRound {
+  id              String    @id @default(cuid())
+  contestId       String    @map("contest_id")
+  provider        String
+  providerRoundId String    @map("provider_round_id")
+  ordinal         Int
+  name            String
+  status          String?
+  deadlineAt      DateTime? @map("deadline_at")
+  startsAt        DateTime? @map("starts_at")
+  finishedAt      DateTime? @map("finished_at")
+  fetchedAt       DateTime  @map("fetched_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  contest  FantasyContest           @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  fixtures FantasyProviderFixture[]
+
+  @@unique([contestId, providerRoundId], map: "fantasy_provider_rounds_contest_provider_round_key")
+  @@unique([contestId, ordinal], map: "fantasy_provider_rounds_contest_ordinal_key")
+  @@index([contestId, status, ordinal], map: "fantasy_provider_rounds_contest_status_ordinal_idx")
+  @@map("fantasy_provider_rounds")
+}
+
+model FantasyProviderFixture {
+  id                 String    @id @default(cuid())
+  contestId          String    @map("contest_id")
+  roundId            String?   @map("round_id")
+  provider           String
+  providerFixtureId  String    @map("provider_fixture_id")
+  providerHomeTeamId String    @map("provider_home_team_id")
+  providerAwayTeamId String    @map("provider_away_team_id")
+  homeTeamId         BigInt?   @map("home_team_id")
+  awayTeamId         BigInt?   @map("away_team_id")
+  matchId            BigInt?   @map("match_id")
+  kickoffAt          DateTime? @map("kickoff_at")
+  status             String?
+  sourceRoundLabel   String?   @map("source_round_label")
+  mappingStatus      String    @default("UNMATCHED") @map("mapping_status")
+  mappingConfidence  Float?    @map("mapping_confidence")
+  matchedBy          String?   @map("matched_by")
+  fetchedAt          DateTime  @map("fetched_at")
+  createdAt          DateTime  @default(now()) @map("created_at")
+  updatedAt          DateTime  @updatedAt @map("updated_at")
+
+  contest  FantasyContest        @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  round    FantasyProviderRound? @relation(fields: [roundId], references: [id], onDelete: SetNull)
+  homeTeam CoreTeam?             @relation("FantasyProviderFixtureHomeTeam", fields: [homeTeamId], references: [id], onDelete: SetNull)
+  awayTeam CoreTeam?             @relation("FantasyProviderFixtureAwayTeam", fields: [awayTeamId], references: [id], onDelete: SetNull)
+  match    CoreMatch?            @relation(fields: [matchId], references: [id], onDelete: SetNull)
+
+  @@unique([contestId, providerFixtureId], map: "fantasy_provider_fixtures_contest_fixture_key")
+  @@unique([contestId, matchId], map: "fantasy_provider_fixtures_contest_match_key")
+  @@index([roundId, kickoffAt], map: "fantasy_provider_fixtures_round_kickoff_idx")
+  @@index([contestId, mappingStatus], map: "fantasy_provider_fixtures_contest_mapping_idx")
+  @@map("fantasy_provider_fixtures")
 }
 
 model SportsRuSquadSnapshot {
@@ -1153,6 +1217,7 @@ model CoreMatch {
   fantasyPointBreakdowns FantasyPointBreakdown[]
   oddsSnapshots          FixtureOddsSnapshot[]
   providerOfficialScores FantasyProviderPlayerMatchScore[]
+  providerFixtures       FantasyProviderFixture[]
 
   @@index([leagueId, season], map: "idx_matches_league_season")
   @@index([finished, matchDate], map: "idx_matches_finished_date")

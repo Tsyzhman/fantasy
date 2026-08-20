@@ -19,13 +19,16 @@ import {
   latestPublishedFplGameweek,
   type FplBootstrap,
   type FplClientOptions,
+  type FplFixture,
   type FplPriceRow
 } from "@/lib/providers/fpl";
 import { fpl202627Rules, fplRulesetJson, FPL_RULESET_NAME, FPL_RULESET_VERSION } from "@/lib/providers/fpl-rules";
 
+import { replaceFantasyProviderSchedule } from "./fantasy-provider-schedule";
+
 const FPL_LOCK_KEY = "fantasy-scout:fpl:price-sync";
 const FPL_JOB_TYPE = "FPL_PRICE_SYNC";
-const FPL_PRICE_SYNC_FORMAT_VERSION = "web-name-v1";
+const FPL_PRICE_SYNC_FORMAT_VERSION = "provider-schedule-v2";
 
 export type FplPriceSyncResult = {
   status: "SYNCED" | "SKIPPED";
@@ -39,6 +42,7 @@ export type FplPriceSyncResult = {
   payloadHash: string;
   latestPublishedGameweek: number | null;
   latestFinalizedGameweek: number | null;
+  scheduleFixtures: number;
 };
 
 export async function syncFplPrices(
@@ -53,9 +57,10 @@ export async function syncFplPrices(
   const now = options.now ?? new Date();
   const client = options.client ?? new FplPublicClient(options.clientOptions);
   const bootstrap = await client.getBootstrap();
+  const fixtures = await client.getFixtures();
   const rows = fplPriceRows(bootstrap);
   if (rows.length === 0) throw new Error("FPL bootstrap produced no price rows; preserving the previous snapshot.");
-  const payloadHash = hashBootstrap(bootstrap);
+  const payloadHash = hashFplSnapshot(bootstrap, fixtures);
   const snapshotKey = fplSnapshotKey(now);
   const latestPublishedGameweek = latestPublishedFplGameweek(bootstrap.events, now)?.id ?? null;
   const latestFinalizedGameweek = latestFinalizedFplGameweek(bootstrap.events, now)?.id ?? null;
@@ -106,7 +111,8 @@ export async function syncFplPrices(
         unmatchedTeams: 0,
         payloadHash,
         latestPublishedGameweek,
-        latestFinalizedGameweek
+        latestFinalizedGameweek,
+        scheduleFixtures: fixtures.length
       };
     }
 
@@ -220,6 +226,32 @@ export async function syncFplPrices(
         }
       });
     }
+    const schedule = await replaceFantasyProviderSchedule(tx, {
+      contestId: contest.id,
+      provider: FPL_PROVIDER,
+      leagueId: FPL_LEAGUE_ID,
+      season: FPL_SEASON,
+      fetchedAt: bootstrap.fetchedAt,
+      rounds: bootstrap.events.map((event) => ({
+        providerRoundId: String(event.id),
+        ordinal: event.id,
+        name: event.name,
+        status: event.finished ? "FINISHED" : event.isCurrent ? "CURRENT" : event.isNext ? "NEXT" : "SCHEDULED",
+        deadlineAt: event.deadlineTime,
+        startsAt: earliestFplFixtureDate(fixtures, event.id) ?? event.deadlineTime,
+        finishedAt: event.finished ? latestFplFixtureDate(fixtures, event.id) : null
+      })),
+      fixtures: fixtures.map((fixture) => ({
+        providerFixtureId: String(fixture.id),
+        providerRoundId: fixture.event === null ? null : String(fixture.event),
+        providerHomeTeamId: String(fixture.homeTeamId),
+        providerAwayTeamId: String(fixture.awayTeamId),
+        kickoffAt: fixture.kickoffTime,
+        status: fixture.finished ? "FINISHED" : fixture.started ? "STARTED" : "SCHEDULED",
+        sourceRoundLabel: null
+      })),
+      teamIds: new Map([...mapping.teams].map(([providerTeamId, team]) => [providerTeamId, team.internalId]))
+    });
     await tx.fantasyPlayerPriceSnapshot.upsert({
       where: { contestId_snapshotKey: { contestId: contest.id, snapshotKey } },
       update: {
@@ -281,7 +313,12 @@ export async function syncFplPrices(
           mappedPlayers: mapping.mappedPlayers,
           mappedTeams: mapping.mappedTeams,
           unmatchedPlayers: mapping.unmatchedPlayers,
-          unmatchedTeams: mapping.unmatchedTeams
+          unmatchedTeams: mapping.unmatchedTeams,
+          scheduleRounds: schedule.rounds,
+          scheduleFixtures: schedule.fixtures,
+          scheduleMatchedFixtures: schedule.matchedFixtures,
+          scheduleTeamMappedFixtures: schedule.teamMappedFixtures,
+          scheduleUnmatchedFixtures: schedule.unmatchedFixtures
         } as Prisma.InputJsonValue
       }
     });
@@ -296,7 +333,8 @@ export async function syncFplPrices(
       unmatchedTeams: mapping.unmatchedTeams,
       payloadHash,
       latestPublishedGameweek,
-      latestFinalizedGameweek
+      latestFinalizedGameweek,
+      scheduleFixtures: schedule.fixtures
     } satisfies FplPriceSyncResult;
   });
 }
@@ -438,15 +476,32 @@ function positionMatches(position: string | null, fplPosition: string) {
   return normalized === fplPosition || (fplPosition === "GK" && ["GKP", "GOALKEEPER"].includes(normalized)) || (fplPosition === "FWD" && ["FW", "FORWARD"].includes(normalized));
 }
 
-function hashBootstrap(bootstrap: FplBootstrap) {
+function hashFplSnapshot(bootstrap: FplBootstrap, fixtures: readonly FplFixture[]) {
   return createHash("sha256").update(JSON.stringify({
     events: bootstrap.events,
     teams: bootstrap.teams,
     elements: bootstrap.elements,
     elementTypes: bootstrap.elementTypes,
     chips: bootstrap.chips,
-    gameConfig: bootstrap.gameConfig
+    gameConfig: bootstrap.gameConfig,
+    fixtures
   })).digest("hex");
+}
+
+function earliestFplFixtureDate(fixtures: readonly FplFixture[], eventId: number) {
+  return fplFixtureDateBoundary(fixtures, eventId, "MIN");
+}
+
+function latestFplFixtureDate(fixtures: readonly FplFixture[], eventId: number) {
+  return fplFixtureDateBoundary(fixtures, eventId, "MAX");
+}
+
+function fplFixtureDateBoundary(fixtures: readonly FplFixture[], eventId: number, direction: "MIN" | "MAX") {
+  const values = fixtures
+    .filter((fixture) => fixture.event === eventId && fixture.kickoffTime)
+    .map((fixture) => fixture.kickoffTime!.getTime());
+  if (values.length === 0) return null;
+  return new Date(direction === "MIN" ? Math.min(...values) : Math.max(...values));
 }
 
 export function fplSnapshotKey(date: Date) {

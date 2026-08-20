@@ -71,6 +71,7 @@ test("Sports.ru contest rules preserve phase history and continue cup round offs
   const transientEmptyTours = sportsRuContestRules(playoffs, sportsSnapshot("72", 0), "champions-league");
   const current = (transientEmptyTours.sportsRuSeasons as Array<{ seasonId: string; tours: unknown[] }>).find((phase) => phase.seasonId === "72");
   assert.equal(current?.tours.length, 9);
+  assert.equal(Object.hasOwn(current?.tours[0] as object, "fixtures"), false, "fixture payloads must stay in normalized tables, not contest JSON");
 });
 
 function sportsRuFetch(seasonId: string | null, playersPerRole: number): typeof fetch {
@@ -102,7 +103,8 @@ function sportsSnapshot(seasonId: string, tourCount: number) {
       name: `${index + 1} тур`,
       status: null,
       startedAt: null,
-      finishedAt: null
+      finishedAt: null,
+      fixtures: []
     })),
     prices: [],
     fetchedAt: "2026-08-09T00:00:00.000Z"

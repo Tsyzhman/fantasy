@@ -4,6 +4,7 @@ import test from "node:test";
 
 const schema = readFileSync(new URL("../../prisma/schema.prisma", import.meta.url), "utf8");
 const migration = readFileSync(new URL("../../prisma/migrations/000032_fantasy_provider_isolation/migration.sql", import.meta.url), "utf8");
+const scheduleMigration = readFileSync(new URL("../../prisma/migrations/000033_fantasy_provider_schedules/migration.sql", import.meta.url), "utf8");
 const mergeScript = readFileSync(new URL("../../scripts/merge-core-leagues.ts", import.meta.url), "utf8");
 const fplClient = readFileSync(new URL("../lib/providers/fpl.ts", import.meta.url), "utf8");
 const fplPriceSync = readFileSync(new URL("./fpl-price-sync.ts", import.meta.url), "utf8");
@@ -30,10 +31,21 @@ test("FPL schema is provider/contest-scoped over the existing fantasy tables", (
     "FantasyUserGameweekState",
     "FantasyChipDefinition",
     "FantasyChipUsage",
-    "FantasyProviderPlayerMatchScore"
+    "FantasyProviderPlayerMatchScore",
+    "FantasyProviderRound",
+    "FantasyProviderFixture"
   ]) {
     assert.match(schema, new RegExp(`model ${model}\\s*\\{`));
   }
+});
+
+test("provider schedule migration keeps provider rounds normalized and fixture identities unique", () => {
+  assert.match(scheduleMigration, /CREATE TABLE "fantasy_provider_rounds"/);
+  assert.match(scheduleMigration, /CREATE TABLE "fantasy_provider_fixtures"/);
+  assert.match(scheduleMigration, /fantasy_provider_rounds_contest_provider_round_key/);
+  assert.match(scheduleMigration, /fantasy_provider_fixtures_contest_fixture_key/);
+  assert.match(scheduleMigration, /fantasy_provider_fixtures_contest_match_key/);
+  assert.match(schema, /scheduleRevision\s+String\?/);
 });
 
 test("provider isolation migration backfills before enforcing contest keys", () => {
@@ -61,7 +73,9 @@ test("league merge preserves contest-bound FPL artifacts before source deletion"
     "fantasy_user_gameweek_states",
     "fantasy_chip_definitions",
     "fantasy_chip_usages",
-    "fantasy_provider_player_match_scores"
+    "fantasy_provider_player_match_scores",
+    "fantasy_provider_rounds",
+    "fantasy_provider_fixtures"
   ]) {
     assert.match(mergeScript, new RegExp(table));
   }

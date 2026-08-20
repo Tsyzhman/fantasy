@@ -1,8 +1,14 @@
 import type { PrismaClient } from "@prisma/client";
 
 import { fetchSportsRuFantasyGraphqlSnapshot, parseSportsRuFantasyTournament } from "@/lib/providers/sports-ru-fantasy";
+import { normalizeName } from "@/lib/text";
+import {
+  replaceFantasyProviderSchedule,
+  validateFantasyProviderSchedule
+} from "@/server/fantasy-provider-schedule";
 
 import { autoMapSportsRuFantasyPlayers } from "./sports_ru_player_mapping";
+import { sportsRuSeasonAliases } from "./squad_planner";
 
 export type SportsRuFantasySyncInput = {
   leagueId: bigint;
@@ -37,6 +43,8 @@ export async function syncSportsRuFantasy(prisma: PrismaClient, input: SportsRuF
       `Sports.ru returned only ${snapshot.prices.length} current-season prices for ${input.tournamentHru}; required at least ${minimumPlayers}. Existing data was not changed.`
     );
   }
+  const providerSchedule = sportsRuProviderScheduleRows(snapshot);
+  if (!input.dryRun) validateFantasyProviderSchedule(providerSchedule.rounds, providerSchedule.fixtures);
   if (input.dryRun) {
     return {
       status: "READY" as const,
@@ -178,12 +186,19 @@ export async function syncSportsRuFantasy(prisma: PrismaClient, input: SportsRuF
     contestId,
     onlyUnmapped: true
   });
+  const schedule = await syncSportsRuProviderSchedule(prisma, {
+    contestId,
+    leagueId: input.leagueId,
+    season: input.season,
+    snapshot
+  });
   return {
     status: "SYNCED" as const,
     seasonId: snapshot.seasonId,
     prices: snapshot.prices.length,
     deletedStalePrices,
     mapping,
+    schedule,
     databaseChanged: true
   };
 }
@@ -212,7 +227,9 @@ export function sportsRuContestRules(
   const current: StoredSportsRuSeason = {
     seasonId: snapshot.seasonId!,
     canonicalOffset,
-    tours: snapshot.tours.length > 0 ? snapshot.tours : existing?.tours ?? []
+    tours: snapshot.tours.length > 0
+      ? snapshot.tours.map(({ id, name, status, startedAt, finishedAt }) => ({ id, name, status, startedAt, finishedAt }))
+      : existing?.tours ?? []
   };
   const sportsRuSeasons = [...previous.filter((season) => season.seasonId !== current.seasonId), current]
     .sort((left, right) => left.canonicalOffset - right.canonicalOffset)
@@ -264,4 +281,147 @@ function inferredMaxPlayersPerTeam(leagueName: string) {
 
 function positiveInteger(value: number | undefined, fallback: number) {
   return typeof value === "number" && Number.isInteger(value) && value > 0 ? value : fallback;
+}
+
+async function syncSportsRuProviderSchedule(
+  prisma: PrismaClient,
+  input: {
+    contestId: string;
+    leagueId: bigint;
+    season: string;
+    snapshot: Awaited<ReturnType<typeof fetchSportsRuFantasyGraphqlSnapshot>>;
+  }
+) {
+  const tours = input.snapshot.tours;
+  const fixtures = tours.flatMap((tour) => tour.fixtures);
+  const providerSchedule = sportsRuProviderScheduleRows(input.snapshot);
+  const storedPrices = await prisma.fantasyPlayerPrice.findMany({
+    where: { contestId: input.contestId, provider: "SPORTS_RU" },
+    select: { providerPlayerId: true, teamId: true, teamName: true }
+  });
+  const storedByProviderPlayerId = new Map(
+    storedPrices.flatMap((row) => row.providerPlayerId ? [[row.providerPlayerId, row] as const] : [])
+  );
+  const teamCandidates = new Map<string, Set<bigint>>();
+  const teamCandidatesByName = new Map<string, Set<bigint>>();
+  for (const price of input.snapshot.prices) {
+    const stored = price.providerPlayerId ? storedByProviderPlayerId.get(price.providerPlayerId) : null;
+    if (!stored?.teamId) continue;
+    if (price.providerStatTeamId) addTeamCandidate(teamCandidates, price.providerStatTeamId, stored.teamId);
+    const teamName = normalizeName(price.teamName ?? stored.teamName);
+    if (teamName) addTeamCandidate(teamCandidatesByName, teamName, stored.teamId);
+  }
+  for (const fixture of fixtures) {
+    if (!teamCandidates.has(fixture.homeTeamId) && fixture.homeTeamName) {
+      const candidates = teamCandidatesByName.get(normalizeName(fixture.homeTeamName));
+      if (candidates) teamCandidates.set(fixture.homeTeamId, new Set(candidates));
+    }
+    if (!teamCandidates.has(fixture.awayTeamId) && fixture.awayTeamName) {
+      const candidates = teamCandidatesByName.get(normalizeName(fixture.awayTeamName));
+      if (candidates) teamCandidates.set(fixture.awayTeamId, new Set(candidates));
+    }
+  }
+  const teamIds = new Map<string, bigint | null>(
+    [...teamCandidates].map(([providerTeamId, candidates]) => [
+      providerTeamId,
+      candidates.size === 1 ? [...candidates][0] : null
+    ])
+  );
+  const fetchedAt = validProviderDate(input.snapshot.fetchedAt) ?? new Date();
+
+  return prisma.$transaction(async (tx) => {
+    for (const [providerTeamId, internalTeamId] of teamIds) {
+      await tx.providerEntityMap.upsert({
+        where: {
+          provider_providerSeason_providerEntityType_providerEntityId_internalEntityType: {
+            provider: "SPORTS_RU",
+            providerSeason: input.snapshot.seasonId ?? input.season,
+            providerEntityType: "STAT_TEAM",
+            providerEntityId: providerTeamId,
+            internalEntityType: "TEAM"
+          }
+        },
+        update: {
+          contestId: input.contestId,
+          internalEntityId: internalTeamId ? String(internalTeamId) : null,
+          confidence: internalTeamId ? 1 : 0,
+          matchedBy: internalTeamId ? "SPORTS_RU_PRICE_TEAM_CONSENSUS" : null,
+          status: internalTeamId ? "MATCHED" : "UNMATCHED"
+        },
+        create: {
+          provider: "SPORTS_RU",
+          contestId: input.contestId,
+          providerSeason: input.snapshot.seasonId ?? input.season,
+          providerEntityType: "STAT_TEAM",
+          providerEntityId: providerTeamId,
+          internalEntityType: "TEAM",
+          internalEntityId: internalTeamId ? String(internalTeamId) : null,
+          confidence: internalTeamId ? 1 : 0,
+          matchedBy: internalTeamId ? "SPORTS_RU_PRICE_TEAM_CONSENSUS" : null,
+          status: internalTeamId ? "MATCHED" : "UNMATCHED"
+        }
+      });
+    }
+    return replaceFantasyProviderSchedule(tx, {
+      contestId: input.contestId,
+      provider: "SPORTS_RU",
+      leagueId: input.leagueId,
+      season: input.season,
+      seasonAliases: sportsRuSeasonAliases(input.season),
+      fetchedAt,
+      rounds: providerSchedule.rounds,
+      fixtures: providerSchedule.fixtures,
+      teamIds
+    });
+  });
+}
+
+function addTeamCandidate(map: Map<string, Set<bigint>>, key: string, teamId: bigint) {
+  const candidates = map.get(key) ?? new Set<bigint>();
+  candidates.add(teamId);
+  map.set(key, candidates);
+}
+
+function sportsRuTourOrdinal(_name: string, index: number) {
+  // Sports.ru returns tours in fantasy order, while their opaque IDs are not
+  // monotonic (Spain's tour 6 ID is lower than tours 4 and 5). Array order is
+  // therefore the only generic ordinal that also works for playoff labels.
+  return index + 1;
+}
+
+function sportsRuProviderScheduleRows(
+  snapshot: Awaited<ReturnType<typeof fetchSportsRuFantasyGraphqlSnapshot>>
+) {
+  return {
+    rounds: snapshot.tours.map((tour, index) => ({
+      providerRoundId: tour.id,
+      ordinal: sportsRuTourOrdinal(tour.name, index),
+      name: tour.name,
+      status: tour.status,
+      deadlineAt: validProviderDate(tour.startedAt),
+      startsAt: earliestDate(tour.fixtures.map((fixture) => validProviderDate(fixture.scheduledAt)))
+        ?? validProviderDate(tour.startedAt),
+      finishedAt: validProviderDate(tour.finishedAt)
+    })),
+    fixtures: snapshot.tours.flatMap((tour) => tour.fixtures.map((fixture) => ({
+      providerFixtureId: fixture.id,
+      providerRoundId: tour.id,
+      providerHomeTeamId: fixture.homeTeamId,
+      providerAwayTeamId: fixture.awayTeamId,
+      kickoffAt: validProviderDate(fixture.scheduledAt),
+      status: fixture.status,
+      sourceRoundLabel: fixture.sourceRoundLabel
+    })))
+  };
+}
+
+function validProviderDate(value: string | null | undefined) {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isFinite(date.getTime()) ? date : null;
+}
+
+function earliestDate(values: Array<Date | null>) {
+  const dates = values.filter((value): value is Date => value !== null);
+  return dates.length > 0 ? new Date(Math.min(...dates.map((date) => date.getTime()))) : null;
 }

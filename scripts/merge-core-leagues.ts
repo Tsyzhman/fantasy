@@ -265,12 +265,12 @@ async function mergeLeague(tx: Prisma.TransactionClient, item: PlannedMerge): Pr
     INSERT INTO sports_ru_fantasy_contests (
       id, league_id, season, provider, provider_contest_id, slug, name,
       budget_limit, squad_size, max_players_per_team, rules, source_url,
-      last_synced_at, created_at, updated_at
+      last_synced_at, schedule_revision, schedule_synced_at, created_at, updated_at
     )
     SELECT
       'merge_' || md5(id || ':' || ${targetId}::text), ${targetId}, season, provider,
       provider_contest_id, slug, name, budget_limit, squad_size, max_players_per_team,
-      rules, source_url, last_synced_at, created_at, now()
+      rules, source_url, last_synced_at, schedule_revision, schedule_synced_at, created_at, now()
     FROM sports_ru_fantasy_contests
     WHERE league_id = ${sourceId}
     ${seasonFilter}
@@ -280,6 +280,8 @@ async function mergeLeague(tx: Prisma.TransactionClient, item: PlannedMerge): Pr
       rules = COALESCE(sports_ru_fantasy_contests.rules, EXCLUDED.rules),
       source_url = COALESCE(sports_ru_fantasy_contests.source_url, EXCLUDED.source_url),
       last_synced_at = GREATEST(sports_ru_fantasy_contests.last_synced_at, EXCLUDED.last_synced_at),
+      schedule_revision = COALESCE(EXCLUDED.schedule_revision, sports_ru_fantasy_contests.schedule_revision),
+      schedule_synced_at = GREATEST(sports_ru_fantasy_contests.schedule_synced_at, EXCLUDED.schedule_synced_at),
       updated_at = now()
   `;
 
@@ -413,6 +415,78 @@ async function mergeFantasyProviderArtifacts(tx: Prisma.TransactionClient, sourc
   const providerSeasonFilter = cli.seasons.length > 0
     ? Prisma.sql`AND source_contest.season IN (${Prisma.join(cli.seasons)})`
     : Prisma.empty;
+
+  await tx.$executeRaw`
+    INSERT INTO fantasy_provider_rounds (
+      id, contest_id, provider, provider_round_id, ordinal, name, status,
+      deadline_at, starts_at, finished_at, fetched_at, created_at, updated_at
+    )
+    SELECT
+      'merge_' || md5(source_round.id || ':' || ${targetId}::text), target_contest.id,
+      source_round.provider, source_round.provider_round_id, source_round.ordinal,
+      source_round.name, source_round.status, source_round.deadline_at,
+      source_round.starts_at, source_round.finished_at, source_round.fetched_at,
+      source_round.created_at, now()
+    FROM fantasy_provider_rounds source_round
+    JOIN sports_ru_fantasy_contests source_contest ON source_contest.id = source_round.contest_id
+    JOIN sports_ru_fantasy_contests target_contest
+      ON target_contest.provider = source_contest.provider
+      AND target_contest.league_id = ${targetId}
+      AND target_contest.season = source_contest.season
+    WHERE source_contest.league_id = ${sourceId}
+      ${providerSeasonFilter}
+    ON CONFLICT (contest_id, provider_round_id) DO UPDATE SET
+      ordinal = EXCLUDED.ordinal,
+      name = EXCLUDED.name,
+      status = EXCLUDED.status,
+      deadline_at = EXCLUDED.deadline_at,
+      starts_at = EXCLUDED.starts_at,
+      finished_at = EXCLUDED.finished_at,
+      fetched_at = GREATEST(fantasy_provider_rounds.fetched_at, EXCLUDED.fetched_at),
+      updated_at = now()
+  `;
+
+  await tx.$executeRaw`
+    INSERT INTO fantasy_provider_fixtures (
+      id, contest_id, round_id, provider, provider_fixture_id,
+      provider_home_team_id, provider_away_team_id, home_team_id, away_team_id,
+      match_id, kickoff_at, status, source_round_label, mapping_status,
+      mapping_confidence, matched_by, fetched_at, created_at, updated_at
+    )
+    SELECT
+      'merge_' || md5(source_fixture.id || ':' || ${targetId}::text), target_contest.id,
+      target_round.id, source_fixture.provider, source_fixture.provider_fixture_id,
+      source_fixture.provider_home_team_id, source_fixture.provider_away_team_id,
+      source_fixture.home_team_id, source_fixture.away_team_id, source_fixture.match_id,
+      source_fixture.kickoff_at, source_fixture.status, source_fixture.source_round_label,
+      source_fixture.mapping_status, source_fixture.mapping_confidence,
+      source_fixture.matched_by, source_fixture.fetched_at, source_fixture.created_at, now()
+    FROM fantasy_provider_fixtures source_fixture
+    JOIN sports_ru_fantasy_contests source_contest ON source_contest.id = source_fixture.contest_id
+    JOIN sports_ru_fantasy_contests target_contest
+      ON target_contest.provider = source_contest.provider
+      AND target_contest.league_id = ${targetId}
+      AND target_contest.season = source_contest.season
+    LEFT JOIN fantasy_provider_rounds source_round ON source_round.id = source_fixture.round_id
+    LEFT JOIN fantasy_provider_rounds target_round
+      ON target_round.contest_id = target_contest.id
+      AND target_round.provider_round_id = source_round.provider_round_id
+    WHERE source_contest.league_id = ${sourceId}
+      ${providerSeasonFilter}
+    ON CONFLICT (contest_id, provider_fixture_id) DO UPDATE SET
+      round_id = EXCLUDED.round_id,
+      home_team_id = COALESCE(EXCLUDED.home_team_id, fantasy_provider_fixtures.home_team_id),
+      away_team_id = COALESCE(EXCLUDED.away_team_id, fantasy_provider_fixtures.away_team_id),
+      match_id = COALESCE(EXCLUDED.match_id, fantasy_provider_fixtures.match_id),
+      kickoff_at = EXCLUDED.kickoff_at,
+      status = EXCLUDED.status,
+      source_round_label = EXCLUDED.source_round_label,
+      mapping_status = EXCLUDED.mapping_status,
+      mapping_confidence = EXCLUDED.mapping_confidence,
+      matched_by = EXCLUDED.matched_by,
+      fetched_at = GREATEST(fantasy_provider_fixtures.fetched_at, EXCLUDED.fetched_at),
+      updated_at = now()
+  `;
 
   await tx.$executeRaw`
     UPDATE fantasy_rulesets source_ruleset

@@ -6,6 +6,7 @@ export const FPL_SEASON = "2026/2027";
 export const FPL_TIME_ZONE = "Europe/London";
 export const FPL_ORIGIN = "https://fantasy.premierleague.com";
 export const FPL_BOOTSTRAP_URL = "https://fantasy.premierleague.com/api/bootstrap-static/";
+export const FPL_FIXTURES_URL = "https://fantasy.premierleague.com/api/fixtures/";
 export const FPL_ENTRY_URL = "https://fantasy.premierleague.com/api/entry";
 export const FPL_EVENT_LIVE_URL = "https://fantasy.premierleague.com/api/event";
 export const FPL_POSITION_BY_ELEMENT_TYPE: Readonly<Record<number, "GK" | "DEF" | "MID" | "FWD">> = {
@@ -97,6 +98,17 @@ export type FplBootstrap = {
   chips: FplOfficialChip[];
   gameConfig: Record<string, unknown>;
   fetchedAt: Date;
+};
+
+export type FplFixture = {
+  id: number;
+  event: number | null;
+  homeTeamId: number;
+  awayTeamId: number;
+  kickoffTime: Date | null;
+  started: boolean;
+  finished: boolean;
+  provisionalStartTime: boolean;
 };
 
 export type FplPriceRow = {
@@ -236,6 +248,11 @@ export class FplPublicClient {
   async getBootstrap(): Promise<FplBootstrap> {
     const payload = await this.getJson(this.endpoint);
     return parseFplBootstrap(payload, this.now());
+  }
+
+  async getFixtures(): Promise<FplFixture[]> {
+    const url = this.endpoint.replace(/bootstrap-static\/?$/, "fixtures/");
+    return parseFplFixtures(await this.getJson(url));
   }
 
   async getEntry(entryId: string): Promise<Record<string, unknown>> {
@@ -428,6 +445,32 @@ export function parseFplBootstrap(payload: unknown, fetchedAt = new Date()): Fpl
     throw new FplProviderError("FPL bootstrap contains an element with an unknown team or element type.", "MALFORMED");
   }
   return { events, teams, elements, elementTypes, chips, gameConfig, fetchedAt };
+}
+
+export function parseFplFixtures(payload: unknown): FplFixture[] {
+  const fixtures = parseArray(payload, "fixtures").map((value, index) => {
+    const row = parseRecord(value, `fixtures[${index}]`);
+    const event = row.event === null ? null : positiveIntegerValue(row.event, `fixtures[${index}].event`);
+    const kickoffTime = row.kickoff_time === null ? null : parseDate(row.kickoff_time, `fixtures[${index}].kickoff_time`);
+    return {
+      id: positiveIntegerValue(row.id, `fixtures[${index}].id`),
+      event,
+      homeTeamId: positiveIntegerValue(row.team_h, `fixtures[${index}].team_h`),
+      awayTeamId: positiveIntegerValue(row.team_a, `fixtures[${index}].team_a`),
+      kickoffTime,
+      started: row.started === true,
+      finished: row.finished === true,
+      provisionalStartTime: row.provisional_start_time === true
+    } satisfies FplFixture;
+  });
+  if (fixtures.length === 0) throw new FplProviderError("FPL fixtures payload is empty.", "MALFORMED");
+  if (new Set(fixtures.map((fixture) => fixture.id)).size !== fixtures.length) {
+    throw new FplProviderError("FPL fixtures payload has duplicate fixture IDs.", "MALFORMED");
+  }
+  if (fixtures.some((fixture) => fixture.homeTeamId === fixture.awayTeamId)) {
+    throw new FplProviderError("FPL fixtures payload contains the same home and away team.", "MALFORMED");
+  }
+  return fixtures;
 }
 
 export function fplPriceRows(bootstrap: FplBootstrap): FplPriceRow[] {

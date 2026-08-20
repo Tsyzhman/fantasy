@@ -13,7 +13,7 @@ import {
   type SportsRuSquadImportPreview
 } from "./sports_ru_squad_import";
 import type { FantasySquadSelection } from "./squad_logic";
-import { sportsRuSeasonAliases } from "./squad_planner";
+import { fantasyProviderRoundKey, sportsRuSeasonAliases } from "./squad_planner";
 
 export const SPORTS_RU_SQUAD_PUBLICATION_DELAY_MS = 30 * 60 * 1_000;
 const SPORTS_RU_SQUAD_RETRY_DELAY_MS = 15 * 60 * 1_000;
@@ -32,6 +32,7 @@ export type SportsRuSquadScheduleMatch = {
 export type SportsRuSquadRoundSchedule = {
   roundKey: string;
   roundLabel: string;
+  providerTourId: string | null;
   firstMatchAt: Date;
   availableAfter: Date;
 };
@@ -66,8 +67,8 @@ export type SportsRuSquadSnapshotSyncResult = {
 type FetchPublishedSquad = typeof fetchSportsRuLatestPublishedSquad;
 
 /**
- * Returns the most recently started league round. The publication time is
- * anchored to the earliest FotMob kickoff in that round plus 30 minutes.
+ * Legacy/test helper for a FotMob schedule. Production uses normalized
+ * Sports.ru provider rounds through loadLatestSportsRuSquadRoundSchedule.
  */
 export function latestStartedSportsRuSquadRound(
   matches: readonly SportsRuSquadScheduleMatch[],
@@ -89,9 +90,73 @@ export function latestStartedSportsRuSquadRound(
   return {
     roundKey: latest[0],
     roundLabel: latest[1].label,
+    providerTourId: null,
     firstMatchAt: latest[1].firstMatchAt,
     availableAfter: new Date(latest[1].firstMatchAt.getTime() + SPORTS_RU_SQUAD_PUBLICATION_DELAY_MS)
   };
+}
+
+export function latestStartedSportsRuProviderRound(
+  rounds: ReadonlyArray<{
+    providerRoundId: string;
+    ordinal: number;
+    name: string;
+    startsAt: Date | null;
+    fixtures: ReadonlyArray<{ kickoffAt: Date | null; status: string | null }>;
+  }>,
+  now: Date
+): SportsRuSquadRoundSchedule | null {
+  return rounds.flatMap((round): SportsRuSquadRoundSchedule[] => {
+    const firstMatchAt = round.fixtures
+      .filter((fixture) => !["CANCELLED", "POSTPONED"].includes(fixture.status?.toUpperCase() ?? ""))
+      .map((fixture) => fixture.kickoffAt)
+      .filter((kickoff): kickoff is Date => kickoff !== null)
+      .sort((left, right) => left.getTime() - right.getTime())[0] ?? round.startsAt;
+    if (!firstMatchAt || firstMatchAt > now) return [];
+    return [{
+      roundKey: fantasyProviderRoundKey("SPORTS_RU", round.ordinal, round.providerRoundId),
+      roundLabel: round.name,
+      providerTourId: round.providerRoundId,
+      firstMatchAt,
+      availableAfter: new Date(firstMatchAt.getTime() + SPORTS_RU_SQUAD_PUBLICATION_DELAY_MS)
+    }];
+  }).sort((left, right) => right.firstMatchAt.getTime() - left.firstMatchAt.getTime())[0] ?? null;
+}
+
+async function loadLatestSportsRuSquadRoundSchedule(
+  prisma: PrismaClient,
+  input: { contestId: string; leagueId: bigint; season: string; now: Date }
+): Promise<SportsRuSquadRoundSchedule | null> {
+  const delegate = (prisma as unknown as {
+    fantasyProviderRound?: PrismaClient["fantasyProviderRound"];
+  }).fantasyProviderRound;
+  if (delegate) {
+    const rounds = await delegate.findMany({
+      where: { contestId: input.contestId, provider: "SPORTS_RU" },
+      include: {
+        fixtures: {
+          select: { kickoffAt: true, status: true },
+          orderBy: { kickoffAt: "asc" }
+        }
+      },
+      orderBy: { ordinal: "asc" }
+    });
+    return latestStartedSportsRuProviderRound(rounds, input.now);
+  }
+
+  // Compatibility for narrow unit-test doubles created before provider-round
+  // delegates existed. This path is unreachable with the generated runtime
+  // Prisma client, so production never falls back when provider rows are empty.
+  const matches = await prisma.coreMatch.findMany({
+    where: {
+      leagueId: input.leagueId,
+      season: { in: sportsRuSeasonAliases(input.season) },
+      cancelled: false,
+      matchDate: { lte: input.now }
+    },
+    select: { id: true, round: true, matchDate: true, cancelled: true }
+  });
+  return latestStartedSportsRuSquadRound(matches, input.now);
 }
 
 export async function syncSportsRuSquadSnapshots(
@@ -139,16 +204,12 @@ export async function syncSportsRuSquadSnapshots(
         result.skipped += profiles.length;
         continue;
       }
-      const matches = await prisma.coreMatch.findMany({
-        where: {
-          leagueId: scope.leagueId,
-          season: { in: sportsRuSeasonAliases(scope.season) },
-          cancelled: false,
-          matchDate: { lte: now }
-        },
-        select: { id: true, round: true, matchDate: true, cancelled: true }
+      const schedule = await loadLatestSportsRuSquadRoundSchedule(prisma, {
+        contestId: contest.id,
+        leagueId: scope.leagueId,
+        season: scope.season,
+        now
       });
-      const schedule = latestStartedSportsRuSquadRound(matches, now);
       if (!schedule) {
         result.skipped += profiles.length;
         continue;
@@ -175,13 +236,15 @@ export async function syncSportsRuSquadSnapshots(
               firstMatchAt: schedule.firstMatchAt,
               availableAfter: schedule.availableAfter,
               providerProfileId: profile.providerUserId,
-              providerSeasonId
+              providerSeasonId,
+              providerTourId: schedule.providerTourId
             },
             update: {
               roundLabel: schedule.roundLabel,
               firstMatchAt: schedule.firstMatchAt,
               availableAfter: schedule.availableAfter,
-              providerSeasonId
+              providerSeasonId,
+              providerTourId: schedule.providerTourId
             }
           });
           result.scheduled += 1;
@@ -248,16 +311,12 @@ export async function syncSportsRuSquadSnapshotOnDemand(
       "Sports.ru squad import is not configured for this league season yet."
     );
   }
-  const matches = await prisma.coreMatch.findMany({
-    where: {
-      leagueId: input.leagueId,
-      season: { in: sportsRuSeasonAliases(input.season) },
-      cancelled: false,
-      matchDate: { lte: now }
-    },
-    select: { id: true, round: true, matchDate: true, cancelled: true }
+  const schedule = await loadLatestSportsRuSquadRoundSchedule(prisma, {
+    contestId: contest.id,
+    leagueId: input.leagueId,
+    season: input.season,
+    now
   });
-  const schedule = latestStartedSportsRuSquadRound(matches, now);
   if (!schedule) {
     const status = await loadSportsRuSquadSnapshotStatus(prisma, {
       userId: input.userId,
@@ -285,13 +344,15 @@ export async function syncSportsRuSquadSnapshotOnDemand(
       firstMatchAt: schedule.firstMatchAt,
       availableAfter: schedule.availableAfter,
       providerProfileId: profile.providerUserId,
-      providerSeasonId
+      providerSeasonId,
+      providerTourId: schedule.providerTourId
     },
     update: {
       roundLabel: schedule.roundLabel,
       firstMatchAt: schedule.firstMatchAt,
       availableAfter: schedule.availableAfter,
-      providerSeasonId
+      providerSeasonId,
+      providerTourId: schedule.providerTourId
     }
   });
   await syncOneSportsRuSquadSnapshot(prisma, snapshot.id, {
@@ -360,7 +421,8 @@ async function syncOneSportsRuSquadSnapshot(
   if (!published) {
     try {
       published = await input.fetchPublishedSquad(input.profileId, snapshot.providerSeasonId, {
-        expectedTourNumber: firstPositiveInteger(snapshot.roundLabel) ?? undefined
+        expectedTourId: snapshot.providerTourId ?? undefined,
+        expectedTourNumber: snapshot.providerTourId ? undefined : firstPositiveInteger(snapshot.roundLabel) ?? undefined
       });
     } catch (error) {
       return markPublicationRetry(prisma, snapshot, input.now, errorMessage(error, "Sports.ru request failed."));
@@ -377,12 +439,12 @@ async function syncOneSportsRuSquadSnapshot(
       `Sports.ru returned ${published.players.length}/${input.expectedSquadSize} players.`
     );
   }
-  if (!sportsRuTourMatchesFotMobRound(snapshot.roundLabel, published.tourName)) {
+  if (snapshot.providerTourId && published.tourId !== snapshot.providerTourId) {
     return markPublicationRetry(
       prisma,
       snapshot,
       input.now,
-      `Sports.ru still exposes ${published.tourName}, while FotMob has started ${snapshot.roundLabel}.`
+      `Sports.ru returned tour ${published.tourId}, while provider tour ${snapshot.providerTourId} is expected.`
     );
   }
   const duplicate = await prisma.sportsRuSquadSnapshot.findFirst({
@@ -636,12 +698,6 @@ function parseStoredUnmappedPlayers(value: Prisma.JsonValue | null) {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-}
-
-export function sportsRuTourMatchesFotMobRound(roundLabel: string | null, tourName: string) {
-  const fotmobRound = firstPositiveInteger(roundLabel);
-  const sportsRound = firstPositiveInteger(tourName);
-  return fotmobRound === null || sportsRound === null || fotmobRound === sportsRound;
 }
 
 function firstPositiveInteger(value: string | null) {

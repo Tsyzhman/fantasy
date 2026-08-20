@@ -20,6 +20,7 @@ import {
   compareFantasyPlannerPlayers,
   configuredFantasyProjectionEngine,
   fantasyPlannerPosition,
+  fantasyProviderRoundKey,
   fantasyPlayerPoolPreferenceGroups,
   fantasyPlannerSharedRowIdentity,
   fantasySquadRoundPlansFromFilters,
@@ -1279,6 +1280,8 @@ test("round rollover resolves exact stored rounds, numeric gaps, and legacy filt
   assert.equal(fantasySquadRoundShift(["round:12", "round:13", "round:14"], ["round:13", "round:14"]), 1);
   assert.equal(fantasySquadRoundShift(["round:12", "round:13"], ["round:17"]), 5);
   assert.equal(fantasySquadRoundShift(["date:2026-08-01"], ["date:2026-08-08"]), 0);
+  assert.equal(fantasySquadRoundShift(["sports-ru:tour:2:2462"], ["sports-ru:tour:5:2466"]), 3);
+  assert.equal(fantasySquadRoundShift(["fpl:event:8"], ["fpl:event:10"]), 2);
   assert.deepEqual(fantasySquadRoundIdsFromFilters({ roundPlanRoundIds: [" round:12 ", 7, "", "round:13"] }), ["round:12", "round:13"]);
   assert.deepEqual(fantasySquadRoundIdsFromFilters({ roundPlans: [] }), []);
 });
@@ -1303,6 +1306,42 @@ test("squad planner groups upcoming matches into fixture rounds", () => {
   assert.equal(result.rounds[0].fixtureCount, 2);
   assert.equal(result.fixturesByTeamRound.get("round:12")?.get("10")?.[0].opponentName, "Away 20");
   assert.equal(result.fixturesByTeamRound.get("round:12")?.get("10")?.[0].opponentTeamId, "20");
+});
+
+test("Sports.ru provider tour keeps 14 fixtures and eight double-fixture teams in one round", () => {
+  const providerRoundId = fantasyProviderRoundKey("SPORTS_RU", 2, "2462");
+  const pairs = [
+    ...Array.from({ length: 10 }, (_, index) => [String(index * 2 + 1), String(index * 2 + 2)] as const),
+    ["1", "3"], ["2", "4"], ["5", "7"], ["6", "8"]
+  ];
+  const matches = pairs.map(([homeTeamId, awayTeamId], index) => Object.assign(
+    match({
+      id: `sports-${index + 1}`,
+      round: index < 10 ? "2" : "1",
+      date: `2026-08-${String(25 + Math.floor(index / 7)).padStart(2, "0")}T17:00:00.000Z`,
+      homeTeamId,
+      awayTeamId
+    }),
+    {
+      providerRoundId,
+      providerRoundLabel: "2 тур",
+      providerRoundOrdinal: 2
+    }
+  ));
+
+  const result = buildPlannerRoundFixtures(matches, new Date("2026-08-20T00:00:00.000Z"));
+  const doubleTeams = [...(result.fixturesByTeamRound.get(providerRoundId) ?? new Map())]
+    .filter(([, fixtures]) => fixtures.length === 2)
+    .map(([teamId]) => teamId)
+    .sort((left, right) => Number(left) - Number(right));
+
+  assert.deepEqual(result.rounds, [{
+    id: providerRoundId,
+    label: "2 тур",
+    startsAt: "2026-08-25T17:00:00.000Z",
+    fixtureCount: 14
+  }]);
+  assert.deepEqual(doubleTeams, ["1", "2", "3", "4", "5", "6", "7", "8"]);
 });
 
 test("squad planner retains completed fixtures in an active split round", () => {

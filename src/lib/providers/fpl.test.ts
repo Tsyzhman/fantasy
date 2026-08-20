@@ -16,6 +16,7 @@ import {
   latestPublishedFplGameweek,
   normalizeFplEntryId,
   parseFplBootstrap,
+  parseFplFixtures,
   parseFplLiveEvent,
   parseFplPublishedPicks
 } from "./fpl";
@@ -129,6 +130,47 @@ test("FPL bootstrap fails closed for malformed or ambiguous collections", () => 
     (error: unknown) => error instanceof FplProviderError && error.reason === "MALFORMED"
   );
   assert.throws(() => parseFplBootstrap({ ...bootstrapPayload(), teams: [] }), /required non-empty collection/);
+});
+
+test("FPL fixtures keep provider event membership and preserve unassigned postponed matches", () => {
+  const fixtures = parseFplFixtures([
+    {
+      id: 1001,
+      event: 8,
+      team_h: 1,
+      team_a: 2,
+      kickoff_time: "2026-10-17T14:00:00Z",
+      started: false,
+      finished: false,
+      provisional_start_time: false
+    },
+    {
+      id: 1002,
+      event: null,
+      team_h: 3,
+      team_a: 4,
+      kickoff_time: null,
+      started: false,
+      finished: false,
+      provisional_start_time: true
+    }
+  ]);
+
+  assert.equal(fixtures[0].event, 8);
+  assert.equal(fixtures[0].kickoffTime?.toISOString(), "2026-10-17T14:00:00.000Z");
+  assert.equal(fixtures[1].event, null);
+  assert.equal(fixtures[1].kickoffTime, null);
+  assert.throws(() => parseFplFixtures([{
+    id: 1,
+    event: 1,
+    team_h: 2,
+    team_a: 2,
+    kickoff_time: null,
+    started: false,
+    finished: false,
+    provisional_start_time: true
+  }]), /same home and away team/);
+  assert.throws(() => parseFplFixtures([]), /payload is empty/);
 });
 
 test("FPL public client retries unavailable responses and omits credentials", async () => {
