@@ -20,7 +20,7 @@ test("production AmneziaWG config stays secret, bounded, and serialized with dep
   assert.match(workflow, /secrets\.FPL_AMNEZIAWG_CONFIG/);
   assert.match(workflow, /group: production-deploy/);
   assert.match(script, /chmod 600 "\$uploaded_config"/);
-  assert.match(script, /config_root="\/etc\/fantasy-scout\/fpl-vpn"/);
+  assert.match(script, /config_root="\/var\/backups\/fantasy-scout\/fpl-vpn-config"/);
   assert.match(interfaceAllowlist, /PrivateKey/);
   assert.doesNotMatch(interfaceAllowlist, /(?:Pre|Post)(?:Up|Down)/);
   assert.doesNotMatch(workflow, /PrivateKey\s*=/);
