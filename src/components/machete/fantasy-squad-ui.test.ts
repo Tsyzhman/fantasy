@@ -35,6 +35,13 @@ const fantasySquadPageSource = readFileSync(new URL("../../app/machete/fantasy-s
 const playerTableExportRouteSource = readFileSync(new URL("../../app/api/machete/squads/export-table/route.ts", import.meta.url), "utf8");
 const globalStylesSource = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
 
+test("Sports.ru placeholders stay visible in the squad with their price but never enter the transfer pool", () => {
+  assert.match(squadPlannerSource, /current\.filter\(\(player\) => player\.isProviderPlaceholder\)/);
+  assert.match(squadPlannerSource, /\.filter\(\(player\) => !player\.isProviderPlaceholder\)/);
+  assert.match(squadPlannerSource, /<I18nText en="not in database" ru="нет в базе" \/>/);
+  assert.match(squadPlannerSource, /placeholderPlayersCount/);
+});
+
 test("round forecast totals available alternative projections and keeps missing players visible through warnings", () => {
   const players = [
     { playerId: "captain", alternativePredictedFp: 4.5, alternativeRoundPoints: [4.5, 5, null] },

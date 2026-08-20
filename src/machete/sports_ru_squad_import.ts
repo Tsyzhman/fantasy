@@ -5,9 +5,12 @@ import type { SportsRuPublishedSquad } from "@/lib/providers/sports-ru-fantasy";
 import {
   countFantasySquadTransfers,
   createFantasySquadRoundPlans,
+  fantasyProviderPlaceholderPlayerId,
   fantasyTransferLimitForHorizon,
+  normalizeFantasyPosition,
   validateFantasySquadForSave,
   type FantasyPlannerPlayer,
+  type FantasyProviderPlaceholder,
   type FantasySquadRoundPlan,
   type FantasySquadRules,
   type FantasySquadSelection
@@ -22,7 +25,7 @@ export type SportsRuSquadImportPreview = {
   tourId: string;
   tourName: string;
   selections: FantasySquadSelection[];
-  unmapped: Array<{ providerPlayerId: string; name: string; teamName: string | null }>;
+  unmapped: FantasyProviderPlaceholder[];
 };
 
 export async function mapSportsRuPublishedSquad(
@@ -47,18 +50,28 @@ export async function mapSportsRuPublishedSquad(
       providerPlayerId: { in: providerPlayerIds }
     },
     orderBy: { lastSeenAt: "desc" },
-    select: { providerPlayerId: true, playerId: true, price: true, position: true }
+    select: {
+      providerPlayerId: true,
+      playerId: true,
+      teamId: true,
+      playerName: true,
+      teamName: true,
+      sportsTeamName: true,
+      price: true,
+      position: true
+    }
   });
+  const priceByProviderId = new Map<string, (typeof priceRows)[number]>();
   const mappedByProviderId = new Map<string, (typeof priceRows)[number]>();
   for (const row of priceRows) {
-    if (!row.providerPlayerId || !row.playerId || mappedByProviderId.has(row.providerPlayerId)) continue;
-    mappedByProviderId.set(row.providerPlayerId, row);
+    if (!row.providerPlayerId) continue;
+    if (!priceByProviderId.has(row.providerPlayerId)) priceByProviderId.set(row.providerPlayerId, row);
+    if (row.playerId && !mappedByProviderId.has(row.providerPlayerId)) mappedByProviderId.set(row.providerPlayerId, row);
   }
-  const unmapped = published.players
-    .filter((player) => !mappedByProviderId.has(player.providerPlayerId))
-    .map((player) => ({ providerPlayerId: player.providerPlayerId, name: player.name, teamName: player.teamName }));
-  const mappedPlayers = published.players.filter((player) => mappedByProviderId.has(player.providerPlayerId));
-  const orderedPlayers = [...mappedPlayers].sort((left, right) => {
+  if (providerPlayerIds.length !== published.players.length) {
+    throw new SportsRuSquadImportError("DUPLICATE_PUBLISHED_PLAYER", "Sports.ru returned a duplicate player in the published squad.");
+  }
+  const orderedPlayers = [...published.players].sort((left, right) => {
     if (left.isStarter !== right.isStarter) return left.isStarter ? -1 : 1;
     if (left.isStarter) return sportsRuRoleOrder(left.role) - sportsRuRoleOrder(right.role);
     const leftGoalkeeper = left.role === "GOALKEEPER";
@@ -66,16 +79,49 @@ export async function mapSportsRuPublishedSquad(
     if (leftGoalkeeper !== rightGoalkeeper) return leftGoalkeeper ? 1 : -1;
     return (left.substitutePriority ?? 99) - (right.substitutePriority ?? 99);
   });
+  const unmapped: FantasyProviderPlaceholder[] = [];
   const selections = orderedPlayers.map((player, slotIndex): FantasySquadSelection => {
-    const mapped = mappedByProviderId.get(player.providerPlayerId)!;
+    const mapped = mappedByProviderId.get(player.providerPlayerId);
+    const priceRow = priceByProviderId.get(player.providerPlayerId);
+    const purchasePrice = player.price ?? priceRow?.price ?? null;
+    if (purchasePrice === null || !Number.isFinite(purchasePrice) || purchasePrice < 0) {
+      throw new SportsRuSquadImportError(
+        "SPORTS_PLAYER_PRICE_MISSING",
+        `Sports.ru did not return a valid price for ${player.name}.`
+      );
+    }
+    let playerId: string;
+    if (mapped?.playerId) {
+      playerId = String(mapped.playerId);
+    } else {
+      const position = player.role ?? priceRow?.position ?? "";
+      if (normalizeFantasyPosition(position) === "UNK") {
+        throw new SportsRuSquadImportError(
+          "SPORTS_PLAYER_POSITION_MISSING",
+          `Sports.ru did not return a valid fantasy position for ${player.name}.`
+        );
+      }
+      playerId = fantasyProviderPlaceholderPlayerId("SPORTS_RU", player.providerPlayerId);
+      const teamName = player.teamName ?? priceRow?.sportsTeamName ?? priceRow?.teamName ?? "Sports.ru team";
+      unmapped.push({
+        playerId,
+        provider: "SPORTS_RU",
+        providerPlayerId: player.providerPlayerId,
+        name: player.name || priceRow?.playerName || `Sports.ru player ${player.providerPlayerId}`,
+        teamId: priceRow?.teamId ? String(priceRow.teamId) : sportsRuPlaceholderTeamId(teamName),
+        teamName,
+        position,
+        price: purchasePrice
+      });
+    }
     return {
-      playerId: String(mapped.playerId),
+      playerId,
       isStarter: player.isStarter,
       isLocked: false,
       isCaptain: player.isCaptain,
       isViceCaptain: player.isViceCaptain,
       slotIndex,
-      purchasePrice: player.price ?? mapped.price
+      purchasePrice
     };
   });
   if (published.players.length !== input.expectedSquadSize) {
@@ -141,4 +187,9 @@ function sportsRuRoleOrder(role: string | null) {
   if (role === "MIDFIELDER") return 2;
   if (role === "FORWARD") return 3;
   return 4;
+}
+
+function sportsRuPlaceholderTeamId(teamName: string) {
+  const normalized = teamName.trim().toLocaleLowerCase("ru-RU").replace(/\s+/g, " ");
+  return `provider-team:SPORTS_RU:${encodeURIComponent(normalized || "unknown")}`;
 }

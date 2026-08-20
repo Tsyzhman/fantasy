@@ -77,6 +77,11 @@ import {
   defaultFantasySquadRules,
   countFantasySquadTransfers,
   fantasyTransferLimitForHorizon,
+  fantasyProviderPlaceholderPlannerPlayer,
+  fantasyProviderPlaceholdersFromFilters,
+  isFantasyProviderPlaceholderPlayerId,
+  isFantasySquadPlayerId,
+  parseFantasyProviderPlaceholders,
   transfersPerFantasyRound,
   normalizeFantasyHorizon,
   normalizeFantasyPosition,
@@ -86,6 +91,7 @@ import {
   validateFantasySquadForSave,
   type FantasyProjectionFixtureInputs,
   type FantasyPlannerPlayer,
+  type FantasyProviderPlaceholder,
   type FantasyPositionGroup,
   type FantasyRoundProjection,
   type FantasySquadRules,
@@ -1086,32 +1092,40 @@ export async function loadFantasySquadPlannerData(
     ];
   });
 
-  const players = isFpl
+  const basePlayers = isFpl
     ? rosterPlayers.filter((player) => player.priceSource === FPL_PROVIDER)
     : sportsRuPricedFantasyPlayers(rosterPlayers);
   const sportsRuPrices = !isFpl && options?.playerIds !== undefined
     ? new Set(priceMaps.map((row) => row.internalEntityId).filter((playerId): playerId is string => Boolean(playerId))).size
-    : !isFpl ? players.filter((player) => player.priceSource === "SPORTS_RU").length : 0;
+    : !isFpl ? basePlayers.filter((player) => player.priceSource === "SPORTS_RU").length : 0;
   const fplPrices = isFpl
-    ? players.filter((player) => player.priceSource === FPL_PROVIDER).length
+    ? basePlayers.filter((player) => player.priceSource === FPL_PROVIDER).length
     : 0;
   const estimatedPrices = Math.max(0, rosterPlayerCount - sportsRuPrices - fplPrices);
   const latestPriceSync = priceRows.reduce<Date | null>((latest, row) => {
     if (!latest || row.lastSeenAt > latest) return row.lastSeenAt;
     return latest;
   }, null);
+  const placeholderPlayers = fantasyProviderPlaceholdersFromFilters(savedSquad?.filters, provider).map((placeholder) =>
+    fantasyProviderPlaceholderPlannerPlayer(placeholder, league.displayName, roundsAndFixtures.rounds.length || 5)
+  );
+  const players = mergeFantasyPlannerPlayerPools(basePlayers, placeholderPlayers);
   const playersById = new Map(players.map((player) => [player.playerId, player]));
   const horizonRounds = normalizeFantasyHorizon(savedSquad?.horizonRounds, rules.horizonOptions);
   const savedSelections =
-    savedSquad?.players.filter((player) => playersById.has(String(player.playerId))).map((player) => ({
-      playerId: String(player.playerId),
-      isStarter: player.isStarter,
-      isLocked: player.isLocked,
-      isCaptain: player.isCaptain,
-      isViceCaptain: player.isViceCaptain,
-      slotIndex: player.slotIndex,
-      purchasePrice: playersById.get(String(player.playerId))?.price ?? player.purchasePrice
-    })) ?? [];
+    savedSquad?.players.flatMap((player): FantasySquadSelection[] => {
+      const playerId = String(player.playerId);
+      if (!playersById.has(playerId)) return [];
+      return [{
+        playerId,
+        isStarter: player.isStarter,
+        isLocked: player.isLocked,
+        isCaptain: player.isCaptain,
+        isViceCaptain: player.isViceCaptain,
+        slotIndex: player.slotIndex,
+        purchasePrice: playersById.get(playerId)?.price ?? player.purchasePrice
+      }];
+    }) ?? [];
   const storedRoundPlans = fantasySquadRoundPlansFromFilters(savedSquad?.filters, savedSelections, playersById);
   const roundShift = fantasySquadRoundShift(
     fantasySquadRoundIdsFromFilters(savedSquad?.filters),
@@ -1137,7 +1151,7 @@ export async function loadFantasySquadPlannerData(
     squads: savedSquads.map((squad) => ({
       id: squad.id,
       name: squad.name,
-      playersCount: squad.players.length,
+      playersCount: savedFantasySquadPlayersCount(squad.players.length, squad.filters),
       updatedAt: squad.updatedAt.toISOString()
     })),
     squad: {
@@ -1480,6 +1494,32 @@ export function sportsRuPricedFantasyPlayers(players: FantasyPlannerPlayer[]) {
   return players.filter((player) => player.priceSource === "SPORTS_RU");
 }
 
+export function mergeFantasyPlannerPlayerPools(
+  base: FantasyPlannerPlayer[],
+  additions: FantasyPlannerPlayer[]
+) {
+  const merged = new Map(base.map((player) => [player.playerId, player]));
+  for (const player of additions) merged.set(player.playerId, player);
+  return [...merged.values()];
+}
+
+export function savedFantasySquadPlayersCount(fallbackCount: number, filters: unknown) {
+  if (!filters || typeof filters !== "object" || Array.isArray(filters)) return fallbackCount;
+  const plans = (filters as { roundPlans?: unknown }).roundPlans;
+  if (!Array.isArray(plans)) return fallbackCount;
+  const firstPlan = plans.find((plan) =>
+    plan && typeof plan === "object" && !Array.isArray(plan) && Number((plan as { roundOffset?: unknown }).roundOffset) === 0
+  );
+  if (!firstPlan || typeof firstPlan !== "object" || Array.isArray(firstPlan)) return fallbackCount;
+  const selections = (firstPlan as { selections?: unknown }).selections;
+  if (!Array.isArray(selections)) return fallbackCount;
+  return new Set(selections.flatMap((selection) => {
+    if (!selection || typeof selection !== "object" || Array.isArray(selection)) return [];
+    const playerId = (selection as { playerId?: unknown }).playerId;
+    return typeof playerId === "string" && isFantasySquadPlayerId(playerId) ? [playerId] : [];
+  })).size;
+}
+
 async function loadFplRosterPriceContext(
   prisma: PrismaClient,
   league: Pick<SharedLeagueSeasonOption, "leagueId" | "season">,
@@ -1590,12 +1630,39 @@ export async function saveFantasySquad(
     rules: FantasySquadRules;
     provider?: string;
     contestId?: string | null;
+    providerPlaceholders?: FantasyProviderPlaceholder[];
   }
 ) {
   const horizonRounds = normalizeFantasyHorizon(input.horizonRounds, input.rules.horizonOptions);
   const name = normalizeFantasySquadName(input.name);
   return prisma.$transaction(async (tx) => {
     const provider = input.provider ?? "SPORTS_RU";
+    const providerPlaceholders = parseFantasyProviderPlaceholders(input.providerPlaceholders, provider);
+    const placeholdersById = new Map(providerPlaceholders.map((placeholder) => [placeholder.playerId, placeholder]));
+    const selectionIds = new Set(input.selections.map((selection) => selection.playerId));
+    if (selectionIds.size !== input.selections.length || input.selections.some((selection) =>
+      !/^\d+$/.test(selection.playerId) && !placeholdersById.has(selection.playerId)
+    )) {
+      throw new Error("Fantasy squad contains an invalid provider placeholder.");
+    }
+    const canonicalSelections = input.selections.filter((selection) => !isFantasyProviderPlaceholderPlayerId(selection.playerId));
+    const roundPlans = (input.roundPlans ?? createFantasySquadRoundPlans(input.selections)).map((plan) => ({
+      ...plan,
+      selections: plan.selections.map((selection) => {
+        const placeholder = placeholdersById.get(selection.playerId);
+        return placeholder ? { ...selection, purchasePrice: placeholder.price } : selection;
+      })
+    }));
+    if (roundPlans.some((plan) => plan.selections.some((selection) =>
+      !/^\d+$/.test(selection.playerId) && !placeholdersById.has(selection.playerId)
+    ))) {
+      throw new Error("Fantasy squad round plan contains an invalid provider placeholder.");
+    }
+    const usedPlaceholderIds = new Set(
+      roundPlans.flatMap((plan) => plan.selections.map((selection) => selection.playerId))
+        .filter(isFantasyProviderPlaceholderPlayerId)
+    );
+    const storedProviderPlaceholders = providerPlaceholders.filter((placeholder) => usedPlaceholderIds.has(placeholder.playerId));
     const contest = await ensureFantasyContest(tx, {
       contestId: input.contestId,
       provider,
@@ -1603,7 +1670,7 @@ export async function saveFantasySquad(
       season: input.season,
       rules: input.rules
     });
-    const selectedPlayerIds = [...new Set(input.selections.map((selection) => selection.playerId))].map(BigInt);
+    const selectedPlayerIds = [...new Set(canonicalSelections.map((selection) => selection.playerId))].map(BigInt);
     const sportsSeasons = sportsRuSeasonAliases(input.season);
     const [fotmobRosterRows, sportsRosterRows, fplPriceRows, sportsPositionsByPlayerId] = await Promise.all([
       provider === FPL_PROVIDER || selectedPlayerIds.length === 0
@@ -1665,11 +1732,11 @@ export async function saveFantasySquad(
     const rosterByPlayerId = provider === FPL_PROVIDER
       ? fplRosterByPlayerId
       : authoritativeFantasyRosterByPlayerId(fotmobRosterRows, sportsRosterRows);
-    if (selectedPlayerIds.length !== input.selections.length || rosterByPlayerId.size !== selectedPlayerIds.length) {
+    if (selectedPlayerIds.length !== canonicalSelections.length || rosterByPlayerId.size !== selectedPlayerIds.length) {
       throw new Error("Fantasy squad contains a player who is no longer active in the selected league and season.");
     }
     const positionByPlayerId = new Map(
-      input.selections.map((selection) => [
+      canonicalSelections.map((selection) => [
         selection.playerId,
         (provider === FPL_PROVIDER
           ? fplPriceRows.find((row) => String(row.playerId) === selection.playerId)?.position
@@ -1678,10 +1745,14 @@ export async function saveFantasySquad(
         ?? null
       ])
     );
-    if (input.selections.some((selection) => normalizeFantasyPosition(positionByPlayerId.get(selection.playerId)) === "UNK")) {
+    if (canonicalSelections.some((selection) => normalizeFantasyPosition(positionByPlayerId.get(selection.playerId)) === "UNK")) {
       throw new Error("Fantasy squad contains a player without an authoritative fantasy position.");
     }
     const resolvedPool = input.selections.map((selection) => {
+      const placeholder = placeholdersById.get(selection.playerId);
+      if (placeholder) {
+        return fantasyProviderPlaceholderPlannerPlayer(placeholder, String(input.leagueId), horizonRounds);
+      }
       const position = positionByPlayerId.get(selection.playerId)!;
       const teamId = String(rosterByPlayerId.get(selection.playerId)!.teamId);
       return {
@@ -1729,7 +1800,8 @@ export async function saveFantasySquad(
           bank,
           horizonRounds,
           filters: {
-            roundPlans: input.roundPlans ?? createFantasySquadRoundPlans(input.selections),
+            roundPlans,
+            providerPlaceholders: storedProviderPlaceholders,
             roundPlanRoundIds: normalizeFantasySquadRoundIds(input.roundPlanRoundIds)
           }
         },
@@ -1748,7 +1820,8 @@ export async function saveFantasySquad(
           bank,
           horizonRounds,
           filters: {
-            roundPlans: input.roundPlans ?? createFantasySquadRoundPlans(input.selections),
+            roundPlans,
+            providerPlaceholders: storedProviderPlaceholders,
             roundPlanRoundIds: normalizeFantasySquadRoundIds(input.roundPlanRoundIds)
           }
         },
@@ -1758,18 +1831,21 @@ export async function saveFantasySquad(
 
     await tx.userFantasySquadPlayer.deleteMany({ where: { squadId: squad.id } });
     await tx.userFantasySquadPlayer.createMany({
-      data: input.selections.map((selection, index) => ({
-        squadId: squad.id,
-        playerId: BigInt(selection.playerId),
-        teamId: rosterByPlayerId.get(selection.playerId)!.teamId,
-        position: positionByPlayerId.get(selection.playerId)!,
-        isStarter: selection.isStarter,
-        isLocked: selection.isLocked,
-        isCaptain: selection.isCaptain,
-        isViceCaptain: selection.isViceCaptain,
-        slotIndex: selection.slotIndex ?? index,
-        purchasePrice: selection.purchasePrice
-      }))
+      data: input.selections.flatMap((selection, index) => {
+        if (isFantasyProviderPlaceholderPlayerId(selection.playerId)) return [];
+        return [{
+          squadId: squad.id,
+          playerId: BigInt(selection.playerId),
+          teamId: rosterByPlayerId.get(selection.playerId)!.teamId,
+          position: positionByPlayerId.get(selection.playerId)!,
+          isStarter: selection.isStarter,
+          isLocked: selection.isLocked,
+          isCaptain: selection.isCaptain,
+          isViceCaptain: selection.isViceCaptain,
+          slotIndex: selection.slotIndex ?? index,
+          purchasePrice: selection.purchasePrice
+        }];
+      })
     });
 
     return squad;
@@ -1810,7 +1886,7 @@ export function fantasySquadRoundPlansFromFilters(
     const selections = rawSelections.flatMap((item, index): FantasySquadSelection[] => {
       if (!item || typeof item !== "object" || Array.isArray(item)) return [];
       const record = item as Record<string, unknown>;
-      const playerId = typeof record.playerId === "string" && /^\d+$/.test(record.playerId) ? record.playerId : null;
+      const playerId = typeof record.playerId === "string" && isFantasySquadPlayerId(record.playerId) ? record.playerId : null;
       if (!playerId || seen.has(playerId) || (playersById && !playersById.has(playerId))) return [];
       seen.add(playerId);
       const purchasePrice = Number(record.purchasePrice);

@@ -11,6 +11,8 @@ import {
   defaultFantasySquadRules,
   fantasyAddBlockReason,
   fantasyFitBlockReason,
+  fantasyProviderPlaceholderPlannerPlayer,
+  fantasyProviderPlaceholderPlayerId,
   fantasyTransferLimitForHorizon,
   nextAlternativeFantasyPoints,
   nextFantasyPoints,
@@ -18,6 +20,7 @@ import {
   normalizeFantasyPosition,
   optimizeFantasySquad,
   optimizeFantasyStarters,
+  parseFantasyProviderPlaceholders,
   playerAlternativeHorizonPoints,
   selectionForPlayer,
   summarizeFantasySquad,
@@ -26,6 +29,40 @@ import {
   validateFantasySquadForSave,
   type FantasyPlannerPlayer
 } from "./squad_logic";
+
+test("provider placeholders retain source price without becoming real database players", () => {
+  const playerId = fantasyProviderPlaceholderPlayerId("SPORTS_RU", "new-2");
+  const placeholders = parseFantasyProviderPlaceholders([
+    {
+      playerId,
+      provider: "SPORTS_RU",
+      providerPlayerId: "new-2",
+      name: "Новый игрок",
+      teamId: "502",
+      teamName: "Севилья",
+      position: "MIDFIELDER",
+      price: 8.4
+    },
+    {
+      playerId: "provider-placeholder:SPORTS_RU:forged",
+      provider: "SPORTS_RU",
+      providerPlayerId: "new-2",
+      name: "Подмена",
+      teamId: "502",
+      teamName: "Севилья",
+      position: "MIDFIELDER",
+      price: 0
+    }
+  ], "SPORTS_RU");
+
+  assert.equal(placeholders.length, 1);
+  const placeholderPlayer = fantasyProviderPlaceholderPlannerPlayer(placeholders[0], "La Liga", 5);
+  assert.equal(placeholderPlayer.playerId, playerId);
+  assert.equal(placeholderPlayer.isProviderPlaceholder, true);
+  assert.equal(placeholderPlayer.price, 8.4);
+  assert.equal(placeholderPlayer.priceSource, "SPORTS_RU");
+  assert.deepEqual(placeholderPlayer.roundPoints, [0, 0, 0, 0, 0]);
+});
 
 test("squad summary enforces budget and max players per team", () => {
   const rules = { ...defaultFantasySquadRules, budgetLimit: 20, maxPlayersPerTeam: 2 };

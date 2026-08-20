@@ -1,5 +1,18 @@
 export type FantasyPositionGroup = "GK" | "DEF" | "MID" | "FWD" | "UNK";
 
+const fantasyProviderPlaceholderPrefix = "provider-placeholder:";
+
+export type FantasyProviderPlaceholder = {
+  playerId: string;
+  provider: string;
+  providerPlayerId: string;
+  name: string;
+  teamId: string | null;
+  teamName: string;
+  position: string;
+  price: number;
+};
+
 export const transferSuggestionForecastSources = ["FO", "ALT", "FFO"] as const;
 export type TransferSuggestionForecastSource = typeof transferSuggestionForecastSources[number];
 
@@ -79,6 +92,8 @@ export type FantasyPlannerPlayer = {
   projectedFixtureComponents?: FantasyProjectionFixtureInputs | null;
   id: string;
   playerId: string;
+  isProviderPlaceholder?: boolean;
+  providerPlayerId?: string | null;
   teamId: string | null;
   name: string;
   fotmobName?: string | null;
@@ -220,6 +235,103 @@ export type FantasySquadRoundPlan = {
 };
 
 export const fantasySquadPlanningRounds = 5;
+
+export function fantasyProviderPlaceholderPlayerId(provider: string, providerPlayerId: string) {
+  const normalizedProvider = provider.trim().toUpperCase();
+  const normalizedPlayerId = providerPlayerId.trim();
+  if (!/^[A-Z][A-Z0-9_]{1,31}$/.test(normalizedProvider) || !normalizedPlayerId || normalizedPlayerId.length > 256) {
+    throw new Error("Invalid fantasy provider placeholder identity.");
+  }
+  const playerId = `${fantasyProviderPlaceholderPrefix}${normalizedProvider}:${encodeURIComponent(normalizedPlayerId)}`;
+  if (playerId.length > 384) throw new Error("Invalid fantasy provider placeholder identity.");
+  return playerId;
+}
+
+export function isFantasyProviderPlaceholderPlayerId(value: string) {
+  if (!value.startsWith(fantasyProviderPlaceholderPrefix) || value.length > 384) return false;
+  const suffix = value.slice(fantasyProviderPlaceholderPrefix.length);
+  const separator = suffix.indexOf(":");
+  if (separator <= 0 || separator === suffix.length - 1) return false;
+  return /^[A-Z][A-Z0-9_]{1,31}$/.test(suffix.slice(0, separator))
+    && /^[A-Za-z0-9.!'()*_~%-]+$/.test(suffix.slice(separator + 1));
+}
+
+export function isFantasySquadPlayerId(value: string) {
+  return /^\d+$/.test(value) || isFantasyProviderPlaceholderPlayerId(value);
+}
+
+export function parseFantasyProviderPlaceholders(value: unknown, expectedProvider?: string) {
+  if (!Array.isArray(value)) return [];
+  const providerScope = expectedProvider?.trim().toUpperCase() ?? null;
+  const seen = new Set<string>();
+  const placeholders: FantasyProviderPlaceholder[] = [];
+
+  for (const item of value) {
+    if (!item || typeof item !== "object" || Array.isArray(item)) continue;
+    const record = item as Record<string, unknown>;
+    const provider = typeof record.provider === "string" ? record.provider.trim().toUpperCase() : "";
+    const providerPlayerId = typeof record.providerPlayerId === "string" ? record.providerPlayerId.trim() : "";
+    const name = typeof record.name === "string" ? record.name.trim().slice(0, 200) : "";
+    const teamId = typeof record.teamId === "string" && record.teamId.trim() ? record.teamId.trim().slice(0, 384) : null;
+    const teamName = typeof record.teamName === "string" ? record.teamName.trim().slice(0, 200) : "";
+    const position = typeof record.position === "string" ? record.position.trim().slice(0, 64) : "";
+    const price = typeof record.price === "number" ? record.price : Number.NaN;
+    if (!provider || (providerScope && provider !== providerScope) || !providerPlayerId || !name || !teamName || !position) continue;
+    if (!Number.isFinite(price) || price < 0 || price > 1_000) continue;
+
+    let playerId: string;
+    try {
+      playerId = fantasyProviderPlaceholderPlayerId(provider, providerPlayerId);
+    } catch {
+      continue;
+    }
+    if (record.playerId !== playerId || seen.has(playerId) || normalizeFantasyPosition(position) === "UNK") continue;
+    seen.add(playerId);
+    placeholders.push({ playerId, provider, providerPlayerId, name, teamId, teamName, position, price });
+  }
+  return placeholders;
+}
+
+export function fantasyProviderPlaceholdersFromFilters(filters: unknown, expectedProvider?: string) {
+  if (!filters || typeof filters !== "object" || Array.isArray(filters)) return [];
+  return parseFantasyProviderPlaceholders(
+    (filters as { providerPlaceholders?: unknown }).providerPlaceholders,
+    expectedProvider
+  );
+}
+
+export function fantasyProviderPlaceholderPlannerPlayer(
+  placeholder: FantasyProviderPlaceholder,
+  leagueName: string,
+  roundCount = fantasySquadPlanningRounds
+): FantasyPlannerPlayer {
+  const rounds = Math.max(0, Math.floor(roundCount));
+  return {
+    id: placeholder.playerId,
+    playerId: placeholder.playerId,
+    isProviderPlaceholder: true,
+    providerPlayerId: placeholder.providerPlayerId,
+    teamId: placeholder.teamId,
+    name: placeholder.name,
+    teamName: placeholder.teamName,
+    leagueName,
+    position: placeholder.position,
+    positionGroup: normalizeFantasyPosition(placeholder.position),
+    photoUrl: null,
+    price: placeholder.price,
+    priceSource: placeholder.provider === "FPL" ? "FPL" : "SPORTS_RU",
+    predictedFp: null,
+    alternativePredictedFp: null,
+    foontasyPoints: null,
+    valueScore: 0,
+    roundPoints: Array.from({ length: rounds }, () => 0),
+    alternativeRoundPoints: Array.from({ length: rounds }, () => null),
+    fixtures: Array.from({ length: rounds }, () => ""),
+    fixtureFullNames: Array.from({ length: rounds }, () => ""),
+    fixtureDifficulties: Array.from({ length: rounds }, () => null),
+    forecastRisks: ["Provider player is not mapped to the internal player database"]
+  };
+}
 
 export function createFantasySquadRoundPlans(selections: FantasySquadSelection[]): FantasySquadRoundPlan[] {
   return Array.from({ length: fantasySquadPlanningRounds }, (_, roundOffset) => ({

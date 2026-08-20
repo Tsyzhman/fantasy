@@ -14,7 +14,12 @@ import {
   syncSportsRuSquadSnapshotOnDemand,
   type SportsRuSquadSnapshotStatus
 } from "@/machete/sports_ru_squad_snapshots";
-import { validateFantasySquadForSave } from "@/machete/squad_logic";
+import {
+  fantasyProviderPlaceholderPlannerPlayer,
+  validateFantasySquadForSave,
+  type FantasyPlannerPlayer,
+  type FantasyProviderPlaceholder
+} from "@/machete/squad_logic";
 import { loadFantasySquadPlannerData, saveFantasySquad, uniqueFantasySquadName } from "@/machete/squad_planner";
 
 export const runtime = "nodejs";
@@ -89,15 +94,16 @@ export const POST = withApiHandler(async (request: Request) => {
     }
     throw error;
   }
-  if (preview.unmapped.length > 0) {
-    return NextResponse.json({
-      code: "SPORTS_PLAYERS_UNMAPPED",
-      message: `${preview.unmapped.length} Sports.ru players are not mapped. The squad was not changed.`,
-      preview: publicPreview(preview)
-    }, { status: 409 });
-  }
+  const placeholderPlayers = preview.unmapped.map((placeholder) =>
+    fantasyProviderPlaceholderPlannerPlayer(placeholder, league.displayName, plannerData.rounds.length || 5)
+  );
+  const importPool = mergePlayerPools(plannerData.players, placeholderPlayers);
+  const providerPlaceholders = mergeProviderPlaceholders(
+    plannerData.players.flatMap((player) => providerPlaceholderFromPlayer(player)),
+    preview.unmapped
+  );
   const validation = validateFantasySquadForSave({
-    pool: plannerData.players,
+    pool: importPool,
     selections: preview.selections,
     rules: plannerData.rules,
     horizon: 1
@@ -107,7 +113,7 @@ export const POST = withApiHandler(async (request: Request) => {
   const roundPlans = mergeImportedSquadWithFuturePlans({
     importedSelections: validation.selections,
     existingPlans: plannerData.squad.roundPlans,
-    pool: plannerData.players,
+    pool: importPool,
     rules: plannerData.rules
   });
   const name = plannerData.squad.id
@@ -123,7 +129,8 @@ export const POST = withApiHandler(async (request: Request) => {
     selections: validation.selections,
     roundPlans,
     roundPlanRoundIds: plannerData.rounds.map((round) => round.id),
-    rules: plannerData.rules
+    rules: plannerData.rules,
+    providerPlaceholders
   });
   await prisma.userExternalProfile.update({
     where: { userId_provider: { userId: auth.user.id, provider: "SPORTS_RU" } },
@@ -147,6 +154,7 @@ export const POST = withApiHandler(async (request: Request) => {
       horizonRounds: plannerData.squad.horizonRounds,
       selections: validation.selections,
       roundPlans,
+      placeholderPlayers,
       updatedAt: new Date().toISOString()
     },
     snapshot: snapshotStatus,
@@ -162,8 +170,35 @@ function publicPreview(preview: Awaited<ReturnType<typeof loadStoredSportsRuSqua
     tourId: preview.tourId,
     tourName: preview.tourName,
     playersCount: preview.selections.length,
+    placeholderPlayersCount: preview.unmapped.length,
     unmapped: preview.unmapped
   };
+}
+
+function mergePlayerPools<T extends { playerId: string }>(base: T[], additions: T[]) {
+  const merged = new Map(base.map((player) => [player.playerId, player]));
+  for (const player of additions) merged.set(player.playerId, player);
+  return [...merged.values()];
+}
+
+function providerPlaceholderFromPlayer(player: FantasyPlannerPlayer): FantasyProviderPlaceholder[] {
+  if (!player.isProviderPlaceholder || !player.providerPlayerId) return [];
+  return [{
+    playerId: player.playerId,
+    provider: "SPORTS_RU",
+    providerPlayerId: player.providerPlayerId,
+    name: player.name,
+    teamId: player.teamId,
+    teamName: player.teamName,
+    position: player.position ?? player.positionGroup,
+    price: player.price
+  }];
+}
+
+function mergeProviderPlaceholders(base: FantasyProviderPlaceholder[], additions: FantasyProviderPlaceholder[]) {
+  const merged = new Map(base.map((placeholder) => [placeholder.playerId, placeholder]));
+  for (const placeholder of additions) merged.set(placeholder.playerId, placeholder);
+  return [...merged.values()];
 }
 
 function pendingSportsRuResponse(

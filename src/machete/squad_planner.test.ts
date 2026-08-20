@@ -44,6 +44,7 @@ import {
   projectFixtureFantasyPoints,
   resolveFantasyPlannerPrice,
   rolloverFantasySquadRoundPlans,
+  savedFantasySquadPlayersCount,
   saveFantasySquad,
   sportsRuAuthoritativeRosterOverrides,
   sportsRuFantasyPriceRefsByScopedPlayer,
@@ -61,7 +62,7 @@ import type { PlayerFixtureProjection } from "./deterministic_fantasy_projection
 import type { ActiveScoringModel } from "@/lib/scoring";
 import { friendAlternativeFormulaDefaults } from "@/lib/scoring/formula-display";
 import { calculateFriendWindowMetrics, type SharedMachetePlayerRow } from "./shared_read_model";
-import { defaultFantasySquadRules } from "./squad_logic";
+import { defaultFantasySquadRules, fantasyProviderPlaceholderPlayerId, type FantasyProviderPlaceholder } from "./squad_logic";
 import { expectedProjectionFormulaConfig, friendAltProjectionFormulaConfig } from "./projection-formula-config";
 import { positionEventPriorPer90 } from "./player-season-prior";
 
@@ -1245,6 +1246,20 @@ test("legacy squads expand to five linked planning rounds and saved round plans 
   assert.equal(stored[1].linkedToPrevious, false);
   assert.equal(stored[1].selections[0].playerId, "2");
   assert.equal(stored[2].linkedToPrevious, true);
+
+  const placeholderId = fantasyProviderPlaceholderPlayerId("SPORTS_RU", "new-2");
+  const withPlaceholder = fantasySquadRoundPlansFromFilters({
+    roundPlans: [{
+      roundOffset: 0,
+      linkedToPrevious: false,
+      selections: [{ ...base[0], playerId: placeholderId, purchasePrice: 8.4 }]
+    }]
+  }, []);
+  assert.equal(withPlaceholder[0].selections[0]?.playerId, placeholderId);
+  assert.equal(withPlaceholder[0].selections[0]?.purchasePrice, 8.4);
+  assert.equal(savedFantasySquadPlayersCount(0, {
+    roundPlans: [{ roundOffset: 0, selections: [...base, { ...base[0], playerId: placeholderId }] }]
+  }), 2);
 });
 
 test("saved five-round plans roll forward and keep only valid future variants", () => {
@@ -1712,8 +1727,85 @@ test("squad planner normalizes forecast horizon and stores its round anchors bef
   assert.equal(creates[0]?.data.name, "My squad");
   assert.deepEqual(creates[0]?.data.filters, {
     roundPlans: Array.from({ length: 5 }, (_, roundOffset) => ({ roundOffset, linkedToPrevious: roundOffset > 0, selections: [] })),
+    providerPlaceholders: [],
     roundPlanRoundIds: ["round:12", "round:13"]
   });
+});
+
+test("squad save persists a Sports.ru placeholder in filters and never inserts a fake CorePlayer relation", async () => {
+  const playerId = fantasyProviderPlaceholderPlayerId("SPORTS_RU", "new-2");
+  const placeholder: FantasyProviderPlaceholder = {
+    playerId,
+    provider: "SPORTS_RU",
+    providerPlayerId: "new-2",
+    name: "Новый игрок Sports.ru",
+    teamId: "502",
+    teamName: "Севилья",
+    position: "MIDFIELDER",
+    price: 8.4
+  };
+  const creates: Array<{ data: { bank: number; filters: unknown } }> = [];
+  const playerRows: unknown[] = [];
+  const canonicalPositions = ["GK", "GK", "DEF", "DEF", "DEF", "DEF", "DEF", "MID", "MID", "MID", "MID", "FWD", "FWD", "FWD"];
+  const rosterRows = canonicalPositions.map((position, index) => ({
+    playerId: BigInt(index + 1),
+    teamId: BigInt(index + 101),
+    position
+  }));
+  const prisma = {
+    $queryRaw: async () => rosterRows,
+    fantasyPlayerPrice: { findMany: async () => [] },
+    userFantasySquad: {
+      create: async (args: { data: { bank: number; filters: unknown } }) => {
+        creates.push(args);
+        return { id: "squad-placeholder", name: "Imported" };
+      }
+    },
+    userFantasySquadPlayer: {
+      deleteMany: async () => ({}),
+      createMany: async (args: { data: unknown[] }) => {
+        playerRows.push(...args.data);
+        return { count: args.data.length };
+      }
+    },
+    $transaction: async (callback: (tx: unknown) => Promise<unknown>) => callback(prisma)
+  };
+  const placeholderSelection = {
+    playerId,
+    isStarter: true,
+    isLocked: false,
+    isCaptain: false,
+    isViceCaptain: false,
+    slotIndex: 14,
+    purchasePrice: 0
+  };
+  const canonicalSelections = canonicalPositions.map((position, index) => ({
+    playerId: String(index + 1),
+    isStarter: index === 0 || (position === "DEF" && index <= 4) || (position === "MID" && index <= 9) || position === "FWD",
+    isLocked: false,
+    isCaptain: index === 11,
+    isViceCaptain: index === 7,
+    slotIndex: index,
+    purchasePrice: 5
+  }));
+
+  await saveFantasySquad(prisma as never, {
+    userId: "user-1",
+    leagueId: 87n,
+    season: "2026/2027",
+    name: "Imported",
+    horizonRounds: 1,
+    selections: [...canonicalSelections, placeholderSelection],
+    rules: defaultFantasySquadRules,
+    providerPlaceholders: [placeholder]
+  });
+
+  assert.equal(creates[0]?.data.bank, 21.6);
+  assert.deepEqual((creates[0]?.data.filters as { providerPlaceholders: unknown }).providerPlaceholders, [placeholder]);
+  const storedSelections = (creates[0]?.data.filters as { roundPlans: Array<{ selections: Array<{ playerId: string; purchasePrice: number }> }> }).roundPlans[0].selections;
+  assert.equal(storedSelections.find((selection) => selection.playerId === playerId)?.purchasePrice, 8.4);
+  assert.equal(playerRows.length, 14);
+  assert.equal(playerRows.some((row) => String((row as { playerId: bigint }).playerId) === playerId), false, "placeholder must not create a canonical player foreign key row");
 });
 
 test("squad planner updates only the requested owned variant", async () => {

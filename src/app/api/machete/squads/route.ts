@@ -9,6 +9,7 @@ import { FPL_PROVIDER } from "@/lib/providers/fpl";
 import {
   loadCachedFantasySquadPlayerPool,
   loadFantasySquadPlannerData,
+  mergeFantasyPlannerPlayerPools,
   fantasySquadRoundIdsFromFilters,
   fantasySquadRoundShift,
   normalizeFantasySquadName,
@@ -18,12 +19,17 @@ import {
 } from "@/machete/squad_planner";
 import {
   countFantasySquadTransfers,
+  fantasyProviderPlaceholderPlannerPlayer,
+  fantasyProviderPlaceholdersFromFilters,
   fantasyTransferLimitForHorizon,
+  isFantasySquadPlayerId,
   normalizeFantasyHorizon,
   fantasySquadPlanningRounds,
   validateFantasySquadForSave,
   type FantasySquadSelection,
-  type FantasySquadRoundPlan
+  type FantasySquadRoundPlan,
+  type FantasyProviderPlaceholder,
+  type FantasyPlannerPlayer
 } from "@/machete/squad_logic";
 import { parseFantasyHistorySettings } from "@/machete/squad-history";
 
@@ -79,6 +85,7 @@ export const GET = withApiHandler(async (request: Request) => {
     isCurrent: leagueSeason.isCurrent,
     updatedAt: leagueSeason.updatedAt
   };
+  let ownedSquadFilters: unknown = null;
   if (squadId) {
     const contest = await prisma.fantasyContest.findUnique({
       where: { provider_leagueId_season: { provider, leagueId, season } },
@@ -93,11 +100,12 @@ export const GET = withApiHandler(async (request: Request) => {
         leagueId,
         season
       },
-      select: { id: true }
+      select: { id: true, filters: true }
     });
     if (!ownedSquad) {
       return jsonError("NOT_FOUND", "Squad variant not found for this league and season.", 404);
     }
+    ownedSquadFilters = ownedSquad.filters;
   }
   const contest = await prisma.fantasyContest.findUnique({
     where: { provider_leagueId_season: { provider, leagueId, season } },
@@ -105,9 +113,12 @@ export const GET = withApiHandler(async (request: Request) => {
   });
   if (!contest) return jsonError("CONTEST_NOT_SYNCED", "The selected fantasy provider contest is not synchronized yet.", 503);
   const players = await loadCachedFantasySquadPlayerPool(prisma, auth.user.id, plannerLeague, historySettings, provider, contest.id);
+  const placeholderPlayers = fantasyProviderPlaceholdersFromFilters(ownedSquadFilters, provider).map((placeholder) =>
+    fantasyProviderPlaceholderPlannerPlayer(placeholder, displayName)
+  );
 
   return NextResponse.json(
-    { players },
+    { players: mergeFantasyPlannerPlayerPools(players, placeholderPlayers) },
     { headers: { "Cache-Control": "private, no-store" } }
   );
 });
@@ -230,7 +241,8 @@ export const POST = withApiHandler(async (request: Request) => {
     roundPlanRoundIds: currentRoundIds,
     rules,
     provider,
-    contestId: plannerData.contestId
+    contestId: plannerData.contestId,
+    providerPlaceholders: providerPlaceholdersForPlans(plannerData.players, safeRoundPlans, provider)
   });
 
   return NextResponse.json({
@@ -279,7 +291,7 @@ function parseSelections(value: unknown): FantasySquadSelection[] {
 
   for (const item of value) {
     const record = item && typeof item === "object" && !Array.isArray(item) ? (item as Record<string, unknown>) : {};
-    const playerId = typeof record.playerId === "string" && /^\d+$/.test(record.playerId) ? record.playerId : null;
+    const playerId = typeof record.playerId === "string" && isFantasySquadPlayerId(record.playerId) ? record.playerId : null;
     if (!playerId || seen.has(playerId)) continue;
     seen.add(playerId);
     selections.push({
@@ -294,6 +306,27 @@ function parseSelections(value: unknown): FantasySquadSelection[] {
   }
 
   return selections;
+}
+
+function providerPlaceholdersForPlans(
+  players: FantasyPlannerPlayer[],
+  plans: FantasySquadRoundPlan[],
+  provider: string
+): FantasyProviderPlaceholder[] {
+  const usedPlayerIds = new Set(plans.flatMap((plan) => plan.selections.map((selection) => selection.playerId)));
+  return players.flatMap((player): FantasyProviderPlaceholder[] => {
+    if (!player.isProviderPlaceholder || !usedPlayerIds.has(player.playerId) || !player.providerPlayerId) return [];
+    return [{
+      playerId: player.playerId,
+      provider,
+      providerPlayerId: player.providerPlayerId,
+      name: player.name,
+      teamId: player.teamId,
+      teamName: player.teamName,
+      position: player.position ?? player.positionGroup,
+      price: player.price
+    }];
+  });
 }
 
 function parseRoundPlans(value: unknown, fallbackSelections: FantasySquadSelection[]): FantasySquadRoundPlan[] {

@@ -12,12 +12,15 @@ import {
   SportsRuSquadImportError,
   type SportsRuSquadImportPreview
 } from "./sports_ru_squad_import";
-import type { FantasySquadSelection } from "./squad_logic";
+import {
+  isFantasySquadPlayerId,
+  parseFantasyProviderPlaceholders,
+  type FantasySquadSelection
+} from "./squad_logic";
 import { fantasyProviderRoundKey, sportsRuSeasonAliases } from "./squad_planner";
 
 export const SPORTS_RU_SQUAD_PUBLICATION_DELAY_MS = 30 * 60 * 1_000;
 const SPORTS_RU_SQUAD_RETRY_DELAY_MS = 15 * 60 * 1_000;
-const SPORTS_RU_SQUAD_MAPPING_RETRY_DELAY_MS = 60 * 60 * 1_000;
 const SPORTS_RU_SQUAD_LEASE_MS = 10 * 60 * 1_000;
 const SPORTS_RU_SQUAD_MAX_PUBLICATION_ATTEMPTS = 8;
 const SPORTS_RU_SQUAD_MANUAL_RETRY_COOLDOWN_MS = 60 * 1_000;
@@ -272,7 +275,8 @@ export async function syncSportsRuSquadSnapshots(
  * once the 30-minute publication delay has elapsed, tries to fill it during
  * the button request. A manual request can revive an exhausted snapshot, but
  * the one-minute cooldown and the database lease prevent click-spam and
- * duplicate cross-process Sports.ru requests.
+ * duplicate cross-process Sports.ru requests. A legacy MAPPING_INCOMPLETE
+ * payload is local and can be reprocessed immediately without another request.
  */
 export async function syncSportsRuSquadSnapshotOnDemand(
   prisma: PrismaClient,
@@ -385,6 +389,7 @@ async function syncOneSportsRuSquadSnapshot(
   const retryEligibility: Prisma.SportsRuSquadSnapshotWhereInput = input.manualRetry
     ? {
         OR: [
+          { status: "MAPPING_INCOMPLETE" },
           { lastAttemptAt: null },
           { lastAttemptAt: { lte: new Date(input.now.getTime() - SPORTS_RU_SQUAD_MANUAL_RETRY_COOLDOWN_MS) } }
         ]
@@ -475,28 +480,6 @@ async function syncOneSportsRuSquadSnapshot(
   } catch (error) {
     return markPublicationRetry(prisma, snapshot, input.now, errorMessage(error, "Sports.ru squad mapping failed."));
   }
-  if (preview.unmapped.length > 0) {
-    await prisma.sportsRuSquadSnapshot.update({
-      where: { id: snapshot.id },
-      data: {
-        status: "MAPPING_INCOMPLETE",
-        providerSquadId: preview.providerSquadId,
-        providerTourId: preview.tourId,
-        squadName: preview.squadName,
-        tournamentName: preview.tournamentName,
-        tourName: preview.tourName,
-        playersCount: published.players.length,
-        mappedPlayersCount: preview.selections.length,
-        providerPayload: published as unknown as Prisma.InputJsonValue,
-        unmappedPlayers: preview.unmapped as Prisma.InputJsonValue,
-        nextAttemptAt: new Date(input.now.getTime() + SPORTS_RU_SQUAD_MAPPING_RETRY_DELAY_MS),
-        syncLeaseUntil: null,
-        lastError: `${preview.unmapped.length} Sports.ru players are not mapped to FotMob.`
-      }
-    });
-    return "retried";
-  }
-
   await prisma.sportsRuSquadSnapshot.update({
     where: { id: snapshot.id },
     data: {
@@ -507,10 +490,10 @@ async function syncOneSportsRuSquadSnapshot(
       tournamentName: preview.tournamentName,
       tourName: preview.tourName,
       playersCount: published.players.length,
-      mappedPlayersCount: preview.selections.length,
+      mappedPlayersCount: preview.selections.length - preview.unmapped.length,
       selections: preview.selections as Prisma.InputJsonValue,
       providerPayload: published as unknown as Prisma.InputJsonValue,
-      unmappedPlayers: [],
+      unmappedPlayers: preview.unmapped as Prisma.InputJsonValue,
       fetchedAt: input.now,
       completedAt: input.now,
       nextAttemptAt: null,
@@ -665,6 +648,7 @@ function parseStoredSelections(value: Prisma.JsonValue | null): FantasySquadSele
     if (
       !isRecord(row)
       || typeof row.playerId !== "string"
+      || !isFantasySquadPlayerId(row.playerId)
       || typeof row.isStarter !== "boolean"
       || typeof row.isLocked !== "boolean"
       || typeof row.slotIndex !== "number"
@@ -685,15 +669,7 @@ function parseStoredSelections(value: Prisma.JsonValue | null): FantasySquadSele
 }
 
 function parseStoredUnmappedPlayers(value: Prisma.JsonValue | null) {
-  if (!Array.isArray(value)) return [];
-  return value.flatMap((row) => {
-    if (!isRecord(row) || typeof row.providerPlayerId !== "string" || typeof row.name !== "string") return [];
-    return [{
-      providerPlayerId: row.providerPlayerId,
-      name: row.name,
-      teamName: typeof row.teamName === "string" ? row.teamName : null
-    }];
-  });
+  return parseFantasyProviderPlaceholders(value, "SPORTS_RU");
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

@@ -78,11 +78,19 @@ test("the one-click import route reuses a stored snapshot or starts a targeted o
   assert.match(importRouteSource, /selections: validation\.selections/);
   assert.match(importRouteSource, /roundPlans,/);
   assert.doesNotMatch(importRouteSource, /fetchSportsRuLatestPublishedSquad|loadSportsRuSquadImportPreview/);
+  assert.doesNotMatch(importRouteSource, /SPORTS_PLAYERS_UNMAPPED/);
   assert.ok(
     importRouteSource.indexOf("snapshotStatus = await syncSportsRuSquadSnapshotOnDemand")
       < importRouteSource.indexOf("preview = await loadStoredSportsRuSquadImportPreview"),
     "the current round must be scheduled before an older stored snapshot can be imported"
   );
+});
+
+test("unmapped Sports.ru players complete the snapshot as provider placeholders", () => {
+  assert.doesNotMatch(snapshotSource, /data:\s*\{\s*status:\s*"MAPPING_INCOMPLETE"/);
+  assert.match(snapshotSource, /\{ status: "MAPPING_INCOMPLETE" \}/);
+  assert.match(snapshotSource, /mappedPlayersCount: preview\.selections\.length - preview\.unmapped\.length/);
+  assert.match(snapshotSource, /unmappedPlayers: preview\.unmapped as Prisma\.InputJsonValue/);
 });
 
 test("a button request revives an exhausted snapshot without waiting for the background scheduler", async () => {

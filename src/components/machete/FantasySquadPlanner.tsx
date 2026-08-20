@@ -434,10 +434,10 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
     return roundId ? bookmakerFavorites.filter((row) => row.roundId === roundId) : [];
   }, [activeRoundOffset, bookmakerFavorites, rounds]);
   const teamFilterOptions = useMemo(() => [...new Map(players
-    .filter((player) => player.teamId)
+    .filter((player) => !player.isProviderPlaceholder && player.teamId)
     .map((player) => [player.teamId!, { id: player.teamId!, name: player.teamName }])).values()]
     .sort((left, right) => left.name.localeCompare(right.name)), [players]);
-  const priceFilterOptions = useMemo(() => [...new Set(players.map((player) => player.price))].sort((left, right) => left - right), [players]);
+  const priceFilterOptions = useMemo(() => [...new Set(players.filter((player) => !player.isProviderPlaceholder).map((player) => player.price))].sort((left, right) => left - right), [players]);
   const playerPoolColumns = useMemo(() => playerPoolOptionalColumns(players, tableHorizon, language, provider), [language, players, provider, tableHorizon]);
   const advancedFilterColumns = useMemo(() => playerPoolColumns.map(({ key, label, title, numeric }) => ({ key, label, title, numeric })), [playerPoolColumns]);
   const deferredAdvancedTableFilters = useDeferredValue(advancedTableFilters);
@@ -478,6 +478,7 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
 
   const baseMatchingPlayers = useMemo(() => {
     return players
+      .filter((player) => !player.isProviderPlaceholder)
       .filter((player) => (positionFilter === "ALL" ? true : player.positionGroup === positionFilter))
       .filter((player) => (teamFilter === "ALL" ? true : player.teamId === teamFilter))
       .filter((player) => minimumPrice === null || player.price >= minimumPrice)
@@ -575,7 +576,10 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
         if (!response.ok || !Array.isArray(payload.players)) throw new Error("PLAYER_POOL_LOAD_FAILED");
         if (lifecycleCancelled) return;
         requestCompleted = true;
-        setSourcePlayers(payload.players);
+        setSourcePlayers((current) => mergeFantasyPlayerPools(
+          payload.players!,
+          current.filter((player) => player.isProviderPlaceholder)
+        ));
         setPlayerPoolFailed(false);
         setPlayerPoolPending(false);
         setHistoryApplying(false);
@@ -1205,6 +1209,7 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
           horizonRounds?: number;
           selections?: FantasySquadSelection[];
           roundPlans?: FantasySquadRoundPlan[];
+          placeholderPlayers?: FantasyPlannerPlayer[];
           updatedAt?: string;
         };
       };
@@ -1226,11 +1231,15 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
         return;
       }
       const savedSquadId = payload.squad?.id;
+      const importedPlayerPool = mergeFantasyPlayerPools(
+        sourcePlayers,
+        Array.isArray(payload.squad?.placeholderPlayers) ? payload.squad.placeholderPlayers : []
+      );
       const importedSelections = Array.isArray(payload.squad?.selections)
-        ? normalizeInitialSelections(payload.squad.selections, sourcePlayers, rules)
+        ? normalizeInitialSelections(payload.squad.selections, importedPlayerPool, rules)
         : [];
       const importedRoundPlans = Array.isArray(payload.squad?.roundPlans)
-        ? normalizePlannerRoundPlans(payload.squad.roundPlans, importedSelections, sourcePlayers, rules)
+        ? normalizePlannerRoundPlans(payload.squad.roundPlans, importedSelections, importedPlayerPool, rules)
         : [];
       if (
         !savedSquadId
@@ -1246,9 +1255,11 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
       }
       const savedSquadName = payload.squad?.name?.trim() || squadName;
       const savedPlayers = payload.squad?.savedPlayers ?? importedSelections.length;
+      const placeholderPlayersCount = payload.squad?.placeholderPlayers?.length ?? 0;
       const updatedAt = payload.squad?.updatedAt ?? new Date().toISOString();
       const importedHorizon = normalizeFantasyHorizon(payload.squad?.horizonRounds ?? horizon, rules.horizonOptions);
       setActiveRoundOffset(0);
+      setSourcePlayers(importedPlayerPool);
       setRoundPlans(importedRoundPlans);
       setSavedRoundPlans(cloneFantasyRoundPlans(importedRoundPlans));
       setActiveSquadId(savedSquadId);
@@ -1270,8 +1281,8 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
         tone: "success",
         text: localizedText(
           language,
-          `Sports.ru squad loaded and saved: ${savedPlayers} players.`,
-          `Состав Sports.ru загружен и сохранён: ${savedPlayers} игроков.`
+          `Sports.ru squad loaded and saved: ${savedPlayers} players${placeholderPlayersCount ? `, ${placeholderPlayersCount} provider placeholders` : ""}.`,
+          `Состав Sports.ru загружен и сохранён: ${savedPlayers} игроков${placeholderPlayersCount ? `, пустышек для игроков не из базы: ${placeholderPlayersCount}` : ""}.`
         )
       });
       void recordBetaMilestone("SQUAD_SAVED");
@@ -4255,7 +4266,7 @@ function SquadPlayerTile({
         compact ? "w-[3.6rem] sm:w-[3.8rem] 2xl:w-16" : "w-[3.6rem] sm:w-[3.8rem] 2xl:w-[4.25rem]",
         "relative rounded border bg-white px-1 py-0.5 text-center shadow-sm transition [@media(pointer:fine)]:pb-5",
         replacementMode ? "cursor-pointer" : "cursor-grab active:cursor-grabbing",
-        isCaptain ? "border-amber-400 ring-2 ring-amber-200" : "border-white/70",
+        isCaptain ? "border-amber-400 ring-2 ring-amber-200" : player.isProviderPlaceholder ? "border-amber-300 bg-amber-50/70" : "border-white/70",
         isDragging && "opacity-55 ring-2 ring-sky-300"
       )}
     >
@@ -4318,7 +4329,11 @@ function SquadPlayerTile({
         </span>
       </div>
       <p className="mt-0.5 truncate text-[9px] font-bold text-ink" title={player.name} aria-label={player.name}>{compactPlayerDisplayName(player.name)}</p>
-      <dl className="mt-0.5 text-[7px] leading-tight num-tabular">
+      {player.isProviderPlaceholder ? (
+        <p className="mt-1 rounded bg-amber-100 px-1 py-0.5 text-[7px] font-bold uppercase leading-tight text-amber-900">
+          <I18nText en="not in database" ru="нет в базе" />
+        </p>
+      ) : <dl className="mt-0.5 text-[7px] leading-tight num-tabular">
         <div className="grid grid-cols-3 gap-x-px">
           <div className="min-w-0">
             <dt className="whitespace-nowrap text-[6px] font-semibold uppercase text-slate-500"><I18nText en="FP1" ru="ФО1" /></dt>
@@ -4343,7 +4358,7 @@ function SquadPlayerTile({
             <dd className="cursor-help whitespace-nowrap text-[8px] font-bold text-violet-700" title={cardAlternativeHorizonTitle}>{formatCompactScore(scaleCaptainForecast(cardAlternativeHorizonForecast, isCaptain), "0")}</dd>
           </div>
         </div>
-      </dl>
+      </dl>}
       {fixtureChips.length > 0 ? (
         <div className="mt-0.5 flex min-w-0 items-center justify-center overflow-hidden">
           <FdrRow
@@ -5807,6 +5822,12 @@ function cloneFantasyRoundPlans(plans: FantasySquadRoundPlan[]) {
     ...plan,
     selections: plan.selections.map((selection) => ({ ...selection }))
   }));
+}
+
+function mergeFantasyPlayerPools(base: FantasyPlannerPlayer[], additions: FantasyPlannerPlayer[]) {
+  const merged = new Map(base.map((player) => [player.playerId, player]));
+  for (const player of additions) merged.set(player.playerId, player);
+  return [...merged.values()];
 }
 
 function normalizePlannerRoundPlans(

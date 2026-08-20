@@ -1,8 +1,102 @@
 import assert from "node:assert/strict";
 import test from "node:test";
+import type { PrismaClient } from "@prisma/client";
 
-import { createFantasySquadRoundPlans, defaultFantasySquadRules, type FantasyPlannerPlayer, type FantasySquadSelection } from "./squad_logic";
-import { mergeImportedSquadWithFuturePlans } from "./sports_ru_squad_import";
+import {
+  createFantasySquadRoundPlans,
+  defaultFantasySquadRules,
+  fantasyProviderPlaceholderPlayerId,
+  type FantasyPlannerPlayer,
+  type FantasySquadSelection
+} from "./squad_logic";
+import { mapSportsRuPublishedSquad, mergeImportedSquadWithFuturePlans } from "./sports_ru_squad_import";
+
+test("Sports.ru import keeps an unknown provider player as a priced placeholder", async () => {
+  const prisma = {
+    fantasyPlayerPrice: {
+      findMany: async () => [
+        {
+          providerPlayerId: "known-1",
+          playerId: 101n,
+          teamId: 501n,
+          playerName: "Known player",
+          teamName: "Betis",
+          sportsTeamName: "Бетис",
+          price: 6.1,
+          position: "GK"
+        },
+        {
+          providerPlayerId: "new-2",
+          playerId: null,
+          teamId: 502n,
+          playerName: "Provider fallback name",
+          teamName: "Sevilla",
+          sportsTeamName: "Севилья",
+          price: 7.2,
+          position: "MID"
+        }
+      ]
+    }
+  } as unknown as PrismaClient;
+
+  const preview = await mapSportsRuPublishedSquad(prisma, {
+    profileId: "profile-1",
+    contestId: "contest-1",
+    leagueId: 87n,
+    season: "2026/2027",
+    expectedSquadSize: 2,
+    published: {
+      providerSquadId: "squad-1",
+      squadName: "Imported",
+      seasonId: "season-1",
+      tournamentHru: "spain",
+      tournamentName: "Испания",
+      tourId: "2462",
+      tourName: "2 тур",
+      tourFinishedAt: "2026-08-28T00:00:00Z",
+      totalPrice: 14.5,
+      currentBalance: 85.5,
+      players: [
+        {
+          providerPlayerId: "known-1",
+          name: "Known player",
+          teamName: "Бетис",
+          role: "GOALKEEPER",
+          price: 6.1,
+          isStarter: true,
+          isCaptain: false,
+          isViceCaptain: false,
+          substitutePriority: null
+        },
+        {
+          providerPlayerId: "new-2",
+          name: "Новый игрок Sports.ru",
+          teamName: "Севилья",
+          role: "MIDFIELDER",
+          price: 8.4,
+          isStarter: true,
+          isCaptain: true,
+          isViceCaptain: false,
+          substitutePriority: null
+        }
+      ]
+    }
+  });
+
+  const placeholderId = fantasyProviderPlaceholderPlayerId("SPORTS_RU", "new-2");
+  assert.deepEqual(preview.selections.map((selection) => selection.playerId), ["101", placeholderId]);
+  assert.equal(preview.selections[1].purchasePrice, 8.4, "the published-squad price wins over the price snapshot");
+  assert.deepEqual(preview.unmapped, [{
+    playerId: placeholderId,
+    provider: "SPORTS_RU",
+    providerPlayerId: "new-2",
+    name: "Новый игрок Sports.ru",
+    teamId: "502",
+    teamName: "Севилья",
+    position: "MIDFIELDER",
+    price: 8.4
+  }]);
+});
 
 test("Sports.ru import replaces current and linked rounds while retaining a valid independent future plan", () => {
   const positions = ["GK", "GK", "DEF", "DEF", "DEF", "DEF", "DEF", "MID", "MID", "MID", "MID", "MID", "FWD", "FWD", "FWD"] as const;
