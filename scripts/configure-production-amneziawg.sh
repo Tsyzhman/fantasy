@@ -104,9 +104,11 @@ validate_config() {
 
 probe_vpn_namespace() {
   local target_container="$1"
-  local probe="const c=new AbortController();const t=setTimeout(()=>c.abort(),20000);fetch('https://fantasy.premierleague.com/api/bootstrap-static/',{signal:c.signal}).then(async r=>{const b=await r.arrayBuffer();clearTimeout(t);process.exit(r.status===200&&b.byteLength>=100000?0:1)}).catch(()=>process.exit(1))"
+  local probe="const c=new AbortController();const t=setTimeout(()=>c.abort(),10000);fetch('https://fantasy.premierleague.com/api/bootstrap-static/',{signal:c.signal}).then(async r=>{const b=await r.arrayBuffer();clearTimeout(t);process.exit(r.status===200&&b.byteLength>=100000?0:1)}).catch(()=>process.exit(1))"
   local attempt
-  for attempt in $(seq 1 30); do
+  local max_attempts=12
+  local latest_handshake transfer rx_bytes tx_bytes handshake
+  for attempt in $(seq 1 "$max_attempts"); do
     if docker run --rm \
       --network "container:$target_container" \
       --read-only \
@@ -116,9 +118,23 @@ probe_vpn_namespace() {
       "$app_image" \
       -e "$probe" >/dev/null 2>&1
     then
+      echo "AmneziaWG candidate passed the official FPL bootstrap probe on attempt $attempt/$max_attempts."
       return 0
     fi
-    sleep 2
+    latest_handshake="$({ docker exec "$target_container" awg show awg0 latest-handshakes || true; } 2>/dev/null \
+      | awk '{ if ($2 > latest) latest = $2 } END { printf "%.0f", latest + 0 }')"
+    transfer="$({ docker exec "$target_container" awg show awg0 transfer || true; } 2>/dev/null \
+      | awk '{ rx += $2; tx += $3 } END { printf "%.0f %.0f", rx + 0, tx + 0 }')"
+    read -r rx_bytes tx_bytes <<< "${transfer:-0 0}"
+    handshake="no"
+    if [[ "$latest_handshake" =~ ^[0-9]+$ && "$latest_handshake" -gt 0 ]]; then
+      handshake="yes"
+    fi
+    printf 'AmneziaWG FPL probe attempt %d/%d failed: handshake=%s rxBytes=%s txBytes=%s.\n' \
+      "$attempt" "$max_attempts" "$handshake" "${rx_bytes:-0}" "${tx_bytes:-0}" >&2
+    if (( attempt < max_attempts )); then
+      sleep 2
+    fi
   done
   return 1
 }
@@ -242,6 +258,13 @@ container_exists "$vpn_container" || {
   echo "Existing FPL VPN container is missing; refusing an unguarded first install." >&2
   exit 1
 }
+candidate_pattern="^${vpn_container}-candidate-[0-9]{8}T[0-9]{6}Z-[0-9]+$"
+while IFS= read -r stale_candidate; do
+  [[ "$stale_candidate" =~ $candidate_pattern ]] || continue
+  [[ "$(docker container inspect "$stale_candidate" --format '{{ index .Config.Labels "com.fantasy-scout.role" }}' 2>/dev/null || true)" == "fpl-vpn" ]] || continue
+  docker container rm -f "$stale_candidate" >/dev/null
+  echo "Removed stale bounded AmneziaWG candidate $stale_candidate."
+done < <(docker ps -a --format '{{.Names}}')
 [[ -z "$(docker ps -aq --filter "name=^/${candidate_container}$")" ]] || {
   echo "AmneziaWG candidate container already exists." >&2
   exit 1

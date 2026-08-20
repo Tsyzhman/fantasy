@@ -13,6 +13,8 @@ test("production AmneziaWG promotion uses an official immutable image and a cand
   assert.match(script, /dst=\/etc\/amnezia\/amneziawg\/awg0\.conf,readonly/);
   assert.match(script, /--sysctl net\.ipv4\.conf\.all\.src_valid_mark=1/);
   assert.match(script, /src_valid_mark=1[\s\S]+\/proc\/sys\/net\/ipv4\/conf\/all\/src_valid_mark[\s\S]+command sysctl/);
+  assert.match(script, /handshake=%s rxBytes=%s txBytes=%s/);
+  assert.match(script, /Removed stale bounded AmneziaWG candidate/);
   assert.ok(script.indexOf("probe_vpn_namespace \"$candidate_container\"") < script.indexOf("docker container stop -t 20 \"$vpn_container\""));
   assert.match(script, /restore_old_runtime/);
   assert.match(script, /fplProbe/);
@@ -35,6 +37,8 @@ test("the existing production workflow can rotate AmneziaWG before promotion", (
   assert.match(deployWorkflow, /configure_fpl_vpn:/);
   assert.match(deployWorkflow, /inputs\.configure_fpl_vpn == 'true'/);
   assert.match(deployWorkflow, /scripts\/configure-production-amneziawg\.sh/);
+  assert.match(deployWorkflow, /ServerAliveInterval=15/);
+  assert.match(deployWorkflow, /timeout --signal=TERM --kill-after=30s 5m bash -s/);
   assert.ok(
     deployWorkflow.indexOf("Promote verified AmneziaWG network namespace")
       < deployWorkflow.indexOf("Promote Docker release")
