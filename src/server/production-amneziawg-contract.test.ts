@@ -4,6 +4,7 @@ import test from "node:test";
 
 const script = readFileSync(new URL("../../scripts/configure-production-amneziawg.sh", import.meta.url), "utf8");
 const workflow = readFileSync(new URL("../../.github/workflows/configure-production-fpl-vpn.yml", import.meta.url), "utf8");
+const deployWorkflow = readFileSync(new URL("../../.github/workflows/deploy-production.yml", import.meta.url), "utf8");
 
 test("production AmneziaWG promotion uses an official immutable image and a candidate probe", () => {
   assert.match(script, /amneziavpn\/amneziawg-go@sha256:[a-f0-9]{64}/);
@@ -24,4 +25,14 @@ test("production AmneziaWG config stays secret, bounded, and serialized with dep
   assert.doesNotMatch(interfaceAllowlist, /(?:Pre|Post)(?:Up|Down)/);
   assert.doesNotMatch(workflow, /PrivateKey\s*=/);
   assert.doesNotMatch(script, /PrivateKey\s*=[A-Za-z0-9+/]/);
+});
+
+test("the existing production workflow can rotate AmneziaWG before promotion", () => {
+  assert.match(deployWorkflow, /configure_fpl_vpn:/);
+  assert.match(deployWorkflow, /inputs\.configure_fpl_vpn == 'true'/);
+  assert.match(deployWorkflow, /scripts\/configure-production-amneziawg\.sh/);
+  assert.ok(
+    deployWorkflow.indexOf("Promote verified AmneziaWG network namespace")
+      < deployWorkflow.indexOf("Promote Docker release")
+  );
 });

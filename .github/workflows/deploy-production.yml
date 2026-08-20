@@ -15,6 +15,14 @@ on:
         description: Git ref to package. It must contain the current main branch.
         required: true
         default: main
+      configure_fpl_vpn:
+        description: Replace the FPL network namespace from the FPL_AMNEZIAWG_CONFIG secret before deploy.
+        required: true
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
 
 permissions:
   contents: read
@@ -105,6 +113,27 @@ jobs:
             '${{ steps.release.outputs.tree }}' \
             '${{ steps.release.outputs.checksum }}'
 
+      - name: Materialize bounded AmneziaWG secret
+        if: inputs.dry_run == 'false' && inputs.configure_fpl_vpn == 'true'
+        id: fpl_vpn_config
+        shell: bash
+        env:
+          FPL_AMNEZIAWG_CONFIG: ${{ secrets.FPL_AMNEZIAWG_CONFIG }}
+        run: |
+          set -euo pipefail
+          : "${FPL_AMNEZIAWG_CONFIG:?FPL_AMNEZIAWG_CONFIG secret is required}"
+          umask 077
+          path="$RUNNER_TEMP/fantasy-scout-fpl-amneziawg-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}.conf"
+          printf '%s' "$FPL_AMNEZIAWG_CONFIG" > "$path"
+          size="$(stat -c '%s' "$path")"
+          [[ "$size" -ge 100 && "$size" -le 16384 ]]
+          checksum="$(sha256sum "$path" | awk '{print $1}')"
+          {
+            echo "path=$path"
+            echo "checksum=$checksum"
+            echo "remote_path=/tmp/$(basename "$path")"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Prepare SSH key
         if: inputs.dry_run == 'false'
         env:
@@ -121,6 +150,54 @@ jobs:
           printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
           chmod 600 ~/.ssh/deploy_key
           ssh-keyscan -p "$DEPLOY_PORT" "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+
+      - name: Transfer VPN configuration over SSH
+        if: inputs.dry_run == 'false' && inputs.configure_fpl_vpn == 'true'
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          LOCAL_CONFIG: ${{ steps.fpl_vpn_config.outputs.path }}
+          REMOTE_CONFIG: ${{ steps.fpl_vpn_config.outputs.remote_path }}
+        run: |
+          set -euo pipefail
+          : "${DEPLOY_USER:?DEPLOY_USER secret is required}"
+          DEPLOY_PORT="${DEPLOY_PORT:-22}"
+          scp -i ~/.ssh/deploy_key -P "$DEPLOY_PORT" \
+            "$LOCAL_CONFIG" "$DEPLOY_USER@$DEPLOY_HOST:$REMOTE_CONFIG"
+
+      - name: Promote verified AmneziaWG network namespace
+        if: inputs.dry_run == 'false' && inputs.configure_fpl_vpn == 'true'
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          REMOTE_CONFIG: ${{ steps.fpl_vpn_config.outputs.remote_path }}
+          CONFIG_SHA256: ${{ steps.fpl_vpn_config.outputs.checksum }}
+        run: |
+          set -euo pipefail
+          DEPLOY_PORT="${DEPLOY_PORT:-22}"
+          ssh -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
+            "bash -s -- '$REMOTE_CONFIG' '$CONFIG_SHA256'" \
+            < scripts/configure-production-amneziawg.sh
+
+      - name: Remove runner copy of VPN configuration
+        if: always() && inputs.configure_fpl_vpn == 'true'
+        env:
+          LOCAL_CONFIG: ${{ steps.fpl_vpn_config.outputs.path }}
+        run: rm -f -- "$LOCAL_CONFIG"
+
+      - name: Verify production remains healthy after VPN rotation
+        if: inputs.dry_run == 'false' && inputs.configure_fpl_vpn == 'true'
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+        run: |
+          set -euo pipefail
+          DEPLOY_PORT="${DEPLOY_PORT:-22}"
+          ssh -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
+            "docker exec fantasy-scout-web node -e \"fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))\""
 
       - name: Reject production history rollback
         if: inputs.dry_run == 'false'
