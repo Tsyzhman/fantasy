@@ -265,6 +265,14 @@ config_created=1
 docker pull "$awg_image" >/dev/null
 vpn_command='set -Eeuo pipefail
 config=/etc/amnezia/amneziawg/awg0.conf
+sysctl() {
+  if [[ "$#" -eq 2 && "$1" == "-q" && "$2" == "net.ipv4.conf.all.src_valid_mark=1" ]] \
+    && [[ "$(< /proc/sys/net/ipv4/conf/all/src_valid_mark)" == "1" ]]; then
+    return 0
+  fi
+  command sysctl "$@"
+}
+export -f sysctl
 cleanup() { awg-quick down "$config" >/dev/null 2>&1 || true; }
 trap "cleanup; exit 0" TERM INT
 awg-quick up "$config"

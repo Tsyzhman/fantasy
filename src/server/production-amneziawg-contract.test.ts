@@ -11,6 +11,8 @@ test("production AmneziaWG promotion uses an official immutable image and a cand
   assert.doesNotMatch(script, /amneziawg-go:latest/);
   assert.match(script, /--cap-drop ALL \\\n\s+--cap-add DAC_OVERRIDE \\\n\s+--cap-add NET_ADMIN/);
   assert.match(script, /dst=\/etc\/amnezia\/amneziawg\/awg0\.conf,readonly/);
+  assert.match(script, /--sysctl net\.ipv4\.conf\.all\.src_valid_mark=1/);
+  assert.match(script, /src_valid_mark=1[\s\S]+\/proc\/sys\/net\/ipv4\/conf\/all\/src_valid_mark[\s\S]+command sysctl/);
   assert.ok(script.indexOf("probe_vpn_namespace \"$candidate_container\"") < script.indexOf("docker container stop -t 20 \"$vpn_container\""));
   assert.match(script, /restore_old_runtime/);
   assert.match(script, /fplProbe/);
