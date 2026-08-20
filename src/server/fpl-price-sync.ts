@@ -28,7 +28,7 @@ import { replaceFantasyProviderSchedule } from "./fantasy-provider-schedule";
 
 const FPL_LOCK_KEY = "fantasy-scout:fpl:price-sync";
 const FPL_JOB_TYPE = "FPL_PRICE_SYNC";
-const FPL_PRICE_SYNC_FORMAT_VERSION = "provider-schedule-v2";
+const FPL_PRICE_SYNC_FORMAT_VERSION = "provider-schedule-v3";
 
 export type FplPriceSyncResult = {
   status: "SYNCED" | "SKIPPED";
@@ -59,6 +59,7 @@ export async function syncFplPrices(
   const bootstrap = await client.getBootstrap();
   const fixtures = await client.getFixtures();
   const rows = fplPriceRows(bootstrap);
+  const teamByProviderId = new Map(bootstrap.teams.map((team) => [team.id, team]));
   if (rows.length === 0) throw new Error("FPL bootstrap produced no price rows; preserving the previous snapshot.");
   const payloadHash = hashFplSnapshot(bootstrap, fixtures);
   const snapshotKey = fplSnapshotKey(now);
@@ -246,6 +247,8 @@ export async function syncFplPrices(
         providerRoundId: fixture.event === null ? null : String(fixture.event),
         providerHomeTeamId: String(fixture.homeTeamId),
         providerAwayTeamId: String(fixture.awayTeamId),
+        providerHomeTeamName: teamByProviderId.get(fixture.homeTeamId)?.name ?? null,
+        providerAwayTeamName: teamByProviderId.get(fixture.awayTeamId)?.name ?? null,
         kickoffAt: fixture.kickoffTime,
         status: fixture.finished ? "FINISHED" : fixture.started ? "STARTED" : "SCHEDULED",
         sourceRoundLabel: null

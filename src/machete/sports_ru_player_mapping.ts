@@ -129,6 +129,108 @@ const autoConflictingBirthDateNameThreshold = 0.96;
 const autoMatchingBirthDateNameThreshold = 0.58;
 const displayCandidateThreshold = 0.58;
 
+type SportsRuTeamAssignmentPrice = {
+  id: string;
+  playerId: bigint | null;
+  teamId: bigint | null;
+  teamName: string;
+};
+
+export function planSportsRuTeamAssignmentCorrections(
+  prices: readonly SportsRuTeamAssignmentPrice[],
+  activeSeasonTeams: readonly ActiveSeasonTeam[],
+  lockedPriceIds: ReadonlySet<string> = new Set()
+) {
+  return prices.flatMap((price) => {
+    if (!price.playerId || lockedPriceIds.has(price.id)) return [];
+    const providerTeam = resolveSportsRuSeasonTeam(price.teamName, activeSeasonTeams);
+    if (!providerTeam || providerTeam.teamId === price.teamId) return [];
+    return [{
+      priceId: price.id,
+      playerId: price.playerId,
+      previousTeamId: price.teamId,
+      teamId: providerTeam.teamId
+    }];
+  });
+}
+
+/**
+ * Corrects only the team attached to an already accepted provider player.
+ * Player identity maps stay untouched, and an explicit MANUAL_TEAM_OVERRIDE
+ * remains authoritative.
+ */
+export async function reconcileSportsRuFantasyTeamAssignments(
+  prisma: PrismaClient,
+  input: { leagueId: bigint; season: string; contestId: string }
+) {
+  const prices = await prisma.fantasyPlayerPrice.findMany({
+    where: {
+      provider: sportsRuProvider,
+      contestId: input.contestId,
+      leagueId: input.leagueId,
+      season: input.season,
+      playerId: { not: null }
+    },
+    select: { id: true, playerId: true, teamId: true, teamName: true }
+  });
+  if (prices.length === 0) {
+    return { scanned: 0, correctedPrices: 0, refreshedSelections: 0, skippedManualTeamOverrides: 0 };
+  }
+
+  const [activeSeasonTeams, manualTeamOverrides] = await Promise.all([
+    prisma.leagueSeasonTeam.findMany({
+      where: { leagueId: input.leagueId, season: input.season, active: true },
+      select: { teamId: true, team: { select: { name: true } } }
+    }),
+    prisma.providerEntityMap.findMany({
+      where: {
+        provider: sportsRuProvider,
+        contestId: input.contestId,
+        providerSeason: input.season,
+        providerEntityType: sportsRuPlayerEntityType,
+        providerEntityId: { in: prices.map((price) => price.id) },
+        internalEntityType: internalPlayerEntityType,
+        matchedBy: manualTeamOverrideMethod
+      },
+      select: { providerEntityId: true }
+    })
+  ]);
+  const lockedPriceIds = new Set(manualTeamOverrides.map((row) => row.providerEntityId));
+  const corrections = planSportsRuTeamAssignmentCorrections(prices, activeSeasonTeams, lockedPriceIds);
+  if (corrections.length === 0) {
+    return {
+      scanned: prices.length,
+      correctedPrices: 0,
+      refreshedSelections: 0,
+      skippedManualTeamOverrides: lockedPriceIds.size
+    };
+  }
+
+  return prisma.$transaction(async (tx) => {
+    let refreshedSelections = 0;
+    for (const correction of corrections) {
+      await tx.fantasyPlayerPrice.update({
+        where: { id: correction.priceId },
+        data: { teamId: correction.teamId }
+      });
+      const refreshed = await tx.userFantasySquadPlayer.updateMany({
+        where: {
+          playerId: correction.playerId,
+          squad: { contestId: input.contestId }
+        },
+        data: { teamId: correction.teamId }
+      });
+      refreshedSelections += refreshed.count;
+    }
+    return {
+      scanned: prices.length,
+      correctedPrices: corrections.length,
+      refreshedSelections,
+      skippedManualTeamOverrides: lockedPriceIds.size
+    };
+  });
+}
+
 // Sports.ru exposes localized club names while FotMob keeps the provider's
 // Latin club names. A known team must be canonicalized before player-name
 // scoring; otherwise an exact player identity is rejected as a team mismatch.
@@ -1008,7 +1110,7 @@ export function isSafeAutomaticSportsRuCandidate(
   return best.nameConfidence >= autoNameConfidenceThreshold;
 }
 
-export function resolveSportsRuSeasonTeam<T extends ActiveSeasonTeam>(sportsTeamName: string, teams: T[]) {
+export function resolveSportsRuSeasonTeam<T extends ActiveSeasonTeam>(sportsTeamName: string, teams: readonly T[]) {
   const candidates = teams
     .map((team) => ({ team, score: teamScoreAdjustment(sportsTeamName, team.team.name) }))
     .filter((candidate) => candidate.score > 0)

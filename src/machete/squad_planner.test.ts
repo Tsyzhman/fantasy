@@ -158,15 +158,22 @@ test("a new Foontasy fetch timestamp creates a new fantasy player pool cache key
     season: "2026/2027",
     leagueUpdatedAt: new Date("2026-08-13T08:00:00.000Z"),
     startingXiRevision: "no-xi-change",
+    contestRevision: "2026-08-13T08:00:00.000Z:schedule-a",
     preferenceKey: "global",
     historySettingsKey: "LAST_5"
   };
   const first = fantasyPlayerPoolCacheKey({ ...base, foontasyRevision: "2026-08-13T08:01:00.000Z" });
   const same = fantasyPlayerPoolCacheKey({ ...base, foontasyRevision: "2026-08-13T08:01:00.000Z" });
   const refreshed = fantasyPlayerPoolCacheKey({ ...base, foontasyRevision: "2026-08-13T12:01:00.000Z" });
+  const rescheduled = fantasyPlayerPoolCacheKey({
+    ...base,
+    foontasyRevision: "2026-08-13T08:01:00.000Z",
+    contestRevision: "2026-08-13T12:00:00.000Z:schedule-b"
+  });
 
   assert.equal(first, same);
   assert.notEqual(first, refreshed);
+  assert.notEqual(first, rescheduled);
 });
 
 test("component xFP is the default primary engine and legacy remains a one-flag rollback", () => {

@@ -2,7 +2,11 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-import { sportsRuContestRules, syncSportsRuFantasy } from "./sports_ru_fantasy_sync";
+import {
+  resolveSportsRuTeamCandidate,
+  sportsRuContestRules,
+  syncSportsRuFantasy
+} from "./sports_ru_fantasy_sync";
 
 test("Sports.ru sync preserves the database when the current season is unavailable", async () => {
   let databaseReads = 0;
@@ -72,6 +76,20 @@ test("Sports.ru contest rules preserve phase history and continue cup round offs
   const current = (transientEmptyTours.sportsRuSeasons as Array<{ seasonId: string; tours: unknown[] }>).find((phase) => phase.seasonId === "72");
   assert.equal(current?.tours.length, 9);
   assert.equal(Object.hasOwn(current?.tours[0] as object, "fixtures"), false, "fixture payloads must stay in normalized tables, not contest JSON");
+});
+
+test("Sports.ru schedule team mapping tolerates isolated stale player-team assignments", () => {
+  assert.deepEqual(resolveSportsRuTeamCandidate(new Map([[8302n, 29], [8633n, 1], [9906n, 1]])), {
+    internalTeamId: 8302n,
+    confidence: 29 / 31,
+    matchedBy: "SPORTS_RU_PRICE_TEAM_DOMINANCE"
+  });
+  assert.equal(resolveSportsRuTeamCandidate(new Map([[8302n, 5], [8633n, 4]])), null);
+  assert.deepEqual(resolveSportsRuTeamCandidate(new Map([[8302n, 1]])), {
+    internalTeamId: 8302n,
+    confidence: 1,
+    matchedBy: "SPORTS_RU_PRICE_TEAM_CONSENSUS"
+  });
 });
 
 function sportsRuFetch(seasonId: string | null, playersPerRole: number): typeof fetch {

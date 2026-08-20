@@ -850,25 +850,27 @@ model FantasyProviderRound {
 }
 
 model FantasyProviderFixture {
-  id                 String    @id @default(cuid())
-  contestId          String    @map("contest_id")
-  roundId            String?   @map("round_id")
-  provider           String
-  providerFixtureId  String    @map("provider_fixture_id")
-  providerHomeTeamId String    @map("provider_home_team_id")
-  providerAwayTeamId String    @map("provider_away_team_id")
-  homeTeamId         BigInt?   @map("home_team_id")
-  awayTeamId         BigInt?   @map("away_team_id")
-  matchId            BigInt?   @map("match_id")
-  kickoffAt          DateTime? @map("kickoff_at")
-  status             String?
-  sourceRoundLabel   String?   @map("source_round_label")
-  mappingStatus      String    @default("UNMATCHED") @map("mapping_status")
-  mappingConfidence  Float?    @map("mapping_confidence")
-  matchedBy          String?   @map("matched_by")
-  fetchedAt          DateTime  @map("fetched_at")
-  createdAt          DateTime  @default(now()) @map("created_at")
-  updatedAt          DateTime  @updatedAt @map("updated_at")
+  id                   String    @id @default(cuid())
+  contestId            String    @map("contest_id")
+  roundId              String?   @map("round_id")
+  provider             String
+  providerFixtureId    String    @map("provider_fixture_id")
+  providerHomeTeamId   String    @map("provider_home_team_id")
+  providerAwayTeamId   String    @map("provider_away_team_id")
+  providerHomeTeamName String?   @map("provider_home_team_name")
+  providerAwayTeamName String?   @map("provider_away_team_name")
+  homeTeamId           BigInt?   @map("home_team_id")
+  awayTeamId           BigInt?   @map("away_team_id")
+  matchId              BigInt?   @map("match_id")
+  kickoffAt            DateTime? @map("kickoff_at")
+  status               String?
+  sourceRoundLabel     String?   @map("source_round_label")
+  mappingStatus        String    @default("UNMATCHED") @map("mapping_status")
+  mappingConfidence    Float?    @map("mapping_confidence")
+  matchedBy            String?   @map("matched_by")
+  fetchedAt            DateTime  @map("fetched_at")
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
 
   contest  FantasyContest        @relation(fields: [contestId], references: [id], onDelete: Cascade)
   round    FantasyProviderRound? @relation(fields: [roundId], references: [id], onDelete: SetNull)

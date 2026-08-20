@@ -10,6 +10,7 @@ import {
   isSafeAutomaticSportsRuCandidate,
   loadSportsRuAuthoritativeStarterCandidate,
   loadSportsRuTeamPlayerMappings,
+  planSportsRuTeamAssignmentCorrections,
   planSportsRuSelectionRemap,
   resolveSportsRuSeasonTeam,
   scoreSportsRuCandidate,
@@ -30,6 +31,26 @@ test("Spain, Championship and Turkey Sports.ru club names resolve to their FotMo
   assert.equal(resolveSportsRuSeasonTeam("Алавес", teams)?.teamId, 1n);
   assert.equal(resolveSportsRuSeasonTeam("КПР", teams)?.teamId, 2n);
   assert.equal(resolveSportsRuSeasonTeam("Истанбул", teams)?.teamId, 3n);
+});
+
+test("provider club changes repair team assignments without touching player identities or manual team locks", () => {
+  const teams = [
+    { teamId: 8302n, team: { name: "Sevilla" } },
+    { teamId: 8633n, team: { name: "Real Madrid" } }
+  ];
+  const corrections = planSportsRuTeamAssignmentCorrections([
+    { id: "stale", playerId: 10n, teamId: 8633n, teamName: "Севилья" },
+    { id: "correct", playerId: 11n, teamId: 8302n, teamName: "Севилья" },
+    { id: "locked", playerId: 12n, teamId: 8633n, teamName: "Севилья" },
+    { id: "unmapped-player", playerId: null, teamId: null, teamName: "Севилья" }
+  ], teams, new Set(["locked"]));
+
+  assert.deepEqual(corrections, [{
+    priceId: "stale",
+    playerId: 10n,
+    previousTeamId: 8633n,
+    teamId: 8302n
+  }]);
 });
 
 test("an exact birth date safely bridges poor transliteration and rejects a conflicting birthday", () => {

@@ -17,6 +17,8 @@ export type FantasyProviderFixtureInput = {
   providerRoundId: string | null;
   providerHomeTeamId: string;
   providerAwayTeamId: string;
+  providerHomeTeamName: string | null;
+  providerAwayTeamName: string | null;
   kickoffAt: Date | null;
   status: string | null;
   sourceRoundLabel: string | null;
@@ -173,6 +175,8 @@ export async function replaceFantasyProviderSchedule(
       provider,
       providerHomeTeamId: fixture.providerHomeTeamId,
       providerAwayTeamId: fixture.providerAwayTeamId,
+      providerHomeTeamName: fixture.providerHomeTeamName,
+      providerAwayTeamName: fixture.providerAwayTeamName,
       homeTeamId,
       awayTeamId,
       matchId: uniqueMatch?.id ?? null,

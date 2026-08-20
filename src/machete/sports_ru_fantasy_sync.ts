@@ -7,7 +7,10 @@ import {
   validateFantasyProviderSchedule
 } from "@/server/fantasy-provider-schedule";
 
-import { autoMapSportsRuFantasyPlayers } from "./sports_ru_player_mapping";
+import {
+  autoMapSportsRuFantasyPlayers,
+  reconcileSportsRuFantasyTeamAssignments
+} from "./sports_ru_player_mapping";
 import { sportsRuSeasonAliases } from "./squad_planner";
 
 export type SportsRuFantasySyncInput = {
@@ -177,6 +180,14 @@ export async function syncSportsRuFantasy(prisma: PrismaClient, input: SportsRuF
   });
   const { deletedStalePrices, contestId } = syncResult;
 
+  // Keep an accepted player identity, but move its fantasy row to the club
+  // currently published by Sports.ru. This is deliberately separate from
+  // identity matching: a provider transfer must not remap the person.
+  const teamReconciliation = await reconcileSportsRuFantasyTeamAssignments(prisma, {
+    leagueId: input.leagueId,
+    season: input.season,
+    contestId
+  });
   // A routine price refresh may update names, clubs and prices, but it must
   // never reinterpret an identity that an earlier automatic or manual review
   // has already accepted. Only genuinely unmapped rows enter the matcher.
@@ -197,6 +208,7 @@ export async function syncSportsRuFantasy(prisma: PrismaClient, input: SportsRuF
     seasonId: snapshot.seasonId,
     prices: snapshot.prices.length,
     deletedStalePrices,
+    teamReconciliation,
     mapping,
     schedule,
     databaseChanged: true
@@ -302,8 +314,8 @@ async function syncSportsRuProviderSchedule(
   const storedByProviderPlayerId = new Map(
     storedPrices.flatMap((row) => row.providerPlayerId ? [[row.providerPlayerId, row] as const] : [])
   );
-  const teamCandidates = new Map<string, Set<bigint>>();
-  const teamCandidatesByName = new Map<string, Set<bigint>>();
+  const teamCandidates = new Map<string, Map<bigint, number>>();
+  const teamCandidatesByName = new Map<string, Map<bigint, number>>();
   for (const price of input.snapshot.prices) {
     const stored = price.providerPlayerId ? storedByProviderPlayerId.get(price.providerPlayerId) : null;
     if (!stored?.teamId) continue;
@@ -314,23 +326,28 @@ async function syncSportsRuProviderSchedule(
   for (const fixture of fixtures) {
     if (!teamCandidates.has(fixture.homeTeamId) && fixture.homeTeamName) {
       const candidates = teamCandidatesByName.get(normalizeName(fixture.homeTeamName));
-      if (candidates) teamCandidates.set(fixture.homeTeamId, new Set(candidates));
+      if (candidates) teamCandidates.set(fixture.homeTeamId, new Map(candidates));
     }
     if (!teamCandidates.has(fixture.awayTeamId) && fixture.awayTeamName) {
       const candidates = teamCandidatesByName.get(normalizeName(fixture.awayTeamName));
-      if (candidates) teamCandidates.set(fixture.awayTeamId, new Set(candidates));
+      if (candidates) teamCandidates.set(fixture.awayTeamId, new Map(candidates));
     }
   }
-  const teamIds = new Map<string, bigint | null>(
-    [...teamCandidates].map(([providerTeamId, candidates]) => [
+  const providerTeamIds = new Set(fixtures.flatMap((fixture) => [fixture.homeTeamId, fixture.awayTeamId]));
+  const teamResolutions = new Map(
+    [...providerTeamIds].map((providerTeamId) => [
       providerTeamId,
-      candidates.size === 1 ? [...candidates][0] : null
+      resolveSportsRuTeamCandidate(teamCandidates.get(providerTeamId) ?? new Map())
     ])
+  );
+  const teamIds = new Map(
+    [...teamResolutions].map(([providerTeamId, resolution]) => [providerTeamId, resolution?.internalTeamId ?? null])
   );
   const fetchedAt = validProviderDate(input.snapshot.fetchedAt) ?? new Date();
 
   return prisma.$transaction(async (tx) => {
     for (const [providerTeamId, internalTeamId] of teamIds) {
+      const resolution = teamResolutions.get(providerTeamId) ?? null;
       await tx.providerEntityMap.upsert({
         where: {
           provider_providerSeason_providerEntityType_providerEntityId_internalEntityType: {
@@ -344,8 +361,8 @@ async function syncSportsRuProviderSchedule(
         update: {
           contestId: input.contestId,
           internalEntityId: internalTeamId ? String(internalTeamId) : null,
-          confidence: internalTeamId ? 1 : 0,
-          matchedBy: internalTeamId ? "SPORTS_RU_PRICE_TEAM_CONSENSUS" : null,
+          confidence: resolution?.confidence ?? 0,
+          matchedBy: resolution?.matchedBy ?? null,
           status: internalTeamId ? "MATCHED" : "UNMATCHED"
         },
         create: {
@@ -356,8 +373,8 @@ async function syncSportsRuProviderSchedule(
           providerEntityId: providerTeamId,
           internalEntityType: "TEAM",
           internalEntityId: internalTeamId ? String(internalTeamId) : null,
-          confidence: internalTeamId ? 1 : 0,
-          matchedBy: internalTeamId ? "SPORTS_RU_PRICE_TEAM_CONSENSUS" : null,
+          confidence: resolution?.confidence ?? 0,
+          matchedBy: resolution?.matchedBy ?? null,
           status: internalTeamId ? "MATCHED" : "UNMATCHED"
         }
       });
@@ -376,10 +393,25 @@ async function syncSportsRuProviderSchedule(
   });
 }
 
-function addTeamCandidate(map: Map<string, Set<bigint>>, key: string, teamId: bigint) {
-  const candidates = map.get(key) ?? new Set<bigint>();
-  candidates.add(teamId);
+function addTeamCandidate(map: Map<string, Map<bigint, number>>, key: string, teamId: bigint) {
+  const candidates = map.get(key) ?? new Map<bigint, number>();
+  candidates.set(teamId, (candidates.get(teamId) ?? 0) + 1);
   map.set(key, candidates);
+}
+
+export function resolveSportsRuTeamCandidate(votes: ReadonlyMap<bigint, number>) {
+  const ranked = [...votes]
+    .filter(([, count]) => Number.isSafeInteger(count) && count > 0)
+    .sort((left, right) => right[1] - left[1] || (left[0] < right[0] ? -1 : left[0] > right[0] ? 1 : 0));
+  if (ranked.length === 0) return null;
+  const total = ranked.reduce((sum, [, count]) => sum + count, 0);
+  const [internalTeamId, count] = ranked[0];
+  if (ranked.length === 1) {
+    return { internalTeamId, confidence: 1, matchedBy: "SPORTS_RU_PRICE_TEAM_CONSENSUS" };
+  }
+  const share = count / total;
+  if (count < 3 || share < 0.75 || count === ranked[1][1]) return null;
+  return { internalTeamId, confidence: share, matchedBy: "SPORTS_RU_PRICE_TEAM_DOMINANCE" };
 }
 
 function sportsRuTourOrdinal(_name: string, index: number) {
@@ -408,6 +440,8 @@ function sportsRuProviderScheduleRows(
       providerRoundId: tour.id,
       providerHomeTeamId: fixture.homeTeamId,
       providerAwayTeamId: fixture.awayTeamId,
+      providerHomeTeamName: fixture.homeTeamName,
+      providerAwayTeamName: fixture.awayTeamName,
       kickoffAt: validProviderDate(fixture.scheduledAt),
       status: fixture.status,
       sourceRoundLabel: fixture.sourceRoundLabel

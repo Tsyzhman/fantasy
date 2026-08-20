@@ -427,11 +427,8 @@ export async function loadCachedFantasySquadPlayerPool(
   provider = "SPORTS_RU",
   contestId?: string | null
 ) {
-  const resolvedContestId = contestId ?? (await fantasyContestClient(prisma).findFirst({
-    where: { provider, leagueId: league.leagueId, season: provider === FPL_PROVIDER ? FPL_SEASON : { in: sportsRuSeasonAliases(league.season) } },
-    orderBy: { lastSyncedAt: "desc" },
-    select: { id: true }
-  }))?.id ?? null;
+  const contestMetadata = await fantasyContestCacheMetadata(prisma, league, provider, contestId);
+  const resolvedContestId = contestMetadata.contestId;
   const [preference, latestStartingXiChange, foontasyRevision] = await Promise.all([
     prisma.userScoringPreference.findUnique({
       where: { userId_modelSource: { userId, modelSource: "MACHETE" } },
@@ -455,6 +452,7 @@ export async function loadCachedFantasySquadPlayerPool(
     preferenceKey,
     startingXiRevision,
     foontasyRevision,
+    contestMetadata.revision,
     provider,
     resolvedContestId
   );
@@ -474,11 +472,8 @@ export async function loadCachedFantasySquadPlayerPools(
 ) {
   const uniqueUserIds = [...new Set(userIds)];
   if (uniqueUserIds.length === 0) return new Map<string, CachedFantasySquadPlayerPoolResult>();
-  const resolvedContestId = contestId ?? (await fantasyContestClient(prisma).findFirst({
-    where: { provider, leagueId: league.leagueId, season: provider === FPL_PROVIDER ? FPL_SEASON : { in: sportsRuSeasonAliases(league.season) } },
-    orderBy: { lastSyncedAt: "desc" },
-    select: { id: true }
-  }))?.id ?? null;
+  const contestMetadata = await fantasyContestCacheMetadata(prisma, league, provider, contestId);
+  const resolvedContestId = contestMetadata.contestId;
   const [preferences, latestStartingXiChange, foontasyRevision] = await Promise.all([
     prisma.userScoringPreference.findMany({
       where: { userId: { in: uniqueUserIds }, modelSource: "MACHETE" },
@@ -505,6 +500,7 @@ export async function loadCachedFantasySquadPlayerPools(
         preferenceKey,
         startingXiRevision,
         foontasyRevision,
+        contestMetadata.revision,
         provider,
         resolvedContestId
       );
@@ -540,6 +536,7 @@ function loadCachedFantasySquadPlayerPoolWithMetadata(
   preferenceKey: string,
   startingXiRevision: string,
   foontasyRevision: string,
+  contestRevision: string,
   provider: string,
   contestId?: string | null
 ) {
@@ -551,6 +548,7 @@ function loadCachedFantasySquadPlayerPoolWithMetadata(
     leagueUpdatedAt: league.updatedAt,
     startingXiRevision,
     foontasyRevision,
+    contestRevision,
     preferenceKey,
     historySettingsKey: fantasyHistorySettingsKey(historySettings)
   });
@@ -1471,10 +1469,11 @@ export function fantasyPlayerPoolCacheKey(input: {
   leagueUpdatedAt: Date;
   startingXiRevision: string;
   foontasyRevision: string;
+  contestRevision: string;
   preferenceKey: string;
   historySettingsKey: string;
 }) {
-  return `${input.provider}:${input.contestId ?? "no-contest"}:${input.leagueId}:${input.season}:${input.leagueUpdatedAt.toISOString()}:${input.startingXiRevision}:${input.foontasyRevision}:${input.preferenceKey}:${input.historySettingsKey}`;
+  return `${input.provider}:${input.contestId ?? "no-contest"}:${input.leagueId}:${input.season}:${input.leagueUpdatedAt.toISOString()}:${input.startingXiRevision}:${input.foontasyRevision}:${input.contestRevision}:${input.preferenceKey}:${input.historySettingsKey}`;
 }
 
 export function sportsRuPricedFantasyPlayers(players: FantasyPlannerPlayer[]) {
@@ -3429,10 +3428,10 @@ async function loadProviderPlannerMatches(
       matchDate: fixture.kickoffAt ?? fixture.match?.matchDate ?? null,
       homeTeamId: fixture.homeTeamId ? String(fixture.homeTeamId) : null,
       awayTeamId: fixture.awayTeamId ? String(fixture.awayTeamId) : null,
-      homeTeamName: fixture.homeTeam?.name ?? null,
-      awayTeamName: fixture.awayTeam?.name ?? null,
-      homeTeamFullName: fixture.homeTeam?.name ?? null,
-      awayTeamFullName: fixture.awayTeam?.name ?? null,
+      homeTeamName: fixture.homeTeam?.name ?? fixture.providerHomeTeamName ?? providerTeamIdLabel(fixture.providerHomeTeamId),
+      awayTeamName: fixture.awayTeam?.name ?? fixture.providerAwayTeamName ?? providerTeamIdLabel(fixture.providerAwayTeamId),
+      homeTeamFullName: fixture.homeTeam?.name ?? fixture.providerHomeTeamName ?? providerTeamIdLabel(fixture.providerHomeTeamId),
+      awayTeamFullName: fixture.awayTeam?.name ?? fixture.providerAwayTeamName ?? providerTeamIdLabel(fixture.providerAwayTeamId),
       finished: fixture.match?.finished === true || ["FINISHED", "COMPLETED", "PLAYED"].includes(status),
       cancelled: fixture.match?.cancelled === true || ["CANCELLED", "POSTPONED"].includes(status),
       homeOver15Probability: freshOdds?.homeOver15Probability ?? null,
@@ -3442,6 +3441,32 @@ async function loadProviderPlannerMatches(
       oddsFetchedAt: freshOdds?.fetchedAt ?? null
     }];
   });
+}
+
+async function fantasyContestCacheMetadata(
+  prisma: PrismaClient,
+  league: Pick<SharedLeagueSeasonOption, "leagueId" | "season">,
+  provider: string,
+  contestId?: string | null
+) {
+  const contest = await fantasyContestClient(prisma).findFirst({
+    where: {
+      ...(contestId ? { id: contestId } : {}),
+      provider,
+      leagueId: league.leagueId,
+      season: provider === FPL_PROVIDER ? FPL_SEASON : { in: sportsRuSeasonAliases(league.season) }
+    },
+    orderBy: { lastSyncedAt: "desc" },
+    select: { id: true, lastSyncedAt: true, scheduleRevision: true }
+  });
+  return {
+    // Preserve an explicitly requested ID so the uncached loader can reject
+    // an out-of-scope contest instead of silently selecting another one.
+    contestId: contest?.id ?? contestId ?? null,
+    revision: contest
+      ? `${contest.lastSyncedAt?.toISOString() ?? "never"}:${contest.scheduleRevision ?? "no-schedule"}`
+      : "no-contest"
+  };
 }
 
 async function finalizeProviderPlannerMatches(
@@ -3485,6 +3510,13 @@ export function fantasyProviderRoundKey(provider: string, ordinal: number, provi
   return `${provider.toLocaleLowerCase("en-US").replace(/_/g, "-")}:round:${ordinal}:${encodeURIComponent(providerRoundId)}`;
 }
 
+function providerTeamIdLabel(providerTeamId: string) {
+  const words = providerTeamId.trim().replace(/[_-]+/g, " ").replace(/\s+/g, " ");
+  if (!words) return "—";
+  if (/^\d+$/.test(words)) return `#${words}`;
+  return words.replace(/(^|\s)\p{L}/gu, (letter) => letter.toLocaleUpperCase("en-US"));
+}
+
 export function buildPlannerRoundFixtures(matches: PlannerMatch[], now = new Date()): PlannerRoundFixtures {
   const eligible = matches.filter((match) => !match.cancelled);
   const upcoming = eligible.filter((match) => !match.finished && (!match.matchDate || match.matchDate >= startOfTodayUtc(now)));
@@ -3522,8 +3554,8 @@ export function buildPlannerRoundFixtures(matches: PlannerMatch[], now = new Dat
           teamName: match.homeTeamName ?? "Team",
           teamFullName: match.homeTeamFullName ?? match.homeTeamName ?? "Team",
           opponentTeamId: match.awayTeamId,
-          opponentName: match.awayTeamName ?? "Opponent",
-          opponentFullName: match.awayTeamFullName ?? match.awayTeamName ?? "Opponent",
+          opponentName: match.awayTeamName ?? "—",
+          opponentFullName: match.awayTeamFullName ?? match.awayTeamName ?? "—",
           side: "H",
           kickoffAt: match.matchDate,
           projectedXg: null,
@@ -3544,8 +3576,8 @@ export function buildPlannerRoundFixtures(matches: PlannerMatch[], now = new Dat
           teamName: match.awayTeamName ?? "Team",
           teamFullName: match.awayTeamFullName ?? match.awayTeamName ?? "Team",
           opponentTeamId: match.homeTeamId,
-          opponentName: match.homeTeamName ?? "Opponent",
-          opponentFullName: match.homeTeamFullName ?? match.homeTeamName ?? "Opponent",
+          opponentName: match.homeTeamName ?? "—",
+          opponentFullName: match.homeTeamFullName ?? match.homeTeamName ?? "—",
           side: "A",
           kickoffAt: match.matchDate,
           projectedXg: null,

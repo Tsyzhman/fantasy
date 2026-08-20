@@ -35,6 +35,8 @@ const fixtures: FantasyProviderFixtureInput[] = [
     providerRoundId: "1",
     providerHomeTeamId: "1",
     providerAwayTeamId: "2",
+    providerHomeTeamName: "Arsenal",
+    providerAwayTeamName: "Chelsea",
     kickoffAt: new Date("2026-08-15T14:00:00Z"),
     status: "FINISHED",
     sourceRoundLabel: null
@@ -44,6 +46,8 @@ const fixtures: FantasyProviderFixtureInput[] = [
     providerRoundId: null,
     providerHomeTeamId: "3",
     providerAwayTeamId: "4",
+    providerHomeTeamName: "Liverpool",
+    providerAwayTeamName: "Everton",
     kickoffAt: null,
     status: "SCHEDULED",
     sourceRoundLabel: null
