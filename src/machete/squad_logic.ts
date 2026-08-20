@@ -141,6 +141,7 @@ export type FantasyPlannerPlayer = {
     bonus: number;
     defensiveContributions: number;
     total: number;
+    fixtureCount?: number;
   } | null;
   fplForecastStatus?: string | null;
   projectionFormula?: {
@@ -209,6 +210,7 @@ export type FantasyPlannerPlayer = {
   historicalStats?: Record<string, number | null>;
   valueScore: number;
   roundPoints: number[];
+  roundFixtureCounts?: number[];
   fixtures: string[];
   fixtureFullNames?: string[];
   fixtureDifficulties: (number | null)[];
@@ -325,6 +327,7 @@ export function fantasyProviderPlaceholderPlannerPlayer(
     foontasyPoints: null,
     valueScore: 0,
     roundPoints: Array.from({ length: rounds }, () => 0),
+    roundFixtureCounts: Array.from({ length: rounds }, () => 0),
     alternativeRoundPoints: Array.from({ length: rounds }, () => null),
     fixtures: Array.from({ length: rounds }, () => ""),
     fixtureFullNames: Array.from({ length: rounds }, () => ""),

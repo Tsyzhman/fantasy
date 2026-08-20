@@ -4,6 +4,7 @@ import test from "node:test";
 import {
   FORMULA_ADAPTATION_HYPOTHESES,
   FORMULA_ADAPTATION_WEATHER_INCLUDED,
+  aggregateFormulaAdaptationPredictions,
   addPromotedFormulaAdaptationTeamProfiles,
   addFormulaAdaptationInteractions,
   buildFormulaAdaptationPlayerFeatures,
@@ -75,6 +76,37 @@ test("detailed adaptations expose every additive term and reproduce the displaye
   assert.ok(jointAll);
   assert.ok(jointAll.numericTerms.some((term) => term.valueSource === "trained_median"));
   assert.ok(jointAll.numericTerms.some((term) => term.rawValue === null && term.missingCoefficient !== null));
+});
+
+test("double round adaptations score each fixture independently and expose both breakdowns", () => {
+  const fixturePrediction = (fixtureId: string, opponentTeamId: string, fo: number, alt: number) => ({
+    fixtureId,
+    fixtureLabel: `${fixtureId} opponent`,
+    prediction: predictFormulaAdaptationsWithBreakdowns({
+      leagueId: "63",
+      position: "MID",
+      fo,
+      alt,
+      features: {
+        player_target_h10: 5,
+        player_minutes_h10: 84,
+        team_id: "168719",
+        opponent_team_id: opponentTeamId,
+        is_home: fixtureId === "first" ? "True" : "False"
+      }
+    })
+  });
+  const first = fixturePrediction("first", "1066681", 4.1, 4.6);
+  const second = fixturePrediction("second", "9825", 5.3, 5.9);
+  const round = aggregateFormulaAdaptationPredictions([first, second]);
+
+  for (const key of Object.keys(round.forecasts) as Array<keyof typeof round.forecasts>) {
+    const firstValue = first.prediction.forecasts[key];
+    const secondValue = second.prediction.forecasts[key];
+    assert.equal(round.forecasts[key], Math.round(((firstValue ?? 0) + (secondValue ?? 0)) * 1000) / 1000);
+    assert.deepEqual(round.breakdowns[key]?.roundFixtures?.map((fixture) => fixture.fixtureId), ["first", "second"]);
+    assert.equal(round.breakdowns[key]?.roundedPrediction, round.forecasts[key]);
+  }
 });
 
 test("player adaptations calculate 3/5/10 form and recovery/pass interactions from prior matches", () => {

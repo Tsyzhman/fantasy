@@ -3,7 +3,7 @@ import test from "node:test";
 
 import { expectedPoissonGroups, type PlayerFixtureProjection } from "@/machete/deterministic_fantasy_projection";
 
-import { fplForecastPointsFromProjection, fplOfficialScoreInputFromStats } from "./fpl-scoring";
+import { aggregateFplForecastResults, fplForecastPointsFromProjection, fplOfficialScoreInputFromStats } from "./fpl-scoring";
 
 const projection: PlayerFixtureProjection = {
   playerId: "1",
@@ -118,6 +118,38 @@ test("goalkeeper never receives defensive-contribution forecast points", () => {
   assert.equal(result.breakdown.bonus, 2);
   assert.equal(result.breakdown.defensiveContributions, 0);
   assert.equal(result.coverage.defensiveContributions, 1);
+});
+
+test("FPL double gameweek forecast sums independently scored fixtures", () => {
+  const first = fplForecastPointsFromProjection(projection, {
+    expectedBonusPerAppearance: 1,
+    expectedDefensiveContributionPointsPerAppearance: 0.5,
+    bonusCoverage: 1,
+    defensiveContributionCoverage: 1
+  });
+  const second = fplForecastPointsFromProjection({
+    ...projection,
+    probabilities: { appearance: 0.5, sixtyMinutes: 0.4, fullMatch: 0.3 },
+    expectedEvents: {
+      ...projection.expectedEvents,
+      goals: 0.1,
+      assists: 0.4,
+      cleanSheets: 0.2
+    }
+  }, {
+    expectedBonusPerAppearance: 1,
+    expectedDefensiveContributionPointsPerAppearance: 0.5,
+    bonusCoverage: 0.6,
+    defensiveContributionCoverage: 0.8
+  });
+  const round = aggregateFplForecastResults([first, second]);
+
+  assert.ok(round);
+  assert.equal(round.breakdown.fixtureCount, 2);
+  assert.ok(Math.abs(round.points - first.points - second.points) < 1e-9);
+  assert.ok(Math.abs(round.breakdown.goals - first.breakdown.goals - second.breakdown.goals) < 1e-9);
+  assert.deepEqual(round.coverage, { bonus: 0.6, defensiveContributions: 0.8 });
+  assert.equal(round.status, "OFFICIAL_SCORING_WITH_PARTIAL_BONUS_AND_DEFENSIVE_CONTRIBUTIONS");
 });
 
 test("FPL official live stats map to the versioned rules input", () => {

@@ -45,6 +45,7 @@ import {
   createFantasyFitEvaluator,
   createFantasySquadRoundPlans,
   fantasyTransferLimitForHorizon,
+  nextAlternativeFantasyPoints,
   nextFantasyPoints,
   normalizeFantasyHorizon,
   optimizeFantasySquad,
@@ -2999,13 +3000,13 @@ function playerPoolOptionalColumns(players: FantasyPlannerPlayer[], horizon: num
     width
   });
   const standard = [
-    column("nextFp", "FP", "ФО", "Expected fantasy points in the next round from expected minutes, player event rates, opponent strength, bookmaker inputs, and the active scoring formula.", "Ожидаемые фэнтези-очки в следующем туре: учитываются ожидаемые минуты, игровые показатели футболиста, сила соперника, букмекерские данные и активная формула начисления.", true, 64),
+    column("nextFp", "FP", "ФО", "Expected fantasy points in the next provider round. Every fixture is calculated with its own opponent inputs and the active scoring formula, then double-round results are summed.", "Ожидаемые фэнтези-очки в следующем туре провайдера. Каждый матч рассчитывается со своими входами соперника и активной формулой начисления, затем результаты двойного тура складываются.", true, 64),
     column("nextFpPerPrice", "FP/price", "ФО/цена", `Primary next-round expected fantasy points divided by the current ${priceProviderLabel} price. Higher means more forecast points per one price unit.`, `Основные ожидаемые ФО на следующий тур, делённые на текущую цену ${priceProviderLabel}. Чем выше значение, тем больше прогнозных очков на одну единицу стоимости.`, true, 78),
     column("horizonFp", `${horizon}R FP`, `${horizon}Т ФО`, `Sum of independently calculated primary forecasts for the next ${horizon} rounds; the current-round value is not simply multiplied.`, `Сумма отдельно рассчитанных основных прогнозов на следующие ${horizon} туров; значение текущего тура не умножается механически.`),
     column("foontasy", "FFO", "FFO", "Foontasy's external forecast for the current round, matched strictly through the Sports.ru player identifier. Foontasy does not publish a multi-round forecast; missing data is shown as a dash.", "Внешний прогноз Foontasy на текущий тур, сопоставленный строго через идентификатор игрока Sports.ru. Foontasy не публикует прогноз на несколько туров; отсутствие данных показывается прочерком."),
     column("foontasyPerPrice", "FFO/price", "ФФО/цена", `Foontasy current-round forecast divided by the current ${priceProviderLabel} price. Higher means more FFO per one price unit.`, `Прогноз Foontasy на текущий тур, делённый на текущую цену ${priceProviderLabel}. Чем выше значение, тем больше ФФО на одну единицу стоимости.`, true, 82),
     column("modelHorizon", `${horizon}R FFO`, `${horizon}Т ФФО`, `Our reproducible Foontasy-style forecast for the selected ${horizon}-round horizon. Every fixture is calculated separately from expected minutes, smoothed player rates, and fresh odds, xG form, or goals fallback. It is our model, not Foontasy's external forecast.`, `Наш воспроизводимый прогноз в стиле Foontasy на выбранный горизонт ${horizon} туров. Каждый матч считается отдельно по ожидаемым минутам, сглаженным показателям игрока и свежим коэффициентам, xG-форме или голам. Это наша модель, а не внешний прогноз Foontasy.`),
-    column("alternative", "Alt", "Альт", "Alternative next-round fantasy forecast calculated with this user's personal Alt formula and the same minute-aware player inputs.", "Альтернативный прогноз фэнтези-очков на следующий тур по личной формуле Alt пользователя и с учётом ожидаемых минут игрока."),
+    column("alternative", "Alt", "Альт", "Alternative forecast for the next provider round. Each fixture is calculated independently with the user's personal Alt formula, then double-round results are summed.", "Альтернативный прогноз на следующий тур провайдера. Каждый матч отдельно рассчитывается по личной формуле Alt пользователя, затем результаты двойного тура складываются."),
     column("alternativePerPrice", "Alt/price", "Альт/цена", `Alternative next-round expected fantasy points divided by the current ${priceProviderLabel} price. Higher means more Alt points per one price unit.`, `Альтернативные ожидаемые ФО на следующий тур, делённые на текущую цену ${priceProviderLabel}. Чем выше значение, тем больше Альт-очков на одну единицу стоимости.`, true, 82),
     column("alternativeHorizon", `Alt ${horizon}R`, `Альт ${horizon}Т`, `Sum of independently calculated personal Alt forecasts for the next ${horizon} rounds.`, `Сумма отдельно рассчитанных личных прогнозов Alt на следующие ${horizon} туров.`),
     column("foPositionCalibratedFp", "FO position cal.", "FO калибр. позиции", "FO calibrated independently by fantasy position on the complete 2024/25–2025/26 retro sample: actual starters who played over 60 minutes. Weather is not used.", "FO, независимо откалиброванный по фэнтези-позиции на полной ретро-выборке 2024/25–2025/26: фактический старт и больше 60 минут. Погода не используется.", true, 116),
@@ -3025,14 +3026,14 @@ function playerPoolOptionalColumns(players: FantasyPlannerPlayer[], horizon: num
     column("forecastConfidence", "Confidence", "Уверенность", "Data-reliability heuristic, not forecast accuracy: 55% sample completeness (reaches maximum at 5 matches) + 30% minute stability (standard deviation, worst at 45+ minutes) + 15% completeness of known starting-XI flags.", "Эвристика надёжности данных, а не точность прогноза: 55% — полнота выборки (максимум при 5 матчах), 30% — стабильность минут (по стандартному отклонению, минимум при 45+ минутах), 15% — полнота известных отметок выхода в старте."),
     column("valueScore", "FP/price", "ФО/цена", "Next-round primary expected fantasy points divided by the player's current price; a relative value indicator, not a separate forecast.", "Основной прогноз ФО на следующий тур, делённый на текущую цену игрока; показатель относительной выгодности, а не отдельный прогноз."),
     column("recentFp", "Recent FP", "Недавние ФО", "Average actual fantasy points over up to the last 5 stored matches in the selected history scope.", "Средние фактические фэнтези-очки максимум за 5 последних сохранённых матчей в выбранном историческом диапазоне."),
-    column("projectedGoals", "Exp goals", "Ож. голы", "Expected goals allocated to the player for the next fixture after scaling his scoring rate by expected minutes and team attacking forecast.", "Ожидаемые голы игрока в следующем матче после масштабирования его голевого темпа на ожидаемые минуты и атакующий прогноз команды."),
-    column("projectedAssists", "Exp assists", "Ож. ассисты", "Expected assists for the next fixture after minute scaling and team-event allocation.", "Ожидаемые ассисты в следующем матче после учёта минут и распределения командных событий между игроками."),
-    column("projectedRecoveries", "Exp rec.", "Ож. возвраты", "Expected recoveries in the next fixture, scaled to the player's expected minutes; used only where the scoring model rewards them.", "Ожидаемые возвраты мяча в следующем матче с учётом ожидаемых минут; используются только если активная формула начисляет за них очки."),
-    column("projectedSaves", "Exp saves", "Ож. сейвы", "Expected goalkeeper saves in the next fixture from the player's save rate, expected minutes, and opponent shot forecast.", "Ожидаемые сейвы вратаря в следующем матче на основе его темпа сейвов, ожидаемых минут и прогноза ударов соперника."),
-    column("projectedCleanSheets", "Exp CS", "Ож. сухарь", "Expected clean-sheet contribution for the next fixture, weighted by team defensive forecast and the player's playing-time exposure.", "Ожидаемый вклад сухого матча в следующем туре, взвешенный по защитному прогнозу команды и игровому времени футболиста."),
-    column("projectedGoalsConceded", "Exp GC", "Ож. пропущ.", "Expected goals conceded while the player is on the pitch in the next fixture. Both primary FP and default Alt subtract one fantasy point per Poisson group of two for defenders and goalkeepers.", "Ожидаемые пропущенные голы, пока игрок находится на поле в следующем матче. Основное ФО и стандартный Альт вычитают по одному фэнтези-очку за каждую пуассоновскую группу из двух голов у защитников и вратарей."),
-    column("projectedYellowCards", "Exp YC", "Ож. ЖК", "Expected yellow cards in the next fixture from the player's card rate scaled by expected minutes.", "Ожидаемые жёлтые карточки в следующем матче: карточный темп игрока масштабируется на ожидаемые минуты."),
-    column("projectedRedCards", "Exp RC", "Ож. КК", "Expected red cards in the next fixture from the player's card rate scaled by expected minutes.", "Ожидаемые красные карточки в следующем матче: карточный темп игрока масштабируется на ожидаемые минуты."),
+    column("projectedGoals", "Exp goals", "Ож. голы", "Expected goals allocated to the player across the next provider round. Double-round fixtures are projected independently and summed.", "Ожидаемые голы игрока за следующий тур провайдера. Матчи двойного тура прогнозируются отдельно и складываются."),
+    column("projectedAssists", "Exp assists", "Ож. ассисты", "Expected assists across the next provider round after each fixture's minute scaling and team-event allocation.", "Ожидаемые ассисты за следующий тур провайдера после отдельного учёта минут и распределения командных событий в каждом матче."),
+    column("projectedRecoveries", "Exp rec.", "Ож. возвраты", "Expected recoveries across the next provider round; used only where the scoring model rewards them.", "Ожидаемые возвраты мяча за следующий тур провайдера; используются только если активная формула начисляет за них очки."),
+    column("projectedSaves", "Exp saves", "Ож. сейвы", "Expected goalkeeper saves across the next provider round, calculated separately for each opponent.", "Ожидаемые сейвы вратаря за следующий тур провайдера, рассчитанные отдельно для каждого соперника."),
+    column("projectedCleanSheets", "Exp CS", "Ож. сухарь", "Expected clean-sheet contribution across the next provider round, calculated separately for every fixture.", "Ожидаемый вклад сухих матчей за следующий тур провайдера, рассчитанный отдельно для каждого матча."),
+    column("projectedGoalsConceded", "Exp GC", "Ож. пропущ.", "Expected goals conceded while the player is on the pitch across the next provider round. Both primary FP and default Alt apply their penalty independently in every fixture.", "Ожидаемые пропущенные голы за следующий тур провайдера. Основное ФО и стандартный Альт применяют штраф отдельно в каждом матче."),
+    column("projectedYellowCards", "Exp YC", "Ож. ЖК", "Expected yellow cards across the next provider round, calculated from each fixture's minute exposure.", "Ожидаемые жёлтые карточки за следующий тур провайдера с отдельным учётом минут каждого матча."),
+    column("projectedRedCards", "Exp RC", "Ож. КК", "Expected red cards across the next provider round, calculated from each fixture's minute exposure.", "Ожидаемые красные карточки за следующий тур провайдера с отдельным учётом минут каждого матча."),
     column("baltikaXg", "W xG", "W xG", "Total Wyscout xG from the imported Baltika workbook for the selected sample; shown only when that source is available.", "Суммарный xG Wyscout из загруженного файла «Балтики» для выбранной выборки; показывается только при наличии этого источника."),
     column("baltikaXa", "W xA", "W xA", "Total Wyscout xA from the imported Baltika workbook for the selected sample; shown only when that source is available.", "Суммарный xA Wyscout из загруженного файла «Балтики» для выбранной выборки; показывается только при наличии этого источника."),
     column("baltikaMatches", "W matches", "W матчи", "Number of matches represented in the imported Wyscout aggregate.", "Количество матчей, вошедших в загруженный агрегат Wyscout.")
@@ -3159,7 +3160,7 @@ function playerPoolValueCellTitle(column: PlayerPoolOptionalColumn, player: Fant
   if (column.key === "foontasy") return foontasyForecastTitle(player, language, 1);
   if (column.key === "foontasyPerPrice") return forecastEfficiencyTitle(player, language, "FFO", player.foontasyPoints ?? null, numericValue);
   if (column.key === "alternative") return alternativePlayerForecastTitle(player, language);
-  if (column.key === "alternativePerPrice") return forecastEfficiencyTitle(player, language, "Alt", player.alternativePredictedFp ?? null, numericValue);
+  if (column.key === "alternativePerPrice") return forecastEfficiencyTitle(player, language, "Alt", nextAlternativeFantasyPoints(player), numericValue);
   if (column.key === "alternativeHorizon") return alternativePlayerHorizonForecastTitle(player, language, horizon);
   return playerPoolMetricValueTitle(column, player, language, rawValue);
 }
@@ -3233,7 +3234,10 @@ function playerPoolMetricValueTitle(column: PlayerPoolOptionalColumn, player: Fa
       ? localizedText(language, "No stored match scores in the selected sample.", "В выбранной выборке нет сохранённых очков по матчам.")
       : localizedText(language, `Matches: ${values.map((value) => formatNumber(value, 2)).join(" + ")} = ${formatNumber(sum, 2)}; ${formatNumber(sum, 2)} / ${values.length} = ${display}.`, `Матчи: ${values.map((value) => formatNumber(value, 2)).join(" + ")} = ${formatNumber(sum, 2)}; ${formatNumber(sum, 2)} / ${values.length} = ${display}.`));
   } else if (column.key.startsWith("projected")) {
-    lines.push(localizedText(language, `Next-fixture component produced by the minute-aware projection. Expected minutes: ${player.expectedMinutes == null ? "—" : formatNumber(player.expectedMinutes, 1)}; component value: ${display}.`, `Компонент прогноза на следующий матч с учётом минут. Ожидаемые минуты: ${player.expectedMinutes == null ? "—" : formatNumber(player.expectedMinutes, 1)}; значение компонента: ${display}.`));
+    const fixtureCount = player.roundFixtureCounts?.[0] ?? 0;
+    lines.push(fixtureCount > 1
+      ? localizedText(language, `Provider-round component: ${fixtureCount} fixtures projected independently and summed; component total: ${display}.`, `Компонент provider-тура: ${fixtureCount} матча рассчитаны отдельно и сложены; итог компонента: ${display}.`)
+      : localizedText(language, `Next-fixture component produced by the minute-aware projection. Expected minutes: ${player.expectedMinutes == null ? "—" : formatNumber(player.expectedMinutes, 1)}; component value: ${display}.`, `Компонент прогноза на следующий матч с учётом минут. Ожидаемые минуты: ${player.expectedMinutes == null ? "—" : formatNumber(player.expectedMinutes, 1)}; значение компонента: ${display}.`));
     lines.push(sample);
   } else if (column.key === "baltikaXg" || column.key === "baltikaXa") {
     const sampleSize = player.baltikaMatchesPlayed ?? null;
@@ -3324,8 +3328,8 @@ function customPlayerPoolColumnValue(key: string, player: FantasyPlannerPlayer, 
     case "foontasy": return player.foontasyPoints ?? null;
     case "foontasyPerPrice": return forecastPointsPerPrice(player.foontasyPoints, player.price);
     case "modelHorizon": return horizon === 3 ? player.modelT3Points ?? null : player.modelT5Points ?? null;
-    case "alternative": return player.alternativePredictedFp ?? null;
-    case "alternativePerPrice": return forecastPointsPerPrice(player.alternativePredictedFp, player.price);
+    case "alternative": return nextAlternativeFantasyPoints(player);
+    case "alternativePerPrice": return forecastPointsPerPrice(nextAlternativeFantasyPoints(player), player.price);
     case "alternativeHorizon": return playerAlternativeHorizonPoints(player, horizon);
     case "foPositionCalibratedFp": return player.foPositionCalibratedFp ?? null;
     case "altPositionCalibratedFp": return player.altPositionCalibratedFp ?? null;
@@ -3482,6 +3486,7 @@ export function PlayerPoolTable({
               const removeLabel = localizedText(language, `Remove ${player.name}`, `Удалить ${player.name}`);
               const forecastTitle = fantasyForecastTitle(player, language);
               const nextRoundForecast = nextFantasyPoints(player);
+              const nextAlternativeForecast = nextAlternativeFantasyPoints(player);
               const primaryHorizonForecast = playerHorizonPoints(player, horizon);
               const alternativeHorizonForecast = playerAlternativeHorizonPoints(player, horizon);
               const nextPrimaryForecastTitle = playerPrimaryNextForecastTitle(player, language, nextRoundForecast);
@@ -3537,11 +3542,11 @@ export function PlayerPoolTable({
                     {foontasyNextForecast === null ? "—" : formatNumber(foontasyNextForecast, 1)}
                   </td>
                   <td
-                    data-sort-value={player.alternativePredictedFp ?? 0}
+                    data-sort-value={nextAlternativeForecast ?? 0}
                     className={`overflow-hidden whitespace-nowrap px-1 py-1.5 text-right text-[11px] font-semibold ${muted ? "text-slate-600" : "text-amber-700"}`}
                     title={alternativePlayerForecastTitle(player, language)}
                   >
-                    {formatAlternativeScore(player.alternativePredictedFp)}
+                    {formatAlternativeScore(nextAlternativeForecast)}
                   </td>
                   <td
                     data-sort-value={alternativeHorizonForecast ?? 0}
@@ -3710,7 +3715,7 @@ function PlayerPoolMobileList({
               </div>
               <div className="min-w-0 px-1" title={alternativePredictedFpTitle(language)}>
                 <dt className="text-[10px] font-semibold uppercase text-slate-500">Alt</dt>
-                <dd className="truncate text-sm font-bold text-amber-700 num-tabular">{formatAlternativeScore(player.alternativePredictedFp)}</dd>
+                <dd className="truncate text-sm font-bold text-amber-700 num-tabular">{formatAlternativeScore(nextAlternativeFantasyPoints(player))}</dd>
               </div>
             </dl>
 
@@ -4172,7 +4177,7 @@ function SquadPlayerTile({
       : localizedText(language, `Swap with ${player.name}`, `Заменить на ${player.name}`);
   const cardPrimaryNextForecast = nextFantasyPoints(player);
   const cardPrimaryHorizonForecast = playerHorizonPoints(player, 3);
-  const cardAlternativeNextForecast = player.alternativePredictedFp ?? null;
+  const cardAlternativeNextForecast = nextAlternativeFantasyPoints(player);
   const cardAlternativeHorizonForecast = playerAlternativeHorizonPoints(player, 3);
   const cardPrimaryNextTitle = squadCardForecastTitle(
     playerPrimaryNextForecastTitle(player, language, cardPrimaryNextForecast),
@@ -4670,7 +4675,7 @@ function SquadPlayerPhoto({ player }: { player: FantasyPlannerPlayer }) {
 function fantasyForecastTitle(player: FantasyPlannerPlayer, language: UiLanguage) {
   const lines = [
     player.name,
-    localizedText(language, `Forecast: ${formatScore(player.predictedFp)} FP`, `Прогноз: ${formatScore(player.predictedFp)} FP`)
+    localizedText(language, `Next-round forecast: ${formatScore(nextFantasyPoints(player))} FP`, `Прогноз на следующий тур: ${formatScore(nextFantasyPoints(player))} FP`)
   ];
   if (player.expectedMinutes !== null && player.expectedMinutes !== undefined) {
     lines.push(localizedText(language, `Expected minutes: ${Math.round(player.expectedMinutes)}`, `Ожидаемые минуты: ${Math.round(player.expectedMinutes)}`));
@@ -5213,6 +5218,13 @@ function buildFplForecastBreakdownLines(
   totalLabel: string
 ) {
   const lines: string[] = [];
+  if ((breakdown.fixtureCount ?? 1) > 1) {
+    lines.push(localizedText(
+      language,
+      `- Provider-round total: ${breakdown.fixtureCount} fixtures scored independently and summed.`,
+      `- Итог provider-тура: ${breakdown.fixtureCount} матча рассчитаны отдельно и сложены.`
+    ));
+  }
   const defensiveThreshold = player.positionGroup === "DEF" ? 10
     : player.positionGroup === "MID" || player.positionGroup === "FWD" ? 12
     : null;
@@ -5400,13 +5412,20 @@ function buildAlternativeProjectionBreakdownLines(
 }
 
 function playerPrimaryNextForecastTitle(player: FantasyPlannerPlayer, language: UiLanguage, nextForecast: number | null) {
-  const lines = [localizedText(language, `Primary forecast for next round: ${formatScore(nextForecast)} FP`, `Основной прогноз на следующий тур: ${formatScore(nextForecast)} ФО`)];
+  const fixtureCount = player.roundFixtureCounts?.[0] ?? 0;
+  const lines = [localizedText(
+    language,
+    `Primary forecast for next provider round${fixtureCount > 1 ? ` (${fixtureCount} fixtures)` : ""}: ${formatScore(nextForecast)} FP`,
+    `Основной прогноз на следующий тур провайдера${fixtureCount > 1 ? ` (${fixtureCount} матча)` : ""}: ${formatScore(nextForecast)} ФО`
+  )];
   if (player.fplForecastBreakdown) {
     lines.push(...buildFplForecastBreakdownLines(player, language, player.fplForecastBreakdown, "Total"));
   } else if (player.projectionEngine === "COMPONENT_XFP_V1" && player.projectionFormula) {
-    lines.push(...starterMinuteFloorLines(player.projectedFixtureComponents, language));
-    lines.push(...minuteHistoryProvenanceLines(player.projectedFixtureComponents, language));
-    lines.push(...sparseTeamAttackAllocationLines(player.projectedFixtureComponents, language));
+    if (fixtureCount <= 1) {
+      lines.push(...starterMinuteFloorLines(player.projectedFixtureComponents, language));
+      lines.push(...minuteHistoryProvenanceLines(player.projectedFixtureComponents, language));
+      lines.push(...sparseTeamAttackAllocationLines(player.projectedFixtureComponents, language));
+    }
     lines.push(...buildFormulaBreakdownLines(language, player.projectionFormula, "Total", nextForecast));
   } else if (player.projectionEngine === "COMPONENT_XFP_V1" && player.projectionComponents) {
     lines.push(...buildProjectionBreakdownLines(player, language, player.projectionComponents, player.projectedFixtureComponents));
@@ -5462,15 +5481,22 @@ function playerAverageForecastTitle(
 }
 
 function alternativePlayerForecastTitle(player: FantasyPlannerPlayer, language: UiLanguage) {
-  const nextAlternative = player.alternativePredictedFp ?? null;
-  const lines = [localizedText(language, `Alternative forecast for next fixture: ${formatScore(nextAlternative)} FP`, `Альтернативный прогноз на следующий матч: ${formatScore(nextAlternative)} ФО`)];
+  const nextAlternative = nextAlternativeFantasyPoints(player);
+  const fixtureCount = player.roundFixtureCounts?.[0] ?? 0;
+  const lines = [localizedText(
+    language,
+    `Alternative forecast for next provider round${fixtureCount > 1 ? ` (${fixtureCount} fixtures)` : ""}: ${formatScore(nextAlternative)} FP`,
+    `Альтернативный прогноз на следующий тур провайдера${fixtureCount > 1 ? ` (${fixtureCount} матча)` : ""}: ${formatScore(nextAlternative)} ФО`
+  )];
   const minuteInputs = player.alternativeProjectedFixtureComponents;
-  lines.push(...starterMinuteFloorLines(minuteInputs, language));
+  if (fixtureCount <= 1) lines.push(...starterMinuteFloorLines(minuteInputs, language));
   if (player.alternativeFplForecastBreakdown) {
     lines.push(...buildFplForecastBreakdownLines(player, language, player.alternativeFplForecastBreakdown, "Alternative total"));
   } else if (player.alternativeProjectionFormula) {
-    lines.push(...minuteHistoryProvenanceLines(player.alternativeProjectedFixtureComponents, language));
-    lines.push(...sparseTeamAttackAllocationLines(player.alternativeProjectedFixtureComponents, language));
+    if (fixtureCount <= 1) {
+      lines.push(...minuteHistoryProvenanceLines(player.alternativeProjectedFixtureComponents, language));
+      lines.push(...sparseTeamAttackAllocationLines(player.alternativeProjectedFixtureComponents, language));
+    }
     lines.push(...buildFormulaBreakdownLines(
       language,
       player.alternativeProjectionFormula,
@@ -5537,8 +5563,8 @@ function squadCardForecastTitle(details: string, baseValue: number | null, isCap
 function alternativePredictedFpTitle(language: UiLanguage) {
   return localizedText(
     language,
-    "Alternative forecast for the next fixture.",
-    "Альтернативный прогноз FP на следующий матч. Только для просмотра: не используется в автоподборе, ценности, трансферах и очках тура."
+    "Alternative forecast for the next provider round; double-round fixtures are projected independently and summed.",
+    "Альтернативный прогноз FP на следующий тур провайдера; матчи двойного тура считаются отдельно и складываются. Только для просмотра: не используется в автоподборе, ценности, трансферах и очках тура."
   );
 }
 
@@ -5556,7 +5582,7 @@ function playerPoolColumnTitles(language: UiLanguage, horizon: number) {
     team: localizedText(language, "Player's club. The compact code is shown; hover a row value for the full name.", "Клуб игрока. Показан короткий код; полное название доступно при наведении на значение."),
     position: localizedText(language, "Fantasy position: goalkeeper, defender, midfielder, or forward.", "Фэнтези-позиция: вратарь, защитник, полузащитник или нападающий."),
     price: localizedText(language, "Current fantasy price. A tilde marks an estimated price.", "Текущая фэнтези-цена. Тильда означает оценочную цену."),
-    next: localizedText(language, "Primary fantasy-points forecast for the next fixture.", "Основной прогноз fantasy-очков на ближайший матч."),
+    next: localizedText(language, "Primary fantasy-points forecast for the next provider round; double-round fixtures are summed.", "Основной прогноз fantasy-очков на следующий тур провайдера; матчи двойного тура складываются."),
     foontasyNext: localizedText(language, "Foontasy current-round forecast (FFO).", "Прогноз Foontasy на текущий тур (FFO)."),
     alternative: alternativePredictedFpTitle(language),
     alternativeFive: alternativeFiveRoundFpTitle(language, horizon),
@@ -5809,8 +5835,25 @@ function fantasyPlayerAtRoundOffset(player: FantasyPlannerPlayer, roundOffset: n
     ...player,
     predictedFp: player.roundPoints[roundOffset] ?? null,
     alternativePredictedFp: player.alternativeRoundPoints?.[roundOffset] ?? null,
+    projectedFixtureComponents: null,
+    projectionComponents: null,
+    fplForecastBreakdown: null,
+    projectionFormula: null,
+    alternativeProjectedFixtureComponents: null,
+    alternativeProjectionComponents: null,
+    alternativeFplForecastBreakdown: null,
+    alternativeProjectionFormula: null,
+    foPositionCalibratedFp: null,
+    altPositionCalibratedFp: null,
+    altJointAllFp: null,
+    foJointAllFp: null,
+    altJointAcceptedFp: null,
+    foJointAcceptedFp: null,
+    expectedMinutes: null,
+    startProbability: null,
     alternativeRoundPoints: player.alternativeRoundPoints?.slice(roundOffset),
     roundPoints: player.roundPoints.slice(roundOffset),
+    roundFixtureCounts: player.roundFixtureCounts?.slice(roundOffset),
     fixtures: player.fixtures.slice(roundOffset),
     fixtureFullNames: player.fixtureFullNames?.slice(roundOffset),
     fixtureDifficulties: player.fixtureDifficulties.slice(roundOffset)

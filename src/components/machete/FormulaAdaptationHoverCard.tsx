@@ -15,8 +15,14 @@ type FormulaAdaptationResponse = {
   breakdowns: FormulaAdaptationBreakdowns;
 };
 
-const requestCache = new Map<string, Promise<FormulaAdaptationResponse>>();
+type FormulaAdaptationRequestCacheEntry = {
+  expiresAt: number;
+  promise: Promise<FormulaAdaptationResponse>;
+};
+
+const requestCache = new Map<string, FormulaAdaptationRequestCacheEntry>();
 const requestCacheMaximumEntries = 80;
+const requestCacheTtlMs = 5 * 60_000;
 
 export function formulaAdaptationBreakdownHref(sourceHref: string | undefined, playerId: string, provider?: string) {
   if (!sourceHref) return null;
@@ -73,7 +79,10 @@ export function FormulaAdaptationHoverCard({
     }
     if (response) return;
     setFailedHref(null);
-    let request = requestCache.get(requestHref);
+    const now = Date.now();
+    const cached = requestCache.get(requestHref);
+    if (cached && cached.expiresAt <= now) requestCache.delete(requestHref);
+    let request = cached && cached.expiresAt > now ? cached.promise : undefined;
     if (!request) {
       request = fetch(requestHref, {
         cache: "no-store",
@@ -89,8 +98,11 @@ export function FormulaAdaptationHoverCard({
         const oldest = requestCache.keys().next().value;
         if (oldest) requestCache.delete(oldest);
       }
-      requestCache.set(requestHref, request);
-      void request.catch(() => requestCache.delete(requestHref!));
+      const entry = { expiresAt: now + requestCacheTtlMs, promise: request };
+      requestCache.set(requestHref, entry);
+      void request.catch(() => {
+        if (requestCache.get(requestHref) === entry) requestCache.delete(requestHref);
+      });
     }
     void request.then((payload) => {
       if (!mountedRef.current) return;
@@ -210,7 +222,8 @@ export function FormulaAdaptationBreakdownContent({
   loading,
   failed,
   language,
-  detailed
+  detailed,
+  embedded = false
 }: {
   playerName: string;
   columnLabel: string;
@@ -219,6 +232,7 @@ export function FormulaAdaptationBreakdownContent({
   failed: boolean;
   language: Language;
   detailed: boolean;
+  embedded?: boolean;
 }) {
   if (loading) {
     return <p role="status">{language === "ru" ? `Загружаю ${detailed ? "подробный" : "короткий"} расчёт…` : `Loading the ${detailed ? "detailed" : "short"} calculation…`}</p>;
@@ -230,6 +244,46 @@ export function FormulaAdaptationBreakdownContent({
     return <p>{language === "ru" ? "Для этого значения детализация отсутствует." : "No breakdown is available for this value."}</p>;
   }
 
+  if (breakdown.roundFixtures && breakdown.roundFixtures.length > 1) {
+    return (
+      <>
+        {!embedded ? (
+          <div className="sticky -top-4 z-10 -mx-4 -mt-4 border-b border-slate-200 bg-white px-4 py-3">
+            <p className="text-sm font-bold text-ink">{playerName} · {columnLabel}</p>
+            <p className="text-[11px] text-slate-500">
+              {language === "ru"
+                ? `Сумма ${breakdown.roundFixtures.length} независимых матчей provider-тура`
+                : `Sum of ${breakdown.roundFixtures.length} independently projected provider-round fixtures`}
+            </p>
+          </div>
+        ) : null}
+        <div className="mt-3 rounded border border-emerald-200 bg-emerald-50 p-3 font-mono text-[11px] num-tabular">
+          <p>
+            {breakdown.roundFixtures.map((fixture) => `${fixture.fixtureLabel} ${detailNumber(fixture.breakdown.roundedPrediction)}`).join(" + ")}
+            {" = "}<strong>{detailNumber(breakdown.roundedPrediction)}</strong>
+          </p>
+        </div>
+        <div className="mt-3 space-y-4">
+          {breakdown.roundFixtures.map((fixture) => (
+            <section key={fixture.fixtureId} className="rounded border border-slate-200 p-3">
+              <h3 className="mb-2 font-bold text-ink">{fixture.fixtureLabel}</h3>
+              <FormulaAdaptationBreakdownContent
+                playerName={playerName}
+                columnLabel={columnLabel}
+                breakdown={fixture.breakdown}
+                loading={false}
+                failed={false}
+                language={language}
+                detailed={detailed}
+                embedded
+              />
+            </section>
+          ))}
+        </div>
+      </>
+    );
+  }
+
   const baseLabel = breakdown.baseName === "fo_current" ? "FO" : "Alt";
   const profileLabel = breakdown.profile === "position"
     ? (language === "ru" ? "калибровка позиции" : "position calibration")
@@ -239,10 +293,14 @@ export function FormulaAdaptationBreakdownContent({
 
   const calculationSummary = (
     <>
-      <div className="sticky -top-4 z-10 -mx-4 -mt-4 border-b border-slate-200 bg-white px-4 py-3">
-        <p className="text-sm font-bold text-ink">{playerName} · {columnLabel}</p>
+      {!embedded ? (
+        <div className="sticky -top-4 z-10 -mx-4 -mt-4 border-b border-slate-200 bg-white px-4 py-3">
+          <p className="text-sm font-bold text-ink">{playerName} · {columnLabel}</p>
+          <p className="text-[11px] text-slate-500">{baseLabel} · {profileLabel} · {breakdown.position}</p>
+        </div>
+      ) : (
         <p className="text-[11px] text-slate-500">{baseLabel} · {profileLabel} · {breakdown.position}</p>
-      </div>
+      )}
 
       <div className="mt-3 rounded border border-slate-200 bg-slate-50 p-3 font-mono text-[11px] num-tabular">
         <p>{baseLabel} = {detailNumber(breakdown.baseValue)}</p>

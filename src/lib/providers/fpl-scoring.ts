@@ -17,6 +17,7 @@ export type FplForecastBreakdown = {
   bonus: number;
   defensiveContributions: number;
   total: number;
+  fixtureCount?: number;
 };
 
 export type FplForecastResult = {
@@ -89,6 +90,43 @@ export function fplForecastPointsFromProjection(
       ? "OFFICIAL_SCORING_WITH_ROLLING_BONUS_AND_DEFENSIVE_CONTRIBUTIONS"
       : "OFFICIAL_SCORING_WITH_PARTIAL_BONUS_AND_DEFENSIVE_CONTRIBUTIONS",
     coverage: { bonus: bonusCoverage, defensiveContributions: defensiveContributionCoverage }
+  };
+}
+
+export function aggregateFplForecastResults(
+  results: readonly FplForecastResult[]
+): FplForecastResult | null {
+  if (results.length === 0) return null;
+  const componentKeys = [
+    "appearance",
+    "goals",
+    "assists",
+    "cleanSheets",
+    "saves",
+    "goalsConceded",
+    "yellowCards",
+    "redCards",
+    "penaltySaves",
+    "penaltyMisses",
+    "ownGoals",
+    "bonus",
+    "defensiveContributions"
+  ] as const satisfies readonly (keyof FplForecastBreakdown)[];
+  const breakdown = Object.fromEntries(componentKeys.map((key) => [
+    key,
+    results.reduce((total, result) => total + result.breakdown[key], 0)
+  ])) as Omit<FplForecastBreakdown, "total">;
+  const total = componentKeys.reduce((sum, key) => sum + breakdown[key], 0);
+  return {
+    points: total,
+    breakdown: { ...breakdown, total, fixtureCount: results.length },
+    status: results.every((result) => result.status === "OFFICIAL_SCORING_WITH_ROLLING_BONUS_AND_DEFENSIVE_CONTRIBUTIONS")
+      ? "OFFICIAL_SCORING_WITH_ROLLING_BONUS_AND_DEFENSIVE_CONTRIBUTIONS"
+      : "OFFICIAL_SCORING_WITH_PARTIAL_BONUS_AND_DEFENSIVE_CONTRIBUTIONS",
+    coverage: {
+      bonus: Math.min(...results.map((result) => result.coverage.bonus)),
+      defensiveContributions: Math.min(...results.map((result) => result.coverage.defensiveContributions))
+    }
   };
 }
 

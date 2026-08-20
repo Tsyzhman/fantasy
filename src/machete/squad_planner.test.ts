@@ -34,6 +34,7 @@ import {
   fixtureOddsAreFresh,
   fixtureStrengthProjection,
   fixtureStrengthWithBookmaker,
+  formulaAdaptationBreakdownCacheKey,
   friendAlternativeProjectionFantasyPoints,
   friendAlternativeScoringModel,
   friendStartingRows,
@@ -42,6 +43,7 @@ import {
   normalizeFantasySquadName,
   preferredArchivedSeason,
   projectFixtureFantasyPoints,
+  projectionRoundFormulaWithBreakdown,
   resolveFantasyPlannerPrice,
   rolloverFantasySquadRoundPlans,
   savedFantasySquadPlayersCount,
@@ -177,6 +179,26 @@ test("a new Foontasy fetch timestamp creates a new fantasy player pool cache key
   assert.notEqual(first, rescheduled);
 });
 
+test("formula-adaptation detail cache invalidates when the provider schedule changes", () => {
+  const base = {
+    leagueId: 87n,
+    season: "2026/2027",
+    leagueUpdatedAt: new Date("2026-08-20T08:00:00.000Z"),
+    provider: "SPORTS_RU",
+    contestId: "la-liga-contest",
+    playerId: 123n,
+    userId: "user-1",
+    preferenceRevision: "global",
+    startingXiRevision: "no-xi-change",
+    foontasyRevision: "2026-08-20T08:00:00.000Z",
+    historySettingsKey: "LAST_5"
+  };
+  const singleRound = formulaAdaptationBreakdownCacheKey({ ...base, contestRevision: "sync-a:single-fixture" });
+  const doubleRound = formulaAdaptationBreakdownCacheKey({ ...base, contestRevision: "sync-b:double-fixture" });
+
+  assert.notEqual(singleRound, doubleRound);
+});
+
 test("component xFP is the default primary engine and legacy remains a one-flag rollback", () => {
   assert.equal(configuredFantasyProjectionEngine(undefined), "COMPONENT_XFP_V1");
   assert.equal(configuredFantasyProjectionEngine("component"), "COMPONENT_XFP_V1");
@@ -298,6 +320,79 @@ test("editable pipeline applies history, fixture, allocation and final score for
   assert.equal(index.byFixturePlayer.get("fixture-1:p1")?.expectedEvents.goals, 0.5);
   assert.equal(index.byFixturePlayer.get("fixture-1:p2")?.expectedEvents.goals, 1.5);
   assert.equal(index.formulaMetricsByFixturePlayer.get("fixture-1:p1")?.expected_goals, 2);
+});
+
+test("double provider round evaluates the formula for both opponents and sums the results", () => {
+  const config = {
+    ...expectedProjectionFormulaConfig,
+    history: {
+      ...expectedProjectionFormulaConfig.history,
+      expectedMinutes: "90",
+      appearanceProbability: "1",
+      sixtyProbability: "1",
+      fullMatchProbability: "1",
+      xgRate: "1",
+      xaRate: "0",
+      recoveryRate: "0",
+      saveRate: "0",
+      yellowRate: "0",
+      redRate: "0"
+    },
+    team: {
+      expectedGoals: "{Fixture projected xG}",
+      expectedGoalsAgainst: "1",
+      assistsPerGoal: "0",
+      cleanSheetProbability: "0"
+    },
+    allocation: {
+      goals: "{Blended xG per 90}",
+      assists: "0",
+      recoveries: "0",
+      saves: "0",
+      cardExposure: "0"
+    },
+    scoreByPosition: {
+      GK: "{Fixture projected xG}",
+      DEF: "{Fixture projected xG}",
+      MID: "{Fixture projected xG}",
+      FWD: "{Fixture projected xG}"
+    }
+  };
+  const row = {
+    playerId: "double-player",
+    teamId: "team-1",
+    position: "FWD",
+    isStarter: true,
+    startProbability: 1,
+    expectedMinutes: 90,
+    minutesPlayed: 90,
+    rawMetrics: {}
+  } as never;
+  const fixtures = [
+    {
+      id: "home-fixture", roundId: "provider-round", teamId: "team-1", opponentTeamId: "team-2",
+      opponentName: "AAA", opponentFullName: "Alpha", side: "H" as const,
+      kickoffAt: new Date("2026-08-25T12:00:00Z"), projectedXg: 1.2, projectedXga: 1,
+      attackMultiplier: 1, defenseMultiplier: 1
+    },
+    {
+      id: "away-fixture", roundId: "provider-round", teamId: "team-1", opponentTeamId: "team-3",
+      opponentName: "BBB", opponentFullName: "Beta", side: "A" as const,
+      kickoffAt: new Date("2026-08-29T12:00:00Z"), projectedXg: 2.3, projectedXga: 1,
+      attackMultiplier: 1, defenseMultiplier: 1
+    }
+  ];
+  const index = buildFormulaProjectionIndex(
+    [row],
+    { rounds: [], fixturesByTeamRound: new Map([["provider-round", new Map([["team-1", fixtures]])]]), teamShortNameById: new Map() },
+    new Map([["double-player", "FWD"]]),
+    config
+  );
+  const round = projectionRoundFormulaWithBreakdown(fixtures, "double-player", index, config);
+
+  assert.ok(round);
+  assert.equal(round.total, 3.5);
+  assert.deepEqual([...new Set(round.terms.map((term) => term.fixtureLabel))], ["H AAA", "A BBB"]);
 });
 
 test("formula pipeline scales a raw per-90 allocation by expected minutes", () => {

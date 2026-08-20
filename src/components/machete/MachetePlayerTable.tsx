@@ -74,6 +74,7 @@ export type MachetePlayerRow = {
   forecastSource?: "planner" | "history";
   predictedFp?: number | null;
   roundPoints?: number[] | null;
+  roundFixtureCounts?: number[] | null;
   foontasyPoints?: number | null;
   alternativePredictedFp?: number | null;
   alternativeRoundPoints?: Array<number | null> | null;
@@ -473,9 +474,17 @@ export function machetePlayerCellTitle(column: Column, player: MachetePlayerRow,
   } else if (column.key === "foontasy") {
     lines.push(localizedText(language, "Source: Foontasy current-round export matched by the Sports.ru player identifier.", "Источник: выгрузка Foontasy на текущий тур, сопоставленная по идентификатору игрока Sports.ru."));
   } else if (column.key === "predictedFp" || column.key === "alternativePredictedFp") {
+    const fixtureCount = player.roundFixtureCounts?.[0] ?? 0;
     const formula = column.key === "predictedFp" ? player.projectionFormula : player.alternativeProjectionFormula;
     const components = column.key === "predictedFp" ? player.projectionComponents : player.alternativeProjectionComponents;
     if (formula?.terms?.length) {
+      if (fixtureCount > 1) {
+        lines.push(localizedText(
+          language,
+          `${fixtureCount} provider-round fixtures are projected independently and summed.`,
+          `${fixtureCount} матча provider-тура рассчитаны отдельно и сложены.`
+        ));
+      }
       lines.push(localizedText(language, `Formula: ${formula.formula}`, `Формула: ${formula.formula}`));
       formula.terms.forEach((term) => lines.push(`- ${term.fixtureLabel ? `${term.fixtureLabel}: ` : ""}${term.resolvedExpression} = ${formatNumber(term.value, 2)}`));
       lines.push(`${localizedText(language, "Total", "Итого")}: ${formatNumber(formula.total, 2)}`);
@@ -486,7 +495,9 @@ export function machetePlayerCellTitle(column: Column, player: MachetePlayerRow,
     } else {
       lines.push(localizedText(language, "The value comes from the squad-planner forecast, but this cached row has no term-level decomposition.", "Значение пришло из прогноза подбора состава, но в этой кэшированной строке нет разложения по слагаемым."));
     }
-    appendProjectionInputLines(lines, column.key === "predictedFp" ? player.projectedFixtureComponents : player.alternativeProjectedFixtureComponents, player.position, language);
+    if (fixtureCount <= 1) {
+      appendProjectionInputLines(lines, column.key === "predictedFp" ? player.projectedFixtureComponents : player.alternativeProjectedFixtureComponents, player.position, language);
+    }
     appendPlayerForecastMeta(lines, player, language);
   } else if (column.key === "forecastHorizonFp" || column.key === "alternativeForecastHorizon") {
     const points = column.key === "forecastHorizonFp" ? player.roundPoints ?? [] : player.alternativeRoundPoints ?? [];
@@ -724,12 +735,12 @@ function playerFixtureExportValue(player: MachetePlayerRow, horizon: number) {
 function macheteColumns(players: MachetePlayerRow[], language: "en" | "ru", horizon: 3 | 5 | 10): Column[] {
   const column = (key: string, en: string, ru: string, titleEn: string, titleRu: string, width: number, numeric: boolean, value: Column["value"]): Column => ({ key, label: localizedText(language, en, ru), title: localizedText(language, titleEn, titleRu), width, numeric, value });
   const base = [
-    column("predictedFp", "FP 1R", "ФО 1Т", "Machete fantasy-points forecast for the next round. It uses the same projection as the squad planner, including expected minutes and the next opponent.", "Прогноз фэнтези-очков Machete на следующий тур. Используется тот же расчёт, что в подборе состава: с ожидаемыми минутами и следующим соперником.", 76, true, playerNextForecast),
+    column("predictedFp", "FP 1R", "ФО 1Т", "Machete fantasy-points forecast for the next provider round. Every fixture in a double round is projected independently and summed.", "Прогноз фэнтези-очков Machete на следующий тур провайдера. Каждый матч двойного тура рассчитывается отдельно, затем результаты складываются.", 76, true, playerNextForecast),
     column("predictedFpPerPrice", "FP/price", "ФО/цена", "Next-round Machete forecast divided by the current Sports.ru price. Higher means more expected points per one price unit.", "Прогноз Machete на следующий тур, делённый на текущую цену Sports.ru. Чем выше значение, тем больше ожидаемых очков на одну единицу стоимости.", 82, true, (p) => forecastPointsPerPrice(playerNextForecast(p), p.price)),
     column("forecastHorizonFp", `FP ${horizon}R`, `ФО ${horizon}Т`, `Sum of the Machete round forecasts for the next ${horizon} rounds. Double rounds are already combined inside their round.`, `Сумма прогнозов Machete на следующие ${horizon} туров. Матчи двойного тура уже объединены внутри соответствующего тура.`, 82, true, (p) => playerForecastHorizon(p, horizon)),
     column("foontasy", "FFO", "ФФО", "Foontasy current-round forecast matched through the Sports.ru player identifier.", "Прогноз Foontasy на текущий тур, сопоставленный через идентификатор игрока Sports.ru.", 72, true, (p) => p.foontasyPoints ?? null),
     column("foontasyPerPrice", "FFO/price", "ФФО/цена", "Foontasy current-round forecast divided by the current Sports.ru price. Higher means more FFO per one price unit.", "Прогноз Foontasy на текущий тур, делённый на текущую цену Sports.ru. Чем выше значение, тем больше ФФО на одну единицу стоимости.", 86, true, (p) => forecastPointsPerPrice(p.foontasyPoints, p.price)),
-    column("alternativePredictedFp", "Alt 1R", "Альт 1Т", "Alternative-formula fantasy-points forecast for the next round, using the same future fixture and expected-minutes data as the squad planner.", "Прогноз фэнтези-очков по альтернативной формуле на следующий тур: с тем же будущим соперником и ожидаемыми минутами, что в подборе состава.", 78, true, playerNextAlternativeForecast),
+    column("alternativePredictedFp", "Alt 1R", "Альт 1Т", "Alternative-formula forecast for the next provider round. Every fixture in a double round uses its own opponent and expected-minutes inputs before the results are summed.", "Прогноз по альтернативной формуле на следующий тур провайдера. В двойном туре каждый матч использует своего соперника и собственные входы ожидаемых минут, затем результаты складываются.", 78, true, playerNextAlternativeForecast),
     column("alternativePredictedFpPerPrice", "Alt/price", "Альт/цена", "Alternative next-round forecast divided by the current Sports.ru price. Higher means more Alt points per one price unit.", "Альтернативный прогноз на следующий тур, делённый на текущую цену Sports.ru. Чем выше значение, тем больше Альт-очков на одну единицу стоимости.", 86, true, (p) => forecastPointsPerPrice(playerNextAlternativeForecast(p), p.price)),
     column("alternativeForecastHorizon", `Alt ${horizon}R`, `Альт ${horizon}Т`, `Sum of the alternative-formula forecasts for the next ${horizon} rounds. Missing projections remain empty rather than becoming zero.`, `Сумма прогнозов по альтернативной формуле на следующие ${horizon} туров. Отсутствующий прогноз остаётся пустым и не превращается в ноль.`, 86, true, (p) => playerAlternativeForecastHorizon(p, horizon)),
     column("foPositionCalibratedFp", "FO position cal.", "FO калибр. позиции", "FO calibrated independently by fantasy position on the complete 2024/25–2025/26 retro sample (actual starters who played over 60 minutes). Weather is not used.", "FO, независимо откалиброванный по фэнтези-позиции на полной ретро-выборке 2024/25–2025/26: только фактический старт и больше 60 минут. Погода не используется.", 116, true, (p) => p.foPositionCalibratedFp ?? null),

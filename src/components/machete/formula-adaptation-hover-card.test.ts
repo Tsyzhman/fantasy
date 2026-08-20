@@ -108,3 +108,40 @@ test("detailed formula tooltip preserves every coefficient table", () => {
   assert.match(html, /opponent_coach/);
   assert.doesNotMatch(html, /Включите «Подробные подсказки»/);
 });
+
+test("double-round formula tooltip shows the summed total and both fixture calculations", () => {
+  const roundBreakdown: FormulaAdaptationBreakdown = {
+    ...breakdown,
+    baseValue: 13,
+    intercept: 2.5,
+    numericTerms: [],
+    categoricalTerms: [],
+    numericContributionTotal: 1.08,
+    categoricalContributionTotal: -0.28,
+    rawPrediction: 3.3,
+    predictionClamp: [-4, 30],
+    clampedPrediction: 3.3,
+    minuteGuard: null,
+    minuteAdjustedPrediction: 1.65,
+    roundedPrediction: 1.65,
+    roundFixtures: [
+      { fixtureId: "first", fixtureLabel: "H Team A", breakdown },
+      { fixtureId: "second", fixtureLabel: "A Team B", breakdown }
+    ]
+  };
+  const html = renderToStaticMarkup(React.createElement(FormulaAdaptationBreakdownContent, {
+    playerName: "Test Player",
+    columnLabel: "Alt Joint accepted",
+    breakdown: roundBreakdown,
+    loading: false,
+    failed: false,
+    language: "ru",
+    detailed: false
+  }));
+
+  assert.match(html, /Сумма 2 независимых матчей provider-тура/);
+  assert.match(html, /H Team A 0\.825 \+ A Team B 0\.825 =/);
+  assert.match(html, /1\.65/);
+  assert.match(html, /H Team A/);
+  assert.match(html, /A Team B/);
+});

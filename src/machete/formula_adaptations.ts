@@ -94,6 +94,13 @@ export type FormulaAdaptationBreakdown = {
   roundedPrediction: number;
   trainingSamples: number;
   weatherIncluded: false;
+  roundFixtures?: FormulaAdaptationRoundFixtureBreakdown[];
+};
+
+export type FormulaAdaptationRoundFixtureBreakdown = {
+  fixtureId: string;
+  fixtureLabel: string;
+  breakdown: FormulaAdaptationBreakdown;
 };
 
 export type FormulaAdaptationBreakdowns = Record<FormulaAdaptationForecastKey, FormulaAdaptationBreakdown | null>;
@@ -102,6 +109,15 @@ export type FormulaAdaptationPrediction = {
   forecasts: FormulaAdaptationForecasts;
   breakdowns: FormulaAdaptationBreakdowns;
 };
+
+const formulaAdaptationForecastKeys = [
+  "foPositionCalibratedFp",
+  "altPositionCalibratedFp",
+  "altJointAllFp",
+  "foJointAllFp",
+  "altJointAcceptedFp",
+  "foJointAcceptedFp"
+] as const satisfies readonly FormulaAdaptationForecastKey[];
 
 export type FormulaAdaptationPlayerMatch = {
   matchDate: Date | null;
@@ -264,6 +280,57 @@ export function predictFormulaAdaptationsWithBreakdowns(input: {
     ) as FormulaAdaptationForecasts,
     breakdowns: variants
   };
+}
+
+export function aggregateFormulaAdaptationPredictions(
+  fixtures: ReadonlyArray<{
+    fixtureId: string;
+    fixtureLabel: string;
+    prediction: FormulaAdaptationPrediction;
+  }>
+): FormulaAdaptationPrediction {
+  if (fixtures.length === 0) {
+    const forecasts = Object.fromEntries(formulaAdaptationForecastKeys.map((key) => [key, null])) as FormulaAdaptationForecasts;
+    const breakdowns = Object.fromEntries(formulaAdaptationForecastKeys.map((key) => [key, null])) as FormulaAdaptationBreakdowns;
+    return { forecasts, breakdowns };
+  }
+  if (fixtures.length === 1) return fixtures[0].prediction;
+
+  const forecasts = Object.fromEntries(formulaAdaptationForecastKeys.map((key) => {
+    const values = fixtures.map((fixture) => fixture.prediction.forecasts[key]);
+    return [key, values.every((value): value is number => typeof value === "number" && Number.isFinite(value))
+      ? round(values.reduce((total, value) => total + value, 0))
+      : null];
+  })) as FormulaAdaptationForecasts;
+  const breakdowns = Object.fromEntries(formulaAdaptationForecastKeys.map((key) => {
+    const parts = fixtures.flatMap((fixture) => {
+      const breakdown = fixture.prediction.breakdowns[key];
+      return breakdown ? [{ fixtureId: fixture.fixtureId, fixtureLabel: fixture.fixtureLabel, breakdown }] : [];
+    });
+    if (parts.length !== fixtures.length || forecasts[key] === null) return [key, null];
+    const first = parts[0].breakdown;
+    return [key, {
+      ...first,
+      baseValue: round(parts.reduce((total, part) => total + part.breakdown.baseValue, 0)),
+      intercept: round(parts.reduce((total, part) => total + part.breakdown.intercept, 0)),
+      numericTerms: [],
+      categoricalTerms: [],
+      numericContributionTotal: round(parts.reduce((total, part) => total + part.breakdown.numericContributionTotal, 0)),
+      categoricalContributionTotal: round(parts.reduce((total, part) => total + part.breakdown.categoricalContributionTotal, 0)),
+      rawPrediction: round(parts.reduce((total, part) => total + part.breakdown.rawPrediction, 0)),
+      predictionClamp: [
+        round(parts.reduce((total, part) => total + part.breakdown.predictionClamp[0], 0)),
+        round(parts.reduce((total, part) => total + part.breakdown.predictionClamp[1], 0))
+      ],
+      clampedPrediction: round(parts.reduce((total, part) => total + part.breakdown.clampedPrediction, 0)),
+      minuteGuard: null,
+      minuteAdjustedPrediction: round(parts.reduce((total, part) => total + part.breakdown.minuteAdjustedPrediction, 0)),
+      roundedPrediction: forecasts[key],
+      trainingSamples: Math.min(...parts.map((part) => part.breakdown.trainingSamples)),
+      roundFixtures: parts
+    } satisfies FormulaAdaptationBreakdown];
+  })) as FormulaAdaptationBreakdowns;
+  return { forecasts, breakdowns };
 }
 
 export function formulaAdaptationMinuteFeatures(

@@ -394,7 +394,7 @@ test("player table exposes per-field advanced filters and detailed forecast cell
   assert.match(squadPlannerSource, /Минимум основы только на ближайший матч: max\(базовые/);
   assert.match(squadPlannerSource, /It is not applied to later fixtures/);
   assert.doesNotMatch(squadPlannerSource, /club starting-XI uplift/);
-  assert.match(squadPlannerBackendSource, /alternativeProjectionFormula: nextFriendFormula/);
+  assert.match(squadPlannerBackendSource, /alternativeProjectionFormula: nextFriendRoundFormula/);
   assert.match(squadPlannerSource, /`\$\{horizon\}Т ФФО`/);
 });
 
@@ -500,13 +500,13 @@ test("display-only Alt FP renders in the desktop pool, mobile pool, and squad ca
   const desktopAltFive = squadPlannerSource.indexOf('title={columnTitles.alternativeFive}', desktopAlt);
   const mobileMetrics = squadPlannerSource.indexOf('grid-cols-4');
   const mobilePrice = squadPlannerSource.indexOf('formatNumber(player.price, 1)', mobileMetrics);
-  const mobileAlt = squadPlannerSource.indexOf('formatAlternativeScore(player.alternativePredictedFp)', mobilePrice);
+  const mobileAlt = squadPlannerSource.indexOf('formatAlternativeScore(nextAlternativeFantasyPoints(player))', mobilePrice);
 
   assert.ok(desktopNext >= 0 && desktopHorizon > desktopNext && desktopAlt > desktopHorizon && desktopAltFive > desktopAlt);
   assert.ok(mobileMetrics >= 0 && mobilePrice > mobileMetrics && mobileAlt > mobilePrice);
-  assert.equal(squadPlannerSource.match(/formatAlternativeScore\(player\.alternativePredictedFp\)/g)?.length, 2);
+  assert.ok((squadPlannerSource.match(/nextAlternativeFantasyPoints\(player\)/g)?.length ?? 0) >= 5);
   assert.match(squadPlannerSource, /formatCompactScore\(scaleCaptainForecast\(cardAlternativeNextForecast, isCaptain\), "0"\)/);
-  assert.match(squadPlannerSource, /Alternative forecast for next fixture/);
+  assert.match(squadPlannerSource, /Alternative forecast for next provider round/);
   assert.equal(formatScore(null), NULL_GLYPH);
   assert.equal(formatAlternativeScore(null), "0");
 });
@@ -564,7 +564,7 @@ test("every one-round forecast exposes sortable points-per-price asset efficienc
   assert.match(squadPlannerSource, /column\("alternativePerPrice", "Alt\/price", "Альт\/цена"/);
   assert.match(squadPlannerSource, /forecastPointsPerPrice\(nextFantasyPoints\(player\), player\.price\)/);
   assert.match(squadPlannerSource, /forecastPointsPerPrice\(player\.foontasyPoints, player\.price\)/);
-  assert.match(squadPlannerSource, /forecastPointsPerPrice\(player\.alternativePredictedFp, player\.price\)/);
+  assert.match(squadPlannerSource, /forecastPointsPerPrice\(nextAlternativeFantasyPoints\(player\), player\.price\)/);
   assert.doesNotMatch(squadPlannerSource, /inlineEfficiency/);
 });
 
@@ -591,6 +591,7 @@ test("squad player pool exposes every formula-adaptation forecast as a separate 
   assert.match(formulaAdaptationHoverCardSource, /missingContribution/);
   assert.match(formulaAdaptationHoverCardSource, /trainedMedian/);
   assert.match(formulaAdaptationHoverCardSource, /requestCacheMaximumEntries = 80/);
+  assert.match(formulaAdaptationHoverCardSource, /requestCacheTtlMs = 5 \* 60_000/);
 });
 
 test("player-pool controls use two desktop rows and the search targets only player names", () => {

@@ -534,6 +534,7 @@ async function buildMatchWindowRows({
       price: sportsRuPriceRefForMacheteRow(row.id, sportsPriceRefs)?.price ?? null,
       predictedFp: forecast?.predictedFp ?? null,
       roundPoints: forecast?.roundPoints ?? null,
+      roundFixtureCounts: forecast?.roundFixtureCounts ?? null,
       foontasyPoints: forecast?.foontasyPoints ?? null,
       alternativePredictedFp: forecast?.alternativePredictedFp ?? null,
       alternativeRoundPoints: forecast?.alternativeRoundPoints ?? null,

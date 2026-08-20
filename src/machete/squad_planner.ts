@@ -6,7 +6,7 @@ import { macheteLeagueDisplayName } from "@/lib/leagues/display";
 import { normalizeSportsRuPlayerName } from "@/lib/providers/sports-ru-fantasy";
 import { FPL_PROVIDER, FPL_SEASON } from "@/lib/providers/fpl";
 import { fpl202627Rules } from "@/lib/providers/fpl-rules";
-import { fplForecastPointsFromProjection, type FplForecastAdjustments } from "@/lib/providers/fpl-scoring";
+import { aggregateFplForecastResults, fplForecastPointsFromProjection, type FplForecastAdjustments } from "@/lib/providers/fpl-scoring";
 import { calculateAlternativeScore, calculateFantasyScore, getActiveScoringModelBundleForSource, type ActiveScoringModel } from "@/lib/scoring";
 import {
   calculateCustomFormulaScore,
@@ -26,6 +26,7 @@ import {
   ProjectionInputError,
   projectTeamPlayers,
   type PlayerFixtureProjection,
+  type PlayerFantasyPointComponents,
   type ProbableParticipantInput,
   type ProjectedTeamTotals
 } from "./deterministic_fantasy_projection";
@@ -40,10 +41,10 @@ import { loadFantasyProjectionCalibration } from "./fantasy_projection_service";
 import {
   addPromotedFormulaAdaptationTeamProfiles,
   addFormulaAdaptationInteractions,
+  aggregateFormulaAdaptationPredictions,
   buildFormulaAdaptationTeamProfiles,
   formulaAdaptationMinuteFeatures,
   formulaAdaptationFixtureFeatures,
-  predictFormulaAdaptations,
   predictFormulaAdaptationsWithBreakdowns,
   type FormulaAdaptationBreakdowns,
   type FormulaAdaptationFeatures,
@@ -770,45 +771,74 @@ export async function loadFantasySquadPlannerData(
   const preferredProjectionEngine = configuredFantasyProjectionEngine();
   const formulaAdaptationBreakdownsByPlayerId: Record<string, FormulaAdaptationBreakdowns> = {};
   const rosterPlayers: FantasyPlannerPlayer[] = rosterRows.flatMap((row) => {
+    const playerId = String(row.playerId);
+    const teamId = String(row.teamId);
     const projected = projectedByPlayerTeam.get(playerTeamKey(row.playerId, row.teamId));
-    const nextFixture = nearestPlannerFixture(
-      roundsAndFixtures.rounds
-        .flatMap((round) => roundsAndFixtures.fixturesByTeamRound.get(round.id)?.get(String(row.teamId)) ?? [])
+    const teamFixturesByRound = roundsAndFixtures.rounds.map((round) =>
+      roundsAndFixtures.fixturesByTeamRound.get(round.id)?.get(teamId) ?? []
     );
-    const legacyPredictedFp = !isFpl && projected
-      ? calibratedPlayerFixturePoints(projected, nextFixture, playerRows.calibration?.model ?? null, playerRows.scoringModel)
-      : null;
-    const priceRow = prices.byPlayerId.get(String(row.playerId));
-    const providerPosition = providerPositionsByPlayerId.get(String(row.playerId)) ?? (priceRow ? sportsRuPricePosition(priceRow) : null);
+    const nextRoundFixtures = teamFixturesByRound[0] ?? [];
+    const nextFixture = nearestPlannerFixture(teamFixturesByRound.flat());
+    const priceRow = prices.byPlayerId.get(playerId);
+    const providerPosition = providerPositionsByPlayerId.get(playerId) ?? (priceRow ? sportsRuPricePosition(priceRow) : null);
     const position = fantasyPlannerPosition(providerPosition, row.position, projected?.position ?? null);
     const positionGroup = normalizeFantasyPosition(position);
+    const legacyFixturePoints = (fixture: PlannerFixture) => {
+      if (!projected) return null;
+      const fixturePoints = calibratedPlayerFixturePoints(
+        projected,
+        fixture,
+        playerRows.calibration?.model ?? null,
+        playerRows.scoringModel
+      ) ?? 0;
+      return playerRows.calibration
+        ? fixturePoints
+        : projectFixtureFantasyPoints(fixturePoints, positionGroup, fixture);
+    };
+    const legacyPredictedFp = !isFpl && projected
+      ? roundsAndFixtures.rounds.length > 0
+        ? roundFantasyValue(nextRoundFixtures.reduce((total, fixture) => total + (legacyFixturePoints(fixture) ?? 0), 0))
+        : calibratedPlayerFixturePoints(projected, nextFixture, playerRows.calibration?.model ?? null, playerRows.scoringModel)
+      : null;
     const foontasy = foontasyByPlayerId.get(String(row.playerId)) ?? null;
     const modelT3 = modelForecastByPlayerHorizon.get(`${row.playerId}:3`) ?? null;
     const modelT5 = modelForecastByPlayerHorizon.get(`${row.playerId}:5`) ?? null;
-    const nextFixturePlayerKey = fixturePlayerProjectionKey(nextFixture?.id ?? "", String(row.playerId));
+    const nextFixturePlayerKey = fixturePlayerProjectionKey(nextFixture?.id ?? "", playerId);
     const nextComponentProjection = nextFixture
       ? componentProjections.byFixturePlayer.get(nextFixturePlayerKey) ?? null
       : null;
     const nextComponentFormulaMetrics = nextFixture
       ? componentProjections.formulaMetricsByFixturePlayer.get(nextFixturePlayerKey)
       : undefined;
-    const nextComponentFormula = !isFpl && nextComponentProjection
-      ? projectionFormulaWithBreakdown(
-          nextComponentProjection,
-          nextFixture,
-          playerRows.expectedProjectionConfig,
-          nextComponentFormulaMetrics
+    const nextComponentRoundFormula = !isFpl
+      ? projectionRoundFormulaWithBreakdown(
+          nextRoundFixtures,
+          playerId,
+          componentProjections,
+          effectivePlayerRows.expectedProjectionConfig
         )
       : null;
-    const nextFplForecast = isFpl && nextComponentProjection
-      ? fplForecastPointsFromProjection(
-          nextComponentProjection,
-          officialFplForecastAdjustmentsByPlayerId.get(String(row.playerId))
-        )
+    const nextComponentRoundProjections = nextRoundFixtures.map((fixture) =>
+      componentProjections.byFixturePlayer.get(fixturePlayerProjectionKey(fixture.id, playerId)) ?? null
+    );
+    const completeNextComponentRound = nextComponentRoundProjections.every(
+      (projection): projection is PlayerFixtureProjection => projection !== null
+    );
+    const nextComponentRoundComponents = completeNextComponentRound
+      ? aggregatePlayerFantasyPointComponents(nextComponentRoundProjections.map((projection) => projection.components))
+      : null;
+    const nextFplForecast = isFpl && completeNextComponentRound && nextComponentRoundProjections.length > 0
+      ? aggregateFplForecastResults(nextComponentRoundProjections.map((projection) =>
+          fplForecastPointsFromProjection(projection, officialFplForecastAdjustmentsByPlayerId.get(playerId))
+        ))
       : null;
     const componentPredictedFp = isFpl
-      ? nextFplForecast?.points ?? null
-      : nextComponentFormula?.total ?? null;
+      ? roundsAndFixtures.rounds.length > 0 && nextRoundFixtures.length === 0
+        ? 0
+        : nextFplForecast ? roundFantasyValue(nextFplForecast.points) : null
+      : roundsAndFixtures.rounds.length > 0 && nextRoundFixtures.length === 0
+        ? 0
+        : nextComponentRoundFormula?.total ?? null;
     const projectionEngine: FantasyProjectionEngine =
       isFpl || (preferredProjectionEngine === "COMPONENT_XFP_V1" && componentPredictedFp !== null)
         ? "COMPONENT_XFP_V1"
@@ -822,32 +852,35 @@ export async function loadFantasySquadPlannerData(
     const nextFriendFormulaMetrics = nextFixture
       ? friendAlternativeProjections.formulaMetricsByFixturePlayer.get(nextFixturePlayerKey)
       : undefined;
-    const nextFriendFormula = !isFpl && nextFriendProjection
-      ? projectionFormulaWithBreakdown(
-          nextFriendProjection,
-          nextFixture,
-          playerRows.alternativeProjectionConfig,
-          nextFriendFormulaMetrics
+    const nextFriendRoundFormula = !isFpl
+      ? projectionRoundFormulaWithBreakdown(
+          nextRoundFixtures,
+          playerId,
+          friendAlternativeProjections,
+          playerRows.alternativeProjectionConfig
         )
       : null;
-    const nextRoundFixtures = roundsAndFixtures.rounds.length > 0
-      ? roundsAndFixtures.fixturesByTeamRound.get(roundsAndFixtures.rounds[0].id)?.get(String(row.teamId)) ?? []
-      : [];
-    const nextComponentRoundFormula = projectionRoundFormulaWithBreakdown(
-      nextRoundFixtures,
-      String(row.playerId),
-      componentProjections,
-        effectivePlayerRows.expectedProjectionConfig
+    const nextFriendRoundProjections = nextRoundFixtures.map((fixture) =>
+      friendAlternativeProjections.byFixturePlayer.get(fixturePlayerProjectionKey(fixture.id, playerId)) ?? null
     );
-    const nextFplAlternativeForecast = isFpl && nextFriendProjection
-      ? fplForecastPointsFromProjection(
-          nextFriendProjection,
-          officialFplForecastAdjustmentsByPlayerId.get(String(row.playerId))
-        )
+    const completeNextFriendRound = nextFriendRoundProjections.every(
+      (projection): projection is PlayerFixtureProjection => projection !== null
+    );
+    const nextFriendRoundComponents = completeNextFriendRound
+      ? aggregatePlayerFantasyPointComponents(nextFriendRoundProjections.map((projection) => projection.components))
+      : null;
+    const nextFplAlternativeForecast = isFpl && completeNextFriendRound && nextFriendRoundProjections.length > 0
+      ? aggregateFplForecastResults(nextFriendRoundProjections.map((projection) =>
+          fplForecastPointsFromProjection(projection, officialFplForecastAdjustmentsByPlayerId.get(playerId))
+        ))
       : null;
     const alternativePredictedFp = isFpl
-      ? nextFplAlternativeForecast?.points ?? null
-      : nextFriendFormula?.total ?? null;
+      ? roundsAndFixtures.rounds.length > 0 && nextRoundFixtures.length === 0
+        ? 0
+        : nextFplAlternativeForecast ? roundFantasyValue(nextFplAlternativeForecast.points) : null
+      : roundsAndFixtures.rounds.length > 0 && nextRoundFixtures.length === 0
+        ? 0
+        : nextFriendRoundFormula?.total ?? null;
     const price = resolveFantasyPlannerPrice(priceRow, predictedFp, positionGroup, provider);
     const playerName = priceRow?.playerName ?? row.player.name;
     const baltikaMetric = baltikaMetricsByName.get(normalizeSportsRuPlayerName(playerName));
@@ -855,63 +888,87 @@ export async function loadFantasySquadPlannerData(
     const recentFp = isFpl
       ? officialFplPointsByPlayerId.get(String(row.playerId)) ?? []
       : projected?.recentFp ?? [];
-    const formulaAdaptationFeatures: FormulaAdaptationFeatures = addFormulaAdaptationInteractions({
-      ...(friendHistory?.formulaAdaptationFeatures ?? {}),
-      ...formulaAdaptationFixtureFeatures({
-        profiles: roundsAndFixtures.formulaAdaptationTeamProfiles,
-        teamId: String(row.teamId),
-        opponentTeamId: nextFixture?.opponentTeamId ?? null,
-        kickoffAt: nextFixture?.kickoffAt ?? null,
-        side: nextFixture?.side ?? null
-      }),
-      ...formulaAdaptationMinuteFeatures(
-        "fo",
-        predictedFp,
-        buildFixtureComponentInputs(nextComponentProjection, nextComponentFormulaMetrics)
-      ),
-      ...formulaAdaptationMinuteFeatures(
-        "alt",
-        alternativePredictedFp,
-        buildFixtureComponentInputs(nextFriendProjection, nextFriendFormulaMetrics)
-      ),
-      age: projected?.age ?? row.age ?? null,
-      role_side: positionGroup === "GK" ? "center" : "unknown"
-    });
-    const formulaAdaptationInput = {
-      leagueId: league.leagueId,
-      position: positionGroup,
-      fo: predictedFp,
-      alt: alternativePredictedFp,
-      features: formulaAdaptationFeatures
-    };
-    const detailedFormulaAdaptations = !isFpl && options?.includeFormulaAdaptationBreakdowns
-      ? predictFormulaAdaptationsWithBreakdowns(formulaAdaptationInput)
+    const formulaAdaptationRound = !isFpl && nextRoundFixtures.length > 0
+      ? aggregateFormulaAdaptationPredictions(nextRoundFixtures.map((fixture, index) => {
+          const componentProjection = nextComponentRoundProjections[index];
+          const friendProjection = nextFriendRoundProjections[index];
+          const componentKey = fixturePlayerProjectionKey(fixture.id, playerId);
+          const componentFormulaMetrics = componentProjections.formulaMetricsByFixturePlayer.get(componentKey);
+          const friendFormulaMetrics = friendAlternativeProjections.formulaMetricsByFixturePlayer.get(componentKey);
+          const componentFixturePoints = componentProjection
+            ? projectionFormulaFantasyPoints(
+                componentProjection,
+                fixture,
+                playerRows.expectedProjectionConfig,
+                componentFormulaMetrics
+              )
+            : null;
+          const friendFixturePoints = friendProjection
+            ? projectionFormulaFantasyPoints(
+                friendProjection,
+                fixture,
+                playerRows.alternativeProjectionConfig,
+                friendFormulaMetrics
+              )
+            : null;
+          const fo = projectionEngine === "COMPONENT_XFP_V1"
+            ? componentFixturePoints
+            : legacyFixturePoints(fixture);
+          const features: FormulaAdaptationFeatures = addFormulaAdaptationInteractions({
+            ...(friendHistory?.formulaAdaptationFeatures ?? {}),
+            ...formulaAdaptationFixtureFeatures({
+              profiles: roundsAndFixtures.formulaAdaptationTeamProfiles,
+              teamId,
+              opponentTeamId: fixture.opponentTeamId,
+              kickoffAt: fixture.kickoffAt,
+              side: fixture.side
+            }),
+            ...formulaAdaptationMinuteFeatures(
+              "fo",
+              fo,
+              buildFixtureComponentInputs(componentProjection, componentFormulaMetrics)
+            ),
+            ...formulaAdaptationMinuteFeatures(
+              "alt",
+              friendFixturePoints,
+              buildFixtureComponentInputs(friendProjection, friendFormulaMetrics)
+            ),
+            age: projected?.age ?? row.age ?? null,
+            role_side: positionGroup === "GK" ? "center" : "unknown"
+          });
+          return {
+            fixtureId: fixture.id,
+            fixtureLabel: `${fixture.side} ${fixture.opponentName}`,
+            prediction: predictFormulaAdaptationsWithBreakdowns({
+              leagueId: league.leagueId,
+              position: positionGroup,
+              fo,
+              alt: friendFixturePoints,
+              features
+            })
+          };
+        }))
       : null;
     const formulaAdaptations = isFpl
       ? emptyFormulaAdaptationForecasts()
-      : detailedFormulaAdaptations?.forecasts ?? predictFormulaAdaptations(formulaAdaptationInput);
-    if (!isFpl && detailedFormulaAdaptations) {
-      formulaAdaptationBreakdownsByPlayerId[String(row.playerId)] = detailedFormulaAdaptations.breakdowns;
+      : formulaAdaptationRound?.forecasts ?? emptyFormulaAdaptationForecasts();
+    if (!isFpl && options?.includeFormulaAdaptationBreakdowns && formulaAdaptationRound) {
+      formulaAdaptationBreakdownsByPlayerId[playerId] = formulaAdaptationRound.breakdowns;
     }
-    const legacyRoundPoints = roundsAndFixtures.rounds.map((round) => {
-      const fixtures = roundsAndFixtures.fixturesByTeamRound.get(round.id)?.get(String(row.teamId)) ?? [];
+    const legacyRoundPoints = teamFixturesByRound.map((fixtures) => {
       return roundFantasyValue(
-        fixtures.reduce((total, fixture) => {
-          const fixturePoints = projected ? calibratedPlayerFixturePoints(projected, fixture, playerRows.calibration?.model ?? null, playerRows.scoringModel) ?? 0 : 0;
-          return total + (playerRows.calibration ? fixturePoints : projectFixtureFantasyPoints(fixturePoints, positionGroup, fixture));
-        }, 0)
+        fixtures.reduce((total, fixture) => total + (legacyFixturePoints(fixture) ?? 0), 0)
       );
     });
-    const componentRoundPoints = roundsAndFixtures.rounds.map((round) => {
-      const fixtures = roundsAndFixtures.fixturesByTeamRound.get(round.id)?.get(String(row.teamId)) ?? [];
+    const componentRoundPoints = teamFixturesByRound.map((fixtures) => {
       if (fixtures.length === 0) return 0;
       const values = fixtures.map((fixture) => {
-        const projection = componentProjections.byFixturePlayer.get(fixturePlayerProjectionKey(fixture.id, String(row.playerId)));
-        const key = fixturePlayerProjectionKey(fixture.id, String(row.playerId));
+        const projection = componentProjections.byFixturePlayer.get(fixturePlayerProjectionKey(fixture.id, playerId));
+        const key = fixturePlayerProjectionKey(fixture.id, playerId);
         if (!projection) return null;
         if (isFpl) return fplForecastPointsFromProjection(
           projection,
-          officialFplForecastAdjustmentsByPlayerId.get(String(row.playerId))
+          officialFplForecastAdjustmentsByPlayerId.get(playerId)
         ).points;
         return projectionFormulaFantasyPoints(
           projection,
@@ -930,16 +987,15 @@ export async function loadFantasySquadPlannerData(
         ? componentRoundPoints[index] ?? 0
         : legacyRoundPoints[index] ?? 0
     );
-    const alternativeRoundPoints = roundsAndFixtures.rounds.map((round) => {
-      const fixtures = roundsAndFixtures.fixturesByTeamRound.get(round.id)?.get(String(row.teamId)) ?? [];
+    const alternativeRoundPoints = teamFixturesByRound.map((fixtures) => {
       if (fixtures.length === 0) return 0;
       const values = fixtures.map((fixture) => {
-        const projection = friendAlternativeProjections.byFixturePlayer.get(fixturePlayerProjectionKey(fixture.id, String(row.playerId)));
-        const key = fixturePlayerProjectionKey(fixture.id, String(row.playerId));
+        const projection = friendAlternativeProjections.byFixturePlayer.get(fixturePlayerProjectionKey(fixture.id, playerId));
+        const key = fixturePlayerProjectionKey(fixture.id, playerId);
         if (!projection) return null;
         if (isFpl) return fplForecastPointsFromProjection(
           projection,
-          officialFplForecastAdjustmentsByPlayerId.get(String(row.playerId))
+          officialFplForecastAdjustmentsByPlayerId.get(playerId)
         ).points;
         return projectionFormulaFantasyPoints(
           projection,
@@ -952,16 +1008,14 @@ export async function loadFantasySquadPlannerData(
         ? null
         : roundFantasyValue(values.reduce<number>((total, value) => total + (value ?? 0), 0));
     });
-    const fixtures = roundsAndFixtures.rounds.map((round) => {
-      const teamFixtures = roundsAndFixtures.fixturesByTeamRound.get(round.id)?.get(String(row.teamId)) ?? [];
+    const roundFixtureCounts = teamFixturesByRound.map((teamFixtures) => teamFixtures.length);
+    const fixtures = teamFixturesByRound.map((teamFixtures) => {
       return teamFixtures.map((fixture) => `${fixture.side} ${fixture.opponentName}`).join(", ");
     });
-    const fixtureFullNames = roundsAndFixtures.rounds.map((round) => {
-      const teamFixtures = roundsAndFixtures.fixturesByTeamRound.get(round.id)?.get(String(row.teamId)) ?? [];
+    const fixtureFullNames = teamFixturesByRound.map((teamFixtures) => {
       return teamFixtures.map((fixture) => `${fixture.side} ${fixture.opponentFullName}`).join(", ");
     });
-    const fixtureDifficulties = roundsAndFixtures.rounds.map((round) => {
-      const teamFixtures = roundsAndFixtures.fixturesByTeamRound.get(round.id)?.get(String(row.teamId)) ?? [];
+    const fixtureDifficulties = teamFixturesByRound.map((teamFixtures) => {
       return aggregateRoundDifficulty(teamFixtures, positionGroup);
     });
     const forecastExplanation = buildFantasyForecastExplanation({
@@ -1011,20 +1065,20 @@ export async function loadFantasySquadPlannerData(
 
     return [
       {
-        id: String(row.playerId),
-        playerId: String(row.playerId),
-        teamId: String(row.teamId),
+        id: playerId,
+        playerId,
+        teamId,
         name: playerName,
         fotmobName: row.player.name,
         teamName: row.team.name,
         projectedFixtureComponents: buildFixtureComponentInputs(
           nextComponentProjection,
           nextFixture
-            ? componentProjections.formulaMetricsByFixturePlayer.get(fixturePlayerProjectionKey(nextFixture.id, String(row.playerId)))
+            ? componentProjections.formulaMetricsByFixturePlayer.get(fixturePlayerProjectionKey(nextFixture.id, playerId))
             : undefined
         ),
-        teamShortName: roundsAndFixtures.teamShortNameById.get(String(row.teamId)) ?? row.team.name,
-        photoUrl: row.photoUrl ? playerPhotoPublicUrl(String(row.playerId)) : null,
+        teamShortName: roundsAndFixtures.teamShortNameById.get(teamId) ?? row.team.name,
+        photoUrl: row.photoUrl ? playerPhotoPublicUrl(playerId) : null,
         leagueName: league.displayName,
         position,
         positionGroup,
@@ -1037,19 +1091,19 @@ export async function loadFantasySquadPlannerData(
         legacyPredictedFp,
         componentPredictedFp,
         projectionEngine,
-        projectionComponents: isFpl ? null : nextComponentProjection?.components ?? null,
+        projectionComponents: isFpl ? null : nextComponentRoundComponents,
         fplForecastBreakdown: nextFplForecast?.breakdown ?? null,
         fplForecastStatus: nextFplForecast?.status ?? null,
         projectionFormula: !isFpl && projectionEngine === "COMPONENT_XFP_V1" ? nextComponentRoundFormula : null,
         alternativeProjectedFixtureComponents: buildFixtureComponentInputs(
           nextFriendProjection,
           nextFixture
-            ? friendAlternativeProjections.formulaMetricsByFixturePlayer.get(fixturePlayerProjectionKey(nextFixture.id, String(row.playerId)))
+            ? friendAlternativeProjections.formulaMetricsByFixturePlayer.get(fixturePlayerProjectionKey(nextFixture.id, playerId))
             : undefined
         ),
-        alternativeProjectionComponents: isFpl ? null : nextFriendProjection?.components ?? null,
+        alternativeProjectionComponents: isFpl ? null : nextFriendRoundComponents,
         alternativeFplForecastBreakdown: nextFplAlternativeForecast?.breakdown ?? null,
-        alternativeProjectionFormula: nextFriendFormula,
+        alternativeProjectionFormula: nextFriendRoundFormula,
         alternativePredictedFp,
         alternativeRoundPoints,
         ...formulaAdaptations,
@@ -1081,6 +1135,7 @@ export async function loadFantasySquadPlannerData(
         }),
         valueScore: price.price > 0 ? roundFantasyValue((roundPoints[0] ?? predictedFp ?? 0) / price.price) : 0,
         roundPoints,
+        roundFixtureCounts,
         fixtures,
         fixtureFullNames,
         fixtureDifficulties,
@@ -1370,24 +1425,25 @@ export async function loadFantasySquadFormulaAdaptationBreakdowns(
         season: provider === FPL_PROVIDER ? FPL_SEASON : { in: sportsRuSeasonAliases(league.season) }
       },
       orderBy: { lastSyncedAt: "desc" },
-      select: { id: true }
+      select: { id: true, lastSyncedAt: true, scheduleRevision: true }
     })
   ]);
   const preferenceRevision = preference ? `${preference.id}:${preference.updatedAt.toISOString()}` : "global";
   const startingXiRevision = latestStartingXiChange._max.startingXiChangedAt?.toISOString() ?? "no-xi-change";
-  const key = [
-    league.leagueId,
-    league.season,
-    league.updatedAt.toISOString(),
+  const key = formulaAdaptationBreakdownCacheKey({
+    leagueId: league.leagueId,
+    season: league.season,
+    leagueUpdatedAt: league.updatedAt,
     provider,
-    contest?.id ?? "no-contest",
+    contestId: contest?.id ?? null,
+    contestRevision: contest ? `${contest.lastSyncedAt?.toISOString() ?? "never"}:${contest.scheduleRevision ?? "no-schedule"}` : "no-contest-revision",
     playerId,
     userId,
     preferenceRevision,
     startingXiRevision,
     foontasyRevision,
-    fantasyHistorySettingsKey(historySettings)
-  ].join(":");
+    historySettingsKey: fantasyHistorySettingsKey(historySettings)
+  });
   return fantasyFormulaAdaptationBreakdownCache.getOrCreate(key, fantasyPlayerPoolCacheTtlMs, async () => {
     const data = await loadFantasySquadPlannerData(prisma, userId, league, null, {
       playerIds: [playerId],
@@ -1488,6 +1544,36 @@ export function fantasyPlayerPoolCacheKey(input: {
   historySettingsKey: string;
 }) {
   return `${input.provider}:${input.contestId ?? "no-contest"}:${input.leagueId}:${input.season}:${input.leagueUpdatedAt.toISOString()}:${input.startingXiRevision}:${input.foontasyRevision}:${input.contestRevision}:${input.preferenceKey}:${input.historySettingsKey}`;
+}
+
+export function formulaAdaptationBreakdownCacheKey(input: {
+  leagueId: bigint;
+  season: string;
+  leagueUpdatedAt: Date;
+  provider: string;
+  contestId?: string | null;
+  contestRevision: string;
+  playerId: bigint;
+  userId: string;
+  preferenceRevision: string;
+  startingXiRevision: string;
+  foontasyRevision: string;
+  historySettingsKey: string;
+}) {
+  return [
+    input.leagueId,
+    input.season,
+    input.leagueUpdatedAt.toISOString(),
+    input.provider,
+    input.contestId ?? "no-contest",
+    input.contestRevision,
+    input.playerId,
+    input.userId,
+    input.preferenceRevision,
+    input.startingXiRevision,
+    input.foontasyRevision,
+    input.historySettingsKey
+  ].join(":");
 }
 
 export function sportsRuPricedFantasyPlayers(players: FantasyPlannerPlayer[]) {
@@ -3122,6 +3208,30 @@ export function componentProjectionFormulaMetrics(
   }, fixture);
 }
 
+export function aggregatePlayerFantasyPointComponents(
+  components: readonly PlayerFantasyPointComponents[]
+): PlayerFantasyPointComponents | null {
+  if (components.length === 0) return null;
+  const keys = [
+    "appearance",
+    "sixtyMinutes",
+    "fullMatch",
+    "goals",
+    "assists",
+    "cleanSheet",
+    "saves",
+    "recoveries",
+    "goalsConceded",
+    "yellowCards",
+    "redCards",
+    "total"
+  ] as const satisfies readonly (keyof PlayerFantasyPointComponents)[];
+  return Object.fromEntries(keys.map((key) => [
+    key,
+    roundFantasyValue(components.reduce((total, component) => total + component[key], 0))
+  ])) as PlayerFantasyPointComponents;
+}
+
 export function projectionFormulaFantasyPoints(
   projection: PlayerFixtureProjection,
   fixture: PlannerFixture | null,
@@ -3152,25 +3262,26 @@ function projectionFormulaWithBreakdown(
   };
 }
 
-function projectionRoundFormulaWithBreakdown(
+export function projectionRoundFormulaWithBreakdown(
   fixtures: PlannerFixture[],
   playerId: string,
   index: ReturnType<typeof buildFormulaProjectionIndex>,
   config: ProjectionFormulaConfig
 ) {
-  const fixtureBreakdowns = fixtures.flatMap((fixture) => {
+  if (fixtures.length === 0) return null;
+  const fixtureBreakdowns = fixtures.map((fixture) => {
     const key = fixturePlayerProjectionKey(fixture.id, playerId);
     const projection = index.byFixturePlayer.get(key);
-    if (!projection) return [];
+    if (!projection) return null;
     const breakdown = projectionFormulaWithBreakdown(
       projection,
       fixture,
       config,
       index.formulaMetricsByFixturePlayer.get(key)
     );
-    return [{ fixture, breakdown }];
+    return { fixture, breakdown };
   });
-  if (fixtureBreakdowns.length === 0) return null;
+  if (!fixtureBreakdowns.every((item): item is NonNullable<typeof item> => item !== null)) return null;
 
   const hasMultipleFixtures = fixtureBreakdowns.length > 1;
   return {
