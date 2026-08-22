@@ -20,6 +20,7 @@ import {
   type FantasyPlannerPlayer,
   type FantasyProviderPlaceholder
 } from "@/machete/squad_logic";
+import { toFantasyPlayerPoolListItem } from "@/machete/squad-player-dto";
 import { loadFantasySquadPlannerData, saveFantasySquad, uniqueFantasySquadName } from "@/machete/squad_planner";
 
 export const runtime = "nodejs";
@@ -117,6 +118,11 @@ export const POST = withApiHandler(async (request: Request) => {
     pool: importPool,
     rules: plannerData.rules
   });
+  const importedPlayersById = new Map(importPool.map((player) => [player.playerId, player]));
+  const importedPlayers = validation.selections.flatMap((selection) => {
+    const player = importedPlayersById.get(selection.playerId);
+    return player ? [toFantasyPlayerPoolListItem(player)] : [];
+  });
   const name = plannerData.squad.id
     ? plannerData.squad.name
     : uniqueFantasySquadName(plannerData.squads.map((option) => option.name), preview.squadName);
@@ -155,6 +161,7 @@ export const POST = withApiHandler(async (request: Request) => {
       horizonRounds: plannerData.squad.horizonRounds,
       selections: validation.selections,
       roundPlans,
+      importedPlayers,
       placeholderPlayers,
       updatedAt: new Date().toISOString()
     },

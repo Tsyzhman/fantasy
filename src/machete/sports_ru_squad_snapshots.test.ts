@@ -79,6 +79,8 @@ test("the one-click import route reuses a stored snapshot or starts a targeted o
   assert.match(importRouteSource, /availablePlayerIds: plannerData\.players\.map/);
   assert.match(importRouteSource, /selections: validation\.selections/);
   assert.match(importRouteSource, /roundPlans,/);
+  assert.match(importRouteSource, /const importedPlayers = validation\.selections\.flatMap/);
+  assert.match(importRouteSource, /toFantasyPlayerPoolListItem/);
   assert.doesNotMatch(importRouteSource, /fetchSportsRuLatestPublishedSquad|loadSportsRuSquadImportPreview/);
   assert.doesNotMatch(importRouteSource, /SPORTS_PLAYERS_UNMAPPED/);
   assert.ok(

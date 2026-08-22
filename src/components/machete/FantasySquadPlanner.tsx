@@ -12,6 +12,7 @@ import {
   fantasyRoundPointsWithActiveChip,
   fixtureChipPresentations,
   isSquadReplacementTarget,
+  mergeFantasyPlayerPools,
   orderSquadSelectionsWithBenchGoalkeeperLast,
   startingXiAlternativeHorizonPoints,
   startingXiAlternativeRoundPoints,
@@ -256,6 +257,7 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
   const budgetForecastRef = useRef<HTMLDivElement>(null);
   const suggestionPanelRef = useRef<HTMLDivElement>(null);
   const [sourcePlayers, setSourcePlayers] = useState<FantasyPlannerPlayer[]>(initialPlayers);
+  const sourcePlayersRef = useRef<FantasyPlannerPlayer[]>(initialPlayers);
   const [appliedHistorySettings, setAppliedHistorySettings] = useState(historySettings);
   const [playerPoolRequestHref, setPlayerPoolRequestHref] = useState(playerPoolHref);
   const [activeRoundOffset, setActiveRoundOffset] = useState(0);
@@ -579,10 +581,14 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
         if (!response.ok || !Array.isArray(payload.players)) throw new Error("PLAYER_POOL_LOAD_FAILED");
         if (lifecycleCancelled) return;
         requestCompleted = true;
-        setSourcePlayers((current) => mergeFantasyPlayerPools(
-          payload.players!,
-          current.filter((player) => player.isProviderPlaceholder)
-        ));
+        setSourcePlayers((current) => {
+          const merged = mergeFantasyPlayerPools(
+            payload.players!,
+            current.filter((player) => player.isProviderPlaceholder)
+          );
+          sourcePlayersRef.current = merged;
+          return merged;
+        });
         setPlayerPoolFailed(false);
         setPlayerPoolPending(false);
         setHistoryApplying(false);
@@ -1210,6 +1216,7 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
           horizonRounds?: number;
           selections?: FantasySquadSelection[];
           roundPlans?: FantasySquadRoundPlan[];
+          importedPlayers?: FantasyPlannerPlayer[];
           placeholderPlayers?: FantasyPlannerPlayer[];
           updatedAt?: string;
         };
@@ -1232,10 +1239,12 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
         return;
       }
       const savedSquadId = payload.squad?.id;
-      const importedPlayerPool = mergeFantasyPlayerPools(
-        sourcePlayers,
-        Array.isArray(payload.squad?.placeholderPlayers) ? payload.squad.placeholderPlayers : []
-      );
+      const importedResponsePlayers = Array.isArray(payload.squad?.importedPlayers)
+        ? payload.squad.importedPlayers
+        : Array.isArray(payload.squad?.placeholderPlayers)
+          ? payload.squad.placeholderPlayers
+          : [];
+      const importedPlayerPool = mergeFantasyPlayerPools(sourcePlayersRef.current, importedResponsePlayers);
       const importedSelections = Array.isArray(payload.squad?.selections)
         ? normalizeInitialSelections(payload.squad.selections, importedPlayerPool, rules)
         : [];
@@ -1260,6 +1269,7 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
       const updatedAt = payload.squad?.updatedAt ?? new Date().toISOString();
       const importedHorizon = normalizeFantasyHorizon(payload.squad?.horizonRounds ?? horizon, rules.horizonOptions);
       setActiveRoundOffset(0);
+      sourcePlayersRef.current = importedPlayerPool;
       setSourcePlayers(importedPlayerPool);
       setRoundPlans(importedRoundPlans);
       setSavedRoundPlans(cloneFantasyRoundPlans(importedRoundPlans));
@@ -5918,12 +5928,6 @@ function cloneFantasyRoundPlans(plans: FantasySquadRoundPlan[]) {
     ...plan,
     selections: plan.selections.map((selection) => ({ ...selection }))
   }));
-}
-
-function mergeFantasyPlayerPools(base: FantasyPlannerPlayer[], additions: FantasyPlannerPlayer[]) {
-  const merged = new Map(base.map((player) => [player.playerId, player]));
-  for (const player of additions) merged.set(player.playerId, player);
-  return [...merged.values()];
 }
 
 function normalizePlannerRoundPlans(

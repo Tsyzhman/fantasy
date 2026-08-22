@@ -4,6 +4,15 @@ export type FixtureChipSide = "home" | "away" | null;
 
 export type FantasyActiveChip = "BENCH_BOOST" | "TRIPLE_CAPTAIN" | "WILDCARD" | "FREE_HIT" | null;
 
+export function mergeFantasyPlayerPools<T extends { playerId: string }>(
+  base: readonly T[],
+  additions: readonly T[]
+) {
+  const merged = new Map(base.map((player) => [player.playerId, player]));
+  for (const player of additions) merged.set(player.playerId, player);
+  return [...merged.values()];
+}
+
 export type FixtureChipPresentation = {
   label: string;
   title: string;

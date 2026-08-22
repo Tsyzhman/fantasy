@@ -8,6 +8,7 @@ import {
   fantasyAlternativeRoundPointsWithActiveChip,
   fantasyRoundPointsWithActiveChip,
   isSquadReplacementTarget,
+  mergeFantasyPlayerPools,
   orderSquadSelectionsWithBenchGoalkeeperLast,
   startingXiFoontasyPoints,
   startingXiAlternativeHorizonPoints,
@@ -40,6 +41,24 @@ test("Sports.ru placeholders stay visible in the squad with their price but neve
   assert.match(squadPlannerSource, /\.filter\(\(player\) => !player\.isProviderPlaceholder\)/);
   assert.match(squadPlannerSource, /<I18nText en="not in database" ru="нет в базе" \/>/);
   assert.match(squadPlannerSource, /placeholderPlayersCount/);
+});
+
+test("Sports.ru import can complete from response players while the full player pool is still loading", () => {
+  const merged = mergeFantasyPlayerPools(
+    [{ playerId: "old-player", source: "initial" }],
+    [
+      { playerId: "new-player", source: "import" },
+      { playerId: "provider-placeholder:SPORTS_RU:gone", source: "import" }
+    ]
+  );
+
+  assert.deepEqual(merged.map((player) => player.playerId), [
+    "old-player",
+    "new-player",
+    "provider-placeholder:SPORTS_RU:gone"
+  ]);
+  assert.match(squadPlannerSource, /sourcePlayersRef\.current, importedResponsePlayers/);
+  assert.match(squadPlannerSource, /payload\.squad\?\.importedPlayers/);
 });
 
 test("round forecast totals available alternative projections and keeps missing players visible through warnings", () => {
