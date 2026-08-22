@@ -44,6 +44,8 @@ export type PlannerReadiness = {
     finishedAt: string | null;
     ageHours: number | null;
     upcomingFixturesDiscovered: number;
+    upcomingFixturesPersisted: number | null;
+    currentUpcomingFixturesFromDiscovery: number | null;
   } | null;
 };
 
@@ -87,6 +89,8 @@ export type PlannerReadinessEvaluationInput = {
     startedAt: Date | null;
     finishedAt: Date | null;
     upcomingFixturesDiscovered: number;
+    upcomingFixturesPersisted: number | null;
+    currentUpcomingFixturesFromDiscovery: number | null;
   } | null;
 };
 
@@ -112,7 +116,13 @@ export function evaluatePlannerReadiness(input: PlannerReadinessEvaluationInput)
   } else {
     if (input.ingestion.status !== "completed" || !input.ingestion.finishedAt) reasons.push("INCREMENTAL_INGESTION_NOT_COMPLETED");
     if (ingestionAgeHours === null || ingestionAgeHours < 0 || ingestionAgeHours > input.maximumAgeHours) reasons.push("INCREMENTAL_INGESTION_STALE");
-    if (input.ingestion.upcomingFixturesDiscovered !== input.upcomingFixtures) reasons.push("INGESTION_FIXTURE_COUNT_MISMATCH");
+    const exactFixtureEvidenceAvailable = input.ingestion.upcomingFixturesPersisted !== null
+      && input.ingestion.currentUpcomingFixturesFromDiscovery !== null;
+    const fixtureCountsMatch = exactFixtureEvidenceAvailable
+      ? input.ingestion.upcomingFixturesPersisted === input.ingestion.upcomingFixturesDiscovered
+        && input.ingestion.currentUpcomingFixturesFromDiscovery === input.upcomingFixtures
+      : input.ingestion.upcomingFixturesDiscovered === input.upcomingFixtures;
+    if (!fixtureCountsMatch) reasons.push("INGESTION_FIXTURE_COUNT_MISMATCH");
   }
 
   if (input.audit?.startedAt && input.ingestion?.finishedAt && input.audit.startedAt < input.ingestion.finishedAt) {
@@ -152,7 +162,9 @@ export function evaluatePlannerReadiness(input: PlannerReadinessEvaluationInput)
           startedAt: input.ingestion.startedAt?.toISOString() ?? null,
           finishedAt: input.ingestion.finishedAt?.toISOString() ?? null,
           ageHours: ingestionAgeHours,
-          upcomingFixturesDiscovered: input.ingestion.upcomingFixturesDiscovered
+          upcomingFixturesDiscovered: input.ingestion.upcomingFixturesDiscovered,
+          upcomingFixturesPersisted: input.ingestion.upcomingFixturesPersisted,
+          currentUpcomingFixturesFromDiscovery: input.ingestion.currentUpcomingFixturesFromDiscovery
         }
       : null
   };
@@ -177,7 +189,16 @@ export async function loadPlannerReadinessByScope(
 
   const entries = await Promise.all(
     scopes.map(async (scope) => {
-      const [audit, activePlayers, upcomingFixtures] = await Promise.all([
+      const scopeIngestion = selectLatestIngestionAttempt(ingestionJobs, scope.leagueId, scope.season);
+      const exactUpcomingFixtureIds = scopeIngestion
+        ? completedIngestionUpcomingFixtureIds(scopeIngestion.job.metadata, scope.leagueId, scope.season)
+        : null;
+      const exactUpcomingFixtureBigInts = exactUpcomingFixtureIds
+        ? parseFixtureIds(exactUpcomingFixtureIds)
+        : null;
+      const exactFixtureEvidenceAvailable = exactUpcomingFixtureBigInts !== null
+        && exactUpcomingFixtureBigInts.length === exactUpcomingFixtureIds?.length;
+      const [audit, activePlayers, upcomingFixtures, upcomingFixturesPersisted, currentUpcomingFixturesFromDiscovery] = await Promise.all([
         prisma.dataQualityAuditRun.findFirst({
           where: { leagueId: scope.leagueId, season: scope.season },
           orderBy: [{ createdAt: "desc" }, { id: "desc" }],
@@ -203,9 +224,29 @@ export async function loadPlannerReadinessByScope(
             cancelled: false,
             matchDate: { gt: now }
           }
-        })
+        }),
+        exactFixtureEvidenceAvailable
+          ? prisma.coreMatch.count({
+              where: {
+                leagueId: scope.leagueId,
+                season: scope.season,
+                id: { in: exactUpcomingFixtureBigInts }
+              }
+            })
+          : Promise.resolve(null),
+        exactFixtureEvidenceAvailable
+          ? prisma.coreMatch.count({
+              where: {
+                leagueId: scope.leagueId,
+                season: scope.season,
+                id: { in: exactUpcomingFixtureBigInts },
+                finished: false,
+                cancelled: false,
+                matchDate: { gt: now }
+              }
+            })
+          : Promise.resolve(null)
       ]);
-      const scopeIngestion = selectLatestIngestionAttempt(ingestionJobs, scope.leagueId, scope.season);
       const readiness = evaluatePlannerReadiness({
         leagueId: scope.leagueId,
         season: scope.season,
@@ -220,7 +261,9 @@ export async function loadPlannerReadinessByScope(
               status: String(scopeIngestion.evidence.status),
               startedAt: scopeIngestion.job.startedAt,
               finishedAt: validDate(scopeIngestion.evidence?.finished_at) ?? scopeIngestion.job.finishedAt,
-              upcomingFixturesDiscovered: Number(scopeIngestion.evidence?.upcoming_fixtures_discovered ?? 0)
+              upcomingFixturesDiscovered: Number(scopeIngestion.evidence?.upcoming_fixtures_discovered ?? 0),
+              upcomingFixturesPersisted,
+              currentUpcomingFixturesFromDiscovery
             }
           : null
       });
@@ -241,6 +284,21 @@ export function completedIngestionScope(metadataValue: unknown, leagueId: bigint
     .find((scope) => scope
       && String(scope.league_id) === String(leagueId)
       && String(scope.season) === season) ?? null;
+}
+
+export function completedIngestionUpcomingFixtureIds(metadataValue: unknown, leagueId: bigint, season: string) {
+  const metadata = metadataValue && typeof metadataValue === "object" && !Array.isArray(metadataValue)
+    ? metadataValue as Record<string, unknown>
+    : {};
+  const scopes = Array.isArray(metadata.completed_scopes) ? metadata.completed_scopes : [];
+  const matchingScopes = scopes
+    .map((value) => value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : null)
+    .filter((scope): scope is Record<string, unknown> => Boolean(scope)
+      && String(scope?.canonical_league_id) === String(leagueId)
+      && String(scope?.season) === season);
+  if (matchingScopes.length === 0 || matchingScopes.some((scope) => !Array.isArray(scope.upcoming_fixture_ids))) return null;
+
+  return [...new Set(matchingScopes.flatMap((scope) => (scope.upcoming_fixture_ids as unknown[]).map(String)))];
 }
 
 type IngestionAttemptJob = {
@@ -283,6 +341,14 @@ function validDate(value: unknown) {
   if (typeof value !== "string") return null;
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function parseFixtureIds(values: string[]) {
+  try {
+    return values.map((value) => BigInt(value));
+  } catch {
+    return null;
+  }
 }
 
 export function selectPlannerSeason(

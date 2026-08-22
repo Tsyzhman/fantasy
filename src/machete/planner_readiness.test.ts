@@ -5,6 +5,7 @@ import {
   evaluatePlannerDefaultScope,
   evaluatePlannerReadiness,
   completedIngestionScope,
+  completedIngestionUpcomingFixtureIds,
   plannerReadinessBlocksForecastActions,
   plannerReadinessBlocksTransferSuggestions,
   plannerReadinessKey,
@@ -38,7 +39,9 @@ test("planner readiness requires fixtures, an exact passing audit, and a fresh c
       status: "completed",
       startedAt: new Date("2026-07-17T03:00:00.000Z"),
       finishedAt: new Date("2026-07-17T09:00:00.000Z"),
-      upcomingFixturesDiscovered: 380
+      upcomingFixturesDiscovered: 380,
+      upcomingFixturesPersisted: 380,
+      currentUpcomingFixturesFromDiscovery: 380
     }
   });
 
@@ -100,7 +103,9 @@ test("a fresh audit cannot hide missing fixtures, a failed latest ingestion, or 
       status: "failed",
       startedAt: new Date("2026-07-17T08:00:00.000Z"),
       finishedAt: new Date("2026-07-17T09:00:00.000Z"),
-      upcomingFixturesDiscovered: 0
+      upcomingFixturesDiscovered: 0,
+      upcomingFixturesPersisted: 0,
+      currentUpcomingFixturesFromDiscovery: 0
     }
   });
 
@@ -131,7 +136,9 @@ test("preseason planner readiness uses forecast coverage without pretending the 
       status: "completed",
       startedAt: new Date("2026-07-17T09:00:00.000Z"),
       finishedAt: new Date("2026-07-17T09:30:00.000Z"),
-      upcomingFixturesDiscovered: 380
+      upcomingFixturesDiscovered: 380,
+      upcomingFixturesPersisted: 380,
+      currentUpcomingFixturesFromDiscovery: 380
     }
   });
 
@@ -164,7 +171,9 @@ test("preseason planner readiness still rejects forecast coverage below the conf
       status: "completed",
       startedAt: new Date("2026-07-17T09:00:00.000Z"),
       finishedAt: new Date("2026-07-17T09:30:00.000Z"),
-      upcomingFixturesDiscovered: 380
+      upcomingFixturesDiscovered: 380,
+      upcomingFixturesPersisted: 380,
+      currentUpcomingFixturesFromDiscovery: 380
     }
   });
 
@@ -196,12 +205,47 @@ test("planner readiness rejects partial fixture discovery even when the database
       status: "completed",
       startedAt: new Date("2026-07-17T09:00:00.000Z"),
       finishedAt: new Date("2026-07-17T09:30:00.000Z"),
-      upcomingFixturesDiscovered: 1
+      upcomingFixturesDiscovered: 1,
+      upcomingFixturesPersisted: 1,
+      currentUpcomingFixturesFromDiscovery: 1
     }
   });
 
   assert.equal(result.ready, false);
   assert.deepEqual(result.reasons, ["INGESTION_FIXTURE_COUNT_MISMATCH"]);
+});
+
+test("planner readiness does not treat a normal kickoff after ingestion as a missing fixture", () => {
+  const result = evaluatePlannerReadiness({
+    leagueId: 63n,
+    season: "2026/2027",
+    activePlayers: 521,
+    upcomingFixtures: 207,
+    maximumAgeHours: 26,
+    now,
+    audit: {
+      id: "audit-matchday",
+      status: "COMPLETED",
+      gatePassed: true,
+      coverageThreshold: 90,
+      forecastCoverage: 99,
+      finishedMatches: 32,
+      startedAt: new Date("2026-07-17T10:00:00.000Z"),
+      completedAt: new Date("2026-07-17T10:05:00.000Z")
+    },
+    ingestion: {
+      id: "ingestion-before-kickoff",
+      status: "completed",
+      startedAt: new Date("2026-07-17T03:00:00.000Z"),
+      finishedAt: new Date("2026-07-17T09:00:00.000Z"),
+      upcomingFixturesDiscovered: 208,
+      upcomingFixturesPersisted: 208,
+      currentUpcomingFixturesFromDiscovery: 207
+    }
+  });
+
+  assert.equal(result.ready, true);
+  assert.deepEqual(result.reasons, []);
 });
 
 test("incremental evidence requires an exact successful league-season scope", () => {
@@ -214,6 +258,23 @@ test("incremental evidence requires an exact successful league-season scope", ()
   assert.equal(completedIngestionScope(metadata, 47n, "2026/2027")?.status, "completed");
   assert.equal(completedIngestionScope(metadata, 47n, "2025/2026"), null);
   assert.equal(completedIngestionScope(metadata, 87n, "2026/2027")?.status, "completed_with_errors");
+});
+
+test("exact upcoming fixture evidence is deduplicated across canonical source scopes", () => {
+  const metadata = {
+    completed_scopes: [
+      { canonical_league_id: 47, season: "2026/2027", upcoming_fixture_ids: ["1", "2"] },
+      { canonical_league_id: 47, season: "2026/2027", upcoming_fixture_ids: ["2", "3"] },
+      { canonical_league_id: 87, season: "2026/2027", upcoming_fixture_ids: ["4"] }
+    ]
+  };
+
+  assert.deepEqual(completedIngestionUpcomingFixtureIds(metadata, 47n, "2026/2027"), ["1", "2", "3"]);
+  assert.equal(completedIngestionUpcomingFixtureIds(metadata, 47n, "2025/2026"), null);
+  assert.equal(
+    completedIngestionUpcomingFixtureIds({ completed_scopes: [{ canonical_league_id: 47, season: "2026/2027" }] }, 47n, "2026/2027"),
+    null
+  );
 });
 
 test("automatic selection uses only a ready exact scope while an explicit unready season remains selected and flagged", () => {
