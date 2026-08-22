@@ -64,6 +64,7 @@ test("production fantasy price sync is an exact, non-runtime operator job", () =
 
 test("server promoter verifies formula files, rehearses migrations, and checks exact runtime commit", () => {
   const promoter = source("scripts/deploy-production-docker.sh");
+  const relayLauncher = promoter.slice(promoter.indexOf("start_fpl_relay()"), promoter.indexOf("wait_for_fpl_relay()"));
 
   assert.match(promoter, /src\/machete\/formula_adaptations\.ts/);
   assert.match(promoter, /Verified production backup/);
@@ -85,6 +86,9 @@ test("server promoter verifies formula files, rehearses migrations, and checks e
   assert.match(promoter, /wait_for_fpl_relay "\$fpl_relay_candidate_volume" 100000/);
   assert.match(promoter, /--network "container:\$fpl_vpn_container"/);
   assert.match(promoter, /FPL_RELAY_SOCKET_PATH=\$fpl_relay_socket/);
+  assert.match(relayLauncher, /--log-driver json-file/);
+  assert.match(relayLauncher, /--log-opt max-size=20m/);
+  assert.match(relayLauncher, /--log-opt max-file=5/);
   assert.match(promoter, /type=volume,src=\$fpl_relay_volume,dst=\/run\/fpl-relay,readonly/);
   assert.doesNotMatch(promoter, /docker network connect/);
   assert.match(promoter, /fpl_relay_rollback="fantasy-scout-fpl-relay-rollback-pre-\$release"/);

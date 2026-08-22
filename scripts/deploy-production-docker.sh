@@ -174,6 +174,9 @@ start_fpl_relay() {
     --read-only \
     --cap-drop ALL \
     --security-opt no-new-privileges:true \
+    --log-driver json-file \
+    --log-opt max-size=20m \
+    --log-opt max-file=5 \
     --no-healthcheck \
     --entrypoint node \
     "$image" \
