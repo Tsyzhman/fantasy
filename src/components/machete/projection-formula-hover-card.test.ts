@@ -69,3 +69,10 @@ test("projection detail request cache is bounded by entries and bytes", () => {
   assert.match(source, /detailRequestCacheMaximumBytes = 2 \* 1024 \* 1024/);
   assert.match(source, /detailRequestCacheBytes > detailRequestCacheMaximumBytes/);
 });
+
+test("short FP and Alt tooltips stay narrow while detailed calculations keep extra room", () => {
+  const source = readFileSync(new URL("./ProjectionFormulaHoverCard.tsx", import.meta.url), "utf8");
+  assert.match(source, /panelMaximumWidth = detailed \? 640 : 440/);
+  assert.match(source, /detailed \? "w-\[min\(640px,calc\(100vw-16px\)\)\]" : "w-\[min\(440px,calc\(100vw-16px\)\)\]"/);
+  assert.doesNotMatch(source, /w-\[min\(760px,calc\(100vw-16px\)\)\]/);
+});

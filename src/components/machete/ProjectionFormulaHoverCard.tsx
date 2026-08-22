@@ -59,6 +59,7 @@ export function ProjectionFormulaHoverCard({
   const requestHref = projectionFormulaDetailsHref(sourceHref, playerId, provider);
   const details = responseState?.href === requestHref ? responseState.details : null;
   const failed = requestHref ? failedHref === requestHref : true;
+  const panelMaximumWidth = detailed ? 640 : 440;
 
   const cancelClose = useCallback(() => {
     if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
@@ -91,7 +92,7 @@ export function ProjectionFormulaHoverCard({
     const trigger = triggerRef.current;
     if (!trigger) return;
     const triggerRect = trigger.getBoundingClientRect();
-    const panelWidth = panelRef.current?.offsetWidth ?? Math.min(760, window.innerWidth - 16);
+    const panelWidth = panelRef.current?.offsetWidth ?? Math.min(panelMaximumWidth, window.innerWidth - 16);
     const panelHeight = panelRef.current?.offsetHeight ?? Math.min(560, window.innerHeight - 16);
     const gutter = 8;
     const gap = 6;
@@ -104,7 +105,7 @@ export function ProjectionFormulaHoverCard({
       ? below
       : Math.max(gutter, triggerRect.top - panelHeight - gap);
     setPosition({ left, top });
-  }, []);
+  }, [panelMaximumWidth]);
 
   useLayoutEffect(() => {
     if (open) updatePosition();
@@ -155,7 +156,7 @@ export function ProjectionFormulaHoverCard({
           role="tooltip"
           onPointerEnter={cancelClose}
           onPointerLeave={scheduleClose}
-          className="fixed z-[90] max-h-[min(70vh,560px)] w-[min(760px,calc(100vw-16px))] overflow-auto rounded border border-slate-200 bg-white p-4 text-left text-xs normal-case tracking-normal text-slate-700 shadow-elev"
+          className={`fixed z-[90] max-h-[min(70vh,560px)] ${detailed ? "w-[min(640px,calc(100vw-16px))]" : "w-[min(440px,calc(100vw-16px))]"} overflow-auto rounded border border-slate-200 bg-white p-4 text-left text-xs normal-case tracking-normal text-slate-700 shadow-elev`}
           style={position}
         >
           <p className="font-bold text-ink">{playerName} · {label}</p>
