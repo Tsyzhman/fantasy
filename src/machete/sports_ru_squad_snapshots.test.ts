@@ -6,6 +6,7 @@ import type { PrismaClient } from "@prisma/client";
 import {
   latestStartedSportsRuSquadRound,
   latestStartedSportsRuProviderRound,
+  loadStoredSportsRuSquadImportPreview,
   SPORTS_RU_SQUAD_PUBLICATION_DELAY_MS,
   syncSportsRuSquadSnapshotOnDemand
 } from "./sports_ru_squad_snapshots";
@@ -75,6 +76,7 @@ test("Sports.ru snapshot schedule follows provider tour 3 even when it contains 
 test("the one-click import route reuses a stored snapshot or starts a targeted on-demand sync", () => {
   assert.match(importRouteSource, /loadStoredSportsRuSquadImportPreview/);
   assert.match(importRouteSource, /syncSportsRuSquadSnapshotOnDemand/);
+  assert.match(importRouteSource, /availablePlayerIds: plannerData\.players\.map/);
   assert.match(importRouteSource, /selections: validation\.selections/);
   assert.match(importRouteSource, /roundPlans,/);
   assert.doesNotMatch(importRouteSource, /fetchSportsRuLatestPublishedSquad|loadSportsRuSquadImportPreview/);
@@ -91,6 +93,95 @@ test("unmapped Sports.ru players complete the snapshot as provider placeholders"
   assert.match(snapshotSource, /\{ status: "MAPPING_INCOMPLETE" \}/);
   assert.match(snapshotSource, /mappedPlayersCount: preview\.selections\.length - preview\.unmapped\.length/);
   assert.match(snapshotSource, /unmappedPlayers: preview\.unmapped as Prisma\.InputJsonValue/);
+});
+
+test("stored Sports.ru snapshot turns a transferred-out mapped player into a priced placeholder", async () => {
+  const published = {
+    providerSquadId: "squad-1",
+    squadName: "Imported",
+    seasonId: "season-1",
+    tournamentHru: "spain",
+    tournamentName: "Испания",
+    tourId: "2462",
+    tourName: "2 тур",
+    tourFinishedAt: "2026-08-28T00:00:00Z",
+    totalPrice: 14.5,
+    currentBalance: 85.5,
+    players: [
+      {
+        providerPlayerId: "known-1",
+        name: "Known player",
+        teamName: "Бетис",
+        role: "GOALKEEPER",
+        price: 6.1,
+        isStarter: true,
+        isCaptain: false,
+        isViceCaptain: false,
+        substitutePriority: null
+      },
+      {
+        providerPlayerId: "gone-2",
+        name: "Ушедший игрок",
+        teamName: "Севилья",
+        role: "MIDFIELDER",
+        price: 8.4,
+        isStarter: true,
+        isCaptain: true,
+        isViceCaptain: false,
+        substitutePriority: null
+      }
+    ]
+  };
+  const prisma = {
+    userExternalProfile: {
+      findUnique: async () => ({ providerUserId: "profile-1" })
+    },
+    sportsRuSquadSnapshot: {
+      findFirst: async () => ({
+        status: "COMPLETE",
+        lastError: null,
+        providerSquadId: published.providerSquadId,
+        squadName: published.squadName,
+        tournamentName: published.tournamentName,
+        providerTourId: published.tourId,
+        tourName: published.tourName,
+        roundLabel: "2",
+        providerPayload: published,
+        selections: [
+          { playerId: "101", isStarter: true, isLocked: false, isCaptain: false, isViceCaptain: false, slotIndex: 0, purchasePrice: 6.1 },
+          { playerId: "202", isStarter: true, isLocked: false, isCaptain: true, isViceCaptain: false, slotIndex: 1, purchasePrice: 8.4 }
+        ],
+        unmappedPlayers: []
+      })
+    }
+  } as unknown as PrismaClient;
+
+  const preview = await loadStoredSportsRuSquadImportPreview(prisma, {
+    userId: "user-1",
+    leagueId: 87n,
+    season: "2026/2027",
+    expectedSquadSize: 2,
+    availablePlayerIds: ["101"]
+  });
+
+  assert.equal(preview.selections[0].playerId, "101");
+  assert.match(preview.selections[1].playerId, /^provider-placeholder:SPORTS_RU:/);
+  assert.equal(preview.selections[1].slotIndex, 1);
+  assert.equal(preview.selections[1].isCaptain, true);
+  assert.equal(preview.selections[1].purchasePrice, 8.4);
+  assert.deepEqual(preview.unmapped.map((player) => ({
+    providerPlayerId: player.providerPlayerId,
+    name: player.name,
+    teamName: player.teamName,
+    position: player.position,
+    price: player.price
+  })), [{
+    providerPlayerId: "gone-2",
+    name: "Ушедший игрок",
+    teamName: "Севилья",
+    position: "MIDFIELDER",
+    price: 8.4
+  }]);
 });
 
 test("a button request revives an exhausted snapshot without waiting for the background scheduler", async () => {

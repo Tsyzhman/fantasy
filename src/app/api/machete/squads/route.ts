@@ -9,6 +9,7 @@ import { FPL_PROVIDER } from "@/lib/providers/fpl";
 import {
   loadCachedFantasySquadPlayerPool,
   loadFantasySquadPlannerData,
+  fantasyPlayerPoolCacheMetrics,
   mergeFantasyPlannerPlayerPools,
   fantasySquadRoundIdsFromFilters,
   fantasySquadRoundShift,
@@ -32,6 +33,7 @@ import {
   type FantasyPlannerPlayer
 } from "@/machete/squad_logic";
 import { parseFantasyHistorySettings } from "@/machete/squad-history";
+import { toFantasyPlayerPoolListItem } from "@/machete/squad-player-dto";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -113,13 +115,22 @@ export const GET = withApiHandler(async (request: Request) => {
   });
   if (!contest) return jsonError("CONTEST_NOT_SYNCED", "The selected fantasy provider contest is not synchronized yet.", 503);
   const players = await loadCachedFantasySquadPlayerPool(prisma, auth.user.id, plannerLeague, historySettings, provider, contest.id);
+  const cacheMetrics = fantasyPlayerPoolCacheMetrics();
   const placeholderPlayers = fantasyProviderPlaceholdersFromFilters(ownedSquadFilters, provider).map((placeholder) =>
     fantasyProviderPlaceholderPlannerPlayer(placeholder, displayName)
   );
+  const listPlayers = mergeFantasyPlannerPlayerPools(players, placeholderPlayers).map(toFantasyPlayerPoolListItem);
 
   return NextResponse.json(
-    { players: mergeFantasyPlannerPlayerPools(players, placeholderPlayers) },
-    { headers: { "Cache-Control": "private, no-store" } }
+    { players: listPlayers },
+    {
+      headers: {
+        "Cache-Control": "private, no-store",
+        "X-Machete-Player-DTO": "squad-list-v1",
+        "X-Machete-Feature-Cache": formatPlayerPoolCacheMetrics(cacheMetrics.featurePool),
+        "X-Machete-Overlay-Cache": formatPlayerPoolCacheMetrics(cacheMetrics.scoringOverlay)
+      }
+    }
   );
 });
 
@@ -368,4 +379,16 @@ function optionalId(value: unknown) {
 
 function normalizeProvider(value: string | null) {
   return value?.trim().toUpperCase() === FPL_PROVIDER ? FPL_PROVIDER : "SPORTS_RU";
+}
+
+function formatPlayerPoolCacheMetrics(
+  metrics: ReturnType<typeof fantasyPlayerPoolCacheMetrics>["featurePool"]
+) {
+  return [
+    `hit=${metrics.hits}`,
+    `miss=${metrics.misses}`,
+    `build_ms=${metrics.buildMs}`,
+    `bytes=${metrics.bytes}`,
+    `entries=${metrics.entries}`
+  ].join(";");
 }

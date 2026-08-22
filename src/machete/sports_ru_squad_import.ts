@@ -1,12 +1,13 @@
 import type { PrismaClient } from "@prisma/client";
 
-import type { SportsRuPublishedSquad } from "@/lib/providers/sports-ru-fantasy";
+import type { SportsRuPublishedSquad, SportsRuPublishedSquadPlayer } from "@/lib/providers/sports-ru-fantasy";
 
 import {
   countFantasySquadTransfers,
   createFantasySquadRoundPlans,
   fantasyProviderPlaceholderPlayerId,
   fantasyTransferLimitForHorizon,
+  isFantasyProviderPlaceholderPlayerId,
   normalizeFantasyPosition,
   validateFantasySquadForSave,
   type FantasyPlannerPlayer,
@@ -71,14 +72,7 @@ export async function mapSportsRuPublishedSquad(
   if (providerPlayerIds.length !== published.players.length) {
     throw new SportsRuSquadImportError("DUPLICATE_PUBLISHED_PLAYER", "Sports.ru returned a duplicate player in the published squad.");
   }
-  const orderedPlayers = [...published.players].sort((left, right) => {
-    if (left.isStarter !== right.isStarter) return left.isStarter ? -1 : 1;
-    if (left.isStarter) return sportsRuRoleOrder(left.role) - sportsRuRoleOrder(right.role);
-    const leftGoalkeeper = left.role === "GOALKEEPER";
-    const rightGoalkeeper = right.role === "GOALKEEPER";
-    if (leftGoalkeeper !== rightGoalkeeper) return leftGoalkeeper ? 1 : -1;
-    return (left.substitutePriority ?? 99) - (right.substitutePriority ?? 99);
-  });
+  const orderedPlayers = orderedSportsRuPublishedPlayers(published.players);
   const unmapped: FantasyProviderPlaceholder[] = [];
   const selections = orderedPlayers.map((player, slotIndex): FantasySquadSelection => {
     const mapped = mappedByProviderId.get(player.providerPlayerId);
@@ -94,25 +88,9 @@ export async function mapSportsRuPublishedSquad(
     if (mapped?.playerId) {
       playerId = String(mapped.playerId);
     } else {
-      const position = player.role ?? priceRow?.position ?? "";
-      if (normalizeFantasyPosition(position) === "UNK") {
-        throw new SportsRuSquadImportError(
-          "SPORTS_PLAYER_POSITION_MISSING",
-          `Sports.ru did not return a valid fantasy position for ${player.name}.`
-        );
-      }
-      playerId = fantasyProviderPlaceholderPlayerId("SPORTS_RU", player.providerPlayerId);
-      const teamName = player.teamName ?? priceRow?.sportsTeamName ?? priceRow?.teamName ?? "Sports.ru team";
-      unmapped.push({
-        playerId,
-        provider: "SPORTS_RU",
-        providerPlayerId: player.providerPlayerId,
-        name: player.name || priceRow?.playerName || `Sports.ru player ${player.providerPlayerId}`,
-        teamId: priceRow?.teamId ? String(priceRow.teamId) : sportsRuPlaceholderTeamId(teamName),
-        teamName,
-        position,
-        price: purchasePrice
-      });
+      const placeholder = sportsRuProviderPlaceholder(player, purchasePrice, priceRow);
+      playerId = placeholder.playerId;
+      unmapped.push(placeholder);
     }
     return {
       playerId,
@@ -139,6 +117,52 @@ export async function mapSportsRuPublishedSquad(
     tourName: published.tourName,
     selections,
     unmapped
+  };
+}
+
+export function reconcileSportsRuSquadAvailability(input: {
+  preview: SportsRuSquadImportPreview;
+  published: SportsRuPublishedSquad;
+  availablePlayerIds: Iterable<string>;
+}): SportsRuSquadImportPreview {
+  const availablePlayerIds = new Set(input.availablePlayerIds);
+  const orderedPlayers = orderedSportsRuPublishedPlayers(input.published.players);
+  if (orderedPlayers.length !== input.preview.selections.length) {
+    throw new SportsRuSquadImportError(
+      "STORED_SPORTS_SQUAD_INVALID",
+      "The stored Sports.ru squad no longer matches its provider payload."
+    );
+  }
+
+  const storedPlaceholdersById = new Map(input.preview.unmapped.map((placeholder) => [placeholder.playerId, placeholder]));
+  const usedPlaceholders = new Map<string, FantasyProviderPlaceholder>();
+  const selections = input.preview.selections.map((selection) => {
+    const existingPlaceholder = isFantasyProviderPlaceholderPlayerId(selection.playerId)
+      ? storedPlaceholdersById.get(selection.playerId)
+      : null;
+    if (!existingPlaceholder && availablePlayerIds.has(selection.playerId)) return selection;
+
+    const publishedPlayer = orderedPlayers[selection.slotIndex];
+    if (!publishedPlayer) {
+      throw new SportsRuSquadImportError(
+        "STORED_SPORTS_SQUAD_INVALID",
+        `Sports.ru player slot ${selection.slotIndex} is missing from the stored provider payload.`
+      );
+    }
+    const purchasePrice = selection.purchasePrice ?? publishedPlayer.price;
+    const placeholder = existingPlaceholder ?? sportsRuProviderPlaceholder(publishedPlayer, purchasePrice);
+    usedPlaceholders.set(placeholder.playerId, placeholder);
+    return {
+      ...selection,
+      playerId: placeholder.playerId,
+      purchasePrice: placeholder.price
+    };
+  });
+
+  return {
+    ...input.preview,
+    selections,
+    unmapped: [...usedPlaceholders.values()]
   };
 }
 
@@ -187,6 +211,54 @@ function sportsRuRoleOrder(role: string | null) {
   if (role === "MIDFIELDER") return 2;
   if (role === "FORWARD") return 3;
   return 4;
+}
+
+function orderedSportsRuPublishedPlayers(players: SportsRuPublishedSquadPlayer[]) {
+  return [...players].sort((left, right) => {
+    if (left.isStarter !== right.isStarter) return left.isStarter ? -1 : 1;
+    if (left.isStarter) return sportsRuRoleOrder(left.role) - sportsRuRoleOrder(right.role);
+    const leftGoalkeeper = left.role === "GOALKEEPER";
+    const rightGoalkeeper = right.role === "GOALKEEPER";
+    if (leftGoalkeeper !== rightGoalkeeper) return leftGoalkeeper ? 1 : -1;
+    return (left.substitutePriority ?? 99) - (right.substitutePriority ?? 99);
+  });
+}
+
+function sportsRuProviderPlaceholder(
+  player: SportsRuPublishedSquadPlayer,
+  purchasePrice: number | null,
+  priceRow?: {
+    teamId: bigint | null;
+    playerName: string;
+    teamName: string;
+    sportsTeamName: string | null;
+    position: string | null;
+  }
+): FantasyProviderPlaceholder {
+  if (purchasePrice === null || !Number.isFinite(purchasePrice) || purchasePrice < 0) {
+    throw new SportsRuSquadImportError(
+      "SPORTS_PLAYER_PRICE_MISSING",
+      `Sports.ru did not return a valid price for ${player.name}.`
+    );
+  }
+  const position = player.role ?? priceRow?.position ?? "";
+  if (normalizeFantasyPosition(position) === "UNK") {
+    throw new SportsRuSquadImportError(
+      "SPORTS_PLAYER_POSITION_MISSING",
+      `Sports.ru did not return a valid fantasy position for ${player.name}.`
+    );
+  }
+  const teamName = player.teamName ?? priceRow?.sportsTeamName ?? priceRow?.teamName ?? "Sports.ru team";
+  return {
+    playerId: fantasyProviderPlaceholderPlayerId("SPORTS_RU", player.providerPlayerId),
+    provider: "SPORTS_RU",
+    providerPlayerId: player.providerPlayerId,
+    name: player.name || priceRow?.playerName || `Sports.ru player ${player.providerPlayerId}`,
+    teamId: priceRow?.teamId ? String(priceRow.teamId) : sportsRuPlaceholderTeamId(teamName),
+    teamName,
+    position,
+    price: purchasePrice
+  };
 }
 
 function sportsRuPlaceholderTeamId(teamName: string) {

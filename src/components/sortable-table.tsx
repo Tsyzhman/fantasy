@@ -4,12 +4,14 @@ import { useEffect, useRef, type KeyboardEvent, type MouseEvent, type TableHTMLA
 
 import { localizedText, useLanguage } from "@/components/localized-option";
 
-type SortDirection = "asc" | "desc";
+export type SortDirection = "asc" | "desc";
 
 type SortableTableProps = TableHTMLAttributes<HTMLTableElement> & {
   serverSortParam?: string;
   defaultSort?: string;
   sortRefreshKey?: string | number;
+  managedClientSort?: boolean;
+  clientSort?: { key: string; direction: SortDirection } | null;
   onClientSortChange?: (sort: { key: string; direction: SortDirection }) => void;
 };
 
@@ -19,7 +21,7 @@ type ComparableValue =
   | { kind: "date"; number: number; text: string }
   | { kind: "text"; text: string };
 
-export function SortableTable({ className, serverSortParam, defaultSort, sortRefreshKey, onClientSortChange, children, ...props }: SortableTableProps) {
+export function SortableTable({ className, serverSortParam, defaultSort, sortRefreshKey, managedClientSort = false, clientSort, onClientSortChange, children, ...props }: SortableTableProps) {
   const language = useLanguage();
   const tableRef = useRef<HTMLTableElement>(null);
 
@@ -28,6 +30,10 @@ export function SortableTable({ className, serverSortParam, defaultSort, sortRef
     if (!table) return;
 
     initializeHeaders(table, language);
+    if (managedClientSort) {
+      syncManagedClientSortHeaders(table, clientSort ?? null);
+      return;
+    }
     if (serverSortParam) {
       syncServerSortHeaders(table, serverSortParam, defaultSort);
       return;
@@ -38,17 +44,17 @@ export function SortableTable({ className, serverSortParam, defaultSort, sortRef
     );
     const direction = activeHeader ? readSortDirection(activeHeader.dataset.sortDirection) : null;
     if (activeHeader && direction) sortTableBody(table, activeHeader, direction);
-  }, [serverSortParam, defaultSort, children, language]);
+  }, [clientSort, serverSortParam, defaultSort, children, language, managedClientSort]);
 
   useEffect(() => {
     const table = tableRef.current;
-    if (!table || sortRefreshKey === undefined) return;
+    if (!table || sortRefreshKey === undefined || managedClientSort) return;
     const activeHeader = Array.from(table.tHead?.querySelectorAll("th[data-sort-direction]") ?? []).find(
       (header): header is HTMLTableCellElement => header instanceof HTMLTableCellElement
     );
     const direction = activeHeader ? readSortDirection(activeHeader.dataset.sortDirection) : null;
     if (activeHeader && direction) sortTableBody(table, activeHeader, direction);
-  }, [sortRefreshKey]);
+  }, [managedClientSort, sortRefreshKey]);
 
   function sortFromEvent(target: EventTarget | null) {
     const table = tableRef.current;
@@ -64,14 +70,24 @@ export function SortableTable({ className, serverSortParam, defaultSort, sortRef
       return;
     }
 
+    if (managedClientSort) {
+      const key = header.dataset.sortKey ?? header.textContent?.trim() ?? "";
+      const currentDirection = clientSort?.key === key ? clientSort.direction : null;
+      const direction = currentDirection
+        ? reverseDirection(currentDirection)
+        : defaultDirectionForColumn(table, header.cellIndex, header);
+      markActiveHeader(table, header, direction);
+      notifyClientSort(table, onClientSortChange, { key, direction });
+      return;
+    }
+
     sortTableBody(table, header);
     const direction = readSortDirection(header.dataset.sortDirection);
     if (direction) {
-      onClientSortChange?.({ key: header.dataset.sortKey ?? header.textContent?.trim() ?? "", direction });
-      table.dispatchEvent(new CustomEvent("sortable-table:sort-change", {
-        bubbles: true,
-        detail: { key: header.dataset.sortKey ?? header.textContent?.trim() ?? "", direction }
-      }));
+      notifyClientSort(table, onClientSortChange, {
+        key: header.dataset.sortKey ?? header.textContent?.trim() ?? "",
+        direction
+      });
     }
   }
 
@@ -97,6 +113,18 @@ export function SortableTable({ className, serverSortParam, defaultSort, sortRef
       {children}
     </table>
   );
+}
+
+function notifyClientSort(
+  table: HTMLTableElement,
+  onClientSortChange: SortableTableProps["onClientSortChange"],
+  sort: { key: string; direction: SortDirection }
+) {
+  onClientSortChange?.(sort);
+  table.dispatchEvent(new CustomEvent("sortable-table:sort-change", {
+    bubbles: true,
+    detail: sort
+  }));
 }
 
 function initializeHeaders(table: HTMLTableElement, language: "en" | "ru") {
@@ -184,6 +212,23 @@ function syncServerSortHeaders(table: HTMLTableElement, sortParam: string, defau
   if (!(header instanceof HTMLTableCellElement)) return;
 
   markActiveHeader(table, header, current.direction ?? defaultDirectionForColumn(table, header.cellIndex, header));
+}
+
+function syncManagedClientSortHeaders(
+  table: HTMLTableElement,
+  sort: { key: string; direction: SortDirection } | null
+) {
+  if (!sort) {
+    for (const header of Array.from(table.tHead?.querySelectorAll("th") ?? [])) {
+      header.removeAttribute("data-sort-direction");
+      header.setAttribute("aria-sort", "none");
+    }
+    return;
+  }
+  const header = Array.from(table.tHead?.querySelectorAll("th[data-sort-key]") ?? []).find(
+    (candidate) => candidate instanceof HTMLTableCellElement && candidate.dataset.sortKey === sort.key
+  );
+  if (header instanceof HTMLTableCellElement) markActiveHeader(table, header, sort.direction);
 }
 
 function markActiveHeader(table: HTMLTableElement, activeHeader: HTMLTableCellElement, direction: SortDirection) {

@@ -83,7 +83,8 @@ export const POST = withApiHandler(async (request: Request) => {
       userId: auth.user.id,
       leagueId,
       season,
-      expectedSquadSize: plannerData.rules.squadSize
+      expectedSquadSize: plannerData.rules.squadSize,
+      availablePlayerIds: plannerData.players.map((player) => player.playerId)
     });
   } catch (error) {
     if (error instanceof SportsRuSquadImportError) {

@@ -9,6 +9,7 @@ import type { SportsRuFantasySyncScope } from "./sports_ru_fantasy_config";
 import {
   mapSportsRuPublishedSquad,
   readSportsRuSeasonId,
+  reconcileSportsRuSquadAvailability,
   SportsRuSquadImportError,
   type SportsRuSquadImportPreview
 } from "./sports_ru_squad_import";
@@ -533,6 +534,7 @@ export async function loadStoredSportsRuSquadImportPreview(
     leagueId: bigint;
     season: string;
     expectedSquadSize: number;
+    availablePlayerIds?: readonly string[];
   }
 ): Promise<SportsRuSquadImportPreview> {
   const profile = await prisma.userExternalProfile.findUnique({
@@ -569,7 +571,7 @@ export async function loadStoredSportsRuSquadImportPreview(
       `The stored Sports.ru squad contains ${selections.length}/${input.expectedSquadSize} mapped players.`
     );
   }
-  return {
+  const preview: SportsRuSquadImportPreview = {
     profileId: profile.providerUserId,
     providerSquadId: snapshot.providerSquadId ?? "",
     squadName: snapshot.squadName ?? "Sports.ru squad",
@@ -579,6 +581,10 @@ export async function loadStoredSportsRuSquadImportPreview(
     selections,
     unmapped: parseStoredUnmappedPlayers(snapshot.unmappedPlayers)
   };
+  const published = parseStoredPublishedSquad(snapshot.providerPayload);
+  return input.availablePlayerIds && published
+    ? reconcileSportsRuSquadAvailability({ preview, published, availablePlayerIds: input.availablePlayerIds })
+    : preview;
 }
 
 export async function loadSportsRuSquadSnapshotStatus(

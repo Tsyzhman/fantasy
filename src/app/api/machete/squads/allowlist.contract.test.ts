@@ -5,6 +5,7 @@ import test from "node:test";
 const squadsRouteSource = normalizedSource(new URL("./route.ts", import.meta.url));
 const exportRouteSource = normalizedSource(new URL("./export/route.ts", import.meta.url));
 const formulaAdaptationsRouteSource = normalizedSource(new URL("./formula-adaptations/route.ts", import.meta.url));
+const projectionDetailsRouteSource = normalizedSource(new URL("./projection-details/route.ts", import.meta.url));
 
 test("squad GET rejects non-allowlisted league seasons before loading the player pool", () => {
   const source = handlerSource(squadsRouteSource, "GET", "POST");
@@ -46,6 +47,17 @@ test("formula-adaptation details reject non-allowlisted league seasons before lo
     "const leagueSeason = await prisma.leagueSeason.findUnique",
     "!isFantasySquadLeague({ providerLeagueId: String(leagueSeason.leagueId) })",
     "loadFantasySquadFormulaAdaptationBreakdowns"
+  );
+  assertNotFoundWithoutLeagueDisclosure(source);
+});
+
+test("projection details reject non-allowlisted league seasons before loading the cached pool", () => {
+  const source = handlerSource(projectionDetailsRouteSource, "GET");
+  assertGuardBeforeDownstreamLoad(
+    source,
+    "const leagueSeason = await prisma.leagueSeason.findUnique",
+    "!isFantasySquadLeague({ providerLeagueId: String(leagueSeason.leagueId) })",
+    "loadCachedFantasySquadPlayerPool"
   );
   assertNotFoundWithoutLeagueDisclosure(source);
 });

@@ -629,7 +629,12 @@ function readMetric(rawMetrics: Record<string, unknown>, metricKey: string) {
 }
 
 function readOptionalMetric(rawMetrics: Record<string, unknown>, metricKey: string) {
-  const aliases = metricKey.split("|").map((key) => key.trim()).filter(Boolean);
+  if (!metricKey.includes("|")) {
+    const value = rawMetrics[metricKey];
+    return value === null || value === undefined || value === "" ? null : numericMetric(value);
+  }
+
+  const aliases = metricAliases(metricKey);
 
   for (const alias of aliases) {
     const value = rawMetrics[alias];
@@ -640,6 +645,22 @@ function readOptionalMetric(rawMetrics: Record<string, unknown>, metricKey: stri
   }
 
   return null;
+}
+
+const metricAliasCache = new Map<string, readonly string[]>();
+const maximumMetricAliasCacheEntries = 128;
+
+function metricAliases(metricKey: string) {
+  const cached = metricAliasCache.get(metricKey);
+  if (cached) return cached;
+
+  const aliases = metricKey.split("|").map((key) => key.trim()).filter(Boolean);
+  metricAliasCache.set(metricKey, aliases);
+  if (metricAliasCache.size > maximumMetricAliasCacheEntries) {
+    const oldestKey = metricAliasCache.keys().next().value;
+    if (oldestKey !== undefined) metricAliasCache.delete(oldestKey);
+  }
+  return aliases;
 }
 
 function numericMetric(value: unknown) {

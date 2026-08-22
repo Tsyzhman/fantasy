@@ -49,3 +49,42 @@ test("expiring promise cache enforces a bounded entry count", async () => {
   }, 1);
   assert.equal(reloaded, true);
 });
+
+test("expiring promise cache evicts the least recently used value by byte budget", async () => {
+  const cache = new ExpiringPromiseCache<string, string>({
+    maxEntries: 10,
+    maxBytes: 6,
+    estimateBytes: (value) => value.length
+  });
+  await cache.getOrCreate("one", 1_000, async () => "111", 0);
+  await cache.getOrCreate("two", 1_000, async () => "22", 0);
+  await cache.getOrCreate("one", 1_000, async () => "unused", 1);
+  await cache.getOrCreate("three", 1_000, async () => "33", 1);
+
+  let twoReloaded = false;
+  await cache.getOrCreate("two", 1_000, async () => {
+    twoReloaded = true;
+    return "2";
+  }, 2);
+
+  assert.equal(twoReloaded, true);
+  assert.ok(cache.bytes <= 6);
+  assert.equal(cache.getMetrics(2).evictions, 1);
+});
+
+test("expiring promise cache reports hit, miss, build, byte and entry metrics", async () => {
+  const cache = new ExpiringPromiseCache<string, string>({
+    maxBytes: 100,
+    estimateBytes: (value) => value.length
+  });
+  await cache.getOrCreate("league", 1_000, async () => "value", 0);
+  await cache.getOrCreate("league", 1_000, async () => "unused", 1);
+
+  const metrics = cache.getMetrics(1);
+  assert.equal(metrics.hits, 1);
+  assert.equal(metrics.misses, 1);
+  assert.equal(metrics.builds, 1);
+  assert.equal(metrics.bytes, 5);
+  assert.equal(metrics.entries, 1);
+  assert.ok(metrics.buildMs >= 0);
+});

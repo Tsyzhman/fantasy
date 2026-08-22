@@ -21,7 +21,8 @@ import {
   type FantasyActiveChip
 } from "@/components/machete/fantasy-squad-ui";
 import { FormulaAdaptationHoverCard } from "@/components/machete/FormulaAdaptationHoverCard";
-import { SortableTable } from "@/components/sortable-table";
+import { ProjectionFormulaHoverCard } from "@/components/machete/ProjectionFormulaHoverCard";
+import { SortableTable, type SortDirection } from "@/components/sortable-table";
 import { FdrRow } from "@/components/ui/fdr-pill";
 import { SegmentedControl, type SegmentedOption } from "@/components/ui/segmented-control";
 import { compactPriceHeaderThreshold, responsivePriceHeaderLabel } from "@/components/machete/responsive-price-label";
@@ -285,10 +286,8 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
   const [transferSuggestionForecastSource, setTransferSuggestionForecastSource] = useState<TransferSuggestionForecastSource>("FO");
   const [tableHorizon, setTableHorizon] = useState<3 | 5>(5);
   const [exportColumnKeys, setExportColumnKeys] = useState(initialVisiblePlayerPoolColumns);
-  const playerNameQueryRef = useRef("");
-  const playerPoolMaskRootRef = useRef<HTMLDivElement>(null);
-  const [presetNameQuery, setPresetNameQuery] = useState("");
-  const [presetNameQueryRevision, setPresetNameQueryRevision] = useState(0);
+  const [playerNameQuery, setPlayerNameQuery] = useState("");
+  const deferredPlayerNameQuery = useDeferredValue(playerNameQuery);
   const [teamFilter, setTeamFilter] = useState("ALL");
   const [positionFilter, setPositionFilter] = useState("ALL");
   const [minimumPrice, setMinimumPrice] = useState<number | null>(null);
@@ -494,7 +493,10 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
     if (!onlyAffordable || fitCalculation?.evaluator !== fantasyFitEvaluator) return baseMatchingPlayers;
     return baseMatchingPlayers.filter((player) => selectionsByPlayerId.has(player.playerId) || fitCalculation.eligiblePlayerIds.has(player.playerId));
   }, [baseMatchingPlayers, fantasyFitEvaluator, fitCalculation, onlyAffordable, selectionsByPlayerId]);
-  const filteredPlayers = matchingPlayers;
+  const filteredPlayers = useMemo(
+    () => filterPlayerPoolByNameQuery(matchingPlayers, deferredPlayerNameQuery),
+    [deferredPlayerNameQuery, matchingPlayers]
+  );
 
   useEffect(() => {
     void recordBetaMilestone("PLANNER_OPENED");
@@ -636,7 +638,7 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
   function currentFilterPresetValue(): SquadFilterPresetFilters {
     return {
       version: 1,
-      query: playerNameQueryRef.current,
+      query: playerNameQuery,
       teamName: teamFilter === "ALL" ? null : teamFilterOptions.find((team) => team.id === teamFilter)?.name ?? null,
       position: positionFilter as SquadFilterPresetFilters["position"],
       minimumPrice,
@@ -653,9 +655,7 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
     const matchingTeam = filters.teamName
       ? teamFilterOptions.find((team) => team.name.localeCompare(filters.teamName!, undefined, { sensitivity: "base" }) === 0)
       : null;
-    playerNameQueryRef.current = filters.query;
-    setPresetNameQuery(filters.query);
-    setPresetNameQueryRevision((current) => current + 1);
+    setPlayerNameQuery(filters.query);
     setTeamFilter(matchingTeam?.id ?? "ALL");
     setPositionFilter(filters.position);
     setMinimumPrice(filters.minimumPrice);
@@ -2165,7 +2165,7 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
                 <button
                   type="button"
                   onClick={() => {
-                    const exportPlayers = filterPlayerPoolByNameQuery(matchingPlayers, playerNameQueryRef.current);
+                    const exportPlayers = filterPlayerPoolByNameQuery(matchingPlayers, playerNameQuery);
                     if (exportPlayers.length === 0) {
                       setMessage(localizedText(language, "No players match the selected filters.", "Нет игроков под выбранные фильтры."));
                       return;
@@ -2200,17 +2200,12 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
                   initialVisibleColumns={initialVisiblePlayerPoolColumns}
                   initialColumnWidths={initialPlayerPoolColumnWidths}
                   onVisibleColumnsChange={setExportColumnKeys}
-                  maskRootRef={playerPoolMaskRootRef}
-                  nameQueryRef={playerNameQueryRef}
                   toolbar={(
                     <>
-                      <PlayerPoolMaskedNameSearch
-                        key={presetNameQueryRevision}
+                      <PlayerPoolNameSearch
                         language={language}
-                        players={matchingPlayers}
-                        presetQuery={presetNameQuery}
-                        queryRef={playerNameQueryRef}
-                        rootRef={playerPoolMaskRootRef}
+                        value={playerNameQuery}
+                        onChange={setPlayerNameQuery}
                       />
                       <select value={teamFilter} onChange={(event) => setTeamFilter(event.target.value)} aria-label={localizedText(language, "Team filter", "Фильтр по команде")} className="min-w-0 rounded border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 [@media(pointer:coarse)]:text-base">
                         <option value="ALL">{localizedText(language, "All teams", "Все команды")}</option>
@@ -2584,65 +2579,17 @@ export function filterPlayerPoolByNameQuery(players: FantasyPlannerPlayer[], que
   return players.filter((player) => player.name.toLowerCase().includes(normalizedQuery));
 }
 
-function applyPlayerPoolNameMask(root: HTMLDivElement | null, query: string) {
-  if (!root) return;
-  const normalizedQuery = normalizedPlayerPoolNameQuery(query);
-  const matchingPlayerIds = new Set<string>();
-  root.querySelectorAll<HTMLElement>("[data-player-search-row]").forEach((row) => {
-    const matches = !normalizedQuery || (row.dataset.playerSearchName ?? "").includes(normalizedQuery);
-    row.hidden = !matches;
-    row.setAttribute("aria-hidden", matches ? "false" : "true");
-    if (matches && row.dataset.playerSearchId) matchingPlayerIds.add(row.dataset.playerSearchId);
-  });
-  root.querySelectorAll<HTMLElement>("[data-player-search-empty]").forEach((emptyState) => {
-    emptyState.hidden = matchingPlayerIds.size > 0;
-  });
-  root.querySelectorAll<HTMLElement>("[data-player-search-count]").forEach((counter) => {
-    counter.textContent = String(matchingPlayerIds.size);
-  });
-}
-
-function PlayerPoolMaskedNameSearch({ language, players, presetQuery, queryRef, rootRef }: {
+function PlayerPoolNameSearch({ language, value, onChange }: {
   language: UiLanguage;
-  players: FantasyPlannerPlayer[];
-  presetQuery: string;
-  queryRef: { current: string };
-  rootRef: RefObject<HTMLDivElement>;
+  value: string;
+  onChange: (value: string) => void;
 }) {
-  const [value, setValue] = useState(presetQuery);
-  const frameRef = useRef<number | null>(null);
-
-  function scheduleMask(query: string) {
-    queryRef.current = query;
-    if (frameRef.current !== null) window.cancelAnimationFrame(frameRef.current);
-    frameRef.current = window.requestAnimationFrame(() => {
-      frameRef.current = null;
-      applyPlayerPoolNameMask(rootRef.current, query);
-    });
-  }
-
-  useEffect(() => {
-    queryRef.current = presetQuery;
-    applyPlayerPoolNameMask(rootRef.current, presetQuery);
-    return () => {
-      if (frameRef.current !== null) window.cancelAnimationFrame(frameRef.current);
-    };
-  }, [presetQuery, queryRef, rootRef]);
-
-  useEffect(() => {
-    applyPlayerPoolNameMask(rootRef.current, queryRef.current);
-  }, [players, rootRef, queryRef]);
-
   return (
     <label className="relative min-w-0">
       <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
       <input
         value={value}
-        onChange={(event) => {
-          const nextValue = event.target.value;
-          setValue(nextValue);
-          scheduleMask(nextValue);
-        }}
+        onChange={(event) => onChange(event.target.value)}
         placeholder={localizedText(language, "Name", "Имя")}
         aria-label={localizedText(language, "Search by player name", "Поиск по имени игрока")}
         className="w-full rounded border border-slate-200 py-2 pl-9 pr-3 text-xs [@media(pointer:coarse)]:text-base"
@@ -2655,18 +2602,17 @@ function CustomizablePlayerPoolTable({
   initialVisibleColumns,
   initialColumnWidths,
   onVisibleColumnsChange,
-  maskRootRef,
-  nameQueryRef,
   toolbar,
   availableColumns,
   ...props
-}: PlayerPoolTableProps & { availableColumns: PlayerPoolOptionalColumn[]; initialVisibleColumns: string[]; initialColumnWidths: Record<string, number>; onVisibleColumnsChange: (columns: string[]) => void; maskRootRef: RefObject<HTMLDivElement>; nameQueryRef: { current: string }; toolbar: ReactNode }) {
+}: PlayerPoolTableProps & { availableColumns: PlayerPoolOptionalColumn[]; initialVisibleColumns: string[]; initialColumnWidths: Record<string, number>; onVisibleColumnsChange: (columns: string[]) => void; toolbar: ReactNode }) {
   const { players, horizon, language } = props;
   const columns = availableColumns;
   const [visibleColumnKeys, setVisibleColumnKeys] = useState(initialVisibleColumns);
   const [columnWidths, setColumnWidths] = useState(initialColumnWidths);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
   const [compactViewport, setCompactViewport] = useState<boolean | null>(null);
+  const [playerSort, setPlayerSort] = useState<{ key: string; direction: SortDirection } | null>(null);
   const preferencesMounted = useRef(false);
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const columnsByKey = useMemo(() => new Map(columns.map((column) => [column.key, column])), [columns]);
@@ -2681,14 +2627,13 @@ function CustomizablePlayerPoolTable({
     + widthFor("position", playerPoolFixedColumnWidths.position)
     + widthFor("price", playerPoolFixedColumnWidths.price)
     + visibleColumns.reduce((total, column) => total + widthFor(column.key, column.width), 0);
+  const sortedPlayers = sortPlayerPoolRows(players, playerSort, horizon);
+  const playerOrderKey = sortedPlayers.map((player) => player.playerId).join(",");
+  const desktopRows = useFixedVirtualRows(sortedPlayers, tableContainerRef, compactViewport === false, 44, 10, playerOrderKey);
 
   useEffect(() => {
     onVisibleColumnsChange(visibleColumnKeys);
   }, [onVisibleColumnsChange, visibleColumnKeys]);
-
-  useEffect(() => {
-    applyPlayerPoolNameMask(maskRootRef.current, nameQueryRef.current);
-  }, [compactViewport, maskRootRef, nameQueryRef, players, visibleColumnKeys]);
 
   useEffect(() => {
     const media = window.matchMedia("(max-width: 767px), (pointer: coarse)");
@@ -2790,7 +2735,7 @@ function CustomizablePlayerPoolTable({
   }
 
   return (
-    <div ref={maskRootRef} className="contents">
+    <div className="contents">
       <div className="mb-3 flex min-w-0 flex-wrap items-start gap-2 xl:flex-nowrap">
         <div className="grid min-w-0 flex-[1_1_34rem] grid-cols-2 gap-2 lg:grid-cols-5">
           {toolbar}
@@ -2847,14 +2792,21 @@ function CustomizablePlayerPoolTable({
         </details>
       </div>
 
-      {compactViewport !== false ? <div className="col-span-full">
-        <PlayerPoolMobileList {...props} />
+      {compactViewport === null ? (
+        <div className="col-span-full h-24 animate-pulse rounded border border-slate-200 bg-slate-50" aria-hidden="true" />
+      ) : null}
+
+      {compactViewport === true ? <div className="col-span-full">
+        <PlayerPoolMobileList {...props} players={sortedPlayers} />
       </div> : null}
 
-      {compactViewport !== true ? <div className="col-span-full hidden min-w-0 max-w-full overflow-hidden rounded border border-slate-200 bg-white md:block [@media(pointer:coarse)]:!hidden" data-testid="player-pool-table">
+      {compactViewport === false ? <div className="col-span-full min-w-0 max-w-full overflow-hidden rounded border border-slate-200 bg-white" data-testid="player-pool-table">
         <div ref={tableContainerRef} className="relative max-h-[720px] w-full max-w-full overflow-auto [scrollbar-gutter:stable]">
           <SortableTable
             sortRefreshKey={`${horizon}:${visibleColumnKeys.join(",")}`}
+            managedClientSort
+            clientSort={playerSort}
+            onClientSortChange={setPlayerSort}
             className="player-pool-sortable table-fixed divide-y divide-slate-200 text-xs"
             style={{ minWidth: `${tableWidth}px`, width: `${tableWidth}px` }}
           >
@@ -2868,25 +2820,27 @@ function CustomizablePlayerPoolTable({
             </colgroup>
             <thead className="sticky top-0 z-10 whitespace-nowrap bg-slate-50 text-left text-[10px] font-semibold uppercase text-slate-500">
               <tr>
-                <th className="sticky left-0 z-20 overflow-hidden border-r border-slate-200 bg-slate-50 px-2 py-2" title={fixedColumnTitles.player} style={{ width: widthFor("player", playerPoolFixedColumnWidths.player) }}><PlayerPoolHeaderLabel label={localizedText(language, "Player", "Игрок")} /><ColumnResizeHandle label={localizedText(language, "player", "игрока")} onPointerDown={(event) => startColumnResize(event, "player", playerPoolFixedColumnWidths.player)} onDoubleClick={() => resetColumnWidth("player")} /></th>
-                <th className="relative overflow-hidden px-2 py-2" title={fixedColumnTitles.team} style={{ width: widthFor("team", playerPoolFixedColumnWidths.team) }}><PlayerPoolHeaderLabel label={localizedText(language, "Team", "Клуб")} /><ColumnResizeHandle label={localizedText(language, "team", "клуба")} onPointerDown={(event) => startColumnResize(event, "team", playerPoolFixedColumnWidths.team)} onDoubleClick={() => resetColumnWidth("team")} /></th>
-                <th className="relative overflow-hidden px-1 py-2" title={fixedColumnTitles.position} style={{ width: widthFor("position", playerPoolFixedColumnWidths.position) }}><PlayerPoolHeaderLabel label={localizedText(language, "Pos", "Поз.")} /><ColumnResizeHandle label={localizedText(language, "position", "позиции")} onPointerDown={(event) => startColumnResize(event, "position", playerPoolFixedColumnWidths.position)} onDoubleClick={() => resetColumnWidth("position")} /></th>
-                <th data-column-key="price" aria-label={localizedText(language, "Price", "Цена")} className="relative overflow-hidden px-1 py-2 text-right" title={fixedColumnTitles.price} style={{ width: widthFor("price", playerPoolFixedColumnWidths.price) }}><PlayerPoolHeaderLabel label={responsivePriceHeaderLabel(widthFor("price", playerPoolFixedColumnWidths.price), language)} numeric priceLabel fullLabel={localizedText(language, "Price", "Цена")} /><ColumnResizeHandle label={localizedText(language, "price", "цены")} onPointerDown={(event) => startColumnResize(event, "price", playerPoolFixedColumnWidths.price)} onDoubleClick={() => resetColumnWidth("price")} /></th>
+                <th data-sort-key="player" data-sort-default-direction="asc" className="sticky left-0 z-20 overflow-hidden border-r border-slate-200 bg-slate-50 px-2 py-2" title={fixedColumnTitles.player} style={{ width: widthFor("player", playerPoolFixedColumnWidths.player) }}><PlayerPoolHeaderLabel label={localizedText(language, "Player", "Игрок")} /><ColumnResizeHandle label={localizedText(language, "player", "игрока")} onPointerDown={(event) => startColumnResize(event, "player", playerPoolFixedColumnWidths.player)} onDoubleClick={() => resetColumnWidth("player")} /></th>
+                <th data-sort-key="team" data-sort-default-direction="asc" className="relative overflow-hidden px-2 py-2" title={fixedColumnTitles.team} style={{ width: widthFor("team", playerPoolFixedColumnWidths.team) }}><PlayerPoolHeaderLabel label={localizedText(language, "Team", "Клуб")} /><ColumnResizeHandle label={localizedText(language, "team", "клуба")} onPointerDown={(event) => startColumnResize(event, "team", playerPoolFixedColumnWidths.team)} onDoubleClick={() => resetColumnWidth("team")} /></th>
+                <th data-sort-key="position" data-sort-default-direction="asc" className="relative overflow-hidden px-1 py-2" title={fixedColumnTitles.position} style={{ width: widthFor("position", playerPoolFixedColumnWidths.position) }}><PlayerPoolHeaderLabel label={localizedText(language, "Pos", "Поз.")} /><ColumnResizeHandle label={localizedText(language, "position", "позиции")} onPointerDown={(event) => startColumnResize(event, "position", playerPoolFixedColumnWidths.position)} onDoubleClick={() => resetColumnWidth("position")} /></th>
+                <th data-sort-key="price" data-sort-default-direction="desc" data-column-key="price" aria-label={localizedText(language, "Price", "Цена")} className="relative overflow-hidden px-1 py-2 text-right" title={fixedColumnTitles.price} style={{ width: widthFor("price", playerPoolFixedColumnWidths.price) }}><PlayerPoolHeaderLabel label={responsivePriceHeaderLabel(widthFor("price", playerPoolFixedColumnWidths.price), language)} numeric priceLabel fullLabel={localizedText(language, "Price", "Цена")} /><ColumnResizeHandle label={localizedText(language, "price", "цены")} onPointerDown={(event) => startColumnResize(event, "price", playerPoolFixedColumnWidths.price)} onDoubleClick={() => resetColumnWidth("price")} /></th>
                 <th data-sort-disabled="true" className="relative overflow-hidden px-1 py-2 text-center" style={{ width: widthFor("action", playerPoolFixedColumnWidths.action) }} title={localizedText(language, "Add the player to the squad or remove a selected player. Disabled means a budget, position, or club limit would be exceeded.", "Добавить игрока в состав или убрать выбранного. Неактивная кнопка означает превышение бюджета, лимита позиции или клуба.")}><span aria-hidden="true">+</span><span className="sr-only"><I18nText en="Add or remove" ru="Добавить или убрать" /></span><ColumnResizeHandle label={localizedText(language, "squad action", "кнопки состава")} onPointerDown={(event) => startColumnResize(event, "action", playerPoolFixedColumnWidths.action)} onDoubleClick={() => resetColumnWidth("action")} /></th>
                 {visibleColumns.map((column) => (
-                  <th key={column.key} data-sort-disabled={column.key === "fixtures" ? "true" : undefined} className={cn("relative overflow-hidden px-1 py-2", column.numeric && "text-center")} title={column.title} style={{ width: widthFor(column.key, column.width) }}><PlayerPoolHeaderLabel label={column.label} numeric={column.numeric} /><ColumnResizeHandle label={column.label} onPointerDown={(event) => startColumnResize(event, column.key, column.width)} onDoubleClick={() => resetColumnWidth(column.key)} /></th>
+                  <th key={column.key} data-sort-key={column.key} data-sort-default-direction={column.numeric ? "desc" : "asc"} data-sort-disabled={column.key === "fixtures" ? "true" : undefined} className={cn("relative overflow-hidden px-1 py-2", column.numeric && "text-center")} title={column.title} style={{ width: widthFor(column.key, column.width) }}><PlayerPoolHeaderLabel label={column.label} numeric={column.numeric} /><ColumnResizeHandle label={column.label} onPointerDown={(event) => startColumnResize(event, column.key, column.width)} onDoubleClick={() => resetColumnWidth(column.key)} /></th>
                 ))}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {players.map((player) => <CustomPlayerPoolRow key={player.playerId} player={player} columns={visibleColumns} {...props} />)}
-              <tr data-player-search-empty hidden={players.length > 0}><td colSpan={5 + visibleColumns.length} className="px-4 py-10 text-center text-sm text-slate-500"><I18nText en="No players match the selected filters." ru="Нет игроков под выбранные фильтры." /></td></tr>
+              {desktopRows.paddingBefore > 0 ? <tr aria-hidden="true"><td colSpan={5 + visibleColumns.length} className="p-0" style={{ height: desktopRows.paddingBefore }} /></tr> : null}
+              {desktopRows.items.map(({ item: player }) => <CustomPlayerPoolRow key={player.playerId} player={player} columns={visibleColumns} {...props} />)}
+              {desktopRows.paddingAfter > 0 ? <tr aria-hidden="true"><td colSpan={5 + visibleColumns.length} className="p-0" style={{ height: desktopRows.paddingAfter }} /></tr> : null}
+              {players.length === 0 ? <tr><td colSpan={5 + visibleColumns.length} className="px-4 py-10 text-center text-sm text-slate-500"><I18nText en="No players match the selected filters." ru="Нет игроков под выбранные фильтры." /></td></tr> : null}
             </tbody>
           </SortableTable>
         </div>
       </div> : null}
       <div className="col-span-full mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
-        <span><span data-player-search-count>{players.length}</span> {localizedText(language, "players", "игроков")}</span>
+        <span>{players.length} {localizedText(language, "players", "игроков")}</span>
       </div>
     </div>
   );
@@ -2964,10 +2918,7 @@ function CustomPlayerPoolRow({ player, columns, horizon, language, provider, for
 
   return (
     <tr
-      data-player-search-row
-      data-player-search-id={player.playerId}
-      data-player-search-name={player.name.toLowerCase()}
-      className={cn("group", isSelected ? "bg-emerald-50 text-slate-700" : disabled ? "bg-slate-50 text-slate-500" : "hover:bg-slate-50")}
+      className={cn("group h-11", isSelected ? "bg-emerald-50 text-slate-700" : disabled ? "bg-slate-50 text-slate-500" : "hover:bg-slate-50")}
     >
       <td className={cn("sticky left-0 z-[5] overflow-hidden border-r border-slate-200 px-2 py-1.5", isSelected ? "bg-emerald-50" : disabled ? "bg-slate-50" : "bg-white group-hover:bg-slate-50")} title={`${player.name}\n${fixedColumnTitles.player}\n${localizedText(language, `Forecast inputs: ${player.expectedMinutes == null ? "—" : `${formatNumber(player.expectedMinutes, 0)} min`}; confidence ${player.forecastConfidence == null ? "—" : `${formatNumber(player.forecastConfidence * 100, 0)}%`}.`, `Входы прогноза: ${player.expectedMinutes == null ? "—" : `${formatNumber(player.expectedMinutes, 0)} мин`}; уверенность ${player.forecastConfidence == null ? "—" : `${formatNumber(player.forecastConfidence * 100, 0)}%`}.`)}`}>
         <span className={cn("block truncate font-semibold", muted ? "text-slate-500" : "text-ink")}>{compactPlayerDisplayName(player.name)}</span>
@@ -3117,8 +3068,11 @@ function customPlayerPoolCell(
             : "text-slate-700";
   const cellTitle = playerPoolValueCellTitle(column, player, horizon, language, rawValue);
   const formulaAdaptationKey = formulaAdaptationForecastKey(column.key);
+  const projectionKind: "primary" | "alternative" | null = column.key === "nextFp"
+    ? "primary"
+    : column.key === "alternative" ? "alternative" : null;
   return (
-    <td key={column.key} data-sort-value={rawValue ?? ""} className={cn("overflow-hidden text-ellipsis whitespace-nowrap px-1 py-1.5", column.numeric && "text-center num-tabular", muted ? "text-slate-500" : tone)} title={formulaAdaptationKey ? undefined : cellTitle}>
+    <td key={column.key} data-sort-value={rawValue ?? ""} className={cn("overflow-hidden text-ellipsis whitespace-nowrap px-1 py-1.5", column.numeric && "text-center num-tabular", muted ? "text-slate-500" : tone)} title={formulaAdaptationKey || projectionKind ? undefined : cellTitle}>
       {formulaAdaptationKey ? (
         <FormulaAdaptationHoverCard
           playerId={player.playerId}
@@ -3132,6 +3086,18 @@ function customPlayerPoolCell(
         >
           {display}
         </FormulaAdaptationHoverCard>
+      ) : projectionKind ? (
+        <ProjectionFormulaHoverCard
+          playerId={player.playerId}
+          playerName={player.name}
+          kind={projectionKind}
+          sourceHref={formulaAdaptationSourceHref}
+          provider={provider}
+          language={language}
+          detailed={detailedFormulaTooltips}
+        >
+          {display}
+        </ProjectionFormulaHoverCard>
       ) : display}
     </td>
   );
@@ -3318,8 +3284,85 @@ function playerPoolFilterValue(key: string, player: FantasyPlannerPlayer, horizo
   return customPlayerPoolColumnValue(key, player, horizon);
 }
 
+export function sortPlayerPoolRows(
+  players: FantasyPlannerPlayer[],
+  sort: { key: string; direction: SortDirection } | null,
+  horizon: number
+) {
+  if (!sort) return players;
+  return players
+    .map((player, index) => ({ player, index, value: playerPoolFilterValue(sort.key, player, horizon) }))
+    .sort((left, right) => {
+      const compared = comparePlayerPoolValues(left.value, right.value, sort.direction);
+      return compared || left.index - right.index;
+    })
+    .map(({ player }) => player);
+}
+
+function comparePlayerPoolValues(
+  left: string | number | null,
+  right: string | number | null,
+  direction: SortDirection
+) {
+  if (left === null && right === null) return 0;
+  if (left === null) return 1;
+  if (right === null) return -1;
+  const result = typeof left === "number" && typeof right === "number"
+    ? left - right
+    : String(left).localeCompare(String(right), undefined, { numeric: true, sensitivity: "base" });
+  return direction === "asc" ? result : -result;
+}
+
+function useFixedVirtualRows<T>(
+  items: T[],
+  containerRef: { current: HTMLDivElement | null },
+  enabled: boolean,
+  rowHeight: number,
+  overscan: number,
+  resetKey: string
+) {
+  const [range, setRange] = useState({ start: 0, end: 0 });
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!enabled || !container) return;
+    const update = () => {
+      const start = Math.max(0, Math.floor(container.scrollTop / rowHeight) - overscan);
+      const visibleRows = Math.ceil(Math.max(container.clientHeight, rowHeight) / rowHeight);
+      const end = Math.min(items.length, start + visibleRows + overscan * 2);
+      setRange((current) => current.start === start && current.end === end ? current : { start, end });
+    };
+    update();
+    container.addEventListener("scroll", update, { passive: true });
+    const resizeObserver = new ResizeObserver(update);
+    resizeObserver.observe(container);
+    return () => {
+      container.removeEventListener("scroll", update);
+      resizeObserver.disconnect();
+    };
+  }, [containerRef, enabled, items.length, overscan, rowHeight]);
+
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!enabled || !container) return;
+    container.scrollTop = 0;
+    const visibleRows = Math.ceil(Math.max(container.clientHeight, rowHeight) / rowHeight);
+    setRange({ start: 0, end: Math.min(items.length, visibleRows + overscan * 2) });
+  }, [containerRef, enabled, items.length, overscan, resetKey, rowHeight]);
+
+  if (!enabled) return { items: [] as Array<{ item: T; index: number }>, paddingBefore: 0, paddingAfter: 0 };
+  const start = Math.min(range.start, items.length);
+  const fallbackEnd = Math.min(items.length, Math.ceil(720 / rowHeight) + overscan * 2);
+  const end = Math.max(start, Math.min(range.end || fallbackEnd, items.length));
+  return {
+    items: items.slice(start, end).map((item, offset) => ({ item, index: start + offset })),
+    paddingBefore: start * rowHeight,
+    paddingAfter: Math.max(0, (items.length - end) * rowHeight)
+  };
+}
+
 function customPlayerPoolColumnValue(key: string, player: FantasyPlannerPlayer, horizon: number): string | number | null {
-  const projected = player.projectedFixtureComponents;
+  const projected = player.projectedFixtureComponents ?? player.projectionListMetrics;
   if (key.startsWith("stat:")) return player.historicalStats?.[key.slice(5)] ?? null;
   switch (key) {
     case "nextFp": return nextFantasyPoints(player);
@@ -3637,9 +3680,20 @@ function PlayerPoolMobileList({
   onAdd: (player: FantasyPlannerPlayer) => void;
   onRemove: (playerId: string) => void;
 }) {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const rowHeight = 208;
+  const virtualRows = useFixedVirtualRows(
+    players,
+    containerRef,
+    true,
+    rowHeight,
+    4,
+    players.map((player) => player.playerId).join(",")
+  );
   return (
-    <div className="space-y-2 md:hidden [@media(pointer:coarse)]:!block" data-testid="player-pool-mobile">
-      {players.map((player) => {
+    <div ref={containerRef} className="relative max-h-[720px] overflow-y-auto [scrollbar-gutter:stable]" data-testid="player-pool-mobile">
+      <div className="relative" style={{ height: players.length * rowHeight }}>
+      {virtualRows.items.map(({ item: player, index }) => {
         const reason = addBlockReason(player);
         const isSelected = selectionsByPlayerId.has(player.playerId);
         const disabled = !isSelected && reason !== null;
@@ -3653,17 +3707,15 @@ function PlayerPoolMobileList({
         return (
           <article
             key={player.playerId}
-            data-player-search-row
-            data-player-search-id={player.playerId}
-            data-player-search-name={player.name.toLowerCase()}
             className={cn(
-              "rounded border p-3",
+              "absolute inset-x-0 overflow-hidden rounded border p-3",
               isSelected
                 ? "border-emerald-200 bg-emerald-50"
                 : disabled
                   ? "border-slate-200 bg-slate-50 text-slate-500"
                   : "border-slate-200 bg-white"
             )}
+            style={{ top: index * rowHeight, height: rowHeight - 8 }}
           >
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -3737,9 +3789,10 @@ function PlayerPoolMobileList({
           </article>
         );
       })}
-      <p data-player-search-empty hidden={players.length > 0} className="rounded border border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
+      </div>
+      {players.length === 0 ? <p className="rounded border border-slate-200 bg-slate-50 px-4 py-8 text-center text-sm text-slate-500">
         <I18nText en="No players match the selected filters." ru="Нет игроков под выбранные фильтры." />
-      </p>
+      </p> : null}
     </div>
   );
 }

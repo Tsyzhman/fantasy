@@ -4,7 +4,7 @@ import test from "node:test";
 import type { PrismaClient } from "@prisma/client";
 
 import type { ActiveScoringModel } from "@/lib/scoring";
-import { applySharedRosterOverrides, calculateFriendWindowMetrics, loadSharedLeagueOptions, loadSharedLeagueSeason, loadSharedLeagueTeams, loadSharedMachetePlayerRows, loadSharedMatchWindowSummary, loadSharedTeamMatchIds } from "./shared_read_model";
+import { applySharedRosterOverrides, calculateFriendWindowMetrics, createSharedMacheteReadContext, loadSharedLeagueOptions, loadSharedLeagueSeason, loadSharedLeagueTeams, loadSharedMachetePlayerRows, loadSharedMatchWindowSummary, loadSharedTeamMatchIds } from "./shared_read_model";
 
 const scoringModel: ActiveScoringModel = {
   modelSource: "MACHETE",
@@ -437,8 +437,8 @@ test("combined player rows aggregate all selected team scope matches even when r
   assert.equal(rows.length, 1);
   assert.equal(rows[0].matchesPlayed, 3);
   assert.equal(rows[0].minutesPlayed, 225);
-  assert.equal(coreMatchCalls.length, 2);
-  assert.equal(coreMatchCalls.every((call) => (call as { where?: { season?: string } }).where?.season === undefined), true);
+  assert.equal(coreMatchCalls.length, 1);
+  assert.equal((coreMatchCalls[0] as { where?: { season?: string } }).where?.season, undefined);
   const statCall = statCalls[0] as {
     where?: {
       matchId?: { in?: bigint[] };
@@ -515,8 +515,8 @@ test("combined last match window is applied across selected competitions without
   assert.equal(rows.length, 1);
   assert.equal(rows[0].matchesPlayed, 2);
   assert.equal(rows[0].minutesPlayed, 180);
-  assert.equal(coreMatchCalls.filter((call) => (call as { take?: number }).take === undefined).length, 2);
-  assert.equal(coreMatchCalls.filter((call) => (call as { take?: number }).take === 10).length, 2);
+  assert.equal(coreMatchCalls.length, 1);
+  assert.equal((coreMatchCalls[0] as { take?: number }).take, 10);
   assert.equal(coreMatchCalls.every((call) => (call as { where?: { season?: string } }).where?.season === undefined), true);
   assert.equal(coreMatchCalls.every((call) => (call as { where?: { playerStats?: unknown } }).where?.playerStats === undefined), true);
   const statCall = statCalls[0] as { where?: { matchId?: { in?: bigint[] } } };
@@ -990,6 +990,185 @@ test("new transfers use five recent previous-club matches with a ten-percent pen
   assert.equal(rows[0].rawMetrics?.previous_club_penalty_factor, 0.9);
   assert.deepEqual((fallbackMatchQueries.at(-1) as { where: { leagueId: { in: bigint[] } } }).where.leagueId.in, [47n]);
   assert.deepEqual((fallbackStatQueries[0] as { where: { match: { leagueId: { in: bigint[] } } } }).where.match.leagueId.in, [47n]);
+});
+
+test("production club fallback loads only the selected previous club and ten bounded rows", async () => {
+  let rawQueryCount = 0;
+  let broadHistoryQueries = 0;
+  const previousMatches = Array.from({ length: 5 }, (_, index) => ({
+    id: BigInt(501 + index),
+    matchDate: new Date(`2025-05-${String(index + 1).padStart(2, "0")}T16:00:00.000Z`),
+    season: "2024/2025"
+  }));
+  const prisma = {
+    teamPlayerSeason: {
+      async findMany(input: { select?: { seasonTeam?: unknown } }) {
+        if (input.select?.seasonTeam) {
+          return [
+            {
+              playerId: 99n,
+              teamId: 10n,
+              team: { name: "Current FC", country: "England" },
+              seasonTeam: { leagueSeason: { league: { name: "Premier League", country: "England" } } }
+            },
+            {
+              playerId: 99n,
+              teamId: 5n,
+              team: { name: "Previous FC", country: "England" },
+              seasonTeam: { leagueSeason: { league: { name: "Championship", country: "England" } } }
+            }
+          ];
+        }
+        return [rosterRow({
+          leagueId: 47n,
+          season: "2025/2026",
+          teamId: 10n,
+          playerId: 99n,
+          position: null,
+          playerName: "Transferred Player"
+        })];
+      }
+    },
+    coreMatch: {
+      async findMany() {
+        return [];
+      }
+    },
+    matchPlayerStat: {
+      async findMany(input: { include?: { match?: unknown } }) {
+        if (input.include?.match) broadHistoryQueries += 1;
+        return [];
+      }
+    },
+    async $queryRaw() {
+      rawQueryCount += 1;
+      if (rawQueryCount === 1) {
+        return [
+          { playerId: 99n, teamId: 10n, latestMatchDate: new Date("2025-08-10T16:00:00.000Z"), season: "2025/2026" },
+          { playerId: 99n, teamId: 5n, latestMatchDate: previousMatches[4].matchDate, season: "2024/2025" }
+        ];
+      }
+      if (rawQueryCount === 2) {
+        return previousMatches.map((match) => ({
+          ...playerStat(match.id, 90),
+          teamId: 5n,
+          position: "Defender",
+          createdAt: match.matchDate,
+          updatedAt: match.matchDate,
+          matchDate: match.matchDate,
+          matchStatus: "FINISHED"
+        }));
+      }
+      return previousMatches.map((match) => ({ teamId: 5n, ...match }));
+    }
+  } as unknown as PrismaClient;
+
+  const rows = await loadSharedMachetePlayerRows(prisma, {
+    scopes: [{ leagueId: 47n, season: "2025/2026", teamId: 10n }],
+    matchWindow: { kind: "last", matches: 5 },
+    fallbackToRecentClubHistory: true,
+    scoringModel
+  });
+
+  assert.equal(rawQueryCount, 3);
+  assert.equal(broadHistoryQueries, 0);
+  assert.equal(rows[0].matchesPlayed, 5);
+  assert.equal(rows[0].minutesPlayed, 405);
+  assert.equal(rows[0].minuteHistoryProvenance?.previousClubName, "Previous FC");
+});
+
+test("request read context coalesces concurrent roster reads", async () => {
+  let rosterQueries = 0;
+  const prisma = {
+    teamPlayerSeason: {
+      async findMany() {
+        rosterQueries += 1;
+        await Promise.resolve();
+        return [rosterRow({
+          leagueId: 47n,
+          season: "2025/2026",
+          teamId: 10n,
+          playerId: 99n,
+          position: "GK",
+          playerName: "Shared Player"
+        })];
+      }
+    },
+    coreMatch: { async findMany() { return []; } },
+    matchPlayerStat: { async findMany() { return []; } }
+  } as unknown as PrismaClient;
+  const readContext = createSharedMacheteReadContext();
+
+  await Promise.all([
+    loadSharedMachetePlayerRows(prisma, {
+      scopes: [{ leagueId: 47n, season: "2025/2026", teamId: 10n }],
+      matchWindow: { kind: "last", matches: 5 },
+      scoringModel,
+      readContext
+    }),
+    loadSharedMachetePlayerRows(prisma, {
+      scopes: [{ leagueId: 47n, season: "2025/2026", teamId: 10n }],
+      matchWindow: { kind: "days", days: 365 },
+      scoringModel,
+      readContext
+    })
+  ]);
+
+  assert.equal(rosterQueries, 1);
+  assert.equal(readContext.rosterRowsByKey.size, 1);
+});
+
+test("batch match loader maps multiple exact league-team scopes in one query", async () => {
+  const matchQueries: unknown[] = [];
+  const statQueries: unknown[] = [];
+  const secondRoster = rosterRow({
+    leagueId: 48n,
+    season: "2025/2026",
+    teamId: 30n,
+    playerId: 100n,
+    position: "MID",
+    playerName: "Second Player"
+  });
+  secondRoster.team = { name: "Second FC" };
+  const prisma = {
+    teamPlayerSeason: {
+      async findMany() {
+        return [
+          rosterRow({ leagueId: 47n, season: "2025/2026", teamId: 10n, playerId: 99n, position: "GK", playerName: "First Player" }),
+          secondRoster
+        ];
+      }
+    },
+    coreMatch: {
+      async findMany(input: unknown) {
+        matchQueries.push(input);
+        return [
+          { id: 501n, matchDate: new Date("2026-05-02T16:00:00.000Z"), season: "2025/2026", leagueId: 47n, homeTeamId: 10n, awayTeamId: 20n },
+          { id: 601n, matchDate: new Date("2026-05-03T16:00:00.000Z"), season: "2025/2026", leagueId: 48n, homeTeamId: 30n, awayTeamId: 40n }
+        ];
+      }
+    },
+    matchPlayerStat: {
+      async findMany(input: unknown) {
+        statQueries.push(input);
+        return [];
+      }
+    }
+  } as unknown as PrismaClient;
+
+  const rows = await loadSharedMachetePlayerRows(prisma, {
+    scopes: [
+      { leagueId: 47n, season: "2025/2026", teamId: 10n },
+      { leagueId: 48n, season: "2025/2026", teamId: 30n }
+    ],
+    matchWindow: { kind: "all" },
+    scoringModel
+  });
+
+  assert.equal(rows.length, 2);
+  assert.equal(matchQueries.length, 1);
+  assert.equal(((matchQueries[0] as { where?: { OR?: unknown[] } }).where?.OR ?? []).length, 2);
+  assert.deepEqual((statQueries[0] as { where?: { matchId?: { in?: bigint[] } } }).where?.matchId?.in, [501n, 601n]);
 });
 
 test("match window summary reports official matches separately from parsed player-stat coverage", async () => {

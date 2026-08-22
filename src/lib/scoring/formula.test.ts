@@ -1,7 +1,13 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { calculateCustomFormulaScore, calculateCustomFormulaScoreWithBreakdown, normalizeFormulaMetric, validateCustomFormula } from "./formula";
+import {
+  calculateCustomFormulaScore,
+  calculateCustomFormulaScoreWithBreakdown,
+  customFormulaParseCacheMetrics,
+  normalizeFormulaMetric,
+  validateCustomFormula
+} from "./formula";
 
 test("keeps arithmetic precedence, parentheses, unary operators and metric normalization", () => {
   assert.equal(calculateCustomFormulaScore("2 + 3 * 4", {}), 14);
@@ -130,4 +136,28 @@ test("enforces formula length, token and nesting limits", () => {
   assert.match(validateCustomFormula("1".repeat(4_001)).message ?? "", /4000 characters/);
   assert.match(validateCustomFormula(Array.from({ length: 501 }, () => "1").join("+")).message ?? "", /1000 tokens/);
   assert.match(validateCustomFormula(`${"(".repeat(65)}1${")".repeat(65)}`).message ?? "", /nesting depth/);
+});
+
+test("reuses parsed formulas across scoring, validation and breakdown calls", () => {
+  const formula = "123.456 + {formula_parse_cache_probe}";
+  const before = customFormulaParseCacheMetrics();
+
+  assert.equal(calculateCustomFormulaScore(formula, { formula_parse_cache_probe: 1 }), 124.456);
+  assert.deepEqual(validateCustomFormula(formula), { ok: true });
+  assert.equal(calculateCustomFormulaScoreWithBreakdown(formula, { formula_parse_cache_probe: 2 }).value, 125.456);
+
+  const after = customFormulaParseCacheMetrics();
+  assert.equal(after.misses - before.misses, 1);
+  assert.equal(after.hits - before.hits, 2);
+});
+
+test("keeps the parsed formula cache bounded by entries and estimated bytes", () => {
+  for (let index = 0; index < 300; index += 1) {
+    calculateCustomFormulaScore(`${index} + {bounded_formula_cache_probe}`, { bounded_formula_cache_probe: 1 });
+  }
+
+  const metrics = customFormulaParseCacheMetrics();
+  assert.ok(metrics.entries <= metrics.maxEntries);
+  assert.ok(metrics.bytes <= metrics.maxBytes);
+  assert.ok(metrics.evictions > 0);
 });

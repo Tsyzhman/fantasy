@@ -1,6 +1,8 @@
 const MAX_FORMULA_LENGTH = 4_000;
 const MAX_FORMULA_TOKENS = 1_000;
 const MAX_PARSE_DEPTH = 64;
+const MAX_PARSED_FORMULA_CACHE_ENTRIES = 256;
+const MAX_PARSED_FORMULA_CACHE_BYTES = 2 * 1024 * 1024;
 
 type Operator = "+" | "-" | "*" | "/" | "^";
 type FunctionName =
@@ -24,6 +26,17 @@ type FormulaNode =
   | { type: "binary"; operator: Operator; left: FormulaNode; right: FormulaNode }
   | { type: "call"; name: FunctionName; args: FormulaNode[] };
 
+type ParsedFormulaCacheEntry = {
+  tree: FormulaNode;
+  bytes: number;
+};
+
+const parsedFormulaCache = new Map<string, ParsedFormulaCacheEntry>();
+let parsedFormulaCacheBytes = 0;
+let parsedFormulaCacheHits = 0;
+let parsedFormulaCacheMisses = 0;
+let parsedFormulaCacheEvictions = 0;
+
 export type FormulaBreakdownTerm = {
   expression: string;
   resolvedExpression: string;
@@ -35,6 +48,18 @@ export type FormulaBreakdown = {
   value: number;
   terms: FormulaBreakdownTerm[];
 };
+
+export function customFormulaParseCacheMetrics() {
+  return {
+    hits: parsedFormulaCacheHits,
+    misses: parsedFormulaCacheMisses,
+    evictions: parsedFormulaCacheEvictions,
+    bytes: parsedFormulaCacheBytes,
+    entries: parsedFormulaCache.size,
+    maxBytes: MAX_PARSED_FORMULA_CACHE_BYTES,
+    maxEntries: MAX_PARSED_FORMULA_CACHE_ENTRIES
+  };
+}
 
 type ParseState = {
   tokens: Token[];
@@ -117,6 +142,19 @@ export function normalizeFormulaMetric(metric: string) {
 }
 
 function parseFormula(formula: string) {
+  if (formula.length > MAX_FORMULA_LENGTH) {
+    throw new Error(`Formula exceeds ${MAX_FORMULA_LENGTH} characters.`);
+  }
+
+  const cached = parsedFormulaCache.get(formula);
+  if (cached) {
+    parsedFormulaCacheHits += 1;
+    parsedFormulaCache.delete(formula);
+    parsedFormulaCache.set(formula, cached);
+    return cached.tree;
+  }
+
+  parsedFormulaCacheMisses += 1;
   const tokens = tokenizeFormula(formula);
   const state: ParseState = { tokens, index: 0, depth: 0 };
   const tree = parseExpression(state);
@@ -125,14 +163,31 @@ function parseFormula(formula: string) {
     throw new Error(`Unexpected token near "${formatToken(tokens[state.index])}".`);
   }
 
+  const bytes = Math.max(256, formula.length * 12);
+  if (bytes <= MAX_PARSED_FORMULA_CACHE_BYTES) {
+    parsedFormulaCache.set(formula, { tree, bytes });
+    parsedFormulaCacheBytes += bytes;
+    trimParsedFormulaCache();
+  }
+
   return tree;
 }
 
-function tokenizeFormula(formula: string) {
-  if (formula.length > MAX_FORMULA_LENGTH) {
-    throw new Error(`Formula exceeds ${MAX_FORMULA_LENGTH} characters.`);
+function trimParsedFormulaCache() {
+  while (
+    parsedFormulaCache.size > MAX_PARSED_FORMULA_CACHE_ENTRIES ||
+    parsedFormulaCacheBytes > MAX_PARSED_FORMULA_CACHE_BYTES
+  ) {
+    const oldestKey = parsedFormulaCache.keys().next().value;
+    if (oldestKey === undefined) break;
+    const oldest = parsedFormulaCache.get(oldestKey);
+    parsedFormulaCache.delete(oldestKey);
+    parsedFormulaCacheBytes -= oldest?.bytes ?? 0;
+    parsedFormulaCacheEvictions += 1;
   }
+}
 
+function tokenizeFormula(formula: string) {
   const tokens: Token[] = [];
   let index = 0;
 

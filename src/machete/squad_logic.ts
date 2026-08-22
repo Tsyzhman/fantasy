@@ -85,11 +85,26 @@ export type FantasyProjectionFixtureInputs = {
   expectedCleanSheets: number | null;
 };
 
+export type FantasyProjectionListMetrics = Pick<
+  FantasyProjectionFixtureInputs,
+  | "sixtyMinutesProbability"
+  | "fullMatchProbability"
+  | "expectedGoals"
+  | "expectedAssists"
+  | "expectedRecoveries"
+  | "expectedSaves"
+  | "expectedYellowCards"
+  | "expectedRedCards"
+  | "expectedGoalsConceded"
+  | "expectedCleanSheets"
+>;
+
 export type FantasyPlannerPlayer = {
   // Raw per-match decomposition used only for transparent user-facing tooltips.
   // These values come from the component projection pipeline and are optional to
   // keep backward compatibility with legacy data flows.
   projectedFixtureComponents?: FantasyProjectionFixtureInputs | null;
+  projectionListMetrics?: FantasyProjectionListMetrics | null;
   id: string;
   playerId: string;
   isProviderPlaceholder?: boolean;

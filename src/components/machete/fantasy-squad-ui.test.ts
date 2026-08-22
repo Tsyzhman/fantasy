@@ -370,7 +370,7 @@ test("custom player table keeps one-line headers and the action as fixed column 
 });
 
 test("custom player table keeps the player name visible during horizontal scrolling", () => {
-  assert.match(squadPlannerSource, /<th className="sticky left-0 z-20[\s\S]*?PlayerPoolHeaderLabel/);
+  assert.match(squadPlannerSource, /<th data-sort-key="player"[\s\S]*?className="sticky left-0 z-20[\s\S]*?PlayerPoolHeaderLabel/);
   assert.match(squadPlannerSource, /sticky left-0 z-\[5\][\s\S]*?fixedColumnTitles\.player/);
 });
 
@@ -535,7 +535,7 @@ test("player pool exposes team, price, local match-scope and typed XLSX export c
   assert.match(squadPlannerSource, /provider === "FPL" \? player\.name : player\.fotmobName \?\? player\.name/);
   assert.match(playerTableExportRouteSource, /body\.rows\.length > 1_000/);
   assert.doesNotMatch(playerTableExportRouteSource, /at most 140/);
-  assert.match(squadPlannerSource, /const filteredPlayers = matchingPlayers/);
+  assert.match(squadPlannerSource, /filterPlayerPoolByNameQuery\(matchingPlayers, deferredPlayerNameQuery\)/);
   assert.doesNotMatch(squadPlannerSource, /slice\(0, 140\)/);
   assert.match(squadPlannerSource, /\/api\/machete\/squads\/export-table/);
   assert.match(squadPlannerSource, /\.xlsx`/);
@@ -606,7 +606,7 @@ test("player-pool controls use two desktop rows and the search targets only play
   assert.match(squadPlannerSource, /grid-cols-2 gap-2 lg:grid-cols-5/);
   assert.match(squadPlannerSource, /en="Fits" ru="Проходит"/);
   assert.match(squadPlannerSource, /<details className="relative shrink-0">[\s\S]*?<I18nText en="Columns" ru="Столбцы"/);
-  assert.match(squadPlannerSource, /className="col-span-full hidden min-w-0 max-w-full/);
+  assert.match(squadPlannerSource, /compactViewport === false \? <div className="col-span-full min-w-0 max-w-full/);
 });
 
 test("preset and advanced-filter popovers are not clipped by the player-pool toolbar", () => {
@@ -615,16 +615,25 @@ test("preset and advanced-filter popovers are not clipped by the player-pool too
   assert.equal((squadPlannerSource.match(/<details className="relative open:z-50">/g) ?? []).length, 2);
 });
 
-test("name search masks cached player rows without rerendering the planner and export applies the same query", () => {
-  assert.match(squadPlannerSource, /function PlayerPoolMaskedNameSearch/);
-  assert.match(squadPlannerSource, /queryRef\.current = query/);
-  assert.match(squadPlannerSource, /requestAnimationFrame/);
-  assert.match(squadPlannerSource, /querySelectorAll<HTMLElement>\("\[data-player-search-row\]"\)/);
-  assert.match(squadPlannerSource, /row\.hidden = !matches/);
-  assert.match(squadPlannerSource, /data-player-search-name=\{player\.name\.toLowerCase\(\)\}/);
-  assert.match(squadPlannerSource, /filterPlayerPoolByNameQuery\(matchingPlayers, playerNameQueryRef\.current\)/);
-  assert.doesNotMatch(squadPlannerSource, /const \[query, setQuery\] = useState/);
-  assert.doesNotMatch(squadPlannerSource, /deferredQuery/);
+test("name search, sorting and rendering operate on arrays before virtual rows mount", () => {
+  assert.match(squadPlannerSource, /function PlayerPoolNameSearch/);
+  assert.match(squadPlannerSource, /const \[playerNameQuery, setPlayerNameQuery\] = useState\(""\)/);
+  assert.match(squadPlannerSource, /useDeferredValue\(playerNameQuery\)/);
+  assert.match(squadPlannerSource, /filterPlayerPoolByNameQuery\(matchingPlayers, deferredPlayerNameQuery\)/);
+  assert.match(squadPlannerSource, /filterPlayerPoolByNameQuery\(matchingPlayers, playerNameQuery\)/);
+  assert.match(squadPlannerSource, /sortPlayerPoolRows\(players, playerSort, horizon\)/);
+  assert.match(squadPlannerSource, /managedClientSort/);
+  assert.match(squadPlannerSource, /useFixedVirtualRows\(sortedPlayers, tableContainerRef, compactViewport === false, 44, 10, playerOrderKey\)/);
+  assert.doesNotMatch(squadPlannerSource, /querySelectorAll<HTMLElement>\("\[data-player-search-row\]"\)/);
+  assert.doesNotMatch(squadPlannerSource, /data-player-search-name/);
+});
+
+test("player pool mounts one responsive renderer and virtualizes both variants", () => {
+  assert.match(squadPlannerSource, /compactViewport === true \? <div className="col-span-full">/);
+  assert.match(squadPlannerSource, /compactViewport === false \? <div className="col-span-full min-w-0/);
+  assert.doesNotMatch(squadPlannerSource, /compactViewport !== false/);
+  assert.doesNotMatch(squadPlannerSource, /compactViewport !== true/);
+  assert.match(squadPlannerSource, /useFixedVirtualRows\([\s\S]*?players,[\s\S]*?containerRef,[\s\S]*?true,[\s\S]*?rowHeight,[\s\S]*?4,/);
 });
 
 test("table forecast tooltips and compact controls cover both English and Russian", () => {

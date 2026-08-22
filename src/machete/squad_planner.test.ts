@@ -38,6 +38,7 @@ import {
   friendAlternativeProjectionFantasyPoints,
   friendAlternativeScoringModel,
   friendStartingRows,
+  fantasyPlayerFeaturePoolCacheKey,
   fantasyPlayerPoolCacheKey,
   loadFantasySquadPlannerData,
   normalizeFantasySquadName,
@@ -177,6 +178,25 @@ test("a new Foontasy fetch timestamp creates a new fantasy player pool cache key
   assert.equal(first, same);
   assert.notEqual(first, refreshed);
   assert.notEqual(first, rescheduled);
+});
+
+test("shared player features ignore personal formula revisions while scoring overlays do not", () => {
+  const base = {
+    provider: "SPORTS_RU",
+    contestId: "contest-47",
+    leagueId: 47n,
+    season: "2026/2027",
+    leagueUpdatedAt: new Date("2026-08-13T08:00:00.000Z"),
+    startingXiRevision: "no-xi-change",
+    foontasyRevision: "2026-08-13T08:01:00.000Z",
+    contestRevision: "2026-08-13T08:00:00.000Z:schedule-a",
+    historySettingsKey: "LAST_5"
+  };
+  const first = { ...base, preferenceKey: "formula-a:1" };
+  const second = { ...base, preferenceKey: "formula-b:2" };
+
+  assert.equal(fantasyPlayerFeaturePoolCacheKey(first), fantasyPlayerFeaturePoolCacheKey(second));
+  assert.notEqual(fantasyPlayerPoolCacheKey(first), fantasyPlayerPoolCacheKey(second));
 });
 
 test("formula-adaptation detail cache invalidates when the provider schedule changes", () => {

@@ -68,6 +68,7 @@ import {
   type ResolvedFantasyHistory
 } from "./squad-history";
 import {
+  createSharedMacheteReadContext,
   loadSharedMachetePlayerRows,
   type SharedLeagueSeasonOption,
   type SharedMachetePlayerRow,
@@ -418,9 +419,36 @@ const teamStrengthFeederLeagueByTopLeague = new Map<string, bigint>([
   ["71", 165n],
   ["87", 140n]
 ]);
+
+type FantasyPlayerScoringOverlay = Pick<
+  FantasyPlannerPlayer,
+  | "playerId"
+  | "alternativeProjectedFixtureComponents"
+  | "alternativeProjectionComponents"
+  | "alternativeFplForecastBreakdown"
+  | "alternativeProjectionFormula"
+  | "alternativePredictedFp"
+  | "alternativeRoundPoints"
+  | "foPositionCalibratedFp"
+  | "altPositionCalibratedFp"
+  | "altJointAllFp"
+  | "foJointAllFp"
+  | "altJointAcceptedFp"
+  | "foJointAcceptedFp"
+>;
+
 const fixtureOddsMaximumAgeMs = 35 * 24 * 60 * 60_000;
 const fantasyPlayerPoolCacheTtlMs = 5 * 60_000;
-const fantasyPlayerPoolCache = new ExpiringPromiseCache<string, FantasyPlannerPlayer[]>(20);
+const fantasyPlayerFeaturePoolCache = new ExpiringPromiseCache<string, FantasyPlannerPlayer[]>({
+  maxEntries: 20,
+  maxBytes: 96 * 1024 * 1024,
+  estimateBytes: jsonByteLength
+});
+const fantasyPlayerScoringOverlayCache = new ExpiringPromiseCache<string, FantasyPlayerScoringOverlay[]>({
+  maxEntries: 60,
+  maxBytes: 32 * 1024 * 1024,
+  estimateBytes: jsonByteLength
+});
 const fantasyFormulaAdaptationBreakdownCache = new ExpiringPromiseCache<string, FormulaAdaptationBreakdowns | null>(120);
 const upcomingRoundFixturesCacheTtlMs = 5 * 60_000;
 const upcomingRoundFixturesCache = new ExpiringPromiseCache<string, PlannerRoundFixtures>(20);
@@ -535,6 +563,56 @@ export function fantasyPlayerPoolPreferenceGroups(
   return groups;
 }
 
+function fantasyPlayerCommonFeatures(player: FantasyPlannerPlayer): FantasyPlannerPlayer {
+  const {
+    alternativeProjectedFixtureComponents: _alternativeProjectedFixtureComponents,
+    alternativeProjectionComponents: _alternativeProjectionComponents,
+    alternativeFplForecastBreakdown: _alternativeFplForecastBreakdown,
+    alternativeProjectionFormula: _alternativeProjectionFormula,
+    alternativePredictedFp: _alternativePredictedFp,
+    alternativeRoundPoints: _alternativeRoundPoints,
+    foPositionCalibratedFp: _foPositionCalibratedFp,
+    altPositionCalibratedFp: _altPositionCalibratedFp,
+    altJointAllFp: _altJointAllFp,
+    foJointAllFp: _foJointAllFp,
+    altJointAcceptedFp: _altJointAcceptedFp,
+    foJointAcceptedFp: _foJointAcceptedFp,
+    ...features
+  } = player;
+  return features;
+}
+
+function fantasyPlayerScoringOverlay(player: FantasyPlannerPlayer): FantasyPlayerScoringOverlay {
+  return {
+    playerId: player.playerId,
+    alternativeProjectedFixtureComponents: player.alternativeProjectedFixtureComponents,
+    alternativeProjectionComponents: player.alternativeProjectionComponents,
+    alternativeFplForecastBreakdown: player.alternativeFplForecastBreakdown,
+    alternativeProjectionFormula: player.alternativeProjectionFormula,
+    alternativePredictedFp: player.alternativePredictedFp,
+    alternativeRoundPoints: player.alternativeRoundPoints,
+    foPositionCalibratedFp: player.foPositionCalibratedFp,
+    altPositionCalibratedFp: player.altPositionCalibratedFp,
+    altJointAllFp: player.altJointAllFp,
+    foJointAllFp: player.foJointAllFp,
+    altJointAcceptedFp: player.altJointAcceptedFp,
+    foJointAcceptedFp: player.foJointAcceptedFp
+  };
+}
+
+function mergeFantasyPlayerScoringOverlay(
+  features: FantasyPlannerPlayer[],
+  overlays: FantasyPlayerScoringOverlay[]
+) {
+  const overlayByPlayerId = new Map(overlays.map((overlay) => [overlay.playerId, overlay]));
+  return features.map((player) => ({ ...player, ...overlayByPlayerId.get(player.playerId) }));
+}
+
+function jsonByteLength(value: unknown) {
+  const json = JSON.stringify(value);
+  return json ? Buffer.byteLength(json, "utf8") : 0;
+}
+
 function loadCachedFantasySquadPlayerPoolWithMetadata(
   prisma: PrismaClient,
   userId: string,
@@ -547,7 +625,7 @@ function loadCachedFantasySquadPlayerPoolWithMetadata(
   provider: string,
   contestId?: string | null
 ) {
-  const key = fantasyPlayerPoolCacheKey({
+  const cacheKeyInput = {
     provider,
     contestId,
     leagueId: league.leagueId,
@@ -558,11 +636,27 @@ function loadCachedFantasySquadPlayerPoolWithMetadata(
     contestRevision,
     preferenceKey,
     historySettingsKey: fantasyHistorySettingsKey(historySettings)
-  });
-  return fantasyPlayerPoolCache.getOrCreate(key, fantasyPlayerPoolCacheTtlMs, async () => {
-    const data = await loadFantasySquadPlannerData(prisma, userId, league, null, { historySettings, skipSavedSquads: true, provider, contestId });
-    return data.players;
-  });
+  };
+  const featureKey = fantasyPlayerFeaturePoolCacheKey(cacheKeyInput);
+  const overlayKey = fantasyPlayerPoolCacheKey(cacheKeyInput);
+  let fullPoolPromise: Promise<FantasyPlannerPlayer[]> | null = null;
+  const loadFullPool = () => {
+    fullPoolPromise ??= loadFantasySquadPlannerData(prisma, userId, league, null, {
+      historySettings,
+      skipSavedSquads: true,
+      provider,
+      contestId
+    }).then((data) => data.players);
+    return fullPoolPromise;
+  };
+  return Promise.all([
+    fantasyPlayerFeaturePoolCache.getOrCreate(featureKey, fantasyPlayerPoolCacheTtlMs, async () =>
+      (await loadFullPool()).map(fantasyPlayerCommonFeatures)
+    ),
+    fantasyPlayerScoringOverlayCache.getOrCreate(overlayKey, fantasyPlayerPoolCacheTtlMs, async () =>
+      (await loadFullPool()).map(fantasyPlayerScoringOverlay)
+    )
+  ]).then(([features, overlays]) => mergeFantasyPlayerScoringOverlay(features, overlays));
 }
 
 export async function loadFantasySquadPlannerData(
@@ -783,7 +877,9 @@ export async function loadFantasySquadPlannerData(
     const providerPosition = providerPositionsByPlayerId.get(playerId) ?? (priceRow ? sportsRuPricePosition(priceRow) : null);
     const position = fantasyPlannerPosition(providerPosition, row.position, projected?.position ?? null);
     const positionGroup = normalizeFantasyPosition(position);
+    const legacyFixturePointsById = new Map<string, number | null>();
     const legacyFixturePoints = (fixture: PlannerFixture) => {
+      if (legacyFixturePointsById.has(fixture.id)) return legacyFixturePointsById.get(fixture.id) ?? null;
       if (!projected) return null;
       const fixturePoints = calibratedPlayerFixturePoints(
         projected,
@@ -791,9 +887,11 @@ export async function loadFantasySquadPlannerData(
         playerRows.calibration?.model ?? null,
         playerRows.scoringModel
       ) ?? 0;
-      return playerRows.calibration
+      const result = playerRows.calibration
         ? fixturePoints
         : projectFixtureFantasyPoints(fixturePoints, positionGroup, fixture);
+      legacyFixturePointsById.set(fixture.id, result);
+      return result;
     };
     const legacyPredictedFp = !isFpl && projected
       ? roundsAndFixtures.rounds.length > 0
@@ -1546,6 +1644,19 @@ export function fantasyPlayerPoolCacheKey(input: {
   return `${input.provider}:${input.contestId ?? "no-contest"}:${input.leagueId}:${input.season}:${input.leagueUpdatedAt.toISOString()}:${input.startingXiRevision}:${input.foontasyRevision}:${input.contestRevision}:${input.preferenceKey}:${input.historySettingsKey}`;
 }
 
+export function fantasyPlayerFeaturePoolCacheKey(
+  input: Parameters<typeof fantasyPlayerPoolCacheKey>[0]
+) {
+  return `features:${fantasyPlayerPoolCacheKey({ ...input, preferenceKey: "shared" })}`;
+}
+
+export function fantasyPlayerPoolCacheMetrics() {
+  return {
+    featurePool: fantasyPlayerFeaturePoolCache.getMetrics(),
+    scoringOverlay: fantasyPlayerScoringOverlayCache.getMetrics()
+  };
+}
+
 export function formulaAdaptationBreakdownCacheKey(input: {
   leagueId: bigint;
   season: string;
@@ -2220,6 +2331,7 @@ async function loadProjectedPlayerRows(
   const expectedProjectionConfig = resolvedExpectedProjectionConfig(modelBundle.model);
   const alternativeProjectionConfig = resolvedAlternativeProjectionConfig(preference);
   const baseModelVersion = `${modelBundle.identity.configuredModelSource}:${modelBundle.identity.configuredModelId ?? "built-in"}:v${modelBundle.identity.configuredModelVersion}`;
+  const readContext = createSharedMacheteReadContext();
   const [rawRows, rawFriendRows, calibration] = await Promise.all([
     loadSharedMachetePlayerRows(prisma, {
       scopes: history.historyScopes,
@@ -2231,7 +2343,8 @@ async function loadProjectedPlayerRows(
       scoringModel: modelBundle.model,
       playerIds,
       rosterOverrides,
-      ignoreStarterFlags
+      ignoreStarterFlags,
+      readContext
     }),
     deferFormulaProjections
       ? Promise.resolve([])
@@ -2244,8 +2357,10 @@ async function loadProjectedPlayerRows(
           fallbackToRecentClubHistory: true,
           fallbackLeagueIds: [...new Set(history.projectionScopes.map((scope) => scope.leagueId))],
           scoringModel: modelBundle.model,
+          playerIds,
           rosterOverrides,
-          ignoreStarterFlags
+          ignoreStarterFlags,
+          readContext
         }),
     loadFantasyProjectionCalibration(prisma, {
       leagueId: league.leagueId,
@@ -2254,12 +2369,13 @@ async function loadProjectedPlayerRows(
       modelCacheKey: `${baseModelVersion}:${modelBundle.identity.configuredModelUpdatedAt?.toISOString() ?? "built-in"}`
     })
   ]);
-  const [rows, friendRows] = await Promise.all([
-    addArchivedPlayerSeasonMetrics(prisma, rawRows, league),
-    deferFormulaProjections
-      ? Promise.resolve(rawFriendRows)
-      : addArchivedPlayerSeasonMetrics(prisma, rawFriendRows, league)
-  ]);
+  const archivedRows = await addArchivedPlayerSeasonMetrics(
+    prisma,
+    deferFormulaProjections ? rawRows : [...rawRows, ...rawFriendRows],
+    league
+  );
+  const rows = archivedRows.slice(0, rawRows.length);
+  const friendRows = deferFormulaProjections ? rawFriendRows : archivedRows.slice(rawRows.length);
 
   return {
     calculatedAt: new Date().toISOString(),
@@ -3142,14 +3258,21 @@ export function fixtureFormulaMetrics(
   fixture: PlannerFixture | null,
   now = new Date()
 ): Record<string, unknown> {
+  return assignFixtureFormulaMetrics({ ...(rawMetrics ?? {}) }, fixture, now);
+}
+
+function assignFixtureFormulaMetrics(
+  metrics: Record<string, unknown>,
+  fixture: PlannerFixture | null,
+  now = new Date()
+) {
   const oddsAgeHours = fixture?.oddsFetchedAt
     ? Math.max(0, (now.getTime() - fixture.oddsFetchedAt.getTime()) / (60 * 60 * 1_000))
     : 0;
   const oddsAvailable = fixture?.teamOver15Probability !== null && fixture?.teamOver15Probability !== undefined &&
     fixture.cleanSheetProbability !== null && fixture.cleanSheetProbability !== undefined;
 
-  return {
-    ...(rawMetrics ?? {}),
+  return Object.assign(metrics, {
     fixture_team_over_1_5_probability: fixture?.teamOver15Probability ?? 0,
     fixture_clean_sheet_probability: fixture?.cleanSheetProbability ?? 0,
     fixture_bookmaker_odds_available: oddsAvailable ? 1 : 0,
@@ -3161,18 +3284,65 @@ export function fixtureFormulaMetrics(
     next_fixture_count: fixture ? 1 : 0,
     next_is_home: fixture?.side === "H" ? 1 : 0,
     next_is_away: fixture?.side === "A" ? 1 : 0
-  };
+  });
 }
+
+type CachedComponentFormulaMetrics = {
+  projection: PlayerFixtureProjection;
+  fixture: PlannerFixture | null;
+  metrics: Record<string, unknown>;
+};
+
+type CachedComponentFormulaMetricsWithoutExtra = {
+  byFixture: WeakMap<PlannerFixture, Record<string, unknown>>;
+  withoutFixture?: Record<string, unknown>;
+};
+
+const componentFormulaMetricsByExtraMetrics = new WeakMap<Record<string, unknown>, CachedComponentFormulaMetrics>();
+const componentFormulaMetricsWithoutExtra = new WeakMap<PlayerFixtureProjection, CachedComponentFormulaMetricsWithoutExtra>();
+const materializedComponentFormulaMetrics = new WeakSet<Record<string, unknown>>();
 
 export function componentProjectionFormulaMetrics(
   projection: PlayerFixtureProjection,
   fixture: PlannerFixture | null,
   extraMetrics?: Record<string, unknown>
 ): Record<string, unknown> {
-  const { components, expectedEvents, probabilities } = projection;
+  if (extraMetrics && materializedComponentFormulaMetrics.has(extraMetrics)) return extraMetrics;
+  if (extraMetrics) {
+    const cached = componentFormulaMetricsByExtraMetrics.get(extraMetrics);
+    if (cached?.projection === projection && cached.fixture === fixture) return cached.metrics;
+  } else {
+    const cached = componentFormulaMetricsWithoutExtra.get(projection);
+    const metrics = fixture ? cached?.byFixture.get(fixture) : cached?.withoutFixture;
+    if (metrics) return metrics;
+  }
 
-  return fixtureFormulaMetrics({
-    ...(extraMetrics ?? {}),
+  const metrics = materializeComponentProjectionFormulaMetrics(
+    projection,
+    fixture,
+    extraMetrics ? Object.create(extraMetrics) as Record<string, unknown> : {}
+  );
+
+  if (extraMetrics) {
+    componentFormulaMetricsByExtraMetrics.set(extraMetrics, { projection, fixture, metrics });
+  } else {
+    const cached: CachedComponentFormulaMetricsWithoutExtra = componentFormulaMetricsWithoutExtra.get(projection) ?? {
+      byFixture: new WeakMap<PlannerFixture, Record<string, unknown>>()
+    };
+    if (fixture) cached.byFixture.set(fixture, metrics);
+    else cached.withoutFixture = metrics;
+    componentFormulaMetricsWithoutExtra.set(projection, cached);
+  }
+  return metrics;
+}
+
+function materializeComponentProjectionFormulaMetrics(
+  projection: PlayerFixtureProjection,
+  fixture: PlannerFixture | null,
+  metrics: Record<string, unknown>
+) {
+  const { components, expectedEvents, probabilities } = projection;
+  Object.assign(metrics, {
     matches_played: 1,
     minutes_played: projection.expectedMinutes,
     appearance_probability: probabilities.appearance,
@@ -3205,7 +3375,10 @@ export function componentProjectionFormulaMetrics(
     goals_conceded_fp: components.goalsConceded,
     yellow_card_fp: components.yellowCards,
     red_card_fp: components.redCards
-  }, fixture);
+  });
+  assignFixtureFormulaMetrics(metrics, fixture);
+  materializedComponentFormulaMetrics.add(metrics);
+  return metrics;
 }
 
 export function aggregatePlayerFantasyPointComponents(

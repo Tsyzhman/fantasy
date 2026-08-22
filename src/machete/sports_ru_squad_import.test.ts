@@ -9,7 +9,7 @@ import {
   type FantasyPlannerPlayer,
   type FantasySquadSelection
 } from "./squad_logic";
-import { mapSportsRuPublishedSquad, mergeImportedSquadWithFuturePlans } from "./sports_ru_squad_import";
+import { mapSportsRuPublishedSquad, mergeImportedSquadWithFuturePlans, reconcileSportsRuSquadAvailability } from "./sports_ru_squad_import";
 
 test("Sports.ru import keeps an unknown provider player as a priced placeholder", async () => {
   const prisma = {
@@ -96,6 +96,116 @@ test("Sports.ru import keeps an unknown provider player as a priced placeholder"
     position: "MIDFIELDER",
     price: 8.4
   }]);
+});
+
+test("Sports.ru import creates a placeholder when the provider player has no local price row at all", async () => {
+  const prisma = {
+    fantasyPlayerPrice: {
+      findMany: async () => []
+    }
+  } as unknown as PrismaClient;
+
+  const preview = await mapSportsRuPublishedSquad(prisma, {
+    profileId: "profile-1",
+    contestId: "contest-1",
+    leagueId: 48n,
+    season: "2026/2027",
+    expectedSquadSize: 1,
+    published: {
+      providerSquadId: "squad-1",
+      squadName: "Imported",
+      seasonId: "season-1",
+      tournamentHru: "russia",
+      tournamentName: "Россия",
+      tourId: "100",
+      tourName: "1 тур",
+      tourFinishedAt: null,
+      totalPrice: 7.5,
+      currentBalance: 92.5,
+      players: [{
+        providerPlayerId: "missing-everywhere",
+        name: "Игрок вне нашей лиги",
+        teamName: "Бывший клуб",
+        role: "FORWARD",
+        price: 7.5,
+        isStarter: true,
+        isCaptain: false,
+        isViceCaptain: false,
+        substitutePriority: null
+      }]
+    }
+  });
+
+  assert.equal(preview.selections.length, 1);
+  assert.equal(preview.selections[0].playerId, fantasyProviderPlaceholderPlayerId("SPORTS_RU", "missing-everywhere"));
+  assert.equal(preview.selections[0].purchasePrice, 7.5);
+  assert.deepEqual(preview.unmapped.map((player) => ({
+    providerPlayerId: player.providerPlayerId,
+    name: player.name,
+    teamName: player.teamName,
+    position: player.position,
+    price: player.price
+  })), [{
+    providerPlayerId: "missing-everywhere",
+    name: "Игрок вне нашей лиги",
+    teamName: "Бывший клуб",
+    position: "FORWARD",
+    price: 7.5
+  }]);
+});
+
+test("Sports.ru availability reconciliation reuses an existing placeholder without duplicating it", () => {
+  const playerId = fantasyProviderPlaceholderPlayerId("SPORTS_RU", "gone-1");
+  const placeholder = {
+    playerId,
+    provider: "SPORTS_RU" as const,
+    providerPlayerId: "gone-1",
+    name: "Ушедший игрок",
+    teamId: "provider-team:SPORTS_RU:former",
+    teamName: "Бывший клуб",
+    position: "FORWARD",
+    price: 7.5
+  };
+
+  const reconciled = reconcileSportsRuSquadAvailability({
+    preview: {
+      profileId: "profile-1",
+      providerSquadId: "squad-1",
+      squadName: "Imported",
+      tournamentName: "Россия",
+      tourId: "100",
+      tourName: "1 тур",
+      selections: [{ playerId, isStarter: true, isLocked: false, isCaptain: false, isViceCaptain: false, slotIndex: 0, purchasePrice: 7.5 }],
+      unmapped: [placeholder]
+    },
+    published: {
+      providerSquadId: "squad-1",
+      squadName: "Imported",
+      seasonId: "season-1",
+      tournamentHru: "russia",
+      tournamentName: "Россия",
+      tourId: "100",
+      tourName: "1 тур",
+      tourFinishedAt: null,
+      totalPrice: 7.5,
+      currentBalance: 92.5,
+      players: [{
+        providerPlayerId: "gone-1",
+        name: "Ушедший игрок",
+        teamName: "Бывший клуб",
+        role: "FORWARD",
+        price: 7.5,
+        isStarter: true,
+        isCaptain: false,
+        isViceCaptain: false,
+        substitutePriority: null
+      }]
+    },
+    availablePlayerIds: []
+  });
+
+  assert.deepEqual(reconciled.selections.map((selection) => selection.playerId), [playerId]);
+  assert.deepEqual(reconciled.unmapped, [placeholder]);
 });
 
 test("Sports.ru import replaces current and linked rounds while retaining a valid independent future plan", () => {

@@ -1,4 +1,4 @@
-import type { PrismaClient } from "@prisma/client";
+import { Prisma, type PrismaClient } from "@prisma/client";
 
 import { calculateAlternativeScore, calculateFantasyScore, calculateScoringScore, getActiveScoringModelForSource, type ActiveScoringModel } from "@/lib/scoring";
 import { getUserScoringModelForSource } from "@/lib/scoring/user-preferences";
@@ -141,6 +141,35 @@ export type SharedRosterRow = {
     };
   };
 };
+
+type SharedClubMembershipRow = {
+  playerId: bigint;
+  teamId: bigint;
+  team: {
+    name: string;
+    country: string | null;
+  };
+  seasonTeam: {
+    leagueSeason: {
+      league: {
+        name: string;
+        country: string | null;
+      };
+    };
+  };
+};
+
+export type SharedMacheteReadContext = {
+  rosterRowsByKey: Map<string, Promise<SharedRosterRow[]>>;
+  clubMembershipRowsByKey: Map<string, Promise<SharedClubMembershipRow[]>>;
+};
+
+export function createSharedMacheteReadContext(): SharedMacheteReadContext {
+  return {
+    rosterRowsByKey: new Map(),
+    clubMembershipRowsByKey: new Map()
+  };
+}
 
 export type SharedMatchWindowSummary = {
   officialMatches: number;
@@ -407,6 +436,83 @@ export async function loadSharedTeamPlayers(prisma: PrismaClient, leagueId: bigi
   }));
 }
 
+async function loadSharedRosterRows(
+  prisma: PrismaClient,
+  rosterScopes: SharedPlayerRowsScope[],
+  playerIds: bigint[] | undefined,
+  readContext: SharedMacheteReadContext | undefined
+) {
+  const requestedPlayerIds = playerIds === undefined ? undefined : uniqueBigints(playerIds);
+  const cacheKey = sharedRosterRowsCacheKey(rosterScopes, requestedPlayerIds);
+  return loadFromReadContext(
+    readContext?.rosterRowsByKey,
+    cacheKey,
+    () => prisma.teamPlayerSeason.findMany({
+      where: {
+        active: true,
+        AND: [
+          {
+            OR: rosterScopes.map((scope) => ({
+              leagueId: scope.leagueId,
+              season: scope.season,
+              ...(scope.teamId ? { teamId: scope.teamId } : {})
+            }))
+          },
+          ...(requestedPlayerIds !== undefined
+            ? [
+                {
+                  playerId: { in: requestedPlayerIds }
+                }
+              ]
+            : [])
+        ]
+      },
+      include: {
+        player: true,
+        team: true,
+        seasonTeam: {
+          include: {
+            leagueSeason: {
+              include: {
+                league: true
+              }
+            }
+          }
+        }
+      },
+      orderBy: [{ team: { name: "asc" } }, { player: { name: "asc" } }]
+    }) as Promise<SharedRosterRow[]>
+  );
+}
+
+function sharedRosterRowsCacheKey(scopes: SharedPlayerRowsScope[], playerIds: bigint[] | undefined) {
+  const scopeKey = [...new Set(scopes.map((scope) =>
+    `${scope.leagueId}:${scope.season}:${scope.teamId ?? "*"}`
+  ))].sort().join(",");
+  const playerKey = playerIds === undefined
+    ? "*"
+    : [...new Set(playerIds.map(String))].sort().join(",");
+  return `${scopeKey}|players=${playerKey}`;
+}
+
+async function loadFromReadContext<Key, Value>(
+  cache: Map<Key, Promise<Value>> | undefined,
+  key: Key,
+  loader: () => Promise<Value>
+) {
+  if (!cache) return loader();
+  const existing = cache.get(key);
+  if (existing) return existing;
+  const pending = loader();
+  cache.set(key, pending);
+  try {
+    return await pending;
+  } catch (error) {
+    if (cache.get(key) === pending) cache.delete(key);
+    throw error;
+  }
+}
+
 export async function loadSharedMachetePlayerRows(
   prisma: PrismaClient,
   input: {
@@ -425,6 +531,7 @@ export async function loadSharedMachetePlayerRows(
     playerIds?: bigint[];
     rosterOverrides?: SharedRosterOverride[];
     ignoreStarterFlags?: boolean;
+    readContext?: SharedMacheteReadContext;
   }
 ): Promise<SharedMachetePlayerRow[]> {
   const scopes = input.scopes.filter((scope) => scope.leagueId && scope.season);
@@ -432,41 +539,12 @@ export async function loadSharedMachetePlayerRows(
   if (rosterScopes.length === 0) return [];
 
   const positionFilter = parseSharedPositionFilter(input.position);
-  const rosterRowsFromDb: SharedRosterRow[] = await prisma.teamPlayerSeason.findMany({
-    where: {
-      active: true,
-      AND: [
-        {
-          OR: rosterScopes.map((scope) => ({
-            leagueId: scope.leagueId,
-            season: scope.season,
-            ...(scope.teamId ? { teamId: scope.teamId } : {})
-          }))
-        },
-        ...(input.playerIds !== undefined
-          ? [
-              {
-                playerId: { in: uniqueBigints(input.playerIds) }
-              }
-            ]
-          : [])
-      ]
-    },
-    include: {
-      player: true,
-      team: true,
-      seasonTeam: {
-        include: {
-          leagueSeason: {
-            include: {
-              league: true
-            }
-          }
-        }
-      }
-    },
-    orderBy: [{ team: { name: "asc" } }, { player: { name: "asc" } }]
-  });
+  const rosterRowsFromDb = await loadSharedRosterRows(
+    prisma,
+    rosterScopes,
+    input.playerIds,
+    input.readContext
+  );
   const requestedPlayerIds = input.playerIds === undefined
     ? null
     : new Set(uniqueBigints(input.playerIds).map(String));
@@ -501,25 +579,22 @@ export async function loadSharedMachetePlayerRows(
     }
   }
 
-  const matchRefsByTeamScope = new Map<string, SharedTeamMatchRef[]>();
-  await Promise.all(
-    [...teamScopes.values()].map(async (scope) => {
-      if (!scope.teamId) return;
-      const key = teamScopeKey(scope.leagueId, scope.season, scope.teamId);
-      matchRefsByTeamScope.set(
-        key,
-        await loadSharedTeamMatchRefs(prisma, scope.leagueId, scope.season, scope.teamId, input.matchWindow, {
-          deferLastLimit: Boolean(input.combineTeamCompetitions && input.matchWindow.kind === "last")
-        })
-      );
-    })
+  const matchRefWindow = input.matchWindow.kind === "last" && input.matchWindow.matches < AVERAGE_RATING_WINDOW.matches
+    ? AVERAGE_RATING_WINDOW
+    : input.matchWindow;
+  const loadedMatchRefsByTeamScope = await loadSharedTeamMatchRefsBatch(prisma, [...teamScopes.values()], matchRefWindow);
+  const matchRefsByTeamScope = new Map(
+    [...loadedMatchRefsByTeamScope.entries()].map(([key, refs]) => [
+      key,
+      input.matchWindow.kind === "last" ? refs.slice(0, input.matchWindow.matches) : refs
+    ])
   );
   const ratingMatchRefsByTeamScope = new Map<string, SharedTeamMatchRef[]>();
   const selectedWindowAlreadyCoversRating =
     input.matchWindow.kind === "all" ||
-    (input.matchWindow.kind === "last" && input.matchWindow.matches >= AVERAGE_RATING_WINDOW.matches);
+    input.matchWindow.kind === "last";
   if (selectedWindowAlreadyCoversRating) {
-    for (const [key, refs] of matchRefsByTeamScope) {
+    for (const [key, refs] of loadedMatchRefsByTeamScope) {
       ratingMatchRefsByTeamScope.set(
         key,
         uniqueMatchRefs(refs)
@@ -528,16 +603,8 @@ export async function loadSharedMachetePlayerRows(
       );
     }
   } else {
-    await Promise.all(
-      [...teamScopes.values()].map(async (scope) => {
-        if (!scope.teamId) return;
-        const key = teamScopeKey(scope.leagueId, scope.season, scope.teamId);
-        ratingMatchRefsByTeamScope.set(
-          key,
-          await loadSharedTeamMatchRefs(prisma, scope.leagueId, scope.season, scope.teamId, AVERAGE_RATING_WINDOW)
-        );
-      })
-    );
+    const loadedRatingRefs = await loadSharedTeamMatchRefsBatch(prisma, [...teamScopes.values()], AVERAGE_RATING_WINDOW);
+    for (const [key, refs] of loadedRatingRefs) ratingMatchRefsByTeamScope.set(key, refs);
   }
 
   const matchIdsByTeamScope = new Map([...matchRefsByTeamScope.entries()].map(([key, matches]) => [key, matches.map((match) => match.id)]));
@@ -566,7 +633,9 @@ export async function loadSharedMachetePlayerRows(
     ? await loadRecentClubPlayerHistory(
         prisma,
         uniqueBigints(rosterRows.map((row) => row.playerId)),
-        uniqueBigints(input.fallbackLeagueIds ?? [])
+        uniqueBigints(input.fallbackLeagueIds ?? []),
+        currentTeamIdsByPlayer(rosterRows),
+        input.readContext
       )
     : null;
   const fallbackStats = clubHistory?.stats ?? (input.fallbackToRecentLeagueHistory || input.fallbackToRecentPlayerHistory
@@ -784,19 +853,7 @@ export async function loadSharedMatchWindowSummary(
   }
   if (teamScopes.size === 0) return null;
 
-  const matchRefsByTeamScope = new Map<string, SharedTeamMatchRef[]>();
-  await Promise.all(
-    [...teamScopes.values()].map(async (scope) => {
-      if (!scope.teamId) return;
-      const key = teamScopeKey(scope.leagueId, scope.season, scope.teamId);
-      matchRefsByTeamScope.set(
-        key,
-        await loadSharedTeamMatchRefs(prisma, scope.leagueId, scope.season, scope.teamId, window, {
-          deferLastLimit: combineTeamCompetitions && window.kind === "last"
-        })
-      );
-    })
-  );
+  const matchRefsByTeamScope = await loadSharedTeamMatchRefsBatch(prisma, [...teamScopes.values()], window);
 
   const matchIdsByTeam = groupScopeMatchIdsByTeam(teamScopes.values(), matchRefsByTeamScope, window);
   const officialMatchIds = uniqueBigints([...matchIdsByTeam.values()].flat());
@@ -844,6 +901,75 @@ async function loadSharedTeamMatchRefs(
   });
 
   return matches;
+}
+
+async function loadSharedTeamMatchRefsBatch(
+  prisma: PrismaClient,
+  scopes: SharedPlayerRowsScope[],
+  window: MacheteMatchWindow
+) {
+  const requestedScopes = scopes.filter((scope): scope is SharedPlayerRowsScope & { teamId: bigint } => Boolean(scope.teamId));
+  if (requestedScopes.length === 0) return new Map<string, SharedTeamMatchRef[]>();
+
+  const queriesByKey = new Map<string, { leagueId: bigint; season: string | null; teamId: bigint }>();
+  const queryKeyByScopeKey = new Map<string, string>();
+  for (const scope of requestedScopes) {
+    const seasonFilter = window.kind === "season" ? matchWindowSeasonLabel(scope.season, window.offset, String(scope.leagueId)) : null;
+    const queryKey = sharedTeamMatchQueryKey(scope.leagueId, seasonFilter, scope.teamId);
+    queriesByKey.set(queryKey, { leagueId: scope.leagueId, season: seasonFilter, teamId: scope.teamId });
+    queryKeyByScopeKey.set(teamScopeKey(scope.leagueId, scope.season, scope.teamId), queryKey);
+  }
+  const queries = [...queriesByKey.values()];
+  const dateFilter = window.kind === "days" ? { gte: daysAgo(window.days) } : undefined;
+  const queryWhere = (query: (typeof queries)[number]) => ({
+    leagueId: query.leagueId,
+    ...(query.season ? { season: query.season } : {}),
+    OR: [{ homeTeamId: query.teamId }, { awayTeamId: query.teamId }]
+  });
+  const singleQuery = queries.length === 1 ? queries[0] : null;
+  const matches = await prisma.coreMatch.findMany({
+    where: {
+      finished: true,
+      ...(dateFilter ? { matchDate: dateFilter } : {}),
+      ...(singleQuery ? queryWhere(singleQuery) : { OR: queries.map(queryWhere) })
+    },
+    orderBy: [{ matchDate: "desc" }, { id: "desc" }],
+    ...(singleQuery && window.kind === "last" ? { take: window.matches } : {}),
+    select: { id: true, matchDate: true, season: true, leagueId: true, homeTeamId: true, awayTeamId: true }
+  });
+
+  const refsByQueryKey = new Map<string, SharedTeamMatchRef[]>();
+  for (const queryKey of queriesByKey.keys()) refsByQueryKey.set(queryKey, []);
+  for (const match of matches) {
+    const ref = { id: match.id, matchDate: match.matchDate, season: match.season };
+    if (match.leagueId === undefined || (match.homeTeamId === undefined && match.awayTeamId === undefined)) {
+      for (const [queryKey, query] of queriesByKey) {
+        if (query.season && match.season && query.season !== match.season) continue;
+        refsByQueryKey.get(queryKey)!.push(ref);
+      }
+      continue;
+    }
+    if (!match.leagueId) continue;
+    for (const teamId of [match.homeTeamId, match.awayTeamId]) {
+      if (!teamId) continue;
+      for (const seasonFilter of [match.season, null]) {
+        const queryKey = sharedTeamMatchQueryKey(match.leagueId, seasonFilter, teamId);
+        refsByQueryKey.get(queryKey)?.push(ref);
+      }
+    }
+  }
+
+  for (const [queryKey, refs] of refsByQueryKey) {
+    const ordered = uniqueMatchRefs(refs).sort((left, right) => compareMatchRefsAscending(right, left));
+    refsByQueryKey.set(queryKey, window.kind === "last" ? ordered.slice(0, window.matches) : ordered);
+  }
+  const refsByScopeKey = new Map<string, SharedTeamMatchRef[]>();
+  for (const [scopeKey, queryKey] of queryKeyByScopeKey) refsByScopeKey.set(scopeKey, refsByQueryKey.get(queryKey) ?? []);
+  return refsByScopeKey;
+}
+
+function sharedTeamMatchQueryKey(leagueId: bigint, season: string | null, teamId: bigint) {
+  return `${leagueId}:${season ?? "*"}:${teamId}`;
 }
 
 export async function loadSharedTeamFixtures(prisma: PrismaClient, leagueId: bigint, season: string, teamId: bigint, limit = 8) {
@@ -963,7 +1089,13 @@ async function loadRecentPlayerHistory(prisma: PrismaClient, playerIds: bigint[]
   return rows.filter((row) => row.match.status !== "SEASON_AGGREGATE");
 }
 
-async function loadRecentClubPlayerHistory(prisma: PrismaClient, playerIds: bigint[], leagueIds: bigint[] = []) {
+async function loadRecentClubPlayerHistory(
+  prisma: PrismaClient,
+  playerIds: bigint[],
+  leagueIds: bigint[] = [],
+  currentTeamsByPlayer = new Map<string, Set<string>>(),
+  readContext?: SharedMacheteReadContext
+) {
   if (playerIds.length === 0) {
     return {
       stats: [],
@@ -972,23 +1104,28 @@ async function loadRecentClubPlayerHistory(prisma: PrismaClient, playerIds: bigi
     };
   }
 
-  const memberships = await prisma.teamPlayerSeason.findMany({
-    where: { playerId: { in: playerIds } },
-    select: {
-      playerId: true,
-      teamId: true,
-      team: { select: { name: true, country: true } },
-      seasonTeam: {
-        select: {
-          leagueSeason: {
-            select: {
-              league: { select: { name: true, country: true } }
+  const membershipKey = [...new Set(playerIds.map(String))].sort().join(",");
+  const memberships = await loadFromReadContext(
+    readContext?.clubMembershipRowsByKey,
+    membershipKey,
+    () => prisma.teamPlayerSeason.findMany({
+      where: { playerId: { in: playerIds } },
+      select: {
+        playerId: true,
+        teamId: true,
+        team: { select: { name: true, country: true } },
+        seasonTeam: {
+          select: {
+            leagueSeason: {
+              select: {
+                league: { select: { name: true, country: true } }
+              }
             }
           }
         }
       }
-    }
-  });
+    }) as Promise<SharedClubMembershipRow[]>
+  );
   const allowedPairs = new Set(
     memberships
       .filter(isClubRosterMembership)
@@ -1001,6 +1138,20 @@ async function loadRecentClubPlayerHistory(prisma: PrismaClient, playerIds: bigi
   );
   const clubMemberships = memberships.filter(isClubRosterMembership);
   const clubTeamIds = uniqueBigints(clubMemberships.map((row) => row.teamId));
+  if (supportsRawQueries(prisma)) {
+    const bounded = await loadBoundedRecentClubHistory(
+      prisma,
+      playerIds,
+      leagueIds,
+      allowedPairs,
+      currentTeamsByPlayer
+    );
+    return {
+      stats: bounded.stats,
+      teamNameById,
+      matchRefsByTeamId: bounded.matchRefsByTeamId
+    };
+  }
   const [stats, clubMatches] = await Promise.all([
     loadRecentPlayerHistory(prisma, playerIds, leagueIds),
     clubTeamIds.length > 0
@@ -1033,6 +1184,200 @@ async function loadRecentClubPlayerHistory(prisma: PrismaClient, playerIds: bigi
     teamNameById,
     matchRefsByTeamId
   };
+}
+
+type RecentClubCandidate = {
+  playerId: bigint;
+  teamId: bigint;
+  latestMatchDate: Date;
+  season: string | null;
+};
+
+type RawRecentClubStat = Awaited<ReturnType<typeof loadStatsForMatchIds>>[number] & {
+  matchDate: Date;
+  matchStatus: string | null;
+};
+
+async function loadBoundedRecentClubHistory(
+  prisma: PrismaClient,
+  playerIds: bigint[],
+  leagueIds: bigint[],
+  allowedPairs: Set<string>,
+  currentTeamsByPlayer: Map<string, Set<string>>
+) {
+  const leagueFilter = leagueIds.length > 0
+    ? Prisma.sql`AND match_row."league_id" IN (${Prisma.join(leagueIds)})`
+    : Prisma.sql``;
+  const candidates = await prisma.$queryRaw<RecentClubCandidate[]>(Prisma.sql`
+    SELECT DISTINCT ON (stats."player_id", stats."team_id")
+      stats."player_id" AS "playerId",
+      stats."team_id" AS "teamId",
+      match_row."match_date" AS "latestMatchDate",
+      match_row."season" AS "season"
+    FROM "match_player_stats" stats
+    INNER JOIN "matches" match_row ON match_row."id" = stats."match_id"
+    WHERE stats."player_id" IN (${Prisma.join(playerIds)})
+      AND stats."team_id" IS NOT NULL
+      AND match_row."finished" = TRUE
+      AND match_row."cancelled" = FALSE
+      AND match_row."match_date" IS NOT NULL
+      AND match_row."status" IS DISTINCT FROM 'SEASON_AGGREGATE'
+      ${leagueFilter}
+    ORDER BY stats."player_id", stats."team_id", match_row."match_date" DESC, match_row."id" DESC
+  `);
+  const previousClubByPlayer = new Map<string, RecentClubCandidate>();
+  for (const candidate of [...candidates].sort((left, right) =>
+    dateMs(right.latestMatchDate) - dateMs(left.latestMatchDate) || compareBigints(right.teamId, left.teamId)
+  )) {
+    const playerKey = String(candidate.playerId);
+    if (previousClubByPlayer.has(playerKey)) continue;
+    if (!allowedPairs.has(teamPlayerKey(candidate.teamId, candidate.playerId))) continue;
+    if (currentTeamsByPlayer.get(playerKey)?.has(String(candidate.teamId))) continue;
+    previousClubByPlayer.set(playerKey, candidate);
+  }
+  const previousClubs = [...previousClubByPlayer.values()];
+  if (previousClubs.length === 0) {
+    return { stats: [] as Array<MatchPlayerStatRecord & { match: { matchDate: Date; status: string | null } }>, matchRefsByTeamId: new Map<string, SharedTeamMatchRef[]>() };
+  }
+
+  const requestedPlayerTeams = Prisma.join(previousClubs.map((candidate) =>
+    Prisma.sql`(${candidate.playerId}, ${candidate.teamId})`
+  ));
+  const rawStats = await prisma.$queryRaw<RawRecentClubStat[]>(Prisma.sql`
+    WITH requested("player_id", "team_id") AS (
+      VALUES ${requestedPlayerTeams}
+    ), ranked AS (
+      SELECT
+        stats.*,
+        match_row."match_date" AS "history_match_date",
+        match_row."status" AS "history_match_status",
+        ROW_NUMBER() OVER (
+          PARTITION BY stats."player_id", stats."team_id"
+          ORDER BY match_row."match_date" DESC, match_row."id" DESC
+        ) AS "history_rank"
+      FROM requested
+      INNER JOIN "match_player_stats" stats
+        ON stats."player_id" = requested."player_id"
+       AND stats."team_id" = requested."team_id"
+      INNER JOIN "matches" match_row ON match_row."id" = stats."match_id"
+      WHERE match_row."finished" = TRUE
+        AND match_row."cancelled" = FALSE
+        AND match_row."match_date" IS NOT NULL
+        AND match_row."status" IS DISTINCT FROM 'SEASON_AGGREGATE'
+        ${leagueFilter}
+    )
+    SELECT
+      "match_id" AS "matchId",
+      "player_id" AS "playerId",
+      "team_id" AS "teamId",
+      "opponent_team_id" AS "opponentTeamId",
+      "is_home" AS "isHome",
+      "started",
+      "substituted_in" AS "substitutedIn",
+      "substituted_out" AS "substitutedOut",
+      "minutes",
+      "position",
+      "shirt_number" AS "shirtNumber",
+      "goals",
+      "assists",
+      "yellow_cards" AS "yellowCards",
+      "red_cards" AS "redCards",
+      "saves",
+      "goals_conceded" AS "goalsConceded",
+      "clean_sheet" AS "cleanSheet",
+      "xg",
+      "xgot",
+      "xa",
+      "shots",
+      "shots_on_target" AS "shotsOnTarget",
+      "key_passes" AS "keyPasses",
+      "chances_created" AS "chancesCreated",
+      "tackles_won" AS "tacklesWon",
+      "interceptions",
+      "clearances",
+      "duels_won" AS "duelsWon",
+      "aerials_won" AS "aerialsWon",
+      "recoveries",
+      "touches_in_opp_box" AS "touchesInOppBox",
+      "fouls_won" AS "foulsWon",
+      "penalties_won" AS "penaltiesWon",
+      "rating",
+      "created_at" AS "createdAt",
+      "updated_at" AS "updatedAt",
+      "history_match_date" AS "matchDate",
+      "history_match_status" AS "matchStatus"
+    FROM ranked
+    WHERE "history_rank" <= ${FORMULA_HISTORY_MATCHES}
+    ORDER BY "history_match_date" ASC, "match_id" ASC
+  `);
+  const stats = rawStats.map(({ matchDate, matchStatus, ...stat }) => ({
+    ...stat,
+    match: { matchDate, status: matchStatus }
+  }));
+
+  const previousTeamSeasons = new Map<string, { teamId: bigint; season: string }>();
+  for (const candidate of previousClubs) {
+    if (!candidate.season) continue;
+    previousTeamSeasons.set(`${candidate.teamId}:${candidate.season}`, { teamId: candidate.teamId, season: candidate.season });
+  }
+  const matchRefsByTeamId = new Map<string, SharedTeamMatchRef[]>();
+  if (previousTeamSeasons.size === 0) return { stats, matchRefsByTeamId };
+  const requestedTeamSeasons = Prisma.join([...previousTeamSeasons.values()].map((scope) =>
+    Prisma.sql`(${scope.teamId}, ${scope.season})`
+  ));
+  const rawMatchRefs = await prisma.$queryRaw<Array<SharedTeamMatchRef & { teamId: bigint }>>(Prisma.sql`
+    WITH requested("team_id", "season") AS (
+      VALUES ${requestedTeamSeasons}
+    ), ranked AS (
+      SELECT
+        requested."team_id" AS "requested_team_id",
+        match_row."id",
+        match_row."match_date",
+        match_row."season",
+        ROW_NUMBER() OVER (
+          PARTITION BY requested."team_id", requested."season"
+          ORDER BY match_row."match_date" DESC, match_row."id" DESC
+        ) AS "history_rank"
+      FROM requested
+      INNER JOIN "matches" match_row
+        ON match_row."season" = requested."season"
+       AND (match_row."home_team_id" = requested."team_id" OR match_row."away_team_id" = requested."team_id")
+      WHERE match_row."finished" = TRUE
+        AND match_row."cancelled" = FALSE
+        AND match_row."match_date" IS NOT NULL
+        ${leagueFilter}
+    )
+    SELECT
+      "requested_team_id" AS "teamId",
+      "id",
+      "match_date" AS "matchDate",
+      "season"
+    FROM ranked
+    WHERE "history_rank" <= ${FORMULA_HISTORY_MATCHES}
+    ORDER BY "match_date" ASC, "id" ASC
+  `);
+  for (const { teamId, ...ref } of rawMatchRefs) {
+    const key = String(teamId);
+    const refs = matchRefsByTeamId.get(key) ?? [];
+    refs.push(ref);
+    matchRefsByTeamId.set(key, refs);
+  }
+  return { stats, matchRefsByTeamId };
+}
+
+function supportsRawQueries(prisma: PrismaClient) {
+  return typeof (prisma as unknown as { $queryRaw?: unknown }).$queryRaw === "function";
+}
+
+function currentTeamIdsByPlayer(rows: Array<Pick<SharedRosterRow, "playerId" | "teamId">>) {
+  const grouped = new Map<string, Set<string>>();
+  for (const row of rows) {
+    const key = String(row.playerId);
+    const teamIds = grouped.get(key) ?? new Set<string>();
+    teamIds.add(String(row.teamId));
+    grouped.set(key, teamIds);
+  }
+  return grouped;
 }
 
 function isClubRosterMembership(row: {
