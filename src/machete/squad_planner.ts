@@ -100,6 +100,7 @@ import {
   type FantasySquadSelection,
   type FantasySquadRoundPlan
 } from "./squad_logic";
+import { sportsRuMaxPlayersPerTeamForLeague } from "./sports_ru_team_limits";
 
 export type SavedFantasySquad = {
   id: string | null;
@@ -2243,14 +2244,14 @@ export function fantasyRulesForLeague(
       supportsTripleCaptain: true
     };
   }
-  const inferredMaxPlayers = isTopFiveLeague(league) ? 3 : 2;
+  const configuredMaxPlayers = sportsRuMaxPlayersPerTeamForLeague(league.leagueId);
   return {
     ...defaultFantasySquadRules,
     budgetLimit: contest?.budgetLimit ?? 100,
     squadSize: contest?.squadSize ?? defaultFantasySquadRules.squadSize,
-    maxPlayersPerTeam: contest?.maxPlayersPerTeam ?? inferredMaxPlayers,
+    maxPlayersPerTeam: contest?.maxPlayersPerTeam ?? configuredMaxPlayers,
     transferLimitPerRound: league.leagueId === 63n ? transfersPerFantasyRound : null,
-    sourceLabel: contest ? `Sports.ru: ${contest.name}` : isTopFiveLeague(league) ? "Inferred top-five league rules" : "Inferred default Sports.ru rules"
+    sourceLabel: contest ? `Sports.ru: ${contest.name}` : "Configured Sports.ru league rules"
   };
 }
 
@@ -5043,14 +5044,6 @@ function priceSourceRank(source: FantasyPlannerPlayer["priceSource"]) {
 
 function playerTeamKey(playerId: string | number | bigint, teamId: string | number | bigint) {
   return `${playerId}:${teamId}`;
-}
-
-function isTopFiveLeague(league: Pick<SharedLeagueSeasonOption, "leagueId" | "name" | "displayName" | "country">) {
-  const name = `${league.name} ${league.displayName} ${league.country ?? ""}`.toLowerCase();
-  return (
-    String(league.leagueId) === "47" ||
-    ["premier league", "la liga", "bundesliga", "serie a", "ligue 1"].some((candidate) => name.includes(candidate))
-  );
 }
 
 function normalizeRoundLabel(value: string | null) {

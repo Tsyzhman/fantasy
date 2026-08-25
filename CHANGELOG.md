@@ -5,6 +5,78 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.25 - 2026-08-24
+
+### Added
+
+- Squad projections expose dedicated detail payloads and formula explanations
+  without loading the complete player pool for every interaction.
+- Release version verification now keeps `package.json`, `package-lock.json`,
+  and the newest changelog entry synchronized and rejects unversioned change
+  sets in CI.
+
+### Changed
+
+- Machete squad loading reuses bounded shared reads, preserves imported slots,
+  and remains ready while fixture kickoffs move through the active window.
+- Sports.ru mappings cover current Bundesliga and Serie A team names, and the
+  Championship calendar uses the canonical fantasy route.
+- Local spreadsheet working artifacts under `.codex_sheet_work` no longer
+  pollute Git status.
+- Repository text files are pinned to LF so Windows `core.autocrlf` settings
+  cannot turn a small edit into a whole-file diff.
+
+### Fixed
+
+- Sports.ru squad imports can finish while the player pool is still loading.
+- Sports.ru club limits now use one explicit CoreLeague-ID matrix, with three
+  players allowed for both LaLiga and the Russian Premier League.
+- Projection formula tooltips retain a readable bounded width.
+- The production FPL relay now uses bounded Docker log rotation.
+
+## 0.3.24 - 2026-08-20
+
+### Changed
+
+- Forecasts are aggregated across provider rounds before they are presented in
+  the Machete planner and player table.
+- Formula adaptation explanations distinguish official FPL scoring from the
+  component projection model.
+
+## 0.3.23 - 2026-08-20
+
+### Fixed
+
+- Sports.ru squad imports retain provider players that do not yet have an
+  internal identity mapping, including their selections and prices.
+- Applying an imported squad no longer loses unresolved players during planner
+  normalization or reload.
+
+## 0.3.22 - 2026-08-20
+
+### Fixed
+
+- Provider fixture team names are stored independently from canonical club
+  names so later schedule and price refreshes preserve verified mappings.
+- Sports.ru player matching reuses the persisted provider-team identity across
+  fantasy synchronization and squad planning.
+
+## 0.3.21 - 2026-08-20
+
+### Added
+
+- Versioned provider fantasy schedules and team-name mappings support
+  provider-specific rounds across Sports.ru and FPL.
+- The planner exposes roster and forecast coverage, while the FPL integration
+  uses official names, scoring, and the production VPN relay.
+- Audited Sports.ru mapping workflows cover current Ligue 1 teams and finalized
+  player identities.
+
+### Fixed
+
+- Forecast minutes are scoped by competition, and a Foontasy refresh updates
+  the active fantasy pool without requiring a reload.
+
 ## 0.3.20 - 2026-08-09
 
 ### Added

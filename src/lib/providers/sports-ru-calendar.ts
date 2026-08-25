@@ -44,7 +44,7 @@ const sourceByLeagueId: Record<string, SportsRuCalendarSource> = {
     }
   },
   championship: {
-    fantasyUrl: "https://www.sports.ru/fantasy/football/england-championship/",
+    fantasyUrl: "https://www.sports.ru/fantasy/football/championship/",
     calendarUrl: "https://www.sports.ru/football/tournament/efl-championship/calendar/",
     teamAliases: {
       "Бирмингем": "Birmingham City",

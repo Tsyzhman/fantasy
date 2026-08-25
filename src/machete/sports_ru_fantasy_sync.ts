@@ -11,6 +11,7 @@ import {
   autoMapSportsRuFantasyPlayers,
   reconcileSportsRuFantasyTeamAssignments
 } from "./sports_ru_player_mapping";
+import { sportsRuMaxPlayersPerTeamForLeague } from "./sports_ru_team_limits";
 import { sportsRuSeasonAliases } from "./squad_planner";
 
 export type SportsRuFantasySyncInput = {
@@ -68,7 +69,7 @@ export async function syncSportsRuFantasy(prisma: PrismaClient, input: SportsRuF
   const parsed = parseSportsRuFantasyTournament(html);
   const maxPlayersPerTeam = positiveInteger(
     input.maxPlayersPerTeam,
-    parsed.contest.maxPlayersPerTeam ?? inferredMaxPlayersPerTeam(leagueSeason.league.name)
+    sportsRuMaxPlayersPerTeamForLeague(input.leagueId)
   );
   const contestName = parsed.contest.name === "Фэнтези" ? `Sports.ru ${leagueSeason.league.name}` : parsed.contest.name;
   const syncResult = await prisma.$transaction(async (tx) => {
@@ -284,11 +285,6 @@ async function fetchSportsRuPage(url: string, fetchImpl: typeof fetch = fetch) {
   const response = await fetchImpl(url, { headers: { "user-agent": "MacheteFantasyImporter/2.0" } });
   if (!response.ok) throw new Error(`Sports.ru page request failed: ${response.status} ${response.statusText}`);
   return response.text();
-}
-
-function inferredMaxPlayersPerTeam(leagueName: string) {
-  const value = leagueName.toLowerCase();
-  return ["premier league", "la liga", "bundesliga", "serie a", "ligue 1"].some((name) => value.includes(name)) ? 3 : 2;
 }
 
 function positiveInteger(value: number | undefined, fallback: number) {

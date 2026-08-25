@@ -14,18 +14,24 @@ if (unknownArguments.length > 0) {
 const allowUnpushed = argumentsSet.has("--allow-unpushed");
 const ciMode = argumentsSet.has("--ci");
 const requiredTrackedFiles = [
+  "CHANGELOG.md",
   ".github/workflows/deploy-production.yml",
   "Dockerfile",
+  "package-lock.json",
+  "package.json",
   "scripts/deploy-production-docker.sh",
   "scripts/export-formula-adaptation-models.py",
   "scripts/fpl-vpn-relay.mjs",
   "scripts/prune-production-artifacts.sh",
   "scripts/verify-release-source.mjs",
+  "scripts/verify-release-version.mjs",
   "src/app/api/machete/squads/formula-adaptations/route.ts",
   "src/components/machete/FormulaAdaptationHoverCard.tsx",
   "src/machete/formula-adaptation-models.generated.json",
   "src/machete/formula_adaptations.ts"
 ];
+
+verifyReleaseVersion();
 
 const status = git(["status", "--porcelain=v1", "--untracked-files=all"]);
 if (status) {
@@ -86,6 +92,19 @@ function git(argumentsList) {
   } catch (error) {
     const stderr = typeof error?.stderr === "string" ? error.stderr.trim() : "";
     fail(stderr || `git ${argumentsList.join(" ")} failed.`);
+  }
+}
+
+function verifyReleaseVersion() {
+  try {
+    execFileSync(process.execPath, ["scripts/verify-release-version.mjs"], {
+      cwd: process.cwd(),
+      encoding: "utf8",
+      stdio: ["ignore", "pipe", "pipe"]
+    });
+  } catch (error) {
+    const stderr = typeof error?.stderr === "string" ? error.stderr.trim() : "";
+    fail(stderr || "Release version contract verification failed.");
   }
 }
 

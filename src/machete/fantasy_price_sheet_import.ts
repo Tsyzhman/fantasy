@@ -4,6 +4,7 @@ import type ExcelJS from "exceljs";
 import { normalizeSportsRuPlayerName } from "@/lib/providers/sports-ru-fantasy";
 
 import { autoMapSportsRuFantasyPlayers } from "./sports_ru_player_mapping";
+import { sportsRuMaxPlayersPerTeamForLeague } from "./sports_ru_team_limits";
 
 export type ParsedFantasyPriceRow = {
   rowNumber: number;
@@ -69,7 +70,7 @@ export async function importFantasyPriceWorkbook(
       name: `${providerLabel(provider)} ${leagueSeason.league.name}`,
       budgetLimit: input.budgetLimit ?? 100,
       squadSize: input.squadSize ?? 15,
-      maxPlayersPerTeam: input.maxPlayersPerTeam ?? inferredMaxPlayersPerTeam(leagueSeason.league.name),
+      maxPlayersPerTeam: input.maxPlayersPerTeam ?? sportsRuMaxPlayersPerTeamForLeague(input.leagueId),
       sourceUrl: input.sourceLabel ?? null,
       rules: {
         source: "xlsx",
@@ -85,7 +86,7 @@ export async function importFantasyPriceWorkbook(
       name: `${providerLabel(provider)} ${leagueSeason.league.name}`,
       budgetLimit: input.budgetLimit ?? 100,
       squadSize: input.squadSize ?? 15,
-      maxPlayersPerTeam: input.maxPlayersPerTeam ?? inferredMaxPlayersPerTeam(leagueSeason.league.name),
+      maxPlayersPerTeam: input.maxPlayersPerTeam ?? sportsRuMaxPlayersPerTeamForLeague(input.leagueId),
       sourceUrl: input.sourceLabel ?? null,
       rules: {
         source: "xlsx",
@@ -378,11 +379,6 @@ function cellValue(value: ExcelJS.CellValue): unknown {
     if ("hyperlink" in value && "text" in value) return value.text;
   }
   return value;
-}
-
-function inferredMaxPlayersPerTeam(leagueName: string) {
-  const value = leagueName.toLowerCase();
-  return ["premier league", "la liga", "bundesliga", "serie a", "ligue 1"].some((name) => value.includes(name)) ? 3 : 2;
 }
 
 function providerLabel(provider: string) {

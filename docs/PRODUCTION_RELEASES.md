@@ -14,6 +14,16 @@ is never a production source. `npm run release:verify-source` rejects dirty,
 untracked, or unpushed source and verifies that the formula model and its
 runtime files are tracked.
 
+Every tracked change set intended for merge or release must increment the
+stable semantic version in `package.json`, copy that exact version to both the
+top-level and root-package entries in `package-lock.json`, and add a dated
+`## <version> - YYYY-MM-DD` entry as the newest release in `CHANGELOG.md`. One
+version identifies the complete pull request or release candidate; individual
+commits inside that change set do not require separate version bumps.
+`npm run release:verify-version` checks the local file contract, while CI also
+compares the candidate version with the base revision and requires it to be
+strictly newer.
+
 The manual GitHub workflow packages `git archive HEAD`, retains the archive as
 a workflow artifact, and passes its SHA-256 to the guarded Docker promoter.
 The candidate ref must contain current `main`; after the first manifested

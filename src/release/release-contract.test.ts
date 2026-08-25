@@ -29,11 +29,23 @@ test("production workflow packages committed Git source and never deploys the le
 
   assert.match(workflow, /git merge-base --is-ancestor origin\/main HEAD/);
   assert.match(workflow, /npm run release:verify-source -- --ci/);
+  assert.match(workflow, /npm run release:verify-version -- --base origin\/main/);
   assert.match(workflow, /git archive --format=tar\.gz/);
   assert.match(workflow, /scripts\/deploy-production-docker\.sh/);
   assert.match(workflow, /Reject production history rollback/);
   assert.doesNotMatch(workflow, /\bgit pull\b/);
   assert.doesNotMatch(workflow, /\bpm2\b/i);
+});
+
+test("CI requires a synchronized version bump against the base revision", () => {
+  const workflow = source(".github/workflows/check.yml");
+  const packageManifest = JSON.parse(source("package.json")) as { scripts?: Record<string, string> };
+  const gitAttributes = source(".gitattributes");
+
+  assert.match(workflow, /fetch-depth:\s*0/);
+  assert.match(workflow, /npm run release:verify-version -- --base "\$VERSION_BASE"/);
+  assert.match(packageManifest.scripts?.check ?? "", /^npm run release:verify-version &&/);
+  assert.match(gitAttributes, /^\* text=auto eol=lf$/m);
 });
 
 test("production fantasy price sync is an exact, non-runtime operator job", () => {
@@ -100,10 +112,14 @@ test("server promoter verifies formula files, rehearses migrations, and checks e
   assert.match(promoter, /fantasy-scout-current-rollback-\$release/);
 });
 
-test("release-source verifier requires every formula runtime artifact to be tracked", () => {
+test("release-source verifier requires formula and version artifacts to be tracked", () => {
   const verifier = source("scripts/verify-release-source.mjs");
 
   for (const required of [
+    "CHANGELOG.md",
+    "package-lock.json",
+    "package.json",
+    "scripts/verify-release-version.mjs",
     "src/app/api/machete/squads/formula-adaptations/route.ts",
     "scripts/fpl-vpn-relay.mjs",
     "src/components/machete/FormulaAdaptationHoverCard.tsx",
@@ -112,6 +128,7 @@ test("release-source verifier requires every formula runtime artifact to be trac
   ]) {
     assert.match(verifier, new RegExp(required.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   }
+  assert.match(verifier, /verifyReleaseVersion\(\)/);
   assert.match(verifier, /Release source is dirty/);
   assert.match(verifier, /is not present on an origin remote ref/);
 });
