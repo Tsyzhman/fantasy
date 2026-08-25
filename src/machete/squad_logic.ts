@@ -1011,13 +1011,14 @@ export function validateFantasySquadForSave(input: {
 }
 
 /**
- * Weights for blending independent point forecasts. The component projection
- * carries the most signal, the user's alternative formula adds diversity and
- * the external Foontasy number is an independent third opinion. Community
- * practice (and forecast-blending literature) shows a weighted mean of
- * imperfectly-correlated predictors beats any single one of them.
+ * Weights for blending independent point forecasts. The user's alternative
+ * formula carries the most signal, the external Foontasy number is an
+ * independent second opinion and the primary component projection acts as a
+ * stabilizing baseline. Community practice (and forecast-blending literature)
+ * shows a weighted mean of imperfectly-correlated predictors beats any single
+ * one of them.
  */
-const CONSENSUS_WEIGHTS = { primary: 0.5, alternative: 0.2, external: 0.3 } as const;
+const CONSENSUS_WEIGHTS = { primary: 0.2, alternative: 0.5, external: 0.3 } as const;
 
 type ConsensusFantasyPointsPlayer = Pick<
   FantasyPlannerPlayer,

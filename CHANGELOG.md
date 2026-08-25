@@ -5,6 +5,14 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.30 - 2026-08-25
+
+### Changed
+
+- Consensus weights rebalanced to trust the user's alternative formula first
+  (0.5), then the external Foontasy number (0.3), with the primary projection
+  as a stabilizing baseline (0.2).
+
 ## 0.3.29 - 2026-08-25
 
 ### Added

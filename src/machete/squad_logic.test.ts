@@ -858,12 +858,12 @@ test("consensus blends primary, alternative and external forecasts", () => {
   const blended = player("1", "Blended Mid", "10", "MID", 8, [6]);
   blended.alternativeRoundPoints = [2];
   blended.foontasyPoints = 10;
-  assert.equal(consensusNextFantasyPoints(blended), 6.4);
+  assert.equal(consensusNextFantasyPoints(blended), 5.2);
   assert.equal(consensusNextFantasyPoints(player("2", "Solo Mid", "11", "MID", 8, [4])), 4);
 
   const mixed = player("3", "Mixed Mid", "12", "MID", 8, [5, 5, 5]);
   mixed.foontasyPoints = 9;
-  assert.equal(consensusHorizonFantasyPoints(mixed, 3), 16.5);
+  assert.equal(consensusHorizonFantasyPoints(mixed, 3), 17.4);
   assert.equal(consensusHorizonFantasyPoints(player("4", "Plain Mid", "13", "MID", 8, [2, 3, 4]), 3), 9);
 });
 
