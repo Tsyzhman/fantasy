@@ -11,6 +11,7 @@ import { FOTMOB_PITCH_LENGTH_METERS, FOTMOB_PITCH_WIDTH_METERS, normalized_shot_
 import type { ShotMapShot } from "@/lib/shot-maps";
 import { compactPlayerDisplayName } from "@/lib/players/display-name";
 import { shotMatchesSituationFilter, type ShotSituationFilter } from "@/mixer/shot-filters";
+import { buildShotHeatField, heatColor, type ShotHeatField } from "@/mixer/shot-heatmap";
 
 type ShotMapExplorerProps = {
   teamShots: ShotMapShot[];
@@ -52,6 +53,7 @@ export function ShotMapExplorer({
   const [mode, setMode] = useState<Mode>("overlay");
   const [goalsOnly, setGoalsOnly] = useState(false);
   const [onTargetOnly, setOnTargetOnly] = useState(false);
+  const [showHeat, setShowHeat] = useState(true);
   const [showTeamShots, setShowTeamShots] = useState(true);
   const [showConceded, setShowConceded] = useState(true);
   const [situation, setSituation] = useState<ShotSituationFilter>("all");
@@ -115,6 +117,16 @@ export function ShotMapExplorer({
   }, [goalsOnly, language, mode, onTargetOnly, overlayShots.attacking, overlayShots.conceded, playerShots, showConceded, showTeamShots, situation, teamShots]);
 
   const visibleShots = layers.flatMap((layer) => layer.shots);
+  const heatField = useMemo(
+    () => (showHeat ? buildShotHeatField(visibleShots.map(shotToHeatPoint), {
+      left: PITCH_FIELD_X,
+      top: PITCH_FIELD_Y,
+      width: PITCH_FIELD_WIDTH,
+      height: PITCH_FIELD_HEIGHT
+    }) : null),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- visibleShots is derived from the memoized layers
+    [showHeat, layers]
+  );
   const sequenceShots = useMemo(() => orderShotsForSequence(visibleShots), [visibleShots]);
   const activeSequenceIndex = sequenceShots.length ? activeShotIndex % sequenceShots.length : 0;
   const activeSequenceShot = sequenceShots[activeSequenceIndex] ?? null;
@@ -144,6 +156,10 @@ export function ShotMapExplorer({
             <label className="inline-flex items-center gap-1.5 rounded border border-slate-200 px-2 py-1">
               <input type="checkbox" checked={onTargetOnly} onChange={(event) => setOnTargetOnly(event.target.checked)} />
               <I18nText en="SOT" ru="В створ" />
+            </label>
+            <label className="inline-flex items-center gap-1.5 rounded border border-slate-200 px-2 py-1">
+              <input type="checkbox" checked={showHeat} onChange={(event) => setShowHeat(event.target.checked)} />
+              <I18nText en="Heatmap" ru="Тепловая карта" />
             </label>
             {mode === "for" || mode === "overlay" ? (
               <label className="inline-flex items-center gap-1.5 rounded border border-slate-200 px-2 py-1">
@@ -196,6 +212,12 @@ export function ShotMapExplorer({
           <OutcomeKey color="bg-emerald-500" label={localizedText(language, "Goal", "Гол")} />
           <OutcomeKey color="bg-amber-400" label={localizedText(language, "SOT", "В створ")} />
           <OutcomeKey color="bg-violet-500" label={localizedText(language, "Blocked", "Заблокирован")} />
+          {showHeat ? (
+            <span className="inline-flex items-center gap-1.5">
+              <span className="h-2.5 w-8 rounded-full bg-gradient-to-r from-[#fde68a] via-[#f97316] to-[#dc2626]" />
+              <I18nText en="Heat (xG-weighted)" ru="Плотность (вес — xG)" />
+            </span>
+          ) : null}
         </div>
 
         <div className="mt-3 overflow-x-auto">
@@ -204,6 +226,7 @@ export function ShotMapExplorer({
             activeShotId={activeSequenceShot?.id ?? null}
             compact={false}
             language={language}
+            heatField={heatField}
           />
         </div>
 
@@ -425,13 +448,15 @@ function ShotPitchPanel({
   layers,
   activeShotId,
   compact = true,
-  language
+  language,
+  heatField = null
 }: {
   title?: ReactNode;
   layers: ShotLayer[];
   activeShotId: string | null;
   compact?: boolean;
   language: "en" | "ru";
+  heatField?: ShotHeatField | null;
 }) {
   const shotCount = layers.reduce((total, layer) => total + layer.shots.length, 0);
   const frameClassName = compact
@@ -447,7 +472,7 @@ function ShotPitchPanel({
         </div>
       ) : null}
       <div className={frameClassName}>
-        <ShotPitchSvg layers={layers} activeShotId={activeShotId} language={language} />
+        <ShotPitchSvg layers={layers} activeShotId={activeShotId} language={language} heatField={heatField} />
         {shotCount === 0 ? (
           <div className="absolute inset-0 grid place-items-center bg-[#121619]/75 text-sm font-semibold text-[#f3f1ea]">
             <I18nText en="No shots for current filters" ru="Нет ударов по текущим фильтрам" />
@@ -458,7 +483,7 @@ function ShotPitchPanel({
   );
 }
 
-function ShotPitchSvg({ layers, activeShotId, language }: { layers: ShotLayer[]; activeShotId: string | null; language: "en" | "ru" }) {
+function ShotPitchSvg({ layers, activeShotId, language, heatField = null }: { layers: ShotLayer[]; activeShotId: string | null; language: "en" | "ru"; heatField?: ShotHeatField | null }) {
   const penaltyArea = pitchRectFromCenterWidth(PENALTY_AREA_WIDTH_METERS, PENALTY_AREA_DEPTH_METERS);
   const sixYardBox = pitchRectFromCenterWidth(SIX_YARD_BOX_WIDTH_METERS, SIX_YARD_BOX_DEPTH_METERS);
   const goal = goalMouthRect();
@@ -477,6 +502,12 @@ function ShotPitchSvg({ layers, activeShotId, language }: { layers: ShotLayer[];
         <filter id="shot-shadow" x="-50%" y="-50%" width="200%" height="200%">
           <feDropShadow dx="0" dy="1.2" stdDeviation="1.4" floodColor="#052e16" floodOpacity="0.36" />
         </filter>
+        <clipPath id="pitch-field-clip">
+          <rect x={PITCH_FIELD_X} y={PITCH_FIELD_Y} width={PITCH_FIELD_WIDTH} height={PITCH_FIELD_HEIGHT} rx="8" />
+        </clipPath>
+        <filter id="heat-blur" x="-15%" y="-15%" width="130%" height="130%">
+          <feGaussianBlur stdDeviation="13" />
+        </filter>
       </defs>
 
       <rect width={PITCH_WIDTH} height={PITCH_HEIGHT} fill="#047857" />
@@ -494,6 +525,8 @@ function ShotPitchSvg({ layers, activeShotId, language }: { layers: ShotLayer[];
         <path d={`M${zoneLineTwo} ${PITCH_FIELD_Y}V${PITCH_FIELD_Y + PITCH_FIELD_HEIGHT}`} />
       </g>
 
+      {heatField && heatField.cells.length > 0 ? <ShotHeatLayer heatField={heatField} /> : null}
+
       {layers.map((layer) =>
         layer.shots.map((shot, index) => (
           <ShotMarker key={`${layer.key}-${shot.id}-${index}`} layer={layer} shot={shot} active={shot.id === activeShotId} />
@@ -501,6 +534,29 @@ function ShotPitchSvg({ layers, activeShotId, language }: { layers: ShotLayer[];
       )}
     </svg>
   );
+}
+
+function ShotHeatLayer({ heatField }: { heatField: ShotHeatField }) {
+  return (
+    <g clipPath="url(#pitch-field-clip)" filter="url(#heat-blur)">
+      {heatField.cells.map((cell, index) => (
+        <circle
+          key={index}
+          cx={cell.cx}
+          cy={cell.cy}
+          r={heatField.cellRadius}
+          fill={heatColor(cell.intensity)}
+          opacity={0.14 + 0.5 * cell.intensity}
+        />
+      ))}
+    </g>
+  );
+}
+
+/** Heat input reuses the marker display geometry; intensity is xG-weighted. */
+function shotToHeatPoint(shot: ShotMapShot) {
+  const marker = shotMarkerGeometry(shot);
+  return { x: marker.x, y: marker.y, weight: Math.max(shot.xg ?? 0.05, 0.02) };
 }
 
 function ShotMarker({ layer, shot, active }: { layer: ShotLayer; shot: ShotMapShot; active: boolean }) {

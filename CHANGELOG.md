@@ -5,6 +5,20 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.28 - 2026-08-25
+
+### Added
+
+- MiXerr shot maps gained an xG-weighted heat-map overlay built from the
+  currently filtered shots, toggleable next to the goal/SOT filters and drawn
+  under the shot markers with a legend swatch.
+
+### Removed
+
+- Assisted-pass attribution in MiXerr (top pass creators table, assist
+  tooltips and shot DTO fields): FotMob only publishes passers on goal
+  incidents, so per-shot attribution was misleadingly sparse.
+
 ## 0.3.27 - 2026-08-25
 
 ### Added
