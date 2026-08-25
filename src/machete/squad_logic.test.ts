@@ -5,6 +5,8 @@ import {
   buildTransferSuggestions,
   buildTransferPlanSuggestions,
   canAddFantasyPlayer,
+  consensusHorizonFantasyPoints,
+  consensusNextFantasyPoints,
   countFantasySquadTransfers,
   createFantasyAddEvaluator,
   createFantasyFitEvaluator,
@@ -13,6 +15,7 @@ import {
   fantasyFitBlockReason,
   fantasyProviderPlaceholderPlannerPlayer,
   fantasyProviderPlaceholderPlayerId,
+  fantasySquadStrategyPlayerScore,
   fantasyTransferLimitForHorizon,
   nextAlternativeFantasyPoints,
   nextFantasyPoints,
@@ -247,7 +250,7 @@ test("full-squad optimizer returns a legal squad within budget and respects lock
   assert.equal(optimized.filter((selection) => selection.isViceCaptain).length, 1);
 });
 
-test("display-only alternative predicted FP does not change optimizer output", () => {
+test("alternative forecasts steer the optimizer through bounded consensus weights", () => {
   const rules = { ...defaultFantasySquadRules, budgetLimit: 82, maxPlayersPerTeam: 3 };
   const positions = ["GK", "DEF", "MID", "FWD"] as const;
   const pool = positions.flatMap((position, positionIndex) =>
@@ -262,17 +265,33 @@ test("display-only alternative predicted FP does not change optimizer output", (
       )
     )
   );
-  const withAlternativeDisplayValues = pool.map((candidate, index) => ({
-    ...candidate,
-    alternativePredictedFp: index % 2 === 0 ? 10_000 - index : -10_000 + index
-  }));
 
   const baseline = optimizeFantasySquad({ pool, rules, horizon: 3 });
-  const withAlternative = optimizeFantasySquad({ pool: withAlternativeDisplayValues, rules, horizon: 3 });
-
   assert.ok(baseline);
-  assert.ok(withAlternative);
-  assert.deepEqual(withAlternative, baseline);
+  assert.equal(baseline.some((selection) => selection.playerId === "203"), false);
+
+  // The user's own formula rates this mid-range candidate far higher than the
+  // primary model does; consensus must pull him into the squad.
+  const boostedPool = pool.map((candidate) =>
+    candidate.playerId === "203"
+      ? { ...candidate, alternativePredictedFp: 60, alternativeRoundPoints: [60, 60, 60] }
+      : candidate
+  );
+  const boosted = optimizeFantasySquad({ pool: boostedPool, rules, horizon: 3 });
+  assert.ok(boosted);
+  assert.equal(boosted.some((selection) => selection.playerId === "203"), true);
+  assert.deepEqual(summarizeFantasySquad(boostedPool, boosted, rules, 3).violations, []);
+
+  // Even absurd alternative noise cannot break legality: consensus is a
+  // weighted mean over available sources, so output stays a valid full squad.
+  const extremePool = pool.map((candidate, index) => ({
+    ...candidate,
+    alternativePredictedFp: index % 2 === 0 ? 10_000 - index : -10_000 + index,
+    alternativeRoundPoints: [index % 2 === 0 ? 10_000 : -10_000, index % 2 === 0 ? 10_000 : -10_000, index % 2 === 0 ? 10_000 : -10_000]
+  }));
+  const extreme = optimizeFantasySquad({ pool: extremePool, rules, horizon: 3 });
+  assert.ok(extreme);
+  assert.deepEqual(summarizeFantasySquad(extremePool, extreme, rules, 3).violations, []);
 });
 
 test("full-squad optimizer spends available budget on a higher forecast without selecting an unaffordable star", () => {
@@ -835,8 +854,81 @@ test("alternative forecasts preserve missing values and sum only available round
   assert.equal(playerAlternativeHorizonPoints({ alternativePredictedFp: null, alternativeRoundPoints: [] }, 5), null);
 });
 
-test("position normalizer accepts Sports.ru labels", () => {
-  assert.equal(normalizeFantasyPosition("\u0432\u0440"), "GK");
+test("consensus blends primary, alternative and external forecasts", () => {
+  const blended = player("1", "Blended Mid", "10", "MID", 8, [6]);
+  blended.alternativeRoundPoints = [2];
+  blended.foontasyPoints = 10;
+  assert.equal(consensusNextFantasyPoints(blended), 6.4);
+  assert.equal(consensusNextFantasyPoints(player("2", "Solo Mid", "11", "MID", 8, [4])), 4);
+
+  const mixed = player("3", "Mixed Mid", "12", "MID", 8, [5, 5, 5]);
+  mixed.foontasyPoints = 9;
+  assert.equal(consensusHorizonFantasyPoints(mixed, 3), 16.5);
+  assert.equal(consensusHorizonFantasyPoints(player("4", "Plain Mid", "13", "MID", 8, [2, 3, 4]), 3), 9);
+});
+
+test("reliable strategy caps rotation-risk fringe players below safe scorers", () => {
+  const safe = player("1", "Safe Mid", "10", "MID", 8, [6]);
+  safe.expectedMinutes = 85;
+  safe.startProbability = 0.95;
+  const fringe = player("2", "Fringe Mid", "11", "MID", 8, [6]);
+  fringe.expectedMinutes = 25;
+  fringe.startProbability = 0.35;
+  assert.ok(fantasySquadStrategyPlayerScore(safe, 3, "reliable") > fantasySquadStrategyPlayerScore(fringe, 3, "reliable"));
+});
+
+test("upside strategy prefers the same-total option with the higher ceiling", () => {
+  const steady = player("1", "Steady Fwd", "10", "FWD", 9, [8, 8, 8]);
+  const spiky = player("2", "Spiky Fwd", "11", "FWD", 9, [16, 4, 4]);
+  assert.equal(fantasySquadStrategyPlayerScore(steady, 3, "balanced"), fantasySquadStrategyPlayerScore(spiky, 3, "balanced"));
+  assert.ok(fantasySquadStrategyPlayerScore(spiky, 3, "upside") > fantasySquadStrategyPlayerScore(steady, 3, "upside"));
+});
+
+test("transfer candidates break score ties toward confident low-owned differentials", () => {
+  const rules = { ...defaultFantasySquadRules, budgetLimit: 40, maxPlayersPerTeam: 3 };
+  const outgoingMid = player("1", "Current Mid", "10", "MID", 5, [2, 2, 2]);
+  const templatePick = { ...player("2", "Template Mid", "20", "MID", 5, [6, 6, 6]), forecastConfidence: 0.9, ownershipPercent: 60 };
+  const differentialPick = { ...player("3", "Differential Mid", "30", "MID", 5, [6, 6, 6]), forecastConfidence: 0.9, ownershipPercent: 6 };
+
+  const plans = buildTransferPlanSuggestions({
+    pool: [outgoingMid, templatePick, differentialPick],
+    selections: [selectionForPlayer(outgoingMid, 0, true)],
+    rules,
+    forecastSource: "FO",
+    horizon: 3,
+    transferCount: 1,
+    maximumPlans: 1
+  });
+
+  assert.equal(plans[0]?.moves[0]?.inPlayerId, differentialPick.playerId);
+  assert.equal(plans[0]?.reason.includes("low-owned differential pick"), true);
+});
+
+test("captain suggestion breaks next-round ties by ceiling volatility", () => {
+  const rules = { ...defaultFantasySquadRules, budgetLimit: 40, maxPlayersPerTeam: 3 };
+  const zeroStarter = player("1", "Zero Def", "10", "DEF", 5, [0, 0, 0]);
+  const flatForward = player("2", "Flat Fwd", "20", "FWD", 5, [8, 8, 8]);
+  const spikyForward = player("3", "Spiky Fwd", "30", "FWD", 5, [16, 4, 4]);
+  const defUpgrade = player("4", "Def Upgrade", "40", "DEF", 5, [4, 4, 4]);
+
+  const plans = buildTransferPlanSuggestions({
+    pool: [zeroStarter, flatForward, spikyForward, defUpgrade],
+    selections: [
+      selectionForPlayer(zeroStarter, 0, true),
+      selectionForPlayer(flatForward, 1, true),
+      selectionForPlayer(spikyForward, 2, true)
+    ],
+    rules,
+    forecastSource: "FO",
+    horizon: 3,
+    transferCount: 1,
+    maximumPlans: 1
+  });
+
+  assert.equal(plans[0]?.captainPlayerId, spikyForward.playerId);
+});
+
+test("position normalizer accepts Sports.ru labels", () => {  assert.equal(normalizeFantasyPosition("\u0432\u0440"), "GK");
   assert.equal(normalizeFantasyPosition("\u0412\u0420\u0422"), "GK");
   assert.equal(normalizeFantasyPosition("\u0412\u0440\u0430\u0442\u0430\u0440\u0438"), "GK");
   assert.equal(normalizeFantasyPosition("\u0437\u0430\u0449"), "DEF");

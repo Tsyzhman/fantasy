@@ -5,6 +5,22 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.29 - 2026-08-25
+
+### Added
+
+- Squad recommendations now run on a consensus engine that blends the primary
+  projection, the user's alternative formula and the external Foontasy number
+  (weights 0.5/0.2/0.3) instead of trusting a single model.
+- Auto-pick "Reliable" strategy adds a rotation-risk floor guard on expected
+  minutes and start probability; "Upside" caps the volatility bonus so junk
+  minutes cannot masquerade as ceiling.
+- Transfer suggestions weigh clamped recent-form tilt, confident low-owned
+  differentials (Foontasy ownership now reaches the planner), and a small
+  fixture-run tie-breaker; plans earn cross-model agreement and calendar-swing
+  bonuses, flag differential picks in their reason, and the captain tie-break
+  prefers ceiling volatility among equal next-round projections.
+
 ## 0.3.28 - 2026-08-25
 
 ### Added

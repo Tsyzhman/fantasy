@@ -5738,8 +5738,8 @@ function squadStrategyCopy(language: UiLanguage, strategy: FantasySquadStrategy)
       label: localizedText(language, "Reliable", "Надёжность"),
       description: localizedText(
         language,
-        "Weights expected minutes, historical starts and confidence; penalizes stated risks and estimated prices.",
-        "Учитывает ожидаемые минуты, долю стартов и уверенность; штрафует явные риски и оценочные цены."
+        "Consensus of three forecasts weighted by minutes, starts and confidence; caps rotation risks and estimated prices.",
+        "Консенсус трёх прогнозов с весами по минутам, стартам и уверенности; режет ротационные риски и оценочные цены."
       )
     };
   }
@@ -5748,8 +5748,8 @@ function squadStrategyCopy(language: UiLanguage, strategy: FantasySquadStrategy)
       label: localizedText(language, "Upside", "Потенциал"),
       description: localizedText(
         language,
-        "Rewards the forecast ceiling and round-to-round variance; this option is intentionally less stable.",
-        "Повышает вес потолка прогноза и разброса по турам; этот вариант намеренно менее стабилен."
+        "Chases the consensus ceiling and useful variance (capped), for captains and differentials.",
+        "Гонится за потолком консенсуса и полезным (ограниченным) разбросом — под капитанов и дифференциалы."
       )
     };
   }
@@ -5757,8 +5757,8 @@ function squadStrategyCopy(language: UiLanguage, strategy: FantasySquadStrategy)
     label: localizedText(language, "Balanced", "Баланс"),
     description: localizedText(
       language,
-      "Maximizes raw projected points over the selected horizon.",
-      "Максимизирует исходный прогноз очков на выбранном горизонте."
+      "Maximizes the blended forecast (own model + alt formula + Foontasy) over the selected horizon.",
+      "Максимизирует смешанный прогноз (своя модель + альт-формула + Foontasy) на выбранном горизонте."
     )
   };
 }

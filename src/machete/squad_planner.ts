@@ -762,7 +762,7 @@ export async function loadFantasySquadPlannerData(
           where: { leagueId: league.leagueId, season: league.season, sourceVariant: "sports", playerId: { not: null } },
           orderBy: [{ fetchedAt: "desc" }, { updatedAt: "desc" }],
           distinct: ["playerId"],
-          select: { playerId: true, points: true, fetchedAt: true }
+          select: { playerId: true, points: true, selectedByPercent: true, fetchedAt: true }
         }),
     isFpl
       ? Promise.resolve([])
@@ -1207,6 +1207,9 @@ export async function loadFantasySquadPlannerData(
         alternativeRoundPoints,
         ...formulaAdaptations,
         foontasyPoints: foontasy?.points ?? null,
+        ownershipPercent: typeof foontasy?.selectedByPercent === "number" && Number.isFinite(foontasy.selectedByPercent)
+          ? foontasy.selectedByPercent
+          : null,
         // Foontasy publishes its current round only. Do not invent a T3/T5
         // total from one matchweek; this becomes numeric only when the source
         // supplies projections for every round in the selected horizon.

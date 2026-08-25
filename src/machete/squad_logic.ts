@@ -208,6 +208,8 @@ export type FantasyPlannerPlayer = {
   foontasyPoints?: number | null;
   foontasyHorizonPoints?: number | null;
   foontasyFetchedAt?: string | null;
+  /** Provider-reported ownership share, percent of managers (0-100) or null. */
+  ownershipPercent?: number | null;
   modelT3Points?: number | null;
   modelT5Points?: number | null;
   modelT3Status?: string | null;
@@ -1008,13 +1010,84 @@ export function validateFantasySquadForSave(input: {
   return { ok: true, selections: canonicalSelections, summary };
 }
 
+/**
+ * Weights for blending independent point forecasts. The component projection
+ * carries the most signal, the user's alternative formula adds diversity and
+ * the external Foontasy number is an independent third opinion. Community
+ * practice (and forecast-blending literature) shows a weighted mean of
+ * imperfectly-correlated predictors beats any single one of them.
+ */
+const CONSENSUS_WEIGHTS = { primary: 0.5, alternative: 0.2, external: 0.3 } as const;
+
+type ConsensusFantasyPointsPlayer = Pick<
+  FantasyPlannerPlayer,
+  "predictedFp" | "roundPoints" | "alternativePredictedFp" | "alternativeRoundPoints" | "foontasyPoints"
+>;
+
+/** Blended expected points for a single upcoming round; null when no source covers it. */
+export function consensusRoundFantasyPoints(player: ConsensusFantasyPointsPlayer, roundIndex: number): number | null {
+  let total = 0;
+  let weight = 0;
+  const primary = finiteTransferForecast(
+    roundIndex === 0 ? (player.roundPoints[0] ?? player.predictedFp ?? null) : (player.roundPoints[roundIndex] ?? null)
+  );
+  if (primary !== null) {
+    total += primary * CONSENSUS_WEIGHTS.primary;
+    weight += CONSENSUS_WEIGHTS.primary;
+  }
+  const alternative = roundIndex === 0
+    ? nextAlternativeFantasyPoints(player)
+    : finiteTransferForecast(player.alternativeRoundPoints?.[roundIndex] ?? null);
+  if (alternative !== null) {
+    total += alternative * CONSENSUS_WEIGHTS.alternative;
+    weight += CONSENSUS_WEIGHTS.alternative;
+  }
+  if (roundIndex === 0) {
+    const external = finiteTransferForecast(player.foontasyPoints);
+    if (external !== null) {
+      total += external * CONSENSUS_WEIGHTS.external;
+      weight += CONSENSUS_WEIGHTS.external;
+    }
+  }
+  return weight > 0 ? total / weight : null;
+}
+
+export function consensusNextFantasyPoints(player: ConsensusFantasyPointsPlayer): number {
+  return consensusRoundFantasyPoints(player, 0) ?? nextFantasyPoints(player);
+}
+
+/** Weighted-sum of per-round consensus points; falls back to primary-only totals. */
+export function consensusHorizonFantasyPoints(player: ConsensusFantasyPointsPlayer, horizon: number): number | null {
+  const requestedHorizon = Math.max(1, Math.floor(horizon));
+  let total = 0;
+  for (let roundIndex = 0; roundIndex < requestedHorizon; roundIndex += 1) {
+    const roundScore = consensusRoundFantasyPoints(player, roundIndex);
+    if (roundScore === null) return playerHorizonPoints(player, requestedHorizon);
+    total += roundScore;
+  }
+  return roundFantasyValue(total);
+}
+
+function sampleRoundScores(player: FantasyPlannerPlayer, horizon: number) {
+  const consensusSamples: number[] = [];
+  for (let roundIndex = 0; roundIndex < horizon; roundIndex += 1) {
+    const roundScore = consensusRoundFantasyPoints(player, roundIndex);
+    if (roundScore !== null) consensusSamples.push(roundScore);
+  }
+  if (consensusSamples.length > 0) return consensusSamples;
+  const primary = player.roundPoints.slice(0, Math.max(1, horizon)).filter(Number.isFinite);
+  return primary.length > 0 ? primary : [finiteScore(nextFantasyPoints(player))];
+}
+
 export function fantasySquadStrategyPlayerScore(
   player: FantasyPlannerPlayer,
   horizon: number,
   strategy: FantasySquadStrategy,
   basis: FantasyStarterOptimizationBasis = "horizon"
 ) {
-  const baseScore = finiteScore(basis === "next" ? nextFantasyPoints(player) : playerHorizonPoints(player, horizon));
+  const baseScore = finiteScore(
+    basis === "next" ? consensusNextFantasyPoints(player) : (consensusHorizonFantasyPoints(player, horizon) ?? playerHorizonPoints(player, horizon))
+  );
   if (strategy === "balanced") return baseScore;
 
   if (strategy === "reliable") {
@@ -1024,16 +1097,25 @@ export function fantasySquadStrategyPlayerScore(
     const reliability = minutesReliability * 0.45 + startReliability * 0.3 + confidenceReliability * 0.25;
     const riskMultiplier = 1 - Math.min(0.24, (player.forecastRisks?.length ?? 0) * 0.04);
     const sourceMultiplier = player.priceSource === "SPORTS_RU" ? 1 : 0.96;
-    return Math.max(0, baseScore * (0.55 + reliability * 0.45) * riskMultiplier * sourceMultiplier);
+    // Rotation-risk guard: projected fringe minutes cap the score regardless of
+    // headline projections, so reliable squads avoid bench-ball casualties.
+    const rotationGuard = Math.min(
+      normalizedReliability(player.expectedMinutes, 55, 0.55),
+      normalizedReliability(player.startProbability, 0.85, 0.55)
+    );
+    const floorMultiplier = 0.82 + rotationGuard * 0.18;
+    return Math.max(0, baseScore * (0.5 + reliability * 0.5) * riskMultiplier * sourceMultiplier * floorMultiplier);
   }
 
-  const roundScores = player.roundPoints.slice(0, Math.max(1, horizon)).filter(Number.isFinite);
-  const samples = roundScores.length > 0 ? roundScores : [finiteScore(nextFantasyPoints(player))];
+  const samples = sampleRoundScores(player, Math.max(1, horizon));
   const mean = samples.reduce((total, score) => total + score, 0) / samples.length;
   const ceiling = Math.max(...samples);
   const variance = samples.reduce((total, score) => total + (score - mean) ** 2, 0) / samples.length;
   const volatility = Math.sqrt(variance);
-  return Math.max(0, baseScore + ceiling * 0.35 + volatility * 0.5);
+  // Volatility is desirable only up to a point: beyond ~60% of the base it
+  // stops signalling upside and starts signalling junk minutes.
+  const volatilityBonus = Math.min(volatility * 0.5, baseScore * 0.6);
+  return Math.max(0, baseScore + ceiling * 0.35 + volatilityBonus);
 }
 
 export type FantasySquadOptimizationInput = {
@@ -1702,9 +1784,45 @@ function evaluateTransferPlan(input: {
   if (netHorizonDelta !== null && netHorizonDelta <= 0) return null;
 
   const risks = transferPlanRisks(input.incoming, moves, paidTransferLoss, input.forecastSource);
-  const reason = `${input.forecastSource} projected gain ${signedFantasyValue(horizonDelta)} over ${input.horizon} round${input.horizon === 1 ? "" : "s"}${priceDelta <= 0 ? ` while saving ${roundFantasyValue(-priceDelta)}` : ""}`;
+  // Cross-model agreement: when an independent forecast (the user's ALT
+  // formula) moves the same direction as the selected source, the plan is far
+  // less likely to be single-model noise.
+  let agreementBonus = 0;
+  if (input.forecastSource !== "ALT" && input.forecastSource !== "FFO") {
+    const altMoves = input.outgoing.map((pair, index) =>
+      transferSuggestionRoundDelta(input.incoming[index], pair.player, "ALT", Math.min(3, input.horizon))
+    );
+    if (!altMoves.some((delta) => delta === null)) {
+      const altNet = altMoves.reduce<number>((total, delta) => total + (delta ?? 0), 0);
+      if (Math.abs(altNet) >= 0.5 && Math.sign(altNet) === Math.sign(horizonDelta)) {
+        agreementBonus = 0.15 * Math.min(1, Math.abs(altNet) / 3);
+      }
+    }
+  }
+  // Calendar swing: selling a player into a hard run while buying into an easy
+  // one adds quiet value that round-level deltas only capture partially.
+  const outgoingRun = averagePlanFixtureRun(input.outgoing.map((pair) => pair.player), input.horizon);
+  const incomingRun = averagePlanFixtureRun(input.incoming, input.horizon);
+  const fixtureSwingBonus = outgoingRun !== null && incomingRun !== null ? clampValue((outgoingRun - incomingRun) * 0.06, -0.2, 0.2) : 0;
+  const differentialPick = input.incoming.some(
+    (player) =>
+      player.ownershipPercent !== null && player.ownershipPercent !== undefined && player.ownershipPercent < 15 && (player.forecastConfidence ?? 0) >= 0.6
+  );
+  // Plan-level ownership edge mirrors the candidate-level bonus so that two
+  // otherwise-identical plans are ranked by template edge instead of id order.
+  const ownershipEdgeBonus =
+    input.incoming.reduce((total, player) => total + ownershipEdgeValue(player), 0) / Math.max(1, input.incoming.length);
+  const reason = `${input.forecastSource} projected gain ${signedFantasyValue(horizonDelta)} over ${input.horizon} round${input.horizon === 1 ? "" : "s"}${priceDelta <= 0 ? ` while saving ${roundFantasyValue(-priceDelta)}` : ""}${differentialPick ? "; includes a low-owned differential pick" : ""}`;
   const score = roundFantasyValue(
-    (netHorizonDelta ?? horizonDelta) + round1Delta * 0.7 + (round3Delta ?? 0) * 0.15 + (round5Delta ?? 0) * 0.08 + Math.max(0, -priceDelta) * 0.05 - risks.length * 0.05
+    (netHorizonDelta ?? horizonDelta)
+      + round1Delta * 0.7
+      + (round3Delta ?? 0) * 0.15
+      + (round5Delta ?? 0) * 0.08
+      + Math.max(0, -priceDelta) * 0.05
+      - risks.length * 0.05
+      + agreementBonus
+      + fixtureSwingBonus
+      + ownershipEdgeBonus
   );
   const id = moves
     .map((move) => `${move.outPlayerId}>${move.inPlayerId}`)
@@ -1749,7 +1867,7 @@ function transferPlanCaptainPlayerId(
   horizon: number
 ) {
   const playersById = new Map(pool.map((player) => [player.playerId, player]));
-  let best: { playerId: string; nextPoints: number; horizonPoints: number } | null = null;
+  let best: { playerId: string; nextPoints: number; upsideKey: number } | null = null;
 
   for (const selection of selections) {
     if (!selection.isStarter) continue;
@@ -1758,17 +1876,42 @@ function transferPlanCaptainPlayerId(
     const nextPoints = transferSuggestionForecastNextPoints(player, forecastSource);
     if (nextPoints === null) continue;
     const horizonPoints = transferSuggestionForecastHorizonPoints(player, forecastSource, horizon) ?? Number.NEGATIVE_INFINITY;
+    // Captains want ceiling, not just the safest projection: among equals the
+    // armband goes to the higher-variance, higher-horizon option.
+    const upsideKey = horizonPoints + sampleVolatility(player, horizon) * 0.5;
     if (
       !best
       || nextPoints > best.nextPoints
-      || (nextPoints === best.nextPoints && horizonPoints > best.horizonPoints)
-      || (nextPoints === best.nextPoints && horizonPoints === best.horizonPoints && player.playerId.localeCompare(best.playerId) < 0)
+      || (nextPoints === best.nextPoints && upsideKey > best.upsideKey)
+      || (nextPoints === best.nextPoints && upsideKey === best.upsideKey && player.playerId.localeCompare(best.playerId) < 0)
     ) {
-      best = { playerId: player.playerId, nextPoints, horizonPoints };
+      best = { playerId: player.playerId, nextPoints, upsideKey };
     }
   }
 
   return best?.playerId ?? null;
+}
+
+function sampleVolatility(player: FantasyPlannerPlayer, horizon: number) {
+  const samples = player.roundPoints.slice(0, Math.max(1, horizon)).filter(Number.isFinite);
+  if (samples.length < 2) return 0;
+  const mean = samples.reduce((total, score) => total + score, 0) / samples.length;
+  const variance = samples.reduce((total, score) => total + (score - mean) ** 2, 0) / samples.length;
+  return Math.sqrt(variance);
+}
+
+function averagePlanFixtureRun(players: ReadonlyArray<Pick<FantasyPlannerPlayer, "fixtureDifficulties">>, horizon: number) {
+  const runs = players
+    .map((player) => fixtureRunAverage(player.fixtureDifficulties, horizon))
+    .filter((run): run is number => run !== null);
+  if (runs.length === 0) return null;
+  return runs.reduce((total, run) => total + run, 0) / runs.length;
+}
+
+function ownershipEdgeValue(player: FantasyPlannerPlayer) {
+  const ownership = player.ownershipPercent;
+  if (ownership === null || ownership === undefined || ownership >= 22) return 0;
+  return clampValue((22 - ownership) / 22, 0, 1) * 0.15 * (player.forecastConfidence ?? 0.5);
 }
 
 function transferPlanFitsValidatedSquad(
@@ -1855,10 +1998,49 @@ function sumPlanValues(values: Array<number | null>) {
 }
 
 function transferCandidateScore(player: FantasyPlannerPlayer, horizon: number, forecastSource: TransferSuggestionForecastSource) {
-  return (transferSuggestionForecastHorizonPoints(player, forecastSource, horizon) ?? 0)
-    + (transferSuggestionForecastNextPoints(player, forecastSource) ?? 0) * 1.5
-    + (player.forecastConfidence ?? 0)
+  const horizonPoints = transferSuggestionForecastHorizonPoints(player, forecastSource, horizon) ?? 0;
+  const nextPoints = transferSuggestionForecastNextPoints(player, forecastSource) ?? 0;
+  const confidence = player.forecastConfidence ?? 0;
+  let score = horizonPoints
+    + nextPoints * 1.5
+    + confidence * 0.5
     - player.price * 0.02;
+
+  // Recent form tilt. Actuals are noisier than projections, so the signal is
+  // clamped hard: a single haul can lift a candidate by at most ±0.375.
+  const formMean = recentFormMean(player.recentFp, 4);
+  if (formMean !== null) score += clampValue(formMean - 2, -1.5, 1.5) * 0.25;
+
+  // Differential edge: a confident pick owned by almost nobody is exactly where
+  // league rank is won; heavily-owned players cannot gain you an edge.
+  if (player.ownershipPercent !== null && player.ownershipPercent !== undefined && player.ownershipPercent < 22) {
+    score += clampValue((22 - player.ownershipPercent) / 22, 0, 1) * 0.9 * Math.max(confidence, 0.3);
+  }
+
+  // Fixture-run tie-breaker. Per-match odds already live inside the point
+  // projections, so this only nudges otherwise-similar candidates.
+  const runDifficulty = fixtureRunAverage(player.fixtureDifficulties, horizon);
+  if (runDifficulty !== null) score += (2.6 - runDifficulty) * 0.15;
+
+  return score;
+}
+
+function recentFormMean(recentFp: readonly number[] | undefined, sampleSize: number) {
+  const samples = (recentFp ?? []).filter((value) => Number.isFinite(value)).slice(-sampleSize);
+  if (samples.length === 0) return null;
+  return samples.reduce((total, value) => total + value, 0) / samples.length;
+}
+
+export function fixtureRunAverage(difficulties: ReadonlyArray<number | null> | undefined, horizon: number) {
+  const samples = (difficulties ?? []).slice(0, Math.max(1, Math.floor(horizon))).filter(
+    (value): value is number => typeof value === "number" && Number.isFinite(value)
+  );
+  if (samples.length === 0) return null;
+  return samples.reduce((total, value) => total + value, 0) / samples.length;
+}
+
+function clampValue(value: number, min: number, max: number) {
+  return Math.min(max, Math.max(min, value));
 }
 
 function combinations<T>(values: T[], count: number): T[][] {
