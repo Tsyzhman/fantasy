@@ -8,6 +8,7 @@ export async function register() {
   const { startSportsRuFantasySyncScheduler } = await import("./server/sports-ru-fantasy-sync-scheduler");
   const { startSportsRuSquadSnapshotScheduler } = await import("./server/sports-ru-squad-snapshot-scheduler");
   const { startFixtureOddsScheduler } = await import("./server/fixture-odds-scheduler");
+  const { startSquadPlanningSnapshotScheduler } = await import("./server/squad-planning-snapshot-scheduler");
   const { startFoontasyForecastScheduler } = await import("./server/foontasy-forecast-scheduler");
   const { startFplPriceSyncScheduler } = await import("./server/fpl-price-sync-scheduler");
 
@@ -17,6 +18,7 @@ export async function register() {
   startSportsRuFantasySyncScheduler();
   startSportsRuSquadSnapshotScheduler();
   startFixtureOddsScheduler();
+  startSquadPlanningSnapshotScheduler();
   startFoontasyForecastScheduler();
   startFplPriceSyncScheduler();
   startIngestionWorkerLoop();

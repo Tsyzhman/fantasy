@@ -625,6 +625,7 @@ model CoreLeague {
   fantasySquads                 UserFantasySquad[]
   sportsRuSquadSnapshots        SportsRuSquadSnapshot[]
   fantasyProviderSquadSnapshots FantasyProviderSquadSnapshot[]
+  squadPlanningSnapshots        SquadPlanningSnapshot[]
   fantasyGameweekStates         FantasyUserGameweekState[]
   fantasyPriceSnapshots         FantasyPlayerPriceSnapshot[]
   fantasySyncRuns               FantasyProviderSyncRun[]
@@ -812,6 +813,7 @@ model FantasyContest {
   priceSnapshots         FantasyPlayerPriceSnapshot[]
   syncRuns               FantasyProviderSyncRun[]
   providerSquadSnapshots FantasyProviderSquadSnapshot[]
+  squadPlanningSnapshots SquadPlanningSnapshot[]
   gameweekStates         FantasyUserGameweekState[]
   chipDefinitions        FantasyChipDefinition[]
   chipUsages             FantasyChipUsage[]
@@ -1726,6 +1728,36 @@ model FantasyPlayerPriceSnapshot {
   @@unique([contestId, snapshotKey], map: "fantasy_price_snapshots_contest_snapshot_key")
   @@index([provider, leagueId, season, fetchedAt], map: "fantasy_price_snapshots_provider_league_season_fetched_idx")
   @@map("fantasy_player_price_snapshots")
+}
+
+model SquadPlanningSnapshot {
+  id             String    @id @default(cuid())
+  provider       String    @default("SPORTS_RU")
+  leagueId       BigInt    @map("league_id")
+  season         String
+  roundKey       String    @map("round_key")
+  roundLabel     String?   @map("round_label")
+  contestId      String?   @map("contest_id")
+  firstKickoffAt DateTime  @map("first_kickoff_at")
+  dueAt          DateTime  @map("due_at")
+  status         String    @default("PENDING")
+  attemptCount   Int       @default(0) @map("attempt_count")
+  nextAttemptAt  DateTime? @map("next_attempt_at")
+  capturedAt     DateTime? @map("captured_at")
+  playersCount   Int       @default(0) @map("players_count")
+  payloadHash    String?   @map("payload_hash")
+  players        Json?
+  lastError      String?   @map("last_error")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+
+  contest FantasyContest? @relation(fields: [contestId], references: [id], onDelete: SetNull)
+  league  CoreLeague      @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, leagueId, season, roundKey], map: "squad_planning_snapshots_scope_key")
+  @@index([status, dueAt], map: "squad_planning_snapshots_status_due_idx")
+  @@index([leagueId, season, capturedAt], map: "squad_planning_snapshots_league_season_captured_idx")
+  @@map("squad_planning_snapshots")
 }
 
 model FantasyProviderSyncRun {

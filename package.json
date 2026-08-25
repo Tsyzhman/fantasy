@@ -1,6 +1,6 @@
 {
   "name": "fantasy-scout",
-  "version": "0.3.24",
+  "version": "0.3.26",
   "private": true,
   "engines": {
     "node": ">=20.9.0"
@@ -17,9 +17,10 @@
     "test:e2e": "playwright test",
     "audit:prod": "npm audit --omit=dev --audit-level=moderate",
     "release:verify-source": "node scripts/verify-release-source.mjs",
+    "release:verify-version": "node scripts/verify-release-version.mjs",
     "lint": "eslint .",
     "typecheck": "next typegen && tsc --noEmit",
-    "check": "npm run test && npm run lint && npm run typecheck && npm run build",
+    "check": "npm run release:verify-version && npm run test && npm run lint && npm run typecheck && npm run build",
     "clean:dev": "tsx scripts/clean-dev.ts",
     "prisma:generate": "prisma generate",
     "prisma:push": "npm run prisma:migrate:deploy",
@@ -68,7 +69,8 @@
     "beta:user-test": "tsx scripts/beta-user-test.ts",
     "logos:download": "tsx scripts/download-team-logos.ts",
     "photos:cache-fotmob": "tsx scripts/cache-fotmob-player-photos.ts",
-    "odds:sync-fonbet": "tsx scripts/sync-fonbet-fixture-odds.ts"
+    "odds:sync-fonbet": "tsx scripts/sync-fonbet-fixture-odds.ts",
+    "snapshots:squad": "tsx scripts/export-squad-planning-snapshots.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

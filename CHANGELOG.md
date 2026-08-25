@@ -5,6 +5,16 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.26 - 2026-08-25
+
+### Added
+
+- Machete squad planning tables are archived per fantasy tour exactly one
+  minute before the first kickoff. Tour boundaries come from the synced
+  Sports.ru provider rounds, captures run on one precise timer per round, and
+  the stored player pool is exportable with `npm run snapshots:squad` for
+  comparing pre-deadline forecasts with real fantasy results.
+
 ## 0.3.25 - 2026-08-24
 
 ### Added
