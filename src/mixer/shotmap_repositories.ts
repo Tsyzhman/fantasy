@@ -5,7 +5,6 @@ import { sourceIdToBigInt } from "@/core_data/models";
 import { FOTMOB_PITCH_LENGTH_METERS, FOTMOB_PITCH_WIDTH_METERS, normalized_shot_axis_coordinate } from "@/lib/shot-coordinates";
 import { buildSideZoneSummary } from "@/providers/fotmob/shots";
 import { matchWindowSeasonLabel, type MacheteMatchWindow } from "@/scoring/machete/match-window";
-import { buildShotAssistIndex, findAssisterForShot, type ShotAssistCandidate } from "@/mixer/shot-assists";
 
 export type ShotMapShot = {
   id: string;
@@ -38,9 +37,6 @@ export type ShotMapShot = {
   xgot: number | null;
   team_name: string | null;
   opponent_team_name: string | null;
-  assist_player_id: string | null;
-  assist_provider_player_id: string | null;
-  assist_player_name: string | null;
   match_date: string | null;
   match_label: string | null;
 };
@@ -420,38 +416,8 @@ function latestCompetitionScopesByLeague(scopes: ShotCompetitionScope[]) {
 
 async function serializeShots(prisma: PrismaClient, shots: ShotRecord[]) {
   if (shots.length === 0) return [];
-  const [positionLookups, assistIndex] = await Promise.all([
-    loadShotPlayerPositionLookups(prisma, shots),
-    loadShotAssistIndex(prisma, shots)
-  ]);
-  return shots.map((shot) => serializeShot(shot, shotPlayerPosition(shot, positionLookups), assistIndex));
-}
-
-/**
- * FotMob publishes the final passer only on goal incidents (match events with
- * a related player), never on shotmap entries, so assists are resolved for
- * goal shots by matching the incident feed onto the stored shots.
- */
-async function loadShotAssistIndex(prisma: PrismaClient, shots: ShotRecord[]) {
-  const matchIds = uniqueBigInts(shots.filter((shot) => shot.isGoal).map((shot) => shot.matchId));
-  if (matchIds.length === 0) return buildShotAssistIndex([]);
-  const events = await prisma.matchEvent.findMany({
-    where: {
-      matchId: { in: matchIds },
-      isGoal: true,
-      isOwnGoal: false,
-      playerId: { not: null },
-      relatedPlayerId: { not: null }
-    },
-    select: {
-      matchId: true,
-      playerId: true,
-      minute: true,
-      addedTime: true,
-      relatedPlayer: { select: { id: true, name: true, rawRef: true } }
-    }
-  });
-  return buildShotAssistIndex(events);
+  const positionLookups = await loadShotPlayerPositionLookups(prisma, shots);
+  return shots.map((shot) => serializeShot(shot, shotPlayerPosition(shot, positionLookups)));
 }
 
 async function loadShotPlayerPositionLookups(prisma: PrismaClient, shots: ShotRecord[]): Promise<ShotPlayerPositionLookups> {
@@ -512,16 +478,8 @@ async function loadShotPlayerPositionLookups(prisma: PrismaClient, shots: ShotRe
   return { byProviderPlayerId, rosterExact, rosterByPlayerTeam, rosterByPlayer };
 }
 
-function serializeShot(shot: ShotRecord, playerPosition: string | null, assistIndex: ReturnType<typeof buildShotAssistIndex>): ShotMapShot {
+function serializeShot(shot: ShotRecord, playerPosition: string | null): ShotMapShot {
   const [normalizedX, normalizedY] = serializeShotCoordinates(shot);
-  const assister = isOwnGoalShot(shot)
-    ? null
-    : findAssisterForShot(assistIndex, {
-      matchId: shot.matchId,
-      playerId: shot.playerId,
-      minute: shot.minute,
-      addedTime: shot.addedTime
-    });
 
   return {
     id: String(shot.id),
@@ -554,16 +512,9 @@ function serializeShot(shot: ShotRecord, playerPosition: string | null, assistIn
     xgot: shot.xgot,
     team_name: shot.team?.name ?? null,
     opponent_team_name: shot.opponentTeam?.name ?? null,
-    assist_player_id: assister === null ? null : String(assister.id),
-    assist_provider_player_id: assister?.rawRef ?? null,
-    assist_player_name: assister?.name ?? null,
     match_date: shot.match?.matchDate?.toISOString() ?? null,
     match_label: [shot.match?.homeTeam?.name, shot.match?.awayTeam?.name].filter(Boolean).join(" vs ") || null
   };
-}
-
-function isOwnGoalShot(shot: ShotRecord) {
-  return /own/i.test(shot.eventType ?? "");
 }
 
 function shotPlayerPosition(shot: ShotRecord, lookups: ShotPlayerPositionLookups) {
