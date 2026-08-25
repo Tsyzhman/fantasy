@@ -11,7 +11,7 @@ const userPlayerSurfaces = [
   ["../../app/compare/page.tsx", 2],
   ["../../components/players/player-watchlist.tsx", 1],
   ["../../components/ui/player-hover-card.tsx", 1],
-  ["../../components/mixerr/ShotMapExplorer.tsx", 1],
+  ["../../components/mixerr/ShotMapExplorer.tsx", 2],
   ["../../app/mixerr/page.tsx", 2],
   ["../../app/page.tsx", 1]
 ] as const;

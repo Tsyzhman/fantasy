@@ -11,6 +11,7 @@ import { FOTMOB_PITCH_LENGTH_METERS, FOTMOB_PITCH_WIDTH_METERS, normalized_shot_
 import type { ShotMapShot } from "@/lib/shot-maps";
 import { compactPlayerDisplayName } from "@/lib/players/display-name";
 import { shotMatchesSituationFilter, type ShotSituationFilter } from "@/mixer/shot-filters";
+import { summarizeShotPassers } from "@/mixer/shot-passers";
 
 type ShotMapExplorerProps = {
   teamShots: ShotMapShot[];
@@ -121,6 +122,8 @@ export function ShotMapExplorer({
   const totalXg = visibleShots.reduce((total, shot) => total + (shot.xg ?? 0), 0);
   const shooterSummaries = summarizeShooters(visibleShots, language);
   const topShooterSummaries = shooterSummaries.slice(0, 8);
+  const passerSummaries = summarizeShotPassers(visibleShots);
+  const topPasserSummaries = passerSummaries.slice(0, 8);
   const switchActiveShot = (direction: -1 | 1) => {
     setActiveShotIndex((current) => (sequenceShots.length ? (current + direction + sequenceShots.length) % sequenceShots.length : 0));
   };
@@ -250,6 +253,49 @@ export function ShotMapExplorer({
                 ) : null}
               </tbody>
             </SortableTable>
+          </div>
+
+          <div className="mt-5 border-t border-slate-200 pt-4">
+            <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+              <h2 className="text-base font-semibold text-ink"><I18nText en="Top pass creators" ru="Топ пасующих" /></h2>
+              <p className="text-xs text-slate-500">
+                <I18nText
+                  en={`Assists on ${visibleShots.filter((shot) => shot.assist_player_id || shot.assist_provider_player_id).length} scored shots · passer is known for goals only`}
+                  ru={`Пасы под ${visibleShots.filter((shot) => shot.assist_player_id || shot.assist_provider_player_id).length} голов · пасующий известен только для голов`}
+                />
+              </p>
+            </div>
+            <div className="mt-3 overflow-x-auto">
+              <SortableTable className="min-w-full divide-y divide-slate-200 text-sm">
+                <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
+                  <tr>
+                    <th className="px-3 py-2"><I18nText en="Player" ru="Игрок" /></th>
+                    <th className="px-3 py-2"><I18nText en="Team" ru="Команда" /></th>
+                    <th className="px-3 py-2 text-right"><I18nText en="Assists" ru="Ассисты" /></th>
+                    <th className="px-3 py-2 text-right">xG</th>
+                    <th className="px-3 py-2"><I18nText en="Last assist" ru="Последний пас" /></th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {topPasserSummaries.map((summary) => (
+                    <tr key={summary.key} className="hover:bg-slate-50">
+                      <td className="whitespace-nowrap px-3 py-2 font-medium text-ink" title={summary.playerName}>{compactPlayerDisplayName(summary.playerName)}</td>
+                      <td className="whitespace-nowrap px-3 py-2 text-slate-600">{summary.teamName}</td>
+                      <td className="whitespace-nowrap px-3 py-2 text-right font-semibold text-ink">{summary.assists}</td>
+                      <td className="whitespace-nowrap px-3 py-2 text-right text-slate-700">{summary.xgAssisted.toFixed(2)}</td>
+                      <td className="min-w-48 px-3 py-2 text-slate-600">{summary.lastAssist}</td>
+                    </tr>
+                  ))}
+                  {topPasserSummaries.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="px-3 py-8 text-center text-slate-500">
+                        <I18nText en="No assisted goals for the current layer and filters." ru="Нет голов с ассистами по текущему слою и фильтрам." />
+                      </td>
+                    </tr>
+                  ) : null}
+                </tbody>
+              </SortableTable>
+            </div>
           </div>
         </div>
       </section>
@@ -496,14 +542,14 @@ function ShotPitchSvg({ layers, activeShotId, language }: { layers: ShotLayer[];
 
       {layers.map((layer) =>
         layer.shots.map((shot, index) => (
-          <ShotMarker key={`${layer.key}-${shot.id}-${index}`} layer={layer} shot={shot} active={shot.id === activeShotId} />
+          <ShotMarker key={`${layer.key}-${shot.id}-${index}`} layer={layer} shot={shot} active={shot.id === activeShotId} language={language} />
         ))
       )}
     </svg>
   );
 }
 
-function ShotMarker({ layer, shot, active }: { layer: ShotLayer; shot: ShotMapShot; active: boolean }) {
+function ShotMarker({ layer, shot, active, language }: { layer: ShotLayer; shot: ShotMapShot; active: boolean; language: "en" | "ru" }) {
   const marker = shotMarkerGeometry(shot);
   const fill = markerFill(shot);
   const stroke = markerStroke(layer.tone);
@@ -515,7 +561,7 @@ function ShotMarker({ layer, shot, active }: { layer: ShotLayer; shot: ShotMapSh
 
   return (
     <g className="transition-transform hover:scale-125" filter="url(#shot-shadow)" opacity={opacity} style={{ transformOrigin: `${marker.x}px ${marker.y}px` }}>
-      <title>{shotTooltip(shot, layer.label)}</title>
+      <title>{shotTooltip(shot, layer.label, language)}</title>
       {active ? (
         <>
           <circle cx={marker.x} cy={marker.y} r={marker.radius + 13} fill="#fef08a" opacity="0.2" />
@@ -672,13 +718,16 @@ function shotDisplayCoordinates(shot: ShotMapShot): [number | null, number | nul
   ];
 }
 
-function shotTooltip(shot: ShotMapShot, layer: string) {
+function shotTooltip(shot: ShotMapShot, layer: string, language: "en" | "ru") {
   return [
     layer,
     shot.player_name,
     shot.minute !== null ? `${shot.minute}${shot.added_time ? `+${shot.added_time}` : ""}'` : null,
     shot.xg !== null ? `${shot.xg.toFixed(2)} xG` : null,
     shot.event_type,
+    shot.assist_player_name
+      ? `${localizedText(language, "Pass", "Пас")}: ${shot.assist_player_name}`
+      : null,
     shot.match_label
   ].filter(Boolean).join(" | ");
 }

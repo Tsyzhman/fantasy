@@ -5,6 +5,16 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.27 - 2026-08-25
+
+### Added
+
+- MiXerr shot maps now attach the final passer to every assisted goal by
+  joining the synced goal incidents, surface a "Top pass creators" table with
+  assists and assisted xG below the top shooters table, and show the passer in
+  each shot tooltip. FotMob publishes passers only for goals, so other shots
+  stay unattributed.
+
 ## 0.3.26 - 2026-08-25
 
 ### Added
