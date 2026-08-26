@@ -5,6 +5,17 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.32 - 2026-08-26
+
+### Added
+
+- Fantasy model forecasts are now recalculated automatically: an in-process
+  scheduler recomputes `XG_SHARE_V2` forecasts for every active league/season
+  scope shortly after startup and then every six hours (configurable via
+  `FANTASY_MODEL_FORECAST_SYNC_INTERVAL_HOURS`, disable with
+  `FANTASY_MODEL_FORECAST_SYNC_ENABLED=false`). The manual
+  `forecasts:recalculate-model` script remains available.
+
 ## 0.3.31 - 2026-08-26
 
 ### Changed

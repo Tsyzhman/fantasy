@@ -10,6 +10,7 @@ export async function register() {
   const { startFixtureOddsScheduler } = await import("./server/fixture-odds-scheduler");
   const { startSquadPlanningSnapshotScheduler } = await import("./server/squad-planning-snapshot-scheduler");
   const { startFoontasyForecastScheduler } = await import("./server/foontasy-forecast-scheduler");
+  const { startFantasyModelForecastScheduler } = await import("./server/fantasy-model-forecast-scheduler");
   const { startFplPriceSyncScheduler } = await import("./server/fpl-price-sync-scheduler");
 
   startMacheteDailyFotMobSyncScheduler();
@@ -20,6 +21,7 @@ export async function register() {
   startFixtureOddsScheduler();
   startSquadPlanningSnapshotScheduler();
   startFoontasyForecastScheduler();
+  startFantasyModelForecastScheduler();
   startFplPriceSyncScheduler();
   startIngestionWorkerLoop();
 }
