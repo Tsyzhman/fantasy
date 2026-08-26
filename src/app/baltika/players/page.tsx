@@ -144,7 +144,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
   const altRanks = computeRanks(players.map((p) => p.alternativeScore));
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 2xl:max-w-[1600px] 3xl:max-w-[1760px]">
       <PageBreadcrumbs
         backHref="/baltika/leagues"
         backLabel={<I18nText en="Back to leagues" ru="Назад к лигам" />}

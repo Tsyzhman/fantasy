@@ -51,7 +51,7 @@ export function AppHeader({ user }: AppHeaderProps) {
 
   return (
     <header className="app-header sticky top-0 z-20">
-      <div className="relative mx-auto flex min-h-14 min-w-0 max-w-7xl items-center justify-end px-4 sm:px-6 lg:px-8">
+      <div className="relative mx-auto flex min-h-14 min-w-0 max-w-7xl items-center justify-end px-4 sm:px-6 lg:px-8 2xl:max-w-[1760px] 3xl:max-w-[1920px] 3xl:px-10">
         <button
           type="button"
           aria-controls="global-navigation"

@@ -64,7 +64,14 @@ export function MacheteShell({ children, compact = false }: { children: ReactNod
   );
 
   return (
-    <main className={cn("mx-auto max-w-7xl px-4 sm:px-5 lg:px-6 2xl:px-8", compact ? "py-3 sm:py-4" : "py-5 sm:py-7")}>
+    <main
+      className={cn(
+        "mx-auto w-full px-4 sm:px-5 lg:px-6 2xl:px-8",
+        compact
+          ? "max-w-7xl py-3 sm:py-4 2xl:max-w-[1760px] 3xl:max-w-[1920px] 3xl:px-10"
+          : "max-w-7xl py-5 sm:py-7 2xl:max-w-[1600px] 3xl:max-w-[1760px]"
+      )}
+    >
       {compact ? (
         <div className="flex min-w-0 items-center gap-3 border-b border-slate-200 pb-2.5">
           <span className="hidden shrink-0 text-xs font-semibold text-slate-500 sm:inline">Machete</span>
@@ -75,7 +82,7 @@ export function MacheteShell({ children, compact = false }: { children: ReactNod
           <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <p className="kicker">Machete</p>
-              <h1 className="mt-1 text-[clamp(28px,3vw,40px)] font-bold leading-[1.08] tracking-[-0.03em] text-ink">
+              <h1 className="mt-1 text-[clamp(24px,2.6vw,32px)] font-bold leading-[1.08] tracking-[-0.03em] text-ink">
                 <I18nText en="FotMob data workspace" ru="Рабочее пространство FotMob" />
               </h1>
             </div>

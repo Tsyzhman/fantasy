@@ -43,7 +43,7 @@ export function MacheteSyncStatusBanner() {
 
   return (
     <section className="border-b border-amber-200 bg-amber-50">
-      <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-3 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
+      <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-3 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8 2xl:max-w-[1760px] 3xl:max-w-[1920px] 3xl:px-10">
         <div className="flex items-start gap-2">
           <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
           <div>

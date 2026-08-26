@@ -1148,6 +1148,9 @@ export function optimizeFantasySquad(input: FantasySquadOptimizationInput) {
   const excludedIds = new Set(excludedPlayerIds);
   const existingById = new Map(selections.map((selection) => [selection.playerId, selection]));
   const lockedIds = new Set(selections.filter((selection) => selection.isLocked).map((selection) => selection.playerId));
+  const forcedBenchIds = new Set(
+    selections.filter((selection) => selection.isLocked && !selection.isStarter).map((selection) => selection.playerId)
+  );
   if ([...lockedIds].some((playerId) => excludedIds.has(playerId))) return null;
 
   const uniquePlayers = new Map<string, FantasyPlannerPlayer>();
@@ -1185,8 +1188,18 @@ export function optimizeFantasySquad(input: FantasySquadOptimizationInput) {
   const remainingPositionCapacity = buildRemainingPositionCapacity(teamOptions);
 
   const budgetWidth = budgetUnits + 1;
+  const playerRanks = new Map(
+    candidates.map((candidate) => [candidate.player.playerId, { positionIndex: candidate.positionIndex, score: candidate.score }])
+  );
   let states = new Map<number, SquadOptimizationState>();
-  states.set(0, { counts: [0, 0, 0, 0], budgetUnits: 0, score: 0, previous: null, addedPlayerIds: [] });
+  states.set(0, {
+    counts: [0, 0, 0, 0],
+    budgetUnits: 0,
+    score: 0,
+    previous: null,
+    addedPlayerIds: [],
+    ranked: [[], [], [], []]
+  });
 
   for (let teamIndex = 0; teamIndex < teamOptions.length; teamIndex += 1) {
     const options = teamOptions[teamIndex];
@@ -1200,7 +1213,8 @@ export function optimizeFantasySquad(input: FantasySquadOptimizationInput) {
         const nextBudget = state.budgetUnits + option.budgetUnits;
         if (nextBudget > budgetUnits) continue;
 
-        const score = state.score + option.score;
+        const ranked = mergeRankedStartingXi(state.ranked, option.playerIds, playerRanks, forcedBenchIds);
+        const score = startingXiScoreFromRanked(ranked);
         const positionCode = encodePositionCounts(counts, targets);
         const key = positionCode * budgetWidth + nextBudget;
         const existing = nextStates.get(key);
@@ -1210,7 +1224,8 @@ export function optimizeFantasySquad(input: FantasySquadOptimizationInput) {
             budgetUnits: nextBudget,
             score,
             previous: state,
-            addedPlayerIds: option.playerIds
+            addedPlayerIds: option.playerIds,
+            ranked
           });
         }
       }
@@ -1288,13 +1303,73 @@ type TeamOptimizationOption = {
   playerIds: string[];
 };
 
+type RankedStartingXiPlayer = {
+  playerId: string;
+  score: number;
+};
+
 type SquadOptimizationState = {
   counts: PositionCounts;
   budgetUnits: number;
   score: number;
   previous: SquadOptimizationState | null;
   addedPlayerIds: string[];
+  ranked: [RankedStartingXiPlayer[], RankedStartingXiPlayer[], RankedStartingXiPlayer[], RankedStartingXiPlayer[]];
 };
+
+function mergeRankedStartingXi(
+  ranked: SquadOptimizationState["ranked"],
+  playerIds: string[],
+  playerRanks: Map<string, { positionIndex: number; score: number }>,
+  forcedBenchIds: Set<string>
+) {
+  const next: SquadOptimizationState["ranked"] = [
+    ranked[0].slice(),
+    ranked[1].slice(),
+    ranked[2].slice(),
+    ranked[3].slice()
+  ];
+  for (const playerId of playerIds) {
+    if (forcedBenchIds.has(playerId)) continue;
+    const rank = playerRanks.get(playerId);
+    if (!rank) continue;
+    const list = next[rank.positionIndex];
+    let insertAt = list.length;
+    while (insertAt > 0 && (list[insertAt - 1].score < rank.score || (list[insertAt - 1].score === rank.score && list[insertAt - 1].playerId > playerId))) {
+      insertAt -= 1;
+    }
+    list.splice(insertAt, 0, { playerId, score: rank.score });
+  }
+  return next;
+}
+
+type StartingXiFormation = Record<Exclude<FantasyPositionGroup, "UNK">, number>;
+
+function startingXiScoreFromRanked(ranked: SquadOptimizationState["ranked"]) {
+  let score = ranked[0][0]?.score ?? 0;
+  const heads = [0, 0, 0];
+  for (let taken = 0; taken < 10; taken += 1) {
+    let bestIndex = -1;
+    let bestScore = Number.NEGATIVE_INFINITY;
+    let bestPlayerId = "";
+    for (let positionIndex = 0; positionIndex < 3; positionIndex += 1) {
+      const candidate = ranked[positionIndex + 1][heads[positionIndex]];
+      if (!candidate) continue;
+      if (
+        candidate.score > bestScore
+        || (candidate.score === bestScore && candidate.playerId < bestPlayerId)
+      ) {
+        bestIndex = positionIndex;
+        bestScore = candidate.score;
+        bestPlayerId = candidate.playerId;
+      }
+    }
+    if (bestIndex < 0) break;
+    score += bestScore;
+    heads[bestIndex] += 1;
+  }
+  return score;
+}
 
 function buildTeamOptimizationOptions(
   candidates: OptimizationCandidate[],
@@ -1452,6 +1527,136 @@ function normalizedReliability(value: number | null | undefined, scale: number, 
   return Math.min(1, Math.max(0, value / scale));
 }
 
+function selectGreedyMaxFoXi(
+  players: FantasyPlannerPlayer[],
+  scorePlayer: (player: FantasyPlannerPlayer) => number
+) {
+  const scoreCache = new Map<string, number>();
+  const scoreOf = (player: FantasyPlannerPlayer) => {
+    const cached = scoreCache.get(player.playerId);
+    if (cached !== undefined) return cached;
+    const score = finiteScore(scorePlayer(player));
+    scoreCache.set(player.playerId, score);
+    return score;
+  };
+  const goalkeepers = players
+    .filter((player) => player.positionGroup === "GK")
+    .sort((left, right) => scoreOf(right) - scoreOf(left) || left.playerId.localeCompare(right.playerId));
+  const fieldPlayers = players
+    .filter((player) => player.positionGroup !== "GK" && player.positionGroup !== "UNK")
+    .sort((left, right) => scoreOf(right) - scoreOf(left) || left.playerId.localeCompare(right.playerId));
+  const ids = new Set<string>();
+  let score = 0;
+  const goalkeeper = goalkeepers[0];
+  if (goalkeeper) {
+    ids.add(goalkeeper.playerId);
+    score += scoreOf(goalkeeper);
+  }
+  for (const player of fieldPlayers.slice(0, 10)) {
+    ids.add(player.playerId);
+    score += scoreOf(player);
+  }
+  return ids.size > 0 ? { ids, score } : null;
+}
+
+function legalStartingFormations(rules: FantasySquadRules): StartingXiFormation[] {
+  const formations: StartingXiFormation[] = [];
+  for (let def = rules.starterPositionLimits.DEF.min; def <= rules.starterPositionLimits.DEF.max; def += 1) {
+    for (let mid = rules.starterPositionLimits.MID.min; mid <= rules.starterPositionLimits.MID.max; mid += 1) {
+      for (let fwd = rules.starterPositionLimits.FWD.min; fwd <= rules.starterPositionLimits.FWD.max; fwd += 1) {
+        if (def + mid + fwd !== rules.starterSize - 1) continue;
+        formations.push({ GK: 1, DEF: def, MID: mid, FWD: fwd });
+      }
+    }
+  }
+  return formations;
+}
+
+export function maximumStartingXiScore(
+  players: FantasyPlannerPlayer[],
+  rules: FantasySquadRules,
+  scorePlayer: (player: FantasyPlannerPlayer) => number,
+  options?: { forcedStarterIds?: Iterable<string>; forcedBenchIds?: Iterable<string> }
+) {
+  return selectMaximumStartingXi(players, rules, scorePlayer, options)?.score ?? 0;
+}
+
+function selectMaximumStartingXi(
+  players: FantasyPlannerPlayer[],
+  rules: FantasySquadRules,
+  scorePlayer: (player: FantasyPlannerPlayer) => number,
+  options?: { forcedStarterIds?: Iterable<string>; forcedBenchIds?: Iterable<string> }
+) {
+  const forcedStarterIds = new Set(options?.forcedStarterIds ?? []);
+  const forcedBenchIds = new Set(options?.forcedBenchIds ?? []);
+  const scoreCache = new Map<string, number>();
+  const scoreOf = (player: FantasyPlannerPlayer) => {
+    const cached = scoreCache.get(player.playerId);
+    if (cached !== undefined) return cached;
+    const score = finiteScore(scorePlayer(player));
+    scoreCache.set(player.playerId, score);
+    return score;
+  };
+
+  const byPosition: Record<Exclude<FantasyPositionGroup, "UNK">, FantasyPlannerPlayer[]> = {
+    GK: [],
+    DEF: [],
+    MID: [],
+    FWD: []
+  };
+  for (const player of players) {
+    if (player.positionGroup === "UNK" || forcedBenchIds.has(player.playerId)) continue;
+    byPosition[player.positionGroup].push(player);
+  }
+  for (const position of ["GK", "DEF", "MID", "FWD"] as const) {
+    byPosition[position].sort((left, right) => scoreOf(right) - scoreOf(left) || left.playerId.localeCompare(right.playerId));
+  }
+
+  const pickFormation = (formation: StartingXiFormation) => {
+    const ids = new Set<string>();
+    let score = 0;
+    for (const position of ["GK", "DEF", "MID", "FWD"] as const) {
+      const targetCount = formation[position];
+      const forced = byPosition[position].filter((player) => forcedStarterIds.has(player.playerId));
+      const rest = byPosition[position].filter((player) => !forcedStarterIds.has(player.playerId));
+      if (forced.length > targetCount || forced.length + rest.length < targetCount) return null;
+      for (const player of [...forced, ...rest.slice(0, targetCount - forced.length)]) {
+        ids.add(player.playerId);
+        score += scoreOf(player);
+      }
+    }
+    return ids.size === rules.starterSize ? { ids, score } : null;
+  };
+
+  let best: { ids: Set<string>; score: number } | null = null;
+  for (const formation of legalStartingFormations(rules)) {
+    const picked = pickFormation(formation);
+    if (picked && (!best || picked.score > best.score)) best = picked;
+  }
+  if (best) return best;
+
+  const ids = new Set<string>();
+  let score = 0;
+  const goalkeeper = byPosition.GK[0];
+  if (goalkeeper) {
+    ids.add(goalkeeper.playerId);
+    score += scoreOf(goalkeeper);
+  }
+  const fieldCounts: Record<Exclude<FantasyPositionGroup, "GK" | "UNK">, number> = { DEF: 0, MID: 0, FWD: 0 };
+  const fieldPlayers = [...byPosition.DEF, ...byPosition.MID, ...byPosition.FWD].sort(
+    (left, right) => scoreOf(right) - scoreOf(left) || left.playerId.localeCompare(right.playerId)
+  );
+  for (const player of fieldPlayers) {
+    if (ids.size >= rules.starterSize) break;
+    if (player.positionGroup === "GK" || player.positionGroup === "UNK") continue;
+    if (fieldCounts[player.positionGroup] >= rules.starterPositionLimits[player.positionGroup].max) continue;
+    fieldCounts[player.positionGroup] += 1;
+    ids.add(player.playerId);
+    score += scoreOf(player);
+  }
+  return ids.size > 0 ? { ids, score } : null;
+}
+
 export function optimizeFantasyStarters(input: {
   pool: FantasyPlannerPlayer[];
   selections: FantasySquadSelection[];
@@ -1484,51 +1689,17 @@ export function optimizeFantasyStarters(input: {
       .filter((pair) => respectLocks && pair.selection.isLocked && !pair.selection.isStarter)
       .map((pair) => pair.player.playerId)
   );
-  const formationOptions: Array<Record<Exclude<FantasyPositionGroup, "UNK">, number>> = [];
+  const best = selectMaximumStartingXi(
+    selectedPairs.map((pair) => pair.player),
+    rules,
+    scorePlayer,
+    { forcedStarterIds, forcedBenchIds }
+  );
+  if (!best || best.ids.size !== rules.starterSize) return null;
 
-  for (let def = rules.starterPositionLimits.DEF.min; def <= rules.starterPositionLimits.DEF.max; def += 1) {
-    for (let mid = rules.starterPositionLimits.MID.min; mid <= rules.starterPositionLimits.MID.max; mid += 1) {
-      for (let fwd = rules.starterPositionLimits.FWD.min; fwd <= rules.starterPositionLimits.FWD.max; fwd += 1) {
-        if (def + mid + fwd !== rules.starterSize - 1) continue;
-        formationOptions.push({ GK: 1, DEF: def, MID: mid, FWD: fwd });
-      }
-    }
-  }
-
-  let best: { ids: Set<string>; score: number } | null = null;
-  for (const formation of formationOptions) {
-    const starterIds = new Set<string>();
-    let score = 0;
-    let valid = true;
-
-    for (const position of ["GK", "DEF", "MID", "FWD"] as const) {
-      const targetCount = formation[position];
-      const forced = selectedPairs
-        .filter((pair) => pair.player.positionGroup === position && forcedStarterIds.has(pair.player.playerId))
-        .sort((left, right) => scorePlayer(right.player) - scorePlayer(left.player));
-      const candidates = selectedPairs
-        .filter((pair) => pair.player.positionGroup === position && !forcedStarterIds.has(pair.player.playerId) && !forcedBenchIds.has(pair.player.playerId))
-        .sort((left, right) => scorePlayer(right.player) - scorePlayer(left.player));
-
-      if (forced.length > targetCount || forced.length + candidates.length < targetCount) {
-        valid = false;
-        break;
-      }
-
-      for (const pair of [...forced, ...candidates.slice(0, targetCount - forced.length)]) {
-        starterIds.add(pair.player.playerId);
-        score += scorePlayer(pair.player);
-      }
-    }
-
-    if (!valid || starterIds.size !== rules.starterSize) continue;
-    const optimized = selections.map((selection) => ({ ...selection, isStarter: starterIds.has(selection.playerId) }));
-    if (summarizeFantasySquad(pool, optimized, rules, horizon).violations.length > 0) continue;
-    if (!best || score > best.score) best = { ids: starterIds, score };
-  }
-
-  if (!best) return null;
-  return selections.map((selection) => ({ ...selection, isStarter: best.ids.has(selection.playerId) }));
+  const optimized = selections.map((selection) => ({ ...selection, isStarter: best.ids.has(selection.playerId) }));
+  if (summarizeFantasySquad(pool, optimized, rules, horizon).violations.length > 0) return null;
+  return optimized;
 }
 
 export function buildTransferSuggestions(input: {
@@ -1616,6 +1787,8 @@ export function buildTransferPlanSuggestions(input: {
   if (maximumMoves === 0 || selections.length === 0) return [];
 
   const currentSummary = summarizeFantasySquad(pool, selections, rules, horizon);
+  const currentPlayers = selectedPlannerPlayers(pool, selections);
+  const currentLineup = lineupForecastBreakdown(currentPlayers, rules, forecastSource, horizon);
   const validationContext: TransferPlanValidationContext | null =
     currentSummary.violations.length === 0
       ? {
@@ -1675,6 +1848,7 @@ export function buildTransferPlanSuggestions(input: {
           incoming,
           validationContext,
           currentSpent: currentSummary.spent,
+          currentLineup,
           freeTransfers: input.freeTransfers,
           paidTransferPointCost: input.paidTransferPointCost
         });
@@ -1708,6 +1882,13 @@ type TransferPlanValidationContext = {
   byTeam: Record<string, number>;
 };
 
+type LineupForecastBreakdown = {
+  round1: number | null;
+  round3: number | null;
+  round5: number | null;
+  horizon: number | null;
+};
+
 function evaluateTransferPlan(input: {
   pool: FantasyPlannerPlayer[];
   selections: FantasySquadSelection[];
@@ -1718,6 +1899,7 @@ function evaluateTransferPlan(input: {
   incoming: FantasyPlannerPlayer[];
   validationContext: TransferPlanValidationContext | null;
   currentSpent: number;
+  currentLineup: LineupForecastBreakdown;
   freeTransfers?: number | null;
   paidTransferPointCost?: number | null;
 }): TransferPlanSuggestion | null {
@@ -1745,11 +1927,20 @@ function evaluateTransferPlan(input: {
   if (squadCostAfter > input.rules.budgetLimit) return null;
   const bankAfter = roundFantasyValue(input.rules.budgetLimit - squadCostAfter);
 
+  const nextPlayers = selectedPlannerPlayers(input.pool, nextSelections);
+  const nextLineup = lineupForecastBreakdown(nextPlayers, input.rules, input.forecastSource, input.horizon);
+  const round1Delta = lineupBreakdownDelta(nextLineup.round1, input.currentLineup.round1);
+  if (round1Delta === null) return null;
+  const round3Delta = lineupBreakdownDelta(nextLineup.round3, input.currentLineup.round3);
+  const round5Delta = lineupBreakdownDelta(nextLineup.round5, input.currentLineup.round5);
+  const horizonDelta = lineupBreakdownDelta(nextLineup.horizon, input.currentLineup.horizon);
+  if (horizonDelta === null || (horizonDelta <= 0 && round1Delta <= 0 && (round3Delta ?? 0) <= 0 && (round5Delta ?? 0) <= 0)) return null;
+
   const moves: TransferPlanMove[] = [];
   for (const [index, pair] of input.outgoing.entries()) {
     const incoming = input.incoming[index];
-    const round1Delta = transferSuggestionRoundDelta(incoming, pair.player, input.forecastSource, 1);
-    if (round1Delta === null) return null;
+    const moveRound1Delta = transferSuggestionRoundDelta(incoming, pair.player, input.forecastSource, 1);
+    if (moveRound1Delta === null) return null;
     moves.push({
       outPlayerId: pair.player.playerId,
       inPlayerId: incoming.playerId,
@@ -1759,24 +1950,14 @@ function evaluateTransferPlan(input: {
       outTeamName: pair.player.teamName,
       inTeamName: incoming.teamName,
       priceDelta: roundFantasyValue(incoming.price - pair.player.price),
-      round1Delta,
+      round1Delta: moveRound1Delta,
       round3Delta: transferSuggestionRoundDelta(incoming, pair.player, input.forecastSource, 3),
       round5Delta: transferSuggestionRoundDelta(incoming, pair.player, input.forecastSource, 5)
     });
   }
-  const round1Delta = roundFantasyValue(sumPlanValues(moves.map((move) => move.round1Delta)) ?? 0);
-  const rawRound3Delta = sumPlanValues(moves.map((move) => move.round3Delta));
-  const rawRound5Delta = sumPlanValues(moves.map((move) => move.round5Delta));
-  const round3Delta = rawRound3Delta === null ? null : roundFantasyValue(rawRound3Delta);
-  const round5Delta = rawRound5Delta === null ? null : roundFantasyValue(rawRound5Delta);
-  const horizonDelta = roundFantasyValue(
-    input.incoming.reduce((total, player) => total + (transferSuggestionForecastHorizonPoints(player, input.forecastSource, input.horizon) ?? 0), 0) -
-      input.outgoing.reduce((total, pair) => total + (transferSuggestionForecastHorizonPoints(pair.player, input.forecastSource, input.horizon) ?? 0), 0)
-  );
-  if (horizonDelta <= 0 && round1Delta <= 0 && (round3Delta ?? 0) <= 0 && (round5Delta ?? 0) <= 0) return null;
 
   const priorityReplacementCount = input.outgoing.filter((pair) => isPriorityTransferReplacement(pair, input.forecastSource)).length;
-  const captainPlayerId = transferPlanCaptainPlayerId(input.pool, nextSelections, input.forecastSource, input.horizon);
+  const captainPlayerId = transferPlanCaptainPlayerId(nextPlayers, input.rules, input.forecastSource, input.horizon);
   const transferCostConfigured = isNonNegativeInteger(input.freeTransfers) && isNonNegativeNumber(input.paidTransferPointCost);
   const paidTransferLoss = transferCostConfigured
     ? roundFantasyValue(Math.max(0, moves.length - (input.freeTransfers ?? 0)) * (input.paidTransferPointCost ?? 0))
@@ -1861,24 +2042,84 @@ function isPriorityTransferReplacement(
     && transferSuggestionForecastNextPoints(pair.player, forecastSource) === 0;
 }
 
+function selectedPlannerPlayers(pool: FantasyPlannerPlayer[], selections: FantasySquadSelection[]) {
+  const playersById = new Map(pool.map((player) => [player.playerId, player]));
+  return selections
+    .map((selection) => playersById.get(selection.playerId))
+    .filter((player): player is FantasyPlannerPlayer => Boolean(player));
+}
+
+function playerForecastForRounds(
+  player: FantasyPlannerPlayer,
+  forecastSource: TransferSuggestionForecastSource,
+  rounds: number
+) {
+  if (forecastSource === "FFO") {
+    return rounds === 1 ? transferSuggestionForecastNextPoints(player, forecastSource) : null;
+  }
+  if (forecastSource === "ALT") return playerAlternativeHorizonPoints(player, rounds);
+  if (rounds === 1) return transferSuggestionForecastNextPoints(player, forecastSource);
+  if (player.roundPoints.length < rounds) return null;
+  return roundFantasyValue(player.roundPoints.slice(0, rounds).reduce((total, value) => total + value, 0));
+}
+
+function sumXiForecast(
+  players: FantasyPlannerPlayer[],
+  xiIds: Set<string>,
+  forecastSource: TransferSuggestionForecastSource,
+  rounds: number
+) {
+  const values: number[] = [];
+  for (const player of players) {
+    if (!xiIds.has(player.playerId)) continue;
+    const points = playerForecastForRounds(player, forecastSource, rounds);
+    if (points === null || !Number.isFinite(points)) return null;
+    values.push(points);
+  }
+  return roundFantasyValue(values.reduce((total, value) => total + value, 0));
+}
+
+function lineupForecastBreakdown(
+  players: FantasyPlannerPlayer[],
+  rules: FantasySquadRules,
+  forecastSource: TransferSuggestionForecastSource,
+  horizon: number
+): LineupForecastBreakdown {
+  const xi = selectGreedyMaxFoXi(players, (player) => playerForecastForRounds(player, forecastSource, 1) ?? Number.NEGATIVE_INFINITY);
+  if (!xi || xi.ids.size === 0) {
+    return { round1: 0, round3: 0, round5: 0, horizon: 0 };
+  }
+  return {
+    round1: sumXiForecast(players, xi.ids, forecastSource, 1),
+    round3: sumXiForecast(players, xi.ids, forecastSource, 3),
+    round5: sumXiForecast(players, xi.ids, forecastSource, 5),
+    horizon: sumXiForecast(players, xi.ids, forecastSource, horizon)
+  };
+}
+
+function lineupBreakdownDelta(nextTotal: number | null, currentTotal: number | null) {
+  if (nextTotal === null || currentTotal === null) return null;
+  return roundFantasyValue(nextTotal - currentTotal);
+}
+
 function transferPlanCaptainPlayerId(
-  pool: FantasyPlannerPlayer[],
-  selections: FantasySquadSelection[],
+  players: FantasyPlannerPlayer[],
+  rules: FantasySquadRules,
   forecastSource: TransferSuggestionForecastSource,
   horizon: number
 ) {
-  const playersById = new Map(pool.map((player) => [player.playerId, player]));
+  const xi = selectGreedyMaxFoXi(
+    players,
+    (player) => transferSuggestionForecastNextPoints(player, forecastSource) ?? Number.NEGATIVE_INFINITY
+  );
+  if (!xi) return null;
   let best: { playerId: string; nextPoints: number; upsideKey: number } | null = null;
 
-  for (const selection of selections) {
-    if (!selection.isStarter) continue;
-    const player = playersById.get(selection.playerId);
-    if (!player) continue;
+  for (const player of players) {
+    if (!xi.ids.has(player.playerId)) continue;
     const nextPoints = transferSuggestionForecastNextPoints(player, forecastSource);
     if (nextPoints === null) continue;
     const horizonPoints = transferSuggestionForecastHorizonPoints(player, forecastSource, horizon) ?? Number.NEGATIVE_INFINITY;
-    // Captains want ceiling, not just the safest projection: among equals the
-    // armband goes to the higher-variance, higher-horizon option.
     const upsideKey = horizonPoints + sampleVolatility(player, horizon) * 0.5;
     if (
       !best

@@ -318,9 +318,14 @@ test("auto-pick strategies produce distinct legal squads when risk profiles diff
   const fixedPlayers = [
     ...rangePlayers("GK", 2, 1),
     ...rangePlayers("DEF", 5, 10),
-    ...rangePlayers("MID", 4, 20),
+    ...rangePlayers("MID", 1, 20),
     ...rangePlayers("FWD", 3, 30)
   ].map((candidate) => ({ ...candidate, roundPoints: [20, 20, 20], predictedFp: 20 }));
+  const extraMids = [
+    player("mid-fill-a", "Fill Mid A", "80", "MID", 3, [4, 4, 4]),
+    player("mid-fill-b", "Fill Mid B", "81", "MID", 3, [3.8, 3.8, 3.8]),
+    player("mid-fill-c", "Fill Mid C", "82", "MID", 3, [3.6, 3.6, 3.6])
+  ];
   const balancedMid = {
     ...player("balanced-mid", "Balanced Mid", "90", "MID", 5, [7, 7, 7]),
     priceSource: "SPORTS_RU" as const,
@@ -345,7 +350,7 @@ test("auto-pick strategies produce distinct legal squads when risk profiles diff
     forecastConfidence: 0.55,
     forecastRisks: ["Volatile output"]
   };
-  const pool = [...fixedPlayers, balancedMid, reliableMid, upsideMid];
+  const pool = [...fixedPlayers, ...extraMids, balancedMid, reliableMid, upsideMid];
 
   const variants = (["balanced", "reliable", "upside"] as const).map((strategy) => {
     const selections = optimizeFantasySquad({ pool, rules, horizon: 3, strategy });
@@ -738,6 +743,68 @@ test("an eligible zero-FP starting goalkeeper stays below field-player transfers
   assert.equal(plans[0]?.moves[0]?.outPlayerId, fieldStarter.playerId);
 });
 
+test("transfer plans ignore bench-only FO upgrades that do not enter the max-FO XI", () => {
+  const rules = { ...defaultFantasySquadRules, budgetLimit: 80, maxPlayersPerTeam: 3 };
+  const squad = maxFoXiSquad();
+  const benchMid = squad.find((item) => item.playerId === "m4")!;
+  const luxuryBenchMid = player("luxury-mid", "Luxury Bench Mid", "90", "MID", 5, [3, 3, 3]);
+  const starterUpgrade = player("starter-mid", "Starter Mid", "91", "MID", 5, [12, 12, 12]);
+
+  const benchOnlyPlans = buildTransferPlanSuggestions({
+    pool: [...squad, luxuryBenchMid],
+    selections: maxFoXiSelections(squad),
+    rules,
+    forecastSource: "FO",
+    horizon: 3,
+    transferCount: 1,
+    maximumPlans: 6,
+    freeTransfers: 3,
+    paidTransferPointCost: 0
+  });
+  assert.equal(benchOnlyPlans.some((plan) => plan.moves.some((move) => move.inPlayerId === luxuryBenchMid.playerId)), false);
+
+  const starterPlans = buildTransferPlanSuggestions({
+    pool: [...squad, starterUpgrade],
+    selections: maxFoXiSelections(squad),
+    rules,
+    forecastSource: "FO",
+    horizon: 3,
+    transferCount: 1,
+    maximumPlans: 6,
+    freeTransfers: 3,
+    paidTransferPointCost: 0
+  });
+  assert.equal(starterPlans.some((plan) => plan.moves.some((move) => move.outPlayerId === benchMid.playerId && move.inPlayerId === starterUpgrade.playerId)), true);
+  assert.ok((starterPlans[0]?.round1Delta ?? 0) > 0);
+});
+
+test("full-squad optimizer spends leftover budget on the XI, not a luxury bench", () => {
+  const rules = { ...defaultFantasySquadRules, budgetLimit: 100, maxPlayersPerTeam: 20 };
+  const xi = [
+    player("gk-start", "Start GK", "1", "GK", 7, [20, 20, 20]),
+    ...Array.from({ length: 4 }, (_, index) => player(`def-${index}`, `Start DEF ${index}`, `1${index}`, "DEF", 7, [20, 20, 20])),
+    ...Array.from({ length: 4 }, (_, index) => player(`mid-${index}`, `Start MID ${index}`, `2${index}`, "MID", 7, [20, 20, 20])),
+    ...Array.from({ length: 2 }, (_, index) => player(`fwd-${index}`, `Start FWD ${index}`, `3${index}`, "FWD", 7, [20, 20, 20]))
+  ];
+  const cheapBench = [
+    player("gk-bench", "Bench GK", "40", "GK", 2, [1, 1, 1]),
+    player("def-bench", "Bench DEF", "41", "DEF", 2, [1, 1, 1]),
+    player("mid-bench", "Bench MID", "42", "MID", 2, [1, 1, 1]),
+    player("fwd-bench", "Bench FWD", "43", "FWD", 2, [1, 1, 1])
+  ];
+  const luxuryBenchMid = player("luxury-bench", "Luxury Bench MID", "50", "MID", 8, [12, 12, 12]);
+  const optimized = optimizeFantasySquad({
+    pool: [...xi, ...cheapBench, luxuryBenchMid],
+    rules,
+    horizon: 3
+  });
+
+  assert.ok(optimized);
+  assert.equal(optimized.some((selection) => selection.playerId === luxuryBenchMid.playerId), false);
+  assert.equal(optimized.some((selection) => selection.playerId === "mid-bench"), true);
+  assert.deepEqual(summarizeFantasySquad([...xi, ...cheapBench, luxuryBenchMid], optimized, rules, 3).violations, []);
+});
+
 test("transfer plan recommends the best projected starter as captain after transfers", () => {
   const rules = { ...defaultFantasySquadRules, budgetLimit: 30, maxPlayersPerTeam: 3 };
   const zeroStarter = player("1", "Zero Def", "10", "DEF", 5, [0, 0, 0]);
@@ -975,4 +1042,29 @@ function rangePlayers(positionGroup: FantasyPlannerPlayer["positionGroup"], coun
     const id = String(startId + index);
     return player(id, `${positionGroup} ${index + 1}`, id, positionGroup, 5, [1]);
   });
+}
+
+function maxFoXiSquad() {
+  return [
+    player("g0", "Start GK", "g0", "GK", 5, [6, 6, 6]),
+    player("g1", "Bench GK", "g1", "GK", 5, [1, 1, 1]),
+    player("d0", "DEF 0", "d0", "DEF", 5, [8, 8, 8]),
+    player("d1", "DEF 1", "d1", "DEF", 5, [8, 8, 8]),
+    player("d2", "DEF 2", "d2", "DEF", 5, [8, 8, 8]),
+    player("d3", "DEF 3", "d3", "DEF", 5, [8, 8, 8]),
+    player("d4", "DEF 4", "d4", "DEF", 5, [1, 1, 1]),
+    player("m0", "MID 0", "m0", "MID", 5, [8, 8, 8]),
+    player("m1", "MID 1", "m1", "MID", 5, [8, 8, 8]),
+    player("m2", "MID 2", "m2", "MID", 5, [8, 8, 8]),
+    player("m3", "MID 3", "m3", "MID", 5, [8, 8, 8]),
+    player("m4", "MID 4", "m4", "MID", 5, [1, 1, 1]),
+    player("f0", "FWD 0", "f0", "FWD", 5, [8, 8, 8]),
+    player("f1", "FWD 1", "f1", "FWD", 5, [8, 8, 8]),
+    player("f2", "FWD 2", "f2", "FWD", 5, [1, 1, 1])
+  ];
+}
+
+function maxFoXiSelections(squad: FantasyPlannerPlayer[]) {
+  const starterIds = new Set(["g0", "d0", "d1", "d2", "d3", "m0", "m1", "m2", "m3", "f0", "f1"]);
+  return squad.map((item, index) => selectionForPlayer(item, index, starterIds.has(item.playerId)));
 }

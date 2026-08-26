@@ -111,8 +111,8 @@ html[data-theme="light"] {
   --radius-lg: 24px;
   --radius-xl: 32px;
   --radius-pill: 999px;
-  --control-compact: 36px;
-  --control-default: 44px;
+  --control-compact: 32px;
+  --control-default: 40px;
   --control-touch: 44px;
   --duration-fast: 160ms;
   --duration-base: 240ms;
@@ -225,6 +225,7 @@ html[data-theme="dark"] {
 }
 
 html {
+  font-size: 15px;
   scrollbar-color: var(--border-strong) var(--bg-page);
   background: var(--page-atmosphere);
 }
@@ -245,7 +246,7 @@ code,
 kbd,
 samp {
   font-family: var(--font-jetbrains-mono), "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 500;
   line-height: 1.35;
 }
@@ -260,8 +261,8 @@ body {
   background: var(--page-atmosphere);
   color: var(--text-primary);
   font-family: var(--font-onest), Onest, Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  font-size: 16px;
-  line-height: 1.5;
+  font-size: 1rem;
+  line-height: 1.45;
 }
 
 a {
@@ -338,8 +339,8 @@ textarea {
 }
 
 .ui-input {
-  min-height: 50px;
-  padding: 0 16px;
+  min-height: 42px;
+  padding: 0 14px;
   border: 1px solid var(--border);
   border-radius: 14px;
   color: var(--text-primary);
@@ -395,14 +396,14 @@ html[data-theme="dark"] .ui-surface-elevated {
   border-radius: 14px;
   background: var(--surface-1);
   color: var(--text-primary);
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 650;
   line-height: 1;
 }
 
 .ui-button {
   gap: 8px;
-  padding: 0 20px;
+  padding: 0 14px;
 }
 
 .ui-icon-button {
@@ -434,13 +435,13 @@ html[data-theme="dark"] .ui-surface-elevated {
   background: var(--button-primary-bg);
   color: var(--button-primary-text);
   box-shadow: var(--shadow-sm);
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 650;
 }
 
 .ui-button-primary {
-  min-height: 50px;
-  padding: 0 20px;
+  min-height: 42px;
+  padding: 0 16px;
 }
 
 .ui-button-primary:hover,
@@ -476,7 +477,7 @@ html[data-theme="dark"] .ui-surface-elevated {
 }
 
 .kicker {
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 600;
   line-height: 1.35;
   letter-spacing: -0.01em;
@@ -513,8 +514,8 @@ html[data-theme="dark"] .hero-scene {
 }
 
 .sortable-table {
-  font-size: 13px;
-  line-height: 18px;
+  font-size: 12px;
+  line-height: 16px;
   font-variant-numeric: tabular-nums lining-nums;
 }
 
@@ -527,13 +528,13 @@ html[data-theme="dark"] .hero-scene {
 .sortable-table th {
   color: var(--text-secondary);
   background: var(--surface-2);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 650;
 }
 
 .sortable-table td,
 .sortable-table th {
-  padding: 14px 16px;
+  padding: 10px 12px;
   border-bottom: 1px solid var(--border);
   text-align: left;
 }

@@ -68,7 +68,7 @@ export default async function AdminBetaTestPage({ searchParams }: PageProps) {
   const errorMessage = betaReviewErrorMessage(resolvedSearchParams.error);
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 2xl:max-w-[1600px] 3xl:max-w-[1760px]">
       <AdminNav />
       <div className="mt-6 flex flex-wrap items-start justify-between gap-4">
         <div>

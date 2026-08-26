@@ -58,16 +58,16 @@ export default async function HomePage() {
   const dashboard = user ? await loadHomeDashboard(user.id).catch(() => null) : null;
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-7xl flex-col px-4 pb-10 pt-24 sm:px-6 lg:px-8">
+    <main className="mx-auto flex min-h-screen max-w-7xl flex-col px-4 pb-10 pt-24 sm:px-6 lg:px-8 2xl:max-w-[1600px] 3xl:max-w-[1760px]">
       <section className="grid items-end gap-6 lg:grid-cols-12">
         <div className="lg:col-span-7">
           <p className="kicker">
             <I18nText en="Today" ru="Сегодня" />
           </p>
-          <h1 className="mt-3 max-w-[14ch] text-[clamp(40px,6vw,72px)] font-bold leading-[1.04] tracking-[-0.04em] text-ink">
+          <h1 className="mt-3 max-w-[14ch] text-[clamp(32px,5vw,56px)] font-bold leading-[1.04] tracking-[-0.04em] text-ink">
             <I18nText en="Fantasy Scout" ru="Fantasy Scout" />
           </h1>
-          <p className="mt-4 max-w-[56ch] text-[clamp(19px,1.8vw,23px)] leading-7 text-slate-600">
+          <p className="mt-4 max-w-[56ch] text-[clamp(16px,1.6vw,19px)] leading-6 text-slate-600">
             <I18nText
               en="Your latest squad, fresh prices, watched players and active workspaces in one place."
               ru="Последний состав, свежие цены, избранное и рабочие режимы в одном месте."

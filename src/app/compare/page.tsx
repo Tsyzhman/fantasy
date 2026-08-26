@@ -135,7 +135,7 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
   const xFpLeaderValue = bestMetricValue(rows.map((row) => row.fantasyScore), true);
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 2xl:max-w-[1600px] 3xl:max-w-[1760px]">
       <PageBreadcrumbs
         backHref={backHref}
         backLabel={<I18nText en="Back" ru="Назад" />}
@@ -150,7 +150,7 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
           <p className="kicker">
             <I18nText en="Side-by-side comparison" ru="Сравнение игроков" />
           </p>
-          <h1 className="mt-2 text-[clamp(32px,4vw,48px)] font-bold leading-[1.08] tracking-[-0.03em] text-ink">
+          <h1 className="mt-2 text-[clamp(26px,3.4vw,40px)] font-bold leading-[1.08] tracking-[-0.03em] text-ink">
             {rows.length > 0 ? (
               <I18nText en={`${rows.length} players`} ru={`${rows.length} игроков`} />
             ) : (

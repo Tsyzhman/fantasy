@@ -8,6 +8,9 @@ const config: Config = {
   ],
   theme: {
     extend: {
+      screens: {
+        "3xl": "1800px"
+      },
       colors: {
         white: "rgb(var(--surface-rgb) / <alpha-value>)",
         ink: "rgb(var(--text-primary-rgb) / <alpha-value>)",

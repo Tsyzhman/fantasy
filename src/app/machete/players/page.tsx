@@ -149,7 +149,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
       : "/machete/squad";
 
   return (
-    <main className="mx-auto max-w-[1600px] px-3 py-6 sm:px-5 lg:px-6">
+    <main className="mx-auto max-w-[1600px] px-3 py-6 sm:px-5 lg:px-6 3xl:max-w-[1920px] 3xl:px-8">
       {resolvedSearchParams.query?.trim() &&
       players.some((player) => player.fantasyScore !== null) ? (
         <BetaJourneyMarker milestone="PLAYER_FORECAST_FOUND" />

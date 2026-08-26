@@ -5,6 +5,17 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.36 - 2026-08-26
+
+### Changed
+
+- Transfer recommendations and auto-pick now score a squad as the maximum-FO
+  starting XI (1 goalkeeper + 10 outfield players), so leftover budget is not
+  spent on luxury bench pieces that never enter that XI.
+- Tightened Cloudline type and control sizes so dense planner screens fit more
+  content, and widened page shells for ultrawide monitors—especially the squad
+  pitch and player-pool table.
+
 ## 0.3.35 - 2026-08-26
 
 ### Changed

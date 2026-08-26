@@ -127,10 +127,10 @@ export default async function MixerrPage({ searchParams }: PageProps) {
     : [[], [], emptyComparison(attackingTeamId, defendingTeamId)];
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+    <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 2xl:max-w-[1600px] 3xl:max-w-[1760px]">
       <section className="border-b border-slate-200 pb-6">
         <p className="kicker">MiXerr / FotMob</p>
-        <h1 className="mt-2 text-[clamp(32px,4vw,48px)] font-bold leading-[1.08] tracking-[-0.03em] text-ink"><I18nText en="MiXerr shot maps" ru="Карты ударов Миксер" /></h1>
+        <h1 className="mt-2 text-[clamp(26px,3.4vw,40px)] font-bold leading-[1.08] tracking-[-0.03em] text-ink"><I18nText en="MiXerr shot maps" ru="Карты ударов Миксер" /></h1>
       </section>
 
       <FilterShell

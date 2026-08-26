@@ -1840,7 +1840,7 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
               <I18nText en="RPL allows up to three transfers in a round; no point penalties apply." ru="В РПЛ — до трёх замен за тур, без штрафов по очкам." />
             </p>
           ) : null}
-          <div className="mt-2 grid gap-2 xl:grid-cols-3">
+          <div className="mt-2 grid gap-2 xl:grid-cols-3 3xl:grid-cols-4">
             {displayedSuggestions.map((suggestion) => {
               const captain = suggestion.captainPlayerId ? playersById.get(suggestion.captainPlayerId) ?? null : null;
               return (
@@ -2014,7 +2014,7 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
       </section>
 
       <section className={cn(mobileTab === "suggestions" ? "hidden xl:block" : "block", "order-4 min-w-0 rounded border border-slate-200 bg-white p-3 shadow-soft sm:p-4")}>
-        <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-[minmax(360px,0.76fr)_minmax(620px,1.24fr)] 2xl:grid-cols-[minmax(390px,0.72fr)_minmax(760px,1.28fr)]">
+        <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-[minmax(360px,0.76fr)_minmax(620px,1.24fr)] 2xl:grid-cols-[minmax(400px,0.62fr)_minmax(860px,1.38fr)] 3xl:grid-cols-[minmax(460px,0.5fr)_minmax(1100px,1.5fr)]">
           <div className={cn(mobileTab === "squad" ? "block" : "hidden xl:block")}>
             <div className="mb-3">
               <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
@@ -2811,7 +2811,7 @@ function CustomizablePlayerPoolTable({
       </div> : null}
 
       {compactViewport === false ? <div className="col-span-full min-w-0 max-w-full overflow-hidden rounded border border-slate-200 bg-white" data-testid="player-pool-table">
-        <div ref={tableContainerRef} className="relative max-h-[720px] w-full max-w-full overflow-auto [scrollbar-gutter:stable]">
+        <div ref={tableContainerRef} className="relative max-h-[720px] w-full max-w-full overflow-auto [scrollbar-gutter:stable] 2xl:max-h-[min(78vh,880px)] 3xl:max-h-[min(84vh,1040px)]">
           <SortableTable
             sortRefreshKey={`${horizon}:${visibleColumnKeys.join(",")}`}
             managedClientSort
@@ -3481,7 +3481,7 @@ export function PlayerPoolTable({
         onRemove={onRemove}
       />
       <div className="hidden min-w-0 max-w-full overflow-hidden rounded border border-slate-200 bg-white md:block [@media(pointer:coarse)]:!hidden" data-testid="player-pool-table">
-        <div className="relative min-w-0 max-h-[720px] w-full max-w-full overflow-x-hidden overflow-y-auto [scrollbar-gutter:stable]">
+        <div className="relative min-w-0 max-h-[720px] w-full max-w-full overflow-x-hidden overflow-y-auto [scrollbar-gutter:stable] 2xl:max-h-[min(78vh,880px)] 3xl:max-h-[min(84vh,1040px)]">
         <SortableTable sortRefreshKey={horizon} className="w-full min-w-0 table-fixed divide-y divide-slate-200 text-xs">
           <colgroup>
             <col className="w-[15%]" />
@@ -4331,7 +4331,7 @@ function SquadPlayerTile({
       title={fantasyForecastTitle(player, language)}
       aria-label={localizedText(language, `Squad player ${player.name}`, `Игрок состава: ${player.name}`)}
       className={cn(
-        compact ? "w-[3.6rem] sm:w-[3.8rem] 2xl:w-16" : "w-[3.6rem] sm:w-[3.8rem] 2xl:w-[4.25rem]",
+        compact ? "w-[3.6rem] sm:w-[3.8rem] 2xl:w-16 3xl:w-[4.5rem]" : "w-[3.6rem] sm:w-[3.8rem] 2xl:w-[4.25rem] 3xl:w-20",
         "relative rounded border bg-white px-1 py-0.5 text-center shadow-sm transition [@media(pointer:fine)]:pb-5",
         replacementMode ? "cursor-pointer" : "cursor-grab active:cursor-grabbing",
         isCaptain ? "border-amber-400 ring-2 ring-amber-200" : player.isProviderPlaceholder ? "border-amber-300 bg-amber-50/70" : "border-white/70",
