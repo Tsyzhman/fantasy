@@ -47,19 +47,23 @@ async function runCycle(state: SchedulerState) {
   state.running = true;
   try {
     const scopes = await loadActiveScopes();
-    const results = [];
+    const summaries = [];
+    let succeeded = true;
     for (const scope of scopes) {
-      results.push(await recalculateFantasyModelForecasts(prisma, scope));
+      const key = `${scope.leagueId}:${scope.season}`;
+      try {
+        const result = await recalculateFantasyModelForecasts(prisma, scope);
+        summaries.push({ scope: key, forecasts: result.forecasts });
+      } catch (error) {
+        // One league with incomplete provider data must not block the others;
+        // the next cycle retries it automatically.
+        succeeded = false;
+        summaries.push({ scope: key, error: error instanceof Error ? `${error.name}: ${error.message}` : String(error) });
+        logger.error("Fantasy model forecast recalculation failed for a scope.", { scope: key, error });
+      }
     }
-    logger.info("Fantasy model forecasts recalculated.", {
-      scopes: results.map((result) => ({
-        modelVersion: result.modelVersion,
-        players: result.players,
-        fixtures: result.fixtures,
-        forecasts: result.forecasts
-      }))
-    });
-    return true;
+    logger.info("Fantasy model forecast recalculation cycle finished.", { scopes: summaries });
+    return succeeded;
   } catch (error) {
     logger.error("Fantasy model forecast recalculation failed; existing forecasts were preserved.", { error });
     return false;

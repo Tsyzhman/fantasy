@@ -5,6 +5,15 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.33 - 2026-08-26
+
+### Fixed
+
+- The forecast recalculation scheduler isolates per-league failures: a league
+  whose provider statistics cannot support allocation (no player xG or
+  recoveries recorded) no longer blocks recalculation of the other active
+  leagues; it is logged and retried on the next cycle.
+
 ## 0.3.32 - 2026-08-26
 
 ### Added
