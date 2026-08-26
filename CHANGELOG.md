@@ -5,6 +5,20 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.31 - 2026-08-26
+
+### Changed
+
+- Fantasy model forecasts now use the xg_share allocation: a player receives
+  the team's next-match expected goals and assists in proportion to their
+  blended share of the team's observed xG/xA (season weighted 0.6, last three
+  team matches weighted 0.4). Shares are fractions of actual team totals, so
+  part-time players can no longer be inflated beyond the team expectation.
+- Model version bumped to `XG_SHARE_V2`; stored forecasts are recalculated
+  under the new version on the next `forecasts:recalculate-model` run.
+- Fixture breakdowns now persist the season/recent/blended shares used for
+  the attack projection.
+
 ## 0.3.30 - 2026-08-25
 
 ### Changed

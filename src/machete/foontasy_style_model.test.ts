@@ -81,6 +81,41 @@ test("double gameweek is two fixtures and partial T5 reports honest coverage", (
   assert.ok((t5.points ?? 0) > 0);
 });
 
+test("xg_share v2 allocates team goals by blended observed shares, capped by team totals", () => {
+  const star = modelPlayer("star", "team", [
+    historyWithXg("2026-07-10T12:00:00Z", 90, 0.3),
+    historyWithXg("2026-07-18T12:00:00Z", 90, 0.3),
+    historyWithXg("2026-07-25T12:00:00Z", 90, 0.3)
+  ]);
+  const cameo = modelPlayer("cameo", "team", [historyWithXg("2026-07-25T12:00:00Z", 10, 0.05)], false);
+  const results = calculatePlayerHorizons([star, cameo], [fixture("f1", "7", "2026-08-01T12:00:00Z")]);
+  const starRow = results.find((row) => row.playerId === "star" && row.horizon === 3)!.breakdown[0]!;
+  const cameoRow = results.find((row) => row.playerId === "cameo" && row.horizon === 3)!.breakdown[0]!;
+  const seasonShare = 0.9 / 0.95;
+  assert.ok(starRow.xgShare !== null && Math.abs(starRow.xgShare.season - seasonShare) < 1e-9);
+  assert.ok(starRow.xgShare !== null && Math.abs(starRow.xgShare.blended - starRow.xgShare.season) < 1e-12);
+  assert.ok(starRow.components.goals > cameoRow.components.goals);
+  assert.ok(starRow.components.goals <= 1.4 * 5 + 1e-9);
+  assert.ok(cameoRow.xgShare !== null && cameoRow.xgShare.season <= 1);
+});
+
+test("a part-time per-90 outlier can never receive more than the whole team expectation", () => {
+  const inflated = modelPlayer("inflated", "team", [historyWithXg("2026-07-25T12:00:00Z", 5, 0.5)], false);
+  const results = calculatePlayerHorizons([inflated], [fixture("f1", "7", "2026-08-01T12:00:00Z")]);
+  const breakdown = results.find((row) => row.horizon === 3)!.breakdown[0]!;
+  assert.equal(breakdown.xgShare!.season, 1);
+  assert.ok(breakdown.components.goals <= 1.4 * 5 + 1e-9);
+});
+
+test("without team xG history the model degrades to exposure rates and reports null shares", () => {
+  const player = modelPlayer("p1", "team", []);
+  const results = calculatePlayerHorizons([player], [fixture("f1", "7", "2026-08-01T12:00:00Z")]);
+  const t3 = results.find((row) => row.horizon === 3)!;
+  assert.equal(t3.breakdown[0]?.xgShare, null);
+  assert.equal(t3.breakdown[0]?.xaShare, null);
+  assert.ok((t3.points ?? 0) > 0);
+});
+
 test("team without a recognized goalkeeper does not allocate fictional saves", () => {
   const noGoalkeeperFixture = { ...fixture("f1", "7", "2026-08-01T12:00:00Z"), expectedSaves: 3 };
   const results = calculatePlayerHorizons([modelPlayer("mid", "team", [], true)], [noGoalkeeperFixture]);
@@ -103,8 +138,12 @@ function modelPlayer(playerId: string, teamId: string, rows: ReturnType<typeof h
 }
 
 function history(date: string, minutes: number) {
+  return historyWithXg(date, minutes, 0.1);
+}
+
+function historyWithXg(date: string, minutes: number, xg: number) {
   return {
-    matchDate: new Date(date), minutes, started: minutes >= 60, xg: 0.1, xa: 0.1,
+    matchDate: new Date(date), minutes, started: minutes >= 60, xg, xa: 0.1,
     goals: 0, assists: 0, yellowCards: 0, redCards: 0, saves: 0, recoveries: 4
   };
 }
