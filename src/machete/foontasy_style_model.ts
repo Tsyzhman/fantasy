@@ -301,6 +301,33 @@ function clamp01(value: number) {
   return clamp(value, 0, 1);
 }
 
+type AllocatableMetric = "goals" | "assists" | "recoveries";
+
+/**
+ * Leagues whose provider statistics contain no player xG/goals or recoveries
+ * leave every allocation weight at zero while the team total is positive,
+ * which the projection engine fails closed on. With no signal at all, split
+ * the team total uniformly across the probable participants instead of
+ * skipping the league entirely.
+ */
+function ensureUniformAllocationFallback(participants: ProbableParticipantInput[], metric: AllocatableMetric, total: number) {
+  if (!(total > 0) || participants.length === 0) return;
+  const denominator = participants.reduce((sum, player) => {
+    const explicit = player.allocationWeights?.[metric];
+    if (explicit !== undefined) return sum + explicit;
+    if (metric === "recoveries" && player.position === "GK") return sum;
+    const rate = metric === "goals"
+      ? player.ratesPer90.xg!
+      : metric === "assists" ? player.ratesPer90.xa! : player.ratesPer90.recoveries!;
+    return sum + rate * ((player.expectedMinutes ?? 0) / 90);
+  }, 0);
+  if (denominator > 0) return;
+  for (const player of participants) {
+    if (metric === "recoveries" && player.position === "GK") continue;
+    player.allocationWeights = { ...player.allocationWeights, [metric]: 1 };
+  }
+}
+
 export function calculatePlayerHorizons(
   players: readonly ModelPlayer[],
   fixtures: readonly ModelFixture[],
@@ -330,6 +357,9 @@ export function calculatePlayerHorizons(
       if (usableShares.xa && shares.xa) allocationWeights.assists = shares.xa.blended;
       return Object.keys(allocationWeights).length > 0 ? { ...participant, allocationWeights } : participant;
     });
+    ensureUniformAllocationFallback(participants, "goals", fixture.teamProjection.expectedGoals);
+    ensureUniformAllocationFallback(participants, "assists", fixture.teamProjection.expectedGoals * config.expectedAssistsPerGoal);
+    ensureUniformAllocationFallback(participants, "recoveries", fixture.expectedRecoveries);
     const hasGoalkeeperExposure = estimates.some(({ player, estimate }) =>
       player.position === "GK"
       && (estimate.participant.expectedMinutes ?? 0) > 0

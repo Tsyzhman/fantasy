@@ -5,6 +5,14 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.34 - 2026-08-26
+
+### Fixed
+
+- Leagues whose provider statistics contain no player xG/goals or recoveries
+  at all now receive forecasts via a uniform split of the team totals across
+  the probable squad instead of failing allocation for the whole scope.
+
 ## 0.3.33 - 2026-08-26
 
 ### Fixed

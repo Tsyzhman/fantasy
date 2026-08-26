@@ -116,6 +116,19 @@ test("without team xG history the model degrades to exposure rates and reports n
   assert.ok((t3.points ?? 0) > 0);
 });
 
+test("a league without any player xG data splits the team total uniformly instead of failing", () => {
+  const emptyRates: RateProfile = { ...fallback, xg90: 0, xa90: 0, recoveries90: 0 };
+  const left = { ...modelPlayer("left", "team", []), teamPositionFallback: emptyRates, leaguePositionFallback: emptyRates };
+  const right = { ...modelPlayer("right", "team", []), teamPositionFallback: emptyRates, leaguePositionFallback: emptyRates };
+  const results = calculatePlayerHorizons([left, right], [fixture("f1", "7", "2026-08-01T12:00:00Z")]);
+  const rows = results.filter((row) => row.horizon === 3).map((row) => row.breakdown[0]!);
+  assert.equal(rows.length, 2);
+  for (const row of rows) {
+    assert.ok(Math.abs(row.components.goals - (1.4 / 2) * 5) < 1e-9);
+    assert.ok(row.points! > 0);
+  }
+});
+
 test("team without a recognized goalkeeper does not allocate fictional saves", () => {
   const noGoalkeeperFixture = { ...fixture("f1", "7", "2026-08-01T12:00:00Z"), expectedSaves: 3 };
   const results = calculatePlayerHorizons([modelPlayer("mid", "team", [], true)], [noGoalkeeperFixture]);
