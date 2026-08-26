@@ -5,6 +5,16 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.37 - 2026-08-26
+
+### Changed
+
+- Pinned the sticky global header navigation to the right, so the chrome sits
+  with the content's trailing edge instead of stretching from the left on wide
+  screens.
+- Halved the Bookmaker favorites panel and pinned it to the right of transfer
+  suggestions on wide screens.
+
 ## 0.3.36 - 2026-08-26
 
 ### Changed

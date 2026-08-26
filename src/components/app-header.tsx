@@ -74,7 +74,7 @@ export function AppHeader({ user }: AppHeaderProps) {
           className={cn(
             mobileMenuOpen ? "grid" : "hidden",
             "ui-surface-elevated absolute right-4 top-full z-30 mt-1 max-h-[calc(100vh-5rem)] w-[min(21rem,calc(100vw-2rem))] grid-cols-1 gap-1 overflow-y-auto p-2 text-sm font-medium text-slate-600 [@supports(height:100dvh)]:max-h-[calc(100dvh-5rem)] sm:right-6 sm:grid-cols-2 [&_a]:justify-start [&_button:not([data-icon-button])]:justify-start",
-            "xl:static xl:mt-0 xl:flex xl:max-h-none xl:w-full xl:flex-1 xl:flex-wrap xl:items-center xl:justify-start xl:overflow-visible xl:border-0 xl:bg-transparent xl:p-0 xl:shadow-none"
+            "xl:static xl:ml-auto xl:mt-0 xl:flex xl:max-h-none xl:w-auto xl:flex-none xl:flex-wrap xl:items-center xl:justify-end xl:overflow-visible xl:border-0 xl:bg-transparent xl:p-0 xl:shadow-none"
           )}
         >
           <HeaderNavigationItems pathname={pathname} user={user} logout={logout} />

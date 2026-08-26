@@ -20,6 +20,14 @@ test("global header contains only the requested product navigation", () => {
   assert.match(source, /<LanguageToggle \/>[\s\S]*<ThemeToggle \/>/);
 });
 
+test("desktop header pins the navigation cluster to the right", () => {
+  assert.match(source, /xl:ml-auto/);
+  assert.match(source, /xl:justify-end/);
+  assert.doesNotMatch(source, /xl:justify-start/);
+  assert.doesNotMatch(source, /xl:w-full/);
+  assert.doesNotMatch(source, /xl:flex-1/);
+});
+
 test("squad navigation opens the integrated squad page directly", () => {
   assert.doesNotMatch(source, /function SquadHeaderMenu/);
   assert.match(source, /href="\/machete\/squad"/);

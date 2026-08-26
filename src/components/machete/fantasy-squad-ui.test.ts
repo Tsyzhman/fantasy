@@ -136,7 +136,8 @@ test("transfer suggestions expose FO, ALT, and FFO, while FFO remains a current-
 });
 
 test("compact transfer suggestions include bookmaker favorites with separate clean-sheet and over-1.5 probabilities", () => {
-  assert.match(squadPlannerSource, /xl:grid-cols-3/);
+  assert.match(squadPlannerSource, /mt-2 grid items-start gap-3 xl:grid-cols-2/);
+  assert.match(squadPlannerSource, /min-w-0 xl:sticky xl:top-16/);
   assert.match(squadPlannerSource, /BookmakerFavoritesTable/);
   assert.match(squadPlannerSource, /en="Bookmaker favorites" ru="Рыночные фавориты"/);
   assert.match(squadPlannerSource, /en="Clean sheet" ru="Сухарь"/);

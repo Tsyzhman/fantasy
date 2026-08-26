@@ -1840,7 +1840,8 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
               <I18nText en="RPL allows up to three transfers in a round; no point penalties apply." ru="В РПЛ — до трёх замен за тур, без штрафов по очкам." />
             </p>
           ) : null}
-          <div className="mt-2 grid gap-2 xl:grid-cols-3 3xl:grid-cols-4">
+          <div className="mt-2 grid items-start gap-3 xl:grid-cols-2">
+            <div className="grid min-w-0 gap-2 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
             {displayedSuggestions.map((suggestion) => {
               const captain = suggestion.captainPlayerId ? playersById.get(suggestion.captainPlayerId) ?? null : null;
               return (
@@ -2003,13 +2004,16 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
             ) : suggestions.length === 0 ? (
               <p className="text-sm text-slate-500"><I18nText en="No clean upgrade found for the selected filters." ru="Для выбранных фильтров чистое улучшение не найдено." /></p>
             ) : null}
-          </div>
+            </div>
 
-          <BookmakerFavoritesTable
-            rows={activeRoundBookmakerFavorites}
-            roundLabel={rounds[activeRoundOffset]?.label ?? null}
-            language={language}
-          />
+            <div className="min-w-0 xl:sticky xl:top-16">
+              <BookmakerFavoritesTable
+                rows={activeRoundBookmakerFavorites}
+                roundLabel={rounds[activeRoundOffset]?.label ?? null}
+                language={language}
+              />
+            </div>
+          </div>
         </div>
       </section>
 
@@ -4522,12 +4526,12 @@ function BookmakerFavoritesTable({
   );
 
   return (
-    <section className="mt-3 overflow-hidden rounded border border-slate-200 bg-white" aria-label={localizedText(language, "Bookmaker favorites", "Рыночные фавориты")}>
-      <div className="flex flex-wrap items-start justify-between gap-2 border-b border-slate-200 bg-slate-50/80 px-3 py-2">
+    <section className="overflow-hidden rounded border border-slate-200 bg-white" aria-label={localizedText(language, "Bookmaker favorites", "Рыночные фавориты")}>
+      <div className="flex flex-wrap items-start justify-between gap-1.5 border-b border-slate-200 bg-slate-50/80 px-2 py-1.5">
         <div className="min-w-0">
-          <h4 className="text-xs font-semibold uppercase tracking-wide text-slate-600"><I18nText en="Bookmaker favorites" ru="Рыночные фавориты" /></h4>
-          <p className="mt-0.5 text-[10px] text-slate-500" title={selectionExplanation}>
-            <I18nText en="One favorite per fixture · selected by P(team over 1.5)" ru="Один фаворит на матч · выбор по шансу ИТБ 1.5" />
+          <h4 className="text-[10px] font-semibold uppercase tracking-wide text-slate-600"><I18nText en="Bookmaker favorites" ru="Рыночные фавориты" /></h4>
+          <p className="mt-0.5 truncate text-[10px] text-slate-500" title={selectionExplanation}>
+            <I18nText en="One favorite per fixture · P(team O1.5)" ru="Один фаворит на матч · ИТБ 1.5" />
           </p>
         </div>
         <div className="shrink-0 text-right text-[10px] text-slate-500">
@@ -4536,7 +4540,7 @@ function BookmakerFavoritesTable({
         </div>
       </div>
 
-      <div className="grid grid-cols-[minmax(0,1fr)_4.25rem_4.75rem] border-b border-slate-200 bg-slate-50 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-slate-500 sm:grid-cols-[minmax(0,1fr)_5.5rem_6rem]">
+      <div className="grid grid-cols-[minmax(0,1fr)_3.5rem_3.75rem] border-b border-slate-200 bg-slate-50 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-500">
         <span><I18nText en="Favorite" ru="Фаворит" /></span>
         <span className="text-right"><I18nText en="Clean sheet" ru="Сухарь" /></span>
         <span className="text-right"><I18nText en="Team O1.5" ru="ИТБ 1.5" /></span>
@@ -4545,13 +4549,13 @@ function BookmakerFavoritesTable({
       {rows.length > 0 ? (
         <div className="divide-y divide-slate-100">
           {rows.map((row) => (
-            <div key={row.fixtureId} className="grid grid-cols-[minmax(0,1fr)_4.25rem_4.75rem] items-center gap-x-2 px-3 py-2 sm:grid-cols-[minmax(0,1fr)_5.5rem_6rem]">
-              <div className="flex min-w-0 items-center gap-2">
-                <span aria-hidden="true" className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-sky-100 bg-sky-50 text-[10px] font-black text-sky-800">
+            <div key={row.fixtureId} className="grid grid-cols-[minmax(0,1fr)_3.5rem_3.75rem] items-center gap-x-1.5 px-2 py-1.5">
+              <div className="flex min-w-0 items-center gap-1.5">
+                <span aria-hidden="true" className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-sky-100 bg-sky-50 text-[9px] font-black text-sky-800">
                   {teamMarketInitials(row.teamName)}
                 </span>
                 <div className="min-w-0">
-                  <p className="truncate text-xs font-semibold text-ink" title={row.teamFullName}>{row.teamName}</p>
+                  <p className="truncate text-[11px] font-semibold text-ink" title={row.teamFullName}>{row.teamName}</p>
                   <p className="truncate text-[10px] text-slate-500" title={row.opponentFullName}>
                     <span className="mr-1 font-semibold text-slate-400">{row.side === "H" ? "vs" : "@"}</span>{row.opponentName}
                   </p>
@@ -4563,7 +4567,7 @@ function BookmakerFavoritesTable({
           ))}
         </div>
       ) : (
-        <p className="px-3 py-4 text-center text-xs text-slate-500" role="status">
+        <p className="px-2 py-3 text-center text-[11px] text-slate-500" role="status">
           <I18nText en="No fresh complete bookmaker lines for this round." ru="На этот тур нет свежих полных букмекерских линий." />
         </p>
       )}
