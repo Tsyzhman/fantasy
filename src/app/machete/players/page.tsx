@@ -163,7 +163,7 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
         ]}
       />
       <div className="mt-4 rounded border border-slate-200 bg-white px-4 py-4 sm:px-5">
-        <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+        <p className="kicker">
           <I18nText en="Machete player explorer" ru="Таблица игроков Machete" />
         </p>
         <h1 className="mt-2 text-3xl font-bold text-ink">

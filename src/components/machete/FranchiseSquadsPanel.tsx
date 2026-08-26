@@ -242,7 +242,7 @@ export function FranchiseSquadsPanel({ leagueId, season, provider, initialFranch
         {canSwitch ? (
           <div className="mt-3 flex gap-2" aria-label="Франшиза">
             {(["MACHETE", "BALTIKA"] as const).map((option) => (
-              <button key={option} type="button" onClick={() => selectFranchise(option)} className={cn("rounded border px-3 py-2 text-sm font-semibold", franchise === option ? "border-ink bg-ink text-white" : "border-slate-200 text-slate-600 hover:border-slate-400")}>
+              <button key={option} type="button" onClick={() => selectFranchise(option)} className={cn("rounded border px-3 py-2 text-sm font-semibold", franchise === option ? "border-brand-600 bg-brand-600 text-[color:var(--brand-fg)]" : "border-slate-200 text-slate-600 hover:border-slate-400")}>
                 {franchiseLabel(option)}
               </button>
             ))}

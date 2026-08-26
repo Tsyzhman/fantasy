@@ -60,7 +60,7 @@ export function SegmentedControl<T extends string>({
               size === "sm"
                 ? "px-2 py-1 text-xs [@media(pointer:coarse)]:py-2 [@media(pointer:coarse)]:text-sm"
                 : "px-3 py-1.5 text-sm [@media(pointer:coarse)]:py-2",
-              active ? "bg-brand-600 text-white shadow-sm" : "text-slate-600 hover:bg-slate-50"
+              active ? "bg-brand-600 text-[color:var(--brand-fg)] shadow-sm" : "text-slate-600 hover:bg-slate-50"
             )}
           >
             {option.label}

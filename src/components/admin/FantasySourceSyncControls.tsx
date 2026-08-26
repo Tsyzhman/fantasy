@@ -52,7 +52,7 @@ export function FantasySourceSyncControls({
   fplEnabled?: boolean;
 }) {
   return (
-    <section className="mt-6 rounded border border-slate-200 bg-white p-5 shadow-soft">
+    <section className="mt-6 ui-card p-5">
       <div>
         <h2 className="text-lg font-bold text-ink">
           <I18nText en="Fantasy source updates" ru="Обновление фэнтези-источников" />
@@ -126,7 +126,7 @@ function FplPriceSyncPanel({ enabled }: { enabled: boolean }) {
         type="button"
         disabled={!enabled || pending}
         onClick={run}
-        className="mt-4 inline-flex items-center gap-2 rounded bg-ink px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-45"
+        className="ui-button ui-button-primary mt-4 disabled:cursor-not-allowed"
       >
         <RefreshCw className={`h-4 w-4 ${pending ? "animate-spin" : ""}`} />
         {pending ? <I18nText en="Updating..." ru="Обновление..." /> : <I18nText en="Update FPL prices" ru="Обновить цены FPL" />}
@@ -232,7 +232,7 @@ function SourcePanel({
         type="button"
         disabled={pending || selected.size === 0}
         onClick={run}
-        className="mt-4 inline-flex items-center gap-2 rounded bg-ink px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-45"
+        className="ui-button ui-button-primary mt-4 disabled:cursor-not-allowed"
       >
         <RefreshCw className={`h-4 w-4 ${pending ? "animate-spin" : ""}`} />
         {pending ? <I18nText en="Updating..." ru="Обновление..." /> : actionLabel}

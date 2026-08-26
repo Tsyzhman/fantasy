@@ -72,7 +72,7 @@ export default async function AdminBetaTestPage({ searchParams }: PageProps) {
       <AdminNav />
       <div className="mt-6 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+          <p className="kicker">
             <I18nText en="Administration" ru="Администрирование" />
           </p>
           <h1 className="mt-2 text-3xl font-bold text-ink">
@@ -92,7 +92,7 @@ export default async function AdminBetaTestPage({ searchParams }: PageProps) {
           <Link href="/admin/users" className="rounded border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
             <I18nText en="Create participant account" ru="Создать аккаунт участника" />
           </Link>
-          <span className="rounded bg-ink px-4 py-2 text-sm font-semibold text-white">
+          <span className="ui-button ui-button-primary">
             <I18nText en="Participant URL: /beta-test" ru="URL участника: /beta-test" />
           </span>
         </div>

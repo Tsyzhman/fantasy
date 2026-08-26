@@ -59,27 +59,27 @@ export default async function HomePage() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-7xl flex-col px-4 pb-10 pt-24 sm:px-6 lg:px-8">
-      <section className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+      <section className="grid items-end gap-6 lg:grid-cols-12">
+        <div className="lg:col-span-7">
+          <p className="kicker">
             <I18nText en="Today" ru="Сегодня" />
           </p>
-          <h1 className="mt-3 text-4xl font-bold tracking-tight text-ink sm:text-5xl">
+          <h1 className="mt-3 max-w-[14ch] text-[clamp(40px,6vw,72px)] font-bold leading-[1.04] tracking-[-0.04em] text-ink">
             <I18nText en="Fantasy Scout" ru="Fantasy Scout" />
           </h1>
-          <p className="mt-4 max-w-3xl text-base leading-7 text-slate-600">
+          <p className="mt-4 max-w-[56ch] text-[clamp(19px,1.8vw,23px)] leading-7 text-slate-600">
             <I18nText
               en="Your latest squad, fresh prices, watched players and active workspaces in one place."
               ru="Последний состав, свежие цены, избранное и рабочие режимы в одном месте."
             />
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Link href="/machete/squad" className="inline-flex items-center gap-2 rounded bg-ink px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">
+        <div className="flex flex-wrap gap-2 lg:col-span-5 lg:justify-end">
+          <Link href="/machete/squad" className="ui-button ui-button-primary">
             <Users className="h-4 w-4" />
             <I18nText en="Open squad" ru="Открыть состав" />
           </Link>
-          <Link href="/players" className="inline-flex items-center gap-2 rounded border border-slate-200 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50">
+          <Link href="/players" className="ui-button">
             <Sparkles className="h-4 w-4" />
             <I18nText en="Find players" ru="Искать игроков" />
           </Link>
@@ -94,10 +94,10 @@ export default async function HomePage() {
       </section>
 
       <section className="mt-5 grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
-        <div className="rounded border border-slate-200 bg-white p-5 shadow-soft">
+        <div className="hero-scene p-5">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+              <p className="kicker">
                 <I18nText en="Latest squad" ru="Последний состав" />
               </p>
               <h2 className="mt-2 text-2xl font-bold text-ink">{dashboard?.squad?.name ?? <I18nText en="No saved squad yet" ru="Состав еще не сохранен" />}</h2>
@@ -116,7 +116,7 @@ export default async function HomePage() {
             </div>
             <Link
               href={dashboard?.squad?.href ?? "/machete/squad"}
-              className="inline-flex items-center justify-center gap-2 rounded border border-slate-200 px-3 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+              className="ui-button text-sm"
             >
               <I18nText en="Planner" ru="Планировщик" />
               <ArrowRight className="h-4 w-4" />
@@ -165,10 +165,10 @@ export default async function HomePage() {
           ) : null}
         </div>
 
-        <div className="rounded border border-slate-200 bg-white p-5 shadow-soft">
+        <div className="ui-card p-5">
           <div className="flex items-center justify-between gap-3">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+              <p className="kicker">
                 <I18nText en="Fresh prices" ru="Свежие цены" />
               </p>
               <h2 className="mt-2 text-2xl font-bold text-ink">Sports.ru</h2>
@@ -188,8 +188,8 @@ export default async function HomePage() {
       </section>
 
       <section className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,0.75fr)_minmax(0,1.25fr)]">
-        <div className="rounded border border-slate-200 bg-white p-5 shadow-soft">
-          <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+        <div className="ui-card p-5">
+          <p className="kicker">
             <I18nText en="Data freshness" ru="Свежесть данных" />
           </p>
           <div className="mt-4 space-y-2">
@@ -211,7 +211,7 @@ export default async function HomePage() {
               <Link
                 key={mode.href}
                 href={mode.href}
-                className="group rounded border border-slate-200 bg-white p-4 shadow-soft transition hover:-translate-y-0.5 hover:border-slate-300 hover:bg-slate-50"
+                className="group ui-card p-4 transition-[border-color,box-shadow,background-color] hover:border-slate-300 hover:bg-slate-50 hover:shadow-elev"
               >
                 <div className="flex items-start justify-between gap-3">
                   <span className={`mode-logo-frame mode-logo-frame-choice ${mode.frameClassName ?? ""}`}>
@@ -219,7 +219,7 @@ export default async function HomePage() {
                   </span>
                   <ArrowRight className="mt-2 h-5 w-5 shrink-0 text-slate-400 transition group-hover:translate-x-0.5 group-hover:text-ink" />
                 </div>
-                <p className="mt-4 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                <p className="kicker mt-4">
                   <Icon className="mr-1 inline h-3.5 w-3.5 align-[-2px]" />
                   <I18nText en={mode.kickerEn} ru={mode.kickerRu} />
                 </p>
@@ -387,7 +387,7 @@ async function loadNextRound(leagueId: bigint, season: string, teamIds: bigint[]
 
 function MetricCard({ icon, labelEn, labelRu, value }: { icon: React.ReactNode; labelEn: string; labelRu: string; value: string }) {
   return (
-    <div className="rounded border border-slate-200 bg-white p-4 shadow-soft">
+    <div className="ui-card p-4">
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm font-semibold text-slate-600">
           <I18nText en={labelEn} ru={labelRu} />

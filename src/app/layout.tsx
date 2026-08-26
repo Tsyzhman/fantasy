@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Onest } from "next/font/google";
+import { JetBrains_Mono, Onest } from "next/font/google";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -14,6 +14,12 @@ const onest = Onest({
   subsets: ["cyrillic", "latin"],
   display: "swap",
   variable: "--font-onest"
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["cyrillic", "latin"],
+  display: "swap",
+  variable: "--font-jetbrains-mono"
 });
 
 const earlyPreferenceScript = `
@@ -59,7 +65,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           }}
         />
       </head>
-      <body className={onest.variable}>
+      <body className={`${onest.variable} ${jetbrainsMono.variable}`}>
         <div className="min-h-screen">
           <AppHeader user={user} />
           {children}

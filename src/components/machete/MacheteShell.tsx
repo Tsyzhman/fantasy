@@ -48,7 +48,7 @@ export function MacheteShell({ children, compact = false }: { children: ReactNod
             onFocus={() => router.prefetch(item.href)}
             aria-current={active ? "page" : undefined}
             className={cn(
-              "inline-flex shrink-0 items-center justify-center gap-2 rounded-sm border sm:justify-start",
+              "inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-sm border sm:justify-start",
               compact ? "px-2.5 py-1.5" : "px-3 py-2",
               active
                 ? "border-brand-600 bg-brand-50 text-brand-700"
@@ -74,8 +74,8 @@ export function MacheteShell({ children, compact = false }: { children: ReactNod
         <div className="border-b border-slate-200 pb-3 sm:pb-4">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
             <div>
-              <p className="text-sm font-semibold text-slate-500">Machete</p>
-              <h1 className="mt-1 text-[28px] font-bold leading-[34px] text-ink">
+              <p className="kicker">Machete</p>
+              <h1 className="mt-1 text-[clamp(28px,3vw,40px)] font-bold leading-[1.08] tracking-[-0.03em] text-ink">
                 <I18nText en="FotMob data workspace" ru="Рабочее пространство FotMob" />
               </h1>
             </div>

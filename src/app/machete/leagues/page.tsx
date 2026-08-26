@@ -12,7 +12,7 @@ export default async function MacheteLeaguesPage() {
 
   return (
     <MacheteShell>
-      <section className="mt-8 rounded border border-slate-200 bg-white p-5 shadow-soft">
+      <section className="mt-8 ui-card p-5">
         <h2 className="text-lg font-semibold text-ink">Machete</h2>
         <p className="mt-1 text-sm text-slate-600">
           <I18nText

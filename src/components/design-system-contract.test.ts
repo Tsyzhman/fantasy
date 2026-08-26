@@ -8,45 +8,49 @@ const themeToggle = readFileSync(new URL("./theme-toggle.tsx", import.meta.url),
 const appHeader = readFileSync(new URL("./app-header.tsx", import.meta.url), "utf8");
 const tailwindConfig = readFileSync(new URL("../../tailwind.config.ts", import.meta.url), "utf8");
 
-test("Soft Signal semantic tokens define both complete themes", () => {
+test("Cloudline semantic tokens define both complete themes", () => {
   for (const token of [
-    "--bg-canvas",
-    "--bg-surface",
-    "--bg-surface-muted",
-    "--border-default",
+    "--bg-page",
+    "--surface-1",
     "--text-primary",
-    "--action-primary",
+    "--accent-primary",
     "--focus-ring",
+    "--page-atmosphere",
+    "--button-primary-bg",
     "--chart-8"
   ]) {
     const declarations = globals.match(new RegExp(`${token}:`, "g")) ?? [];
     assert.equal(declarations.length, 2, `${token} must exist once per theme`);
   }
 
-  assert.match(globals, /--bg-canvas:\s*#f7f6f1/);
-  assert.match(globals, /--bg-canvas:\s*#121619/);
-  assert.doesNotMatch(globals, /linear-gradient\(180deg[\s\S]*body/);
+  assert.match(globals, /html\[data-theme="light"\]/);
+  assert.match(globals, /html\[data-theme="dark"\]/);
+  assert.match(globals, /--bg-page:\s*#f4f8fd/);
+  assert.match(globals, /--bg-page:\s*#0d1727/);
+  assert.match(globals, /body\s*\{[\s\S]*background:\s*var\(--page-atmosphere\)/);
 });
 
 test("theme control stays centered and meets the shared touch target", () => {
   assert.match(themeToggle, /data-icon-button/);
   assert.match(themeToggle, /className="ui-icon-button !justify-center"/);
   assert.match(themeToggle, /aria-hidden="true"/);
+  assert.match(themeToggle, /aria-pressed=\{theme === "dark"\}/);
   assert.match(globals, /\.ui-icon-button\s*\{[\s\S]*width:\s*var\(--control-default\)/);
   assert.match(globals, /@media \(pointer: coarse\)[\s\S]*width:\s*var\(--control-touch\)/);
   assert.match(appHeader, /button:not\(\[data-icon-button\]\)/);
 });
 
-test("ordinary cards have borders and no decorative elevation", () => {
-  assert.match(globals, /\.ui-card\s*\{[\s\S]*border: 1px solid var\(--border-subtle\)/);
-  assert.match(globals, /\.ui-card\s*\{[\s\S]*box-shadow: none/);
-  assert.match(globals, /\.shadow-soft\s*\{[\s\S]*box-shadow: none/);
+test("ordinary cards have borders and Cloudline elevation", () => {
+  assert.match(globals, /\.ui-card\s*\{[\s\S]*border: 1px solid var\(--border\)/);
+  assert.match(globals, /\.ui-card\s*\{[\s\S]*box-shadow: var\(--shadow-sm\)/);
+  assert.match(globals, /\.shadow-soft\s*\{[\s\S]*box-shadow: var\(--shadow-sm\)/);
 });
 
 test("Onest is self-hosted by Next instead of relying on a system font", () => {
-  assert.match(layout, /import \{ Onest \} from "next\/font\/google"/);
+  assert.match(layout, /import \{ JetBrains_Mono, Onest \} from "next\/font\/google"/);
   assert.match(layout, /variable: "--font-onest"/);
-  assert.match(layout, /className=\{onest\.variable\}/);
+  assert.match(layout, /variable: "--font-jetbrains-mono"/);
+  assert.match(layout, /className=\{`\$\{onest\.variable\} \$\{jetbrainsMono\.variable\}`\}/);
   assert.match(globals, /font-family: var\(--font-onest\)/);
 });
 
@@ -54,8 +58,10 @@ test("semantic 950 text cannot collapse onto its soft alert background", () => {
   assert.match(tailwindConfig, /950: `rgb\(var\(--\$\{name\}-rgb\)/);
   assert.doesNotMatch(tailwindConfig, /950: `rgb\(var\(--\$\{name\}-soft-rgb\)/);
 
-  assert.ok(contrastRatio("#8a5a10", "#fff5d8") >= 4.5);
-  assert.ok(contrastRatio("#f3c76d", "#3b311a") >= 4.5);
+  assert.ok(contrastRatio("#7b5a13", "#fff4d8") >= 4.5);
+  assert.ok(contrastRatio("#efc56d", "#3b3120") >= 4.5);
+  assert.ok(contrastRatio("#61718a", "#f4f8fd") >= 4.5);
+  assert.ok(contrastRatio("#91a2ba", "#0d1727") >= 4.5);
 });
 
 function contrastRatio(foreground: string, background: string) {

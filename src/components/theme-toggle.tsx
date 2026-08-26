@@ -38,6 +38,8 @@ export function ThemeToggle() {
       data-icon-button
       onClick={toggleTheme}
       aria-label={label}
+      aria-pressed={theme === "dark"}
+      title={label}
       className="ui-icon-button !justify-center"
     >
       <Icon aria-hidden="true" />

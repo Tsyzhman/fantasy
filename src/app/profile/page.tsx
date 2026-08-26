@@ -16,8 +16,8 @@ export default async function ProfilePage() {
   });
   return (
     <main className="mx-auto w-full max-w-3xl px-4 py-8 sm:px-6">
-      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500"><I18nText en="Account" ru="Аккаунт" /></p>
-      <h1 className="mt-1 text-2xl font-bold text-ink"><I18nText en="Profile" ru="Профиль" /></h1>
+      <p className="kicker"><I18nText en="Account" ru="Аккаунт" /></p>
+      <h1 className="mt-1 text-[clamp(28px,3vw,40px)] font-bold leading-[1.08] tracking-[-0.03em] text-ink"><I18nText en="Profile" ru="Профиль" /></h1>
       <p className="mt-1 text-sm text-slate-500">{user.name ?? user.email}</p>
       <section className="mt-6">
         <h2 className="mb-2 text-lg font-bold text-ink"><I18nText en="Fantasy data sources" ru="Источники фэнтези-данных" /></h2>

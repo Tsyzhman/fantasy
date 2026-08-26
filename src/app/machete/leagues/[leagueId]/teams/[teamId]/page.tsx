@@ -145,12 +145,12 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
           ]}
       />
 
-      <section className="mt-6 rounded border border-slate-200 bg-white p-5 shadow-soft">
+      <section className="mt-6 ui-card p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="flex items-start gap-4">
             <MacheteTeamLogo logoUrl={teamLogoUrl} name={seasonTeam.team.name} size="lg" />
             <div>
-              <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+              <p className="kicker">
                 {league.displayName} / {league.season} / FOTMOB
               </p>
               <div className="mt-2 flex flex-wrap items-center gap-3">
@@ -290,7 +290,7 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
       </section>
 
       {currentUser?.role === UserRole.ADMIN ? (
-      <details className="mt-6 rounded border border-slate-200 bg-white p-5 shadow-soft">
+      <details className="mt-6 ui-card p-5">
         <summary className="flex cursor-pointer items-center gap-2 text-lg font-semibold text-ink">
           <Database className="h-5 w-5 text-slate-500" />
           <I18nText en="Diagnostics and retained raw payload references" ru="Диагностика и сохраненные исходные данные" />

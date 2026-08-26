@@ -154,7 +154,7 @@ export default async function PlayersPage({ searchParams }: PageProps) {
         ]}
       />
       <div className="mt-5">
-        <p className="text-sm font-semibold uppercase tracking-wide text-slate-500"><I18nText en="Baltika player explorer" ru="Таблица игроков Балтики" /></p>
+        <p className="kicker"><I18nText en="Baltika player explorer" ru="Таблица игроков Балтики" /></p>
         <h1 className="mt-2 text-3xl font-bold text-ink"><I18nText en="Published Wyscout players" ru="Опубликованные игроки Wyscout" /></h1>
         <p className="mt-2 max-w-2xl text-sm text-slate-600">
           <I18nText en="This table only reads snapshots from imports marked current and published." ru="Здесь показаны только игроки из текущих опубликованных импортов." />

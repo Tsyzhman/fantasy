@@ -147,10 +147,10 @@ export default async function ComparePage({ searchParams }: { searchParams: Prom
 
       <div className="mt-5 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+          <p className="kicker">
             <I18nText en="Side-by-side comparison" ru="Сравнение игроков" />
           </p>
-          <h1 className="mt-2 text-3xl font-bold text-ink">
+          <h1 className="mt-2 text-[clamp(32px,4vw,48px)] font-bold leading-[1.08] tracking-[-0.03em] text-ink">
             {rows.length > 0 ? (
               <I18nText en={`${rows.length} players`} ru={`${rows.length} игроков`} />
             ) : (
@@ -276,7 +276,7 @@ function WindowSelector({ source, ids, active }: { source: string; ids: string[]
 
 function CompareSummaryCard({ row, isLeader }: { row: CompareRow; isLeader: boolean }) {
   return (
-    <article className="rounded border border-slate-200 bg-white p-4 shadow-soft">
+    <article className="ui-card p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <h2 className="truncate text-base font-bold text-ink" title={row.name}>{compactPlayerDisplayName(row.name)}</h2>

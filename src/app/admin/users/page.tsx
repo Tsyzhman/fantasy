@@ -45,7 +45,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <AdminNav />
       <div className="mt-6">
-        <p className="text-sm font-semibold uppercase tracking-wide text-slate-500"><I18nText en="Administration" ru="Администрирование" /></p>
+        <p className="kicker"><I18nText en="Administration" ru="Администрирование" /></p>
         <h1 className="mt-2 text-3xl font-bold text-ink"><I18nText en="Users" ru="Пользователи" /></h1>
         <p className="mt-2 max-w-3xl text-sm text-slate-600">
           <I18nText en="Create accounts, assign a franchise, change roles, and disable access without deleting history." ru="Создавайте аккаунты, назначайте франшизу, меняйте роли и отключайте доступ без удаления истории." />
@@ -81,7 +81,7 @@ export default async function AdminUsersPage({ searchParams }: PageProps) {
               <input name="isActive" type="checkbox" defaultChecked className="h-4 w-4 rounded border-slate-300" />
               <I18nText en="Active" ru="Активен" />
             </label>
-            <button type="submit" className="w-full rounded bg-ink px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">
+            <button type="submit" className="ui-button ui-button-primary w-full">
               <I18nText en="Create user" ru="Создать пользователя" />
             </button>
           </div>

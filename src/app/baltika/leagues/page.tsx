@@ -32,7 +32,7 @@ export default async function BaltikaLeaguesPage() {
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">Baltika</p>
+          <p className="kicker">Baltika</p>
           <h1 className="mt-2 text-3xl font-bold text-ink"><I18nText en="Leagues" ru="Лиги" /></h1>
           <p className="mt-2 max-w-2xl text-sm text-slate-600">
             <I18nText
@@ -56,7 +56,7 @@ export default async function BaltikaLeaguesPage() {
             <Link
               key={league.id}
               href={`/baltika/leagues/${league.id}`}
-              className="rounded border border-slate-200 bg-white p-5 shadow-soft transition hover:-translate-y-0.5 hover:border-slate-300"
+              className="ui-card p-5 transition-[border-color,box-shadow] hover:border-slate-300 hover:shadow-elev"
             >
               <div className="flex items-start justify-between gap-3">
                 <div className="flex items-center gap-3">

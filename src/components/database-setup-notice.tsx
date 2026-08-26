@@ -1,13 +1,15 @@
 import { I18nText } from "@/components/i18n-text";
+import { PublicPreferenceBar } from "@/components/public-preference-bar";
 
 const localSetupCommands = ["copy .env.example .env", "docker compose up -d postgres", "npm run prisma:migrate:deploy", "npm run db:seed", "npm run dev"];
 
 export function DatabaseSetupNotice() {
   return (
     <main className="grid min-h-screen place-items-center px-4 py-12">
-      <section className="w-full max-w-lg rounded border border-amber-200 bg-amber-50 p-6 shadow-sm">
-        <p className="text-sm font-semibold uppercase tracking-wide text-amber-700">Fantasy Scout</p>
-        <h1 className="mt-2 text-2xl font-bold text-ink">
+      <PublicPreferenceBar />
+      <section className="ui-card w-full max-w-lg border-amber-200 bg-amber-50 p-6">
+        <p className="kicker text-amber-700">Fantasy Scout</p>
+        <h1 className="mt-2 text-2xl font-bold tracking-tight text-ink">
           <I18nText en="Database is not configured" ru="База данных не настроена" />
         </h1>
         <p className="mt-3 text-sm leading-6 text-amber-900">

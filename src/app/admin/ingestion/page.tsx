@@ -34,10 +34,10 @@ export default async function AdminIngestionPage() {
     <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
       <IngestionAutoRefresh enabled={Boolean(status.active_job)} />
       <AdminNav />
-      <section className="mt-6 rounded border border-slate-200 bg-white p-5 shadow-soft">
+      <section className="mt-6 ui-card p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+            <p className="flex items-center gap-2 kicker">
               <DatabaseZap className="h-4 w-4" />
               <I18nText en="Data ingestion" ru="Загрузка данных" />
             </p>
@@ -58,7 +58,7 @@ export default async function AdminIngestionPage() {
         fplEnabled={process.env.FPL_ENABLED !== "false" && process.env.FPL_PRICE_SYNC_ENABLED !== "false"}
       />
 
-      <section className="mt-6 rounded border border-slate-200 bg-white p-5 shadow-soft">
+      <section className="mt-6 ui-card p-5">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h2 className="text-lg font-bold text-ink"><I18nText en="Status" ru="Статус" /></h2>

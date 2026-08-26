@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 
 import { DatabaseSetupNotice } from "@/components/database-setup-notice";
 import { I18nText } from "@/components/i18n-text";
+import { PublicPreferenceBar } from "@/components/public-preference-bar";
 import { createUserSession, hashPassword, normalizeEmail } from "@/lib/auth";
 import { authRateLimitBuckets, checkAuthRateLimits, clearAuthRateLimits, getClientIpFromHeaders, recordFailedAuthAttempt } from "@/lib/auth-rate-limit";
 import { isDatabaseConfigured, prisma } from "@/lib/db";
@@ -26,10 +27,11 @@ export default async function SetupPage({ searchParams }: PageProps) {
 
   return (
     <main className="grid min-h-screen place-items-center px-4 py-12">
-      <section className="w-full max-w-md rounded border border-slate-200 bg-white p-6 shadow-sm">
-        <p className="text-sm font-semibold uppercase tracking-wide text-slate-500"><I18nText en="First run" ru="Первый запуск" /></p>
-        <h1 className="mt-2 text-2xl font-bold text-ink"><I18nText en="Create admin account" ru="Создайте администратора" /></h1>
-        <p className="mt-2 text-sm text-slate-600">
+      <PublicPreferenceBar />
+      <section className="ui-card w-full max-w-md p-6">
+        <p className="kicker"><I18nText en="First run" ru="Первый запуск" /></p>
+        <h1 className="mt-2 text-2xl font-bold tracking-tight text-ink"><I18nText en="Create admin account" ru="Создайте администратора" /></h1>
+        <p className="mt-2 max-w-[56ch] text-sm leading-6 text-slate-600">
           <I18nText
             en="Create the first admin with a password. Existing imported users without passwords will not block this setup."
             ru="Создайте первого администратора с паролем. Уже импортированные пользователи без паролей не блокируют настройку."
@@ -44,18 +46,18 @@ export default async function SetupPage({ searchParams }: PageProps) {
 
         <form action={setupAction} className="mt-6 space-y-4">
           <label className="block">
-            <span className="text-sm font-semibold text-slate-700"><I18nText en="Name" ru="Имя" /></span>
-            <input name="name" className="mt-1 w-full rounded border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400" />
+            <span className="text-[13px] font-semibold text-slate-700"><I18nText en="Name" ru="Имя" /></span>
+            <input name="name" className="ui-input mt-1 w-full text-base outline-none" />
           </label>
           <label className="block">
-            <span className="text-sm font-semibold text-slate-700"><I18nText en="Email" ru="Почта" /></span>
-            <input required name="email" type="email" className="mt-1 w-full rounded border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400" />
+            <span className="text-[13px] font-semibold text-slate-700"><I18nText en="Email" ru="Почта" /></span>
+            <input required name="email" type="email" className="ui-input mt-1 w-full text-base outline-none" />
           </label>
           <label className="block">
-            <span className="text-sm font-semibold text-slate-700"><I18nText en="Password" ru="Пароль" /></span>
-            <input required name="password" type="password" minLength={8} className="mt-1 w-full rounded border border-slate-200 px-3 py-2 text-sm outline-none focus:border-slate-400" />
+            <span className="text-[13px] font-semibold text-slate-700"><I18nText en="Password" ru="Пароль" /></span>
+            <input required name="password" type="password" minLength={8} className="ui-input mt-1 w-full text-base outline-none" />
           </label>
-          <button type="submit" className="w-full rounded bg-ink px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">
+          <button type="submit" className="ui-button ui-button-primary w-full">
             <I18nText en="Create admin" ru="Создать администратора" />
           </button>
         </form>

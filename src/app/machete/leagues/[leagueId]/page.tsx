@@ -140,7 +140,7 @@ export default async function MacheteLeaguePage({ params, searchParams }: PagePr
         />
       </div>
 
-      <section className="mt-8 rounded border border-slate-200 bg-white p-5 shadow-soft">
+      <section className="mt-8 ui-card p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-3">

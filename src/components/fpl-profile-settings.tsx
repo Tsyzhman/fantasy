@@ -44,7 +44,7 @@ export function FplProfileSettings({ initialValue }: { initialValue: string }) {
   }
 
   return (
-    <div className="rounded border border-slate-200 bg-white p-4 shadow-soft">
+    <div className="ui-card p-4">
       <label className="block text-sm font-semibold text-slate-700" htmlFor="fpl-entry-id">
         <I18nText en="FPL entry ID" ru="ID команды FPL" />
       </label>
@@ -63,7 +63,7 @@ export function FplProfileSettings({ initialValue }: { initialValue: string }) {
         />
       </p>
       <div className="mt-3 flex flex-wrap gap-2">
-        <button type="button" onClick={save} disabled={pending || !value.trim() || value === savedValue} className="rounded bg-ink px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
+        <button type="button" onClick={save} disabled={pending || !value.trim() || value === savedValue} className="ui-button ui-button-primary disabled:opacity-55">
           <I18nText en="Save" ru="Сохранить" />
         </button>
         {savedValue ? (
@@ -132,7 +132,7 @@ function FplChipLedger() {
           <LocalizedOption value="TRIPLE_CAPTAIN" en="Triple Captain" ru="Triple Captain" />
           <LocalizedOption value="BENCH_BOOST" en="Bench Boost" ru="Bench Boost" />
         </select>
-        <button type="button" onClick={() => void planChip()} disabled={pending} className="rounded bg-ink px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"><I18nText en="Plan chip" ru="Запланировать" /></button>
+        <button type="button" onClick={() => void planChip()} disabled={pending} className="rounded-sm bg-brand-600 px-3 py-1.5 text-xs font-semibold text-[color:var(--brand-fg)] disabled:opacity-55"><I18nText en="Plan chip" ru="Запланировать" /></button>
       </div>
       {usages.length > 0 ? <ul className="mt-3 space-y-1 text-xs text-slate-600">{usages.map((usage) => <li key={`${usage.gameweek}-${usage.code}`}>GW{usage.gameweek}: {usage.code} · {usage.status}</li>)}</ul> : null}
       {message ? <p role="status" className="mt-2 text-xs text-slate-600">{message}</p> : null}

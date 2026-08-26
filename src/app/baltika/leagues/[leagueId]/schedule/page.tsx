@@ -69,7 +69,7 @@ export default async function BaltikaLeagueSchedulePage({ params }: PageProps) {
 
       <div className="mt-5 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-slate-500">
+          <p className="flex items-center gap-2 kicker">
             <LeagueFlag league={league} size={18} />
             <I18nText en={leagueSubtitle(league, season?.name ?? "No season")} ru={leagueSubtitle(league, season?.name ?? "Сезон не задан")} />
           </p>

@@ -30,7 +30,7 @@ export default async function MacheteSyncJobsPage() {
         />
       </div>
       <section className="mt-8">
-        <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+        <p className="kicker">
           <I18nText en="Machete operations" ru="Операции Machete" />
         </p>
         <h2 className="mt-2 text-2xl font-bold text-ink">

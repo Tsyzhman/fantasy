@@ -17,7 +17,7 @@ export function EmptyState({
 }) {
   return (
     <div className={cn("ui-card border-dashed border-slate-300 p-8 text-center", className)}>
-      {icon ? <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded bg-slate-100 text-slate-500">{icon}</div> : null}
+      {icon ? <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-sm bg-slate-100 text-slate-500">{icon}</div> : null}
       <h2 className="text-base font-semibold text-ink">{title}</h2>
       {description ? <p className="mx-auto mt-2 max-w-xl text-sm leading-6 text-slate-500">{description}</p> : null}
       {action ? <div className="mt-4">{action}</div> : null}

@@ -114,7 +114,7 @@ export default async function FantasySquadPage({ searchParams, mode }: FantasySq
               </select>
             </label>
           )}
-          <button type="submit" className="self-end rounded bg-ink px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">
+          <button type="submit" className="ui-button ui-button-primary self-end">
             <I18nText en="Load" ru="Загрузить" />
           </button>
         </AutoSubmitForm>

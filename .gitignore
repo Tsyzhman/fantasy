@@ -3,6 +3,7 @@ node_modules
 /.codex_sheet_work/
 .env
 .env*.local
+.postgres-data/
 storage/uploads
 *.tsbuildinfo
 .cache

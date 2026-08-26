@@ -139,7 +139,7 @@ export function ShotMapExplorer({
 
   return (
     <div className="mt-6 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_320px]">
-      <section className="rounded border border-slate-200 bg-white p-4 shadow-soft">
+      <section className="ui-card p-4">
         <div className="flex flex-col gap-3 border-b border-slate-200 pb-3 xl:flex-row xl:items-center xl:justify-between">
           <div className="flex flex-wrap gap-2">
             <ModeButton active={mode === "for"} onClick={() => setMode("for")} icon={<Crosshair className="h-4 w-4" />} label={<I18nText en="A attack" ru="Атака A" />} />
@@ -278,7 +278,7 @@ export function ShotMapExplorer({
       </section>
 
       <aside>
-        <section className="rounded border border-slate-200 bg-white p-4 shadow-soft">
+        <section className="ui-card p-4">
           <p className="text-xs font-semibold uppercase text-slate-500"><I18nText en="Summary" ru="Сводка" /></p>
           <dl className="mt-3 grid grid-cols-3 gap-3 text-sm">
             <div>
@@ -395,7 +395,7 @@ function ModeButton({ active, onClick, icon, label }: { active: boolean; onClick
       onClick={onClick}
       aria-pressed={active}
       className={`inline-flex items-center gap-2 rounded px-3 py-2 text-sm font-semibold ${
-        active ? "bg-ink text-white" : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
+        active ? "bg-brand-600 text-[color:var(--brand-fg)]" : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
       }`}
     >
       {icon}
@@ -474,7 +474,7 @@ function ShotPitchPanel({
       <div className={frameClassName}>
         <ShotPitchSvg layers={layers} activeShotId={activeShotId} language={language} heatField={heatField} />
         {shotCount === 0 ? (
-          <div className="absolute inset-0 grid place-items-center bg-[#121619]/75 text-sm font-semibold text-[#f3f1ea]">
+          <div className="absolute inset-0 grid place-items-center bg-[color:var(--scrim)] text-sm font-semibold text-ink">
             <I18nText en="No shots for current filters" ru="Нет ударов по текущим фильтрам" />
           </div>
         ) : null}

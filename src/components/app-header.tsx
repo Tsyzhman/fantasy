@@ -50,7 +50,7 @@ export function AppHeader({ user }: AppHeaderProps) {
   if (isPublicAuthPage) return null;
 
   return (
-    <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
+    <header className="app-header sticky top-0 z-20">
       <div className="relative mx-auto flex min-h-14 min-w-0 max-w-7xl items-center justify-end px-4 sm:px-6 lg:px-8">
         <button
           type="button"
@@ -124,7 +124,7 @@ function HeaderNavigationItems({ pathname, user, logout }: {
           <button
             type="button"
             onClick={logout}
-            className="shrink-0 rounded px-3 py-2 text-slate-600 hover:bg-slate-100"
+            className="ui-button shrink-0 text-sm text-slate-600"
             aria-label={localizedText(language, `Sign out ${user.name ?? user.email}`, `Выйти: ${user.name ?? user.email}`)}
           >
             <I18nText en="Sign out" ru="Выйти" />
@@ -152,7 +152,7 @@ function HeaderLink({ href, active = false, icon, children }: {
       onPointerEnter={() => router.prefetch(href)}
       onFocus={() => router.prefetch(href)}
       aria-current={active ? "page" : undefined}
-      className={cn("inline-flex shrink-0 items-center gap-2 rounded px-3 py-2", active ? "bg-slate-100 text-ink" : "text-slate-600", "hover:bg-slate-100")}
+      className={cn("inline-flex shrink-0 items-center gap-2 rounded-sm px-3 py-2", active ? "bg-slate-100 text-ink" : "text-slate-600", "hover:bg-slate-100")}
     >
       <HeaderLinkIcon icon={icon} />
       {children}

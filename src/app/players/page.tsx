@@ -63,7 +63,7 @@ export default async function PlayersEntryPage({ searchParams }: PageProps) {
       />
 
       <section className="mt-5 max-w-3xl">
-        <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">
+        <p className="kicker">
           <I18nText en="Unified player entry" ru="Единый вход в игроков" />
         </p>
         <h1 className="mt-2 text-3xl font-bold text-ink">
@@ -86,7 +86,7 @@ export default async function PlayersEntryPage({ searchParams }: PageProps) {
             <Link
               key={card.source}
               href={href}
-              className="group rounded border border-slate-200 bg-white p-5 shadow-soft transition hover:-translate-y-0.5 hover:border-brand-300 hover:bg-slate-50"
+              className="group ui-card p-5 transition-[border-color,box-shadow,background-color] hover:border-brand-300 hover:bg-slate-50 hover:shadow-elev"
             >
               <div className="flex items-start justify-between gap-4">
                 <div className="flex min-w-0 items-center gap-3">

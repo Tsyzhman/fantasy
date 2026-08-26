@@ -1456,7 +1456,7 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
         <SegmentedControl value={mobileTab} onChange={setMobileTab} options={mobileTabs} className="w-full justify-between" size="sm" />
       </div>
       <section className="contents">
-        <div className={cn(mobileTab === "squad" ? "block" : "hidden xl:block", "order-2 rounded border border-slate-200 bg-white p-4 shadow-soft")}>
+        <div className={cn(mobileTab === "squad" ? "block" : "hidden xl:block", "order-2 ui-card p-4")}>
           <div className="space-y-3">
             <div className="rounded border border-slate-200 bg-slate-50 p-2">
               <div className="flex gap-1 overflow-x-auto" aria-label={localizedText(language, "Squad planning round", "Тур плана состава")}>
@@ -1807,7 +1807,7 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
           ) : null}
         </div>
 
-        <div ref={suggestionPanelRef} className={cn(mobileTab === "suggestions" ? "block" : "hidden xl:block", "order-5 rounded border border-slate-200 bg-white p-3 shadow-soft")}>
+        <div ref={suggestionPanelRef} className={cn(mobileTab === "suggestions" ? "block" : "hidden xl:block", "order-5 ui-card p-3")}>
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="min-w-0">
               <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-500 sm:text-sm"><I18nText en="Transfer suggestions" ru="Подсказки трансферов" /></h3>
@@ -2510,7 +2510,7 @@ function PlayerPoolFilterPresets({ presets, selectedId, pending, language, onApp
             aria-label={localizedText(language, "Filter preset name", "Название пресета фильтров")}
             className="min-w-0 flex-1 rounded border border-slate-200 px-3 py-2 text-sm"
           />
-          <button type="button" onClick={() => void handleSave()} disabled={pending || !name.trim()} className="inline-flex items-center gap-1.5 rounded bg-ink px-3 py-2 text-xs font-semibold text-white disabled:opacity-50">
+          <button type="button" onClick={() => void handleSave()} disabled={pending || !name.trim()} className="ui-button ui-button-primary text-xs disabled:opacity-55">
             {saved ? <Check className="h-4 w-4" /> : <Save className="h-4 w-4" />}
             <I18nText en="Save" ru="Сохранить" />
           </button>

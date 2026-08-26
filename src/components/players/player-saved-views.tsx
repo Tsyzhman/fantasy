@@ -162,7 +162,7 @@ export function PlayerSavedViews({ source, className }: PlayerSavedViewsProps) {
             <button
               type="button"
               onClick={saveCurrentView}
-              className="inline-flex items-center justify-center gap-1.5 rounded bg-ink px-3 py-2 font-semibold text-white hover:bg-slate-700"
+              className="ui-button ui-button-primary"
             >
               {savedId ? <Check className="h-4 w-4" /> : <Bookmark className="h-4 w-4" />}
               <I18nText en="Save" ru="Сохранить" />

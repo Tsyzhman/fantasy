@@ -5,6 +5,14 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.35 - 2026-08-26
+
+### Changed
+
+- Adopted the Isty Cloudline design system across the product: Cloud Day and
+  Cloud Night semantic tokens, page atmosphere, rounded surfaces, gradient
+  primary actions, Onest plus JetBrains Mono, and a persisted theme toggle.
+
 ## 0.3.34 - 2026-08-26
 
 ### Fixed

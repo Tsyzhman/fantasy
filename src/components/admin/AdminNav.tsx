@@ -73,10 +73,10 @@ function AdminNavLink({
       href={href}
       className={cn(
         "inline-flex min-w-[180px] items-center gap-3 rounded border px-4 py-3 text-sm transition",
-        active ? "border-slate-300 bg-white text-ink shadow-soft" : "border-slate-200 bg-slate-50 text-slate-600 hover:bg-white"
+        active ? "border-slate-300 bg-white text-ink shadow-elev" : "border-slate-200 bg-slate-50 text-slate-600 hover:bg-white"
       )}
     >
-      <span className={cn("grid h-9 w-9 place-items-center rounded", active ? "bg-ink text-white" : "bg-white text-slate-500")}>{icon}</span>
+      <span className={cn("grid h-10 w-10 place-items-center rounded-sm", active ? "bg-brand-600 text-[color:var(--brand-fg)]" : "bg-white text-slate-500")}>{icon}</span>
       <span>
         <span className="block font-semibold">{children}</span>
         <span className="block text-xs text-slate-500">{description}</span>

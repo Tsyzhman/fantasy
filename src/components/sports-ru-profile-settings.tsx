@@ -45,7 +45,7 @@ export function SportsRuProfileSettings({ initialValue }: { initialValue: string
   }
 
   return (
-    <div className="rounded border border-slate-200 bg-white p-4 shadow-soft">
+    <div className="ui-card p-4">
       <label className="block text-sm font-semibold text-slate-700" htmlFor="sports-ru-profile">
         <I18nText en="Sports.ru profile ID or URL" ru="ID или ссылка на профиль Sports.ru" />
       </label>
@@ -63,7 +63,7 @@ export function SportsRuProfileSettings({ initialValue }: { initialValue: string
         />
       </p>
       <div className="mt-3 flex flex-wrap gap-2">
-        <button type="button" onClick={save} disabled={pending || !value.trim() || value === savedValue} className="rounded bg-ink px-4 py-2 text-sm font-semibold text-white disabled:opacity-50">
+        <button type="button" onClick={save} disabled={pending || !value.trim() || value === savedValue} className="ui-button ui-button-primary disabled:opacity-55">
           <I18nText en="Save" ru="Сохранить" />
         </button>
         {savedValue ? (

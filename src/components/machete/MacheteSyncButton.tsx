@@ -58,7 +58,7 @@ export function MacheteSyncButton({
         className={cn(
           "inline-flex items-center justify-center gap-2 rounded px-3 py-2 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-70",
           variant === "primary"
-            ? "bg-ink text-white hover:bg-slate-700"
+            ? "bg-brand-600 text-[color:var(--brand-fg)] hover:opacity-90"
             : "border border-slate-200 bg-white text-slate-700 hover:bg-slate-50"
         )}
       >

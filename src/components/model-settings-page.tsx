@@ -450,7 +450,7 @@ export async function ModelSettingsPage({
 
           <FormulaHelp source={source} />
 
-          <button type="submit" className="rounded bg-ink px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700">
+          <button type="submit" className="ui-button ui-button-primary">
             <I18nText en="Save and recalculate scores" ru="Сохранить и пересчитать очки" />
           </button>
         </form>

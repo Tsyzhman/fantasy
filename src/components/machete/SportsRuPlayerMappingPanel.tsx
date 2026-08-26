@@ -87,7 +87,7 @@ export function SportsRuPlayerMappingPanel({ rows, roster, canEdit, contestId }:
 
   if (rows.length === 0) {
     return (
-      <section className="mt-6 rounded border border-slate-200 bg-white p-5 shadow-soft">
+      <section className="mt-6 ui-card p-5">
         <div className="flex items-center gap-2">
           <Link2 className="h-5 w-5 text-slate-500" />
           <h2 className="text-lg font-semibold text-ink"><I18nText en="Sports.ru to FotMob mapping" ru="Сопоставление Sports.ru с FotMob" /></h2>
@@ -103,7 +103,7 @@ export function SportsRuPlayerMappingPanel({ rows, roster, canEdit, contestId }:
   }
 
   return (
-    <section className="mt-6 rounded border border-slate-200 bg-white p-5 shadow-soft">
+    <section className="mt-6 ui-card p-5">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
           <div className="flex items-center gap-2">

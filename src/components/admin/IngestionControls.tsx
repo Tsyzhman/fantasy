@@ -39,7 +39,7 @@ export function IngestionControls({ hasActiveJob, initialBackfillCompleted }: Pr
         type="button"
         disabled={hasActiveJob || isPending}
         onClick={() => post("/api/admin/ingestion/initial-backfill/start", { mode: "current_league_47" })}
-        className="inline-flex items-center gap-2 rounded bg-ink px-4 py-2 text-sm font-semibold text-white hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-45"
+        className="ui-button ui-button-primary disabled:cursor-not-allowed"
       >
         <UploadCloud className="h-4 w-4" />
         <I18nText en="Quick EPL current season" ru="Быстро: АПЛ текущий сезон" />

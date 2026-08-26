@@ -117,7 +117,7 @@ export default async function BaltikaLeaguePage({ params }: PageProps) {
       />
       <div className="mt-5 flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-wide text-slate-500"><I18nText en="League workspace" ru="Рабочее место лиги" /></p>
+          <p className="kicker"><I18nText en="League workspace" ru="Рабочее место лиги" /></p>
           <h1 className="mt-2 flex items-center gap-3 text-3xl font-bold text-ink">
             <LeagueFlag league={league} size={40} />
             {league.name}
@@ -131,7 +131,7 @@ export default async function BaltikaLeaguePage({ params }: PageProps) {
           <BulkImportButton leagueId={league.id} seasonId={season?.id ?? ""} />
           <Link
             href="/baltika/players"
-            className="inline-flex items-center gap-2 rounded bg-ink px-3 py-2 text-sm font-semibold text-white hover:bg-slate-700"
+            className="ui-button ui-button-primary"
           >
             <BarChart3 className="h-4 w-4" />
             <I18nText en="View players" ru="Смотреть игроков" />
@@ -145,7 +145,7 @@ export default async function BaltikaLeaguePage({ params }: PageProps) {
         </div>
       </div>
 
-      <section className="mt-8 rounded border border-slate-200 bg-white p-5 shadow-soft">
+      <section className="mt-8 ui-card p-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="text-sm font-semibold text-ink">

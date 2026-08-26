@@ -73,7 +73,7 @@ export async function UserScoringPreferencesPage({ searchParams }: { searchParam
         <I18nText en="Back to Machete players" ru="Назад к игрокам Machete" />
       </Link>
       <div className="mt-5">
-        <p className="text-sm font-semibold uppercase tracking-wide text-slate-500">Machete</p>
+        <p className="kicker">Machete</p>
         <h1 className="mt-2 text-3xl font-bold text-ink"><I18nText en="My Alt FP formula" ru="Моя формула Alt FP" /></h1>
         <p className="mt-2 max-w-3xl text-sm text-slate-600">
           <I18nText

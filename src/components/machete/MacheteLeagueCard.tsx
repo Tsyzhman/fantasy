@@ -39,7 +39,7 @@ export function MacheteLeagueCard({ league }: { league: MacheteLeagueCardDto }) 
   return (
     <Link
       href={`/machete/leagues/${league.id}${league.season ? `?season=${encodeURIComponent(league.season)}` : ""}`}
-      className="rounded border border-slate-200 bg-white p-5 shadow-soft transition hover:-translate-y-0.5 hover:border-slate-300"
+      className="ui-card p-5 transition-[border-color,box-shadow] hover:border-slate-300 hover:shadow-elev"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex items-center gap-3">

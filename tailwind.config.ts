@@ -52,15 +52,20 @@ const config: Config = {
         purple: semanticPalette("experimental")
       },
       boxShadow: {
-        soft: "none",
-        elev: "none",
+        soft: "var(--shadow-sm)",
+        elev: "var(--shadow-md)",
         popover: "var(--shadow-popover)"
       },
       borderRadius: {
+        none: "0px",
         xs: "var(--radius-xs)",
         sm: "var(--radius-sm)",
+        DEFAULT: "var(--radius-md)",
         md: "var(--radius-md)",
-        lg: "var(--radius-lg)"
+        lg: "var(--radius-lg)",
+        xl: "var(--radius-xl)",
+        "2xl": "var(--radius-xl)",
+        full: "var(--radius-pill)"
       },
       fontFamily: {
         sans: [
@@ -75,6 +80,14 @@ const config: Config = {
           "Helvetica",
           "Arial",
           "sans-serif"
+        ],
+        mono: [
+          "var(--font-jetbrains-mono)",
+          "JetBrains Mono",
+          "ui-monospace",
+          "SFMono-Regular",
+          "Menlo",
+          "monospace"
         ]
       }
     }
