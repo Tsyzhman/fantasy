@@ -1,6 +1,6 @@
 {
   "name": "fantasy-scout",
-  "version": "0.3.37",
+  "version": "0.3.38",
   "private": true,
   "engines": {
     "node": ">=20.9.0"
@@ -59,6 +59,7 @@
     "prices:finalize-sports-ru": "tsx scripts/finalize-sports-ru-current-mappings.ts",
     "forecasts:sync-foontasy": "tsx scripts/sync-foontasy-forecasts.ts",
     "starters:sync-completed": "tsx scripts/sync-starting-xi-from-completed-matches.ts",
+    "starters:sync-probable": "tsx scripts/sync-probable-lineups.ts",
     "forecasts:analyze-foontasy": "tsx scripts/analyze-foontasy-archive.ts",
     "benchmark:squad-interactions": "tsx scripts/benchmark-squad-interactions.ts",
     "forecasts:recalculate-model": "tsx scripts/recalculate-fantasy-model-forecasts.ts",
@@ -79,6 +80,7 @@
     "exceljs": "^4.4.0",
     "lucide-react": "^0.468.0",
     "next": "^16.2.12",
+    "node-html-parser": "7.0.1",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "tailwind-merge": "^2.5.4"
@@ -102,7 +104,8 @@
   },
   "overrides": {
     "brace-expansion": "$brace-expansion",
-    "nanoid": "3.3.17",
+    "js-yaml": "4.3.2",
+    "nanoid": "3.3.18",
     "postcss": "8.5.25",
     "sharp": "0.35.0",
     "tmp": "^0.2.6",

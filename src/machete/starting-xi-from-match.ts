@@ -133,7 +133,7 @@ async function applyTeamStartingXi(
   }
 ): Promise<StartingXiTeamApplyResult> {
   return prisma.$transaction(async (tx) => {
-    const lockKey = `starting-xi-from-match:${input.leagueId}:${input.season}:${input.teamId}`;
+    const lockKey = `starting-xi:${input.leagueId}:${input.season}:${input.teamId}`;
     await tx.$executeRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`);
     const seasonTeam = await tx.leagueSeasonTeam.findUnique({
       where: {

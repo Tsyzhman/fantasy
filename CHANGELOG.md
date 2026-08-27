@@ -5,6 +5,23 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.38 - 2026-08-27
+
+### Added
+
+- Added a guarded probable-lineup sync for Premier League (Fantasy Football
+  Scout), Serie A (Gazzetta), and Bundesliga (LigaInsider), with dry-run/apply
+  modes, dynamic discovery of LigaInsider club URLs, exact FPL provider-code
+  matching, roster-scoped fallback matching, compact provenance, and strict
+  league/team completeness checks.
+
+### Changed
+
+- Unified actual-match, manual, and probable-lineup writes on the same
+  per-team PostgreSQL advisory lock.
+- Updated the pinned `nanoid` and transitive `js-yaml` patch releases to remove
+  the high-severity advisories found during the dependency audit.
+
 ## 0.3.37 - 2026-08-26
 
 ### Changed

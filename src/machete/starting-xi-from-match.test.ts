@@ -81,3 +81,12 @@ test("incremental ingestion applies match starters instead of clearing the whole
   assert.match(source, /applyStartingXiFromCompletedMatch\(prisma, \{ matchId: result\.matchId \}\)/);
   assert.doesNotMatch(source, /resetStartingXiForLatestCompletedRound|resetting_starting_xi/);
 });
+
+test("actual-match and manual starter updates share the per-team lock namespace", () => {
+  const actualMatchSource = readFileSync(new URL("./starting-xi-from-match.ts", import.meta.url), "utf8");
+  const probableLineupSource = readFileSync(new URL("./probable-lineup-sync.ts", import.meta.url), "utf8");
+  const manualSource = readFileSync(new URL("../app/api/machete/team-player-seasons/starter/route.ts", import.meta.url), "utf8");
+  assert.match(actualMatchSource, /`starting-xi:\$\{input\.leagueId\}:\$\{input\.season\}:\$\{input\.teamId\}`/);
+  assert.match(probableLineupSource, /`starting-xi:\$\{plan\.leagueId\}:\$\{plan\.season\}:\$\{teamId\}`/);
+  assert.match(manualSource, /`starting-xi:\$\{leagueId\}:\$\{season\}:\$\{teamId\}`/);
+});
