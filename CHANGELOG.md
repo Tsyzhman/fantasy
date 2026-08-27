@@ -5,6 +5,15 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.39 - 2026-08-27
+
+### Added
+
+- Added the production probable-lineup scheduler: it performs an idempotent
+  startup catch-up and then synchronizes EPL, Serie A, and Bundesliga every day
+  at 14:30 UTC. Deployment canaries explicitly disable the scheduler so they
+  cannot mutate production starting-XI flags.
+
 ## 0.3.38 - 2026-08-27
 
 ### Added

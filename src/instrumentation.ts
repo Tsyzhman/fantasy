@@ -12,6 +12,7 @@ export async function register() {
   const { startFoontasyForecastScheduler } = await import("./server/foontasy-forecast-scheduler");
   const { startFantasyModelForecastScheduler } = await import("./server/fantasy-model-forecast-scheduler");
   const { startFplPriceSyncScheduler } = await import("./server/fpl-price-sync-scheduler");
+  const { startProbableLineupScheduler } = await import("./server/probable-lineup-scheduler");
 
   startMacheteDailyFotMobSyncScheduler();
   startLeagueSeasonRetentionScheduler();
@@ -23,5 +24,6 @@ export async function register() {
   startFoontasyForecastScheduler();
   startFantasyModelForecastScheduler();
   startFplPriceSyncScheduler();
+  startProbableLineupScheduler();
   startIngestionWorkerLoop();
 }

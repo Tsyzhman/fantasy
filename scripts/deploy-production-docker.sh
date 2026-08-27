@@ -131,6 +131,7 @@ run_canary() {
     -e FIXTURE_ODDS_SYNC_ENABLED=false \
     -e FOONTASY_SYNC_ENABLED=false \
     -e FPL_PRICE_SYNC_ENABLED=false \
+    -e PROBABLE_LINEUP_SYNC_ENABLED=false \
     -e "FPL_RELAY_SOCKET_PATH=$fpl_relay_socket" \
     --network fantasy-scout_default \
     --mount type=volume,src=fantasy-scout_fantasy-scout-uploads,dst=/app/storage/uploads,readonly \
