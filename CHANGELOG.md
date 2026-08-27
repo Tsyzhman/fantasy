@@ -5,6 +5,15 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.40 - 2026-08-27
+
+### Added
+
+- Added independent admin buttons for manually refreshing EPL, Serie A, and
+  Bundesliga probable starting lineups from the existing ingestion page. The
+  admin-only route accepts only server-defined source keys and shares the
+  scheduler's concurrency guard and per-team advisory locks.
+
 ## 0.3.39 - 2026-08-27
 
 ### Added

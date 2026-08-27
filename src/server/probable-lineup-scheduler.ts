@@ -57,12 +57,14 @@ export function startProbableLineupScheduler() {
 }
 
 export async function runProbableLineupSyncNow(
-  trigger: "STARTUP" | "SCHEDULED" | "MANUAL"
+  trigger: "STARTUP" | "SCHEDULED" | "MANUAL",
+  sourceKeys?: readonly ProbableLineupSourceKey[]
 ): Promise<ProbableLineupScheduledRunResult> {
   if (trigger !== "MANUAL" && process.env.PROBABLE_LINEUP_SYNC_ENABLED === "false") {
     return emptyRunResult(false);
   }
 
+  const definitions = selectProbableLineupSourceDefinitions(sourceKeys);
   const state = probableLineupSchedulerState();
   if (state.running) {
     logger.info("Probable-lineup sync is already running; the trigger was skipped.", { trigger });
@@ -72,7 +74,7 @@ export async function runProbableLineupSyncNow(
   state.running = true;
   const sources: SourceRunResult[] = [];
   try {
-    for (const definition of PROBABLE_LINEUP_SOURCE_DEFINITIONS) {
+    for (const definition of definitions) {
       try {
         const fetchedAt = new Date();
         const page = await fetchProbableLineupPage(definition);
@@ -143,6 +145,17 @@ export async function runProbableLineupSyncNow(
   const result = summarizeRun(sources);
   logger.info("Probable-lineup synchronization cycle finished.", { trigger, ...result });
   return result;
+}
+
+export function selectProbableLineupSourceDefinitions(sourceKeys?: readonly ProbableLineupSourceKey[]) {
+  if (sourceKeys === undefined) return [...PROBABLE_LINEUP_SOURCE_DEFINITIONS];
+  if (sourceKeys.length === 0) throw new Error("At least one probable-lineup source is required.");
+
+  const requested = new Set(sourceKeys);
+  if (requested.size !== sourceKeys.length) throw new Error("Probable-lineup sources must be unique.");
+  const selected = PROBABLE_LINEUP_SOURCE_DEFINITIONS.filter((definition) => requested.has(definition.key));
+  if (selected.length !== requested.size) throw new Error("Unknown probable-lineup source.");
+  return selected;
 }
 
 export function nextProbableLineupSyncAt(now: Date) {

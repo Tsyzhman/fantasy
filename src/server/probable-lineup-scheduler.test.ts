@@ -5,7 +5,8 @@ import test from "node:test";
 import {
   nextProbableLineupSyncAt,
   PROBABLE_LINEUP_SYNC_HOUR_UTC,
-  PROBABLE_LINEUP_SYNC_MINUTE_UTC
+  PROBABLE_LINEUP_SYNC_MINUTE_UTC,
+  selectProbableLineupSourceDefinitions
 } from "./probable-lineup-scheduler";
 
 const instrumentationSource = readFileSync(new URL("../instrumentation.ts", import.meta.url), "utf8");
@@ -27,4 +28,13 @@ test("probable lineups are scheduled every day at 14:30 UTC", () => {
 test("production starts one probable-lineup scheduler and canaries cannot run it", () => {
   assert.match(instrumentationSource, /startProbableLineupScheduler/);
   assert.match(deploymentSource, /-e PROBABLE_LINEUP_SYNC_ENABLED=false/);
+});
+
+test("manual probable-lineup runs can select one allowlisted source", () => {
+  assert.deepEqual(selectProbableLineupSourceDefinitions(["epl"]).map((source) => source.key), ["epl"]);
+  assert.deepEqual(selectProbableLineupSourceDefinitions(["serie-a"]).map((source) => source.key), ["serie-a"]);
+  assert.deepEqual(selectProbableLineupSourceDefinitions(["bundesliga"]).map((source) => source.key), ["bundesliga"]);
+  assert.deepEqual(selectProbableLineupSourceDefinitions().map((source) => source.key), ["epl", "serie-a", "bundesliga"]);
+  assert.throws(() => selectProbableLineupSourceDefinitions([]), /At least one/);
+  assert.throws(() => selectProbableLineupSourceDefinitions(["epl", "epl"]), /unique/);
 });

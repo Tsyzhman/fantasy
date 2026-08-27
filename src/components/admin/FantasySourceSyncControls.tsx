@@ -1,6 +1,6 @@
 "use client";
 
-import { Coins, RefreshCw, Sigma, Trophy } from "lucide-react";
+import { Coins, RefreshCw, Sigma, Trophy, Users } from "lucide-react";
 import { useState } from "react";
 
 import { I18nText } from "@/components/i18n-text";
@@ -41,6 +41,66 @@ type FplSyncResult = {
   error?: string;
   officialScoreError?: string;
 };
+
+type ProbableLineupSourceKey = "epl" | "serie-a" | "bundesliga";
+
+type ProbableLineupSourceResult = {
+  source: ProbableLineupSourceKey;
+  status: "SUCCEEDED" | "PARTIAL" | "FAILED";
+  parsedTeams: number;
+  appliedTeams: number;
+  unchangedTeams: number;
+  skippedTeams: number;
+  failedTeams: number;
+  error: string | null;
+};
+
+type ProbableLineupSyncResult = {
+  started: boolean;
+  sources: ProbableLineupSourceResult[];
+};
+
+const probableLineupSources: Array<{
+  sourceKey: ProbableLineupSourceKey;
+  labelEn: string;
+  labelRu: string;
+  provider: string;
+  descriptionEn: string;
+  descriptionRu: string;
+  actionEn: string;
+  actionRu: string;
+}> = [
+  {
+    sourceKey: "epl",
+    labelEn: "Premier League lineups",
+    labelRu: "Составы АПЛ",
+    provider: "Fantasy Football Scout",
+    descriptionEn: "Parse and apply the current probable XI for all 20 Premier League clubs.",
+    descriptionRu: "Загрузить и применить текущие вероятные XI для всех 20 клубов АПЛ.",
+    actionEn: "Update EPL lineups",
+    actionRu: "Обновить составы АПЛ"
+  },
+  {
+    sourceKey: "serie-a",
+    labelEn: "Serie A lineups",
+    labelRu: "Составы Серии A",
+    provider: "Gazzetta",
+    descriptionEn: "Parse and apply the current probable XI for all 20 Serie A clubs.",
+    descriptionRu: "Загрузить и применить текущие вероятные XI для всех 20 клубов Серии A.",
+    actionEn: "Update Serie A lineups",
+    actionRu: "Обновить составы Серии A"
+  },
+  {
+    sourceKey: "bundesliga",
+    labelEn: "Bundesliga lineups",
+    labelRu: "Составы Бундеслиги",
+    provider: "LigaInsider",
+    descriptionEn: "Discover all 18 club pages, then parse and apply each probable XI.",
+    descriptionRu: "Найти страницы всех 18 клубов, затем загрузить и применить каждый вероятный XI.",
+    actionEn: "Update Bundesliga lineups",
+    actionRu: "Обновить составы Бундеслиги"
+  }
+];
 
 export function FantasySourceSyncControls({
   priceOptions,
@@ -85,7 +145,105 @@ export function FantasySourceSyncControls({
         />
         <FplPriceSyncPanel enabled={fplEnabled} />
       </div>
+      <div className="mt-6 border-t border-slate-200 pt-5">
+        <h3 className="text-base font-bold text-ink">
+          <I18nText en="Probable starting lineups" ru="Вероятные стартовые составы" />
+        </h3>
+        <p className="mt-1 max-w-3xl text-sm leading-6 text-slate-500">
+          <I18nText
+            en="Run one league independently. Only a complete source with 11 unambiguously mapped players per club can change starting-XI flags."
+            ru="Запускайте лиги независимо. Флаги стартового состава меняются только для полного источника и при однозначном сопоставлении всех 11 игроков клуба."
+          />
+        </p>
+        <div className="mt-4 grid gap-5 lg:grid-cols-3">
+          {probableLineupSources.map((source) => (
+            <ProbableLineupSyncPanel key={source.sourceKey} {...source} />
+          ))}
+        </div>
+      </div>
     </section>
+  );
+}
+
+function ProbableLineupSyncPanel({
+  sourceKey,
+  labelEn,
+  labelRu,
+  provider,
+  descriptionEn,
+  descriptionRu,
+  actionEn,
+  actionRu
+}: (typeof probableLineupSources)[number]) {
+  const language = useLanguage();
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [result, setResult] = useState<ProbableLineupSyncResult | null>(null);
+
+  async function run() {
+    setPending(true);
+    setError(null);
+    setResult(null);
+    try {
+      const response = await fetch(`/api/admin/fantasy-sources/probable-lineups/${sourceKey}/start`, { method: "POST" });
+      const body = await response.json().catch(() => null) as (ProbableLineupSyncResult & { error?: { message?: string } | string }) | null;
+      const errorMessage = body && typeof body.error === "object"
+        ? body.error.message
+        : typeof body?.error === "string"
+          ? body.error
+          : null;
+      if (!response.ok) throw new Error(errorMessage ?? (language === "ru" ? "Обновление составов не запустилось." : "The lineup update could not be started."));
+      setResult(body);
+    } catch (runError) {
+      setError(runError instanceof Error ? runError.message : language === "ru" ? "Неизвестная ошибка." : "Unknown error.");
+    } finally {
+      setPending(false);
+    }
+  }
+
+  const sourceResult = result?.sources.find((source) => source.source === sourceKey) ?? null;
+  const resultClass = sourceResult?.status === "SUCCEEDED"
+    ? "bg-emerald-50 text-emerald-800"
+    : sourceResult?.status === "PARTIAL"
+      ? "bg-amber-50 text-amber-800"
+      : "bg-rose-50 text-rose-700";
+
+  return (
+    <div className="rounded border border-slate-200 bg-field p-4">
+      <div className="flex items-center gap-2 text-sm font-bold text-ink">
+        <Users className="h-4 w-4" />
+        <I18nText en={labelEn} ru={labelRu} />
+      </div>
+      <p className="mt-1 text-xs font-semibold text-slate-400">{provider}</p>
+      <p className="mt-1 text-xs leading-5 text-slate-500"><I18nText en={descriptionEn} ru={descriptionRu} /></p>
+      <button
+        type="button"
+        disabled={pending}
+        onClick={run}
+        className="ui-button ui-button-primary mt-4 disabled:cursor-not-allowed"
+      >
+        <RefreshCw className={`h-4 w-4 ${pending ? "animate-spin" : ""}`} />
+        {pending ? <I18nText en="Updating..." ru="Обновление..." /> : <I18nText en={actionEn} ru={actionRu} />}
+      </button>
+      {error ? <p className="mt-3 rounded bg-rose-50 px-3 py-2 text-xs text-rose-700">{error}</p> : null}
+      {sourceResult ? (
+        <div className={`mt-3 rounded px-3 py-2 text-xs ${resultClass}`}>
+          <p className="font-semibold">
+            {sourceResult.status === "SUCCEEDED"
+              ? <I18nText en="Completed" ru="Завершено" />
+              : sourceResult.status === "PARTIAL"
+                ? <I18nText en="Completed with skips" ru="Завершено с пропусками" />
+                : <I18nText en="Failed" ru="Ошибка" />}
+          </p>
+          <p className="mt-1">
+            {language === "ru"
+              ? `Команд: ${sourceResult.parsedTeams}; применено: ${sourceResult.appliedTeams}; без изменений: ${sourceResult.unchangedTeams}; пропущено: ${sourceResult.skippedTeams}; ошибок: ${sourceResult.failedTeams}.`
+              : `Teams: ${sourceResult.parsedTeams}; applied: ${sourceResult.appliedTeams}; unchanged: ${sourceResult.unchangedTeams}; skipped: ${sourceResult.skippedTeams}; errors: ${sourceResult.failedTeams}.`}
+          </p>
+          {sourceResult.error ? <p className="mt-1">{sourceResult.error}</p> : null}
+        </div>
+      ) : null}
+    </div>
   );
 }
 
