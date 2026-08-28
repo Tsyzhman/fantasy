@@ -8,7 +8,6 @@ const nextConfig = {
       "./.env",
       "./.env.*",
       "./.git/**/*",
-      "./.next/**/*",
       "./.playwright-cli/**/*",
       "./.postgres-data/**/*",
       "./output/**/*",

@@ -153,6 +153,7 @@ run_canary() {
     sleep 2
   done
   [[ "$canary_healthy" -eq 1 ]] || {
+    docker logs --tail 200 "$canary" >&2 || true
     echo "$stage release canary did not become healthy with the requested commit." >&2
     return 1
   }

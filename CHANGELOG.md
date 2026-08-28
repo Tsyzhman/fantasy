@@ -18,6 +18,8 @@ image labels `org.opencontainers.image.version` and
 - Bounded local upload discovery and scrubbed local databases, environment
   files, QA output, and development caches from the standalone production
   artifact after every build.
+- Kept generated Next.js server chunks inside the standalone runtime and made
+  failed production canaries print their startup log before cleanup.
 
 ## 0.3.47 - 2026-08-28
 

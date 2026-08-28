@@ -68,7 +68,7 @@ test("standalone builds exclude and scrub local state, secrets, and generated QA
   assert.match(nextConfig, /"\.\/\.env"/);
   assert.match(nextConfig, /"\.\/\.env\.\*"/);
   assert.match(nextConfig, /"\.\/\.git\/\*\*\/\*"/);
-  assert.match(nextConfig, /"\.\/\.next\/\*\*\/\*"/);
+  assert.doesNotMatch(nextConfig, /"\.\/\.next\/\*\*\/\*"/);
   assert.equal(packageManifest.scripts?.postbuild, "tsx scripts/sanitize-standalone-output.ts");
   assert.match(scrubber, /entry === "\.env" \|\| entry\.startsWith\("\.env\."\)/);
   assert.match(scrubber, /Refusing to remove a path outside standalone output/);
@@ -121,6 +121,7 @@ test("server promoter verifies formula files, rehearses migrations, and checks e
   assert.doesNotMatch(promoter, /cat "\$backup_path" \| docker exec/);
   assert.match(promoter, /run_canary "Pre-migration"/);
   assert.match(promoter, /run_canary "Post-migration"/);
+  assert.match(promoter, /docker logs --tail 200 "\$canary"/);
   assert.match(promoter, /FPL_PRICE_SYNC_ENABLED=false/);
   assert.match(promoter, /schema_migration_started/);
   assert.match(promoter, /status IN \('queued','running'\)/);
