@@ -5,6 +5,18 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.41 - 2026-08-28
+
+### Fixed
+
+- Fixed Serie A probable-lineup matching for joined surnames such as
+  `Delprato` / `Del Prato` and for roster nicknames such as
+  `Valdepenas` / `Valde` when the source and active roster also agree on the
+  shirt number. A shirt number alone is still insufficient to match a player.
+- Probable-lineup scheduler warnings now identify each skipped team, unresolved
+  source player, reason, and bounded candidate list instead of exposing only an
+  aggregate skipped-team count.
+
 ## 0.3.40 - 2026-08-27
 
 ### Added

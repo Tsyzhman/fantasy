@@ -139,6 +139,19 @@ test("ambiguous duplicate surnames remain unresolved until shirt number disambig
   assert.equal(resolveProbableLineupPlayer(sourcePlayer("Mancini", null, 23), roster).playerId, 1n);
 });
 
+test("Gazzetta matching handles joined surnames and a FotMob nickname only with the matching shirt number", () => {
+  const roster = [
+    rosterPlayer(1n, "Enrico Del Prato", 15),
+    rosterPlayer(2n, "Valde", 21)
+  ];
+
+  assert.equal(resolveProbableLineupPlayer(sourcePlayer("Delprato", null, 15), roster).playerId, 1n);
+  assert.equal(resolveProbableLineupPlayer(sourcePlayer("Valdepenas", null, 21), roster).playerId, 2n);
+  assert.equal(resolveProbableLineupPlayer(sourcePlayer("Valdepenas"), roster).reason, "NO_MATCH");
+  assert.equal(resolveProbableLineupPlayer(sourcePlayer("Valdepenas", null, 99), roster).reason, "NO_MATCH");
+  assert.equal(resolveProbableLineupPlayer(sourcePlayer("Unrelated", null, 21), roster).reason, "NO_MATCH");
+});
+
 test("Bundesliga team matching handles LigaInsider prefixes and German/English aliases", () => {
   assert.ok(probableLineupTeamScore("FC Bayern München", "Bayern Munich") >= 0.96);
   assert.ok(probableLineupTeamScore("Borussia Mönchengladbach", "Borussia M'gladbach") >= 0.96);

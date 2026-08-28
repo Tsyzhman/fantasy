@@ -11,6 +11,7 @@ import {
 
 const instrumentationSource = readFileSync(new URL("../instrumentation.ts", import.meta.url), "utf8");
 const deploymentSource = readFileSync(new URL("../../scripts/deploy-production-docker.sh", import.meta.url), "utf8");
+const schedulerSource = readFileSync(new URL("./probable-lineup-scheduler.ts", import.meta.url), "utf8");
 
 test("probable lineups are scheduled every day at 14:30 UTC", () => {
   assert.equal(PROBABLE_LINEUP_SYNC_HOUR_UTC, 14);
@@ -37,4 +38,10 @@ test("manual probable-lineup runs can select one allowlisted source", () => {
   assert.deepEqual(selectProbableLineupSourceDefinitions().map((source) => source.key), ["epl", "serie-a", "bundesliga"]);
   assert.throws(() => selectProbableLineupSourceDefinitions([]), /At least one/);
   assert.throws(() => selectProbableLineupSourceDefinitions(["epl", "epl"]), /unique/);
+});
+
+test("production logs identify skipped teams and unresolved source players", () => {
+  assert.match(schedulerSource, /Probable lineup skipped for one team/);
+  assert.match(schedulerSource, /sourceName: player\.sourcePlayer\.fullName \?\? player\.sourcePlayer\.name/);
+  assert.match(schedulerSource, /alternatives: player\.alternatives\.map/);
 });

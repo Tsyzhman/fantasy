@@ -787,7 +787,9 @@ function teamCoreName(value: string) {
 function normalizedPlayerNameScore(sourceName: string, candidateName: string) {
   if (!sourceName || !candidateName) return 0;
   if (sourceName === candidateName) return 1;
-  if (sourceName.replaceAll(" ", "") === candidateName.replaceAll(" ", "")) return 0.98;
+  const sourceCompact = sourceName.replaceAll(" ", "");
+  const candidateCompact = candidateName.replaceAll(" ", "");
+  if (sourceCompact === candidateCompact) return 0.98;
   const sourceTokens = sourceName.split(" ").filter(Boolean);
   const candidateTokens = candidateName.split(" ").filter(Boolean);
   if (sameStringSet(sourceTokens, candidateTokens)) return 0.99;
@@ -800,6 +802,13 @@ function normalizedPlayerNameScore(sourceName: string, candidateName: string) {
   const candidateInSource = candidateTokens.every((token) => sourceSet.has(token));
   if (candidateInSource && candidateTokens.length >= 2) return 0.96;
   if (sourceInCandidate && sourceTokens.length >= 2) return 0.94;
+  const shorterCompactLength = Math.min(sourceCompact.length, candidateCompact.length);
+  if (shorterCompactLength >= 5 && (sourceCompact.endsWith(candidateCompact) || candidateCompact.endsWith(sourceCompact))) {
+    return 0.94;
+  }
+  if (shorterCompactLength >= 5 && (sourceCompact.startsWith(candidateCompact) || candidateCompact.startsWith(sourceCompact))) {
+    return 0.84;
+  }
   if (sourceTokens.length === 1 && candidateSet.has(sourceTokens[0])) {
     return candidateTokens.at(-1) === sourceTokens[0] ? 0.9 : 0.86;
   }

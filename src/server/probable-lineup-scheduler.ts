@@ -84,6 +84,23 @@ export async function runProbableLineupSyncNow(
         let failedTeams = 0;
 
         for (const team of plan.teams) {
+          if (team.status === "TEAM_UNMATCHED" || team.status === "PLAYERS_UNMATCHED") {
+            logger.warn("Probable lineup skipped for one team; that team's prior flags were preserved.", {
+              trigger,
+              source: definition.key,
+              team: team.databaseTeamName ?? team.sourceLineup.teamName,
+              status: team.status,
+              problems: team.problems,
+              unresolvedPlayers: team.playerResolutions
+                .filter((player) => player.reason !== "MATCHED")
+                .map((player) => ({
+                  sourceName: player.sourcePlayer.fullName ?? player.sourcePlayer.name,
+                  reason: player.reason,
+                  alternatives: player.alternatives.map((alternative) => alternative.playerName)
+                }))
+            });
+            continue;
+          }
           if (team.status !== "READY") continue;
           try {
             const result = await applyProbableLineupTeamPlan(prisma, team);
