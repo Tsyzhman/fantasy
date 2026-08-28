@@ -3,8 +3,26 @@ import { parse, type HTMLElement } from "node-html-parser";
 export const FANTASY_FOOTBALL_SCOUT_LINEUPS_URL = "https://www.fantasyfootballscout.co.uk/team-news/";
 export const GAZZETTA_PROBABLE_LINEUPS_URL = "https://www.gazzetta.it/Calcio/prob_form/";
 export const LIGAINSIDER_BUNDESLIGA_URL = "https://www.ligainsider.de/";
+export const FANTASY_COACH_LIGUE_1_URL = "https://l1.compos.fantasy-coach.fr/";
+export const FANTASY_COACH_LIGUE_1_API_URL = "https://script.google.com/macros/s/AKfycby7k1DeAKMJFeSLMCHtQntyU0hGseKmN4ZMxuMMDjugFTh-H4wTNvk5TA32CM5By7aMng/exec";
 
-export type ProbableLineupSource = "FANTASY_FOOTBALL_SCOUT" | "GAZZETTA" | "LIGAINSIDER";
+const FANTASY_COACH_LIGUE_1_PLAYER_ALIASES = new Map<string, string>([
+  ["auxerre|labeau lascary", "Rémy Lascary"],
+  ["le havre|mpasi", "Lionel Mpasi-Nzau"],
+  // The provider's current J2 payload says "Valette" in the left-back slot,
+  // but no such player exists in the active HAC roster. Zouaoui is injured and
+  // current match sheets identify Enzo Koffi as his replacement.
+  ["le havre|valette", "Enzo Koffi"],
+  ["lille|alexsandro", "Alexsandro Ribeiro"],
+  ["nice|youssouf", "Youssouf Ndayishimiye"],
+  ["paris sg|kvaratskehlia", "Khvicha Kvaratskhelia"],
+  ["rennes|al tamari", "Mousa Tamari"],
+  ["strasbourg|omomabidele", "Andrew Omobamidele"],
+  ["strasbourg|demba", "Pape Demba Diop"],
+  ["troyes|ifnaoui", "Merwan Ifnaou"]
+]);
+
+export type ProbableLineupSource = "FANTASY_FOOTBALL_SCOUT" | "GAZZETTA" | "LIGAINSIDER" | "FANTASY_COACH_LIGUE_1";
 export type ProbableLineupVenue = "HOME" | "AWAY";
 
 export type LigaInsiderTeamPage = {
@@ -44,6 +62,76 @@ export class ProbableLineupParseError extends Error {
     super(message);
     this.name = "ProbableLineupParseError";
   }
+}
+
+export function parseFantasyCoachAvailableGameweeks(payload: string) {
+  const parsed = parseJsonPayload(payload, "Fantasy Coach gameweek metadata");
+  if (!Array.isArray(parsed) || parsed.length === 0) {
+    throw new ProbableLineupParseError("Fantasy Coach gameweek metadata must be a non-empty array.");
+  }
+  const gameweeks = parsed.map((value) => {
+    const normalized = typeof value === "number" ? value : typeof value === "string" ? Number(value.trim()) : Number.NaN;
+    if (!Number.isSafeInteger(normalized) || normalized <= 0 || normalized > 100) {
+      throw new ProbableLineupParseError(`Fantasy Coach returned an invalid gameweek '${String(value)}'.`);
+    }
+    return normalized;
+  });
+  if (new Set(gameweeks).size !== gameweeks.length) {
+    throw new ProbableLineupParseError("Fantasy Coach returned duplicate gameweeks.");
+  }
+  return gameweeks.sort((left, right) => left - right);
+}
+
+export function parseFantasyCoachLigue1Lineups(
+  payload: string,
+  gameweek: number,
+  sourceUrl: string
+): ParsedProbableLineupPage {
+  if (!Number.isSafeInteger(gameweek) || gameweek <= 0) {
+    throw new ProbableLineupParseError(`Fantasy Coach gameweek '${gameweek}' is invalid.`);
+  }
+  const parsed = parseJsonPayload(payload, `Fantasy Coach Ligue 1 gameweek ${gameweek}`);
+  if (!isJsonObject(parsed) || !Array.isArray(parsed.equipes)) {
+    throw new ProbableLineupParseError(`Fantasy Coach Ligue 1 gameweek ${gameweek} does not contain an equipes array.`);
+  }
+
+  const lineups = parsed.equipes.map((entry, teamIndex) => {
+    if (!isJsonObject(entry)) {
+      throw new ProbableLineupParseError(`Fantasy Coach team ${teamIndex + 1} is not an object.`);
+    }
+    const teamName = requiredFantasyCoachText(entry.equipe, `team ${teamIndex + 1} name`);
+    if (!Array.isArray(entry.joueurs)) {
+      throw new ProbableLineupParseError(`Fantasy Coach ${teamName} does not contain a joueurs array.`);
+    }
+    const players = entry.joueurs.map((value, playerIndex) => {
+      const name = fantasyCoachPrimaryPlayerName(value, teamName, playerIndex);
+      return {
+        name,
+        fullName: fantasyCoachPlayerAlias(teamName, name),
+        providerCode: null,
+        shirtNumber: null
+      } satisfies ProbableLineupPlayer;
+    });
+
+    return {
+      source: "FANTASY_COACH_LIGUE_1",
+      sourceUrl,
+      sourceTeamCode: null,
+      sourceFixtureId: `journee-${gameweek}`,
+      teamName,
+      opponentName: null,
+      venue: null,
+      formation: optionalFantasyCoachText(entry.formation),
+      sourceUpdatedText: `Journée ${gameweek}`,
+      players
+    } satisfies ProbableTeamLineup;
+  });
+
+  return {
+    source: "FANTASY_COACH_LIGUE_1",
+    sourceUrl,
+    lineups
+  };
 }
 
 export function parseFantasyFootballScoutLineups(html: string): ParsedProbableLineupPage {
@@ -258,6 +346,43 @@ export function normalizeLineupIdentity(value: string) {
     .replace(/[^a-z0-9]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+}
+
+function parseJsonPayload(payload: string, label: string): unknown {
+  try {
+    return JSON.parse(payload) as unknown;
+  } catch {
+    throw new ProbableLineupParseError(`${label} is not valid JSON.`);
+  }
+}
+
+function isJsonObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+function requiredFantasyCoachText(value: unknown, label: string) {
+  const normalized = optionalFantasyCoachText(value);
+  if (!normalized) throw new ProbableLineupParseError(`Fantasy Coach ${label} is empty or invalid.`);
+  return normalized;
+}
+
+function optionalFantasyCoachText(value: unknown) {
+  return typeof value === "string" ? cleanText(value) || null : null;
+}
+
+function fantasyCoachPrimaryPlayerName(value: unknown, teamName: string, playerIndex: number) {
+  const rawName = requiredFantasyCoachText(value, `${teamName} player ${playerIndex + 1}`);
+  const primaryName = cleanText(rawName.replace(/\s*\([^)]*\)\s*$/, ""));
+  if (!primaryName) {
+    throw new ProbableLineupParseError(`Fantasy Coach ${teamName} player ${playerIndex + 1} has no primary name.`);
+  }
+  return primaryName;
+}
+
+function fantasyCoachPlayerAlias(teamName: string, playerName: string) {
+  return FANTASY_COACH_LIGUE_1_PLAYER_ALIASES.get(
+    `${normalizeLineupIdentity(teamName)}|${normalizeLineupIdentity(playerName)}`
+  ) ?? null;
 }
 
 function gazzettaPlayers(lineup: HTMLElement | null): ProbableLineupPlayer[] {

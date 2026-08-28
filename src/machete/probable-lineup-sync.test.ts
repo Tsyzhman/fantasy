@@ -5,8 +5,11 @@ import type { PrismaClient } from "@prisma/client";
 
 import {
   assertCompleteProbableLineupPage,
+  FANTASY_COACH_LIGUE_1_API_URL,
   LIGAINSIDER_BUNDESLIGA_URL,
   normalizeLineupIdentity,
+  parseFantasyCoachAvailableGameweeks,
+  parseFantasyCoachLigue1Lineups,
   parseFantasyFootballScoutLineups,
   parseGazzettaProbableLineups,
   parseLigaInsiderTeamDirectory,
@@ -97,6 +100,45 @@ test("LigaInsider team parser selects the visible player, excludes alternatives 
   assert.equal(lineup.players.some((player) => player.providerCode === "99999"), false);
 });
 
+test("Fantasy Coach parser selects primary players and records the source gameweek", () => {
+  const sourceUrl = `${FANTASY_COACH_LIGUE_1_API_URL}?journee=2`;
+  const page = parseFantasyCoachLigue1Lineups(fantasyCoachPayload(), 2, sourceUrl);
+
+  assertCompleteProbableLineupPage(page, { expectedTeams: 18 });
+  assert.equal(page.lineups.length, 18);
+  assert.equal(page.lineups[0]?.source, "FANTASY_COACH_LIGUE_1");
+  assert.equal(page.lineups[0]?.sourceFixtureId, "journee-2");
+  assert.equal(page.lineups[0]?.sourceUpdatedText, "Journée 2");
+  assert.equal(page.lineups[0]?.players[1]?.name, "El Ouazzani");
+  assert.equal(page.lineups[0]?.players[2]?.name, "Del Castillo");
+  assert.equal(page.lineups[0]?.players.some((player) => player.name.includes("(")), false);
+
+  const aliasPayload = JSON.stringify({ equipes: [{
+    equipe: "Paris SG",
+    formation: "4-3-3",
+    joueurs: ["Safonov", "Kvaratskehlia", ...Array.from({ length: 9 }, (_, index) => `PSG Player ${index + 3}`)]
+  }] });
+  const aliasPage = parseFantasyCoachLigue1Lineups(aliasPayload, 2, sourceUrl);
+  assert.deepEqual(aliasPage.lineups[0]?.players[1], {
+    name: "Kvaratskehlia",
+    fullName: "Khvicha Kvaratskhelia",
+    providerCode: null,
+    shirtNumber: null
+  });
+});
+
+test("Fantasy Coach metadata and lineup parser fail closed on malformed or partial payloads", () => {
+  assert.deepEqual(parseFantasyCoachAvailableGameweeks('["2",1]'), [1, 2]);
+  assert.throws(() => parseFantasyCoachAvailableGameweeks('["2","2"]'), /duplicate gameweeks/);
+  assert.throws(() => parseFantasyCoachAvailableGameweeks('{"journee":2}'), /non-empty array/);
+
+  const page = parseFantasyCoachLigue1Lineups(fantasyCoachPayload(17), 2, "https://example.test/?journee=2");
+  assert.throws(
+    () => assertCompleteProbableLineupPage(page, { expectedTeams: 18 }),
+    (error: unknown) => error instanceof ProbableLineupParseError && /expected 18 teams, parsed 17/.test(error.message)
+  );
+});
+
 test("completeness checks reject a partial source page instead of clearing valid starters", () => {
   const page = parseFantasyFootballScoutLineups(`<ol>${ffsTeamHtml("ars", "Arsenal", "Coventry City (H)", "4-3-3", 10)}</ol>`);
   assert.throws(
@@ -159,6 +201,12 @@ test("Bundesliga team matching handles LigaInsider prefixes and German/English a
   assert.ok(probableLineupTeamScore("1. FSV Mainz 05", "Mainz 05") >= 0.96);
   assert.ok(probableLineupTeamScore("Hamburger SV", "Hamburg") >= 0.96);
   assert.ok(probableLineupTeamScore("SV Werder Bremen", "Werder Bremen") >= 0.96);
+});
+
+test("Ligue 1 team matching distinguishes Paris Saint-Germain from Paris FC", () => {
+  assert.ok(probableLineupTeamScore("Paris SG", "Paris Saint-Germain") >= 0.98);
+  assert.equal(probableLineupTeamScore("Paris SG", "Paris FC"), 0);
+  assert.equal(probableLineupTeamScore("Paris FC", "Paris FC"), 1);
 });
 
 test("source fetch retries a transient failure and validates all twenty teams", async () => {
@@ -240,6 +288,43 @@ test("LigaInsider fetch discovers and loads all eighteen team pages sequentially
   assert.equal(requestedUrls.length, 19);
   assert.equal(maximumActiveRequests, 1);
   assert.deepEqual(page.lineups.map((lineup) => lineup.sourceTeamCode), teamPages.map((team) => team.sourceTeamCode));
+});
+
+test("Fantasy Coach fetch selects the latest advertised gameweek and validates 18 by 11", async () => {
+  const requestedUrls: string[] = [];
+  const definition: ProbableLineupSourceDefinition = {
+    key: "ligue-1",
+    label: "Ligue 1 test",
+    source: "FANTASY_COACH_LIGUE_1",
+    sourceUrl: "https://l1.compos.fantasy-coach.fr/",
+    leagueId: 53n,
+    expectedTeams: 18,
+    fetchMode: "FANTASY_COACH_LATEST_GAMEWEEK",
+    parse: null
+  };
+
+  const page = await fetchProbableLineupPage(definition, {
+    fetchImpl: async (input, init) => {
+      const url = String(input);
+      requestedUrls.push(url);
+      assert.match(String(new Headers(init?.headers).get("accept")), /application\/json/);
+      if (url.endsWith("?meta=1")) {
+        return new Response('["1","2"]', { status: 200, headers: { "content-type": "application/json; charset=utf-8" } });
+      }
+      return new Response(fantasyCoachPayload(), {
+        status: url.endsWith("?journee=2") ? 200 : 404,
+        headers: { "content-type": "application/json; charset=utf-8" }
+      });
+    }
+  });
+
+  assert.deepEqual(requestedUrls, [
+    `${FANTASY_COACH_LIGUE_1_API_URL}?meta=1`,
+    `${FANTASY_COACH_LIGUE_1_API_URL}?journee=2`
+  ]);
+  assert.equal(page.lineups.length, 18);
+  assert.equal(page.lineups.every((lineup) => lineup.players.length === 11), true);
+  assert.equal(page.lineups[0]?.sourceUrl, requestedUrls[1]);
 });
 
 test("sync planning resolves all eleven players inside each active team roster", async () => {
@@ -415,6 +500,20 @@ function ligaInsiderTeamHtml(teamName: string, teamCode: number, includeAlternat
     <h2 class="text-uppercase">${teamName}</h2>
     <h3 class="text-uppercase text-start">Gegen 1. FC Union Berlin fehlen</h3>
     <div class="stadium_container_bg">${rows}</div>`;
+}
+
+function fantasyCoachPayload(teamCount = 18) {
+  return JSON.stringify({
+    equipes: Array.from({ length: teamCount }, (_, teamIndex) => ({
+      equipe: teamIndex === 0 ? "Angers" : `France Team ${teamIndex + 1}`,
+      formation: "4-3-3",
+      joueurs: teamIndex === 0
+        ? ["Lopes", "El Ouazzani (Peter)", "Del Castillo (P)", ...Array.from({ length: 8 }, (_, playerIndex) => `Angers Player ${playerIndex + 4}`)]
+        : Array.from({ length: 11 }, (_, playerIndex) => `France Player ${teamIndex + 1} ${playerIndex + 1}`),
+      score: null
+    })),
+    score: null
+  });
 }
 
 function sourcePlayer(name: string, fullName: string | null = null, shirtNumber: number | null = null): ProbableLineupPlayer {

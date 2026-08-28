@@ -5,6 +5,15 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.47 - 2026-08-28
+
+### Added
+
+- Added Ligue 1 probable-lineup synchronization from Fantasy Coach. The parser
+  selects the latest advertised gameweek, requires all 18 clubs with 11 unique
+  players each, and is available through the daily 14:30 UTC scheduler, CLI,
+  and the existing admin ingestion page.
+
 ## 0.3.46 - 2026-08-28
 
 ### Fixed

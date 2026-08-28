@@ -5,7 +5,7 @@ import test from "node:test";
 const controls = readFileSync(new URL("./FantasySourceSyncControls.tsx", import.meta.url), "utf8");
 
 test("admin ingestion controls expose one probable-lineup button per allowlisted league", () => {
-  for (const source of ["epl", "serie-a", "bundesliga"]) {
+  for (const source of ["epl", "serie-a", "bundesliga", "ligue-1"]) {
     assert.match(controls, new RegExp(`sourceKey: "${source}"`));
   }
   assert.match(controls, /probable-lineups\/\$\{sourceKey\}\/start/);

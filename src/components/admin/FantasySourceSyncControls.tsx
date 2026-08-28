@@ -42,7 +42,7 @@ type FplSyncResult = {
   officialScoreError?: string;
 };
 
-type ProbableLineupSourceKey = "epl" | "serie-a" | "bundesliga";
+type ProbableLineupSourceKey = "epl" | "serie-a" | "bundesliga" | "ligue-1";
 
 type ProbableLineupSourceResult = {
   source: ProbableLineupSourceKey;
@@ -99,6 +99,16 @@ const probableLineupSources: Array<{
     descriptionRu: "Найти страницы всех 18 клубов, затем загрузить и применить каждый вероятный XI.",
     actionEn: "Update Bundesliga lineups",
     actionRu: "Обновить составы Бундеслиги"
+  },
+  {
+    sourceKey: "ligue-1",
+    labelEn: "Ligue 1 lineups",
+    labelRu: "Составы Лиги 1",
+    provider: "Fantasy Coach",
+    descriptionEn: "Load the latest published gameweek and apply the probable XI for all 18 Ligue 1 clubs.",
+    descriptionRu: "Загрузить последний опубликованный тур и применить вероятные XI для всех 18 клубов Лиги 1.",
+    actionEn: "Update Ligue 1 lineups",
+    actionRu: "Обновить составы Лиги 1"
   }
 ];
 
@@ -155,7 +165,7 @@ export function FantasySourceSyncControls({
             ru="Запускайте лиги независимо. Флаги стартового состава меняются только для полного источника и при однозначном сопоставлении всех 11 игроков клуба."
           />
         </p>
-        <div className="mt-4 grid gap-5 lg:grid-cols-3">
+        <div className="mt-4 grid gap-5 lg:grid-cols-2 xl:grid-cols-4">
           {probableLineupSources.map((source) => (
             <ProbableLineupSyncPanel key={source.sourceKey} {...source} />
           ))}

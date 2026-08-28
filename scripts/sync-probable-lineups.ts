@@ -248,7 +248,8 @@ function sourceKeys(rawValue: string) {
     if (["epl", "ffs", "ffscout", "fantasy-football-scout"].includes(value)) result.add("epl");
     else if (["serie-a", "seriea", "italy", "gazzetta"].includes(value)) result.add("serie-a");
     else if (["bundesliga", "bund", "germany", "ligainsider"].includes(value)) result.add("bundesliga");
-    else throw new Error(`Unknown source '${value}'. Use all, epl, serie-a or bundesliga.`);
+    else if (["ligue-1", "ligue1", "france", "fantasy-coach"].includes(value)) result.add("ligue-1");
+    else throw new Error(`Unknown source '${value}'. Use all, epl, serie-a, bundesliga or ligue-1.`);
   }
   if (result.size === 0) throw new Error("--source must select at least one source.");
   return result;
@@ -283,24 +284,25 @@ function printHumanReport(report: {
 }
 
 function printHelp() {
-  console.log(`Sync probable starting XIs from Fantasy Football Scout (EPL), Gazzetta (Serie A), and LigaInsider (Bundesliga).
+  console.log(`Sync probable starting XIs from Fantasy Football Scout (EPL), Gazzetta (Serie A), LigaInsider (Bundesliga), and Fantasy Coach (Ligue 1).
 
 Usage:
   npm run starters:sync-probable
   npm run starters:sync-probable -- --apply
   npm run starters:sync-probable -- --source bundesliga --season 2026/2027 --apply
+  npm run starters:sync-probable -- --source ligue-1 --season 2026/2027 --apply
 
 Options:
   --apply                 Apply safe, fully resolved team lineups (default is dry-run)
   --dry-run               Preview only
-  --source all|epl|serie-a|bundesliga[,..]
+  --source all|epl|serie-a|bundesliga|ligue-1[,..]
   --season YYYY/YYYY      Override the current league season
   --timeout-ms N          Per-request timeout (default 20000)
   --max-attempts N        Fetch attempts from 1 to 5 (default 3)
   --json                  Machine-readable report
   --help                  Show this help
 
-Safety: EPL/Serie A must contain 20 teams, Bundesliga 18 teams, and every team must contain 11 unique players.
+Safety: EPL/Serie A must contain 20 teams, Bundesliga/Ligue 1 18 teams, and every team must contain 11 unique players.
 A database team is changed only after all 11 players resolve uniquely to its active roster.`);
 }
 

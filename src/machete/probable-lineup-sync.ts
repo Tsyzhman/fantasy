@@ -5,10 +5,14 @@ import { Prisma, type PrismaClient } from "@prisma/client";
 
 import {
   assertCompleteProbableLineupPage,
+  FANTASY_COACH_LIGUE_1_API_URL,
+  FANTASY_COACH_LIGUE_1_URL,
   FANTASY_FOOTBALL_SCOUT_LINEUPS_URL,
   GAZZETTA_PROBABLE_LINEUPS_URL,
   LIGAINSIDER_BUNDESLIGA_URL,
   normalizeLineupIdentity,
+  parseFantasyCoachAvailableGameweeks,
+  parseFantasyCoachLigue1Lineups,
   parseFantasyFootballScoutLineups,
   parseGazzettaProbableLineups,
   parseLigaInsiderTeamDirectory,
@@ -34,9 +38,9 @@ const TEAM_AMBIGUITY_GAP = 0.04;
 
 class NonRetryableProbableLineupError extends Error {}
 
-export type ProbableLineupSourceKey = "epl" | "serie-a" | "bundesliga";
+export type ProbableLineupSourceKey = "epl" | "serie-a" | "bundesliga" | "ligue-1";
 
-export type ProbableLineupFetchMode = "SINGLE_PAGE" | "LIGAINSIDER_TEAM_PAGES";
+export type ProbableLineupFetchMode = "SINGLE_PAGE" | "LIGAINSIDER_TEAM_PAGES" | "FANTASY_COACH_LATEST_GAMEWEEK";
 
 export type ProbableLineupSourceDefinition = {
   key: ProbableLineupSourceKey;
@@ -78,6 +82,16 @@ export const PROBABLE_LINEUP_SOURCE_DEFINITIONS: readonly ProbableLineupSourceDe
     leagueId: 54n,
     expectedTeams: 18,
     fetchMode: "LIGAINSIDER_TEAM_PAGES",
+    parse: null
+  },
+  {
+    key: "ligue-1",
+    label: "Ligue 1 / Fantasy Coach",
+    source: "FANTASY_COACH_LIGUE_1",
+    sourceUrl: FANTASY_COACH_LIGUE_1_URL,
+    leagueId: 53n,
+    expectedTeams: 18,
+    fetchMode: "FANTASY_COACH_LATEST_GAMEWEEK",
     parse: null
   }
 ];
@@ -190,6 +204,9 @@ export async function fetchProbableLineupPage(
   if (definition.fetchMode === "LIGAINSIDER_TEAM_PAGES") {
     return fetchLigaInsiderLineupPage(definition, resolvedOptions);
   }
+  if (definition.fetchMode === "FANTASY_COACH_LATEST_GAMEWEEK") {
+    return fetchFantasyCoachLigue1LineupPage(definition, resolvedOptions);
+  }
   if (!definition.parse) {
     throw new Error(`${definition.label} does not define a parser for ${definition.fetchMode}.`);
   }
@@ -208,6 +225,42 @@ export async function fetchProbableLineupPage(
       });
       return page;
     }
+  );
+}
+
+async function fetchFantasyCoachLigue1LineupPage(
+  definition: ProbableLineupSourceDefinition,
+  options: ResolvedProbableLineupFetchOptions
+) {
+  if (definition.source !== "FANTASY_COACH_LIGUE_1") {
+    throw new Error(`${definition.label} uses the Fantasy Coach fetch mode with source ${definition.source}.`);
+  }
+  const metaUrl = fantasyCoachApiUrl("meta", "1");
+  const gameweeks = await fetchParsedProbableLineupResource(
+    metaUrl,
+    `${definition.label} gameweek metadata`,
+    definition,
+    options,
+    parseFantasyCoachAvailableGameweeks,
+    JSON_RESOURCE_OPTIONS
+  );
+  const gameweek = gameweeks.at(-1);
+  if (gameweek === undefined) throw new Error(`${definition.label} returned no gameweek.`);
+  const lineupUrl = fantasyCoachApiUrl("journee", String(gameweek));
+  return fetchParsedProbableLineupResource(
+    lineupUrl,
+    `${definition.label} gameweek ${gameweek}`,
+    definition,
+    options,
+    (payload) => {
+      const page = parseFantasyCoachLigue1Lineups(payload, gameweek, lineupUrl);
+      assertCompleteProbableLineupPage(page, {
+        expectedTeams: definition.expectedTeams,
+        expectedPlayersPerTeam: EXPECTED_PLAYERS_PER_TEAM
+      });
+      return page;
+    },
+    JSON_RESOURCE_OPTIONS
   );
 }
 
@@ -272,7 +325,11 @@ async function fetchParsedProbableLineupResource<T>(
   label: string,
   definition: ProbableLineupSourceDefinition,
   options: ResolvedProbableLineupFetchOptions,
-  parseHtml: (html: string) => T
+  parseBody: (body: string) => T,
+  resourceOptions: {
+    accept: string;
+    acceptedContentTypes: readonly string[];
+  } = HTML_RESOURCE_OPTIONS
 ) {
   let lastError: unknown;
 
@@ -283,7 +340,7 @@ async function fetchParsedProbableLineupResource<T>(
       const response = await options.fetchImpl(url, {
         method: "GET",
         headers: {
-          accept: "text/html,application/xhtml+xml",
+          accept: resourceOptions.accept,
           "accept-language": probableLineupAcceptLanguage(definition.source),
           "user-agent": "FantasyScoutProbableLineups/0.3 (+local admin sync)"
         },
@@ -300,11 +357,11 @@ async function fetchParsedProbableLineupResource<T>(
         continue;
       }
       const contentType = response.headers.get("content-type")?.toLocaleLowerCase("en") ?? "";
-      if (contentType && !contentType.includes("text/html") && !contentType.includes("application/xhtml+xml")) {
+      if (contentType && !resourceOptions.acceptedContentTypes.some((acceptedType) => contentType.includes(acceptedType))) {
         throw new Error(`${label} returned unexpected content type '${contentType}'.`);
       }
-      const html = await responseTextWithLimit(response, MAX_RESPONSE_BYTES);
-      return parseHtml(html);
+      const body = await responseTextWithLimit(response, MAX_RESPONSE_BYTES);
+      return parseBody(body);
     } catch (error) {
       lastError = controller.signal.aborted
         ? new Error(`${label} timed out after ${options.timeoutMs} ms.`)
@@ -318,6 +375,22 @@ async function fetchParsedProbableLineupResource<T>(
   }
 
   throw lastError instanceof Error ? lastError : new Error(`${label} could not be fetched.`);
+}
+
+const HTML_RESOURCE_OPTIONS = {
+  accept: "text/html,application/xhtml+xml",
+  acceptedContentTypes: ["text/html", "application/xhtml+xml"]
+} as const;
+
+const JSON_RESOURCE_OPTIONS = {
+  accept: "application/json,text/plain;q=0.9,*/*;q=0.1",
+  acceptedContentTypes: ["application/json", "text/plain"]
+} as const;
+
+function fantasyCoachApiUrl(parameter: "meta" | "journee", value: string) {
+  const url = new URL(FANTASY_COACH_LIGUE_1_API_URL);
+  url.searchParams.set(parameter, value);
+  return url.toString();
 }
 
 function assertCompleteLigaInsiderDirectory(teamPages: LigaInsiderTeamPage[], expectedTeams: number) {
@@ -336,6 +409,7 @@ function assertCompleteLigaInsiderDirectory(teamPages: LigaInsiderTeamPage[], ex
 function probableLineupAcceptLanguage(source: ProbableLineupSource) {
   if (source === "GAZZETTA") return "it-IT,it;q=0.9,en;q=0.6";
   if (source === "LIGAINSIDER") return "de-DE,de;q=0.9,en;q=0.6";
+  if (source === "FANTASY_COACH_LIGUE_1") return "fr-FR,fr;q=0.9,en;q=0.6";
   return "en-GB,en;q=0.9";
 }
 
@@ -778,6 +852,8 @@ function teamCoreName(value: string) {
     ["munchen", "munich"]
   ]);
   return value
+    .replace(/\bparis saint germain\b/g, "paris psg")
+    .replace(/\bparis sg\b/g, "paris psg")
     .split(" ")
     .filter((token) => token && !ignored.has(token) && !/^\d{1,4}$/.test(token))
     .map((token) => aliases.get(token) ?? token)
