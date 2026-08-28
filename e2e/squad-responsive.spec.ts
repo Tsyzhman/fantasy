@@ -14,6 +14,10 @@ test("squad controls stay usable without page-level horizontal clipping", async 
   } else {
     await expect(page.getByTestId("squad-touch-roster")).toBeVisible();
     await expect(page.getByTestId("player-pool-mobile")).toBeAttached({ timeout: 30_000 });
+    const variantAndAutoPick = page.locator("summary").filter({ hasText: /Variant and auto-pick/i });
+    await expect(variantAndAutoPick).toBeVisible();
+    await assertMinimumTouchTarget(variantAndAutoPick, 44);
+    await variantAndAutoPick.click();
     await expect(autoPickButton).toBeEnabled({ timeout: 30_000 });
     await autoPickButton.click();
     await expect(page.getByText("Valid squad", { exact: true })).toBeVisible();
