@@ -8,11 +8,15 @@ test("squad controls stay usable without page-level horizontal clipping", async 
   await page.goto(`/machete/squad?leagueId=${productionSmokeLeagueId}`);
   await expect(page.getByRole("heading", { name: /Squad planner/i })).toBeVisible();
   await expect(page.locator("[data-fantasy-squad-planner]")).toHaveAttribute("data-league-id", productionSmokeLeagueId);
+  const autoPickButton = page.getByRole("button", { name: /Auto-pick squad/i });
   if (testInfo.project.name === "desktop-chromium") {
-    await expect(page.getByRole("button", { name: /Auto-pick squad/i })).toBeEnabled({ timeout: 30_000 });
+    await expect(autoPickButton).toBeEnabled({ timeout: 30_000 });
   } else {
     await expect(page.getByTestId("squad-touch-roster")).toBeVisible();
     await expect(page.getByTestId("player-pool-mobile")).toBeAttached({ timeout: 30_000 });
+    await expect(autoPickButton).toBeEnabled({ timeout: 30_000 });
+    await autoPickButton.click();
+    await expect(page.getByText("Valid squad", { exact: true })).toBeVisible();
     await expect(page.getByTestId("squad-touch-roster").getByRole("button", { name: /Actions for/i }).first()).toBeVisible();
   }
 
