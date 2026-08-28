@@ -5,6 +5,15 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.44 - 2026-08-28
+
+### Fixed
+
+- Deactivate stale player memberships and starter flags when FotMob removes a
+  club from a league season. This keeps source-agnostic roster consumers such
+  as price mapping and forecasts from seeing players at both their current and
+  relegated clubs.
+
 ## 0.3.43 - 2026-08-28
 
 ### Fixed

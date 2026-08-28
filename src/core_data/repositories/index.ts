@@ -203,6 +203,18 @@ export class CoreSeasonRosterRepository {
       },
       data: { active: false }
     });
+    await this.prisma.teamPlayerSeason.updateMany({
+      where: {
+        leagueId,
+        season,
+        teamId: { notIn: activeTeamIds },
+        active: true
+      },
+      data: {
+        active: false,
+        isStarter: false
+      }
+    });
   }
 
   async upsertTeamPlayers(rows: TeamPlayerSeasonData[]) {

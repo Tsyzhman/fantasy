@@ -95,6 +95,47 @@ test("FotMob roster deactivation preserves Sports.ru authoritative starter rows"
   }]);
 });
 
+test("deactivating missing season teams also retires their active roster and starter flags", async () => {
+  const seasonTeamUpdates: unknown[] = [];
+  const rosterUpdates: unknown[] = [];
+  const prisma = {
+    leagueSeasonTeam: {
+      async updateMany(input: unknown) {
+        seasonTeamUpdates.push(input);
+        return { count: 2 };
+      }
+    },
+    teamPlayerSeason: {
+      async updateMany(input: unknown) {
+        rosterUpdates.push(input);
+        return { count: 7 };
+      }
+    }
+  } as unknown as PrismaClient;
+
+  const repository = new CoreSeasonRosterRepository(prisma);
+  await repository.deactivateMissingSeasonTeams(54n, "2026/2027", [8406n, 8460n]);
+
+  assert.deepEqual(seasonTeamUpdates, [{
+    where: {
+      leagueId: 54n,
+      season: "2026/2027",
+      teamId: { notIn: [8406n, 8460n] },
+      active: true
+    },
+    data: { active: false }
+  }]);
+  assert.deepEqual(rosterUpdates, [{
+    where: {
+      leagueId: 54n,
+      season: "2026/2027",
+      teamId: { notIn: [8406n, 8460n] },
+      active: true
+    },
+    data: { active: false, isStarter: false }
+  }]);
+});
+
 test("FotMob roster sync takes ownership when an authoritative Sports.ru row appears in FotMob", async () => {
   const upserts: Array<{ update: { source?: string } }> = [];
   const prisma = {
