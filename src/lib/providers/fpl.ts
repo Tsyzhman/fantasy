@@ -592,7 +592,9 @@ export function parseFplLiveEvent(payload: unknown, gameweek: number): FplLiveEv
     const rawStats = parseRecord(row.stats, `event ${gameweek} live elements[${index}].stats`);
     const stats: Record<string, number> = {};
     for (const [key, value] of Object.entries(rawStats)) {
-      const numericValue = typeof value === "number"
+      const numericValue = typeof value === "boolean" && FPL_BOOLEAN_LIVE_STAT_KEYS.has(key)
+        ? Number(value)
+        : typeof value === "number"
         ? value
         : typeof value === "string" && value.trim() !== ""
           ? Number(value)
@@ -661,6 +663,11 @@ const FPL_INTEGER_LIVE_STAT_KEYS = new Set([
   "bonus",
   "defensive_contribution",
   "total_points"
+]);
+
+const FPL_BOOLEAN_LIVE_STAT_KEYS = new Set([
+  "in_dreamteam",
+  "played"
 ]);
 
 export function parseFplPublishedPicks(payload: Record<string, unknown>, gameweek: number): FplPublishedPicks {

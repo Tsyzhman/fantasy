@@ -405,6 +405,15 @@ test("FPL live parser accepts numeric ancillary metrics but protects scoring fie
   assert.equal(live.elements[0].stats.total_points, 10);
   assert.equal(live.elements[0].stats.bps, 75.5);
   assert.equal(live.elements[0].stats.influence, 12.3);
+  const booleanFlags = parseFplLiveEvent({
+    elements: [{
+      id: 103,
+      stats: { minutes: 90, total_points: 6, in_dreamteam: false, played: true },
+      explain: [{ fixture: 501, stats: [{ identifier: "minutes", points: 2, value: 90 }] }]
+    }]
+  }, 1);
+  assert.equal(booleanFlags.elements[0].stats.in_dreamteam, 0);
+  assert.equal(booleanFlags.elements[0].stats.played, 1);
   const didNotPlay = parseFplLiveEvent({
     elements: [{ id: 102, stats: { minutes: 0, total_points: 0 }, explain: [] }]
   }, 1);
@@ -416,5 +425,9 @@ test("FPL live parser accepts numeric ancillary metrics but protects scoring fie
   assert.throws(
     () => parseFplLiveEvent({ elements: [{ id: 101, stats: { minutes: 90, total_points: 2 } }] }, 1),
     /explain/
+  );
+  assert.throws(
+    () => parseFplLiveEvent({ elements: [{ id: 101, stats: { minutes: 0, total_points: 0, unexpected_flag: true }, explain: [] }] }, 1),
+    /unexpected_flag.*not numeric/
   );
 });

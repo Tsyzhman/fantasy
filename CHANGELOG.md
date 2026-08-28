@@ -5,6 +5,14 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.45 - 2026-08-28
+
+### Fixed
+
+- Accept the official FPL live endpoint's boolean `in_dreamteam` and `played`
+  flags while retaining strict numeric validation for scoring data. FPL price
+  synchronization can now complete its finalized-gameweek score refresh.
+
 ## 0.3.44 - 2026-08-28
 
 ### Fixed
