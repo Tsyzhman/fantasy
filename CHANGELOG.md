@@ -5,6 +5,17 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.42 - 2026-08-28
+
+### Fixed
+
+- Split production scheduler ownership between the web and worker containers.
+  Heavy background schedulers and their dependency graphs now load only in the
+  worker, while FPL and probable-lineup schedules remain in web alongside their
+  admin-trigger concurrency guards. This prevents duplicate startup work,
+  forecast recalculations, FPL transaction timeouts, and avoidable web memory
+  use.
+
 ## 0.3.41 - 2026-08-28
 
 ### Fixed

@@ -586,6 +586,7 @@ docker create \
   --name "$web" \
   --restart unless-stopped \
   --env-file "$web_env" \
+  -e INGESTION_WORKER_IN_PROCESS=false \
   -e "FPL_RELAY_SOCKET_PATH=$fpl_relay_socket" \
   --network fantasy-scout_default \
   --mount type=volume,src=fantasy-scout_fantasy-scout-uploads,dst=/app/storage/uploads \
@@ -600,6 +601,9 @@ docker create \
   --name "$worker" \
   --restart unless-stopped \
   --env-file "$worker_env" \
+  -e INGESTION_WORKER_IN_PROCESS=true \
+  -e FPL_PRICE_SYNC_ENABLED=false \
+  -e PROBABLE_LINEUP_SYNC_ENABLED=false \
   -e "FPL_RELAY_SOCKET_PATH=$fpl_relay_socket" \
   --network fantasy-scout_default \
   --mount type=volume,src=fantasy-scout_fantasy-scout-uploads,dst=/app/storage/uploads \
