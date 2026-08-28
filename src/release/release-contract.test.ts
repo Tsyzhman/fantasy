@@ -48,6 +48,39 @@ test("CI requires a synchronized version bump against the base revision", () => 
   assert.match(gitAttributes, /^\* text=auto eol=lf$/m);
 });
 
+test("standalone builds exclude and scrub local state, secrets, and generated QA artifacts", () => {
+  const nextConfig = source("next.config.mjs");
+  const dockerIgnore = source(".dockerignore");
+  const scrubber = source("scripts/sanitize-standalone-output.ts");
+  const packageManifest = JSON.parse(source("package.json")) as { scripts?: Record<string, string> };
+  const localOnlyPaths = [
+    ".codex-tmp",
+    ".codex_sheet_work",
+    ".playwright-cli",
+    ".postgres-data",
+    "output",
+    "outputs",
+    "playwright-report",
+    "test-results"
+  ];
+
+  assert.match(nextConfig, /outputFileTracingExcludes:\s*\{\s*"\/\*":/);
+  assert.match(nextConfig, /"\.\/\.env"/);
+  assert.match(nextConfig, /"\.\/\.env\.\*"/);
+  assert.match(nextConfig, /"\.\/\.git\/\*\*\/\*"/);
+  assert.match(nextConfig, /"\.\/\.next\/\*\*\/\*"/);
+  assert.equal(packageManifest.scripts?.postbuild, "tsx scripts/sanitize-standalone-output.ts");
+  assert.match(scrubber, /entry === "\.env" \|\| entry\.startsWith\("\.env\."\)/);
+  assert.match(scrubber, /Refusing to remove a path outside standalone output/);
+
+  for (const path of localOnlyPaths) {
+    const escaped = path.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    assert.match(nextConfig, new RegExp(`"\\./${escaped}/\\*\\*/\\*"`));
+    assert.match(dockerIgnore, new RegExp(`^${escaped}$`, "m"));
+    assert.match(scrubber, new RegExp(`"${escaped}"`));
+  }
+});
+
 test("production fantasy price sync is an exact, non-runtime operator job", () => {
   const workflow = source(".github/workflows/sync-production-fantasy-prices.yml");
   const runner = source("scripts/sync-production-fantasy-prices.sh");

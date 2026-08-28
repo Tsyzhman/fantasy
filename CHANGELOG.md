@@ -5,6 +5,20 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.48 - 2026-08-28
+
+### Added
+
+- Reworked the fantasy squad planner into a first-class mobile and tablet
+  experience with persistent navigation, touch-sized roster controls, inline
+  player actions, and one-step replacements without bouncing between dialogs.
+
+### Fixed
+
+- Bounded local upload discovery and scrubbed local databases, environment
+  files, QA output, and development caches from the standalone production
+  artifact after every build.
+
 ## 0.3.47 - 2026-08-28
 
 ### Added

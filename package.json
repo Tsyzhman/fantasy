@@ -1,6 +1,6 @@
 {
   "name": "fantasy-scout",
-  "version": "0.3.47",
+  "version": "0.3.48",
   "private": true,
   "engines": {
     "node": ">=20.9.0"
@@ -9,6 +9,7 @@
     "dev": "next dev",
     "prebuild": "npm run extension:build",
     "build": "next build --webpack",
+    "postbuild": "tsx scripts/sanitize-standalone-output.ts",
     "extension:build": "node scripts/build-browser-extension.mjs",
     "extension:smoke": "npm run extension:build && node scripts/smoke-browser-extension.mjs",
     "start": "next start -H 0.0.0.0",

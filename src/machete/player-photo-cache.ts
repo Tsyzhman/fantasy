@@ -2,6 +2,8 @@ import { constants } from "node:fs";
 import { access, mkdir, readFile, rename, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 
+import { localUploadRoot } from "@/lib/storage/local";
+
 const pngSignature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
 const maximumPhotoBytes = 2 * 1024 * 1024;
 
@@ -19,8 +21,7 @@ export function playerPhotoPublicUrl(playerId: string) {
 }
 
 export function playerPhotoCacheDirectory() {
-  const uploadRoot = process.env.LOCAL_UPLOAD_DIR ?? "./storage/uploads";
-  return path.resolve(process.cwd(), uploadRoot, "fotmob-player-photos");
+  return path.join(localUploadRoot(), "fotmob-player-photos");
 }
 
 export function playerPhotoCachePath(playerId: string) {

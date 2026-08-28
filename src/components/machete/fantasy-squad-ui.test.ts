@@ -10,6 +10,7 @@ import {
   isSquadReplacementTarget,
   mergeFantasyPlayerPools,
   orderSquadSelectionsWithBenchGoalkeeperLast,
+  replaceSquadSelectionPlayer,
   startingXiFoontasyPoints,
   startingXiAlternativeHorizonPoints,
   startingXiAlternativeRoundPoints,
@@ -290,6 +291,37 @@ test("click replacement targets only the opposite squad group and the same goalk
     "GK",
     "GK"
   ), true);
+});
+
+test("pool replacement is atomic and preserves the outgoing player's squad role", () => {
+  const source = {
+    ...squadSelection("def", true, 4),
+    isLocked: true,
+    isCaptain: true,
+    purchasePrice: 6.5
+  };
+  const result = replaceSquadSelectionPlayer(
+    [source, squadSelection("mid", false, 12)],
+    "def",
+    { playerId: "incoming-def", price: 7.2 }
+  );
+
+  assert.equal(result.ok, true);
+  if (!result.ok) return;
+  assert.deepEqual(result.selections[0], {
+    ...source,
+    playerId: "incoming-def",
+    purchasePrice: 7.2
+  });
+  assert.equal(result.selections.length, 2);
+});
+
+test("pool replacement refuses a player who is already selected", () => {
+  assert.deepEqual(replaceSquadSelectionPlayer(
+    [squadSelection("def", true, 1), squadSelection("mid", false, 2)],
+    "def",
+    { playerId: "mid", price: 8 }
+  ), { ok: false, reason: "PLAYER_ALREADY_SELECTED" });
 });
 
 test("squad exposes a localized click replacement mode and reuses formation validation", () => {
@@ -615,7 +647,8 @@ test("squad player pool exposes every formula-adaptation forecast as a separate 
 });
 
 test("player-pool controls use two desktop rows and the search targets only player names", () => {
-  assert.match(squadPlannerSource, /relative z-30 mb-2 flex flex-wrap items-center justify-between gap-2 overflow-visible/);
+  assert.match(squadPlannerSource, /relative z-30 mb-3 rounded border border-slate-200 bg-slate-50\/70 xl:contents/);
+  assert.match(squadPlannerSource, /relative z-30 flex flex-wrap items-center justify-between gap-2 overflow-visible/);
   assert.match(squadPlannerSource, /flex min-w-0 flex-wrap items-center justify-end gap-2/);
   assert.match(squadPlannerSource, /whitespace-nowrap rounded border border-emerald-200/);
   assert.match(squadPlannerSource, /toolbar={\(/);
@@ -625,12 +658,12 @@ test("player-pool controls use two desktop rows and the search targets only play
   assert.doesNotMatch(squadPlannerSource, /`\$\{player\.name\} \$\{player\.teamName\}/);
   assert.match(squadPlannerSource, /grid-cols-2 gap-2 lg:grid-cols-5/);
   assert.match(squadPlannerSource, /en="Fits" ru="Проходит"/);
-  assert.match(squadPlannerSource, /<details className="relative shrink-0">[\s\S]*?<I18nText en="Columns" ru="Столбцы"/);
+  assert.match(squadPlannerSource, /<details className="relative hidden shrink-0 md:block \[@media\(pointer:coarse\)\]:hidden">[\s\S]*?<I18nText en="Columns" ru="Столбцы"/);
   assert.match(squadPlannerSource, /compactViewport === false \? <div className="col-span-full min-w-0 max-w-full/);
 });
 
 test("preset and advanced-filter popovers are not clipped by the player-pool toolbar", () => {
-  assert.match(squadPlannerSource, /relative z-30 mb-2 flex flex-wrap items-center justify-between gap-2 overflow-visible/);
+  assert.match(squadPlannerSource, /relative z-30 flex flex-wrap items-center justify-between gap-2 overflow-visible/);
   assert.doesNotMatch(squadPlannerSource, /mb-2 flex flex-nowrap items-center justify-between gap-2 overflow-x-auto/);
   assert.equal((squadPlannerSource.match(/<details className="relative open:z-50">/g) ?? []).length, 2);
 });
@@ -648,12 +681,25 @@ test("name search, sorting and rendering operate on arrays before virtual rows m
   assert.doesNotMatch(squadPlannerSource, /data-player-search-name/);
 });
 
-test("player pool mounts one responsive renderer and virtualizes both variants", () => {
+test("player pool keeps desktop virtualization but uses bounded normal page flow on touch screens", () => {
   assert.match(squadPlannerSource, /compactViewport === true \? <div className="col-span-full">/);
   assert.match(squadPlannerSource, /compactViewport === false \? <div className="col-span-full min-w-0/);
   assert.doesNotMatch(squadPlannerSource, /compactViewport !== false/);
   assert.doesNotMatch(squadPlannerSource, /compactViewport !== true/);
-  assert.match(squadPlannerSource, /useFixedVirtualRows\([\s\S]*?players,[\s\S]*?containerRef,[\s\S]*?true,[\s\S]*?rowHeight,[\s\S]*?4,/);
+  assert.match(squadPlannerSource, /const pageSize = 18/);
+  assert.match(squadPlannerSource, /const visiblePlayers = players\.slice\(0, visibleCount\)/);
+  assert.match(squadPlannerSource, /setVisibleCount\(\(current\) => Math\.min\(players\.length, current \+ pageSize\)\)/);
+  assert.doesNotMatch(squadPlannerSource, /data-testid="player-pool-mobile"[^>]*max-h-\[720px\][^>]*overflow-y-auto/);
+});
+
+test("touch roster exposes visible large actions and one-step pool replacement", () => {
+  assert.match(squadPlannerSource, /data-testid="squad-touch-roster"/);
+  assert.match(squadPlannerSource, /data-testid="pool-replacement-banner"/);
+  assert.match(squadPlannerSource, /replaceSquadSelectionPlayer\(selections, poolReplacementSource\.playerId, player\)/);
+  assert.match(squadPlannerSource, /en="Find a replacement" ru="Найти замену"/);
+  assert.match(squadPlannerSource, /en="Swap XI \/ bench" ru="Поменять основу \/ запас"/);
+  assert.match(squadPlannerSource, /min-h-12 shrink-0 items-center justify-center gap-1\.5/);
+  assert.match(squadPlannerSource, /<div className="hidden xl:block">[\s\S]*?<SquadPitch/);
 });
 
 test("table forecast tooltips and compact controls cover both English and Russian", () => {

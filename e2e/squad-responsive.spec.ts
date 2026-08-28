@@ -8,7 +8,13 @@ test("squad controls stay usable without page-level horizontal clipping", async 
   await page.goto(`/machete/squad?leagueId=${productionSmokeLeagueId}`);
   await expect(page.getByRole("heading", { name: /Squad planner/i })).toBeVisible();
   await expect(page.locator("[data-fantasy-squad-planner]")).toHaveAttribute("data-league-id", productionSmokeLeagueId);
-  await expect(page.getByRole("button", { name: /Auto-pick squad/i })).toBeEnabled({ timeout: 30_000 });
+  if (testInfo.project.name === "desktop-chromium") {
+    await expect(page.getByRole("button", { name: /Auto-pick squad/i })).toBeEnabled({ timeout: 30_000 });
+  } else {
+    await expect(page.getByTestId("squad-touch-roster")).toBeVisible();
+    await expect(page.getByTestId("player-pool-mobile")).toBeAttached({ timeout: 30_000 });
+    await expect(page.getByTestId("squad-touch-roster").getByRole("button", { name: /Actions for/i }).first()).toBeVisible();
+  }
 
   const sportsSquadButton = page.getByRole("button", { name: /^Sports squad$/i });
   const saveSquadButton = page.getByRole("button", { name: /^Save(?: squad)?$/i });
@@ -30,6 +36,16 @@ test("squad controls stay usable without page-level horizontal clipping", async 
     await page.getByText("More actions", { exact: true }).click();
     await expect(page.getByRole("textbox", { name: /Search by player name/i })).toBeVisible();
   } else {
+    const touchActions = page.getByTestId("squad-touch-roster").getByRole("button", { name: /Actions for/i }).first();
+    await assertMinimumTouchTarget(touchActions, 44);
+    await touchActions.click();
+    const findReplacement = page.getByRole("button", { name: /Find a replacement/i });
+    await expect(findReplacement).toBeVisible();
+    await assertMinimumTouchTarget(findReplacement, 44);
+    await expect(page.getByRole("button", { name: /Swap XI \/ bench/i })).toBeVisible();
+    await findReplacement.click();
+    await expect(page.getByTestId("pool-replacement-banner")).toBeVisible();
+
     const poolTab = page.getByRole("radio", { name: /Pool/i });
     await expect(poolTab).toBeVisible();
     await assertInsideViewport(poolTab, page);
@@ -46,10 +62,11 @@ test("squad controls stay usable without page-level horizontal clipping", async 
     await menu.click();
     await expect(header.getByRole("button", { name: /Sign out/i }).last()).toBeHidden();
 
-    if (testInfo.project.name === "mobile-chromium") {
-      await expect(page.getByTestId("player-pool-mobile")).toBeVisible();
-      await expect(page.getByTestId("player-pool-table")).toBeHidden();
-    }
+    await expect(page.getByTestId("player-pool-mobile")).toBeVisible();
+    await expect(page.getByTestId("player-pool-table")).toBeHidden();
+    const replaceButton = page.getByTestId("player-pool-mobile").getByRole("button", { name: /^Replace /i }).first();
+    await expect(replaceButton).toBeVisible({ timeout: 30_000 });
+    await assertMinimumTouchTarget(replaceButton, 44);
   }
 
   if (testInfo.project.name !== "desktop-chromium") {
@@ -130,6 +147,14 @@ async function assertSameRowInOrder(left: Locator, right: Locator) {
   if (!leftBox || !rightBox) return;
   expect(Math.abs(leftBox.y - rightBox.y)).toBeLessThanOrEqual(1);
   expect(leftBox.x + leftBox.width).toBeLessThanOrEqual(rightBox.x);
+}
+
+async function assertMinimumTouchTarget(locator: Locator, minimum: number) {
+  const box = await locator.boundingBox();
+  expect(box).not.toBeNull();
+  if (!box) return;
+  expect(box.width).toBeGreaterThanOrEqual(minimum);
+  expect(box.height).toBeGreaterThanOrEqual(minimum);
 }
 
 async function attachViewportScreenshot(page: Page, testInfo: TestInfo) {

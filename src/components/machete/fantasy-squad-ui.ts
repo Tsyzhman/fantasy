@@ -157,6 +157,29 @@ export type SquadCardSwapResult =
   | { ok: true; selections: FantasySquadSelection[] }
   | { ok: false; reason: "PLAYER_NOT_FOUND" | "GOALKEEPER_MISMATCH" };
 
+export type SquadPoolReplacementResult =
+  | { ok: true; selections: FantasySquadSelection[] }
+  | { ok: false; reason: "PLAYER_NOT_FOUND" | "PLAYER_ALREADY_SELECTED" };
+
+export function replaceSquadSelectionPlayer(
+  selections: FantasySquadSelection[],
+  sourcePlayerId: string,
+  incomingPlayer: Pick<FantasyPlannerPlayer, "playerId" | "price">
+): SquadPoolReplacementResult {
+  const source = selections.find((selection) => selection.playerId === sourcePlayerId);
+  if (!source) return { ok: false, reason: "PLAYER_NOT_FOUND" };
+  if (selections.some((selection) => selection.playerId === incomingPlayer.playerId)) {
+    return { ok: false, reason: "PLAYER_ALREADY_SELECTED" };
+  }
+
+  return {
+    ok: true,
+    selections: selections.map((selection) => selection.playerId === sourcePlayerId
+      ? { ...selection, playerId: incomingPlayer.playerId, purchasePrice: incomingPlayer.price }
+      : selection)
+  };
+}
+
 export function isSquadReplacementTarget(
   source: Pick<FantasySquadSelection, "isStarter"> | undefined,
   target: Pick<FantasySquadSelection, "isStarter"> | undefined,

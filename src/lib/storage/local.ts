@@ -10,10 +10,17 @@ export function sanitizeFilename(filename: string) {
   return filename.replace(/[^\w.\- ]+/g, "_").replace(/\s+/g, " ").trim();
 }
 
+export function localUploadRoot() {
+  const configuredRoot = process.env.LOCAL_UPLOAD_DIR?.trim();
+  if (!configuredRoot || configuredRoot === "./storage/uploads" || configuredRoot === "storage/uploads") {
+    return path.join(/* turbopackIgnore: true */ process.cwd(), "storage", "uploads");
+  }
+  return path.resolve(configuredRoot);
+}
+
 export async function storeUpload(sourceFileId: string, filename: string, buffer: Buffer) {
-  const root = process.env.LOCAL_UPLOAD_DIR ?? "./storage/uploads";
   const safeName = sanitizeFilename(filename);
-  const directory = path.resolve(process.cwd(), root, sourceFileId);
+  const directory = path.join(localUploadRoot(), sourceFileId);
   await mkdir(directory, { recursive: true });
 
   const absolutePath = path.join(directory, safeName);

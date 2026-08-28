@@ -26,7 +26,7 @@ export function MacheteShell({ children, compact = false }: { children: ReactNod
       className={cn(
         "text-sm font-semibold",
         compact
-          ? "flex min-w-0 flex-1 gap-1.5 overflow-x-auto pb-1"
+          ? "hidden min-w-0 flex-1 gap-1.5 overflow-x-auto pb-1 sm:flex"
           : "grid grid-cols-3 gap-2 sm:flex sm:flex-wrap sm:overflow-visible lg:justify-end"
       )}
     >
@@ -35,9 +35,7 @@ export function MacheteShell({ children, compact = false }: { children: ReactNod
       </span>
       {navItems.map((item) => {
         const Icon = item.icon;
-        const active = pathname === item.href
-          || pathname.startsWith(`${item.href}/`)
-          || (item.href === "/machete/squad" && pathname.startsWith("/machete/franchise-squads"));
+        const active = macheteNavItemIsActive(pathname, item.href);
 
         return (
           <Link
@@ -68,12 +66,12 @@ export function MacheteShell({ children, compact = false }: { children: ReactNod
       className={cn(
         "mx-auto w-full px-4 sm:px-5 lg:px-6 2xl:px-8",
         compact
-          ? "max-w-7xl py-3 sm:py-4 2xl:max-w-[1760px] 3xl:max-w-[1920px] 3xl:px-10"
+          ? "max-w-7xl pb-[calc(5.25rem+env(safe-area-inset-bottom))] pt-3 sm:py-4 2xl:max-w-[1760px] 3xl:max-w-[1920px] 3xl:px-10"
           : "max-w-7xl py-5 sm:py-7 2xl:max-w-[1600px] 3xl:max-w-[1760px]"
       )}
     >
       {compact ? (
-        <div className="flex min-w-0 items-center gap-3 border-b border-slate-200 pb-2.5">
+        <div className="hidden min-w-0 items-center gap-3 border-b border-slate-200 pb-2.5 sm:flex">
           <span className="hidden shrink-0 text-xs font-semibold text-slate-500 sm:inline">Machete</span>
           {workspaceNavigation}
         </div>
@@ -97,8 +95,42 @@ export function MacheteShell({ children, compact = false }: { children: ReactNod
         </div>
       )}
       {children}
+      {compact ? (
+        <nav aria-labelledby="machete-mobile-nav-label" className="fixed inset-x-0 bottom-0 z-40 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_rgba(15,23,42,0.10)] backdrop-blur sm:hidden">
+          <span id="machete-mobile-nav-label" className="sr-only"><I18nText en="Main Machete sections" ru="Основные разделы Machete" /></span>
+          <div className="mx-auto grid max-w-lg grid-cols-4 px-1.5 py-1">
+            {navItems.slice(0, 4).map((item) => {
+              const Icon = item.icon;
+              const active = macheteNavItemIsActive(pathname, item.href);
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  prefetch={false}
+                  onPointerEnter={() => router.prefetch(item.href)}
+                  onFocus={() => router.prefetch(item.href)}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "inline-flex min-h-14 flex-col items-center justify-center gap-0.5 rounded px-1 text-[11px] font-semibold",
+                    active ? "bg-brand-50 text-brand-700" : "text-slate-600"
+                  )}
+                >
+                  <MacheteNavigationIcon icon={Icon} />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
+      ) : null}
     </main>
   );
+}
+
+function macheteNavItemIsActive(pathname: string, href: string) {
+  return pathname === href
+    || pathname.startsWith(`${href}/`)
+    || (href === "/machete/squad" && pathname.startsWith("/machete/franchise-squads"));
 }
 
 function MacheteNavigationIcon({ icon: Icon }: { icon: LucideIcon }) {

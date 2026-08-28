@@ -1,6 +1,14 @@
 .git
 .next
+.codex-tmp
+.codex_sheet_work
+.playwright-cli
+.postgres-data
 node_modules
+output
+outputs
+playwright-report
+test-results
 storage/uploads
 backups
 .env

@@ -78,26 +78,26 @@ export default async function FantasySquadPage({ searchParams, mode }: FantasySq
 
   return (
     <MacheteShell compact>
-      <section className="border-b border-slate-200 py-4">
+      <section className="border-b border-slate-200 py-3 sm:py-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
               <I18nText en="Fantasy planning" ru="Фэнтези-планирование" />
             </p>
-            <h1 className="mt-1 text-2xl font-bold text-ink">
+            <h1 className="mt-0.5 text-xl font-bold text-ink sm:mt-1 sm:text-2xl">
               <I18nText en="Squad planner" ru="Планировщик состава" />
             </h1>
           </div>
         </div>
 
-        <AutoSubmitForm className="mt-4 grid grid-cols-[minmax(0,1fr)_auto] gap-2 sm:max-w-xl">
+        <AutoSubmitForm className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] gap-2 sm:max-w-xl">
           <input type="hidden" name="historyScope" value={historySettings.scope} />
           <input type="hidden" name="historyWindow" value={historySettings.window} />
           {historySettings.selectedSeasons.map((season) => <input key={season} type="hidden" name="historySeason" value={season} />)}
           {mode === "FPL" ? (
             <div className="text-sm">
               <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500"><I18nText en="Fantasy league" ru="Фэнтези-лига" /></span>
-              <div className="rounded border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-800">
+              <div className="flex min-h-12 items-center rounded border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-800">
                 <I18nText en="Fantasy Premier League · EPL CoreLeague 47" ru="Fantasy Premier League · CoreLeague АПЛ 47" />
               </div>
               <input type="hidden" name="leagueId" value={selectedLeagueId} />
@@ -105,7 +105,7 @@ export default async function FantasySquadPage({ searchParams, mode }: FantasySq
           ) : (
             <label className="text-sm">
               <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500"><I18nText en="Sports.ru league" ru="Лига Sports.ru" /></span>
-              <select name="leagueId" defaultValue={selectedLeagueId} className="w-full rounded border border-slate-200 bg-white px-3 py-2">
+              <select name="leagueId" defaultValue={selectedLeagueId} className="min-h-12 w-full rounded border border-slate-200 bg-white px-3 py-2 text-base">
                 {leagues.map((league) => (
                   <option key={String(league.leagueId)} value={String(league.leagueId)}>
                     {league.displayName}
@@ -114,25 +114,38 @@ export default async function FantasySquadPage({ searchParams, mode }: FantasySq
               </select>
             </label>
           )}
-          <button type="submit" className="ui-button ui-button-primary self-end">
+          <button type="submit" className="ui-button ui-button-primary min-h-12 self-end px-4">
             <I18nText en="Load" ru="Загрузить" />
           </button>
         </AutoSubmitForm>
         {freshness ? (
-          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-600">
+          <>
+          <details className="mt-3 rounded border border-slate-200 bg-white lg:hidden">
+            <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-3 text-sm font-semibold text-slate-700 [&::-webkit-details-marker]:hidden">
+              <I18nText en="Data freshness" ru="Свежесть данных" />
+              <span className="text-xs font-normal text-slate-500"><I18nText en="Show details" ru="Подробнее" /></span>
+            </summary>
+            <dl className="grid gap-2 border-t border-slate-200 p-3 text-xs text-slate-700 sm:grid-cols-3">
+              <div><dt className="font-semibold text-slate-500"><I18nText en="FotMob" ru="FotMob" /></dt><dd className="mt-0.5">{formatDateTime(freshness.fotmobStatsAt)}</dd></div>
+              <div><dt className="font-semibold text-slate-500"><I18nText en={provider === "FPL" ? "FPL" : "Sports.ru"} ru={provider === "FPL" ? "FPL" : "Sports.ru"} /></dt><dd className="mt-0.5">{formatDateTime(data?.priceStatus.lastSyncedAt)}</dd></div>
+              <div><dt className="font-semibold text-slate-500"><I18nText en="Odds" ru="Коэффициенты" /></dt><dd className="mt-0.5">{formatDateTime(freshness.bookmakerOddsAt)}</dd></div>
+            </dl>
+          </details>
+          <div className="mt-3 hidden flex-wrap items-center gap-2 text-xs text-slate-600 lg:flex">
             <span className="font-semibold uppercase tracking-wide text-slate-500">
               <I18nText en="Data updated · Moscow time" ru="Обновление данных · МСК" />
             </span>
-            <span className="rounded border border-slate-200 bg-white px-2.5 py-1.5" title="Latest FotMob statistics used for a current-roster player / Последняя статистика FotMob, используемая для игрока текущего ростера">
+            <span className="rounded border border-slate-200 bg-white px-2.5 py-1.5">
               <I18nText en={`FotMob stats: ${formatDateTime(freshness.fotmobStatsAt)}`} ru={`Стата FotMob: ${formatDateTime(freshness.fotmobStatsAt)}`} />
             </span>
             <span className="rounded border border-slate-200 bg-white px-2.5 py-1.5" title={`${provider === "FPL" ? "Latest FPL" : "Latest Sports.ru"} fantasy-price snapshot for this league and season / ${provider === "FPL" ? "Последний снимок цен FPL" : "Последний снимок цен Sports.ru"} для этой лиги и сезона`}>
               <I18nText en={`${provider === "FPL" ? "FPL" : "Sports.ru"} prices: ${formatDateTime(data?.priceStatus.lastSyncedAt)}`} ru={`${provider === "FPL" ? "Цены FPL" : "Цены Sports.ru"}: ${formatDateTime(data?.priceStatus.lastSyncedAt)}`} />
             </span>
-            <span className="rounded border border-slate-200 bg-white px-2.5 py-1.5" title="Latest bookmaker-odds snapshot for this league and season / Последний снимок коэффициентов для этой лиги и сезона">
+            <span className="rounded border border-slate-200 bg-white px-2.5 py-1.5">
               <I18nText en={`Bookmaker odds: ${formatDateTime(freshness.bookmakerOddsAt)}`} ru={`Кэфы букмекера: ${formatDateTime(freshness.bookmakerOddsAt)}`} />
             </span>
           </div>
+          </>
         ) : null}
       </section>
 
