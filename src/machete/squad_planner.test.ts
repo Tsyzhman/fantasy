@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
+import { OFFICIAL_TRANSFER_ROSTER_SOURCE } from "@/core_data/models";
 import {
   applySportsRuRosterOverrides,
   addPromotedTeamStrengthProfiles,
@@ -1658,6 +1659,44 @@ test("squad planner uses Sports.ru teams for stale and missing FotMob roster tra
   ]);
   assert.equal(effective.find((row) => row.playerId === 637741n)?.isStarter, true);
   assert.equal(effective.find((row) => row.playerId === 1400979n)?.isStarter, false);
+});
+
+test("an official transfer stays ahead of a stale Sports.ru price team", () => {
+  const league = {
+    leagueId: 54n,
+    season: "2026/2027",
+    name: "Bundesliga",
+    country: "Germany"
+  };
+  const overrides = sportsRuAuthoritativeRosterOverrides(
+    [{
+      id: "atubolu-price",
+      leagueId: 54n,
+      season: "2026/2027",
+      teamId: 8358n,
+      playerId: 1281100n,
+      position: "GK",
+      lastSeenAt: new Date("2026-08-28T08:56:36Z"),
+      player: { id: 1281100n, name: "Noah Atubolu", country: "Germany" },
+      team: { id: 8358n, name: "Freiburg" }
+    }],
+    [{ providerEntityId: "atubolu-price", internalEntityId: "1281100" }],
+    league,
+    undefined,
+    new Set(["1281100"])
+  );
+  assert.deepEqual(overrides, []);
+
+  const roster = authoritativeFantasyRosterByPlayerId(
+    [{
+      playerId: 1281100n,
+      teamId: 9810n,
+      position: "GK",
+      source: OFFICIAL_TRANSFER_ROSTER_SOURCE
+    }],
+    [{ playerId: 1281100n, teamId: 8358n, position: "GK" }]
+  );
+  assert.equal(roster.get("1281100")?.teamId, 9810n);
 });
 
 test("squad planner does not create an authoritative roster row from an unverified price foreign key", () => {

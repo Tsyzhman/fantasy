@@ -5,6 +5,15 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.46 - 2026-08-28
+
+### Fixed
+
+- Keep a confirmed `official-transfer` club assignment ahead of a stale
+  Sports.ru price-team mapping in both the fantasy player pool and transactional
+  squad validation. Sports.ru remains authoritative over ordinary FotMob roster
+  lag, while completed-match FotMob starting-XI promotion is unchanged.
+
 ## 0.3.45 - 2026-08-28
 
 ### Fixed
