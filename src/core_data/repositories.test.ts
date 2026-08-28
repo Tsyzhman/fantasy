@@ -3,6 +3,7 @@ import test from "node:test";
 
 import type { PrismaClient } from "@prisma/client";
 
+import { OFFICIAL_TRANSFER_ROSTER_SOURCE } from "./models";
 import { CoreSeasonRosterRepository, CoreTeamRepository } from "./repositories";
 
 test("core team repository does not overwrite a named team with a FotMob placeholder", async () => {
@@ -100,6 +101,15 @@ test("FotMob roster sync takes ownership when an authoritative Sports.ru row app
     coreTeam: { createMany: async () => ({ count: 0 }) },
     corePlayer: { createMany: async () => ({ count: 0 }) },
     teamPlayerSeason: {
+      async findMany() {
+        return [{
+          leagueId: 57n,
+          season: "2026/2027",
+          teamId: 10229n,
+          playerId: 1352213n,
+          source: "sports.ru"
+        }];
+      },
       async upsert(input: { update: { source?: string } }) {
         upserts.push(input);
         return {};
@@ -122,4 +132,83 @@ test("FotMob roster sync takes ownership when an authoritative Sports.ru row app
   }]);
 
   assert.equal(upserts[0]?.update.source, "fotmob");
+});
+
+test("stale FotMob membership cannot reclaim a player from an official transfer override", async () => {
+  const upserts: unknown[] = [];
+  const prisma = {
+    coreTeam: { createMany: async () => ({ count: 0 }) },
+    corePlayer: { createMany: async () => ({ count: 0 }) },
+    teamPlayerSeason: {
+      async findMany() {
+        return [{
+          leagueId: 54n,
+          season: "2026/2027",
+          teamId: 9810n,
+          playerId: 1281100n,
+          source: OFFICIAL_TRANSFER_ROSTER_SOURCE
+        }];
+      },
+      async upsert(input: unknown) {
+        upserts.push(input);
+        return {};
+      }
+    }
+  } as unknown as PrismaClient;
+
+  const repository = new CoreSeasonRosterRepository(prisma);
+  await repository.upsertTeamPlayers([{
+    leagueId: 54n,
+    season: "2026/2027",
+    teamId: 8358n,
+    playerId: 1281100n,
+    active: true,
+    position: "GK",
+    shirtNumber: 1,
+    nationality: "Germany",
+    age: 24,
+    photoUrl: null
+  }]);
+
+  assert.equal(upserts.length, 0);
+});
+
+test("FotMob refreshes the target club without removing an official transfer marker", async () => {
+  const upserts: Array<{ update: { source?: string; shirtNumber?: number | null } }> = [];
+  const prisma = {
+    coreTeam: { createMany: async () => ({ count: 0 }) },
+    corePlayer: { createMany: async () => ({ count: 0 }) },
+    teamPlayerSeason: {
+      async findMany() {
+        return [{
+          leagueId: 54n,
+          season: "2026/2027",
+          teamId: 9810n,
+          playerId: 1281100n,
+          source: OFFICIAL_TRANSFER_ROSTER_SOURCE
+        }];
+      },
+      async upsert(input: { update: { source?: string; shirtNumber?: number | null } }) {
+        upserts.push(input);
+        return {};
+      }
+    }
+  } as unknown as PrismaClient;
+
+  const repository = new CoreSeasonRosterRepository(prisma);
+  await repository.upsertTeamPlayers([{
+    leagueId: 54n,
+    season: "2026/2027",
+    teamId: 9810n,
+    playerId: 1281100n,
+    active: true,
+    position: "GK",
+    shirtNumber: 99,
+    nationality: "Germany",
+    age: 24,
+    photoUrl: null
+  }]);
+
+  assert.equal(upserts[0]?.update.source, OFFICIAL_TRANSFER_ROSTER_SOURCE);
+  assert.equal(upserts[0]?.update.shirtNumber, 99);
 });

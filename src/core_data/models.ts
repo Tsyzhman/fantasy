@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 
 export const FOTMOB_SOURCE = "fotmob";
+export const OFFICIAL_TRANSFER_ROSTER_SOURCE = "official-transfer";
 export const CORE_SCHEMA_VERSION = "2026-05-shared-football-v1";
 export const DEFAULT_PARSER_VERSION = "fotmob-parser-v1";
 

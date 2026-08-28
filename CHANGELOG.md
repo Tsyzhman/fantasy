@@ -5,6 +5,15 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.43 - 2026-08-28
+
+### Fixed
+
+- Added a durable `official-transfer` roster override for the short window in
+  which a club has confirmed a transfer but FotMob still exposes the player in
+  the old squad. FotMob refreshes can update the confirmed target membership,
+  but cannot reactivate a conflicting stale-club membership.
+
 ## 0.3.42 - 2026-08-28
 
 ### Fixed

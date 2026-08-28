@@ -2,6 +2,7 @@ import { Prisma, type PrismaClient } from "@prisma/client";
 
 import {
   FOTMOB_SOURCE,
+  OFFICIAL_TRANSFER_ROSTER_SOURCE,
   type LeagueSeasonData,
   type LeagueSeasonTeamData,
   type LeagueData,
@@ -208,8 +209,46 @@ export class CoreSeasonRosterRepository {
     await ensureCoreTeamPlaceholders(this.prisma, rows.map((row) => row.teamId));
     await ensureCorePlayerPlaceholders(this.prisma, rows.map((row) => row.playerId));
 
+    const authoritativeMemberships = rows.length === 0
+      ? []
+      : await this.prisma.teamPlayerSeason.findMany({
+          where: {
+            active: true,
+            source: { not: FOTMOB_SOURCE },
+            OR: rows.map((row) => ({
+              leagueId: row.leagueId,
+              season: row.season,
+              playerId: row.playerId
+            }))
+          },
+          select: {
+            leagueId: true,
+            season: true,
+            teamId: true,
+            playerId: true,
+            source: true
+          }
+        });
+    const authoritativeByPlayerScope = new Map<string, Array<(typeof authoritativeMemberships)[number]>>();
+    for (const membership of authoritativeMemberships) {
+      const key = rosterPlayerScopeKey(membership.leagueId, membership.season, membership.playerId);
+      const memberships = authoritativeByPlayerScope.get(key) ?? [];
+      memberships.push(membership);
+      authoritativeByPlayerScope.set(key, memberships);
+    }
+
     const now = new Date();
     for (const row of rows) {
+      const authoritative = authoritativeByPlayerScope.get(
+        rosterPlayerScopeKey(row.leagueId, row.season, row.playerId)
+      ) ?? [];
+      if (authoritative.some((membership) => membership.teamId !== row.teamId)) continue;
+      const synchronizedSource = authoritative.some((membership) =>
+        membership.source === OFFICIAL_TRANSFER_ROSTER_SOURCE
+      )
+        ? OFFICIAL_TRANSFER_ROSTER_SOURCE
+        : FOTMOB_SOURCE;
+
       await this.prisma.teamPlayerSeason.upsert({
         where: {
           leagueId_season_teamId_playerId: {
@@ -220,7 +259,7 @@ export class CoreSeasonRosterRepository {
           }
         },
         update: {
-          source: FOTMOB_SOURCE,
+          source: synchronizedSource,
           active: row.active,
           position: row.position,
           shirtNumber: row.shirtNumber,
@@ -553,6 +592,10 @@ function teamPlayerSeasonData(row: TeamPlayerSeasonData) {
     age: row.age,
     photoUrl: row.photoUrl
   };
+}
+
+function rosterPlayerScopeKey(leagueId: bigint, season: string, playerId: bigint) {
+  return `${leagueId}:${season}:${playerId}`;
 }
 
 function teamData(team: TeamData) {
