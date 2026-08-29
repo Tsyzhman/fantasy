@@ -46,6 +46,7 @@ import {
   preferredArchivedSeason,
   projectFixtureFantasyPoints,
   projectionRoundFormulaWithBreakdown,
+  resolveFantasyPlannerOwnership,
   resolveFantasyPlannerPrice,
   rolloverFantasySquadRoundPlans,
   savedFantasySquadPlayersCount,
@@ -69,6 +70,13 @@ import { calculateFriendWindowMetrics, type SharedMachetePlayerRow } from "./sha
 import { defaultFantasySquadRules, fantasyProviderPlaceholderPlayerId, type FantasyProviderPlaceholder } from "./squad_logic";
 import { expectedProjectionFormulaConfig, friendAltProjectionFormulaConfig } from "./projection-formula-config";
 import { positionEventPriorPer90 } from "./player-season-prior";
+
+test("Sports.ru price popularity takes precedence over the forecast fallback", () => {
+  assert.equal(resolveFantasyPlannerOwnership({ selectedByPercent: 57.28 }, { selectedByPercent: 12 }), 57.28);
+  assert.equal(resolveFantasyPlannerOwnership({ selectedByPercent: null }, { selectedByPercent: 12 }), 12);
+  assert.equal(resolveFantasyPlannerOwnership({ selectedByPercent: 101 }, { selectedByPercent: 4 }), 4);
+  assert.equal(resolveFantasyPlannerOwnership(null, null), null);
+});
 
 test("FPL official forecast history applies position thresholds instead of recoveries groups", () => {
   const adjustments = buildFplOfficialForecastAdjustments([

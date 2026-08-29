@@ -105,18 +105,25 @@ export async function syncSportsRuFantasy(prisma: PrismaClient, input: SportsRuF
 
     const importedIds: string[] = [];
     for (const row of snapshot.prices) {
-      const existingProviderRow = row.providerPlayerId
-        ? await tx.fantasyPlayerPrice.findFirst({
+      const existingRow = row.providerPlayerId
+        ? await tx.fantasyPlayerPrice.findUnique({
             where: {
-              provider: "SPORTS_RU",
-              contestId: contest.id,
-              leagueId: input.leagueId,
-              season: input.season,
-              providerPlayerId: row.providerPlayerId
+              contestId_providerPlayerId: {
+                contestId: contest.id,
+                providerPlayerId: row.providerPlayerId
+              }
             },
             select: { id: true }
           })
-        : null;
+        : await tx.fantasyPlayerPrice.findFirst({
+            where: {
+              contestId: contest.id,
+              normalizedName: row.normalizedName,
+              teamName: row.teamName ?? "",
+              providerPlayerId: null
+            },
+            select: { id: true }
+          });
       const priceData = {
         providerPlayerId: row.providerPlayerId,
         providerStatPlayerId: row.providerStatPlayerId,
@@ -131,32 +138,25 @@ export async function syncSportsRuFantasy(prisma: PrismaClient, input: SportsRuF
         sportsTeamName: row.teamName ?? null,
         position: row.position,
         price: row.price,
+        selectedByPercent: row.selectedByPercent,
         sourceKind: row.sourceKind,
         sourceRowIndex: row.sourceRowIndex,
         lastSeenAt: new Date()
       };
-      const imported = existingProviderRow
+      const imported = existingRow
         ? await tx.fantasyPlayerPrice.update({
-            where: { id: existingProviderRow.id },
+            where: { id: existingRow.id },
             data: priceData
           })
-        : await tx.fantasyPlayerPrice.upsert({
-        where: {
-          contestId_normalizedName_teamName: {
-            contestId: contest.id,
-            normalizedName: row.normalizedName,
-            teamName: row.teamName ?? ""
-          }
-        },
-        update: priceData,
-        create: {
-          contestId: contest.id,
-          leagueId: input.leagueId,
-          season: input.season,
-          provider: "SPORTS_RU",
-          ...priceData
-        }
-      });
+        : await tx.fantasyPlayerPrice.create({
+            data: {
+              contestId: contest.id,
+              leagueId: input.leagueId,
+              season: input.season,
+              provider: "SPORTS_RU",
+              ...priceData
+            }
+          });
       importedIds.push(imported.id);
     }
 

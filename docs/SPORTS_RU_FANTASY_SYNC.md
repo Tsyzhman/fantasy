@@ -19,7 +19,12 @@ The importer first resolves Sports.ru's `currentSeason`, then downloads every
 `GOALKEEPER`, `DEFENDER`, `MIDFIELDER`, and `FORWARD` page. A normal sync
 requires at least 100 unique players by default. It upserts the contest and
 price snapshot transactionally, removes stale rows only after the replacement
-snapshot has passed validation, and then refreshes player mappings.
+snapshot has passed validation, and then refreshes player mappings. Each price
+also stores `status.selectedBy`, the provider's current ownership percentage,
+which drives the progressive squad-pool order. Provider player ID is the
+authoritative row identity; the normalized name/team fallback is used only for
+legacy HTML or workbook rows without a provider ID, so same-name teammates are
+not collapsed.
 
 If Sports.ru returns no current season, fewer than the minimum number of
 players, GraphQL errors, or a network error, the operation fails closed. No

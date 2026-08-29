@@ -91,7 +91,7 @@ test("production fantasy price sync is an exact, non-runtime operator job", () =
   assert.match(workflow, /scripts\/sync-production-fantasy-prices\.sh/);
   assert.match(runner, /sha256sum/);
   assert.match(runner, /--target setup/);
-  assert.match(runner, /npm run prices:sync-fpl-and-epl/);
+  assert.match(runner, /npm run prices:sync-production/);
   assert.match(runner, /--network fantasy-scout_default/);
   assert.match(runner, /--network "container:\$vpn_container"/);
   assert.match(runner, /FPL_RELAY_SOCKET_PATH=\$relay_socket/);
@@ -103,6 +103,8 @@ test("production fantasy price sync is an exact, non-runtime operator job", () =
   assert.match(entrypoint, /syncFplPrices/);
   assert.match(entrypoint, /syncSportsRuFantasy/);
   assert.match(entrypoint, /tournamentHru: "england"/);
+  assert.match(entrypoint, /leagueId: 48n/);
+  assert.match(entrypoint, /tournamentHru: "championship"/);
   assert.doesNotMatch(runner, /docker container restart/);
   assert.doesNotMatch(runner, /docker compose (up|down)/);
 });

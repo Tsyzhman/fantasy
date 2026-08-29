@@ -237,14 +237,24 @@ The response contains `players` in the squad-planner row shape. Optional
 the shared pool is returned. User squads and ownership are never stored in the
 pool cache.
 
-The league/season player pool is coalesced and cached inside one web process for
-30 seconds, with at most 20 keys. Rejected loads are removed. The key includes
-league ID, season, and `LeagueSeason.updatedAt`; other related data changes may
-therefore remain visible from that process up to 30 seconds later. HTTP remains
-`Cache-Control: private, no-store`, so browsers and intermediaries must not
-cache the response. The endpoint lets the server-rendered page load only saved
-player IDs while the browser fetches the full pool without embedding it in the
-initial HTML.
+With `progressive=1`, the first request (without `cursor`) returns a lightweight
+64-player `SEED`: active-squad players first, then mapped players ordered by the
+Sports.ru ownership percentage stored with their current price. Its
+`pageInfo.totalPlayers` is `null` because the expensive canonical pool has not
+been built yet. The browser follows `nextCursor=0`; canonical `POOL` pages then
+contain 64 players each and report the exact loaded and total counts. The first
+canonical page replaces the seed as the enrichment source, so the final list
+contains every canonical player exactly once. Calls without `progressive=1`
+retain the legacy all-at-once response for old deployed JavaScript chunks.
+
+The league/season player features and personal scoring overlays are coalesced
+and cached separately inside one web process for five minutes. Feature entries
+are bounded to 20 keys/96 MiB and overlay entries to 60 keys/32 MiB; rejected
+loads are removed. Their revisioned keys include the contest, roster, forecast,
+history and scoring inputs. HTTP remains `Cache-Control: private, no-store`, so
+browsers and intermediaries must not cache responses. The server-rendered page
+still embeds only saved player IDs while the browser progressively fetches the
+pool.
 
 ### `POST /api/machete/squads`
 

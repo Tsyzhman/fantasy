@@ -5,6 +5,27 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.49 - 2026-08-29
+
+### Added
+
+- Load the fantasy squad player pool progressively: an inexpensive first batch
+  contains the active squad followed by the most-owned Sports.ru players, and
+  subsequent 64-player batches enrich and complete the list without blocking
+  early interaction.
+- Persist Sports.ru's player ownership percentage alongside each current price
+  and use it as the canonical popularity order with the existing Foontasy value
+  retained as a fallback.
+- Extend the guarded production price-sync job to refresh Championship alongside
+  FPL and Sports.ru EPL, so the largest pool is covered by the same repeatable
+  operator workflow.
+
+### Fixed
+
+- Preserve distinct Sports.ru provider players who happen to share the same
+  normalized name and club; the legacy name/team uniqueness guard now applies
+  only to imports without a provider player ID.
+
 ## 0.3.48 - 2026-08-28
 
 ### Added

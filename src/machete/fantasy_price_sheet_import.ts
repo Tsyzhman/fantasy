@@ -99,43 +99,42 @@ export async function importFantasyPriceWorkbook(
 
   const importedIds: string[] = [];
   for (const row of parsed.rows) {
-    const price = await prisma.fantasyPlayerPrice.upsert({
+    const existingPrice = await prisma.fantasyPlayerPrice.findFirst({
       where: {
-        contestId_normalizedName_teamName: {
-          contestId: contest.id,
-          normalizedName: row.normalizedName,
-          teamName: row.teamName
-        }
-      },
-      update: {
-        playerName: row.playerName,
-        position: row.position,
-        sportsTeamName: row.sportsTeamName,
-        fotmobPlayerName: row.fotmobPlayerName,
-        positionLabel: row.positionLabel,
-        sourceKind: row.sourceKind,
-        sourceRowIndex: row.sourceRowIndex,
-        price: row.price,
-        lastSeenAt: importedAt
-      },
-      create: {
         contestId: contest.id,
-        leagueId: input.leagueId,
-        season,
-        provider,
-        playerName: row.playerName,
         normalizedName: row.normalizedName,
         teamName: row.teamName,
-        sportsTeamName: row.sportsTeamName,
-        fotmobPlayerName: row.fotmobPlayerName,
-        positionLabel: row.positionLabel,
-        sourceKind: row.sourceKind,
-        sourceRowIndex: row.sourceRowIndex,
-        position: row.position,
-        price: row.price,
-        lastSeenAt: importedAt
-      }
+        providerPlayerId: null
+      },
+      select: { id: true }
     });
+    const updateData = {
+      playerName: row.playerName,
+      position: row.position,
+      sportsTeamName: row.sportsTeamName,
+      fotmobPlayerName: row.fotmobPlayerName,
+      positionLabel: row.positionLabel,
+      sourceKind: row.sourceKind,
+      sourceRowIndex: row.sourceRowIndex,
+      price: row.price,
+      lastSeenAt: importedAt
+    };
+    const price = existingPrice
+      ? await prisma.fantasyPlayerPrice.update({
+          where: { id: existingPrice.id },
+          data: updateData
+        })
+      : await prisma.fantasyPlayerPrice.create({
+          data: {
+            contestId: contest.id,
+            leagueId: input.leagueId,
+            season,
+            provider,
+            normalizedName: row.normalizedName,
+            teamName: row.teamName,
+            ...updateData
+          }
+        });
     importedIds.push(price.id);
   }
 

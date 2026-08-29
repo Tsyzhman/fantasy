@@ -4,11 +4,13 @@ import { syncFplPrices } from "@/server/fpl-price-sync";
 import { syncSportsRuFantasy } from "@/machete/sports_ru_fantasy_sync";
 
 const SPORTS_RU_EPL_SOURCE_URL = "https://www.sports.ru/fantasy/football/england/";
+const SPORTS_RU_CHAMPIONSHIP_SOURCE_URL = "https://www.sports.ru/fantasy/football/championship/";
 
 async function main() {
   const failures: string[] = [];
   let fpl: Record<string, unknown>;
   let sportsRuEpl: Record<string, unknown>;
+  let sportsRuChampionship: Record<string, unknown>;
 
   try {
     const result = await syncFplPrices(prisma, { trigger: "MANUAL" });
@@ -58,7 +60,34 @@ async function main() {
     sportsRuEpl = { provider: "SPORTS_RU", status: "FAILED", error: safeError(error) };
   }
 
-  console.log(JSON.stringify({ fpl, sportsRuEpl, failures }, null, 2));
+  try {
+    const result = await syncSportsRuFantasy(prisma, {
+      leagueId: 48n,
+      season: FPL_SEASON,
+      tournamentHru: "championship",
+      sourceUrl: SPORTS_RU_CHAMPIONSHIP_SOURCE_URL
+    });
+    sportsRuChampionship = {
+      provider: "SPORTS_RU",
+      status: result.status,
+      leagueId: "48",
+      season: FPL_SEASON,
+      sourceUrl: SPORTS_RU_CHAMPIONSHIP_SOURCE_URL,
+      seasonId: result.seasonId,
+      prices: result.prices,
+      deletedStalePrices: result.deletedStalePrices,
+      matched: result.mapping?.matched ?? null,
+      manual: result.mapping?.manual ?? null,
+      unmatched: result.mapping?.unmatched ?? null,
+      databaseChanged: result.databaseChanged
+    };
+    if (result.status === "UNAVAILABLE") failures.push("SPORTS_RU_CHAMPIONSHIP");
+  } catch (error) {
+    failures.push("SPORTS_RU_CHAMPIONSHIP");
+    sportsRuChampionship = { provider: "SPORTS_RU", status: "FAILED", error: safeError(error) };
+  }
+
+  console.log(JSON.stringify({ fpl, sportsRuEpl, sportsRuChampionship, failures }, null, 2));
   if (failures.length > 0) process.exitCode = 1;
 }
 

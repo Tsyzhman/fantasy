@@ -213,7 +213,8 @@ export default async function FantasySquadPage({ searchParams, mode }: FantasySq
 function squadPlayerPoolHref(league: SharedLeagueSeasonOption, historySettings: FantasyHistorySettings, squadId: string | null | undefined, apiPath: string, provider: string) {
   const query = new URLSearchParams({
     leagueId: String(league.leagueId),
-    season: league.season
+    season: league.season,
+    progressive: "1"
   });
   if (provider === FPL_PROVIDER) query.set("provider", FPL_PROVIDER);
   applyFantasyHistorySearchParams(query, historySettings);

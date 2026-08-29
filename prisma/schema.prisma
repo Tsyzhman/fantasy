@@ -949,6 +949,7 @@ model FantasyPlayerPrice {
   sourceRowIndex       Int?      @map("source_row_index")
   position             String?
   price                Float
+  selectedByPercent    Float?    @map("selected_by_percent")
   firstSeenAt          DateTime  @default(now()) @map("first_seen_at")
   lastSeenAt           DateTime  @default(now()) @map("last_seen_at")
 
@@ -957,8 +958,8 @@ model FantasyPlayerPrice {
   team    CoreTeam?      @relation(fields: [teamId], references: [id], onDelete: SetNull)
   player  CorePlayer?    @relation(fields: [playerId], references: [id], onDelete: SetNull)
 
-  @@unique([contestId, normalizedName, teamName], map: "fantasy_player_prices_contest_normalized_name_team_name_key")
   @@unique([contestId, providerPlayerId], map: "fantasy_player_prices_contest_provider_player_id_key")
+  @@index([contestId, normalizedName, teamName], map: "fantasy_player_prices_contest_normalized_name_team_name_idx")
   @@index([contestId, lastSeenAt], map: "fantasy_player_prices_contest_last_seen_at_idx")
   @@index([playerId, leagueId, season])
   @@index([teamId, leagueId, season])

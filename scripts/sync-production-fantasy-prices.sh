@@ -179,7 +179,7 @@ docker create \
   -e "FPL_RELAY_SOCKET_PATH=$relay_socket" \
   --mount "type=volume,src=$relay_volume,dst=/run/fpl-relay,readonly" \
   "$image" \
-  npm run prices:sync-fpl-and-epl >/dev/null
+  npm run prices:sync-production >/dev/null
 
 docker container start --attach "$container"
 

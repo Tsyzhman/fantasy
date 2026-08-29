@@ -8,6 +8,7 @@ import { readJsonObject } from "@/lib/request-json";
 import { FPL_PROVIDER } from "@/lib/providers/fpl";
 import {
   loadCachedFantasySquadPlayerPool,
+  loadFantasySquadPlayerPoolSeed,
   loadFantasySquadPlannerData,
   fantasyPlayerPoolCacheMetrics,
   mergeFantasyPlannerPlayerPools,
@@ -34,6 +35,12 @@ import {
 } from "@/machete/squad_logic";
 import { parseFantasyHistorySettings } from "@/machete/squad-history";
 import { toFantasyPlayerPoolListItem } from "@/machete/squad-player-dto";
+import {
+  orderProgressiveFantasyPlayerPool,
+  parseProgressiveFantasyPlayerPoolCursor,
+  progressiveFantasyPlayerPoolBatchSize,
+  progressiveFantasyPlayerPoolPage
+} from "@/machete/squad-player-pool-batches";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -47,6 +54,9 @@ export const GET = withApiHandler(async (request: Request) => {
   const season = params.get("season")?.trim() ?? "";
   const squadId = optionalId(params.get("squadId"));
   const provider = normalizeProvider(params.get("provider"));
+  const progressive = params.get("progressive") === "1";
+  const progressiveSeed = progressive && provider === "SPORTS_RU" && !params.has("cursor");
+  const progressiveCursor = progressive ? parseProgressiveFantasyPlayerPoolCursor(params.get("cursor")) : 0;
   const historySettings = parseFantasyHistorySettings({
     historyScope: params.get("historyScope"),
     historyWindow: params.get("historyWindow"),
@@ -54,6 +64,9 @@ export const GET = withApiHandler(async (request: Request) => {
   });
   if (!leagueId || !season) {
     return jsonError("BAD_REQUEST", "leagueId and season are required.", 400);
+  }
+  if (progressiveCursor === null) {
+    return jsonError("BAD_REQUEST", "cursor must be a non-negative safe integer.", 400);
   }
 
   const leagueSeason = await prisma.leagueSeason.findUnique({
@@ -88,6 +101,7 @@ export const GET = withApiHandler(async (request: Request) => {
     updatedAt: leagueSeason.updatedAt
   };
   let ownedSquadFilters: unknown = null;
+  let ownedSquadPlayerIds: string[] = [];
   if (squadId) {
     const contest = await prisma.fantasyContest.findUnique({
       where: { provider_leagueId_season: { provider, leagueId, season } },
@@ -102,31 +116,87 @@ export const GET = withApiHandler(async (request: Request) => {
         leagueId,
         season
       },
-      select: { id: true, filters: true }
+      select: {
+        id: true,
+        filters: true,
+        players: {
+          orderBy: { slotIndex: "asc" },
+          select: { playerId: true }
+        }
+      }
     });
     if (!ownedSquad) {
       return jsonError("NOT_FOUND", "Squad variant not found for this league and season.", 404);
     }
     ownedSquadFilters = ownedSquad.filters;
+    ownedSquadPlayerIds = ownedSquad.players.map((player) => String(player.playerId));
   }
   const contest = await prisma.fantasyContest.findUnique({
     where: { provider_leagueId_season: { provider, leagueId, season } },
     select: { id: true }
   });
   if (!contest) return jsonError("CONTEST_NOT_SYNCED", "The selected fantasy provider contest is not synchronized yet.", 503);
-  const players = await loadCachedFantasySquadPlayerPool(prisma, auth.user.id, plannerLeague, historySettings, provider, contest.id);
-  const cacheMetrics = fantasyPlayerPoolCacheMetrics();
   const placeholderPlayers = fantasyProviderPlaceholdersFromFilters(ownedSquadFilters, provider).map((placeholder) =>
     fantasyProviderPlaceholderPlannerPlayer(placeholder, displayName)
   );
-  const listPlayers = mergeFantasyPlannerPlayerPools(players, placeholderPlayers).map(toFantasyPlayerPoolListItem);
+  const priorityPlayerIds = [...ownedSquadPlayerIds, ...placeholderPlayers.map((player) => player.playerId)];
+  let batchHeader = progressive ? "progressive-v1" : "full-v1";
+  let responsePayload;
+  if (progressiveSeed) {
+    const seedPlayers = await loadFantasySquadPlayerPoolSeed(
+      prisma,
+      plannerLeague,
+      contest.id,
+      priorityPlayerIds
+    );
+    const orderedSeed = orderProgressiveFantasyPlayerPool(
+      mergeFantasyPlannerPlayerPools(seedPlayers, placeholderPlayers),
+      priorityPlayerIds
+    ).slice(0, progressiveFantasyPlayerPoolBatchSize);
+    responsePayload = {
+      players: orderedSeed,
+      pageInfo: {
+        nextCursor: "0",
+        loadedPlayers: orderedSeed.length,
+        totalPlayers: null,
+        complete: false,
+        batchSize: progressiveFantasyPlayerPoolBatchSize,
+        strategy: "SQUAD_THEN_POPULARITY" as const,
+        phase: "SEED" as const
+      }
+    };
+    batchHeader = "progressive-seed-v1";
+  } else {
+    const players = await loadCachedFantasySquadPlayerPool(
+      prisma,
+      auth.user.id,
+      plannerLeague,
+      historySettings,
+      provider,
+      contest.id
+    );
+    const mergedPlayers = mergeFantasyPlannerPlayerPools(players, placeholderPlayers);
+    responsePayload = progressive
+      ? progressiveFantasyPlayerPoolPage(
+          orderProgressiveFantasyPlayerPool(mergedPlayers, priorityPlayerIds),
+          progressiveCursor
+        )
+      : { players: mergedPlayers, pageInfo: null };
+  }
+  const cacheMetrics = fantasyPlayerPoolCacheMetrics();
+  const listPlayers = responsePayload.players.map(toFantasyPlayerPoolListItem);
 
   return NextResponse.json(
-    { players: listPlayers },
+    {
+      players: listPlayers,
+      ...(responsePayload.pageInfo ? { pageInfo: responsePayload.pageInfo } : {})
+    },
     {
       headers: {
         "Cache-Control": "private, no-store",
         "X-Machete-Player-DTO": "squad-list-v1",
+        "X-Machete-Player-Batch": batchHeader,
+        "X-Machete-Player-Count": String(listPlayers.length),
         "X-Machete-Feature-Cache": formatPlayerPoolCacheMetrics(cacheMetrics.featurePool),
         "X-Machete-Overlay-Cache": formatPlayerPoolCacheMetrics(cacheMetrics.scoringOverlay)
       }

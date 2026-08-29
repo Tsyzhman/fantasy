@@ -83,7 +83,7 @@ jobs:
             "$LOCAL_ARCHIVE" \
             "$DEPLOY_USER@$DEPLOY_HOST:/tmp/fantasy-scout-price-sync-${RELEASE}.tar.gz"
 
-      - name: Run FPL and Sports.ru EPL price sync
+      - name: Run FPL, Sports.ru EPL, and Championship price sync
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}

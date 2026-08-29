@@ -34,6 +34,7 @@ const formulaAdaptationHoverCardSource = readFileSync(new URL("./FormulaAdaptati
 const squadPlannerBackendSource = readFileSync(new URL("../../machete/squad_planner.ts", import.meta.url), "utf8");
 const squadPageSource = readFileSync(new URL("../../app/machete/squad/page.tsx", import.meta.url), "utf8");
 const fantasySquadPageSource = readFileSync(new URL("../../app/machete/fantasy-squad-page.tsx", import.meta.url), "utf8");
+const squadPoolRouteSource = readFileSync(new URL("../../app/api/machete/squads/route.ts", import.meta.url), "utf8");
 const playerTableExportRouteSource = readFileSync(new URL("../../app/api/machete/squads/export-table/route.ts", import.meta.url), "utf8");
 const globalStylesSource = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
 
@@ -60,6 +61,30 @@ test("Sports.ru import can complete from response players while the full player 
   ]);
   assert.match(squadPlannerSource, /sourcePlayersRef\.current, importedResponsePlayers/);
   assert.match(squadPlannerSource, /payload\.squad\?\.importedPlayers/);
+});
+
+test("player pool loads squad-first popularity batches and becomes usable before completion", () => {
+  const seedWithInitialPlayer = mergeFantasyPlayerPools(
+    [{ playerId: "selected", source: "seed" }, { playerId: "popular", source: "seed" }],
+    [{ playerId: "selected", source: "server-rendered" }]
+  );
+  assert.deepEqual(seedWithInitialPlayer, [
+    { playerId: "selected", source: "server-rendered" },
+    { playerId: "popular", source: "seed" }
+  ]);
+  assert.match(fantasySquadPageSource, /progressive: "1"/);
+  assert.match(squadPoolRouteSource, /orderProgressiveFantasyPlayerPool/);
+  assert.match(squadPoolRouteSource, /loadFantasySquadPlayerPoolSeed/);
+  assert.match(squadPoolRouteSource, /progressiveSeed = progressive && provider === "SPORTS_RU" && !params\.has\("cursor"\)/);
+  assert.match(squadPoolRouteSource, /phase: "SEED"/);
+  assert.match(squadPoolRouteSource, /ownedSquadPlayerIds/);
+  assert.match(squadPlannerSource, /fetch\(batchUrl/);
+  assert.match(squadPlannerSource, /yieldToPlayerPoolUi/);
+  assert.match(squadPlannerSource, /previousPhase === "SEED"/);
+  assert.match(squadPlannerSource, /effectivePageInfo\.phase === "SEED"\s*\? mergeFantasyPlayerPools\(batchPlayers, current\)/);
+  assert.match(squadPlannerSource, /playerPoolAvailable && postLoadContentReady/);
+  assert.match(squadPlannerSource, /data-player-pool-progress/);
+  assert.match(squadPlannerSource, /priority players are ready\. The full list is loading; you can use this list now\./);
 });
 
 test("round forecast totals available alternative projections and keeps missing players visible through warnings", () => {
@@ -569,7 +594,7 @@ test("planner exposes mobile-safe history controls and sends the applied setting
   assert.match(squadPlannerSource, /type="checkbox"/);
   assert.match(squadPlannerSource, /requestHistorySettings\(historyDraft\)/);
   assert.match(squadPlannerSource, /window\.history\.replaceState/);
-  assert.match(squadPlannerSource, /fetch\(playerPoolRequestHref/);
+  assert.match(squadPlannerSource, /fetch\(batchUrl/);
   assert.match(squadPlannerSource, /historyScope: appliedHistorySettings\.scope/);
   assert.match(squadPlannerSource, /historyWindow: appliedHistorySettings\.window/);
   assert.match(squadPlannerSource, /historySeasons: appliedHistorySettings\.selectedSeasons/);

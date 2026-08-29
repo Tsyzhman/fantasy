@@ -26,6 +26,7 @@ export type SportsRuFantasyPriceRow = {
   teamName?: string | null;
   position: string | null;
   price: number;
+  selectedByPercent: number | null;
   sourceKind: string;
   sourceRowIndex: number;
 };
@@ -205,6 +206,7 @@ export async function fetchSportsRuFantasyGraphqlSnapshot(
               id?: string | null;
               name?: string | null;
               price?: number | null;
+              status?: { selectedBy?: number | null } | null;
               team?: {
                 id?: string | null;
                 name?: string | null;
@@ -235,6 +237,7 @@ export async function fetchSportsRuFantasyGraphqlSnapshot(
             }) {
               list {
                 id name price
+                status { selectedBy }
                 team { id name statObject { id name } }
                 statObject { id name firstName lastName coalesceName dateOfBirth }
               }
@@ -268,6 +271,7 @@ export async function fetchSportsRuFantasyGraphqlSnapshot(
           teamName: cleanText(player.team?.name ?? "") || null,
           position,
           price,
+          selectedByPercent: sportsRuSelectedByPercent(player.status?.selectedBy),
           sourceKind: correctedPlayerName ? "graphql-current-season-corrected" : "graphql-current-season",
           sourceRowIndex: prices.length
         });
@@ -283,6 +287,11 @@ export async function fetchSportsRuFantasyGraphqlSnapshot(
     prices,
     fetchedAt: new Date().toISOString()
   };
+}
+
+function sportsRuSelectedByPercent(value: number | null | undefined) {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) && numeric >= 0 && numeric <= 100 ? numeric : null;
 }
 
 function sportsRuDateOnly(value: string | null | undefined) {
@@ -602,6 +611,7 @@ function parseFeaturedPriceRows(html: string): SportsRuFantasyPriceRow[] {
         normalizedName: normalizeSportsRuPlayerName(playerName),
         position,
         price,
+        selectedByPercent: null,
         sourceKind: "featured-field",
         sourceRowIndex: rowIndex
       });
@@ -623,6 +633,7 @@ function parseFeaturedPriceRows(html: string): SportsRuFantasyPriceRow[] {
         normalizedName: normalizeSportsRuPlayerName(playerName),
         position: positionForFeaturedIndex(index),
         price,
+        selectedByPercent: null,
         sourceKind: "featured-field-fallback",
         sourceRowIndex: index
       });

@@ -64,6 +64,23 @@ test("routine price refreshes send only previously unmapped rows to identity mat
   assert.doesNotMatch(source, /autoMapSportsRuFantasyPlayers\(prisma, \{ leagueId: input\.leagueId, season: input\.season \}\)/);
 });
 
+test("Sports.ru price refresh persists provider popularity with the price row", () => {
+  const source = readFileSync(new URL("./sports_ru_fantasy_sync.ts", import.meta.url), "utf8");
+  assert.match(source, /selectedByPercent: row\.selectedByPercent/);
+});
+
+test("Sports.ru provider IDs remain distinct when players share a name and club", () => {
+  const source = readFileSync(new URL("./sports_ru_fantasy_sync.ts", import.meta.url), "utf8");
+  const migration = readFileSync(
+    new URL("../../prisma/migrations/000038_fantasy_price_provider_identity/migration.sql", import.meta.url),
+    "utf8"
+  );
+  assert.match(source, /contestId_providerPlayerId/);
+  assert.doesNotMatch(source, /contestId_normalizedName_teamName/);
+  assert.match(migration, /WHERE "provider_player_id" IS NULL/);
+  assert.match(migration, /DROP INDEX "fantasy_player_prices_contest_normalized_name_team_name_key"/);
+});
+
 test("Sports.ru contest rules preserve phase history and continue cup round offsets", () => {
   const group = sportsRuContestRules(null, sportsSnapshot("70", 8), "champions-league");
   const playoffs = sportsRuContestRules(group, sportsSnapshot("72", 9), "champions-league");

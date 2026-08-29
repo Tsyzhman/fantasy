@@ -10,10 +10,10 @@ import {
 
 test("Sports.ru GraphQL snapshot loads every position from the current season", async () => {
   const roles = new Map([
-    ["GOALKEEPER", { id: "gk-1", name: "Goal Keeper", price: 5, team: { id: "1", name: "Ростов" } }],
-    ["DEFENDER", { id: "def-1", name: "Left Back", price: 6, team: { id: "2", name: "Спартак" } }],
-    ["MIDFIELDER", { id: "mid-1", name: "Play Maker", price: 8, team: { id: "3", name: "Зенит" } }],
-    ["FORWARD", { id: "fwd-1", name: "Goal Scorer", price: 10, team: { id: "4", name: "Динамо" } }]
+    ["GOALKEEPER", { id: "gk-1", name: "Goal Keeper", price: 5, status: { selectedBy: 12.5 }, team: { id: "1", name: "Ростов" } }],
+    ["DEFENDER", { id: "def-1", name: "Left Back", price: 6, status: { selectedBy: 28 }, team: { id: "2", name: "Спартак" } }],
+    ["MIDFIELDER", { id: "mid-1", name: "Play Maker", price: 8, status: { selectedBy: 51.75 }, team: { id: "3", name: "Зенит" } }],
+    ["FORWARD", { id: "fwd-1", name: "Goal Scorer", price: 10, status: { selectedBy: 7 }, team: { id: "4", name: "Динамо" } }]
   ]);
   const fetchImpl = (async (_input: string | URL | Request, init?: RequestInit) => {
     assert.ok(init?.signal, "Sports.ru requests must have a timeout signal");
@@ -40,6 +40,7 @@ test("Sports.ru GraphQL snapshot loads every position from the current season", 
       } } } } });
     }
     assert.match(query, /team \{ id name statObject \{ id name \} \}/);
+    assert.match(query, /status \{ selectedBy \}/);
     const role = [...roles.keys()].find((value) => query.includes(`role: ${value}`));
     const player = role ? roles.get(role) : null;
     return jsonResponse({ data: { fantasyQueries: { players: { list: player ? [player] : [] } } } });
@@ -68,6 +69,7 @@ test("Sports.ru GraphQL snapshot loads every position from the current season", 
   assert.deepEqual(snapshot.prices.map((row) => row.position), ["GK", "DEF", "MID", "FWD"]);
   assert.deepEqual(snapshot.prices.map((row) => row.providerPlayerId), ["gk-1", "def-1", "mid-1", "fwd-1"]);
   assert.deepEqual(snapshot.prices.map((row) => row.teamName), ["Ростов", "Спартак", "Зенит", "Динамо"]);
+  assert.deepEqual(snapshot.prices.map((row) => row.selectedByPercent), [12.5, 28, 51.75, 7]);
 });
 
 test("Sports.ru snapshot fails closed when no current season exists", async () => {

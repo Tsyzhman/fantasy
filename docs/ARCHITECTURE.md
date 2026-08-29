@@ -81,12 +81,13 @@ Admin or cron queues ingestion
 ### Sports.ru fantasy prices
 
 ```text
-Admin uploads price workbook
--> workbook parser normalizes names, teams, positions, prices
+Scheduled or manual Sports.ru GraphQL sync (with workbook fallback)
+-> importer normalizes names, teams, positions, prices, and ownership percentage
 -> rows are stored in fantasy_player_prices
 -> automatic and manual mappings connect prices to FotMob players
 -> mapped Sports.ru team, position, and price override a lagging FotMob roster
 -> FotMob match history still supplies minutes, form, and event rates
+-> squad page returns an immediate squad/popularity seed, then canonical 64-player batches
 -> squad planner uses the same assignment for forecasts and transactional save validation
 ```
 

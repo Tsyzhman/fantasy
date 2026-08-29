@@ -101,6 +101,10 @@ import {
   type FantasySquadSelection,
   type FantasySquadRoundPlan
 } from "./squad_logic";
+import {
+  orderProgressiveFantasyPlayerPool,
+  progressiveFantasyPlayerPoolBatchSize
+} from "./squad-player-pool-batches";
 import { sportsRuMaxPlayersPerTeamForLeague } from "./sports_ru_team_limits";
 
 export type SavedFantasySquad = {
@@ -455,6 +459,146 @@ const fantasyFormulaAdaptationBreakdownCache = new ExpiringPromiseCache<string, 
 const upcomingRoundFixturesCacheTtlMs = 5 * 60_000;
 const upcomingRoundFixturesCache = new ExpiringPromiseCache<string, PlannerRoundFixtures>(20);
 export const maxFantasySquadNameLength = 80;
+
+/**
+ * Returns a cheap, immediately usable first player batch. The full planner
+ * projection is intentionally not invoked here: the browser can render names,
+ * clubs, positions, prices and ownership while the canonical pool is built by
+ * the following request.
+ */
+export async function loadFantasySquadPlayerPoolSeed(
+  prisma: PrismaClient,
+  league: Pick<SharedLeagueSeasonOption, "leagueId" | "season" | "displayName">,
+  contestId: string,
+  priorityPlayerIds: readonly string[],
+  batchSize = progressiveFantasyPlayerPoolBatchSize
+) {
+  if (!Number.isSafeInteger(batchSize) || batchSize < 1) throw new Error("Invalid player-pool seed batch size.");
+  const priorityIds = [...new Set(priorityPlayerIds.flatMap((playerId) =>
+    /^\d{1,20}$/.test(playerId) ? [BigInt(playerId)] : []
+  ))];
+  const priceSelect = {
+    playerId: true,
+    teamId: true,
+    playerName: true,
+    position: true,
+    positionLabel: true,
+    sourceKind: true,
+    sourceRowIndex: true,
+    price: true,
+    selectedByPercent: true,
+    lastSeenAt: true,
+    player: { select: { id: true, name: true, country: true } },
+    team: { select: { id: true, name: true } }
+  } satisfies Prisma.FantasyPlayerPriceSelect;
+  const where = {
+    provider: "SPORTS_RU",
+    contestId,
+    leagueId: league.leagueId,
+    playerId: { not: null }
+  } satisfies Prisma.FantasyPlayerPriceWhereInput;
+  const [priorityRows, popularRows] = await Promise.all([
+    prisma.fantasyPlayerPrice.findMany({
+      where: { ...where, playerId: { in: priorityIds } },
+      select: priceSelect,
+      orderBy: { lastSeenAt: "desc" }
+    }),
+    prisma.fantasyPlayerPrice.findMany({
+      where,
+      select: priceSelect,
+      orderBy: [
+        { selectedByPercent: { sort: "desc", nulls: "last" } },
+        { lastSeenAt: "desc" }
+      ],
+      take: batchSize * 3
+    })
+  ]);
+  const priceByPlayerId = new Map<string, (typeof popularRows)[number]>();
+  for (const row of [...priorityRows, ...popularRows]) {
+    if (!row.playerId) continue;
+    const playerId = String(row.playerId);
+    if (!priceByPlayerId.has(playerId)) priceByPlayerId.set(playerId, row);
+  }
+  const candidateIds = [...priceByPlayerId.keys()].map((playerId) => BigInt(playerId));
+  const memberships = candidateIds.length > 0
+    ? await prisma.teamPlayerSeason.findMany({
+        where: {
+          leagueId: league.leagueId,
+          season: league.season,
+          active: true,
+          playerId: { in: candidateIds }
+        },
+        select: {
+          playerId: true,
+          teamId: true,
+          position: true,
+          age: true,
+          nationality: true,
+          photoUrl: true,
+          isStarter: true,
+          player: { select: { name: true, country: true } },
+          team: { select: { name: true } }
+        },
+        orderBy: { lastSeenAt: "desc" }
+      })
+    : [];
+  const membershipByPlayerTeam = new Map(memberships.map((row) => [
+    `${row.playerId}:${row.teamId}`,
+    row
+  ]));
+  const latestMembershipByPlayer = new Map<string, (typeof memberships)[number]>();
+  for (const membership of memberships) {
+    const playerId = String(membership.playerId);
+    if (!latestMembershipByPlayer.has(playerId)) latestMembershipByPlayer.set(playerId, membership);
+  }
+
+  const seedPlayers = [...priceByPlayerId.entries()].flatMap(([playerId, row]): FantasyPlannerPlayer[] => {
+    const membership = (row.teamId ? membershipByPlayerTeam.get(`${playerId}:${row.teamId}`) : null)
+      ?? latestMembershipByPlayer.get(playerId);
+    const playerName = row.playerName || row.player?.name || membership?.player.name;
+    const teamId = row.teamId ?? membership?.teamId;
+    const teamName = row.team?.name ?? membership?.team.name;
+    if (!playerName || !teamId || !teamName) return [];
+    const position = sportsRuPricePosition(row) ?? membership?.position ?? null;
+    return [{
+      id: playerId,
+      playerId,
+      teamId: String(teamId),
+      name: playerName,
+      fotmobName: row.player?.name ?? membership?.player.name ?? null,
+      teamName,
+      teamShortName: teamName,
+      photoUrl: membership?.photoUrl ? playerPhotoPublicUrl(playerId) : null,
+      leagueName: league.displayName,
+      position,
+      positionGroup: normalizeFantasyPosition(position),
+      age: membership?.age ?? null,
+      nationality: membership?.nationality ?? row.player?.country ?? membership?.player.country ?? null,
+      isStarter: membership?.isStarter,
+      price: row.price,
+      priceSource: "SPORTS_RU",
+      predictedFp: null,
+      legacyPredictedFp: null,
+      componentPredictedFp: null,
+      alternativePredictedFp: null,
+      ownershipPercent: resolveFantasyPlannerOwnership(row, null),
+      expectedMinutes: null,
+      startProbability: null,
+      forecastConfidence: null,
+      forecastFactors: [],
+      forecastRisks: [],
+      recentFp: [],
+      historicalStats: {},
+      valueScore: 0,
+      roundPoints: [],
+      roundFixtureCounts: [],
+      fixtures: [],
+      fixtureFullNames: [],
+      fixtureDifficulties: []
+    }];
+  });
+  return orderProgressiveFantasyPlayerPool(seedPlayers, priorityPlayerIds).slice(0, batchSize);
+}
 
 export async function loadCachedFantasySquadPlayerPool(
   prisma: PrismaClient,
@@ -1208,9 +1352,7 @@ export async function loadFantasySquadPlannerData(
         alternativeRoundPoints,
         ...formulaAdaptations,
         foontasyPoints: foontasy?.points ?? null,
-        ownershipPercent: typeof foontasy?.selectedByPercent === "number" && Number.isFinite(foontasy.selectedByPercent)
-          ? foontasy.selectedByPercent
-          : null,
+        ownershipPercent: resolveFantasyPlannerOwnership(priceRow, foontasy),
         // Foontasy publishes its current round only. Do not invent a T3/T5
         // total from one matchweek; this becomes numeric only when the source
         // supplies projections for every round in the selected horizon.
@@ -1749,6 +1891,7 @@ async function loadFplRosterPriceContext(
           sourceKind: true,
           sourceRowIndex: true,
           price: true,
+          selectedByPercent: true,
           lastSeenAt: true
         },
         orderBy: { lastSeenAt: "desc" }
@@ -4980,6 +5123,7 @@ function priceLookup(
     sourceKind?: string | null;
     sourceRowIndex?: number | null;
     price: number;
+    selectedByPercent?: number | null;
   }>,
   priceMaps: Array<{
     providerEntityId: string;
@@ -5028,6 +5172,20 @@ export function resolveFantasyPlannerPrice(
     price: estimateFantasyPrice(score, positionGroup),
     priceSource: "ESTIMATED"
   };
+}
+
+export function resolveFantasyPlannerOwnership(
+  priceRow: { selectedByPercent?: number | null } | null | undefined,
+  forecastRow: { selectedByPercent?: number | null } | null | undefined
+) {
+  return fantasyOwnershipPercent(priceRow?.selectedByPercent)
+    ?? fantasyOwnershipPercent(forecastRow?.selectedByPercent);
+}
+
+function fantasyOwnershipPercent(value: number | null | undefined) {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 100
+    ? value
+    : null;
 }
 
 function estimateFantasyPrice(score: number | null, positionGroup: FantasyPositionGroup) {
