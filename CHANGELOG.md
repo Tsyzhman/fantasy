@@ -26,6 +26,12 @@ image labels `org.opencontainers.image.version` and
   priority over background player-list updates.
 - Add `snapshots:player-pool` for controlled initial publication and diagnostics.
 
+### Fixed
+
+- Keep mapped Sports.ru players without active FotMob memberships in targeted
+  team refreshes. Use the complete authoritative team roster so incremental
+  publication preserves every player and the full team's formula allocation.
+
 ## 0.3.49 - 2026-08-29
 
 ### Added

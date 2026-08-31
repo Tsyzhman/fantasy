@@ -4,6 +4,7 @@ import { Prisma, type PrismaClient } from "@prisma/client";
 
 import { isFantasySquadLeague, macheteLeagueDisplayName } from "@/lib/leagues/display";
 import { createLogger } from "@/lib/logger";
+import { fantasyPlayerPoolTeamRefreshPlayerIds } from "@/machete/fantasy-player-pool-team-roster";
 import {
   buildFantasyStartingXiState,
   changedFantasyStartingXiTeams
@@ -12,6 +13,7 @@ import { defaultFantasyHistorySettings, fantasyHistorySettingsKey } from "@/mach
 import { toFantasyPlayerPoolListItem, type FantasyPlayerPoolListItem } from "@/machete/squad-player-dto";
 import {
   loadFantasySquadPlannerData,
+  loadSportsRuAuthoritativeRosterContext,
   type FantasySquadPlannerData
 } from "@/machete/squad_planner";
 import type { SharedLeagueSeasonOption } from "@/machete/shared_read_model";
@@ -188,16 +190,27 @@ async function refreshCurrentXiTeamsSnapshotUnlocked(
   // hash. A second team's edit can arrive before the queue picked its request.
   const changedTeamIds = changedFantasyStartingXiTeams(previousMetadata.startingXiTeamRevisions, xiBefore.teamRevisions);
   if (changedTeamIds.length === 0) return previous;
-  const teamMemberships = await prisma.teamPlayerSeason.findMany({
-    where: {
-      leagueId: input.leagueId,
-      season: input.season,
-      teamId: { in: changedTeamIds },
-      active: true
-    },
-    select: { playerId: true, teamId: true }
-  });
-  if (teamMemberships.length === 0) {
+  const [teamMemberships, authoritativeRoster] = await Promise.all([
+    prisma.teamPlayerSeason.findMany({
+      where: {
+        leagueId: input.leagueId,
+        season: input.season,
+        teamId: { in: changedTeamIds },
+        active: true
+      },
+      select: { playerId: true, teamId: true }
+    }),
+    loadSportsRuAuthoritativeRosterContext(prisma, scope.league, undefined, scope.contestId)
+  ]);
+  // The full pool also contains mapped Sports.ru players without an active
+  // FotMob membership. Replacing a team from memberships alone drops those
+  // players and changes the team-wide allocation used by its formulas.
+  const playerIds = fantasyPlayerPoolTeamRefreshPlayerIds(
+    changedTeamIds,
+    teamMemberships,
+    authoritativeRoster.rosterOverrides
+  );
+  if (playerIds.length === 0) {
     return buildAndPublishFantasyPlayerPoolSnapshot(prisma, scope, FANTASY_PLAYER_POOL_SNAPSHOT_CURRENT_XI);
   }
   const data = await loadFantasySquadPlannerData(
@@ -206,7 +219,7 @@ async function refreshCurrentXiTeamsSnapshotUnlocked(
     scope.league,
     null,
     {
-      playerIds: teamMemberships.map((row) => row.playerId),
+      playerIds,
       historySettings: defaultFantasyHistorySettings,
       skipSavedSquads: true,
       provider: "SPORTS_RU",
