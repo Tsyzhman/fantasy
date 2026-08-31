@@ -419,10 +419,20 @@ test("probable XI application is transactional and stores compact provenance wit
     })
   } as unknown as PrismaClient;
   const plan = teamPlan(targetIds);
+  const changedTeamIds: bigint[] = [];
 
-  const result = await applyProbableLineupTeamPlan(prisma, plan, new Date("2026-08-27T07:00:00.000Z"));
+  const result = await applyProbableLineupTeamPlan(
+    prisma,
+    plan,
+    new Date("2026-08-27T07:00:00.000Z"),
+    async (change, tx) => {
+      assert.equal(typeof tx.$executeRaw, "function");
+      changedTeamIds.push(...change.teamIds);
+    }
+  );
 
   assert.equal(result.status, "APPLIED");
+  assert.deepEqual(changedTeamIds, [100n]);
   assert.equal(updates.filter((entry) => entry.kind === "roster-update").length, 3);
   const seasonTeamUpdate = updates.find((entry) => entry.kind === "season-team-update")?.value as {
     data?: { metadata?: { retained?: boolean; probableLineup?: { source?: string; players?: unknown[]; rawHtml?: unknown } } };

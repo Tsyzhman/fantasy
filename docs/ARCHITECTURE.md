@@ -87,9 +87,40 @@ Scheduled or manual Sports.ru GraphQL sync (with workbook fallback)
 -> automatic and manual mappings connect prices to FotMob players
 -> mapped Sports.ru team, position, and price override a lagging FotMob roster
 -> FotMob match history still supplies minutes, form, and event rates
--> squad page returns an immediate squad/popularity seed, then canonical 64-player batches
+-> worker publishes a CURRENT_XI forecast snapshot at 10:00..23:00 Europe/Moscow
+-> saved squad and forecasts render from the DB; remaining complete players arrive in 10% batches
 -> squad planner uses the same assignment for forecasts and transactional save validation
 ```
+
+### Rotating squad player-pool snapshots
+
+`fantasy_player_pool_snapshots` and its player rows hold one CURRENT_XI variant,
+with three READY revisions per contest. Full publication, incremental team-row
+copy, and pruning share one transaction/advisory lock, so clients never see a
+partial generation and a competing publisher cannot prune a new revision.
+There is no NO_XI table or process-cache warmup requirement for normal requests.
+Worker bootstrap calculates only scopes with no READY revision; an ordinary
+restart reuses existing snapshots instead of rebuilding all leagues.
+
+Manual, probable-lineup, and completed-match XI writers enqueue affected teams
+in `fantasy_player_pool_refresh_requests` inside the flag transaction. One
+unique league/season/team row coalesces repeated edits. Every event has a fresh
+token; acknowledgment and failure updates match that token so newer edits are
+never lost. The worker polls every two seconds after a one-second debounce,
+groups teams by scope, and uses bounded exponential retry delays (5s to 5min).
+The web process does not drain this queue.
+
+Snapshot metadata retains a per-team active-roster/XI vector. Incremental
+refresh compares the complete vector to catch changes that arrived before
+queue pickup, rebuilds only changed teams, and checks for concurrent edits
+again before publication. Unaffected player payloads are copied in SQL.
+One worker calculation runs at a time to bound peak memory; an hourly trigger
+that arrives during incremental work is queued rather than skipped.
+
+The visible squad tab polls the small revision descriptor and downloads a new
+revision privately. Only a complete download is merged into player data; user
+draft state stays in the session. Nondefault history and personal alternative
+formulas retain the dynamic calculation fallback.
 
 ### Baltika Excel imports
 

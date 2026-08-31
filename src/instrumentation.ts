@@ -16,6 +16,7 @@ export async function register() {
     const { startSquadPlanningSnapshotScheduler } = await import("./server/squad-planning-snapshot-scheduler");
     const { startFoontasyForecastScheduler } = await import("./server/foontasy-forecast-scheduler");
     const { startFantasyModelForecastScheduler } = await import("./server/fantasy-model-forecast-scheduler");
+    const { startFantasyPlayerPoolSnapshotScheduler } = await import("./server/fantasy-player-pool-snapshot-scheduler");
 
     startMacheteDailyFotMobSyncScheduler();
     startLeagueSeasonRetentionScheduler();
@@ -26,6 +27,7 @@ export async function register() {
     startSquadPlanningSnapshotScheduler();
     startFoontasyForecastScheduler();
     startFantasyModelForecastScheduler();
+    startFantasyPlayerPoolSnapshotScheduler();
     startIngestionWorkerLoop();
   }
 

@@ -8,7 +8,8 @@ import { readJsonObject } from "@/lib/request-json";
 import { FPL_PROVIDER } from "@/lib/providers/fpl";
 import {
   loadCachedFantasySquadPlayerPool,
-  loadFantasySquadPlayerPoolSeed,
+  loadFantasySquadPlayerPoolBaseBatch,
+  loadFantasySquadPlayerPoolLoadPlan,
   loadFantasySquadPlannerData,
   fantasyPlayerPoolCacheMetrics,
   mergeFantasyPlannerPlayerPools,
@@ -33,12 +34,16 @@ import {
   type FantasyProviderPlaceholder,
   type FantasyPlannerPlayer
 } from "@/machete/squad_logic";
-import { parseFantasyHistorySettings } from "@/machete/squad-history";
+import { fantasyHistorySettingsKey, parseFantasyHistorySettings } from "@/machete/squad-history";
 import { toFantasyPlayerPoolListItem } from "@/machete/squad-player-dto";
+import {
+  loadFantasyPlayerPoolSnapshotPlayers,
+  userCanUseCurrentXiFantasyPlayerPoolSnapshot
+} from "@/machete/fantasy-player-pool-snapshots";
 import {
   orderProgressiveFantasyPlayerPool,
   parseProgressiveFantasyPlayerPoolCursor,
-  progressiveFantasyPlayerPoolBatchSize,
+  parseProgressiveFantasyPlayerPoolStage,
   progressiveFantasyPlayerPoolPage
 } from "@/machete/squad-player-pool-batches";
 
@@ -53,10 +58,11 @@ export const GET = withApiHandler(async (request: Request) => {
   const leagueId = parseBigInt(params.get("leagueId"));
   const season = params.get("season")?.trim() ?? "";
   const squadId = optionalId(params.get("squadId"));
+  const requestedSnapshotId = optionalId(params.get("snapshotId"));
   const provider = normalizeProvider(params.get("provider"));
   const progressive = params.get("progressive") === "1";
-  const progressiveSeed = progressive && provider === "SPORTS_RU" && !params.has("cursor");
   const progressiveCursor = progressive ? parseProgressiveFantasyPlayerPoolCursor(params.get("cursor")) : 0;
+  const progressiveStage = progressive ? parseProgressiveFantasyPlayerPoolStage(params.get("stage")) : "DETAILS";
   const historySettings = parseFantasyHistorySettings({
     historyScope: params.get("historyScope"),
     historyWindow: params.get("historyWindow"),
@@ -65,8 +71,8 @@ export const GET = withApiHandler(async (request: Request) => {
   if (!leagueId || !season) {
     return jsonError("BAD_REQUEST", "leagueId and season are required.", 400);
   }
-  if (progressiveCursor === null) {
-    return jsonError("BAD_REQUEST", "cursor must be a non-negative safe integer.", 400);
+  if (progressiveCursor === null || progressiveStage === null) {
+    return jsonError("BAD_REQUEST", "cursor and stage must identify a valid progressive player-pool page.", 400);
   }
 
   const leagueSeason = await prisma.leagueSeason.findUnique({
@@ -139,33 +145,101 @@ export const GET = withApiHandler(async (request: Request) => {
   const placeholderPlayers = fantasyProviderPlaceholdersFromFilters(ownedSquadFilters, provider).map((placeholder) =>
     fantasyProviderPlaceholderPlannerPlayer(placeholder, displayName)
   );
-  const priorityPlayerIds = [...ownedSquadPlayerIds, ...placeholderPlayers.map((player) => player.playerId)];
+  const currentSquadPlayerIds = [...ownedSquadPlayerIds, ...placeholderPlayers.map((player) => player.playerId)];
   let batchHeader = progressive ? "progressive-v1" : "full-v1";
   let responsePayload;
-  if (progressiveSeed) {
-    const seedPlayers = await loadFantasySquadPlayerPoolSeed(
+  if (progressive && provider === "SPORTS_RU") {
+    const loadPlan = await loadFantasySquadPlayerPoolLoadPlan(
       prisma,
       plannerLeague,
       contest.id,
-      priorityPlayerIds
+      currentSquadPlayerIds,
+      placeholderPlayers.map((player) => player.playerId)
     );
-    const orderedSeed = orderProgressiveFantasyPlayerPool(
-      mergeFantasyPlannerPlayerPools(seedPlayers, placeholderPlayers),
-      priorityPlayerIds
-    ).slice(0, progressiveFantasyPlayerPoolBatchSize);
-    responsePayload = {
-      players: orderedSeed,
-      pageInfo: {
-        nextCursor: "0",
-        loadedPlayers: orderedSeed.length,
-        totalPlayers: null,
-        complete: false,
-        batchSize: progressiveFantasyPlayerPoolBatchSize,
-        strategy: "SQUAD_THEN_POPULARITY" as const,
-        phase: "SEED" as const
+    if (progressiveStage === "BASE") {
+      const idPage = progressiveFantasyPlayerPoolPage(
+        loadPlan.playerIds,
+        progressiveCursor,
+        "BASE",
+        loadPlan.priorityPlayers
+      );
+      const basePlayers = await loadFantasySquadPlayerPoolBaseBatch(
+        prisma,
+        plannerLeague,
+        contest.id,
+        idPage.players
+      );
+      const requestedIds = new Set(idPage.players);
+      responsePayload = {
+        players: orderProgressiveFantasyPlayerPool(
+          mergeFantasyPlannerPlayerPools(
+            basePlayers,
+            placeholderPlayers.filter((player) => requestedIds.has(player.playerId))
+          ),
+          idPage.players
+        ),
+        pageInfo: idPage.pageInfo
+      };
+      batchHeader = "progressive-base-v2";
+    } else {
+      const idPage = progressiveFantasyPlayerPoolPage(
+        loadPlan.playerIds,
+        progressiveCursor,
+        "DETAILS",
+        loadPlan.priorityPlayers
+      );
+      const canUseSnapshot = await userCanUseCurrentXiFantasyPlayerPoolSnapshot(
+        prisma,
+        auth.user.id,
+        fantasyHistorySettingsKey(historySettings)
+      );
+      const snapshotPage = canUseSnapshot
+        ? await loadFantasyPlayerPoolSnapshotPlayers(prisma, {
+            contestId: contest.id,
+            playerIds: idPage.players,
+            snapshotId: requestedSnapshotId
+          })
+        : null;
+      if (requestedSnapshotId && canUseSnapshot && !snapshotPage?.snapshot) {
+        return jsonError("SNAPSHOT_EXPIRED", "The requested player-pool snapshot is no longer available.", 409);
       }
-    };
-    batchHeader = "progressive-seed-v1";
+      if (snapshotPage?.snapshot) {
+        const requestedIds = new Set(idPage.players);
+        responsePayload = {
+          players: orderProgressiveFantasyPlayerPool(
+            mergeFantasyPlannerPlayerPools(
+              snapshotPage.players,
+              placeholderPlayers.filter((player) => requestedIds.has(player.playerId))
+            ),
+            idPage.players
+          ),
+          pageInfo: { ...idPage.pageInfo, snapshotId: snapshotPage.snapshot.id }
+        };
+        batchHeader = "progressive-snapshot-details-v3";
+      } else {
+        const players = await loadCachedFantasySquadPlayerPool(
+          prisma,
+          auth.user.id,
+          plannerLeague,
+          historySettings,
+          provider,
+          contest.id
+        );
+        const mergedPlayers = mergeFantasyPlannerPlayerPools(players, placeholderPlayers);
+        const plannedPlayerIds = new Set(loadPlan.playerIds);
+        const orderedPlayers = orderProgressiveFantasyPlayerPool(
+          mergedPlayers.filter((player) => plannedPlayerIds.has(player.playerId)),
+          loadPlan.playerIds
+        );
+        responsePayload = progressiveFantasyPlayerPoolPage(
+          orderedPlayers,
+          progressiveCursor,
+          "DETAILS",
+          Math.min(loadPlan.priorityPlayers, orderedPlayers.length)
+        );
+        batchHeader = "progressive-calculated-details-v3";
+      }
+    }
   } else {
     const players = await loadCachedFantasySquadPlayerPool(
       prisma,
@@ -178,8 +252,10 @@ export const GET = withApiHandler(async (request: Request) => {
     const mergedPlayers = mergeFantasyPlannerPlayerPools(players, placeholderPlayers);
     responsePayload = progressive
       ? progressiveFantasyPlayerPoolPage(
-          orderProgressiveFantasyPlayerPool(mergedPlayers, priorityPlayerIds),
-          progressiveCursor
+          orderProgressiveFantasyPlayerPool(mergedPlayers, currentSquadPlayerIds),
+          progressiveCursor,
+          "DETAILS",
+          new Set(currentSquadPlayerIds).size
         )
       : { players: mergedPlayers, pageInfo: null };
   }
@@ -197,6 +273,7 @@ export const GET = withApiHandler(async (request: Request) => {
         "X-Machete-Player-DTO": "squad-list-v1",
         "X-Machete-Player-Batch": batchHeader,
         "X-Machete-Player-Count": String(listPlayers.length),
+        "X-Machete-Order-Cache": formatPlayerPoolCacheMetrics(cacheMetrics.loadOrder),
         "X-Machete-Feature-Cache": formatPlayerPoolCacheMetrics(cacheMetrics.featurePool),
         "X-Machete-Overlay-Cache": formatPlayerPoolCacheMetrics(cacheMetrics.scoringOverlay)
       }

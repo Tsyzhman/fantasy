@@ -9,7 +9,10 @@ import { formatDateTime } from "@/lib/format";
 import { isFantasySquadLeague } from "@/lib/leagues/display";
 import { FPL_LEAGUE_ID, FPL_PROVIDER, FPL_SEASON } from "@/lib/providers/fpl";
 import { loadSharedLeagueOptions, type SharedLeagueSeasonOption } from "@/machete/shared_read_model";
-import { loadFantasySquadPlannerData } from "@/machete/squad_planner";
+import {
+  loadFantasySquadPlannerData,
+  loadSportsRuFantasySquadPlannerShellData
+} from "@/machete/squad_planner";
 import { loadSportsRuSquadSnapshotStatus } from "@/machete/sports_ru_squad_snapshots";
 import { parseSquadTableColumns, parseSquadTableColumnWidths } from "@/machete/squad-table-columns";
 import { canSwitchFranchise, resolveVisibleFranchise } from "@/machete/franchise-access";
@@ -59,21 +62,32 @@ export default async function FantasySquadPage({ searchParams, mode }: FantasySq
         ? String(leagues[0].leagueId)
         : "";
   const selectedLeague = leagues.find((league) => String(league.leagueId) === selectedLeagueId) ?? null;
-  const readinessByScope = await loadPlannerReadinessByScope(prisma, selectedLeague ? [selectedLeague] : []);
-  const selectedReadiness = selectedLeague ? readinessByScope.get(plannerReadinessKey(selectedLeague)) ?? null : null;
-  const [data, freshness, sportsRuSquadStatus] = selectedLeague && selectedReadiness
-    ? await Promise.all([
-    loadInitialFantasySquadPlannerData(user.id, selectedLeague, selectedReadiness, historySettings, params.squadId, provider),
-        loadSquadDataFreshness(selectedLeague),
-        provider === "FPL"
-          ? Promise.resolve(null)
-          : loadSportsRuSquadSnapshotStatus(prisma, {
-              userId: user.id,
-              leagueId: selectedLeague.leagueId,
-              season: selectedLeague.season
-            })
-      ])
-    : [null, null, null];
+  const readinessByScope = provider === "FPL" && selectedLeague
+    ? await loadPlannerReadinessByScope(prisma, [selectedLeague])
+    : new Map<string, PlannerReadiness>();
+  const selectedReadiness = selectedLeague && provider === "FPL"
+    ? readinessByScope.get(plannerReadinessKey(selectedLeague)) ?? null
+    : undefined;
+  const data = selectedLeague && (provider !== "FPL" || selectedReadiness)
+    ? await loadInitialFantasySquadPlannerData(
+        user.id,
+        selectedLeague,
+        selectedReadiness ?? undefined,
+        historySettings,
+        params.squadId,
+        provider
+      )
+    : null;
+  const freshness = selectedLeague && data
+    ? data.dataFreshness ?? await loadSquadDataFreshness(selectedLeague)
+    : null;
+  const sportsRuSquadStatus = selectedLeague && provider !== "FPL"
+    ? await loadSportsRuSquadSnapshotStatus(prisma, {
+        userId: user.id,
+        leagueId: selectedLeague.leagueId,
+        season: selectedLeague.season
+      })
+    : null;
   const transferSuggestionsBlockedByReadiness = data ? plannerReadinessBlocksTransferSuggestions(data.readiness) : true;
 
   return (
@@ -182,7 +196,8 @@ export default async function FantasySquadPage({ searchParams, mode }: FantasySq
               historySettings,
               data.squad.id,
               mode === "FPL" ? "/api/machete/fpl/squad" : "/api/machete/squads",
-              provider
+              provider,
+              data.playerPoolSnapshotId
             )}
             initialSquad={data.squad}
             savedSquads={data.squads}
@@ -210,13 +225,21 @@ export default async function FantasySquadPage({ searchParams, mode }: FantasySq
   );
 }
 
-function squadPlayerPoolHref(league: SharedLeagueSeasonOption, historySettings: FantasyHistorySettings, squadId: string | null | undefined, apiPath: string, provider: string) {
+function squadPlayerPoolHref(
+  league: SharedLeagueSeasonOption,
+  historySettings: FantasyHistorySettings,
+  squadId: string | null | undefined,
+  apiPath: string,
+  provider: string,
+  snapshotId?: string | null
+) {
   const query = new URLSearchParams({
     leagueId: String(league.leagueId),
     season: league.season,
     progressive: "1"
   });
   if (provider === FPL_PROVIDER) query.set("provider", FPL_PROVIDER);
+  if (snapshotId) query.set("snapshotId", snapshotId);
   applyFantasyHistorySearchParams(query, historySettings);
   if (squadId) query.set("squadId", squadId);
   return `${apiPath}?${query.toString()}`;
@@ -263,7 +286,7 @@ function initialSquadPlayers<T extends { playerId: string }>(players: T[], selec
 async function loadInitialFantasySquadPlannerData(
   userId: string,
   league: SharedLeagueSeasonOption,
-  readiness: PlannerReadiness,
+  readiness: PlannerReadiness | undefined,
   historySettings: FantasyHistorySettings,
   squadId?: string | null,
   provider = "SPORTS_RU"
@@ -272,6 +295,13 @@ async function loadInitialFantasySquadPlannerData(
     where: { provider_leagueId_season: { provider, leagueId: league.leagueId, season: league.season } },
     select: { id: true }
   });
+  if (provider === "SPORTS_RU") {
+    return loadSportsRuFantasySquadPlannerShellData(prisma, userId, league, squadId, {
+      ...(readiness ? { readiness } : {}),
+      historySettings,
+      contestId: contest?.id ?? null
+    });
+  }
   const requestedSquad = squadId && contest
     ? await prisma.userFantasySquad.findFirst({
         where: {
@@ -303,12 +333,14 @@ async function loadInitialFantasySquadPlannerData(
       })
     : null);
 
-  return loadFantasySquadPlannerData(prisma, userId, league, squadId, {
-    playerIds: selectedSquad?.players.map((player) => player.playerId) ?? [],
+  const selectedPlayerIds = selectedSquad?.players.map((player) => player.playerId) ?? [];
+  const data = await loadFantasySquadPlannerData(prisma, userId, league, squadId, {
+    playerIds: selectedPlayerIds,
     readiness,
     historySettings,
     deferFormulaProjections: true,
     provider,
     contestId: contest?.id ?? null
   });
+  return data;
 }

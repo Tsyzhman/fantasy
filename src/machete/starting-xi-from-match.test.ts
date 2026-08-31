@@ -67,18 +67,28 @@ test("a partial FotMob lineup replaces the flags with every available starter", 
     }
   } as unknown as PrismaClient;
 
-  const result = await applyStartingXiFromCompletedMatch(prisma, { matchId: 100n });
+  const changedTeamIds: bigint[] = [];
+  const result = await applyStartingXiFromCompletedMatch(prisma, {
+    matchId: 100n,
+    onTeamsChanged: async (change, tx) => {
+      assert.equal(typeof tx.$executeRaw, "function");
+      changedTeamIds.push(...change.teamIds);
+    }
+  });
   assert.equal(transactionCalls, 1);
   assert.deepEqual(upsertedPlayerIds, Array.from({ length: 10 }, (_, index) => BigInt(index + 1)));
   assert.deepEqual(result.teams.map((team) => [team.teamId, team.reason, team.startersFound, team.startersApplied]), [
     [10n, "APPLIED", 10, 10],
     [20n, "NO_STARTERS", 0, 0]
   ]);
+  assert.deepEqual(changedTeamIds, [10n]);
 });
 
 test("incremental ingestion applies match starters instead of clearing the whole league", () => {
   const source = readFileSync(new URL("../core_data/ingestion-jobs.ts", import.meta.url), "utf8");
-  assert.match(source, /applyStartingXiFromCompletedMatch\(prisma, \{ matchId: result\.matchId \}\)/);
+  assert.match(source, /applyStartingXiFromCompletedMatch\(prisma, \{/);
+  assert.match(source, /matchId: result\.matchId/);
+  assert.match(source, /onTeamsChanged: \(change, tx\) => enqueueCurrentXiTeamsSnapshotRefresh\(tx, change\)/);
   assert.doesNotMatch(source, /resetStartingXiForLatestCompletedRound|resetting_starting_xi/);
 });
 

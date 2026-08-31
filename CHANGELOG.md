@@ -5,6 +5,27 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.50 - 2026-08-31
+
+### Added
+
+- Precompute one complete CURRENT_XI player-pool snapshot per current Sports.ru
+  league in the worker at every exact Moscow hour from 10:00 through 23:00.
+  Publish atomically and retain three READY revisions; there is no NO_XI copy.
+- Persist and deduplicate manual/imported starting-XI changes in the same
+  transaction as their flags. A separate worker groups affected teams by league,
+  recalculates only changed team vectors, and safely retries concurrent edits.
+- Render the saved squad and its forecasts directly from PostgreSQL; load the
+  remaining complete forecasts in approximately 10% batches, prioritizing all
+  saved-squad players and then Sports.ru popularity. Forecast calculation is
+  no longer part of ordinary default-history page requests.
+- Silently poll snapshot revisions while the squad tab is visible and merge a
+  fully downloaded revision without replacing unsaved selections, captain,
+  filters, search, or scroll. Retry an expired initial revision automatically.
+- Mark batch rendering as a non-blocking transition so clicks and typing take
+  priority over background player-list updates.
+- Add `snapshots:player-pool` for controlled initial publication and diagnostics.
+
 ## 0.3.49 - 2026-08-29
 
 ### Added

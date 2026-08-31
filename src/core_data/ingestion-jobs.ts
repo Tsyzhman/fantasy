@@ -1,6 +1,7 @@
 import { Prisma, type IngestionJob, type PrismaClient } from "@prisma/client";
 
 import { FantasyPointsRepository } from "@/machete/fantasy_repositories";
+import { enqueueCurrentXiTeamsSnapshotRefresh } from "@/machete/fantasy-player-pool-refresh-queue";
 import { calculate_fantasy_points_for_match } from "@/machete/fantasy_points_engine";
 import { applyStartingXiFromCompletedMatch } from "@/machete/starting-xi-from-match";
 
@@ -437,7 +438,10 @@ async function runIngestionJob(prisma: PrismaClient, jobId: string, jobType: Ing
             await calculate_fantasy_points_for_match(prisma, result.matchId, ruleset.id);
           }
           if (jobType === "incremental_update") {
-            const startingXi = await applyStartingXiFromCompletedMatch(prisma, { matchId: result.matchId });
+            const startingXi = await applyStartingXiFromCompletedMatch(prisma, {
+              matchId: result.matchId,
+              onTeamsChanged: (change, tx) => enqueueCurrentXiTeamsSnapshotRefresh(tx, change)
+            });
             const changedTeams = startingXi.teams.filter((team) => team.reason === "APPLIED");
             const teamsWithoutStarters = startingXi.teams.filter((team) => team.reason === "NO_STARTERS");
             const oversizedTeams = startingXi.teams.filter((team) => team.reason === "TOO_MANY_STARTERS");

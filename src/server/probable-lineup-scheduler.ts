@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/db";
 import { createLogger } from "@/lib/logger";
+import { enqueueCurrentXiTeamsSnapshotRefresh } from "@/machete/fantasy-player-pool-refresh-queue";
 import {
   applyProbableLineupTeamPlan,
   buildProbableLineupSyncPlan,
@@ -103,7 +104,9 @@ export async function runProbableLineupSyncNow(
           }
           if (team.status !== "READY") continue;
           try {
-            const result = await applyProbableLineupTeamPlan(prisma, team);
+            const result = await applyProbableLineupTeamPlan(prisma, team, undefined, (change, tx) =>
+              enqueueCurrentXiTeamsSnapshotRefresh(tx, change)
+            );
             if (result.status === "APPLIED") appliedTeams += 1;
             else raceUnchangedTeams += 1;
           } catch (error) {

@@ -237,24 +237,36 @@ The response contains `players` in the squad-planner row shape. Optional
 the shared pool is returned. User squads and ownership are never stored in the
 pool cache.
 
-With `progressive=1`, the first request (without `cursor`) returns a lightweight
-64-player `SEED`: active-squad players first, then mapped players ordered by the
-Sports.ru ownership percentage stored with their current price. Its
-`pageInfo.totalPlayers` is `null` because the expensive canonical pool has not
-been built yet. The browser follows `nextCursor=0`; canonical `POOL` pages then
-contain 64 players each and report the exact loaded and total counts. The first
-canonical page replaces the seed as the enrichment source, so the final list
-contains every canonical player exactly once. Calls without `progressive=1`
-retain the legacy all-at-once response for old deployed JavaScript chunks.
+With `progressive=1`, batch size is `ceil(totalPlayers / 10)`, not a fixed 64.
+Order is the currently opened saved squad, players from other saved squads in
+the current contest, then descending Sports.ru ownership percentage. The
+server-rendered page embeds saved players and their persisted forecasts first.
 
-The league/season player features and personal scoring overlays are coalesced
-and cached separately inside one web process for five minutes. Feature entries
-are bounded to 20 keys/96 MiB and overlay entries to 60 keys/32 MiB; rejected
-loads are removed. Their revisioned keys include the contest, roster, forecast,
-history and scoring inputs. HTTP remains `Cache-Control: private, no-store`, so
-browsers and intermediaries must not cache responses. The server-rendered page
-still embeds only saved player IDs while the browser progressively fetches the
-pool.
+When a CURRENT_XI snapshot is available for default history and standard scoring,
+the browser starts at `stage=DETAILS` and pins `snapshotId` for the complete
+download. Every batch reads only its requested player rows from PostgreSQL; it
+does not calculate forecasts or populate the feature/overlay process caches.
+`pageInfo` supplies `nextCursor`, `nextStage`, `visiblePlayers`, `enrichedPlayers`,
+`totalPlayers`, `batchSize`, `priorityPlayers`, `complete`, and the snapshot ID.
+`SNAPSHOT_EXPIRED` (409) means the pinned revision was rotated out; the browser
+can restart enrichment from the latest revision without clearing its lineup.
+
+Before initial publication, or for custom history/personal alternative formulas,
+the fallback runs ten-percent lightweight `BASE` batches followed by `DETAILS`.
+The dynamic feature/overlay caches remain bounded to 20 keys/96 MiB and 60
+keys/32 MiB respectively, with five-minute expiry. The small loading-order cache
+is bounded to 40 keys/4 MiB, expires after 15 seconds, and includes the saved-squad
+revision. No user squad or ownership authorization is taken from the shared
+forecast snapshot. All responses remain `Cache-Control: private, no-store`.
+Calls without `progressive=1` retain the all-at-once compatibility response.
+
+### `GET /api/machete/squads/snapshot`
+
+Authenticated, private/no-store revision descriptor for `leagueId` and `season`.
+Returns `snapshot: { id, revision, calculatedAt, playersCount } | null` without
+loading player payloads. The visible squad tab polls every 15 seconds, downloads
+new DETAILS batches, and merges a complete revision once. Draft selections,
+captain, search, filters, and scroll are not replaced. Hidden tabs do not poll.
 
 ### `POST /api/machete/squads`
 

@@ -11,6 +11,7 @@ import {
   type ProbableLineupSourceKey,
   type ProbableLineupTeamPlan
 } from "@/machete/probable-lineup-sync";
+import { refreshCurrentXiTeamsSnapshot } from "@/machete/fantasy-player-pool-snapshots";
 
 type CliOptions = {
   apply: boolean;
@@ -83,6 +84,7 @@ async function main(cli: CliOptions) {
   let sourceFailures = 0;
   let teamFailures = 0;
   let skippedTeams = 0;
+  const changedTeamsByScope = new Map<string, { leagueId: bigint; season: string; teamIds: Set<string> }>();
 
   try {
     for (const definition of PROBABLE_LINEUP_SOURCE_DEFINITIONS) {
@@ -106,7 +108,16 @@ async function main(cli: CliOptions) {
             continue;
           }
           try {
-            const result = await applyProbableLineupTeamPlan(prisma, team);
+            const result = await applyProbableLineupTeamPlan(prisma, team, undefined, (change) => {
+              const key = `${change.leagueId}:${change.season}`;
+              const scope = changedTeamsByScope.get(key) ?? {
+                leagueId: change.leagueId,
+                season: change.season,
+                teamIds: new Set<string>()
+              };
+              for (const teamId of change.teamIds) scope.teamIds.add(String(teamId));
+              changedTeamsByScope.set(key, scope);
+            });
             teamReports.push(teamReport(team, result, null));
           } catch (error) {
             teamFailures += 1;
@@ -155,6 +166,13 @@ async function main(cli: CliOptions) {
           error: errorMessage(error)
         });
       }
+    }
+    for (const scope of changedTeamsByScope.values()) {
+      await refreshCurrentXiTeamsSnapshot(prisma, {
+        leagueId: scope.leagueId,
+        season: scope.season,
+        teamIds: [...scope.teamIds].map(BigInt)
+      });
     }
   } finally {
     await prisma.$disconnect();

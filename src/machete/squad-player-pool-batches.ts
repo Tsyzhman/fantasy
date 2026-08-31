@@ -1,20 +1,25 @@
-export const progressiveFantasyPlayerPoolBatchSize = 64;
+export const progressiveFantasyPlayerPoolBatchCount = 10;
 
 type ProgressivePlayerPoolPlayer = {
   playerId: string;
   ownershipPercent?: number | null;
 };
 
+export type ProgressiveFantasyPlayerPoolStage = "BASE" | "DETAILS";
+
 export type ProgressiveFantasyPlayerPoolPage<T> = {
   players: T[];
   pageInfo: {
     nextCursor: string | null;
-    loadedPlayers: number;
+    nextStage: ProgressiveFantasyPlayerPoolStage | null;
+    visiblePlayers: number;
+    enrichedPlayers: number;
     totalPlayers: number;
     complete: boolean;
     batchSize: number;
-    strategy: "SQUAD_THEN_POPULARITY";
-    phase: "POOL";
+    priorityPlayers: number;
+    strategy: "ACTIVE_SQUADS_THEN_POPULARITY";
+    stage: ProgressiveFantasyPlayerPoolStage;
   };
 };
 
@@ -44,6 +49,13 @@ export function orderProgressiveFantasyPlayerPool<T extends ProgressivePlayerPoo
     .map(({ player }) => player);
 }
 
+export function progressiveFantasyPlayerPoolBatchSize(totalPlayers: number) {
+  if (!Number.isSafeInteger(totalPlayers) || totalPlayers < 0) {
+    throw new Error("Invalid progressive player-pool size.");
+  }
+  return Math.max(1, Math.ceil(totalPlayers / progressiveFantasyPlayerPoolBatchCount));
+}
+
 export function parseProgressiveFantasyPlayerPoolCursor(value: string | null) {
   if (value === null || value === "") return 0;
   if (!/^\d+$/.test(value)) return null;
@@ -51,26 +63,45 @@ export function parseProgressiveFantasyPlayerPoolCursor(value: string | null) {
   return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : null;
 }
 
+export function parseProgressiveFantasyPlayerPoolStage(value: string | null): ProgressiveFantasyPlayerPoolStage | null {
+  if (value === null || value === "" || value === "BASE") return "BASE";
+  return value === "DETAILS" ? "DETAILS" : null;
+}
+
 export function progressiveFantasyPlayerPoolPage<T>(
   players: readonly T[],
   cursor: number,
-  batchSize = progressiveFantasyPlayerPoolBatchSize
+  stage: ProgressiveFantasyPlayerPoolStage,
+  priorityPlayers: number,
+  batchSize = progressiveFantasyPlayerPoolBatchSize(players.length)
 ): ProgressiveFantasyPlayerPoolPage<T> {
   if (!Number.isSafeInteger(cursor) || cursor < 0) throw new Error("Invalid progressive player-pool cursor.");
   if (!Number.isSafeInteger(batchSize) || batchSize < 1) throw new Error("Invalid progressive player-pool batch size.");
+  if (!Number.isSafeInteger(priorityPlayers) || priorityPlayers < 0 || priorityPlayers > players.length) {
+    throw new Error("Invalid progressive priority-player count.");
+  }
 
   const start = Math.min(cursor, players.length);
   const end = Math.min(start + batchSize, players.length);
+  const stageComplete = end >= players.length;
+  const complete = stage === "DETAILS" && stageComplete;
   return {
     players: players.slice(start, end),
     pageInfo: {
-      nextCursor: end < players.length ? String(end) : null,
-      loadedPlayers: end,
+      nextCursor: stageComplete
+        ? stage === "BASE" ? "0" : null
+        : String(end),
+      nextStage: stageComplete
+        ? stage === "BASE" ? "DETAILS" : null
+        : stage,
+      visiblePlayers: stage === "BASE" ? end : players.length,
+      enrichedPlayers: stage === "DETAILS" ? end : 0,
       totalPlayers: players.length,
-      complete: end >= players.length,
+      complete,
       batchSize,
-      strategy: "SQUAD_THEN_POPULARITY",
-      phase: "POOL"
+      priorityPlayers,
+      strategy: "ACTIVE_SQUADS_THEN_POPULARITY",
+      stage
     }
   };
 }

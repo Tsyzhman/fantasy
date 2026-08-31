@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 
 import { applyStartingXiFromCompletedMatches } from "@/machete/starting-xi-from-match";
+import { refreshCurrentXiTeamsSnapshot } from "@/machete/fantasy-player-pool-snapshots";
 
 const prisma = new PrismaClient();
 
@@ -22,7 +23,20 @@ async function main() {
   if (scopes.length === 0) throw new Error("No current league-season scopes matched the command arguments.");
 
   for (const scope of scopes) {
-    const result = await applyStartingXiFromCompletedMatches(prisma, scope);
+    const changedTeamIds = new Set<string>();
+    const result = await applyStartingXiFromCompletedMatches(prisma, {
+      ...scope,
+      onTeamsChanged: (change) => {
+        for (const teamId of change.teamIds) changedTeamIds.add(String(teamId));
+      }
+    });
+    if (changedTeamIds.size > 0) {
+      await refreshCurrentXiTeamsSnapshot(prisma, {
+        leagueId: scope.leagueId,
+        season: scope.season,
+        teamIds: [...changedTeamIds].map(BigInt)
+      });
+    }
     console.log(JSON.stringify({
       leagueId: String(scope.leagueId),
       league: scope.league.name,

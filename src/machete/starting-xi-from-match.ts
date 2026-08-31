@@ -1,4 +1,5 @@
 import { Prisma, type PrismaClient } from "@prisma/client";
+import type { StartingXiTeamsChangedListener } from "./fantasy-player-pool-refresh-queue";
 
 const MAX_STARTERS = 11;
 
@@ -33,7 +34,11 @@ type StarterRow = {
 
 export async function applyStartingXiFromCompletedMatch(
   prisma: PrismaClient,
-  input: { matchId: bigint; appliedAt?: Date }
+  input: {
+    matchId: bigint;
+    appliedAt?: Date;
+    onTeamsChanged?: StartingXiTeamsChangedListener;
+  }
 ): Promise<StartingXiMatchApplyResult> {
   const match = await prisma.coreMatch.findUnique({
     where: { id: input.matchId },
@@ -84,7 +89,8 @@ export async function applyStartingXiFromCompletedMatch(
       matchId: match.id,
       matchDate: match.matchDate,
       starters,
-      appliedAt: input.appliedAt ?? new Date()
+      appliedAt: input.appliedAt ?? new Date(),
+      onTeamsChanged: input.onTeamsChanged
     }));
   }
 
@@ -93,7 +99,11 @@ export async function applyStartingXiFromCompletedMatch(
 
 export async function applyStartingXiFromCompletedMatches(
   prisma: PrismaClient,
-  input: { leagueId: bigint; season: string }
+  input: {
+    leagueId: bigint;
+    season: string;
+    onTeamsChanged?: StartingXiTeamsChangedListener;
+  }
 ) {
   const matches = await prisma.coreMatch.findMany({
     where: {
@@ -109,7 +119,10 @@ export async function applyStartingXiFromCompletedMatches(
   });
   const totals = { matches: matches.length, teamsApplied: 0, noStarterTeams: 0, oversizedTeams: 0, skippedTeams: 0 };
   for (const match of matches) {
-    const result = await applyStartingXiFromCompletedMatch(prisma, { matchId: match.id });
+    const result = await applyStartingXiFromCompletedMatch(prisma, {
+      matchId: match.id,
+      onTeamsChanged: input.onTeamsChanged
+    });
     for (const team of result.teams) {
       if (team.reason === "APPLIED") totals.teamsApplied += 1;
       else if (team.reason === "NO_STARTERS") totals.noStarterTeams += 1;
@@ -130,9 +143,10 @@ async function applyTeamStartingXi(
     matchDate: Date;
     starters: StarterRow[];
     appliedAt: Date;
+    onTeamsChanged?: StartingXiTeamsChangedListener;
   }
 ): Promise<StartingXiTeamApplyResult> {
-  return prisma.$transaction(async (tx) => {
+  const outcome = await prisma.$transaction(async (tx) => {
     const lockKey = `starting-xi:${input.leagueId}:${input.season}:${input.teamId}`;
     await tx.$executeRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`);
     const seasonTeam = await tx.leagueSeasonTeam.findUnique({
@@ -149,7 +163,7 @@ async function applyTeamStartingXi(
         startingXiSourceMatchDate: true
       }
     });
-    if (!seasonTeam?.active) return emptyTeamResult(input, "SEASON_TEAM_NOT_FOUND");
+    if (!seasonTeam?.active) return { result: emptyTeamResult(input, "SEASON_TEAM_NOT_FOUND"), changedTeamIds: [] as bigint[] };
 
     const decision = startingXiMatchOrderDecision({
       previousMatchId: seasonTeam.startingXiSourceMatchId,
@@ -158,7 +172,10 @@ async function applyTeamStartingXi(
       nextMatchDate: input.matchDate
     });
     if (decision !== "APPLY") {
-      return emptyTeamResult(input, decision === "ALREADY_APPLIED" ? "ALREADY_APPLIED" : "OLDER_MATCH");
+      return {
+        result: emptyTeamResult(input, decision === "ALREADY_APPLIED" ? "ALREADY_APPLIED" : "OLDER_MATCH"),
+        changedTeamIds: [] as bigint[]
+      };
     }
 
     const starterIds = input.starters.map((starter) => starter.playerId);
@@ -248,14 +265,20 @@ async function applyTeamStartingXi(
       });
     }
 
+    const changedTeamIds = [input.teamId, ...otherFlaggedTeams.map((team) => team.teamId)];
+    await input.onTeamsChanged?.({ leagueId: input.leagueId, season: input.season, teamIds: changedTeamIds }, tx);
     return {
-      teamId: input.teamId,
-      startersFound: input.starters.length,
-      startersApplied: input.starters.length,
-      flagsCleared: clearedCurrentTeam.count + clearedOtherTeams.count,
-      reason: "APPLIED"
+      result: {
+        teamId: input.teamId,
+        startersFound: input.starters.length,
+        startersApplied: input.starters.length,
+        flagsCleared: clearedCurrentTeam.count + clearedOtherTeams.count,
+        reason: "APPLIED" as const
+      },
+      changedTeamIds
     };
   });
+  return outcome.result;
 }
 
 export function startingXiMatchOrderDecision(input: {

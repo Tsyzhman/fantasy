@@ -171,6 +171,8 @@ export type ProbableLineupApplyResult = {
   otherTeamFlagsCleared: number;
 };
 
+type StartingXiTeamsChangedListener = import("./fantasy-player-pool-refresh-queue").StartingXiTeamsChangedListener;
+
 type ActiveTeam = {
   teamId: bigint;
   team: { name: string };
@@ -575,7 +577,8 @@ export function probableLineupPlayerScore(
 export async function applyProbableLineupTeamPlan(
   prisma: PrismaClient,
   plan: ProbableLineupTeamPlan,
-  appliedAt = new Date()
+  appliedAt = new Date(),
+  onTeamsChanged?: StartingXiTeamsChangedListener
 ): Promise<ProbableLineupApplyResult> {
   if (!plan.teamId || !plan.databaseTeamName || (plan.status !== "READY" && plan.status !== "UNCHANGED")) {
     throw new Error(`${plan.sourceLineup.teamName} is not eligible for probable-lineup application (${plan.status}).`);
@@ -586,7 +589,7 @@ export async function applyProbableLineupTeamPlan(
   const teamId = plan.teamId;
   const teamName = plan.databaseTeamName;
 
-  return prisma.$transaction(async (tx) => {
+  const outcome = await prisma.$transaction(async (tx) => {
     const lockKey = `starting-xi:${plan.leagueId}:${plan.season}:${teamId}`;
     await tx.$executeRaw(Prisma.sql`SELECT pg_advisory_xact_lock(hashtext(${lockKey}))`);
     const seasonTeam = await tx.leagueSeasonTeam.findUnique({
@@ -619,12 +622,15 @@ export async function applyProbableLineupTeamPlan(
     const currentStarterIds = rosterRows.filter((row) => row.isStarter).map((row) => row.playerId);
     if (sameBigIntSet(currentStarterIds, plan.targetPlayerIds)) {
       return {
-        teamId,
-        teamName,
-        status: "UNCHANGED",
-        startersSet: 0,
-        startersCleared: 0,
-        otherTeamFlagsCleared: 0
+        result: {
+          teamId,
+          teamName,
+          status: "UNCHANGED" as const,
+          startersSet: 0,
+          startersCleared: 0,
+          otherTeamFlagsCleared: 0
+        },
+        changedTeamIds: [] as bigint[]
       };
     }
 
@@ -695,15 +701,21 @@ export async function applyProbableLineupTeamPlan(
       });
     }
 
+    const changedTeamIds = [teamId, ...otherFlaggedTeams.map((team) => team.teamId)];
+    await onTeamsChanged?.({ leagueId: plan.leagueId, season: plan.season, teamIds: changedTeamIds }, tx);
     return {
-      teamId,
-      teamName,
-      status: "APPLIED",
-      startersSet: setCurrentTeam.count,
-      startersCleared: clearedCurrentTeam.count,
-      otherTeamFlagsCleared: clearedOtherTeams.count
+      result: {
+        teamId,
+        teamName,
+        status: "APPLIED" as const,
+        startersSet: setCurrentTeam.count,
+        startersCleared: clearedCurrentTeam.count,
+        otherTeamFlagsCleared: clearedOtherTeams.count
+      },
+      changedTeamIds
     };
   });
+  return outcome.result;
 }
 
 function buildTeamPlan(input: {

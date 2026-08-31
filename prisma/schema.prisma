@@ -626,6 +626,7 @@ model CoreLeague {
   sportsRuSquadSnapshots        SportsRuSquadSnapshot[]
   fantasyProviderSquadSnapshots FantasyProviderSquadSnapshot[]
   squadPlanningSnapshots        SquadPlanningSnapshot[]
+  fantasyPlayerPoolSnapshots    FantasyPlayerPoolSnapshot[]
   fantasyGameweekStates         FantasyUserGameweekState[]
   fantasyPriceSnapshots         FantasyPlayerPriceSnapshot[]
   fantasySyncRuns               FantasyProviderSyncRun[]
@@ -814,6 +815,7 @@ model FantasyContest {
   syncRuns               FantasyProviderSyncRun[]
   providerSquadSnapshots FantasyProviderSquadSnapshot[]
   squadPlanningSnapshots SquadPlanningSnapshot[]
+  playerPoolSnapshots    FantasyPlayerPoolSnapshot[]
   gameweekStates         FantasyUserGameweekState[]
   chipDefinitions        FantasyChipDefinition[]
   chipUsages             FantasyChipUsage[]
@@ -1759,6 +1761,66 @@ model SquadPlanningSnapshot {
   @@index([status, dueAt], map: "squad_planning_snapshots_status_due_idx")
   @@index([leagueId, season, capturedAt], map: "squad_planning_snapshots_league_season_captured_idx")
   @@map("squad_planning_snapshots")
+}
+
+model FantasyPlayerPoolSnapshot {
+  id                 String   @id @default(cuid())
+  provider           String   @default("SPORTS_RU")
+  contestId          String   @map("contest_id")
+  leagueId           BigInt   @map("league_id")
+  season             String
+  variant            String
+  revision           String
+  sourceXiRevision   String?  @map("source_xi_revision")
+  historySettingsKey String   @map("history_settings_key")
+  status             String   @default("READY")
+  playersCount       Int      @default(0) @map("players_count")
+  payloadHash        String?  @map("payload_hash")
+  metadata           Json
+  calculatedAt       DateTime @map("calculated_at")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  contest FantasyContest                    @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  league  CoreLeague                        @relation(fields: [leagueId], references: [id], onDelete: Cascade)
+  players FantasyPlayerPoolSnapshotPlayer[]
+
+  @@unique([provider, contestId, variant, revision], map: "fantasy_player_pool_snapshots_scope_revision_key")
+  @@index([provider, contestId, variant, status, calculatedAt], map: "fantasy_player_pool_snapshots_ready_idx")
+  @@index([leagueId, season, calculatedAt], map: "fantasy_player_pool_snapshots_scope_idx")
+  @@map("fantasy_player_pool_snapshots")
+}
+
+model FantasyPlayerPoolSnapshotPlayer {
+  id         String   @id @default(cuid())
+  snapshotId String   @map("snapshot_id")
+  playerId   String   @map("player_id")
+  payload    Json
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  snapshot FantasyPlayerPoolSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+
+  @@unique([snapshotId, playerId], map: "fantasy_player_pool_snapshot_players_snapshot_player_key")
+  @@index([playerId, snapshotId], map: "fantasy_player_pool_snapshot_players_player_snapshot_idx")
+  @@map("fantasy_player_pool_snapshot_players")
+}
+
+model FantasyPlayerPoolRefreshRequest {
+  id           String   @id @default(cuid())
+  leagueId     BigInt   @map("league_id")
+  season       String
+  teamId       BigInt   @map("team_id")
+  requestToken String   @default(uuid()) @map("request_token")
+  requestedAt  DateTime @default(now()) @map("requested_at")
+  availableAt  DateTime @default(now()) @map("available_at")
+  attempts     Int      @default(0)
+  lastError    String?  @map("last_error")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  @@unique([leagueId, season, teamId], map: "fantasy_player_pool_refresh_requests_scope_team_key")
+  @@index([availableAt], map: "fantasy_player_pool_refresh_requests_available_idx")
+  @@map("fantasy_player_pool_refresh_requests")
 }
 
 model FantasyProviderSyncRun {

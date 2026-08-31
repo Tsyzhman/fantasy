@@ -8,6 +8,7 @@ import { readJsonObjectOrNull } from "@/lib/request-json";
 import { loadSportsRuAuthoritativeStarterCandidate } from "@/machete/sports_ru_player_mapping";
 import { sportsRuSeasonAliases } from "@/machete/squad_planner";
 import { startingXiSelectionBlockReason, type StartingXiLimitCode } from "@/machete/starting-xi-limits";
+import { enqueueCurrentXiTeamsSnapshotRefresh } from "@/machete/fantasy-player-pool-refresh-queue";
 
 export const dynamic = "force-dynamic";
 
@@ -93,7 +94,13 @@ export const PATCH = withApiHandler(async (request: Request) => {
       if (limitCode) throw new StarterLimitError(limitCode);
 
       let changed = false;
+      const changedTeamIds = new Set<bigint>();
       if (sportsRuCandidate) {
+        const staleTeams = await tx.teamPlayerSeason.findMany({
+          where: { leagueId, season, playerId, teamId: { not: teamId }, active: true },
+          select: { teamId: true }
+        });
+        for (const team of staleTeams) changedTeamIds.add(team.teamId);
         const staleMemberships = await tx.teamPlayerSeason.updateMany({
           where: {
             leagueId,
@@ -172,6 +179,7 @@ export const PATCH = withApiHandler(async (request: Request) => {
       if (!row) return null;
 
       if (changed) {
+        changedTeamIds.add(teamId);
         await tx.leagueSeasonTeam.update({
           where: {
             leagueId_season_teamId: {
@@ -182,19 +190,26 @@ export const PATCH = withApiHandler(async (request: Request) => {
           },
           data: { startingXiChangedAt: new Date() }
         });
+        if (changedTeamIds.size > 1) {
+          await tx.leagueSeasonTeam.updateMany({
+            where: { leagueId, season, teamId: { in: [...changedTeamIds].filter((id) => id !== teamId) } },
+            data: { startingXiChangedAt: new Date() }
+          });
+        }
+        await enqueueCurrentXiTeamsSnapshotRefresh(tx, { leagueId, season, teamIds: [...changedTeamIds] });
       }
 
-      return row;
+      return { row, changed };
     });
 
     if (!result) return jsonError("PLAYER_NOT_FOUND", "Team player season row not found.", 404);
 
     return NextResponse.json({
       player: {
-        ...result,
-        leagueId: String(result.leagueId),
-        teamId: String(result.teamId),
-        playerId: String(result.playerId)
+        ...result.row,
+        leagueId: String(result.row.leagueId),
+        teamId: String(result.row.teamId),
+        playerId: String(result.row.playerId)
       }
     });
   } catch (error) {

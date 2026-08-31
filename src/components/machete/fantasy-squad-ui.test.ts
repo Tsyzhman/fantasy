@@ -39,7 +39,7 @@ const playerTableExportRouteSource = readFileSync(new URL("../../app/api/machete
 const globalStylesSource = readFileSync(new URL("../../app/globals.css", import.meta.url), "utf8");
 
 test("Sports.ru placeholders stay visible in the squad with their price but never enter the transfer pool", () => {
-  assert.match(squadPlannerSource, /current\.filter\(\(player\) => player\.isProviderPlaceholder\)/);
+  assert.match(squadPlannerSource, /current\.filter\(\(player\) => player\.isProviderPlaceholder/);
   assert.match(squadPlannerSource, /\.filter\(\(player\) => !player\.isProviderPlaceholder\)/);
   assert.match(squadPlannerSource, /<I18nText en="not in database" ru="нет в базе" \/>/);
   assert.match(squadPlannerSource, /placeholderPlayersCount/);
@@ -63,28 +63,55 @@ test("Sports.ru import can complete from response players while the full player 
   assert.match(squadPlannerSource, /payload\.squad\?\.importedPlayers/);
 });
 
-test("player pool loads squad-first popularity batches and becomes usable before completion", () => {
-  const seedWithInitialPlayer = mergeFantasyPlayerPools(
-    [{ playerId: "selected", source: "seed" }, { playerId: "popular", source: "seed" }],
+test("player pool loads saved squads first, then complete snapshot forecasts in ten-percent popularity batches", () => {
+  const baseWithInitialPlayer = mergeFantasyPlayerPools(
+    [{ playerId: "selected", source: "base" }, { playerId: "popular", source: "base" }],
     [{ playerId: "selected", source: "server-rendered" }]
   );
-  assert.deepEqual(seedWithInitialPlayer, [
+  assert.deepEqual(baseWithInitialPlayer, [
     { playerId: "selected", source: "server-rendered" },
-    { playerId: "popular", source: "seed" }
+    { playerId: "popular", source: "base" }
   ]);
   assert.match(fantasySquadPageSource, /progressive: "1"/);
   assert.match(squadPoolRouteSource, /orderProgressiveFantasyPlayerPool/);
-  assert.match(squadPoolRouteSource, /loadFantasySquadPlayerPoolSeed/);
-  assert.match(squadPoolRouteSource, /progressiveSeed = progressive && provider === "SPORTS_RU" && !params\.has\("cursor"\)/);
-  assert.match(squadPoolRouteSource, /phase: "SEED"/);
+  assert.match(squadPoolRouteSource, /loadFantasySquadPlayerPoolLoadPlan/);
+  assert.match(squadPoolRouteSource, /loadFantasySquadPlayerPoolBaseBatch/);
+  assert.match(squadPlannerBackendSource, /userFantasySquadPlayer\.findMany/);
+  assert.match(squadPlannerBackendSource, /selectedByPercent/);
+  assert.match(squadPoolRouteSource, /progressive-base-v2/);
+  assert.match(squadPoolRouteSource, /progressive-snapshot-details-v3/);
+  assert.match(squadPoolRouteSource, /loadFantasyPlayerPoolSnapshotPlayers/);
   assert.match(squadPoolRouteSource, /ownedSquadPlayerIds/);
   assert.match(squadPlannerSource, /fetch\(batchUrl/);
   assert.match(squadPlannerSource, /yieldToPlayerPoolUi/);
-  assert.match(squadPlannerSource, /previousPhase === "SEED"/);
-  assert.match(squadPlannerSource, /effectivePageInfo\.phase === "SEED"\s*\? mergeFantasyPlayerPools\(batchPlayers, current\)/);
+  assert.match(squadPlannerSource, /let stage: PlayerPoolPageInfo\["stage"\] \| null = pinnedSnapshotId \? "DETAILS" : null/);
+  assert.match(squadPlannerSource, /payload\.error\?\.code === "SNAPSHOT_EXPIRED" && expiredSnapshotRetries < 2/);
+  assert.match(squadPlannerSource, /effectivePageInfo\.stage === "BASE"/);
+  assert.match(squadPlannerSource, /mergeFantasyPlayerPools\(basePlayersForRender, current\)/);
+  assert.match(squadPlannerSource, /startPlayerPoolTransition\(\(\) =>/);
+  assert.match(squadPlannerSource, /mergeFantasyPlayerPools\(current, batchPlayers\)/);
+  assert.match(squadPlannerSource, /document\.visibilityState !== "visible"/);
+  assert.match(squadPlannerSource, /playerPoolBackgroundRefreshRunningRef/);
+  assert.match(squadPlannerSource, /mergeFantasyPlayerPools\(current, refreshedPlayers\)/);
   assert.match(squadPlannerSource, /playerPoolAvailable && postLoadContentReady/);
   assert.match(squadPlannerSource, /data-player-pool-progress/);
-  assert.match(squadPlannerSource, /priority players are ready\. The full list is loading; you can use this list now\./);
+  assert.match(squadPlannerSource, /Сначала загружаются футболисты из сохранённых составов/);
+  assert.match(squadPlannerSource, /Обновляем прогнозы/);
+});
+
+test("Sports.ru page renders a persisted-squad shell without forecast work on the SSR path", () => {
+  const shellSource = squadPlannerBackendSource.split("export async function loadSportsRuFantasySquadPlannerShellData")[1]
+    ?.split("async function loadLatestFoontasyForecastRevision")[0] ?? "";
+
+  assert.match(
+    fantasySquadPageSource,
+    /if \(provider === "SPORTS_RU"\) \{[\s\S]*?return loadSportsRuFantasySquadPlannerShellData\([\s\S]*?\n  \}/
+  );
+  assert.match(shellSource, /userFantasySquad\.findMany/);
+  assert.match(shellSource, /loadFantasySquadPlayerPoolBaseBatch/);
+  assert.match(shellSource, /loadFantasySquadPlayerPoolLoadPlan/);
+  assert.doesNotMatch(shellSource, /loadFantasySquadPlannerData/);
+  assert.doesNotMatch(shellSource, /loadProjectedPlayerRows/);
 });
 
 test("round forecast totals available alternative projections and keeps missing players visible through warnings", () => {

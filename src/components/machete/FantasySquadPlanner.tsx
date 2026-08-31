@@ -2,7 +2,7 @@
 
 import { ArrowLeft, ArrowLeftRight, ArrowRight, Bookmark, Check, Columns3, Copy, Crown, Download, FilePlus2, Layers3, ListChecks, LoaderCircle, Lock, MoreHorizontal, Plus, Save, Search, SlidersHorizontal, Sparkles, Trash2, Users, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { type DragEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject, type SetStateAction, useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { type DragEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject, type SetStateAction, startTransition as startPlayerPoolTransition, useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { createPortal } from "react-dom";
 
 import { I18nText } from "@/components/i18n-text";
@@ -90,6 +90,7 @@ import {
 } from "@/machete/squad-table-columns";
 import {
   applyFantasyHistorySearchParams,
+  defaultFantasyHistorySettings,
   fantasyHistoryScopes,
   fantasyHistorySettingsKey,
   fantasyHistoryWindows,
@@ -141,43 +142,122 @@ type StoredSquadCaptains = {
 };
 type PlayerPoolPageInfo = {
   nextCursor: string | null;
-  loadedPlayers: number;
-  totalPlayers: number | null;
+  nextStage: "BASE" | "DETAILS" | null;
+  visiblePlayers: number;
+  enrichedPlayers: number;
+  totalPlayers: number;
   complete: boolean;
   batchSize: number;
-  strategy: "SQUAD_THEN_POPULARITY";
-  phase: "SEED" | "POOL";
+  priorityPlayers: number;
+  strategy: "ACTIVE_SQUADS_THEN_POPULARITY";
+  stage: "BASE" | "DETAILS";
+  snapshotId: string | null;
 };
 type PlayerPoolProgress = {
-  loadedPlayers: number;
+  visiblePlayers: number;
+  enrichedPlayers: number;
   totalPlayers: number | null;
+  priorityPlayers: number;
+  stage: "BASE" | "DETAILS";
 };
+
+function emptyPlayerPoolProgress(visiblePlayers = 0): PlayerPoolProgress {
+  return {
+    visiblePlayers,
+    enrichedPlayers: visiblePlayers,
+    totalPlayers: null,
+    priorityPlayers: visiblePlayers,
+    stage: "BASE"
+  };
+}
+
+function playerPoolProgressMessage(progress: PlayerPoolProgress) {
+  if (progress.totalPlayers === null) {
+    return progress.visiblePlayers > 0
+      ? {
+          en: "Your saved squad is already available. Loading the first market batch...",
+          ru: "Сохранённый состав уже доступен. Загружаем первый батч рынка..."
+        }
+      : {
+          en: "Loading the first player batch...",
+          ru: "Загружаем первый батч игроков..."
+        };
+  }
+  if (progress.stage === "BASE") {
+    return {
+      en: `Players ready: ${progress.visiblePlayers}/${progress.totalPlayers}. Saved-squad players load first, then Sports.ru popularity; this list is already interactive.`,
+      ru: `Игроки доступны: ${progress.visiblePlayers}/${progress.totalPlayers}. Сначала загружаются футболисты из сохранённых составов, затем — по популярности Sports.ru; списком уже можно пользоваться.`
+    };
+  }
+  return {
+    en: `All ${progress.totalPlayers} players are available. Updating forecasts: ${progress.enrichedPlayers}/${progress.totalPlayers}.`,
+    ru: `Все ${progress.totalPlayers} игроков уже доступны. Обновляем прогнозы: ${progress.enrichedPlayers}/${progress.totalPlayers}.`
+  };
+}
 
 function parsePlayerPoolPageInfo(value: unknown): PlayerPoolPageInfo | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const page = value as Record<string, unknown>;
   const nextCursor = page.nextCursor;
-  const loadedPlayers = page.loadedPlayers;
+  const nextStage = page.nextStage;
+  const visiblePlayers = page.visiblePlayers;
+  const enrichedPlayers = page.enrichedPlayers;
   const totalPlayers = page.totalPlayers;
   const batchSize = page.batchSize;
+  const priorityPlayers = page.priorityPlayers;
   const complete = page.complete;
+  const snapshotId = page.snapshotId ?? null;
   if (nextCursor !== null && (typeof nextCursor !== "string" || !/^\d+$/.test(nextCursor))) return null;
-  if (!Number.isSafeInteger(loadedPlayers) || Number(loadedPlayers) < 0) return null;
-  if (totalPlayers !== null && (!Number.isSafeInteger(totalPlayers) || Number(totalPlayers) < Number(loadedPlayers))) return null;
+  if (nextStage !== null && nextStage !== "BASE" && nextStage !== "DETAILS") return null;
+  if (!Number.isSafeInteger(totalPlayers) || Number(totalPlayers) < 0) return null;
+  if (!Number.isSafeInteger(visiblePlayers) || Number(visiblePlayers) < 0 || Number(visiblePlayers) > Number(totalPlayers)) return null;
+  if (!Number.isSafeInteger(enrichedPlayers) || Number(enrichedPlayers) < 0 || Number(enrichedPlayers) > Number(totalPlayers)) return null;
   if (!Number.isSafeInteger(batchSize) || Number(batchSize) < 1) return null;
-  if (typeof complete !== "boolean" || page.strategy !== "SQUAD_THEN_POPULARITY") return null;
-  if (page.phase !== "SEED" && page.phase !== "POOL") return null;
-  if (!complete && nextCursor === null) return null;
-  if (page.phase === "SEED" && (complete || nextCursor !== "0" || totalPlayers !== null)) return null;
+  if (!Number.isSafeInteger(priorityPlayers) || Number(priorityPlayers) < 0 || Number(priorityPlayers) > Number(totalPlayers)) return null;
+  if (typeof complete !== "boolean" || page.strategy !== "ACTIVE_SQUADS_THEN_POPULARITY") return null;
+  if (page.stage !== "BASE" && page.stage !== "DETAILS") return null;
+  if (snapshotId !== null && (typeof snapshotId !== "string" || snapshotId.length < 1 || snapshotId.length > 128)) return null;
+  if (complete !== (nextCursor === null && nextStage === null)) return null;
+  if (!complete && (nextCursor === null || nextStage === null)) return null;
+  if (page.stage === "BASE" && (complete || Number(enrichedPlayers) !== 0)) return null;
+  if (page.stage === "DETAILS" && Number(visiblePlayers) !== Number(totalPlayers)) return null;
   return {
     nextCursor,
-    loadedPlayers: Number(loadedPlayers),
-    totalPlayers: totalPlayers === null ? null : Number(totalPlayers),
+    nextStage,
+    visiblePlayers: Number(visiblePlayers),
+    enrichedPlayers: Number(enrichedPlayers),
+    totalPlayers: Number(totalPlayers),
     batchSize: Number(batchSize),
+    priorityPlayers: Number(priorityPlayers),
     complete,
-    strategy: "SQUAD_THEN_POPULARITY",
-    phase: page.phase
+    strategy: "ACTIVE_SQUADS_THEN_POPULARITY",
+    stage: page.stage,
+    snapshotId
   };
+}
+
+function playerPoolSnapshotIdFromHref(href: string | undefined) {
+  if (!href) return null;
+  try {
+    const value = new URL(href, "https://fantasy.local").searchParams.get("snapshotId")?.trim() ?? "";
+    return value.length > 0 && value.length <= 128 ? value : null;
+  } catch {
+    return null;
+  }
+}
+
+function playerPoolSnapshotStatusHref(href: string) {
+  try {
+    const source = new URL(href, "https://fantasy.local");
+    if (source.pathname !== "/api/machete/squads") return null;
+    const leagueId = source.searchParams.get("leagueId");
+    const season = source.searchParams.get("season");
+    if (!leagueId || !season) return null;
+    const params = new URLSearchParams({ leagueId, season });
+    return `/api/machete/squads/snapshot?${params.toString()}`;
+  } catch {
+    return null;
+  }
 }
 
 async function yieldToPlayerPoolUi() {
@@ -311,6 +391,9 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
   const playerPoolSectionRef = useRef<HTMLDivElement>(null);
   const [sourcePlayers, setSourcePlayers] = useState<FantasyPlannerPlayer[]>(initialPlayers);
   const sourcePlayersRef = useRef<FantasyPlannerPlayer[]>(initialPlayers);
+  const activePlayerPoolSnapshotIdRef = useRef<string | null>(playerPoolSnapshotIdFromHref(playerPoolHref));
+  const playerPoolInitialLoadCompleteRef = useRef(!playerPoolHref);
+  const playerPoolBackgroundRefreshRunningRef = useRef(false);
   const [appliedHistorySettings, setAppliedHistorySettings] = useState(historySettings);
   const [playerPoolRequestHref, setPlayerPoolRequestHref] = useState(playerPoolHref);
   const [activeRoundOffset, setActiveRoundOffset] = useState(0);
@@ -321,10 +404,17 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
   const [playerPoolPending, setPlayerPoolPending] = useState(Boolean(playerPoolHref));
   const [playerPoolFailed, setPlayerPoolFailed] = useState(false);
   const [playerPoolAvailable, setPlayerPoolAvailable] = useState(!playerPoolHref);
-  const [playerPoolProgress, setPlayerPoolProgress] = useState<PlayerPoolProgress>({
-    loadedPlayers: playerPoolHref ? 0 : initialPlayers.length,
-    totalPlayers: playerPoolHref ? null : initialPlayers.length
-  });
+  const [playerPoolProgress, setPlayerPoolProgress] = useState<PlayerPoolProgress>(
+    playerPoolHref
+      ? emptyPlayerPoolProgress(initialPlayers.length)
+      : {
+          visiblePlayers: initialPlayers.length,
+          enrichedPlayers: initialPlayers.length,
+          totalPlayers: initialPlayers.length,
+          priorityPlayers: initialPlayers.length,
+          stage: "DETAILS"
+        }
+  );
   const [historyScopeDraft, setHistoryScopeDraft] = useState<FantasyHistoryScope>(historySettings.scope);
   const [historyWindowDraft, setHistoryWindowDraft] = useState<FantasyHistoryWindow>(historySettings.window);
   const [historySeasonsDraft, setHistorySeasonsDraft] = useState(historySettings.selectedSeasons);
@@ -388,6 +478,7 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
   const [autoPickPending, setAutoPickPending] = useState(false);
   const autoPickRevisionRef = useRef(0);
   const playerPoolReady = !playerPoolRequestHref || (!playerPoolPending && !playerPoolFailed);
+  const playerPoolLoadingMessage = playerPoolProgressMessage(playerPoolProgress);
   const historyDraft: FantasyHistorySettings = {
     scope: historyScopeDraft,
     window: historyWindowDraft,
@@ -644,6 +735,8 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
   useEffect(() => {
     if (!postLoadContentReady || !playerPoolRequestHref) return;
 
+    playerPoolInitialLoadCompleteRef.current = false;
+    activePlayerPoolSnapshotIdRef.current = playerPoolSnapshotIdFromHref(playerPoolRequestHref);
     let lifecycleCancelled = false;
     let requestCompleted = false;
     let retryAfterBfcacheRestore = false;
@@ -658,7 +751,7 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
       retryAfterBfcacheRestore = false;
       setPlayerPoolFailed(false);
       setPlayerPoolPending(true);
-      setPlayerPoolProgress({ loadedPlayers: 0, totalPlayers: null });
+      setPlayerPoolProgress(emptyPlayerPoolProgress(sourcePlayersRef.current.length));
       setPlayerPoolRetry((value) => value + 1);
     };
     window.addEventListener("pagehide", handlePageHide);
@@ -666,14 +759,24 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
 
     async function loadPlayerPool() {
       let cursor: string | null = null;
-      let accumulatedPlayers: FantasyPlannerPlayer[] = [];
-      let previousPhase: PlayerPoolPageInfo["phase"] | null = null;
-      const seenCursors = new Set<string>();
+      let pinnedSnapshotId = playerPoolSnapshotIdFromHref(playerPoolRequestHref);
+      let stage: PlayerPoolPageInfo["stage"] | null = pinnedSnapshotId ? "DETAILS" : null;
+      let expiredSnapshotRetries = 0;
+      let accumulatedBasePlayers: FantasyPlannerPlayer[] = [];
+      let accumulatedDetailPlayers: FantasyPlannerPlayer[] = [];
+      const seenPages = new Set<string>();
 
       while (!lifecycleCancelled) {
         const batchUrl = new URL(playerPoolRequestHref!, window.location.origin);
-        if (cursor) batchUrl.searchParams.set("cursor", cursor);
+        if (cursor !== null) batchUrl.searchParams.set("cursor", cursor);
         else batchUrl.searchParams.delete("cursor");
+        if (stage) batchUrl.searchParams.set("stage", stage);
+        else batchUrl.searchParams.delete("stage");
+        if (pinnedSnapshotId) batchUrl.searchParams.set("snapshotId", pinnedSnapshotId);
+        else batchUrl.searchParams.delete("snapshotId");
+        const requestedPage = `${pinnedSnapshotId ?? "live"}:${stage ?? "BASE"}:${cursor ?? "0"}`;
+        if (seenPages.has(requestedPage)) throw new Error("PLAYER_POOL_CURSOR_DID_NOT_ADVANCE");
+        seenPages.add(requestedPage);
         const response = await fetch(batchUrl, {
           cache: "no-store",
           headers: { Accept: "application/json" },
@@ -682,7 +785,20 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
         const payload = await response.json().catch(() => ({})) as {
           players?: FantasyPlannerPlayer[];
           pageInfo?: unknown;
+          error?: { code?: string };
         };
+        if (response.status === 409 && payload.error?.code === "SNAPSHOT_EXPIRED" && expiredSnapshotRetries < 2) {
+          expiredSnapshotRetries += 1;
+          pinnedSnapshotId = null;
+          cursor = "0";
+          stage = "DETAILS";
+          accumulatedDetailPlayers = [];
+          seenPages.clear();
+          // Keep the visible roster and unsaved selections while restarting
+          // enrichment from the newest retained revision.
+          await yieldToPlayerPoolUi();
+          continue;
+        }
         if (!response.ok || !Array.isArray(payload.players)) throw new Error("PLAYER_POOL_LOAD_FAILED");
         const batchPlayers = payload.players;
         const progressive = batchUrl.searchParams.get("progressive") === "1";
@@ -690,53 +806,82 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
         if (progressive && !pageInfo) throw new Error("PLAYER_POOL_PAGE_INFO_INVALID");
         const effectivePageInfo = pageInfo ?? {
           nextCursor: null,
-          loadedPlayers: batchPlayers.length,
+          nextStage: null,
+          visiblePlayers: batchPlayers.length,
+          enrichedPlayers: batchPlayers.length,
           totalPlayers: batchPlayers.length,
           complete: true,
-          batchSize: batchPlayers.length,
-          strategy: "SQUAD_THEN_POPULARITY" as const,
-          phase: "POOL" as const
+          batchSize: Math.max(1, batchPlayers.length),
+          priorityPlayers: batchPlayers.length,
+          strategy: "ACTIVE_SQUADS_THEN_POPULARITY" as const,
+          stage: "DETAILS" as const,
+          snapshotId: null
         };
-        accumulatedPlayers = effectivePageInfo.phase === "SEED"
-          ? mergeFantasyPlayerPools([], batchPlayers)
-          : previousPhase === "SEED"
-            ? mergeFantasyPlayerPools([], batchPlayers)
-            : mergeFantasyPlayerPools(accumulatedPlayers, batchPlayers);
-        previousPhase = effectivePageInfo.phase;
+        if (effectivePageInfo.snapshotId) {
+          if (pinnedSnapshotId && pinnedSnapshotId !== effectivePageInfo.snapshotId) {
+            throw new Error("PLAYER_POOL_SNAPSHOT_CHANGED_DURING_LOAD");
+          }
+          pinnedSnapshotId = effectivePageInfo.snapshotId;
+        }
+        if (effectivePageInfo.stage === "BASE") {
+          accumulatedBasePlayers = mergeFantasyPlayerPools(accumulatedBasePlayers, batchPlayers);
+        } else {
+          accumulatedDetailPlayers = mergeFantasyPlayerPools(accumulatedDetailPlayers, batchPlayers);
+        }
         if (lifecycleCancelled) return;
 
-        setSourcePlayers((current) => {
-          const merged = effectivePageInfo.complete
-            ? mergeFantasyPlayerPools(
-                accumulatedPlayers,
-                current.filter((player) => player.isProviderPlaceholder)
-              )
-            : effectivePageInfo.phase === "SEED"
-              ? mergeFantasyPlayerPools(batchPlayers, current)
-              : mergeFantasyPlayerPools(current, batchPlayers);
-          sourcePlayersRef.current = merged;
-          return merged;
-        });
-        setPlayerPoolAvailable(true);
-        setPlayerPoolProgress({
-          loadedPlayers: effectivePageInfo.loadedPlayers,
-          totalPlayers: effectivePageInfo.totalPlayers
+        const basePlayersForRender = accumulatedBasePlayers;
+        const detailPlayersForRender = accumulatedDetailPlayers;
+        startPlayerPoolTransition(() => {
+          setSourcePlayers((current) => {
+            let merged: FantasyPlannerPlayer[];
+            if (effectivePageInfo.complete) {
+              const canonical = mergeFantasyPlayerPools(basePlayersForRender, detailPlayersForRender);
+              const canonicalIds = new Set(canonical.map((player) => player.playerId));
+              merged = mergeFantasyPlayerPools(
+                canonical,
+                current.filter((player) => player.isProviderPlaceholder && !canonicalIds.has(player.playerId))
+              );
+            } else if (effectivePageInfo.stage === "BASE") {
+              // The SSR/current-squad copy wins over lightweight base rows while
+              // the accumulated base order still controls the visual list.
+              merged = mergeFantasyPlayerPools(basePlayersForRender, current);
+            } else {
+              merged = mergeFantasyPlayerPools(current, batchPlayers);
+            }
+            sourcePlayersRef.current = merged;
+            return merged;
+          });
+          setPlayerPoolAvailable(true);
+          setPlayerPoolProgress({
+            visiblePlayers: Math.max(basePlayersForRender.length, detailPlayersForRender.length),
+            enrichedPlayers: effectivePageInfo.enrichedPlayers,
+            totalPlayers: effectivePageInfo.totalPlayers,
+            priorityPlayers: effectivePageInfo.priorityPlayers,
+            stage: effectivePageInfo.stage
+          });
+
+          if (effectivePageInfo.complete) {
+            setPlayerPoolFailed(false);
+            setPlayerPoolPending(false);
+            setHistoryApplying(false);
+          }
         });
 
         if (effectivePageInfo.complete) {
           requestCompleted = true;
-          setPlayerPoolFailed(false);
-          setPlayerPoolPending(false);
-          setHistoryApplying(false);
+          activePlayerPoolSnapshotIdRef.current = pinnedSnapshotId;
+          playerPoolInitialLoadCompleteRef.current = true;
           return;
         }
 
         const nextCursor = effectivePageInfo.nextCursor;
-        if (!nextCursor || nextCursor === cursor || seenCursors.has(nextCursor)) {
+        const nextStage = effectivePageInfo.nextStage;
+        if (nextCursor === null || nextStage === null) {
           throw new Error("PLAYER_POOL_CURSOR_DID_NOT_ADVANCE");
         }
-        seenCursors.add(nextCursor);
         cursor = nextCursor;
+        stage = nextStage;
         await yieldToPlayerPoolUi();
       }
     }
@@ -744,6 +889,7 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
     void loadPlayerPool().catch((error: unknown) => {
         if (lifecycleCancelled || controller.signal.aborted || (error instanceof Error && error.name === "AbortError")) return;
         requestCompleted = true;
+        playerPoolInitialLoadCompleteRef.current = false;
         console.error("Failed to load fantasy player pool.", error);
         void recordBetaClientError("PLAYER_POOL_LOAD_FAILED");
         setPlayerPoolFailed(true);
@@ -758,6 +904,110 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
       controller.abort();
     };
   }, [playerPoolRequestHref, playerPoolRetry, postLoadContentReady]);
+
+  useEffect(() => {
+    if (
+      provider !== "SPORTS_RU" ||
+      !postLoadContentReady ||
+      !playerPoolRequestHref ||
+      fantasyHistorySettingsKey(appliedHistorySettings) !== fantasyHistorySettingsKey(defaultFantasyHistorySettings)
+    ) return;
+    const statusHref = playerPoolSnapshotStatusHref(playerPoolRequestHref);
+    if (!statusHref) return;
+
+    let cancelled = false;
+    const controller = new AbortController();
+
+    async function refreshSnapshot(targetSnapshotId: string) {
+      playerPoolBackgroundRefreshRunningRef.current = true;
+      try {
+        let cursor = "0";
+        let refreshedPlayers: FantasyPlannerPlayer[] = [];
+        const seenCursors = new Set<string>();
+        while (!cancelled) {
+          if (seenCursors.has(cursor)) throw new Error("PLAYER_POOL_BACKGROUND_CURSOR_DID_NOT_ADVANCE");
+          seenCursors.add(cursor);
+          const batchUrl = new URL(playerPoolRequestHref!, window.location.origin);
+          batchUrl.searchParams.set("stage", "DETAILS");
+          batchUrl.searchParams.set("cursor", cursor);
+          batchUrl.searchParams.set("snapshotId", targetSnapshotId);
+          const response = await fetch(batchUrl, {
+            cache: "no-store",
+            headers: { Accept: "application/json" },
+            signal: controller.signal
+          });
+          if (!response.ok) return;
+          const payload = await response.json().catch(() => ({})) as {
+            players?: FantasyPlannerPlayer[];
+            pageInfo?: unknown;
+          };
+          const pageInfo = parsePlayerPoolPageInfo(payload.pageInfo);
+          if (
+            !Array.isArray(payload.players) ||
+            !pageInfo ||
+            pageInfo.stage !== "DETAILS" ||
+            pageInfo.snapshotId !== targetSnapshotId
+          ) return;
+          refreshedPlayers = mergeFantasyPlayerPools(refreshedPlayers, payload.players);
+          if (pageInfo.complete) break;
+          if (pageInfo.nextStage !== "DETAILS" || pageInfo.nextCursor === null) return;
+          cursor = pageInfo.nextCursor;
+          await yieldToPlayerPoolUi();
+        }
+        if (cancelled || refreshedPlayers.length === 0) return;
+        startPlayerPoolTransition(() => setSourcePlayers((current) => {
+          const merged = mergeFantasyPlayerPools(current, refreshedPlayers);
+          sourcePlayersRef.current = merged;
+          return merged;
+        }));
+        activePlayerPoolSnapshotIdRef.current = targetSnapshotId;
+      } finally {
+        playerPoolBackgroundRefreshRunningRef.current = false;
+      }
+    }
+
+    async function checkForSnapshotUpdate() {
+      if (
+        cancelled ||
+        document.visibilityState !== "visible" ||
+        !playerPoolInitialLoadCompleteRef.current ||
+        playerPoolBackgroundRefreshRunningRef.current ||
+        !activePlayerPoolSnapshotIdRef.current
+      ) return;
+      try {
+        const response = await fetch(statusHref!, {
+          cache: "no-store",
+          headers: { Accept: "application/json" },
+          signal: controller.signal
+        });
+        if (!response.ok) return;
+        const payload = await response.json().catch(() => ({})) as { snapshot?: { id?: unknown } | null };
+        const snapshotId = typeof payload.snapshot?.id === "string" ? payload.snapshot.id : null;
+        if (
+          !snapshotId ||
+          snapshotId === activePlayerPoolSnapshotIdRef.current ||
+          playerPoolBackgroundRefreshRunningRef.current
+        ) return;
+        await refreshSnapshot(snapshotId);
+      } catch (error) {
+        if (cancelled || controller.signal.aborted || (error instanceof Error && error.name === "AbortError")) return;
+        console.error("Failed to refresh the fantasy player pool snapshot in background.", error);
+      }
+    }
+
+    const interval = window.setInterval(() => void checkForSnapshotUpdate(), 15_000);
+    const onVisibilityChange = () => {
+      if (document.visibilityState === "visible") void checkForSnapshotUpdate();
+    };
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      cancelled = true;
+      controller.abort();
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+      playerPoolBackgroundRefreshRunningRef.current = false;
+    };
+  }, [appliedHistorySettings, playerPoolRequestHref, postLoadContentReady, provider]);
 
   function applyHistorySettings() {
     if (historyWindowDraft === "SELECTED_SEASONS" && historySeasonsDraft.length === 0) {
@@ -779,7 +1029,7 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
     setHistoryApplying(true);
     setPlayerPoolFailed(false);
     setPlayerPoolPending(true);
-    setPlayerPoolProgress({ loadedPlayers: 0, totalPlayers: null });
+    setPlayerPoolProgress(emptyPlayerPoolProgress(sourcePlayersRef.current.length));
 
     const pageUrl = new URL(window.location.href);
     applyFantasyHistorySearchParams(pageUrl.searchParams, nextSettings);
@@ -787,6 +1037,9 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
 
     const poolUrl = new URL(playerPoolHref, window.location.origin);
     applyFantasyHistorySearchParams(poolUrl.searchParams, nextSettings);
+    poolUrl.searchParams.delete("snapshotId");
+    activePlayerPoolSnapshotIdRef.current = null;
+    playerPoolInitialLoadCompleteRef.current = false;
     setPlayerPoolRequestHref(`${poolUrl.pathname}?${poolUrl.searchParams.toString()}`);
   }
 
@@ -2225,7 +2478,7 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
                   onClick={() => {
                     setPlayerPoolFailed(false);
                     setPlayerPoolPending(true);
-                    setPlayerPoolProgress({ loadedPlayers: 0, totalPlayers: null });
+                    setPlayerPoolProgress(emptyPlayerPoolProgress(sourcePlayersRef.current.length));
                     setPlayerPoolRetry((value) => value + 1);
                   }}
                   className="block rounded border border-rose-300 bg-white px-3 py-1.5 text-xs font-semibold text-rose-700"
@@ -2251,18 +2504,10 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
               <p className="text-sm text-slate-500" role="status" aria-live="polite">
                 <I18nText
                   en={playerPoolPending
-                    ? playerPoolProgress.totalPlayers === null
-                      ? playerPoolProgress.loadedPlayers > 0
-                        ? `${playerPoolProgress.loadedPlayers} priority players are ready. The full list is still loading.`
-                        : "Loading the first player batch..."
-                      : `Loading players: ${playerPoolProgress.loadedPlayers}/${playerPoolProgress.totalPlayers}. Loaded players are already available.`
+                    ? playerPoolLoadingMessage.en
                     : "Calculating transfer recommendations..."}
                   ru={playerPoolPending
-                    ? playerPoolProgress.totalPlayers === null
-                      ? playerPoolProgress.loadedPlayers > 0
-                        ? `${playerPoolProgress.loadedPlayers} приоритетных игроков уже доступны. Полный список догружается.`
-                        : "Загружаем первый батч игроков..."
-                      : `Загружаем игроков: ${playerPoolProgress.loadedPlayers}/${playerPoolProgress.totalPlayers}. Уже загруженные доступны.`
+                    ? playerPoolLoadingMessage.ru
                     : "Рассчитываем трансферные рекомендации..."}
                 />
               </p>
@@ -2523,18 +2768,14 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
               <>
                 {playerPoolPending ? (
                   <p
-                    data-player-pool-progress={`${playerPoolProgress.loadedPlayers}/${playerPoolProgress.totalPlayers ?? "?"}`}
+                    data-player-pool-progress={`${playerPoolProgress.stage}:${playerPoolProgress.visiblePlayers}/${playerPoolProgress.totalPlayers ?? "?"}:${playerPoolProgress.enrichedPlayers}`}
                     className="mb-2 rounded border border-sky-200 bg-sky-50 px-3 py-2 text-xs text-sky-800"
                     role="status"
                     aria-live="polite"
                   >
                     <I18nText
-                      en={playerPoolProgress.totalPlayers === null
-                        ? `${playerPoolProgress.loadedPlayers} priority players are ready. The full list is loading; you can use this list now.`
-                        : `Loaded ${playerPoolProgress.loadedPlayers} of ${playerPoolProgress.totalPlayers} players. You can already use this list while the rest load.`}
-                      ru={playerPoolProgress.totalPlayers === null
-                        ? `${playerPoolProgress.loadedPlayers} приоритетных игроков уже доступны. Полный список догружается; этим списком уже можно пользоваться.`
-                        : `Загружено ${playerPoolProgress.loadedPlayers} из ${playerPoolProgress.totalPlayers} игроков. Этим списком уже можно пользоваться.`}
+                      en={playerPoolLoadingMessage.en}
+                      ru={playerPoolLoadingMessage.ru}
                     />
                   </p>
                 ) : playerPoolFailed ? (
@@ -2545,7 +2786,7 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
                       onClick={() => {
                         setPlayerPoolFailed(false);
                         setPlayerPoolPending(true);
-                        setPlayerPoolProgress({ loadedPlayers: 0, totalPlayers: null });
+                        setPlayerPoolProgress(emptyPlayerPoolProgress(sourcePlayersRef.current.length));
                         setPlayerPoolRetry((value) => value + 1);
                       }}
                       className="rounded border border-rose-300 bg-white px-3 py-1.5 font-semibold text-rose-700"
