@@ -1,6 +1,10 @@
+import type { PrismaClient } from "@prisma/client";
+
 import { prisma } from "@/lib/db";
+import { isFantasySquadLeague } from "@/lib/leagues/display";
 import { createLogger } from "@/lib/logger";
 import { recalculateFantasyModelForecasts } from "@/machete/foontasy_style_forecast_service";
+import { loadSharedLeagueOptions } from "@/machete/shared_read_model";
 
 const logger = createLogger("fantasy-model-forecast:scheduler");
 
@@ -46,7 +50,7 @@ async function runCycle(state: SchedulerState) {
   if (state.running) return false;
   state.running = true;
   try {
-    const scopes = await loadActiveScopes();
+    const scopes = await loadFantasyModelForecastScopes(prisma);
     const summaries = [];
     let succeeded = true;
     for (const scope of scopes) {
@@ -74,26 +78,13 @@ async function runCycle(state: SchedulerState) {
 
 type ActiveScope = { leagueId: bigint; season: string };
 
-async function loadActiveScopes(): Promise<ActiveScope[]> {
-  const rows = await prisma.teamPlayerSeason.findMany({
-    where: { active: true },
-    distinct: ["leagueId", "season"],
-    select: { leagueId: true, season: true }
-  });
-  return activeScopesFromRows(rows);
-}
-
-export function activeScopesFromRows(
-  rows: ReadonlyArray<{ leagueId: bigint | null; season: string | null }>
-): ActiveScope[] {
-  const scopes = new Map<string, ActiveScope>();
-  for (const row of rows) {
-    if (row.leagueId === null || row.season === null || !row.season.trim()) continue;
-    scopes.set(`${row.leagueId}:${row.season}`, { leagueId: row.leagueId, season: row.season });
-  }
-  return [...scopes.values()].sort((left, right) =>
-    `${left.leagueId}:${left.season}`.localeCompare(`${right.leagueId}:${right.season}`)
-  );
+export async function loadFantasyModelForecastScopes(prismaClient: PrismaClient): Promise<ActiveScope[]> {
+  // Historical player memberships can remain active. Use Squad's league and
+  // default-season selection, but never schedule its archived-season fallback.
+  const leagues = await loadSharedLeagueOptions(prismaClient);
+  return leagues
+    .filter((league) => league.isCurrent && isFantasySquadLeague(league))
+    .map(({ leagueId, season }) => ({ leagueId, season }));
 }
 
 export function forecastSyncIntervalMs(rawHours: string | undefined = process.env.FANTASY_MODEL_FORECAST_SYNC_INTERVAL_HOURS) {

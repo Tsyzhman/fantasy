@@ -28,6 +28,9 @@ image labels `org.opencontainers.image.version` and
 
 ### Fixed
 
+- Restrict the legacy six-hour model-forecast worker to Squad's shared league
+  allowlist and one current season per league. Do not schedule archived seasons
+  or unrelated cups just because their player memberships remain active.
 - Keep mapped Sports.ru players without active FotMob memberships in targeted
   team refreshes. Use the complete authoritative team roster so incremental
   publication preserves every player and the full team's formula allocation.
