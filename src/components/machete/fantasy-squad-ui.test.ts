@@ -188,7 +188,9 @@ test("transfer suggestions expose FO, ALT, and FFO, while FFO remains a current-
 });
 
 test("compact transfer suggestions include bookmaker favorites with separate clean-sheet and over-1.5 probabilities", () => {
-  assert.match(squadPlannerSource, /mt-2 grid items-start gap-3 xl:grid-cols-2/);
+  assert.match(squadPlannerSource, /mt-1\.5 grid items-start gap-2 xl:grid-cols-/);
+  assert.match(squadPlannerSource, /maximumPlans: 2/);
+  assert.match(squadPlannerSource, /suggestions\.slice\(0, 2\)/);
   assert.match(squadPlannerSource, /min-w-0 xl:sticky xl:top-16/);
   assert.match(squadPlannerSource, /BookmakerFavoritesTable/);
   assert.match(squadPlannerSource, /en="Bookmaker favorites" ru="Рыночные фавориты"/);
@@ -222,14 +224,15 @@ test("stored Sports squad action sits immediately left of save in the one-line s
   const pitch = squadPlannerSource.indexOf("<SquadPitch", squadHeading);
   const headingBlock = squadPlannerSource.slice(squadHeading, pitch);
   const sportsButton = headingBlock.indexOf("onClick={importStoredSportsRuSquad}");
-  const saveButton = headingBlock.indexOf("onClick={() => saveSquad(false)}");
+  const saveButton = headingBlock.indexOf("onClick={() => void saveSquad()}");
 
   assert.ok(squadHeading >= 0);
   assert.ok(sportsButton >= 0);
   assert.ok(saveButton > sportsButton);
   assert.match(squadPlannerSource, /grid-cols-\[minmax\(0,1fr\)_auto\]/);
-  assert.match(headingBlock, /en="Sports squad" ru="Состав Sports"/);
-  assert.match(headingBlock, /whitespace-nowrap/);
+  assert.match(headingBlock, /en="Import Sports squad" ru="Импортировать состав Sports"/);
+  assert.match(headingBlock, /aria-label=\{sportsRuSquadButtonTitle/);
+  assert.match(headingBlock, /aria-label=\{localizedText\(language, "Save squad", "Сохранить состав"\)\}/);
   assert.match(headingBlock, /id="sports-ru-import-status"/);
   assert.match(headingBlock, /role="status"/);
   assert.match(squadPlannerSource, /Requesting the published Sports\.ru squad and matching its players/);
@@ -238,8 +241,15 @@ test("stored Sports squad action sits immediately left of save in the one-line s
   assert.match(squadPlannerSource, /setSavedRoundPlans\(cloneFantasyRoundPlans\(importedRoundPlans\)\)/);
   assert.match(squadPlannerSource, /window\.history\.replaceState/);
   assert.doesNotMatch(squadPlannerSource, /window\.location\.replace/);
-  assert.equal(squadPlannerSource.match(/onClick=\{\(\) => saveSquad\(false\)\}/g)?.length, 1);
+  assert.equal(squadPlannerSource.match(/onClick=\{\(\) => void saveSquad\(\)\}/g)?.length, 1);
   assert.doesNotMatch(squadPageSource, /SportsRuSquadImport/);
+});
+
+test("squad planner keeps one unnamed current squad and places transfer usage over the lineup", () => {
+  assert.doesNotMatch(squadPlannerSource, /Saved variant|Variant name|Save as copy|Planning settings/);
+  assert.match(squadPlannerSource, /ref=\{budgetForecastRef\}/);
+  assert.match(squadPlannerSource, /value=\{`\$\{transferLimitIsActive \? plannedTransferCount : 0\}\/\$\{transferLimit\}`\}/);
+  assert.doesNotMatch(squadPlannerSource, /xl:order-3/);
 });
 
 test("fixture chips hide H/A from visible labels but retain side and original title", () => {
@@ -614,11 +624,12 @@ test("display-only Alt FP renders in the desktop pool, mobile pool, and squad ca
   assert.equal(formatAlternativeScore(null), "0");
 });
 
-test("planner exposes mobile-safe history controls and sends the applied settings when saving", () => {
-  assert.match(squadPlannerSource, /fantasyHistoryScopes\.map/);
-  assert.match(squadPlannerSource, /fantasyHistoryWindows\.map/);
-  assert.match(squadPlannerSource, /type="checkbox"/);
-  assert.match(squadPlannerSource, /requestHistorySettings\(historyDraft\)/);
+test("planner removes planning settings but keeps the current history settings when saving", () => {
+  assert.doesNotMatch(squadPlannerSource, /fantasyHistoryScopes\.map/);
+  assert.doesNotMatch(squadPlannerSource, /fantasyHistoryWindows\.map/);
+  assert.doesNotMatch(squadPlannerSource, /requestHistorySettings\(historyDraft\)/);
+  assert.doesNotMatch(squadPlannerSource, /Planning settings|Настройки планирования/);
+  assert.match(squadPlannerSource, /applyQuickHistoryScope\("ALL_PLAYER_MATCHES"\)/);
   assert.match(squadPlannerSource, /window\.history\.replaceState/);
   assert.match(squadPlannerSource, /fetch\(batchUrl/);
   assert.match(squadPlannerSource, /historyScope: appliedHistorySettings\.scope/);

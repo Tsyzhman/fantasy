@@ -40,6 +40,7 @@ import {
   friendStartingRows,
   fantasyPlayerFeaturePoolCacheKey,
   fantasyPlayerPoolCacheKey,
+  defaultFantasySquadNameForUser,
   loadFantasySquadPlannerData,
   normalizeFantasySquadName,
   preferredArchivedSeason,
@@ -2074,6 +2075,9 @@ test("squad save rechecks position limits after locking the authoritative roster
 test("squad variant names are normalized and copies receive a unique suffix", () => {
   assert.equal(normalizeFantasySquadName("  My   differential   squad  "), "My differential squad");
   assert.equal(uniqueFantasySquadName(["Main", "Main (2)"], "main"), "main (3)");
+  assert.equal(defaultFantasySquadNameForUser({ name: "  Nik  Test " }), "Nik Test squad");
+  assert.equal(defaultFantasySquadNameForUser({ email: "coach@example.com" }), "coach squad");
+  assert.match(defaultFantasySquadNameForUser({ name: "x".repeat(200) }), / squad$/);
 });
 
 test("squad planner resolves Sports.ru positions through manual mappings", () => {

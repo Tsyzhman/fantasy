@@ -28,9 +28,9 @@ test("starting XI export uses one team per column and compact FotMob names", () 
   assert.deepEqual(
     table.rows.map((row) => table.columns.map((column) => column.value(row))),
     [
-      ["Y. Latyshonok", "D. Santos"],
       ["K. De Bruyne", "M. Cassierra"],
-      ["N. Titkov", ""]
+      ["N. Titkov", "D. Santos"],
+      ["Y. Latyshonok", ""]
     ]
   );
 });

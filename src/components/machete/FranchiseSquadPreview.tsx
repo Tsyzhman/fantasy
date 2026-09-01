@@ -8,6 +8,7 @@ import { FdrRow } from "@/components/ui/fdr-pill";
 import { cn } from "@/lib/cn";
 import { formatNumber, formatScore, NULL_GLYPH } from "@/lib/format";
 import { compactPlayerDisplayName } from "@/lib/players/display-name";
+import { fantasyPositionOrder, fantasyPositionRank } from "@/lib/players/fantasy-position-order";
 import type { AdminFranchiseSquadPreviewPlayer } from "@/machete/admin-franchise-squads";
 import { fixtureChipPresentations } from "./fantasy-squad-ui";
 
@@ -21,16 +22,17 @@ export function FranchiseSquadPreview({
   const language = useLanguage();
   const starters = players
     .filter((player) => player.isStarter)
-    .sort((left, right) => positionOrder(left.positionGroup) - positionOrder(right.positionGroup) || left.slotIndex - right.slotIndex);
+    .sort((left, right) => fantasyPositionRank(left.positionGroup) - fantasyPositionRank(right.positionGroup) || left.slotIndex - right.slotIndex);
   const bench = players
     .filter((player) => !player.isStarter)
     .sort((left, right) => Number(left.positionGroup === "GK") - Number(right.positionGroup === "GK") || left.slotIndex - right.slotIndex);
-  const lines = [
-    { position: "GK" as const, en: "Goalkeeper", ru: "Вратарь" },
-    { position: "DEF" as const, en: "Defenders", ru: "Защитники" },
-    { position: "MID" as const, en: "Midfielders", ru: "Полузащитники" },
-    { position: "FWD" as const, en: "Forwards", ru: "Нападающие" }
-  ];
+  const lineLabels = {
+    FWD: { en: "Forwards", ru: "Нападающие" },
+    MID: { en: "Midfielders", ru: "Полузащитники" },
+    DEF: { en: "Defenders", ru: "Защитники" },
+    GK: { en: "Goalkeeper", ru: "Вратарь" }
+  } as const;
+  const lines = fantasyPositionOrder.flatMap((position) => position === "UNK" ? [] : [{ position, ...lineLabels[position] }]);
 
   return (
     <section className="rounded-lg border border-slate-200 bg-slate-50 p-3 shadow-inner" aria-label={localizedText(language, `Squad preview for ${ownerName}`, `Предпросмотр состава: ${ownerName}`)}>
@@ -201,10 +203,6 @@ function scaleForecast(value: number | null, multiplier: number) {
 function compactScore(value: number | null) {
   if (value === null || !Number.isFinite(value)) return NULL_GLYPH;
   return Number.isInteger(value) ? String(value) : value.toFixed(1);
-}
-
-function positionOrder(position: AdminFranchiseSquadPreviewPlayer["positionGroup"]) {
-  return position === "GK" ? 0 : position === "DEF" ? 1 : position === "MID" ? 2 : position === "FWD" ? 3 : 4;
 }
 
 function positionPillClass(position: AdminFranchiseSquadPreviewPlayer["positionGroup"]) {

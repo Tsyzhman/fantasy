@@ -26,6 +26,11 @@ import { ScoreHeatCell, computeRanks } from "@/components/ui/score-heat-cell";
 import { formatCurrency, formatNumber, NULL_GLYPH } from "@/lib/format";
 import { prisma } from "@/lib/db";
 import { compactPlayerDisplayName } from "@/lib/players/display-name";
+import {
+  loadPlayerSnapshotPositionPage,
+  playerSnapshotPositionSortDirection,
+  playerSnapshotWithTeamLeagueInclude
+} from "@/lib/players/player-snapshot-position-page";
 
 export const dynamic = "force-dynamic";
 
@@ -45,7 +50,7 @@ type PageProps = {
   searchParams: Promise<SearchParams>;
 };
 
-const positions = ["GK", "DEF", "MID", "FWD", "UNKNOWN"];
+const positions = ["FWD", "MID", "DEF", "GK", "UNKNOWN"];
 const DEFAULT_PAGE_SIZE = 100;
 const PAGE_SIZE_OPTIONS = [50, 100, 250] as const;
 const playerSnapshotSortColumns = {
@@ -113,21 +118,21 @@ export default async function PlayersPage({ searchParams }: PageProps) {
 
   const sort = resolvedSearchParams.sort ?? "fantasyScore";
   const orderBy = playerSnapshotOrderBy(sort);
+  const positionSortDirection = playerSnapshotPositionSortDirection(sort);
   const totalPlayers = await prisma.playerSnapshot.count({ where });
   const pageCount = Math.max(1, Math.ceil(totalPlayers / pageSize));
   const page = Math.min(Math.max(1, requestedPage), pageCount);
   const offset = (page - 1) * pageSize;
 
-  const players = await prisma.playerSnapshot.findMany({
-    where,
-    orderBy,
-    skip: offset,
-    take: pageSize,
-    include: {
-      league: true,
-      team: true
-    }
-  });
+  const players = positionSortDirection && !resolvedSearchParams.positionGroup
+    ? await loadPlayerSnapshotPositionPage(where, positionSortDirection, offset, pageSize)
+    : await prisma.playerSnapshot.findMany({
+        where,
+        orderBy,
+        skip: offset,
+        take: pageSize,
+        include: playerSnapshotWithTeamLeagueInclude
+      });
   const paginationParams = {
     ...resolvedSearchParams,
     leagueId: selectedLeagueId || undefined,

@@ -52,7 +52,7 @@ export const GET = withApiHandler(async (request: Request) => {
     historySeason: params.getAll("historySeason")
   });
   const data = await loadFantasySquadPlannerData(prisma, auth.user.id, league, squadId, { historySettings, provider });
-  if (squadId && data.squad.id !== squadId) return jsonError("SQUAD_NOT_FOUND", "Squad variant not found.", 404);
+  if (squadId && data.squad.id !== squadId) return jsonError("SQUAD_NOT_FOUND", "Squad not found.", 404);
   const roundCount = Math.min(data.squad.horizonRounds, data.rounds.length);
   const rows = squadExportRows(data.squad.selections, data.players, roundCount);
   const columns = squadExportColumns(roundCount);

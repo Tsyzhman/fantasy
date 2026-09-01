@@ -1,3 +1,5 @@
+import { fantasyPositionRank } from "@/lib/players/fantasy-position-order";
+
 export type FantasyPositionGroup = "GK" | "DEF" | "MID" | "FWD" | "UNK";
 
 const fantasyProviderPlaceholderPrefix = "provider-placeholder:";
@@ -1238,14 +1240,12 @@ export function optimizeFantasySquad(input: FantasySquadOptimizationInput) {
   const bestPlayerIds = optimizationStatePlayerIds(best);
   if (bestPlayerIds.length !== rules.squadSize) return null;
 
-  const positionOrder = new Map(positions.map((position, index) => [position, index]));
   const selectedPlayers = bestPlayerIds
     .map((playerId) => uniquePlayers.get(playerId))
     .filter((player): player is FantasyPlannerPlayer => Boolean(player))
     .sort(
       (left, right) =>
-        (positionOrder.get(left.positionGroup as (typeof positions)[number]) ?? positions.length) -
-          (positionOrder.get(right.positionGroup as (typeof positions)[number]) ?? positions.length) ||
+        fantasyPositionRank(left.positionGroup) - fantasyPositionRank(right.positionGroup) ||
         scorePlayer(right) - scorePlayer(left) ||
         left.name.localeCompare(right.name)
     );
@@ -1776,7 +1776,7 @@ export function buildTransferPlanSuggestions(input: {
 }) {
   const { pool, selections, rules, horizon } = input;
   const forecastSource = input.forecastSource ?? "FO";
-  const maximumPlans = Math.max(3, Math.min(12, Math.floor(input.maximumPlans ?? 6)));
+  const maximumPlans = Math.max(1, Math.min(12, Math.floor(input.maximumPlans ?? 6)));
   const maximumMoves = Math.min(3, Math.max(0, Math.floor(input.transferCount)));
   if (maximumMoves === 0 || selections.length === 0) return [];
 

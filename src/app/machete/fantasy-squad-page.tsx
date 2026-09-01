@@ -203,15 +203,12 @@ export default async function FantasySquadPage({ searchParams, mode }: FantasySq
               data.playerPoolSnapshotId
             )}
             initialSquad={data.squad}
-            savedSquads={data.squads}
             readiness={data.readiness}
-            priceStatus={data.priceStatus}
             sportsRuSquadStatus={sportsRuSquadStatus}
             provider={provider}
             squadApiPath={mode === "FPL" ? "/api/machete/fpl/squad" : "/api/machete/squads"}
             squadRoutePath={mode === "FPL" ? "/machete/fpl/squad" : "/machete/squad"}
             historySettings={historySettings}
-            historySeasonOptions={data.historySeasonOptions}
             initialVisiblePlayerPoolColumns={parseSquadTableColumns(tablePreference?.squadTableColumns)}
             initialPlayerPoolColumnWidths={parseSquadTableColumnWidths(tablePreference?.squadTableColumnWidths)}
           />

@@ -7,6 +7,7 @@ import { compareMacheteLeagues, macheteLeagueDisplayName } from "@/lib/leagues/d
 import { teamLogoUrlForSlug, validTeamLogoUrl } from "@/lib/teams/logo-assets";
 import { providerTeamShortName } from "@/lib/teams/display";
 import { normalizeName, slugify } from "@/lib/text";
+import { compareFantasyPositions } from "@/lib/players/fantasy-position-order";
 import { daysAgo, matchWindowSeasonLabel, type MacheteMatchWindow } from "@/scoring/machete/match-window";
 import { normalizeFantasyPosition, type FantasyPositionGroup } from "@/machete/squad_logic";
 
@@ -2092,7 +2093,9 @@ function compareSharedMacheteRows(left: SharedMachetePlayerRow, right: SharedMac
   const key = rawKey in sharedMacheteSortColumns ? (rawKey as keyof typeof sharedMacheteSortColumns) : "fantasyScore";
   const column = sharedMacheteSortColumns[key];
   const direction = rawDirection === "asc" || rawDirection === "desc" ? rawDirection : column.defaultDirection;
-  const result = compareSharedMacheteValues(left[column.field], right[column.field], direction);
+  const result = key === "position"
+    ? compareFantasyPositions(String(left.position ?? ""), String(right.position ?? ""), direction)
+    : compareSharedMacheteValues(left[column.field], right[column.field], direction);
   return result || left.name.localeCompare(right.name);
 }
 

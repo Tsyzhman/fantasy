@@ -64,7 +64,7 @@ type PageProps = {
   searchParams: Promise<SearchParams>;
 };
 
-const POSITION_FILTERS = ["GK", "DEF", "MID", "FWD"] as const;
+const POSITION_FILTERS = ["FWD", "MID", "DEF", "GK"] as const;
 
 type PositionFilter = Exclude<FantasyPositionGroup, "UNK">;
 

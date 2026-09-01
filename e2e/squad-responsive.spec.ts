@@ -14,18 +14,14 @@ test("squad controls stay usable without page-level horizontal clipping", async 
   } else {
     await expect(page.getByTestId("squad-touch-roster")).toBeVisible();
     await expect(page.getByTestId("player-pool-mobile")).toBeAttached({ timeout: 30_000 });
-    const variantAndAutoPick = page.locator("summary").filter({ hasText: /Variant and auto-pick/i });
-    await expect(variantAndAutoPick).toBeVisible();
-    await assertMinimumTouchTarget(variantAndAutoPick, 44);
-    await variantAndAutoPick.click();
     await expect(autoPickButton).toBeEnabled({ timeout: 30_000 });
     await autoPickButton.click();
     await expect(page.getByText("Valid squad", { exact: true })).toBeVisible();
     await expect(page.getByTestId("squad-touch-roster").getByRole("button", { name: /Actions for/i }).first()).toBeVisible();
   }
 
-  const sportsSquadButton = page.getByRole("button", { name: /^Sports squad$/i });
-  const saveSquadButton = page.getByRole("button", { name: /^Save(?: squad)?$/i });
+  const sportsSquadButton = page.getByRole("button", { name: /^Import Sports squad$/i });
+  const saveSquadButton = page.getByRole("button", { name: /^Save squad$/i });
   await assertSameRowInOrder(sportsSquadButton, saveSquadButton);
 
   await expect
@@ -36,12 +32,10 @@ test("squad controls stay usable without page-level horizontal clipping", async 
     const controls = [
       page.getByRole("button", { name: /Save squad/i }),
       page.getByRole("button", { name: /Auto-pick squad/i }),
-      page.getByText("More actions", { exact: true })
+      page.getByRole("button", { name: /Auto-pick XI/i })
     ];
     await assertVisibleControlsDoNotOverlap(controls);
-    await page.getByText("More actions", { exact: true }).click();
-    await expect(page.getByRole("button", { name: /Auto-pick XI/i })).toBeVisible();
-    await page.getByText("More actions", { exact: true }).click();
+    await expect(page.getByText("Planning settings", { exact: true })).toHaveCount(0);
     await expect(page.getByRole("textbox", { name: /Search by player name/i })).toBeVisible();
   } else {
     const touchActions = page.getByTestId("squad-touch-roster").getByRole("button", { name: /Actions for/i }).first();

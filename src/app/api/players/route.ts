@@ -6,6 +6,11 @@ import { requireApiUser } from "@/lib/auth";
 import { finiteNumberQueryParam } from "@/lib/api-query";
 import type { CsvColumn } from "@/lib/csv";
 import { prisma } from "@/lib/db";
+import {
+  loadPlayerSnapshotPositionPage,
+  playerSnapshotPositionSortDirection,
+  playerSnapshotWithTeamLeagueInclude
+} from "@/lib/players/player-snapshot-position-page";
 import { parseTableExportFormat, tableExportResponse } from "@/lib/table-export";
 
 export const dynamic = "force-dynamic";
@@ -82,16 +87,16 @@ export const GET = withApiHandler(async (request: Request) => {
 
   const sort = params.get("sort") ?? "fantasyScore";
   const orderBy = playerSnapshotOrderBy(sort);
+  const positionSortDirection = playerSnapshotPositionSortDirection(sort);
 
-  const players = await prisma.playerSnapshot.findMany({
-    where,
-    orderBy,
-    take: 250,
-    include: {
-      team: true,
-      league: true
-    }
-  });
+  const players = positionSortDirection && !positionGroup
+    ? await loadPlayerSnapshotPositionPage(where, positionSortDirection, 0, 250)
+    : await prisma.playerSnapshot.findMany({
+        where,
+        orderBy,
+        take: 250,
+        include: playerSnapshotWithTeamLeagueInclude
+      });
 
   const exportFormat = parseTableExportFormat(params.get("format"), null);
   if (params.has("format")) {

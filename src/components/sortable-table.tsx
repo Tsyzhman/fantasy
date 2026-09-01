@@ -3,6 +3,7 @@
 import { useEffect, useRef, type KeyboardEvent, type MouseEvent, type TableHTMLAttributes } from "react";
 
 import { localizedText, useLanguage } from "@/components/localized-option";
+import { compareFantasyPositions, isFantasyPositionSortKey } from "@/lib/players/fantasy-position-order";
 
 export type SortDirection = "asc" | "desc";
 
@@ -160,7 +161,7 @@ function sortTableBody(table: HTMLTableElement, header: HTMLTableCellElement, fo
   const pinnedRows = rowGroups.filter((group) => !rowCanSort(group.row, columnIndex));
 
   sortableRows.sort((left, right) => {
-    const result = compareSortableValues(left.value, right.value, nextDirection);
+    const result = compareSortableValues(left.value, right.value, nextDirection, header.dataset.sortKey);
     return result || left.index - right.index;
   });
 
@@ -278,11 +279,12 @@ function comparableValue(value: string): ComparableValue {
   return { kind: "text", text: text.toLocaleLowerCase() };
 }
 
-export function compareSortableValues(left: ComparableValue, right: ComparableValue, direction: SortDirection) {
+export function compareSortableValues(left: ComparableValue, right: ComparableValue, direction: SortDirection, sortKey?: string) {
   if (left.kind === "empty" && right.kind === "empty") return 0;
   if (left.kind === "empty") return 1;
   if (right.kind === "empty") return -1;
 
+  if (isFantasyPositionSortKey(sortKey)) return compareFantasyPositions(left.text, right.text, direction);
   const result = "number" in left && "number" in right
     ? left.number - right.number
     : left.text.localeCompare(right.text, undefined, { numeric: true, sensitivity: "base" });

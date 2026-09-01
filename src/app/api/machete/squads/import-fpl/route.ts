@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { FPL_LEAGUE_ID, FPL_PROVIDER, FPL_SEASON, normalizeFplEntryId } from "@/lib/providers/fpl";
 import { readJsonObject } from "@/lib/request-json";
 import { FplSquadImportError, importPublishedFplSquad } from "@/machete/fpl-squad-import";
+import { defaultFantasySquadNameForUser } from "@/machete/squad_planner";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -38,7 +39,7 @@ export const POST = withApiHandler(async (request: Request) => {
       userId: auth.user.id,
       entryId,
       squadId: typeof body.squadId === "string" && body.squadId.trim() ? body.squadId.trim() : null,
-      squadName: typeof body.squadName === "string" ? body.squadName : undefined,
+      squadName: defaultFantasySquadNameForUser(auth.user),
       horizonRounds: Number.isInteger(Number(body.horizonRounds)) ? Number(body.horizonRounds) : undefined
     });
     return NextResponse.json({ imported: true, result });

@@ -5,6 +5,29 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.54 - 2026-09-01
+
+### Changed
+
+- Collapse Squad to one current squad. Remove saved-variant and variant-name
+  controls, preserve existing squad names, and name only newly created squads
+  from the user name plus `squad`.
+- Put next-round, forecast, budget, bank and transfer-limit progress directly
+  above the composition; move Round forecast below it and keep the existing
+  planning configuration without exposing a separate settings panel.
+- Make save and provider-import actions icon-only, move Fits beside the price
+  range, and show at most two compact transfer suggestions beside denser
+  bookmaker favorites.
+- Tighten the all-team fixture calendar, use difficulty as the cell background,
+  enlarge fixture text, simplify its legend and remove the explanatory footer.
+- Use the position order FWD, MID, DEF, GK, UNK consistently across player and
+  squad tables, exports and optimizer output.
+
+### Performance
+
+- Compute only the two displayed suggestion plans and page position-sorted
+  database reads in bounded groups instead of loading a full player table.
+
 ## 0.3.53 - 2026-09-01
 
 ### Fixed

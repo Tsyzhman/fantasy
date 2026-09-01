@@ -258,15 +258,19 @@ export async function importPublishedFplSquad(
       rawChipCode === "WILDCARD" || rawChipCode === "FREE_HIT" ? rawChipCode : null
     );
 
-    const squadName = input.squadName?.trim() || `FPL GW${event.id}`;
     const existingSquad = input.squadId
       ? await tx.userFantasySquad.findFirst({ where: { id: input.squadId, userId: input.userId, contestId: contest.id, provider: FPL_PROVIDER, leagueId: FPL_LEAGUE_ID, season: FPL_SEASON }, select: { id: true, name: true, horizonRounds: true } })
-      : null;
-    if (input.squadId && !existingSquad) throw new FplSquadImportError("FPL_SQUAD_NOT_FOUND", "FPL squad variant does not belong to this user.", undefined, 404);
+      : await tx.userFantasySquad.findFirst({
+          where: { userId: input.userId, contestId: contest.id, provider: FPL_PROVIDER, leagueId: FPL_LEAGUE_ID, season: FPL_SEASON },
+          orderBy: { updatedAt: "desc" },
+          select: { id: true, name: true, horizonRounds: true }
+        });
+    if (input.squadId && !existingSquad) throw new FplSquadImportError("FPL_SQUAD_NOT_FOUND", "FPL squad does not belong to this user.", undefined, 404);
+    const squadName = (existingSquad?.name ?? input.squadName?.trim()) || `FPL GW${event.id}`;
     const squad = existingSquad
       ? await tx.userFantasySquad.update({
           where: { id: existingSquad.id },
-          data: { name: squadName, budgetLimit: fpl202627Rules.budgetLimit, bank: published.entryHistory.bank ?? fpl202627Rules.budgetLimit - validation.spent, horizonRounds: input.horizonRounds ?? existingSquad.horizonRounds, filters: { roundPlans } },
+          data: { budgetLimit: fpl202627Rules.budgetLimit, bank: published.entryHistory.bank ?? fpl202627Rules.budgetLimit - validation.spent, horizonRounds: input.horizonRounds ?? existingSquad.horizonRounds, filters: { roundPlans } },
           select: { id: true, name: true, horizonRounds: true }
         })
       : await tx.userFantasySquad.create({

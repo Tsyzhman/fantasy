@@ -170,8 +170,11 @@ test("calendar is lazy, memoized and shared once per snapshot update, not duplic
   assert.match(client, /IntersectionObserver/);
   assert.match(client, /sticky left-0/);
   assert.match(client, /section ref=\{sectionRef\} className="relative /, "contain absolute screen-reader labels inside the scrollable calendar");
-  assert.match(client, /<col className="w-32 sm:w-44" \/>/, "keep a complete fixture visible beside the team and average on mobile");
+  assert.match(client, /<col className="w-28 sm:w-36" \/>/, "keep a complete fixture visible beside the team and average on mobile");
   assert.match(client, /<FdrPill/);
+  assert.match(client, /fixtureCalendarCellTone\(fixtures\)/, "difficulty colors fill the cells instead of only underlining fixture pills");
+  assert.match(client, /<strong className="font-bold text-slate-700">\{text\("H", "Д"\)\}<\/strong>/);
+  assert.doesNotMatch(client, /Both matches in a double round count separately/);
   assert.doesNotMatch(client, /fetch\(|setInterval\(|localStorage|squad_planner/);
   assert.match(planner, /fixtureCalendarSnapshotIdRef\.current !== pinnedSnapshotId/);
   assert.match(planner, /if \(cursor === "0"\) batchUrl\.searchParams\.set\("fixtureCalendar", "1"\)/);

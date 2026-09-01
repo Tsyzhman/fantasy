@@ -21,7 +21,7 @@ import {
   type FantasyProviderPlaceholder
 } from "@/machete/squad_logic";
 import { toFantasyPlayerPoolListItem } from "@/machete/squad-player-dto";
-import { loadFantasySquadPlannerData, saveFantasySquad, uniqueFantasySquadName } from "@/machete/squad_planner";
+import { defaultFantasySquadNameForUser, loadFantasySquadPlannerData, saveFantasySquad, uniqueFantasySquadName } from "@/machete/squad_planner";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -58,7 +58,7 @@ export const POST = withApiHandler(async (request: Request) => {
     updatedAt: leagueSeason.updatedAt
   };
   const plannerData = await loadFantasySquadPlannerData(prisma, auth.user.id, league, squadId);
-  if (squadId && plannerData.squad.id !== squadId) return jsonError("NOT_FOUND", "Squad variant not found.", 404);
+  if (squadId && plannerData.squad.id !== squadId) return jsonError("NOT_FOUND", "Squad not found.", 404);
 
   let snapshotStatus: SportsRuSquadSnapshotStatus | null = null;
   try {
@@ -125,7 +125,10 @@ export const POST = withApiHandler(async (request: Request) => {
   });
   const name = plannerData.squad.id
     ? plannerData.squad.name
-    : uniqueFantasySquadName(plannerData.squads.map((option) => option.name), preview.squadName);
+    : uniqueFantasySquadName(
+        plannerData.squads.map((option) => option.name),
+        defaultFantasySquadNameForUser(auth.user)
+      );
   const saved = await saveFantasySquad(prisma, {
     userId: auth.user.id,
     leagueId,

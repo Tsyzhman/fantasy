@@ -2637,6 +2637,15 @@ export function normalizeFantasySquadName(value: string | null | undefined, fall
   return normalized.slice(0, maxFantasySquadNameLength).trim() || fallback;
 }
 
+export function defaultFantasySquadNameForUser(user: { name?: string | null; email?: string | null }) {
+  const displayName = user.name?.replace(/\s+/g, " ").trim()
+    || user.email?.split("@", 1)[0]?.replace(/\s+/g, " ").trim()
+    || "User";
+  const suffix = " squad";
+  const stem = displayName.slice(0, maxFantasySquadNameLength - suffix.length).trimEnd() || "User";
+  return `${stem}${suffix}`;
+}
+
 export function uniqueFantasySquadName(existingNames: Iterable<string>, requestedName: string | null | undefined) {
   const baseName = normalizeFantasySquadName(requestedName);
   const used = new Set([...existingNames].map((name) => normalizeFantasySquadName(name).toLocaleLowerCase()));

@@ -1,10 +1,12 @@
 import { calculateFantasyScore, calculateScoringScore, type ActiveScoringModel } from "@/lib/scoring";
+import { fantasyPositionOrder } from "@/lib/players/fantasy-position-order";
 
 import { build_fantasy_model_metrics_from_player_stat, type FantasyMatchPlayerStatInput } from "./fantasy_points_engine";
 
-export const FANTASY_BACKTEST_POSITION_GROUPS = ["GK", "DEF", "MID", "FWD"] as const;
-
-export type FantasyBacktestPositionGroup = (typeof FANTASY_BACKTEST_POSITION_GROUPS)[number];
+export type FantasyBacktestPositionGroup = Exclude<(typeof fantasyPositionOrder)[number], "UNK">;
+export const FANTASY_BACKTEST_POSITION_GROUPS: readonly FantasyBacktestPositionGroup[] = fantasyPositionOrder.filter(
+  (position): position is FantasyBacktestPositionGroup => position !== "UNK"
+);
 export type FantasyBacktestPlayingTimeGroup = "STABLE_STARTER" | "UNCERTAIN_MINUTES" | "OTHER";
 
 export type FantasyBacktestObservation = FantasyMatchPlayerStatInput & {

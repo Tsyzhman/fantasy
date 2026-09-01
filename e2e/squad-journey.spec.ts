@@ -1,4 +1,4 @@
-import { expect, test, type Page } from "@playwright/test";
+import { expect, test } from "@playwright/test";
 
 type PlayerPoolPayload = {
   players?: Array<{
@@ -9,14 +9,11 @@ type PlayerPoolPayload = {
 
 const productionSmokeLeagueId = "63";
 
-test("search a forecast, auto-pick a valid squad, save it, and remove the QA copy", async ({ page }, testInfo) => {
+test("search a forecast, auto-pick the current squad, and save it", async ({ page }, testInfo) => {
   test.skip(testInfo.project.name !== "desktop-chromium", "The full mutation journey runs once; responsive projects are read-only.");
   test.slow();
 
-  let createdSquadId: string | null = null;
-  const qaSquadName = `E2E optimized ${Date.now()}`;
   await page.goto(`/machete/squad?leagueId=${productionSmokeLeagueId}`);
-  await removeStaleQaSquads(page);
 
   const plannerScope = page.locator("[data-fantasy-squad-planner]");
   await expect(plannerScope).toHaveCount(1);
@@ -51,50 +48,18 @@ test("search a forecast, auto-pick a valid squad, save it, and remove the QA cop
   await expect(page.getByRole("heading", { name: /Player search and forecasts/i })).toBeVisible();
   await expect(page.getByRole("button", { name: `Add ${forecastPlayer.name} to comparison`, exact: true }).first()).toBeVisible();
 
-  try {
-    await page.goto(`/machete/squad?${new URLSearchParams({ leagueId, season })}`);
-    const autoPickButton = page.getByRole("button", { name: /Auto-pick squad/i });
-    await expect(autoPickButton).toBeEnabled({ timeout: 30_000 });
+  await page.goto(`/machete/squad?${new URLSearchParams({ leagueId, season })}`);
+  const autoPickButton = page.getByRole("button", { name: /Auto-pick squad/i });
+  await expect(autoPickButton).toBeEnabled({ timeout: 30_000 });
+  await expect(page.getByLabel(/Saved variant|Variant name/i)).toHaveCount(0);
+  await autoPickButton.click();
 
-    await page.getByText("More actions", { exact: true }).click();
-    await page.getByRole("button", { name: /New blank/i }).click();
-    await page.getByLabel(/Variant name/i).fill(qaSquadName);
-    await autoPickButton.click();
-
-    await expect(page.getByText("Valid squad", { exact: true })).toBeVisible();
-    const saveButton = page.getByRole("button", { name: /Save squad/i });
-    await expect(saveButton).toBeEnabled();
-    await saveButton.click();
-    await page.waitForURL((url) => url.pathname === "/machete/squad" && Boolean(url.searchParams.get("squadId")), {
-      timeout: 30_000
-    });
-    createdSquadId = new URL(page.url()).searchParams.get("squadId");
-    expect(createdSquadId).toBeTruthy();
-    await expect(page.getByLabel(/Saved variant/i).locator("option:checked")).toContainText(qaSquadName);
-  } finally {
-    if (createdSquadId) {
-      const cleanupStatus = await deleteSquadInBrowser(page, createdSquadId);
-      expect(cleanupStatus, `QA squad cleanup failed with ${cleanupStatus}.`).toBe(200);
-    }
-  }
+  await expect(page.getByText("Valid squad", { exact: true })).toBeVisible();
+  const saveButton = page.getByRole("button", { name: /Save squad/i });
+  await expect(saveButton).toBeEnabled();
+  await saveButton.click();
+  await page.waitForURL((url) => url.pathname === "/machete/squad" && Boolean(url.searchParams.get("squadId")), {
+    timeout: 30_000
+  });
+  expect(new URL(page.url()).searchParams.get("squadId")).toBeTruthy();
 });
-
-async function removeStaleQaSquads(page: Page) {
-  const staleSquadIds = await page.getByLabel(/Saved variant/i).locator("option").evaluateAll((options) =>
-    options
-      .filter((option) => option.textContent?.trim().startsWith("E2E optimized "))
-      .map((option) => (option as HTMLOptionElement).value)
-      .filter(Boolean)
-  );
-  for (const squadId of staleSquadIds) {
-    const status = await deleteSquadInBrowser(page, squadId);
-    expect(status, `Stale QA squad cleanup failed with ${status}.`).toBe(200);
-  }
-}
-
-async function deleteSquadInBrowser(page: Page, squadId: string) {
-  return page.evaluate(async (id) => {
-    const response = await fetch(`/api/machete/squads?squadId=${encodeURIComponent(id)}`, { method: "DELETE" });
-    return response.status;
-  }, squadId);
-}

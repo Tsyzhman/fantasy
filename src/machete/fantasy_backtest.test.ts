@@ -90,7 +90,7 @@ test("quality gate requires the configured improvement in three position groups"
     requiredPassingPositions: 3
   });
 
-  assert.deepEqual(summary.qualityGate.passingPositions, ["GK", "DEF", "MID"]);
+  assert.deepEqual(summary.qualityGate.passingPositions, ["MID", "DEF", "GK"]);
   assert.equal(summary.qualityGate.passed, true);
   assert.equal(summary.byPosition.GK.maeImprovementPercent, 50);
   assert.equal(summary.byPosition.FWD.passesImprovementThreshold, false);

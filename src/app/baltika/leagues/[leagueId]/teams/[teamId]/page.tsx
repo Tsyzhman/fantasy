@@ -11,6 +11,7 @@ import { SortableTable } from "@/components/sortable-table";
 import { prisma } from "@/lib/db";
 import { formatCurrency, formatDate, formatNumber, formatScore } from "@/lib/format";
 import { compactPlayerDisplayName } from "@/lib/players/display-name";
+import { compareFantasyPositions } from "@/lib/players/fantasy-position-order";
 import { LeagueFlag } from "@/components/ui/league-flag";
 
 export const dynamic = "force-dynamic";
@@ -45,7 +46,6 @@ export default async function BaltikaTeamPage({ params, searchParams }: PageProp
           snapshots: {
             orderBy: [
               { isStarter: "desc" },
-              { positionGroup: "asc" },
               { fantasyScore: { sort: "desc", nulls: "last" } },
               { playerName: "asc" }
             ]
@@ -64,7 +64,10 @@ export default async function BaltikaTeamPage({ params, searchParams }: PageProp
   if (!team || team.leagueId !== leagueId) notFound();
 
   const currentImport = team.imports[0];
-  const players = currentImport?.snapshots ?? [];
+  const players = [...(currentImport?.snapshots ?? [])].sort((left, right) =>
+    Number(right.isStarter) - Number(left.isStarter)
+      || compareFantasyPositions(left.positionGroup, right.positionGroup)
+  );
   const filteredPlayers = filterByStarter(players, starterFilter);
   const startersCount = players.filter((player) => player.isStarter).length;
   const matchStats = [...team.baltikaMatchStats].sort((left, right) => {

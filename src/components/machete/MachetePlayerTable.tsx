@@ -18,6 +18,7 @@ import { compactPriceHeaderThreshold, responsivePriceHeaderLabel } from "@/compo
 import { cn } from "@/lib/cn";
 import { formatNumber } from "@/lib/format";
 import { compactPlayerDisplayName } from "@/lib/players/display-name";
+import { compareFantasyPositions, isFantasyPositionSortKey } from "@/lib/players/fantasy-position-order";
 import { compactTeamDisplayName } from "@/lib/teams/display";
 import {
   machetePlayerTableFiltersSource,
@@ -225,7 +226,7 @@ export function MachetePlayerTable({
     if (!clientSort) return filteredPlayers;
     const sortColumn = [...fixedColumns, ...columns].find((column) => column.key === clientSort.key);
     if (!sortColumn) return filteredPlayers;
-    return [...filteredPlayers].sort((left, right) => compareColumnValues(sortColumn.value(left), sortColumn.value(right), clientSort.direction));
+    return [...filteredPlayers].sort((left, right) => compareColumnValues(sortColumn.value(left), sortColumn.value(right), clientSort.direction, sortColumn.key));
   }, [clientSort, columns, filteredPlayers, fixedColumns]);
   const [xRanks, fpRanks, altRanks] = useMemo(() => [
     computeRanks(displayedPlayers.map((player) => player.fantasyScore)),
@@ -799,9 +800,10 @@ function displayValue(value: string | number | null) { return value == null || v
 function displayColumnValue(key: string, value: string | number | null) { return key.endsWith("PerPrice") && typeof value === "number" ? formatNumber(value, 3) : displayValue(value); }
 function filterIsActive(filter: ValueFilter | undefined, numeric: boolean) { if (!filter) return false; return numeric ? Boolean(filter.min.trim() || filter.max.trim()) : Boolean(filter.query.trim()); }
 function valueMatches(value: string | number | null, filter: ValueFilter, numeric: boolean) { if (!filterIsActive(filter, numeric)) return true; if (numeric) { if (typeof value !== "number") return false; const min = Number(filter.min.replace(",", ".")); const max = Number(filter.max.replace(",", ".")); return (!filter.min.trim() || value >= min) && (!filter.max.trim() || value <= max); } return String(value ?? "").toLocaleLowerCase().includes(filter.query.trim().toLocaleLowerCase()); }
-function compareColumnValues(left: string | number | null, right: string | number | null, direction: "asc" | "desc") {
+function compareColumnValues(left: string | number | null, right: string | number | null, direction: "asc" | "desc", sortKey?: string) {
   const emptyDifference = Number(left == null || left === "") - Number(right == null || right === "");
   if (emptyDifference !== 0) return emptyDifference;
+  if (isFantasyPositionSortKey(sortKey)) return compareFantasyPositions(String(left ?? ""), String(right ?? ""), direction);
   const difference = typeof left === "number" && typeof right === "number"
     ? left - right
     : String(left ?? "").localeCompare(String(right ?? ""), undefined, { numeric: true, sensitivity: "base" });

@@ -11,11 +11,11 @@ import {
   loadFantasySquadPlayerPoolBaseBatch,
   loadFantasySquadPlayerPoolLoadPlan,
   loadFantasySquadPlannerData,
+  defaultFantasySquadNameForUser,
   fantasyPlayerPoolCacheMetrics,
   mergeFantasyPlannerPlayerPools,
   fantasySquadRoundIdsFromFilters,
   fantasySquadRoundShift,
-  normalizeFantasySquadName,
   rolloverFantasySquadRoundPlans,
   saveFantasySquad,
   uniqueFantasySquadName
@@ -134,7 +134,7 @@ export const GET = withApiHandler(async (request: Request) => {
       }
     });
     if (!ownedSquad) {
-      return jsonError("NOT_FOUND", "Squad variant not found for this league and season.", 404);
+      return jsonError("NOT_FOUND", "Squad not found for this league and season.", 404);
     }
     ownedSquadFilters = ownedSquad.filters;
     ownedSquadPlayerIds = ownedSquad.players.map((player) => String(player.playerId));
@@ -341,8 +341,9 @@ export const POST = withApiHandler(async (request: Request) => {
     updatedAt: leagueSeason.updatedAt
       }, squadId, { historySettings, provider });
   if (squadId && plannerData.squad.id !== squadId) {
-    return jsonError("NOT_FOUND", "Squad variant not found for this league and season.", 404);
+    return jsonError("NOT_FOUND", "Squad not found for this league and season.", 404);
   }
+  const targetSquadId = squadId ?? plannerData.squad.id;
   const rules = plannerData.rules;
   const horizonRounds = normalizeFantasyHorizon(body.horizonRounds, rules.horizonOptions);
   const requestedSelections = parseSelections(body.selections);
@@ -378,29 +379,24 @@ export const POST = withApiHandler(async (request: Request) => {
     }
   }
 
-  const savedSelections = squadId ? plannerData.squad.selections : [];
+  const savedSelections = targetSquadId ? plannerData.squad.selections : [];
   const transferLimit = fantasyTransferLimitForHorizon(horizonRounds, rules.transferLimitPerRound);
   const transferCount = countFantasySquadTransfers(savedSelections, safeSelections);
   if (savedSelections.length === rules.squadSize && transferCount > transferLimit) {
     return jsonError("BAD_REQUEST", `You made ${transferCount} transfers; limit for this forecast is ${transferLimit}.`, 400);
   }
 
-  const requestedName = typeof body.name === "string" ? body.name : undefined;
-  const normalizedName = normalizeFantasySquadName(requestedName);
-  const conflictingVariant = plannerData.squads.find(
-    (option) => option.id !== squadId && option.name.toLocaleLowerCase() === normalizedName.toLocaleLowerCase()
-  );
-  if (squadId && conflictingVariant) {
-    return jsonError("SQUAD_NAME_CONFLICT", "Another squad variant already uses this name.", 409);
-  }
-  const name = squadId
-    ? normalizedName
-    : uniqueFantasySquadName(plannerData.squads.map((option) => option.name), normalizedName);
+  const name = targetSquadId
+    ? plannerData.squad.name
+    : uniqueFantasySquadName(
+        plannerData.squads.map((option) => option.name),
+        defaultFantasySquadNameForUser(auth.user)
+      );
   const squad = await saveFantasySquad(prisma, {
     userId,
     leagueId,
     season,
-    squadId,
+    squadId: targetSquadId,
     name,
     horizonRounds,
     selections: safeSelections,
@@ -435,7 +431,7 @@ export const DELETE = withApiHandler(async (request: Request) => {
     select: { contestId: true, provider: true, userId: true }
   });
   if (!squad || squad.userId !== auth.user.id || squad.provider !== provider) {
-    return jsonError("NOT_FOUND", "Squad variant not found.", 404);
+    return jsonError("NOT_FOUND", "Squad not found.", 404);
   }
 
   const deleted = await prisma.userFantasySquad.deleteMany({
@@ -446,7 +442,7 @@ export const DELETE = withApiHandler(async (request: Request) => {
       contestId: squad.contestId
     }
   });
-  if (deleted.count === 0) return jsonError("NOT_FOUND", "Squad variant not found.", 404);
+  if (deleted.count === 0) return jsonError("NOT_FOUND", "Squad not found.", 404);
 
   return NextResponse.json({ deletedSquadId: squadId });
 });

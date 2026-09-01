@@ -1,5 +1,6 @@
 import type { CsvColumn } from "@/lib/csv";
 import { compactPlayerDisplayName } from "@/lib/players/display-name";
+import { fantasyPositionRank } from "@/lib/players/fantasy-position-order";
 
 export type LeagueStartingXiTeam = {
   id: bigint;
@@ -16,13 +17,6 @@ export type LeagueStartingXiTeam = {
 };
 
 type StartingXiExportRow = Record<string, string>;
-
-const positionOrder = new Map([
-  ["GK", 0], ["G", 0], ["GOALKEEPER", 0],
-  ["DEF", 1], ["D", 1], ["DEFENDER", 1],
-  ["MID", 2], ["M", 2], ["MIDFIELDER", 2],
-  ["FWD", 3], ["FW", 3], ["F", 3], ["FORWARD", 3]
-]);
 
 export function buildLeagueStartingXiTable(teams: LeagueStartingXiTeam[]) {
   const orderedTeams = teams
@@ -56,13 +50,9 @@ export function probableStartingPlayers<T extends LeagueStartingXiTeam["players"
 }
 
 function comparePlayers(left: LeagueStartingXiTeam["players"][number], right: LeagueStartingXiTeam["players"][number]) {
-  const positionDifference = playerPositionRank(left.position) - playerPositionRank(right.position);
+  const positionDifference = fantasyPositionRank(left.position) - fantasyPositionRank(right.position);
   if (positionDifference !== 0) return positionDifference;
   const shirtDifference = (left.shirtNumber ?? Number.MAX_SAFE_INTEGER) - (right.shirtNumber ?? Number.MAX_SAFE_INTEGER);
   if (shirtDifference !== 0) return shirtDifference;
   return left.name.localeCompare(right.name, "en", { sensitivity: "base" });
-}
-
-function playerPositionRank(position: string | null) {
-  return positionOrder.get(position?.trim().toUpperCase() ?? "") ?? 4;
 }
