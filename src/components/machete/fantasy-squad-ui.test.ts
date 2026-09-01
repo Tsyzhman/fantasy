@@ -196,6 +196,15 @@ test("compact transfer suggestions include bookmaker favorites with separate cle
   assert.match(squadPlannerSource, /en="Bookmaker favorites" ru="Рыночные фавориты"/);
   assert.match(squadPlannerSource, /en="Clean sheet" ru="Сухарь"/);
   assert.match(squadPlannerSource, /en="Team O1\.5" ru="ИТБ 1\.5"/);
+  assert.match(squadPlannerSource, /xl:grid-cols-\[minmax\(0,1fr\)_minmax\(18rem,22rem\)\]/);
+  assert.match(squadPlannerSource, /<table className="w-full table-fixed">/);
+  assert.match(squadPlannerSource, /max-w-0 truncate/);
+  assert.match(squadPlannerSource, /\{row\.teamName\}/);
+  assert.match(squadPlannerSource, /\{row\.side === "H" \? "vs" : "@"\} \{row\.opponentName\}/);
+  assert.doesNotMatch(squadPlannerSource, /max-w-\[11rem\]/);
+  assert.doesNotMatch(squadPlannerSource, /w-\[4\.4rem\]/);
+  assert.doesNotMatch(squadPlannerSource, /MarketProbabilityCell[^\n]*wide/);
+  assert.doesNotMatch(squadPlannerSource, /teamMarketInitials/);
   assert.match(squadPlannerSource, /activeRoundBookmakerFavorites/);
   assert.match(squadPlannerBackendSource, /bookmakerFavorites: buildBookmakerFavorites\(roundsAndFixtures\)/);
   assert.match(squadPlannerBackendSource, /pricedSides\.length === 0/);

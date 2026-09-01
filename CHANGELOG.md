@@ -5,6 +5,12 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.56 - 2026-09-01
+
+### Fixed
+
+- Rebuild bookmaker favorites as a compact `table-fixed` sidebar so favorite, clean-sheet and team over-1.5 columns stay aligned beside transfer suggestions without overflowing.
+
 ## 0.3.55 - 2026-09-01
 
 ### Changed

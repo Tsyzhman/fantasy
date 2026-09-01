@@ -2050,7 +2050,7 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
               <I18nText en="FPL banks unused free transfers, up to 5. Extra transfers cost 4 points." ru="В FPL неиспользованные бесплатные трансферы копятся до 5. Лишние стоят 4 очка." />
             </p>
           )}
-          <div className="mt-1.5 grid items-start gap-2 xl:grid-cols-[minmax(0,1fr)_minmax(16rem,0.86fr)]">
+          <div className="mt-1.5 grid items-start gap-2 xl:grid-cols-[minmax(0,1fr)_minmax(18rem,22rem)]">
             <div className="grid min-w-0 gap-1.5 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
             {displayedSuggestions.map((suggestion) => {
               const captain = suggestion.captainPlayerId ? playersById.get(suggestion.captainPlayerId) ?? null : null;
@@ -5022,7 +5022,7 @@ function BookmakerFavoritesTable({
   );
 
   return (
-    <section className="overflow-hidden rounded border border-slate-200 bg-white" aria-label={localizedText(language, "Bookmaker favorites", "Рыночные фавориты")} title={selectionExplanation}>
+    <section className="min-w-0 overflow-hidden rounded border border-slate-200 bg-white" aria-label={localizedText(language, "Bookmaker favorites", "Рыночные фавориты")} title={selectionExplanation}>
       <div className="flex items-center justify-between gap-1.5 border-b border-slate-200 bg-slate-50/80 px-2 py-1">
         <h4 className="min-w-0 truncate text-[10px] font-semibold uppercase tracking-wide text-slate-600"><I18nText en="Bookmaker favorites" ru="Рыночные фавориты" /></h4>
         <p className="shrink-0 text-right text-[9px] font-semibold text-slate-600" title={newestOddsAt ? `${localizedText(language, "Latest bookmaker update", "Последнее обновление линии")}: ${formatDateTime(newestOddsAt)}` : undefined}>
@@ -5030,30 +5030,32 @@ function BookmakerFavoritesTable({
         </p>
       </div>
 
-      <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-500">
-        <span className="min-w-0 max-w-[11rem] flex-1"><I18nText en="Favorite" ru="Фаворит" /></span>
-        <span className="w-[4.4rem] shrink-0 text-right"><I18nText en="Clean sheet" ru="Сухарь" /></span>
-        <span className="w-[4.4rem] shrink-0 text-right"><I18nText en="Team O1.5" ru="ИТБ 1.5" /></span>
-      </div>
-
       {rows.length > 0 ? (
-        <div className="divide-y divide-slate-100">
-          {rows.map((row) => (
-            <div key={row.fixtureId} className="flex items-center gap-2 px-2 py-1">
-              <div className="flex min-w-0 max-w-[11rem] items-center gap-1">
-                <span aria-hidden="true" className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-sky-100 bg-sky-50 text-[7px] font-black text-sky-800">
-                  {teamMarketInitials(row.teamName)}
-                </span>
-                <p className="min-w-0 truncate text-[10px] font-semibold leading-3 text-ink" title={`${row.teamFullName} ${row.side === "H" ? "vs" : "@"} ${row.opponentFullName}`}>
+        <table className="w-full table-fixed">
+          <thead>
+            <tr className="border-b border-slate-200 bg-slate-50 text-[9px] font-semibold text-slate-500">
+              <th scope="col" className="px-2 py-0.5 text-left font-semibold"><I18nText en="Favorite" ru="Фаворит" /></th>
+              <th scope="col" className="w-12 px-0.5 py-0.5 text-right font-semibold leading-tight"><I18nText en="Clean sheet" ru="Сухарь" /></th>
+              <th scope="col" className="w-14 px-0.5 py-0.5 text-right font-semibold leading-tight"><I18nText en="Team O1.5" ru="ИТБ 1.5" /></th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => (
+              <tr key={row.fixtureId} className="border-b border-slate-100 last:border-b-0">
+                <td className="max-w-0 truncate px-2 py-0.5 text-[10px] font-semibold leading-4 text-ink" title={`${row.teamFullName} ${row.side === "H" ? "vs" : "@"} ${row.opponentFullName}`}>
                   {row.teamName}
                   <span className="ml-1 font-medium text-slate-500">{row.side === "H" ? "vs" : "@"} {row.opponentName}</span>
-                </p>
-              </div>
-              <MarketProbabilityCell probability={row.cleanSheetProbability} tone="sky" label={localizedText(language, `Clean-sheet chance for ${row.teamFullName}`, `Шанс сухаря: ${row.teamFullName}`)} wide />
-              <MarketProbabilityCell probability={row.teamOver15Probability} tone="emerald" label={localizedText(language, `Chance ${row.teamFullName} scores over 1.5`, `Шанс ${row.teamFullName} забить больше 1.5`)} wide />
-            </div>
-          ))}
-        </div>
+                </td>
+                <td className="px-0.5 py-0.5 text-right">
+                  <MarketProbabilityCell probability={row.cleanSheetProbability} tone="sky" label={localizedText(language, `Clean-sheet chance for ${row.teamFullName}`, `Шанс сухаря: ${row.teamFullName}`)} />
+                </td>
+                <td className="px-0.5 py-0.5 text-right">
+                  <MarketProbabilityCell probability={row.teamOver15Probability} tone="emerald" label={localizedText(language, `Chance ${row.teamFullName} scores over 1.5`, `Шанс ${row.teamFullName} забить больше 1.5`)} />
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       ) : (
         <p className="px-2 py-3 text-center text-[11px] text-slate-500" role="status">
           <I18nText en="No fresh complete bookmaker lines for this round." ru="На этот тур нет свежих полных букмекерских линий." />
@@ -5063,17 +5065,13 @@ function BookmakerFavoritesTable({
   );
 }
 
-function MarketProbabilityCell({ probability, tone, label, wide = false }: { probability: number; tone: "sky" | "emerald"; label: string; wide?: boolean }) {
+function MarketProbabilityCell({ probability, tone, label }: { probability: number; tone: "sky" | "emerald"; label: string }) {
   const percent = Math.round(probability * 100);
   return (
-    <div className={cn("shrink-0 text-right", wide ? "w-[4.4rem]" : "w-10")} aria-label={`${label}: ${percent}%`} title={`${label}: ${percent}%`}>
-      <span className={cn("text-[11px] font-bold num-tabular", tone === "sky" ? "text-sky-700" : "text-emerald-700")}>{percent}%</span>
-    </div>
+    <span className={cn("inline-block rounded px-0.5 text-[11px] font-bold leading-4 num-tabular", tone === "sky" ? "bg-sky-50 text-sky-700" : "bg-emerald-50 text-emerald-700")} aria-label={`${label}: ${percent}%`} title={`${label}: ${percent}%`}>
+      {percent}%
+    </span>
   );
-}
-
-function teamMarketInitials(name: string) {
-  return name.trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase() || "?";
 }
 
 function transferSuggestionRoundLabel(source: TransferSuggestionForecastSource, rounds: number, language: UiLanguage) {
