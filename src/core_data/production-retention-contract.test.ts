@@ -20,3 +20,10 @@ test("production retention keeps current plus one rollback release by default", 
   assert.match(retentionScript, /KEEP_ROLLBACK=/);
   assert.match(retentionScript, /docker builder prune --force --max-used-space "\$build_cache_limit"/);
 });
+
+test("production worker exposes explicit V8 garbage collection for forecast working sets", () => {
+  const workerCreateIndex = deployScript.indexOf('docker create \\\n  --name "$worker"');
+  assert.ok(workerCreateIndex >= 0, "worker container creation must remain explicit");
+  const workerCreateBlock = deployScript.slice(workerCreateIndex, deployScript.indexOf("docker container start", workerCreateIndex));
+  assert.match(workerCreateBlock, /"\$image" node --expose-gc server\.js/);
+});

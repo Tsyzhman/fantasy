@@ -612,7 +612,7 @@ docker create \
   --log-driver json-file \
   --log-opt max-size=20m \
   --log-opt max-file=5 \
-  "$image" >/dev/null
+  "$image" node --expose-gc server.js >/dev/null
 
 docker container start "$web" "$worker" >/dev/null
 production_healthy=0

@@ -5,6 +5,17 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.52 - 2026-09-01
+
+### Fixed
+
+- Restrict background model-forecast recalculation to current Sports.ru
+  contests that are actually available in Squad. Stale current-season metadata
+  for legacy UEFA tournaments no longer schedules unused work.
+- Release each league's temporary forecast working set before processing the
+  next league. The production worker now exposes explicit V8 collection and
+  reports post-cycle RSS/heap counters for memory acceptance checks.
+
 ## 0.3.51 - 2026-09-01
 
 ### Added

@@ -52,6 +52,7 @@ async function runCycle(state: SchedulerState) {
   try {
     const scopes = await loadFantasyModelForecastScopes(prisma);
     const summaries = [];
+    let explicitGcRuns = 0;
     let succeeded = true;
     for (const scope of scopes) {
       const key = `${scope.leagueId}:${scope.season}`;
@@ -64,9 +65,19 @@ async function runCycle(state: SchedulerState) {
         succeeded = false;
         summaries.push({ scope: key, error: error instanceof Error ? `${error.name}: ${error.message}` : String(error) });
         logger.error("Fantasy model forecast recalculation failed for a scope.", { scope: key, error });
+      } finally {
+        // Every scope materializes a sizeable stats working set. The production
+        // worker exposes V8's collector so those temporary objects do not keep
+        // the whole cycle's high-water mark resident until the next run.
+        if (collectFantasyModelForecastGarbage()) explicitGcRuns += 1;
       }
     }
-    logger.info("Fantasy model forecast recalculation cycle finished.", { scopes: summaries });
+    const memory = process.memoryUsage();
+    logger.info("Fantasy model forecast recalculation cycle finished.", {
+      scopes: summaries,
+      explicitGcRuns,
+      memory: { rssBytes: memory.rss, heapUsedBytes: memory.heapUsed, externalBytes: memory.external }
+    });
     return succeeded;
   } catch (error) {
     logger.error("Fantasy model forecast recalculation failed; existing forecasts were preserved.", { error });
@@ -79,12 +90,39 @@ async function runCycle(state: SchedulerState) {
 type ActiveScope = { leagueId: bigint; season: string };
 
 export async function loadFantasyModelForecastScopes(prismaClient: PrismaClient): Promise<ActiveScope[]> {
-  // Historical player memberships can remain active. Use Squad's league and
-  // default-season selection, but never schedule its archived-season fallback.
+  // Historical player memberships and LeagueSeason rows can remain active.
+  // Squad itself is backed by current Sports.ru contests, so use the same
+  // boundary and never precompute a tournament that the page cannot open.
   const leagues = await loadSharedLeagueOptions(prismaClient);
-  return leagues
+  const squadLeagues = leagues
     .filter((league) => league.isCurrent && isFantasySquadLeague(league))
     .map(({ leagueId, season }) => ({ leagueId, season }));
+  if (squadLeagues.length === 0) return [];
+
+  const contests = await prismaClient.fantasyContest.findMany({
+    where: {
+      provider: "SPORTS_RU",
+      OR: squadLeagues.map(({ leagueId, season }) => ({ leagueId, season }))
+    },
+    select: { leagueId: true, season: true }
+  });
+  const contestScopes = new Set(contests.map(({ leagueId, season }) => `${leagueId}:${season}`));
+  return squadLeagues.filter(({ leagueId, season }) => contestScopes.has(`${leagueId}:${season}`));
+}
+
+type ExplicitGarbageCollector = (() => void) | null | undefined;
+
+export function collectFantasyModelForecastGarbage(
+  collect: ExplicitGarbageCollector = (globalThis as typeof globalThis & { gc?: () => void }).gc
+) {
+  if (typeof collect !== "function") return false;
+  try {
+    collect();
+    return true;
+  } catch (error) {
+    logger.warn("Explicit fantasy model forecast garbage collection failed.", { error });
+    return false;
+  }
 }
 
 export function forecastSyncIntervalMs(rawHours: string | undefined = process.env.FANTASY_MODEL_FORECAST_SYNC_INTERVAL_HOURS) {
