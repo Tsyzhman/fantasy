@@ -1,3 +1,7 @@
+import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
+
 import type { PrismaClient } from "@prisma/client";
 
 import { prisma } from "@/lib/db";
@@ -12,6 +16,7 @@ const initialDelayMs = 30_000;
 const retryDelayMs = 10 * 60 * 1_000;
 const defaultIntervalHours = 6;
 const minimumIntervalHours = 0.25;
+const isolatedChildPort = "39001";
 
 type SchedulerState = {
   running: boolean;
@@ -35,15 +40,71 @@ export async function runFantasyModelForecastSyncNow() {
   const state = globalForScheduler.fantasyModelForecastScheduler ?? { running: false, started: false };
   state.started = true;
   globalForScheduler.fantasyModelForecastScheduler = state;
-  return runCycle(state);
+  return runForecastCycle(state);
 }
 
 function scheduleNextRun(state: SchedulerState, delayMs: number) {
   state.timer = setTimeout(() => {
-    void runCycle(state).finally(() => scheduleNextRun(state, forecastSyncIntervalMs()));
+    void runForecastCycle(state).finally(() => scheduleNextRun(state, forecastSyncIntervalMs()));
   }, delayMs);
   state.timer.unref?.();
   logger.info("Scheduled fantasy model forecast recalculation.", { delayMs });
+}
+
+async function runForecastCycle(state: SchedulerState) {
+  const standaloneServerPath = join(process.cwd(), "server.js");
+  if (process.env.FANTASY_MODEL_FORECAST_CHILD === "true" || !existsSync(standaloneServerPath)) {
+    return runCycle(state);
+  }
+  return runIsolatedForecastCycle(state, standaloneServerPath);
+}
+
+async function runIsolatedForecastCycle(state: SchedulerState, standaloneServerPath: string) {
+  if (state.running) return false;
+  state.running = true;
+  try {
+    return await new Promise<boolean>((resolve) => {
+      let settled = false;
+      const finish = (succeeded: boolean) => {
+        if (settled) return;
+        settled = true;
+        resolve(succeeded);
+      };
+      const child = spawn(process.execPath, ["--expose-gc", standaloneServerPath], {
+        cwd: process.cwd(),
+        env: fantasyModelForecastChildEnvironment(),
+        stdio: ["ignore", "inherit", "inherit"]
+      });
+      logger.info("Started isolated fantasy model forecast recalculation process.", { pid: child.pid });
+      child.once("error", (error) => {
+        logger.error("Could not start isolated fantasy model forecast recalculation process.", { error });
+        finish(false);
+      });
+      child.once("exit", (code, signal) => {
+        const succeeded = code === 0;
+        if (succeeded) {
+          logger.info("Isolated fantasy model forecast recalculation process finished.", { code });
+        } else {
+          logger.error("Isolated fantasy model forecast recalculation process failed.", { code, signal });
+        }
+        finish(succeeded);
+      });
+    });
+  } finally {
+    state.running = false;
+  }
+}
+
+export function fantasyModelForecastChildEnvironment(environment: NodeJS.ProcessEnv = process.env): NodeJS.ProcessEnv {
+  return {
+    ...environment,
+    FANTASY_MODEL_FORECAST_CHILD: "true",
+    INGESTION_WORKER_IN_PROCESS: "false",
+    FPL_PRICE_SYNC_ENABLED: "false",
+    PROBABLE_LINEUP_SYNC_ENABLED: "false",
+    HOSTNAME: "127.0.0.1",
+    PORT: isolatedChildPort
+  };
 }
 
 async function runCycle(state: SchedulerState) {

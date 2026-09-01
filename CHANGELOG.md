@@ -5,6 +5,15 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.53 - 2026-09-01
+
+### Fixed
+
+- Run the model-forecast cycle in a disposable production subprocess. Explicit
+  V8 collection still bounds the peak between leagues, while process exit now
+  guarantees that native allocator pages return to the OS instead of remaining
+  in the long-lived worker's RSS.
+
 ## 0.3.52 - 2026-09-01
 
 ### Fixed

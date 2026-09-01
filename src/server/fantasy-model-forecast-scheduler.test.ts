@@ -6,6 +6,7 @@ import type { PrismaClient } from "@prisma/client";
 import { fantasySquadLeagueFotMobIds } from "@/lib/leagues/display";
 import {
   collectFantasyModelForecastGarbage,
+  fantasyModelForecastChildEnvironment,
   forecastSyncIntervalMs,
   loadFantasyModelForecastScopes
 } from "@/server/fantasy-model-forecast-scheduler";
@@ -125,6 +126,26 @@ test("forecast working-set collection is optional and invokes the exposed collec
   assert.equal(collectFantasyModelForecastGarbage(null), false);
   assert.equal(collectFantasyModelForecastGarbage(() => { calls += 1; }), true);
   assert.equal(calls, 1);
+});
+
+test("isolated forecast child keeps database access but disables every parent scheduler", () => {
+  const environment = fantasyModelForecastChildEnvironment({
+    NODE_ENV: "test",
+    DATABASE_URL: "postgresql://forecast-test",
+    INGESTION_WORKER_IN_PROCESS: "true",
+    FPL_PRICE_SYNC_ENABLED: "true",
+    PROBABLE_LINEUP_SYNC_ENABLED: "true",
+    HOSTNAME: "0.0.0.0",
+    PORT: "3000"
+  });
+
+  assert.equal(environment.DATABASE_URL, "postgresql://forecast-test");
+  assert.equal(environment.FANTASY_MODEL_FORECAST_CHILD, "true");
+  assert.equal(environment.INGESTION_WORKER_IN_PROCESS, "false");
+  assert.equal(environment.FPL_PRICE_SYNC_ENABLED, "false");
+  assert.equal(environment.PROBABLE_LINEUP_SYNC_ENABLED, "false");
+  assert.equal(environment.HOSTNAME, "127.0.0.1");
+  assert.equal(environment.PORT, "39001");
 });
 
 function leagueSeason(leagueId: bigint, season: string, isCurrent: boolean, updatedAt = "2026-08-31T00:00:00Z") {

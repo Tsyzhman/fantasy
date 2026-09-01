@@ -40,6 +40,11 @@ test("canary role loads no scheduler modules", () => {
 });
 
 test("instrumentation and production promotion enforce one owner per scheduler", () => {
+  const isolatedForecastIndex = instrumentationSource.indexOf('FANTASY_MODEL_FORECAST_CHILD === "true"');
+  const runtimePlanIndex = instrumentationSource.indexOf("schedulerRuntimePlan()");
+  assert.ok(isolatedForecastIndex >= 0 && isolatedForecastIndex < runtimePlanIndex);
+  assert.match(instrumentationSource.slice(isolatedForecastIndex, runtimePlanIndex), /runFantasyModelForecastSyncNow/);
+  assert.match(instrumentationSource.slice(isolatedForecastIndex, runtimePlanIndex), /process\.exit\(exitCode\)/);
   assert.match(instrumentationSource, /if \(plan\.worker\)/);
   assert.match(instrumentationSource, /if \(plan\.fpl\)/);
   assert.match(instrumentationSource, /if \(plan\.probableLineups\)/);
