@@ -39,20 +39,9 @@ import {
   type FantasyProjectionCalibrationModel
 } from "./fantasy_projection_calibration";
 import { loadFantasyProjectionCalibration } from "./fantasy_projection_service";
-import {
-  addPromotedFormulaAdaptationTeamProfiles,
-  addFormulaAdaptationInteractions,
-  aggregateFormulaAdaptationPredictions,
-  buildFormulaAdaptationTeamProfiles,
-  formulaAdaptationMinuteFeatures,
-  formulaAdaptationFixtureFeatures,
-  predictFormulaAdaptationsWithBreakdowns,
-  type FormulaAdaptationBreakdowns,
-  type FormulaAdaptationFeatures,
-  type FormulaAdaptationShot,
-  type FormulaAdaptationTeamProfiles,
-  type FormulaAdaptationTeamStat
-} from "./formula_adaptations";
+import { withoutRetiredFantasyForecasts } from "./retired-fantasy-forecasts";
+import { buildFantasyFixtureCalendar } from "./squad-fixture-calendar-builder";
+import { fixtureDifficultyFromSignal, parseFantasyFixtureCalendar, type FantasyFixtureCalendar } from "./squad-fixture-calendar";
 import { FANTASY_MODEL_VERSION } from "./foontasy_style_model";
 import {
   archivedExpectedMinutes,
@@ -127,6 +116,7 @@ export type FantasySquadPlannerData = {
   rules: FantasySquadRules;
   rounds: FantasyRoundProjection[];
   bookmakerFavorites: FantasyBookmakerFavorite[];
+  fixtureCalendar?: FantasyFixtureCalendar | null;
   players: FantasyPlannerPlayer[];
   squad: SavedFantasySquad;
   squads: SavedFantasySquadOption[];
@@ -137,7 +127,6 @@ export type FantasySquadPlannerData = {
     lastSyncedAt: string | null;
   };
   historySeasonOptions: string[];
-  formulaAdaptationBreakdownsByPlayerId: Record<string, FormulaAdaptationBreakdowns>;
   playerPoolSnapshotId?: string | null;
   dataFreshness?: {
     fotmobStatsAt: string | null;
@@ -282,7 +271,7 @@ export type PlannerRoundFixtures = {
   rounds: FantasyRoundProjection[];
   fixturesByTeamRound: Map<string, Map<string, PlannerFixture[]>>;
   teamShortNameById: Map<string, string>;
-  formulaAdaptationTeamProfiles?: FormulaAdaptationTeamProfiles;
+  teamFullNameById?: Map<string, string>;
 };
 
 export type FantasyProjectionEngine = "COMPONENT_XFP_V1" | "LEGACY_RIDGE19_V1";
@@ -326,8 +315,13 @@ type TeamStrengthMatchInput = {
   homeTeamId: string | null;
   awayTeamId: string | null;
   matchDate?: Date | string | null;
-  teamStats: FormulaAdaptationTeamStat[];
-  shots?: FormulaAdaptationShot[];
+  teamStats: Array<{
+    teamId: string;
+    opponentTeamId?: string | null;
+    isHome?: boolean | null;
+    goals?: number | null;
+    xg?: number | null;
+  }>;
 };
 
 type SportsRuPositionPriceRow = {
@@ -436,12 +430,6 @@ type FantasyPlayerScoringOverlay = Pick<
   | "alternativeProjectionFormula"
   | "alternativePredictedFp"
   | "alternativeRoundPoints"
-  | "foPositionCalibratedFp"
-  | "altPositionCalibratedFp"
-  | "altJointAllFp"
-  | "foJointAllFp"
-  | "altJointAcceptedFp"
-  | "foJointAcceptedFp"
 >;
 
 const fixtureOddsMaximumAgeMs = 35 * 24 * 60 * 60_000;
@@ -466,7 +454,6 @@ const fantasyPlayerLoadOrderCache = new ExpiringPromiseCache<string, FantasyPlay
   maxBytes: 4 * 1024 * 1024,
   estimateBytes: jsonByteLength
 });
-const fantasyFormulaAdaptationBreakdownCache = new ExpiringPromiseCache<string, FormulaAdaptationBreakdowns | null>(120);
 const upcomingRoundFixturesCacheTtlMs = 5 * 60_000;
 const upcomingRoundFixturesCache = new ExpiringPromiseCache<string, PlannerRoundFixtures>(20);
 export const maxFantasySquadNameLength = 80;
@@ -873,12 +860,6 @@ function fantasyPlayerCommonFeatures(player: FantasyPlannerPlayer): FantasyPlann
     alternativeProjectionFormula: _alternativeProjectionFormula,
     alternativePredictedFp: _alternativePredictedFp,
     alternativeRoundPoints: _alternativeRoundPoints,
-    foPositionCalibratedFp: _foPositionCalibratedFp,
-    altPositionCalibratedFp: _altPositionCalibratedFp,
-    altJointAllFp: _altJointAllFp,
-    foJointAllFp: _foJointAllFp,
-    altJointAcceptedFp: _altJointAcceptedFp,
-    foJointAcceptedFp: _foJointAcceptedFp,
     ...features
   } = player;
   return features;
@@ -892,13 +873,7 @@ function fantasyPlayerScoringOverlay(player: FantasyPlannerPlayer): FantasyPlaye
     alternativeFplForecastBreakdown: player.alternativeFplForecastBreakdown,
     alternativeProjectionFormula: player.alternativeProjectionFormula,
     alternativePredictedFp: player.alternativePredictedFp,
-    alternativeRoundPoints: player.alternativeRoundPoints,
-    foPositionCalibratedFp: player.foPositionCalibratedFp,
-    altPositionCalibratedFp: player.altPositionCalibratedFp,
-    altJointAllFp: player.altJointAllFp,
-    foJointAllFp: player.foJointAllFp,
-    altJointAcceptedFp: player.altJointAcceptedFp,
-    foJointAcceptedFp: player.foJointAcceptedFp
+    alternativeRoundPoints: player.alternativeRoundPoints
   };
 }
 
@@ -972,7 +947,6 @@ export async function loadFantasySquadPlannerData(
     historySettings?: FantasyHistorySettings;
     deferFormulaProjections?: boolean;
     skipSavedSquads?: boolean;
-    includeFormulaAdaptationBreakdowns?: boolean;
     provider?: string;
     contestId?: string | null;
   }
@@ -1143,7 +1117,6 @@ export async function loadFantasySquadPlannerData(
     : playerRows;
   const effectivePlayerRows = projectionRows;
   const projectedByPlayerTeam = new Map(effectivePlayerRows.rows.map((row) => [playerTeamKey(row.playerId, row.teamId), row]));
-  const friendByPlayerTeam = new Map(effectivePlayerRows.friendRows.map((row) => [playerTeamKey(row.playerId, row.teamId), row]));
   const componentProjections = options?.deferFormulaProjections
     ? emptyComponentProjectionIndex()
     : buildFormulaProjectionIndex(
@@ -1165,7 +1138,6 @@ export async function loadFantasySquadPlannerData(
         isFpl ? "FPL" : "GENERIC"
       );
   const preferredProjectionEngine = configuredFantasyProjectionEngine();
-  const formulaAdaptationBreakdownsByPlayerId: Record<string, FormulaAdaptationBreakdowns> = {};
   const rosterPlayers: FantasyPlannerPlayer[] = rosterRows.flatMap((row) => {
     const playerId = String(row.playerId);
     const teamId = String(row.teamId);
@@ -1284,77 +1256,9 @@ export async function loadFantasySquadPlannerData(
     const price = resolveFantasyPlannerPrice(priceRow, predictedFp, positionGroup, provider);
     const playerName = priceRow?.playerName ?? row.player.name;
     const baltikaMetric = baltikaMetricsByName.get(normalizeSportsRuPlayerName(playerName));
-    const friendHistory = friendByPlayerTeam.get(playerTeamKey(row.playerId, row.teamId));
     const recentFp = isFpl
       ? officialFplPointsByPlayerId.get(String(row.playerId)) ?? []
       : projected?.recentFp ?? [];
-    const formulaAdaptationRound = !isFpl && nextRoundFixtures.length > 0
-      ? aggregateFormulaAdaptationPredictions(nextRoundFixtures.map((fixture, index) => {
-          const componentProjection = nextComponentRoundProjections[index];
-          const friendProjection = nextFriendRoundProjections[index];
-          const componentKey = fixturePlayerProjectionKey(fixture.id, playerId);
-          const componentFormulaMetrics = componentProjections.formulaMetricsByFixturePlayer.get(componentKey);
-          const friendFormulaMetrics = friendAlternativeProjections.formulaMetricsByFixturePlayer.get(componentKey);
-          const componentFixturePoints = componentProjection
-            ? projectionFormulaFantasyPoints(
-                componentProjection,
-                fixture,
-                playerRows.expectedProjectionConfig,
-                componentFormulaMetrics
-              )
-            : null;
-          const friendFixturePoints = friendProjection
-            ? projectionFormulaFantasyPoints(
-                friendProjection,
-                fixture,
-                playerRows.alternativeProjectionConfig,
-                friendFormulaMetrics
-              )
-            : null;
-          const fo = projectionEngine === "COMPONENT_XFP_V1"
-            ? componentFixturePoints
-            : legacyFixturePoints(fixture);
-          const features: FormulaAdaptationFeatures = addFormulaAdaptationInteractions({
-            ...(friendHistory?.formulaAdaptationFeatures ?? {}),
-            ...formulaAdaptationFixtureFeatures({
-              profiles: roundsAndFixtures.formulaAdaptationTeamProfiles,
-              teamId,
-              opponentTeamId: fixture.opponentTeamId,
-              kickoffAt: fixture.kickoffAt,
-              side: fixture.side
-            }),
-            ...formulaAdaptationMinuteFeatures(
-              "fo",
-              fo,
-              buildFixtureComponentInputs(componentProjection, componentFormulaMetrics)
-            ),
-            ...formulaAdaptationMinuteFeatures(
-              "alt",
-              friendFixturePoints,
-              buildFixtureComponentInputs(friendProjection, friendFormulaMetrics)
-            ),
-            age: projected?.age ?? row.age ?? null,
-            role_side: positionGroup === "GK" ? "center" : "unknown"
-          });
-          return {
-            fixtureId: fixture.id,
-            fixtureLabel: `${fixture.side} ${fixture.opponentName}`,
-            prediction: predictFormulaAdaptationsWithBreakdowns({
-              leagueId: league.leagueId,
-              position: positionGroup,
-              fo,
-              alt: friendFixturePoints,
-              features
-            })
-          };
-        }))
-      : null;
-    const formulaAdaptations = isFpl
-      ? emptyFormulaAdaptationForecasts()
-      : formulaAdaptationRound?.forecasts ?? emptyFormulaAdaptationForecasts();
-    if (!isFpl && options?.includeFormulaAdaptationBreakdowns && formulaAdaptationRound) {
-      formulaAdaptationBreakdownsByPlayerId[playerId] = formulaAdaptationRound.breakdowns;
-    }
     const legacyRoundPoints = teamFixturesByRound.map((fixtures) => {
       return roundFantasyValue(
         fixtures.reduce((total, fixture) => total + (legacyFixturePoints(fixture) ?? 0), 0)
@@ -1506,7 +1410,6 @@ export async function loadFantasySquadPlannerData(
         alternativeProjectionFormula: nextFriendRoundFormula,
         alternativePredictedFp,
         alternativeRoundPoints,
-        ...formulaAdaptations,
         foontasyPoints: foontasy?.points ?? null,
         ownershipPercent: resolveFantasyPlannerOwnership(priceRow, foontasy),
         // Foontasy publishes its current round only. Do not invent a T3/T5
@@ -1603,6 +1506,7 @@ export async function loadFantasySquadPlannerData(
     rules,
     rounds: roundsAndFixtures.rounds,
     bookmakerFavorites: buildBookmakerFavorites(roundsAndFixtures),
+    fixtureCalendar: buildFantasyFixtureCalendar(roundsAndFixtures),
     players: players.sort(compareFantasyPlannerPlayers),
     squads: savedSquads.map((squad) => ({
       id: squad.id,
@@ -1625,8 +1529,7 @@ export async function loadFantasySquadPlannerData(
       estimatedPrices,
       lastSyncedAt: latestPriceSync?.toISOString() ?? null
     },
-    historySeasonOptions: history.availableSeasons,
-    formulaAdaptationBreakdownsByPlayerId
+    historySeasonOptions: history.availableSeasons
   };
 }
 
@@ -1767,6 +1670,7 @@ export async function loadSportsRuFantasySquadPlannerShellData(
     rules,
     rounds: roundsAndFixtures.rounds,
     bookmakerFavorites: buildBookmakerFavorites(roundsAndFixtures),
+    fixtureCalendar: buildFantasyFixtureCalendar(roundsAndFixtures),
     players,
     squads: savedSquads.map((squad) => ({
       id: squad.id,
@@ -1789,14 +1693,13 @@ export async function loadSportsRuFantasySquadPlannerShellData(
       estimatedPrices: Math.max(0, rosterPlayerCount - pricedPlayers),
       lastSyncedAt: latestPriceSync._max.lastSeenAt?.toISOString() ?? null
     },
-    historySeasonOptions: history.availableSeasons,
-    formulaAdaptationBreakdownsByPlayerId: {}
+    historySeasonOptions: history.availableSeasons
   };
 }
 
 type FantasyPlayerPoolSnapshotShellMetadata = Pick<
   FantasySquadPlannerData,
-  "readiness" | "rules" | "rounds" | "bookmakerFavorites" | "priceStatus" | "historySeasonOptions" | "dataFreshness"
+  "readiness" | "rules" | "rounds" | "bookmakerFavorites" | "fixtureCalendar" | "priceStatus" | "historySeasonOptions" | "dataFreshness"
 > & { version: 1 };
 
 async function loadSportsRuFantasySquadSnapshotShellData(
@@ -1871,7 +1774,7 @@ async function loadSportsRuFantasySquadSnapshotShellData(
   for (const row of snapshotRows) {
     if (!row.payload || typeof row.payload !== "object" || Array.isArray(row.payload)) continue;
     const player = row.payload as unknown as FantasyPlannerPlayer;
-    if (player.playerId === row.playerId) snapshotPlayersById.set(row.playerId, player);
+    if (player.playerId === row.playerId) snapshotPlayersById.set(row.playerId, withoutRetiredFantasyForecasts(player));
   }
   const snapshotPlayers = selectedPlayerIds.flatMap((playerId) => {
     const player = snapshotPlayersById.get(playerId);
@@ -1917,6 +1820,7 @@ async function loadSportsRuFantasySquadSnapshotShellData(
     rules: metadata.rules,
     rounds: metadata.rounds,
     bookmakerFavorites: metadata.bookmakerFavorites,
+    fixtureCalendar: parseFantasyFixtureCalendar(metadata.fixtureCalendar),
     players,
     squads: savedSquads.map((squad) => ({
       id: squad.id,
@@ -1935,7 +1839,6 @@ async function loadSportsRuFantasySquadSnapshotShellData(
     },
     priceStatus: metadata.priceStatus,
     historySeasonOptions: metadata.historySeasonOptions,
-    formulaAdaptationBreakdownsByPlayerId: {},
     playerPoolSnapshotId: snapshot.id,
     dataFreshness: metadata.dataFreshness
   };
@@ -2057,17 +1960,6 @@ export function buildFplOfficialForecastAdjustments(
   return adjustmentsByPlayerId;
 }
 
-function emptyFormulaAdaptationForecasts() {
-  return {
-    foPositionCalibratedFp: null,
-    altPositionCalibratedFp: null,
-    altJointAllFp: null,
-    foJointAllFp: null,
-    altJointAcceptedFp: null,
-    foJointAcceptedFp: null
-  };
-}
-
 function fplOfficialAppearanceSamples(breakdown: Record<string, unknown>): FplOfficialAppearanceSample[] {
   const fixtureBreakdowns = Array.isArray(breakdown.fixture_breakdowns)
     ? breakdown.fixture_breakdowns.flatMap((value) => {
@@ -2117,66 +2009,6 @@ function numericRecord(value: unknown): Record<string, unknown> | null {
 
 function finiteNumber(value: unknown) {
   return typeof value === "number" && Number.isFinite(value) ? value : null;
-}
-
-export async function loadFantasySquadFormulaAdaptationBreakdowns(
-  prisma: PrismaClient,
-  userId: string,
-  league: SharedLeagueSeasonOption,
-  playerId: bigint,
-  historySettings: FantasyHistorySettings = defaultFantasyHistorySettings,
-  provider = "SPORTS_RU"
-) {
-  // These Ridge adaptations were trained against generic/Sports.ru fantasy
-  // points. Returning them in FPL would reintroduce the wrong scoring target.
-  if (provider === FPL_PROVIDER) return null;
-  const [preference, latestStartingXiChange, foontasyRevision, contest] = await Promise.all([
-    prisma.userScoringPreference.findUnique({
-      where: { userId_modelSource: { userId, modelSource: "MACHETE" } },
-      select: { id: true, updatedAt: true }
-    }),
-    prisma.leagueSeasonTeam.aggregate({
-      where: { leagueId: league.leagueId, season: league.season, active: true },
-      _max: { startingXiChangedAt: true }
-    }),
-    loadLatestFoontasyForecastRevision(prisma, league),
-    fantasyContestClient(prisma).findFirst({
-      where: {
-        provider,
-        leagueId: league.leagueId,
-        season: provider === FPL_PROVIDER ? FPL_SEASON : { in: sportsRuSeasonAliases(league.season) }
-      },
-      orderBy: { lastSyncedAt: "desc" },
-      select: { id: true, lastSyncedAt: true, scheduleRevision: true }
-    })
-  ]);
-  const preferenceRevision = preference ? `${preference.id}:${preference.updatedAt.toISOString()}` : "global";
-  const startingXiRevision = latestStartingXiChange._max.startingXiChangedAt?.toISOString() ?? "no-xi-change";
-  const key = formulaAdaptationBreakdownCacheKey({
-    leagueId: league.leagueId,
-    season: league.season,
-    leagueUpdatedAt: league.updatedAt,
-    provider,
-    contestId: contest?.id ?? null,
-    contestRevision: contest ? `${contest.lastSyncedAt?.toISOString() ?? "never"}:${contest.scheduleRevision ?? "no-schedule"}` : "no-contest-revision",
-    playerId,
-    userId,
-    preferenceRevision,
-    startingXiRevision,
-    foontasyRevision,
-    historySettingsKey: fantasyHistorySettingsKey(historySettings)
-  });
-  return fantasyFormulaAdaptationBreakdownCache.getOrCreate(key, fantasyPlayerPoolCacheTtlMs, async () => {
-    const data = await loadFantasySquadPlannerData(prisma, userId, league, null, {
-      playerIds: [playerId],
-      historySettings,
-      skipSavedSquads: true,
-      includeFormulaAdaptationBreakdowns: true,
-      provider,
-      contestId: contest?.id ?? null
-    });
-    return data.formulaAdaptationBreakdownsByPlayerId[String(playerId)] ?? null;
-  });
 }
 
 function numericHistoricalStats(metrics: Record<string, unknown> | undefined) {
@@ -2280,36 +2112,6 @@ export function fantasyPlayerPoolCacheMetrics() {
     featurePool: fantasyPlayerFeaturePoolCache.getMetrics(),
     scoringOverlay: fantasyPlayerScoringOverlayCache.getMetrics()
   };
-}
-
-export function formulaAdaptationBreakdownCacheKey(input: {
-  leagueId: bigint;
-  season: string;
-  leagueUpdatedAt: Date;
-  provider: string;
-  contestId?: string | null;
-  contestRevision: string;
-  playerId: bigint;
-  userId: string;
-  preferenceRevision: string;
-  startingXiRevision: string;
-  foontasyRevision: string;
-  historySettingsKey: string;
-}) {
-  return [
-    input.leagueId,
-    input.season,
-    input.leagueUpdatedAt.toISOString(),
-    input.provider,
-    input.contestId ?? "no-contest",
-    input.contestRevision,
-    input.playerId,
-    input.userId,
-    input.preferenceRevision,
-    input.startingXiRevision,
-    input.foontasyRevision,
-    input.historySettingsKey
-  ].join(":");
 }
 
 export function sportsRuPricedFantasyPlayers(players: FantasyPlannerPlayer[]) {
@@ -4308,7 +4110,8 @@ async function loadUpcomingRoundFixturesUncached(
       },
       select: {
         teamId: true,
-        metadata: true
+        metadata: true,
+        team: { select: { name: true } }
       }
     })
   ]);
@@ -4323,6 +4126,7 @@ async function loadUpcomingRoundFixturesUncached(
       })
     : [];
   const shortNameByTeamId = fantasyTeamShortNamesByTeamId(seasonTeams, fallbackSeasonTeams);
+  const teamFullNameById = new Map(seasonTeams.map((row) => [String(row.teamId), row.team.name]));
   const coreFixtures = buildPlannerRoundFixtures(
     matches.map((match) => {
       const odds = match.oddsSnapshots[0];
@@ -4350,17 +4154,11 @@ async function loadUpcomingRoundFixturesUncached(
   );
 
   if (coreFixtures.rounds.length > 0) {
-    return {
-      ...applyFixtureStrength({ ...coreFixtures, teamShortNameById: shortNameByTeamId }, teamStrength.profiles),
-      formulaAdaptationTeamProfiles: teamStrength.formulaAdaptationTeamProfiles
-    };
+    return applyFixtureStrength({ ...coreFixtures, teamShortNameById: shortNameByTeamId, teamFullNameById }, teamStrength);
   }
 
   const legacyFixtures = await loadLegacyMacheteUpcomingRoundFixtures(prisma, league, now);
-  return {
-    ...applyFixtureStrength({ ...legacyFixtures, teamShortNameById: shortNameByTeamId }, teamStrength.profiles),
-    formulaAdaptationTeamProfiles: teamStrength.formulaAdaptationTeamProfiles
-  };
+  return applyFixtureStrength({ ...legacyFixtures, teamShortNameById: shortNameByTeamId, teamFullNameById }, teamStrength);
 }
 
 async function loadProviderPlannerMatches(
@@ -4472,7 +4270,7 @@ async function finalizeProviderPlannerMatches(
     loadTeamStrengthProfiles(prisma, league.leagueId),
     prisma.leagueSeasonTeam.findMany({
       where: { leagueId: league.leagueId, season: league.season, active: true },
-      select: { teamId: true, metadata: true }
+      select: { teamId: true, metadata: true, team: { select: { name: true } } }
     })
   ]);
   const missingShortNameTeamIds = seasonTeams
@@ -4491,10 +4289,8 @@ async function finalizeProviderPlannerMatches(
     homeTeamName: (match.homeTeamId ? shortNameByTeamId.get(match.homeTeamId) : null) ?? match.homeTeamName,
     awayTeamName: (match.awayTeamId ? shortNameByTeamId.get(match.awayTeamId) : null) ?? match.awayTeamName
   })), now);
-  return {
-    ...applyFixtureStrength({ ...rounds, teamShortNameById: shortNameByTeamId }, teamStrength.profiles),
-    formulaAdaptationTeamProfiles: teamStrength.formulaAdaptationTeamProfiles
-  };
+  const teamFullNameById = new Map(seasonTeams.map((row) => [String(row.teamId), row.team.name]));
+  return applyFixtureStrength({ ...rounds, teamShortNameById: shortNameByTeamId, teamFullNameById }, teamStrength);
 }
 
 export function fantasyProviderRoundKey(provider: string, ordinal: number, providerRoundId: string) {
@@ -4535,6 +4331,11 @@ export function buildPlannerRoundFixtures(matches: PlannerMatch[], now = new Dat
   }));
   const selectedRoundIds = new Set(rounds.map((round) => round.id));
   const fixturesByTeamRound = new Map<string, Map<string, PlannerFixture[]>>();
+  const teamFullNameById = new Map<string, string>();
+  for (const match of eligible) {
+    if (match.homeTeamId) teamFullNameById.set(match.homeTeamId, match.homeTeamFullName ?? match.homeTeamName ?? match.homeTeamId);
+    if (match.awayTeamId) teamFullNameById.set(match.awayTeamId, match.awayTeamFullName ?? match.awayTeamName ?? match.awayTeamId);
+  }
 
   for (const group of grouped) {
     if (!selectedRoundIds.has(group.id)) continue;
@@ -4589,7 +4390,8 @@ export function buildPlannerRoundFixtures(matches: PlannerMatch[], now = new Dat
   return {
     rounds,
     fixturesByTeamRound,
-    teamShortNameById: new Map()
+    teamShortNameById: new Map(),
+    teamFullNameById
   };
 }
 
@@ -4699,11 +4501,7 @@ export function fixtureDifficultyFromMultipliers(
     ? (attackComponent * weights.attack + defenseComponent * weights.defense) / weightTotal
     : 1;
 
-  if (score >= 1.18) return 1;
-  if (score >= 1.06) return 2;
-  if (score >= 0.94) return 3;
-  if (score >= 0.82) return 4;
-  return 5;
+  return fixtureDifficultyFromSignal(score);
 }
 
 export function aggregateRoundDifficulty(
@@ -4850,25 +4648,12 @@ async function loadTeamStrengthProfiles(prisma: PrismaClient, leagueId: bigint) 
     feederLeagueId ? loadTeamStrengthMatches(prisma, feederLeagueId) : Promise.resolve([])
   ]);
   const profiles = buildTeamStrengthProfilesFromMatches(matches);
-  const formulaAdaptationTeamProfiles = buildFormulaAdaptationTeamProfiles(matches);
   if (!feederLeagueId || feederMatches.length === 0) {
-    return { profiles, formulaAdaptationTeamProfiles };
+    return profiles;
   }
 
   const feederProfiles = buildTeamStrengthProfilesFromMatches(feederMatches, { fallbackToGoals: true });
-  const feederFormulaProfiles = buildFormulaAdaptationTeamProfiles(feederMatches);
-  return {
-    profiles: addPromotedTeamStrengthProfiles(profiles, feederProfiles),
-    formulaAdaptationTeamProfiles: addPromotedFormulaAdaptationTeamProfiles(
-      formulaAdaptationTeamProfiles,
-      feederFormulaProfiles,
-      {
-        strengthFactor: promotedTeamStrengthFactor,
-        ratioExponent: promotedTeamRatioExponent,
-        priorMatches: promotedTeamPriorMatches
-      }
-    )
-  };
+  return addPromotedTeamStrengthProfiles(profiles, feederProfiles);
 }
 
 async function loadTeamStrengthMatches(prisma: PrismaClient, leagueId: bigint): Promise<TeamStrengthMatchInput[]> {
@@ -4886,28 +4671,13 @@ async function loadTeamStrengthMatches(prisma: PrismaClient, leagueId: bigint): 
       homeScore: true,
       awayScore: true,
       matchDate: true,
-      shots: {
-        select: {
-          teamId: true,
-          normalizedY: true,
-          xg: true
-        }
-      },
       teamStats: {
         select: {
           teamId: true,
           opponentTeamId: true,
           isHome: true,
           xg: true,
-          goals: true,
-          shots: true,
-          shotsOnTarget: true,
-          bigChances: true,
-          touchesInOppBox: true,
-          possession: true,
-          passes: true,
-          accuratePasses: true,
-          passAccuracy: true
+          goals: true
         }
       }
     }
@@ -4919,26 +4689,13 @@ async function loadTeamStrengthMatches(prisma: PrismaClient, leagueId: bigint): 
       opponentTeamId: stringifyBigInt(stat.opponentTeamId),
       isHome: stat.isHome,
       xg: stat.xg,
-      goals: stat.goals,
-      shots: stat.shots,
-      shotsOnTarget: stat.shotsOnTarget,
-      bigChances: stat.bigChances,
-      touchesInOppBox: stat.touchesInOppBox,
-      possession: stat.possession,
-      passes: stat.passes,
-      accuratePasses: stat.accuratePasses,
-      passAccuracy: stat.passAccuracy
+      goals: stat.goals
     }));
     return fillTeamStrengthStatsFromScore({
       homeTeamId: stringifyBigInt(match.homeTeamId),
       awayTeamId: stringifyBigInt(match.awayTeamId),
       matchDate: match.matchDate,
       teamStats: parsedTeamStats,
-      shots: match.shots.map((shot) => ({
-        teamId: stringifyBigInt(shot.teamId),
-        normalizedY: shot.normalizedY,
-        xg: shot.xg
-      })),
       homeScore: match.homeScore,
       awayScore: match.awayScore
     });
@@ -4972,8 +4729,7 @@ export function fillTeamStrengthStatsFromScore(
     homeTeamId: match.homeTeamId,
     awayTeamId: match.awayTeamId,
     matchDate: match.matchDate,
-    teamStats: [...byTeamId.values()],
-    shots: match.shots
+    teamStats: [...byTeamId.values()]
   };
 }
 

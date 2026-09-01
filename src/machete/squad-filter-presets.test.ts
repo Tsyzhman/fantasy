@@ -31,6 +31,17 @@ test("squad filter presets reject malformed ranges, columns and scopes", () => {
   assert.equal(parseSquadFilterPresetFilters({ ...validPreset, advancedFilters: { unsafe: { minimum: "", maximum: "", query: "x" } } }), null);
 });
 
+test("old squad presets discard retired forecast filters without resetting useful criteria", () => {
+  assert.deepEqual(parseSquadFilterPresetFilters({
+    ...validPreset,
+    advancedFilters: {
+      ...validPreset.advancedFilters,
+      foPositionCalibratedFp: { minimum: "6", maximum: "", query: "" },
+      altJointAcceptedFp: { minimum: "4", maximum: "", query: "" }
+    }
+  }), validPreset);
+});
+
 test("saved squad presets use the authenticated user and no league scope", () => {
   const route = readFileSync(new URL("../app/api/user/saved-views/route.ts", import.meta.url), "utf8");
   assert.match(route, /requireApiUser/);

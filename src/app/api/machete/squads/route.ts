@@ -36,8 +36,10 @@ import {
 } from "@/machete/squad_logic";
 import { fantasyHistorySettingsKey, parseFantasyHistorySettings } from "@/machete/squad-history";
 import { toFantasyPlayerPoolListItem } from "@/machete/squad-player-dto";
+import { parseFantasyFixtureCalendar, type FantasyFixtureCalendar } from "@/machete/squad-fixture-calendar";
 import {
   loadFantasyPlayerPoolSnapshotPlayers,
+  parseFantasyPlayerPoolSnapshotMetadata,
   userCanUseCurrentXiFantasyPlayerPoolSnapshot
 } from "@/machete/fantasy-player-pool-snapshots";
 import {
@@ -148,6 +150,7 @@ export const GET = withApiHandler(async (request: Request) => {
   const currentSquadPlayerIds = [...ownedSquadPlayerIds, ...placeholderPlayers.map((player) => player.playerId)];
   let batchHeader = progressive ? "progressive-v1" : "full-v1";
   let responsePayload;
+  let fixtureCalendar: FantasyFixtureCalendar | null = null;
   if (progressive && provider === "SPORTS_RU") {
     const loadPlan = await loadFantasySquadPlayerPoolLoadPlan(
       prisma,
@@ -204,6 +207,11 @@ export const GET = withApiHandler(async (request: Request) => {
         return jsonError("SNAPSHOT_EXPIRED", "The requested player-pool snapshot is no longer available.", 409);
       }
       if (snapshotPage?.snapshot) {
+        if (progressiveCursor === 0 && params.get("fixtureCalendar") === "1") {
+          fixtureCalendar = parseFantasyFixtureCalendar(
+            parseFantasyPlayerPoolSnapshotMetadata(snapshotPage.snapshot.metadata)?.fixtureCalendar
+          );
+        }
         const requestedIds = new Set(idPage.players);
         responsePayload = {
           players: orderProgressiveFantasyPlayerPool(
@@ -265,6 +273,7 @@ export const GET = withApiHandler(async (request: Request) => {
   return NextResponse.json(
     {
       players: listPlayers,
+      ...(fixtureCalendar ? { fixtureCalendar } : {}),
       ...(responsePayload.pageInfo ? { pageInfo: responsePayload.pageInfo } : {})
     },
     {

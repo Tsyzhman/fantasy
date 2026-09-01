@@ -19,7 +19,7 @@ test("player table settings retain ordered columns and clamp per-user widths", (
   assert.equal(parseMachetePlayerTableSettings({ version: 1, columns: ["unsafe"], widths: {} }), null);
   assert.deepEqual(parseMachetePlayerTableSettings({ version: 1, columns: ["goals"], widths: {} }), {
     version: 3,
-    columns: ["predictedFp", "predictedFpPerPrice", "forecastHorizonFp", "foontasy", "foontasyPerPrice", "alternativePredictedFp", "alternativePredictedFpPerPrice", "alternativeForecastHorizon", "foPositionCalibratedFp", "altPositionCalibratedFp", "altJointAllFp", "foJointAllFp", "altJointAcceptedFp", "foJointAcceptedFp", "fixtures", "goals"],
+    columns: ["predictedFp", "predictedFpPerPrice", "forecastHorizonFp", "foontasy", "foontasyPerPrice", "alternativePredictedFp", "alternativePredictedFpPerPrice", "alternativeForecastHorizon", "fixtures", "goals"],
     widths: {},
     horizon: 5
   });
@@ -31,12 +31,6 @@ test("player table settings retain ordered columns and clamp per-user widths", (
   })?.columns, [
     "predictedFp",
     "alternativeForecastHorizon",
-    "foPositionCalibratedFp",
-    "altPositionCalibratedFp",
-    "altJointAllFp",
-    "foJointAllFp",
-    "altJointAcceptedFp",
-    "foJointAcceptedFp",
     "fixtures"
   ]);
 });

@@ -1,3 +1,4 @@
+import { withoutRetiredFantasyForecasts } from "./retired-fantasy-forecasts";
 import type {
   FantasyPlannerPlayer,
   FantasyProjectionFixtureInputs,
@@ -32,7 +33,7 @@ export function toFantasyPlayerPoolListItem(
       ?? null
   };
   for (const key of projectionDetailKeys) delete compact[key];
-  return compact;
+  return withoutRetiredFantasyForecasts(compact);
 }
 
 export function fantasyPlayerProjectionDetails(

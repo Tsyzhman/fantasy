@@ -1,4 +1,5 @@
 import { isSquadTableFilterKey, type SquadTableValueFilter } from "@/machete/squad-table-columns";
+import { isRetiredFantasyForecastKey } from "@/machete/retired-fantasy-forecasts";
 
 export const maximumSquadFilterPresets = 20;
 
@@ -61,6 +62,7 @@ function parseAdvancedFilters(value: unknown) {
   if (entries.length > 100) return null;
   const result: Record<string, SquadTableValueFilter> = {};
   for (const [key, rawFilter] of entries) {
+    if (isRetiredFantasyForecastKey(key)) continue;
     if (!isSquadTableFilterKey(key) || key === "action" || !rawFilter || typeof rawFilter !== "object" || Array.isArray(rawFilter)) return null;
     const filter = rawFilter as Record<string, unknown>;
     const minimum = boundedString(filter.minimum, 40);

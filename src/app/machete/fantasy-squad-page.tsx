@@ -1,5 +1,6 @@
 import { FantasySquadPlanner } from "@/components/machete/FantasySquadPlanner";
 import { FranchiseSquadsPanel } from "@/components/machete/FranchiseSquadsPanel";
+import { SquadLeagueCommit, SquadLeagueSwitcher } from "@/components/machete/SquadLeagueSwitcher";
 import { I18nText } from "@/components/i18n-text";
 import { MacheteShell } from "@/components/machete/MacheteShell";
 import { AutoSubmitForm } from "@/components/players/auto-submit-form";
@@ -89,6 +90,8 @@ export default async function FantasySquadPage({ searchParams, mode }: FantasySq
       })
     : null;
   const transferSuggestionsBlockedByReadiness = data ? plannerReadinessBlocksTransferSuggestions(data.readiness) : true;
+  const leagueHistoryParams = new URLSearchParams();
+  applyFantasyHistorySearchParams(leagueHistoryParams, historySettings);
 
   return (
     <MacheteShell compact>
@@ -104,11 +107,11 @@ export default async function FantasySquadPage({ searchParams, mode }: FantasySq
           </div>
         </div>
 
-        <AutoSubmitForm className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] gap-2 sm:max-w-xl">
-          <input type="hidden" name="historyScope" value={historySettings.scope} />
-          <input type="hidden" name="historyWindow" value={historySettings.window} />
-          {historySettings.selectedSeasons.map((season) => <input key={season} type="hidden" name="historySeason" value={season} />)}
-          {mode === "FPL" ? (
+        {mode === "FPL" ? (
+          <AutoSubmitForm className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] gap-2 sm:max-w-xl">
+            <input type="hidden" name="historyScope" value={historySettings.scope} />
+            <input type="hidden" name="historyWindow" value={historySettings.window} />
+            {historySettings.selectedSeasons.map((season) => <input key={season} type="hidden" name="historySeason" value={season} />)}
             <div className="text-sm">
               <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500"><I18nText en="Fantasy league" ru="Фэнтези-лига" /></span>
               <div className="flex min-h-12 items-center rounded border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-800">
@@ -116,22 +119,21 @@ export default async function FantasySquadPage({ searchParams, mode }: FantasySq
               </div>
               <input type="hidden" name="leagueId" value={selectedLeagueId} />
             </div>
-          ) : (
-            <label className="text-sm">
-              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500"><I18nText en="Sports.ru league" ru="Лига Sports.ru" /></span>
-              <select name="leagueId" defaultValue={selectedLeagueId} className="min-h-12 w-full rounded border border-slate-200 bg-white px-3 py-2 text-base">
-                {leagues.map((league) => (
-                  <option key={String(league.leagueId)} value={String(league.leagueId)}>
-                    {league.displayName}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-          <button type="submit" className="ui-button ui-button-primary min-h-12 self-end px-4">
-            <I18nText en="Load" ru="Загрузить" />
-          </button>
-        </AutoSubmitForm>
+            <button type="submit" className="ui-button ui-button-primary min-h-12 self-end px-4">
+              <I18nText en="Load" ru="Загрузить" />
+            </button>
+          </AutoSubmitForm>
+        ) : (
+          <SquadLeagueSwitcher
+            pathname="/machete/squad"
+            selectedLeagueId={selectedLeagueId}
+            historyQuery={leagueHistoryParams.toString()}
+            leagues={leagues.map((league) => ({
+              leagueId: String(league.leagueId),
+              label: league.displayName
+            }))}
+          />
+        )}
         {freshness ? (
           <>
           <details className="mt-3 rounded border border-slate-200 bg-white lg:hidden">
@@ -190,6 +192,7 @@ export default async function FantasySquadPage({ searchParams, mode }: FantasySq
             rules={data.rules}
             rounds={data.rounds}
             bookmakerFavorites={data.bookmakerFavorites}
+            initialFixtureCalendar={data.fixtureCalendar ?? null}
             players={initialSquadPlayers(data.players, data.squad.roundPlans.flatMap((plan) => plan.selections))}
             playerPoolHref={squadPlayerPoolHref(
               selectedLeague,
@@ -221,6 +224,7 @@ export default async function FantasySquadPage({ searchParams, mode }: FantasySq
           />
         </div>
       )}
+      {mode !== "FPL" && selectedLeagueId ? <SquadLeagueCommit leagueId={selectedLeagueId} /> : null}
     </MacheteShell>
   );
 }

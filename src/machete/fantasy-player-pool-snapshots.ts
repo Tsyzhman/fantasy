@@ -10,6 +10,8 @@ import {
   changedFantasyStartingXiTeams
 } from "@/machete/fantasy-player-pool-xi-revision";
 import { defaultFantasyHistorySettings, fantasyHistorySettingsKey } from "@/machete/squad-history";
+import { withoutRetiredFantasyForecasts } from "@/machete/retired-fantasy-forecasts";
+import { parseFantasyFixtureCalendar } from "@/machete/squad-fixture-calendar";
 import { toFantasyPlayerPoolListItem, type FantasyPlayerPoolListItem } from "@/machete/squad-player-dto";
 import {
   loadFantasySquadPlannerData,
@@ -31,6 +33,7 @@ export type FantasyPlayerPoolSnapshotMetadata = {
   rules: FantasySquadPlannerData["rules"];
   rounds: FantasySquadPlannerData["rounds"];
   bookmakerFavorites: FantasySquadPlannerData["bookmakerFavorites"];
+  fixtureCalendar?: FantasySquadPlannerData["fixtureCalendar"];
   priceStatus: FantasySquadPlannerData["priceStatus"];
   historySeasonOptions: string[];
   startingXiTeamRevisions?: Record<string, string>;
@@ -80,7 +83,11 @@ export async function refreshFantasyPlayerPoolSnapshots(
   for (const scope of scopes) {
     for (const variant of variants) {
       try {
-        if (options.onlyMissing && await latestFantasyPlayerPoolSnapshot(prisma, { contestId: scope.contestId, variant })) continue;
+        if (options.onlyMissing) {
+          const existing = await latestFantasyPlayerPoolSnapshot(prisma, { contestId: scope.contestId, variant });
+          // Upgrade old metadata once in the sequential worker, never on a page request.
+          if (fantasyPlayerPoolSnapshotHasFixtureCalendar(existing?.metadata)) continue;
+        }
         const snapshot = await withFantasyPlayerPoolScopeLock(
           snapshotScopeKey(scope.league),
           () => buildAndPublishFantasyPlayerPoolSnapshot(prisma, scope, variant)
@@ -296,7 +303,7 @@ export async function loadFantasyPlayerPoolSnapshotPlayers(
     if (!row.payload || typeof row.payload !== "object" || Array.isArray(row.payload)) continue;
     const payload = row.payload as unknown as FantasyPlayerPoolListItem;
     if (payload.playerId !== row.playerId) continue;
-    byPlayerId.set(row.playerId, payload);
+    byPlayerId.set(row.playerId, withoutRetiredFantasyForecasts(payload));
   }
   return {
     snapshot,
@@ -366,6 +373,11 @@ export function parseFantasyPlayerPoolSnapshotMetadata(value: unknown): FantasyP
   return metadata as FantasyPlayerPoolSnapshotMetadata;
 }
 
+export function fantasyPlayerPoolSnapshotHasFixtureCalendar(value: unknown): boolean {
+  const metadata = parseFantasyPlayerPoolSnapshotMetadata(value);
+  return parseFantasyFixtureCalendar(metadata?.fixtureCalendar) !== null;
+}
+
 function fantasyPlayerPoolSnapshotMetadata(
   data: FantasySquadPlannerData,
   dataFreshness: FantasyPlayerPoolSnapshotMetadata["dataFreshness"]
@@ -376,6 +388,7 @@ function fantasyPlayerPoolSnapshotMetadata(
     rules: data.rules,
     rounds: data.rounds,
     bookmakerFavorites: data.bookmakerFavorites,
+    fixtureCalendar: data.fixtureCalendar ?? null,
     priceStatus: data.priceStatus,
     historySeasonOptions: data.historySeasonOptions,
     dataFreshness

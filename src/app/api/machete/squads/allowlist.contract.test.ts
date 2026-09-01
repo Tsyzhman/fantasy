@@ -40,15 +40,13 @@ test("squad export rejects non-allowlisted league seasons before loading planner
   assertNotFoundWithoutLeagueDisclosure(source);
 });
 
-test("formula-adaptation details reject non-allowlisted league seasons before loading a player breakdown", () => {
+test("retired formula details remain authenticated and never load a player pool", () => {
   const source = handlerSource(formulaAdaptationsRouteSource, "GET");
-  assertGuardBeforeDownstreamLoad(
-    source,
-    "const leagueSeason = await prisma.leagueSeason.findUnique",
-    "!isFantasySquadLeague({ providerLeagueId: String(leagueSeason.leagueId) })",
-    "loadFantasySquadFormulaAdaptationBreakdowns"
-  );
-  assertNotFoundWithoutLeagueDisclosure(source);
+  assert.ok(source.indexOf("if (auth.response) return auth.response") < source.indexOf('"FORMULA_RETIRED"'));
+  assert.match(source, /requireApiUser/);
+  assert.match(source, /410/);
+  assert.match(source, /private, no-store/);
+  assert.doesNotMatch(formulaAdaptationsRouteSource, /prisma|squad_planner|loadFantasySquadFormulaAdaptationBreakdowns/);
 });
 
 test("projection details reject non-allowlisted league seasons before loading the cached pool", () => {

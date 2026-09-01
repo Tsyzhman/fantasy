@@ -80,7 +80,7 @@ test("players table reuses squad forecasts for 1 round and 3, 5 or 10 round hori
   assert.doesNotMatch(tableSource, /player\.alternativeScore \?\? 0/);
 });
 
-test("players table exposes all six independent non-weather formula adaptations", () => {
+test("players table omits the six retired formulas while keeping FFO, FO and ALT", () => {
   for (const key of [
     "foPositionCalibratedFp",
     "altPositionCalibratedFp",
@@ -89,12 +89,12 @@ test("players table exposes all six independent non-weather formula adaptations"
     "altJointAcceptedFp",
     "foJointAcceptedFp"
   ]) {
-    assert.match(pageSource, new RegExp(`${key}: forecast\\?\\.${key}`));
-    assert.match(tableSource, new RegExp(`column\\("${key}"`));
+    assert.doesNotMatch(pageSource, new RegExp(key));
+    assert.doesNotMatch(tableSource, new RegExp(key));
   }
-  assert.match(tableSource, /FO калибр\. позиции/);
-  assert.match(tableSource, /Alt Joint всех/);
-  assert.match(tableSource, /Погода исключена/);
+  for (const key of ["predictedFp", "foontasy", "alternativePredictedFp"]) {
+    assert.ok(tableSource.includes(`column("${key}"`));
+  }
 });
 
 test("value-cell tooltips explain the concrete player value instead of repeating header help", () => {

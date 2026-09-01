@@ -2,7 +2,7 @@
 
 import { ArrowLeft, ArrowLeftRight, ArrowRight, Bookmark, Check, Columns3, Copy, Crown, Download, FilePlus2, Layers3, ListChecks, LoaderCircle, Lock, MoreHorizontal, Plus, Save, Search, SlidersHorizontal, Sparkles, Trash2, Users, X } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { type DragEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject, type SetStateAction, startTransition as startPlayerPoolTransition, useDeferredValue, useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { type DragEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject, type SetStateAction, startTransition as startPlayerPoolTransition, useDeferredValue, useEffect, useMemo, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { createPortal } from "react-dom";
 
 import { I18nText } from "@/components/i18n-text";
@@ -22,8 +22,9 @@ import {
   swapSquadSelectionCards,
   type FantasyActiveChip
 } from "@/components/machete/fantasy-squad-ui";
-import { FormulaAdaptationHoverCard } from "@/components/machete/FormulaAdaptationHoverCard";
 import { ProjectionFormulaHoverCard } from "@/components/machete/ProjectionFormulaHoverCard";
+import { FantasyFixtureCalendar } from "@/components/machete/FantasyFixtureCalendar";
+import { parseFantasyFixtureCalendar, type FantasyFixtureCalendar as FixtureCalendarData } from "@/machete/squad-fixture-calendar";
 import { SortableTable, type SortDirection } from "@/components/sortable-table";
 import { FdrRow } from "@/components/ui/fdr-pill";
 import { SegmentedControl, type SegmentedOption } from "@/components/ui/segmented-control";
@@ -75,11 +76,16 @@ import {
   type TransferSuggestionForecastSource
 } from "@/machete/squad_logic";
 import { forecastPointsPerPrice } from "@/machete/fantasy-value-efficiency";
-import type { FormulaAdaptationForecastKey } from "@/machete/formula_adaptations";
 import type { FantasyBookmakerFavorite, SavedFantasySquad, SavedFantasySquadOption } from "@/machete/squad_planner";
 import { plannerReadinessBlocksForecastActions, type PlannerReadiness } from "@/machete/planner_readiness";
 import type { SportsRuSquadSnapshotStatus } from "@/machete/sports_ru_squad_snapshots";
 import type { SquadFilterPreset, SquadFilterPresetFilters } from "@/machete/squad-filter-presets";
+import {
+  fantasySquadLeagueNavigationEvent,
+  fantasySquadLeagueNavigationTarget,
+  fantasySquadPendingLeagueId,
+  subscribeFantasySquadLeagueNavigation
+} from "@/machete/squad-league-navigation";
 import {
   defaultSquadTableColumns,
   emptySquadTableValueFilter,
@@ -106,6 +112,7 @@ type FantasySquadPlannerProps = {
   rules: FantasySquadRules;
   rounds: FantasyRoundProjection[];
   bookmakerFavorites: FantasyBookmakerFavorite[];
+  initialFixtureCalendar?: FixtureCalendarData | null;
   players: FantasyPlannerPlayer[];
   playerPoolHref?: string;
   squadApiPath?: string;
@@ -381,7 +388,7 @@ type TransferSuggestionCalculation = {
   suggestions: TransferPlanSuggestion[];
 };
 
-export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds, bookmakerFavorites, players: initialPlayers, playerPoolHref, squadApiPath = "/api/machete/squads", squadRoutePath = "/machete/squad", initialSquad, savedSquads, readiness, priceStatus, sportsRuSquadStatus, historySettings, historySeasonOptions, initialVisiblePlayerPoolColumns, initialPlayerPoolColumnWidths }: FantasySquadPlannerProps) {
+export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds, bookmakerFavorites, initialFixtureCalendar = null, players: initialPlayers, playerPoolHref, squadApiPath = "/api/machete/squads", squadRoutePath = "/machete/squad", initialSquad, savedSquads, readiness, priceStatus, sportsRuSquadStatus, historySettings, historySeasonOptions, initialVisiblePlayerPoolColumns, initialPlayerPoolColumnWidths }: FantasySquadPlannerProps) {
   const language = useLanguage();
   const router = useRouter();
   const budgetForecastRef = useRef<HTMLDivElement>(null);
@@ -392,8 +399,19 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
   const [sourcePlayers, setSourcePlayers] = useState<FantasyPlannerPlayer[]>(initialPlayers);
   const sourcePlayersRef = useRef<FantasyPlannerPlayer[]>(initialPlayers);
   const activePlayerPoolSnapshotIdRef = useRef<string | null>(playerPoolSnapshotIdFromHref(playerPoolHref));
+  const [fixtureCalendar, setFixtureCalendar] = useState(initialFixtureCalendar);
+  const fixtureCalendarRef = useRef(initialFixtureCalendar);
+  const fixtureCalendarSnapshotIdRef = useRef(initialFixtureCalendar ? playerPoolSnapshotIdFromHref(playerPoolHref) : null);
   const playerPoolInitialLoadCompleteRef = useRef(!playerPoolHref);
   const playerPoolBackgroundRefreshRunningRef = useRef(false);
+  const foregroundPlayerPoolCancelRef = useRef<(() => void) | null>(null);
+  const backgroundPlayerPoolCancelRef = useRef<(() => void) | null>(null);
+  const pendingLeagueId = useSyncExternalStore(
+    subscribeFantasySquadLeagueNavigation,
+    fantasySquadPendingLeagueId,
+    () => null
+  );
+  const leagueNavigationPending = Boolean(pendingLeagueId && pendingLeagueId !== leagueId);
   const [appliedHistorySettings, setAppliedHistorySettings] = useState(historySettings);
   const [playerPoolRequestHref, setPlayerPoolRequestHref] = useState(playerPoolHref);
   const [activeRoundOffset, setActiveRoundOffset] = useState(0);
@@ -733,7 +751,20 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
   }, []);
 
   useEffect(() => {
-    if (!postLoadContentReady || !playerPoolRequestHref) return;
+    function stopOldLeagueDownloads(event: Event) {
+      const targetLeagueId = fantasySquadLeagueNavigationTarget(event);
+      if (!targetLeagueId || targetLeagueId === leagueId) return;
+      foregroundPlayerPoolCancelRef.current?.();
+      backgroundPlayerPoolCancelRef.current?.();
+      if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+    }
+
+    window.addEventListener(fantasySquadLeagueNavigationEvent, stopOldLeagueDownloads);
+    return () => window.removeEventListener(fantasySquadLeagueNavigationEvent, stopOldLeagueDownloads);
+  }, [leagueId]);
+
+  useEffect(() => {
+    if (leagueNavigationPending || !postLoadContentReady || !playerPoolRequestHref) return;
 
     playerPoolInitialLoadCompleteRef.current = false;
     activePlayerPoolSnapshotIdRef.current = playerPoolSnapshotIdFromHref(playerPoolRequestHref);
@@ -741,10 +772,14 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
     let requestCompleted = false;
     let retryAfterBfcacheRestore = false;
     const controller = new AbortController();
-    const handlePageHide = (event: PageTransitionEvent) => {
+    const cancelPlayerPoolLoad = () => {
       lifecycleCancelled = true;
-      retryAfterBfcacheRestore = event.persisted && !requestCompleted;
       if (!requestCompleted) controller.abort();
+    };
+    foregroundPlayerPoolCancelRef.current = cancelPlayerPoolLoad;
+    const handlePageHide = (event: PageTransitionEvent) => {
+      retryAfterBfcacheRestore = event.persisted && !requestCompleted;
+      cancelPlayerPoolLoad();
     };
     const handlePageShow = (event: PageTransitionEvent) => {
       if (!event.persisted || !retryAfterBfcacheRestore) return;
@@ -774,6 +809,10 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
         else batchUrl.searchParams.delete("stage");
         if (pinnedSnapshotId) batchUrl.searchParams.set("snapshotId", pinnedSnapshotId);
         else batchUrl.searchParams.delete("snapshotId");
+        if (stage === "DETAILS" && (cursor === null || cursor === "0") && (
+          !fixtureCalendarRef.current || fixtureCalendarSnapshotIdRef.current !== pinnedSnapshotId
+        )) batchUrl.searchParams.set("fixtureCalendar", "1");
+        else batchUrl.searchParams.delete("fixtureCalendar");
         const requestedPage = `${pinnedSnapshotId ?? "live"}:${stage ?? "BASE"}:${cursor ?? "0"}`;
         if (seenPages.has(requestedPage)) throw new Error("PLAYER_POOL_CURSOR_DID_NOT_ADVANCE");
         seenPages.add(requestedPage);
@@ -786,6 +825,7 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
           players?: FantasyPlannerPlayer[];
           pageInfo?: unknown;
           error?: { code?: string };
+          fixtureCalendar?: unknown;
         };
         if (response.status === 409 && payload.error?.code === "SNAPSHOT_EXPIRED" && expiredSnapshotRetries < 2) {
           expiredSnapshotRetries += 1;
@@ -832,7 +872,13 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
 
         const basePlayersForRender = accumulatedBasePlayers;
         const detailPlayersForRender = accumulatedDetailPlayers;
+        const batchCalendar = parseFantasyFixtureCalendar(payload.fixtureCalendar);
         startPlayerPoolTransition(() => {
+          if (batchCalendar) {
+            fixtureCalendarRef.current = batchCalendar;
+            fixtureCalendarSnapshotIdRef.current = pinnedSnapshotId;
+            setFixtureCalendar(batchCalendar);
+          }
           setSourcePlayers((current) => {
             let merged: FantasyPlannerPlayer[];
             if (effectivePageInfo.complete) {
@@ -900,13 +946,16 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
     return () => {
       window.removeEventListener("pagehide", handlePageHide);
       window.removeEventListener("pageshow", handlePageShow);
-      lifecycleCancelled = true;
-      controller.abort();
+      cancelPlayerPoolLoad();
+      if (foregroundPlayerPoolCancelRef.current === cancelPlayerPoolLoad) {
+        foregroundPlayerPoolCancelRef.current = null;
+      }
     };
-  }, [playerPoolRequestHref, playerPoolRetry, postLoadContentReady]);
+  }, [leagueNavigationPending, playerPoolRequestHref, playerPoolRetry, postLoadContentReady]);
 
   useEffect(() => {
     if (
+      leagueNavigationPending ||
       provider !== "SPORTS_RU" ||
       !postLoadContentReady ||
       !playerPoolRequestHref ||
@@ -917,12 +966,18 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
 
     let cancelled = false;
     const controller = new AbortController();
+    const cancelBackgroundPlayerPoolLoad = () => {
+      cancelled = true;
+      controller.abort();
+    };
+    backgroundPlayerPoolCancelRef.current = cancelBackgroundPlayerPoolLoad;
 
     async function refreshSnapshot(targetSnapshotId: string) {
       playerPoolBackgroundRefreshRunningRef.current = true;
       try {
         let cursor = "0";
         let refreshedPlayers: FantasyPlannerPlayer[] = [];
+        let refreshedCalendar: FixtureCalendarData | null = null;
         const seenCursors = new Set<string>();
         while (!cancelled) {
           if (seenCursors.has(cursor)) throw new Error("PLAYER_POOL_BACKGROUND_CURSOR_DID_NOT_ADVANCE");
@@ -931,6 +986,8 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
           batchUrl.searchParams.set("stage", "DETAILS");
           batchUrl.searchParams.set("cursor", cursor);
           batchUrl.searchParams.set("snapshotId", targetSnapshotId);
+          if (cursor === "0") batchUrl.searchParams.set("fixtureCalendar", "1");
+          else batchUrl.searchParams.delete("fixtureCalendar");
           const response = await fetch(batchUrl, {
             cache: "no-store",
             headers: { Accept: "application/json" },
@@ -940,6 +997,7 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
           const payload = await response.json().catch(() => ({})) as {
             players?: FantasyPlannerPlayer[];
             pageInfo?: unknown;
+            fixtureCalendar?: unknown;
           };
           const pageInfo = parsePlayerPoolPageInfo(payload.pageInfo);
           if (
@@ -948,6 +1006,7 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
             pageInfo.stage !== "DETAILS" ||
             pageInfo.snapshotId !== targetSnapshotId
           ) return;
+          if (cursor === "0") refreshedCalendar = parseFantasyFixtureCalendar(payload.fixtureCalendar);
           refreshedPlayers = mergeFantasyPlayerPools(refreshedPlayers, payload.players);
           if (pageInfo.complete) break;
           if (pageInfo.nextStage !== "DETAILS" || pageInfo.nextCursor === null) return;
@@ -955,11 +1014,18 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
           await yieldToPlayerPoolUi();
         }
         if (cancelled || refreshedPlayers.length === 0) return;
-        startPlayerPoolTransition(() => setSourcePlayers((current) => {
-          const merged = mergeFantasyPlayerPools(current, refreshedPlayers);
-          sourcePlayersRef.current = merged;
-          return merged;
-        }));
+        startPlayerPoolTransition(() => {
+          setSourcePlayers((current) => {
+            const merged = mergeFantasyPlayerPools(current, refreshedPlayers);
+            sourcePlayersRef.current = merged;
+            return merged;
+          });
+          if (refreshedCalendar) {
+            fixtureCalendarRef.current = refreshedCalendar;
+            fixtureCalendarSnapshotIdRef.current = targetSnapshotId;
+            setFixtureCalendar(refreshedCalendar);
+          }
+        });
         activePlayerPoolSnapshotIdRef.current = targetSnapshotId;
       } finally {
         playerPoolBackgroundRefreshRunningRef.current = false;
@@ -1001,13 +1067,15 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
     };
     document.addEventListener("visibilitychange", onVisibilityChange);
     return () => {
-      cancelled = true;
-      controller.abort();
+      cancelBackgroundPlayerPoolLoad();
       window.clearInterval(interval);
       document.removeEventListener("visibilitychange", onVisibilityChange);
       playerPoolBackgroundRefreshRunningRef.current = false;
+      if (backgroundPlayerPoolCancelRef.current === cancelBackgroundPlayerPoolLoad) {
+        backgroundPlayerPoolCancelRef.current = null;
+      }
     };
-  }, [appliedHistorySettings, playerPoolRequestHref, postLoadContentReady, provider]);
+  }, [appliedHistorySettings, leagueNavigationPending, playerPoolRequestHref, postLoadContentReady, provider]);
 
   function applyHistorySettings() {
     if (historyWindowDraft === "SELECTED_SEASONS" && historySeasonsDraft.length === 0) {
@@ -1938,11 +2006,21 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
 
   return (
     <div
-      className="mt-4 flex flex-col gap-4"
+      className="relative mt-4"
       data-fantasy-squad-planner
       data-league-id={leagueId}
       data-season={season}
+      aria-busy={leagueNavigationPending}
     >
+      {leagueNavigationPending ? (
+        <div className="fixed inset-x-4 top-20 z-50 mx-auto max-w-xl rounded border border-sky-300 bg-sky-50 px-4 py-3 text-center text-sm font-semibold text-sky-950 shadow-lg" role="status" aria-live="assertive">
+          <I18nText
+            en="Switching league. The previous player download has been stopped."
+            ru="Переключаю лигу. Выгрузка игроков прошлой лиги остановлена."
+          />
+        </div>
+      ) : null}
+      <div className={cn("flex flex-col gap-4 transition-opacity", leagueNavigationPending && "pointer-events-none select-none opacity-[0.35]")}>
       <div ref={plannerTabsRef} className="sticky top-14 z-30 order-1 -mx-1 rounded border border-slate-200 bg-white/95 p-1 shadow-sm backdrop-blur xl:hidden">
         <SegmentedControl value={mobileTab} onChange={setMobileTab} options={mobileTabs} className="w-full justify-between border-0 bg-transparent p-0 [&>button]:min-h-12 [&>button]:flex-1" size="sm" />
       </div>
@@ -2806,7 +2884,7 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
                   onAdd={replacePlayerFromPool}
                   onRemove={removePlayer}
                   replacementSource={poolReplacementSource}
-                  formulaAdaptationSourceHref={playerPoolRequestHref}
+                  projectionDetailsSourceHref={playerPoolRequestHref}
                   detailedFormulaTooltips={detailedFormulaTooltips}
                   initialVisibleColumns={initialVisiblePlayerPoolColumns}
                   initialColumnWidths={initialPlayerPoolColumnWidths}
@@ -2910,6 +2988,8 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
           </div>
         </section>
       ) : null}
+      <FantasyFixtureCalendar calendar={fixtureCalendar} />
+      </div>
     </div>
   );
 }
@@ -3040,7 +3120,7 @@ type PlayerPoolTableProps = {
   horizon: number;
   language: UiLanguage;
   provider?: string;
-  formulaAdaptationSourceHref?: string;
+  projectionDetailsSourceHref?: string;
   detailedFormulaTooltips: boolean;
   addBlockReason: (player: FantasyPlannerPlayer) => string | null;
   selectionsByPlayerId: Map<string, FantasySquadSelection>;
@@ -3503,7 +3583,7 @@ function playerPoolFixedColumnTitles(language: UiLanguage, provider = "SPORTS_RU
   };
 }
 
-function CustomPlayerPoolRow({ player, columns, horizon, language, provider, formulaAdaptationSourceHref, detailedFormulaTooltips, addBlockReason, selectionsByPlayerId, onAdd, onRemove }: Omit<PlayerPoolTableProps, "players"> & { player: FantasyPlannerPlayer; columns: PlayerPoolOptionalColumn[] }) {
+function CustomPlayerPoolRow({ player, columns, horizon, language, provider, projectionDetailsSourceHref, detailedFormulaTooltips, addBlockReason, selectionsByPlayerId, onAdd, onRemove }: Omit<PlayerPoolTableProps, "players"> & { player: FantasyPlannerPlayer; columns: PlayerPoolOptionalColumn[] }) {
   const reason = addBlockReason(player);
   const isSelected = selectionsByPlayerId.has(player.playerId);
   const disabled = !isSelected && reason !== null;
@@ -3548,7 +3628,7 @@ function CustomPlayerPoolRow({ player, columns, horizon, language, provider, for
           <button type="button" onClick={() => onAdd(player)} aria-label={addLabel} className="inline-flex h-7 w-7 items-center justify-center rounded border border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"><Plus className="h-4 w-4" /></button>
         )}
       </td>
-      {columns.map((column) => customPlayerPoolCell(column, player, horizon, language, muted, formulaAdaptationSourceHref, detailedFormulaTooltips, provider ?? "SPORTS_RU"))}
+      {columns.map((column) => customPlayerPoolCell(column, player, horizon, language, muted, projectionDetailsSourceHref, detailedFormulaTooltips, provider ?? "SPORTS_RU"))}
     </tr>
   );
 }
@@ -3572,12 +3652,6 @@ function playerPoolOptionalColumns(players: FantasyPlannerPlayer[], horizon: num
     column("alternative", "Alt", "Альт", "Alternative forecast for the next provider round. Each fixture is calculated independently with the user's personal Alt formula, then double-round results are summed.", "Альтернативный прогноз на следующий тур провайдера. Каждый матч отдельно рассчитывается по личной формуле Alt пользователя, затем результаты двойного тура складываются."),
     column("alternativePerPrice", "Alt/price", "Альт/цена", `Alternative next-round expected fantasy points divided by the current ${priceProviderLabel} price. Higher means more Alt points per one price unit.`, `Альтернативные ожидаемые ФО на следующий тур, делённые на текущую цену ${priceProviderLabel}. Чем выше значение, тем больше Альт-очков на одну единицу стоимости.`, true, 82),
     column("alternativeHorizon", `Alt ${horizon}R`, `Альт ${horizon}Т`, `Sum of independently calculated personal Alt forecasts for the next ${horizon} rounds.`, `Сумма отдельно рассчитанных личных прогнозов Alt на следующие ${horizon} туров.`),
-    column("foPositionCalibratedFp", "FO position cal.", "FO калибр. позиции", "FO calibrated independently by fantasy position on the complete 2024/25–2025/26 retro sample: actual starters who played over 60 minutes. Weather is not used.", "FO, независимо откалиброванный по фэнтези-позиции на полной ретро-выборке 2024/25–2025/26: фактический старт и больше 60 минут. Погода не используется.", true, 116),
-    column("altPositionCalibratedFp", "Alt position cal.", "Alt калибр. позиции", "Alt calibrated independently by fantasy position on the complete 2024/25–2025/26 retro sample: actual starters who played over 60 minutes. Weather is not used.", "Alt, независимо откалиброванный по фэнтези-позиции на полной ретро-выборке 2024/25–2025/26: фактический старт и больше 60 минут. Погода не используется.", true, 116),
-    column("altJointAllFp", "Alt Joint all", "Alt Joint всех", "Alt joint Ridge adaptation with every researched non-weather hypothesis. Missing live inputs are handled by the trained missing-value model rather than invented.", "Joint-адаптация Alt со всеми исследованными гипотезами, кроме погоды. Недоступные live-признаки обрабатываются обученной моделью пропусков, а не выдумываются.", true, 108),
-    column("foJointAllFp", "FO Joint all", "FO Joint всех", "FO joint Ridge adaptation with every researched non-weather hypothesis. Missing live inputs are handled by the trained missing-value model rather than invented.", "Joint-адаптация FO со всеми исследованными гипотезами, кроме погоды. Недоступные live-признаки обрабатываются обученной моделью пропусков, а не выдумываются.", true, 108),
-    column("altJointAcceptedFp", "Alt Joint accepted", "Alt Joint accepted", "Alt joint Ridge adaptation restricted to hypotheses accepted on the 2024/25 selection folds. Weather is excluded.", "Joint-адаптация Alt только по гипотезам, принятым на фолдах 2024/25. Погода исключена.", true, 126),
-    column("foJointAcceptedFp", "FO Joint accepted", "FO Joint accepted", "FO joint Ridge adaptation restricted to hypotheses accepted on the 2024/25 selection folds. Weather is excluded.", "Joint-адаптация FO только по гипотезам, принятым на фолдах 2024/25. Погода исключена.", true, 126),
     column("fixtures", "Fixtures", "Матчи", "The next opponents in the selected horizon. Chip colour represents fixture difficulty; hover a chip for the full opponent name and home/away context.", "Следующие соперники на выбранном горизонте. Цвет плашки показывает сложность матча; при наведении доступны полное имя соперника и поле дома/в гостях.", false, 230),
     column("age", "Age", "Возраст", "Player age from the current FotMob profile.", "Возраст игрока из текущего профиля FotMob."),
     column("nationality", "Nationality", "Гражданство", "Player nationality from FotMob metadata.", "Гражданство игрока из метаданных FotMob.", false, 120),
@@ -3651,7 +3725,7 @@ function customPlayerPoolCell(
   horizon: number,
   language: UiLanguage,
   muted: boolean,
-  formulaAdaptationSourceHref: string | undefined,
+  projectionDetailsSourceHref: string | undefined,
   detailedFormulaTooltips: boolean,
   provider: string
 ) {
@@ -3676,34 +3750,19 @@ function customPlayerPoolCell(
     : column.key === "horizonFp" ? "text-sky-700"
       : column.key === "foontasy" || column.key === "foontasyPerPrice" ? "text-cyan-700"
         : column.key.startsWith("alt") ? "text-amber-700"
-          : column.key.startsWith("foPosition") || column.key.startsWith("foJoint") ? "text-emerald-700"
-            : "text-slate-700";
+          : "text-slate-700";
   const cellTitle = playerPoolValueCellTitle(column, player, horizon, language, rawValue);
-  const formulaAdaptationKey = formulaAdaptationForecastKey(column.key);
   const projectionKind: "primary" | "alternative" | null = column.key === "nextFp"
     ? "primary"
     : column.key === "alternative" ? "alternative" : null;
   return (
-    <td key={column.key} data-sort-value={rawValue ?? ""} className={cn("overflow-hidden text-ellipsis whitespace-nowrap px-1 py-1.5", column.numeric && "text-center num-tabular", muted ? "text-slate-500" : tone)} title={formulaAdaptationKey || projectionKind ? undefined : cellTitle}>
-      {formulaAdaptationKey ? (
-        <FormulaAdaptationHoverCard
-          playerId={player.playerId}
-          playerName={player.name}
-          columnLabel={column.label}
-          columnKey={formulaAdaptationKey}
-          sourceHref={formulaAdaptationSourceHref}
-          provider={provider}
-          language={language}
-          detailed={detailedFormulaTooltips}
-        >
-          {display}
-        </FormulaAdaptationHoverCard>
-      ) : projectionKind ? (
+    <td key={column.key} data-sort-value={rawValue ?? ""} className={cn("overflow-hidden text-ellipsis whitespace-nowrap px-1 py-1.5", column.numeric && "text-center num-tabular", muted ? "text-slate-500" : tone)} title={projectionKind ? undefined : cellTitle}>
+      {projectionKind ? (
         <ProjectionFormulaHoverCard
           playerId={player.playerId}
           playerName={player.name}
           kind={projectionKind}
-          sourceHref={formulaAdaptationSourceHref}
+          sourceHref={projectionDetailsSourceHref}
           provider={provider}
           language={language}
           detailed={detailedFormulaTooltips}
@@ -3713,21 +3772,6 @@ function customPlayerPoolCell(
       ) : display}
     </td>
   );
-}
-
-const formulaAdaptationForecastKeys = new Set<FormulaAdaptationForecastKey>([
-  "foPositionCalibratedFp",
-  "altPositionCalibratedFp",
-  "altJointAllFp",
-  "foJointAllFp",
-  "altJointAcceptedFp",
-  "foJointAcceptedFp"
-]);
-
-function formulaAdaptationForecastKey(value: string): FormulaAdaptationForecastKey | null {
-  return formulaAdaptationForecastKeys.has(value as FormulaAdaptationForecastKey)
-    ? value as FormulaAdaptationForecastKey
-    : null;
 }
 
 function playerPoolValueCellTitle(column: PlayerPoolOptionalColumn, player: FantasyPlannerPlayer, horizon: number, language: UiLanguage, rawValue: string | number | null) {
@@ -3986,12 +4030,6 @@ function customPlayerPoolColumnValue(key: string, player: FantasyPlannerPlayer, 
     case "alternative": return nextAlternativeFantasyPoints(player);
     case "alternativePerPrice": return forecastPointsPerPrice(nextAlternativeFantasyPoints(player), player.price);
     case "alternativeHorizon": return playerAlternativeHorizonPoints(player, horizon);
-    case "foPositionCalibratedFp": return player.foPositionCalibratedFp ?? null;
-    case "altPositionCalibratedFp": return player.altPositionCalibratedFp ?? null;
-    case "altJointAllFp": return player.altJointAllFp ?? null;
-    case "foJointAllFp": return player.foJointAllFp ?? null;
-    case "altJointAcceptedFp": return player.altJointAcceptedFp ?? null;
-    case "foJointAcceptedFp": return player.foJointAcceptedFp ?? null;
     case "fixtures": return [...(player.fixtureFullNames ?? []), ...(player.fixtures ?? [])].join(" ");
     case "age": return player.age ?? null;
     case "nationality": return player.nationality ?? null;
@@ -6742,12 +6780,6 @@ function fantasyPlayerAtRoundOffset(player: FantasyPlannerPlayer, roundOffset: n
     alternativeProjectionComponents: null,
     alternativeFplForecastBreakdown: null,
     alternativeProjectionFormula: null,
-    foPositionCalibratedFp: null,
-    altPositionCalibratedFp: null,
-    altJointAllFp: null,
-    foJointAllFp: null,
-    altJointAcceptedFp: null,
-    foJointAcceptedFp: null,
     expectedMinutes: null,
     startProbability: null,
     alternativeRoundPoints: player.alternativeRoundPoints?.slice(roundOffset),

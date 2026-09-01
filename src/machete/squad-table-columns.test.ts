@@ -2,7 +2,8 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 
-import { defaultSquadTableColumns, formulaAdaptationSquadTableColumns, isSquadTableColumnsInput, isSquadTableColumnWidthsInput, isSquadTableFilterKey, moveSquadTableColumn, parseSquadTableColumns, parseSquadTableColumnWidths, squadTableColumnsPreference, squadTableValueFilterIsActive, squadTableValueMatchesFilter } from "./squad-table-columns";
+import { defaultSquadTableColumns, isSquadTableColumnsInput, isSquadTableColumnWidthsInput, isSquadTableFilterKey, moveSquadTableColumn, parseSquadTableColumns, parseSquadTableColumnWidths, squadTableColumnsPreference, squadTableValueFilterIsActive, squadTableValueMatchesFilter } from "./squad-table-columns";
+import { retiredFantasyForecastKeys } from "./retired-fantasy-forecasts";
 
 test("squad table columns default excludes the invented Foontasy horizon", () => {
   assert.deepEqual(parseSquadTableColumns(null), [...defaultSquadTableColumns]);
@@ -16,19 +17,17 @@ test("squad table columns default excludes the invented Foontasy horizon", () =>
       defaultSquadTableColumns.indexOf("alternativeHorizon") + 1,
       defaultSquadTableColumns.indexOf("fixtures")
     ),
-    formulaAdaptationSquadTableColumns
+    []
   );
   assert.ok(!defaultSquadTableColumns.some((key) => key.toLowerCase().includes("foontasyhorizon")));
 });
 
-test("legacy squad column preferences gain formula adaptations exactly once", () => {
+test("legacy and current squad preferences discard retired columns without changing order", () => {
   const legacy = ["nextFp", "alternative", "fixtures"];
-  assert.deepEqual(parseSquadTableColumns(legacy), [
-    "nextFp",
-    "alternative",
-    ...formulaAdaptationSquadTableColumns,
-    "fixtures"
-  ]);
+  assert.deepEqual(parseSquadTableColumns(legacy), legacy);
+  assert.deepEqual(parseSquadTableColumns(["nextFp", ...retiredFantasyForecastKeys, "alternative", "fixtures"]), legacy);
+  assert.deepEqual(parseSquadTableColumns({ version: 2, columns: [...legacy, ...retiredFantasyForecastKeys] }), legacy);
+  assert.deepEqual(parseSquadTableColumnWidths({ nextFp: 80, foJointAllFp: 140 }), { nextFp: 80 });
 
   const current = squadTableColumnsPreference(legacy);
   assert.deepEqual(current, { version: 2, columns: legacy });
@@ -38,7 +37,7 @@ test("legacy squad column preferences gain formula adaptations exactly once", ()
 test("squad table columns accept known and dynamic player stats but reject arbitrary keys", () => {
   assert.deepEqual(parseSquadTableColumns(squadTableColumnsPreference(["nextFp", "stat:xg_per_90_l5", "bad", "nextFp"])), ["nextFp", "stat:xg_per_90_l5"]);
   assert.equal(isSquadTableColumnsInput(["nextFp", "stat:shots_on_target"]), true);
-  assert.equal(isSquadTableColumnsInput([...formulaAdaptationSquadTableColumns]), true);
+  assert.equal(isSquadTableColumnsInput([...retiredFantasyForecastKeys]), false);
   assert.equal(isSquadTableColumnsInput(["bad"]), false);
 });
 

@@ -5,6 +5,42 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.51 - 2026-09-01
+
+### Added
+
+- Add an all-team fixture calendar at the bottom of Squad, with a 5–10-round
+  horizon, separate attack/defence difficulty and easiest-to-hardest ranking.
+  Reuse the player-table FDR scale and show home/away, double and blank rounds.
+- Store one normalized calendar in each league snapshot, not in player rows.
+  Reuse existing fixture calculations, lazily render the table near the viewport,
+  and update it with the existing background snapshot flow without resetting
+  the user's draft or calendar controls. Old snapshots upgrade in the worker.
+
+### Changed
+
+- Retire the six position-calibrated/Joint forecast variants from Squad and
+  player tables. Preserve the parsed external FFO, primary FO and personal ALT,
+  including their existing round and starting-XI behavior.
+- Stop constructing adaptation player/team features, six sets of coefficient
+  breakdowns and their server cache. Do not load shot histories or adaptation-only
+  team statistics during player-pool refreshes. Research artifacts remain offline
+  and are not imported by the application calculation path.
+- Drop retired fields when reading older rotating snapshots. Migrate saved
+  columns, widths and filters without discarding unrelated preferences. Requests
+  from old formula tooltips return authenticated HTTP 410 without recalculating
+  players. No database migration or snapshot purge is required.
+
+### Fixed
+
+- Make Sports.ru league switching in Squad immediate and latest-request-wins.
+  Cancel the previous league's progressive/background player downloads as soon
+  as a new league is selected, keep stale/intermediate league responses blocked
+  until the matching planner mounts, and use a guarded full-navigation fallback
+  only if the complete page does not commit.
+- Upgrade Next.js from 16.2.12 to 16.3.4, which includes the upstream route-cache
+  fix for stale query parameters being restored by `router.push`/`router.replace`.
+
 ## 0.3.50 - 2026-08-31
 
 ### Added

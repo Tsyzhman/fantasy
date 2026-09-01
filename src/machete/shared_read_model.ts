@@ -8,7 +8,6 @@ import { teamLogoUrlForSlug, validTeamLogoUrl } from "@/lib/teams/logo-assets";
 import { providerTeamShortName } from "@/lib/teams/display";
 import { normalizeName, slugify } from "@/lib/text";
 import { daysAgo, matchWindowSeasonLabel, type MacheteMatchWindow } from "@/scoring/machete/match-window";
-import { buildFormulaAdaptationPlayerFeatures, type FormulaAdaptationFeatures } from "@/machete/formula_adaptations";
 import { normalizeFantasyPosition, type FantasyPositionGroup } from "@/machete/squad_logic";
 
 export type SharedLeagueSeasonOption = {
@@ -77,7 +76,6 @@ export type SharedMachetePlayerRow = {
   dataUpdatedAt: Date | null;
   hasBasicStats: boolean;
   rawMetrics?: Record<string, unknown>;
-  formulaAdaptationFeatures?: FormulaAdaptationFeatures;
 };
 
 export type SharedMinuteHistoryProvenance = {
@@ -1956,23 +1954,6 @@ function aggregateSharedStats(
   const positionGroup = machetePositionGroup(position);
 
   const recentFp = computeRecentFp(stats, positionGroup, model, matchDateById);
-  const formulaAdaptationFeatures = buildFormulaAdaptationPlayerFeatures(
-    stats.map((stat) => {
-      const points = calculateScoringScore(perMatchRawMetrics(stat), positionGroup, model);
-      return {
-        matchDate: matchDateById?.get(String(stat.matchId)) ?? null,
-        points: typeof points === "number" && Number.isFinite(points) ? points : null,
-        minutes: stat.minutes,
-        rating: stat.rating,
-        xg: stat.xg,
-        xa: stat.xa,
-        shots: stat.shots,
-        shotsOnTarget: stat.shotsOnTarget,
-        recoveries: stat.recoveries,
-        chancesCreated: stat.chancesCreated
-      };
-    })
-  );
 
   return {
     matchesPlayed,
@@ -1995,8 +1976,7 @@ function aggregateSharedStats(
     forecastConfidence,
     dataUpdatedAt,
     hasBasicStats: stats.some((stat) => isSharedBasicStatComplete(stat, position)),
-    rawMetrics,
-    formulaAdaptationFeatures
+    rawMetrics
   };
 }
 

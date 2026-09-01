@@ -78,12 +78,6 @@ export type MachetePlayerRow = {
   foontasyPoints?: number | null;
   alternativePredictedFp?: number | null;
   alternativeRoundPoints?: Array<number | null> | null;
-  foPositionCalibratedFp?: number | null;
-  altPositionCalibratedFp?: number | null;
-  altJointAllFp?: number | null;
-  foJointAllFp?: number | null;
-  altJointAcceptedFp?: number | null;
-  foJointAcceptedFp?: number | null;
   fixtures?: string[];
   fixtureFullNames?: string[];
   fixtureDifficulties?: Array<number | null>;
@@ -113,12 +107,6 @@ const defaultColumns = [
   "alternativePredictedFp",
   "alternativePredictedFpPerPrice",
   "alternativeForecastHorizon",
-  "foPositionCalibratedFp",
-  "altPositionCalibratedFp",
-  "altJointAllFp",
-  "foJointAllFp",
-  "altJointAcceptedFp",
-  "foJointAcceptedFp",
   "fixtures",
   "fantasyScore",
   "scoringScore",
@@ -743,12 +731,6 @@ function macheteColumns(players: MachetePlayerRow[], language: "en" | "ru", hori
     column("alternativePredictedFp", "Alt 1R", "Альт 1Т", "Alternative-formula forecast for the next provider round. Every fixture in a double round uses its own opponent and expected-minutes inputs before the results are summed.", "Прогноз по альтернативной формуле на следующий тур провайдера. В двойном туре каждый матч использует своего соперника и собственные входы ожидаемых минут, затем результаты складываются.", 78, true, playerNextAlternativeForecast),
     column("alternativePredictedFpPerPrice", "Alt/price", "Альт/цена", "Alternative next-round forecast divided by the current Sports.ru price. Higher means more Alt points per one price unit.", "Альтернативный прогноз на следующий тур, делённый на текущую цену Sports.ru. Чем выше значение, тем больше Альт-очков на одну единицу стоимости.", 86, true, (p) => forecastPointsPerPrice(playerNextAlternativeForecast(p), p.price)),
     column("alternativeForecastHorizon", `Alt ${horizon}R`, `Альт ${horizon}Т`, `Sum of the alternative-formula forecasts for the next ${horizon} rounds. Missing projections remain empty rather than becoming zero.`, `Сумма прогнозов по альтернативной формуле на следующие ${horizon} туров. Отсутствующий прогноз остаётся пустым и не превращается в ноль.`, 86, true, (p) => playerAlternativeForecastHorizon(p, horizon)),
-    column("foPositionCalibratedFp", "FO position cal.", "FO калибр. позиции", "FO calibrated independently by fantasy position on the complete 2024/25–2025/26 retro sample (actual starters who played over 60 minutes). Weather is not used.", "FO, независимо откалиброванный по фэнтези-позиции на полной ретро-выборке 2024/25–2025/26: только фактический старт и больше 60 минут. Погода не используется.", 116, true, (p) => p.foPositionCalibratedFp ?? null),
-    column("altPositionCalibratedFp", "Alt position cal.", "Alt калибр. позиции", "Alt calibrated independently by fantasy position on the complete 2024/25–2025/26 retro sample (actual starters who played over 60 minutes). Weather is not used.", "Alt, независимо откалиброванный по фэнтези-позиции на полной ретро-выборке 2024/25–2025/26: только фактический старт и больше 60 минут. Погода не используется.", 116, true, (p) => p.altPositionCalibratedFp ?? null),
-    column("altJointAllFp", "Alt Joint all", "Alt Joint всех", "Alt joint Ridge adaptation with every researched non-weather hypothesis: player form, recency, team style, possession, opponent passing, recoveries, coaches, formations, opponent, attack zones, rest and market context.", "Joint-адаптация Alt со всеми исследованными гипотезами, кроме погоды: форма игрока, давность, стиль команды, владение, точность передач соперника, возвраты, тренеры, схемы, соперник, зоны атак, отдых и рыночный контекст.", 108, true, (p) => p.altJointAllFp ?? null),
-    column("foJointAllFp", "FO Joint all", "FO Joint всех", "FO joint Ridge adaptation with every researched non-weather hypothesis: player form, recency, team style, possession, opponent passing, recoveries, coaches, formations, opponent, attack zones, rest and market context.", "Joint-адаптация FO со всеми исследованными гипотезами, кроме погоды: форма игрока, давность, стиль команды, владение, точность передач соперника, возвраты, тренеры, схемы, соперник, зоны атак, отдых и рыночный контекст.", 108, true, (p) => p.foJointAllFp ?? null),
-    column("altJointAcceptedFp", "Alt Joint accepted", "Alt Joint accepted", "Alt joint Ridge adaptation restricted to hypotheses accepted by the 2024/25 selection folds: player form, recency, team style, possession, recovery/pass interaction, coach, opponent and rest/market context. Weather is excluded.", "Joint-адаптация Alt только по гипотезам, принятым на фолдах 2024/25: форма игрока, давность, стиль команды, владение, связь возвратов с передачами, тренер, соперник и отдых/рыночный контекст. Погода исключена.", 126, true, (p) => p.altJointAcceptedFp ?? null),
-    column("foJointAcceptedFp", "FO Joint accepted", "FO Joint accepted", "FO joint Ridge adaptation restricted to hypotheses accepted by the 2024/25 selection folds: player form, recency, team style, possession, recovery/pass interaction, coach, opponent and rest/market context. Weather is excluded.", "Joint-адаптация FO только по гипотезам, принятым на фолдах 2024/25: форма игрока, давность, стиль команды, владение, связь возвратов с передачами, тренер, соперник и отдых/рыночный контекст. Погода исключена.", 126, true, (p) => p.foJointAcceptedFp ?? null),
     column("fixtures", `Opp ${horizon}R`, `Соп. ${horizon}Т`, `Upcoming opponents for the next ${horizon} rounds. H means home, A means away; colour shows fixture difficulty.`, `Соперники на следующие ${horizon} туров. H — дома, A — в гостях; цвет показывает сложность матча.`, 320, false, (p) => playerFixtureExportValue(p, horizon)),
     column("fantasyScore", "xFP", "xFP", "Machete expected fantasy points for the selected statistics window.", "Ожидаемые фэнтези-очки Machete по выбранному окну статистики.", 76, true, (p) => p.fantasyScore),
     column("scoringScore", "FP", "ФО", "Fantasy points recalculated from actual events in the selected window.", "Фэнтези-очки, пересчитанные по фактическим событиям выбранного окна.", 72, true, (p) => p.scoringScore ?? null),

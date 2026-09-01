@@ -35,7 +35,6 @@ import {
   fixtureOddsAreFresh,
   fixtureStrengthProjection,
   fixtureStrengthWithBookmaker,
-  formulaAdaptationBreakdownCacheKey,
   friendAlternativeProjectionFantasyPoints,
   friendAlternativeScoringModel,
   friendStartingRows,
@@ -206,26 +205,6 @@ test("shared player features ignore personal formula revisions while scoring ove
 
   assert.equal(fantasyPlayerFeaturePoolCacheKey(first), fantasyPlayerFeaturePoolCacheKey(second));
   assert.notEqual(fantasyPlayerPoolCacheKey(first), fantasyPlayerPoolCacheKey(second));
-});
-
-test("formula-adaptation detail cache invalidates when the provider schedule changes", () => {
-  const base = {
-    leagueId: 87n,
-    season: "2026/2027",
-    leagueUpdatedAt: new Date("2026-08-20T08:00:00.000Z"),
-    provider: "SPORTS_RU",
-    contestId: "la-liga-contest",
-    playerId: 123n,
-    userId: "user-1",
-    preferenceRevision: "global",
-    startingXiRevision: "no-xi-change",
-    foontasyRevision: "2026-08-20T08:00:00.000Z",
-    historySettingsKey: "LAST_5"
-  };
-  const singleRound = formulaAdaptationBreakdownCacheKey({ ...base, contestRevision: "sync-a:single-fixture" });
-  const doubleRound = formulaAdaptationBreakdownCacheKey({ ...base, contestRevision: "sync-b:double-fixture" });
-
-  assert.notEqual(singleRound, doubleRound);
 });
 
 test("component xFP is the default primary engine and legacy remains a one-flag rollback", () => {
