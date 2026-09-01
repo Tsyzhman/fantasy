@@ -182,7 +182,7 @@ jobs:
           DEPLOY_PORT="${DEPLOY_PORT:-22}"
           ssh -o ServerAliveInterval=15 -o ServerAliveCountMax=4 \
             -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
-            "timeout --signal=TERM --kill-after=30s 5m bash -s -- '$REMOTE_CONFIG' '$CONFIG_SHA256'" \
+            "AMNEZIAWG_ALLOW_BOOTSTRAP=1 timeout --signal=TERM --kill-after=30s 5m bash -s -- '$REMOTE_CONFIG' '$CONFIG_SHA256'" \
             < scripts/configure-production-amneziawg.sh
 
       - name: Remove runner copy of VPN configuration

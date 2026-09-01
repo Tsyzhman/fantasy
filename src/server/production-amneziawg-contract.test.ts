@@ -52,6 +52,12 @@ test("production AmneziaWG promotion uses the reviewed immutable AWG2 client and
   assert.match(script, /restore_old_runtime/);
   assert.match(script, /fplProbe/);
   assert.match(script, /AMNEZIAWG_VALIDATE_ONLY/);
+  assert.match(script, /AMNEZIAWG_ALLOW_BOOTSTRAP/);
+  assert.match(script, /guarded bootstrap is enabled/);
+  assert.ok(
+    script.indexOf('probe_vpn_namespace "$candidate_container"') <
+      script.lastIndexOf('docker container rm -f "$relay_container"'),
+  );
 });
 
 test("production AmneziaWG config stays secret, bounded, and serialized with deploys", () => {
@@ -59,6 +65,7 @@ test("production AmneziaWG config stays secret, bounded, and serialized with dep
     script.match(/interface_allowed = "([^"]+)"/)?.[1] ?? "";
   assert.match(workflow, /secrets\.FPL_AMNEZIAWG_CONFIG/);
   assert.match(workflow, /group: production-deploy/);
+  assert.match(workflow, /AMNEZIAWG_ALLOW_BOOTSTRAP=1/);
   assert.match(script, /chmod 600 "\$uploaded_config"/);
   assert.match(
     script,
@@ -77,6 +84,7 @@ test("the existing production workflow can rotate AmneziaWG before promotion", (
   assert.match(deployWorkflow, /configure_fpl_vpn:/);
   assert.match(deployWorkflow, /inputs\.configure_fpl_vpn == 'true'/);
   assert.match(deployWorkflow, /scripts\/configure-production-amneziawg\.sh/);
+  assert.match(deployWorkflow, /AMNEZIAWG_ALLOW_BOOTSTRAP=1/);
   assert.match(deployWorkflow, /ServerAliveInterval=15/);
   assert.match(
     deployWorkflow,

@@ -34,6 +34,14 @@ completed=0
 app_image=""
 relay_timeout_ms="15000"
 validate_only="${AMNEZIAWG_VALIDATE_ONLY:-0}"
+allow_bootstrap="${AMNEZIAWG_ALLOW_BOOTSTRAP:-0}"
+vpn_was_present=0
+promotion_mode="rotation"
+
+[[ "$allow_bootstrap" =~ ^[01]$ ]] || {
+  echo "AMNEZIAWG_ALLOW_BOOTSTRAP must be 0 or 1." >&2
+  exit 2
+}
 
 container_exists() {
   docker container inspect "$1" >/dev/null 2>&1
@@ -261,10 +269,15 @@ container_exists "$web_container" || {
   echo "Production web container is not running." >&2
   exit 1
 }
-container_exists "$vpn_container" || {
+if container_exists "$vpn_container"; then
+  vpn_was_present=1
+elif [[ "$allow_bootstrap" == "1" ]]; then
+  promotion_mode="bootstrap"
+  echo "Existing FPL VPN container is missing; guarded bootstrap is enabled."
+else
   echo "Existing FPL VPN container is missing; refusing an unguarded first install." >&2
   exit 1
-}
+fi
 candidate_pattern="^${vpn_container}-candidate-[0-9]{8}T[0-9]{6}Z-[0-9]+$"
 while IFS= read -r stale_candidate; do
   [[ "$stale_candidate" =~ $candidate_pattern ]] || continue
@@ -344,9 +357,11 @@ probe_vpn_namespace "$candidate_container" || {
 }
 
 docker container rm -f "$relay_container" >/dev/null 2>&1 || true
-docker container stop -t 20 "$vpn_container" >/dev/null
-docker container rename "$vpn_container" "$rollback_container"
-old_vpn_renamed=1
+if (( vpn_was_present == 1 )); then
+  docker container stop -t 20 "$vpn_container" >/dev/null
+  docker container rename "$vpn_container" "$rollback_container"
+  old_vpn_renamed=1
+fi
 docker container rename "$candidate_container" "$vpn_container"
 candidate_started=0
 new_vpn_active=1
@@ -358,8 +373,10 @@ probe_relay || {
   exit 1
 }
 
-docker container rm -f "$rollback_container" >/dev/null
-old_vpn_renamed=0
+if (( old_vpn_renamed == 1 )); then
+  docker container rm -f "$rollback_container" >/dev/null
+  old_vpn_renamed=0
+fi
 new_vpn_active=0
 config_volume_created=0
 completed=1
@@ -376,5 +393,5 @@ while IFS= read -r old_volume; do
   docker volume rm "$old_volume" >/dev/null 2>&1 || true
 done < <(docker volume ls --filter label=com.fantasy-scout.role=fpl-vpn-config --format '{{.Name}}')
 
-printf '{"status":"ok","container":"%s","configSha256":"%s","image":"%s","fplProbe":"ok"}\n' \
-  "$vpn_container" "$expected_sha" "$awg_image"
+printf '{"status":"ok","mode":"%s","container":"%s","configSha256":"%s","image":"%s","fplProbe":"ok"}\n' \
+  "$promotion_mode" "$vpn_container" "$expected_sha" "$awg_image"
