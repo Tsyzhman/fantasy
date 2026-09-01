@@ -298,6 +298,8 @@ function deleteDetailRequest(href: string) {
   detailRequestCacheBytes = Math.max(0, detailRequestCacheBytes - entry.bytes);
 }
 
-function formatProjectionValue(value: number) {
-  return Number.isFinite(value) ? value.toLocaleString(undefined, { maximumFractionDigits: 3 }) : "—";
+function formatProjectionValue(value: number | null | undefined) {
+  return typeof value === "number" && Number.isFinite(value)
+    ? value.toLocaleString(undefined, { maximumFractionDigits: 3 })
+    : "—";
 }

@@ -34,8 +34,8 @@ test("compact FO/Alt tooltip keeps only total and every arithmetic term", () => 
         { expression: "yellow", resolvedExpression: "expected yellow cards (0)", sign: -1, value: 0 }
       ]
     },
-    components: { total: 3.9 },
-    fixtureInputs: { expectedMinutes: 90 }
+    components: null,
+    fixtureInputs: null
   }));
   assert.match(html, /Total:/);
   assert.match(html, /\+ appearance probability \(1\) =/);
