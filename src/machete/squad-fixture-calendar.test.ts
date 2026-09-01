@@ -173,6 +173,9 @@ test("calendar is lazy, memoized and shared once per snapshot update, not duplic
   assert.match(client, /<col className="w-28 sm:w-36" \/>/, "keep a complete fixture visible beside the team and average on mobile");
   assert.match(client, /<FdrPill/);
   assert.match(client, /fixtureCalendarCellTone\(fixtures\)/, "difficulty colors fill the cells instead of only underlining fixture pills");
+  assert.match(client, /fdr-cell-1/);
+  assert.doesNotMatch(client, /Easiest → hardest over the selected rounds/);
+  assert.doesNotMatch(client, /bg-emerald-200/);
   assert.match(client, /<strong className="font-bold text-slate-700">\{text\("H", "Д"\)\}<\/strong>/);
   assert.doesNotMatch(client, /Both matches in a double round count separately/);
   assert.doesNotMatch(client, /fetch\(|setInterval\(|localStorage|squad_planner/);

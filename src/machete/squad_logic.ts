@@ -25,6 +25,8 @@ export type FantasySquadRules = {
   benchSize: number;
   maxPlayersPerTeam: number;
   transferLimitPerRound?: number | null;
+  maxBankedTransfers?: number | null;
+  paidTransferPointCost?: number | null;
   positionLimits: Record<Exclude<FantasyPositionGroup, "UNK">, number>;
   starterPositionLimits: Record<Exclude<FantasyPositionGroup, "UNK">, { min: number; max: number }>;
   horizonOptions: number[];
@@ -460,6 +462,7 @@ export type FantasySquadSaveValidation =
     };
 
 export const transfersPerFantasyRound = 3;
+export const sportsRuMaxBankedTransfers = 6;
 const fantasyOptimizerBudgetFrontierLimit = 32;
 const fantasyOptimizerTeamBudgetFrontierLimit = 8;
 
@@ -530,6 +533,59 @@ export function fantasyTransferLimitForHorizon(horizon: number, transferLimitPer
   }
   const safeHorizon = Number.isFinite(horizon) ? Math.max(1, Math.floor(horizon)) : 1;
   return safeHorizon * transfersPerFantasyRound;
+}
+
+export type FantasyTransferBudget = {
+  perRound: number;
+  maxBanked: number;
+  paidPointCost: number;
+};
+
+export function fantasyTransferBudget(
+  rules: Pick<FantasySquadRules, "transferLimitPerRound" | "maxBankedTransfers" | "paidTransferPointCost">
+): FantasyTransferBudget {
+  const perRound = Number.isInteger(rules.transferLimitPerRound) && (rules.transferLimitPerRound ?? 0) > 0
+    ? rules.transferLimitPerRound!
+    : transfersPerFantasyRound;
+  const maxBanked = Number.isInteger(rules.maxBankedTransfers) && (rules.maxBankedTransfers ?? 0) > 0
+    ? rules.maxBankedTransfers!
+    : perRound;
+  const paidPointCost = typeof rules.paidTransferPointCost === "number" && Number.isFinite(rules.paidTransferPointCost)
+    ? Math.max(0, rules.paidTransferPointCost)
+    : 0;
+  return { perRound, maxBanked, paidPointCost };
+}
+
+export function openingAvailableTransfers(
+  budget: FantasyTransferBudget,
+  storedOpening?: number | null
+) {
+  if (Number.isInteger(storedOpening) && (storedOpening ?? 0) > 0) {
+    return Math.min(budget.maxBanked, storedOpening!);
+  }
+  return Math.min(budget.maxBanked, budget.perRound);
+}
+
+export function nextBankedTransfers(available: number, used: number, budget: FantasyTransferBudget) {
+  const unused = Math.max(0, available - Math.max(0, used));
+  return Math.min(budget.maxBanked, unused + budget.perRound);
+}
+
+export function availableTransfersByRound(input: {
+  roundPlans: Array<{ selections: Array<Pick<FantasySquadSelection, "playerId">> }>;
+  baselineSelections: Array<Pick<FantasySquadSelection, "playerId">>;
+  budget: FantasyTransferBudget;
+  openingAvailable?: number | null;
+}): Array<{ used: number; available: number }> {
+  const rows: Array<{ used: number; available: number }> = [];
+  let available = openingAvailableTransfers(input.budget, input.openingAvailable);
+  for (let offset = 0; offset < input.roundPlans.length; offset += 1) {
+    const previous = offset === 0 ? input.baselineSelections : input.roundPlans[offset - 1].selections;
+    const used = countFantasySquadTransfers(previous, input.roundPlans[offset].selections);
+    rows.push({ used, available });
+    available = nextBankedTransfers(available, used, input.budget);
+  }
+  return rows;
 }
 
 export function normalizeFantasyHorizon(value: unknown, options: readonly number[], fallback = 5) {

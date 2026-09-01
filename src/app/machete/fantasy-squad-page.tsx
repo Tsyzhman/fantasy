@@ -16,6 +16,7 @@ import {
 } from "@/machete/squad_planner";
 import { loadSportsRuSquadSnapshotStatus } from "@/machete/sports_ru_squad_snapshots";
 import { parseSquadTableColumns, parseSquadTableColumnWidths } from "@/machete/squad-table-columns";
+import { loadFantasyPlayerPoolDataFreshness } from "@/machete/fantasy-player-pool-snapshots";
 import { canSwitchFranchise, resolveVisibleFranchise } from "@/machete/franchise-access";
 import { loadPlannerReadinessByScope, plannerReadinessBlocksTransferSuggestions, plannerReadinessKey, type PlannerReadiness } from "@/machete/planner_readiness";
 import {
@@ -79,8 +80,8 @@ export default async function FantasySquadPage({ searchParams, mode }: FantasySq
         provider
       )
     : null;
-  const freshness = selectedLeague && data
-    ? data.dataFreshness ?? await loadSquadDataFreshness(selectedLeague)
+  const freshness = selectedLeague
+    ? await mergeSquadDataFreshness(selectedLeague, data?.dataFreshness)
     : null;
   const sportsRuSquadStatus = selectedLeague && provider !== "FPL"
     ? await loadSportsRuSquadSnapshotStatus(prisma, {
@@ -141,10 +142,18 @@ export default async function FantasySquadPage({ searchParams, mode }: FantasySq
               <I18nText en="Data freshness" ru="Свежесть данных" />
               <span className="text-xs font-normal text-slate-500"><I18nText en="Show details" ru="Подробнее" /></span>
             </summary>
-            <dl className="grid gap-2 border-t border-slate-200 p-3 text-xs text-slate-700 sm:grid-cols-3">
+            <dl className="grid gap-2 border-t border-slate-200 p-3 text-xs text-slate-700 sm:grid-cols-2 lg:grid-cols-3">
               <div><dt className="font-semibold text-slate-500"><I18nText en="FotMob" ru="FotMob" /></dt><dd className="mt-0.5">{formatDateTime(freshness.fotmobStatsAt)}</dd></div>
               <div><dt className="font-semibold text-slate-500"><I18nText en={provider === "FPL" ? "FPL" : "Sports.ru"} ru={provider === "FPL" ? "FPL" : "Sports.ru"} /></dt><dd className="mt-0.5">{formatDateTime(data?.priceStatus.lastSyncedAt)}</dd></div>
               <div><dt className="font-semibold text-slate-500"><I18nText en="Odds" ru="Коэффициенты" /></dt><dd className="mt-0.5">{formatDateTime(freshness.bookmakerOddsAt)}</dd></div>
+              <div>
+                <dt className="font-semibold text-slate-500"><I18nText en="Oldest XI flags" ru="Самые старые флаги XI" /></dt>
+                <dd className="mt-0.5">{startingXiFreshnessLabel(freshness.startingXiOldest)}</dd>
+              </div>
+              <div>
+                <dt className="font-semibold text-slate-500"><I18nText en="Newest XI flags" ru="Самые новые флаги XI" /></dt>
+                <dd className="mt-0.5">{startingXiFreshnessLabel(freshness.startingXiNewest)}</dd>
+              </div>
             </dl>
           </details>
           <div className="mt-3 hidden flex-wrap items-center gap-2 text-xs text-slate-600 lg:flex">
@@ -159,6 +168,18 @@ export default async function FantasySquadPage({ searchParams, mode }: FantasySq
             </span>
             <span className="rounded border border-slate-200 bg-white px-2.5 py-1.5">
               <I18nText en={`Bookmaker odds: ${formatDateTime(freshness.bookmakerOddsAt)}`} ru={`Кэфы букмекера: ${formatDateTime(freshness.bookmakerOddsAt)}`} />
+            </span>
+            <span className="rounded border border-slate-200 bg-white px-2.5 py-1.5">
+              <I18nText
+                en={`Oldest XI flags: ${startingXiFreshnessLabel(freshness.startingXiOldest)}`}
+                ru={`Самые старые флаги XI: ${startingXiFreshnessLabel(freshness.startingXiOldest)}`}
+              />
+            </span>
+            <span className="rounded border border-slate-200 bg-white px-2.5 py-1.5">
+              <I18nText
+                en={`Newest XI flags: ${startingXiFreshnessLabel(freshness.startingXiNewest)}`}
+                ru={`Самые новые флаги XI: ${startingXiFreshnessLabel(freshness.startingXiNewest)}`}
+              />
             </span>
           </div>
           </>
@@ -246,37 +267,27 @@ function squadPlayerPoolHref(
   return `${apiPath}?${query.toString()}`;
 }
 
-async function loadSquadDataFreshness(league: SharedLeagueSeasonOption) {
-  const [fotmobStats, bookmakerOdds] = await Promise.all([
-    prisma.matchPlayerStat.aggregate({
-      where: {
-        player: {
-          seasonRosterEntries: {
-            some: {
-              leagueId: league.leagueId,
-              season: league.season,
-              active: true
-            }
-          }
-        }
-      },
-      _max: { updatedAt: true }
-    }),
-    prisma.fixtureOddsSnapshot.aggregate({
-      where: {
-        match: {
-          leagueId: league.leagueId,
-          season: league.season
-        }
-      },
-      _max: { fetchedAt: true }
-    })
-  ]);
-
+async function mergeSquadDataFreshness(
+  league: SharedLeagueSeasonOption,
+  snapshot?: {
+    fotmobStatsAt: string | null;
+    bookmakerOddsAt: string | null;
+    startingXiOldest?: { teamName: string; at: string | null } | null;
+    startingXiNewest?: { teamName: string; at: string | null } | null;
+  } | null
+) {
+  const live = await loadFantasyPlayerPoolDataFreshness(prisma, league);
   return {
-    fotmobStatsAt: fotmobStats._max.updatedAt?.toISOString() ?? null,
-    bookmakerOddsAt: bookmakerOdds._max.fetchedAt?.toISOString() ?? null
+    fotmobStatsAt: snapshot?.fotmobStatsAt ?? live.fotmobStatsAt,
+    bookmakerOddsAt: snapshot?.bookmakerOddsAt ?? live.bookmakerOddsAt,
+    startingXiOldest: live.startingXiOldest ?? snapshot?.startingXiOldest ?? null,
+    startingXiNewest: live.startingXiNewest ?? snapshot?.startingXiNewest ?? null
   };
+}
+
+function startingXiFreshnessLabel(value?: { teamName: string; at: string | null } | null) {
+  if (!value) return formatDateTime(null);
+  return `${value.teamName} · ${formatDateTime(value.at)}`;
 }
 
 function initialSquadPlayers<T extends { playerId: string }>(players: T[], selections: Array<{ playerId: string }>) {

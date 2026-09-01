@@ -68,12 +68,15 @@ import {
 import {
   defaultFantasySquadRules,
   countFantasySquadTransfers,
+  fantasyTransferBudget,
   fantasyTransferLimitForHorizon,
+  nextBankedTransfers,
   fantasyProviderPlaceholderPlannerPlayer,
   fantasyProviderPlaceholdersFromFilters,
   isFantasyProviderPlaceholderPlayerId,
   isFantasySquadPlayerId,
   parseFantasyProviderPlaceholders,
+  sportsRuMaxBankedTransfers,
   transfersPerFantasyRound,
   normalizeFantasyHorizon,
   normalizeFantasyPosition,
@@ -100,6 +103,8 @@ export type SavedFantasySquad = {
   horizonRounds: number;
   selections: FantasySquadSelection[];
   roundPlans: FantasySquadRoundPlan[];
+  transferBaselinePlayerIds?: string[] | null;
+  openingFreeTransfers?: number | null;
 };
 
 export type SavedFantasySquadOption = {
@@ -131,6 +136,8 @@ export type FantasySquadPlannerData = {
   dataFreshness?: {
     fotmobStatsAt: string | null;
     bookmakerOddsAt: string | null;
+    startingXiOldest?: { teamName: string; at: string | null } | null;
+    startingXiNewest?: { teamName: string; at: string | null } | null;
   };
 };
 
@@ -1498,6 +1505,11 @@ export async function loadFantasySquadPlannerData(
     rules
   });
   const currentSelections = roundPlans[0]?.selections ?? savedSelections;
+  const openingFreeTransfers = await loadOpeningFreeTransfers(prisma, {
+    userId,
+    provider,
+    contestId: scopedContest?.id ?? null
+  });
 
   return {
     provider,
@@ -1521,7 +1533,8 @@ export async function loadFantasySquadPlannerData(
       season: league.season,
       horizonRounds,
       selections: currentSelections,
-      roundPlans
+      roundPlans,
+      ...savedFantasySquadTransferState(savedSquad?.filters, openingFreeTransfers)
     },
     priceStatus: {
       sportsRuPrices,
@@ -1685,7 +1698,8 @@ export async function loadSportsRuFantasySquadPlannerShellData(
       season: league.season,
       horizonRounds: normalizeFantasyHorizon(savedSquad?.horizonRounds, rules.horizonOptions),
       selections: currentSelections,
-      roundPlans
+      roundPlans,
+      ...savedFantasySquadTransferState(savedSquad?.filters, null)
     },
     priceStatus: {
       sportsRuPrices: pricedPlayers,
@@ -1835,7 +1849,8 @@ async function loadSportsRuFantasySquadSnapshotShellData(
       season: league.season,
       horizonRounds: normalizeFantasyHorizon(savedSquad?.horizonRounds, metadata.rules.horizonOptions),
       selections: currentSelections,
-      roundPlans
+      roundPlans,
+      ...savedFantasySquadTransferState(savedSquad?.filters, null)
     },
     priceStatus: metadata.priceStatus,
     historySeasonOptions: metadata.historySeasonOptions,
@@ -2256,6 +2271,7 @@ export async function saveFantasySquad(
     provider?: string;
     contestId?: string | null;
     providerPlaceholders?: FantasyProviderPlaceholder[];
+    resetTransferBaseline?: boolean;
   }
 ) {
   const horizonRounds = normalizeFantasyHorizon(input.horizonRounds, input.rules.horizonOptions);
@@ -2415,9 +2431,16 @@ export async function saveFantasySquad(
           leagueId: input.leagueId,
           season: input.season
         },
-        select: { id: true }
+        select: { id: true, filters: true, players: { select: { playerId: true } } }
       });
       if (!ownedSquad) throw new Error("Fantasy squad does not belong to the selected user, league, and season.");
+      const transferBaselinePlayerIds = resolveFantasySquadTransferBaseline({
+        stored: fantasySquadTransferBaselineFromFilters(ownedSquad.filters),
+        previousPlayerIds: (ownedSquad.players ?? []).map((player) => String(player.playerId)),
+        nextPlayerIds: input.selections.map((selection) => selection.playerId),
+        squadSize: input.rules.squadSize,
+        reset: input.resetTransferBaseline === true
+      });
       squad = await tx.userFantasySquad.update({
         where: { id: ownedSquad.id },
         data: {
@@ -2425,15 +2448,23 @@ export async function saveFantasySquad(
           budgetLimit: input.rules.budgetLimit,
           bank,
           horizonRounds,
-          filters: {
+          filters: fantasySquadFiltersPayload({
             roundPlans,
             providerPlaceholders: storedProviderPlaceholders,
-            roundPlanRoundIds: normalizeFantasySquadRoundIds(input.roundPlanRoundIds)
-          }
+            roundPlanRoundIds: normalizeFantasySquadRoundIds(input.roundPlanRoundIds),
+            transferBaselinePlayerIds
+          })
         },
         select: { id: true, name: true }
       });
     } else {
+      const transferBaselinePlayerIds = resolveFantasySquadTransferBaseline({
+        stored: null,
+        previousPlayerIds: [],
+        nextPlayerIds: input.selections.map((selection) => selection.playerId),
+        squadSize: input.rules.squadSize,
+        reset: input.resetTransferBaseline === true
+      });
       squad = await tx.userFantasySquad.create({
         data: {
           userId: input.userId,
@@ -2445,11 +2476,12 @@ export async function saveFantasySquad(
           budgetLimit: input.rules.budgetLimit,
           bank,
           horizonRounds,
-          filters: {
+          filters: fantasySquadFiltersPayload({
             roundPlans,
             providerPlaceholders: storedProviderPlaceholders,
-            roundPlanRoundIds: normalizeFantasySquadRoundIds(input.roundPlanRoundIds)
-          }
+            roundPlanRoundIds: normalizeFantasySquadRoundIds(input.roundPlanRoundIds),
+            transferBaselinePlayerIds
+          })
         },
         select: { id: true, name: true }
       });
@@ -2540,6 +2572,66 @@ export function fantasySquadRoundPlansFromFilters(
   });
 }
 
+export function fantasySquadTransferBaselineFromFilters(filters: unknown): string[] | null {
+  if (!filters || typeof filters !== "object" || Array.isArray(filters)) return null;
+  const raw = (filters as { transferBaselinePlayerIds?: unknown }).transferBaselinePlayerIds;
+  if (!Array.isArray(raw)) return null;
+  const ids = [...new Set(raw.filter((value): value is string => typeof value === "string" && value.trim().length > 0))];
+  return ids.length > 0 ? ids : null;
+}
+
+export function resolveFantasySquadTransferBaseline(input: {
+  stored: string[] | null;
+  previousPlayerIds: string[];
+  nextPlayerIds: string[];
+  squadSize: number;
+  reset?: boolean;
+}) {
+  if (input.reset) return uniquePlayerIds(input.nextPlayerIds);
+  if (input.stored && input.stored.length > 0) return uniquePlayerIds(input.stored);
+  if (input.previousPlayerIds.length === input.squadSize) return uniquePlayerIds(input.previousPlayerIds);
+  if (input.nextPlayerIds.length === input.squadSize) return uniquePlayerIds(input.nextPlayerIds);
+  return uniquePlayerIds(input.nextPlayerIds);
+}
+
+function uniquePlayerIds(values: string[]) {
+  return [...new Set(values.filter((value) => value.trim().length > 0))];
+}
+
+function fantasySquadFiltersPayload(input: {
+  roundPlans: FantasySquadRoundPlan[];
+  providerPlaceholders: FantasyProviderPlaceholder[];
+  roundPlanRoundIds: string[];
+  transferBaselinePlayerIds: string[];
+}) {
+  return {
+    roundPlans: input.roundPlans,
+    providerPlaceholders: input.providerPlaceholders,
+    roundPlanRoundIds: input.roundPlanRoundIds,
+    ...(input.transferBaselinePlayerIds.length > 0 ? { transferBaselinePlayerIds: input.transferBaselinePlayerIds } : {})
+  };
+}
+
+function savedFantasySquadTransferState(filters: unknown, openingFreeTransfers: number | null) {
+  return {
+    transferBaselinePlayerIds: fantasySquadTransferBaselineFromFilters(filters),
+    openingFreeTransfers
+  };
+}
+
+async function loadOpeningFreeTransfers(
+  prisma: PrismaClient,
+  input: { userId: string; provider: string; contestId: string | null }
+) {
+  if (input.provider !== FPL_PROVIDER || !input.contestId) return null;
+  const state = await prisma.fantasyUserGameweekState.findFirst({
+    where: { userId: input.userId, contestId: input.contestId, provider: FPL_PROVIDER },
+    orderBy: { gameweek: "desc" },
+    select: { bankedFreeTransfers: true }
+  });
+  return state?.bankedFreeTransfers ?? fpl202627Rules.initialFreeTransfers;
+}
+
 export function fantasySquadRoundIdsFromFilters(filters: unknown) {
   if (!filters || typeof filters !== "object" || Array.isArray(filters)) return [];
   return normalizeFantasySquadRoundIds((filters as { roundPlanRoundIds?: unknown }).roundPlanRoundIds);
@@ -2582,23 +2674,28 @@ export function rolloverFantasySquadRoundPlans(input: {
     .find((result) => result.ok);
   const startSelections = validStart?.ok ? validStart.selections : [];
   const rolled = createFantasySquadRoundPlans(startSelections);
-  const perRoundTransferLimit = fantasyTransferLimitForHorizon(1, input.rules.transferLimitPerRound);
+  const budget = fantasyTransferBudget(input.rules);
+  let availableTransfers = budget.perRound;
 
   for (let roundOffset = 1; roundOffset < rolled.length; roundOffset += 1) {
     const sourceIndex = roundOffset + shift;
     if (sourceIndex >= plans.length) {
       rolled[roundOffset].selections = rolled[roundOffset - 1].selections.map((selection) => ({ ...selection }));
+      availableTransfers = nextBankedTransfers(availableTransfers, 0, budget);
       continue;
     }
 
     const sourcePlan = plans[sourceIndex];
     const validated = validate(sourcePlan.selections);
     const previousSelections = rolled[roundOffset - 1].selections;
-    if (!validated.ok || countFantasySquadTransfers(previousSelections, validated.selections) > perRoundTransferLimit) {
+    const transferCount = validated.ok ? countFantasySquadTransfers(previousSelections, validated.selections) : Number.POSITIVE_INFINITY;
+    if (!validated.ok || transferCount > availableTransfers) {
       rolled[roundOffset].selections = previousSelections.map((selection) => ({ ...selection }));
       rolled[roundOffset].linkedToPrevious = true;
+      availableTransfers = nextBankedTransfers(availableTransfers, 0, budget);
       continue;
     }
+    availableTransfers = nextBankedTransfers(availableTransfers, transferCount, budget);
 
     rolled[roundOffset] = {
       roundOffset,
@@ -2679,7 +2776,9 @@ export function fantasyRulesForLeague(
       starterSize: fpl202627Rules.starterSize,
       benchSize: fpl202627Rules.squadSize - fpl202627Rules.starterSize,
       maxPlayersPerTeam: fpl202627Rules.maxPlayersPerTeam,
-      transferLimitPerRound: null,
+      transferLimitPerRound: fpl202627Rules.initialFreeTransfers,
+      maxBankedTransfers: fpl202627Rules.maxBankedFreeTransfers,
+      paidTransferPointCost: Math.abs(fpl202627Rules.extraTransferCost),
       positionLimits: { ...fpl202627Rules.positionLimits },
       starterPositionLimits: { ...fpl202627Rules.starterPositionLimits },
       sourceLabel: "FPL 2026/27 official rules",
@@ -2693,7 +2792,9 @@ export function fantasyRulesForLeague(
     budgetLimit: contest?.budgetLimit ?? 100,
     squadSize: contest?.squadSize ?? defaultFantasySquadRules.squadSize,
     maxPlayersPerTeam: contest?.maxPlayersPerTeam ?? configuredMaxPlayers,
-    transferLimitPerRound: league.leagueId === 63n ? transfersPerFantasyRound : null,
+    transferLimitPerRound: transfersPerFantasyRound,
+    maxBankedTransfers: sportsRuMaxBankedTransfers,
+    paidTransferPointCost: 0,
     sourceLabel: contest ? `Sports.ru: ${contest.name}` : "Configured Sports.ru league rules"
   };
 }

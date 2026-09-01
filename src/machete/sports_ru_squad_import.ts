@@ -6,7 +6,8 @@ import {
   countFantasySquadTransfers,
   createFantasySquadRoundPlans,
   fantasyProviderPlaceholderPlayerId,
-  fantasyTransferLimitForHorizon,
+  fantasyTransferBudget,
+  nextBankedTransfers,
   isFantasyProviderPlaceholderPlayerId,
   normalizeFantasyPosition,
   validateFantasySquadForSave,
@@ -173,21 +174,26 @@ export function mergeImportedSquadWithFuturePlans(input: {
   rules: FantasySquadRules;
 }) {
   const merged = createFantasySquadRoundPlans(input.importedSelections);
-  const perRoundLimit = fantasyTransferLimitForHorizon(1, input.rules.transferLimitPerRound);
+  const budget = fantasyTransferBudget(input.rules);
+  let availableTransfers = budget.perRound;
   for (let roundOffset = 1; roundOffset < merged.length; roundOffset += 1) {
     const existing = input.existingPlans[roundOffset];
     const previous = merged[roundOffset - 1].selections;
     if (!existing || existing.linkedToPrevious) {
       merged[roundOffset].selections = previous.map((selection) => ({ ...selection }));
+      availableTransfers = nextBankedTransfers(availableTransfers, 0, budget);
       continue;
     }
     const validation = validateFantasySquadForSave({ pool: input.pool, selections: existing.selections, rules: input.rules, horizon: 1 });
-    if (!validation.ok || countFantasySquadTransfers(previous, validation.selections) > perRoundLimit) {
+    const transferCount = validation.ok ? countFantasySquadTransfers(previous, validation.selections) : Number.POSITIVE_INFINITY;
+    if (!validation.ok || transferCount > availableTransfers) {
       merged[roundOffset].selections = previous.map((selection) => ({ ...selection }));
       merged[roundOffset].linkedToPrevious = true;
+      availableTransfers = nextBankedTransfers(availableTransfers, 0, budget);
       continue;
     }
     merged[roundOffset] = { roundOffset, linkedToPrevious: false, selections: validation.selections };
+    availableTransfers = nextBankedTransfers(availableTransfers, transferCount, budget);
   }
   return merged;
 }

@@ -177,8 +177,8 @@ test("transfer suggestions expose FO, ALT, and FFO, while FFO remains a current-
   assert.match(squadPlannerSource, /FFO is published only for the current round/);
   assert.match(squadPlannerSource, /horizon: transferSuggestionHorizon/);
   assert.match(squadPlannerSource, /plannerReadinessBlocksForecastActions/);
-  assert.match(squadPlannerSource, /freeTransfers: usesRplTransferRules \? transferLimit : undefined/);
-  assert.match(squadPlannerSource, /paidTransferPointCost: usesRplTransferRules \? 0 : undefined/);
+  assert.match(squadPlannerSource, /freeTransfers: availableSuggestionCount/);
+  assert.match(squadPlannerSource, /paidTransferPointCost: transferBudget.paidPointCost/);
   assert.match(squadPlannerSource, /TransferSuggestionPlayerCard/);
   assert.match(squadPlannerSource, /TransferSuggestionCaptain/);
   assert.match(squadPlannerSource, /captainPlayerId/);
@@ -232,6 +232,8 @@ test("stored Sports squad action sits immediately left of save in the one-line s
   assert.match(squadPlannerSource, /grid-cols-\[minmax\(0,1fr\)_auto\]/);
   assert.match(headingBlock, /en="Import Sports squad" ru="Импортировать состав Sports"/);
   assert.match(headingBlock, /aria-label=\{sportsRuSquadButtonTitle/);
+  assert.match(headingBlock, /onClick=\{rollbackToLastSavedSquad\}/);
+  assert.match(headingBlock, /aria-label=\{localizedText\(language, "Roll back to the last save on this page", "Откатить к последнему сохранению здесь"\)\}/);
   assert.match(headingBlock, /aria-label=\{localizedText\(language, "Save squad", "Сохранить состав"\)\}/);
   assert.match(headingBlock, /id="sports-ru-import-status"/);
   assert.match(headingBlock, /role="status"/);
@@ -248,7 +250,7 @@ test("stored Sports squad action sits immediately left of save in the one-line s
 test("squad planner keeps one unnamed current squad and places transfer usage over the lineup", () => {
   assert.doesNotMatch(squadPlannerSource, /Saved variant|Variant name|Save as copy|Planning settings/);
   assert.match(squadPlannerSource, /ref=\{budgetForecastRef\}/);
-  assert.match(squadPlannerSource, /value=\{`\$\{transferLimitIsActive \? plannedTransferCount : 0\}\/\$\{transferLimit\}`\}/);
+  assert.match(squadPlannerSource, /value=\{`\$\{plannedTransferCount\}\/\$\{transferLimit\}`\}/);
   assert.doesNotMatch(squadPlannerSource, /xl:order-3/);
 });
 
@@ -494,6 +496,7 @@ test("player table exposes per-field advanced filters and detailed forecast cell
   assert.match(squadPlannerSource, /playerPrimaryNextForecastTitle\(player, language, numericValue\)/);
   assert.match(squadPlannerSource, /alternativePlayerForecastTitle\(player, language\)/);
   assert.match(squadPlannerSource, /readableResolvedFormulaExpression/);
+  assert.match(squadPlannerSource, /compactFormulaArithmeticLines/);
   assert.match(squadPlannerSource, /formulaContributionTotalLine/);
   assert.match(squadPlannerSource, /term\.sign === -1/);
   assert.match(squadPlannerSource, /Ожидаемые голы/);
@@ -802,6 +805,8 @@ test("squad page shows source freshness and has no data-tools menu", () => {
   assert.match(fantasySquadPageSource, /Стата FotMob:/);
   assert.match(fantasySquadPageSource, /provider === "FPL" \? "Цены FPL" : "Цены Sports\.ru"/);
   assert.match(fantasySquadPageSource, /Кэфы букмекера:/);
+  assert.match(fantasySquadPageSource, /Самые старые флаги XI/);
+  assert.match(fantasySquadPageSource, /Самые новые флаги XI/);
   assert.match(fantasySquadPageSource, /formatDateTime\(freshness\.fotmobStatsAt\)/);
   assert.match(fantasySquadPageSource, /formatDateTime\(freshness\.bookmakerOddsAt\)/);
   assert.doesNotMatch(fantasySquadPageSource, /Data tools|Инструменты|squadExportHref/);

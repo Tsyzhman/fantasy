@@ -40,6 +40,8 @@ export type FantasyPlayerPoolSnapshotMetadata = {
   dataFreshness: {
     fotmobStatsAt: string | null;
     bookmakerOddsAt: string | null;
+    startingXiOldest?: { teamName: string; at: string | null } | null;
+    startingXiNewest?: { teamName: string; at: string | null } | null;
   };
 };
 
@@ -395,31 +397,59 @@ function fantasyPlayerPoolSnapshotMetadata(
   };
 }
 
-async function loadFantasyPlayerPoolDataFreshness(
+export async function loadFantasyPlayerPoolDataFreshness(
   prisma: PrismaClient,
   league: Pick<SharedLeagueSeasonOption, "leagueId" | "season">
 ) {
-  const fotmobStats = await prisma.matchPlayerStat.aggregate({
-    where: {
-      player: {
-        seasonRosterEntries: {
-          some: {
-            leagueId: league.leagueId,
-            season: league.season,
-            active: true
+  const [fotmobStats, bookmakerOdds, startingXiTeams] = await Promise.all([
+    prisma.matchPlayerStat.aggregate({
+      where: {
+        player: {
+          seasonRosterEntries: {
+            some: {
+              leagueId: league.leagueId,
+              season: league.season,
+              active: true
+            }
           }
         }
-      }
-    },
-    _max: { updatedAt: true }
-  });
-  const bookmakerOdds = await prisma.fixtureOddsSnapshot.aggregate({
-    where: { match: { leagueId: league.leagueId, season: league.season } },
-    _max: { fetchedAt: true }
-  });
+      },
+      _max: { updatedAt: true }
+    }),
+    prisma.fixtureOddsSnapshot.aggregate({
+      where: { match: { leagueId: league.leagueId, season: league.season } },
+      _max: { fetchedAt: true }
+    }),
+    prisma.leagueSeasonTeam.findMany({
+      where: { leagueId: league.leagueId, season: league.season, active: true },
+      select: { startingXiChangedAt: true, team: { select: { name: true } } }
+    })
+  ]);
   return {
     fotmobStatsAt: fotmobStats._max.updatedAt?.toISOString() ?? null,
-    bookmakerOddsAt: bookmakerOdds._max.fetchedAt?.toISOString() ?? null
+    bookmakerOddsAt: bookmakerOdds._max.fetchedAt?.toISOString() ?? null,
+    ...startingXiFreshnessFromTeams(startingXiTeams)
+  };
+}
+
+function startingXiFreshnessFromTeams(
+  teams: Array<{ startingXiChangedAt: Date | null; team: { name: string } }>
+) {
+  if (teams.length === 0) {
+    return { startingXiOldest: null, startingXiNewest: null };
+  }
+  let oldest = teams[0];
+  let newest = teams[0];
+  for (const team of teams) {
+    const at = team.startingXiChangedAt?.getTime() ?? Number.NEGATIVE_INFINITY;
+    const oldestAt = oldest.startingXiChangedAt?.getTime() ?? Number.NEGATIVE_INFINITY;
+    const newestAt = newest.startingXiChangedAt?.getTime() ?? Number.NEGATIVE_INFINITY;
+    if (at < oldestAt) oldest = team;
+    if (at > newestAt) newest = team;
+  }
+  return {
+    startingXiOldest: { teamName: oldest.team.name, at: oldest.startingXiChangedAt?.toISOString() ?? null },
+    startingXiNewest: { teamName: newest.team.name, at: newest.startingXiChangedAt?.toISOString() ?? null }
   };
 }
 

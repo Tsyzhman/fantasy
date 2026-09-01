@@ -20,6 +20,32 @@ test("projection detail URL preserves history filters and drops squad state", ()
   assert.equal(parsed.searchParams.has("squadId"), false);
 });
 
+test("compact FO/Alt tooltip keeps only total and every arithmetic term", () => {
+  const html = renderToStaticMarkup(React.createElement(ProjectionDetailsBody, {
+    language: "en",
+    detailed: false,
+    formula: {
+      formula: "appearance + 6 * xg + poisson_groups(xga, 2)",
+      total: 3.9,
+      terms: [
+        { expression: "appearance", resolvedExpression: "appearance probability (1)", sign: 1, value: 1 },
+        { expression: "xg", resolvedExpression: "(6 * expected goals (0.0002))", sign: 1, value: 0.001 },
+        { expression: "xga", resolvedExpression: "poisson_groups(expected goals conceded (0.885), 2)", sign: -1, value: -0.235 },
+        { expression: "yellow", resolvedExpression: "expected yellow cards (0)", sign: -1, value: 0 }
+      ]
+    },
+    components: { total: 3.9 },
+    fixtureInputs: { expectedMinutes: 90 }
+  }));
+  assert.match(html, /Total:/);
+  assert.match(html, /\+ appearance probability \(1\) =/);
+  assert.match(html, /− poisson_groups\(expected goals conceded \(0\.885\), 2\) =/);
+  assert.match(html, /\+ \(6 \* expected goals \(0\.0002\)\) =/);
+  assert.doesNotMatch(html, /Formula/);
+  assert.doesNotMatch(html, /expectedMinutes/);
+  assert.doesNotMatch(html, /\+4…|\+3…/);
+});
+
 test("projection detail tooltip renders formula arithmetic lazily returned by the detail route", () => {
   const html = renderToStaticMarkup(React.createElement(ProjectionDetailsBody, {
     language: "ru",
@@ -72,7 +98,8 @@ test("projection detail request cache is bounded by entries and bytes", () => {
 
 test("short FP and Alt tooltips stay narrow while detailed calculations keep extra room", () => {
   const source = readFileSync(new URL("./ProjectionFormulaHoverCard.tsx", import.meta.url), "utf8");
-  assert.match(source, /panelMaximumWidth = detailed \? 640 : 440/);
-  assert.match(source, /detailed \? "w-\[min\(640px,calc\(100vw-16px\)\)\]" : "w-\[min\(440px,calc\(100vw-16px\)\)\]"/);
-  assert.doesNotMatch(source, /w-\[min\(760px,calc\(100vw-16px\)\)\]/);
+  assert.match(source, /panelMaximumWidth = detailed \? 640 : 280/);
+  assert.match(source, /detailed \? "max-h-\[min\(70vh,560px\)\] w-\[min\(640px,calc\(100vw-16px\)\)\] p-4" : "max-h-\[min\(70vh,420px\)\] w-\[min\(280px,calc\(100vw-16px\)\)\] p-2"/);
+  assert.doesNotMatch(source, /w-\[min\(440px,calc\(100vw-16px\)\)\]/);
+  assert.doesNotMatch(source, /terms\.slice\(0, 8\)/);
 });

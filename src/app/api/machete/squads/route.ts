@@ -21,10 +21,10 @@ import {
   uniqueFantasySquadName
 } from "@/machete/squad_planner";
 import {
-  countFantasySquadTransfers,
+  availableTransfersByRound,
   fantasyProviderPlaceholderPlannerPlayer,
   fantasyProviderPlaceholdersFromFilters,
-  fantasyTransferLimitForHorizon,
+  fantasyTransferBudget,
   isFantasySquadPlayerId,
   normalizeFantasyHorizon,
   fantasySquadPlanningRounds,
@@ -371,19 +371,30 @@ export const POST = withApiHandler(async (request: Request) => {
     safeRoundPlans.push({ ...plan, selections: planValidation.selections });
   }
   const safeSelections = safeRoundPlans[0]?.selections ?? [];
-  for (let index = 1; index < safeRoundPlans.length; index += 1) {
-    const transferCount = countFantasySquadTransfers(safeRoundPlans[index - 1].selections, safeRoundPlans[index].selections);
-    const perRoundLimit = fantasyTransferLimitForHorizon(1, rules.transferLimitPerRound);
-    if (transferCount > perRoundLimit) {
-      return jsonError("BAD_REQUEST", `Round +${index}: ${transferCount} transfers planned; per-round limit is ${perRoundLimit}.`, 400);
+  const budget = fantasyTransferBudget(rules);
+  const storedBaseline = plannerData.squad.transferBaselinePlayerIds ?? [];
+  const previousSaved = targetSquadId ? plannerData.squad.selections : [];
+  const transferBaseline = storedBaseline.length === rules.squadSize
+    ? storedBaseline.map((playerId) => ({ playerId }))
+    : previousSaved.length === rules.squadSize
+      ? previousSaved
+      : [];
+  if (transferBaseline.length === rules.squadSize) {
+    const transferRows = availableTransfersByRound({
+      roundPlans: safeRoundPlans,
+      baselineSelections: transferBaseline,
+      budget,
+      openingAvailable: plannerData.squad.openingFreeTransfers
+    });
+    const exceeded = transferRows.find((row) => row.used > row.available);
+    if (exceeded) {
+      const roundOffset = transferRows.indexOf(exceeded);
+      return jsonError(
+        "BAD_REQUEST",
+        `Round +${roundOffset}: ${exceeded.used} transfers planned; ${exceeded.available} available.`,
+        400
+      );
     }
-  }
-
-  const savedSelections = targetSquadId ? plannerData.squad.selections : [];
-  const transferLimit = fantasyTransferLimitForHorizon(horizonRounds, rules.transferLimitPerRound);
-  const transferCount = countFantasySquadTransfers(savedSelections, safeSelections);
-  if (savedSelections.length === rules.squadSize && transferCount > transferLimit) {
-    return jsonError("BAD_REQUEST", `You made ${transferCount} transfers; limit for this forecast is ${transferLimit}.`, 400);
   }
 
   const name = targetSquadId

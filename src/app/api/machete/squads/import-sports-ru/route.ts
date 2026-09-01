@@ -140,7 +140,8 @@ export const POST = withApiHandler(async (request: Request) => {
     roundPlans,
     roundPlanRoundIds: plannerData.rounds.map((round) => round.id),
     rules: plannerData.rules,
-    providerPlaceholders
+    providerPlaceholders,
+    resetTransferBaseline: true
   });
   await prisma.userExternalProfile.update({
     where: { userId_provider: { userId: auth.user.id, provider: "SPORTS_RU" } },

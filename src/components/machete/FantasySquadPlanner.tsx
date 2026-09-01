@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, ArrowLeftRight, ArrowRight, Bookmark, Check, Columns3, Crown, Download, Layers3, ListChecks, LoaderCircle, Lock, MoreHorizontal, Plus, Save, Search, SlidersHorizontal, Sparkles, Trash2, Users, X } from "lucide-react";
+import { ArrowLeft, ArrowLeftRight, ArrowRight, Bookmark, Check, Columns3, Crown, Download, Layers3, ListChecks, LoaderCircle, Lock, MoreHorizontal, Plus, Save, Search, SlidersHorizontal, Sparkles, Trash2, Undo2, Users, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type DragEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject, type SetStateAction, startTransition as startPlayerPoolTransition, useDeferredValue, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { createPortal } from "react-dom";
@@ -44,12 +44,13 @@ import {
   recordBetaMilestone
 } from "@/lib/beta-telemetry-client";
 import {
+  availableTransfersByRound,
   canStartFantasyPlayer,
   countFantasySquadTransfers,
   createFantasyAddEvaluator,
   createFantasyFitEvaluator,
   createFantasySquadRoundPlans,
-  fantasyTransferLimitForHorizon,
+  fantasyTransferBudget,
   nextAlternativeFantasyPoints,
   nextFantasyPoints,
   normalizeFantasyHorizon,
@@ -534,18 +535,37 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
   const viceCaptainId = useMemo(() => selections.find((selection) => selection.isViceCaptain)?.playerId ?? null, [selections]);
   const summary = useMemo(() => summarizeFantasySquad(players, selections, rules, horizon), [players, selections, rules, horizon]);
   const savedSummary = useMemo(() => summarizeFantasySquad(players, savedSelections, rules, horizon), [players, savedSelections, rules, horizon]);
-  const transferBaselineSelections = activeRoundOffset > 0 ? roundPlans[activeRoundOffset - 1].selections : savedSelections;
+  const transferBudget = useMemo(() => fantasyTransferBudget(rules), [rules]);
+  const [transferBaselinePlayerIds, setTransferBaselinePlayerIds] = useState<string[]>(
+    () => initialSquad.transferBaselinePlayerIds?.length ? initialSquad.transferBaselinePlayerIds : initialSelections.map((selection) => selection.playerId)
+  );
+  const [openingFreeTransfers, setOpeningFreeTransfers] = useState<number | null>(initialSquad.openingFreeTransfers ?? null);
+  const transferBaselineSelections = useMemo(
+    () => transferBaselinePlayerIds.map((playerId) => ({ playerId })),
+    [transferBaselinePlayerIds]
+  );
   const hasFullSquad = summary.selectedPlayers.length === rules.squadSize;
   const squadIsValid =
     hasFullSquad &&
     summary.starterPlayers.length === rules.starterSize &&
     summary.benchPlayers.length === rules.benchSize &&
     summary.violations.length === 0;
-  const transferLimit = fantasyTransferLimitForHorizon(activeRoundOffset > 0 ? 1 : horizon, rules.transferLimitPerRound);
-  const usesRplTransferRules = rules.transferLimitPerRound === 3;
-  const transferLimitIsActive = transferBaselineSelections.length === rules.squadSize;
-  const plannedTransferCount = countFantasySquadTransfers(transferBaselineSelections, selections);
+  const transferRows = useMemo(
+    () => availableTransfersByRound({
+      roundPlans,
+      baselineSelections: transferBaselineSelections.length === rules.squadSize ? transferBaselineSelections : roundPlans[0]?.selections ?? [],
+      budget: transferBudget,
+      openingAvailable: openingFreeTransfers
+    }),
+    [openingFreeTransfers, roundPlans, rules.squadSize, transferBaselineSelections, transferBudget]
+  );
+  const activeTransferRow = transferRows[activeRoundOffset] ?? { used: 0, available: transferBudget.perRound };
+  const transferLimit = activeTransferRow.available;
+  const usesUnpricedTransfers = transferBudget.paidPointCost === 0;
+  const transferLimitIsActive = (transferBaselineSelections.length === rules.squadSize || (activeRoundOffset > 0 && (roundPlans[activeRoundOffset - 1]?.selections.length ?? 0) === rules.squadSize));
+  const plannedTransferCount = transferLimitIsActive ? activeTransferRow.used : 0;
   const availableSuggestionCount = transferLimitIsActive ? Math.max(0, transferLimit - plannedTransferCount) : transferLimit;
+  const squadIsDirty = useMemo(() => fantasyRoundPlansFingerprint(roundPlans) !== fantasyRoundPlansFingerprint(savedRoundPlans), [roundPlans, savedRoundPlans]);
   const [suggestionCalculation, setSuggestionCalculation] = useState<TransferSuggestionCalculation | null>(null);
   const [failedSuggestionCalculation, setFailedSuggestionCalculation] = useState<TransferSuggestionCalculation | null>(null);
   const [suggestionRetry, setSuggestionRetry] = useState(0);
@@ -1135,8 +1155,8 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
       forecastSource: transferSuggestionForecastSource,
       transferCount: availableSuggestionCount,
       maximumPlans: 2,
-      freeTransfers: usesRplTransferRules ? transferLimit : undefined,
-      paidTransferPointCost: usesRplTransferRules ? 0 : undefined
+      freeTransfers: availableSuggestionCount,
+      paidTransferPointCost: transferBudget.paidPointCost
     });
     void task.promise
       .then((nextSuggestions) => {
@@ -1155,7 +1175,7 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
       cancelled = true;
       task.cancel();
     };
-  }, [availableSuggestionCount, players, selections, rules, playerPoolReady, postLoadContentReady, suggestionRetry, transferLimit, transferSuggestionForecastSource, transferSuggestionHorizon, transferSuggestionsReady, usesRplTransferRules]);
+  }, [availableSuggestionCount, players, selections, rules, playerPoolReady, postLoadContentReady, suggestionRetry, transferBudget.paidPointCost, transferSuggestionForecastSource, transferSuggestionHorizon, transferSuggestionsReady]);
 
   useEffect(() => {
     const handle = window.setTimeout(() => {
@@ -1185,13 +1205,27 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
 
   function transferLimitBlockReason(nextSelections: FantasySquadSelection[]) {
     if (!transferLimitIsActive) return null;
-    if (countFantasySquadTransfers(transferBaselineSelections, nextSelections) <= transferLimit) return null;
+    const previous = activeRoundOffset === 0
+      ? (transferBaselineSelections.length === rules.squadSize ? transferBaselineSelections : [])
+      : roundPlans[activeRoundOffset - 1]?.selections ?? [];
+    if (previous.length !== rules.squadSize) return null;
+    if (countFantasySquadTransfers(previous, nextSelections) <= transferLimit) return null;
 
     return localizedText(
       language,
-      `Transfer limit reached: ${transferLimit} for this round.`,
+      `Transfer limit reached: ${transferLimit} available this round.`,
       `Лимит замен на этот тур: ${transferLimit}.`
     );
+  }
+
+  function rollbackToLastSavedSquad() {
+    if (interactionPending || autoPickPending || !squadIsDirty) return;
+    setRoundPlans(cloneFantasyRoundPlans(savedRoundPlans));
+    setReplacementMode(false);
+    setReplacementSourcePlayerId(null);
+    setPoolReplacementSourcePlayerId(null);
+    setDraggedPlayerId(null);
+    setMessage(localizedText(language, "Squad restored to the last save on this page.", "Состав откатан к последнему сохранению здесь."));
   }
 
   function addPlayer(player: FantasyPlannerPlayer) {
@@ -1762,6 +1796,7 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
       setSourcePlayers(importedPlayerPool);
       setRoundPlans(importedRoundPlans);
       setSavedRoundPlans(cloneFantasyRoundPlans(importedRoundPlans));
+      setTransferBaselinePlayerIds(importedSelections.map((selection) => selection.playerId));
       setActiveSquadId(savedSquadId);
       setHorizon(importedHorizon);
       setReplacementMode(false);
@@ -1808,6 +1843,7 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
           selections?: FantasySquadSelection[];
           roundPlans?: FantasySquadRoundPlan[];
           gameweek?: number;
+          bankedFreeTransfers?: number;
         };
         message?: string;
       };
@@ -1820,6 +1856,8 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
       setActiveRoundOffset(0);
       setRoundPlans(importedPlans);
       setSavedRoundPlans(cloneFantasyRoundPlans(importedPlans));
+      setTransferBaselinePlayerIds(importedSelections.map((selection) => selection.playerId));
+      if (typeof payload.result.bankedFreeTransfers === "number") setOpeningFreeTransfers(payload.result.bankedFreeTransfers);
       setActiveSquadId(payload.result.squadId);
       setMessage(`FPL GW${payload.result.gameweek ?? ""} published squad imported: ${importedSelections.length} players.`);
     } finally {
@@ -2003,11 +2041,15 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
               <I18nText en="FFO is published only for the current round, so these suggestions are ranked over 1 round." ru="FFO публикуется только на текущий тур, поэтому эти подсказки ранжированы на 1 тур." />
             </p>
           ) : null}
-          {usesRplTransferRules ? (
+          {usesUnpricedTransfers ? (
             <p className="mt-1.5 text-[10px] text-slate-500">
-              <I18nText en="RPL allows up to three transfers in a round; no point penalties apply." ru="В РПЛ — до трёх замен за тур, без штрафов по очкам." />
+              <I18nText en="Sports.ru allows 3 transfers per round; unused transfers bank up to 6." ru="В Sports.ru — 3 замены за тур, неиспользованные копятся до 6." />
             </p>
-          ) : null}
+          ) : (
+            <p className="mt-1.5 text-[10px] text-slate-500">
+              <I18nText en="FPL banks unused free transfers, up to 5. Extra transfers cost 4 points." ru="В FPL неиспользованные бесплатные трансферы копятся до 5. Лишние стоят 4 очка." />
+            </p>
+          )}
           <div className="mt-1.5 grid items-start gap-2 xl:grid-cols-[minmax(0,1fr)_minmax(16rem,0.86fr)]">
             <div className="grid min-w-0 gap-1.5 sm:grid-cols-2 xl:grid-cols-1 2xl:grid-cols-2">
             {displayedSuggestions.map((suggestion) => {
@@ -2173,7 +2215,7 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
       <section className={cn(mobileTab === "suggestions" ? "hidden xl:block" : "block", "order-3 min-w-0 rounded border border-slate-200 bg-white p-3 shadow-soft sm:p-4 xl:order-4")}>
         <div className="grid min-w-0 grid-cols-1 gap-4 xl:grid-cols-[minmax(360px,0.76fr)_minmax(620px,1.24fr)] 2xl:grid-cols-[minmax(400px,0.62fr)_minmax(860px,1.38fr)] 3xl:grid-cols-[minmax(460px,0.5fr)_minmax(1100px,1.5fr)]">
           <div ref={squadSectionRef} className={cn(mobileTab === "squad" ? "block" : "hidden xl:block", "scroll-mt-28")}>
-            <div ref={budgetForecastRef} className="mb-3 grid grid-cols-2 overflow-hidden rounded border border-slate-200 bg-slate-50 [&>dl:nth-child(odd)]:border-r [&>dl:nth-child(n+5)]:border-b-0 [&>dl:last-child]:col-span-2 [&>dl:last-child]:border-r-0 sm:grid-cols-5 sm:divide-x sm:divide-slate-200 sm:[&>dl]:border-b-0 sm:[&>dl]:border-r-0 sm:[&>dl:last-child]:col-span-1">
+            <div ref={budgetForecastRef} className="mb-3 grid grid-cols-2 overflow-hidden rounded border border-slate-200 bg-slate-50 text-[13px] [&>dl:nth-child(odd)]:border-r [&>dl:nth-child(n+5)]:border-b-0 [&>dl:last-child]:col-span-2 [&>dl:last-child]:border-r-0 sm:grid-cols-5 sm:divide-x sm:divide-slate-200 sm:[&>dl]:border-b-0 sm:[&>dl]:border-r-0 sm:[&>dl:last-child]:col-span-1">
               <Metric
                 label={<I18nText en="Next round" ru="След. тур" />}
                 value={formatScore(previewNextRound)}
@@ -2194,8 +2236,17 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
               <Metric label={<I18nText en="Bank" ru="Банк" />} value={formatNumber(summary.bank, 1)} tone={summary.bank < 0 ? "bad" : "good"} />
               <Metric
                 label={<I18nText en="Transfers" ru="Замены" />}
-                value={`${transferLimitIsActive ? plannedTransferCount : 0}/${transferLimit}`}
+                value={`${plannedTransferCount}/${transferLimit}`}
                 tone={transferLimitIsActive && plannedTransferCount >= transferLimit ? "bad" : "accent"}
+                title={localizedText(
+                  language,
+                  usesUnpricedTransfers
+                    ? "Used / available this round. Sports.ru grants 3 per round and banks unused transfers up to 6."
+                    : "Used / available this round. FPL banks unused free transfers up to 5.",
+                  usesUnpricedTransfers
+                    ? "Использовано / доступно в этом туре. В Sports.ru 3 замены за тур, неиспользованные копятся до 6."
+                    : "Использовано / доступно в этом туре. В FPL неиспользованные бесплатные трансферы копятся до 5."
+                )}
               />
             </div>
             <div className="mb-3">
@@ -2229,6 +2280,17 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
                       <span className="sr-only"><I18nText en={fplImportPending ? "Loading FPL squad" : "Import FPL squad"} ru={fplImportPending ? "Загрузка состава FPL" : "Импортировать состав FPL"} /></span>
                     </button>
                   ) : null}
+                  <button
+                    type="button"
+                    onClick={rollbackToLastSavedSquad}
+                    disabled={interactionPending || autoPickPending || !squadIsDirty}
+                    title={localizedText(language, "Roll back to the last save on this page", "Откатить к последнему сохранению здесь")}
+                    aria-label={localizedText(language, "Roll back to the last save on this page", "Откатить к последнему сохранению здесь")}
+                    className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded border border-amber-200 bg-amber-50 text-amber-900 hover:bg-amber-100 disabled:opacity-60"
+                  >
+                    <Undo2 className="h-4 w-4" aria-hidden="true" />
+                    <span className="sr-only"><I18nText en="Roll back squad" ru="Откатить состав" /></span>
+                  </button>
                   <button
                     type="button"
                     onClick={() => void saveSquad()}
@@ -4066,7 +4128,8 @@ function Metric({
   secondaryValue,
   tertiaryLabel,
   tertiaryValue,
-  tone = "default"
+  tone = "default",
+  title
 }: {
   label: React.ReactNode;
   value: string;
@@ -4075,20 +4138,21 @@ function Metric({
   tertiaryLabel?: React.ReactNode;
   tertiaryValue?: string;
   tone?: "default" | "good" | "bad" | "accent";
+  title?: string;
 }) {
   const color = tone === "good" ? "text-emerald-700" : tone === "bad" ? "text-rose-700" : tone === "accent" ? "text-sky-700" : "text-ink";
   return (
-    <dl className="min-w-0 border-b border-slate-200 px-3 py-2 last:border-b-0 md:border-b-0">
-      <dt className="truncate text-[11px] font-semibold uppercase tracking-wide text-slate-500">{label}</dt>
-      <dd className={cn("mt-0.5 truncate text-lg font-bold num-tabular", color)}>{value}</dd>
+    <dl className="min-w-0 border-b border-slate-200 px-2 py-1.5 last:border-b-0 md:border-b-0" title={title}>
+      <dt className="truncate text-[10px] font-semibold uppercase tracking-wide text-slate-500">{label}</dt>
+      <dd className={cn("mt-0.5 whitespace-nowrap text-sm font-bold leading-5 num-tabular", color)}>{value}</dd>
       {secondaryValue !== undefined ? (
-        <dd className="mt-0.5 flex items-baseline gap-1.5 truncate text-xs font-semibold text-amber-700 num-tabular">
+        <dd className="mt-0.5 flex items-baseline gap-1 truncate text-[10px] font-semibold text-amber-700 num-tabular">
           <span className="uppercase tracking-wide text-slate-500">{secondaryLabel}</span>
           <span>{secondaryValue}</span>
         </dd>
       ) : null}
       {tertiaryValue !== undefined ? (
-        <dd className="mt-0.5 flex items-baseline gap-1.5 truncate text-xs font-semibold text-cyan-700 num-tabular">
+        <dd className="mt-0.5 flex items-baseline gap-1 truncate text-[10px] font-semibold text-cyan-700 num-tabular">
           <span className="uppercase tracking-wide text-slate-500">{tertiaryLabel}</span>
           <span>{tertiaryValue}</span>
         </dd>
@@ -4456,15 +4520,21 @@ function SquadPitch({
             type="button"
             onClick={onToggleReplacementMode}
             aria-pressed={replacementMode}
+            title={replacementMode
+              ? localizedText(language, "Cancel replacement", "Отменить замену")
+              : localizedText(language, "Replace", "Замена")}
+            aria-label={replacementMode
+              ? localizedText(language, "Cancel replacement", "Отменить замену")
+              : localizedText(language, "Replace", "Замена")}
             className={cn(
-              "inline-flex min-h-8 items-center gap-1.5 rounded border px-2.5 py-1 text-xs font-semibold transition",
+              "inline-flex h-8 w-8 items-center justify-center rounded border transition",
               replacementMode
                 ? "border-sky-400 bg-sky-100 text-sky-900"
                 : "border-slate-300 bg-white text-slate-700 hover:bg-slate-100"
             )}
           >
             {replacementMode ? <X className="h-3.5 w-3.5" /> : <ArrowLeftRight className="h-3.5 w-3.5" />}
-            {replacementMode ? <I18nText en="Cancel" ru="Отмена" /> : <I18nText en="Replace" ru="Замена" />}
+            <span className="sr-only">{replacementMode ? <I18nText en="Cancel" ru="Отмена" /> : <I18nText en="Replace" ru="Замена" />}</span>
           </button>
         </div>
         <div
@@ -4960,29 +5030,27 @@ function BookmakerFavoritesTable({
         </p>
       </div>
 
-      <div className="grid grid-cols-[minmax(0,1fr)_3.25rem_3.5rem] border-b border-slate-200 bg-slate-50 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-500">
-        <span><I18nText en="Favorite" ru="Фаворит" /></span>
-        <span className="text-right"><I18nText en="Clean sheet" ru="Сухарь" /></span>
-        <span className="text-right"><I18nText en="Team O1.5" ru="ИТБ 1.5" /></span>
+      <div className="flex items-center gap-2 border-b border-slate-200 bg-slate-50 px-2 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-500">
+        <span className="min-w-0 max-w-[11rem] flex-1"><I18nText en="Favorite" ru="Фаворит" /></span>
+        <span className="w-[4.4rem] shrink-0 text-right"><I18nText en="Clean sheet" ru="Сухарь" /></span>
+        <span className="w-[4.4rem] shrink-0 text-right"><I18nText en="Team O1.5" ru="ИТБ 1.5" /></span>
       </div>
 
       {rows.length > 0 ? (
         <div className="divide-y divide-slate-100">
           {rows.map((row) => (
-            <div key={row.fixtureId} className="grid grid-cols-[minmax(0,1fr)_3.25rem_3.5rem] items-center gap-x-1 px-2 py-1">
-              <div className="flex min-w-0 items-center gap-1">
+            <div key={row.fixtureId} className="flex items-center gap-2 px-2 py-1">
+              <div className="flex min-w-0 max-w-[11rem] items-center gap-1">
                 <span aria-hidden="true" className="flex h-4 w-4 shrink-0 items-center justify-center rounded-full border border-sky-100 bg-sky-50 text-[7px] font-black text-sky-800">
                   {teamMarketInitials(row.teamName)}
                 </span>
-                <div className="min-w-0">
-                  <p className="truncate text-[10px] font-semibold leading-3 text-ink" title={row.teamFullName}>{row.teamName}</p>
-                  <p className="truncate text-[9px] leading-3 text-slate-500" title={row.opponentFullName}>
-                    <span className="mr-1 font-semibold text-slate-400">{row.side === "H" ? "vs" : "@"}</span>{row.opponentName}
-                  </p>
-                </div>
+                <p className="min-w-0 truncate text-[10px] font-semibold leading-3 text-ink" title={`${row.teamFullName} ${row.side === "H" ? "vs" : "@"} ${row.opponentFullName}`}>
+                  {row.teamName}
+                  <span className="ml-1 font-medium text-slate-500">{row.side === "H" ? "vs" : "@"} {row.opponentName}</span>
+                </p>
               </div>
-              <MarketProbabilityCell probability={row.cleanSheetProbability} tone="sky" label={localizedText(language, `Clean-sheet chance for ${row.teamFullName}`, `Шанс сухаря: ${row.teamFullName}`)} />
-              <MarketProbabilityCell probability={row.teamOver15Probability} tone="emerald" label={localizedText(language, `Chance ${row.teamFullName} scores over 1.5`, `Шанс ${row.teamFullName} забить больше 1.5`)} />
+              <MarketProbabilityCell probability={row.cleanSheetProbability} tone="sky" label={localizedText(language, `Clean-sheet chance for ${row.teamFullName}`, `Шанс сухаря: ${row.teamFullName}`)} wide />
+              <MarketProbabilityCell probability={row.teamOver15Probability} tone="emerald" label={localizedText(language, `Chance ${row.teamFullName} scores over 1.5`, `Шанс ${row.teamFullName} забить больше 1.5`)} wide />
             </div>
           ))}
         </div>
@@ -4995,14 +5063,11 @@ function BookmakerFavoritesTable({
   );
 }
 
-function MarketProbabilityCell({ probability, tone, label }: { probability: number; tone: "sky" | "emerald"; label: string }) {
+function MarketProbabilityCell({ probability, tone, label, wide = false }: { probability: number; tone: "sky" | "emerald"; label: string; wide?: boolean }) {
   const percent = Math.round(probability * 100);
   return (
-    <div className="min-w-0 text-right" aria-label={`${label}: ${percent}%`} title={`${label}: ${percent}%`}>
+    <div className={cn("shrink-0 text-right", wide ? "w-[4.4rem]" : "w-10")} aria-label={`${label}: ${percent}%`} title={`${label}: ${percent}%`}>
       <span className={cn("text-[11px] font-bold num-tabular", tone === "sky" ? "text-sky-700" : "text-emerald-700")}>{percent}%</span>
-      <span className="mt-0.5 block h-0.5 overflow-hidden rounded-full bg-slate-100">
-        <span className={cn("block h-full rounded-full", tone === "sky" ? "bg-sky-500" : "bg-emerald-500")} style={{ width: `${percent}%` }} />
-      </span>
     </div>
   );
 }
@@ -5382,6 +5447,22 @@ function addPoissonProjectionTermLine(
     ? `${fallback} (from ${variableName} when unavailable)`
     : `poisson_groups(${metric}, ${groupSize})`;
   addProjectionTermLine(lines, language, label, value, formula);
+}
+
+function compactFormulaArithmeticLines(
+  language: UiLanguage,
+  formulaData: NonNullable<FantasyPlannerPlayer["projectionFormula"]> | NonNullable<FantasyPlannerPlayer["alternativeProjectionFormula"]>,
+  totalOverride: number | null
+) {
+  const total = totalOverride === null ? formulaData.total : totalOverride;
+  const lines = [`${language === "ru" ? "Итого" : "Total"}: ${formatNumber(total, 3)}`];
+  for (const term of formulaData.terms) {
+    const expression = readableResolvedFormulaExpression(term.resolvedExpression, language);
+    const sign = term.sign < 0 ? "−" : "+";
+    const fixturePrefix = term.fixtureLabel ? `[${term.fixtureLabel}] ` : "";
+    lines.push(`${sign} ${fixturePrefix}${expression} = ${formatNumber(term.value, 3)}`);
+  }
+  return lines;
 }
 
 function buildFormulaBreakdownLines(
@@ -5859,6 +5940,9 @@ function buildAlternativeProjectionBreakdownLines(
 }
 
 function playerPrimaryNextForecastTitle(player: FantasyPlannerPlayer, language: UiLanguage, nextForecast: number | null) {
+  if (player.projectionFormula) {
+    return compactFormulaArithmeticLines(language, player.projectionFormula, nextForecast).join("\n");
+  }
   const fixtureCount = player.roundFixtureCounts?.[0] ?? 0;
   const lines = [localizedText(
     language,
@@ -5867,13 +5951,6 @@ function playerPrimaryNextForecastTitle(player: FantasyPlannerPlayer, language: 
   )];
   if (player.fplForecastBreakdown) {
     lines.push(...buildFplForecastBreakdownLines(player, language, player.fplForecastBreakdown, "Total"));
-  } else if (player.projectionEngine === "COMPONENT_XFP_V1" && player.projectionFormula) {
-    if (fixtureCount <= 1) {
-      lines.push(...starterMinuteFloorLines(player.projectedFixtureComponents, language));
-      lines.push(...minuteHistoryProvenanceLines(player.projectedFixtureComponents, language));
-      lines.push(...sparseTeamAttackAllocationLines(player.projectedFixtureComponents, language));
-    }
-    lines.push(...buildFormulaBreakdownLines(language, player.projectionFormula, "Total", nextForecast));
   } else if (player.projectionEngine === "COMPONENT_XFP_V1" && player.projectionComponents) {
     lines.push(...buildProjectionBreakdownLines(player, language, player.projectionComponents, player.projectedFixtureComponents));
   } else if (player.projectionEngine === "LEGACY_RIDGE19_V1") {
@@ -5929,27 +6006,17 @@ function playerAverageForecastTitle(
 
 function alternativePlayerForecastTitle(player: FantasyPlannerPlayer, language: UiLanguage) {
   const nextAlternative = nextAlternativeFantasyPoints(player);
+  if (player.alternativeProjectionFormula) {
+    return compactFormulaArithmeticLines(language, player.alternativeProjectionFormula, nextAlternative).join("\n");
+  }
   const fixtureCount = player.roundFixtureCounts?.[0] ?? 0;
   const lines = [localizedText(
     language,
     `Alternative forecast for next provider round${fixtureCount > 1 ? ` (${fixtureCount} fixtures)` : ""}: ${formatScore(nextAlternative)} FP`,
     `Альтернативный прогноз на следующий тур провайдера${fixtureCount > 1 ? ` (${fixtureCount} матча)` : ""}: ${formatScore(nextAlternative)} ФО`
   )];
-  const minuteInputs = player.alternativeProjectedFixtureComponents;
-  if (fixtureCount <= 1) lines.push(...starterMinuteFloorLines(minuteInputs, language));
   if (player.alternativeFplForecastBreakdown) {
     lines.push(...buildFplForecastBreakdownLines(player, language, player.alternativeFplForecastBreakdown, "Alternative total"));
-  } else if (player.alternativeProjectionFormula) {
-    if (fixtureCount <= 1) {
-      lines.push(...minuteHistoryProvenanceLines(player.alternativeProjectedFixtureComponents, language));
-      lines.push(...sparseTeamAttackAllocationLines(player.alternativeProjectedFixtureComponents, language));
-    }
-    lines.push(...buildFormulaBreakdownLines(
-      language,
-      player.alternativeProjectionFormula,
-      "Alternative total",
-      nextAlternative
-    ));
   } else if (player.alternativeProjectionComponents) {
     lines.push(
       ...buildAlternativeProjectionBreakdownLines(
@@ -6034,7 +6101,7 @@ function playerPoolColumnTitles(language: UiLanguage, horizon: number) {
     alternative: alternativePredictedFpTitle(language),
     alternativeFive: alternativeFiveRoundFpTitle(language, horizon),
     horizon: localizedText(language, `Total primary forecast over the selected ${horizon}-round horizon.`, `Суммарный основной прогноз на выбранном горизонте в ${horizon} туров.`),
-    fixtures: localizedText(language, "Upcoming opponents. Home fixtures are bold; underline colour shows difficulty from green (easy) to red (hard). Hover an opponent for the full club name.", "Ближайшие соперники. Домашние матчи выделены жирным; цвет нижней границы показывает сложность от зелёного (легко) до красного (сложно). Полное название клуба доступно при наведении."),
+    fixtures: localizedText(language, "Upcoming opponents. Home fixtures are bold; fill colour shows difficulty from blue (easy) to red (hard). Hover an opponent for the full club name.", "Ближайшие соперники. Домашние матчи выделены жирным; цвет заливки показывает сложность от синего (легко) до красного (сложно). Полное название клуба доступно при наведении."),
     action: localizedText(language, "Add the player to the squad or remove the selected player.", "Добавить игрока в состав или убрать уже выбранного игрока.")
   };
 }
@@ -6241,6 +6308,20 @@ function cloneFantasyRoundPlans(plans: FantasySquadRoundPlan[]) {
     ...plan,
     selections: plan.selections.map((selection) => ({ ...selection }))
   }));
+}
+
+function fantasyRoundPlansFingerprint(plans: FantasySquadRoundPlan[]) {
+  return JSON.stringify(plans.map((plan) => ({
+    roundOffset: plan.roundOffset,
+    linkedToPrevious: plan.linkedToPrevious,
+    selections: plan.selections.map((selection) => [
+      selection.playerId,
+      selection.isStarter,
+      selection.isCaptain,
+      selection.isViceCaptain,
+      selection.slotIndex
+    ])
+  })));
 }
 
 function normalizePlannerRoundPlans(

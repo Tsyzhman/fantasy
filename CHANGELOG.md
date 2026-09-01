@@ -5,6 +5,20 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.55 - 2026-09-01
+
+### Changed
+
+- Count Sports.ru transfers as 3 per round with unused banking up to 6, and use FPL banked free transfers from the last import.
+- Add a squad rollback control that restores the last save on this page.
+- Recolor fixture difficulty 1–5 as blue, green, yellow, orange and red for both themes, and apply those fills site-wide.
+- Make bookmaker favorites denser, show oldest/newest starting-XI flag updates in data freshness, and drop the fixture-calendar easiest-to-hardest caption.
+- Shrink FO/ALT hover tooltips to total plus every arithmetic term, without the formula text, component grid, or truncated term list.
+
+### Fixed
+
+- Keep budget/bank/transfer metrics from clipping, make the bench Replace control icon-only, and restore the previous compact squad-card layout.
+
 ## 0.3.54 - 2026-09-01
 
 ### Changed

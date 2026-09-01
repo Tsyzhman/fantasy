@@ -51,11 +51,10 @@ export const FantasyFixtureCalendar = memo(function FantasyFixtureCalendar({ cal
   );
 
   return (
-    <section ref={sectionRef} className="relative order-7 min-w-0 overflow-hidden rounded border border-slate-200 bg-white shadow-soft" aria-labelledby={titleId} data-squad-fixture-calendar data-mode={mode} data-horizon={horizon}>
+    <section ref={sectionRef} className="relative order-7 min-w-0 overflow-hidden rounded border border-[var(--border)] bg-[var(--surface-1)] shadow-soft text-[var(--text-primary)]" aria-labelledby={titleId} data-squad-fixture-calendar data-mode={mode} data-horizon={horizon}>
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-200 px-3 py-2">
         <div className="min-w-0">
           <h3 id={titleId} className="text-sm font-semibold uppercase tracking-wide text-slate-600">{text("All teams · fixture calendar", "Календарь всех команд")}</h3>
-          <p className="mt-0.5 text-[11px] text-slate-500">{text("Easiest → hardest over the selected rounds", "От лёгкой дистанции к тяжёлой")}</p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <SegmentedControl
@@ -72,7 +71,7 @@ export const FantasyFixtureCalendar = memo(function FantasyFixtureCalendar({ cal
             aria-label={text("Fixture calendar horizon", "Дистанция календаря")}
             value={horizon}
             onChange={(event) => setHorizon(fantasyFixtureCalendarHorizon(Number(event.target.value)))}
-            className="min-h-9 rounded border border-slate-200 bg-white px-2 text-xs font-semibold text-slate-700"
+            className="min-h-9 rounded border border-[var(--border)] bg-[var(--surface-1)] px-2 text-xs font-semibold text-[var(--text-primary)]"
           >
             {[5, 6, 7, 8, 9, 10].map((value) => <option key={value} value={value}>{text(`${value} rounds`, `${value} туров`)}</option>)}
           </select>
@@ -114,15 +113,15 @@ export const FantasyFixtureCalendar = memo(function FantasyFixtureCalendar({ cal
               </colgroup>
               <thead className="text-left text-xs font-semibold text-slate-500">
                 <tr>
-                  <th scope="col" className="sticky left-0 top-0 z-20 border-b border-r border-slate-200 bg-slate-50 px-2 py-2">{text("Team", "Команда")}</th>
-                  <th scope="col" aria-sort="ascending" title={summaryTitle} className="sticky top-0 z-10 border-b border-slate-200 bg-slate-50 px-2 py-2 text-center">{text("Avg ↓", "Ср. ↓")}</th>
-                  {view.rounds.map((round) => <th key={round.id} scope="col" className="sticky top-0 z-10 min-w-20 border-b border-slate-200 bg-slate-50 px-1 py-2 text-center">{round.label}</th>)}
+                  <th scope="col" className="sticky left-0 top-0 z-20 border-b border-r border-slate-200 bg-[var(--surface-2)] px-2 py-2">{text("Team", "Команда")}</th>
+                  <th scope="col" aria-sort="ascending" title={summaryTitle} className="sticky top-0 z-10 border-b border-slate-200 bg-[var(--surface-2)] px-2 py-2 text-center">{text("Avg ↓", "Ср. ↓")}</th>
+                  {view.rounds.map((round) => <th key={round.id} scope="col" className="sticky top-0 z-10 min-w-20 border-b border-slate-200 bg-[var(--surface-2)] px-1 py-2 text-center">{round.label}</th>)}
                 </tr>
               </thead>
               <tbody>
                 {view.rows.map((row) => (
                   <tr key={row.team.id} data-calendar-team-id={row.team.id} data-calendar-average={row.averageDifficulty ?? ""}>
-                    <th scope="row" className="sticky left-0 z-10 border-b border-r border-slate-100 bg-white px-2 py-1.5 text-left text-[13px] font-semibold text-ink" title={row.team.name}>
+                    <th scope="row" className="sticky left-0 z-10 border-b border-r border-slate-100 bg-[var(--surface-1)] px-2 py-1.5 text-left text-[13px] font-semibold text-ink" title={row.team.name}>
                       <span className="block max-w-40 truncate">{row.team.name}</span>
                     </th>
                     <td className="border-b border-slate-100 px-1.5 py-1 text-center num-tabular" title={text(
@@ -133,8 +132,8 @@ export const FantasyFixtureCalendar = memo(function FantasyFixtureCalendar({ cal
                       <span className="block whitespace-nowrap text-[9px] leading-3 text-slate-500">{text(`${row.fixtureCount} matches`, `${row.fixtureCount} матч.`)}{row.ratedFixtures < row.fixtureCount ? " *" : ""}</span>
                     </td>
                     {row.cells.map((fixtures, index) => (
-                      <td key={view.rounds[index].id} className={cn("border-b border-white/70 px-1 py-1 text-center align-middle", fixtureCalendarCellTone(fixtures))}>
-                        {fixtures.length === 0 ? <span className="text-slate-400" title={text("No fixture in this round", "Нет матча в этом туре")}>—</span> : (
+                      <td key={view.rounds[index].id} className={cn("border-b border-[color:color-mix(in_srgb,var(--fdr-text)_18%,transparent)] px-1 py-1 text-center align-middle", fixtureCalendarCellTone(fixtures))}>
+                        {fixtures.length === 0 ? <span className="text-current opacity-60" title={text("No fixture in this round", "Нет матча в этом туре")}>—</span> : (
                           <div className="flex flex-col items-center gap-0.5">
                             {fixtures.map((fixture) => {
                               const venue = fixture.side === "home" ? text("home", "дома") : text("away", "в гостях");
@@ -145,7 +144,7 @@ export const FantasyFixtureCalendar = memo(function FantasyFixtureCalendar({ cal
                                 side={fixture.side}
                                 label={`${fixture.opponentShortName} (${fixture.side === "home" ? text("H", "Д") : text("A", "Г")})`}
                                 title={`${fixture.opponentName} · ${venue} · ${kickoff} · ${mode === "attack" ? text("Attack", "Атака") : text("Defence", "Защита")}${fixture.finished ? text(" · Played", " · Сыгран") : ""}`}
-                                className="relative !h-5 max-w-full !rounded-sm !border-b-0 !bg-transparent !px-0.5 !text-[11px] !text-slate-900"
+                                className="relative !h-5 max-w-full !rounded-sm !border-0 !bg-transparent !px-0.5 !text-[11px] !text-current"
                               />;
                             })}
                           </div>
@@ -167,11 +166,11 @@ function fixtureCalendarCellTone(fixtures: Array<{ difficulty: number | null }>)
   const rated = fixtures
     .map((fixture) => fixture.difficulty)
     .filter((difficulty): difficulty is number => typeof difficulty === "number" && Number.isFinite(difficulty));
-  if (rated.length === 0) return fixtures.length === 0 ? "bg-white" : "bg-slate-100";
+  if (rated.length === 0) return fixtures.length === 0 ? "fdr-cell-empty" : "fdr-cell-unrated";
   const average = rated.reduce((total, difficulty) => total + difficulty, 0) / rated.length;
-  if (average < 1.5) return "bg-emerald-200/80";
-  if (average < 2.5) return "bg-lime-100/90";
-  if (average < 3.5) return "bg-amber-100/90";
-  if (average < 4.5) return "bg-orange-100/90";
-  return "bg-rose-200/80";
+  if (average < 1.5) return "fdr-cell-1";
+  if (average < 2.5) return "fdr-cell-2";
+  if (average < 3.5) return "fdr-cell-3";
+  if (average < 4.5) return "fdr-cell-4";
+  return "fdr-cell-5";
 }

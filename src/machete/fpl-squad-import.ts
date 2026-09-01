@@ -51,6 +51,7 @@ export type FplSquadImportResult = {
   teamValue: number | null;
   transfersMade: number;
   transferCost: number;
+  bankedFreeTransfers: number;
 };
 
 export class FplSquadImportError extends Error {
@@ -270,11 +271,11 @@ export async function importPublishedFplSquad(
     const squad = existingSquad
       ? await tx.userFantasySquad.update({
           where: { id: existingSquad.id },
-          data: { budgetLimit: fpl202627Rules.budgetLimit, bank: published.entryHistory.bank ?? fpl202627Rules.budgetLimit - validation.spent, horizonRounds: input.horizonRounds ?? existingSquad.horizonRounds, filters: { roundPlans } },
+          data: { budgetLimit: fpl202627Rules.budgetLimit, bank: published.entryHistory.bank ?? fpl202627Rules.budgetLimit - validation.spent, horizonRounds: input.horizonRounds ?? existingSquad.horizonRounds, filters: { roundPlans, transferBaselinePlayerIds: selections.map((selection) => selection.playerId) } },
           select: { id: true, name: true, horizonRounds: true }
         })
       : await tx.userFantasySquad.create({
-          data: { userId: input.userId, provider: FPL_PROVIDER, contestId: contest.id, leagueId: FPL_LEAGUE_ID, season: FPL_SEASON, name: squadName, budgetLimit: fpl202627Rules.budgetLimit, bank: published.entryHistory.bank ?? fpl202627Rules.budgetLimit - validation.spent, horizonRounds: input.horizonRounds ?? 5, filters: { roundPlans } },
+          data: { userId: input.userId, provider: FPL_PROVIDER, contestId: contest.id, leagueId: FPL_LEAGUE_ID, season: FPL_SEASON, name: squadName, budgetLimit: fpl202627Rules.budgetLimit, bank: published.entryHistory.bank ?? fpl202627Rules.budgetLimit - validation.spent, horizonRounds: input.horizonRounds ?? 5, filters: { roundPlans, transferBaselinePlayerIds: selections.map((selection) => selection.playerId) } },
           select: { id: true, name: true, horizonRounds: true }
         });
 
@@ -401,7 +402,8 @@ export async function importPublishedFplSquad(
       bankValue: published.entryHistory.bank,
       teamValue: published.entryHistory.value,
       transfersMade: published.entryHistory.eventTransfers ?? 0,
-      transferCost: published.entryHistory.eventTransfersCost ?? 0
+      transferCost: published.entryHistory.eventTransfersCost ?? 0,
+      bankedFreeTransfers: transferState.bankedFreeTransfers
     } satisfies FplSquadImportResult;
   });
 }
