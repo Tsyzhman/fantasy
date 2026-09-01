@@ -8,6 +8,7 @@ RUN apt-get update \
 
 COPY package.json package-lock.json ./
 COPY prisma ./prisma
+COPY vendor ./vendor
 
 # npm install (not npm ci) because the developer lockfile can omit
 # platform-specific native dependency edges that Docker needs to reconcile.
@@ -19,7 +20,7 @@ WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 
 COPY . .
-RUN npx prisma generate && npm run build
+RUN ./node_modules/.bin/prisma generate && npm run build
 
 FROM builder AS setup
 

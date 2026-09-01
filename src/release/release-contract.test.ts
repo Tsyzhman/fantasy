@@ -24,6 +24,16 @@ test("Docker runtime carries the same version and commit in env and OCI labels",
   assert.match(dockerfile, /ENV APP_RELEASE_COMMIT="\$\{APP_RELEASE_COMMIT\}"/);
 });
 
+test("Docker dependency builds include local packages and cannot download an unpinned Prisma CLI", () => {
+  const dockerfile = source("Dockerfile");
+  const vendorCopyIndex = dockerfile.indexOf("COPY vendor ./vendor");
+  const installIndex = dockerfile.indexOf("RUN npm install --no-audit --no-fund");
+
+  assert.ok(vendorCopyIndex >= 0 && vendorCopyIndex < installIndex);
+  assert.match(dockerfile, /RUN \.\/node_modules\/\.bin\/prisma generate && npm run build/);
+  assert.doesNotMatch(dockerfile, /RUN npx prisma generate/);
+});
+
 test("production workflow packages committed Git source and never deploys the legacy PM2 checkout", () => {
   const workflow = source(".github/workflows/deploy-production.yml");
 

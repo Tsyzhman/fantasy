@@ -28,6 +28,12 @@ image labels `org.opencontainers.image.version` and
 - Compute only the two displayed suggestion plans and page position-sorted
   database reads in bounded groups instead of loading a full player table.
 
+### Fixed
+
+- Copy tracked local npm packages into the Docker dependency stage and invoke
+  the pinned Prisma CLI directly, so an incomplete install cannot silently
+  download an incompatible latest CLI during a production build.
+
 ## 0.3.53 - 2026-09-01
 
 ### Fixed
