@@ -296,6 +296,9 @@ export const POST = withApiHandler(async (request: Request) => {
   const userId = auth.user.id;
 
   const body = await readJsonObject(request);
+  // @spec spec://modules/machete/FEAT-001-global-ranking-strategy#contracts
+  const strategy = body.strategy;
+  if (strategy !== undefined && strategy !== "balanced" && strategy !== "reliable" && strategy !== "upside" && strategy !== "GLOBAL_AUTO") return jsonError("BAD_REQUEST", "Invalid squad strategy.", 400);
   const leagueId = parseBigInt(body.leagueId);
   const season = typeof body.season === "string" ? body.season : "";
   const squadId = optionalId(body.squadId);
@@ -404,6 +407,7 @@ export const POST = withApiHandler(async (request: Request) => {
         defaultFantasySquadNameForUser(auth.user)
       );
   const squad = await saveFantasySquad(prisma, {
+    strategy,
     userId,
     leagueId,
     season,

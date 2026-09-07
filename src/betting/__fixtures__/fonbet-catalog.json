@@ -1,0 +1,1356 @@
+{
+  "groups": [
+    {
+      "name": "Основные ставки",
+      "tables": [
+        {
+          "num": 120,
+          "name": "Исходы",
+          "isMain": true,
+          "rows": [
+            [
+              {
+                "name": "1"
+              },
+              {
+                "name": "X"
+              },
+              {
+                "name": "2"
+              },
+              {
+                "name": "1X"
+              },
+              {
+                "name": "12"
+              },
+              {
+                "name": "X2"
+              }
+            ],
+            [
+              {
+                "kind": "value",
+                "factorId": 921
+              },
+              {
+                "kind": "value",
+                "factorId": 922
+              },
+              {
+                "kind": "value",
+                "factorId": 923
+              },
+              {
+                "kind": "value",
+                "factorId": 924
+              },
+              {
+                "kind": "value",
+                "factorId": 1571
+              },
+              {
+                "kind": "value",
+                "factorId": 925
+              }
+            ]
+          ]
+        },
+        {
+          "num": 304,
+          "name": "Фора",
+          "isMain": true,
+          "sortByParam": true,
+          "rows": [
+            [
+              {
+                "name": ""
+              },
+              {
+                "name": "1"
+              },
+              {
+                "name": ""
+              },
+              {
+                "name": "2"
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 910
+              },
+              {
+                "kind": "value",
+                "factorId": 910,
+                "flexParam": true
+              },
+              {
+                "kind": "param",
+                "factorId": 912
+              },
+              {
+                "kind": "value",
+                "factorId": 912,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 927
+              },
+              {
+                "kind": "value",
+                "factorId": 927,
+                "flexParam": true
+              },
+              {
+                "kind": "param",
+                "factorId": 928
+              },
+              {
+                "kind": "value",
+                "factorId": 928,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 937
+              },
+              {
+                "kind": "value",
+                "factorId": 937,
+                "flexParam": true
+              },
+              {
+                "kind": "param",
+                "factorId": 938
+              },
+              {
+                "kind": "value",
+                "factorId": 938,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 989
+              },
+              {
+                "kind": "value",
+                "factorId": 989,
+                "flexParam": true
+              },
+              {
+                "kind": "param",
+                "factorId": 991
+              },
+              {
+                "kind": "value",
+                "factorId": 991,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 1569
+              },
+              {
+                "kind": "value",
+                "factorId": 1569,
+                "flexParam": true
+              },
+              {
+                "kind": "param",
+                "factorId": 1572
+              },
+              {
+                "kind": "value",
+                "factorId": 1572,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 1672
+              },
+              {
+                "kind": "value",
+                "factorId": 1672,
+                "flexParam": true
+              },
+              {
+                "kind": "param",
+                "factorId": 1675
+              },
+              {
+                "kind": "value",
+                "factorId": 1675,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 1677
+              },
+              {
+                "kind": "value",
+                "factorId": 1677,
+                "flexParam": true
+              },
+              {
+                "kind": "param",
+                "factorId": 1678
+              },
+              {
+                "kind": "value",
+                "factorId": 1678,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 1680
+              },
+              {
+                "kind": "value",
+                "factorId": 1680,
+                "flexParam": true
+              },
+              {
+                "kind": "param",
+                "factorId": 1681
+              },
+              {
+                "kind": "value",
+                "factorId": 1681,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 1683
+              },
+              {
+                "kind": "value",
+                "factorId": 1683,
+                "flexParam": true
+              },
+              {
+                "kind": "param",
+                "factorId": 1684
+              },
+              {
+                "kind": "value",
+                "factorId": 1684,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 1686
+              },
+              {
+                "kind": "value",
+                "factorId": 1686,
+                "flexParam": true
+              },
+              {
+                "kind": "param",
+                "factorId": 1687
+              },
+              {
+                "kind": "value",
+                "factorId": 1687,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 1689
+              },
+              {
+                "kind": "value",
+                "factorId": 1689,
+                "flexParam": true
+              },
+              {
+                "kind": "param",
+                "factorId": 1690
+              },
+              {
+                "kind": "value",
+                "factorId": 1690,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 1692
+              },
+              {
+                "kind": "value",
+                "factorId": 1692,
+                "flexParam": true
+              },
+              {
+                "kind": "param",
+                "factorId": 1718
+              },
+              {
+                "kind": "value",
+                "factorId": 1718,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 1723
+              },
+              {
+                "kind": "value",
+                "factorId": 1723,
+                "flexParam": true
+              },
+              {
+                "kind": "param",
+                "factorId": 1724
+              },
+              {
+                "kind": "value",
+                "factorId": 1724,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 1845
+              },
+              {
+                "kind": "value",
+                "factorId": 1845,
+                "flexParam": true
+              },
+              {
+                "kind": "param",
+                "factorId": 1846
+              },
+              {
+                "kind": "value",
+                "factorId": 1846,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 16211
+              },
+              {
+                "kind": "value",
+                "factorId": 16211,
+                "flexParam": true
+              },
+              {
+                "kind": "param",
+                "factorId": 16212
+              },
+              {
+                "kind": "value",
+                "factorId": 16212,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 16214
+              },
+              {
+                "kind": "value",
+                "factorId": 16214,
+                "flexParam": true
+              },
+              {
+                "kind": "param",
+                "factorId": 16215
+              },
+              {
+                "kind": "value",
+                "factorId": 16215,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 16217
+              },
+              {
+                "kind": "value",
+                "factorId": 16217,
+                "flexParam": true
+              },
+              {
+                "kind": "param",
+                "factorId": 16218
+              },
+              {
+                "kind": "value",
+                "factorId": 16218,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 16220
+              },
+              {
+                "kind": "value",
+                "factorId": 16220,
+                "flexParam": true
+              },
+              {
+                "kind": "param",
+                "factorId": 16221
+              },
+              {
+                "kind": "value",
+                "factorId": 16221,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 16223
+              },
+              {
+                "kind": "value",
+                "factorId": 16223,
+                "flexParam": true
+              },
+              {
+                "kind": "param",
+                "factorId": 16224
+              },
+              {
+                "kind": "value",
+                "factorId": 16224,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 16226
+              },
+              {
+                "kind": "value",
+                "factorId": 16226,
+                "flexParam": true
+              },
+              {
+                "kind": "param",
+                "factorId": 16227
+              },
+              {
+                "kind": "value",
+                "factorId": 16227,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 16229
+              },
+              {
+                "kind": "value",
+                "factorId": 16229,
+                "flexParam": true
+              },
+              {
+                "kind": "param",
+                "factorId": 16230
+              },
+              {
+                "kind": "value",
+                "factorId": 16230,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 16232
+              },
+              {
+                "kind": "value",
+                "factorId": 16232,
+                "flexParam": true
+              },
+              {
+                "kind": "param",
+                "factorId": 16233
+              },
+              {
+                "kind": "value",
+                "factorId": 16233,
+                "flexParam": true
+              }
+            ]
+          ]
+        },
+        {
+          "num": 305,
+          "name": "Тотал",
+          "isMain": true,
+          "sortByParam": true,
+          "rows": [
+            [
+              {
+                "name": ""
+              },
+              {
+                "name": "Б"
+              },
+              {
+                "name": "М"
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 930
+              },
+              {
+                "kind": "value",
+                "factorId": 930,
+                "flexParam": true
+              },
+              {
+                "kind": "value",
+                "factorId": 931,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 940
+              },
+              {
+                "kind": "value",
+                "factorId": 940,
+                "flexParam": true
+              },
+              {
+                "kind": "value",
+                "factorId": 941,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 1848
+              },
+              {
+                "kind": "value",
+                "factorId": 1848,
+                "flexParam": true
+              },
+              {
+                "kind": "value",
+                "factorId": 1849,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 1696
+              },
+              {
+                "kind": "value",
+                "factorId": 1696,
+                "flexParam": true
+              },
+              {
+                "kind": "value",
+                "factorId": 1697,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 1727
+              },
+              {
+                "kind": "value",
+                "factorId": 1727,
+                "flexParam": true
+              },
+              {
+                "kind": "value",
+                "factorId": 1728,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 1730
+              },
+              {
+                "kind": "value",
+                "factorId": 1730,
+                "flexParam": true
+              },
+              {
+                "kind": "value",
+                "factorId": 1731,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 1733
+              },
+              {
+                "kind": "value",
+                "factorId": 1733,
+                "flexParam": true
+              },
+              {
+                "kind": "value",
+                "factorId": 1734,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 1736
+              },
+              {
+                "kind": "value",
+                "factorId": 1736,
+                "flexParam": true
+              },
+              {
+                "kind": "value",
+                "factorId": 1737,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 1739
+              },
+              {
+                "kind": "value",
+                "factorId": 1739,
+                "flexParam": true
+              },
+              {
+                "kind": "value",
+                "factorId": 1791,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 1793
+              },
+              {
+                "kind": "value",
+                "factorId": 1793,
+                "flexParam": true
+              },
+              {
+                "kind": "value",
+                "factorId": 1794,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 1796
+              },
+              {
+                "kind": "value",
+                "factorId": 1796,
+                "flexParam": true
+              },
+              {
+                "kind": "value",
+                "factorId": 1797,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 1799
+              },
+              {
+                "kind": "value",
+                "factorId": 1799,
+                "flexParam": true
+              },
+              {
+                "kind": "value",
+                "factorId": 1800,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 1802
+              },
+              {
+                "kind": "value",
+                "factorId": 1802,
+                "flexParam": true
+              },
+              {
+                "kind": "value",
+                "factorId": 1803,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 1805
+              },
+              {
+                "kind": "value",
+                "factorId": 1805,
+                "flexParam": true
+              },
+              {
+                "kind": "value",
+                "factorId": 1806,
+                "flexParam": true
+              }
+            ]
+          ]
+        },
+        {
+          "num": 506,
+          "name": "Инд. тоталы-1",
+          "sortByParam": true,
+          "rows": [
+            [
+              {
+                "name": "%1"
+              },
+              {
+                "name": "Б"
+              },
+              {
+                "name": "М"
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 974
+              },
+              {
+                "kind": "value",
+                "factorId": 974,
+                "flexParam": true
+              },
+              {
+                "kind": "value",
+                "factorId": 976,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 1809
+              },
+              {
+                "kind": "value",
+                "factorId": 1809,
+                "flexParam": true
+              },
+              {
+                "kind": "value",
+                "factorId": 1810,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 1812
+              },
+              {
+                "kind": "value",
+                "factorId": 1812,
+                "flexParam": true
+              },
+              {
+                "kind": "value",
+                "factorId": 1813,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 1815
+              },
+              {
+                "kind": "value",
+                "factorId": 1815,
+                "flexParam": true
+              },
+              {
+                "kind": "value",
+                "factorId": 1816,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 1818
+              },
+              {
+                "kind": "value",
+                "factorId": 1818,
+                "flexParam": true
+              },
+              {
+                "kind": "value",
+                "factorId": 1819,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 1821
+              },
+              {
+                "kind": "value",
+                "factorId": 1821,
+                "flexParam": true
+              },
+              {
+                "kind": "value",
+                "factorId": 1822,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 1824
+              },
+              {
+                "kind": "value",
+                "factorId": 1824,
+                "flexParam": true
+              },
+              {
+                "kind": "value",
+                "factorId": 1825,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 1827
+              },
+              {
+                "kind": "value",
+                "factorId": 1827,
+                "flexParam": true
+              },
+              {
+                "kind": "value",
+                "factorId": 1828,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 1830
+              },
+              {
+                "kind": "value",
+                "factorId": 1830,
+                "flexParam": true
+              },
+              {
+                "kind": "value",
+                "factorId": 1831,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 2203
+              },
+              {
+                "kind": "value",
+                "factorId": 2203,
+                "flexParam": true
+              },
+              {
+                "kind": "value",
+                "factorId": 2204,
+                "flexParam": true
+              }
+            ]
+          ]
+        },
+        {
+          "num": 507,
+          "name": "Инд. тоталы-2",
+          "sortByParam": true,
+          "rows": [
+            [
+              {
+                "name": "%2"
+              },
+              {
+                "name": "Б"
+              },
+              {
+                "name": "М"
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 978
+              },
+              {
+                "kind": "value",
+                "factorId": 978,
+                "flexParam": true
+              },
+              {
+                "kind": "value",
+                "factorId": 980,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 1854
+              },
+              {
+                "kind": "value",
+                "factorId": 1854,
+                "flexParam": true
+              },
+              {
+                "kind": "value",
+                "factorId": 1871,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 1873
+              },
+              {
+                "kind": "value",
+                "factorId": 1873,
+                "flexParam": true
+              },
+              {
+                "kind": "value",
+                "factorId": 1874,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 1880
+              },
+              {
+                "kind": "value",
+                "factorId": 1880,
+                "flexParam": true
+              },
+              {
+                "kind": "value",
+                "factorId": 1881,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 1883
+              },
+              {
+                "kind": "value",
+                "factorId": 1883,
+                "flexParam": true
+              },
+              {
+                "kind": "value",
+                "factorId": 1884,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 1886
+              },
+              {
+                "kind": "value",
+                "factorId": 1886,
+                "flexParam": true
+              },
+              {
+                "kind": "value",
+                "factorId": 1887,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 1893
+              },
+              {
+                "kind": "value",
+                "factorId": 1893,
+                "flexParam": true
+              },
+              {
+                "kind": "value",
+                "factorId": 1894,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 1896
+              },
+              {
+                "kind": "value",
+                "factorId": 1896,
+                "flexParam": true
+              },
+              {
+                "kind": "value",
+                "factorId": 1897,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 1899
+              },
+              {
+                "kind": "value",
+                "factorId": 1899,
+                "flexParam": true
+              },
+              {
+                "kind": "value",
+                "factorId": 1900,
+                "flexParam": true
+              }
+            ],
+            [
+              {
+                "kind": "param",
+                "factorId": 2209
+              },
+              {
+                "kind": "value",
+                "factorId": 2209,
+                "flexParam": true
+              },
+              {
+                "kind": "value",
+                "factorId": 2210,
+                "flexParam": true
+              }
+            ]
+          ]
+        },
+        {
+          "num": 2800,
+          "rows": [
+            [
+              {
+                "name": "Забьют - не забьют"
+              },
+              {
+                "name": "Да"
+              },
+              {
+                "name": "нет"
+              }
+            ],
+            [
+              {
+                "name": "%1 забьет"
+              },
+              {
+                "kind": "value",
+                "factorId": 4235
+              },
+              {
+                "kind": "value",
+                "factorId": 4236
+              }
+            ],
+            [
+              {
+                "name": "%1 сделает ран"
+              },
+              {
+                "kind": "value",
+                "factorId": 10520
+              },
+              {
+                "kind": "value",
+                "factorId": 10521
+              }
+            ],
+            [
+              {
+                "name": "%2 забьет"
+              },
+              {
+                "kind": "value",
+                "factorId": 4238
+              },
+              {
+                "kind": "value",
+                "factorId": 4239
+              }
+            ],
+            [
+              {
+                "name": "%2 сделает ран"
+              },
+              {
+                "kind": "value",
+                "factorId": 10523
+              },
+              {
+                "kind": "value",
+                "factorId": 10524
+              }
+            ],
+            [
+              {
+                "name": "Обе забьют"
+              },
+              {
+                "kind": "value",
+                "factorId": 4241
+              },
+              {
+                "kind": "value",
+                "factorId": 4242
+              }
+            ],
+            [
+              {
+                "name": "Обе забьют забьют по %P и более"
+              },
+              {
+                "kind": "value",
+                "factorId": 12777
+              },
+              {
+                "kind": "value",
+                "factorId": 12778
+              }
+            ],
+            [
+              {
+                "name": "Обе сделают ран"
+              },
+              {
+                "kind": "value",
+                "factorId": 10526
+              },
+              {
+                "kind": "value",
+                "factorId": 10527
+              }
+            ],
+            [
+              {
+                "name": "Только %1 забьет"
+              },
+              {
+                "kind": "value",
+                "factorId": 4244
+              },
+              {
+                "kind": "value",
+                "factorId": 4245
+              }
+            ],
+            [
+              {
+                "name": "Только %2 забьет"
+              },
+              {
+                "kind": "value",
+                "factorId": 4247
+              },
+              {
+                "kind": "value",
+                "factorId": 4248
+              }
+            ],
+            [
+              {
+                "name": "Только одна забьет"
+              },
+              {
+                "kind": "value",
+                "factorId": 4250
+              },
+              {
+                "kind": "value",
+                "factorId": 4251
+              }
+            ],
+            [
+              {
+                "name": "Никто не забьет"
+              },
+              {
+                "kind": "value",
+                "factorId": 4253
+              },
+              {
+                "kind": "value",
+                "factorId": 4254
+              }
+            ]
+          ]
+        },
+        {
+          "num": 3900,
+          "name": "Ничья",
+          "rows": [
+            [
+              {
+                "name": "%P"
+              },
+              {
+                "name": "%P"
+              },
+              {
+                "name": "%P"
+              },
+              {
+                "name": "%P"
+              },
+              {
+                "name": "%P"
+              },
+              {
+                "name": "%P"
+              },
+              {
+                "name": "%P"
+              },
+              {
+                "name": "%P"
+              }
+            ],
+            [
+              {
+                "kind": "value",
+                "factorId": 1889,
+                "flexParam": true
+              },
+              {
+                "kind": "value",
+                "factorId": 2636,
+                "flexParam": true
+              },
+              {
+                "kind": "value",
+                "factorId": 2639,
+                "flexParam": true
+              },
+              {
+                "kind": "value",
+                "factorId": 2642,
+                "flexParam": true
+              },
+              {
+                "kind": "value",
+                "factorId": 2645,
+                "flexParam": true
+              },
+              {
+                "kind": "value",
+                "factorId": 2648,
+                "flexParam": true
+              },
+              {
+                "kind": "value",
+                "factorId": 2651,
+                "flexParam": true
+              },
+              {
+                "kind": "value",
+                "factorId": 2654,
+                "flexParam": true
+              }
+            ]
+          ]
+        }
+      ]
+    }
+  ]
+}

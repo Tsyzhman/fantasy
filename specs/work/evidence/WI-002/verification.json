@@ -1,0 +1,16 @@
+{
+  "same_day_and_future_perturbation": "passed",
+  "unit_stake_payout": "passed",
+  "bet_dedup_and_holdout_dates": "passed",
+  "matched_games": 3532,
+  "score_disagreements": 36,
+  "package_versions": {
+    "numpy": "2.4.3",
+    "pandas": "3.0.3",
+    "scipy": "1.17.1",
+    "scikit-learn": "1.8.0",
+    "plotly": "6.7.0"
+  },
+  "low_similarity_name_mappings": "Manually inspected Sheffield Weds, FC Koln, For Sittard, Oud-Heverlee Leuven; correct team identities.",
+  "input_archive_integrity": "CRC and every SHA-256 passed"
+}

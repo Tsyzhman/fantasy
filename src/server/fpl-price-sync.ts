@@ -28,7 +28,7 @@ import { replaceFantasyProviderSchedule } from "./fantasy-provider-schedule";
 
 const FPL_LOCK_KEY = "fantasy-scout:fpl:price-sync";
 const FPL_JOB_TYPE = "FPL_PRICE_SYNC";
-const FPL_PRICE_SYNC_FORMAT_VERSION = "provider-schedule-v3";
+const FPL_PRICE_SYNC_FORMAT_VERSION = "provider-schedule-ownership-v4";
 
 export type FplPriceSyncResult = {
   status: "SYNCED" | "SKIPPED";
@@ -45,6 +45,7 @@ export type FplPriceSyncResult = {
   scheduleFixtures: number;
 };
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#data */
 export async function syncFplPrices(
   prisma: PrismaClient = defaultPrisma,
   options: {
@@ -165,6 +166,7 @@ export async function syncFplPrices(
           sourceRowIndex,
           position: row.position,
           price: row.price,
+          selectedByPercent: row.selectedByPercent,
           firstSeenAt: now,
           lastSeenAt: now
         }
@@ -469,6 +471,7 @@ function fplPriceUpdate(row: FplPriceRow, teamName: string, teamId: bigint | nul
     sourceKind: "FPL_BOOTSTRAP_STATIC",
     position: row.position,
     price: row.price,
+    selectedByPercent: row.selectedByPercent,
     lastSeenAt: now
   };
 }

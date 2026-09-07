@@ -1,0 +1,54 @@
+{
+  "health": {
+    "status": "ok",
+    "uptimeSeconds": 41,
+    "release": {
+      "version": "0.3.57",
+      "commit": "d9abf51dbc2a842b66484c644269987fd719d653"
+    }
+  },
+  "events": 368,
+  "leagues": 46,
+  "participants": 33,
+  "bots": [
+    {
+      "name": "Abella",
+      "balance": 9200000,
+      "locked": 800000
+    },
+    {
+      "name": "Riley",
+      "balance": 9100000,
+      "locked": 900000
+    },
+    {
+      "name": "Mia",
+      "balance": 9100000,
+      "locked": 900000
+    },
+    {
+      "name": "Lana",
+      "balance": 9100000,
+      "locked": 900000
+    },
+    {
+      "name": "Adriana",
+      "balance": 9200000,
+      "locked": 800000
+    }
+  ],
+  "sync": {
+    "id": "main",
+    "leaseUntil": null,
+    "owner": null,
+    "lastSuccess": "2026-09-07T09:50:06.979Z",
+    "lastError": null,
+    "summary": {
+      "events": 368,
+      "settled": 0,
+      "refreshed": 16,
+      "unmatched": 77,
+      "downloadedLeagues": 46
+    }
+  }
+}

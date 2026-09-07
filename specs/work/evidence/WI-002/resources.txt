@@ -1,0 +1,16 @@
+Initial: RAM available 5678 MiB; worker 2.001 GiB, web 776.1 MiB, postgres 976.1 MiB; disk 19%.
+Midpoint: RAM available 6284 MiB; worker 1.307 GiB, web 776.6 MiB, postgres 1008 MiB.
+Final:
+Mon Sep  7 08:22:26 UTC 2026
+               total        used        free      shared  buff/cache   available
+Mem:           11876        5128        1200         169        5547        6262
+Swap:              0           0           0
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/vda3       119G   21G   92G  19% /
+fantasy-scout-web 776.7MiB / 11.6GiB 0.00%
+fantasy-scout-worker 1.308GiB / 11.6GiB 0.02%
+fantasy-scout-postgres 1008MiB / 11.6GiB 0.14%
+fantasy-scout-worker Up 5 days (healthy)
+fantasy-scout-web Up 5 days (healthy)
+fantasy-scout-fpl-relay Up 5 days
+fantasy-scout-postgres Up 2 weeks (healthy)

@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "sourceResearch": "full 2024/25 + 2025/26 FotMob/H2H retro sample",
+  "trainingCohort": "actual starters with >60 minutes",
+  "seasons": [
+    "2024/25",
+    "2025/26"
+  ],
+  "weatherIncluded": false,
+  "hypotheses": {
+    "fo_current": {
+      "accepted": [
+        "player_form",
+        "recency_ewm",
+        "team_style",
+        "possession",
+        "recovery_pass",
+        "coach",
+        "opponent",
+        "rest_market"
+      ],
+      "all": [
+        "player_form",
+        "recency_ewm",
+        "team_style",
+        "possession",
+        "recovery_pass",
+        "coach",
+        "formation",
+        "opponent",
+        "zones",
+        "rest_market"
+      ],
+      "windows": {
+        "player_form": 10,
+        "recency_ewm": 3,
+        "team_style": 10,
+        "possession": 10,
+        "recovery_pass": 5,
+        "coach": null,
+        "formation": null,
+        "opponent": null,
+        "zones": null,
+        "rest_market": null
+      }
+    },
+    "alt_current": {
+      "accepted": [
+        "player_form",
+        "recency_ewm",
+        "team_style",
+        "possession",
+        "recovery_pass",
+        "coach",
+        "opponent",
+        "rest_market"
+      ],
+      "all": [
+        "player_form",
+        "recency_ewm",
+        "team_style",
+        "possession",
+        "recovery_pass",
+        "coach",
+        "formation",
+        "opponent",
+        "zones",
+        "rest_market"
+      ],
+      "windows": {
+        "player_form": 10,
+        "recency_ewm": 5,
+        "team_style": 10,
+        "possession": 10,
+        "recovery_pass": 5,
+        "coach": null,
+        "formation": null,
+        "opponent": null,
+        "zones": null,
+        "rest_market": null
+      }
+    }
+  },
+  "found_sources": [
+    "src/machete/formula_adaptations.ts",
+    "src/machete/formula-adaptation-models.generated.json",
+    "scripts/export-formula-adaptation-models.py",
+    "docs/MODEL_BACKTEST.md"
+  ],
+  "not_found": "Original run_formula_hypothesis_research.py and original research archive not found in inspected project, transfer worktree, deploy research paths, Downloads, Codex output names."
+}

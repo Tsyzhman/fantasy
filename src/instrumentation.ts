@@ -21,6 +21,9 @@ export async function register() {
   const plan = schedulerRuntimePlan();
 
   if (plan.worker) {
+    // @spec spec://modules/betting/FEAT-001-virtual-league#runtime
+    const { startBettingLeague } = await import("./betting/sync");
+    startBettingLeague();
     const { startMacheteDailyFotMobSyncScheduler } = await import("./server/machete-daily-sync");
     const { startIngestionWorkerLoop } = await import("./server/ingestion-worker-loop");
     const { startLeagueSeasonRetentionScheduler } = await import("./server/league-season-retention-scheduler");

@@ -1,4 +1,8 @@
 import { fantasyPositionRank } from "@/lib/players/fantasy-position-order";
+/** @spec spec://modules/machete/FEAT-004-rotation-risk#contracts */
+import { currentRotationRisk, type RotationRisk } from "./rotation-risk";
+import { optimizeGlobalSquad, buildGlobalTransferSuggestions } from "./global-strategy-planner";
+import type { GlobalStrategyRequestContext } from "./global-strategy";
 
 export type FantasyPositionGroup = "GK" | "DEF" | "MID" | "FWD" | "UNK";
 
@@ -214,6 +218,7 @@ export type FantasyPlannerPlayer = {
   modelT5Status?: string | null;
   modelForecastCalculatedAt?: string | null;
   expectedMinutes?: number | null;
+  rotationRisk?: RotationRisk | null;
   startProbability?: number | null;
   forecastConfidence?: number | null;
   forecastFactors?: string[];
@@ -427,6 +432,8 @@ export type TransferPlanMove = {
 };
 
 export type TransferPlanSuggestion = {
+  globalStrategy?: import("./global-strategy-planner").GlobalStrategyAnalysis;
+  selections?: FantasySquadSelection[];
   id: string;
   forecastSource: TransferSuggestionForecastSource;
   moves: TransferPlanMove[];
@@ -448,7 +455,7 @@ export type TransferPlanSuggestion = {
 };
 
 export type FantasyStarterOptimizationBasis = "next" | "horizon";
-export type FantasySquadStrategy = "balanced" | "reliable" | "upside";
+export type FantasySquadStrategy = "balanced" | "reliable" | "upside" | "GLOBAL_AUTO";
 
 export type FantasySquadSaveValidation =
   | {
@@ -1141,9 +1148,14 @@ export function fantasySquadStrategyPlayerScore(
   const baseScore = finiteScore(
     basis === "next" ? consensusNextFantasyPoints(player) : (consensusHorizonFantasyPoints(player, horizon) ?? playerHorizonPoints(player, horizon))
   );
-  if (strategy === "balanced") return baseScore;
+  if (strategy === "balanced" || strategy === "GLOBAL_AUTO") return baseScore;
 
   if (strategy === "reliable") {
+    const rotationRisk = currentRotationRisk(player.rotationRisk);
+    if (rotationRisk !== null) {
+      const confidence = normalizedReliability(player.forecastConfidence, 1, 0.55);
+      return Math.max(0, baseScore * (1 - rotationRisk) * (0.75 + 0.25 * confidence) * (player.priceSource === "SPORTS_RU" ? 1 : 0.96));
+    }
     const minutesReliability = normalizedReliability(player.expectedMinutes, 90, 0.55);
     const startReliability = normalizedReliability(player.startProbability, 1, 0.55);
     const confidenceReliability = normalizedReliability(player.forecastConfidence, 1, 0.55);
@@ -1172,6 +1184,10 @@ export function fantasySquadStrategyPlayerScore(
 }
 
 export type FantasySquadOptimizationInput = {
+  maximumTransfers?: number;
+  freeTransfers?: number;
+  paidTransferPointCost?: number;
+  globalStrategy?: GlobalStrategyRequestContext | null;
   pool: FantasyPlannerPlayer[];
   selections?: FantasySquadSelection[];
   rules: FantasySquadRules;
@@ -1182,7 +1198,12 @@ export type FantasySquadOptimizationInput = {
   minimumBank?: number;
 };
 
-export function optimizeFantasySquad(input: FantasySquadOptimizationInput) {
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#contracts */
+export function optimizeFantasySquad(input: FantasySquadOptimizationInput): FantasySquadSelection[] | null {
+  return input.strategy === "GLOBAL_AUTO" ? optimizeGlobalSquad(input, Date.now()).selections : optimizeFantasySquadWithScores(input);
+}
+
+export function optimizeFantasySquadWithScores(input: FantasySquadOptimizationInput, scoreOverride?: (player: FantasyPlannerPlayer) => number) {
   const {
     pool,
     selections = [],
@@ -1215,7 +1236,7 @@ export function optimizeFantasySquad(input: FantasySquadOptimizationInput) {
 
   const budgetUnits = Math.floor((rules.budgetLimit - Math.max(0, minimumBank)) * 10 + 1e-7);
   if (budgetUnits < 0) return null;
-  const scorePlayer = (player: FantasyPlannerPlayer) => fantasySquadStrategyPlayerScore(player, horizon, strategy, basis);
+  const scorePlayer = scoreOverride ?? ((player: FantasyPlannerPlayer) => fantasySquadStrategyPlayerScore(player, horizon, strategy, basis));
   const optimizerPool = [...uniquePlayers.values()];
   const candidates = optimizerPool.map((player) => ({
     player,
@@ -1314,7 +1335,7 @@ export function optimizeFantasySquad(input: FantasySquadOptimizationInput) {
       isLocked: existing?.isLocked ?? false
     };
   });
-  const optimized = optimizeFantasyStarters({ pool: optimizerPool, selections: baseSelections, rules, horizon, basis, strategy, respectLocks: true });
+  const optimized = optimizeFantasyStarters({ pool: optimizerPool, selections: baseSelections, rules, horizon, basis, strategy: scoreOverride ? "balanced" : strategy, respectLocks: true }, scoreOverride);
   if (!optimized) return null;
 
   const starters = optimized
@@ -1708,6 +1729,7 @@ function selectMaximumStartingXi(
 }
 
 export function optimizeFantasyStarters(input: {
+  globalStrategy?: GlobalStrategyRequestContext | null;
   pool: FantasyPlannerPlayer[];
   selections: FantasySquadSelection[];
   rules: FantasySquadRules;
@@ -1715,7 +1737,8 @@ export function optimizeFantasyStarters(input: {
   basis?: FantasyStarterOptimizationBasis;
   strategy?: FantasySquadStrategy;
   respectLocks?: boolean;
-}) {
+}, scoreOverride?: (player: FantasyPlannerPlayer) => number): FantasySquadSelection[] | null {
+  if (input.strategy === "GLOBAL_AUTO" && !scoreOverride) return optimizeGlobalSquad({ ...input, selections: input.selections }, Date.now(), true).selections;
   const { pool, selections, rules, horizon, basis = "horizon", strategy = "balanced", respectLocks = true } = input;
   const playersById = new Map(pool.map((player) => [player.playerId, player]));
   const selectedPairs = selections
@@ -1728,7 +1751,7 @@ export function optimizeFantasyStarters(input: {
 
   if (selectedPairs.length < rules.starterSize) return null;
 
-  const scorePlayer = (player: FantasyPlannerPlayer) => fantasySquadStrategyPlayerScore(player, horizon, strategy, basis);
+  const scorePlayer = scoreOverride ?? ((player: FantasyPlannerPlayer) => fantasySquadStrategyPlayerScore(player, horizon, strategy, basis));
   const forcedStarterIds = new Set(
     selectedPairs
       .filter((pair) => respectLocks && pair.selection.isLocked && pair.selection.isStarter)
@@ -1820,6 +1843,8 @@ export function buildTransferSuggestions(input: {
 }
 
 export function buildTransferPlanSuggestions(input: {
+  strategy?: FantasySquadStrategy;
+  globalStrategy?: GlobalStrategyRequestContext | null;
   pool: FantasyPlannerPlayer[];
   selections: FantasySquadSelection[];
   rules: FantasySquadRules;
@@ -1829,7 +1854,8 @@ export function buildTransferPlanSuggestions(input: {
   maximumPlans?: number;
   freeTransfers?: number | null;
   paidTransferPointCost?: number | null;
-}) {
+}): TransferPlanSuggestion[] {
+  if (input.strategy === "GLOBAL_AUTO") return buildGlobalTransferSuggestions(input, Date.now());
   const { pool, selections, rules, horizon } = input;
   const forecastSource = input.forecastSource ?? "FO";
   const maximumPlans = Math.max(1, Math.min(12, Math.floor(input.maximumPlans ?? 6)));

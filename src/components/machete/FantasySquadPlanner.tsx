@@ -1,5 +1,12 @@
 "use client";
 
+import { GlobalStrategyPanel } from "./GlobalStrategyPanel";
+/** @spec spec://modules/machete/FEAT-004-rotation-risk#scenarios */
+import { currentRotationRisk, rotationRiskDescription } from "@/machete/rotation-risk";
+import type { GlobalStrategyAnalysis, GlobalSquadResult } from "@/machete/global-strategy-planner";
+import { globalStrategyPoolEvaluation, isGlobalRecommendationCurrent } from "@/machete/global-strategy-planner";
+import type { GlobalStrategyRequestContext } from "@/machete/global-strategy";
+
 import { ArrowLeft, ArrowLeftRight, ArrowRight, Bookmark, Check, Columns3, Crown, Download, Layers3, ListChecks, LoaderCircle, Lock, MoreHorizontal, Plus, Save, Search, SlidersHorizontal, Sparkles, Trash2, Undo2, Users, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { type DragEvent, type PointerEvent as ReactPointerEvent, type ReactNode, type RefObject, type SetStateAction, startTransition as startPlayerPoolTransition, useDeferredValue, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
@@ -266,10 +273,10 @@ async function yieldToPlayerPoolUi() {
   await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
 }
 
-function optimizeFantasySquadOffThread(input: FantasySquadOptimizationInput) {
-  if (typeof Worker === "undefined") return Promise.resolve(optimizeFantasySquad(input));
+function optimizeFantasySquadOffThread(input: FantasySquadOptimizationInput, startersOnly = false, signal?: AbortSignal) {
+  if (typeof Worker === "undefined") return input.strategy === "GLOBAL_AUTO" ? Promise.reject(new Error("WORKER_REQUIRED")) : Promise.resolve({ selections: optimizeFantasySquad(input), analysis: null });
 
-  return new Promise<FantasySquadSelection[] | null>((resolve, reject) => {
+  return new Promise<GlobalSquadResult>((resolve, reject) => {
     const worker = new Worker(new URL("./FantasySquadOptimizer.worker.ts", import.meta.url), {
       name: "fantasy-squad-optimizer"
     });
@@ -280,7 +287,11 @@ function optimizeFantasySquadOffThread(input: FantasySquadOptimizationInput) {
     const finish = () => {
       window.clearTimeout(timeout);
       worker.terminate();
+      signal?.removeEventListener("abort", abort);
     };
+    const abort = () => { finish(); reject(new Error("OPTIMIZER_CANCELLED")); };
+    if (signal?.aborted) { abort(); return; }
+    signal?.addEventListener("abort", abort, { once: true });
 
     worker.onmessage = (event: MessageEvent<FantasySquadWorkerResponse>) => {
       finish();
@@ -288,13 +299,13 @@ function optimizeFantasySquadOffThread(input: FantasySquadOptimizationInput) {
         reject(new Error("FANTASY_SQUAD_OPTIMIZER_FAILED"));
         return;
       }
-      resolve(event.data.optimized);
+      resolve({ selections: event.data.optimized, analysis: event.data.analysis ?? null });
     };
     worker.onerror = () => {
       finish();
       reject(new Error("FANTASY_SQUAD_OPTIMIZER_FAILED"));
     };
-    const request: FantasySquadWorkerRequest = { kind: "OPTIMIZE_SQUAD", input };
+    const request: FantasySquadWorkerRequest = { kind: "OPTIMIZE_SQUAD", input, startersOnly };
     worker.postMessage(request);
   });
 }
@@ -366,6 +377,7 @@ type TransferSuggestionCalculation = {
   suggestions: TransferPlanSuggestion[];
 };
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#scenarios */
 export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds, bookmakerFavorites, initialFixtureCalendar = null, players: initialPlayers, playerPoolHref, squadApiPath = "/api/machete/squads", squadRoutePath = "/machete/squad", initialSquad, readiness, sportsRuSquadStatus, historySettings, initialVisiblePlayerPoolColumns, initialPlayerPoolColumnWidths }: FantasySquadPlannerProps) {
   const language = useLanguage();
   const router = useRouter();
@@ -444,7 +456,11 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
     evaluator: FantasyFitEvaluator;
     eligiblePlayerIds: Set<string>;
   } | null>(null);
-  const autoPickStrategy: FantasySquadStrategy = "balanced";
+  const [autoPickStrategy, setAutoPickStrategy] = useState<FantasySquadStrategy>(initialSquad.strategy ?? "balanced");
+  const [globalStrategyContext, setGlobalStrategy] = useState<GlobalStrategyRequestContext | null>(null);
+  const globalStrategy = useMemo(() => globalStrategyContext ? { ...globalStrategyContext, forecastRevision: globalForecastRevision(players) } : null, [globalStrategyContext, players]);
+  const globalPoolEvaluation = useMemo(() => globalStrategy ? globalStrategyPoolEvaluation(players, globalStrategy, Date.parse(globalStrategy.context.observedAt)) : null, [players, globalStrategy]);
+  const [globalAnalysis, setGlobalAnalysis] = useState<GlobalStrategyAnalysis | null>(null);
   const [message, setMessage] = useState<string | null>(null);
   const [savePending, setSavePending] = useState(false);
   const [sportsImportPending, setSportsImportPending] = useState(false);
@@ -464,6 +480,7 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
   const [betaAutoPickComplete, setBetaAutoPickComplete] = useState(false);
   const [autoPickPending, setAutoPickPending] = useState(false);
   const autoPickRevisionRef = useRef(0);
+  const autoPickAbortRef = useRef<AbortController | null>(null);
   const playerPoolReady = !playerPoolRequestHref || (!playerPoolPending && !playerPoolFailed);
   const playerPoolLoadingMessage = playerPoolProgressMessage(playerPoolProgress);
   const hasRealRoundProjections = useMemo(
@@ -504,7 +521,9 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
 
   useEffect(() => {
     autoPickRevisionRef.current += 1;
-  }, [autoPickStrategy, horizon, players, rules, selections]);
+    autoPickAbortRef.current?.abort();
+    return () => autoPickAbortRef.current?.abort();
+  }, [autoPickStrategy, globalStrategy, activeSquadId, provider, horizon, players, rules, selections]);
 
   useEffect(() => {
     if (!replacementMode && !poolReplacementSourcePlayerId) return;
@@ -1148,6 +1167,8 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
 
     let cancelled = false;
     const task = buildTransferSuggestionsOffThread({
+      strategy: autoPickStrategy,
+      globalStrategy,
       pool: players,
       selections,
       rules,
@@ -1175,7 +1196,7 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
       cancelled = true;
       task.cancel();
     };
-  }, [availableSuggestionCount, players, selections, rules, playerPoolReady, postLoadContentReady, suggestionRetry, transferBudget.paidPointCost, transferSuggestionForecastSource, transferSuggestionHorizon, transferSuggestionsReady]);
+  }, [autoPickStrategy, globalStrategy, availableSuggestionCount, players, selections, rules, playerPoolReady, postLoadContentReady, suggestionRetry, transferBudget.paidPointCost, transferSuggestionForecastSource, transferSuggestionHorizon, transferSuggestionsReady]);
 
   useEffect(() => {
     const handle = window.setTimeout(() => {
@@ -1500,11 +1521,15 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
     updateCaptainState(captainId, viceCaptainId === playerId ? null : playerId);
   }
 
-  function applySuggestion(suggestion: TransferPlanSuggestion) {
+  function applySuggestion(suggestion: TransferPlanSuggestion, now: number) {
     if (!transferSuggestionsReady) return;
+    if (suggestion.globalStrategy && !isGlobalRecommendationCurrent(suggestion.globalStrategy, globalStrategy, now)) {
+      setMessage(localizedText(language, "Strategy inputs changed. Recalculate suggestions.", "Данные стратегии изменились. Пересчитайте подсказки."));
+      return;
+    }
     const replacements = new Map(suggestion.moves.map((move) => [move.outPlayerId, players.find((player) => player.playerId === move.inPlayerId)]));
     if ([...replacements.values()].some((player) => !player)) return;
-    const nextSelections = selections.map((selection) => {
+    const nextSelections = suggestion.selections ?? selections.map((selection) => {
       const incoming = replacements.get(selection.playerId);
       return incoming
         ? {
@@ -1540,22 +1565,34 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
     }
 
     void recordBetaMilestone("TRANSFER_TIPS_VIEWED");
+    setGlobalAnalysis(suggestion.globalStrategy ?? null);
+    if (suggestion.globalStrategy) void recordGlobalRecommendation(activeSquadId, suggestion.globalStrategy);
     setSelections(nextSelections);
     setMessage(null);
   }
 
-  function autoPickStarters() {
+  async function autoPickStarters() {
     if (!plannerForecastReady) {
       setMessage(localizedText(language, "Auto-pick is unavailable until this league season has fresh forecast data.", "Автоподбор недоступен, пока для сезона лиги нет свежих прогнозных данных."));
       return;
     }
-    const optimized = optimizeFantasyStarters({
+    const revision = autoPickRevisionRef.current;
+    const controller = new AbortController();
+    autoPickAbortRef.current = controller;
+    const globalResult = autoPickStrategy === "GLOBAL_AUTO" ? await optimizeFantasySquadOffThread({ pool: players, selections, rules, horizon, strategy: autoPickStrategy, globalStrategy }, true, controller.signal).catch(() => null) : null;
+    if (revision !== autoPickRevisionRef.current) return;
+    if (globalResult?.analysis && !isGlobalRecommendationCurrent(globalResult.analysis, globalStrategy, Date.now())) {
+      setMessage(localizedText(language, "Strategy inputs expired. Refresh and try again.", "Данные стратегии устарели. Обновите их и повторите подбор.")); return;
+    }
+    if (autoPickStrategy === "GLOBAL_AUTO" && !globalResult) { setMessage(localizedText(language, "Selection did not finish. Try again.", "Подбор не завершился. Повторите запрос.")); return; }
+    const optimized = globalResult ? globalResult.selections : optimizeFantasyStarters({
       pool: players,
       selections,
       rules,
       horizon,
       basis: "horizon",
       strategy: autoPickStrategy,
+      globalStrategy,
       respectLocks: true
     });
     if (!optimized) {
@@ -1570,6 +1607,8 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
     }
 
     const optimizedSummary = summarizeFantasySquad(players, optimized, rules, horizon);
+    setGlobalAnalysis(globalResult?.analysis ?? null);
+    if (globalResult?.analysis) void recordGlobalRecommendation(activeSquadId, globalResult.analysis);
     const delta = optimizedSummary.projectedHorizon - summary.projectedHorizon;
     setSelections(sanitizeCaptainRoles(optimized));
     setMessage(
@@ -1590,19 +1629,29 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
   async function autoPickSquad() {
     if (autoPickPending || !plannerForecastReady) return;
     const revision = autoPickRevisionRef.current;
+    const controller = new AbortController();
+    autoPickAbortRef.current = controller;
     const optimizerInput: FantasySquadOptimizationInput = {
       pool: players,
       selections,
       rules,
       horizon,
       basis: "horizon",
-      strategy: autoPickStrategy
+      strategy: autoPickStrategy,
+      globalStrategy,
+      maximumTransfers: transferLimitIsActive ? availableSuggestionCount : undefined,
+      freeTransfers: availableSuggestionCount,
+      paidTransferPointCost: transferBudget.paidPointCost ?? 0
     };
     setAutoPickPending(true);
     setMessage(localizedText(language, "Optimizing a valid squad…", "Подбираем допустимый состав…"));
 
     try {
-      const optimized = await optimizeFantasySquadOffThread(optimizerInput);
+      const result = await optimizeFantasySquadOffThread(optimizerInput, false, controller.signal);
+      const optimized = result.selections;
+      if (result.analysis && !isGlobalRecommendationCurrent(result.analysis, globalStrategy, Date.now())) {
+        setMessage(localizedText(language, "Strategy inputs expired. Refresh and try again.", "Данные стратегии устарели. Обновите их и повторите подбор.")); return;
+      }
       if (revision !== autoPickRevisionRef.current) {
         setMessage(localizedText(language, "Squad settings changed during auto-pick. Run it again.", "Настройки состава изменились во время автоподбора. Запустите его ещё раз."));
         return;
@@ -1625,6 +1674,8 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
       }
 
       const optimizedSummary = summarizeFantasySquad(players, optimized, rules, horizon);
+      setGlobalAnalysis(result.analysis);
+      if (result.analysis) void recordGlobalRecommendation(activeSquadId, result.analysis);
       const delta = optimizedSummary.projectedHorizon - summary.projectedHorizon;
       setSelections(optimized);
       if (optimizedSummary.violations.length === 0) {
@@ -1667,6 +1718,7 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
             historyWindow: appliedHistorySettings.window,
             historySeasons: appliedHistorySettings.selectedSeasons,
             provider,
+            strategy: autoPickStrategy,
             selections: roundPlansToSave[0].selections,
             roundPlans: roundPlansToSave,
             roundPlanRoundIds: rounds.map((round) => round.id)
@@ -2058,7 +2110,7 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
                 <button
                   key={suggestion.id}
                   type="button"
-                  onClick={() => applySuggestion(suggestion)}
+                  onClick={() => applySuggestion(suggestion, Date.now())}
                   className="block w-full rounded border border-slate-200 bg-white p-1.5 text-left shadow-sm transition hover:border-sky-200 hover:bg-sky-50/30"
                 >
                   <div className="flex items-start justify-between gap-2">
@@ -2249,6 +2301,7 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
                 )}
               />
             </div>
+            <GlobalStrategyPanel squadId={activeSquadId} provider={provider} mode={autoPickStrategy} onMode={setAutoPickStrategy} onContext={setGlobalStrategy} analysis={globalAnalysis} poolEvaluation={globalPoolEvaluation} />
             <div className="mb-3">
               <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
                 <h3 className="truncate text-xs font-semibold uppercase tracking-wide text-slate-500 sm:text-sm"><I18nText en="Your squad" ru="Ваш состав" /></h3>
@@ -2359,7 +2412,6 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
                 replacementSourcePlayerId={replacementSourcePlayerId}
                 onRemove={removePlayer}
                 onToggleCaptain={toggleCaptain}
-                onToggleVice={toggleViceCaptain}
                 onDragStart={setDraggedPlayerId}
                 onDragEnd={() => setDraggedPlayerId(null)}
                 onDropToStarter={handleDropToStarter}
@@ -3317,6 +3369,7 @@ function playerPoolOptionalColumns(players: FantasyPlannerPlayer[], horizon: num
     column("age", "Age", "Возраст", "Player age from the current FotMob profile.", "Возраст игрока из текущего профиля FotMob."),
     column("nationality", "Nationality", "Гражданство", "Player nationality from FotMob metadata.", "Гражданство игрока из метаданных FotMob.", false, 120),
     column("rosterStarter", "XI flag", "Старт", "The club's current starting-XI flag edited on the team page. This is a shared roster marker, not the model's start probability.", "Текущая отметка стартовых 11 клуба, установленная на странице команды. Это общий признак состава, а не вероятность старта модели.", false),
+    column("rotationRisk", "RR %", "RR %", "Rotation risk from 50/20/10/5 known lineups and rest. Baseline, not a calibrated probability.", "Риск ротации по 50/20/10/5 известным составам и отдыху. Baseline, не откалиброванная вероятность."),
     column("expectedMinutes", "Exp min", "Ож. мин", "Expected playing time in the next match, from 0 to 90 minutes. It scales all per-90 event rates; 80 or more minutes count as a full fantasy match.", "Ожидаемое игровое время в следующем матче от 0 до 90 минут. Им масштабируются все показатели per 90; 80 минут и больше считаются полным фэнтези-матчем."),
     column("startProbability", "Appearance %", "Выход %", "Model probability that the player appears on the pitch in the next fixture. This stored forecast field is not a starting-XI probability.", "Вероятность модели, что игрок появится на поле в следующем матче. Это сохранённое поле прогноза не является вероятностью выхода в стартовом составе."),
     column("sixtyProbability", "60 min %", "60 мин %", "Estimated probability of reaching 60 minutes. It controls the fantasy threshold for the higher appearance score and is not assumed to be 100% for every attacker.", "Оценка вероятности провести не менее 60 минут. Она управляет порогом повышенных очков за участие и не считается автоматически равной 100% для всех атакующих игроков."),
@@ -3436,6 +3489,7 @@ function customPlayerPoolCell(
 }
 
 function playerPoolValueCellTitle(column: PlayerPoolOptionalColumn, player: FantasyPlannerPlayer, horizon: number, language: UiLanguage, rawValue: string | number | null) {
+  if (column.key === "rotationRisk") return rotationRiskDescription(player.rotationRisk, language);
   const numericValue = typeof rawValue === "number" && Number.isFinite(rawValue) ? rawValue : null;
   if (column.key === "nextFp") return playerPrimaryNextForecastTitle(player, language, numericValue);
   if (column.key === "nextFpPerPrice") return forecastEfficiencyTitle(player, language, "FP", nextFantasyPoints(player), numericValue);
@@ -3698,6 +3752,7 @@ function customPlayerPoolColumnValue(key: string, player: FantasyPlannerPlayer, 
     case "nationality": return player.nationality ?? null;
     case "rosterStarter": return player.isStarter ? 1 : 0;
     case "expectedMinutes": return player.expectedMinutes ?? null;
+    case "rotationRisk": return currentRotationRisk(player.rotationRisk);
     case "startProbability": return player.startProbability ?? null;
     case "sixtyProbability": return projected?.sixtyMinutesProbability ?? null;
     case "fullMatchProbability": return projected?.fullMatchProbability ?? null;
@@ -3724,7 +3779,7 @@ function customPlayerPoolColumnDisplay(key: string, value: string | number | nul
   if (typeof value === "string") return value;
   if (key.endsWith("PerPrice")) return formatNumber(value, 3);
   if (key === "rosterStarter") return value ? localizedText(language, "Yes", "Да") : localizedText(language, "No", "Нет");
-  if (["startProbability", "sixtyProbability", "fullMatchProbability", "forecastConfidence"].includes(key) || /(?:appearance|sixty|full_match)_(?:probability|rate)/.test(key)) {
+  if (["rotationRisk", "startProbability", "sixtyProbability", "fullMatchProbability", "forecastConfidence"].includes(key) || /(?:appearance|sixty|full_match)_(?:probability|rate)/.test(key)) {
     return `${formatNumber(value * 100, 0)}%`;
   }
   if (key === "age" || key === "expectedMinutes" || key === "baltikaMatches" || /^stat:(?:matches|minutes|appearances|full_matches|goals|assists|shots|saves|cards)/.test(key)) return formatNumber(value, 0);
@@ -4407,7 +4462,6 @@ function SquadPitch({
   replacementSourcePlayerId,
   onRemove,
   onToggleCaptain,
-  onToggleVice,
   onDragStart,
   onDragEnd,
   onDropToStarter,
@@ -4427,7 +4481,6 @@ function SquadPitch({
   replacementSourcePlayerId: string | null;
   onRemove: (playerId: string) => void;
   onToggleCaptain: (playerId: string) => void;
-  onToggleVice: (playerId: string) => void;
   onDragStart: (playerId: string) => void;
   onDragEnd: () => void;
   onDropToStarter: (playerId: string) => void;
@@ -4475,7 +4528,6 @@ function SquadPitch({
               replacementSourcePosition={replacementSourcePosition}
               onRemove={onRemove}
               onToggleCaptain={onToggleCaptain}
-              onToggleVice={onToggleVice}
               onDragStart={onDragStart}
               onDragEnd={onDragEnd}
               onDropOnPlayer={onDropOnPlayer}
@@ -4499,7 +4551,6 @@ function SquadPitch({
                 replacementSourcePosition={replacementSourcePosition}
                 onRemove={onRemove}
                 onToggleCaptain={onToggleCaptain}
-                onToggleVice={onToggleVice}
                 onDragStart={onDragStart}
                 onDragEnd={onDragEnd}
                 onDropOnPlayer={onDropOnPlayer}
@@ -4565,7 +4616,6 @@ function SquadPitch({
               compact
               onRemove={onRemove}
               onToggleCaptain={onToggleCaptain}
-              onToggleVice={onToggleVice}
               onDragStart={onDragStart}
               onDragEnd={onDragEnd}
               onDropOnPlayer={onDropOnPlayer}
@@ -4598,7 +4648,6 @@ function SquadLine({
   replacementSourcePosition,
   onRemove,
   onToggleCaptain,
-  onToggleVice,
   onDragStart,
   onDragEnd,
   onDropOnPlayer,
@@ -4619,7 +4668,6 @@ function SquadLine({
   replacementSourcePosition: FantasyPositionGroup | undefined;
   onRemove: (playerId: string) => void;
   onToggleCaptain: (playerId: string) => void;
-  onToggleVice: (playerId: string) => void;
   onDragStart: (playerId: string) => void;
   onDragEnd: () => void;
   onDropOnPlayer: (sourcePlayerId: string, targetPlayerId: string) => void;
@@ -4656,7 +4704,6 @@ function SquadLine({
             replacementSourcePosition={replacementSourcePosition}
             onRemove={onRemove}
             onToggleCaptain={onToggleCaptain}
-            onToggleVice={onToggleVice}
             onDragStart={onDragStart}
             onDragEnd={onDragEnd}
             onDropOnPlayer={onDropOnPlayer}
@@ -4673,6 +4720,7 @@ function SquadLine({
   );
 }
 
+/** @spec spec://modules/machete/FEAT-003-squad-player-card#root */
 function SquadPlayerTile({
   player,
   selection,
@@ -4688,7 +4736,6 @@ function SquadPlayerTile({
   replacementSourcePosition,
   onRemove,
   onToggleCaptain,
-  onToggleVice,
   onDragStart,
   onDragEnd,
   onDropOnPlayer,
@@ -4708,27 +4755,16 @@ function SquadPlayerTile({
   replacementSourcePosition?: FantasyPositionGroup;
   onRemove: (playerId: string) => void;
   onToggleCaptain: (playerId: string) => void;
-  onToggleVice: (playerId: string) => void;
   onDragStart: (playerId: string) => void;
   onDragEnd: () => void;
   onDropOnPlayer: (sourcePlayerId: string, targetPlayerId: string) => void;
   onReplacementPlayerClick: (playerId: string) => void;
 }) {
-  const [mobileActionsOpen, setMobileActionsOpen] = useState(false);
-  const mobileActionsTriggerRef = useRef<HTMLButtonElement>(null);
-  const mobileActionsCloseRef = useRef<HTMLButtonElement>(null);
-  const mobileActionsDialogRef = useRef<HTMLDivElement>(null);
   const fixtureChips = fixtureChipPresentations(player.fixtures, player.fixtureDifficulties ?? [], Math.max(horizon, 3), player.fixtureFullNames);
   const captainActionLabel = isCaptain
     ? localizedText(language, "Remove captain", "Снять капитана")
     : localizedText(language, "Make captain x2", "Сделать капитаном x2");
-  const viceActionLabel = isVice
-    ? localizedText(language, "Remove vice-captain", "Снять вице-капитана")
-    : localizedText(language, "Make vice-captain", "Сделать вице-капитаном");
   const removeActionLabel = localizedText(language, `Remove ${player.name}`, `Удалить ${player.name}`);
-  const closeActionsLabel = localizedText(language, "Close player actions", "Закрыть действия игрока");
-  const mobileActionsLabel = localizedText(language, `Actions for ${player.name}`, `Действия: ${player.name}`);
-  const mobileActionsTitleId = `mobile-player-actions-${player.playerId}`;
   const isReplacementSource = replacementSourcePlayerId === player.playerId;
   const replacementTargetAllowed = !replacementSourcePlayerId
     || isReplacementSource
@@ -4771,48 +4807,7 @@ function SquadPlayerTile({
     foontasyForecastTitle(player, language, 1),
     isCaptain ? localizedText(language, "Captain multiplier x2 is applied on this card.", "На карточке применён капитанский коэффициент x2.") : null
   ].filter((line): line is string => Boolean(line)).join("\n");
-  const runMobileAction = (action: () => void) => {
-    setMobileActionsOpen(false);
-    action();
-  };
-
-  useEffect(() => {
-    if (!mobileActionsOpen) return;
-    const trigger = mobileActionsTriggerRef.current;
-    const previousBodyOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    const focusFrame = window.requestAnimationFrame(() => mobileActionsCloseRef.current?.focus());
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        setMobileActionsOpen(false);
-        return;
-      }
-      if (event.key !== "Tab") return;
-      const focusable = [...(mobileActionsDialogRef.current?.querySelectorAll<HTMLButtonElement>("button:not([disabled])") ?? [])]
-        .filter((element) => element.tabIndex >= 0);
-      const first = focusable[0];
-      const last = focusable.at(-1);
-      if (!first || !last) return;
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-    document.addEventListener("keydown", handleKeyDown);
-    return () => {
-      window.cancelAnimationFrame(focusFrame);
-      document.removeEventListener("keydown", handleKeyDown);
-      document.body.style.overflow = previousBodyOverflow;
-      trigger?.focus();
-    };
-  }, [mobileActionsOpen]);
-
   return (
-    <>
     <div
       draggable={Boolean(selection) && !replacementMode}
       onDragStart={(event) => {
@@ -4832,9 +4827,10 @@ function SquadPlayerTile({
       aria-label={localizedText(language, `Squad player ${player.name}`, `Игрок состава: ${player.name}`)}
       className={cn(
         compact ? "w-[3.6rem] sm:w-[3.8rem] 2xl:w-16 3xl:w-[4.5rem]" : "w-[3.6rem] sm:w-[3.8rem] 2xl:w-[4.25rem] 3xl:w-20",
-        "relative rounded border bg-white px-1 py-0.5 text-center shadow-sm transition [@media(pointer:fine)]:pb-5",
+        "squad-contact-card",
         replacementMode ? "cursor-pointer" : "cursor-grab active:cursor-grabbing",
-        isCaptain ? "border-amber-400 ring-2 ring-amber-200" : player.isProviderPlaceholder ? "border-amber-300 bg-amber-50/70" : "border-white/70",
+        isCaptain && "squad-contact-card--captain",
+        player.isProviderPlaceholder && "squad-contact-card--placeholder",
         isDragging && "opacity-55 ring-2 ring-sky-300"
       )}
     >
@@ -4845,7 +4841,7 @@ function SquadPlayerTile({
           aria-label={replacementActionLabel}
           title={replacementActionLabel}
           className={cn(
-            "absolute inset-0 z-30 rounded border-2 transition",
+            "absolute inset-0 z-30 rounded-[inherit] border-2 transition",
             isReplacementSource
               ? "border-amber-400 bg-amber-100/20 ring-2 ring-amber-200"
               : replacementTargetAllowed
@@ -4856,150 +4852,77 @@ function SquadPlayerTile({
           <span className="sr-only">{replacementActionLabel}</span>
         </button>
       ) : null}
-      <span
-        className="absolute left-0.5 top-0.5 max-w-[1.45rem] truncate text-[7px] font-bold text-slate-500"
-        title={player.teamName}
-      >
-        {fantasyPlayerTeamDisplayName(player)}
-      </span>
-      <button
-        type="button"
-        onClick={() => onRemove(player.playerId)}
-        className="absolute right-0.5 top-0.5 z-10 inline-flex h-3.5 w-3.5 items-center justify-center rounded-full bg-white/90 text-rose-700 shadow-sm hover:bg-rose-50 [@media(pointer:coarse)]:h-6 [@media(pointer:coarse)]:w-6"
-        aria-label={removeActionLabel}
-      >
-        <X className="h-2.5 w-2.5" />
-        <span className="sr-only">{removeActionLabel}</span>
-      </button>
-      <div className="flex translate-x-1 items-center justify-center gap-1">
-        <span className={`rounded px-0.5 py-px text-[7px] font-bold ${positionPillClass(player.positionGroup)}`}>{player.positionGroup}</span>
-      </div>
-      <div className="relative mx-auto grid w-full grid-cols-[1fr_1.75rem_1fr] items-center">
+      <div className="squad-contact-card__portrait">
+        <SquadPlayerPhoto player={player} contactSheet />
+        <span className="squad-contact-card__club" title={player.teamName}>
+          {fantasyPlayerTeamDisplayName(player)}
+        </span>
+        <span className="squad-contact-card__position">{player.positionGroup}</span>
         {isCaptain || isVice ? (
-          <span
-            className={cn(
-              "z-10 mr-0.5 justify-self-end rounded px-0.5 py-px text-[7px] font-black text-white shadow-sm",
-              isCaptain ? "bg-amber-700" : "bg-slate-700"
-            )}
-            title={isCaptain ? captainActionLabel : viceActionLabel}
-            aria-label={isCaptain ? localizedText(language, "Captain", "Капитан") : localizedText(language, "Vice-captain", "Вице-капитан")}
-          >
+          <span className="squad-contact-card__role"
+            title={isCaptain ? localizedText(language, "Captain", "Капитан") : localizedText(language, "Vice-captain", "Вице-капитан")}
+            aria-label={isCaptain ? localizedText(language, "Captain", "Капитан") : localizedText(language, "Vice-captain", "Вице-капитан")}>
             {isCaptain ? "C" : "VC"}
           </span>
-        ) : <span aria-hidden="true" />}
-        <SquadPlayerPhoto player={player} />
-        <span
-          className="ml-0.5 justify-self-start whitespace-nowrap text-[7px] font-black text-ink num-tabular"
-          title={localizedText(language, `Fantasy price: ${formatNumber(player.price, 1)}`, `Фэнтези-цена: ${formatNumber(player.price, 1)}`)}
-          aria-label={localizedText(language, `Fantasy price ${formatNumber(player.price, 1)}`, `Фэнтези-цена ${formatNumber(player.price, 1)}`)}
-        >
+        ) : null}
+        <span className="squad-contact-card__price num-tabular"
+          title={localizedText(language, "Fantasy price: " + formatNumber(player.price, 1), "Фэнтези-цена: " + formatNumber(player.price, 1))}
+          aria-label={localizedText(language, "Fantasy price " + formatNumber(player.price, 1), "Фэнтези-цена " + formatNumber(player.price, 1))}>
           {player.priceSource === "ESTIMATED" ? "~" : ""}{formatNumber(player.price, 1)}
         </span>
+        <p className="squad-contact-card__name" title={player.name} aria-label={player.name}>{compactPlayerDisplayName(player.name)}</p>
       </div>
-      <p className="mt-0.5 truncate text-[9px] font-bold text-ink" title={player.name} aria-label={player.name}>{compactPlayerDisplayName(player.name)}</p>
       {player.isProviderPlaceholder ? (
-        <p className="mt-1 rounded bg-amber-100 px-1 py-0.5 text-[7px] font-bold uppercase leading-tight text-amber-900">
+        <p className="squad-contact-card__missing">
           <I18nText en="not in database" ru="нет в базе" />
         </p>
-      ) : <dl className="mt-0.5 text-[7px] leading-tight num-tabular">
+      ) : <dl className="squad-contact-card__metrics num-tabular">
         <div className="grid grid-cols-3 gap-x-px">
           <div className="min-w-0">
-            <dt className="whitespace-nowrap text-[6px] font-semibold uppercase text-slate-500"><I18nText en="FP1" ru="ФО1" /></dt>
-            <dd className="cursor-help whitespace-nowrap text-[8px] font-bold text-emerald-700" title={cardPrimaryNextTitle}>{formatCompactScore(cardPrimaryNextForecast * (isCaptain ? 2 : 1))}</dd>
+            <dt className="squad-contact-card__metric-label"><I18nText en="FP1" ru="ФО1" /></dt>
+            <dd className="squad-contact-card__metric-value" title={cardPrimaryNextTitle}>{formatCompactScore(cardPrimaryNextForecast * (isCaptain ? 2 : 1))}</dd>
           </div>
           <div className="min-w-0">
-            <dt className="whitespace-nowrap text-[6px] font-semibold uppercase text-slate-500"><I18nText en="FP3" ru="ФО3" /></dt>
-            <dd className="cursor-help whitespace-nowrap text-[8px] font-bold text-sky-700" title={cardPrimaryHorizonTitle}>{formatCompactScore(cardPrimaryHorizonForecast * (isCaptain ? 2 : 1))}</dd>
+            <dt className="squad-contact-card__metric-label"><I18nText en="FP3" ru="ФО3" /></dt>
+            <dd className="squad-contact-card__metric-value" title={cardPrimaryHorizonTitle}>{formatCompactScore(cardPrimaryHorizonForecast * (isCaptain ? 2 : 1))}</dd>
           </div>
           <div className="min-w-0" title={cardFoontasyTitle}>
-            <dt className="whitespace-nowrap text-[6px] font-semibold uppercase text-slate-500">FFO</dt>
-            <dd className="cursor-help whitespace-nowrap text-[8px] font-bold text-cyan-700" title={cardFoontasyTitle}>{formatCompactScore(cardFoontasyForecast)}</dd>
+            <dt className="squad-contact-card__metric-label">FFO</dt>
+            <dd className="squad-contact-card__metric-value" title={cardFoontasyTitle}>{formatCompactScore(cardFoontasyForecast)}</dd>
           </div>
         </div>
         <div className="mt-px grid grid-cols-2 gap-x-px px-1">
           <div className="min-w-0">
-            <dt className="whitespace-nowrap text-[6px] font-semibold uppercase text-slate-500">ALT1</dt>
-            <dd className="cursor-help whitespace-nowrap text-[8px] font-bold text-amber-700" title={cardAlternativeNextTitle}>{formatCompactScore(scaleCaptainForecast(cardAlternativeNextForecast, isCaptain), "0")}</dd>
+            <dt className="squad-contact-card__metric-label">ALT1</dt>
+            <dd className="squad-contact-card__metric-value" title={cardAlternativeNextTitle}>{formatCompactScore(scaleCaptainForecast(cardAlternativeNextForecast, isCaptain), "0")}</dd>
           </div>
           <div className="min-w-0">
-            <dt className="whitespace-nowrap text-[6px] font-semibold uppercase text-slate-500">ALT3</dt>
-            <dd className="cursor-help whitespace-nowrap text-[8px] font-bold text-violet-700" title={cardAlternativeHorizonTitle}>{formatCompactScore(scaleCaptainForecast(cardAlternativeHorizonForecast, isCaptain), "0")}</dd>
+            <dt className="squad-contact-card__metric-label">ALT3</dt>
+            <dd className="squad-contact-card__metric-value" title={cardAlternativeHorizonTitle}>{formatCompactScore(scaleCaptainForecast(cardAlternativeHorizonForecast, isCaptain), "0")}</dd>
           </div>
         </div>
       </dl>}
       {fixtureChips.length > 0 ? (
-        <div className="mt-0.5 flex min-w-0 items-center justify-center overflow-hidden">
+        <div className="squad-contact-card__fixtures">
           <FdrRow
             fixtures={fixtureChips.slice(0, 3)}
-            className="min-w-0 flex-nowrap gap-px overflow-hidden [&_.fdr-pill]:min-w-0 [&_.fdr-pill]:max-w-[1.1rem] [&_.fdr-pill]:px-px [&_.fdr-pill]:text-[8px]"
+            className="squad-contact-card__fixture-row"
           />
         </div>
       ) : null}
-      <button
-        ref={mobileActionsTriggerRef}
-        type="button"
-        onClick={() => setMobileActionsOpen(true)}
-        className="mt-1 hidden min-h-11 w-full items-center justify-center rounded border border-slate-200 text-slate-700 hover:bg-slate-50 [@media(pointer:coarse)]:inline-flex"
-        aria-label={mobileActionsLabel}
-      >
-        <MoreHorizontal className="h-5 w-5" />
-        <span className="sr-only"><I18nText en="Actions" ru="Действия" /></span>
-      </button>
-      <button
-        type="button"
-        onClick={() => onToggleCaptain(player.playerId)}
-        className={cn(
-          "absolute bottom-0.5 left-0.5 hidden h-4 w-4 items-center justify-center rounded border border-slate-200 text-[7px] font-black hover:bg-amber-50 [@media(pointer:fine)]:inline-flex",
-          isCaptain ? "bg-amber-100 text-amber-700" : "bg-white text-slate-500"
-        )}
-        aria-label={captainActionLabel}
-      >
-        C
-        <span className="sr-only">{captainActionLabel}</span>
-      </button>
-      <button
-        type="button"
-        onClick={() => onToggleVice(player.playerId)}
-        className={cn(
-          "absolute bottom-0.5 right-0.5 hidden h-4 w-4 items-center justify-center rounded border border-slate-200 text-[7px] font-black hover:bg-slate-50 [@media(pointer:fine)]:inline-flex",
-          isVice ? "bg-slate-200 text-slate-950" : "bg-white text-slate-500"
-        )}
-        aria-label={viceActionLabel}
-      >
-        VC
-        <span className="sr-only">{viceActionLabel}</span>
-      </button>
+      <div className="squad-contact-card__actions">
+        <button type="button" onClick={() => onToggleCaptain(player.playerId)}
+          disabled={replacementMode} aria-pressed={isCaptain}
+          className="squad-contact-card__captain" aria-label={captainActionLabel} title={captainActionLabel}>
+          C
+        </button>
+        <button type="button" onClick={() => onRemove(player.playerId)}
+          disabled={replacementMode} className="squad-contact-card__remove"
+          aria-label={removeActionLabel} title={removeActionLabel}>
+          <X aria-hidden="true" className="h-2.5 w-2.5" />
+        </button>
+      </div>
     </div>
-    {mobileActionsOpen && typeof document !== "undefined"
-      ? createPortal(
-          <div ref={mobileActionsDialogRef} className="fixed inset-0 z-[80]" role="dialog" aria-modal="true" aria-labelledby={mobileActionsTitleId}>
-            <button type="button" tabIndex={-1} onClick={() => setMobileActionsOpen(false)} className="absolute inset-0 bg-slate-950/55" aria-label={closeActionsLabel} />
-            <section className="absolute inset-x-0 bottom-0 max-h-[calc(100vh-1rem)] overflow-y-auto overscroll-contain rounded-t-2xl bg-white px-4 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 text-left shadow-2xl [@supports(height:100dvh)]:max-h-[calc(100dvh-1rem)]">
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500"><I18nText en="Player actions" ru="Действия игрока" /></p>
-                  <h5 id={mobileActionsTitleId} className="truncate text-base font-bold text-ink" title={player.name}>{compactPlayerDisplayName(player.name)}</h5>
-                </div>
-                <button ref={mobileActionsCloseRef} type="button" onClick={() => setMobileActionsOpen(false)} className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded border border-slate-200" aria-label={closeActionsLabel}>
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-              <div className="grid gap-2">
-                <button type="button" onClick={() => runMobileAction(() => onToggleCaptain(player.playerId))} className="flex min-h-11 items-center gap-3 rounded border border-slate-200 px-4 py-2 font-semibold text-slate-800">
-                  <Crown className={cn("h-5 w-5", isCaptain && "fill-current text-amber-600")} />
-                  {captainActionLabel}
-                </button>
-                <button type="button" onClick={() => runMobileAction(() => onToggleVice(player.playerId))} className="flex min-h-11 items-center gap-3 rounded border border-slate-200 px-4 py-2 font-semibold text-slate-800">
-                  <span className="inline-flex h-5 w-5 items-center justify-center text-xs font-black">VC</span>
-                  {viceActionLabel}
-                </button>
-              </div>
-            </section>
-          </div>,
-          document.body
-        )
-      : null}
-    </>
   );
 }
 
@@ -5160,11 +5083,12 @@ function TransferSuggestionCaptain({ player, source }: { player: FantasyPlannerP
   );
 }
 
-function SquadPlayerPhoto({ player, large = false }: { player: FantasyPlannerPlayer; large?: boolean }) {
+/** @spec spec://modules/machete/FEAT-003-squad-player-card#errors */
+function SquadPlayerPhoto({ player, large = false, contactSheet = false }: { player: FantasyPlannerPlayer; large?: boolean; contactSheet?: boolean }) {
   const [failed, setFailed] = useState(false);
   if (!player.photoUrl || failed) {
     return (
-      <div aria-hidden="true" className={cn("flex shrink-0 items-center justify-center rounded-full bg-slate-200 font-black text-slate-500 ring-1 ring-white", large ? "h-12 w-12 text-sm" : "mx-auto mt-0.5 h-7 w-7 text-[9px]")}>
+      <div aria-hidden="true" className={contactSheet ? "squad-contact-card__photo squad-contact-card__photo--fallback" : cn("flex shrink-0 items-center justify-center rounded-full bg-slate-200 font-black text-slate-500 ring-1 ring-white", large ? "h-12 w-12 text-sm" : "mx-auto mt-0.5 h-7 w-7 text-[9px]")}>
         {player.name.trim().slice(0, 1).toUpperCase()}
       </div>
     );
@@ -5176,8 +5100,9 @@ function SquadPlayerPhoto({ player, large = false }: { player: FantasyPlannerPla
       alt=""
       loading="lazy"
       decoding="async"
+      draggable={false}
       onError={() => setFailed(true)}
-      className={cn("shrink-0 rounded-full bg-slate-100 object-cover object-top ring-1 ring-white", large ? "h-12 w-12" : "mx-auto mt-0.5 h-7 w-7")}
+      className={contactSheet ? "squad-contact-card__photo" : cn("shrink-0 rounded-full bg-slate-100 object-cover object-top ring-1 ring-white", large ? "h-12 w-12" : "mx-auto mt-0.5 h-7 w-7")}
     />
   );
 }
@@ -6181,14 +6106,30 @@ function sanitizeCaptainRoles(selections: FantasySquadSelection[]) {
   });
 }
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#contracts */
+function globalForecastRevision(players: FantasyPlannerPlayer[]) {
+  const value = JSON.stringify(players.map((player) => [player.playerId, player.price, player.priceSource, player.roundPoints, player.predictedFp, player.alternativeRoundPoints, player.alternativePredictedFp, player.foontasyPoints]));
+  let hash = 2166136261;
+  for (let i = 0; i < value.length; i++) hash = Math.imul(hash ^ value.charCodeAt(i), 16777619);
+  return `forecast-v1:${value.length}:${hash >>> 0}`;
+}
+async function recordGlobalRecommendation(squadId: string | null, analysis: GlobalStrategyAnalysis) {
+  if (!squadId || !["READY", "NEUTRAL"].includes(analysis.evaluation.status)) return;
+  try {
+    const response = await fetch("/api/machete/squads/global-strategy", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ squadId, analysis }) });
+    if (!response.ok) console.warn("Global strategy recommendation snapshot was not recorded.", response.status);
+  } catch { console.warn("Global strategy recommendation snapshot request failed."); }
+}
+
 function squadStrategyCopy(language: UiLanguage, strategy: FantasySquadStrategy) {
+  if (strategy === "GLOBAL_AUTO") return { label: localizedText(language, "Global ranking", "По глобальному рейтингу"), description: "" };
   if (strategy === "reliable") {
     return {
       label: localizedText(language, "Reliable", "Надёжность"),
       description: localizedText(
         language,
-        "Consensus of three forecasts weighted by minutes, starts and confidence; caps rotation risks and estimated prices.",
-        "Консенсус трёх прогнозов с весами по минутам, стартам и уверенности; режет ротационные риски и оценочные цены."
+        "Uses next-match RR from lineup history and rest, with confidence and price-source adjustments. Falls back to minutes and appearances when RR is unknown.",
+        "Учитывает RR ближайшего матча по истории составов и отдыху, уверенность и источник цены. При неизвестном RR использует прежнюю оценку по минутам и выходам."
       )
     };
   }

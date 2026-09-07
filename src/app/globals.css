@@ -2,6 +2,111 @@
 @tailwind components;
 @tailwind utilities;
 
+/* @spec spec://modules/machete/FEAT-003-squad-player-card#contracts */
+.squad-contact-card {
+  /* Match the previous tile's footprint, including its inline badge baseline. */
+  --card-body-height: calc(3.625rem + 64.1875px);
+  --card-action-height: 17px;
+  position: relative;
+  height: calc(var(--card-body-height) + var(--card-action-height) + 2px);
+  flex-shrink: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xs);
+  background: var(--surface-1);
+  color: var(--text-primary);
+  text-align: center;
+  box-shadow: var(--shadow-sm);
+  transition: border-color var(--duration-fast), box-shadow var(--duration-fast), opacity var(--duration-fast);
+}
+.squad-contact-card--captain {
+  border-color: var(--warning);
+  box-shadow: 0 0 0 2px var(--warning-soft), var(--shadow-sm);
+}
+.squad-contact-card--placeholder { border-color: var(--warning); }
+.squad-contact-card__portrait {
+  position: relative;
+  height: calc(var(--card-body-height) * .56);
+  overflow: hidden;
+  border-radius: calc(var(--radius-xs) - 1px) calc(var(--radius-xs) - 1px) 0 0;
+  background: var(--surface-3);
+}
+.squad-contact-card__photo {
+  position: absolute;
+  inset: 7px 0 0;
+  width: 100%;
+  height: calc(100% - 7px);
+  object-fit: contain;
+  object-position: center top;
+  filter: grayscale(1);
+}
+.squad-contact-card__photo--fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  font-size: 28px;
+  font-weight: 800;
+}
+.squad-contact-card__club, .squad-contact-card__position {
+  position: absolute;
+  top: 3px;
+  max-width: 56%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-radius: 2px;
+  padding: 1px 2px;
+  background: var(--surface-1);
+  color: var(--text-secondary);
+  font-size: 6px;
+  font-weight: 700;
+  line-height: 8px;
+}
+.squad-contact-card__club { left: 3px; }
+.squad-contact-card__position { right: 3px; max-width: 33%; }
+.squad-contact-card__role, .squad-contact-card__price {
+  position: absolute;
+  bottom: 19px;
+  border-radius: 2px;
+  padding: 0 2px;
+  font-size: 8px;
+  font-weight: 800;
+  line-height: 12px;
+}
+.squad-contact-card__role { left: 3px; color: var(--warning); background: var(--warning-soft); }
+.squad-contact-card__price { right: 3px; color: var(--text-primary); background: var(--surface-1); }
+.squad-contact-card__name {
+  position: absolute;
+  inset: auto 0 0;
+  overflow: hidden;
+  padding: 2px 3px;
+  background: var(--accent-primary-strong);
+  color: var(--button-primary-text);
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.squad-contact-card__metrics { padding: 3px 3px 0; }
+.squad-contact-card__metric-label { color: var(--text-muted); font-size: 5px; font-weight: 600; line-height: 7px; }
+.squad-contact-card__metric-value { color: var(--text-primary); font-size: 8px; font-weight: 800; line-height: 10px; white-space: nowrap; cursor: help; }
+.squad-contact-card__missing { padding: 6px 3px; color: var(--warning); font-size: 7px; font-weight: 700; line-height: 10px; }
+.squad-contact-card__fixtures { position: absolute; inset: auto 3px calc(var(--card-action-height) + 3px); overflow: hidden; }
+.squad-contact-card__fixture-row { display: flex; flex-wrap: nowrap; justify-content: center; gap: 1px; }
+.squad-contact-card__fixture-row .fdr-pill { flex: 1 1 0; min-width: 0; max-width: 1.3rem; min-height: 0; height: 10px; padding: 0 1px; font-size: 6px; line-height: 10px; border-radius: 2px; }
+.squad-contact-card__actions { position: absolute; inset: auto 0 0; display: grid; grid-template-columns: 2fr 1fr; height: var(--card-action-height); overflow: hidden; border-top: 1px solid var(--border); border-radius: 0 0 calc(var(--radius-xs) - 1px) calc(var(--radius-xs) - 1px); }
+.squad-contact-card__actions button { display: flex; align-items: center; justify-content: center; padding: 0; font-size: 8px; font-weight: 800; cursor: pointer; transition: background var(--duration-fast); }
+.squad-contact-card__captain { background: var(--accent-primary-soft); color: var(--accent-primary); }
+.squad-contact-card__captain:hover, .squad-contact-card__captain[aria-pressed="true"] { background: var(--accent-primary-strong); color: var(--button-primary-text); }
+.squad-contact-card__remove { border-left: 1px solid var(--border); background: var(--surface-1); color: var(--danger); }
+.squad-contact-card__remove:hover { background: var(--danger-soft); }
+.squad-contact-card__actions button:focus-visible { outline: 2px solid var(--accent-primary-strong); outline-offset: -2px; }
+.squad-contact-card__actions button:disabled { cursor: default; }
+@media (pointer: coarse) {
+  .squad-contact-card { --card-action-height: var(--control-touch); }
+}
+
 :root,
 html[data-theme="light"] {
   color-scheme: light;

@@ -130,6 +130,8 @@ export const POST = withApiHandler(async (request: Request) => {
         defaultFantasySquadNameForUser(auth.user)
       );
   const saved = await saveFantasySquad(prisma, {
+    // @spec spec://modules/machete/FEAT-001-global-ranking-strategy#data
+    providerSquadId: preview.providerSquadId,
     userId: auth.user.id,
     leagueId,
     season,

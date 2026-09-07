@@ -1,0 +1,290 @@
+{
+  "2425_B1.csv": {
+    "bytes": 158659,
+    "sha256": "fcc3ec3a7bdd57ec42df76bb03aa1858ee18be88886a379f42b4c7b2e7f5d0eb"
+  },
+  "2425_D1.csv": {
+    "bytes": 156414,
+    "sha256": "a295c58033cfe6393cbbc28f7db85671839b960c5f1153fd3678e20ad2adb92e"
+  },
+  "2425_E0.csv": {
+    "bytes": 197110,
+    "sha256": "d0c8ce4a96d886cf60cf101f570f4a3893844226f91c7bd769eb568c49edbfa4"
+  },
+  "2425_E1.csv": {
+    "bytes": 286983,
+    "sha256": "f34c340446c916374be66bdc2fb25b87ee7f2662712ca009653d03ac705535f9"
+  },
+  "2425_F1.csv": {
+    "bytes": 154703,
+    "sha256": "fe6ae6a0c30d05f0ac88e0fc4a31452c7203e2b444703dfa941e22f38f20ab63"
+  },
+  "2425_I1.csv": {
+    "bytes": 191722,
+    "sha256": "79d87a5b18771e066ac7419b7876bfd9771a68ca117a9712375d6bc9685abee3"
+  },
+  "2425_N1.csv": {
+    "bytes": 155460,
+    "sha256": "7f97f0a7fd1f9b2cff6ac09588cdc14fd07f19950cb75e821fa58ab41e541d0a"
+  },
+  "2425_P1.csv": {
+    "bytes": 153596,
+    "sha256": "e3cceff81e471c59e72c1f60f81b2e62df21d1a58af167062d4915484da00255"
+  },
+  "2425_SP1.csv": {
+    "bytes": 192863,
+    "sha256": "c086e96d6a53f6e6c0fce4e35db0d1728c773b4362323da0161a34769e315a36"
+  },
+  "2425_T1.csv": {
+    "bytes": 173297,
+    "sha256": "fd91680cc815f356c94fdd733078431ca771707305994ec49c5f1270cf9c9f5c"
+  },
+  "2627_B1.csv": {
+    "bytes": 17638,
+    "sha256": "82552aa987b73ee3f50bc51fc03d7239c37955e7d9dd91a263df5876b779ea35"
+  },
+  "2627_D1.csv": {
+    "bytes": 4900,
+    "sha256": "ce403915d278ae3cfc8fe83fc85bedde200a5f3a6479384796e91317fd616f64"
+  },
+  "2627_E0.csv": {
+    "bytes": 10309,
+    "sha256": "7c7ab2d623aa5d44444f75a313993e3b688c815aa8cb23b929eb3332fde1654b"
+  },
+  "2627_E1.csv": {
+    "bytes": 23874,
+    "sha256": "edae865426cf0c1ec837ad410e38bb60d19f96556331f1a6b64eb03ec2347651"
+  },
+  "2627_F1.csv": {
+    "bytes": 9567,
+    "sha256": "ae3fdcf087e9e6c70e541aa7463fc3a45eec6da4810670e83393f5b0bc30a29f"
+  },
+  "2627_I1.csv": {
+    "bytes": 9950,
+    "sha256": "8209769730f998ed233de7e9b1ce6f25cae6d261ddaf6b429afdf26830020977"
+  },
+  "2627_N1.csv": {
+    "bytes": 16136,
+    "sha256": "66b423edfe8183dd8fdc9b1f715065473468289c85c4f8970ed473624c1ca118"
+  },
+  "2627_P1.csv": {
+    "bytes": 16100,
+    "sha256": "81ca5e63e3e845c7b3ac365cbd3df96a36d9b5596671c0edc4e11e8c0474b04f"
+  },
+  "2627_SP1.csv": {
+    "bytes": 15383,
+    "sha256": "9459bfc396f906e90639e6e9b2c72f6b15e60d8e07512c144719c6a584c05307"
+  },
+  "2627_T1.csv": {
+    "bytes": 13248,
+    "sha256": "e61a6b4a67f8d3716fca20697ffafd830a4ba1752f3b40821140f50105020dce"
+  },
+  "stadiums.csv": {
+    "bytes": 11365,
+    "sha256": "311fccaccfa01d59c0dff86ba2d638b8ba9bb4f296bef47a4244817af9d0b188"
+  },
+  "weather_Arsenal.json": {
+    "bytes": 5631,
+    "sha256": "325889fdb62cd0a59decf019fe712b0ae40fcfa48bba8e171519500412e17340"
+  },
+  "weather_AstonVilla.json": {
+    "bytes": 5647,
+    "sha256": "5cdd97d531f204d93be524afb5b4aad5e69cc6845470e5ebe39c066c9b92cf66"
+  },
+  "weather_Birmingham.json": {
+    "bytes": 3777,
+    "sha256": "b3afd39b4b739c146c5e68385c3d0549d62224f3d6bfbf8fc081bf8caf85cf30"
+  },
+  "weather_Blackburn.json": {
+    "bytes": 6857,
+    "sha256": "373ea959def9a7ef963347b2b259b16101001f8022d161dbb0f5300f942fc2ca"
+  },
+  "weather_Bolton.json": {
+    "bytes": 687,
+    "sha256": "7db0dc2416e1b1c2ac0a7d8f4cbddb0ba8ca31a88843e8fb51f13bc3511826cf"
+  },
+  "weather_Bournemouth.json": {
+    "bytes": 5662,
+    "sha256": "ee0b226c468598c941d232c771784ea2381058d080148bc739a9b1f4d5ea6500"
+  },
+  "weather_Brentford.json": {
+    "bytes": 5643,
+    "sha256": "053cdee49e42de59dd91f363fad2a78427ddedf6a2921620c9961241e51ccf9d"
+  },
+  "weather_Brighton.json": {
+    "bytes": 5657,
+    "sha256": "0b51d8f650d6cda9b8a01285b6a6e3d159104b0b2326d3bdf1e0d0303a3e1e38"
+  },
+  "weather_BristolCity.json": {
+    "bytes": 6861,
+    "sha256": "9742c6d2b21dc70f24d7dbed462f2c925ef97b4a1b000fa884cc5c2bd46ba8ce"
+  },
+  "weather_Burnley.json": {
+    "bytes": 6311,
+    "sha256": "33d4364c2a1ce3085178cfbe13dea15c153ee2d0475001da836f0d8661de00e0"
+  },
+  "weather_Cardiff.json": {
+    "bytes": 3767,
+    "sha256": "1e00b86f1812f6999e10e035a8426df3e7576c9217fc2a4e59b23a9850fa85e3"
+  },
+  "weather_Charlton.json": {
+    "bytes": 3769,
+    "sha256": "06f9ba65c88954a0a5e63d115eb023339e3825aa8e77ed365823b5b921b934c3"
+  },
+  "weather_Chelsea.json": {
+    "bytes": 5636,
+    "sha256": "fd7b9224ac0e3917397d5177df02d2830630ca5efe45bbb24013fbe3836df9b4"
+  },
+  "weather_Coventry.json": {
+    "bytes": 6722,
+    "sha256": "f4809229b35d541e58f804c13a43934c5f3d3f5c56f0f6be260d4c35a566a154"
+  },
+  "weather_CrystalPalace.json": {
+    "bytes": 5655,
+    "sha256": "8001548db4cc926328b8874ab3cb14addf0cad6c99b476419b6d117a6de9478c"
+  },
+  "weather_Derby.json": {
+    "bytes": 6849,
+    "sha256": "aeec32f82ccb4146d63a7add3e7c8ee64d1f39724cd86b94775768a5d58b614f"
+  },
+  "weather_Everton.json": {
+    "bytes": 5637,
+    "sha256": "d9effe650e87759474f12e9fe5fc1eeceb94bdd8ed0f601bcde3885f0da6519f"
+  },
+  "weather_Fulham.json": {
+    "bytes": 5639,
+    "sha256": "5d412156dfbebd56f987212887077273c64d72cf42c77457623a7d879ad495f8"
+  },
+  "weather_Hull.json": {
+    "bytes": 6711,
+    "sha256": "4aad5a6671821df3f51b6e84269a0cfcf73580d963fa15aee34dbebf4d1887af"
+  },
+  "weather_Ipswich.json": {
+    "bytes": 6187,
+    "sha256": "e4025a3e08d7b31293eb58d5e0bec863bc3f0952f8f563450042328890691496"
+  },
+  "weather_Leeds.json": {
+    "bytes": 6171,
+    "sha256": "eebd9015c949d55667bb549d4b11148ad427d1d17e905ead083f5eee7241f44a"
+  },
+  "weather_Leicester.json": {
+    "bytes": 6051,
+    "sha256": "01a41709705c4f967a314f4cee322d7c682929b6c075c84658a9ea73c174e96e"
+  },
+  "weather_Lincoln.json": {
+    "bytes": 685,
+    "sha256": "f30200c4ed7eeb5e5e7c1cc34debc3428b6b456d7594b2b552c1e098863ab493"
+  },
+  "weather_Liverpool.json": {
+    "bytes": 5643,
+    "sha256": "d2299021afd039fd0b61b8357423d7a6f1bf9e91211fc01c040625d0100b9a38"
+  },
+  "weather_Luton.json": {
+    "bytes": 3498,
+    "sha256": "ac8e4434cc269a5768f229718a9b5ef1116a26fff71c828e022a539a253aed49"
+  },
+  "weather_ManCity.json": {
+    "bytes": 5649,
+    "sha256": "27f0dded4f69e6847f6e85f8072961e6e7099abe2344238d3281e0aecf56992f"
+  },
+  "weather_ManUnited.json": {
+    "bytes": 5650,
+    "sha256": "2fb3c79e82eeb0e6578e21a3f18e48c90c8df4a76f386e06a857fe5094c5a6cc"
+  },
+  "weather_Middlesbrough.json": {
+    "bytes": 6857,
+    "sha256": "7733dc1bc3ecf96eb838760a4f122cb6459aacb038f16602a677e90c37dc2d32"
+  },
+  "weather_Millwall.json": {
+    "bytes": 6841,
+    "sha256": "eb5608cc11f33e86728d6957229f482cc56cb92f6fc5a66c24e5f79e99501361"
+  },
+  "weather_Newcastle.json": {
+    "bytes": 5643,
+    "sha256": "baa8d32dfb6b7370d583a4f4989747b6bc6dbfc75b27a8805a7660c11647bad3"
+  },
+  "weather_Norwich.json": {
+    "bytes": 6849,
+    "sha256": "0ee47ab63d85a28efb855ddaa62f95a82580e6a57ba36613780ccc8a328b3f28"
+  },
+  "weather_NottmForest.json": {
+    "bytes": 5657,
+    "sha256": "6fe6e43666d55c8bf6db8a2a981c49f695bb128e1464036e315fca13a4a20339"
+  },
+  "weather_Oxford.json": {
+    "bytes": 6588,
+    "sha256": "f4a52f44129a43757c4681ac73690ac269af2220ce70f99f253b96a108ef338c"
+  },
+  "weather_Plymouth.json": {
+    "bytes": 3509,
+    "sha256": "7f8167bbd9983f8a525a16c1135910095aa12d79ba932e30bcd26ab8785be366"
+  },
+  "weather_Portsmouth.json": {
+    "bytes": 6859,
+    "sha256": "a8c78aeffd0b2b02dce34a9e933a7754edf1706c1c53ab2f48167875960930a8"
+  },
+  "weather_Preston.json": {
+    "bytes": 6864,
+    "sha256": "d4a5c229fa2d41dafc1d5a1288a6433c7181fa3939ee1e42dfceb60bcf959d48"
+  },
+  "weather_probe.json": {
+    "bytes": 2026,
+    "sha256": "54f23542470e911fb1f78478f4eea69659e64668408c4d2047345cc290241000"
+  },
+  "weather_QPR.json": {
+    "bytes": 6859,
+    "sha256": "9434a22bb720ac9b93c15a7ff74f1c350f3fffd8079d2184ec08a0a195cf19b5"
+  },
+  "weather_SheffieldUnited.json": {
+    "bytes": 6869,
+    "sha256": "d90b1f62d163b0aee6d2b30abdda1ee8ba6da3b55ae038549973975f253b0b0e"
+  },
+  "weather_SheffieldWeds.json": {
+    "bytes": 6591,
+    "sha256": "4987d08c2fc73b5deb07ea2b4318efb6bf18c6e08a64f9577b2d6cf6f2f58a50"
+  },
+  "weather_Southampton.json": {
+    "bytes": 6330,
+    "sha256": "5b85dbadd44d629b77baa11638af5fd7a5e2012cf5f03ee7cea1570e9e6ef3da"
+  },
+  "weather_Stoke.json": {
+    "bytes": 6844,
+    "sha256": "1e80babb9000d481e66a56e7dd9eac2ee2903303d04da6fc225bcc50a928df19"
+  },
+  "weather_Sunderland.json": {
+    "bytes": 6183,
+    "sha256": "4e61df644d15ac349c14b73d76c8c0dd9a1d95aec0f2d3d56f7e8f195e99fcd8"
+  },
+  "weather_Swansea.json": {
+    "bytes": 6861,
+    "sha256": "dabbcb2370a2becd0436b6e141ac13fd7bae2cbfd3bd49361f7e4bbefa1b6162"
+  },
+  "weather_Tottenham.json": {
+    "bytes": 5649,
+    "sha256": "88c640e410e03990608ebe62966eba44b0b83aa11381cd3d77ae0ea80ef8ba27"
+  },
+  "weather_Watford.json": {
+    "bytes": 6852,
+    "sha256": "3513132d4ceaa19f040d50cd0652ade956fb957953e6918db5da5caa083e234f"
+  },
+  "weather_WestBrom.json": {
+    "bytes": 6865,
+    "sha256": "51e7251e1e0f1bc2cd1159d40e68316bc63b367e0da41ce65b0485c30dff5b13"
+  },
+  "weather_WestHam.json": {
+    "bytes": 5770,
+    "sha256": "0bdb84835fb7e6d9afe1eac01abff0f132e07dfa16a39344810b8495d3b2120e"
+  },
+  "weather_Wolves.json": {
+    "bytes": 5787,
+    "sha256": "43812f745690f03b7ccd1fa52ace6435bde12b2a6a44d25d2165409aec6998fd"
+  },
+  "weather_Wrexham.json": {
+    "bytes": 3762,
+    "sha256": "fec5992f3adfc232599e0eaae883fc059eae6f747715ac7daadea56d09a0ae93"
+  },
+  "grounds.html": {
+    "bytes": 716341,
+    "sha256": "c9bbac235e09102e115c532a76af8897aa33abd45c7e3768fa3d8c6ade7b05d6"
+  }
+}

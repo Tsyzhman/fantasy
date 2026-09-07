@@ -1,5 +1,7 @@
 node_modules
 .next
+specs/.me
+.prist/
 /.codex_sheet_work/
 .env
 .env*.local

@@ -1,0 +1,103 @@
+{
+  "matches": 21343,
+  "finished": 13781,
+  "leagues": 46,
+  "league_season_pairs": 94,
+  "finished_both_xg": 10513,
+  "finished_missing_score": 2626,
+  "first_finished": "2024-06-14 19:00:00",
+  "last_finished": "2026-09-06 19:30:00",
+  "python": "3.14.0",
+  "counts": [
+    {
+      "name": "match_team_stats",
+      "n": 26927,
+      "matches": 13463,
+      "has_xg": 21032
+    },
+    {
+      "name": "fantasy_model_forecasts",
+      "n": 179572,
+      "matches": null,
+      "has_xg": null
+    },
+    {
+      "name": "match_events",
+      "n": 223395,
+      "matches": 12751,
+      "has_xg": null
+    },
+    {
+      "name": "match_shots",
+      "n": 280092,
+      "matches": 13017,
+      "has_xg": 273547
+    },
+    {
+      "name": "match_player_stats",
+      "n": 473577,
+      "matches": 11439,
+      "has_xg": 150769
+    }
+  ],
+  "duplicates": [
+    {
+      "name": "match_natural_key",
+      "groups": 0
+    },
+    {
+      "name": "odds_match_provider",
+      "groups": 0
+    },
+    {
+      "name": "shot_fingerprint",
+      "groups": 0
+    }
+  ],
+  "db_health": [
+    {
+      "db_bytes": 1518238743,
+      "connections": 35,
+      "active_connections": 1
+    }
+  ],
+  "sports_aux_counts": [
+    {
+      "name": "raw_match_payloads",
+      "n": 4
+    },
+    {
+      "name": "foontasy_forecasts",
+      "n": 21822
+    },
+    {
+      "name": "player_season_archives",
+      "n": 4260
+    },
+    {
+      "name": "fantasy_backtest_runs",
+      "n": 1
+    },
+    {
+      "name": "BaltikaTeamMatchStat",
+      "n": 0
+    },
+    {
+      "name": "PlayerSnapshot",
+      "n": 0
+    }
+  ],
+  "team_membership": [
+    {
+      "stat_rows": 26927,
+      "unexpected_team_rows": 1
+    }
+  ],
+  "point_in_time": [
+    {
+      "finished": 13781,
+      "imported_after_match": 12540,
+      "incomplete_score": 2626
+    }
+  ]
+}

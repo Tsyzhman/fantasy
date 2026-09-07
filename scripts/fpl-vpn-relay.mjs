@@ -13,6 +13,9 @@ const upstreamOrigin = "https://fantasy.premierleague.com";
 const upstreamTimeoutMs = strictInteger(process.env.FPL_RELAY_UPSTREAM_TIMEOUT_MS, 15_000, 1, 60_000);
 const maximumBodyBytes = strictInteger(process.env.FPL_RELAY_MAX_BODY_BYTES, 8 * 1024 * 1024, 1, 32 * 1024 * 1024);
 const allowedPaths = [
+  // @spec spec://modules/machete/FEAT-001-global-ranking-strategy#data
+  /^\/api\/entry\/[1-9]\d*\/history\/$/,
+  /^\/api\/leagues-classic\/[1-9]\d*\/standings\/$/,
   /^\/api\/bootstrap-static\/$/,
   /^\/api\/fixtures(?:\/)?$/,
   /^\/api\/event\/[1-9]\d*\/live\/$/,

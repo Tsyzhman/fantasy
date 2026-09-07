@@ -8,6 +8,8 @@ import type {
 } from "@/machete/squad_logic";
 
 export type TransferSuggestionWorkerInput = {
+  strategy?: import("@/machete/squad_logic").FantasySquadStrategy;
+  globalStrategy?: import("@/machete/global-strategy").GlobalStrategyRequestContext | null;
   pool: FantasyPlannerPlayer[];
   selections: FantasySquadSelection[];
   rules: FantasySquadRules;
@@ -20,10 +22,10 @@ export type TransferSuggestionWorkerInput = {
 };
 
 export type FantasySquadWorkerRequest =
-  | { kind: "OPTIMIZE_SQUAD"; input: FantasySquadOptimizationInput }
+  | { kind: "OPTIMIZE_SQUAD"; input: FantasySquadOptimizationInput; startersOnly?: boolean }
   | { kind: "BUILD_TRANSFER_SUGGESTIONS"; input: TransferSuggestionWorkerInput };
 
 export type FantasySquadWorkerResponse =
-  | { kind: "OPTIMIZE_SQUAD"; optimized: FantasySquadSelection[] | null; error: false }
+  | { kind: "OPTIMIZE_SQUAD"; optimized: FantasySquadSelection[] | null; analysis?: import("@/machete/global-strategy-planner").GlobalStrategyAnalysis | null; error: false }
   | { kind: "BUILD_TRANSFER_SUGGESTIONS"; suggestions: TransferPlanSuggestion[]; error: false }
   | { kind: FantasySquadWorkerRequest["kind"]; error: true };

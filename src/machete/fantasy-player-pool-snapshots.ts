@@ -1,4 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
+/** @spec spec://modules/machete/FEAT-004-rotation-risk#contracts */
+import { ROTATION_RISK_VERSION, ROTATION_RISK_TTL_MS } from "./rotation-risk";
 
 import { Prisma, type PrismaClient } from "@prisma/client";
 
@@ -29,6 +31,9 @@ export type FantasyPlayerPoolSnapshotVariant = typeof FANTASY_PLAYER_POOL_SNAPSH
 
 export type FantasyPlayerPoolSnapshotMetadata = {
   version: typeof FANTASY_PLAYER_POOL_SNAPSHOT_METADATA_VERSION;
+  providerIdentityVersion?: 1;
+  rotationRiskVersion?: typeof ROTATION_RISK_VERSION;
+  rotationRiskExpiresAt?: string;
   readiness: FantasySquadPlannerData["readiness"];
   rules: FantasySquadPlannerData["rules"];
   rounds: FantasySquadPlannerData["rounds"];
@@ -88,7 +93,9 @@ export async function refreshFantasyPlayerPoolSnapshots(
         if (options.onlyMissing) {
           const existing = await latestFantasyPlayerPoolSnapshot(prisma, { contestId: scope.contestId, variant });
           // Upgrade old metadata once in the sequential worker, never on a page request.
-          if (fantasyPlayerPoolSnapshotHasFixtureCalendar(existing?.metadata)) continue;
+          if (fantasyPlayerPoolSnapshotHasFixtureCalendar(existing?.metadata)
+            && parseFantasyPlayerPoolSnapshotMetadata(existing?.metadata)?.providerIdentityVersion === 1
+            && fantasyPlayerPoolSnapshotHasCurrentRotationRisk(existing?.metadata)) continue;
         }
         const snapshot = await withFantasyPlayerPoolScopeLock(
           snapshotScopeKey(scope.league),
@@ -191,7 +198,7 @@ async function refreshCurrentXiTeamsSnapshotUnlocked(
   }
 
   const previousMetadata = parseFantasyPlayerPoolSnapshotMetadata(previous.metadata);
-  if (!previousMetadata?.startingXiTeamRevisions) {
+  if (!previousMetadata?.startingXiTeamRevisions || previousMetadata.providerIdentityVersion !== 1 || !fantasyPlayerPoolSnapshotHasCurrentRotationRisk(previous.metadata)) {
     return buildAndPublishFantasyPlayerPoolSnapshot(prisma, scope, FANTASY_PLAYER_POOL_SNAPSHOT_CURRENT_XI);
   }
   const xiBefore = await loadFantasyStartingXiState(prisma, scope.league);
@@ -380,12 +387,22 @@ export function fantasyPlayerPoolSnapshotHasFixtureCalendar(value: unknown): boo
   return parseFantasyFixtureCalendar(metadata?.fixtureCalendar) !== null;
 }
 
+export function fantasyPlayerPoolSnapshotHasCurrentRotationRisk(value: unknown, now = Date.now()): boolean {
+  const metadata = parseFantasyPlayerPoolSnapshotMetadata(value);
+  return metadata?.rotationRiskVersion === ROTATION_RISK_VERSION && now < Date.parse(metadata.rotationRiskExpiresAt ?? "");
+}
+
 function fantasyPlayerPoolSnapshotMetadata(
   data: FantasySquadPlannerData,
   dataFreshness: FantasyPlayerPoolSnapshotMetadata["dataFreshness"]
 ): FantasyPlayerPoolSnapshotMetadata {
   return {
     version: FANTASY_PLAYER_POOL_SNAPSHOT_METADATA_VERSION,
+    // @spec spec://modules/machete/FEAT-001-global-ranking-strategy#contracts
+    // Rebuild legacy pools in the sequential worker; retain their ordinary UI until ready.
+    providerIdentityVersion: 1,
+    rotationRiskVersion: ROTATION_RISK_VERSION,
+    rotationRiskExpiresAt: new Date(data.players.reduce((expires, player) => Math.min(expires, Date.parse(player.rotationRisk?.expiresAt ?? "") || expires), Date.now() + ROTATION_RISK_TTL_MS)).toISOString(),
     readiness: data.readiness,
     rules: data.rules,
     rounds: data.rounds,

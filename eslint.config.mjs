@@ -21,6 +21,10 @@ const eslintConfig = [
   {
     ignores: [
       ".next/**",
+      ".tmp/**",
+      ".cache/**",
+      ".playwright-cli/**",
+      "output/**",
       "node_modules/**",
       "public/**",
       "tsconfig.tsbuildinfo"

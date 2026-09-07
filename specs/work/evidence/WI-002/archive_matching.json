@@ -1,0 +1,493 @@
+{
+  "sources": [
+    {
+      "code": "E0",
+      "league_id": 47,
+      "rows": 380,
+      "sha256": "3e3a8352f9ada6789c508d6ca184424421fed56a30400904a4a327c583407e62",
+      "url": "https://football-data.co.uk/mmz4281/2526/E0.csv"
+    },
+    {
+      "code": "E1",
+      "league_id": 48,
+      "rows": 552,
+      "sha256": "98954c319950f19158624b17a154ef1c56eb7b8d169ef317f28f06d11d0b9a74",
+      "url": "https://football-data.co.uk/mmz4281/2526/E1.csv"
+    },
+    {
+      "code": "D1",
+      "league_id": 54,
+      "rows": 306,
+      "sha256": "618301a4b39918225a8ccc57f0f839d675e1abd92fa3a3ccd9a67acd7c79dd7f",
+      "url": "https://football-data.co.uk/mmz4281/2526/D1.csv"
+    },
+    {
+      "code": "I1",
+      "league_id": 55,
+      "rows": 380,
+      "sha256": "709ae279617d16af226312bcceac941e71241745ddaf950bdac2b83afad4fcbb",
+      "url": "https://football-data.co.uk/mmz4281/2526/I1.csv"
+    },
+    {
+      "code": "SP1",
+      "league_id": 87,
+      "rows": 380,
+      "sha256": "4ca2e285f3ee0702f6bc55fcaa4f5a15cb3aef6220735a1d15398131e21d63f5",
+      "url": "https://football-data.co.uk/mmz4281/2526/SP1.csv"
+    },
+    {
+      "code": "F1",
+      "league_id": 53,
+      "rows": 306,
+      "sha256": "898b7ddcd373cfe955ae353b1a98cf7f1c8757ca10b69d53039f4e098e88f192",
+      "url": "https://football-data.co.uk/mmz4281/2526/F1.csv"
+    },
+    {
+      "code": "N1",
+      "league_id": 57,
+      "rows": 306,
+      "sha256": "dfb092a866e0df4b4c8fde7778d47f41a4307f5c5ac5a6f55d2276e45c80e604",
+      "url": "https://football-data.co.uk/mmz4281/2526/N1.csv"
+    },
+    {
+      "code": "P1",
+      "league_id": 61,
+      "rows": 306,
+      "sha256": "f1353dc7404bfa0d27daa3ca6c164bb450ec20558ee02fffb7160fae182213dc",
+      "url": "https://football-data.co.uk/mmz4281/2526/P1.csv"
+    },
+    {
+      "code": "B1",
+      "league_id": 40,
+      "rows": 311,
+      "sha256": "7ba1d75b2f23ab6bf36952fa61b62e80905e2d38fa059ad389106772aebaf481",
+      "url": "https://football-data.co.uk/mmz4281/2526/B1.csv"
+    },
+    {
+      "code": "T1",
+      "league_id": 71,
+      "rows": 306,
+      "sha256": "d35e97d42b53ca870b13683da3998aa2758eeb43280fbe71d5d935bae47cdd23",
+      "url": "https://football-data.co.uk/mmz4281/2526/T1.csv"
+    }
+  ],
+  "matched": 3532,
+  "unmatched": [
+    {
+      "code": "N1",
+      "date": "2026-05-10",
+      "h": "NAC Breda",
+      "a": "Heerenveen",
+      "candidates": [
+        [
+          0.273,
+          "Go Ahead Eagles",
+          "PSV Eindhoven"
+        ],
+        [
+          0.267,
+          "Telstar",
+          "Heracles"
+        ]
+      ]
+    }
+  ],
+  "score_mismatches": [
+    {
+      "id": 4813391,
+      "db": [
+        2.0,
+        0.0
+      ],
+      "archive": [
+        1,
+        1
+      ]
+    },
+    {
+      "id": 4813400,
+      "db": [
+        2.0,
+        3.0
+      ],
+      "archive": [
+        3,
+        2
+      ]
+    },
+    {
+      "id": 4813411,
+      "db": [
+        0.0,
+        1.0
+      ],
+      "archive": [
+        1,
+        0
+      ]
+    },
+    {
+      "id": 4813417,
+      "db": [
+        3.0,
+        1.0
+      ],
+      "archive": [
+        2,
+        2
+      ]
+    },
+    {
+      "id": 4813419,
+      "db": [
+        2.0,
+        2.0
+      ],
+      "archive": [
+        3,
+        1
+      ]
+    },
+    {
+      "id": 4813431,
+      "db": [
+        3.0,
+        3.0
+      ],
+      "archive": [
+        5,
+        1
+      ]
+    },
+    {
+      "id": 4813444,
+      "db": [
+        0.0,
+        2.0
+      ],
+      "archive": [
+        1,
+        1
+      ]
+    },
+    {
+      "id": 4813452,
+      "db": [
+        1.0,
+        1.0
+      ],
+      "archive": [
+        2,
+        0
+      ]
+    },
+    {
+      "id": 4813467,
+      "db": [
+        1.0,
+        1.0
+      ],
+      "archive": [
+        2,
+        0
+      ]
+    },
+    {
+      "id": 4813468,
+      "db": [
+        2.0,
+        1.0
+      ],
+      "archive": [
+        3,
+        0
+      ]
+    },
+    {
+      "id": 4813474,
+      "db": [
+        2.0,
+        2.0
+      ],
+      "archive": [
+        3,
+        1
+      ]
+    },
+    {
+      "id": 4813509,
+      "db": [
+        5.0,
+        4.0
+      ],
+      "archive": [
+        4,
+        5
+      ]
+    },
+    {
+      "id": 4813507,
+      "db": [
+        2.0,
+        5.0
+      ],
+      "archive": [
+        3,
+        4
+      ]
+    },
+    {
+      "id": 4813511,
+      "db": [
+        0.0,
+        2.0
+      ],
+      "archive": [
+        1,
+        1
+      ]
+    },
+    {
+      "id": 4813518,
+      "db": [
+        2.0,
+        1.0
+      ],
+      "archive": [
+        3,
+        0
+      ]
+    },
+    {
+      "id": 4813525,
+      "db": [
+        0.0,
+        3.0
+      ],
+      "archive": [
+        2,
+        1
+      ]
+    },
+    {
+      "id": 4813533,
+      "db": [
+        0.0,
+        1.0
+      ],
+      "archive": [
+        1,
+        0
+      ]
+    },
+    {
+      "id": 4813534,
+      "db": [
+        3.0,
+        2.0
+      ],
+      "archive": [
+        2,
+        3
+      ]
+    },
+    {
+      "id": 4813545,
+      "db": [
+        1.0,
+        2.0
+      ],
+      "archive": [
+        2,
+        1
+      ]
+    },
+    {
+      "id": 4813546,
+      "db": [
+        3.0,
+        2.0
+      ],
+      "archive": [
+        4,
+        1
+      ]
+    },
+    {
+      "id": 4813584,
+      "db": [
+        0.0,
+        3.0
+      ],
+      "archive": [
+        1,
+        2
+      ]
+    },
+    {
+      "id": 4813578,
+      "db": [
+        1.0,
+        3.0
+      ],
+      "archive": [
+        2,
+        2
+      ]
+    },
+    {
+      "id": 4813596,
+      "db": [
+        1.0,
+        4.0
+      ],
+      "archive": [
+        2,
+        3
+      ]
+    },
+    {
+      "id": 4813612,
+      "db": [
+        2.0,
+        1.0
+      ],
+      "archive": [
+        3,
+        0
+      ]
+    },
+    {
+      "id": 4813625,
+      "db": [
+        0.0,
+        1.0
+      ],
+      "archive": [
+        1,
+        0
+      ]
+    },
+    {
+      "id": 4813628,
+      "db": [
+        3.0,
+        2.0
+      ],
+      "archive": [
+        2,
+        3
+      ]
+    },
+    {
+      "id": 4813648,
+      "db": [
+        2.0,
+        5.0
+      ],
+      "archive": [
+        3,
+        4
+      ]
+    },
+    {
+      "id": 4813651,
+      "db": [
+        4.0,
+        3.0
+      ],
+      "archive": [
+        5,
+        2
+      ]
+    },
+    {
+      "id": 4813646,
+      "db": [
+        3.0,
+        0.0
+      ],
+      "archive": [
+        2,
+        1
+      ]
+    },
+    {
+      "id": 4813675,
+      "db": [
+        3.0,
+        1.0
+      ],
+      "archive": [
+        2,
+        2
+      ]
+    },
+    {
+      "id": 4813692,
+      "db": [
+        2.0,
+        0.0
+      ],
+      "archive": [
+        1,
+        1
+      ]
+    },
+    {
+      "id": 4813705,
+      "db": [
+        3.0,
+        1.0
+      ],
+      "archive": [
+        2,
+        2
+      ]
+    },
+    {
+      "id": 4813712,
+      "db": [
+        1.0,
+        4.0
+      ],
+      "archive": [
+        0,
+        5
+      ]
+    },
+    {
+      "id": 4813718,
+      "db": [
+        2.0,
+        1.0
+      ],
+      "archive": [
+        3,
+        0
+      ]
+    },
+    {
+      "id": 4813715,
+      "db": [
+        2.0,
+        1.0
+      ],
+      "archive": [
+        3,
+        0
+      ]
+    },
+    {
+      "id": 4813752,
+      "db": [
+        1.0,
+        2.0
+      ],
+      "archive": [
+        2,
+        1
+      ]
+    }
+  ]
+}

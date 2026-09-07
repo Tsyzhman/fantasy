@@ -1,6 +1,8 @@
 .git
 .next
 .codex-tmp
+.tmp
+specs/work/evidence
 .codex_sheet_work
 .playwright-cli
 .postgres-data

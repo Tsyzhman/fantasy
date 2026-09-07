@@ -5,6 +5,13 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.57 - 2026-09-07
+
+- Add Arena, a virtual Fonbet league for existing Fantasy users and five experimental algorithms.
+- Give each participant 100,000 coins once; record accepted odds on each immutable ticket, with atomic spending, idempotent payouts and an auditable ledger.
+- Browse full pre-match markets in downloaded leagues, compare recommendations, skip events, track results and settle special markets with an admin source record.
+- Add bounded worker synchronization and an additive database migration. WI-005.
+
 ## 0.3.56 - 2026-09-01
 
 ### Fixed

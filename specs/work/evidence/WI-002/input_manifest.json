@@ -1,0 +1,98 @@
+{
+  "counts.json": {
+    "bytes": 388,
+    "sha256": "70cb8bd860fc83edbb04d64fcbdfc67e7aa4e0ec8fe7e38e7f6d1345ef1fd2f9"
+  },
+  "db_health.json": {
+    "bytes": 70,
+    "sha256": "3fc9ed0c01501111a8ab138799b898892587fc5f8ac2a8730b871f3ebb47d625"
+  },
+  "duplicates.json": {
+    "bytes": 133,
+    "sha256": "7fb44b81664d8e4a43e8ee4d284d6a924ae7a90467bdb2b2edaa58a5f407e512"
+  },
+  "forecast_coverage.json": {
+    "bytes": 11102,
+    "sha256": "56d299e3379cfe8bf53da2744be6d2077f045faf26b07554adaeec20952ad135"
+  },
+  "matches.json": {
+    "bytes": 9936458,
+    "sha256": "e9aa2a84889424d60fdcdc19881eae96252e24fca927ad6781d0895b23a868b3"
+  },
+  "odds.json": {
+    "bytes": 274357,
+    "sha256": "b51e73e179dff7f7630819b6d13af5d67988b29939f9ded2a2cddd44cf10fb7a"
+  },
+  "player_coverage.json": {
+    "bytes": 12259,
+    "sha256": "45e490af123f113569f9f26d54b220b048aeaa9b5d8d2b7a60ff26c5910827f0"
+  },
+  "point_in_time.json": {
+    "bytes": 78,
+    "sha256": "73cd36d04fb26c66d5baa361ac0cd54afa08caa7963c15937f774f509d97404d"
+  },
+  "sports_aux_counts.json": {
+    "bytes": 252,
+    "sha256": "d833aa611e5495557029d1deef5aee347f7d5e8a53b364b90c618ab91c1748e0"
+  },
+  "tables.json": {
+    "bytes": 5653,
+    "sha256": "edd9a36229471e87f7ac3eb8f06b3ad2ef5287b3be49dc1069b3e63cd03f2b93"
+  },
+  "team_membership.json": {
+    "bytes": 49,
+    "sha256": "f5b0c2d2574897bfeec625b0b1be642fe40e2d29e1f7526faef1c8abf3e2fba0"
+  },
+  "team_scores.json": {
+    "bytes": 1429209,
+    "sha256": "bc08a7dd13d8112b9145666e2da08b68f4a3d769c86405f4a2689d06a7ad0c1f"
+  },
+  "external/B1.csv": {
+    "bytes": 158888,
+    "sha256": "7ba1d75b2f23ab6bf36952fa61b62e80905e2d38fa059ad389106772aebaf481"
+  },
+  "external/D1.csv": {
+    "bytes": 159944,
+    "sha256": "618301a4b39918225a8ccc57f0f839d675e1abd92fa3a3ccd9a67acd7c79dd7f"
+  },
+  "external/E0.csv": {
+    "bytes": 203438,
+    "sha256": "3e3a8352f9ada6789c508d6ca184424421fed56a30400904a4a327c583407e62"
+  },
+  "external/E1.csv": {
+    "bytes": 294390,
+    "sha256": "98954c319950f19158624b17a154ef1c56eb7b8d169ef317f28f06d11d0b9a74"
+  },
+  "external/F1.csv": {
+    "bytes": 158471,
+    "sha256": "898b7ddcd373cfe955ae353b1a98cf7f1c8757ca10b69d53039f4e098e88f192"
+  },
+  "external/I1.csv": {
+    "bytes": 196217,
+    "sha256": "709ae279617d16af226312bcceac941e71241745ddaf950bdac2b83afad4fcbb"
+  },
+  "external/N1.csv": {
+    "bytes": 158364,
+    "sha256": "dfb092a866e0df4b4c8fde7778d47f41a4307f5c5ac5a6f55d2276e45c80e604"
+  },
+  "external/P1.csv": {
+    "bytes": 157715,
+    "sha256": "f1353dc7404bfa0d27daa3ca6c164bb450ec20558ee02fffb7160fae182213dc"
+  },
+  "external/SP1.csv": {
+    "bytes": 197653,
+    "sha256": "4ca2e285f3ee0702f6bc55fcaa4f5a15cb3aef6220735a1d15398131e21d63f5"
+  },
+  "external/T1.csv": {
+    "bytes": 158392,
+    "sha256": "d35e97d42b53ca870b13683da3998aa2758eeb43280fbe71d5d935bae47cdd23"
+  },
+  "external/notes.txt": {
+    "bytes": 7686,
+    "sha256": "6ecd41a98ad2751372817e7e6f1709bfeb433c53dd9aeda330fd926a5471452d"
+  },
+  "external/downloadm.php": {
+    "bytes": 105412,
+    "sha256": "cbee8a154be54c0d22ede475936d908f45dfefb14abf3eaae07c076ae83a62f0"
+  }
+}

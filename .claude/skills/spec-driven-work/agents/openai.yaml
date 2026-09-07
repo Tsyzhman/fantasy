@@ -1,0 +1,4 @@
+interface:
+  display_name: "Spec-driven work"
+  short_description: "Ведёт продукт через спеки и проверяемую работу"
+  default_prompt: "Use $spec-driven-work to resolve this request through the repository canon and complete it safely."
