@@ -41,3 +41,7 @@
 ## Checks
 
 `npm run check` runs version verification, tests, lint, typecheck, and production build in sequence because Next type generation and `.next` writes must not race.
+
+## KHL
+
+Изолированные `src/khl/`, `src/server/khl/`, `src/components/khl/`, `src/app/machete/khl/`, `src/app/api/machete/khl/` и таблицы `khl_*`. Адаптеры: `src/providers/sports-ru-hockey/`, `khl-mobile/`, `khl-xg/`, `fonbet/hockey-*`. Контракты в `specs/modules/khl/` (FEAT-001/002/003, INFRA-001/002/003). Футбольные core_data и scoring остаются независимыми. Флаги КХЛ выключены до production readiness.

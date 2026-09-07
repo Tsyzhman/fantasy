@@ -7,6 +7,526 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+/// @spec spec://modules/khl/INFRA-002-khl-storage-and-api#schema
+model KhlCompetition {
+  id String @id @default(cuid())
+  code String @unique
+  seasons KhlSeason[]
+  @@map("khl_competitions")
+}
+model KhlSeason {
+  externalMaps KhlExternalEntityMap[]
+  memberships KhlRosterMembership[]
+  startsAt DateTime?
+  endsAt DateTime?
+  phase String @default("REGULAR")
+  id String @id @default(cuid())
+  competitionId String
+  seasonKey String
+  label String
+  competition KhlCompetition @relation(fields: [competitionId], references: [id], onDelete: Restrict)
+  contests KhlContest[]
+  matches KhlMatch[]
+  @@unique([competitionId, seasonKey])
+  @@map("khl_seasons")
+}
+model KhlContest {
+  externalMaps KhlExternalEntityMap[]
+  officialScores KhlOfficialFantasyScore[]
+  forecasts KhlForecastRevision[]
+  snapshots KhlProviderSquadSnapshot[]
+  calendarComplete Boolean @default(false)
+  calendarObservedAt DateTime?
+  calendarFrom DateTime?
+  calendarTo DateTime?
+  catalogComplete Boolean @default(false)
+  id String @id @default(cuid())
+  seasonId String
+  provider String @default("SPORTS_RU")
+  providerContestId String
+  name String
+  revision Int @default(1)
+  publishedAt DateTime?
+  season KhlSeason @relation(fields: [seasonId], references: [id], onDelete: Restrict)
+  rules KhlRuleset[]
+  weeks KhlFantasyWeek[]
+  players KhlFantasyPlayer[]
+  squads KhlUserSquad[]
+  preferences KhlUserViewPreference[]
+  @@unique([provider, providerContestId, seasonId])
+  @@map("khl_contests")
+}
+model KhlRuleset {
+  id String @id @default(cuid())
+  contestId String
+  version String
+  sourceUrl String
+  sourceHash String
+  fetchedAt DateTime
+  verifiedAt DateTime?
+  rules Json
+  scoringBoundaryStatus String @default("UNVERIFIED")
+  contest KhlContest @relation(fields: [contestId], references: [id], onDelete: Restrict)
+  @@unique([contestId, version])
+  @@map("khl_rulesets")
+}
+model KhlFantasyWeek {
+  externalMaps KhlExternalEntityMap[]
+  id String @id @default(cuid())
+  contestId String
+  providerWeekId String
+  label String
+  startsAt DateTime?
+  endsAt DateTime?
+  timezone String?
+  verified Boolean @default(false)
+  revision Int @default(1)
+  sourceUrl String
+  contest KhlContest @relation(fields: [contestId], references: [id], onDelete: Restrict)
+  assignments KhlMatchFantasyWeek[]
+  @@unique([contestId, providerWeekId])
+  @@unique([id, contestId])
+  @@map("khl_fantasy_weeks")
+}
+model KhlTeam {
+  externalMaps KhlExternalEntityMap[]
+  memberships KhlRosterMembership[]
+  xgObservations KhlXgObservation[]
+  id String @id @default(cuid())
+  name String
+  homeMatches KhlMatch[] @relation("KhlHome")
+  awayMatches KhlMatch[] @relation("KhlAway")
+  @@map("khl_teams")
+}
+model KhlPlayer {
+  externalMaps KhlExternalEntityMap[]
+  memberships KhlRosterMembership[]
+  availability KhlAvailabilityObservation[]
+  xgObservations KhlXgObservation[]
+  forecasts KhlPlayerMatchForecast[]
+  id String @id @default(cuid())
+  name String
+  birthDate DateTime?
+  fantasyPlayers KhlFantasyPlayer[]
+  stats KhlPlayerMatchStat[]
+  @@map("khl_players")
+}
+model KhlMatch {
+  externalMaps KhlExternalEntityMap[]
+  xgObservations KhlXgObservation[]
+  officialScores KhlOfficialFantasyScore[]
+  forecasts KhlPlayerMatchForecast[]
+  oddsEvents KhlOddsEventMap[]
+  id String @id @default(cuid())
+  seasonId String
+  homeId String
+  awayId String
+  startsAt DateTime
+  status String
+  decidedBy String @default("UNKNOWN")
+  regulationScore Json?
+  otScore Json?
+  shootoutScore Json?
+  finalScore Json?
+  revision Int @default(1)
+  season KhlSeason @relation(fields: [seasonId], references: [id], onDelete: Restrict)
+  home KhlTeam @relation("KhlHome", fields: [homeId], references: [id], onDelete: Restrict)
+  away KhlTeam @relation("KhlAway", fields: [awayId], references: [id], onDelete: Restrict)
+  weeks KhlMatchFantasyWeek[]
+  stats KhlPlayerMatchStat[]
+  @@index([seasonId, startsAt, status])
+  @@map("khl_matches")
+}
+model KhlMatchFantasyWeek {
+  id String @id @default(cuid())
+  matchId String
+  contestId String
+  weekId String
+  match KhlMatch @relation(fields: [matchId], references: [id], onDelete: Restrict)
+  week KhlFantasyWeek @relation(fields: [weekId, contestId], references: [id, contestId], onDelete: Restrict)
+  @@unique([contestId, matchId])
+  @@map("khl_match_fantasy_weeks")
+}
+model KhlPlayerMatchStat {
+  clubAtMatchId String?
+  participationStatus String @default("UNKNOWN")
+  shifts Int?
+  shotsOnGoal Int?
+  blockedShots Int?
+  observedAt DateTime?
+  availableAt DateTime?
+  id String @id @default(cuid())
+  playerId String
+  matchId String
+  toiSeconds Int?
+  ppToiSeconds Int?
+  pkToiSeconds Int?
+  saves Int?
+  goalsAgainst Int?
+  goals Int?
+  assists Int?
+  plusMinus Int?
+  pimMinutes Int?
+  started Boolean?
+  fullGame Boolean?
+  sources Json
+  revision Int @default(1)
+  player KhlPlayer @relation(fields: [playerId], references: [id], onDelete: Restrict)
+  match KhlMatch @relation(fields: [matchId], references: [id], onDelete: Restrict)
+  @@unique([matchId, playerId])
+  @@index([playerId, matchId])
+  @@map("khl_player_match_stats")
+}
+model KhlFantasyPlayer {
+  officialScores KhlOfficialFantasyScore[]
+  active Boolean @default(true)
+  ownershipPct Float?
+  id String @id @default(cuid())
+  contestId String
+  providerPlayerId String
+  providerTagId String?
+  playerId String?
+  name String
+  clubId String
+  clubName String
+  position String
+  currentPriceUnits Int?
+  priceDelta Int?
+  providerLock Boolean?
+  observedAt DateTime
+  priceRevision Int @default(1)
+  contest KhlContest @relation(fields: [contestId], references: [id], onDelete: Restrict)
+  player KhlPlayer? @relation(fields: [playerId], references: [id], onDelete: Restrict)
+  entries KhlUserSquadEntry[]
+  @@unique([contestId, providerPlayerId])
+  @@unique([contestId, playerId])
+  @@unique([id, contestId])
+  @@index([contestId, position, id])
+  @@map("khl_fantasy_players")
+}
+model KhlUserSquad {
+  baselineSnapshotId String?
+  baseline KhlProviderSquadSnapshot? @relation(fields: [baselineSnapshotId], references: [id], onDelete: Restrict)
+  scenarios KhlTransferScenario[]
+  id String @id @default(cuid())
+  userId String
+  contestId String
+  name String
+  kind String @default("LOCAL_DRAFT")
+  revision Int @default(1)
+  bankUnits Int?
+  updatedAt DateTime @updatedAt
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  contest KhlContest @relation(fields: [contestId], references: [id], onDelete: Restrict)
+  entries KhlUserSquadEntry[]
+  @@unique([userId, contestId, name])
+  @@unique([id, contestId])
+  @@index([userId, contestId, updatedAt])
+  @@map("khl_user_squads")
+}
+model KhlUserSquadEntry {
+  id String @id @default(cuid())
+  squadId String
+  contestId String
+  fantasyPlayerId String
+  slotIndex Int
+  keepForOptimizer Boolean @default(false)
+  squad KhlUserSquad @relation(fields: [squadId, contestId], references: [id, contestId], onDelete: Cascade)
+  player KhlFantasyPlayer @relation(fields: [fantasyPlayerId, contestId], references: [id, contestId], onDelete: Restrict)
+  @@unique([squadId, fantasyPlayerId])
+  @@unique([squadId, slotIndex])
+  @@map("khl_user_squad_entries")
+}
+model KhlUserViewPreference {
+  id String @id @default(cuid())
+  userId String
+  contestId String
+  viewKey String
+  schemaVersion Int
+  preferences Json
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contest KhlContest @relation(fields: [contestId], references: [id], onDelete: Restrict)
+  @@unique([userId, contestId, viewKey])
+  @@map("khl_user_view_preferences")
+}
+model KhlTransferScenario {
+  id String @id @default(cuid())
+  userId String
+  squadId String
+  expectedVersion Int
+  dataRevision Int
+  weekId String
+  weekRevision Int
+  baselineHash String
+  quoteHash String
+  expiresAt DateTime
+  steps Json
+  result Json
+  status String @default("PREVIEW")
+  idempotencyKey String?
+  requestHash String?
+  createdAt DateTime @default(now())
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  squad KhlUserSquad @relation(fields: [squadId], references: [id], onDelete: Restrict)
+  @@unique([userId, idempotencyKey])
+  @@index([userId, status, expiresAt])
+  @@map("khl_transfer_scenarios")
+}
+/// Immutable transitions shared by KHL price/status/odds observations; never football.
+model KhlRevisionStream {
+  id String @id
+  revision Int @default(0)
+  hash String?
+  lastSeenAt DateTime
+  revisions KhlObservationRevision[]
+  @@map("khl_revision_streams")
+}
+model KhlObservationRevision {
+  id String @id @default(cuid())
+  streamId String
+  sequence Int
+  transitionKey String
+  hash String
+  value Json
+  observedAt DateTime
+  availableAt DateTime?
+  stream KhlRevisionStream @relation(fields: [streamId], references: [id], onDelete: Restrict)
+  @@unique([streamId, sequence])
+  @@unique([streamId, transitionKey])
+  @@index([streamId, observedAt])
+  @@map("khl_observation_revisions")
+}
+model KhlObservationReceipt {
+  id String @id @default(cuid())
+  streamId String
+  transitionKey String
+  hash String
+  sequence Int
+  observedAt DateTime
+  @@unique([streamId, transitionKey])
+  @@index([observedAt])
+  @@map("khl_observation_receipts")
+}
+model KhlSyncJob {
+  id String @id @default(cuid())
+  provider String
+  scope String
+  jobType String
+  status String @default("PENDING")
+  leaseToken String?
+  leaseUntil DateTime?
+  attempts Int @default(0)
+  nextRunAt DateTime @default(now())
+  cursor Json?
+  error String?
+  updatedAt DateTime @updatedAt
+  @@index([status, nextRunAt])
+  @@map("khl_sync_jobs")
+}
+model KhlRawPayload {
+  id String @id @default(cuid())
+  provider String
+  scope String
+  contentHash String
+  parserVersion String
+  compressed Bytes
+  expiresAt DateTime
+  @@unique([provider, scope, contentHash])
+  @@index([expiresAt])
+  @@map("khl_raw_payloads")
+}
+
+model KhlExternalEntityMap {
+  id String @id @default(cuid())
+  provider String
+  entityType String
+  providerScope String
+  externalId String
+  seasonId String?
+  contestId String?
+  weekId String?
+  teamId String?
+  playerId String?
+  matchId String?
+  evidence String
+  verifiedAt DateTime
+  season KhlSeason? @relation(fields: [seasonId], references: [id], onDelete: Restrict)
+  contest KhlContest? @relation(fields: [contestId], references: [id], onDelete: Restrict)
+  week KhlFantasyWeek? @relation(fields: [weekId], references: [id], onDelete: Restrict)
+  team KhlTeam? @relation(fields: [teamId], references: [id], onDelete: Restrict)
+  player KhlPlayer? @relation(fields: [playerId], references: [id], onDelete: Restrict)
+  match KhlMatch? @relation(fields: [matchId], references: [id], onDelete: Restrict)
+  @@unique([provider, entityType, providerScope, externalId])
+  @@map("khl_external_entity_maps")
+}
+model KhlRosterMembership {
+  id String @id @default(cuid())
+  seasonId String
+  playerId String
+  teamId String
+  startsAt DateTime
+  endsAt DateTime?
+  source String
+  observedAt DateTime
+  season KhlSeason @relation(fields: [seasonId], references: [id], onDelete: Restrict)
+  player KhlPlayer @relation(fields: [playerId], references: [id], onDelete: Restrict)
+  team KhlTeam @relation(fields: [teamId], references: [id], onDelete: Restrict)
+  @@unique([seasonId, playerId, startsAt])
+  @@index([seasonId, teamId, endsAt])
+  @@map("khl_roster_memberships")
+}
+model KhlAvailabilityObservation {
+  id String @id @default(cuid())
+  playerId String
+  field String
+  value Json
+  quality String
+  source String
+  observedAt DateTime
+  expiresAt DateTime?
+  revision Int
+  player KhlPlayer @relation(fields: [playerId], references: [id], onDelete: Restrict)
+  @@unique([playerId, field, source, revision])
+  @@index([playerId, observedAt])
+  @@map("khl_availability_observations")
+}
+model KhlXgObservation {
+  id String @id @default(cuid())
+  matchId String
+  playerId String?
+  teamId String?
+  metric String
+  strength String
+  value Float?
+  source String
+  definitionVersion String
+  revision Int
+  observedAt DateTime
+  availableAt DateTime
+  match KhlMatch @relation(fields: [matchId], references: [id], onDelete: Restrict)
+  player KhlPlayer? @relation(fields: [playerId], references: [id], onDelete: Restrict)
+  team KhlTeam? @relation(fields: [teamId], references: [id], onDelete: Restrict)
+  @@index([playerId, matchId, availableAt])
+  @@index([teamId, matchId, availableAt])
+  @@map("khl_xg_observations")
+}
+model KhlOfficialFantasyScore {
+  id String @id @default(cuid())
+  contestId String
+  fantasyPlayerId String
+  matchId String
+  points Float?
+  source String
+  revision Int
+  observedAt DateTime
+  availableAt DateTime
+  contest KhlContest @relation(fields: [contestId], references: [id], onDelete: Restrict)
+  player KhlFantasyPlayer @relation(fields: [fantasyPlayerId, contestId], references: [id, contestId], onDelete: Restrict)
+  match KhlMatch @relation(fields: [matchId], references: [id], onDelete: Restrict)
+  @@unique([fantasyPlayerId, matchId])
+  @@map("khl_official_fantasy_scores")
+}
+model KhlProviderSquadSnapshot {
+  id String @id @default(cuid())
+  userId String
+  contestId String
+  providerEntryId String
+  providerWeekId String
+  bankUnits Int
+  transfersUsed Int?
+  entries Json
+  source String
+  observedAt DateTime
+  hash String
+  user User @relation(fields: [userId], references: [id], onDelete: Restrict)
+  contest KhlContest @relation(fields: [contestId], references: [id], onDelete: Restrict)
+  squads KhlUserSquad[]
+  @@unique([userId, contestId, providerEntryId, hash])
+  @@index([userId, contestId, observedAt])
+  @@map("khl_provider_squad_snapshots")
+}
+model KhlForecastRevision {
+  id String @id @default(cuid())
+  contestId String
+  modelVersion String
+  rulesVersion String
+  inputHash String
+  dataRevision Int?
+  asOf DateTime
+  horizonEnd DateTime
+  status String
+  quality String
+  diagnostics Json
+  contest KhlContest @relation(fields: [contestId], references: [id], onDelete: Restrict)
+  players KhlPlayerMatchForecast[]
+  @@unique([contestId, modelVersion, inputHash])
+  @@index([contestId, status, asOf])
+  @@map("khl_forecast_revisions")
+}
+model KhlPlayerMatchForecast {
+  id String @id @default(cuid())
+  forecastId String
+  playerId String
+  matchId String
+  expectedPoints Float?
+  participationProbability Float?
+  uncertainty Float?
+  components Json
+  forecast KhlForecastRevision @relation(fields: [forecastId], references: [id], onDelete: Restrict)
+  player KhlPlayer @relation(fields: [playerId], references: [id], onDelete: Restrict)
+  match KhlMatch @relation(fields: [matchId], references: [id], onDelete: Restrict)
+  @@unique([forecastId, playerId, matchId])
+  @@map("khl_player_match_forecasts")
+}
+model KhlOddsEventMap {
+  id String @id @default(cuid())
+  provider String
+  externalId String
+  matchId String
+  dictionaryVersion String
+  verifiedAt DateTime
+  match KhlMatch @relation(fields: [matchId], references: [id], onDelete: Restrict)
+  snapshots KhlOddsSnapshot[]
+  @@unique([provider, externalId])
+  @@map("khl_odds_event_maps")
+}
+model KhlOddsSnapshot {
+  id String @id @default(cuid())
+  eventId String
+  marketKey String
+  revision Int
+  status String
+  prices Json
+  probabilities Json?
+  observedAt DateTime
+  event KhlOddsEventMap @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  @@unique([eventId, marketKey, revision])
+  @@map("khl_odds_snapshots")
+}
+model KhlSourceContract {
+  id String @id @default(cuid())
+  provider String @unique
+  capabilities Json
+  permissionStatus String @default("UNVERIFIED")
+  evidence String
+  definitionVersion String?
+  verifiedAt DateTime?
+  health String @default("UNKNOWN")
+  lastSuccessAt DateTime?
+  coverage Json
+  @@map("khl_source_contracts")
+}
+model KhlProviderCheckpoint {
+  id String @id @default(cuid())
+  provider String
+  scope String
+  jobType String
+  cursor Json
+  completedAt DateTime
+  @@unique([provider, scope, jobType])
+  @@map("khl_provider_checkpoints")
+}
+
 enum UserRole {
   ADMIN
   USER
@@ -38,6 +558,10 @@ enum DataSourceType {
 
 model User {
   bettingAccount BettingAccount?
+  khlProviderSnapshots           KhlProviderSquadSnapshot[]
+  khlTransferScenarios           KhlTransferScenario[]
+  khlSquads                     KhlUserSquad[]
+  khlPreferences                KhlUserViewPreference[]
   id                            String                         @id @default(cuid())
   email                         String                         @unique
   name                          String?

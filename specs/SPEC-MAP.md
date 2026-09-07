@@ -40,3 +40,14 @@ These files stay as authored project documentation. They are not typed Prist spe
 ## Next typed specs
 
 Register a PROP, FEAT, or INFRA only when a change needs an independently owned contract. Likely first areas: Machete squad planning, FotMob ingestion, Sports.ru price mapping, Baltika workbook import, MiXerr shot maps, and auth/session access.
+
+## KHL (изолированный beta-модуль)
+
+- `specs/modules/khl/FEAT-001-khl-module-and-rules.md`
+- `specs/modules/khl/FEAT-002-khl-squad.md`
+- `specs/modules/khl/FEAT-003-khl-projections-and-optimizer.md`
+- `specs/modules/khl/INFRA-001-khl-data-ingestion.md`
+- `specs/modules/khl/INFRA-002-khl-storage-and-api.md`
+- `specs/modules/khl/INFRA-003-khl-fonbet-odds.md`
+
+Реализация и production gates: [KHL status](../docs/KHL_IMPLEMENTATION_STATUS.md).
