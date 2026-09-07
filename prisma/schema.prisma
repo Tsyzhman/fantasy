@@ -55,6 +55,8 @@ model User {
   watchlistPlayers              UserWatchlistPlayer[]
   scoringPreferences            UserScoringPreference[]
   externalProfiles              UserExternalProfile[]
+  globalStrategyStates          UserGlobalStrategyState[]
+  globalStrategyRecommendations GlobalStrategyRecommendation[]
   sportsRuSquadSnapshots        SportsRuSquadSnapshot[]
   fantasyProviderSquadSnapshots FantasyProviderSquadSnapshot[]
   fantasyGameweekStates         FantasyUserGameweekState[]
@@ -824,11 +826,73 @@ model FantasyContest {
   officialScores         FantasyProviderPlayerMatchScore[]
   providerEntityMaps     ProviderEntityMap[]
   providerRounds         FantasyProviderRound[]
+  globalStrategyStates   GlobalContestStrategyState[]
+  userGlobalStrategyStates UserGlobalStrategyState[]
+  globalStrategyRecommendations GlobalStrategyRecommendation[]
   providerFixtures       FantasyProviderFixture[]
 
   @@unique([provider, leagueId, season], map: "sports_ru_fantasy_contests_provider_league_id_season_key")
   @@index([leagueId, season], map: "sports_ru_fantasy_contests_league_id_season_idx")
   @@map("sports_ru_fantasy_contests")
+}
+
+/// @spec spec://modules/machete/FEAT-001-global-ranking-strategy#data
+model GlobalContestStrategyState {
+  id String @id @default(cuid())
+  provider String
+  contestId String @map("contest_id")
+  season String
+  sourceRevision String @map("source_revision")
+  calendarRevision String @map("calendar_revision")
+  standingsRoundId String @map("standings_round_id")
+  fieldSize Int @map("field_size")
+  leaderPoints Float @map("leader_points")
+  totalRounds Int @map("total_rounds")
+  remainingRounds Int @map("remaining_rounds")
+  observedAt DateTime @map("observed_at")
+  expiresAt DateTime @map("expires_at")
+  contest FantasyContest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  @@unique([provider, contestId, season])
+  @@map("global_contest_strategy_states")
+}
+
+/// @spec spec://modules/machete/FEAT-001-global-ranking-strategy#data
+model UserGlobalStrategyState {
+  id String @id @default(cuid())
+  userId String @map("user_id")
+  provider String
+  contestId String @map("contest_id")
+  providerSquadId String @map("provider_squad_id")
+  season String
+  sourceRevision String @map("source_revision")
+  contextRevision String @map("context_revision")
+  rank Int
+  managerPoints Float @map("manager_points")
+  history Json
+  observedAt DateTime @map("observed_at")
+  expiresAt DateTime @map("expires_at")
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contest FantasyContest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  @@unique([userId, contestId, providerSquadId, season])
+  @@map("user_global_strategy_states")
+}
+
+/// @spec spec://modules/machete/FEAT-001-global-ranking-strategy#data
+model GlobalStrategyRecommendation {
+  id String @id @default(cuid())
+  userId String @map("user_id")
+  contestId String @map("contest_id")
+  squadId String @map("squad_id")
+  decisionRound String @map("decision_round")
+  inputHash String @map("input_hash")
+  configVersion String @map("config_version")
+  result Json
+  createdAt DateTime @default(now()) @map("created_at")
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contest FantasyContest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  @@unique([userId, squadId, decisionRound, inputHash, configVersion], map: "global_strategy_recommendation_input_key")
+  @@index([createdAt])
+  @@map("global_strategy_recommendations")
 }
 
 model FantasyProviderRound {

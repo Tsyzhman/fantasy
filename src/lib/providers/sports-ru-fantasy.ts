@@ -404,6 +404,15 @@ export async function fetchSportsRuLatestPublishedSquad(
   return null;
 }
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#data */
+export async function fetchSportsRuGlobalSquadChoices(profileId: string, seasonId: string, fetchImpl: typeof fetch = fetch) {
+  const safeProfileId = normalizeSportsRuProfileId(profileId);
+  if (!safeProfileId || !/^\d{1,20}$/.test(seasonId)) throw new Error("Invalid Sports.ru binding.");
+  const response = await sportsRuGraphqlRequest<{ fantasyQueries: { squads: { id: string; name: string; season: { id: string } }[] } }>(sportsRuFantasyGraphqlEndpoint,
+    `{ fantasyQueries { squads(input:{userID:${JSON.stringify(safeProfileId)},isActiveTournament:true}) { id name season { id } } } }`, fetchImpl);
+  return response.fantasyQueries.squads.filter((squad) => squad.season?.id === seasonId).map((squad) => ({ id: squad.id, label: squad.name }));
+}
+
 type SportsRuTourNode = {
   id: string;
   name?: string | null;
@@ -529,7 +538,13 @@ export function sportsRuTournamentHruFromUrl(value: string) {
   }
 }
 
-async function sportsRuGraphqlRequest<T>(endpoint: string, query: string, fetchImpl: typeof fetch): Promise<T> {
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#errors */
+export class SportsRuGraphqlHttpError extends Error {
+  constructor(public readonly status: number, public readonly retryAfter: string | null, statusText: string) {
+    super(`Sports.ru GraphQL request failed: ${status} ${statusText}`);
+  }
+}
+export async function sportsRuGraphqlRequest<T>(endpoint: string, query: string, fetchImpl: typeof fetch): Promise<T> {
   const response = await fetchImpl(endpoint, {
     method: "POST",
     headers: {
@@ -541,7 +556,7 @@ async function sportsRuGraphqlRequest<T>(endpoint: string, query: string, fetchI
     signal: AbortSignal.timeout(sportsRuFantasyRequestTimeoutMs),
     body: JSON.stringify({ query })
   });
-  if (!response.ok) throw new Error(`Sports.ru GraphQL request failed: ${response.status} ${response.statusText}`);
+  if (!response.ok) throw new SportsRuGraphqlHttpError(response.status, response.headers.get("retry-after"), response.statusText);
   const payload = (await response.json()) as { data?: T; errors?: Array<{ message?: string }> };
   if (payload.errors?.length) throw new Error(`Sports.ru GraphQL error: ${payload.errors.map((error) => error.message ?? "unknown error").join("; ")}`);
   if (!payload.data) throw new Error("Sports.ru GraphQL response contains no data.");

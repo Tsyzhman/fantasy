@@ -157,7 +157,7 @@ test("old snapshots remain readable while the sequential worker upgrades calenda
   assert.equal(fantasyPlayerPoolSnapshotHasFixtureCalendar({ ...oldMetadata, fixtureCalendar: testCalendar() }), true);
   assert.equal(fantasyPlayerPoolSnapshotHasFixtureCalendar({ ...oldMetadata, fixtureCalendar: { version: 2 } }), false);
   const snapshots = readFileSync(new URL("./fantasy-player-pool-snapshots.ts", import.meta.url), "utf8");
-  assert.match(snapshots, /if \(fantasyPlayerPoolSnapshotHasFixtureCalendar\(existing\?\.metadata\)\) continue/);
+  assert.match(snapshots, /if \(fantasyPlayerPoolSnapshotHasFixtureCalendar\(existing\?\.metadata\)\s*&& parseFantasyPlayerPoolSnapshotMetadata\(existing\?\.metadata\)\?\.providerIdentityVersion === 1\s*&& fantasyPlayerPoolSnapshotHasCurrentRotationRisk\(existing\?\.metadata\)\) continue/);
   assert.match(snapshots, /const metadata = \{ \.\.\.previousMetadata, startingXiTeamRevisions: xiAfter\.teamRevisions \}/, "XI-only publication preserves the existing calendar");
 });
 

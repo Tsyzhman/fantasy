@@ -1,0 +1,253 @@
+{
+  "recordedAt": "2026-09-07T08:14:53.644Z",
+  "source": "https://www.sports.ru/gql/graphql/",
+  "tournamentKey": "russia",
+  "season": {
+    "id": "75",
+    "totalSquadsCount": 18951,
+    "tours": [
+      {
+        "id": "2283",
+        "name": "1 тур",
+        "status": "FINISHED",
+        "startedAt": "2026-07-24T17:00:00Z",
+        "finishedAt": "2026-07-26T19:30:00Z"
+      },
+      {
+        "id": "2284",
+        "name": "2 тур",
+        "status": "FINISHED",
+        "startedAt": "2026-07-31T17:00:00Z",
+        "finishedAt": "2026-08-02T20:30:00Z"
+      },
+      {
+        "id": "2285",
+        "name": "3 тур",
+        "status": "FINISHED",
+        "startedAt": "2026-08-08T12:30:00Z",
+        "finishedAt": "2026-08-10T19:30:00Z"
+      },
+      {
+        "id": "2286",
+        "name": "4 тур",
+        "status": "FINISHED",
+        "startedAt": "2026-08-14T14:00:00Z",
+        "finishedAt": "2026-08-16T19:30:00Z"
+      },
+      {
+        "id": "2287",
+        "name": "5 тур",
+        "status": "FINISHED",
+        "startedAt": "2026-08-22T12:30:00Z",
+        "finishedAt": "2026-08-24T20:30:00Z"
+      },
+      {
+        "id": "2288",
+        "name": "6 тур",
+        "status": "FINISHED",
+        "startedAt": "2026-08-28T15:00:00Z",
+        "finishedAt": "2026-08-30T20:00:00Z"
+      },
+      {
+        "id": "2289",
+        "name": "7 тур",
+        "status": "IN_PROGRESS",
+        "startedAt": "2026-09-05T11:00:00Z",
+        "finishedAt": "2026-09-07T19:30:00Z"
+      },
+      {
+        "id": "2290",
+        "name": "8 тур",
+        "status": "OPENED",
+        "startedAt": "2026-09-11T15:00:00Z",
+        "finishedAt": "2026-09-13T19:30:00Z"
+      },
+      {
+        "id": "2291",
+        "name": "9 тур",
+        "status": "NOT_STARTED",
+        "startedAt": "2026-09-16T15:30:00Z",
+        "finishedAt": "2026-09-17T20:45:00Z"
+      },
+      {
+        "id": "2292",
+        "name": "10 тур",
+        "status": "NOT_STARTED",
+        "startedAt": "2026-10-11T00:00:00Z",
+        "finishedAt": "2026-10-11T03:00:00Z"
+      },
+      {
+        "id": "2293",
+        "name": "11 тур",
+        "status": "NOT_STARTED",
+        "startedAt": "2026-10-18T00:00:00Z",
+        "finishedAt": "2026-10-18T03:00:00Z"
+      },
+      {
+        "id": "2294",
+        "name": "12 тур",
+        "status": "NOT_STARTED",
+        "startedAt": "2026-10-25T00:00:00Z",
+        "finishedAt": "2026-10-25T03:00:00Z"
+      },
+      {
+        "id": "2295",
+        "name": "13 тур",
+        "status": "NOT_STARTED",
+        "startedAt": "2026-11-01T00:00:00Z",
+        "finishedAt": "2026-11-01T03:00:00Z"
+      },
+      {
+        "id": "2296",
+        "name": "14 тур",
+        "status": "NOT_STARTED",
+        "startedAt": "2026-11-08T00:00:00Z",
+        "finishedAt": "2026-11-08T03:00:00Z"
+      },
+      {
+        "id": "2297",
+        "name": "15 тур",
+        "status": "NOT_STARTED",
+        "startedAt": "2026-11-22T00:00:00Z",
+        "finishedAt": "2026-11-22T03:00:00Z"
+      },
+      {
+        "id": "2298",
+        "name": "16 тур",
+        "status": "NOT_STARTED",
+        "startedAt": "2026-11-29T00:00:00Z",
+        "finishedAt": "2026-11-29T03:00:00Z"
+      },
+      {
+        "id": "2299",
+        "name": "17 тур",
+        "status": "NOT_STARTED",
+        "startedAt": "2026-12-06T00:00:00Z",
+        "finishedAt": "2026-12-06T03:00:00Z"
+      },
+      {
+        "id": "2300",
+        "name": "18 тур",
+        "status": "NOT_STARTED",
+        "startedAt": "2027-02-28T00:00:00Z",
+        "finishedAt": "2027-02-28T03:00:00Z"
+      },
+      {
+        "id": "2301",
+        "name": "19 тур",
+        "status": "NOT_STARTED",
+        "startedAt": "2027-03-07T00:00:00Z",
+        "finishedAt": "2027-03-07T03:00:00Z"
+      },
+      {
+        "id": "2302",
+        "name": "20 тур",
+        "status": "NOT_STARTED",
+        "startedAt": "2027-03-14T00:00:00Z",
+        "finishedAt": "2027-03-14T03:00:00Z"
+      },
+      {
+        "id": "2303",
+        "name": "21 тур",
+        "status": "NOT_STARTED",
+        "startedAt": "2027-03-21T00:00:00Z",
+        "finishedAt": "2027-03-21T03:00:00Z"
+      },
+      {
+        "id": "2304",
+        "name": "22 тур",
+        "status": "NOT_STARTED",
+        "startedAt": "2027-04-04T00:00:00Z",
+        "finishedAt": "2027-04-04T03:00:00Z"
+      },
+      {
+        "id": "2305",
+        "name": "23 тур",
+        "status": "NOT_STARTED",
+        "startedAt": "2027-04-11T00:00:00Z",
+        "finishedAt": "2027-04-11T03:00:00Z"
+      },
+      {
+        "id": "2306",
+        "name": "24 тур",
+        "status": "NOT_STARTED",
+        "startedAt": "2027-04-18T00:00:00Z",
+        "finishedAt": "2027-04-18T03:00:00Z"
+      },
+      {
+        "id": "2307",
+        "name": "25 тур",
+        "status": "NOT_STARTED",
+        "startedAt": "2027-04-25T00:00:00Z",
+        "finishedAt": "2027-04-25T03:00:00Z"
+      },
+      {
+        "id": "2308",
+        "name": "26 тур",
+        "status": "NOT_STARTED",
+        "startedAt": "2027-05-02T00:00:00Z",
+        "finishedAt": "2027-05-02T03:00:00Z"
+      },
+      {
+        "id": "2309",
+        "name": "27 тур",
+        "status": "NOT_STARTED",
+        "startedAt": "2027-05-09T00:00:00Z",
+        "finishedAt": "2027-05-09T03:00:00Z"
+      },
+      {
+        "id": "2310",
+        "name": "28 тур",
+        "status": "NOT_STARTED",
+        "startedAt": "2027-05-16T00:00:00Z",
+        "finishedAt": "2027-05-16T03:00:00Z"
+      },
+      {
+        "id": "2311",
+        "name": "29 тур",
+        "status": "NOT_STARTED",
+        "startedAt": "2027-05-23T00:00:00Z",
+        "finishedAt": "2027-05-23T03:00:00Z"
+      },
+      {
+        "id": "2312",
+        "name": "30 тур",
+        "status": "NOT_STARTED",
+        "startedAt": "2027-05-29T00:00:00Z",
+        "finishedAt": "2027-05-29T03:00:00Z"
+      }
+    ]
+  },
+  "leader": {
+    "place": 1,
+    "score": 487,
+    "totalPlaces": 18951
+  },
+  "coherent": true,
+  "history": [
+    {
+      "id": "2283",
+      "score": 90
+    },
+    {
+      "id": "2284",
+      "score": 66
+    },
+    {
+      "id": "2285",
+      "score": 64
+    },
+    {
+      "id": "2286",
+      "score": 78
+    },
+    {
+      "id": "2287",
+      "score": 57
+    },
+    {
+      "id": "2288",
+      "score": 68
+    }
+  ]
+}

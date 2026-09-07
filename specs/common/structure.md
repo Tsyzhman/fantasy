@@ -19,6 +19,7 @@
 | Machete UI | League, player, model, squad, and sync screens | `src/app/machete` |
 | Squad player card | FEAT-003: contact-sheet pitch/bench card and themed styles | `src/components/machete/FantasySquadPlanner.tsx`, `src/app/globals.css` |
 | Machete domain | Read models, scoring, Sports.ru mapping, squad planning | `src/machete` |
+| Rotation risk | FEAT-004: RR math and bounded normalized history reader | `src/machete/rotation-risk.ts`, `src/server/rotation-risk.ts` |
 | Global ranking strategy | FEAT-001/002: pure K/EP-loss math, bounded candidate search, provider context/cache, recommendation audit and UI | `src/machete/global-strategy*.ts`, `src/server/global-strategy*.ts`, `src/app/api/machete/squads/global-strategy`, `src/components/machete/GlobalStrategyPanel.tsx` |
 | Shared FotMob core | Normalized match, team, player, shot, and event tables | `src/core_data` |
 | Baltika UI | Imported leagues, teams, schedule, models | `src/app/baltika` |

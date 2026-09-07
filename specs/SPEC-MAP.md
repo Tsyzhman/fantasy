@@ -12,6 +12,7 @@ Canon for Fantasy Scout. Work status lives in `BOARD.md`; this file is the catal
 | `specs/modules/machete/FEAT-001-global-ranking-strategy.md` | Active: режим «По глобальному рейтингу» в планировщике |
 | `specs/modules/machete/FEAT-002-global-strategy-formula.md` | Active: формула K и strategyScore |
 | `specs/modules/machete/FEAT-003-squad-player-card.md` | Active: карточка поля Squad «Контактный лист», действия и темы |
+| `specs/modules/machete/FEAT-004-rotation-risk.md` | Active: RR по истории стартов и отдыху, надёжный подбор |
 
 Typed specs were imported from today's documents in `docs/`. Originals stay in place.
 

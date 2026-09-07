@@ -49,6 +49,7 @@ export type FplEvent = {
   isNext: boolean;
   released: boolean;
   dataChecked: boolean;
+  averageEntryScore?: number | null;
 };
 
 export type FplTeam = {
@@ -91,6 +92,7 @@ export type FplOfficialChip = {
 };
 
 export type FplBootstrap = {
+  totalPlayers?: number | null;
   events: FplEvent[];
   teams: FplTeam[];
   elements: FplElement[];
@@ -261,6 +263,20 @@ export class FplPublicClient {
     return parseRecord(await this.getJson(`${this.entryEndpoint}/${normalizedEntryId}/`), "entry");
   }
 
+  /** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#data */
+  async getEntryHistory(entryId: string): Promise<Record<string, unknown>> {
+    const id = normalizeFplEntryId(entryId);
+    if (!id) throw new FplProviderError("Invalid FPL entry ID.", "MALFORMED");
+    return parseRecord(await this.getJson(`${this.entryEndpoint}/${id}/history/`), "history");
+  }
+
+  /** Only the first page of the system Overall league is needed.
+   * @spec spec://modules/machete/FEAT-001-global-ranking-strategy#data */
+  async getOverallStandings(leagueId: number): Promise<Record<string, unknown>> {
+    if (!Number.isSafeInteger(leagueId) || leagueId < 1) throw new FplProviderError("Invalid overall league ID.", "MALFORMED");
+    return parseRecord(await this.getJson(`${this.endpoint.replace(/bootstrap-static\/?$/, "leagues-classic")}/${leagueId}/standings/`), "standings");
+  }
+
   async getPublishedPicks(entryId: string, gameweek: number): Promise<FplPublishedPicks> {
     const normalizedEntryId = normalizeFplEntryId(entryId);
     if (!normalizedEntryId) throw new FplProviderError("FPL entry ID must be a positive integer.", "MALFORMED");
@@ -368,6 +384,9 @@ export function fplRelayPathAllowed(pathname: string) {
 }
 
 const FPL_RELAY_PATHS = [
+  // @spec spec://modules/machete/FEAT-001-global-ranking-strategy#data
+  /^\/api\/entry\/[1-9]\d*\/history\/$/,
+  /^\/api\/leagues-classic\/[1-9]\d*\/standings\/$/,
   /^\/api\/bootstrap-static\/$/,
   /^\/api\/fixtures(?:\/)?$/,
   /^\/api\/event\/[1-9]\d*\/live\/$/,
@@ -444,7 +463,7 @@ export function parseFplBootstrap(payload: unknown, fetchedAt = new Date()): Fpl
   if (elements.some((element) => !teamIds.has(element.teamId) || !elementTypeIds.has(element.elementType))) {
     throw new FplProviderError("FPL bootstrap contains an element with an unknown team or element type.", "MALFORMED");
   }
-  return { events, teams, elements, elementTypes, chips, gameConfig, fetchedAt };
+  return { events, teams, elements, elementTypes, chips, gameConfig, fetchedAt, totalPlayers: integerOrNull(root.total_players) };
 }
 
 export function parseFplFixtures(payload: unknown): FplFixture[] {
@@ -724,7 +743,8 @@ function parseEvent(value: unknown, index: number): FplEvent {
     isCurrent: row.is_current === true,
     isNext: row.is_next === true,
     released: row.released !== false,
-    dataChecked: row.data_checked === true
+    dataChecked: row.data_checked === true,
+    averageEntryScore: integerOrNull(row.average_entry_score)
   };
 }
 

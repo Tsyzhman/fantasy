@@ -1,0 +1,23 @@
+{
+  "measuredAt": "2026-09-07T09:49:29.402Z",
+  "fixture": "SYNTHETIC_50_KNOWN_LINEUPS",
+  "passes": 6,
+  "calculationsPerPass": 5000,
+  "gcAvailable": true,
+  "heapSamples": [
+    8285896,
+    8261064,
+    8260256,
+    8260240,
+    8260240,
+    8260240
+  ],
+  "compactResultBytes": 393,
+  "finalMemory": {
+    "rss": 94146560,
+    "heapTotal": 17620992,
+    "heapUsed": 8298712,
+    "external": 2450483,
+    "arrayBuffers": 37646
+  }
+}

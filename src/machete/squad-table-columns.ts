@@ -1,4 +1,5 @@
 export const defaultSquadTableColumns = [
+  "rotationRisk",
   "nextFp",
   "nextFpPerPrice",
   "horizonFp",

@@ -4,9 +4,11 @@ import test from "node:test";
 import type { FantasyPlannerPlayer } from "./squad_logic";
 import { fantasyPlayerProjectionDetails, toFantasyPlayerPoolListItem } from "./squad-player-dto";
 
-test("squad list DTO strips projection breakdowns and keeps sortable projection metrics", () => {
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#contracts */
+test("squad list DTO preserves provider identity, strips breakdowns and keeps projection metrics", () => {
   const player = {
     playerId: "7",
+    providerPlayerId: "315",
     projectedFixtureComponents: {
       sixtyMinutesProbability: 0.7,
       fullMatchProbability: 0.5,
@@ -27,6 +29,7 @@ test("squad list DTO strips projection breakdowns and keeps sortable projection 
   } as unknown as FantasyPlannerPlayer;
 
   const listItem = toFantasyPlayerPoolListItem(player);
+  assert.equal(listItem.providerPlayerId, "315");
   assert.equal("projectionFormula" in listItem, false);
   assert.equal("projectedFixtureComponents" in listItem, false);
   assert.deepEqual(listItem.projectionListMetrics, {

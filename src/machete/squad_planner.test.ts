@@ -25,6 +25,7 @@ import {
   fantasyPlayerPoolPreferenceGroups,
   fantasyPlannerSharedRowIdentity,
   fantasySquadRoundPlansFromFilters,
+  fantasySquadFiltersPayload,
   fantasySquadRoundIdsFromFilters,
   fantasySquadRoundShift,
   fantasyTeamShortName,
@@ -63,6 +64,18 @@ import {
 
 import { fitFantasyProjectionCalibration } from "./fantasy_projection_calibration";
 import type { FantasyBacktestSample } from "./fantasy_backtest";
+
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#data */
+test("saving GLOBAL_AUTO preserves user filters and binding, and replaces a cleared transfer baseline", () => {
+  const previousFilters = Object.freeze({ customFilter: { position: "MID" }, globalStrategyBinding: { providerSquadId: "9" }, transferBaselinePlayerIds: ["old"] });
+  const result = fantasySquadFiltersPayload({ previousFilters, strategy: "GLOBAL_AUTO", roundPlans: [], providerPlaceholders: [], roundPlanRoundIds: ["7"], transferBaselinePlayerIds: [] });
+  assert.equal(result.strategy, "GLOBAL_AUTO");
+  assert.ok("customFilter" in result);
+  assert.deepEqual(result.customFilter, { position: "MID" });
+  assert.deepEqual(result.globalStrategyBinding, { providerSquadId: "9" });
+  assert.equal(result.transferBaselinePlayerIds, undefined);
+  assert.deepEqual(previousFilters.transferBaselinePlayerIds, ["old"]);
+});
 import type { PlayerFixtureProjection } from "./deterministic_fantasy_projection";
 import type { ActiveScoringModel } from "@/lib/scoring";
 import { friendAlternativeFormulaDefaults } from "@/lib/scoring/formula-display";

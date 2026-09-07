@@ -1,4 +1,6 @@
 import { ImportStatus, Prisma, type PrismaClient } from "@prisma/client";
+/** @spec spec://modules/machete/FEAT-004-rotation-risk#contracts */
+import { loadRotationRisks } from "@/server/rotation-risk";
 
 import { OFFICIAL_TRANSFER_ROSTER_SOURCE } from "@/core_data/models";
 import { formatDate } from "@/lib/format";
@@ -96,6 +98,7 @@ import {
 import { sportsRuMaxPlayersPerTeamForLeague } from "./sports_ru_team_limits";
 
 export type SavedFantasySquad = {
+  strategy?: import("./squad_logic").FantasySquadStrategy;
   id: string | null;
   name: string;
   leagueId: string;
@@ -615,6 +618,7 @@ export async function loadFantasySquadPlayerPoolLoadPlan(
  * pipeline. Every returned item is immediately usable for search, filters and
  * squad edits; forecast fields are enriched only after all base rows are on
  * screen.
+ * @spec spec://modules/machete/FEAT-001-global-ranking-strategy#contracts
  */
 export async function loadFantasySquadPlayerPoolBaseBatch(
   prisma: PrismaClient,
@@ -629,6 +633,7 @@ export async function loadFantasySquadPlayerPoolBaseBatch(
   if (numericIds.length === 0) return [];
   const priceSelect = {
     playerId: true,
+    providerPlayerId: true,
     teamId: true,
     playerName: true,
     position: true,
@@ -706,6 +711,7 @@ export async function loadFantasySquadPlayerPoolBaseBatch(
     return [[playerId, {
       id: playerId,
       playerId,
+      providerPlayerId: row.providerPlayerId,
       teamId: String(teamId),
       name: playerName,
       fotmobName: row.player?.name ?? membership?.player.name ?? null,
@@ -943,6 +949,7 @@ function loadCachedFantasySquadPlayerPoolWithMetadata(
   ]).then(([features, overlays]) => mergeFantasyPlayerScoringOverlay(features, overlays));
 }
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#contracts */
 export async function loadFantasySquadPlannerData(
   prisma: PrismaClient,
   userId: string,
@@ -1378,6 +1385,7 @@ export async function loadFantasySquadPlannerData(
       {
         id: playerId,
         playerId,
+        providerPlayerId: priceRow?.providerPlayerId ?? null,
         teamId,
         name: playerName,
         fotmobName: row.player.name,
@@ -1475,7 +1483,13 @@ export async function loadFantasySquadPlannerData(
   const placeholderPlayers = fantasyProviderPlaceholdersFromFilters(savedSquad?.filters, provider).map((placeholder) =>
     fantasyProviderPlaceholderPlannerPlayer(placeholder, league.displayName, roundsAndFixtures.rounds.length || 5)
   );
-  const players = mergeFantasyPlannerPlayerPools(basePlayers, placeholderPlayers);
+  const riskObservedAt = new Date();
+  const rotationRisks = options?.deferFormulaProjections ? new Map() : await loadRotationRisks(prisma, basePlayers.map((player) => ({
+    playerId: player.playerId,
+    kickoffAt: nearestPlannerFixture(roundsAndFixtures.rounds.flatMap((round) => roundsAndFixtures.fixturesByTeamRound.get(round.id)?.get(player.teamId ?? "") ?? [])
+      .filter((fixture) => fixture.kickoffAt && +fixture.kickoffAt > +riskObservedAt))?.kickoffAt ?? null
+  })), riskObservedAt);
+  const players = mergeFantasyPlannerPlayerPools(basePlayers.map((player) => ({ ...player, rotationRisk: rotationRisks.get(player.playerId) ?? null })), placeholderPlayers);
   const playersById = new Map(players.map((player) => [player.playerId, player]));
   const horizonRounds = normalizeFantasyHorizon(savedSquad?.horizonRounds, rules.horizonOptions);
   const savedSelections =
@@ -2177,6 +2191,7 @@ async function loadFplRosterPriceContext(
         select: {
           id: true,
           playerId: true,
+          providerPlayerId: true,
           teamId: true,
           playerName: true,
           normalizedName: true,
@@ -2272,6 +2287,8 @@ export async function saveFantasySquad(
     contestId?: string | null;
     providerPlaceholders?: FantasyProviderPlaceholder[];
     resetTransferBaseline?: boolean;
+    providerSquadId?: string;
+    strategy?: import("./squad_logic").FantasySquadStrategy;
   }
 ) {
   const horizonRounds = normalizeFantasyHorizon(input.horizonRounds, input.rules.horizonOptions);
@@ -2449,6 +2466,9 @@ export async function saveFantasySquad(
           bank,
           horizonRounds,
           filters: fantasySquadFiltersPayload({
+            previousFilters: ownedSquad.filters,
+            providerSquadId: input.providerSquadId,
+            strategy: input.strategy,
             roundPlans,
             providerPlaceholders: storedProviderPlaceholders,
             roundPlanRoundIds: normalizeFantasySquadRoundIds(input.roundPlanRoundIds),
@@ -2477,6 +2497,8 @@ export async function saveFantasySquad(
           bank,
           horizonRounds,
           filters: fantasySquadFiltersPayload({
+            strategy: input.strategy,
+            providerSquadId: input.providerSquadId,
             roundPlans,
             providerPlaceholders: storedProviderPlaceholders,
             roundPlanRoundIds: normalizeFantasySquadRoundIds(input.roundPlanRoundIds),
@@ -2598,13 +2620,23 @@ function uniquePlayerIds(values: string[]) {
   return [...new Set(values.filter((value) => value.trim().length > 0))];
 }
 
-function fantasySquadFiltersPayload(input: {
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#data */
+export function fantasySquadFiltersPayload(input: {
+  providerSquadId?: string;
+  previousFilters?: unknown;
+  strategy?: import("./squad_logic").FantasySquadStrategy;
   roundPlans: FantasySquadRoundPlan[];
   providerPlaceholders: FantasyProviderPlaceholder[];
   roundPlanRoundIds: string[];
   transferBaselinePlayerIds: string[];
 }) {
+  const previousFilters = input.previousFilters && typeof input.previousFilters === "object" && !Array.isArray(input.previousFilters)
+    ? { ...input.previousFilters as Prisma.InputJsonObject } : {};
+  delete previousFilters.transferBaselinePlayerIds;
   return {
+    ...previousFilters,
+    ...(input.strategy ? { strategy: input.strategy } : {}),
+    ...(input.providerSquadId ? { globalStrategyBinding: { providerSquadId: input.providerSquadId } } : {}),
     roundPlans: input.roundPlans,
     providerPlaceholders: input.providerPlaceholders,
     roundPlanRoundIds: input.roundPlanRoundIds,
@@ -2613,7 +2645,10 @@ function fantasySquadFiltersPayload(input: {
 }
 
 function savedFantasySquadTransferState(filters: unknown, openingFreeTransfers: number | null) {
+  const value = filters && typeof filters === "object" ? (filters as { strategy?: unknown }).strategy : null;
+  const strategy: import("./squad_logic").FantasySquadStrategy = value === "GLOBAL_AUTO" || value === "reliable" || value === "upside" ? value : "balanced";
   return {
+    strategy,
     transferBaselinePlayerIds: fantasySquadTransferBaselineFromFilters(filters),
     openingFreeTransfers
   };
@@ -5459,6 +5494,7 @@ function priceLookup(
   priceRows: Array<{
     id: string;
     playerId: bigint | null;
+    providerPlayerId: string | null;
     playerName: string;
     normalizedName: string;
     teamName: string;

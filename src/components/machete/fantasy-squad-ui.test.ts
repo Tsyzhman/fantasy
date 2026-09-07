@@ -456,14 +456,16 @@ test("Russian player-pool headers stay compact and contained inside their column
   assert.doesNotMatch(squadPlannerSource, /overflow-hidden text-ellipsis px-/);
 });
 
-test("squad cards expose only captain and vice-captain controls with corner removal", () => {
-  assert.doesNotMatch(squadPlannerSource, /onToggleLock|onToggleStarter|<Star|<Unlock/);
-  assert.match(squadPlannerSource, /onClick=\{\(\) => onRemove\(player\.playerId\)\}[\s\S]*?absolute right-0\.5 top-0\.5/);
-  assert.match(squadPlannerSource, /onToggleCaptain\(player\.playerId\)/);
-  assert.match(squadPlannerSource, /onToggleVice\(player\.playerId\)/);
-  assert.match(squadPlannerSource, /absolute bottom-0\.5 left-0\.5[\s\S]*?>\s*C\s*/);
-  assert.match(squadPlannerSource, /absolute bottom-0\.5 right-0\.5[\s\S]*?>\s*VC\s*/);
-  assert.doesNotMatch(squadPlannerSource, /absolute -top-1\.5 left-1\/2/);
+/** @spec spec://modules/machete/FEAT-003-squad-player-card#scenarios */
+test("pitch cards expose direct captain and removal actions, with replacement outside the card", () => {
+  const tile = squadPlannerSource.split("function SquadPlayerTile(")[1].split("function BookmakerFavoritesTable(")[0];
+  assert.match(tile, /onToggleCaptain\(player\.playerId\)/);
+  assert.match(tile, /onRemove\(player\.playerId\)/);
+  assert.match(tile, /aria-pressed=\{isCaptain\}/);
+  assert.equal(tile.match(/disabled=\{replacementMode\}/g)?.length, 2);
+  assert.match(tile, /onReplacementPlayerClick\(player\.playerId\)/);
+  assert.match(tile, /isCaptain \? "C" : "VC"/);
+  assert.doesNotMatch(tile, /onToggleVice|MoreHorizontal|createPortal|useEffect|addEventListener|localStorage/);
 });
 
 test("squad cards show three upcoming opponents without a remaining-fixtures counter", () => {
@@ -581,29 +583,30 @@ test("squad cards distinguish next-round FP from a three-round forecast", () => 
   assert.doesNotMatch(tileSource, /playerHorizonPoints\(player, horizon\)/);
 });
 
-test("squad cards use a smaller position badge", () => {
-  assert.match(squadPlannerSource, /rounded px-0\.5 py-px text-\[7px\] font-bold/);
+test("squad cards retain a compact position badge", () => {
+  assert.match(squadPlannerSource, /className="squad-contact-card__position">\{player.positionGroup\}/);
 });
 
 test("squad cards place the compact team name in the top-left corner", () => {
   const tileStart = squadPlannerSource.indexOf("function SquadPlayerTile(");
   const tileEnd = squadPlannerSource.indexOf("function fantasyForecastTitle(", tileStart);
   const tileSource = squadPlannerSource.slice(tileStart, tileEnd);
-  assert.match(tileSource, /absolute left-0\.5 top-0\.5[\s\S]*?fantasyPlayerTeamDisplayName\(player\)/);
-  assert.match(tileSource, /max-w-\[1\.45rem\]/);
-  assert.match(tileSource, /flex translate-x-1 items-center justify-center/);
+  assert.match(tileSource, /squad-contact-card__club[\s\S]*?fantasyPlayerTeamDisplayName\(player\)/);
+  assert.match(globalStylesSource, /\.squad-contact-card__club \{ left: 3px/);
 });
 
 test("squad cards show captain to the left and price to the right of the player photo", () => {
   const tileStart = squadPlannerSource.indexOf("function SquadPlayerTile(");
   const tileEnd = squadPlannerSource.indexOf("function fantasyForecastTitle(", tileStart);
   const tileSource = squadPlannerSource.slice(tileStart, tileEnd);
-  assert.match(tileSource, /grid-cols-\[1fr_1\.75rem_1fr\][\s\S]*?isCaptain \? "C" : "VC"[\s\S]*?<SquadPlayerPhoto player=\{player\} \/>[\s\S]*?Fantasy price[\s\S]*?formatNumber\(player\.price, 1\)/);
+  assert.match(tileSource, /<SquadPlayerPhoto player=\{player\} contactSheet \/>[\s\S]*?isCaptain \? "C" : "VC"[\s\S]*?Fantasy price[\s\S]*?formatNumber\(player\.price, 1\)/);
+  assert.match(globalStylesSource, /\.squad-contact-card__role \{ left:/);
+  assert.match(globalStylesSource, /\.squad-contact-card__price \{ right:/);
   assert.match(tileSource, /player\.priceSource === "ESTIMATED" \? "~" : ""/);
 });
 
 test("squad cards lazy-load locally cached FotMob player photos with a fallback", () => {
-  assert.match(squadPlannerSource, /<SquadPlayerPhoto player=\{player\} \/>/);
+  assert.match(squadPlannerSource, /<SquadPlayerPhoto player=\{player\} contactSheet \/>/);
   assert.match(squadPlannerSource, /src=\{player\.photoUrl\}/);
   assert.match(squadPlannerSource, /loading="lazy"/);
   assert.match(squadPlannerSource, /onError=\{\(\) => setFailed\(true\)\}/);

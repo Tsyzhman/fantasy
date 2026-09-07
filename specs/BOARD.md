@@ -23,6 +23,7 @@
 | Work | Title | Owner | Date |
 |---|---|---|---|
 | [WI-005](work/archive/2026/WI-005-virtual-betting-league.md) | Виртуальная лига ставок Fantasy | @tsyzhman | 2026-09-07 |
+| [WI-006](work/archive/2026/WI-006-rotation-risk.md) | RR — риск ротации игрока | @tsyzhman | 2026-09-07 |
 | [WI-004](work/archive/2026/WI-004-squad-contact-sheet.md) | Карточка состава «Контактный лист» | @tsyzhman | 2026-09-07 |
 | [WI-003](work/archive/2026/WI-003-betting-features.md) | Расширенная проверка факторов ставок | @tsyzhman | 2026-09-07 |
 | [WI-002](work/archive/2026/WI-002-betting-feasibility.md) | Проверка доходности ставок по статистике | @tsyzhman | 2026-09-07 |

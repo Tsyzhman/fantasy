@@ -14,6 +14,18 @@ Next.js fantasy football scouting workspace with three main modes:
 - Node test runner via `tsx --test`
 - ESLint 9 with a local JSX localization warning rule
 
+## How the project is specified
+
+Product canon lives in `specs/`. Agents start from `AGENTS.md` and the `spec-driven-work` skill. There is no live Prist control plane.
+
+- `specs/SPEC-MAP.md` — catalog of specifications
+- `specs/common/` and `specs/modules/` — PROP / FEAT / INFRA
+- `specs/work/WI-NNN-*.md` — tracked work
+- `specs/BOARD.md` — status of work items
+- `specs/WAL.md` — checkpoints only when work is left unfinished
+
+One-step changes in the current session do not need a work item. Copy `specs/.me.template` to `specs/.me` before claiming BOARD rows.
+
 ## Local Development
 
 Requires Node.js `>=20.9.0` (matching Next.js) and npm. If you use nvm,
