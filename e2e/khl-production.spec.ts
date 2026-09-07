@@ -10,8 +10,20 @@ test("Betting offers all Squad leagues in the same order", async ({ page }) => {
   expect(await select.locator("option").evaluateAll(options => options.map(o => (o as HTMLOptionElement).value))).toEqual(["", ...fantasySquadLeagueFotMobIds]);
   await expect(select.locator("option").first()).toHaveText("Все лиги");
   await expect(page.getByRole("navigation", { name: "Разделы арены" }).getByRole("button", { name: "Расчёт", exact: true })).toHaveCount(0);
+  const leagueResponse = page.waitForResponse(r => r.url().includes("/api/betting?league=42") && r.request().method() === "GET");
   await select.selectOption("42");
-  await page.waitForResponse(r => r.url().includes("/api/betting?league=42") && r.request().method() === "GET");
+  expect((await leagueResponse).status()).toBe(200);
+  const order = page.getByRole("combobox", { name: /Порядок событий|Event order/ });
+  await expect(order).toHaveValue("value");
+  for (const sort of ["time", "value"]) {
+    const response = page.waitForResponse(r => r.url().includes(`/api/betting?league=42`) && r.url().includes(`sort=${sort}`));
+    await order.selectOption(sort);
+    const result = await response;
+    expect(result.status()).toBe(200);
+    const body = await result.json();
+    expect(body.events.length).toBeLessThanOrEqual(30);
+    expect(body.events.every((event: object) => "opportunity" in event)).toBe(true);
+  }
   const events = page.getByRole("region", { name: "События", exact: true }).getByRole("button");
   await expect(events.first()).toBeVisible();
   const detailResponse = page.waitForResponse(r => r.url().includes("/api/betting?event=") && r.request().method() === "GET");
@@ -23,6 +35,7 @@ test("Betting offers all Squad leagues in the same order", async ({ page }) => {
   expect([...detail.model!.home, ...detail.model!.away].every(r => Date.parse(r.at) < Date.parse(detail.model!.kickoff))).toBe(true);
   for (const name of ["Mia", "Abella", "Lana", "Riley", "Adriana"]) expect(detail.markets.some(m => m.recommendations.some(r => r.name === name && r.probability !== null))).toBe(true);
   const advice = page.getByRole("region", { name: "Советы алгоритмов на выбранный матч" });
+  await expect(page.getByRole("region", { name: "Подходящие исходы матча" })).toBeVisible();
   await expect(advice.getByRole("article")).toHaveCount(5);
   for (const name of ["Mia", "Abella", "Lana", "Riley", "Adriana"]) await expect(advice.getByRole("heading", { name, exact: true })).toBeVisible();
   await page.getByRole("textbox", { name: "Поиск рынка" }).fill("несуществующий рынок");
@@ -44,6 +57,7 @@ test("production KHL catalog and local planning are available", async ({ page })
   const selected = page.getByText("Сохранить в подборе", { exact: true });
   if (await selected.count() === 0) await page.getByRole("button", { name: "Выбрать", exact: true }).first().click();
   const count = await selected.count();
+  await expect(page.getByLabel("Хоккейный состав, все 17 активны").locator(".squad-contact-card")).toHaveCount(count);
   await page.getByRole("textbox", { name: "Название варианта" }).fill("KHL production smoke");
   await page.getByRole("button", { name: "Сохранить план" }).click();
   await expect(page.getByRole("status").filter({ hasText: "Локальный вариант сохранён" })).toBeVisible();
