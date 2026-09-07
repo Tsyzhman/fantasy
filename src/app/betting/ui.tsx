@@ -1,11 +1,14 @@
 "use client";
 /** @spec spec://modules/betting/FEAT-001-virtual-league#ui */
-import { useCallback,useEffect,useRef,useState } from "react";
+import { useCallback,useEffect,useMemo,useRef,useState } from "react";
 import { ArrowUpRight,Check,Coins,RefreshCw,Search,SkipForward,Trophy,X } from "lucide-react";
 import { BOTS,type Recommendation,type Selection,type ModelInput } from "@/betting/domain";
 import { matchAdvice } from "@/betting/match-advice";
+import { currentOpportunity, matchOpportunities, quoteUnavailable, type OpportunitySummary, type EventSort } from "@/betting/opportunities";
 import styles from "./ui.module.css";
-type Event={id:string;leagueId:number;home:string;away:string;kickoff:string;fetchedAt:string|null;matchId:number|null;closed?:boolean};
+import { I18nText } from "@/components/i18n-text";
+import { LocalizedOption } from "@/components/localized-option";
+type Event={id:string;leagueId:number;home:string;away:string;kickoff:string;fetchedAt:string|null;matchId:number|null;closed?:boolean;opportunity?:OpportunitySummary|null};
 type Market=Selection & {recommendations:Recommendation[]};
 type Detail=Event & {markets:Market[];model?:ModelInput|null;warning?:string|null};
 type Standing={id:string;name:string;bot_name:string|null;balance:number;locked:number;turnover:number;profit:number;bets:number;wins:number};
@@ -21,10 +24,13 @@ async function api<T>(path="",body?:unknown,signal?:AbortSignal):Promise<T>{cons
 export function BettingLeague() {
   const [data,setData]=useState<Dashboard|null>(null),[error,setError]=useState(""),[notice,setNotice]=useState("");
   const [tab,setTab]=useState("line"),[league,setLeague]=useState(""),[search,setSearch]=useState(""),[offset,setOffset]=useState(0);
+  const [sort,setSort]=useState<EventSort>("value");
   const [selected,setSelected]=useState<Detail|null>(null),[loadingEvent,setLoadingEvent]=useState(false),[marketSearch,setMarketSearch]=useState("");
   const [slip,setSlip]=useState<{event:Detail;market:Market;requestKey:string}|null>(null),[coins,setCoins]=useState("1000"),[busy,setBusy]=useState(false);
   const eventAbort=useRef<AbortController|null>(null),dashboardAbort=useRef<AbortController|null>(null);
-  const load=useCallback(async()=>{dashboardAbort.current?.abort();const c=new AbortController();dashboardAbort.current=c;try{const d=await api<Dashboard>(`?league=${league}&search=${encodeURIComponent(search)}&offset=${offset}`,undefined,c.signal);if(!c.signal.aborted)setData(d);}catch(e){if(!c.signal.aborted)setError((e as Error).message);}},[league,search,offset]);
+  const load=useCallback(async()=>{dashboardAbort.current?.abort();const c=new AbortController();dashboardAbort.current=c;try{const d=await api<Dashboard>(`?league=${league}&search=${encodeURIComponent(search)}&offset=${offset}&sort=${sort}`,undefined,c.signal);if(!c.signal.aborted)setData(d);}catch(e){if(!c.signal.aborted)setError((e as Error).message);}},[league,search,offset,sort]);
+  const loadRef=useRef(load);
+  useEffect(()=>{loadRef.current=load;},[load]);
   useEffect(()=>{const t=setTimeout(()=>void load(),250);const interval=setInterval(()=>{if(!document.hidden)void load();},30000);return()=>{clearTimeout(t);clearInterval(interval);dashboardAbort.current?.abort();};},[load]);
   useEffect(()=>()=>eventAbort.current?.abort(),[]);
   useEffect(()=>{
@@ -42,18 +48,23 @@ export function BettingLeague() {
     document.addEventListener("keydown",key);
     return()=>{document.body.style.overflow=previous;document.removeEventListener("keydown",key);before?.focus();};
   },[Boolean(slip),busy]);
-  async function openEvent(id:string){eventAbort.current?.abort();const c=new AbortController();eventAbort.current=c;setLoadingEvent(true);setSelected(null);setMarketSearch("");setError("");try{const d=await api<Detail>(`?event=${id}`,undefined,c.signal);if(!c.signal.aborted)setSelected(d);}catch(e){if(!c.signal.aborted)setError((e as Error).message);}finally{if(!c.signal.aborted)setLoadingEvent(false);}}
+  async function openEvent(id:string){eventAbort.current?.abort();const c=new AbortController();eventAbort.current=c;setLoadingEvent(true);setSelected(null);setMarketSearch("");setError("");try{const d=await api<Detail>(`?event=${id}`,undefined,c.signal);if(!c.signal.aborted){setSelected(d);void loadRef.current();}}catch(e){if(!c.signal.aborted)setError((e as Error).message);}finally{if(!c.signal.aborted)setLoadingEvent(false);}}
   async function post(body:unknown){setBusy(true);setError("");setNotice("");try{const r=await api("",body);await load();return r;}catch(e){setError((e as Error).message);throw e;}finally{setBusy(false);}}
   async function submit(){if(!slip)return;try{await post({action:"bet",eventId:slip.event.id,key:slip.market.key,odds:slip.market.odds,coins:Number(coins),requestKey:slip.requestKey});setNotice(`Ставка принята по ${slip.market.odds.toFixed(2)}. Коэффициент зафиксирован.`);setSlip(null);}catch{/* Preserve idempotency key and offered quote for network retries. */}}
   const [adviceTime,setAdviceTime]=useState(0);
   useEffect(()=>{
-    if(!selected || tab!=="line")return;
-    const update=()=>setAdviceTime(Date.now());
-    const initial=setTimeout(update,0);
-    const expires=Math.min(Date.parse(selected.kickoff),Date.parse(selected.fetchedAt??"")+300001);
-    const expiry=setTimeout(update,Math.max(0,Math.min(300001,expires-Date.now())));
-    return()=>{clearTimeout(initial);clearTimeout(expiry);};
-  },[selected,tab]);
+    if((!selected && !data) || tab!=="line")return;
+    let timer:ReturnType<typeof setTimeout>;
+    const update=()=>{
+      const now=Date.now();setAdviceTime(now);
+      const deadlines=[...(data?.events??[]),...(selected?[selected]:[])].flatMap(e=>[Date.parse(e.kickoff),Date.parse(e.fetchedAt??"")+300001]).filter(t=>Number.isFinite(t)&&t>now);
+      if(deadlines.length)timer=setTimeout(update,Math.min(300001,Math.max(1,Math.min(...deadlines)-now)));
+    };
+    timer=setTimeout(update,0);
+    return()=>clearTimeout(timer);
+  },[selected,data,tab]);
+  const opportunities=useMemo(()=>selected?matchOpportunities(selected,adviceTime):[],[selected,adviceTime]);
+  const opportunityKeys=useMemo(()=>new Set(opportunities.map(o=>o.market.key)),[opportunities]);
   const me=data?.standings.find(r=>r.id===data.account.id);
   const groups=new Map<string,Market[]>();
   for(const m of selected?.markets??[])if(!marketSearch || `${m.group} ${m.label}`.toLowerCase().includes(marketSearch.toLowerCase()))groups.set(m.group,[...(groups.get(m.group)??[]),m]);
@@ -72,14 +83,23 @@ export function BettingLeague() {
     {tab==="line"&&<>
       <div className={styles.filters}><label>Турнир<select value={league} onChange={e=>{setLeague(e.target.value);setOffset(0);}}><option value="">Все лиги</option>{data?.leagues.map(l=><option key={l.id} value={l.id}>{l.name} · {l.events}</option>)}</select></label><label><span><Search size={14}/> Найти команду</span><input value={search} onChange={e=>{setSearch(e.target.value);setOffset(0);}} placeholder="Челси, Рубин…"/></label><div className={styles.feedStatus}>{data?.total??0} событий<br/><small>{data?.sync?.lastSuccess?`Обновлено ${date(data.sync.lastSuccess)}`:"Ожидаем первую синхронизацию"}</small></div></div>
       {data?.sync?.lastError&&<p className={styles.warning}>Обновление линии: {data.sync.lastError}</p>}
+      <div className={styles.opportunityControls}><label><I18nText en="Event order" ru="Порядок событий"/><select value={sort} onChange={e=>{setSort(e.target.value as EventSort);setOffset(0);}}><LocalizedOption value="value" en="Highest EV first" ru="Сначала высокий EV"/><LocalizedOption value="time" en="Kickoff time" ru="По времени начала"/></select></label><p><I18nText en="Highlights pass at least one algorithm’s threshold. EV is a model estimate." ru="Подсвечены исходы, прошедшие порог хотя бы одного алгоритма. EV — оценка модели."/></p></div>
       <div className={styles.lineGrid}><section className={styles.events} aria-label="События">
-        {data?.events.map(e=><button key={e.id} className={`${styles.event} ${selected?.id===e.id?styles.selected:""}`} onClick={()=>void openEvent(e.id)}><span>{data.leagues.find(l=>l.id===e.leagueId)?.name}<time>{date(e.kickoff)}</time></span><strong>{e.home}<small> — </small>{e.away}</strong><span>{e.matchId?"Статистика подключена":"Без сопоставленной статистики"}<ArrowUpRight size={17}/></span></button>)}
+        {data?.events.map(e=>{const opportunity=currentOpportunity(e,adviceTime);return <button key={e.id} className={`${styles.event} ${opportunity?.count?styles.eventOpportunity:""} ${selected?.id===e.id?styles.selected:""}`} onClick={()=>void openEvent(e.id)}><span>{data.leagues.find(l=>l.id===e.leagueId)?.name}<time>{date(e.kickoff)}</time></span><strong>{e.home}<small> — </small>{e.away}</strong>{opportunity?.count?<span className={styles.opportunityBadge}><I18nText en="Qualifying outcomes:" ru="Подходящих исходов:"/> {opportunity.count}<b><I18nText en="EV up to" ru="EV до"/> {pct(opportunity.bestEv!)}</b></span>:<small>{opportunity?"Нет исходов выше порога":"Нет актуальной оценки"}</small>}<span>{e.matchId?"Статистика подключена":"Без сопоставленной статистики"}<ArrowUpRight size={17}/></span></button>;})}
         {data?.events.length===0&&<div className={styles.empty}>Сейчас в этом фильтре нет событий Фонбета. Попробуйте другую лигу или дождитесь обновления линии.</div>}
         {data && data.total>30&&<div className={styles.pagination}><button disabled={offset===0} onClick={()=>setOffset(Math.max(0,offset-30))}>← Назад</button><span>{offset+1}–{Math.min(offset+30,data.total)}</span><button disabled={offset+30>=data.total} onClick={()=>setOffset(offset+30)}>Далее →</button></div>}
       </section><section className={styles.marketPanel} aria-label="Роспись матча">
         {loadingEvent?<div className={styles.empty}>Загружаем полную роспись…</div>:selected?<>
           <div className={styles.matchTitle}><span>{date(selected.kickoff)}</span><h2>{selected.home} — {selected.away}</h2><p>{selected.markets.length} исходов · {selected.fetchedAt?`котировки ${date(selected.fetchedAt)}`:"нет свежей линии"}</p><div><button onClick={()=>void openEvent(selected.id)}><RefreshCw size={14}/>Обновить</button><button disabled={busy} onClick={()=>void post({action:"skip",eventId:selected.id}).then(()=>setNotice("Матч пропущен. Монеты остаются на балансе.")).catch(()=>{})}><SkipForward size={14}/>Пропустить матч</button></div></div>
           {selected.warning&&<p className={styles.warning}>{selected.warning}</p>}
+          <section className={styles.opportunities} aria-label="Подходящие исходы матча">
+            <h3><I18nText en="Qualifying outcomes" ru="Подходящие исходы"/> · {opportunities.length}</h3>
+            <p><I18nText en="Sorted by highest EV. Outcomes within one match may be correlated; their edges do not add up." ru="Отсортированы по лучшему EV. Исходы одного матча могут быть связаны — их преимущество не складывается."/></p>
+            {opportunities.length?<div className={styles.opportunityList}>{opportunities.map(o=><button key={o.market.key} className={styles.opportunity} onClick={()=>{setSlip({event:selected,market:o.market,requestKey:crypto.randomUUID()});setError("");}}>
+              <span><strong>{o.market.label}</strong><small>{o.market.group}</small><small>{o.supporters.map(r=>`${r.name}: EV ${pct(r.ev!)}`).join(" · ")}</small></span>
+              <span><b>{o.market.odds.toFixed(2)}</b><em><I18nText en="EV up to" ru="EV до"/> {pct(o.bestEv)}</em><small><I18nText en="Open bet slip" ru="Открыть купон"/></small></span>
+            </button>)}</div>:<p>{quoteUnavailable(selected,adviceTime)??"Алгоритмы не нашли доступных исходов выше своих порогов."}</p>}
+          </section>
           <section className={styles.matchAdvice} aria-label="Советы алгоритмов на выбранный матч">
             <h3>Что думают алгоритмы об этом матче</h3>
             {selected.model?.europeanCompetitionId&&<p className={styles.hint}>История чемпионатов и прошлых матчей {selected.model.europeanCompetitionId===42?"ЛЧ":"ЛЕ"}, только до этой игры. {([[selected.home,selected.model.home],[selected.away,selected.model.away]] as const).map(([name,rows])=>`${name}: ${rows.filter(r=>r.competitionId!==selected.model!.europeanCompetitionId).length} в чемпионатах + ${rows.filter(r=>r.competitionId===selected.model!.europeanCompetitionId).length} в еврокубке`).join("; ")}. Длинные модели используют до 12 + 8 игр, короткая — до 5 + 3.</p>}
@@ -95,7 +115,7 @@ export function BettingLeague() {
           </section>
           <input className={styles.marketSearch} aria-label="Поиск рынка" placeholder="Найти рынок: тотал, угловые, тайм…" value={marketSearch} onChange={e=>setMarketSearch(e.target.value)}/>
           <p className={styles.hint}>«Ручной расчёт» — результат подтверждает администратор по источнику. Модели оценивают основные рынки матча.</p>
-          {Array.from(groups).map(([name,markets],i)=><details key={name} className={styles.marketGroup} open={i<2 || Boolean(marketSearch)}><summary>{name}<span>{markets.length}</span></summary><div>{markets.map(m=><button key={m.key} disabled={!m.enabled || selected.closed || Date.parse(selected.kickoff)<=Date.now()} onClick={()=>{setSlip({event:selected,market:m,requestKey:crypto.randomUUID()});setError("");}} className={styles.market}><span>{m.label}<small>{!m.enabled?"Приём недоступен":m.manual?"Ручной расчёт":m.recommendations.some(r=>r.decision==="BET")?"Есть рекомендация":"Автоматический расчёт"}</small></span><strong>{m.odds.toFixed(2)}</strong></button>)}</div></details>)}
+          {Array.from(groups).map(([name,markets],i)=><details key={name} className={styles.marketGroup} open={i<2 || Boolean(marketSearch)}><summary>{name}<span>{markets.length}</span></summary><div>{markets.map(m=><button key={m.key} disabled={!m.enabled || selected.closed || Date.parse(selected.kickoff)<=Date.now()} onClick={()=>{setSlip({event:selected,market:m,requestKey:crypto.randomUUID()});setError("");}} className={`${styles.market} ${opportunityKeys.has(m.key)?styles.marketOpportunity:""}`}><span>{m.label}<small>{!m.enabled?"Приём недоступен":m.manual?"Ручной расчёт":opportunityKeys.has(m.key)?"Есть рекомендация":"Автоматический расчёт"}</small></span><strong>{m.odds.toFixed(2)}</strong></button>)}</div></details>)}
           {!selected.markets.length&&<div className={styles.empty}>Роспись недоступна у источника. Ставки закрыты до обновления.</div>}
         </>:<div className={styles.empty}><ArrowUpRight size={32}/><h2>Выберите матч</h2><p>Откройте роспись и сравните своё решение с пятью алгоритмами.</p><small>Вы можете пропустить любое событие.</small></div>}
       </section></div>
