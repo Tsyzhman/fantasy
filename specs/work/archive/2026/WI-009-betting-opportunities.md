@@ -30,3 +30,5 @@
 - Evidence: output/playwright/betting-opportunities/{tests.txt,project-check.txt,browser-report.txt,spec-snapshot.json,light-1440.png,dark-1440.png,light-390.png,dark-390.png}.
 
 Без миграции БД и без deploy. Старые записи получают сводку при очередном refreshEvent (worker или открытие матча); до этого не выдаются за оценённые.
+
+Интеграция 2026-09-07: по отдельному запросу пользователя опубликовано совместно с КХЛ в WI-011, 0.3.62 / 0d05986. Добавлена настоящая PostgreSQL-проверка сортировки/пагинации; production API и сортировки value/time проверены smoke 34157185770.

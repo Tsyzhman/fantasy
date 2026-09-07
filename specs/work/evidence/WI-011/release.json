@@ -1,0 +1,43 @@
+{
+  "version": "0.3.62",
+  "runtimeCommit": "0d059869b4cff0349ace6fc6d443e611c44b3878",
+  "release": "20260907T194659Z-v0.3.62-0d05986",
+  "deployRun": 34156552775,
+  "deploy": "success",
+  "productionBrowserRun": 34157185770,
+  "productionBrowser": {
+    "authPassed": 1,
+    "passed": 10,
+    "skipped": 20
+  },
+  "local": {
+    "unitPassed": 1081,
+    "unitSkipped": 1,
+    "lintErrors": 0,
+    "lintWarnings": 105,
+    "typecheck": "pass",
+    "build": "pass",
+    "postgresOpportunityTest": "pass, all writes rolled back",
+    "khlBrowserPassed": 14,
+    "khlBrowserSkipped": 16,
+    "footballBrowserPassed": 3,
+    "footballBrowserSkipped": 1
+  },
+  "resources": {
+    "navigationRetainedBytesBefore": 2252128,
+    "navigationRetainedBytesAfter": 2252720,
+    "domNodesBefore": 916,
+    "domNodesAfter": 916,
+    "listenersBefore": 413,
+    "listenersAfter": 413,
+    "filterHeapBefore": 5131632,
+    "filterHeapAfter": 5301468,
+    "workerHeapBefore": 6154544,
+    "workerHeapAfter": 6306804,
+    "maximumWorkers": 1,
+    "browserCacheEntries": 0,
+    "duplicateIds": 0,
+    "localQaSession": "revoked",
+    "localServers": "stopped"
+  }
+}

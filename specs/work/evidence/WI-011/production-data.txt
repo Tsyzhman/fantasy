@@ -1,0 +1,8 @@
+khl_catalog|694|694
+khl_duplicate_entries|0
+khl_receipts|9014
+khl_jobs|DONE|692
+betting_bets|50
+betting_opportunity_snapshots|11
+ledger_mismatches|0
+unfinished_migrations|0

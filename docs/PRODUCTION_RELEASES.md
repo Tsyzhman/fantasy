@@ -75,3 +75,10 @@ The 0.2.x release line prevents the same failure mode in four ways:
 - the deployed commit is visible and machine-verifiable;
 - a candidate that drops the canonical/main or current production history is
   rejected before the server swap.
+
+## 0.3.62 — 2026-09-07
+
+- Release: `20260907T194659Z-v0.3.62-0d05986`; runtime `0d059869b4cff0349ace6fc6d443e611c44b3878`.
+- Combined KHL football-style contact sheet, local Arena opportunity ranking/multiple outcomes, retained FDR fix from 0.3.61.
+- Deploy [34156552775](https://github.com/Tsyzhman/fantasy/actions/runs/34156552775) success; production browser [34157185770](https://github.com/Tsyzhman/fantasy/actions/runs/34157185770) success (auth 1, UI 10).
+- No new migrations or data reset. 694 unique KHL catalog entries; ledger mismatches 0; web/worker healthy, restarts 0. Evidence: `specs/work/evidence/WI-011/`.

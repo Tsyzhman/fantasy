@@ -1,0 +1,9 @@
+khl_receipts|9014
+khl_catalog|694|694
+betting_opportunity_snapshots|11
+ledger_mismatches|0
+fantasy-scout-web 368.8MiB / 11.6GiB
+fantasy-scout-worker 783.5MiB / 11.6GiB
+fantasy-scout-postgres 1.181GiB / 11.6GiB
+/fantasy-scout-web healthy restarts=0
+/fantasy-scout-worker healthy restarts=0
