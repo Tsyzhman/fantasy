@@ -5,6 +5,12 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.58 - 2026-09-07
+
+- Consolidate local global-ranking strategy, rotation risk, squad contact-sheet UI and provider ownership changes with the deployed Arena release.
+- Add isolated KHL storage, planning UI, bounded ingestion and optimizer; production source/readiness flags remain disabled.
+- Preserve all existing navigation and use bounded web-vitals collectors. Order new KHL migrations after the deployed migration history.
+
 ## 0.3.57 - 2026-09-07
 
 - Add Arena, a virtual Fonbet league for existing Fantasy users and five experimental algorithms.

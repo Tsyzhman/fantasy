@@ -4,6 +4,19 @@ status: draft
 
 # INFRA-001: источники и регулярный импорт КХЛ {#root}
 
+## Простыми словами {#plain-language}
+
+Импорт сохраняет источники и историю исправлений отдельно от футбольного pipeline.
+
+## Цель {#goal}
+
+Обеспечить воспроизводимые, ограниченные по ресурсам загрузки.
+
+## Управляющие документы {#governing-specs}
+
+Границы продукта: `specs/common/main.md`; взаимные контракты и точные ссылки перечислены в #relationships. Документ остаётся draft до закрытия перечисленных source/rules gates.
+
+
 ## Контракт {#scope}
 
 Регулярные загрузки, HTML-парсинг, нормализация, хранение и прогноз выполняются без LLM. Получение данных не запускается на каждый пользовательский запрос. Каждый адаптер возвращает типизированный результат, качество, provider IDs, source URL, время наблюдения и получения, parserVersion и hash; публикация read model атомарна.
@@ -86,4 +99,38 @@ In-memory read cache: max 50 ключей и 64 MiB на процесс; при 
 
 ## История {#changelog}
 
+- 2026-09-07: при интеграции сохранены исходные anchors и требования; добавлены обязательные разделы текущего standalone протокола и трассировка реализации. Draft gates не сняты.
+
 - 2026-09-07: созданы контракты источников, незакрытый gate xG и ресурсные бюджеты. Импорт не запускался.
+
+## environments {#environments}
+
+Локальная PostgreSQL используется для fixtures; production transport включается только после подтверждения источника (#providers/#xg-gate).
+
+## decisions {#decisions}
+
+Точные внешние ID и quarantine вместо fuzzy merge; готовый player-match xG проходит отдельный gate (#normalization/#xg-gate).
+
+## runtime {#runtime}
+
+Coordinator исполняет jobs с lease/heartbeat, ограниченными retries и checkpoints (#operations).
+
+## data {#data}
+
+Normalized observations, provenance, revisions и ограниченные gzip raw payloads (#normalization/#operations).
+
+## contracts {#contracts}
+
+Проверяются schema, ID, coverage, observedAt и права источника до публикации. Повтор A→A не создаёт новую ревизию.
+
+## recovery {#recovery}
+
+Повторная доставка идемпотентна; потерявший lease worker не публикует результат. Старые корректные наблюдения сохраняются.
+
+## observability {#observability}
+
+Health, freshness, quarantine, размер raw, активная очередь и process cache измеряются по #operations.
+
+## Трассировка {#traceability}
+
+src/server/khl/coordinator.ts, observations.ts, jobs.ts, retention.ts; src/khl/data-layer.db-test.ts. Итоговая приёмка определяется #acceptance; статус реализации — docs/KHL_IMPLEMENTATION_STATUS.md.

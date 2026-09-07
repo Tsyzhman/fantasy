@@ -4,13 +4,26 @@ status: draft
 
 # INFRA-002: хоккейные данные, API и миграции {#root}
 
+## Простыми словами {#plain-language}
+
+Хоккейные сущности и API изолированы; сохранение выполняется с проверкой владельца и версии.
+
+## Цель {#goal}
+
+Не повредить футбольные данные при развитии и выпуске КХЛ.
+
+## Управляющие документы {#governing-specs}
+
+Границы продукта: `specs/common/main.md`; взаимные контракты и точные ссылки перечислены в #relationships. Документ остаётся draft до закрытия перечисленных source/rules gates.
+
+
 ## Архитектурное решение {#boundary}
 
 Первый релиз использует отдельные модели `Khl*` с таблицами `khl_*` и строковыми внутренними ID. Общие User/сессии/франшизы/Prisma/инфраструктура остаются. Не вставлять mobile ID или Sports.ru ID в футбольные CorePlayer/CoreTeam/CoreMatch и не назначать отрицательные ID как namespace.
 
 Причина: `FantasyContest`, `FantasyPlayerPrice`, `UserFantasySquadPlayer`, `FantasyModelForecast` и `FixtureOddsSnapshot` имеют FK в футбольное ядро; добавление только sport в JSON не изолирует данные. Общая платформа сущностей возможна отдельной последующей миграцией, не обязательна для КХЛ. Дублируется доменная модель, но не HTTP/auth/кэш-код.
 
-## Схема (проект, Prisma ещё не изменён) {#schema}
+## Схема и контракты данных {#schema}
 
 Все даты UTC DateTime, внутренние ID string; цены integer units, FP и xG Decimal с точностью не ниже 4 знаков, вероятности в [0,1]. Значения округлять для отображения, не в промежуточных расчётах. Во всех изменяемых наборах updatedAt и revision. В API IDs — строки, даты — ISO 8601, Decimal — конечные JSON numbers в документированных единицах; исходная точность остаётся в БД.
 
@@ -106,4 +119,42 @@ status: draft
 
 ## История {#changelog}
 
+- 2026-09-07: при интеграции сохранены исходные anchors и требования; добавлены обязательные разделы текущего standalone протокола и трассировка реализации. Draft gates не сняты.
+
 - 2026-09-07: предложены изолированная схема и API; SQL/Prisma/routes не созданы.
+
+## scope {#scope}
+
+Хранилище Khl*, HTTP API и миграции; футбольные PK/FK и правила не меняются (#boundary).
+
+## environments {#environments}
+
+Отдельная локальная БД для проверки; production выпускается из чистого Git commit после backup/rehearsal (#migrations).
+
+## decisions {#decisions}
+
+Аддитивные таблицы khl_* и строковые внутренние ID; shared User содержит обратные связи (#boundary).
+
+## runtime {#runtime}
+
+Next API и Prisma transactions; флаги по умолчанию выключены; импорты запускаются явно.
+
+## data {#data}
+
+Модели и уникальные ключи перечислены в #schema; null отличается от нуля.
+
+## contracts {#contracts}
+
+Auth, ownership, no-store, ограничения payload, CAS и идемпотентность определены в #api/#transactions.
+
+## recovery {#recovery}
+
+До миграций backup и rehearsal; старые football таблицы не удаляются. Правила отката в #migrations.
+
+## observability {#observability}
+
+Проверяются migration state, duplicates, API conflicts, freshness и ограниченность хранилища; причины отказов доступны вызывающему коду.
+
+## Трассировка {#traceability}
+
+prisma/schema.prisma; prisma/migrations/20260907110000_khl_foundation/ и следующие три KHL миграции; src/app/api/machete/khl/; src/khl/storage.db-test.ts. Итоговая приёмка определяется #acceptance; статус реализации — docs/KHL_IMPLEMENTATION_STATUS.md.

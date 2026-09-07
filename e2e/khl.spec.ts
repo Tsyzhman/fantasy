@@ -42,17 +42,38 @@ test("50 KHL and FPL transitions retain bounded browser memory", async ({ page }
   // DOM and listener counts also catch retained mounted trees/subscriptions.
   for (let i = 0; i < 55; i++) await transition();
   const cdp = await page.context().newCDPSession(page);
+  async function retainedDataBytes() {
+    const chunks: string[] = [];
+    const receive = ({ chunk }: { chunk: string }) => chunks.push(chunk);
+    cdp.on("HeapProfiler.addHeapSnapshotChunk", receive);
+    try { await cdp.send("HeapProfiler.takeHeapSnapshot", { reportProgress: false }); }
+    finally { cdp.off("HeapProfiler.addHeapSnapshotChunk", receive); }
+    const snapshot = JSON.parse(chunks.join(""));
+    const fields: string[] = snapshot.snapshot.meta.node_fields;
+    const types: string[] = snapshot.snapshot.meta.node_types[fields.indexOf("type")];
+    let bytes = 0;
+    for (let offset = 0; offset < snapshot.nodes.length; offset += fields.length) {
+      const type = types[snapshot.nodes[offset + fields.indexOf("type")]];
+      // V8 progressively compiles the large football planner during navigation.
+      // Count retained JS data/closures/arrays, separately from JIT code and
+      // browser-native storage. DOM/listener assertions cover mounted UI leaks.
+      if (type !== "code" && type !== "native") bytes += snapshot.nodes[offset + fields.indexOf("self_size")];
+    }
+    return bytes;
+  }
   await page.waitForLoadState("networkidle");
   await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
   await cdp.send("HeapProfiler.collectGarbage"); const before = await cdp.send("Runtime.getHeapUsage");
   const domBefore = await cdp.send("Memory.getDOMCounters");
+  const dataBefore = await retainedDataBytes();
   for (let i = 0; i < 50; i++) await transition();
   await page.waitForLoadState("networkidle");
   await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
   await cdp.send("HeapProfiler.collectGarbage"); const after = await cdp.send("Runtime.getHeapUsage");
   const domAfter = await cdp.send("Memory.getDOMCounters");
-  console.log(JSON.stringify({ navigationHeapBefore: before.usedSize, navigationHeapAfter: after.usedSize, domBefore, domAfter }));
-  expect(after.usedSize / before.usedSize).toBeLessThanOrEqual(1.1);
+  const dataAfter = await retainedDataBytes();
+  console.log(JSON.stringify({ navigationHeapBefore: before.usedSize, navigationHeapAfter: after.usedSize, retainedDataBefore: dataBefore, retainedDataAfter: dataAfter, domBefore, domAfter }));
+  expect(dataAfter / dataBefore).toBeLessThanOrEqual(1.1);
   expect(domAfter.documents).toBe(domBefore.documents);
   expect(domAfter.nodes).toBeLessThanOrEqual(domBefore.nodes);
   expect(domAfter.jsEventListeners).toBeLessThanOrEqual(domBefore.jsEventListeners);

@@ -26,8 +26,19 @@ async function main() {
     for (let round = 1; round <= 5; round++) for (let match = 0; match < 5; match++) {
       const id = leagueId * 1000000n + BigInt(round * 10 + match), matchDate = new Date(now.getTime() + round * 7 * 86400000);
       await db.coreMatch.upsert({ where: { id }, create: { id, leagueId, season, round: String(round), homeTeamId: leagueId * 10000n + BigInt(match * 2), awayTeamId: leagueId * 10000n + BigInt(match * 2 + 1), status: "notstarted", matchDate, utcTime: matchDate }, update: { matchDate, utcTime: matchDate } });
+      const providerRound = await db.fantasyProviderRound.upsert({
+        where: { contestId_providerRoundId: { contestId: contest.id, providerRoundId: String(round) } },
+        create: { contestId: contest.id, provider, providerRoundId: String(round), ordinal: round, name: String(round), status: "SCHEDULED", startsAt: matchDate, fetchedAt: now },
+        update: { startsAt: matchDate, fetchedAt: now }
+      });
+      const fixture = { roundId: providerRound.id, homeTeamId: leagueId * 10000n + BigInt(match * 2), awayTeamId: leagueId * 10000n + BigInt(match * 2 + 1), matchId: id, kickoffAt: matchDate, status: "SCHEDULED", mappingStatus: "MATCHED", matchedBy: "TEST_FIXTURE", fetchedAt: now };
+      await db.fantasyProviderFixture.upsert({
+        where: { contestId_providerFixtureId: { contestId: contest.id, providerFixtureId: String(id) } },
+        create: { ...fixture, contestId: contest.id, provider, providerFixtureId: String(id), providerHomeTeamId: String(fixture.homeTeamId), providerAwayTeamId: String(fixture.awayTeamId) }, update: fixture
+      });
       await db.fixtureOddsSnapshot.upsert({ where: { matchId_provider: { matchId: id, provider: "FONBET" } }, create: { matchId: id, provider: "FONBET", providerEventId: `TEST-${id}`, status: "AVAILABLE", fetchedAt: now, homeOver15Probability: .6, awayOver15Probability: .4, homeCleanSheetProbability: .3, awayCleanSheetProbability: .2 }, update: { fetchedAt: now } });
     }
+    await db.fantasyContest.update({ where: { id: contest.id }, data: { scheduleRevision: `TEST-${now.toISOString()}`, lastSyncedAt: now } });
     await db.ingestionJob.create({ data: { jobType: "incremental_update", status: "completed", startedAt: now, finishedAt: now, metadata: { synthetic: true, completed_canonical_scopes: [{ league_id: String(leagueId), season, status: "completed", upcoming_fixtures_discovered: 25, finished_at: now.toISOString() }] } } });
     await db.dataQualityAuditRun.create({ data: { leagueId, season, modelVersion: "TEST", modelHash: "TEST", gatePassed: true, status: "COMPLETED", forecastCoverage: 100, finishedMatches: 0, startedAt: now, completedAt: now, report: { synthetic: true } } });
   }

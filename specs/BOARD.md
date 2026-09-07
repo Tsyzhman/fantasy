@@ -6,6 +6,7 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
+| [WI-007](work/WI-007-integrated-release.md) | Объединённый выпуск 7 сентября | betting FEAT-001; khl INFRA-002 | @tsyzhman | 2026-09-07 | — |
 
 ## Backlog
 

@@ -68,3 +68,11 @@
 Только отдельная тестовая БД. CLI: `npx tsx scripts/khl-runner.ts status`; для мутаций нужен `KHL_SYNC_ENABLED=true`. Команды: `bootstrap metadata.json`, `catalog CONTEST`, `calendar CONTEST FROM_ISO TO_ISO`, `baseline CONTEST WEEK_ID[,WEEK_ID]`, `prune`. Bootstrap требует явные season/provider IDs и evidence.
 
 Тестовые fixtures: `scripts/khl-seed-test.ts`, `scripts/khl-football-regression-seed.ts` требуют `KHL_TEST_DATABASE=true` и точный локальный URL. Браузерные конфиги: `playwright.khl.config.ts`, `playwright.khl-regression.config.ts`. Тестовые авторизационные файлы не должны попадать в git.
+
+## Интеграция общего релиза 0.3.58
+
+7 сентября модуль объединён с действующим production d9abf51 и полным локальным снимком global strategy, rotation risk и contact-sheet UI. Для первого production применения четыре ещё не выпускавшиеся KHL миграции переименованы в 20260907110000–20260907110003; SQL сохранён. Исторические номера в проверках выше относятся к изолированному исходному checkout.
+
+На объединённой версии: 1070 unit tests, 1069 pass, 1 skip; lint 0 errors/101 warnings; typecheck/build pass; 46 миграций на новой тестовой БД и schema diff без расхождений. Отдельно пройдены KHL DB tests и wallet concurrency/settlement test Арены. Старые football fixtures дополнены календарём провайдера.
+
+KHL browser: 9 pass/16 предусмотренных skips. После 55 warm-up и ещё 50 переходов полный heap 8 661 312 → 9 604 204 bytes (+10.89%); snapshots показывают рост V8 compiled code. Проверка удерживаемых JS-данных теперь отдельно исключает code/native: 2 236 184 → 2 236 444 (+260 bytes); порог данных 10%, DOM 852 → 852, listeners 395 → 395. Это изменение методики, а не утверждение о прохождении прежнего лимита общего heap. Worker 5 929 880 → 6 094 168 bytes, максимум 1, после завершения 0; фильтры 5 112 444 → 5 278 928.

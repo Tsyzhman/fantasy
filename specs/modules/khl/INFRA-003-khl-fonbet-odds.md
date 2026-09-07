@@ -4,6 +4,19 @@ status: draft
 
 # INFRA-003: хоккейные коэффициенты Фонбета {#root}
 
+## Простыми словами {#plain-language}
+
+Хоккейная линия Фонбета хранится с точными условиями расчёта и историей.
+
+## Цель {#goal}
+
+Не смешивать исход за 60 минут с исходом с овертаймом и буллитами.
+
+## Управляющие документы {#governing-specs}
+
+Границы продукта: `specs/common/main.md`; взаимные контракты и точные ссылки перечислены в #relationships. Документ остаётся draft до закрытия перечисленных source/rules gates.
+
+
 ## Граница {#scope}
 
 Коэффициенты КХЛ получать из Фонбета. Действующий `src/providers/fonbet/odds.ts` использует футбольные factor IDs и пары индивидуальных тоталов 0.5/1.5. Хоккейный адаптер не должен наследовать их значение по совпадению числового ID. `src/machete/fixture-odds-sync.ts` и scheduler выбирают футбольные лиги и туры: их поведение сохраняется.
@@ -61,4 +74,38 @@ Retention: сырые ответы входят в общий KHL raw budget и�
 
 ## История {#changelog}
 
+- 2026-09-07: при интеграции сохранены исходные anchors и требования; добавлены обязательные разделы текущего standalone протокола и трассировка реализации. Draft gates не сняты.
+
 - 2026-09-07: зафиксирован новый контракт; factor IDs и поставка линии остаются предметом ODD-00.
+
+## environments {#environments}
+
+Fixtures и normalized adapter проверяются локально; production dictionary/transport требуют отдельного подтверждения.
+
+## decisions {#decisions}
+
+Собственный hockey dictionary; football factor IDs не переиспользуются (#markets).
+
+## runtime {#runtime}
+
+Получение и валидация полного снимка предшествуют публикации; outage не означает withdrawal (#snapshots).
+
+## data {#data}
+
+Event mappings, period/scope/line, raw odds, normalized probabilities, timestamps и immutable revisions (#markets/#matching/#snapshots).
+
+## contracts {#contracts}
+
+Сопоставление требует точных команд/времени и проверенного dictionary; несовместимые рынки не объединяются.
+
+## recovery {#recovery}
+
+После outage сохранённый снимок становится stale; исправление создаёт ревизию, повтор не дублируется (#snapshots).
+
+## observability {#observability}
+
+Контролируются unmatched events, coverage, stale/withdrawn, dictionary version и source health.
+
+## Трассировка {#traceability}
+
+src/providers/fonbet/hockey-markets.ts, hockey-markets.test.ts; src/server/khl/odds-storage.ts. Итоговая приёмка определяется #acceptance; статус реализации — docs/KHL_IMPLEMENTATION_STATUS.md.
