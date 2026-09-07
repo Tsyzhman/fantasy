@@ -141,6 +141,7 @@ export function KhlSquadPlanner({ contestId, season, players: initialPlayers, we
     {week && <p className="text-sm">{week.verified ? `${week.startsAt} — ${week.endsAt}` : "Точное время границ недели не подтверждено. Автоматического сброса по понедельникам нет."}</p>}
     {activeTab === "calendar" ? <KhlCalendar key={weekId} contestId={contestId} weekId={weekId}/> : <>
     {activeTab === "squad" && <>
+      <Link className={control} href={`/machete/khl/squad?contestId=${encodeURIComponent(contestId)}&new=1`}>Новый вариант</Link>
       <label className="block">Название варианта <input aria-label="Название варианта" className={`${control} max-w-full`} value={name} maxLength={128} onChange={e => setName(e.target.value)}/></label>
       <div className="grid gap-3 rounded border bg-slate-50 p-4 sm:grid-cols-3"><p>Выбрано: <strong>{selected.length}/17</strong><br/>Стоимость: {value ?? "—"}</p><label>Банк локального варианта<input className={`${control} mt-1 w-full`} type="number" min="0" value={bank ?? ""} placeholder="Неизвестно" onChange={e => { optimizer.cancel(); setBank(e.target.value === "" ? null : Number(e.target.value)); }}/></label><p>Начальный бюджет: 20 000<br/>Официальный остаток трансферов: <strong>неизвестно</strong></p></div>
       <div className="grid gap-2 md:grid-cols-10 rounded-[2rem] border-4 border-sky-200 bg-gradient-to-b from-sky-50 to-white p-3 sm:p-5" aria-label="Хоккейный состав, все 17 активны">

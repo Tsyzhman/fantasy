@@ -7,7 +7,7 @@ import { KhlSquadPlanner, type KhlViewPreferences } from "@/components/khl/KhlSq
 import { khlEnabled } from "@/server/khl/access";
 import { hydratePlayers } from "@/server/khl/read-model";
 export const dynamic = "force-dynamic";
-export default async function KhlPage({ params, searchParams }: { params: Promise<{ view: string }>; searchParams: Promise<{ contestId?: string; squadId?: string }> }) {
+export default async function KhlPage({ params, searchParams }: { params: Promise<{ view: string }>; searchParams: Promise<{ contestId?: string; squadId?: string; new?: string }> }) {
   if (!khlEnabled()) notFound();
   const user = await requireCurrentUser();
   const { view } = await params;
@@ -21,7 +21,7 @@ export default async function KhlPage({ params, searchParams }: { params: Promis
     prisma.khlFantasyPlayer.findMany({ where: { contestId: contest.id }, orderBy: { id: "asc" }, take: 1000 }),
     prisma.khlFantasyWeek.findMany({ where: { contestId: contest.id }, orderBy: { providerWeekId: "asc" }, take: 100 }),
     prisma.khlUserViewPreference.findUnique({ where: { userId_contestId_viewKey: { userId: user.id, contestId: contest.id, viewKey: "planner" } } }),
-    query.squadId ? prisma.khlUserSquad.findFirst({ where: { id: query.squadId, userId: user.id, contestId: contest.id }, include: { entries: { orderBy: { slotIndex: "asc" } } } }) : null
+    query.squadId ? prisma.khlUserSquad.findFirst({ where: { id: query.squadId, userId: user.id, contestId: contest.id }, include: { entries: { orderBy: { slotIndex: "asc" } } } }) : query.new === "1" ? null : prisma.khlUserSquad.findFirst({ where: { userId: user.id, contestId: contest.id }, orderBy: [{ updatedAt: "desc" }, { id: "desc" }], include: { entries: { orderBy: { slotIndex: "asc" } } } })
   ]);
   if (query.squadId && !squad) notFound();
   const hydrated = await hydratePlayers(prisma, players);

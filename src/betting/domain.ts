@@ -1,6 +1,6 @@
 /** @spec spec://modules/betting/FEAT-001-virtual-league#algorithms */
 export const INITIAL_COINS = 100_000;
-export const STRATEGY_VERSION = "2026-09-07.1";
+export const STRATEGY_VERSION = "2026-09-07.2";
 export const BOTS = [
   { name: "Mia", window: 20, xg: .5, edge: .06, rest: false, description: "Баланс: 50% голы + 50% xG, 20 игр, EV от 6%" },
   { name: "Abella", window: 20, xg: .75, edge: .09, rest: false, description: "Качество моментов: 75% xG, 20 игр, EV от 9%" },
@@ -10,8 +10,8 @@ export const BOTS = [
 ] as const;
 export type Rule = { kind: "result" | "double" | "total" | "handicap" | "btts"; side: string; line?: number };
 export type Selection = { key: string; eventId: number; factorId: number; parameter: string; label: string; group: string; odds: number; rule: Rule | null; manual: boolean; enabled: boolean };
-export type HistoryRow = { at: string; home: boolean; goals: number; conceded: number; xg: number | null; xga: number | null };
-export type ModelInput = { home: HistoryRow[]; away: HistoryRow[]; leagueHome: number; leagueAway: number; kickoff: string };
+export type HistoryRow = { at: string; home: boolean; goals: number; conceded: number; xg: number | null; xga: number | null; competitionId?: number };
+export type ModelInput = { home: HistoryRow[]; away: HistoryRow[]; leagueHome: number; leagueAway: number; kickoff: string; europeanCompetitionId?: number };
 export type Recommendation = { name: string; version: string; probability: number | null; ev: number | null; decision: "BET" | "SKIP"; reason: string; lambdaHome?: number; lambdaAway?: number };
 
 // Settlement uses only explicit factor contracts, never guessed market labels.
@@ -48,8 +48,16 @@ export function payoutMultiplier(rule: Rule, home: number, away: number, odds: n
   return Math.abs(line * 2 - Math.round(line * 2)) > .00001 ? (at(line - .25) + at(line + .25)) / 2 : at(line);
 }
 
-function means(rows: HistoryRow[], window: number, xgWeight: number, baseFor: number, baseAgainst: number) {
-  const usable = rows.slice(0, window);
+export function modelHistoryWindow(rows: HistoryRow[], window: number, europeanCompetitionId?: number) {
+  if (!europeanCompetitionId) return rows.slice(0, window);
+  const european = rows.filter(r => r.competitionId === europeanCompetitionId);
+  const domestic = rows.filter(r => r.competitionId !== europeanCompetitionId);
+  const selected = [...european.slice(0, Math.round(window * .4)), ...domestic.slice(0, window - Math.min(european.length, Math.round(window * .4)))];
+  for (const row of rows) if (selected.length < window && !selected.includes(row)) selected.push(row);
+  return selected.sort((a,b) => Date.parse(b.at)-Date.parse(a.at));
+}
+function means(rows: HistoryRow[], window: number, xgWeight: number, baseFor: number, baseAgainst: number, europeanCompetitionId?: number) {
+  const usable = modelHistoryWindow(rows, window, europeanCompetitionId);
   if (usable.length < 5 || (xgWeight > 0 && usable.filter(r => r.xg !== null && r.xga !== null).length < 5)) return null;
   let scored = baseFor * 5, conceded = baseAgainst * 5, weight = 5;
   usable.forEach((r, i) => {
@@ -65,7 +73,7 @@ function means(rows: HistoryRow[], window: number, xgWeight: number, baseFor: nu
 }
 function lambdas(input: ModelInput, bot: typeof BOTS[number]) {
   const base = (input.leagueHome + input.leagueAway) / 2;
-  const h = means(input.home, bot.window, bot.xg, base, base), a = means(input.away, bot.window, bot.xg, base, base);
+  const h = means(input.home, bot.window, bot.xg, base, base, input.europeanCompetitionId), a = means(input.away, bot.window, bot.xg, base, base, input.europeanCompetitionId);
   if (!h || !a) return null;
   let home = input.leagueHome * h.attack / base * a.defence / base;
   let away = input.leagueAway * a.attack / base * h.defence / base;

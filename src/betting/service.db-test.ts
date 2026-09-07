@@ -46,8 +46,11 @@ test("wallet integration: init, price fixation, concurrent spend, retry and sett
     const mismatches=await prisma.$queryRaw<{id:string}[]>`SELECT a.id FROM betting_accounts a LEFT JOIN betting_ledger l ON l.account_id=a.id GROUP BY a.id HAVING a.balance<>COALESCE(sum(l.delta),0)`;
     assert.equal(mismatches.length,0);
     const matchId=-BigInt(Date.now());
-    await prisma.coreMatch.create({data:{id:matchId,leagueId:-999n,finished:true,homeScore:2,awayScore:0,matchDate:new Date(Date.now()-7200000)}});
-    await prisma.bettingEvent.update({where:{id:eventId},data:{matchId}});
+    await prisma.coreLeague.upsert({where:{id:42n},create:{id:42n,name:"Champions League"},update:{}});
+    await prisma.coreMatch.create({data:{id:matchId,leagueId:42n,round:"final",finished:true,homeScore:2,awayScore:0,matchDate:new Date(Date.now()-7200000)}});
+    await prisma.bettingEvent.update({where:{id:eventId},data:{matchId,leagueId:42n}});
+    assert.equal(await settleFinished(),0,"Unknown regulation score in a knockout is not guessed");
+    await prisma.coreMatch.update({where:{id:matchId},data:{round:"1"}});
     assert.equal(await settleFinished(),1,"Worker settles the remaining ticket from the final source score");
     assert.equal(await settleFinished(),0,"Repeated worker cycle is idempotent");
     assert.equal((await prisma.bettingAccount.findUniqueOrThrow({where:{userId:users[2]}})).balance,19600000n);

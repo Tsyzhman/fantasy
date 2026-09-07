@@ -1,7 +1,7 @@
 /** @spec spec://modules/betting/FEAT-001-virtual-league#settlement */
 import test from "node:test";
 import assert from "node:assert/strict";
-import { BOTS,factorRule,payoutMultiplier,recommend,type ModelInput,type Selection } from "./domain";
+import { BOTS,factorRule,payoutMultiplier,recommend,modelHistoryWindow,type ModelInput,type Selection } from "./domain";
 import { parseCatalog,parseSelections,type Feed } from "./provider";
 const selection:Selection={key:"1:921:",eventId:1,factorId:921,parameter:"",label:"П1",group:"Матч",odds:2.5,rule:factorRule(921,""),manual:false,enabled:true};
 test("fixed odds: two tickets for the same result pay their own prices",()=>{
@@ -36,4 +36,19 @@ test("full feed keeps nested markets, blocks suspended selections, and distingui
   const feed:Feed={sports:[],events:[{id:1,kind:1,level:1,sportId:2,startTime:9999999999,place:"line",team1:"Chelsea",team2:"Arsenal"},{id:2,parentId:1,kind:100201,level:2,sportId:2,startTime:9999999999,place:"line",name:"1-й тайм"}],customFactors:[{e:1,factors:[{f:921,v:2.5},{f:922,v:3,blocked:true},{f:999999,v:2}]},{e:2,factors:[{f:921,v:2.6}]}]};
   const s=parseSelections(feed,1,labels);assert.equal(s.length,4);assert.equal(s[0].odds,2.5);assert.equal(s[3].odds,2.6);assert.equal(s[3].manual,true);assert.equal(s[1].enabled,false);assert.equal(s[2].enabled,false);
   assert.equal(new Set(s.map(s=>s.key)).size,4);
+});
+
+test("European models retain domestic and previous European history in both model windows",()=>{
+  const domestic=Array.from({length:20},(_,i)=>({at:new Date(Date.UTC(2026,7,28-i)).toISOString(),competitionId:47,home:true,goals:2,conceded:1,xg:1.8,xga:1.1}));
+  const previous=Array.from({length:8},(_,i)=>({...domestic[0],at:new Date(Date.UTC(2026,0,28-i*7)).toISOString(),competitionId:42}));
+  const pool=[...domestic,...previous];
+  for(const [window,european] of [[20,8],[8,3]]) {
+    const rows=modelHistoryWindow(pool,window,42);
+    assert.equal(rows.length,window);
+    assert.equal(rows.filter(r=>r.competitionId===42).length,european);
+    assert.equal(new Set(rows).size,window);
+  }
+  assert.deepEqual(modelHistoryWindow(domestic,20,42),domestic);
+  const input:ModelInput={home:pool,away:pool,leagueHome:1.6,leagueAway:1.2,kickoff:"2026-09-01T12:00:00Z",europeanCompetitionId:42};
+  assert.ok(recommend(selection,input).every(r=>r.probability!==null));
 });

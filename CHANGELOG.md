@@ -7,6 +7,8 @@ image labels `org.opencontainers.image.version` and
 
 ## 0.3.60 - 2026-09-07
 
+- Restore the latest owned KHL draft on entry and provide an explicit new draft action.
+- Allow European league-phase models to combine domestic history and prior European games, with explicit regulation-time gates.
 - Remove the manual settlement tab and dialog from Arena. Keep virtual result settlement.
 - Expire match advice with scoped one-shot timers instead of redrawing the market list every second.
 

@@ -23,3 +23,11 @@ test("competition names distinguish tiers and map the actual Fonbet labels",()=>
   for(const [name,id] of [["Греция. Суперлига 1",135],["Германия. Бундеслига 2",146],["Нидерланды. 1-й дивизион",111],["Португалия. 2-й дивизион",185],["Бельгия. Премьер-Лига",40],["Норвегия. Суперлига",59],["Швеция. Премьер-Лига",67],["Польша. Суперлига",196]] as const)assert.equal(leagueForSport(name),id);
   for(const name of ["Греция. Суперлига 2","Германия. Бундеслига 3","Шотландия. Кубок Лиги","Англия. Премьер-Лига. Итоги турнира","Португалия. До 23 лет. Молодежная лига"])assert.equal(leagueForSport(name),null,name);
 });
+
+import { hasRegulationScore } from "./competition";
+test("European league phase can use 90-minute models and settlement; knockout ambiguity stays explicit",()=>{
+  assert.equal(hasRegulationScore(42,"1"),true);
+  assert.equal(hasRegulationScore(73,"8"),true);
+  for(const round of [null,"final","1/8","playoff",""])assert.equal(hasRegulationScore(42,round),false);
+  assert.equal(hasRegulationScore(47,null),true);
+});

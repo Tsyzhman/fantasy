@@ -1,7 +1,7 @@
 import { test, expect } from "@playwright/test";
 test("KHL 17 active slots and bounded mobile layout", async ({ page }, testInfo) => {
   test.skip(process.env.KHL_E2E_ENABLED !== "true", "Requires explicitly seeded local KHL test contest");
-  await page.goto(`/machete/khl/squad?contestId=${process.env.KHL_E2E_CONTEST_ID}`);
+  await page.goto(`/machete/khl/squad?contestId=${process.env.KHL_E2E_CONTEST_ID}&new=1`);
   await expect(page.getByRole("heading", { name: /Fantasy КХЛ/ })).toBeVisible();
   await page.getByRole("combobox", { name: "Позиция", exact: true }).selectOption("ALL");
   await expect(page.getByLabel("Хоккейный состав, все 17 активны")).toBeVisible();

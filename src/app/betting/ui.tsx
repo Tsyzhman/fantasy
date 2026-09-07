@@ -2,12 +2,12 @@
 /** @spec spec://modules/betting/FEAT-001-virtual-league#ui */
 import { useCallback,useEffect,useRef,useState } from "react";
 import { ArrowUpRight,Check,Coins,RefreshCw,Search,SkipForward,Trophy,X } from "lucide-react";
-import { BOTS,type Recommendation,type Selection } from "@/betting/domain";
+import { BOTS,type Recommendation,type Selection,type ModelInput } from "@/betting/domain";
 import { matchAdvice } from "@/betting/match-advice";
 import styles from "./ui.module.css";
 type Event={id:string;leagueId:number;home:string;away:string;kickoff:string;fetchedAt:string|null;matchId:number|null;closed?:boolean};
 type Market=Selection & {recommendations:Recommendation[]};
-type Detail=Event & {markets:Market[];warning?:string|null};
+type Detail=Event & {markets:Market[];model?:ModelInput|null;warning?:string|null};
 type Standing={id:string;name:string;bot_name:string|null;balance:number;locked:number;turnover:number;profit:number;bets:number;wins:number};
 type Ticket={id:string;event_id:string;home:string;away:string;selection:Selection;odds:number;stake:number;payout:number;status:string;created_at:string;settlement_source:string|null};
 type Decision={id:string;name:string;home:string;away:string;decision:string;reason:string;decided_at:string};
@@ -82,6 +82,7 @@ export function BettingLeague() {
           {selected.warning&&<p className={styles.warning}>{selected.warning}</p>}
           <section className={styles.matchAdvice} aria-label="Советы алгоритмов на выбранный матч">
             <h3>Что думают алгоритмы об этом матче</h3>
+            {selected.model?.europeanCompetitionId&&<p className={styles.hint}>История чемпионатов и прошлых матчей {selected.model.europeanCompetitionId===42?"ЛЧ":"ЛЕ"}, только до этой игры. {([[selected.home,selected.model.home],[selected.away,selected.model.away]] as const).map(([name,rows])=>`${name}: ${rows.filter(r=>r.competitionId!==selected.model!.europeanCompetitionId).length} в чемпионатах + ${rows.filter(r=>r.competitionId===selected.model!.europeanCompetitionId).length} в еврокубке`).join("; ")}. Длинные модели используют до 12 + 8 игр, короткая — до 5 + 3.</p>}
             <div>{matchAdvice(selected, adviceTime).map((tip,i)=><article key={tip.name}>
               <header><span className={styles.avatar} data-color={i}>{tip.name[0]}</span><h4>{tip.name}</h4></header>
               {tip.market && tip.recommendation ? <>
