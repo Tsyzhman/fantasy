@@ -6,6 +6,7 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
+| [WI-011](work/WI-011-khl-football-design.md) | Футбольный дизайн сборщика для КХЛ | FEAT-002 | @tsyzhman | 2026-09-07 | — |
 
 ## Backlog
 

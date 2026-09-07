@@ -5,6 +5,11 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.61 - 2026-09-07
+
+- Adapt football Squad contact-sheet cards and side-by-side catalog to KHL, retaining all 17 active slots and hockey actions.
+- Add position-filter shortcuts from empty slots and expandable player details with direct keep/remove controls.
+
 ## 0.3.60 - 2026-09-07
 
 - Restore the latest owned KHL draft on entry and provide an explicit new draft action.

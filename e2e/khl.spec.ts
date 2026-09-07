@@ -30,7 +30,7 @@ test("KHL 17 active slots and bounded mobile layout", async ({ page }, testInfo)
 test("50 KHL and FPL transitions retain bounded browser memory", async ({ page }, testInfo) => {
   test.skip(process.env.KHL_E2E_ENABLED !== "true" || testInfo.project.name !== "khl-1440", "One navigation resource run");
   test.setTimeout(180000);
-  await page.goto("/machete/khl/squad?contestId=khl-e2e");
+  await page.goto("/machete/khl/squad?contestId=khl-e2e&new=1");
   async function transition() {
     await page.getByRole("link", { name: "FPL", exact: true }).first().click();
     await expect(page.locator("[data-fantasy-squad-planner]")).toHaveCount(1);
@@ -81,7 +81,7 @@ test("50 KHL and FPL transitions retain bounded browser memory", async ({ page }
 });
 test("KHL filters retain selected players after 50 interactions", async ({ page }, testInfo) => {
   test.skip(process.env.KHL_E2E_ENABLED !== "true" || testInfo.project.name !== "khl-1440", "One desktop resource run");
-  await page.goto(`/machete/khl/squad?contestId=${process.env.KHL_E2E_CONTEST_ID}`);
+  await page.goto(`/machete/khl/squad?contestId=${process.env.KHL_E2E_CONTEST_ID}&new=1`);
   await page.getByRole("button", { name: "Выбрать", exact: true }).first().click();
   const search = page.getByRole("textbox", { name: "Поиск игрока" });
   for (let i = 0; i < 10; i++) { await search.fill("нет совпадений"); await search.fill(""); }
@@ -100,7 +100,7 @@ test("KHL filters retain selected players after 50 interactions", async ({ page 
 test("KHL details, calendar, preferences and worker lifecycle", async ({ page }, testInfo) => {
   test.skip(process.env.KHL_E2E_ENABLED !== "true" || testInfo.project.name !== "khl-1440", "One desktop integration run");
   test.setTimeout(180000);
-  await page.goto("/machete/khl/squad?contestId=khl-e2e");
+  await page.goto("/machete/khl/squad?contestId=khl-e2e&new=1");
   await page.getByRole("textbox", { name: "Название варианта" }).fill(`worker-${Date.now()}`);
   for (const [position, count] of [["G", 2], ["D", 6], ["F", 9]] as const) {
     await page.getByRole("combobox", { name: "Позиция", exact: true }).selectOption(position);
@@ -149,7 +149,7 @@ test("cancel terminates an active KHL worker without applying its proposal", asy
       postMessage(message: unknown) { setTimeout(() => super.postMessage(message), 1000); }
     };
   });
-  await page.goto("/machete/khl/squad?contestId=khl-e2e");
+  await page.goto("/machete/khl/squad?contestId=khl-e2e&new=1");
   const squad = await page.evaluate(async () => {
     const r = await fetch("/api/machete/khl/squads", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contestId: "khl-e2e", name: `cancel-${Date.now()}`, mode: "DRAFT", bankUnits: 11500, entries: Array.from({ length: 17 }, (_, i) => ({ id: `khl-e2e-${i}`, keepForOptimizer: false })) }) });
     if (!r.ok) throw new Error(await r.text()); return (await r.json()).data;
