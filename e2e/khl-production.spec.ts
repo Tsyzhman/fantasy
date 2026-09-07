@@ -8,6 +8,15 @@ test("Betting offers all Squad leagues in the same order", async ({ page }) => {
   await expect(select.locator("option")).toHaveCount(fantasySquadLeagueFotMobIds.length + 1);
   expect(await select.locator("option").evaluateAll(options => options.map(o => (o as HTMLOptionElement).value))).toEqual(["", ...fantasySquadLeagueFotMobIds]);
   await expect(select.locator("option").first()).toHaveText("Все лиги");
+  const events = page.getByRole("region", { name: "События", exact: true }).getByRole("button");
+  await expect(events.first()).toBeVisible();
+  await events.first().click();
+  const advice = page.getByRole("region", { name: "Советы алгоритмов на выбранный матч" });
+  await expect(advice.getByRole("article")).toHaveCount(5);
+  for (const name of ["Mia", "Abella", "Lana", "Riley", "Adriana"]) await expect(advice.getByRole("heading", { name, exact: true })).toBeVisible();
+  await page.getByRole("textbox", { name: "Поиск рынка" }).fill("несуществующий рынок");
+  await expect(advice.getByRole("article")).toHaveCount(5);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 });
 
 test("production KHL catalog and local planning are available", async ({ page }) => {

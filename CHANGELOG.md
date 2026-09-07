@@ -8,6 +8,7 @@ image labels `org.opencontainers.image.version` and
 ## 0.3.59 - 2026-09-07
 
 - Enable the real KHL catalog and local drafts, with bounded recurring catalog refresh and explicit unavailable forecasts.
+- Show five algorithm advice cards directly inside the selected match, with a best pick or an explicit skip reason.
 - Use the same league list and order as Squad in Betting, including leagues without loaded events.
 
 ## 0.3.58 - 2026-09-07

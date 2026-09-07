@@ -3,6 +3,7 @@
 import { useCallback,useEffect,useRef,useState } from "react";
 import { ArrowUpRight,Check,Coins,RefreshCw,Search,SkipForward,Trophy,X } from "lucide-react";
 import { BOTS,type Recommendation,type Selection } from "@/betting/domain";
+import { matchAdvice } from "@/betting/match-advice";
 import styles from "./ui.module.css";
 type Event={id:string;leagueId:number;home:string;away:string;kickoff:string;fetchedAt:string|null;matchId:number|null;closed?:boolean};
 type Market=Selection & {recommendations:Recommendation[]};
@@ -73,6 +74,18 @@ export function BettingLeague({admin}:{admin:boolean}) {
         {loadingEvent?<div className={styles.empty}>Загружаем полную роспись…</div>:selected?<>
           <div className={styles.matchTitle}><span>{date(selected.kickoff)}</span><h2>{selected.home} — {selected.away}</h2><p>{selected.markets.length} исходов · {selected.fetchedAt?`котировки ${date(selected.fetchedAt)}`:"нет свежей линии"}</p><div><button onClick={()=>void openEvent(selected.id)}><RefreshCw size={14}/>Обновить</button><button disabled={busy} onClick={()=>void post({action:"skip",eventId:selected.id}).then(()=>setNotice("Матч пропущен. Монеты остаются на балансе.")).catch(()=>{})}><SkipForward size={14}/>Пропустить матч</button></div></div>
           {selected.warning&&<p className={styles.warning}>{selected.warning}</p>}
+          <section className={styles.matchAdvice} aria-label="Советы алгоритмов на выбранный матч">
+            <h3>Что думают алгоритмы об этом матче</h3>
+            <div>{matchAdvice(selected, Date.now()).map((tip,i)=><article key={tip.name}>
+              <header><span className={styles.avatar} data-color={i}>{tip.name[0]}</span><h4>{tip.name}</h4></header>
+              {tip.market && tip.recommendation ? <>
+                <strong>{tip.market.label}</strong>
+                <p>Коэффициент {tip.market.odds.toFixed(2)} · EV {pct(tip.recommendation.ev!)}</p>
+                <small>{tip.reason}</small>
+                <button onClick={()=>{setSlip({event:selected,market:tip.market!,requestKey:crypto.randomUUID()});setError("");}}>Открыть купон · {tip.name}</button>
+              </> : <><strong>Сюда лучше не ставить</strong><small>{tip.reason}</small></>}
+            </article>)}</div>
+          </section>
           <input className={styles.marketSearch} aria-label="Поиск рынка" placeholder="Найти рынок: тотал, угловые, тайм…" value={marketSearch} onChange={e=>setMarketSearch(e.target.value)}/>
           <p className={styles.hint}>«Ручной расчёт» — результат подтверждает администратор по источнику. Модели оценивают основные рынки матча.</p>
           {Array.from(groups).map(([name,markets],i)=><details key={name} className={styles.marketGroup} open={i<2 || Boolean(marketSearch)}><summary>{name}<span>{markets.length}</span></summary><div>{markets.map(m=><button key={m.key} disabled={!m.enabled || selected.closed || Date.parse(selected.kickoff)<=Date.now()} onClick={()=>{setSlip({event:selected,market:m,requestKey:crypto.randomUUID()});setError("");}} className={styles.market}><span>{m.label}<small>{!m.enabled?"Приём недоступен":m.manual?"Ручной расчёт":m.recommendations.some(r=>r.decision==="BET")?"Есть рекомендация":"Автоматический расчёт"}</small></span><strong>{m.odds.toFixed(2)}</strong></button>)}</div></details>)}

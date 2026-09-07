@@ -5,3 +5,14 @@
 @media(max-width:680px){.heroIcon{display:none}.hero h1{font-size:48px}.hero h1 span{font-size:21px}.hero p{font-size:12px}.hero{padding-top:0}.metrics{grid-template-columns:repeat(2,1fr);gap:24px;padding:20px 0}.metrics>div:nth-child(2){border:0}.metrics span{font-size:10px}.metrics strong{font-size:24px}.tabbar nav button{padding:16px 11px;font-size:12px}.filters{grid-template-columns:1fr 1fr;gap:12px}.feedStatus{grid-column:1/-1;text-align:left;display:flex;gap:12px;font-size:12px}.lineGrid{grid-template-columns:1fr}.events{max-height:350px;overflow:auto}.arena .event{padding:14px;gap:9px}.event>strong{font-size:15px}.hero{margin-bottom:0}.marketGroup>div{grid-template-columns:repeat(2,minmax(0,1fr))}.arena .market{font-size:11px}.botCards{grid-template-columns:repeat(2,minmax(0,1fr))}.botCard{padding:18px}.panel{padding:18px}.overlay{padding:8px}.slip{padding:22px 18px;max-height:calc(100dvh - 16px)}.arena td{padding:14px 8px;font-size:12px}.arena th{padding:10px 8px}.hero h1{letter-spacing:-.05em}.matchTitle{padding:20px}.decisions>div{gap:10px}}
 
 @media(min-width:681px){.events,.marketPanel{max-height:75dvh;overflow:auto;scrollbar-width:thin}.marketPanel{scroll-margin-top:80px}}
+
+.matchAdvice { margin: 18px 0; }
+.matchAdvice h3 { margin: 0 0 12px; font-size: 16px; }
+.matchAdvice > div { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); gap: 10px; }
+.matchAdvice article { min-width: 0; display: flex; flex-direction: column; gap: 9px; padding: 14px; border: 1px solid var(--border-color); border-radius: 12px; background: var(--surface-secondary); overflow-wrap: anywhere; }
+.matchAdvice header { display: flex; align-items: center; gap: 9px; }
+.matchAdvice header .avatar { width: 30px; height: 30px; font-size: 14px; margin: 0; }
+.matchAdvice h4, .matchAdvice p { margin: 0; }
+.matchAdvice p, .matchAdvice small { font-size: 12px; line-height: 1.5; }
+.matchAdvice small { color: var(--text-secondary); }
+.matchAdvice button { margin-top: auto; padding: 9px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--surface-primary); color: var(--text-primary); font-weight: 600; cursor: pointer; }
