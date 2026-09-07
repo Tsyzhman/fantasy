@@ -5,6 +5,10 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.61 - 2026-09-07
+
+- Restore FDR difficulty colours on opponent chips in tables and squad cards in both themes; keep neutral fallback from overriding rated fixtures.
+
 ## 0.3.60 - 2026-09-07
 
 - Restore the latest owned KHL draft on entry and provide an explicit new draft action.
