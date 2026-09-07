@@ -1,0 +1,400 @@
+[
+  {
+    "family": "market",
+    "model": "market",
+    "params": {},
+    "val_logloss": 0.6909123069275219,
+    "thresholds": [
+      {
+        "threshold": 0,
+        "n": 8,
+        "matches": 8,
+        "wins": 3,
+        "avg_odds": 2.4125,
+        "profit_units": -0.41999999999999993,
+        "roi": -0.05249999999999999,
+        "predicted_ev": 0.00952996161829947,
+        "max_drawdown_units": 2.02,
+        "roi_odds_minus_2pct": -0.07145000000000001,
+        "roi_odds_minus_5pct": -0.09987499999999999
+      },
+      {
+        "threshold": 0.03,
+        "n": 0,
+        "roi": null
+      },
+      {
+        "threshold": 0.05,
+        "n": 0,
+        "roi": null
+      },
+      {
+        "threshold": 0.1,
+        "n": 0,
+        "roi": null
+      },
+      {
+        "threshold": 0.2,
+        "n": 0,
+        "roi": null
+      }
+    ],
+    "selected_threshold": null
+  },
+  {
+    "family": "logistic_market_form_rest",
+    "model": "logistic",
+    "params": {
+      "features": "market_form_rest",
+      "C": 0.01
+    },
+    "val_logloss": 0.7112906142431467,
+    "thresholds": [
+      {
+        "threshold": 0,
+        "n": 334,
+        "matches": 334,
+        "wins": 158,
+        "avg_odds": 1.9631736526946109,
+        "profit_units": -27.650000000000002,
+        "roi": -0.08278443113772456,
+        "predicted_ev": 0.10325581612073037,
+        "max_drawdown_units": 49.58,
+        "roi_odds_minus_2pct": -0.10112874251497006,
+        "roi_odds_minus_5pct": -0.12864520958083836
+      },
+      {
+        "threshold": 0.03,
+        "n": 262,
+        "matches": 262,
+        "wins": 122,
+        "avg_odds": 1.9639694656488547,
+        "profit_units": -25.860000000000003,
+        "roi": -0.0987022900763359,
+        "predicted_ev": 0.12748821153013007,
+        "max_drawdown_units": 48.730000000000004,
+        "roi_odds_minus_2pct": -0.11672824427480917,
+        "roi_odds_minus_5pct": -0.14376717557251914
+      },
+      {
+        "threshold": 0.05,
+        "n": 221,
+        "matches": 221,
+        "wins": 100,
+        "avg_odds": 1.9689140271493213,
+        "profit_units": -27.14,
+        "roi": -0.1228054298642534,
+        "predicted_ev": 0.1435501188464586,
+        "max_drawdown_units": 43.13000000000001,
+        "roi_odds_minus_2pct": -0.14034932126696834,
+        "roi_odds_minus_5pct": -0.1666651583710408
+      },
+      {
+        "threshold": 0.1,
+        "n": 149,
+        "matches": 149,
+        "wins": 67,
+        "avg_odds": 1.9957046979865773,
+        "profit_units": -16.66,
+        "roi": -0.11181208053691276,
+        "predicted_ev": 0.17715106324183236,
+        "max_drawdown_units": 28.789999999999996,
+        "roi_odds_minus_2pct": -0.12957583892617452,
+        "roi_odds_minus_5pct": -0.15622147651006718
+      },
+      {
+        "threshold": 0.2,
+        "n": 44,
+        "matches": 44,
+        "wins": 19,
+        "avg_odds": 2.092727272727273,
+        "profit_units": -5.379999999999998,
+        "roi": -0.12227272727272723,
+        "predicted_ev": 0.26378446530083705,
+        "max_drawdown_units": 12.14,
+        "roi_odds_minus_2pct": -0.13982727272727272,
+        "roi_odds_minus_5pct": -0.16615909090909092
+      }
+    ],
+    "selected_threshold": {
+      "threshold": 0,
+      "n": 334,
+      "matches": 334,
+      "wins": 158,
+      "avg_odds": 1.9631736526946109,
+      "profit_units": -27.650000000000002,
+      "roi": -0.08278443113772456,
+      "predicted_ev": 0.10325581612073037,
+      "max_drawdown_units": 49.58,
+      "roi_odds_minus_2pct": -0.10112874251497006,
+      "roi_odds_minus_5pct": -0.12864520958083836
+    }
+  },
+  {
+    "family": "logistic_market_form_rest_weather",
+    "model": "logistic",
+    "params": {
+      "features": "market_form_rest_weather",
+      "C": 0.01
+    },
+    "val_logloss": 0.7109518989023217,
+    "thresholds": [
+      {
+        "threshold": 0,
+        "n": 331,
+        "matches": 331,
+        "wins": 157,
+        "avg_odds": 1.9730513595166164,
+        "profit_units": -23.68,
+        "roi": -0.07154078549848943,
+        "predicted_ev": 0.10794437153491176,
+        "max_drawdown_units": 48.870000000000005,
+        "roi_odds_minus_2pct": -0.09010996978851966,
+        "roi_odds_minus_5pct": -0.11796374622356502
+      },
+      {
+        "threshold": 0.03,
+        "n": 269,
+        "matches": 269,
+        "wins": 127,
+        "avg_odds": 1.979033457249071,
+        "profit_units": -20.160000000000004,
+        "roi": -0.07494423791821563,
+        "predicted_ev": 0.12891251859865266,
+        "max_drawdown_units": 40.63,
+        "roi_odds_minus_2pct": -0.09344535315985134,
+        "roi_odds_minus_5pct": -0.1211970260223049
+      },
+      {
+        "threshold": 0.05,
+        "n": 235,
+        "matches": 235,
+        "wins": 110,
+        "avg_odds": 1.9805957446808513,
+        "profit_units": -19.5,
+        "roi": -0.08297872340425531,
+        "predicted_ev": 0.1418896172140153,
+        "max_drawdown_units": 39.74999999999999,
+        "roi_odds_minus_2pct": -0.10131914893617022,
+        "roi_odds_minus_5pct": -0.12882978723404262
+      },
+      {
+        "threshold": 0.1,
+        "n": 146,
+        "matches": 146,
+        "wins": 65,
+        "avg_odds": 2.001780821917808,
+        "profit_units": -17.69,
+        "roi": -0.12116438356164384,
+        "predicted_ev": 0.18339947669031778,
+        "max_drawdown_units": 28.94999999999999,
+        "roi_odds_minus_2pct": -0.13874109589041095,
+        "roi_odds_minus_5pct": -0.1651061643835617
+      },
+      {
+        "threshold": 0.2,
+        "n": 48,
+        "matches": 48,
+        "wins": 21,
+        "avg_odds": 2.075833333333333,
+        "profit_units": -5.829999999999999,
+        "roi": -0.12145833333333332,
+        "predicted_ev": 0.2616701774893121,
+        "max_drawdown_units": 13.59,
+        "roi_odds_minus_2pct": -0.13902916666666668,
+        "roi_odds_minus_5pct": -0.16538541666666673
+      }
+    ],
+    "selected_threshold": {
+      "threshold": 0,
+      "n": 331,
+      "matches": 331,
+      "wins": 157,
+      "avg_odds": 1.9730513595166164,
+      "profit_units": -23.68,
+      "roi": -0.07154078549848943,
+      "predicted_ev": 0.10794437153491176,
+      "max_drawdown_units": 48.870000000000005,
+      "roi_odds_minus_2pct": -0.09010996978851966,
+      "roi_odds_minus_5pct": -0.11796374622356502
+    }
+  },
+  {
+    "family": "boosting_market_form_rest",
+    "model": "hist_gradient_boosting",
+    "params": {
+      "features": "market_form_rest",
+      "leaves": 3
+    },
+    "val_logloss": 0.7027907945054491,
+    "thresholds": [
+      {
+        "threshold": 0,
+        "n": 315,
+        "matches": 315,
+        "wins": 132,
+        "avg_odds": 2.06215873015873,
+        "profit_units": -40.38,
+        "roi": -0.1281904761904762,
+        "predicted_ev": 0.08127507149215372,
+        "max_drawdown_units": 49.07000000000001,
+        "roi_odds_minus_2pct": -0.1456266666666667,
+        "roi_odds_minus_5pct": -0.17178095238095245
+      },
+      {
+        "threshold": 0.03,
+        "n": 242,
+        "matches": 242,
+        "wins": 105,
+        "avg_odds": 2.0882644628099176,
+        "profit_units": -21.740000000000002,
+        "roi": -0.08983471074380166,
+        "predicted_ev": 0.10143267857891247,
+        "max_drawdown_units": 31.8,
+        "roi_odds_minus_2pct": -0.10803801652892564,
+        "roi_odds_minus_5pct": -0.13534297520661165
+      },
+      {
+        "threshold": 0.05,
+        "n": 193,
+        "matches": 193,
+        "wins": 82,
+        "avg_odds": 2.1143005181347148,
+        "profit_units": -17.140000000000004,
+        "roi": -0.08880829015544044,
+        "predicted_ev": 0.11658644568832571,
+        "max_drawdown_units": 27.67,
+        "roi_odds_minus_2pct": -0.10703212435233163,
+        "roi_odds_minus_5pct": -0.13436787564766844
+      },
+      {
+        "threshold": 0.1,
+        "n": 94,
+        "matches": 94,
+        "wins": 47,
+        "avg_odds": 2.2115957446808507,
+        "profit_units": 11.91,
+        "roi": 0.12670212765957448,
+        "predicted_ev": 0.1628519154806112,
+        "max_drawdown_units": 8.04,
+        "roi_odds_minus_2pct": 0.10416808510638298,
+        "roi_odds_minus_5pct": 0.07036702127659566
+      },
+      {
+        "threshold": 0.2,
+        "n": 18,
+        "matches": 18,
+        "wins": 9,
+        "avg_odds": 2.514444444444445,
+        "profit_units": 7.61,
+        "roi": 0.4227777777777778,
+        "predicted_ev": 0.2791699008996965,
+        "max_drawdown_units": 2.37,
+        "roi_odds_minus_2pct": 0.3943222222222222,
+        "roi_odds_minus_5pct": 0.35163888888888883
+      }
+    ],
+    "selected_threshold": {
+      "threshold": 0.1,
+      "n": 94,
+      "matches": 94,
+      "wins": 47,
+      "avg_odds": 2.2115957446808507,
+      "profit_units": 11.91,
+      "roi": 0.12670212765957448,
+      "predicted_ev": 0.1628519154806112,
+      "max_drawdown_units": 8.04,
+      "roi_odds_minus_2pct": 0.10416808510638298,
+      "roi_odds_minus_5pct": 0.07036702127659566
+    }
+  },
+  {
+    "family": "boosting_market_form_rest_weather",
+    "model": "hist_gradient_boosting",
+    "params": {
+      "features": "market_form_rest_weather",
+      "leaves": 3
+    },
+    "val_logloss": 0.702355819072343,
+    "thresholds": [
+      {
+        "threshold": 0,
+        "n": 317,
+        "matches": 317,
+        "wins": 132,
+        "avg_odds": 2.058643533123028,
+        "profit_units": -44.75,
+        "roi": -0.1411671924290221,
+        "predicted_ev": 0.07966731332510876,
+        "max_drawdown_units": 54.029999999999994,
+        "roi_odds_minus_2pct": -0.15834384858044168,
+        "roi_odds_minus_5pct": -0.18410883280757104
+      },
+      {
+        "threshold": 0.03,
+        "n": 239,
+        "matches": 239,
+        "wins": 104,
+        "avg_odds": 2.087824267782427,
+        "profit_units": -20.31,
+        "roi": -0.08497907949790795,
+        "predicted_ev": 0.10095148232207225,
+        "max_drawdown_units": 33.510000000000005,
+        "roi_odds_minus_2pct": -0.10327949790794981,
+        "roi_odds_minus_5pct": -0.13073012552301258
+      },
+      {
+        "threshold": 0.05,
+        "n": 190,
+        "matches": 190,
+        "wins": 84,
+        "avg_odds": 2.1138421052631577,
+        "profit_units": -10.340000000000005,
+        "roi": -0.054421052631578974,
+        "predicted_ev": 0.11695691261698025,
+        "max_drawdown_units": 25.42,
+        "roi_odds_minus_2pct": -0.07333263157894741,
+        "roi_odds_minus_5pct": -0.10170000000000005
+      },
+      {
+        "threshold": 0.1,
+        "n": 95,
+        "matches": 95,
+        "wins": 48,
+        "avg_odds": 2.205368421052631,
+        "profit_units": 12.59,
+        "roi": 0.1325263157894737,
+        "predicted_ev": 0.16215458428832338,
+        "max_drawdown_units": 6.74,
+        "roi_odds_minus_2pct": 0.10987578947368418,
+        "roi_odds_minus_5pct": 0.07589999999999993
+      },
+      {
+        "threshold": 0.2,
+        "n": 16,
+        "matches": 16,
+        "wins": 8,
+        "avg_odds": 2.5125,
+        "profit_units": 6.030000000000001,
+        "roi": 0.37687500000000007,
+        "predicted_ev": 0.2889678550113294,
+        "max_drawdown_units": 4.0,
+        "roi_odds_minus_2pct": 0.34933749999999997,
+        "roi_odds_minus_5pct": 0.30803125
+      }
+    ],
+    "selected_threshold": {
+      "threshold": 0.1,
+      "n": 95,
+      "matches": 95,
+      "wins": 48,
+      "avg_odds": 2.205368421052631,
+      "profit_units": 12.59,
+      "roi": 0.1325263157894737,
+      "predicted_ev": 0.16215458428832338,
+      "max_drawdown_units": 6.74,
+      "roi_odds_minus_2pct": 0.10987578947368418,
+      "roi_odds_minus_5pct": 0.07589999999999993
+    }
+  }
+]

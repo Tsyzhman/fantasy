@@ -1,0 +1,16 @@
+{
+  "independent_prior_day_ewm_checks": 124,
+  "frozen_choices_min_validation_loss": "passed",
+  "fresh_period_and_unique_bet_payout_checks": "passed",
+  "weather_previous_day1_and_dedup": "passed",
+  "weather_matches": 1932,
+  "archive_sha256_crc": "passed",
+  "versions": {
+    "numpy": "2.4.3",
+    "pandas": "3.0.3",
+    "scipy": "1.17.1",
+    "scikit-learn": "1.8.0"
+  },
+  "cache_bytes": 29465873,
+  "input_zip_bytes": 772047
+}

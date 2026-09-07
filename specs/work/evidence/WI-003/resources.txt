@@ -1,0 +1,11 @@
+Mon Sep  7 08:39:39 UTC 2026
+               total        used        free      shared  buff/cache   available
+Mem:           11876        5154        1147         169        5574        6236
+Swap:              0           0           0
+fantasy-scout-web 787.8MiB / 11.6GiB 0.00%
+fantasy-scout-worker 1.261GiB / 11.6GiB 0.26%
+fantasy-scout-postgres 1004MiB / 11.6GiB 0.00%
+fantasy-scout-worker Up 5 days (healthy)
+fantasy-scout-web Up 5 days (healthy)
+fantasy-scout-fpl-relay Up 5 days
+fantasy-scout-postgres Up 2 weeks (healthy)

@@ -1,0 +1,28 @@
+# BOARD
+
+> Компактный оперативный индекс work items. Каталог спецификаций находится в [SPEC-MAP.md](./SPEC-MAP.md).
+
+## In Progress
+
+| Work | Title | Specs | Owner | Started | Blocker |
+|---|---|---|---|---|---|
+| [WI-005](work/WI-005-virtual-betting-league.md) | Виртуальная лига ставок Fantasy | betting/FEAT-001 | @tsyzhman | 2026-09-07 | — |
+
+## Backlog
+
+| Work | Title | Specs | Owner | Priority |
+|---|---|---|---|---|
+
+## Blocked
+
+| Work | Title | Owner | Reason | Waiting for |
+|---|---|---|---|---|
+| [WI-001](work/WI-001-global-strategy.md) | Автоматическая стратегия глобального рейтинга | @tsyzhman | PostgreSQL/Docker недоступны; FPL HTTP 503; live-приёмка не выполнена | Рабочая БД и доступ к провайдеру/relay для миграции, синхронизации и end-to-end проверок |
+
+## Done
+
+| Work | Title | Owner | Date |
+|---|---|---|---|
+| [WI-004](work/archive/2026/WI-004-squad-contact-sheet.md) | Карточка состава «Контактный лист» | @tsyzhman | 2026-09-07 |
+| [WI-003](work/archive/2026/WI-003-betting-features.md) | Расширенная проверка факторов ставок | @tsyzhman | 2026-09-07 |
+| [WI-002](work/archive/2026/WI-002-betting-feasibility.md) | Проверка доходности ставок по статистике | @tsyzhman | 2026-09-07 |

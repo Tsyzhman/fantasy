@@ -37,6 +37,7 @@ enum DataSourceType {
 }
 
 model User {
+  bettingAccount BettingAccount?
   id                            String                         @id @default(cuid())
   email                         String                         @unique
   name                          String?
@@ -607,6 +608,7 @@ model MacheteFixture {
 }
 
 model CoreLeague {
+  bettingEvents BettingEvent[]
   id        BigInt   @id
   name      String
   country   String?
@@ -1190,6 +1192,7 @@ model PlayerArchiveFetchState {
 }
 
 model CoreMatch {
+  bettingEvents BettingEvent[]
   id            BigInt    @id
   leagueId      BigInt?   @map("league_id")
   season        String?
@@ -2064,4 +2067,98 @@ model BaltikaTeamMatchStat {
   @@unique([fixtureId, teamId])
   @@index([teamId, side])
   @@index([opponentTeamId])
+}
+
+// @spec spec://modules/betting/FEAT-001-virtual-league#ledger
+// SQL service owns foreign keys and CHECK constraints; identifiers mirror the database.
+model BettingAccount {
+  user User? @relation(fields: [userId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  bets BettingBet[]
+  ledger BettingLedger[]
+  decisions BettingDecision[]
+  id String @id
+  userId String? @unique @map("user_id")
+  botName String? @unique @map("bot_name")
+  name String
+  balance BigInt @default(10000000)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  @@map("betting_accounts")
+}
+model BettingEvent {
+  match CoreMatch? @relation(fields: [matchId], references: [id], onDelete: SetNull, onUpdate: NoAction)
+  league CoreLeague @relation(fields: [leagueId], references: [id], onDelete: Restrict, onUpdate: NoAction)
+  bets BettingBet[]
+  decisions BettingDecision[]
+  id String @id
+  matchId BigInt? @map("match_id")
+  leagueId BigInt @map("league_id")
+  home String
+  away String
+  kickoff DateTime @db.Timestamptz
+  markets Json @default("[]")
+  model Json?
+  fetchedAt DateTime? @map("fetched_at") @db.Timestamptz
+  updatedAt DateTime @default(now()) @map("updated_at") @db.Timestamptz
+  closed Boolean @default(false)
+  @@index([kickoff], map: "betting_events_kickoff_idx")
+  @@index([leagueId,kickoff], map: "betting_events_league_kickoff_idx")
+  @@map("betting_events")
+}
+model BettingBet {
+  account BettingAccount @relation(fields: [accountId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  event BettingEvent @relation(fields: [eventId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  ledger BettingLedger[]
+  id String @id
+  accountId String @map("account_id")
+  eventId String @map("event_id")
+  requestKey String @map("request_key")
+  selectionKey String @map("selection_key")
+  selection Json
+  odds Int
+  stake BigInt
+  payout BigInt @default(0)
+  status String @default("PENDING")
+  recommendations Json
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  settledAt DateTime? @map("settled_at") @db.Timestamptz
+  settlementSource String? @map("settlement_source")
+  settledBy String? @map("settled_by")
+  @@unique([accountId,requestKey])
+  @@index([eventId,status], map: "betting_bets_event_status_idx")
+  @@index([accountId,createdAt(sort: Desc)], map: "betting_bets_account_created_idx")
+  @@map("betting_bets")
+}
+model BettingLedger {
+  account BettingAccount @relation(fields: [accountId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  bet BettingBet? @relation(fields: [betId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id String @id
+  accountId String @map("account_id")
+  betId String? @map("bet_id")
+  delta BigInt
+  kind String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  @@index([accountId], map: "betting_ledger_account_idx")
+  @@map("betting_ledger")
+}
+model BettingDecision {
+  account BettingAccount @relation(fields: [accountId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  event BettingEvent @relation(fields: [eventId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  id String @id
+  accountId String @map("account_id")
+  eventId String @map("event_id")
+  decision String
+  reason String
+  details Json?
+  decidedAt DateTime @default(now()) @map("decided_at") @db.Timestamptz
+  @@unique([accountId,eventId])
+  @@map("betting_decisions")
+}
+model BettingSyncState {
+  id String @id
+  leaseUntil DateTime? @map("lease_until") @db.Timestamptz
+  owner String?
+  lastSuccess DateTime? @map("last_success") @db.Timestamptz
+  lastError String? @map("last_error")
+  summary Json?
+  @@map("betting_sync_state")
 }

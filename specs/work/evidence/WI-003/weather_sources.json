@@ -1,0 +1,541 @@
+[
+  {
+    "team": "Arsenal",
+    "gazetteer_name": "Arsenal",
+    "latitude": 51.555151,
+    "longitude": -0.108422,
+    "resolved_grid": [
+      51.5,
+      0.0
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=51.555151&longitude=-0.108422&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-17&end_date=2026-08-21&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Aston Villa",
+    "gazetteer_name": "Aston Villa",
+    "latitude": 52.50907,
+    "longitude": -1.88503,
+    "resolved_grid": [
+      52.5,
+      -2.0
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=52.50907&longitude=-1.88503&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-24&end_date=2026-08-31&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Birmingham",
+    "gazetteer_name": "Birmingham City",
+    "latitude": 52.475758,
+    "longitude": -1.868204,
+    "resolved_grid": [
+      52.5,
+      -1.75
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=52.475758&longitude=-1.868204&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2025-08-08&end_date=2026-09-01&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Blackburn",
+    "gazetteer_name": "Blackburn Rovers",
+    "latitude": 53.72858,
+    "longitude": -2.489173,
+    "resolved_grid": [
+      53.75,
+      -2.5
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=53.72858&longitude=-2.489173&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-09&end_date=2026-08-29&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Bolton",
+    "gazetteer_name": "Bolton Wanderers",
+    "latitude": 53.580594,
+    "longitude": -2.535661,
+    "resolved_grid": [
+      53.5,
+      -2.5
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=53.580594&longitude=-2.535661&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2026-08-15&end_date=2026-08-29&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Bournemouth",
+    "gazetteer_name": "AFC Bournemouth",
+    "latitude": 50.735225,
+    "longitude": -1.838343,
+    "resolved_grid": [
+      50.75,
+      -1.75
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=50.735225&longitude=-1.838343&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-25&end_date=2026-08-29&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Brentford",
+    "gazetteer_name": "Brentford",
+    "latitude": 51.490759,
+    "longitude": -0.288675,
+    "resolved_grid": [
+      51.5,
+      -0.25
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=51.490759&longitude=-0.288675&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-18&end_date=2026-08-22&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Brighton",
+    "gazetteer_name": "Brighton & Hove Albion",
+    "latitude": 50.861577,
+    "longitude": -0.083671,
+    "resolved_grid": [
+      51.0,
+      0.0
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=50.861577&longitude=-0.083671&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-24&end_date=2026-08-23&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Bristol City",
+    "gazetteer_name": "Bristol City",
+    "latitude": 51.440134,
+    "longitude": -2.62022,
+    "resolved_grid": [
+      51.5,
+      -2.5
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=51.440134&longitude=-2.62022&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-17&end_date=2026-08-29&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Burnley",
+    "gazetteer_name": "Burnley",
+    "latitude": 53.788988,
+    "longitude": -2.230249,
+    "resolved_grid": [
+      53.75,
+      -2.25
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=53.788988&longitude=-2.230249&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-17&end_date=2026-09-02&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Cardiff",
+    "gazetteer_name": "Cardiff City",
+    "latitude": 51.472817,
+    "longitude": -3.203022,
+    "resolved_grid": [
+      51.5,
+      -3.25
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=51.472817&longitude=-3.203022&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-10&end_date=2026-08-29&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Charlton",
+    "gazetteer_name": "Charlton Athletic",
+    "latitude": 51.48646,
+    "longitude": 0.036526,
+    "resolved_grid": [
+      51.5,
+      0.0
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=51.48646&longitude=0.036526&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2025-08-09&end_date=2026-08-29&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Chelsea",
+    "gazetteer_name": "Chelsea",
+    "latitude": 51.481737,
+    "longitude": -0.190929,
+    "resolved_grid": [
+      51.5,
+      -0.25
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=51.481737&longitude=-0.190929&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-18&end_date=2026-08-30&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Coventry",
+    "gazetteer_name": "Coventry City",
+    "latitude": 52.448141,
+    "longitude": -1.495607,
+    "resolved_grid": [
+      52.5,
+      -1.5
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=52.448141&longitude=-1.495607&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-16&end_date=2026-08-29&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Crystal Palace",
+    "gazetteer_name": "Crystal Palace",
+    "latitude": 51.398289,
+    "longitude": -0.085441,
+    "resolved_grid": [
+      51.5,
+      0.0
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=51.398289&longitude=-0.085441&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-24&end_date=2026-08-28&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Derby",
+    "gazetteer_name": "Derby County",
+    "latitude": 52.914946,
+    "longitude": -1.447282,
+    "resolved_grid": [
+      53.0,
+      -1.5
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=52.914946&longitude=-1.447282&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-17&end_date=2026-08-29&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Everton",
+    "gazetteer_name": "Everton",
+    "latitude": 53.438847,
+    "longitude": -2.966289,
+    "resolved_grid": [
+      53.5,
+      -3.0
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=53.438847&longitude=-2.966289&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-17&end_date=2026-08-22&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Fulham",
+    "gazetteer_name": "Fulham",
+    "latitude": 51.474906,
+    "longitude": -0.221619,
+    "resolved_grid": [
+      51.5,
+      -0.25
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=51.474906&longitude=-0.221619&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-24&end_date=2026-08-24&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Hull",
+    "gazetteer_name": "Hull City",
+    "latitude": 53.746264,
+    "longitude": -0.367638,
+    "resolved_grid": [
+      53.75,
+      -0.25
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=53.746264&longitude=-0.367638&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-10&end_date=2026-08-22&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Ipswich",
+    "gazetteer_name": "Ipswich Town",
+    "latitude": 52.054957,
+    "longitude": 1.145319,
+    "resolved_grid": [
+      52.0,
+      1.25
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=52.054957&longitude=1.145319&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-17&end_date=2026-08-22&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Leeds",
+    "gazetteer_name": "Leeds United",
+    "latitude": 53.777806,
+    "longitude": -1.572165,
+    "resolved_grid": [
+      53.75,
+      -1.5
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=53.777806&longitude=-1.572165&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-10&end_date=2026-08-30&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Leicester",
+    "gazetteer_name": "Leicester City",
+    "latitude": 52.620378,
+    "longitude": -1.142247,
+    "resolved_grid": [
+      52.5,
+      -1.25
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=52.620378&longitude=-1.142247&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-19&end_date=2026-04-24&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Lincoln",
+    "gazetteer_name": "Lincoln City",
+    "latitude": 53.21834,
+    "longitude": -0.540763,
+    "resolved_grid": [
+      53.25,
+      -0.5
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=53.21834&longitude=-0.540763&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2026-08-22&end_date=2026-09-01&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Liverpool",
+    "gazetteer_name": "Liverpool",
+    "latitude": 53.430892,
+    "longitude": -2.960813,
+    "resolved_grid": [
+      53.5,
+      -3.0
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=53.430892&longitude=-2.960813&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-25&end_date=2026-08-29&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Luton",
+    "gazetteer_name": "Luton Town",
+    "latitude": 51.884218,
+    "longitude": -0.431634,
+    "resolved_grid": [
+      52.0,
+      -0.5
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=51.884218&longitude=-0.431634&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-12&end_date=2025-04-26&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Man City",
+    "gazetteer_name": "Manchester City",
+    "latitude": 53.483126,
+    "longitude": -2.200352,
+    "resolved_grid": [
+      53.5,
+      -2.25
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=53.483126&longitude=-2.200352&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-24&end_date=2026-08-23&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Man United",
+    "gazetteer_name": "Manchester United",
+    "latitude": 53.463047,
+    "longitude": -2.291308,
+    "resolved_grid": [
+      53.5,
+      -2.25
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=53.463047&longitude=-2.291308&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-16&end_date=2026-08-30&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Middlesbrough",
+    "gazetteer_name": "Middlesbrough",
+    "latitude": 54.578257,
+    "longitude": -1.216891,
+    "resolved_grid": [
+      54.5,
+      -1.25
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=54.578257&longitude=-1.216891&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-10&end_date=2026-08-29&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Millwall",
+    "gazetteer_name": "Millwall",
+    "latitude": 51.485953,
+    "longitude": -0.050913,
+    "resolved_grid": [
+      51.5,
+      0.0
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=51.485953&longitude=-0.050913&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-10&end_date=2026-09-02&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Newcastle",
+    "gazetteer_name": "Newcastle United",
+    "latitude": 54.975578,
+    "longitude": -1.621585,
+    "resolved_grid": [
+      55.0,
+      -1.5
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=54.975578&longitude=-1.621585&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-17&end_date=2026-08-23&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Norwich",
+    "gazetteer_name": "Norwich City",
+    "latitude": 52.622149,
+    "longitude": 1.309223,
+    "resolved_grid": [
+      52.5,
+      1.25
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=52.622149&longitude=1.309223&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-17&end_date=2026-08-29&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Nott'm Forest",
+    "gazetteer_name": "Nottingham Forest",
+    "latitude": 52.939453,
+    "longitude": -1.1331992,
+    "resolved_grid": [
+      53.0,
+      -1.25
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=52.939453&longitude=-1.1331992&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-17&end_date=2026-08-22&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Oxford",
+    "gazetteer_name": "Oxford United",
+    "latitude": 51.716542,
+    "longitude": -1.207921,
+    "resolved_grid": [
+      51.75,
+      -1.25
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=51.716542&longitude=-1.207921&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-10&end_date=2026-04-25&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Plymouth",
+    "gazetteer_name": "Plymouth Argyle",
+    "latitude": 50.388082,
+    "longitude": -4.150926,
+    "resolved_grid": [
+      50.5,
+      -4.25
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=50.388082&longitude=-4.150926&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-17&end_date=2025-05-03&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Portsmouth",
+    "gazetteer_name": "Portsmouth",
+    "latitude": 50.79633,
+    "longitude": -1.063807,
+    "resolved_grid": [
+      50.75,
+      -1.25
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=50.79633&longitude=-1.063807&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-17&end_date=2026-09-01&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Preston",
+    "gazetteer_name": "Preston North End",
+    "latitude": 53.772183,
+    "longitude": -2.688401,
+    "resolved_grid": [
+      53.75,
+      -2.75
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=53.772183&longitude=-2.688401&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-09&end_date=2026-09-01&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "QPR",
+    "gazetteer_name": "Queens Park Rangers",
+    "latitude": 51.509267,
+    "longitude": -0.232115,
+    "resolved_grid": [
+      51.5,
+      -0.25
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=51.509267&longitude=-0.232115&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-10&end_date=2026-09-02&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Sheffield United",
+    "gazetteer_name": "Sheffield United",
+    "latitude": 53.370362,
+    "longitude": -1.470845,
+    "resolved_grid": [
+      53.25,
+      -1.5
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=53.370362&longitude=-1.470845&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-17&end_date=2026-09-01&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Sheffield Weds",
+    "gazetteer_name": "Sheffield Wednesday",
+    "latitude": 53.411427,
+    "longitude": -1.500661,
+    "resolved_grid": [
+      53.5,
+      -1.5
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=53.411427&longitude=-1.500661&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-11&end_date=2026-05-02&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Southampton",
+    "gazetteer_name": "Southampton",
+    "latitude": 50.905828,
+    "longitude": -1.390992,
+    "resolved_grid": [
+      51.0,
+      -1.5
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=50.905828&longitude=-1.390992&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-24&end_date=2026-08-29&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Stoke",
+    "gazetteer_name": "Stoke City",
+    "latitude": 52.98841,
+    "longitude": -2.175413,
+    "resolved_grid": [
+      53.0,
+      -2.25
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=52.98841&longitude=-2.175413&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-10&end_date=2026-09-01&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Sunderland",
+    "gazetteer_name": "Sunderland",
+    "latitude": 54.914428,
+    "longitude": -1.388179,
+    "resolved_grid": [
+      55.0,
+      -1.5
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=54.914428&longitude=-1.388179&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-18&end_date=2026-08-30&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Swansea",
+    "gazetteer_name": "Swansea City",
+    "latitude": 51.642738,
+    "longitude": -3.93458,
+    "resolved_grid": [
+      51.75,
+      -4.0
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=51.642738&longitude=-3.93458&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-17&end_date=2026-09-01&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Tottenham",
+    "gazetteer_name": "Tottenham Hotspur",
+    "latitude": 51.604189,
+    "longitude": -0.066107,
+    "resolved_grid": [
+      51.5,
+      0.0
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=51.604189&longitude=-0.066107&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-24&end_date=2026-08-29&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Watford",
+    "gazetteer_name": "Watford",
+    "latitude": 51.649893,
+    "longitude": -0.401538,
+    "resolved_grid": [
+      51.75,
+      -0.5
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=51.649893&longitude=-0.401538&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-17&end_date=2026-08-29&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "West Brom",
+    "gazetteer_name": "West Bromwich Albion",
+    "latitude": 52.509092,
+    "longitude": -1.963928,
+    "resolved_grid": [
+      52.5,
+      -2.0
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=52.509092&longitude=-1.963928&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-17&end_date=2026-09-02&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "West Ham",
+    "gazetteer_name": "West Ham United",
+    "latitude": 51.538685,
+    "longitude": -0.016441,
+    "resolved_grid": [
+      51.5,
+      0.0
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=51.538685&longitude=-0.016441&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-17&end_date=2026-09-01&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Wolves",
+    "gazetteer_name": "Wolverhampton Wanderers",
+    "latitude": 52.590217,
+    "longitude": -2.130405,
+    "resolved_grid": [
+      52.5,
+      -2.25
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=52.590217&longitude=-2.130405&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2024-08-25&end_date=2026-08-29&models=ecmwf_ifs025&timezone=GMT"
+  },
+  {
+    "team": "Wrexham",
+    "gazetteer_name": "Wrexham",
+    "latitude": 53.051973,
+    "longitude": -3.003801,
+    "resolved_grid": [
+      53.0,
+      -3.0
+    ],
+    "url": "https://previous-runs-api.open-meteo.com/v1/forecast?latitude=53.051973&longitude=-3.003801&hourly=temperature_2m_previous_day1%2Cprecipitation_previous_day1%2Cwind_speed_10m_previous_day1&start_date=2025-08-16&end_date=2026-08-28&models=ecmwf_ifs025&timezone=GMT"
+  }
+]

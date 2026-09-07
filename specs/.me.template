@@ -1,0 +1,6 @@
+handle: @yourhandle
+name: Your Name
+role: developer
+
+# Скопируй этот файл в `specs/.me` и замени значения.
+# `specs/.me` локален для разработчика и не должен попадать в общий репозиторий.
