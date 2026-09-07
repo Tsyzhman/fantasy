@@ -2,7 +2,7 @@
 import { BOTS, type Recommendation, type Selection } from "./domain";
 export type AdviceMarket = Selection & { recommendations: Recommendation[] };
 export function matchAdvice(event: { markets: AdviceMarket[]; closed?: boolean; kickoff: string; fetchedAt: string | null }, now: number) {
-  const unavailable = event.closed || !Number.isFinite(Date.parse(event.kickoff)) || Date.parse(event.kickoff) <= now
+  const unavailable = now === 0 ? "Проверяем свежесть котировок" : event.closed || !Number.isFinite(Date.parse(event.kickoff)) || Date.parse(event.kickoff) <= now
     ? "Приём ставок на матч закрыт"
     : !event.fetchedAt || !Number.isFinite(Date.parse(event.fetchedAt)) || now - Date.parse(event.fetchedAt) > 300000
       ? "Котировки устарели — обновите матч" : null;

@@ -48,6 +48,8 @@ export function BettingLeague({admin}:{admin:boolean}) {
   async function post(body:unknown){setBusy(true);setError("");setNotice("");try{const r=await api("",body);await load();return r;}catch(e){setError((e as Error).message);throw e;}finally{setBusy(false);}}
   async function submit(){if(!slip)return;try{await post({action:"bet",eventId:slip.event.id,key:slip.market.key,odds:slip.market.odds,coins:Number(coins),requestKey:slip.requestKey});setNotice(`Ставка принята по ${slip.market.odds.toFixed(2)}. Коэффициент зафиксирован.`);setSlip(null);}catch{/* Preserve idempotency key and offered quote for network retries. */}}
   async function switchTab(value:string){setTab(value);if(value==="admin")try{setPending(await api<Pending[]>("?admin=pending"));}catch(e){setError((e as Error).message);}}
+  const [adviceTime,setAdviceTime]=useState(0);
+  useEffect(()=>{if(!selected)return;const timer=setInterval(()=>setAdviceTime(Date.now()),1000);return()=>clearInterval(timer);},[selected]);
   const me=data?.standings.find(r=>r.id===data.account.id);
   const groups=new Map<string,Market[]>();
   for(const m of selected?.markets??[])if(!marketSearch || `${m.group} ${m.label}`.toLowerCase().includes(marketSearch.toLowerCase()))groups.set(m.group,[...(groups.get(m.group)??[]),m]);
@@ -76,7 +78,7 @@ export function BettingLeague({admin}:{admin:boolean}) {
           {selected.warning&&<p className={styles.warning}>{selected.warning}</p>}
           <section className={styles.matchAdvice} aria-label="Советы алгоритмов на выбранный матч">
             <h3>Что думают алгоритмы об этом матче</h3>
-            <div>{matchAdvice(selected, Date.now()).map((tip,i)=><article key={tip.name}>
+            <div>{matchAdvice(selected, adviceTime).map((tip,i)=><article key={tip.name}>
               <header><span className={styles.avatar} data-color={i}>{tip.name[0]}</span><h4>{tip.name}</h4></header>
               {tip.market && tip.recommendation ? <>
                 <strong>{tip.market.label}</strong>
