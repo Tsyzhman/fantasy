@@ -24,10 +24,19 @@ test("competition names distinguish tiers and map the actual Fonbet labels",()=>
   for(const name of ["Греция. Суперлига 2","Германия. Бундеслига 3","Шотландия. Кубок Лиги","Англия. Премьер-Лига. Итоги турнира","Португалия. До 23 лет. Молодежная лига"])assert.equal(leagueForSport(name),null,name);
 });
 
-import { hasRegulationScore } from "./competition";
+import { hasRegulationScore, historicalScore } from "./competition";
 test("European league phase can use 90-minute models and settlement; knockout ambiguity stays explicit",()=>{
   assert.equal(hasRegulationScore(42,"1"),true);
   assert.equal(hasRegulationScore(73,"8"),true);
   for(const round of [null,"final","1/8","playoff",""])assert.equal(hasRegulationScore(42,round),false);
   assert.equal(hasRegulationScore(47,null),true);
+});
+
+test("missing match score can use exact team statistics, preserving zero and rejecting incomplete or conflicting data",()=>{
+  const input={homeTeamId:1n,awayTeamId:2n,homeScore:null,awayScore:null,teamStats:[{teamId:1n,goals:0},{teamId:2n,goals:2}]};
+  assert.deepEqual(historicalScore(input),{home:0,away:2,source:"TEAM_STATS"});
+  assert.equal(historicalScore({...input,teamStats:[{teamId:3n,goals:4},{teamId:2n,goals:2}]}),null);
+  assert.equal(historicalScore({...input,homeScore:1}),null);
+  assert.equal(historicalScore({...input,teamStats:[]}),null);
+  assert.deepEqual(historicalScore({...input,homeScore:1,awayScore:2}),{home:1,away:2,source:"MATCH"});
 });

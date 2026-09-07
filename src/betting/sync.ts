@@ -7,7 +7,7 @@ import { fixtureNameScore } from "@/machete/fixture-odds-sync";
 import { BOTS, recommend, type ModelInput, type Selection, type HistoryRow } from "./domain";
 import { eventSelections, listFeed } from "./provider";
 import { dbJson, initializeAccounts, placeBet, settleTicket } from "./service";
-import { CUP_LEAGUES, EUROPEAN_LEAGUE_ROUNDS, DOMESTIC_LEAGUES, hasRegulationScore } from "./competition";
+import { CUP_LEAGUES, EUROPEAN_LEAGUE_ROUNDS, DOMESTIC_LEAGUES, hasRegulationScore, historicalScore } from "./competition";
 
 // Provider competition identities; cup patterns precede domestic leagues.
 export function leagueForSport(name: string): number|null {
@@ -39,13 +39,12 @@ export async function loadModel(matchId: bigint): Promise<ModelInput|null> {
   const european=[42n,73n].includes(target.leagueId);
   const since=new Date(target.matchDate.getTime()-730*86400000);
   const history=async(team:bigint):Promise<HistoryRow[]>=>{
-    const where:Prisma.CoreMatchWhereInput={finished:true,cancelled:false,matchDate:{lt:target.matchDate!,gte:since},homeScore:{not:null},awayScore:{not:null},OR:[{homeTeamId:team},{awayTeamId:team}]};
-    const select={id:true,leagueId:true,homeTeamId:true,homeScore:true,awayScore:true,matchDate:true,teamStats:{select:{teamId:true,xg:true}}} as const;
-    const rows=european ? (await Promise.all([
-      prisma.coreMatch.findMany({where:{...where,leagueId:{in:DOMESTIC_LEAGUES}},orderBy:[{matchDate:"desc"},{id:"desc"}],take:20,select}),
-      prisma.coreMatch.findMany({where:{...where,leagueId:target.leagueId,round:{in:EUROPEAN_LEAGUE_ROUNDS}},orderBy:[{matchDate:"desc"},{id:"desc"}],take:8,select})
-    ])).flat().sort((a,b)=>b.matchDate!.getTime()-a.matchDate!.getTime()) : await prisma.coreMatch.findMany({where,orderBy:[{matchDate:"desc"},{id:"desc"}],take:20,select});
-    return rows.map(r=>{const home=r.homeTeamId===team;return {at:r.matchDate!.toISOString(),competitionId:Number(r.leagueId),home,goals:home?r.homeScore!:r.awayScore!,conceded:home?r.awayScore!:r.homeScore!,xg:r.teamStats.find(s=>s.teamId===team)?.xg??null,xga:r.teamStats.find(s=>s.teamId!==team)?.xg??null};});
+    const where:Prisma.CoreMatchWhereInput={finished:true,cancelled:false,matchDate:{lt:target.matchDate!,gte:since},OR:[{homeTeamId:team},{awayTeamId:team}]};
+    const fetchRows=async(scope:Prisma.CoreMatchWhereInput,limit:number):Promise<HistoryRow[]>=>{
+      const rows=await prisma.coreMatch.findMany({where:{...where,...scope},orderBy:[{matchDate:"desc"},{id:"desc"}],take:limit*2,select:{id:true,leagueId:true,homeTeamId:true,awayTeamId:true,homeScore:true,awayScore:true,matchDate:true,teamStats:{select:{teamId:true,goals:true,xg:true}}}});
+      return rows.flatMap(r=>{const score=historicalScore(r);if(!score)return [];const home=r.homeTeamId===team;return [{at:r.matchDate!.toISOString(),competitionId:Number(r.leagueId),home,goals:home?score.home:score.away,conceded:home?score.away:score.home,xg:r.teamStats.find(s=>s.teamId===team)?.xg??null,xga:r.teamStats.find(s=>s.teamId===(home?r.awayTeamId:r.homeTeamId))?.xg??null}];}).slice(0,limit);
+    };
+    return european ? (await Promise.all([fetchRows({leagueId:{in:DOMESTIC_LEAGUES}},20),fetchRows({leagueId:target.leagueId,round:{in:EUROPEAN_LEAGUE_ROUNDS}},8)])).flat().sort((a,b)=>Date.parse(b.at)-Date.parse(a.at)) : fetchRows({},20);
   };
   const [home,away,baseRows]=await Promise.all([history(target.homeTeamId),history(target.awayTeamId),prisma.coreMatch.findMany({where:{leagueId:target.leagueId,finished:true,cancelled:false,matchDate:{lt:target.matchDate,gte:since},homeScore:{not:null},awayScore:{not:null},...(european?{round:{in:EUROPEAN_LEAGUE_ROUNDS}}:{})},orderBy:[{matchDate:"desc"},{id:"desc"}],take:600,select:{homeScore:true,awayScore:true}})]);
   if(baseRows.length<30)return null;
