@@ -5,6 +5,11 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.60 - 2026-09-07
+
+- Remove the manual settlement tab and dialog from Arena. Keep virtual result settlement.
+- Expire match advice with scoped one-shot timers instead of redrawing the market list every second.
+
 ## 0.3.59 - 2026-09-07
 
 - Enable the real KHL catalog and local drafts, with bounded recurring catalog refresh and explicit unavailable forecasts.

@@ -2,4 +2,4 @@
 import { requireCurrentUser } from "@/lib/auth";
 import { BettingLeague } from "./ui";
 export const dynamic="force-dynamic";
-export default async function BettingPage(){const user=await requireCurrentUser();return <BettingLeague admin={user.role==="ADMIN"}/>;}
+export default async function BettingPage(){await requireCurrentUser();return <BettingLeague/>;}
