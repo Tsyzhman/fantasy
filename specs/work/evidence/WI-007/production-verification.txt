@@ -1,0 +1,30 @@
+MANIFEST a23d3a00b413c5e3020435c0193f79e1c9bfb2d0
+/fantasy-scout-web running healthy restarts=0 image=fantasy-scout:20260907T102720Z-v0.3.58-a23d3a0
+a23d3a00b413c5e3020435c0193f79e1c9bfb2d0
+/fantasy-scout-worker running healthy restarts=0 image=fantasy-scout:20260907T102720Z-v0.3.58-a23d3a0
+a23d3a00b413c5e3020435c0193f79e1c9bfb2d0
+{"status":"ok","uptimeSeconds":72,"release":{"version":"0.3.58","commit":"a23d3a00b413c5e3020435c0193f79e1c9bfb2d0"}}
+users=30
+squads=140
+betting_accounts=33
+ledger_mismatch=0
+initial_duplicates=0
+ticket_duplicates=0
+khl_contests=0
+migrations=46
+unfinished_migrations=0
+fantasy-scout-web 129.2MiB / 11.6GiB
+fantasy-scout-worker 2.103GiB / 11.6GiB
+fantasy-scout-postgres 1.302GiB / 11.6GiB
+               total        used        free      shared  buff/cache   available
+Mem:           11876        5483        1712         168        4680        5911
+Swap:              0           0           0
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/vda3       119G   22G   91G  20% /
+fantasy-scout-worker Up About a minute (healthy)
+fantasy-scout-web Up About a minute (healthy)
+fantasy-scout-fpl-relay Up About a minute
+fantasy-scout-worker-rollback-pre-20260907T102720Z-v0.3.58-a23d3a0 Exited (143) 3 minutes ago
+fantasy-scout-web-rollback-pre-20260907T102720Z-v0.3.58-a23d3a0 Exited (143) 3 minutes ago
+fantasy-scout-fpl-relay-rollback-pre-20260907T102720Z-v0.3.58-a23d3a0 Exited (0) About a minute ago
+fantasy-scout-postgres Up 2 weeks (healthy)

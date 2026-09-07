@@ -6,7 +6,6 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
-| [WI-007](work/WI-007-integrated-release.md) | Объединённый выпуск 7 сентября | betting FEAT-001; khl INFRA-002 | @tsyzhman | 2026-09-07 | — |
 
 ## Backlog
 
@@ -23,6 +22,7 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-007](work/archive/2026/WI-007-integrated-release.md) | Объединённый выпуск 0.3.58 | @tsyzhman | 2026-09-07 |
 | [WI-005](work/archive/2026/WI-005-virtual-betting-league.md) | Виртуальная лига ставок Fantasy | @tsyzhman | 2026-09-07 |
 | [WI-006](work/archive/2026/WI-006-rotation-risk.md) | RR — риск ротации игрока | @tsyzhman | 2026-09-07 |
 | [WI-004](work/archive/2026/WI-004-squad-contact-sheet.md) | Карточка состава «Контактный лист» | @tsyzhman | 2026-09-07 |

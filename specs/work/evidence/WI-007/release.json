@@ -1,0 +1,43 @@
+{
+  "version": "0.3.58",
+  "commit": "a23d3a00b413c5e3020435c0193f79e1c9bfb2d0",
+  "release": "20260907T102720Z-v0.3.58-a23d3a0",
+  "deploy": "https://github.com/Tsyzhman/fantasy/actions/runs/34111055172",
+  "browserSmoke": "https://github.com/Tsyzhman/fantasy/actions/runs/34112100695",
+  "migrations": 46,
+  "unit": {
+    "pass": 1069,
+    "skip": 1,
+    "fail": 0
+  },
+  "localKhlBrowser": {
+    "pass": 9,
+    "skip": 16,
+    "fail": 0
+  },
+  "localFootballBrowser": {
+    "pass": 3,
+    "skip": 1,
+    "fail": 0
+  },
+  "productionBrowser": {
+    "authPass": 1,
+    "pass": 4,
+    "skip": 17,
+    "fail": 0
+  },
+  "backupSha256": "347dbea30661464594c415b8f5e27e08c01320f13568ae0e524178766c095ef8",
+  "productionFlags": {
+    "khlEnabled": false,
+    "khlContests": 0
+  },
+  "postSmokeMemory": {
+    "webMiB": 665.8,
+    "workerGiB": 2.147,
+    "postgresGiB": 1.372
+  },
+  "restartCounts": {
+    "web": 0,
+    "worker": 0
+  }
+}
