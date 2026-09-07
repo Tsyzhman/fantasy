@@ -1,8 +1,9 @@
 "use client";
 
-import { useReportWebVitals } from "next/web-vitals";
+import { onCLS, onLCP, onINP, onFCP, onTTFB, type Metric } from "web-vitals";
+import { onFID, type Metric as LegacyMetric } from "web-vitals-legacy";
 import { usePathname } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { betaWebVitalNames, betaWebVitalRatings, type BetaWebVitalName, type BetaWebVitalRating } from "@/beta/user-test";
 import { I18nText } from "@/components/i18n-text";
@@ -23,6 +24,21 @@ import {
   type StoredBetaTestSession
 } from "@/lib/beta-telemetry-client";
 
+// The Next-bundled older collector installs a visibility listener on every click.
+// Current collectors also release INP idle/visibility callbacks. Only FID uses
+// the compatible legacy collector because newer versions removed that metric.
+// Observers live for the document lifetime, so register exactly once per page load.
+let webVitalsStarted = false;
+function startWebVitals() {
+  if (webVitalsStarted) return;
+  webVitalsStarted = true;
+  const report = (metric: Metric | LegacyMetric) => {
+    if (!betaWebVitalNames.includes(metric.name as never) || !betaWebVitalRatings.includes(metric.rating as never)) return;
+    void recordBetaWebVital(metric.name as BetaWebVitalName, metric.value, metric.rating as BetaWebVitalRating);
+  };
+  onCLS(report); onFID(report); onLCP(report); onINP(report); onFCP(report); onTTFB(report);
+}
+
 export function BetaTelemetryReporter() {
   const language = useLanguage();
   const pathname = usePathname();
@@ -32,12 +48,7 @@ export function BetaTelemetryReporter() {
   const [endError, setEndError] = useState<string | null>(null);
   const runId = session?.runId ?? null;
 
-  const reportWebVital = useCallback((metric: Parameters<Parameters<typeof useReportWebVitals>[0]>[0]) => {
-    if (!betaWebVitalNames.includes(metric.name as never) || !betaWebVitalRatings.includes(metric.rating as never)) return;
-    void recordBetaWebVital(metric.name as BetaWebVitalName, metric.value, metric.rating as BetaWebVitalRating);
-  }, []);
-
-  useReportWebVitals(reportWebVital);
+  useEffect(startWebVitals, []);
 
   useEffect(() => {
     const refresh = () => setSession(getBetaTestSession());

@@ -13,6 +13,7 @@ const navItems = [
   { href: "/machete/players", icon: BarChart3, label: <I18nText en="Players" ru="Игроки" /> },
   { href: "/machete/squad", icon: Users, label: <I18nText en="Squad" ru="Состав" /> },
   { href: "/machete/fpl/squad", icon: Users, label: <I18nText en="FPL" ru="FPL" /> },
+  { href: "/machete/khl/squad", icon: Users, label: <I18nText en="KHL" ru="КХЛ" /> },
   { href: "/machete/sync-jobs", icon: ListChecks, label: <I18nText en="Data jobs" ru="Задачи данных" /> },
   { href: "/machete/models", icon: Settings, label: <I18nText en="Model" ru="Модель" /> }
 ] as const;
@@ -37,6 +38,7 @@ export function MacheteShell({ children, compact = false }: { children: ReactNod
         const Icon = item.icon;
         const active = pathname === item.href
           || pathname.startsWith(`${item.href}/`)
+          || (item.href === "/machete/khl/squad" && pathname.startsWith("/machete/khl/"))
           || (item.href === "/machete/squad" && pathname.startsWith("/machete/franchise-squads"));
 
         return (
