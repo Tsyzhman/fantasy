@@ -2311,7 +2311,7 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
                     onClick={importStoredSportsRuSquad}
                     disabled={interactionPending || autoPickPending}
                     title={sportsRuSquadButtonTitle(language, sportsSnapshotStatus)}
-                    aria-label={sportsRuSquadButtonTitle(language, sportsSnapshotStatus)}
+                    aria-label={localizedText(language, "Import Sports squad", "Импортировать состав Sports")}
                     aria-describedby={sportsImportNotice ? "sports-ru-import-status" : undefined}
                     className={cn("inline-flex h-11 w-11 shrink-0 items-center justify-center rounded border border-sky-200 bg-sky-50 text-sky-800 hover:bg-sky-100 disabled:opacity-60", provider === "FPL" && "hidden")}
                   >
