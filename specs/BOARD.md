@@ -6,7 +6,6 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
-| [WI-008](work/WI-008-khl-production.md) | Доступный КХЛ на сервере | KHL INFRA-001/002 | @tsyzhman | 2026-09-07 | — |
 
 ## Backlog
 
@@ -23,6 +22,7 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-008](work/archive/2026/WI-008-khl-production.md) | КХЛ на сервере и исправления Betting | @tsyzhman | 2026-09-07 |
 | [WI-007](work/archive/2026/WI-007-integrated-release.md) | Объединённый выпуск 0.3.58 | @tsyzhman | 2026-09-07 |
 | [WI-005](work/archive/2026/WI-005-virtual-betting-league.md) | Виртуальная лига ставок Fantasy | @tsyzhman | 2026-09-07 |
 | [WI-006](work/archive/2026/WI-006-rotation-risk.md) | RR — риск ротации игрока | @tsyzhman | 2026-09-07 |

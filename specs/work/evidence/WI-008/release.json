@@ -1,0 +1,32 @@
+{
+  "version": "0.3.60",
+  "runtimeCommit": "15b5a6c9083cf60a292a90f7ef4bf9167c5b0bdd",
+  "release": "20260907T112939Z-v0.3.60-15b5a6c",
+  "deploy": "https://github.com/Tsyzhman/fantasy/actions/runs/34116440816",
+  "browser": "https://github.com/Tsyzhman/fantasy/actions/runs/34117242298",
+  "unit": {
+    "pass": 1075,
+    "fail": 0
+  },
+  "browserResults": {
+    "authPass": 1,
+    "uiPass": 10,
+    "skip": 17,
+    "fail": 0
+  },
+  "bettingReset": {
+    "beforeBets": 50,
+    "afterBets": 0,
+    "accounts": 33,
+    "coinsEach": 100000,
+    "backup": "/var/backups/fantasy-scout/betting-before-user-reset-20260907-v0359.dump",
+    "sha256": "326c5e0c7f0c2368b65ddf1cf080da5bd8ff3041ae5fd2c39b05ac3776780ac4"
+  },
+  "khl": {
+    "players": 694,
+    "clubs": 22,
+    "rawBytes": 0,
+    "stableReceipts": 2776,
+    "qaDrafts": 1
+  }
+}

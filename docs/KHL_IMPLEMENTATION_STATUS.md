@@ -61,7 +61,7 @@
 | Provider team | Проверенный read-only endpoint, привязка владельца, банк и weekly transfers. Пока нет свежего доверенного снимка, import возвращает недоступность |
 | Основная модель | После получения feeds: построение и калибровка совместных распределений/признаков на реальных хоккейных данных, rolling-origin, ≥8 недель holdout, ablation xG/odds, ≥2 недель shadow. Вычислительное ядро и beta baseline не закрывают этот пункт |
 
-Длительные наблюдения и обучение не проводились и не заменены mocks. КХЛ flags по умолчанию выключены. Реальное подключение источников и включение production не выполнялись.
+Длительные наблюдения и обучение не проводились и не заменены mocks. До WI-008 КХЛ flags оставались выключенными; текущее подключение production описано ниже. Незакрытые gates из таблицы сохраняются.
 
 ## Воспроизведение
 
@@ -76,3 +76,14 @@
 На объединённой версии: 1070 unit tests, 1069 pass, 1 skip; lint 0 errors/101 warnings; typecheck/build pass; 46 миграций на новой тестовой БД и schema diff без расхождений. Отдельно пройдены KHL DB tests и wallet concurrency/settlement test Арены. Старые football fixtures дополнены календарём провайдера.
 
 KHL browser: 9 pass/16 предусмотренных skips. После 55 warm-up и ещё 50 переходов полный heap 8 661 312 → 9 604 204 bytes (+10.89%); snapshots показывают рост V8 compiled code. Проверка удерживаемых JS-данных теперь отдельно исключает code/native: 2 236 184 → 2 236 444 (+260 bytes); порог данных 10%, DOM 852 → 852, listeners 395 → 395. Это изменение методики, а не утверждение о прохождении прежнего лимита общего heap. Worker 5 929 880 → 6 094 168 bytes, максимум 1, после завершения 0; фильтры 5 112 444 → 5 278 928.
+
+
+## Production 0.3.60 — WI-008, 7 сентября 2026
+
+Реальный каталог Sports.ru 107 включён: сезон 2026/2027, mobile stage 407 / official season 1436, 694 уникальных игрока и 22 клуба. Включены KHL_ENABLED и KHL_SYNC_ENABLED; worker обновляет только этот публичный каталог через fenced jobs каждые 45 секунд после завершения предыдущего цикла. Неподтверждённые calendar/protocol/xG transports не включены. Последний собственный вариант восстанавливается при входе, новый открывается явно.
+
+Одинаковый каталог обновляет freshness без новых receipts/revisions. Production: receipts 2776 сохранялись при нескольких следующих циклах; raw=0, duplicate player/entry groups=0, один повторно используемый QA draft. Число receipts выросло только при первоначальных импортах/перезапусках; кэш содержит не более пяти fingerprint/timestamp пар.
+
+Runtime 15b5a6c9083cf60a292a90f7ef4bf9167c5b0bdd, release 20260907T112939Z-v0.3.60-15b5a6c. Deploy workflow 34116440816 success. Полный CI: 1075 tests pass, lint 0 errors/98 warnings, typecheck/build pass. Production browser workflow 34117242298: auth 1 pass, UI 10 pass/17 skips; реальные KHL catalog/save/reload/return/new-variant и Betting/UCL cases прошли на desktop/tablet/mobile. Skips относятся к отдельным seeded local suites и двум mobile journey cases.
+
+После smoke: web 433.6 MiB, worker 131.3 MiB, PostgreSQL 1.188 GiB; web/worker healthy, restarts=0. Новых миграций нет: 46 применённых миграций, одна прежняя rolled-back audit row, незавершённых 0. Детали Betting/reset и общий release evidence находятся в WI-008.

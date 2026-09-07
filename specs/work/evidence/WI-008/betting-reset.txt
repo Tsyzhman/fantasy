@@ -1,0 +1,36 @@
+326c5e0c7f0c2368b65ddf1cf080da5bd8ff3041ae5fd2c39b05ac3776780ac4  /var/backups/fantasy-scout/betting-before-user-reset-20260907-v0359.dump
+BEGIN
+SET
+ ?column? | bets |  stake  
+----------+------+---------
+ before   |   50 | 5000000
+(1 row)
+
+DELETE 125
+DELETE 83
+DELETE 50
+UPDATE 33
+INSERT 0 33
+UPDATE 183
+UPDATE 1
+COMMIT
+ ?column? | bets 
+----------+------
+ after    |    0
+(1 row)
+
+ ?column? | accounts |   min    |   max    
+----------+----------+----------+----------
+ balances |       33 | 10000000 | 10000000
+(1 row)
+
+    ?column?     | count 
+-----------------+-------
+ ledger_mismatch |     0
+(1 row)
+
+      ?column?      | count 
+--------------------+-------
+ initial_duplicates |     0
+(1 row)
+

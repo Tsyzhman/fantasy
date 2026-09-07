@@ -1,0 +1,10 @@
+UPDATE 1
+khl_receipts|2776
+khl_players|694|694|2026-09-07 11:37:06.243
+khl_squads|1
+khl_duplicate_entries|0
+fantasy-scout-web 433.6MiB / 11.6GiB
+fantasy-scout-worker 131.3MiB / 11.6GiB
+fantasy-scout-postgres 1.188GiB / 11.6GiB
+/fantasy-scout-web healthy restarts=0
+/fantasy-scout-worker healthy restarts=0

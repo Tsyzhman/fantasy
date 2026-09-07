@@ -1,0 +1,6 @@
+sync|2026-09-07 11:38:24.686+00||{"events": 202, "settled": 0, "refreshed": 8, "unmatched": 34, "supportedLeagues": 12}
+new_bets|39
+outside_squad|0
+ledger_mismatch|0
+ticket_duplicates|0
+source_version|2026-09-07.2|39
