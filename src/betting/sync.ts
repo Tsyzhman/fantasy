@@ -1,4 +1,5 @@
 /** @spec spec://modules/betting/FEAT-001-virtual-league#runtime */
+import { bettingLeagues, bettingLeagueIds } from "./leagues";
 import { randomUUID } from "node:crypto";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/db";
@@ -8,7 +9,7 @@ import { eventSelections, listFeed } from "./provider";
 import { dbJson, initializeAccounts, placeBet, settleTicket } from "./service";
 const CUP_LEAGUES=[42,44,50,73,74,77,10216,132,133,134,137,138,139,141,149,186,193,209,235];
 
-// Full set of downloaded competition scopes; cup patterns precede domestic leagues.
+// Provider competition identities; cup patterns precede domestic leagues.
 export function leagueForSport(name: string): number|null {
   if(/женщ|молод|до \d|итоги|виртуал|кибер|альтернатив|резерв|лучший|кто выше/i.test(name))return null;
   if(/греция.*суперлига\s*2|германия.*бундеслига\s*3|чемпионат мира.*отбор|шотландия.*кубок лиги/i.test(name))return null;
@@ -58,8 +59,9 @@ export async function refreshEvent(id:string) {
 }
 
 async function catalogSync() {
-  const [feed,leagues,matches]=await Promise.all([listFeed(),prisma.coreLeague.findMany({select:{id:true}}),prisma.coreMatch.findMany({where:{finished:false,cancelled:false,matchDate:{gt:new Date(),lt:new Date(Date.now()+45*86400000)}},select:{id:true,leagueId:true,matchDate:true,homeTeam:{select:{name:true}},awayTeam:{select:{name:true}}}})]);
-  const allowed=new Set(leagues.map(l=>Number(l.id))), sports=new Map(feed.sports.map(s=>[s.id,s]));
+  const [feed,matches]=await Promise.all([listFeed(),prisma.coreMatch.findMany({where:{finished:false,cancelled:false,matchDate:{gt:new Date(),lt:new Date(Date.now()+45*86400000)}},select:{id:true,leagueId:true,matchDate:true,homeTeam:{select:{name:true}},awayTeam:{select:{name:true}}}})]);
+  await prisma.coreLeague.createMany({ data: bettingLeagues.map(l => ({ id: BigInt(l.id), name: l.name })), skipDuplicates: true });
+  const allowed=new Set(bettingLeagueIds.map(Number)), sports=new Map(feed.sports.map(s=>[s.id,s]));
   const rootEvents=feed.events.filter(e=>e.level===1 && e.kind===1 && e.team1 && e.team2 && e.place==="line" && e.startTime*1000>Date.now() && e.startTime*1000<Date.now()+45*86400000);
   const ids:string[]=[]; const records:{id:string;match_id:string|null;league_id:number;home:string;away:string;kickoff:string}[]=[]; let unmatched=0;
   for(const event of rootEvents) {
@@ -78,7 +80,7 @@ async function catalogSync() {
     ON CONFLICT(id) DO UPDATE SET match_id=excluded.match_id,home=excluded.home,away=excluded.away,kickoff=excluded.kickoff,closed=false,updated_at=now()`;
   // A successful complete catalogue may close vanished markets, never settle them.
   await prisma.bettingEvent.updateMany({where:{id:{notIn:ids},closed:false},data:{closed:true}});
-  return {events:ids.length,unmatched,downloadedLeagues:allowed.size};
+  return {events:ids.length,unmatched,supportedLeagues:allowed.size};
 }
 
 export async function settleFinished() {

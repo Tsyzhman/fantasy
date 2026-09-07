@@ -19,6 +19,10 @@ test("wallet integration: init, price fixation, concurrent spend, retry and sett
     for(const userId of users){const a=await prisma.bettingAccount.findUniqueOrThrow({where:{userId}});assert.equal(a.balance,10000000n);assert.equal(await prisma.bettingLedger.count({where:{accountId:a.id,kind:"INITIAL"}}),1);}
     await prisma.bettingEvent.create({data:{id:eventId,leagueId:-999n,home:"Chelsea",away:"Arsenal",kickoff:new Date(Date.now()+3600000),fetchedAt:new Date(),markets:dbJson([s])}});
     const a={accountId:`user:${users[0]}`,eventId,key:s.key,odds:2.5,coins:1000,requestKey:randomUUID()};
+    await assert.rejects(placeBet(a), /Лига недоступна/);
+    assert.equal(await prisma.bettingBet.count({ where: { eventId } }), 0);
+    await prisma.coreLeague.upsert({ where: { id: 47n }, create: { id: 47n, name: "Premier League" }, update: {} });
+    await prisma.bettingEvent.update({ where: { id: eventId }, data: { leagueId: 47n } });
     const [first,retry]=await Promise.all([placeBet(a),placeBet(a)]);assert.equal(first.id,retry.id);
     await prisma.bettingEvent.update({where:{id:eventId},data:{markets:dbJson([{...s,odds:2.6}])}});
     await assert.rejects(placeBet({...a,requestKey:randomUUID()}),/изменился/);

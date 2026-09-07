@@ -43,6 +43,7 @@ jobs:
 
       - name: Run authenticated desktop, tablet, and mobile checks
         env:
+          KHL_PRODUCTION_SMOKE: "true"
           PLAYWRIGHT_BASE_URL: https://fantasy.tsyzhman.ru
           PLAYWRIGHT_USER_AGENT: fantasy-production-browser-smoke/${{ github.run_id }}
         run: npx playwright test --no-deps --project=desktop-chromium --project=tablet-chromium --project=mobile-chromium

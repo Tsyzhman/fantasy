@@ -2,6 +2,7 @@
 import { randomUUID } from "node:crypto";
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { prisma } from "@/lib/db";
+import { bettingLeagues, bettingLeagueIds } from "./leagues";
 import { BOTS, recommend, payoutMultiplier, type ModelInput, type Recommendation, type Selection } from "./domain";
 
 export class BettingError extends Error { constructor(message: string, public status = 409) { super(message); } }
@@ -25,12 +26,12 @@ export async function initializeAccounts(db: PrismaClient = prisma) {
 export async function dashboard(userId: string, league: string | null, search: string, offset: number) {
   await initializeAccounts();
   const where: Prisma.BettingEventWhereInput = { kickoff: { gt: new Date() }, closed: false,
-    ...(league ? { leagueId: BigInt(league) } : {}), ...(search ? { OR:[{home:{contains:search,mode:"insensitive"}},{away:{contains:search,mode:"insensitive"}}] } : {}) };
-  const [account, events, total, leagues, standings, history, decisions, sync] = await Promise.all([
+    leagueId: league ? { equals: BigInt(league), in: bettingLeagueIds } : { in: bettingLeagueIds }, ...(search ? { OR:[{home:{contains:search,mode:"insensitive"}},{away:{contains:search,mode:"insensitive"}}] } : {}) };
+  const [account, events, total, leagueCounts, standings, history, decisions, sync] = await Promise.all([
     prisma.bettingAccount.findUniqueOrThrow({where:{userId}}),
     prisma.bettingEvent.findMany({where,orderBy:[{kickoff:"asc"},{id:"asc"}],take:30,skip:offset, select:{id:true,leagueId:true,home:true,away:true,kickoff:true,fetchedAt:true,matchId:true}}),
     prisma.bettingEvent.count({where}),
-    prisma.$queryRaw<{id:bigint;name:string;events:bigint}[]>`SELECT l.id,l.name,count(e.id) AS events FROM leagues l LEFT JOIN betting_events e ON e.league_id=l.id AND e.kickoff>now() AND NOT e.closed GROUP BY l.id,l.name ORDER BY l.name`,
+    prisma.$queryRaw<{id:bigint;name:string;events:bigint}[]>`SELECT league_id AS id,count(*) AS events FROM betting_events WHERE kickoff>now() AND NOT closed GROUP BY league_id`,
     prisma.$queryRaw`SELECT a.id,a.name,a.bot_name,a.balance,
       COALESCE(sum(b.stake) FILTER(WHERE b.status='PENDING'),0)::bigint AS locked,
       COALESCE(sum(b.stake) FILTER(WHERE b.status NOT IN ('PENDING','VOID')),0)::bigint AS turnover,
@@ -43,6 +44,7 @@ export async function dashboard(userId: string, league: string | null, search: s
     prisma.$queryRaw`SELECT d.*,a.name,e.home,e.away FROM betting_decisions d JOIN betting_accounts a ON a.id=d.account_id JOIN betting_events e ON e.id=d.event_id WHERE a.bot_name IS NOT NULL OR a.user_id=${userId} ORDER BY d.decided_at DESC LIMIT 50`,
     prisma.bettingSyncState.findUnique({where:{id:"main"}})
   ]);
+  const leagues = bettingLeagues.map(l => ({ ...l, events: Number(leagueCounts.find(c => Number(c.id) === l.id)?.events ?? 0) }));
   return jsonValue({account,events,total,leagues,standings,history,decisions,sync,bots:BOTS,now:new Date()});
 }
 
@@ -71,6 +73,7 @@ export async function placeBet(input: PlaceInput, db: PrismaClient = prisma) {
     const event=await tx.bettingEvent.findUnique({where:{id:input.eventId}});
     const now=new Date();
     if(!event || event.closed || event.kickoff<=now)throw new BettingError("Приём ставок на событие закрыт");
+    if(!bettingLeagueIds.includes(event.leagueId))throw new BettingError("Лига недоступна в Squad");
     if(!event.fetchedAt || now.getTime()-event.fetchedAt.getTime()>300000)throw new BettingError("Линия устарела. Дождитесь обновления");
     if(event.matchId) {
       const match=await tx.coreMatch.findUnique({where:{id:event.matchId},select:{started:true,finished:true,cancelled:true,matchDate:true}});

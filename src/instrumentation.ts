@@ -21,6 +21,8 @@ export async function register() {
   const plan = schedulerRuntimePlan();
 
   if (plan.worker) {
+    const { startKhlCatalogScheduler } = await import("./server/khl/catalog-scheduler");
+    startKhlCatalogScheduler();
     // @spec spec://modules/betting/FEAT-001-virtual-league#runtime
     const { startBettingLeague } = await import("./betting/sync");
     startBettingLeague();

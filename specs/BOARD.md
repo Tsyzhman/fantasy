@@ -6,6 +6,7 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
+| [WI-008](work/WI-008-khl-production.md) | Доступный КХЛ на сервере | KHL INFRA-001/002 | @tsyzhman | 2026-09-07 | — |
 
 ## Backlog
 

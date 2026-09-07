@@ -367,6 +367,13 @@ docker container inspect "$worker" --format '{{range .Config.Env}}{{println .}}{
   | grep -vE '^APP_RELEASE_(COMMIT|VERSION)=' > "$worker_env"
 chmod 600 "$web_env" "$worker_env"
 
+# Public KHL catalog and local drafts are enabled independently of forecasts.
+# Explicit production configuration survives subsequent immutable releases.
+for runtime_env in "$web_env" "$worker_env"; do
+  sed -i '/^KHL_ENABLED=/d; /^KHL_SYNC_ENABLED=/d; /^KHL_CATALOG_CONTEST_IDS=/d; /^KHL_FORECASTS_ENABLED=/d' "$runtime_env"
+  printf '%s\n' 'KHL_ENABLED=true' 'KHL_SYNC_ENABLED=true' 'KHL_CATALOG_CONTEST_IDS=107' 'KHL_FORECASTS_ENABLED=false' >> "$runtime_env"
+done
+
 docker container inspect "$fpl_vpn_container" >/dev/null 2>&1 || {
   echo "FPL VPN container is missing: $fpl_vpn_container" >&2
   exit 1

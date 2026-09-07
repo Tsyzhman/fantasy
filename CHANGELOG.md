@@ -5,6 +5,11 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.59 - 2026-09-07
+
+- Enable the real KHL catalog and local drafts, with bounded recurring catalog refresh and explicit unavailable forecasts.
+- Use the same league list and order as Squad in Betting, including leagues without loaded events.
+
 ## 0.3.58 - 2026-09-07
 
 - Consolidate local global-ranking strategy, rotation risk, squad contact-sheet UI and provider ownership changes with the deployed Arena release.
