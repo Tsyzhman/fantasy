@@ -52,3 +52,6 @@ GROUP BY a.id HAVING a.balance <> COALESCE(sum(l.delta), 0);
 - API: 401 без сессии, 403 для чужого/невалидного Origin, 400 для невалидного JSON, 413 при превышении размера.
 
 Spec: `spec://modules/betting/FEAT-001-virtual-league#root`; WI-005. Незавершённый runtime WI-001 и визуальные изменения WI-004 в этот выпуск не включены. Их существующие документы сохранены; диагностика spec-space по отсутствующему коду WI-001 ожидаема для отдельной ветки этого выпуска.
+
+
+Production v0.3.57 запущен 2026-09-07; workflow 34107206679 success. Revision d9abf51 совпадает в health, web, worker и .release-commit. Сверка 33 счетов: 0 дублей и 0 расхождений. На первом smoke — 368 событий. Свидетельства: specs/work/evidence/WI-005.

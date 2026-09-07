@@ -1,0 +1,16 @@
+[
+  {
+    "name": "/fantasy-scout-web",
+    "image": "fantasy-scout:20260907T094424Z-v0.3.57-d9abf51",
+    "revision": "d9abf51dbc2a842b66484c644269987fd719d653",
+    "version": "0.3.57",
+    "health": "healthy"
+  },
+  {
+    "name": "/fantasy-scout-worker",
+    "image": "fantasy-scout:20260907T094424Z-v0.3.57-d9abf51",
+    "revision": "d9abf51dbc2a842b66484c644269987fd719d653",
+    "version": "0.3.57",
+    "health": "healthy"
+  }
+]

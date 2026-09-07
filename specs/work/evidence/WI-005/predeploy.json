@@ -1,0 +1,36 @@
+{
+  "release": "0.3.57",
+  "commit": "d9abf51dbc2a842b66484c644269987fd719d653",
+  "workflowRun": 34107206679,
+  "checks": {
+    "unitPassed": 1019,
+    "skipped": 1,
+    "failed": 0,
+    "typecheck": "pass",
+    "build": "pass",
+    "prismaDrift": "empty",
+    "api": "auth/origin/json-limit/fixed-price passed",
+    "browser": {
+      "width": 390,
+      "scrollWidth": 390,
+      "consoleErrors": 0,
+      "themes": [
+        "light",
+        "dark"
+      ]
+    }
+  },
+  "accounting": {
+    "duplicateBotEvents": 0,
+    "ledgerMismatches": 0,
+    "bots": 5,
+    "initialCoinsEach": 100000,
+    "openRiskCoinsEach": 10000
+  },
+  "feed": {
+    "events": 367,
+    "unmatched": 76,
+    "downloadedLeagues": 46,
+    "sampleFullSelections": 2120
+  }
+}

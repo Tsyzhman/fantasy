@@ -6,7 +6,6 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
-| [WI-005](work/WI-005-virtual-betting-league.md) | Виртуальная лига ставок Fantasy | betting/FEAT-001 | @tsyzhman | 2026-09-07 | — |
 
 ## Backlog
 
@@ -23,6 +22,7 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-005](work/archive/2026/WI-005-virtual-betting-league.md) | Виртуальная лига ставок Fantasy | @tsyzhman | 2026-09-07 |
 | [WI-004](work/archive/2026/WI-004-squad-contact-sheet.md) | Карточка состава «Контактный лист» | @tsyzhman | 2026-09-07 |
 | [WI-003](work/archive/2026/WI-003-betting-features.md) | Расширенная проверка факторов ставок | @tsyzhman | 2026-09-07 |
 | [WI-002](work/archive/2026/WI-002-betting-feasibility.md) | Проверка доходности ставок по статистике | @tsyzhman | 2026-09-07 |
