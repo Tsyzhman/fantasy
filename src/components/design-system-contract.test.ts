@@ -64,6 +64,20 @@ test("semantic 950 text cannot collapse onto its soft alert background", () => {
   assert.ok(contrastRatio("#91a2ba", "#0d1727") >= 4.5);
 });
 
+/** @spec spec://modules/machete/FEAT-003-squad-player-card#contracts */
+test("fixture neutral fallback has zero specificity so known FDR colours win in either CSS order", () => {
+  assert.match(globals, /:where\(\.fixture-pill\)\s*\{[^}]*background: var\(--surface-3\)/);
+  assert.doesNotMatch(globals, /^\.fixture-pill\s*\{/m);
+  for (let level = 1; level <= 5; level++) {
+    const rule = globals.split(`.fixture-difficulty-${level} {`)[1]?.split("}")[0];
+    assert.ok(rule?.includes(`background: var(--fdr-${level})`));
+    assert.ok(rule?.includes("color: var(--fdr-text)"));
+  }
+  assert.match(globals, /\.fixture-difficulty-na\s*\{[^}]*color: var\(--text-muted\)/);
+  assert.match(globals, /\.fixture-pill-home\s*\{\s*font-weight: 800/);
+  assert.match(globals, /\.fixture-pill-away\s*\{\s*font-weight: 400/);
+});
+
 function contrastRatio(foreground: string, background: string) {
   const lighter = Math.max(relativeLuminance(foreground), relativeLuminance(background));
   const darker = Math.min(relativeLuminance(foreground), relativeLuminance(background));

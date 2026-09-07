@@ -887,7 +887,9 @@ html[data-theme="dark"] .score-heat::before {
 .fdr-na { background: var(--surface-3); color: var(--text-muted); }
 .fdr-cell-empty { background: var(--surface-1); color: var(--text-muted); }
 .fdr-cell-unrated { background: var(--surface-3); color: var(--text-muted); }
-.fixture-pill { background: var(--surface-3); color: var(--text-primary); }
+/* @spec spec://modules/machete/FEAT-003-squad-player-card#contracts */
+/* Neutral fallback must never override a known fixture difficulty. */
+:where(.fixture-pill) { background: var(--surface-3); color: var(--text-primary); }
 .fixture-pill-home { font-weight: 800; }
 .fixture-pill-away { font-weight: 400; }
 .fixture-difficulty-na { background: var(--surface-3); color: var(--text-muted); }
