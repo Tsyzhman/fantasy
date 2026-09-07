@@ -240,7 +240,8 @@ test("stored Sports squad action sits immediately left of save in the one-line s
   assert.ok(saveButton > sportsButton);
   assert.match(squadPlannerSource, /grid-cols-\[minmax\(0,1fr\)_auto\]/);
   assert.match(headingBlock, /en="Import Sports squad" ru="Импортировать состав Sports"/);
-  assert.match(headingBlock, /aria-label=\{sportsRuSquadButtonTitle/);
+  assert.match(headingBlock, /aria-label=\{localizedText\(language, "Import Sports squad", "Импортировать состав Sports"\)\}/);
+  assert.match(headingBlock, /title=\{sportsRuSquadButtonTitle/);
   assert.match(headingBlock, /onClick=\{rollbackToLastSavedSquad\}/);
   assert.match(headingBlock, /aria-label=\{localizedText\(language, "Roll back to the last save on this page", "Откатить к последнему сохранению здесь"\)\}/);
   assert.match(headingBlock, /aria-label=\{localizedText\(language, "Save squad", "Сохранить состав"\)\}/);
