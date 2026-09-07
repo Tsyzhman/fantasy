@@ -1,5 +1,6 @@
 import { test, expect } from "@playwright/test";
 import { fantasySquadLeagueFotMobIds } from "../src/lib/leagues/display";
+import type { ModelInput, Recommendation } from "../src/betting/domain";
 
 test("Betting offers all Squad leagues in the same order", async ({ page }) => {
   test.skip(process.env.KHL_PRODUCTION_SMOKE !== "true", "Explicit production check");
@@ -8,9 +9,19 @@ test("Betting offers all Squad leagues in the same order", async ({ page }) => {
   await expect(select.locator("option")).toHaveCount(fantasySquadLeagueFotMobIds.length + 1);
   expect(await select.locator("option").evaluateAll(options => options.map(o => (o as HTMLOptionElement).value))).toEqual(["", ...fantasySquadLeagueFotMobIds]);
   await expect(select.locator("option").first()).toHaveText("Все лиги");
+  await expect(page.getByRole("navigation", { name: "Разделы арены" }).getByRole("button", { name: "Расчёт", exact: true })).toHaveCount(0);
+  await select.selectOption("42");
+  await page.waitForResponse(r => r.url().includes("/api/betting?league=42") && r.request().method() === "GET");
   const events = page.getByRole("region", { name: "События", exact: true }).getByRole("button");
   await expect(events.first()).toBeVisible();
+  const detailResponse = page.waitForResponse(r => r.url().includes("/api/betting?event=") && r.request().method() === "GET");
   await events.first().click();
+  const detail = await (await detailResponse).json() as { model: ModelInput | null; markets: { recommendations: Recommendation[] }[] };
+  expect(detail.model?.europeanCompetitionId).toBe(42);
+  expect(detail.model!.home.length).toBeGreaterThanOrEqual(5);
+  expect(detail.model!.away.length).toBeGreaterThanOrEqual(5);
+  expect([...detail.model!.home, ...detail.model!.away].every(r => Date.parse(r.at) < Date.parse(detail.model!.kickoff))).toBe(true);
+  for (const name of ["Mia", "Abella", "Lana", "Riley", "Adriana"]) expect(detail.markets.some(m => m.recommendations.some(r => r.name === name && r.probability !== null))).toBe(true);
   const advice = page.getByRole("region", { name: "Советы алгоритмов на выбранный матч" });
   await expect(advice.getByRole("article")).toHaveCount(5);
   for (const name of ["Mia", "Abella", "Lana", "Riley", "Adriana"]) await expect(advice.getByRole("heading", { name, exact: true })).toBeVisible();
@@ -38,5 +49,9 @@ test("production KHL catalog and local planning are available", async ({ page })
   await expect(page.getByRole("status").filter({ hasText: "Локальный вариант сохранён" })).toBeVisible();
   await page.reload();
   await expect(selected).toHaveCount(count);
+  await page.goto("/machete/khl/squad");
+  await expect(selected).toHaveCount(count);
+  await page.getByRole("link", { name: "Новый вариант", exact: true }).click();
+  await expect(page.getByText(/свободное место/)).toHaveCount(17);
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 });
