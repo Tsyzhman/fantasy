@@ -7,6 +7,7 @@
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
 | [WI-011](work/WI-011-khl-football-design.md) | Футбольный дизайн сборщика для КХЛ | FEAT-002 | @tsyzhman | 2026-09-07 | — |
+| [WI-010](work/WI-010-fdr-colors.md) | Восстановить FDR на сервере | machete/FEAT-003 | @tsyzhman | 2026-09-07 | — |
 
 ## Backlog
 
@@ -23,6 +24,7 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-009](work/archive/2026/WI-009-betting-opportunities.md) | Сортировка событий и несколько исходов | @tsyzhman | 2026-09-07 |
 | [WI-008](work/archive/2026/WI-008-khl-production.md) | КХЛ на сервере и исправления Betting | @tsyzhman | 2026-09-07 |
 | [WI-007](work/archive/2026/WI-007-integrated-release.md) | Объединённый выпуск 0.3.58 | @tsyzhman | 2026-09-07 |
 | [WI-005](work/archive/2026/WI-005-virtual-betting-league.md) | Виртуальная лига ставок Fantasy | @tsyzhman | 2026-09-07 |

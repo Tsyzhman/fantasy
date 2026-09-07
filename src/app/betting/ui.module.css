@@ -7,6 +7,26 @@
 @media(min-width:681px){.events,.marketPanel{max-height:75dvh;overflow:auto;scrollbar-width:thin}.marketPanel{scroll-margin-top:80px}}
 
 .matchAdvice { margin: 18px 0; }
+/* @spec spec://modules/betting/FEAT-001-virtual-league#opportunities */
+.opportunityControls { display: flex; flex-wrap: wrap; align-items: end; gap: 18px; margin: 0 0 20px; }
+.opportunityControls label { flex: 0 1 280px; font-size: 12px; color: var(--text-muted); }
+.opportunityControls select { margin-top: 7px; }
+.opportunityControls p { flex: 1 1 230px; font-size: 12px; margin: 0; }
+.arena .eventOpportunity { border-color: var(--success); box-shadow: inset 3px 0 var(--success); }
+.arena .event .opportunityBadge { display: flex; flex-wrap: wrap; gap: 6px; color: var(--success); font-size: 11px; }
+.opportunities { padding: 20px; border-bottom: 1px solid var(--border); }
+.opportunities h3 { font-size: 16px; font-weight: 650; }
+.opportunities p { margin: 8px 0 14px; font-size: 12px; }
+.opportunityList { display: grid; gap: 8px; max-height: 380px; overflow: auto; scrollbar-width: thin; padding: 3px; }
+.arena .opportunity { justify-content: space-between; align-items: start; gap: 16px; text-align: left; padding: 14px; background: var(--success-soft); border-color: var(--border); }
+.opportunity > span:first-child { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.opportunity > span:last-child { flex-shrink: 0; text-align: right; }
+.opportunity strong { font-size: 13px; }
+.opportunity small { display: block; font-size: 11px; margin-top: 5px; }
+.opportunity b { font-size: 18px; font-variant-numeric: tabular-nums; }
+.opportunity em { display: block; font-size: 12px; font-style: normal; color: var(--success); margin-top: 5px; }
+.arena .marketOpportunity { border-color: var(--success); background: var(--success-soft); }
+@media(max-width:400px) { .arena .opportunity { gap: 8px; padding: 10px; } .opportunity > span:last-child { max-width: 105px; } }
 .matchAdvice h3 { margin: 0 0 12px; font-size: 16px; }
 .matchAdvice > div { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); gap: 10px; }
 .matchAdvice article { min-width: 0; display: flex; flex-direction: column; gap: 9px; padding: 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); overflow-wrap: anywhere; }

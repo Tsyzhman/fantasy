@@ -6,6 +6,8 @@ image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
 ## 0.3.62 - 2026-09-07
+
+- Include local Arena opportunity ranking and multiple unique recommended outcomes per match; retain all five algorithm cards.
 - Adapt football Squad contact-sheet cards and side-by-side catalog to KHL, retaining all 17 active slots and hockey actions.
 - Add position-filter shortcuts from empty slots and expandable player details with direct keep/remove controls.
 

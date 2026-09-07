@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db";
 import { fixtureNameScore } from "@/machete/fixture-odds-sync";
 import { BOTS, recommend, type ModelInput, type Selection, type HistoryRow } from "./domain";
 import { eventSelections, listFeed } from "./provider";
+import { opportunitySnapshot } from "./opportunities";
 import { dbJson, initializeAccounts, placeBet, settleTicket } from "./service";
 import { CUP_LEAGUES, EUROPEAN_LEAGUE_ROUNDS, DOMESTIC_LEAGUES, hasRegulationScore, historicalScore } from "./competition";
 
@@ -61,8 +62,10 @@ export async function refreshEvent(id:string) {
   if(!target || !hasRegulationScore(Number(current.leagueId),target.round))for(const s of selections)s.manual=true;
   const root=feed.events.find(e=>String(e.id)===id);
   const model=current.matchId?await loadModel(current.matchId):null;
+  const kickoff=root?new Date(root.startTime*1000):current.kickoff;
+  const snapshot=model?{...model,_opportunities:opportunitySnapshot(selections,model,requestedAt.toISOString(),kickoff.toISOString())}:null;
   // Late network responses must not overwrite a newer quote snapshot.
-  await prisma.bettingEvent.updateMany({where:{id,OR:[{fetchedAt:null},{fetchedAt:{lte:requestedAt}}]},data:{markets:dbJson(selections),model:model?dbJson(model):Prisma.DbNull,fetchedAt:requestedAt,updatedAt:new Date(),closed:!root || root.place!=="line" || root.startTime*1000<=Date.now(),...(root ? {kickoff:new Date(root.startTime*1000)}:{})}});
+  await prisma.bettingEvent.updateMany({where:{id,OR:[{fetchedAt:null},{fetchedAt:{lte:requestedAt}}]},data:{markets:dbJson(selections),model:snapshot?dbJson(snapshot):Prisma.DbNull,fetchedAt:requestedAt,updatedAt:new Date(),closed:!root || root.place!=="line" || root.startTime*1000<=Date.now(),...(root ? {kickoff}:{})}});
 }
 
 async function catalogSync() {

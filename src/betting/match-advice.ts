@@ -1,11 +1,9 @@
 /** @spec spec://modules/betting/FEAT-001-virtual-league#ui */
 import { BOTS, type Recommendation, type Selection } from "./domain";
+import { quoteUnavailable } from "./opportunities";
 export type AdviceMarket = Selection & { recommendations: Recommendation[] };
 export function matchAdvice(event: { markets: AdviceMarket[]; closed?: boolean; kickoff: string; fetchedAt: string | null }, now: number) {
-  const unavailable = now === 0 ? "Проверяем свежесть котировок" : event.closed || !Number.isFinite(Date.parse(event.kickoff)) || Date.parse(event.kickoff) <= now
-    ? "Приём ставок на матч закрыт"
-    : !event.fetchedAt || !Number.isFinite(Date.parse(event.fetchedAt)) || now - Date.parse(event.fetchedAt) > 300000
-      ? "Котировки устарели — обновите матч" : null;
+  const unavailable = quoteUnavailable(event, now);
   return BOTS.map(bot => {
     const eligible = event.markets.filter(m => m.enabled && m.rule && !m.manual).flatMap(m => {
       const recommendation = m.recommendations.find(r => r.name === bot.name);

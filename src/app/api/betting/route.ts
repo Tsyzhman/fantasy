@@ -21,8 +21,10 @@ export async function GET(request:Request){return handle(async()=>{
     return reply({...await eventDetail(event),warning});
   }
   const league=q.get("league"),offset=Number(q.get("offset")??0);
+  const sort=q.get("sort")??"value";
+  if(sort!=="value" && sort!=="time")return reply({error:"Некорректная сортировка"},400);
   if((league && !validId(league)) || !Number.isSafeInteger(offset) || offset<0 || offset>10000)return reply({error:"Некорректный фильтр"},400);
-  return reply(await dashboard(auth.user.id,league,(q.get("search")??"").slice(0,80),offset));
+  return reply(await dashboard(auth.user.id,league,(q.get("search")??"").slice(0,80),offset,sort));
 });}
 export async function POST(request:Request){return handle(async()=>{
   const auth=await requireApiUser(request);if(auth.response)return auth.response;
