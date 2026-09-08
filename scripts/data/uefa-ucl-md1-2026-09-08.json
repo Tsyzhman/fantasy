@@ -1,0 +1,2601 @@
+{
+  "source": "UEFA",
+  "sourceUrl": "https://www.uefa.com/uefachampionsleague/news/02a9-2188cf675017-df8325ec95c3-1000--champions-league-predicted-line-ups-matchday-1-team-news-/",
+  "sourceUpdatedText": "Tuesday, September 8, 2026",
+  "leagueId": "42",
+  "season": "2026/2027",
+  "teams": [
+    {
+      "teamId": "8342",
+      "teamName": "Club Brugge",
+      "players": [
+        {
+          "sourceName": "Sommer",
+          "playerId": "41618",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Yann Sommer"
+        },
+        {
+          "sourceName": "Sabbe",
+          "playerId": "1227590",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Kyriani Sabbe"
+        },
+        {
+          "sourceName": "Mechele",
+          "playerId": "445873",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Brandon Mechele"
+        },
+        {
+          "sourceName": "Han-beom Lee",
+          "playerId": "1232253",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Han-Beom Lee"
+        },
+        {
+          "sourceName": "Seys",
+          "playerId": "1489449",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Joaquin Seys"
+        },
+        {
+          "sourceName": "Potts",
+          "playerId": "1206287",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Freddie Potts"
+        },
+        {
+          "sourceName": "Vanaken",
+          "playerId": "203666",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Hans Vanaken"
+        },
+        {
+          "sourceName": "Carlos Forbs",
+          "playerId": "1186529",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Carlos Forbs"
+        },
+        {
+          "sourceName": "Vetlesen",
+          "playerId": "837064",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Hugo Vetlesen"
+        },
+        {
+          "sourceName": "Diakhon",
+          "playerId": "1484998",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Mamadou Diakhon"
+        },
+        {
+          "sourceName": "Tresoldi",
+          "playerId": "1334552",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Nicolo Tresoldi"
+        }
+      ]
+    },
+    {
+      "teamId": "10252",
+      "teamName": "Aston Villa",
+      "players": [
+        {
+          "sourceName": "Suzuki",
+          "playerId": "1053679",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Zion Suzuki"
+        },
+        {
+          "sourceName": "Cash",
+          "playerId": "729731",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Matty Cash"
+        },
+        {
+          "sourceName": "Lindelöf",
+          "playerId": "258269",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Victor Nilsson Lindelöf"
+        },
+        {
+          "sourceName": "Pau Torres",
+          "playerId": "792645",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Pau Torres"
+        },
+        {
+          "sourceName": "Maatsen",
+          "playerId": "966026",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Ian Maatsen"
+        },
+        {
+          "sourceName": "Kamara",
+          "playerId": "816325",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Boubacar Kamara"
+        },
+        {
+          "sourceName": "João Gomes",
+          "playerId": "1174672",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "João Gomes"
+        },
+        {
+          "sourceName": "McGinn",
+          "playerId": "356406",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "John McGinn"
+        },
+        {
+          "sourceName": "Buendía",
+          "playerId": "610184",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Emiliano Buendía"
+        },
+        {
+          "sourceName": "Hemmings",
+          "playerId": "1607333",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "George Hemmings"
+        },
+        {
+          "sourceName": "Jackson",
+          "playerId": "1197347",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Nicolas Jackson"
+        }
+      ]
+    },
+    {
+      "teamId": "8563",
+      "teamName": "AEK Athens",
+      "players": [
+        {
+          "sourceName": "Strakosha",
+          "playerId": "403049",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Thomas Strakosha"
+        },
+        {
+          "sourceName": "Rota",
+          "playerId": "949866",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Lazaros Rota"
+        },
+        {
+          "sourceName": "Moukoudi",
+          "playerId": "637737",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Harold Moukoudi"
+        },
+        {
+          "sourceName": "Relvas",
+          "playerId": "1285815",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Filipe Relvas"
+        },
+        {
+          "sourceName": "Pilios",
+          "playerId": "1015750",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Stavros Pilios"
+        },
+        {
+          "sourceName": "Majer",
+          "playerId": "762721",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Lovro Majer"
+        },
+        {
+          "sourceName": "Marin",
+          "playerId": "574844",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Razvan Marin"
+        },
+        {
+          "sourceName": "Vitális",
+          "playerId": "1197823",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Milán Vitális"
+        },
+        {
+          "sourceName": "Gaćinović",
+          "playerId": "448859",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Mijat Gacinovic"
+        },
+        {
+          "sourceName": "Varga",
+          "playerId": "796504",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Barnabás Varga"
+        },
+        {
+          "sourceName": "Jović",
+          "playerId": "463291",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Luka Jovic"
+        }
+      ]
+    },
+    {
+      "teamId": "9977",
+      "teamName": "LASK",
+      "players": [
+        {
+          "sourceName": "Jungwirth",
+          "playerId": "1156883",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Lukas Jungwirth"
+        },
+        {
+          "sourceName": "Mbuyamba",
+          "playerId": "979963",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Xavier Mbuyamba"
+        },
+        {
+          "sourceName": "Tornich",
+          "playerId": "1437941",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Alemão"
+        },
+        {
+          "sourceName": "Andrade",
+          "playerId": "688449",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Andrés Andrade"
+        },
+        {
+          "sourceName": "Jørgensen",
+          "playerId": "1029360",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Kasper Jørgensen"
+        },
+        {
+          "sourceName": "Ljubičić",
+          "playerId": "939430",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Robert Ljubicic"
+        },
+        {
+          "sourceName": "Bogarde",
+          "playerId": "1108604",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Melayro Bogarde"
+        },
+        {
+          "sourceName": "Horvath",
+          "playerId": "426726",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Sascha Horvath"
+        },
+        {
+          "sourceName": "Bello",
+          "playerId": "953995",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "George Bello"
+        },
+        {
+          "sourceName": "Usor",
+          "playerId": "1366348",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Moses Usor"
+        },
+        {
+          "sourceName": "Lang",
+          "playerId": "1232205",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Christoph Lang"
+        }
+      ]
+    },
+    {
+      "teamId": "8633",
+      "teamName": "Real Madrid",
+      "players": [
+        {
+          "sourceName": "Courtois",
+          "playerId": "170323",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Thibaut Courtois"
+        },
+        {
+          "sourceName": "Konaté",
+          "playerId": "820140",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Ibrahima Konaté"
+        },
+        {
+          "sourceName": "Rüdiger",
+          "playerId": "276738",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Antonio Rüdiger"
+        },
+        {
+          "sourceName": "Huijsen",
+          "playerId": "1367619",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Dean Huijsen"
+        },
+        {
+          "sourceName": "Dumfries",
+          "playerId": "593118",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Denzel Dumfries"
+        },
+        {
+          "sourceName": "Valverde",
+          "playerId": "743533",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Federico Valverde"
+        },
+        {
+          "sourceName": "Bellingham",
+          "playerId": "1077894",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Jude Bellingham"
+        },
+        {
+          "sourceName": "Brahim Díaz",
+          "playerId": "750027",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Brahim Díaz"
+        },
+        {
+          "sourceName": "Cucurella",
+          "playerId": "873289",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Marc Cucurella"
+        },
+        {
+          "sourceName": "Vinícius Júnior",
+          "playerId": "846033",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Vinícius Júnior"
+        },
+        {
+          "sourceName": "Mbappé",
+          "playerId": "701154",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Kylian Mbappé"
+        }
+      ]
+    },
+    {
+      "teamId": "8636",
+      "teamName": "Inter",
+      "players": [
+        {
+          "sourceName": "Martínez",
+          "playerId": "772168",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Josep Martínez"
+        },
+        {
+          "sourceName": "Bisseck",
+          "playerId": "889535",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Yann Aurel Bisseck"
+        },
+        {
+          "sourceName": "Akanji",
+          "playerId": "521318",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Manuel Akanji"
+        },
+        {
+          "sourceName": "Bastoni",
+          "playerId": "805451",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Alessandro Bastoni"
+        },
+        {
+          "sourceName": "Diouf",
+          "playerId": "1254297",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Andy Diouf"
+        },
+        {
+          "sourceName": "Hakan Çalhanoğlu",
+          "playerId": "304733",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Hakan Çalhanoglu"
+        },
+        {
+          "sourceName": "Barella",
+          "playerId": "541820",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Nicolò Barella"
+        },
+        {
+          "sourceName": "Zieliński",
+          "playerId": "362212",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Piotr Zielinski"
+        },
+        {
+          "sourceName": "Dimarco",
+          "playerId": "605224",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Federico Dimarco"
+        },
+        {
+          "sourceName": "Martínez",
+          "playerId": "690230",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Lautaro Martínez"
+        },
+        {
+          "sourceName": "Esposito",
+          "playerId": "1367618",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Francesco Pio Esposito"
+        }
+      ]
+    },
+    {
+      "teamId": "9789",
+      "teamName": "B. Dortmund",
+      "players": [
+        {
+          "sourceName": "Kobel",
+          "playerId": "764018",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Gregor Kobel"
+        },
+        {
+          "sourceName": "Gadou",
+          "playerId": "1479742",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Joane Gadou"
+        },
+        {
+          "sourceName": "Anton",
+          "playerId": "664970",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Waldemar Anton"
+        },
+        {
+          "sourceName": "Svensson",
+          "playerId": "1209228",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Daniel Svensson"
+        },
+        {
+          "sourceName": "Ryerson",
+          "playerId": "659272",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Julian Ryerson"
+        },
+        {
+          "sourceName": "Veerman",
+          "playerId": "792429",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Joey Veerman"
+        },
+        {
+          "sourceName": "Bellingham",
+          "playerId": "1287373",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Jobe Bellingham"
+        },
+        {
+          "sourceName": "Beier",
+          "playerId": "1047667",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Maximilian Beier"
+        },
+        {
+          "sourceName": "Karetsas",
+          "playerId": "1536436",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Konstantinos Karetsas"
+        },
+        {
+          "sourceName": "Nwaneri",
+          "playerId": "1254234",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Ethan Nwaneri"
+        },
+        {
+          "sourceName": "Guirassy",
+          "playerId": "448540",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Serhou Guirassy"
+        }
+      ]
+    },
+    {
+      "teamId": "10205",
+      "teamName": "Villarreal",
+      "players": [
+        {
+          "sourceName": "Gulácsi",
+          "playerId": "151001",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Péter Gulácsi"
+        },
+        {
+          "sourceName": "Mouriño",
+          "playerId": "1407468",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Santiago Mouriño"
+        },
+        {
+          "sourceName": "Logan Costa",
+          "playerId": "922877",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Logan Costa"
+        },
+        {
+          "sourceName": "Renato Veiga",
+          "playerId": "1343750",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Renato Veiga"
+        },
+        {
+          "sourceName": "Sergi Cardona",
+          "playerId": "1059657",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Sergi Cardona"
+        },
+        {
+          "sourceName": "Pépé",
+          "playerId": "575735",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Nicolas Pépé"
+        },
+        {
+          "sourceName": "Santi Comesaña",
+          "playerId": "671865",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Santi Comesaña"
+        },
+        {
+          "sourceName": "Gueye",
+          "playerId": "844544",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Pape Gueye"
+        },
+        {
+          "sourceName": "Buchanan",
+          "playerId": "1026135",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Tajon Buchanan"
+        },
+        {
+          "sourceName": "Gerard Moreno",
+          "playerId": "246438",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Gerard Moreno"
+        },
+        {
+          "sourceName": "Mikautadze",
+          "playerId": "1117069",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Georges Mikautadze"
+        }
+      ]
+    },
+    {
+      "teamId": "9773",
+      "teamName": "Porto",
+      "players": [
+        {
+          "sourceName": "Diogo Costa",
+          "playerId": "795630",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Diogo Costa"
+        },
+        {
+          "sourceName": "Alberto Costa",
+          "playerId": "1387439",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Alberto Costa"
+        },
+        {
+          "sourceName": "Kiwior",
+          "playerId": "1021834",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Jakub Kiwior"
+        },
+        {
+          "sourceName": "Nehuén Pérez",
+          "playerId": "902383",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Nehuén Pérez"
+        },
+        {
+          "sourceName": "Francisco Moura",
+          "playerId": "919374",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Francisco Moura"
+        },
+        {
+          "sourceName": "Hwang",
+          "playerId": "623698",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "In-Beom Hwang"
+        },
+        {
+          "sourceName": "Rosário",
+          "playerId": "664226",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Pablo Rosario"
+        },
+        {
+          "sourceName": "Gabriel Veiga",
+          "playerId": "1116734",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Gabriel Veiga"
+        },
+        {
+          "sourceName": "William Gomes",
+          "playerId": "1580427",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "William Gomes"
+        },
+        {
+          "sourceName": "Giménez",
+          "playerId": "954092",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Santiago Giménez"
+        },
+        {
+          "sourceName": "Pepê",
+          "playerId": "850356",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Pepê"
+        }
+      ]
+    },
+    {
+      "teamId": "8456",
+      "teamName": "Man City",
+      "players": [
+        {
+          "sourceName": "Donnarumma",
+          "playerId": "618878",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Gianluigi Donnarumma"
+        },
+        {
+          "sourceName": "Khusanov",
+          "playerId": "1362998",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Abdukodir Khusanov"
+        },
+        {
+          "sourceName": "Rúben Dias",
+          "playerId": "614006",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Rúben Dias"
+        },
+        {
+          "sourceName": "Guéhi",
+          "playerId": "844425",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Marc Guéhi"
+        },
+        {
+          "sourceName": "Gvardiol",
+          "playerId": "1070712",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Josko Gvardiol"
+        },
+        {
+          "sourceName": "Anderson",
+          "playerId": "1089691",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Elliot Anderson"
+        },
+        {
+          "sourceName": "Fernández",
+          "playerId": "1137705",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Enzo Fernández"
+        },
+        {
+          "sourceName": "Semenyo",
+          "playerId": "933576",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Antoine Semenyo"
+        },
+        {
+          "sourceName": "Cherki",
+          "playerId": "1104053",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Rayan Cherki"
+        },
+        {
+          "sourceName": "Ndiaye",
+          "playerId": "965764",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Iliman Ndiaye"
+        },
+        {
+          "sourceName": "Haaland",
+          "playerId": "737066",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Erling Haaland"
+        }
+      ]
+    },
+    {
+      "teamId": "8639",
+      "teamName": "Lille",
+      "players": [
+        {
+          "sourceName": "Berke Özer",
+          "playerId": "815912",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Berke Özer"
+        },
+        {
+          "sourceName": "Tiago Santos",
+          "playerId": "1397857",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Tiago Santos"
+        },
+        {
+          "sourceName": "Ngoy",
+          "playerId": "1252070",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Nathan Ngoy"
+        },
+        {
+          "sourceName": "Alexsandro",
+          "playerId": "1186553",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Alexsandro Ribeiro"
+        },
+        {
+          "sourceName": "Perraud",
+          "playerId": "815465",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Romain Perraud"
+        },
+        {
+          "sourceName": "André",
+          "playerId": "148830",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Benjamin André"
+        },
+        {
+          "sourceName": "Bentaleb",
+          "playerId": "500520",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Nabil Bentaleb"
+        },
+        {
+          "sourceName": "Mbappé",
+          "playerId": "1426809",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Ethan Mbappé"
+        },
+        {
+          "sourceName": "Haraldsson",
+          "playerId": "1044470",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Hákon Arnar Haraldsson"
+        },
+        {
+          "sourceName": "Sahraoui",
+          "playerId": "988160",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Osame Sahraoui"
+        },
+        {
+          "sourceName": "Giroud",
+          "playerId": "46469",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Olivier Giroud"
+        }
+      ]
+    },
+    {
+      "teamId": "8603",
+      "teamName": "Real Betis",
+      "players": [
+        {
+          "sourceName": "Vallés",
+          "playerId": "999171",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Álvaro Vallés"
+        },
+        {
+          "sourceName": "Bellerín",
+          "playerId": "427438",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Héctor Bellerín"
+        },
+        {
+          "sourceName": "Bartra",
+          "playerId": "195305",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Marc Bartra"
+        },
+        {
+          "sourceName": "Natan",
+          "playerId": "1188375",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Natan"
+        },
+        {
+          "sourceName": "Fran García",
+          "playerId": "750028",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Fran García"
+        },
+        {
+          "sourceName": "Marc Roca",
+          "playerId": "640220",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Marc Roca"
+        },
+        {
+          "sourceName": "Bernal",
+          "playerId": "1436133",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Facundo Bernal"
+        },
+        {
+          "sourceName": "Antony",
+          "playerId": "967622",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Antony"
+        },
+        {
+          "sourceName": "Isco",
+          "playerId": "191315",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Isco"
+        },
+        {
+          "sourceName": "Fornals",
+          "playerId": "683450",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Pablo Fornals"
+        },
+        {
+          "sourceName": "Parrott",
+          "playerId": "942365",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Troy Parrott"
+        }
+      ]
+    },
+    {
+      "teamId": "8634",
+      "teamName": "Barcelona",
+      "players": [
+        {
+          "sourceName": "Joan García",
+          "playerId": "1167220",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Joan García"
+        },
+        {
+          "sourceName": "Koundé",
+          "playerId": "705450",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Jules Koundé"
+        },
+        {
+          "sourceName": "Cubarsí",
+          "playerId": "1532137",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Pau Cubarsí"
+        },
+        {
+          "sourceName": "Gerard Martín",
+          "playerId": "1598982",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Gerard Martín"
+        },
+        {
+          "sourceName": "Espart",
+          "playerId": "1815149",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Xavi Espart"
+        },
+        {
+          "sourceName": "Rodri",
+          "playerId": "675088",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Rodri"
+        },
+        {
+          "sourceName": "Pedri",
+          "playerId": "1083323",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Pedri"
+        },
+        {
+          "sourceName": "Lamine Yamal",
+          "playerId": "1467236",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Lamine Yamal"
+        },
+        {
+          "sourceName": "Fermín López",
+          "playerId": "1404415",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Fermín López"
+        },
+        {
+          "sourceName": "Gordon",
+          "playerId": "906937",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Anthony Gordon"
+        },
+        {
+          "sourceName": "Raphinha",
+          "playerId": "696679",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Raphinha"
+        }
+      ]
+    },
+    {
+      "teamId": "10235",
+      "teamName": "Feyenoord",
+      "players": [
+        {
+          "sourceName": "Ernst",
+          "playerId": "1336731",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Tjark Ernst"
+        },
+        {
+          "sourceName": "Read",
+          "playerId": "1351133",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Givairo Read"
+        },
+        {
+          "sourceName": "St. Juste",
+          "playerId": "611831",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Jeremiah St. Juste"
+        },
+        {
+          "sourceName": "Watanabe",
+          "playerId": "1023887",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Tsuyoshi Watanabe"
+        },
+        {
+          "sourceName": "Mármol",
+          "playerId": "1225450",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Mika Mármol"
+        },
+        {
+          "sourceName": "Vanhoutte",
+          "playerId": "952057",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Charles Vanhoutte"
+        },
+        {
+          "sourceName": "Zechiel",
+          "playerId": "1523822",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Gjivai Zechiël"
+        },
+        {
+          "sourceName": "Targhalline",
+          "playerId": "1228273",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Oussama Targhalline"
+        },
+        {
+          "sourceName": "Diarra",
+          "playerId": "1675966",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Gaoussou Diarra"
+        },
+        {
+          "sourceName": "Ferri",
+          "playerId": "1382019",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Nacho Ferri"
+        },
+        {
+          "sourceName": "Valente",
+          "playerId": "1256180",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Luciano Valente"
+        }
+      ]
+    },
+    {
+      "teamId": "10269",
+      "teamName": "Stuttgart",
+      "players": [
+        {
+          "sourceName": "Bredlow",
+          "playerId": "522236",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Fabian Bredlow"
+        },
+        {
+          "sourceName": "Vagnoman",
+          "playerId": "928454",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Josha Vagnoman"
+        },
+        {
+          "sourceName": "Jeltsch",
+          "playerId": "1487877",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Finn Jeltsch"
+        },
+        {
+          "sourceName": "Chabot",
+          "playerId": "867080",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Jeff Chabot"
+        },
+        {
+          "sourceName": "Mittelstädt",
+          "playerId": "614384",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Maximilian Mittelstädt"
+        },
+        {
+          "sourceName": "Prömel",
+          "playerId": "625175",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Grischa Prömel"
+        },
+        {
+          "sourceName": "Stiller",
+          "playerId": "1071186",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Angelo Stiller"
+        },
+        {
+          "sourceName": "Leweling",
+          "playerId": "1074968",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Jamie Leweling"
+        },
+        {
+          "sourceName": "Undav",
+          "playerId": "661519",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Deniz Undav"
+        },
+        {
+          "sourceName": "Führich",
+          "playerId": "892679",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Chris Führich"
+        },
+        {
+          "sourceName": "Pejčinović",
+          "playerId": "1366602",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Dzenan Pejcinovic"
+        }
+      ]
+    },
+    {
+      "teamId": "8478",
+      "teamName": "Viking",
+      "players": [
+        {
+          "sourceName": "Østbø",
+          "playerId": "119598",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Arild Østbø"
+        },
+        {
+          "sourceName": "Heggheim",
+          "playerId": "1163230",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Henrik Heggheim"
+        },
+        {
+          "sourceName": "Daland",
+          "playerId": "633094",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Jesper Daland"
+        },
+        {
+          "sourceName": "Stensness",
+          "playerId": "1029026",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Gianni Stensness"
+        },
+        {
+          "sourceName": "Haugen",
+          "playerId": "313128",
+          "review": "Kristoffer Haugen: left-back in UEFA ordered XI, distinct from right-back Herman Haugen",
+          "resolvedName": "Kristoffer Haugen"
+        },
+        {
+          "sourceName": "Moi",
+          "playerId": "1636182",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Tobias Moi"
+        },
+        {
+          "sourceName": "Bell",
+          "playerId": "848345",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Joe Bell"
+        },
+        {
+          "sourceName": "Askildsen",
+          "playerId": "964535",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Kristoffer Askildsen"
+        },
+        {
+          "sourceName": "Kvia-Egeskog",
+          "playerId": "1267374",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Simen Kvia-Egeskog"
+        },
+        {
+          "sourceName": "Christiansen",
+          "playerId": "955759",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Peter Christiansen"
+        },
+        {
+          "sourceName": "Tripić",
+          "playerId": "279191",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Zlatko Tripic"
+        }
+      ]
+    },
+    {
+      "teamId": "9847",
+      "teamName": "Paris",
+      "players": [
+        {
+          "sourceName": "Safonov",
+          "playerId": "800880",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Matvey Safonov"
+        },
+        {
+          "sourceName": "Hakimi",
+          "playerId": "770881",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Achraf Hakimi"
+        },
+        {
+          "sourceName": "Marquinhos",
+          "playerId": "267365",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Marquinhos"
+        },
+        {
+          "sourceName": "Pacho",
+          "playerId": "1137670",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Willian Pacho"
+        },
+        {
+          "sourceName": "Nuno Mendes",
+          "playerId": "1158945",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Nuno Mendes"
+        },
+        {
+          "sourceName": "João Neves",
+          "playerId": "1342757",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "João Neves"
+        },
+        {
+          "sourceName": "Vitinha",
+          "playerId": "1061249",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Vítinha"
+        },
+        {
+          "sourceName": "Fabián Ruiz",
+          "playerId": "605654",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Fabián Ruiz"
+        },
+        {
+          "sourceName": "Doué",
+          "playerId": "1339208",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Désiré Doué"
+        },
+        {
+          "sourceName": "Dembélé",
+          "playerId": "692984",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Ousmane Dembélé"
+        },
+        {
+          "sourceName": "Kvaratskhelia",
+          "playerId": "900433",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Khvicha Kvaratskhelia"
+        }
+      ]
+    },
+    {
+      "teamId": "6019",
+      "teamName": "Slovan Bratislava",
+      "players": [
+        {
+          "sourceName": "Takáč",
+          "playerId": "862024",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Dominik Takác"
+        },
+        {
+          "sourceName": "Blackman",
+          "playerId": "888966",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "César Blackman"
+        },
+        {
+          "sourceName": "Bajrić",
+          "playerId": "315814",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Kenan Bajric"
+        },
+        {
+          "sourceName": "Marković",
+          "playerId": "922722",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Svetozar Markovic"
+        },
+        {
+          "sourceName": "Sandro Cruz",
+          "playerId": "1045565",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Sandro Cruz"
+        },
+        {
+          "sourceName": "Martínez",
+          "playerId": "727101",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Cristian Martínez"
+        },
+        {
+          "sourceName": "Pokorný",
+          "playerId": "951951",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Peter Pokorny"
+        },
+        {
+          "sourceName": "Ibrahim",
+          "playerId": "1239580",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Rahim Ibrahim"
+        },
+        {
+          "sourceName": "Barseghyan",
+          "playerId": "552700",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Tigran Barseghyan"
+        },
+        {
+          "sourceName": "Šporar",
+          "playerId": "338136",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Andraz Sporar"
+        },
+        {
+          "sourceName": "Camara",
+          "playerId": "1206542",
+          "review": "Suleiman Camara: forward in UEFA ordered XI and squad, distinct from defender Sahmkou",
+          "resolvedName": "Suleiman Camara"
+        }
+      ]
+    },
+    {
+      "teamId": "8650",
+      "teamName": "Liverpool",
+      "players": [
+        {
+          "sourceName": "Alisson Becker",
+          "playerId": "319784",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Alisson Becker"
+        },
+        {
+          "sourceName": "Araújo",
+          "playerId": "921253",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Ronald Araujo"
+        },
+        {
+          "sourceName": "Jacquet",
+          "playerId": "1473534",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Jérémy Jacquet"
+        },
+        {
+          "sourceName": "Van Dijk",
+          "playerId": "209405",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Virgil van Dijk"
+        },
+        {
+          "sourceName": "Kerkez",
+          "playerId": "1195281",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Milos Kerkez"
+        },
+        {
+          "sourceName": "Szoboszlai",
+          "playerId": "846005",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Dominik Szoboszlai"
+        },
+        {
+          "sourceName": "Gravenberch",
+          "playerId": "956683",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Ryan Gravenberch"
+        },
+        {
+          "sourceName": "Gakpo",
+          "playerId": "806552",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Cody Gakpo"
+        },
+        {
+          "sourceName": "Wirtz",
+          "playerId": "1152455",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Florian Wirtz"
+        },
+        {
+          "sourceName": "Barcola",
+          "playerId": "1297165",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Bradley Barcola"
+        },
+        {
+          "sourceName": "Isak",
+          "playerId": "690107",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Alexander Isak"
+        }
+      ]
+    },
+    {
+      "teamId": "9906",
+      "teamName": "Atleti",
+      "players": [
+        {
+          "sourceName": "Oblak",
+          "playerId": "177126",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Jan Oblak"
+        },
+        {
+          "sourceName": "Llorente",
+          "playerId": "602563",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Marcos Llorente"
+        },
+        {
+          "sourceName": "Marc Pubill",
+          "playerId": "1323897",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Marc Pubill"
+        },
+        {
+          "sourceName": "Hancko",
+          "playerId": "727897",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Dávid Hancko"
+        },
+        {
+          "sourceName": "Grimaldo",
+          "playerId": "288406",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Alejandro Grimaldo"
+        },
+        {
+          "sourceName": "Simeone",
+          "playerId": "1226147",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Giuliano Simeone"
+        },
+        {
+          "sourceName": "Barrios",
+          "playerId": "1338192",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Pablo Barrios"
+        },
+        {
+          "sourceName": "Hjulmand",
+          "playerId": "950199",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Morten Hjulmand"
+        },
+        {
+          "sourceName": "Lookman",
+          "playerId": "690516",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Ademola Lookman"
+        },
+        {
+          "sourceName": "Alvarez",
+          "playerId": "974753",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Julián Álvarez"
+        },
+        {
+          "sourceName": "Álex Baena",
+          "playerId": "942372",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Álex Baena"
+        }
+      ]
+    },
+    {
+      "teamId": "9768",
+      "teamName": "Sporting CP",
+      "players": [
+        {
+          "sourceName": "Rui Silva",
+          "playerId": "361717",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Rui Silva"
+        },
+        {
+          "sourceName": "Fresneda",
+          "playerId": "1325998",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Iván Fresneda"
+        },
+        {
+          "sourceName": "Gonçalo Inácio",
+          "playerId": "1165710",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Gonçalo Inácio"
+        },
+        {
+          "sourceName": "Debast",
+          "playerId": "1232172",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Zeno Debast"
+        },
+        {
+          "sourceName": "Araújo",
+          "playerId": "1031656",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Maxi Araújo"
+        },
+        {
+          "sourceName": "Doumbia",
+          "playerId": "1339345",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Issa Doumbia"
+        },
+        {
+          "sourceName": "Sergi Altimira",
+          "playerId": "1310480",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Sergi Altimira"
+        },
+        {
+          "sourceName": "Catamo",
+          "playerId": "1088753",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Geny Catamo"
+        },
+        {
+          "sourceName": "Zalazar",
+          "playerId": "1070776",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Rodrigo Zalazar"
+        },
+        {
+          "sourceName": "Flávio Gonçalves",
+          "playerId": "1691190",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Flávio Gonçalves"
+        },
+        {
+          "sourceName": "Suárez",
+          "playerId": "792303",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Luis Suárez"
+        }
+      ]
+    },
+    {
+      "teamId": "8637",
+      "teamName": "Galatasaray",
+      "players": [
+        {
+          "sourceName": "Uğurcan Çakır",
+          "playerId": "603669",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Ugurcan Çakir"
+        },
+        {
+          "sourceName": "Sallai",
+          "playerId": "583601",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Roland Sallai"
+        },
+        {
+          "sourceName": "Sánchez",
+          "playerId": "643533",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Davinson Sánchez"
+        },
+        {
+          "sourceName": "Abdülkerim Bardakcı",
+          "playerId": "291399",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Abdülkerim Bardakci"
+        },
+        {
+          "sourceName": "Jakobs",
+          "playerId": "906945",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Ismail Jakobs"
+        },
+        {
+          "sourceName": "Gabriel Sara",
+          "playerId": "902710",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Gabriel Sara"
+        },
+        {
+          "sourceName": "Torreira",
+          "playerId": "592909",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Lucas Torreira"
+        },
+        {
+          "sourceName": "Yunus Akgün",
+          "playerId": "845991",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Yunus Akgün"
+        },
+        {
+          "sourceName": "Batrakov",
+          "playerId": "1504343",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Aleksey Batrakov"
+        },
+        {
+          "sourceName": "Sané",
+          "playerId": "530859",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Leroy Sané"
+        },
+        {
+          "sourceName": "Barış Alper Yılmaz",
+          "playerId": "890232",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Baris Alper Yilmaz"
+        }
+      ]
+    },
+    {
+      "teamId": "9875",
+      "teamName": "Napoli",
+      "players": [
+        {
+          "sourceName": "Meret",
+          "playerId": "577912",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Alex Meret"
+        },
+        {
+          "sourceName": "Di Lorenzo",
+          "playerId": "414906",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Giovanni Di Lorenzo"
+        },
+        {
+          "sourceName": "Rrahmani",
+          "playerId": "544693",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Amir Rrahmani"
+        },
+        {
+          "sourceName": "Rafa Marín",
+          "playerId": "1313884",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Rafa Marín"
+        },
+        {
+          "sourceName": "Spinazzola",
+          "playerId": "215242",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Leonardo Spinazzola"
+        },
+        {
+          "sourceName": "Anguissa",
+          "playerId": "612863",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Frank Anguissa"
+        },
+        {
+          "sourceName": "Lobotka",
+          "playerId": "308517",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Stanislav Lobotka"
+        },
+        {
+          "sourceName": "De Bruyne",
+          "playerId": "169200",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Kevin De Bruyne"
+        },
+        {
+          "sourceName": "Neres",
+          "playerId": "793066",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "David Neres"
+        },
+        {
+          "sourceName": "Højlund",
+          "playerId": "1199272",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Rasmus Højlund"
+        },
+        {
+          "sourceName": "Alisson Santos",
+          "playerId": "1355552",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Alisson Santos"
+        }
+      ]
+    },
+    {
+      "teamId": "9825",
+      "teamName": "Arsenal",
+      "players": [
+        {
+          "sourceName": "Raya",
+          "playerId": "562727",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "David Raya"
+        },
+        {
+          "sourceName": "White",
+          "playerId": "776151",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Ben White"
+        },
+        {
+          "sourceName": "Konsa",
+          "playerId": "710159",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Ezri Konsa"
+        },
+        {
+          "sourceName": "Gabriel",
+          "playerId": "795179",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Gabriel"
+        },
+        {
+          "sourceName": "Calafiori",
+          "playerId": "1105912",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Riccardo Calafiori"
+        },
+        {
+          "sourceName": "Bruno Guimarães",
+          "playerId": "850354",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Bruno Guimarães"
+        },
+        {
+          "sourceName": "Rice",
+          "playerId": "654096",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Declan Rice"
+        },
+        {
+          "sourceName": "Saka",
+          "playerId": "961995",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Bukayo Saka"
+        },
+        {
+          "sourceName": "Ødegaard",
+          "playerId": "534670",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Martin Ødegaard"
+        },
+        {
+          "sourceName": "Tzolis",
+          "playerId": "1157237",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Christos Tzolis"
+        },
+        {
+          "sourceName": "Havertz",
+          "playerId": "749736",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Kai Havertz"
+        }
+      ]
+    },
+    {
+      "teamId": "8640",
+      "teamName": "PSV",
+      "players": [
+        {
+          "sourceName": "Kovář",
+          "playerId": "1077903",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Matej Kovár"
+        },
+        {
+          "sourceName": "Dest",
+          "playerId": "892816",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Sergiño Dest"
+        },
+        {
+          "sourceName": "Geertruida",
+          "playerId": "881640",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Lutsharel Geertruida"
+        },
+        {
+          "sourceName": "Obispo",
+          "playerId": "794244",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Armando Obispo"
+        },
+        {
+          "sourceName": "Kostić",
+          "playerId": "281012",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Filip Kostic"
+        },
+        {
+          "sourceName": "Sano",
+          "playerId": "1337282",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Kodai Sano"
+        },
+        {
+          "sourceName": "Til",
+          "playerId": "774947",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Guus Til"
+        },
+        {
+          "sourceName": "Fernandez",
+          "playerId": "1699551",
+          "review": "Noah Fernandez: Sports.ru 74263, DOB2008-01-09, existing FotMob1699551 and PSV historical roster",
+          "resolvedName": "Noah Fernandez"
+        },
+        {
+          "sourceName": "Perišić",
+          "playerId": "163670",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Ivan Perisic"
+        },
+        {
+          "sourceName": "Pepi",
+          "playerId": "1036401",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Ricardo Pepi"
+        },
+        {
+          "sourceName": "Van Bommel",
+          "playerId": "1359970",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Ruben van Bommel"
+        }
+      ]
+    },
+    {
+      "teamId": "9728",
+      "teamName": "Shakhtar",
+      "players": [
+        {
+          "sourceName": "Riznyk",
+          "playerId": "8000000000074917",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Дмитрий Ризнык"
+        },
+        {
+          "sourceName": "Vinícius Tobias",
+          "playerId": "8000000000075196",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Винисиус Тобиас"
+        },
+        {
+          "sourceName": "Bondar",
+          "playerId": "8000000000074847",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Валерий Бондарь"
+        },
+        {
+          "sourceName": "Matviyenko",
+          "playerId": "8000000000074846",
+          "review": "Mykola Matvienko: transliteration, Sports.ru74846",
+          "resolvedName": "Николай Матвиенко"
+        },
+        {
+          "sourceName": "Pedro Henrique",
+          "playerId": "8000000000074849",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Педро Энрике"
+        },
+        {
+          "sourceName": "Nazaryna",
+          "playerId": "8000000000074266",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Егор Назарина"
+        },
+        {
+          "sourceName": "Ocheretko",
+          "playerId": "8000000000074259",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Олег Очеретько"
+        },
+        {
+          "sourceName": "Marlon Gomes",
+          "playerId": "8000000000074268",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Марлон Гомес"
+        },
+        {
+          "sourceName": "Alisson Santana",
+          "playerId": "8000000000074141",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Алиссон Сантана"
+        },
+        {
+          "sourceName": "Kauã Elias",
+          "playerId": "8000000000074078",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Кауан Элиаз"
+        },
+        {
+          "sourceName": "Newertton",
+          "playerId": "8000000000074142",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Невертон"
+        }
+      ]
+    },
+    {
+      "teamId": "8695",
+      "teamName": "Fenerbahçe",
+      "players": [
+        {
+          "sourceName": "Ederson",
+          "playerId": "363364",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Ederson"
+        },
+        {
+          "sourceName": "Mert Müldür",
+          "playerId": "904098",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Mert Müldür"
+        },
+        {
+          "sourceName": "Škriniar",
+          "playerId": "309328",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Milan Skriniar"
+        },
+        {
+          "sourceName": "Aké",
+          "playerId": "417068",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Nathan Aké"
+        },
+        {
+          "sourceName": "Brown",
+          "playerId": "1113704",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Archie Brown"
+        },
+        {
+          "sourceName": "İsmail Yüksek",
+          "playerId": "1183589",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Ismail Yüksek"
+        },
+        {
+          "sourceName": "Kanté",
+          "playerId": "319300",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "N'Golo Kanté"
+        },
+        {
+          "sourceName": "Kerem Aktürkoğlu",
+          "playerId": "1117570",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Kerem Aktürkoglu"
+        },
+        {
+          "sourceName": "Greenwood",
+          "playerId": "950473",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Mason Greenwood"
+        },
+        {
+          "sourceName": "Oğuz Aydın",
+          "playerId": "1092015",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Oguz Aydin"
+        },
+        {
+          "sourceName": "Muriqi",
+          "playerId": "517052",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Vedat Muriqi"
+        }
+      ]
+    },
+    {
+      "teamId": "8686",
+      "teamName": "Roma",
+      "players": [
+        {
+          "sourceName": "Svilar",
+          "playerId": "768474",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Mile Svilar"
+        },
+        {
+          "sourceName": "Mancini",
+          "playerId": "588687",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Gianluca Mancini"
+        },
+        {
+          "sourceName": "N'Dicka",
+          "playerId": "787242",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Evan N'Dicka"
+        },
+        {
+          "sourceName": "Hermoso",
+          "playerId": "671203",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Mario Hermoso"
+        },
+        {
+          "sourceName": "Molina",
+          "playerId": "726345",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Nahuel Molina"
+        },
+        {
+          "sourceName": "Cristante",
+          "playerId": "299799",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Bryan Cristante"
+        },
+        {
+          "sourceName": "Koné",
+          "playerId": "1016132",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Manu Koné"
+        },
+        {
+          "sourceName": "Wesley França",
+          "playerId": "1320176",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Wesley"
+        },
+        {
+          "sourceName": "Dybala",
+          "playerId": "325916",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Paulo Dybala"
+        },
+        {
+          "sourceName": "Soulé",
+          "playerId": "1280082",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Matias Soulé"
+        },
+        {
+          "sourceName": "Malen",
+          "playerId": "660301",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Donyell Malen"
+        }
+      ]
+    },
+    {
+      "teamId": "9823",
+      "teamName": "Bayern München",
+      "players": [
+        {
+          "sourceName": "Neuer",
+          "playerId": "27299",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Manuel Neuer"
+        },
+        {
+          "sourceName": "Laimer",
+          "playerId": "526827",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Konrad Laimer"
+        },
+        {
+          "sourceName": "Upamecano",
+          "playerId": "658554",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Dayot Upamecano"
+        },
+        {
+          "sourceName": "Tah",
+          "playerId": "469700",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Jonathan Tah"
+        },
+        {
+          "sourceName": "Davies",
+          "playerId": "751202",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Alphonso Davies"
+        },
+        {
+          "sourceName": "Kimmich",
+          "playerId": "460632",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Joshua Kimmich"
+        },
+        {
+          "sourceName": "Pavlović",
+          "playerId": "1473580",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Aleksandar Pavlovic"
+        },
+        {
+          "sourceName": "Olise",
+          "playerId": "1029063",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Michael Olise"
+        },
+        {
+          "sourceName": "Musiala",
+          "playerId": "1156141",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Jamal Musiala"
+        },
+        {
+          "sourceName": "Luis Díaz",
+          "playerId": "860914",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Luis Díaz"
+        },
+        {
+          "sourceName": "Kane",
+          "playerId": "194165",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Harry Kane"
+        }
+      ]
+    },
+    {
+      "teamId": "8402",
+      "teamName": "Bodø/Glimt",
+      "players": [
+        {
+          "sourceName": "Haikin",
+          "playerId": "625360",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Nikita Haikin"
+        },
+        {
+          "sourceName": "Sjøvold",
+          "playerId": "1281021",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Fredrik Sjøvold"
+        },
+        {
+          "sourceName": "Nielsen",
+          "playerId": "1436937",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Villads Nielsen"
+        },
+        {
+          "sourceName": "Bjørtuft",
+          "playerId": "917774",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Odin Lurås Bjørtuft"
+        },
+        {
+          "sourceName": "Bjørkan",
+          "playerId": "630228",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Fredrik André Bjørkan"
+        },
+        {
+          "sourceName": "Auklend",
+          "playerId": "1160076",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Sondre Auklend"
+        },
+        {
+          "sourceName": "Berg",
+          "playerId": "530635",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Patrick Berg"
+        },
+        {
+          "sourceName": "Brunstad Fet",
+          "playerId": "540975",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Sondre Brunstad Fet"
+        },
+        {
+          "sourceName": "Blomberg",
+          "playerId": "1086551",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Ole Blomberg"
+        },
+        {
+          "sourceName": "Helmersen",
+          "playerId": "615292",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Andreas Helmersen"
+        },
+        {
+          "sourceName": "Hauge",
+          "playerId": "741397",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Jens Petter Hauge"
+        }
+      ]
+    },
+    {
+      "teamId": "10260",
+      "teamName": "Man United",
+      "players": [
+        {
+          "sourceName": "Lammens",
+          "playerId": "1178602",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Senne Lammens"
+        },
+        {
+          "sourceName": "Dalot",
+          "playerId": "751550",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Diogo Dalot"
+        },
+        {
+          "sourceName": "Yoro",
+          "playerId": "1358581",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Leny Yoro"
+        },
+        {
+          "sourceName": "Martínez",
+          "playerId": "847983",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Lisandro Martínez"
+        },
+        {
+          "sourceName": "Mazraoui",
+          "playerId": "775539",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Noussair Mazraoui"
+        },
+        {
+          "sourceName": "Andrey Santos",
+          "playerId": "1372921",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Andrey Santos"
+        },
+        {
+          "sourceName": "Mainoo",
+          "playerId": "1292810",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Kobbie Mainoo"
+        },
+        {
+          "sourceName": "Mbeumo",
+          "playerId": "923312",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Bryan Mbeumo"
+        },
+        {
+          "sourceName": "Bruno Fernandes",
+          "playerId": "422685",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Bruno Fernandes"
+        },
+        {
+          "sourceName": "Dorgu",
+          "playerId": "1526560",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Patrick Dorgu"
+        },
+        {
+          "sourceName": "Šeško",
+          "playerId": "1073977",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Benjamin Sesko"
+        }
+      ]
+    },
+    {
+      "teamId": "951893",
+      "teamName": "Sabah",
+      "players": [
+        {
+          "sourceName": "Pokatilov",
+          "playerId": "8000000000074924",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Стас Покатилов"
+        },
+        {
+          "sourceName": "Solvet",
+          "playerId": "8000000000074884",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Стив Сольве"
+        },
+        {
+          "sourceName": "Dashdamirov",
+          "playerId": "8000000000074882",
+          "review": "Rahman Dashdemirov: transliteration, Sports.ru74882",
+          "resolvedName": "Рахман Дашдемиров"
+        },
+        {
+          "sourceName": "Puchacz",
+          "playerId": "8000000000074881",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Тымотеуш Пухач"
+        },
+        {
+          "sourceName": "Zedadka",
+          "playerId": "8000000000074880",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Аким Зедадка"
+        },
+        {
+          "sourceName": "Rakhmonaliev",
+          "playerId": "8000000000074468",
+          "review": "Umarali Rahmonaliyev: transliteration, Sports.ru74468",
+          "resolvedName": "Умарали Рахмоналиев"
+        },
+        {
+          "sourceName": "Isaev",
+          "playerId": "8000000000074465",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Алексей Исаев"
+        },
+        {
+          "sourceName": "Lepinjica",
+          "playerId": "8000000000074466",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Иван Лепиница"
+        },
+        {
+          "sourceName": "Parris",
+          "playerId": "8000000000074300",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Кахим Пэррис"
+        },
+        {
+          "sourceName": "Mickels",
+          "playerId": "8000000000074299",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Джой-Лэнс Миккельс"
+        },
+        {
+          "sourceName": "Simić",
+          "playerId": "8000000000074246",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Велько Симич"
+        }
+      ]
+    },
+    {
+      "teamId": "7787",
+      "teamName": "Slavia Praha",
+      "players": [
+        {
+          "sourceName": "Markovič",
+          "playerId": "1085744",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Jakub Markovic"
+        },
+        {
+          "sourceName": "Vlček",
+          "playerId": "979540",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Tomás Vlcek"
+        },
+        {
+          "sourceName": "Zima",
+          "playerId": "1085401",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "David Zima"
+        },
+        {
+          "sourceName": "Chaloupek",
+          "playerId": "1288146",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Stepán Chaloupek"
+        },
+        {
+          "sourceName": "Isife",
+          "playerId": "1744791",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Samuel Isife"
+        },
+        {
+          "sourceName": "Nowak",
+          "playerId": "1395322",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Wiktor Nowak"
+        },
+        {
+          "sourceName": "Sadílek",
+          "playerId": "806551",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Michal Sadílek"
+        },
+        {
+          "sourceName": "Jurásek",
+          "playerId": "1247323",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "David Jurásek"
+        },
+        {
+          "sourceName": "Šturm",
+          "playerId": "1270718",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Danijel Sturm"
+        },
+        {
+          "sourceName": "Ayaosi",
+          "playerId": "1327747",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Emmanuel Ayaosi"
+        },
+        {
+          "sourceName": "Chorý",
+          "playerId": "523217",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Tomás Chory"
+        }
+      ]
+    },
+    {
+      "teamId": "8588",
+      "teamName": "Lens",
+      "players": [
+        {
+          "sourceName": "Risser",
+          "playerId": "1390336",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Robin Risser"
+        },
+        {
+          "sourceName": "Antonio",
+          "playerId": "1685514",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Kyllian Antonio"
+        },
+        {
+          "sourceName": "Ganiou",
+          "playerId": "1406645",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Ismaëlo Ganiou"
+        },
+        {
+          "sourceName": "Todibo",
+          "playerId": "955214",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Jean-Clair Todibo"
+        },
+        {
+          "sourceName": "Skóraś",
+          "playerId": "954190",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Michal Skóras"
+        },
+        {
+          "sourceName": "Haidara",
+          "playerId": "688830",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Amadou Haidara"
+        },
+        {
+          "sourceName": "Cuisance",
+          "playerId": "861445",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Michaël Cuisance"
+        },
+        {
+          "sourceName": "Udol",
+          "playerId": "660326",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Matthieu Udol"
+        },
+        {
+          "sourceName": "Thauvin",
+          "playerId": "254308",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Florian Thauvin"
+        },
+        {
+          "sourceName": "Ivanović",
+          "playerId": "1406419",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Franjo Ivanovic"
+        },
+        {
+          "sourceName": "Édouard",
+          "playerId": "637746",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Odsonne Édouard"
+        }
+      ]
+    },
+    {
+      "teamId": "10171",
+      "teamName": "Como",
+      "players": [
+        {
+          "sourceName": "Butez",
+          "playerId": "560939",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Jean Butez"
+        },
+        {
+          "sourceName": "Yan Couto",
+          "playerId": "1109171",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Yan Couto"
+        },
+        {
+          "sourceName": "Ramón",
+          "playerId": "1413963",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Jacobo Ramón"
+        },
+        {
+          "sourceName": "Chalobah",
+          "playerId": "793907",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Trevoh Chalobah"
+        },
+        {
+          "sourceName": "Valle",
+          "playerId": "1384881",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Álex Valle"
+        },
+        {
+          "sourceName": "Perrone",
+          "playerId": "1336582",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Máximo Perrone"
+        },
+        {
+          "sourceName": "Da Cunha",
+          "playerId": "1076647",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Lucas Da Cunha"
+        },
+        {
+          "sourceName": "Diao",
+          "playerId": "1434889",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Assane Diao"
+        },
+        {
+          "sourceName": "Paz",
+          "playerId": "1347574",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Nico Paz"
+        },
+        {
+          "sourceName": "Baturina",
+          "playerId": "1215064",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Martin Baturina"
+        },
+        {
+          "sourceName": "Douvikas",
+          "playerId": "873270",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Anastasios Douvikas"
+        }
+      ]
+    },
+    {
+      "teamId": "178475",
+      "teamName": "Leipzig",
+      "players": [
+        {
+          "sourceName": "Vandevoordt",
+          "playerId": "972200",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Maarten Vandevoordt"
+        },
+        {
+          "sourceName": "Baku",
+          "playerId": "883087",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Ridle Baku"
+        },
+        {
+          "sourceName": "Orbán",
+          "playerId": "278856",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Willi Orbán"
+        },
+        {
+          "sourceName": "Lukeba",
+          "playerId": "1253852",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Castello Lukeba"
+        },
+        {
+          "sourceName": "Raum",
+          "playerId": "806669",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "David Raum"
+        },
+        {
+          "sourceName": "El Aynaoui",
+          "playerId": "1274060",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Neil El Aynaoui"
+        },
+        {
+          "sourceName": "Seiwald",
+          "playerId": "1024672",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Nicolas Seiwald"
+        },
+        {
+          "sourceName": "Gruda",
+          "playerId": "1430151",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Brajan Gruda"
+        },
+        {
+          "sourceName": "Bakayoko",
+          "playerId": "1203194",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Johan Bakayoko"
+        },
+        {
+          "sourceName": "Nkunku",
+          "playerId": "704523",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Christopher Nkunku"
+        },
+        {
+          "sourceName": "Nusa",
+          "playerId": "1248482",
+          "review": "Unique exact normalized name tokens within club; goalkeeper separated from outfield",
+          "resolvedName": "Antonio Nusa"
+        }
+      ]
+    }
+  ]
+}

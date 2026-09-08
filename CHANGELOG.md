@@ -9,6 +9,7 @@ image labels `org.opencontainers.image.version` and
 
 - Restore UCL club mappings for Bodø/Glimt, Club Brugge, Sabah, Shakhtar and Slavia.
 - Support scoped, reviewable Sports.ru roster backfills using existing provider-only identities when FotMob lacks a squad.
+- Apply the reviewed UEFA Matchday 1 predictions for all 36 UCL teams (396 starters), preserving source provenance and restoring eight missing Sports.ru price mappings.
 
 ## 0.3.63 - 2026-09-08
 
