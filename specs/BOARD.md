@@ -6,7 +6,6 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
-| [WI-014](work/WI-014-squad-excel-export.md) | Экспорт полного пула Squad | API routes | @tsyzhman | 2026-09-08 | — |
 
 ## Backlog
 
@@ -23,6 +22,7 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-014](work/archive/2026/WI-014-squad-excel-export.md) | Экспорт полного пула Squad | @tsyzhman | 2026-09-08 |
 | [WI-013](work/archive/2026/WI-013-ucl-missing-clubs.md) | Пять клубов ЛЧ и старты УЕФА | @tsyzhman | 2026-09-08 |
 | [WI-012](work/archive/2026/WI-012-khl-statistics-import.md) | Фактическая статистика КХЛ на сервере | @tsyzhman | 2026-09-08 |
 | [WI-011](work/archive/2026/WI-011-khl-football-design.md) | Дизайн КХЛ и общий выпуск 0.3.62 | @tsyzhman | 2026-09-07 |
