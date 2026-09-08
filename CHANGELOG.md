@@ -5,6 +5,11 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.64 - 2026-09-08
+
+- Restore UCL club mappings for Bodø/Glimt, Club Brugge, Sabah, Shakhtar and Slavia.
+- Support scoped, reviewable Sports.ru roster backfills using existing provider-only identities when FotMob lacks a squad.
+
 ## 0.3.63 - 2026-09-08
 
 - Load real KHL player match history, official fantasy points, TOI and goalie statistics from public Sports.ru profiles matched to the KHL calendar.

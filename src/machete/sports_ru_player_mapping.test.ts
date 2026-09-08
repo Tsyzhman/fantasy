@@ -806,3 +806,13 @@ function roster(name: string, position: string, team: { name: string }, playerId
     team
   };
 }
+
+test('UCL Sports.ru club names resolve to the exact active team', () => {
+ const teams = [
+  {teamId:8402n,team:{name:'Bodø/Glimt'}}, {teamId:8342n,team:{name:'Club Brugge'}},
+  {teamId:951893n,team:{name:'Sabah FK'}}, {teamId:9728n,team:{name:'Shakhtar Donetsk'}},
+  {teamId:7787n,team:{name:'Slavia Prague'}}
+ ];
+ for(const [name,id] of [['Буде-Глимт',8402n],['Брюгге',8342n],['Сабах',951893n],['Шахтер',9728n],['Славия',7787n]] as const) assert.equal(resolveSportsRuSeasonTeam(name,teams)?.teamId,id);
+ assert.equal(resolveSportsRuSeasonTeam('Славия',[{teamId:1n,team:{name:'Slavia Sofia'}}]),null);
+});

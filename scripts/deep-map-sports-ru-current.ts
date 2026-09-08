@@ -20,6 +20,7 @@ const leagueIds = (stringArgument("--league-ids") ?? "47,48,57,61,63,71,87")
   .map((value) => value.trim())
   .filter((value) => /^\d+$/.test(value))
   .map(BigInt);
+const teamIds = (stringArgument("--team-ids") ?? "").split(",").filter(Boolean).map(BigInt);
 const syntheticPlayerIdBase = 8_000_000_000_000_000n;
 
 type MappingPlan = {
@@ -41,9 +42,6 @@ type MappingPlan = {
 };
 
 async function main() {
-  if (seedSportsOnly && !apply) {
-    throw new Error("--seed-sports-only requires --apply so the intent cannot be mistaken for an audit.");
-  }
   const plans: MappingPlan[] = [];
   const unresolved: Array<Record<string, unknown>> = [];
   const conflicts: Array<Record<string, unknown>> = [];
@@ -99,6 +97,7 @@ async function main() {
         unresolved.push(unresolvedRow(price, "TARGET_TEAM_NOT_FOUND"));
         continue;
       }
+      if (teamIds.length && !teamIds.includes(targetTeam.teamId)) continue;
       const mappedBirthDateConflicts = Boolean(
         price.player
         && price.providerBirthDate
@@ -215,7 +214,7 @@ async function main() {
     });
   }
 
-  console.log(JSON.stringify({ apply, seedSportsOnly, season, summaries, actions: countActions(plans), conflicts, unresolved: unresolved.slice(0, 100) }, bigintJson, 2));
+  console.log(JSON.stringify({ apply, seedSportsOnly, season, summaries, actions: countActions(plans), plans: apply ? undefined : plans, conflicts, unresolved: unresolved.slice(0, 100) }, bigintJson, 2));
   if (!apply) return;
   if (conflicts.length > 0) {
     throw new Error(`${conflicts.length} mapped birth-date conflict(s) have no safe replacement; refusing to apply until they are reviewed.`);

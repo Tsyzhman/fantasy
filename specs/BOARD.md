@@ -6,6 +6,7 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
+| [WI-013](work/WI-013-ucl-missing-clubs.md) | Пять клубов ЛЧ из Sports.ru | Sports.ru sync | @tsyzhman | 2026-09-08 | — |
 
 ## Backlog
 

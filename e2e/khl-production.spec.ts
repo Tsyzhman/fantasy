@@ -97,3 +97,20 @@ test('production KHL player history contains imported facts', async ({page})=>{
  await expect(page.getByText(new RegExp(`${displayed.match.startsAt.slice(0,10)}.*FP ${points}.*TOI`))).toBeVisible();
  expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 });
+
+/** @spec spec://modules/machete/FEAT-003-squad-player-card#root */
+test('UCL shows all five Sports.ru clubs even without FotMob squad coverage', async ({page})=>{
+ test.skip(process.env.KHL_PRODUCTION_SMOKE !== 'true','Explicit production catalog check');
+ test.setTimeout(120000);
+ await page.goto('/machete/squad?leagueId=42');
+ await expect(page.locator('[data-fantasy-squad-planner]')).toHaveAttribute('data-league-id','42');
+ const poolTab=page.getByRole('button',{name:/^Pool$|^Пул$/});
+ if(await poolTab.isVisible()) await poolTab.click();
+ const filter=page.getByRole('combobox',{name:/^Team filter$|^Фильтр по команде$/});
+ for(const teamId of ['8402','8342','951893','9728','7787']){
+  await expect(filter.locator(`option[value="${teamId}"]`)).toBeAttached({timeout:45000});
+  await filter.selectOption(teamId);
+  const pool=page.getByTestId('player-pool-table').or(page.getByTestId('player-pool-mobile')).filter({visible:true});
+  await expect(pool.getByRole('button',{name:/^(Add|Cannot add|Remove|Добавить|Нельзя добавить|Убрать) /}).first()).toBeVisible();
+ }
+});

@@ -428,8 +428,13 @@ const sportsRuTeamNamePairs = [
   ["Труа", "Troyes"],
   ["Тулуза", "Toulouse"]
 ] as const;
+// Reviewed against active UCL 2026/27 team identities, not fuzzy club matching.
+const europeanSportsTeamNames = [
+  ["Буде-Глимт", "Bodø/Glimt"], ["Брюгге", "Club Brugge"],
+  ["Сабах", "Sabah FK"], ["Шахтер", "Shakhtar Donetsk"], ["Славия", "Slavia Prague"]
+] as const;
 const sportsRuCanonicalTeamNames = new Map<string, string>();
-for (const [sportsName, fotmobName] of sportsRuTeamNamePairs) {
+for (const [sportsName, fotmobName] of [...sportsRuTeamNamePairs, ...europeanSportsTeamNames]) {
   const canonicalName = normalizedSportsRuTeamKey(fotmobName);
   sportsRuCanonicalTeamNames.set(normalizedSportsRuTeamKey(sportsName), canonicalName);
   sportsRuCanonicalTeamNames.set(canonicalName, canonicalName);
