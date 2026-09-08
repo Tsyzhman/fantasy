@@ -69,3 +69,23 @@ test("production KHL catalog and local planning are available", async ({ page })
   await expect(page.getByText(/свободное место/)).toHaveCount(17);
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 });
+
+/** @spec spec://modules/khl/FEAT-002-khl-squad#cards */
+test('production KHL player history contains imported facts', async ({page})=>{
+ test.skip(process.env.KHL_PRODUCTION_SMOKE !== 'true', 'Explicit production statistics check');
+ await page.goto('/machete/khl/players');
+ await page.getByRole('combobox',{name:'Позиция',exact:true}).selectOption('ALL');
+ await page.getByRole('textbox',{name:'Поиск игрока',exact:true}).fill('Грегуар');
+ const select=page.getByRole('combobox',{name:'Открыть карточку игрока'});
+ await expect(select.locator('option')).toHaveCount(2);
+ const value=await select.locator('option').nth(1).getAttribute('value');
+ const response=page.waitForResponse(r=>r.url().includes(`/players/${value}/history?`));
+ await select.selectOption(value!);
+ const body=await (await response).json();
+ const historical=body.data.stats.find((s:{match:{startsAt:string}})=>s.match.startsAt.startsWith('2026-09-05'));
+ expect(historical.toiSeconds).toBe(1250);
+ expect(body.data.scores.find((s:{matchId:string})=>s.matchId===historical.matchId).points).toBe(7);
+ await page.getByRole('button',{name:'История матчей',exact:true}).click();
+ await expect(page.getByText(/2026-09-05.*FP 7.*20:50/)).toBeVisible();
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+});

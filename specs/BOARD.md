@@ -6,6 +6,7 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
+| [WI-012](work/WI-012-khl-statistics-import.md) | Фактическая статистика КХЛ | INFRA-001, INFRA-002 | @tsyzhman | 2026-09-08 | — |
 
 ## Backlog
 

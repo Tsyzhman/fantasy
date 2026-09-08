@@ -8,6 +8,7 @@ import { enqueueKhl } from "./jobs";
 import { runNextKhl } from "./coordinator";
 import { lockValidLease } from "./lease";
 import { pruneKhl } from "./retention";
+import { startKhlHistoryScheduler } from "./history-scheduler";
 
 // Only fingerprints survive a cycle, never player payloads. The publication
 // timestamp fences this optimization against another importer changing data.
@@ -51,6 +52,7 @@ export async function refreshKhlCatalogs() {
 export function startKhlCatalogScheduler() {
   if (started || process.env.KHL_SYNC_ENABLED !== "true") return;
   started = true;
+  startKhlHistoryScheduler();
   async function tick() {
     try { await refreshKhlCatalogs(); }
     catch (error) { console.error("KHL catalog scheduler failed", error); }

@@ -11,6 +11,7 @@ import { fetchHockeyCatalog } from "../src/providers/sports-ru-hockey/catalog";
 import { importCatalog } from "../src/server/khl/catalog-sync";
 import { khlResourceStatus, enqueueKhl } from "../src/server/khl/jobs";
 import { pruneKhl } from "../src/server/khl/retention";
+import { refreshKhlHistory } from "../src/server/khl/history-scheduler";
 const db = new PrismaClient();
 async function main() {
   const [command, contestId, fromText, toText] = process.argv.slice(2);
@@ -22,7 +23,19 @@ async function main() {
     console.log(await bootstrapKhlContest(db, JSON.parse(await readFile(contestId, "utf8")))); return;
   }
   if (command === "baseline" && contestId && fromText) { console.log(await publishBaseline(db, contestId, fromText, new Date())); return; }
-  if (!["catalog", "calendar"].includes(command) || !contestId) throw new Error("Usage: status | prune | bootstrap metadata.json | catalog CONTEST | calendar CONTEST FROM_ISO TO_ISO | baseline CONTEST WEEK");
+  if (command === "statistics" && contestId) {
+    for (let batch = 0; batch < (fromText === "--all" ? 100 : 1); batch++) {
+      const result = await refreshKhlHistory(db, contestId);
+      console.log(JSON.stringify(result));
+      if (!result) { if (fromText !== "--all") return; await new Promise(r => setTimeout(r, 3000)); continue; }
+      if (result.status !== "DONE") throw new Error(`HISTORY_JOB_${result.status}`);
+      const job = await db.khlSyncJob.findUniqueOrThrow({ where: { id: result.id } });
+      console.log(JSON.stringify(job.cursor));
+      if (!(job.cursor as { remaining?: number })?.remaining) return;
+    }
+    throw new Error("HISTORY_BATCH_LIMIT");
+  }
+  if (!["catalog", "calendar"].includes(command) || !contestId) throw new Error("Usage: status | prune | bootstrap metadata.json | catalog CONTEST | statistics CONTEST [--all] | calendar CONTEST FROM_ISO TO_ISO | baseline CONTEST WEEK");
   const contest = await db.khlContest.findUniqueOrThrow({ where: { id: contestId } });
   const provider = command === "catalog" ? "SPORTS_RU" : "KHL_MOBILE";
   if (command === "calendar") {

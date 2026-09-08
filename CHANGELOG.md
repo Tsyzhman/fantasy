@@ -5,6 +5,12 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.63 - 2026-09-08
+
+- Load real KHL player match history, official fantasy points, TOI and goalie statistics from public Sports.ru profiles matched to the KHL calendar.
+- Refresh changed players in bounded worker batches with resumable checkpoints; preserve DNP, unknown fields and correction history.
+- Show match-specific FP and scoring/goalie facts in KHL player history.
+
 ## 0.3.62 - 2026-09-07
 
 - Include local Arena opportunity ranking and multiple unique recommended outcomes per match; retain all five algorithm cards.
