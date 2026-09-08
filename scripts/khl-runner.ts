@@ -31,7 +31,7 @@ async function main() {
       if (result.status !== "DONE") throw new Error(`HISTORY_JOB_${result.status}`);
       const job = await db.khlSyncJob.findUniqueOrThrow({ where: { id: result.id } });
       console.log(JSON.stringify(job.cursor));
-      if (!(job.cursor as { remaining?: number })?.remaining) return;
+      if (fromText !== "--all" || !(job.cursor as { remaining?: number })?.remaining) return;
     }
     throw new Error("HISTORY_BATCH_LIMIT");
   }
