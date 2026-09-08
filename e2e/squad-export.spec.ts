@@ -28,7 +28,7 @@ test('Squad Export table button downloads the displayed UCL pool', async ({ page
   if (await poolTab.isVisible()) await poolTab.click();
   await expect(page.getByTestId('player-pool-table').or(page.getByTestId('player-pool-mobile')).filter({ visible: true })).toBeVisible();
   await expect(page.locator('[data-player-pool-progress]')).toHaveCount(0, { timeout: 45000 });
-  const exportButton = page.getByRole('button', { name: /^(Export table|Выгрузить таблицу)$/, includeHidden: true });
+  const exportButton = page.getByRole('button', { name: /^(Export table|Выгрузить таблицу)$/ });
   if (page.viewportSize()!.width < 1280) {
     await page.locator('summary').filter({ hasText: /More filters and export|Ещё фильтры и выгрузка/ }).click();
   }
