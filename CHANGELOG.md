@@ -5,6 +5,10 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.65 - 2026-09-08
+
+- Fix Squad Excel exports for full league pools above 1000 players; support up to 5000 rows, matching the player-page export.
+
 ## 0.3.64 - 2026-09-08
 
 - Restore UCL club mappings for Bodø/Glimt, Club Brugge, Sabah, Shakhtar and Slavia.

@@ -20,8 +20,8 @@ export const POST = withApiHandler(async (request: Request) => {
   if (auth.response) return auth.response;
 
   const body = await readJsonObject(request);
-  if (!Array.isArray(body.rows) || body.rows.length > 1_000) {
-    return jsonError("BAD_REQUEST", "rows must contain at most 1000 player rows.", 400);
+  if (!Array.isArray(body.rows) || body.rows.length > 5_000) {
+    return jsonError("BAD_REQUEST", "rows must contain at most 5000 player rows.", 400);
   }
 
   const requestedColumns = parseColumns(body.columns);
