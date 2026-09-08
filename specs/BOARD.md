@@ -6,6 +6,7 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
+| [WI-014](work/WI-014-squad-excel-export.md) | Экспорт полного пула Squad | API routes | @tsyzhman | 2026-09-08 | — |
 
 ## Backlog
 
