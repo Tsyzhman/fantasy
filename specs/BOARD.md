@@ -6,6 +6,7 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
+| [WI-016](work/WI-016-ucl-three-per-club.md) | Три игрока клуба в ЛЧ | Sports.ru sync | @tsyzhman | 2026-09-08 | — |
 
 ## Backlog
 

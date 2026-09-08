@@ -10,7 +10,7 @@ import { fantasyRulesForLeague } from "./squad_planner";
 
 test("Sports.ru club limits are explicit for every supported competition", () => {
   assert.deepEqual(sportsRuMaxPlayersPerTeamByLeagueId, {
-    "42": 2,
+    "42": 3,
     "47": 3,
     "48": 2,
     "53": 3,
@@ -43,8 +43,8 @@ test("all Sports.ru contest writers and Squad fallback share the ID-based limit"
   assert.doesNotMatch(syncSource, /parsed\.contest\.maxPlayersPerTeam\s*\?\?/);
 });
 
-test("Squad fallback allows three same-club players in LaLiga and RPL", () => {
-  for (const [leagueId, name, country] of [[87n, "LaLiga", "ESP"], [63n, "Premier League", "RUS"]] as const) {
+test("Squad fallback allows three same-club players in UCL, LaLiga and RPL", () => {
+  for (const [leagueId, name, country] of [[42n, "Champions League", "INT"], [87n, "LaLiga", "ESP"], [63n, "Premier League", "RUS"]] as const) {
     const rules = fantasyRulesForLeague({
       leagueId,
       season: "2026/2027",

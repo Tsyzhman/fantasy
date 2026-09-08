@@ -1,5 +1,5 @@
 export const sportsRuMaxPlayersPerTeamByLeagueId = {
-  "42": 2,
+  "42": 3,
   "47": 3,
   "48": 2,
   "53": 3,
