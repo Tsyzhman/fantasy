@@ -22,6 +22,7 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-015](work/archive/2026/WI-015-ffo-ucl-sync.md) | FFO в Squad | @tsyzhman | 2026-09-08 |
 | [WI-014](work/archive/2026/WI-014-squad-excel-export.md) | Экспорт полного пула Squad | @tsyzhman | 2026-09-08 |
 | [WI-013](work/archive/2026/WI-013-ucl-missing-clubs.md) | Пять клубов ЛЧ и старты УЕФА | @tsyzhman | 2026-09-08 |
 | [WI-012](work/archive/2026/WI-012-khl-statistics-import.md) | Фактическая статистика КХЛ на сервере | @tsyzhman | 2026-09-08 |
