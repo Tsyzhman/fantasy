@@ -90,3 +90,16 @@ KHL browser: 9 pass/16 предусмотренных skips. После 55 warm-
 Runtime 15b5a6c9083cf60a292a90f7ef4bf9167c5b0bdd, release 20260907T112939Z-v0.3.60-15b5a6c. Deploy workflow 34116440816 success. Полный CI: 1075 tests pass, lint 0 errors/98 warnings, typecheck/build pass. Production browser workflow 34117242298: auth 1 pass, UI 10 pass/17 skips; реальные KHL catalog/save/reload/return/new-variant и Betting/UCL cases прошли на desktop/tablet/mobile. Skips относятся к отдельным seeded local suites и двум mobile journey cases.
 
 После smoke: web 433.6 MiB, worker 131.3 MiB, PostgreSQL 1.188 GiB; web/worker healthy, restarts=0. Новых миграций нет: 46 применённых миграций, одна прежняя rolled-back audit row, незавершённых 0. Детали Betting/reset и общий release evidence находятся в WI-008.
+
+
+## Production 0.3.63 — WI-012, 8 сентября 2026
+
+Было: только catalogue/price/lock, 0 player-match и 0 официальных FP. Стало: проверены все 693 активных профиля Sports.ru 107, загружено 1013 player-match (638 PLAYED / 375 DNP), 638 официальных FP, 435 сыгравших игроков и 33 goalie-match. Повторный CLI: imported=0, changed=0, remaining=0; receipts 14259 → 14259, duplicate stat/score groups=0, raw=0 bytes. Один quarantine: Егор Соколов / 2026-09-05 / Спартак, счёт карточки не совпадает с календарём; строка не опубликована. Профили без сыгранных матчей не получают выдуманного среднего нуля.
+
+Контроль production: Грегуар 2026-09-05 — 1250 sec / 7 FP, 2026-09-07 — 1010 sec / 17 FP; Кульбаков 2026-09-07 — 3573 sec / SV33 / GA1 / 15 FP. В истории карточки FP теперь стоят возле конкретного матча вместе с TOI, G/A/+−/PIM или SV/GA. PP/PK TOI и ixG остаются null; полный protocol/xG и forecast readiness не объявлены готовыми.
+
+Worker выполняет ограниченные фоновые партии, первичный CLI завершил 35 партий и освободил свой процесс. Его RSS 206084 → 225180 KiB во время импорта; после завершения дополнительного процесса нет. Итоговые контейнеры: web 491.6 MiB / worker 1.11 GiB / PostgreSQL 957.9 MiB, healthy. Во время импорта параллельно работал существующий отдельный процесс футбольных прогнозов; после его завершения память снизилась. 46 миграций применены, незавершённых 0; схема в этом выпуске не менялась. Локальные QA-файлы 16.2 MB, runtime HTML не кешируется; собственная тестовая PostgreSQL остановлена.
+
+Runtime 28a5427a11c6782f4b31f4eb2d4ceb7a9e6cde2d, release 20260908T075518Z-v0.3.63-28a5427. Deploy workflow 34201405135 success. Локально 1085 unit pass / 1 skip, lint 0 errors / 105 warnings, typecheck/build pass; 3 KHL DB tests pass. Общий DB runner остановлен защитой Betting от чужого имени fixture DB; целевой набор КХЛ выполнен отдельно.
+
+Production browser 34202294303: первоначальный запуск до завершения backfill дал 10 pass / 20 skip / 3 history fail из-за ещё не загруженного контрольного профиля. Повтор после backfill: auth 1 pass, UI 13 pass / 20 предусмотренных skip, включая реальные FP/TOI и отсутствие горизонтального переполнения карточки на desktop/tablet/mobile. Рестарты web/worker: 0.

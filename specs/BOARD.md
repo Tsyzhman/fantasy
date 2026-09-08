@@ -6,7 +6,6 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
-| [WI-012](work/WI-012-khl-statistics-import.md) | Фактическая статистика КХЛ | INFRA-001, INFRA-002 | @tsyzhman | 2026-09-08 | — |
 
 ## Backlog
 
@@ -23,6 +22,7 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-012](work/archive/2026/WI-012-khl-statistics-import.md) | Фактическая статистика КХЛ на сервере | @tsyzhman | 2026-09-08 |
 | [WI-011](work/archive/2026/WI-011-khl-football-design.md) | Дизайн КХЛ и общий выпуск 0.3.62 | @tsyzhman | 2026-09-07 |
 | [WI-010](work/archive/2026/WI-010-fdr-colors.md) | Восстановить FDR на сервере | @tsyzhman | 2026-09-07 |
 | [WI-009](work/archive/2026/WI-009-betting-opportunities.md) | Сортировка событий и несколько исходов | @tsyzhman | 2026-09-07 |
