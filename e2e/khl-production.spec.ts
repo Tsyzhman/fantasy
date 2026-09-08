@@ -104,7 +104,7 @@ test('UCL shows all five Sports.ru clubs even without FotMob squad coverage', as
  test.setTimeout(120000);
  await page.goto('/machete/squad?leagueId=42');
  await expect(page.locator('[data-fantasy-squad-planner]')).toHaveAttribute('data-league-id','42');
- const poolTab=page.getByRole('button',{name:/^Pool$|^Пул$/});
+ const poolTab=page.getByRole('radio',{name:/^Pool$|^Пул$/});
  if(await poolTab.isVisible()) await poolTab.click();
  const filter=page.getByRole('combobox',{name:/^Team filter$|^Фильтр по команде$/});
  for(const teamId of ['8402','8342','951893','9728','7787']){
