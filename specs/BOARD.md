@@ -6,7 +6,6 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
-| [WI-016](work/WI-016-ucl-three-per-club.md) | Три игрока клуба в ЛЧ | Sports.ru sync | @tsyzhman | 2026-09-08 | — |
 
 ## Backlog
 
@@ -23,6 +22,7 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-016](work/archive/2026/WI-016-ucl-three-per-club.md) | Три игрока клуба в ЛЧ | @tsyzhman | 2026-09-08 |
 | [WI-015](work/archive/2026/WI-015-ffo-ucl-sync.md) | FFO в Squad | @tsyzhman | 2026-09-08 |
 | [WI-014](work/archive/2026/WI-014-squad-excel-export.md) | Экспорт полного пула Squad | @tsyzhman | 2026-09-08 |
 | [WI-013](work/archive/2026/WI-013-ucl-missing-clubs.md) | Пять клубов ЛЧ и старты УЕФА | @tsyzhman | 2026-09-08 |
