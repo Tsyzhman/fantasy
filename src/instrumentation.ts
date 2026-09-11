@@ -21,6 +21,9 @@ export async function register() {
   const plan = schedulerRuntimePlan();
 
   if (plan.worker) {
+    // @spec spec://modules/machete/INFRA-004-sorareinside-starters#runtime
+    const { startSorareInsideScheduler } = await import("./server/sorareinside-scheduler");
+    startSorareInsideScheduler();
     const { startKhlCatalogScheduler } = await import("./server/khl/catalog-scheduler");
     startKhlCatalogScheduler();
     // @spec spec://modules/betting/FEAT-001-virtual-league#runtime

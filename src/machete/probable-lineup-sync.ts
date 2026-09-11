@@ -25,6 +25,7 @@ import {
   type ProbableTeamLineup
 } from "./probable-lineup-parsers";
 import { normalizeFantasyPosition } from "./squad_logic";
+import { hasUpcomingSorareLineup } from "./sorareinside-protection";
 
 const EXPECTED_PLAYERS_PER_TEAM = 11;
 const DEFAULT_TIMEOUT_MS = 20_000;
@@ -574,11 +575,13 @@ export function probableLineupPlayerScore(
   return roundedConfidence(score);
 }
 
+/** @spec spec://modules/machete/INFRA-004-sorareinside-starters#apply */
 export async function applyProbableLineupTeamPlan(
   prisma: PrismaClient,
   plan: ProbableLineupTeamPlan,
   appliedAt = new Date(),
-  onTeamsChanged?: StartingXiTeamsChangedListener
+  onTeamsChanged?: StartingXiTeamsChangedListener,
+  beforeApply?: (tx: Prisma.TransactionClient) => Promise<void>
 ): Promise<ProbableLineupApplyResult> {
   if (!plan.teamId || !plan.databaseTeamName || (plan.status !== "READY" && plan.status !== "UNCHANGED")) {
     throw new Error(`${plan.sourceLineup.teamName} is not eligible for probable-lineup application (${plan.status}).`);
@@ -603,6 +606,10 @@ export async function applyProbableLineupTeamPlan(
       select: { active: true, metadata: true }
     });
     if (!seasonTeam?.active) throw new Error(`${teamName} is no longer active in ${plan.season}.`);
+    if (plan.source !== "SORAREINSIDE" && hasUpcomingSorareLineup(seasonTeam.metadata, appliedAt)) {
+      return { result: { teamId, teamName, status: "UNCHANGED" as const, startersSet: 0, startersCleared: 0, otherTeamFlagsCleared: 0 }, changedTeamIds: [] as bigint[] };
+    }
+    if (plan.source === "SORAREINSIDE" && !(Date.parse(plan.sourceLineup.sourceKickoff ?? "") > Date.now())) throw new Error("SorareInside fixture has already started");
 
     const rosterRows = await tx.teamPlayerSeason.findMany({
       where: { leagueId: plan.leagueId, season: plan.season, teamId },
@@ -620,7 +627,12 @@ export async function applyProbableLineupTeamPlan(
       throw new Error(`${teamName} target lineup must contain one goalkeeper in the first source position.`);
     }
     const currentStarterIds = rosterRows.filter((row) => row.isStarter).map((row) => row.playerId);
+    await beforeApply?.(tx);
     if (sameBigIntSet(currentStarterIds, plan.targetPlayerIds)) {
+      if (plan.source === "SORAREINSIDE") await tx.leagueSeasonTeam.update({
+        where: { leagueId_season_teamId: { leagueId: plan.leagueId, season: plan.season, teamId } },
+        data: { metadata: probableLineupMetadata(seasonTeam.metadata, plan, appliedAt) }
+      });
       return {
         result: {
           teamId,
@@ -987,6 +999,7 @@ function probableLineupMetadata(existing: Prisma.JsonValue | null, plan: Probabl
       sourceUrl: plan.sourceUrl,
       sourceTeamCode: plan.sourceLineup.sourceTeamCode,
       sourceFixtureId: plan.sourceLineup.sourceFixtureId,
+      ...(plan.sourceLineup.sourceKickoff ? { sourceKickoff: plan.sourceLineup.sourceKickoff, sourceLineupId: plan.sourceLineup.sourceLineupId } : {}),
       sourceUpdatedText: plan.sourceLineup.sourceUpdatedText,
       fetchedAt: plan.fetchedAt.toISOString(),
       appliedAt: appliedAt.toISOString(),

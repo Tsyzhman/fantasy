@@ -1,5 +1,6 @@
 import { Prisma, type PrismaClient } from "@prisma/client";
 import type { StartingXiTeamsChangedListener } from "./fantasy-player-pool-refresh-queue";
+import { hasUpcomingSorareLineup } from "./sorareinside-protection";
 
 const MAX_STARTERS = 11;
 
@@ -9,6 +10,7 @@ export type StartingXiTeamApplyReason =
   | "NO_STARTERS"
   | "TOO_MANY_STARTERS"
   | "OLDER_MATCH"
+  | "UPCOMING_PREDICTION"
   | "SEASON_TEAM_NOT_FOUND";
 
 export type StartingXiTeamApplyResult = {
@@ -133,6 +135,7 @@ export async function applyStartingXiFromCompletedMatches(
   return totals;
 }
 
+/** @spec spec://modules/machete/INFRA-004-sorareinside-starters#apply */
 async function applyTeamStartingXi(
   prisma: PrismaClient,
   input: {
@@ -159,11 +162,13 @@ async function applyTeamStartingXi(
       },
       select: {
         active: true,
+        metadata: true,
         startingXiSourceMatchId: true,
         startingXiSourceMatchDate: true
       }
     });
     if (!seasonTeam?.active) return { result: emptyTeamResult(input, "SEASON_TEAM_NOT_FOUND"), changedTeamIds: [] as bigint[] };
+    if (hasUpcomingSorareLineup(seasonTeam.metadata, input.appliedAt)) return { result: emptyTeamResult(input, "UPCOMING_PREDICTION"), changedTeamIds: [] as bigint[] };
 
     const decision = startingXiMatchOrderDecision({
       previousMatchId: seasonTeam.startingXiSourceMatchId,

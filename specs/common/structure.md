@@ -29,6 +29,7 @@
 | HTTP API | Auth, imports, ingestion, squads, shot maps, cron | `src/app/api` |
 | Auth and shared lib | Sessions, Prisma client, request parsing, helpers | `src/lib` |
 | Ingestion jobs | Backfill, incremental update, worker loop | `scripts/ingestion-runner.ts`, `src/app/api/admin/ingestion` |
+| SorareInside starters | INFRA-004: ближайший матч, UUID-маппинг и hourly :05 | `src/providers/sorareinside/`, `src/machete/sorareinside-sync.ts`, `src/server/sorareinside-scheduler.ts`, `scripts/sync-sorareinside.ts` |
 | Browser extension | Sports.ru squad transfer | `extensions/sports-squad-transfer` |
 | Schema | Canonical datamodel and migrations | `prisma` |
 

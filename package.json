@@ -1,6 +1,6 @@
 {
   "name": "fantasy-scout",
-  "version": "0.3.67",
+  "version": "0.3.68",
   "private": true,
   "engines": {
     "node": ">=20.9.0"
@@ -62,6 +62,7 @@
     "forecasts:sync-foontasy": "tsx scripts/sync-foontasy-forecasts.ts",
     "starters:sync-completed": "tsx scripts/sync-starting-xi-from-completed-matches.ts",
     "starters:sync-probable": "tsx scripts/sync-probable-lineups.ts",
+    "starters:sync-sorareinside": "tsx scripts/sync-sorareinside.ts",
     "forecasts:analyze-foontasy": "tsx scripts/analyze-foontasy-archive.ts",
     "benchmark:squad-interactions": "tsx scripts/benchmark-squad-interactions.ts",
     "forecasts:recalculate-model": "tsx scripts/recalculate-fantasy-model-forecasts.ts",

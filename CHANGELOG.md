@@ -5,6 +5,12 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.68 - 2026-09-11
+
+- Import starting-XI predictions from each club's nearest future SorareInside fixture every hour at :05, using persistent player/team UUID mappings.
+- Preserve complete team flags on missing predictions or unresolved identities; refresh current-XI caches transactionally and prevent older automatic sources overwriting an upcoming prediction.
+- Add a bounded dry-run/apply CLI and private worker-only credentials, with no schema migration or changes to saved user squads.
+
 ## 0.3.67 - 2026-09-11
 
 - Aggregate KHL season statistics from individual match protocols, including attack time and per-field coverage; preserve Sports.ru official fantasy scores.

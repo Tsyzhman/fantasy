@@ -1,0 +1,35 @@
+{
+  "status": "current",
+  "diagnostics": [],
+  "fingerprint": "114904122df943ff00d534507b167829653c05d1cf593a12f75f4d74a33b14df",
+  "commit": "d61b953dbc77ce1a3c583d3b5966cf1ffd53ce77",
+  "provenance": {
+    "commit": "d61b953dbc77ce1a3c583d3b5966cf1ffd53ce77",
+    "source": "working_tree",
+    "observedAt": "2026-09-11T12:40:51.225Z",
+    "workingTree": {
+      "dirty": true,
+      "materialPaths": [
+        "Dockerfile",
+        "package-lock.json",
+        "package.json",
+        "scripts/deploy-production-docker.sh",
+        "scripts/sync-sorareinside.ts",
+        "specs/common/structure.md",
+        "specs/modules/machete/INFRA-004-sorareinside-starters.md",
+        "specs/SPEC-MAP.md",
+        "src/instrumentation.ts",
+        "src/machete/probable-lineup-parsers.ts",
+        "src/machete/probable-lineup-sync.test.ts",
+        "src/machete/probable-lineup-sync.ts",
+        "src/machete/sorareinside-identity.test.ts",
+        "src/machete/sorareinside-identity.ts",
+        "src/machete/sorareinside-protection.ts",
+        "src/machete/sorareinside-sync.ts",
+        "src/machete/starting-xi-from-match.ts",
+        "src/server/sorareinside-scheduler.test.ts",
+        "src/server/sorareinside-scheduler.ts"
+      ]
+    }
+  }
+}

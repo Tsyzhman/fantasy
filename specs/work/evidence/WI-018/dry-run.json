@@ -1,0 +1,257 @@
+{
+  "startedAt": "2026-09-11T12:35:26.233Z",
+  "finishedAt": "2026-09-11T12:38:38.598Z",
+  "apply": false,
+  "status": "PARTIAL",
+  "totals": {
+    "READY": 150,
+    "NO_MATCH_OR_TEAM_MAPPING": 5,
+    "UNCHANGED": 61,
+    "SOURCE_ERROR": 2,
+    "PLAYERS_UNMAPPED": 8
+  },
+  "rssMiB": 136,
+  "exceptions": [
+    {
+      "leagueId": "42",
+      "season": "2026/2027",
+      "teamId": "8563",
+      "team": "AEK Athens",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "leagueId": "42",
+      "season": "2026/2027",
+      "teamId": "7787",
+      "team": "Slavia Prague",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "leagueId": "42",
+      "season": "2026/2027",
+      "teamId": "8478",
+      "team": "Viking",
+      "status": "SOURCE_ERROR",
+      "problems": [
+        "SorareInside: expected 11 unique starters with one goalkeeper first"
+      ],
+      "sourceTeamId": "1d79081b-38e3-4fd4-8c87-9bfb6d89ba7c",
+      "fixtureId": "2627aac8-5e0f-49b7-a1aa-67cf10703d21",
+      "kickoff": "2026-09-13T12:30:00.000Z",
+      "lineupId": "2ee8b974-2a32-4a7b-a09c-5c920741eaf3"
+    },
+    {
+      "leagueId": "42",
+      "season": "2026/2027",
+      "teamId": "6019",
+      "team": "Slovan Bratislava",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "leagueId": "57",
+      "season": "2026/2027",
+      "teamId": "8640",
+      "team": "PSV Eindhoven",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "0501ee25-5d5f-445b-9c4a-f2912cde4328",
+      "fixtureId": "e0dad921-3c39-43a6-a12f-3457454086e0",
+      "kickoff": "2026-09-13T18:00:00.000Z",
+      "lineupId": "59366c8f-820d-4bc6-bab5-f674ace01298",
+      "players": [
+        {
+          "sourceId": "30112206-ba7d-4450-a96d-eca2bea99a4c",
+          "name": "Noah Fernandez",
+          "playerId": null,
+          "reason": "UNMAPPED"
+        }
+      ]
+    },
+    {
+      "leagueId": "42",
+      "season": "2026/2027",
+      "teamId": "9728",
+      "team": "Shakhtar Donetsk",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "leagueId": "42",
+      "season": "2026/2027",
+      "teamId": "8402",
+      "team": "Bodø/Glimt",
+      "status": "SOURCE_ERROR",
+      "problems": [
+        "SorareInside: expected 11 unique starters with one goalkeeper first"
+      ],
+      "sourceTeamId": "4baa67bf-772c-4e9b-8714-fdf29e16dfc6",
+      "fixtureId": "a677d3e4-855c-4871-9971-14cecaf22a7d",
+      "kickoff": "2026-09-14T17:00:00.000Z",
+      "lineupId": "7453500b-9d2d-429a-9e51-025d9dfb9b21"
+    },
+    {
+      "leagueId": "42",
+      "season": "2026/2027",
+      "teamId": "951893",
+      "team": "Sabah FK",
+      "status": "NO_MATCH_OR_TEAM_MAPPING",
+      "problems": []
+    },
+    {
+      "leagueId": "48",
+      "season": "2026/2027",
+      "teamId": "8654",
+      "team": "West Ham United",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "d8dfa744-6ef2-4d14-a1dd-0556afe378ea",
+      "fixtureId": "5583fdcb-ca1a-42a9-b3b6-5aff16a49dc5",
+      "kickoff": "2026-09-11T19:00:00.000Z",
+      "lineupId": "2083b924-3b41-4f75-9a86-8fb562b94b5e",
+      "players": [
+        {
+          "sourceId": "bbfb87c1-ac01-43e8-bc3c-951a48c5365f",
+          "name": "Mohamadou Kanté",
+          "playerId": null,
+          "reason": "UNMAPPED"
+        }
+      ]
+    },
+    {
+      "leagueId": "55",
+      "season": "2026/2027",
+      "teamId": "10233",
+      "team": "Genoa",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "c2c34efa-5df4-4a12-8794-ba075ac0ddc0",
+      "fixtureId": "2e07861c-475b-4025-8b21-c498fc1ccd35",
+      "kickoff": "2026-09-12T13:00:00.000Z",
+      "lineupId": "6379ea97-7892-43e8-970a-03ee087b5f54",
+      "players": [
+        {
+          "sourceId": "3457f08b-aba2-4036-8429-836c861a3d9a",
+          "name": "Stephan El Shaarawy",
+          "playerId": null,
+          "reason": "UNMAPPED"
+        }
+      ]
+    },
+    {
+      "leagueId": "87",
+      "season": "2026/2027",
+      "teamId": "8370",
+      "team": "Rayo Vallecano",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "e30c8b23-e744-4fb4-b135-ee1204c41fe6",
+      "fixtureId": "a1be6ed8-fb0f-42d3-b5ef-d0781c2d1f8c",
+      "kickoff": "2026-09-12T19:00:00.000Z",
+      "lineupId": "2d85ce39-130c-4571-aa4c-ae8609356120",
+      "players": [
+        {
+          "sourceId": "822bbe6a-153c-4f78-a781-748e17ee9c1e",
+          "name": "Gnangoro",
+          "playerId": null,
+          "reason": "UNMAPPED"
+        }
+      ]
+    },
+    {
+      "leagueId": "87",
+      "season": "2026/2027",
+      "teamId": "9864",
+      "team": "Málaga",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "c807e159-c7e5-438f-ac41-56adbb89f3e5",
+      "fixtureId": "9690d960-718e-408f-909c-d856fc5a0646",
+      "kickoff": "2026-09-13T12:00:00.000Z",
+      "lineupId": "dd5476d8-d156-48be-b7cd-a17d84e45044",
+      "players": [
+        {
+          "sourceId": "d1f694a7-a444-4da1-ba9d-145c09d904b7",
+          "name": "Ángel Recio",
+          "playerId": null,
+          "reason": "UNMAPPED"
+        }
+      ]
+    },
+    {
+      "leagueId": "61",
+      "season": "2026/2027",
+      "teamId": "7844",
+      "team": "Vitória de Guimarães",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "b9e429bc-e70e-4651-9f9c-109a518d1add",
+      "fixtureId": "00bd6f81-f387-4d5a-aab0-1e197c6c33fe",
+      "kickoff": "2026-09-12T19:30:00.000Z",
+      "lineupId": "a186b36a-728a-4894-ba84-6b4f077a327f",
+      "players": [
+        {
+          "sourceId": "2f9ef21d-77c9-4f6d-a5e1-d827b1681975",
+          "name": "Thiago Balieiro",
+          "playerId": null,
+          "reason": "UNMAPPED"
+        }
+      ]
+    },
+    {
+      "leagueId": "57",
+      "season": "2026/2027",
+      "teamId": "8674",
+      "team": "FC Groningen",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "afb8de1c-bf07-43a9-bd1c-b7201deba1fd",
+      "fixtureId": "c72d89cd-62dc-4315-bbf3-2684fac71779",
+      "kickoff": "2026-09-12T16:45:00.000Z",
+      "lineupId": "68410d2e-a5b0-4cfc-8f42-88e993db5881",
+      "players": [
+        {
+          "sourceId": "19e91008-bc44-42cf-aba3-b460fc8b86ee",
+          "name": "Jorg Schreuders",
+          "playerId": null,
+          "reason": "UNMAPPED"
+        }
+      ]
+    },
+    {
+      "leagueId": "57",
+      "season": "2026/2027",
+      "teamId": "10229",
+      "team": "AZ Alkmaar",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "f22e062a-a455-441d-a1f9-84298eba94ca",
+      "fixtureId": "420fa633-e0ee-45f9-8670-afc1ffa91096",
+      "kickoff": "2026-09-11T18:00:00.000Z",
+      "lineupId": "f2cb6f04-146b-4347-980f-7f43cc1c9de0",
+      "players": [
+        {
+          "sourceId": "1101cd81-8f88-4784-9c31-8323cf4c2e6b",
+          "name": "Ro-Zangelo Daal",
+          "playerId": null,
+          "reason": "UNMAPPED"
+        }
+      ]
+    }
+  ],
+  "checks": {
+    "testsPassed": 1107,
+    "testsSkipped": 1,
+    "lint": "passed",
+    "typecheck": "passed",
+    "build": "passed",
+    "concurrentLockProbe": "locked=false while dry-run holds lock",
+    "privateBackup": {
+      "teams": 226,
+      "flags": 10036
+    },
+    "schemaMigration": "none"
+  }
+}

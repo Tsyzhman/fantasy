@@ -22,6 +22,7 @@ ENV NEXT_TELEMETRY_DISABLED=1
 COPY . .
 RUN ./node_modules/.bin/prisma generate && npm run build
 RUN ./node_modules/.bin/esbuild scripts/khl-runner.ts --bundle --platform=node --external:@prisma/client --outfile=/app/khl-runner.cjs
+RUN ./node_modules/.bin/esbuild scripts/sync-sorareinside.ts --bundle --platform=node --external:@prisma/client --outfile=/app/sync-sorareinside.cjs
 
 FROM builder AS setup
 
@@ -59,6 +60,7 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/scripts/fpl-vpn-relay.mjs ./scripts/fpl-vpn-relay.mjs
 COPY --from=builder /app/khl-runner.cjs ./scripts/khl-runner.cjs
+COPY --from=builder /app/sync-sorareinside.cjs ./scripts/sync-sorareinside.cjs
 COPY --from=prod-deps /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=prod-deps /app/node_modules/@prisma ./node_modules/@prisma
 

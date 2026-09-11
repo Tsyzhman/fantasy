@@ -443,6 +443,42 @@ test("probable XI application is transactional and stores compact provenance wit
   assert.equal(seasonTeamUpdate.data?.metadata?.probableLineup?.rawHtml, undefined);
 });
 
+/** @spec spec://modules/machete/INFRA-004-sorareinside-starters#apply */
+test("SorareInside unchanged XI records new fixture provenance without cache refresh or flag writes",async()=> {
+  const ids=Array.from({length:11},(_,i)=>BigInt(i+1));
+  const plan=teamPlan(ids);plan.source="SORAREINSIDE";plan.sourceLineup.source="SORAREINSIDE";
+  plan.sourceLineup.sourceKickoff=new Date(Date.now()+86400000).toISOString();plan.sourceLineup.sourceLineupId="lineup-test";
+  let metadata:unknown;let mapped=0;
+  const tx={
+    $executeRaw:async()=>1,
+    leagueSeasonTeam:{findUnique:async()=>({active:true,metadata:{retained:true}}),update:async(value:unknown)=>{metadata=value;return value;}},
+    teamPlayerSeason:{findMany:async()=>ids.map((playerId,i)=>({playerId,active:true,isStarter:true,position:i===0?"GK":"DEF"})),updateMany:async()=>{assert.fail("unchanged XI must not write flags");}}
+  };
+  const db={$transaction:async(fn:(arg:typeof tx)=>unknown)=>fn(tx)} as unknown as PrismaClient;
+  const result=await applyProbableLineupTeamPlan(db,plan,new Date(),async()=>assert.fail("unchanged XI must not enqueue"),async actual=>{assert.equal(actual,tx);mapped++;});
+  assert.equal(result.status,"UNCHANGED");assert.equal(mapped,1);
+  const savedMetadata=(metadata as {data:{metadata:{probableLineup:{sourceLineupId:string;sourceKickoff:string}}}}).data.metadata.probableLineup;
+  assert.equal(savedMetadata.sourceLineupId,"lineup-test");assert.equal(savedMetadata.sourceKickoff,plan.sourceLineup.sourceKickoff);
+});
+/** @spec spec://modules/machete/INFRA-004-sorareinside-starters#apply */
+test("other automatic source cannot replace protected upcoming XI",async()=> {
+  const plan=teamPlan(Array.from({length:11},(_,i)=>BigInt(i+1)));
+  const tx={
+    $executeRaw:async()=>1,
+    leagueSeasonTeam:{findUnique:async()=>({active:true,metadata:{probableLineup:{source:"SORAREINSIDE",sourceKickoff:"2099-01-01T00:00:00Z"}}})},
+    teamPlayerSeason:{findMany:async()=>assert.fail("protected XI must not reach writes")}
+  };
+  const db={$transaction:async(fn:(arg:typeof tx)=>unknown)=>fn(tx)} as unknown as PrismaClient;
+  assert.equal((await applyProbableLineupTeamPlan(db,plan)).status,"UNCHANGED");
+});
+/** @spec spec://modules/machete/INFRA-004-sorareinside-starters#apply */
+test("a fixture that starts after planning cannot be applied",async()=> {
+  const plan=teamPlan(Array.from({length:11},(_,i)=>BigInt(i+1)));plan.source="SORAREINSIDE";plan.sourceLineup.sourceKickoff="2000-01-01T00:00:00Z";
+  const tx={$executeRaw:async()=>1,leagueSeasonTeam:{findUnique:async()=>({active:true,metadata:null})}};
+  const db={$transaction:async(fn:(arg:typeof tx)=>unknown)=>fn(tx)} as unknown as PrismaClient;
+  await assert.rejects(applyProbableLineupTeamPlan(db,plan),/already started/);
+});
+
 test("name normalization covers punctuation and non-decomposing Latin letters", () => {
   assert.equal(normalizeLineupIdentity("  N’Dri Ødegaard Łukasz  "), "ndri odegaard lukasz");
 });

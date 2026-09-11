@@ -367,6 +367,16 @@ docker container inspect "$worker" --format '{{range .Config.Env}}{{println .}}{
   | grep -vE '^APP_RELEASE_(COMMIT|VERSION)=' > "$worker_env"
 chmod 600 "$web_env" "$worker_env"
 
+# @spec spec://modules/machete/INFRA-004-sorareinside-starters#runtime
+# Keep account credentials out of release archives and the public web runtime.
+sorare_env="/home/deploy/.config/fantasy-scout/sorareinside.env"
+if [[ -f "$sorare_env" ]]; then
+  [[ "$(stat -c '%a' "$sorare_env")" == "600" ]] || { echo "SorareInside config must be mode 600" >&2; exit 1; }
+  sed -i '/^SORAREINSIDE_/d' "$worker_env"
+  grep -E '^SORAREINSIDE_(SYNC_ENABLED|EMAIL|PASSWORD)=' "$sorare_env" >> "$worker_env"
+fi
+sed -i '/^SORAREINSIDE_/d' "$web_env"
+
 # Public KHL catalog and local drafts are enabled independently of forecasts.
 # Explicit production configuration survives subsequent immutable releases.
 for runtime_env in "$web_env" "$worker_env"; do

@@ -6,6 +6,7 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
+| [WI-018](work/WI-018-sorareinside-starters.md) | Основа из ближайшего матча SorareInside | INFRA-004 | @tsyzhman | 2026-09-11 | — |
 
 ## Backlog
 
