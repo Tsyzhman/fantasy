@@ -6,7 +6,6 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
-| [WI-018](work/WI-018-sorareinside-starters.md) | Основа из ближайшего матча SorareInside | INFRA-004 | @tsyzhman | 2026-09-11 | — |
 
 ## Backlog
 
@@ -24,6 +23,7 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-018](work/archive/2026/WI-018-sorareinside-starters.md) | Основа из ближайшего матча SorareInside | @tsyzhman | 2026-09-11 |
 | [WI-016](work/archive/2026/WI-016-ucl-three-per-club.md) | Три игрока клуба в ЛЧ | @tsyzhman | 2026-09-08 |
 | [WI-015](work/archive/2026/WI-015-ffo-ucl-sync.md) | FFO в Squad | @tsyzhman | 2026-09-08 |
 | [WI-014](work/archive/2026/WI-014-squad-excel-export.md) | Экспорт полного пула Squad | @tsyzhman | 2026-09-08 |
