@@ -3,6 +3,9 @@ import { randomUUID } from "node:crypto";
 import { PrismaClient } from "@prisma/client";
 import { readFile, stat } from "node:fs/promises";
 import { bootstrapKhlContest } from "../src/server/khl/bootstrap";
+import { refreshKhlProtocols } from "../src/server/khl/protocol-scheduler";
+import { importKhlProtocolHtml } from "../src/server/khl/protocol-import";
+import { publishRollingForecast } from "../src/server/khl/rolling-forecast";
 import { publishBaseline } from "../src/server/khl/forecast-publication";
 import { fetchMobileRange } from "../src/providers/khl-mobile/transport";
 import { importCalendar } from "../src/server/khl/data-layer";
@@ -21,6 +24,12 @@ async function main() {
   if (command === "bootstrap" && contestId) {
     if ((await stat(contestId)).size > 16384) throw new Error("METADATA_TOO_LARGE");
     console.log(await bootstrapKhlContest(db, JSON.parse(await readFile(contestId, "utf8")))); return;
+  }
+  if (command === "protocols" && contestId) { console.log(await refreshKhlProtocols(db, contestId)); return; }
+  if (command === "forecast" && contestId) { console.log(await publishRollingForecast(db, contestId)); return; }
+  if (command === "protocol" && contestId && fromText && toText) {
+    if ((await stat(toText)).size > 5 * 1024 * 1024) throw new Error("PROTOCOL_TOO_LARGE");
+    console.log(await importKhlProtocolHtml(db, { contestId, officialMatchId: fromText, html: await readFile(toText, "utf8"), observedAt: new Date(), dryRun: process.argv.includes("--dry-run") })); return;
   }
   if (command === "baseline" && contestId && fromText) { console.log(await publishBaseline(db, contestId, fromText, new Date())); return; }
   if (command === "statistics" && contestId) {

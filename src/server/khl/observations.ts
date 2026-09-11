@@ -1,23 +1,26 @@
-/** Normalized adapters accept explicit canonical IDs after provider mapping. */
+/** @spec spec://modules/khl/INFRA-001-khl-data-ingestion#protocols */
 import { Prisma, type PrismaClient } from "@prisma/client";
+import { lockValidLease, type KhlLease } from "./lease";
 import { appendRevision } from "@/khl/repositories/revisions";
 
 const statFields = ["toiSeconds", "ppToiSeconds", "pkToiSeconds", "saves", "goalsAgainst", "goals", "assists", "pimMinutes", "shotsOnGoal", "shifts", "blockedShots"] as const;
-export type ProtocolInput = { playerId: string; matchId: string; clubAtMatchId: string; participationStatus: "PLAYED" | "DNP" | "UNKNOWN"; plusMinus: number | null; started: boolean | null; fullGame: boolean | null } & Record<typeof statFields[number], number | null>;
-export async function importProtocols(db: PrismaClient, input: { seasonId: string; source: string; batchId: string; observedAt: Date; availableAt: Date; rows: ProtocolInput[] }) {
+export type ProtocolInput = { playerId: string; matchId: string; clubAtMatchId: string; participationStatus: "PLAYED" | "DNP" | "UNKNOWN"; plusMinus: number | null; started: boolean | null; fullGame: boolean | null; attackZoneSeconds?: number | null } & Record<typeof statFields[number], number | null>;
+export async function importProtocols(db: PrismaClient, input: { seasonId: string; source: string; batchId: string; observedAt: Date; availableAt: Date; rows: ProtocolInput[]; lease?: KhlLease }) {
   if (!input.rows.length || input.rows.length > 2000 || input.availableAt > input.observedAt || new Set(input.rows.map(r => `${r.matchId}:${r.playerId}`)).size !== input.rows.length) throw new Error("PROTOCOL_BATCH_INVALID");
   for (const row of input.rows) {
+    if (row.attackZoneSeconds != null && (!Number.isSafeInteger(row.attackZoneSeconds) || row.attackZoneSeconds < 0 || row.toiSeconds != null && row.attackZoneSeconds > row.toiSeconds)) throw new Error("PROTOCOL_ATTACK_TIME_INVALID");
     if (statFields.some(f => row[f] !== null && (!Number.isSafeInteger(row[f]) || row[f]! < 0)) || row.plusMinus !== null && !Number.isSafeInteger(row.plusMinus) || row.toiSeconds !== null && ((row.ppToiSeconds ?? 0) + (row.pkToiSeconds ?? 0) > row.toiSeconds)) throw new Error("PROTOCOL_VALUES_INVALID");
-    if (row.participationStatus === "DNP" && statFields.some(f => row[f] !== null && row[f] !== 0)) throw new Error("DNP_STATS_CONFLICT");
+    if (row.participationStatus === "DNP" && ((row.attackZoneSeconds ?? 0) !== 0 || statFields.some(f => row[f] !== null && row[f] !== 0))) throw new Error("DNP_STATS_CONFLICT");
   }
   return db.$transaction(async tx => {
+    await lockValidLease(tx, input.lease);
     let changed = 0;
     for (const row of input.rows) {
       const match = await tx.khlMatch.findFirstOrThrow({ where: { id: row.matchId, seasonId: input.seasonId } });
       if (![match.homeId, match.awayId].includes(row.clubAtMatchId)) throw new Error("PROTOCOL_TEAM_SCOPE_INVALID");
       const revision = await appendRevision(tx, { streamId: `stats:${row.matchId}:${row.playerId}`, transitionKey: input.batchId, value: { ...row, source: input.source }, observedAt: input.observedAt, availableAt: input.availableAt });
       if (revision.replayed) continue;
-      const data = { ...row, observedAt: input.observedAt, availableAt: input.availableAt, sources: Object.fromEntries([...statFields, "plusMinus", "started", "fullGame", "participationStatus"].map(f => [f, input.source])), revision: revision.sequence };
+      const data = { ...row, observedAt: input.observedAt, availableAt: input.availableAt, sources: Object.fromEntries([...statFields, "attackZoneSeconds", "plusMinus", "started", "fullGame", "participationStatus"].map(f => [f, input.source])), revision: revision.sequence };
       await tx.khlPlayerMatchStat.upsert({ where: { matchId_playerId: { matchId: row.matchId, playerId: row.playerId } }, create: data, update: data });
       changed += Number(revision.changed);
     }

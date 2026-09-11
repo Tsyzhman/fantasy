@@ -6,6 +6,8 @@ import { fetchMobileRange } from "@/providers/khl-mobile/transport";
 import { fetchHockeyHistory, parseHockeyHistory } from "@/providers/sports-ru-hockey/history";
 import { importCalendar } from "./data-layer";
 import { importHockeyHistory } from "./history-import";
+import { refreshKhlProtocols } from "./protocol-scheduler";
+import { publishRollingForecast } from "./rolling-forecast";
 import { enqueueKhl } from "./jobs";
 import { runNextKhl } from "./coordinator";
 import { lockValidLease } from "./lease";
@@ -38,7 +40,7 @@ export async function refreshKhlHistory(db: PrismaClient, contestId: string) {
     };
     const due = pool.filter(p => {
       const c = checkMap.get(p.id), cursor = c?.cursor as { priceRevision?: number; latestFinal?: string | null } | undefined;
-      return !c || cursor?.priceRevision !== p.priceRevision || cursor?.latestFinal !== latestFinal(p.clubId) || now.getTime() - c.completedAt.getTime() > 86400000;
+      return !c || (c.cursor as { identityVersion?: number }).identityVersion !== 2 || cursor?.priceRevision !== p.priceRevision || cursor?.latestFinal !== latestFinal(p.clubId) || now.getTime() - c.completedAt.getTime() > 86400000;
     });
     let imported = 0, changed = 0;
     for (const player of due.slice(0, 20)) {
@@ -50,7 +52,7 @@ export async function refreshKhlHistory(db: PrismaClient, contestId: string) {
       await db.$transaction(async tx => {
         await lockValidLease(tx, lease);
         const key = { provider: "SPORTS_RU_STATS", scope: player.id, jobType: "PLAYER" };
-        const cursor = { priceRevision: player.priceRevision, latestFinal: latestFinal(player.clubId), played: result.played, dnp: result.dnp, quarantined: result.quarantined };
+        const cursor = { identityVersion: 2, priceRevision: player.priceRevision, latestFinal: latestFinal(player.clubId), played: result.played, dnp: result.dnp, quarantined: result.quarantined };
         await tx.khlProviderCheckpoint.upsert({ where: { provider_scope_jobType: key }, create: { ...key, cursor, completedAt: observedAt }, update: { cursor, completedAt: observedAt } });
       });
       imported++; changed += result.changed; coverage.set(player.id, result);
@@ -76,7 +78,14 @@ export function startKhlHistoryScheduler() {
     try {
       const ids = (process.env.KHL_CATALOG_CONTEST_IDS ?? "").split(",").filter(id => /^\d{1,12}$/.test(id)).slice(0, 5);
       const contests = await prisma.khlContest.findMany({ where: { provider: "SPORTS_RU", providerContestId: { in: ids } }, take: 5 });
-      for (const contest of contests) { const result = await refreshKhlHistory(prisma, contest.id); if (result && result.status !== "DONE") console.warn("KHL history sync", result); }
+      for (const contest of contests) {
+        const result = await refreshKhlHistory(prisma, contest.id);
+        if (result && result.status !== "DONE") console.warn("KHL history sync", result);
+        try { await refreshKhlProtocols(prisma, contest.id); }
+        catch (error) { console.warn("KHL protocols", error instanceof Error ? error.message : "FAILED"); }
+        try { await publishRollingForecast(prisma, contest.id); }
+        catch (error) { console.warn("KHL rolling forecast", error instanceof Error ? error.message : "FAILED"); }
+      }
     } catch (error) { console.error("KHL history scheduler failed", error); }
     finally { setTimeout(() => { void tick(); }, 60000).unref(); }
   }

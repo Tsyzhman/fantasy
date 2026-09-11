@@ -5,6 +5,12 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.67 - 2026-09-11
+
+- Aggregate KHL season statistics from individual match protocols, including attack time and per-field coverage; preserve Sports.ru official fantasy scores.
+- Publish a clearly labelled seven-day beta EP from official FP history and observed appearances, independent of unverified fantasy-week boundaries.
+- Add bounded, idempotent protocol imports with source priority, raw retention and explicit HTTP access failure reporting. Ready-made individual xG remains unavailable without a verified feed.
+
 ## 0.3.66 - 2026-09-08
 
 - Correct the Champions League fantasy limit to three players per club in Squad, price sync and the current persisted contest.

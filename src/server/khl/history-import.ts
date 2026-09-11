@@ -16,6 +16,8 @@ export async function importHockeyHistory(db: PrismaClient, input: { contestId: 
     const player = await tx.khlFantasyPlayer.findFirstOrThrow({ where: { id: input.fantasyPlayerId, contestId: input.contestId }, include: { contest: { include: { season: true } } } });
     const link = hockeyTeamLinks.find(t => t[0] === player.clubId && t[2] === profile.clubSlug);
     if (!player.playerId || !link || profile.position !== player.position || profile.season !== player.contest.season.seasonKey || profile.tagId && profile.tagId !== player.providerTagId || source !== `https://www.sports.ru/fantasy/hockey/player/info/${player.contest.providerContestId}/${player.providerPlayerId}.html`) throw new Error("HISTORY_PLAYER_SCOPE_INVALID");
+    // The catalog has surnames only; the identity-checked profile carries the full name.
+    await tx.khlPlayer.update({ where: { id: player.playerId }, data: { name: profile.name } });
     const teamMaps = await tx.khlExternalEntityMap.findMany({ where: { provider: "KHL", entityType: "team", providerScope: "global", externalId: { in: hockeyTeamLinks.map(t => t[1]) } } });
     const internal = (external: string) => teamMaps.find(m => m.externalId === external)?.teamId;
     const teamId = internal(link[1]); if (!teamId) throw new Error("HISTORY_TEAM_MAPPING_UNAVAILABLE");
@@ -40,13 +42,16 @@ export async function importHockeyHistory(db: PrismaClient, input: { contestId: 
       const facts = { participationStatus, toiSeconds: row.toiSeconds, goals: row.goals, assists: row.assists, plusMinus: row.plusMinus, pimMinutes: row.pimMinutes, saves: row.saves, goalsAgainst: row.goalsAgainst, clubAtMatchId: teamId };
       if (participationStatus === "DNP" && [row.goals, row.assists, row.pimMinutes, row.saves, row.goalsAgainst].some(n => n !== null && n !== 0)) throw new Error("HISTORY_DNP_CONFLICT");
       const previous = existing.find(s => s.matchId === match.id);
+      // Full match protocols own their fields; Sports.ru still supplies fantasy FP.
+      const priorSources = previous?.sources as Record<string, string> | undefined;
+      const protocolOwnsStats = priorSources?.toiSeconds?.startsWith("https://www.khl.ru/game/");
       const before = previous && Object.fromEntries(Object.keys(facts).map(k => [k, previous[k as keyof typeof previous]]));
-      if (!before || contentHash(before) !== contentHash(facts)) {
+      if (!protocolOwnsStats && (!before || contentHash(before) !== contentHash(facts))) {
         const revision = await appendRevision(tx, { streamId: `SPORTS_RU:history:${player.id}:${match.id}`, transitionKey: batchId, value: facts, observedAt, availableAt: observedAt });
         const sources = { ...(previous?.sources as Record<string, string> ?? {}), ...Object.fromEntries(Object.keys(facts).map(k => [k, source])) };
         await tx.khlPlayerMatchStat.upsert({ where: { matchId_playerId: { matchId: match.id, playerId: player.playerId } }, create: { matchId: match.id, playerId: player.playerId, ...facts, sources, observedAt, availableAt: observedAt, revision: revision.sequence }, update: { ...facts, sources, observedAt, availableAt: observedAt, revision: revision.sequence } });
         changed++;
-      } else await tx.khlPlayerMatchStat.update({ where: { id: previous!.id }, data: { observedAt } });
+      } else if (!protocolOwnsStats) await tx.khlPlayerMatchStat.update({ where: { id: previous!.id }, data: { observedAt } });
       if (participationStatus === "PLAYED") {
         played++;
         const old = scores.find(s => s.matchId === match.id);

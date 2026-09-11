@@ -1,5 +1,5 @@
 ---
-status: draft
+status: active
 ---
 
 # INFRA-002: хоккейные данные, API и миграции {#root}
@@ -14,7 +14,7 @@ status: draft
 
 ## Управляющие документы {#governing-specs}
 
-Границы продукта: `specs/common/main.md`; взаимные контракты и точные ссылки перечислены в #relationships. Документ остаётся draft до закрытия перечисленных source/rules gates.
+Границы продукта: `specs/common/main.md`; взаимные контракты и точные ссылки перечислены в #relationships. Канон активен по запросу пользователя; source/rules gates определяют доступность соответствующих возможностей, а не статус документа.
 
 
 ## Архитектурное решение {#boundary}
@@ -158,3 +158,9 @@ Auth, ownership, no-store, ограничения payload, CAS и идемпот
 ## Трассировка {#traceability}
 
 prisma/schema.prisma; prisma/migrations/20260907110000_khl_foundation/ и следующие три KHL миграции; src/app/api/machete/khl/; src/khl/storage.db-test.ts. Итоговая приёмка определяется #acceptance; статус реализации — docs/KHL_IMPLEMENTATION_STATUS.md.
+
+## Агрегаты протоколов {#protocol-aggregates}
+
+KhlPlayerMatchStat.attackZoneSeconds — nullable индивидуальное время в атаке, секунды. Не смешивается с TOI, владением шайбой или временем команды в зоне. API игрока включает seasonStats: played, по полям sum/known/total. Агрегаты считаются SQL группировкой из текущих уникальных фактов, не хранят копию сезона или неограниченный process cache. Матчевая история включает новые поля и источники.
+
+- 2026-09-11: активирован канон; добавлены ВВА и матчевые сезонные агрегаты.

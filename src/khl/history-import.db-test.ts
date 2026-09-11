@@ -9,9 +9,11 @@ import {hockeyTeamLinks} from '@/providers/sports-ru-hockey/teams';
 import {importCatalog} from '@/server/khl/catalog-sync';
 import {importCalendar} from '@/server/khl/data-layer';
 import {importHockeyHistory} from '@/server/khl/history-import';
+import {importProtocols} from '@/server/khl/observations';
+import {publishRollingForecast} from '@/server/khl/rolling-forecast';
 import {hydratePlayers} from '@/server/khl/read-model';
 const db=new PrismaClient();
-const enabled=process.env.KHL_TEST_DATABASE==='true'&&process.env.DATABASE_URL?.includes('127.0.0.1:55439/khl_test');
+const enabled=process.env.KHL_TEST_DATABASE==='true'&&Boolean(process.env.DATABASE_URL?.match(/127\.0\.0\.1:(55439|45439)\/khl_test/));
 after(()=>db.$disconnect());
 test('public hockey history: exact matches, nulls, repeat and played-to-DNP correction',{skip:!enabled},async()=>{
  const key=randomUUID(),now=new Date('2026-09-08T12:00:00Z');
@@ -31,6 +33,36 @@ test('public hockey history: exact matches, nulls, repeat and played-to-DNP corr
  assert.equal((await importHockeyHistory(db,input)).changed,0);
  assert.equal(await revisions(),count);
  const dto=(await hydratePlayers(db,[player],{now}))[0];assert.equal(dto.officialFp.value,12);assert.equal(dto.toiSeconds.value,1130);assert.equal(dto.ppToiSeconds.value,null);
+
+ // @spec spec://modules/khl/INFRA-002-khl-storage-and-api#protocol-aggregates
+ const stats=await db.khlPlayerMatchStat.findMany({where:{playerId:player.playerId!,match:{seasonId:season.id}},orderBy:{match:{startsAt:'asc'}}});
+ const first=stats[0];
+ const protocol={playerId:first.playerId,matchId:first.matchId,clubAtMatchId:first.clubAtMatchId!,participationStatus:'PLAYED' as const,toiSeconds:first.toiSeconds,ppToiSeconds:300,pkToiSeconds:60,attackZoneSeconds:120,goals:first.goals,assists:first.assists,plusMinus:first.plusMinus,pimMinutes:first.pimMinutes,shotsOnGoal:3,saves:null,goalsAgainst:null,shifts:20,blockedShots:2,started:null,fullGame:null};
+ const fullInput={seasonId:season.id,source:'https://www.khl.ru/game/1436/901980/protocol/',batchId:randomUUID(),observedAt:now,availableAt:now,rows:[protocol]};
+ assert.equal((await importProtocols(db,fullInput)).changed,1);
+ assert.equal((await importProtocols(db,{...fullInput,batchId:randomUUID()})).changed,0);
+ assert.equal(await db.khlPlayerMatchStat.count({where:{playerId:player.playerId!,match:{seasonId:season.id}}}),2);
+ const seasonDto=(await hydratePlayers(db,[player],{now}))[0];
+ assert.equal(seasonDto.seasonStats!.games,2);
+ assert.deepEqual(seasonDto.seasonStats!.totals.attackZoneSeconds,{value:120,knownGames:1});
+ await importProtocols(db,{...fullInput,batchId:randomUUID(),rows:[{...protocol,attackZoneSeconds:90}]});
+ await importHockeyHistory(db,input);
+ const afterCorrection=(await hydratePlayers(db,[player],{now}))[0];
+ assert.equal(afterCorrection.seasonStats!.totals.attackZoneSeconds.value,90);
+ assert.equal(afterCorrection.seasonStats!.totals.ppToiSeconds.value,300);
+ // @spec spec://modules/khl/FEAT-003-khl-projections-and-optimizer#rolling-beta
+ const future={...matches[0],eventId:key+'future',officialMatchId:key+'future',startsAt:'2026-09-09T12:00:00Z',status:'SCHEDULED' as const,score:null};
+ const beyond={...future,eventId:key+'beyond',officialMatchId:key+'beyond',startsAt:'2026-09-17T12:00:00Z'};
+ await importCalendar(db,{contestId:contest.id,stageId:key,officialSeasonId:key,matches:[...matches,future,beyond],batchId:randomUUID(),observedAt:now,complete:true,from:new Date('2026-09-01T00:00:00Z'),to:new Date('2026-09-20T00:00:00Z')});
+ const forecast=await publishRollingForecast(db,contest.id,now);
+ assert.equal((await publishRollingForecast(db,contest.id,now)).id,forecast.id);
+ const projected=(await hydratePlayers(db,[player],{now}))[0];
+ assert.equal(projected.ep.quality,'ESTIMATE'); assert.equal(projected.ep.value,12);
+ assert.equal(projected.fixtures.filter(f=>f.expectedPoints?.value!==null).length,1);
+ assert.equal(projected.ixg.value,null);
+ const late=(await hydratePlayers(db,[player],{now:new Date(now.getTime()+3600001)}))[0];
+ assert.equal(late.ep.value,null);
+
  const corrected=structuredClone(profile);corrected.rows[0]={...corrected.rows[0],toiSeconds:0,goals:0,assists:0,pimMinutes:0,plusMinus:0,points:0};
  assert.equal((await importHockeyHistory(db,{...input,profile:corrected})).dnp,1);
  assert.equal(await db.khlOfficialFantasyScore.count({where:{fantasyPlayerId:player.id}}),1);

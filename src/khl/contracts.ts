@@ -15,6 +15,12 @@ export interface KhlFixture {
   startProbability: Observation<number>;
   expectedPoints?: Observation<number>;
 }
+export const seasonStatFields = ["toiSeconds", "ppToiSeconds", "pkToiSeconds", "attackZoneSeconds", "goals", "assists", "shotsOnGoal", "blockedShots", "pimMinutes", "saves", "goalsAgainst"] as const;
+export type SeasonStatField = typeof seasonStatFields[number];
+export interface KhlSeasonStats {
+  games: number; asOf: string | null;
+  totals: Record<SeasonStatField, { value: number | null; knownGames: number }>;
+}
 export interface KhlPlayer {
   id: string; contestId: string; playerId: string | null; name: string;
   clubId: string; clubName: string; position: KhlPosition;
@@ -23,6 +29,7 @@ export interface KhlPlayer {
   toiSeconds: Observation<number>; ppToiSeconds: Observation<number>; pkToiSeconds: Observation<number>;
   officialFp: Observation<number>; ep: Observation<number>; ixg: Observation<number>;
   saves: Observation<number>; goalsAgainst: Observation<number>;
+  attackZoneSeconds?: Observation<number>; seasonStats?: KhlSeasonStats; forecastHorizonEnd?: string | null;
   fixtures: KhlFixture[];
 }
 export interface KhlWeek {

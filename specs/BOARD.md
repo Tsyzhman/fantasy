@@ -6,6 +6,7 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
+| [WI-017](work/WI-017-khl-protocol-statistics.md) | Протоколы КХЛ и прогнозы | KHL INFRA-001/002, FEAT-003 | @tsyzhman | 2026-09-11 | — |
 
 ## Backlog
 

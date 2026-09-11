@@ -148,6 +148,7 @@ model KhlMatchFantasyWeek {
   @@map("khl_match_fantasy_weeks")
 }
 model KhlPlayerMatchStat {
+  attackZoneSeconds Int?
   clubAtMatchId String?
   participationStatus String @default("UNKNOWN")
   shifts Int?
