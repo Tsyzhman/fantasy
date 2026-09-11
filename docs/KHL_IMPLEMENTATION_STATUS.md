@@ -103,3 +103,17 @@ Worker выполняет ограниченные фоновые партии, 
 Runtime 28a5427a11c6782f4b31f4eb2d4ceb7a9e6cde2d, release 20260908T075518Z-v0.3.63-28a5427. Deploy workflow 34201405135 success. Локально 1085 unit pass / 1 skip, lint 0 errors / 105 warnings, typecheck/build pass; 3 KHL DB tests pass. Общий DB runner остановлен защитой Betting от чужого имени fixture DB; целевой набор КХЛ выполнен отдельно.
 
 Production browser 34202294303: первоначальный запуск до завершения backfill дал 10 pass / 20 skip / 3 history fail из-за ещё не загруженного контрольного профиля. Повтор после backfill: auth 1 pass, UI 13 pass / 20 предусмотренных skip, включая реальные FP/TOI и отсутствие горизонтального переполнения карточки на desktop/tablet/mobile. Рестарты web/worker: 0.
+
+## Production 0.3.67 — WI-017, 11 сентября 2026
+
+Было: матчевые данные Sports.ru и официальные FP, без времени в атаке/PP/PK и без опубликованного EP. Стало: сезонные суммы из отдельных протоколов, отдельное покрытие каждого поля, PP/PK/атака в каталоге, карточке и истории; семидневный EP с явной маркировкой BETA_BASELINE. Средние последних 5/10/20 матчей сохранены. EP = средние официальные FP × частота участия × реальные будущие игры; это не обученная xG-модель.
+
+На production освежены все 696 активных карточек Sports.ru и загружены 29 протоколов завершённых матчей сезона 2026/2027. В 27 протоколах атака заполнена; 901980/901987 содержат заглушки. Из 1838 player-match атака известна в 959, PP/PK в 1018. Сезонная атака есть у 425 игроков, EP у 496, ixG у 0. Остались 48 различных unlinked имён: не подставлялись по нечёткому сходству. Два старых матча Алистрова дообогатились после точного официального ID из позднего протокола; окончательный повтор 29 файлов changed=0, forecast revision не поменялась.
+
+Контроль Грегуара: 3 матча, TOI 60:04, PP 8:51, PK 2:07, атака 4:25 с покрытием 1/3; EP 16.6667 на два будущих матча. Отсутствие атаки в остальных играх не превращается в ноль. Прямой khl.ru HTTP с production IP возвращает 403; worker сделал одну неуспешную попытку и установил паузу до 2026-09-12T10:39:37.838Z. Новые протоколы не обещаны автоматически до восстановления доступа. Готового player-match ixG feed не найдено, собственная модель не реализована; WI остаётся Blocked.
+
+Runtime dd49fb039e215bddfc0489a8e07c320cd185188c, release 20260911T103306Z-v0.3.67-dd49fb0. [Deploy 34589500218](https://github.com/Tsyzhman/fantasy/actions/runs/34589500218) success: 48 миграций, незавершённых 0; восстановление backup и rehearsal до production. SHA256 backup 86005bff4c3e71f23686f832df572bfdf8f7fbba7fdf367c17850e6479631b26. Health/manifest/OCI обеих служб совпадают, restarts=0.
+
+Локально npm run check: 1090 pass / 1 skip, lint 0 errors / 117 warnings, typecheck/build pass; focused PostgreSQL test дополнительно проверяет конкурентную запись Sports.ru/КХЛ. UI проверен на desktop/390px, overflow=0, duplicate DOM IDs=0. [Production browser 34590394503](https://github.com/Tsyzhman/fantasy/actions/runs/34590394503): auth pass, 19 UI pass / 20 skip / 3 fail; все KHL-сценарии прошли на desktop/tablet/mobile, три прежних failure относятся к Betting UCL model и воспроизводились до выпуска.
+
+Дубли stat/raw/active jobs=0. Raw 29 строк / 99987 bytes, read cache=0, 4 forecast revisions; финальные web 293.2 MiB / worker 462.9 MiB / PostgreSQL 1.033 GiB, свободно 86 GiB. Временный локальный сайт и PostgreSQL остановлены, созданная тестовая учётная запись/сессия удалены. Полное production evidence хранится в Result [WI-017](../specs/work/WI-017-khl-protocol-statistics.md).

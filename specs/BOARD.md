@@ -6,7 +6,6 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
-| [WI-017](work/WI-017-khl-protocol-statistics.md) | Протоколы КХЛ и прогнозы | KHL INFRA-001/002, FEAT-003 | @tsyzhman | 2026-09-11 | — |
 
 ## Backlog
 
@@ -17,6 +16,7 @@
 
 | Work | Title | Owner | Reason | Waiting for |
 |---|---|---|---|---|
+| [WI-017](work/WI-017-khl-protocol-statistics.md) | Протоколы КХЛ и прогнозы | @tsyzhman | 0.3.67 и 29 протоколов опубликованы; готовый ixG недоступен, прямой источник КХЛ HTTP 403 | Источник ixG или решение по собственной модели; снятие ограничения доступа к протоколам |
 | [WI-001](work/WI-001-global-strategy.md) | Автоматическая стратегия глобального рейтинга | @tsyzhman | PostgreSQL/Docker недоступны; FPL HTTP 503; live-приёмка не выполнена | Рабочая БД и доступ к провайдеру/relay для миграции, синхронизации и end-to-end проверок |
 
 ## Done
