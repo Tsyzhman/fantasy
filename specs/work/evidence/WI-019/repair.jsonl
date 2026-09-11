@@ -1,0 +1,12 @@
+{"event":"mapping-plan","priceId":"cmtwlh9y80j2ub7a8vypr5wfl","fromPlayerId":null,"toPlayerId":"161328","toTeamId":"10233","apply":true}
+{"event":"sports-mapping","result":{"priceId":"cmtwlh9y80j2ub7a8vypr5wfl","playerId":"161328","teamId":"10233","confidence":1,"status":"MATCHED","matchedBy":"MANUAL","selectionSync":{"movedSelections":0,"refreshedSelections":0,"removedDuplicateSelections":0}}}
+{"event":"roster-plan","leagueId":"57","teamId":"8640","playerId":"1699551","verifiedPriceId":"cms99uk4i00xed2ewh8iy7gwy","beforeActive":false,"beforeStarter":true,"apply":true}
+{"event":"roster-plan","leagueId":"48","teamId":"8654","playerId":"1529203","verifiedPriceId":"cmt2qdp9r023qd0yg1c4x895g","beforeActive":false,"beforeStarter":true,"apply":true}
+{"event":"roster-plan","leagueId":"55","teamId":"10233","playerId":"161328","verifiedPriceId":"cmtwlh9y80j2ub7a8vypr5wfl","beforeActive":false,"beforeStarter":false,"apply":true}
+{"event":"roster-plan","leagueId":"87","teamId":"9864","playerId":"1260010","verifiedPriceId":"cmslfq60i00gutg4n4zmxvaqi","beforeActive":false,"beforeStarter":true,"apply":true}
+{"event":"roster-plan","leagueId":"61","teamId":"7844","playerId":"1709721","verifiedPriceId":"cms99urr001wjd2ewajck2bnh","beforeActive":false,"beforeStarter":true,"apply":true}
+{"event":"roster-plan","leagueId":"57","teamId":"8674","playerId":"1419385","verifiedPriceId":"cms99uk2b00vod2ew5muapm7v","beforeActive":false,"beforeStarter":true,"apply":true}
+{"event":"roster-plan","leagueId":"57","teamId":"10229","playerId":"1352213","verifiedPriceId":"cms99uk1100usd2ew0uyt9dgx","beforeActive":false,"beforeStarter":true,"apply":true}
+{"event":"sorare-mapping","id":"3114cd7d-f07f-427c-af8f-f49bc62818b2","playerId":"1170023","teamId":"8710","leagueId":"63","apply":true,"existing":0}
+{"event":"sorare-mapping","id":"822bbe6a-153c-4f78-a781-748e17ee9c1e","playerId":"1889232","teamId":"8370","leagueId":"87","apply":true,"existing":0}
+{"event":"finished","apply":true,"at":"2026-09-11T13:38:37.230Z","rssMiB":75}

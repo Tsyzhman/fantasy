@@ -1,0 +1,14 @@
+{
+  "scopes": 11,
+  "snapshots": 11,
+  "players": 6989,
+  "failed": [],
+  "elapsedMs": 78843,
+  "memory": {
+    "rss": 1640574976,
+    "heapTotal": 410906624,
+    "heapUsed": 379710176,
+    "external": 1890515,
+    "arrayBuffers": 16626
+  }
+}
