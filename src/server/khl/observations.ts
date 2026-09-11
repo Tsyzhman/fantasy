@@ -14,6 +14,8 @@ export async function importProtocols(db: PrismaClient, input: { seasonId: strin
   }
   return db.$transaction(async tx => {
     await lockValidLease(tx, input.lease);
+    // History/calendar writers acquire contest before player facts. Use the same lock order.
+    await tx.$queryRaw`SELECT id FROM khl_contests WHERE "seasonId" = ${input.seasonId} ORDER BY id FOR UPDATE`;
     let changed = 0;
     for (const row of input.rows) {
       const match = await tx.khlMatch.findFirstOrThrow({ where: { id: row.matchId, seasonId: input.seasonId } });

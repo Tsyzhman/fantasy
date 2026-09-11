@@ -39,7 +39,8 @@ test('public hockey history: exact matches, nulls, repeat and played-to-DNP corr
  const first=stats[0];
  const protocol={playerId:first.playerId,matchId:first.matchId,clubAtMatchId:first.clubAtMatchId!,participationStatus:'PLAYED' as const,toiSeconds:first.toiSeconds,ppToiSeconds:300,pkToiSeconds:60,attackZoneSeconds:120,goals:first.goals,assists:first.assists,plusMinus:first.plusMinus,pimMinutes:first.pimMinutes,shotsOnGoal:3,saves:null,goalsAgainst:null,shifts:20,blockedShots:2,started:null,fullGame:null};
  const fullInput={seasonId:season.id,source:'https://www.khl.ru/game/1436/901980/protocol/',batchId:randomUUID(),observedAt:now,availableAt:now,rows:[protocol]};
- assert.equal((await importProtocols(db,fullInput)).changed,1);
+ const concurrent=await Promise.all([importHockeyHistory(db,input),importProtocols(db,fullInput)]);
+ assert.equal(concurrent[1].changed,1);
  assert.equal((await importProtocols(db,{...fullInput,batchId:randomUUID()})).changed,0);
  assert.equal(await db.khlPlayerMatchStat.count({where:{playerId:player.playerId!,match:{seasonId:season.id}}}),2);
  const seasonDto=(await hydratePlayers(db,[player],{now}))[0];
