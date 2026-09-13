@@ -8,6 +8,10 @@ test('KHL visible statistics survive partial matches and history switches',async
  const initialRows=await page.locator('tbody tr').allTextContents().then(rows=>rows.slice(0,10));
  console.log('Initial catalog',initialRows);
  expect(initialRows.some(row=>/[1-9]\d*:[0-5]\d/.test(row)),'Initial catalog must show players with known ice time').toBe(true);
+ await page.getByRole('combobox',{name:'Период прогноза'}).selectOption('week');
+ const weekRows=await page.locator('tbody tr').allTextContents().then(rows=>rows.slice(0,10));
+ expect(weekRows.some(row=>/[1-9]\d*:[0-5]\d/.test(row)),'Unknown week EP must not hide players with known ice time').toBe(true);
+ await page.getByRole('combobox',{name:'Период прогноза'}).selectOption('rolling');
  await page.getByRole('combobox',{name:'Позиция',exact:true}).selectOption('ALL');
  await page.getByRole('textbox',{name:'Поиск игрока',exact:true}).fill('Грегуар');
  const options=page.getByRole('combobox',{name:'Открыть карточку игрока'}).locator('option');

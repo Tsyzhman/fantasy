@@ -95,7 +95,9 @@ export function KhlSquadPlanner({ contestId, season, players: initialPlayers, we
   }
   const selected = entries.map(e => players.find(p => p.id === e.id)).filter((p): p is KhlPlayer => Boolean(p));
   const value = selected.some(p => p.price.value === null) ? null : selected.reduce((n, p) => n + p.price.value!, 0);
-  const filtered = useMemo(() => players.filter(p => (position === "ALL" || p.position === position) && (!club || p.clubId === club) && p.name.toLocaleLowerCase().includes(query.toLocaleLowerCase()) && (!maximum || p.price.value !== null && p.price.value <= Number(maximum)) && (!minimumToi || p.toiSeconds.value !== null && p.toiSeconds.value >= Number(minimumToi) * 60)).sort((a, b) => compareNullable(a[sortField].value, b[sortField].value, direction) || a.id.localeCompare(b.id)), [players, position, club, query, maximum, direction, sortField, minimumToi]);
+  const filtered = useMemo(() => players.filter(p => (position === "ALL" || p.position === position) && (!club || p.clubId === club) && p.name.toLocaleLowerCase().includes(query.toLocaleLowerCase()) && (!maximum || p.price.value !== null && p.price.value <= Number(maximum)) && (!minimumToi || p.toiSeconds.value !== null && p.toiSeconds.value >= Number(minimumToi) * 60)).sort((a, b) => compareNullable(a[sortField].value, b[sortField].value, direction)
+    || (sortField === "ep" && a.ep.value === null && b.ep.value === null ? compareNullable(a.toiSeconds.value, b.toiSeconds.value, -1) : 0)
+    || a.id.localeCompare(b.id)), [players, position, club, query, maximum, direction, sortField, minimumToi]);
   const week = weeks.find(w => w.id === weekId);
   function toggle(p: KhlPlayer) {
     optimizer.cancel();
