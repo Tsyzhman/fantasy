@@ -99,6 +99,7 @@ model KhlTeam {
   @@map("khl_teams")
 }
 model KhlPlayer {
+  historicalSeasons KhlHistoricalSeason[]
   externalMaps KhlExternalEntityMap[]
   memberships KhlRosterMembership[]
   availability KhlAvailabilityObservation[]
@@ -110,6 +111,21 @@ model KhlPlayer {
   fantasyPlayers KhlFantasyPlayer[]
   stats KhlPlayerMatchStat[]
   @@map("khl_players")
+}
+/// @spec spec://modules/khl/INFRA-002-khl-storage-and-api#schema
+model KhlHistoricalSeason {
+  id String @id @default(cuid())
+  playerId String
+  seasonKey String
+  providerSeasonId String
+  source String
+  contentHash String
+  aggregates Json
+  observedAt DateTime
+  availableAt DateTime
+  player KhlPlayer @relation(fields: [playerId], references: [id], onDelete: Restrict)
+  @@unique([playerId, seasonKey])
+  @@map("khl_historical_seasons")
 }
 model KhlMatch {
   externalMaps KhlExternalEntityMap[]

@@ -5,6 +5,13 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.71 - 2026-09-13
+
+- КХЛ: броски, голы, передачи, штрафные минуты и плюс-минус в отдельных сортируемых колонках; максимум две десятичные цифры в показателях.
+- Архив предыдущего сезона Sports, отдельный период просмотра и ограниченный prior для короткой текущей истории.
+- Единый объяснимый EP: G/A/SOG/PIM/+/−, вклад показателей, частота участия и размеры выборок. Официальные FP сохраняются.
+- Аддитивная таблица khl_historical_seasons; идемпотентный импорт и перенос проверенного локального архива.
+
 ## 0.3.70 - 2026-09-13
 
 - Split KHL TOI, PP, PK and attack time into separate sortable columns with per-field coverage.

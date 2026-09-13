@@ -17,11 +17,22 @@ export interface KhlFixture {
   startProbability: Observation<number>;
   expectedPoints?: Observation<number>;
 }
-export const seasonStatFields = ["toiSeconds", "ppToiSeconds", "pkToiSeconds", "attackZoneSeconds", "goals", "assists", "shotsOnGoal", "blockedShots", "pimMinutes", "saves", "goalsAgainst"] as const;
+export const seasonStatFields = ["toiSeconds", "ppToiSeconds", "pkToiSeconds", "attackZoneSeconds", "goals", "assists", "shotsOnGoal", "blockedShots", "pimMinutes", "plusMinus", "saves", "goalsAgainst"] as const;
+export const playerStatFields = ["toiSeconds", "ppToiSeconds", "pkToiSeconds", "attackZoneSeconds", "goals", "assists", "shotsOnGoal", "pimMinutes", "plusMinus", "saves", "goalsAgainst"] as const;
 export type SeasonStatField = typeof seasonStatFields[number];
 export interface KhlSeasonStats {
   games: number; asOf: string | null;
   totals: Record<SeasonStatField, { value: number | null; knownGames: number }>;
+}
+export interface KhlHistoricalStats extends KhlSeasonStats {
+  seasonKey: string; source: string; dnp: number;
+  officialFp: { sum: number; count: number };
+  otherPoints: { sum: number; count: number };
+}
+export interface KhlForecastExplanation {
+  perGame: number; appearanceRate: number; currentGames: number; previousGames: number;
+  previousSeason: string | null; priorWeight: number;
+  components: Record<string, number>; warnings: string[];
 }
 export interface KhlPlayer {
   id: string; contestId: string; playerId: string | null; name: string;
@@ -32,6 +43,9 @@ export interface KhlPlayer {
   officialFp: Observation<number>; ep: Observation<number>; ixg: Observation<number>;
   saves: Observation<number>; goalsAgainst: Observation<number>;
   attackZoneSeconds?: Observation<number>; seasonStats?: KhlSeasonStats; forecastHorizonEnd?: string | null;
+  goals?: Observation<number>; assists?: Observation<number>; shotsOnGoal?: Observation<number>;
+  pimMinutes?: Observation<number>; plusMinus?: Observation<number>;
+  previousSeasonStats?: KhlHistoricalStats; forecastExplanation?: KhlForecastExplanation;
   fixtures: KhlFixture[];
 }
 export interface KhlWeek {
@@ -45,8 +59,13 @@ export interface KhlSquad {
   entries: KhlEntry[]; bankUnits: number | null; capitalUnits?: number;
 }
 export function formatToi(seconds: number | null) {
-  if (seconds === null) return "—";
+  if (seconds === null || !Number.isFinite(seconds)) return "—";
+  seconds = Math.round(seconds);
   return `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
+}
+const numberFormat = new Intl.NumberFormat("ru-RU", { maximumFractionDigits: 2 });
+export function formatKhlNumber(value: number | null | undefined) {
+  return value == null || !Number.isFinite(value) ? "—" : numberFormat.format(value);
 }
 export function parseToi(value: unknown): number | null {
   if (typeof value !== "string" || !/^\d{1,3}:[0-5]\d$/.test(value)) return null;

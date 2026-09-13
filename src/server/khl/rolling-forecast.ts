@@ -2,8 +2,9 @@
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { contentHash } from "@/khl/repositories/revisions";
 import { hydratePlayers } from "./read-model";
+import { projectHistory, summarizeHockeyHistory } from "@/khl/history-projection";
 
-const MODEL = "khl-fp10-participation-beta-v1";
+const MODEL = "khl-history-components-beta-v2";
 export async function publishRollingForecast(db: PrismaClient, contestId: string, asOf = new Date()) {
   return db.$transaction(async tx => {
     await tx.$queryRaw`SELECT id FROM khl_contests WHERE id = ${contestId} FOR UPDATE`;
@@ -14,20 +15,29 @@ export async function publishRollingForecast(db: PrismaClient, contestId: string
     if (fresh) return fresh;
     const pool = await tx.khlFantasyPlayer.findMany({ where: { contestId, active: true }, take: 1001 });
     const players = await hydratePlayers(tx, pool, { now: asOf });
-    const history = await tx.khlPlayer.findMany({ where: { id: { in: pool.flatMap(p => p.playerId ? [p.playerId] : []) } }, select: { id: true, stats: { where: { availableAt: { lte: asOf }, match: { seasonId: contest.seasonId, status: "FINAL", startsAt: { lt: asOf } }, participationStatus: { in: ["PLAYED", "DNP"] } }, orderBy: { match: { startsAt: "desc" } }, take: 10, select: { participationStatus: true } } } });
-    const rates = new Map(history.map(p => [p.id, p.stats.length ? p.stats.filter(s => s.participationStatus === "PLAYED").length / p.stats.length : null]));
+    const history = await tx.khlPlayer.findMany({ where: { id: { in: pool.flatMap(p => p.playerId ? [p.playerId] : []) } }, select: { id: true, stats: { where: { availableAt: { lte: asOf }, match: { seasonId: contest.seasonId, status: "FINAL", startsAt: { lt: asOf } }, participationStatus: { in: ["PLAYED", "DNP"] } }, orderBy: { match: { startsAt: "desc" } }, take: 10 } } });
+    const scores = await tx.khlOfficialFantasyScore.findMany({ where: { contestId, availableAt: { lte: asOf }, matchId: { in: [...new Set(history.flatMap(p => p.stats.map(s => s.matchId)))] } }, take: 10001 });
+    if (scores.length > 10000) throw new Error("HISTORY_POOL_LIMIT");
+    const scoreMap = new Map(scores.map(s => [`${s.fantasyPlayerId}:${s.matchId}`, s.points]));
+    const historyMap = new Map(history.map(p => [p.id, p.stats]));
+    const paired = (stats: typeof history[number]["stats"]) => stats.filter(s => s.participationStatus === "PLAYED" && s.goals !== null && s.shotsOnGoal !== null && s.goals >= 0 && s.goals <= s.shotsOnGoal);
+    const leaguePairs = paired(history.flatMap(p => p.stats));
+    const leagueGoals = leaguePairs.reduce((n, s) => n + s.goals!, 0), leagueShots = leaguePairs.reduce((n, s) => n + s.shotsOnGoal!, 0);
     const inputs = players.flatMap(p => {
-      const participation = p.playerId ? rates.get(p.playerId) : null;
-      if (!p.playerId || p.officialFp.value === null || participation == null) return [];
-      return [{ playerId: p.playerId, mean: p.officialFp.value, participation, fixtures: p.fixtures.filter(f => f.status === "SCHEDULED" && new Date(f.startsAt) < horizonEnd).map(f => f.id) }];
+      if (!p.playerId) return [];
+      const stats = historyMap.get(p.playerId) ?? [], pairs = paired(stats);
+      const current = summarizeHockeyHistory(stats.map(s => ({ ...s, points: scoreMap.get(`${p.id}:${s.matchId}`) ?? null })), "current", "SPORTS_RU/KHL");
+      const explanation = projectHistory({ position: p.position, current, previous: p.previousSeasonStats, pairedGoals: pairs.reduce((n, s) => n + s.goals!, 0), pairedShots: pairs.reduce((n, s) => n + s.shotsOnGoal!, 0), leagueGoals, leagueShots });
+      if (!explanation) return [];
+      return [{ playerId: p.playerId, explanation, fixtures: p.fixtures.filter(f => f.status === "SCHEDULED" && new Date(f.startsAt) < horizonEnd).map(f => f.id) }];
     });
     if (!inputs.some(p => p.fixtures.length)) throw new Error("HISTORY_NOT_READY");
     const inputHash = contentHash({ inputs, dataRevision: contest.revision, asOf: asOf.toISOString() });
-    const forecast = await tx.khlForecastRevision.create({ data: { contestId, dataRevision: contest.revision + 1, modelVersion: MODEL, rulesVersion: "provider-official-fp", inputHash, asOf, horizonEnd, status: "PUBLISHED", quality: "BETA_BASELINE", diagnostics: { horizon: "NEXT_7_DAYS", xgReady: false, fittedModel: false, participation: "Empirical appearances including DNP; not probability of starting", warnings: ["SMALL_SAMPLE", "XG_UNAVAILABLE"] } } });
-    await tx.khlPlayerMatchForecast.createMany({ data: inputs.flatMap(p => p.fixtures.map(matchId => ({ forecastId: forecast.id, playerId: p.playerId, matchId, expectedPoints: p.mean * p.participation, participationProbability: null, components: { officialFpMean: p.mean, appearanceRate: p.participation }, uncertainty: null }))) });
+    const forecast = await tx.khlForecastRevision.create({ data: { contestId, dataRevision: contest.revision + 1, modelVersion: MODEL, rulesVersion: "provider-official-fp", inputHash, asOf, horizonEnd, status: "PUBLISHED", quality: "BETA_BASELINE", diagnostics: { horizon: "NEXT_7_DAYS", xgReady: false, fittedModel: false, participation: "Empirical appearances with previous-season prior; not probability of starting", historicalPlayers: inputs.filter(p => p.explanation.previousGames > 0).length, warnings: ["BETA_UNCALIBRATED", "XG_UNAVAILABLE"] } } });
+    await tx.khlPlayerMatchForecast.createMany({ data: inputs.flatMap(p => p.fixtures.map(matchId => ({ forecastId: forecast.id, playerId: p.playerId, matchId, expectedPoints: p.explanation.perGame * p.explanation.appearanceRate, participationProbability: null, components: p.explanation as unknown as Prisma.InputJsonValue, uncertainty: null }))) });
     await tx.khlContest.update({ where: { id: contestId }, data: { revision: { increment: 1 } } });
     // Restrict FK: remove owned projections before the bounded revision audit window.
-    const expired = { contestId, modelVersion: MODEL, asOf: { lt: new Date(asOf.getTime() - 7 * 86400000) } };
+    const expired = { contestId, modelVersion: { in: [MODEL, "khl-fp10-participation-beta-v1"] }, asOf: { lt: new Date(asOf.getTime() - 7 * 86400000) } };
     await tx.khlPlayerMatchForecast.deleteMany({ where: { forecast: expired } });
     await tx.khlForecastRevision.deleteMany({ where: expired });
     return forecast;

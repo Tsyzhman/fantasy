@@ -1,7 +1,7 @@
 /** @spec spec://modules/khl/INFRA-001-khl-data-ingestion#operations */
 import { randomUUID } from "node:crypto";
 import { PrismaClient } from "@prisma/client";
-import { readFile, stat } from "node:fs/promises";
+import { readFile, writeFile, stat } from "node:fs/promises";
 import { bootstrapKhlContest } from "../src/server/khl/bootstrap";
 import { refreshKhlProtocols } from "../src/server/khl/protocol-scheduler";
 import { importKhlProtocolHtml } from "../src/server/khl/protocol-import";
@@ -15,6 +15,7 @@ import { importCatalog } from "../src/server/khl/catalog-sync";
 import { khlResourceStatus, enqueueKhl } from "../src/server/khl/jobs";
 import { pruneKhl } from "../src/server/khl/retention";
 import { refreshKhlHistory } from "../src/server/khl/history-scheduler";
+import { refreshHistoricalSeason, exportHistoricalBundle, importHistoricalBundle } from "../src/server/khl/historical-season";
 const db = new PrismaClient();
 async function main() {
   const [command, contestId, fromText, toText] = process.argv.slice(2);
@@ -27,6 +28,23 @@ async function main() {
   }
   if (command === "protocols" && contestId) { console.log(await refreshKhlProtocols(db, contestId)); return; }
   if (command === "forecast" && contestId) { console.log(await publishRollingForecast(db, contestId)); return; }
+  if (command === "previous-season-export" && contestId && fromText) {
+    const bundle = await exportHistoricalBundle(db, contestId);
+    await writeFile(fromText, JSON.stringify(bundle)); console.log({ exported: bundle.entries.length, seasonKey: bundle.seasonKey }); return;
+  }
+  if (command === "previous-season-import" && contestId && fromText) {
+    if ((await stat(fromText)).size > 20 * 1024 * 1024) throw new Error("HISTORY_BUNDLE_TOO_LARGE");
+    console.log(await importHistoricalBundle(db, contestId, JSON.parse(await readFile(fromText, "utf8")))); return;
+  }
+  if (command === "previous-season" && contestId) {
+    for (let batch = 0; batch < (fromText === "--all" ? 60 : 1); batch++) {
+      const result = await refreshHistoricalSeason(db, contestId);
+      console.log(JSON.stringify(result));
+      if (!result.remaining || fromText !== "--all") return;
+      if (result.errors.some(e => /HTTP_(401|403|429)/.test(e.message))) throw new Error("HISTORY_ARCHIVE_SOURCE_UNAVAILABLE");
+    }
+    throw new Error("HISTORY_ARCHIVE_BATCH_LIMIT");
+  }
   if (command === "protocol" && contestId && fromText && toText) {
     if ((await stat(toText)).size > 5 * 1024 * 1024) throw new Error("PROTOCOL_TOO_LARGE");
     console.log(await importKhlProtocolHtml(db, { contestId, officialMatchId: fromText, html: await readFile(toText, "utf8"), observedAt: new Date(), dryRun: process.argv.includes("--dry-run") })); return;

@@ -1,5 +1,5 @@
 import {test,expect} from '@playwright/test';
-import {formatToi,type KhlPlayer} from '../src/khl/contracts';
+import {formatToi,formatKhlNumber,type KhlPlayer} from '../src/khl/contracts';
 
 /** @spec spec://modules/khl/FEAT-002-khl-squad#cards */
 test('KHL visible statistics survive partial matches and history switches',async({page},testInfo)=>{
@@ -20,6 +20,17 @@ test('KHL visible statistics survive partial matches and history switches',async
    expect(values.slice(0,known.length).every(n=>n!==null)).toBe(true);
   }
  }
+ for (const [label,column] of [['Броски',13],['Голы',14],['Передачи',15],['Штраф, мин',16],['+/−',17]] as const) {
+  const sort=page.getByRole('button',{name:`Сортировать: ${label}`,exact:true});
+  for(const direction of ['descending','ascending'] as const){
+   await sort.click();await expect(sort.locator('..')).toHaveAttribute('aria-sort',direction);
+   const texts=await page.locator(`tbody tr td:nth-child(${column}) > span`).allTextContents();
+   const values=texts.map(s=>s==='—'?null:Number(s.replace(/\s/g,'').replace(',','.')));
+   const known=values.filter((n):n is number=>n!==null);
+   expect(known.length).toBeGreaterThan(0);
+   expect(known).toEqual([...known].sort((a,b)=>direction==='ascending'?a-b:b-a));
+  }
+ }
  await page.getByRole('combobox',{name:'Сортировать по',exact:true}).selectOption('ep');
  await page.getByRole('combobox',{name:'Период прогноза'}).selectOption('week');
  const weekRows=await page.locator('tbody tr').allTextContents().then(rows=>rows.slice(0,10));
@@ -33,6 +44,8 @@ test('KHL visible statistics survive partial matches and history switches',async
  const response=await page.request.get(`/api/machete/khl/players/${id}?contestId=cmtr4grkd00056htzwpdv4fwu`);
  expect(response.status()).toBe(200);
  const p=(await response.json()).data as KhlPlayer;
+ expect(p.previousSeasonStats?.games).toBeGreaterThan(40);
+ expect(p.forecastExplanation?.previousGames).toBeGreaterThan(40);
  const row=page.locator('tbody tr').filter({hasText:'Грегуар'});
  if(await row.getByRole('button',{name:'Выбрать',exact:true}).count()) await row.getByRole('button',{name:'Выбрать',exact:true}).click();
  for(const key of ['toiSeconds','ppToiSeconds','pkToiSeconds','attackZoneSeconds'] as const){
@@ -41,7 +54,7 @@ test('KHL visible statistics survive partial matches and history switches',async
   await expect(row).toContainText(formatToi(total.value));
  }
  await page.screenshot({path:`output/playwright-test-results/khl-statistics-season-${testInfo.project.name}.png`,fullPage:true});
- await page.getByRole('combobox',{name:'Статистика времени и вратаря'}).selectOption('recent');
+ await page.getByRole('combobox',{name:'Период статистики'}).selectOption('recent');
  console.log('Recent catalog',await row.innerText());
  for(const key of ['toiSeconds','ppToiSeconds','pkToiSeconds','attackZoneSeconds'] as const){
   expect(p[key]?.value,`${key} must retain known observations`).not.toBeNull();
@@ -61,6 +74,8 @@ test('KHL visible statistics survive partial matches and history switches',async
  const card=page.getByRole('region',{name:'Карточка Грегуар'});
  await expect(card).toBeVisible();
  await expect(card).toContainText(`Данные: ${p.attackZoneSeconds!.knownGames} из ${p.attackZoneSeconds!.totalGames} матчей`);
+ await expect(card.getByRole('region',{name:'Формула EP'})).toBeVisible();
+ await expect(card).toContainText(`Прошлый сезон ${p.previousSeasonStats!.seasonKey}`);
  await card.screenshot({path:`output/playwright-test-results/khl-statistics-card-${testInfo.project.name}.png`});
  await page.getByRole('button',{name:'Закрыть карточку',exact:true}).click();
  const tabRefresh=page.waitForResponse(r=>r.url().includes('/api/machete/khl/players?'));
@@ -76,7 +91,12 @@ test('KHL visible statistics survive partial matches and history switches',async
  if(testInfo.project.name==='desktop-chromium') expect(box!.width).toBeLessThan(90);
  else expect(box!.width).toBeGreaterThan(200);
  await roster.screenshot({path:`output/playwright-test-results/khl-roster-${testInfo.project.name}.png`});
- await page.getByRole('combobox',{name:'Статистика времени и вратаря'}).selectOption('season');
+ await page.getByRole('combobox',{name:'Период статистики'}).selectOption('previous');
+ await expect(row).toContainText(formatToi(p.previousSeasonStats!.totals.toiSeconds.value));
+ await expect(row.locator('td').nth(13).locator('span')).toHaveText(formatKhlNumber(p.previousSeasonStats!.totals.goals.value));
+ await expect(row.locator('td').nth(10)).toHaveText(formatKhlNumber(p.ep.value));
+ await page.screenshot({path:`output/playwright-test-results/khl-previous-season-${testInfo.project.name}.png`,fullPage:true});
+ await page.getByRole('combobox',{name:'Период статистики'}).selectOption('season');
  await expect(row).toContainText(formatToi(p.seasonStats!.totals.attackZoneSeconds.value));
  await page.screenshot({path:`output/playwright-test-results/khl-statistics-refreshed-${testInfo.project.name}.png`,fullPage:true});
  expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);

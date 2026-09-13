@@ -6,7 +6,7 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
-| [WI-021](work/WI-021-khl-visible-statistics.md) | Статистика, состав и импорт КХЛ | KHL FEAT-002, INFRA-002 | @tsyzhman | 2026-09-13 | — |
+| [WI-022](work/WI-022-khl-history-projection.md) | Полная статистика и прошлый сезон в прогнозе КХЛ | KHL FEAT-002/003, INFRA-001/002 | @tsyzhman | 2026-09-13 | — |
 
 ## Backlog
 
@@ -24,6 +24,7 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-021](work/archive/2026/WI-021-khl-visible-statistics.md) | Статистика, состав и импорт КХЛ | @tsyzhman | 2026-09-13 |
 | [WI-019](work/archive/2026/WI-019-sports-prices-roster-repair.md) | Цены Sports и активность пропущенных игроков | @tsyzhman | 2026-09-11 |
 | [WI-018](work/archive/2026/WI-018-sorareinside-starters.md) | Основа из ближайшего матча SorareInside | @tsyzhman | 2026-09-11 |
 | [WI-016](work/archive/2026/WI-016-ucl-three-per-club.md) | Три игрока клуба в ЛЧ | @tsyzhman | 2026-09-08 |

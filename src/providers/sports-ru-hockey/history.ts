@@ -7,7 +7,7 @@ export type HockeyHistory = { tagId: string | null; name: string; club: string; 
 const text = (value: string) => value.replace(/\s+/g, " ").trim();
 function number(value: string) { const s = text(value); if (!s || s === "—" || s === "-") return null; if (!/^-?\d+$/.test(s)) throw new Error("HISTORY_NUMBER_INVALID"); return Number(s); }
 function slug(url: string) { const match = /^https:\/\/www\.sports\.ru\/hockey\/club\/([\w-]+)\/$/.exec(url); if (!match) throw new Error("HISTORY_CLUB_INVALID"); return match[1]; }
-export function parseHockeyHistory(html: string, expected: { tagId: string; season: string; position: KhlPosition }): HockeyHistory {
+export function parseHockeyHistory(html: string, expected: { tagId: string; season: string; position: KhlPosition; historyOnly?: boolean }): HockeyHistory {
   if (Buffer.byteLength(html) > 2 * 1024 * 1024) throw new Error("HISTORY_SIZE_INVALID");
   const root = parse(html), link = root.querySelector(".go-to-page")?.getAttribute("href") ?? "";
   const tagId = /\/tags\/(\d+)\//.exec(link)?.[1] ?? null;
@@ -28,6 +28,8 @@ export function parseHockeyHistory(html: string, expected: { tagId: string; seas
   });
   if (!tables[1]) throw new Error("HISTORY_SCHEMA_INVALID");
   const parsed = tables.map((table, tableIndex) => {
+    // Sports retains the current calendar when an archived statistics season is selected.
+    if (tableIndex === 1 && expected.historyOnly) return [];
     if (!table) return [];
     const columns = table!.querySelectorAll("thead td").map(c => text(c.text));
     const expectedColumns = tableIndex ? ["Дата", "Соперник", "", "Счет"] : position === "G" ? ["Дата", "Соперник", "", "Счет", "МИН", "Сэйв", "ПР", "О", "С"] : ["Дата", "Соперник", "", "Счет", "МИН", "Г", "П", "+/-", "ШВ", "СМ", "О", "С"];
@@ -57,9 +59,23 @@ export function parseHockeyHistory(html: string, expected: { tagId: string; seas
   return { tagId, name, season: expected.season, club, clubSlug: slug(clubLink!.getAttribute("href")!), position, rows: parsed[0], fixtures: parsed[1] };
 }
 
-export async function fetchHockeyHistory(contest: string, player: string, signal?: AbortSignal) {
+export function previousHockeySeason(season: string) {
+  const match = /^(\d{4})\/(\d{4})$/.exec(season);
+  if (!match || Number(match[2]) !== Number(match[1]) + 1) throw new Error("HISTORY_SEASON_INVALID");
+  return `${Number(match[1]) - 1}/${match[1]}`;
+}
+export function hockeyHistorySeasonId(html: string, season: string) {
+  if (Buffer.byteLength(html) > 2 * 1024 * 1024) throw new Error("HISTORY_SIZE_INVALID");
+  const options = parse(html).querySelectorAll("#slt option").filter(o => text(o.text) === season);
+  if (options.length > 1) throw new Error("HISTORY_SEASON_DUPLICATE");
+  const id = options[0]?.getAttribute("value");
+  if (id !== undefined && !/^\d{1,12}$/.test(id)) throw new Error("HISTORY_SEASON_INVALID");
+  return id ?? null;
+}
+export async function fetchHockeyHistory(contest: string, player: string, signal?: AbortSignal, seasonId?: string) {
   if (!/^\d+$/.test(contest) || !/^\d+$/.test(player)) throw new Error("HISTORY_REQUEST_INVALID");
-  const url = `https://www.sports.ru/fantasy/hockey/player/info/${contest}/${player}.html`;
+  if (seasonId !== undefined && !/^\d{1,12}$/.test(seasonId)) throw new Error("HISTORY_SEASON_INVALID");
+  const url = `https://www.sports.ru/fantasy/hockey/player/info/${contest}/${player}.html${seasonId ? `?s=${seasonId}` : ""}`;
   const response = await fetch(url, { cache: "no-store", redirect: "error", signal: AbortSignal.any([AbortSignal.timeout(20000), ...(signal ? [signal] : [])]) });
   if (!response.ok) throw new Error(`SPORTS_RU_HTTP_${response.status}`);
   if (!response.body) throw new Error("HISTORY_EMPTY_RESPONSE");

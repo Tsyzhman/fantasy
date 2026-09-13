@@ -1,0 +1,66 @@
+/** @spec spec://modules/khl/INFRA-002-khl-storage-and-api#schema
+ * @spec spec://modules/khl/FEAT-003-khl-projections-and-optimizer#rolling-beta */
+import { after, test } from "node:test";
+import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
+import { PrismaClient } from "@prisma/client";
+import { summarizeHockeyHistory } from "./history-projection";
+import { importHistoricalSeason, exportHistoricalBundle, importHistoricalBundle } from "@/server/khl/historical-season";
+import { hydratePlayers } from "@/server/khl/read-model";
+import { publishRollingForecast } from "@/server/khl/rolling-forecast";
+const db = new PrismaClient();
+const enabled = process.env.KHL_TEST_DATABASE === "true" && Boolean(process.env.DATABASE_URL?.match(/127\.0\.0\.1:(55439|45439)\/khl_test/));
+after(() => db.$disconnect());
+test("historical import is deduplicated, bounded, as-of safe and supplies a forecast before current games", { skip: !enabled }, async () => {
+  const key = randomUUID(), now = new Date("2026-09-13T12:00:00Z");
+  const competition = await db.khlCompetition.create({ data: { code: key } });
+  const season = await db.khlSeason.create({ data: { competitionId: competition.id, seasonKey: "2026/2027", label: key } });
+  const contest = await db.khlContest.create({ data: { seasonId: season.id, providerContestId: "107", name: key, calendarComplete: true, calendarFrom: now, calendarTo: new Date("2026-10-01T00:00:00Z") } });
+  const player = await db.khlPlayer.create({ data: { name: key } });
+  const fantasy = await db.khlFantasyPlayer.create({ data: { contestId: contest.id, playerId: player.id, providerPlayerId: "2167467", name: key, clubId: "test", clubName: key, position: "F", observedAt: now } });
+  const home = await db.khlTeam.create({ data: { name: key + "home" } }), away = await db.khlTeam.create({ data: { name: key + "away" } });
+  await db.khlRosterMembership.create({ data: { playerId: player.id, seasonId: season.id, teamId: home.id, startsAt: now, source: "test", observedAt: now } });
+  const match = await db.khlMatch.create({ data: { seasonId: season.id, homeId: home.id, awayId: away.id, startsAt: new Date("2026-09-14T12:00:00Z"), status: "SCHEDULED" } });
+  const aggregates = summarizeHockeyHistory(Array.from({ length: 68 }, () => ({ participationStatus: "PLAYED", toiSeconds: 1200, points: 10, goals: 1, assists: 0, plusMinus: 0, pimMinutes: 2 })), "2025/2026", "https://www.sports.ru/fantasy/hockey/player/info/107/2167467.html?s=1317639");
+  const input = { playerId: player.id, providerSeasonId: "1317639", aggregates, observedAt: now };
+  try {
+    await importHistoricalSeason(db, { ...input, observedAt: new Date(now.getTime() + 1000) });
+    assert.equal((await hydratePlayers(db, [fantasy], { now }))[0].previousSeasonStats, undefined);
+    await assert.rejects(publishRollingForecast(db, contest.id, now), /HISTORY_NOT_READY/);
+    await db.khlHistoricalSeason.deleteMany({ where: { playerId: player.id } });
+    const results = await Promise.all([importHistoricalSeason(db, input), importHistoricalSeason(db, input)]);
+    assert.equal(results.filter(Boolean).length, 1);
+    const revision = (await db.khlContest.findUniqueOrThrow({ where: { id: contest.id } })).revision;
+    assert.equal(await importHistoricalSeason(db, input), false);
+    assert.equal((await db.khlContest.findUniqueOrThrow({ where: { id: contest.id } })).revision, revision);
+    const forecast = await publishRollingForecast(db, contest.id, now);
+    assert.equal((await publishRollingForecast(db, contest.id, now)).id, forecast.id);
+    const dto = (await hydratePlayers(db, [fantasy], { now }))[0];
+    assert.equal(dto.previousSeasonStats?.games, 68); assert.equal(dto.seasonStats, undefined);
+    assert.equal(dto.ep.value, 10); assert.equal(dto.officialFp.value, null);
+    assert.equal(dto.forecastExplanation?.previousGames, 68); assert.equal(dto.forecastExplanation?.currentGames, 0);
+    const bundle = await exportHistoricalBundle(db, contest.id);
+    assert.equal(bundle.entries.length, 1);
+    assert.equal((await importHistoricalBundle(db, contest.id, bundle)).changed, 0);
+    const wrongIdentity = structuredClone(bundle); wrongIdentity.entries[0].providerTagId = "foreign";
+    await assert.rejects(importHistoricalBundle(db, contest.id, wrongIdentity), /IDENTITY_INVALID/);
+    await assert.rejects(importHistoricalBundle(db, contest.id, { ...bundle, entries: [...bundle.entries, ...bundle.entries] }), /BUNDLE_INVALID/);
+    assert.equal(await db.khlPlayerMatchStat.count({ where: { playerId: player.id } }), 0);
+    const broken = structuredClone(aggregates); broken.totals.goals.knownGames = 999;
+    await assert.rejects(importHistoricalSeason(db, { ...input, aggregates: broken }), /AGGREGATES_INVALID/);
+    for (const seasonKey of ["2024/2025", "2023/2024"]) await importHistoricalSeason(db, { ...input, aggregates: { ...aggregates, seasonKey } });
+    assert.equal(await db.khlHistoricalSeason.count({ where: { playerId: player.id } }), 2);
+  } finally {
+    await db.khlPlayerMatchForecast.deleteMany({ where: { playerId: player.id } });
+    await db.khlForecastRevision.deleteMany({ where: { contestId: contest.id } });
+    await db.khlHistoricalSeason.deleteMany({ where: { playerId: player.id } });
+    await db.khlRosterMembership.deleteMany({ where: { playerId: player.id } });
+    await db.khlFantasyPlayer.delete({ where: { id: fantasy.id } });
+    await db.khlMatch.delete({ where: { id: match.id } });
+    await db.khlTeam.deleteMany({ where: { id: { in: [home.id, away.id] } } });
+    await db.khlPlayer.delete({ where: { id: player.id } });
+    await db.khlContest.delete({ where: { id: contest.id } });
+    await db.khlSeason.delete({ where: { id: season.id } });
+    await db.khlCompetition.delete({ where: { id: competition.id } });
+  }
+});

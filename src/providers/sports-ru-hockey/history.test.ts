@@ -2,9 +2,19 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {readFileSync} from 'node:fs';
-import {parseHockeyHistory} from './history';
+import {parseHockeyHistory,hockeyHistorySeasonId,previousHockeySeason} from './history';
 const fixture=(name:string)=>readFileSync(`src/providers/sports-ru-hockey/fixtures/history-${name}.html`,'utf8');
 const expected={tagId:'161159685',season:'2026/2027',position:'D' as const};
+test('archived season uses published selector and ignores the current-season calendar',()=>{
+ const html=fixture('previous');
+ assert.equal(previousHockeySeason('2026/2027'),'2025/2026');
+ assert.equal(hockeyHistorySeasonId(fixture('skater'),'2025/2026'),'1317639');
+ const h=parseHockeyHistory(html,{...expected,season:'2025/2026',historyOnly:true});
+ assert.ok(h.rows.length>50);assert.equal(h.fixtures.length,0);
+ assert.ok(h.rows.every(r=>r.date>='2025-07-01'&&r.date<'2026-07-01'));
+ assert.throws(()=>parseHockeyHistory(html,{...expected,historyOnly:true}),/IDENTITY|SEASON/);
+ assert.throws(()=>parseHockeyHistory(html.replace('19.03.2026','19.03.2027'),{...expected,season:'2025/2026',historyOnly:true}),/SEASON/);
+});
 test('Sports hockey malformed tbody preserves actual TOI, FP and separate future weeks',()=>{
  const h=parseHockeyHistory(fixture('skater'),expected);
  assert.equal(h.rows.find(r=>r.date==='2026-09-05')?.toiSeconds,1250);
