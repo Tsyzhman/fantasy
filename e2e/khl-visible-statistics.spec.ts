@@ -13,7 +13,7 @@ test('KHL visible statistics survive partial matches and history switches',async
   for (const direction of ['descending','ascending'] as const) {
    await sort.click(); await expect(sort.locator('..')).toHaveAttribute('aria-sort',direction);
    const cells=await page.locator(`tbody tr td:nth-child(${column})`).allTextContents();
-   const values=cells.map(s=>/^(\d+):(\d+)/.exec(s)).map(m=>m?Number(m[1])*60+Number(m[2]):null);
+   const values=cells.map(s=>/^(\d+):([0-5]\d)/.exec(s)).map(m=>m?Number(m[1])*60+Number(m[2]):null);
    const known=values.filter((n):n is number=>n!==null);
    expect(known.length).toBeGreaterThan(0);
    expect(known).toEqual([...known].sort((a,b)=>direction==='ascending'?a-b:b-a));
