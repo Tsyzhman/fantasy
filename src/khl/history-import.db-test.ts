@@ -46,11 +46,21 @@ test('public hockey history: exact matches, nulls, repeat and played-to-DNP corr
  const seasonDto=(await hydratePlayers(db,[player],{now}))[0];
  assert.equal(seasonDto.seasonStats!.games,2);
  assert.deepEqual(seasonDto.seasonStats!.totals.attackZoneSeconds,{value:120,knownGames:1});
+ assert.equal(seasonDto.ppToiSeconds.value,300);
+ assert.equal(seasonDto.ppToiSeconds.knownGames,1);
+ assert.equal(seasonDto.ppToiSeconds.totalGames,2);
+ assert.equal(seasonDto.attackZoneSeconds?.value,120);
  await importProtocols(db,{...fullInput,batchId:randomUUID(),rows:[{...protocol,attackZoneSeconds:90}]});
  await importHockeyHistory(db,input);
  const afterCorrection=(await hydratePlayers(db,[player],{now}))[0];
  assert.equal(afterCorrection.seasonStats!.totals.attackZoneSeconds.value,90);
  assert.equal(afterCorrection.seasonStats!.totals.ppToiSeconds.value,300);
+ await importProtocols(db,{...fullInput,batchId:randomUUID(),rows:[{...protocol,pkToiSeconds:0,attackZoneSeconds:90}]});
+ const zeroKnown=(await hydratePlayers(db,[player],{now}))[0];
+ assert.equal(zeroKnown.pkToiSeconds.value,0);
+ assert.equal(zeroKnown.pkToiSeconds.quality,'FACT');
+ assert.equal(zeroKnown.pkToiSeconds.knownGames,1);
+ assert.equal(zeroKnown.pkToiSeconds.totalGames,2);
  // @spec spec://modules/khl/FEAT-003-khl-projections-and-optimizer#rolling-beta
  const future={...matches[0],eventId:key+'future',officialMatchId:key+'future',startsAt:'2026-09-09T12:00:00Z',status:'SCHEDULED' as const,score:null};
  const beyond={...future,eventId:key+'beyond',officialMatchId:key+'beyond',startsAt:'2026-09-17T12:00:00Z'};

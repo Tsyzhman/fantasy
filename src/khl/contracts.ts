@@ -7,6 +7,8 @@ export interface Observation<T> {
   source: string | null;
   asOf: string | null;
   reason?: string;
+  knownGames?: number;
+  totalGames?: number;
 }
 export const unknown = <T>(reason: string): Observation<T> => ({ value: null, quality: "UNKNOWN", source: null, asOf: null, reason });
 export interface KhlFixture {

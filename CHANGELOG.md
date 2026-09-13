@@ -5,6 +5,12 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.69 - 2026-09-13
+
+- Keep known KHL TOI/PP/PK/attack averages visible when other matches lack those fields, with explicit per-field coverage.
+- Refresh KHL statistics without resetting draft selections or filters; accept fresh server snapshots instead of retaining stale initial data.
+- Open the KHL catalog with forecast leaders and distinguish missing match statistics from observed zeros.
+
 ## 0.3.68 - 2026-09-11
 
 - Import starting-XI predictions from each club's nearest future SorareInside fixture every hour at :05, using persistent player/team UUID mappings.

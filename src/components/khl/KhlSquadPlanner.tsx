@@ -1,6 +1,6 @@
 "use client";
 /** @spec spec://modules/khl/FEAT-002-khl-squad#layout */
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { compareNullable, formatToi, unknown, type KhlPlayer, type KhlPosition, type KhlWeek, type KhlSquad } from "@/khl/contracts";
 import { KHL_RULES, validateRoster } from "@/khl/rules";
@@ -13,12 +13,22 @@ type Props = { protocolNotice?: string; contestId: string; season: string; playe
 import styles from "./KhlSquadPlanner.module.css";
 import { KhlSquadCard } from "./KhlSquadCard";
 const control = styles.control;
+/** @spec spec://modules/khl/FEAT-002-khl-squad#cards */
+function KhlTimeStats({ player, seasonView }: { player: KhlPlayer; seasonView: boolean }) {
+  const fields = [["TOI", player.toiSeconds], ["PP", player.ppToiSeconds], ["PK", player.pkToiSeconds], ["атака", player.attackZoneSeconds]] as const;
+  return <><span>{fields.map(([, value]) => formatToi(value?.value ?? null)).join(" / ")}</span>
+    {player.seasonStats ? <><small className="block text-slate-500">{seasonView ? "Суммы сезона" : "Средние по известным данным"}</small><small className="block text-slate-500">{fields.map(([label, value]) => `${label}: ${value?.knownGames ?? 0}/${value?.totalGames ?? player.seasonStats!.games}`).join(" · ")} матчей</small></> : <small className="block text-slate-500">Нет статистики сыгранных матчей</small>}
+  </>;
+}
 export function KhlSquadPlanner({ contestId, season, players: initialPlayers, weeks, initialSquad, protocolNotice, initialPreferences: preferences = {}, tab }: Props) {
-  const [sourcePlayers, setSourcePlayers] = useState(initialPlayers);
+  const [loadedPlayers, setLoadedPlayers] = useState<{ source: KhlPlayer[]; historyWindow: number; players: KhlPlayer[] } | null>(null);
   const [seasonView, setSeasonView] = useState(true);
   const [rolling, setRolling] = useState(true);
   const [historyWindow, setHistoryWindow] = useState<5 | 10 | 20>(10);
-  const loadedWindow = useRef(10);
+  const [refreshRevision, setRefreshRevision] = useState(0);
+  const [pendingStats, setPendingStats] = useState<{ source: KhlPlayer[]; historyWindow: number; refreshRevision: number } | null>(null);
+  const statsBusy = pendingStats?.source === initialPlayers && pendingStats.historyWindow === historyWindow && pendingStats.refreshRevision === refreshRevision;
+  const sourcePlayers = loadedPlayers?.source === initialPlayers && loadedPlayers.historyWindow === historyWindow ? loadedPlayers.players : initialPlayers;
   const [activeTab, setActiveTab] = useState(tab);
   const [entries, setEntries] = useState(initialSquad?.entries ?? []);
   const [saved, setSaved] = useState(initialSquad);
@@ -36,14 +46,14 @@ export function KhlSquadPlanner({ contestId, season, players: initialPlayers, we
   const [outId, setOutId] = useState("");
   const [inId, setInId] = useState("");
   const [page, setPage] = useState(0);
-  const [direction, setDirection] = useState<1 | -1>(preferences.direction ?? 1);
-  const [sortField, setSortField] = useState<NonNullable<KhlViewPreferences["sortField"]>>(preferences.sortField ?? "price");
+  const [direction, setDirection] = useState<1 | -1>(preferences.direction ?? -1);
+  const [sortField, setSortField] = useState<NonNullable<KhlViewPreferences["sortField"]>>(preferences.sortField ?? "ep");
   const [minimumToi, setMinimumToi] = useState(preferences.minimumToi ?? "");
   const players = useMemo(() => sourcePlayers.map(original => {
     const p = { ...original };
     if (seasonView && p.seasonStats) for (const field of ["toiSeconds", "ppToiSeconds", "pkToiSeconds", "attackZoneSeconds", "saves", "goalsAgainst"] as const) {
       const total = p.seasonStats.totals[field];
-      p[field] = { value: total.value, quality: total.value === null ? "UNKNOWN" : "FACT", source: "Протоколы матчей", asOf: p.seasonStats.asOf, reason: `Сумма сезона: данные в ${total.knownGames} из ${p.seasonStats.games} сыгранных матчей` };
+      p[field] = { value: total.value, quality: total.value === null ? "UNKNOWN" : "FACT", source: "Протоколы матчей", asOf: p.seasonStats.asOf, knownGames: total.knownGames, totalGames: p.seasonStats.games, reason: `Сумма сезона: данные в ${total.knownGames} из ${p.seasonStats.games} сыгранных матчей` };
     }
     if (rolling) return { ...p, fixtures: p.fixtures.filter(f => p.forecastHorizonEnd && f.startsAt < p.forecastHorizonEnd) };
     const ordered = [...weeks].sort((a, b) => (a.startsAt ?? "").localeCompare(b.startsAt ?? ""));
@@ -57,24 +67,25 @@ export function KhlSquadPlanner({ contestId, season, players: initialPlayers, we
   const [detailId, setDetailId] = useState<string | null>(null);
   const optimizer = useKhlOptimizer();
   useEffect(() => {
-    if (loadedWindow.current === historyWindow) return;
+    if (historyWindow === 10 && refreshRevision === 0) return;
     const abort = new AbortController();
     async function refresh() {
+      setPendingStats({ source: initialPlayers, historyWindow, refreshRevision });
       const pool: KhlPlayer[] = []; let cursor: string | null = null, revision: number | null = null;
       for (let page = 0; page < 10; page++) {
         const params = new URLSearchParams({ contestId, limit: "100", historyWindow: String(historyWindow) });
         if (cursor) params.set("cursor", cursor);
-        const r = await fetch(`/api/machete/khl/players?${params}`, { signal: abort.signal });
-        const result = await r.json(); if (!r.ok) throw new Error(result.error?.message ?? "Ошибка загрузки игроков");
+        const r = await fetch(`/api/machete/khl/players?${params}`, { signal: abort.signal, cache: "no-store" });
+        const result = await r.json(); if (abort.signal.aborted) return; if (!r.ok) throw new Error(result.error?.message ?? "Ошибка загрузки игроков");
         if (revision !== null && revision !== result.data.poolRevision) throw new Error("Каталог изменился во время загрузки. Повторите выбор окна.");
         revision = result.data.poolRevision; pool.push(...result.data.players); cursor = result.data.nextCursor;
-        if (!cursor) { setSourcePlayers(pool); loadedWindow.current = historyWindow; return; }
+        if (!cursor) { setLoadedPlayers({ source: initialPlayers, historyWindow, players: pool }); setMessage("Статистика обновлена."); return; }
       }
       throw new Error("Каталог превышает 1000 игроков");
     }
-    void refresh().catch(e => { if (!abort.signal.aborted) setMessage(e.message); });
+    void refresh().catch(e => { if (!abort.signal.aborted) setMessage(e.message); }).finally(() => { if (!abort.signal.aborted) setPendingStats(null); });
     return () => abort.abort();
-  }, [contestId, historyWindow]);
+  }, [contestId, historyWindow, initialPlayers, refreshRevision]);
   async function savePreferences() {
     try {
       const r = await fetch("/api/machete/khl/preferences", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contestId, schemaVersion: 1, preferences: { position, club, query, maximum, direction, compare, sortField, minimumToi } }) });
@@ -140,8 +151,8 @@ export function KhlSquadPlanner({ contestId, season, players: initialPlayers, we
   }
   return <section className={`${styles.planner} min-w-0 space-y-4 py-5`}>
     <p className="text-sm font-semibold">{(["G", "D", "F"] as const).map(pos => `${pos} ${selected.filter(p => p.position === pos).length}/${KHL_RULES.positions[pos]}`).join(" · ")}</p>
-    <div className="flex flex-wrap items-center gap-3"><h1 className="text-2xl font-bold">Fantasy КХЛ · {season}</h1><span className={styles.notice}>Источники подключены частично</span></div>
-    <nav aria-label="Разделы КХЛ" className={styles.tabs}>{([["squad", "Состав"], ["players", "Игроки"], ["calendar", "Календарь"]] as const).map(([key, label]) => <Link className={control} aria-current={activeTab === key ? "page" : undefined} key={key} href={`/machete/khl/${key}?contestId=${encodeURIComponent(contestId)}${saved ? `&squadId=${saved.id}` : ""}`} onClick={event => { event.preventDefault(); setActiveTab(key); const url = new URL(window.location.href); url.pathname = `/machete/khl/${key}`; window.history.replaceState(null, "", url); }}>{label}</Link>)}</nav>
+    <div className="flex flex-wrap items-center gap-3"><h1 className="text-2xl font-bold">Fantasy КХЛ · {season}</h1><span className={styles.notice}>Источники подключены частично</span><button className={control} disabled={statsBusy} onClick={() => { optimizer.cancel(); setRefreshRevision(n => n + 1); }}>Обновить статистику</button>{statsBusy && <span role="status">Загружаются свежие показатели…</span>}</div>
+    <nav aria-label="Разделы КХЛ" className={styles.tabs}>{([["squad", "Состав"], ["players", "Игроки"], ["calendar", "Календарь"]] as const).map(([key, label]) => <Link className={control} aria-current={activeTab === key ? "page" : undefined} key={key} href={`/machete/khl/${key}?contestId=${encodeURIComponent(contestId)}${saved ? `&squadId=${saved.id}` : ""}`} onClick={event => { event.preventDefault(); optimizer.cancel(); setActiveTab(key); setRefreshRevision(n => n + 1); const url = new URL(window.location.href); url.pathname = `/machete/khl/${key}`; window.history.replaceState(null, "", url); }}>{label}</Link>)}</nav>
     {protocolNotice && <p role="status" className={styles.notice}>{protocolNotice}</p>}
     <p className={styles.notice}>{players.some(p => p.ep.value !== null) ? "Доступен опубликованный EP. Модель и качество указаны в источниках карточки; beta-прогноз не подтверждает готовность xG-модели." : "Прогноз выбранного периода пока не готов."} Неизвестное обозначено «—». Внешнее выполнение трансферов отсутствует.</p>
     <label className="block">Период прогноза <select className={control} value={rolling ? "rolling" : "week"} onChange={e => { optimizer.cancel(); setRolling(e.target.value === "rolling"); }}><option value="rolling">Ближайшие 7 дней · оценка</option><option value="week">Официальная фэнтези-неделя</option></select></label>
@@ -174,7 +185,7 @@ export function KhlSquadPlanner({ contestId, season, players: initialPlayers, we
     </div>}
     <div className={styles.catalog}><h2 className="text-sm font-semibold uppercase tracking-wide">Подбор игроков</h2>
     <div className="flex flex-wrap gap-2"><input id="khl-player-search" aria-label="Поиск игрока" className={`${control} min-w-0 max-w-full`} value={query} onChange={e => { setQuery(e.target.value); setPage(0); }} placeholder="Поиск игрока"/><select aria-label="Позиция" className={control} value={position} onChange={e => { setPosition(e.target.value as KhlPosition | "ALL"); setPage(0); }}>{["ALL", "G", "D", "F"].map(p => <option key={p}>{p}</option>)}</select><select aria-label="Клуб" className={`${control} max-w-full`} value={club} onChange={e => { setClub(e.target.value); setPage(0); }}><option value="">Все клубы</option>{[...new Map(players.map(p => [p.clubId, p.clubName])).entries()].map(([id, name]) => <option key={id} value={id}>{name}</option>)}</select><input aria-label="Максимальная цена" className={`${control} w-40`} type="number" value={maximum} placeholder="Цена до" onChange={e => { setMaximum(e.target.value); setPage(0); }}/></div>
-    <div className={styles.tableScroll}><table className="w-full text-left text-sm"><caption className="p-3 text-left">Каталог · {filtered.length} игроков · цена и lock на дату снимка</caption><thead className="bg-slate-100"><tr>{["Игрок", "Клуб / позиция", "Выбор", "Сравнить"].map(h => <th key={h} className="p-3">{h}</th>)}<th><button className={control} onClick={() => setDirection(direction === 1 ? -1 : 1)}>Цена ↕</button></th><th className="p-3">TOI / PP / PK / атака</th><th className="p-3">FP / EP / ixG</th></tr></thead><tbody>{filtered.slice(page * 50, (page + 1) * 50).map(p => <tr key={p.id} className="border-t"><td className="p-3 font-medium">{p.name}</td><td className="p-3">{p.clubName} / {p.position}</td><td className="p-3"><button className={control} onClick={() => toggle(p)}>{entries.some(e => e.id === p.id) ? "Убрать" : "Выбрать"}</button></td><td className="p-3"><input aria-label={`Сравнить ${p.name}`} type="checkbox" checked={compare.includes(p.id)} disabled={!compare.includes(p.id) && compare.length >= 4} onChange={() => setCompare(compare.includes(p.id) ? compare.filter(id => id !== p.id) : [...compare, p.id])}/></td><td className="p-3">{p.price.value ?? "—"}</td><td className="whitespace-nowrap p-3">{formatToi(p.toiSeconds.value)} / {formatToi(p.ppToiSeconds.value)} / {formatToi(p.pkToiSeconds.value)} / {formatToi(p.attackZoneSeconds?.value ?? null)}{seasonView && p.seasonStats && <small className="block text-slate-500">Суммы сезона · {p.seasonStats.games} матчей · атака: {p.seasonStats.totals.attackZoneSeconds.knownGames}/{p.seasonStats.games}</small>}</td><td className="whitespace-nowrap p-3">{p.officialFp.value ?? "—"} / {p.ep.value ?? "—"} / {p.ixg.value ?? "—"}</td></tr>)}</tbody></table></div>
+    <div className={styles.tableScroll}><table className="w-full text-left text-sm"><caption className="p-3 text-left">Каталог · {filtered.length} игроков · цена и lock на дату снимка</caption><thead className="bg-slate-100"><tr>{["Игрок", "Клуб / позиция", "Выбор", "Сравнить"].map(h => <th key={h} className="p-3">{h}</th>)}<th><button className={control} onClick={() => { setSortField("price"); setDirection(sortField === "price" ? (direction === 1 ? -1 : 1) : 1); }}>Цена ↕</button></th><th className="p-3">TOI / PP / PK / атака</th><th className="p-3">FP / EP / ixG</th></tr></thead><tbody>{filtered.slice(page * 50, (page + 1) * 50).map(p => <tr key={p.id} className="border-t"><td className="p-3 font-medium">{p.name}</td><td className="p-3">{p.clubName} / {p.position}</td><td className="p-3"><button className={control} onClick={() => toggle(p)}>{entries.some(e => e.id === p.id) ? "Убрать" : "Выбрать"}</button></td><td className="p-3"><input aria-label={`Сравнить ${p.name}`} type="checkbox" checked={compare.includes(p.id)} disabled={!compare.includes(p.id) && compare.length >= 4} onChange={() => setCompare(compare.includes(p.id) ? compare.filter(id => id !== p.id) : [...compare, p.id])}/></td><td className="p-3">{p.price.value ?? "—"}</td><td className="whitespace-nowrap p-3"><KhlTimeStats player={p} seasonView={seasonView}/></td><td className="whitespace-nowrap p-3">{p.officialFp.value ?? "—"} / {p.ep.value ?? "—"} / {p.ixg.value ?? "—"}</td></tr>)}</tbody></table></div>
     <div className="flex gap-2"><button className={control} disabled={!page} onClick={() => setPage(page - 1)}>Назад</button><button className={control} disabled={(page + 1) * 50 >= filtered.length} onClick={() => setPage(page + 1)}>Далее</button></div>
     <label className="block">Статистика времени и вратаря <select className={control} value={seasonView ? "season" : "recent"} onChange={e => setSeasonView(e.target.value === "season")}><option value="season">Сезон · сумма протоколов</option><option value="recent">Последние матчи · среднее</option></select></label>
     <label className="block">История для средних <select className={control} value={historyWindow} onChange={e => setHistoryWindow(Number(e.target.value) as 5 | 10 | 20)}>{[5, 10, 20].map(n => <option key={n} value={n}>{n} матчей</option>)}</select></label>
