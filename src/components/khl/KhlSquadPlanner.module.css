@@ -1,8 +1,8 @@
 /* @spec spec://modules/khl/FEAT-002-khl-squad#layout */
 .planner { color: var(--text-primary); }
 .control { min-height: 44px; max-width: 100%; border: 1px solid var(--border); border-radius: var(--radius-xs); background: var(--surface-1); color: var(--text-primary); padding: 8px 12px; font-size: 13px; }
-.control:disabled { opacity: .4; }
-.control:focus-visible, .card button:focus-visible, .card summary:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
+.control:disabled, .card button:disabled { opacity: .4; }
+.control:focus-visible, .card button:focus-visible, .card summary:focus-visible, .sortButton:focus-visible { outline: 2px solid var(--accent-primary); outline-offset: 2px; }
 .tabs { display: flex; gap: 4px; border-bottom: 1px solid var(--border); }
 .tabs a { border: 0; border-radius: 0; background: transparent; padding-inline: 18px; color: var(--text-muted); }
 .tabs a[aria-current] { color: var(--accent-primary); box-shadow: inset 0 -2px var(--accent-primary); font-weight: 700; }
@@ -11,38 +11,75 @@
 .roster, .catalog { min-width: 0; display: flex; flex-direction: column; gap: 12px; }
 .catalog table { background: var(--surface-1); }
 .catalog thead { background: var(--surface-2); }
-.catalog th, .catalog td { padding: 8px; border-color: var(--border); font-size: 12px; }
-.tableScroll { max-height: 760px; overflow: auto; border: 1px solid var(--border); border-radius: var(--radius-xs); }
-.tableScroll thead { position: sticky; top: 0; z-index: 1; }
+.catalog th, .catalog td { padding: 8px; border-bottom: 1px solid var(--border); font-size: 12px; }
+.catalog td { font-variant-numeric: tabular-nums; }
+.catalog th:first-child, .catalog td:first-child { position: sticky; left: 0; z-index: 1; background: var(--surface-1); min-width: 110px; }
+.catalog th:first-child { background: var(--surface-2); }
+.tableScroll { max-height: 760px; max-width: 100%; overflow: auto; border: 1px solid var(--border); border-radius: var(--radius-xs); }
+.tableScroll thead { position: sticky; top: 0; z-index: 2; }
+.sortButton { display: flex; align-items: center; justify-content: space-between; gap: 8px; width: 100%; min-height: 44px; white-space: nowrap; }
+.catalog th[aria-sort="ascending"], .catalog th[aria-sort="descending"] { color: var(--accent-primary); }
+.timeCell { min-width: 86px; white-space: nowrap; }
+.coverage { display: block; margin-top: 3px; color: var(--text-muted); font-size: 10px; }
 .summary { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); background: var(--surface-2); border: 1px solid var(--border); border-radius: var(--radius-xs); overflow: hidden; font-size: 12px; }
-.summary > * { padding: 10px; border-bottom: 1px solid var(--border); }
+.summary > * { padding: 8px; border-bottom: 1px solid var(--border); }
 .summary strong { font-size: 18px; font-variant-numeric: tabular-nums; }
 .summary label { grid-column: span 2; }
 .summary input { width: 110px; margin-left: 10px; }
 .rink { display: grid; gap: 16px; }
-.group h2 { margin-bottom: 8px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .08em; font-size: 11px; font-weight: 700; }
-.slots { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; align-items: start; }
-.card { height: auto; min-width: 0; --card-body-height: 150px; --card-action-height: 44px; }
-.card :global(.squad-contact-card__portrait) { height: 100px; }
-.card :global(.squad-contact-card__club), .card :global(.squad-contact-card__position) { font-size: 9px; line-height: 14px; padding: 1px 3px; }
-.card :global(.squad-contact-card__name) { font-size: 11px; line-height: 18px; padding: 3px; }
-.card :global(.squad-contact-card__price) { bottom: 28px; font-size: 11px; line-height: 16px; }
-.card :global(.squad-contact-card__photo--fallback) { font-size: 32px; padding-bottom: 16px; }
-.metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 2px; padding: 8px 4px 4px; }
-.card :global(.squad-contact-card__metric-label) { font-size: 9px; line-height: 12px; }
-.card :global(.squad-contact-card__metric-value) { font-size: 12px; line-height: 18px; }
-.fixture, .lock { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 2px 5px; color: var(--text-secondary); font-size: 10px; line-height: 16px; }
-.cardDetails { text-align: left; border-top: 1px solid var(--border); margin-top: 4px; }
-.cardDetails summary { min-height: 44px; padding: 12px 6px; cursor: pointer; font-size: 11px; color: var(--text-secondary); }
-.cardDetails > div { padding: 6px; font-size: 11px; overflow-wrap: anywhere; }
+.group h2 { margin-bottom: 8px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; font-size: 11px; font-weight: 700; }
+.slots { display: flex; flex-direction: column; gap: 8px; }
+.card { display: grid; grid-template-columns: 52px minmax(0, 1fr); column-gap: 10px; height: auto; min-width: 0; padding: 10px; text-align: left; }
+.card .portrait { grid-column: 1; grid-row: 1 / 6; height: 52px; border-radius: 50%; }
+.card .portrait :global(.squad-contact-card__club), .card .portrait :global(.squad-contact-card__position), .card .portrait :global(.squad-contact-card__price) { display: none; }
+.card .playerName { position: static; grid-column: 2; grid-row: 1; background: transparent; color: var(--text-primary); font-size: 14px; line-height: 20px; padding: 0; }
+.mobileIdentity { grid-column: 2; grid-row: 2; color: var(--text-secondary); font-size: 12px; }
+.metrics { grid-column: 2; grid-row: 3; display: flex; gap: 16px; padding: 6px 0; }
+.card :global(.squad-contact-card__metric-label) { font-size: 10px; line-height: 13px; }
+.card :global(.squad-contact-card__metric-value) { font-size: 13px; line-height: 18px; }
+.fixture, .lock { grid-column: 2; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-secondary); font-size: 11px; line-height: 17px; }
+.fixture { grid-row: 4; } .lock { grid-row: 5; }
+.cardDetails { grid-column: 1 / -1; grid-row: 6; text-align: left; border-top: 1px solid var(--border); margin-top: 8px; }
+.cardDetails summary { min-height: 44px; padding: 12px 4px; cursor: pointer; font-size: 12px; color: var(--text-secondary); }
+.cardDetails > div { padding: 6px; font-size: 12px; overflow-wrap: anywhere; }
 .cardDetails button { min-height: 44px; padding: 6px; border: 1px solid var(--border); border-radius: var(--radius-xs); }
 .move { display: flex; gap: 4px; margin-top: 4px; }
 .move button { flex: 1; }
-.actions { position: static; grid-template-columns: minmax(0, 1fr) 44px; }
-.actions label { display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 10px; cursor: pointer; background: var(--accent-primary-soft); color: var(--accent-primary); }
-.actions button { font-size: 20px; }
-.empty { min-height: 130px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; padding: 12px 4px; border: 1px dashed var(--border-strong); border-radius: var(--radius-xs); background: var(--surface-2); color: var(--text-muted); font-size: 11px; }
-.empty span:first-child { font-size: 28px; font-weight: 300; }
+.card .actions { position: static; grid-column: 1 / -1; grid-row: 7; grid-template-columns: minmax(0, 1fr) 44px; height: 44px; }
+.actions label { display: flex; align-items: center; justify-content: center; gap: 5px; font-size: 12px; cursor: pointer; background: var(--accent-primary-soft); color: var(--accent-primary); }
+.card .actions button { font-size: 20px; }
+.empty { min-height: 44px; display: flex; align-items: center; gap: 8px; padding: 8px 12px; border: 1px dashed var(--border-strong); border-radius: var(--radius-xs); background: var(--surface-2); color: var(--text-muted); font-size: 12px; }
+.empty span:first-child { font-size: 22px; font-weight: 300; }
 .primary { background: var(--accent-primary-strong); color: var(--button-primary-text); border-color: var(--accent-primary-strong); }
-@media (min-width: 600px) { .slots { grid-template-columns: repeat(3, minmax(0, 1fr)); } .goalies { grid-template-columns: repeat(2, minmax(0, 1fr)); max-width: 66%; margin-inline: auto; } }
-@media (min-width: 1280px) { .workspace { grid-template-columns: minmax(360px, .76fr) minmax(0, 1.24fr); gap: 20px; padding: 16px; } .catalog { align-self: start; } }
+@media (min-width: 1280px) {
+  .workspace { grid-template-columns: minmax(410px, .85fr) minmax(0, 1.15fr); gap: 20px; padding: 16px; }
+  .catalog { align-self: start; }
+  .rink { position: relative; gap: 10px; padding: 12px 8px; border: 1px solid #487996; border-radius: 18px; background: repeating-linear-gradient(0deg, #183a51 0px, #183a51 70px, #1a4058 70px, #1a4058 140px); overflow: hidden; }
+  .rink::before { content: ""; position: absolute; top: 50%; left: 8px; right: 8px; height: 3px; background: #cf596d80; box-shadow: 0 -130px #82b6da60, 0 130px #82b6da60; pointer-events: none; }
+  .rink::after { content: ""; position: absolute; top: calc(50% - 38px); left: calc(50% - 38px); width: 76px; height: 76px; border: 1px solid #ffffff35; border-radius: 50%; pointer-events: none; }
+  .group { position: relative; z-index: 1; }
+  .group h2 { text-align: center; color: #d6e8f2; font-size: 10px; margin-bottom: 5px; }
+  .slots { flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 5px; }
+  .card, .empty { flex: 0 0 calc((100% - 25px) / 6); max-width: 82px; }
+  .card { display: block; padding: 0; text-align: center; }
+  .card .portrait { height: 44px; border-radius: var(--radius-xs) var(--radius-xs) 0 0; }
+  .card .portrait :global(.squad-contact-card__club), .card .portrait :global(.squad-contact-card__position), .card .portrait :global(.squad-contact-card__price) { display: block; font-size: 6px; line-height: 8px; }
+  .card .portrait :global(.squad-contact-card__price) { bottom: 1px; font-size: 8px; line-height: 11px; }
+  .card .portrait :global(.squad-contact-card__photo--fallback) { font-size: 22px; }
+  .card .playerName { padding: 2px 1px; background: var(--accent-primary-strong); color: var(--button-primary-text); font-size: 9px; line-height: 12px; }
+  .mobileIdentity { display: none; }
+  .metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; padding: 3px 1px 0; }
+  .card :global(.squad-contact-card__metric-label) { font-size: 6px; line-height: 8px; }
+  .card :global(.squad-contact-card__metric-value) { font-size: 8px; line-height: 11px; }
+  .fixture, .lock { padding: 0 2px; font-size: 7px; line-height: 11px; }
+  .cardDetails { margin-top: 1px; }
+  .cardDetails summary { min-height: 18px; padding: 2px; font-size: 8px; line-height: 13px; }
+  .cardDetails > div { padding: 3px; font-size: 10px; }
+  .cardDetails button { width: 100%; min-height: 26px; padding: 3px; font-size: 9px; }
+  .card .actions { grid-template-columns: minmax(0, 1fr) 20px; height: 22px; }
+  .actions label { gap: 1px; font-size: 7px; }
+  .actions input { width: 10px; height: 10px; }
+  .card .actions button { font-size: 14px; }
+  .empty { min-height: 140px; flex-direction: column; justify-content: center; padding: 6px 2px; text-align: center; background: #ffffff0b; border-color: #ffffff35; color: #e3edf3; font-size: 9px; }
+}
+@media (min-width: 1280px) and (pointer: coarse) { .card .actions { height: 44px; grid-template-columns: minmax(0, 1fr) 44px; } .cardDetails summary { min-height: 44px; } }

@@ -8,6 +8,19 @@ test('KHL visible statistics survive partial matches and history switches',async
  const initialRows=await page.locator('tbody tr').allTextContents().then(rows=>rows.slice(0,10));
  console.log('Initial catalog',initialRows);
  expect(initialRows.some(row=>/[1-9]\d*:[0-5]\d/.test(row)),'Initial catalog must show players with known ice time').toBe(true);
+ for (const [label, column] of [['TOI',6],['PP',7],['PK',8],['Атака',9]] as const) {
+  const sort = page.getByRole('button',{name:`Сортировать: ${label}`,exact:true});
+  for (const direction of ['descending','ascending'] as const) {
+   await sort.click(); await expect(sort.locator('..')).toHaveAttribute('aria-sort',direction);
+   const cells=await page.locator(`tbody tr td:nth-child(${column})`).allTextContents();
+   const values=cells.map(s=>/^(\d+):(\d+)/.exec(s)).map(m=>m?Number(m[1])*60+Number(m[2]):null);
+   const known=values.filter((n):n is number=>n!==null);
+   expect(known.length).toBeGreaterThan(0);
+   expect(known).toEqual([...known].sort((a,b)=>direction==='ascending'?a-b:b-a));
+   expect(values.slice(0,known.length).every(n=>n!==null)).toBe(true);
+  }
+ }
+ await page.getByRole('combobox',{name:'Сортировать по',exact:true}).selectOption('ep');
  await page.getByRole('combobox',{name:'Период прогноза'}).selectOption('week');
  const weekRows=await page.locator('tbody tr').allTextContents().then(rows=>rows.slice(0,10));
  expect(weekRows.some(row=>/[1-9]\d*:[0-5]\d/.test(row)),'Unknown week EP must not hide players with known ice time').toBe(true);
@@ -55,6 +68,14 @@ test('KHL visible statistics survive partial matches and history switches',async
  await tabRefresh;
  await expect(refresh).toBeEnabled({timeout:30000});
  await expect(row.getByRole('button',{name:'Убрать',exact:true})).toBeVisible();
+ await expect(page.getByRole('button',{name:'Импортировать состав Sports',exact:true})).toBeVisible();
+ const roster=page.getByLabel('Хоккейный состав, все 17 активны');
+ const rosterCards=roster.locator('article');
+ await expect(rosterCards.first()).toBeVisible();
+ const box=await rosterCards.first().boundingBox();
+ if(testInfo.project.name==='desktop-chromium') expect(box!.width).toBeLessThan(90);
+ else expect(box!.width).toBeGreaterThan(200);
+ await roster.screenshot({path:`output/playwright-test-results/khl-roster-${testInfo.project.name}.png`});
  await page.getByRole('combobox',{name:'Статистика времени и вратаря'}).selectOption('season');
  await expect(row).toContainText(formatToi(p.seasonStats!.totals.attackZoneSeconds.value));
  await page.screenshot({path:`output/playwright-test-results/khl-statistics-refreshed-${testInfo.project.name}.png`,fullPage:true});

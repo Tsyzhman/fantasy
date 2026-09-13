@@ -42,7 +42,7 @@ export interface KhlWeek {
 export interface KhlEntry { id: string; keepForOptimizer: boolean }
 export interface KhlSquad {
   id: string; contestId: string; revision: number; name: string;
-  entries: KhlEntry[]; bankUnits: number | null;
+  entries: KhlEntry[]; bankUnits: number | null; capitalUnits?: number;
 }
 export function formatToi(seconds: number | null) {
   if (seconds === null) return "—";

@@ -70,7 +70,8 @@ status: active
 | GET `/squads?contestId=...` и `/squads/{id}` | Scoped query | Только доступные пользователю варианты, bank и версия baseline |
 | POST `/squads` | contestId, name, entries[], bankUnits nullable | Созданный локальный draft, revision, violations; частичный draft разрешён, статус incomplete |
 | PUT `/squads/{id}` | expectedVersion, entries, bankUnits, mode=DRAFT/COMPLETE | Атомарное сохранение; COMPLETE требует 17/2/6/9, бюджет и клубный лимит |
-| POST `/squads/{id}/import-sports-ru` | providerTeamId (не произвольный URL), expectedVersion, Idempotency-Key | Импорт наблюдаемого read-only baseline либо IMPORT_UNAVAILABLE с точной причиной |
+| POST `/squads/import-sports-ru` | contestId, squadId/expectedVersion опционально | Текущая команда привязанного Sports-профиля, атомарный новый/существующий вариант; снимок дедуплицируется по содержимому |
+| POST `/squads/{id}/import-sports-ru` | expectedVersion | Применение ранее подтверждённого свежего снимка |
 | POST `/squads/{id}/transfer-preview` | baselineHash, expectedVersion, weekId, effectiveAt, steps[] | Финальный состав, cash/EP delta, remainingGames/transferCount/locks, quote hash/revisions/expiresAt |
 | POST `/squads/{id}/transfer-plans` | quote hash, expectedVersion, Idempotency-Key | Сохраняет локальный сценарий и новую версию; `externalExecuted:false` |
 | POST `/optimize` | scope, poolRevision, forecastRevision, squadVersion, horizon ≤4 weeks, keep/exclude IDs, maxTransfers | requestId, status, proposal, violations, optimality/time-limit marker; один active solve на пользователя |
@@ -93,7 +94,7 @@ status: active
 4. В короткой транзакции optimistic CAS/serializable проверить версии повторно, записать локальный scenario + entries + revision + evidence. При конфликте откатить целиком, предложить свежий preview. Одинаковый Idempotency-Key с тем же hash возвращает тот же результат, с иным payload — 409.
 5. Сохранение draft/scenario не расходует официальный weekly transfer balance. Внешний подтверждённый snapshot/journal обновляет observed state отдельно; неизвестный остаток запрещает заявления «доступно 5». Локальные плановые операции учитываются только внутри плана относительно baseline.
 
-Внешний импорт состава — отдельный источник, стабильный hockey team endpoint и полнота истории ещё не подтверждены. При недоступности разрешён ручной локальный draft с явной отметкой «состояние Sports.ru не подтверждено». В будущем пользователь самостоятельно выполняет операции на Sports.ru; новый read-only sync фиксирует факт, не объявляет внешнее выполнение по нажатию нашей кнопки.
+Внешний импорт состава — отдельный источник: публичный профиль → HTML команды → GET `/fantasy/hockey/team/json/{teamId}.json`. Текущие 17 игроков и банк проверяются по owner/contest/provider IDs; HTML-стоимость сверяется с суммой цен ответа. Это текущий снимок, полнота истории и официальный остаток трансферов не подтверждены. Неделя без явного источника записывается как unknown, а не угадывается. Сеть ограничена allowlist, timeout, размером и 2 импортами/мин/пользователь; запросы не держат SQL-транзакцию. Снимок не содержит raw HTML, hash исключает fetchedAt, сохраняется не более 3 непривязанных снимков пользователя/турнира плюс используемые вариантами. При недоступности разрешён ручной локальный draft с явной отметкой «состояние Sports.ru не подтверждено». В будущем пользователь самостоятельно выполняет операции на Sports.ru; новый read-only sync фиксирует факт, не объявляет внешнее выполнение по нажатию нашей кнопки.
 
 ## Миграции и откат {#migrations}
 
@@ -164,3 +165,5 @@ prisma/schema.prisma; prisma/migrations/20260907110000_khl_foundation/ и сле
 KhlPlayerMatchStat.attackZoneSeconds — nullable индивидуальное время в атаке, секунды. Не смешивается с TOI, владением шайбой или временем команды в зоне. API игрока включает seasonStats: played, по полям sum/known/total. Агрегаты считаются SQL группировкой из текущих уникальных фактов, не хранят копию сезона или неограниченный process cache. Матчевая история включает новые поля и источники.
 
 - 2026-09-11: активирован канон; добавлены ВВА и матчевые сезонные агрегаты.
+
+- 2026-09-13: подтверждён read-only endpoint текущего состава Sports, добавлен импорт через привязанный профиль и границы ресурсов.

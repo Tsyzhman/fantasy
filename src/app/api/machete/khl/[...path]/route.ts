@@ -8,6 +8,7 @@ import { envelope, KHL_READINESS, playerDto, hydratePlayers, readiness } from "@
 import { validateRoster } from "@/khl/rules";
 import { createTransferPreview, saveTransferPlan } from "@/server/khl/transfer-plans";
 import { prepareOptimization } from "@/server/khl/optimizer-service";
+import { importSportsHockeySquad } from "@/server/khl/sports-import";
 import { importOwnedProviderSnapshot } from "@/server/khl/provider-snapshot";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
@@ -75,7 +76,7 @@ const mutate = withApiHandler(async (request: Request, context: Context) => {
   if (path[0] === "preferences" && request.method === "PUT") {
     if (body.schemaVersion !== 1 || !body.preferences || typeof body.preferences !== "object" || Array.isArray(body.preferences)) throw apiError("INVALID_INPUT", "Неверные настройки", 400);
     const p = body.preferences as Record<string, unknown>;
-    if (Object.keys(p).some(k => !["position", "club", "query", "maximum", "direction", "compare", "sortField", "minimumToi"].includes(k)) || (p.position !== undefined && !["ALL", "G", "D", "F"].includes(String(p.position))) || ["club", "query", "maximum", "minimumToi"].some(k => p[k] !== undefined && (typeof p[k] !== "string" || String(p[k]).length > 128)) || p.sortField !== undefined && !["price", "ep", "officialFp", "toiSeconds", "ppToiSeconds", "pkToiSeconds", "ixg", "saves", "goalsAgainst"].includes(String(p.sortField)) || p.direction !== undefined && p.direction !== 1 && p.direction !== -1 || p.compare !== undefined && (!Array.isArray(p.compare) || p.compare.length > 4 || p.compare.some(id => typeof id !== "string" || id.length > 128))) throw apiError("INVALID_INPUT", "Неверные поля настроек", 400);
+    if (Object.keys(p).some(k => !["position", "club", "query", "maximum", "direction", "compare", "sortField", "minimumToi"].includes(k)) || (p.position !== undefined && !["ALL", "G", "D", "F"].includes(String(p.position))) || ["club", "query", "maximum", "minimumToi"].some(k => p[k] !== undefined && (typeof p[k] !== "string" || String(p[k]).length > 128)) || p.sortField !== undefined && !["price", "ep", "officialFp", "toiSeconds", "ppToiSeconds", "pkToiSeconds", "attackZoneSeconds", "ixg", "saves", "goalsAgainst"].includes(String(p.sortField)) || p.direction !== undefined && p.direction !== 1 && p.direction !== -1 || p.compare !== undefined && (!Array.isArray(p.compare) || p.compare.length > 4 || p.compare.some(id => typeof id !== "string" || id.length > 128))) throw apiError("INVALID_INPUT", "Неверные поля настроек", 400);
     return response(envelope(contest, await prisma.khlUserViewPreference.upsert({ where: { userId_contestId_viewKey: { userId: auth.user.id, contestId, viewKey: "planner" } }, create: { userId: auth.user.id, contestId, viewKey: "planner", schemaVersion: 1, preferences: p as Prisma.InputJsonValue }, update: { schemaVersion: 1, preferences: p as Prisma.InputJsonValue } })));
   }
   if (path[0] === "optimize" && request.method === "POST") return response(envelope(contest, await prepareOptimization(prisma, auth.user.id, contestId, body)));
@@ -86,6 +87,10 @@ const mutate = withApiHandler(async (request: Request, context: Context) => {
     return response(envelope(contest, await hydratePlayers(prisma, players, { weekId: typeof body.weekId === "string" ? body.weekId : undefined })));
   }
   if (path[0] !== "squads") throw apiError("NOT_FOUND", "Маршрут не найден", 404);
+  if (path.length === 2 && path[1] === "import-sports-ru" && request.method === "POST") {
+    try { return response(envelope(contest, await importSportsHockeySquad(prisma, auth.user.id, contestId, body))); }
+    catch (error) { if (error instanceof Prisma.PrismaClientKnownRequestError && ["P2034", "P2002"].includes(error.code)) throw apiError("VERSION_CONFLICT", "Состав изменился. Повторите импорт", 409); throw error; }
+  }
   const squadId = path[1];
   if (squadId) {
     const owned = await prisma.khlUserSquad.findFirst({ where: { id: squadId, userId: auth.user.id, contestId } });

@@ -5,6 +5,12 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.70 - 2026-09-13
+
+- Split KHL TOI, PP, PK and attack time into separate sortable columns with per-field coverage.
+- Use a compact hockey rink on desktop and a readable touch roster on mobile, following the corresponding football Squad views.
+- Import the current 17-player Sports hockey squad through the linked public profile, with verified ownership, atomic saves, source errors and bounded snapshots.
+
 ## 0.3.69 - 2026-09-13
 
 - Keep known KHL TOI/PP/PK/attack averages visible when other matches lack those fields, with explicit per-field coverage.
