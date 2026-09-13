@@ -4,6 +4,12 @@ on:
   schedule:
     - cron: "17 3 * * *"
   workflow_dispatch:
+    inputs:
+      scope:
+        description: Browser checks to run
+        type: choice
+        options: [all, khl-statistics]
+        default: all
 
 permissions:
   contents: read
@@ -46,7 +52,11 @@ jobs:
           KHL_PRODUCTION_SMOKE: "true"
           PLAYWRIGHT_BASE_URL: https://fantasy.tsyzhman.ru
           PLAYWRIGHT_USER_AGENT: fantasy-production-browser-smoke/${{ github.run_id }}
-        run: npx playwright test --no-deps --project=desktop-chromium --project=tablet-chromium --project=mobile-chromium
+          SMOKE_SCOPE: ${{ inputs.scope || 'all' }}
+        run: |
+          args=()
+          if [[ "$SMOKE_SCOPE" == "khl-statistics" ]]; then args+=(--grep "KHL visible statistics"); fi
+          npx playwright test --no-deps --project=desktop-chromium --project=tablet-chromium --project=mobile-chromium "${args[@]}"
 
       - name: Upload browser evidence
         if: always()

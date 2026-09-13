@@ -6,6 +6,7 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
+| [WI-020](work/WI-020-khl-visible-statistics.md) | Статистика КХЛ в таблице | KHL FEAT-002, INFRA-002 | @tsyzhman | 2026-09-13 | — |
 
 ## Backlog
 
