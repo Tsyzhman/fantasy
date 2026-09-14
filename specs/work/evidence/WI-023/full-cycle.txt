@@ -1,0 +1,17 @@
+Result=exit-code
+ExecMainStatus=2
+ActiveState=failed
+SubState=failed
+archive_checked|695|2026-09-14 09:23:24.02
+FONBET_HOCKEY|HEALTHY|2026-09-14 11:39:25.226|||12|
+SPORTS_RU_STATS|HEALTHY|2026-09-14 09:13:42.406|0|695||
+KHL_DAILY|DEGRADED|||||
+SPORTS_RU_STATS|2026-09-14 09:13:42.409|DONE|0|695|0
+PARTIAL|Sports: каталог|DONE|{"updatedAt":"2026-09-14T09:04:22.412Z"}
+PARTIAL|KHL Mobile + Sports: текущая история|DONE|{"dnp":955,"played":1638,"catalog":695,"changed":0,"imported":15,"profiles":695,"remaining":0,"quarantined":["2203135:WEEK_ASSIGNMENT_CONFLICT:cmtsdon2403k8g2hgyq95jqm5","2193096:WEEK_ASSIGNMENT_CONFLICT:cmtsdon2403k8g2h
+PARTIAL|Sports: прошлый сезон|FAILED|"ARCHIVE_PROFILES_FAILED:16:2193096:HISTORY_IDENTITY_INVALID;2086201:HISTORY_IDENTITY_INVALID;2193482:HISTORY_IDENTITY_INVALID;2086189:HISTORY_IDENTITY_INVALID;2172944:HISTORY_IDENTITY_INVALID"
+PARTIAL|КХЛ: текущие протоколы|FAILED|"PROTOCOL_HTTP_403"
+PARTIAL|КХЛ: архивные протоколы|DONE|{"remaining":0,"cached":true}
+PARTIAL|Фонбет: линия КХЛ|DONE|{"id":"cmu11d0bt0f554infm3vvqp7o","status":"DONE"}
+PARTIAL|EP|DONE|{"id":"cmu11d1qf0f7z4inf10libpvk","contestId":"cmtr4grkd00056htzwpdv4fwu","modelVersion":"khl-opponent-explained-beta-v4","rulesVersion":"provider-official-fp","inputHash":"1680cafb6696ae3b5c4413ca742644d75f6d3713e664d8b
+PARTIAL|Очистка|DONE|{"raw":0,"previews":0,"receipts":0,"jobs":0}

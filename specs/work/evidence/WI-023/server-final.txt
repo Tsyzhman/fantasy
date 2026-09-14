@@ -1,0 +1,29 @@
+{"status":"ok","uptimeSeconds":7921,"release":{"version":"0.3.74","commit":"5ce0976394b11b7d11f36eb982364c9cd36c8da9"}}
+5ce0976394b11b7d11f36eb982364c9cd36c8da9
+enabled
+NextElapseUSecRealtime=Mon 2026-09-14 20:00:00 MSK
+LastTriggerUSec=
+ActiveState=active
+Result=exit-code
+ExecMainStatus=2
+ActiveState=failed
+SubState=failed
+/fantasy-scout-web healthy restarts=0 commit=5ce0976394b11b7d11f36eb982364c9cd36c8da9
+/fantasy-scout-worker healthy restarts=0 commit=5ce0976394b11b7d11f36eb982364c9cd36c8da9
+odds|HEALTHY|2026-09-14 11:39:25.226|{"events": 12, "market": "1X2_REGULATION_60", "source": "https://line-lb61-w.bk6bba-resources.com/ma/events/listBase?lang=ru&scopeMarket=1600", "changed": 0, "matched": 12, "upcoming": 29}
+daily|2026-09-14 09:23:56.511|PARTIAL
+forecast|khl-opponent-explained-beta-v4|2026-09-14 11:39:25.236|4820
+Томас Грегуар|2026-09-14 16:00:00|5.614354073593124|0.9607113876115769|Фонбет: P(победы за 60 минут) + 0,5 × P(ничьей), маржа удалена. Beta-поправка, не обученная модель.
+Томас Грегуар|2026-09-19 07:00:00|5.687701815729467|1|Свежей линии нет: используется базовый темп игрока.
+Томас Грегуар|2026-09-21 09:00:00|5.687701815729467|1|Свежей линии нет: используется базовый темп игрока.
+duplicate_stats|0
+duplicate_odds|0
+duplicate_raw|0
+duplicate_active_jobs|0
+raw_bytes|29|99987
+v4_revisions|96
+forecast_bytes|253918892
+migration|49|0
+fantasy-scout-web 153.4MiB / 11.6GiB
+fantasy-scout-worker 1.933GiB / 11.6GiB
+fantasy-scout-postgres 1.217GiB / 11.6GiB

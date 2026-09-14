@@ -6,7 +6,6 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
-| [WI-023](work/WI-023-khl-expected-statistics.md) | Ожидания, соперники и обновление КХЛ | FEAT-002/003, INFRA-001/003 | @tsyzhman | 2026-09-14 | — |
 
 ## Backlog
 
@@ -24,6 +23,7 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-023](work/archive/2026/WI-023-khl-expected-statistics.md) | Ожидания, соперники и обновление КХЛ | @tsyzhman | 2026-09-14 |
 | [WI-022](work/archive/2026/WI-022-khl-history-projection.md) | Полная статистика, подсказки и Excel КХЛ | @tsyzhman | 2026-09-14 |
 | [WI-021](work/archive/2026/WI-021-khl-visible-statistics.md) | Статистика, состав и импорт КХЛ | @tsyzhman | 2026-09-13 |
 | [WI-019](work/archive/2026/WI-019-sports-prices-roster-repair.md) | Цены Sports и активность пропущенных игроков | @tsyzhman | 2026-09-11 |
