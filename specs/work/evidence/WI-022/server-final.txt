@@ -1,0 +1,16 @@
+{"status":"ok","uptimeSeconds":519,"release":{"version":"0.3.72","commit":"442b3c61648fb8cf3257c696a70f14091d43d55d"}}
+/var/www/fantasy-scout-releases/20260914T074053Z-v0.3.72-442b3c6
+442b3c61648fb8cf3257c696a70f14091d43d55d
+/fantasy-scout-web healthy restarts=0 commit=442b3c61648fb8cf3257c696a70f14091d43d55d image=sha256:2d35a53d12142899f62e77169437ae530034dba3a5008b3fe867ad347016f4b0
+/fantasy-scout-worker healthy restarts=0 commit=442b3c61648fb8cf3257c696a70f14091d43d55d image=sha256:2d35a53d12142899f62e77169437ae530034dba3a5008b3fe867ad347016f4b0
+migration|49|0
+duplicate_stats|0
+duplicate_raw|0
+duplicate_active_jobs|0
+raw_bytes|29|99987
+forecasts|226
+fantasy-scout-web 340.3MiB / 11.6GiB
+fantasy-scout-worker 462.5MiB / 11.6GiB
+fantasy-scout-postgres 1.073GiB / 11.6GiB
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/vda3       119G   28G   85G  25% /
