@@ -431,6 +431,14 @@ wait_for_fpl_relay "$fpl_relay_candidate_volume" 100000 || {
 
 run_canary "Pre-migration"
 
+# @spec spec://modules/khl/INFRA-001-khl-data-ingestion#operations
+# Share the full-source collector lock before any migration or worker stop.
+# Keep it until promotion/rollback exits, so a scheduled collector waits safely.
+mkdir -p /home/deploy/.cache
+exec 9>/home/deploy/.cache/fantasy-khl-daily.lock
+echo "Waiting for any active KHL statistics collection before replacing containers."
+flock -w 1800 9 || { echo "KHL collection is still active; production was not stopped." >&2; exit 1; }
+
 if (( ${#pending_migrations[@]} > 0 )); then
   active_jobs_before_migration="$(
     docker exec "$postgres" psql -U fantasy_app -d fantasy_scout -Atc \
