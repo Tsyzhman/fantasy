@@ -17,7 +17,8 @@ export async function refreshKhlOdds(db: PrismaClient, contestId: string, force 
   if (!force && source?.lastSuccessAt && now.getTime() - source.lastSuccessAt.getTime() < ttl) return { skipped: 'FRESH' };
   const job = await enqueueKhl(db, provider, contestId, 'ODDS');
   const result = await runNextKhl(db, { 'FONBET_HOCKEY:ODDS': async (job, signal) => {
-    if (!source?.verifiedAt || source.definitionVersion !== KHL_LINE_VERSION || now.getTime() - source.verifiedAt.getTime() > 86400000) {
+    const verifyDictionary = force || !source?.verifiedAt || source.definitionVersion !== KHL_LINE_VERSION || now.getTime() - source.verifiedAt.getTime() > 86400000;
+    if (verifyDictionary) {
       const dictionary = await fetchHockeyJson('line/factorsCatalog/tables', signal);
       if (!verifyHockeyDictionary(dictionary.payload)) throw new Error('HOCKEY_DICTIONARY_CHANGED');
     }
@@ -45,7 +46,7 @@ export async function refreshKhlOdds(db: PrismaClient, contestId: string, force 
       matched++; changed += stored.changed;
     }
     const coverage = { events: events.length, upcoming: matches.length, matched, changed, market: '1X2_REGULATION_60', source: line.source };
-    const data = { capabilities: ['1x2_regulation_60'], permissionStatus: 'VERIFIED', evidence: 'Public Fonbet tables: Исходы 921/922/923; hockey rule 10.1; 12 KHL prematch samples 2026-09-14. Other markets unverified.', definitionVersion: KHL_LINE_VERSION, verifiedAt: now, health: 'HEALTHY', lastSuccessAt: observedAt, coverage };
+    const data = { capabilities: ['1x2_regulation_60'], permissionStatus: 'VERIFIED', evidence: 'Public Fonbet tables: Исходы 921/922/923; hockey rule 10.1; 12 KHL prematch samples 2026-09-14. Other markets unverified.', definitionVersion: KHL_LINE_VERSION, verifiedAt: verifyDictionary ? now : source!.verifiedAt, health: 'HEALTHY', lastSuccessAt: observedAt, coverage };
     await db.khlSourceContract.upsert({ where: { provider }, create: { provider, ...data }, update: data });
     // A refreshed unchanged line can make an old fallback usable again.
     await db.khlContest.update({ where: { id: contestId }, data: { revision: { increment: 1 } } });

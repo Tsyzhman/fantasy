@@ -5,6 +5,10 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.74 - 2026-09-14
+
+- КХЛ: каждый полный сбор заново проверяет словарь хоккейных исходов Фонбета; обычное обновление линии сохраняет время последней фактической проверки словаря.
+
 ## 0.3.73 - 2026-09-14
 
 - КХЛ: клик по EP открывает ожидаемые G/A/SOG/PIM/+− и исходные суммы, покрытия, веса и формулы; полный Excel дополнен листом ожиданий.
