@@ -1,6 +1,7 @@
 import {test,expect} from '@playwright/test';
 import {formatToi,formatKhlNumber,historicalTableStats,type KhlPlayer} from '../src/khl/contracts';
 import ExcelJS from 'exceljs';
+import {readFile} from 'node:fs/promises';
 
 /** @spec spec://modules/khl/FEAT-002-khl-squad#cards */
 test('KHL visible statistics survive partial matches and history switches',async({page},testInfo)=>{
@@ -50,10 +51,16 @@ test('KHL visible statistics survive partial matches and history switches',async
  expect(response.status()).toBe(200);
  const p=(await response.json()).data as KhlPlayer;
  const exportResponse=page.waitForResponse(r=>r.url().includes('/players-export?'));
+ const downloadReady=page.waitForEvent('download');
  await page.getByRole('button',{name:'Excel · все игроки',exact:true}).click();
  const xlsx=await exportResponse;expect(xlsx.status()).toBe(200);
  expect(Number(xlsx.headers()['x-export-row-count'])).toBe(poolCount);
- const book=new ExcelJS.Workbook();await book.xlsx.load(new Uint8Array(await xlsx.body()).buffer);
+ const download=await downloadReady;
+ const workbookPath=testInfo.outputPath('khl-all-players.xlsx');await download.saveAs(workbookPath);
+ const workbookBytes=await readFile(workbookPath);
+ console.log('Downloaded Excel',{bytes:workbookBytes.length,players:poolCount});
+ expect(workbookBytes.length).toBeGreaterThan(10000);
+ const book=new ExcelJS.Workbook();await book.xlsx.load(new Uint8Array(workbookBytes).buffer);
  expect(book.worksheets).toHaveLength(6);
  for(const name of ['Игроки','Текущий сезон','Последние матчи','Прошлый сезон']) {
   const sheet=book.getWorksheet(name)!;
