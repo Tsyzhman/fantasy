@@ -47,9 +47,15 @@ test('KHL visible statistics survive partial matches and history switches',async
  const options=page.getByRole('combobox',{name:'Открыть карточку игрока'}).locator('option');
  await expect(options).toHaveCount(2);
  const id=await options.nth(1).getAttribute('value');
- const response=await page.request.get(`/api/machete/khl/players/${id}?contestId=cmtr4grkd00056htzwpdv4fwu`);
- expect(response.status()).toBe(200);
- const p=(await response.json()).data as KhlPlayer;
+ let p!:KhlPlayer;
+ // A source revision can arrive immediately before the minute worker publishes EP.
+ // Wait for that publication explicitly; a persistent missing forecast still fails.
+ await expect.poll(async()=>{
+  const response=await page.request.get(`/api/machete/khl/players/${id}?contestId=cmtr4grkd00056htzwpdv4fwu`);
+  expect(response.status()).toBe(200);
+  p=(await response.json()).data as KhlPlayer;
+  return p.forecastExplanation?.details?.version;
+ },{timeout:75000,intervals:[1000,3000,5000]}).toBe(1);
  const exportResponse=page.waitForResponse(r=>r.url().includes('/players-export?'));
  const downloadReady=page.waitForEvent('download');
  await page.getByRole('button',{name:'Excel · все игроки',exact:true}).click();
