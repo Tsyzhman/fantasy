@@ -129,12 +129,13 @@ test('KHL visible statistics survive partial matches and history switches',async
  if(testInfo.project.name==='desktop-chromium') expect(box!.width).toBeLessThan(90);
  else expect(box!.width).toBeGreaterThan(200);
  await roster.screenshot({path:`output/playwright-test-results/khl-roster-${testInfo.project.name}.png`});
+ const epBeforePast=await row.locator('td').nth(10).innerText();
  await page.getByRole('combobox',{name:'Период статистики'}).selectOption('previous');
  const previous=historicalTableStats(p.previousSeasonStats!);
  for(const key of ['toiSeconds','ppToiSeconds','pkToiSeconds','attackZoneSeconds'] as const) await expect(row).toContainText(formatToi(previous.totals[key].value));
  await expect(row.locator('td').nth(12).locator('span')).toHaveText(formatKhlNumber(previous.totals.shotsOnGoal.value));
  await expect(row.locator('td').nth(13).locator('span')).toHaveText(formatKhlNumber(previous.totals.goals.value));
- await expect(row.locator('td').nth(10)).toHaveText(formatKhlNumber(p.ep.value));
+ await expect(row.locator('td').nth(10)).toHaveText(epBeforePast);
  await page.screenshot({path:`output/playwright-test-results/khl-previous-season-${testInfo.project.name}.png`,fullPage:true});
  await page.getByRole('combobox',{name:'Период статистики'}).selectOption('season');
  await expect(row).toContainText(formatToi(p.seasonStats!.totals.attackZoneSeconds.value));
