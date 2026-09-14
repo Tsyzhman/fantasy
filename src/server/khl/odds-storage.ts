@@ -1,3 +1,4 @@
+/** @spec spec://modules/khl/INFRA-003-khl-fonbet-odds#snapshots */
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { appendRevision } from "@/khl/repositories/revisions";
 import { hockeyMarketKey, noVig, reconcileMarkets, type HockeyMarket } from "@/providers/fonbet/hockey-markets";
@@ -9,6 +10,7 @@ export async function storeHockeyOdds(db: PrismaClient, input: { eventId: string
     const event = await tx.khlOddsEventMap.findUniqueOrThrow({ where: { id: input.eventId }, include: { match: true } });
     if (event.dictionaryVersion !== input.dictionaryVersion || input.dictionaryVersion === "unverified") throw new Error("HOCKEY_DICTIONARY_UNVERIFIED");
     const previous = await tx.khlOddsSnapshot.findMany({ where: { eventId: event.id }, orderBy: [{ observedAt: "desc" }, { revision: "desc" }], distinct: ["marketKey"], take: 500 });
+    if (previous.some(s => s.observedAt > input.observedAt)) return { changed: 0, stale: true };
     const markets = reconcileMarkets(previous.map(s => s.prices as unknown as HockeyMarket), input.markets, input.complete, input.success);
     if (!input.success) return { changed: 0, stale: true };
     let changed = 0;

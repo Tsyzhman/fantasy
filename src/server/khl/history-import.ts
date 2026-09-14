@@ -82,7 +82,7 @@ export async function importHockeyHistory(db: PrismaClient, input: { contestId: 
       const providerWeekId = String(row.week);
       const week = await tx.khlFantasyWeek.upsert({ where: { contestId_providerWeekId: { contestId: input.contestId, providerWeekId } }, create: { contestId: input.contestId, providerWeekId, label: `Неделя ${row.week}`, sourceUrl: source, verified: false }, update: {} });
       const assignment = await tx.khlMatchFantasyWeek.findUnique({ where: { contestId_matchId: { contestId: input.contestId, matchId: match.id } } });
-      if (assignment && assignment.weekId !== week.id) throw new Error("WEEK_ASSIGNMENT_CONFLICT");
+      if (assignment && assignment.weekId !== week.id) { quarantined.push(`WEEK_ASSIGNMENT_CONFLICT:${match.id}`); continue; }
       if (!assignment) { await tx.khlMatchFantasyWeek.create({ data: { contestId: input.contestId, matchId: match.id, weekId: week.id } }); changed++; }
     }
     if (changed) await tx.khlContest.update({ where: { id: input.contestId }, data: { revision: { increment: 1 } } });

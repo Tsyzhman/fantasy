@@ -52,6 +52,7 @@ export async function refreshHistoricalSeason(db: PrismaClient, contestId: strin
   const checks = await db.khlProviderCheckpoint.findMany({ where: { provider: "SPORTS_RU_ARCHIVE", jobType, scope: { in: pool.map(p => p.id) } }, take: 1000 });
   const done = new Set(checks.filter(c => Date.now() - c.completedAt.getTime() < ((c.cursor as { error?: string }).error ? 3600000 : 7 * 86400000)).map(c => c.scope));
   const due = pool.filter(p => !done.has(p.id));
+  const deferredErrors = checks.flatMap(c => { const error = (c.cursor as { error?: string }).error; return error && done.has(c.scope) ? [{ player: pool.find(p => p.id === c.scope)!.providerPlayerId, message: error }] : []; });
   let imported = 0, absent = 0, changed = 0; const errors: { player: string; message: string }[] = [];
   for (const player of due.slice(0, 20)) {
     try {
@@ -82,7 +83,7 @@ export async function refreshHistoricalSeason(db: PrismaClient, contestId: strin
     }
     await new Promise(resolve => setTimeout(resolve, 300));
   }
-  return { seasonKey, pool: pool.length, imported, absent, changed, errors, remaining: Math.max(0, due.length - imported - absent - errors.length) };
+  return { seasonKey, pool: pool.length, imported, absent, changed, errors, deferredErrors, remaining: Math.max(0, due.length - imported - absent - errors.length) };
 }
 
 type ArchiveBundle = { version: 1; seasonKey: string; entries: { providerPlayerId: string; providerTagId: string | null; providerSeasonId: string; observedAt: string; aggregates: KhlHistoricalStats }[] };

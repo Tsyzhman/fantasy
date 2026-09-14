@@ -1,0 +1,12 @@
+[Unit]
+Description=KHL full statistics refresh at 10:00 and 20:00 Moscow time
+
+[Timer]
+OnCalendar=*-*-* 10,20:00:00 Europe/Moscow
+Persistent=true
+AccuracySec=1s
+RandomizedDelaySec=0
+Unit=fantasy-khl-statistics.service
+
+[Install]
+WantedBy=timers.target

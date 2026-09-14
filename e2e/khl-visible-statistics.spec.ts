@@ -61,8 +61,8 @@ test('KHL visible statistics survive partial matches and history switches',async
  console.log('Downloaded Excel',{bytes:workbookBytes.length,players:poolCount});
  expect(workbookBytes.length).toBeGreaterThan(10000);
  const book=new ExcelJS.Workbook();await book.xlsx.load(new Uint8Array(workbookBytes).buffer);
- expect(book.worksheets).toHaveLength(6);
- for(const name of ['Игроки','Текущий сезон','Последние матчи','Прошлый сезон']) {
+ expect(book.worksheets).toHaveLength(7);
+ for(const name of ['Игроки','Текущий сезон','Последние матчи','Прошлый сезон','Ожидаемые показатели']) {
   const sheet=book.getWorksheet(name)!;
   expect(sheet.rowCount-1).toBe(poolCount);
   expect(new Set(sheet.getColumn(1).values.slice(2)).size).toBe(poolCount);
@@ -100,11 +100,19 @@ test('KHL visible statistics survive partial matches and history switches',async
  await expect(page.getByRole('status').filter({hasText:'Статистика обновлена'})).toBeVisible({timeout:30000});
  await expect(page.getByRole('textbox',{name:'Поиск игрока',exact:true})).toHaveValue('Грегуар');
  await expect(row.getByRole('button',{name:'Убрать',exact:true})).toBeVisible();
- await page.getByRole('combobox',{name:'Открыть карточку игрока'}).selectOption(id!);
+ await row.getByRole('button',{name:'Разобрать прогноз: Грегуар',exact:true}).click();
  const card=page.getByRole('region',{name:'Карточка Грегуар'});
  await expect(card).toBeVisible();
  await expect(card).toContainText(`Данные: ${p.attackZoneSeconds!.knownGames} из ${p.attackZoneSeconds!.totalGames} матчей`);
  await expect(card.getByRole('region',{name:'Формула EP'})).toBeVisible();
+ await expect(card.getByRole('heading',{name:'Ожидаемые показатели',exact:true})).toBeVisible();
+ expect(p.forecastExplanation?.details?.version).toBe(1);
+ const expectedTable=card.getByRole('region',{name:'Формула EP'}).getByRole('table');
+ const expectedGoals=expectedTable.getByRole('row').filter({has:page.getByRole('rowheader',{name:'Голы',exact:true})});
+ await expect(expectedGoals.getByRole('cell').first()).toHaveText(formatKhlNumber(p.forecastExplanation!.details!.expected.goals));
+ await card.getByText('Из чего получился прогноз',{exact:true}).click();
+ await expect(card).toContainText('Вес прошлого: min(20;');
+ await card.getByText('Из чего получился прогноз',{exact:true}).click();
  await expect(card).toContainText(`Прошлый сезон ${p.previousSeasonStats!.seasonKey}`);
  await card.screenshot({path:`output/playwright-test-results/khl-statistics-card-${testInfo.project.name}.png`});
  await page.getByRole('button',{name:'Закрыть карточку',exact:true}).click();

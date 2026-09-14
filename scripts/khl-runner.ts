@@ -17,11 +17,15 @@ import { pruneKhl } from "../src/server/khl/retention";
 import { refreshKhlHistory } from "../src/server/khl/history-scheduler";
 import { refreshHistoricalSeason, exportHistoricalBundle, importHistoricalBundle } from "../src/server/khl/historical-season";
 import { importProtocolArchive } from "../src/server/khl/protocol-archive-import";
+import { runKhlDailySync } from "../src/server/khl/daily-sync";
+import { refreshKhlOdds } from "../src/server/khl/odds-sync";
 const db = new PrismaClient();
 async function main() {
   const [command, contestId, fromText, toText] = process.argv.slice(2);
   if (command === "status") { console.log(JSON.stringify(await khlResourceStatus(db))); return; }
   if (process.env.KHL_SYNC_ENABLED !== "true") throw new Error("KHL_SYNC_DISABLED");
+  if (command === "odds" && contestId) { console.log(await refreshKhlOdds(db, contestId, true)); return; }
+  if (command === "daily" && contestId) { const result = await runKhlDailySync(db, contestId); console.log(JSON.stringify(result)); if (result.status !== "DONE") process.exitCode = 2; return; }
   if (command === "prune") { console.log(await pruneKhl(db, new Date())); return; }
   if (command === "bootstrap" && contestId) {
     if ((await stat(contestId)).size > 16384) throw new Error("METADATA_TOO_LARGE");

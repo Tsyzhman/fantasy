@@ -15,11 +15,11 @@ import { startKhlHistoryScheduler } from "./history-scheduler";
 const seen = new Map<string, { hash: string; publishedAt: number }>();
 let started = false;
 
-export async function refreshKhlCatalogs() {
+export async function refreshKhlCatalogs(contestId?: string) {
   if (process.env.KHL_SYNC_ENABLED !== "true") return;
   const ids = (process.env.KHL_CATALOG_CONTEST_IDS ?? "").split(",").filter(id => /^\d{1,12}$/.test(id)).slice(0, 5);
   if (!ids.length) return;
-  const contests = await prisma.khlContest.findMany({ where: { provider: "SPORTS_RU", providerContestId: { in: ids } }, orderBy: { id: "asc" }, take: 5 });
+  const contests = await prisma.khlContest.findMany({ where: { ...(contestId ? { id: contestId } : {}), provider: "SPORTS_RU", providerContestId: { in: ids } }, orderBy: { id: "asc" }, take: 5 });
   for (const contest of contests) {
     const queued = await enqueueKhl(prisma, "SPORTS_RU", contest.id, "CATALOG");
     const result = await runNextKhl(prisma, { "SPORTS_RU:CATALOG": async (job, signal) => {

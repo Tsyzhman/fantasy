@@ -5,6 +5,8 @@ import ExcelJS from 'exceljs';
 import {buildKhlWorkbook} from './player-export';
 import {unknown,seasonStatFields,type KhlPlayer} from '@/khl/contracts';
 import {khlCellHelp} from '@/khl/stat-help';
+import {projectHistory,summarizeHockeyHistory} from '@/khl/history-projection';
+import {applyOpponent} from '@/khl/forecast-explanation';
 
 const observed={value:0,quality:'FACT' as const,source:'КХЛ',asOf:'2026-09-13T20:00:00Z',knownGames:2,totalGames:3};
 const player:KhlPlayer={id:'player-0',contestId:'contest',playerId:'canonical',name:'=SUM(A1:A2)',clubId:'club',clubName:'Клуб',position:'D',price:{...observed,value:924},priceRevision:1,priceDelta:null,providerLock:unknown('Нет данных'),injury:unknown('Нет данных'),toiSeconds:{...observed,value:1200},ppToiSeconds:observed,pkToiSeconds:unknown('Нет данных'),officialFp:{...observed,value:6.123456},ep:{...observed,value:12.345678},ixg:unknown('Нет данных'),saves:unknown('Не вратарь'),goalsAgainst:unknown('Не вратарь'),fixtures:[{id:'match',weekId:'week',startsAt:'2026-09-15T12:00:00Z',opponent:'Соперник',status:'SCHEDULED',startProbability:unknown('Нет данных'),expectedPoints:{...observed,value:12.345678}}],
@@ -15,8 +17,8 @@ test('XLSX contains all 603 unique players on each period sheet, real numbers, m
  const players=Array.from({length:603},(_,i)=>({...player,id:`player-${i}`}));
  const input={players,season:'2026/2027',revision:3,asOf:observed.asOf,historyWindow:10};
  const bytes=await buildKhlWorkbook(input),book=new ExcelJS.Workbook();await book.xlsx.load(new Uint8Array(bytes).buffer);
- assert.equal(book.worksheets.length,6);
- for(const name of ['Игроки','Текущий сезон','Последние матчи','Прошлый сезон']){
+ assert.equal(book.worksheets.length,7);
+ for(const name of ['Игроки','Текущий сезон','Последние матчи','Прошлый сезон','Ожидаемые показатели']){
   const sheet=book.getWorksheet(name)!;assert.equal(sheet.rowCount,604);
   assert.equal(new Set(sheet.getColumn(1).values.slice(2)).size,603);
   assert.equal(sheet.getCell('A604').value,'player-602');
@@ -37,4 +39,15 @@ test('cell help distinguishes zero from missing, states coverage/source and expl
  const zero=khlCellHelp(player,'ppToiSeconds','Текущий сезон');assert.match(zero,/Значение: 0:00/);assert.match(zero,/2 из 3/);assert.match(zero,/Источник: КХЛ/);
  assert.match(khlCellHelp(player,'pkToiSeconds','Текущий сезон'),/Значение: Нет данных/);
  const ep=khlCellHelp(player,'ep','Ближайшие 7 дней');assert.match(ep,/текущих матчей 3, прошлых 60/);assert.match(ep,/За сыгранный матч: 6,81/);assert.match(ep,/Голы, FP: 1,23/);
+});
+test('XLSX expectations retain numerical precision and source formulas for every player',async()=>{
+ const current=summarizeHockeyHistory([{participationStatus:'PLAYED',points:15,goals:1,assists:1,shotsOnGoal:4,pimMinutes:2,plusMinus:1}],'current','Sports');
+ const e=projectHistory({position:'F',current,pairedGoals:1,pairedShots:4,leagueGoals:5,leagueShots:50})!;
+ const f=applyOpponent(e,{factor:1.1,probability:0.7,observedAt:observed.asOf,source:'Fonbet',snapshotIds:['s1'],reason:'Test'});
+ const p={...player,forecastExplanation:e,forecastHorizonEnd:'2026-09-21T00:00:00Z',ep:{...observed,value:f.perGame},fixtures:[{...player.fixtures[0],forecast:f}]};
+ const bytes=await buildKhlWorkbook({players:[p],season:'2026/2027',revision:1,asOf:observed.asOf,historyWindow:5}),book=new ExcelJS.Workbook();await book.xlsx.load(new Uint8Array(bytes).buffer);
+ const sheet=book.getWorksheet('Ожидаемые показатели')!;
+ assert.equal(sheet.getCell('G2').value,e.details!.expected.goals);assert.equal(sheet.getCell('H2').value,f.expected.goals);
+ assert.match(String(sheet.getCell('G2').note),/Вес прошлого/);assert.equal(sheet.getCell('G2').numFmt,'0.##');
+ assert.equal(book.getWorksheet('Предстоящие матчи')!.getCell('K2').value,f.expected.goals);
 });

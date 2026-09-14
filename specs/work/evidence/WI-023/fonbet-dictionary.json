@@ -1,0 +1,158 @@
+{
+  "source": "https://line-lb61-w.bk6bba-resources.com/ma/line/factorsCatalog/tables?lang=ru&scopeMarket=1600",
+  "observedAt": "2026-09-14",
+  "version": 1724151144,
+  "tables": [
+    {
+      "num": 120,
+      "name": "Исходы",
+      "isMain": true,
+      "rows": [
+        [
+          {
+            "name": "1"
+          },
+          {
+            "name": "X"
+          },
+          {
+            "name": "2"
+          },
+          {
+            "name": "1X"
+          },
+          {
+            "name": "12"
+          },
+          {
+            "name": "X2"
+          }
+        ],
+        [
+          {
+            "kind": "value",
+            "factorId": 921
+          },
+          {
+            "kind": "value",
+            "factorId": 922
+          },
+          {
+            "kind": "value",
+            "factorId": 923
+          },
+          {
+            "kind": "value",
+            "factorId": 924
+          },
+          {
+            "kind": "value",
+            "factorId": 1571
+          },
+          {
+            "kind": "value",
+            "factorId": 925
+          }
+        ]
+      ]
+    },
+    {
+      "num": 491,
+      "name": "Итоговая победа",
+      "rows": [
+        [
+          {
+            "name": "1"
+          },
+          {
+            "name": "1"
+          },
+          {
+            "name": "1"
+          },
+          {
+            "name": "1"
+          },
+          {
+            "name": "1"
+          },
+          {
+            "name": "1"
+          },
+          {
+            "name": "2"
+          },
+          {
+            "name": "2"
+          },
+          {
+            "name": "2"
+          },
+          {
+            "name": "2"
+          },
+          {
+            "name": "2"
+          },
+          {
+            "name": "2"
+          }
+        ],
+        [
+          {
+            "kind": "value",
+            "factorId": 7035
+          },
+          {
+            "kind": "value",
+            "factorId": 933
+          },
+          {
+            "kind": "value",
+            "factorId": 7348
+          },
+          {
+            "kind": "value",
+            "factorId": 16617
+          },
+          {
+            "kind": "value",
+            "factorId": 16680
+          },
+          {
+            "kind": "value",
+            "factorId": 17036
+          },
+          {
+            "kind": "value",
+            "factorId": 7036
+          },
+          {
+            "kind": "value",
+            "factorId": 934
+          },
+          {
+            "kind": "value",
+            "factorId": 7349
+          },
+          {
+            "kind": "value",
+            "factorId": 16618
+          },
+          {
+            "kind": "value",
+            "factorId": 16681
+          },
+          {
+            "kind": "value",
+            "factorId": 17037
+          }
+        ]
+      ]
+    }
+  ],
+  "rules": "https://fonbet.kz/rules#10.1",
+  "samples": "src/providers/fonbet/fixtures/khl-line-20260914.json",
+  "actualKhlEvents": 12,
+  "excludedAggregate": "Хозяева / Гости"
+}

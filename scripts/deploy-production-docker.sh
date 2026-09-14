@@ -380,8 +380,8 @@ sed -i '/^SORAREINSIDE_/d' "$web_env"
 # Public KHL catalog and local drafts are enabled independently of forecasts.
 # Explicit production configuration survives subsequent immutable releases.
 for runtime_env in "$web_env" "$worker_env"; do
-  sed -i '/^KHL_ENABLED=/d; /^KHL_SYNC_ENABLED=/d; /^KHL_CATALOG_CONTEST_IDS=/d; /^KHL_FORECASTS_ENABLED=/d; /^KHL_STATS_SYNC_ENABLED=/d' "$runtime_env"
-  printf '%s\n' 'KHL_ENABLED=true' 'KHL_SYNC_ENABLED=true' 'KHL_CATALOG_CONTEST_IDS=107' 'KHL_FORECASTS_ENABLED=false' 'KHL_STATS_SYNC_ENABLED=true' >> "$runtime_env"
+  sed -i '/^KHL_ENABLED=/d; /^KHL_SYNC_ENABLED=/d; /^KHL_CATALOG_CONTEST_IDS=/d; /^KHL_FORECASTS_ENABLED=/d; /^KHL_STATS_SYNC_ENABLED=/d; /^KHL_DAILY_STATS_ENABLED=/d' "$runtime_env"
+  printf '%s\n' 'KHL_ENABLED=true' 'KHL_SYNC_ENABLED=true' 'KHL_CATALOG_CONTEST_IDS=107' 'KHL_FORECASTS_ENABLED=false' 'KHL_STATS_SYNC_ENABLED=true' 'KHL_DAILY_STATS_ENABLED=true' >> "$runtime_env"
 done
 
 docker container inspect "$fpl_vpn_container" >/dev/null 2>&1 || {
@@ -663,6 +663,13 @@ link_tmp="/var/www/.fantasy-scout-current-$release"
 ln -s "$target" "$link_tmp"
 mv -Tf "$link_tmp" "$current_link"
 phase="deployed"
+
+# Timer follows the immutable current-release symlink; one service and flock
+# prevent overlapping full source refreshes. Forecast/odds cadence stays in worker.
+sudo install -m 0644 "$target/ops/fantasy-khl-statistics.service" /etc/systemd/system/fantasy-khl-statistics.service
+sudo install -m 0644 "$target/ops/fantasy-khl-statistics.timer" /etc/systemd/system/fantasy-khl-statistics.timer
+sudo systemctl daemon-reload
+sudo systemctl enable --now fantasy-khl-statistics.timer
 
 previous_release="$(basename "$(docker container inspect "$web_rollback" --format '{{.Config.Image}}')")"
 image_id="$(docker image inspect "$image" --format '{{.Id}}')"

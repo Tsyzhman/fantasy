@@ -6,6 +6,7 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
+| [WI-023](work/WI-023-khl-expected-statistics.md) | Ожидания, соперники и обновление КХЛ | FEAT-002/003, INFRA-001/003 | @tsyzhman | 2026-09-14 | — |
 
 ## Backlog
 

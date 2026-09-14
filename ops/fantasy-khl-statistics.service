@@ -1,0 +1,12 @@
+[Unit]
+Description=Refresh KHL statistics, archives, odds and forecasts
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=deploy
+Group=deploy
+ExecStart=/usr/bin/bash /var/www/fantasy-scout-current/ops/khl-daily-sync.sh cmtr4grkd00056htzwpdv4fwu
+TimeoutStartSec=7200
+Nice=10

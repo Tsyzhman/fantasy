@@ -1,0 +1,424 @@
+{
+  "sports": [
+    {
+      "id": 2,
+      "kind": "sport",
+      "sortOrder": "1+++I+++0+++0",
+      "name": "Хоккей",
+      "alias": "hockey"
+    },
+    {
+      "id": 13283,
+      "parentId": 2,
+      "parentIds": [
+        13278
+      ],
+      "kind": "segment",
+      "regionId": 643,
+      "sortOrder": "1+++I+++0+++0&yZ+zzr+++D+1DS+++-+1DX",
+      "name": "Фонбет КХЛ. Регулярный сезон",
+      "tabCaption": "КХЛ",
+      "outrightTableOraIds": [
+        146191,
+        113174,
+        85581,
+        85579,
+        85578,
+        85273,
+        85591,
+        143106
+      ],
+      "outrightTableLinks": [
+        {
+          "oraId": 146191,
+          "tabTournamentAlias": "tournament"
+        },
+        {
+          "oraId": 113174,
+          "tabTournamentAlias": "tournament"
+        },
+        {
+          "oraId": 85581,
+          "tabTournamentAlias": "tournament"
+        },
+        {
+          "oraId": 85579,
+          "tabTournamentAlias": "tournament"
+        },
+        {
+          "oraId": 85578,
+          "tabTournamentAlias": "tournament"
+        },
+        {
+          "oraId": 85273,
+          "tabTournamentAlias": "tournament"
+        },
+        {
+          "oraId": 85591,
+          "tabTournamentAlias": "tournament"
+        },
+        {
+          "oraId": 143106,
+          "tabTournamentAlias": "tournament"
+        }
+      ],
+      "tournamentInfoId": 776,
+      "geoCategoryId": 2
+    }
+  ],
+  "events": [
+    {
+      "id": 67987374,
+      "level": 1,
+      "sportId": 13283,
+      "kind": 1,
+      "team1": "Лада",
+      "team2": "Динамо Минск",
+      "startTime": 1789398000,
+      "place": "line"
+    },
+    {
+      "id": 67987421,
+      "level": 1,
+      "sportId": 13283,
+      "kind": 1,
+      "team1": "Северсталь",
+      "team2": "Динамо Москва",
+      "startTime": 1789401600,
+      "place": "line"
+    },
+    {
+      "id": 67987402,
+      "level": 1,
+      "sportId": 13283,
+      "kind": 1,
+      "team1": "Торпедо НН",
+      "team2": "Ак Барс",
+      "startTime": 1789403700,
+      "place": "line"
+    },
+    {
+      "id": 68070953,
+      "level": 1,
+      "sportId": 13283,
+      "kind": 121,
+      "team1": "Хозяева",
+      "team2": "Гости",
+      "startTime": 1789398000,
+      "place": "line"
+    },
+    {
+      "id": 68024035,
+      "level": 1,
+      "sportId": 13283,
+      "kind": 1,
+      "team1": "Авангард",
+      "team2": "Автомобилист",
+      "startTime": 1789479000,
+      "place": "line"
+    },
+    {
+      "id": 68024071,
+      "level": 1,
+      "sportId": 13283,
+      "kind": 1,
+      "team1": "Трактор",
+      "team2": "Локомотив Ярославль",
+      "startTime": 1789480800,
+      "place": "line"
+    },
+    {
+      "id": 68024136,
+      "level": 1,
+      "sportId": 13283,
+      "kind": 1,
+      "team1": "СКА",
+      "team2": "Шанхай Дрэгонс",
+      "startTime": 1789489800,
+      "place": "line"
+    },
+    {
+      "id": 68057168,
+      "level": 1,
+      "sportId": 13283,
+      "kind": 1,
+      "team1": "Сибирь",
+      "team2": "Нефтехимик",
+      "startTime": 1789561800,
+      "place": "line"
+    },
+    {
+      "id": 68057082,
+      "level": 1,
+      "sportId": 13283,
+      "kind": 1,
+      "team1": "Металлург Мг",
+      "team2": "Спартак",
+      "startTime": 1789567200,
+      "place": "line"
+    },
+    {
+      "id": 68057103,
+      "level": 1,
+      "sportId": 13283,
+      "kind": 1,
+      "team1": "Салават Юлаев",
+      "team2": "Ак Барс",
+      "startTime": 1789567200,
+      "place": "line"
+    },
+    {
+      "id": 68057040,
+      "level": 1,
+      "sportId": 13283,
+      "kind": 1,
+      "team1": "Лада",
+      "team2": "Барыс",
+      "startTime": 1789570800,
+      "place": "line"
+    },
+    {
+      "id": 68056985,
+      "level": 1,
+      "sportId": 13283,
+      "kind": 1,
+      "team1": "ХК Сочи",
+      "team2": "ЦСКА",
+      "startTime": 1789576200,
+      "place": "line"
+    },
+    {
+      "id": 68085485,
+      "level": 1,
+      "sportId": 13283,
+      "kind": 1,
+      "team1": "Адмирал",
+      "team2": "Динамо Москва",
+      "startTime": 1789637400,
+      "place": "line"
+    }
+  ],
+  "customFactors": [
+    {
+      "e": 67987374,
+      "factors": [
+        {
+          "f": 921,
+          "v": 3.9
+        },
+        {
+          "f": 922,
+          "v": 4.3
+        },
+        {
+          "f": 923,
+          "v": 1.77
+        }
+      ]
+    },
+    {
+      "e": 67987421,
+      "factors": [
+        {
+          "f": 921,
+          "v": 3.1
+        },
+        {
+          "f": 922,
+          "v": 4.15
+        },
+        {
+          "f": 923,
+          "v": 2.05
+        }
+      ]
+    },
+    {
+      "e": 67987402,
+      "factors": [
+        {
+          "f": 921,
+          "v": 2.5
+        },
+        {
+          "f": 922,
+          "v": 4.3
+        },
+        {
+          "f": 923,
+          "v": 2.5
+        }
+      ]
+    },
+    {
+      "e": 68070953,
+      "factors": [
+        {
+          "f": 921,
+          "v": 2.85
+        },
+        {
+          "f": 923,
+          "v": 1.63
+        },
+        {
+          "f": 922,
+          "v": 8.5
+        }
+      ]
+    },
+    {
+      "e": 68024035,
+      "factors": [
+        {
+          "f": 921,
+          "v": 1.85
+        },
+        {
+          "f": 922,
+          "v": 4.2
+        },
+        {
+          "f": 923,
+          "v": 3.65
+        }
+      ]
+    },
+    {
+      "e": 68024071,
+      "factors": [
+        {
+          "f": 921,
+          "v": 3.2
+        },
+        {
+          "f": 922,
+          "v": 4.15
+        },
+        {
+          "f": 923,
+          "v": 2.0
+        }
+      ]
+    },
+    {
+      "e": 68024136,
+      "factors": [
+        {
+          "f": 923,
+          "v": 3.7
+        },
+        {
+          "f": 921,
+          "v": 1.82
+        },
+        {
+          "f": 922,
+          "v": 4.3
+        }
+      ]
+    },
+    {
+      "e": 68057168,
+      "factors": [
+        {
+          "f": 921,
+          "v": 2.2
+        },
+        {
+          "f": 922,
+          "v": 4.3
+        },
+        {
+          "f": 923,
+          "v": 2.75
+        }
+      ]
+    },
+    {
+      "e": 68057082,
+      "factors": [
+        {
+          "f": 921,
+          "v": 1.85
+        },
+        {
+          "f": 922,
+          "v": 4.2
+        },
+        {
+          "f": 923,
+          "v": 3.65
+        }
+      ]
+    },
+    {
+      "e": 68057103,
+      "factors": [
+        {
+          "f": 921,
+          "v": 2.45
+        },
+        {
+          "f": 922,
+          "v": 4.1
+        },
+        {
+          "f": 923,
+          "v": 2.5
+        }
+      ]
+    },
+    {
+      "e": 68057040,
+      "factors": [
+        {
+          "f": 921,
+          "v": 2.4
+        },
+        {
+          "f": 922,
+          "v": 4.2
+        },
+        {
+          "f": 923,
+          "v": 2.5
+        }
+      ]
+    },
+    {
+      "e": 68056985,
+      "factors": [
+        {
+          "f": 921,
+          "v": 5.0
+        },
+        {
+          "f": 922,
+          "v": 4.7
+        },
+        {
+          "f": 923,
+          "v": 1.55
+        }
+      ]
+    },
+    {
+      "e": 68085485,
+      "factors": [
+        {
+          "f": 921,
+          "v": 3.4
+        },
+        {
+          "f": 922,
+          "v": 4.3
+        },
+        {
+          "f": 923,
+          "v": 1.9
+        }
+      ]
+    }
+  ]
+}

@@ -74,6 +74,15 @@ test('public hockey history: exact matches, nulls, repeat and played-to-DNP corr
  const late=(await hydratePlayers(db,[player],{now:new Date(now.getTime()+3600001)}))[0];
  assert.equal(late.ep.value,null);
 
+ const futureMatch=await db.khlMatch.findFirstOrThrow({where:{seasonId:season.id,startsAt:new Date(future.startsAt)}});
+ const protectedWeek=await db.khlFantasyWeek.create({data:{contestId:contest.id,providerWeekId:'protected',label:'Protected week',sourceUrl:'TEST',verified:true,startsAt:new Date('2026-09-08T00:00:00Z'),endsAt:new Date('2026-09-15T00:00:00Z'),timezone:'Europe/Moscow'}});
+ await db.khlMatchFantasyWeek.create({data:{contestId:contest.id,matchId:futureMatch.id,weekId:protectedWeek.id}});
+ const conflicting=structuredClone(profile);conflicting.fixtures=[{...profile.rows[0],date:'2026-09-09',week:2,score:null}];
+ const isolated=await importHockeyHistory(db,{...input,profile:conflicting});
+ assert.ok(isolated.quarantined.includes(`WEEK_ASSIGNMENT_CONFLICT:${futureMatch.id}`));
+ assert.equal(isolated.played,2);
+ assert.equal((await db.khlMatchFantasyWeek.findUniqueOrThrow({where:{contestId_matchId:{contestId:contest.id,matchId:futureMatch.id}}})).weekId,protectedWeek.id);
+
  const corrected=structuredClone(profile);corrected.rows[0]={...corrected.rows[0],toiSeconds:0,goals:0,assists:0,pimMinutes:0,plusMinus:0,points:0};
  assert.equal((await importHockeyHistory(db,{...input,profile:corrected})).dnp,1);
  assert.equal(await db.khlOfficialFantasyScore.count({where:{fantasyPlayerId:player.id}}),1);

@@ -16,6 +16,8 @@ export interface KhlFixture {
   status: "SCHEDULED" | "LIVE" | "FINAL" | "POSTPONED" | "CANCELLED";
   startProbability: Observation<number>;
   expectedPoints?: Observation<number>;
+  forecast?: KhlMatchExpectation;
+  isHome?: boolean;
 }
 export const seasonStatFields = ["toiSeconds", "ppToiSeconds", "pkToiSeconds", "attackZoneSeconds", "goals", "assists", "shotsOnGoal", "blockedShots", "pimMinutes", "plusMinus", "saves", "goalsAgainst"] as const;
 export const playerStatFields = seasonStatFields;
@@ -41,10 +43,30 @@ export function historicalTableStats(stats: KhlHistoricalStats): KhlSeasonStats 
     official.totals[key].knownGames >= stats.totals[key].knownGames ? official.totals[key] : stats.totals[key]
   ])) as KhlSeasonStats["totals"] };
 }
+export const expectedStatKeys = ["goals", "assists", "shotsOnGoal", "pimMinutes", "plusMinus"] as const;
+export type ExpectedStatKey = typeof expectedStatKeys[number];
+export type KhlExpectedStats = Record<ExpectedStatKey, number | null>;
+export interface KhlRateInput {
+  currentSum: number; currentCount: number; previousSum: number; previousCount: number;
+  previousWeight: number; previousSource: string | null; mean: number | null;
+}
+export interface KhlMatchExpectation {
+  expected: KhlExpectedStats; perGame: number;
+  adjustment: { factor: number; probability: number | null; source: string | null; observedAt: string | null; reason: string; snapshotIds: string[] };
+}
+export interface KhlForecastDetails {
+  version: 1; historyWindow: 10; mode: "events" | "official-fp";
+  expected: KhlExpectedStats;
+  rates: Record<ExpectedStatKey | "otherPoints" | "officialFp", KhlRateInput>;
+  appearance: KhlRateInput;
+  conversion?: { currentGoals: number; currentShots: number; previousGoals: number; previousShots: number; previousGames: number; previousWeight: number; leagueGoals: number; leagueShots: number; leagueWeight: number; value: number };
+}
 export interface KhlForecastExplanation {
   perGame: number; appearanceRate: number; currentGames: number; previousGames: number;
   previousSeason: string | null; priorWeight: number;
   components: Record<string, number>; warnings: string[];
+  details?: KhlForecastDetails;
+  match?: KhlMatchExpectation;
 }
 export interface KhlPlayer {
   id: string; contestId: string; playerId: string | null; name: string;

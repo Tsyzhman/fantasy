@@ -1,4 +1,5 @@
 /** @spec spec://modules/khl/FEAT-002-khl-squad#table */
+import {expectedTooltip} from './forecast-explanation';
 import {formatKhlNumber,formatToi,type KhlPlayer,type Observation} from './contracts';
 export const khlStatHelp = {
   player: 'Игрок из каталога Sports. Статистика КХЛ привязана к тому же хоккеисту по подтверждённой идентичности.',
@@ -11,7 +12,7 @@ export const khlStatHelp = {
   pkToiSeconds: 'PK — время на льду в меньшинстве. Сумма протоколов сезона или среднее известных наблюдений выбранного окна.',
   attackZoneSeconds: 'Атака — индивидуальное время в атаке (ВВА) из протоколов КХЛ. Не владение команды и не весь TOI. Сплошные нули телеметрии считаются отсутствием данных.',
   officialFp: 'FP — сумма официальных очков Sports, делённая на число последних матчей с оценкой в выбранном окне. Если хотя бы одна оценка окна неизвестна, среднее не публикуется. Переключение на прошлый сезон меняет статистику, но не текущие FP.',
-  ep: 'EP — ожидаемые очки будущих матчей. Бета: (10 × ожидаемые голы + 5 × передачи + 2 × плюс-минус − штрафные минуты + прочие FP) × частота участия × число будущих игр. Для вратаря — средние официальные FP × участие × игры. Прошлый сезон имеет вес до 20 матчей; голы оцениваются поровну по темпу голов и броскам × реализации. Это оценка, не готовый xG.',
+  ep: 'EP — ожидаемые очки будущих матчей. Бета: (10 × ожидаемые голы + 5 × передачи + 2 × плюс-минус − штрафные минуты + прочие FP) × частота участия отдельно для каждого матча; EP периода — сумма матчей с поправками соперников. Для вратаря — средние официальные FP × участие × игры. Прошлый сезон имеет вес до 20 матчей; голы оцениваются поровну по темпу голов и броскам × реализации. Это оценка, не готовый xG.',
   ixg: 'ixG — индивидуальные ожидаемые голы из подтверждённой модели качества бросков. Среднее последних известных матчей в выбранном окне, только при едином источнике и версии модели. Прочерк означает отсутствие данных, а не ноль. Броски и их реализация не подменяют готовый ixG.',
   shotsOnGoal: 'Броски в створ (SOG). Сумма или среднее по известным сыгранным матчам. Броски и реализация участвуют в оценке голов для EP, отдельного бонуса FP за бросок нет.',
   goals: 'Голы игрока. Сумма или среднее выбранного периода. В формуле Sports один гол даёт 10 FP; в EP используется ожидаемый темп голов.',
@@ -32,5 +33,6 @@ export function khlCellHelp(player:KhlPlayer,key:KhlHelpKey,period:string) {
   const text=value?.value==null?'Нет данных':key.endsWith('Seconds')?formatToi(value.value):formatKhlNumber(value.value);
   const lines=[header,`Значение: ${text}`,value?.totalGames!=null?`Известно в ${value.knownGames??0} из ${value.totalGames} матчей. Пропуски не считаются нулями.`:'',value?.source?`Источник: ${value.source}`:'',value?.asOf?`Обновлено: ${value.asOf}`:'',value?.reason??''];
   if(key==='ep'&&player.forecastExplanation){const e=player.forecastExplanation;lines.push(`За сыгранный матч: ${formatKhlNumber(e.perGame)} FP; участие ${formatKhlNumber(e.appearanceRate*100)}%; текущих матчей ${e.currentGames}, прошлых ${e.previousGames}, вес прошлого ${e.priorWeight}.`,Object.entries(e.components).map(([k,v])=>`${({goals:'Голы, FP',assists:'Передачи, FP',plusMinus:'Плюс-минус, FP',penalty:'Штраф, FP',other:'Прочие FP',officialFp:'Средние FP',shotsPerGame:'Броски/матч',shotConversion:'Реализация (доля)',previousShotGames:'Матчей прошлого сезона с бросками'} as Record<string,string>)[k]??k}: ${formatKhlNumber(v)}`).join('; '));}
+  if(key==='ep')lines.push(expectedTooltip(player));
   return lines.filter(Boolean).join('\n');
 }

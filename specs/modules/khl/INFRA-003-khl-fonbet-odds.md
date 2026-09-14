@@ -25,6 +25,8 @@ status: draft
 
 ## Семантика рынков {#markets}
 
+Реализуемый контур WI-023 ограничен prematch 1/X/2 за 60 минут. Probe 2026-09-14: 12 настоящих событий КХЛ из hockey tree (root 2, регулярный сезон 13283), каталог Фонбета `line/factorsCatalog/tables`, таблица «Исходы»: 921=1, 922=X, 923=2. Таблица «Итоговая победа» отдельная и не используется. Условия основного времени подтверждены правилом хоккея 10.1 Фонбета. Словарь перепроверяется ежедневно по названиям и позициям; прочие рынки остаются непроверенными. Сжатый набор реальных примеров хранится в src/providers/fonbet/fixtures/khl-line-20260914.json. Агрегат «Хозяева/Гости», дочерние периоды и live исключаются. eventBlocks.state=blocked немедленно приостанавливает тройку.
+
 Обязательный ключ рынка: `providerEventId + marketType + settlementScope + period + selection + line + marketVersion`. Значения `settlementScope`: `REGULATION_60`, `INCLUDING_OT_SO`, `INCLUDING_OT_NO_SO`, `UNKNOWN`; период `FULL_GAME|P1|P2|P3|OT`. UNKNOWN сохраняется для диагностики, не используется в прогнозе.
 
 | Рынок | Допустимая интерпретация |
@@ -73,6 +75,8 @@ Retention: сырые ответы входят в общий KHL raw budget и�
 `spec://modules/khl/INFRA-001-khl-data-ingestion#operations`, `spec://modules/khl/INFRA-002-khl-storage-and-api#schema`, `spec://modules/khl/FEAT-003-khl-projections-and-optimizer#forecast`.
 
 ## История {#changelog}
+
+- 2026-09-14: проверены 12 текущих КХЛ-событий и словарь 1/X/2 за 60 минут; отдельный parser/sync, строгие aliases, свежесть и beta-поправка соперника (WI-023). Gates прочих рынков не сняты.
 
 - 2026-09-07: при интеграции сохранены исходные anchors и требования; добавлены обязательные разделы текущего standalone протокола и трассировка реализации. Draft gates не сняты.
 

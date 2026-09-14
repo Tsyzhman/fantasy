@@ -1,7 +1,8 @@
 /** @spec spec://modules/khl/FEAT-002-khl-squad#table
  * @spec spec://modules/khl/INFRA-002-khl-storage-and-api#api */
 import {Prisma,type PrismaClient} from '@prisma/client';
-import {historicalTableStats,seasonStatFields,type KhlPlayer,type KhlSeasonStats} from '@/khl/contracts';
+import {historicalTableStats,seasonStatFields,expectedStatKeys,type KhlPlayer,type KhlSeasonStats} from '@/khl/contracts';
+import {expectedStatLabels,expectedTotals,forecastFixtures,goalCalculation,rateCalculation} from '@/khl/forecast-explanation';
 import {khlStatHelp} from '@/khl/stat-help';
 import {hydratePlayers} from './read-model';
 const labels={toiSeconds:'TOI',ppToiSeconds:'PP',pkToiSeconds:'PK',attackZoneSeconds:'Атака',goals:'Голы',assists:'Передачи',shotsOnGoal:'Броски',blockedShots:'Блоки',pimMinutes:'Штраф, мин',plusMinus:'+/−',saves:'Сэйвы',goalsAgainst:'Пропущено'};
@@ -26,9 +27,13 @@ export async function buildKhlWorkbook(input:{players:KhlPlayer[];season:string;
   }
   seasonStatFields.forEach((k,i)=>{ws.getCell(1,6+i*2).note=khlStatHelp[k];if(k.endsWith('Seconds'))ws.getColumn(6+i*2).numFmt='[m]:ss';});
  }
- const fixtures=sheet('Предстоящие матчи',['ID игрока','Игрок','Клуб','Позиция','ID матча','Начало UTC','Соперник','Статус','EP матча','Качество EP']);
- for(const p of input.players)for(const f of p.fixtures)fixtures.addRow([...identity(p),f.id,f.startsAt,f.opponent,f.status,f.expectedPoints?.value??null,f.expectedPoints?.quality??null]);
+ const expectations=sheet('Ожидаемые показатели',['ID','Игрок','Клуб','Позиция','Матчей в горизонте','Частота участия',...expectedStatKeys.flatMap(k=>[`${expectedStatLabels[k]}: база за сыгранный матч`,`${expectedStatLabels[k]}: за 7 дней`]),'База FP за сыгранный матч','EP за 7 дней','Разбивка','Расчёт голов','Источник','Обновлено']);
+ expectations.getColumn(6).numFmt='0.##%';
+ for(const p of input.players){const e=p.forecastExplanation,d=e?.details,total=expectedTotals(p);const row=expectations.addRow([...identity(p),forecastFixtures(p).length,e?.appearanceRate??null,...expectedStatKeys.flatMap(k=>[d?.expected[k]??null,total[k]]),e?.perGame??null,p.ep.value,d?.mode??'Нет снимка',e?goalCalculation(e):null,p.ep.source,p.ep.asOf]);if(d)expectedStatKeys.forEach((k,i)=>{row.getCell(7+i*2).note=rateCalculation(d.rates[k]);});}
+ const fixtures=sheet('Предстоящие матчи',['ID игрока','Игрок','Клуб','Позиция','ID матча','Начало UTC','Соперник','Статус','EP матча','Качество EP',...expectedStatKeys.map(k=>`${expectedStatLabels[k]}: с участием`),'Поправка атаки','Сила по линии','Источник линии','Дата линии','Причина']);
+ for(const p of input.players)for(const f of p.fixtures)fixtures.addRow([...identity(p),f.id,f.startsAt,f.opponent,f.status,f.expectedPoints?.value??null,f.expectedPoints?.quality??null,...expectedStatKeys.map(k=>f.forecast?.expected[k]!=null&&p.forecastExplanation?f.forecast.expected[k]!*p.forecastExplanation.appearanceRate:null),f.forecast?.adjustment.factor??null,f.forecast?.adjustment.probability??null,f.forecast?.adjustment.source??null,f.forecast?.adjustment.observedAt??null,f.forecast?.adjustment.reason??null]);
  const help=sheet('Справка',['Показатель','Значение / расчёт']);help.getColumn(1).width=28;help.getColumn(2).width=110;help.getColumn(2).alignment={wrapText:true,vertical:'top'};
  for(const [key,value]of Object.entries(khlStatHelp))help.addRow([key,value]);help.addRow(['Снимок',`${input.season}; ревизия ${input.revision}; ${input.asOf}; ${input.players.length} уникальных игроков. Фильтры и страница не ограничивают экспорт.`]);help.addRow(['Периоды',`Текущий/прошлый сезон — суммы. Последние матчи — средние по окну ${input.historyWindow} сыгранных матчей. FP — среднее этого окна; EP — будущие 7 дней. Отсутствие — пустая ячейка, известный ноль — число 0. Время — минуты:секунды.`]);
+ help.addRow(['Ожидания','База — за сыгранный матч без поправки соперника. Итог — сумма будущих матчей с участием ровно один раз. Входы доступны в примечаниях ячеек базы; окно модели фиксировано: последние 10 записей PLAYED/DNP, в отличие от выбранного окна табличных средних. Нет событийной разбивки — пустые ячейки. Поправка атаки — фиксированное beta-допущение, не обученная xG-модель.']);
  const bytes=await book.xlsx.writeBuffer();return Buffer.from(bytes);
 }
