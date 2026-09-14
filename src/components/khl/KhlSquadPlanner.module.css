@@ -9,6 +9,7 @@
 .notice { color: var(--text-secondary); font-size: 12px; background: var(--surface-2); padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-xs); }
 .workspace { display: grid; min-width: 0; gap: 24px; padding: 12px; background: var(--surface-1); border: 1px solid var(--border); border-radius: var(--radius-xs); }
 .roster, .catalog { min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+.catalog { max-width: 100%; }
 .catalog table { background: var(--surface-1); }
 .catalog thead { background: var(--surface-2); }
 .catalog th, .catalog td { padding: 8px; border-bottom: 1px solid var(--border); font-size: 12px; }

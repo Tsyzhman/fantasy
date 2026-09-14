@@ -4,7 +4,7 @@ import { contentHash } from "@/khl/repositories/revisions";
 import { hydratePlayers } from "./read-model";
 import { projectHistory, summarizeHockeyHistory } from "@/khl/history-projection";
 
-const MODEL = "khl-history-components-beta-v2";
+const MODEL = "khl-history-protocols-beta-v3";
 export async function publishRollingForecast(db: PrismaClient, contestId: string, asOf = new Date()) {
   return db.$transaction(async tx => {
     await tx.$queryRaw`SELECT id FROM khl_contests WHERE id = ${contestId} FOR UPDATE`;
@@ -37,7 +37,7 @@ export async function publishRollingForecast(db: PrismaClient, contestId: string
     await tx.khlPlayerMatchForecast.createMany({ data: inputs.flatMap(p => p.fixtures.map(matchId => ({ forecastId: forecast.id, playerId: p.playerId, matchId, expectedPoints: p.explanation.perGame * p.explanation.appearanceRate, participationProbability: null, components: p.explanation as unknown as Prisma.InputJsonValue, uncertainty: null }))) });
     await tx.khlContest.update({ where: { id: contestId }, data: { revision: { increment: 1 } } });
     // Restrict FK: remove owned projections before the bounded revision audit window.
-    const expired = { contestId, modelVersion: { in: [MODEL, "khl-fp10-participation-beta-v1"] }, asOf: { lt: new Date(asOf.getTime() - 7 * 86400000) } };
+    const expired = { contestId, modelVersion: { in: [MODEL, "khl-history-components-beta-v2", "khl-fp10-participation-beta-v1"] }, asOf: { lt: new Date(asOf.getTime() - 7 * 86400000) } };
     await tx.khlPlayerMatchForecast.deleteMany({ where: { forecast: expired } });
     await tx.khlForecastRevision.deleteMany({ where: expired });
     return forecast;

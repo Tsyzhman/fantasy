@@ -19,7 +19,10 @@ export function blendHistory(current: { sum: number; count: number }, previous?:
 }
 export function projectHistory(input: { position: KhlPosition; current: KhlHistoricalStats; previous?: KhlHistoricalStats; pairedGoals: number; pairedShots: number; leagueGoals: number; leagueShots: number }): KhlForecastExplanation | null {
   const { current, previous } = input;
-  const rate = (key: keyof KhlHistoricalStats["totals"]) => blendHistory({ sum: current.totals[key].value ?? 0, count: current.totals[key].knownGames }, previous && { sum: previous.totals[key].value ?? 0, count: previous.totals[key].knownGames });
+  const rate = (key: keyof KhlHistoricalStats["totals"]) => {
+    const past = key === "shotsOnGoal" && previous?.protocolStats ? previous.protocolStats.totals[key] : previous?.totals[key];
+    return blendHistory({ sum: current.totals[key].value ?? 0, count: current.totals[key].knownGames }, past && { sum: past.value ?? 0, count: past.knownGames });
+  };
   const appearanceRate = blendHistory({ sum: current.games, count: current.games + current.dnp }, previous && { sum: previous.games, count: previous.games + previous.dnp });
   const officialMean = blendHistory(current.officialFp, previous?.officialFp);
   if (appearanceRate === null || officialMean === null) return null;
@@ -35,9 +38,12 @@ export function projectHistory(input: { position: KhlPosition; current: KhlHisto
       warnings.push("EVENTS_INCOMPLETE"); components.officialFp = officialMean;
     } else {
       let expectedGoals = goals;
-      if (shots !== null && input.leagueShots > 0) {
+      const archive = previous?.protocolStats;
+      if (shots !== null && (input.leagueShots > 0 || input.pairedShots > 0 || (archive?.pairedShots ?? 0) > 0)) {
         const priorShots = Math.min(50, input.leagueShots);
-        const conversion = (input.pairedGoals + priorShots * input.leagueGoals / input.leagueShots) / (input.pairedShots + priorShots);
+        const archiveWeight = archive?.pairedGames ? Math.min(20, archive.pairedGames) / archive.pairedGames : 0;
+        const conversion = (input.pairedGoals + archiveWeight * (archive?.pairedGoals ?? 0) + (priorShots ? priorShots * input.leagueGoals / input.leagueShots : 0)) / (input.pairedShots + archiveWeight * (archive?.pairedShots ?? 0) + priorShots);
+        if (archive?.pairedGames) components.previousShotGames = archive.pairedGames;
         expectedGoals = (goals + shots * conversion) / 2;
         components.shotsPerGame = shots; components.shotConversion = conversion;
       } else warnings.push("SHOTS_UNAVAILABLE");

@@ -2,10 +2,11 @@
 /** @spec spec://modules/khl/FEAT-002-khl-squad#layout */
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { compareNullable, formatToi, formatKhlNumber, playerStatFields, unknown, type KhlPlayer, type KhlPosition, type KhlWeek, type KhlSquad, type Observation } from "@/khl/contracts";
+import { compareNullable, formatToi, formatKhlNumber, historicalTableStats, playerStatFields, unknown, type KhlPlayer, type KhlPosition, type KhlWeek, type KhlSquad, type Observation } from "@/khl/contracts";
 import { KHL_RULES, validateRoster } from "@/khl/rules";
 import { previewTransfers } from "@/khl/transfers";
 import { khlViolationText } from "@/khl/messages";
+import { khlCellHelp, khlStatHelp, type KhlHelpKey } from "@/khl/stat-help";
 import { KhlCalendar, KhlPlayerDetails } from "./KhlDataPanels";
 import { useKhlOptimizer } from "./useKhlOptimizer";
 export type KhlViewPreferences = { position?: KhlPosition | "ALL"; query?: string; club?: string; maximum?: string; compare?: string[]; direction?: 1 | -1; sortField?: "price" | "ep" | "officialFp" | "toiSeconds" | "ppToiSeconds" | "pkToiSeconds" | "attackZoneSeconds" | "ixg" | "saves" | "goalsAgainst" | "goals" | "assists" | "shotsOnGoal" | "pimMinutes" | "plusMinus"; minimumToi?: string };
@@ -40,6 +41,8 @@ export function KhlSquadPlanner({ contestId, season, players: initialPlayers, we
   const [compare, setCompare] = useState<string[]>(preferences.compare ?? []);
   const [message, setMessage] = useState("");
   const [statsMessage, setStatsMessage] = useState("");
+  const [exporting, setExporting] = useState(false);
+  const [exportMessage, setExportMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [importing, setImporting] = useState(false);
   const [profileRequired, setProfileRequired] = useState(false);
@@ -50,12 +53,20 @@ export function KhlSquadPlanner({ contestId, season, players: initialPlayers, we
   const [direction, setDirection] = useState<1 | -1>(preferences.direction ?? -1);
   const [sortField, setSortField] = useState<NonNullable<KhlViewPreferences["sortField"]>>(preferences.sortField ?? "ep");
   const [minimumToi, setMinimumToi] = useState(preferences.minimumToi ?? "");
+  const periodLabel = statPeriod === "previous" ? "Прошлый сезон · сумма" : statPeriod === "season" ? "Текущий сезон · сумма" : `Последние ${historyWindow} матчей · среднее`;
+  const cellHelp = (player: KhlPlayer, key: KhlHelpKey) => khlCellHelp(player, key,
+    key === "ep" ? rolling ? "Ближайшие 7 дней" : `Выбранные fantasy-недели: ${horizonWeeks}`
+      : key === "officialFp" ? `Последние ${historyWindow} матчей с официальной оценкой · среднее FP`
+      : key === "ixg" ? `Последние ${historyWindow} известных матчей · среднее ixG`
+      : key === "price" ? "Текущая цена" : periodLabel);
   const players = useMemo(() => sourcePlayers.map(original => {
     const p = { ...original };
-    const stats = statPeriod === "previous" ? p.previousSeasonStats : p.seasonStats;
+    const stats = statPeriod === "previous" ? p.previousSeasonStats && historicalTableStats(p.previousSeasonStats) : p.seasonStats;
     if (statPeriod !== "recent") for (const field of playerStatFields) {
       const total = stats?.totals[field];
-      p[field] = { value: total?.value ?? null, quality: total?.value == null ? "UNKNOWN" : "FACT", source: statPeriod === "previous" ? p.previousSeasonStats?.source ?? null : "Протоколы матчей", asOf: stats?.asOf ?? null, knownGames: total?.knownGames ?? 0, totalGames: stats?.games ?? 0, reason: `Сумма ${statPeriod === "previous" ? "прошлого" : "текущего"} сезона: ${total?.knownGames ?? 0} из ${stats?.games ?? 0} матчей` };
+      const archive = p.previousSeasonStats;
+      const pastSource = archive?.protocolStats && total === archive.protocolStats.totals[field] ? archive.protocolStats.source : archive?.source;
+      p[field] = { value: total?.value ?? null, quality: total?.value == null ? "UNKNOWN" : "FACT", source: statPeriod === "previous" ? pastSource ?? null : "Протоколы матчей", asOf: stats?.asOf ?? null, knownGames: total?.knownGames ?? 0, totalGames: stats?.games ?? 0, reason: `Сумма ${statPeriod === "previous" ? "прошлого" : "текущего"} сезона: ${total?.knownGames ?? 0} из ${stats?.games ?? 0} матчей` };
     }
     if (rolling) return { ...p, fixtures: p.fixtures.filter(f => p.forecastHorizonEnd && f.startsAt < p.forecastHorizonEnd) };
     const ordered = [...weeks].sort((a, b) => (a.startsAt ?? "").localeCompare(b.startsAt ?? ""));
@@ -88,6 +99,21 @@ export function KhlSquadPlanner({ contestId, season, players: initialPlayers, we
     void refresh().catch(e => { if (!abort.signal.aborted) setStatsMessage(e.message); }).finally(() => { if (!abort.signal.aborted) setPendingStats(null); });
     return () => abort.abort();
   }, [contestId, historyWindow, initialPlayers, refreshRevision]);
+  async function exportPlayers() {
+    setExporting(true); setExportMessage("");
+    try {
+      const params = new URLSearchParams({ contestId, historyWindow: String(historyWindow) });
+      const result = await fetch(`/api/machete/khl/players-export?${params}`, { cache: "no-store" });
+      if (!result.ok) throw new Error((await result.json()).error?.message ?? "Не удалось выгрузить игроков");
+      const url = URL.createObjectURL(await result.blob());
+      const anchor = document.createElement("a");
+      anchor.href = url; anchor.download = `khl-all-players-${season.replace(/[^0-9-]/g, "-")}.xlsx`;
+      document.body.appendChild(anchor); anchor.click(); anchor.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setExportMessage(`Excel готов: ${result.headers.get("X-Export-Row-Count") ?? "все"} игроков, 6 листов.`);
+    } catch (error) { setExportMessage(error instanceof Error ? error.message : "Ошибка выгрузки"); }
+    finally { setExporting(false); }
+  }
   async function savePreferences() {
     try {
       const r = await fetch("/api/machete/khl/preferences", { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ contestId, schemaVersion: 1, preferences: { position, club, query, maximum, direction, compare, sortField, minimumToi } }) });
@@ -205,19 +231,20 @@ export function KhlSquadPlanner({ contestId, season, players: initialPlayers, we
       <details className="rounded border p-3"><summary className="min-h-11 cursor-pointer">Локальный трансферный сценарий</summary><div className="flex flex-wrap gap-2"><select aria-label="Продать" className={`${control} max-w-full`} value={outId} onChange={e => setOutId(e.target.value)}><option value="">Продать</option>{selected.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select><select aria-label="Купить" className={`${control} max-w-full`} value={inId} onChange={e => setInId(e.target.value)}><option value="">Купить</option>{players.filter(p => !entries.some(e => e.id === p.id)).map(p => <option key={p.id} value={p.id}>{p.name} · {p.position} · {formatKhlNumber(p.price.value)}</option>)}</select><button className={control} disabled={!outId || !inId} onClick={event => scenario(performance.timeOrigin + event.timeStamp)}>Применить к черновику</button></div></details>
       <p className="text-sm text-amber-800">{validateRoster(selected, capital).map(khlViolationText).join(" · ")}</p>
     </div>}
-    <div className={styles.catalog}><h2 className="text-sm font-semibold uppercase tracking-wide">Подбор игроков</h2>
+    <div className={styles.catalog}><div className="flex flex-wrap items-center gap-3"><h2 className="text-sm font-semibold uppercase tracking-wide">Подбор игроков</h2><button className={control} disabled={exporting} onClick={exportPlayers} title="Весь каталог турнира: все страницы и клубы, независимо от фильтров. Текущий и прошлый сезон, средние, прогнозы и справка.">{exporting ? "Готовлю Excel…" : "Excel · все игроки"}</button><span role="status" className="text-sm">{exportMessage}</span></div>
     <div className="flex flex-wrap gap-2"><input id="khl-player-search" aria-label="Поиск игрока" className={`${control} min-w-0 max-w-full`} value={query} onChange={e => { setQuery(e.target.value); setPage(0); }} placeholder="Поиск игрока"/><select aria-label="Позиция" className={control} value={position} onChange={e => { setPosition(e.target.value as KhlPosition | "ALL"); setPage(0); }}>{["ALL", "G", "D", "F"].map(p => <option key={p}>{p}</option>)}</select><select aria-label="Клуб" className={`${control} max-w-full`} value={club} onChange={e => { setClub(e.target.value); setPage(0); }}><option value="">Все клубы</option>{[...new Map(players.map(p => [p.clubId, p.clubName])).entries()].map(([id, name]) => <option key={id} value={id}>{name}</option>)}</select><input aria-label="Максимальная цена" className={`${control} w-40`} type="number" value={maximum} placeholder="Цена до" onChange={e => { setMaximum(e.target.value); setPage(0); }}/></div>
     <div className={styles.tableScroll}><table className="w-full text-left text-sm"><caption className="p-3 text-left">Каталог · {filtered.length} игроков · {statPeriod === "previous" ? "прошлый сезон · суммы" : statPeriod === "season" ? "текущий сезон · суммы" : "средние по известным матчам"}. EP — ближайшие матчи; FP — среднее текущих официальных очков.</caption><thead><tr>
-      {["Игрок", "Клуб / позиция", "Выбор", "Сравнить"].map(h => <th key={h} scope="col">{h}</th>)}
-      {([["price", "Цена"], ["toiSeconds", "TOI"], ["ppToiSeconds", "PP"], ["pkToiSeconds", "PK"], ["attackZoneSeconds", "Атака"], ["officialFp", "FP"], ["ep", "EP"], ["ixg", "ixG"], ["shotsOnGoal", "Броски"], ["goals", "Голы"], ["assists", "Передачи"], ["pimMinutes", "Штраф, мин"], ["plusMinus", "+/−"]] as const).map(([field, label]) => <th key={field} scope="col" aria-sort={sortField === field ? direction === 1 ? "ascending" : "descending" : "none"}><button className={styles.sortButton} aria-label={`Сортировать: ${label}`} onClick={() => sortBy(field)}>{label} <span aria-hidden="true">{sortField === field ? direction === 1 ? "↑" : "↓" : "↕"}</span></button></th>)}
+      {([["player", "Игрок"], ["club", "Клуб / позиция"], ["selection", "Выбор"], ["compare", "Сравнить"]] as const).map(([key, h]) => <th key={key} scope="col" title={khlStatHelp[key]}>{h}</th>)}
+      {([["price", "Цена"], ["toiSeconds", "TOI"], ["ppToiSeconds", "PP"], ["pkToiSeconds", "PK"], ["attackZoneSeconds", "Атака"], ["officialFp", "FP"], ["ep", "EP"], ["ixg", "ixG"], ["shotsOnGoal", "Броски"], ["goals", "Голы"], ["assists", "Передачи"], ["pimMinutes", "Штраф, мин"], ["plusMinus", "+/−"]] as const).map(([field, label]) => <th key={field} scope="col" title={khlStatHelp[field]} aria-sort={sortField === field ? direction === 1 ? "ascending" : "descending" : "none"}><button className={styles.sortButton} aria-label={`Сортировать: ${label}`} onClick={() => sortBy(field)}>{label} <span aria-hidden="true">{sortField === field ? direction === 1 ? "↑" : "↓" : "↕"}</span></button></th>)}
     </tr></thead><tbody>{filtered.slice(page * 50, (page + 1) * 50).map(p => <tr key={p.id}>
-      <td className="font-medium">{p.name}</td><td>{p.clubName} / {p.position}</td><td><button className={control} disabled={importing} onClick={() => toggle(p)}>{entries.some(e => e.id === p.id) ? "Убрать" : "Выбрать"}</button></td><td><input aria-label={`Сравнить ${p.name}`} type="checkbox" checked={compare.includes(p.id)} disabled={!compare.includes(p.id) && compare.length >= 4} onChange={() => setCompare(compare.includes(p.id) ? compare.filter(id => id !== p.id) : [...compare, p.id])}/></td><td>{formatKhlNumber(p.price.value)}</td>
-      {(["toiSeconds", "ppToiSeconds", "pkToiSeconds", "attackZoneSeconds"] as const).map(field => <td className={styles.timeCell} key={field}><KhlTimeStat value={p[field]} games={p.seasonStats?.games ?? 0}/></td>)}
-      <td>{formatKhlNumber(p.officialFp.value)}</td><td>{formatKhlNumber(p.ep.value)}</td><td>{formatKhlNumber(p.ixg.value)}</td>
-      {(["shotsOnGoal", "goals", "assists", "pimMinutes", "plusMinus"] as const).map(field => <td className={styles.timeCell} key={field}><span>{formatKhlNumber(p[field]?.value)}</span><small className={styles.coverage}>{p[field]?.knownGames ?? 0}/{p[field]?.totalGames ?? 0} матчей</small></td>)}
+      <td className="font-medium" title={cellHelp(p, "player")}>{p.name}</td><td title={cellHelp(p, "club")}>{p.clubName} / {p.position}</td><td title={cellHelp(p, "selection")}><button className={control} disabled={importing} onClick={() => toggle(p)}>{entries.some(e => e.id === p.id) ? "Убрать" : "Выбрать"}</button></td><td title={cellHelp(p, "compare")}><input aria-label={`Сравнить ${p.name}`} type="checkbox" checked={compare.includes(p.id)} disabled={!compare.includes(p.id) && compare.length >= 4} onChange={() => setCompare(compare.includes(p.id) ? compare.filter(id => id !== p.id) : [...compare, p.id])}/></td><td title={cellHelp(p, "price")}>{formatKhlNumber(p.price.value)}</td>
+      {(["toiSeconds", "ppToiSeconds", "pkToiSeconds", "attackZoneSeconds"] as const).map(field => <td className={styles.timeCell} key={field} title={cellHelp(p, field)}><KhlTimeStat value={p[field]} games={p.seasonStats?.games ?? 0}/></td>)}
+      <td title={cellHelp(p, "officialFp")}>{formatKhlNumber(p.officialFp.value)}</td><td title={cellHelp(p, "ep")}>{formatKhlNumber(p.ep.value)}</td><td title={cellHelp(p, "ixg")}>{formatKhlNumber(p.ixg.value)}</td>
+      {(["shotsOnGoal", "goals", "assists", "pimMinutes", "plusMinus"] as const).map(field => <td className={styles.timeCell} key={field} title={cellHelp(p, field)}><span>{formatKhlNumber(p[field]?.value)}</span><small className={styles.coverage}>{p[field]?.knownGames ?? 0}/{p[field]?.totalGames ?? 0} матчей</small></td>)}
     </tr>)}</tbody></table></div>
+    <details className="rounded border p-3"><summary className="min-h-11 cursor-pointer">Справка показателей</summary><dl className="space-y-3 text-sm">{Object.entries(khlStatHelp).map(([key, help]) => <div key={key}><dt className="font-semibold">{({player:'Игрок',club:'Клуб / позиция',selection:'Выбор',compare:'Сравнение',price:'Цена',toiSeconds:'TOI',ppToiSeconds:'PP',pkToiSeconds:'PK',attackZoneSeconds:'Атака',officialFp:'FP',ep:'EP',ixg:'ixG',shotsOnGoal:'Броски',goals:'Голы',assists:'Передачи',pimMinutes:'Штрафные минуты',plusMinus:'Плюс-минус',blockedShots:'Блоки',saves:'Сэйвы',goalsAgainst:'Пропущено'} as Record<string,string>)[key]}</dt><dd>{help}</dd></div>)}</dl></details>
     <div className="flex gap-2"><button className={control} disabled={!page} onClick={() => setPage(page - 1)}>Назад</button><button className={control} disabled={(page + 1) * 50 >= filtered.length} onClick={() => setPage(page + 1)}>Далее</button></div>
-    <label className="block">Период статистики <select className={control} value={statPeriod} onChange={e => { setStatPeriod(e.target.value as typeof statPeriod); setPage(0); }}><option value="season">Текущий сезон · сумма протоколов</option><option value="recent">Последние матчи · среднее</option><option value="previous">Прошлый сезон · сумма истории Sports</option></select></label>
+    <label className="block">Период статистики <select className={control} value={statPeriod} onChange={e => { setStatPeriod(e.target.value as typeof statPeriod); setPage(0); }}><option value="season">Текущий сезон · сумма протоколов</option><option value="recent">Последние матчи · среднее</option><option value="previous">Прошлый сезон · КХЛ и Sports</option></select></label>
     {statPeriod === "previous" && <p className="text-sm">Архив доступен у {players.filter(p => p.previousSeasonStats?.games).length} из {players.length} игроков. У новичков лиги прошлый сезон КХЛ может отсутствовать. Броски и подробное время показаны только при наличии в источнике.</p>}
     <label className="block">История для средних <select className={control} value={historyWindow} onChange={e => setHistoryWindow(Number(e.target.value) as 5 | 10 | 20)}>{[5, 10, 20].map(n => <option key={n} value={n}>{n} матчей</option>)}</select></label>
     {!rolling && <label className="block">Горизонт EP <select className={control} value={horizonWeeks} onChange={e => { optimizer.cancel(); setHorizonWeeks(Number(e.target.value)); }}>{[1, 2, 3, 4].map(n => <option key={n} value={n}>{n} нед.</option>)}</select></label>}

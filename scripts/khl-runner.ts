@@ -16,6 +16,7 @@ import { khlResourceStatus, enqueueKhl } from "../src/server/khl/jobs";
 import { pruneKhl } from "../src/server/khl/retention";
 import { refreshKhlHistory } from "../src/server/khl/history-scheduler";
 import { refreshHistoricalSeason, exportHistoricalBundle, importHistoricalBundle } from "../src/server/khl/historical-season";
+import { importProtocolArchive } from "../src/server/khl/protocol-archive-import";
 const db = new PrismaClient();
 async function main() {
   const [command, contestId, fromText, toText] = process.argv.slice(2);
@@ -28,6 +29,10 @@ async function main() {
   }
   if (command === "protocols" && contestId) { console.log(await refreshKhlProtocols(db, contestId)); return; }
   if (command === "forecast" && contestId) { console.log(await publishRollingForecast(db, contestId)); return; }
+  if (command === "previous-protocols-import" && contestId && fromText) {
+    if ((await stat(fromText)).size > 20 * 1024 * 1024) throw new Error("HISTORY_BUNDLE_TOO_LARGE");
+    console.log(await importProtocolArchive(db, contestId, JSON.parse(await readFile(fromText, "utf8")))); return;
+  }
   if (command === "previous-season-export" && contestId && fromText) {
     const bundle = await exportHistoricalBundle(db, contestId);
     await writeFile(fromText, JSON.stringify(bundle)); console.log({ exported: bundle.entries.length, seasonKey: bundle.seasonKey }); return;

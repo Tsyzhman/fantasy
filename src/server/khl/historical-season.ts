@@ -5,15 +5,16 @@ import { fetchHockeyHistory, parseHockeyHistory, hockeyHistorySeasonId, previous
 import { summarizeHockeyHistory } from "@/khl/history-projection";
 import { contentHash } from "@/khl/repositories/revisions";
 import { seasonStatFields, type KhlHistoricalStats, type KhlPosition } from "@/khl/contracts";
+import { validateProtocolArchive } from "@/khl/protocol-archive";
 
-export async function importHistoricalSeason(db: PrismaClient, input: { playerId: string; providerSeasonId: string; aggregates: KhlHistoricalStats; observedAt: Date }) {
+export async function importHistoricalSeason(db: PrismaClient, input: { playerId: string; providerSeasonId: string; aggregates: KhlHistoricalStats; observedAt: Date; protocolOnly?: boolean }) {
   const { aggregates, observedAt } = input;
   if (!Number.isFinite(observedAt.getTime()) || !/^\d{4}\/\d{4}$/.test(aggregates.seasonKey) || !/^\d{1,12}$/.test(input.providerSeasonId)
     || !/^https:\/\/www\.sports\.ru\/fantasy\/hockey\/player\/info\/\d+\/\d+\.html\?s=\d+$/.test(aggregates.source)
     || !aggregates.source.endsWith(`?s=${input.providerSeasonId}`) || !Number.isInteger(aggregates.games) || aggregates.games < 0 || aggregates.games > 100 || !Number.isInteger(aggregates.dnp) || aggregates.dnp < 0 || aggregates.games + aggregates.dnp > 100
     || seasonStatFields.some(field => { const s = aggregates.totals[field]; return !s || !Number.isInteger(s.knownGames) || s.knownGames < 0 || s.knownGames > aggregates.games || (s.knownGames === 0) !== (s.value === null) || s.value !== null && (!Number.isFinite(s.value) || field !== "plusMinus" && s.value < 0); })
     || [aggregates.officialFp, aggregates.otherPoints].some(s => !s || !Number.isFinite(s.sum) || !Number.isInteger(s.count) || s.count < 0 || s.count > aggregates.games)) throw new Error("HISTORY_AGGREGATES_INVALID");
-  const value = { ...aggregates, asOf: null }, hash = contentHash(value);
+  if (aggregates.protocolStats) validateProtocolArchive(aggregates.protocolStats);
   return db.$transaction(async tx => {
     const contests = await tx.khlFantasyPlayer.findMany({ where: { playerId: input.playerId }, select: { contestId: true } });
     const contestIds = [...new Set(contests.map(c => c.contestId))].sort();
@@ -22,6 +23,17 @@ export async function importHistoricalSeason(db: PrismaClient, input: { playerId
     await tx.$queryRaw`SELECT id FROM khl_players WHERE id = ${input.playerId} FOR UPDATE`;
     const key = { playerId: input.playerId, seasonKey: aggregates.seasonKey };
     const old = await tx.khlHistoricalSeason.findUnique({ where: { playerId_seasonKey: key } });
+    const oldProtocol = (old?.aggregates as unknown as KhlHistoricalStats | undefined)?.protocolStats;
+    const protocolStats = aggregates.protocolStats ?? oldProtocol;
+    if (oldProtocol && protocolStats && oldProtocol.matchIds.some(id => !protocolStats.matchIds.includes(id))) throw new Error("ARCHIVE_PROTOCOL_COVERAGE_REGRESSION");
+    if (protocolStats) {
+      const identity = await tx.khlExternalEntityMap.findUnique({ where: { provider_entityType_providerScope_externalId: { provider: "KHL", entityType: "player", providerScope: "global", externalId: protocolStats.officialPlayerId } } });
+      if (identity?.playerId !== input.playerId || Date.parse(protocolStats.asOf!) > observedAt.getTime()) throw new Error("ARCHIVE_PROTOCOL_IDENTITY_INVALID");
+    }
+    if (input.protocolOnly && !old) throw new Error("ARCHIVE_SPORTS_HISTORY_REQUIRED");
+    const base = input.protocolOnly ? old!.aggregates as unknown as KhlHistoricalStats : aggregates;
+    const value = { ...base, asOf: null, ...(protocolStats ? { protocolStats } : {}) };
+    const hash = contentHash({ ...value, ...(protocolStats ? { protocolStats: { ...protocolStats, asOf: null } } : {}) });
     if (old?.contentHash === hash) { await tx.khlHistoricalSeason.update({ where: { id: old.id }, data: { observedAt } }); return false; }
     const data = { providerSeasonId: input.providerSeasonId, source: aggregates.source, contentHash: hash, aggregates: value as unknown as Prisma.InputJsonValue, observedAt, availableAt: observedAt };
     await tx.khlHistoricalSeason.upsert({ where: { playerId_seasonKey: key }, create: { ...key, ...data }, update: data });

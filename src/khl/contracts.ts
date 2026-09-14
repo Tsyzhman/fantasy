@@ -18,7 +18,7 @@ export interface KhlFixture {
   expectedPoints?: Observation<number>;
 }
 export const seasonStatFields = ["toiSeconds", "ppToiSeconds", "pkToiSeconds", "attackZoneSeconds", "goals", "assists", "shotsOnGoal", "blockedShots", "pimMinutes", "plusMinus", "saves", "goalsAgainst"] as const;
-export const playerStatFields = ["toiSeconds", "ppToiSeconds", "pkToiSeconds", "attackZoneSeconds", "goals", "assists", "shotsOnGoal", "pimMinutes", "plusMinus", "saves", "goalsAgainst"] as const;
+export const playerStatFields = seasonStatFields;
 export type SeasonStatField = typeof seasonStatFields[number];
 export interface KhlSeasonStats {
   games: number; asOf: string | null;
@@ -28,6 +28,18 @@ export interface KhlHistoricalStats extends KhlSeasonStats {
   seasonKey: string; source: string; dnp: number;
   officialFp: { sum: number; count: number };
   otherPoints: { sum: number; count: number };
+  protocolStats?: KhlProtocolArchiveStats;
+}
+export interface KhlProtocolArchiveStats extends KhlSeasonStats {
+  officialPlayerId: string; officialSeasonId: string; source: string;
+  matchIds: string[]; pairedGoals: number; pairedShots: number; pairedGames: number;
+}
+export function historicalTableStats(stats: KhlHistoricalStats): KhlSeasonStats {
+  const official = stats.protocolStats;
+  if (!official) return stats;
+  return { games: Math.max(stats.games, official.games), asOf: official.asOf, totals: Object.fromEntries(seasonStatFields.map(key => [key,
+    official.totals[key].knownGames >= stats.totals[key].knownGames ? official.totals[key] : stats.totals[key]
+  ])) as KhlSeasonStats["totals"] };
 }
 export interface KhlForecastExplanation {
   perGame: number; appearanceRate: number; currentGames: number; previousGames: number;
@@ -44,6 +56,7 @@ export interface KhlPlayer {
   saves: Observation<number>; goalsAgainst: Observation<number>;
   attackZoneSeconds?: Observation<number>; seasonStats?: KhlSeasonStats; forecastHorizonEnd?: string | null;
   goals?: Observation<number>; assists?: Observation<number>; shotsOnGoal?: Observation<number>;
+  blockedShots?: Observation<number>;
   pimMinutes?: Observation<number>; plusMinus?: Observation<number>;
   previousSeasonStats?: KhlHistoricalStats; forecastExplanation?: KhlForecastExplanation;
   fixtures: KhlFixture[];

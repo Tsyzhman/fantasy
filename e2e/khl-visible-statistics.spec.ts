@@ -1,13 +1,18 @@
 import {test,expect} from '@playwright/test';
-import {formatToi,formatKhlNumber,type KhlPlayer} from '../src/khl/contracts';
+import {formatToi,formatKhlNumber,historicalTableStats,type KhlPlayer} from '../src/khl/contracts';
+import ExcelJS from 'exceljs';
 
 /** @spec spec://modules/khl/FEAT-002-khl-squad#cards */
 test('KHL visible statistics survive partial matches and history switches',async({page},testInfo)=>{
  test.skip(process.env.KHL_PRODUCTION_SMOKE!=='true','Explicit production statistics check');
  await page.goto('/machete/khl/players');
+ const poolCount=Number((await page.locator('caption').innerText()).match(/Каталог · (\d+)/)?.[1]);
+ expect(poolCount).toBeGreaterThan(50);
+ expect(await page.locator('th,td').evaluateAll(cells=>cells.filter(cell=>!cell.getAttribute('title')).length)).toBe(0);
  const initialRows=await page.locator('tbody tr').allTextContents().then(rows=>rows.slice(0,10));
  console.log('Initial catalog',initialRows);
  expect(initialRows.some(row=>/[1-9]\d*:[0-5]\d/.test(row)),'Initial catalog must show players with known ice time').toBe(true);
+ expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
  for (const [label, column] of [['TOI',6],['PP',7],['PK',8],['Атака',9]] as const) {
   const sort = page.getByRole('button',{name:`Сортировать: ${label}`,exact:true});
   for (const direction of ['descending','ascending'] as const) {
@@ -44,9 +49,27 @@ test('KHL visible statistics survive partial matches and history switches',async
  const response=await page.request.get(`/api/machete/khl/players/${id}?contestId=cmtr4grkd00056htzwpdv4fwu`);
  expect(response.status()).toBe(200);
  const p=(await response.json()).data as KhlPlayer;
+ const exportResponse=page.waitForResponse(r=>r.url().includes('/players-export?'));
+ await page.getByRole('button',{name:'Excel · все игроки',exact:true}).click();
+ const xlsx=await exportResponse;expect(xlsx.status()).toBe(200);
+ expect(Number(xlsx.headers()['x-export-row-count'])).toBe(poolCount);
+ const book=new ExcelJS.Workbook();await book.xlsx.load(new Uint8Array(await xlsx.body()).buffer);
+ expect(book.worksheets).toHaveLength(6);
+ for(const name of ['Игроки','Текущий сезон','Последние матчи','Прошлый сезон']) {
+  const sheet=book.getWorksheet(name)!;
+  expect(sheet.rowCount-1).toBe(poolCount);
+  expect(new Set(sheet.getColumn(1).values.slice(2)).size).toBe(poolCount);
+ }
+ await expect(page.getByRole('status').filter({hasText:`Excel готов: ${poolCount} игроков`})).toBeVisible();
  expect(p.previousSeasonStats?.games).toBeGreaterThan(40);
  expect(p.forecastExplanation?.previousGames).toBeGreaterThan(40);
+ expect(p.previousSeasonStats?.protocolStats?.games).toBeGreaterThan(40);
+ for(const key of ['shotsOnGoal','ppToiSeconds','pkToiSeconds','attackZoneSeconds'] as const) expect(p.previousSeasonStats!.protocolStats!.totals[key].value).toBeGreaterThan(0);
  const row=page.locator('tbody tr').filter({hasText:'Грегуар'});
+ await expect(row.locator('td').nth(10)).toHaveAttribute('title',/За сыгранный матч:/);
+ await page.getByText('Справка показателей',{exact:true}).click();
+ await expect(page.locator('details[open]').filter({hasText:'Справка показателей'})).toContainText('частота участия');
+ await page.getByText('Справка показателей',{exact:true}).click();
  if(await row.getByRole('button',{name:'Выбрать',exact:true}).count()) await row.getByRole('button',{name:'Выбрать',exact:true}).click();
  for(const key of ['toiSeconds','ppToiSeconds','pkToiSeconds','attackZoneSeconds'] as const){
   const total=p.seasonStats!.totals[key];
@@ -92,8 +115,10 @@ test('KHL visible statistics survive partial matches and history switches',async
  else expect(box!.width).toBeGreaterThan(200);
  await roster.screenshot({path:`output/playwright-test-results/khl-roster-${testInfo.project.name}.png`});
  await page.getByRole('combobox',{name:'Период статистики'}).selectOption('previous');
- await expect(row).toContainText(formatToi(p.previousSeasonStats!.totals.toiSeconds.value));
- await expect(row.locator('td').nth(13).locator('span')).toHaveText(formatKhlNumber(p.previousSeasonStats!.totals.goals.value));
+ const previous=historicalTableStats(p.previousSeasonStats!);
+ for(const key of ['toiSeconds','ppToiSeconds','pkToiSeconds','attackZoneSeconds'] as const) await expect(row).toContainText(formatToi(previous.totals[key].value));
+ await expect(row.locator('td').nth(12).locator('span')).toHaveText(formatKhlNumber(previous.totals.shotsOnGoal.value));
+ await expect(row.locator('td').nth(13).locator('span')).toHaveText(formatKhlNumber(previous.totals.goals.value));
  await expect(row.locator('td').nth(10)).toHaveText(formatKhlNumber(p.ep.value));
  await page.screenshot({path:`output/playwright-test-results/khl-previous-season-${testInfo.project.name}.png`,fullPage:true});
  await page.getByRole('combobox',{name:'Период статистики'}).selectOption('season');

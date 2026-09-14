@@ -10,6 +10,7 @@ import { createTransferPreview, saveTransferPlan } from "@/server/khl/transfer-p
 import { prepareOptimization } from "@/server/khl/optimizer-service";
 import { importSportsHockeySquad } from "@/server/khl/sports-import";
 import { importOwnedProviderSnapshot } from "@/server/khl/provider-snapshot";
+import { buildKhlWorkbook, loadKhlExport } from "@/server/khl/player-export";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 type Context = { params: Promise<{ path: string[] }> };
@@ -29,6 +30,19 @@ export const GET = withApiHandler(async (request: Request, context: Context) => 
   if (path[0] === "calendar") {
     const weekId = requiredStringParam(params.get("weekId"), "weekId");
     return response(envelope(contest, await prisma.khlMatchFantasyWeek.findMany({ where: { contestId, weekId }, include: { match: { include: { home: true, away: true } } }, take: 200 })));
+  }
+  if (path.length === 1 && path[0] === "players-export") {
+    const historyWindow = Number(params.get("historyWindow") ?? 10);
+    if (![5, 10, 20].includes(historyWindow)) throw apiError("INVALID_INPUT", "Окно истории: 5, 10 или 20 матчей", 400);
+    const snapshot = await loadKhlExport(prisma, contestId, historyWindow as 5 | 10 | 20);
+    const bytes = await buildKhlWorkbook(snapshot);
+    return new Response(new Uint8Array(bytes), { headers: {
+      "Content-Type": "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      "Content-Disposition": `attachment; filename="khl-all-players-${snapshot.asOf.slice(0, 10)}.xlsx"`,
+      "Cache-Control": "private, no-store",
+      "X-Export-Row-Count": String(snapshot.players.length),
+      "X-Pool-Revision": String(snapshot.revision),
+    } });
   }
   if (path[0] === "players") {
     const historyWindow = Number(params.get("historyWindow") ?? 10);
