@@ -1,0 +1,59 @@
+{
+  "at": "2026-09-13T07:50:38.377Z",
+  "leagueId": "73",
+  "season": "2026/2027",
+  "prices": 1034,
+  "uniqueMappedPlayers": 1034,
+  "duplicatePricePlayers": [],
+  "pricedPlayersWithoutActiveRoster": [],
+  "activeTeams": 36,
+  "snapshotPlayers": 1034,
+  "snapshotAt": "2026-09-13T07:50:35.568Z",
+  "retainedSnapshots": 3,
+  "refreshQueue": [],
+  "teamsWithStarterFlags": 10,
+  "starterCounts": {
+    "9826": 11,
+    "9885": 11,
+    "8472": 11,
+    "10229": 11,
+    "9772": 11,
+    "10188": 11,
+    "9910": 11,
+    "9748": 11,
+    "8464": 11,
+    "8560": 11
+  },
+  "sportsOnlyPricedPlayers": 8,
+  "workbookDuplicateMappedIds": [],
+  "health": "ok",
+  "release": "0.3.68 ec5d6f20bdf4b26831ebec30d3b6e98053e2c62d",
+  "memoryMiB": {
+    "hostAvailable": 5825,
+    "workerGiB": 1.652,
+    "webMiB": 904.4,
+    "postgresGiB": 1.173
+  },
+  "existingReadinessLimitation": {
+    "audit": null,
+    "ready": false,
+    "season": "2026/2027",
+    "reasons": [
+      "NO_DATA_QUALITY_AUDIT"
+    ],
+    "leagueId": "73",
+    "ingestion": {
+      "id": "cmtz1sah5ahd68r9vnr8sgqfc",
+      "status": "completed",
+      "ageHours": 7.795,
+      "startedAt": "2026-09-13T00:00:13.572Z",
+      "finishedAt": "2026-09-13T00:02:41.493Z",
+      "upcomingFixturesPersisted": 144,
+      "upcomingFixturesDiscovered": 144,
+      "currentUpcomingFixturesFromDiscovery": 144
+    },
+    "activePlayers": 1174,
+    "maximumAgeHours": 26,
+    "upcomingFixtures": 144
+  }
+}

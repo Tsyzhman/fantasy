@@ -1,0 +1,1792 @@
+[
+  {
+    "key": "status",
+    "label": "Статус сопоставления",
+    "group": "Идентификация",
+    "format": "@",
+    "width": 21,
+    "description": "",
+    "columnIndex": 3,
+    "column": "C"
+  },
+  {
+    "key": "name",
+    "label": "Имя FotMob / сервера",
+    "group": "Идентификация",
+    "format": "@",
+    "width": 31,
+    "description": "",
+    "columnIndex": 4,
+    "column": "D"
+  },
+  {
+    "key": "ru_name",
+    "label": "Имя Sports.ru",
+    "group": "Идентификация",
+    "format": "@",
+    "width": 29,
+    "description": "",
+    "columnIndex": 5,
+    "column": "E"
+  },
+  {
+    "key": "price",
+    "label": "Цена ЛЕ, млн",
+    "group": "Цены",
+    "format": "0.0",
+    "width": 15,
+    "description": "Только текущая цена Sports.ru сезона 2026/2027. Пусто означает отсутствие цены, а не ноль.",
+    "columnIndex": 6,
+    "column": "F"
+  },
+  {
+    "key": "position",
+    "label": "Позиция Sports.ru",
+    "group": "Цены",
+    "format": "@",
+    "width": 14,
+    "description": "",
+    "columnIndex": 7,
+    "column": "G"
+  },
+  {
+    "key": "ownership",
+    "label": "Выбрали менеджеры",
+    "group": "Цены",
+    "format": "0.0%",
+    "width": 17,
+    "description": "",
+    "columnIndex": 8,
+    "column": "H"
+  },
+  {
+    "key": "starter",
+    "label": "Галочка основы на сервере",
+    "group": "Состав",
+    "format": "@",
+    "width": 15,
+    "description": "Текущее состояние галочки; не гарантия выхода на поле.",
+    "columnIndex": 9,
+    "column": "I"
+  },
+  {
+    "key": "active",
+    "label": "Активен в ростере ЛЕ",
+    "group": "Состав",
+    "format": "@",
+    "width": 15,
+    "description": "",
+    "columnIndex": 10,
+    "column": "J"
+  },
+  {
+    "key": "roster_position",
+    "label": "Позиция в ростере",
+    "group": "Состав",
+    "format": "@",
+    "width": 22,
+    "description": "",
+    "columnIndex": 11,
+    "column": "K"
+  },
+  {
+    "key": "shirt",
+    "label": "Игровой номер",
+    "group": "Состав",
+    "format": "0",
+    "width": 14,
+    "description": "",
+    "columnIndex": 12,
+    "column": "L"
+  },
+  {
+    "key": "age",
+    "label": "Возраст",
+    "group": "Состав",
+    "format": "0",
+    "width": 13,
+    "description": "",
+    "columnIndex": 13,
+    "column": "M"
+  },
+  {
+    "key": "nationality",
+    "label": "Гражданство в ростере",
+    "group": "Состав",
+    "format": "@",
+    "width": 20,
+    "description": "",
+    "columnIndex": 14,
+    "column": "N"
+  },
+  {
+    "key": "dob",
+    "label": "Дата рождения Sports.ru",
+    "group": "Идентификация",
+    "format": "date",
+    "width": 19,
+    "description": "",
+    "columnIndex": 15,
+    "column": "O"
+  },
+  {
+    "key": "dob_core",
+    "label": "Дата рождения FotMob",
+    "group": "Идентификация",
+    "format": "date",
+    "width": 19,
+    "description": "Источники дат хранятся отдельно; расхождения не исправлены догадкой.",
+    "columnIndex": 16,
+    "column": "P"
+  },
+  {
+    "key": "predictedFp",
+    "label": "Прогноз очков, ближайший тур",
+    "group": "Прогнозы",
+    "format": "0.00",
+    "width": 22,
+    "description": "Готовое значение серверного пула. Прогноз не является фактической статистикой.",
+    "columnIndex": 17,
+    "column": "Q"
+  },
+  {
+    "key": "expectedMinutes",
+    "label": "Ожидаемые минуты",
+    "group": "Прогнозы",
+    "format": "0.00",
+    "width": 22,
+    "description": "Готовое значение серверного пула. Прогноз не является фактической статистикой.",
+    "columnIndex": 18,
+    "column": "R"
+  },
+  {
+    "key": "startProbability",
+    "label": "Вероятность старта",
+    "group": "Прогнозы",
+    "format": "0.0%",
+    "width": 22,
+    "description": "Готовое значение серверного пула. Прогноз не является фактической статистикой.",
+    "columnIndex": 19,
+    "column": "S"
+  },
+  {
+    "key": "valueScore",
+    "label": "Value score сервера",
+    "group": "Прогнозы",
+    "format": "0.00",
+    "width": 22,
+    "description": "Готовое значение серверного пула. Прогноз не является фактической статистикой.",
+    "columnIndex": 20,
+    "column": "T"
+  },
+  {
+    "key": "forecastConfidence",
+    "label": "Уверенность модели",
+    "group": "Прогнозы",
+    "format": "0.0%",
+    "width": 22,
+    "description": "Готовое значение серверного пула. Прогноз не является фактической статистикой.",
+    "columnIndex": 21,
+    "column": "U"
+  },
+  {
+    "key": "componentPredictedFp",
+    "label": "Очки компонентной модели",
+    "group": "Прогнозы",
+    "format": "0.00",
+    "width": 22,
+    "description": "Готовое значение серверного пула. Прогноз не является фактической статистикой.",
+    "columnIndex": 22,
+    "column": "V"
+  },
+  {
+    "key": "legacyPredictedFp",
+    "label": "Очки прежней модели",
+    "group": "Прогнозы",
+    "format": "0.00",
+    "width": 22,
+    "description": "Готовое значение серверного пула. Прогноз не является фактической статистикой.",
+    "columnIndex": 23,
+    "column": "W"
+  },
+  {
+    "key": "alternativePredictedFp",
+    "label": "Альтернативный прогноз",
+    "group": "Прогнозы",
+    "format": "0.00",
+    "width": 22,
+    "description": "Готовое значение серверного пула. Прогноз не является фактической статистикой.",
+    "columnIndex": 24,
+    "column": "X"
+  },
+  {
+    "key": "rr",
+    "label": "Риск ротации RR",
+    "group": "Прогнозы",
+    "format": "0.0%",
+    "width": 17,
+    "description": "",
+    "columnIndex": 25,
+    "column": "Y"
+  },
+  {
+    "key": "rest",
+    "label": "Дни отдыха",
+    "group": "Прогнозы",
+    "format": "0.0",
+    "width": 14,
+    "description": "",
+    "columnIndex": 26,
+    "column": "Z"
+  },
+  {
+    "key": "proj_expectedGoals",
+    "label": "Ожидаемые голы",
+    "group": "Компоненты прогноза",
+    "format": "0.00",
+    "width": 23,
+    "description": "",
+    "columnIndex": 27,
+    "column": "AA"
+  },
+  {
+    "key": "proj_expectedAssists",
+    "label": "Ожидаемые ассисты",
+    "group": "Компоненты прогноза",
+    "format": "0.00",
+    "width": 23,
+    "description": "",
+    "columnIndex": 28,
+    "column": "AB"
+  },
+  {
+    "key": "proj_expectedSaves",
+    "label": "Ожидаемые сейвы",
+    "group": "Компоненты прогноза",
+    "format": "0.00",
+    "width": 23,
+    "description": "",
+    "columnIndex": 29,
+    "column": "AC"
+  },
+  {
+    "key": "proj_expectedCleanSheets",
+    "label": "Ожидаемые сухие матчи",
+    "group": "Компоненты прогноза",
+    "format": "0.00",
+    "width": 23,
+    "description": "",
+    "columnIndex": 30,
+    "column": "AD"
+  },
+  {
+    "key": "proj_expectedGoalsConceded",
+    "label": "Ожидаемые пропущенные",
+    "group": "Компоненты прогноза",
+    "format": "0.00",
+    "width": 23,
+    "description": "",
+    "columnIndex": 31,
+    "column": "AE"
+  },
+  {
+    "key": "proj_expectedRecoveries",
+    "label": "Ожидаемые возвраты мяча",
+    "group": "Компоненты прогноза",
+    "format": "0.00",
+    "width": 23,
+    "description": "",
+    "columnIndex": 32,
+    "column": "AF"
+  },
+  {
+    "key": "proj_expectedYellowCards",
+    "label": "Ожидаемые ЖК",
+    "group": "Компоненты прогноза",
+    "format": "0.00",
+    "width": 23,
+    "description": "",
+    "columnIndex": 33,
+    "column": "AG"
+  },
+  {
+    "key": "proj_expectedRedCards",
+    "label": "Ожидаемые КК",
+    "group": "Компоненты прогноза",
+    "format": "0.00",
+    "width": 23,
+    "description": "",
+    "columnIndex": 34,
+    "column": "AH"
+  },
+  {
+    "key": "proj_sixtyMinutesProbability",
+    "label": "Вероятность 60+ минут",
+    "group": "Компоненты прогноза",
+    "format": "0.0%",
+    "width": 23,
+    "description": "",
+    "columnIndex": 35,
+    "column": "AI"
+  },
+  {
+    "key": "proj_fullMatchProbability",
+    "label": "Вероятность полного матча",
+    "group": "Компоненты прогноза",
+    "format": "0.0%",
+    "width": 23,
+    "description": "",
+    "columnIndex": 36,
+    "column": "AJ"
+  },
+  {
+    "key": "hist_matches_played",
+    "label": "Матчи — последние 5",
+    "group": "Последние 5",
+    "format": "0",
+    "width": 23,
+    "description": "Пул Squad: ALL_LOADED / LAST_5. Доступная серверу выборка, не обязательно только ЛЕ.",
+    "columnIndex": 37,
+    "column": "AK"
+  },
+  {
+    "key": "hist_minutes_played",
+    "label": "Минуты — последние 5",
+    "group": "Последние 5",
+    "format": "0",
+    "width": 23,
+    "description": "Пул Squad: ALL_LOADED / LAST_5. Доступная серверу выборка, не обязательно только ЛЕ.",
+    "columnIndex": 38,
+    "column": "AL"
+  },
+  {
+    "key": "hist_goals",
+    "label": "Голы — последние 5",
+    "group": "Последние 5",
+    "format": "0",
+    "width": 23,
+    "description": "Пул Squad: ALL_LOADED / LAST_5. Доступная серверу выборка, не обязательно только ЛЕ.",
+    "columnIndex": 39,
+    "column": "AM"
+  },
+  {
+    "key": "hist_assists",
+    "label": "Ассисты — последние 5",
+    "group": "Последние 5",
+    "format": "0",
+    "width": 23,
+    "description": "Пул Squad: ALL_LOADED / LAST_5. Доступная серверу выборка, не обязательно только ЛЕ.",
+    "columnIndex": 40,
+    "column": "AN"
+  },
+  {
+    "key": "hist_xg",
+    "label": "xG — последние 5",
+    "group": "Последние 5",
+    "format": "0.00",
+    "width": 23,
+    "description": "Пул Squad: ALL_LOADED / LAST_5. Доступная серверу выборка, не обязательно только ЛЕ.",
+    "columnIndex": 41,
+    "column": "AO"
+  },
+  {
+    "key": "hist_xa",
+    "label": "xA — последние 5",
+    "group": "Последние 5",
+    "format": "0.00",
+    "width": 23,
+    "description": "Пул Squad: ALL_LOADED / LAST_5. Доступная серверу выборка, не обязательно только ЛЕ.",
+    "columnIndex": 42,
+    "column": "AP"
+  },
+  {
+    "key": "hist_xgot",
+    "label": "xGOT — последние 5",
+    "group": "Последние 5",
+    "format": "0.00",
+    "width": 23,
+    "description": "Пул Squad: ALL_LOADED / LAST_5. Доступная серверу выборка, не обязательно только ЛЕ.",
+    "columnIndex": 43,
+    "column": "AQ"
+  },
+  {
+    "key": "hist_shots",
+    "label": "Удары — последние 5",
+    "group": "Последние 5",
+    "format": "0",
+    "width": 23,
+    "description": "Пул Squad: ALL_LOADED / LAST_5. Доступная серверу выборка, не обязательно только ЛЕ.",
+    "columnIndex": 44,
+    "column": "AR"
+  },
+  {
+    "key": "hist_shots_on_target",
+    "label": "Удары в створ — последние 5",
+    "group": "Последние 5",
+    "format": "0",
+    "width": 23,
+    "description": "Пул Squad: ALL_LOADED / LAST_5. Доступная серверу выборка, не обязательно только ЛЕ.",
+    "columnIndex": 45,
+    "column": "AS"
+  },
+  {
+    "key": "hist_key_passes",
+    "label": "Ключевые передачи — последние 5",
+    "group": "Последние 5",
+    "format": "0",
+    "width": 23,
+    "description": "Пул Squad: ALL_LOADED / LAST_5. Доступная серверу выборка, не обязательно только ЛЕ.",
+    "columnIndex": 46,
+    "column": "AT"
+  },
+  {
+    "key": "hist_chances_created",
+    "label": "Созданные моменты — последние 5",
+    "group": "Последние 5",
+    "format": "0",
+    "width": 23,
+    "description": "Пул Squad: ALL_LOADED / LAST_5. Доступная серверу выборка, не обязательно только ЛЕ.",
+    "columnIndex": 47,
+    "column": "AU"
+  },
+  {
+    "key": "hist_saves",
+    "label": "Сейвы — последние 5",
+    "group": "Последние 5",
+    "format": "0",
+    "width": 23,
+    "description": "Пул Squad: ALL_LOADED / LAST_5. Доступная серверу выборка, не обязательно только ЛЕ.",
+    "columnIndex": 48,
+    "column": "AV"
+  },
+  {
+    "key": "hist_goals_conceded",
+    "label": "Пропущено — последние 5",
+    "group": "Последние 5",
+    "format": "0",
+    "width": 23,
+    "description": "Пул Squad: ALL_LOADED / LAST_5. Доступная серверу выборка, не обязательно только ЛЕ.",
+    "columnIndex": 49,
+    "column": "AW"
+  },
+  {
+    "key": "hist_clean_sheets",
+    "label": "Сухие матчи — последние 5",
+    "group": "Последние 5",
+    "format": "0",
+    "width": 23,
+    "description": "Пул Squad: ALL_LOADED / LAST_5. Доступная серверу выборка, не обязательно только ЛЕ.",
+    "columnIndex": 50,
+    "column": "AX"
+  },
+  {
+    "key": "hist_yellow_cards",
+    "label": "ЖК — последние 5",
+    "group": "Последние 5",
+    "format": "0",
+    "width": 23,
+    "description": "Пул Squad: ALL_LOADED / LAST_5. Доступная серверу выборка, не обязательно только ЛЕ.",
+    "columnIndex": 51,
+    "column": "AY"
+  },
+  {
+    "key": "hist_red_cards",
+    "label": "КК — последние 5",
+    "group": "Последние 5",
+    "format": "0",
+    "width": 23,
+    "description": "Пул Squad: ALL_LOADED / LAST_5. Доступная серверу выборка, не обязательно только ЛЕ.",
+    "columnIndex": 52,
+    "column": "AZ"
+  },
+  {
+    "key": "hist_tackles_won",
+    "label": "Выигранные отборы — последние 5",
+    "group": "Последние 5",
+    "format": "0",
+    "width": 23,
+    "description": "Пул Squad: ALL_LOADED / LAST_5. Доступная серверу выборка, не обязательно только ЛЕ.",
+    "columnIndex": 53,
+    "column": "BA"
+  },
+  {
+    "key": "hist_interceptions",
+    "label": "Перехваты — последние 5",
+    "group": "Последние 5",
+    "format": "0",
+    "width": 23,
+    "description": "Пул Squad: ALL_LOADED / LAST_5. Доступная серверу выборка, не обязательно только ЛЕ.",
+    "columnIndex": 54,
+    "column": "BB"
+  },
+  {
+    "key": "hist_clearances",
+    "label": "Выносы — последние 5",
+    "group": "Последние 5",
+    "format": "0",
+    "width": 23,
+    "description": "Пул Squad: ALL_LOADED / LAST_5. Доступная серверу выборка, не обязательно только ЛЕ.",
+    "columnIndex": 55,
+    "column": "BC"
+  },
+  {
+    "key": "hist_duels_won",
+    "label": "Выигранные единоборства — последние 5",
+    "group": "Последние 5",
+    "format": "0",
+    "width": 23,
+    "description": "Пул Squad: ALL_LOADED / LAST_5. Доступная серверу выборка, не обязательно только ЛЕ.",
+    "columnIndex": 56,
+    "column": "BD"
+  },
+  {
+    "key": "hist_aerials_won",
+    "label": "Верховые единоборства — последние 5",
+    "group": "Последние 5",
+    "format": "0",
+    "width": 23,
+    "description": "Пул Squad: ALL_LOADED / LAST_5. Доступная серверу выборка, не обязательно только ЛЕ.",
+    "columnIndex": 57,
+    "column": "BE"
+  },
+  {
+    "key": "hist_recoveries",
+    "label": "Возвраты мяча — последние 5",
+    "group": "Последние 5",
+    "format": "0",
+    "width": 23,
+    "description": "Пул Squad: ALL_LOADED / LAST_5. Доступная серверу выборка, не обязательно только ЛЕ.",
+    "columnIndex": 58,
+    "column": "BF"
+  },
+  {
+    "key": "hist_touches_in_opposition_box",
+    "label": "Касания в штрафной — последние 5",
+    "group": "Последние 5",
+    "format": "0",
+    "width": 23,
+    "description": "Пул Squad: ALL_LOADED / LAST_5. Доступная серверу выборка, не обязательно только ЛЕ.",
+    "columnIndex": 59,
+    "column": "BG"
+  },
+  {
+    "key": "hist_fouls_won",
+    "label": "Заработанные фолы — последние 5",
+    "group": "Последние 5",
+    "format": "0",
+    "width": 23,
+    "description": "Пул Squad: ALL_LOADED / LAST_5. Доступная серверу выборка, не обязательно только ЛЕ.",
+    "columnIndex": 60,
+    "column": "BH"
+  },
+  {
+    "key": "hist_penalties_won",
+    "label": "Заработанные пенальти — последние 5",
+    "group": "Последние 5",
+    "format": "0",
+    "width": 23,
+    "description": "Пул Squad: ALL_LOADED / LAST_5. Доступная серверу выборка, не обязательно только ЛЕ.",
+    "columnIndex": 61,
+    "column": "BI"
+  },
+  {
+    "key": "hist_average_rating",
+    "label": "Средний рейтинг — последние 5",
+    "group": "Последние 5",
+    "format": "0.00",
+    "width": 23,
+    "description": "Пул Squad: ALL_LOADED / LAST_5. Доступная серверу выборка, не обязательно только ЛЕ.",
+    "columnIndex": 62,
+    "column": "BJ"
+  },
+  {
+    "key": "hist_appearances_60",
+    "label": "Матчи 60+ минут — последние 5",
+    "group": "Последние 5",
+    "format": "0",
+    "width": 23,
+    "description": "Пул Squad: ALL_LOADED / LAST_5. Доступная серверу выборка, не обязательно только ЛЕ.",
+    "columnIndex": 63,
+    "column": "BK"
+  },
+  {
+    "key": "hist_full_matches",
+    "label": "Полные матчи — последние 5",
+    "group": "Последние 5",
+    "format": "0",
+    "width": 23,
+    "description": "Пул Squad: ALL_LOADED / LAST_5. Доступная серверу выборка, не обязательно только ЛЕ.",
+    "columnIndex": 64,
+    "column": "BL"
+  },
+  {
+    "key": "fp0",
+    "label": "Фэнтези-очки, матч 1",
+    "group": "Последние 5",
+    "format": "0.0",
+    "width": 21,
+    "description": "Порядок значений сохранён из recentFp сервера.",
+    "columnIndex": 65,
+    "column": "BM"
+  },
+  {
+    "key": "fp1",
+    "label": "Фэнтези-очки, матч 2",
+    "group": "Последние 5",
+    "format": "0.0",
+    "width": 21,
+    "description": "Порядок значений сохранён из recentFp сервера.",
+    "columnIndex": 66,
+    "column": "BN"
+  },
+  {
+    "key": "fp2",
+    "label": "Фэнтези-очки, матч 3",
+    "group": "Последние 5",
+    "format": "0.0",
+    "width": 21,
+    "description": "Порядок значений сохранён из recentFp сервера.",
+    "columnIndex": 67,
+    "column": "BO"
+  },
+  {
+    "key": "fp3",
+    "label": "Фэнтези-очки, матч 4",
+    "group": "Последние 5",
+    "format": "0.0",
+    "width": 21,
+    "description": "Порядок значений сохранён из recentFp сервера.",
+    "columnIndex": 68,
+    "column": "BP"
+  },
+  {
+    "key": "fp4",
+    "label": "Фэнтези-очки, матч 5",
+    "group": "Последние 5",
+    "format": "0.0",
+    "width": 21,
+    "description": "Порядок значений сохранён из recentFp сервера.",
+    "columnIndex": 69,
+    "column": "BQ"
+  },
+  {
+    "key": "2026/2027_appearances",
+    "label": "Матчи с минутами 2026/2027",
+    "group": "Матчи 2026/2027",
+    "format": "0",
+    "width": 23,
+    "description": "Агрегат уникальных завершённых матчей в БД по всем загруженным турнирам указанного сезона. Это покрытие сервера, а не гарантированно полный сезон.",
+    "columnIndex": 70,
+    "column": "BR"
+  },
+  {
+    "key": "2026/2027_starts",
+    "label": "Старты 2026/2027",
+    "group": "Матчи 2026/2027",
+    "format": "0",
+    "width": 23,
+    "description": "Агрегат уникальных завершённых матчей в БД по всем загруженным турнирам указанного сезона. Это покрытие сервера, а не гарантированно полный сезон.",
+    "columnIndex": 71,
+    "column": "BS"
+  },
+  {
+    "key": "2026/2027_minutes",
+    "label": "Минуты 2026/2027",
+    "group": "Матчи 2026/2027",
+    "format": "0",
+    "width": 23,
+    "description": "Агрегат уникальных завершённых матчей в БД по всем загруженным турнирам указанного сезона. Это покрытие сервера, а не гарантированно полный сезон.",
+    "columnIndex": 72,
+    "column": "BT"
+  },
+  {
+    "key": "2026/2027_goals",
+    "label": "Голы 2026/2027",
+    "group": "Матчи 2026/2027",
+    "format": "0",
+    "width": 23,
+    "description": "Агрегат уникальных завершённых матчей в БД по всем загруженным турнирам указанного сезона. Это покрытие сервера, а не гарантированно полный сезон.",
+    "columnIndex": 73,
+    "column": "BU"
+  },
+  {
+    "key": "2026/2027_assists",
+    "label": "Ассисты 2026/2027",
+    "group": "Матчи 2026/2027",
+    "format": "0",
+    "width": 23,
+    "description": "Агрегат уникальных завершённых матчей в БД по всем загруженным турнирам указанного сезона. Это покрытие сервера, а не гарантированно полный сезон.",
+    "columnIndex": 74,
+    "column": "BV"
+  },
+  {
+    "key": "2026/2027_xg",
+    "label": "xG 2026/2027",
+    "group": "Матчи 2026/2027",
+    "format": "0.00",
+    "width": 23,
+    "description": "Агрегат уникальных завершённых матчей в БД по всем загруженным турнирам указанного сезона. Это покрытие сервера, а не гарантированно полный сезон.",
+    "columnIndex": 75,
+    "column": "BW"
+  },
+  {
+    "key": "2026/2027_xa",
+    "label": "xA 2026/2027",
+    "group": "Матчи 2026/2027",
+    "format": "0.00",
+    "width": 23,
+    "description": "Агрегат уникальных завершённых матчей в БД по всем загруженным турнирам указанного сезона. Это покрытие сервера, а не гарантированно полный сезон.",
+    "columnIndex": 76,
+    "column": "BX"
+  },
+  {
+    "key": "2026/2027_xgot",
+    "label": "xGOT 2026/2027",
+    "group": "Матчи 2026/2027",
+    "format": "0.00",
+    "width": 23,
+    "description": "Агрегат уникальных завершённых матчей в БД по всем загруженным турнирам указанного сезона. Это покрытие сервера, а не гарантированно полный сезон.",
+    "columnIndex": 77,
+    "column": "BY"
+  },
+  {
+    "key": "2026/2027_shots",
+    "label": "Удары 2026/2027",
+    "group": "Матчи 2026/2027",
+    "format": "0",
+    "width": 23,
+    "description": "Агрегат уникальных завершённых матчей в БД по всем загруженным турнирам указанного сезона. Это покрытие сервера, а не гарантированно полный сезон.",
+    "columnIndex": 78,
+    "column": "BZ"
+  },
+  {
+    "key": "2026/2027_shots_on_target",
+    "label": "Удары в створ 2026/2027",
+    "group": "Матчи 2026/2027",
+    "format": "0",
+    "width": 23,
+    "description": "Агрегат уникальных завершённых матчей в БД по всем загруженным турнирам указанного сезона. Это покрытие сервера, а не гарантированно полный сезон.",
+    "columnIndex": 79,
+    "column": "CA"
+  },
+  {
+    "key": "2026/2027_key_passes",
+    "label": "Ключевые передачи 2026/2027",
+    "group": "Матчи 2026/2027",
+    "format": "0",
+    "width": 23,
+    "description": "Агрегат уникальных завершённых матчей в БД по всем загруженным турнирам указанного сезона. Это покрытие сервера, а не гарантированно полный сезон.",
+    "columnIndex": 80,
+    "column": "CB"
+  },
+  {
+    "key": "2026/2027_chances_created",
+    "label": "Моменты 2026/2027",
+    "group": "Матчи 2026/2027",
+    "format": "0",
+    "width": 23,
+    "description": "Агрегат уникальных завершённых матчей в БД по всем загруженным турнирам указанного сезона. Это покрытие сервера, а не гарантированно полный сезон.",
+    "columnIndex": 81,
+    "column": "CC"
+  },
+  {
+    "key": "2026/2027_saves",
+    "label": "Сейвы 2026/2027",
+    "group": "Матчи 2026/2027",
+    "format": "0",
+    "width": 23,
+    "description": "Агрегат уникальных завершённых матчей в БД по всем загруженным турнирам указанного сезона. Это покрытие сервера, а не гарантированно полный сезон.",
+    "columnIndex": 82,
+    "column": "CD"
+  },
+  {
+    "key": "2026/2027_goals_conceded",
+    "label": "Пропущено 2026/2027",
+    "group": "Матчи 2026/2027",
+    "format": "0",
+    "width": 23,
+    "description": "Агрегат уникальных завершённых матчей в БД по всем загруженным турнирам указанного сезона. Это покрытие сервера, а не гарантированно полный сезон.",
+    "columnIndex": 83,
+    "column": "CE"
+  },
+  {
+    "key": "2026/2027_clean_sheets",
+    "label": "Сухие матчи 2026/2027",
+    "group": "Матчи 2026/2027",
+    "format": "0",
+    "width": 23,
+    "description": "Агрегат уникальных завершённых матчей в БД по всем загруженным турнирам указанного сезона. Это покрытие сервера, а не гарантированно полный сезон.",
+    "columnIndex": 84,
+    "column": "CF"
+  },
+  {
+    "key": "2026/2027_yellow_cards",
+    "label": "ЖК 2026/2027",
+    "group": "Матчи 2026/2027",
+    "format": "0",
+    "width": 23,
+    "description": "Агрегат уникальных завершённых матчей в БД по всем загруженным турнирам указанного сезона. Это покрытие сервера, а не гарантированно полный сезон.",
+    "columnIndex": 85,
+    "column": "CG"
+  },
+  {
+    "key": "2026/2027_red_cards",
+    "label": "КК 2026/2027",
+    "group": "Матчи 2026/2027",
+    "format": "0",
+    "width": 23,
+    "description": "Агрегат уникальных завершённых матчей в БД по всем загруженным турнирам указанного сезона. Это покрытие сервера, а не гарантированно полный сезон.",
+    "columnIndex": 86,
+    "column": "CH"
+  },
+  {
+    "key": "2026/2027_recoveries",
+    "label": "Возвраты мяча 2026/2027",
+    "group": "Матчи 2026/2027",
+    "format": "0",
+    "width": 23,
+    "description": "Агрегат уникальных завершённых матчей в БД по всем загруженным турнирам указанного сезона. Это покрытие сервера, а не гарантированно полный сезон.",
+    "columnIndex": 87,
+    "column": "CI"
+  },
+  {
+    "key": "2026/2027_rating",
+    "label": "Средний рейтинг 2026/2027",
+    "group": "Матчи 2026/2027",
+    "format": "0.00",
+    "width": 23,
+    "description": "Агрегат уникальных завершённых матчей в БД по всем загруженным турнирам указанного сезона. Это покрытие сервера, а не гарантированно полный сезон.",
+    "columnIndex": 88,
+    "column": "CJ"
+  },
+  {
+    "key": "2026/2027_records",
+    "label": "Записи матчей 2026/2027",
+    "group": "Матчи 2026/2027",
+    "format": "0",
+    "width": 23,
+    "description": "Агрегат уникальных завершённых матчей в БД по всем загруженным турнирам указанного сезона. Это покрытие сервера, а не гарантированно полный сезон.",
+    "columnIndex": 89,
+    "column": "CK"
+  },
+  {
+    "key": "2026/2027_xg_records",
+    "label": "Записи с xG 2026/2027",
+    "group": "Матчи 2026/2027",
+    "format": "0",
+    "width": 23,
+    "description": "Агрегат уникальных завершённых матчей в БД по всем загруженным турнирам указанного сезона. Это покрытие сервера, а не гарантированно полный сезон.",
+    "columnIndex": 90,
+    "column": "CL"
+  },
+  {
+    "key": "2026/2027first_match",
+    "label": "Первый матч выборки 2026/2027",
+    "group": "Матчи 2026/2027",
+    "format": "date",
+    "width": 22,
+    "description": "",
+    "columnIndex": 91,
+    "column": "CM"
+  },
+  {
+    "key": "2026/2027last_match",
+    "label": "Последний матч выборки 2026/2027",
+    "group": "Матчи 2026/2027",
+    "format": "date",
+    "width": 22,
+    "description": "",
+    "columnIndex": 92,
+    "column": "CN"
+  },
+  {
+    "key": "2025/2026_appearances",
+    "label": "Матчи с минутами 2025/2026",
+    "group": "Матчи 2025/2026",
+    "format": "0",
+    "width": 23,
+    "description": "Агрегат уникальных завершённых матчей в БД по всем загруженным турнирам указанного сезона. Это покрытие сервера, а не гарантированно полный сезон.",
+    "columnIndex": 93,
+    "column": "CO"
+  },
+  {
+    "key": "2025/2026_starts",
+    "label": "Старты 2025/2026",
+    "group": "Матчи 2025/2026",
+    "format": "0",
+    "width": 23,
+    "description": "Агрегат уникальных завершённых матчей в БД по всем загруженным турнирам указанного сезона. Это покрытие сервера, а не гарантированно полный сезон.",
+    "columnIndex": 94,
+    "column": "CP"
+  },
+  {
+    "key": "2025/2026_minutes",
+    "label": "Минуты 2025/2026",
+    "group": "Матчи 2025/2026",
+    "format": "0",
+    "width": 23,
+    "description": "Агрегат уникальных завершённых матчей в БД по всем загруженным турнирам указанного сезона. Это покрытие сервера, а не гарантированно полный сезон.",
+    "columnIndex": 95,
+    "column": "CQ"
+  },
+  {
+    "key": "2025/2026_goals",
+    "label": "Голы 2025/2026",
+    "group": "Матчи 2025/2026",
+    "format": "0",
+    "width": 23,
+    "description": "Агрегат уникальных завершённых матчей в БД по всем загруженным турнирам указанного сезона. Это покрытие сервера, а не гарантированно полный сезон.",
+    "columnIndex": 96,
+    "column": "CR"
+  },
+  {
+    "key": "2025/2026_assists",
+    "label": "Ассисты 2025/2026",
+    "group": "Матчи 2025/2026",
+    "format": "0",
+    "width": 23,
+    "description": "Агрегат уникальных завершённых матчей в БД по всем загруженным турнирам указанного сезона. Это покрытие сервера, а не гарантированно полный сезон.",
+    "columnIndex": 97,
+    "column": "CS"
+  },
+  {
+    "key": "2025/2026_xg",
+    "label": "xG 2025/2026",
+    "group": "Матчи 2025/2026",
+    "format": "0.00",
+    "width": 23,
+    "description": "Агрегат уникальных завершённых матчей в БД по всем загруженным турнирам указанного сезона. Это покрытие сервера, а не гарантированно полный сезон.",
+    "columnIndex": 98,
+    "column": "CT"
+  },
+  {
+    "key": "2025/2026_xa",
+    "label": "xA 2025/2026",
+    "group": "Матчи 2025/2026",
+    "format": "0.00",
+    "width": 23,
+    "description": "Агрегат уникальных завершённых матчей в БД по всем загруженным турнирам указанного сезона. Это покрытие сервера, а не гарантированно полный сезон.",
+    "columnIndex": 99,
+    "column": "CU"
+  },
+  {
+    "key": "2025/2026_xgot",
+    "label": "xGOT 2025/2026",
+    "group": "Матчи 2025/2026",
+    "format": "0.00",
+    "width": 23,
+    "description": "Агрегат уникальных завершённых матчей в БД по всем загруженным турнирам указанного сезона. Это покрытие сервера, а не гарантированно полный сезон.",
+    "columnIndex": 100,
+    "column": "CV"
+  },
+  {
+    "key": "2025/2026_shots",
+    "label": "Удары 2025/2026",
+    "group": "Матчи 2025/2026",
+    "format": "0",
+    "width": 23,
+    "description": "Агрегат уникальных завершённых матчей в БД по всем загруженным турнирам указанного сезона. Это покрытие сервера, а не гарантированно полный сезон.",
+    "columnIndex": 101,
+    "column": "CW"
+  },
+  {
+    "key": "2025/2026_shots_on_target",
+    "label": "Удары в створ 2025/2026",
+    "group": "Матчи 2025/2026",
+    "format": "0",
+    "width": 23,
+    "description": "Агрегат уникальных завершённых матчей в БД по всем загруженным турнирам указанного сезона. Это покрытие сервера, а не гарантированно полный сезон.",
+    "columnIndex": 102,
+    "column": "CX"
+  },
+  {
+    "key": "2025/2026_key_passes",
+    "label": "Ключевые передачи 2025/2026",
+    "group": "Матчи 2025/2026",
+    "format": "0",
+    "width": 23,
+    "description": "Агрегат уникальных завершённых матчей в БД по всем загруженным турнирам указанного сезона. Это покрытие сервера, а не гарантированно полный сезон.",
+    "columnIndex": 103,
+    "column": "CY"
+  },
+  {
+    "key": "2025/2026_chances_created",
+    "label": "Моменты 2025/2026",
+    "group": "Матчи 2025/2026",
+    "format": "0",
+    "width": 23,
+    "description": "Агрегат уникальных завершённых матчей в БД по всем загруженным турнирам указанного сезона. Это покрытие сервера, а не гарантированно полный сезон.",
+    "columnIndex": 104,
+    "column": "CZ"
+  },
+  {
+    "key": "2025/2026_saves",
+    "label": "Сейвы 2025/2026",
+    "group": "Матчи 2025/2026",
+    "format": "0",
+    "width": 23,
+    "description": "Агрегат уникальных завершённых матчей в БД по всем загруженным турнирам указанного сезона. Это покрытие сервера, а не гарантированно полный сезон.",
+    "columnIndex": 105,
+    "column": "DA"
+  },
+  {
+    "key": "2025/2026_goals_conceded",
+    "label": "Пропущено 2025/2026",
+    "group": "Матчи 2025/2026",
+    "format": "0",
+    "width": 23,
+    "description": "Агрегат уникальных завершённых матчей в БД по всем загруженным турнирам указанного сезона. Это покрытие сервера, а не гарантированно полный сезон.",
+    "columnIndex": 106,
+    "column": "DB"
+  },
+  {
+    "key": "2025/2026_clean_sheets",
+    "label": "Сухие матчи 2025/2026",
+    "group": "Матчи 2025/2026",
+    "format": "0",
+    "width": 23,
+    "description": "Агрегат уникальных завершённых матчей в БД по всем загруженным турнирам указанного сезона. Это покрытие сервера, а не гарантированно полный сезон.",
+    "columnIndex": 107,
+    "column": "DC"
+  },
+  {
+    "key": "2025/2026_yellow_cards",
+    "label": "ЖК 2025/2026",
+    "group": "Матчи 2025/2026",
+    "format": "0",
+    "width": 23,
+    "description": "Агрегат уникальных завершённых матчей в БД по всем загруженным турнирам указанного сезона. Это покрытие сервера, а не гарантированно полный сезон.",
+    "columnIndex": 108,
+    "column": "DD"
+  },
+  {
+    "key": "2025/2026_red_cards",
+    "label": "КК 2025/2026",
+    "group": "Матчи 2025/2026",
+    "format": "0",
+    "width": 23,
+    "description": "Агрегат уникальных завершённых матчей в БД по всем загруженным турнирам указанного сезона. Это покрытие сервера, а не гарантированно полный сезон.",
+    "columnIndex": 109,
+    "column": "DE"
+  },
+  {
+    "key": "2025/2026_recoveries",
+    "label": "Возвраты мяча 2025/2026",
+    "group": "Матчи 2025/2026",
+    "format": "0",
+    "width": 23,
+    "description": "Агрегат уникальных завершённых матчей в БД по всем загруженным турнирам указанного сезона. Это покрытие сервера, а не гарантированно полный сезон.",
+    "columnIndex": 110,
+    "column": "DF"
+  },
+  {
+    "key": "2025/2026_rating",
+    "label": "Средний рейтинг 2025/2026",
+    "group": "Матчи 2025/2026",
+    "format": "0.00",
+    "width": 23,
+    "description": "Агрегат уникальных завершённых матчей в БД по всем загруженным турнирам указанного сезона. Это покрытие сервера, а не гарантированно полный сезон.",
+    "columnIndex": 111,
+    "column": "DG"
+  },
+  {
+    "key": "2025/2026_records",
+    "label": "Записи матчей 2025/2026",
+    "group": "Матчи 2025/2026",
+    "format": "0",
+    "width": 23,
+    "description": "Агрегат уникальных завершённых матчей в БД по всем загруженным турнирам указанного сезона. Это покрытие сервера, а не гарантированно полный сезон.",
+    "columnIndex": 112,
+    "column": "DH"
+  },
+  {
+    "key": "2025/2026_xg_records",
+    "label": "Записи с xG 2025/2026",
+    "group": "Матчи 2025/2026",
+    "format": "0",
+    "width": 23,
+    "description": "Агрегат уникальных завершённых матчей в БД по всем загруженным турнирам указанного сезона. Это покрытие сервера, а не гарантированно полный сезон.",
+    "columnIndex": 113,
+    "column": "DI"
+  },
+  {
+    "key": "2025/2026first_match",
+    "label": "Первый матч выборки 2025/2026",
+    "group": "Матчи 2025/2026",
+    "format": "date",
+    "width": 22,
+    "description": "",
+    "columnIndex": 114,
+    "column": "DJ"
+  },
+  {
+    "key": "2025/2026last_match",
+    "label": "Последний матч выборки 2025/2026",
+    "group": "Матчи 2025/2026",
+    "format": "date",
+    "width": 22,
+    "description": "",
+    "columnIndex": 115,
+    "column": "DK"
+  },
+  {
+    "key": "fixtureFullNames0",
+    "label": "Соперник — тур 1",
+    "group": "Календарь ЛЕ",
+    "format": "@",
+    "width": 34,
+    "description": "H — дома, A — в гостях. Значения из серверного пула; туры 1–8 текущей ЛЕ.",
+    "columnIndex": 116,
+    "column": "DL"
+  },
+  {
+    "key": "fixtureDifficulties0",
+    "label": "Сложность FDR — тур 1",
+    "group": "Календарь ЛЕ",
+    "format": "0",
+    "width": 16,
+    "description": "H — дома, A — в гостях. Значения из серверного пула; туры 1–8 текущей ЛЕ.",
+    "columnIndex": 117,
+    "column": "DM"
+  },
+  {
+    "key": "roundPoints0",
+    "label": "Прогноз очков — тур 1",
+    "group": "Календарь ЛЕ",
+    "format": "0.00",
+    "width": 18,
+    "description": "H — дома, A — в гостях. Значения из серверного пула; туры 1–8 текущей ЛЕ.",
+    "columnIndex": 118,
+    "column": "DN"
+  },
+  {
+    "key": "roundFixtureCounts0",
+    "label": "Матчей в туре — тур 1",
+    "group": "Календарь ЛЕ",
+    "format": "0",
+    "width": 17,
+    "description": "H — дома, A — в гостях. Значения из серверного пула; туры 1–8 текущей ЛЕ.",
+    "columnIndex": 119,
+    "column": "DO"
+  },
+  {
+    "key": "fixtureFullNames1",
+    "label": "Соперник — тур 2",
+    "group": "Календарь ЛЕ",
+    "format": "@",
+    "width": 34,
+    "description": "H — дома, A — в гостях. Значения из серверного пула; туры 1–8 текущей ЛЕ.",
+    "columnIndex": 120,
+    "column": "DP"
+  },
+  {
+    "key": "fixtureDifficulties1",
+    "label": "Сложность FDR — тур 2",
+    "group": "Календарь ЛЕ",
+    "format": "0",
+    "width": 16,
+    "description": "H — дома, A — в гостях. Значения из серверного пула; туры 1–8 текущей ЛЕ.",
+    "columnIndex": 121,
+    "column": "DQ"
+  },
+  {
+    "key": "roundPoints1",
+    "label": "Прогноз очков — тур 2",
+    "group": "Календарь ЛЕ",
+    "format": "0.00",
+    "width": 18,
+    "description": "H — дома, A — в гостях. Значения из серверного пула; туры 1–8 текущей ЛЕ.",
+    "columnIndex": 122,
+    "column": "DR"
+  },
+  {
+    "key": "roundFixtureCounts1",
+    "label": "Матчей в туре — тур 2",
+    "group": "Календарь ЛЕ",
+    "format": "0",
+    "width": 17,
+    "description": "H — дома, A — в гостях. Значения из серверного пула; туры 1–8 текущей ЛЕ.",
+    "columnIndex": 123,
+    "column": "DS"
+  },
+  {
+    "key": "fixtureFullNames2",
+    "label": "Соперник — тур 3",
+    "group": "Календарь ЛЕ",
+    "format": "@",
+    "width": 34,
+    "description": "H — дома, A — в гостях. Значения из серверного пула; туры 1–8 текущей ЛЕ.",
+    "columnIndex": 124,
+    "column": "DT"
+  },
+  {
+    "key": "fixtureDifficulties2",
+    "label": "Сложность FDR — тур 3",
+    "group": "Календарь ЛЕ",
+    "format": "0",
+    "width": 16,
+    "description": "H — дома, A — в гостях. Значения из серверного пула; туры 1–8 текущей ЛЕ.",
+    "columnIndex": 125,
+    "column": "DU"
+  },
+  {
+    "key": "roundPoints2",
+    "label": "Прогноз очков — тур 3",
+    "group": "Календарь ЛЕ",
+    "format": "0.00",
+    "width": 18,
+    "description": "H — дома, A — в гостях. Значения из серверного пула; туры 1–8 текущей ЛЕ.",
+    "columnIndex": 126,
+    "column": "DV"
+  },
+  {
+    "key": "roundFixtureCounts2",
+    "label": "Матчей в туре — тур 3",
+    "group": "Календарь ЛЕ",
+    "format": "0",
+    "width": 17,
+    "description": "H — дома, A — в гостях. Значения из серверного пула; туры 1–8 текущей ЛЕ.",
+    "columnIndex": 127,
+    "column": "DW"
+  },
+  {
+    "key": "fixtureFullNames3",
+    "label": "Соперник — тур 4",
+    "group": "Календарь ЛЕ",
+    "format": "@",
+    "width": 34,
+    "description": "H — дома, A — в гостях. Значения из серверного пула; туры 1–8 текущей ЛЕ.",
+    "columnIndex": 128,
+    "column": "DX"
+  },
+  {
+    "key": "fixtureDifficulties3",
+    "label": "Сложность FDR — тур 4",
+    "group": "Календарь ЛЕ",
+    "format": "0",
+    "width": 16,
+    "description": "H — дома, A — в гостях. Значения из серверного пула; туры 1–8 текущей ЛЕ.",
+    "columnIndex": 129,
+    "column": "DY"
+  },
+  {
+    "key": "roundPoints3",
+    "label": "Прогноз очков — тур 4",
+    "group": "Календарь ЛЕ",
+    "format": "0.00",
+    "width": 18,
+    "description": "H — дома, A — в гостях. Значения из серверного пула; туры 1–8 текущей ЛЕ.",
+    "columnIndex": 130,
+    "column": "DZ"
+  },
+  {
+    "key": "roundFixtureCounts3",
+    "label": "Матчей в туре — тур 4",
+    "group": "Календарь ЛЕ",
+    "format": "0",
+    "width": 17,
+    "description": "H — дома, A — в гостях. Значения из серверного пула; туры 1–8 текущей ЛЕ.",
+    "columnIndex": 131,
+    "column": "EA"
+  },
+  {
+    "key": "fixtureFullNames4",
+    "label": "Соперник — тур 5",
+    "group": "Календарь ЛЕ",
+    "format": "@",
+    "width": 34,
+    "description": "H — дома, A — в гостях. Значения из серверного пула; туры 1–8 текущей ЛЕ.",
+    "columnIndex": 132,
+    "column": "EB"
+  },
+  {
+    "key": "fixtureDifficulties4",
+    "label": "Сложность FDR — тур 5",
+    "group": "Календарь ЛЕ",
+    "format": "0",
+    "width": 16,
+    "description": "H — дома, A — в гостях. Значения из серверного пула; туры 1–8 текущей ЛЕ.",
+    "columnIndex": 133,
+    "column": "EC"
+  },
+  {
+    "key": "roundPoints4",
+    "label": "Прогноз очков — тур 5",
+    "group": "Календарь ЛЕ",
+    "format": "0.00",
+    "width": 18,
+    "description": "H — дома, A — в гостях. Значения из серверного пула; туры 1–8 текущей ЛЕ.",
+    "columnIndex": 134,
+    "column": "ED"
+  },
+  {
+    "key": "roundFixtureCounts4",
+    "label": "Матчей в туре — тур 5",
+    "group": "Календарь ЛЕ",
+    "format": "0",
+    "width": 17,
+    "description": "H — дома, A — в гостях. Значения из серверного пула; туры 1–8 текущей ЛЕ.",
+    "columnIndex": 135,
+    "column": "EE"
+  },
+  {
+    "key": "fixtureFullNames5",
+    "label": "Соперник — тур 6",
+    "group": "Календарь ЛЕ",
+    "format": "@",
+    "width": 34,
+    "description": "H — дома, A — в гостях. Значения из серверного пула; туры 1–8 текущей ЛЕ.",
+    "columnIndex": 136,
+    "column": "EF"
+  },
+  {
+    "key": "fixtureDifficulties5",
+    "label": "Сложность FDR — тур 6",
+    "group": "Календарь ЛЕ",
+    "format": "0",
+    "width": 16,
+    "description": "H — дома, A — в гостях. Значения из серверного пула; туры 1–8 текущей ЛЕ.",
+    "columnIndex": 137,
+    "column": "EG"
+  },
+  {
+    "key": "roundPoints5",
+    "label": "Прогноз очков — тур 6",
+    "group": "Календарь ЛЕ",
+    "format": "0.00",
+    "width": 18,
+    "description": "H — дома, A — в гостях. Значения из серверного пула; туры 1–8 текущей ЛЕ.",
+    "columnIndex": 138,
+    "column": "EH"
+  },
+  {
+    "key": "roundFixtureCounts5",
+    "label": "Матчей в туре — тур 6",
+    "group": "Календарь ЛЕ",
+    "format": "0",
+    "width": 17,
+    "description": "H — дома, A — в гостях. Значения из серверного пула; туры 1–8 текущей ЛЕ.",
+    "columnIndex": 139,
+    "column": "EI"
+  },
+  {
+    "key": "fixtureFullNames6",
+    "label": "Соперник — тур 7",
+    "group": "Календарь ЛЕ",
+    "format": "@",
+    "width": 34,
+    "description": "H — дома, A — в гостях. Значения из серверного пула; туры 1–8 текущей ЛЕ.",
+    "columnIndex": 140,
+    "column": "EJ"
+  },
+  {
+    "key": "fixtureDifficulties6",
+    "label": "Сложность FDR — тур 7",
+    "group": "Календарь ЛЕ",
+    "format": "0",
+    "width": 16,
+    "description": "H — дома, A — в гостях. Значения из серверного пула; туры 1–8 текущей ЛЕ.",
+    "columnIndex": 141,
+    "column": "EK"
+  },
+  {
+    "key": "roundPoints6",
+    "label": "Прогноз очков — тур 7",
+    "group": "Календарь ЛЕ",
+    "format": "0.00",
+    "width": 18,
+    "description": "H — дома, A — в гостях. Значения из серверного пула; туры 1–8 текущей ЛЕ.",
+    "columnIndex": 142,
+    "column": "EL"
+  },
+  {
+    "key": "roundFixtureCounts6",
+    "label": "Матчей в туре — тур 7",
+    "group": "Календарь ЛЕ",
+    "format": "0",
+    "width": 17,
+    "description": "H — дома, A — в гостях. Значения из серверного пула; туры 1–8 текущей ЛЕ.",
+    "columnIndex": 143,
+    "column": "EM"
+  },
+  {
+    "key": "fixtureFullNames7",
+    "label": "Соперник — тур 8",
+    "group": "Календарь ЛЕ",
+    "format": "@",
+    "width": 34,
+    "description": "H — дома, A — в гостях. Значения из серверного пула; туры 1–8 текущей ЛЕ.",
+    "columnIndex": 144,
+    "column": "EN"
+  },
+  {
+    "key": "fixtureDifficulties7",
+    "label": "Сложность FDR — тур 8",
+    "group": "Календарь ЛЕ",
+    "format": "0",
+    "width": 16,
+    "description": "H — дома, A — в гостях. Значения из серверного пула; туры 1–8 текущей ЛЕ.",
+    "columnIndex": 145,
+    "column": "EO"
+  },
+  {
+    "key": "roundPoints7",
+    "label": "Прогноз очков — тур 8",
+    "group": "Календарь ЛЕ",
+    "format": "0.00",
+    "width": 18,
+    "description": "H — дома, A — в гостях. Значения из серверного пула; туры 1–8 текущей ЛЕ.",
+    "columnIndex": 146,
+    "column": "EP"
+  },
+  {
+    "key": "roundFixtureCounts7",
+    "label": "Матчей в туре — тур 8",
+    "group": "Календарь ЛЕ",
+    "format": "0",
+    "width": 17,
+    "description": "H — дома, A — в гостях. Значения из серверного пула; туры 1–8 текущей ЛЕ.",
+    "columnIndex": 147,
+    "column": "EQ"
+  },
+  {
+    "key": "rr5_starts",
+    "label": "Стартов — окно 5",
+    "group": "История основы",
+    "format": "0",
+    "width": 20,
+    "description": "",
+    "columnIndex": 148,
+    "column": "ER"
+  },
+  {
+    "key": "rr5_bench",
+    "label": "В запасе — окно 5",
+    "group": "История основы",
+    "format": "0",
+    "width": 20,
+    "description": "",
+    "columnIndex": 149,
+    "column": "ES"
+  },
+  {
+    "key": "rr5_risk",
+    "label": "Риск — окно 5",
+    "group": "История основы",
+    "format": "0.0%",
+    "width": 20,
+    "description": "",
+    "columnIndex": 150,
+    "column": "ET"
+  },
+  {
+    "key": "rr10_starts",
+    "label": "Стартов — окно 10",
+    "group": "История основы",
+    "format": "0",
+    "width": 20,
+    "description": "",
+    "columnIndex": 151,
+    "column": "EU"
+  },
+  {
+    "key": "rr10_bench",
+    "label": "В запасе — окно 10",
+    "group": "История основы",
+    "format": "0",
+    "width": 20,
+    "description": "",
+    "columnIndex": 152,
+    "column": "EV"
+  },
+  {
+    "key": "rr10_risk",
+    "label": "Риск — окно 10",
+    "group": "История основы",
+    "format": "0.0%",
+    "width": 20,
+    "description": "",
+    "columnIndex": 153,
+    "column": "EW"
+  },
+  {
+    "key": "rr20_starts",
+    "label": "Стартов — окно 20",
+    "group": "История основы",
+    "format": "0",
+    "width": 20,
+    "description": "",
+    "columnIndex": 154,
+    "column": "EX"
+  },
+  {
+    "key": "rr20_bench",
+    "label": "В запасе — окно 20",
+    "group": "История основы",
+    "format": "0",
+    "width": 20,
+    "description": "",
+    "columnIndex": 155,
+    "column": "EY"
+  },
+  {
+    "key": "rr20_risk",
+    "label": "Риск — окно 20",
+    "group": "История основы",
+    "format": "0.0%",
+    "width": 20,
+    "description": "",
+    "columnIndex": 156,
+    "column": "EZ"
+  },
+  {
+    "key": "rr50_starts",
+    "label": "Стартов — окно 50",
+    "group": "История основы",
+    "format": "0",
+    "width": 20,
+    "description": "",
+    "columnIndex": 157,
+    "column": "FA"
+  },
+  {
+    "key": "rr50_bench",
+    "label": "В запасе — окно 50",
+    "group": "История основы",
+    "format": "0",
+    "width": 20,
+    "description": "",
+    "columnIndex": 158,
+    "column": "FB"
+  },
+  {
+    "key": "rr50_risk",
+    "label": "Риск — окно 50",
+    "group": "История основы",
+    "format": "0.0%",
+    "width": 20,
+    "description": "",
+    "columnIndex": 159,
+    "column": "FC"
+  },
+  {
+    "key": "team_server",
+    "label": "Команда цены ЛЕ на сервере",
+    "group": "Идентификация",
+    "format": "@",
+    "width": 28,
+    "description": "",
+    "columnIndex": 160,
+    "column": "FD"
+  },
+  {
+    "key": "id",
+    "label": "ID игрока сервера",
+    "group": "Идентификация",
+    "format": "@",
+    "width": 21,
+    "description": "",
+    "columnIndex": 161,
+    "column": "FE"
+  },
+  {
+    "key": "pid",
+    "label": "ID Sports.ru (ЛЕ)",
+    "group": "Идентификация",
+    "format": "@",
+    "width": 20,
+    "description": "",
+    "columnIndex": 162,
+    "column": "FF"
+  },
+  {
+    "key": "statid",
+    "label": "Постоянный ID Sports.ru",
+    "group": "Идентификация",
+    "format": "@",
+    "width": 48,
+    "description": "",
+    "columnIndex": 163,
+    "column": "FG"
+  },
+  {
+    "key": "teamid",
+    "label": "ID клуба FotMob",
+    "group": "Идентификация",
+    "format": "@",
+    "width": 18,
+    "description": "",
+    "columnIndex": 164,
+    "column": "FH"
+  },
+  {
+    "key": "source",
+    "label": "Источник карточки",
+    "group": "Идентификация",
+    "format": "@",
+    "width": 19,
+    "description": "",
+    "columnIndex": 165,
+    "column": "FI"
+  },
+  {
+    "key": "price_at",
+    "label": "Цены обновлены UTC",
+    "group": "Актуальность",
+    "format": "datetime",
+    "width": 23,
+    "description": "",
+    "columnIndex": 166,
+    "column": "FJ"
+  },
+  {
+    "key": "forecast_at",
+    "label": "Прогноз рассчитан UTC",
+    "group": "Актуальность",
+    "format": "datetime",
+    "width": 23,
+    "description": "",
+    "columnIndex": 167,
+    "column": "FK"
+  },
+  {
+    "key": "forecast_data_at",
+    "label": "Данные прогноза UTC",
+    "group": "Актуальность",
+    "format": "datetime",
+    "width": 23,
+    "description": "",
+    "columnIndex": 168,
+    "column": "FL"
+  },
+  {
+    "key": "engine",
+    "label": "Модель прогноза",
+    "group": "Актуальность",
+    "format": "@",
+    "width": 25,
+    "description": "",
+    "columnIndex": 169,
+    "column": "FM"
+  },
+  {
+    "key": "fotmob_url",
+    "label": "Карточка FotMob",
+    "group": "Источники",
+    "format": "@",
+    "width": 49,
+    "description": "",
+    "columnIndex": 170,
+    "column": "FN"
+  },
+  {
+    "key": "lineup_status",
+    "label": "Доступность прогноза основы",
+    "group": "Источник основы",
+    "format": "@",
+    "width": 42,
+    "description": "Проверка SorareInside. Галочка «Нет» при отсутствии прогноза не означает подтверждённый запас.",
+    "columnIndex": 171,
+    "column": "FO"
+  },
+  {
+    "key": "lineup_source",
+    "label": "Источник основы",
+    "group": "Источник основы",
+    "format": "@",
+    "width": 22,
+    "description": "Ближайший матч команды, включая национальные турниры; это не обязательно матч ЛЕ.",
+    "columnIndex": 172,
+    "column": "FP"
+  },
+  {
+    "key": "lineup_opponentName",
+    "label": "Соперник прогноза основы",
+    "group": "Источник основы",
+    "format": "@",
+    "width": 28,
+    "description": "Ближайший матч команды, включая национальные турниры; это не обязательно матч ЛЕ.",
+    "columnIndex": 173,
+    "column": "FQ"
+  },
+  {
+    "key": "lineup_sourceKickoff",
+    "label": "Матч прогноза основы UTC",
+    "group": "Источник основы",
+    "format": "datetime",
+    "width": 25,
+    "description": "Ближайший матч команды, включая национальные турниры; это не обязательно матч ЛЕ.",
+    "columnIndex": 174,
+    "column": "FR"
+  },
+  {
+    "key": "lineup_formation",
+    "label": "Схема прогноза основы",
+    "group": "Источник основы",
+    "format": "@",
+    "width": 20,
+    "description": "Ближайший матч команды, включая национальные турниры; это не обязательно матч ЛЕ.",
+    "columnIndex": 175,
+    "column": "FS"
+  },
+  {
+    "key": "lineup_fetchedAt",
+    "label": "Основа получена UTC",
+    "group": "Источник основы",
+    "format": "datetime",
+    "width": 24,
+    "description": "Ближайший матч команды, включая национальные турниры; это не обязательно матч ЛЕ.",
+    "columnIndex": 176,
+    "column": "FT"
+  },
+  {
+    "key": "lineup_sourceUrl",
+    "label": "Ссылка на прогноз основы",
+    "group": "Источник основы",
+    "format": "@",
+    "width": 52,
+    "description": "Ближайший матч команды, включая национальные турниры; это не обязательно матч ЛЕ.",
+    "columnIndex": 177,
+    "column": "FU"
+  },
+  {
+    "key": "lineup_venue",
+    "label": "Поле в прогнозе основы",
+    "group": "Источник основы",
+    "format": "@",
+    "width": 21,
+    "description": "Ближайший матч команды, включая национальные турниры; это не обязательно матч ЛЕ.",
+    "columnIndex": 178,
+    "column": "FV"
+  },
+  {
+    "key": "forecastFactors",
+    "label": "Факторы прогноза",
+    "group": "Пояснения модели",
+    "format": "@",
+    "width": 65,
+    "description": "Текст серверной модели сохранён на языке источника.",
+    "columnIndex": 179,
+    "column": "FW"
+  },
+  {
+    "key": "forecastRisks",
+    "label": "Ограничения прогноза",
+    "group": "Пояснения модели",
+    "format": "@",
+    "width": 65,
+    "description": "Текст серверной модели сохранён на языке источника.",
+    "columnIndex": 180,
+    "column": "FX"
+  },
+  {
+    "key": "forecastModelVersion",
+    "label": "Версия модели",
+    "group": "Пояснения модели",
+    "format": "@",
+    "width": 65,
+    "description": "Текст серверной модели сохранён на языке источника.",
+    "columnIndex": 181,
+    "column": "FY"
+  }
+]

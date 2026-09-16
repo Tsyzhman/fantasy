@@ -1,3 +1,7 @@
+/**
+ * Explicit Sports.ru club limits keyed by CoreLeague id.
+ * @spec spec://modules/machete/FEAT-003-squad-player-card#root
+ */
 export const sportsRuMaxPlayersPerTeamByLeagueId = {
   "42": 3,
   "47": 3,
@@ -9,7 +13,7 @@ export const sportsRuMaxPlayersPerTeamByLeagueId = {
   "61": 2,
   "63": 3,
   "71": 2,
-  "73": 2,
+  "73": 3,
   "77": 2,
   "87": 3
 } as const satisfies Readonly<Record<string, 2 | 3>>;

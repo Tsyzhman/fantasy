@@ -1,0 +1,19 @@
+{
+  "sourceCellsChecked": 2280,
+  "newCellsChecked": 176136,
+  "rows": 984,
+  "addedColumns": 179,
+  "matchedRows": 977,
+  "rowsWithPrice": 895,
+  "matchedWithoutPrice": 82,
+  "ambiguous": 1,
+  "unmatched": 6,
+  "errors": [],
+  "formulaErrors": [],
+  "fileBytes": 909831,
+  "sheets": [
+    "Combine Sheet",
+    "Log Sheet",
+    "Поля сервера"
+  ]
+}

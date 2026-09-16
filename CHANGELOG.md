@@ -5,6 +5,10 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.75 - 2026-09-16
+
+- Correct the Europa League fantasy limit to three players per club in Squad, price sync and the current persisted contest.
+
 ## 0.3.74 - 2026-09-14
 
 - Выпуск ждёт завершения полного сбора КХЛ перед остановкой контейнеров; плановый сбор ждёт окончания замены сервера.

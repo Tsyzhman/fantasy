@@ -1,0 +1,37 @@
+{
+  "added": 56,
+  "activated": 21,
+  "moved": 1,
+  "teamsChanged": 27
+}
+{
+  "status": "SYNCED",
+  "seasonId": "86",
+  "prices": 1034,
+  "deletedStalePrices": 0,
+  "teamReconciliation": {
+    "scanned": 1034,
+    "correctedPrices": 0,
+    "refreshedSelections": 0,
+    "skippedManualTeamOverrides": 497
+  },
+  "mapping": {
+    "total": 0,
+    "matched": 0,
+    "manual": 0,
+    "excluded": 0,
+    "unmatched": 0,
+    "movedSelections": 0,
+    "refreshedSelections": 0,
+    "removedDuplicateSelections": 0
+  },
+  "schedule": {
+    "revision": "dfee8d1e9f75652ec561bdf7cbeba2cf36d2fc121a8bab2b11f4516e48ea00ed",
+    "rounds": 8,
+    "fixtures": 144,
+    "matchedFixtures": 144,
+    "teamMappedFixtures": 0,
+    "unmatchedFixtures": 0
+  },
+  "databaseChanged": true
+}

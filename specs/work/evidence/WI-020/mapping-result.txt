@@ -1,0 +1,13 @@
+{
+  "plans": 497,
+  "unresolved": 0,
+  "audit": 1034,
+  "reasons": {
+    "EXACT_NAME_IN_TEAM": 732,
+    "EXISTING_PROVIDER_ID_AND_DOB": 128,
+    "RETAIN_AUTO": 54,
+    "REVIEWED_TEAM_NAME_VARIANT": 93,
+    "REVIEWED_IDENTITY": 20,
+    "SPORTS_ONLY_VERIFIED_NO_CORE_MATCH": 7
+  }
+}

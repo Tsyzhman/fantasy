@@ -20,12 +20,13 @@ test("Sports.ru club limits are explicit for every supported competition", () =>
     "61": 2,
     "63": 3,
     "71": 2,
-    "73": 2,
+    "73": 3,
     "77": 2,
     "87": 3
   });
   assert.equal(sportsRuMaxPlayersPerTeamForLeague(87n), 3, "LaLiga");
   assert.equal(sportsRuMaxPlayersPerTeamForLeague(63n), 3, "RPL");
+  assert.equal(sportsRuMaxPlayersPerTeamForLeague(73n), 3, "Europa League");
   assert.equal(sportsRuMaxPlayersPerTeamForLeague(999n), 2, "unknown competition fallback");
 });
 
@@ -43,8 +44,8 @@ test("all Sports.ru contest writers and Squad fallback share the ID-based limit"
   assert.doesNotMatch(syncSource, /parsed\.contest\.maxPlayersPerTeam\s*\?\?/);
 });
 
-test("Squad fallback allows three same-club players in UCL, LaLiga and RPL", () => {
-  for (const [leagueId, name, country] of [[42n, "Champions League", "INT"], [87n, "LaLiga", "ESP"], [63n, "Premier League", "RUS"]] as const) {
+test("Squad fallback allows three same-club players in UCL, Europa League, LaLiga and RPL", () => {
+  for (const [leagueId, name, country] of [[42n, "Champions League", "INT"], [73n, "Europa League", "INT"], [87n, "LaLiga", "ESP"], [63n, "Premier League", "RUS"]] as const) {
     const rules = fantasyRulesForLeague({
       leagueId,
       season: "2026/2027",
@@ -67,4 +68,15 @@ test("migration corrects persisted LaLiga and RPL contest limits", () => {
   assert.match(migration, /\(63::BIGINT, 3\)/);
   assert.match(migration, /\(87::BIGINT, 3\)/);
   assert.match(migration, /"provider" = 'SPORTS_RU'/);
+});
+
+test("migration corrects the current Europa League contest limit", () => {
+  const migration = readFileSync(
+    new URL("../../prisma/migrations/20260916120000_europa_three_players_per_club/migration.sql", import.meta.url),
+    "utf8"
+  );
+  assert.match(migration, /league_id = 73/);
+  assert.match(migration, /season = '2026\/2027'/);
+  assert.match(migration, /max_players_per_team = 3/);
+  assert.match(migration, /provider = 'SPORTS_RU'/);
 });

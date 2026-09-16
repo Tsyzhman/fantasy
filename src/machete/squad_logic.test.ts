@@ -123,6 +123,21 @@ test("UCL allows a third same-club player and rejects a fourth", () => {
   assert.equal(summarizeFantasySquad(pool, selections, rules, 1).violations.some((v) => v.includes("4/3")), true);
 });
 
+test("Europa League allows a third same-club player and rejects a fourth", () => {
+  const rules = { ...defaultFantasySquadRules, maxPlayersPerTeam: sportsRuMaxPlayersPerTeamForLeague(73) };
+  const pool = [
+    player("1", "GK A", "10", "GK", 5, [2]),
+    player("2", "DEF A", "10", "DEF", 5, [2]),
+    player("3", "MID A", "10", "MID", 5, [2]),
+    player("4", "FWD A", "10", "FWD", 5, [2])
+  ];
+  const selections = pool.map((item, index) => selectionForPlayer(item, index));
+  assert.equal(canAddFantasyPlayer(pool[2], pool, selections.slice(0, 2), rules), true);
+  assert.equal(canAddFantasyPlayer(pool[3], pool, selections.slice(0, 3), rules), false);
+  assert.equal(summarizeFantasySquad(pool, selections.slice(0, 3), rules, 1).violations.some((v) => v.includes("Team 10")), false);
+  assert.equal(summarizeFantasySquad(pool, selections, rules, 1).violations.some((v) => v.includes("4/3")), true);
+});
+
 test("can add rejects players that break a team cap", () => {
   const rules = { ...defaultFantasySquadRules, maxPlayersPerTeam: 1 };
   const pool = [player("1", "GK A", "10", "GK", 5, [2]), player("2", "DEF A", "10", "DEF", 5, [2])];
