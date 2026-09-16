@@ -6,7 +6,6 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
-| [WI-024](work/WI-024-europa-three-per-club.md) | Три игрока клуба в Лиге Европы | Sports.ru limits | @tsyzhman | 2026-09-16 | — |
 
 ## Backlog
 
@@ -24,6 +23,7 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-024](work/archive/2026/WI-024-europa-three-per-club.md) | Три игрока клуба в Лиге Европы | @tsyzhman | 2026-09-16 |
 | [WI-023](work/archive/2026/WI-023-khl-expected-statistics.md) | Ожидания, соперники и обновление КХЛ | @tsyzhman | 2026-09-14 |
 | [WI-022](work/archive/2026/WI-022-khl-history-projection.md) | Полная статистика, подсказки и Excel КХЛ | @tsyzhman | 2026-09-14 |
 | [WI-021](work/archive/2026/WI-021-khl-visible-statistics.md) | Статистика, состав и импорт КХЛ | @tsyzhman | 2026-09-13 |
