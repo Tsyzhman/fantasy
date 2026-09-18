@@ -259,6 +259,7 @@ type PlannerMatch = {
   providerRoundId?: string | null;
   providerRoundLabel?: string | null;
   providerRoundOrdinal?: number | null;
+  providerRoundStatus?: string | null;
   matchDate: Date | null;
   homeTeamId: string | null;
   awayTeamId: string | null;
@@ -4355,12 +4356,15 @@ async function loadProviderPlannerMatches(
     const odds = fixture.match?.oddsSnapshots[0];
     const freshOdds = odds && fixtureOddsAreFresh(odds.fetchedAt, now) ? odds : null;
     const status = fixture.status?.toUpperCase() ?? "";
+    const finished = fixture.match?.finished === true || ["FINISHED", "COMPLETED", "PLAYED"].includes(status);
+    const postponed = fixture.match?.cancelled === true || ["CANCELLED", "POSTPONED"].includes(status);
     return [{
       id: `provider-fixture:${provider.toLocaleLowerCase("en-US")}:${fixture.providerFixtureId}`,
       round: fixture.sourceRoundLabel,
       providerRoundId: fantasyProviderRoundKey(provider, fixture.round.ordinal, fixture.round.providerRoundId),
       providerRoundLabel: fixture.round.name,
       providerRoundOrdinal: fixture.round.ordinal,
+      providerRoundStatus: fixture.round.status,
       matchDate: fixture.kickoffAt ?? fixture.match?.matchDate ?? null,
       homeTeamId: fixture.homeTeamId ? String(fixture.homeTeamId) : null,
       awayTeamId: fixture.awayTeamId ? String(fixture.awayTeamId) : null,
@@ -4368,8 +4372,8 @@ async function loadProviderPlannerMatches(
       awayTeamName: fixture.awayTeam?.name ?? fixture.providerAwayTeamName ?? providerTeamIdLabel(fixture.providerAwayTeamId),
       homeTeamFullName: fixture.homeTeam?.name ?? fixture.providerHomeTeamName ?? providerTeamIdLabel(fixture.providerHomeTeamId),
       awayTeamFullName: fixture.awayTeam?.name ?? fixture.providerAwayTeamName ?? providerTeamIdLabel(fixture.providerAwayTeamId),
-      finished: fixture.match?.finished === true || ["FINISHED", "COMPLETED", "PLAYED"].includes(status),
-      cancelled: fixture.match?.cancelled === true || ["CANCELLED", "POSTPONED"].includes(status),
+      finished,
+      cancelled: postponed || leftoverFixtureInClosedProviderRound(fixture.round.status, finished),
       homeOver15Probability: freshOdds?.homeOver15Probability ?? null,
       awayOver15Probability: freshOdds?.awayOver15Probability ?? null,
       homeCleanSheetProbability: freshOdds?.homeCleanSheetProbability ?? null,
@@ -4451,8 +4455,17 @@ function providerTeamIdLabel(providerTeamId: string) {
   return words.replace(/(^|\s)\p{L}/gu, (letter) => letter.toLocaleUpperCase("en-US"));
 }
 
+export function leftoverFixtureInClosedProviderRound(roundStatus: string | null | undefined, fixtureFinished: boolean) {
+  return providerRoundIsClosed(roundStatus) && !fixtureFinished;
+}
+
+function providerRoundIsClosed(status: string | null | undefined) {
+  const normalized = status?.trim().toUpperCase() ?? "";
+  return normalized === "FINISHED" || normalized === "COMPLETED";
+}
+
 export function buildPlannerRoundFixtures(matches: PlannerMatch[], now = new Date()): PlannerRoundFixtures {
-  const eligible = matches.filter((match) => !match.cancelled);
+  const eligible = matches.filter((match) => !match.cancelled && !leftoverFixtureInClosedProviderRound(match.providerRoundStatus, match.finished));
   const upcoming = eligible.filter((match) => !match.finished && (!match.matchDate || match.matchDate >= startOfTodayUtc(now)));
   const upcomingGroups = groupMatchesByRound(upcoming);
   const firstUpcomingRoundId = upcomingGroups[0]?.id ?? null;
@@ -4462,6 +4475,8 @@ export function buildPlannerRoundFixtures(matches: PlannerMatch[], now = new Dat
   // a split round becomes a forecast for only the remaining games, which makes
   // the displayed squad total collapse mid-tour. Subsequent rounds keep only
   // their unplayed fixtures; fully completed earlier rounds stay excluded.
+  // Sports.ru can mark a tour FINISHED while one postponed match stays
+  // NOT_STARTED; that leftover must not keep the planner on the closed tour.
   const grouped = firstUpcomingIndex >= 0
     ? allGroups.slice(firstUpcomingIndex).map((group) => ({
         ...group,

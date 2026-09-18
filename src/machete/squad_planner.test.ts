@@ -12,6 +12,7 @@ import {
   buildBookmakerFavorites,
   buildFantasyForecastExplanation,
   buildPlannerRoundFixtures,
+  leftoverFixtureInClosedProviderRound,
   buildTeamStrengthProfilesFromMatches,
   bookmakerFixtureMultiplier,
   componentProjectionFantasyPoints,
@@ -1481,6 +1482,47 @@ test("Sports.ru provider tour keeps 14 fixtures and eight double-fixture teams i
     fixtureCount: 14
   }]);
   assert.deepEqual(doubleTeams, ["1", "2", "3", "4", "5", "6", "7", "8"]);
+});
+
+test("squad planner advances past a finished Sports.ru tour with a leftover unplayed fixture", () => {
+  const closedTour = fantasyProviderRoundKey("SPORTS_RU", 6, "2464");
+  const openTour = fantasyProviderRoundKey("SPORTS_RU", 7, "2467");
+  const leftover = Object.assign(
+    match({ id: "levante-athletic", round: "6", date: "2026-10-21T18:00:00.000Z", homeTeamId: "90", awayTeamId: "91" }),
+    {
+      providerRoundId: closedTour,
+      providerRoundLabel: "6 тур",
+      providerRoundOrdinal: 6,
+      providerRoundStatus: "FINISHED"
+    }
+  );
+  const closedPlayed = Object.assign(
+    match({ id: "tour6-played", round: "6", date: "2026-09-17T19:30:00.000Z", homeTeamId: "10", awayTeamId: "20" }),
+    {
+      finished: true,
+      providerRoundId: closedTour,
+      providerRoundLabel: "6 тур",
+      providerRoundOrdinal: 6,
+      providerRoundStatus: "FINISHED"
+    }
+  );
+  const current = Object.assign(
+    match({ id: "tour7-open", round: "7", date: "2026-09-18T19:00:00.000Z", homeTeamId: "30", awayTeamId: "40" }),
+    {
+      providerRoundId: openTour,
+      providerRoundLabel: "7 тур",
+      providerRoundOrdinal: 7,
+      providerRoundStatus: "OPENED"
+    }
+  );
+
+  const result = buildPlannerRoundFixtures([leftover, closedPlayed, current], new Date("2026-09-18T18:44:00.000Z"));
+
+  assert.equal(leftoverFixtureInClosedProviderRound("FINISHED", false), true);
+  assert.equal(leftoverFixtureInClosedProviderRound("OPENED", false), false);
+  assert.equal(result.rounds[0]?.id, openTour);
+  assert.equal(result.rounds[0]?.label, "7 тур");
+  assert.equal(result.rounds.some((round) => round.id === closedTour), false);
 });
 
 test("squad planner retains completed fixtures in an active split round", () => {
