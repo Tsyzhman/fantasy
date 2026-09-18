@@ -5,6 +5,10 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.77 - 2026-09-18
+
+- Production deploy still promotes when GitHub cannot store the release archive because artifact quota is full.
+
 ## 0.3.76 - 2026-09-18
 
 - Squad advances to the Sports.ru OPENED tour even when a finished tour still has one postponed match left as NOT_STARTED.
