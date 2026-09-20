@@ -51,7 +51,7 @@ export async function runKhlDailySync(db: PrismaClient, contestId: string) {
       last = cursor;
       const { quarantined: _details, ...summary } = cursor as typeof cursor & { quarantined?: unknown };
       console.log(JSON.stringify({ source: 'Sports: текущая история', batch: batch + 1, ...summary }));
-      if (!cursor.remaining) { if (cursor.failedProfiles) throw new Error(`CURRENT_PROFILES_FAILED:${cursor.failedProfiles}`); return cursor; }
+      if (!cursor.remaining) { if (cursor.failedProfiles) throw new Error(`CURRENT_PROFILES_FAILED:${cursor.failedProfiles}`); return summary; }
     }
     if (last.failedProfiles) throw new Error(`CURRENT_PROFILES_FAILED:${last.failedProfiles}`);
     return { ...last, remaining: last.remaining ?? 1, deferred: 'HOURLY_BUDGET' };

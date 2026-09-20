@@ -13,6 +13,9 @@ import { importProtocolArchive } from './protocol-archive-import';
 import { hockeyTeamLinks } from '@/providers/sports-ru-hockey/teams';
 
 const leagueClubs = new Set<string>(hockeyTeamLinks.map(t => t[1]));
+export function archiveCoverageHash(pool: { id: string; playerId: string | null }[], identities: { externalId: string; playerId: string | null }[], seasonKey: string, stageId: string) {
+  return contentHash({ pool: [...pool].sort((a, b) => a.id.localeCompare(b.id)), identities: [...identities].sort((a, b) => a.externalId.localeCompare(b.externalId)), seasonKey, stageId });
+}
 export function isArchiveLeagueGame(match: MobileMatch) {
   // The same mobile stage also contains the 2026 All-Star mini-tournament.
   return leagueClubs.has(match.home.officialId) && leagueClubs.has(match.away.officialId);
@@ -31,7 +34,9 @@ export async function refreshOfficialArchive(db: PrismaClient, contestId: string
   if (old?.transportVersion === 2 && old.retryAfter && Date.parse(old.retryAfter) > Date.now()) throw new Error(old.error ?? 'ARCHIVE_SOURCE_BACKOFF');
   const pool = await db.khlFantasyPlayer.findMany({ where: { contestId, active: true }, select: { id: true, playerId: true }, orderBy: { id: 'asc' }, take: 1001 });
   if (pool.length > 1000) throw new Error('ARCHIVE_POOL_LIMIT');
-  const hash = contentHash({ pool, seasonKey, stageId });
+  const identities = await db.khlExternalEntityMap.findMany({ where: { provider: 'KHL', entityType: 'player', providerScope: 'global', playerId: { in: pool.flatMap(p => p.playerId ? [p.playerId] : []) } }, select: { externalId: true, playerId: true }, take: 1001 });
+  if (identities.length > 1000) throw new Error('ARCHIVE_IDENTITY_LIMIT');
+  const hash = archiveCoverageHash(pool, identities, seasonKey, stageId);
   if (old?.hash === hash && checkpoint && Date.now() - checkpoint.completedAt.getTime() < 7 * 86400000) return { remaining: 0, cached: true };
   try {
     const year = Number(seasonKey.slice(0, 4)), calendar = cycle.calendar ?? [];

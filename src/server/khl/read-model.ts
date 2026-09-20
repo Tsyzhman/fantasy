@@ -13,7 +13,7 @@ export function playerDto(p: KhlFantasyPlayer): KhlPlayer {
   return { id: p.id, contestId: p.contestId, playerId: p.playerId, name: p.name, clubId: p.clubId, clubName: p.clubName, position: p.position as KhlPosition,
     price: fact(p.currentPriceUnits), priceRevision: p.priceRevision, priceDelta: p.priceDelta, providerLock: fact(p.providerLock),
     goals: unknown("Нет протокола"), assists: unknown("Нет протокола"), shotsOnGoal: unknown("Нет протокола"), pimMinutes: unknown("Нет протокола"), plusMinus: unknown("Нет протокола"),
-    injury: unknown("Источник травм не подключён"), attackZoneSeconds: unknown("Нет времени в атаке в протоколах"), toiSeconds: unknown("Нет протокола"), ppToiSeconds: unknown("Нет протокола"), pkToiSeconds: unknown("Нет протокола"),
+    injury: unknown("Нет актуального подтверждения травмы"), attackZoneSeconds: unknown("Нет времени в атаке в протоколах"), toiSeconds: unknown("Нет протокола"), ppToiSeconds: unknown("Нет протокола"), pkToiSeconds: unknown("Нет протокола"),
     officialFp: unknown("История не импортирована"), ep: unknown("Прогноз не готов"), ixg: unknown("В протоколах нет готового индивидуального xG; отдельный источник пока не подключён"), saves: unknown("Нет протокола"), goalsAgainst: unknown("Нет протокола"), fixtures: [] };
 }
 export function envelope(contest: { id: string; seasonId: string; revision: number; publishedAt: Date | null }, data: unknown) {
