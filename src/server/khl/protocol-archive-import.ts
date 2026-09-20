@@ -6,6 +6,11 @@ import { previousHockeySeason } from '@/providers/sports-ru-hockey/history';
 import { importHistoricalSeason } from './historical-season';
 import { bindExternalEntity } from './data-layer';
 
+export function protocolOnlyHistory(entry: KhlProtocolArchiveStats, seasonKey: string): KhlHistoricalStats {
+  validateProtocolArchive(entry);
+  return { seasonKey, source: entry.source, sourceKind: 'KHL_PROTOCOL', asOf: entry.asOf, games: entry.games, dnp: 0, totals: entry.totals, officialFp: { sum: 0, count: 0 }, otherPoints: { sum: 0, count: 0 }, protocolStats: entry };
+}
+
 const nameKey = (s: string) => s.replace(/\s+(?:19|20)\d{2}(?:\s+нап)?$/g, '').replace(/(?:^|\s)[А-ЯЁ][а-яё]{0,3}\./g, '').toLocaleLowerCase('ru-RU').replace(/ё/g,'е').replace(/[^\p{L}\p{N}]+/gu,' ').trim().split(/\s+/).sort().join(' ');
 export function matchingArchiveIdentity(entry: KhlProtocolArchiveStats & {name?:string;position?:KhlPosition}, candidate: {name:string;position:string;stats:KhlHistoricalStats}) {
   return Boolean(entry.name && entry.position && nameKey(entry.name).split(' ').length >= 2 && nameKey(entry.name)===nameKey(candidate.name) && entry.position===candidate.position && entry.games===candidate.stats.games && entry.games>0
@@ -36,9 +41,12 @@ export async function importProtocolArchive(db: PrismaClient, contestId: string,
       const ambiguous=bundle.entries.filter(e=>e.name && nameKey(e.name)===nameKey(entry.name!)).length!==1;
       if(candidates.length===1 && !ambiguous){map=await db.$transaction(tx=>bindExternalEntity(tx,{provider:'KHL',entityType:'player',providerScope:'global',externalId:entry.officialPlayerId,canonicalId:candidates[0].playerId,evidence:`${entry.source}; ${seasonKey}; exact full name, position, GP/G/A/PM/PIM match Sports history`,verifiedAt:new Date(bundle.observedAt)}));linkedPlayers.add(candidates[0].playerId);newLinks++;}
     }
-    const history=histories.find(h=>h.playerId===map?.playerId);if(!history)continue;
-    const aggregates=history.aggregates as unknown as KhlHistoricalStats;
-    if(await importHistoricalSeason(db,{playerId:history.playerId,providerSeasonId:history.providerSeasonId,aggregates:{...aggregates,protocolStats:entry},observedAt:new Date(bundle.observedAt),protocolOnly:true}))changed++;
+    if(!map?.playerId)continue;
+    const history=histories.find(h=>h.playerId===map.playerId);
+    if(!history && !entry.games)continue;
+    const old=history?.aggregates as unknown as KhlHistoricalStats | undefined;
+    const aggregates=old && old.sourceKind !== 'KHL_PROTOCOL' ? {...old,protocolStats:entry} : protocolOnlyHistory(entry,seasonKey);
+    if(await importHistoricalSeason(db,{playerId:map.playerId,providerSeasonId:history?.providerSeasonId ?? entry.officialSeasonId,aggregates,observedAt:new Date(bundle.observedAt),protocolOnly:true}))changed++;
     imported++;
   }
   return {imported,changed,newLinks,unmapped:bundle.entries.length-imported,seasonKey,matches:bundle.matches.length};

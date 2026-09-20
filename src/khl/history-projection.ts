@@ -26,7 +26,8 @@ export function projectHistory(input: { position: KhlPosition; current: KhlHisto
     const past = key === "shotsOnGoal" && previous?.protocolStats ? previous.protocolStats.totals[key] : previous?.totals[key];
     return rateInput({ sum: current.totals[key].value ?? 0, count: current.totals[key].knownGames }, past && { sum: past.value ?? 0, count: past.knownGames }, key === "shotsOnGoal" && previous?.protocolStats ? previous.protocolStats.source : previous?.source ?? null);
   };
-  const appearanceRate = blendHistory({ sum: current.games, count: current.games + current.dnp }, previous && { sum: previous.games, count: previous.games + previous.dnp });
+  const priorAppearance = previous && previous.sourceKind !== 'KHL_PROTOCOL' ? { sum: previous.games, count: previous.games + previous.dnp } : undefined;
+  const appearanceRate = blendHistory({ sum: current.games, count: current.games + current.dnp }, priorAppearance);
   const officialMean = blendHistory(current.officialFp, previous?.officialFp);
   if (appearanceRate === null || officialMean === null) return null;
   const rates = Object.fromEntries(expectedStatKeys.map(key => [key, rate(key)])) as KhlForecastDetails["rates"];
@@ -34,7 +35,7 @@ export function projectHistory(input: { position: KhlPosition; current: KhlHisto
   rates.officialFp = rateInput(current.officialFp, previous?.officialFp, previous?.source ?? null);
   const details: KhlForecastDetails = { version: 1, historyWindow: 10, mode: "official-fp", rates,
     expected: Object.fromEntries(expectedStatKeys.map(key => [key, null])) as KhlExpectedStats,
-    appearance: rateInput({ sum: current.games, count: current.games + current.dnp }, previous && { sum: previous.games, count: previous.games + previous.dnp }, previous?.source ?? null) };
+    appearance: rateInput({ sum: current.games, count: current.games + current.dnp }, priorAppearance, priorAppearance ? previous!.source : null) };
   const components: Record<string, number> = {}, warnings: string[] = ["BETA_UNCALIBRATED", "XG_UNAVAILABLE"];
   if (!previous?.games) warnings.push("PREVIOUS_SEASON_UNAVAILABLE");
   if (!current.games) warnings.push("PREVIOUS_SEASON_ONLY");

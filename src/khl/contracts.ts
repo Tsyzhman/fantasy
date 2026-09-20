@@ -28,6 +28,7 @@ export interface KhlSeasonStats {
 }
 export interface KhlHistoricalStats extends KhlSeasonStats {
   seasonKey: string; source: string; dnp: number;
+  sourceKind?: 'KHL_PROTOCOL';
   officialFp: { sum: number; count: number };
   otherPoints: { sum: number; count: number };
   protocolStats?: KhlProtocolArchiveStats;

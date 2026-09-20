@@ -14,7 +14,7 @@ import { hockeyTeamLinks } from '@/providers/sports-ru-hockey/teams';
 
 const leagueClubs = new Set<string>(hockeyTeamLinks.map(t => t[1]));
 export function archiveCoverageHash(pool: { id: string; playerId: string | null }[], identities: { externalId: string; playerId: string | null }[], seasonKey: string, stageId: string) {
-  return contentHash({ pool: [...pool].sort((a, b) => a.id.localeCompare(b.id)), identities: [...identities].sort((a, b) => a.externalId.localeCompare(b.externalId)), seasonKey, stageId });
+  return contentHash({ version: 3, pool: [...pool].sort((a, b) => a.id.localeCompare(b.id)), identities: [...identities].sort((a, b) => a.externalId.localeCompare(b.externalId)), seasonKey, stageId });
 }
 export function isArchiveLeagueGame(match: MobileMatch) {
   // The same mobile stage also contains the 2026 All-Star mini-tournament.

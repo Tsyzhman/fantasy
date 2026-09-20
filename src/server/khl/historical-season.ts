@@ -9,12 +9,17 @@ import { validateProtocolArchive } from "@/khl/protocol-archive";
 
 export async function importHistoricalSeason(db: PrismaClient, input: { playerId: string; providerSeasonId: string; aggregates: KhlHistoricalStats; observedAt: Date; protocolOnly?: boolean }) {
   const { aggregates, observedAt } = input;
+  if (aggregates.protocolStats) validateProtocolArchive(aggregates.protocolStats);
+  const protocolBase = aggregates.sourceKind === 'KHL_PROTOCOL';
+  const validSource = protocolBase
+    ? aggregates.protocolStats && aggregates.source === aggregates.protocolStats.source && input.providerSeasonId === aggregates.protocolStats.officialSeasonId
+      && aggregates.games === aggregates.protocolStats.games && aggregates.dnp === 0 && aggregates.officialFp.count === 0 && aggregates.officialFp.sum === 0 && aggregates.otherPoints.count === 0 && aggregates.otherPoints.sum === 0
+      && contentHash(aggregates.totals) === contentHash(aggregates.protocolStats.totals)
+    : aggregates.sourceKind === undefined && /^https:\/\/www\.sports\.ru\/fantasy\/hockey\/player\/info\/\d+\/\d+\.html\?s=\d+$/.test(aggregates.source) && aggregates.source.endsWith(`?s=${input.providerSeasonId}`);
   if (!Number.isFinite(observedAt.getTime()) || !/^\d{4}\/\d{4}$/.test(aggregates.seasonKey) || !/^\d{1,12}$/.test(input.providerSeasonId)
-    || !/^https:\/\/www\.sports\.ru\/fantasy\/hockey\/player\/info\/\d+\/\d+\.html\?s=\d+$/.test(aggregates.source)
-    || !aggregates.source.endsWith(`?s=${input.providerSeasonId}`) || !Number.isInteger(aggregates.games) || aggregates.games < 0 || aggregates.games > 100 || !Number.isInteger(aggregates.dnp) || aggregates.dnp < 0 || aggregates.games + aggregates.dnp > 100
+    || !validSource || !Number.isInteger(aggregates.games) || aggregates.games < 0 || aggregates.games > 100 || !Number.isInteger(aggregates.dnp) || aggregates.dnp < 0 || aggregates.games + aggregates.dnp > 100
     || seasonStatFields.some(field => { const s = aggregates.totals[field]; return !s || !Number.isInteger(s.knownGames) || s.knownGames < 0 || s.knownGames > aggregates.games || (s.knownGames === 0) !== (s.value === null) || s.value !== null && (!Number.isFinite(s.value) || field !== "plusMinus" && s.value < 0); })
     || [aggregates.officialFp, aggregates.otherPoints].some(s => !s || !Number.isFinite(s.sum) || !Number.isInteger(s.count) || s.count < 0 || s.count > aggregates.games)) throw new Error("HISTORY_AGGREGATES_INVALID");
-  if (aggregates.protocolStats) validateProtocolArchive(aggregates.protocolStats);
   return db.$transaction(async tx => {
     const contests = await tx.khlFantasyPlayer.findMany({ where: { playerId: input.playerId }, select: { contestId: true } });
     const contestIds = [...new Set(contests.map(c => c.contestId))].sort();
@@ -30,12 +35,14 @@ export async function importHistoricalSeason(db: PrismaClient, input: { playerId
       const identity = await tx.khlExternalEntityMap.findUnique({ where: { provider_entityType_providerScope_externalId: { provider: "KHL", entityType: "player", providerScope: "global", externalId: protocolStats.officialPlayerId } } });
       if (identity?.playerId !== input.playerId || Date.parse(protocolStats.asOf!) > observedAt.getTime()) throw new Error("ARCHIVE_PROTOCOL_IDENTITY_INVALID");
     }
-    if (input.protocolOnly && !old) throw new Error("ARCHIVE_SPORTS_HISTORY_REQUIRED");
-    const base = input.protocolOnly ? old!.aggregates as unknown as KhlHistoricalStats : aggregates;
+    if (input.protocolOnly && !old && !protocolBase) throw new Error("ARCHIVE_SPORTS_HISTORY_REQUIRED");
+    const oldBase = old?.aggregates as unknown as KhlHistoricalStats | undefined;
+    const keepSports = (input.protocolOnly || protocolBase) && oldBase && oldBase.sourceKind !== 'KHL_PROTOCOL';
+    const base = keepSports ? oldBase : aggregates;
     const value = { ...base, asOf: null, ...(protocolStats ? { protocolStats } : {}) };
     const hash = contentHash({ ...value, ...(protocolStats ? { protocolStats: { ...protocolStats, asOf: null } } : {}) });
     if (old?.contentHash === hash) { await tx.khlHistoricalSeason.update({ where: { id: old.id }, data: { observedAt } }); return false; }
-    const data = { providerSeasonId: input.providerSeasonId, source: aggregates.source, contentHash: hash, aggregates: value as unknown as Prisma.InputJsonValue, observedAt, availableAt: observedAt };
+    const data = { providerSeasonId: keepSports ? old!.providerSeasonId : input.providerSeasonId, source: base.source, contentHash: hash, aggregates: value as unknown as Prisma.InputJsonValue, observedAt, availableAt: observedAt };
     await tx.khlHistoricalSeason.upsert({ where: { playerId_seasonKey: key }, create: { ...key, ...data }, update: data });
     await tx.khlContest.updateMany({ where: { id: { in: contestIds } }, data: { revision: { increment: 1 } } });
     const stale = await tx.khlHistoricalSeason.findMany({ where: { playerId: input.playerId }, orderBy: { seasonKey: "desc" }, skip: 2, select: { id: true } });
@@ -95,7 +102,8 @@ export async function exportHistoricalBundle(db: PrismaClient, contestId: string
   if (pool.length > 1000) throw new Error("HISTORY_POOL_LIMIT");
   return { version: 1, seasonKey, entries: pool.flatMap(p => {
     const archive = p.player?.historicalSeasons[0];
-    return archive ? [{ providerPlayerId: p.providerPlayerId, providerTagId: p.providerTagId, providerSeasonId: archive.providerSeasonId, observedAt: archive.observedAt.toISOString(), aggregates: archive.aggregates as unknown as KhlHistoricalStats }] : [];
+    // This transfer bundle belongs to Sports; official-only facts use ProtocolArchiveBundle.
+    return archive && (archive.aggregates as unknown as KhlHistoricalStats).sourceKind !== 'KHL_PROTOCOL' ? [{ providerPlayerId: p.providerPlayerId, providerTagId: p.providerTagId, providerSeasonId: archive.providerSeasonId, observedAt: archive.observedAt.toISOString(), aggregates: archive.aggregates as unknown as KhlHistoricalStats }] : [];
   }) };
 }
 export async function importHistoricalBundle(db: PrismaClient, contestId: string, bundle: ArchiveBundle) {
