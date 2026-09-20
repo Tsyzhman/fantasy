@@ -40,7 +40,10 @@ export async function importHockeyHistory(db: PrismaClient, input: { contestId: 
       if (!match || match.status !== "FINAL" || match.startsAt > observedAt) { quarantined.push(`${row.date}:${row.opponentSlug}`); continue; }
       const participationStatus = row.toiSeconds === null ? "UNKNOWN" : row.toiSeconds > 0 ? "PLAYED" : "DNP";
       const facts = { participationStatus, toiSeconds: row.toiSeconds, goals: row.goals, assists: row.assists, plusMinus: row.plusMinus, pimMinutes: row.pimMinutes, saves: row.saves, goalsAgainst: row.goalsAgainst, clubAtMatchId: teamId };
-      if (participationStatus === "DNP" && [row.goals, row.assists, row.pimMinutes, row.saves, row.goalsAgainst].some(n => n !== null && n !== 0)) throw new Error("HISTORY_DNP_CONFLICT");
+      if (participationStatus === "DNP" && [row.goals, row.assists, row.pimMinutes, row.saves, row.goalsAgainst].some(n => n !== null && n !== 0)) {
+        quarantined.push(`HISTORY_DNP_CONFLICT:${row.date}:${row.opponentSlug}`);
+        continue; // A partially published box score must not erase last-good facts or other matches.
+      }
       const previous = existing.find(s => s.matchId === match.id);
       // Full match protocols own their fields; Sports.ru still supplies fantasy FP.
       const priorSources = previous?.sources as Record<string, string> | undefined;

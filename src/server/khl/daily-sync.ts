@@ -42,30 +42,37 @@ export async function runKhlDailySync(db: PrismaClient, contestId: string) {
     return result;
   });
   await step('KHL Mobile + Sports: текущая история', async () => {
-    let last: { remaining?: number; failedProfiles?: number } = {};
+    let last: { remaining?: number; failedProfiles?: number; incompleteProfiles?: number } = {};
     for (let batch = 0; batch < 20 && Date.now() < deadline; batch++) {
       const result = await refreshKhlHistory(db, contestId);
       if (!result || result.status !== 'DONE') throw new Error(result && 'error' in result ? String(result.error) : `HISTORY_${result?.status ?? 'BUSY'}`);
       const job = await db.khlSyncJob.findUniqueOrThrow({ where: { id: result.id } });
-      const cursor = job.cursor as { remaining?: number; failedProfiles?: number };
+      const cursor = job.cursor as { remaining?: number; failedProfiles?: number; incompleteProfiles?: number };
       last = cursor;
       const { quarantined: _details, ...summary } = cursor as typeof cursor & { quarantined?: unknown };
       console.log(JSON.stringify({ source: 'Sports: текущая история', batch: batch + 1, ...summary }));
-      if (!cursor.remaining) { if (cursor.failedProfiles) throw new Error(`CURRENT_PROFILES_FAILED:${cursor.failedProfiles}`); return summary; }
+      if (!cursor.remaining) {
+        if (cursor.failedProfiles) throw new Error(`CURRENT_PROFILES_FAILED:${cursor.failedProfiles}`);
+        if (cursor.incompleteProfiles) throw new Error(`CURRENT_ROWS_DEFERRED:${cursor.incompleteProfiles}`);
+        return summary;
+      }
     }
     if (last.failedProfiles) throw new Error(`CURRENT_PROFILES_FAILED:${last.failedProfiles}`);
     return { ...last, remaining: last.remaining ?? 1, deferred: 'HOURLY_BUDGET' };
   });
   await step('КХЛ: текущие протоколы', async () => {
-    let last: { accessError?: string; remaining?: number } | null = null;
+    let last: { accessError?: string; remaining?: number; deferredMatches?: number } | null = null;
     for (let batch = 0; batch < 12 && Date.now() < deadline; batch++) {
       const r = await refreshKhlProtocols(db, contestId);
       if (r && r.status !== 'DONE') throw new Error('error' in r ? String(r.error) : r.status);
       const source = await db.khlSourceContract.findUnique({ where: { provider: 'KHL_PROTOCOL' } });
-      const coverage = source?.coverage as { accessError?: string; remaining?: number } | null;
+      const coverage = source?.coverage as { accessError?: string; remaining?: number; deferredMatches?: number } | null;
       last = coverage;
       if (coverage?.accessError) throw new Error(coverage.accessError);
-      if (!r || !coverage?.remaining) return coverage;
+      if (!r || !coverage?.remaining) {
+        if (coverage?.deferredMatches) throw new Error(`PROTOCOL_MATCHES_DEFERRED:${coverage.deferredMatches}`);
+        return coverage;
+      }
     }
     return { ...last, remaining: last?.remaining ?? 1, deferred: 'HOURLY_BUDGET' };
   });

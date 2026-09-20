@@ -40,13 +40,15 @@ export async function refreshKhlHistory(db: PrismaClient, contestId: string, ref
       return match ? `${match.id}:${match.revision}` : null;
     };
     const due = pool.filter(p => {
-      const c = checkMap.get(p.id), cursor = c?.cursor as { priceRevision?: number; latestFinal?: string | null } | undefined;
+      const c = checkMap.get(p.id), cursor = c?.cursor as { priceRevision?: number; latestFinal?: string | null; quarantined?: string[] } | undefined;
+      const incomplete = cursor?.quarantined?.some(q => q.startsWith('HISTORY_DNP_CONFLICT:'));
+      if (incomplete && c && now.getTime() - c.completedAt.getTime() < 50 * 60000) return false;
       const recentMatch = finished.find(m => `${m.id}:${m.revision}` === latestFinal(p.clubId));
       const correctionDue = recentMatch && c && [4, 26, 74].some(hours => {
         const boundary = recentMatch.startsAt.getTime() + hours * 3600000;
         return boundary <= now.getTime() && c.completedAt.getTime() < boundary;
       });
-      return !c || correctionDue || (refreshSince && c.completedAt < refreshSince) || (c.cursor as { identityVersion?: number }).identityVersion !== 2 || cursor?.priceRevision !== p.priceRevision || cursor?.latestFinal !== latestFinal(p.clubId) || now.getTime() - c.completedAt.getTime() > 86400000;
+      return !c || incomplete || correctionDue || (refreshSince && c.completedAt < refreshSince) || (c.cursor as { identityVersion?: number }).identityVersion !== 2 || cursor?.priceRevision !== p.priceRevision || cursor?.latestFinal !== latestFinal(p.clubId) || now.getTime() - c.completedAt.getTime() > 86400000;
     }).sort((a, b) => {
       const priority = (id: string, clubId: string) => {
         const c = checkMap.get(id);
@@ -86,7 +88,7 @@ export async function refreshKhlHistory(db: PrismaClient, contestId: string, ref
     }
     const observations = [...coverage.values()];
     const quarantined = pool.flatMap(p => (coverage.get(p.id)?.quarantined ?? []).map(r => `${p.providerPlayerId}:${r}`));
-    const summary = { catalog: pool.length, profiles: pool.length - due.length + processed, imported, remaining: Math.max(0, due.length - processed), failedProfiles: observations.filter(c => c.error).length, played: observations.reduce((n, c) => n + (c.played ?? 0), 0), dnp: observations.reduce((n, c) => n + (c.dnp ?? 0), 0), changed, quarantineCount: quarantined.length, quarantined: quarantined.slice(0, 100) };
+    const summary = { catalog: pool.length, profiles: pool.length - due.length + processed, imported, remaining: Math.max(0, due.length - processed), failedProfiles: observations.filter(c => c.error).length, incompleteProfiles: observations.filter(c => c.quarantined?.some(q => q.startsWith('HISTORY_DNP_CONFLICT:'))).length, played: observations.reduce((n, c) => n + (c.played ?? 0), 0), dnp: observations.reduce((n, c) => n + (c.dnp ?? 0), 0), changed, quarantineCount: quarantined.length, quarantined: quarantined.slice(0, 100) };
     await db.$transaction(async tx => {
       await lockValidLease(tx, lease);
       const data = { capabilities: ["official_fp", "toi", "goals", "assists", "plus_minus", "pim", "saves", "goals_against"], permissionStatus: "PUBLIC_READ", evidence: "User-authorized bounded reads of anonymous Sports.ru player pages; public mobile calendar. No claim of a licensed full-protocol/xG feed.", definitionVersion: "sports-ru-hockey-history-v1", verifiedAt: now, health: "HEALTHY", lastSuccessAt: new Date(), coverage: summary };

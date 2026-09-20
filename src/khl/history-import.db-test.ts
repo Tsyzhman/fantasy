@@ -32,6 +32,13 @@ test('public hockey history: exact matches, nulls, repeat and played-to-DNP corr
  const count=await revisions();
  assert.equal((await importHockeyHistory(db,input)).changed,0);
  assert.equal(await revisions(),count);
+ const incomplete=structuredClone(profile);incomplete.rows[0]={...incomplete.rows[0],toiSeconds:0,goals:1};
+ const isolatedIncomplete=await importHockeyHistory(db,{...input,profile:incomplete});
+ assert.equal(isolatedIncomplete.changed,0);
+ assert.equal(isolatedIncomplete.played,1);
+ assert.ok(isolatedIncomplete.quarantined.some(q=>q.startsWith('HISTORY_DNP_CONFLICT:')));
+ assert.equal(await revisions(),count);
+ assert.equal(await db.khlOfficialFantasyScore.count({where:{fantasyPlayerId:player.id}}),2);
  const dto=(await hydratePlayers(db,[player],{now}))[0];assert.equal(dto.officialFp.value,12);assert.equal(dto.toiSeconds.value,1130);assert.equal(dto.ppToiSeconds.value,null);
 
  // @spec spec://modules/khl/INFRA-002-khl-storage-and-api#protocol-aggregates
