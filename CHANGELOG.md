@@ -5,6 +5,10 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.79 - 2026-09-20
+
+- КХЛ: часовой сбор использует свежий каталог и ждёт занятую публикацию при старте, не сообщает ложную ошибку из-за конкурирующего worker. Подробный quarantine не дублируется в журнале каждого пакета.
+
 ## 0.3.78 - 2026-09-20
 
 - КХЛ: полный публичный протокол через лёгкий HTTP REST без браузера на сервере; проверка идентичности и состава полей.

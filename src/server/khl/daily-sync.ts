@@ -18,7 +18,22 @@ export async function runKhlDailySync(db: PrismaClient, contestId: string) {
     catch (error) { results.push({ source, status: 'FAILED', detail: error instanceof Error ? error.message : 'SYNC_FAILED' }); }
     console.log(JSON.stringify(results.at(-1)));
   }
-  await step('Sports: каталог', async () => { await refreshKhlCatalogs(contestId); const c = await db.khlContest.findUniqueOrThrow({ where: { id: contestId } }); if (!c.publishedAt || c.publishedAt < startedAt) throw new Error('CATALOG_NOT_REFRESHED'); return { updatedAt: c.publishedAt }; });
+  await step('Sports: каталог', async () => {
+    const freshness = startedAt.getTime() - 60000;
+    let c = await db.khlContest.findUniqueOrThrow({ where: { id: contestId } });
+    if (c.publishedAt && c.publishedAt.getTime() >= freshness) return { updatedAt: c.publishedAt, cached: true };
+    await refreshKhlCatalogs(contestId);
+    // The resident worker can own the catalogue lease during deployment/startup.
+    // Wait for that publication, rather than reporting a false source failure.
+    for (let attempt = 0; attempt < 15; attempt++) {
+      c = await db.khlContest.findUniqueOrThrow({ where: { id: contestId } });
+      if (c.publishedAt && c.publishedAt.getTime() >= freshness) return { updatedAt: c.publishedAt };
+      const busy = await db.khlSyncJob.count({ where: { provider: 'SPORTS_RU', scope: contestId, jobType: 'CATALOG', status: { in: ['PENDING', 'RUNNING'] } } });
+      if (!busy) break;
+      await new Promise(resolve => setTimeout(resolve, 2000));
+    }
+    throw new Error('CATALOG_NOT_REFRESHED');
+  });
   await step('KHL Mobile + Sports: текущая история', async () => {
     let last: { remaining?: number; failedProfiles?: number } = {};
     for (let batch = 0; batch < 20 && Date.now() < deadline; batch++) {
@@ -27,7 +42,8 @@ export async function runKhlDailySync(db: PrismaClient, contestId: string) {
       const job = await db.khlSyncJob.findUniqueOrThrow({ where: { id: result.id } });
       const cursor = job.cursor as { remaining?: number; failedProfiles?: number };
       last = cursor;
-      console.log(JSON.stringify({ source: 'Sports: текущая история', batch: batch + 1, ...cursor }));
+      const { quarantined: _details, ...summary } = cursor as typeof cursor & { quarantined?: unknown };
+      console.log(JSON.stringify({ source: 'Sports: текущая история', batch: batch + 1, ...summary }));
       if (!cursor.remaining) { if (cursor.failedProfiles) throw new Error(`CURRENT_PROFILES_FAILED:${cursor.failedProfiles}`); return cursor; }
     }
     if (last.failedProfiles) throw new Error(`CURRENT_PROFILES_FAILED:${last.failedProfiles}`);
