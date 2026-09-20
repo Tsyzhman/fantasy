@@ -8,6 +8,8 @@ import { refreshOfficialArchive } from './archive-protocol-sync';
 import { refreshKhlOdds } from './odds-sync';
 import { publishRollingForecast } from './rolling-forecast';
 import { pruneKhl } from './retention';
+import { refreshKhlBirthDates } from './identity-sync';
+import { refreshKhlInjuries } from './injury-sync';
 
 /** The production entrypoint holds flock across the entire cycle, including all batches. */
 export async function runKhlDailySync(db: PrismaClient, contestId: string) {
@@ -33,6 +35,11 @@ export async function runKhlDailySync(db: PrismaClient, contestId: string) {
       await new Promise(resolve => setTimeout(resolve, 2000));
     }
     throw new Error('CATALOG_NOT_REFRESHED');
+  });
+  await step('Sports: идентичность игроков', async () => {
+    const result = await refreshKhlBirthDates(db, contestId);
+    if (result.errors.length) throw new Error(`IDENTITY_ERRORS:${JSON.stringify(result.errors)}`);
+    return result;
   });
   await step('KHL Mobile + Sports: текущая история', async () => {
     let last: { remaining?: number; failedProfiles?: number } = {};
@@ -73,6 +80,7 @@ export async function runKhlDailySync(db: PrismaClient, contestId: string) {
     return refreshOfficialArchive(db, contestId);
   });
   await step('Фонбет: линия КХЛ', async () => { const r = await refreshKhlOdds(db, contestId, true); if (!r || 'skipped' in r && r.skipped === 'SOURCE_BACKOFF' || 'status' in r && r.status !== 'DONE') throw new Error('ODDS_NOT_REFRESHED'); return r; });
+  await step('КХЛ: травмированные', () => refreshKhlInjuries(db, contestId));
   await step('EP', () => publishRollingForecast(db, contestId));
   await step('Очистка', () => pruneKhl(db, new Date()));
   const status = results.some(r => r.status === 'FAILED') ? 'PARTIAL' : results.some(r => r.status === 'PENDING') ? 'PENDING' : 'DONE';

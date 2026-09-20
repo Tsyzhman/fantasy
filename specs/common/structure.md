@@ -48,3 +48,5 @@
 Изолированные `src/khl/`, `src/server/khl/`, `src/components/khl/`, `src/app/machete/khl/`, `src/app/api/machete/khl/` и таблицы `khl_*`. Адаптеры: `src/providers/sports-ru-hockey/`, `khl-mobile/`, `khl-xg/`, `fonbet/hockey-*`. Контракты в `specs/modules/khl/` (FEAT-001/002/003, INFRA-001/002/003). Футбольные core_data и scoring остаются независимыми. Флаги КХЛ выключены до production readiness.
 
 Матчевые протоколы КХЛ: одноразовый HTTP `scripts/khl-protocol-http.py` (зависимости `khl-http-requirements.txt`, без браузера), серверный таймер `ops/fantasy-khl-statistics.*` → `src/providers/khl-mobile/protocol*.ts` → `src/server/khl/protocol-import.ts`/`protocol-scheduler.ts` → агрегаты в `read-model.ts`. Базовый семидневный EP: `rolling-forecast.ts`; owning contracts INFRA-001#protocols, INFRA-002#protocol-aggregates, FEAT-003#rolling-beta.
+
+Идентичность КХЛ: `sports-ru-hockey/identity.ts`, `khl-mobile/identity.ts`, `server/khl/identity-sync.ts` и проверенный операторский `identity-audit.ts`; клубные травмы `khl-mobile/injuries.ts` → `server/khl/injury-sync.ts`. Тот же ограниченный HTTP helper и часовой цикл, ownership INFRA-001#normalization/#runtime.

@@ -19,6 +19,8 @@ export async function storeKhlRaw(db: PrismaClient, input: { provider: string; s
 export async function pruneKhl(db: PrismaClient, now: Date) {
   return db.$transaction(async tx => ({
     raw: (await tx.khlRawPayload.deleteMany({ where: { expiresAt: { lt: now } } })).count,
+    availability: (await tx.khlAvailabilityObservation.deleteMany({ where: { expiresAt: { lt: new Date(now.getTime() - 30 * 86400000) } } })).count,
+    availabilityRevisions: (await tx.khlObservationRevision.deleteMany({ where: { streamId: { startsWith: 'availability:' }, observedAt: { lt: new Date(now.getTime() - 30 * 86400000) } } })).count,
     previews: (await tx.khlTransferScenario.deleteMany({ where: { status: "PREVIEW", expiresAt: { lt: now } } })).count,
     receipts: (await tx.khlObservationReceipt.deleteMany({ where: { observedAt: { lt: new Date(now.getTime() - 30 * 86400000) } } })).count,
     jobs: (await tx.khlSyncJob.deleteMany({ where: { status: { in: ["DONE", "FAILED"] }, updatedAt: { lt: new Date(now.getTime() - 30 * 86400000) } } })).count

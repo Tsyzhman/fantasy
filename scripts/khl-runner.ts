@@ -19,11 +19,16 @@ import { refreshHistoricalSeason, exportHistoricalBundle, importHistoricalBundle
 import { importProtocolArchive } from "../src/server/khl/protocol-archive-import";
 import { runKhlDailySync } from "../src/server/khl/daily-sync";
 import { refreshKhlOdds } from "../src/server/khl/odds-sync";
+import { importIdentityAudit } from "../src/server/khl/identity-audit";
 const db = new PrismaClient();
 async function main() {
   const [command, contestId, fromText, toText] = process.argv.slice(2);
   if (command === "status") { console.log(JSON.stringify(await khlResourceStatus(db))); return; }
   if (process.env.KHL_SYNC_ENABLED !== "true") throw new Error("KHL_SYNC_DISABLED");
+  if (command === "identity-import" && contestId && fromText) {
+    if ((await stat(fromText)).size > 2 * 1024 * 1024) throw new Error('IDENTITY_BUNDLE_TOO_LARGE');
+    console.log(await importIdentityAudit(db, contestId, JSON.parse(await readFile(fromText, 'utf8')), !process.argv.includes('--apply'))); return;
+  }
   if (command === "odds" && contestId) { console.log(await refreshKhlOdds(db, contestId, true)); return; }
   if (["daily", "hourly"].includes(command) && contestId) { const result = await runKhlDailySync(db, contestId); console.log(JSON.stringify(result)); if (result.status === "PARTIAL") process.exitCode = 2; return; }
   if (command === "prune") { console.log(await pruneKhl(db, new Date())); return; }

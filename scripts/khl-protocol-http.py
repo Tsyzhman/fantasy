@@ -36,6 +36,37 @@ def body(session, method, url, **kwargs):
 
 
 def main():
+    if len(sys.argv) == 4 and sys.argv[1] == "clubs" and re.fullmatch(r"\d{1,10}", sys.argv[2]):
+        season, ids = sys.argv[2], sys.argv[3].split(",")
+        if not 1 <= len(ids) <= 32 or len(set(ids)) != len(ids) or any(not re.fullmatch(r"\d{1,10}", id) for id in ids):
+            raise ValueError("PROTOCOL_SCOPE_INVALID")
+        with requests.Session(impersonate="chrome136") as session:
+            page = body(session, "GET", f"https://www.khl.ru/players/season/{season}/")
+            token = re.search(r"['\"]bitrix_sessid['\"]\s*:\s*['\"]([a-fA-F0-9]{32})['\"]", page)
+            if not token:
+                raise ValueError("PROTOCOL_SESSION_UNAVAILABLE")
+            result = {}
+            for club in ids:
+                result[club] = json.loads(body(session, "POST", "https://www.khl.ru/rest/clubs/team/", data={
+                    "values[club_id]": club, "values[page]": "team", "sessid": token[1],
+                }))
+            raw = json.dumps(result, ensure_ascii=False)
+            if len(raw.encode("utf-8")) > LIMIT:
+                raise ValueError("PROTOCOL_BODY_TOO_LARGE")
+            sys.stdout.write(raw)
+        return
+    if len(sys.argv) == 3 and sys.argv[1] == "player" and re.fullmatch(r"\d{1,12}", sys.argv[2]):
+        player = sys.argv[2]
+        with requests.Session(impersonate="chrome136") as session:
+            page = body(session, "GET", f"https://www.khl.ru/players/{player}/")
+            token = re.search(r"['\"]bitrix_sessid['\"]\s*:\s*['\"]([a-fA-F0-9]{32})['\"]", page)
+            if not token:
+                raise ValueError("PROTOCOL_SESSION_UNAVAILABLE")
+            raw = body(session, "POST", "https://www.khl.ru/rest/players/profile/", data={
+                "values[id]": player, "config[partials][]": "biography", "sessid": token[1],
+            })
+            sys.stdout.write(raw)
+        return
     if len(sys.argv) != 3 or not re.fullmatch(r"\d{1,10}", sys.argv[1]) or not re.fullmatch(r"\d{1,12}", sys.argv[2]):
         raise ValueError("PROTOCOL_SCOPE_INVALID")
     season, match = sys.argv[1:]

@@ -4,6 +4,7 @@ import { parseToi, type KhlPosition } from "@/khl/contracts";
 
 export interface KhlProtocolRow {
   officialPlayerId: string; name: string; teamName: string; position: KhlPosition;
+  birthDate?: string;
   participationStatus: "PLAYED" | "DNP";
   toiSeconds: number | null; ppToiSeconds: number | null; pkToiSeconds: number | null;
   attackZoneSeconds: number | null; goals: number | null; assists: number | null;
@@ -106,7 +107,13 @@ function parseRestProtocol(raw: string, officialMatchId: string, officialSeasonI
         const number = (key: string) => integer(value(key)), time = (key: string) => seconds(value(key));
         const games = number("gp");
         if (games !== 0 && games !== 1) throw new Error("PROTOCOL_NOT_SINGLE_MATCH");
+        let birthDate: string | undefined;
+        if (p.birthdate !== undefined) {
+          if (typeof p.birthdate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(p.birthdate) || !Number.isFinite(Date.parse(p.birthdate)) || new Date(p.birthdate).toISOString().slice(0, 10) !== p.birthdate) throw new Error('PROTOCOL_BIRTHDATE_INVALID');
+          birthDate = p.birthdate;
+        }
         rows.push({ officialPlayerId: p.id, name: clean(p.name), teamName: clean(team.name), position,
+          ...(birthDate ? { birthDate } : {}),
           participationStatus: games ? "PLAYED" : "DNP", toiSeconds: time(position === "G" ? "toi" : "toi_avg"),
           ppToiSeconds: time("tipp_avg"), pkToiSeconds: time("tish_avg"), attackZoneSeconds: time("toa_avg"),
           goals: number("g"), assists: number("a"), plusMinus: number("pm"), pimMinutes: number("pim"),
