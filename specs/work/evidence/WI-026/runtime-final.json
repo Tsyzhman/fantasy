@@ -1,0 +1,239 @@
+{
+  "at": "2026-09-20T17:48:50.718Z",
+  "pool": 697,
+  "active": 695,
+  "birthDates": 697,
+  "mapped": 691,
+  "activeMapped": 689,
+  "mappingDuplicates": [],
+  "currentRows": 4313,
+  "coverage": {
+    "toiSeconds": 4167,
+    "ppToiSeconds": 2569,
+    "pkToiSeconds": 2569,
+    "attackZoneSeconds": 2479,
+    "shotsOnGoal": 2597,
+    "shifts": 2569,
+    "blockedShots": 2597,
+    "saves": 412,
+    "goalsAgainst": 412
+  },
+  "protocols": 68,
+  "protocolErrors": [],
+  "historyIncomplete": [
+    {
+      "player": "Липский",
+      "errors": [
+        "HISTORY_DNP_CONFLICT:2026-09-20:avtomobilist",
+        "WEEK_ASSIGNMENT_CONFLICT:cmtsdon1o03jng2hg1e96mqps"
+      ],
+      "at": "2026-09-20T17:39:24.852Z"
+    },
+    {
+      "player": "Кузьмин",
+      "errors": [
+        "HISTORY_DNP_CONFLICT:2026-09-20:avtomobilist",
+        "WEEK_ASSIGNMENT_CONFLICT:cmtsdon1o03jng2hg1e96mqps"
+      ],
+      "at": "2026-09-20T17:38:32.723Z"
+    },
+    {
+      "player": "Брук",
+      "errors": [
+        "HISTORY_DNP_CONFLICT:2026-09-20:avtomobilist",
+        "WEEK_ASSIGNMENT_CONFLICT:cmtsdon1o03jng2hg1e96mqps"
+      ],
+      "at": "2026-09-20T17:38:47.784Z"
+    },
+    {
+      "player": "Клэг",
+      "errors": [
+        "HISTORY_DNP_CONFLICT:2026-09-20:dynamo-minsk"
+      ],
+      "at": "2026-09-20T17:39:27.304Z"
+    },
+    {
+      "player": "Денежкин",
+      "errors": [
+        "HISTORY_DNP_CONFLICT:2026-09-20:dynamo-minsk"
+      ],
+      "at": "2026-09-20T17:39:33.391Z"
+    },
+    {
+      "player": "Смит",
+      "errors": [
+        "HISTORY_DNP_CONFLICT:2026-09-20:avtomobilist",
+        "WEEK_ASSIGNMENT_CONFLICT:cmtsdon1o03jng2hg1e96mqps"
+      ],
+      "at": "2026-09-20T17:39:34.120Z"
+    },
+    {
+      "player": "Галиев",
+      "errors": [
+        "HISTORY_DNP_CONFLICT:2026-09-20:avtomobilist",
+        "WEEK_ASSIGNMENT_CONFLICT:cmtsdon1o03jng2hg1e96mqps"
+      ],
+      "at": "2026-09-20T17:39:35.779Z"
+    },
+    {
+      "player": "Кузнецов",
+      "errors": [
+        "HISTORY_DNP_CONFLICT:2026-09-20:avtomobilist",
+        "WEEK_ASSIGNMENT_CONFLICT:cmtsdon1o03jng2hg1e96mqps"
+      ],
+      "at": "2026-09-20T17:39:37.270Z"
+    },
+    {
+      "player": "Тирни",
+      "errors": [
+        "HISTORY_DNP_CONFLICT:2026-09-20:avtomobilist",
+        "WEEK_ASSIGNMENT_CONFLICT:cmtsdon1o03jng2hg1e96mqps"
+      ],
+      "at": "2026-09-20T17:39:44.118Z"
+    },
+    {
+      "player": "Шаров",
+      "errors": [
+        "HISTORY_DNP_CONFLICT:2026-09-20:dynamo-minsk"
+      ],
+      "at": "2026-09-20T17:39:57.449Z"
+    },
+    {
+      "player": "Ружичка",
+      "errors": [
+        "HISTORY_DNP_CONFLICT:2026-09-20:dynamo-minsk"
+      ],
+      "at": "2026-09-20T17:40:10.751Z"
+    },
+    {
+      "player": "Обе-Кюбель",
+      "errors": [
+        "HISTORY_DNP_CONFLICT:2026-09-20:avtomobilist",
+        "WEEK_ASSIGNMENT_CONFLICT:cmtsdon1o03jng2hg1e96mqps"
+      ],
+      "at": "2026-09-20T17:40:09.107Z"
+    },
+    {
+      "player": "Спронг",
+      "errors": [
+        "HISTORY_DNP_CONFLICT:2026-09-20:dynamo-minsk"
+      ],
+      "at": "2026-09-20T17:40:17.732Z"
+    },
+    {
+      "player": "Барабанов",
+      "errors": [
+        "HISTORY_DNP_CONFLICT:2026-09-20:dynamo-minsk"
+      ],
+      "at": "2026-09-20T17:40:14.919Z"
+    },
+    {
+      "player": "Сотишвили",
+      "errors": [
+        "HISTORY_DNP_CONFLICT:2026-09-20:avtomobilist",
+        "WEEK_ASSIGNMENT_CONFLICT:cmtsdon1o03jng2hg1e96mqps"
+      ],
+      "at": "2026-09-20T17:39:06.465Z"
+    },
+    {
+      "player": "Усов",
+      "errors": [
+        "HISTORY_DNP_CONFLICT:2026-09-20:avtomobilist",
+        "WEEK_ASSIGNMENT_CONFLICT:cmtsdon1o03jng2hg1e96mqps"
+      ],
+      "at": "2026-09-20T17:39:07.310Z"
+    },
+    {
+      "player": "Улле",
+      "errors": [
+        "HISTORY_DNP_CONFLICT:2026-09-20:avtomobilist",
+        "WEEK_ASSIGNMENT_CONFLICT:cmtsdon1o03jng2hg1e96mqps"
+      ],
+      "at": "2026-09-20T17:39:13.430Z"
+    },
+    {
+      "player": "Гросс",
+      "errors": [
+        "HISTORY_DNP_CONFLICT:2026-09-20:dynamo-minsk"
+      ],
+      "at": "2026-09-20T17:39:39.869Z"
+    }
+  ],
+  "raw": [
+    {
+      "count": 816,
+      "bytes": "11829960"
+    }
+  ],
+  "duplicates": [
+    {
+      "kind": "stats",
+      "count": 0
+    },
+    {
+      "kind": "raw",
+      "count": 0
+    },
+    {
+      "kind": "activeJobs",
+      "count": 0
+    }
+  ],
+  "lastCycle": {
+    "at": "2026-09-20T17:48:21.774Z",
+    "status": "PARTIAL",
+    "sources": [
+      {
+        "detail": "{\"updatedAt\":\"2026-09-20T17:47:27.243Z\",\"cached\":true}",
+        "source": "Sports: каталог",
+        "status": "DONE"
+      },
+      {
+        "detail": "{\"imported\":0,\"remaining\":0,\"errors\":[]}",
+        "source": "Sports: идентичность игроков",
+        "status": "DONE"
+      },
+      {
+        "detail": "\"CURRENT_ROWS_DEFERRED:18\"",
+        "source": "KHL Mobile + Sports: текущая история",
+        "status": "FAILED"
+      },
+      {
+        "detail": "{\"errors\":[],\"imported\":1,\"remaining\":0,\"accessError\":null,\"deferredMatches\":0}",
+        "source": "КХЛ: текущие протоколы",
+        "status": "DONE"
+      },
+      {
+        "detail": "\"ARCHIVE_PROFILES_FAILED:16:2193096:HISTORY_IDENTITY_INVALID;2086201:HISTORY_IDENTITY_INVALID;2193482:HISTORY_IDENTITY_INVALID;2086189:HISTORY_IDENTITY_INVALID;2172944:HISTORY_IDENTITY_INVALID\"",
+        "source": "Sports: прошлый сезон",
+        "status": "FAILED"
+      },
+      {
+        "detail": "{\"remaining\":0,\"imported\":556,\"changed\":16,\"newLinks\":0,\"unmapped\":257,\"seasonKey\":\"2025/2026\",\"matches\":748}",
+        "source": "КХЛ: архивные протоколы",
+        "status": "DONE"
+      },
+      {
+        "detail": "{\"id\":\"cmua40sy900gkzp9ginapmgk8\",\"status\":\"DONE\"}",
+        "source": "Фонбет: линия КХЛ",
+        "status": "DONE"
+      },
+      {
+        "detail": "{\"cached\":true}",
+        "source": "КХЛ: травмированные",
+        "status": "DONE"
+      },
+      {
+        "detail": "{\"id\":\"cmua40uif00iyzp9g83jzq9px\",\"contestId\":\"cmtr4grkd00056htzwpdv4fwu\",\"modelVersion\":\"khl-opponent-explained-beta-v4\",\"rulesVersion\":\"provider-official-fp\",\"inputHash\":\"6d5d939f51dee1facb3678b8b2f2131e9c250cf11180f0f8ce65fb1203a8fe96\",\"dataRevision\":18834,\"asOf\":\"2026-09-20T17:48:18.561Z\",\"horizonEnd\":\"2026-09-27T17:48:18.561Z\",\"status\":\"PUBLISHED\",\"quality\":\"BETA_BASELINE\",\"diagnostics\":{\"horizon\":\"NEXT_7_DAYS\",\"xgReady\":false,\"warnings\":[\"BETA_UNCALIBRATED\",\"XG_UNAVAILABLE\"],\"fittedModel\":false,\"participation\":\"Empirical appearances with previous-season prior; not probability of starting\",\"historicalPlayers\":545}}",
+        "source": "EP",
+        "status": "DONE"
+      },
+      {
+        "detail": "{\"raw\":0,\"availability\":0,\"availabilityRevisions\":0,\"previews\":0,\"receipts\":0,\"jobs\":0}",
+        "source": "Очистка",
+        "status": "DONE"
+      }
+    ],
+    "startedAt": "2026-09-20T17:47:52.246Z"
+  }
+}

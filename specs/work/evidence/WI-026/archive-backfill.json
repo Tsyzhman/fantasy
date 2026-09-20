@@ -1,0 +1,548 @@
+{
+  "before": {
+    "histories": 540,
+    "withProtocols": 499
+  },
+  "after": {
+    "histories": 540,
+    "withProtocols": 540
+  },
+  "results": [
+    {
+      "batch": 1,
+      "remaining": 738,
+      "imported": 10,
+      "rss": 141713408,
+      "seconds": 28
+    },
+    {
+      "batch": 2,
+      "remaining": 728,
+      "imported": 10,
+      "rss": 165253120,
+      "seconds": 35
+    },
+    {
+      "batch": 3,
+      "remaining": 718,
+      "imported": 10,
+      "rss": 168669184,
+      "seconds": 41
+    },
+    {
+      "batch": 4,
+      "remaining": 708,
+      "imported": 10,
+      "rss": 178421760,
+      "seconds": 47
+    },
+    {
+      "batch": 5,
+      "remaining": 698,
+      "imported": 10,
+      "rss": 186720256,
+      "seconds": 54
+    },
+    {
+      "batch": 6,
+      "remaining": 688,
+      "imported": 10,
+      "rss": 188604416,
+      "seconds": 61
+    },
+    {
+      "batch": 7,
+      "remaining": 678,
+      "imported": 10,
+      "rss": 187928576,
+      "seconds": 69
+    },
+    {
+      "batch": 8,
+      "remaining": 668,
+      "imported": 10,
+      "rss": 187158528,
+      "seconds": 76
+    },
+    {
+      "batch": 9,
+      "remaining": 658,
+      "imported": 10,
+      "rss": 192114688,
+      "seconds": 84
+    },
+    {
+      "batch": 10,
+      "remaining": 648,
+      "imported": 10,
+      "rss": 168988672,
+      "seconds": 91
+    },
+    {
+      "batch": 11,
+      "remaining": 638,
+      "imported": 10,
+      "rss": 175845376,
+      "seconds": 98
+    },
+    {
+      "batch": 12,
+      "remaining": 628,
+      "imported": 10,
+      "rss": 191197184,
+      "seconds": 104
+    },
+    {
+      "batch": 13,
+      "remaining": 618,
+      "imported": 10,
+      "rss": 193294336,
+      "seconds": 111
+    },
+    {
+      "batch": 14,
+      "remaining": 608,
+      "imported": 10,
+      "rss": 195039232,
+      "seconds": 117
+    },
+    {
+      "batch": 15,
+      "remaining": 598,
+      "imported": 10,
+      "rss": 195874816,
+      "seconds": 124
+    },
+    {
+      "batch": 16,
+      "remaining": 588,
+      "imported": 10,
+      "rss": 197505024,
+      "seconds": 130
+    },
+    {
+      "batch": 17,
+      "remaining": 578,
+      "imported": 10,
+      "rss": 167227392,
+      "seconds": 137
+    },
+    {
+      "batch": 18,
+      "remaining": 568,
+      "imported": 10,
+      "rss": 182341632,
+      "seconds": 143
+    },
+    {
+      "batch": 19,
+      "remaining": 558,
+      "imported": 10,
+      "rss": 191590400,
+      "seconds": 149
+    },
+    {
+      "batch": 20,
+      "remaining": 548,
+      "imported": 10,
+      "rss": 194404352,
+      "seconds": 156
+    },
+    {
+      "batch": 21,
+      "remaining": 538,
+      "imported": 10,
+      "rss": 188354560,
+      "seconds": 162
+    },
+    {
+      "batch": 22,
+      "remaining": 528,
+      "imported": 10,
+      "rss": 190038016,
+      "seconds": 168
+    },
+    {
+      "batch": 23,
+      "remaining": 518,
+      "imported": 10,
+      "rss": 180809728,
+      "seconds": 175
+    },
+    {
+      "batch": 24,
+      "remaining": 508,
+      "imported": 10,
+      "rss": 189018112,
+      "seconds": 181
+    },
+    {
+      "batch": 25,
+      "remaining": 498,
+      "imported": 10,
+      "rss": 198324224,
+      "seconds": 188
+    },
+    {
+      "batch": 26,
+      "remaining": 488,
+      "imported": 10,
+      "rss": 199000064,
+      "seconds": 194
+    },
+    {
+      "batch": 27,
+      "remaining": 478,
+      "imported": 10,
+      "rss": 201232384,
+      "seconds": 200
+    },
+    {
+      "batch": 28,
+      "remaining": 468,
+      "imported": 10,
+      "rss": 200224768,
+      "seconds": 208
+    },
+    {
+      "batch": 29,
+      "remaining": 458,
+      "imported": 10,
+      "rss": 200609792,
+      "seconds": 215
+    },
+    {
+      "batch": 30,
+      "remaining": 448,
+      "imported": 10,
+      "rss": 197812224,
+      "seconds": 222
+    },
+    {
+      "batch": 31,
+      "remaining": 438,
+      "imported": 10,
+      "rss": 199495680,
+      "seconds": 229
+    },
+    {
+      "batch": 32,
+      "remaining": 428,
+      "imported": 10,
+      "rss": 202838016,
+      "seconds": 236
+    },
+    {
+      "batch": 33,
+      "remaining": 418,
+      "imported": 10,
+      "rss": 198508544,
+      "seconds": 244
+    },
+    {
+      "batch": 34,
+      "remaining": 408,
+      "imported": 10,
+      "rss": 200585216,
+      "seconds": 251
+    },
+    {
+      "batch": 35,
+      "remaining": 398,
+      "imported": 10,
+      "rss": 202993664,
+      "seconds": 258
+    },
+    {
+      "batch": 36,
+      "remaining": 388,
+      "imported": 10,
+      "rss": 199659520,
+      "seconds": 265
+    },
+    {
+      "batch": 37,
+      "remaining": 378,
+      "imported": 10,
+      "rss": 201265152,
+      "seconds": 272
+    },
+    {
+      "batch": 38,
+      "remaining": 368,
+      "imported": 10,
+      "rss": 182837248,
+      "seconds": 281
+    },
+    {
+      "batch": 39,
+      "remaining": 358,
+      "imported": 10,
+      "rss": 190959616,
+      "seconds": 287
+    },
+    {
+      "batch": 40,
+      "remaining": 348,
+      "imported": 10,
+      "rss": 200556544,
+      "seconds": 294
+    },
+    {
+      "batch": 41,
+      "remaining": 338,
+      "imported": 10,
+      "rss": 201916416,
+      "seconds": 300
+    },
+    {
+      "batch": 42,
+      "remaining": 328,
+      "imported": 10,
+      "rss": 203927552,
+      "seconds": 307
+    },
+    {
+      "batch": 43,
+      "remaining": 318,
+      "imported": 10,
+      "rss": 183918592,
+      "seconds": 315
+    },
+    {
+      "batch": 44,
+      "remaining": 308,
+      "imported": 10,
+      "rss": 192073728,
+      "seconds": 322
+    },
+    {
+      "batch": 45,
+      "remaining": 298,
+      "imported": 10,
+      "rss": 201965568,
+      "seconds": 329
+    },
+    {
+      "batch": 46,
+      "remaining": 288,
+      "imported": 10,
+      "rss": 202756096,
+      "seconds": 337
+    },
+    {
+      "batch": 47,
+      "remaining": 278,
+      "imported": 10,
+      "rss": 172769280,
+      "seconds": 344
+    },
+    {
+      "batch": 48,
+      "remaining": 268,
+      "imported": 10,
+      "rss": 182820864,
+      "seconds": 351
+    },
+    {
+      "batch": 49,
+      "remaining": 258,
+      "imported": 10,
+      "rss": 188100608,
+      "seconds": 357
+    },
+    {
+      "batch": 50,
+      "remaining": 248,
+      "imported": 10,
+      "rss": 200990720,
+      "seconds": 365
+    },
+    {
+      "batch": 51,
+      "remaining": 238,
+      "imported": 10,
+      "rss": 179908608,
+      "seconds": 373
+    },
+    {
+      "batch": 52,
+      "remaining": 228,
+      "imported": 10,
+      "rss": 191893504,
+      "seconds": 381
+    },
+    {
+      "batch": 53,
+      "remaining": 218,
+      "imported": 10,
+      "rss": 200691712,
+      "seconds": 388
+    },
+    {
+      "batch": 54,
+      "remaining": 208,
+      "imported": 10,
+      "rss": 205197312,
+      "seconds": 396
+    },
+    {
+      "batch": 55,
+      "remaining": 198,
+      "imported": 10,
+      "rss": 202113024,
+      "seconds": 403
+    },
+    {
+      "batch": 56,
+      "remaining": 188,
+      "imported": 10,
+      "rss": 206557184,
+      "seconds": 411
+    },
+    {
+      "batch": 57,
+      "remaining": 178,
+      "imported": 10,
+      "rss": 202600448,
+      "seconds": 418
+    },
+    {
+      "batch": 58,
+      "remaining": 168,
+      "imported": 10,
+      "rss": 202276864,
+      "seconds": 425
+    },
+    {
+      "batch": 59,
+      "remaining": 158,
+      "imported": 10,
+      "rss": 206761984,
+      "seconds": 432
+    },
+    {
+      "batch": 60,
+      "remaining": 148,
+      "imported": 10,
+      "rss": 203055104,
+      "seconds": 439
+    },
+    {
+      "batch": 61,
+      "remaining": 138,
+      "imported": 10,
+      "rss": 205094912,
+      "seconds": 446
+    },
+    {
+      "batch": 62,
+      "remaining": 128,
+      "imported": 10,
+      "rss": 204648448,
+      "seconds": 453
+    },
+    {
+      "batch": 63,
+      "remaining": 118,
+      "imported": 10,
+      "rss": 206262272,
+      "seconds": 459
+    },
+    {
+      "batch": 64,
+      "remaining": 108,
+      "imported": 10,
+      "rss": 209420288,
+      "seconds": 467
+    },
+    {
+      "batch": 65,
+      "remaining": 98,
+      "imported": 10,
+      "rss": 211042304,
+      "seconds": 474
+    },
+    {
+      "batch": 66,
+      "remaining": 88,
+      "imported": 10,
+      "rss": 188375040,
+      "seconds": 481
+    },
+    {
+      "batch": 67,
+      "remaining": 78,
+      "imported": 10,
+      "rss": 200359936,
+      "seconds": 488
+    },
+    {
+      "batch": 68,
+      "remaining": 68,
+      "imported": 10,
+      "rss": 207953920,
+      "seconds": 495
+    },
+    {
+      "batch": 69,
+      "remaining": 58,
+      "imported": 10,
+      "rss": 201560064,
+      "seconds": 502
+    },
+    {
+      "batch": 70,
+      "remaining": 48,
+      "imported": 10,
+      "rss": 203329536,
+      "seconds": 510
+    },
+    {
+      "batch": 71,
+      "remaining": 38,
+      "imported": 10,
+      "rss": 188219392,
+      "seconds": 518
+    },
+    {
+      "batch": 72,
+      "remaining": 28,
+      "imported": 10,
+      "rss": 197931008,
+      "seconds": 525
+    },
+    {
+      "batch": 73,
+      "remaining": 18,
+      "imported": 10,
+      "rss": 202747904,
+      "seconds": 533
+    },
+    {
+      "batch": 74,
+      "remaining": 8,
+      "imported": 10,
+      "rss": 205242368,
+      "seconds": 540
+    },
+    {
+      "batch": 75,
+      "remaining": 0,
+      "imported": 540,
+      "changed": 41,
+      "newLinks": 0,
+      "unmapped": 273,
+      "seasonKey": "2025/2026",
+      "matches": 748,
+      "rss": 253140992,
+      "seconds": 558
+    },
+    {
+      "replay": {
+        "remaining": 0,
+        "cached": true
+      }
+    }
+  ]
+}

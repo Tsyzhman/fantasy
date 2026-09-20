@@ -6,7 +6,6 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
-| [WI-026](work/WI-026-khl-hourly-ingestion.md) | Экономное ежечасное обновление КХЛ | KHL INFRA-001/002 | @tsyzhman | 2026-09-20 | — |
 
 ## Backlog
 
@@ -17,13 +16,14 @@
 
 | Work | Title | Owner | Reason | Waiting for |
 |---|---|---|---|---|
-| [WI-017](work/WI-017-khl-protocol-statistics.md) | Протоколы КХЛ и прогнозы | @tsyzhman | 0.3.67 и 29 протоколов опубликованы; готовый ixG недоступен, прямой источник КХЛ HTTP 403 | Источник ixG или решение по собственной модели; снятие ограничения доступа к протоколам |
+| [WI-017](work/WI-017-khl-protocol-statistics.md) | Протоколы КХЛ и прогнозы | @tsyzhman | Протоколы и часовой HTTP-сбор работают после WI-026; готовый ixG недоступен | Источник ixG или решение по собственной модели |
 | [WI-001](work/WI-001-global-strategy.md) | Автоматическая стратегия глобального рейтинга | @tsyzhman | PostgreSQL/Docker недоступны; FPL HTTP 503; live-приёмка не выполнена | Рабочая БД и доступ к провайдеру/relay для миграции, синхронизации и end-to-end проверок |
 
 ## Done
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-026](work/archive/2026/WI-026-khl-hourly-ingestion.md) | Часовой сбор КХЛ и проверка всех игроков | @tsyzhman | 2026-09-20 |
 | [WI-024](work/archive/2026/WI-024-europa-three-per-club.md) | Три игрока клуба в Лиге Европы | @tsyzhman | 2026-09-16 |
 | [WI-023](work/archive/2026/WI-023-khl-expected-statistics.md) | Ожидания, соперники и обновление КХЛ | @tsyzhman | 2026-09-14 |
 | [WI-022](work/archive/2026/WI-022-khl-history-projection.md) | Полная статистика, подсказки и Excel КХЛ | @tsyzhman | 2026-09-14 |

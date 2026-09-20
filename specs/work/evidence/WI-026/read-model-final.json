@@ -1,0 +1,1845 @@
+{
+  "at": "2026-09-20T17:48:52.151Z",
+  "rows": [
+    {
+      "name": "Шетле",
+      "previous": {
+        "source": "https://www.khl.ru/players/42039/",
+        "kind": "KHL_PROTOCOL",
+        "games": 2,
+        "officialFp": {
+          "sum": 0,
+          "count": 0
+        },
+        "totals": {
+          "toiSeconds": {
+            "value": 2335,
+            "knownGames": 2
+          },
+          "ppToiSeconds": {
+            "value": 4,
+            "knownGames": 2
+          },
+          "pkToiSeconds": {
+            "value": 153,
+            "knownGames": 2
+          },
+          "attackZoneSeconds": {
+            "value": 227,
+            "knownGames": 2
+          },
+          "goals": {
+            "value": 0,
+            "knownGames": 2
+          },
+          "assists": {
+            "value": 0,
+            "knownGames": 2
+          },
+          "shotsOnGoal": {
+            "value": 0,
+            "knownGames": 2
+          },
+          "blockedShots": {
+            "value": 4,
+            "knownGames": 2
+          },
+          "pimMinutes": {
+            "value": 2,
+            "knownGames": 2
+          },
+          "plusMinus": {
+            "value": -3,
+            "knownGames": 2
+          },
+          "saves": {
+            "value": null,
+            "knownGames": 0
+          },
+          "goalsAgainst": {
+            "value": null,
+            "knownGames": 0
+          }
+        }
+      },
+      "pp": {
+        "value": null,
+        "quality": "UNKNOWN",
+        "source": null,
+        "asOf": null,
+        "reason": "Нет протокола",
+        "knownGames": 0,
+        "totalGames": 0
+      },
+      "shots": {
+        "value": null,
+        "quality": "UNKNOWN",
+        "source": null,
+        "asOf": null,
+        "reason": "Нет протокола",
+        "knownGames": 0,
+        "totalGames": 0
+      }
+    },
+    {
+      "name": "Карпов",
+      "previous": {
+        "source": "https://www.khl.ru/players/40465/",
+        "kind": "KHL_PROTOCOL",
+        "games": 2,
+        "officialFp": {
+          "sum": 0,
+          "count": 0
+        },
+        "totals": {
+          "toiSeconds": {
+            "value": 712,
+            "knownGames": 2
+          },
+          "ppToiSeconds": {
+            "value": 2,
+            "knownGames": 2
+          },
+          "pkToiSeconds": {
+            "value": 22,
+            "knownGames": 2
+          },
+          "attackZoneSeconds": {
+            "value": 86,
+            "knownGames": 2
+          },
+          "goals": {
+            "value": 0,
+            "knownGames": 2
+          },
+          "assists": {
+            "value": 0,
+            "knownGames": 2
+          },
+          "shotsOnGoal": {
+            "value": 1,
+            "knownGames": 2
+          },
+          "blockedShots": {
+            "value": 1,
+            "knownGames": 2
+          },
+          "pimMinutes": {
+            "value": 0,
+            "knownGames": 2
+          },
+          "plusMinus": {
+            "value": -1,
+            "knownGames": 2
+          },
+          "saves": {
+            "value": null,
+            "knownGames": 0
+          },
+          "goalsAgainst": {
+            "value": null,
+            "knownGames": 0
+          }
+        }
+      },
+      "current": {
+        "games": 6,
+        "asOf": "2026-09-20T17:04:09.189Z",
+        "totals": {
+          "toiSeconds": {
+            "value": 5912,
+            "knownGames": 6
+          },
+          "ppToiSeconds": {
+            "value": 14,
+            "knownGames": 6
+          },
+          "pkToiSeconds": {
+            "value": 1019,
+            "knownGames": 6
+          },
+          "attackZoneSeconds": {
+            "value": 677,
+            "knownGames": 5
+          },
+          "goals": {
+            "value": 0,
+            "knownGames": 6
+          },
+          "assists": {
+            "value": 0,
+            "knownGames": 6
+          },
+          "shotsOnGoal": {
+            "value": 2,
+            "knownGames": 6
+          },
+          "blockedShots": {
+            "value": 9,
+            "knownGames": 6
+          },
+          "pimMinutes": {
+            "value": 0,
+            "knownGames": 6
+          },
+          "plusMinus": {
+            "value": -3,
+            "knownGames": 6
+          },
+          "saves": {
+            "value": null,
+            "knownGames": 0
+          },
+          "goalsAgainst": {
+            "value": null,
+            "knownGames": 0
+          }
+        }
+      },
+      "pp": {
+        "value": 2,
+        "quality": "FACT",
+        "source": "https://www.khl.ru/game/1436/902025/protocol/,https://www.khl.ru/game/1436/902017/protocol/,https://www.khl.ru/game/1436/902007/protocol/,https://www.khl.ru/game/1436/902036/protocol/,https://www.khl.ru/game/1436/901987/protocol/,https://www.khl.ru/game/1436/901981/protocol/",
+        "asOf": "2026-09-20T17:04:09.189Z",
+        "knownGames": 6,
+        "totalGames": 6,
+        "reason": "Среднее по известным данным: 6 из 6 последних сыгранных матчей"
+      },
+      "shots": {
+        "value": 0.3333333333333333,
+        "quality": "FACT",
+        "source": "https://www.khl.ru/game/1436/902025/protocol/,https://www.khl.ru/game/1436/902017/protocol/,https://www.khl.ru/game/1436/902007/protocol/,https://www.khl.ru/game/1436/902036/protocol/,https://www.khl.ru/game/1436/901987/protocol/,https://www.khl.ru/game/1436/901981/protocol/",
+        "asOf": "2026-09-20T17:04:09.189Z",
+        "knownGames": 6,
+        "totalGames": 6,
+        "reason": "Среднее по известным данным: 6 из 6 последних сыгранных матчей"
+      }
+    },
+    {
+      "name": "Окунев",
+      "previous": {
+        "source": "https://www.khl.ru/players/42506/",
+        "kind": "KHL_PROTOCOL",
+        "games": 9,
+        "officialFp": {
+          "sum": 0,
+          "count": 0
+        },
+        "totals": {
+          "toiSeconds": {
+            "value": 3546,
+            "knownGames": 9
+          },
+          "ppToiSeconds": {
+            "value": 105,
+            "knownGames": 9
+          },
+          "pkToiSeconds": {
+            "value": 0,
+            "knownGames": 9
+          },
+          "attackZoneSeconds": {
+            "value": 694,
+            "knownGames": 9
+          },
+          "goals": {
+            "value": 0,
+            "knownGames": 9
+          },
+          "assists": {
+            "value": 1,
+            "knownGames": 9
+          },
+          "shotsOnGoal": {
+            "value": 6,
+            "knownGames": 9
+          },
+          "blockedShots": {
+            "value": 0,
+            "knownGames": 9
+          },
+          "pimMinutes": {
+            "value": 0,
+            "knownGames": 9
+          },
+          "plusMinus": {
+            "value": -1,
+            "knownGames": 9
+          },
+          "saves": {
+            "value": null,
+            "knownGames": 0
+          },
+          "goalsAgainst": {
+            "value": null,
+            "knownGames": 0
+          }
+        }
+      },
+      "pp": {
+        "value": null,
+        "quality": "UNKNOWN",
+        "source": null,
+        "asOf": null,
+        "reason": "Нет протокола",
+        "knownGames": 0,
+        "totalGames": 0
+      },
+      "shots": {
+        "value": null,
+        "quality": "UNKNOWN",
+        "source": null,
+        "asOf": null,
+        "reason": "Нет протокола",
+        "knownGames": 0,
+        "totalGames": 0
+      }
+    },
+    {
+      "name": "Калимуллин",
+      "previous": {
+        "source": "https://www.khl.ru/players/41183/",
+        "kind": "KHL_PROTOCOL",
+        "games": 3,
+        "officialFp": {
+          "sum": 0,
+          "count": 0
+        },
+        "totals": {
+          "toiSeconds": {
+            "value": 537,
+            "knownGames": 3
+          },
+          "ppToiSeconds": {
+            "value": 0,
+            "knownGames": 3
+          },
+          "pkToiSeconds": {
+            "value": 1,
+            "knownGames": 3
+          },
+          "attackZoneSeconds": {
+            "value": 77,
+            "knownGames": 3
+          },
+          "goals": {
+            "value": 0,
+            "knownGames": 3
+          },
+          "assists": {
+            "value": 0,
+            "knownGames": 3
+          },
+          "shotsOnGoal": {
+            "value": 0,
+            "knownGames": 3
+          },
+          "blockedShots": {
+            "value": 0,
+            "knownGames": 3
+          },
+          "pimMinutes": {
+            "value": 0,
+            "knownGames": 3
+          },
+          "plusMinus": {
+            "value": -1,
+            "knownGames": 3
+          },
+          "saves": {
+            "value": null,
+            "knownGames": 0
+          },
+          "goalsAgainst": {
+            "value": null,
+            "knownGames": 0
+          }
+        }
+      },
+      "pp": {
+        "value": null,
+        "quality": "UNKNOWN",
+        "source": null,
+        "asOf": null,
+        "reason": "Нет протокола",
+        "knownGames": 0,
+        "totalGames": 0
+      },
+      "shots": {
+        "value": null,
+        "quality": "UNKNOWN",
+        "source": null,
+        "asOf": null,
+        "reason": "Нет протокола",
+        "knownGames": 0,
+        "totalGames": 0
+      }
+    },
+    {
+      "name": "Мухранов",
+      "previous": {
+        "source": "https://www.khl.ru/players/41529/",
+        "kind": "KHL_PROTOCOL",
+        "games": 2,
+        "officialFp": {
+          "sum": 0,
+          "count": 0
+        },
+        "totals": {
+          "toiSeconds": {
+            "value": 1936,
+            "knownGames": 2
+          },
+          "ppToiSeconds": {
+            "value": 0,
+            "knownGames": 2
+          },
+          "pkToiSeconds": {
+            "value": 190,
+            "knownGames": 2
+          },
+          "attackZoneSeconds": {
+            "value": 321,
+            "knownGames": 2
+          },
+          "goals": {
+            "value": 1,
+            "knownGames": 2
+          },
+          "assists": {
+            "value": 0,
+            "knownGames": 2
+          },
+          "shotsOnGoal": {
+            "value": 4,
+            "knownGames": 2
+          },
+          "blockedShots": {
+            "value": 4,
+            "knownGames": 2
+          },
+          "pimMinutes": {
+            "value": 0,
+            "knownGames": 2
+          },
+          "plusMinus": {
+            "value": -1,
+            "knownGames": 2
+          },
+          "saves": {
+            "value": null,
+            "knownGames": 0
+          },
+          "goalsAgainst": {
+            "value": null,
+            "knownGames": 0
+          }
+        }
+      },
+      "pp": {
+        "value": null,
+        "quality": "UNKNOWN",
+        "source": null,
+        "asOf": null,
+        "reason": "Нет протокола",
+        "knownGames": 0,
+        "totalGames": 0
+      },
+      "shots": {
+        "value": null,
+        "quality": "UNKNOWN",
+        "source": null,
+        "asOf": null,
+        "reason": "Нет протокола",
+        "knownGames": 0,
+        "totalGames": 0
+      }
+    },
+    {
+      "name": "Бондарь",
+      "previous": {
+        "source": "https://www.khl.ru/players/41593/",
+        "kind": "KHL_PROTOCOL",
+        "games": 8,
+        "officialFp": {
+          "sum": 0,
+          "count": 0
+        },
+        "totals": {
+          "toiSeconds": {
+            "value": 1462,
+            "knownGames": 8
+          },
+          "ppToiSeconds": {
+            "value": 3,
+            "knownGames": 8
+          },
+          "pkToiSeconds": {
+            "value": 1,
+            "knownGames": 8
+          },
+          "attackZoneSeconds": {
+            "value": 234,
+            "knownGames": 8
+          },
+          "goals": {
+            "value": 0,
+            "knownGames": 8
+          },
+          "assists": {
+            "value": 1,
+            "knownGames": 8
+          },
+          "shotsOnGoal": {
+            "value": 2,
+            "knownGames": 8
+          },
+          "blockedShots": {
+            "value": 0,
+            "knownGames": 8
+          },
+          "pimMinutes": {
+            "value": 0,
+            "knownGames": 8
+          },
+          "plusMinus": {
+            "value": 0,
+            "knownGames": 8
+          },
+          "saves": {
+            "value": null,
+            "knownGames": 0
+          },
+          "goalsAgainst": {
+            "value": null,
+            "knownGames": 0
+          }
+        }
+      },
+      "current": {
+        "games": 6,
+        "asOf": "2026-09-20T17:04:19.611Z",
+        "totals": {
+          "toiSeconds": {
+            "value": 1852,
+            "knownGames": 6
+          },
+          "ppToiSeconds": {
+            "value": 33,
+            "knownGames": 6
+          },
+          "pkToiSeconds": {
+            "value": 0,
+            "knownGames": 6
+          },
+          "attackZoneSeconds": {
+            "value": 282,
+            "knownGames": 5
+          },
+          "goals": {
+            "value": 0,
+            "knownGames": 6
+          },
+          "assists": {
+            "value": 0,
+            "knownGames": 6
+          },
+          "shotsOnGoal": {
+            "value": 6,
+            "knownGames": 6
+          },
+          "blockedShots": {
+            "value": 1,
+            "knownGames": 6
+          },
+          "pimMinutes": {
+            "value": 0,
+            "knownGames": 6
+          },
+          "plusMinus": {
+            "value": 0,
+            "knownGames": 6
+          },
+          "saves": {
+            "value": null,
+            "knownGames": 0
+          },
+          "goalsAgainst": {
+            "value": null,
+            "knownGames": 0
+          }
+        }
+      },
+      "pp": {
+        "value": 6,
+        "quality": "FACT",
+        "source": "https://www.khl.ru/game/1436/902037/protocol/,https://www.khl.ru/game/1436/902028/protocol/,https://www.khl.ru/game/1436/902021/protocol/,https://www.khl.ru/game/1436/902009/protocol/,https://www.khl.ru/game/1436/901991/protocol/,https://www.khl.ru/game/1436/901977/protocol/",
+        "asOf": "2026-09-20T17:04:19.611Z",
+        "knownGames": 6,
+        "totalGames": 6,
+        "reason": "Среднее по известным данным: 6 из 6 последних сыгранных матчей"
+      },
+      "shots": {
+        "value": 1,
+        "quality": "FACT",
+        "source": "https://www.khl.ru/game/1436/902037/protocol/,https://www.khl.ru/game/1436/902028/protocol/,https://www.khl.ru/game/1436/902021/protocol/,https://www.khl.ru/game/1436/902009/protocol/,https://www.khl.ru/game/1436/901991/protocol/,https://www.khl.ru/game/1436/901977/protocol/",
+        "asOf": "2026-09-20T17:04:19.611Z",
+        "knownGames": 6,
+        "totalGames": 6,
+        "reason": "Среднее по известным данным: 6 из 6 последних сыгранных матчей"
+      }
+    },
+    {
+      "name": "Чуркин",
+      "previous": {
+        "source": "https://www.khl.ru/players/40236/",
+        "kind": "KHL_PROTOCOL",
+        "games": 39,
+        "officialFp": {
+          "sum": 0,
+          "count": 0
+        },
+        "totals": {
+          "toiSeconds": {
+            "value": 19403,
+            "knownGames": 39
+          },
+          "ppToiSeconds": {
+            "value": 98,
+            "knownGames": 39
+          },
+          "pkToiSeconds": {
+            "value": 1,
+            "knownGames": 39
+          },
+          "attackZoneSeconds": {
+            "value": 4185,
+            "knownGames": 39
+          },
+          "goals": {
+            "value": 1,
+            "knownGames": 39
+          },
+          "assists": {
+            "value": 3,
+            "knownGames": 39
+          },
+          "shotsOnGoal": {
+            "value": 44,
+            "knownGames": 39
+          },
+          "blockedShots": {
+            "value": 14,
+            "knownGames": 39
+          },
+          "pimMinutes": {
+            "value": 6,
+            "knownGames": 39
+          },
+          "plusMinus": {
+            "value": 6,
+            "knownGames": 39
+          },
+          "saves": {
+            "value": null,
+            "knownGames": 0
+          },
+          "goalsAgainst": {
+            "value": null,
+            "knownGames": 0
+          }
+        }
+      },
+      "pp": {
+        "value": null,
+        "quality": "UNKNOWN",
+        "source": null,
+        "asOf": null,
+        "reason": "Нет протокола",
+        "knownGames": 0,
+        "totalGames": 0
+      },
+      "shots": {
+        "value": null,
+        "quality": "UNKNOWN",
+        "source": null,
+        "asOf": null,
+        "reason": "Нет протокола",
+        "knownGames": 0,
+        "totalGames": 0
+      }
+    },
+    {
+      "name": "Казулаев",
+      "previous": {
+        "source": "https://www.khl.ru/players/42651/",
+        "kind": "KHL_PROTOCOL",
+        "games": 14,
+        "officialFp": {
+          "sum": 0,
+          "count": 0
+        },
+        "totals": {
+          "toiSeconds": {
+            "value": 8630,
+            "knownGames": 14
+          },
+          "ppToiSeconds": {
+            "value": 104,
+            "knownGames": 14
+          },
+          "pkToiSeconds": {
+            "value": 1,
+            "knownGames": 14
+          },
+          "attackZoneSeconds": {
+            "value": 2160,
+            "knownGames": 14
+          },
+          "goals": {
+            "value": 2,
+            "knownGames": 14
+          },
+          "assists": {
+            "value": 2,
+            "knownGames": 14
+          },
+          "shotsOnGoal": {
+            "value": 8,
+            "knownGames": 14
+          },
+          "blockedShots": {
+            "value": 11,
+            "knownGames": 14
+          },
+          "pimMinutes": {
+            "value": 0,
+            "knownGames": 14
+          },
+          "plusMinus": {
+            "value": 5,
+            "knownGames": 14
+          },
+          "saves": {
+            "value": null,
+            "knownGames": 0
+          },
+          "goalsAgainst": {
+            "value": null,
+            "knownGames": 0
+          }
+        }
+      },
+      "pp": {
+        "value": null,
+        "quality": "UNKNOWN",
+        "source": null,
+        "asOf": null,
+        "reason": "Нет протокола",
+        "knownGames": 0,
+        "totalGames": 0
+      },
+      "shots": {
+        "value": null,
+        "quality": "UNKNOWN",
+        "source": null,
+        "asOf": null,
+        "reason": "Нет протокола",
+        "knownGames": 0,
+        "totalGames": 0
+      }
+    },
+    {
+      "name": "Магомедсултанов",
+      "previous": {
+        "source": "https://www.khl.ru/players/42536/",
+        "kind": "KHL_PROTOCOL",
+        "games": 5,
+        "officialFp": {
+          "sum": 0,
+          "count": 0
+        },
+        "totals": {
+          "toiSeconds": {
+            "value": 813,
+            "knownGames": 5
+          },
+          "ppToiSeconds": {
+            "value": 0,
+            "knownGames": 5
+          },
+          "pkToiSeconds": {
+            "value": 0,
+            "knownGames": 5
+          },
+          "attackZoneSeconds": {
+            "value": 221,
+            "knownGames": 5
+          },
+          "goals": {
+            "value": 0,
+            "knownGames": 5
+          },
+          "assists": {
+            "value": 0,
+            "knownGames": 5
+          },
+          "shotsOnGoal": {
+            "value": 3,
+            "knownGames": 5
+          },
+          "blockedShots": {
+            "value": 0,
+            "knownGames": 5
+          },
+          "pimMinutes": {
+            "value": 0,
+            "knownGames": 5
+          },
+          "plusMinus": {
+            "value": 2,
+            "knownGames": 5
+          },
+          "saves": {
+            "value": null,
+            "knownGames": 0
+          },
+          "goalsAgainst": {
+            "value": null,
+            "knownGames": 0
+          }
+        }
+      },
+      "pp": {
+        "value": null,
+        "quality": "UNKNOWN",
+        "source": null,
+        "asOf": null,
+        "reason": "Нет протокола",
+        "knownGames": 0,
+        "totalGames": 0
+      },
+      "shots": {
+        "value": null,
+        "quality": "UNKNOWN",
+        "source": null,
+        "asOf": null,
+        "reason": "Нет протокола",
+        "knownGames": 0,
+        "totalGames": 0
+      }
+    },
+    {
+      "name": "Будницкий",
+      "previous": {
+        "source": "https://www.khl.ru/players/34892/",
+        "kind": "KHL_PROTOCOL",
+        "games": 1,
+        "officialFp": {
+          "sum": 0,
+          "count": 0
+        },
+        "totals": {
+          "toiSeconds": {
+            "value": 616,
+            "knownGames": 1
+          },
+          "ppToiSeconds": {
+            "value": 0,
+            "knownGames": 1
+          },
+          "pkToiSeconds": {
+            "value": 49,
+            "knownGames": 1
+          },
+          "attackZoneSeconds": {
+            "value": 105,
+            "knownGames": 1
+          },
+          "goals": {
+            "value": 0,
+            "knownGames": 1
+          },
+          "assists": {
+            "value": 0,
+            "knownGames": 1
+          },
+          "shotsOnGoal": {
+            "value": 0,
+            "knownGames": 1
+          },
+          "blockedShots": {
+            "value": 0,
+            "knownGames": 1
+          },
+          "pimMinutes": {
+            "value": 0,
+            "knownGames": 1
+          },
+          "plusMinus": {
+            "value": 1,
+            "knownGames": 1
+          },
+          "saves": {
+            "value": null,
+            "knownGames": 0
+          },
+          "goalsAgainst": {
+            "value": null,
+            "knownGames": 0
+          }
+        }
+      },
+      "pp": {
+        "value": null,
+        "quality": "UNKNOWN",
+        "source": null,
+        "asOf": null,
+        "reason": "Нет протокола",
+        "knownGames": 0,
+        "totalGames": 0
+      },
+      "shots": {
+        "value": null,
+        "quality": "UNKNOWN",
+        "source": null,
+        "asOf": null,
+        "reason": "Нет протокола",
+        "knownGames": 0,
+        "totalGames": 0
+      }
+    },
+    {
+      "name": "Мансуров",
+      "previous": {
+        "source": "https://www.khl.ru/players/26303/",
+        "kind": "KHL_PROTOCOL",
+        "games": 29,
+        "officialFp": {
+          "sum": 0,
+          "count": 0
+        },
+        "totals": {
+          "toiSeconds": {
+            "value": 25510,
+            "knownGames": 29
+          },
+          "ppToiSeconds": {
+            "value": 311,
+            "knownGames": 29
+          },
+          "pkToiSeconds": {
+            "value": 3648,
+            "knownGames": 29
+          },
+          "attackZoneSeconds": {
+            "value": 4781,
+            "knownGames": 29
+          },
+          "goals": {
+            "value": 4,
+            "knownGames": 29
+          },
+          "assists": {
+            "value": 5,
+            "knownGames": 29
+          },
+          "shotsOnGoal": {
+            "value": 33,
+            "knownGames": 29
+          },
+          "blockedShots": {
+            "value": 9,
+            "knownGames": 29
+          },
+          "pimMinutes": {
+            "value": 4,
+            "knownGames": 29
+          },
+          "plusMinus": {
+            "value": 5,
+            "knownGames": 29
+          },
+          "saves": {
+            "value": null,
+            "knownGames": 0
+          },
+          "goalsAgainst": {
+            "value": null,
+            "knownGames": 0
+          }
+        }
+      },
+      "current": {
+        "games": 5,
+        "asOf": "2026-09-20T17:04:22.199Z",
+        "totals": {
+          "toiSeconds": {
+            "value": 3988,
+            "knownGames": 5
+          },
+          "ppToiSeconds": {
+            "value": 7,
+            "knownGames": 5
+          },
+          "pkToiSeconds": {
+            "value": 748,
+            "knownGames": 5
+          },
+          "attackZoneSeconds": {
+            "value": 644,
+            "knownGames": 5
+          },
+          "goals": {
+            "value": 0,
+            "knownGames": 5
+          },
+          "assists": {
+            "value": 1,
+            "knownGames": 5
+          },
+          "shotsOnGoal": {
+            "value": 6,
+            "knownGames": 5
+          },
+          "blockedShots": {
+            "value": 3,
+            "knownGames": 5
+          },
+          "pimMinutes": {
+            "value": 0,
+            "knownGames": 5
+          },
+          "plusMinus": {
+            "value": 2,
+            "knownGames": 5
+          },
+          "saves": {
+            "value": null,
+            "knownGames": 0
+          },
+          "goalsAgainst": {
+            "value": null,
+            "knownGames": 0
+          }
+        }
+      },
+      "pp": {
+        "value": 1,
+        "quality": "FACT",
+        "source": "https://www.khl.ru/game/1436/902040/protocol/,https://www.khl.ru/game/1436/902033/protocol/,https://www.khl.ru/game/1436/902026/protocol/,https://www.khl.ru/game/1436/902012/protocol/,https://www.khl.ru/game/1436/901979/protocol/",
+        "asOf": "2026-09-20T17:04:22.199Z",
+        "knownGames": 5,
+        "totalGames": 5,
+        "reason": "Среднее по известным данным: 5 из 5 последних сыгранных матчей"
+      },
+      "shots": {
+        "value": 1.2,
+        "quality": "FACT",
+        "source": "https://www.khl.ru/game/1436/902040/protocol/,https://www.khl.ru/game/1436/902033/protocol/,https://www.khl.ru/game/1436/902026/protocol/,https://www.khl.ru/game/1436/902012/protocol/,https://www.khl.ru/game/1436/901979/protocol/",
+        "asOf": "2026-09-20T17:04:22.199Z",
+        "knownGames": 5,
+        "totalGames": 5,
+        "reason": "Среднее по известным данным: 5 из 5 последних сыгранных матчей"
+      }
+    },
+    {
+      "name": "Тирни",
+      "previous": null,
+      "current": {
+        "games": 6,
+        "asOf": "2026-09-20T17:40:18.760Z",
+        "totals": {
+          "toiSeconds": {
+            "value": 6781,
+            "knownGames": 6
+          },
+          "ppToiSeconds": {
+            "value": 877,
+            "knownGames": 6
+          },
+          "pkToiSeconds": {
+            "value": 199,
+            "knownGames": 6
+          },
+          "attackZoneSeconds": {
+            "value": 1771,
+            "knownGames": 6
+          },
+          "goals": {
+            "value": 2,
+            "knownGames": 6
+          },
+          "assists": {
+            "value": 5,
+            "knownGames": 6
+          },
+          "shotsOnGoal": {
+            "value": 11,
+            "knownGames": 6
+          },
+          "blockedShots": {
+            "value": 4,
+            "knownGames": 6
+          },
+          "pimMinutes": {
+            "value": 0,
+            "knownGames": 6
+          },
+          "plusMinus": {
+            "value": 1,
+            "knownGames": 6
+          },
+          "saves": {
+            "value": null,
+            "knownGames": 0
+          },
+          "goalsAgainst": {
+            "value": null,
+            "knownGames": 0
+          }
+        }
+      },
+      "pp": {
+        "value": 146,
+        "quality": "FACT",
+        "source": "https://www.khl.ru/game/1436/902039/protocol/,https://www.khl.ru/game/1436/902032/protocol/,https://www.khl.ru/game/1436/902017/protocol/,https://www.khl.ru/game/1436/902009/protocol/,https://www.khl.ru/game/1436/902004/protocol/,https://www.khl.ru/game/1436/901986/protocol/",
+        "asOf": "2026-09-20T17:40:18.760Z",
+        "knownGames": 6,
+        "totalGames": 6,
+        "reason": "Среднее по известным данным: 6 из 6 последних сыгранных матчей"
+      },
+      "shots": {
+        "value": 1.8333333333333333,
+        "quality": "FACT",
+        "source": "https://www.khl.ru/game/1436/902039/protocol/,https://www.khl.ru/game/1436/902032/protocol/,https://www.khl.ru/game/1436/902017/protocol/,https://www.khl.ru/game/1436/902009/protocol/,https://www.khl.ru/game/1436/902004/protocol/,https://www.khl.ru/game/1436/901986/protocol/",
+        "asOf": "2026-09-20T17:40:18.760Z",
+        "knownGames": 6,
+        "totalGames": 6,
+        "reason": "Среднее по известным данным: 6 из 6 последних сыгранных матчей"
+      }
+    },
+    {
+      "name": "С. Фу",
+      "previous": {
+        "source": "https://www.khl.ru/players/34934/",
+        "kind": "KHL_PROTOCOL",
+        "games": 59,
+        "officialFp": {
+          "sum": 0,
+          "count": 0
+        },
+        "totals": {
+          "toiSeconds": {
+            "value": 57026,
+            "knownGames": 59
+          },
+          "ppToiSeconds": {
+            "value": 5812,
+            "knownGames": 59
+          },
+          "pkToiSeconds": {
+            "value": 10626,
+            "knownGames": 59
+          },
+          "attackZoneSeconds": {
+            "value": 10383,
+            "knownGames": 59
+          },
+          "goals": {
+            "value": 11,
+            "knownGames": 59
+          },
+          "assists": {
+            "value": 9,
+            "knownGames": 59
+          },
+          "shotsOnGoal": {
+            "value": 110,
+            "knownGames": 59
+          },
+          "blockedShots": {
+            "value": 41,
+            "knownGames": 59
+          },
+          "pimMinutes": {
+            "value": 40,
+            "knownGames": 59
+          },
+          "plusMinus": {
+            "value": -9,
+            "knownGames": 59
+          },
+          "saves": {
+            "value": null,
+            "knownGames": 0
+          },
+          "goalsAgainst": {
+            "value": null,
+            "knownGames": 0
+          }
+        }
+      },
+      "pp": {
+        "value": null,
+        "quality": "UNKNOWN",
+        "source": null,
+        "asOf": null,
+        "reason": "Нет протокола",
+        "knownGames": 0,
+        "totalGames": 0
+      },
+      "shots": {
+        "value": null,
+        "quality": "UNKNOWN",
+        "source": null,
+        "asOf": null,
+        "reason": "Нет протокола",
+        "knownGames": 0,
+        "totalGames": 0
+      }
+    },
+    {
+      "name": "Салыго",
+      "previous": {
+        "source": "https://www.khl.ru/players/42471/",
+        "kind": "KHL_PROTOCOL",
+        "games": 18,
+        "officialFp": {
+          "sum": 0,
+          "count": 0
+        },
+        "totals": {
+          "toiSeconds": {
+            "value": 8137,
+            "knownGames": 18
+          },
+          "ppToiSeconds": {
+            "value": 4,
+            "knownGames": 18
+          },
+          "pkToiSeconds": {
+            "value": 2,
+            "knownGames": 18
+          },
+          "attackZoneSeconds": {
+            "value": 1819,
+            "knownGames": 18
+          },
+          "goals": {
+            "value": 1,
+            "knownGames": 18
+          },
+          "assists": {
+            "value": 3,
+            "knownGames": 18
+          },
+          "shotsOnGoal": {
+            "value": 14,
+            "knownGames": 18
+          },
+          "blockedShots": {
+            "value": 1,
+            "knownGames": 18
+          },
+          "pimMinutes": {
+            "value": 2,
+            "knownGames": 18
+          },
+          "plusMinus": {
+            "value": 3,
+            "knownGames": 18
+          },
+          "saves": {
+            "value": null,
+            "knownGames": 0
+          },
+          "goalsAgainst": {
+            "value": null,
+            "knownGames": 0
+          }
+        }
+      },
+      "pp": {
+        "value": null,
+        "quality": "UNKNOWN",
+        "source": null,
+        "asOf": null,
+        "reason": "Нет протокола",
+        "knownGames": 0,
+        "totalGames": 0
+      },
+      "shots": {
+        "value": null,
+        "quality": "UNKNOWN",
+        "source": null,
+        "asOf": null,
+        "reason": "Нет протокола",
+        "knownGames": 0,
+        "totalGames": 0
+      }
+    },
+    {
+      "name": "Соловьев",
+      "previous": {
+        "source": "https://www.khl.ru/players/40830/",
+        "kind": "KHL_PROTOCOL",
+        "games": 2,
+        "officialFp": {
+          "sum": 0,
+          "count": 0
+        },
+        "totals": {
+          "toiSeconds": {
+            "value": 248,
+            "knownGames": 2
+          },
+          "ppToiSeconds": {
+            "value": 0,
+            "knownGames": 2
+          },
+          "pkToiSeconds": {
+            "value": 0,
+            "knownGames": 2
+          },
+          "attackZoneSeconds": {
+            "value": 18,
+            "knownGames": 2
+          },
+          "goals": {
+            "value": 0,
+            "knownGames": 2
+          },
+          "assists": {
+            "value": 0,
+            "knownGames": 2
+          },
+          "shotsOnGoal": {
+            "value": 1,
+            "knownGames": 2
+          },
+          "blockedShots": {
+            "value": 0,
+            "knownGames": 2
+          },
+          "pimMinutes": {
+            "value": 0,
+            "knownGames": 2
+          },
+          "plusMinus": {
+            "value": 1,
+            "knownGames": 2
+          },
+          "saves": {
+            "value": null,
+            "knownGames": 0
+          },
+          "goalsAgainst": {
+            "value": null,
+            "knownGames": 0
+          }
+        }
+      },
+      "current": {
+        "games": 4,
+        "asOf": "2026-09-20T17:04:05.072Z",
+        "totals": {
+          "toiSeconds": {
+            "value": 2788,
+            "knownGames": 4
+          },
+          "ppToiSeconds": {
+            "value": 287,
+            "knownGames": 4
+          },
+          "pkToiSeconds": {
+            "value": 6,
+            "knownGames": 4
+          },
+          "attackZoneSeconds": {
+            "value": 600,
+            "knownGames": 4
+          },
+          "goals": {
+            "value": 1,
+            "knownGames": 4
+          },
+          "assists": {
+            "value": 1,
+            "knownGames": 4
+          },
+          "shotsOnGoal": {
+            "value": 4,
+            "knownGames": 4
+          },
+          "blockedShots": {
+            "value": 1,
+            "knownGames": 4
+          },
+          "pimMinutes": {
+            "value": 2,
+            "knownGames": 4
+          },
+          "plusMinus": {
+            "value": -1,
+            "knownGames": 4
+          },
+          "saves": {
+            "value": null,
+            "knownGames": 0
+          },
+          "goalsAgainst": {
+            "value": null,
+            "knownGames": 0
+          }
+        }
+      },
+      "pp": {
+        "value": 72,
+        "quality": "FACT",
+        "source": "https://www.khl.ru/game/1436/902027/protocol/,https://www.khl.ru/game/1436/902004/protocol/,https://www.khl.ru/game/1436/901995/protocol/,https://www.khl.ru/game/1436/901983/protocol/",
+        "asOf": "2026-09-20T17:04:05.072Z",
+        "knownGames": 4,
+        "totalGames": 4,
+        "reason": "Среднее по известным данным: 4 из 4 последних сыгранных матчей"
+      },
+      "shots": {
+        "value": 1,
+        "quality": "FACT",
+        "source": "https://www.khl.ru/game/1436/902027/protocol/,https://www.khl.ru/game/1436/902004/protocol/,https://www.khl.ru/game/1436/901995/protocol/,https://www.khl.ru/game/1436/901983/protocol/",
+        "asOf": "2026-09-20T17:04:05.072Z",
+        "knownGames": 4,
+        "totalGames": 4,
+        "reason": "Среднее по известным данным: 4 из 4 последних сыгранных матчей"
+      }
+    },
+    {
+      "name": "Коновалов",
+      "previous": {
+        "source": "https://www.khl.ru/players/22611/",
+        "kind": "KHL_PROTOCOL",
+        "games": 6,
+        "officialFp": {
+          "sum": 0,
+          "count": 0
+        },
+        "totals": {
+          "toiSeconds": {
+            "value": 18937,
+            "knownGames": 6
+          },
+          "ppToiSeconds": {
+            "value": null,
+            "knownGames": 0
+          },
+          "pkToiSeconds": {
+            "value": null,
+            "knownGames": 0
+          },
+          "attackZoneSeconds": {
+            "value": null,
+            "knownGames": 0
+          },
+          "goals": {
+            "value": 0,
+            "knownGames": 6
+          },
+          "assists": {
+            "value": 0,
+            "knownGames": 6
+          },
+          "shotsOnGoal": {
+            "value": null,
+            "knownGames": 0
+          },
+          "blockedShots": {
+            "value": null,
+            "knownGames": 0
+          },
+          "pimMinutes": {
+            "value": 0,
+            "knownGames": 6
+          },
+          "plusMinus": {
+            "value": null,
+            "knownGames": 0
+          },
+          "saves": {
+            "value": 129,
+            "knownGames": 6
+          },
+          "goalsAgainst": {
+            "value": 17,
+            "knownGames": 6
+          }
+        }
+      },
+      "current": {
+        "games": 1,
+        "asOf": "2026-09-20T17:03:39.961Z",
+        "totals": {
+          "toiSeconds": {
+            "value": 2598,
+            "knownGames": 1
+          },
+          "ppToiSeconds": {
+            "value": null,
+            "knownGames": 0
+          },
+          "pkToiSeconds": {
+            "value": null,
+            "knownGames": 0
+          },
+          "attackZoneSeconds": {
+            "value": null,
+            "knownGames": 0
+          },
+          "goals": {
+            "value": 0,
+            "knownGames": 1
+          },
+          "assists": {
+            "value": 0,
+            "knownGames": 1
+          },
+          "shotsOnGoal": {
+            "value": null,
+            "knownGames": 0
+          },
+          "blockedShots": {
+            "value": null,
+            "knownGames": 0
+          },
+          "pimMinutes": {
+            "value": 0,
+            "knownGames": 1
+          },
+          "plusMinus": {
+            "value": null,
+            "knownGames": 0
+          },
+          "saves": {
+            "value": 21,
+            "knownGames": 1
+          },
+          "goalsAgainst": {
+            "value": 7,
+            "knownGames": 1
+          }
+        }
+      },
+      "pp": {
+        "value": null,
+        "quality": "UNKNOWN",
+        "source": null,
+        "asOf": null,
+        "reason": "Нет протокола",
+        "knownGames": 0,
+        "totalGames": 1
+      },
+      "shots": {
+        "value": null,
+        "quality": "UNKNOWN",
+        "source": null,
+        "asOf": null,
+        "reason": "Нет протокола",
+        "knownGames": 0,
+        "totalGames": 1
+      }
+    },
+    {
+      "name": "Ахсянов",
+      "previous": {
+        "source": "https://www.khl.ru/players/41563/",
+        "kind": "KHL_PROTOCOL",
+        "games": 1,
+        "officialFp": {
+          "sum": 0,
+          "count": 0
+        },
+        "totals": {
+          "toiSeconds": {
+            "value": 725,
+            "knownGames": 1
+          },
+          "ppToiSeconds": {
+            "value": 0,
+            "knownGames": 1
+          },
+          "pkToiSeconds": {
+            "value": 0,
+            "knownGames": 1
+          },
+          "attackZoneSeconds": {
+            "value": 157,
+            "knownGames": 1
+          },
+          "goals": {
+            "value": 0,
+            "knownGames": 1
+          },
+          "assists": {
+            "value": 0,
+            "knownGames": 1
+          },
+          "shotsOnGoal": {
+            "value": 0,
+            "knownGames": 1
+          },
+          "blockedShots": {
+            "value": 0,
+            "knownGames": 1
+          },
+          "pimMinutes": {
+            "value": 0,
+            "knownGames": 1
+          },
+          "plusMinus": {
+            "value": 0,
+            "knownGames": 1
+          },
+          "saves": {
+            "value": null,
+            "knownGames": 0
+          },
+          "goalsAgainst": {
+            "value": null,
+            "knownGames": 0
+          }
+        }
+      },
+      "pp": {
+        "value": null,
+        "quality": "UNKNOWN",
+        "source": null,
+        "asOf": null,
+        "reason": "Нет протокола",
+        "knownGames": 0,
+        "totalGames": 0
+      },
+      "shots": {
+        "value": null,
+        "quality": "UNKNOWN",
+        "source": null,
+        "asOf": null,
+        "reason": "Нет протокола",
+        "knownGames": 0,
+        "totalGames": 0
+      }
+    },
+    {
+      "name": "Рубин",
+      "previous": {
+        "source": "https://www.khl.ru/players/43680/",
+        "kind": "KHL_PROTOCOL",
+        "games": 2,
+        "officialFp": {
+          "sum": 0,
+          "count": 0
+        },
+        "totals": {
+          "toiSeconds": {
+            "value": 1210,
+            "knownGames": 2
+          },
+          "ppToiSeconds": {
+            "value": 0,
+            "knownGames": 2
+          },
+          "pkToiSeconds": {
+            "value": 0,
+            "knownGames": 2
+          },
+          "attackZoneSeconds": {
+            "value": 175,
+            "knownGames": 2
+          },
+          "goals": {
+            "value": 0,
+            "knownGames": 2
+          },
+          "assists": {
+            "value": 0,
+            "knownGames": 2
+          },
+          "shotsOnGoal": {
+            "value": 1,
+            "knownGames": 2
+          },
+          "blockedShots": {
+            "value": 4,
+            "knownGames": 2
+          },
+          "pimMinutes": {
+            "value": 0,
+            "knownGames": 2
+          },
+          "plusMinus": {
+            "value": -2,
+            "knownGames": 2
+          },
+          "saves": {
+            "value": null,
+            "knownGames": 0
+          },
+          "goalsAgainst": {
+            "value": null,
+            "knownGames": 0
+          }
+        }
+      },
+      "current": {
+        "games": 1,
+        "asOf": "2026-09-20T17:04:07.096Z",
+        "totals": {
+          "toiSeconds": {
+            "value": 196,
+            "knownGames": 1
+          },
+          "ppToiSeconds": {
+            "value": 0,
+            "knownGames": 1
+          },
+          "pkToiSeconds": {
+            "value": 0,
+            "knownGames": 1
+          },
+          "attackZoneSeconds": {
+            "value": 47,
+            "knownGames": 1
+          },
+          "goals": {
+            "value": 0,
+            "knownGames": 1
+          },
+          "assists": {
+            "value": 0,
+            "knownGames": 1
+          },
+          "shotsOnGoal": {
+            "value": 0,
+            "knownGames": 1
+          },
+          "blockedShots": {
+            "value": 0,
+            "knownGames": 1
+          },
+          "pimMinutes": {
+            "value": 0,
+            "knownGames": 1
+          },
+          "plusMinus": {
+            "value": 0,
+            "knownGames": 1
+          },
+          "saves": {
+            "value": null,
+            "knownGames": 0
+          },
+          "goalsAgainst": {
+            "value": null,
+            "knownGames": 0
+          }
+        }
+      },
+      "pp": {
+        "value": 0,
+        "quality": "FACT",
+        "source": "https://www.khl.ru/game/1436/902026/protocol/",
+        "asOf": "2026-09-20T17:04:07.096Z",
+        "knownGames": 1,
+        "totalGames": 1,
+        "reason": "Среднее по известным данным: 1 из 1 последних сыгранных матчей"
+      },
+      "shots": {
+        "value": 0,
+        "quality": "FACT",
+        "source": "https://www.khl.ru/game/1436/902026/protocol/",
+        "asOf": "2026-09-20T17:04:07.096Z",
+        "knownGames": 1,
+        "totalGames": 1,
+        "reason": "Среднее по известным данным: 1 из 1 последних сыгранных матчей"
+      }
+    },
+    {
+      "name": "Ковгореня",
+      "previous": {
+        "source": "https://www.khl.ru/players/41927/",
+        "kind": "KHL_PROTOCOL",
+        "games": 1,
+        "officialFp": {
+          "sum": 0,
+          "count": 0
+        },
+        "totals": {
+          "toiSeconds": {
+            "value": 218,
+            "knownGames": 1
+          },
+          "ppToiSeconds": {
+            "value": 0,
+            "knownGames": 1
+          },
+          "pkToiSeconds": {
+            "value": 2,
+            "knownGames": 1
+          },
+          "attackZoneSeconds": {
+            "value": 54,
+            "knownGames": 1
+          },
+          "goals": {
+            "value": 0,
+            "knownGames": 1
+          },
+          "assists": {
+            "value": 0,
+            "knownGames": 1
+          },
+          "shotsOnGoal": {
+            "value": 1,
+            "knownGames": 1
+          },
+          "blockedShots": {
+            "value": 1,
+            "knownGames": 1
+          },
+          "pimMinutes": {
+            "value": 0,
+            "knownGames": 1
+          },
+          "plusMinus": {
+            "value": -1,
+            "knownGames": 1
+          },
+          "saves": {
+            "value": null,
+            "knownGames": 0
+          },
+          "goalsAgainst": {
+            "value": null,
+            "knownGames": 0
+          }
+        }
+      },
+      "pp": {
+        "value": null,
+        "quality": "UNKNOWN",
+        "source": null,
+        "asOf": null,
+        "reason": "Нет протокола",
+        "knownGames": 0,
+        "totalGames": 0
+      },
+      "shots": {
+        "value": null,
+        "quality": "UNKNOWN",
+        "source": null,
+        "asOf": null,
+        "reason": "Нет протокола",
+        "knownGames": 0,
+        "totalGames": 0
+      }
+    }
+  ]
+}

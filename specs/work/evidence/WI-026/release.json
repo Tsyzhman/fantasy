@@ -1,0 +1,13 @@
+{
+  "version": "0.3.83",
+  "commit": "cb2877e338e89b9084483e60af45dc9c76ec6a76",
+  "deployment": "https://github.com/Tsyzhman/fantasy/actions/runs/35526328946",
+  "conclusion": "success",
+  "tests": {"passed": 1145, "failed": 0, "skipped": 0, "pythonTransport": 4},
+  "lint": {"errors": 0, "warnings": 152},
+  "typecheck": "passed",
+  "build": "passed",
+  "targetedDbRegression": "added but not executed locally: Docker daemon unavailable",
+  "production": {"timer": "hourly :22 Europe/Moscow", "lastAutomaticTrigger": "2026-09-20T20:22:00+03:00", "immediateCycleAt": "2026-09-20T20:47:52+03:00", "cycleSeconds": 29, "currentProtocols": 68, "archiveMatches": 748, "activeHistoricalPlayers": 556, "inactiveHistoricalPlayers": 2},
+  "specSnapshot": "522fd2714d1ba547ea39d6a45e333a081ec3d031f09186e8f2e7a26a9c88c13a"
+}
