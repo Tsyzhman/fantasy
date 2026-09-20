@@ -41,7 +41,18 @@ export async function refreshKhlHistory(db: PrismaClient, contestId: string, ref
     };
     const due = pool.filter(p => {
       const c = checkMap.get(p.id), cursor = c?.cursor as { priceRevision?: number; latestFinal?: string | null } | undefined;
-      return !c || (refreshSince && c.completedAt < refreshSince) || (c.cursor as { identityVersion?: number }).identityVersion !== 2 || cursor?.priceRevision !== p.priceRevision || cursor?.latestFinal !== latestFinal(p.clubId) || now.getTime() - c.completedAt.getTime() > 86400000;
+      const recentMatch = finished.find(m => `${m.id}:${m.revision}` === latestFinal(p.clubId));
+      const correctionDue = recentMatch && c && [4, 26, 74].some(hours => {
+        const boundary = recentMatch.startsAt.getTime() + hours * 3600000;
+        return boundary <= now.getTime() && c.completedAt.getTime() < boundary;
+      });
+      return !c || correctionDue || (refreshSince && c.completedAt < refreshSince) || (c.cursor as { identityVersion?: number }).identityVersion !== 2 || cursor?.priceRevision !== p.priceRevision || cursor?.latestFinal !== latestFinal(p.clubId) || now.getTime() - c.completedAt.getTime() > 86400000;
+    }).sort((a, b) => {
+      const priority = (id: string, clubId: string) => {
+        const c = checkMap.get(id);
+        return !c || (c.cursor as { latestFinal?: string | null }).latestFinal !== latestFinal(clubId) ? 0 : c.completedAt.getTime();
+      };
+      return priority(a.id, a.clubId) - priority(b.id, b.clubId);
     });
     let imported = 0, changed = 0, processed = 0;
     for (const player of due.slice(0, 20)) {

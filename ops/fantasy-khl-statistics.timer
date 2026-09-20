@@ -1,8 +1,8 @@
 [Unit]
-Description=KHL full statistics refresh at 10:00 and 20:00 Moscow time
+Description=KHL incremental statistics refresh hourly at minute 22
 
 [Timer]
-OnCalendar=*-*-* 10,20:00:00 Europe/Moscow
+OnCalendar=*-*-* *:22:00 Europe/Moscow
 Persistent=true
 AccuracySec=1s
 RandomizedDelaySec=0

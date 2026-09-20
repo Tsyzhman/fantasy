@@ -8,5 +8,5 @@ Type=oneshot
 User=deploy
 Group=deploy
 ExecStart=/usr/bin/bash /var/www/fantasy-scout-current/ops/khl-daily-sync.sh cmtr4grkd00056htzwpdv4fwu
-TimeoutStartSec=7200
+TimeoutStartSec=2100
 Nice=10

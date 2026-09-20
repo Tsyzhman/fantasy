@@ -5,6 +5,31 @@ import { readFileSync } from "node:fs";
 import { parseKhlProtocol } from "./protocol";
 import { fetchKhlProtocol } from "./protocol-transport";
 const html = readFileSync("src/providers/khl-mobile/fixtures/protocol-901980.html", "utf8");
+const rest = readFileSync("src/providers/khl-mobile/fixtures/protocol-902038.json", "utf8");
+test("real public REST protocol preserves exact times, attack, blocks, shifts and goalie saves", () => {
+  const result = parseKhlProtocol(rest, "902038", "1436");
+  assert.equal(result.rows.length, 43);
+  assert.equal(result.attackTimeAvailable, true);
+  const p = result.rows.find(r => r.officialPlayerId === "44956")!;
+  assert.equal(p.toiSeconds, 1192); assert.equal(p.attackZoneSeconds, 241);
+  assert.equal(p.ppToiSeconds, 0); assert.equal(p.pkToiSeconds, 33);
+  assert.equal(p.shifts, 23); assert.equal(p.shotsOnGoal, 1);
+  assert.equal(result.rows.find(r => r.officialPlayerId === "29048")!.blockedShots, 4);
+  const goalie = result.rows.find(r => r.officialPlayerId === "22139")!;
+  assert.equal(goalie.saves, 23); assert.equal(goalie.goalsAgainst, 1);
+  assert.equal(goalie.shotsOnGoal, null); assert.equal(goalie.ppToiSeconds, null);
+});
+test("REST refuses empty success, wrong season/match, missing fields and duplicate players", () => {
+  assert.throws(() => parseKhlProtocol('{"status":"success","data":{"teams":[]}}', "902038"), /RESPONSE_INVALID/);
+  assert.throws(() => parseKhlProtocol(rest, "901980"), /MATCH_INVALID/);
+  assert.throws(() => parseKhlProtocol(rest, "902038", "1369"), /MATCH_INVALID/);
+  const d = JSON.parse(rest);
+  delete d.data.teams.home.stats.def[0].tipp_avg;
+  assert.throws(() => parseKhlProtocol(JSON.stringify(d), "902038"), /COLUMNS_INVALID/);
+  const duplicate = JSON.parse(rest);
+  duplicate.data.teams.home.stats.gk[0].id = duplicate.data.teams.visitor.stats.gk[0].id;
+  assert.throws(() => parseKhlProtocol(JSON.stringify(duplicate), "902038"), /PLAYER_INVALID/);
+});
 test("real KHL protocol: 44 identities, match TOI and PP/PK, empty attack telemetry stays unknown", () => {
   const result = parseKhlProtocol(html, "901980");
   assert.equal(result.rows.length, 44);

@@ -14,7 +14,7 @@ export async function importKhlProtocolHtml(db: PrismaClient, input: { contestId
   const mapping = await db.khlExternalEntityMap.findFirstOrThrow({ where: { provider: "KHL", entityType: "match", externalId: input.officialMatchId, match: { seasonId: contest.seasonId } }, include: { match: { include: { home: true, away: true } } } });
   const match = mapping.match!;
   if (match.status !== "FINAL" || match.startsAt > input.observedAt) throw new Error("PROTOCOL_MATCH_NOT_FINAL");
-  const parsed = parseKhlProtocol(input.html, input.officialMatchId);
+  const parsed = parseKhlProtocol(input.html, input.officialMatchId, mapping.providerScope);
   const source = `https://www.khl.ru/game/${mapping.providerScope}/${input.officialMatchId}/protocol/`;
   const [pool, teams, identities] = await Promise.all([
     db.khlFantasyPlayer.findMany({ where: { contestId: contest.id }, include: { player: true }, take: 1000 }),
@@ -40,7 +40,7 @@ export async function importKhlProtocolHtml(db: PrismaClient, input: { contestId
   for (const link of newLinks) await bindExternalEntity(tx, { provider: "KHL", entityType: "player", providerScope: "global", externalId: link.officialPlayerId, canonicalId: link.playerId, evidence: `${source}; exact full name, position and verified match club: ${link.name}`, verifiedAt: input.observedAt });
   });
   const result = rows.length ? await importProtocols(db, { seasonId: contest.seasonId, source, rows, batchId: randomUUID(), observedAt: input.observedAt, availableAt: input.observedAt, lease: input.lease }) : { changed: 0 };
-  await storeKhlRaw(db, { provider: "KHL_PROTOCOL", scope: `${mapping.providerScope}:${input.officialMatchId}`, parserVersion: "khl-protocol-v1", raw: Buffer.from(input.html), now: input.observedAt });
+  await storeKhlRaw(db, { provider: "KHL_PROTOCOL", scope: `${mapping.providerScope}:${input.officialMatchId}`, parserVersion: "khl-protocol-v2", raw: Buffer.from(input.html), now: input.observedAt });
   await db.$transaction(async tx => {
     await lockValidLease(tx, input.lease);
     const key = { provider: "KHL_PROTOCOL", scope: `${input.contestId}:${input.officialMatchId}`, jobType: "MATCH" };

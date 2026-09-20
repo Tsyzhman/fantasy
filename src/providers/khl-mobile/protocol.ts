@@ -24,8 +24,9 @@ const seconds = (s: string) => {
   return value;
 };
 
-export function parseKhlProtocol(html: string, officialMatchId: string) {
+export function parseKhlProtocol(html: string, officialMatchId: string, officialSeasonId?: string) {
   if (Buffer.byteLength(html) > 5 * 1024 * 1024 || !/^\d+$/.test(officialMatchId)) throw new Error("PROTOCOL_SCOPE_INVALID");
+  if (html.trimStart().startsWith("{")) return parseRestProtocol(html, officialMatchId, officialSeasonId);
   const root = parse(html);
   if (!root.querySelector(`a[href*="game-${officialMatchId}-ru.pdf"]`)) throw new Error("PROTOCOL_MATCH_INVALID");
   const rows: KhlProtocolRow[] = [];
@@ -66,6 +67,54 @@ export function parseKhlProtocol(html: string, officialMatchId: string) {
   }
   if (tables.size !== 6 || rows.length < 30 || rows.length > 60 || new Set(rows.map(r => r.teamName)).size !== 2) throw new Error("PROTOCOL_COVERAGE_INVALID");
   // A whole column of zeroes is a telemetry placeholder, not 40 genuine zero-attack games.
+  const attackTimeAvailable = rows.some(r => (r.attackZoneSeconds ?? 0) > 0);
+  if (!attackTimeAvailable) for (const row of rows) row.attackZoneSeconds = null;
+  return { officialMatchId, rows, attackTimeAvailable };
+}
+
+function object(value: unknown): Record<string, unknown> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) throw new Error("PROTOCOL_RESPONSE_INVALID");
+  return value as Record<string, unknown>;
+}
+
+/** The same public JSON used by khl.ru to render all six protocol tables. */
+function parseRestProtocol(raw: string, officialMatchId: string, officialSeasonId?: string) {
+  const response = object(JSON.parse(raw));
+  if (response.status !== "success") throw new Error("PROTOCOL_RESPONSE_INVALID");
+  const data = object(response.data), pdf = object(object(data.pdf).stat);
+  const identity = /^\/pdf\/(\d+)\/(\d+)\/game-(\d+)-ru\.pdf$/.exec(String(pdf.URL));
+  if (!identity || identity[2] !== officialMatchId || identity[3] !== officialMatchId || officialSeasonId && identity[1] !== officialSeasonId) throw new Error("PROTOCOL_MATCH_INVALID");
+  const teams = object(data.teams), rows: KhlProtocolRow[] = [], ids = new Set<string>();
+  for (const side of ["home", "visitor"]) {
+    const team = object(teams[side]), stats = object(team.stats);
+    if (typeof team.name !== "string" || !team.name.trim()) throw new Error("PROTOCOL_TABLE_INVALID");
+    for (const [group, position] of [["gk", "G"], ["def", "D"], ["fwd", "F"]] as const) {
+      const entries = stats[group];
+      if (!Array.isArray(entries) || !entries.length) throw new Error("PROTOCOL_COVERAGE_INVALID");
+      for (const entry of entries) {
+        const p = object(entry);
+        const required = position === "G" ? ["gp", "toi", "sv", "ga", "g", "a", "pim"] : ["gp", "toi_avg", "tipp_avg", "tish_avg", "toa_avg", "g", "a", "sog", "pim", "pm", "sft_avg", "bls"];
+        if (required.some(key => !(key in p))) throw new Error("PROTOCOL_COLUMNS_INVALID");
+        if (typeof p.id !== "string" || !/^\d+$/.test(p.id) || ids.has(p.id) || typeof p.name !== "string" || !p.name.trim() || p.teamname !== team.name) throw new Error("PROTOCOL_PLAYER_INVALID");
+        ids.add(p.id);
+        const value = (key: string) => {
+          const v = p[key];
+          if (v === undefined || v === null) return "";
+          if (typeof v !== "string" && typeof v !== "number") throw new Error("PROTOCOL_NUMBER_INVALID");
+          return String(v);
+        };
+        const number = (key: string) => integer(value(key)), time = (key: string) => seconds(value(key));
+        const games = number("gp");
+        if (games !== 0 && games !== 1) throw new Error("PROTOCOL_NOT_SINGLE_MATCH");
+        rows.push({ officialPlayerId: p.id, name: clean(p.name), teamName: clean(team.name), position,
+          participationStatus: games ? "PLAYED" : "DNP", toiSeconds: time(position === "G" ? "toi" : "toi_avg"),
+          ppToiSeconds: time("tipp_avg"), pkToiSeconds: time("tish_avg"), attackZoneSeconds: time("toa_avg"),
+          goals: number("g"), assists: number("a"), plusMinus: number("pm"), pimMinutes: number("pim"),
+          shotsOnGoal: position === "G" ? null : number("sog"), saves: number("sv"), goalsAgainst: number("ga"), shifts: number("sft_avg"), blockedShots: number("bls") });
+      }
+    }
+  }
+  if (rows.length < 30 || rows.length > 60 || new Set(rows.map(r => r.teamName)).size !== 2) throw new Error("PROTOCOL_COVERAGE_INVALID");
   const attackTimeAvailable = rows.some(r => (r.attackZoneSeconds ?? 0) > 0);
   if (!attackTimeAvailable) for (const row of rows) row.attackZoneSeconds = null;
   return { officialMatchId, rows, attackTimeAvailable };

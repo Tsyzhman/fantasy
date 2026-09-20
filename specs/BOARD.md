@@ -6,6 +6,7 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
+| [WI-026](work/WI-026-khl-hourly-ingestion.md) | Экономное ежечасное обновление КХЛ | KHL INFRA-001/002 | @tsyzhman | 2026-09-20 | — |
 
 ## Backlog
 

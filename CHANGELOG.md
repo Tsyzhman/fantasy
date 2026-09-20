@@ -5,6 +5,11 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.78 - 2026-09-20
+
+- КХЛ: полный публичный протокол через лёгкий HTTP REST без браузера на сервере; проверка идентичности и состава полей.
+- Серверное обновление каждый час в :22 МСК, инкрементальные очереди и ограниченные архивные пакеты вместо принудительного полного сбора.
+
 ## 0.3.77 - 2026-09-18
 
 - Production deploy still promotes when GitHub cannot store the release archive because artifact quota is full.

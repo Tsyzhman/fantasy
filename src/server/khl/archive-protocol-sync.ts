@@ -27,7 +27,8 @@ export async function refreshOfficialArchive(db: PrismaClient, contestId: string
   if (!stageId || !officialSeasonId) throw new Error('ARCHIVE_SEASON_MAPPING_UNAVAILABLE');
   const provider = 'KHL_PROTOCOL_ARCHIVE', key = { provider, scope: contestId, jobType: seasonKey };
   const checkpoint = await db.khlProviderCheckpoint.findUnique({ where: { provider_scope_jobType: key } });
-  const old = checkpoint?.cursor as { hash?: string; retryAfter?: string; error?: string } | null;
+  const old = checkpoint?.cursor as { hash?: string; retryAfter?: string; error?: string; transportVersion?: number } | null;
+  if (old?.transportVersion === 2 && old.retryAfter && Date.parse(old.retryAfter) > Date.now()) throw new Error(old.error ?? 'ARCHIVE_SOURCE_BACKOFF');
   const pool = await db.khlFantasyPlayer.findMany({ where: { contestId, active: true }, select: { id: true, playerId: true }, orderBy: { id: 'asc' }, take: 1001 });
   if (pool.length > 1000) throw new Error('ARCHIVE_POOL_LIMIT');
   const hash = contentHash({ pool, seasonKey, stageId });
@@ -52,17 +53,16 @@ export async function refreshOfficialArchive(db: PrismaClient, contestId: string
       await db.khlProviderCheckpoint.upsert({ where: { provider_scope_jobType: key }, create: { ...key, ...data }, update: data });
       return { remaining: 0, cached: true };
     }
-    if (old?.retryAfter && Date.parse(old.retryAfter) > Date.now()) throw new Error(old.error ?? 'ARCHIVE_SOURCE_BACKOFF');
     for (const m of due.slice(0, 10)) {
-      const { html } = await fetchKhlProtocol(officialSeasonId, m.officialMatchId, AbortSignal.timeout(30000));
-      parseKhlProtocol(html, m.officialMatchId);
-      await storeKhlRaw(db, { provider, scope: scopePrefix + m.officialMatchId, parserVersion: 'khl-protocol-v1', raw: Buffer.from(html), now: new Date() });
+      const { html } = await fetchKhlProtocol(officialSeasonId, m.officialMatchId, AbortSignal.timeout(55000));
+      parseKhlProtocol(html, m.officialMatchId, officialSeasonId);
+      await storeKhlRaw(db, { provider, scope: scopePrefix + m.officialMatchId, parserVersion: 'khl-protocol-v2', raw: Buffer.from(html), now: new Date() });
     }
     if (due.length > 10) return { remaining: due.length - 10, imported: Math.min(10, due.length) };
     const players = new Map<string, { matchId: string; row: KhlProtocolRow }[]>();
     for (const m of calendar) {
       const raw = await db.khlRawPayload.findFirstOrThrow({ where: { provider, scope: scopePrefix + m.officialMatchId }, orderBy: { expiresAt: 'desc' } });
-      const parsed = parseKhlProtocol(gunzipSync(raw.compressed, { maxOutputLength: 5 * 1024 * 1024 }).toString('utf8'), m.officialMatchId);
+      const parsed = parseKhlProtocol(gunzipSync(raw.compressed, { maxOutputLength: 5 * 1024 * 1024 }).toString('utf8'), m.officialMatchId, officialSeasonId);
       for (const row of parsed.rows) { const list = players.get(row.officialPlayerId) ?? []; list.push({ matchId: m.officialMatchId, row }); players.set(row.officialPlayerId, list); }
     }
     const observedAt = new Date().toISOString();
@@ -73,7 +73,7 @@ export async function refreshOfficialArchive(db: PrismaClient, contestId: string
   } catch (error) {
     const message = error instanceof Error ? error.message : 'ARCHIVE_FAILED';
     if (old?.retryAfter && Date.parse(old.retryAfter) > Date.now() && message === old.error) throw error;
-    const data = { cursor: { error: message, retryAfter: new Date(Date.now() + (/HTTP_40[13]|HTTP_429/.test(message) ? 86400000 : 3600000)).toISOString() }, completedAt: new Date() };
+    const data = { cursor: { transportVersion: 2, error: message, retryAfter: new Date(Date.now() + (/HTTP_40[13]|HTTP_429/.test(message) ? 86400000 : 50 * 60000)).toISOString() }, completedAt: new Date() };
     await db.khlProviderCheckpoint.upsert({ where: { provider_scope_jobType: key }, create: { ...key, ...data }, update: data });
     throw error;
   }

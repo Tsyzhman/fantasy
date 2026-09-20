@@ -71,6 +71,9 @@ jobs:
       - name: Run checks before packaging
         run: npm run check
 
+      - name: Verify browser-free KHL HTTP transport
+        run: python3 scripts/khl-protocol-http.test.py
+
       - name: Package exact Git commit
         id: release
         shell: bash

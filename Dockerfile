@@ -33,6 +33,14 @@ FROM builder AS prod-deps
 WORKDIR /app
 RUN npm prune --omit=dev
 
+# HTTP/TLS client only: no browser binaries or browser automation runtime.
+FROM node:20-bookworm-slim AS khl-http
+RUN apt-get update && apt-get install -y --no-install-recommends python3-venv ca-certificates \
+  && rm -rf /var/lib/apt/lists/*
+COPY scripts/khl-http-requirements.txt /tmp/khl-http-requirements.txt
+RUN python3 -m venv /opt/khl-http \
+  && /opt/khl-http/bin/pip install --no-cache-dir --only-binary=:all: -r /tmp/khl-http-requirements.txt
+
 FROM node:20-bookworm-slim AS runtime
 
 WORKDIR /app
@@ -49,9 +57,10 @@ ENV HOSTNAME=0.0.0.0
 ENV PORT=3000
 ENV APP_RELEASE_VERSION="${APP_RELEASE_VERSION}"
 ENV APP_RELEASE_COMMIT="${APP_RELEASE_COMMIT}"
+ENV KHL_PROTOCOL_TRANSPORT=rest
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends ca-certificates openssl \
+  && apt-get install -y --no-install-recommends ca-certificates openssl python3 \
   && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/.next/standalone ./
@@ -60,6 +69,8 @@ COPY --from=builder /app/public ./public
 COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/scripts/fpl-vpn-relay.mjs ./scripts/fpl-vpn-relay.mjs
 COPY --from=builder /app/khl-runner.cjs ./scripts/khl-runner.cjs
+COPY --from=khl-http /opt/khl-http /opt/khl-http
+COPY --from=builder /app/scripts/khl-protocol-http.py ./scripts/khl-protocol-http.py
 COPY --from=builder /app/sync-sorareinside.cjs ./scripts/sync-sorareinside.cjs
 COPY --from=prod-deps /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=prod-deps /app/node_modules/@prisma ./node_modules/@prisma
