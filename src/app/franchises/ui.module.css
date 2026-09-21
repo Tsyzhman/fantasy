@@ -112,6 +112,20 @@
   border-radius: 12px;
   font-size: 14px;
 }
+.coverage {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-top: 16px;
+}
+.coverage summary {
+  cursor: pointer;
+}
+.coverage ul {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: 8px 20px;
+  margin-top: 12px;
+}
 .tabs .active {
   background: var(--accent-primary);
   color: white;

@@ -549,6 +549,11 @@ export function FranchiseAnalytics({
           </details>
         )}
       </form>
+      <p className={styles.note}>
+        Номера туров считаются отдельно в каждом чемпионате по нумерации H2H.
+        Например, 1–2 — первый и второй тур каждой выбранной лиги, независимо от
+        дат матчей.
+      </p>
       {error && (
         <div role="alert" className={styles.error}>
           {error}
@@ -578,6 +583,30 @@ export function FranchiseAnalytics({
               чемпионатов · {data.squads.toLocaleString("ru-RU")} составов
             </span>
           </div>
+          <details className={styles.coverage}>
+            <summary>Какие чемпионаты вошли в расчёт</summary>
+            <ul>
+              {Object.entries(data.leagues)
+                .filter(
+                  ([slug]) =>
+                    !data.filters.leagues.length ||
+                    data.filters.leagues.includes(slug),
+                )
+                .map(([slug, name]) => {
+                  const rows = data.byLeague.filter(
+                    (r) =>
+                      r.slug === slug && (!f || r.franchise === f.franchise),
+                  );
+                  const count = rows.reduce((n, r) => n + r.count, 0);
+                  return (
+                    <li key={slug}>
+                      <b>{name}</b>: {count.toLocaleString("ru-RU")} составов
+                      {!count ? " · нет данных на выбранной дистанции" : ""}
+                    </li>
+                  );
+                })}
+            </ul>
+          </details>
           <nav className={styles.tabs} aria-label="Разделы аналитики">
             {[
               ["choices", "Выборы и форма"],
@@ -926,7 +955,7 @@ export function FranchiseAnalytics({
                   {f && (
                     <Section
                       title="xФО по чемпионатам"
-                      description="Полнота данных на выбранной дистанции. Лига без полного XI не получает искусственный ноль."
+                      description="Туры выбранного диапазона учитываются отдельно в каждой лиге. Прочерк означает, что для xФО нет полного XI с известной статистикой и фактическими очками; составы этой лиги остаются в остальных разделах."
                     >
                       <Table
                         rows={data.byLeague
@@ -938,6 +967,11 @@ export function FranchiseAnalytics({
                             full: r.xfoComplete,
                             eligible: r.xfoEligible,
                             coverage: r.xfoCoverage,
+                            status: r.xfoComplete
+                              ? `Учтено ${r.xfoComplete} из ${r.xfoEligible} завершённых XI`
+                              : r.xfoEligible
+                                ? "Недостаточно данных для полного XI"
+                                : "Нет завершённых составов",
                           }))}
                         columns={[
                           { key: "name", label: "Чемпионат" },
@@ -950,6 +984,7 @@ export function FranchiseAnalytics({
                             digits: 0,
                           },
                           { key: "coverage", label: "Покрытие футболистов, %" },
+                          { key: "status", label: "Что учтено в xФО" },
                         ]}
                       />
                     </Section>

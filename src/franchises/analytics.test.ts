@@ -70,6 +70,58 @@ test("equal league weights and the inclusive round range", () => {
     0,
   );
 });
+test("rounds 1–2 include each league independently, including leagues without complete xFO", () => {
+  const s = snapshot([
+    fact(1, "championship", 1, 10),
+    fact(1, "championship", 2, 20),
+    fact(1, "turkey", 1, 30),
+    fact(1, "turkey", 2, 40),
+    fact(1, "turkey", 3, 90),
+  ]);
+  s.leagues = { championship: "Чемпионшип", turkey: "Турция" };
+  s.rounds = [
+    {
+      slug: "championship",
+      round: 1,
+      finished: true,
+      cutoff: "2026-08-14T19:00:00Z",
+    },
+    {
+      slug: "championship",
+      round: 2,
+      finished: true,
+      cutoff: "2026-08-22T11:30:00Z",
+    },
+    {
+      slug: "turkey",
+      round: 1,
+      finished: true,
+      cutoff: "2026-08-01T17:00:00Z",
+    },
+    {
+      slug: "turkey",
+      round: 2,
+      finished: true,
+      cutoff: "2026-08-08T17:00:00Z",
+    },
+    {
+      slug: "turkey",
+      round: 3,
+      finished: true,
+      cutoff: "2026-08-22T17:00:00Z",
+    },
+  ];
+  const result = aggregate(s, { from: 1, to: 2, leagues: [], completed: true });
+  assert.equal(result.rounds, 4);
+  assert.equal(result.squads, 4);
+  assert.deepEqual(
+    result.byLeague.map((r) => [r.name, r.count, r.xfoComplete, r.metrics.own]),
+    [
+      ["Чемпионшип", 2, 0, 15],
+      ["Турция", 2, 0, 35],
+    ],
+  );
+});
 test("missing model / xFO values do not become a zero or rank", () => {
   const s = snapshot([
     fact(1, "a", 1, 10, { buy_delta_gap: null }),

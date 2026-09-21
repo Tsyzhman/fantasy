@@ -54,6 +54,51 @@ for the branch is green:
 npm run check
 ```
 
+## Franchise analytics collection
+
+The authenticated `/franchises` module reads its published snapshot from
+PostgreSQL. The worker keeps resumable H2H source records in the
+`fantasy-scout-franchises` volume mounted at `/app/storage/franchises`.
+Do not set `FRANCHISE_DATA_DIR` on production web: that override is for local
+file-backed analysis. Football statistics and forecasts come from the existing
+database; visitors' filters do not scrape H2H or call an AI service.
+
+After the first release containing the franchise migration, initialize the
+snapshot with a full collection, or import an operator-verified source bundle
+using `docker exec fantasy-scout-worker node scripts/franchises.cjs`.
+Then enable the supplied timer:
+
+```bash
+sudo install -m 0644 /var/www/fantasy-scout-current/ops/fantasy-franchises.service /etc/systemd/system/fantasy-franchises.service
+sudo install -m 0644 /var/www/fantasy-scout-current/ops/fantasy-franchises.timer /etc/systemd/system/fantasy-franchises.timer
+sudo systemctl daemon-reload
+sudo systemctl enable --now fantasy-franchises.timer
+sudo systemctl start --no-block fantasy-franchises.service
+```
+
+The timer runs every three hours at minute 47, Moscow time. Its command follows
+the immutable current-release symlink. Collection and deployment share a host
+lock, so a release waits for the collector before replacing its worker.
+The collector also locks its data directory, publishes a snapshot only after a
+successful calculation and database import, and retains the previous snapshot
+on failure. Settled H2H rounds are reused after the correction window; current
+rounds are refreshed. HTTP cache expires after 30 days, and reproducible large
+intermediate frames are removed after a successful calculation.
+
+Inspect operation without starting a second collector:
+
+```bash
+systemctl list-timers fantasy-franchises.timer
+systemctl show fantasy-franchises.service -p ActiveState -p Result -p ExecMainStatus
+journalctl -u fantasy-franchises.service -n 30 --no-pager
+docker exec fantasy-scout-worker du -sh storage/franchises
+```
+
+After an interrupted process, verify that no collector is running before
+removing a stale `.sync.lock` or `.collection.lock`. Source rows can be restored
+from PostgreSQL with `node scripts/franchises.cjs --restore` in the worker.
+The standalone HTML report under local `output/` is not part of this release.
+
 ## Verified Docker production state (2026-07-17)
 
 The currently verified runtime is Docker, not the PM2 workflow described later
