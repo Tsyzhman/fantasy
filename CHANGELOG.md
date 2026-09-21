@@ -5,6 +5,10 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.85 - 2026-09-21
+
+- «Франшизы»: мобильные таблицы сравнения прокручиваются внутри карточек и больше не растягивают страницу шире экрана.
+
 ## 0.3.84 - 2026-09-21
 
 - Новый модуль «Франшизы» вне Machete: доступ после входа, выбор чемпионатов и диапазона туров сезона 2026/27, 12 франшиз включая Fratelli.
