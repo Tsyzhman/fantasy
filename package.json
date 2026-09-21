@@ -1,12 +1,15 @@
 {
   "name": "fantasy-scout",
-  "version": "0.3.83",
+  "version": "0.3.84",
   "private": true,
   "engines": {
     "node": ">=20.9.0"
   },
   "scripts": {
     "dev": "next dev",
+    "franchises:sync": "tsx scripts/import-franchise-data.ts --sync",
+    "franchises:import": "tsx scripts/import-franchise-data.ts",
+    "franchises:restore": "tsx scripts/import-franchise-data.ts --restore",
     "prebuild": "npm run extension:build",
     "build": "next build --webpack",
     "postbuild": "tsx scripts/sanitize-standalone-output.ts",

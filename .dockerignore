@@ -12,6 +12,8 @@ outputs
 playwright-report
 test-results
 storage/uploads
+storage/franchises
+**/__pycache__
 backups
 .env
 .env.*

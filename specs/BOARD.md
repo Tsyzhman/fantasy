@@ -6,6 +6,7 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
+| [WI-029](work/WI-029-franchises-production.md) | Выпуск «Франшиз» на сайт | FEAT-005 | @tsyzhman | 2026-09-21 | — |
 
 ## Backlog
 
@@ -23,7 +24,10 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-028](work/archive/2026/WI-028-franchise-analytics-module.md) | Аналитика франшиз и xФО | @tsyzhman | 2026-09-21 |
 | [WI-026](work/archive/2026/WI-026-khl-hourly-ingestion.md) | Часовой сбор КХЛ и проверка всех игроков | @tsyzhman | 2026-09-20 |
+| [WI-027](work/archive/2026/WI-027-franchise-report-clarity.md) | Понятные графики и гипотезы отчёта франшиз | @tsyzhman | 2026-09-20 |
+| [WI-025](work/archive/2026/WI-025-franchise-style-report.md) | Локальный отчёт о стиле франшиз 2026/27 | @tsyzhman | 2026-09-20 |
 | [WI-024](work/archive/2026/WI-024-europa-three-per-club.md) | Три игрока клуба в Лиге Европы | @tsyzhman | 2026-09-16 |
 | [WI-023](work/archive/2026/WI-023-khl-expected-statistics.md) | Ожидания, соперники и обновление КХЛ | @tsyzhman | 2026-09-14 |
 | [WI-022](work/archive/2026/WI-022-khl-history-projection.md) | Полная статистика, подсказки и Excel КХЛ | @tsyzhman | 2026-09-14 |

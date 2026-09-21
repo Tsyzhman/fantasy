@@ -1,0 +1,375 @@
+.page {
+  max-width: 1500px;
+  margin: auto;
+  padding: 32px 28px 80px;
+  color: var(--text-primary);
+}
+.hero {
+  padding: 28px 32px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  margin-bottom: 24px;
+}
+.hero h1 {
+  font-size: 38px;
+  font-weight: 700;
+  margin: 6px 0;
+}
+.hero p {
+  font-size: 17px;
+  margin: 8px 0 18px;
+}
+.hero small,
+.note {
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.65;
+}
+.eyebrow {
+  font-size: 12px;
+  letter-spacing: 0.14em;
+  color: var(--accent-primary-strong);
+}
+.filters,
+.context {
+  display: flex;
+  align-items: end;
+  gap: 18px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.filters label,
+.context label {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+}
+.filters input[type="number"] {
+  width: 94px;
+}
+.page input,
+.page select {
+  background: var(--surface-1);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 9px 12px;
+}
+.filters .check {
+  display: flex;
+  align-items: center;
+  padding: 10px 0;
+}
+.check input,
+.leagues input {
+  accent-color: var(--accent-primary);
+}
+.leagues {
+  position: relative;
+  align-self: center;
+}
+.leagues summary {
+  cursor: pointer;
+  padding: 10px;
+}
+.leagues > div {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: var(--surface-1);
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  z-index: 5;
+  width: 280px;
+  box-shadow: 0 10px 30px #0002;
+}
+.leagues label {
+  display: flex;
+  flex-direction: row;
+  gap: 10px;
+  margin: 9px 0;
+}
+.context {
+  justify-content: space-between;
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.context select {
+  min-width: 270px;
+}
+.tabs {
+  display: flex;
+  gap: 8px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 12px;
+  flex-wrap: wrap;
+  margin: 28px 0;
+}
+.tabs button {
+  padding: 10px 18px;
+  border-radius: 12px;
+  font-size: 14px;
+}
+.tabs .active {
+  background: var(--accent-primary);
+  color: white;
+}
+.franchiseTitle {
+  font-size: 27px;
+  font-weight: 650;
+  margin: 20px 0;
+}
+.stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+.card {
+  padding: 22px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+}
+.card strong {
+  display: block;
+  font-size: 30px;
+  font-weight: 650;
+  margin: 7px 0;
+}
+.card small {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+.section {
+  margin: 34px 0;
+}
+.section > h2 {
+  font-size: 23px;
+  font-weight: 650;
+  margin: 0 0 7px;
+}
+.section > .note {
+  margin-bottom: 18px;
+}
+.tableBlock {
+  min-width: 0;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+}
+.tableTools {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  padding: 14px;
+  flex-wrap: wrap;
+}
+.tableTools span {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.tableTools button {
+  margin-left: auto;
+}
+.tableScroll {
+  overflow: auto;
+  max-height: 560px;
+}
+.tableScroll table {
+  width: 100%;
+  font-size: 13px;
+  border-collapse: collapse;
+  white-space: nowrap;
+}
+.tableScroll th {
+  text-align: right;
+  background: var(--surface-1);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  font-weight: 500;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border);
+  padding: 14px;
+}
+.tableScroll td {
+  text-align: right;
+  border-bottom: 1px solid var(--border);
+  padding: 13px 14px;
+  font-variant-numeric: tabular-nums;
+}
+.tableScroll td:first-child,
+.tableScroll th:first-child {
+  text-align: left;
+}
+.textButton {
+  color: var(--accent-primary-strong);
+  font-weight: 550;
+  text-align: left;
+}
+.textButton:hover {
+  text-decoration: underline;
+}
+.tableBlock > .note {
+  padding: 18px;
+}
+.charts {
+  display: grid;
+  gap: 20px;
+}
+.charts h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 16px;
+}
+.scatter svg {
+  display: block;
+  width: 100%;
+  max-height: 620px;
+}
+.scatter text {
+  fill: var(--text-secondary);
+  font-size: 11px;
+}
+.scatter line {
+  stroke: var(--border);
+}
+.scatter a {
+  cursor: pointer;
+  transition: opacity 0.15s;
+}
+.scatter .plotLabel {
+  fill: var(--text-primary);
+  font-size: 12px;
+  font-weight: 500;
+  paint-order: stroke;
+  stroke: var(--surface-1);
+  stroke-width: 4;
+  stroke-linejoin: round;
+}
+.mobilePlot {
+  display: none;
+}
+.explanation {
+  background: var(--surface-1);
+  border-left: 3px solid var(--accent-primary);
+  border-radius: 8px;
+  padding: 15px 22px;
+  margin: 25px 0;
+  font-size: 14px;
+  line-height: 1.8;
+}
+.explanation p + p {
+  margin-top: 10px;
+}
+.events {
+  display: grid;
+  gap: 14px;
+}
+.events p {
+  font-size: 14px;
+  margin: 10px 0;
+}
+.events a {
+  font-size: 13px;
+  color: var(--accent-primary-strong);
+}
+.eventTitle {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+.eventTitle span {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+.method {
+  max-width: 900px;
+  padding: 26px;
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  font-size: 15px;
+  line-height: 1.8;
+}
+.method h3 {
+  font-size: 18px;
+  font-weight: 650;
+  margin: 22px 0 8px;
+}
+.method p {
+  margin-bottom: 16px;
+}
+.error {
+  padding: 18px;
+  border: 1px solid #b45353;
+  border-radius: 12px;
+  color: #b45353;
+  margin: 20px 0;
+}
+@media (max-width: 760px) {
+  .page {
+    padding: 20px 14px 50px;
+  }
+  .hero {
+    padding: 22px;
+  }
+  .hero h1 {
+    font-size: 30px;
+  }
+  .hero p {
+    font-size: 15px;
+  }
+  .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .stats .card {
+    padding: 16px;
+  }
+  .card strong {
+    font-size: 25px;
+  }
+  .scatter {
+    display: none;
+  }
+  .mobilePlot {
+    display: block;
+  }
+  .tabs {
+    gap: 4px;
+  }
+  .tabs button {
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+  .section > h2 {
+    font-size: 20px;
+  }
+  .tableTools input {
+    max-width: 100%;
+    width: 170px;
+  }
+  .context select {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .context label {
+    width: 100%;
+  }
+  .filters {
+    gap: 10px;
+  }
+  .leagues > div {
+    left: auto;
+    right: 0;
+  }
+  .explanation,
+  .method {
+    padding: 18px;
+  }
+}

@@ -1,0 +1,83 @@
+{
+  "work_item": "WI-025",
+  "season": "2026/27",
+  "franchises": [
+    503,
+    19,
+    65,
+    5,
+    18,
+    433,
+    223,
+    40,
+    401,
+    27,
+    25
+  ],
+  "artifact": "output/franchise-report-2026-27/report.html",
+  "report_bytes": 1632183,
+  "zip_bytes": 628489,
+  "report_sha256": "b821501f0e0fdf5a6dd2cd1d83a0a2529d76b702cf2684115bb213193a018300",
+  "counts": {
+    "n_squads": 7474,
+    "n_decisions": 112110,
+    "n_buys": 18109,
+    "n_player_rounds": 8852
+  },
+  "checks": {
+    "unique_squads": 7474,
+    "all_xi_11": true,
+    "all_active_390": true,
+    "missing_active_state": 0,
+    "future_history": 0,
+    "duplicate_selections": 0,
+    "source_fnl_files": 0,
+    "freeze_verified": 195
+  },
+  "browser": {
+    "singlePages": 13,
+    "physicalPages": 13,
+    "mobileWidth": 390,
+    "desktopWidth": 1440,
+    "failures": [],
+    "pageErrors": [],
+    "externalRequests": [],
+    "numericSort": "pass",
+    "tableExport": "pass",
+    "leagueSwitch": "pass",
+    "freezeSearch": "pass",
+    "themes": [
+      "light",
+      "dark"
+    ]
+  },
+  "freezes": {
+    "episodes": 195,
+    "verified": 195,
+    "finished": 169,
+    "pending": 26,
+    "slots": 284,
+    "machete_finished": 9,
+    "machete_positive": 8,
+    "machete_gain": 129,
+    "machete_eredivisie_7_pending_gain": -14
+  },
+  "server_access": "read-only; no upload or deployment",
+  "cache": {
+    "before_intermediate_bytes": 173163937,
+    "compressed_intermediate_bytes": 17838721,
+    "final_local_directory_bytes": 245256742
+  },
+  "memory": {
+    "local_free_gib": 18.28,
+    "local_total_gib": 31.93,
+    "server_available_mib": 6947,
+    "server_total_mib": 11876
+  },
+  "limitations": [
+    "whole-field XI is a position-weighted ownership proxy; exact XI comparison uses the 11-franchise cohort",
+    "field purchases use positive net H2h ownership growth, not the full gross-transfer ledger",
+    "historical server forecast snapshots exist for 44 of 65 rounds; current forecasts are contextual only",
+    "ongoing freeze outcomes excluded from final success; no causal interpretation of hypotheses or full H2H counterfactual"
+  ]
+}

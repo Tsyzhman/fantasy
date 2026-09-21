@@ -1,0 +1,32 @@
+{
+  "work_item": "WI-027",
+  "named_chart_labels": 22,
+  "unique_franchise_names_per_chart": 11,
+  "label_overlap": false,
+  "whole_field_heatmap": "all cells equal own_gap, not own_cohort_gap",
+  "ranking_formula": "unchanged; headings now specify rarity of choices",
+  "hypothesis_cards": 44,
+  "budget_text_present": false,
+  "hypotheses": [
+    "increasing_minutes",
+    "increasing_recent_form",
+    "hard_next_fixture",
+    "low_ownership",
+    "increasing_xG_xA",
+    "underreturn_vs_xG_xA"
+  ],
+  "low_coverage_disclosed": true,
+  "single_pages": 13,
+  "physical_pages": 13,
+  "browser_errors": [],
+  "external_requests": [],
+  "mobile_overflow": false,
+  "local_only": true,
+  "source_data_refetched": false,
+  "archive_read_in_memory": true,
+  "report_sha256": "c122d32aff5e36d3888b222c145201b2250341790b8a18943d190fa1053f2ed8",
+  "report_bytes": 1713007,
+  "zip_bytes": 666211,
+  "folder_bytes": 245536263,
+  "archive_entries_unique": true
+}

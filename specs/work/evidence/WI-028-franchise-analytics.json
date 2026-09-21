@@ -1,0 +1,70 @@
+{
+  "franchises": 12,
+  "squads": 8112,
+  "selections": 121680,
+  "buys": 19614,
+  "full_xfo": 3741,
+  "formula_rows": 107,
+  "python_tests": 6,
+  "project_tests_passed": 1149,
+  "project_tests_skipped": 1,
+  "project_check": "passed (lint 0 errors; existing and new localization warnings)",
+  "api": {
+    "unauthenticated": 401,
+    "invalid_range": 400,
+    "user_franchise": "BALTIKA",
+    "visible_franchises": 12,
+    "sample_range": {
+      "league": "epl_2026",
+      "from": 2,
+      "to": 3,
+      "squads": 256
+    }
+  },
+  "restore": {
+    "squads": 8112,
+    "rounds": 65
+  },
+  "chart_labels": {
+    "per_chart": 12,
+    "overlaps": 0
+  },
+  "ui": {
+    "light": true,
+    "dark": true,
+    "desktop": 1440,
+    "mobile": 390,
+    "page_overflow": false,
+    "empty_range": true,
+    "fratelli_navigation": true,
+    "machete_eredivisie_7_freeze": true
+  },
+  "source_checks": {
+    "unique_squads": 8112,
+    "all_xi_11": true,
+    "all_active_390": true,
+    "missing_active_state": 0,
+    "future_history": 0,
+    "duplicate_selections": 0,
+    "source_fnl_files": 0,
+    "freeze_verified": 200
+  },
+  "snapshot_bytes": 2034325,
+  "raw_snapshot_bytes": 18809826,
+  "production_deployed": false,
+  "cleanup": {
+    "removed_intermediate_mib": 195.6,
+    "free_memory_gib": 15.54,
+    "qa_processes_stopped": true,
+    "retained_directories": [
+      "output/franchise-restore-qa",
+      "output/franchise-qa-postgres"
+    ],
+    "retention_reason": "Automatic approval review rejected recursive deletion; no detailed reason returned."
+  },
+  "spec_snapshot": {
+    "status": "current",
+    "diagnostics": [],
+    "fingerprint": "97845e0079428b2ff7688264a17f3410ec4129f4b86dc807876e4f0ebafb0238"
+  }
+}

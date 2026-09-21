@@ -111,6 +111,10 @@ function HeaderNavigationItems({ pathname, user, logout }: {
       <HeaderLink href="/mixerr" active={pathname.startsWith("/mixerr")} icon={<Crosshair className="h-4 w-4" />}>
         <I18nText en="MiXerr" ru="Миксер" />
       </HeaderLink>
+      {/* @spec spec://modules/franchises/FEAT-005-franchise-analytics#ui */}
+      <HeaderLink href="/franchises" active={pathname.startsWith("/franchises")} icon={<Users className="h-4 w-4" />}>
+        <I18nText en="Franchises" ru="Франшизы" />
+      </HeaderLink>
       {/* @spec spec://modules/betting/FEAT-001-virtual-league#ui */}
       <HeaderLink href="/betting" active={pathname.startsWith("/betting")} icon={<Users className="h-4 w-4" />}>
         <I18nText en="Arena" ru="Арена" />

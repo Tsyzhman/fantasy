@@ -6,6 +6,7 @@ Canon for Fantasy Scout. Work status lives in `BOARD.md`; this file is the catal
 
 | Document | Responsibility |
 |---|---|
+| `specs/modules/franchises/FEAT-005-franchise-analytics.md` | Active: отдельная аналитика франшиз, диапазон туров, заморозки и xФО |
 | `specs/modules/machete/INFRA-004-sorareinside-starters.md` | Active: основа SorareInside, ближайший матч, UUID-маппинг, запуск :05 |
 | `specs/modules/betting/FEAT-001-virtual-league.md` | Active: виртуальная лига, линия, монеты, алгоритмы и расчёт |
 | `specs/common/main.md` | Product purpose, audience, modes, and boundaries |

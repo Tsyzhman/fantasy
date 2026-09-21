@@ -23,6 +23,7 @@ COPY . .
 RUN ./node_modules/.bin/prisma generate && npm run build
 RUN ./node_modules/.bin/esbuild scripts/khl-runner.ts --bundle --platform=node --external:@prisma/client --outfile=/app/khl-runner.cjs
 RUN ./node_modules/.bin/esbuild scripts/sync-sorareinside.ts --bundle --platform=node --external:@prisma/client --outfile=/app/sync-sorareinside.cjs
+RUN ./node_modules/.bin/esbuild scripts/import-franchise-data.ts --bundle --platform=node --external:@prisma/client --outfile=/app/franchises.cjs
 
 FROM builder AS setup
 
@@ -40,6 +41,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends python3-venv ca
 COPY scripts/khl-http-requirements.txt /tmp/khl-http-requirements.txt
 RUN python3 -m venv /opt/khl-http \
   && /opt/khl-http/bin/pip install --no-cache-dir --only-binary=:all: -r /tmp/khl-http-requirements.txt
+COPY scripts/franchise-analytics/requirements.txt /tmp/franchise-requirements.txt
+RUN python3 -m venv /opt/franchises \
+  && /opt/franchises/bin/pip install --no-cache-dir --only-binary=:all: -r /tmp/franchise-requirements.txt
 
 FROM node:20-bookworm-slim AS runtime
 
@@ -60,7 +64,7 @@ ENV APP_RELEASE_COMMIT="${APP_RELEASE_COMMIT}"
 ENV KHL_PROTOCOL_TRANSPORT=rest
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends ca-certificates openssl python3 \
+  && apt-get install -y --no-install-recommends ca-certificates openssl python3 postgresql-client \
   && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/.next/standalone ./
@@ -72,6 +76,9 @@ COPY --from=builder /app/khl-runner.cjs ./scripts/khl-runner.cjs
 COPY --from=khl-http /opt/khl-http /opt/khl-http
 COPY --from=builder /app/scripts/khl-protocol-http.py ./scripts/khl-protocol-http.py
 COPY --from=builder /app/sync-sorareinside.cjs ./scripts/sync-sorareinside.cjs
+COPY --from=builder /app/franchises.cjs ./scripts/franchises.cjs
+COPY --from=builder /app/scripts/franchise-analytics ./scripts/franchise-analytics
+COPY --from=khl-http /opt/franchises /opt/franchises
 COPY --from=prod-deps /app/node_modules/.prisma ./node_modules/.prisma
 COPY --from=prod-deps /app/node_modules/@prisma ./node_modules/@prisma
 

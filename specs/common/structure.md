@@ -3,6 +3,9 @@
 ## Betting league
 `src/betting/`, `src/app/betting/`, `src/app/api/betting/` — линия, алгоритмы и бухгалтерия виртуальной лиги. Namespace: `spec://modules/betting/FEAT-001-virtual-league#root`. Цикл worker подключён через instrumentation; таблицы имеют префикс betting_.
 
+## Franchise analytics
+`src/franchises/`, `src/server/franchises/`, `src/app/franchises/`, `src/app/api/franchises/`, `scripts/franchise-analytics/` — подготовка снимка, алгоритмическая агрегация по дистанции, общий UI и xФО. Namespace: `spec://modules/franchises/FEAT-005-franchise-analytics#root`. Независим от ограничений франшизы Machete; использует общий session auth и статистику core_data.
+
 ## Runtime
 
 - Next.js App Router, React, TypeScript (`src/app`, `next.config.mjs`).

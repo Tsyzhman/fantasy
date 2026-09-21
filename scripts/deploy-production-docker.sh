@@ -438,6 +438,10 @@ mkdir -p /home/deploy/.cache
 exec 9>/home/deploy/.cache/fantasy-khl-daily.lock
 echo "Waiting for any active KHL statistics collection before replacing containers."
 flock -w 1800 9 || { echo "KHL collection is still active; production was not stopped." >&2; exit 1; }
+# @spec spec://modules/franchises/FEAT-005-franchise-analytics#data
+# Hold the same lock as the franchise timer before touching worker identity.
+exec 8>/home/deploy/.cache/fantasy-franchises.lock
+flock -w 1800 8 || { echo "Franchise collection is still active; production was not stopped." >&2; exit 1; }
 
 if (( ${#pending_migrations[@]} > 0 )); then
   active_jobs_before_migration="$(
@@ -633,6 +637,7 @@ docker create \
   -e "FPL_RELAY_SOCKET_PATH=$fpl_relay_socket" \
   --network fantasy-scout_default \
   --mount type=volume,src=fantasy-scout_fantasy-scout-uploads,dst=/app/storage/uploads \
+  --mount type=volume,src=fantasy-scout-franchises,dst=/app/storage/franchises \
   --mount "type=volume,src=$fpl_relay_volume,dst=/run/fpl-relay,readonly" \
   --log-driver json-file \
   --log-opt max-size=20m \
