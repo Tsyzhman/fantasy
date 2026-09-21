@@ -4,6 +4,7 @@ os.environ['OMP_NUM_THREADS']='1'
 os.environ['OPENBLAS_NUM_THREADS']='1'
 import sys,pathlib,json,gzip,hashlib,time,urllib.request,urllib.parse,subprocess,re,concurrent.futures,shlex,datetime
 from bs4 import BeautifulSoup
+from database import postgres_environment
 sys.stdout.reconfigure(encoding='utf-8')
 ROOT=pathlib.Path(os.environ.get('FRANCHISE_DATA_DIR',str(pathlib.Path.cwd()/'storage/franchises'))).resolve()
 CACHE=ROOT/'source'/'http';CACHE.mkdir(parents=True,exist_ok=True)
@@ -51,7 +52,7 @@ def db(name,query):
  if path.exists() and os.environ.get('FRANCHISE_USE_CACHE')=='1':return
  env=os.environ.copy()
  if env.get('DATABASE_URL') and not env.get('FRANCHISE_SSH'):
-  env['PGDATABASE']=env['DATABASE_URL'].split('?schema=')[0]
+  env=postgres_environment(env)
   command=['psql','-Atq','-v','ON_ERROR_STOP=1']
  else:
   command=['ssh','-o','BatchMode=yes',env.get('FRANCHISE_SSH','deploy'),'docker exec -i fantasy-scout-postgres psql -U fantasy_app -d fantasy_scout -Atq -v ON_ERROR_STOP=1']

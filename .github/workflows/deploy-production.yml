@@ -74,7 +74,7 @@ jobs:
       - name: Verify browser-free KHL HTTP transport
         run: python3 scripts/khl-protocol-http.test.py
 
-      - name: Verify franchise xFO formula and captain normalization
+      - name: Verify franchise database adapter and xFO formula
         run: python3 -m unittest discover -s scripts/franchise-analytics -p 'test_*.py'
 
       - name: Package exact Git commit
