@@ -1,6 +1,6 @@
 """Compact facts for bounded request-time aggregation. @spec spec://modules/franchises/FEAT-005-franchise-analytics#data"""
 from analyze import ROOT,stream,clean,date_iso,date_ru,avg
-from xfo import match_xfo,h2h_score
+from xfo import match_xfo,h2h_score,compare_xi
 import json,gzip,collections,datetime as dt,os
 import pandas as pd
 
@@ -56,12 +56,8 @@ def main():
  xby={};xrows=[]
  for (fid,slug,rn,team),g in decisions[decisions.is_xi].groupby(['franchise','slug','round','team']):
   done=rounds.get((slug,rn),{}).get('finished',False);cap=g[g.is_cap];known=g.xfo.notna();full=bool(done and len(g)==11 and known.all() and len(cap)==1)
-  xfo=float(g.xfo.sum()+cap.xfo.iloc[0]) if full else None
-  actuals=[]
-  for r in g.to_dict('records'):
-   score=h2h_score(scores.get((slug,rn,str(team),str(r['h2h_id']))))
-   if score is not None:actuals.append(score)
-  actual=sum(actuals) if full and len(actuals)==11 else None
+  comparison=[{'xfo':r['xfo'],'is_cap':r['is_cap'],'score':scores.get((slug,rn,str(team),str(r['h2h_id'])))} for r in g.to_dict('records')]
+  xfo,actual=compare_xi(comparison,done)
   x={'franchise':int(fid),'slug':slug,'round':int(rn),'team':str(team),'xfo':xfo,'xfo_actual':actual,'xfo_gap':actual-xfo if actual is not None else None,'xfo_known':int(known.sum()),'xfo_filled':int(g.xfo_filled.sum()),'xfo_complete':full and actual is not None,'finished':done,'xfo_player_mean':float(g.xfo.mean()) if known.any() else None}
   xrows.append(x);xby[(int(fid),slug,int(rn),str(team))]=x
  for r in d['squads']:r.update(xby.get((r['franchise'],r['slug'],r['round'],str(r['team'])),{}))
@@ -87,6 +83,8 @@ def main():
  freeze=json.loads((ROOT/'freezes.json').read_text('utf-8'))
  snapshot={'version':1,'season':'2026/2027','generated':dt.datetime.now(dt.timezone.utc).isoformat(),'acquisition':d['acquisition'],'franchises':[{'id':f['franchise'],'name':f['name']} for f in d['franchises']],'leagues':d['league_names'],'rounds':list(rounds.values()),'squads':[{k:r.get(k) for k in keep} for r in d['squads']],'freeze':{k:freeze[k] for k in ['events','basis']},'purchases':clean(buys[[c for c in ['franchise','manager','slug','round','team','h2h_id','name','pos','own','delta','form5','form5_gap','trend','minutes5','fdr_pre','fo','alt','ffo','triple_model_low','source','minutes_change','attack_change','underreturn','cold_with_followup','early_success','outcome_next3'] if c in buys]].to_dict('records')),'xfoExamples':player_examples,'checks':d['checks']}
  snapshot['xfoExamples']=compact_examples
+ snapshot['xfoCaptainMultiplier']=1
+ d['xfoCaptainMultiplier']=1
  raw=json.dumps(clean(snapshot),ensure_ascii=False,separators=(',',':')).encode()
  if len(raw)>50*1024*1024:raise ValueError('Snapshot exceeds 50 MB bound')
  compressed=gzip.compress(raw,compresslevel=6)

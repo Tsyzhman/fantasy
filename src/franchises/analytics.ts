@@ -23,6 +23,7 @@ export type FreezeEvent = {
 };
 export type Snapshot = {
   version: number;
+  xfoCaptainMultiplier?: 1 | 2;
   season: string;
   generated: string;
   acquisition: { from: string; to: string };
@@ -370,6 +371,7 @@ export function aggregate(snapshot: Snapshot, filters: Filters) {
   });
   return {
     season: snapshot.season,
+    xfoCaptainMultiplier: snapshot.xfoCaptainMultiplier ?? 2,
     generated: snapshot.generated,
     acquisition: snapshot.acquisition,
     filters,

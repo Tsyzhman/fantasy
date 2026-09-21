@@ -863,7 +863,13 @@ export function FranchiseAnalytics({
                   )}
                 </>
               )}
-              {tab === "xfo" && (
+              {tab === "xfo" && data.xfoCaptainMultiplier !== 1 && (
+                <p role="status" className={styles.explanation}>
+                  Пересчитываем xФО и реальные ФО без капитанского удвоения.
+                  Остальные разделы доступны.
+                </p>
+              )}
+              {tab === "xfo" && data.xfoCaptainMultiplier === 1 && (
                 <>
                   <div className={styles.explanation}>
                     <p>
@@ -876,11 +882,18 @@ export function FranchiseAnalytics({
                     <p>
                       Основной рейтинг использует только завершённые туры с
                       оценкой всех 11 игроков и известным фактическим
-                      результатом выбранного XI; капитан удваивается. Пустые
-                      компоненты при наличии подробной статистики матча
-                      считаются нулями по правилу Excel, их количество показано
-                      отдельно. При низком покрытии сравнение относится лишь к
-                      доступной части дистанции.
+                      результатом выбранного XI. И xФО, и реальные ФО считаются
+                      без капитанского удвоения: каждый из 11 игроков
+                      учитывается один раз. Пустые компоненты при наличии
+                      подробной статистики матча считаются нулями по правилу
+                      Excel, их количество показано отдельно. При низком
+                      покрытии сравнение относится лишь к доступной части
+                      дистанции.
+                    </p>
+                    <p>
+                      ФО − xФО: плюс означает, что игроки набрали больше
+                      реальных очков, чем оценка по моментам; минус — меньше.
+                      Это не сравнение с прогнозом ФО перед туром.
                     </p>
                   </div>
                   <Section
@@ -903,8 +916,8 @@ export function FranchiseAnalytics({
                       columns={[
                         { key: "name", label: "Франшиза" },
                         { key: "xfo", label: "xФО состава", digits: 2 },
-                        { key: "actual", label: "Фактические очки", digits: 2 },
-                        { key: "gap", label: "Факт − xФО", digits: 2 },
+                        { key: "actual", label: "Реальные ФО", digits: 2 },
+                        { key: "gap", label: "ФО − xФО", digits: 2 },
                         { key: "full", label: "Полных оценок", digits: 0 },
                         {
                           key: "eligible",
@@ -936,6 +949,7 @@ export function FranchiseAnalytics({
                         .map((r) => ({
                           name: r.name + " · " + names.get(r.franchise),
                           xfo: metric(r, "xfo"),
+                          actual: metric(r, "xfo_actual"),
                           gap: metric(r, "xfo_gap"),
                           full: r.xfoComplete,
                           eligible: r.xfoEligible,
@@ -945,7 +959,8 @@ export function FranchiseAnalytics({
                       columns={[
                         { key: "name", label: "Менеджер" },
                         { key: "xfo", label: "xФО состава", digits: 2 },
-                        { key: "gap", label: "Факт − xФО", digits: 2 },
+                        { key: "actual", label: "Реальные ФО", digits: 2 },
+                        { key: "gap", label: "ФО − xФО", digits: 2 },
                         { key: "full", label: "Полных оценок", digits: 0 },
                         { key: "eligible", label: "Завершённых", digits: 0 },
                         { key: "coverage", label: "Покрытие, %" },
@@ -963,6 +978,7 @@ export function FranchiseAnalytics({
                           .map((r) => ({
                             name: r.name,
                             xfo: metric(r, "xfo"),
+                            actual: metric(r, "xfo_actual"),
                             gap: metric(r, "xfo_gap"),
                             full: r.xfoComplete,
                             eligible: r.xfoEligible,
@@ -976,7 +992,8 @@ export function FranchiseAnalytics({
                         columns={[
                           { key: "name", label: "Чемпионат" },
                           { key: "xfo", label: "xФО основы", digits: 2 },
-                          { key: "gap", label: "Факт − xФО", digits: 2 },
+                          { key: "actual", label: "Реальные ФО", digits: 2 },
+                          { key: "gap", label: "ФО − xФО", digits: 2 },
                           { key: "full", label: "Полных XI", digits: 0 },
                           {
                             key: "eligible",

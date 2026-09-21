@@ -122,6 +122,13 @@ test("rounds 1–2 include each league independently, including leagues without 
     ],
   );
 });
+test("legacy and base-XI scoring stay distinguishable during snapshot replacement", () => {
+  const s = snapshot([fact(1, "a", 1, 10)]);
+  const filters = { from: 1, to: 2, leagues: [], completed: false };
+  assert.equal(aggregate(s, filters).xfoCaptainMultiplier, 2);
+  s.xfoCaptainMultiplier = 1;
+  assert.equal(aggregate(s, filters).xfoCaptainMultiplier, 1);
+});
 test("missing model / xFO values do not become a zero or rank", () => {
   const s = snapshot([
     fact(1, "a", 1, 10, { buy_delta_gap: null }),

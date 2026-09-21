@@ -42,4 +42,13 @@ def h2h_score(value, captain=False, individual=False):
  if value in ('—','–','-'):return 0.0
  try:score=float(str(value).replace(',','.'))
  except (ValueError,TypeError):return None
+ if not math.isfinite(score):return None
  return score/2 if captain and individual else score
+
+def compare_xi(players,finished):
+ """Compare the same eleven base scores, undoing H2H's captain multiplier."""
+ if not finished or len(players)!=11 or sum(bool(p.get('is_cap')) for p in players)!=1:return None,None
+ expected=[p.get('xfo') for p in players]
+ actual=[h2h_score(p.get('score'),p.get('is_cap',False),individual=True) for p in players]
+ if any(v is None or not math.isfinite(v) for v in expected):return None,None
+ return sum(expected),sum(actual) if all(v is not None for v in actual) else None

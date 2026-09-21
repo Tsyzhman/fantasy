@@ -11,6 +11,9 @@ let loading: Promise<Snapshot> | null = null;
 export function validateSnapshot(value: Snapshot): Snapshot {
   if (
     value.version !== 1 ||
+    (value.xfoCaptainMultiplier !== undefined &&
+      value.xfoCaptainMultiplier !== 1 &&
+      value.xfoCaptainMultiplier !== 2) ||
     value.season !== "2026/2027" ||
     !Array.isArray(value.squads) ||
     !Array.isArray(value.purchases) ||

@@ -1,8 +1,19 @@
 """@spec spec://modules/franchises/FEAT-005-franchise-analytics#xfo"""
 import unittest,math,json,pathlib
-from xfo import defense_points,from_components,match_xfo,h2h_score
+from xfo import defense_points,from_components,match_xfo,h2h_score,compare_xi
 
 class XfoTest(unittest.TestCase):
+ def test_xi_compares_eleven_without_captain_bonus(self):
+  players=[{'xfo':4,'score':'5','is_cap':False} for _ in range(10)]+[{'xfo':7,'score':'18','is_cap':True}]
+  self.assertEqual(compare_xi(players,True),(47,59))
+  players[-1]['score']='-4'
+  self.assertEqual(compare_xi(players,True),(47,48))
+  self.assertEqual(compare_xi(players,False),(None,None))
+  self.assertEqual(compare_xi(players[:-1],True),(None,None))
+  players[-1]['score']=None
+  self.assertEqual(compare_xi(players,True),(47,None))
+  players[-1]['xfo']=float('nan')
+  self.assertEqual(compare_xi(players,True),(None,None))
  def test_h2h_captain_is_already_doubled(self):
   self.assertEqual(h2h_score('18',True),18)
   self.assertEqual(h2h_score('18',True,individual=True),9)
