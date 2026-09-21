@@ -1,0 +1,315 @@
+{
+  "checkedAt": "2026-09-21T16:50:06.8566622Z",
+  "release": {
+    "conclusion": "success",
+    "commit": "047b987960ee71ff7eb0f08e7ebaf5d875c03a22",
+    "workflow": "https://github.com/Tsyzhman/fantasy/actions/runs/35626023135",
+    "worker": "healthy",
+    "manifestMatches": true,
+    "version": "0.3.85",
+    "restarts": 0,
+    "web": "healthy"
+  },
+  "tests": {
+    "workbookRows": 107,
+    "projectFailed": 0,
+    "typecheck": "passed",
+    "lint": "0 errors",
+    "pythonPassed": 10,
+    "build": "passed",
+    "projectPassed": 1152
+  },
+  "database": {
+    "rounds": 65,
+    "squads": 8112,
+    "states": 12,
+    "snapshots": [
+      {
+        "season": "2026/2027",
+        "sha256": "3205bda91e8f7c41897fc6aa90ea987ad4cc06fda0e51d958fbd80e38dfe19d0",
+        "generatedAt": "2026-09-21T16:43:29.157Z",
+        "squads": 8112,
+        "compressedBytes": 2951823,
+        "franchises": [
+          {
+            "id": 23,
+            "name": "Fratelli"
+          },
+          {
+            "id": 433,
+            "name": "Лаванда"
+          },
+          {
+            "id": 25,
+            "name": "GOMEL CITY"
+          },
+          {
+            "id": 5,
+            "name": "Мачете"
+          },
+          {
+            "id": 503,
+            "name": "Starbound"
+          },
+          {
+            "id": 40,
+            "name": "Свободный Ум"
+          },
+          {
+            "id": 19,
+            "name": "Ратамахатта"
+          },
+          {
+            "id": 223,
+            "name": "Moneyball"
+          },
+          {
+            "id": 65,
+            "name": "Балтика"
+          },
+          {
+            "id": 401,
+            "name": "Я·К·У·Д·З·А"
+          },
+          {
+            "id": 18,
+            "name": "The Avengers"
+          },
+          {
+            "id": 27,
+            "name": "Истина"
+          }
+        ],
+        "duplicateSquads": 0,
+        "purchases": 19614,
+        "freezeEvents": 200,
+        "checks": {
+          "unique_squads": 8112,
+          "all_xi_11": true,
+          "active_squads_per_franchise": {
+            "5": 390,
+            "18": 390,
+            "19": 390,
+            "23": 390,
+            "25": 390,
+            "27": 390,
+            "40": 390,
+            "65": 390,
+            "223": 390,
+            "401": 390,
+            "433": 390,
+            "503": 390
+          },
+          "missing_active_state": 0,
+          "future_history": 0,
+          "duplicate_selections": 0,
+          "source_fnl_files": 0,
+          "freeze_verified": 200
+        }
+      }
+    ]
+  },
+  "basePoints": {
+    "captainMultiplier": 1,
+    "generated": "2026-09-21T19:43:29.157931+03:00",
+    "checked": 12,
+    "samples": [
+      {
+        "franchise": "Fratelli",
+        "league": "france_2026",
+        "round": 3,
+        "xfo": 58.761131370844424,
+        "actual": 58,
+        "h2hWithCaptain": 61,
+        "removedCaptainBonus": 3,
+        "gap": -0.7611313708444243
+      },
+      {
+        "franchise": "Лаванда",
+        "league": "championship_2026",
+        "round": 4,
+        "xfo": 46.06279599579745,
+        "actual": 39,
+        "h2hWithCaptain": 51,
+        "removedCaptainBonus": 12,
+        "gap": -7.062795995797451
+      },
+      {
+        "franchise": "GOMEL CITY",
+        "league": "turkey_2026",
+        "round": 5,
+        "xfo": 43.62253308140987,
+        "actual": 42,
+        "h2hWithCaptain": 45,
+        "removedCaptainBonus": 3,
+        "gap": -1.6225330814098697
+      },
+      {
+        "franchise": "Мачете",
+        "league": "championship_2026",
+        "round": 5,
+        "xfo": 52.1711692435904,
+        "actual": 46,
+        "h2hWithCaptain": 52,
+        "removedCaptainBonus": 6,
+        "gap": -6.171169243590398
+      },
+      {
+        "franchise": "Starbound",
+        "league": "turkey_2026",
+        "round": 5,
+        "xfo": 48.186900639788796,
+        "actual": 44,
+        "h2hWithCaptain": 47,
+        "removedCaptainBonus": 3,
+        "gap": -4.186900639788796
+      },
+      {
+        "franchise": "Свободный Ум",
+        "league": "epl_2026",
+        "round": 4,
+        "xfo": 51.05824745323205,
+        "actual": 62,
+        "h2hWithCaptain": 69,
+        "removedCaptainBonus": 7,
+        "gap": 10.941752546767951
+      },
+      {
+        "franchise": "Ратамахатта",
+        "league": "rfpl_2026",
+        "round": 9,
+        "xfo": 53.93359583812845,
+        "actual": 61,
+        "h2hWithCaptain": 63,
+        "removedCaptainBonus": 2,
+        "gap": 7.066404161871553
+      },
+      {
+        "franchise": "Moneyball",
+        "league": "portugal_2026",
+        "round": 5,
+        "xfo": 83.78738752838487,
+        "actual": 47,
+        "h2hWithCaptain": 53,
+        "removedCaptainBonus": 6,
+        "gap": -36.78738752838487
+      },
+      {
+        "franchise": "Балтика",
+        "league": "eredivisie_2026",
+        "round": 7,
+        "xfo": 60.55076285984711,
+        "actual": 66,
+        "h2hWithCaptain": 72,
+        "removedCaptainBonus": 6,
+        "gap": 5.4492371401528885
+      },
+      {
+        "franchise": "Я·К·У·Д·З·А",
+        "league": "bundesliga_2026",
+        "round": 1,
+        "xfo": 69.2117450752008,
+        "actual": 58,
+        "h2hWithCaptain": 60,
+        "removedCaptainBonus": 2,
+        "gap": -11.211745075200795
+      },
+      {
+        "franchise": "The Avengers",
+        "league": "rfpl_2026",
+        "round": 5,
+        "xfo": 46.93736838225424,
+        "actual": 45,
+        "h2hWithCaptain": 53,
+        "removedCaptainBonus": 8,
+        "gap": -1.9373683822542418
+      },
+      {
+        "franchise": "Истина",
+        "league": "epl_2026",
+        "round": 2,
+        "xfo": 73.39085399554682,
+        "actual": 84,
+        "h2hWithCaptain": 106,
+        "removedCaptainBonus": 22,
+        "gap": 10.60914600445318
+      }
+    ]
+  },
+  "completeXfo": 4599,
+  "browser": {
+    "mobileHeader": true,
+    "widths": [
+      {
+        "width": 320,
+        "scroll": 320
+      },
+      {
+        "width": 390,
+        "scroll": 390
+      },
+      {
+        "width": 760,
+        "scroll": 760
+      },
+      {
+        "width": 1440,
+        "scroll": 1440
+      }
+    ],
+    "allLeagues": "Какие чемпионаты вошли в расчёт\nРоссия: 256 составов\nАнглия: 256 составов\nЧемпионшип: 246 составов\nИспания: 252 составов\nГермания: 254 составов\nФранция: 250 составов\nИталия: 256 составов\nПортугалия: 240 составов\nНидерланды: 244 составов\nТурция: 244 составов\nЛига чемпионов: 129 составов\nЛига Европы: 126 составов",
+    "macheteLeagues": "Какие чемпионаты вошли в расчёт\nРоссия: 20 составов\nАнглия: 22 составов\nЧемпионшип: 22 составов\nИспания: 22 составов\nГермания: 22 составов\nФранция: 22 составов\nИталия: 22 составов\nПортугалия: 22 составов\nНидерланды: 22 составов\nТурция: 22 составов\nЛига чемпионов: 11 составов\nЛига Европы: 11 составов",
+    "xfoRows": 12,
+    "championship": "Чемпионшип\t—\t—\t—\t0\t22\t87,6\tНедостаточно данных для полного XI",
+    "turkey": "Турция\t—\t—\t—\t0\t22\t83,5\tНедостаточно данных для полного XI",
+    "release": {
+      "version": "0.3.85",
+      "commit": "047b987960ee71ff7eb0f08e7ebaf5d875c03a22"
+    }
+  },
+  "auth": {
+    "franchise": "BALTIKA",
+    "invalidRangeStatus": 400,
+    "fratelli": true,
+    "eplRounds2to3": 256,
+    "allFranchises": 12,
+    "emptyRange": true,
+    "anonymousStatus": 401,
+    "role": "USER"
+  },
+  "collector": {
+    "result": "success",
+    "locksReleased": true,
+    "sourceSquads": 8112,
+    "everyHours": 3,
+    "timezone": "Europe/Moscow",
+    "minute": 47,
+    "timerEnabled": true,
+    "exitCode": 0,
+    "firstFailure": "libpq URL adapter fixed; previous published snapshot retained",
+    "finished": "2026-09-21T16:44:27Z",
+    "settledSquads": 7114
+  },
+  "resources": {
+    "webMemoryMiB": 273.7,
+    "httpCacheMiB": 86,
+    "workspaceMiB": 252,
+    "workerMemoryMiB": 889.5,
+    "reproducibleFramesRemaining": 0,
+    "availableMemoryMiB": 7061
+  },
+  "cleanup": {
+    "qaUserRemaining": 0,
+    "qaBettingAccountDeleted": true,
+    "htmlReportRemainsLocal": true,
+    "browserClosed": true,
+    "uploadedSeedArchivesRemoved": true,
+    "localAuthStateDeleted": true,
+    "qaSessionDeleted": true
+  },
+  "spec": {
+    "status": "current",
+    "fingerprint": "fd2abfa200e90281198c2597eedea5a6c9c2b3b5d653d09bd193e2fbfe5c9b82",
+    "diagnostics": []
+  }
+}

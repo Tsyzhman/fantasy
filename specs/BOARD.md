@@ -6,7 +6,6 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
-| [WI-029](work/WI-029-franchises-production.md) | Выпуск «Франшиз» на сайт | FEAT-005 | @tsyzhman | 2026-09-21 | — |
 
 ## Backlog
 
@@ -24,6 +23,7 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-029](work/archive/2026/WI-029-franchises-production.md) | Выпуск «Франшиз» на сайт | @tsyzhman | 2026-09-21 |
 | [WI-028](work/archive/2026/WI-028-franchise-analytics-module.md) | Аналитика франшиз и xФО | @tsyzhman | 2026-09-21 |
 | [WI-026](work/archive/2026/WI-026-khl-hourly-ingestion.md) | Часовой сбор КХЛ и проверка всех игроков | @tsyzhman | 2026-09-20 |
 | [WI-027](work/archive/2026/WI-027-franchise-report-clarity.md) | Понятные графики и гипотезы отчёта франшиз | @tsyzhman | 2026-09-20 |
