@@ -44,6 +44,8 @@ export async function register() {
     const { startSportsTrendsScheduler } = await import("./server/sports-trends/scheduler");
     // @spec spec://modules/telegram/INFRA-005-deadline-pipeline#pipeline
     const { startDeadlineReportScheduler } = await import("./server/deadline-reports/scheduler");
+    // @spec spec://modules/telegram/FEAT-007-deadline-assistant#actors
+    const { startTelegramPollingScheduler } = await import("./server/telegram/polling");
 
     startMacheteDailyFotMobSyncScheduler();
     startLeagueSeasonRetentionScheduler();
@@ -57,6 +59,7 @@ export async function register() {
     startFantasyPlayerPoolSnapshotScheduler();
     startSportsTrendsScheduler();
     startDeadlineReportScheduler();
+    startTelegramPollingScheduler();
     startIngestionWorkerLoop();
   }
 

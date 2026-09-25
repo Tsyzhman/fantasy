@@ -1,0 +1,807 @@
+<!doctype html>
+<html lang="ru" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Шапка — 10 вариантов облегчить</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500&family=Onest:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root, html[data-theme="light"] {
+  color-scheme: light;
+  --bg-page: #f4f8fd;
+  --surface-1: #ffffff;
+  --surface-2: #f7faff;
+  --surface-3: #eef4fb;
+  --text-primary: #1f2a3d;
+  --text-secondary: #3d4b61;
+  --text-muted: #61718a;
+  --border: #dce6f1;
+  --border-strong: #bdd5fa;
+  --accent-primary: #4776b7;
+  --accent-primary-strong: #365f98;
+  --accent-primary-soft: #e3eeff;
+  --accent-secondary: #765eb5;
+  --accent-secondary-soft: #f0ebff;
+  --success: #39755d;
+  --success-soft: #e6f6ee;
+  --warning: #7b5a13;
+  --warning-soft: #fff4d8;
+  --danger: #a34550;
+  --danger-soft: #fdebed;
+  --button-primary-text: #ffffff;
+  --button-primary-bg: linear-gradient(135deg, #4776b7 0%, #6f63b2 100%);
+  --focus-ring: rgba(71, 118, 183, 0.18);
+  --shadow-sm: 0 1px 2px rgba(31, 42, 61, 0.04), 0 6px 18px rgba(54, 95, 152, 0.06);
+  --shadow-md: 0 2px 4px rgba(31, 42, 61, 0.04), 0 16px 40px rgba(54, 95, 152, 0.09);
+  --page-atmosphere:
+    radial-gradient(62% 42% at 8% 0%, rgba(189, 213, 250, 0.58), transparent 72%),
+    radial-gradient(48% 34% at 92% 10%, rgba(213, 201, 248, 0.46), transparent 74%),
+    linear-gradient(180deg, #fbfdff 0%, #f4f8fd 48%, #ffffff 100%);
+  --bg-surface-elevated: #ffffff;
+}
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --bg-page: #0d1727;
+  --surface-1: #142137;
+  --surface-2: #17243a;
+  --surface-3: #1b2b44;
+  --text-primary: #f1f6ff;
+  --text-secondary: #c6d1e1;
+  --text-muted: #91a2ba;
+  --border: rgba(159, 185, 220, 0.18);
+  --border-strong: #638fc8;
+  --accent-primary: #89b7ef;
+  --accent-primary-strong: #a4ccfb;
+  --accent-primary-soft: #1d3555;
+  --accent-secondary: #b8a8ee;
+  --accent-secondary-soft: #292443;
+  --success: #91d3b5;
+  --success-soft: #17372f;
+  --warning: #efc56d;
+  --warning-soft: #3b3120;
+  --danger: #f0a0ac;
+  --danger-soft: #3b2028;
+  --button-primary-text: #0c1726;
+  --button-primary-bg: linear-gradient(135deg, #93c2f7 0%, #bba9ef 100%);
+  --focus-ring: rgba(137, 183, 239, 0.22);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.16), 0 10px 28px rgba(2, 8, 20, 0.24);
+  --shadow-md: 0 2px 4px rgba(0, 0, 0, 0.18), 0 22px 58px rgba(2, 8, 20, 0.32);
+  --page-atmosphere:
+    radial-gradient(58% 42% at 8% 0%, rgba(79, 124, 182, 0.30), transparent 74%),
+    radial-gradient(48% 36% at 92% 8%, rgba(122, 100, 182, 0.26), transparent 75%),
+    linear-gradient(180deg, #0d1727 0%, #111d30 48%, #0c1626 100%);
+  --bg-surface-elevated: #17243a;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; }
+body {
+  background: var(--page-atmosphere);
+  color: var(--text-primary);
+  font-family: Onest, Inter, "Segoe UI", sans-serif;
+  font-size: 15px;
+  line-height: 1.45;
+}
+button, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+button:focus-visible, select:focus-visible, a:focus-visible {
+  outline: 2px solid var(--accent-primary);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--focus-ring);
+}
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px 18px;
+  padding: 12px 22px;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface-1) 88%, transparent);
+  backdrop-filter: blur(16px);
+}
+.topbar h1 { margin: 0; font-size: 16px; font-weight: 750; letter-spacing: -0.02em; }
+.topbar p { margin: 0; color: var(--text-muted); font-size: 12px; }
+.brandline { display: flex; flex-direction: column; margin-right: auto; }
+.controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.seg { display: inline-flex; padding: 3px; border: 1px solid var(--border); border-radius: 14px; background: var(--surface-1); }
+.seg button {
+  border: 0;
+  background: transparent;
+  min-height: 32px;
+  padding: 0 10px;
+  border-radius: 11px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  font-weight: 650;
+}
+.seg button[aria-pressed="true"] { background: var(--accent-primary-soft); color: var(--accent-primary-strong); }
+.layout { display: grid; grid-template-columns: 292px minmax(0, 1fr); gap: 22px; max-width: 1680px; margin: 0 auto; padding: 22px; }
+.intro { grid-column: 1 / -1; max-width: 980px; }
+.intro p { margin: 0 0 10px; color: var(--text-secondary); }
+.legend { display: flex; flex-wrap: wrap; gap: 10px 14px; margin-top: 8px; font-size: 12px; color: var(--text-muted); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.lg-nav { background: var(--accent-primary); }
+.lg-sub { background: var(--accent-secondary); }
+.lg-title { background: var(--text-muted); }
+.lg-context { background: var(--warning); }
+.index { position: sticky; top: 78px; align-self: start; display: flex; flex-direction: column; gap: 4px; max-height: calc(100vh - 96px); overflow: auto; padding-right: 4px; }
+.index button {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 8px;
+  text-align: left;
+  border: 1px solid transparent;
+  background: transparent;
+  border-radius: 14px;
+  padding: 8px 10px;
+}
+.index button strong { display: block; font-size: 13.5px; font-weight: 700; }
+.index button small { display: block; margin-top: 2px; color: var(--text-muted); font-size: 11px; font-family: "JetBrains Mono", ui-monospace, monospace; min-height: 14px; }
+.index button.on, .index button:hover { background: var(--surface-1); border-color: var(--border); }
+.index .n { color: var(--text-muted); font: 500 11px "JetBrains Mono", ui-monospace, monospace; padding-top: 3px; }
+.gallery { display: flex; flex-direction: column; gap: 22px; min-width: 0; }
+.concept {
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  background: color-mix(in srgb, var(--surface-1) 86%, transparent);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.concept.picked { box-shadow: 0 0 0 2px var(--accent-primary), var(--shadow-md); }
+.concept-head { display: flex; justify-content: space-between; gap: 18px; padding: 18px 20px 14px; }
+.eyebrow { margin: 0 0 4px; color: var(--accent-primary-strong); font-size: 12px; font-weight: 750; }
+.concept h2 { margin: 0; font-size: 22px; letter-spacing: -0.03em; line-height: 1.15; }
+.thesis, .cost { margin: 8px 0 0; max-width: 68ch; color: var(--text-secondary); font-size: 14px; }
+.cost { color: var(--text-muted); font-size: 13px; }
+.side { display: flex; flex-direction: column; align-items: flex-end; gap: 8px; min-width: 180px; }
+.badge { margin: 0; text-align: right; font: 500 12px/1.45 "JetBrains Mono", ui-monospace, monospace; color: var(--text-secondary); }
+.badge b { font-weight: 500; }
+.good { color: var(--success); }
+.bad { color: var(--danger); }
+.pick {
+  border: 1px solid var(--border);
+  background: var(--surface-1);
+  border-radius: 14px;
+  min-height: 36px;
+  padding: 0 12px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.concept.picked .pick { background: var(--button-primary-bg); color: var(--button-primary-text); border-color: transparent; }
+.frame { position: relative; width: 100%; overflow: hidden; background: var(--bg-page); border-top: 1px solid var(--border); }
+.frame-note { margin: 0; padding: 8px 20px 12px; color: var(--text-muted); font-size: 12px; }
+.app {
+  position: absolute;
+  top: 0;
+  left: 0;
+  overflow: auto;
+  background: var(--page-atmosphere);
+  color: var(--text-primary);
+  font-size: 15px;
+}
+.app.is-rail { overflow: hidden; }
+.m-top, .m-bar, .m-sub, .m-block, .m-inline, .m-filters {
+  background: color-mix(in srgb, var(--surface-1) 88%, transparent);
+}
+.m-top {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 56px;
+  padding: 6px 16px;
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(16px);
+}
+.m-top.dense { min-height: 40px; padding: 4px 12px; }
+.m-top strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.m-top nav, .m-scrollrow { display: flex; align-items: center; gap: 2px; margin-left: auto; }
+.m-top nav.wrap { flex-wrap: wrap; justify-content: flex-end; }
+.m-scrollrow { flex: 1; min-width: 0; margin-left: 0; flex-wrap: nowrap; overflow-x: auto; max-width: 100%; scrollbar-width: thin; }
+.m-link, .m-pill, .m-text, .m-popitem, .m-tool {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border: 0;
+  background: transparent;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  font-weight: 650;
+}
+.m-link { padding: 8px 10px; border-radius: 2px; font-size: 14px; }
+.m-link.active, .m-link:hover, .m-text.active, .m-text:hover, .m-popitem:hover, .m-tool:hover { background: var(--surface-3); color: var(--text-primary); }
+.m-link svg, .m-pill svg, .m-tool svg, .m-mini svg { width: 16px; height: 16px; flex: none; }
+.m-btn, .m-iconbtn, .m-primary, .m-quiet {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.m-btn, .m-iconbtn, .m-quiet {
+  border: 1px solid var(--border);
+  background: var(--surface-1);
+}
+.m-btn { min-height: 40px; padding: 0 14px; }
+.m-btn.slim, .m-quiet { min-height: 32px; padding: 0 10px; border-radius: 12px; }
+.m-iconbtn { width: 44px; height: 44px; }
+.m-iconbtn.slim { width: 32px; height: 32px; border-radius: 12px; }
+.m-iconbtn svg { width: 18px; height: 18px; }
+.m-iconbtn.active, .m-tool.active { background: var(--accent-primary-soft); color: var(--accent-primary-strong); border-color: transparent; }
+.m-primary { min-height: 48px; padding: 0 16px; border: 0; background: var(--button-primary-bg); color: var(--button-primary-text); }
+.m-sub { display: flex; align-items: center; gap: 8px; padding: 10px 16px; border-bottom: 1px solid var(--border); }
+.m-sub.slim { padding: 4px 12px; }
+.m-sub .tag { flex: none; color: var(--text-muted); font-size: 12px; font-weight: 750; }
+.m-pill {
+  min-height: 44px;
+  padding: 6px 12px;
+  border-radius: 2px;
+  border: 1px solid var(--border);
+  background: var(--surface-1);
+  font-size: 14px;
+}
+.m-pill.active { border-color: var(--accent-primary); background: var(--accent-primary-soft); color: var(--accent-primary-strong); }
+.m-text { min-height: 32px; padding: 0 8px; border-radius: 8px; font-size: 13px; }
+.m-text.under { border-radius: 0; border-bottom: 2px solid transparent; background: transparent; }
+.m-text.under.active { background: transparent; color: var(--accent-primary-strong); border-bottom-color: var(--accent-primary); }
+.m-block { padding: 14px 16px 8px; }
+.m-kicker { margin: 0; color: var(--text-muted); font-size: 12px; font-weight: 750; letter-spacing: 0.04em; text-transform: uppercase; }
+.m-h1 { margin: 4px 0 0; font-size: 24px; line-height: 1.12; letter-spacing: -0.03em; font-weight: 800; }
+.m-h1.lg { font-size: 32px; }
+.m-h1.xl { font-size: 36px; }
+.m-lead { margin: 8px 0 0; max-width: 68ch; color: var(--text-secondary); font-size: 14px; }
+.m-league { display: grid; grid-template-columns: minmax(0, 520px) auto; gap: 8px; align-items: end; padding: 8px 16px 4px; }
+.m-field { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 750; letter-spacing: 0.04em; text-transform: uppercase; color: var(--text-muted); }
+.m-field select, .m-select, .m-input {
+  min-height: 48px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--surface-1);
+  color: var(--text-primary);
+  padding: 0 12px;
+  font-size: 16px;
+  font-weight: 650;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.m-select.slim, .m-input.slim { min-height: 32px; font-size: 13px; border-radius: 12px; }
+.m-fresh { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 8px 16px 14px; color: var(--text-secondary); font-size: 12px; }
+.m-chip { border: 1px solid var(--border); background: var(--surface-1); border-radius: 4px; padding: 6px 10px; }
+.m-inline { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-height: 44px; padding: 6px 16px; border-bottom: 1px solid var(--border); }
+.m-inline .crumb { color: var(--text-muted); font-size: 13px; font-weight: 650; }
+.m-inline .crumb b { color: var(--text-primary); font-weight: 750; }
+.m-filters { display: flex; flex-wrap: wrap; gap: 8px; padding: 10px 16px; border-bottom: 1px solid var(--border); }
+.m-filters label { display: flex; flex-direction: column; gap: 4px; color: var(--text-muted); font-size: 12px; font-weight: 700; }
+.note-card { margin: 14px 16px 0; padding: 16px 18px; border: 1px solid var(--border); border-radius: 24px; background: var(--surface-1); box-shadow: var(--shadow-sm); }
+.note-card h3 { margin: 0; font-size: 18px; }
+.note-card p { margin: 6px 0 0; color: var(--text-secondary); font-size: 14px; }
+.pop-wrap { position: relative; flex: none; }
+.pop {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 8;
+  min-width: 220px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--bg-surface-elevated);
+  box-shadow: var(--shadow-md);
+}
+.pop.left { right: auto; left: 0; }
+.pop p { margin: 0; padding: 7px 10px; font-size: 13px; }
+.m-popitem { width: 100%; padding: 8px 10px; border-radius: 10px; font-size: 14px; text-align: left; }
+.rail-app { display: flex; height: 100%; }
+.rail {
+  width: 212px;
+  flex: none;
+  height: 100%;
+  overflow: auto;
+  border-right: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface-1) 92%, transparent);
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.rail.icons { width: 68px; align-items: center; }
+.rail-main { min-width: 0; flex: 1; height: 100%; overflow: auto; }
+.m-tool { width: 100%; min-height: 36px; padding: 6px 8px; border-radius: 12px; font-size: 14px; justify-content: flex-start; }
+.rail.icons .m-tool { width: 40px; justify-content: center; padding: 6px; }
+.surface { padding-bottom: 28px; }
+.rounds { display: flex; gap: 6px; padding: 12px 16px 0; }
+.rounds span { min-width: 84px; border-radius: 8px; background: var(--surface-1); border: 1px solid var(--border); padding: 8px 10px; font-size: 12px; font-weight: 750; }
+.rounds span.on { background: var(--button-primary-bg); color: var(--button-primary-text); border-color: transparent; }
+.rounds small { display: block; font-weight: 600; opacity: 0.7; }
+.pitch { margin: 12px 16px; padding: 14px 8px; border-radius: 16px; background: #0c4a3e; display: grid; gap: 8px; }
+html[data-theme="dark"] .pitch { background: #0b3b34; }
+.prow { display: flex; justify-content: center; gap: 6px; }
+.pcard { width: 78px; border-radius: 8px; background: #f7faff; color: #1f2a3d; text-align: center; padding: 6px 4px 5px; font-size: 10px; font-weight: 800; box-shadow: var(--shadow-sm); }
+.pcard em { display: block; font-style: normal; color: #61718a; font-size: 9px; font-weight: 700; }
+.table { margin: 0 16px; border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: var(--surface-1); }
+.tr { display: grid; grid-template-columns: 1.4fr 0.8fr 0.4fr 0.5fr 0.5fr; gap: 8px; padding: 8px 12px; font-size: 13px; }
+.tr.head { background: var(--surface-2); color: var(--text-muted); font-size: 11px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
+.tr + .tr { border-top: 1px solid var(--border); }
+.cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; padding: 16px; }
+.lcard { border: 1px solid var(--border); border-radius: 24px; background: var(--surface-1); box-shadow: var(--shadow-sm); padding: 16px; }
+.lcard h3 { margin: 6px 0 0; font-size: 18px; }
+.lcard p { margin: 6px 0 0; color: var(--text-muted); font-size: 13px; }
+.maps { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; padding: 16px; }
+.map { height: 280px; border: 1px solid var(--border); border-radius: 24px; background:
+  radial-gradient(circle at 50% 50%, transparent 58px, color-mix(in srgb, var(--accent-primary) 28%, transparent) 59px, transparent 60px),
+  linear-gradient(var(--surface-1), var(--surface-1));
+  box-shadow: var(--shadow-sm);
+  position: relative;
+}
+.map span { position: absolute; left: 14px; top: 12px; font-size: 12px; font-weight: 800; color: var(--text-muted); letter-spacing: 0.04em; text-transform: uppercase; }
+#toast {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%) translateY(12px);
+  opacity: 0;
+  pointer-events: none;
+  background: var(--text-primary);
+  color: var(--surface-1);
+  border-radius: 14px;
+  padding: 10px 14px;
+  font-size: 13px;
+  font-weight: 650;
+  box-shadow: var(--shadow-md);
+  transition: opacity 160ms, transform 160ms;
+  max-width: min(520px, calc(100vw - 24px));
+}
+#toast.on { opacity: 1; transform: translateX(-50%) translateY(0); }
+.pickbar { grid-column: 1 / -1; display: none; border: 1px solid var(--border-strong); background: var(--accent-primary-soft); color: var(--accent-primary-strong); border-radius: 16px; padding: 10px 14px; font-weight: 700; }
+.pickbar.on { display: block; }
+@media (max-width: 1100px) {
+  .layout { grid-template-columns: 1fr; }
+  .index { position: static; max-height: none; flex-direction: row; overflow: auto; }
+  .index button { min-width: 210px; }
+  .concept-head { flex-direction: column; }
+  .side { align-items: flex-start; }
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="brandline">
+    <h1>Шапка и подшапка</h1>
+    <p>Локальный макет. Приложение не менялось.</p>
+  </div>
+  <div class="controls">
+    <div class="seg" id="screens" role="group" aria-label="Вкладка"></div>
+    <div class="seg" role="group" aria-label="Ширина">
+      <button type="button" data-act="width" data-width="1280">1280</button>
+      <button type="button" data-act="width" data-width="1440">1440</button>
+      <button type="button" data-act="width" data-width="1760">1760</button>
+    </div>
+    <div class="seg" role="group" aria-label="Тема">
+      <button type="button" data-act="theme" data-theme="light">День</button>
+      <button type="button" data-act="theme" data-theme="dark">Ночь</button>
+    </div>
+  </div>
+</header>
+<div class="layout">
+  <div class="intro">
+    <p>На части вкладок первый экран собирается из нескольких полос. Сверху общая шапка на десяток пунктов. На страницах Machete под ней вторая навигация с почти теми же разделами. Ниже ещё заголовок, а на составе — выбор лиги высотой 48px и ряд плашек свежести. Подшапка не приклеена, но пока её не пролистаешь, поле и таблица начинаются низко. На ширине около 1280–1440 общая шапка ещё и переносится на вторую строку.</p>
+    <p>Ниже — как это выглядит сейчас, и десять способов снять высоту. Палитра, Onest, радиус кнопок и сине-лиловый акцент те же. Рамка внутри карточки листается: так видно, сколько рабочей области остаётся. Цифра — высота всего, что стоит над ней, на выбранных вкладке и ширине.</p>
+    <div class="legend">
+      <span><i class="lg-nav"></i>Общая навигация</span>
+      <span><i class="lg-sub"></i>Подшапка раздела</span>
+      <span><i class="lg-title"></i>Заголовок</span>
+      <span><i class="lg-context"></i>Лига, свежесть, фильтры</span>
+    </div>
+  </div>
+  <div class="pickbar" id="pickbar"></div>
+  <nav class="index" id="index" aria-label="Варианты"></nav>
+  <div class="gallery" id="gallery"></div>
+</div>
+<div id="toast" role="status"></div>
+<script>
+const PATHS = {
+  layers: '<path d="m12 3 9 4.5-9 4.5L3 7.5 12 3Z"/><path d="m3 12 9 4.5 9-4.5"/><path d="m3 16.5 9 4.5 9-4.5"/>',
+  users: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="3.2"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a3.2 3.2 0 0 1 0 6.2"/>',
+  user: '<path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="3.2"/>',
+  cross: '<circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/>',
+  settings: '<circle cx="12" cy="12" r="3"/><path d="M12 3v2M12 19v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M3 12h2M19 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  shield: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10Z"/>',
+  list: '<path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/>',
+  lang: '<circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18"/>',
+  moon: '<path d="M21 14.5A8.5 8.5 0 1 1 9.5 3 7 7 0 0 0 21 14.5Z"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  chev: '<path d="m6 9 6 6 6-6"/>'
+};
+const NAV = [
+  { id: "leagues", label: "Лиги", icon: "layers", screen: "leagues", primary: true },
+  { id: "squad", label: "Состав", icon: "users", screen: "squad", primary: true },
+  { id: "fpl", label: "FPL", icon: "users" },
+  { id: "khl", label: "КХЛ", icon: "users" },
+  { id: "players", label: "Игроки", icon: "user", screen: "players", primary: true },
+  { id: "mixerr", label: "Миксер", icon: "cross", screen: "mixerr", primary: true },
+  { id: "franchises", label: "Франшизы", icon: "users", primary: true },
+  { id: "arena", label: "Арена", icon: "users" },
+  { id: "model", label: "Модель", icon: "settings" },
+  { id: "jobs", label: "Задачи данных", icon: "list", subOnly: true },
+  { id: "admin", label: "Админ", icon: "shield" },
+  { id: "profile", label: "Профиль", icon: "user" }
+];
+const byId = Object.fromEntries(NAV.map((item) => [item.id, item]));
+const GLOBAL = ["leagues", "squad", "fpl", "khl", "players", "mixerr", "franchises", "arena", "model", "admin", "profile"];
+const SUB = ["leagues", "players", "squad", "fpl", "khl", "jobs", "model"];
+const PRIMARY = ["leagues", "squad", "players", "mixerr", "franchises"];
+const RARE = ["fpl", "khl", "arena", "model", "jobs", "admin", "profile"];
+const GROUPS = [
+  { id: "fantasy", label: "Фэнтези", items: ["leagues", "squad", "players"] },
+  { id: "cups", label: "Турниры", items: ["fpl", "khl"] },
+  { id: "analysis", label: "Разбор", items: ["mixerr", "franchises", "arena"] },
+  { id: "service", label: "Сервис", items: ["model", "jobs", "admin"] }
+];
+const SCREENS = [
+  { id: "squad", label: "Состав" },
+  { id: "leagues", label: "Лиги" },
+  { id: "players", label: "Игроки" },
+  { id: "mixerr", label: "Миксер" }
+];
+const SCREEN = {
+  squad: { label: "Состав", kicker: "Фэнтези-планирование", title: "Планировщик состава", crumb: "Machete / Состав", group: "fantasy", sub: true, league: true, fresh: true },
+  leagues: { label: "Лиги", kicker: "Machete", title: "Рабочее пространство FotMob", lead: "Общие данные FotMob обновляются автоматически в 03:00 по Москве; ingestion управляется из админ-панели.", crumb: "Machete / Лиги", group: "fantasy", sub: true, note: true },
+  players: { label: "Игроки", kicker: "Таблица игроков Machete", title: "Поиск игроков и прогнозы", lead: "Ищите реальных игроков FotMob и сравнивайте пересчитанные прогнозы Machete.", crumb: "Machete / Игроки", group: "fantasy", filters: "players" },
+  mixerr: { label: "Миксер", kicker: "MiXerr / FotMob", title: "Карты ударов Миксер", crumb: "Миксер", group: "analysis", filters: "mixerr", hero: true }
+};
+const LEAGUES = ["АПЛ", "Ла Лига", "Серия А", "Бундеслига", "Лига 1", "РПЛ", "Чемпионшип"];
+const CONCEPTS = [
+  ["0", "Сейчас", "Три слоя как в приложении", "Общая шапка, подшапка Machete на лигах и составе, затем заголовок. На составе ещё список лиги на 48px, кнопка «Загрузить» и пять плашек свежести.", "Точка отсчёта. На 1280 шапка часто занимает две строки."],
+  ["1", "Одна строка", "Частые разделы, лига и свежесть в одной полосе", "FPL, КХЛ, Арена, Модель, задачи данных и админ уходят в «Ещё». Заголовок и вторая навигация снимаются.", "Редкие разделы в одном клике дальше. На игроках и миксере фильтры остаются второй полосой: это уже инструмент, не шапка."],
+  ["2", "Главное и контекст", "Сверху разделы, снизу только то, с чем работаешь", "Вторая полоса больше не меню. Там лига, свежесть или короткая справка. Редкие пункты в «Ещё».", "Те же спрятанные разделы, зато список лиги не спорит с пунктами меню."],
+  ["3", "Левая рейка", "Разделы стоят слева, сверху остаётся контекст", "Высота шапки падает до одной полосы на всех вкладках. Подписи рейки можно выключить.", "Поле становится уже на 212px, без подписей — на 68px. Названия тогда только во всплывающей подсказке."],
+  ["4", "Группы разделов", "Четыре группы, под ними только соседи", "Из состава видны Лиги, Состав и Игроки. Миксер лежит в группе «Разбор», FPL и КХЛ — в «Турнирах».", "Чужой раздел открывается в два шага: сначала группа, потом пункт."],
+  ["5", "Рабочая полка", "На экране название дела и лига, разделы — в меню", "Кнопка «Разделы» собирает всю навигацию, включая задачи данных. Заголовок страницы не дублирует пункт меню.", "Пока меню закрыто, карта приложения не видна."],
+  ["6", "Сжатый текущий", "Те же пункты и тот же порядок, меньше воздуха", "Иконки сняты, кнопки ниже, подшапка Machete становится текстовой, выбор лиги встаёт в одну строку со свежестью.", "Меню по-прежнему длинное. Выигрыш в высоте, не в числе пунктов."],
+  ["7", "Крошки вместо меню", "Вторая полоса показывает путь, а не соседние разделы", "Верх сохраняет все пункты без иконок. Строка «Machete / Состав» заменяет и подшапку, и большой заголовок.", "Между Составом и Игроками переключаешься верхней шапкой, не второй."],
+  ["8", "Липкая строка", "Всё, что нужно, живёт в одной закреплённой строке", "Подшапка и заголовок удалены. Если пункты не помещаются, строка листается вбок и не растёт вниз.", "На узкой ширине часть разделов за правым краем. Их нужно доскроллить."],
+  ["9", "Значки и контекст", "Разделы остаются на виду, но без подписей", "Полоса отдана лиге, туру и свежести. Разделы — ряд значков с подсказкой по наведению.", "Без подписи пункт узнаётся хуже, особенно FPL, КХЛ и Арена."],
+  ["10", "Плотно или обычно", "Плотность переключается в самой шапке", "«Плотно» собирает экран как сжатый текущий вариант. «Обычно» возвращает сегодняшние три слоя.", "Переключатель занимает место в обоих режимах, а плотный вид всё равно нужно включить."]
+];
+
+const state = {
+  screen: "squad",
+  width: 1440,
+  theme: "light",
+  menus: {},
+  rail: "labels",
+  density: "compact",
+  league: "АПЛ",
+  groupOverride: null,
+  pick: localStorage.getItem("header-concept-pick") || ""
+};
+
+function icon(name) {
+  return `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${PATHS[name] || ""}</svg>`;
+}
+function itemButton(id, opts = {}) {
+  const item = byId[id];
+  const active = item.screen && item.screen === state.screen;
+  const act = item.screen
+    ? `data-act="screen" data-screen="${item.screen}"`
+    : `data-act="missing" data-name="${item.label}"`;
+  const cls = `${opts.cls || "m-link"}${active ? " active" : ""}`;
+  const graphic = opts.icons === false ? "" : icon(item.icon);
+  const text = opts.iconsOnly ? "" : `<span>${item.label}</span>`;
+  const title = opts.iconsOnly ? ` title="${item.label}"` : "";
+  return `<button type="button" class="${cls}" ${act}${title}>${graphic}${text}</button>`;
+}
+function pop(conceptId, key, label, inner, align) {
+  const open = state.menus[conceptId] === key;
+  return `<span class="pop-wrap"><button type="button" class="${label.cls || "m-link"}" data-act="menu" data-menu="${key}">${label.html}</button>${open ? `<div class="pop ${align || ""}">${inner}</div>` : ""}</span>`;
+}
+function freshButton(conceptId) {
+  return pop(conceptId, "fresh", { html: "Свежесть · сегодня", cls: "m-quiet" }, `
+    <p>FotMob · сегодня, 09:12</p>
+    <p>Sports.ru · сегодня, 08:40</p>
+    <p>Кэфы · вчера, 22:18</p>
+    <p>Флаги XI · сегодня, 07:02–11:40</p>`);
+}
+function freshChips() {
+  return `<div class="m-fresh"><span>Обновление данных · МСК</span><span class="m-chip">Стата FotMob: сегодня, 09:12</span><span class="m-chip">Цены Sports.ru: сегодня, 08:40</span><span class="m-chip">Кэфы букмекера: вчера, 22:18</span><span class="m-chip">Самые старые флаги XI: сегодня, 07:02</span><span class="m-chip">Самые новые флаги XI: сегодня, 11:40</span></div>`;
+}
+function leagueSelect(slim) {
+  const cls = slim ? "m-select slim" : "";
+  return `<select class="${cls}" data-league aria-label="Лига Sports.ru">${LEAGUES.map((name) => `<option${name === state.league ? " selected" : ""}>${name}</option>`).join("")}</select>`;
+}
+function leagueStack() {
+  return `<div class="m-league"><label class="m-field">Лига Sports.ru${leagueSelect(false)}</label><button type="button" class="m-primary" data-act="note" data-note="В приложении лига и так переключается выбором из списка. Кнопка повторяет то же действие.">Загрузить</button></div>${freshChips()}`;
+}
+function avatar(conceptId) {
+  return pop(conceptId, "avatar", { html: icon("user"), cls: "m-iconbtn slim" }, `
+    <button type="button" class="m-popitem" data-act="missing" data-name="Профиль">Профиль</button>
+    <button type="button" class="m-popitem" data-act="missing" data-name="Админ">Админ</button>
+    <button type="button" class="m-popitem" data-act="theme" data-theme="toggle">Тема: ${state.theme === "dark" ? "ночь" : "день"}</button>
+    <button type="button" class="m-popitem" data-act="missing" data-name="Язык">Язык · RU</button>
+    <button type="button" class="m-popitem" data-act="missing" data-name="Выход">Выйти</button>`, "");
+}
+function utils(slim) {
+  const btn = slim ? "m-btn slim" : "m-btn";
+  const iconBtn = slim ? "m-iconbtn slim" : "m-iconbtn";
+  return `<button type="button" class="${btn}" data-act="missing" data-name="Выход">Выйти</button><button type="button" class="${btn}" data-act="missing" data-name="Язык">${icon("lang")}<span>RU</span></button><button type="button" class="${iconBtn}" data-act="theme" data-theme="toggle" title="Тема">${icon(state.theme === "dark" ? "sun" : "moon")}</button>`;
+}
+function more(conceptId, ids) {
+  return pop(conceptId, "more", { html: `Ещё ${icon("chev")}` }, ids.map((id) => itemButton(id, { cls: "m-popitem", icons: false })).join(""), "left");
+}
+function layer(name, html, sticky) {
+  if (!html) return "";
+  return `<div class="layer" data-layer="${name}" ${sticky ? "data-sticky" : ""}>${html}</div>`;
+}
+function subnav(style) {
+  const meta = SCREEN[state.screen];
+  if (!meta.sub) return "";
+  if (style === "pills") {
+    return `<div class="m-sub"><span class="tag">Machete</span>${SUB.map((id) => itemButton(id, { cls: "m-pill" })).join("")}</div>`;
+  }
+  return `<div class="m-sub slim"><span class="tag">Machete</span>${SUB.map((id) => itemButton(id, { cls: "m-text", icons: false })).join("")}</div>`;
+}
+function titleBlock(size) {
+  const meta = SCREEN[state.screen];
+  const hero = size === "xl" ? " xl" : size === "lg" ? " lg" : "";
+  return `<div class="m-block"><p class="m-kicker">${meta.kicker}</p><h2 class="m-h1${hero}">${meta.title}</h2>${meta.lead ? `<p class="m-lead">${meta.lead}</p>` : ""}</div>`;
+}
+function filters() {
+  const kind = SCREEN[state.screen].filters;
+  if (kind === "players") {
+    return `<div class="m-filters"><label>Игрок<input class="m-input slim" value="Сака" aria-label="Поиск игрока"></label><label>Лига${leagueSelect(true)}</label><label>Позиция<select class="m-select slim" aria-label="Позиция"><option>Все</option><option>Нап</option><option>Пз</option><option>Защ</option><option>Вр</option></select></label></div>`;
+  }
+  if (kind === "mixerr") {
+    return `<div class="m-filters"><label>Лига${leagueSelect(true)}</label><label>Сезон<select class="m-select slim"><option>2025/26</option></select></label><label>Команда А<select class="m-select slim"><option>Арсенал</option><option>Ливерпуль</option></select></label><label>Команда Б<select class="m-select slim"><option>Челси</option><option>Сити</option></select></label></div>`;
+  }
+  return "";
+}
+function contextLine(conceptId) {
+  const meta = SCREEN[state.screen];
+  if (meta.league) return `<div class="m-inline">${leagueSelect(true)}${freshButton(conceptId)}</div>`;
+  if (state.screen === "leagues") return `<div class="m-inline"><span class="crumb">12 лиг · FotMob обновляется в 03:00 МСК</span></div>`;
+  return "";
+}
+function surface() {
+  if (state.screen === "squad") {
+    const row = (cells) => `<div class="prow">${cells.map(([name, price]) => `<div class="pcard">${name}<em>${price}</em></div>`).join("")}</div>`;
+    return `<div class="surface"><div class="rounds"><span class="on">Следующий<small>тур 8</small></span><span>+1<small>связан</small></span><span>+2<small>связан</small></span><span>+3<small>1 тр.</small></span></div><div class="pitch">${row([["Райя", "5.5"]])}${row([["Салаиба", "6.1"], ["Габриэл", "6.0"], ["Тарковски", "4.5"], ["Гвардиол", "6.2"]])}${row([["Сака", "10.0"], ["Райс", "6.6"], ["Палмер", "10.6"]])}${row([["Холанн", "14.5"], ["Сон", "9.6"], ["Джексон", "7.7"]])}</div><div class="table"><div class="tr head"><span>Игрок</span><span>Клуб</span><span>Поз.</span><span>Цена</span><span>xPts</span></div><div class="tr"><span>Сака</span><span>Арсенал</span><span>Пз</span><span>10.0</span><span>6.4</span></div><div class="tr"><span>Холанн</span><span>Сити</span><span>Нап</span><span>14.5</span><span>7.8</span></div><div class="tr"><span>Палмер</span><span>Челси</span><span>Пз</span><span>10.6</span><span>6.9</span></div></div></div>`;
+  }
+  if (state.screen === "leagues") {
+    const cards = [["АПЛ", "20 команд · текущий"], ["Ла Лига", "20 команд · текущий"], ["Серия А", "20 команд · текущий"], ["Бундеслига", "18 команд · текущий"], ["Лига 1", "18 команд · текущий"], ["РПЛ", "16 команд · текущий"]];
+    return `<div class="surface"><div class="cards">${cards.map(([name, meta]) => `<article class="lcard"><p class="m-kicker">FotMob</p><h3>${name}</h3><p>${meta}</p></article>`).join("")}</div></div>`;
+  }
+  if (state.screen === "players") {
+    return `<div class="surface"><div class="table"><div class="tr head"><span>Игрок</span><span>Клуб</span><span>Поз.</span><span>Цена</span><span>Прогноз</span></div>${[["Сака", "Арсенал", "Пз", "10.0", "6.4"], ["Холанн", "Сити", "Нап", "14.5", "7.8"], ["Палмер", "Челси", "Пз", "10.6", "6.9"], ["Виртис", "Ньюкасл", "Защ", "4.8", "3.9"], ["Райя", "Арсенал", "Вр", "5.5", "3.6"]].map((row) => `<div class="tr">${row.map((cell) => `<span>${cell}</span>`).join("")}</div>`).join("")}</div></div>`;
+  }
+  return `<div class="surface"><div class="maps"><div class="map"><span>Команда А · Арсенал</span></div><div class="map"><span>Команда Б · Челси</span></div></div></div>`;
+}
+function app(id, html, rail) {
+  return `<div class="app${rail ? " is-rail" : ""}" data-concept="${id}">${html}${rail ? "" : surface()}</div>`;
+}
+
+function render0(id, opts = {}) {
+  const meta = SCREEN[state.screen];
+  const nav = `<header class="m-top">${opts.extra || ""}<nav class="wrap">${GLOBAL.map((item) => itemButton(item)).join("")}${utils(false)}</nav></header>`;
+  const sub = subnav("pills");
+  const titleSize = state.screen === "mixerr" ? "xl" : state.screen === "players" || state.screen === "leagues" ? "lg" : "";
+  const title = titleBlock(titleSize);
+  const context = meta.league ? leagueStack() : "";
+  const note = meta.note ? `<div class="note-card"><h3>Machete</h3><p>Данные FotMob автоматически обновляются каждый день в 03:00 МСК. Ручное управление загрузкой находится в админ-панели.</p></div>` : "";
+  return app(id, layer("nav", nav, true) + layer("sub", sub) + layer("title", title) + layer("context", context) + layer("title", note) + layer("context", filters()));
+}
+function render1(id) {
+  const meta = SCREEN[state.screen];
+  const bits = meta.league ? `${leagueSelect(true)}${freshButton(id)}` : (state.screen === "leagues" ? `<span class="crumb">03:00 МСК</span>` : "");
+  const bar = `<header class="m-top dense"><nav class="wrap">${PRIMARY.map((item) => itemButton(item, { icons: false })).join("")}${more(id, RARE)}${bits}${avatar(id)}</nav></header>`;
+  return app(id, layer("nav", bar, true) + layer("context", filters()));
+}
+function render2(id) {
+  const nav = `<header class="m-top dense"><nav>${PRIMARY.map((item) => itemButton(item, { cls: "m-text under", icons: false })).join("")}${more(id, RARE)}${avatar(id)}</nav></header>`;
+  return app(id, layer("nav", nav, true) + layer("context", contextLine(id)) + layer("context", filters()));
+}
+function render3(id) {
+  const icons = state.rail === "icons";
+  const meta = SCREEN[state.screen];
+  const rail = `<aside class="rail${icons ? " icons" : ""}" data-layer="rail"><button type="button" class="m-quiet" data-act="rail">${icons ? "Aa" : "Значки"}</button>${[...GLOBAL, "jobs"].map((item) => itemButton(item, { cls: "m-tool", iconsOnly: icons, icons: true })).join("")}</aside>`;
+  const top = `<header class="m-top dense"><strong style="font-size:15px">${meta.label || meta.title}</strong><span style="flex:1"></span>${meta.league ? leagueSelect(true) : ""}${meta.fresh || meta.league ? freshButton(id) : ""}${state.screen === "leagues" ? `<span class="crumb">12 лиг · 03:00 МСК</span>` : ""}${avatar(id)}</header>`;
+  const main = `${layer("nav", top, true)}${layer("context", filters())}<div class="rail-scroll">${surface()}</div>`;
+  return app(id, `<div class="rail-app">${rail}<div class="rail-main">${main}</div></div>`, true);
+}
+function render4(id) {
+  const group = GROUPS.find((entry) => entry.id === (state.groupOverride || SCREEN[state.screen].group)) || GROUPS[0];
+  const nav = `<header class="m-top dense"><nav>${GROUPS.map((entry) => `<button type="button" class="m-text under${entry.id === group.id ? " active" : ""}" data-act="group" data-group="${entry.id}">${entry.label}</button>`).join("")}${avatar(id)}</nav></header>`;
+  const sub = `<div class="m-sub">${group.items.map((item) => itemButton(item, { cls: "m-text", icons: false })).join("")}</div>`;
+  return app(id, layer("nav", nav, true) + layer("sub", sub) + layer("context", contextLine(id)) + layer("context", filters()));
+}
+function render5(id) {
+  const meta = SCREEN[state.screen];
+  const menu = pop(id, "brand", { html: `Разделы ${icon("chev")}`, cls: "m-btn slim" }, [...GLOBAL, "jobs"].map((item) => itemButton(item, { cls: "m-popitem", icons: false })).join(""), "left");
+  const bar = `<header class="m-top dense">${menu}<strong style="font-size:15px;margin-left:4px">${SCREEN[state.screen].label}</strong><span style="flex:1"></span>${meta.league ? leagueSelect(true) : ""}${state.screen === "leagues" ? `<span class="crumb">12 лиг · 03:00</span>` : ""}${freshButton(id)}${avatar(id)}</header>`;
+  return app(id, layer("nav", bar, true) + layer("context", filters()));
+}
+function render6(id, opts = {}) {
+  const nav = `<header class="m-top dense">${opts.extra || ""}<nav class="wrap">${GLOBAL.map((item) => itemButton(item, { icons: false })).join("")}${utils(true)}</nav></header>`;
+  return app(id, layer("nav", nav, true) + layer("sub", subnav("text")) + layer("context", contextLine(id)) + layer("context", filters()));
+}
+function render7(id) {
+  const nav = `<header class="m-top dense"><nav class="wrap">${GLOBAL.map((item) => itemButton(item, { icons: false })).join("")}${utils(true)}</nav></header>`;
+  const parts = SCREEN[state.screen].crumb.split(" / ");
+  const crumbLabel = parts.length === 2 ? `${parts[0]} / <b>${parts[1]}</b>` : `<b>${parts[0]}</b>`;
+  const crumb = `<div class="m-inline"><span class="crumb">${crumbLabel}</span>${SCREEN[state.screen].league ? leagueSelect(true) : ""}${SCREEN[state.screen].league ? freshButton(id) : ""}${state.screen === "leagues" ? `<span class="crumb">обновление в 03:00 МСК</span>` : ""}</div>`;
+  return app(id, layer("nav", nav, true) + layer("context", crumb) + layer("context", filters()));
+}
+function render8(id) {
+  const meta = SCREEN[state.screen];
+  const bar = `<header class="m-top dense"><div class="m-scrollrow">${GLOBAL.concat("jobs").map((item) => itemButton(item, { icons: false })).join("")}${meta.league ? leagueSelect(true) : ""}${state.screen === "leagues" ? `<span class="crumb">03:00 МСК</span>` : ""}${freshButton(id)}${utils(true)}</div></header>`;
+  return app(id, layer("nav", bar, true) + layer("context", filters()));
+}
+function render9(id) {
+  const meta = SCREEN[state.screen];
+  const bar = `<header class="m-top dense"><nav>${GLOBAL.concat("jobs").map((item) => itemButton(item, { cls: "m-iconbtn slim", iconsOnly: true })).join("")}<span style="width:8px"></span>${meta.league ? leagueSelect(true) : ""}<span class="crumb">${meta.league ? "тур 8" : meta.label}</span>${freshButton(id)}</nav></header>`;
+  return app(id, layer("nav", bar, true) + layer("context", filters()));
+}
+function render10(id) {
+  const toggle = `<span class="seg" style="flex:none"><button type="button" data-act="density" data-density="compact" aria-pressed="${state.density === "compact"}">Плотно</button><button type="button" data-act="density" data-density="comfort" aria-pressed="${state.density === "comfort"}">Обычно</button></span>`;
+  return state.density === "compact" ? render6(id, { extra: toggle }) : render0(id, { extra: toggle });
+}
+const RENDER = { 0: render0, 1: render1, 2: render2, 3: render3, 4: render4, 5: render5, 6: render6, 7: render7, 8: render8, 9: render9, 10: render10 };
+
+function studyChrome() {
+  document.documentElement.dataset.theme = state.theme;
+  document.querySelectorAll("[data-act='width']").forEach((button) => button.setAttribute("aria-pressed", String(Number(button.dataset.width) === state.width)));
+  document.querySelectorAll("[data-act='theme'][data-theme]").forEach((button) => {
+    if (button.dataset.theme === "toggle") return;
+    button.setAttribute("aria-pressed", String(button.dataset.theme === state.theme));
+  });
+  const screens = document.getElementById("screens");
+  screens.innerHTML = SCREENS.map((screen) => `<button type="button" data-act="screen" data-screen="${screen.id}" aria-pressed="${screen.id === state.screen}">${screen.label}</button>`).join("");
+  document.getElementById("index").innerHTML = CONCEPTS.map(([id, name]) => `<button type="button" data-act="goto" data-goto="${id}"><span class="n">${id === "0" ? "00" : id.padStart(2, "0")}</span><span><strong>${name}</strong><small data-delta-for="${id}"></small></span></button>`).join("");
+  const picked = CONCEPTS.find((concept) => concept[0] === state.pick);
+  const bar = document.getElementById("pickbar");
+  bar.classList.toggle("on", Boolean(picked));
+  bar.textContent = picked ? `Отмечен вариант ${picked[0] === "0" ? "«Сейчас»" : picked[0] + " · " + picked[1]}. Его номер можно прислать как ответ.` : "";
+}
+function render(keepWindow) {
+  const y = window.scrollY;
+  studyChrome();
+  document.getElementById("gallery").innerHTML = CONCEPTS.map(([id, name, thesis, cost]) => {
+    const mark = state.pick === id ? " picked" : "";
+    const label = id === "0" ? "Сейчас" : `Вариант ${id.padStart(2, "0")}`;
+    const action = id === "0" ? "Оставить как есть" : "Внедрять этот";
+    return `<article class="concept${mark}" id="c${id}"><header class="concept-head"><div><p class="eyebrow">${label}</p><h2>${name}</h2><p class="thesis">${thesis}</p><p class="cost">${cost}</p></div><div class="side"><p class="badge" data-badge-for="${id}"></p><button type="button" class="pick" data-act="pick" data-pick="${id}">${state.pick === id ? "Отмечен" : action}</button></div></header><div class="frame">${RENDER[id](id)}</div><p class="frame-note">Рамка — ширина ${state.width}px. Листай внутри неё, чтобы увидеть, где начинается ${state.screen === "squad" ? "поле" : state.screen === "leagues" ? "сетка лиг" : state.screen === "players" ? "таблица" : "карты"}.</p></article>`;
+  }).join("");
+  fit();
+  measure();
+  if (keepWindow) window.scrollTo(0, y);
+}
+function fit() {
+  document.querySelectorAll(".frame").forEach((frame) => {
+    const node = frame.querySelector(".app");
+    const scale = Math.min(1, frame.clientWidth / state.width);
+    node.style.width = `${state.width}px`;
+    node.style.height = "800px";
+    node.style.transformOrigin = "top left";
+    node.style.transform = `scale(${scale})`;
+    frame.style.height = `${Math.round(800 * scale)}px`;
+  });
+}
+function measure() {
+  const metrics = {};
+  document.querySelectorAll(".app").forEach((node) => {
+    let vertical = 0;
+    const parts = [];
+    node.querySelectorAll(".layer").forEach((layerNode) => {
+      if (layerNode.dataset.layer === "rail") return;
+      const height = layerNode.offsetHeight;
+      if (!height) return;
+      vertical += height;
+      parts.push(`${layerName(layerNode.dataset.layer)} ${height}`);
+    });
+    const rail = node.querySelector("[data-layer='rail']");
+    metrics[node.dataset.concept] = { vertical, parts, rail: rail ? rail.offsetWidth : 0 };
+  });
+  const base = metrics["0"] ? metrics["0"].vertical : 0;
+  Object.entries(metrics).forEach(([id, metric]) => {
+    const delta = metric.vertical - base;
+    const deltaText = id === "0" ? `${metric.vertical} px` : `${metric.vertical} px · ${delta > 0 ? "+" : "−"}${Math.abs(delta)}`;
+    const railText = metric.rail ? ` · рейка ${metric.rail} px` : "";
+    const small = document.querySelector(`[data-delta-for="${id}"]`);
+    if (small) {
+      small.textContent = deltaText + (metric.rail ? ` · рейка ${metric.rail}` : "");
+      small.className = delta < -8 ? "good" : delta > 8 ? "bad" : "";
+    }
+    const badge = document.querySelector(`[data-badge-for="${id}"]`);
+    if (badge) badge.innerHTML = `<b class="${delta < -8 ? "good" : delta > 8 ? "bad" : ""}">${deltaText}</b>${railText}<br><span title="${metric.parts.join(" · ")}">${metric.parts.join(" · ") || "без полос над рабочей областью"}</span>`;
+  });
+  document.querySelectorAll(".index button").forEach((button) => button.classList.toggle("on", button.dataset.goto === state.pick));
+}
+function layerName(name) {
+  return { nav: "шапка", sub: "подшапка", title: "заголовок", context: "контекст" }[name] || name;
+}
+let toastTimer = 0;
+function toast(text) {
+  const node = document.getElementById("toast");
+  node.textContent = text;
+  node.classList.add("on");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => node.classList.remove("on"), 2600);
+}
+document.addEventListener("click", (event) => {
+  const button = event.target.closest("[data-act]");
+  if (!button) {
+    if (Object.values(state.menus).some(Boolean)) {
+      state.menus = {};
+      render(true);
+    }
+    return;
+  }
+  const act = button.dataset.act;
+  if (act === "goto") {
+    document.getElementById(`c${button.dataset.goto}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
+    return;
+  }
+  if (act === "screen") {
+    state.screen = button.dataset.screen;
+    state.groupOverride = null;
+    state.menus = {};
+    render(true);
+    return;
+  }
+  if (act === "width") {
+    state.width = Number(button.dataset.width);
+    render(true);
+    return;
+  }
+  if (act === "theme") {
+    state.theme = button.dataset.theme === "dark" || button.dataset.theme === "light" ? button.dataset.theme : (state.theme === "dark" ? "light" : "dark");
+    render(true);
+    return;
+  }
+  if (act === "menu") {
+    const id = button.closest(".app").dataset.concept;
+    state.menus[id] = state.menus[id] === button.dataset.menu ? null : button.dataset.menu;
+    render(true);
+    return;
+  }
+  if (act === "rail") {
+    state.rail = state.rail === "icons" ? "labels" : "icons";
+    render(true);
+    return;
+  }
+  if (act === "density") {
+    state.density = button.dataset.density;
+    render(true);
+    return;
+  }
+  if (act === "group") {
+    state.groupOverride = button.dataset.group;
+    render(true);
+    return;
+  }
+  if (act === "pick") {
+    state.pick = button.dataset.pick;
+    localStorage.setItem("header-concept-pick", state.pick);
+    render(true);
+    document.getElementById(`c${state.pick}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
+  if (act === "missing") toast(`${button.dataset.name} в макете не открывается. В приложении пункт останется.`);
+  if (act === "note") toast(button.dataset.note);
+});
+document.addEventListener("change", (event) => {
+  if (event.target.matches("[data-league]")) state.league = event.target.value;
+});
+window.addEventListener("resize", () => { fit(); measure(); });
+document.fonts.ready.then(() => { fit(); measure(); });
+render(false);
+</script>
+</body>
+</html>

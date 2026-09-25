@@ -191,6 +191,7 @@ test("VPN relay proxies allowlisted Telegram Bot API methods over the shared soc
   assert.match(relay, /setWebhook/);
   assert.match(relay, /getMe/);
   assert.match(relay, /getWebhookInfo/);
+  assert.match(relay, /getUpdates/);
   assert.match(relay, /method !== "GET" && method !== "POST"/);
   assert.match(relay, /request body too large/);
 });

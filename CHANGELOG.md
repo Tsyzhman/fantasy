@@ -5,6 +5,11 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.89 - 2026-09-25
+
+- FEAT-007/WI-036: бот получает updates через long polling (`getUpdates`) поверх VPN relay в worker-роли, потому что Telegram не может открыть входящее соединение к хосту; offset продолжается от durable inbox, webhook удаляется и остаётся альтернативой.
+- VPN relay allowlist расширен read-only `getUpdates`.
+
 ## 0.3.88 - 2026-09-25
 
 - FEAT-007/WI-035: бот отвечает без AI — `/start` даёт приветствие и инструкцию с кодом, введённый код получает результат «подошёл/не подошёл» с email аккаунта; подтверждение на сайте остаётся обязательным, конфликт чужого Telegram аккаунт не раскрывает.
