@@ -5,6 +5,13 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.86 - 2026-09-25
+
+- FEAT-006: парсер опубликованных рейтингов Sports (покупки, продажи, владение, капитаны, до 15 игроков), история ownership и дельта в п.п. из `selectedByPercent`, bounded collector с source/revision/retention, read API и панель «Популярное на Sports» в Squad. Сбор включается `SPORTS_TRENDS_SYNC_ENABLED` (по умолчанию off).
+- FEAT-007: привязка Telegram через deep link и код с ротацией 15 секунд, подтверждение в профиле, webhook с secret token и durable inbox, подписки по турнирам, пауза и отвязка. Включается `TELEGRAM_LINK_ENABLED` (по умолчанию off).
+- INFRA-005: кампании дедлайна 08:00/08:10/09:00 МСК с gate `DEADLINE_CONFLICT`/ранний дедлайн, классификация ALT/blank/XI/unknown, отчёт с тегами и тремя столбцами, outbox с free-лимитом 25/с, retry и `DELIVERY_UNKNOWN`. Флаги `TELEGRAM_DEADLINE_ENABLED` и `TELEGRAM_SEND_ENABLED` по умолчанию off (shadow-режим).
+- Additive-миграция `20260925081319_sports_trends_telegram_deadline`: новые таблицы trends/telegram/deadline, существующие потоки и UI не меняются.
+
 ## 0.3.85 - 2026-09-21
 
 - xФО сопоставляется с реальными ФО одной и той же основы без капитанского удвоения в обоих показателях; ФО и разница показаны также у менеджеров и по чемпионатам.

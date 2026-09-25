@@ -6,6 +6,9 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
+| [WI-031](work/WI-031-sports-trends-implementation.md) | Популярность Sports — parser, история и чтение | FEAT-006 | @tsyzhman | 2026-09-25 | — |
+| [WI-032](work/WI-032-telegram-linking.md) | Telegram — привязка, webhook и подписки | FEAT-007 | @tsyzhman | 2026-09-25 | — |
+| [WI-033](work/WI-033-deadline-reports-delivery.md) | Отчёты дедлайна и доставка Telegram | INFRA-005, FEAT-007 | @tsyzhman | 2026-09-25 | — |
 
 ## Backlog
 
@@ -23,6 +26,7 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-030](work/archive/2026/WI-030-telegram-deadline-documentation.md) | Документация Sports trends и Telegram перед дедлайном | @tsyzhman | 2026-09-25 |
 | [WI-029](work/archive/2026/WI-029-franchises-production.md) | Выпуск «Франшиз» на сайт | @tsyzhman | 2026-09-21 |
 | [WI-028](work/archive/2026/WI-028-franchise-analytics-module.md) | Аналитика франшиз и xФО | @tsyzhman | 2026-09-21 |
 | [WI-026](work/archive/2026/WI-026-khl-hourly-ingestion.md) | Часовой сбор КХЛ и проверка всех игроков | @tsyzhman | 2026-09-20 |

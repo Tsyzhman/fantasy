@@ -11,7 +11,7 @@ const publicPaths = [
   "/api/health",
   "/api/client-errors"
 ];
-const publicPrefixes = ["/_next", "/favicon", "/team-logos", "/mode-logos", "/api/cron/", "/api/health/"];
+const publicPrefixes = ["/_next", "/favicon", "/team-logos", "/mode-logos", "/api/cron/", "/api/health/", "/api/telegram/"];
 
 export function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname;

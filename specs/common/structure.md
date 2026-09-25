@@ -6,6 +6,10 @@
 ## Franchise analytics
 `src/franchises/`, `src/server/franchises/`, `src/app/franchises/`, `src/app/api/franchises/`, `scripts/franchise-analytics/` — подготовка снимка, алгоритмическая агрегация по дистанции, общий UI и xФО. Namespace: `spec://modules/franchises/FEAT-005-franchise-analytics#root`. Независим от ограничений франшизы Machete; использует общий session auth и статистику core_data.
 
+## Sports trends и Telegram deadline
+
+Contracts: `spec://modules/machete/FEAT-006-sports-popularity#root`, `spec://modules/telegram/FEAT-007-deadline-assistant#root`, `spec://modules/telegram/INFRA-005-deadline-pipeline#root`. Ownership: `src/providers/sports-ru-trends/` (feed/article HTTP и parser), `src/server/sports-trends/` (collector, ownership snapshots, scheduler), `src/machete/sports-trends.ts` (read view), `src/server/telegram/` (link service, webhook, bot API, rate limits), `src/server/deadline-reports/` (campaign planning, classifier, renderer, delivery) и `src/app/api/telegram/webhook/`. Флаги `SPORTS_TRENDS_SYNC_ENABLED`, `TELEGRAM_LINK_ENABLED`, `TELEGRAM_DEADLINE_ENABLED`, `TELEGRAM_SEND_ENABLED`, `TELEGRAM_PAID_BROADCAST_ENABLED` по умолчанию off. Existing Sports price/squad import, Sorare, scoring and session auth retain their ownership. See `docs/TELEGRAM_DEADLINE_PLAN.md`.
+
 ## Runtime
 
 - Next.js App Router, React, TypeScript (`src/app`, `next.config.mjs`).
@@ -33,6 +37,9 @@
 | Auth and shared lib | Sessions, Prisma client, request parsing, helpers | `src/lib` |
 | Ingestion jobs | Backfill, incremental update, worker loop | `scripts/ingestion-runner.ts`, `src/app/api/admin/ingestion` |
 | SorareInside starters | INFRA-004: ближайший матч, UUID-маппинг и hourly :05 | `src/providers/sorareinside/`, `src/machete/sorareinside-sync.ts`, `src/server/sorareinside-scheduler.ts`, `scripts/sync-sorareinside.ts` |
+| Sports trends | FEAT-006: лента/статьи Sports, до 15 игроков, ownership и дельта | `src/providers/sports-ru-trends/`, `src/server/sports-trends/`, `src/machete/sports-trends.ts` |
+| Telegram linking | FEAT-007: link session, код 15 секунд, webhook, подписки | `src/server/telegram/`, `src/app/api/profile/telegram/`, `src/app/api/telegram/webhook/` |
+| Deadline reports | INFRA-005: кампании 08:00/08:10/09:00, классификация, рендер, outbox | `src/server/deadline-reports/`, `scripts/deadline-reports.ts` |
 | Browser extension | Sports.ru squad transfer | `extensions/sports-squad-transfer` |
 | Schema | Canonical datamodel and migrations | `prisma` |
 

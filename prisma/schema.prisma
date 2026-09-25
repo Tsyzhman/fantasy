@@ -652,6 +652,10 @@ model User {
   fantasyProviderSquadSnapshots FantasyProviderSquadSnapshot[]
   fantasyGameweekStates         FantasyUserGameweekState[]
   fantasyChipUsages             FantasyChipUsage[]
+  telegramLink                  TelegramLink?
+  telegramSubscriptions         TelegramSubscription[]
+  telegramOutbox                TelegramOutbox[]
+  deadlineUserReports           DeadlineUserReport[]
   createdAt                     DateTime                       @default(now())
   updatedAt                     DateTime                       @updatedAt
 }
@@ -2816,4 +2820,322 @@ model BettingSyncState {
   lastError String? @map("last_error")
   summary Json?
   @@map("betting_sync_state")
+}
+
+/// @spec spec://modules/machete/FEAT-006-sports-popularity#data
+model SportsTrendSource {
+  id                String    @id @default(cuid())
+  canonicalUrl      String    @unique @map("canonical_url")
+  sourceKind        String    @default("ARTICLE") @map("source_kind")
+  title             String?
+  sourcePublishedAt DateTime? @map("source_published_at")
+  fetchedAt         DateTime  @map("fetched_at")
+  contentHash       String    @map("content_hash")
+  parserVersion     String    @map("parser_version")
+  parseStatus       String    @default("PENDING") @map("parse_status")
+  parseError        String?   @map("parse_error")
+  sourceRoundLabel  String?   @map("source_round_label")
+  revision          Int       @default(1)
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  snapshots SportsTrendSnapshot[]
+
+  @@index([parseStatus, updatedAt], map: "sports_trend_sources_status_updated_idx")
+  @@map("sports_trend_sources")
+}
+
+/// @spec spec://modules/machete/FEAT-006-sports-popularity#data
+model SportsTrendSnapshot {
+  id                String    @id @default(cuid())
+  contestId         String?   @map("contest_id")
+  provider          String    @default("SPORTS_RU")
+  season            String
+  providerRoundId   String?   @map("provider_round_id")
+  roundOrdinal      Int?      @map("round_ordinal")
+  category          String
+  metricKind        String    @default("reported_count") @map("metric_kind")
+  unit              String    @default("players")
+  populationScope   String    @default("ALL_MANAGERS") @map("population_scope")
+  sectionKey        String    @default("") @map("section_key")
+  sourceId          String?   @map("source_id")
+  revision          Int       @default(1)
+  status            String    @default("READY")
+  statusReason      String?   @map("status_reason")
+  sourceEntryCount  Int?      @map("source_entry_count")
+  observedAt        DateTime  @map("observed_at")
+  sourcePublishedAt DateTime? @map("source_published_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+
+  source  SportsTrendSource? @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  entries SportsTrendEntry[]
+
+  @@unique([sourceId, revision, category, populationScope, sectionKey], map: "sports_trend_snapshot_source_revision_section_key")
+  @@unique([contestId, category, populationScope, sectionKey, observedAt], map: "sports_trend_snapshot_contest_section_observed_key")
+  @@index([contestId, season, providerRoundId, category, observedAt], map: "sports_trend_snapshots_lookup_idx")
+  @@index([contestId, category, observedAt], map: "sports_trend_snapshots_contest_category_idx")
+  @@map("sports_trend_snapshots")
+}
+
+/// @spec spec://modules/machete/FEAT-006-sports-popularity#data
+model SportsTrendEntry {
+  id               String   @id @default(cuid())
+  snapshotId       String   @map("snapshot_id")
+  sourceRank       Int      @map("source_rank")
+  providerPlayerId String?  @map("provider_player_id")
+  playerId         BigInt?  @map("player_id")
+  sourceName       String    @map("source_name")
+  sourceTeam       String?   @map("source_team")
+  sourcePosition   String?   @map("source_position")
+  value            Float?
+  valueText        String?   @map("value_text")
+  createdAt        DateTime  @default(now()) @map("created_at")
+
+  snapshot SportsTrendSnapshot @relation(fields: [snapshotId], references: [id], onDelete: Cascade)
+
+  @@unique([snapshotId, sourceRank], map: "sports_trend_entries_snapshot_rank_key")
+  @@index([playerId], map: "sports_trend_entries_player_idx")
+  @@map("sports_trend_entries")
+}
+
+/// @spec spec://modules/telegram/FEAT-007-deadline-assistant#data
+model TelegramLink {
+  id               String    @id @default(cuid())
+  userId           String    @unique @map("user_id")
+  telegramUserId   String    @unique @map("telegram_user_id")
+  chatId           String    @map("chat_id")
+  username         String?
+  firstName        String?
+  state            String    @default("PENDING")
+  consentAt        DateTime? @map("consent_at")
+  linkVersion      Int       @default(1) @map("link_version")
+  linkSessionId    String?   @map("link_session_id")
+  pendingExpiresAt DateTime? @map("pending_expires_at")
+  lastInboundAt    DateTime? @map("last_inbound_at")
+  createdAt        DateTime  @default(now()) @map("created_at")
+  updatedAt        DateTime  @updatedAt @map("updated_at")
+
+  user          User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscriptions TelegramSubscription[]
+
+  @@index([state, pendingExpiresAt], map: "telegram_links_state_pending_idx")
+  @@map("telegram_links")
+}
+
+/// @spec spec://modules/telegram/FEAT-007-deadline-assistant#linking
+model TelegramLinkSession {
+  id        String   @id @default(cuid())
+  userId    String   @map("user_id")
+  state     String   @default("OPEN")
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  challenges TelegramLinkChallenge[]
+
+  @@index([userId, state], map: "telegram_link_sessions_user_state_idx")
+  @@index([expiresAt], map: "telegram_link_sessions_expires_idx")
+  @@map("telegram_link_sessions")
+}
+
+/// @spec spec://modules/telegram/FEAT-007-deadline-assistant#linking
+model TelegramLinkChallenge {
+  id           String    @id @default(cuid())
+  sessionId    String    @map("session_id")
+  slot         Int
+  codeDigest   String?   @unique @map("code_digest")
+  secretDigest String?   @unique @map("secret_digest")
+  expiresAt    DateTime  @map("expires_at")
+  consumedAt   DateTime? @map("consumed_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+
+  session TelegramLinkSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, slot], map: "telegram_link_challenges_session_slot_key")
+  @@map("telegram_link_challenges")
+}
+
+/// @spec spec://modules/telegram/FEAT-007-deadline-assistant#data
+model TelegramSubscription {
+  id               String   @id @default(cuid())
+  linkId           String   @map("link_id")
+  userId           String   @map("user_id")
+  contestId        String   @map("contest_id")
+  leagueId         BigInt   @map("league_id")
+  season           String
+  squadId          String?  @map("squad_id")
+  providerSquadId  String?  @map("provider_squad_id")
+  sourcePreference String   @default("SPORTS_PUBLISHED") @map("source_preference")
+  enabled          Boolean  @default(true)
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  link TelegramLink @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  user User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, contestId], map: "telegram_subscriptions_user_contest_key")
+  @@index([contestId, enabled], map: "telegram_subscriptions_contest_enabled_idx")
+  @@map("telegram_subscriptions")
+}
+
+/// @spec spec://modules/telegram/INFRA-005-deadline-pipeline#data
+model TelegramInbox {
+  id          String    @id @default(cuid())
+  botId       String    @map("bot_id")
+  updateId    BigInt    @map("update_id")
+  updateType  String?   @map("update_type")
+  payload     Json
+  state       String    @default("PENDING")
+  receivedAt  DateTime  @default(now()) @map("received_at")
+  processedAt DateTime? @map("processed_at")
+  lastError   String?   @map("last_error")
+
+  @@unique([botId, updateId], map: "telegram_inbox_bot_update_key")
+  @@index([state, receivedAt], map: "telegram_inbox_state_received_idx")
+  @@map("telegram_inbox")
+}
+
+/// @spec spec://modules/telegram/FEAT-007-deadline-assistant#linking
+model TelegramRateLimit {
+  id              String    @id
+  action          String
+  subjectHash     String    @map("subject_hash")
+  failedCount     Int       @default(0) @map("failed_count")
+  windowStartedAt DateTime  @default(now()) @map("window_started_at")
+  lockedUntil     DateTime? @map("locked_until")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  @@unique([action, subjectHash], map: "telegram_rate_limits_action_subject_key")
+  @@index([lockedUntil], map: "telegram_rate_limits_locked_idx")
+  @@map("telegram_rate_limits")
+}
+
+/// @spec spec://modules/telegram/INFRA-005-deadline-pipeline#data
+model DeadlineCampaign {
+  id              String    @id @default(cuid())
+  provider        String    @default("SPORTS_RU")
+  contestId       String    @map("contest_id")
+  season          String
+  providerRoundId String    @map("provider_round_id")
+  roundKey        String?   @map("round_key")
+  roundLabel      String?   @map("round_label")
+  deadlineAt      DateTime? @map("deadline_at")
+  deadlineSource  String?   @map("deadline_source")
+  verifiedAt      DateTime? @map("verified_at")
+  scheduleVersion String?   @map("schedule_version")
+  status          String    @default("PLANNED")
+  inputVersion    Int       @default(1) @map("input_version")
+  reportDate      String?   @map("report_date")
+  isEarlyDeadline Boolean   @default(false) @map("is_early_deadline")
+  blockedReason   String?   @map("blocked_reason")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  updatedAt       DateTime  @updatedAt @map("updated_at")
+
+  stageJobs DeadlineStageJob[]
+  snapshots DeadlineDataSnapshot[]
+  reports   DeadlineUserReport[]
+  outbox    TelegramOutbox[]
+
+  @@unique([contestId, season, providerRoundId], map: "deadline_campaigns_contest_season_round_key")
+  @@index([status, deadlineAt], map: "deadline_campaigns_status_deadline_idx")
+  @@map("deadline_campaigns")
+}
+
+/// @spec spec://modules/telegram/INFRA-005-deadline-pipeline#data
+model DeadlineStageJob {
+  id            String    @id @default(cuid())
+  campaignId    String    @map("campaign_id")
+  stage         String
+  inputVersion  Int       @map("input_version")
+  shardKey      String    @default("") @map("shard_key")
+  status        String    @default("QUEUED")
+  leaseToken    String?   @map("lease_token")
+  leaseUntil    DateTime? @map("lease_until")
+  fence         Int       @default(0)
+  attempts      Int       @default(0)
+  nextAttemptAt DateTime  @default(now()) @map("next_attempt_at")
+  dueAt         DateTime  @map("due_at")
+  startedAt     DateTime? @map("started_at")
+  finishedAt    DateTime? @map("finished_at")
+  result        Json?
+  lastError     String?   @map("last_error")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  campaign DeadlineCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, stage, inputVersion, shardKey], map: "deadline_stage_jobs_campaign_stage_version_shard_key")
+  @@index([status, nextAttemptAt], map: "deadline_stage_jobs_status_next_idx")
+  @@map("deadline_stage_jobs")
+}
+
+/// @spec spec://modules/telegram/INFRA-005-deadline-pipeline#data
+model DeadlineDataSnapshot {
+  id           String   @id @default(cuid())
+  campaignId   String   @map("campaign_id")
+  inputVersion Int      @map("input_version")
+  dataset      String
+  status       String   @default("READY")
+  revision     String?
+  coverage     Json?
+  freshness    Json?
+  capturedAt   DateTime @default(now()) @map("captured_at")
+
+  campaign DeadlineCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([campaignId, inputVersion, dataset], map: "deadline_data_snapshots_campaign_version_dataset_key")
+  @@map("deadline_data_snapshots")
+}
+
+/// @spec spec://modules/telegram/INFRA-005-deadline-pipeline#data
+model DeadlineUserReport {
+  id            String   @id @default(cuid())
+  userId        String   @map("user_id")
+  campaignId    String   @map("campaign_id")
+  reportVersion Int      @default(1) @map("report_version")
+  status        String   @default("READY")
+  renderHash    String   @map("render_hash")
+  partsCount    Int      @default(1) @map("parts_count")
+  findings      Json?
+  inputRefs     Json?
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campaign DeadlineCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, campaignId, reportVersion], map: "deadline_user_reports_user_campaign_version_key")
+  @@index([campaignId, status], map: "deadline_user_reports_campaign_status_idx")
+  @@map("deadline_user_reports")
+}
+
+/// @spec spec://modules/telegram/INFRA-005-deadline-pipeline#delivery
+model TelegramOutbox {
+  id                String    @id @default(cuid())
+  userId            String    @map("user_id")
+  campaignId        String    @map("campaign_id")
+  reportKind        String    @default("DEADLINE_REPORT") @map("report_kind")
+  partNumber        Int       @default(1) @map("part_number")
+  partsCount        Int       @default(1) @map("parts_count")
+  reportVersion     Int       @default(1) @map("report_version")
+  linkVersion       Int       @default(1) @map("link_version")
+  state             String    @default("PENDING")
+  nextAttemptAt     DateTime  @default(now()) @map("next_attempt_at")
+  attempts          Int       @default(0)
+  leaseToken        String?   @map("lease_token")
+  leaseUntil        DateTime? @map("lease_until")
+  telegramMessageId String?   @map("telegram_message_id")
+  text              String
+  sentAt            DateTime? @map("sent_at")
+  lastError         String?   @map("last_error")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  user     User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  campaign DeadlineCampaign @relation(fields: [campaignId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, campaignId, reportKind, partNumber], map: "telegram_outbox_user_campaign_kind_part_key")
+  @@index([state, nextAttemptAt], map: "telegram_outbox_state_next_idx")
+  @@map("telegram_outbox")
 }

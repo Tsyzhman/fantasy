@@ -1,8 +1,10 @@
 import { I18nText } from "@/components/i18n-text";
 import { FplProfileSettings } from "@/components/fpl-profile-settings";
 import { SportsRuProfileSettings } from "@/components/sports-ru-profile-settings";
+import { TelegramSettings } from "@/components/telegram-settings";
 import { requireCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
+import { telegramLinkEnabled } from "@/server/telegram/config";
 
 export const dynamic = "force-dynamic";
 
@@ -26,6 +28,12 @@ export default async function ProfilePage() {
           <FplProfileSettings initialValue={fplProfile?.providerUserId ?? ""} />
         </div>
       </section>
+      {telegramLinkEnabled() ? (
+        <section className="mt-6">
+          <h2 className="mb-2 text-lg font-bold text-ink"><I18nText en="Deadline notifications" ru="Уведомления перед дедлайном" /></h2>
+          <TelegramSettings />
+        </section>
+      ) : null}
     </main>
   );
 }

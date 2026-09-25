@@ -40,6 +40,10 @@ export async function register() {
     const { startFoontasyForecastScheduler } = await import("./server/foontasy-forecast-scheduler");
     const { startFantasyModelForecastScheduler } = await import("./server/fantasy-model-forecast-scheduler");
     const { startFantasyPlayerPoolSnapshotScheduler } = await import("./server/fantasy-player-pool-snapshot-scheduler");
+    // @spec spec://modules/machete/FEAT-006-sports-popularity#scenarios
+    const { startSportsTrendsScheduler } = await import("./server/sports-trends/scheduler");
+    // @spec spec://modules/telegram/INFRA-005-deadline-pipeline#pipeline
+    const { startDeadlineReportScheduler } = await import("./server/deadline-reports/scheduler");
 
     startMacheteDailyFotMobSyncScheduler();
     startLeagueSeasonRetentionScheduler();
@@ -51,6 +55,8 @@ export async function register() {
     startFoontasyForecastScheduler();
     startFantasyModelForecastScheduler();
     startFantasyPlayerPoolSnapshotScheduler();
+    startSportsTrendsScheduler();
+    startDeadlineReportScheduler();
     startIngestionWorkerLoop();
   }
 

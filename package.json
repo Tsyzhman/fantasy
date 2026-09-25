@@ -1,6 +1,6 @@
 {
   "name": "fantasy-scout",
-  "version": "0.3.85",
+  "version": "0.3.86",
   "private": true,
   "engines": {
     "node": ">=20.9.0"
@@ -78,7 +78,9 @@
     "photos:cache-fotmob": "tsx scripts/cache-fotmob-player-photos.ts",
     "odds:sync-fonbet": "tsx scripts/sync-fonbet-fixture-odds.ts",
     "snapshots:squad": "tsx scripts/export-squad-planning-snapshots.ts",
-    "snapshots:player-pool": "tsx scripts/refresh-fantasy-player-pool-snapshots.ts"
+    "snapshots:player-pool": "tsx scripts/refresh-fantasy-player-pool-snapshots.ts",
+    "sports-trends": "tsx scripts/sports-trends.ts",
+    "deadline-reports": "tsx scripts/deadline-reports.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

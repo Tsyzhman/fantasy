@@ -1,0 +1,20 @@
+{
+  "status": "current",
+  "diagnostics": [],
+  "fingerprint": "ebe547befef35242b71d914bed5344bb3273ebe4453a014140757086646580f5",
+  "commit": "b5b5eb81cecaa3347ba5be4ffb6ce18964296738",
+  "source": "working_tree",
+  "provenance": {
+    "commit": "b5b5eb81cecaa3347ba5be4ffb6ce18964296738",
+    "source": "working_tree",
+    "observedAt": "2026-09-25T07:28:27.15Z",
+    "workingTree": {
+      "dirty": true,
+      "materialPaths": [
+        "specs/common/structure.md",
+        "specs/modules/machete/FEAT-006-sports-popularity.md",
+        "specs/SPEC-MAP.md"
+      ]
+    }
+  }
+}

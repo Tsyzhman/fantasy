@@ -226,6 +226,7 @@ export default async function FantasySquadPage({ searchParams, mode }: FantasySq
             initialSquad={data.squad}
             readiness={data.readiness}
             sportsRuSquadStatus={sportsRuSquadStatus}
+            contestId={data.contestId}
             provider={provider}
             squadApiPath={mode === "FPL" ? "/api/machete/fpl/squad" : "/api/machete/squads"}
             squadRoutePath={mode === "FPL" ? "/machete/fpl/squad" : "/machete/squad"}

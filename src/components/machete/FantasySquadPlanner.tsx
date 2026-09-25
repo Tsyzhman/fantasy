@@ -30,6 +30,7 @@ import {
   type FantasyActiveChip
 } from "@/components/machete/fantasy-squad-ui";
 import { ProjectionFormulaHoverCard } from "@/components/machete/ProjectionFormulaHoverCard";
+import { SportsTrendsPanel } from "@/components/machete/SportsTrendsPanel";
 import { FantasyFixtureCalendar } from "@/components/machete/FantasyFixtureCalendar";
 import { parseFantasyFixtureCalendar, type FantasyFixtureCalendar as FixtureCalendarData } from "@/machete/squad-fixture-calendar";
 import { SortableTable, type SortDirection } from "@/components/sortable-table";
@@ -126,6 +127,7 @@ type FantasySquadPlannerProps = {
   initialSquad: SavedFantasySquad;
   readiness: PlannerReadiness;
   sportsRuSquadStatus: SportsRuSquadSnapshotStatus | null;
+  contestId?: string | null;
   historySettings: FantasyHistorySettings;
   initialVisiblePlayerPoolColumns: string[];
   initialPlayerPoolColumnWidths: Record<string, number>;
@@ -378,7 +380,7 @@ type TransferSuggestionCalculation = {
 };
 
 /** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#scenarios */
-export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds, bookmakerFavorites, initialFixtureCalendar = null, players: initialPlayers, playerPoolHref, squadApiPath = "/api/machete/squads", squadRoutePath = "/machete/squad", initialSquad, readiness, sportsRuSquadStatus, historySettings, initialVisiblePlayerPoolColumns, initialPlayerPoolColumnWidths }: FantasySquadPlannerProps) {
+export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds, bookmakerFavorites, initialFixtureCalendar = null, players: initialPlayers, playerPoolHref, squadApiPath = "/api/machete/squads", squadRoutePath = "/machete/squad", initialSquad, readiness, sportsRuSquadStatus, contestId = null, historySettings, initialVisiblePlayerPoolColumns, initialPlayerPoolColumnWidths }: FantasySquadPlannerProps) {
   const language = useLanguage();
   const router = useRouter();
   const budgetForecastRef = useRef<HTMLDivElement>(null);
@@ -2258,6 +2260,11 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
                 rows={activeRoundBookmakerFavorites}
                 roundLabel={rounds[activeRoundOffset]?.label ?? null}
                 language={language}
+              />
+              <SportsTrendsPanel
+                contestId={contestId}
+                roundKey={rounds[activeRoundOffset]?.id ?? null}
+                roundLabel={rounds[activeRoundOffset]?.label ?? null}
               />
             </div>
           </div>
