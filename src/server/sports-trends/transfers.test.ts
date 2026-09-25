@@ -54,6 +54,14 @@ test("players without the previous tour are not invented", () => {
   assert.equal(result.losers.length, 0);
 });
 
+test("an unpublished target tour falls back to the newest charted tour", () => {
+  const players = [player("1", "Игрок", "Клуб", [["2291", "9 тур", 10], ["2290", "8 тур", 4]])];
+  const result = computeTransferDeltas(players, "2292");
+  assert.equal(result.tourId, "2291");
+  assert.equal(result.tourLabel, "9 тур");
+  assert.equal(result.gainers[0]?.valueText, "+6.00 п.п.");
+});
+
 test("zero deltas and entries above the top-10 are skipped", () => {
   const players = [
     player("0", "Ноль", "Клуб", [["10", "10", 7], ["9", "9", 7]]),

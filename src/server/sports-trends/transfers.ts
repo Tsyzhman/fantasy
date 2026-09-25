@@ -71,10 +71,13 @@ export function computeTransferDeltas(players: GraphqlPlayer[], targetTourId?: s
   const charted = players.filter((player) => (player.status?.chartSelectedBy ?? []).length > 0);
   let tourId = targetTourId ?? null;
   let tourLabel: string | null = null;
-  if (tourId) {
-    const entry = charted.find((player) => player.status?.chartSelectedBy?.some((chart) => chart.tour?.id === tourId))?.status?.chartSelectedBy?.find((chart) => chart.tour?.id === tourId);
-    tourLabel = entry?.tour?.name ?? null;
+  const targetEntry = tourId
+    ? charted.find((player) => player.status?.chartSelectedBy?.some((chart) => chart.tour?.id === tourId))?.status?.chartSelectedBy?.find((chart) => chart.tour?.id === tourId)
+    : null;
+  if (targetEntry) {
+    tourLabel = targetEntry.tour?.name ?? null;
   } else {
+    // The upcoming tour has no published ownership chart yet; fall back to the newest charted tour.
     const newest = charted[0]?.status?.chartSelectedBy?.[0];
     tourId = newest?.tour?.id ?? null;
     tourLabel = newest?.tour?.name ?? null;
@@ -269,7 +272,7 @@ export async function captureSportsTransferTrends(
       continue;
     }
     const existing = await prisma.sportsTrendSnapshot.findFirst({
-      where: { contestId: contest.id, sectionKey: "TRANSFERS_GAIN", providerRoundId: round.providerRoundId, observedAt: bucket },
+      where: { contestId: contest.id, sectionKey: { in: ["TRANSFERS_GAIN", "TRANSFERS_OFFICIAL"] }, observedAt: bucket },
       select: { id: true }
     });
     if (existing) {
@@ -297,54 +300,54 @@ export async function captureSportsTransferTrends(
     const providerRoundId = roundMatches ? round.providerRoundId : null;
     const roundOrdinal = roundMatches ? round.ordinal : null;
     const tourSuffix = trends.tourLabel ? ` Тур: ${trends.tourLabel}.` : "";
-    if (trends.official.length > 0) {
-      result.entries += await createTransferSnapshot(prisma, {
-        contestId: contest.id,
-        season: contest.season,
-        providerRoundId,
-        roundOrdinal,
-        category: "BUYS",
-        metricKind: "reported_points",
-        unit: "points",
-        sectionKey: "TRANSFERS_OFFICIAL",
-        statusReason: `${OFFICIAL_STATUS_REASON}${tourSuffix}`,
-        observedAt: bucket,
-        entries: trends.official
-      });
-      result.snapshots += 1;
-    }
-    if (trends.gainers.length > 0) {
-      result.entries += await createTransferSnapshot(prisma, {
-        contestId: contest.id,
-        season: contest.season,
-        providerRoundId,
-        roundOrdinal,
-        category: "BUYS",
-        metricKind: "ownership_delta_pp",
-        unit: "pp",
-        sectionKey: "TRANSFERS_GAIN",
-        statusReason: `${TRANSFER_STATUS_REASON}${tourSuffix}`,
-        observedAt: bucket,
-        entries: trends.gainers
-      });
-      result.snapshots += 1;
-    }
-    if (trends.losers.length > 0) {
-      result.entries += await createTransferSnapshot(prisma, {
-        contestId: contest.id,
-        season: contest.season,
-        providerRoundId,
-        roundOrdinal,
-        category: "SELLS",
-        metricKind: "ownership_delta_pp",
-        unit: "pp",
-        sectionKey: "TRANSFERS_DROP",
-        statusReason: `${TRANSFER_STATUS_REASON}${tourSuffix}`,
-        observedAt: bucket,
-        entries: trends.losers
-      });
-      result.snapshots += 1;
-    }
+    const createIfEntries = async (input: Parameters<typeof createTransferSnapshot>[1]) => {
+      if (input.entries.length === 0) return;
+      try {
+        result.entries += await createTransferSnapshot(prisma, input);
+        result.snapshots += 1;
+      } catch {
+        result.skipped += 1;
+      }
+    };
+    await createIfEntries({
+      contestId: contest.id,
+      season: contest.season,
+      providerRoundId,
+      roundOrdinal,
+      category: "BUYS",
+      metricKind: "reported_points",
+      unit: "points",
+      sectionKey: "TRANSFERS_OFFICIAL",
+      statusReason: `${OFFICIAL_STATUS_REASON}${tourSuffix}`,
+      observedAt: bucket,
+      entries: trends.official
+    });
+    await createIfEntries({
+      contestId: contest.id,
+      season: contest.season,
+      providerRoundId,
+      roundOrdinal,
+      category: "BUYS",
+      metricKind: "ownership_delta_pp",
+      unit: "pp",
+      sectionKey: "TRANSFERS_GAIN",
+      statusReason: `${TRANSFER_STATUS_REASON}${tourSuffix}`,
+      observedAt: bucket,
+      entries: trends.gainers
+    });
+    await createIfEntries({
+      contestId: contest.id,
+      season: contest.season,
+      providerRoundId,
+      roundOrdinal,
+      category: "SELLS",
+      metricKind: "ownership_delta_pp",
+      unit: "pp",
+      sectionKey: "TRANSFERS_DROP",
+      statusReason: `${TRANSFER_STATUS_REASON}${tourSuffix}`,
+      observedAt: bucket,
+      entries: trends.losers
+    });
   }
   return result;
 }
