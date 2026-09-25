@@ -128,8 +128,14 @@ export function renderDeadlineReport(input: DeadlineReportInput): RenderedDeadli
   const sections: string[] = [];
 
   if (input.squadSource.kind === "SPORTS_PUBLISHED") {
+    const tourLabel = input.squadSource.tourLabel;
+    const sourceLabel = tourLabel
+      ? /тур/i.test(tourLabel)
+        ? `опубликованный состав, ${escapeHtml(tourLabel)}`
+        : `опубликованный тур ${escapeHtml(tourLabel)}`
+      : "опубликованный состав";
     sections.push(
-      `Состав Sports: опубликованный тур ${escapeHtml(input.squadSource.tourLabel ?? "?")}, загружен ${input.squadSource.fetchedAt ? moscowTimeLabel(input.squadSource.fetchedAt) : "время неизвестно"}.` +
+      `Состав Sports: ${sourceLabel}, загружен ${input.squadSource.fetchedAt ? moscowTimeLabel(input.squadSource.fetchedAt) : "время неизвестно"}.` +
         (input.squadSource.note ? `\n${escapeHtml(input.squadSource.note)}` : "")
     );
   } else {
