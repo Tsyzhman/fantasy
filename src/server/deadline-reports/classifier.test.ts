@@ -95,7 +95,7 @@ function reportInput(overrides: Partial<DeadlineReportInput> = {}): DeadlineRepo
     fixtures: [{ home: "Arsenal", away: "Liverpool", kickoffAt: new Date("2026-09-25T15:30:00.000Z"), status: "scheduled" }],
     popularitySections: [
       {
-        category: "SELLS",
+        kind: "SELLS",
         entries: [
           { rank: 1, name: "Бруну Фернандеш", team: "Португалия", valueText: "-4,7%" },
           { rank: 2, name: "Эрлинг Холанд", team: "Норвегия", valueText: "-4,6%" }
@@ -133,7 +133,7 @@ test("report contains the tag, source, risks, three-column schedule and freshnes
 
 test("published buys and sells are included up to 10 with source; missing publication omits the block", () => {
   const sells = {
-    category: "SELLS" as const,
+    kind: "SELLS" as const,
     entries: Array.from({ length: 12 }, (_, index) => ({ rank: index + 1, name: `Продажа ${index + 1}`, team: "Клуб", valueText: `-${index + 1}%` })),
     sourceUrl: "https://www.sports.ru/football/1-x.html",
     sourcePublishedAt: "2026-09-25T05:00:00.000Z"
@@ -145,6 +145,42 @@ test("published buys and sells are included up to 10 with source; missing public
   assert.ok(!text.includes("11. Продажа 11"), "entries above the published top-10 stay out");
   const empty = renderDeadlineReport(reportInput({ popularitySections: [] }));
   assert.ok(!empty.parts[0]!.includes("Популярные"), "no fabricated popularity block");
+});
+
+test("transfer popularity sections render official top-3 and ownership-delta top-10", () => {
+  const { parts } = renderDeadlineReport(
+    reportInput({
+      popularitySections: [
+        {
+          kind: "TRANSFERS_OFFICIAL",
+          entries: [
+            { rank: 1, name: "Жилсон Беншимол", team: "Акрон", valueText: "48 очков" },
+            { rank: 2, name: "Иван Обляков", team: "ЦСКА", valueText: "56 очков" }
+          ],
+          sourceUrl: null,
+          sourcePublishedAt: null
+        },
+        {
+          kind: "TRANSFERS_GAIN",
+          entries: [{ rank: 1, name: "Жилсон Беншимол", team: "Акрон", valueText: "+8.93 п.п." }],
+          sourceUrl: null,
+          sourcePublishedAt: null
+        },
+        {
+          kind: "TRANSFERS_DROP",
+          entries: [{ rank: 1, name: "Кто-то", team: "Клуб", valueText: "-3.10 п.п." }],
+          sourceUrl: null,
+          sourcePublishedAt: null
+        }
+      ]
+    })
+  );
+  const text = parts[0]!;
+  assert.match(text, /Популярные трансферы Sports \(топ-2\):/);
+  assert.match(text, /1\. Жилсон Беншимол, Акрон — 48 очков/);
+  assert.match(text, /Трансферы Sports: рост доли выбора \(топ-1\):/);
+  assert.match(text, /1\. Жилсон Беншимол, Акрон — \+8\.93 п\.п\./);
+  assert.match(text, /Трансферы Sports: падение доли выбора \(топ-1\):/);
 });
 
 test("report escapes HTML from dynamic values", () => {

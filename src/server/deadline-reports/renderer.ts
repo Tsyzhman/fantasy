@@ -19,8 +19,10 @@ export interface DeadlinePopularityEntry {
   valueText: string | null;
 }
 
+export type DeadlinePopularityKind = "BUYS" | "SELLS" | "TRANSFERS_OFFICIAL" | "TRANSFERS_GAIN" | "TRANSFERS_DROP";
+
 export interface DeadlinePopularitySection {
-  category: "BUYS" | "SELLS";
+  kind: DeadlinePopularityKind;
   entries: DeadlinePopularityEntry[];
   sourceUrl: string | null;
   sourcePublishedAt: string | null;
@@ -98,10 +100,18 @@ function renderFindings(title: string, findings: DeadlinePlayerFinding[]): strin
   return `${title}\n${lines.join("\n")}`;
 }
 
+const POPULARITY_LABELS: Record<DeadlinePopularityKind, string> = {
+  BUYS: "Популярные покупки Sports",
+  SELLS: "Популярные продажи Sports",
+  TRANSFERS_OFFICIAL: "Популярные трансферы Sports",
+  TRANSFERS_GAIN: "Трансферы Sports: рост доли выбора",
+  TRANSFERS_DROP: "Трансферы Sports: падение доли выбора"
+};
+
 function renderPopularitySection(section: DeadlinePopularitySection): string | null {
   const entries = section.entries.slice(0, 10);
   if (entries.length === 0) return null;
-  const label = section.category === "SELLS" ? "Популярные продажи Sports" : "Популярные покупки Sports";
+  const label = POPULARITY_LABELS[section.kind] ?? POPULARITY_LABELS.BUYS;
   const lines = entries.map((entry) => `${entry.rank}. ${escapeHtml(entry.name)}${entry.team ? `, ${escapeHtml(entry.team)}` : ""} — ${escapeHtml(entry.valueText ?? "—")}`);
   const source = section.sourceUrl ? safeUrl(section.sourceUrl) : null;
   return `${label} (топ-${entries.length}):\n${lines.join("\n")}${source ? `\n<a href="${escapeHtml(source)}">источник ↗</a>` : ""}`;

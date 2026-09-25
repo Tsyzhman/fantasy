@@ -144,9 +144,10 @@ export async function buildCampaignReports(
       ...(round ? { OR: [{ providerRoundId: round.providerRoundId }, { providerRoundId: null }] } : { providerRoundId: null })
     },
     orderBy: { observedAt: "desc" },
-    take: 8,
+    take: 12,
     select: {
       category: true,
+      sectionKey: true,
       providerRoundId: true,
       sourcePublishedAt: true,
       source: { select: { canonicalUrl: true } },
@@ -157,17 +158,29 @@ export async function buildCampaignReports(
       }
     }
   });
+  const bestByKey = new Map<string, (typeof popularitySnapshots)[number]>();
+  for (const snapshot of popularitySnapshots) {
+    const key = `${snapshot.category}:${snapshot.sectionKey}`;
+    const current = bestByKey.get(key);
+    const matchesTargetRound = snapshot.providerRoundId != null && snapshot.providerRoundId === round?.providerRoundId;
+    const currentMatchesTargetRound = current?.providerRoundId != null && current.providerRoundId === round?.providerRoundId;
+    if (!current || (matchesTargetRound && !currentMatchesTargetRound)) bestByKey.set(key, snapshot);
+  }
+  const toPopularitySection = (snapshot: (typeof popularitySnapshots)[number], kind: DeadlinePopularitySection["kind"]): DeadlinePopularitySection => ({
+    kind,
+    entries: snapshot.entries.map((entry) => ({ rank: entry.sourceRank, name: entry.sourceName, team: entry.sourceTeam, valueText: entry.valueText })),
+    sourceUrl: snapshot.source?.canonicalUrl ?? null,
+    sourcePublishedAt: snapshot.sourcePublishedAt?.toISOString() ?? null
+  });
   const popularitySections: DeadlinePopularitySection[] = [];
-  for (const category of ["BUYS", "SELLS"] as const) {
-    const candidates = popularitySnapshots.filter((snapshot) => snapshot.category === category);
-    const best = candidates.find((snapshot) => snapshot.providerRoundId === round?.providerRoundId) ?? candidates[0];
-    if (!best || best.entries.length === 0) continue;
-    popularitySections.push({
-      category,
-      entries: best.entries.map((entry) => ({ rank: entry.sourceRank, name: entry.sourceName, team: entry.sourceTeam, valueText: entry.valueText })),
-      sourceUrl: best.source?.canonicalUrl ?? null,
-      sourcePublishedAt: best.sourcePublishedAt?.toISOString() ?? null
-    });
+  for (const kind of ["TRANSFERS_OFFICIAL", "TRANSFERS_GAIN", "TRANSFERS_DROP"] as const) {
+    const section = bestByKey.get(`BUYS:${kind}`) ?? bestByKey.get(`SELLS:${kind}`);
+    if (section && section.entries.length > 0) popularitySections.push(toPopularitySection(section, kind));
+  }
+  for (const [key, snapshot] of bestByKey) {
+    if (key.endsWith(":TRANSFERS_OFFICIAL") || key.endsWith(":TRANSFERS_GAIN") || key.endsWith(":TRANSFERS_DROP")) continue;
+    if (snapshot.entries.length === 0) continue;
+    popularitySections.push(toPopularitySection(snapshot, snapshot.category === "SELLS" ? "SELLS" : "BUYS"));
   }
 
   const subscriptions = await prisma.telegramSubscription.findMany({

@@ -3,6 +3,7 @@ import { createLogger } from "@/lib/logger";
 import { sportsTrendsEnabled, sportsTrendsIntervalMs } from "./config";
 import { collectSportsTrends } from "./collector";
 import { captureSportsOwnershipSnapshots, pruneSportsOwnershipHistory } from "./ownership";
+import { captureSportsTransferTrends } from "./transfers";
 
 /**
  * @spec spec://modules/machete/FEAT-006-sports-popularity#scenarios
@@ -23,6 +24,7 @@ const globalForScheduler = globalThis as unknown as {
 export interface SportsTrendsRunResult {
   collection: Awaited<ReturnType<typeof collectSportsTrends>>;
   ownership: Awaited<ReturnType<typeof captureSportsOwnershipSnapshots>>;
+  transfers: Awaited<ReturnType<typeof captureSportsTransferTrends>>;
   pruned: number;
 }
 
@@ -44,9 +46,10 @@ export async function runSportsTrendsNow(trigger: "startup" | "interval" | "manu
   try {
     const collection = await collectSportsTrends(prisma);
     const ownership = await captureSportsOwnershipSnapshots(prisma);
+    const transfers = await captureSportsTransferTrends(prisma);
     const pruned = await pruneSportsOwnershipHistory(prisma).catch(() => 0);
-    logger.info("Sports trends collection finished.", { trigger, collection, ownership, pruned });
-    return { collection, ownership, pruned };
+    logger.info("Sports trends collection finished.", { trigger, collection, ownership, transfers, pruned });
+    return { collection, ownership, transfers, pruned };
   } catch (error) {
     logger.error("Sports trends collection failed; stored ratings were preserved.", { trigger, error });
     return null;

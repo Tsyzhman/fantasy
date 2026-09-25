@@ -6,6 +6,7 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
+| [WI-037](work/WI-037-transfer-trends-message.md) | Популярные трансферы Sports в отчёте | FEAT-006, FEAT-007 | @tsyzhman | 2026-09-25 | — |
 
 ## Backlog
 
