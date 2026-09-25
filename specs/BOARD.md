@@ -6,7 +6,6 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
-| [WI-038](work/WI-038-compact-deadline-message.md) | Компактное сообщение дедлайна | FEAT-007 | @tsyzhman | 2026-09-25 | — |
 
 ## Backlog
 
@@ -24,6 +23,7 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-038](work/archive/2026/WI-038-compact-deadline-message.md) | Компактное сообщение дедлайна | @tsyzhman | 2026-09-25 |
 | [WI-037](work/archive/2026/WI-037-transfer-trends-message.md) | Популярные трансферы Sports в отчёте | @tsyzhman | 2026-09-25 |
 | [WI-036](work/archive/2026/WI-036-telegram-long-polling.md) | Long polling бота через VPN | @tsyzhman | 2026-09-25 |
 | [WI-035](work/archive/2026/WI-035-bot-greeting-and-code-result.md) | Приветствие бота и результат кода с аккаунтом | @tsyzhman | 2026-09-25 |
