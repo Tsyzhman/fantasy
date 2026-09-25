@@ -5,6 +5,11 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.88 - 2026-09-25
+
+- FEAT-007/WI-035: бот отвечает без AI — `/start` даёт приветствие и инструкцию с кодом, введённый код получает результат «подошёл/не подошёл» с email аккаунта; подтверждение на сайте остаётся обязательным, конфликт чужого Telegram аккаунт не раскрывает.
+- VPN relay: в allowlist добавлен read-only `getWebhookInfo` для операторской проверки webhook.
+
 ## 0.3.87 - 2026-09-25
 
 - FEAT-007/WI-034: сообщение дедлайна включает опубликованные Sports списки покупок и продаж (до 10 игроков, исходный порядок, значение, единица и ссылка на источник); отсутствие публикации не блокирует отчёт.

@@ -51,6 +51,7 @@ export type TelegramChallengeConsumeStatus =
 export interface TelegramChallengeConsumeResult {
   status: TelegramChallengeConsumeStatus;
   candidate: { firstName: string | null; username: string | null; telegramUserIdMasked: string } | null;
+  accountEmail: string | null;
 }
 
 export interface TelegramOverview {
@@ -240,22 +241,24 @@ export async function consumeTelegramChallenge(
       where: input.kind === "code" ? { codeDigest: digest } : { secretDigest: digest },
       include: { session: true }
     });
-    if (!challenge || challenge.consumedAt || challenge.expiresAt <= now) return { status: "EXPIRED", candidate: null };
+    if (!challenge || challenge.consumedAt || challenge.expiresAt <= now) return { status: "EXPIRED", candidate: null, accountEmail: null };
     const session = challenge.session;
     if (session.expiresAt <= now || (session.state !== "OPEN" && session.state !== "PENDING")) {
-      return { status: "EXPIRED", candidate: null };
+      return { status: "EXPIRED", candidate: null, accountEmail: null };
     }
+    const account = await tx.user.findUnique({ where: { id: session.userId }, select: { email: true } });
+    const accountEmail = account?.email ?? null;
 
     const existingLink = await tx.telegramLink.findUnique({ where: { userId: session.userId } });
     if (existingLink && existingLink.telegramUserId === input.identity.telegramUserId && existingLink.state === "PENDING") {
-      return { status: "PENDING_EXISTS", candidate: null };
+      return { status: "PENDING_EXISTS", candidate: null, accountEmail };
     }
     if (existingLink && existingLink.state !== "REVOKED") {
-      return { status: "ALREADY_LINKED", candidate: null };
+      return { status: "ALREADY_LINKED", candidate: null, accountEmail };
     }
     const otherLink = await tx.telegramLink.findUnique({ where: { telegramUserId: input.identity.telegramUserId } });
     if (otherLink && otherLink.userId !== session.userId && otherLink.state !== "REVOKED") {
-      return { status: "CONFLICT", candidate: null };
+      return { status: "CONFLICT", candidate: null, accountEmail: null };
     }
 
     await tx.telegramLink.deleteMany({
@@ -290,7 +293,8 @@ export async function consumeTelegramChallenge(
         firstName: input.identity.firstName,
         username: input.identity.username,
         telegramUserIdMasked: maskTelegramUserId(input.identity.telegramUserId)
-      }
+      },
+      accountEmail
     };
   });
 }

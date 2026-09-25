@@ -3,7 +3,7 @@ import { request } from "node:http";
 /**
  * @spec spec://modules/telegram/INFRA-005-deadline-pipeline#delivery
  */
-const TELEGRAM_METHOD_PATH = /^\/bot\d{5,}:[A-Za-z0-9_-]{10,}\/(?:sendMessage|setWebhook|deleteWebhook|getMe)$/;
+const TELEGRAM_METHOD_PATH = /^\/bot\d{5,}:[A-Za-z0-9_-]{10,}\/(?:sendMessage|setWebhook|deleteWebhook|getMe|getWebhookInfo)$/;
 export const TELEGRAM_RELAY_RESPONSE_MAX_BYTES = 64 * 1024;
 export const TELEGRAM_RELAY_DEFAULT_TIMEOUT_MS = 20_000;
 

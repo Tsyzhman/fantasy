@@ -86,19 +86,40 @@ async function consumeWithLimits(
   return result;
 }
 
-function consumeReply(status: string): string {
-  switch (status) {
+const START_GREETING = [
+  "👋 Привет! Я помощник Fantasy Scout: присылаю отчёт по твоему составу перед дедлайном.",
+  "",
+  "Чтобы подключиться:",
+  "1. Открой свою страницу /profile на сайте Fantasy Scout.",
+  "2. Нажми «Подключить Telegram» — появится код, он обновляется каждые 15 секунд.",
+  "3. Отправь этот код сюда.",
+  "",
+  "Я проверю код и напишу, к какому аккаунту он подходит."
+].join("\n");
+
+const HELP_TEXT = [
+  "Fantasy Scout: помощник перед дедлайном.",
+  "/start — подключение и приветствие",
+  "/status — состояние подписки",
+  "/settings — настройки на сайте",
+  "/stop — пауза",
+  "/resume — возобновить",
+  "/unlink — отвязать Telegram"
+].join("\n");
+
+function consumeReply(result: { status: string; accountEmail: string | null }): string {
+  switch (result.status) {
     case "PENDING":
     case "PENDING_EXISTS":
-      return "Код принят. Вернитесь в настройки Fantasy Scout и подтвердите подключение в течение 2 минут.";
+      return `✅ Код подошёл: аккаунт ${result.accountEmail ?? "Fantasy Scout"}. Вернись на сайт и нажми «Подтвердить» в течение 2 минут.`;
     case "EXPIRED":
-      return "Код истёк или уже использован. Обновите код на сайте и попробуйте снова.";
+      return "❌ Код не подошёл: он истёк или уже использован. Обнови код на сайте и попробуй снова.";
     case "ALREADY_LINKED":
-      return "Этот аккаунт сайта уже привязан к Telegram. Откройте /status.";
+      return `ℹ️ Telegram уже подключён к аккаунту ${result.accountEmail ?? "Fantasy Scout"}. Открой /status.`;
     case "CONFLICT":
-      return "Этот Telegram уже привязан к другому аккаунту Fantasy Scout. Сначала отвяжите его в настройках того аккаунта.";
+      return "❌ Код не подошёл: этот Telegram уже привязан к другому аккаунту Fantasy Scout. Сначала отвяжи его в настройках того аккаунта.";
     default:
-      return "Не удалось принять код. Обновите код на сайте.";
+      return "❌ Код не подошёл. Обнови код на сайте и попробуй снова.";
   }
 }
 
@@ -130,17 +151,8 @@ async function handleMessage(
   if (!text) return { status: "IGNORED", reply: null };
 
   if (text === "/help") {
-    const help = [
-      "Fantasy Scout: помощник перед дедлайном.",
-      "/start — подключение и код привязки",
-      "/status — состояние подписки",
-      "/settings — настройки на сайте",
-      "/stop — пауза",
-      "/resume — возобновить",
-      "/unlink — отвязать Telegram"
-    ].join("\n");
-    await reply(deps, chatId, help);
-    return { status: "PROCESSED", reply: help };
+    await reply(deps, chatId, HELP_TEXT);
+    return { status: "PROCESSED", reply: HELP_TEXT };
   }
 
   if (text.startsWith("/start")) {
@@ -150,19 +162,19 @@ async function handleMessage(
       const value = kind === "code" ? normalizeTelegramLinkCode(payload)! : payload;
       const result = await consumeWithLimits(prisma, { telegramUserId, kind, value, identity, now });
       const replyText = result.status === "RATE_LIMITED"
-        ? `Слишком много попыток. Повторите через ${result.retryAfterSeconds} с.`
-        : consumeReply(result.status);
+        ? `Слишком много попыток. Повтори через ${result.retryAfterSeconds} с.`
+        : consumeReply(result);
       await reply(deps, chatId, replyText);
       return { status: "PROCESSED", reply: replyText };
     }
     const link = await prisma.telegramLink.findUnique({ where: { telegramUserId } });
     const replyText = link?.state === "ACTIVE"
-      ? "Telegram уже привязан. Откройте /settings, чтобы изменить турниры."
+      ? `✅ Telegram уже подключён. Открой /settings, чтобы изменить турниры, или /status для состояния.`
       : link?.state === "PAUSED"
-        ? "Подписка на паузе. Отправьте /resume, чтобы возобновить."
+        ? "Подписка на паузе. Отправь /resume, чтобы возобновить."
         : link?.state === "PENDING"
-          ? "Подключение ожидает подтверждения на сайте."
-          : "Откройте настройки Fantasy Scout, получите код и отправьте его сюда.";
+          ? "Подключение ожидает подтверждения на сайте. Открой /profile и нажми «Подтвердить»."
+          : START_GREETING;
     await reply(deps, chatId, replyText);
     return { status: "PROCESSED", reply: replyText };
   }
@@ -208,13 +220,13 @@ async function handleMessage(
   if (code) {
     const result = await consumeWithLimits(prisma, { telegramUserId, kind: "code", value: code, identity, now });
     const replyText = result.status === "RATE_LIMITED"
-      ? `Слишком много попыток. Повторите через ${result.retryAfterSeconds} с.`
-      : consumeReply(result.status);
+      ? `Слишком много попыток. Повтори через ${result.retryAfterSeconds} с.`
+      : consumeReply(result);
     await reply(deps, chatId, replyText);
     return { status: "PROCESSED", reply: replyText };
   }
 
-  const replyText = "Неизвестная команда. /help покажет доступные действия.";
+  const replyText = "Неизвестная команда. Отправь /start — покажу, как подключиться, или /help.";
   await reply(deps, chatId, replyText);
   return { status: "PROCESSED", reply: replyText };
 }

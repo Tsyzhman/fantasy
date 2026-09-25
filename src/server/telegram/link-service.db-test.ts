@@ -166,7 +166,25 @@ test("webhook accepts a code once and stores the update durably", { skip }, asyn
         }
       });
       assert.equal(result.status, "PROCESSED");
-      assert.ok(replies.some((reply) => reply.includes("Код принят")), JSON.stringify(replies));
+      assert.ok(
+        replies.some((reply) => reply.includes("Код подошёл") && reply.includes(`telegram-webhook-${suffix}@example.test`)),
+        JSON.stringify(replies)
+      );
+      const greeting = await processTelegramUpdate(
+        prisma,
+        {
+          update_id: updateId + 1,
+          message: {
+            message_id: 2,
+            from: { ...update.message.from, id: update.message.from.id + 1 },
+            chat: { ...update.message.chat, id: update.message.chat.id + 1 },
+            text: "/start"
+          }
+        },
+        { sendMessage: async (_chatId, text) => void replies.push(text) }
+      );
+      assert.equal(greeting.status, "PROCESSED");
+      assert.ok(replies.some((reply) => reply.includes("Привет") && reply.includes("Отправь этот код сюда")), JSON.stringify(replies));
       const duplicate = await processTelegramUpdate(prisma, update, { sendMessage: async () => undefined });
       assert.equal(duplicate.status, "DUPLICATE");
       assert.equal(await prisma.telegramInbox.count({ where: { botId: "123456", updateId: BigInt(updateId) } }), 1);

@@ -7,6 +7,7 @@
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
 | [WI-034](work/WI-034-deadline-popularity-message.md) | Покупки и продажи в сообщении дедлайна | FEAT-007, FEAT-006 | @tsyzhman | 2026-09-25 | — |
+| [WI-035](work/WI-035-bot-greeting-and-code-result.md) | Приветствие бота и результат кода с аккаунтом | FEAT-007 | @tsyzhman | 2026-09-25 | — |
 
 ## Backlog
 

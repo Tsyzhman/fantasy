@@ -20,6 +20,10 @@ test("relay path validation accepts only allowlisted bot methods", () => {
     telegramRelayRequestPath("/bot123456:TEST-token_ABC/setWebhook"),
     "/telegram/bot123456:TEST-token_ABC/setWebhook"
   );
+  assert.equal(
+    telegramRelayRequestPath("/bot123456:TEST-token_ABC/getWebhookInfo"),
+    "/telegram/bot123456:TEST-token_ABC/getWebhookInfo"
+  );
   assert.equal(telegramRelayRequestPath("/bot123456:TEST-token_ABC/getUpdates"), null);
   assert.equal(telegramRelayRequestPath("/bot1:short/sendMessage"), null);
   assert.equal(telegramRelayRequestPath("/api/bootstrap-static/"), null);

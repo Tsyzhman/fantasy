@@ -15,7 +15,7 @@ const maximumBodyBytes = strictInteger(process.env.FPL_RELAY_MAX_BODY_BYTES, 8 *
 const telegramOrigin = "https://api.telegram.org";
 const telegramTimeoutMs = strictInteger(process.env.TELEGRAM_RELAY_UPSTREAM_TIMEOUT_MS, 20_000, 1, 60_000);
 const telegramMaximumBodyBytes = strictInteger(process.env.TELEGRAM_RELAY_MAX_BODY_BYTES, 64 * 1024, 1, 1024 * 1024);
-const telegramPathPattern = /^\/telegram\/(bot\d{5,}:[A-Za-z0-9_-]{10,}\/(?:sendMessage|setWebhook|deleteWebhook|getMe))$/;
+const telegramPathPattern = /^\/telegram\/(bot\d{5,}:[A-Za-z0-9_-]{10,}\/(?:sendMessage|setWebhook|deleteWebhook|getMe|getWebhookInfo))$/;
 const allowedPaths = [
   // @spec spec://modules/machete/FEAT-001-global-ranking-strategy#data
   /^\/api\/entry\/[1-9]\d*\/history\/$/,
