@@ -30,4 +30,13 @@ FEAT-007 в части привязки реализована: пользова
 
 ## Result
 
-Заполняется при завершении.
+Реализована привязка Telegram (WI-032) и выпущена в production 0.3.86 (release `20260925T082846Z-v0.3.86-e14f27c`, commit `e14f27c`, deploy run 36112589545).
+
+Проверки:
+
+- `src/server/telegram/crypto.test.ts`: 6/6 — Crockford-код 12 символов, нормализация, 128-битный secret, стабильная деривация по slot, digest по kind/key, слот 15 секунд.
+- `src/server/telegram/link-service.db-test.ts`: 4/4 на PostgreSQL — полный lifecycle (session→code→consume→confirm→ACTIVE), replay=EXPIRED, конфликт Telegram ID, pause/resume, subscriptions, unlink и повторная привязка, purge pending/challenges, атомарные rate limits, webhook `/start <code>` + replay=DUPLICATE + durable inbox.
+- `npm test` 1183/0, `npm run lint` 0 errors, `npm run typecheck`, `npm run check` успешно; маршруты `/api/profile/telegram/*` и `/api/telegram/webhook` в production build.
+- Production: флаги `TELEGRAM_*` отсутствуют (0 ключей в worker), webhook отвечает 404 при выключенном `TELEGRAM_LINK_ENABLED`; секреты не коммитились (в `.env.example` только пустые имена).
+
+REVIEW: 15-секундный ручной код неудобен — основной путь deep link, fallback с grace 15 секунд. Группы, paid и обратный импорт состава вне выпуска.

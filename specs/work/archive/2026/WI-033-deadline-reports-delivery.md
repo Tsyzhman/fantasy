@@ -35,4 +35,14 @@ INFRA-005 и пользовательская часть FEAT-007 реализо
 
 ## Result
 
-Заполняется при завершении.
+Реализованы отчёты дедлайна и доставка (WI-033) и выпущены в production 0.3.86 (release `20260925T082846Z-v0.3.86-e14f27c`, commit `e14f27c`, deploy run 36112589545).
+
+Проверки:
+
+- `src/server/deadline-reports/classifier.test.ts`: 9/9 — blank только при полном календаре, OUT_OF_XI только при покрытии всех матчей двойного тура, true ALT 0 против округлённого, unknown-причины, несколько причин у игрока, bench/captain split, тег/источник/три столбца/freshness, HTML escaping, «уточняется», детерминированное разбиение ≤4096 с повтором тега и нумерацией частей.
+- `npm test` 1183/0, `npm run lint` 0 errors, `npm run typecheck`, `npm run check` успешно.
+- Миграция additive: таблицы `deadline_campaigns`, `deadline_stage_jobs`, `deadline_data_snapshots`, `deadline_user_reports`, `telegram_outbox`, `telegram_inbox`, `telegram_rate_limits` созданы; production: строка миграции в `_prisma_migrations` = 1, выборочная проверка четырёх таблиц (`telegram_outbox`, `deadline_campaigns` и trends/telegram) = 4/4.
+- Production: web/worker healthy, RestartCount 0, OOMKilled false, release identity совпала (`/api/health` 0.3.86 e14f27c); `TELEGRAM_DEADLINE_ENABLED`/`TELEGRAM_SEND_ENABLED` не заданы → shadow off, отправка невозможна.
+- CLI: `npm run deadline-reports -- plan|run|stage|build|dry-run|status`, отправка только `send --apply` при включённых флагах.
+
+REVIEW/TECHDEBT: TD-001 доставка в worker-процессе вместо отдельного контейнера; TD-002 ALT по общей формуле; TD-003 synthetic million load не проводился; TD-005 источник дедлайна не подтверждён для части лиг, gate `DEADLINE_CONFLICT`/EARLY_DEADLINE блокирует их до проверки. Paid broadcast не реализован.

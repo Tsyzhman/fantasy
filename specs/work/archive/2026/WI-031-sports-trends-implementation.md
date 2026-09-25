@@ -33,4 +33,14 @@ FEAT-006 реализована: опубликованные рейтинги S
 
 ## Result
 
-Заполняется при завершении.
+Реализован первый выпуск FEAT-006 и выпущен в production 0.3.86 (release `20260925T082846Z-v0.3.86-e14f27c`, commit `e14f27c`, deploy run 36112589545).
+
+Проверки:
+
+- `src/providers/sports-ru-trends/parser.test.ts`: 13/13 — реальная статья Sports даёт 10 покупок и 10 продаж, JSON-LD-анонс не теряет HTML-списки, позиции/топ-1000/запятые/0/15/17/повтор/неоднозначность, discovery ленты, 429/403/too-large.
+- `npm test`: 1183 теста, 0 fail; `npm run lint` 0 errors; `npm run typecheck`; `npm run check` (release:verify-version, тесты, lint, typecheck, production build) успешно.
+- Миграция `20260925081319_sports_trends_telegram_deadline` additive; production `_prisma_migrations` = 1, таблицы `sports_trend_sources`/`sports_trend_snapshots`/`sports_trend_entries` созданы (всего 4/4 целевых).
+- Production `/api/machete/sports-trends` → 401 без сессии (маршрут выпущен); collector выключен флагом `SPORTS_TRENDS_SYNC_ENABLED=false`.
+- `specs/TECHDEBT.md`: TD-004 (discovery зависит от вёрстки ленты).
+
+REVIEW: регулярность публикаций по лигам не доказана; сбор включается только для соревнований с синхронным расписанием. Панель в Squad доступна для выбранного тура. Одношаговый CLI: `npm run sports-trends -- collect|ownership|status|prune`.
