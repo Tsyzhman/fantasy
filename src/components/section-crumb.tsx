@@ -30,13 +30,19 @@ export function SectionCrumb({
         </span>
         {items.map((item, index) => {
           const last = index === items.length - 1;
-          const content = last && heading
-            ? <h1 className="inline text-[13px] font-bold leading-none text-ink">{item.label}</h1>
-            : <span className={last ? "font-bold text-ink" : undefined}>{item.label}</span>;
+          const slash = index > 0 ? <span aria-hidden="true">/</span> : null;
+          if (last && heading) {
+            return (
+              <h1 key={`${index}:current`} className="inline-flex items-center gap-1.5 text-[13px] font-bold leading-none text-ink">
+                {slash}
+                {item.label}
+              </h1>
+            );
+          }
           return (
             <span key={`${index}:${item.href ?? "current"}`} className="inline-flex items-center gap-1.5">
-              {index > 0 ? <span aria-hidden="true">/</span> : null}
-              {item.href && !last ? <Link href={item.href} className="hover:text-ink">{item.label}</Link> : content}
+              {slash}
+              {item.href && !last ? <Link href={item.href} className="hover:text-ink">{item.label}</Link> : <span className={last ? "font-bold text-ink" : undefined}>{item.label}</span>}
             </span>
           );
         })}

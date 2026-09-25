@@ -44,3 +44,21 @@ test("tournament hints resolve a single contest and reject ambiguity", () => {
   assert.equal(matchSportsTrendContest("ЧМ", candidates), null);
   assert.equal(matchSportsTrendContest(null, candidates), null);
 });
+
+test("English Sports contest names resolve hints and stay unambiguous", () => {
+  const candidates = [
+    { id: "champ", name: "Sports.ru Championship", season: "2026/2027" },
+    { id: "cl", name: "Sports.ru Champions League", season: "2026/2027" },
+    { id: "eredivisie", name: "Sports.ru Eredivisie", season: "2026/2027" },
+    { id: "laliga-a", name: "Sports.ru LaLiga", season: "2026/2027" }
+  ];
+  assert.equal(matchSportsTrendContest("Чемпионшип", candidates)?.id, "champ");
+  assert.equal(matchSportsTrendContest("Лига чемпионов", candidates)?.id, "cl");
+  assert.equal(matchSportsTrendContest("Нидерланды", candidates)?.id, "eredivisie");
+  assert.equal(matchSportsTrendContest("Ла Лига", candidates)?.id, "laliga-a");
+  const duplicatedPremier = [
+    { id: "england", name: "Sports.ru Premier League", season: "2026/2027" },
+    { id: "russia", name: "Sports.ru Premier League", season: "2026/2027" }
+  ];
+  assert.equal(matchSportsTrendContest("АПЛ", duplicatedPremier), null);
+});

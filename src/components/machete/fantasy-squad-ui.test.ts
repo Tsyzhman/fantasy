@@ -815,12 +815,12 @@ test("Sports.ru XLSX price import is not exposed on the squad page", () => {
 });
 
 test("squad page shows source freshness and has no data-tools menu", () => {
-  assert.match(fantasySquadPageSource, /Стата FotMob:/);
-  assert.match(fantasySquadPageSource, /provider === "FPL" \? "Цены FPL" : "Цены Sports\.ru"/);
-  assert.match(fantasySquadPageSource, /Кэфы букмекера:/);
-  assert.match(fantasySquadPageSource, /Самые старые флаги XI/);
-  assert.match(fantasySquadPageSource, /Самые новые флаги XI/);
-  assert.match(fantasySquadPageSource, /formatDateTime\(freshness\.fotmobStatsAt\)/);
-  assert.match(fantasySquadPageSource, /formatDateTime\(freshness\.bookmakerOddsAt\)/);
+  assert.match(fantasySquadPageSource, /<I18nText en="Freshness" ru="Свежесть" \/>/);
+  assert.match(fantasySquadPageSource, /const priceName = provider === "FPL" \? "FPL" : "Sports\.ru"/);
+  assert.match(fantasySquadPageSource, /<I18nText en="Odds" ru="Коэффициенты" \/>/);
+  assert.match(fantasySquadPageSource, /<I18nText en="Oldest XI flags" ru="Самые старые флаги XI" \/>/);
+  assert.match(fantasySquadPageSource, /<I18nText en="Newest XI flags" ru="Самые новые флаги XI" \/>/);
+  assert.match(fantasySquadPageSource, /formatDateTime\(fotmobStatsAt\)/);
+  assert.match(fantasySquadPageSource, /formatDateTime\(bookmakerOddsAt\)/);
   assert.doesNotMatch(fantasySquadPageSource, /Data tools|Инструменты|squadExportHref/);
 });

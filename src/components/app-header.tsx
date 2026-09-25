@@ -122,6 +122,9 @@ function HeaderNavigationItems({ pathname, user, logout }: {
       <HeaderLink href="/machete/models" active={pathname.startsWith("/machete/models")}>
         <I18nText en="Model" ru="Модель" />
       </HeaderLink>
+      <HeaderLink href="/machete/sync-jobs" active={pathname.startsWith("/machete/sync-jobs")}>
+        <I18nText en="Data jobs" ru="Задачи данных" />
+      </HeaderLink>
       {user?.role === "ADMIN" ? (
         <HeaderLink href="/admin/ingestion" active={pathname.startsWith("/admin")}>
           <I18nText en="Admin" ru="Админ" />

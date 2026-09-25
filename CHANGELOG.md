@@ -5,6 +5,12 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.90 - 2026-09-25
+
+- Шапка: пункты без иконок. Вторая навигация раздела заменена путём «Machete / страница». На составе лига и свежесть стоят в этой строке. «Задачи данных» перенесены в общую шапку.
+- FEAT-006/FEAT-007: теги и маппинг трендов понимают английские названия турниров Sports (`Championship`, `Premier League`, `Champions League`, `LaLiga`, `Bundesliga`, `Serie A`, `Ligue 1`, `Eredivisie`, `Liga Portugal`, `Super Lig`); добавлен тег `#Турция`.
+- Проверено на реальном отчёте Championship через production pipeline (WI-036/WI-034 verification).
+
 ## 0.3.89 - 2026-09-25
 
 - FEAT-007/WI-036: бот получает updates через long polling (`getUpdates`) поверх VPN relay в worker-роли, потому что Telegram не может открыть входящее соединение к хосту; offset продолжается от durable inbox, webhook удаляется и остаётся альтернативой.
