@@ -5,6 +5,15 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.87 - 2026-09-25
+
+- FEAT-007/WI-034: сообщение дедлайна включает опубликованные Sports списки покупок и продаж (до 10 игроков, исходный порядок, значение, единица и ссылка на источник); отсутствие публикации не блокирует отчёт.
+- Telegram Bot API идёт через существующий VPN relay (`sharovik-vpn`): тот же Unix-сокет, что у FPL, с allowlist методов `sendMessage`/`setWebhook`; прямой доступ к `api.telegram.org` без VPN не используется.
+- `/profile` автоматически показывает ротируемый каждые 15 секунд код для не привязанного пользователя; код и сессия доступны только владельцу под session auth, `no-store` и без записи открытого кода в БД/логи.
+- Deploy: `TELEGRAM_*` и `SPORTS_TRENDS_*` теперь берутся из операторского `/home/deploy/.config/fantasy-scout/notifications.env` (mode 600) в web и worker, без секретов в Git и архивах релиза.
+- Admin: `POST /api/admin/telegram/webhook` регистрирует webhook бота через VPN relay (admin session), когда появится `TELEGRAM_BOT_TOKEN`.
+- Production: включены `TELEGRAM_LINK_ENABLED`, `TELEGRAM_DEADLINE_ENABLED`, `TELEGRAM_SEND_ENABLED`, `SPORTS_TRENDS_SYNC_ENABLED`; paid broadcast остаётся false.
+
 ## 0.3.86 - 2026-09-25
 
 - FEAT-006: парсер опубликованных рейтингов Sports (покупки, продажи, владение, капитаны, до 15 игроков), история ownership и дельта в п.п. из `selectedByPercent`, bounded collector с source/revision/retention, read API и панель «Популярное на Sports» в Squad. Сбор включается `SPORTS_TRENDS_SYNC_ENABLED` (по умолчанию off).

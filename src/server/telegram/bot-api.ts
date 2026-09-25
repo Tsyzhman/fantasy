@@ -1,6 +1,8 @@
 /**
  * @spec spec://modules/telegram/INFRA-005-deadline-pipeline#delivery
  */
+import { fetchTelegramViaRelay, telegramRelaySocketPath } from "./vpn-transport";
+
 export class TelegramApiError extends Error {
   readonly status: number;
   readonly retryAfterSeconds: number | null;
@@ -23,6 +25,58 @@ interface TelegramApiResponse {
   description?: string;
   error_code?: number;
   parameters?: { retry_after?: number; migrate_to_chat_id?: number };
+}
+
+/**
+ * @spec spec://modules/telegram/INFRA-005-deadline-pipeline#delivery
+ */
+async function callTelegramApi(input: {
+  token: string;
+  method: "sendMessage" | "setWebhook";
+  payload: Record<string, unknown>;
+  fetchImpl?: typeof fetch;
+  timeoutMs?: number;
+}): Promise<TelegramApiResponse> {
+  const methodPath = `/bot${input.token}/${input.method}`;
+  const timeoutMs = input.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const relaySocketPath = telegramRelaySocketPath();
+  if (!input.fetchImpl && relaySocketPath) {
+    const response = await fetchTelegramViaRelay(relaySocketPath, methodPath, {
+      method: "POST",
+      body: JSON.stringify(input.payload),
+      timeoutMs
+    });
+    const payload = (await response.json().catch(() => null)) as TelegramApiResponse | null;
+    if (!response.ok || !payload?.ok) {
+      throw new TelegramApiError({
+        message: payload?.description ?? `Telegram relay returned status ${response.status}`,
+        status: response.status,
+        retryAfterSeconds: payload?.parameters?.retry_after ?? null,
+        blocked: isBlockedDescription(payload?.description ?? "", response.status),
+        permanent: response.status === 400
+      });
+    }
+    return payload;
+  }
+  const fetchImpl = input.fetchImpl ?? fetch;
+  const response = await fetchImpl(`https://api.telegram.org${methodPath}`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(input.payload),
+    signal: AbortSignal.timeout(timeoutMs)
+  });
+  const payload = (await response.json().catch(() => null)) as TelegramApiResponse | null;
+  if (!response.ok || !payload?.ok) {
+    const description = payload?.description ?? `Telegram request failed with status ${response.status}`;
+    throw new TelegramApiError({
+      message: description,
+      status: response.status,
+      retryAfterSeconds: payload?.parameters?.retry_after ?? null,
+      blocked: isBlockedDescription(description, response.status),
+      permanent: response.status === 400
+    });
+  }
+  return payload;
 }
 
 export interface SendTelegramMessageInput {
@@ -48,29 +102,18 @@ function isBlockedDescription(description: string, status: number): boolean {
  * @spec spec://modules/telegram/INFRA-005-deadline-pipeline#delivery
  */
 export async function sendTelegramMessage(input: SendTelegramMessageInput): Promise<SendTelegramMessageResult> {
-  const fetchImpl = input.fetchImpl ?? fetch;
-  const response = await fetchImpl(`https://api.telegram.org/bot${input.token}/sendMessage`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
+  const payload = await callTelegramApi({
+    token: input.token,
+    method: "sendMessage",
+    payload: {
       chat_id: input.chatId,
       text: input.text,
       ...(input.parseMode ? { parse_mode: input.parseMode } : {}),
       disable_web_page_preview: true
-    }),
-    signal: AbortSignal.timeout(input.timeoutMs ?? DEFAULT_TIMEOUT_MS)
+    },
+    fetchImpl: input.fetchImpl,
+    timeoutMs: input.timeoutMs
   });
-  const payload = (await response.json().catch(() => null)) as TelegramApiResponse | null;
-  if (!response.ok || !payload?.ok) {
-    const description = payload?.description ?? `Telegram request failed with status ${response.status}`;
-    throw new TelegramApiError({
-      message: description,
-      status: response.status,
-      retryAfterSeconds: payload?.parameters?.retry_after ?? null,
-      blocked: isBlockedDescription(description, response.status),
-      permanent: response.status === 400
-    });
-  }
   const messageId = payload.result?.message_id;
   return { messageId: messageId == null ? "" : String(messageId) };
 }
@@ -83,23 +126,14 @@ export interface SetTelegramWebhookInput {
 }
 
 export async function setTelegramWebhook(input: SetTelegramWebhookInput): Promise<void> {
-  const fetchImpl = input.fetchImpl ?? fetch;
-  const response = await fetchImpl(`https://api.telegram.org/bot${input.token}/setWebhook`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({
+  await callTelegramApi({
+    token: input.token,
+    method: "setWebhook",
+    payload: {
       url: input.url,
       secret_token: input.secretToken,
       allowed_updates: ["message", "callback_query", "my_chat_member"]
-    }),
-    signal: AbortSignal.timeout(DEFAULT_TIMEOUT_MS)
+    },
+    fetchImpl: input.fetchImpl
   });
-  const payload = (await response.json().catch(() => null)) as TelegramApiResponse | null;
-  if (!response.ok || !payload?.ok) {
-    throw new TelegramApiError({
-      message: payload?.description ?? `Telegram setWebhook failed with status ${response.status}`,
-      status: response.status,
-      retryAfterSeconds: payload?.parameters?.retry_after ?? null
-    });
-  }
 }

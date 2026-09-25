@@ -93,7 +93,17 @@ function reportInput(overrides: Partial<DeadlineReportInput> = {}): DeadlineRepo
       { playerId: "1", name: "Игрок А", teamName: "Arsenal", bench: false, captain: true, viceCaptain: false, reasons: [{ code: "ALT_ZERO", text: "ALT 0 — проверьте игрока" }] }
     ],
     fixtures: [{ home: "Arsenal", away: "Liverpool", kickoffAt: new Date("2026-09-25T15:30:00.000Z"), status: "scheduled" }],
-    popularity: { available: true, count: 10, sourceUrl: "https://www.sports.ru/football/1117357818-x.html" },
+    popularitySections: [
+      {
+        category: "SELLS",
+        entries: [
+          { rank: 1, name: "Бруну Фернандеш", team: "Португалия", valueText: "-4,7%" },
+          { rank: 2, name: "Эрлинг Холанд", team: "Норвегия", valueText: "-4,6%" }
+        ],
+        sourceUrl: "https://www.sports.ru/football/1117357818-x.html",
+        sourcePublishedAt: "2026-09-25T05:00:00.000Z"
+      }
+    ],
     freshness: [
       { label: "Статистика", at: new Date("2026-09-25T05:32:00.000Z"), stale: false },
       { label: "Кэфы", at: new Date("2026-09-25T05:18:00.000Z"), stale: false }
@@ -113,9 +123,28 @@ test("report contains the tag, source, risks, three-column schedule and freshnes
   assert.match(text, /⚠ Игрок А \(К\) — ALT 0 — проверьте игрока\./);
   assert.match(text, /<pre>Хозяева\s+\| дата и время МСК \| Гости\s+\n/);
   assert.match(text, /Arsenal\s+\| 18:30 25\.09\s+\| Liverpool\s+/);
-  assert.match(text, /Популярность Sports: найдено 10 · <a href="https:\/\/www\.sports\.ru/);
+  assert.match(text, /Популярные продажи Sports \(топ-2\):/);
+  assert.match(text, /1\. Бруну Фернандеш, Португалия — -4,7%/);
+  assert.match(text, /2\. Эрлинг Холанд, Норвегия — -4,6%/);
+  assert.match(text, /<a href="https:\/\/www\.sports\.ru/);
   assert.match(text, /Статистика 08:32 · Кэфы 08:18\./);
   assert.match(text, /Открыть состав ↗/);
+});
+
+test("published buys and sells are included up to 10 with source; missing publication omits the block", () => {
+  const sells = {
+    category: "SELLS" as const,
+    entries: Array.from({ length: 12 }, (_, index) => ({ rank: index + 1, name: `Продажа ${index + 1}`, team: "Клуб", valueText: `-${index + 1}%` })),
+    sourceUrl: "https://www.sports.ru/football/1-x.html",
+    sourcePublishedAt: "2026-09-25T05:00:00.000Z"
+  };
+  const { parts } = renderDeadlineReport(reportInput({ popularitySections: [sells] }));
+  const text = parts[0]!;
+  assert.match(text, /Популярные продажи Sports \(топ-10\):/);
+  assert.match(text, /10\. Продажа 10, Клуб — -10%/);
+  assert.ok(!text.includes("11. Продажа 11"), "entries above the published top-10 stay out");
+  const empty = renderDeadlineReport(reportInput({ popularitySections: [] }));
+  assert.ok(!empty.parts[0]!.includes("Популярные"), "no fabricated popularity block");
 });
 
 test("report escapes HTML from dynamic values", () => {

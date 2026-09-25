@@ -90,7 +90,7 @@ Sorare: обычный importer продолжает выполнять INFRA-00
 
 ## Telegram delivery и неоднозначный результат {#delivery}
 
-Webhook проверяет `X-Telegram-Bot-Api-Secret-Token`, HTTPS, Content-Type, размер и допустимые update types; bot token хранится только в secret env выделенного backend. Группы не могут привязать аккаунт. Повторы updates поглощает inbox. Вызовы Bot API отдельными HTTPS requests, не webhook inline response, чтобы сохранять результат и message_id.
+Webhook проверяет `X-Telegram-Bot-Api-Secret-Token`, HTTPS, Content-Type, размер и допустимые update types; bot token хранится только в secret env выделенного backend. Группы не могут привязать аккаунт. Повторы updates поглощает inbox. Вызовы Bot API отдельными HTTPS requests, не webhook inline response, чтобы сохранять результат и message_id. В production исходящие запросы Bot API идут через существующий VPN relay (тот же Unix-сокет, что у FPL relay, с allowlist `sendMessage`/`setWebhook`); прямое обращение к `api.telegram.org` без VPN namespace не используется, токен не логируется и не попадает в URL-логи.
 
 Общий исходящий budget включает отчёты и служебные ответы. Начальный бесплатный лимит приложения 25 сообщений/с (оставляет запас относительно Telegram ~30); private chat не чаще 1 сообщения/с. При нескольких дедлайнах fair scheduling с приоритетом ближайшего срока, а не одновременный burst в один chat. Начальный paid operational target 900/с, максимум провайдера 1000/с, если режим и бюджет явно включены оператором.
 
@@ -166,3 +166,4 @@ Scheduler создаёт jobs в БД; worker принимает только ca
 - REVIEW: SLA/paid бюджет не приняты; свободная очередь 25/с, `TELEGRAM_PAID_BROADCAST_ENABLED=false`.
 - 2026-09-25: создан draft на основании живого read-only обследования production и официальных лимитов Telegram.
 - 2026-09-25: переведён в `active` для реализации WI-033. Сознательные компромиссы первого выпуска: доставка выполняется ограниченным тиком в существующем worker-процессе (не отдельный контейнер), отдельный материализатор отчётов по fingerprint формулы не построен, synthetic million load не проводился. Это зафиксировано в TECHDEBT и не отменяет канон.
+- 2026-09-25: WI-034 закрепил transport-контур: Bot API через общий VPN relay, регистрация webhook отдельным admin-действием, флаги и секреты из operator env.

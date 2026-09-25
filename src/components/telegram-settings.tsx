@@ -126,6 +126,14 @@ export function TelegramSettings() {
   }, [language]);
 
   useEffect(() => {
+    if (!overview || challenge) return;
+    if (overview.state !== "UNLINKED" && overview.state !== "REVOKED") return;
+    queueMicrotask(() => {
+      void issueCode();
+    });
+  }, [overview, challenge, issueCode]);
+
+  useEffect(() => {
     if (!challenge || overview?.state === "PENDING") return;
     const rotate = () => {
       if (document.visibilityState !== "visible") return;

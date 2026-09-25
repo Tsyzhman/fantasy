@@ -156,6 +156,9 @@ test("server promoter verifies formula files, rehearses migrations, and checks e
   assert.match(promoter, /if \[\[ "\$phase" == "deployed" \]\]; then\s+exit "\$exit_code"/);
   assert.match(promoter, /mv -Tf "\$link_tmp" "\$current_link"\s+phase="deployed"/);
   assert.match(promoter, /fantasy-scout-current-rollback-\$release/);
+  assert.match(promoter, /notifications\.env/);
+  assert.match(promoter, /TELEGRAM_\|SPORTS_TRENDS_/);
+  assert.match(promoter, /Notification config must be mode 600/);
 });
 
 test("release-source verifier requires formula and version artifacts to be tracked", () => {
@@ -177,6 +180,18 @@ test("release-source verifier requires formula and version artifacts to be track
   assert.match(verifier, /verifyReleaseVersion\(\)/);
   assert.match(verifier, /Release source is dirty/);
   assert.match(verifier, /is not present on an origin remote ref/);
+});
+
+test("VPN relay proxies allowlisted Telegram Bot API methods over the shared socket", () => {
+  const relay = source("scripts/fpl-vpn-relay.mjs");
+
+  assert.match(relay, /api\.telegram\.org/);
+  assert.match(relay, /telegramPathPattern/);
+  assert.match(relay, /sendMessage/);
+  assert.match(relay, /setWebhook/);
+  assert.match(relay, /getMe/);
+  assert.match(relay, /method !== "GET" && method !== "POST"/);
+  assert.match(relay, /request body too large/);
 });
 
 function source(relativePath: string) {

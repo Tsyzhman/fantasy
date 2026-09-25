@@ -196,6 +196,12 @@ variables.
 `DATA_QUALITY_AUDIT_SCOPES` is mandatory for beta operations. Use explicit
 `<league id>:<season>` entries separated by commas or semicolons.
 
+Immutable Docker releases keep operator-owned notification configuration in
+`/home/deploy/.config/fantasy-scout/notifications.env` (mode `600`). The
+promoter merges its `TELEGRAM_*` and `SPORTS_TRENDS_*` lines into both web and
+worker, replacing previous values, so flags and secrets never live in Git or
+release archives. Missing file leaves the notification features disabled.
+
 ## Full reset
 
 This deletes the database, uploaded files, containers and old PM2 processes.

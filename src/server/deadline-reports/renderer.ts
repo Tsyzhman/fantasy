@@ -12,6 +12,20 @@ export interface DeadlineFixtureLine {
   status: string | null;
 }
 
+export interface DeadlinePopularityEntry {
+  rank: number;
+  name: string;
+  team: string | null;
+  valueText: string | null;
+}
+
+export interface DeadlinePopularitySection {
+  category: "BUYS" | "SELLS";
+  entries: DeadlinePopularityEntry[];
+  sourceUrl: string | null;
+  sourcePublishedAt: string | null;
+}
+
 export interface DeadlineReportInput {
   tag: string;
   deadlineAt: Date | null;
@@ -24,7 +38,7 @@ export interface DeadlineReportInput {
   };
   findings: DeadlinePlayerFinding[];
   fixtures: DeadlineFixtureLine[];
-  popularity: { available: boolean; count: number; sourceUrl: string | null } | null;
+  popularitySections: DeadlinePopularitySection[];
   freshness: Array<{ label: string; at: Date | null; stale: boolean }>;
   squadUrl: string;
   degraded: string[];
@@ -84,6 +98,15 @@ function renderFindings(title: string, findings: DeadlinePlayerFinding[]): strin
   return `${title}\n${lines.join("\n")}`;
 }
 
+function renderPopularitySection(section: DeadlinePopularitySection): string | null {
+  const entries = section.entries.slice(0, 10);
+  if (entries.length === 0) return null;
+  const label = section.category === "SELLS" ? "Популярные продажи Sports" : "Популярные покупки Sports";
+  const lines = entries.map((entry) => `${entry.rank}. ${escapeHtml(entry.name)}${entry.team ? `, ${escapeHtml(entry.team)}` : ""} — ${escapeHtml(entry.valueText ?? "—")}`);
+  const source = section.sourceUrl ? safeUrl(section.sourceUrl) : null;
+  return `${label} (топ-${entries.length}):\n${lines.join("\n")}${source ? `\n<a href="${escapeHtml(source)}">источник ↗</a>` : ""}`;
+}
+
 /**
  * @spec spec://modules/telegram/FEAT-007-deadline-assistant#message
  */
@@ -111,11 +134,9 @@ export function renderDeadlineReport(input: DeadlineReportInput): RenderedDeadli
 
   sections.push(renderScheduleBlock(input.fixtures));
 
-  if (input.popularity?.available) {
-    const source = input.popularity.sourceUrl ? safeUrl(input.popularity.sourceUrl) : null;
-    sections.push(
-      `Популярность Sports: найдено ${input.popularity.count}${source ? ` · <a href="${escapeHtml(source)}">источник ↗</a>` : ""}`
-    );
+  for (const popularitySection of input.popularitySections) {
+    const block = renderPopularitySection(popularitySection);
+    if (block) sections.push(block);
   }
 
   const freshness = input.freshness

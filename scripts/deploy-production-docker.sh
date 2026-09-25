@@ -377,6 +377,17 @@ if [[ -f "$sorare_env" ]]; then
 fi
 sed -i '/^SORAREINSIDE_/d' "$web_env"
 
+# @spec spec://modules/telegram/INFRA-005-deadline-pipeline#recovery
+# Operator-owned notification flags and secrets stay outside Git and release archives.
+notifications_env="/home/deploy/.config/fantasy-scout/notifications.env"
+if [[ -f "$notifications_env" ]]; then
+  [[ "$(stat -c '%a' "$notifications_env")" == "600" ]] || { echo "Notification config must be mode 600" >&2; exit 1; }
+  for runtime_env in "$web_env" "$worker_env"; do
+    sed -i -E '/^(TELEGRAM_|SPORTS_TRENDS_)/d' "$runtime_env"
+    grep -E '^(TELEGRAM_|SPORTS_TRENDS_)[A-Z0-9_]+=' "$notifications_env" >> "$runtime_env"
+  done
+fi
+
 # Public KHL catalog and local drafts are enabled independently of forecasts.
 # Explicit production configuration survives subsequent immutable releases.
 for runtime_env in "$web_env" "$worker_env"; do

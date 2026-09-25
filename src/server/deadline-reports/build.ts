@@ -9,7 +9,7 @@ import { defaultFantasyHistorySettings, fantasyHistorySettingsKey } from "@/mach
 import { fantasyProviderRoundKey } from "@/machete/squad_planner";
 import { classifyDeadlinePlayers, type DeadlinePlayerSignalInput } from "./classifier";
 import { DEADLINE_DELIVERY_HOUR, moscowDateKey, moscowDateTimeToUtc } from "./config";
-import { renderDeadlineReport, type DeadlineFixtureLine } from "./renderer";
+import { renderDeadlineReport, type DeadlineFixtureLine, type DeadlinePopularitySection } from "./renderer";
 import { deadlineTag } from "./tags";
 
 /**
@@ -136,16 +136,39 @@ export async function buildCampaignReports(
         select: { fetchedAt: true }
       })
     : null;
-  const popularitySnapshot = await prisma.sportsTrendSnapshot.findFirst({
+  const popularitySnapshots = await prisma.sportsTrendSnapshot.findMany({
     where: {
       contestId: contest.id,
-      providerRoundId: round?.providerRoundId ?? undefined,
-      category: { in: ["BUYS", "SELLS", "OWNERSHIP"] },
-      status: "READY"
+      category: { in: ["BUYS", "SELLS"] },
+      status: "READY",
+      ...(round ? { OR: [{ providerRoundId: round.providerRoundId }, { providerRoundId: null }] } : { providerRoundId: null })
     },
     orderBy: { observedAt: "desc" },
-    select: { id: true, source: { select: { canonicalUrl: true } }, sourceEntryCount: true, _count: { select: { entries: true } } }
+    take: 8,
+    select: {
+      category: true,
+      providerRoundId: true,
+      sourcePublishedAt: true,
+      source: { select: { canonicalUrl: true } },
+      entries: {
+        orderBy: { sourceRank: "asc" },
+        take: 10,
+        select: { sourceRank: true, sourceName: true, sourceTeam: true, valueText: true }
+      }
+    }
   });
+  const popularitySections: DeadlinePopularitySection[] = [];
+  for (const category of ["BUYS", "SELLS"] as const) {
+    const candidates = popularitySnapshots.filter((snapshot) => snapshot.category === category);
+    const best = candidates.find((snapshot) => snapshot.providerRoundId === round?.providerRoundId) ?? candidates[0];
+    if (!best || best.entries.length === 0) continue;
+    popularitySections.push({
+      category,
+      entries: best.entries.map((entry) => ({ rank: entry.sourceRank, name: entry.sourceName, team: entry.sourceTeam, valueText: entry.valueText })),
+      sourceUrl: best.source?.canonicalUrl ?? null,
+      sourcePublishedAt: best.sourcePublishedAt?.toISOString() ?? null
+    });
+  }
 
   const subscriptions = await prisma.telegramSubscription.findMany({
     where: { contestId: contest.id, enabled: true, link: { state: "ACTIVE" } },
@@ -170,13 +193,7 @@ export async function buildCampaignReports(
         fixtureLines,
         scheduleKnown,
         scheduleComplete,
-        popularity: popularitySnapshot
-          ? {
-              available: true,
-              count: popularitySnapshot.sourceEntryCount ?? popularitySnapshot._count.entries,
-              sourceUrl: popularitySnapshot.source?.canonicalUrl ?? null
-            }
-          : { available: false, count: 0, sourceUrl: null },
+        popularitySections,
         freshness: [
           { label: "Статистика", at: poolSnapshot?.calculatedAt ?? null, stale: false },
           { label: "Кэфы", at: oddsFreshness?.fetchedAt ?? null, stale: false }
@@ -216,7 +233,7 @@ async function buildOneReport(
     fixtureLines: DeadlineFixtureLine[];
     scheduleKnown: boolean;
     scheduleComplete: boolean;
-    popularity: { available: boolean; count: number; sourceUrl: string | null };
+    popularitySections: DeadlinePopularitySection[];
     freshness: Array<{ label: string; at: Date | null; stale: boolean }>;
     subscription: {
       id: string;
@@ -375,7 +392,7 @@ async function buildOneReport(
     },
     findings: classified.findings,
     fixtures: input.fixtureLines,
-    popularity: input.popularity.available ? input.popularity : null,
+    popularitySections: input.popularitySections,
     freshness,
     squadUrl: `${process.env.TELEGRAM_PUBLIC_BASE_URL?.trim() || "https://fantasy.tsyzhman.ru"}/machete/squad`,
     degraded
