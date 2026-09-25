@@ -30,4 +30,12 @@
 
 ## Result
 
-Заполняется при завершении.
+Реализовано и выпущено: 0.3.87 (release `20260925T094054Z-v0.3.87-29a9ead`) и далее 0.3.88/0.3.89.
+
+Проверки:
+
+- `src/server/deadline-reports/classifier.test.ts`: 10/10 — продажи и покупки включаются до 10 с источником, отсутствие публикации не создаёт блок, escaping и части 1/N сохранены.
+- `npm run check` (0.3.87): verify-version, 1183+ тестов, lint 0 errors, typecheck, build — успешно.
+- Deploy: notifications.env (mode 600) merge в web/worker; production collector создал 57 sources/57 snapshots; BUYS/SELLS пока `UNMAPPED_CONTEST`, потому что опубликованные статьи относятся к лигам вне текущих `SPORTS_RU_FANTASY_SYNC_SCOPES` (Russia/Spain/Netherlands/Portugal). Для лиг с синхронизированным расписанием блок появится автоматически.
+
+REVIEW: чтобы покупки/продажи попадали в сообщение конкретной лиги, нужен scope этой лиги в Sports sync и пройденный deadline gate. Панель Squad показывает те же данные независимо от кампании.

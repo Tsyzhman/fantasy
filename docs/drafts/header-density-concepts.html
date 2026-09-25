@@ -201,9 +201,23 @@ button:focus-visible, select:focus-visible, a:focus-visible {
 }
 .m-top.dense { min-height: 40px; padding: 4px 12px; }
 .m-top strong { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.m-top nav, .m-scrollrow { display: flex; align-items: center; gap: 2px; margin-left: auto; }
+.app { --column: 1248px; }
+.app[data-wide="1"] { --column: 1728px; }
+.m-bar, .m-top > nav, .m-scrollrow {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  width: min(100%, var(--column));
+  margin-inline: auto;
+}
 .m-top nav.wrap { flex-wrap: wrap; justify-content: flex-end; }
-.m-scrollrow { flex: 1; min-width: 0; margin-left: 0; flex-wrap: nowrap; overflow-x: auto; max-width: 100%; scrollbar-width: thin; }
+.m-top.dense > nav, .m-top.dense > .m-bar, .m-top.dense > .m-scrollrow { justify-content: flex-start; }
+.m-scrollrow { min-width: 0; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: thin; }
+.m-end { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; }
+.m-sub, .m-block, .m-league, .m-fresh, .m-inline, .m-filters, .note-card, .app > .surface, .rail-scroll {
+  width: min(100%, var(--column));
+  margin-inline: auto;
+}
 .m-link, .m-pill, .m-text, .m-popitem, .m-tool {
   display: inline-flex;
   align-items: center;
@@ -392,7 +406,7 @@ html[data-theme="dark"] .pitch { background: #0b3b34; }
 </header>
 <div class="layout">
   <div class="intro">
-    <p>На части вкладок первый экран собирается из нескольких полос. Сверху общая шапка на десяток пунктов. На страницах Machete под ней вторая навигация с почти теми же разделами. Ниже ещё заголовок, а на составе — выбор лиги высотой 48px и ряд плашек свежести. Подшапка не приклеена, но пока её не пролистаешь, поле и таблица начинаются низко. На ширине около 1280–1440 общая шапка ещё и переносится на вторую строку.</p>
+    <p>На части вкладок первый экран собирается из нескольких полос. Сверху общая шапка на десяток пунктов. На страницах Machete под ней вторая навигация с почти теми же разделами. Ниже ещё заголовок, а на составе — выбор лиги высотой 48px и ряд плашек свежести. Подшапка не приклеена, но пока её не пролистаешь, поле и таблица начинаются низко. На ширине 1280 плашки свежести переносятся ещё на одну строку: у меню уже нет запаса, не убирая пункты.</p>
     <p>Ниже — как это выглядит сейчас, и десять способов снять высоту. Палитра, Onest, радиус кнопок и сине-лиловый акцент те же. Рамка внутри карточки листается: так видно, сколько рабочей области остаётся. Цифра — высота всего, что стоит над ней, на выбранных вкладке и ширине.</p>
     <div class="legend">
       <span><i class="lg-nav"></i>Общая навигация</span>
@@ -501,7 +515,7 @@ function itemButton(id, opts = {}) {
 }
 function pop(conceptId, key, label, inner, align) {
   const open = state.menus[conceptId] === key;
-  return `<span class="pop-wrap"><button type="button" class="${label.cls || "m-link"}" data-act="menu" data-menu="${key}">${label.html}</button>${open ? `<div class="pop ${align || ""}">${inner}</div>` : ""}</span>`;
+  return `<span class="pop-wrap${label.end ? " m-end" : ""}"><button type="button" class="${label.cls || "m-link"}" data-act="menu" data-menu="${key}">${label.html}</button>${open ? `<div class="pop ${align || ""}">${inner}</div>` : ""}</span>`;
 }
 function freshButton(conceptId) {
   return pop(conceptId, "fresh", { html: "Свежесть · сегодня", cls: "m-quiet" }, `
@@ -521,7 +535,7 @@ function leagueStack() {
   return `<div class="m-league"><label class="m-field">Лига Sports.ru${leagueSelect(false)}</label><button type="button" class="m-primary" data-act="note" data-note="В приложении лига и так переключается выбором из списка. Кнопка повторяет то же действие.">Загрузить</button></div>${freshChips()}`;
 }
 function avatar(conceptId) {
-  return pop(conceptId, "avatar", { html: icon("user"), cls: "m-iconbtn slim" }, `
+  return pop(conceptId, "avatar", { html: icon("user"), cls: "m-iconbtn slim", end: true }, `
     <button type="button" class="m-popitem" data-act="missing" data-name="Профиль">Профиль</button>
     <button type="button" class="m-popitem" data-act="missing" data-name="Админ">Админ</button>
     <button type="button" class="m-popitem" data-act="theme" data-theme="toggle">Тема: ${state.theme === "dark" ? "ночь" : "день"}</button>
@@ -531,7 +545,7 @@ function avatar(conceptId) {
 function utils(slim) {
   const btn = slim ? "m-btn slim" : "m-btn";
   const iconBtn = slim ? "m-iconbtn slim" : "m-iconbtn";
-  return `<button type="button" class="${btn}" data-act="missing" data-name="Выход">Выйти</button><button type="button" class="${btn}" data-act="missing" data-name="Язык">${icon("lang")}<span>RU</span></button><button type="button" class="${iconBtn}" data-act="theme" data-theme="toggle" title="Тема">${icon(state.theme === "dark" ? "sun" : "moon")}</button>`;
+  return `<span class="m-end"><button type="button" class="${btn}" data-act="missing" data-name="Выход">Выйти</button><button type="button" class="${btn}" data-act="missing" data-name="Язык">${icon("lang")}<span>RU</span></button><button type="button" class="${iconBtn}" data-act="theme" data-theme="toggle" title="Тема">${icon(state.theme === "dark" ? "sun" : "moon")}</button></span>`;
 }
 function more(conceptId, ids) {
   return pop(conceptId, "more", { html: `Ещё ${icon("chev")}` }, ids.map((id) => itemButton(id, { cls: "m-popitem", icons: false })).join(""), "left");
@@ -611,7 +625,7 @@ function render3(id) {
   const icons = state.rail === "icons";
   const meta = SCREEN[state.screen];
   const rail = `<aside class="rail${icons ? " icons" : ""}" data-layer="rail"><button type="button" class="m-quiet" data-act="rail">${icons ? "Aa" : "Значки"}</button>${[...GLOBAL, "jobs"].map((item) => itemButton(item, { cls: "m-tool", iconsOnly: icons, icons: true })).join("")}</aside>`;
-  const top = `<header class="m-top dense"><strong style="font-size:15px">${meta.label || meta.title}</strong><span style="flex:1"></span>${meta.league ? leagueSelect(true) : ""}${meta.fresh || meta.league ? freshButton(id) : ""}${state.screen === "leagues" ? `<span class="crumb">12 лиг · 03:00 МСК</span>` : ""}${avatar(id)}</header>`;
+  const top = `<header class="m-top dense"><div class="m-bar"><strong style="font-size:15px">${meta.label}</strong><span style="flex:1"></span>${meta.league ? leagueSelect(true) : ""}${meta.fresh || meta.league ? freshButton(id) : ""}${state.screen === "leagues" ? `<span class="crumb">12 лиг · 03:00 МСК</span>` : ""}${avatar(id)}</div></header>`;
   const main = `${layer("nav", top, true)}${layer("context", filters())}<div class="rail-scroll">${surface()}</div>`;
   return app(id, `<div class="rail-app">${rail}<div class="rail-main">${main}</div></div>`, true);
 }
@@ -624,7 +638,7 @@ function render4(id) {
 function render5(id) {
   const meta = SCREEN[state.screen];
   const menu = pop(id, "brand", { html: `Разделы ${icon("chev")}`, cls: "m-btn slim" }, [...GLOBAL, "jobs"].map((item) => itemButton(item, { cls: "m-popitem", icons: false })).join(""), "left");
-  const bar = `<header class="m-top dense">${menu}<strong style="font-size:15px;margin-left:4px">${SCREEN[state.screen].label}</strong><span style="flex:1"></span>${meta.league ? leagueSelect(true) : ""}${state.screen === "leagues" ? `<span class="crumb">12 лиг · 03:00</span>` : ""}${freshButton(id)}${avatar(id)}</header>`;
+  const bar = `<header class="m-top dense"><div class="m-bar">${menu}<strong style="font-size:15px;margin-left:4px">${meta.label}</strong><span style="flex:1"></span>${meta.league ? leagueSelect(true) : ""}${state.screen === "leagues" ? `<span class="crumb">12 лиг · 03:00</span>` : ""}${freshButton(id)}${avatar(id)}</div></header>`;
   return app(id, layer("nav", bar, true) + layer("context", filters()));
 }
 function render6(id, opts = {}) {
@@ -686,6 +700,7 @@ function fit() {
   document.querySelectorAll(".frame").forEach((frame) => {
     const node = frame.querySelector(".app");
     const scale = Math.min(1, frame.clientWidth / state.width);
+    node.dataset.wide = state.width >= 1600 ? "1" : "0";
     node.style.width = `${state.width}px`;
     node.style.height = "800px";
     node.style.transformOrigin = "top left";

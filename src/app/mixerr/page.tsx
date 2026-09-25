@@ -1,4 +1,5 @@
 import { ShotMapExplorer } from "@/components/mixerr/ShotMapExplorer";
+import { SectionCrumb } from "@/components/section-crumb";
 import { I18nText } from "@/components/i18n-text";
 import { LocalizedOption } from "@/components/localized-option";
 import { AutoSubmitForm } from "@/components/players/auto-submit-form";
@@ -127,14 +128,11 @@ export default async function MixerrPage({ searchParams }: PageProps) {
     : [[], [], emptyComparison(attackingTeamId, defendingTeamId)];
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 2xl:max-w-[1600px] 3xl:max-w-[1760px]">
-      <section className="border-b border-slate-200 pb-6">
-        <p className="kicker">MiXerr / FotMob</p>
-        <h1 className="mt-2 text-[clamp(26px,3.4vw,40px)] font-bold leading-[1.08] tracking-[-0.03em] text-ink"><I18nText en="MiXerr shot maps" ru="Карты ударов Миксер" /></h1>
-      </section>
+    <main className="mx-auto max-w-7xl px-4 py-3 sm:px-6 sm:py-4 lg:px-8 2xl:max-w-[1600px] 3xl:max-w-[1760px]">
+      <SectionCrumb items={[{ label: <I18nText en="MiXerr" ru="Миксер" /> }]} />
 
       <FilterShell
-        className="mt-6"
+        className="mt-4"
         title={<I18nText en="Comparison setup" ru="Настройка сравнения" />}
         resetHref="/mixerr"
       >

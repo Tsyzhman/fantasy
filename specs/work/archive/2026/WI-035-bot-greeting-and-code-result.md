@@ -27,4 +27,12 @@
 
 ## Result
 
-Заполняется при завершении.
+Выпущено 0.3.88 (release `20260925T095553Z-v0.3.88-f4c0ba7`).
+
+Проверки:
+
+- `src/server/telegram/link-service.db-test.ts`: 4/4 на PostgreSQL — ответ на код содержит «Код подошёл» и email аккаунта; `/start` от непривязанного пользователя содержит «Привет» и инструкцию «Отправь этот код сюда»; replay остаётся DUPLICATE.
+- `npm run check` (0.3.88) успешно.
+- Production: `setWebhook` через VPN relay вернул `Webhook was set` (URL `https://fantasy.tsyzhman.ru/api/telegram/webhook`), `getMe` вернул `fantasyfootballhelpbot`. Позже webhook удалён при переходе на polling (WI-036).
+
+REVIEW: подтверждение на сайте (PENDING до `confirm`) сохранено; бот не активирует связь сам, чтобы перехваченный код не привязывал чужой Telegram. Конфликт не раскрывает чужой email.

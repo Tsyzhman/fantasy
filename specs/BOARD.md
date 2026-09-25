@@ -6,9 +6,6 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
-| [WI-034](work/WI-034-deadline-popularity-message.md) | Покупки и продажи в сообщении дедлайна | FEAT-007, FEAT-006 | @tsyzhman | 2026-09-25 | — |
-| [WI-035](work/WI-035-bot-greeting-and-code-result.md) | Приветствие бота и результат кода с аккаунтом | FEAT-007 | @tsyzhman | 2026-09-25 | — |
-| [WI-036](work/WI-036-telegram-long-polling.md) | Long polling бота через VPN | FEAT-007, INFRA-005 | @tsyzhman | 2026-09-25 | — |
 
 ## Backlog
 
@@ -26,6 +23,9 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-036](work/archive/2026/WI-036-telegram-long-polling.md) | Long polling бота через VPN | @tsyzhman | 2026-09-25 |
+| [WI-035](work/archive/2026/WI-035-bot-greeting-and-code-result.md) | Приветствие бота и результат кода с аккаунтом | @tsyzhman | 2026-09-25 |
+| [WI-034](work/archive/2026/WI-034-deadline-popularity-message.md) | Покупки и продажи в сообщении дедлайна | @tsyzhman | 2026-09-25 |
 | [WI-033](work/archive/2026/WI-033-deadline-reports-delivery.md) | Отчёты дедлайна и доставка Telegram | @tsyzhman | 2026-09-25 |
 | [WI-032](work/archive/2026/WI-032-telegram-linking.md) | Telegram — привязка, webhook и подписки | @tsyzhman | 2026-09-25 |
 | [WI-031](work/archive/2026/WI-031-sports-trends-implementation.md) | Популярность Sports — parser, история и чтение | @tsyzhman | 2026-09-25 |

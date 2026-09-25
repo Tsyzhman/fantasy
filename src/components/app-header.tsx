@@ -1,6 +1,6 @@
 "use client";
 
-import { Crosshair, Layers3, Loader2, Menu, Settings, ShieldCheck, UserRound, Users } from "lucide-react";
+import { Loader2, Menu } from "lucide-react";
 import Link, { useLinkStatus } from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useState, type ReactNode } from "react";
@@ -93,43 +93,43 @@ function HeaderNavigationItems({ pathname, user, logout }: {
 
   return (
     <>
-      <HeaderLink href="/machete/leagues" active={pathname.startsWith("/machete/leagues")} icon={<Layers3 className="h-4 w-4" />}>
+      <HeaderLink href="/machete/leagues" active={pathname.startsWith("/machete/leagues")}>
         <I18nText en="Leagues" ru="Лиги" />
       </HeaderLink>
-      <HeaderLink href="/machete/squad" active={pathname.startsWith("/machete/squad")} icon={<Users className="h-4 w-4" />}>
+      <HeaderLink href="/machete/squad" active={pathname.startsWith("/machete/squad")}>
         <I18nText en="Squad" ru="Состав" />
       </HeaderLink>
-      <HeaderLink href="/machete/fpl/squad" active={pathname.startsWith("/machete/fpl/squad")} icon={<Users className="h-4 w-4" />}>
+      <HeaderLink href="/machete/fpl/squad" active={pathname.startsWith("/machete/fpl/squad")}>
         <I18nText en="FPL" ru="FPL" />
       </HeaderLink>
-      <HeaderLink href="/machete/khl/squad" active={pathname.startsWith("/machete/khl/")} icon={<Users className="h-4 w-4" />}>
+      <HeaderLink href="/machete/khl/squad" active={pathname.startsWith("/machete/khl/")}>
         <I18nText en="KHL" ru="КХЛ" />
       </HeaderLink>
-      <HeaderLink href="/machete/players" active={pathname.startsWith("/machete/players")} icon={<UserRound className="h-4 w-4" />}>
+      <HeaderLink href="/machete/players" active={pathname.startsWith("/machete/players")}>
         <I18nText en="Players" ru="Игроки" />
       </HeaderLink>
-      <HeaderLink href="/mixerr" active={pathname.startsWith("/mixerr")} icon={<Crosshair className="h-4 w-4" />}>
+      <HeaderLink href="/mixerr" active={pathname.startsWith("/mixerr")}>
         <I18nText en="MiXerr" ru="Миксер" />
       </HeaderLink>
       {/* @spec spec://modules/franchises/FEAT-005-franchise-analytics#ui */}
-      <HeaderLink href="/franchises" active={pathname.startsWith("/franchises")} icon={<Users className="h-4 w-4" />}>
+      <HeaderLink href="/franchises" active={pathname.startsWith("/franchises")}>
         <I18nText en="Franchises" ru="Франшизы" />
       </HeaderLink>
       {/* @spec spec://modules/betting/FEAT-001-virtual-league#ui */}
-      <HeaderLink href="/betting" active={pathname.startsWith("/betting")} icon={<Users className="h-4 w-4" />}>
+      <HeaderLink href="/betting" active={pathname.startsWith("/betting")}>
         <I18nText en="Arena" ru="Арена" />
       </HeaderLink>
-      <HeaderLink href="/machete/models" active={pathname.startsWith("/machete/models")} icon={<Settings className="h-4 w-4" />}>
+      <HeaderLink href="/machete/models" active={pathname.startsWith("/machete/models")}>
         <I18nText en="Model" ru="Модель" />
       </HeaderLink>
       {user?.role === "ADMIN" ? (
-        <HeaderLink href="/admin/ingestion" active={pathname.startsWith("/admin")} icon={<ShieldCheck className="h-4 w-4" />}>
+        <HeaderLink href="/admin/ingestion" active={pathname.startsWith("/admin")}>
           <I18nText en="Admin" ru="Админ" />
         </HeaderLink>
       ) : null}
       {user ? (
         <>
-          <HeaderLink href="/profile" active={pathname === "/profile"} icon={<UserRound className="h-4 w-4" />}>
+          <HeaderLink href="/profile" active={pathname === "/profile"}>
             <I18nText en="Profile" ru="Профиль" />
           </HeaderLink>
           <button
@@ -163,7 +163,7 @@ function HeaderLink({ href, active = false, icon, children }: {
       onPointerEnter={() => router.prefetch(href)}
       onFocus={() => router.prefetch(href)}
       aria-current={active ? "page" : undefined}
-      className={cn("inline-flex shrink-0 items-center gap-2 rounded-sm px-3 py-2", active ? "bg-slate-100 text-ink" : "text-slate-600", "hover:bg-slate-100")}
+      className={cn("inline-flex shrink-0 items-center gap-1.5 rounded-sm px-2.5 py-1.5 text-sm", active ? "bg-slate-100 text-ink" : "text-slate-600", "hover:bg-slate-100")}
     >
       <HeaderLinkIcon icon={icon} />
       {children}

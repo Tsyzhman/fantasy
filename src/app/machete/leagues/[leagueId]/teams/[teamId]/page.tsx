@@ -8,7 +8,7 @@ import { MachetePlayerTable } from "@/components/machete/MachetePlayerTable";
 import { MacheteStatusBadge } from "@/components/machete/MacheteStatusBadge";
 import { MacheteTeamLogo } from "@/components/machete/MacheteTeamCard";
 import { SportsRuPlayerMappingPanel } from "@/components/machete/SportsRuPlayerMappingPanel";
-import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
+import { SectionCrumb } from "@/components/section-crumb";
 import { LocalizedOption } from "@/components/localized-option";
 import { LocalizedNumberInput } from "@/components/ui/localized-number-input";
 import { AutoSubmitForm } from "@/components/players/auto-submit-form";
@@ -133,19 +133,18 @@ export default async function MacheteTeamPage({ params, searchParams }: PageProp
   });
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8 2xl:max-w-[1600px] 3xl:max-w-[1760px]">
-        <PageBreadcrumbs
-          backHref={macheteLeagueHref(league.leagueId, league.season)}
-          backLabel={<I18nText en="Back to league" ru="Назад к лиге" />}
-          items={[
-            { label: "Machete", href: "/machete/leagues" },
-            { label: <I18nText en="Leagues" ru="Лиги" />, href: "/machete/leagues" },
-            { label: league.displayName, href: macheteLeagueHref(league.leagueId, league.season) },
-            { label: seasonTeam.team.name, href: macheteTeamHref(league.leagueId, seasonTeam.teamId) }
-          ]}
+    <main className="mx-auto max-w-7xl px-4 py-3 sm:px-6 sm:py-4 lg:px-8 2xl:max-w-[1600px] 3xl:max-w-[1760px]">
+      <SectionCrumb
+        heading={false}
+        items={[
+          { label: "Machete", href: "/machete/leagues" },
+          { label: <I18nText en="Leagues" ru="Лиги" />, href: "/machete/leagues" },
+          { label: league.displayName, href: macheteLeagueHref(league.leagueId, league.season) },
+          { label: seasonTeam.team.name }
+        ]}
       />
 
-      <section className="mt-6 ui-card p-5">
+      <section className="mt-4 ui-card p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="flex items-start gap-4">
             <MacheteTeamLogo logoUrl={teamLogoUrl} name={seasonTeam.team.name} size="lg" />
@@ -375,10 +374,6 @@ function macheteTeamRowPlayerId(rowId: string) {
 
 function macheteLeagueHref(leagueId: bigint, season: string) {
   return `/machete/leagues/${leagueId}?season=${encodeURIComponent(season)}`;
-}
-
-function macheteTeamHref(leagueId: bigint, teamId: bigint) {
-  return `/machete/leagues/${leagueId}/teams/${teamId}`;
 }
 
 function rawPayloadMatchDate(payload: unknown) {

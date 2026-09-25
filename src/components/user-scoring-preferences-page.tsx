@@ -1,9 +1,9 @@
 import { revalidatePath } from "next/cache";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 
 import { I18nText } from "@/components/i18n-text";
+import { SectionCrumb } from "@/components/section-crumb";
 import { ProjectionFormulaEditor } from "@/components/projection-formula-editor";
 import { requireCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
@@ -68,13 +68,16 @@ export async function UserScoringPreferencesPage({ searchParams }: { searchParam
   const hasPersonalProjection = preference?.alternativeProjectionFormulaConfig != null;
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
-      <Link href="/machete/players" className="text-sm font-semibold text-slate-600 hover:text-ink">
-        <I18nText en="Back to Machete players" ru="Назад к игрокам Machete" />
-      </Link>
-      <div className="mt-5">
-        <p className="kicker">Machete</p>
-        <h1 className="mt-2 text-3xl font-bold text-ink"><I18nText en="My Alt FP formula" ru="Моя формула Alt FP" /></h1>
+    <main className="mx-auto max-w-5xl px-4 py-3 sm:px-6 sm:py-4 lg:px-8">
+      <SectionCrumb
+        heading={false}
+        items={[
+          { label: "Machete", href: "/machete/leagues" },
+          { label: <I18nText en="Model" ru="Модель" /> }
+        ]}
+      />
+      <div className="mt-4">
+        <h1 className="text-2xl font-bold text-ink"><I18nText en="My Alt FP formula" ru="Моя формула Alt FP" /></h1>
         <p className="mt-2 max-w-3xl text-sm text-slate-600">
           <I18nText
             en="Alt FP in the squad planner starts with the adapted method below for every user. You can change it only for your account; Expected FP and Actual FP remain global."

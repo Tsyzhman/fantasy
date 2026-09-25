@@ -3,7 +3,6 @@ import { FranchiseSquadsPanel } from "@/components/machete/FranchiseSquadsPanel"
 import { SquadLeagueCommit, SquadLeagueSwitcher } from "@/components/machete/SquadLeagueSwitcher";
 import { I18nText } from "@/components/i18n-text";
 import { MacheteShell } from "@/components/machete/MacheteShell";
-import { AutoSubmitForm } from "@/components/players/auto-submit-form";
 import { requireCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { formatDateTime } from "@/lib/format";
@@ -95,97 +94,38 @@ export default async function FantasySquadPage({ searchParams, mode }: FantasySq
   applyFantasyHistorySearchParams(leagueHistoryParams, historySettings);
 
   return (
-    <MacheteShell compact>
-      <section className="border-b border-slate-200 py-3 sm:py-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-              <I18nText en="Fantasy planning" ru="Фэнтези-планирование" />
-            </p>
-            <h1 className="mt-0.5 text-xl font-bold text-ink sm:mt-1 sm:text-2xl">
-              <I18nText en="Squad planner" ru="Планировщик состава" />
-            </h1>
-          </div>
-        </div>
-
-        {mode === "FPL" ? (
-          <AutoSubmitForm className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] gap-2 sm:max-w-xl">
-            <input type="hidden" name="historyScope" value={historySettings.scope} />
-            <input type="hidden" name="historyWindow" value={historySettings.window} />
-            {historySettings.selectedSeasons.map((season) => <input key={season} type="hidden" name="historySeason" value={season} />)}
-            <div className="text-sm">
-              <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500"><I18nText en="Fantasy league" ru="Фэнтези-лига" /></span>
-              <div className="flex min-h-12 items-center rounded border border-slate-200 bg-slate-50 px-3 py-2 font-semibold text-slate-800">
-                <I18nText en="Fantasy Premier League · EPL CoreLeague 47" ru="Fantasy Premier League · CoreLeague АПЛ 47" />
-              </div>
-              <input type="hidden" name="leagueId" value={selectedLeagueId} />
-            </div>
-            <button type="submit" className="ui-button ui-button-primary min-h-12 self-end px-4">
-              <I18nText en="Load" ru="Загрузить" />
-            </button>
-          </AutoSubmitForm>
-        ) : (
-          <SquadLeagueSwitcher
-            pathname="/machete/squad"
-            selectedLeagueId={selectedLeagueId}
-            historyQuery={leagueHistoryParams.toString()}
-            leagues={leagues.map((league) => ({
-              leagueId: String(league.leagueId),
-              label: league.displayName
-            }))}
-          />
-        )}
-        {freshness ? (
-          <>
-          <details className="mt-3 rounded border border-slate-200 bg-white lg:hidden">
-            <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-3 px-3 text-sm font-semibold text-slate-700 [&::-webkit-details-marker]:hidden">
-              <I18nText en="Data freshness" ru="Свежесть данных" />
-              <span className="text-xs font-normal text-slate-500"><I18nText en="Show details" ru="Подробнее" /></span>
-            </summary>
-            <dl className="grid gap-2 border-t border-slate-200 p-3 text-xs text-slate-700 sm:grid-cols-2 lg:grid-cols-3">
-              <div><dt className="font-semibold text-slate-500"><I18nText en="FotMob" ru="FotMob" /></dt><dd className="mt-0.5">{formatDateTime(freshness.fotmobStatsAt)}</dd></div>
-              <div><dt className="font-semibold text-slate-500"><I18nText en={provider === "FPL" ? "FPL" : "Sports.ru"} ru={provider === "FPL" ? "FPL" : "Sports.ru"} /></dt><dd className="mt-0.5">{formatDateTime(data?.priceStatus.lastSyncedAt)}</dd></div>
-              <div><dt className="font-semibold text-slate-500"><I18nText en="Odds" ru="Коэффициенты" /></dt><dd className="mt-0.5">{formatDateTime(freshness.bookmakerOddsAt)}</dd></div>
-              <div>
-                <dt className="font-semibold text-slate-500"><I18nText en="Oldest XI flags" ru="Самые старые флаги XI" /></dt>
-                <dd className="mt-0.5">{startingXiFreshnessLabel(freshness.startingXiOldest)}</dd>
-              </div>
-              <div>
-                <dt className="font-semibold text-slate-500"><I18nText en="Newest XI flags" ru="Самые новые флаги XI" /></dt>
-                <dd className="mt-0.5">{startingXiFreshnessLabel(freshness.startingXiNewest)}</dd>
-              </div>
-            </dl>
-          </details>
-          <div className="mt-3 hidden flex-wrap items-center gap-2 text-xs text-slate-600 lg:flex">
-            <span className="font-semibold uppercase tracking-wide text-slate-500">
-              <I18nText en="Data updated · Moscow time" ru="Обновление данных · МСК" />
+    <MacheteShell
+      compact
+      tools={(
+        <>
+          {mode === "FPL" ? (
+            <span className="text-[13px] font-semibold text-slate-700">
+              <I18nText en="Fantasy Premier League" ru="Fantasy Premier League" />
             </span>
-            <span className="rounded border border-slate-200 bg-white px-2.5 py-1.5">
-              <I18nText en={`FotMob stats: ${formatDateTime(freshness.fotmobStatsAt)}`} ru={`Стата FotMob: ${formatDateTime(freshness.fotmobStatsAt)}`} />
-            </span>
-            <span className="rounded border border-slate-200 bg-white px-2.5 py-1.5" title={`${provider === "FPL" ? "Latest FPL" : "Latest Sports.ru"} fantasy-price snapshot for this league and season / ${provider === "FPL" ? "Последний снимок цен FPL" : "Последний снимок цен Sports.ru"} для этой лиги и сезона`}>
-              <I18nText en={`${provider === "FPL" ? "FPL" : "Sports.ru"} prices: ${formatDateTime(data?.priceStatus.lastSyncedAt)}`} ru={`${provider === "FPL" ? "Цены FPL" : "Цены Sports.ru"}: ${formatDateTime(data?.priceStatus.lastSyncedAt)}`} />
-            </span>
-            <span className="rounded border border-slate-200 bg-white px-2.5 py-1.5">
-              <I18nText en={`Bookmaker odds: ${formatDateTime(freshness.bookmakerOddsAt)}`} ru={`Кэфы букмекера: ${formatDateTime(freshness.bookmakerOddsAt)}`} />
-            </span>
-            <span className="rounded border border-slate-200 bg-white px-2.5 py-1.5">
-              <I18nText
-                en={`Oldest XI flags: ${startingXiFreshnessLabel(freshness.startingXiOldest)}`}
-                ru={`Самые старые флаги XI: ${startingXiFreshnessLabel(freshness.startingXiOldest)}`}
-              />
-            </span>
-            <span className="rounded border border-slate-200 bg-white px-2.5 py-1.5">
-              <I18nText
-                en={`Newest XI flags: ${startingXiFreshnessLabel(freshness.startingXiNewest)}`}
-                ru={`Самые новые флаги XI: ${startingXiFreshnessLabel(freshness.startingXiNewest)}`}
-              />
-            </span>
-          </div>
-          </>
-        ) : null}
-      </section>
-
+          ) : (
+            <SquadLeagueSwitcher
+              pathname="/machete/squad"
+              selectedLeagueId={selectedLeagueId}
+              historyQuery={leagueHistoryParams.toString()}
+              leagues={leagues.map((league) => ({
+                leagueId: String(league.leagueId),
+                label: league.displayName
+              }))}
+            />
+          )}
+          {freshness ? (
+            <SquadFreshness
+              provider={provider}
+              fotmobStatsAt={freshness.fotmobStatsAt}
+              pricesAt={data?.priceStatus.lastSyncedAt}
+              bookmakerOddsAt={freshness.bookmakerOddsAt}
+              startingXiOldest={freshness.startingXiOldest}
+              startingXiNewest={freshness.startingXiNewest}
+            />
+          ) : null}
+        </>
+      )}
+    >
       {selectedLeague ? (
         <FranchiseSquadsPanel
           leagueId={String(selectedLeague.leagueId)}
@@ -284,6 +224,44 @@ async function mergeSquadDataFreshness(
     startingXiOldest: live.startingXiOldest ?? snapshot?.startingXiOldest ?? null,
     startingXiNewest: live.startingXiNewest ?? snapshot?.startingXiNewest ?? null
   };
+}
+
+function SquadFreshness({
+  provider,
+  fotmobStatsAt,
+  pricesAt,
+  bookmakerOddsAt,
+  startingXiOldest,
+  startingXiNewest
+}: {
+  provider: string;
+  fotmobStatsAt: Parameters<typeof formatDateTime>[0];
+  pricesAt: Parameters<typeof formatDateTime>[0];
+  bookmakerOddsAt: Parameters<typeof formatDateTime>[0];
+  startingXiOldest?: { teamName: string; at: string | null } | null;
+  startingXiNewest?: { teamName: string; at: string | null } | null;
+}) {
+  const priceName = provider === "FPL" ? "FPL" : "Sports.ru";
+  return (
+    <details className="relative">
+      <summary className="flex h-8 cursor-pointer list-none items-center rounded-xl border border-slate-200 bg-white px-2.5 text-[13px] font-semibold text-slate-700 [&::-webkit-details-marker]:hidden">
+        <I18nText en="Freshness" ru="Свежесть" />
+      </summary>
+      <dl className="absolute left-0 z-30 mt-1 grid w-[min(20rem,calc(100vw-2rem))] gap-2 rounded-2xl border border-slate-200 bg-white p-3 text-xs text-slate-700 shadow-md sm:left-auto sm:right-0">
+        <div><dt className="font-semibold text-slate-500"><I18nText en="FotMob" ru="FotMob" /></dt><dd className="mt-0.5">{formatDateTime(fotmobStatsAt)}</dd></div>
+        <div><dt className="font-semibold text-slate-500">{priceName}</dt><dd className="mt-0.5">{formatDateTime(pricesAt)}</dd></div>
+        <div><dt className="font-semibold text-slate-500"><I18nText en="Odds" ru="Коэффициенты" /></dt><dd className="mt-0.5">{formatDateTime(bookmakerOddsAt)}</dd></div>
+        <div>
+          <dt className="font-semibold text-slate-500"><I18nText en="Oldest XI flags" ru="Самые старые флаги XI" /></dt>
+          <dd className="mt-0.5">{startingXiFreshnessLabel(startingXiOldest)}</dd>
+        </div>
+        <div>
+          <dt className="font-semibold text-slate-500"><I18nText en="Newest XI flags" ru="Самые новые флаги XI" /></dt>
+          <dd className="mt-0.5">{startingXiFreshnessLabel(startingXiNewest)}</dd>
+        </div>
+      </dl>
+    </details>
+  );
 }
 
 function startingXiFreshnessLabel(value?: { teamName: string; at: string | null } | null) {

@@ -54,4 +54,14 @@
 - Mitigation: подтвердить настоящий Sports deadline для каждой лиги и сохранить `deadlineSource`/`verifiedAt`.
 - Work: —
 
+### TD-006: Offset polling зависит от max(updateId) в inbox
+- Area: `telegram-polling`
+- Related specs: `spec://modules/telegram/INFRA-005-deadline-pipeline#delivery`
+- Introduced by: `WI-036`
+- Current state: offset для `getUpdates` берётся из `max(updateId)` durable inbox; synthetic webhook-апдейты с произвольными большими id могут сдвинуть offset вперёд и пропустить реальные updates.
+- Risk: пропуск сообщений после тестового/операторского synthetic webhook-вызова.
+- Trigger: ручной POST в webhook с ненастоящим update_id при включённом polling.
+- Mitigation: хранить offset в отдельном состоянии polling, а inbox использовать только для dedupe; не отправлять synthetic update_id выше реальных.
+- Work: —
+
 ## Resolved

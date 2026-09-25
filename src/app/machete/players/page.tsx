@@ -7,7 +7,7 @@ import { I18nText } from "@/components/i18n-text";
 import { LocalizedOption } from "@/components/localized-option";
 import { LocalizedNumberInput } from "@/components/ui/localized-number-input";
 import { MachetePlayerTable } from "@/components/machete/MachetePlayerTable";
-import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
+import { SectionCrumb } from "@/components/section-crumb";
 import { AutoSubmitForm } from "@/components/players/auto-submit-form";
 import { PlayerSavedViews } from "@/components/players/player-saved-views";
 import { PlayerWatchlistPanel } from "@/components/players/player-watchlist";
@@ -149,36 +149,26 @@ export default async function MachetePlayersPage({ searchParams }: PageProps) {
       : "/machete/squad";
 
   return (
-    <main className="mx-auto max-w-[1600px] px-3 py-6 sm:px-5 lg:px-6 3xl:max-w-[1920px] 3xl:px-8">
+    <main className="mx-auto max-w-[1600px] px-3 py-3 sm:px-5 lg:px-6 3xl:max-w-[1920px] 3xl:px-8">
       {resolvedSearchParams.query?.trim() &&
       players.some((player) => player.fantasyScore !== null) ? (
         <BetaJourneyMarker milestone="PLAYER_FORECAST_FOUND" />
       ) : null}
-      <PageBreadcrumbs
-        backHref="/machete/leagues"
-        backLabel={<I18nText en="Back to Machete leagues" ru="Назад к лигам Machete" />}
+      <SectionCrumb
         items={[
           { label: "Machete", href: "/machete/leagues" },
-          { label: <I18nText en="Players" ru="Игроки" />, href: "/machete/players" }
+          { label: <I18nText en="Players" ru="Игроки" /> }
         ]}
       />
-      <div className="mt-4 rounded border border-slate-200 bg-white px-4 py-4 sm:px-5">
-        <p className="kicker">
-          <I18nText en="Machete player explorer" ru="Таблица игроков Machete" />
-        </p>
-        <h1 className="mt-2 text-3xl font-bold text-ink">
-          <I18nText en="Player search and forecasts" ru="Поиск игроков и прогнозы" />
-        </h1>
-        <p className="mt-2 max-w-2xl text-sm text-slate-600">
-          <I18nText
-            en="Search real FotMob players and compare recalculated Machete forecasts. Sports.ru names and positions are used when a verified mapping exists."
-            ru="Ищите реальных игроков FotMob и сравнивайте пересчитанные прогнозы Machete. Имена и позиции Sports.ru используются только при подтверждённом сопоставлении."
-          />
-        </p>
-      </div>
+      <p className="mt-3 max-w-2xl text-sm text-slate-600">
+        <I18nText
+          en="Search real FotMob players and compare recalculated Machete forecasts. Sports.ru names and positions are used when a verified mapping exists."
+          ru="Ищите реальных игроков FotMob и сравнивайте пересчитанные прогнозы Machete. Имена и позиции Sports.ru используются только при подтверждённом сопоставлении."
+        />
+      </p>
 
       <FilterShell
-        className="mt-4"
+        className="mt-3"
         title={<I18nText en="Player filters" ru="Фильтры игроков" />}
         description={<I18nText en="Choose the working scope first; detailed filters refine the table without a separate apply button." ru="Сначала выберите рабочий скоуп; дополнительные фильтры сразу уточняют таблицу." />}
         resetHref="/machete/players"

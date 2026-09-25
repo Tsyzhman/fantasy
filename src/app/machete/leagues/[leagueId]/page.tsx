@@ -7,7 +7,6 @@ import { MacheteRosterCoverageSummary } from "@/components/machete/MacheteRoster
 import { MacheteShell } from "@/components/machete/MacheteShell";
 import { MacheteStatusBadge } from "@/components/machete/MacheteStatusBadge";
 import { MacheteTeamCard } from "@/components/machete/MacheteTeamCard";
-import { PageBreadcrumbs } from "@/components/page-breadcrumbs";
 import { AutoSubmitForm } from "@/components/players/auto-submit-form";
 import { LocalizedOption } from "@/components/localized-option";
 import { prisma } from "@/lib/db";
@@ -127,20 +126,11 @@ export default async function MacheteLeaguePage({ params, searchParams }: PagePr
   };
 
   return (
-    <MacheteShell>
-      <div className="mt-6">
-        <PageBreadcrumbs
-          backHref="/machete/leagues"
-          backLabel={<I18nText en="Back to leagues" ru="Назад к лигам" />}
-          items={[
-            { label: "Machete", href: "/machete/leagues" },
-            { label: <I18nText en="Leagues" ru="Лиги" />, href: "/machete/leagues" },
-            { label: league.displayName, href: macheteLeagueHref(league.leagueId, league.season) }
-          ]}
-        />
-      </div>
-
-      <section className="mt-8 ui-card p-5">
+    <MacheteShell
+      section={league.displayName}
+      parent={{ href: "/machete/leagues", label: <I18nText en="Leagues" ru="Лиги" /> }}
+    >
+      <section className="mt-4 ui-card p-5">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <div className="flex flex-wrap items-center gap-3">
@@ -215,10 +205,6 @@ function Metric({ label, value, accent = false }: { label: ReactNode; value: str
       <dd className={`mt-1 font-semibold ${accent ? "text-emerald-700" : "text-ink"}`}>{value}</dd>
     </div>
   );
-}
-
-function macheteLeagueHref(leagueId: bigint, season: string) {
-  return `/machete/leagues/${leagueId}?season=${encodeURIComponent(season)}`;
 }
 
 function startingXiExportHref(leagueId: bigint, season: string) {

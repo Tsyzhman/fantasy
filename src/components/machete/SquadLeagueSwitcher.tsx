@@ -112,29 +112,26 @@ export function SquadLeagueSwitcher({ pathname, selectedLeagueId, historyQuery, 
     <form
       onSubmit={submit}
       aria-busy={pending}
-      className="mt-3 grid grid-cols-[minmax(0,1fr)_auto] gap-2 sm:max-w-xl"
+      className="flex min-w-0 flex-wrap items-center gap-2"
       data-squad-league-switcher
     >
-      <label className="text-sm">
-        <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-slate-500">
+      <label className="min-w-0">
+        <span className="sr-only">
           <I18nText en="Sports.ru league" ru="Лига Sports.ru" />
         </span>
         <select
           name="leagueId"
           value={requestedLeagueId ?? selectedLeagueId}
           onChange={(event) => navigate(event.target.value)}
-          className="min-h-12 w-full rounded border border-slate-200 bg-white px-3 py-2 text-base"
+          className="h-8 max-w-full rounded-xl border border-slate-200 bg-white px-2.5 text-[13px] font-semibold text-slate-800 sm:max-w-xs"
         >
           {leagues.map((league) => (
             <option key={league.leagueId} value={league.leagueId}>{league.label}</option>
           ))}
         </select>
       </label>
-      <button type="submit" className="ui-button ui-button-primary min-h-12 self-end px-4" disabled={pending}>
-        {pending ? <I18nText en="Loading…" ru="Загрузка…" /> : <I18nText en="Load" ru="Загрузить" />}
-      </button>
       {requestedLeague ? (
-        <span className="col-span-2 text-xs font-semibold text-sky-700" role="status" aria-live="polite">
+        <span className="text-xs font-semibold text-sky-700" role="status" aria-live="polite">
           <I18nText
             en={`Opening ${requestedLeague.label}. The previous player download has been stopped.`}
             ru={`Открываю ${requestedLeague.label}. Выгрузка игроков прошлой лиги остановлена.`}

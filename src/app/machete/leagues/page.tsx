@@ -12,17 +12,7 @@ export default async function MacheteLeaguesPage() {
 
   return (
     <MacheteShell>
-      <section className="mt-8 ui-card p-5">
-        <h2 className="text-lg font-semibold text-ink">Machete</h2>
-        <p className="mt-1 text-sm text-slate-600">
-          <I18nText
-            en="FotMob data is refreshed automatically every day at 03:00 Moscow time. Manual ingestion controls live in the admin panel."
-            ru="Данные FotMob автоматически обновляются каждый день в 03:00 МСК. Ручное управление загрузкой находится в админ-панели."
-          />
-        </p>
-      </section>
-
-      <section className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+      <section className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
         {sortedLeagues.map((league) => (
           <MacheteLeagueCard key={league.id} league={league} />
         ))}
