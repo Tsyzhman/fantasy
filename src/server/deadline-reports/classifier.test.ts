@@ -89,7 +89,7 @@ function reportInput(overrides: Partial<DeadlineReportInput> = {}): DeadlineRepo
     tag: "#Англия10",
     deadlineAt: new Date("2026-09-25T15:30:00.000Z"),
     today: true,
-    squadSource: { kind: "SPORTS_PUBLISHED", tourLabel: "9", fetchedAt: new Date("2026-09-25T05:02:00.000Z"), note: "Последние замены на тур 10 могут отсутствовать." },
+    squadSource: { kind: "SPORTS_PUBLISHED", tourLabel: "9", note: "Последние замены на тур 10 могут отсутствовать." },
     findings: [
       { playerId: "1", name: "Игрок А", teamName: "Arsenal", bench: false, captain: true, viceCaptain: false, reasons: [{ code: "ALT_ZERO", text: "ALT 0 — проверьте игрока" }] }
     ],
@@ -105,29 +105,26 @@ function reportInput(overrides: Partial<DeadlineReportInput> = {}): DeadlineRepo
         sourcePublishedAt: "2026-09-25T05:00:00.000Z"
       }
     ],
-    freshness: [
-      { label: "Статистика", at: new Date("2026-09-25T05:32:00.000Z"), stale: false },
-      { label: "Кэфы", at: new Date("2026-09-25T05:18:00.000Z"), stale: false }
-    ],
     squadUrl: "https://fantasy.example/machete/squad",
     degraded: [],
     ...overrides
   };
 }
 
-test("report contains the tag, source, risks, three-column schedule and freshness", () => {
+test("report contains the tag, source, risks, plain schedule and popularity", () => {
   const { parts, partsCount } = renderDeadlineReport(reportInput());
   assert.equal(partsCount, 1);
   const text = parts[0]!;
   assert.match(text, /^#Англия10 · Дедлайн сегодня 18:30 МСК/);
-  assert.match(text, /Состав Sports: опубликованный тур 9, загружен 08:02\./);
+  assert.match(text, /Состав Sports: опубликованный тур 9\./);
+  assert.ok(!text.includes("загружен"), "no data-age timestamps in the message");
   assert.match(text, /⚠ Игрок А \(К\) — ALT 0 — проверьте игрока\./);
-  assert.match(text, /Матчи тура\n<pre>Arsenal\s+\| Liverpool\s+<\/pre>/);
+  assert.match(text, /Матчи тура\nArsenal - Liverpool\n/);
   assert.match(text, /Популярные продажи Sports \(топ-2\):/);
   assert.match(text, /1\. Бруну Фернандеш, Португалия — -4,7%/);
   assert.match(text, /2\. Эрлинг Холанд, Норвегия — -4,6%/);
   assert.match(text, /<a href="https:\/\/www\.sports\.ru/);
-  assert.match(text, /Статистика 08:32 · Кэфы 08:18\./);
+  assert.ok(!text.includes("Статистика"), "no freshness footer");
   assert.match(text, /Открыть состав ↗/);
 });
 
@@ -189,8 +186,7 @@ test("report escapes HTML from dynamic values", () => {
 
 test("missing kickoff no longer needs a fabricated time column", () => {
   const block = renderScheduleBlock([{ home: "A", away: "B", kickoffAt: null, status: null }]);
-  assert.match(block, /Матчи тура\n<pre>A\s+\| B\s+<\/pre>/);
-  assert.ok(!block.includes("уточняется"));
+  assert.equal(block, "Матчи тура\nA - B");
 });
 
 test("long reports split deterministically with the same tag and part numbers", () => {

@@ -35,13 +35,11 @@ export interface DeadlineReportInput {
   squadSource: {
     kind: "SPORTS_PUBLISHED" | "SITE_SAVED";
     tourLabel: string | null;
-    fetchedAt: Date | null;
     note: string | null;
   };
   findings: DeadlinePlayerFinding[];
   fixtures: DeadlineFixtureLine[];
   popularitySections: DeadlinePopularitySection[];
-  freshness: Array<{ label: string; at: Date | null; stale: boolean }>;
   squadUrl: string;
   degraded: string[];
   maxLength?: number;
@@ -53,7 +51,6 @@ export interface RenderedDeadlineReport {
 }
 
 const TELEGRAM_MESSAGE_LIMIT = 4096;
-const SCHEDULE_COLUMN_WIDTH = 21;
 
 export function escapeHtml(value: string): string {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -68,23 +65,10 @@ function safeUrl(value: string): string | null {
   }
 }
 
-function displayWidth(value: string): number {
-  return Array.from(value).length;
-}
-
-function fit(value: string, width: number): string {
-  const characters = Array.from(value.replace(/\s+/g, " ").trim());
-  if (characters.length > width) return `${characters.slice(0, Math.max(1, width - 1)).join("")}…`;
-  return characters.join("").padEnd(width, " ");
-}
-
 export function renderScheduleBlock(fixtures: DeadlineFixtureLine[]): string {
   if (fixtures.length === 0) return "Матчи тура\n(расписание не опубликовано)";
-  const lines = fixtures.map((fixture) => {
-    const status = fixture.status && !/scheduled|not[_ ]?started|ns/i.test(fixture.status) ? ` · ${fixture.status}` : "";
-    return `${fit(fixture.home, SCHEDULE_COLUMN_WIDTH)} | ${fit(`${fixture.away}${status}`, SCHEDULE_COLUMN_WIDTH)}`;
-  });
-  return `Матчи тура\n<pre>${escapeHtml(lines.join("\n"))}</pre>`;
+  const lines = fixtures.map((fixture) => `${escapeHtml(fixture.home)} - ${escapeHtml(fixture.away)}`);
+  return `Матчи тура\n${lines.join("\n")}`;
 }
 
 function renderFindings(title: string, findings: DeadlinePlayerFinding[]): string | null {
@@ -133,12 +117,9 @@ export function renderDeadlineReport(input: DeadlineReportInput): RenderedDeadli
         ? `опубликованный состав, ${escapeHtml(tourLabel)}`
         : `опубликованный тур ${escapeHtml(tourLabel)}`
       : "опубликованный состав";
-    sections.push(
-      `Состав Sports: ${sourceLabel}, загружен ${input.squadSource.fetchedAt ? moscowTimeLabel(input.squadSource.fetchedAt) : "время неизвестно"}.` +
-        (input.squadSource.note ? `\n${escapeHtml(input.squadSource.note)}` : "")
-    );
+    sections.push(`Состав Sports: ${sourceLabel}.` + (input.squadSource.note ? `\n${escapeHtml(input.squadSource.note)}` : ""));
   } else {
-    sections.push(`Состав Scout: сохранённый план${input.squadSource.tourLabel ? ` тура ${escapeHtml(input.squadSource.tourLabel)}` : ""} от ${input.squadSource.fetchedAt ? moscowTimeLabel(input.squadSource.fetchedAt) : "неизвестного времени"}. Не подтверждён Sports.`);
+    sections.push(`Состав Scout: сохранённый план${input.squadSource.tourLabel ? ` тура ${escapeHtml(input.squadSource.tourLabel)}` : ""}. Не подтверждён Sports.`);
   }
 
   const { starters, bench } = splitFindingsByLineup(input.findings);
@@ -153,11 +134,6 @@ export function renderDeadlineReport(input: DeadlineReportInput): RenderedDeadli
     const block = renderPopularitySection(popularitySection);
     if (block) sections.push(block);
   }
-
-  const freshness = input.freshness
-    .map((entry) => `${escapeHtml(entry.label)} ${entry.at ? moscowTimeLabel(entry.at) : "нет"}${entry.stale ? " (устарело)" : ""}`)
-    .join(" · ");
-  if (freshness) sections.push(`${freshness}.`);
 
   const squadUrl = safeUrl(input.squadUrl);
   if (squadUrl) sections.push(`<a href="${escapeHtml(squadUrl)}">Открыть состав ↗</a>`);

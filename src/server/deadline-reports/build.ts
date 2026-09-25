@@ -124,18 +124,6 @@ export async function buildCampaignReports(
     if (fixture.awayTeamId != null) fixturesByTeam.set(String(fixture.awayTeamId), (fixturesByTeam.get(String(fixture.awayTeamId)) ?? 0) + 1);
   }
 
-  const poolSnapshot = await prisma.fantasyPlayerPoolSnapshot.findFirst({
-    where: { contestId: contest.id, status: "READY" },
-    orderBy: { calculatedAt: "desc" },
-    select: { calculatedAt: true }
-  });
-  const oddsFreshness = fixtures.length > 0
-    ? await prisma.fixtureOddsSnapshot.findFirst({
-        where: { matchId: { in: fixtures.map((fixture) => fixture.matchId).filter((matchId): matchId is bigint => matchId != null) } },
-        orderBy: { fetchedAt: "desc" },
-        select: { fetchedAt: true }
-      })
-    : null;
   const popularitySnapshots = await prisma.sportsTrendSnapshot.findMany({
     where: {
       contestId: contest.id,
@@ -206,10 +194,6 @@ export async function buildCampaignReports(
         scheduleKnown,
         scheduleComplete,
         popularitySections,
-        freshness: [
-          { label: "Статистика", at: poolSnapshot?.calculatedAt ?? null, stale: false },
-          { label: "Кэфы", at: oddsFreshness?.fetchedAt ?? null, stale: false }
-        ],
         subscription,
         deliveryOpen,
         now
@@ -246,7 +230,6 @@ async function buildOneReport(
     scheduleKnown: boolean;
     scheduleComplete: boolean;
     popularitySections: DeadlinePopularitySection[];
-    freshness: Array<{ label: string; at: Date | null; stale: boolean }>;
     subscription: {
       id: string;
       userId: string;
@@ -261,7 +244,6 @@ async function buildOneReport(
   const degradedNotes: string[] = [];
   let sourcePlayers: SquadBasePlayer[] = [];
   let sourceKind: "SPORTS_PUBLISHED" | "SITE_SAVED" = input.subscription.sourcePreference === "SITE_SAVED" ? "SITE_SAVED" : "SPORTS_PUBLISHED";
-  let sourceFetchedAt: Date | null = null;
   let tourLabel: string | null = null;
 
   if (sourceKind === "SITE_SAVED") {
@@ -279,13 +261,12 @@ async function buildOneReport(
         isViceCaptain: row.isViceCaptain,
         sourceName: null
       }));
-      sourceFetchedAt = squad.updatedAt;
     }
   } else {
     const snapshot = await prisma.sportsRuSquadSnapshot.findFirst({
       where: { userId: input.subscription.userId, leagueId: input.contest.leagueId, season: input.contest.season, status: "COMPLETE" },
       orderBy: [{ completedAt: "desc" }, { fetchedAt: "desc" }],
-      select: { selections: true, fetchedAt: true, completedAt: true, tourName: true, providerTourId: true }
+      select: { selections: true, tourName: true, providerTourId: true }
     });
     if (!snapshot) {
       degradedNotes.push("опубликованный состав Sports не найден");
@@ -301,7 +282,6 @@ async function buildOneReport(
           isViceCaptain: selection.isViceCaptain === true,
           sourceName: null
         }));
-      sourceFetchedAt = snapshot.completedAt ?? snapshot.fetchedAt ?? null;
       tourLabel = snapshot.tourName ?? snapshot.providerTourId ?? null;
       if (snapshot.selections == null || sourcePlayers.length === 0) degradedNotes.push("опубликованный состав Sports пуст");
     }
@@ -344,17 +324,6 @@ async function buildOneReport(
   const poolByPlayer = new Map(pool.players.map((player) => [player.playerId, player]));
   const xiByPlayer = new Map(xiRows.map((row) => [String(row.playerId), row]));
   const lineupByTeam = new Map(teamRows.map((row) => [String(row.teamId), parseProbableLineup(row.metadata)]));
-  const observedXi = teamRows
-    .map((row) => parseProbableLineup(row.metadata)?.observedAt ?? null)
-    .filter((value): value is number => value != null);
-  const xiObservedAt = observedXi.length > 0 ? new Date(Math.max(...observedXi)) : null;
-  const freshness = [...input.freshness];
-  if (xiObservedAt) {
-    freshness.push({ label: "Прогнозы XI", at: xiObservedAt, stale: input.now.getTime() - xiObservedAt.getTime() > XI_STALE_MS });
-  } else {
-    freshness.push({ label: "Прогнозы XI", at: null, stale: false });
-  }
-  if (sourceFetchedAt) freshness.push({ label: "Состав Sports", at: sourceFetchedAt, stale: false });
 
   const signals: DeadlinePlayerSignalInput[] = sourcePlayers.map((player) => {
     const price = priceByPlayer.get(player.playerId);
@@ -399,7 +368,6 @@ async function buildOneReport(
     squadSource: {
       kind: sourceKind,
       tourLabel,
-      fetchedAt: sourceFetchedAt,
       note:
         sourceKind === "SPORTS_PUBLISHED" && input.roundLabel
           ? /тур/i.test(input.roundLabel)
@@ -410,7 +378,6 @@ async function buildOneReport(
     findings: classified.findings,
     fixtures: input.fixtureLines,
     popularitySections: input.popularitySections,
-    freshness,
     squadUrl: `${process.env.TELEGRAM_PUBLIC_BASE_URL?.trim() || "https://fantasy.tsyzhman.ru"}/machete/squad`,
     degraded
   });
