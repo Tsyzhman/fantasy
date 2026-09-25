@@ -272,7 +272,7 @@ export async function captureSportsTransferTrends(
       continue;
     }
     const existing = await prisma.sportsTrendSnapshot.findFirst({
-      where: { contestId: contest.id, sectionKey: { in: ["TRANSFERS_GAIN", "TRANSFERS_OFFICIAL"] }, observedAt: bucket },
+      where: { contestId: contest.id, sectionKey: "TRANSFERS_GAIN", observedAt: bucket },
       select: { id: true }
     });
     if (existing) {
