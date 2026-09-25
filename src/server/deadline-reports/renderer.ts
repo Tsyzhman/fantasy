@@ -81,7 +81,7 @@ function fit(value: string, width: number): string {
 export function renderScheduleBlock(fixtures: DeadlineFixtureLine[]): string {
   if (fixtures.length === 0) return "Матчи тура\n(расписание не опубликовано)";
   const lines = fixtures.map((fixture) => {
-    const status = fixture.status && !/scheduled|notstarted|ns/i.test(fixture.status) ? ` · ${fixture.status}` : "";
+    const status = fixture.status && !/scheduled|not[_ ]?started|ns/i.test(fixture.status) ? ` · ${fixture.status}` : "";
     return `${fit(fixture.home, SCHEDULE_COLUMN_WIDTH)} | ${fit(`${fixture.away}${status}`, SCHEDULE_COLUMN_WIDTH)}`;
   });
   return `Матчи тура\n<pre>${escapeHtml(lines.join("\n"))}</pre>`;

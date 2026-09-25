@@ -400,7 +400,12 @@ async function buildOneReport(
       kind: sourceKind,
       tourLabel,
       fetchedAt: sourceFetchedAt,
-      note: sourceKind === "SPORTS_PUBLISHED" && input.roundLabel ? `Последние замены на тур ${input.roundLabel} могут отсутствовать.` : null
+      note:
+        sourceKind === "SPORTS_PUBLISHED" && input.roundLabel
+          ? /тур/i.test(input.roundLabel)
+            ? `Последние замены на ${input.roundLabel} могут отсутствовать.`
+            : `Последние замены на тур ${input.roundLabel} могут отсутствовать.`
+          : null
     },
     findings: classified.findings,
     fixtures: input.fixtureLines,
