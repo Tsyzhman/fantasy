@@ -173,10 +173,9 @@ export async function buildCampaignReports(
     sourcePublishedAt: snapshot.sourcePublishedAt?.toISOString() ?? null
   });
   const popularitySections: DeadlinePopularitySection[] = [];
-  for (const kind of ["TRANSFERS_OFFICIAL", "TRANSFERS_GAIN", "TRANSFERS_DROP"] as const) {
-    const section = bestByKey.get(`BUYS:${kind}`) ?? bestByKey.get(`SELLS:${kind}`);
-    if (section && section.entries.length > 0) popularitySections.push(toPopularitySection(section, kind));
-  }
+  // The message shows the official Sports transfer list only; ownership-delta sections stay in the database.
+  const official = bestByKey.get("BUYS:TRANSFERS_OFFICIAL") ?? bestByKey.get("SELLS:TRANSFERS_OFFICIAL");
+  if (official && official.entries.length > 0) popularitySections.push(toPopularitySection(official, "TRANSFERS_OFFICIAL"));
   for (const [key, snapshot] of bestByKey) {
     if (key.endsWith(":TRANSFERS_OFFICIAL") || key.endsWith(":TRANSFERS_GAIN") || key.endsWith(":TRANSFERS_DROP")) continue;
     if (snapshot.entries.length === 0) continue;

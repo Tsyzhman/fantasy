@@ -4,9 +4,17 @@ import test from "node:test";
 
 import {
   resolveSportsRuTeamCandidate,
+  sportsRuContestDisplayName,
   sportsRuContestRules,
   syncSportsRuFantasy
 } from "./sports_ru_fantasy_sync";
+
+test("Sports.ru contest names disambiguate identical Premier League titles by HRU", () => {
+  assert.equal(sportsRuContestDisplayName("russia", "Sports.ru Premier League", "Premier League"), "Russian Premier League");
+  assert.equal(sportsRuContestDisplayName("england", "Sports.ru Premier League", "Premier League"), "English Premier League");
+  assert.equal(sportsRuContestDisplayName("spain", "Фэнтези", "LaLiga"), "Sports.ru LaLiga");
+  assert.equal(sportsRuContestDisplayName("portugal", "Sports.ru Liga Portugal", "Liga Portugal"), "Sports.ru Liga Portugal");
+});
 
 test("Sports.ru sync preserves the database when the current season is unavailable", async () => {
   let databaseReads = 0;

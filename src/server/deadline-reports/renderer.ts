@@ -53,9 +53,7 @@ export interface RenderedDeadlineReport {
 }
 
 const TELEGRAM_MESSAGE_LIMIT = 4096;
-const HOME_WIDTH = 12;
-const MID_WIDTH = 16;
-const AWAY_WIDTH = 12;
+const SCHEDULE_COLUMN_WIDTH = 21;
 
 export function escapeHtml(value: string): string {
   return value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
@@ -81,14 +79,12 @@ function fit(value: string, width: number): string {
 }
 
 export function renderScheduleBlock(fixtures: DeadlineFixtureLine[]): string {
-  if (fixtures.length === 0) return "Матчи тура · время МСК\n(расписание не опубликовано)";
+  if (fixtures.length === 0) return "Матчи тура\n(расписание не опубликовано)";
   const lines = fixtures.map((fixture) => {
-    const middle = fixture.kickoffAt ? `${moscowTimeLabel(fixture.kickoffAt)} ${moscowShortDate(fixture.kickoffAt)}` : "уточняется";
     const status = fixture.status && !/scheduled|notstarted|ns/i.test(fixture.status) ? ` · ${fixture.status}` : "";
-    return `${fit(fixture.home, HOME_WIDTH)} | ${fit(`${middle}${status}`, MID_WIDTH)} | ${fit(fixture.away, AWAY_WIDTH)}`;
+    return `${fit(fixture.home, SCHEDULE_COLUMN_WIDTH)} | ${fit(`${fixture.away}${status}`, SCHEDULE_COLUMN_WIDTH)}`;
   });
-  const header = fit("Хозяева", HOME_WIDTH) + " | " + fit("дата и время МСК", MID_WIDTH) + " | " + fit("Гости", AWAY_WIDTH);
-  return `Матчи тура · время МСК\n<pre>${escapeHtml(`${header}\n${lines.join("\n")}`)}</pre>`;
+  return `Матчи тура\n<pre>${escapeHtml(lines.join("\n"))}</pre>`;
 }
 
 function renderFindings(title: string, findings: DeadlinePlayerFinding[]): string | null {
@@ -112,7 +108,10 @@ function renderPopularitySection(section: DeadlinePopularitySection): string | n
   const entries = section.entries.slice(0, 10);
   if (entries.length === 0) return null;
   const label = POPULARITY_LABELS[section.kind] ?? POPULARITY_LABELS.BUYS;
-  const lines = entries.map((entry) => `${entry.rank}. ${escapeHtml(entry.name)}${entry.team ? `, ${escapeHtml(entry.team)}` : ""} — ${escapeHtml(entry.valueText ?? "—")}`);
+  const lines = entries.map((entry) => {
+    const value = section.kind === "TRANSFERS_OFFICIAL" ? "" : ` — ${escapeHtml(entry.valueText ?? "—")}`;
+    return `${entry.rank}. ${escapeHtml(entry.name)}${entry.team ? `, ${escapeHtml(entry.team)}` : ""}${value}`;
+  });
   const source = section.sourceUrl ? safeUrl(section.sourceUrl) : null;
   return `${label} (топ-${entries.length}):\n${lines.join("\n")}${source ? `\n<a href="${escapeHtml(source)}">источник ↗</a>` : ""}`;
 }

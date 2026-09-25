@@ -6,6 +6,7 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
+| [WI-038](work/WI-038-compact-deadline-message.md) | Компактное сообщение дедлайна | FEAT-007 | @tsyzhman | 2026-09-25 | — |
 
 ## Backlog
 

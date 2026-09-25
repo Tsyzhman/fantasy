@@ -25,6 +25,22 @@ export type SportsRuFantasySyncInput = {
   fetchImpl?: typeof fetch;
 };
 
+/**
+ * @spec spec://modules/telegram/FEAT-007-deadline-assistant#message
+ * Sports.ru publishes the same "Sports.ru Premier League" title for England and
+ * Russia; the HRU is the only stable discriminator.
+ */
+const SPORTS_RU_CONTEST_NAME_BY_HRU: Record<string, string> = {
+  england: "English Premier League",
+  russia: "Russian Premier League"
+};
+
+export function sportsRuContestDisplayName(tournamentHru: string, parsedName: string, leagueName: string): string {
+  const known = SPORTS_RU_CONTEST_NAME_BY_HRU[tournamentHru.trim().toLowerCase()];
+  if (known) return known;
+  return parsedName === "Фэнтези" ? `Sports.ru ${leagueName}` : parsedName;
+}
+
 export async function syncSportsRuFantasy(prisma: PrismaClient, input: SportsRuFantasySyncInput) {
   const sourceUrl = input.sourceUrl ?? `https://www.sports.ru/fantasy/football/${input.tournamentHru}/`;
   const minimumPlayers = positiveInteger(input.minimumPlayers, 100);
@@ -71,7 +87,7 @@ export async function syncSportsRuFantasy(prisma: PrismaClient, input: SportsRuF
     input.maxPlayersPerTeam,
     sportsRuMaxPlayersPerTeamForLeague(input.leagueId)
   );
-  const contestName = parsed.contest.name === "Фэнтези" ? `Sports.ru ${leagueSeason.league.name}` : parsed.contest.name;
+  const contestName = sportsRuContestDisplayName(input.tournamentHru, parsed.contest.name, leagueSeason.league.name);
   const syncResult = await prisma.$transaction(async (tx) => {
     const existingContest = await tx.fantasyContest.findUnique({
       where: { provider_leagueId_season: { provider: "SPORTS_RU", leagueId: input.leagueId, season: input.season } },

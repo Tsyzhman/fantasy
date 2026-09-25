@@ -5,6 +5,14 @@ promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
 `org.opencontainers.image.revision`.
 
+## 0.3.95 - 2026-09-25
+
+- FEAT-007: расписание в сообщении — два столбца (хозяева | гости) без даты и времени МСК; секции роста/падения доли выбора убраны из сообщения (данные остаются в БД); официальные популярные трансферы выводятся без очков — только имя и команда.
+
+## 0.3.94 - 2026-09-25
+
+- Синхронизация Sports.ru различает одинаковые заголовки Premier League по HRU: Russia → `Russian Premier League`, England → `English Premier League`; теги и маппинг трендов больше не путают РПЛ и АПЛ.
+
 ## 0.3.93 - 2026-09-25
 
 - FEAT-006: часовой guard трансферных снимков проверяет наличие расширенного топа (`TRANSFERS_GAIN`), а не официального, чтобы не пропускать сбор после частичного сбоя.

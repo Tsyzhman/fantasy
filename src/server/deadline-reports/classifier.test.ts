@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import test from "node:test";
 import { classifyDeadlinePlayers, splitFindingsByLineup, type DeadlinePlayerSignalInput } from "./classifier";
 import { escapeHtml, renderDeadlineReport, renderScheduleBlock, type DeadlineReportInput } from "./renderer";
@@ -121,8 +122,7 @@ test("report contains the tag, source, risks, three-column schedule and freshnes
   assert.match(text, /^#Англия10 · Дедлайн сегодня 18:30 МСК/);
   assert.match(text, /Состав Sports: опубликованный тур 9, загружен 08:02\./);
   assert.match(text, /⚠ Игрок А \(К\) — ALT 0 — проверьте игрока\./);
-  assert.match(text, /<pre>Хозяева\s+\| дата и время МСК \| Гости\s+\n/);
-  assert.match(text, /Arsenal\s+\| 18:30 25\.09\s+\| Liverpool\s+/);
+  assert.match(text, /Матчи тура\n<pre>Arsenal\s+\| Liverpool\s+<\/pre>/);
   assert.match(text, /Популярные продажи Sports \(топ-2\):/);
   assert.match(text, /1\. Бруну Фернандеш, Португалия — -4,7%/);
   assert.match(text, /2\. Эрлинг Холанд, Норвегия — -4,6%/);
@@ -147,7 +147,7 @@ test("published buys and sells are included up to 10 with source; missing public
   assert.ok(!empty.parts[0]!.includes("Популярные"), "no fabricated popularity block");
 });
 
-test("transfer popularity sections render official top-3 and ownership-delta top-10", () => {
+test("transfer popularity sections render the official top without points and without ownership deltas", () => {
   const { parts } = renderDeadlineReport(
     reportInput({
       popularitySections: [
@@ -159,28 +159,19 @@ test("transfer popularity sections render official top-3 and ownership-delta top
           ],
           sourceUrl: null,
           sourcePublishedAt: null
-        },
-        {
-          kind: "TRANSFERS_GAIN",
-          entries: [{ rank: 1, name: "Жилсон Беншимол", team: "Акрон", valueText: "+8.93 п.п." }],
-          sourceUrl: null,
-          sourcePublishedAt: null
-        },
-        {
-          kind: "TRANSFERS_DROP",
-          entries: [{ rank: 1, name: "Кто-то", team: "Клуб", valueText: "-3.10 п.п." }],
-          sourceUrl: null,
-          sourcePublishedAt: null
         }
       ]
     })
   );
   const text = parts[0]!;
   assert.match(text, /Популярные трансферы Sports \(топ-2\):/);
-  assert.match(text, /1\. Жилсон Беншимол, Акрон — 48 очков/);
-  assert.match(text, /Трансферы Sports: рост доли выбора \(топ-1\):/);
-  assert.match(text, /1\. Жилсон Беншимол, Акрон — \+8\.93 п\.п\./);
-  assert.match(text, /Трансферы Sports: падение доли выбора \(топ-1\):/);
+  assert.match(text, /1\. Жилсон Беншимол, Акрон\n/);
+  assert.match(text, /2\. Иван Обляков, ЦСКА\n/);
+  assert.ok(!text.includes("48 очков"), "points stay out of the message");
+  assert.ok(!text.includes("очков"));
+  const buildSource = readFileSync(new URL("./build.ts", import.meta.url), "utf8");
+  assert.match(buildSource, /const official = bestByKey\.get\("BUYS:TRANSFERS_OFFICIAL"\)/);
+  assert.match(buildSource, /key\.endsWith\(":TRANSFERS_GAIN"\) \|\| key\.endsWith\(":TRANSFERS_DROP"\)/);
 });
 
 test("report escapes HTML from dynamic values", () => {
@@ -196,9 +187,10 @@ test("report escapes HTML from dynamic values", () => {
   assert.equal(escapeHtml("a & b < c"), "a &amp; b &lt; c");
 });
 
-test("missing kickoff renders as pending time, not a fabricated one", () => {
+test("missing kickoff no longer needs a fabricated time column", () => {
   const block = renderScheduleBlock([{ home: "A", away: "B", kickoffAt: null, status: null }]);
-  assert.match(block, /уточняется/);
+  assert.match(block, /Матчи тура\n<pre>A\s+\| B\s+<\/pre>/);
+  assert.ok(!block.includes("уточняется"));
 });
 
 test("long reports split deterministically with the same tag and part numbers", () => {

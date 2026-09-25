@@ -8,6 +8,8 @@ import { contestTagAlias, deadlineTag } from "./tags";
 test("deadline tags recognise Russian and English contest names", () => {
   assert.equal(deadlineTag("Sports.ru Championship", 9), "#Чемпиошип9");
   assert.equal(deadlineTag("Sports.ru Premier League", 10), "#Англия10");
+  assert.equal(deadlineTag("English Premier League", 10), "#Англия10");
+  assert.equal(deadlineTag("Russian Premier League", 10), "#Россия10");
   assert.equal(deadlineTag("Sports.ru Champions League", 2), "#ЛигаЧемпионов2");
   assert.equal(deadlineTag("Sports.ru Europa League", 3), "#ЛигаЕвропы3");
   assert.equal(deadlineTag("Sports.ru LaLiga", 8), "#Испания8");

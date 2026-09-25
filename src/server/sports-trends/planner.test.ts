@@ -50,12 +50,16 @@ test("English Sports contest names resolve hints and stay unambiguous", () => {
     { id: "champ", name: "Sports.ru Championship", season: "2026/2027" },
     { id: "cl", name: "Sports.ru Champions League", season: "2026/2027" },
     { id: "eredivisie", name: "Sports.ru Eredivisie", season: "2026/2027" },
-    { id: "laliga-a", name: "Sports.ru LaLiga", season: "2026/2027" }
+    { id: "laliga-a", name: "Sports.ru LaLiga", season: "2026/2027" },
+    { id: "england", name: "English Premier League", season: "2026/2027" },
+    { id: "russia", name: "Russian Premier League", season: "2026/2027" }
   ];
   assert.equal(matchSportsTrendContest("Чемпионшип", candidates)?.id, "champ");
   assert.equal(matchSportsTrendContest("Лига чемпионов", candidates)?.id, "cl");
   assert.equal(matchSportsTrendContest("Нидерланды", candidates)?.id, "eredivisie");
   assert.equal(matchSportsTrendContest("Ла Лига", candidates)?.id, "laliga-a");
+  assert.equal(matchSportsTrendContest("АПЛ", candidates)?.id, "england");
+  assert.equal(matchSportsTrendContest("РПЛ", candidates)?.id, "russia");
   const duplicatedPremier = [
     { id: "england", name: "Sports.ru Premier League", season: "2026/2027" },
     { id: "russia", name: "Sports.ru Premier League", season: "2026/2027" }
