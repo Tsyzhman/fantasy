@@ -1,0 +1,136 @@
+{
+  "checkedAt": "2026-09-28T14:56:27Z",
+  "canonAction": "none",
+  "applicationCommit": "d4b7aa225f788f607aca316cf15a5effe9352883",
+  "publication": {
+    "target": "main",
+    "mode": "direct-push",
+    "obsoletePr32": "CLOSED"
+  },
+  "regression": {
+    "baselineRejectedPlayers": 2,
+    "focusedTests": 25,
+    "inactiveAndWrongClubRejectedBeforeWrites": true
+  },
+  "check": {
+    "url": "https://github.com/Tsyzhman/fantasy/actions/runs/36435634597",
+    "conclusion": "success",
+    "unitTests": 1213,
+    "databaseTests": 15,
+    "lintErrors": 0,
+    "existingLintWarnings": 215,
+    "dependencyVulnerabilities": 0,
+    "typecheck": "passed",
+    "build": "passed"
+  },
+  "deployment": {
+    "url": "https://github.com/Tsyzhman/fantasy/actions/runs/36435851405",
+    "successfulAttempt": 2,
+    "conclusion": "success",
+    "release": "20260928T144700Z-v0.3.109-d4b7aa2",
+    "health": {
+      "httpStatus": 200,
+      "release": {
+        "version": "0.3.109",
+        "commit": "d4b7aa225f788f607aca316cf15a5effe9352883"
+      }
+    },
+    "baseline": {
+      "status": 409,
+      "code": "FPL_PLAYERS_NOT_ACTIVE",
+      "rejectedPlayers": 2,
+      "savedSquads": 0
+    }
+  },
+  "publishedSquadImport": {
+    "phase": "--verify",
+    "attempts": [
+      {
+        "status": 200,
+        "imported": true,
+        "gameweek": 5,
+        "picks": 15,
+        "starters": 11,
+        "captains": 1,
+        "viceCaptains": 1,
+        "positionsPreserved": true,
+        "lineupPreserved": true,
+        "savedSquads": 1,
+        "savedSnapshots": 1
+      },
+      {
+        "status": 200,
+        "imported": true,
+        "gameweek": 5,
+        "picks": 15,
+        "starters": 11,
+        "captains": 1,
+        "viceCaptains": 1,
+        "positionsPreserved": true,
+        "lineupPreserved": true,
+        "savedSquads": 1,
+        "savedSnapshots": 1
+      }
+    ]
+  },
+  "cleanup": {
+    "qaUserRemaining": 0,
+    "qaProfilesRemaining": 0,
+    "qaSquadsRemaining": 0,
+    "qaSnapshotsRemaining": 0
+  },
+  "data": {
+    "priceDuplicateGroups": 0,
+    "activeIngestionJobs": 0,
+    "originalLinkedFplProfiles": 1,
+    "startupFplPriceSync": {
+      "jobType": "FPL_PRICE_SYNC",
+      "status": "SUCCEEDED",
+      "startedAt": "2026-09-28T14:52:20.745Z",
+      "finishedAt": "2026-09-28T14:52:20.745Z",
+      "errorMessage": null
+    },
+    "poolHealth": {
+      "httpStatus": 503,
+      "fresh": true,
+      "complete": false,
+      "snapshotFetchedAt": "2026-09-28T14:52:21.384Z",
+      "counts": {
+        "prices": 667,
+        "mappedPlayers": 589,
+        "mappedPercent": 88.30584707646177,
+        "matchedEntities": 609,
+        "unmatchedEntities": 78,
+        "latestOfficialGameweek": 5,
+        "officialScoreRows": 667,
+        "mappedOfficialScoreRows": 589,
+        "officialScoreMappedPercent": 88.30584707646177
+      }
+    }
+  },
+  "resources": {
+    "webMiB": 162.9,
+    "workerGiB": 1.012,
+    "relayMiB": 19.78,
+    "vpnMiB": 37.84,
+    "postgresMiB": 496.6,
+    "hostAvailableMiB": 6803,
+    "runtimeRestarts": 0,
+    "stoppedRollbacksPerService": 1,
+    "reclaimableBuildCacheMB": 996,
+    "sharedBuildCacheGB": 7.019,
+    "localNextGeneratedBytes": 60132,
+    "localTypeScriptCacheBytes": 272783,
+    "localTestProcesses": 0
+  },
+  "specificationSnapshot": {
+    "status": "current",
+    "diagnostics": [],
+    "fingerprint": "2675c908e680ec7481aa62c39fa0d5b4797df71d0ed3bc3156bb423eb2d67d5a"
+  },
+  "notes": [
+    "Production import verification used an isolated QA account with the original linked public entry; original user squads were not overwritten.",
+    "Overall pool mapping remains incomplete for 78 players; all 15 imported picks are mapped.",
+    "Version 0.3.110 records completion evidence; application implementation is unchanged from the verified 0.3.109 runtime."
+  ]
+}

@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.110 - 2026-09-28
+
+- Record successful production verification of FPL squad import, repeated-import idempotency and resource cleanup; close WI-044.
+
 ## 0.3.109 - 2026-09-28
 
 - Import published FPL squads when active shared-roster players have different FotMob positions, retaining official FPL positions, lineup and captain choices.
