@@ -28,7 +28,7 @@ report no known vulnerabilities, and the application continues to pass its check
 - [x] A clean dependency install works, and both production and full npm audits report zero known vulnerabilities.
 - [x] Verify native image processing with sharp and the updated browser/CSS tooling.
 - [x] Application tests, lint, TypeScript checks, and the production build pass.
-- [ ] Release metadata is consistent, the final diff is reviewed, and the changes are published to main.
+- [x] Release metadata is consistent, the final diff is reviewed, and the changes are published to main.
 - [x] Check task-created caches, dependency duplicates, and helper process memory at completion.
 
 ## Dependencies
@@ -38,8 +38,9 @@ report no known vulnerabilities, and the application continues to pass its check
 
 ## Result
 
-Local remediation and verification are complete; publication and GitHub
-verification are the remaining steps.
+Remediation and publication are complete. GitHub CI confirms the production
+security audit passes; its subsequent isolated-database configuration failure is
+tracked separately in WI-041.
 
 Updated sharp 0.35.0 to 0.35.4, baseline-browser-mapping 2.10.30 to 2.11.26,
 browserslist 4.28.2 to 4.29.2, and postcss-selector-parser 6.1.2 to 6.1.4.
@@ -69,4 +70,8 @@ omitted the root @emnapi/core and @emnapi/runtime entries required by CI's npm
 10.8.2 (Node 20.20.2). Regeneration with npm 10.8.2 restores both 1.11.3 entries;
 the four patched dependency versions remain unchanged. Clean installation with
 npm 10.8.2 and its Linux x64 dry-run check pass. Both audits still report zero
-known vulnerabilities. Follow-up publication and GitHub verification remain.
+known vulnerabilities. Published to main in `1292dd57848f81da4a8a13cc733a62c124e9e72a`.
+Check run 36404329686 passes installation, Prisma generation, the production
+audit, and migration drift checks. The database stage fails on pre-existing
+environment guards; this is the separate WI-041 outcome, not a remaining
+dependency vulnerability. TD-007 is resolved on 2026-09-28.

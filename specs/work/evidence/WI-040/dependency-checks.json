@@ -353,7 +353,7 @@
     "task_node_processes_remaining": 0
   },
   "github_ci": {
-    "status": "awaiting_follow_up_publication",
+    "status": "dependency_audit_passed",
     "initial_run": {
       "id": 36403656514,
       "url": "https://github.com/Tsyzhman/fantasy/actions/runs/36403656514",
@@ -361,7 +361,18 @@
       "step": "Install dependencies",
       "cause": "npm 11.6.2 on Windows omitted root @emnapi/core and @emnapi/runtime entries required by npm 10.8.2"
     },
-    "database_integration_tests": "not run locally; verified by the GitHub Check workflow"
+    "database_integration_tests": "CI environment correction tracked by WI-041",
+    "follow_up_run": {
+      "id": 36404329686,
+      "url": "https://github.com/Tsyzhman/fantasy/actions/runs/36404329686",
+      "commit": "1292dd57848f81da4a8a13cc733a62c124e9e72a",
+      "install": "passed",
+      "prisma_generate": "passed",
+      "production_audit": "passed",
+      "migration_drift": "passed",
+      "database_integration_tests": "failed on pre-existing isolated-database guards; addressed separately in WI-041",
+      "application_checks": "skipped by CI after the database stage; passed locally"
+    }
   },
-  "technical_debt": "TD-007 remediation in progress; local audits pass"
+  "technical_debt": "TD-007 resolved on 2026-09-28; dependency remediation complete"
 }

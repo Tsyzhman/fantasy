@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.102 - 2026-09-28
+
+### Checks
+
+- Run all tracked database integration tests in disposable common, betting, and KHL databases that match the existing safety guards; enable the isolated KHL test cases and run each group serially.
+- Record the verified dependency remediation and resolve TD-007.
+
 ## 0.3.101 - 2026-09-28
 
 ### Build

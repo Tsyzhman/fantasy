@@ -6,7 +6,7 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
-| [WI-040](work/WI-040-dependency-security.md) | Patch vulnerable dependencies | common/structure, common/main | @tsyzhman | 2026-09-28 | — |
+| [WI-041](work/WI-041-ci-database-isolation.md) | Run isolated CI database tests | common/structure, betting FEAT-001, khl INFRA-002 | @tsyzhman | 2026-09-28 | — |
 
 ## Backlog
 
@@ -24,6 +24,7 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-040](work/archive/2026/WI-040-dependency-security.md) | Patch vulnerable dependencies | @tsyzhman | 2026-09-28 |
 | [WI-039](work/archive/2026/WI-039-english-documentation.md) | English documentation and repository organization | @tsyzhman | 2026-09-28 |
 | [WI-024](work/archive/2026/WI-024-europa-three-per-club.md) | Three club players in the Europa League | @tsyzhman | 2026-09-16 |
 | [WI-023](work/archive/2026/WI-023-khl-expected-statistics.md) | Expectations, opponents and KHL update | @tsyzhman | 2026-09-14 |

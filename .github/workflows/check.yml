@@ -19,6 +19,7 @@ jobs:
           POSTGRES_USER: postgres
         ports:
           - 5432:5432
+          - 55439:5432
         options: >-
           --health-cmd "pg_isready -U postgres -d fantasy_scout_test"
           --health-interval 10s
@@ -62,10 +63,44 @@ jobs:
         env:
           SHADOW_DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fantasy_scout_test?schema=prisma_shadow
 
+      # @spec spec://modules/betting/FEAT-001-virtual-league#ledger
+      # @spec spec://modules/khl/INFRA-002-khl-storage-and-api#boundary
       - name: Run database integration tests
-        run: npm run prisma:migrate:deploy && npm run test:db
+        shell: bash
         env:
-          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/fantasy_scout_test?schema=public
+          TEST_POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
+        run: |
+          mapfile -t integration_tests < <(git ls-files 'src/**/*.db-test.ts')
+          common_tests=()
+          betting_tests=()
+          khl_tests=()
+          for test_file in "${integration_tests[@]}"; do
+            case "$test_file" in
+              src/betting/*) betting_tests+=("$test_file") ;;
+              src/khl/*|src/server/khl/*) khl_tests+=("$test_file") ;;
+              *) common_tests+=("$test_file") ;;
+            esac
+          done
+
+          run_database_tests() {
+            local database_name="$1"
+            local -n test_group="$2"
+            local khl_test_enabled="$3"
+            local database_url="postgresql://postgres:postgres@127.0.0.1:55439/$database_name?schema=public"
+            if (( ${#test_group[@]} == 0 )); then
+              echo "No integration tests found for $database_name" >&2
+              return 1
+            fi
+            docker exec "$TEST_POSTGRES_CONTAINER" psql -U postgres -v ON_ERROR_STOP=1 \
+              -c "CREATE DATABASE \"$database_name\";"
+            DATABASE_URL="$database_url" npm run prisma:migrate:deploy
+            DATABASE_URL="$database_url" KHL_TEST_DATABASE="$khl_test_enabled" \
+              npm exec -- tsx --test --test-concurrency=1 "${test_group[@]}"
+          }
+
+          run_database_tests fantasy_scout_test_ci common_tests false
+          run_database_tests fantasy_betting_test_ci betting_tests false
+          run_database_tests khl_test_ci khl_tests true
 
       - name: Run checks
         run: npm run check
