@@ -6,6 +6,7 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
+| [WI-043](work/WI-043-production-browser-smoke.md) | Restore the full production browser smoke | Betting FEAT-001, KHL FEAT-002, Machete FEAT-003 | @tsyzhman | 2026-09-28 | — |
 
 ## Backlog
 

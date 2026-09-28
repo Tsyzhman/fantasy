@@ -1,4 +1,4 @@
-import {test,expect} from '@playwright/test';
+import {test,expect,type Page} from '@playwright/test';
 import {formatToi,formatKhlNumber,historicalTableStats,type KhlPlayer} from '../src/khl/contracts';
 import ExcelJS from 'exceljs';
 import {readFile} from 'node:fs/promises';
@@ -39,9 +39,12 @@ test('KHL visible statistics include refresh status on every view and preserve i
  expect(await panel.locator('time').first().getAttribute('datetime')).toBe(catalogTime);
 });
 
-/** @spec spec://modules/khl/FEAT-002-khl-squad#cards */
+/** @spec spec://modules/khl/FEAT-002-khl-squad#cards
+ * @spec spec://modules/khl/FEAT-002-khl-squad#table
+ */
 test('KHL visible statistics survive partial matches and history switches',async({page},testInfo)=>{
  test.skip(process.env.KHL_PRODUCTION_SMOKE!=='true','Explicit production statistics check');
+ test.setTimeout(180000);
  await page.goto('/machete/khl/players');
  const poolCount=Number((await page.locator('caption').innerText()).match(/Каталог · (\d+)/)?.[1]);
  expect(poolCount).toBeGreaterThan(50);
@@ -134,12 +137,7 @@ test('KHL visible statistics survive partial matches and history switches',async
  }
  await page.getByRole('combobox',{name:'История для средних'}).selectOption('5');
  const refresh=page.getByRole('button',{name:'Обновить статистику',exact:true});
- await expect(refresh).toBeEnabled({timeout:30000});
- const refreshed=page.waitForResponse(r=>r.url().includes('/api/machete/khl/players?'));
- await refresh.click();
- await refreshed;
- await expect(refresh).toBeEnabled({timeout:30000});
- await expect(page.getByRole('status').filter({hasText:'Статистика обновлена'})).toBeVisible({timeout:30000});
+ await refreshStatistics(page);
  await expect(page.getByRole('textbox',{name:'Поиск игрока',exact:true})).toHaveValue('Грегуар');
  await expect(row.getByRole('button',{name:'Убрать',exact:true})).toBeVisible();
  await row.getByRole('button',{name:'Разобрать прогноз: Грегуар',exact:true}).click();
@@ -188,3 +186,21 @@ test('KHL visible statistics survive partial matches and history switches',async
  await page.screenshot({path:`output/playwright-test-results/khl-statistics-refreshed-${testInfo.project.name}.png`,fullPage:true});
  expect(await page.evaluate(()=>document.documentElement.scrollWidth-document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
 });
+
+async function refreshStatistics(page: Page) {
+ const refresh=page.getByRole('button',{name:'Обновить статистику',exact:true});
+ const status=refresh.locator('..').getByRole('status');
+ for(let attempt=0;attempt<3;attempt++) {
+  await expect(refresh).toBeEnabled({timeout:30000});
+  const response=page.waitForResponse(r=>r.url().includes('/api/machete/khl/players?') && r.request().method()==='GET');
+  await refresh.click();
+  expect((await response).status()).toBe(200);
+  await expect(refresh).toBeEnabled({timeout:30000});
+  const message=await status.innerText();
+  if(message==='Статистика обновлена.') return;
+  // A published revision may change between catalog pages. Exercise the UI's
+  // explicit retry; unrelated errors and persistent conflicts still fail.
+  expect(message).toBe('Каталог изменился во время загрузки. Повторите выбор окна.');
+ }
+ throw new Error('KHL catalog changed during all three bounded refresh attempts.');
+}

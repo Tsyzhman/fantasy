@@ -45,7 +45,8 @@ test("search a forecast, auto-pick the current squad, and save it", async ({ pag
     query: forecastPlayer.name
   });
   await page.goto(`/machete/players?${playerSearch}`);
-  await expect(page.getByRole("heading", { name: /Player search and forecasts/i })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Players", exact: true })).toBeVisible();
+  await expect(page.getByRole("searchbox", { name: "Player search", exact: true })).toHaveValue(forecastPlayer.name);
   await expect(page.getByRole("button", { name: `Add ${forecastPlayer.name} to comparison`, exact: true }).first()).toBeVisible();
 
   await page.goto(`/machete/squad?${new URLSearchParams({ leagueId, season })}`);
