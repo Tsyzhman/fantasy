@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.99 - 2026-09-28
+
+### Documentation
+
+- Record verified publication of the English documentation on the default GitHub branch and archive WI-039 with validation evidence.
+
 ## 0.3.98 - 2026-09-28
 
 ### Documentation

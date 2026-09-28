@@ -108,12 +108,27 @@
     "diagnostics": [],
     "fingerprint": "2fb018ddd22f71d41d0941cda89d2ee78dea8e314c14c2b14207fe090ac9379d"
   },
+  "publication": {
+    "branch": "main",
+    "implementation_commit": "17dc7a89f3df5073e2e658caf01287d0549796c5",
+    "default_readme_blob_verified": true,
+    "default_documentation_index_blob_verified": true
+  },
   "next_typegen": "passed; regenerated ignored next-env.d.ts",
-  "release_version_check": "passed; 0.3.98 > origin/main 0.3.77",
+  "release_version_check": "passed; completion metadata 0.3.99 > main 0.3.98",
   "resources": {
     "translation_working_set_observed_mb": 38.1,
-    "temporary_state_mb": 2.61,
     "translation_helper_running": false,
-    "dependency_copy": "shared junction, not duplicated"
+    "dependency_copy": "one shared junction; no dependency installation or copy",
+    "temporary_translation_state_removed": false,
+    "generated_next_type_artifacts_removed": true
+  },
+  "ci": {
+    "run_url": "https://github.com/Tsyzhman/fantasy/actions/runs/36398972115",
+    "status": "failed at existing dependency audit",
+    "baseline_browser_mapping": "2.10.30, unchanged from original main",
+    "sharp": "0.35.0, unchanged from original main",
+    "application_checks": "skipped, not claimed passed",
+    "tracked_as": "TD-007"
   }
 }
