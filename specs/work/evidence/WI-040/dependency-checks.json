@@ -1,0 +1,393 @@
+{
+  "work": "WI-040",
+  "date": "2026-09-28",
+  "base_commit": "ea59b2a5476e94519106b87a4d2a7beca55853c3",
+  "release": "0.3.101",
+  "changes": [
+    {
+      "package": "sharp",
+      "before": "0.35.0",
+      "after": "0.35.4",
+      "advisories": [
+        "https://github.com/advisories/GHSA-rgj7-g3m4-5g8c"
+      ]
+    },
+    {
+      "package": "baseline-browser-mapping",
+      "before": "2.10.30",
+      "after": "2.11.26",
+      "advisories": [
+        "https://github.com/advisories/GHSA-w5vr-8v7q-w6rv"
+      ]
+    },
+    {
+      "package": "browserslist",
+      "before": "4.28.2",
+      "after": "4.29.2",
+      "advisories": [
+        "https://github.com/advisories/GHSA-c83g-rgw3-j3cx",
+        "https://github.com/advisories/GHSA-73wf-gq98-2v4g"
+      ]
+    },
+    {
+      "package": "postcss-selector-parser",
+      "before": "6.1.2",
+      "after": "6.1.4",
+      "advisories": [
+        "https://github.com/advisories/GHSA-w9m9-85wc-3x92"
+      ]
+    }
+  ],
+  "before_full_audit": {
+    "exitCode": 1,
+    "metadata": {
+      "vulnerabilities": {
+        "info": 0,
+        "low": 1,
+        "moderate": 1,
+        "high": 2,
+        "critical": 0,
+        "total": 4
+      },
+      "dependencies": {
+        "prod": 148,
+        "dev": 409,
+        "optional": 96,
+        "peer": 2,
+        "peerOptional": 0,
+        "total": 595
+      }
+    },
+    "vulnerabilities": {
+      "baseline-browser-mapping": {
+        "name": "baseline-browser-mapping",
+        "severity": "moderate",
+        "isDirect": false,
+        "via": [
+          {
+            "source": 1193686,
+            "name": "baseline-browser-mapping",
+            "dependency": "baseline-browser-mapping",
+            "title": "baseline-browser-mapping process termination on invalid input causes denial of service",
+            "url": "https://github.com/advisories/GHSA-w5vr-8v7q-w6rv",
+            "severity": "moderate",
+            "cwe": [
+              "CWE-705"
+            ],
+            "cvss": {
+              "score": 0,
+              "vectorString": null
+            },
+            "range": ">=2.0.0 <2.11.0"
+          }
+        ],
+        "effects": [],
+        "range": ">=2.0.0 <2.11.0",
+        "nodes": [
+          "node_modules/baseline-browser-mapping"
+        ],
+        "fixAvailable": true
+      },
+      "browserslist": {
+        "name": "browserslist",
+        "severity": "high",
+        "isDirect": false,
+        "via": [
+          {
+            "source": 1153171,
+            "name": "browserslist",
+            "dependency": "browserslist",
+            "title": "Browserslist: Unbounded memory growth (no cache eviction) via distinct query results, leading to eventual OOM",
+            "url": "https://github.com/advisories/GHSA-c83g-rgw3-j3cx",
+            "severity": "high",
+            "cwe": [
+              "CWE-770"
+            ],
+            "cvss": {
+              "score": 7.5,
+              "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+            },
+            "range": "<=4.28.6"
+          },
+          {
+            "source": 1153172,
+            "name": "browserslist",
+            "dependency": "browserslist",
+            "title": "Browserslist: Uncaught crash / prototype write via untrusted browserslist-stats.json custom stats (normalizeStats)",
+            "url": "https://github.com/advisories/GHSA-73wf-gq98-2v4g",
+            "severity": "high",
+            "cwe": [
+              "CWE-248",
+              "CWE-1321"
+            ],
+            "cvss": {
+              "score": 7.5,
+              "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:N/I:N/A:H"
+            },
+            "range": "<=4.28.6"
+          }
+        ],
+        "effects": [],
+        "range": "<=4.28.6",
+        "nodes": [
+          "node_modules/browserslist"
+        ],
+        "fixAvailable": true
+      },
+      "postcss-selector-parser": {
+        "name": "postcss-selector-parser",
+        "severity": "low",
+        "isDirect": false,
+        "via": [
+          {
+            "source": 1153170,
+            "name": "postcss-selector-parser",
+            "dependency": "postcss-selector-parser",
+            "title": "postcss-selector-parser allows denial of service through uncontrolled AST recursion",
+            "url": "https://github.com/advisories/GHSA-w9m9-85wc-3x92",
+            "severity": "low",
+            "cwe": [
+              "CWE-404"
+            ],
+            "cvss": {
+              "score": 4.3,
+              "vectorString": "CVSS:3.1/AV:N/AC:L/PR:N/UI:R/S:U/C:N/I:N/A:L"
+            },
+            "range": ">=6.1.0 <6.1.3"
+          }
+        ],
+        "effects": [],
+        "range": "6.1.0 - 6.1.2",
+        "nodes": [
+          "node_modules/postcss-selector-parser"
+        ],
+        "fixAvailable": true
+      },
+      "sharp": {
+        "name": "sharp",
+        "severity": "high",
+        "isDirect": false,
+        "via": [
+          {
+            "source": 1193725,
+            "name": "sharp",
+            "dependency": "sharp",
+            "title": "sharp: Vulnerabilities in libheif: GHSA-g89c-p67h-r497 and GHSA-2jg2-4ch7-h545",
+            "url": "https://github.com/advisories/GHSA-rgj7-g3m4-5g8c",
+            "severity": "high",
+            "cwe": [
+              "CWE-122"
+            ],
+            "cvss": {
+              "score": 0,
+              "vectorString": null
+            },
+            "range": "<0.35.4"
+          }
+        ],
+        "effects": [],
+        "range": "<0.35.4",
+        "nodes": [
+          "node_modules/sharp"
+        ],
+        "fixAvailable": true
+      }
+    },
+    "error": null
+  },
+  "after_audits": [
+    {
+      "mode": "production",
+      "exitCode": 0,
+      "metadata": {
+        "vulnerabilities": {
+          "info": 0,
+          "low": 0,
+          "moderate": 0,
+          "high": 0,
+          "critical": 0,
+          "total": 0
+        },
+        "dependencies": {
+          "prod": 148,
+          "dev": 409,
+          "optional": 96,
+          "peer": 2,
+          "peerOptional": 0,
+          "total": 595
+        }
+      },
+      "vulnerabilities": {},
+      "error": null
+    },
+    {
+      "mode": "all",
+      "exitCode": 0,
+      "metadata": {
+        "vulnerabilities": {
+          "info": 0,
+          "low": 0,
+          "moderate": 0,
+          "high": 0,
+          "critical": 0,
+          "total": 0
+        },
+        "dependencies": {
+          "prod": 148,
+          "dev": 409,
+          "optional": 96,
+          "peer": 2,
+          "peerOptional": 0,
+          "total": 595
+        }
+      },
+      "vulnerabilities": {},
+      "error": null
+    }
+  ],
+  "native_and_tooling_smoke": {
+    "status": "passed",
+    "sharpVersions": {
+      "aom": "3.14.1",
+      "archive": "3.8.9",
+      "cairo": "1.18.4",
+      "cgif": "0.5.3",
+      "exif": "0.6.26",
+      "expat": "2.8.3",
+      "ffi": "3.8.0",
+      "fontconfig": "2.18.3",
+      "freetype": "2.14.3",
+      "fribidi": "1.0.16",
+      "glib": "2.89.4",
+      "harfbuzz": "14.3.1",
+      "heif": "1.23.2",
+      "highway": "1.4.0",
+      "imagequant": "2.4.1",
+      "lcms": "2.19.1",
+      "mozjpeg": "0826579",
+      "pango": "1.58.2",
+      "pixman": "0.46.4",
+      "png": "1.6.58",
+      "proxy-libintl": "0.5",
+      "rsvg": "2.62.91",
+      "tiff": "4.7.2",
+      "uhdr": "2.0.2",
+      "vips": "8.18.6",
+      "webp": "1.6.0",
+      "xml2": "2.15.3",
+      "zlib-ng": "2.3.3",
+      "sharp": "0.35.4"
+    },
+    "images": [
+      {
+        "format": "jpeg",
+        "bytes": 268
+      },
+      {
+        "format": "webp",
+        "bytes": 62
+      },
+      {
+        "format": "heif",
+        "bytes": 462
+      }
+    ],
+    "browserTargets": 35,
+    "baselineTargets": 7,
+    "selector": ".squad:is(.selected, .bench) > img:not([hidden])",
+    "autoprefixer": true,
+    "memory": {
+      "rss": 84934656,
+      "heapTotal": 32301056,
+      "heapUsed": 16192520,
+      "external": 2031039,
+      "arrayBuffers": 16655
+    }
+  },
+  "local_validation": {
+    "node": "24.11.1",
+    "npm": "11.6.2",
+    "clean_install": "passed",
+    "prisma_generate": "passed",
+    "npm_run_check": {
+      "exit_code": 0,
+      "test_files": 199,
+      "tests": 1132,
+      "passed": 1131,
+      "failed": 0,
+      "skipped": 1,
+      "skip_reason": "access-log-audit malformed-window-start case is skipped on Windows",
+      "lint_errors": 0,
+      "lint_warnings": 153,
+      "typecheck": "passed",
+      "production_build": "passed",
+      "standalone_sanitization": "passed"
+    },
+    "release_version_against_main": "passed",
+    "diff_check": "passed",
+    "application_schema_and_workflow_files_changed": [],
+    "lockfile_compatibility": {
+      "generator_npm": "10.8.2",
+      "github_node": "20.20.2",
+      "github_npm": "10.8.2",
+      "restored_entries": {
+        "@emnapi/core": "1.11.3",
+        "@emnapi/runtime": "1.11.3"
+      },
+      "linux_x64_npm_ci_dry_run": "passed",
+      "clean_install_with_ci_npm": "passed",
+      "audits_with_ci_npm": "production and full both report zero known vulnerabilities",
+      "native_runtime_after_reinstall": "sharp 0.35.4 and libheif 1.23.2 verified"
+    }
+  },
+  "resources": {
+    "updated_package_resolutions": "one locked version per updated package; shared consumers deduplicated",
+    "isolated_node_modules": "retained for reuse; the primary checkout's different dependency installation was preserved",
+    "native_smoke_rss_bytes": 84934656,
+    "webpack_worker_observed_memory_mib": 1487,
+    "generated_build_files_removed": 3386,
+    "generated_build_bytes_removed": 461958368,
+    "extension_build_output_and_archives_removed": true,
+    "next_cache_removed": true,
+    "typescript_build_cache_removed": true,
+    "task_node_processes_remaining": 0
+  },
+  "github_ci": {
+    "status": "full_check_passed",
+    "initial_run": {
+      "id": 36403656514,
+      "url": "https://github.com/Tsyzhman/fantasy/actions/runs/36403656514",
+      "conclusion": "failure",
+      "step": "Install dependencies",
+      "cause": "npm 11.6.2 on Windows omitted root @emnapi/core and @emnapi/runtime entries required by npm 10.8.2"
+    },
+    "database_integration_tests": "11 passed without failures or skips after WI-041",
+    "follow_up_run": {
+      "id": 36404329686,
+      "url": "https://github.com/Tsyzhman/fantasy/actions/runs/36404329686",
+      "commit": "1292dd57848f81da4a8a13cc733a62c124e9e72a",
+      "install": "passed",
+      "prisma_generate": "passed",
+      "production_audit": "passed",
+      "migration_drift": "passed",
+      "database_integration_tests": "failed on pre-existing isolated-database guards; addressed separately in WI-041",
+      "application_checks": "skipped by CI after the database stage; passed locally"
+    },
+    "final_verification": {
+      "id": 36406463394,
+      "url": "https://github.com/Tsyzhman/fantasy/actions/runs/36406463394",
+      "commit": "7963f786ae7fe91e129ebfbccc0a7d56b86383be",
+      "release": "0.3.103",
+      "conclusion": "success",
+      "production_audit": "passed",
+      "unit_tests_passed": 1132,
+      "database_tests_passed": 11,
+      "lint_errors": 0,
+      "lint_warnings": 153,
+      "typecheck": "passed",
+      "production_build": "passed",
+      "standalone_sanitization": "passed"
+    }
+  },
+  "technical_debt": "TD-007 resolved on 2026-09-28; dependency remediation complete"
+}

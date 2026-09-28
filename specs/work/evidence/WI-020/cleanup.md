@@ -1,5 +1,5 @@
-# Очистка WI-020
+# Cleaning WI-020
 
-Все временные файлы с префиксом wi020- удалены из /tmp хоста и /app, /tmp worker. Повторное перечисление пустое; production health ok.
+All temporary files with the wi020- prefix have been removed from /tmp host and /app, /tmp worker. Repeated listing is empty; production health ok.
 
-Локальная `.tmp/WI-020` содержит 79 567 474 байта обычных файлов (около 76 MiB) и junction на общие библиотеки. Автоматическая проверка отклонила удаление папки и затем более узкое удаление только временных файлов без обхода junction. Ответ проверки: `blocked by policy`, подробная причина не указана. Локальные временные файлы оставлены; ограничения не обходились. Итоговый Excel и evidence сохранены отдельно.
+Local `.tmp/WI-020` contains 79 567 474 bytes of regular files (about 76 MiB) and a junction to shared libraries. The automatic check rejected the folder deletion and then narrowed down the deletion of only temporary files without bypassing the junction. Verification response: `blocked by policy`, detailed reason not specified. Local temporary files are left behind; restrictions were not avoided. The final Excel and evidence are saved separately.

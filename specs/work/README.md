@@ -1,7 +1,7 @@
 # Work items
 
-В этой папке живут активные файлы `WI-NNN-short-slug.md`.
+The active files `WI-NNN-short-slug.md` live in this folder.
 
-Формат, правила разбиения и жизненный цикл описаны в [WORK-ITEM-PROTOCOL.md](../protocols/WORK-ITEM-PROTOCOL.md).
+The format, partitioning rules and life cycle are described in [WORK-ITEM-PROTOCOL.md](../protocols/WORK-ITEM-PROTOCOL.md).
 
-Завершённые work items переносятся в `archive/YYYY/`. Папка года создаётся при первом завершении.
+Completed work items are transferred to `archive/YYYY/`. A year folder is created on first completion.

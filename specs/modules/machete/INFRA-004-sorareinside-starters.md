@@ -2,61 +2,104 @@
 status: active
 ---
 
-# INFRA-004: Основа SorareInside {#root}
+<a name="root"></a>
 
-## Простыми словами {#plain-language}
-Галочки основы обновляются каждый час в 05 минут по прогнозу ближайшего будущего матча клуба в SorareInside. Неизвестный игрок или отсутствующий прогноз сохраняют прежние галочки всей команды.
+# INFRA-004: SorareInside Foundation {#root}
 
-## Цель и границы {#scope}
-Управляющий продуктовый канон: `specs/common/main.md`. Область — текущие сезоны с fantasy-ценами и активными клубными составами. Сохранённые составы пользователей, национальные команды и интерфейс не изменяются. Все турниры источника участвуют в выборе ближайшего матча клуба, включая кубки. Полученный клубный прогноз применяется к доступным текущим fantasy-пулам этого клуба.
+<a name="plain-language"></a>
 
-## Цель {#goal}
-Поддерживать актуальную основу по прогнозу следующего матча без повторного угадывания идентичности игроков и без очистки команды при неполном источнике.
+## Plain language {#plain-language}
 
-## Управляющие документы {#governing-specs}
-Legacy product canon: `specs/common/main.md`; runtime ownership: `specs/common/structure.md`; выпуск: `docs/DEPLOYMENT.md`.
+Starting-lineup flags refresh every hour at minute 05 from SorareInside forecasts for the club's nearest future match. An unknown player or a missing forecast preserves the previous flags for the whole team.
 
-## Окружения {#environments}
-Node.js 20+, Prisma/PostgreSQL, HTTPS-доступ к SorareInside. Production — существующий Docker worker. Web не получает учётные данные источника. CLI использует то же подключение к БД и явные environment credentials.
+<a name="scope"></a>
 
-## Канонические решения {#decisions}
-Устойчивые UUID хранятся в общей таблице соответствий, календарь выбирается до прогноза, запись выполняется только для полного XI. Защита и обновление кэша используют существующие транзакционные механизмы проекта.
+## Scope {#scope}
+Controlling product canon: `specs/common/main.md`. Region - current seasons with fantasy prices and active club rosters. Saved user squads, national teams and the interface do not change. All source tournaments participate in the selection of the club's next match, including cups. The resulting club forecast is applied to the available current fantasy pools of that club.
 
-## Источник и выбор матча {#source}
-Авторизованный API `https://platform-api.sorareinside.com`, тот же, который использует сайт. `/gameweeks` задаёт актуальные окна, `/games` возвращает расписание вместе с nullable-ссылками на прогнозы, `/lineups/:id` — опубликованный прогноз. Загружаются все окна с окончанием в будущем и началом в пределах 14 дней, а также scheduledLineups. Сначала выбирается минимальная будущая дата команды, затем её lineupId; нельзя отбрасывать матчи без прогноза до выбора минимума. Прошедшие, отменённые, перенесённые и уже начавшиеся матчи исключаются. Неизвестный формат/статус закрывает запись. Конфликтующие дубли расписания блокируют цикл. Неполная загрузка любого окна запрещает применение всего цикла.
+<a name="goal"></a>
 
-## Идентичность и данные {#mapping}
-Используется существующая `ProviderEntityMap`: provider `SORAREINSIDE`, providerSeason `GLOBAL`, types TEAM/PLAYER, UUID источника → FotMob ID. Новых колонок или копий игроков нет. Первичная автоматическая привязка требует уникального строгого совпадения нормализованного имени/полного slug внутри клуба либо совпадения полной даты рождения и значимого токена имени. Одна дата рождения без подтверждения имени недостаточна. При наличии дат рождения они обязаны совпасть. Команды сопоставляются строго по нормализованному названию/явному проверенному alias и стране. Неоднозначность, противоречие даты, дубли внутренних ID и ID вне активного ростера блокируют применение команды. Существующий ID не заменяется поиском по имени. Привязки сохраняются только при apply, уникальным upsert без изменения уже установленного соответствия. Для новых несовпадений оператор может записать проверенную привязку.
+## Goal {#goal}
+Maintain an up-to-date basis for the forecast of the next match without re-guessing the identity of the players and without clearing the team when the source is incomplete.
 
-## Применение и конкуренция {#apply}
-Только `lineup_players.starting_players`, ровно 11 уникальных игроков и один вратарь; не alternate_players и не суммарный процент старта. Проверяются game_id, team.id, is_published и будущая дата непосредственно перед записью. В одной транзакции под существующим starting-xi lock изменяются галочки и записывается запрос обновления CURRENT_XI snapshot. Используется существующая реализация применения основы. Metadata хранит ID матча, kickoff, lineup ID, время проверки, источник и fingerprint, включая случай неизменных галочек. Пока такой прогноз относится к будущему матчу, другие автоматические источники не перезаписывают его. Ручное выставление основы сохраняет прежний сценарий; очередной импорт применяет актуальный прогноз согласно расписанию.
+<a name="governing-specs"></a>
 
-## Данные и миграции {#data}
-`ProviderEntityMap`, `TeamPlayerSeason.isStarter`, `LeagueSeasonTeam.metadata.probableLineup`, `startingXiChangedAt`, `FantasyPlayerPoolRefreshRequest`. Новая миграция не требуется. Другие metadata-поля сохраняются; полные provider response и данные аккаунта не сохраняются.
+## Governing specifications {#governing-specs}
+Legacy product canon: `specs/common/main.md`; runtime ownership: `specs/common/structure.md`; issue: `docs/operations/DEPLOYMENT.md`.
 
-## Контракты и точки входа {#contracts}
-`npm run starters:sync-sorareinside -- --json` возвращает отчёт без записи; `--apply` разрешает запись. Worker подключает тот же sync из instrumentation. Отчёт содержит status, totals, команды, fixture/kickoff и несовпадения; HTTP, применение и конфликт маппинга дают ненулевой exit code CLI.
+<a name="environments"></a>
 
-## Runtime и операции {#runtime}
-Worker запускает один таймер на ближайшее :05 UTC (в Москве это также :05). Запуск после рестарта восполняет состояние. CLI по умолчанию dry-run, `--apply` разрешает запись. Межпроцессный advisory lock не допускает одновременный запуск scheduler/CLI. Feature flag `SORAREINSIDE_SYNC_ENABLED=true`; логин и пароль только в environment, без попадания в Git/отчёты. Авторизация cookie; запросы последовательные, ограничены таймаутом, размером, количеством окон/команд и общей длительностью. Куки переиспользуются в памяти worker, данные матчей и игроков не хранятся в глобальном кэше.
+## Environments and dependencies {#environments}
+Node.js 20+, Prisma/PostgreSQL, HTTPS access to SorareInside. Production is an existing Docker worker. Web does not receive origin credentials. The CLI uses the same database connection and explicit environment credentials.
 
-## Ошибки и наблюдаемость {#errors}
-Сбой авторизации, HTTP/JSON или схемы не сбрасывает основу. Отдельный невалидный состав сохраняет всю команду. Журнал содержит итог, выбранный матч, пропуски и несовпадения без секретов и данных аккаунта. Повторный запуск не дублирует маппинг или очередь кэша; неизменные галочки не запускают пересчёт. Логи ограничивает действующая Docker-ротация.
+<a name="decisions"></a>
 
-## Наблюдаемость {#observability}
-Worker сообщает следующий запуск в UTC, итог цикла, число изменённых/неизменных/пропущенных команд и память. Для пропущенной команды видны выбранный матч и причина. Частичный успех не называется полным покрытием.
+## Canonical decisions {#decisions}
+Persistent UUIDs are stored in a common mapping table, the calendar is selected before the forecast, the entry is performed only for the full XI. Cache protection and updating use the project's existing transactional mechanisms.
 
-## Выпуск и восстановление {#recovery}
-Чистый commit на origin, проверки, production dry-run и канонический Docker deploy. До применения сохраняется ограниченный снимок затрагиваемых галочек/metadata для восстановления. Отключение feature flag прекращает новые запуски; rollback образа возвращает прежний worker. Деструктивной миграции нет.
+<a name="source"></a>
 
-## Трассировка и готовность {#acceptance}
-`@spec` на provider parser/client, sync, scheduler, CLI, guard и прямых contract tests. Проверки: выбор минимума до проверки наличия прогноза, UUID/дубликаты, неоднозначность и смена клуба, 11 игроков, атомарность/кэш, :05 и конкурентный запуск. Production evidence подтверждает реальные данные, расписание, память и повторный запуск без дублирования.
+## Source and match selection {#source}
+Authorized API `https://platform-api.sorareinside.com`, the same one the site uses. `/gameweeks` sets the current windows, `/games` returns the schedule along with nullable links to forecasts, `/lineups/:id` returns the published forecast. All windows with an end in the future and a start within 14 days are loaded, as well as scheduledLineups. First, the minimum future date of the team is selected, then its lineupId; matches without a forecast cannot be discarded until the minimum is selected. Past, canceled, postponed and already started matches are excluded. Unknown format/status closes the entry. Conflicting schedule duplicates block the cycle. Incomplete loading of any window prevents the entire loop from being applied.
 
-## Точки ответственности {#traceability}
-`src/providers/sorareinside/`, `src/machete/sorareinside-sync.ts`, `src/machete/sorareinside-identity.ts`, `src/machete/sorareinside-protection.ts`, `src/server/sorareinside-scheduler.ts`, CLI и автоматические writers. Прямые unit/contract tests ссылаются на owning anchor.
+<a name="mapping"></a>
 
-## Связи {#relationships}
-Существующие probable-lineup sync, starting-xi-from-match, fantasy-player-pool-refresh-queue; `docs/DEPLOYMENT.md`.
+## Identity and data {#mapping}
+The existing `ProviderEntityMap` is used: provider `SORAREINSIDE`, providerSeason `GLOBAL`, types TEAM/PLAYER, source UUID → FotMob ID. There are no new columns or player copies. Primary automatic binding requires a unique strict match of the normalized name/full slug within the club, or a match of the full date of birth and the significant name token. One date of birth without name verification is not enough. If there are dates of birth, they must match. Teams are matched strictly by normalized name/explicit verified alias and country. Ambiguity, date contradiction, duplicate internal IDs and IDs outside the active roster block the command from being used. An existing ID is not replaced by a name search. Bindings are only preserved by apply, a unique upsert, without changing the already established mapping. For new mismatches, the operator can record the verified binding.
 
-## История изменений {#changelog}
-- 2026-09-11: создан канон импорта SorareInside.
+<a name="apply"></a>
+
+## Application and competition {#apply}
+Only `lineup_players.starting_players`, exactly 11 unique players and one goalkeeper; not alternate_players and not the total start percentage. Game_id, team.id, is_published and future date are checked immediately before recording. In one transaction, under the existing starting-xi lock, the checkboxes are changed and a CURRENT_XI snapshot update request is written. An existing framework application implementation is used. Metadata stores match ID, kickoff, lineup ID, check time, source and fingerprint, including the case of permanent checkmarks. As long as the prediction is for a future match, other automated sources will not overwrite it. Manually setting the base retains the same scenario; the next import applies the current forecast according to the schedule.
+
+<a name="data"></a>
+
+## Data and state {#data}
+`ProviderEntityMap`, `TeamPlayerSeason.isStarter`, `LeagueSeasonTeam.metadata.probableLineup`, `startingXiChangedAt`, `FantasyPlayerPoolRefreshRequest`. No new migration is required. Other metadata fields are preserved; full provider response and account data are not saved.
+
+<a name="contracts"></a>
+
+## Contracts {#contracts}
+`npm run starters:sync-sorareinside -- --json` returns a report without a record; `--apply` allows recording. Worker connects the same sync from instrumentation. The report contains status, totals, commands, fixture/kickoff and mismatches; HTTP, application and mapping conflict give a non-zero CLI exit code.
+
+<a name="runtime"></a>
+
+## Runtime and operations {#runtime}
+Worker starts one timer for the nearest :05 UTC (in Moscow it is also :05). Starting after a restart replenishes the condition. The default CLI is dry-run, `--apply` allows writing. Interprocess advisory lock does not allow simultaneous launch of scheduler/CLI. Feature flag `SORAREINSIDE_SYNC_ENABLED=true`; login and password only in the environment, without getting into Git/reports. Cookie authorization; requests are sequential, limited by timeout, size, number of windows/commands and total duration. Cookies are reused in the worker's memory; match and player data is not stored in the global cache.
+
+<a name="errors"></a>
+
+## Errors and validation {#errors}
+Authorization, HTTP/JSON, or schema failure does not reset the framework. A separate invalid squad saves the entire team. The log contains the result, the selected match, omissions and discrepancies without secrets and account data. Rerunning does not duplicate the mapping or cache queue; Unchanged checkboxes do not trigger recalculation. The logs are limited by the current Docker rotation.
+
+<a name="observability"></a>
+
+## Observability {#observability}
+Worker reports next run in UTC, cycle total, number of commands changed/unchanged/skipped and memory. For a missed team, the selected match and reason are visible. Partial success is not called complete coverage.
+
+<a name="recovery"></a>
+
+## Rollout, rollback, and recovery {#recovery}
+Clean commit to origin, checks, production dry-run and canonical Docker deploy. Prior to application, a limited snapshot of the affected checkmarks/metadata is saved for recovery. Disabling the feature flag stops new launches; rollback of the image returns the previous worker. There is no destructive migration.
+
+<a name="acceptance"></a>
+
+## Acceptance criteria {#acceptance}
+`@spec` on provider parser/client, sync, scheduler, CLI, guard and direct contract tests. Checks: selection of the minimum before checking the presence of a forecast, UUID/duplicates, ambiguity and club change, 11 players, atomicity/cache, :05 and competitive launch. Production evidence confirms real data, schedule, memory and re-run without duplication.
+
+<a name="traceability"></a>
+
+## Implementation traceability {#traceability}
+`src/providers/sorareinside/`, `src/machete/sorareinside-sync.ts`, `src/machete/sorareinside-identity.ts`, `src/machete/sorareinside-protection.ts`, `src/server/sorareinside-scheduler.ts`, CLI and automatic writers. Direct unit/contract tests refer to the owning anchor.
+
+<a name="relationships"></a>
+
+## Related specifications {#relationships}
+Existing probable-lineup sync, starting-xi-from-match, fantasy-player-pool-refresh-queue; `docs/operations/DEPLOYMENT.md`.
+
+<a name="changelog"></a>
+
+## Changelog {#changelog}
+
+- 2026-09-28: English documentation, repaired document references, and GitHub navigation anchors (WI-039).
+- 2026-09-11: SorareInside import canon created.

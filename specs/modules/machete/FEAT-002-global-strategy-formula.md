@@ -2,109 +2,143 @@
 status: active
 ---
 
-# FEAT-002: Формула глобальной стратегии {#root}
+<a name="root"></a>
 
-## Простыми словами {#plain-language}
+# FEAT-002: Global strategy formula {#root}
 
-Отдельный strategyScore отклоняет состав от популярного шаблона по месту и отставанию. Ожидаемые очки футболиста не переписываются популярностью. Первая версия — ограниченная эвристика, не оценка вероятности победы.
+<a name="plain-language"></a>
 
-Полный текст от 2026-09-06 сохранён ниже и в `docs/GLOBAL_STRATEGY_FORMULA_RECOMMENDATIONS.md`.
+## Plain language {#plain-language}
 
-## 1. Цель {#goal}
+A separate strategyScore adjusts squad selection away from the popular template using rank and the gap to the leader. Player expected points must not be replaced with popularity. The first version is a bounded heuristic, rather than an estimate of the probability of winning.
 
-Зафиксировать формулу K и strategyScore, которую реализует FEAT-001, вместе со стартовыми коэффициентами и запретом подменять EP популярностью.
+The full text dated 2026-09-06 is preserved below and in `docs/archive/planning/GLOBAL_STRATEGY_FORMULA_RECOMMENDATIONS.md`.
 
-## 2. Управляющие спеки {#governing-specs}
+<a name="goal"></a>
 
-- Related: `spec://modules/machete/FEAT-001-global-ranking-strategy#root`
+## 1. Goal {#goal}
 
-## 3. Границы {#scope}
+Fix the formula K and strategyScore, which is implemented by FEAT-001, along with starting coefficients and a ban on replacing EP with popularity.
 
-### 3.1. Входит {#scope.in}
+<a name="governing-specs"></a>
 
-Формулы q, g, u, K; отдельный strategyScore; бюджет потери EP; версионируемые профили FPL и Sports.ru.
-
-### 3.2. Не входит {#scope.out}
-
-Подбор вероятности обгона, мини-лиги, замена EP на AdjustedEP.
-
-## 4. Участники {#actors}
-
-Тот же пользователь планировщика, что в FEAT-001. Формула не имеет отдельного экрана.
-
-## 5. Сценарии {#scenarios}
-
-K растёт при худшем месте, большем отставании и меньшей доле оставшегося сезона. Лидер получает K=0. Недостаток владения отключает стратегическую надбавку, а не трактуется как 0%.
-
-## 6. Данные {#data}
-
-N, rank, G, T, R, ER, ownership того же провайдера. Параметры α/c/η/weights/εmax — стартовые инженерные гипотезы, не подобранный оптимум.
-
-## 7. Контракты {#contracts}
-
-Формулы и примеры из исходного документа. Ядро — чистые функции FEAT-001; этот документ задаёт математику.
-
-## 8. Ошибки {#errors}
-
-Некорректные N/rank/G/ER не исправляются произвольным clamp. Отсутствие владения блокирует надбавку для набора кандидатов.
-
-## 9. Трассировка {#traceability}
-
-Чистые функции и профили: `src/machete/global-strategy.ts`, `src/machete/global-strategy-config.ts`. Прямые тесты формулы: `src/machete/global-strategy.test.ts`. Применение бюджета к составу и трансферам: `src/machete/global-strategy-planner.ts` и одноимённый test.
-
-## 10. Приёмка {#acceptance}
-
-Пять числовых примеров исходного документа воспроизводятся с допуском 1e-6. EP футболиста не мутируется.
-
-## 11. Связи {#relationships}
+## 2. Governing specifications {#governing-specs}
 
 - Related: `spec://modules/machete/FEAT-001-global-ranking-strategy#root`
 
-## 12. История изменений {#changelog}
+<a name="scope"></a>
 
-- [2026-09-07] Канон активирован по прямому поручению пользователя реализовать стратегию.
+## 3. Scope {#scope}
 
-- [2026-09-06] Импортирован действующий канон из `docs/GLOBAL_STRATEGY_FORMULA_RECOMMENDATIONS.md`.
+<a name="scope.in"></a>
 
-## Исходный документ
+### 3.1. In scope {#scope.in}
 
-Исторический текст на дату импорта; статус выполнения сверяется с WI-001.
+Formulas q, g, u, K; separate strategyScore; EP loss budget; versioned profiles FPL and Sports.ru.
 
-# Корректировки формулы глобальной стратегии
+<a name="scope.out"></a>
 
-Дата: 2026-09-06. Статус: предложение для реализации и проверки, не внедрено.
+### 3.2. Out of scope {#scope.out}
 
-## 1. Назначение
+Selection of overtaking probability, mini-leagues, replacing EP with AdjustedEP.
 
-Функция автоматически подбирает степень отклонения от популярных игроков по глобальному положению привязанной команды. Sports.ru — отдельное поле каждого турнира и сезона; FPL — Overall текущего сезона. Мини-лиги и ручной ввод рейтинга не входят в задачу.
+<a name="actors"></a>
 
-Предлагаемая первая версия — ограниченная эвристика выбора состава. Она не оценивает вероятность победы, не гарантирует улучшение итогового места и не превращает владение в дополнительные ожидаемые очки. Для оптимизации вероятности обгона нужны распределения результатов и совместные исходы состава и соперников.
+## 4. Participants and triggers {#actors}
 
-## 2. Что изменить и почему
+Same squad-planner user as FEAT-001. The formula does not have a separate screen.
 
-| Было в предложении | Предлагается | Причина |
+<a name="scenarios"></a>
+
+## 5. Scenarios {#scenarios}
+
+K is growing with a worse position, a larger lag and a smaller share of the remaining season. The leader receives K=0. Lack of ownership disables the strategic premium rather than being treated as 0%.
+
+<a name="data"></a>
+
+## 6. Data and state {#data}
+
+N, rank, G, T, R, ER, ownership of the same provider. Parameters α/c/η/weights/εmax are starting engineering hypotheses, an unselected optimum.
+
+<a name="contracts"></a>
+
+## 7. Contracts {#contracts}
+
+Formulas and examples from the source document. Core - pure functions FEAT-001; this document does the math.
+
+<a name="errors"></a>
+
+## 8. Errors and validation {#errors}
+
+Incorrect N/rank/G/ER are not corrected by an arbitrary clamp. Lack of ownership blocks the recruitment allowance for candidates.
+
+<a name="traceability"></a>
+
+## 9. Implementation traceability {#traceability}
+
+Pure functions and profiles: `src/machete/global-strategy.ts`, `src/machete/global-strategy-config.ts`. Direct formula tests: `src/machete/global-strategy.test.ts`. Applying the budget to the roster and transfers: `src/machete/global-strategy-planner.ts` and the test of the same name.
+
+<a name="acceptance"></a>
+
+## 10. Acceptance criteria {#acceptance}
+
+Five numerical examples of the original document are reproduced to tolerance 1e-6. The football player's EP does not mutate.
+
+<a name="relationships"></a>
+
+## 11. Related specifications {#relationships}
+
+- Related: `spec://modules/machete/FEAT-001-global-ranking-strategy#root`
+
+<a name="changelog"></a>
+
+## 12. Changelog {#changelog}
+
+- 2026-09-28: English documentation, repaired document references, and GitHub navigation anchors (WI-039).
+
+- [2026-09-07] Canon activated on the direct instructions of the user to implement the strategy.
+
+- [2026-09-06] Imported the current canon from `docs/archive/planning/GLOBAL_STRATEGY_FORMULA_RECOMMENDATIONS.md`.
+
+## Source document
+
+Historical text as of import date; The execution status is checked against WI-001.
+
+# Adjustments to the global strategy formula
+
+Date: 2026-09-06. Status: proposal for implementation and testing, not implemented.
+
+## 1. Purpose
+
+The function automatically selects the degree of deviation from popular players based on the global position of the linked team. Sports.ru - a separate field for each tournament and season; FPL — Overall of the current season. Mini-leagues and manual rating entry are not included in the task.
+
+The proposed first version is a limited squad selection heuristic. It does not estimate the probability of winning, does not guarantee an improvement in final placing, and does not convert possessions into additional expected points. To optimize the probability of overtaking, distributions of results and joint outcomes of the squad and opponents are needed.
+
+## 2. What to change and why
+
+| Was in offer | Offered | Reason |
 |---|---|---|
-| AdjustedEP заменяет EP | Сохранять EP; ввести отдельный strategyScore | Популярность не меняет ожидаемый результат футболиста |
-| Владение из неопределённого поля | Только глобальное владение того же провайдера, турнира и сезона | Sports.ru EPL и FPL имеют разные команды менеджеров и правила |
-| ln(N)/ln(500) умножает весь K | Убрать отдельный FieldFactor | При миллионах участников он раздувает K; N уже участвует в процентиле |
-| RankRisk = q^1.3 | Начать с линейного q | Степень 1.3 уменьшает все внутренние значения относительно q; эмпирического основания для неё нет |
-| GapRisk = G/(G + ER × R) и отдельная urgency | Нормировать G в единицах обычного тура; время учитывать отдельно | Убираем повторное усиление времени и ложную интерпретацию ER × R как доступного отыгрыша |
-| Urgency = 10/(R+10) добавляется даже лидеру | Urgency умножает потребность в погоне и зависит от доли пройденного сезона | Лидер не становится агрессивнее только из-за приближения конца; сезоны разной длины сопоставимы |
-| Kfinal = 0.05 + 0.90K | Явный clamp и допустимый K=0 | Линейное преобразование не гарантирует границ и создаёт обязательную агрессию |
-| Большой бонус редкости без ограничения потерь | Небольшой бонус плюс жёсткий бюджет потери EP всего решения | Редкий слабый игрок не должен побеждать за счёт одного множителя |
-| Одна настройка для всех | Версионируемые профили FPL и SPORTS_RU, у Sports.ru — overrides по турниру | Отличаются очки, календарь, трансферы, бонусы и масштаб поля |
-| Неизвестное владение трактуется как 0% | Использовать свежий источник; при сбое отключать стратегическую надбавку для запроса | Отсутствие данных не означает редкость |
+| AdjustedEP replaces EP | Save EP; enter a separate strategyScore | Popularity does not change the expected result of a football player |
+| Ownership from undefined field | Only global ownership of the same provider, tournament and season | Sports.ru EPL and FPL have different management teams and rules |
+| ln(N)/ln(500) multiplies the entire K | Remove separate FieldFactor | With millions of participants it inflates K; N is already participating in the percentile |
+| RankRisk = q^1.3 | Start with linear q | Power 1.3 reduces all internal values with respect to q; there is no empirical basis for it |
+| GapRisk = G/(G + ER × R) and separate urgency | Normalize G in normal round units; time to be taken into account separately | We remove the repeated amplification of time and the false interpretation of ER × R as an available wagering |
+| Urgency = 10/(R+10) is added even to the leader | Urgency multiplies the need for the chase and depends on the share of the season completed | The leader does not become more aggressive just because the end is approaching; seasons of different lengths are comparable |
+| Kfinal = 0.05 + 0.90K | Explicit clamp and permissible K=0 | Linear transformation does not guarantee boundaries and creates mandatory aggression |
+| Large rarity bonus with no loss limit | Small bonus plus strict EP loss budget of the entire solution | Rare weak player should not win due to one multiplier |
+| One setting for all | Versible profiles FPL and SPORTS_RU, Sports.ru has overrides for the tournament | Points, calendar, transfers, bonuses and field scale are different |
+| Unknown ownership is treated as 0% | Use a fresh source; on failure, disable strategic surcharge for request | Lack of data does not mean rarity |
 
-## 3. Предлагаемая формула первой версии
+## 3. Proposed formula of the first version
 
-Все параметры ниже — стартовые инженерные гипотезы. Они проверяют реализацию и ограничивают её поведение; это не статистически подобранные оптимальные коэффициенты.
+All parameters below are starting engineering hypotheses. They check the implementation and constrain its behavior; These are not statistically selected optimal odds.
 
-Обозначения:
+Designations:
 
-- N — размер глобального поля; rank — место команды по тому же срезу рейтинга.
-- G = leaderPoints − managerPoints, неотрицательное отставание. Отрицательная разница означает несовместимые данные, а не необходимость молча обнулить G.
-- T — полное число сопоставимых туров данного зачёта; R — число оставшихся туров, на которые ещё можно повлиять до дедлайна. R не равно горизонту прогноза H.
-- ER — положительный масштаб очков за один тур, автоматически оценённый по официальным завершённым турам. Это единица нормализации, не оценка доступного отыгрыша.
+- N — global field size; rank — the team’s position according to the same rating section.
+- G = leaderPoints − managerPoints, non-negative lag. A negative difference means inconsistent data, not the need to silently reset G.
+- T - the total number of comparable rounds of this classification; R is the number of remaining rounds that can still be influenced before the deadline. R is not equal to the forecast horizon H.
+- ER - positive scale of points for one round, automatically assessed based on official completed rounds. This is a unit of normalization, not an estimate of available wagering.
 
 ```text
 q = (rank − 1) / (N − 1)
@@ -114,19 +148,19 @@ u = clamp((T − R) / max(T − 1, 1), 0, 1)^η
 K = clamp(Kmax × u × (wRank × q + wGap × g), 0, Kmax)
 ```
 
-Стартовый профиль: `c=3`, `η=2`, `wRank=0.4`, `wGap=0.6`, `Kmax=0.8`. Веса суммируются в 1. Для FPL и Sports.ru создаются отдельные конфигурации; до калибровки допустимы одинаковые значения. Придумывать отличия коэффициентов без данных не нужно.
+Starting profile: `c=3`, `η=2`, `wRank=0.4`, `wGap=0.6`, `Kmax=0.8`. The weights are summed up in 1. Separate configurations are created for FPL and Sports.ru; before calibration, the same values ​​are acceptable. There is no need to invent differences in coefficients without data.
 
-Если команда лидирует или делит лидерство по очкам — K=0. При R=0 — сезон/доступные решения завершены, рекомендаций нет. До первого завершённого тура — нейтральный режим. При N≤1 конкурентная стратегия не нужна. Несогласованный календарь или рейтинг блокирует автоматический K.
+If the team is in the lead or shares the lead on points - K=0. When R=0 - the season/available solutions are over, there are no recommendations. Until the first completed round - neutral mode. When N≤1, a competitive strategy is not needed. An inconsistent calendar or rating blocks automatic K.
 
-Почему такая форма: ухудшение места или рост отставания при остальных равных не уменьшает K; уменьшение R его не уменьшает. Отставание и место дают содержательную потребность в погоне, а u постепенно увеличивает её влияние. Квадрат u откладывает значимую агрессию на позднюю часть сезона. Это осознанная консервативная настройка, которую нужно проверять, особенно для коротких турниров.
+Why this form: worsening place or increasing lag, all other things being equal, does not reduce K; decreasing R does not reduce it. The lag and place give a meaningful need for the pursuit, and u gradually increases its influence. The u square delays significant aggression until later in the season. This is a consciously conservative setting that needs to be checked, especially for short tournaments.
 
-K=0 у лидера означает нейтральный подбор по прогнозу. Это не полноценная стратегия защиты лидерства: глобальное владение не описывает состав второго места. Защиту не обещать в интерфейсе.
+K=0 for the leader means neutral selection according to the forecast. This is not a complete leadership defense strategy: global ownership does not describe the squad of second place. Protection cannot be promised in the interface.
 
-### Примеры K
+### Examples K
 
-При N=500, T=38, ER=70:
+When N=500, T=38, ER=70:
 
-| Место | G | R | K |
+| Location | G | R | K |
 |---|---:|---:|---:|
 | 1 | 0 | 1 | 0 |
 | 250 | 100 | 35 | 0.0021 |
@@ -134,11 +168,11 @@ K=0 у лидера означает нейтральный подбор по п
 | 250 | 100 | 3 | 0.2814 |
 | 490 | 300 | 1 | 0.5959 |
 
-Примеры проверяют арифметику и направление изменения K; они не доказывают спортивную эффективность.
+Examples check the arithmetic and direction of change of K; they do not prove athletic performance.
 
-## 4. Владение и цена отклонения
+## 4. Ownership and cost of deviation
 
-Для одной пары «игрок — тур»:
+For one “player-round” pair:
 
 ```text
 o = ownershipPercent / 100
@@ -146,9 +180,9 @@ bonus = α × K × max(EP, 0) × (1 − o)
 strategyScore = EP + bonus
 ```
 
-Стартовый `α=0.15`: при Kmax=0.8 надбавка не превышает 12% положительного EP. Отрицательный прогноз сохраняется; умножением редкости он не улучшается. Повторно домножать бонус на forecastConfidence или минуты в первой версии не нужно: это может повторить уже учтённые в EP поправки, а confidence не является вероятностью удачного выступления.
+Starting `α=0.15`: with Kmax=0.8 the premium does not exceed 12% positive EP. The negative prognosis remains; it does not improve by multiplying rarity. There is no need to repeatedly multiply the bonus by forecastConfidence or minutes in the first version: this can repeat the amendments already taken into account in the EP, and confidence is not the probability of a successful performance.
 
-Даже ограниченного бонуса недостаточно. Сначала находится базовое допустимое решение с наибольшим EP среди рассмотренных решений, затем стратегическое. Для одинакового горизонта, источника прогноза, состава ограничений и правил:
+Even a limited bonus is not enough. First, the basic feasible solution with the highest EP among the considered solutions is found, then the strategic one. For the same horizon, forecast source, set of restrictions and rules:
 
 ```text
 ε(K) = 0.03 × K / Kmax
@@ -156,35 +190,35 @@ B = ε(K) × max(baseExpectedPoints, 0)
 candidateExpectedPoints ≥ baseExpectedPoints − B
 ```
 
-`baseExpectedPoints` и `candidateExpectedPoints` уже учитывают реальную стартовую расстановку, капитана и стоимость трансферов. Если базовый прогноз 70 и K=0.4, разрешённая потеря составляет 1.05 очка. Это верхний предел, не требуемая жертва.
+`baseExpectedPoints` and `candidateExpectedPoints` already take into account the real starting lineup, captain and transfer costs. If the base forecast is 70 and K=0.4, the allowed loss is 1.05 points. This is an upper limit, not a required sacrifice.
 
-Бонус определяет стратегическую сортировку, а B отдельно ограничивает её ущерб. В UI показывать и EP, и потерю относительно базового решения. Не называть strategyScore прогнозом очков.
+Bonus determines strategic sorting, and B separately limits its damage. In the UI, show both EP and loss relative to the base solution. Don't call strategyScore a score prediction.
 
-Пример исходной проблемы: при K=0.8 оригинальная формула предпочитает EP=6/O=5% (10.56) игроку EP=8/O=80% (9.28). Предлагаемая надбавка даёт 6.684 и 8.192 соответственно. Однако проверять бюджет нужно у всего состава, а не только у отдельного игрока.
+Example of the original problem: when K=0.8, the original formula prefers EP=6/O=5% (10.56) to the player EP=8/O=80% (9.28). The proposed premium gives 6.684 and 8.192 respectively. However, you need to check the budget of the entire squad, and not just an individual player.
 
-## 5. Принципиальные ограничения
+## 5. Fundamental restrictions
 
-Ожидаемый отрыв состава от фиксированного поля в упрощённой модели равен `Σ(x_i − o_i)EP_i`, где x_i — собственная экспозиция. Вторая часть не зависит от нашего выбора. Поэтому положительный вклад выбранного редкого игрока нельзя выдавать за доказательство оптимальности: нужно учитывать пропущенных игроков и совместные исходы.
+The expected separation of the squad from the fixed field in the simplified model is equal to `Σ(x_i − o_i)EP_i`, where x_i is its own exposure. The second part does not depend on our choice. Therefore, the positive contribution of the selected rare player cannot be presented as proof of optimality: missing players and joint outcomes must be taken into account.
 
-Низкое владение не доказывает высокую дисперсию. Текущий режим upside в проекте использует разброс прогнозов между турами; это в том числе эффект календаря, а не распределение случайного результата. Не использовать этот разброс как σ для вероятности победы и не складывать его автоматически с новым бонусом.
+Low ownership does not prove high dispersion. The current upside mode in the project uses the spread of forecasts between rounds; This is also a calendar effect, and not a distribution of a random result. Do not use this spread as σ for the probability of winning and do not automatically add it to the new bonus.
 
-Для капитана обычное владение не равно эффективной экспозиции поля: оно не включает долю капитанства, старт и бонусы. В первой версии бонус по обычному владению — только явно обозначенное приближение. Эффективное владение, которое может превышать 100%, потребует отдельного поля и другой формулы; ограничивать его как обычный процент нельзя.
+For a captain, normal ownership does not equal effective field exposure: it does not include captaincy shares, starts or bonuses. In the first version, the bonus for normal possession is only a clearly indicated approximation. An effective holding that could exceed 100% would require a separate field and a different formula; it cannot be limited like a regular percentage.
 
-Отставание от первого места в многомиллионном FPL — агрессивная цель. Эта версия сохраняет исходный ориентир на лидера, но не утверждает, что такая цель лучше для среднего итогового места. Если продукту нужна оптимизация попадания в определённый глобальный топ, это отдельное определение цели и проверка, без мини-лиг.
+Falling short of first place in a multi-million dollar FPL is an aggressive goal. This version retains the original focus on the leader, but does not claim that such a target is better for the average final place. If a product needs optimization to reach a certain global top, this is a separate goal determination and verification, without mini-leagues.
 
-## 6. Данные и источники
+## 6. Data and sources
 
-Проверено 2026-09-06: публичный Sports.ru GraphQL возвращает `seasonScoreInfo.place/score/totalPlaces`, `totalSquadsCount`, рейтинг `rating.squads` по SEASON без leagueID. В российском турнире на момент проверки было 18 926 команд, лидер — 478 очков. `averageScore` в проверенном ответе равнялся 0, поэтому нельзя принимать наличие поля за пригодную статистику.
+Verified by 2026-09-06: public Sports.ru GraphQL returns `seasonScoreInfo.place/score/totalPlaces`, `totalSquadsCount`, rating `rating.squads` by SEASON without leagueID. In the Russian tournament at the time of inspection there were 18 926 teams, the leader was 478 points. `averageScore` in the verified answer was equal to 0, so the presence of the field cannot be taken as a usable statistic.
 
-FPL возвращает `total_players`, `summary_overall_rank`, `summary_overall_points`, `selected_by_percent`, события и рейтинг Overall. В текущем коде selectedByPercent теряется при upsert основной таблицы цен, хотя присутствует в сохранённых данных всех 653 игроков.
+FPL returns `total_players`, `summary_overall_rank`, `summary_overall_points`, `selected_by_percent`, events and Overall rating. In the current code, selectedByPercent is lost when upsert the main price table, although it is present in the saved data of all 653 players.
 
-Первичные исследовательские источники поддерживают моделирование соперников, дисперсии и корреляций, но не предложенные здесь коэффициенты:
+Primary research sources support modeling of rivals, variance, and correlations, but not the coefficients proposed here:
 
 - Haugh, Singal, How to Play Fantasy Sports Strategically (and Win): https://pubsonline.informs.org/doi/abs/10.1287/mnsc.2019.3528
 - Picking Winners in Daily Fantasy Sports Using Integer Programming: https://arxiv.org/abs/1604.01455
-- Проверенный рейтинг FPL: https://fantasy.premierleague.com/api/leagues-classic/314/standings/
+- Verified FPL rating: https://fantasy.premierleague.com/api/leagues-classic/314/standings/
 - Sports.ru GraphQL: https://www.sports.ru/gql/graphql/
 
-Обсуждения использовались для поиска практических вопросов, не для доказательства коэффициентов: https://www.reddit.com/r/FantasyPL/comments/1f3942y/ ; https://stats.stackexchange.com/questions/212719/suggestions-for-simple-model-of-who-wins-the-league-in-a-game-of-fantasy-footbal
+Discussions were used to find practical questions, not to prove coefficients: https://www.reddit.com/r/FantasyPL/comments/1f3942y/ ; https://stats.stackexchange.com/questions/212719/suggestions-for-simple-model-of-who-wins-the-league-in-a-game-of-fantasy-footbal
 
-Подробная спецификация: [GLOBAL_STRATEGY_SPEC.md](GLOBAL_STRATEGY_SPEC.md).
+Detailed specification: [GLOBAL_STRATEGY_SPEC.md](../../../docs/archive/planning/GLOBAL_STRATEGY_SPEC.md).

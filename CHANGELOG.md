@@ -1,5 +1,50 @@
 # Changelog
 
+## 0.3.104 - 2026-09-28
+
+### Documentation
+
+- Record the successful Linux security and application checks, document the CI test environments, and archive WI-041.
+
+## 0.3.103 - 2026-09-28
+
+### Checks
+
+- Run CI unit-test files serially so timing assertions do not compete with other tests for CPU and memory; retain the existing five-second optimizer limit.
+
+## 0.3.102 - 2026-09-28
+
+### Checks
+
+- Run all tracked database integration tests in disposable common, betting, and KHL databases that match the existing safety guards; enable the isolated KHL test cases and run each group serially.
+- Record the verified dependency remediation and resolve TD-007.
+
+## 0.3.101 - 2026-09-28
+
+### Build
+
+- Regenerate the dependency lockfile with CI's npm 10.8.2, restoring the required optional WASM runtime entries without changing the patched dependency versions.
+
+## 0.3.100 - 2026-09-28
+
+### Security
+
+- Update the sharp override and its native libraries to patched releases.
+- Refresh compatible baseline-browser-mapping, browserslist, and postcss-selector-parser resolutions to address dependency denial-of-service vulnerabilities.
+
+## 0.3.99 - 2026-09-28
+
+### Documentation
+
+- Record verified publication of the English documentation on the default GitHub branch and archive WI-039 with validation evidence.
+
+## 0.3.98 - 2026-09-28
+
+### Documentation
+
+- Translate public Markdown documentation to English, organize it by topic, add an index and current project overview, and repair references while preserving contract anchors.
+- Consolidate Git ignore rules for local configuration, credentials, generated files, caches, and reports; stop tracking the generated `next-env.d.ts` file.
+
 All production versions are built from Git commits and tagged after successful
 promotion. Runtime identity is available from `/api/health` and from the OCI
 image labels `org.opencontainers.image.version` and
@@ -112,7 +157,7 @@ image labels `org.opencontainers.image.version` and
 
 ## 0.3.76 - 2026-09-18
 
-- Squad advances to the Sports.ru OPENED tour even when a finished tour still has one postponed match left as NOT_STARTED.
+- Squad advances to the Sports.ru OPENED round even when a finished round still has one postponed match left as NOT_STARTED.
 
 ## 0.3.75 - 2026-09-16
 
@@ -120,31 +165,31 @@ image labels `org.opencontainers.image.version` and
 
 ## 0.3.74 - 2026-09-14
 
-- Выпуск ждёт завершения полного сбора КХЛ перед остановкой контейнеров; плановый сбор ждёт окончания замены сервера.
+- The release is waiting for the completion of the full collection of KHL before stopping the containers; The scheduled collection is waiting for the server replacement to be completed.
 
-- КХЛ: каждый полный сбор заново проверяет словарь хоккейных исходов Фонбета; обычное обновление линии сохраняет время последней фактической проверки словаря.
+- KHL: each full training camp re-checks the Fonbet dictionary of hockey outcomes; a normal line update stores the time of the last actual dictionary check.
 
 ## 0.3.73 - 2026-09-14
 
-- КХЛ: клик по EP открывает ожидаемые G/A/SOG/PIM/+− и исходные суммы, покрытия, веса и формулы; полный Excel дополнен листом ожиданий.
-- EP суммирует отдельные матчи с прозрачной beta-поправкой атаки по свежей проверенной линии Фонбета за 60 минут; нет линии — явно указанный базовый прогноз.
-- Полный сбор Sports, календаря и протоколов КХЛ, архива и линии запускается в 10:00 и 20:00 МСК. Повторы ограничены lock/checkpoints, ошибки источников сохраняют последние хорошие данные и отдельный статус.
-- Между полными циклами обновляются коэффициенты и EP; история публикаций ограничена 96 снимками на турнир и семью сутками.
+- KHL: clicking on EP opens the expected G/A/SOG/PIM/+− and initial amounts, coverage, weights and formulas; full Excel supplemented with a waiting list.
+- EP summarizes individual matches with a transparent beta-correction of the attack on a fresh, verified Fonbet line in 60 minutes; no line—explicitly specified base forecast.
+- A complete collection of Sports, calendar and KHL protocols, archive and line is launched in 10:00 and 20:00 MSC. Repetitions are limited by lock/checkpoints, source errors keep the last good data and a separate status.
+- Between full cycles, coefficients and EP are updated; publication history is limited to 96 photos for the tournament and seven days.
 
 ## 0.3.72 - 2026-09-14
 
-- Прошлый сезон КХЛ дополнен точными матчевыми протоколами: броски, TOI, большинство, меньшинство и время в атаке с отдельным покрытием.
-- Прошлогодние броски и их реализация участвуют в EP; официальные FP Sports сохраняются, повторный импорт не удваивает данные.
-- Подсказки для каждого столбца и ячейки: смысл, расчёт, период, покрытие, источник и компоненты EP игрока; доступная справка показателей.
-- Полный Excel всего каталога независимо от страницы и фильтров: шесть листов с текущей/прошлой статистикой, средними, прогнозами и справкой.
-- Исправлено расширение каталога за пределы страницы на десктопе; широкая таблица сохраняет собственную прокрутку.
+- The last KHL season is supplemented with accurate match protocols: shots, TOI, power play, minority and time in attack with separate coverage.
+- Last year's throws and their implementation are included in the EP; official FP Sports are preserved, re-import does not double the data.
+- Hints for each column and cell: meaning, calculation, period, coverage, source and player EP components; available reference of indicators.
+- Full Excel of the entire catalog, regardless of page and filters: six sheets with current/past statistics, averages, forecasts and help.
+- Fixed directory expansion beyond the page on the desktop; The wide table retains its own scrolling.
 
 ## 0.3.71 - 2026-09-13
 
-- КХЛ: броски, голы, передачи, штрафные минуты и плюс-минус в отдельных сортируемых колонках; максимум две десятичные цифры в показателях.
-- Архив предыдущего сезона Sports, отдельный период просмотра и ограниченный prior для короткой текущей истории.
-- Единый объяснимый EP: G/A/SOG/PIM/+/−, вклад показателей, частота участия и размеры выборок. Официальные FP сохраняются.
-- Аддитивная таблица khl_historical_seasons; идемпотентный импорт и перенос проверенного локального архива.
+- KHL: shots, goals, assists, penalty minutes and plus/minus in separate sortable columns; maximum two decimal digits in indicators.
+- Archive of the previous Sports season, separate viewing period and limited prior for a short current story.
+- Single explainable EP: G/A/SOG/PIM/+/−, contribution of indicators, frequency of participation and sample sizes. Official FPs are retained.
+- Additive table khl_historical_seasons; idempotent import and migration of a verified local archive.
 
 ## 0.3.70 - 2026-09-13
 
@@ -254,7 +299,7 @@ image labels `org.opencontainers.image.version` and
   controls, preserve existing squad names, and name only newly created squads
   from the user name plus `squad`.
 - Put next-round, forecast, budget, bank and transfer-limit progress directly
-  above the composition; move Round forecast below it and keep the existing
+  above the squad; move Round forecast below it and keep the existing
   planning configuration without exposing a separate settings panel.
 - Make save and provider-import actions icon-only, move Fits beside the price
   range, and show at most two compact transfer suggestions beside denser
@@ -623,8 +668,8 @@ image labels `org.opencontainers.image.version` and
 
 ### Added
 
-- Machete squad planning tables are archived per fantasy tour exactly one
-  minute before the first kickoff. Tour boundaries come from the synced
+- Machete squad planning tables are archived per fantasy round exactly one
+  minute before the first kickoff. round boundaries come from the synced
   Sports.ru provider rounds, captures run on one precise timer per round, and
   the stored player pool is exportable with `npm run snapshots:squad` for
   comparing pre-deadline forecasts with real fantasy results.
@@ -746,7 +791,7 @@ image labels `org.opencontainers.image.version` and
   UEFA writes remain closed during the rollback-compatible schema expansion.
 - Foontasy rows now retain their source variant, Sports.ru phase ID, original
   round label, phase round, and canonical round. Sports.ru price refreshes
-  retain the tour history needed when European knockout phases restart at
+  retain the round history needed when European knockout phases restart at
   round one.
 
 ### Fixed

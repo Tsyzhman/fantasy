@@ -1,30 +1,44 @@
-# Вход для AI
+# AI entry point
 
-Перед любым действием используй project skill `spec-driven-work` как единый роутер. Codex находит его в `.agents/skills/spec-driven-work/`, Claude Code — в `.claude/skills/spec-driven-work/`. Если client не обнаружил skill, полностью прочитай `specs/protocols/BOOT.md`.
+Before any action, use the project `spec-driven-work` skill as the primary router.
+Codex finds it in `.agents/skills/spec-driven-work/`; Claude Code uses
+`.claude/skills/spec-driven-work/`. If the client cannot discover the skill, read
+`specs/protocols/BOOT.md` in full.
 
-Этот проект ведётся в режиме `standalone`. Спеки, код и тесты — канон в Git. Очередь работы живёт в `specs/BOARD.md`, `specs/work/` и при необходимости в `specs/WAL.md`. Сервис Prist не требуется и не контролирует агента.
+This repository uses `standalone` mode. Specifications, code, and tests are the
+canonical sources in Git. Work tracking lives in `specs/BOARD.md`, `specs/work/`,
+and, when needed, `specs/WAL.md`. A Prist service is not required.
 
-## Основные инварианты
+## Core invariants
 
-- Явный `WI-NNN` ведёт к файлу WI, одной строке `BOARD.md`, возможному checkpoint в `WAL.md` и перечисленным governing specs.
-- Запрос обычным языком разрешается через `BOARD.md`, `SPEC-MAP.md`, `common/structure.md`, спеки и `@spec`.
-- Одношаговая работа в текущей сессии может выполняться без WI, `BOARD` и `WAL`.
-- Отслеживаемая работа получает файл `specs/work/WI-NNN-*.md` и одну строку в `BOARD.md`.
-- `WAL.md` меняется только при checkpoint, handoff или возобновлении незавершённой работы.
-- Спека хранит канон; WI хранит outcome, scope, acceptance и result текущего прохода.
-- Новая спека регистрируется в `SPEC-MAP.md`. `common/structure.md` меняется при изменении модуля, namespace или code ownership.
-- Исправление кода по ясной активной спеке использует `Canon action: none`; текст спеки обновляется при реальном изменении или пробеле канона.
-- `specs/.me` требуется перед claim WI и изменением `BOARD/WAL`. Read-only анализ и одношаговая работа могут идти без него. Локальный `specs/.me` не коммить.
+- An explicit `WI-NNN` resolves to its file, one board row, any relevant WAL
+  checkpoint, and its governing specifications.
+- Resolve ordinary-language requests through the board, specification map,
+  technical ownership map, specifications, and `@spec` markers.
+- A one-step change completed in the current session may omit WI, BOARD, and WAL.
+- Tracked work gets a `specs/work/WI-NNN-*.md` file and one board row.
+- Change WAL only for a checkpoint, handoff, or resuming unfinished work.
+- A specification stores the canonical contract; a WI stores the outcome, scope,
+  acceptance criteria, and result of the current pass.
+- Register new specifications in `SPEC-MAP.md`. Update `common/structure.md` when
+  modules, namespaces, directory ownership, or code ownership change.
+- A fix to match a clear active contract uses `Canon action: none`. Update the
+  specification only for an actual contract change or a missing contract detail.
+- Require `specs/.me` before claiming a WI or changing BOARD/WAL. Read-only
+  analysis and one-step work may proceed without it. Never commit this identity.
 
-## Безопасность интерфейса
+## Interface preservation
 
-Сохраняй существующие UI/UX-сценарии при технических изменениях. Явно сообщай человеку, если текущий интерфейс нельзя сохранить на выбранном backend или API. Удаление и упрощение пользовательских возможностей требуют прямого запроса.
+Preserve existing UI/UX workflows during technical changes. Tell the user
+explicitly if the selected backend or API cannot support the existing interface.
+Removing or simplifying user capabilities requires a direct user request.
 
-## Трассировка
+## Traceability
 
-Новый или существенно изменённый spec-owned код получает актуальный `@spec spec://...#...` на точках ответственности: файл, обработчик, сервис, крупный UI-компонент, worker, миграция или materializer.
-
-Прямой contract test, подтверждающий owning contract, также получает `@spec`.
+New or substantially changed specification-owned code receives an up-to-date
+`@spec spec://...#...` marker at responsibility boundaries: files, handlers,
+services, major UI components, workers, migrations, and materializers.
+Direct contract tests also receive the owning `@spec` marker.
 
 <!-- BEGIN:nextjs-agent-rules -->
 

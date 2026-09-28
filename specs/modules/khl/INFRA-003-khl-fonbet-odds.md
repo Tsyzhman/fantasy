@@ -2,114 +2,154 @@
 status: draft
 ---
 
-# INFRA-003: хоккейные коэффициенты Фонбета {#root}
+<a name="root"></a>
 
-## Простыми словами {#plain-language}
+# INFRA-003: Fonbet hockey odds {#root}
 
-Хоккейная линия Фонбета хранится с точными условиями расчёта и историей.
+<a name="plain-language"></a>
 
-## Цель {#goal}
+## Plain language {#plain-language}
 
-Не смешивать исход за 60 минут с исходом с овертаймом и буллитами.
+Fonbet hockey odds are stored with their exact settlement conditions and history.
 
-## Управляющие документы {#governing-specs}
+<a name="goal"></a>
 
-Границы продукта: `specs/common/main.md`; взаимные контракты и точные ссылки перечислены в #relationships. Документ остаётся draft до закрытия перечисленных source/rules gates.
+## Goal {#goal}
+
+Do not mix the outcome in 60 minutes with the outcome with overtime and shootouts.
+
+<a name="governing-specs"></a>
+
+## Governing specifications {#governing-specs}
+
+Product boundaries: `specs/common/main.md`; mutual contracts and exact links are listed in #relationships. The document remains draft until the listed source/rules gates are closed.
 
 
-## Граница {#scope}
+<a name="scope"></a>
 
-Коэффициенты КХЛ получать из Фонбета. Действующий `src/providers/fonbet/odds.ts` использует футбольные factor IDs и пары индивидуальных тоталов 0.5/1.5. Хоккейный адаптер не должен наследовать их значение по совпадению числового ID. `src/machete/fixture-odds-sync.ts` и scheduler выбирают футбольные лиги и туры: их поведение сохраняется.
+## Scope {#scope}
 
-Доступный в коде transport использует `events/listBase?lang=ru&scopeMarket=1600`. Конкретная полнота хоккейных рынков, factor IDs и стабильность выгрузки не проверены этой задачей. ODD-00 — обязательный probe на текущем payload перед реализацией parser. Базовый URL конфигурируемый; новые домены не угадываются. Это аналитические данные: выполнение ставок не входит.
+Get KHL odds from Fonbet. The current `src/providers/fonbet/odds.ts` uses football factor IDs and pairs of individual totals 0.5/1.5. The hockey adapter should not inherit their value by matching numeric ID. `src/machete/fixture-odds-sync.ts` and scheduler select football leagues and rounds: their behavior is preserved.
 
-## Семантика рынков {#markets}
+The transport available in the code uses `events/listBase?lang=ru&scopeMarket=1600`. The specific completeness of hockey markets, factor IDs, and stability of unloading have not been tested by this task. ODD-00 - mandatory probe on the current payload before implementing the parser. Base URL configurable; new domains are not guessed. This is analytical data: placing bets is not included.
 
-Реализуемый контур WI-023 ограничен prematch 1/X/2 за 60 минут. Probe 2026-09-14: 12 настоящих событий КХЛ из hockey tree (root 2, регулярный сезон 13283), каталог Фонбета `line/factorsCatalog/tables`, таблица «Исходы»: 921=1, 922=X, 923=2. Таблица «Итоговая победа» отдельная и не используется. Условия основного времени подтверждены правилом хоккея 10.1 Фонбета. Словарь перепроверяется ежедневно по названиям и позициям; прочие рынки остаются непроверенными. Сжатый набор реальных примеров хранится в src/providers/fonbet/fixtures/khl-line-20260914.json. Агрегат «Хозяева/Гости», дочерние периоды и live исключаются. eventBlocks.state=blocked немедленно приостанавливает тройку.
+<a name="markets"></a>
 
-Обязательный ключ рынка: `providerEventId + marketType + settlementScope + period + selection + line + marketVersion`. Значения `settlementScope`: `REGULATION_60`, `INCLUDING_OT_SO`, `INCLUDING_OT_NO_SO`, `UNKNOWN`; период `FULL_GAME|P1|P2|P3|OT`. UNKNOWN сохраняется для диагностики, не используется в прогнозе.
+## Market semantics {#markets}
 
-| Рынок | Допустимая интерпретация |
+The implemented circuit WI-023 is limited to prematch 1/X/2 for 60 minutes. Probe 2026-09-14: 12 of real KHL events from the hockey tree (root 2, regular season 13283), Fonbet catalog `line/factorsCatalog/tables`, “Outcomes” table: 921=1, 922=X, 923=2. The “Final Victory” table is separate and not used. The conditions of regular time are confirmed by the Fonbet hockey rule 10.1. The dictionary is rechecked daily for names and positions; other markets remain untested. A compressed set of real examples is stored in src/providers/fonbet/fixtures/khl-line-20260914.json. The “Hosts/Guests” aggregate, child periods and live are excluded. eventBlocks.state=blocked immediately pauses the trio.
+
+Required market key: `providerEventId + marketType + settlementScope + period + selection + line + marketVersion`. Values ​​of `settlementScope`: `REGULATION_60`, `INCLUDING_OT_SO`, `INCLUDING_OT_NO_SO`, `UNKNOWN`; period `FULL_GAME|P1|P2|P3|OT`. UNKNOWN is saved for diagnostic purposes and is not used in prognosis.
+
+| Market | Acceptable interpretation |
 |---|---|
-| 1/X/2 за 60 минут | Победа хозяев/ничья/победа гостей в основное время; нужна полная тройка одного снимка |
-| Победитель с ОТ и буллитами | Два исхода матча; не заменяет вероятность победы в основное время |
-| Общий тотал / индивидуальный тотал | Сохранять числовую линию, сторону, период и реальные условия расчёта; тотал 5.5 за 60 минут и 5.5 с ОТ/буллитами — разные рынки |
-| Фора | Линия со знаком с точки зрения выбранной команды, условия push; не выводить готовые xG напрямую |
-| Сухой матч / точный счёт / прочее | Только при наличии подтверждённого market dictionary. Нет линии — null, без выдуманных котировок |
+| 1/X/2 for 60 minutes | Home win/draw/guest win in regular time; need a complete triplet of one photo |
+| Winner with OT and shootouts | Two outcomes of the match; does not replace the probability of winning in regular time |
+| General total / individual total | Save the number line, side, period and real calculation conditions; total 5.5 for 60 minutes and 5.5 with OT/shootouts - different markets |
+| Handicap | Signed line from the point of view of the selected command, push conditions; do not output ready-made xG directly |
+| Clean sheet / correct score / other | Only with a confirmed market dictionary. No line - null, no fictitious quotes |
 
-Порядок расчёта буллитного победного гола в тоталах — часть provider rules; нельзя автоматически считать его голом игрока/пропущенным вратаря. Odds-модель должна учитывать вероятность ОТ и моделировать распределение командных исходов отдельно от G/A/GA и официального FP.
+The procedure for calculating a winning shootout goal in totals is part of the provider rules; it cannot automatically be considered a player's goal/goalkeeper's goal. The Odds model should take into account the probability of OT and model the distribution of team outcomes separately from G/A/GA and official FP.
 
-Из полных взаимоисключающих исходов одного рынка/снимка можно получить приблизительные вероятности удалением пропорциональной маржи: `p_i = (1/odds_i) / sum(1/odds_j)`. Это модель, не факт букмекера. Неполная пара/тройка, odds ≤1, NaN, неверная сторона или несовместимые условия → probability=null. Целые/азиатские тоталы с возвратом не трактовать простой бинарной парой без push-модели.
+From the complete mutually exclusive outcomes of one market/snapshot, approximate probabilities can be obtained by removing the proportional margin: `p_i = (1/odds_i) / sum(1/odds_j)`. This is a model, not a bookmaker fact. Incomplete pair/triple, odds ≤1, NaN, wrong side or incompatible conditions → probability=null. Integer/Asian totals with return cannot be interpreted as a simple binary pair without a push model.
 
-Нельзя `P(ОТ-победы) = P(победы с ОТ) − P(победы за 60)` без согласованной совместной модели: независимо очищенные маржи могут давать несовместимые вероятности. Фитировать четыре исхода W60/W_OTSO/L_OTSO/L60 с суммой 1, неотрицательностью и проверкой качества fit. При плохом fit использовать проверенную хоккейную baseline с предупреждением, не обрезать отрицательные значения и объявлять результат точным.
+Cannot `P(ОТ-победы) = P(победы с ОТ) − P(победы за 60)` without a consistent joint model: independently refined margins may produce inconsistent probabilities. Fit four outcomes W60/W_OTSO/L_OTSO/L60 with the sum 1, non-negativity and fit quality check. For a bad fit, use a proven hockey baseline with a warning, do not trim negative values, and declare the result accurate.
 
-## Сопоставление событий {#matching}
+<a name="matching"></a>
 
-1. Выбрать по дереву спорта хоккей и подтверждённое соревнование КХЛ текущего сезона; исключить NHL/МХЛ/товарищеские, симуляции и live из prematch расчёта. Название «хоккей» само по себе не достаточно.
-2. Привести клубы через проверенные alias → внутренние KhlTeam IDs. Дом/выезд сохранять; обратную ориентацию не угадывать.
-3. Время начала UTC с начальным допуском ±15 минут, затем ровно один кандидат с обеими командами, соревнованием и датой. Для переноса использовать существующий external event mapping и повторную проверку, не расширять окно до нескольких суток.
-4. Parent event матча отделять от дочерних событий периодов/рынков. Одинаковые имена в нескольких событиях не создают несколько матчей.
-5. Zero/multiple candidates → UNMATCHED/AMBIGUOUS, отдельная очередь разбирательства. Сохранить источник, причины и версию matching; не матчить по одной команде.
+## Event mapping {#matching}
 
-## Снимки и свежесть {#snapshots}
+1. Select hockey and a confirmed KHL competition for the current season from the sport tree; exclude NHL/MHL/friendlies, simulations and live from prematch calculations. The name "hockey" by itself is not enough.
+2. Bring clubs through verified alias → internal KhlTeam IDs. Home/away save; do not guess the reverse orientation.
+3. UTC start time with initial tolerance ±15 minutes, then exactly one candidate with both teams, competition and date. To transfer, use existing external event mapping and recheck, do not expand the window to several days.
+4. Parent event of the match is separated from child events of periods/markets. Same names in multiple events do not create multiple matches.
+5. Zero/multiple candidates → UNMATCHED/AMBIGUOUS, separate trial queue. Save source, reasons and matching version; do not match on the same team.
 
-Хранить immutable ревизии нормализованного набора рынков (INFRA-002), fetchedAt, sourcePublishedAt при наличии, completeFeed flag, payloadHash, parserVersion, status. Совпадение с последним hash только обновляет lastSeenAt; новая цена, линия или status создаёт ревизию. Возвращение A→B→A создаёт третью ревизию, даже если raw bytes уже есть в кэше. Временной ряд должен различать момент наблюдения и момент изменения, а прогноз ссылаться на точную ревизию.
+<a name="snapshots"></a>
 
-Статусы: `AVAILABLE`, `SUSPENDED`, `WITHDRAWN`, `STALE`, `UNMATCHED`. При явной остановке/снятии — применить сразу. Отсутствие на одном запросе означает WITHDRAWN только если доказан полный успешный snapshot заданного scope; для delta-feed — только явная tombstone. Таймаут/ошибка/обрезанная страница означает stale, не массовое снятие. Старые значения видны с датой, но не становятся актуальной линией после пропажи.
+## Pictures and freshness {#snapshots}
 
-Начальный polling: раз в 15 мин для ближайших 7 суток, раз в 60 с для матчей в ближайшие 6 ч, при разрешённых лимитах. Freshness для рекомендаций: ≤5 мин в пределах 6 ч до матча, ≤30 мин дальше; после начала prematch линия непригодна независимо от TTL. Дальняя неделя может быть без коэффициентов, UI показывает отсутствие и источник baseline. No-vig расчёты только внутри одного snapshot, никаких пар «over вчера + under сейчас».
+Store immutable revisions of the normalized set of markets (INFRA-002), fetchedAt, sourcePublishedAt if available, completeFeed flag, payloadHash, parserVersion, status. Matching the last hash only updates lastSeenAt; a new price, line or status creates a revision. Returning A→B→A creates a third revision, even if the raw bytes are already in the cache. The time series must distinguish between the moment of observation and the moment of change, and the forecast refers to an accurate revision.
 
-Retention: сырые ответы входят в общий KHL raw budget из INFRA-001; компактные изменения линии — сезон +90 дней при разрешённом хранении. Индексы match/market/observedAt; историческое чтение ограничено интервалом и пагинацией. Статусы и исчезнувшие рынки участвуют в hash/invalidation.
+Statuses: `AVAILABLE`, `SUSPENDED`, `WITHDRAWN`, `STALE`, `UNMATCHED`. In case of obvious stopping/removal, apply immediately. Absence on one request means WITHDRAWN only if a complete successful snapshot of the specified scope is proven; for delta-feed - only explicit tombstone. Timeout/error/truncated page means stale, not mass withdrawal. Old values ​​are visible with the date, but do not become the current line after disappearance.
 
-## Приёмка {#acceptance}
+Initial polling: once every 15 minutes for the next 7 days, once every 60 s for matches in the next 6 hours, with allowed limits. Freshness for recommendations: ≤5 min within 6 hours before the match, ≤30 min further; after prematch starts, the line is unusable regardless of TTL. The distant week may be without coefficients, the UI shows the absence and the source of the baseline. No-vig calculations only within one snapshot, no “over yesterday + under now” pairs.
 
-- ODD-00: текущие Фонбет-образцы минимум 10 КХЛ событий, все нужные типы рынков и словарь factor/period/settlement с проверенными человекочитаемыми названиями; HTTP и стабильность проверены со staging. Если нужного рынка нет, зафиксирована недоступность и ограничение прогноза.
-- ODD-01: отдельные 1X2 за 60 и победитель с ОТ/буллитами сохраняются и отображаются раздельно; identical line в разных scopes не сливается.
-- ODD-02: неоднозначные клубы, два события одного дня, перестановка команд, перенос и дочерний период не приводят к ложному mapping.
-- ODD-03: полная тройка даёт сумму вероятностей 1 с допуском 1e-6; неполная/невалидная линия даёт null; снятые и stale линии исключены из текущего расчёта.
-- ODD-04: повтор payload не создаёт новую ревизию; явное снятие и outage различаются; данные на дату backtest не содержат более поздних котировок.
-- ODD-05: действующие football odds tests и scheduler tests проходят без изменения ожиданий; хоккейные sync не пишут FixtureOddsSnapshot.
+Retention: raw answers are included in the general KHL raw budget from INFRA-001; compact line changes - season +90 days with permitted storage. Indexes match/market/observedAt; historical reading is limited by spacing and pagination. Statuses and disappeared markets are involved in hash/invalidation.
 
-## Связи {#relationships}
+<a name="acceptance"></a>
+
+## Acceptance criteria {#acceptance}
+
+- ODD-00: current Fonbet samples of at least 10 KHL events, all necessary types of markets and a factor/period/settlement dictionary with proven human-readable names; HTTP and stability tested with staging. If the required market does not exist, the forecast is unavailable and limited.
+- ODD-01: separate 1X2 for 60 and winner with OT/shootout are saved and displayed separately; identical line in different scopes does not merge.
+- ODD-02: ambiguous clubs, two events on the same day, team reshuffle, transfer and child period do not lead to false mapping.
+- ODD-03: the complete triple gives the sum of the probabilities 1 with the tolerance 1e-6; an incomplete/invalid line gives null; removed and stale lines are excluded from the current calculation.
+- ODD-04: replay payload does not create a new revision; explicit withdrawal and outage are different; data as of the backtest date does not contain later quotes.
+- ODD-05: existing football odds tests and scheduler tests pass without changing expectations; hockey syncs do not write FixtureOddsSnapshot.
+
+<a name="relationships"></a>
+
+## Related specifications {#relationships}
 
 `spec://modules/khl/INFRA-001-khl-data-ingestion#operations`, `spec://modules/khl/INFRA-002-khl-storage-and-api#schema`, `spec://modules/khl/FEAT-003-khl-projections-and-optimizer#forecast`.
 
-## История {#changelog}
+<a name="changelog"></a>
 
-- 2026-09-14: проверены 12 текущих КХЛ-событий и словарь 1/X/2 за 60 минут; отдельный parser/sync, строгие aliases, свежесть и beta-поправка соперника (WI-023). Gates прочих рынков не сняты.
+## Changelog {#changelog}
 
-- 2026-09-07: при интеграции сохранены исходные anchors и требования; добавлены обязательные разделы текущего standalone протокола и трассировка реализации. Draft gates не сняты.
+- 2026-09-28: English documentation, repaired document references, and GitHub navigation anchors (WI-039).
 
-- 2026-09-07: зафиксирован новый контракт; factor IDs и поставка линии остаются предметом ODD-00.
+- 2026-09-14: checked 12 current KHL events and dictionary 1/X/2 for 60 minutes; separate parser/sync, strict aliases, freshness and beta correction of the opponent (WI-023). Gates of other markets have not been withdrawn.
 
-## environments {#environments}
+- 2026-09-07: during integration, the original anchors and requirements are preserved; added mandatory sections of the current standalone protocol and implementation trace. Draft gates have not been removed.
 
-Fixtures и normalized adapter проверяются локально; production dictionary/transport требуют отдельного подтверждения.
+- 2026-09-07: new contract recorded; factor IDs and line delivery remain subject to ODD-00.
 
-## decisions {#decisions}
+<a name="environments"></a>
 
-Собственный hockey dictionary; football factor IDs не переиспользуются (#markets).
+## Environments and dependencies {#environments}
 
-## runtime {#runtime}
+Fixtures and normalized adapter are checked locally; production dictionary/transport require separate confirmation.
 
-Получение и валидация полного снимка предшествуют публикации; outage не означает withdrawal (#snapshots).
+<a name="decisions"></a>
 
-## data {#data}
+## Canonical decisions {#decisions}
 
-Event mappings, period/scope/line, raw odds, normalized probabilities, timestamps и immutable revisions (#markets/#matching/#snapshots).
+Own hockey dictionary; football factor IDs are not reused (#markets).
 
-## contracts {#contracts}
+<a name="runtime"></a>
 
-Сопоставление требует точных команд/времени и проверенного dictionary; несовместимые рынки не объединяются.
+## Runtime and operations {#runtime}
 
-## recovery {#recovery}
+Obtaining and validating the full image precedes publication; outage does not mean withdrawal (#snapshots).
 
-После outage сохранённый снимок становится stale; исправление создаёт ревизию, повтор не дублируется (#snapshots).
+<a name="data"></a>
 
-## observability {#observability}
+## Data and state {#data}
 
-Контролируются unmatched events, coverage, stale/withdrawn, dictionary version и source health.
+Event mappings, period/scope/line, raw odds, normalized probabilities, timestamps and immutable revisions (#markets/#matching/#snapshots).
 
-## Трассировка {#traceability}
+<a name="contracts"></a>
 
-src/providers/fonbet/hockey-markets.ts, hockey-markets.test.ts; src/server/khl/odds-storage.ts. Итоговая приёмка определяется #acceptance; статус реализации — docs/KHL_IMPLEMENTATION_STATUS.md.
+## Contracts {#contracts}
+
+Mapping requires precise commands/timing and a proven dictionary; incompatible markets do not merge.
+
+<a name="recovery"></a>
+
+## Rollout, rollback, and recovery {#recovery}
+
+After outage, the saved snapshot becomes stale; the fix creates a revision, the replay is not duplicated (#snapshots).
+
+<a name="observability"></a>
+
+## Observability {#observability}
+
+Unmatched events, coverage, stale/withdrawn, dictionary version and source health are controlled.
+
+<a name="traceability"></a>
+
+## Implementation traceability {#traceability}
+
+src/providers/fonbet/hockey-markets.ts, hockey-markets.test.ts; src/server/khl/odds-storage.ts. Final acceptance is determined by #acceptance; implementation status - docs/guides/KHL_IMPLEMENTATION_STATUS.md.

@@ -1,28 +1,50 @@
-node_modules
-.next
-specs/.me
-.prist/
-/.codex_sheet_work/
-.env
-.env*.local
-.postgres-data/
-storage/uploads
-storage/franchises/
-*.tsbuildinfo
-.cache
+# Dependencies and local runtimes
+node_modules/
+.venv/
+venv/
 __pycache__/
 *.py[cod]
-/output/
+
+# Next.js and TypeScript generated files
+.next/
+/out/
+/dist/
+/next-env.d.ts
+*.tsbuildinfo
+
+# Credentials and local agent identity/configuration
+.env*
+!.env.example
+!.env.*.example
+/specs/.me
+/.prist/
+/.codex/
+/.mcp.json
+
+# Local databases, uploads, and generated analytics
+/.postgres-data/
+/storage/uploads/
+/storage/franchises/
+/backups/
+/public/downloads/*.zip
+
+# Caches, temporary work, and reports
+.cache/
+/.tmp/
+/.codex-tmp/
+/.codex_sheet_work/
 /.playwright-cli/
+/output/
+/outputs/
+/coverage/
 /playwright-report/
 /test-results/
-/public/downloads/*.zip
-tmp_*
-.tmp-fotmob-js
-tmp_*.json
-tmp_*.rds
-tmp_fotmob_smoke
-sports_ru_*_backup_*.json
+*.log
+/tmp_*
+/.tmp-fotmob-js/
+/sports_ru_*_backup_*.json
 
-/.tmp/
-/specs/.me
+# Operating-system metadata
+.DS_Store
+Thumbs.db
+Desktop.ini

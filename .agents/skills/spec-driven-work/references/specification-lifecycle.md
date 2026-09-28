@@ -1,75 +1,85 @@
 # SPEC-PROTOCOL
 
-## 1. Иерархия приоритетов {#priority}
+<a name="priority"></a>
 
-**человек → спека → тесты → код**
+## 1. Hierarchy of priorities {#priority}
 
-Человек задаёт намерение и утверждает канон. Спека фиксирует канон. Тесты проверяют канон. Код реализует канон.
+**man → spec → tests → code**
 
-Work item определяет границы текущего прохода. Он не меняет приоритет канонических источников.
+A person sets an intention and approves a canon. The specification fixes the canon. The tests check the canon. The code implements canon.
 
-Если задача состоит в создании новой спеки или глубокой переработке существующей, открой `SPEC-AUTHORING-PROTOCOL.md`.
+Work item defines the boundaries of the current pass. It does not change the priority of canonical sources.
 
-## 2. Роль спецификации {#role}
+If the task is to create a new spec or deeply rework an existing one, open `SPEC-AUTHORING-PROTOCOL.md`.
 
-Спецификация описывает долговечное текущее поведение, контракт или инвариант.
+<a name="role"></a>
 
-В спецификации живут:
-- область ответственности;
-- сценарии и правила;
-- данные и состояния;
-- внешние контракты;
-- ошибки;
-- критерии канонической готовности;
-- устойчивые связи с соседними документами;
-- история изменений канона.
+## 2. Role of specification {#role}
 
-Owner, priority, текущий статус реализации, session checkpoint и чекбоксы конкретного прохода живут в `BOARD`, WI и `WAL`.
+A specification describes a durable current behavior, contract, or invariant.
 
-## 3. Типы документов {#types}
+The specifications include:
+- area of responsibility;
+- scenarios and rules;
+- data and states;
+- external contracts;
+- errors;
+- canonical readiness criteria;
+- stable connections with neighboring documents;
+- history of canon changes.
 
-- `PROP` — долгоживущий канон проекта или модуля.
-- `FEAT` — продуктовая возможность или самостоятельная область продуктового поведения.
-- `INFRA` — жизненный контур сервиса: окружения, деплой, хранилища, очереди, наблюдаемость, восстановление.
+Owner, priority, current implementation status, session checkpoint and checkboxes for a specific pass live in `BOARD`, WI and `WAL`.
 
-Work item имеет отдельный ID `WI-NNN` и описывается по `WORK-ITEM-PROTOCOL.md`.
+<a name="types"></a>
 
-## 4. Обязательные свойства {#required}
+## 3. Document types {#types}
 
-Любая `PROP`, `FEAT` или `INFRA` должна:
-- иметь `#root`;
-- быть адресуемой через `spec://...#anchor`;
-- начинаться с блока простыми словами;
-- содержать конкретику, достаточную для использования как канона;
-- иметь историю изменений или заметки документа;
-- быть зарегистрированной в `SPEC-MAP.md`.
+- `PROP` is a long-lived canon of a project or module.
+- `FEAT` is a product opportunity or an independent area of ​​product behavior.
+- `INFRA` - life contour of the service: environments, deployment, storage, queues, observability, recovery.
 
-Для `FEAT` и `INFRA` дополнительно обязательны:
-- управляющие спеки;
-- границы текущего канона;
-- состояние и данные, если документ их меняет;
-- контракты внешнего поведения или runtime-точек;
-- ошибочные сценарии;
-- критерии готовности;
-- связи с соседними документами.
+Work item has a separate ID `WI-NNN` and is described by `WORK-ITEM-PROTOCOL.md`.
 
-Для `PROP` обязательны:
-- границы канона;
-- ссылки на соседние или подчинённые документы;
-- чеклист заполнения;
-- история изменений.
+<a name="required"></a>
 
-`PROP-000` может быть корневым документом проекта и не иметь управляющей спеки.
+## 4. Required properties {#required}
 
-## 5. Lifecycle спецификации {#lifecycle}
+Any `PROP`, `FEAT` or `INFRA` must:
+- have `#root`;
+- be addressable via `spec://...#anchor`;
+- start with a block in simple words;
+- contain specificity sufficient to be used as a canon;
+- have a change history or document notes;
+- be registered in `SPEC-MAP.md`.
 
-Допустимые состояния:
-- `draft` — предложение или незавершённый канон;
-- `active` — действующий governing canon;
-- `superseded` — документ заменён другим каноном;
-- `retired` — область выведена из продукта без прямой замены.
+For `FEAT` and `INFRA` the following are additionally required:
+- control specs;
+- current canon boundaries;
+- state and data, if the document changes them;
+- contracts for external behavior or runtime points;
+- erroneous scripts;
+- readiness criteria;
+- connections with neighboring documents.
 
-Для новых и существенно изменяемых документов состояние указывается в YAML:
+For `PROP` the following are required:
+- canon boundaries;
+- links to adjacent or subordinate documents;
+- checklist filling;
+- history of changes.
+
+`PROP-000` can be the root document of the project and not have a control spec.
+
+<a name="lifecycle"></a>
+
+## 5. Lifecycle specifications {#lifecycle}
+
+Valid states:
+- `draft` - proposal or unfinished canon;
+- `active` - current governing canon;
+- `superseded` - the document has been replaced by another canon;
+- `retired` - The area has been removed from the product without being directly replaced.
+
+For new and significantly changed documents, the state is indicated in YAML:
 
 ```yaml
 ---
@@ -77,17 +87,17 @@ status: active
 ---
 ```
 
-Legacy-документ в `specs/common/` или `specs/modules/` без `status` считается `active`. Учебные документы в `specs/examples/` находятся вне lifecycle рабочего канона.
+Legacy document in `specs/common/` or `specs/modules/` without `status` is considered `active`. The training documents in `specs/examples/` are outside the lifecycle working canon.
 
-Правила:
-- production-код ссылается через `@spec` на `active`-спеки;
-- `draft` может использоваться при authoring и планировании, реализация начинается после перевода governing spec в `active`;
-- файл `superseded` или `retired` сохраняет исходный путь и `spec://`-адрес;
-- активный каталог `SPEC-MAP.md` переносит заменённый документ в `Superseded and retired`;
-- `common/structure.md` сохраняет техническую связь исторического namespace с кодом, если она ещё нужна;
-- ID выведенной спеки не переиспользуется.
+Rules:
+- production code refers through `@spec` to `active` specs;
+- `draft` can be used for authoring and planning, implementation begins after the governing spec is translated into `active`;
+- file `superseded` or `retired` saves the original path and `spec://` address;
+- active directory `SPEC-MAP.md` transfers the replaced document to `Superseded and retired`;
+- `common/structure.md` preserves the technical connection of the historical namespace with the code, if it is still needed;
+- The ID of the displayed spec is not reused.
 
-Для supersession старая спека содержит:
+For supersession, the old spec contains:
 
 ```md
 ## Superseded by {#superseded-by}
@@ -95,7 +105,7 @@ Legacy-документ в `specs/common/` или `specs/modules/` без `statu
 - `spec://modules/core/FEAT-070-new-canon#root`
 ```
 
-Новая спека содержит взаимную связь:
+The new spec contains a mutual connection:
 
 ```md
 ## Supersedes {#supersedes}
@@ -103,124 +113,134 @@ Legacy-документ в `specs/common/` или `specs/modules/` без `statu
 - `spec://modules/core/FEAT-041-old-canon#root`
 ```
 
-Если один документ разделяется на несколько, `Superseded by` перечисляет все новые owning specs. При частичном выделении прежняя спека остаётся `active`, её scope обновляется direct edit и указывает новый документ как соседний канон.
+If one document is split into several, `Superseded by` lists all new owning specs. During partial selection, the previous spec remains `active`, its scope is updated by direct edit and indicates the new document as a neighboring canon.
 
-## 6. Именование и адресация {#naming}
+<a name="naming"></a>
 
-Файл спеки именуется так:
+## 6. Naming and addressing {#naming}
+
+The spec file is named as follows:
 - `PROP-000-short-slug.md`;
 - `FEAT-041-billing-ledger.md`;
 - `INFRA-007-production-env.md`.
 
-Legacy change-спеки вида `FEAT-041.A-...md` сохраняют валидность.
+Legacy change specs of the form `FEAT-041.A-...md` retain validity.
 
-Для новых документов:
-- префикс типа обязателен: `PROP`, `FEAT`, `INFRA`;
-- номер уникален во всём spec-space для своего типа;
-- slug короткий, стабильный и отражает ответственность документа;
-- новый самостоятельный контур получает новый `TYPE-NNN`;
-- буквенный суффикс создаётся только по явному решению человека для совместимости с существующей серией документов.
+For new documents:
+- type prefix is required: `PROP`, `FEAT`, `INFRA`;
+- number is unique throughout the spec-space for its type;
+- slug is short, stable and reflects the responsibility of the document;
+- new independent circuit receives new `TYPE-NNN`;
+- letter suffix is ​​created only by explicit human decision for compatibility with an existing document series.
 
-Перед созданием спеки:
-- просканируй `specs/common/**/*.md` и `specs/modules/**/*.md`;
-- проверь `SPEC-MAP.md`;
-- учитывай `superseded` и `retired` документы;
-- не переиспользуй номер удалённого, архивного или переименованного документа;
-- учебным файлам диапазона `900-999` при копировании назначай новый свободный номер.
+Before creating a spec:
+- scan `specs/common/**/*.md` and `specs/modules/**/*.md`;
+- check `SPEC-MAP.md`;
+- take into account `superseded` and `retired` documents;
+- do not reuse the number of a deleted, archived or renamed document; When copying
+- , assign a new free number to training files in the `900-999` range.
 
-Канонический адрес:
+Canonical address:
 - `spec://common/PROP-005-RUNTIME#processes`;
 - `spec://modules/core/FEAT-010-account-lifecycle#api.create`;
 - `spec://modules/core/INFRA-020-data-baseline#migrations`.
 
-Правила якорей:
-- у документа есть `#root`;
-- якоря стабильны и человекочитаемы;
-- вложенность использует точечные сегменты: `scope.in`, `api.create`, `data.workspace`.
+Anchor rules:
+- the document has `#root`;
+- anchors are stable and human readable;
+- nesting uses point segments: `scope.in`, `api.create`, `data.workspace`.
 
-## 7. Связи между спеками {#references}
+<a name="references"></a>
 
-При реальной связи используются:
+## 7. Connections between specs {#references}
+
+For real communication, the following are used:
 - `Related`;
 - `Depends on`;
 - `Supersedes`;
 - `Superseded by`;
 - `See also`.
 
-Ссылки ведут на точные `spec://...#anchor`.
+Links lead to the exact `spec://...#anchor`.
 
-## 8. Модель изменения канона {#change-model}
+<a name="change-model"></a>
+
+## 8. Canon change model {#change-model}
 
 ### Direct edit
 
-Используй direct edit, когда текущая область ответственности сохраняется:
-- уточняется формулировка, термин, anchor, scope или acceptance;
-- добавляется пропущенная деталь;
-- согласованное новое поведение становится текущим каноном той же области;
-- старое поведение прекращает действовать.
+Use direct edit when the current area of responsibility remains:
+- the wording, term, anchor, scope or acceptance is specified;
+- missing part added;
+- the agreed upon new behavior becomes the current canon of the same area;
+- The old behavior stops working.
 
-Обнови текст и `Историю изменений`. Если требуется отслеживаемая реализация, создай `WI-NNN` с `Canon action: direct-edit`.
+Update the text and `Историю изменений`. If a traceable implementation is required, create `WI-NNN` with `Canon action: direct-edit`.
 
-### Новая самостоятельная спека
+### New independent speck
 
-Создай новый `TYPE-NNN`, когда появляется:
-- новая продуктовая возможность;
-- новый процесс;
-- новый runtime-контур;
-- отдельная ответственность, которую можно использовать и изменять самостоятельно.
+Create a new `TYPE-NNN` when:
+- new product opportunity;
+- new process;
+- new runtime circuit;
+- is a separate responsibility that you can use and change yourself.
 
-Для отслеживаемого результата используй такой порядок:
-1. до первой правки определи тип, namespace, планируемый полный spec-адрес с якорем `#root`, существующий вышестоящий канон и ограничения;
-2. создай и запусти WorkItem с `Canon action: new-spec`, поместив планируемый адрес в `Affected`; первый spec-space может не иметь существующей `Governing`-ссылки;
-3. создай и зарегистрируй спеку, сохраняя `draft`, пока её ownership, сценарии или контракты неоднозначны;
-4. до зависимой реализации переведи спеку в `active`, добавь её точный anchor в `Governing` и актуализируй scope и acceptance WorkItem;
-5. продолжи реализацию в том же WorkItem при одном атомарном результате либо до кода создай связанные WI для независимых результатов.
+To track the result, use this order:
+1. before the first edit, determine the type, namespace, planned full spec-address with the `#root` anchor, the existing superior canon and restrictions;
+2. create and run a WorkItem with `Canon action: new-spec`, placing the planned address in `Affected`; the first spec-space may not have an existing `Governing` link;
+3. create and register a spec, keeping `draft` while its ownership, scripts or contracts are ambiguous;
+4. before the dependent implementation, transfer the spec to `active`, add its exact anchor to `Governing` and update the scope and acceptance WorkItem;
+5. continue the implementation in the same WorkItem with one atomic result or create related WIs for independent results before the code.
 
 ### Supersession
 
-Используй supersession, когда прежний документ целиком теряет роль governing canon из-за замены, разделения или объединения ответственности.
+Use supersession when the previous document loses its entire role as governing canon due to replacement, division or consolidation of responsibilities.
 
-Создай новую спеку с новым ID, обнови lifecycle и взаимные ссылки, затем выполни переход через WI с `Canon action: supersede`.
+Create a new spec with a new ID, update the lifecycle and mutual links, then make the transition via WI from `Canon action: supersede`.
 
-### Сосуществование и миграция
+### Coexistence and migration
 
-Если старое и новое поведение временно сосуществуют, обе owning specs остаются `active` и явно описывают условия применимости.
+If old and new behavior temporarily coexist, both owning specs remain `active` and explicitly describe the conditions of applicability.
 
-Исполнение миграции оформляется work item. Долгоживущий migration/rollout/rollback-контракт получает самостоятельную `FEAT` или `INFRA` с новым ID.
+Execution of migration is registered as a work item. A long-lived migration/rollout/rollback contract receives an independent `FEAT` or `INFRA` with a new ID.
 
-### Исторические срезы
+### Historical sections
 
-Release и audit snapshots сохраняются через Git tag, release или другой принятый immutable artifact проекта.
+Release and audit snapshots are saved via Git tag, release or other accepted immutable artifact of the project.
 
-Новая задача, волна или повторный проход реализации сами по себе не создают новую спеку. Для них используется `WI-NNN`.
+A new task, wave, or repeat implementation pass does not in itself create a new spec. For them, `WI-NNN` is used.
 
-## 9. Конфликт кода и спеки {#conflict}
+<a name="conflict"></a>
 
-Если код противоречит ясной активной спеке:
-1. воспроизведи расхождение;
-2. следуй действующему канону;
-3. исправь код и тесты;
-4. сохрани текст спеки, если в нём достаточно конкретики;
-5. для отслеживаемой работы используй `Kind: fix` и `Canon action: none`.
+## 9. Conflict between code and spec {#conflict}
 
-Если спека не содержит детали, необходимой для однозначного исправления:
-- выполни direct edit при подтверждённом намерении;
-- добавь changelog;
-- реализуй уточнение в том же WI.
+If the code contradicts the clear active spec:
+1. reproduce the discrepancy;
+2. follow the current canon;
+3. fix the code and tests;
+4. save the specification text if it is specific enough;
+5. For monitored work use `Kind: fix` and `Canon action: none`.
 
-Если желаемое поведение изменилось, сначала обнови канон по разделу `8`.
+If the spec does not contain the parts necessary for an unambiguous correction:
+- perform direct edit with confirmed intent;
+- add changelog;
+- implement the clarification in the same WI.
 
-Если реализацию можно выполнить по текущему тексту и остаётся вопрос, добавь:
+If the desired behavior has changed, first update the canon under section `8`.
+
+If the implementation can be done using the current text and a question remains, add:
 
 ```md
 <!-- REVIEW: кратко опиши вопрос и почему он важен -->
 ```
 
-Высокий риск потери данных, безопасности, денег или основного пользовательского сценария переводит работу в планирование до решения человека.
+The high risk of loss of data, security, money or the main user scenario moves the work into planning before human decision.
 
-## 10. `@spec` в коде {#code-traceability}
+<a name="code-traceability"></a>
 
-Новый или существенно изменённый spec-owned код получает маркер:
+## 10. `@spec` in code {#code-traceability}
+
+New or significantly changed spec-owned code receives the marker:
 
 ```ts
 /**
@@ -229,29 +249,31 @@ Release и audit snapshots сохраняются через Git tag, release и
  */
 ```
 
-Маркеры ставятся на точки ответственности:
-- файл;
-- обработчик;
-- сервис или класс;
-- крупный компонент;
+Markers are placed on points of responsibility:
+- file;
+- handler;
+- service or class;
+- large component;
 - worker;
-- миграцию;
-- materializer или импортёр;
-- тест, напрямую проверяющий spec-owned контракт.
+- migration;
+- materializer or importer;
+- test that directly checks the spec-owned contract.
 
-При supersession обновляй `@spec` на текущий governing canon в затронутых точках. Legacy-маркер допустим только для кода, который продолжает обслуживать явно описанный legacy-контур.
+During supersession, update `@spec` to the current governing canon at the affected points. A legacy marker is only valid for code that continues to serve an explicitly described legacy path.
 
-## 11. Проверка согласованности {#done}
+<a name="done"></a>
 
-Перед завершением работы со спекой проверь:
-- тип и lifecycle выбраны корректно;
-- `spec://`-адреса и anchors существуют;
-- `SPEC-MAP.md` показывает актуальную ответственность и lifecycle;
-- `common/structure.md` отражает namespace и связь с кодом, если техническая карта менялась;
-- direct edit получил changelog;
-- supersession имеет взаимные ссылки;
-- ID не повторяется и не переиспользуется;
-- спорные места помечены `REVIEW`;
-- кодовые точки ответственности имеют актуальные `@spec`;
-- отслеживаемая реализация оформлена отдельными `WI-NNN`;
-- спецификация не хранит owner, session status и прогресс конкретного WI.
+## 11. Consistency check {#done}
+
+Before finishing work with the speck, check:
+- type and lifecycle are selected correctly;
+- `spec://` addresses and anchors exist;
+- `SPEC-MAP.md` shows current responsibility and lifecycle;
+- `common/structure.md` reflects the namespace and connection to the code if the technical map has changed;
+- direct edit received changelog;
+- supersession has reciprocal links;
+- ID is not repeated or reused;
+- controversial places are marked `REVIEW`;
+- code points of responsibility are current `@spec`;
+- the monitored implementation is framed as separate `WI-NNN`;
+- specification does not store owner, session status and progress of a specific WI.

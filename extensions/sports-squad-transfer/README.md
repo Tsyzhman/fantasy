@@ -1,28 +1,28 @@
 # Fantasy → Sports.ru
 
-Одно расширение WebExtension с отдельными пакетами для Chromium и Firefox.
+One WebExtension with separate packages for Chromium and Firefox.
 
-Как работает перенос:
+How the transfer works:
 
-1. Фоновая часть расширения читает только cookie `fantasy_session` для `fantasy.tsyzhman.ru`.
-2. По HTTPS она получает последний сохранённый вариант состава для открытой лиги.
-3. Контент-скрипт запрашивает у Sports.ru актуальный серверный состав, не используя локальный черновик замен.
-4. Одна атомарная мутация Sports.ru записывает всех 15 игроков, основу, капитана, вице-капитана и порядок скамейки.
-5. После подтверждения Sports.ru страница обновляется и показывает сохранённый состав.
+1. The background part of the extension only reads the `fantasy_session` cookie for `fantasy.tsyzhman.ru`.
+2. Via HTTPS, she receives the latest saved version of the roster for the open league.
+3. The content script requests the current server lineup from Sports.ru, without using a local draft of replacements.
+4. One atomic mutation Sports.ru records all 15 players, first team, captain, vice-captain and bench order.
+5. After confirmation from Sports.ru, the page is updated and shows the saved lineup.
 
-Сессионная cookie не передаётся контент-скрипту и не попадает в DOM Sports.ru.
-Расширение не отправляет телеметрию. Для выполнения команды оно передаёт
-сессионный токен обратно только на `fantasy.tsyzhman.ru`, а выбранный состав —
-только в официальный API Sports.ru.
+The session cookie is not transmitted to the content script and does not end up in the Sports.ru DOM.
+The extension does not send telemetry. To execute the command it sends
+session token back only to `fantasy.tsyzhman.ru`, and the selected squad is
+only in the official Sports.ru API.
 
-Сборка:
+Assembly:
 
 ```powershell
 npm run extension:build
 ```
 
-Результат:
+Result:
 
-- `output/browser-extension/chromium` — распакованное расширение для Chrome/Edge;
-- `output/browser-extension/firefox` — распакованное расширение для Firefox;
-- ZIP-пакеты — в `public/downloads`.
+- `output/browser-extension/chromium` - unpacked extension for Chrome/Edge;
+- `output/browser-extension/firefox` - unpacked extension for Firefox;
+- ZIP packages - in `public/downloads`.

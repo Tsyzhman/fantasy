@@ -1,0 +1,134 @@
+{
+  "status": "pass",
+  "checks": {
+    "markdown_files": 132,
+    "local_links": 214,
+    "preserved_contract_anchors": 425,
+    "preserved_non_markdown_code_blocks": 208,
+    "required_ignored_paths": [
+      ".env",
+      ".env.production",
+      ".env.test",
+      ".env.development.local",
+      "specs/.me",
+      ".mcp.json",
+      ".codex/config.toml",
+      ".prist/connection.json",
+      "node_modules/next/package.json",
+      "nested/node_modules/a.js",
+      ".next/types/a.ts",
+      "next-env.d.ts",
+      "tsconfig.tsbuildinfo",
+      "scripts/__pycache__/a.pyc",
+      ".venv/a",
+      ".cache/a",
+      ".tmp/a",
+      ".codex-tmp/a",
+      ".codex_sheet_work/a",
+      ".postgres-data/a",
+      "storage/uploads/a.xlsx",
+      "storage/franchises/a.json",
+      "backups/a.sql",
+      "output/a.html",
+      "outputs/a.png",
+      "coverage/a.json",
+      "playwright-report/a.html",
+      "test-results/a.png",
+      "npm-debug.log",
+      "public/downloads/extension.zip",
+      "tmp_test.json",
+      "sports_ru_a_backup_b.json"
+    ],
+    "required_trackable_paths": [
+      ".env.example",
+      ".env.production.example",
+      "specs/.me.template",
+      ".agents/skills/spec-driven-work/SKILL.md",
+      ".claude/skills/spec-driven-work/SKILL.md",
+      "prisma/schema.prisma",
+      "prisma/migrations/a/migration.sql",
+      "package-lock.json",
+      "src/app/page.tsx",
+      "e2e/example.spec.ts",
+      "docs/README.md",
+      "scripts/example.py",
+      "specs/work/evidence/WI-002/inputs.zip"
+    ],
+    "matching_client_workflow_files": 9,
+    "duplicate_markdown_groups": [
+      [
+        ".agents/skills/spec-driven-work/SKILL.md",
+        ".claude/skills/spec-driven-work/SKILL.md"
+      ],
+      [
+        ".agents/skills/spec-driven-work/references/board.md",
+        ".claude/skills/spec-driven-work/references/board.md",
+        "specs/protocols/BOARD-PROTOCOL.md"
+      ],
+      [
+        ".agents/skills/spec-driven-work/references/checkpoints.md",
+        ".claude/skills/spec-driven-work/references/checkpoints.md",
+        "specs/protocols/WAL-PROTOCOL.md"
+      ],
+      [
+        ".agents/skills/spec-driven-work/references/prist-managed.md",
+        ".claude/skills/spec-driven-work/references/prist-managed.md"
+      ],
+      [
+        ".agents/skills/spec-driven-work/references/repository-bootstrap.md",
+        ".claude/skills/spec-driven-work/references/repository-bootstrap.md"
+      ],
+      [
+        ".agents/skills/spec-driven-work/references/specification-authoring.md",
+        ".claude/skills/spec-driven-work/references/specification-authoring.md",
+        "specs/protocols/SPEC-AUTHORING-PROTOCOL.md"
+      ],
+      [
+        ".agents/skills/spec-driven-work/references/specification-lifecycle.md",
+        ".claude/skills/spec-driven-work/references/specification-lifecycle.md",
+        "specs/protocols/SPEC-PROTOCOL.md"
+      ],
+      [
+        ".agents/skills/spec-driven-work/references/technical-debt.md",
+        ".claude/skills/spec-driven-work/references/technical-debt.md",
+        "specs/protocols/TECHDEBT-PROTOCOL.md"
+      ],
+      [
+        ".agents/skills/spec-driven-work/references/work-items.md",
+        ".claude/skills/spec-driven-work/references/work-items.md",
+        "specs/protocols/WORK-ITEM-PROTOCOL.md"
+      ]
+    ],
+    "moved_documents": 47
+  },
+  "errors": [],
+  "warnings": [],
+  "spec_space": {
+    "status": "current",
+    "diagnostics": [],
+    "fingerprint": "2fb018ddd22f71d41d0941cda89d2ee78dea8e314c14c2b14207fe090ac9379d"
+  },
+  "publication": {
+    "branch": "main",
+    "implementation_commit": "17dc7a89f3df5073e2e658caf01287d0549796c5",
+    "default_readme_blob_verified": true,
+    "default_documentation_index_blob_verified": true
+  },
+  "next_typegen": "passed; regenerated ignored next-env.d.ts",
+  "release_version_check": "passed; completion metadata 0.3.99 > main 0.3.98",
+  "resources": {
+    "translation_working_set_observed_mb": 38.1,
+    "translation_helper_running": false,
+    "dependency_copy": "one shared junction; no dependency installation or copy",
+    "temporary_translation_state_removed": false,
+    "generated_next_type_artifacts_removed": true
+  },
+  "ci": {
+    "run_url": "https://github.com/Tsyzhman/fantasy/actions/runs/36398972115",
+    "status": "failed at existing dependency audit",
+    "baseline_browser_mapping": "2.10.30, unchanged from original main",
+    "sharp": "0.35.0, unchanged from original main",
+    "application_checks": "skipped, not claimed passed",
+    "tracked_as": "TD-007"
+  }
+}

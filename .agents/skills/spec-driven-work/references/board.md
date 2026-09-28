@@ -1,140 +1,166 @@
 # BOARD-PROTOCOL
 
-## 1. Назначение {#purpose}
+<a name="purpose"></a>
 
-`BOARD.md` — компактный оперативный индекс work items.
+## 1. Purpose {#purpose}
 
-Он показывает:
-- очередь работ;
-- текущих исполнителей;
-- активные блокеры;
-- недавние завершения;
-- связь work items с каноническими спеками.
+`BOARD.md` is a compact operational index of work items.
 
-Соседние источники:
-- `SPEC-MAP.md` — каталог спек и их ответственности;
-- `specs/work/WI-NNN-*.md` — outcome, scope и acceptance;
-- `WAL.md` — checkpoint незавершённой сессии;
-- `TECHDEBT.md` — осознанные компромиссы;
-- Git — полная история реализации.
+It shows:
+- work queue;
+- current assignees;
+- active blockers;
+- recent completions;
+- connection of work items with canonical specs.
 
-## 2. Базовые колонки {#columns}
+Neighboring sources:
+- `SPEC-MAP.md` - catalog of specs and their responsibilities;
+- `specs/work/WI-NNN-*.md` - outcome, scope and acceptance;
+- `WAL.md` — checkpoint of an unfinished session;
+- `TECHDEBT.md` - documented tradeoffs;
+- Git - complete implementation history.
 
-Минимальные колонки:
+<a name="columns"></a>
+
+## 2. Board columns {#columns}
+
+Minimum columns:
 - `Backlog`;
 - `In Progress`;
 - `Blocked`;
 - `Done`.
 
-Проект может добавлять служебные колонки с сохранением этой семантики.
+The project can add service columns while maintaining this semantics.
 
-Один work item находится только в одной колонке.
+One work item is in only one column.
 
-## 3. Единица учёта {#item}
+<a name="item"></a>
 
-Одна строка доски соответствует одному `WI-NNN` и ссылается на его файл.
+## 3. Accounting unit {#item}
 
-Файл WI обязателен для любой новой строки. Legacy-строки с `FEAT-*` или `INFRA-*` остаются валидными при forward-only миграции; новые items получают независимый `WI-NNN`.
+One board line corresponds to one `WI-NNN` and refers to its file.
 
-Одна спека может быть указана в нескольких work items. Один work item может перечислять несколько spec IDs.
+The WI file is required for any new line. Legacy lines with `FEAT-*` or `INFRA-*` remain valid during forward-only migration; new items receive an independent `WI-NNN`.
 
-Колонка `Specs` содержит компактные ID для человеческого обзора. Полные `spec://...#anchor` живут в файле WI.
+One spec can be specified in several work items. One work item can list several spec IDs.
 
-## 4. Минимальный формат {#format}
+Column `Specs` contains compact IDs for human review. The full `spec://...#anchor` live in the WI file.
+
+<a name="format"></a>
+
+## 4. Minimum format {#format}
 
 ### Backlog
 
+```md
 | Work | Title | Specs | Owner | Priority |
 |---|---|---|---|---|
-| [WI-010](work/WI-010-account-lifecycle.md) | Реализовать создание аккаунта | FEAT-010, PROP-006 | @handle | P1 |
+| [WI-010](work/WI-010-account-lifecycle.md) | Implement account creation | FEAT-010, PROP-006 | @handle | P1 |
+```
 
 ### In Progress
 
+```md
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
-| [WI-011](work/WI-011-account-invite.md) | Приглашение участника | FEAT-010 | @handle | YYYY-MM-DD | — |
+| [WI-011](work/WI-011-account-invite.md) | Invitation of participant | FEAT-010 | @handle | YYYY-MM-DD | — |
+```
 
 ### Blocked
 
+```md
 | Work | Title | Owner | Reason | Waiting for |
 |---|---|---|---|---|
-| [WI-012](work/WI-012-production-access.md) | Production access | @handle | Нет доступа | Решение человека |
+| [WI-012](work/WI-012-production-access.md) | Production access | @handle | No access | Human decision |
+```
 
 ### Done
 
+```md
 | Work | Title | Owner | Date |
 |---|---|---|---|
 | [WI-009](work/archive/YYYY/WI-009-runtime-baseline.md) | Runtime baseline | @handle | YYYY-MM-DD |
+```
 
-Scope, acceptance, dependencies и длинное описание результата в `BOARD.md` не повторяются.
+Scope, acceptance, dependencies and a long description of the result in `BOARD.md` are not repeated.
 
-## 5. Кто меняет BOARD {#ownership}
+<a name="ownership"></a>
 
-- Человек может менять любую строку.
-- AI меняет item своего `@handle`.
-- Переназначение owner требует решения человека.
-- `BOARD.md` является источником статуса, owner и priority; эти поля не дублируются в файле WI и WAL.
+## 5. Who changes BOARD {#ownership}
 
-`specs/.me` требуется перед claim или изменением строки агентом.
+- A person can change any line.
+- AI changes the item of its `@handle`.
+- Reassigning owner requires human decision.
+- `BOARD.md` is the source of status, owner and priority; these fields are not duplicated in the WI and WAL file.
 
-## 6. Создание и старт {#start}
+`specs/.me` is required before a claim or line change by the agent.
+
+<a name="start"></a>
+
+## 6. Creation and start of {#start}
 
 ### Backlog
 
-Помещай WI в `Backlog`, если:
-- работа признана нужной;
-- создан файл WI;
-- owning specs разрешены или item имеет `Kind: research` / `Canon action: new-spec`;
-- активная реализация ещё не началась.
+Place WI in `Backlog` if:
+- work found necessary;
+- WI file created;
+- owning specs are allowed or item has `Kind: research` / `Canon action: new-spec`;
+- active implementation has not yet begun.
 
-### Немедленный старт
+### Immediate start
 
-Если человек поручил начать работу сейчас, добавь новый WI сразу в `In Progress`. Промежуточное движение через `Backlog` не требуется.
+If the person instructed to start work now, add the new WI immediately to `In Progress`. No intermediate movement via `Backlog` is required.
 
-Для `In Progress` нужны:
+For `In Progress` you need:
 - owner;
-- фактическое начало работы;
-- файл WI с outcome, specs, scope и acceptance.
+- actual start of work;
+- WI file with outcome, specs, scope and acceptance.
 
-WAL-checkpoint не является условием старта. Он появляется только при незавершённой сессии или handoff.
+WAL-checkpoint is not a start condition. It appears only when the session is incomplete or handoff.
+
+<a name="blocked"></a>
 
 ## 7. Blocked {#blocked}
 
-Переводи WI в `Blocked`, когда продолжение зависит от внешнего условия:
-- решения человека;
-- другого work item или исполнителя;
-- доступа, окружения или внешнего ресурса;
-- подтверждения, без которого результат нельзя честно завершить.
+Convert WI to `Blocked` when continuation depends on external conditions:
+- human decisions;
+- another work item or performer;
+- access, environment or external resource;
+- confirmation, without which the result cannot be honestly completed.
 
-Обычная сложность реализации и локальная неопределённость, разрешимая чтением кода, сохраняют `In Progress`.
+Normal implementation complexity and local uncertainty resolved by reading the code preserve `In Progress`.
 
-Причина и `Waiting for` живут в доске. Подробный checkpoint добавляется в WAL только при необходимости возобновления.
+Reason and `Waiting for` live in the board. A detailed checkpoint is added to the WAL only when a renewal is required.
+
+<a name="done"></a>
 
 ## 8. Done {#done}
 
-Переводи WI в `Done`, когда:
-- outcome достигнут;
-- acceptance пройден;
-- `Result` содержит выполненные проверки;
-- код, тесты и активный канон согласованы;
-- spec changelog обновлён, если использовался `direct-edit` или `supersede`;
-- WAL-checkpoint удалён;
-- открытые компромиссы отражены в `TECHDEBT.md`.
+Transfer WI to `Done` when:
+- outcome achieved;
+- acceptance passed;
+- `Result` contains completed checks;
+- code, tests and active canon are consistent;
+- spec changelog updated if `direct-edit` or `supersede` was used;
+- WAL-checkpoint deleted;
+- open compromises are reflected in `TECHDEBT.md`.
 
-При завершении файл WI переносится в `specs/work/archive/YYYY/`.
+When completed, the WI file is moved to `specs/work/archive/YYYY/`.
 
-`Done` хранит последние десять items или items текущего релиза — проект выбирает один стабильный предел. Более старые строки удаляются из доски; файлы остаются в архиве и Git.
+`Done` stores the last ten items or items of the current release - the project selects one stable limit. Older lines are removed from the board; the files remain in the archive and Git.
 
-Следующая волна оформляется новым `WI-NNN`. Связанная спека сохраняет роль живого канона.
+The next wave is issued by the new `WI-NNN`. The linked spec retains its role as a living canon.
 
-## 9. Синхронизация {#sync}
+<a name="sync"></a>
 
-Проверяй следующие инварианты:
-- каждая новая строка доски ведёт на существующий WI;
-- один `WI-NNN` встречается в одной колонке;
-- owner в активном WAL-заголовке совпадает с owner доски;
-- checkpoint конкретного WI существует только для `In Progress` или `Blocked`;
-- `Specs` доски соответствует полным ссылкам файла WI;
-- завершённый WI имеет заполненный `Result` и архивный путь.
+## 9. Synchronization {#sync}
 
-Изменение статуса обычно затрагивает только `BOARD.md`. `WAL.md` меняется при checkpoint, файл WI — при изменении scope/acceptance или фиксации результата.
+Check the following invariants:
+- each new line of the board leads to an existing WI;
+- one `WI-NNN` occurs in one column;
+- owner in the active WAL header matches the owner of the board;
+- checkpoint of a specific WI exists only for `In Progress` or `Blocked`;
+- `Specs` board matches full WI file links;
+- completed WI has completed `Result` and archive path.
+
+A status change usually affects only `BOARD.md`. `WAL.md` changes when checkpoint, the WI file changes when scope/acceptance changes or the result is fixed.

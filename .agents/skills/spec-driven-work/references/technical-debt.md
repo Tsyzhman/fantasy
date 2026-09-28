@@ -1,47 +1,57 @@
 # TECHDEBT-PROTOCOL
 
-## 1. Назначение {#purpose}
+<a name="purpose"></a>
 
-`TECHDEBT.md` хранит осознанные инженерные компромиссы и риски, которые остаются актуальными после завершения текущей работы.
+## 1. Purpose {#purpose}
 
-## 2. Когда создавать запись {#when}
+`TECHDEBT.md` stores understood engineering trade-offs and risks that remain relevant after the completion of the current work.
 
-Создай запись, если:
-- реализация оставляет временный мост или ограничение;
-- известный риск остаётся за scope текущего WI;
-- канон выполнен с согласованным техническим компромиссом;
-- информацию важно сохранить дольше одной рабочей сессии.
+<a name="when"></a>
 
-Идея продукта относится в продуктовый backlog. Текущий checkpoint относится в `WAL.md`. Отслеживаемая работа оформляется как `WI-NNN`.
+## 2. When to create record {#when}
 
-## 3. Связь с каноном {#canon}
+Create a record if:
+- implementation leaves a temporary bridge or constraint;
+- known risk remains beyond the scope of the current WI;
+- canon is made with an agreed upon technical compromise;
+- It is important to save information for longer than one work session.
 
-- Изменение канонического поведения выполняется по `SPEC-PROTOCOL.md#change-model`.
-- Вопрос к тексту канона помечается `REVIEW` в owning spec.
-- Техдолг описывает состояние реализации, риск и условие проявления.
-- Один риск имеет одну каноническую запись в `TECHDEBT.md`.
+The product idea is included in the product backlog. The current checkpoint is in `WAL.md`. The work being tracked is registered as `WI-NNN`.
 
-## 4. Формат {#format}
+<a name="canon"></a>
+
+## 3. Link to canon {#canon}
+
+- Changing the canonical behavior is done by `SPEC-PROTOCOL.md#change-model`.
+- The question to the canon text is marked `REVIEW` in the owning spec.
+- Technical debt describes the state of implementation, risk and condition of manifestation.
+- One risk has one canonical entry in `TECHDEBT.md`.
+
+<a name="format"></a>
+
+## 4. Format {#format}
 
 ```md
-### TD-001: Краткое название
+### TD-001: Short name
 - Area: `module` / subsystem
 - Related specs: `spec://...#...`
-- Introduced by: `WI-024` или commit/release
-- Current state: что оставлено в реализации
-- Risk: к чему это может привести
-- Trigger: когда риск проявляется
-- Mitigation: как закрыть или снизить риск
+- Introduced by: `WI-024` or commit/release
+- Current state: what is left in the implementation
+- Risk: what this can lead to
+- Trigger: when the risk manifests itself
+- Mitigation: how to close or reduce the risk
 - Work: —
 ```
 
-Обязательные поля: `Area`, `Related specs`, `Current state`, `Risk`, `Trigger`, `Mitigation`.
+Required fields: `Area`, `Related specs`, `Current state`, `Risk`, `Trigger`, `Mitigation`.
 
-## 5. Жизненный цикл {#lifecycle}
+<a name="lifecycle"></a>
 
-- Актуальная запись живёт в `Open`.
-- Когда закрытие становится самостоятельной работой, создай файл WI и одну строку в `BOARD.md`, затем укажи `Work: WI-NNN`.
-- До первого checkpoint `WAL.md` не меняется.
-- После устранения риска перенеси запись в `Resolved` с датой и ссылкой на WI или evidence.
+## 5. Life cycle {#lifecycle}
 
-`TECHDEBT.md` хранит долгоживущий риск. Файл WI хранит scope и acceptance конкретного прохода по его устранению.
+- The current entry lives in `Open`.
+- When closing becomes a standalone job, create a WI file and one line in `BOARD.md`, then specify `Work: WI-NNN`.
+- Until the first checkpoint `WAL.md` does not change.
+- After eliminating the risk, transfer the entry to `Resolved` with the date and link to WI or evidence.
+
+`TECHDEBT.md` holds a long-lived risk. The WI file stores the scope and acceptance of a specific pass to eliminate it.

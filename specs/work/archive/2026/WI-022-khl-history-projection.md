@@ -1,10 +1,10 @@
-# WI-022 — Полная статистика и прошлый сезон в прогнозе КХЛ
+# WI-022 - Full statistics and last season in the KHL forecast
 
 Kind: change
 Canon action: direct-edit
 
 ## Outcome
-Пользователь сравнивает броски, голы, передачи, штрафные минуты и плюс-минус и видит единый объяснимый EP с опорой на прошлый сезон при короткой текущей истории.
+The user compares shots, goals, assists, penalty minutes and plus/minus and sees a single explainable EP based on last season with a short current history.
 
 ## Specs
 - Governing: spec://modules/khl/FEAT-002-khl-squad#table
@@ -14,30 +14,30 @@ Canon action: direct-edit
 - Constraint: spec://modules/khl/FEAT-001-khl-module-and-rules#scoring
 
 ## Scope
-In: отдельные показатели и сортировки, максимум две десятичные цифры в UI, импорт истории 2025/2026 Sports и дополнение официальными протоколами КХЛ (броски, точные TOI/PP/PK/атака), маркированный prior и формула EP с разбивкой, подсказки всех заголовков/ячеек и полный XLSX всего каталога, локальные проверки, Git и production.
-Out: выдуманный индивидуальный xG, изменение официальных начисленных FP, неподтверждённое число удалений вместо известных штрафных минут, футбольные данные.
+In: individual indicators and sortings, maximum two decimal digits in the UI, import of 2025/2026 Sports history and addition of official KHL protocols (shots, exact TOI/PP/PK/attack), labeled prior and EP formula with breakdown, tooltips of all headers/cells and full XLSX of the entire catalog, local checks, Git and production.
+Out: fictitious individual xG, change in official FP awarded, unconfirmed number of deletions instead of known penalty minutes, football data.
 
 ## Acceptance
-- [x] У всех заголовков и ячеек каталога КХЛ есть объяснение смысла, расчёта и значения; полный XLSX включает весь каталог турнира независимо от фильтров и пагинации.
-- [x] Пять показателей видны, сортируются, null отличается от нуля; числовое отображение ограничено двумя десятичными цифрами.
-- [x] Прошлый сезон загружен локально и на сервер; источники, покрытие и отсутствие истории видны.
-- [x] Доступные архивные протоколы КХЛ дополняют прошлый сезон с точными суммами и отдельным покрытием; повторы не удваивают матчи, официальные FP Sports сохраняются.
-- [x] Короткая текущая история использует прошлый сезон в EP; G/A/SOG/PIM/+− участвуют в объяснимом расчёте без двойного счёта голов.
-- [x] Проверены идемпотентность импорта, влияние входов на прогноз и отсутствие будущих данных.
-- [x] Выпуск и браузерная проверка завершены; память, кэш и дубли проверены.
+- [x] All headings and cells of the KHL catalog have an explanation of the meaning, calculation and significance; full XLSX includes the entire tournament catalog regardless of filters and pagination.
+- [x] Five indicators are visible, sorted, null is different from zero; numeric display is limited to two decimal digits.
+- [x] Last season downloaded locally and on the server; the sources, coverage and lack of history are visible.
+- [x] Available archived KHL protocols expand on last season with exact totals and separate coverage; Replays do not double matches, official FP Sports are retained.
+- [x] Short current story uses last season in EP; G/A/SOG/PIM/+− participate in the explanatory calculation without double counting of goals.
+- [x] Checked import idempotency, influence of inputs on forecast, and lack of future data.
+- [x] Release and browser check completed; memory, cache and duplicates are checked.
 
 ## Dependencies
 Related: WI-021, WI-017.
 
 ## Result
-Завершено 2026-09-14. На production 0.3.72, runtime `442b3c61648fb8cf3257c696a70f14091d43d55d`; проверка скачанного файла исправлена отдельным test-only commit `c4ed72c`. [Выпуск](https://github.com/Tsyzhman/fantasy/actions/runs/34818689215) и [браузерная проверка](https://github.com/Tsyzhman/fantasy/actions/runs/34819687685) успешны.
+Completed 2026-09-14. On production 0.3.72, runtime `442b3c61648fb8cf3257c696a70f14091d43d55d`; checking of the downloaded file has been fixed with a separate test-only commit `c4ed72c`. [Release](https://github.com/Tsyzhman/fantasy/actions/runs/34818689215) and [browser check](https://github.com/Tsyzhman/fantasy/actions/runs/34819687685) successful.
 
-Было: краткая текущая история, архив Sports без SOG/PP/PK/атаки, непояснённые ячейки и отсутствие полной выгрузки КХЛ. Стало: 539 Sports-историй / 24174 сыгранных матча; 499 историй дополнены официальными итогами 748 протоколов регулярки 2025/2026. Локально 103 новые связи, на сервере 102 (ещё одна уже существовала); повтор changed=0/newLinks=0. FP Sports сохранены. Броски и реализация прошлого сезона участвуют в маркированном EP v3 с весом не более 20 матчей.
+There was: a brief current history, Sports archive without SOG/PP/PK/attack, unexplained cells and lack of complete KHL unloading. Now: 539 Sports-stories / 24174 matches played; 499 stories are supplemented by the official results of 748 regular season protocols 2025/2026. Locally 103 new connections, on the server 102 (one more already existed); repeat changed=0/newLinks=0. FP Sports saved. Throws and implementations from last season are included in the marked EP v3 with a weight of no more than 20 matches.
 
-У Грегуара 60 прошлых матчей: 126 бросков, 3 гола, 16 передач, 22 штрафные минуты, +4; TOI 1207:21, PP 114:29, PK 80:39, атака 306:55. В интерфейсе отдельные сортируемые показатели, максимум две десятичные цифры, подсказки всех 17 заголовков и ячеек с источником/покрытием/расчётом и справка для клавиатуры/телефона. При поиске одного игрока Excel выгружает весь каталог: на сервере 697 уникальных ID и шесть листов, локальный каталог содержал 693.
+Gregoire has 60 past matches: 126 shots, 3 goals, 16 assists, 22 penalty minutes, +4; TOI 1207:21, PP 114:29, PK 80:39, attack 306:55. The interface has separate sortable indicators, a maximum of two decimal digits, tooltips for all 17 headers and cells with source/coverage/calculation, and keyboard/phone help. When searching for one player, Excel downloads the entire directory: on the server 697 unique IDs and six sheets, the local directory contained 693.
 
-Проверки: полный npm run check — 1119 pass / 1 skip, lint 0 errors / 139 warnings, typecheck/build pass; PostgreSQL/history/protocol suite — 4 pass / 0 skip; XLSX roundtrip — все строки, числа/пустые ячейки/точное время/строковые имена. Production: auth 1 pass, desktop/tablet/mobile 3 pass. Каждый фактически скачанный XLSX 627585–627590 bytes, 697 строк на каждом листе статистики. Первая проверка ошибочно читала пустой network response buffer; проверка сохранённого download подтвердила целый файл без изменения runtime.
+Checks: full npm run check — 1119 pass / 1 skip, lint 0 errors / 139 warnings, typecheck/build pass; PostgreSQL/history/protocol suite - 4 pass / 0 skip; XLSX roundtrip - all lines, numbers/empty cells/exact time/string names. Production: auth 1 pass, desktop/tablet/mobile 3 pass. Each actually downloaded XLSX 627585–627590 bytes, 697 rows on each statistics sheet. The first check erroneously read an empty network response buffer; checking the saved download confirmed the entire file without changing the runtime.
 
-После экспорта: health/OCI совпадают, 49 применённых миграций, незавершённых 0, restarts 0. Дубли stat/raw/active jobs/history/archive match IDs — 0. Raw 29 / 99987 bytes, исторические агрегаты 540415 bytes, 226 forecast revisions в существующем retention. Память: web 340.3 MiB, worker 462.5 MiB, PostgreSQL 1.073 GiB; свободно 85 GiB. Временный bundle на сервере удалён. Локальные исходники сжаты 121.99 → 6.54 MiB после сверки всех 748 SHA256; тестовая учётная запись, пароль и процессы удалены/остановлены.
+After export: health/OCI match, 49 applied migrations, incomplete 0, restarts 0. Duplicates stat/raw/active jobs/history/archive match IDs - 0. Raw 29 / 99987 bytes, historical aggregates 540415 bytes, 226 forecast revisions in existing retention. Memory: web 340.3 MiB, worker 462.5 MiB, PostgreSQL 1.073 GiB; free 85 GiB. The temporary bundle on the server has been deleted. Local sources are compressed 121.99 → 6.54 MiB after checking all 748 SHA256; test account, password and processes are deleted/stopped.
 
-Готовый ixG и прямое автообновление протоколов с production IP остаются ограничениями WI-017; эта работа не объявляет их готовыми. Полное evidence: [release-0.3.72](../../evidence/WI-022/release-0.3.72.md).
+Ready-made ixG and direct auto-update of protocols with production IP remain limitations of WI-017; this work does not declare them ready. Full evidence: [release-0.3.72](../../evidence/WI-022/release-0.3.72.md).

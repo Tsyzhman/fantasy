@@ -1,10 +1,10 @@
-# WI-008: КХЛ на сервере и исправления Betting
+# WI-008: KHL on the server and Betting fixes
 
 - Kind: `fix`
 - Canon action: `direct-edit`
 
 ## Outcome
-Production показывает реальный каталог КХЛ, сохраняет и восстанавливает составы; Betting использует список Squad и советы пяти моделей для выбранного матча, включая историю национальных лиг и ЛЧ/ЛЕ.
+Production shows the real KHL catalog, saves and restores rosters; Betting uses the Squad list and tips from five models for the selected match, including the history of the national leagues and the UCL/UEFA.
 
 ## Specs
 - Governing: `spec://modules/khl/INFRA-001-khl-data-ingestion#operations`.
@@ -15,35 +15,35 @@ Production показывает реальный каталог КХЛ, сохр
 - Governing: `spec://modules/khl/FEAT-002-khl-squad#root`.
 
 ## Scope
-- In: каталог/worker/восстановление КХЛ; лиги Squad в Betting, советы внутри матча, история ЛЧ/ЛЕ + чемпионатов, скрытие ручного settlement UI; разовый сброс ставок по прямому поручению; production acceptance.
-- Out: неподтверждённые feeds, xG, обученный прогноз и отправка трансферов провайдеру.
+- In: directory/worker/KHL restoration; Squad leagues in Betting, tips inside the match, history of the Champions League/UEFA + championships, hiding manual settlement UI; one-time rate reset by direct order; production acceptance.
+- Out: unconfirmed feeds, xG, trained forecast and sending transfers to the provider.
 
 ## Acceptance
-- [x] Проверенный турнир и полный реальный каталог доступны на production.
-- [x] Повторная синхронизация обновляет свежесть без дублей и неограниченного накопления receipts.
-- [x] Авторизованный браузер открывает раздел на desktop/tablet/mobile.
-- [x] Проверены выпуск, здоровье, память и очередь.
+- [x] A proven tournament and a complete real catalog are available on production.
+- [x] Re-synchronization updates freshness without duplicates and unlimited accumulation of receipts.
+- [x] An authorized browser opens a section on desktop/tablet/mobile.
+- [x] Checked release, health, memory and queue.
 
-- [x] Betting использует общий список Squad, включая лиги без событий.
+- [x] Betting uses the general Squad list, including non-event leagues.
 
-- [x] В выбранном матче отображаются пять персональных советов алгоритмов.
-- [x] По прямому поручению пользователя Betting сброшен с резервной копией и восстановлением стартовых балансов.
+- [x] The selected match displays five personalized algorithm tips.
+- [x] By direct order of the user, Betting was reset with a backup and restoration of starting balances.
 
-- [x] КХЛ восстанавливает последний свой состав при входе; можно открыть новый вариант.
-- [x] ЛЧ/ЛЕ используют историю чемпионатов и прежнего общего этапа; неизвестное основное время не подменено.
-- [x] Вкладка ручного расчёта убрана.
+- [x] The KHL is restoring its last roster upon entry; you can open a new option.
+- [x] Champions League/UEL use the history of the championships and the previous general stage; unknown main time is not replaced.
+- [x] The manual calculation tab has been removed.
 
 ## Result
-Завершено. Было: KHL_ENABLED=false и 0 турниров после 0.3.58; Betting ограничивался загруженными лигами, советы находились только в купоне, еврокубки блокировались целиком.
+Completed. It was: KHL_ENABLED=false and 0 tournaments after 0.3.58; Betting was limited to busy leagues, tips were only in the coupon, European cups were blocked entirely.
 
-Стало: production 0.3.60, commit 15b5a6c9083cf60a292a90f7ef4bf9167c5b0bdd, release 20260907T112939Z-v0.3.60-15b5a6c. Каталог КХЛ 694/22, fenced single-flight refresh 45s, стабильные receipts при одинаковых данных, восстановление собственного варианта и явный новый вариант. Календарные/protocol/xG gates остаются открыты; неподтверждённые данные не сгенерированы.
+Now: production 0.3.60, commit 15b5a6c9083cf60a292a90f7ef4bf9167c5b0bdd, release 20260907T112939Z-v0.3.60-15b5a6c. KHL catalog 694/22, fenced single-flight refresh 45s, stable receipts with the same data, restoration of your own variant and an obvious new variant. Calendar/protocol/xG gates remain open; no unverified data was generated.
 
-Betting использует общий список 12 лиг Squad и серверный запрет ставок вне списка. Пять советов находятся внутри выбранного матча; устаревшая линия отключает действия. Вкладка ручного расчёта и диалог убраны; виртуальное settlement сохранено. Для ЛЧ/ЛЕ доступны история национальных чемпионатов и прошлых общих этапов; окна 20/8 сохраняют до 8/3 европейских игр. Пустой CoreMatch score может использовать явно сохранённые goals обеих команд, а не сумму игроков. Все пять проверенных настоящих матчей ЛЧ получили численные оценки всех моделей; cutoff проверен. Для плей-офф основное время не выдумывается.
+Betting uses a general list of 12 Squad leagues and a server-based ban on betting outside the list. Five tips are found inside the selected match; legacy line disables actions. The manual calculation tab and dialog have been removed; the virtual settlement is saved. For the Champions League/UEL, the history of national championships and past general stages is available; windows 20/8 save up to 8/3 European games. An empty CoreMatch score can use the explicitly stored goals of both teams, rather than the sum of the players. All five real UCL matches tested received numerical scores from all models; cutoff checked. For the playoffs, the regular time is not invented.
 
-Проверки: CI workflow 34116440816 — 1075 unit tests pass, lint 0 errors/98 warnings, typecheck/build pass. DB catalog test на 694 строках проверил повтор без receipts, correction и отсутствие дублей; wallet DB test проверил отказ вне Squad, concurrency/retry и автоматическое settlement общего этапа ЛЧ при сохранении запрета неоднозначного финала. Production smoke 34117242298 — auth 1 pass, UI 10 pass/17 intended skips: desktop/tablet/mobile, действительные UCL model inputs, 5 советов, KHL save/reload/return/new variant. Первый smoke 34115224750 выявил duplicate-name конфликт при новом входе; default restore исправлен и повторная приёмка прошла.
+Checks: CI workflow 34116440816 — 1075 unit tests pass, lint 0 errors/98 warnings, typecheck/build pass. DB catalog test on 694 lines checked repetition without receipts, correction and absence of duplicates; wallet DB test tested failure outside Squad, concurrency/retry and automatic settlement of the general stage of the Champions League while maintaining the prohibition of an ambiguous final. Production smoke 34117242298 — auth 1 pass, UI 10 pass/17 intended skips: desktop/tablet/mobile, valid UCL model inputs, 5 tips, KHL save/reload/return/new variant. The first smoke 34115224750 detected a duplicate-name conflict on a new login; default restore has been corrected and re-acceptance has passed.
 
-По прямому поручению пользователя разово сброшены 50 открытых ставок (50 000 монет) и 125 прежних решений. Все 33 счёта восстановлены до 100 000 монет; ledger mismatch/duplicates=0. Backup таблиц Betting сохранён и проверен через pg_restore --list; путь и SHA-256 в evidence. После smoke снята временная lease-пауза: цикл 11:38:24 UTC успешен, 12 лиг/202 события, 39 новых ставок версии 2026-09-07.2, вне Squad=0, ledger mismatch=0, duplicate tickets=0. Повторного сброса новых ставок не выполнялось.
+By direct order of the user, 50 open bets (50 000 coins) and 125 previous decisions were reset one-time. All 33 accounts have been restored to 100 000 coins; ledger mismatch/duplicates=0. Backup of Betting tables saved and checked via pg_restore --list; path and SHA-256 in evidence. After smoke, the temporary lease pause was removed: cycle 11:38:24 UTC successful, 12 leagues/202 events, 39 new bets version 2026-09-07.2, outside Squad=0, ledger mismatch=0, duplicate tickets=0. New rates were not reset again.
 
-Ресурсы после smoke: web 433.6 MiB, worker 131.3 MiB, PostgreSQL 1.188 GiB; web/worker healthy, restarts=0. KHL raw=0, receipts=2776 стабильны после нескольких циклов, единственный QA draft повторно использован, duplicate entries=0. Штатный promoter сохранил текущий и один rollback; build cache 82.95 MB. Локальный тестовый PostgreSQL остановлен. Исторические ignored cache/heap files, удаление которых ранее блокировалось, не тронуты.
+Resources after smoke: web 433.6 MiB, worker 131.3 MiB, PostgreSQL 1.188 GiB; web/worker healthy, restarts=0. KHL raw=0, receipts=2776 are stable after several cycles, the only QA draft is reused, duplicate entries=0. The full-time promoter saved the current one and one rollback; build cache 82.95 MB. Local PostgreSQL test has stopped. Historical ignored cache/heap files, the deletion of which was previously blocked, are not touched.
 
-Новых миграций не добавлено: 46 applied, 1 историческая rolled-back audit row, unfinished=0. Evidence: specs/work/evidence/WI-008. Следующий за runtime commit содержит только усиленные browser tests и этот отчёт; runtime diff отсутствует.
+No new migrations added: 46 applied, 1 historical rolled-back audit row, unfinished=0. Evidence: specs/work/evidence/WI-008. The next runtime commit contains only enhanced browser tests and this report; There is no runtime diff.

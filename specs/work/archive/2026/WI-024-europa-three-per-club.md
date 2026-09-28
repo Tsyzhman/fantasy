@@ -1,28 +1,28 @@
-# WI-024 — Три игрока одного клуба в Лиге Европы
+# WI-024 – Three players from one club in the Europa League
 
 Kind: fix
 Canon action: none
 
 ## Outcome
-В Squad Лиги Европы можно выбрать до 3 игроков одного клуба; четвёртый запрещён.
+You can select up to 3 players from the same club in the Europa League Squad; the fourth is prohibited.
 
 ## Specs
-- Governing (registered legacy): docs/SPORTS_RU_FANTASY_SYNC.md
+- Governing (registered legacy): docs/integrations/SPORTS_RU_FANTASY_SYNC.md
 - Constraint: spec://modules/machete/FEAT-003-squad-player-card#root
 - Related: WI-016
 
 ## Scope
-In: явный лимит league 73, persisted contest текущего сезона, regression, production.
-Out: другие турниры, составы пользователей, исторические сезоны.
+In: explicit limit league 73, persisted contest of the current season, regression, production.
+Out: other tournaments, user lineups, historical seasons.
 
 ## Acceptance
-- [x] Лига Европы имеет лимит 3 в fallback и текущем contest; повторная синхронизация сохраняет 3.
-- [x] Общие ручной выбор/валидация/автоподбор используют правило 3; четвёртый игрок запрещён.
-- [x] Проверки и production завершены.
+- [x] Europa League has a limit of 3 in fallback and current contest; resynchronization saves 3.
+- [x] General manual selection/validation/auto-selection uses the rule 3; the fourth player is prohibited.
+- [x] Checks and production are completed.
 
 ## Result
-- Было: league 73=2 в общей таблице и текущем contest. Стало: 3 в конфигурации и БД; текущие загрузчики цен используют общую таблицу. Миграция ограничена SPORTS_RU / 73 / 2026/2027, остальные лимиты сверены без изменений.
-- Ручной выбор и общая валидация: третий разрешён, четвёртый отклоняется (regression). Автоподбор использует те же rules.
-- Локально: focused tests 53 passed; полный набор 1130 passed / 1 skipped; lint 0 errors; typecheck и production build прошли.
-- Production 0.3.75, commit `571946036223be2689bebff730bed8a19273ab5e`, release `20260916T152502Z-v0.3.75-5719460`. GitHub Actions упёрся в квоту артефактов; выпуск прошёл тем же immutable archive и `deploy-production-docker.sh` через SSH Host `deploy`. Миграция applied; `/api/health` status ok с точным commit; symlink и image labels совпадают.
-- Contest: `73/2026/2027` = 3, `42/2026/2027` остаётся 3. web/worker healthy, restarts=0. Evidence: `specs/work/evidence/WI-024/production.md`.
+- Was: league 73=2 in the general table and the current contest. Now: 3 in configuration and database; current price loaders use a common table. Migration is limited to SPORTS_RU / 73 / 2026/2027, other limits have been verified without changes.
+- Manual selection and general validation: the third is allowed, the fourth is rejected (regression). Auto-selection uses the same rules.
+- Local: focused tests 53 passed; full set 1130 passed / 1 skipped; lint 0 errors; typecheck and production build passed.
+- Production 0.3.75, commit `571946036223be2689bebff730bed8a19273ab5e`, release `20260916T152502Z-v0.3.75-5719460`. GitHub Actions has reached its artifact quota; the release went through the same immutable archive and `deploy-production-docker.sh` via SSH Host `deploy`. Migration applied; `/api/health` status ok with exact commit; symlink and image labels are the same.
+- Contest: `73/2026/2027` = 3, `42/2026/2027` remains 3. web/worker healthy, restarts=0. Evidence: `specs/work/evidence/WI-024/production.md`.

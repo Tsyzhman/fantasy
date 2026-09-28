@@ -2,95 +2,119 @@
 status: active
 ---
 
-# FEAT-003: хоккейный прогноз очков и оптимизатор {#root}
+<a name="root"></a>
 
-## Простыми словами {#plain-language}
+# FEAT-003: hockey score forecast and optimizer {#root}
 
-Прогноз и подбор используют хоккейные данные и явно показывают их качество.
+<a name="plain-language"></a>
 
-## Цель {#goal}
+## Plain language {#plain-language}
 
-Выбирать допустимый состав по ожидаемым очкам без будущих данных и выдуманного xG.
+Projections and squad selection use hockey data and explicitly show its quality.
 
-## Управляющие документы {#governing-specs}
+<a name="goal"></a>
 
-Границы продукта: `specs/common/main.md`; взаимные контракты и точные ссылки перечислены в #relationships. Канон активен по запросу пользователя; source/rules gates определяют доступность соответствующих возможностей, а не статус документа.
+## Goal {#goal}
+
+Select a valid lineup based on expected points without future data and fictional xG.
+
+<a name="governing-specs"></a>
+
+## Governing specifications {#governing-specs}
+
+Product boundaries: `specs/common/main.md`; mutual contracts and exact links are listed in #relationships. Canon is active upon user request; source/rules gates determine the availability of relevant features, not the status of the document.
 
 
-## Цель {#scope}
+<a name="scope"></a>
 
-Рассчитать ожидаемые FP каждого хоккеиста по оставшимся матчам и подобрать допустимые 17 игроков/трансферы. Используется готовый xG выбранного поставщика, без собственной модели вероятности гола отдельного броска. Прогноз воспроизводим по входной ревизии, правилам и modelVersion, без LLM и недатированных советов.
+## Scope {#scope}
 
-Не переносить параметры футбольного `deterministic_fantasy_projection.ts`, per90, 60-minute probability, football clean sheet, xA/assist coefficient 0.8 или FPL captain/bench. Независимые хоккейные конфиги с обучением/калибровкой на КХЛ.
+Calculate the expected FP of each hockey player for the remaining matches and select acceptable 17 players/transfers. The ready-made xG of the selected supplier is used, without its own model of the probability of a goal of an individual shot. We reproduce the forecast using the input revision, rules and modelVersion, without LLM and undated advice.
 
-## Входы и качество {#inputs}
+Do not transfer football parameters `deterministic_fantasy_projection.ts`, per90, 60-minute probability, football clean sheet, xA/assist coefficient 0.8 or FPL captain/bench. Independent hockey configs with training/calibration for the KHL.
 
-По каждому матчу: дата/время, дом/выезд, соперник, пауза между матчами, back-to-back, официальный fantasy week, ещё доступное время участия, исходы regulation/OT/SO, свежие совместимые Фонбет-рынки. Неполный календарь блокирует aggregate weekly recommendation, потому что EP зависит от числа игр.
+<a name="inputs"></a>
 
-Полевые: последние 5/10/20 матчей, фактические TOI и PP/PK TOI, PP share, наблюдаемая либо оценочная роль, G/A/SOG/+/−/PIM, готовый индивидуальный и командный xG по определению поставщика, травмы/дисквалификации. Краткая история shrink к хоккейному team/position/league prior с маркировкой, не к футбольным per90. EV/PP/PK xG не выводить из общей суммы если разрез не поставляется; ALL-only модель остаётся отдельной версией с соответствующим coverage.
+## Inputs and quality {#inputs}
 
-Вратари: `P(start)` на матч, `P(plays without start)`, conditional TOI, saves/GA rates, сила атаки соперника, вероятность смены/полного матча, отдых и ротация, injury и подтверждённые сведения. Готовые xGA/GSAx при наличии отдельного покрытия. Стартовая шестёрка завершённого mobile матча даёт historical target, не подтверждение будущего старта. Официальный future starter nullable, модельная вероятность помечена ESTIMATE. Между goalie клуба распределение стартов согласовано: сумма по всем кандидатам и UNKNOWN_OTHER=1; не ограничиваться двумя fantasy-выбранными вратарями.
+For each match: date/time, home/away, opponent, pause between matches, back-to-back, official fantasy week, still available participation time, regulation/OT/SO outcomes, latest compatible Fonbet markets. An incomplete calendar blocks aggregate weekly recommendation because EP depends on the number of games.
 
-Для каждого признака: value/null, quality FACT/ESTIMATE/UNKNOWN, source, asOf, sampleSize и coverage. Список травм не покрывает каждое краткое повреждение. Неизвестная травма не доказывает здоровье; условная рекомендация должна сообщать неопределённость. XG-01 и покрытие PP TOI из INFRA-001 — зависимости основного прогноза.
+Field: last 5/10/20 matches, actual TOI and PP/PK TOI, PP share, observed or estimated role, G/A/SOG/+/−/PIM, ready individual and team xG as determined by the supplier, injuries/disqualifications. Brief history of shrink to hockey team/position/league prior with markings, not to football per90. EV/PP/PK xG is not deducted from the total if the cut is not supplied; The ALL-only model remains a separate version with appropriate coverage.
 
-## Модель EP {#forecast}
+Goalkeepers: `P(start)` per match, `P(plays without start)`, conditional TOI, saves/GA rates, opponent's attack strength, probability of change/full match, rest and rotation, injury and confirmed information. Ready-made xGA/GSAx with separate coverage. The starting six of a completed mobile match gives a historical target, not confirmation of a future start. Official future starter is nullable, model probability is marked ESTIMATE. The distribution of starts is agreed between the goalie of the club: the sum for all candidates and UNKNOWN_OTHER=1; Don't limit yourself to two fantasy goalies.
 
-Чистая функция принимает inputs, rulesVersion, modelVersion и `asOf`; не читает БД/часы сама. Модель по матчу сначала задаёт состояния участия/времени, затем связанные исходы матча и индивидуальные события. Выход: EP total, breakdown, dispersion/interval при калиброванном распределении, start/appearance/TOI/PP expectations, inputRevision и warnings.
+For each attribute: value/null, quality FACT/ESTIMATE/UNKNOWN, source, asOf, sampleSize and coverage. The list of injuries does not cover every brief injury. An unknown injury does not prove health; a conditional recommendation must convey uncertainty. XG-01 and PP TOI coverage from INFRA-001 - dependencies of the main forecast.
 
-Для полевого концептуально:
+<a name="forecast"></a>
+
+## Model EP {#forecast}
+
+Pure function accepts inputs, rulesVersion, modelVersion and `asOf`; does not read the database/clock itself. The per-match model first specifies participation/time states, then associated match outcomes and individual events. Output: EP total, breakdown, dispersion/interval with calibrated distribution, start/appearance/TOI/PP expectations, inputRevision and warnings.
+
+For the field conceptually:
 
 `EP = 10 E[G] + 5 E[A] + 2 E[plusMinus] − E[PIM] + E[appearancePoints] + E[teamResultPoints] + E[defenderShutoutPoints]`.
 
-Компоненты условны по участию и соответствуют проверенной версии scoring. TOI/PP влияют на экспозицию и вероятность G/A; отдельного бонуса за большинство нет. При данных с EV/PP разрезом rates моделируются раздельно, но PP эффект не умножается повторно поверх уже учтённого общего rate. Прогноз ассистов оценивается на хоккейных событиях (возможны две передачи на гол), не футбольной константой. xG — признак ожидаемой результативности, не готовый FP и не равно фактическим голам.
+The components are conditional on participation and correspond to the verified version of scoring. TOI/PP affect exposure and G/A probability; There is no separate bonus for the power play. For data with an EV/PP cut, the rates are modeled separately, but the PP effect is not multiplied again on top of the overall rate already taken into account. The assist forecast is assessed in hockey events (two assists per goal are possible), not by a football constant. xG is a sign of expected performance, not ready FP and does not equal actual goals.
 
-Для goalie:
+For goalie:
 
 `EP = E[appearancePoints] + E[teamResultPoints] + 20 P(eligible full-game shutout) − 3 E[eligible GA] + E[floor(SV/2)]`.
 
-Учитывать совместные события участие/старт/смена/командный исход. Нельзя сначала включить `P(start)` в EP, а затем умножить на неё вторично. `E[floor(SV/2)]` не равно `floor(E[SV]/2)` и не равно `0.5 E[SV]`: считать по дискретному распределению сэйвов. Аналогично пороги 10/40 минут считаются по распределению TOI, а не по округлённому среднему. До подтверждения точных пороговых правил component quality остаётся provisional.
+Take into account joint events participation/start/change/team outcome. You cannot first include `P(start)` in EP and then multiply by it a second time. `E[floor(SV/2)]` is not equal to `floor(E[SV]/2)` and not equal to `0.5 E[SV]`: count according to the discrete distribution of saves. Likewise, thresholds 10/40 minutes are calculated using the TOI distribution rather than the rounded average. Until the exact threshold rules are confirmed, component quality remains provisional.
 
-Odds используются как вероятностные признаки/калибровка хоккейной силы с учётом settlement; некорректные/снятые линии исключаются. Отсутствие дальних котировок → явно обозначенная baseline сила, не ноль и не ближайшая футбольная линия. Если отсутствует xG, поле остаётся null: baseline EP может быть отдельно доступен как beta, но xG-режим считается неготовым.
+Odds are used as probabilistic signs/calibration of hockey strength taking into account settlement; incorrect/removed lines are excluded. Absence of distant quotes → clearly indicated baseline force, not zero and not the nearest football line. If there is no xG, the field remains null: baseline EP can be separately available as beta, but xG mode is considered not ready.
 
-EP недели — сумма только ещё не сыгранных доступных матчей игрока с учётом времени владения в сценарии. Факт FP уже сыгранного периода показывается отдельно. Горизонт по умолчанию текущая официальная неделя; можно 2–4 недели с явными границами. Не умножать среднее FP на условные «три игры».
+EP of the week - the sum of only the player’s available matches that have not yet been played, taking into account the possession time in the scenario. The fact of FP of the already played period is shown separately. The default horizon is the current official week; you can 2–4 weeks with obvious boundaries. Do not multiply the average FP by the conditional “three games”.
 
-## Оптимизация и трансферные планы {#optimizer}
+<a name="optimizer"></a>
 
-Независимый хоккейный solver, чистый вход и типизированный результат. Для начального состава бинарные `x_i`:
+## Optimization and transfer plans {#optimizer}
+
+Independent hockey solver, clean input and typed result. For the initial squad, binary `x_i`:
 
 - `sum x_i=17`, `sum_G=2`, `sum_D=6`, `sum_F=9`;
 - `sum price_i*x_i ≤ availableCapital`, `sum_club x_i ≤3`;
-- keep выбранного игрока → `x_i=1`; exclude → `x_i=0`; недоступный к покупке не может стать in;
-- duplicate/unmapped/no-price не может войти в подтверждённый рекомендационный состав.
+- keep selected player → `x_i=1`; exclude → `x_i=0`; unavailable for purchase cannot become in;
+- duplicate/unmapped/no-price cannot be included in the confirmed recommendation squad.
 
-Цель v1 — максимальная сумма EP оставшихся матчей без капитана и bench. Риск показывать отдельно; не заявлять максимизацию глобального ранга/вероятности выигрыша турнира. Известные injury/suspension влияют через участие, а source transfer lock — через допустимость операции. При несовместимых keep/exclude/club/position выдавать объяснение infeasible, не молча ослаблять ограничения.
+The goal of v1 is the maximum amount of EP in the remaining matches without a captain and bench. Risk shown separately; do not claim to maximize global rank/tournament winning probability. Known injury/suspension affects through participation, and source transfer lock affects through the permissibility of the operation. For incompatible keep/exclude/club/position, issue an infeasible explanation rather than silently relax the restrictions.
 
-Для трансферов стартовать от конкретного baseline и состояния недели. Каждая пара out/in = один использованный трансфер; возврат проданного позднее также расходует трансфер. Финальный symmetric difference не заменяет журнал. До 5 операций после старта недели минус подтверждённо использованные и запланированные в том же сценарии; нет переносов/платных лишних операций из FPL. Каждый шаг проверяет бюджет, позиции, клуб, lock и момент действия. Сам факт перепланирования не тратит внешний лимит.
+For transfers, start from a specific baseline and state of the week. Each out/in pair = one transfer used; returning what was sold later also costs the transfer. The final symmetric difference does not replace the log. Up to 5 operations after the start of the week, minus those confirmed to be used and planned in the same scenario; no transfers/paid extra operations from FPL. Each step checks the budget, positions, club, lock and moment of action. The very fact of rescheduling does not consume the external limit.
 
-v1 предлагает немедленные допустимые замены; будущие временные шаги — условные сценарии с повторной проверкой цены/lock. Официальное время разблокировки заранее не известно. Выгодность плана = EP по интервалам владения нового состава минус EP «ничего не менять» на том же горизонте и inputs. Продажа до сегодняшнего матча теряет этот матч; покупка после уже прошедшего матча его не приобретает.
+v1 offers immediate valid substitutions; future time steps - conditional scenarios with price/lock recheck. The official unlocking time is not known in advance. Profitability of the plan = EP over the ownership intervals of the new squad minus EP “do not change anything” on the same horizon and inputs. Selling before today's match loses this match; purchasing after a match has already passed does not acquire it.
 
-Подход: ограниченный integer optimization/branch-and-bound с детерминированными tie-breaks, pruning, лимитом времени и отменой. Конкретную библиотеку выбрать spike по bundle/runtime и лицензии, не включать тяжёлый solver без замеров. До 1000 кандидатов и 5 секунд; не более 5 возвращённых планов. При timeout возвращать валидный incumbent с `optimality:"not_proven"`, bound/gap если известны; при отсутствии допустимого результата — `TIME_LIMIT_NO_SOLUTION`, а не доказанное infeasible. Ответ содержит requestId, inputRevision, seed если есть симуляция, elapsedMs и причины ограничений. Сервер проверяет решение независимо.
+Approach: limited integer optimization/branch-and-bound with deterministic tie-breaks, pruning, time limit and cancellation. Select a specific library spike by bundle/runtime and license, do not include a heavy solver without measurements. Up to 1000 candidates and 5 seconds; no more than 5 returned plans. When timeout, return a valid incumbent with `optimality:"not_proven"`, bound/gap if known; in the absence of an acceptable result - `TIME_LIMIT_NO_SOLUTION`, and not proven infeasible. The response contains requestId, inputRevision, seed if there is a simulation, elapsedMs and reasons for the restrictions. The server checks the solution independently.
 
-## Backtest и качество модели {#validation}
+<a name="validation"></a>
 
-Rolling-origin по игровым неделям: обучение только на данных, доступных до прогноза. Для каждого поля source availableAt; closing odds, официальные стартовые составы и corrected xG, появившиеся позже, не попадают в исторический срез. Если источник не предоставляет историю публикации, ограничение указать и использовать prospective shadow test — не выдавать backfill backtest за свободный от утечки.
+## Backtest and quality of model {#validation}
 
-Минимум предыдущий полный сезон, независимые последние ≥8 недель holdout и текущий сезон shadow ≥2 официальных недель. Новички/мало матчей/новый клуб/goalie отдельно. Метрики FP MAE по позициям и недельному total, calibration goalie start (Brier/reliability), interval coverage при наличии интервалов. Сравнить с baseline «последние 10 матчей FP/G × реальные оставшиеся игры» и вариантом той же модели без xG. Отдельно анализировать PP и число матчей; не выбирать гиперпараметры на holdout.
+Rolling-origin by game week: training only on data available before the forecast. For each field source availableAt; closing odds, official starting lineups and corrected xG, which appeared later, do not fall into the historical profile. If the source does not provide a publication history, the limitation of specifying and using a prospective shadow test is to not pass off the backfill backtest as leak-free.
 
-Предлагаемый gate выпуска прогноза: MAE не хуже baseline в целом и ни по одной позиции более чем на 5%; goalie-start Brier не хуже baseline исторической частоты стартов; выигрыш от xG/odds раскрыт ablation, даже если он нулевой. Показать sample counts и неопределённость сравнения. Не обещать улучшение до замеров. Если критерии не выполнены — beta label, причины и запрет выдавать модель за проверенную. Gate источника xG независимо обязателен для обещанной xG-функции.
+Minimum previous full season, independent last ≥8 weeks holdout and current season shadow ≥2 official weeks. Beginners/few matches/new club/goalie separately. FP MAE metrics by positions and weekly total, calibration goalie start (Brier/reliability), interval coverage if there are intervals. Compare with the baseline “last 10 FP/G matches × real remaining games” and a variant of the same model without xG. Separately analyze PP and the number of matches; do not select hyperparameters on holdout.
 
-## Приёмка {#acceptance}
+Proposed forecast release gate: MAE is not worse than the baseline in general and for no position by more than 5%; goalie-start Brier is no worse than the baseline historical start frequency; the gain from xG/odds is revealed by ablation, even if it is zero. Show sample counts and comparison uncertainty. Do not promise improvement before measurements. If the criteria are not met - beta label, reasons and a ban on presenting the model as verified. The xG source gate is independently required for the promised xG functionality.
 
-- MOD-01: одинаковые входы/версии дают одинаковый EP; breakdown суммируется, null и coverage видны, никаких скрытых обращений к LLM.
-- MOD-02: пороги TOI, нечётные SV, участие goalie/смена/OT/SO и отсутствие PP данных обработаны; нет двойного умножения на P(start).
-- MOD-03: перенос матча и обновление роли/цены/травмы/odds/xG инвалидируют старую ревизию; будущий starter не выдаётся за факт без источника.
-- OPT-01: на малых наборах solver совпадает с полным перебором; на полном пуле возвращает только допустимые 17/2/6/9/club/budget решения с корректной меткой optimality.
-- OPT-02: 5-й/6-й трансфер, повторная покупка, locked out/in, keep conflict, продажа до матча и перенос проверены последовательными сценариями.
-- OPT-03: timeout/cancel/stale input отличимы от infeasible; после 50 запусков один worker, нет удержания старых пулов.
-- MOD-04: rolling-origin отчёт, ablation xG/odds, Brier, MAE по позициям, data leakage audit и shadow период приложены до снятия beta.
+<a name="acceptance"></a>
 
-## Связи {#relationships}
+## Acceptance criteria {#acceptance}
+
+- MOD-01: same inputs/versions give same EP; breakdown is summed up, null and coverage are visible, no hidden calls to LLM.
+- MOD-02: TOI thresholds, odd SV, goalie/change/OT/SO participation and no PP data processed; no double multiplication by P(start).
+- MOD-03: postponing the match and updating the role/price/injury/odds/xG invalidates the old revision; a future starter is not presented as a fact without a source.
+- OPT-01: on small sets the solver coincides with exhaustive search; on a full pool, returns only valid 17/2/6/9/club/budget solutions with the correct optimality label.
+- OPT-02: 5-th/6-th transfer, re-purchase, locked out/in, keep conflict, pre-match sale and transfer were tested by successive scenarios.
+- OPT-03: timeout/cancel/stale input distinguishable from infeasible; after 50 launches there is one worker, there is no retention of old pools.
+- MOD-04: rolling-origin report, ablation xG/odds, Brier, MAE by position, data leakage audit and shadow period are attached before beta is removed.
+
+<a name="relationships"></a>
+
+## Related specifications {#relationships}
 
 `spec://modules/khl/INFRA-001-khl-data-ingestion#xg-gate`, `spec://modules/khl/INFRA-003-khl-fonbet-odds#markets`, `spec://modules/khl/FEAT-001-khl-module-and-rules#scoring`, `spec://modules/khl/FEAT-002-khl-squad#cards`.
+
+<a name="changelog"></a>
 
 ## История {#changelog}
 
@@ -100,49 +124,63 @@ Rolling-origin по игровым неделям: обучение только
 
 - 2026-09-07: создана спецификация хоккейного прогноза FP и оптимизатора на готовом xG. Модель не обучалась, solver не реализован.
 
-## actors {#actors}
+<a name="actors"></a>
 
-Пользователь задаёт горизонт и ограничения; публикация модели фиксирует входные данные и их время доступности.
+## Participants and triggers {#actors}
 
-## scenarios {#scenarios}
+The user sets the horizon and restrictions; publishing the model records the input data and its availability time.
 
-Проверка входов #inputs → расчёт #forecast → подбор и трансферы #optimizer → независимая проверка качества #validation.
+<a name="scenarios"></a>
 
-## data {#data}
+## Scenarios {#scenarios}
+
+Checking inputs #inputs → calculation #forecast → selection and transfers #optimizer → independent quality check #validation.
+
+<a name="data"></a>
+
+## Data and state {#data}
 
 Архив `sourceKind=KHL_PROTOCOL` не содержит полной истории пропусков: его games/dnp не используются как prior участия. Проверенные событийные суммы доступны для ставок событий; FP/otherPoints с count=0 не добавляют наблюдений.
 
-Готовый ixG, TOI, участие, старт вратаря, совместные распределения, model/data revisions и компоненты EP (#inputs/#forecast).
+Ready ixG, TOI, participation, goalkeeper start, joint distributions, model/data revisions and EP components (#inputs/#forecast).
 
-## contracts {#contracts}
+<a name="contracts"></a>
 
-Нет участия дважды; E[floor(SV/2)] считается по распределению. Worker ограничен временем, результат повторно проверяет сервер (#optimizer).
+## Contracts {#contracts}
 
-## errors {#errors}
+No participation twice; E[floor(SV/2)] is calculated by distribution. Worker is limited by time, the result is re-checked by the server (#optimizer).
 
-Отсутствующие данные блокируют полноценный прогноз; timeout/cancel отличаются от доказанной невозможности. FP10 beta baseline не считается обученной xG-моделью.
+<a name="errors"></a>
 
-## Трассировка {#traceability}
+## Errors and validation {#errors}
 
-src/khl/forecast-model.ts, optimizer.ts, domain.test.ts, forecast-model.test.ts; src/server/khl/forecast-publication.ts. Итоговая приёмка определяется #acceptance; статус реализации — docs/KHL_IMPLEMENTATION_STATUS.md.
+Missing data blocks a full forecast; timeout/cancel differ from proven impossibility. FP10 beta baseline is not considered a trained xG model.
+
+<a name="traceability"></a>
+
+## Implementation traceability {#traceability}
+
+src/khl/forecast-model.ts, optimizer.ts, domain.test.ts, forecast-model.test.ts; src/server/khl/forecast-publication.ts. Final acceptance is determined by #acceptance; implementation status - docs/guides/KHL_IMPLEMENTATION_STATUS.md.
 
 
-## Базовый прогноз ближайших 7 дней {#rolling-beta}
+<a name="rolling-beta"></a>
 
-Архивные SOG берутся из точных протоколов КХЛ, если архив Sports их не содержит. Реализация дополнительно использует прошлые голы и броски, известные совместно в одних протоколах, с весом максимум 20 прошлых матчей. FP, G/A/+/−/PIM и частота участия Sports сохраняют свою выборку; покрытия источников не складываются как разные матчи.
+## Basic forecast for the next 7 days {#rolling-beta}
 
-До верификации официальных недель отдельно доступен календарный режим «Ближайшие 7 дней · оценка». Он не присваивает матчам фиктивную fantasy-неделю и не делает доступными неподтверждённые трансферы. Официальные недели и горизонт 1–4 недель сохраняются отдельным режимом.
+Archival SOGs are taken from the exact KHL protocols if the Sports archive does not contain them. The implementation additionally uses past goals and shots known together in the same protocols, with a maximum weight of 20 of past matches. FP, G/A/+/−/PIM and Sports participation frequency retain their sample; source coverages do not stack like different matches.
 
-EP использует последние до 10 матчей и прошлый завершённый сезон того же игрока. Каждый известный показатель сглаживается: (текущая сумма + k × прошлое среднее) / (число текущих наблюдений + k), k = min(20, число прошлых наблюдений). Это фиксированное beta-допущение, не обученный коэффициент. Без прошлых данных используются текущие; без текущих — прошлые с явной маркировкой. Неизвестные поля не заменяются нулями. Частота PLAYED среди PLAYED/DNP сглаживается так же и не выдаётся за вероятность старта вратаря.
+Before verification of official weeks, the calendar mode “Nearest 7 days · estimate” is separately available. It does not assign a fictitious fantasy week to matches or make unconfirmed transfers available. Official weeks and the horizon 1–4 weeks are saved in a separate mode.
 
-Для полевого EP за сыгранный матч = 10 × ожидаемые голы + 5 × передачи + 2 × плюс-минус − штрафные минуты + прочие очки. Прочие очки — остаток официальных FP после вычитания G/A/+/−/PIM на тех же полных матчевых наблюдениях. Ожидаемые голы = 0,5 × сглаженные голы/матч + 0,5 × броски в створ/матч × реализация; реализация вычисляется только по совместно известным G/SOG и сглаживается текущей лигой до 50 бросков. Если SOG неизвестен, применяется темп голов с предупреждением. Броски не получают дополнительного официального бонуса, голы не считаются дважды. Для вратаря используется сглаженное среднее официальных FP, сохраняющее дискретный скоринг.
+EP uses up to 10 recent matches and the last completed season of the same player. Each known indicator is smoothed: (current sum + k × past average) / (number of current observations + k), k = min(20, number of past observations). This is a fixed beta assumption, not a trained coefficient. Without past data, current data is used; without current ones - past ones with obvious markings. Unknown fields are not replaced with zeros. The frequency of PLAYED among PLAYED/DNP is smoothed out in the same way and is not reported as the probability of a goalie starting.
 
-EP горизонта — сумма прогнозов будущих SCHEDULED матчей за семь суток. Каждый прогноз умножается на частоту участия ровно один раз. Для полевых игроков полная свежая тройка Фонбет 1/X/2 за 60 минут после удаления пропорциональной маржи задаёт beta-поправку атаки: factor = 0,75 + 0,5 × (P(победы команды) + 0,5 × P(ничьей)). Базовые ожидания G/A/SOG умножаются на factor; PIM, +/− и прочий остаток FP сохраняются. Диапазон 0,75–1,25 — явное фиксированное, пока не обученное допущение, а не вывод интенсивности голов из вероятности победы. Для вратарского официального FP такая поправка не применяется. Нет свежей полной линии → factor=1 с причиной; устаревшие/снятые/непроверенные линии не используются. Дальше возможно отдельное обучение по архиву, но оно не заявляется готовым.
+For field EP per match played = 10 × expected goals + 5 × assists + 2 × plus or minus − penalty minutes + other points. Other points are the remainder of the official FP after subtracting G/A/+/−/PIM on the same full match observations. Expected goals = 0,5 × smoothed goals/match + 0,5 × shots on target/match × conversion; the implementation is calculated only from the jointly known G/SOG and is smoothed by the current league to 50 shots. If SOG is unknown, rate of goals with warning is applied. Shots do not receive an additional official bonus and goals do not count twice. For the goalkeeper, a smoothed average of official FPs is used, preserving discrete scoring.
 
-Карточка и подсказка EP показывают базовые ожидаемые G/A/SOG/PIM/+− за сыгранный матч, отдельные поправки каждого будущего матча и суммарные ожидания выбранного горизонта с участием. Снимок сохраняет текущие/прошлые суммы, покрытия, веса, смешанное среднее, парные G/SOG и сглаживание реализации; интерфейс раскрывает формулы с этими входами. Окно модели фиксировано: последние 10 записей PLAYED/DNP; переключатель табличных средних 5/10/20 не меняет его. Нет полной событийной разбивки → прогноз по официальным FP с явной причиной, ожидания событий null. Нет истории, неполный календарь или отсутствующая связь игрока с клубом → null. Модель маркируется BETA_BASELINE; оценка темпа голов не выдаётся за ixG или обученную модель.
+EP horizon - the sum of forecasts of future SCHEDULED matches for seven days. Each forecast is multiplied by the participation frequency exactly once. For field players, a complete fresh Fonbet triple 1/X/2 for 60 minutes after removing the proportional margin sets the beta correction of the attack: factor = 0,75 + 0,5 × (P(team wins) + 0,5 × P(draw)). Baseline expectations for G/A/SOG are multiplied by factor; PIM, +/− and other remaining FP are preserved. The range 0,75–1,25 is an explicit fixed, not yet trained assumption, rather than inferring goal intensity from the probability of winning. For the goalkeeper's official FP, such an amendment does not apply. No fresh full line → factor=1 with reason; obsolete/retired/untested lines are not used. Further, separate training on the archive is possible, but it is not declared ready.
 
-Worker публикует только при полном покрытии календаря и обновляет после изменения входных данных либо истечения одной минуты. Чтение принимает только актуальную dataRevision и публикацию не старше часа. Повтор без изменений использует ту же ревизию. Базовые публикации и дочерние прогнозы старше семи суток удаляются совместно; для модели v4 дополнительно сохраняется не более 96 последних публикаций на турнир, чтобы минутные пересчёты не раздували хранилище; нет неограниченного кэша процесса.
+The card and EP tip show the base expected G/A/SOG/PIM/+− for the match played, the individual adjustments of each future match, and the total expectations of the selected horizon with participation. The snapshot stores current/historical sums, coverages, weights, blended averages, paired G/SOGs, and implementation smoothing; the interface reveals formulas with these inputs. The model window is fixed: the last 10 records PLAYED/DNP; The 5/10/20 table-average selector does not change this model window. There is no complete event breakdown → forecast based on official FPs with a clear reason, null event expectations. No history, incomplete calendar or missing connection between player and club → null. The model is labeled BETA_BASELINE; Estimation of pace of goals is not given to ixG or trained model.
 
-- 2026-09-11: отдельный rolling beta EP на 7 суток без выдумывания официальных недель; частота участия и ограничение хранения.
-- 2026-09-13: прошлый сезон как prior и единый объяснимый расчёт G/A/SOG/PIM/+/−.
-- 2026-09-14: снимок исходных расчётов, видимые ожидаемые показатели и отдельные матчевые поправки по свежей проверенной линии Фонбет (WI-023).
+Worker publishes only when the calendar is fully covered and updates after input data changes or one minute has passed. Reading accepts only current dataRevision and publication no older than an hour. A replay without changes uses the same revision. Basic publications and child forecasts older than seven days are deleted together; for the v4 model, no more than 96 of the latest publications for the tournament are additionally saved, so that minute recalculations do not bloat the storage; no unlimited process cache.
+
+- 2026-09-11: separate rolling beta EP for 7 days without inventing official weeks; frequency of participation and storage limitation.
+- 2026-09-13: last season as a prior and a single explainable calculation of G/A/SOG/PIM/+/−.
+- 2026-09-14: a snapshot of the initial calculations, visible expected indicators and individual match adjustments for the freshly verified Fonbet line (WI-023).

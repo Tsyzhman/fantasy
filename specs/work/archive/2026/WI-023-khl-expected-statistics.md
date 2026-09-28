@@ -1,10 +1,10 @@
-# WI-023 — Ожидаемые показатели, соперники и автоматическое обновление КХЛ
+# WI-023 - Expected performance, opponents and automatic KHL update
 
 Kind: change
 Canon action: direct-edit
 
 ## Outcome
-Пользователь видит ожидаемую статистику и проверяемый расчёт каждого будущего матча; статистика автоматически обновляется в 10:00 и 20:00 МСК, линия букмекера обновляется и участвует в маркированной оценке соперника.
+The user sees the expected statistics and verifiable calculation of each future match; statistics are automatically updated in 10:00 and 20:00 MSK, the bookmaker's line is updated and participates in the opponent's marked assessment.
 
 ## Specs
 - Governing: spec://modules/khl/FEAT-002-khl-squad#table
@@ -14,18 +14,18 @@ Canon action: direct-edit
 - Affected: spec://modules/khl/INFRA-002-khl-storage-and-api#api
 
 ## Scope
-In: сохранённые исходные средние и ожидаемые G/A/SOG/PIM/+−, разбор по клику EP, матчевые поправки по проверенной линии, полный Excel, сбор используемых источников по расписанию, проверки, Git и production.
-Out: выдуманный ixG, изменение официальных FP, реальные ставки, обход ограничений доступа источников.
+In: saved original averages and expected G/A/SOG/PIM/+−, analysis by clicking EP, match corrections on a verified line, full Excel, collection of used sources on a schedule, checks, Git and production.
+Out: fictitious ixG, changing official FPs, real bets, bypassing source access restrictions.
 
 ## Acceptance
-- [x] В карточке, подсказке EP и полном Excel доступны реальные ожидания и исходный расчёт, максимум две десятичные цифры.
-- [x] Итог EP суммирует отдельные прогнозы матчей; доступные проверенные коэффициенты влияют на прогноз, отсутствие и устаревание обозначены.
-- [x] Скрипт и серверное расписание 10:00/20:00 Europe/Moscow собирают используемые источники с ограниченными пакетами, защитой от дублей и сохранением последних хороших данных.
-- [x] Проверены математика, источники/свежесть, Excel, интерфейс, повторный запуск, память/кэш; выпуск опубликован и проверен.
+- [x] Real expectations and initial calculation, maximum two decimal digits, are available in the card, EP prompt and full Excel.
+- [x] The EP summary summarizes individual match predictions; Available tested coefficients influence the forecast, absence and obsolescence are indicated.
+- [x] Script and server schedule 10:00/20:00 Europe/Moscow collects used sources with limited packages, protection against duplicates and saving the last good data.
+- [x] Checked mathematics, sources/freshness, Excel, interface, restart, memory/cache; the issue has been published and reviewed.
 
 ## Result
-Выпущено 0.3.74 / 5ce0976 после 0.3.73 / 288ca41. Ожидания и исходный расчёт доступны по клику EP и в полном Excel; 1/X/2 Фонбета за 60 минут влияет на отдельные матчи, явно маркированная beta не выдаётся за ixG. Server timer 10:00/20:00 Europe/Moscow активен, полный цикл выполнен с честным PARTIAL по ограничениям источников.
+Released 0.3.74 / 5ce0976 after 0.3.73 / 288ca41. Expectations and initial calculation are available by clicking EP and in full Excel; 1/X/2 Fonbeta for 60 minutes affects individual matches, clearly marked beta is not issued as ixG. Server timer 10:00/20:00 Europe/Moscow is active, the full cycle has been completed with an honest PARTIAL according to source restrictions.
 
-Проверки: 1129 unit pass, lint 0 errors, typecheck/build; целевые PostgreSQL, математические и Excel проверки; три production UI-сценария с успешным повтором одной сетевой навигации. Проверены источник/свежесть, повтор импорта без дублей, общий deploy lock, сохранение даты проверки словаря, лимит 96 ревизий, память/диск и cleanup. Evidence: [release-0.3.74](../../evidence/WI-023/release-0.3.74.md).
+Checks: 1129 unit pass, lint 0 errors, typecheck/build; targeted PostgreSQL, mathematical and Excel checks; three production UI scenarios with successful repetition of one network navigation. Checked source/freshness, repeat import without duplicates, general deploy lock, saving dictionary check date, revision limit 96, memory/disk and cleanup. Evidence: [release-0.3.74](../../evidence/WI-023/release-0.3.74.md).
 
-REVIEW: код, тесты и канон согласованы. Существующие ограничения ixG/HTTP 403 остаются в WI-017; 16 архивных Sports-профилей не прошли проверку идентичности и не были присвоены догадкой. Прежние пользовательские изменения WI-020 сохраняются отдельно в основном checkout.
+REVIEW: code, tests and canon are consistent. Existing ixG/HTTP restrictions 403 remain in WI-017; 16 archived Sports profiles did not pass the identity check and were not assigned a guess. Previous user changes WI-020 are saved separately in the main checkout.
