@@ -6,7 +6,6 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
-| [WI-043](work/WI-043-production-browser-smoke.md) | Restore the full production browser smoke | Betting FEAT-001, KHL FEAT-002, Machete FEAT-003 | @tsyzhman | 2026-09-28 | — |
 
 ## Backlog
 
@@ -24,6 +23,7 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-043](work/archive/2026/WI-043-production-browser-smoke.md) | Restore the full production browser smoke | @tsyzhman | 2026-09-28 |
 | [WI-042](work/archive/2026/WI-042-khl-update-status.md) | KHL update dates and latest refresh outcome | @tsyzhman | 2026-09-28 |
 | [WI-041](work/archive/2026/WI-041-ci-database-isolation.md) | Run isolated CI database tests | @tsyzhman | 2026-09-28 |
 | [WI-040](work/archive/2026/WI-040-dependency-security.md) | Patch vulnerable dependencies | @tsyzhman | 2026-09-28 |
