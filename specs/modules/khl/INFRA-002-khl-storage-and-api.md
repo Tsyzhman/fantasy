@@ -2,174 +2,220 @@
 status: active
 ---
 
-# INFRA-002: хоккейные данные, API и миграции {#root}
+<a name="root"></a>
 
-## Простыми словами {#plain-language}
+# INFRA-002: hockey data, API and migrations {#root}
 
-Хоккейные сущности и API изолированы; сохранение выполняется с проверкой владельца и версии.
+<a name="plain-language"></a>
 
-## Цель {#goal}
+## Plain language {#plain-language}
 
-Не повредить футбольные данные при развитии и выпуске КХЛ.
+Hockey entities and APIs are isolated. Saves validate ownership and version.
 
-## Управляющие документы {#governing-specs}
+<a name="goal"></a>
 
-Границы продукта: `specs/common/main.md`; взаимные контракты и точные ссылки перечислены в #relationships. Канон активен по запросу пользователя; source/rules gates определяют доступность соответствующих возможностей, а не статус документа.
+## Goal {#goal}
+
+Do not damage football data during the development and release of the KHL.
+
+<a name="governing-specs"></a>
+
+## Governing specifications {#governing-specs}
+
+Product boundaries: `specs/common/main.md`; mutual contracts and exact links are listed in #relationships. Canon is active upon user request; source/rules gates determine the availability of relevant features, not the status of the document.
 
 
-## Архитектурное решение {#boundary}
+<a name="boundary"></a>
 
-Первый релиз использует отдельные модели `Khl*` с таблицами `khl_*` и строковыми внутренними ID. Общие User/сессии/франшизы/Prisma/инфраструктура остаются. Не вставлять mobile ID или Sports.ru ID в футбольные CorePlayer/CoreTeam/CoreMatch и не назначать отрицательные ID как namespace.
+## Architectural solution {#boundary}
 
-Причина: `FantasyContest`, `FantasyPlayerPrice`, `UserFantasySquadPlayer`, `FantasyModelForecast` и `FixtureOddsSnapshot` имеют FK в футбольное ядро; добавление только sport в JSON не изолирует данные. Общая платформа сущностей возможна отдельной последующей миграцией, не обязательна для КХЛ. Дублируется доменная модель, но не HTTP/auth/кэш-код.
+The first release uses separate models `Khl*` with tables `khl_*` and string internal IDs. Common User/sessions/franchises/Prisma/infrastructure remain. Do not insert mobile ID or Sports.ru ID into football CorePlayer/CoreTeam/CoreMatch and do not assign negative IDs as namespace.
 
-## Схема и контракты данных {#schema}
+Reason: `FantasyContest`, `FantasyPlayerPrice`, `UserFantasySquadPlayer`, `FantasyModelForecast` and `FixtureOddsSnapshot` have FK in the football core; adding just sport to the JSON does not isolate the data. The common entity platform is possible as a separate subsequent migration, but is not required for the KHL. The domain model is duplicated, but not the HTTP/auth/cache code.
 
-Архивный aggregate JSON может содержать отдельный `protocolStats`: официальный сезон и player ID, source URL, уникальные IDs матчей, точные суммы/покрытие. Эти поля сохраняются при повторном Sports-импорте. Официальные FP и остаток прочих очков Sports не перезаписываются. Импорт протоколов заменяет снимок целиком по hash, не прибавляет повторно; неполная замена с потерей ранее известных матчей отклоняется. Чтение и прогноз различают объём Sports-истории и покрытие КХЛ; не смешивают регулярку с плей-офф.
+<a name="schema"></a>
 
-KhlHistoricalSeason хранит один нормализованный снимок истории на canonical player + seasonKey, без привязки прошлых клубов к нынешнему составу. Поля: providerSeasonId, source, contentHash, observedAt/availableAt, aggregate JSON с totals/knownGames, played/DNP, средним официальных FP и остатком прочих очков. Уникальный ключ исключает дубли; максимум два прошлых сезона на игрока. Raw HTML не сохраняется в БД. Read-model возвращает только прошлый сезон текущего турнира, доступный на asOf; текущие матчевые суммы неизменны. Миграция аддитивна.
+## Schema and data contracts {#schema}
 
-Все даты UTC DateTime, внутренние ID string; цены integer units, FP и xG Decimal с точностью не ниже 4 знаков, вероятности в [0,1]. Значения округлять для отображения, не в промежуточных расчётах. Во всех изменяемых наборах updatedAt и revision. В API IDs — строки, даты — ISO 8601, Decimal — конечные JSON numbers в документированных единицах; исходная точность остаётся в БД.
+Archive aggregate JSON may contain separate `protocolStats`: official season and player ID, source URL, unique match IDs, exact amounts/coverage. These fields are saved when you re-import Sports. Official FP and remaining Sports Points will not be overwritten. Importing protocols replaces the entire snapshot by hash and does not add it again; incomplete replacement with loss of previously known matches is rejected. Reading and forecast distinguish between the volume of Sports history and KHL coverage; They don’t mix the regular season with the playoffs.
 
-| Модель / ключи | Основные поля и связи |
+KhlHistoricalSeason stores one normalized snapshot of history on canonical player + seasonKey, without linking past clubs to the current roster. Fields: providerSeasonId, source, contentHash, observedAt/availableAt, aggregate JSON with totals/knownGames, played/DNP, average official FP and the balance of other points. A unique key eliminates duplicates; At most two previous seasons are retained per player. Raw HTML is not saved to the database. Read-model returns only the last season of the current tournament, available on asOf; current match amounts remain unchanged. Migration is additive.
+
+All dates UTC DateTime, internal ID string; prices integer units, FP and xG Decimal with an accuracy of at least 4 digits, probability in [0,1]. Values ​​should be rounded for display purposes, not in intermediate calculations. In all mutable sets updatedAt and revision. In API IDs - strings, dates - ISO 8601, Decimal - final JSON numbers in documented units; the original accuracy remains in the database.
+
+| Model / keys | Main fields and connections |
 |---|---|
-| KhlCompetition, KhlSeason | Competition code=KHL; season label, startsAt/endsAt, regular/playoff; UNIQUE(competitionId, seasonKey); текущий сезон не определяется годом сервера |
-| KhlTeam, KhlPlayer, KhlRosterMembership | Имена, дата рождения nullable, G/D/F, team/player/season FK, validFrom/validTo; историческая принадлежность не перезаписывается текущей |
-| KhlExternalEntityMap | UNIQUE(provider, entityType, providerScope, externalId); ровно один FK из season/team/player/match/contest/week; CHECK соответствия entityType, mappingStatus/reason/version. Разные пространства season mobile/khl/sports различаются |
-| KhlContest | seasonId FK, provider=SPORTS_RU, providerContestId, rulesetId, priceUnit=SPORTS_POINTS; UNIQUE(provider, providerContestId, seasonId); 107 не глобальный сезонный ID |
-| KhlRuleset | contestId, version, sourceUrl/hash, verifiedAt, rules JSON с валидируемой схемой, scoringBoundaryStatus; UNIQUE(contestId,version) |
-| KhlFantasyWeek | contestId, providerWeekId, startsAt/endsAt nullable, timezone, verificationStatus; UNIQUE(contestId,providerWeekId); подтверждённые интервалы без пересечений |
-| KhlMatch, KhlMatchFantasyWeek | seasonId, home/away FK, startsAt, status, regulationScore, otScore, shootoutScore, finalScore, decidedBy=REGULATION/OT/SO/UNKNOWN; UNIQUE(contestId,matchId) для явного назначения недели |
-| KhlPlayerMatchStat | UNIQUE(matchId,playerId); clubAtMatchId, participationStatus, toiSeconds, ppToiSeconds, pkToiSeconds, shifts, goals, assists, plusMinus, pimMinutes, shotsOnGoal, blockedShots; goalie saves/goalsAgainst/started/fullGame/emptyNet metadata nullable. Источники по группам полей, не один source для всей строки |
-| KhlFieldObservation | entityType/entityId/field, value JSON, quality=FACT/ESTIMATE/UNKNOWN, provider, sourceUrl, observedAt, fetchedAt, revision/hash; UNIQUE(provider,entityType,entityId,field,sourceRevision). Winner observation ссылается из нормализованного набора; противоречащие факты не теряются |
-| KhlXgObservation | matchId, subjectType=PLAYER/TEAM, ровно один subject FK, provider, metric=IXG/XG_FOR/XG_AGAINST/GSAx, strength=ALL/EV/PP/PK/UNKNOWN, definitionVersion/modelVersion nullable, revision, value, availableAt/fetchedAt. UNIQUE(provider,matchId,subjectType,subjectId,metric,strength,revision) |
-| KhlFantasyPlayer, KhlPriceRevision | UNIQUE(contestId,providerPlayerId), playerId nullable до mapping, fantasyClubId, position, currentPriceUnits, delta, ownershipPct; revisions UNIQUE(fantasyPlayerId,revisionSequence), UNIQUE(fantasyPlayerId,transitionKey), contentHash, effectiveAt nullable, observedAt/lastSeenAt. UNIQUE(contestId,playerId) для ненулевого playerId предотвращает двойное сопоставление |
-| KhlAvailabilityObservation | player/season/match nullable, injury/suspension/PP role/goalie starter, fact/estimate/unknown, confidence nullable, source/expiresAt; официальный transfer lock хранится для fantasyPlayer/contest, не смешивается с травмой |
-| KhlOfficialFantasyScore | contestId, fantasyPlayerId, matchId nullable до mapping, providerMatchKey, providerWeekId, revision, points, fetchedAt; UNIQUE(contestId,fantasyPlayerId,providerMatchKey,revision); current pointer. Расчётный breakdown — отдельное поле/модель с rulesVersion |
-| KhlUserSquad, KhlUserSquadEntry | userId FK, contestId, name, kind=LOCAL_DRAFT/PROVIDER_OBSERVED, revision, bankUnits nullable, baselineSnapshotId; UNIQUE(userId,contestId,name). Entry: UNIQUE(squadId,fantasyPlayerId), UNIQUE(squadId,slotIndex), keepForOptimizer, acquiredPriceUnits nullable; нет starter/captain/bench |
+| KhlCompetition, KhlSeason | Competition code=KHL; season label, startsAt/endsAt, regular/playoff; UNIQUE(competitionId, seasonKey); the current season is not determined by the server year |
+| KhlTeam, KhlPlayer, KhlRosterMembership | Names, date of birth nullable, G/D/F, team/player/season FK, validFrom/validTo; historical ownership is not overwritten by the current one |
+| KhlExternalEntityMap | UNIQUE(provider, entityType, providerScope, externalId); exactly one FK from season/team/player/match/contest/week; CHECK matching entityType, mappingStatus/reason/version. Different spaces season mobile/khl/sports vary |
+| KhlContest | seasonId FK, provider=SPORTS_RU, providerContestId, rulesetId, priceUnit=SPORTS_POINTS; UNIQUE(provider, providerContestId, seasonId); 107 non-global seasonal ID |
+| KhlRuleset | contestId, version, sourceUrl/hash, verifiedAt, rules JSON with validated schema, scoringBoundaryStatus; UNIQUE(contestId,version) |
+| KhlFantasyWeek | contestId, providerWeekId, startsAt/endsAt nullable, timezone, verificationStatus; UNIQUE(contestId,providerWeekId); confirmed intervals without intersections |
+| KhlMatch, KhlMatchFantasyWeek | seasonId, home/away FK, startsAt, status, regulationScore, otScore, shootoutScore, finalScore, decidedBy=REGULATION/OT/SO/UNKNOWN; UNIQUE(contestId,matchId) for explicit week assignment |
+| KhlPlayerMatchStat | UNIQUE(matchId,playerId); clubAtMatchId, participationStatus, toiSeconds, ppToiSeconds, pkToiSeconds, shifts, goals, assists, plusMinus, pimMinutes, shotsOnGoal, blockedShots; goalie saves/goalsAgainst/started/fullGame/emptyNet metadata nullable. Sources by field groups, not one source for the entire row |
+| KhlFieldObservation | entityType/entityId/field, value JSON, quality=FACT/ESTIMATE/UNKNOWN, provider, sourceUrl, observedAt, fetchedAt, revision/hash; UNIQUE(provider,entityType,entityId,field,sourceRevision). Winner observation refers from a normalized set; contradictory facts are not lost |
+| KhlXgObservation | matchId, subjectType=PLAYER/TEAM, exactly one subject FK, provider, metric=IXG/XG_FOR/XG_AGAINST/GSAx, strength=ALL/EV/PP/PK/UNKNOWN, definitionVersion/modelVersion nullable, revision, value, availableAt/fetchedAt. UNIQUE(provider,matchId,subjectType,subjectId,metric,strength,revision) |
+| KhlFantasyPlayer, KhlPriceRevision | UNIQUE(contestId,providerPlayerId), playerId nullable before mapping, fantasyClubId, position, currentPriceUnits, delta, ownershipPct; revisions UNIQUE(fantasyPlayerId,revisionSequence), UNIQUE(fantasyPlayerId,transitionKey), contentHash, effectiveAt nullable, observedAt/lastSeenAt. UNIQUE(contestId,playerId) for non-null playerId prevents double matching |
+| KhlAvailabilityObservation | player/season/match nullable, injury/suspension/PP role/goalie starter, fact/estimate/unknown, confidence nullable, source/expiresAt; official transfer lock is kept for fantasyPlayer/contest, not mixed with injury |
+| KhlOfficialFantasyScore | contestId, fantasyPlayerId, matchId nullable to mapping, providerMatchKey, providerWeekId, revision, points, fetchedAt; UNIQUE(contestId,fantasyPlayerId,providerMatchKey,revision); current pointer. Calculated breakdown - separate field/model with rulesVersion |
+| KhlUserSquad, KhlUserSquadEntry | userId FK, contestId, name, kind=LOCAL_DRAFT/PROVIDER_OBSERVED, revision, bankUnits nullable, baselineSnapshotId; UNIQUE(userId,contestId,name). Entry: UNIQUE(squadId,fantasyPlayerId), UNIQUE(squadId,slotIndex), keepForOptimizer, acquiredPriceUnits nullable; no starter/captain/bench |
 | KhlProviderSquadSnapshot, KhlUserWeekState | userId/contestId/providerTeamId, fetchedAt/hash, revisionSequence, transitionKey, official entries, bankUnits, transfersUsed nullable, asOf; UNIQUE(userId,contestId,providerTeamId,transitionKey). WeekState UNIQUE(userId,contestId,providerTeamId,weekId), sourceSnapshotId, verifiedAt |
-| KhlTransferScenario, KhlTransferStep | squadId/version, baselineHash, weekId, effectiveAt, out/in IDs, quotedPriceRevisionIds, status=PLANNED/LOCALLY_APPLIED/SUPERSEDED, idempotencyKey/requestHash; UNIQUE(userId,idempotencyKey). Внешняя операция не возникает от локального сохранения |
-| KhlObservedTransfer | providerTeamId/contestId, providerOperationId или надёжный provider fingerprint, occurredAt, weekId, out/in, sourceSnapshotId. Нельзя вывести полный журнал из одной разницы составов; неизвестные обмены помечены incomplete |
-| KhlForecastRevision, KhlPlayerMatchForecast | contest/season/week/horizon, rules/model/input versions, status, coverage; UNIQUE(forecastRevisionId,playerId,matchId), EP/components, appearance/start probabilities, TOI/PP expectations, quality. Публикация только целого набора |
-| KhlOddsEventMap, KhlOddsSnapshot, KhlOddsMarket | UNIQUE(provider,providerEventId); matchId FK и matching status; snapshot UNIQUE(provider,eventId,revisionSequence), UNIQUE(provider,eventId,transitionKey), normalizedHash, observedAt/lastSeenAt/completeFeed; market UNIQUE(snapshotId,marketType,settlementScope,period,selection,lineKey), odds/status/probability/market dictionary version |
-| KhlSyncJob, KhlSyncCheckpoint, KhlRawPayload | provider/scope/jobType, leaseUntil, attempts, nextRunAt, cursor, sourceHash, bounded error; один pending/running по логическому scope через partial UNIQUE; Raw UNIQUE(provider,scope,contentHash), expiresAt, parserVersion |
-| KhlUserViewPreference | UNIQUE(userId,contestId,viewKey); columns/widths/filters/compare IDs with schemaVersion. Не перезаписывает User.squadTableColumns футбола |
+| KhlTransferScenario, KhlTransferStep | squadId/version, baselineHash, weekId, effectiveAt, out/in IDs, quotedPriceRevisionIds, status=PLANNED/LOCALLY_APPLIED/SUPERSEDED, idempotencyKey/requestHash; UNIQUE(userId,idempotencyKey). External operation does not arise from local saving |
+| KhlObservedTransfer | providerTeamId/contestId, providerOperationId or reliable provider fingerprint, occurredAt, weekId, out/in, sourceSnapshotId. It is not possible to derive a complete log from the squad difference alone; unknown exchanges are marked incomplete |
+| KhlForecastRevision, KhlPlayerMatchForecast | contest/season/week/horizon, rules/model/input versions, status, coverage; UNIQUE(forecastRevisionId,playerId,matchId), EP/components, appearance/start probabilities, TOI/PP expectations, quality. Publishing only the whole set |
+| KhlOddsEventMap, KhlOddsSnapshot, KhlOddsMarket | UNIQUE(provider,providerEventId); matchId FK and matching status; snapshot UNIQUE(provider,eventId,revisionSequence), UNIQUE(provider,eventId,transitionKey), normalizedHash, observedAt/lastSeenAt/completeFeed; market UNIQUE(snapshotId,marketType,settlementScope,period,selection,lineKey), odds/status/probability/market dictionary version |
+| KhlSyncJob, KhlSyncCheckpoint, KhlRawPayload | provider/scope/jobType, leaseUntil, attempts, nextRunAt, cursor, sourceHash, bounded error; one pending/running by logical scope via partial UNIQUE; Raw UNIQUE(provider,scope,contentHash), expiresAt, parserVersion |
+| KhlUserViewPreference | UNIQUE(userId,contestId,viewKey); columns/widths/filters/compare IDs with schemaVersion. Doesn't overwrite User.squadTableColumns football |
 
-Истории цен, статусов, составов и коэффициентов сравнивают hash с последней ревизией, а не со всей историей. A→A обновляет lastSeenAt; A→B→A создаёт три последовательные ревизии. transitionKey стабилен для повтора одной операции импорта и отличается у следующего наблюдаемого перехода. RevisionSequence назначается атомарно под блокировкой current pointer. Raw bytes можно дедуплицировать глобально по hash; историю переходов — нельзя. Для полей без sourceRevision использовать стабильный transitionKey адаптера.
+Histories of prices, statuses, squads and odds compare the hash with the latest revision, and not with the entire history. A→A updates lastSeenAt; A→B→A creates three consecutive revisions. transitionKey is stable for repeating one import operation and different for the next observed transition. RevisionSequence is assigned atomically under the current pointer lock. Raw bytes can be deduplicated globally by hash; transition history is not possible. For fields without sourceRevision, use a stable transitionKey adapter.
 
-Индексы: match(seasonId,startsAt,status); stats(playerId,matchId); price(fantasyPlayerId,observedAt); observation(entityId,field,observedAt); odds(matchId,observedAt); job(status,nextRunAt); squads(userId,contestId,updatedAt). Сезон/турнир состава, игрока, недели и матча проверяется FK где возможно и транзакционным валидатором. Удаление матча не каскадирует пользовательские сценарии/историю: restrict или soft-delete. Смена источника не удаляет official FP.
+Indexes: match(seasonId,startsAt,status); stats(playerId,matchId); price(fantasyPlayerId,observedAt); observation(entityId,field,observedAt); odds(matchId,observedAt); job(status,nextRunAt); squads(userId,contestId,updatedAt). Season/tournament squad, player, week and match are verified by FK where possible and by a transactional validator. Deleting a match does not cascade user scripts/history: restrict or soft-delete. Changing the source does not delete the official FP.
+
+<a name="api"></a>
 
 ## API v1 {#api}
 
-Новые маршруты под `/api/machete/khl`, отдельные от футбольного `/api/machete/squads`. Только текущий авторизованный пользователь и существующая проверка франшизы. Общие read DTO: `apiVersion:1`, `scope:{sport:"ICE_HOCKEY",contestId,seasonId}`, `asOf`, `dataRevision`, `readiness:{status,reasons,coverage}`, `sources`, `data`. Источник/давность каждого важного поля доступны в detail DTO.
+New routes under `/api/machete/khl`, separate from the football `/api/machete/squads`. Current authorized user and existing franchise verification only. Common read DTOs: `apiVersion:1`, `scope:{sport:"ICE_HOCKEY",contestId,seasonId}`, `asOf`, `dataRevision`, `readiness:{status,reasons,coverage}`, `sources`, `data`. The source/date of each important field is available in the detail DTO.
 
-| Метод и путь | Вход | Выход |
+| Method and path | Input | Output |
 |---|---|---|
-| GET `/contests` | Нет | Доступные contest/season/rules version, доступные функции |
-| GET `/weeks?contestId=...` | Обязательный contest | Provider weeks с границами, статусом проверки и числом игр |
-| GET `/calendar?contestId=...&weekId=...` | Одна неделя или диапазон до 42 суток | Матчи, соперники, статусы, settlement, индивидуальные сроки lock |
-| GET `/players?contestId=...&weekId=...&position=G&cursor=...&limit=50` | G/D/F, клуб, цена, доступность, TOI/PP, forecast quality, сортировка | Пагинация, count, nextCursor, poolRevision; лимит ≤100, стабильная сортировка с ID tie-break |
-| GET `/players/{id}?contestId=...&historyWindow=10` | Scoped ID, окно 5/10/20 матчей или сезон | История FP/статистики/цен, xG definitions, источники, прогноз по матчам |
-| POST `/compare` | contest/week, 2–4 player IDs, одинаковые фильтры истории | Сопоставимые метрики и null-aware deltas |
-| GET `/squads?contestId=...` и `/squads/{id}` | Scoped query | Только доступные пользователю варианты, bank и версия baseline |
-| POST `/squads` | contestId, name, entries[], bankUnits nullable | Созданный локальный draft, revision, violations; частичный draft разрешён, статус incomplete |
-| PUT `/squads/{id}` | expectedVersion, entries, bankUnits, mode=DRAFT/COMPLETE | Атомарное сохранение; COMPLETE требует 17/2/6/9, бюджет и клубный лимит |
-| POST `/squads/import-sports-ru` | contestId, squadId/expectedVersion опционально | Текущая команда привязанного Sports-профиля, атомарный новый/существующий вариант; снимок дедуплицируется по содержимому |
-| POST `/squads/{id}/import-sports-ru` | expectedVersion | Применение ранее подтверждённого свежего снимка |
-| POST `/squads/{id}/transfer-preview` | baselineHash, expectedVersion, weekId, effectiveAt, steps[] | Финальный состав, cash/EP delta, remainingGames/transferCount/locks, quote hash/revisions/expiresAt |
-| POST `/squads/{id}/transfer-plans` | quote hash, expectedVersion, Idempotency-Key | Сохраняет локальный сценарий и новую версию; `externalExecuted:false` |
-| POST `/optimize` | scope, poolRevision, forecastRevision, squadVersion, horizon ≤4 weeks, keep/exclude IDs, maxTransfers | requestId, status, proposal, violations, optimality/time-limit marker; один active solve на пользователя |
-| GET `/readiness?contestId=...` | Contest | Каталог/статистика/xG/Фонбет/недели/внешний профиль: отдельные статусы |
-| PUT `/preferences` | contestId, viewKey, schemaVersion, preferences | Только настройки КХЛ текущего пользователя |
+| GET `/contests` | No | Available contest/season/rules version, available functions |
+| GET `/weeks?contestId=...` | Mandatory contest | Provider weeks with boundaries, verification status and number of games |
+| GET `/calendar?contestId=...&weekId=...` | One week or a range of up to 42 days | Matches, opponents, statuses, settlement, individual deadlines lock |
+| GET `/players?contestId=...&weekId=...&position=G&cursor=...&limit=50` | G/D/F, club, price, availability, TOI/PP, forecast quality, sorting | Pagination, count, nextCursor, poolRevision; limit ≤100, stable sorting with ID tie-break |
+| GET `/players/{id}?contestId=...&historyWindow=10` | Scoped ID, match window 5/10/20 or season | FP/stats/price history, xG definitions, sources, match forecast |
+| POST `/compare` | contest/week, 2–4 player IDs, same history filters | Comparable metrics and null-aware deltas |
+| GET `/squads?contestId=...` and `/squads/{id}` | Scoped query | Only user-available options, bank and baseline version |
+| POST `/squads` | contestId, name, entries[], bankUnits nullable | Created local draft, revision, violations; partial draft allowed, status incomplete |
+| PUT `/squads/{id}` | expectedVersion, entries, bankUnits, mode=DRAFT/COMPLETE | Atomic save; COMPLETE requires 17/2/6/9, budget and club limit |
+| POST `/squads/import-sports-ru` | contestId, squadId/expectedVersion optional | Current team of the linked Sports profile, atomic new/existing option; the snapshot is deduplicated according to the contents of |
+| POST `/squads/{id}/import-sports-ru` | expectedVersion | Applying a previously confirmed fresh image |
+| POST `/squads/{id}/transfer-preview` | baselineHash, expectedVersion, weekId, effectiveAt, steps[] | Final lineup, cash/EP delta, remainingGames/transferCount/locks, quote hash/revisions/expiresAt |
+| POST `/squads/{id}/transfer-plans` | quote hash, expectedVersion, Idempotency-Key | Saves the local script and the new version; `externalExecuted:false` |
+| POST `/optimize` | scope, poolRevision, forecastRevision, squadVersion, horizon ≤4 weeks, keep/exclude IDs, maxTransfers | requestId, status, proposal, violations, optimality/time-limit marker; one active solve per user |
+| GET `/readiness?contestId=...` | Contest | Catalog/statistics/xG/Fonbet/weeks/external profile: individual statuses |
+| PUT `/preferences` | contestId, viewKey, schemaVersion, preferences | Only KHL settings of the current user |
 
-Серверный solve использует тот же чистый domain contract, что worker; UI может считать локально для скорости, но сервер независимо валидирует любой сохраняемый результат. POST не получает доверенный EP/price/lock от клиента.
+Server solve uses the same pure domain contract as worker; The UI may read locally for speed, but the server independently validates any result it stores. POST does not receive a trusted EP/price/lock from the client.
 
-Общий body limit 256 KiB; max 17 entries, 17 keep IDs, 100 exclude IDs, 5 transfer steps после начала недели, max 4 сравниваемых игрока. До начала турнира сценарий может заменить весь состав, но body всё равно ограничен. Настраиваемый rate limit solve: 10 запусков/мин/пользователь, timeout 5 с; import: 2/мин. Внешний запрос только через allowlisted provider adapter, не user URL; request timeout, redirects и response size проверяются. Cookie mutations сохраняют защиту same-origin/CSRF проекта. Логи без сессий/паролей и полных личных составов.
+General body limit 256 KiB; max 17 entries, 17 keep IDs, 100 exclude IDs, 5 transfer steps after the start of the week, max 4 compared players. Before the tournament starts, the script can replace the entire roster, but the body is still limited. Configurable rate limit solve: 10 starts/min/user, timeout 5 s; import: 2/min. External request only via allowlisted provider adapter, not user URL; request timeout, redirects and response size are checked. Cookie mutations preserve the project's same-origin/CSRF protection. Logs without sessions/passwords and complete personal information.
 
-Коды: 400 INVALID_INPUT; 401 UNAUTHENTICATED; 403 FORBIDDEN; 404 NOT_FOUND (включая чужую сущность/выключенный модуль); 409 VERSION_CONFLICT, PRICE_CHANGED, LOCK_CHANGED, WEEK_CHANGED, BASELINE_STALE; 422 INVALID_ROSTER, BUDGET_EXCEEDED, CLUB_LIMIT, TRANSFER_LIMIT, UNKNOWN_TRANSFER_BALANCE, INCOMPLETE_DATA; 429 RATE_LIMITED; 503 SOURCE_UNAVAILABLE/IMPORT_UNAVAILABLE. Readiness-degraded GET может вернуть 200 с last-good data; отсутствие обязательных данных не маскируется пустым «успешным» подбором.
+Codes: 400 INVALID_INPUT; 401 UNAUTHENTICATED; 403 FORBIDDEN; 404 NOT_FOUND (including foreign entity/disabled module); 409 VERSION_CONFLICT, PRICE_CHANGED, LOCK_CHANGED, WEEK_CHANGED, BASELINE_STALE; 422 INVALID_ROSTER, BUDGET_EXCEEDED, CLUB_LIMIT, TRANSFER_LIMIT, UNKNOWN_TRANSFER_BALANCE, INCOMPLETE_DATA; 429 RATE_LIMITED; 503 SOURCE_UNAVAILABLE/IMPORT_UNAVAILABLE. Readiness-degraded GET may return 200 with last-good data; the absence of required data is not masked by an empty “successful” selection.
 
-## Транзакции и мгновенное действие {#transactions}
+<a name="transactions"></a>
 
-`keepForOptimizer` — предпочтение пользователя. `providerTransferLock` — запрет внешней площадки; это два разных поля и два разных значка. Перед preview и сохранением сценария:
+## Transactions and instant action {#transactions}
 
-1. Проверить owner/franchise, sport/contest/season/week, squadVersion и baselineHash; загрузить согласованные price/status/schedule revisions. Во время сетевого refresh SQL-транзакция не удерживается.
-2. Подтвердить свежесть, передаваемые out действительно принадлежат составу, in отсутствуют, соблюдены positions/club/cash на каждом исполняемом шаге. Одновременный pair exchange считается одним трансфером; несколько шагов проверяются последовательно по времени.
-3. Проверить locks обеих сторон и `effectiveAt`; сохранить предупреждение о потерянных оставшихся матчах продаваемого игрока. Будущая разблокировка/цена не гарантируется, такой шаг — условный план.
-4. В короткой транзакции optimistic CAS/serializable проверить версии повторно, записать локальный scenario + entries + revision + evidence. При конфликте откатить целиком, предложить свежий preview. Одинаковый Idempotency-Key с тем же hash возвращает тот же результат, с иным payload — 409.
-5. Сохранение draft/scenario не расходует официальный weekly transfer balance. Внешний подтверждённый snapshot/journal обновляет observed state отдельно; неизвестный остаток запрещает заявления «доступно 5». Локальные плановые операции учитываются только внутри плана относительно baseline.
+`keepForOptimizer` - user preference. `providerTransferLock` - prohibition of external site; these are two different fields and two different icons. Before previewing and saving the script:
 
-Внешний импорт состава — отдельный источник: публичный профиль → HTML команды → GET `/fantasy/hockey/team/json/{teamId}.json`. Текущие 17 игроков и банк проверяются по owner/contest/provider IDs; HTML-стоимость сверяется с суммой цен ответа. Это текущий снимок, полнота истории и официальный остаток трансферов не подтверждены. Неделя без явного источника записывается как unknown, а не угадывается. Сеть ограничена allowlist, timeout, размером и 2 импортами/мин/пользователь; запросы не держат SQL-транзакцию. Снимок не содержит raw HTML, hash исключает fetchedAt, сохраняется не более 3 непривязанных снимков пользователя/турнира плюс используемые вариантами. При недоступности разрешён ручной локальный draft с явной отметкой «состояние Sports.ru не подтверждено». В будущем пользователь самостоятельно выполняет операции на Sports.ru; новый read-only sync фиксирует факт, не объявляет внешнее выполнение по нажатию нашей кнопки.
+1. Check owner/franchise, sport/contest/season/week, squadVersion and baselineHash; download agreed price/status/schedule revisions. During a network refresh, the SQL transaction is not held.
+2. Confirm freshness, transmitted outs really belong to the squad, ins are missing, positions/club/cash are observed at each executable step. Simultaneous pair exchange is considered one transfer; several steps are checked sequentially in time.
+3. Check locks of both sides and `effectiveAt`; keep a warning about the lost remaining matches of the player being sold. Future unlock/price is not guaranteed, this step is a tentative plan.
+4. In a short transaction optimistic CAS/serializable, check the versions again, write down the local scenario + entries + revision + evidence. If there is a conflict, roll back the whole thing and offer a fresh preview. The same Idempotency-Key with the same hash returns the same result, with a different payload - 409.
+5. Saving draft/scenario does not consume the official weekly transfer balance. External confirmed snapshot/journal updates observed state separately; unknown remainder prohibits "5 available" statements. Local scheduled operations are taken into account only within the plan relative to the baseline.
 
-## Миграции и откат {#migrations}
+External import of squad - separate source: public profile → HTML commands → GET `/fantasy/hockey/team/json/{teamId}.json`. Current 17 players and bank are checked by owner/contest/provider IDs; The HTML cost is checked against the sum of the response prices. This is a current snapshot, the completeness of the history and the official balance of transfers have not been confirmed. A week with no obvious source is recorded as unknown rather than guessed. The network is limited by allowlist, timeout, size and 2 imports/min/user; queries do not hold SQL transaction. The snapshot does not contain raw HTML, the hash excludes fetchedAt, and no more than 3 of unlinked user/tournament snapshots plus used variants are saved. If unavailable, a manual local draft is allowed with an explicit mark “Sports.ru status is not confirmed.” In the future, the user independently performs operations on Sports.ru; The new read-only sync records the fact and does not declare external execution when our button is pressed.
 
-1. На актуальной ветке проверить schema/migrations и назначить следующую свободную версию. Не выполнять миграцию в задаче на спецификации.
-2. Аддитивно создать Khl* таблицы/FK/indexes, не менять типы ID и defaults футбола. Единственная общая FK — к User и необходимой модели доступа; KHL-specific настройки отдельно.
-3. Seed только проверенных competition/season/provider mapping/rules version за выключенным флагом, импорт idempotent. Не создавать пользовательские составы и не запускать production backfill как post-migrate hook.
-4. Ограниченный staging backfill текущего сезона + источники предыдущего сезона для backtest; не копировать футбольные исторические строки в КХЛ.
-5. До/после сравнить counts и hashes/агрегаты футбол-сущностей и пользовательских записей на том же snapshot, провести smoke Sports.ru/FPL. Индексы и блокировки проверить на staging-копии.
-6. Feature flag off останавливает маршруты и новые jobs, graceful stop освобождает leases. Откат приложения оставляет additive таблицы, чтобы не потерять пользовательские данные. DROP КХЛ после использования — отдельная операция с backup, не штатный rollback.
+<a name="migrations"></a>
 
-## Приёмка {#acceptance}
+## Migrations and rollbacks {#migrations}
 
-- DB-01: один внешний ID может встречаться у разных provider/entity/scope без коллизии; mapping не допускает два хоккеиста на один fantasyPlayer.
-- DB-02: reimport неизменного snapshot не растит историю; correction создаёт revision; null не заменён нулём.
-- API-01: чужой squad/contest mismatch, произвольный URL, >body limit, неверная роль, выключенный flag отклонены сервером.
-- API-02: два параллельных сохранения одной версии — одно успешно, второе 409; повтор idempotent не удваивает шаги.
-- API-03: изменения price/lock/week после preview не позволяют сохранить устаревший сценарий как подтверждённый; draft отдельно от official state.
-- MIG-01: миграции с чистой и существующей БД, drift check, откат приложения и отсутствие изменений футбольных данных проверены.
+1. On the current branch, check schema/migrations and assign the next free version. Do not perform migration in a specification task.
+2. Additively create Khl* tables/FK/indexes, do not change football ID types and defaults. The only common FK is to User and the required access model; KHL-specific settings separately.
+3. Seed only verified competition/season/provider mapping/rules version with the flag turned off, idempotent import. Do not create custom squads and do not run production backfill as a post-migrate hook.
+4. Limited staging backfill of the current season + sources of the previous season for backtest; do not copy football historical lines in the KHL.
+5. Before/after compare counts and hashes/aggregates of football entities and user records on the same snapshot, run smoke Sports.ru/FPL. Check indexes and locks on staging copies.
+6. Feature flag off stops routes and new jobs, graceful stop releases leases. Rolling back the application leaves the additive tables so as not to lose user data. DROP KHL after use is a separate operation with backup, not a standard rollback.
 
-## Связи {#relationships}
+<a name="acceptance"></a>
+
+## Acceptance criteria {#acceptance}
+
+- DB-01: one external ID can be found in different providers/entity/scope without a collision; mapping does not allow two hockey players per fantasyPlayer.
+- DB-02: reimport of an unchanged snapshot does not grow history; correction creates revision; null is not replaced by zero.
+- API-01: foreign squad/contest mismatch, arbitrary URL, >body limit, incorrect role, disabled flag are rejected by the server.
+- API-02: two parallel saves of the same version - one successful, the second 409; idempotent repeat does not double steps.
+- API-03: changes in price/lock/week after preview do not allow saving an outdated script as confirmed; draft is separate from the official state.
+- MIG-01: migrations from a clean and existing database, drift check, application rollback and no changes to football data are checked.
+
+<a name="relationships"></a>
+
+## Related specifications {#relationships}
 
 `spec://modules/khl/FEAT-001-khl-module-and-rules#rules`, `spec://modules/khl/FEAT-002-khl-squad#transfers`, `spec://modules/khl/INFRA-001-khl-data-ingestion#operations`.
 
-## История {#changelog}
+<a name="changelog"></a>
 
-- 2026-09-07: при интеграции сохранены исходные anchors и требования; добавлены обязательные разделы текущего standalone протокола и трассировка реализации. Draft gates не сняты.
+## Changelog {#changelog}
 
-- 2026-09-07: предложены изолированная схема и API; SQL/Prisma/routes не созданы.
+- 2026-09-28: English documentation, repaired document references, and GitHub navigation anchors (WI-039).
 
-## scope {#scope}
+- 2026-09-07: during integration, the original anchors and requirements are preserved; added mandatory sections of the current standalone protocol and implementation trace. Draft gates have not been removed.
 
-Хранилище Khl*, HTTP API и миграции; футбольные PK/FK и правила не меняются (#boundary).
+- 2026-09-07: isolated scheme and API proposed; SQL/Prisma/routes were not created.
 
-## environments {#environments}
+<a name="scope"></a>
 
-Отдельная локальная БД для проверки; production выпускается из чистого Git commit после backup/rehearsal (#migrations).
+## Scope {#scope}
 
-## decisions {#decisions}
+Khl* storage, HTTP API and migrations; football PK/FK and rules do not change (#boundary).
 
-Аддитивные таблицы khl_* и строковые внутренние ID; shared User содержит обратные связи (#boundary).
+<a name="environments"></a>
 
-## runtime {#runtime}
+## Environments and dependencies {#environments}
 
-Next API и Prisma transactions; флаги по умолчанию выключены; импорты запускаются явно.
+Separate local database for checking; production is released from a clean Git commit after backup/rehearsal (#migrations).
 
-## data {#data}
+<a name="decisions"></a>
 
-Модели и уникальные ключи перечислены в #schema; null отличается от нуля.
+## Canonical decisions {#decisions}
 
-## contracts {#contracts}
+Additive tables khl_* and string internal IDs; shared User contains feedback links (#boundary).
 
-Auth, ownership, no-store, ограничения payload, CAS и идемпотентность определены в #api/#transactions.
+<a name="runtime"></a>
 
-## recovery {#recovery}
+## Runtime and operations {#runtime}
 
-До миграций backup и rehearsal; старые football таблицы не удаляются. Правила отката в #migrations.
+Next API and Prisma transactions; flags are disabled by default; imports are run explicitly.
 
-## observability {#observability}
+<a name="data"></a>
 
-Проверяются migration state, duplicates, API conflicts, freshness и ограниченность хранилища; причины отказов доступны вызывающему коду.
+## Data and state {#data}
 
-## Трассировка {#traceability}
+Models and unique keys are listed in #schema; null is different from zero.
 
-prisma/schema.prisma; prisma/migrations/20260907110000_khl_foundation/ и следующие три KHL миграции; src/app/api/machete/khl/; src/khl/storage.db-test.ts. Итоговая приёмка определяется #acceptance; статус реализации — docs/KHL_IMPLEMENTATION_STATUS.md.
+<a name="contracts"></a>
 
-## Агрегаты протоколов {#protocol-aggregates}
+## Contracts {#contracts}
 
-KhlPlayerMatchStat.attackZoneSeconds — nullable индивидуальное время в атаке, секунды. Не смешивается с TOI, владением шайбой или временем команды в зоне. API игрока включает seasonStats: played, по полям sum/known/total. Агрегаты считаются SQL группировкой из текущих уникальных фактов, не хранят копию сезона или неограниченный process cache. Матчевая история включает новые поля и источники.
+Auth, ownership, no-store, payload restrictions, CAS and idempotency are defined in #api/#transactions.
 
-- 2026-09-11: активирован канон; добавлены ВВА и матчевые сезонные агрегаты.
+<a name="recovery"></a>
 
-- 2026-09-13: подтверждён read-only endpoint текущего состава Sports, добавлен импорт через привязанный профиль и границы ресурсов.
+## Rollout, rollback, and recovery {#recovery}
 
-- 2026-09-13: архив прошлого сезона Sports, нормализованное ограниченное хранение, новые показатели и объяснение EP; числовое отображение до двух десятичных цифр.
+Before backup and rehearsal migrations; old football tables are not deleted. Rollback rules in #migrations.
+
+<a name="observability"></a>
+
+## Observability {#observability}
+
+Checks migration state, duplicates, API conflicts, freshness and storage limitations; reasons for failures are available to the calling code.
+
+<a name="traceability"></a>
+
+## Implementation traceability {#traceability}
+
+prisma/schema.prisma; prisma/migrations/20260907110000_khl_foundation/ and the following three KHL migrations; src/app/api/machete/khl/; src/khl/storage.db-test.ts. Final acceptance is determined by #acceptance; implementation status - docs/guides/KHL_IMPLEMENTATION_STATUS.md.
+
+<a name="protocol-aggregates"></a>
+
+## Protocol aggregates {#protocol-aggregates}
+
+KhlPlayerMatchStat.attackZoneSeconds — nullable individual attack time, seconds. Does not mix with TOI, puck possession, or team time in zone. The player API includes seasonStats: played, by sum/known/total fields. Aggregates are considered a SQL grouping of current unique facts and do not store a copy of the season or an unlimited process cache. Match history includes new fields and sources.
+
+- 2026-09-11: canon activated; added VBA and match seasonal units.
+
+- 2026-09-13: the read-only endpoint of the current Sports roster has been confirmed, import through the linked profile and resource boundaries has been added.
+
+- 2026-09-13: Sports Last Season Archive, Normalized Limited Storage, New Metrics and EP Explained; numeric display up to two decimal digits.

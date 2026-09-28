@@ -1,16 +1,18 @@
-# Technical map
+<a name="root"></a>
+
+# Technical map {#root}
 
 ## Betting league
-`src/betting/`, `src/app/betting/`, `src/app/api/betting/` — линия, алгоритмы и бухгалтерия виртуальной лиги. Namespace: `spec://modules/betting/FEAT-001-virtual-league#root`. Цикл worker подключён через instrumentation; таблицы имеют префикс betting_.
+`src/betting/`, `src/app/betting/`, `src/app/api/betting/` - line, algorithms and accounting of the virtual league. Namespace: `spec://modules/betting/FEAT-001-virtual-league#root`. The worker cycle is connected via instrumentation; tables have the betting_ prefix.
 
 ## Runtime
 
 - Next.js App Router, React, TypeScript (`src/app`, `next.config.mjs`).
 - Prisma Client and versioned SQL migrations (`prisma/schema.prisma`, `prisma/migrations`).
-- PostgreSQL locally via Docker Compose on host port `5433` (`docker-compose.yml`, `docs/LOCAL_DEVELOPMENT.md`).
+- PostgreSQL locally via Docker Compose on host port `5433` (`docker-compose.yml`, `docs/development/LOCAL_DEVELOPMENT.md`).
 - Tailwind CSS for application pages.
 - Node test runner through `tsx --test`; Playwright for e2e.
-- Production packaging through Docker and the scripts in `docs/DEPLOYMENT.md` / `docs/DOCKER_PRODUCTION.md`.
+- Production packaging through Docker and the scripts in `docs/operations/DEPLOYMENT.md` / `docs/operations/DOCKER_PRODUCTION.md`.
 
 ## Modules and code ownership
 
@@ -29,7 +31,7 @@
 | HTTP API | Auth, imports, ingestion, squads, shot maps, cron | `src/app/api` |
 | Auth and shared lib | Sessions, Prisma client, request parsing, helpers | `src/lib` |
 | Ingestion jobs | Backfill, incremental update, worker loop | `scripts/ingestion-runner.ts`, `src/app/api/admin/ingestion` |
-| SorareInside starters | INFRA-004: ближайший матч, UUID-маппинг и hourly :05 | `src/providers/sorareinside/`, `src/machete/sorareinside-sync.ts`, `src/server/sorareinside-scheduler.ts`, `scripts/sync-sorareinside.ts` |
+| SorareInside starters | INFRA-004: nearest match, UUID mapping and hourly :05 | `src/providers/sorareinside/`, `src/machete/sorareinside-sync.ts`, `src/server/sorareinside-scheduler.ts`, `scripts/sync-sorareinside.ts` |
 | Browser extension | Sports.ru squad transfer | `extensions/sports-squad-transfer` |
 | Schema | Canonical datamodel and migrations | `prisma` |
 
@@ -45,6 +47,32 @@
 
 ## KHL
 
-Изолированные `src/khl/`, `src/server/khl/`, `src/components/khl/`, `src/app/machete/khl/`, `src/app/api/machete/khl/` и таблицы `khl_*`. Адаптеры: `src/providers/sports-ru-hockey/`, `khl-mobile/`, `khl-xg/`, `fonbet/hockey-*`. Контракты в `specs/modules/khl/` (FEAT-001/002/003, INFRA-001/002/003). Футбольные core_data и scoring остаются независимыми. Флаги КХЛ выключены до production readiness.
+Isolated `src/khl/`, `src/server/khl/`, `src/components/khl/`, `src/app/machete/khl/`, `src/app/api/machete/khl/` and tables `khl_*`. Adapters: `src/providers/sports-ru-hockey/`, `khl-mobile/`, `khl-xg/`, `fonbet/hockey-*`. Contracts in `specs/modules/khl/` (FEAT-001/002/003, INFRA-001/002/003). Football core_data and scoring remain independent. KHL flags are turned off until production readiness.
 
-Матчевые протоколы КХЛ: `src/providers/khl-mobile/protocol*.ts` → `src/server/khl/protocol-import.ts`/`protocol-scheduler.ts` → агрегаты в `read-model.ts`. Базовый семидневный EP: `rolling-forecast.ts`; owning contracts INFRA-001#protocols, INFRA-002#protocol-aggregates, FEAT-003#rolling-beta.
+KHL match reports: `src/providers/khl-mobile/protocol*.ts` → `src/server/khl/protocol-import.ts`/`protocol-scheduler.ts` → units in `read-model.ts`. Basic seven day EP: `rolling-forecast.ts`; owning contracts INFRA-001#protocols, INFRA-002#protocol-aggregates, FEAT-003#rolling-beta.
+
+<a name="documentation"></a>
+
+## Documentation ownership {#documentation}
+
+Public documentation prose is English. Preserve executable examples, identifiers,
+formulas, exact UI labels, provider fixtures, and raw verification evidence when
+their original spelling is part of the contract or source data.
+
+The root README introduces the current product. `docs/README.md` indexes product,
+development, reference, integrations, guides, operations, testing, research,
+design concepts, and an explicit archive. Former `product/`, `prompts/`, and
+`implementation-notes/` documents are grouped under `docs/`. Historical MVP
+prompts and planning inputs live in `docs/archive/`.
+
+Canonical specification paths stay in `specs/common/` and `specs/modules/`;
+relocating other documentation must preserve `spec://` addresses, contract
+anchors, code ownership, and relative navigation. The `.agents/` and `.claude/`
+workflow copies are intentional matching client entry points.
+
+<a name="changelog"></a>
+
+## Changelog {#changelog}
+
+- 2026-09-28: English documentation and topic-based document ownership; local
+  artifacts and credentials excluded from Git (WI-039).

@@ -1,10 +1,10 @@
-# WI-006: RR — риск ротации игрока
+# WI-006: RR - player rotation risk
 
 - Kind: `implement`
 - Canon action: `new-spec`
 
 ## Outcome
-Планировщик показывает объяснимый RR и использует его в режиме «Надёжная».
+The scheduler shows the explainable RR and uses it in Reliable mode.
 
 ## Specs
 - Governing: `spec://modules/machete/FEAT-004-rotation-risk#root`

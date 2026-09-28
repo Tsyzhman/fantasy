@@ -2,154 +2,196 @@
 status: active
 ---
 
-# FEAT-002: хоккейный Squad на 17 игроков {#root}
+<a name="root"></a>
 
-## Простыми словами {#plain-language}
+# FEAT-002: Hockey Squad on 17 players {#root}
 
-Хоккейный состав, календарь и сравнение игроков доступны в отдельном рабочем экране.
+<a name="plain-language"></a>
 
-## Цель {#goal}
+## Plain language {#plain-language}
 
-Дать пользователю проверяемый локальный план с сохранением всех 17 активных мест.
+Hockey squad planning, fixtures, and player comparisons are available in a separate workspace.
 
-## Управляющие документы {#governing-specs}
+<a name="goal"></a>
 
-Границы продукта: `specs/common/main.md`; взаимные контракты и точные ссылки перечислены в #relationships. Канон активен по запросу пользователя; source/rules gates определяют доступность соответствующих возможностей, а не статус документа.
+## Goal {#goal}
+
+Give the user a verifiable local plan, preserving all 17 active locations.
+
+<a name="governing-specs"></a>
+
+## Governing specifications {#governing-specs}
+
+Product boundaries: `specs/common/main.md`; mutual contracts and exact links are listed in #relationships. Canon is active upon user request; source/rules gates determine the availability of relevant features, not the status of the document.
 
 
-## Сценарий и новый экран {#scope}
+<a name="scope"></a>
 
-Пользователь видит всех 17 игроков и оставшиеся матчи каждого, выбирает замену с учётом TOI, большинства, вероятности старта вратаря, цены и lock. Никакой скамейки и назначения стартовых 11. Существующий футбольный `FantasySquadPlanner` не масштабируется до хоккея перестановкой CSS: новая композиция `src/components/khl/KhlSquadPlanner.tsx` с отдельными DTO и доменной логикой.
+## Scope {#scope}
 
-Нейтральные диалоги, кнопки, доступность, форматирование, механика отмены worker и сохранения ширин могут быть выделены/переиспользованы. Футбольные колонки, `FantasyPositionGroup`, 60-minute probability, captain multiplier и bench selection не проходят в KHL props.
+The user sees all 17 players and the remaining matches of each, selects a replacement taking into account TOI, power play, goalkeeper starting probability, price and lock. No bench and assignment of starters 11. Existing football `FantasySquadPlanner` does not scale to hockey by CSS swap: new squad `src/components/khl/KhlSquadPlanner.tsx` with separate DTOs and domain logic.
 
-## Раскладка {#layout}
+Neutral dialogs, buttons, accessibility, formatting, mechanics for canceling worker and saving widths can be highlighted/reused. Football columns, `FantasyPositionGroup`, 60-minute probability, captain multiplier and bench selection do not work in KHL props.
 
-Верхняя строка: КХЛ / сезон / официальная неделя с её интервалом / вариант состава / последняя синхронизация. Далее budget panel: стоимость 17, банк, доступный капитал, заполненность G 2/2 · D 6/6 · F 9/9, остаток официальных трансферов или «неизвестно».
+<a name="layout"></a>
 
-Дизайн адаптирует футбольный Squad: общие классы контактного листа, полоса имени, блок показателей, прямое закрепление/удаление и тематические токены. Футбольные правила не переносятся. При отсутствии фото используются инициалы; неподключённые данные остаются «—».
+## Layout {#layout}
 
-Desktop ≥1280px адаптирует desktop-футбольный SquadPitch: компактные карточки на площадке слева, каталог справа с внутренней прокруткой и закреплённой шапкой. Все 17 активны; группы G(2), D(6), F(9), компактные ряды без футбольной скамейки. Mobile/tablet адаптирует SquadTouchRoster: отдельный вертикальный список по позициям с читаемыми показателями и действиями ≥44px. Пустые места доступны для выбора позиции, детали и перестановки доступны с клавиатуры. Общей горизонтальной прокрутки страницы нет.
+Top line: KHL / season / official week with its interval / lineup option / last synchronization. Next is the budget panel: cost 17, bank, available capital, occupancy G 2/2 · D 6/6 · F 9/9, balance of official transfers or “unknown”.
 
-Порядок слотов меняется через drag-and-drop и клавиатурные кнопки; допустима перестановка в пределах одной позиции. Не меняет состав, трансферный счётчик и прогноз. Неполный draft показывает пустые слоты и недостающие позиции, COMPLETE требует ровно 17.
+Design adapts Football Squad: general contact sheet classes, name bar, metrics block, direct pin/delete and thematic tokens. Football rules are not transferred. If there is no photo, initials are used; unconnected data remains “—”.
 
-## Карточки {#cards}
+Desktop ≥1280px adapts the desktop football SquadPitch: compact cards on the site on the left, a catalog on the right with internal scrolling and a fixed header. All 17 are active; groups G(2), D(6), F(9), compact rows without a football bench. Mobile/tablet adapts SquadTouchRoster: a separate vertical list by position with readable indicators and actions ≥44px. Empty spaces are available for position selection, details and rearrangements are accessible from the keyboard. There is no general horizontal page scrolling.
 
-Общее: имя/фото с fallback, клуб и позиция, актуальная цена/delta, официальный FP отдельно от ожидаемого EP, оставшиеся игры выбранной недели, ближайшие соперник/дом-выезд/начало МСК, травма/дисквалификация, provider lock с временем проверки, кнопка «Сохранить в подборе» с отличным от provider lock значком.
+The order of slots can be changed via drag-and-drop and keyboard buttons; Rearrangement within one position is permissible. Does not change the squad, transfer counter and forecast. An incomplete draft shows empty slots and missing positions, COMPLETE requires exactly 17.
 
-Полевой: TOI/G и PP TOI/G (MM:SS), последние 5/10 матчей с размером выборки, G/A, индивидуальный xG и определение, PP доля/роль (fact/estimate/unknown). Не показывать футбол: xA из футбольной модели, per90, MID, жёлтые карточки, 60-minute вероятность.
+<a name="cards"></a>
 
-Вратарь: вероятность старта **на каждый предстоящий матч**, статус «подтверждён/прогноз/неизвестно», источник и давность; ожидаемое время, SV/GA/SV%, ожидаемые сэйвы и вероятность полного сухого матча при наличии модели. «Сыграл в прошлом матче» не равно «стартует сегодня». Не считать оба goalie выбранного клуба стартующими одновременно.
+## Cards {#cards}
 
-Детальная панель: вкладки «История», «Прогноз по матчам», «Цена», «Источники». Показывать null как «— / нет данных» с причиной. 0 — только наблюдение. Смешанное покрытие обозначать `PP TOI: 7 из 10 матчей`, не брать среднее по десяти с тремя нулями. Unknown не окрашивать зелёным.
+General: name/photo with fallback, club and position, current price/delta, official FP separately from the expected EP, remaining games of the selected week, nearest opponent/home-away/start of Moscow time, injury/disqualification, provider lock with check time, “Save in selection” button with an icon different from provider lock.
 
-## Таблица, фильтры и сравнение {#table}
+Field: TOI/G and PP TOI/G (MM:SS), latest 5/10 matches with sample size, G/A, individual xG and definition, PP share/role (fact/estimate/unknown). Don't show football: xA from football model, per90, MID, yellow cards, 60-minute probability.
 
-Каждый заголовок и ячейка имеют подсказку: смысл показателя, способ расчёта, выбранный период, фактическое значение, покрытие и источник при наличии. EP объясняет конкретные компоненты игрока и beta-ограничения; отсутствие xG объясняется, не заменяется голами. Клавиатура и touch имеют доступ к общей справке показателей, hover — к подсказке ячейки.
+Goalkeeper: probability of starting **for each upcoming match**, status “confirmed/forecast/unknown”, source and date; expected time, SV/GA/SV%, expected saves and probability of a clean sheet given the model. “Played in the last match” is not the same as “starts today”. Do not consider both goalies of the selected club to start at the same time.
 
-Кнопка «Excel · все игроки» выгружает полный каталог текущего турнира независимо от страницы, поиска, позиции и остальных фильтров. Сервер читает согласованный снимок; не принимает присланные клиентом строки и не запускает обновление внешних источников. XLSX включает текущие сезонные суммы, средние выбранного окна, прошлый сезон, FP/EP/ixG, покрытие и источники, предстоящие матчи и справку. Нули — числа, отсутствие — пустая ячейка; числа отображаются максимум с двумя десятичными знаками, время — [m]:ss. Полнота контролируется количеством и уникальностью IDs; превышение лимита явно отклоняется вместо усечения. Существующий ExcelJS проекта используется сервером без добавления клиентской зависимости.
+Detailed panel: “History”, “Match Forecast”, “Price”, “Sources” tabs. Show null as "-/no data" with reason. 0 - observation only. Mixed coverage is designated `PP TOI: 7 из 10 матчей`, do not take the average of ten followed by three zeros. Unknown should not be colored green.
 
-Голы, передачи, броски в створ, штрафные минуты и плюс-минус показываются отдельными сортируемыми колонками с покрытием. Периоды: текущий сезон, последние матчи, прошлый сезон. Архивные суммы не смешиваются с текущими, EP относится к будущему независимо от периода статистики. Числа в таблице, карточках, сравнении и пояснениях имеют максимум две десятичные цифры; точность расчётов сохраняется. Время отображается MM:SS. Нет данных — «—», известный ноль — 0.
+<a name="table"></a>
 
-TOI, PP, PK и время в атаке — четыре самостоятельных столбца со значениями MM:SS и покрытием. Нажатие заголовка включает числовую сортировку, повторное меняет направление; null остаётся последним. Тот же выбор доступен в настройках таблицы и сохраняется для пользователя. Сезон/последние матчи явно подписаны.
+## Table, filters and comparison {#table}
 
-| Представление | Колонки по умолчанию |
+Each heading and cell has a hint: the meaning of the indicator, calculation method, selected period, actual value, coverage and source if available. The EP explains player specific components and beta limitations; the lack of xG is explained, not replaced by goals. The keyboard and touch have access to the general indicator help, hover - to the cell hint.
+
+The “Excel · all players” button downloads the full catalog of the current tournament, regardless of the page, search, position and other filters. The server reads the negotiated snapshot; does not accept strings sent by the client and does not start updating external sources. XLSX includes current season totals, selected window averages, last season, FP/EP/ixG, coverage and sources, upcoming matches and help. Zeros are numbers, absence is an empty cell; numbers are displayed with a maximum of two decimal places, time is [m]:ss. Completeness is controlled by the number and uniqueness of IDs; exceeding the limit is explicitly rejected instead of truncated. The project's existing ExcelJS is used by the server without adding a client dependency.
+
+Goals, assists, shots on target, penalty minutes and plus/minus are shown in separate sortable columns with coverage. Periods: current season, last matches, last season. Archive amounts are not mixed with current amounts; EP refers to the future regardless of the statistical period. Numbers in the table, cards, comparisons, and explanations have a maximum of two decimal digits; the accuracy of the calculations is maintained. The time is displayed MM:SS. No data - "—", known zero - 0.
+
+TOI, PP, PK and time in attack - four independent columns with MM:SS values ​​and coverage. Clicking the title enables numeric sorting, repeating reverses the direction; null is the last one left. The same selection is available in the table settings and is saved for the user. The season/last matches are clearly signed.
+
+| View | Default Columns |
 |---|---|
-| Все | Игрок, позиция/клуб, цена/delta, игр осталось, EP недели, EP/игру, FP последнего окна, доступность/lock |
-| D/F | Дополнительно TOI/G, PP TOI/G, PP share/role, G/A, +/−, PIM, SOG, ixG и coverage |
-| G | Дополнительно start probability ближайшего матча, ожидаемые старты недели, TOI/G, SV, GA, SV%, full-game shutout probability |
+| All | Player, position/club, price/delta, games left, EP of the week, EP/game, last window FP, availability/lock |
+| D/F | Additional TOI/G, PP TOI/G, PP share/role, G/A, +/−, PIM, SOG, ixG and coverage |
+| G | Additionally start probability of the nearest match, expected starts of the week, TOI/G, SV, GA, SV%, full-game shutout probability |
 
-Расширенные колонки: PK TOI, блоки, смены, владение %, матчи/TOI выборки, EP/1000 цены, интервал прогноза, давность источников. Вратарские rate вычисляются по корректным знаменателям: SV% = saves/(saves+GA) при известном ненулевом знаменателе, с оговорённым учётом буллитов. Не смешивать суммарный FP и средний FP в одной колонке.
+Extended columns: PK TOI, blocks, shifts, % ownership, matches/TOI samples, EP/1000 prices, forecast interval, source recency. Goalkeeper rates are calculated using the correct denominators: SV% = saves/(saves+GA) with a known non-zero denominator, taking into account shootouts. Do not mix total FP and average FP in the same column.
 
-Фильтры: G/D/F, клуб, диапазон цены, available/locked/injured/suspended/unknown, число будущих игр, TOI/G и PP TOI/G, наблюдаемая или оценочная PP роль, вероятность старта goalie, xG coverage, свежесть, selected/watchlist, история 5/10/20 матчей/сезон. Неприменимые фильтры скрываются при смене позиции; активные ограничения видны chips с отдельным сбросом. Явный выбор «включать неизвестное». Null-last сортировка в обоих направлениях, стабильный tie-break ID. Поиск с debounce и отменой устаревшего запроса.
+Filters: G/D/F, club, price range, available/locked/injured/suspended/unknown, number of future games, TOI/G and PP TOI/G, observed or estimated PP role, goalie start probability, xG coverage, freshness, selected/watchlist, history 5/10/20 matches/season. Inapplicable filters are hidden when changing position; active restrictions are visible on chips with a separate reset. An explicit choice to “include the unknown.” Null-last sorting in both directions, stable tie-break ID. Search with debounce and cancellation of stale query.
 
-Фильтры ограничивают кандидатов, но не удаляют уже выбранных/keep игроков. Если ограничения делают подбор невозможным, показать конкретно дефицит позиции/денег/клубного лимита. Отдельные `KhlUserViewPreference`: порядок, видимость, ширины, сортировка, фильтры и сравнение не перезаписывают футбольные настройки.
+Filters limit candidates, but do not remove already selected/keep players. If restrictions make selection impossible, show specifically the position/money/club limit deficit. Separate `KhlUserViewPreference`: order, visibility, widths, sorting, filters and compare do not overwrite football settings.
 
-Сравнение 2–4 игроков: один contest/season/historyWindow/horizon; базовые строки общие, goalie и skater секции подписаны как разные. Основные различия — оставшиеся матчи и EP, цена, TOI/PP, роль, травмы/старт. Delta по неизвестным данным = неизвестно. Переключение недели пересчитывает все столбцы согласованно. Никаких прямых «голкипер лучше форварда по xG».
+Comparison of 2–4 players: one contest/season/historyWindow/horizon; the base lines are common, the goalie and skater sections are labeled as different. Main differences - remaining matches and EP, price, TOI/PP, role, injuries/start. Delta from unknown data = unknown. Switching the week recalculates all columns consistently. No direct “goalkeeper is better than forward in terms of xG”.
 
-## Трансферы и индивидуальные блокировки {#transfers}
+<a name="transfers"></a>
 
-1. Пользователь выбирает out/in, видит текущий и предлагаемый состав, сумму продажи/покупки, банк после, использованные/остающиеся трансферы, EP delta и оставшиеся матчи обеих сторон.
-2. Изменение действует с указанного момента: preview прямо показывает, какие будущие матчи теряются при продаже сегодня. Уже сыгранные FP остаются историей, не добавляются к прогнозу новичка.
-3. Сервисный lock Sports.ru блокирует трансфер обеих сторон; «Сохранить в подборе» только ограничивает оптимизатор и может быть снят пользователем. Травма — третий независимый статус.
-4. За 30 минут до матча кандидат считается недоступным даже если прежний lock snapshot ещё false. Поздняя разблокировка только по свежему источнику. При переносе и конфликте времени требуется пересверка.
-5. Если baseline/остаток трансферов/цена/lock неизвестны или устарели, можно сохранить условный draft, но нельзя подписать его «допустим на Sports.ru». Будущий шаг помечается «проверить перед выполнением», цена будущей продажи не гарантируется.
-6. Кнопка называется «Сохранить план», ответ явно `externalExecuted:false`. Внешняя отправка не реализуется, браузерное расширение football не переиспользуется как hockey submitter. Нельзя расходовать внешний лимит от локальной перестановки или редактирования сценария.
-7. Вторая вкладка/изменившийся источник дают 409 с предложением обновить preview, сохраняя несохранённые пользовательские намерения. Ни частичного сохранения пары, ни молчаливой подмены цены.
+## Transfers and individual locks {#transfers}
 
-### Импорт состава Sports {#sports-import}
+1. The user selects out/in, sees the current and proposed lineup, sale/purchase amount, bank after, used/remaining transfers, EP delta and remaining matches of both sides.
+2. The change is effective from the specified moment: preview directly shows which future matches are lost when sold today. Already played FPs remain history and are not added to the newcomer’s forecast.
+3. Service lock Sports.ru blocks the transfer of both parties; “Save in selection” only limits the optimizer and can be unchecked by the user. Trauma is the third independent status.
+4. 30 minutes before the match the candidate is considered unavailable even if the previous lock snapshot is still false. Late unlocking only from a fresh source. In case of transfer and time conflict, reconciliation is required.
+5. If the baseline/remaining transfers/price/lock are unknown or outdated, you can save the conditional draft, but you cannot sign it “acceptable on Sports.ru”. The future step is marked "check before execution", the future sale price is not guaranteed.
+6. The button is called “Save plan”, the answer is clearly `externalExecuted:false`. External sending is not implemented, the football browser extension is not reused as a hockey submitter. You cannot spend an external limit from local rearrangement or script editing.
+7. The second tab/changed source gives 409 with a proposal to update the preview, saving unsaved user intents. No partial saving of the pair, no silent price substitution.
 
-Кнопка «Импортировать состав Sports» загружает текущую хоккейную команду из публичного профиля, привязанного к текущему пользователю. Сервер находит ссылку команды, проверяет владельца, турнир и 17 уникальных игроков (2/6/9), сопоставляет только provider IDs. Банк берётся из опубликованной страницы команды, неизвестный остаток трансферов остаётся неизвестным. Успешный импорт атомарно сохраняет выбранный локальный вариант или создаёт новый. Ошибка, неполный ответ или конфликт версии оставляют вариант без изменений. Без привязки показана ссылка на настройки профиля. Сохранение не отправляет изменений на Sports.
+<a name="sports-import"></a>
 
-## Состояния, доступность, производительность {#quality}
+### Import squad Sports {#sports-import}
 
-Клик или касание EP открывает карточку с разделом «Ожидаемые показатели»: базовые G/A/SOG/PIM/+− за сыгранный матч, значения каждого предстоящего матча и суммарно выбранного периода. Исходные средние, покрытия и формулы доступны без hover. Excel всего каталога включает отдельный лист ожиданий и матчевые поправки, числовые значения остаются числами с отображением максимум двух десятичных цифр. Отсутствие разбивки/линии/полного горизонта обозначается явно.
+The “Import Sports Roster” button loads the current hockey team from the public profile associated with the current user. The server finds the team link, checks the owner, tournament and 17 unique players (2/6/9), matches only provider IDs. The bank is taken from the published team page, the unknown balance of transfers remains unknown. A successful import atomically saves the selected local option or creates a new one. An error, incomplete answer, or version conflict leaves the option unchanged. Without linking, a link to the profile settings is shown. Saving does not send changes to Sports.
 
-Карточка раскрывает общую формулу EP, вклад G/A/+/−/PIM и броскового сигнала, число текущих и прошлых матчей, источник архива. Штрафные минуты не называются количеством удалений. Незагруженный или отсутствующий архив обозначен явно.
+<a name="quality"></a>
 
-Loading skeleton сохраняет геометрию. Empty season, partial catalog, stale odds, xG unavailable, incomplete calendar, no feasible squad, source error, cancelled solve и version conflict имеют разные сообщения. Last-good пул доступен с датой и ограничениями; ошибка не превращается в «игроков нет».
+## States, availability, performance {#quality}
 
-Семантические заголовки и таблицы, фокус в диалоге с возвратом на исходную кнопку, Escape для закрытия, aria-live для результата сохранения/подбора. Цвет статуса сопровождается текстом. Все основные действия доступны клавиатурой и touch; target ≥44px на мобильном.
+Clicking or touching EP opens a card with the “Expected indicators” section: basic G/A/SOG/PIM/+− for the match played, the values of each upcoming match and the total selected period. Original mediums, coverages and formulas are available without hover. Excel of the entire catalog includes a separate waiting list and match adjustments, numeric values ​​remain numbers with a maximum of two decimal digits displayed. The absence of a stakeout/line/full horizon is clearly indicated.
 
-Каталог отдаётся страницами, detail загружается по открытию. Для подборщика один компактный пул до 1000 игроков без raw и полной истории. Один worker на экран, requestId+inputRevision, отмена старого solve, terminate на unmount; ответы старой недели игнорируются. В кеше не более 3 пулов; очищать сравнение и персональное состояние при смене пользователя. Цели на согласованном staging-профиле: p95 локального выбора/фильтра ≤100 мс, warm API ≤500 мс, cold pool ≤2 с, solve ≤5 с с возможностью отмены. Это будущие измеряемые требования, не результаты этой задачи.
+The card reveals the general EP formula, the contribution of G/A/+/−/PIM and the throwing signal, the number of current and past matches, the source of the archive. Penalty minutes are not referred to as the number of deletions. An unloaded or missing archive is clearly indicated.
 
-## Приёмка {#acceptance}
+Loading skeleton preserves geometry. Empty season, partial catalog, stale odds, xG unavailable, incomplete calendar, no feasible squad, source error, canceled solve and version conflict have different messages. Last-good pool is available with dates and restrictions; the error does not turn into “no players”.
 
-- UI-01: на 360/390/768/1024/1440px видны все 17; G/D/F=2/6/9, нет bench/captain, карточки читаемы, body не имеет горизонтального overflow.
-- UI-02: перестановка карточки не меняет сумму EP/FP/лимит; пользовательский keep и provider lock независимо отображаются и проверяются.
-- UI-03: G/D/F таблицы, фильтры, null-last и сравнение 2–4 на общем горизонте работают; настройки КХЛ не затрагивают FPL/Sports.ru football.
-- UI-04: locked/stale/unknown transfer balance, продажа перед ещё не сыгранным матчем, 409 и conditional future plan проверены e2e.
-- UI-05: keyboard/touch сценарий проходит без drag/hover; справка источника доступна; отменённый worker не обновляет UI.
-- UI-06: 50 переходов между КХЛ/FPL и 50 повторных подборов не увеличивают число workers/listeners, после прогрева память не растёт >10% в сопоставимых замерах.
+Semantic headings and tables, focus in the dialog with returning to the original button, Escape for closing, aria-live for the result of saving/selecting. The status color is accompanied by text. All basic actions are available using the keyboard and touch; target ≥44px on mobile.
 
-## Связи {#relationships}
+The catalog is given in pages, detail is loaded upon opening. For the selector, one compact pool of up to 1000 players without raw and full history. One worker per screen, requestId+inputRevision, canceling the old solve, terminate to unmount; Old week's replies are ignored. There are no more than 3 pools in the cache; Clear comparison and personal state when changing user. Goals on the agreed staging profile: p95 local selection/filter ≤100 ms, warm API ≤500 ms, cold pool ≤2 s, solve ≤5 s with cancelability. These are future measurable requirements, not the results of this task.
+
+<a name="acceptance"></a>
+
+## Acceptance criteria {#acceptance}
+
+- UI-01: all 17 are visible on 360/390/768/1024/1440px; G/D/F=2/6/9, no bench/captain, cards are readable, body has no horizontal overflow.
+- UI-02: rearranging the card does not change the EP/FP/limit amount; The user keep and provider lock are independently displayed and checked.
+- UI-03: G/D/F tables, filters, null-last and comparison 2–4 work on a common horizon; KHL settings do not affect FPL/Sports.ru football.
+- UI-04: locked/stale/unknown transfer balance, sale before a match that has not yet been played, 409 and conditional future plan verified by e2e.
+- UI-05: keyboard/touch script runs without drag/hover; source reference available; the canceled worker does not update the UI.
+- UI-06: 50 transitions between the KHL/FPL and 50 repeated selections do not increase the number of workers/listeners, after warming up the memory does not grow >10% in comparable measurements.
+
+<a name="relationships"></a>
+
+## Related specifications {#relationships}
 
 `spec://modules/khl/FEAT-001-khl-module-and-rules#weeks`, `spec://modules/khl/INFRA-002-khl-storage-and-api#api`, `spec://modules/khl/FEAT-003-khl-projections-and-optimizer#optimizer`.
 
-## История {#changelog}
+<a name="changelog"></a>
 
-- 2026-09-07: при интеграции сохранены исходные anchors и требования; добавлены обязательные разделы текущего standalone протокола и трассировка реализации. Draft gates не сняты.
+## Changelog {#changelog}
 
-- 2026-09-07: создан проект полной переработки Squad, без реализации компонентов.
+- 2026-09-28: English documentation, repaired document references, and GitHub navigation anchors (WI-039).
 
-## actors {#actors}
+- 2026-09-07: during integration, the original anchors and requirements are preserved; added mandatory sections of the current standalone protocol and implementation trace. Draft gates have not been removed.
 
-Владелец состава выбирает, сравнивает и сохраняет игроков; провайдер сообщает независимые блокировки.
+- 2026-09-07: a project has been created to completely rework Squad, without implementing components.
 
-## scenarios {#scenarios}
+<a name="actors"></a>
 
-Открытие и раскладка: #scope/#layout; карточки и фильтры: #cards/#table; покупки, продажи и keep: #transfers.
+## Participants and triggers {#actors}
 
-## data {#data}
+The roster owner selects, compares and saves players; the provider reports independent blocking.
 
-Состав, выбранные игроки, фильтры, актуальные цены и provider locks; локальный банк не является официальным snapshot.
+<a name="scenarios"></a>
 
-## contracts {#contracts}
+## Scenarios {#scenarios}
 
-Сохранение требует владельца и актуальной версии; server preview и apply для сохранённых трансферных планов описаны в #transfers.
+Opening and layout: #scope/#layout; cards and filters: #cards/#table; purchases, sales and keep: #transfers.
 
-## errors {#errors}
+<a name="data"></a>
 
-Истёкший quote, конфликт версии, неизвестная цена или недоступная покупка не применяются молча; состояние остаётся доступным для исправления (#quality).
+## Data and state {#data}
 
-## Трассировка {#traceability}
+Squad, selected players, filters, current prices and provider locks; local bank is not an official snapshot.
 
-src/components/khl/; src/server/khl/transfer-plans.ts; e2e/khl.spec.ts. Итоговая приёмка определяется #acceptance; статус реализации — docs/KHL_IMPLEMENTATION_STATUS.md.
+<a name="contracts"></a>
 
-При входе без squadId открывается последний изменённый собственный вариант выбранного турнира. Новый пустой вариант открывается явно через new=1; чужие составы никогда не выбираются по умолчанию.
+## Contracts {#contracts}
 
-- 2026-09-07: восстановление последнего собственного варианта при входе и явное создание нового.
+Saving requires the owner and the current version; server preview and apply for saved transfer plans are described in #transfers.
 
-- 2026-09-07: адаптация контактного листа и композиции футбольного Squad для КХЛ.
+<a name="errors"></a>
 
-### Сезонные суммы протоколов
+## Errors and validation {#errors}
 
-По умолчанию время и показатели вратаря показывают суммы сыгранных матчей текущего сезона. Режим последних 5/10/20 матчей со средними сохраняется. FP остаётся средним официальных оценок; EP относится к выбранному будущему периоду. Время в атаке выводится отдельно в каталоге, карточке и матчевой истории. В карточке у каждого итога число матчей с известным значением / число загруженных сыгранных матчей; отсутствующие значения не становятся нулями. При недоступности прямого источника сохраняются факты и явно показывается причина приостановки автообновления.
+Expired quote, version conflict, unknown price or unavailable purchase are not silently applied; the state remains available for correction (#quality).
 
-- 2026-09-11: суммы сезона по протоколам, покрытие времени в атаке и календарный режим EP на 7 дней.
+<a name="traceability"></a>
 
-- 2026-09-13: отдельные сортируемые показатели, адаптация desktop-площадки и mobile-списка, импорт текущей команды Sports.
+## Implementation traceability {#traceability}
 
-- 2026-09-13: архив прошлого сезона Sports, нормализованное ограниченное хранение, новые показатели и объяснение EP; числовое отображение до двух десятичных цифр.
-- 2026-09-14: подсказки всех заголовков/ячеек и полная серверная выгрузка всего каталога в XLSX независимо от фильтров и страницы.
-- 2026-09-14: реальные ожидаемые показатели, раскрытие исходного расчёта, матчевые поправки и лист ожиданий Excel (WI-023).
+src/components/khl/; src/server/khl/transfer-plans.ts; e2e/khl.spec.ts. Final acceptance is determined by #acceptance; implementation status - docs/guides/KHL_IMPLEMENTATION_STATUS.md.
+
+When logging in without a squadId, the last modified custom version of the selected tournament opens. A new empty option opens explicitly via new=1; other people's lineups are never selected by default.
+
+- 2026-09-07: Restore the last native variant on login and explicitly create a new one.
+
+- 2026-09-07: adaptation of the contact sheet and squad of the football Squad for the KHL.
+
+### Seasonal protocol amounts
+
+By default, the time and goalkeeper indicators show the totals of matches played for the current season. The mode of the last 5/10/20 matches with the averages is preserved. FP remains the average of official estimates; EP refers to the selected future period. Attack time is displayed separately in the catalog, card and match history. On the card for each total is the number of matches with a known value / the number of downloaded matches played; missing values ​​do not become zeros. If the direct source is unavailable, the facts are preserved and the reason for pausing auto-update is clearly shown.
+
+- 2026-09-11: season sums according to protocols, attack time coverage and EP calendar mode for 7 days.
+
+- 2026-09-13: individual sortable indicators, adaptation of the desktop site and mobile list, import of the current Sports team.
+
+- 2026-09-13: Sports Last Season Archive, Normalized Limited Storage, New Metrics and EP Explained; numeric display up to two decimal digits.
+- 2026-09-14: tooltips all headers/cells and full server-side upload of the entire catalog to XLSX regardless of filters and page.
+- 2026-09-14: actual expected performance, original calculation disclosure, match adjustments and Excel expectation sheet (WI-023).

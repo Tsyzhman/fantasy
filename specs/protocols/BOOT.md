@@ -1,151 +1,163 @@
 <!-- Generated from spec-driven-work/SKILL.md. Edit the canonical skill source. -->
 # BOOT
 
-Этот файл читается в начале каждой AI-сессии.
+This file is read at the beginning of each AI session.
 
-Используй его как главный skill-роутер. Сначала выбери маршрут и подгрузи только названные ниже references. Не читай все references заранее.
+Use it as your main skill router. First, select a route and load only the references listed below. Don't read all the references in advance.
 
-## 0. Обязательный managed preflight {#managed-preflight}
+<a name="managed-preflight"></a>
 
-В `prist-managed` до первой repository write выполни весь порядок:
+## 0. Mandatory managed preflight {#managed-preflight}
+
+In `prist-managed`, before the first repository write, complete the entire order:
 
 1. flush pending spec sync;
-2. получи `project_context`, а затем `work_context` для явного WI или `resolve_change` для запроса обычным языком;
-3. выбери маршрут и `canonAction`;
-4. прочитай focused references этого маршрута;
-5. для `new-spec` и первого spec-space перечисли планируемые типы PROP/FEAT/INFRA и вызови `get_spec_example` для каждого типа до authoring;
-6. для tracked работы создай полный WorkItem и вызови `start_work`;
-7. сообщи человеку одной строкой: `Маршрут: <...> · References: <...> · Examples: <...|не нужны> · structure.md: <создать|обновить|без изменений>`.
+2. get `project_context` and then `work_context` for an explicit WI or `resolve_change` for a plain language query;
+3. select route and `canonAction`;
+4. read the focused references of this route;
+5. for `new-spec` and the first spec-space list the planned PROP/FEAT/INFRA types and call `get_spec_example` for each type before authoring;
+6. for tracked work, create a full WorkItem and call `start_work`;
+7. tell the person in one line: `Route: <...> · References: <...> · Examples: <...|not needed> · structure.md: <create|update|unchanged>`.
 
-Не изменяй specs, code или tests до завершения применимых пунктов. `references/prist-managed.md` задаёт точные semantic operations.
+Do not change specs, code or tests until applicable items have been completed. `references/prist-managed.md` specifies precise semantic operations.
 
-Для tracked `new-spec` отсутствие файла новой спеки не откладывает WorkItem. До `create_work` определи тип, namespace и планируемый полный spec-адрес с якорем `#root`, укажи существующий вышестоящий канон и ограничения, если они есть, а планируемый адрес — в affected links. После регистрации и перевода новой спеки в `active` обнови её governing anchor, scope и acceptance WorkItem и только затем начинай зависимую реализацию.
+For tracked `new-spec` the absence of a new spec file does not delay WorkItem. Before `create_work`, define the type, namespace and planned full spec address with the anchor `#root`, indicate the existing higher canon and restrictions, if any, and the planned address in affected links. After registering and transferring the new spec to `active`, update its governing anchor, scope and acceptance WorkItem and only then start the dependent implementation.
 
-## 1. Быстрый вход {#entry}
+<a name="entry"></a>
 
-Сначала разреши явный workflow mode из `.prist/workflow.json` или repository entrypoint. Выполни это до поиска задачи и любых operational mutations:
+## 1. Session entry {#entry}
 
-- `standalone`: WI, BOARD, WAL и TECHDEBT ведутся в repository; `specs/.me` задаёт agent identity;
-- `prist-managed`: operational state ведётся только через Prist. Сразу прочитай `references/prist-managed.md`, выполни его Start a turn и не создавай repository-копии WI/BOARD/WAL/TECHDEBT.
+First resolve the explicit workflow mode from `.prist/workflow.json` or repository entrypoint. Do this before searching for the task and any operational mutations:
 
-Если mode отсутствует или противоречив, останови operational mutation и прочитай `references/repository-bootstrap.md`. Доступность Prist не определяет и не меняет mode. Specs, code, tests и Git остаются repository canon в обоих режимах.
+- `standalone`: WI, BOARD, WAL and TECHDEBT are maintained in the repository; `specs/.me` specifies agent identity;
+- `prist-managed`: operational state is maintained only through Prist. Read `references/prist-managed.md` right away, execute it Start a turn and do not create repository copies of WI/BOARD/WAL/TECHDEBT.
 
-Сначала разреши рабочий контекст минимальным числом чтений.
+If mode is missing or inconsistent, stop operational mutation and read `references/repository-bootstrap.md`. Availability Prist does not define or change mode. Specs, code, tests and Git remain repository canon in both modes.
 
-### Если в запросе указан `WI-NNN`
+First, resolve the working context with a minimum number of reads.
 
-В `standalone`:
+### If the request specifies `WI-NNN`
 
-1. Открой его файл в `specs/work/` или `specs/work/archive/`.
-2. Найди одну строку WI в `specs/BOARD.md`.
-3. Ищи checkpoint этого WI в `specs/WAL.md`. Открывай WAL целиком только при наличии релевантной секции или общего решения.
-4. Открой перечисленные в WI governing specs и только необходимые constraint/affected specs.
+TO `standalone`:
 
-- В `prist-managed` получи `project_context`, затем `work_context` для этого ID и открой перечисленные governing/constraint/affected specs из repository. Не ищи repository WI/BOARD/WAL.
+1. Open its file in `specs/work/` or `specs/work/archive/`.
+2. Find one WI line in `specs/BOARD.md`.
+3. Look for the checkpoint of this WI in `specs/WAL.md`. Open the entire WAL only if there is a relevant section or general solution.
+4. Open the governing specs listed in WI and only the necessary constraint/affected specs.
 
-### Если WI не указан
+- In `prist-managed` get `project_context`, then `work_context` for this ID and open the listed governing/constraint/affected specs from the repository. Don't look for repository WI/BOARD/WAL.
 
-В `standalone` ищи контекст в таком порядке. Ищи контекст в таком порядке:
-1. активные строки `BOARD.md`;
-2. человекочитаемая карта `SPEC-MAP.md`;
-3. техническая карта `common/structure.md`;
-4. имена файлов, заголовки и anchors в `specs/**`;
-5. `@spec` в коде и тестах;
-6. названия модулей, экранов, процессов, компонентов и файлов.
+### If WI is not specified
 
-В `prist-managed` сначала получи `project_context` и вызови `resolve_change` для запроса об изменении. Затем читай найденные specs, связи и минимальный набор code/tests из repository. Для вопроса о состоянии используй точечные `readiness_context`, `list_ideas`, `list_work` и `work_context`.
+In `standalone`, look for the context in this order. Look for the context in this order:
+1. active lines `BOARD.md`;
+2. human-readable map `SPEC-MAP.md`;
+3. technical map `common/structure.md`;
+4. file names, headers and anchors in `specs/**`;
+5. `@spec` in code and tests;
+6. names of modules, screens, processes, components and files.
 
-Поиск выполняется лениво. Не загружай весь spec-space и весь код, если задача уже разрешилась меньшим контекстом.
+In `prist-managed`, first obtain `project_context` and call `resolve_change` to request the change. Then read the found specs, connections and the minimum set of code/tests from the repository. For status questions, use the focused operations `readiness_context`, `list_ideas`, `list_work` and `work_context`.
 
-В `standalone` действует правило: `specs/.me` нужен перед claim work item или изменением ownership, `BOARD.md` и `WAL.md`. Для read-only анализа и одношаговой работы без операционного учёта отсутствие `.me` не блокирует чтение. Если операционное изменение нужно, а файла нет, попроси человека создать его из `specs/.me.template`. Не коммить `specs/.me`.
+The search is lazy. Don't load the entire spec-space and all the code if the problem has already been resolved by a smaller context.
 
-В `prist-managed` owner задаёт authenticated connection identity; `specs/.me` не используется.
+In `standalone` the following rule applies: `specs/.me` is needed before claim work item or change of ownership, `BOARD.md` and `WAL.md`. For read-only analysis and one-step work without operational accounting, the absence of `.me` does not block reading. If an operational change is needed and the file is not there, ask the person to create one from `specs/.me.template`. Do not commit `specs/.me`.
 
-## 2. Выбор контура {#scope}
+In `prist-managed` owner specifies an authenticated connection identity; `specs/.me` is not used.
 
-Выбери один из четырёх маршрутов.
+<a name="scope"></a>
 
-### A. Одношаговая работа
+## 2. Workflow selection {#scope}
 
-Используй этот маршрут, когда задача:
-- завершается в текущей сессии;
-- имеет очевидный owning spec;
-- не требует отдельного owner/status, handoff, координации или блокера.
+Choose one of four routes.
 
-Выполни изменение и проверки. `WI`, `BOARD` и `WAL` не создаются. Если меняется канон, обнови существующую спеку direct edit + changelog. В `prist-managed` после material change также синхронизируй spec-space.
+### A. One-step operation
 
-### B. Существующий work item
+Use this route when the task:
+- ends in the current session;
+- has an obvious owning spec;
+- does not require a separate owner/status, handoff, coordination or blocker.
 
-Прочитай `references/work-items.md`, `references/board.md` и только при handoff/blocker/stop — `references/checkpoints.md`.
+Perform changes and checks. `WI`, `BOARD` and `WAL` are not created. If the canon changes, update the existing direct edit + changelog spec. In `prist-managed`, after the material change, also synchronize the spec-space.
 
-- В `standalone` работай по найденному файлу WI и строке BOARD.
-- В `prist-managed` работай по `work_context`; если status равен `backlog`, вызови `start_work` до изменения specs/code/tests. Не используй checkpoint для старта.
+### B. Existing work item
 
-В `standalone`: Работай по найденному `WI-NNN`. `BOARD.md` остаётся источником статуса и owner. Создавай или обновляй `WAL.md` только при реальной необходимости checkpoint.
+Read `references/work-items.md`, `references/board.md` and only with handoff/blocker/stop - `references/checkpoints.md`.
 
-### C. Новая отслеживаемая работа
+- In `standalone`, work using the found WI file and the BOARD line.
+- In `prist-managed` work according to `work_context`; if status is `backlog`, call `start_work` before changing specs/code/tests. Don't use checkpoint to start.
 
-Если работе нужен отдельный учёт:
+To `standalone`: Work according to the found `WI-NNN`. `BOARD.md` remains the source of status and owner. Create or update `WAL.md` only if there is a real need for a checkpoint.
 
-Сначала прочитай `references/work-items.md` и `references/board.md`.
+### C. New tracked work
 
-В `standalone`:
+If the work requires separate accounting:
 
-1. создай `specs/work/WI-NNN-short-slug.md` по `WORK-ITEM-PROTOCOL.md`;
-2. добавь одну компактную строку в `BOARD.md`;
-3. если работа начинается сейчас, помести строку сразу в `In Progress`;
-4. не создавай WAL в начале сессии;
-5. создай WAL-checkpoint, только если работа останется незавершённой, потребуется handoff или переключение контекста.
+Read `references/work-items.md` and `references/board.md` first.
 
-- В `prist-managed` вызови `create_work` со всеми протокольными полями и затем `start_work` до изменения реализации.
-- В обоих режимах не создавай checkpoint в начале; он нужен только для незавершённой остановки, handoff или blocker.
+TO `standalone`:
 
-Отдельный учёт нужен при самостоятельном scope/acceptance, нескольких шагах, риске, блокере, зависимости, координации, продолжении между сессиями или явной просьбе человека.
+1. create `specs/work/WI-NNN-short-slug.md` by `WORK-ITEM-PROTOCOL.md`;
+2. add one compact line to `BOARD.md`;
+3. if work starts now, place the line immediately in `In Progress`;
+4. do not create WAL at the beginning of the session;
+5. create a WAL-checkpoint, only if the work remains unfinished, a handoff or context switch will be required.
 
-### D. Новый или изменяемый канон
+- In `prist-managed`, call `create_work` with all protocol fields and then `start_work` before changing the implementation.
+- In both modes, do not create a checkpoint at the beginning; it is only needed for an incomplete stop, handoff or blocker.
 
-Прочитай `references/specification-authoring.md` и `references/specification-lifecycle.md`.
+Separate accounting is needed for independent scope/acceptance, several steps, risk, blocker, dependency, coordination, continuation between sessions or an explicit request of a person.
 
-В `prist-managed` при tracked `new-spec` также прочитай `references/work-items.md` и получи service-owned example для каждого планируемого типа спеки до первой repository write.
+### D. New or changed canon
 
-Если подходящей спеки нет, до первой repository write определи формат нового канона. Для tracked работы сначала создай и запусти один `new-spec` WorkItem, затем:
-1. создай и зарегистрируй спеку в `SPEC-MAP.md`;
-2. обнови `common/structure.md`, если меняется модуль, namespace или связь с кодом;
-3. доведи governing spec до `active` и актуализируй links, scope и acceptance существующего WorkItem до реализации;
-4. реализуй тот же атомарный результат в этом WorkItem либо до кода создай связанные implementation WorkItem, если готовый канон выявил несколько независимых результатов.
+Read `references/specification-authoring.md` and `references/specification-lifecycle.md`.
 
-Одношаговое authoring без отдельного результата, статуса или продолжения не создаёт WorkItem и строку в `BOARD.md`.
+In `prist-managed` when tracked `new-spec` also read `references/work-items.md` and get a service-owned example for each planned spec type before the first repository write.
 
-Если найдено несколько равновероятных owning specs и выбор влияет на решение, уточни у человека.
+If there is no suitable spec, before the first repository write, determine the format of the new canon. For tracked work, first create and run one `new-spec` WorkItem, then:
+1. create and register a spec in `SPEC-MAP.md`;
+2. update `common/structure.md` if the module, namespace or connection to the code changes;
+3. bring the governing spec to `active` and update the links, scope and acceptance of the existing WorkItem to implementation;
+4. implement the same atomic result in this WorkItem or create related implementation WorkItems before the code if the finished canon has identified several independent results.
 
-## 3. Маршрутизация по типу задачи {#routing}
+One-step authoring without a separate result, status or continuation does not create a WorkItem and a row in `BOARD.md`.
 
-- Создание или глубокая переработка спеки: `SPEC-AUTHORING-PROTOCOL.md`.
-- Изменение канона, lifecycle, direct edit, supersession или конфликт со спекой: `SPEC-PROTOCOL.md`.
-- Создание, разбиение, исправление или завершение `WI-NNN`: `WORK-ITEM-PROTOCOL.md`.
-- Статус, owner, priority или blocker work item: `BOARD-PROTOCOL.md`.
-- Checkpoint, handoff или возобновление: `WAL-PROTOCOL.md`.
-- Сознательный компромисс вне текущего scope: `TECHDEBT-PROTOCOL.md`.
-- Внедрение workflow в существующий проект: `.human/adopt-existing-project-agent.md`.
+If several equally probable owning specs are found and the choice affects the decision, check with the person.
 
-Внутри skill этим compatibility names соответствуют focused references из предыдущего раздела. В `prist-managed` focused reference сохраняет смысл и критерии протокола, а `references/prist-managed.md` задаёт semantic operation вместо repository operational file. Для внедрения или обновления workflow используй `references/repository-bootstrap.md`.
+<a name="routing"></a>
 
-## 4. Исправление кода по действующей спеке {#fix}
+## 3. Routing by task type {#routing}
 
-Если код противоречит ясной активной спеке:
-1. считай спеку governing canon;
-2. воспроизведи расхождение тестом или проверкой;
-3. исправь код;
-4. сохрани `Canon action: none`, если создан WI;
-5. обнови спеку только при обнаружении пропущенной детали.
+- Creating or substantially revising a specification: `SPEC-AUTHORING-PROTOCOL.md`.
+- Change of canon, lifecycle, direct edit, supersession or conflict with spec: `SPEC-PROTOCOL.md`.
+- Create, split, fix or terminate `WI-NNN`: `WORK-ITEM-PROTOCOL.md`.
+- Status, owner, priority or blocker work item: `BOARD-PROTOCOL.md`.
+- Checkpoint, handoff or resume: `WAL-PROTOCOL.md`.
+- Conscious compromise outside the current scope: `TECHDEBT-PROTOCOL.md`.
+- Implementation of workflow into an existing project: `.human/adopt-existing-project-agent.md`.
 
-Если человек запрашивает новое поведение, сначала выбери direct edit или supersession по `SPEC-PROTOCOL.md#change-model`.
+Inside the skill, these compatibility names correspond to the focused references from the previous section. In `prist-managed`, the focused reference preserves the meaning and criteria of the protocol, and `references/prist-managed.md` specifies a semantic operation instead of a repository operational file. To implement or update workflow, use `references/repository-bootstrap.md`.
 
-Полная процедура находится в `references/specification-lifecycle.md#change-model`.
+<a name="fix"></a>
 
-## 5. Правило `@spec` {#traceability}
+## 4. Code correction for the current spec {#fix}
 
-Новый или существенно изменённый spec-owned код получает полный адрес ответственной спеки:
+If the code contradicts the clear active spec:
+1. consider the governing canon;
+2. reproduce the discrepancy by test or inspection;
+3. fix the code;
+4. save `Canon action: none` if WI is created;
+5. update the spec only when a missing part is detected.
+
+If a person requests a new behavior, first select direct edit or supersession by `SPEC-PROTOCOL.md#change-model`.
+
+The complete procedure is in `references/specification-lifecycle.md#change-model`.
+
+<a name="traceability"></a>
+
+## 5. Rule `@spec` {#traceability}
+
+New or significantly changed spec-owned code receives the full address of the responsible spec:
 
 ```ts
 /**
@@ -154,81 +166,89 @@
  */
 ```
 
-Маркеры ставятся на точки ответственности:
-- файл;
-- обработчик;
-- сервис или класс;
-- крупный UI-компонент;
-- worker или job processor;
-- миграция;
-- materializer, read-model builder или импортёр.
-- прямой contract test, который подтверждает owning contract.
+Markers are placed on points of responsibility:
+- file;
+- handler;
+- service or class;
+- large UI component;
+- worker or job processor;
+- migration;
+- materializer, read-model builder or importer.
+- direct contract test, which confirms the owning contract.
 
-Для мелких helper-функций ownership наследуется от ближайшего размеченного блока.
+For small helper functions, ownership is inherited from the nearest marked block.
 
-## 6. Работа со спорными местами {#review}
+<a name="review"></a>
 
-Если реализацию можно честно выполнить по текущему канону:
-1. выполни работу;
-2. добавь `REVIEW` рядом со спорным местом;
-3. укажи вопрос в финальном отчёте.
+## 6. Working with controversial areas {#review}
 
-Если открытый вопрос создаёт высокий риск для данных, безопасности, денег или основного пользовательского сценария, остановись на планировании и запроси решение человека.
+If the implementation can be honestly performed according to the current canon:
+1. do the job;
+2. add `REVIEW` next to the disputed place;
+3. indicate the question in the final report.
 
-## 7. Синхронизация spec-space {#sync}
+If an open question poses a high risk to data, security, money, or a core user scenario, stop planning and ask for a human solution.
 
-В `prist-managed` получай live tools через project-local remote MCP, материализованный connection component в `.codex/config.toml` и `.mcp.json`. Credential хранится только в locally ignored connection/config files с ограниченными permissions. Если текущая agent session была открыта до установки config, connection component завершает setup и `connection_ready` сам, а MCP discovery появляется после явного trust и новой сессии.
+<a name="sync"></a>
 
-Material change — это изменение active/draft `PROP`, `FEAT` или `INFRA`, `specs/SPEC-MAP.md`, `specs/common/structure.md` либо добавление, удаление или перенос `@spec` в коде, тестах, tools, agent artifacts или migrations.
+## 7. Spec-space synchronization {#sync}
 
-После material change и до completion:
+In `prist-managed` receive live tools via project-local remote MCP, materialized connection component in `.codex/config.toml` and `.mcp.json`. Credential is stored only in locally ignored connection/config files with limited permissions. If the current agent session was opened before installing config, the connection component completes setup and `connection_ready` itself, and MCP discovery appears after an explicit trust and a new session.
 
-1. запусти `node .agents/skills/spec-driven-work/scripts/sync-spec-space.mjs snapshot --root .` и проверь `status`, diagnostics, Git/working-tree provenance и fingerprint;
-2. в `prist-managed` возьми текущий `canon.snapshotVersion` из `project_context`, затем выполни `sync --project-id <id> --expected-version <version>`;
-3. перед новым managed context всегда выполни `flush --root .`, если существует `.prist/outbox/spec-sync.json`;
-4. при `partial`, pending либо version conflict не заявляй current completion: устрани diagnostics или перестрой snapshot по свежему context и повтори;
-5. передай в `complete_work` явное `specChange`: `{ "kind": "material", "fingerprint": "<receipt>", "snapshotVersion": <receipt> }`. Если material источники не менялись, передай `{ "kind": "none" }`.
+Material change is a change in the active/draft `PROP`, `FEAT` or `INFRA`, `specs/SPEC-MAP.md`, `specs/common/structure.md` or the addition, deletion or transfer of `@spec` in code, tests, tools, agent artifacts or migrations.
 
-Snapshot и outbox не содержат credential. Скрипт читает `.prist/connection.json` только при отправке, сохраняет receipt отдельно и редактирует transport errors перед записью pending state.
+After material change and before completion:
 
-## 8. Завершение сессии {#finish}
+1. run `node .agents/skills/spec-driven-work/scripts/sync-spec-space.mjs snapshot --root .` and check `status`, diagnostics, Git/working-tree provenance and fingerprint;
+2. to `prist-managed` take the current `canon.snapshotVersion` from `project_context`, then do `sync --project-id <id> --expected-version <version>`;
+3. before a new managed context always execute `flush --root .` if `.prist/outbox/spec-sync.json` exists;
+4. for `partial`, pending or version conflict, do not declare current completion: eliminate diagnostics or rebuild the snapshot using a fresh context and repeat;
+5. pass an explicit `specChange` to `complete_work`: `{ "kind": "material", "fingerprint": "<receipt>", "snapshotVersion": <receipt> }`. If the material sources have not changed, pass `{ "kind": "none" }`.
 
-Следующие repository writes применяются в `standalone`. В `prist-managed` выполни эквивалентные status, checkpoint, result и evidence operations по `references/prist-managed.md`; WI/BOARD/WAL/TECHDEBT files не меняй.
+Snapshot and outbox do not contain credential. The script reads `.prist/connection.json` only when sending, saves the receipt separately and edits transport errors before writing the pending state.
 
-### Work item завершён
+<a name="finish"></a>
 
-- пройди acceptance WI;
-- перечисляй выполненным только acceptance, для которого фактически выполнена названная проверка или сохранено evidence;
-- если человек запретил конкретный инструмент или deploy, продолжи остальные доступные проверки; если обязательная проверка невозможна, оставь WI незавершённым и сохрани checkpoint;
-- заполни `Result` выполненными проверками и итогом;
-- обнови changelog только тех спек, чей канон менялся;
-- перенеси WI в `specs/work/archive/YYYY/`;
-- переведи строку `BOARD.md` в `Done`;
-- удали WAL-checkpoint этого WI, если он существовал;
-- укажи `REVIEW` и `TECHDEBT` в отчёте.
+## 8. Ending session {#finish}
 
-### Work item остаётся активным
+The following repository writes apply to `standalone`. In `prist-managed`, perform the equivalent status, checkpoint, result and evidence operations in `references/prist-managed.md`; Do not change WI/BOARD/WAL/TECHDEBT files.
 
-- сохрани статус `In Progress` или `Blocked` в `BOARD.md`;
-- создай или обнови один короткий WAL-checkpoint с текущим состоянием и следующим шагом;
-- не копируй в WAL scope и acceptance из файла WI.
+### Work item completed
 
-### Одношаговая работа
+- go through acceptance WI;
+- list as completed only acceptance for which the named check was actually performed or evidence was saved;
+- if a person has banned a specific tool or deploy, continue with the remaining available checks; if a mandatory check is not possible, leave the WI incomplete and save the checkpoint;
+- fill in `Result` with the completed checks and the total;
+- update the changelog only for those specs whose canon has changed;
+- move WI to `specs/work/archive/YYYY/`;
+- translate the string `BOARD.md` to `Done`;
+- delete the WAL-checkpoint of this WI, if it existed;
+- indicate `REVIEW` and `TECHDEBT` in the report.
 
-- укажи изменённые файлы и проверки;
-- операционные файлы workflow остаются без изменений.
+### Work item remains active
 
-## 9. Минимальный набор изменений {#write-matrix}
+- save status `In Progress` or `Blocked` to `BOARD.md`;
+- create or update one short WAL-checkpoint with the current state and the next step;
+- do not copy the WAL scope and acceptance from the WI file.
 
-| Событие | Какие workflow-файлы меняются |
+### One-step operation
+
+- indicate changed files and checks;
+- workflow operational files remain unchanged.
+
+<a name="write-matrix"></a>
+
+## 9. Minimum set of changes {#write-matrix}
+
+| Event | Which workflow files are changing |
 |---|---|
-| Одношаговая реализация | спека только при изменении канона |
-| Создание или изменение спеки | спека + `SPEC-MAP.md`; `structure.md` при изменении технической карты |
-| Старт отслеживаемой работы | файл WI + одна строка `BOARD.md` |
-| Изменение status, owner, priority или blocker | `BOARD.md` |
-| Остановка незавершённой сессии | `WAL.md`; `BOARD.md` при изменении статуса или blocker |
-| Завершение WI | Result и архив WI + `BOARD.md` + удаление существующего WAL-checkpoint |
+| One-step implementation of | spec only when changing the canon |
+| Creating or changing a spec | spec + `SPEC-MAP.md`; `structure.md` when changing the technical map |
+| Start of monitored work | WI file + one line `BOARD.md` |
+| Change status, owner, priority or blocker | `BOARD.md` |
+| Stopping an unfinished session | `WAL.md`; `BOARD.md` when status changes or blocker |
+| Completion of WI | Result and archive WI + `BOARD.md` + deleting existing WAL-checkpoint |
 
-Код, тесты и продуктовые артефакты меняются по scope задачи. Таблица фиксирует только операционный контур workflow.
+Code, tests and product artifacts change according to the scope of the task. The table records only the operational workflow.
 
-В `prist-managed` та же матрица выполняется через semantic operations: `create_work` + `start_work`, `update_work`, `checkpoint_work` и `complete_work`. Создание или изменение спецификации по-прежнему меняет repository canon и требует spec sync; Prist не пишет specs или code.
+In `prist-managed` the same matrix is ​​executed through semantic operations: `create_work` + `start_work`, `update_work`, `checkpoint_work` and `complete_work`. Creating or changing a spec still changes the repository canon and requires spec sync; Prist doesn't write specs or code.

@@ -1,10 +1,10 @@
-# WI-021 — Статистика, состав и импорт КХЛ
+# WI-021 - Statistics, squad and import of the KHL
 
 Kind: fix
 Canon action: direct-edit
 
 ## Outcome
-Каталог и карточка КХЛ показывают известные время/PP/PK/атаку при частичном покрытии и обновлении снимка, без ложных нулей.
+The KHL catalog and card show known time/PP/PK/attack with partial coverage and image update, without false zeros.
 
 ## Specs
 - Governing: spec://modules/khl/FEAT-002-khl-squad#cards
@@ -12,22 +12,22 @@ Canon action: direct-edit
 - Constraint: spec://modules/khl/FEAT-002-khl-squad#quality
 
 ## Scope
-In: воспроизведение production таблицы/API, частичные средние и покрытие, свежий снимок без потери состава/фильтров, локальные проверки и безопасный выпуск.
-Out: xG и блокировка прямого источника КХЛ (WI-017), футбольные данные и внешние трансферы.
+In: replay production tables/API, partial averages and coverage, fresh snapshot without loss of squad/filters, local checks and safe release.
+Out: xG and KHL direct source blocking (WI-017), football data and external transfers.
 
 ## Acceptance
-- [x] Частичное покрытие сохраняет известное среднее; нет данных отличается от наблюдаемого нуля.
-- [x] Таблица и карточка показывают данные после смены окна и обновления; текущий состав и фильтры сохранены.
-- [x] Production UI/API проверены на desktop/mobile; Git, runtime, дубли, кэш и память проверены.
-- [x] TOI, PP, PK и атака разделены, каждый столбец сортируется в обоих направлениях.
-- [x] Desktop использует компактную площадку футбольного Squad, mobile — отдельный список с touch-действиями.
-- [x] Импорт текущего состава Sports через привязанный профиль работает, ошибки не очищают текущий вариант; итог опубликован на сервере.
+- [x] Partial coverage maintains a known average; no data differs from observed zero.
+- [x] The table and card show data after changing the window and updating; the current squad and filters are saved.
+- [x] Production UI/API tested on desktop/mobile; Git, runtime, duplicates, cache and memory are checked.
+- [x] TOI, PP, PK and attack are separated, each column is sorted in both directions.
+- [x] Desktop uses the compact platform of the football Squad, mobile uses a separate list with touch actions.
+- [x] Importing the current Sports lineup via a linked profile works, errors do not clear the current version; the result is published on the server.
 
 ## Result
-Опубликован 0.3.70, runtime commit 8deba825cfa351bff4362fea34ad080291a92f79; deploy workflow 34773231429 success. Production browser 34777451494: desktop/tablet/mobile 3 pass; отдельные сортировки в обе стороны, обновление без потери выбора, компактные desktop-карточки и широкий touch-список. Предыдущая проверка 34777297927 выявила ошибку harness: к секундам приклеивался счётчик покрытия, исправлено в 3f017d1; сортировка приложения корректна.
+Published by 0.3.70, runtime commit 8deba825cfa351bff4362fea34ad080291a92f79; deploy workflow 34773231429 success. Production browser 34777451494: desktop/tablet/mobile 3 pass; separate sorting in both directions, updating without losing selection, compact desktop cards and a wide touch list. The previous check of 34777297927 revealed a harness error: the coverage counter was stuck to the seconds, fixed in 3f017d1; Application sorting is correct.
 
-Было: partial-матч обнулял известные средние; устаревший React snapshot; первый экран из игроков без статистики; четыре времени в одной ячейке; одинаковые карточки desktop/mobile; нет live Sports import. Стало: известные средние с покрытием, обновление снимка, отдельные sortable TOI/PP/PK/атака, адаптация соответствующего football Squad layout, импорт 17 игроков и банка из привязанного публичного профиля с ownership/CAS/идемпотентностью и сохранением варианта при ошибках.
+It was: the partial match reset the known averages to zero; legacy React snapshot; the first screen of players without statistics; four times in one cell; identical desktop/mobile cards; no live Sports import. Now: known averages with coverage, snapshot update, separate sortable TOI/PP/PK/attack, adaptation of the corresponding football Squad layout, import of 17 players and bank from a linked public profile with ownership/CAS/idempotency and saving the option in case of errors.
 
-Локально полный check: 1110 pass / 1 skip, lint 0 errors / 115 warnings, typecheck/build pass. Реальный PostgreSQL import regression pass без skip; после финального capital fix повторены DB/typecheck, CI выполнил полные проверки на release commit. В локальном браузере реальный Sports import сохранил 17 игроков, reload сохранил состав, ошибка отсутствующей привязки не очистила его. На сервере read-only источник сопоставил все 17 ID/позиции, стоимость 20448, банк 0.
+Local full check: 1110 pass / 1 skip, lint 0 errors / 115 warnings, typecheck/build pass. Real PostgreSQL import regression pass without skip; after the final capital fix, DB/typecheck was repeated, CI performed full checks on the release commit. In the local browser, the real Sports import saved 17 players, reload saved the roster, the missing binding error did not clear it. On the read-only server, the source matched all 17 IDs/positions, cost 20448, bank 0.
 
-Production audit: web/worker healthy, restarts 0, 48 миграций/pending 0, stats/raw/jobs duplicates 0; raw 29 / 99987 bytes; web 222.1 MiB, worker 1.211 GiB, PostgreSQL 1.012 GiB. Локальная учётная запись проверки, её состав, snapshot, sessions и счётчик запросов удалены; browser закрыт. Следующий запрос пользователя о показателях, формуле и прошлом сезоне ведётся в WI-022.
+Production audit: web/worker healthy, restarts 0, 48 migrations/pending 0, stats/raw/jobs duplicates 0; raw 29 / 99987 bytes; web 222.1 MiB, worker 1.211 GiB, PostgreSQL 1.012 GiB. The local verification account, its squad, snapshot, sessions and request counter have been deleted; browser is closed. The next user query about indicators, formula and last season is in WI-022.

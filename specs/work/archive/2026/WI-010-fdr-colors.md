@@ -1,26 +1,26 @@
-# WI-010: Восстановить FDR на сервере
+# WI-010: Restore FDR on the server
 
 - Kind: fix
 - Canon action: none
 
 ## Outcome
-На сервере плашки соперников в карточках и таблицах снова используют цвета FDR 1–5.
+On the server, opponent tiles in cards and tables are again using the FDR colors 1–5.
 
 ## Specs
 - Governing: spec://modules/machete/FEAT-003-squad-player-card#contracts
-- Constraints: NEW_DESIGN.md; docs/DEPLOYMENT.md; docs/PRODUCTION_RELEASES.md.
+- Constraints: docs/archive/design/NEW_DESIGN.md; docs/operations/DEPLOYMENT.md; docs/operations/PRODUCTION_RELEASES.md.
 
 ## Scope
 - In: CSS cascade, regression check, isolated patch release, live CSS/browser verification.
-- Out: расчёт сложности, данные, изменения Арены из WI-009.
+- Out: difficulty calculation, data, Arena changes from WI-009.
 
 ## Acceptance
-- [x] Подтверждена причина в текущем production CSS.
-- [x] FDR 1–5, неизвестная сложность и домашний/гостевой матч корректны в обеих темах и контекстах таблицы/карточки.
-- [x] Проверки релиза и штатный deploy успешны; подтверждён новый commit на сервере.
-- [x] Проверены кэш, дубли и память; временные ресурсы освобождены.
+- [x] The cause is confirmed to be in the current production CSS.
+- [x] FDR 1–5, unknown difficulty and home/away match are correct in both topics and table/card contexts.
+- [x] Release checks and regular deploy are successful; a new commit has been confirmed on the server.
+- [x] Cache, duplicates and memory checked; temporary resources are freed.
 
 ## Result
-Было: общий .fixture-pill перекрывал цвета FDR одинаковой специфичностью. Стало: :where(.fixture-pill) задаёт нейтральный fallback, уровни FDR 1–5 сохраняют цвет. Домашний/гостевой акцент и неизвестная сложность сохранены.
+Was: generic .fixture-pill overlapped FDR colors with equal specificity. Now: :where(.fixture-pill) sets a neutral fallback, FDR levels 1–5 retain the color. The home/guest accent and unknown complexity are retained.
 
-Исправление cd1ccda опубликовано штатным deploy 34128583204 как 0.3.61 и сохранено в объединённом 0.3.62 / 0d05986 (WI-011). Проверены production CSS, контрактный тест и исходная browser evidence light/dark из output/playwright/fdr-fix/browser-report.txt в основном checkout: цвета совпадают с токенами, cache/storage/duplicate IDs 0. Совместные проверки и ресурсы выпуска см. WI-011; production smoke 34157185770 success.
+The cd1ccda fix was published by the regular deploy 34128583204 as 0.3.61 and saved in the merged 0.3.62 / 0d05986 (WI-011). Tested production CSS, contract test and original browser evidence light/dark from output/playwright/fdr-fix/browser-report.txt mainly checkout: colors match tokens, cache/storage/duplicate IDs 0. For joint review and release resources, see WI-011; production smoke 34157185770 success.

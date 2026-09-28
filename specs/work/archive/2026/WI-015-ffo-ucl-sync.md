@@ -1,33 +1,33 @@
-# WI-015 — Восстановить FFO в Squad
+# WI-015 - Restore FFO in Squad
 
 Kind: fix
 Canon action: none
 
 ## Outcome
-Доступные прогнозы Foontasy корректно связаны с игроками и видны в Squad.
+Available Foontasy predictions are correctly associated with players and visible in Squad.
 
 ## Specs
-- Governing (registered legacy): docs/SPORTS_RU_FANTASY_SYNC.md
+- Governing (registered legacy): docs/integrations/SPORTS_RU_FANTASY_SYNC.md
 - Constraint: spec://modules/machete/FEAT-001-global-ranking-strategy#root
 
 ## Scope
-In: диагностика FFO источников и текущих привязок, проверенные исправления, синхронизация и snapshot, production verification.
-Out: выдуманные прогнозы, смешение Sports/UEFA scoring, снижение требований к идентификации.
+In: diagnostics of FFO sources and current bindings, verified fixes, synchronization and snapshot, production verification.
+Out: fictitious predictions, mixing Sports/UEFA scoring, reducing identification requirements.
 
 ## Acceptance
-- [x] Причина отсутствия FFO установлена по текущему источнику и БД.
-- [x] Доступные прогнозы импортированы и отображаются в опубликованном pool.
-- [x] Повтор без дублей, cache/memory проверены; необходимые code checks/deploy завершены.
+- [x] The reason for the absence of FFO has been determined based on the current source and database.
+- [x] Available forecasts are imported and displayed in the published pool.
+- [x] Repeat without duplicates, cache/memory checked; the necessary code checks/deploys have been completed.
 
 ## Result
-Начальная диагностика: ЛЧ Sports922/1037 mappings ниже90%; UEFA0/1044 Sports IDs overlap. Исследуется текущий источник.
+Initial diagnostics: Champions League Sports922/1037 mappings below 90%; UEFA0/1044 Sports IDs overlap. The current source is examined.
 
-Текущий источник проверен через существующий authenticated Foontasy parser: Sports1037 rows,1033 пересечения с Sports.ru,922 mappings. Squad явно читает sourceVariant=sports. Отдельная ошибка UEFA связана с отличающимися external_id; UEFA scoring не подмешивался, этот источник не используется колонкой FFO Squad и не изменялся.
+The current source has been verified through the existing authenticated Foontasy parser: Sports1037 rows,1033 intersections with Sports.ru,922 mappings. Squad clearly reads sourceVariant=sports. A separate UEFA bug is related to different external_ids; UEFA scoring has not been tampered with, this source is not used by the FFO Squad column and has not been changed.
 
-Исправлены22 проверенные связи с существующими CorePlayer из плана действующего deep-map CLI (6MAP_ACTIVE/16MAP_GLOBAL); имена/клубы и доступные DOB сверены, текущие назначения защищены проверками.89 предложенных Sports-only seeds не применялись. Новые игроки не создавались. Backup: /var/backups/fantasy-scout/wi015-ffo-mappings-before.json (содержит исходные prices/maps и полный reviewed plan).
+Fixed22 verified connections with existing CorePlayers from the current deep-map CLI plan (6MAP_ACTIVE/16MAP_GLOBAL); names/clubs and available DOBs are verified, current assignments are protected by checks.89 suggested Sports-only seeds were not applied. No new players were created. Backup: /var/backups/fantasy-scout/wi015-ffo-mappings-before.json (contains original prices/maps and full reviewed plan).
 
-Штатный syncFoontasyForecasts для league42/season2026/2027/sourceVariant=sports успешно импортировал1037 прогнозов,944mapped,sourceSeason85,round1. Все исходные проверки полноты сохранены. Повтор mappingpending0; импорт samplesAdded0/samplesPreserved1037.
+Staff syncFoontasyForecasts for league42/season2026/2027/sourceVariant=sports successfully imported 1037 forecasts, 944mapped, sourceSeason85, round1. All original completeness checks are retained. Repeat mappingpending0; import samplesAdded0/samplesPreserved1037.
 
-Snapshot обновлён:1027 игроков,944 сFFO. Все944 значения в опубликованном payload точно совпали с источником, включая явные нули. В остальных10 опубликованных league snapshots FFO присутствуют. Дубли price/player links0, FFO keys0; retention3 snapshots;396 уникальных стартов сохранились.
+Snapshot updated: 1027 players, 944 with FFO. All 944 values ​​in the published payload matched the source exactly, including obvious zeros. The remaining 10 published league snapshots contain FFO. Duplicates price/player links0, FFO keys0; retention3 snapshots;396 unique starts preserved.
 
-Refresh завершился сRSS1045090304bytes приheaplimit1536MiB. После завершения web330.3MiB/worker396.2MiB/Postgres958.5MiB. Изменений runtime/схемы нет; production остаётся0.3.65/af35df1. Проверки — реальные import/replay и точное сравнение published snapshot систочником; дополнительный деплой не нужен.
+Refresh completed with RSS1045090304bytes with heaplimit1536MiB. After completion web330.3MiB/worker396.2MiB/Postgres958.5MiB. There are no runtime/scheme changes; production remains 0.3.65/af35df1. Checks - real import/replay and exact comparison of published snapshot with source; no additional deployment is needed.

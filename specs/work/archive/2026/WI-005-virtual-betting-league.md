@@ -1,42 +1,42 @@
-# WI-005: Виртуальная лига ставок Fantasy
+# WI-005: Virtual Fantasy Betting League
 
 - Kind: `change`
 - Canon action: `new-spec`
 
 ## Outcome
-На сервере Fantasy работает миниприложение с линией Фонбета, виртуальными балансами пользователей и пяти алгоритмов, рекомендациями, ставками и рейтингом.
+The Fantasy server runs a mini-application with the Fonbet line, virtual balances of users and five algorithms, recommendations, bets and ratings.
 
 ## Specs
 - Governing: `spec://modules/betting/FEAT-001-virtual-league#root`.
-- Constraint: продуктовые границы specs/common/main.md и безопасный выпуск docs/DEPLOYMENT.md.
+- Constraint: product boundaries specs/common/main.md and safe release docs/operations/DEPLOYMENT.md.
 - Affected: `spec://modules/betting/FEAT-001-virtual-league#root`.
 
 ## Scope
-- In: существующая авторизация, 100 000 монет каждому участнику, Mia/Abella/Lana/Riley/Adriana, линия по скачанным лигам, рекомендации до ставки, пропуск, журнал, расчёт, рейтинг, миграция и серверный выпуск.
-- Out: реальные деньги, платежи, обещания доходности, изменение незавершённых WI-001/004.
+- In: existing authorization, 100 000 coins for each participant, Mia/Abella/Lana/Riley/Adriana, line for downloaded leagues, recommendations before betting, pass, log, calculation, rating, migration and server release.
+- Out: real money, payments, promises of profitability, changing unfinished WI-001/004.
 
 ## Acceptance
-- [x] Линия отражает покрытие Фонбета и явно сообщает ограничения расчёта.
-- [x] Баланс выдаётся однократно; конкурентные ставки и повторные запросы не создают лишних списаний или выплат.
-- [x] Все пять ботов используют разные опубликованные стратегии и могут пропускать событие.
-- [x] Рекомендации видны до подтверждения ставки; история и рейтинг учитывают открытые ставки отдельно.
-- [x] Работают авторизация, блокировка старых котировок/начавшихся матчей, идемпотентный расчёт.
-- [x] Пройдены контрактные проверки и проверен интерфейс, выполнен безопасный deploy с подтверждением revision/health.
-- [x] Проверены дубли, ограниченность кэшей и серверная память.
+- [x] The line reflects Fonbet coverage and clearly communicates the calculation limitations.
+- [x] The balance is issued once; Competitive rates and repeat requests do not create unnecessary charges or payments.
+- [x] All five bots use different published strategies and may miss the event.
+- [x] Recommendations are visible until the bet is confirmed; history and rating take into account open bets separately.
+- [x] Authorization, blocking of old quotes/started matches, and idempotent calculation work.
+- [x] Contract checks have been completed and the interface has been checked, secure deployment has been completed with revision/health confirmation.
+- [x] Doubles, cache limitations and server memory have been checked.
 
 ## Result
-Реализация готова к серверному выпуску. Изолированная ветка codex/virtual-betting-league от действующего production 8c4835a; рабочий каталог C:/Users/Nik/Documents/fantasy_betting_league.
+The implementation is ready for server release. Isolated branch codex/virtual-betting-league from the current production 8c4835a; working directory C:/Users/Nik/Documents/fantasy_betting_league.
 
 
-Проверено до выпуска: npm run check (1 019 pass, 1 штатный skip, 0 fail; lint без ошибок, typecheck, build); отдельная PostgreSQL с 41 миграцией; конкурентные списания, сетевые повторы, коэффициенты 2,50/2,60, выплаты и журнал; браузерный flow в светлой/тёмной теме и на ширине 390; API auth/origin/JSON limits. Документ: docs/BETTING_ARENA.md. Результат deployment будет добавлен после реального health/revision smoke.
+Tested before release: npm run check (1 019 pass, 1 regular skip, 0 fail; lint without errors, typecheck, build); separate PostgreSQL with 41 migration; competitive write-offs, network replays, 2,50/2,60 odds, payouts and journal; browser flow in light/dark theme and width 390; API auth/origin/JSON limits. Document: docs/guides/BETTING_ARENA.md. The deployment result will be added after the real health/revision smoke.
 
 
-Production: https://fantasy.tsyzhman.ru/betting — v0.3.57, commit d9abf51dbc2a842b66484c644269987fd719d653, release 20260907T094424Z-v0.3.57-d9abf51. Workflow https://github.com/Tsyzhman/fantasy/actions/runs/34107206679 завершён success. Health API, Docker labels обоих контейнеров и .release-commit совпадают; web/worker healthy.
+Production: https://fantasy.tsyzhman.ru/betting — v0.3.57, commit d9abf51dbc2a842b66484c644269987fd719d653, release 20260907T094424Z-v0.3.57-d9abf51. Workflow https://github.com/Tsyzhman/fantasy/actions/runs/34107206679 completed success. Health API, Docker labels of both containers and .release-commit are the same; web/worker healthy.
 
-Проверенная резервная копия: /var/backups/fantasy-scout/pre-20260907T094424Z-v0.3.57-d9abf51-migration.dump, SHA-256 6e1585a6dd4da8711a7c111710f487db909fc4c1876e0446d99fc052ae6fd1bd. Rehearsal restore/migration, 41 production migration, canary и переключение прошли.
+Verified backup: /var/backups/fantasy-scout/pre-20260907T094424Z-v0.3.57-d9abf51-migration.dump, SHA-256 6e1585a6dd4da8711a7c111710f487db909fc4c1876e0446d99fc052ae6fd1bd. Rehearsal restore/migration, 41 production migration, canary and switching completed.
 
-Production smoke: 368 событий, 46 загруженных лиг, 33 счёта (28 пользователей и 5 ботов), синхронизация без ошибки. Несопоставленных матчей 77: явно обозначены, нет выдуманных рекомендаций, расчёт вручную. Все стартовые проводки по 100 000, дублей начислений/бот-ставок и расхождений журнала — 0. Пять ботов дошли до лимита открытого риска 10 000 и пропускают новые ставки сверх лимита. Проверочная человеческая ставка выполнена только на тестовой БД, production проверен чтением. Временная production-сессия отозвана.
+Production smoke: 368 events, 46 loaded leagues, 33 accounts (28 users and 5 bots), synchronization without errors. Unmatched matches 77: clearly marked, no made-up recommendations, manual calculation. All starting transactions for 100 000, duplicate accruals/bot rates and journal discrepancies - 0. Five bots have reached the open risk limit 10 000 and are allowing new bets above the limit. The human verification bet was performed only on the test database, production was verified by reading. The temporary production session has been revoked.
 
-Ресурсы после запуска: web 142 MiB, worker 1.002 GiB, PostgreSQL 985 MiB, доступная RAM 7.1 GiB, диск 20%. Тестовая БД, migration rehearsal DB, canary и setup image удалены; SSH-туннель и QA-браузер закрыты, временные файлы доступа удалены. Репродукция и скриншоты — specs/work/evidence/WI-005. Первичный npm run check: 1 019 pass / 1 skip; после изменения выбора расчётной очереди повторены целевые DB-тесты, typecheck/build; штатный GitHub deploy повторно прошёл весь check.
+Resources after launch: web 142 MiB, worker 1.002 GiB, PostgreSQL 985 MiB, available RAM 7.1 GiB, disk 20%. Test DB, migration rehearsal DB, canary and setup image have been deleted; The SSH tunnel and QA browser are closed, temporary access files are deleted. Reproduction and screenshots - specs/work/evidence/WI-005. Primary npm run check: 1 019 pass / 1 skip; after changing the choice of the calculation queue, the target DB tests, typecheck/build, were repeated; The regular GitHub deploy passed the entire check again.
 
-Код перенесён в основной рабочий каталог проверенным git apply без затрагивания соседних незавершённых изменений. Собственная спецификация Арены проходит snapshot; последующие замечания основного spec-space относятся к параллельному WI-006, а в изолированном релизе — к ещё не выпущенному WI-001. Следующий deploy обязан включать production commit d9abf51.
+The code was moved to the main working directory by the verified git apply without affecting neighboring unfinished changes. Arena's own specification is being snapshotted; subsequent notes from the main spec-space refer to the parallel WI-006, and in the isolated release to the not yet released WI-001. The next deploy must include production commit d9abf51.

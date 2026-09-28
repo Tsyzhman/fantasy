@@ -1,11 +1,11 @@
-# WI-001: Автоматическая стратегия глобального рейтинга
+# WI-001: Automatic global ranking strategy
 
 - Kind: `implement`
-- Canon action: `direct-edit` (активация утверждённого пользователем канона)
+- Canon action: `direct-edit` (activation of a user-approved canon)
 
 ## Outcome
 
-Привязанная команда получает воспроизводимую стратегию GLOBAL_AUTO с ограничением потери EP и объяснением; непригодные данные сохраняют обычный подбор.
+Linked command gets reproducible GLOBAL_AUTO strategy with EP loss limit and explanation; unsuitable data are retained as normal selection.
 
 ## Specs
 
@@ -31,7 +31,7 @@
 
 ## Result
 
-Created local ignored `specs/.me` for `@tsyzhman` / Никита as directly authorized. FEAT-001/002 are active; code ownership and traces updated.
+Created local ignored `specs/.me` for `@tsyzhman` / Nikita as directly authorized. FEAT-001/002 are active; code ownership and traces updated.
 
 Before: ordinary selection modes without global rank, provider context or whole-plan loss bounds. After: opt-in GLOBAL_AUTO with normalized provider state, ownership sync, K and explicit EP loss budget, per-round captain/XI, constrained transfers and no-op baseline, bounded caches, authenticated context/binding/audit API, revision-aware Worker, saved strategy and explanation panel. Legacy player-pool snapshots receive provider identity through sequential refresh; missing mapping produces a visible fallback.
 

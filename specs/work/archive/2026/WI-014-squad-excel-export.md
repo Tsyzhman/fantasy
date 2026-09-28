@@ -1,29 +1,29 @@
-# WI-014 — Экспорт полного пула Squad в Excel
+# WI-014 - Export full Squad pool to Excel
 
 Kind: fix
 Canon action: none
 
 ## Outcome
-Пул Squad с более чем1000 игроков выгружается целиком в корректный XLSX.
+The Squad pool with more than 1000 players is uploaded entirely to the correct XLSX.
 
 ## Specs
-- Governing (registered legacy): docs/API_ROUTES.md
+- Governing (registered legacy): docs/reference/API_ROUTES.md
 - Constraint: spec://modules/machete/FEAT-003-squad-player-card#root
 
 ## Scope
-In: лимит строк экспорта Squad, проверка XLSX через настоящий authenticated API, regression и production.
-Out: изменение формата таблицы, состава игроков, цен, фильтров или прав доступа.
+In: Squad export line limit, XLSX verification via real authenticated API, regression and production.
+Out: Change table format, player lineup, prices, filters, or permissions.
 
 ## Acceptance
-- [x] Воспроизведён отказ текущего endpoint для1005 строк.
-- [x] Экспорт1005 строк сохраняет каждую строку и тип числовых ячеек; предел5000 остаётся ограниченным.
-- [x] Production исправлен, браузерная проверка пройдена; кэш/память проверены, Git синхронизирован.
+- [x] The failure of the current endpoint for 1005 lines has been reproduced.
+- [x] Export1005 rows preserves each row and numeric cell type; the 5000 limit remains limited.
+- [x] Production fixed, browser check passed; cache/memory checked, Git synchronized.
 
 ## Result
-Диагностика: squads/export-table ограничен1000 строк, текущий UCLpool1005; players/export-table уже поддерживает5000. Клиент отправляет полный отфильтрованный пул, сервер отвечает400; UI скрывает техническую причину общим сообщением.
+Diagnostics: squads/export-table limited to 1000 lines, current UCLpool1005; players/export-table already supports 5000. The client sends the full filtered pool, the server responds with 400; The UI hides the technical reason with a generic message.
 
-До исправления: production smoke34218629349, desktop request1005rows дважды получил400 BAD_REQUEST / rows must contain at most1000 player rows. Прогон остановлен после воспроизведения, чтобы не повторять заведомый отказ во всех viewport. В UI-тесте отдельно устранена гонка ожидания responsive controls: desktop ждёт кнопку, tablet/mobile открывают «Ещё фильтры и выгрузка».
+Before fix: production smoke34218629349, desktop request1005rows received 400 BAD_REQUEST / rows must contain at most1000 player rows twice. The run was stopped after playback so as not to repeat the deliberate failure in all viewports. In the UI test, the waiting race for responsive controls was separately eliminated: desktop waits for a button, tablet/mobile opens “More filters and uploading”.
 
-Правка runtimeaf35df1: предел5000 какв players/export-table, без обрезания строк или изменения столбцов. Локальный npmruncheck:1086pass/1skip, lint0errors/105warnings, typecheck/buildpass. После исправления теста: typecheckpass. Spec snapshotcurrent. Deploy34218839176 success; release20260908T111059Z-v0.3.65-af35df1, health0.3.65/af35df1c29877ddc9b68c7aedcdc441bb1ea9564.
+Edit runtimeaf35df1: limit 5000 as in players/export-table, without cutting rows or changing columns. Local npmruncheck:1086pass/1skip, lint0errors/105warnings, typecheck/buildpass. After fixing the test: typecheckpass. Spec snapshotcurrent. Deploy34218839176 success; release20260908T111059Z-v0.3.65-af35df1, health0.3.65/af35df1c29877ddc9b68c7aedcdc441bb1ea9564.
 
-Production34219660334: все3 API-теста прошли — 1005 строк прочитаны ExcelJS, каждая строка и числовая цена совпали,5001 отклоняется400. UI-тест ошибочно включал скрытые переводы в accessible name кнопки; исправлен includeHidden без правкиUI. Финальный34220217615 success: API и реальная кнопка скачивания прошли наdesktop/tablet/mobile, число строк скачанного файла совпадает с полным отправленным пулом. После выгрузок web379.4MiB/worker457.3MiB/Postgres946.2MiB. Экспорт не создаёт серверных файлов или кэша; локальные QAартефакты ограничены текущим прогоном.
+Production34219660334: all 3 API tests passed - 1005 rows read by ExcelJS, each row and numeric price matched, 5001 rejected 400. UI test erroneously included hidden translations in the button's accessible name; fixed includeHidden without editing UI. Final34220217615 success: API and real download button passed to desktop/tablet/mobile, the number of lines of the downloaded file coincides with the full uploaded pool. After downloading web379.4MiB/worker457.3MiB/Postgres946.2MiB. Exporting does not create server files or cache; local QA artifacts are limited to the current run.

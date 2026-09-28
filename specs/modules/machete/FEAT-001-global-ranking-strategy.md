@@ -2,154 +2,188 @@
 status: active
 ---
 
-# FEAT-001: Автоматическая стратегия глобального рейтинга {#root}
+<a name="root"></a>
 
-## Простыми словами {#plain-language}
+# FEAT-001: Automatic global ranking strategy {#root}
 
-В планировщике появляется режим «По глобальному рейтингу». Место, очки, отставание и размер поля подгружаются из Sports.ru или FPL, а подбор состава отклоняется от популярного шаблона только в пределах допустимой потери EP.
+<a name="plain-language"></a>
 
-Полный текст от 2026-09-06 сохранён ниже и в `docs/GLOBAL_STRATEGY_SPEC.md`. Канон активирован поручением пользователя; фактическая готовность реализации и evidence ведутся в WI-001.
+## Plain language {#plain-language}
 
-## 1. Цель {#goal}
+The squad planner gains a global-ranking mode, labeled `По глобальному рейтингу` in the UI. Rank, points, the gap to the leader, and field size are retrieved from Sports.ru or FPL. Squad selection departs from the popular template only within the permitted EP loss.
 
-Дать пользователю с привязанной командой воспроизводимый глобальный коэффициент K и допустимый состав с явным сравнением EP. При проблемах источника обычный подбор остаётся доступным.
+The full text dated 2026-09-06 is preserved below and in `docs/archive/planning/GLOBAL_STRATEGY_SPEC.md`. The user authorized this contract; implementation readiness and verification evidence are tracked separately in WI-001.
 
-## 2. Управляющие спеки {#governing-specs}
+<a name="goal"></a>
 
-- Related: `spec://modules/machete/FEAT-002-global-strategy-formula#root`
+## 1. Goal {#goal}
 
-## 3. Границы {#scope}
+Give the user with the linked command a reproducible global K factor and valid squad with explicit EP comparison. If there are problems with the source, the usual selection remains available.
 
-### 3.1. Входит {#scope.in}
+<a name="governing-specs"></a>
 
-Два провайдера, автоматический глобальный контекст, чистые функции K и strategyScore, применение в подборе состава, стартовой расстановке, капитане и трансферах, бюджет потери EP, объяснение и сохранение настройки.
-
-### 3.2. Не входит {#scope.out}
-
-Симуляция соперников, вероятность победы, мини-лиги, новый движок EP, автоотправка трансферов, полноценная модель effective ownership.
-
-## 4. Участники {#actors}
-
-Fantasy-пользователь с привязанным профилем Sports.ru или FPL entry. Админ не задаёт rank вручную. Клиенту нельзя прислать чужой rank или entry как персональную настройку.
-
-## 5. Сценарии {#scenarios}
-
-Пользователь включает режим вместо balanced/reliable/upside. UI показывает место, размер поля, отставание, оставшиеся туры, K, базовый и предложенный прогнозы и причину. При K=0 — «Нейтральная стратегия». При непригодных данных — обычный подбор.
-
-## 6. Данные {#data}
-
-Контекст: N, rank, очки команды и лидера, T/R, ER по не более чем 6 завершённым турам, владение того же провайдера/турнира/сезона. Модели GlobalContestStrategyState, UserGlobalStrategyState и GlobalStrategyRecommendation. Настройка — GLOBAL_AUTO в существующем JSON filters.
-
-## 7. Контракты {#contracts}
-
-Чистые функции в `src/machete/global-strategy.ts` и `src/machete/global-strategy-config.ts`. Загрузка контекста в server/global-strategy-context.ts. `GET /api/machete/squads/global-strategy`. Интеграция в `src/machete/squad_logic.ts`, worker и `FantasySquadPlanner.tsx`.
-
-`PATCH` этого маршрута привязывает только команду связанного профиля в выбранном сезоне. `POST` сохраняет компактный аудит рекомендации: сервер проверяет собственный контекст и бюджет, а присланный прогноз отмечает `CLIENT_EP_REPORTED`; это не серверная верификация прогноза. Старт и капитан выбираются отдельно для каждого тура, скамейка даёт 0 EP до появления модели автозамен. Старые снимки пула читаются обычным UI и последовательно пересобираются worker при отсутствии `providerIdentityVersion: 1`; неполный mapping отключает GLOBAL_AUTO до пересборки.
-
-## 8. Ошибки {#errors}
-
-INVALID_INPUT, INSUFFICIENT_SCORE_HISTORY, INCOMPLETE_CALENDAR, UNAVAILABLE, NEUTRAL, FINISHED. Не подставлять T=38, ER=70 или ownership=0 при отсутствии данных.
-
-## 9. Трассировка {#traceability}
-
-Точки ответственности с `@spec`: `src/server/global-strategy-providers.ts`, `src/server/global-strategy-context.ts`, `src/server/global-strategy-cache.ts`, `src/server/fpl-price-sync.ts`, `src/machete/global-strategy-planner.ts`, `src/machete/squad_logic.ts`, worker contract/handler, `src/components/machete/GlobalStrategyPanel.tsx`, API global-strategy и миграция `20260907000000_global_strategy`. Прямые contract tests расположены рядом с owning modules.
-
-## 10. Приёмка {#acceptance}
-
-- Числовые примеры из FEAT-002 проходят с допуском 1e-6.
-- 0 ≤ K ≤ Kmax; лидер даёт нейтральный режим.
-- План с отрицательным EP delta только в GLOBAL_AUTO при положительной стратегической дельте и бюджете B.
-- Старые режимы не меняются при выключенной функции.
-- Пользователь с пригодными данными получает K и состав с EP-сравнением.
-
-## 11. Связи {#relationships}
+## 2. Governing specifications {#governing-specs}
 
 - Related: `spec://modules/machete/FEAT-002-global-strategy-formula#root`
 
-## 12. История изменений {#changelog}
+<a name="scope"></a>
 
-- [2026-09-07] Канон активирован по поручению пользователя; зафиксированы точки ответственности, аудит клиентского прогноза, политика скамейки и обновление старых снимков пула.
-- [2026-09-06] Импортирован действующий канон из `docs/GLOBAL_STRATEGY_SPEC.md`.
+## 3. Scope {#scope}
 
-## Исходный документ
+<a name="scope.in"></a>
 
-Исторический текст на дату импорта; статус выполнения сверяется с WI-001.
+### 3.1. In scope {#scope.in}
 
-# Спецификация: автоматическая стратегия глобального рейтинга
+Two providers, automatic global context, pure K and strategyScore functions, application in squad selection, starting lineup, captain and transfers, EP loss budget, explanation and saving of settings.
 
-Дата: 2026-09-06. Статус: готово к реализации; код функции и миграции пока не созданы.
+<a name="scope.out"></a>
 
-Связанное обоснование и формулы: [GLOBAL_STRATEGY_FORMULA_RECOMMENDATIONS.md](GLOBAL_STRATEGY_FORMULA_RECOMMENDATIONS.md).
+### 3.2. Out of scope {#scope.out}
 
-## 1. Результат для пользователя
+Simulation of opponents, probability of victory, mini-leagues, new EP engine, automatic sending of transfers, full-fledged effective ownership model.
 
-В планировщике появляется режим «По глобальному рейтингу». Пользователь привязывает профиль Sports.ru либо FPL entry, выбирает существующий турнир/сезон и включает режим. Размер поля, место, очки, отставание, владение и оставшиеся туры загружаются автоматически. Ручной ввод этих показателей и мини-лиги не нужны.
+<a name="actors"></a>
 
-При подборе показываются:
+## 4. Participants and triggers {#actors}
 
-- глобальное место и размер поля;
-- очки команды и отставание от лидера;
-- оставшиеся доступные туры;
-- интенсивность стратегии K/Kmax, отдельно от вероятностей;
-- базовый и предложенный прогнозы, ожидаемая потеря, разрешённый предел;
-- дата данных и краткая причина рекомендации.
+Fantasy-user with a linked Sports.ru profile or FPL entry. The admin does not set rank manually. The client cannot be sent someone else’s rank or entry as a personal setting.
 
-Пример: «250 из 500 · отставание 100 · осталось 3 тура. Прогноз состава: 69.4; базовый вариант: 70.0; уступает 0.6 очка. Выбран менее популярный состав в пределах допустимой потери».
+<a name="scenarios"></a>
 
-При K=0 выводить «Нейтральная стратегия». Не обещать защиту первого места или вероятность победы. Режим выбирается вместо balanced/reliable/upside, а не добавляется поверх их эвристик. Существующие режимы при выключенной функции сохраняют поведение.
+## 5. Scenarios {#scenarios}
 
-## 2. Границы первой версии
+The user enables the mode instead of balanced/reliable/upside. The UI shows the location, field size, backlog, remaining rounds, K, base and suggested predictions and reason. When K=0 - “Neutral strategy”. If the data is unsuitable, use the usual selection.
 
-Входит: два провайдера; автоматический глобальный контекст; отдельные конфигурации; чистые функции K и strategyScore; единое применение в подборе состава, стартовой расстановки, капитана и трансферов; ограничение потери EP; объяснение; сохранение настройки; проверка качества данных.
+<a name="data"></a>
 
-Не входит: симуляция всех соперников, вероятность итоговой победы, мини-лиги, новый движок EP, автоматическая отправка трансферов на сайт провайдера, самостоятельное изменение доступных бонусов, полноценная модель эффективного владения. Текущий транспорт экспорта/сохранения состава не расширяется этой функцией.
+## 6. Data and state {#data}
 
-Основной математический режим — ограниченное отклонение от глобального шаблона с учётом отставания от лидера. Название и аналитика не должны подменять его максимизацией ожидаемого ранга.
+Context: N, rank, team and leader points, T/R, ER for no more than 6 completed rounds, ownership of the same provider/tournament/season. GlobalContestStrategyState, UserGlobalStrategyState and GlobalStrategyRecommendation models. The setting is GLOBAL_AUTO in existing JSON filters.
 
-## 3. Источники данных
+<a name="contracts"></a>
+
+## 7. Contracts {#contracts}
+
+Pure functions in `src/machete/global-strategy.ts` and `src/machete/global-strategy-config.ts`. Loading the context into server/global-strategy-context.ts. `GET /api/machete/squads/global-strategy`. Integration into `src/machete/squad_logic.ts`, worker and `FantasySquadPlanner.tsx`.
+
+`PATCH` of this route binds only the team of the associated profile in the selected season. `POST` maintains a compact recommendation audit: the server checks its own context and budget, and the sent forecast marks `CLIENT_EP_REPORTED`; This is not server-side verification of the forecast. The start and captain are selected separately for each round, the bench gives 0 EP until the auto-replacement model appears. Old pool snapshots are read by the regular UI and are sequentially rebuilt by workers in the absence of `providerIdentityVersion: 1`; incomplete mapping disables GLOBAL_AUTO until rebuilding.
+
+<a name="errors"></a>
+
+## 8. Errors and validation {#errors}
+
+INVALID_INPUT, INSUFFICIENT_SCORE_HISTORY, INCOMPLETE_CALENDAR, UNAVAILABLE, NEUTRAL, FINISHED. Do not substitute T=38, ER=70 or ownership=0 if data is missing.
+
+<a name="traceability"></a>
+
+## 9. Implementation traceability {#traceability}
+
+Points of responsibility with `@spec`: `src/server/global-strategy-providers.ts`, `src/server/global-strategy-context.ts`, `src/server/global-strategy-cache.ts`, `src/server/fpl-price-sync.ts`, `src/machete/global-strategy-planner.ts`, `src/machete/squad_logic.ts`, worker contract/handler, `src/components/machete/GlobalStrategyPanel.tsx`, API global-strategy and migration `20260907000000_global_strategy`. Direct contract tests are located next to owning modules.
+
+<a name="acceptance"></a>
+
+## 10. Acceptance criteria {#acceptance}
+
+- Numerical examples from FEAT-002 pass to tolerance 1e-6.
+- 0 ≤ K ≤ Kmax; the leader gives neutral mode.
+- Plan with negative EP delta only in GLOBAL_AUTO with positive strategic delta and budget B.
+- Old modes do not change when the function is disabled.
+- The user with suitable data receives K and squad with EP comparison.
+
+<a name="relationships"></a>
+
+## 11. Related specifications {#relationships}
+
+- Related: `spec://modules/machete/FEAT-002-global-strategy-formula#root`
+
+<a name="changelog"></a>
+
+## 12. Changelog {#changelog}
+
+- 2026-09-28: English documentation, repaired document references, and GitHub navigation anchors (WI-039).
+
+- [2026-09-07] Canon activated on behalf of the user; Responsibility points, client forecast audit, bench policy and updating of old pool snapshots are recorded.
+- [2026-09-06] Imported the current canon from `docs/archive/planning/GLOBAL_STRATEGY_SPEC.md`.
+
+## Source document
+
+Historical text as of import date; The execution status is checked against WI-001.
+
+# Specification: Automatic global ranking strategy
+
+Date: 2026-09-06. Status: ready for implementation; The function code and migrations have not yet been created.
+
+Related rationale and formulas: [GLOBAL_STRATEGY_FORMULA_RECOMMENDATIONS.md](../../../docs/archive/planning/GLOBAL_STRATEGY_FORMULA_RECOMMENDATIONS.md).
+
+## 1. Result for the user
+
+The “By Global Rating” mode appears in the scheduler. The user links the Sports.ru profile or FPL entry, selects an existing tournament/season and turns on the mode. Field size, place, points, gap, possession and remaining rounds are loaded automatically. Manual entry of these indicators and mini-leagues are not needed.
+
+When selecting, the following are shown:
+
+- global place and field size;
+- team points and gap from the leader;
+- remaining available rounds;
+- strategy intensity K/Kmax, separate from probabilities;
+- base and proposed forecasts, expected loss, allowed limit;
+- date of data and brief reason for recommendation.
+
+Example: “250 from 500 · backlog of 100 · remaining 3 of the round. squad forecast: 69.4; basic version: 70.0; inferior to 0.6 points. A less popular squad was chosen within the acceptable loss.”
+
+When K=0 display “Neutral strategy”. Do not promise protection of first place or probability of victory. The mode is chosen instead of balanced/reliable/upside, rather than being added on top of their heuristics. Existing modes retain their behavior when the function is disabled.
+
+## 2. Limits of the first version
+
+Included: two providers; automatic global context; individual configurations; pure functions K and strategyScore; uniform application in the selection of the squad, starting lineup, captain and transfers; limiting EP loss; explanation; saving settings; data quality check.
+
+Not included: simulation of all opponents, probability of final victory, mini-leagues, new EP engine, automatic sending of transfers to the provider’s website, independent change of available bonuses, full-fledged effective ownership model. The current squad export/save transport is not extended by this feature.
+
+The main mathematical mode is a limited deviation from the global pattern, taking into account the lag from the leader. The title and analytics should not replace it with maximizing the expected rank.
+
+## 3. Data sources
 
 ### Sports.ru
 
-Использовать существующий клиент `src/lib/providers/sports-ru-fantasy.ts`, расширив DTO и запросы чтения:
+Use existing client `src/lib/providers/sports-ru-fantasy.ts`, extending DTO and read queries:
 
-1. Профиль пользователя → `fantasyQueries.squads(input: {userID, isActiveTournament:true})`. Выбрать squad строго по привязанному providerSquadId и seasonID. При нескольких подходящих командах без явной привязки попросить выбрать команду, не выбирать произвольно.
-2. `squads(input:{squadID,seasonID}) → seasonScoreInfo {place score totalPlaces}` — персональная позиция. Запрос проверен живым ответом.
-3. `tournament(...).currentSeason {id totalSquadsCount tours {...}}` — сезон и календарь.
-4. `rating.squads(input:{entityID:seasonID,entityType:SEASON,sortOrder:DESC,pageSize:2,pageNum:1})` → `scoreInfo {place score totalPlaces}` — лидер и второй. Не передавать leagueID. Сохранять timestamp; не сохранять имена соперников, если они не нужны.
-5. Владение — существующий `seasonPlayer.status.selectedBy`, привязка по providerPlayerId. Использовать тот же турнир и сезон, не Foontasy как первичный источник стратегии.
-6. Официальные очки завершённых туров — `squadTourInfo(input:{squadID,tourID}).scoreInfo.score`. Наличие поля подтверждено схемой; до реализации ER проверить живые значения для завершённых туров и их семантику. Не принимать `seasonScoreInfo.averageScore=0` за достоверное среднее.
+1. User profile → `fantasyQueries.squads(input: {userID, isActiveTournament:true})`. Select a squad strictly according to the linked providerSquadId and seasonID. If there are several suitable commands without an explicit link, ask to select a command, do not choose arbitrarily.
+2. `squads(input:{squadID,seasonID}) → seasonScoreInfo {place score totalPlaces}` - personal position. The request has been verified by a live response.
+3. `tournament(...).currentSeason {id totalSquadsCount tours {...}}` - season and calendar.
+4. `rating.squads(input:{entityID:seasonID,entityType:SEASON,sortOrder:DESC,pageSize:2,pageNum:1})` → `scoreInfo {place score totalPlaces}` - leader and second. Don't pass leagueID. Save timestamp; do not save the names of opponents if they are not needed.
+5. Ownership - existing `seasonPlayer.status.selectedBy`, binding by providerPlayerId. Use the same tournament and season, not Foontasy as the primary source of strategy.
+6. Official points of completed rounds - `squadTourInfo(input:{squadID,tourID}).scoreInfo.score`. The presence of the field is confirmed by the schema; Before implementing ER, check the live values ​​for completed rounds and their semantics. Do not take `seasonScoreInfo.averageScore=0` as a reliable average.
 
-`totalSquadsCount` и `totalPlaces` могут иметь разную семантику включения команд до первого результата. N должен соответствовать рейтингу: приоритет у totalPlaces из согласованного рейтингового среза. Второе число — диагностическое, не заменять им N без проверки.
+`totalSquadsCount` and `totalPlaces` may have different semantics for including commands before the first result. N must correspond to the rating: totalPlaces from the agreed rating slice takes precedence. The second number is diagnostic; do not replace N with it without checking.
 
 ### FPL
 
-1. `/api/bootstrap-static/`: total_players, элементы с selected_by_percent, events и average_entry_score.
-2. `/api/entry/{entryId}/`: summary_overall_rank, summary_overall_points, current_event; глобальную лигу определять по системной записи Overall. ID 314 подтверждён на дату исследования, не считать его универсальной вечной константой.
-3. `/api/leagues-classic/{overallLeagueId}/standings/`: первая страница, rank=1 и total лидера, last_updated_data. Весь многомиллионный рейтинг не загружать.
-4. `/api/entry/{entryId}/history/`: завершённые туры команды для масштаба очков. Расширить клиент и точный allowlist `scripts/fpl-vpn-relay.mjs` для standings/history. Не ослаблять проверку origin и произвольных путей. Standings подтверждён веб-запросом; серверный путь через relay проверяется при реализации после добавления разрешённого маршрута.
-5. Исправить create и update цен в `src/server/fpl-price-sync.ts`, записывая selectedByPercent. Обновить версию формата синхронизации, если дедупликация по snapshot/hash иначе пропустит восстановление. Существующие данные восстановить обычной успешной синхронизацией; проверить 653/653 либо актуальный размер пула, не зашивать 653 в код.
+1. `/api/bootstrap-static/`: total_players, items with selected_by_percent, events and average_entry_score.
+2. `/api/entry/{entryId}/`: summary_overall_rank, summary_overall_points, current_event; The global league is determined by the Overall system record. ID 314 is confirmed as of the research date, do not consider it a universal eternal constant.
+3. `/api/leagues-classic/{overallLeagueId}/standings/`: first page, rank=1 and total leader, last_updated_data. Do not download the entire multimillion-dollar rating.
+4. `/api/entry/{entryId}/history/`: completed team rounds for score scale. Expand client and exact allowlist `scripts/fpl-vpn-relay.mjs` for standings/history. Do not weaken the verification of origin and arbitrary paths. Standings confirmed by web request; the server path through relay is checked during implementation after adding the allowed route.
+5. Fix create and update prices in `src/server/fpl-price-sync.ts` by writing selectedByPercent. Update sync format version if snapshot/hash deduplication will otherwise skip recovery. Existing data can be restored by normal successful synchronization; check 653/653 or the current pool size, do not include 653 in the code.
 
-### Общие правила
+### General rules
 
-Нужны явные provider, contestId, season, entry/squad ID, источник и время каждого компонента. Проценты допускаются только конечные в [0,100]; 0 допустим. Владение FPL нельзя брать из Sports.ru EPL. Обычное владение и капитанская экспозиция — разные показатели.
+We need explicit provider, contestId, season, entry/squad ID, source and time of each component. Only finite percentages are allowed in [0,100]; 0 is acceptable. FPL ownership cannot be taken from Sports.ru EPL. Normal ownership and captain exposure are different metrics.
 
-Лидер, очки команды и rank относятся к одной стадии пересчёта. Предпочтение — официальный завершённый тур. Во время пересчёта не смешивать старый rank с live points. Если согласованность подтвердить нельзя, K не вычисляется; стандартный подбор остаётся доступным. Для каждого адаптера определить contract test временной согласованности на сохранённом обезличенном ответе.
+Leader, team points and rank refer to the same stage of recalculation. Official completed round preferred. During the recalculation, do not mix the old rank with live points. If consistency cannot be confirmed, K is not calculated; standard selection remains available. For each adapter, define a contract test for temporal consistency on the stored anonymized response.
 
-## 4. ER и календарь
+## 4. ER and calendar
 
-ER — среднее официальных очков привязанной команды за последние не более 6 завершённых туров участия. Использовать одинаковую политику у двух провайдеров; хранить sampleCount и usedRoundIds. Тур, в котором команда набрала 0, — наблюдение, а не пропуск. Отрицательные значения не выбрасывать ради положительного среднего. Нет наблюдений или среднее ≤0 — `INSUFFICIENT_SCORE_HISTORY`; не подставлять 70 молча. При 1–2 наблюдениях показать малую выборку, но разрешить вычисление; раннесезонное u само сильно ограничивает K. Эта оценка — шкала, а не прогноз будущих очков и не средняя дисперсия поля.
+ER - the average of official points of the linked team for the last no more than 6 completed rounds of participation. Use the same policy for two providers; store sampleCount and usedRoundIds. The round in which the team scored 0 is an observation, not a pass. Do not throw out negative values ​​for the sake of a positive average. No observations or average ≤0 - `INSUFFICIENT_SCORE_HISTORY`; do not substitute 70 silently. For 1–2 observations, show a small sample, but allow calculation; the early-season u itself severely limits K. This estimate is a scale, not a prediction of future points, nor is it the average variance of the field.
 
-FPL average_entry_score хранить для последующей проверки/калибровки; не менять источник ER незаметно в середине сезона. Собственные сыгранные бонусы могут влиять на ER; в первой версии это отражённое ограничение. Позже источник шкалы или исключение бонусных туров меняются только новой версией профиля.
+FPL average_entry_score to store for later verification/calibration; do not change the ER source unnoticed mid-season. Own played bonuses can affect ER; in the first version this is a reflected limitation. Later, the source of the scale or the exclusion of bonus rounds is changed only by the new version of the profile.
 
-T — полное число туров текущего глобального зачёта, включая ещё не сыгранные; R — количество туров этого зачёта с ещё доступным дедлайном решения. Ровно в deadlineAt тур уже недоступен. Двойной тур FPL — один gameweek, не два матча. Пустой тур существует в календаре, не исчезает из-за отсутствия матчей у выбранного футболиста. Если дедлайн прошёл, текущий незавершённый тур в R не входит.
+T — the total number of rounds of the current global standings, including those not yet played; R is the number of rounds of this competition with a still available solution deadline. Exactly at deadlineAt the round is no longer available. FPL double round - one gameweek, not two matches. An empty round exists in the calendar and does not disappear due to the lack of matches for the selected player. If the deadline has passed, the current unfinished round is not included in R.
 
-Для будущего планирования все последующие R считаются относительно соответствующего дедлайна, но текущий K в первой версии фиксируется на момент запроса: не выдумывать будущий rank/G. Показывать, что это стратегия по текущему положению.
+For future planning, all subsequent R are considered relative to the corresponding deadline, but the current K in the first version is fixed at the time of the request: do not invent a future rank/G. Show that this is a strategy for the current situation.
 
-В Sports.ru нельзя считать последние известные 8 туров ЛЧ полным турниром, пока не подтверждено, что именно ими ограничен зачёт. Календарная политика задаётся по турниру и фазе. При неизвестном T — `INCOMPLETE_CALENDAR`; этот турнир не получает автоматический K до добавления достоверной политики. Никакого T=38 по умолчанию для всех.
+Sports.ru cannot consider the last known 8 rounds of the Champions League a full tournament until it is confirmed that the standings are limited to them. The calendar policy is set by tournament and phase. For unknown T - `INCOMPLETE_CALENDAR`; this tournament does not receive an automatic K until a valid policy is added. No default T=38 for everyone.
 
-## 5. Контракт вычислительного ядра
+## 5. Compute Core Contract
 
-Предлагаемые новые файлы: `src/machete/global-strategy.ts`, `src/machete/global-strategy-config.ts`. Чистые функции без Prisma, fetch, глобального кэша, Date.now и изменения входных объектов.
+Suggested new files: `src/machete/global-strategy.ts`, `src/machete/global-strategy-config.ts`. Pure functions without Prisma, fetch, global cache, Date.now and modification of input objects.
 
 ```ts
 type Provider = "SPORTS_RU" | "FPL";
@@ -203,111 +237,111 @@ scoreGlobalStrategyPlayer({ expectedPoints, ownershipPercent }, evaluation, conf
 evaluateGlobalStrategyPlan({ baseline, candidate }, evaluation, config);
 ```
 
-Сигнатуры последних трёх функций уточнить типами при реализации; обязательная семантика:
+The signatures of the last three functions should be specified by types during implementation; required semantics:
 
-- `now` передаётся снаружи; freshness проверяется детерминированно.
-- INVALID_INPUT: дробные/небезопасные rank/N/R/T, rank вне [1,N], R вне [0,T], NaN/Infinity, неположительный ER, несовпадающий профиль/провайдер/турнир, отрицательный G, rank=1 при положительном G. Непригодные входы не «исправлять» произвольным clamp.
-- N≤1 при согласованных rank и очках — NEUTRAL; R=0 — FINISHED; лидер/G=0 — NEUTRAL. Для корректного однодневного T=1,R=1 без сыгранных туров — NEUTRAL, поскольку ещё нет позиции сезона для адаптации.
-- READY: формулы q/g/u/K из рекомендаций. Конфигурация валидируется один раз, но ядро не доверяет невалидным числам.
-- UNAVAILABLE возвращает k=null и конкретную причину; это не числовой нулевой риск. Подбор по умолчанию запускает существующий balanced.
-- scoreGlobalStrategyPlayer возвращает `{expectedPoints, strategyBonus, strategyScore}`; исходный expectedPoints не изменяется.
-- evaluateGlobalStrategyPlan возвращает `{eligible, expectedPointsLoss, maxExpectedPointsLoss, strategyScoreDelta, reasonCodes}`.
-- Расчёты не округлять до отображения; погрешность сравнения бюджета ≤1e-6 очка, не использовать округлённые UI-числа.
+- `now` is transmitted externally; freshness is checked deterministically.
+- INVALID_INPUT: fractional/unsafe rank/N/R/T, rank out [1,N], R out [0,T], NaN/Infinity, non-positive ER, non-matching profile/provider/tournament, negative G, rank=1 at positive G. Unusable inputs cannot be “corrected” with an arbitrary clamp.
+- N≤1 with agreed rank and points - NEUTRAL; R=0 - FINISHED; leader/G=0 - NEUTRAL. For a correct one-day T=1,R=1 without played rounds - NEUTRAL, since there is no season position for adaptation yet.
+- READY: formulas q/g/u/K from recommendations. The configuration is validated once, but the kernel does not trust invalid numbers.
+- UNAVAILABLE returns k=null and a specific reason; it is not a numerical zero risk. The default selection runs the existing balanced.
+- scoreGlobalStrategyPlayer returns `{expectedPoints, strategyBonus, strategyScore}`; the original expectedPoints is not changed.
+- evaluateGlobalStrategyPlan returns `{eligible, expectedPointsLoss, maxExpectedPointsLoss, strategyScoreDelta, reasonCodes}`.
+- Calculations do not round before display; budget comparison error ≤1e-6 points, do not use rounded UI numbers.
 
-## 6. Оптимизация и трансферы
+## 6. Optimization and transfers
 
-1. Зафиксировать источник EP и горизонт H: в обоих проходах использовать одну выбранную формулу/консенсус. Для FFO H=1, если последующих прогнозов нет. K не меняет прогнозный движок.
-2. Получить базовое решение по сумме ожидаемых очков при тех же бюджете, позициях, командных лимитах, фиксациях, исключениях, правилах и доступных трансферах. Убрать из этого нового базового прохода старые ownership/upside/form bonuses; отдельные старые режимы оставить как есть.
-3. Получить стратегические кандидаты по сумме strategyScore. Бонус считается на уровне player-round и получает тот же множитель старта/капитанства, что и соответствующий EP. Учёт скамейки совпадает с базовым оценщиком и документируется; не считать все 15 игроков стартовыми. Если нет модели автозамен, не обещать точный EP скамейки.
-4. Оценить реальные EP каждого итогового решения заново после выбора XI/капитана. Проверить бюджет B из рекомендаций. Капитан следующего тура использует EP следующего тура, не сумму за H туров. Для multi-round планов капитанство и старт учитываются по каждому туру; если будущий план не задан, применять одинаковую явно зафиксированную политику в обоих проходах.
-5. Базовое решение всегда включать в набор финальных кандидатов. Выбрать допустимый максимум strategyScore; при равенстве — больше EP, меньше штраф трансферов, меньше ходов, стабильный порядок ID. Стратегическая дельта должна быть строго положительна сверх погрешности, иначе базовое решение.
-6. Для трансферов B считается относительно лучшего доступного плана, включая «ничего не менять», по полному EP состава после штрафов. Считать разность бонусов входящих и выходящих, а не бонус только купленных. Это устраняет мотивацию бессмысленного обмена двух одинаково редких игроков.
-7. Неположительный netHorizonDelta разрешается только в новом режиме, если план прошёл B и улучшил стратегическую оценку. Изменить ранние отсеивания около строк 1987 и 2016 `squad_logic.ts`; в старых режимах они сохраняются. Предупреждение о потере очков должно оставаться видимым.
-8. Нельзя начислять исходные ownershipEdgeValue и бонус transferCandidateScore поверх нового бонуса. Новый режим использует один источник стратегии и единый контекст также для капитана и XI.
-9. Ранний отбор восьми кандидатов на позицию сейчас может потерять нужные варианты. Формировать ограниченное объединение кандидатов по EP и strategyScore, включая базовое решение и зафиксированных игроков. Не увеличивать пространство перебора без лимита; для v1 ограничить список до 16 на позицию и сохранить общий лимит 120 000 оценок трансферных комбинаций. При достижении лимита указать searchTruncated=true.
-10. Текущий поиск эвристический. Базовый EP — лучший найденный в ограниченном поиске, не доказанный глобальный максимум. Среди финального объединения кандидатов переопределить базу как максимум истинного EP и повторно проверить B; иначе найденный стратегическим проходом более сильный базовый вариант останется неучтённым. Любое прекращение поиска возвращает лучший допустимый вариант, включая базовый.
+1. Fix source EP and horizon H: use one selected formula/consensus in both passes. For FFO H=1 if there are no subsequent forecasts. K does not change the forecast engine.
+2. Get a basic solution for the total expected points with the same budget, positions, team limits, fixations, exceptions, rules and available transfers. Remove old ownership/upside/form bonuses from this new basic pass; Leave some old regimes as they are.
+3. Get strategic candidates by strategyScore. The bonus is considered at the player-round level and receives the same start/captainship multiplier as the corresponding EP. The bench accounting is the same as the base estimator and is documented; do not count all 15 players as starting ones. If there is no autocorrect model, do not promise the exact bench EP.
+4. Evaluate the real EPs of each final decision again after selecting the XI/captain. Check budget B from recommendations. The captain of the next round uses the EP of the next round, not the amount for H rounds. For multi-round plans, captaincy and start are taken into account for each round; if no future plan is specified, apply the same explicit policy in both passes.
+5. The basic solution is to always include the final candidates in the set. Select the allowed maximum strategyScore; in case of equality - more EP, less transfer penalty, fewer moves, stable ID order. The strategic delta must be strictly positive beyond the error, otherwise the basic solution.
+6. For transfers B is considered relative to the best available plan, including “change nothing”, based on the full EP of the roster after penalties. Count the difference between incoming and outgoing bonuses, and not the bonus of only purchased ones. This removes the motivation for meaninglessly trading two equally rare players.
+7. Non-positive netHorizonDelta is only allowed in the new mode if the plan passes B and improves the strategic assessment. Change early eliminations near the lines 1987 and 2016 `squad_logic.ts`; in old modes they are preserved. The Lost Points warning must remain visible.
+8. You cannot add the original ownershipEdgeValue and transferCandidateScore bonus on top of the new bonus. The new mode uses one source of strategy and a single context for the captain and XI as well.
+9. Early selection of eight candidates for the position now may lose the necessary options. Form a limited pool of candidates based on EP and strategyScore, including the basic solution and fixed players. Do not increase the search space without a limit; for v1, limit the list to 16 per position and maintain the overall limit of 120 000 transfer combination evaluations. When the limit is reached, specify searchTruncated=true.
+10. The current search is heuristic. Base EP is the best found in a limited search, not a proven global maximum. Among the final candidate union, redefine the base as the maximum of the true EP and retest B; otherwise, the stronger basic option found by the strategic passage will remain unaccounted for. Any termination of the search returns the best valid option, including the base one.
 
-Обычное владение для капитана — приближение глобального шаблона. Не называть его effective ownership. Бонус редкости не отменяет ограничений по минутам/доступности, установленных пользователем; новые произвольные медицинские или стартовые фильтры в этот режим не добавлять.
+A common possession for a captain is an approximation of a global template. Don't call it effective ownership. The rarity bonus does not override user-set minute/availability restrictions; Do not add new arbitrary medical or start filters to this mode.
 
-## 7. Интеграция в существующий проект
+## 7. Integration into an existing project
 
-| Файл/слой | Изменение |
+| File/layer | Change |
 |---|---|
-| `src/lib/providers/sports-ru-fantasy.ts` | DTO и ограниченные запросы глобального рейтинга/очков |
-| `src/lib/providers/fpl.ts` | DTO profile/history/standings, разбор total_players и завершённых туров |
-| `src/server/fpl-price-sync.ts` | Сохранение selectedByPercent, восстановление через sync |
-| `scripts/fpl-vpn-relay.mjs` | Точные разрешённые пути standings/history |
-| новый server/global-strategy-context.ts | Загрузка, согласование, freshness и нормализация контекста |
-| `src/machete/squad_logic.ts` | K и оценка планов во всех перечисленных точках подбора |
-| `fantasy-squad-worker-contract.ts` и handler | Передача компактного контекста и версии, единый результат |
-| `FantasySquadPlanner.tsx` | Новый режим, данные позиции, объяснение и сравнение EP |
-| API squads и сохранение filters | Явная разрешённая настройка режима, чтение/сохранение без потери остальных filters |
+| `src/lib/providers/sports-ru-fantasy.ts` | DTO and limited global ranking/point requests |
+| `src/lib/providers/fpl.ts` | DTO profile/history/standings, analysis of total_players and completed rounds |
+| `src/server/fpl-price-sync.ts` | Saving selectedByPercent, restoring via sync |
+| `scripts/fpl-vpn-relay.mjs` | Exact allowed paths standings/history |
+| new server/global-strategy-context.ts | Loading, reconciliation, freshness and context normalization |
+| `src/machete/squad_logic.ts` | K and evaluation of plans at all listed selection points |
+| `fantasy-squad-worker-contract.ts` and handler | Passing compact context and version, single result |
+| `FantasySquadPlanner.tsx` | New mode, position data, explanation and comparison EP |
+| API squads and saving filters | Explicit allowed mode setting, reading/saving without losing other filters |
 
-Предлагаемый read endpoint: `GET /api/machete/squads/global-strategy?squadId=...`. Авторизация как у squads; проверка владельца локального состава; provider/contest/entry определять по сохранённой привязке. Не доверять присланному клиентом rank, очкам или произвольному чужому entry при запросе персональной настройки. Ответ содержит только нормализованные данные, status/reasons и configVersion, не сырой профиль с именем/контактами.
+Suggested read endpoint: `GET /api/machete/squads/global-strategy?squadId=...`. Authorization is the same as for squads; checking the owner of the local squad; provider/contest/entry is determined by the saved binding. Do not trust the rank, points or arbitrary entry sent by the client when requesting personal settings. The response contains only normalized data, status/reasons and configVersion, not the raw profile with name/contacts.
 
-В состояние Worker включить contextRevision, configVersion, poolRevision, forecastSource и H. При смене состава/провайдера/пула или новом запросе старый ответ игнорировать; отменять устаревшую работу существующим механизмом. Пересчёт K сам по себе не запускает повторную загрузку всего пула игроков.
+Include contextRevision, configVersion, poolRevision, forecastSource and H in the Worker state. When changing squad/provider/pool or a new request, ignore the old response; override obsolete work with existing machinery. Recalculating K does not by itself trigger a reload of the entire player pool.
 
-## 8. Хранение, кэш, дубли и память
+## 8. Storage, cache, duplicates and memory
 
-Разделить общую и персональную часть:
+Separate the general and personal parts:
 
-- GlobalContestStrategyState: одна актуальная запись на provider/contestId/season, поля N, очки лидера, стадия рейтинга, T/R/calendarRevision, timestamps и sourceRevision. Локальная логика freshness не изменяет календарь провайдера.
-- UserGlobalStrategyState: одна актуальная запись на userId/contestId/providerSquadId/season, rank/points, история не более 6 значений для ER, ссылка на согласованный общий revision и timestamps. При новой привязке предыдущий контекст не переиспользуется.
-- Настройка пользователя: режим GLOBAL_AUTO в существующем JSON filters; не сохранять K как первичный источник истины. Обновление объединяет ключи, не стирает roundPlans и пользовательские формулы.
+- GlobalContestStrategyState: one current entry per provider/contestId/season, N fields, leader points, rating stage, T/R/calendarRevision, timestamps and sourceRevision. Local freshness logic does not change the provider's calendar.
+- UserGlobalStrategyState: one current entry per userId/contestId/providerSquadId/season, rank/points, history of no more than 6 values ​​for ER, link to the agreed general revision and timestamps. The new binding does not reuse the previous context.
+- User setting: GLOBAL_AUTO mode in existing JSON filters; not retain K as the primary source of truth. The update merges keys and does not erase roundPlans and custom formulas.
 
-Это предлагаемые новые Prisma-модели, а не уже существующие таблицы. Добавить уникальные ключи и миграцию. Не дублировать цену, владение и player pool в этих записях. Повторная загрузка одного среза — upsert; обновление общей/персональной частей публикуется только после проверки согласованности. Если источник не даёт общего revision, использовать его доступные timestamps/round IDs и проверку последовательного чтения; отсутствие согласованного среза обозначать явно.
+These are proposed new Prisma models, not existing tables. Add unique keys and migration. Do not duplicate price, ownership and player pool in these entries. Reloading one slice - upsert; updates to the general/personal parts are published only after consistency has been checked. If the source does not provide a general revision, use its available timestamps/round IDs and sequential reading check; the absence of an agreed cut is clearly indicated.
 
-Кэш в памяти через ExpiringPromiseCache:
+In-memory cache via ExpiringPromiseCache:
 
-- общий контекст: до 32 записей / 1 MiB, TTL 15 минут вне live-пересчёта, 5 минут при обновлении тура;
-- персональный: до 256 записей / 2 MiB, TTL 5 минут;
-- общий предел параллельных новых запросов рейтинга — 2 на провайдера; одинаковые ключи объединять в один promise;
-- retry: не более одного на временную сетевую ошибку, с задержкой и без бесконечного цикла; 429 обрабатывать по Retry-After и показывать доступное состояние;
-- старые данные можно показать с датой, но после expiresAt новый стратегический результат не строить. Deadline rollover инвалидирует соответствующий ключ независимо от TTL;
-- ownershipRevision, forecastRevision, contextRevision и configVersion входят в ключ результата подбора. Результаты по персональному K не кладутся в общий кэш игрока;
-- существующие ограничения общих пулов 96 MiB и overlay 32 MiB, а также retention 3 revisions сохраняются.
+- general context: up to 32 records / 1 MiB, TTL 15 minutes outside of live recalculation, 5 minutes when updating the round;
+- personal: up to 256 records / 2 MiB, TTL 5 minutes;
+- total limit of concurrent new rating requests - 2 per provider; combine identical keys into one promise;
+- retry: no more than one per temporary network error, with delay and without an infinite loop; 429 process by Retry-After and show the available state;
+- old data can be shown with a date, but after expiresAt a new strategic result cannot be built. Deadline rollover invalidates the corresponding key regardless of TTL;
+- ownershipRevision, forecastRevision, contextRevision and configVersion are included in the selection result key. Personal K results are not added to the player’s general cache;
+- existing shared pool restrictions 96 MiB and overlay 32 MiB, as well as retention 3 revisions are preserved.
 
-Для будущей проверки сохранять компактный снимок фактически выполненной рекомендации с source revisions, ID игроков/множителями, baseline/candidate EP, K и loss budget. Дедупликация по user/squad/decisionRound/inputHash/configVersion; хранить последние 60 дней. Полные исторические данные для исследования экспортировать отдельно по явной задаче; не накапливать ежедневные копии всех игроков на каждого пользователя.
+For future verification, save a compact snapshot of the actually implemented recommendation with source revisions, player IDs/multipliers, baseline/candidate EP, K and loss budget. Deduplication by user/squad/decisionRound/inputHash/configVersion; store the last 60 days. Export complete historical data for the study separately by explicit task; Do not accumulate daily copies of all players for each user.
 
-При реализации измерить память до/после повторных запросов и проверить стабилизацию после eviction/TTL. По одному RSS-снимку нельзя утверждать отсутствие утечки. Не очищать рабочие пользовательские данные ради этой функции.
+When implementing, measure memory before/after repeated requests and check stabilization after eviction/TTL. One RSS snapshot cannot confirm the absence of a leak. Do not clear operational user data for this feature.
 
-## 9. Тесты и критерии приёмки
+## 9. Tests and acceptance criteria
 
-Математика:
+Mathematics:
 
-- Проверить все пять числовых примеров из рекомендаций с допуском 1e-6.
-- При прочих равных ухудшение rank, рост G, уменьшение R не уменьшают K; 0≤K≤Kmax для N=500 и N=10 506 303.
-- Лидер/равенство по очкам, N=1, R=0, начало сезона, T=1, ничьи rank, ошибочные числа, отрицательный G, отсутствие ER.
-- O=0/100 валидны; null и значение вне диапазона не дают надбавку и блокируют GLOBAL_AUTO для конкретного набора кандидатов. Обычный EP-подбор при этом доступен.
-- EP=0/отрицательный не получает положительный bonus. Формулы не мутируют входы, повторный вызов даёт тот же результат.
+- Check all five numerical examples from the recommendations with tolerance 1e-6.
+- All other things being equal, deterioration of rank, increase in G, decrease in R do not reduce K; 0≤K≤Kmax for N=500 and N=10 506 303.
+- Leader/tied on points, N=1, R=0, start of season, T=1, tied rank, wrong numbers, negative G, no ER.
+- O=0/100 are valid; null and out-of-range values ​​do not give a premium and block GLOBAL_AUTO for a particular set of candidates. The usual EP selection is available.
+- EP=0/negative does not receive a positive bonus. Formulas do not mutate inputs; repeated calls give the same result.
 
-Интеграция и оптимизация:
+Integration and optimization:
 
-- Одинаковый футболист в FPL и Sports.ru получает свой provider context, EP и ownership. Несовпадение провайдера не исправляется fallback на другой.
-- FPL selectedByPercent сохраняется и в create, и в update; повторный sync не создаёт дублей, а восстановление не пропускается из-за старого hash.
-- Штраф трансферов, no-op, одинаковые игроки по нескольким ходам, командные/позиционные лимиты, капитан и bench не ломают бюджет B.
-- Регрессионный пример: редкий игрок с заметно меньшим EP не вытесняет сильного, если решение превышает B.
-- План с небольшим отрицательным EP delta может появиться только в GLOBAL_AUTO при положительном strategic delta и соблюдённом B. Потеря видна в UI.
-- Поиск не теряет базовый состав из-за отсечения кандидатов. Если все стратегические варианты отклонены, возвращается база; отсутствие допустимой базы возвращает ошибку обычного оптимизатора.
-- Нет повторного ownership bonus. K=0 в новом режиме даёт нейтральный EP-подбор; выключение функции сохраняет старые стратегии.
-- API проверяет владельца; сохранение нового режима не стирает остальные filters. Worker использует свежий контекст, устаревший ответ не заменяет текущий состав.
-- Пересечение дедлайна, обновление рейтинга, 429/503, неизвестная длина турнира, stale владение и неполный player mapping имеют различимые причины, без выдуманных значений.
+- The same football player in FPL and Sports.ru receives its own provider context, EP and ownership. The provider mismatch is not corrected by fallback to another.
+- FPL selectedByPercent is saved in both create and update; repeated sync does not create duplicates, and restoration is not skipped due to an old hash.
+- Transfer penalty, no-op, identical players for several moves, team/positional limits, captain and bench do not break B’s budget.
+- Regression example: a rare player with a noticeably lower EP does not displace a strong one if the solution exceeds B.
+- A plan with a small negative EP delta can only appear in GLOBAL_AUTO if the strategic delta is positive and B is met. The loss is visible in the UI.
+- The search does not lose the base squad due to the cutting off of candidates. If all strategic options are rejected, the base is returned; lack of a valid base returns an error from the normal optimizer.
+- No re-ownership bonus. K=0 in the new mode gives neutral EP selection; turning off the function preserves the old strategies.
+- API checks owner; saving the new mode does not erase the remaining filters. Worker uses fresh context, the outdated answer does not replace the current squad.
+- Deadline crossing, rating update, 429/503, unknown tournament length, stale ownership and incomplete player mapping have distinct causes, without made-up meanings.
 
-Производительность: сравнить текущую и новую реализацию на одинаковых зафиксированных пулах Sports.ru/FPL; минимум 20 измерений после прогрева. p95 полного нового подбора ≤2.5× базового, UI остаётся отзывчивым за счёт Worker. Кэш укладывается в перечисленные лимиты, нет роста числа запросов на каждого игрока и нет фонового бесконечного polling. При превышении лимита оптимизировать поиск, а не молча выключать проверку EP-потерь.
+Performance: compare the current and new implementation on the same fixed Sports.ru/FPL pools; minimum 20 measurements after warming up. p95 of a complete new selection ≤2.5× basic, the UI remains responsive due to the Worker. The cache fits within the listed limits, there is no increase in the number of requests for each player and there is no endless background polling. If the limit is exceeded, optimize the search instead of silently turning off the EP loss check.
 
-## 10. Проверка полезности и выпуск
+## 10. Utility testing and release
 
-Функциональные тесты доказывают соблюдение ограничений, а не улучшение спортивного результата. Доступные данные сейчас не обеспечивают полный честный бэктест глобального ранга: история снимков короткая, история всего поля не собрана.
+Functional tests prove compliance with restrictions, not improvement in athletic performance. The available data currently does not provide a complete, honest backtest of the global rank: the history of the images is short, the history of the entire field is not collected.
 
-До продуктового включения проверить на доступных снимках до дедлайна качество EP, корректность источников и фактическую потерю относительно базы. Кандидатные α/c/η/weights/εmax подбирать отдельно по FPL и Sports.ru с разделением по времени, не по будущим результатам того же тура. Если данных для провайдера недостаточно, профиль маркируется uncalibrated и доступен как экспериментальный opt-in.
+Before product inclusion, check the quality of the EP, the correctness of the sources and the actual loss relative to the database using the available images before the deadline. Candidate α/c/η/weights/εmax should be selected separately from FPL and Sports.ru separated by time, not from future results of the same round. If there is not enough data for the provider, the profile is marked uncalibrated and is available as an experimental opt-in.
 
-Порядок реализации:
+Implementation procedure:
 
-1. Источники, FPL ownership fix, календарная политика, проверка ER на живых завершённых турах.
-2. Prisma-контекст, freshness, bounded cache и pure math с тестами.
-3. Единая оценка и поиск с B, worker, интеграционные тесты.
-4. UI/API/сохранение, объяснение фактической цены стратегии.
-5. Локальная проверка, профиль производительности, проверка дублей/памяти; существующие обязательные проверки репозитория по затронутым слоям.
-6. Экспериментальный opt-in отдельно на провайдера/турнир. Расширять включение после накопления данных, не заявлять доказанный прирост ранга без соответствующей истории.
+1. Sources, FPL ownership fix, calendar policy, checking ER on live completed rounds.
+2. Prisma-context, freshness, bounded cache and pure math with tests.
+3. Unified assessment and search with B, worker, integration tests.
+4. UI/API/saving, explanation of the actual price of the strategy.
+5. Local check, performance profile, duplicate/memory check; Existing mandatory repository checks on affected layers.
+6. Experimental opt-in separately per provider/tournament. Expand inclusion after accumulating data, do not claim proven rank gains without relevant history.
 
-Критерий завершения первой версии: пользователь с привязанной командой и пригодными данными получает воспроизводимый глобальный K и допустимый состав с явным EP-сравнением; при проблемах источника продолжает пользоваться обычным подбором. Работа с мини-лигами и ручной ввод рейтинговых чисел отсутствуют.
+First version completion criterion: user with associated command and valid data receives reproducible global K and valid squad with explicit EP comparison; If there are problems with the source, it continues to use the usual selection. There is no work with mini-leagues or manual entry of rating numbers.

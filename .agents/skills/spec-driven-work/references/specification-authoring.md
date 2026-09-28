@@ -1,250 +1,278 @@
 # SPEC-AUTHORING-PROTOCOL
 
-## 1. Назначение {#purpose}
+<a name="purpose"></a>
 
-Этот протокол применяется для создания новой спецификации или глубокой переработки существующей.
+## 1. Purpose {#purpose}
 
-Спецификация описывает долговечный канон. План конкретной реализации и её acceptance живут в одном или нескольких `WI-NNN`.
+This protocol is used to create a new specification or deeply rework an existing one.
 
-## 2. Минимальное исследование {#research}
+The specification describes a durable canon. The plan for a specific implementation and its acceptance live in one or more `WI-NNN`.
 
-Перед черновиком прочитай:
+<a name="research"></a>
+
+## 2. Minimum study {#research}
+
+Before drafting, read:
 - `specs/common/main.md`;
 - `specs/SPEC-MAP.md`;
 - `specs/common/structure.md`;
-- релевантные `common PROP` и соседние спеки;
-- существующий WI, если authoring входит в отслеживаемую работу;
-- код и тесты, когда документ описывает существующее поведение.
+- relevant `common PROP` and neighboring specs;
+- existing WI, if authoring is included in the tracked work;
+- code and tests when the document describes existing behavior.
 
-Останавливай поиск, когда понятны ownership, действующий канон и затронутые контракты.
+Stop searching when ownership, current canon and affected contracts are clear.
 
-## 3. Выбор типа {#type}
+<a name="type"></a>
 
-Используй:
-- `PROP` для долгоживущих инвариантов, терминов, моделей, общих контрактов и границ модулей;
-- `FEAT` для самостоятельной продуктовой возможности или области поведения;
-- `INFRA` для runtime, окружений, деплоя, хранения, очередей, наблюдаемости и восстановления.
+## 3. Type selection {#type}
 
-Если документ соединяет несколько самостоятельных ответственностей, раздели их на отдельные спеки и свяжи точными `spec://`-адресами.
+Use:
+- `PROP` for long-lived invariants, terms, models, general contracts and module boundaries;
+- `FEAT` for an independent product opportunity or behavior area;
+- `INFRA` for runtime, environments, deployment, storage, queues, observability and recovery.
 
-## 4. Решение до черновика {#before-draft}
+If a document connects several independent responsibilities, divide them into separate specs and link them with exact `spec://` addresses.
 
-Определи:
-- формат изменения: `direct-edit`, `new-spec` или `supersede`;
-- тип и следующий свободный `TYPE-NNN`;
-- модуль и `spec://` namespace;
-- lifecycle: `draft` или `active`;
-- управляющие и соседние спеки;
-- границы канона;
-- вопросы, которые требуют `REVIEW`.
+<a name="before-draft"></a>
 
-Применяй правила изменения и lifecycle из `SPEC-PROTOCOL.md`.
+## 4. Solution to draft {#before-draft}
 
-Новый номер выбирается после поиска по `specs/common/**/*.md`, `specs/modules/**/*.md` и `SPEC-MAP.md`. Учитывай `active`, `draft`, `superseded` и `retired` документы. Номера не переиспользуются.
+Define:
+- change format: `direct-edit`, `new-spec` or `supersede`;
+- type and the next free `TYPE-NNN`;
+- module and `spec://` namespace;
+- lifecycle: `draft` or `active`;
+- control and neighboring specs;
+- canon boundaries;
+- questions that require `REVIEW`.
 
-Буквенные серии `.A`, `.B`, `.C` сохраняются в legacy-проектах. Новый самостоятельный канон получает новый `TYPE-NNN`, если человек не выбрал совместимый буквенный ID явно.
+Apply the change and lifecycle rules from `SPEC-PROTOCOL.md`.
 
-## 5. Lifecycle при authoring {#lifecycle}
+The new number is selected after searching for `specs/common/**/*.md`, `specs/modules/**/*.md` and `SPEC-MAP.md`. Consider the `active`, `draft`, `superseded` and `retired` documents. Numbers are not reused.
 
-Используй `status: draft`, пока ownership, сценарии или контракты остаются неопределёнными.
+Letter series `.A`, `.B`, `.C` are saved in legacy projects. The new self-canon gets a new `TYPE-NNN` if the person has not explicitly chosen a compatible letter ID.
 
-Переводи документ в `status: active`, когда:
-- назначение и границы однозначны;
-- канонические сценарии и контракты достаточны для использования;
-- существенные вопросы разрешены или помечены `REVIEW` с допустимым риском;
-- человек поручил принять этот документ как канон либо явно поручил реализацию по нему.
+<a name="lifecycle"></a>
 
-Этот переход требует правки самой спеки и одной строки в `SPEC-MAP.md`.
+## 5. Lifecycle with authoring {#lifecycle}
 
-## 6. Регистрация {#registration}
+Use `status: draft` while ownership, scripts or contracts remain undefined.
 
-После создания или изменения lifecycle:
-1. обнови одну строку спеки в `SPEC-MAP.md`;
-2. обнови `common/structure.md` только при изменении модуля, namespace, ownership папок или связи spec-space с кодом;
-3. добавь ссылку в `common/main.md`, если появился новый общий `PROP` верхнего уровня;
-4. для уже запущенного `new-spec` WorkItem обнови точные governing/affected links, scope и acceptance после готовности спеки; новый WI здесь не дублируй.
+Translate a document to `status: active` when:
+- purpose and boundaries are unambiguous;
+- canonical scripts and contracts are sufficient for use;
+- material issues resolved or marked `REVIEW` with acceptable risk;
+- the person instructed to accept this document as canon or explicitly instructed the implementation of it.
 
-Одношаговое создание спеки само по себе не создаёт строку в `BOARD.md` и checkpoint в `WAL.md`. Отслеживаемый authoring либо единый результат «спека + реализация» получает WorkItem до первой правки по общему протоколу.
+This transition requires editing the spec itself and one line in `SPEC-MAP.md`.
 
-Учебные файлы из `specs/examples/` регистрируются после копирования в рабочий модуль и назначения нового свободного ID.
+<a name="registration"></a>
 
-## 7. Разбиение реализации {#work-items}
+## 6. Registration {#registration}
 
-После готовности канона уточни уже выбранный рабочий контур:
-- tracked `new-spec` WorkItem может продолжить реализацию маленькой спеки в том же WI, если authoring и код дают один атомарный outcome;
-- перед кодом новая governing spec имеет статус `active`, а WorkItem содержит её точный anchor и актуальные scope и acceptance;
-- объёмная спека до реализации делится на несколько связанных WI по законченным пользовательским или runtime-результатам;
-- один WI может ссылаться на несколько спек, если у них общий атомарный outcome;
-- одношаговое authoring или реализация в текущей сессии могут пройти без WI только при соблюдении критериев одношаговой работы.
+After creating or changing lifecycle:
+1. update one spec line in `SPEC-MAP.md`;
+2. update `common/structure.md` only when the module, namespace, folder ownership or spec-space association with the code changes;
+3. add a link to `common/main.md` if a new top-level general `PROP` has appeared;
+4. for an already running `new-spec` WorkItem, update the exact governing/affected links, scope and acceptance after the spec is ready; do not duplicate the new WI here.
 
-WI хранит scope текущего прохода, acceptance и result. Спека сохраняет сценарии, контракты и критерии канонического поведения без session progress.
+One-step creation of a spec does not itself create a line in `BOARD.md` and a checkpoint in `WAL.md`. The tracked authoring or the single result of “spec + implementation” is received by WorkItem before the first edit according to the general protocol.
 
-## 8. Готовность PROP {#readiness.prop}
+Training files from `specs/examples/` are registered after copying to the working module and assigning a new free ID.
 
-`PROP` содержит:
-- блок простыми словами;
-- назначение и границы;
-- инварианты, термины или общие правила;
-- соседние или подчинённые документы;
-- чеклист заполнения;
-- историю изменений;
-- `REVIEW` для спорных мест.
+<a name="work-items"></a>
 
-`PROP-000` может быть корневым документом без управляющей спеки.
+## 7. Implementation split {#work-items}
 
-## 9. Готовность FEAT {#readiness.feat}
+After the canon is ready, clarify the already selected working circuit:
+- tracked `new-spec` WorkItem can continue to implement a small spec in the same WI if authoring and code give one atomic outcome;
+- before the code, the new governing spec has the status `active`, and WorkItem contains its exact anchor and current scope and acceptance;
+- , before implementation, the volumetric spec is divided into several related WIs according to completed user or runtime results;
+- one WI can refer to several specs if they have a common atomic outcome;
+- one-step authoring or implementation in the current session can proceed without WI only if the criteria for one-step work are met.
 
-`FEAT` содержит:
-- блок простыми словами и цель;
-- управляющие спеки;
-- границы канона;
-- участников и событие запуска;
-- сценарии;
-- данные и состояния;
-- UI, API, события или другие внешние контракты;
-- ошибки и валидацию;
-- ожидаемые точки `@spec`;
-- критерии канонической готовности;
-- связи и историю изменений.
+WI stores the scope of the current pass, acceptance and result. Speck preserves scripts, contracts and criteria for canonical behavior without session progress.
 
-## 10. Готовность INFRA {#readiness.infra}
+<a name="readiness.prop"></a>
 
-`INFRA` содержит:
-- блок простыми словами и цель;
-- управляющие спеки;
-- границы канона;
-- окружения и зависимости;
-- канонические runtime-решения;
-- данные, состояние и миграции;
-- точки входа и операционные сценарии;
-- rollout, rollback и восстановление;
-- наблюдаемость;
-- ожидаемые точки `@spec`;
-- критерии канонической готовности;
-- связи и историю изменений.
+## 8. Ready PROP {#readiness.prop}
 
-## 11. Минимальная структура FEAT {#feat-template}
+`PROP` contains:
+- block in simple words;
+- purpose and boundaries;
+- invariants, terms or general rules;
+- adjacent or subordinate documents;
+- checklist filling;
+- change history;
+- `REVIEW` for controversial areas.
 
-```md
----
-status: draft
----
+`PROP-000` can be a root document without a control spec.
 
-# FEAT-<NNN>: <название> {#root}
+<a name="readiness.feat"></a>
 
-## Простыми словами {#plain-language}
-...
+## 9. Ready FEAT {#readiness.feat}
 
-## 1. Цель {#goal}
-...
+`FEAT` contains:
+- block in simple words and purpose;
+- control specs;
+- canon boundaries;
+- participants and start event;
+- scripts;
+- data and states;
+- UI, API, events or other external contracts;
+- errors and validation;
+- expected points `@spec`;
+- canonical readiness criteria;
+- connections and history of changes.
 
-## 2. Управляющие спеки {#governing-specs}
-- `spec://...#...`
+<a name="readiness.infra"></a>
 
-## 3. Границы {#scope}
-### 3.1. Входит {#scope.in}
-...
-### 3.2. За границей {#scope.out}
-...
+## 10. Readiness INFRA {#readiness.infra}
 
-## 4. Участники и событие запуска {#actors}
-...
+`INFRA` contains:
+- block in simple words and purpose;
+- control specs;
+- canon boundaries;
+- environments and dependencies;
+- canonical runtime solutions;
+- data, status and migrations;
+- entry points and operational scenarios;
+- rollout, rollback and recovery;
+- observability;
+- expected points `@spec`;
+- canonical readiness criteria;
+- connections and history of changes.
 
-## 5. Сценарии {#scenarios}
-...
+<a name="feat-template"></a>
 
-## 6. Данные и состояние {#data}
-...
-
-## 7. Контракты {#contracts}
-...
-
-## 8. Ошибки и валидация {#errors}
-...
-
-## 9. Трассировка реализации {#traceability}
-...
-
-## 10. Критерии готовности {#acceptance}
-...
-
-## 11. Связи {#relationships}
-...
-
-## 12. История изменений {#changelog}
-- [YYYY-MM-DD] created.
-```
-
-## 12. Минимальная структура INFRA {#infra-template}
+## 11. Minimum structure FEAT {#feat-template}
 
 ```md
 ---
 status: draft
 ---
 
-# INFRA-<NNN>: <название> {#root}
+# FEAT-<NNN>: <title> {#root}
 
-## Простыми словами {#plain-language}
+## In simple words {#plain-language}
 ...
 
-## 1. Цель {#goal}
+## 1. Target {#goal}
 ...
 
-## 2. Управляющие спеки {#governing-specs}
+## 2. Control specs {#governing-specs}
 - `spec://...#...`
 
-## 3. Границы {#scope}
+## 3. Boundaries {#scope}
+### 3.1. Included {#scope.in}
+...
+### 3.2. Abroad {#scope.out}
 ...
 
-## 4. Окружения и зависимости {#environments}
+## 4. Participants and launch event {#actors}
 ...
 
-## 5. Канонические решения {#decisions}
+## 5. Scenarios {#scenarios}
 ...
 
-## 6. Runtime и операции {#runtime}
+## 6. Data and status {#data}
 ...
 
-## 7. Данные, состояние и миграции {#data}
+## 7. Contracts {#contracts}
 ...
 
-## 8. Контракты и точки входа {#contracts}
+## 8. Errors and validation {#errors}
 ...
 
-## 9. Rollout, rollback и восстановление {#recovery}
+## 9. Implementation trace {#traceability}
 ...
 
-## 10. Наблюдаемость {#observability}
+## 10. Readiness criteria {#acceptance}
 ...
 
-## 11. Трассировка реализации {#traceability}
+## 11. Communications {#relationships}
 ...
 
-## 12. Критерии готовности {#acceptance}
-...
-
-## 13. Связи {#relationships}
-...
-
-## 14. История изменений {#changelog}
+## 12. Change history {#changelog}
 - [YYYY-MM-DD] created.
 ```
 
-## 13. Стиль {#style}
+<a name="infra-template"></a>
 
-- Пиши на языке проекта.
-- Формулируй, кто выполняет действие, когда оно запускается, что меняется и какой результат считается корректным.
-- Сохраняй стабильные anchors.
-- Помечай спорное место `REVIEW`.
-- Фиксируй осознанный инженерный компромисс в `TECHDEBT.md`.
+## 12. Minimum structure INFRA {#infra-template}
 
-## 14. Завершение authoring {#done}
+```md
+---
+status: draft
+---
 
-Проверь:
-- тип, ID и lifecycle согласованы;
-- ownership не дублирует соседнюю спеку;
-- документ зарегистрирован в `SPEC-MAP.md`;
-- `structure.md` обновлён только при изменении технической карты;
-- все `spec://`-ссылки и anchors существуют;
-- реализация разложена на WI только в необходимом объёме;
-- в спеке нет owner, priority, session status и прогресса реализации.
+# INFRA-<NNN>: <title> {#root}
+
+## In simple words {#plain-language}
+...
+
+## 1. Target {#goal}
+...
+
+## 2. Control specs {#governing-specs}
+- `spec://...#...`
+
+## 3. Boundaries {#scope}
+...
+
+## 4. Environments and dependencies {#environments}
+...
+
+## 5. Canonical solutions {#decisions}
+...
+
+## 6. Runtime and operations {#runtime}
+...
+
+## 7. Data, status and migrations {#data}
+...
+
+## 8. Contracts and entry points {#contracts}
+...
+
+## 9. Rollout, rollback and recovery {#recovery}
+...
+
+## 10. Observability {#observability}
+...
+
+## 11. Implementation trace {#traceability}
+...
+
+## 12. Readiness criteria {#acceptance}
+...
+
+## 13. Communications {#relationships}
+...
+
+## 14. Change history {#changelog}
+- [YYYY-MM-DD] created.
+```
+
+<a name="style"></a>
+
+## 13. Style {#style}
+
+- Write in the project language.
+- Formulate who performs the action, when it is launched, what changes and what result is considered correct.
+- Keep stable anchors.
+- Mark the disputed place `REVIEW`.
+- Record a conscious engineering compromise in `TECHDEBT.md`.
+
+<a name="done"></a>
+
+## 14. Completion of authoring {#done}
+
+Check:
+- type, ID and lifecycle are consistent;
+- ownership does not duplicate the neighboring spec;
+- document registered in `SPEC-MAP.md`;
+- `structure.md` was updated only when the technical map was changed;
+- all `spec://` links and anchors exist;
+- the implementation is decomposed into WI only to the required extent;
+- in the spec there is no owner, priority, session status and implementation progress.

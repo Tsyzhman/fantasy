@@ -10,13 +10,13 @@ An unavailable service creates a visible pending operation for retry. It never p
 
 ## Start a turn
 
-1. Выполни `node .agents/skills/spec-driven-work/scripts/sync-spec-space.mjs flush --root .` до чтения нового managed context. Pending result блокирует свежий status/completion claim и сохраняет текущий mode.
+1. Execute `node .agents/skills/spec-driven-work/scripts/sync-spec-space.mjs flush --root .` before reading the new managed context. Pending result blocks the latest status/completion claim and saves the current mode.
 2. Read `project_context` for project identity, workflow bundle/mode, spec freshness and allowed operations.
 3. Read `work_context` for an explicit work ID. For a natural-language change, call `resolve_change` before broad repository search.
-4. Выбери маршрут и `canonAction`, затем прочитай focused references этого маршрута до repository write.
-5. Для `new-spec` перечисли планируемые типы PROP/FEAT/INFRA, вызови `get_spec_example` для каждого и определи изменение `common/structure.md`.
-6. Для tracked работы создай полный WorkItem и вызови `start_work`. В `new-spec` укажи существующий вышестоящий канон и ограничения, если они есть, а планируемый полный spec-адрес с якорем `#root` — в `affectedSpecs`; первый spec-space может начать без `governingSpecs`.
-7. Сообщи человеку human-visible preflight summary из главного skill и только затем изменяй specs, code или tests.
+4. Select the route and `canonAction`, then read the focused references of that route before the repository write.
+5. For `new-spec`, list the scheduled PROP/FEAT/INFRA types, call `get_spec_example` for each, and define the change `common/structure.md`.
+6. For tracked work, create a full WorkItem and call `start_work`. In `new-spec` indicate the existing higher canon and restrictions, if any, and the planned full spec address with the anchor `#root` - in `affectedSpecs`; the first spec-space can start without `governingSpecs`.
+7. Tell the person the human-visible preflight summary from the main skill and only then change the specs, code or tests.
 8. Use the authenticated connection identity as the agent owner. Never combine it with `specs/.me` for managed ownership.
 
 ## Preserve protocol semantics
@@ -46,7 +46,7 @@ Apply every rule that is independent of repository operational files. Map the fi
 - Create tracked work through `create_work` with kind, canon action, outcome, scope, acceptance, anchored governing/affected/constraint specs and dependencies.
 - Immediately before implementation, move a new backlog item through `start_work`. Starting work never creates a checkpoint.
 - Use `update_work` when the protocol permits correcting scope, acceptance or spec links. Do not hide a separate change in a comment on an unrelated work item.
-- После authoring в `new-spec` используй `update_work`, чтобы до зависимой реализации добавить active governing anchor и актуализировать affected/constraint links, scope и acceptance. Тот же WorkItem может включать authoring и реализацию одного атомарного результата.
+- After authoring in `new-spec`, use `update_work` to add an active governing anchor before the dependent implementation and update affected/constraint links, scope and acceptance. The same WorkItem can include authoring and the implementation of one atomic result.
 - Record a human or agent note through `comment_work` only when it matters to later work.
 - Use `checkpoint_work` for a meaningful unfinished stop, handoff or blocker. Same-session completion creates no checkpoint.
 - Record long-lived risk or conscious compromise in the work result/technical-debt operation supported by the contract.
@@ -60,7 +60,7 @@ After a material change to active/draft specs, `SPEC-MAP`, `common/structure.md`
 
 Keep pending snapshot payload and provenance credential-free in `.prist/outbox/`. Read credentials separately at retry time.
 
-Используй portable script из главного skill:
+Use the portable script from the main skill:
 
 ```bash
 node .agents/skills/spec-driven-work/scripts/sync-spec-space.mjs sync \
@@ -69,7 +69,7 @@ node .agents/skills/spec-driven-work/scripts/sync-spec-space.mjs sync \
   --expected-version '<canon.snapshotVersion from project_context>'
 ```
 
-`stored` увеличивает server snapshot version. `unchanged` сохраняет версию и возвращает проверяемый no-op receipt. При `version_conflict` script читает свежий project context, повторно строит snapshot и отправляет его только при неизменном fingerprint.
+`stored` increases server snapshot version. `unchanged` saves the version and returns a verifiable no-op receipt. With `version_conflict`, the script reads a fresh project context, re-builds the snapshot and sends it only if the fingerprint remains unchanged.
 
 ## Stop or outage
 

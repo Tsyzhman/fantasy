@@ -2,177 +2,221 @@
 status: active
 ---
 
-# INFRA-001: источники и регулярный импорт КХЛ {#root}
+<a name="root"></a>
 
-## Простыми словами {#plain-language}
+# INFRA-001: sources and regular import of KHL {#root}
 
-Импорт сохраняет источники и историю исправлений отдельно от футбольного pipeline.
+<a name="plain-language"></a>
 
-## Цель {#goal}
+## Plain language {#plain-language}
 
-Обеспечить воспроизводимые, ограниченные по ресурсам загрузки.
+Imports preserve sources and correction history separately from the football pipeline.
 
-## Управляющие документы {#governing-specs}
+<a name="goal"></a>
 
-Границы продукта: `specs/common/main.md`; взаимные контракты и точные ссылки перечислены в #relationships. Канон активен по запросу пользователя; source/rules gates определяют доступность соответствующих возможностей, а не статус документа.
+## Goal {#goal}
+
+Provide reproducible, resource-constrained downloads.
+
+<a name="governing-specs"></a>
+
+## Governing specifications {#governing-specs}
+
+Product boundaries: `specs/common/main.md`; mutual contracts and exact links are listed in #relationships. Canon is active upon user request; source/rules gates determine the availability of relevant features, not the status of the document.
 
 
-## Контракт {#scope}
+<a name="scope"></a>
 
-Регулярные загрузки, HTML-парсинг, нормализация, хранение и прогноз выполняются без LLM. Получение данных не запускается на каждый пользовательский запрос. Каждый адаптер возвращает типизированный результат, качество, provider IDs, source URL, время наблюдения и получения, parserVersion и hash; публикация read model атомарна.
+## Scope {#scope}
 
-## Поставщики и границы доказанного {#providers}
+Regular downloads, HTML parsing, normalization, storage and forecasting are performed without LLM. Data retrieval does not run on every user request. Each adapter returns a typed result, quality, provider IDs, source URL, watch and fetch time, parserVersion and hash; publishing a read model is atomic.
 
-Новая архивная связь KHL ID допускается только при единственном совпадении полного имени и позиции, а также числа игр и всех сумм G/A/+/−/PIM с историей Sports того же сезона. Неоднозначные имена, отличающиеся суммы и занятые canonical ID не связываются автоматически. В evidence сохраняется основание связи. Матчи сборных звёзд исключаются по официальным club IDs даже если mobile API вернул stage регулярки.
+<a name="providers"></a>
 
-Архив предыдущего сезона дополняется официальными матчевыми протоколами КХЛ: конкретный сезон и FINAL матч подтверждены календарём, максимум 1000 матчей; для каждой строки сохраняется официальный player ID. Повтор матча не суммируется дважды. Сопоставление с текущим пулом использует подтверждённый KHL ID, новые неоднозначные имена остаются пропусками. Точные суммы SOG/TOI/PP/PK/атаки считаются по PLAYED протоколам; колонка атаки, целиком состоящая из нулей, означает неизвестную телеметрию. Сезонные средние из таблицы сайта не превращаются в выдуманные точные суммы. Публичная нормализованная выгрузка переносится локально → сервер; raw HTML не хранится в БД.
+## Suppliers and boundaries of proven {#providers}
 
-| Данные | Источник и приоритет | Ограничение |
+New archival KHL ID connection is allowed only if the full name and position, as well as the number of games and all G/A/+/−/PIM amounts match the Sports history of the same season. Ambiguous names, different amounts and occupied canonical IDs are not automatically linked. Evidence preserves the basis of the connection. Matches of national teams are excluded according to official club IDs, even if the mobile API has returned the regular season stage.
+
+The archive of the previous season is supplemented by the official KHL match protocols: the specific season and FINAL match are confirmed by the calendar, maximum 1000 matches; The official player ID is saved for each line. Match replays are not double-stacked. Matching to the current pool uses the confirmed KHL ID, new ambiguous names are left as passes. The exact amounts of SOG/TOI/PP/PK/attacks are calculated according to the PLAYED protocols; an attack column consisting entirely of zeros indicates unknown telemetry. Seasonal averages from the website table do not turn into fictitious exact amounts. Public normalized upload is transferred locally → server; raw HTML is not stored in the database.
+
+| Data | Source and priority | Limit |
 |---|---|---|
-| Каталог, позиция, клуб fantasy, цена, delta, lock | Sports.ru `GET /fantasy/hockey/team/create/107.json` | Чтение, несмотря на `create`; 694 уникальных ID, 22 клуба подтверждены 7 сентября. Это снимок, не константа полноты на будущие даты |
-| История FP, точное время, G/A/+−/PIM, владение %, календарь недель | Sports.ru `/fantasy/hockey/player/info/107/{playerId}.html` | HTML-парсер с версией. Предыдущий сезон проверялся `?s=1317639`; не путать season ID с tournament ID |
-| Матчи, команды, составы завершённых матчей, голы/передачи, удаления, стартовая шестёрка | `https://khl.api.webcaster.pro/api/khl_mobile/data.json`, `events_v2.json`, `event_v2.json` | Mobile backend не обещает публичного SLA. stage_id=407 соответствует khl_id=1436 в проверке 6 сентября; отдельно сопоставлять сезоны |
-| TOI/PP TOI/PK TOI, смены, броски, блоки, SV/GA | Протоколы khl.ru `/game/{season}/{match}/protocol/` | В браузере поля найдены; production HTTP/REST-выгрузка и разрешение ещё не подтверждены. Альтернатива — лицензированный поставщик с проверенным KHL coverage |
-| Травмы | Раздел «Травмированные» клубных заявок khl.ru | Не полный реестр всех повреждений. Исчезновение из списка само по себе не доказывает готовность играть |
-| Готовый xG | Отдельно выбранный поставщик: КХЛ/Wisesport или другой с проверенной КХЛ | Существование показателя подтверждено; автоматическая выгрузка не найдена. Обязательная зависимость XG-01 ниже |
-| Коэффициенты | Фонбет | Отдельный хоккейный адаптер по INFRA-003 |
-| Будущий старт вратаря, PP1/PP2, полные звенья | Пока надёжный автоматический источник не подтверждён | Факт, прогноз и неизвестное раздельны; played не доказывает starter |
+| Catalog, position, fantasy club, price, delta, lock | Sports.ru `GET /fantasy/hockey/team/create/107.json` | Reading, despite `create`; 694 unique ID, 22 club confirmed 7 September. This is a snapshot, not a completeness constant for future dates |
+| FP history, exact time, G/A/+−/PIM, ownership %, week calendar | Sports.ru `/fantasy/hockey/player/info/107/{playerId}.html` | HTML parser with version. Previous season reviewed `?s=1317639`; do not confuse season ID with tournament ID |
+| Matches, teams, line-ups of completed matches, goals/assists, deletions, starting six | `https://khl.api.webcaster.pro/api/khl_mobile/data.json`, `events_v2.json`, `event_v2.json` | Mobile backend does not promise a public SLA. stage_id=407 corresponds to khl_id=1436 in the check 6 September; compare seasons separately |
+| TOI/PP TOI/PK TOI, shifts, shots, blocks, SV/GA | Protocols khl.ru `/game/{season}/{match}/protocol/` | Fields found in browser; production HTTP/REST upload and resolution have not yet been confirmed. An alternative is a licensed supplier with proven KHL coverage |
+| Injuries | Section “Injured” of club applications khl.ru | Not a complete register of all injuries. Disappearance from the list does not in itself prove readiness to play |
+| Ready xG | Separately selected supplier: KHL/Wisesport or other with verified KHL | The existence of the indicator is confirmed; automatic upload not found. Mandatory dependency XG-01 below |
+| Odds | Fonbet | Separate hockey adapter according to INFRA-003 |
+| Future start of the goalkeeper, PP1/PP2, full links | Until a reliable automatic source is confirmed | Fact, forecast and unknown are separate; played does not prove starter |
 
-Не выбирать Goalserve/Statorium/Sportradar по NHL-описанию. Проверить отдельно сезон, регулярку, плей-офф, поля и права хранения именно КХЛ. В Global Hockey Sportradar starter/played не различаются в проверенной документации — такой флаг нельзя называть подтверждённым стартом.
+Do not select Goalserve/Statorium/Sportradar based on the NHL description. Check separately the season, regular season, playoffs, fields and storage rights of the KHL. In Global Hockey Sportradar starter/played are not distinguished in the verified documentation - such a flag cannot be called a confirmed start.
 
-### Подтверждённый частичный импорт, 8 сентября 2026
+### Confirmed partial import, 8 September 2026
 
-Публичные анонимные Sports.ru карточки текущего конкурса 107 доступны для ограниченного чтения по запросу пользователя. Проверены 693 профиля текущего каталога: реальные FP, TOI, G/A/+−/PIM и SV/GA вратарей. Возможны numeric tag, `/hockey/person/{slug}/` и корневой vanity profile; основная идентичность — точный запрошенный fantasy player ID, дополнительно проверяются tag при наличии, позиция, сезон и явно сопоставленный клуб. Таблица истории провайдера может не закрывать tbody; отсутствие таблицы у новичка означает неизвестную историю. Нулевой TOI означает DNP: такая строка не входит в средние сыгранных матчей и FP. Коррекция PLAYED→DNP отзывает ранее опубликованный FP с сохранением revision evidence.
+Public anonymous Sports.ru cards of the current competition 107 are available for limited reading upon user request. Checked 693 profiles of the current catalog: real FP, TOI, G/A/+−/PIM and SV/GA goalkeepers. Numeric tag, `/hockey/person/{slug}/` and root vanity profile are possible; the main identity is the exact requested fantasy player ID, additionally checked by tag if available, position, season and explicitly matched club. The provider's history table may not cover the tbody; the absence of a table for a beginner means an unknown history. Zero TOI means DNP: such a line is not included in the average of matches played and FP. The PLAYED→DNP correction revokes the previously published FP while preserving the revision evidence.
 
-22 Sports.ru club ID/slug сопоставлены с официальными KHL team ID явной таблицей. Матч определяется по московской дате, этим ID и дому/выезду, затем сверяется счёт; неоднозначная строка остаётся quarantine. Slug страницы матча не является уникальным match ID. Текущий клуб открывает membership с датой наблюдения, без выдуманной даты трансфера. Номера fantasy-недель сохраняются с `verified=false`: точные границы не доказаны.
+22 Sports.ru club ID/slug are mapped to the official KHL team ID by an explicit table. The match is determined by the Moscow date, this ID and home/away, then the score is reconciled; the ambiguous line remains quarantine. The match page slug is not a unique match ID. The current club opens membership with an observation date, without a fictitious transfer date. Fantasy week numbers are stored from `verified=false`: exact boundaries have not been proven.
 
-Source contract `SPORTS_RU_STATS` использует `PUBLIC_READ` и только перечисленные фактические capabilities. Это технически подтверждённые публичные чтения, а не заявление о коммерческой лицензии или выполнении полного protocol/xG gate. Прямой HTTP протокола khl.ru ответил 403; обход не применяется. PP/PK TOI, xG, линии и подтверждённые будущие старты остаются неизвестными. Forecast readiness не включается.
+Source contract `SPORTS_RU_STATS` uses `PUBLIC_READ` and only the actual capabilities listed. These are technically verified public readings and not a statement of commercial license or implementation of a full protocol/xG gate. Direct HTTP protocol khl.ru responded 403; bypass is not applied. PP/PK TOI, xG, lines and confirmed future starts remain unknown. Forecast readiness is not enabled.
 
-## Матчевые протоколы как источник статистики {#protocols}
+<a name="protocols"></a>
 
-По запросу 2026-09-11 сезонные показатели вычисляются из уникальных player-match протоколов. Сезонная страница не является источником сумм. Официальный протокол сохраняет TOI, PP/PK, время в атаке (ВВА), G/A, SOG, блоки, смены, PIM, +/− и goalie SV/GA. Sports.ru остаётся источником официальных fantasy FP. Приоритет матчевых полей: полный протокол КХЛ, затем ограниченная Sports.ru история; повтор Sports.ru не затирает проверенный протокол.
+## Match reports as a source of statistics {#protocols}
 
-HTML адаптер принимает таблицы с проверенными заголовками, official match/player IDs и scope. Транспорт не обходит CAPTCHA/403 и не копирует пользовательские сессии. Готовые браузером таблицы могут импортироваться локально; unattended транспорт публикует только успешно проверенные ответы. Пустая ВВА и отсутствие телеметрии остаются null. Полностью нулевая колонка ВВА при отсутствии командного времени в атаке не доказывает 0 секунд всем игрокам.
+At the request of 2026-09-11, seasonal indicators are calculated from unique player-match protocols. The season page is not the source of amounts. The official protocol stores TOI, PP/PK, time on attack (TBA), G/A, SOG, blocks, shifts, PIM, +/− and goalie SV/GA. Sports.ru remains the source of official fantasy FP. Priority of match fields: full KHL protocol, then limited Sports.ru history; Sports.ru replay does not overwrite the proven protocol.
 
-Повторная загрузка заменяет факты конкретного матча, затем пересчитывает сумму; не прибавляет повторно. Сумма содержит coverage: число сыгранных матчей и число матчей с заполненным полем. Неполные суммы явно помечаются частичными. Среднее считается только по матчам с известным значением; missing не равен 0.
+HTML adapter accepts tables with verified headers, official match/player IDs and scope. The transport does not bypass CAPTCHA/403 and does not copy user sessions. Browser-ready tables can be imported locally; unattended transport publishes only successfully verified responses. An empty VVA and no telemetry remain null. A completely zero BBA column in the absence of team time in attack does not prove 0 seconds to all players.
 
-## Готовый xG: критерии выбора {#xg-gate}
+Reloading replaces the facts of a particular match, then recalculates the sum; does not add again. The sum contains coverage: the number of matches played and the number of matches with a filled field. Incomplete amounts are clearly marked as partial. The average is calculated only for matches with a known value; missing is not equal to 0.
 
-XG-01 — незакрытая зависимость, не обещанный API. До запуска прогноза с xG нужны:
+<a name="xg-gate"></a>
 
-1. Проверенный способ регулярного получения с production окружения, разрешение хранения/использования, лимиты и стоимость, задокументированные correction и retry.
-2. Словарь метрик: индивидуальный xG полевого за матч и командный xG за матч; отдельно on-ice xG, xGA, GSAx/xG−, EV/PP/PK, учёт ОТ, буллитов, пустых ворот. Нельзя выдавать командный xG или GSAx за индивидуальный ixG.
-3. Стабильные player/team/match IDs и mapping. Версия модели поставщика, event time и момент доступности для исторического backtest; неизвестный modelVersion хранить явно.
-4. Приёмочный набор: все клубы сезона, минимум 100 завершённых матчей, последние 30 дней сезона (или все сыгранные при старте), один предыдущий полный регулярный сезон для backtest. Успешный повторный импорт и коррекция одного матча.
-5. Предлагаемый порог выпуска: ≥95% матчей набора с командным xG и ≥95% сыгравших player-match полевых с индивидуальным xG; ни один клуб <90%; по каждому полю отдельный denominator. 0 — валидное наблюдение, null — непокрыто. Поставка не позже 24 часов после матча в ≥95% случаев на 14-дневном наблюдении. Эти числа — требования проекта, не заявленный SLA поставщика.
-6. Согласованность сумм по определению поставщика; отклонения и неполное покрытие не исправлять делением командного xG между игроками.
+## Ready xG: selection criteria {#xg-gate}
 
-Без XG-01 каталог и локальные варианты могут работать. Прогноз маркируется `XG_UNAVAILABLE`; основной релиз, обещающий xG, не принимается. Базовый прогноз без xG допустим только как явно отдельная beta-функция; собственную shot-xG модель автоматически не создавать. Поля xGA/GSAx для вратаря опциональны и не блокируют каталог; их отсутствие видно отдельно.
+XG-01 - unclosed dependency, not promised API. Before starting a forecast with xG you need:
 
-## ID, парсинг и сверка {#normalization}
+1. A proven method of regularly obtaining from a production environment, storage/use permission, limits and cost, documented by correction and retry.
+2. Dictionary of metrics: individual field xG per match and team xG per match; separately on-ice xG, xGA, GSAx/xG−, EV/PP/PK, accounting for OT, shootouts, empty goals. You cannot pass off team xG or GSAx as individual ixG.
+3. Stable player/team/match IDs and mapping. Provider model version, event time and moment of availability for historical backtest; unknown modelVersion stored explicitly.
+4. Acceptance set: all clubs of the season, at least 100 completed matches, last 30 days of the season (or all played at the start), one previous full regular season for backtest. Successful re-import and correction of one match.
+5. Proposed release threshold: ≥95% set matches with team xG and ≥95% played player-match outfield with individual xG; no club <90%; There is a separate denominator for each field. 0 - valid observation, null - uncovered. Delivery no later than 24 hours after the match in ≥95% cases on 14- day observation. These numbers are project requirements, not the vendor's stated SLA.
+6. Amount consistency as determined by supplier; deviations and incomplete coverage cannot be corrected by dividing the team xG between players.
 
-- Внутренние хоккейные UUID/CUID не равны внешним числам. Ключ mapping: provider + entityType + providerScope + externalId; Sports.ru id и tag_id сохраняются раздельно.
-- Mobile event `3000059` и официальный match `901980` — разные IDs одного проверенного матча сезона 1436/stage 407. Проверять даты и команды при связывании. Имена/транслитерация + клуб + дата рождения — кандидаты; неоднозначность в quarantine, без автоматического слияния по фамилии.
-- Клуб fantasy определяет лимит и доступность покупки, клуб матча — историческую статистику. Реальный переход не переписывает прошлые player-match строки.
-- `start_at` mobile — миллисекунды, фильтры времени — секунды. Запрос календаря имеет обе границы, сортировку, все страницы, контроль watermark. Default 16 записей не является полным календарём; учитывать как type_id=18 завершённых, так и 24 будущих.
-- Пустой `players/start_fives` будущего матча не означает отказ от участия. Сезонный агрегат может отставать: подтверждённые player-match выше сезонного «0 игр».
-- `20:50` хранить как 1250 секунд; `06:05` PP как 365; `00:44` PK как 44. Не разбирать 20:50 как 20.5 минуты. Проверенный Грегуар — контрольный fixture.
-- TOI/PP/PK, SV, GA, PIM и другие неизвестные поля nullable. Парсер различает пустую ячейку, заглушку, число 0 и отсутствие игрока. Суммы невалидны при смешении full-game и per-game/season заголовков.
-- Карта khl.ru показывает только проверенные броски в створ: 60 (26+34), 5 голов при 100 попытках в примере. Desktop/mobile дают 120 DOM-точек, мобильная система повёрнута `x'=100-y, y'=x`. Если карта позже импортируется, выбирать одно представление, проверять fingerprint; это не полная карта попыток и не источник собственного xG. Импорт карты не нужен для первой версии.
-- `/rest/game/{header,text,protocol}/`, `/rest/clubs/team/` обнаружены в браузере, но request contracts не проверены. Не объявлять их готовыми API. Browser fallback допускается только после технической и правовой проверки, без обхода 403 и средств защиты.
+Without XG-01 the catalog and local options can work. The forecast is marked `XG_UNAVAILABLE`; a major release promising xG is not accepted. The base forecast without xG is only valid as an explicitly separate beta function; Do not create your own shot-xG model automatically. The xGA/GSAx fields for the goalkeeper are optional and do not block the directory; their absence is visible separately.
 
-## Обновление, кэш и ресурсы {#operations}
+<a name="normalization"></a>
 
-Начальные настройки ниже — ограниченные бюджеты для пилота, корректируются по условиям поставщика и измерениям, но не увеличиваются автоматически при ошибках.
+## ID, parsing and reconciliation {#normalization}
 
-| Объект | Расписание / TTL | Старые данные |
+- Internal hockey UUID/CUID are not equal to external numbers. Key mapping: provider + entityType + providerScope + externalId; Sports.ru id and tag_id are saved separately.
+- Mobile event `3000059` and official match `901980` are different IDs of one verified match of the season 1436/stage 407. Check dates and commands when linking. Names/transliteration + club + date of birth - candidates; ambiguity in quarantine, without automatic merging by last name.
+- The fantasy club determines the limit and availability of purchases, the match club determines historical statistics. A real transition does not overwrite past player-match lines.
+- `start_at` mobile - milliseconds, time filters - seconds. The calendar request has both borders, sorting, all pages, watermark control. Default 16 entries are not a complete calendar; take into account both type_id=18 completed and future 24.
+- An empty `players/start_fives` of a future match does not mean refusal to participate. The seasonal unit may lag: confirmed player-matches are higher than the seasonal “0 games”.
+- `20:50` store as 1250 seconds; `06:05` PP as 365; `00:44` PK as 44. Do not disassemble 20:50 as 20.5 minutes. The proven Gregoire is a control fixture.
+- TOI/PP/PK, SV, GA, PIM and other unknown fields are nullable. The parser distinguishes between an empty cell, a stub, the number 0 and the absence of a player. Amounts are invalid when mixing full-game and per-game/season headers.
+- The khl.ru map shows only verified shots on target: 60 (26+34), 5 goals with 100 attempts in the example. Desktop/mobile give 120 DOM points, the mobile system is rotated `x'=100-y, y'=x`. If the map is later imported, select one view, check the fingerprint; it is not a complete map of attempts or a source of your own xG. Map import is not needed for the first version.
+- `/rest/game/{header,text,protocol}/`, `/rest/clubs/team/` were detected in the browser, but request contracts were not verified. Don't declare them as ready-made APIs. Browser fallback is allowed only after technical and legal verification, without bypassing 403 and security measures.
+
+<a name="operations"></a>
+
+## Update, cache and resources {#operations}
+
+The initial settings below are limited budgets for the pilot, adjusted according to supplier conditions and measurements, but not automatically increased in case of errors.
+
+| Object | Schedule / TTL | Old data |
 |---|---|---|
-| Каталог/цены | Каждые 15 мин; каждые 60 с в окне −60 мин…разблокировка матчей | Для сохранения трансферного сценария цена ≤5 мин, lock ≤60 с; иначе требовать фоновое обновление |
-| Календарь | Каждые 60 мин, ближайшие 48 часов каждые 5 мин | Изменение даты/статуса немедленно инвалидирует планы; просрочка >2 ч блокирует новые рекомендации |
-| Статистика матчей/FP | После завершения, повторно +1 ч, +24 ч, +72 ч; rolling сверка последних 7 дней | Ранний результат provisional; исходные official FP и расчёт хранятся отдельно |
-| История карточек | Изменившиеся/сыгравшие игроки; полный каталог раз в сутки | Не перекачивать 694 карточки каждую минуту |
-| Травмы | Каждые 60 мин, перед матчами по допустимым лимитам | >2 ч stale; «нет в списке» не «здоров» |
-| xG | По согласованному расписанию поставщика, повторная сверка коррекций | Недоступность не превращается в 0; сохранять последний факт с давностью |
-| Read model | Версия набора; cache TTL до 5 мин, invalidation по ревизиям | UI читает последний целостный опубликованный набор со статусом |
+| Catalog/prices | Every 15 min; every 60 s in the window −60 min…unlocking matches | To save the transfer scenario price ≤5 min, lock ≤60 s; otherwise require background update |
+| Calendar | Every 60 min, next 48 hours every 5 min | Changing the date/status immediately invalidates plans; overdue >2 h blocks new recommendations |
+| Match Statistics/FP | After completion, re-+1 h, +24 h, +72 h; rolling reconciliation of the last 7 days | Early result provisional; the original official FP and calculation are stored separately |
+| Card history | Changed/played players; full catalog once a day | Do not pump cards 694 every minute |
+| Injuries | Every 60 min, before matches according to permissible limits | >2 h stale; “not on the list” not “healthy” |
+| xG | According to the agreed supplier schedule, re-verification of corrections | Unavailability does not turn into 0; save the last fact with prescription |
+| Read model | Set version; cache TTL up to 5 min, invalidation according to revisions | UI reads the last complete published set with status |
 
-Одна задача на provider/scope, lease в БД с heartbeat и reclaim после истечения; cron и несколько процессов не дублируют работу. Не использовать только process-global Set как защиту. Начально 2 HTTP запроса одновременно на provider, 4 суммарно, timeout 20 с, до 3 попыток с jitter и Retry-After; 401/403/schema drift останавливают адаптер до разбора причины. Ограничить ответ 20 MiB, страницу БД 500 строк, очередь 1000 задач с backpressure. Не держать весь сезон/raw в памяти.
+One task per provider/scope, lease in the database with heartbeat and reclaim after expiration; cron and multiple processes do not duplicate work. Don't use only process-global Set as protection. Initially 2 HTTP requests simultaneously to the provider, 4 in total, timeout 20 s, up to 3 attempts with jitter and Retry-After; 401/403/schema drift stops the adapter until the cause is analyzed. Limit response 20 MiB, DB page 500 rows, queue 1000 tasks with backpressure. Don't keep the whole season/raw in your memory.
 
-Raw cache: content-addressed hash + parserVersion, сжатый, 7 дней и общий потолок 250 MiB на KHL; отдельные обезличенные regression fixtures не подпадают под очистку. Если условия лицензии строже — они приоритетны. Errors metadata 30 дней; pool READY последние 3 ревизии на scope, не удалять активную ссылку. Forecast/odds features использованных решений сохраняются как компактное evidence на сезон + 90 дней при разрешённом хранении.
+Raw cache: content-addressed hash + parserVersion, compressed, 7 days and total ceiling 250 MiB on KHL; Individual impersonal regression fixtures are not subject to purification. If the license conditions are stricter, they take precedence. Errors metadata 30 days; pool READY latest 3 revisions on scope, do not delete the active link. Forecast/odds features of the solutions used are stored as compact evidence for a season + 90 days with permitted storage.
 
-In-memory read cache: max 50 ключей и 64 MiB на процесс; при превышении LRU/TTL, исключения и отменённые promises не кешируются навечно. Ключ включает `sport=ICE_HOCKEY`, contest/season/week, filters, historyWindow, rule/model versions, data/price/status/schedule/odds/xg revisions. Пользовательские ключи дополнительно user/franchise/squad/version. Переход между FPL/КХЛ не разделяет пользовательское состояние.
+In-memory read cache: max 50 keys and 64 MiB per process; If the LRU/TTL is exceeded, exceptions and canceled promises are not cached forever. The key includes `sport=ICE_HOCKEY`, contest/season/week, filters, historyWindow, rule/model versions, data/price/status/schedule/odds/xg revisions. User keys additionally user/franchise/squad/version. The transition between FPL/KHL does not share user state.
 
-Идемпотентный повтор не меняет число сущностей/ценовых ревизий; новая ревизия только при изменении значения, lastSeenAt обновляется отдельно. На каждом этапе метрики: inserted/updated/unchanged/quarantined, покрытие/null, staleness, HTTP errors, dedup hits, cache bytes, queue depth/oldest age, RSS/heap. Очистка scoped, не затрагивает футбол или чужие файлы.
+Idempotent repeat does not change the number of entity/price revisions; a new revision only when the value changes, lastSeenAt is updated separately. At each stage, metrics: inserted/updated/unchanged/quarantined, coverage/null, staleness, HTTP errors, dedup hits, cache bytes, queue depth/oldest age, RSS/heap. The cleaning is scoped and does not affect football or other people's files.
 
-### Реализованный ограниченный запуск истории
+### Implemented limited history launch
 
-`KHL_STATS_SYNC_ENABLED=true` вместе с общим sync включает только worker. Каждые 60 секунд после предыдущей партии обрабатывается максимум 20 карточек, последовательно с паузой 300 мс, timeout 20 с и размером до 2 MiB. Checkpoint каждого игрока позволяет продолжать частично завершённый импорт. Карточки обновляются при изменении цены или последнего завершённого матча клуба и минимум раз в сутки. Календарь обновляется раз в час в диапазоне −13/+28 дней. Точные correction интервалы +1/+24/+72 и полный сезонный backfill остаются требованиями выше, а не заявленной готовностью этого частичного запуска.
+`KHL_STATS_SYNC_ENABLED=true`, together with general sync, includes only workers. Every 60 seconds after the previous batch, a maximum of 20 cards are processed, sequentially with a pause of 300 ms, timeout 20 s and a size of up to 2 MiB. Each player's checkpoint allows a partially completed import to continue. Cards are updated when the price changes or the last completed match of the club and at least once a day. The calendar is updated once every hour in the range −13/+28 days. Exact correction intervals +1/+24/+72 and full seasonal backfill remain requirements above, and not the stated readiness of this partial launch.
 
-Начальную загрузку продолжает тот же fenced coordinator: `node scripts/khl-runner.cjs statistics CONTEST --all` в worker image; лимит 100 партий за запуск. HTML не сохраняется в runtime cache, нормализованные изменения версионируются, повтор сохраняет число ревизий. Ограниченные source coverage/checkpoints сохраняют число обработанных профилей и quarantine. История вне уже загруженного календаря не публикуется до его расширения.
+The initial loading is continued by the same fenced coordinator: `node scripts/khl-runner.cjs statistics CONTEST --all` in the worker image; limit 100 batches per launch. HTML is not saved in the runtime cache, normalized changes are versioned, replay preserves the number of revisions. Limited source coverage/checkpoints save the number of processed profiles and quarantine. History outside the already loaded calendar is not published until it is expanded.
 
-## Приёмка {#acceptance}
+<a name="acceptance"></a>
 
-- ING-01: два повтора одного batch дают одинаковые нормализованные строки, нет двойного event/player-match; сбой в середине восстанавливается с checkpoint.
-- ING-02: каталоги и календарь сверены по всем страницам; неизвестный клуб, амплуа и конфликт ID дают quarantine, не молчаливое исключение из denominator.
-- ING-03: 1250/365/44 секунд контрольного игрока, nullable PP/SV, отстающие aggregates и пустые будущие составы разобраны корректно.
-- ING-04: все клубли сезона представлены; ≥99% каталога имеет однозначный mapping статистики, 100% выбранных в рекомендуемом составе сопоставлены. Несопоставленные видны пользователю.
-- ING-05: ≥95% завершённых player-match из приёмочного набора покрыты TOI и PP TOI полевых, ≥95% участвовавших goalie-match имеют SV/GA/TOI. Иначе предложения с соответствующим признаком не проходят readiness.
-- ING-06: 14-дневный staging soak без LLM, без дублированных jobs, без роста bounded cache; после прогрева heap/RSS плато, рост >10% между сопоставимыми окнами требует разбора.
-- XG-01 принимается только по всем шести пунктам проверки поставщика выше; публикации и маркетинговая страница не проходят этот критерий.
+## Acceptance criteria {#acceptance}
 
-## Связи {#relationships}
+- ING-01: two repetitions of one batch give the same normalized lines, there is no double event/player-match; failure in the middle is recovered from checkpoint.
+- ING-02: catalogs and calendar are verified on all pages; unknown club, role and ID conflict give quarantine, not silent exclusion from denominator.
+- ING-03: 1250/365/44 control player seconds, nullable PP/SV, lagging aggregates and empty future lineups are parsed correctly.
+- ING-04: all clubs of the season are presented; ≥99% directory has unambiguous mapping statistics, 100% selected in the recommended squad are mapped. Unmatched ones are visible to the user.
+- ING-05: ≥95% completed player-matches from the acceptance set are covered with field TOI and PP TOI, ≥95% participating goalie-matches have SV/GA/TOI. Otherwise, sentences with the corresponding attribute do not pass readiness.
+- ING-06: 14-day staging soak without LLM, without duplicate jobs, without bounded cache growth; After warming up heap/RSS plateau, growth >10% between comparable windows requires parsing.
+- XG-01 is only accepted for all six supplier check points above; Posts and marketing pages do not pass this criterion.
+
+<a name="relationships"></a>
+
+## Related specifications {#relationships}
 
 `spec://modules/khl/INFRA-002-khl-storage-and-api#schema`, `spec://modules/khl/INFRA-003-khl-fonbet-odds#root`, `spec://modules/khl/FEAT-003-khl-projections-and-optimizer#inputs`.
 
-## История {#changelog}
+<a name="changelog"></a>
 
-- 2026-09-14: полный цикл источников 10:00/20:00 МСК, независимые результаты ошибок, ограниченные пакеты и межпроцессный lock. Точная верхняя граница календаря фильтруется локально после округления провайдера до дня. Конфликт неподтверждённого назначения недели из карточки Sports изолируется в quarantine без отката её корректных исторических фактов (WI-023).
+## Changelog {#changelog}
 
-- 2026-09-08: подтверждены публичные карточки Sports.ru, описаны частичные capabilities, DNP/corrections, точное сопоставление и bounded worker/CLI; protocol/xG gates сохранены.
+- 2026-09-28: English documentation, repaired document references, and GitHub navigation anchors (WI-039).
 
-- 2026-09-07: при интеграции сохранены исходные anchors и требования; добавлены обязательные разделы текущего standalone протокола и трассировка реализации. Draft gates не сняты.
+- 2026-09-14: full cycle of MSC sources 10:00/20:00, independent error results, limited packages and inter-process lock. The exact upper bound of the calendar is filtered locally after the provider rounds to the day. The conflict of the unconfirmed assignment of the week from the Sports card is isolated in quarantine without rolling back its correct historical facts (WI-023).
 
-- 2026-09-07: созданы контракты источников, незакрытый gate xG и ресурсные бюджеты. Импорт не запускался.
+- 2026-09-08: Sports.ru public cards have been confirmed, partial capabilities, DNP/corrections, exact matching and bounded worker/CLI are described; protocol/xG gates are saved.
 
-## environments {#environments}
+- 2026-09-07: during integration, the original anchors and requirements are preserved; added mandatory sections of the current standalone protocol and implementation trace. Draft gates have not been removed.
 
-Локальная PostgreSQL используется для fixtures; production transport включается только после подтверждения источника (#providers/#xg-gate).
+- 2026-09-07: source contracts, unclosed gate xG and resource budgets have been created. The import did not start.
 
-## decisions {#decisions}
+<a name="environments"></a>
 
-Точные внешние ID и quarantine вместо fuzzy merge; готовый player-match xG проходит отдельный gate (#normalization/#xg-gate).
+## Environments and dependencies {#environments}
 
-## runtime {#runtime}
+Local PostgreSQL used for fixtures; production transport is enabled only after confirmation of the source (#providers/#xg-gate).
 
-Полный цикл статистики запускается серверным скриптом ежедневно в 10:00 и 20:00 Europe/Moscow. Цикл включает каталог Sports, календарь KHL Mobile, текущую и прошлую историю Sports, текущие и доступные архивные протоколы КХЛ, коэффициенты Фонбет и публикацию EP. Используются ограниченные пакеты, общий с deploy межпроцессный lock (ожидание выпуска до 30 минут до остановки worker, ожидание сборщика до 5 минут) и сохранённые checkpoints; завершённый архив не скачивается заново дважды в сутки, проверяются пропуски и наступивший срок обновления. Недоступность источника сохраняет last-good данные и отдельный результат ошибки; нельзя объявлять цикл полностью успешным при пропущенном источнике. Пересчёт EP и обновление линии в течение дня поддерживают действующий контракт свежести, отдельно от двух полных циклов статистики.
+<a name="decisions"></a>
 
-Coordinator исполняет jobs с lease/heartbeat, ограниченными retries и checkpoints (#operations).
+## Canonical decisions {#decisions}
 
-## data {#data}
+Exact external IDs and quarantine instead of fuzzy merge; the finished player-match xG goes through a separate gate (#normalization/#xg-gate).
 
-Normalized observations, provenance, revisions и ограниченные gzip raw payloads (#normalization/#operations).
+<a name="runtime"></a>
 
-## contracts {#contracts}
+## Runtime and operations {#runtime}
 
-История прошлого сезона Sports загружается через селектор #slt текущей identity-checked карточки: /fantasy/hockey/player/info/{contest}/{player}.html?s={providerSeasonId}. Пара seasonKey/ID берётся из опубликованного списка, не угадывается. Архив повторно проверяет tag ID (либо точное полное имя подтверждённой текущей карточки), позицию, выбранный сезон, диапазоны дат и уникальность матчей. Завершённые матчи с TOI=0 — DNP, null — неизвестно. Ограничение 2 MiB на ответ, 100 строк истории, 20 профилей за проход, без сетевых запросов внутри транзакции. Отсутствующий сезон записывается в bounded checkpoint, ошибка не удаляет прежний снимок. Импорт повторяется идемпотентно и обновляет ревизию зависимых турниров только при изменении фактов.
+The full cycle of statistics is launched by a server script daily in 10:00 and 20:00 Europe/Moscow. The cycle includes the Sports catalog, KHL Mobile calendar, current and past Sports history, current and available archived KHL minutes, Fonbet odds and EP publication. Limited packages are used, an inter-process lock shared with deploy (waiting for release up to 30 minutes before stopping the worker, waiting for the collector up to 5 minutes) and saved checkpoints; The completed archive is not downloaded again twice a day; gaps and the due date of the update are checked. Unavailability of the source saves last-good data and a separate error result; You cannot declare a loop to be completely successful if the source is missing. EP recalculation and line updates throughout the day maintain the current freshness contract, separate from two full stat cycles.
 
-Проверяются schema, ID, coverage, observedAt и права источника до публикации. Повтор A→A не создаёт новую ревизию.
+Coordinator executes jobs with lease/heartbeat, limited retries and checkpoints (#operations).
 
-## recovery {#recovery}
+<a name="data"></a>
 
-Повторная доставка идемпотентна; потерявший lease worker не публикует результат. Старые корректные наблюдения сохраняются.
+## Data and state {#data}
 
-## observability {#observability}
+Normalized observations, provenance, revisions and limited gzip raw payloads (#normalization/#operations).
 
-Health, freshness, quarantine, размер raw, активная очередь и process cache измеряются по #operations.
+<a name="contracts"></a>
 
-## Трассировка {#traceability}
+## Contracts {#contracts}
 
-src/server/khl/coordinator.ts, observations.ts, jobs.ts, retention.ts; src/khl/data-layer.db-test.ts. Итоговая приёмка определяется #acceptance; статус реализации — docs/KHL_IMPLEMENTATION_STATUS.md.
+The history of the last season Sports is loaded through the #slt selector of the current identity-checked card: /fantasy/hockey/player/info/{contest}/{player}.html?s={providerSeasonId}. The seasonKey/ID pair is taken from the published list and is not guessed. The archive re-checks the tag ID (or the exact full name of the confirmed current card), position, selected season, date ranges and uniqueness of matches. Completed matches with TOI=0 - DNP, null - unknown. Limit 2 MiB per response, 100 history lines, 20 profiles per pass, no network requests within a transaction. The missing season is recorded in the bounded checkpoint; the error does not delete the previous snapshot. The import repeats idempotently and updates the revision of dependent tournaments only when facts change.
 
-- 2026-09-11: активирован канон реализуемого контура; добавлены протоколы, ВВА и сезонные суммы с coverage.
+Schema, ID, coverage, observedAt and source rights are checked before publication. Repeating A→A does not create a new revision.
 
-Серверный протокольный worker использует очередь и lease, до двух матчей за проход, повторную проверку известных матчей не чаще суток. HTTP 401/403 размыкает запросы на сутки, прочие ошибки — минимум на час; смена IP, обход антибота и подмена ответа не применяются. Максимум HTML 5 MiB, timeout 30 секунд, redirects запрещены. Raw хранится с дедупликацией и существующим бюджетом 250 MiB/7 суток. Импорт локально сохранённых таблиц использует тот же парсер и путь нормализации.
+<a name="recovery"></a>
 
-- 2026-09-13: архив прошлого сезона Sports, нормализованное ограниченное хранение, новые показатели и объяснение EP; числовое отображение до двух десятичных цифр.
+## Rollout, rollback, and recovery {#recovery}
 
-- 2026-09-14: deploy и daily используют общий host lock; выпуск ждёт до 30 минут перед остановкой worker, плановый запуск — до 5 минут завершения замены контейнеров.
+Redelivery is idempotent; the lost lease worker does not publish the result. Old correct observations are preserved.
+
+<a name="observability"></a>
+
+## Observability {#observability}
+
+Health, freshness, quarantine, raw size, active queue and process cache are measured by #operations.
+
+<a name="traceability"></a>
+
+## Implementation traceability {#traceability}
+
+src/server/khl/coordinator.ts, observations.ts, jobs.ts, retention.ts; src/khl/data-layer.db-test.ts. Final acceptance is determined by #acceptance; implementation status - docs/guides/KHL_IMPLEMENTATION_STATUS.md.
+
+- 2026-09-11: the canon of the realized contour is activated; added protocols, BBA and seasonal amounts with coverage.
+
+Server protocol worker uses a queue and lease, up to two matches per pass, re-checking known matches no more than 24 hours. HTTP 401/403 opens requests for a day, other errors - for at least an hour; Changing the IP, bypassing the anti-bot and replacing the response are not used. Maximum HTML 5 MiB, timeout 30 seconds, redirects are prohibited. Raw is stored with deduplication and the existing budget 250 MiB/7 days. Importing locally stored tables uses the same parser and normalization path.
+
+- 2026-09-13: Sports Last Season Archive, Normalized Limited Storage, New Metrics and EP Explained; numeric display up to two decimal digits.
+
+- 2026-09-14: deploy and daily use a common host lock; the release waits up to 30 minutes before stopping the worker, the scheduled launch waits until 5 minutes to complete the replacement of containers.

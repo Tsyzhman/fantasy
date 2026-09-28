@@ -2,123 +2,161 @@
 status: draft
 ---
 
-# FEAT-001: отдельный модуль Fantasy КХЛ и правила Sports.ru {#root}
+<a name="root"></a>
 
-## Простыми словами {#plain-language}
+# FEAT-001: separate KHL Fantasy module and Sports.ru rules {#root}
 
-Отдельный хоккейный турнир с проверяемыми правилами и 17 активными игроками.
+<a name="plain-language"></a>
 
-## Цель {#goal}
+## Plain language {#plain-language}
 
-Предотвратить применение футбольного скоринга и календаря к хоккею.
+A separate hockey competition with verifiable rules and 17 active players.
 
-## Управляющие документы {#governing-specs}
+<a name="goal"></a>
 
-Границы продукта: `specs/common/main.md`; взаимные контракты и точные ссылки перечислены в #relationships. Документ остаётся draft до закрытия перечисленных source/rules gates.
+## Goal {#goal}
+
+Prevent soccer scoring and calendar from being applied to hockey.
+
+<a name="governing-specs"></a>
+
+## Governing specifications {#governing-specs}
+
+Product boundaries: `specs/common/main.md`; mutual contracts and exact links are listed in #relationships. The document remains draft until the listed source/rules gates are closed.
 
 
-## Результат и границы {#scope}
+<a name="scope"></a>
 
-Пользователь открывает «КХЛ» рядом с FPL, выбирает сезон/игровую неделю, видит каталог и планирует состав Sports.ru с хоккейной статистикой, готовым xG и коэффициентами Фонбета. Разработка собственной модели xG не входит. Прогноз fantasy-очков на основе готового xG входит в будущую реализацию.
+## Scope {#scope}
 
-Входит регулярный чемпионат турнира 107, история, календарь, пользовательские локальные варианты состава и рекомендации трансферов. Турнир/сезон обнаруживаются и подтверждаются источником, а не зашиваются навечно как 107/2026–27. Playoff, NHL, автосделки на Sports.ru, ставки, управление чужими составами, новости через LLM и восстановление полных звеньев по догадкам не входят. Сохранение варианта в приложении не выполняет внешний трансфер.
+The user opens “KHL” next to the FPL, selects a season/game week, sees the catalog and plans the Sports.ru lineup with hockey statistics, ready-made xG and Fonbet odds. Development of your own xG model is not included. Prediction of fantasy points based on ready-made xG is included in a future implementation.
 
-## Навигация {#navigation}
+Includes the 107 Tournament regular season, history, calendar, custom local roster options and transfer recommendations. The tournament/season is discovered and confirmed by the source, and not permanently sewn up like 107/2026–27. Playoffs, NHL, auto trades on Sports.ru, betting, managing other people's rosters, news through LLM and restoring full lines based on guesswork are not included. Saving a variant in the application does not perform an external transfer.
 
-- `/machete/khl/squad` — основной экран; `/machete/khl/players` — каталог/сравнение; `/machete/khl/calendar` — матчи и недели.
-- В `MacheteShell` добавить пункт «КХЛ», доступный по тем же правилам доступа к рабочему пространству. Внутренние вкладки — «Состав», «Игроки», «Календарь». Не использовать подпись «данные FotMob» для КХЛ.
-- URL и сохранённые настройки включают `contestId`, `seasonId`, `weekId`, `squadId`, допустимые хоккейные фильтры. Чужой squadId возвращает 404.
-- Серверный `KHL_ENABLED` по умолчанию выключен; проверяется и API. Раздельные выключатели `KHL_SYNC_ENABLED`, `KHL_FORECASTS_ENABLED`. Выключение не трогает футбол.
+<a name="navigation"></a>
 
-## Версия правил {#rules}
+## Navigation {#navigation}
 
-Основной источник — [правила турнира 107](https://www.sports.ru/fantasy/hockey/tournament/rules/107.html), повторно получены HTTP 200 2026-09-07. Версию сезона страница явно не маркирует: хранить hash, fetchedAt, verifiedAt, providerContestId, season mapping и отдельную версию нашего ruleset. Проверка действующего сезона обязательна перед включением.
+- `/machete/khl/squad` - main screen; `/machete/khl/players` - catalog/comparison; `/machete/khl/calendar` - matches and weeks.
+- In `MacheteShell` add the “KHL” item, available according to the same rules for accessing the workspace. Internal tabs - “Squad”, “Players”, “Calendar”. Do not use the “FotMob data” signature for the KHL.
+- URL and saved settings include `contestId`, `seasonId`, `weekId`, `squadId`, valid hockey filters. Alien squadId returns 404.
+- Server `KHL_ENABLED` is disabled by default; API is also checked. Separate switches `KHL_SYNC_ENABLED`, `KHL_FORECASTS_ENABLED`. The shutdown does not affect football.
 
-| Параметр | Контракт |
+<a name="rules"></a>
+
+## Rules version {#rules}
+
+Main source - [tournament rules 107](https://www.sports.ru/fantasy/hockey/tournament/rules/107.html), re-retrieved HTTP 200 2026-09-07. The page does not explicitly mark the season version: store hash, fetchedAt, verifiedAt, providerContestId, season mapping and a separate version of our ruleset. Checking the current season is required before switching on.
+
+| Parameter | Contract |
 |---|---|
-| Состав | Ровно 17 уникальных игроков: G=2, D=6, F=9; amplua 1/2/3 сопоставляется по проверенным карточкам |
-| Бюджет | Начальный 20 000 целых единиц Sports.ru. Это не 100.0, не тысячи и не валюта |
-| Клуб | Не более 3 в любой сохраняемой полной версии состава |
-| Участие | Все 17; без скамейки, капитана, vice-captain, автозамен и chips |
-| Расположение | Косметическое, не меняет очки; строки на нашей площадке не являются реальными звеньями клуба |
-| Трансферы | До старта турнира без недельного лимита; после старта максимум 5 за официальную неделю. Не переносить накопление FPL и штраф −4 |
-| Действие | Мгновенное с момента внешней операции; нельзя ретроспективно получить очки проданного/купленного игрока |
-| Цена/капитал | Цена меняется после матча, стоимость состава вместе с ней; доступные средства = bank + актуальная стоимость владений |
-| Блокировка | Игрок блокируется за 30 минут до матча; разблокировка через неопределённое время после игры. Нужен свежий provider lock, нельзя назначать «конец матча + N минут» |
+| squad | Exactly 17 unique players: G=2, D=6, F=9; positions 1/2/3 is matched against verified cards |
+| Budget | Initial 20 000 whole units Sports.ru. This is not 100.0, not thousands and not the currency |
+| Club | No more than 3 in any saved full version of the squad |
+| Participation | All 17; without bench, captain, vice-captain, auto-correct and chips |
+| Location | Cosmetic, does not change glasses; the lines on our site are not real links to the club |
+| Transfers | Before the start of the tournament without a weekly limit; after the start, a maximum of 5 for the official week. Do not transfer FPL accumulation and fine −4 |
+| Action | Instant from the moment of external operation; It is not possible to receive points from a sold/bought player retrospectively |
+| Price/capital | The price changes after the match, the cost of the squad along with it; available funds = bank + current value of holdings |
+| Banning | The player is banned 30 minutes before the match; unlocking after an indefinite period of time after the game. We need a new provider lock, you can’t assign “end of match + N minutes” |
 
-`bank` — отдельное подтверждённое значение. Переоценка уже имеющихся игроков не прибавляется к bank второй раз. Продажа и покупка используют цену одного свежего снимка; особая цена продажи/комиссия не выдумывается. При непроверенной внешней стоимости продажи операция остаётся только сценарием. Бюджет повторно не ограничивается 20 000 после роста стоимости команды.
+`bank` is a separate confirmed value. Revaluation of existing players is not added to the bank a second time. Selling and buying use the price of one fresh photo; There is no special sales price/commission. With an unverified external sales value, the operation remains only a scenario. The budget is not limited again 20 000 after the increase in the cost of the team.
 
-## Недели и время {#weeks}
+<a name="weeks"></a>
 
-Правила называют понедельник 04:00, но не указывают явно часовой пояс. Предлагаем отображение Europe/Moscow, хранение UTC; timezone сброса надо подтвердить по конкретному турниру. Источник игровых недель выше арифметического календаря. Сущность недели содержит providerWeekId, label, startsAt/endsAt (nullable до проверки), timezone, source, verificationStatus, revision. Интервал после проверки полуоткрытый `[startsAt, endsAt)`.
+## Weeks and time {#weeks}
 
-В проверке 6 сентября карточка первой недели указывала окончание 14 сентября; 7 сентября карточка Спронга всё ещё относит 7/11/13 сентября к неделе 1, 15 сентября — к неделе 2. Нельзя 7 сентября автоматически сбросить счётчик только потому, что это понедельник. Дату «14 сентября» без времени/зоны нельзя объявить доказанным UTC deadline.
+The rules call Monday 04:00, but do not explicitly state the time zone. We offer Europe/Moscow display, UTC storage; The reset timezone must be confirmed for a specific tournament. Source of game weeks above the arithmetic calendar. The week entity contains providerWeekId, label, startsAt/endsAt (nullable before verification), timezone, source, verificationStatus, revision. Interval after check half-open `[startsAt, endsAt)`.
 
-Хранить явную связь матч ↔ fantasy-неделя, включая исключения и переносы. При конфликте границы/назначения недели показывать календарь источника, блокировать рекомендации, зависящие от спорного сброса, и ставить `WEEK_BOUNDARY_UNVERIFIED`. Не переносить уже начисленные очки между неделями до официальной коррекции. Изменение календаря увеличивает revision и инвалидирует прогноз/план.
+In the September 6 check, the first week card indicated the end of 14 September; September 7 Sprong's card still places September 7/11/13 in the week 1, September 15 in the week 2. You can't automatically reset the counter 7 September just because it's Monday. The date “14 September” without time/zone cannot be declared as a proven UTC deadline.
 
-## Официальный скоринг и локальная сверка {#scoring}
+Maintain an explicit connection between match ↔ fantasy week, including exceptions and transfers. If there is a week boundary/assignment conflict, show the source calendar, block recommendations that depend on the controversial reset, and set `WEEK_BOUNDARY_UNVERIFIED`. Do not carry over points already awarded between weeks until the official adjustment. Changing the calendar increases revision and invalidates the forecast/plan.
 
-Официальные FP из Sports.ru — источник итогового результата; локальный расчёт отдельный, с breakdown, rulesVersion и статусом `provisional|verified|mismatch|insufficient_data`.
+<a name="scoring"></a>
 
-| Событие | G | D | F |
+## Official scoring and local reconciliation {#scoring}
+
+Official FP from Sports.ru - the source of the final result; local calculation is separate, with breakdown, rulesVersion and status `provisional|verified|mismatch|insufficient_data`.
+
+| Event | G | D | F |
 |---|---:|---:|---:|
-| Победа команды в основное время | 3 | 3 | 3 |
-| Победа в ОТ/буллитах | 2 | 2 | 2 |
-| Поражение в ОТ/буллитах | 1 | 1 | 1 |
-| Гол / передача | Не определено таблицей | 10 / 5 | 10 / 5 |
-| Единица +/− | Не применяется | 2 | 2 |
-| Штрафная минута | Не определено таблицей | −1 | −1 |
-| Время строго больше 40 минут G / 10 минут полевого | 2 | 2 | 2 |
-| Время строго меньше порога при участии | 1 | 1 | 1 |
-| Сухой матч: полный для G, >10 минут для D | 20 | 10 | — |
-| Сухой матч D при <10 минут | — | 5 | — |
-| Пропущенная шайба | −3 | — | — |
-| Каждые два сэйва | 1 | — | — |
+| Team victory in regulation time | 3 | 3 | 3 |
+| Victory in OT/shootout | 2 | 2 | 2 |
+| Lost in OT/shootout | 1 | 1 | 1 |
+| Goal/assist | Not determined by table | 10 / 5 | 10 / 5 |
+| Unit +/− | Not applicable | 2 | 2 |
+| Penalty minute | Not defined by table | −1 | −1 |
+| Time is strictly greater than 40 minutes G / 10 field minutes | 2 | 2 | 2 |
+| Time is strictly less than the threshold with the participation of | 1 | 1 | 1 |
+| Dry match: full for G, >10 minutes for D | 20 | 10 | — |
+| Dry match D at <10 minutes | — | 5 | — |
+| Missing washer | −3 | — | — |
+| Every two saves | 1 | — | — |
 
-Отдельных бонусов за PP гол/ассист нет; PP — признак прогноза. Сэйвы группируются парами, не 0.5 за каждый: контрольный Исаев 21 SV, 1 GA, 60:00 и победа в основное время → 10 − 3 + 2 + 3 = 12 официальных FP (наблюдение 6 сентября).
+There are no separate bonuses for PP goals/assists; PP is a sign of forecast. Saves are grouped in pairs, not 0.5 for each: control Isaev 21 SV, 1 GA, 60:00 and victory in regulation time → 10 − 3 + 2 + 3 = 12 official FP (observation 6 September).
 
-Открытые правила: ровно 10:00/40:00; начисление командных очков неигравшему/запасному; смена вратаря, пустые ворота, буллиты и индивидуальные GA; редкие голы/ассисты/штрафы вратаря, чистый матч при заменах. Пустая ячейка правил не означает подтверждённый ноль. До сверки с официальными FP такие breakdown не объявлять точными. 0 TOI не равно «сыграл меньше порога». Sports.ru заявляет начисление в течение 24 часов после завершения матчей тура, это не гарантия мгновенного обновления после каждого матча.
+Open rules: exactly 10:00/40:00; awarding team points to a non-player/substitute; goalkeeper changes, empty nets, shootouts and individual GAs; rare goals/assists/goalkeeper penalties, clean match during substitutions. An empty rules cell does not mean a confirmed zero. Such breakdowns should not be declared accurate until reconciliation with official FPs. 0 TOI does not equal “played less than the threshold”. Sports.ru states that accruals will be made within 24 hours after the completion of the round matches; this does not guarantee instant updates after each match.
 
-## Приёмка {#acceptance}
+<a name="acceptance"></a>
 
-- RULE-01: валидны 2/6/9 и капитал в пределах доступного; отклонены дубликат, 4-й игрок клуба, неверная позиция, 16/18 игроков.
-- RULE-02: перестановка слотов не меняет FP/EP; ни один из 17 не становится запасным.
-- RULE-03: смена даты на 7 сентября не сбрасывает неделю 1; непроверенные границы видимы; перенос пересчитывает оставшиеся игры.
-- RULE-04: 21 сэйв даёт 10 очков за сэйвы; пример Исаева даёт 12. Пороговые и goalie edge cases покрыты официальными образцами либо остаются явно неподтверждёнными.
-- RULE-05: 5 использованных трансферов запрещают шестой; предсезонная смена и новая подтверждённая неделя различаются; неизвестный остаток не подставляется как 5.
+## Acceptance criteria {#acceptance}
 
-## Связи {#relationships}
+- RULE-01: 2/6/9 is valid and capital is within available limits; rejected duplicate, 4-th club player, incorrect position, 16/18 players.
+- RULE-02: rearranging slots does not change FP/EP; none of 17 becomes spare.
+- RULE-03: changing the date to 7 September does not reset the week of 1; unchecked boundaries are visible; the transfer recounts the remaining games.
+- RULE-04: 21 save gives 10 points for saves; Isaev gives an example 12. Threshold and goalie edge cases are covered by official samples or remain clearly unconfirmed.
+- RULE-05: 5 used transfers are prohibited sixth; pre-season shift and new confirmed week vary; the unknown remainder is not substituted as 5.
+
+<a name="relationships"></a>
+
+## Related specifications {#relationships}
 
 - `spec://modules/khl/FEAT-002-khl-squad#transfers`
 - `spec://modules/khl/INFRA-002-khl-storage-and-api#transactions`
-- [Источники и открытые зависимости](../../../docs/KHL_SOURCE_EVIDENCE_2026-09-07.md)
+- [Sources and open dependencies](../../../docs/research/KHL_SOURCE_EVIDENCE_2026-09-07.md)
 
-## История {#changelog}
+<a name="changelog"></a>
 
-- 2026-09-07: при интеграции сохранены исходные anchors и требования; добавлены обязательные разделы текущего standalone протокола и трассировка реализации. Draft gates не сняты.
+## Changelog {#changelog}
 
-- 2026-09-07: создан проект правил и границ; реализация отсутствует.
+- 2026-09-28: English documentation, repaired document references, and GitHub navigation anchors (WI-039).
 
-## actors {#actors}
+- 2026-09-07: during integration, the original anchors and requirements are preserved; added mandatory sections of the current standalone protocol and implementation trace. Draft gates have not been removed.
 
-Пользователь планирует состав; администратор подтверждает источник, правила и официальную неделю.
+- 2026-09-07: rules and boundaries project created; no implementation.
 
-## scenarios {#scenarios}
+<a name="actors"></a>
 
-Навигация описана в #navigation, состав и бюджет в #rules, границы недель в #weeks, сверка FP в #scoring.
+## Participants and triggers {#actors}
 
-## data {#data}
+User plans squad; the administrator confirms the source, rules and official week.
 
-Версии правил и недель имеют собственные ID; официальные FP не смешиваются с прогнозом EP (#rules, #weeks, #scoring).
+<a name="scenarios"></a>
 
-## contracts {#contracts}
+## Scenarios {#scenarios}
 
-Маршруты КХЛ из #navigation используют отдельные DTO; неподтверждённые правила не получают статус verified.
+Navigation is described in #navigation, squad and budget in #rules, week boundaries in #weeks, FP reconciliation in #scoring.
 
-## errors {#errors}
+<a name="data"></a>
 
-Неизвестная неделя, спорная граница TOI и отсутствующий протокол означают неизвестное значение с причиной, а не нулевой результат.
+## Data and state {#data}
 
-## Трассировка {#traceability}
+Rule and week versions have their own IDs; official FPs are not mixed with the EP forecast (#rules, #weeks, #scoring).
 
-src/khl/rules.ts, scoring.ts, domain.test.ts; src/app/machete/khl/. Итоговая приёмка определяется #acceptance; статус реализации — docs/KHL_IMPLEMENTATION_STATUS.md.
+<a name="contracts"></a>
+
+## Contracts {#contracts}
+
+KHL routes from #navigation use separate DTOs; unverified rules do not receive verified status.
+
+<a name="errors"></a>
+
+## Errors and validation {#errors}
+
+Unknown week, disputed TOI boundary, and missing protocol indicate an unknown value with a reason, not a null result.
+
+<a name="traceability"></a>
+
+## Implementation traceability {#traceability}
+
+src/khl/rules.ts, scoring.ts, domain.test.ts; src/app/machete/khl/. Final acceptance is determined by #acceptance; implementation status - docs/guides/KHL_IMPLEMENTATION_STATUS.md.

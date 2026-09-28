@@ -2,81 +2,126 @@
 status: active
 ---
 
-# FEAT-001: Виртуальная лига Fantasy {#root}
+<a name="root"></a>
 
-## Простыми словами {#plain-language}
-Пользователи Fantasy соревнуются с пятью алгоритмами на монетах. Каждый получает 100 000 один раз. Линия приходит из Фонбета; приложение не отправляет ставки букмекеру. До подтверждения видна оценка пяти алгоритмов. Ставить необязательно.
+# FEAT-001: Virtual Fantasy League {#root}
 
-## Управляющий канон и границы {#scope}
-Самостоятельная функция. Ограничения: specs/common/main.md, существующая авторизация, docs/DEPLOYMENT.md. Только прематчевый футбол в лигах из общего списка Squad (fantasySquadLeagueFotMobIds), независимо от загрузки статистики. Фильтр показывает весь список в порядке Squad, включая лиги с нулём событий. Нет платежей, вывода монет, обещаний доходности, автоматических сбросов, других видов спорта и виртуального футбола. Неоднозначные сопоставления не разрешаются догадкой.
+<a name="plain-language"></a>
 
-## Цель {#goal}
-Сравнивать решения людей и алгоритмов в общей лиге на настоящих прематчевых котировках.
+## Plain language {#plain-language}
 
-## Governing specs {#governing-specs}
-Самостоятельный канон; вышестоящие продуктовые и эксплуатационные ограничения перечислены в scope. Соседние спецификации Machete не меняются.
+Fantasy users compete against five algorithms using virtual coins. Each participant receives 100 000 coins once. Odds come from Fonbet; the application does not send bets to the bookmaker. All five algorithm assessments are visible before confirmation. Placing a bet is optional.
 
-## Участники {#actors}
-Активный пользователь Fantasy, пять автоматических участников, администратор расчётов и фоновый worker.
+<a name="scope"></a>
 
-## Сценарии {#scenarios}
-Пользователь открывает матч, читает оценки, выбирает исход и подтверждает сумму либо пропускает событие. Рабочий цикл обновляет линию, сохраняет решения ботов и рассчитывает завершённые матчи. Администратор проверяет остальные рынки и фиксирует источник расчёта.
+## Scope {#scope}
+Independent function. Restrictions: specs/common/main.md, existing authorization, docs/operations/DEPLOYMENT.md. Only pre-match football in leagues from the general Squad list (fantasySquadLeagueFotMobIds), regardless of loading statistics. The filter shows the entire list in Squad order, including leagues with zero events. No payments, coin withdrawals, promises of profitability, automatic resets, other sports and virtual football. Ambiguous comparisons cannot be resolved by guesswork.
 
-## Данные {#data}
-BettingAccount хранит баланс и связь с User либо именем бота. BettingEvent хранит текущую роспись и сопоставленный матч. BettingBet хранит неизменную принятую цену и исход; BettingLedger — проводки. BettingDecision хранит последнее решение участника на событие. BettingSyncState хранит аренду, время успеха и ошибку.
+<a name="goal"></a>
 
-## Контракты API {#contracts}
-GET /api/betting возвращает страницу лиги, ?event= — роспись выбранного матча, ?admin=pending — очередь расчёта для ADMIN. POST поддерживает bet, skip и settle. Контракты приёма, защиты и расчёта задаются ledger, feed, settlement и errors ниже. История показывает последние 100 ставок, рейтинг до 200 участников; все проводки сохраняются.
+## Goal {#goal}
+Compare decisions of people and algorithms in the general league using real pre-match quotes.
 
-## Трассировка {#traceability}
-Ответственность кода: src/betting/domain.ts, src/betting/provider.ts, src/betting/service.ts, src/betting/sync.ts, src/app/betting/ui.tsx, src/app/api/betting/route.ts.
+<a name="governing-specs"></a>
 
-## Интерфейс {#ui}
-Раздел /betting в общей навигации: фильтр лиги, поиск, группировка рынков выбранного события, купон одного исхода, история, решения алгоритмов и рейтинг. Купон показывает коэффициент, выплату, пять оценок и способ расчёта. Есть явный пропуск события. Рейтинг по капиталу: доступный баланс плюс номинал открытых ставок. ROI по обороту рассчитанных ставок без возвратов.
+## Governing specifications {#governing-specs}
+Independent canon; higher product and operational restrictions are listed in scope. The adjacent Machete specifications do not change.
 
-## Возможности в линии {#opportunities}
-Список событий сортируется по времени или по лучшему оценочному EV среди исходов, получивших BET хотя бы от одного алгоритма. По умолчанию сначала EV; сортировка всей выбранной лиги/поиска выполняется до пагинации. Равенства разрешаются временем и ID. Событие показывает лучший EV и число уникальных подходящих исходов; один исход с пятью оценками считается один раз.
+<a name="actors"></a>
 
-В открытом матче отдельный блок перечисляет все уникальные подходящие исходы по убыванию лучшего EV, с коэффициентом и именами/EV поддерживающих алгоритмов; выбор открывает существующий купон. Пять персональных советов сохраняются. Несколько исходов одного матча могут быть связаны: EV не складываются, выбор не создаёт экспресс или автоматическую ставку. EV — экспериментальная оценка, не гарантия прибыли. Порог BET и правило одного исхода на матч для ботов не меняются.
+## Participants and triggers {#actors}
+Active Fantasy user, five automatic participants, settlement administrator and background worker.
 
-Сводка `_opportunities` хранится в существующем JSON-снимке модели и заменяется атомарно вместе с котировками. Содержит версию алгоритмов, время котировок, kickoff, количество и лучший EV; без отдельных строк истории и без накопительного кэша в памяти. Применяется только к тому же снимку, текущей версии и открытой линии не старше 5 минут. Старые записи без сводки показывают отсутствие актуальной оценки до обычного обновления worker или открытия матча. В API списка не передаются росписи/история моделей; обновление выбранного события также обновляет список. Истёкшая оценка теряет подсветку без перезагрузки.
+<a name="scenarios"></a>
 
-## Балансы {#ledger}
-100 000 монет начисляются участнику однократно вместе с уникальной проводкой. Учёт в целых сотых монеты. Пользователь ставит целые монеты от 1 до 100 000 и не больше баланса. Списание и ставка атомарны с блокировкой счёта. Уникальный ключ запроса защищает сетевые повторы. Изменение коэффициента требует нового подтверждения. Неизменно сохраняются исход, параметр, правило, цена, рекомендации и время. Открытые ставки нельзя отменять по желанию пользователя.
+## Scenarios {#scenarios}
+The user opens the match, reads the scores, selects the outcome and confirms the amount or skips the event. The work cycle updates the line, saves bot decisions and calculates completed matches. The administrator checks other markets and records the source of calculation.
 
-Внутри открытого матча отображаются пять карточек алгоритмов: лучший доступный исход с коэффициентом, EV и причиной либо «Сюда лучше не ставить» с объяснением. Советы относятся только к выбранному матчу, не зависят от фильтра росписи; просроченная линия не даёт активную рекомендацию.
+<a name="data"></a>
 
-## Линия {#feed}
-listBase — события; events/event — полная роспись; factorsCatalog/tables — названия. Только football, place=line, будущее время, без блокировок. Приём по котировке не старше 5 минут; начавшийся по любому достоверному источнику матч закрыт. Исчезнувшие/заблокированные факторы недоступны. Неизвестные названия исходов показываются как неподдержанные, без приёма ставки. Текущий снимок один на событие, принятые цены остаются в ставках. API выдаёт страницы событий и роспись только выбранного события.
+## Data and state {#data}
+BettingAccount stores the balance and connection with the User or bot name. BettingEvent stores the current market listing and match mapping. BettingBet keeps the accepted price and outcome unchanged; BettingLedger - postings. BettingDecision stores the participant's last decision on an event. BettingSyncState stores lease, success time and error.
 
-## Расчёт {#settlement}
-Автоматически считаются явно поддержанные исходы по достоверному результату основного времени: 1X2, двойной шанс, тоталы, индивидуальные тоталы, обе забьют, азиатская фора. Целые линии допускают возврат, четвертные делятся пополам. Спорный счёт и возможное дополнительное время ожидают проверки. Таймовые, статистические и специальные рынки доступны с заметным признаком ручного расчёта. ADMIN указывает результат, источник и причину; расчёт применяется ко всем одинаковым выборам. Отмена матча возвращает ставки, исчезновение линии не является отменой. Повторный расчёт не начисляет деньги повторно. Источник и администратор сохраняются. Пробелы не заменяются нулём или суммой голов игроков.
+<a name="contracts"></a>
 
-## Алгоритмы {#algorithms}
-Mia — голы/xG 50/50, последние 20 игр; Abella — 25/75, строгий порог; Lana — короткая форма 8 игр; Riley — голы и отдых; Adriana — осторожное согласие длинной и короткой формы. Экспоненциальные веса, усадка к среднему лиги, домашнее преимущество; только завершённые игры до целевого матча. Недостаточная история и unsupported рынки означают «пропустить», без выдуманной вероятности. Версии и факторы опубликованы. Погода не включена без проверенного оперативного прогноза. Каждый бот ставит максимум один исход на событие, до 1% начального банка, открытый риск максимум 10%. EV учитывает возвраты. Решения экспериментальные и сохраняются.
+## Contracts {#contracts}
+GET /api/betting returns the league page, ?event= - listing of the selected match, ?admin=pending - settlement queue for ADMIN. POST supports bet, skip and settle. Reception, protection and settlement contracts are specified by ledger, feed, settlement and errors below. History shows the latest 100 bets, ranking up to 200 participants; all transactions are saved.
 
-Для ЛЧ/ЛЕ история ограничена двумя годами до целевого kickoff: до 20 игр национальных чемпионатов и 8 матчей общего этапа соответствующего еврокубка. Окно длинной модели сохраняет до 12 + 8, короткой — до 5 + 3; при отсутствии одного источника дополняется доступным, без дублирования. Если счёт матча пуст, разрешены явные goals обеих команд из MatchTeamStat с точным совпадением team ID; неполная или противоречивая пара исключается, суммы голов игроков не используются. Средний уровень еврокубка считается по минимум 30 прошлым матчам общего этапа. Числовые туры 1–8 общего этапа имеют 90-минутный формат и допускают автоматический расчёт; неизвестный этап и плей-офф остаются на проверке основного времени. Это экспериментальная политика, не доказательство доходности.
+<a name="traceability"></a>
 
-## Runtime и данные {#runtime}
-Отдельные счета, проводки, события, ставки, решения и статус синхронизации. Цикл только в worker, распределённая аренда исключает наложение; BETTING_LEAGUE_ENABLED=false выключает его. Ограничены HTTP-время, размер ответа и число событий за цикл. Каталог имеет TTL-кэш. Проводки и ставки не удаляются; старые события без ставок/решений очищаются пакетами. Выпуск: additive migration, backup/restore/canary через канонический promoter.
+## Implementation traceability {#traceability}
+Code responsibility: src/betting/domain.ts, src/betting/provider.ts, src/betting/service.ts, src/betting/sync.ts, src/app/betting/ui.tsx, src/app/api/betting/route.ts.
 
-## Ошибки {#errors}
-Только активные сессии Fantasy; свой счёт; ручной расчёт только ADMIN. Изменяющие запросы проверяют origin, JSON, размеры и типы. Недостаток монет, закрытый рынок, устаревшие цены и неоднозначность дают понятную ошибку без изменения баланса. Сбой Фонбета виден и не подменяется синтетической линией.
+<a name="ui"></a>
 
-## Трассировка и готовность {#acceptance}
-src/betting, src/app/betting, src/app/api/betting, worker, миграция и прямые тесты имеют @spec. Проверяются конкуренция, повторы, возвраты, даты/источники, лимиты ботов, авторизация, мобильный UI, revision/health, дубли и память.
+## Interface {#ui}
+Section /betting in general navigation: league filter, search, grouping of markets of the selected event, single outcome coupon, history, algorithm solutions and rating. The coupon shows the odds, payout, five ratings and calculation method. There is an obvious omission of an event. Equity rating: available balance plus face value of open bets. ROI based on the turnover of calculated bets without refunds.
 
-## Связи {#relationships}
-Исследования BETTING_FEASIBILITY_2026-09-07 и BETTING_FEATURE_RESEARCH_2026-09-07 описывают ограничения, не подтверждают прибыльность.
+<a name="opportunities"></a>
 
-## История {#changelog}
-- 2026-09-07: сортировка событий по оценочному EV, сводка уникальных исходов и общий список нескольких подходящих вариантов внутри матча.
-- 2026-09-07: канон принят по прямому поручению реализовать лигу.
+## Opportunities in the {#opportunities} line
+The list of events is sorted by time or by the best estimated EV among outcomes that received a BET from at least one algorithm. By default, EV first; Sorting of the entire selected league/search is done before pagination. Equalities are resolved by time and ID. An event shows the best EV and number of unique matching outcomes; one outcome with five scores is counted once.
 
-- 2026-09-07: список и охват лиг синхронизированы со Squad по поручению пользователя; наличие загруженной статистики не ограничивает линию.
+In an open match, a separate block lists all unique eligible outcomes in descending order of best EV, with odds and supporting algorithm names/EVs; selecting opens an existing coupon. Five personal tips are saved. Multiple outcomes of the same match can be linked: EVs do not add up, selection does not create an express bet or an automatic bet. EV is an experimental estimate and not a guarantee of profit. The BET threshold and the rule of one outcome per match for bots do not change.
 
-- 2026-09-07: внутри открытого матча пять карточек, по одной на алгоритм: лучший доступный исход с коэффициентом, EV и причиной либо «Сюда лучше не ставить». Поиск по росписи не скрывает советы. Устаревшая линия не даёт активную рекомендацию.
+The `_opportunities` summary is stored in an existing JSON snapshot of the model and is replaced atomically along with the quotes. Contains algorithm version, quote time, kickoff, quantity and best EV; no separate history lines and no cumulative cache in memory. Applies only to the same snapshot, current version and open line not older than 5 minutes. Old entries without a summary show that there is no up-to-date score until a normal worker update or match opens. Model paintings/history are not transferred to the list API; updating the selected event also updates the list. An expired score loses its highlighting without rebooting.
 
-- 2026-09-07: по поручению пользователя убрана вкладка ручного расчёта из Арены; начисление виртуальных выигрышей и защищённый служебный settlement API сохранены.
+<a name="ledger"></a>
 
-- 2026-09-07: исправлены выборка национальных лиг + прошлой ЛЧ/ЛЕ и запрет всех еврокубковых прогнозов; версия алгоритмов 2026-09-07.2.
+## Balances {#ledger}
+100 000 coins are awarded to the participant once along with a unique transaction. Accounting in whole hundredths of a coin. The user bets whole coins from 1 to 100 000 and no more than the balance. The debit and bet are atomic with account blocking. A unique request key protects network replays. Changing the coefficient requires new confirmation. The outcome, parameter, rule, price, recommendations and time are unchanged. Open bets cannot be canceled at the user's request.
+
+Inside an open match, five algorithm cards are displayed: the best available outcome with odds, EV and reason, or “It’s better not to bet here” with an explanation. Tips apply only to the selected match and do not depend on the match filter; an expired line does not provide an active recommendation.
+
+<a name="feed"></a>
+
+## Line {#feed}
+listBase - events; events/event - full list; factorsCatalog/tables - names. Only football, place=line, future tense, no blocking. Acceptance of quotation no older than 5 minutes; The match, which started according to any reliable source, is closed. Disappeared/blocked factors are not available. Unknown selection names are shown as unsupported, without accepting a bet. There is only one current snapshot per event; accepted prices remain in the bids. The API displays event pages and a description of only the selected event.
+
+<a name="settlement"></a>
+
+## Calculation {#settlement}
+Clearly supported outcomes are automatically calculated based on a reliable result of regulation time: 1X2, double chance, totals, individual totals, both will score, Asian handicap. Whole lines allow returns, quarter lines are divided in half. The disputed score and possible overtime are pending review. Timed, statistical and special markets are available with a noticeable feature of manual settlement. ADMIN indicates the result, source and cause; the calculation applies to all identical selections. Cancellation of a match returns bets; disappearance of a line is not a cancellation. Re-calculation does not re-credit money. The source and administrator are saved. Blanks are not replaced by zero or the sum of the players' goals.
+
+<a name="algorithms"></a>
+
+## Algorithms {#algorithms}
+Mia - goals/xG 50/50, latest 20 games; Abella - 25/75, strict threshold; Lana - short form of 8 games; Riley - goals and rest; Adriana - careful agreement of long and short form. Exponential weights, shrinkage to league average, home advantage; only completed games before the target match. Insufficient history and unsupported markets mean "missing out", with no fictional probability. Versions and factors have been published. Weather is not included without a verified operational forecast. Each bot bets a maximum of one outcome per event, up to 1% of the initial bank, open risk maximum 10%. EV takes returns into account. Solutions are experimental and saved.
+
+For the Champions League/UEL, the history is limited to two years before the target kickoff: up to 20 games of the national championships and 8 matches of the general stage of the corresponding European Cup. The long model window saves up to 12 + 8, the short model window saves up to 5 + 3; in the absence of one source, it is supplemented by the available one, without duplication. If the match score is empty, explicit goals from both teams from MatchTeamStat with an exact match of team ID are allowed; incomplete or inconsistent pairs are eliminated and the players' goal sums are not used. The average level of the European Cup is calculated based on at least 30 past matches of the general stage. Numerical rounds 1–8 of the general stage have a 90- minute format and allow automatic calculation; unknown stage and playoffs remain under regular time review. This is an experimental policy, not proof of profitability.
+
+<a name="runtime"></a>
+
+## Runtime and operations {#runtime}
+Individual accounts, transactions, events, rates, decisions and synchronization status. Cycle only in worker, distributed lease eliminates overlap; BETTING_LEAGUE_ENABLED=false disables it. HTTP time, response size, and number of events per loop are limited. The directory has a TTL cache. Postings and rates are not deleted; old events without bets/decisions are cleared in batches. Release: additive migration, backup/restore/canary via canonical promoter.
+
+<a name="errors"></a>
+
+## Errors and validation {#errors}
+Active Fantasy sessions only; your account; manual calculation only ADMIN. Modifying queries check origin, JSON, sizes and types. Insufficient coins, a closed market, outdated prices and ambiguity provide an understandable error without changing the balance. The Fonbet failure is visible and is not replaced by a synthetic line.
+
+<a name="acceptance"></a>
+
+## Acceptance criteria {#acceptance}
+src/betting, src/app/betting, src/app/api/betting, worker, migration and direct tests have @spec. Competition, replays, returns, dates/sources, bot limits, authorization, mobile UI, revision/health, duplicates and memory are checked.
+
+<a name="relationships"></a>
+
+## Related specifications {#relationships}
+Studies BETTING_FEASIBILITY_2026-09-07 and BETTING_FEATURE_RESEARCH_2026-09-07 describe limitations and do not confirm profitability.
+
+<a name="changelog"></a>
+
+## Changelog {#changelog}
+
+- 2026-09-28: English documentation, repaired document references, and GitHub navigation anchors (WI-039).
+- 2026-09-07: Sorting events by estimated EV, a summary of unique outcomes, and a general list of several suitable options within a match.
+- 2026-09-07: the canon was adopted on direct instructions to implement the league.
+
+- 2026-09-07: list and coverage of leagues synchronized with Squad on behalf of the user; the presence of loaded statistics does not limit the line.
+
+- 2026-09-07: inside the open match there are five cards, one per algorithm: the best available outcome with odds, EV and reason or “It’s better not to bet here.” Search by painting does not hide tips. The legacy line does not provide an active recommendation.
+
+- 2026-09-07: on behalf of the user, the manual calculation tab has been removed from the Arena; the accrual of virtual winnings and the secure service settlement API are preserved.
+
+- 2026-09-07: fixed selection of national leagues + last Champions League/UEFA Champions League and ban on all European Cup forecasts; version of algorithms 2026-09-07.2.

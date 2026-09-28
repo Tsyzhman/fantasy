@@ -1,6 +1,10 @@
-# Product
+<a name="root"></a>
 
-## Purpose
+# Product {#root}
+
+<a name="purpose"></a>
+
+## Purpose {#purpose}
 
 Fantasy Scout is a fantasy football scouting workspace. It turns provider data, price sheets, and match events into decisions about which players to buy, who is underpriced, and which shot profiles are real.
 
@@ -32,4 +36,10 @@ Out of scope for now: payments, multi-tenant organizations, live-match updates, 
 
 ## Sources
 
-These facts come from `README.md`, `product/PRODUCT_BRIEF.md`, and `docs/ARCHITECTURE.md`. Those files remain product documents; they are not typed Prist specifications.
+These facts come from `README.md`, `docs/product/PRODUCT_BRIEF.md`, and `docs/reference/ARCHITECTURE.md`. Those files remain product documents; they are not typed Prist specifications.
+
+<a name="changelog"></a>
+
+## Changelog {#changelog}
+
+- 2026-09-28: English repository documentation, topic-based navigation, and stable product-purpose anchors (WI-039).

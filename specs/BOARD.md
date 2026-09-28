@@ -1,11 +1,12 @@
 # BOARD
 
-> Компактный оперативный индекс work items. Каталог спецификаций находится в [SPEC-MAP.md](./SPEC-MAP.md).
+> Compact operational index of work items. The specifications catalog is located in [SPEC-MAP.md](SPEC-MAP.md).
 
 ## In Progress
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
+| [WI-039](work/WI-039-english-documentation.md) | English documentation and repository organization | common/main, common/structure | @tsyzhman | 2026-09-28 | — |
 
 ## Backlog
 
@@ -16,32 +17,32 @@
 
 | Work | Title | Owner | Reason | Waiting for |
 |---|---|---|---|---|
-| [WI-017](work/WI-017-khl-protocol-statistics.md) | Протоколы КХЛ и прогнозы | @tsyzhman | 0.3.67 и 29 протоколов опубликованы; готовый ixG недоступен, прямой источник КХЛ HTTP 403 | Источник ixG или решение по собственной модели; снятие ограничения доступа к протоколам |
-| [WI-001](work/WI-001-global-strategy.md) | Автоматическая стратегия глобального рейтинга | @tsyzhman | PostgreSQL/Docker недоступны; FPL HTTP 503; live-приёмка не выполнена | Рабочая БД и доступ к провайдеру/relay для миграции, синхронизации и end-to-end проверок |
+| [WI-017](work/WI-017-khl-protocol-statistics.md) | KHL protocols and forecasts | @tsyzhman | 0.3.67 and 29 protocols published; ready-made ixG is not available, direct KHL HTTP source 403 | ixG source or solution based on your own model; removing restrictions on access to protocols |
+| [WI-001](work/WI-001-global-strategy.md) | Automatic global ranking strategy | @tsyzhman | PostgreSQL/Docker not available; FPL HTTP 503; live acceptance failed | Working database and access to provider/relay for migration, synchronization and end-to-end checks |
 
 ## Done
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
-| [WI-024](work/archive/2026/WI-024-europa-three-per-club.md) | Три игрока клуба в Лиге Европы | @tsyzhman | 2026-09-16 |
-| [WI-023](work/archive/2026/WI-023-khl-expected-statistics.md) | Ожидания, соперники и обновление КХЛ | @tsyzhman | 2026-09-14 |
-| [WI-022](work/archive/2026/WI-022-khl-history-projection.md) | Полная статистика, подсказки и Excel КХЛ | @tsyzhman | 2026-09-14 |
-| [WI-021](work/archive/2026/WI-021-khl-visible-statistics.md) | Статистика, состав и импорт КХЛ | @tsyzhman | 2026-09-13 |
-| [WI-020](work/archive/2026/WI-020-europa-prices-enrichment.md) | Цены Лиги Европы и дополнение le.xlsx | @tsyzhman | 2026-09-13 |
-| [WI-019](work/archive/2026/WI-019-sports-prices-roster-repair.md) | Цены Sports и активность пропущенных игроков | @tsyzhman | 2026-09-11 |
-| [WI-018](work/archive/2026/WI-018-sorareinside-starters.md) | Основа из ближайшего матча SorareInside | @tsyzhman | 2026-09-11 |
-| [WI-016](work/archive/2026/WI-016-ucl-three-per-club.md) | Три игрока клуба в ЛЧ | @tsyzhman | 2026-09-08 |
-| [WI-015](work/archive/2026/WI-015-ffo-ucl-sync.md) | FFO в Squad | @tsyzhman | 2026-09-08 |
-| [WI-014](work/archive/2026/WI-014-squad-excel-export.md) | Экспорт полного пула Squad | @tsyzhman | 2026-09-08 |
-| [WI-013](work/archive/2026/WI-013-ucl-missing-clubs.md) | Пять клубов ЛЧ и старты УЕФА | @tsyzhman | 2026-09-08 |
-| [WI-012](work/archive/2026/WI-012-khl-statistics-import.md) | Фактическая статистика КХЛ на сервере | @tsyzhman | 2026-09-08 |
-| [WI-011](work/archive/2026/WI-011-khl-football-design.md) | Дизайн КХЛ и общий выпуск 0.3.62 | @tsyzhman | 2026-09-07 |
-| [WI-010](work/archive/2026/WI-010-fdr-colors.md) | Восстановить FDR на сервере | @tsyzhman | 2026-09-07 |
-| [WI-009](work/archive/2026/WI-009-betting-opportunities.md) | Сортировка событий и несколько исходов | @tsyzhman | 2026-09-07 |
-| [WI-008](work/archive/2026/WI-008-khl-production.md) | КХЛ на сервере и исправления Betting | @tsyzhman | 2026-09-07 |
-| [WI-007](work/archive/2026/WI-007-integrated-release.md) | Объединённый выпуск 0.3.58 | @tsyzhman | 2026-09-07 |
-| [WI-005](work/archive/2026/WI-005-virtual-betting-league.md) | Виртуальная лига ставок Fantasy | @tsyzhman | 2026-09-07 |
-| [WI-006](work/archive/2026/WI-006-rotation-risk.md) | RR — риск ротации игрока | @tsyzhman | 2026-09-07 |
-| [WI-004](work/archive/2026/WI-004-squad-contact-sheet.md) | Карточка состава «Контактный лист» | @tsyzhman | 2026-09-07 |
-| [WI-003](work/archive/2026/WI-003-betting-features.md) | Расширенная проверка факторов ставок | @tsyzhman | 2026-09-07 |
-| [WI-002](work/archive/2026/WI-002-betting-feasibility.md) | Проверка доходности ставок по статистике | @tsyzhman | 2026-09-07 |
+| [WI-024](work/archive/2026/WI-024-europa-three-per-club.md) | Three club players in the Europa League | @tsyzhman | 2026-09-16 |
+| [WI-023](work/archive/2026/WI-023-khl-expected-statistics.md) | Expectations, opponents and KHL update | @tsyzhman | 2026-09-14 |
+| [WI-022](work/archive/2026/WI-022-khl-history-projection.md) | Full statistics, tips and Excel KHL | @tsyzhman | 2026-09-14 |
+| [WI-021](work/archive/2026/WI-021-khl-visible-statistics.md) | Statistics, squad and import of the KHL | @tsyzhman | 2026-09-13 |
+| [WI-020](work/archive/2026/WI-020-europa-prices-enrichment.md) | Europa League prices and addition le.xlsx | @tsyzhman | 2026-09-13 |
+| [WI-019](work/archive/2026/WI-019-sports-prices-roster-repair.md) | Sports prices and activity of missed players | @tsyzhman | 2026-09-11 |
+| [WI-018](work/archive/2026/WI-018-sorareinside-starters.md) | Basis from the nearest match SorareInside | @tsyzhman | 2026-09-11 |
+| [WI-016](work/archive/2026/WI-016-ucl-three-per-club.md) | Three club players in the Champions League | @tsyzhman | 2026-09-08 |
+| [WI-015](work/archive/2026/WI-015-ffo-ucl-sync.md) | FFO in Squad | @tsyzhman | 2026-09-08 |
+| [WI-014](work/archive/2026/WI-014-squad-excel-export.md) | Exporting the full Squad pool | @tsyzhman | 2026-09-08 |
+| [WI-013](work/archive/2026/WI-013-ucl-missing-clubs.md) | Five Champions League clubs and UEFA starts | @tsyzhman | 2026-09-08 |
+| [WI-012](work/archive/2026/WI-012-khl-statistics-import.md) | Actual KHL statistics on the server | @tsyzhman | 2026-09-08 |
+| [WI-011](work/archive/2026/WI-011-khl-football-design.md) | KHL design and general release 0.3.62 | @tsyzhman | 2026-09-07 |
+| [WI-010](work/archive/2026/WI-010-fdr-colors.md) | Restore FDR on server | @tsyzhman | 2026-09-07 |
+| [WI-009](work/archive/2026/WI-009-betting-opportunities.md) | Event sorting and multiple outcomes | @tsyzhman | 2026-09-07 |
+| [WI-008](work/archive/2026/WI-008-khl-production.md) | KHL on the server and Betting fixes | @tsyzhman | 2026-09-07 |
+| [WI-007](work/archive/2026/WI-007-integrated-release.md) | Consolidated release 0.3.58 | @tsyzhman | 2026-09-07 |
+| [WI-005](work/archive/2026/WI-005-virtual-betting-league.md) | Virtual Fantasy Betting League | @tsyzhman | 2026-09-07 |
+| [WI-006](work/archive/2026/WI-006-rotation-risk.md) | RR - risk of player rotation | @tsyzhman | 2026-09-07 |
+| [WI-004](work/archive/2026/WI-004-squad-contact-sheet.md) | squad card “Contact sheet” | @tsyzhman | 2026-09-07 |
+| [WI-003](work/archive/2026/WI-003-betting-features.md) | Advanced check of betting factors | @tsyzhman | 2026-09-07 |
+| [WI-002](work/archive/2026/WI-002-betting-feasibility.md) | Checking the profitability of bets according to statistics | @tsyzhman | 2026-09-07 |
