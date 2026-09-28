@@ -29,10 +29,12 @@ The complete Production Browser Smoke passes on the current production interface
 - [ ] Failed and flaky full-suite assertions are reproduced and their causes recorded.
 - [ ] Betting smoke verifies all five algorithms and honest unavailable-history results without requiring invented data.
 - [ ] Football search and KHL refresh checks follow the current user interface and completed requests.
-- [ ] Focused lint/type validation and the complete desktop/tablet/mobile production smoke pass.
+- [ ] Focused lint/type validation and the complete desktop/tablet/mobile production smoke pass without failed or flaky checks.
 - [ ] Cache retention, duplicate records/jobs and runtime memory are checked after the complete smoke.
 - [ ] The committed correction and verification evidence are published for review.
 
 ## Result
 
 In progress. Baseline full run: https://github.com/Tsyzhman/fantasy/actions/runs/36425268049 on `a05ac190612b2e78112df970f2cc2b44c71cab64`: authentication passed; 23 browser checks passed, four failed, one flaky and 20 expected skips. Betting requires five historical matches even when the first listed fixture has only one; the football journey expects a removed heading; the KHL refresh assertion raced with its background refresh.
+
+The first correction passed Check 36427304813 (1210 unit tests, 15 database integration tests, zero lint errors, successful typecheck/build, zero production dependency vulnerabilities). Full smoke 36427238165 passed with 27 browser checks, one flaky mobile KHL check and 20 expected skips. The remaining race read an EP forecast before export/history changes, then expected it in a later catalog revision. Publication is now checked immediately before the card opens; formula and coverage assertions use the catalog response actually consumed by the interface.

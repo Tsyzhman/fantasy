@@ -1,4 +1,4 @@
-import {test,expect,type Page} from '@playwright/test';
+import {test,expect,type Page,type Response} from '@playwright/test';
 import {formatToi,formatKhlNumber,historicalTableStats,type KhlPlayer} from '../src/khl/contracts';
 import ExcelJS from 'exceljs';
 import {readFile} from 'node:fs/promises';
@@ -86,15 +86,9 @@ test('KHL visible statistics survive partial matches and history switches',async
  const options=page.getByRole('combobox',{name:'Открыть карточку игрока'}).locator('option');
  await expect(options).toHaveCount(2);
  const id=await options.nth(1).getAttribute('value');
- let p!:KhlPlayer;
- // A source revision can arrive immediately before the minute worker publishes EP.
- // Wait for that publication explicitly; a persistent missing forecast still fails.
- await expect.poll(async()=>{
-  const response=await page.request.get(`/api/machete/khl/players/${id}?contestId=cmtr4grkd00056htzwpdv4fwu`);
-  expect(response.status()).toBe(200);
-  p=(await response.json()).data as KhlPlayer;
-  return p.forecastExplanation?.details?.version;
- },{timeout:75000,intervals:[1000,3000,5000]}).toBe(1);
+ const snapshot=await page.request.get(`/api/machete/khl/players/${id}?contestId=cmtr4grkd00056htzwpdv4fwu`);
+ expect(snapshot.status()).toBe(200);
+ const p=(await snapshot.json()).data as KhlPlayer;
  const exportResponse=page.waitForResponse(r=>r.url().includes('/players-export?'));
  const downloadReady=page.waitForEvent('download');
  await page.getByRole('button',{name:'Excel · все игроки',exact:true}).click();
@@ -114,11 +108,9 @@ test('KHL visible statistics survive partial matches and history switches',async
  }
  await expect(page.getByRole('status').filter({hasText:`Excel готов: ${poolCount} игроков`})).toBeVisible();
  expect(p.previousSeasonStats?.games).toBeGreaterThan(40);
- expect(p.forecastExplanation?.previousGames).toBeGreaterThan(40);
  expect(p.previousSeasonStats?.protocolStats?.games).toBeGreaterThan(40);
  for(const key of ['shotsOnGoal','ppToiSeconds','pkToiSeconds','attackZoneSeconds'] as const) expect(p.previousSeasonStats!.protocolStats!.totals[key].value).toBeGreaterThan(0);
  const row=page.locator('tbody tr').filter({hasText:'Грегуар'});
- await expect(row.locator('td').nth(10)).toHaveAttribute('title',/За сыгранный матч:/);
  await page.getByText('Справка показателей',{exact:true}).click();
  await expect(page.locator('details[open]').filter({hasText:'Справка показателей'})).toContainText('частота участия');
  await page.getByText('Справка показателей',{exact:true}).click();
@@ -137,23 +129,34 @@ test('KHL visible statistics survive partial matches and history switches',async
  }
  await page.getByRole('combobox',{name:'История для средних'}).selectOption('5');
  const refresh=page.getByRole('button',{name:'Обновить статистику',exact:true});
- await refreshStatistics(page);
+ let cardPlayer!:KhlPlayer;
+ // Wait at the point where the card consumes the refreshed catalog, rather
+ // than relying on a forecast read before export and history-window changes.
+ await expect.poll(async()=>{
+  const response=await page.request.get(`/api/machete/khl/players/${id}?contestId=cmtr4grkd00056htzwpdv4fwu&historyWindow=5`);
+  expect(response.status()).toBe(200);
+  const published=(await response.json()).data as KhlPlayer;
+  if(published.forecastExplanation?.details?.version!==1) return undefined;
+  const loaded=await refreshStatistics(page);
+  cardPlayer=loaded.find(player=>player.id===id)!;
+  expect(cardPlayer,'Refreshed catalog must contain the selected player').toBeTruthy();
+  return cardPlayer.forecastExplanation?.details?.version;
+ },{timeout:75000,intervals:[1000,3000,5000]}).toBe(1);
  await expect(page.getByRole('textbox',{name:'Поиск игрока',exact:true})).toHaveValue('Грегуар');
  await expect(row.getByRole('button',{name:'Убрать',exact:true})).toBeVisible();
+ await expect(row.locator('td').nth(10)).toHaveAttribute('title',/За сыгранный матч:/);
  await row.getByRole('button',{name:'Разобрать прогноз: Грегуар',exact:true}).click();
  const card=page.getByRole('region',{name:'Карточка Грегуар'});
  await expect(card).toBeVisible();
- const cardSnapshot=await page.request.get(`/api/machete/khl/players/${id}?contestId=cmtr4grkd00056htzwpdv4fwu&historyWindow=5`);
- expect(cardSnapshot.status()).toBe(200);
- const cardPlayer=(await cardSnapshot.json()).data as KhlPlayer;
  expect(cardPlayer.attackZoneSeconds!.totalGames).toBeLessThanOrEqual(5);
  await expect(card).toContainText(`Данные: ${cardPlayer.attackZoneSeconds!.knownGames} из ${cardPlayer.attackZoneSeconds!.totalGames} матчей`);
  await expect(card.getByRole('region',{name:'Формула EP'})).toBeVisible();
  await expect(card.getByRole('heading',{name:'Ожидаемые показатели',exact:true})).toBeVisible();
- expect(p.forecastExplanation?.details?.version).toBe(1);
+ expect(cardPlayer.forecastExplanation?.details?.version).toBe(1);
+ expect(cardPlayer.forecastExplanation?.previousGames).toBeGreaterThan(40);
  const expectedTable=card.getByRole('region',{name:'Формула EP'}).getByRole('table');
  const expectedGoals=expectedTable.getByRole('row').filter({has:page.getByRole('rowheader',{name:'Голы',exact:true})});
- await expect(expectedGoals.getByRole('cell').first()).toHaveText(formatKhlNumber(p.forecastExplanation!.details!.expected.goals));
+ await expect(expectedGoals.getByRole('cell').first()).toHaveText(formatKhlNumber(cardPlayer.forecastExplanation!.details!.expected.goals));
  await card.getByText('Из чего получился прогноз',{exact:true}).click();
  await expect(card).toContainText('Вес прошлого: min(20;');
  await card.getByText('Из чего получился прогноз',{exact:true}).click();
@@ -192,15 +195,32 @@ async function refreshStatistics(page: Page) {
  const status=refresh.locator('..').getByRole('status');
  for(let attempt=0;attempt<3;attempt++) {
   await expect(refresh).toBeEnabled({timeout:30000});
-  const response=page.waitForResponse(r=>r.url().includes('/api/machete/khl/players?') && r.request().method()==='GET');
-  await refresh.click();
-  expect((await response).status()).toBe(200);
-  await expect(refresh).toBeEnabled({timeout:30000});
-  const message=await status.innerText();
-  if(message==='Статистика обновлена.') return;
-  // A published revision may change between catalog pages. Exercise the UI's
-  // explicit retry; unrelated errors and persistent conflicts still fail.
-  expect(message).toBe('Каталог изменился во время загрузки. Повторите выбор окна.');
+  const pages:Promise<KhlPlayer[]>[]=[];
+  const capture=(response:Response)=>{
+   const url=new URL(response.url());
+   if(url.pathname==='/api/machete/khl/players' && url.searchParams.get('historyWindow')==='5' && response.request().method()==='GET') {
+    pages.push(response.json().then(body=>body.data.players as KhlPlayer[]));
+   }
+  };
+  page.on('response',capture);
+  try {
+   const response=page.waitForResponse(r=>new URL(r.url()).pathname==='/api/machete/khl/players' && r.request().method()==='GET');
+   await refresh.click();
+   expect((await response).status()).toBe(200);
+   await expect(refresh).toBeEnabled({timeout:30000});
+   const players=(await Promise.all(pages)).flat();
+   const message=await status.innerText();
+   if(message==='Статистика обновлена.') {
+    expect(players.length).toBeGreaterThan(0);
+    expect(new Set(players.map(player=>player.id)).size).toBe(players.length);
+    return players;
+   }
+   // A published revision may change between catalog pages. Exercise the UI's
+   // explicit retry; unrelated errors and persistent conflicts still fail.
+   expect(message).toBe('Каталог изменился во время загрузки. Повторите выбор окна.');
+  } finally {
+   page.off('response',capture);
+  }
  }
  throw new Error('KHL catalog changed during all three bounded refresh attempts.');
 }

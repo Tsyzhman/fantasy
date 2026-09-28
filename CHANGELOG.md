@@ -5,6 +5,7 @@
 - Restore the complete production browser smoke against the current player search interface.
 - Verify five betting assessments with explicit insufficient-history skips and bounded probabilities instead of requiring complete history for every live fixture.
 - Retry only explicit KHL catalog revision conflicts during the statistics refresh check, with a bounded test budget that accommodates the existing forecast publication wait.
+- Check KHL forecast publication immediately before opening the card and compare its formula with the exact refreshed catalog payload rendered by the interface.
 
 ## 0.3.107 - 2026-09-28
 
