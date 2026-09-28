@@ -8,9 +8,11 @@ import { previewTransfers } from "@/khl/transfers";
 import { khlViolationText } from "@/khl/messages";
 import { khlCellHelp, khlStatHelp, type KhlHelpKey } from "@/khl/stat-help";
 import { KhlCalendar, KhlPlayerDetails } from "./KhlDataPanels";
+import { KhlSyncStatusPanel } from "./KhlSyncStatusPanel";
+import type { KhlSyncStatus } from "@/khl/sync-status";
 import { useKhlOptimizer } from "./useKhlOptimizer";
 export type KhlViewPreferences = { position?: KhlPosition | "ALL"; query?: string; club?: string; maximum?: string; compare?: string[]; direction?: 1 | -1; sortField?: "price" | "ep" | "officialFp" | "toiSeconds" | "ppToiSeconds" | "pkToiSeconds" | "attackZoneSeconds" | "ixg" | "saves" | "goalsAgainst" | "goals" | "assists" | "shotsOnGoal" | "pimMinutes" | "plusMinus"; minimumToi?: string };
-type Props = { protocolNotice?: string; contestId: string; season: string; players: KhlPlayer[]; weeks: KhlWeek[]; initialSquad: KhlSquad | null; initialPreferences?: KhlViewPreferences; tab: "squad" | "players" | "calendar" };
+type Props = { protocolNotice?: string; syncStatus?: KhlSyncStatus; contestId: string; season: string; players: KhlPlayer[]; weeks: KhlWeek[]; initialSquad: KhlSquad | null; initialPreferences?: KhlViewPreferences; tab: "squad" | "players" | "calendar" };
 import styles from "./KhlSquadPlanner.module.css";
 import { KhlSquadCard } from "./KhlSquadCard";
 const control = styles.control;
@@ -18,7 +20,7 @@ const control = styles.control;
 function KhlTimeStat({ value, games }: { value: Observation<number> | undefined; games: number }) {
   return <><span>{formatToi(value?.value ?? null)}</span><small className={styles.coverage} title="Матчи с известным значением / сыгранные матчи">{value?.knownGames ?? 0}/{value?.totalGames ?? games} матчей</small></>;
 }
-export function KhlSquadPlanner({ contestId, season, players: initialPlayers, weeks, initialSquad, protocolNotice, initialPreferences: preferences = {}, tab }: Props) {
+export function KhlSquadPlanner({ contestId, season, players: initialPlayers, weeks, initialSquad, protocolNotice, syncStatus, initialPreferences: preferences = {}, tab }: Props) {
   const [loadedPlayers, setLoadedPlayers] = useState<{ source: KhlPlayer[]; historyWindow: number; players: KhlPlayer[] } | null>(null);
   const [statPeriod, setStatPeriod] = useState<"season" | "recent" | "previous">("season");
   const [rolling, setRolling] = useState(true);
@@ -201,6 +203,7 @@ export function KhlSquadPlanner({ contestId, season, players: initialPlayers, we
     <p className="text-sm font-semibold">{(["G", "D", "F"] as const).map(pos => `${pos} ${selected.filter(p => p.position === pos).length}/${KHL_RULES.positions[pos]}`).join(" · ")}</p>
     <div className="flex flex-wrap items-center gap-3"><h1 className="text-2xl font-bold">Fantasy КХЛ · {season}</h1><span className={styles.notice}>Источники подключены частично</span><button className={control} disabled={statsBusy} onClick={() => { optimizer.cancel(); setRefreshRevision(n => n + 1); }}>Обновить статистику</button><span role="status">{statsBusy ? "Загружаются свежие показатели…" : statsMessage}</span></div>
     <nav aria-label="Разделы КХЛ" className={styles.tabs}>{([["squad", "Состав"], ["players", "Игроки"], ["calendar", "Календарь"]] as const).map(([key, label]) => <Link className={control} aria-current={activeTab === key ? "page" : undefined} key={key} href={`/machete/khl/${key}?contestId=${encodeURIComponent(contestId)}${saved ? `&squadId=${saved.id}` : ""}`} onClick={event => { event.preventDefault(); optimizer.cancel(); setActiveTab(key); setRefreshRevision(n => n + 1); const url = new URL(window.location.href); url.pathname = `/machete/khl/${key}`; window.history.replaceState(null, "", url); }}>{label}</Link>)}</nav>
+    {syncStatus && <KhlSyncStatusPanel contestId={contestId} initialStatus={syncStatus}/>}
     {protocolNotice && <p role="status" className={styles.notice}>{protocolNotice}</p>}
     <p className={styles.notice}>{players.some(p => p.ep.value !== null) ? "Доступен опубликованный EP. Модель и качество указаны в источниках карточки; beta-прогноз не подтверждает готовность xG-модели." : "Прогноз выбранного периода пока не готов."} Неизвестное обозначено «—». Внешнее выполнение трансферов отсутствует.</p>
     <label className="block">Период прогноза <select className={control} value={rolling ? "rolling" : "week"} onChange={e => { optimizer.cancel(); setRolling(e.target.value === "rolling"); }}><option value="rolling">Ближайшие 7 дней · оценка</option><option value="week">Официальная фэнтези-неделя</option></select></label>

@@ -6,6 +6,7 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
+| [WI-042](work/WI-042-khl-update-status.md) | KHL update dates and latest refresh outcome | KHL INFRA-001/002, FEAT-002 | @tsyzhman | 2026-09-28 | — |
 
 ## Backlog
 

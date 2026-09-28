@@ -10,10 +10,18 @@ import { publishRollingForecast } from './rolling-forecast';
 import { pruneKhl } from './retention';
 import { refreshKhlBirthDates } from './identity-sync';
 import { refreshKhlInjuries } from './injury-sync';
+import { readKhlSyncStatus } from './sync-status';
+import { khlRunningCursor, khlCompletedCursor } from '@/khl/sync-status';
 
-/** The production entrypoint holds flock across the entire cycle, including all batches. */
+/** The production entrypoint holds flock across the entire cycle, including all batches.
+ * @spec spec://modules/khl/INFRA-001-khl-data-ingestion#sync-status
+ */
 export async function runKhlDailySync(db: PrismaClient, contestId: string) {
   const startedAt = new Date(), results: { source: string; status: string; detail: unknown }[] = [];
+  const key = { provider: 'KHL_DAILY', scope: contestId, jobType: 'ALL_SOURCES' };
+  const previous = await readKhlSyncStatus(db, contestId, null);
+  const running = { completedAt: previous.lastAttempt ? new Date(previous.lastAttempt.completedAt) : startedAt, cursor: khlRunningCursor(previous, startedAt) };
+  await db.khlProviderCheckpoint.upsert({ where: { provider_scope_jobType: key }, create: { ...key, ...running }, update: running });
   const deadline = startedAt.getTime() + 15 * 60000;
   async function step(source: string, action: () => Promise<unknown>) {
     try { const detail = await action(); const pending = detail && typeof detail === 'object' && 'remaining' in detail && Number(detail.remaining) > 0; results.push({ source, status: pending ? 'PENDING' : 'DONE', detail }); }
@@ -90,11 +98,11 @@ export async function runKhlDailySync(db: PrismaClient, contestId: string) {
   await step('КХЛ: травмированные', () => refreshKhlInjuries(db, contestId));
   await step('EP', () => publishRollingForecast(db, contestId));
   await step('Очистка', () => pruneKhl(db, new Date()));
-  const status = results.some(r => r.status === 'FAILED') ? 'PARTIAL' : results.some(r => r.status === 'PENDING') ? 'PENDING' : 'DONE';
-  const key = { provider: 'KHL_DAILY', scope: contestId, jobType: 'ALL_SOURCES' };
-  const data = { completedAt: new Date(), cursor: { startedAt: startedAt.toISOString(), status, sources: results.map(r => ({ source: r.source, status: r.status, detail: JSON.stringify(r.detail).slice(0, 2000) })) } };
+  const completedAt = new Date();
+  const data = { completedAt, cursor: khlCompletedCursor(previous, startedAt, completedAt, results) };
+  const status = data.cursor.status;
   await db.khlProviderCheckpoint.upsert({ where: { provider_scope_jobType: key }, create: { ...key, ...data }, update: data });
-  const health = { capabilities: ['scheduled_statistics'], permissionStatus: 'PUBLIC_READ', evidence: 'User-requested incremental server refresh every hour at :22 Europe/Moscow; no browser; bounded batches with checkpoints.', health: status === 'PARTIAL' ? 'DEGRADED' : 'HEALTHY', lastSuccessAt: status !== 'PARTIAL' ? new Date() : undefined, coverage: data.cursor };
+  const health = { capabilities: ['scheduled_statistics'], permissionStatus: 'PUBLIC_READ', evidence: 'User-requested incremental server refresh every hour at :22 Europe/Moscow; no browser; bounded batches with checkpoints.', health: status === 'DONE' ? 'HEALTHY' : 'DEGRADED', lastSuccessAt: status === 'DONE' ? completedAt : undefined, coverage: data.cursor };
   await db.khlSourceContract.upsert({ where: { provider: 'KHL_DAILY' }, create: { provider: 'KHL_DAILY', ...health }, update: health });
   return { status, startedAt: startedAt.toISOString(), results };
 }

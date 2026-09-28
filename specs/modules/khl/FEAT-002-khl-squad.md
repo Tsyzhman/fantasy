@@ -39,6 +39,8 @@ Neutral dialogs, buttons, accessibility, formatting, mechanics for canceling wor
 
 Top line: KHL / season / official week with its interval / lineup option / last synchronization. Next is the budget panel: cost 17, bank, available capital, occupancy G 2/2 · D 6/6 · F 9/9, balance of official transfers or “unknown”.
 
+All three KHL views display a server refresh panel near the title: catalog publication date/time, last fully successful cycle, and the latest completed attempt with success/error/pending status. An active or interrupted cycle is separate. Dates use `Europe/Moscow` and an explicit `МСК` label; missing dates are unknown. Source failures name the affected sources and explain that saved data remain available. The lightweight panel refreshes once per minute while visible and preserves the last known state if its status request fails, with an explicit verification warning. Updating status does not claim that the visible player table was reloaded; the existing “Обновить статистику” control remains available.
+
 Design adapts Football Squad: general contact sheet classes, name bar, metrics block, direct pin/delete and thematic tokens. Football rules are not transferred. If there is no photo, initials are used; unconnected data remains “—”.
 
 Desktop ≥1280px adapts the desktop football SquadPitch: compact cards on the site on the left, a catalog on the right with internal scrolling and a fixed header. All 17 are active; groups G(2), D(6), F(9), compact rows without a football bench. Mobile/tablet adapts SquadTouchRoster: a separate vertical list by position with readable indicators and actions ≥44px. Empty spaces are available for position selection, details and rearrangements are accessible from the keyboard. There is no general horizontal page scrolling.
@@ -135,6 +137,8 @@ The catalog is given in pages, detail is loaded upon opening. For the selector, 
 <a name="changelog"></a>
 
 ## Changelog {#changelog}
+
+- 2026-09-28: WI-042 — shared KHL header shows real server refresh times, full-success and last-attempt outcomes, pending work and interruptions, with bounded status polling.
 
 - 2026-09-28: English documentation, repaired document references, and GitHub navigation anchors (WI-039).
 

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.105 - 2026-09-28
+
+- KHL: show catalog and full-success date/time in Moscow, the latest refresh outcome, affected sources, active runs and interruptions on all KHL views.
+- Keep the previous success timestamp on source errors and pending batches; poll a bounded authenticated status endpoint without collecting provider data.
+- Integrate the published KHL/franchise/Telegram features with main's documentation, patched dependencies and isolated CI checks.
+
 ## 0.3.104 - 2026-09-28
 
 ### Documentation

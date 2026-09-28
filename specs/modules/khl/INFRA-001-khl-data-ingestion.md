@@ -104,6 +104,16 @@ Without XG-01 the catalog and local options can work. The forecast is marked `XG
 - The khl.ru map shows only verified shots on target: 60 (26+34), 5 goals with 100 attempts in the example. Desktop/mobile give 120 DOM points, the mobile system is rotated `x'=100-y, y'=x`. If the map is later imported, select one view, check the fingerprint; it is not a complete map of attempts or a source of your own xG. Map import is not needed for the first version.
 - `/rest/game/protocol/` подтверждён с production (20 сентября); остальные REST routes не объявляются готовыми API. Browser fallback на сервере запрещён пользователем.
 
+<a name="sync-status"></a>
+
+## Visible refresh status {#sync-status}
+
+The KHL header reads the persisted, contest-scoped `KHL_DAILY / ALL_SOURCES` checkpoint. It distinguishes the latest completed attempt (`DONE`, `PARTIAL`, `PENDING`) from an active run, preserves the previous completed result during a new run, and labels a run older than 35 minutes as interrupted. It never uses the request time as the data refresh time.
+
+Only a fully completed `DONE` cycle advances `lastSuccessAt`. `PARTIAL`, `PENDING`, an interrupted process, and a page refresh preserve that timestamp. Legacy records without a provable full success show an unknown full-success time; their catalog publication and last attempt times remain visible. Failed source names are visible, while raw errors, cookies and private transport details remain server-side.
+
+State is persisted before ingestion begins and after it ends. One checkpoint per contest holds at most ten source summaries and the previous completed attempt while running, without accumulating run history or creating another collector. Status reads use no application cache, trigger no provider requests, and poll at most once per minute while the page is visible, with one in-flight request and cancellation on unmount.
+
 <a name="operations"></a>
 
 ## Update, cache and resources {#operations}
@@ -154,7 +164,9 @@ The initial loading is continued by the same fenced coordinator: `node scripts/k
 
 <a name="changelog"></a>
 
-## История {#changelog}
+## Changelog {#changelog}
+
+- 2026-09-28: WI-042 — persist active/last-completed cycle status and a strict full-success timestamp; expose bounded source outcomes for the KHL header without new provider reads.
 
 - 2026-09-20: WI-026 — проверенный серверный REST HTTP-транспорт без браузера, инкрементальный цикл каждый час в :22, ограниченные пакеты, честное PENDING/PARTIAL и матрица nullable покрытия; полная DOB-сверка пула, безопасный identity-import, проверка новых игроков, инвалидирование архивного покрытия при новой связи и официальные клубные травмы с TTL/retention.
 

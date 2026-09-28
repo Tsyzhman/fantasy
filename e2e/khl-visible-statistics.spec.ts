@@ -3,6 +3,42 @@ import {formatToi,formatKhlNumber,historicalTableStats,type KhlPlayer} from '../
 import ExcelJS from 'exceljs';
 import {readFile} from 'node:fs/promises';
 
+/** @spec spec://modules/khl/INFRA-001-khl-data-ingestion#sync-status
+ * @spec spec://modules/khl/FEAT-002-khl-squad#layout
+ */
+test('KHL visible statistics include refresh status on every view and preserve it on polling failure', async ({page}, testInfo) => {
+ test.skip(process.env.KHL_PRODUCTION_SMOKE !== 'true', 'Explicit production status check');
+ test.setTimeout(120000);
+ const contests = await page.request.get('/api/machete/khl/contests');
+ expect(contests.status()).toBe(200);
+ const contestId = (await contests.json()).data.map((c: {id: string}) => c.id).sort()[0];
+ expect(contestId).toBeTruthy();
+ const result = await page.request.get(`/api/machete/khl/sync-status?contestId=${encodeURIComponent(contestId)}`);
+ expect(result.status()).toBe(200);
+ expect(result.headers()['cache-control']).toContain('no-store');
+ const status = (await result.json()).data;
+ expect(status.catalogUpdatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+ expect(status.lastAttempt?.sources.length ?? 0).toBeLessThanOrEqual(10);
+ expect(JSON.stringify(status)).not.toContain('"detail"');
+ await page.clock.install();
+ for (const view of ['squad','players','calendar']) {
+  await page.goto(`/machete/khl/${view}?contestId=${encodeURIComponent(contestId)}`);
+  const panel = page.getByRole('region', {name: 'Обновление данных КХЛ'});
+  await expect(panel).toBeVisible();
+  await expect(panel).toContainText('Каталог и цены:');
+  await expect(panel).toContainText('Полное успешное обновление:');
+  await expect(panel).toContainText('МСК');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);
+ }
+ await page.screenshot({path: testInfo.outputPath('khl-refresh-status.png')});
+ const panel = page.getByRole('region', {name: 'Обновление данных КХЛ'});
+ const catalogTime = await panel.locator('time').first().getAttribute('datetime');
+ await page.route('**/api/machete/khl/sync-status?*', route => route.fulfill({status: 503, contentType: 'application/json', body: '{}'}));
+ await page.clock.runFor(61000);
+ await expect(panel).toContainText('Статус сейчас проверить не удалось.');
+ expect(await panel.locator('time').first().getAttribute('datetime')).toBe(catalogTime);
+});
+
 /** @spec spec://modules/khl/FEAT-002-khl-squad#cards */
 test('KHL visible statistics survive partial matches and history switches',async({page},testInfo)=>{
  test.skip(process.env.KHL_PRODUCTION_SMOKE!=='true','Explicit production statistics check');

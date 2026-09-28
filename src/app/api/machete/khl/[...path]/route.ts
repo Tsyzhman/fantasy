@@ -11,6 +11,7 @@ import { prepareOptimization } from "@/server/khl/optimizer-service";
 import { importSportsHockeySquad } from "@/server/khl/sports-import";
 import { importOwnedProviderSnapshot } from "@/server/khl/provider-snapshot";
 import { buildKhlWorkbook, loadKhlExport } from "@/server/khl/player-export";
+import { readKhlSyncStatus } from "@/server/khl/sync-status";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 type Context = { params: Promise<{ path: string[] }> };
@@ -24,6 +25,7 @@ export const GET = withApiHandler(async (request: Request, context: Context) => 
   const contestId = requiredStringParam(params.get("contestId"), "contestId");
   const contest = await prisma.khlContest.findUnique({ where: { id: contestId } });
   if (!contest) throw apiError("NOT_FOUND", "Турнир не найден", 404);
+  if (path.length === 1 && path[0] === "sync-status") return response(envelope(contest, await readKhlSyncStatus(prisma, contestId, contest.publishedAt)));
   if (path[0] === "readiness") { const state = await readiness(prisma, contestId); return response({ ...envelope(contest, state), readiness: state }); }
   if (path[0] === "preferences") return response(envelope(contest, await prisma.khlUserViewPreference.findUnique({ where: { userId_contestId_viewKey: { userId: auth.user.id, contestId, viewKey: "planner" } } })));
   if (path[0] === "weeks") return response(envelope(contest, await prisma.khlFantasyWeek.findMany({ where: { contestId }, orderBy: { providerWeekId: "asc" }, take: 100 })));

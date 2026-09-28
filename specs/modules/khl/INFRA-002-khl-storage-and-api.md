@@ -96,6 +96,7 @@ New routes under `/api/machete/khl`, separate from the football `/api/machete/sq
 | POST `/squads/{id}/transfer-plans` | quote hash, expectedVersion, Idempotency-Key | Saves the local script and the new version; `externalExecuted:false` |
 | POST `/optimize` | scope, poolRevision, forecastRevision, squadVersion, horizon ≤4 weeks, keep/exclude IDs, maxTransfers | requestId, status, proposal, violations, optimality/time-limit marker; one active solve per user |
 | GET `/readiness?contestId=...` | Contest | Catalog/statistics/xG/Fonbet/weeks/external profile: individual statuses |
+| GET `/sync-status?contestId=...` | Contest | Catalog publication, full-success timestamp, last completed attempt with bounded source outcomes, active/interrupted run; private no-store, no source requests |
 | PUT `/preferences` | contestId, viewKey, schemaVersion, preferences | Only KHL settings of the current user |
 
 Server solve uses the same pure domain contract as worker; The UI may read locally for speed, but the server independently validates any result it stores. POST does not receive a trusted EP/price/lock from the client.
@@ -148,7 +149,9 @@ External import of squad - separate source: public profile → HTML commands →
 
 <a name="changelog"></a>
 
-## История {#changelog}
+## Changelog {#changelog}
+
+- 2026-09-28: WI-042 — authenticated no-store `/sync-status` reads the contest-scoped cycle checkpoint and catalog publication time.
 
 - 2026-09-20: WI-026 — самостоятельный KHL-only архив по подтверждённому ID при недоступном Sports; происхождение, неизвестные FP/участие и безопасное дополнение восстановившимся Sports.
 

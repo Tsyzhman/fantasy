@@ -1,0 +1,8 @@
+{
+  "version": "0.3.105",
+  "checks": {"focusedPassed": 7, "fullPassed": 1208, "fullSkipped": 2, "fullFailed": 0, "lintErrors": 0, "typecheck": "passed", "build": "passed", "productionVulnerabilities": 0},
+  "specSnapshot": {"status": "current", "diagnostics": []},
+  "previousProduction": {"version": "0.3.97", "commit": "a678637320d4c7c6a9d0f036ec647d1888e53d82", "webMemoryMiB": 465.2, "workerMemoryGiB": 2.472, "postgresMemoryGiB": 1.773},
+  "previousCycle": {"completedAt": "2026-09-28T10:22:40.834Z", "status": "PARTIAL", "failedSources": ["Sports: прошлый сезон"], "otherSources": "DONE"},
+  "storage": "One contest-scoped checkpoint; at most ten source summaries, detail capped at 2000 characters; running state keeps one sanitized completed attempt and no nested run history. No in-memory status cache or additional collector."
+}
