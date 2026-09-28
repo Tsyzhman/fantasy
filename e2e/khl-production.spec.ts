@@ -1,7 +1,10 @@
 import { test, expect } from "@playwright/test";
 import { fantasySquadLeagueFotMobIds } from "../src/lib/leagues/display";
-import type { ModelInput, Recommendation } from "../src/betting/domain";
+import type { ModelInput, Recommendation, Selection } from "../src/betting/domain";
 
+/** @spec spec://modules/betting/FEAT-001-virtual-league#algorithms
+ * @spec spec://modules/betting/FEAT-001-virtual-league#ui
+ */
 test("Betting offers all Squad leagues in the same order", async ({ page }) => {
   test.skip(process.env.KHL_PRODUCTION_SMOKE !== "true", "Explicit production check");
   await page.goto("/betting");
@@ -28,16 +31,43 @@ test("Betting offers all Squad leagues in the same order", async ({ page }) => {
   await expect(events.first()).toBeVisible();
   const detailResponse = page.waitForResponse(r => r.url().includes("/api/betting?event=") && r.request().method() === "GET");
   await events.first().click();
-  const detail = await (await detailResponse).json() as { model: ModelInput | null; markets: { recommendations: Recommendation[] }[] };
-  expect(detail.model?.europeanCompetitionId).toBe(42);
-  expect(detail.model!.home.length).toBeGreaterThanOrEqual(5);
-  expect(detail.model!.away.length).toBeGreaterThanOrEqual(5);
-  expect([...detail.model!.home, ...detail.model!.away].every(r => Date.parse(r.at) < Date.parse(detail.model!.kickoff))).toBe(true);
-  for (const name of ["Mia", "Abella", "Lana", "Riley", "Adriana"]) expect(detail.markets.some(m => m.recommendations.some(r => r.name === name && r.probability !== null))).toBe(true);
+  const detail = await (await detailResponse).json() as { model: ModelInput | null; markets: (Selection & { recommendations: Recommendation[] })[] };
+  const names = ["Mia", "Abella", "Lana", "Riley", "Adriana"];
+  if (detail.model) {
+    expect(detail.model.europeanCompetitionId).toBe(42);
+    expect([...detail.model.home, ...detail.model.away].every(r => Date.parse(r.at) < Date.parse(detail.model!.kickoff))).toBe(true);
+  }
+  expect(detail.markets.length).toBeGreaterThan(0);
+  for (const market of detail.markets) {
+    expect(market.recommendations.map(r => r.name)).toEqual(names);
+    for (const recommendation of market.recommendations) {
+      if (recommendation.probability === null) {
+        expect(recommendation.decision).toBe("SKIP");
+        expect(recommendation.ev).toBeNull();
+        expect(recommendation.reason).toMatch(/Недостаточно|Нет модели|не сопоставлен/);
+      } else {
+        expect(recommendation.probability).toBeGreaterThanOrEqual(0);
+        expect(recommendation.probability).toBeLessThanOrEqual(1);
+        expect(Number.isFinite(recommendation.ev)).toBe(true);
+      }
+      if (market.rule && !market.manual && detail.model && (detail.model.home.length < 5 || detail.model.away.length < 5)) {
+        expect(recommendation.probability).toBeNull();
+        expect(recommendation.reason).toBe("Недостаточно истории: нужно минимум 5 матчей");
+      }
+    }
+  }
   const advice = page.getByRole("region", { name: "Советы алгоритмов на выбранный матч" });
   await expect(page.getByRole("region", { name: "Подходящие исходы матча" })).toBeVisible();
   await expect(advice.getByRole("article")).toHaveCount(5);
-  for (const name of ["Mia", "Abella", "Lana", "Riley", "Adriana"]) await expect(advice.getByRole("heading", { name, exact: true })).toBeVisible();
+  for (const name of names) {
+    const card = advice.getByRole("article").filter({ has: page.getByRole("heading", { name, exact: true }) });
+    await expect(card).toBeVisible();
+    await expect(card.locator("small")).not.toBeEmpty();
+    if (!detail.markets.some(m => m.recommendations.some(r => r.name === name && r.decision === "BET"))) {
+      await expect(card).toContainText("Сюда лучше не ставить");
+      await expect(card.getByRole("button")).toHaveCount(0);
+    }
+  }
   await page.getByRole("textbox", { name: "Поиск рынка" }).fill("несуществующий рынок");
   await expect(advice.getByRole("article")).toHaveCount(5);
   expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1);

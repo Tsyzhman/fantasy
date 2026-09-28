@@ -1,0 +1,79 @@
+{
+  "verifiedCodeCommit": "7317adec65240c609c5a33eb458bee3530da11ae",
+  "version": "0.3.108",
+  "pullRequest": "https://github.com/Tsyzhman/fantasy/pull/33",
+  "baseline": {
+    "run": "https://github.com/Tsyzhman/fantasy/actions/runs/36425268049",
+    "commit": "a05ac190612b2e78112df970f2cc2b44c71cab64",
+    "passed": 23,
+    "failed": 4,
+    "flaky": 1,
+    "skipped": 20,
+    "causes": ["Live betting fixture has one historical match, below the model's five-match threshold", "Removed football search heading", "KHL catalog revision changed during pagination"]
+  },
+  "intermediate": {
+    "run": "https://github.com/Tsyzhman/fantasy/actions/runs/36427238165",
+    "passed": 27,
+    "failed": 0,
+    "flaky": 1,
+    "skipped": 20,
+    "remainingCause": "Forecast read before export/history changes no longer matched the card's refreshed catalog"
+  },
+  "browser": {
+    "run": "https://github.com/Tsyzhman/fantasy/actions/runs/36428805307",
+    "scope": "all",
+    "authenticationPassed": 1,
+    "total": 48,
+    "passed": 28,
+    "failed": 0,
+    "flaky": 0,
+    "testRetries": 0,
+    "skipped": 20,
+    "skipReason": "Existing explicitly seeded local KHL tests and desktop-only journey checks",
+    "durationMinutes": 4.9,
+    "projects": ["desktop-chromium", "tablet-chromium", "mobile-chromium"],
+    "artifact": "https://github.com/Tsyzhman/fantasy/actions/runs/36428805307/artifacts/10972194648",
+    "artifactBytes": 14680447,
+    "retentionDays": 7
+  },
+  "check": {
+    "run": "https://github.com/Tsyzhman/fantasy/actions/runs/36428799876",
+    "unitPassed": 1210,
+    "databasePassed": 15,
+    "failed": 0,
+    "lintErrors": 0,
+    "existingLintWarnings": 215,
+    "typecheck": "passed",
+    "build": "passed",
+    "productionDependencyVulnerabilities": 0,
+    "localFocusedLint": "passed",
+    "localTypecheck": "passed",
+    "releaseVersionCheck": "passed"
+  },
+  "postSmoke": {
+    "webAndWorker": "healthy, zero restarts",
+    "webMiB": 665.6,
+    "workerGiB": 2.145,
+    "postgresGiB": 1.407,
+    "hostAvailableMiB": 5332,
+    "measurement": "Snapshot after the full smoke; unrelated worker memory growth was not investigated as a fix",
+    "khlSmokeDrafts": 1,
+    "duplicateSquadEntries": 0,
+    "duplicateRawGroups": 0,
+    "duplicatePlayerMatchGroups": 0,
+    "duplicateActiveJobGroups": 0,
+    "rawCacheBytes": 2282199,
+    "reclaimableDockerBuildCacheMB": 970.3,
+    "retainedProductionRelease": "20260928T114230Z-v0.3.107-a05ac19",
+    "retainedRollbackRelease": "20260928T110745Z-v0.3.106-fee7a18",
+    "localRepositoryTestOrBrowserProcesses": 0,
+    "localNextOutputBytes": 1651521597,
+    "localDiagnosticArtifactMiB": 22.3,
+    "localDiagnosticCleanup": "Automatic approval review rejected deletion: blocked by policy; artifacts retained"
+  },
+  "specSnapshot": {
+    "status": "current",
+    "diagnostics": [],
+    "fingerprint": "e0802bac53472b251b493762fde55e263b66c0057593b7fb69abd4a87141d0f9"
+  }
+}
