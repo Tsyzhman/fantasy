@@ -13,7 +13,6 @@ KHL visitors can see when server data was refreshed and whether the latest attem
 - Governing: `spec://modules/khl/INFRA-002-khl-storage-and-api#api`
 - Governing: `spec://modules/khl/FEAT-002-khl-squad#layout`
 - Constraint: `spec://modules/khl/INFRA-001-khl-data-ingestion#operations`
-- Governing: `spec://common/structure#release-transport`
 
 ## Scope
 
@@ -31,4 +30,10 @@ KHL visitors can see when server data was refreshed and whether the latest attem
 
 ## Result
 
-Implementation prepared as 0.3.105 and published to main in `864326cd22aed8c556bec411d04c38f086aa5681`. Seven focused state/SSR contracts pass; the full local check passes (1208 passed, two skipped; lint has warnings and no errors), typecheck/build pass, and the production dependency audit reports zero vulnerabilities. GitHub Check 36410593507 passes. First deploy rejected the shortened commit ref; the corrected deploy 36410793317 lost its SSH connection while the remote dependency build was still running. That process has ended; production remained healthy on 0.3.97 and no duplicate promoter was started. The final candidate adds SSH keepalive and bounded npm fetch retries. Live verification remains pending.
+Production 0.3.106 is installed from `fee7a1812ac69bef9670cc8d5b4ca99aaf848a8e`; GitHub Check 36413266512 and Deploy Production 36413358965 pass. Health, OCI labels and the current-release manifests agree on that revision. Web and worker are healthy with zero restarts.
+
+Seven focused state/SSR contracts pass; the full local and release checks pass (1208 passed, two skipped; lint has warnings and no errors), typecheck/build pass, and the production dependency audit reports zero vulnerabilities. The status checkpoint was observed running with schema version 2, preserving the previous partial attempt. Raw payloads, player-match facts and active jobs have no duplicate groups. The failed 0.3.105 candidate was removed after checking its exact path, commit and lack of runtime references; current and rollback releases remain.
+
+The first live browser run (36414268404) logged in successfully but failed on an obsolete football heading in the shared authentication setup. Assertions now accept the actual Russian/English heading; scoped lint and typecheck pass. Desktop/tablet/mobile verification is being repeated. Two invalid traceability references to the technical map were removed; it remains linked as documentation rather than a typed governing specification.
+
+Earlier release attempts rejected a shortened commit ref and lost an SSH connection during a dependency build. Production stayed on its previous healthy release until a full revision was promoted; the final transport uses SSH keepalive and bounded npm fetch retries. No duplicate promoter was started.
