@@ -12,7 +12,10 @@ COPY vendor ./vendor
 
 # npm install (not npm ci) because the developer lockfile can omit
 # platform-specific native dependency edges that Docker needs to reconcile.
-RUN npm install --no-audit --no-fund
+# @spec spec://common/structure#release-transport
+RUN npm install --no-audit --no-fund \
+  --fetch-timeout=60000 --fetch-retries=3 \
+  --fetch-retry-mintimeout=1000 --fetch-retry-maxtimeout=10000
 
 FROM deps AS builder
 

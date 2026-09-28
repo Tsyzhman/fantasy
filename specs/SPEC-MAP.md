@@ -13,7 +13,7 @@ Canon for Fantasy Scout. Work status lives in `BOARD.md`; this file is the catal
 | [specs/modules/machete/INFRA-004-sorareinside-starters.md](modules/machete/INFRA-004-sorareinside-starters.md) | Active: SorareInside starters, nearest future match, UUID mapping, hourly refresh at :05 |
 | [specs/modules/betting/FEAT-001-virtual-league.md](modules/betting/FEAT-001-virtual-league.md) | Active: virtual league, line, coins, algorithms and calculation |
 | [specs/common/main.md](common/main.md) | Product purpose, audience, modes, and boundaries |
-| [specs/common/structure.md](common/structure.md) | Runtime, modules, namespaces, and code ownership |
+| [specs/common/structure.md](common/structure.md) | Runtime, modules, namespaces, code ownership, and bounded release transport |
 | [specs/modules/machete/FEAT-001-global-ranking-strategy.md](modules/machete/FEAT-001-global-ranking-strategy.md) | Active: global-ranking mode in the squad planner |
 | [specs/modules/machete/FEAT-002-global-strategy-formula.md](modules/machete/FEAT-002-global-strategy-formula.md) | Active: formula K and strategyScore |
 | [specs/modules/machete/FEAT-003-squad-player-card.md](modules/machete/FEAT-003-squad-player-card.md) | Active: Squad field card “Contact sheet”, actions and themes |

@@ -13,10 +13,11 @@ KHL visitors can see when server data was refreshed and whether the latest attem
 - Governing: `spec://modules/khl/INFRA-002-khl-storage-and-api#api`
 - Governing: `spec://modules/khl/FEAT-002-khl-squad#layout`
 - Constraint: `spec://modules/khl/INFRA-001-khl-data-ingestion#operations`
+- Governing: `spec://common/structure#release-transport`
 
 ## Scope
 
-- In: bounded persistent cycle status, accurate success timestamp, shared header on all KHL views, lightweight status polling, contract tests, versioned immutable production release, cache/duplicate/memory verification.
+- In: bounded persistent cycle status, accurate success timestamp, shared header on all KHL views, lightweight status polling, contract tests, versioned immutable production release with bounded dependency downloads and SSH keepalive, cache/duplicate/memory verification.
 - Out: source ingestion schedules, xG availability, scoring, squad actions, historical backfill.
 
 ## Acceptance
@@ -30,4 +31,4 @@ KHL visitors can see when server data was refreshed and whether the latest attem
 
 ## Result
 
-Implementation prepared as 0.3.105. Seven focused state/SSR contracts pass; the full local check passes (1208 passed, two skipped; lint has existing warnings and no errors), typecheck/build pass, and the production dependency audit reports zero vulnerabilities. Spec snapshot is current with no diagnostics. Publishing and live verification remain pending.
+Implementation prepared as 0.3.105 and published to main in `864326cd22aed8c556bec411d04c38f086aa5681`. Seven focused state/SSR contracts pass; the full local check passes (1208 passed, two skipped; lint has warnings and no errors), typecheck/build pass, and the production dependency audit reports zero vulnerabilities. GitHub Check 36410593507 passes. First deploy rejected the shortened commit ref; the corrected deploy 36410793317 lost its SSH connection while the remote dependency build was still running. That process has ended; production remained healthy on 0.3.97 and no duplicate promoter was started. The final candidate adds SSH keepalive and bounded npm fetch retries. Live verification remains pending.

@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.106 - 2026-09-28
+
+- KHL: publish the server refresh panel with Moscow timestamps, full-success and last-attempt outcomes, source errors and interrupted runs.
+- Keep the production SSH promotion connected during quiet builds; bound Docker dependency download timeouts and retries after a disconnected release attempt.
+
 ## 0.3.105 - 2026-09-28
 
 - KHL: show catalog and full-success date/time in Moscow, the latest refresh outcome, affected sources, active runs and interruptions on all KHL views.

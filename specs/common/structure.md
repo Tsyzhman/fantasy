@@ -63,6 +63,12 @@ Isolated `src/khl/`, `src/server/khl/`, `src/components/khl/`, `src/app/machete/
 
 Идентичность КХЛ: `sports-ru-hockey/identity.ts`, `khl-mobile/identity.ts`, `server/khl/identity-sync.ts` и проверенный операторский `identity-audit.ts`; клубные травмы `khl-mobile/injuries.ts` → `server/khl/injury-sync.ts`. Тот же ограниченный HTTP helper и часовой цикл, ownership INFRA-001#normalization/#runtime.
 
+<a name="release-transport"></a>
+
+## Release transport {#release-transport}
+
+The immutable GitHub production promoter keeps its SSH channel alive every 15 seconds and terminates an unresponsive channel after four unanswered probes. Authentication, host verification, release ancestry/checksums and automatic rollback remain mandatory. Docker dependency downloads use a 60-second request timeout, three retries, and bounded 1–10 second retry delays; a failed download stops the candidate without replacing production. A disconnected promotion is inspected before retrying so that collectors, canaries and release processes are never duplicated.
+
 <a name="documentation"></a>
 
 ## Documentation ownership {#documentation}
@@ -85,6 +91,8 @@ workflow copies are intentional matching client entry points.
 <a name="changelog"></a>
 
 ## Changelog {#changelog}
+
+- 2026-09-28: WI-042 — keep long release SSH channels alive and bound Docker package fetch retries after a disconnected KHL status release attempt.
 
 - 2026-09-28: English documentation and topic-based document ownership; local
   artifacts and credentials excluded from Git (WI-039).
