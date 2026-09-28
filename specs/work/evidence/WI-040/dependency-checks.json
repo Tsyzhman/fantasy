@@ -2,7 +2,7 @@
   "work": "WI-040",
   "date": "2026-09-28",
   "base_commit": "ea59b2a5476e94519106b87a4d2a7beca55853c3",
-  "release": "0.3.100",
+  "release": "0.3.101",
   "changes": [
     {
       "package": "sharp",
@@ -209,12 +209,12 @@
           "total": 0
         },
         "dependencies": {
-          "prod": 143,
-          "dev": 408,
-          "optional": 94,
-          "peer": 17,
+          "prod": 148,
+          "dev": 409,
+          "optional": 96,
+          "peer": 2,
           "peerOptional": 0,
-          "total": 593
+          "total": 595
         }
       },
       "vulnerabilities": {},
@@ -233,12 +233,12 @@
           "total": 0
         },
         "dependencies": {
-          "prod": 143,
-          "dev": 408,
-          "optional": 94,
-          "peer": 17,
+          "prod": 148,
+          "dev": 409,
+          "optional": 96,
+          "peer": 2,
           "peerOptional": 0,
-          "total": 593
+          "total": 595
         }
       },
       "vulnerabilities": {},
@@ -325,7 +325,20 @@
     },
     "release_version_against_main": "passed",
     "diff_check": "passed",
-    "application_schema_and_workflow_files_changed": []
+    "application_schema_and_workflow_files_changed": [],
+    "lockfile_compatibility": {
+      "generator_npm": "10.8.2",
+      "github_node": "20.20.2",
+      "github_npm": "10.8.2",
+      "restored_entries": {
+        "@emnapi/core": "1.11.3",
+        "@emnapi/runtime": "1.11.3"
+      },
+      "linux_x64_npm_ci_dry_run": "passed",
+      "clean_install_with_ci_npm": "passed",
+      "audits_with_ci_npm": "production and full both report zero known vulnerabilities",
+      "native_runtime_after_reinstall": "sharp 0.35.4 and libheif 1.23.2 verified"
+    }
   },
   "resources": {
     "updated_package_resolutions": "one locked version per updated package; shared consumers deduplicated",
@@ -340,7 +353,14 @@
     "task_node_processes_remaining": 0
   },
   "github_ci": {
-    "status": "pending_publication",
+    "status": "awaiting_follow_up_publication",
+    "initial_run": {
+      "id": 36403656514,
+      "url": "https://github.com/Tsyzhman/fantasy/actions/runs/36403656514",
+      "conclusion": "failure",
+      "step": "Install dependencies",
+      "cause": "npm 11.6.2 on Windows omitted root @emnapi/core and @emnapi/runtime entries required by npm 10.8.2"
+    },
     "database_integration_tests": "not run locally; verified by the GitHub Check workflow"
   },
   "technical_debt": "TD-007 remediation in progress; local audits pass"

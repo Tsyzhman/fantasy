@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.101 - 2026-09-28
+
+### Build
+
+- Regenerate the dependency lockfile with CI's npm 10.8.2, restoring the required optional WASM runtime entries without changing the patched dependency versions.
+
 ## 0.3.100 - 2026-09-28
 
 ### Security

@@ -62,3 +62,11 @@ locked resolution shared by its consumers. The isolated dependency installation
 is retained for reuse without modifying the primary checkout's different version.
 
 Evidence: `specs/work/evidence/WI-040/dependency-checks.json`.
+
+First publication: `b31a93b7f2af06d16e557c0ef6992f552fd4048e` on main.
+Check run 36403656514 failed during install because npm 11.6.2 on Windows had
+omitted the root @emnapi/core and @emnapi/runtime entries required by CI's npm
+10.8.2 (Node 20.20.2). Regeneration with npm 10.8.2 restores both 1.11.3 entries;
+the four patched dependency versions remain unchanged. Clean installation with
+npm 10.8.2 and its Linux x64 dry-run check pass. Both audits still report zero
+known vulnerabilities. Follow-up publication and GitHub verification remain.
