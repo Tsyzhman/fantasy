@@ -145,7 +145,11 @@ test('KHL visible statistics survive partial matches and history switches',async
  await row.getByRole('button',{name:'Разобрать прогноз: Грегуар',exact:true}).click();
  const card=page.getByRole('region',{name:'Карточка Грегуар'});
  await expect(card).toBeVisible();
- await expect(card).toContainText(`Данные: ${p.attackZoneSeconds!.knownGames} из ${p.attackZoneSeconds!.totalGames} матчей`);
+ const cardSnapshot=await page.request.get(`/api/machete/khl/players/${id}?contestId=cmtr4grkd00056htzwpdv4fwu&historyWindow=5`);
+ expect(cardSnapshot.status()).toBe(200);
+ const cardPlayer=(await cardSnapshot.json()).data as KhlPlayer;
+ expect(cardPlayer.attackZoneSeconds!.totalGames).toBeLessThanOrEqual(5);
+ await expect(card).toContainText(`Данные: ${cardPlayer.attackZoneSeconds!.knownGames} из ${cardPlayer.attackZoneSeconds!.totalGames} матчей`);
  await expect(card.getByRole('region',{name:'Формула EP'})).toBeVisible();
  await expect(card.getByRole('heading',{name:'Ожидаемые показатели',exact:true})).toBeVisible();
  expect(p.forecastExplanation?.details?.version).toBe(1);
