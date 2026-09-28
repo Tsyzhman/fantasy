@@ -1,0 +1,91 @@
+{
+  "verifiedProduction": {
+    "version": "0.3.106",
+    "commit": "fee7a1812ac69bef9670cc8d5b4ca99aaf848a8e",
+    "tree": "29ce232fd18d7770d00997f4533c6f3ed58083b6",
+    "release": "20260928T110745Z-v0.3.106-fee7a18",
+    "archiveSha256": "259fda0177db25c082f67c28fe30d6c8dcfafaa2d54478629045b2499b37f1bc",
+    "health": "ok",
+    "webAndWorker": "healthy, zero restarts",
+    "runtimeIdentity": "Health, OCI labels and release manifests agree",
+    "check": "https://github.com/Tsyzhman/fantasy/actions/runs/36413266512",
+    "deployment": "https://github.com/Tsyzhman/fantasy/actions/runs/36413358965"
+  },
+  "concludingPublication": {
+    "version": "0.3.107",
+    "applicationFiles": "Unchanged since the verified production release; only browser assertions, traceability comments, version metadata and work evidence changed",
+    "runtimeVerification": "Immutable production promotion retains the archive, checksum and exact production health verification in GitHub Actions"
+  },
+  "checks": {
+    "focusedPassed": 7,
+    "fullPassed": 1208,
+    "fullSkipped": 2,
+    "fullFailed": 0,
+    "lintErrors": 0,
+    "lintWarnings": 215,
+    "typecheck": "passed",
+    "build": "passed",
+    "productionVulnerabilities": 0
+  },
+  "browser": {
+    "run": "https://github.com/Tsyzhman/fantasy/actions/runs/36415891583",
+    "commit": "82a0489323a558c6464aad4ab5730b195533de0e",
+    "authenticationPassed": 1,
+    "checksPassed": 6,
+    "checksFailed": 0,
+    "projects": ["desktop-chromium", "tablet-chromium", "mobile-chromium"],
+    "artifact": "https://github.com/Tsyzhman/fantasy/actions/runs/36415891583/artifacts/10967755761",
+    "artifactBytes": 12390095,
+    "retentionDays": 7,
+    "coverage": ["all three KHL views", "Moscow timestamps", "status API private/no-store", "at most ten sources without raw detail", "retained time on polling failure", "no page overflow", "statistics and history", "forecast card", "roster controls", "Excel export"],
+    "visualReview": "Desktop, tablet and mobile status screenshots from run 36415156090 inspected; application code is identical in the subsequent passing run"
+  },
+  "collector": {
+    "schemaVersion": 2,
+    "observedRunningAt": "2026-09-28T11:14:07.638Z",
+    "previousAttemptPreserved": "2026-09-28T10:22:40.834Z, PARTIAL",
+    "runningCheckpointBytes": 905,
+    "manualCompletedAt": "2026-09-28T11:16:01.500Z",
+    "hourlyCompletedAt": "2026-09-28T11:22:16.827Z",
+    "status": "PARTIAL",
+    "failedSources": ["Sports: прошлый сезон"],
+    "sourceCount": 10,
+    "fullSuccessAt": null
+  },
+  "storage": {
+    "dailyCheckpoints": 1,
+    "checkpointBytes": 2381,
+    "rawRows": 160,
+    "rawCompressedBytes": 2309948,
+    "duplicateRawGroups": 0,
+    "duplicateActiveJobGroups": 0,
+    "duplicatePlayerMatchGroups": 0,
+    "bounds": "Ten summaries, source names capped at 120 characters, internal detail capped at 2000 characters, one sanitized previous attempt only while running; no status cache or extra collector"
+  },
+  "resources": {
+    "webMiB": 576.8,
+    "workerGiB": 1.174,
+    "postgresGiB": 1.288,
+    "hostAvailableMiB": 6260,
+    "diskAvailableGiB": 79,
+    "measurement": "Snapshot under browser load after restart; does not establish a fix for unrelated memory growth",
+    "dockerBuildCacheTotalGB": 3.234,
+    "dockerBuildCacheReclaimableMB": 995.9,
+    "dockerBuildCachePruneLimit": "1GB",
+    "localNextCacheBytes": 1291529918,
+    "localNextCacheCleanup": "Deletion rejected by automatic approval review: blocked by policy; cache retained",
+    "localNextOrTestProcesses": 0
+  },
+  "retention": {
+    "releaseDirectories": 2,
+    "releases": ["current 0.3.106", "rollback 0.3.97"],
+    "failedCandidate": "0.3.105 directory removed after exact resolved path, commit and unused-runtime checks; its temporary archive was already absent",
+    "extraCanariesOrCollectors": 0,
+    "npmNetworkProbe": "Owned temporary container removed"
+  },
+  "specSnapshot": {
+    "status": "current",
+    "diagnostics": [],
+    "fingerprint": "dc94b58416474613afa8128fcf62af41ca4ebe571f76492943440401ce00f717"
+  }
+}

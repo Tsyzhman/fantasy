@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.107 - 2026-09-28
+
+- Finalize the KHL server refresh status release with Moscow timestamps, separate full-success and latest-attempt outcomes, and source error visibility.
+- Verify production authentication against the current protected planner component and compare player-card coverage using the selected history window.
+
 ## 0.3.106 - 2026-09-28
 
 - KHL: publish the server refresh panel with Moscow timestamps, full-success and last-attempt outcomes, source errors and interrupted runs.
