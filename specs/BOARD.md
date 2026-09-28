@@ -6,6 +6,7 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
+| [WI-040](work/WI-040-dependency-security.md) | Patch vulnerable dependencies | common/structure, common/main | @tsyzhman | 2026-09-28 | — |
 
 ## Backlog
 

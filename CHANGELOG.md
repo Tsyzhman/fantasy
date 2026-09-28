@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.100 - 2026-09-28
+
+### Security
+
+- Update the sharp override and its native libraries to patched releases.
+- Refresh compatible baseline-browser-mapping, browserslist, and postcss-selector-parser resolutions to address dependency denial-of-service vulnerabilities.
+
 ## 0.3.99 - 2026-09-28
 
 ### Documentation
