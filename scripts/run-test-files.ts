@@ -33,7 +33,9 @@ console.log(`Running ${tests.length} test file(s) ending in ${suffix}.`);
 
 const require = createRequire(import.meta.url);
 const tsxCli = require.resolve("tsx/cli");
-const result = spawnSync(process.execPath, [tsxCli, "--test", ...tests], {
+// Keep CI timing checks from competing with other test files for CPU and memory.
+const concurrencyArgs = process.env.CI === "true" ? ["--test-concurrency=1"] : [];
+const result = spawnSync(process.execPath, [tsxCli, "--test", ...concurrencyArgs, ...tests], {
   env: process.env,
   stdio: "inherit"
 });

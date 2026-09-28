@@ -20,7 +20,8 @@ its intended disposable test database and reaches the application checks.
 
 - In: CI PostgreSQL port mapping, discovery and routing of the existing DB tests,
   disposable common/betting/KHL databases, serial execution, opt-in KHL test
-  configuration, release metadata, GitHub verification, and publication.
+  configuration, CI unit-test resource isolation, release metadata, GitHub
+  verification, and publication.
 - Out: application behavior, weakening test safety guards, schema or migration
   changes, production databases, production feature flags, and deployment.
 
@@ -30,7 +31,8 @@ its intended disposable test database and reaches the application checks.
 - [x] Every tracked .db-test.ts file is routed to the correct isolated database.
 - [x] The existing localhost/port/name safety guards remain unchanged; KHL tests run only with their explicit test opt-in.
 - [x] Workflow YAML and shell syntax are valid, and the spec-space snapshot has no diagnostics.
-- [ ] All 11 current database integration tests run without failures or skips in GitHub CI.
+- [x] All 11 current database integration tests run without failures or skips in GitHub CI.
+- [ ] CI unit-test files execute serially while preserving the optimizer's existing five-second assertion.
 - [ ] The full Check workflow succeeds with the patched dependencies, and publication is confirmed on main.
 - [ ] Task-created caches and helper processes are accounted for, the final result is recorded, and the board entry is archived.
 
@@ -49,6 +51,15 @@ isolated-database opt-in is absent. The application checks are consequently skip
 The updated workflow discovers and routes 3 common, 2 betting, and 6 KHL test
 files. Each group uses its own disposable database at 127.0.0.1:55439 with
 the original guards intact. YAML parsing and Bash syntax checks pass. The
-spec-space snapshot is current with no diagnostics. GitHub execution is pending.
+spec-space snapshot is current with no diagnostics. Check run 36405455608 passes
+all 11 database tests without failures or skips. Its unit-test stage passes 1131
+tests and fails the optimizer timing assertion at 5669 ms during the parallel
+run. CI unit-test files now execute one at a time; the five-second assertion and
+application implementation remain unchanged. Further GitHub execution is pending.
+
+With CI=true locally, all 199 unit-test files run serially: 1131 tests pass,
+none fail, and one POSIX-shell test is skipped on Windows. The optimizer timing
+assertion passes without changing its limit. Runner lint, release metadata,
+and diff validation pass. The spec snapshot remains current with no diagnostics.
 
 Evidence: `specs/work/evidence/WI-041/ci-database-checks.json`.

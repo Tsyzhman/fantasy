@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.103 - 2026-09-28
+
+### Checks
+
+- Run CI unit-test files serially so timing assertions do not compete with other tests for CPU and memory; retain the existing five-second optimizer limit.
+
 ## 0.3.102 - 2026-09-28
 
 ### Checks
