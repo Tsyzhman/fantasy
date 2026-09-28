@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.104 - 2026-09-28
+
+### Documentation
+
+- Record the successful Linux security and application checks, document the CI test environments, and archive WI-041.
+
 ## 0.3.103 - 2026-09-28
 
 ### Checks

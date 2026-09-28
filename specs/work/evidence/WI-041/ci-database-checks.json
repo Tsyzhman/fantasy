@@ -1,7 +1,7 @@
 {
   "work": "WI-041",
   "date": "2026-09-28",
-  "release": "0.3.103",
+  "release": "0.3.104",
   "base_commit": "1292dd57848f81da4a8a13cc733a62c124e9e72a",
   "initial_ci": {
     "id": 36404329686,
@@ -67,10 +67,22 @@
       "sampled_largest_process_resident_mib": 68,
       "next_cache_present": false,
       "typescript_cache_present": false
+    },
+    "workflow_protocol": {
+      "status": "passed",
+      "checks": 8,
+      "errors": []
+    },
+    "final_spec_snapshot": {
+      "status": "current",
+      "diagnostics": [],
+      "fingerprint": "9a33a197c20c8c788e7c42b2707fd5f0965322517543c144fe5dcfa7324bdc82",
+      "source": "working_tree",
+      "provenance_commit": "7963f786ae7fe91e129ebfbccc0a7d56b86383be"
     }
   },
   "github_ci": {
-    "status": "awaiting_serial_unit_test_run",
+    "status": "success",
     "previous_run": {
       "id": 36405455608,
       "url": "https://github.com/Tsyzhman/fantasy/actions/runs/36405455608",
@@ -93,6 +105,55 @@
         "total": 1132
       },
       "failure": "The balanced optimizer timing assertion observed 5669 ms against the existing 5000 ms limit during parallel unit tests"
+    },
+    "successful_run": {
+      "id": 36406463394,
+      "url": "https://github.com/Tsyzhman/fantasy/actions/runs/36406463394",
+      "commit": "7963f786ae7fe91e129ebfbccc0a7d56b86383be",
+      "node": "20.20.2",
+      "npm": "10.8.2",
+      "conclusion": "success",
+      "production_audit": "passed",
+      "migration_drift": "passed",
+      "database_tests": {
+        "passed": 11,
+        "failed": 0,
+        "skipped": 0,
+        "groups": {
+          "common": 3,
+          "betting": 2,
+          "khl": 6
+        }
+      },
+      "unit_tests": {
+        "files": 199,
+        "total": 1132,
+        "passed": 1132,
+        "failed": 0,
+        "skipped": 0,
+        "duration_ms": 102694.25536,
+        "optimizer_limit_per_strategy_ms": 5000,
+        "optimizer_timing_assertion": "passed",
+        "all_three_strategies_total_duration_ms": 10920.20091
+      },
+      "lint": {
+        "errors": 0,
+        "warnings": 153
+      },
+      "typecheck": "passed",
+      "production_build": "passed",
+      "standalone_sanitization": "passed"
     }
+  },
+  "validation_release": "0.3.103",
+  "resources_final": {
+    "next_cache_present": false,
+    "typescript_cache_present": false,
+    "generated_extension_archives_present": false,
+    "task_node_processes_remaining": 0,
+    "task_ci_watcher_processes_remaining": 0,
+    "isolated_node_modules": "retained for reuse",
+    "primary_checkout": "clean and unchanged",
+    "patched_dependency_resolutions": "one version per updated package"
   }
 }

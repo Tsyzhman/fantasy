@@ -94,6 +94,12 @@ types, and builds the production application. Browser checks use
 `npm run test:e2e`; database tests use `npm run test:db` and require the documented
 test database setup.
 
+The [GitHub Check workflow](.github/workflows/check.yml) also audits production
+dependencies and validates migration drift. It runs every tracked database test
+in disposable common, Arena, or KHL databases that match the existing safety
+guards. CI test files run serially to keep timing assertions independent of
+competing test processes.
+
 ## Data jobs and operations
 
 ```sh

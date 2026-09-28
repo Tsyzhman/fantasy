@@ -39,8 +39,9 @@ report no known vulnerabilities, and the application continues to pass its check
 ## Result
 
 Remediation and publication are complete. GitHub CI confirms the production
-security audit passes; its subsequent isolated-database configuration failure is
-tracked separately in WI-041.
+security audit passes. WI-041 also resolves the subsequently reached test-environment
+failures; the full [Check run 36406463394](https://github.com/Tsyzhman/fantasy/actions/runs/36406463394)
+passes with the patched dependencies, 1132 unit tests, and 11 database tests.
 
 Updated sharp 0.35.0 to 0.35.4, baseline-browser-mapping 2.10.30 to 2.11.26,
 browserslist 4.28.2 to 4.29.2, and postcss-selector-parser 6.1.2 to 6.1.4.
