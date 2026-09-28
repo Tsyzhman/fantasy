@@ -12,7 +12,7 @@ setup("authenticate the dedicated beta QA user", async ({ page }) => {
   await page.locator('button[type="submit"]').click();
 
   await expect(page).not.toHaveURL(/\/login(?:\?|$)/, { timeout: 30_000 });
-  await expect(page.getByRole("heading", { name: /Squad builder|Конструктор состава/i })).toBeVisible();
+  await expect(page.locator("[data-fantasy-squad-planner]")).toBeVisible();
   await page.context().storageState({ path: authStatePath });
 });
 
