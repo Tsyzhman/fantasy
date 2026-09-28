@@ -27,6 +27,7 @@ export type FplOfficialScoreSyncResult = {
   payloadHash: string;
 };
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#data */
 export async function syncFplOfficialScores(
   prisma: PrismaClient = defaultPrisma,
   options: {
@@ -161,7 +162,7 @@ export async function syncFplOfficialScores(
       unmatchedRows,
       payloadHash
     } satisfies FplOfficialScoreSyncResult;
-  });
+  }, { maxWait: 10_000, timeout: 30_000 });
 }
 
 function hashPayload(live: FplLiveEvent) {

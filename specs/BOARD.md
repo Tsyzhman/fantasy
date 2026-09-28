@@ -6,6 +6,7 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
+| [WI-044](work/WI-044-fpl-active-roster-import.md) | Import FPL squads with provider positions | FEAT-001 | @tsyzhman | 2026-09-28 | — |
 
 ## Backlog
 

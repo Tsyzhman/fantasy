@@ -341,7 +341,7 @@ export async function syncFplPrices(
       latestFinalizedGameweek,
       scheduleFixtures: schedule.fixtures
     } satisfies FplPriceSyncResult;
-  });
+  }, { maxWait: 10_000, timeout: 30_000 });
 }
 
 type FplMapping = {

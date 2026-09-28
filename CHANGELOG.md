@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.109 - 2026-09-28
+
+- Import published FPL squads when active shared-roster players have different FotMob positions, retaining official FPL positions, lineup and captain choices.
+- Keep inactive and wrong-club players blocked before changing saved squads.
+- Allow complete FPL price, schedule and official-score transactions to finish within a bounded 30-second limit.
+
 ## 0.3.108 - 2026-09-28
 
 - Restore the complete production browser smoke against the current player search interface.

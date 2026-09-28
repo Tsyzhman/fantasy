@@ -66,6 +66,7 @@ export class FplSquadImportError extends Error {
   }
 }
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#data */
 export async function importPublishedFplSquad(
   prisma: PrismaClient,
   input: FplSquadImportInput
@@ -136,14 +137,15 @@ export async function importPublishedFplSquad(
       active: true,
       playerId: { in: priceRows.flatMap((row) => row.playerId ? [row.playerId] : []) }
     },
-    select: { playerId: true, teamId: true, position: true }
+    select: { playerId: true, teamId: true }
   });
-  const rosterByPlayerAndTeam = new Set(rosterRows.map((row) => `${row.playerId}:${row.teamId}:${normalizeFantasyPosition(row.position)}`));
+  // FPL owns fantasy positions; the shared roster establishes active club membership.
+  const rosterByPlayerAndTeam = new Set(rosterRows.map((row) => `${row.playerId}:${row.teamId}`));
   const missingRoster = published.picks.flatMap((pick) => {
     const row = priceByProviderId.get(pick.providerPlayerId);
     if (!row?.playerId || !row.teamId || !row.position) return [pick.providerPlayerId];
     const position = normalizeFantasyPosition(row.position);
-    return position !== "UNK" && !rosterByPlayerAndTeam.has(`${row.playerId}:${row.teamId}:${position}`) ? [pick.providerPlayerId] : [];
+    return position !== "UNK" && !rosterByPlayerAndTeam.has(`${row.playerId}:${row.teamId}`) ? [pick.providerPlayerId] : [];
   });
   if (missingRoster.length > 0) {
     throw new FplSquadImportError(
