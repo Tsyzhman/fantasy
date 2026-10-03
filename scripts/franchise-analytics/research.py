@@ -5,7 +5,7 @@ os.environ['OPENBLAS_NUM_THREADS']='1'
 import sys,pathlib,json,gzip,hashlib,time,urllib.request,urllib.parse,subprocess,re,concurrent.futures,shlex,datetime
 from bs4 import BeautifulSoup
 from database import postgres_environment
-from sources import registry, profile_path, personal_teams, squad_sources, write_cache
+from sources import registry, profile_path, profile_name, board_user_id, personal_teams, squad_sources, write_cache
 sys.stdout.reconfigure(encoding='utf-8')
 ROOT=pathlib.Path(os.environ.get('FRANCHISE_DATA_DIR',str(pathlib.Path.cwd()/'storage/franchises'))).resolve()
 CACHE=ROOT/'source'/'http';CACHE.mkdir(parents=True,exist_ok=True)
@@ -101,7 +101,7 @@ def franchises():
   fid,entry=job;s=soup(get(entry['url']));teams=[]
   for tr in s.select('.players_list tbody tr'):
    a=next((a for a in tr.select('td.uname a[href]') if a['href'].rstrip('/').split('/')[-1].isdigit()),None)
-   if a:teams.append({'team_id':a['href'].rstrip('/').split('/')[-1],'manager':a.get_text(' ',strip=True),'url':a['href'],'row':tr.get_text(' ',strip=True),'attributes':tr.attrs})
+   if a:teams.append({'team_id':a['href'].rstrip('/').split('/')[-1],'manager':a.get_text(' ',strip=True),'user_id':board_user_id(tr),'url':a['href'],'row':tr.get_text(' ',strip=True),'attributes':tr.attrs})
   return {'franchise':fid,**entry,'teams':teams,'text':s.get_text(' ',strip=True)}
  forms=pool(form,[(f['id'],j) for f in fr for j in f['forms']])
  profiles={}
@@ -112,17 +112,31 @@ def franchises():
   fr.append({'id':group['id'],'name':group['name'],'kind':'virtual','forms':[],'roster':group['users']})
   for person in group['users']:
    path=profile_path(person['profile']);profiles.setdefault(path,[]).append(group['id'])
- def personal(path):
-  s=soup(get(path));name=s.select_one('meta[property="og:title"]')['content']
+ def profile(path):
+  s=soup(get(path));name=profile_name(s.select_one('meta[property="og:title"]')['content'])
   links=[a.get('data-url','') for a in s.select('a[data-url]')]
   url=next((u for u in links if re.fullmatch(r'https://fantasy-h2h.ru/h2h/user_tournaments_list/\d+',u)),None)
   if not url:raise ValueError('Personal history unavailable: '+path)
-  teams=personal_teams(str(soup(get(url+'/26',{'ajax':1}))),LEAGUES)
-  return path,name,teams
- for path,name,teams in pool(personal,list(profiles)):
-  for fid in dict.fromkeys(profiles[path]):
+  return path,name,url.rsplit('/',1)[-1]
+ users={}
+ for form in forms:
+  for team in form['teams']:
+   if team['user_id']:
+    user=users.setdefault(team['user_id'],{'name':team['manager'],'groups':set()})
+    user['groups'].add(form['franchise'])
+ for path,name,uid in pool(profile,list(profiles)):
+  user=users.setdefault(uid,{'name':name,'groups':set()});user['name']=name;user['groups'].update(profiles[path])
+ for form in forms:
+  for team in form['teams']:
+   if team['user_id']:team['manager']=users[team['user_id']]['name']
+ def personal(uid):
+  teams=personal_teams(str(soup(get('/h2h/user_tournaments_list/'+uid+'/26',{'ajax':1}))),LEAGUES)
+  return uid,teams
+ for uid,teams in pool(personal,list(users)):
+  user=users[uid]
+  for fid in sorted(user['groups']):
    for team in teams:
-    forms.append({'franchise':fid,'slug':team['slug'],'cid':team['cid'],'url':BASE+path,'personal':True,'teams':[{**team,'manager':name}]})
+    forms.append({'franchise':fid,'slug':team['slug'],'cid':team['cid'],'url':BASE+'/h2h/user_tournaments_list/'+uid+'/26','personal':True,'teams':[{**team,'manager':user['name']}]})
  save('franchises.json',fr);save('franchise-teams.json',forms)
  print('Franchises',[(f['id'],f['name'],len(f['forms'])) for f in fr]);print('forms',len(forms),'teams',sum(len(f['teams']) for f in forms))
 def metadata():
@@ -138,7 +152,10 @@ def metadata():
   cid=int(s.select_one('input[name="filter[tournament_id]"]')['value'])
   for rn,r in rounds.items():
    ss=soup(get('/analytics/competition_tour_shedule/'+str(r['index']),{'ajax':1}))
-   r['matches']=[{'date':x.select_one('.date').get_text(' ',strip=True),'finished':'is_finished' in x.get('class',[]),'text':x.get_text(' ',strip=True)} for x in ss.select('tr.match')]
+   r['matches']=[]
+   for x in ss.select('tr.match'):
+    link=x.select_one('[href*="/football/match/"]');match=re.search(r'/football/match/(\d+)',link['href']) if link else None
+    r['matches'].append({'date':x.select_one('.date').get_text(' ',strip=True),'finished':'is_finished' in x.get('class',[]),'text':x.get_text(' ',strip=True),'sports_match_id':match[1] if match else None})
   return {'slug':slug,'league_id':LEAGUES[slug],'cid':cid,'rounds':list(sorted(rounds.values(),key=lambda r:r['round']))}
  m=pool(one,slugs);save('leagues.json',m);print([(x['slug'],len(x['rounds'])) for x in m])
 def players():

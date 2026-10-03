@@ -3,10 +3,37 @@ import unittest
 import tempfile
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
-from sources import personal_teams, profile_path, registry, squad_sources, memberships, write_cache
+from sources import personal_teams, profile_path, profile_name, board_user_id, fixture_round, registry, squad_sources, memberships, write_cache
 
 
 class SourceTests(unittest.TestCase):
+    def test_board_participants_can_resolve_history_without_an_h2h_profile(self):
+        from bs4 import BeautifulSoup
+        row = BeautifulSoup('<tr data-player_id="745718"><td class="uname"><span class="user_info_control" data-url_key="1053381646/347"></span></td></tr>', 'html.parser')
+        self.assertEqual(board_user_id(row), '1053381646')
+        self.assertIsNone(board_user_id(BeautifulSoup('<td class="uname"><span class="user_info_control" data-url_key="../347"></span></td>', 'html.parser')))
+        self.assertIsNone(board_user_id(BeautifulSoup('<tr data-player_id="745718"></tr>', 'html.parser')))
+
+    def test_profile_names_drop_only_the_site_title_suffix(self):
+        self.assertEqual(profile_name('Никита Цыжман - H2H профиль'), 'Никита Цыжман')
+        self.assertEqual(profile_name('Name - Other'), 'Name - Other')
+
+    def test_board_scope_uses_real_fixtures_instead_of_restarting_phase_rounds(self):
+        from bs4 import BeautifulSoup
+        html = '<div class="roster this_tour"><ul><li><a href="https://sports.ru/football/match/100">матч</a></li><li class="prev"><a href="https://sports.ru/football/match/90">прошлый</a></li></ul></div>'
+        doc = BeautifulSoup(html, 'html.parser')
+        fixtures = {('rfpl_2026','100'):('rfpl_2026',9), ('rfpl_2026','90'):('rfpl_2026',8)}
+        dates = {('rfpl_2026','27.09.2026'):{('rfpl_2026',9)}}
+        self.assertEqual(fixture_round(doc,'rfpl_2026',fixtures,dates,'Player 10 - 20 Player, 27.09.2026'),('rfpl_2026',9))
+        self.assertEqual(fixture_round(BeautifulSoup('', 'html.parser'),'rfpl_2026',fixtures,dates,'Player 0 - 0 Player, 27.09.2026'),('rfpl_2026',9))
+        self.assertIsNone(fixture_round(doc,'epl_2026',fixtures,dates))
+
+    def test_conflicting_board_sources_fail_instead_of_guessing(self):
+        from bs4 import BeautifulSoup
+        doc = BeautifulSoup('<div class="roster this_tour"><ul><li><a href="https://sports.ru/football/match/100">match</a></li></ul></div>', 'html.parser')
+        with self.assertRaisesRegex(ValueError, 'Conflicting'):
+            fixture_round(doc,'a',{('a','100'):('a',1)},{('a','01.10.2026'):{('a',2)}},'A 0 - 0 B, 01.10.2026')
+
     def test_parallel_cache_writes_publish_one_complete_payload(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / 'cache.json.gz'

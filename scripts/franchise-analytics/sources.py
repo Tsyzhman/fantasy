@@ -14,6 +14,34 @@ import time
 _cache_write_lock = threading.Lock()
 
 
+def profile_name(title):
+    return title.removesuffix(' - H2H профиль').strip()
+
+
+def board_user_id(document):
+    control = document.select_one('td.uname .user_info_control[data-url_key]')
+    match = re.fullmatch(r'(\d+)/\d+', control['data-url_key']) if control else None
+    return match[1] if match else None
+
+
+def fixture_round(document, slug, fixtures, dates, title=''):
+    """Resolve a board column from actual Sports fixtures, never its phase-local number."""
+    scopes = set()
+    for link in document.select('.roster.this_tour li:not(.prev) [href*="/football/match/"]'):
+        parsed = urllib.parse.urlsplit(link.get('href', ''))
+        match = re.fullmatch(r'/football/match/(\d+)/?', parsed.path)
+        if parsed.hostname in {'sports.ru', 'www.sports.ru'} and match:
+            scope = fixtures.get((slug, match[1]))
+            if scope is not None:
+                scopes.add(scope)
+    # Empty lineups still have an explicit competition date in the match title.
+    date = re.search(r', (\d{2}\.\d{2}\.\d{4})$', title)
+    dated = dates.get((slug, date[1]), set()) if date else set()
+    if len(scopes) > 1 or len(dated) > 1 or (scopes and dated and scopes != dated):
+        raise ValueError('Conflicting board fixture identity')
+    return next(iter(scopes or dated), None)
+
+
 def registry():
     value = json.loads(pathlib.Path(__file__).with_name('franchises.json').read_text('utf-8'))
     ids = value['franchises']
@@ -74,7 +102,7 @@ def squad_sources(forms):
         for team in form['teams']:
             key = (form['slug'], form['cid'], team['team_id'])
             source = sources.setdefault(key, {'slug': form['slug'], 'cid': form['cid'], 'team': team['team_id'], 'memberships': {}, 'available_rounds': set(), 'board': False})
-            member = {'franchise': form['franchise'], 'manager': team['manager'], 'personal_only': bool(form.get('personal'))}
+            member = {'franchise': form['franchise'], 'manager': profile_name(team['manager']), 'personal_only': bool(form.get('personal'))}
             previous = source['memberships'].get(form['franchise'])
             if previous:
                 member['personal_only'] = previous['personal_only'] and member['personal_only']
@@ -97,6 +125,9 @@ def read_squads(root, expand=True):
         if pathlib.Path(name).name != name or not name.endswith('.json'):
             raise ValueError('Invalid squad source path')
         squad = json.loads((root / 'source/squads' / name).read_text('utf-8'))
+        squad['manager'] = profile_name(squad['manager'])
+        for member in squad.get('memberships', []):
+            member['manager'] = profile_name(member['manager'])
         if expand:
             for member in memberships(squad):
                 yield {**squad, **member}
