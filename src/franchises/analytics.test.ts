@@ -282,6 +282,21 @@ test("unavailable lineups remain in personal history and coverage without invent
   assert.equal(result.franchises[0].missingLineups, 0);
 });
 
+test("franchise purchase explanations keep tournament scope while virtual groups use personal rounds", () => {
+  const s = snapshot([]);
+  s.franchises.push({id: -1, name: "шизы", kind: "virtual"});
+  const board = fact(1, "a", 1, 10, {h2h_id: "board", triple_model_low: 1});
+  const personal = fact(1, "a", 1, 10, {h2h_id: "personal", triple_model_low: 1, personal_only: true});
+  const virtual = fact(-1, "a", 1, 10, {h2h_id: "virtual", triple_model_low: 1, personal_only: true});
+  s.purchases = [board, personal, virtual];
+  s.xfoExamples = [board, personal, virtual];
+  const result = aggregate(s, {from: "2026-07-01", to: "2026-07-02", leagues: [], completed: false});
+  assert.equal(result.buys, 2);
+  assert.deepEqual(result.models.find(f => f.id === 1)!.examples.map(r => r.h2h_id), ["board"]);
+  assert.deepEqual(result.models.find(f => f.id === -1)!.examples.map(r => r.h2h_id), ["virtual"]);
+  assert.deepEqual(result.xfoExamples.map(r => r.h2h_id), ["board", "virtual"]);
+});
+
 test("current forecasts describe only the last selected lineup, historical values retain the full range", () => {
   const s = snapshot([
     fact(1, "a", 1, 10, { team: "same", current_fo: 2, fo_xi_pct: 20 }),

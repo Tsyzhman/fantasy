@@ -348,9 +348,10 @@ export function aggregate(snapshot: Snapshot, filters: Filters) {
   const keys = new Set(rounds.map((r) => `${r.slug}:${r.round}`));
   const rows = snapshot.squads.filter((r) => keys.has(`${r.slug}:${r.round}`));
   const virtual = new Set(snapshot.franchises.filter((f) => f.kind === "virtual").map((f) => f.id));
-  const franchiseRows = rows.filter((r) => !r.personal_only || virtual.has(r.franchise));
+  const franchiseScope = (r: Fact) => !r.personal_only || virtual.has(r.franchise);
+  const franchiseRows = rows.filter(franchiseScope);
   const purchases = snapshot.purchases.filter((r) =>
-    keys.has(`${r.slug}:${r.round}`),
+    keys.has(`${r.slug}:${r.round}`) && franchiseScope(r),
   );
   const controls = hypothesisContext(purchases);
   const franchises = rankStyle(
@@ -437,7 +438,7 @@ export function aggregate(snapshot: Snapshot, filters: Filters) {
     })),
     xfoExamples: snapshot.franchises.flatMap((f) =>
       snapshot.xfoExamples
-        .filter((r) => r.franchise === f.id && keys.has(`${r.slug}:${r.round}`))
+        .filter((r) => r.franchise === f.id && keys.has(`${r.slug}:${r.round}`) && franchiseScope(r))
         .slice(0, 40),
     ),
   };

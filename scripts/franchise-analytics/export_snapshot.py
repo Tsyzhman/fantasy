@@ -51,7 +51,7 @@ def main():
   score=scores.get((r['slug'],r['round'],str(r['team']),str(r['h2h_id'])))
   actual=h2h_score(score,r['is_cap'],individual=True)
   vals.append(value);filled_vals.append(filled and value is not None)
-  if r['is_xi'] and value is not None and rounds[key]['finished']:
+  if r['is_xi'] and value is not None and rounds[key]['finished'] and (not r['personal_only'] or r['franchise']<0):
    example={k:r[k] for k in ['franchise','manager','slug','round','team','name','is_cap','is_buy','source','personal_only']}|{'xfo':value,'actual':actual,'filled':filled}
    group=example_groups[(r['franchise'],r['slug'],r['round'])];group[r['h2h_id']]=example
    if len(group)>2:

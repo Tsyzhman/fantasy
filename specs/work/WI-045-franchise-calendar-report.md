@@ -15,7 +15,7 @@ The production franchise report compares managers across all of their available 
 
 ## Scope
 
-- In: complete manager histories, date filters and their URL/API validation, franchise source registry and virtual `шизы` group, bounded collection/publication, regression checks, Git push and immutable production deployment.
+- In: complete manager histories, date filters and their URL/API validation, franchise source registry and virtual `шизы` group, bounded collection/publication, regression checks, patching existing dependency audit findings blocking release, Git push and immutable production deployment.
 - Out: changes to football scoring or forecasting models, fictitious starting/reserve/freeze states for the virtual group, unrelated server applications.
 
 ## Acceptance
@@ -42,3 +42,4 @@ Implementation is complete; collection and production verification are in progre
 - Full `npm run check` passed: 1,218 tests, 1,216 passed, two platform skips, zero failures; lint has zero errors (221 existing warnings), typecheck and production build passed. The subsequent missing-lineup regression passed with all 13 focused franchise tests. Python collection checks passed all 15 tests, including the 107-case xFO fixture.
 - Spec-space snapshot is `current`, diagnostics empty, fingerprint `89195af27c8c96833453f1d4e30f5a66513fb1b19eee5ba7ef2b737b9fbb04d6`; provenance records the working tree based on `ceb6c92550779cbc9cf367b4ae2040911d20c53b`.
 - Local collection reuses canonical finished source files and atomic HTTP cache entries. Production's previous ready snapshot remains available while the expanded snapshot is prepared.
+- GitHub's first check stopped on existing production dependency advisories. Next.js/eslint-config-next were patched from 16.3.4 to 16.3.8, and the callable brace-expansion adapter/upstream from 5.0.9 to 5.0.12; `npm run audit:prod` now reports zero vulnerabilities. Full checks passed again after the patches and the tournament-scope regression (zero failures; existing lint warnings only).

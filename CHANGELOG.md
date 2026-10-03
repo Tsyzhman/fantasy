@@ -2,6 +2,8 @@
 
 ## 0.3.111 - 2026-10-03
 
+- Patch Next.js and brace-expansion dependencies to clear the existing production audit failures before release.
+
 - Compare managers across all available personal rounds, including reserve and frozen rounds and leagues outside their franchise tournament entry.
 - Filter franchise reports by inclusive Moscow calendar dates shared across leagues.
 - Register 74 workbook franchises and the virtual `шизы` group of 24 personal profiles, without board or freeze semantics.
