@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.113 - 2026-10-04
+
+- Let expanded franchise graphs retain readable text sizes by using their full natural height.
+
 ## 0.3.112 - 2026-10-04
 
 - Keep all franchise chart names readable and selectable with adaptive plot height, bounded label placement and connecting lines for dense groups of 75 points.

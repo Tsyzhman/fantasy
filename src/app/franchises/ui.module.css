@@ -244,7 +244,7 @@
 .scatter svg {
   display: block;
   width: 100%;
-  max-height: 620px;
+  height: auto;
 }
 .scatter text {
   fill: var(--text-secondary);
