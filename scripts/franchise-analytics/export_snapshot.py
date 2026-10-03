@@ -8,8 +8,8 @@ import pandas as pd
 def main():
  d=json.loads((ROOT/'report-data.json').read_text('utf-8'))
  if d.get('errors') or any(d['checks'].get(k,0) for k in ['future_history','duplicate_selections','missing_active_state']):raise ValueError('Source validation failed; retain the previous published snapshot')
- squads=pd.read_pickle(ROOT/'source/squad-metrics.pkl')
- decisions=pd.read_pickle(ROOT/'source/decisions.pkl')
+ columns=['franchise','manager','slug','round','team','h2h_id','name','player_id','pos','is_cap','is_xi','is_buy','source','personal_only']
+ decisions=pd.read_pickle(ROOT/'source/decisions.pkl')[columns]
  buys=pd.read_pickle(ROOT/'source/purchases.pkl')
  leagues=json.loads((ROOT/'leagues.json').read_text('utf-8'))
  mapping={(r['league_id'],str(r['provider_player_id'])):r for r in stream('price-mapping') if r['player_id']}
@@ -31,8 +31,7 @@ def main():
   for p in s['players']:
    if 'prev' not in p['class']:scores[(s['slug'],s['round'],str(s['team']),str(p['id']))]=p.get('score')
  vals=[];filled_vals=[];example_groups=collections.defaultdict(dict);xcache={}
- columns=['franchise','manager','slug','round','team','h2h_id','name','player_id','pos','is_cap','is_xi','is_buy','source','personal_only']
- for values in decisions[columns].itertuples(index=False,name=None):
+ for values in decisions.itertuples(index=False,name=None):
   r=dict(zip(columns,values))
   key=(r['slug'],r['round']);value=None;match_values=[];filled=False
   cachekey=(key,r.get('player_id'),r.get('pos'))

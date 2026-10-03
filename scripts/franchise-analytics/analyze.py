@@ -164,6 +164,8 @@ def aggregate():
   r.update({'active':st.get('active'),'frozen':st.get('frozen'),'personal_only':d.get('personal_only',False),'lineup_missing':False})
   squads.append(r)
  s=pd.DataFrame(squads);z=pd.DataFrame(selected)
+ # DataFrames own the retained columns; release the per-player dictionaries before serialization.
+ del squads,selected,lookup,f
  # Direct XI benchmark for the observed franchise comparison cohort.
  cohort=s.drop_duplicates(['slug','round','team']).groupby(['slug','round']).own.mean()
  s['own_cohort']=[cohort.loc[(row.slug,row.round)] for row in s.itertuples()];s['own_cohort_gap']=s.own-s.own_cohort
