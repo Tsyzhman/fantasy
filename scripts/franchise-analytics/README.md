@@ -16,7 +16,7 @@
 
 ## Повторы, сбои и память
 
-Уникальные ключи: сезон/лига/тур/команда, сезон/лига/тур и сезон/франшиза. Повторный импорт обновляет те же записи. Завершённые составы и пулы фиксируются после суток на уточнение очков и затем повторно не скачиваются; текущие обновляются. HTTP-кэш живёт 30 минут, старые файлы старше 30 дней удаляются после успешного сбора. Снимок — не больше 50 МБ распакованного JSON / 20 МБ gzip; web держит одну актуальную копию, без отдельного кэша на каждый фильтр. Пакетные стадии освобождают память между процессами; после успеха удаляются воспроизводимые DataFrame-файлы.
+Уникальные ключи: сезон/лига/тур/команда, сезон/лига/тур и сезон/франшиза. Повторный импорт обновляет те же записи. Завершённые составы и пулы фиксируются после суток на уточнение очков и затем повторно не скачиваются; текущие обновляются. HTTP-кэш живёт 30 минут, старые файлы старше 30 дней удаляются после успешного сбора. Снимок — не больше 192 МБ распакованного JSON / 64 МБ gzip; web держит одну актуальную копию, без отдельного кэша на каждый фильтр. Пакетные стадии освобождают память между процессами; после успеха удаляются воспроизводимые DataFrame-файлы.
 
 `.sync.lock` и `.collection.lock` исключают параллельный сбор. После аварийного завершения оператор проверяет, что прежний процесс уже не работает, и только тогда удаляет оставшийся lock. При ошибке новый снимок не публикуется; прежний остаётся в БД. Дата источников и расчёта видна посетителям.
 
@@ -25,3 +25,9 @@
 Сравнение xФО с реальными ФО использует тех же 11 игроков до автозамен, без капитанского множителя с обеих сторон. Уже удвоенные очки капитана из H2H делятся на 2. Снимок помечается `xfoCaptainMultiplier: 1`; до пересчёта старого снимка UI не подменяет смысл прежних значений.
 
 `python -m unittest discover -s scripts/franchise-analytics -p test_*.py` проверяет формулу на 107 строках workbook-fixture и крайние случаи, включая 59/60 минут и уже удвоенные очки капитана H2H. `npm test` включает проверки фильтрации и агрегатов. Число отсутствующих данных, будущих матчей и дублей сохраняется в `validation.json`.
+
+## Calendar and personal histories
+
+`franchises.json` registers 74 H2H franchises and the virtual `шизы` group of 24 personal profiles. Profile histories include all available rounds of supported football leagues, independently of franchise board selection. A canonical source squad is downloaded once. Explicit memberships associate it with report groups without duplicate observations inside one group. The virtual group has no board, starting/reserve status or freeze events.
+
+Version 2 snapshots carry complete personal-history semantics. Personal-only leagues contribute to manager comparisons and the virtual group, without changing the tournament sample of regular franchises. Calendar filters use the inclusive Moscow date of each round's first fixture. Undated rounds remain visibly unavailable. `squad-index.json` bounds the current input set; stale cached sources do not re-enter the report. Snapshot encoding streams to gzip and illustrative examples retain two players per group/league/round.

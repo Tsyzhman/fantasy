@@ -5,6 +5,7 @@ import collections
 def main():
  forms=json.loads((ROOT/'franchise-teams.json').read_text('utf-8'));meta=json.loads((ROOT/'leagues.json').read_text('utf-8'));tourmap={r['tour']:(l['slug'],r['round']) for l in meta for r in l['rounds']};states=[];events=[];audit=[];base=[]
  for form in forms:
+  if form.get('personal'):continue
   s=soup(get(form['url']));table=s.select_one('.players_list table');header=table.select_one('tr.header');headcells=header.find_all('td',recursive=False);headers=[c for c in headcells if c.select_one('a[href*="team_match_data"]')];rows=table.select('tbody tr[data-player_id]')
   for j,hc in enumerate(headers):
    cells=[(tr,tr.select('td.match')[j]) for tr in rows if len(tr.select('td.match'))>j]

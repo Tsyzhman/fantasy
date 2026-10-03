@@ -15,6 +15,7 @@ const fmt = (v: number | null | undefined, d = 1) =>
         minimumFractionDigits: d,
       });
 const metric = (r: Summary, key: string) => r.metrics[key] ?? null;
+const dateLabel = (value: string) => value.split("-").reverse().join(".");
 const palette = [
   "#4777bb",
   "#9267b5",
@@ -380,6 +381,10 @@ const asRows = (rows: Summary[]): Row[] =>
     rank: r.rank,
     rarity: r.rarity,
     count: r.count,
+    activeRounds: r.virtual ? null : r.activeRounds,
+    reserveRounds: r.virtual ? null : r.reserveRounds,
+    personalRounds: r.virtual ? null : r.personalRounds,
+    missingLineups: r.missingLineups,
     ...r.metrics,
   }));
 
@@ -394,8 +399,8 @@ export function FranchiseAnalytics({
   const [busy, setBusy] = useState(true);
   const [query, setQuery] = useState(initialQuery);
   const [requestId, setRequestId] = useState(0);
-  const [from, setFrom] = useState(initial.get("from") ?? "1");
-  const [to, setTo] = useState(initial.get("to") ?? "50");
+  const [from, setFrom] = useState(initial.get("from") ?? "2026-07-01");
+  const [to, setTo] = useState(initial.get("to") ?? "2027-06-30");
   const [leagues, setLeagues] = useState<string[]>(
     initial
       .getAll("league")
@@ -421,7 +426,7 @@ export function FranchiseAnalytics({
           );
         return v as Analytics;
       })
-      .then(setData)
+      .then((value) => { if (!controller.signal.aborted) setData(value); })
       .catch((e) => {
         if (!controller.signal.aborted) setError(e.message);
       })
@@ -484,22 +489,18 @@ export function FranchiseAnalytics({
         }}
       >
         <label>
-          С тура
+          С даты
           <input
-            type="number"
-            min="1"
-            max="60"
+            type="date"
             required
             value={from}
             onChange={(e) => setFrom(e.target.value)}
           />
         </label>
         <label>
-          По тур
+          По дату
           <input
-            type="number"
-            min="1"
-            max="60"
+            type="date"
             required
             value={to}
             onChange={(e) => setTo(e.target.value)}
@@ -550,9 +551,8 @@ export function FranchiseAnalytics({
         )}
       </form>
       <p className={styles.note}>
-        Номера туров считаются отдельно в каждом чемпионате по нумерации H2H.
-        Например, 1–2 — первый и второй тур каждой выбранной лиги, независимо от
-        дат матчей.
+        Общий календарный отрезок для всех чемпионатов. Обе даты включены.
+        Тур входит целиком по дате первого матча в Москве.
       </p>
       {error && (
         <div role="alert" className={styles.error}>
@@ -579,10 +579,13 @@ export function FranchiseAnalytics({
               </select>
             </label>
             <span>
-              Туры {data.filters.from}–{data.filters.to} · {data.rounds} туров
+              {dateLabel(data.filters.from)}–{dateLabel(data.filters.to)} · {data.rounds} туров
               чемпионатов · {data.squads.toLocaleString("ru-RU")} составов
             </span>
           </div>
+          {!data.personalHistory && <p className={styles.note}>Полная личная история менеджеров ещё обновляется.</p>}
+          {data.undatedRounds > 0 && <p className={styles.note}>Туров без известной даты: {data.undatedRounds}. Они не включены в календарный отрезок.</p>}
+          {f?.virtual && <p className={styles.note}>«{f.name}» — группа отдельных участников. Здесь учитываются все их личные туры. Основы, резерва и заморозок у группы нет.</p>}
           <details className={styles.coverage}>
             <summary>Какие чемпионаты вошли в расчёт</summary>
             <ul>
@@ -627,7 +630,7 @@ export function FranchiseAnalytics({
           {f && <h2 className={styles.franchiseTitle}>{f.name}</h2>}
           {!data.squads ? (
             <div className={styles.card}>
-              В этом диапазоне составы не найдены. Измените номера туров или
+              В этом диапазоне составы не найдены. Измените даты или
               чемпионаты.
             </div>
           ) : (
@@ -774,7 +777,7 @@ export function FranchiseAnalytics({
                   </Section>
                   <Section
                     title="Менеджеры: склонность к редким выборам"
-                    description="Сравнение на той же дистанции, с равным весом доступных чемпионатов."
+                    description="Все личные туры на выбранных датах, включая резерв и заморозку. Учитываются и личные лиги вне заявки франшизы. Доступные чемпионаты имеют равный вес."
                   >
                     <Table
                       rows={asRows(
@@ -790,7 +793,7 @@ export function FranchiseAnalytics({
                             data.managers.find((m) => m.id === r.id)!.franchise,
                           ),
                       }))}
-                      columns={choiceColumns}
+                      columns={[...choiceColumns, ...(!f?.virtual ? [{ key: "reserveRounds", label: "Вне основы", digits: 0 }, { key: "personalRounds", label: "Личные вне заявки", digits: 0 }] : []), { key: "missingLineups", label: "Без состава", digits: 0 }]}
                     />
                   </Section>
                   <Section
@@ -897,7 +900,7 @@ export function FranchiseAnalytics({
                     </p>
                   </div>
                   <Section
-                    title="Рейтинг по xФО основного состава"
+                    title="Рейтинг франшиз по xФО XI"
                     description="Выше — больше ожидаемых очков по моментам за один полностью покрытый состав. Факт и разница рассчитаны по тем же выбранным XI, до автозамен."
                   >
                     <Table
@@ -940,7 +943,7 @@ export function FranchiseAnalytics({
                   </Section>
                   <Section
                     title="Менеджеры по xФО"
-                    description="Неполный состав не получает место по сумме доступных игроков."
+                    description="Все личные туры менеджера, включая резерв и заморозку. Неполный XI футболистов не получает место по сумме доступных оценок."
                   >
                     <Table
                       initialSort="xfo"
@@ -955,9 +958,16 @@ export function FranchiseAnalytics({
                           eligible: r.xfoEligible,
                           coverage: r.xfoCoverage,
                           filled: r.xfoFilled,
+                          count: r.count,
+                          reserve: r.virtual ? null : r.reserveRounds,
+                          personal: r.virtual ? null : r.personalRounds,
+                          missing: r.missingLineups,
                         }))}
                       columns={[
                         { key: "name", label: "Менеджер" },
+                        { key: "count", label: "Всего личных туров", digits: 0 },
+                        ...(!f?.virtual ? [{ key: "reserve", label: "Вне основы", digits: 0 }, { key: "personal", label: "Личные вне заявки", digits: 0 }] : []),
+                        { key: "missing", label: "Без состава", digits: 0 },
                         { key: "xfo", label: "xФО состава", digits: 2 },
                         { key: "actual", label: "Реальные ФО", digits: 2 },
                         { key: "gap", label: "ФО − xФО", digits: 2 },
@@ -970,7 +980,7 @@ export function FranchiseAnalytics({
                   {f && (
                     <Section
                       title="xФО по чемпионатам"
-                      description="Туры выбранного диапазона учитываются отдельно в каждой лиге. Прочерк означает, что для xФО нет полного XI с известной статистикой и фактическими очками; составы этой лиги остаются в остальных разделах."
+                    description="Туры входят по дате начала в общем календарном отрезке. Прочерк означает, что для xФО нет полного XI с известной статистикой и фактическими очками; составы этой лиги остаются в остальных разделах."
                     >
                       <Table
                         rows={data.byLeague
@@ -1037,7 +1047,8 @@ export function FranchiseAnalytics({
                   </Section>
                 </>
               )}
-              {tab === "freezes" && (
+              {tab === "freezes" && f?.virtual && <Section title="Заморозки"><p>У группы «{f.name}» нет основы, резерва и заморозок.</p></Section>}
+              {tab === "freezes" && !f?.virtual && (
                 <>
                   <Section
                     title="Частота и успех заморозок"
@@ -1144,13 +1155,14 @@ export function FranchiseAnalytics({
                 </p>
                 <h3>Дистанция и рейтинги</h3>
                 <p>
-                  Выбранные номера туров применяются отдельно к каждому
-                  чемпионату. Сначала считаются показатели состава в туре, затем
+                  Один календарный отрезок применяется ко всем чемпионатам по
+                  дате первого матча тура в Москве. Обе границы включены. Сначала считаются показатели состава в туре, затем
                   средние внутри лиги, затем выбранные лиги получают одинаковый
                   вес. Редкость выбора: 40% ранг низкого владения, 30% редкого
                   капитана и 30% низкой H2h-Δ покупки. Рейтинг не измеряет
                   результаты менеджера.
                 </p>
+                <p>Личные сравнения включают все доступные туры менеджера: в основе, резерве, при заморозке и в личных лигах вне заявки франшизы. «шизы» объединяет отдельных участников без турнирной основы и заморозок.</p>
                 <h3>Формула xФО из Excel</h3>
                 <p>
                   xФО = xG × цена гола + 3 × xA + очки времени + карточки +
