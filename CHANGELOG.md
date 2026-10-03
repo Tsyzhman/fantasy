@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.112 - 2026-10-04
+
+- Keep all franchise chart names readable and selectable with adaptive plot height, bounded label placement and connecting lines for dense groups of 75 points.
+
 ## 0.3.111 - 2026-10-03
 
 - Patch Next.js and brace-expansion dependencies to clear the existing production audit failures before release.

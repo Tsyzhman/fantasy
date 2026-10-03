@@ -1,8 +1,9 @@
 "use client";
 /** @spec spec://modules/franchises/FEAT-005-franchise-analytics#ui */
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Analytics, Summary } from "@/franchises/analytics";
 import { number } from "@/franchises/analytics";
+import { chartLabels } from "@/franchises/chart-labels";
 import styles from "./ui.module.css";
 
 type Row = Record<string, string | number | null>;
@@ -203,90 +204,41 @@ function Scatter({
   onSelect: (s: string) => void;
 }) {
   const [hover, setHover] = useState<string | null>(null);
-  const valid = rows.filter(
-    (r) => metric(r, x) !== null && metric(r, y) !== null,
-  );
-  if (!valid.length) return <p>Недостаточно данных для графика.</p>;
-  const xs = valid.map((r) => metric(r, x)!),
-    ys = valid.map((r) => metric(r, y)!);
-  const dx = Math.max(0.1, Math.max(...xs) - Math.min(...xs)),
-    dy = Math.max(0.1, Math.max(...ys) - Math.min(...ys));
-  const loX = Math.min(...xs) - dx * 0.13,
-    hiX = Math.max(...xs) + dx * 0.13,
-    loY = Math.min(...ys) - dy * 0.15,
-    hiY = Math.max(...ys) + dy * 0.15;
-  const points = valid.map((r, i) => ({
-    r,
-    i,
-    px: 62 + ((metric(r, x)! - loX) / (hiX - loX)) * 710,
-    py: 330 - ((metric(r, y)! - loY) / (hiY - loY)) * 290,
-  }));
-  const boxes: { x: number; y: number; w: number; h: number }[] = [];
-  const labels = new Map<string, { x: number; y: number }>();
-  const overlaps = (
-    a: { x: number; y: number; w: number; h: number },
-    b: { x: number; y: number; w: number; h: number },
-  ) =>
-    a.x < b.x + b.w + 4 &&
-    a.x + a.w + 4 > b.x &&
-    a.y < b.y + b.h + 4 &&
-    a.y + a.h + 4 > b.y;
-  for (const p of [...points].sort(
-    (a, b) =>
-      Math.min(
-        ...points
-          .filter((q) => q !== a)
-          .map((q) => Math.hypot(q.px - a.px, q.py - a.py)),
-      ) -
-      Math.min(
-        ...points
-          .filter((q) => q !== b)
-          .map((q) => Math.hypot(q.px - b.px, q.py - b.py)),
-      ),
-  )) {
-    const w = p.r.name.length * 6.8;
-    let chosen: { x: number; y: number; w: number; h: number } | undefined;
-    for (const gap of [10, 18, 28, 40]) {
-      for (const [ox, oy] of [
-        [gap, -7],
-        [-w - gap, -7],
-        [gap, -24],
-        [-w - gap, -24],
-        [gap, 11],
-        [-w - gap, 11],
-        [-w / 2, -28],
-        [-w / 2, 15],
-      ]) {
-        const b = { x: p.px + ox, y: p.py + oy, w, h: 16 };
-        if (
-          b.x < 63 ||
-          b.x + w > 788 ||
-          b.y < 31 ||
-          b.y + 16 > 337 ||
-          boxes.some((a) => overlaps(a, b)) ||
-          points.some(
-            (q) =>
-              Math.hypot(
-                Math.max(b.x - q.px, 0, q.px - b.x - w),
-                Math.max(b.y - q.py, 0, q.py - b.y - 16),
-              ) < 8,
-          )
-        )
-          continue;
-        chosen = b;
-        break;
-      }
-      if (chosen) break;
-    }
-    chosen ??= { x: p.px + 10, y: p.py - 20, w, h: 16 };
-    boxes.push(chosen);
-    labels.set(p.r.id, { x: chosen.x, y: chosen.y + 12 });
-  }
+  const geometry = useMemo(() => {
+    const valid = rows.filter(
+      (r) => metric(r, x) !== null && metric(r, y) !== null,
+    );
+    if (!valid.length) return null;
+    const xs = valid.map((r) => metric(r, x)!),
+      ys = valid.map((r) => metric(r, y)!);
+    const dx = Math.max(0.1, Math.max(...xs) - Math.min(...xs)),
+      dy = Math.max(0.1, Math.max(...ys) - Math.min(...ys));
+    const loX = Math.min(...xs) - dx * 0.13,
+      hiX = Math.max(...xs) + dx * 0.13,
+      loY = Math.min(...ys) - dy * 0.15,
+      hiY = Math.max(...ys) + dy * 0.15;
+    const plotHeight = Math.max(290, valid.length * 14);
+    const bottom = 40 + plotHeight;
+    const points = valid.map((r, i) => ({
+      r,
+      i,
+      px: 62 + ((metric(r, x)! - loX) / (hiX - loX)) * 710,
+      py: bottom - ((metric(r, y)! - loY) / (hiY - loY)) * plotHeight,
+    }));
+    const labels = chartLabels(
+      points.map((p) => ({ id: p.r.id, name: p.r.name, x: p.px, y: p.py })),
+      { left: 63, right: 788, top: 31, bottom: bottom + 7 },
+    );
+    return { valid, loX, hiX, loY, hiY, points, labels, plotHeight, bottom };
+  }, [rows, x, y]);
+  if (!geometry) return <p>Недостаточно данных для графика.</p>;
+  const { valid, loX, hiX, loY, hiY, points, labels, plotHeight, bottom } =
+    geometry;
   return (
     <>
       <div className={styles.scatter}>
         <svg
-          viewBox="0 0 800 390"
+          viewBox={`0 0 800 ${bottom + 60}`}
           role="img"
           aria-label={`${xlabel}; ${ylabel}`}
         >
@@ -295,17 +247,31 @@ function Scatter({
           </text>
           {Array.from({ length: 5 }, (_, i) => (
             <g key={i}>
-              <line x1={62 + i * 177.5} y1="40" x2={62 + i * 177.5} y2="330" />
-              <line x1="62" y1={330 - i * 72.5} x2="772" y2={330 - i * 72.5} />
-              <text x={62 + i * 177.5} y="352" textAnchor="middle">
+              <line
+                x1={62 + i * 177.5}
+                y1="40"
+                x2={62 + i * 177.5}
+                y2={bottom}
+              />
+              <line
+                x1="62"
+                y1={bottom - (i * plotHeight) / 4}
+                x2="772"
+                y2={bottom - (i * plotHeight) / 4}
+              />
+              <text x={62 + i * 177.5} y={bottom + 22} textAnchor="middle">
                 {fmt(loX + ((hiX - loX) * i) / 4)}
               </text>
-              <text x="52" y={334 - i * 72.5} textAnchor="end">
+              <text
+                x="52"
+                y={bottom + 4 - (i * plotHeight) / 4}
+                textAnchor="end"
+              >
                 {fmt(loY + ((hiY - loY) * i) / 4)}
               </text>
             </g>
           ))}
-          <text x="410" y="382" textAnchor="middle">
+          <text x="410" y={bottom + 52} textAnchor="middle">
             {xlabel}
           </text>
           {points.map((p) => (
@@ -325,6 +291,22 @@ function Scatter({
               <title>
                 {p.r.name}: {fmt(metric(p.r, x), 2)}; {fmt(metric(p.r, y), 2)}
               </title>
+              {Math.hypot(
+                p.px - labels.get(p.r.id)!.x,
+                p.py - labels.get(p.r.id)!.y,
+              ) > 25 && (
+                <line
+                  x1={p.px}
+                  y1={p.py}
+                  x2={labels.get(p.r.id)!.x + 2}
+                  y2={labels.get(p.r.id)!.y + 8}
+                  pointerEvents="none"
+                  style={{
+                    stroke: palette[p.i % palette.length],
+                    opacity: 0.5,
+                  }}
+                />
+              )}
               <circle
                 cx={p.px}
                 cy={p.py}
@@ -334,7 +316,7 @@ function Scatter({
               <text
                 className={styles.plotLabel}
                 x={labels.get(p.r.id)!.x}
-                y={labels.get(p.r.id)!.y}
+                y={labels.get(p.r.id)!.y + 13}
               >
                 {p.r.name}
               </text>
@@ -426,7 +408,9 @@ export function FranchiseAnalytics({
           );
         return v as Analytics;
       })
-      .then((value) => { if (!controller.signal.aborted) setData(value); })
+      .then((value) => {
+        if (!controller.signal.aborted) setData(value);
+      })
       .catch((e) => {
         if (!controller.signal.aborted) setError(e.message);
       })
@@ -551,8 +535,8 @@ export function FranchiseAnalytics({
         )}
       </form>
       <p className={styles.note}>
-        Общий календарный отрезок для всех чемпионатов. Обе даты включены.
-        Тур входит целиком по дате первого матча в Москве.
+        Общий календарный отрезок для всех чемпионатов. Обе даты включены. Тур
+        входит целиком по дате первого матча в Москве.
       </p>
       {error && (
         <div role="alert" className={styles.error}>
@@ -579,13 +563,28 @@ export function FranchiseAnalytics({
               </select>
             </label>
             <span>
-              {dateLabel(data.filters.from)}–{dateLabel(data.filters.to)} · {data.rounds} туров
-              чемпионатов · {data.squads.toLocaleString("ru-RU")} составов
+              {dateLabel(data.filters.from)}–{dateLabel(data.filters.to)} ·{" "}
+              {data.rounds} туров чемпионатов ·{" "}
+              {data.squads.toLocaleString("ru-RU")} составов
             </span>
           </div>
-          {!data.personalHistory && <p className={styles.note}>Полная личная история менеджеров ещё обновляется.</p>}
-          {data.undatedRounds > 0 && <p className={styles.note}>Туров без известной даты: {data.undatedRounds}. Они не включены в календарный отрезок.</p>}
-          {f?.virtual && <p className={styles.note}>«{f.name}» — группа отдельных участников. Здесь учитываются все их личные туры. Основы, резерва и заморозок у группы нет.</p>}
+          {!data.personalHistory && (
+            <p className={styles.note}>
+              Полная личная история менеджеров ещё обновляется.
+            </p>
+          )}
+          {data.undatedRounds > 0 && (
+            <p className={styles.note}>
+              Туров без известной даты: {data.undatedRounds}. Они не включены в
+              календарный отрезок.
+            </p>
+          )}
+          {f?.virtual && (
+            <p className={styles.note}>
+              «{f.name}» — группа отдельных участников. Здесь учитываются все их
+              личные туры. Основы, резерва и заморозок у группы нет.
+            </p>
+          )}
           <details className={styles.coverage}>
             <summary>Какие чемпионаты вошли в расчёт</summary>
             <ul>
@@ -630,8 +629,7 @@ export function FranchiseAnalytics({
           {f && <h2 className={styles.franchiseTitle}>{f.name}</h2>}
           {!data.squads ? (
             <div className={styles.card}>
-              В этом диапазоне составы не найдены. Измените даты или
-              чемпионаты.
+              В этом диапазоне составы не найдены. Измените даты или чемпионаты.
             </div>
           ) : (
             <>
@@ -793,7 +791,28 @@ export function FranchiseAnalytics({
                             data.managers.find((m) => m.id === r.id)!.franchise,
                           ),
                       }))}
-                      columns={[...choiceColumns, ...(!f?.virtual ? [{ key: "reserveRounds", label: "Вне основы", digits: 0 }, { key: "personalRounds", label: "Личные вне заявки", digits: 0 }] : []), { key: "missingLineups", label: "Без состава", digits: 0 }]}
+                      columns={[
+                        ...choiceColumns,
+                        ...(!f?.virtual
+                          ? [
+                              {
+                                key: "reserveRounds",
+                                label: "Вне основы",
+                                digits: 0,
+                              },
+                              {
+                                key: "personalRounds",
+                                label: "Личные вне заявки",
+                                digits: 0,
+                              },
+                            ]
+                          : []),
+                        {
+                          key: "missingLineups",
+                          label: "Без состава",
+                          digits: 0,
+                        },
+                      ]}
                     />
                   </Section>
                   <Section
@@ -965,8 +984,25 @@ export function FranchiseAnalytics({
                         }))}
                       columns={[
                         { key: "name", label: "Менеджер" },
-                        { key: "count", label: "Всего личных туров", digits: 0 },
-                        ...(!f?.virtual ? [{ key: "reserve", label: "Вне основы", digits: 0 }, { key: "personal", label: "Личные вне заявки", digits: 0 }] : []),
+                        {
+                          key: "count",
+                          label: "Всего личных туров",
+                          digits: 0,
+                        },
+                        ...(!f?.virtual
+                          ? [
+                              {
+                                key: "reserve",
+                                label: "Вне основы",
+                                digits: 0,
+                              },
+                              {
+                                key: "personal",
+                                label: "Личные вне заявки",
+                                digits: 0,
+                              },
+                            ]
+                          : []),
                         { key: "missing", label: "Без состава", digits: 0 },
                         { key: "xfo", label: "xФО состава", digits: 2 },
                         { key: "actual", label: "Реальные ФО", digits: 2 },
@@ -980,7 +1016,7 @@ export function FranchiseAnalytics({
                   {f && (
                     <Section
                       title="xФО по чемпионатам"
-                    description="Туры входят по дате начала в общем календарном отрезке. Прочерк означает, что для xФО нет полного XI с известной статистикой и фактическими очками; составы этой лиги остаются в остальных разделах."
+                      description="Туры входят по дате начала в общем календарном отрезке. Прочерк означает, что для xФО нет полного XI с известной статистикой и фактическими очками; составы этой лиги остаются в остальных разделах."
                     >
                       <Table
                         rows={data.byLeague
@@ -1047,7 +1083,11 @@ export function FranchiseAnalytics({
                   </Section>
                 </>
               )}
-              {tab === "freezes" && f?.virtual && <Section title="Заморозки"><p>У группы «{f.name}» нет основы, резерва и заморозок.</p></Section>}
+              {tab === "freezes" && f?.virtual && (
+                <Section title="Заморозки">
+                  <p>У группы «{f.name}» нет основы, резерва и заморозок.</p>
+                </Section>
+              )}
               {tab === "freezes" && !f?.virtual && (
                 <>
                   <Section
@@ -1156,13 +1196,19 @@ export function FranchiseAnalytics({
                 <h3>Дистанция и рейтинги</h3>
                 <p>
                   Один календарный отрезок применяется ко всем чемпионатам по
-                  дате первого матча тура в Москве. Обе границы включены. Сначала считаются показатели состава в туре, затем
-                  средние внутри лиги, затем выбранные лиги получают одинаковый
-                  вес. Редкость выбора: 40% ранг низкого владения, 30% редкого
+                  дате первого матча тура в Москве. Обе границы включены.
+                  Сначала считаются показатели состава в туре, затем средние
+                  внутри лиги, затем выбранные лиги получают одинаковый вес.
+                  Редкость выбора: 40% ранг низкого владения, 30% редкого
                   капитана и 30% низкой H2h-Δ покупки. Рейтинг не измеряет
                   результаты менеджера.
                 </p>
-                <p>Личные сравнения включают все доступные туры менеджера: в основе, резерве, при заморозке и в личных лигах вне заявки франшизы. «шизы» объединяет отдельных участников без турнирной основы и заморозок.</p>
+                <p>
+                  Личные сравнения включают все доступные туры менеджера: в
+                  основе, резерве, при заморозке и в личных лигах вне заявки
+                  франшизы. «шизы» объединяет отдельных участников без турнирной
+                  основы и заморозок.
+                </p>
                 <h3>Формула xФО из Excel</h3>
                 <p>
                   xФО = xG × цена гола + 3 × xA + очки времени + карточки +
