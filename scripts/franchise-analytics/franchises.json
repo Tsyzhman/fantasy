@@ -1,0 +1,183 @@
+{
+  "franchises": [
+    433,
+    223,
+    401,
+    27,
+    18,
+    441,
+    31,
+    19,
+    5,
+    17,
+    110,
+    120,
+    163,
+    25,
+    65,
+    432,
+    364,
+    375,
+    227,
+    40,
+    476,
+    45,
+    56,
+    87,
+    150,
+    530,
+    13,
+    26,
+    503,
+    510,
+    477,
+    439,
+    563,
+    542,
+    160,
+    222,
+    125,
+    44,
+    14,
+    367,
+    236,
+    294,
+    20,
+    360,
+    474,
+    10,
+    486,
+    23,
+    41,
+    544,
+    61,
+    487,
+    517,
+    384,
+    62,
+    57,
+    42,
+    516,
+    12,
+    2,
+    22,
+    566,
+    570,
+    28,
+    282,
+    496,
+    586,
+    567,
+    148,
+    389,
+    72,
+    478,
+    48,
+    243
+  ],
+  "groups": [
+    {
+      "id": -1,
+      "name": "шизы",
+      "kind": "virtual",
+      "users": [
+        {
+          "name": "A simple man",
+          "profile": "https://fantasy-h2h.ru/h2h/viewprofile/1419"
+        },
+        {
+          "name": "Ilja Zuev",
+          "profile": "https://fantasy-h2h.ru/h2h/viewprofile/11462"
+        },
+        {
+          "name": "Шваб",
+          "profile": "https://fantasy-h2h.ru/h2h/viewprofile/339"
+        },
+        {
+          "name": "Амстердам",
+          "profile": "https://fantasy-h2h.ru/h2h/viewprofile/3173"
+        },
+        {
+          "name": "weekend offender",
+          "profile": "https://fantasy-h2h.ru/h2h/viewprofile/1158"
+        },
+        {
+          "name": "Alex 1988",
+          "profile": "https://fantasy-h2h.ru/h2h/viewprofile/1131"
+        },
+        {
+          "name": "Lampard07",
+          "profile": "https://fantasy-h2h.ru/h2h/viewprofile/Lampard07"
+        },
+        {
+          "name": "Иван Васильев",
+          "profile": "https://fantasy-h2h.ru/h2h/viewprofile/9546"
+        },
+        {
+          "name": "Tsar (Omsk)",
+          "profile": "https://fantasy-h2h.ru/h2h/viewprofile/723"
+        },
+        {
+          "name": "Александр Дорский",
+          "profile": "https://fantasy-h2h.ru/h2h/viewprofile/1558"
+        },
+        {
+          "name": "Kempes78",
+          "profile": "https://fantasy-h2h.ru/h2h/viewprofile/Kempes78"
+        },
+        {
+          "name": "Mr-Vadim",
+          "profile": "https://fantasy-h2h.ru/h2h/viewprofile/1715"
+        },
+        {
+          "name": "dmitri_Zloy",
+          "profile": "https://fantasy-h2h.ru/h2h/viewprofile/dmitri_Zloy"
+        },
+        {
+          "name": "JOM",
+          "profile": "https://fantasy-h2h.ru/h2h/viewprofile/JOM"
+        },
+        {
+          "name": "alskar",
+          "profile": "https://fantasy-h2h.ru/h2h/viewprofile/alskar"
+        },
+        {
+          "name": "Ignat75",
+          "profile": "https://fantasy-h2h.ru/h2h/viewprofile/Ignat75"
+        },
+        {
+          "name": "Asa ded",
+          "profile": "https://fantasy-h2h.ru/h2h/viewprofile/9680"
+        },
+        {
+          "name": "Дмитрий Кузьмин",
+          "profile": "https://fantasy-h2h.ru/h2h/viewprofile/5703"
+        },
+        {
+          "name": "+Холмс+",
+          "profile": "https://fantasy-h2h.ru/h2h/viewprofile/3249"
+        },
+        {
+          "name": "Zmej",
+          "profile": "https://fantasy-h2h.ru/h2h/viewprofile/Zmej"
+        },
+        {
+          "name": "Mighty_K",
+          "profile": "https://fantasy-h2h.ru/h2h/viewprofile/Mighty_K"
+        },
+        {
+          "name": "Bashkir1987",
+          "profile": "https://fantasy-h2h.ru/h2h/viewprofile/Bashkir1987"
+        },
+        {
+          "name": "saigon.denis",
+          "profile": "https://fantasy-h2h.ru/h2h/viewprofile/6208"
+        },
+        {
+          "name": "jjsjsjsj",
+          "profile": "https://fantasy-h2h.ru/h2h/viewprofile/jjsjsjsj"
+        }
+      ]
+    }
+  ]
+}

@@ -23,17 +23,19 @@ export type FreezeEvent = {
 };
 export type Snapshot = {
   version: number;
+  personalHistory?: boolean;
   xfoCaptainMultiplier?: 1 | 2;
   season: string;
   generated: string;
   acquisition: { from: string; to: string };
-  franchises: { id: number; name: string }[];
+  franchises: { id: number; name: string; kind?: "virtual" }[];
   leagues: Record<string, string>;
   rounds: {
     slug: string;
     round: number;
     finished: boolean;
     cutoff: string | null;
+    date?: string | null;
   }[];
   squads: Fact[];
   purchases: Fact[];
@@ -50,8 +52,8 @@ export type Snapshot = {
   checks: Record<string, unknown>;
 };
 export type Filters = {
-  from: number;
-  to: number;
+  from: string;
+  to: string;
   leagues: string[];
   completed: boolean;
 };
@@ -69,6 +71,11 @@ export type Summary = {
   xfoEligible: number;
   xfoCoverage: number | null;
   xfoFilled: number;
+  activeRounds: number;
+  reserveRounds: number;
+  personalRounds: number;
+  missingLineups: number;
+  virtual?: boolean;
 };
 export const METRICS = [
   "own",
@@ -125,18 +132,18 @@ export function parseFilters(
   params: URLSearchParams,
   leagues: Record<string, string>,
 ): Filters {
-  const read = (name: string, fallback: number) => {
+  const read = (name: string, fallback: string) => {
     const s = params.get(name);
     if (s === null) return fallback;
-    if (!/^\d+$/.test(s))
-      throw new Error("Номер тура должен быть целым числом.");
-    return Number(s);
+    if (!validDate(s))
+      throw new Error("Укажите календарную дату в формате ГГГГ-ММ-ДД.");
+    return s;
   };
-  const from = read("from", 1),
-    to = read("to", 50);
-  if (from < 1 || to > 60 || from > to)
+  const from = read("from", "2026-07-01"),
+    to = read("to", "2027-06-30");
+  if (from > to)
     throw new Error(
-      "Выберите диапазон от 1 до 60: первый тур не может быть позже последнего.",
+      "Начальная дата не может быть позже конечной.",
     );
   const selected = [
     ...new Set(
@@ -159,6 +166,25 @@ export function parseFilters(
     leagues: selected,
     completed: params.get("completed") === "1",
   };
+}
+
+function validDate(value: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(value) &&
+    Number.isFinite(Date.parse(value + "T00:00:00Z")) &&
+    new Date(value + "T00:00:00Z").toISOString().slice(0, 10) === value;
+}
+
+/** @spec spec://modules/franchises/FEAT-005-franchise-analytics#contracts */
+export function roundDate(round: Snapshot["rounds"][number]): string | null {
+  if (round.date && validDate(round.date)) return round.date;
+  if (!round.cutoff) return null;
+  // Version 1 exported naive UTC timestamps. Never interpret them in the host timezone.
+  const cutoff = /(?:Z|[+-]\d{2}:\d{2})$/.test(round.cutoff)
+    ? round.cutoff : round.cutoff + "Z";
+  const time = Date.parse(cutoff);
+  return Number.isFinite(time)
+    ? new Date(time + 3 * 60 * 60 * 1000).toISOString().slice(0, 10)
+    : null;
 }
 function summary(
   id: string,
@@ -194,6 +220,10 @@ function summary(
     xfoComplete: complete.length,
     xfoEligible: eligible.length,
     xfoFilled: eligible.reduce((n, r) => n + (number(r.xfo_filled) ?? 0), 0),
+    activeRounds: rows.filter((r) => r.active === true).length,
+    reserveRounds: rows.filter((r) => r.active === false).length,
+    personalRounds: rows.filter((r) => r.personal_only === true).length,
+    missingLineups: rows.filter((r) => r.lineup_missing === true).length,
     xfoCoverage: eligible.length
       ? (eligible.reduce((n, r) => n + (number(r.xfo_known) ?? 0), 0) /
           (eligible.length * 11)) *
@@ -226,7 +256,7 @@ function rankStyle(rows: Summary[]) {
       1 + eligible.filter((x) => x.rarity! > row.rarity! + 1e-9).length;
   return rows;
 }
-function hypotheses(purchases: Fact[], franchise: number) {
+function hypothesisContext(purchases: Fact[]) {
   const unique = [
     ...group(
       purchases,
@@ -240,6 +270,12 @@ function hypotheses(purchases: Fact[], franchise: number) {
     ).values(),
   ].map((g) => g[0]);
   const groups = group(controls, (r) => `${r.slug}:${r.round}:${r.pos}`);
+  return { groups, byFranchise: group(unique, (r) => String(r.franchise)) };
+}
+
+function hypotheses(context: ReturnType<typeof hypothesisContext>, franchise: number) {
+  const { groups } = context;
+  const unique = context.byFranchise.get(String(franchise)) ?? [];
   const flags = [
     {
       key: "trend",
@@ -301,43 +337,47 @@ function hypotheses(purchases: Fact[], franchise: number) {
   });
 }
 export function aggregate(snapshot: Snapshot, filters: Filters) {
-  const scope = (r: { slug: string; round: number }) =>
-    r.round >= filters.from &&
-    r.round <= filters.to &&
-    (!filters.leagues.length || filters.leagues.includes(r.slug));
+  const scope = (r: Snapshot["rounds"][number]) => {
+    const date = roundDate(r);
+    return date !== null && date >= filters.from && date <= filters.to &&
+      (!filters.leagues.length || filters.leagues.includes(r.slug));
+  };
   const rounds = snapshot.rounds
     .filter(scope)
     .filter((r) => !filters.completed || r.finished);
   const keys = new Set(rounds.map((r) => `${r.slug}:${r.round}`));
   const rows = snapshot.squads.filter((r) => keys.has(`${r.slug}:${r.round}`));
+  const virtual = new Set(snapshot.franchises.filter((f) => f.kind === "virtual").map((f) => f.id));
+  const franchiseScope = (r: Fact) => !r.personal_only || virtual.has(r.franchise);
+  const franchiseRows = rows.filter(franchiseScope);
   const purchases = snapshot.purchases.filter((r) =>
-    keys.has(`${r.slug}:${r.round}`),
+    keys.has(`${r.slug}:${r.round}`) && franchiseScope(r),
   );
+  const controls = hypothesisContext(purchases);
   const franchises = rankStyle(
     snapshot.franchises
       .map((f) =>
-        summary(
+        ({...summary(
           String(f.id),
           f.name,
-          rows.filter((r) => r.franchise === f.id),
+          franchiseRows.filter((r) => r.franchise === f.id),
           f.id,
-        ),
-      )
-      .filter((f) => f.count),
+        ), virtual: f.kind === "virtual"}),
+      ),
   );
   const managers = rankStyle(
     [...group(rows, (r) => `${r.franchise}:${r.manager}`).entries()].map(
-      ([id, g]) => summary(id, g[0].manager, g, g[0].franchise),
+      ([id, g]) => ({ ...summary(id, g[0].manager, g, g[0].franchise), virtual: virtual.has(g[0].franchise) }),
     ),
   );
   const byLeague = [
-    ...group(rows, (r) => `${r.franchise}:${r.slug}`).entries(),
+    ...group(franchiseRows, (r) => `${r.franchise}:${r.slug}`).entries(),
   ].map(([id, g]) => ({
     ...summary(id, snapshot.leagues[g[0].slug], g, g[0].franchise),
     slug: g[0].slug,
   }));
   const timeline = [
-    ...group(rows, (r) => `${r.franchise}:${r.slug}:${r.round}`).entries(),
+    ...group(franchiseRows, (r) => `${r.franchise}:${r.slug}:${r.round}`).entries(),
   ].map(([id, g]) => ({
     ...summary(id, String(g[0].round), g, g[0].franchise),
     slug: g[0].slug,
@@ -346,7 +386,7 @@ export function aggregate(snapshot: Snapshot, filters: Filters) {
   const events = snapshot.freeze.events.filter((r) =>
     keys.has(`${r.slug}:${r.round}`),
   );
-  const freezes = snapshot.franchises.map((f) => {
+  const freezes = snapshot.franchises.filter((f) => f.kind !== "virtual").map((f) => {
     const selected = events.filter((r) => r.franchise === f.id);
     const complete = selected.filter(
       (r) => r.valid && r.finished && r.board_verified && r.gain !== null,
@@ -374,11 +414,14 @@ export function aggregate(snapshot: Snapshot, filters: Filters) {
     xfoCaptainMultiplier: snapshot.xfoCaptainMultiplier ?? 2,
     generated: snapshot.generated,
     acquisition: snapshot.acquisition,
+    personalHistory: snapshot.personalHistory === true,
     filters,
     leagues: snapshot.leagues,
     availableRounds: snapshot.rounds,
     rounds: rounds.length,
-    squads: rows.length,
+    squads: franchiseRows.length,
+    managerSquads: rows.length,
+    undatedRounds: snapshot.rounds.filter((r) => roundDate(r) === null && (!filters.leagues.length || filters.leagues.includes(r.slug))).length,
     buys: purchases.length,
     franchises,
     managers,
@@ -388,14 +431,14 @@ export function aggregate(snapshot: Snapshot, filters: Filters) {
     events,
     models: snapshot.franchises.map((f) => ({
       id: f.id,
-      hypotheses: hypotheses(purchases, f.id),
+      hypotheses: hypotheses(controls, f.id),
       examples: purchases
         .filter((r) => r.franchise === f.id && r.triple_model_low === 1)
         .slice(0, 20),
     })),
     xfoExamples: snapshot.franchises.flatMap((f) =>
       snapshot.xfoExamples
-        .filter((r) => r.franchise === f.id && keys.has(`${r.slug}:${r.round}`))
+        .filter((r) => r.franchise === f.id && keys.has(`${r.slug}:${r.round}`) && franchiseScope(r))
         .slice(0, 40),
     ),
   };

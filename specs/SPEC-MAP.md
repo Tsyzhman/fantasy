@@ -6,7 +6,7 @@ Canon for Fantasy Scout. Work status lives in `BOARD.md`; this file is the catal
 
 | Document | Responsibility |
 |---|---|
-| [specs/modules/franchises/FEAT-005-franchise-analytics.md](modules/franchises/FEAT-005-franchise-analytics.md) | Active: franchise analytics, round ranges, freezes and xFP |
+| [specs/modules/franchises/FEAT-005-franchise-analytics.md](modules/franchises/FEAT-005-franchise-analytics.md) | Active: franchise analytics, calendar ranges, complete personal histories, freezes and xFP |
 | [specs/modules/machete/FEAT-006-sports-popularity.md](modules/machete/FEAT-006-sports-popularity.md) | Active: Sports popularity ratings, ownership and transfers |
 | [specs/modules/telegram/FEAT-007-deadline-assistant.md](modules/telegram/FEAT-007-deadline-assistant.md) | Active: Telegram linking, subscriptions and deadline reports |
 | [specs/modules/telegram/INFRA-005-deadline-pipeline.md](modules/telegram/INFRA-005-deadline-pipeline.md) | Active: deadline campaigns, freshness and delivery |

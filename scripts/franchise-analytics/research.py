@@ -5,19 +5,25 @@ os.environ['OPENBLAS_NUM_THREADS']='1'
 import sys,pathlib,json,gzip,hashlib,time,urllib.request,urllib.parse,subprocess,re,concurrent.futures,shlex,datetime
 from bs4 import BeautifulSoup
 from database import postgres_environment
+from sources import registry, profile_path, profile_name, board_user_id, personal_teams, squad_sources, write_cache
 sys.stdout.reconfigure(encoding='utf-8')
 ROOT=pathlib.Path(os.environ.get('FRANCHISE_DATA_DIR',str(pathlib.Path.cwd()/'storage/franchises'))).resolve()
 CACHE=ROOT/'source'/'http';CACHE.mkdir(parents=True,exist_ok=True)
 BASE='https://fantasy-h2h.ru'
-IDS=[503,19,65,5,18,433,223,40,401,27,25,23]
+REGISTRY=registry()
+IDS=REGISTRY['franchises']
 LEAGUES={'rfpl_2026':63,'portugal_2026':61,'eredivisie_2026':57,'championship_2026':48,'turkey_2026':71,'la_liga_2026':87,'epl_2026':47,'seria_a_2026':55,'france_2026':53,'bundesliga_2026':54,'ucl_2026':42,'liga_europa_2026':73,'fnl_2026':None,'khl_2026':None,'nhl_2026':None}
 def save(name,data):
  (ROOT/name).write_text(json.dumps(data,ensure_ascii=False,separators=(',',':')),encoding='utf-8')
 def get(url,params=None):
  if not url.startswith('http'):url=BASE+url
  if params:url+=('?' if '?' not in url else '&')+urllib.parse.urlencode(params)
+ parsed=urllib.parse.urlsplit(url)
+ if parsed.scheme!='https' or parsed.hostname!='fantasy-h2h.ru' or parsed.username or parsed.password:raise ValueError('Unexpected H2H URL')
  key=hashlib.sha256(url.encode()).hexdigest();p=CACHE/(key+'.json.gz')
- if p.exists() and (os.environ.get('FRANCHISE_USE_CACHE')=='1' or time.time()-p.stat().st_mtime<1800):return json.loads(gzip.decompress(p.read_bytes()))['body']
+ if p.exists() and (os.environ.get('FRANCHISE_USE_CACHE')=='1' or time.time()-p.stat().st_mtime<1800):
+  try:return json.loads(gzip.decompress(p.read_bytes()))['body']
+  except (OSError,ValueError,EOFError):p.unlink(missing_ok=True)
  for i in range(5):
   try:
    req=urllib.request.Request(url,headers={'User-Agent':'Mozilla/5.0 (compatible; local-franchise-analysis/1.0)','X-Requested-With':'XMLHttpRequest' if params and params.get('ajax') else '','Accept-Language':'ru'})
@@ -28,8 +34,10 @@ def get(url,params=None):
     result=subprocess.run(['ssh','-o','BatchMode=yes',os.environ['FRANCHISE_HTTP_SSH'], 'curl -fsSL --max-time 40 '+shlex.quote(url)],capture_output=True,check=True)
     b=result.stdout.decode('utf-8')
    else:
-    with urllib.request.urlopen(req,timeout=40) as r:b=r.read().decode('utf-8')
-   p.write_bytes(gzip.compress(json.dumps({'url':url,'fetchedAt':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),'body':b},ensure_ascii=False).encode(),compresslevel=6));return b
+    with urllib.request.urlopen(req,timeout=40) as r:body=r.read(8*1024*1024+1)
+    if len(body)>8*1024*1024:raise ValueError('H2H response exceeds 8 MB')
+    b=body.decode('utf-8')
+   write_cache(p,gzip.compress(json.dumps({'url':url,'fetchedAt':time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime()),'body':b},ensure_ascii=False).encode(),compresslevel=6));return b
   except Exception:
    if i==4:raise
    time.sleep(1+i*2)
@@ -83,17 +91,53 @@ def franchises():
    m=re.search(r'_26_(\d+)_',div['id'])
    if not m:continue
    cid=int(m[1]);a=div.select_one('a[data-url]')
-   if a:forms.append({'cid':cid,'name':a.get_text(' ',strip=True),'slug':a.get('data-name'),'url':a['data-url']})
+   if a:
+    slug=next((k for k,v in LEAGUES.items() if v is not None and a.get('data-name','').startswith(k)),None)
+    if slug:forms.append({'cid':cid,'name':a.get_text(' ',strip=True),'slug':slug,'url':a['data-url']})
   roster=[{'name':a.text.strip(),'url':a['href']} for a in s.select('table[id^="franchise_roster"] a.cu_name')]
   return {'id':fid,'name':name,'forms':forms,'roster':roster}
- fr=sorted(pool(one,IDS),key=lambda x:IDS.index(x['id']));save('franchises.json',fr)
+ fr=sorted(pool(one,IDS),key=lambda x:IDS.index(x['id']))
  def form(job):
   fid,entry=job;s=soup(get(entry['url']));teams=[]
   for tr in s.select('.players_list tbody tr'):
    a=next((a for a in tr.select('td.uname a[href]') if a['href'].rstrip('/').split('/')[-1].isdigit()),None)
-   if a:teams.append({'team_id':a['href'].rstrip('/').split('/')[-1],'manager':a.get_text(' ',strip=True),'url':a['href'],'row':tr.get_text(' ',strip=True),'attributes':tr.attrs})
+   if a:teams.append({'team_id':a['href'].rstrip('/').split('/')[-1],'manager':a.get_text(' ',strip=True),'user_id':board_user_id(tr),'url':a['href'],'row':tr.get_text(' ',strip=True),'attributes':tr.attrs})
   return {'franchise':fid,**entry,'teams':teams,'text':s.get_text(' ',strip=True)}
- forms=pool(form,[(f['id'],j) for f in fr for j in f['forms']]);save('franchise-teams.json',forms)
+ forms=pool(form,[(f['id'],j) for f in fr for j in f['forms']])
+ profiles={}
+ for f in fr:
+  for person in f['roster']:
+   path=profile_path(person['url']);profiles.setdefault(path,[]).append(f['id'])
+ for group in REGISTRY['groups']:
+  fr.append({'id':group['id'],'name':group['name'],'kind':'virtual','forms':[],'roster':group['users']})
+  for person in group['users']:
+   path=profile_path(person['profile']);profiles.setdefault(path,[]).append(group['id'])
+ def profile(path):
+  s=soup(get(path));name=profile_name(s.select_one('meta[property="og:title"]')['content'])
+  links=[a.get('data-url','') for a in s.select('a[data-url]')]
+  url=next((u for u in links if re.fullmatch(r'https://fantasy-h2h.ru/h2h/user_tournaments_list/\d+',u)),None)
+  if not url:raise ValueError('Personal history unavailable: '+path)
+  return path,name,url.rsplit('/',1)[-1]
+ users={}
+ for form in forms:
+  for team in form['teams']:
+   if team['user_id']:
+    user=users.setdefault(team['user_id'],{'name':team['manager'],'groups':set()})
+    user['groups'].add(form['franchise'])
+ for path,name,uid in pool(profile,list(profiles)):
+  user=users.setdefault(uid,{'name':name,'groups':set()});user['name']=name;user['groups'].update(profiles[path])
+ for form in forms:
+  for team in form['teams']:
+   if team['user_id']:team['manager']=users[team['user_id']]['name']
+ def personal(uid):
+  teams=personal_teams(str(soup(get('/h2h/user_tournaments_list/'+uid+'/26',{'ajax':1}))),LEAGUES)
+  return uid,teams
+ for uid,teams in pool(personal,list(users)):
+  user=users[uid]
+  for fid in sorted(user['groups']):
+   for team in teams:
+    forms.append({'franchise':fid,'slug':team['slug'],'cid':team['cid'],'url':BASE+'/h2h/user_tournaments_list/'+uid+'/26','personal':True,'teams':[{**team,'manager':user['name']}]})
+ save('franchises.json',fr);save('franchise-teams.json',forms)
  print('Franchises',[(f['id'],f['name'],len(f['forms'])) for f in fr]);print('forms',len(forms),'teams',sum(len(f['teams']) for f in forms))
 def metadata():
  forms=json.loads((ROOT/'franchise-teams.json').read_text('utf-8'));slugs=sorted({next(k for k in LEAGUES if f['slug'].startswith(k)) for f in forms})
@@ -108,7 +152,10 @@ def metadata():
   cid=int(s.select_one('input[name="filter[tournament_id]"]')['value'])
   for rn,r in rounds.items():
    ss=soup(get('/analytics/competition_tour_shedule/'+str(r['index']),{'ajax':1}))
-   r['matches']=[{'date':x.select_one('.date').get_text(' ',strip=True),'finished':'is_finished' in x.get('class',[]),'text':x.get_text(' ',strip=True)} for x in ss.select('tr.match')]
+   r['matches']=[]
+   for x in ss.select('tr.match'):
+    link=x.select_one('[href*="/football/match/"]');match=re.search(r'/football/match/(\d+)',link['href']) if link else None
+    r['matches'].append({'date':x.select_one('.date').get_text(' ',strip=True),'finished':'is_finished' in x.get('class',[]),'text':x.get_text(' ',strip=True),'sports_match_id':match[1] if match else None})
   return {'slug':slug,'league_id':LEAGUES[slug],'cid':cid,'rounds':list(sorted(rounds.values(),key=lambda r:r['round']))}
  m=pool(one,slugs);save('leagues.json',m);print([(x['slug'],len(x['rounds'])) for x in m])
 def players():
@@ -137,28 +184,33 @@ def players():
  result=pool(one,[(l,r) for l in meta for r in l['rounds']]);save('players-coverage.json',result);print(result)
 def squads():
  meta=json.loads((ROOT/'leagues.json').read_text('utf-8'));forms=json.loads((ROOT/'franchise-teams.json').read_text('utf-8'));jobs=[]
- for form in forms:
-  lg=next(l for l in meta if l['cid']==form['cid'])
-  for team in form['teams']:
-   for rd in lg['rounds']:
-    if rd.get('tour'):jobs.append((form,lg,team,rd))
+ for source in squad_sources(forms):
+  lg=next(l for l in meta if l['slug']==source['slug'])
+  if lg['cid']!=source['cid']:raise ValueError('Conflicting competition ID')
+  for rd in lg['rounds']:
+   if rd.get('tour') and (source['board'] or rd['round'] in source['available_rounds']):jobs.append((source,lg,rd))
  def one(job):
-  form,lg,t,r=job;key=f"{lg['slug']}-{t['team_id']}-{r['round']}";dest=ROOT/'source'/'squads'/(key+'.json');dest.parent.mkdir(exist_ok=True)
+  source,lg,r=job;member=source['memberships'][0];key=f"{lg['slug']}-{source['team']}-{r['round']}";dest=ROOT/'source'/'squads'/(key+'.json');dest.parent.mkdir(exist_ok=True)
   if dest.exists():
    previous=json.loads(dest.read_text('utf-8'))
-   if os.environ.get('FRANCHISE_USE_CACHE')=='1' or previous.get('collected_finished'):return
-  url=f"/analytics/fantasy_team_tour_data/{t['team_id']}/{r['tour']}/{lg['cid']}/"
+   if os.environ.get('FRANCHISE_USE_CACHE')=='1' or previous.get('collected_finished'):
+    previous.update(member);previous['memberships']=source['memberships'];previous['lineup_missing']=not any('prev' not in p['class'] for p in previous['players']);dest.write_text(json.dumps(previous,ensure_ascii=False,separators=(',',':')),encoding='utf-8');return
+  url=f"/analytics/fantasy_team_tour_data/{source['team']}/{r['tour']}/{lg['cid']}/"
   s=soup(get(url,{'ajax':1}));pl=[]
+  if not s.select_one('.team_roster.football'):raise ValueError('Unexpected fantasy lineup response')
   for x in s.select('li[data-player_id]'):
    name=x.select_one('.uname');score=x.select_one('.score_wrapper > .score')
    value=score.get_text(' ',strip=True) if score else None
    if value=='' and {'finished','game_duration_0'}.issubset(set(score.get('class',[]))):value='0'
    pl.append({'id':x['data-player_id'],'sports_id':x.get('data-sport_player_internal_id'),'name':name.get_text(' ',strip=True) if name else '', 'class':x.get('class',[]),'club':x.get('title'),'score':value})
-  d={'franchise':form['franchise'],'slug':lg['slug'],'cid':lg['cid'],'league_id':lg['league_id'],'manager':t['manager'],'team':t['team_id'],'round':r['round'],'url':BASE+url,'players':pl,'summary':s.get_text(' ',strip=True)[:280]}
+  d={**member,'memberships':source['memberships'],'slug':lg['slug'],'cid':lg['cid'],'league_id':lg['league_id'],'team':source['team'],'round':r['round'],'url':BASE+url,'players':pl,'summary':s.get_text(' ',strip=True)[:280]}
+  d['lineup_missing']=not any('prev' not in p['class'] for p in pl)
   d['collected_finished']=settled(r)
   d['fetched_at']=time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime())
   dest.write_text(json.dumps(d,ensure_ascii=False,separators=(',',':')),encoding='utf-8')
- pool(one,jobs);print('squads',len(jobs))
+ pool(one,jobs)
+ save('squad-index.json',[f"{lg['slug']}-{source['team']}-{r['round']}.json" for source,lg,r in jobs])
+ print('squads',len(jobs))
 def server():
  db('planning',"SELECT row_to_json(s) FROM (SELECT * FROM squad_planning_snapshots WHERE season='2026/2027' AND provider='SPORTS_RU' AND status='READY') s")
  db('current',"SELECT row_to_json(s) FROM (SELECT DISTINCT ON (league_id) * FROM fantasy_player_pool_snapshots WHERE season='2026/2027' AND provider='SPORTS_RU' ORDER BY league_id,calculated_at DESC) s")

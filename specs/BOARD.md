@@ -6,6 +6,7 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
+| [WI-045](work/WI-045-franchise-calendar-report.md) | Complete franchise histories and calendar report | FEAT-005 | @tsyzhman | 2026-10-03 | — |
 
 ## Backlog
 

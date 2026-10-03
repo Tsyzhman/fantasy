@@ -1,17 +1,34 @@
 """@spec spec://modules/franchises/FEAT-005-franchise-analytics#freezes"""
 from research import *
-from analyze import num,clean
+from analyze import num,clean,date_ru
+from sources import fixture_round
 import collections
 def main():
  forms=json.loads((ROOT/'franchise-teams.json').read_text('utf-8'));meta=json.loads((ROOT/'leagues.json').read_text('utf-8'));tourmap={r['tour']:(l['slug'],r['round']) for l in meta for r in l['rounds']};states=[];events=[];audit=[];base=[]
+ fixtures={};dates=collections.defaultdict(set)
+ for league in meta:
+  for rd in league['rounds']:
+   scope=(league['slug'],rd['round'])
+   for match in rd['matches']:
+    if match.get('sports_match_id'):fixtures[(league['slug'],str(match['sports_match_id']))]=scope
+   if rd['matches']:
+    date=(min(date_ru(m['date']) for m in rd['matches'])+datetime.timedelta(hours=3)).strftime('%d.%m.%Y')
+    dates[(league['slug'],date)].add(scope)
  for form in forms:
+  if form.get('personal'):continue
   s=soup(get(form['url']));table=s.select_one('.players_list table');header=table.select_one('tr.header');headcells=header.find_all('td',recursive=False);headers=[c for c in headcells if c.select_one('a[href*="team_match_data"]')];rows=table.select('tbody tr[data-player_id]')
   for j,hc in enumerate(headers):
    cells=[(tr,tr.select('td.match')[j]) for tr in rows if len(tr.select('td.match'))>j]
    tours={int(a['data-tour_id']) for tr,td in cells for a in td.select('a[data-tour_id]')}
-   if len(tours)!=1:audit.append({'form':form['url'],'j':j,'tours':list(tours)});continue
-   tour=next(iter(tours));scope=tourmap.get(tour)
-   if not scope:continue
+   if len(tours)>1:audit.append({'form':form['url'],'j':j,'tours':list(tours)});continue
+   scope=tourmap.get(next(iter(tours))) if tours else None
+   if not tours:
+    link=next((td.select_one('a.match_result[href]') for tr,td in cells if td.select_one('a.match_result[href]')),None)
+    if link:
+     body=get(link['href'],{'ajax':1});value=json.loads(body) if body.lstrip().startswith('{') else {}
+     title=value.get('data',{}).get('title','') if isinstance(value.get('data'),dict) else ''
+     scope=fixture_round(soup(body),form['slug'],fixtures,dates,title)
+   if not scope:audit.append({'form':form['url'],'j':j,'tours':list(tours)});continue
    slug,rn=scope;entries=[]
    for tr,cell in cells:
     a=next((a for a in tr.select('td.uname a[href]') if a['href'].rstrip('/').split('/')[-1].isdigit()),None)

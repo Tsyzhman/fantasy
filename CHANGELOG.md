@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.111 - 2026-10-03
+
+- Patch Next.js and brace-expansion dependencies to clear the existing production audit failures before release.
+
+- Compare managers across all available personal rounds, including reserve and frozen rounds and leagues outside their franchise tournament entry.
+- Filter franchise reports by inclusive Moscow calendar dates shared across leagues.
+- Register 74 workbook franchises and the virtual `шизы` group of 24 personal profiles, without board or freeze semantics.
+- Deduplicate shared source squads, publish complete membership snapshots atomically, and bound snapshot encoding, examples and cache memory.
+
+
 ## 0.3.110 - 2026-09-28
 
 - Record successful production verification of FPL squad import, repeated-import idempotency and resource cleanup; close WI-044.
