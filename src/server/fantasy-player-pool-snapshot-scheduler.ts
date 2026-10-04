@@ -1,6 +1,10 @@
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#contracts */
+import { spawn } from "node:child_process";
+import { existsSync } from "node:fs";
+import { join } from "node:path";
 import { prisma } from "@/lib/db";
 import { createLogger } from "@/lib/logger";
-import { refreshFantasyPlayerPoolSnapshots } from "@/machete/fantasy-player-pool-snapshots";
+import { refreshFantasyPlayerPoolSnapshots, type FantasyPlayerPoolSnapshotRefreshResult } from "@/machete/fantasy-player-pool-snapshots";
 import { drainCurrentXiTeamSnapshotRefreshQueue } from "@/machete/fantasy-player-pool-refresh-queue";
 
 export const FANTASY_PLAYER_POOL_SNAPSHOT_TIME_ZONE = "Europe/Moscow";
@@ -47,7 +51,11 @@ export async function runFantasyPlayerPoolSnapshotRefreshNow(
   }
   state.running = true;
   try {
-    const result = await refreshFantasyPlayerPoolSnapshots(prisma, { onlyMissing: trigger === "BOOTSTRAP" });
+    const options = { onlyMissing: trigger === "BOOTSTRAP" };
+    const script = join(process.cwd(), "scripts", "player-pool-refresh.cjs");
+    const result = existsSync(script)
+      ? await runPlayerPoolRefreshProcess(script, options.onlyMissing)
+      : await refreshFantasyPlayerPoolSnapshots(prisma, options);
     logger.info("Fantasy player-pool snapshot cycle finished.", { trigger, ...result });
     return { started: true, trigger, result } as const;
   } catch (error) {
@@ -57,6 +65,28 @@ export async function runFantasyPlayerPoolSnapshotRefreshNow(
     state.running = false;
     runPendingFullRefresh(state);
   }
+}
+
+/** Full refresh keeps the scheduler's running lock until the child has exited. */
+export function runPlayerPoolRefreshProcess(script: string, onlyMissing: boolean) {
+  return new Promise<FantasyPlayerPoolSnapshotRefreshResult>((resolve, reject) => {
+    const child = spawn(process.execPath, [script, ...(onlyMissing ? ["--only-missing"] : [])], {
+      cwd: process.cwd(),
+      env: process.env,
+      stdio: ["ignore", "inherit", "inherit", "ipc"],
+    });
+    let result: FantasyPlayerPoolSnapshotRefreshResult | undefined;
+    child.on("message", (message: unknown) => {
+      if (!message || typeof message !== "object" || !("type" in message) || message.type !== "player-pool-result" || !("result" in message)) return;
+      const value = message.result as FantasyPlayerPoolSnapshotRefreshResult | undefined;
+      if (value && Number.isInteger(value.scopes) && Number.isInteger(value.snapshots) && Number.isInteger(value.players) && Array.isArray(value.failed)) result = value;
+    });
+    child.once("error", reject);
+    child.once("exit", (code, signal) => {
+      if (code === 0 && result) resolve(result);
+      else reject(new Error(`Isolated player-pool refresh failed (code=${code}, signal=${signal}, result=${Boolean(result)}).`));
+    });
+  });
 }
 
 export function nextFantasyPlayerPoolSnapshotRun(

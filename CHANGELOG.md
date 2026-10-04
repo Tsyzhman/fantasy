@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.114 - 2026-10-04
+
+- Reuse franchise metric groups and bounded, revision-aware report JSON without changing calculations or filters.
+- Release full Squad refresh working memory through a serialized child process and remove a redundant full-pool JSON copy.
+
 ## 0.3.113 - 2026-10-04
 
 - Let expanded franchise graphs retain readable text sizes by using their full natural height.

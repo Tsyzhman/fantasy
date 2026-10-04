@@ -481,8 +481,9 @@ async function publishFullFantasyPlayerPoolSnapshot(
   }
 ) {
   const calculatedAt = new Date();
-  const payload = jsonInput(input.players);
-  const payloadHash = createHash("sha256").update(JSON.stringify(payload)).digest("hex");
+  // JSON serialization already normalizes the payload; parsing it into a full
+  // second player pool before serializing again only duplicates the working set.
+  const payloadHash = createHash("sha256").update(JSON.stringify(input.players)).digest("hex");
   const snapshotId = randomUUID();
   const revision = `${calculatedAt.toISOString()}:${payloadHash.slice(0, 16)}`;
   const snapshot = await prisma.$transaction(async (tx) => {
