@@ -74,3 +74,16 @@ test("dense labels stay close to their own point without moving data", () => {
   }
   assert.deepEqual(points, before);
 });
+
+test("joint layout is deterministic across input order and uses measured widths", () => {
+  const points = Array.from({ length: 20 }, (_, i) => ({
+    id: String(i),
+    name: `Club Alpha${i}`,
+    x: 100 + (i % 5) * 65,
+    y: 100 + Math.floor(i / 5) * 30,
+  }));
+  const measure = (text: string) => text.length * 5;
+  const first = compactLabels(points, 960, measure);
+  assert.deepEqual(first, compactLabels([...points].reverse(), 960, measure));
+  for (const b of first.values()) assert.equal(b.width, measure(b.text) + 4);
+});

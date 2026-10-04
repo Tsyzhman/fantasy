@@ -200,16 +200,21 @@ function Scatter({
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("name");
   const plotRef = useRef<HTMLDivElement>(null);
-  const [plotWidth, setPlotWidth] = useState(900);
+  const [plotWidth, setPlotWidth] = useState(960);
   useEffect(() => {
     const node = plotRef.current;
     if (!node) return;
     const observer = new ResizeObserver(([entry]) =>
-      setPlotWidth(Math.max(720, Math.round(entry.contentRect.width))),
+      setPlotWidth(
+        Math.max(
+          rows.length > 40 ? 960 : 720,
+          Math.round(entry.contentRect.width),
+        ),
+      ),
     );
     observer.observe(node);
     return () => observer.disconnect();
-  }, []);
+  }, [rows.length]);
   const geometry = useMemo(() => {
     const valid = rows.filter(
       (r) => metric(r, x) !== null && metric(r, y) !== null,
@@ -259,19 +264,23 @@ function Scatter({
     }
     return new Map(assigned.map((p) => [p.id, `var(--plot-color-${p.color})`]));
   }, [geometry]);
-  const labels = useMemo(
-    () =>
-      compactLabels(
-        geometry?.points.map((p) => ({
-          id: p.r.id,
-          name: p.r.name,
-          x: p.px,
-          y: p.py,
-        })) ?? [],
-        plotWidth,
-      ),
-    [geometry, plotWidth],
-  );
+  const labels = useMemo(() => {
+    const context =
+      typeof document === "undefined"
+        ? null
+        : document.createElement("canvas").getContext("2d");
+    if (context) context.font = "10px Arial";
+    return compactLabels(
+      geometry?.points.map((p) => ({
+        id: p.r.id,
+        name: p.r.name,
+        x: p.px,
+        y: p.py,
+      })) ?? [],
+      plotWidth,
+      context ? (text) => context.measureText(text).width : undefined,
+    );
+  }, [geometry, plotWidth]);
   const matches = rows
     .filter((r) =>
       r.name

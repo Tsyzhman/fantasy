@@ -603,6 +603,7 @@
   overflow-y: hidden;
 }
 .scatter .pointLabel {
+  font-family: Arial, sans-serif;
   font-size: 10px;
   fill: currentColor;
   paint-order: stroke;
