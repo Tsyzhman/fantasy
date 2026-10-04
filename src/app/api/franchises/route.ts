@@ -1,7 +1,8 @@
 /** @spec spec://modules/franchises/FEAT-005-franchise-analytics#api */
 import { requireApiUser } from "@/lib/auth";
-import { aggregate, parseFilters } from "@/franchises/analytics";
+import { parseFilters } from "@/franchises/analytics";
 import { loadSnapshot } from "@/server/franchises/snapshot";
+import { franchiseReportCache } from "@/server/franchises/report-cache";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 export async function GET(request: Request) {
@@ -34,7 +35,7 @@ export async function GET(request: Request) {
       { status: 400 },
     );
   }
-  return Response.json(aggregate(snapshot, filters), {
-    headers: { "Cache-Control": "private, no-store" },
+  return new Response(franchiseReportCache.get(snapshot, filters), {
+    headers: { "Cache-Control": "private, no-store", "Content-Type": "application/json" },
   });
 }

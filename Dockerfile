@@ -26,6 +26,7 @@ RUN ./node_modules/.bin/prisma generate && npm run build
 RUN ./node_modules/.bin/esbuild scripts/khl-runner.ts --bundle --platform=node --external:@prisma/client --outfile=/app/khl-runner.cjs
 RUN ./node_modules/.bin/esbuild scripts/sync-sorareinside.ts --bundle --platform=node --external:@prisma/client --outfile=/app/sync-sorareinside.cjs
 RUN ./node_modules/.bin/esbuild scripts/import-franchise-data.ts --bundle --platform=node --external:@prisma/client --outfile=/app/franchises.cjs
+RUN ./node_modules/.bin/esbuild scripts/refresh-fantasy-player-pool-snapshots.ts --bundle --platform=node --external:@prisma/client --outfile=/app/player-pool-refresh.cjs
 
 FROM builder AS setup
 
@@ -79,6 +80,7 @@ COPY --from=khl-http /opt/khl-http /opt/khl-http
 COPY --from=builder /app/scripts/khl-protocol-http.py ./scripts/khl-protocol-http.py
 COPY --from=builder /app/sync-sorareinside.cjs ./scripts/sync-sorareinside.cjs
 COPY --from=builder /app/franchises.cjs ./scripts/franchises.cjs
+COPY --from=builder /app/player-pool-refresh.cjs ./scripts/player-pool-refresh.cjs
 COPY --from=builder /app/scripts/franchise-analytics ./scripts/franchise-analytics
 COPY --from=khl-http /opt/franchises /opt/franchises
 COPY --from=prod-deps /app/node_modules/.prisma ./node_modules/.prisma

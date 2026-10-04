@@ -6,6 +6,7 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
+| [WI-046](work/WI-046-runtime-resource-optimization.md) | Optimize runtime resources without changing product behavior | common/main, common/structure | @tsyzhman | 2026-10-04 | — |
 
 ## Backlog
 

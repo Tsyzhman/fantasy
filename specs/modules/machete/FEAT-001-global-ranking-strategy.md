@@ -64,6 +64,8 @@ Context: N, rank, team and leader points, T/R, ER for no more than 6 completed r
 
 ## 7. Contracts {#contracts}
 
+Production full Squad pool refreshes run in a terminating child process so native database working memory is released after each cycle. The scheduler keeps full and incremental work serialized until that child exits; parent shutdown terminates its child. Refresh hours, bootstrap-only-missing behavior, atomic READY publication, retained revisions, complete player data and request-time loading remain unchanged. Development without the production bundle keeps the same in-process implementation.
+
 Pure functions in `src/machete/global-strategy.ts` and `src/machete/global-strategy-config.ts`. Loading the context into server/global-strategy-context.ts. `GET /api/machete/squads/global-strategy`. Integration into `src/machete/squad_logic.ts`, worker and `FantasySquadPlanner.tsx`.
 
 `PATCH` of this route binds only the team of the associated profile in the selected season. `POST` maintains a compact recommendation audit: the server checks its own context and budget, and the sent forecast marks `CLIENT_EP_REPORTED`; This is not server-side verification of the forecast. The start and captain are selected separately for each round, the bench gives 0 EP until the auto-replacement model appears. Old pool snapshots are read by the regular UI and are sequentially rebuilt by workers in the absence of `providerIdentityVersion: 1`; incomplete mapping disables GLOBAL_AUTO until rebuilding.
@@ -99,6 +101,8 @@ Points of responsibility with `@spec`: `src/server/global-strategy-providers.ts`
 <a name="changelog"></a>
 
 ## 12. Changelog {#changelog}
+
+- 2026-10-04: WI-046 — terminating full-pool refresh processes preserve serialized publication and release native working memory.
 
 - 2026-09-28: English documentation, repaired document references, and GitHub navigation anchors (WI-039).
 

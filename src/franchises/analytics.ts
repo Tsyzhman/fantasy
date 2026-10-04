@@ -121,9 +121,9 @@ function group<T>(items: T[], key: (item: T) => string): Map<string, T[]> {
   }
   return out;
 }
-function balanced(rows: Fact[], key: string) {
+function balanced(groups: Fact[][], key: string) {
   return mean(
-    [...group(rows, (r) => r.slug).values()].map((g) =>
+    groups.map((g) =>
       mean(g.map((r) => number(r[key]))),
     ),
   );
@@ -198,13 +198,18 @@ function summary(
   const latest = [...group(rows, (r) => `${r.slug}:${r.team}`).values()].map(
     (g) => g.reduce((a, b) => (a.round > b.round ? a : b)),
   );
+  // The membership of these groups is identical for every metric. Preserve
+  // insertion and summation order, while grouping each population only once.
+  const allGroups = [...group(rows, (r) => r.slug).values()];
+  const completeGroups = [...group(complete, (r) => r.slug).values()];
+  const latestGroups = [...group(latest, (r) => r.slug).values()];
   for (const key of METRICS)
     metrics[key] = balanced(
       key.startsWith("xfo")
-        ? complete
+        ? completeGroups
         : key.startsWith("current_")
-          ? latest
-          : rows,
+          ? latestGroups
+          : allGroups,
       key,
     );
   return {
@@ -354,13 +359,19 @@ export function aggregate(snapshot: Snapshot, filters: Filters) {
     keys.has(`${r.slug}:${r.round}`) && franchiseScope(r),
   );
   const controls = hypothesisContext(purchases);
+  const rowsByFranchise = group(franchiseRows, (r) => String(r.franchise));
+  const purchasesByFranchise = group(purchases, (r) => String(r.franchise));
+  const examplesByFranchise = group(
+    snapshot.xfoExamples.filter((r) => keys.has(`${r.slug}:${r.round}`) && franchiseScope(r)),
+    (r) => String(r.franchise),
+  );
   const franchises = rankStyle(
     snapshot.franchises
       .map((f) =>
         ({...summary(
           String(f.id),
           f.name,
-          franchiseRows.filter((r) => r.franchise === f.id),
+          rowsByFranchise.get(String(f.id)) ?? [],
           f.id,
         ), virtual: f.kind === "virtual"}),
       ),
@@ -432,13 +443,12 @@ export function aggregate(snapshot: Snapshot, filters: Filters) {
     models: snapshot.franchises.map((f) => ({
       id: f.id,
       hypotheses: hypotheses(controls, f.id),
-      examples: purchases
-        .filter((r) => r.franchise === f.id && r.triple_model_low === 1)
+      examples: (purchasesByFranchise.get(String(f.id)) ?? [])
+        .filter((r) => r.triple_model_low === 1)
         .slice(0, 20),
     })),
     xfoExamples: snapshot.franchises.flatMap((f) =>
-      snapshot.xfoExamples
-        .filter((r) => r.franchise === f.id && keys.has(`${r.slug}:${r.round}`) && franchiseScope(r))
+      (examplesByFranchise.get(String(f.id)) ?? [])
         .slice(0, 40),
     ),
   };

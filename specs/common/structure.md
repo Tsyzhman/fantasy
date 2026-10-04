@@ -20,6 +20,7 @@ Contracts: `spec://modules/machete/FEAT-006-sports-popularity#root`, `spec://mod
 - Tailwind CSS for application pages.
 - Node test runner through `tsx --test`; Playwright for e2e.
 - Production packaging through Docker and the scripts in `docs/operations/DEPLOYMENT.md` / `docs/operations/DOCKER_PRODUCTION.md`.
+- Hourly full Squad pool refreshes use the bundled `scripts/refresh-fantasy-player-pool-snapshots.ts` child process. The existing scheduler holds its full/incremental exclusion until child exit; a stopped parent terminates the child. Atomic READY publication and the prior ready revision on failure are preserved. Child exit releases native database/allocator memory; incremental queue polling stays in the worker.
 
 ## Modules and code ownership
 
@@ -91,6 +92,8 @@ workflow copies are intentional matching client entry points.
 <a name="changelog"></a>
 
 ## Changelog {#changelog}
+
+- 2026-10-04: WI-046 — isolate the hourly full Squad refresh while preserving scheduler serialization and atomic READY publication.
 
 - 2026-09-28: WI-042 — keep long release SSH channels alive and bound Docker package fetch retries after a disconnected KHL status release attempt.
 
