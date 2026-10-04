@@ -633,6 +633,26 @@ export function FranchiseAnalytics({
     else q.delete("franchise");
     history.replaceState(null, "", "/franchises?" + q);
   }
+  const captainGroups = useMemo(
+    () =>
+      data
+        ? [
+            {
+              title: "Основной состав и капитан · от 35%",
+              rows: data.franchises.filter(
+                (r) => metric(r, "cap") !== null && metric(r, "cap")! >= 35,
+              ),
+            },
+            {
+              title: "Основной состав и капитан · ниже 35%",
+              rows: data.franchises.filter(
+                (r) => metric(r, "cap") !== null && metric(r, "cap")! < 35,
+              ),
+            },
+          ]
+        : [],
+    [data],
+  );
   const f = data?.franchises.find((f) => f.id === selected);
   const names = new Map(data?.franchises.map((f) => [f.franchise, f.name]));
   const shown = data ? (f ? [f] : data.franchises) : [];
@@ -870,17 +890,41 @@ export function FranchiseAnalytics({
                       description="Сравните стиль выбора всех франшиз. Найдите свою в списке и выделите её на графике."
                     >
                       <div className={styles.charts}>
-                        <div className={styles.card}>
-                          <h3>Основной состав и капитан</h3>
-                          <Scatter
-                            rows={data.franchises}
-                            x="own"
-                            y="cap"
-                            xlabel="Владение основы, %"
-                            ylabel="Популярность капитана, %"
-                            onSelect={select}
-                          />
-                        </div>
+                        {captainGroups.map((group) => (
+                          <div className={styles.card} key={group.title}>
+                            <h3>{group.title}</h3>
+                            <p className={styles.note}>
+                              Группа по популярности капитана. Шкалы подстроены
+                              под её значения.
+                            </p>
+                            <Scatter
+                              rows={group.rows}
+                              x="own"
+                              y="cap"
+                              xlabel="Владение основы, %"
+                              ylabel="Популярность капитана, %"
+                              onSelect={select}
+                            />
+                          </div>
+                        ))}
+                        {data.franchises.some(
+                          (r) => metric(r, "cap") === null,
+                        ) && (
+                          <div className={styles.note}>
+                            Нет оценки популярности капитана:{" "}
+                            {data.franchises
+                              .filter((r) => metric(r, "cap") === null)
+                              .map((r) => (
+                                <button
+                                  key={r.id}
+                                  className={styles.textButton}
+                                  onClick={() => select(r.id)}
+                                >
+                                  {r.name};{" "}
+                                </button>
+                              ))}
+                          </div>
+                        )}
                         <div className={styles.card}>
                           <h3>Покупки и форма до тура</h3>
                           <Scatter
