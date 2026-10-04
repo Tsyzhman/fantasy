@@ -72,7 +72,7 @@ GET `/api/franchises` валидирует сезон, лиги и диапаз�
 
 ## Точки ответственности {#traceability}
 - `src/app/franchises/`, `src/app/api/franchises/`: защищённый экран и API.
-- `src/franchises/compact-labels.ts`: bounded placement and unambiguous display abbreviations; tests in `compact-labels.test.ts`.
+- `src/franchises/compact-labels.ts`: bounded placement and unambiguous display abbreviations; tests in `src/franchises/compact-labels.test.ts`.
 - `src/franchises/analytics.ts`: фильтры, агрегация, рейтинги и гипотезы; контрактные проверки в `src/franchises/analytics.test.ts`.
 - `src/server/franchises/snapshot.ts`: валидация и единственный кэш снимка.
 - `scripts/franchise-analytics/`: сбор H2H, признаки до тура, xФО; `scripts/franchise-analytics/test_xfo.py` и workbook-fixture.
