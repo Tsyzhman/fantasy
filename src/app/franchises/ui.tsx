@@ -633,20 +633,20 @@ export function FranchiseAnalytics({
     else q.delete("franchise");
     history.replaceState(null, "", "/franchises?" + q);
   }
-  const captainGroups = useMemo(
+  const ownershipGroups = useMemo(
     () =>
       data
         ? [
             {
-              title: "Основной состав и капитан · от 35%",
+              title: "Основной состав и капитан · владение от 35%",
               rows: data.franchises.filter(
-                (r) => metric(r, "cap") !== null && metric(r, "cap")! >= 35,
+                (r) => metric(r, "own") !== null && metric(r, "own")! >= 35,
               ),
             },
             {
-              title: "Основной состав и капитан · ниже 35%",
+              title: "Основной состав и капитан · владение ниже 35%",
               rows: data.franchises.filter(
-                (r) => metric(r, "cap") !== null && metric(r, "cap")! < 35,
+                (r) => metric(r, "own") !== null && metric(r, "own")! < 35,
               ),
             },
           ]
@@ -890,12 +890,12 @@ export function FranchiseAnalytics({
                       description="Сравните стиль выбора всех франшиз. Найдите свою в списке и выделите её на графике."
                     >
                       <div className={styles.charts}>
-                        {captainGroups.map((group) => (
+                        {ownershipGroups.map((group) => (
                           <div className={styles.card} key={group.title}>
                             <h3>{group.title}</h3>
                             <p className={styles.note}>
-                              Группа по популярности капитана. Шкалы подстроены
-                              под её значения.
+                              Группа по владению основы (горизонтальная ось).
+                              Шкалы подстроены под её значения.
                             </p>
                             <Scatter
                               rows={group.rows}
@@ -908,12 +908,12 @@ export function FranchiseAnalytics({
                           </div>
                         ))}
                         {data.franchises.some(
-                          (r) => metric(r, "cap") === null,
+                          (r) => metric(r, "own") === null,
                         ) && (
                           <div className={styles.note}>
-                            Нет оценки популярности капитана:{" "}
+                            Нет оценки владения основы:{" "}
                             {data.franchises
-                              .filter((r) => metric(r, "cap") === null)
+                              .filter((r) => metric(r, "own") === null)
                               .map((r) => (
                                 <button
                                   key={r.id}

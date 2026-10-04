@@ -2,7 +2,7 @@
 
 ## 0.3.115 - 2026-10-04
 
-- Redesign franchise scatter charts with small abbreviated names beside every point, an expandable searchable directory, exact values, sorting and profile selection (WI-047/WI-048). Split the ownership/captain chart into stacked groups at 35% captain popularity.
+- Redesign franchise scatter charts with small abbreviated names beside every point, an expandable searchable directory, exact values, sorting and profile selection (WI-047/WI-048). Split the ownership/captain chart into stacked groups at 35% starting-lineup ownership (horizontal axis).
 - Preserve complete populations, CSV, calendar filters, formulas and bounded report caching; remove obsolete dense-label layout code.
 
 ## 0.3.114 - 2026-10-04
