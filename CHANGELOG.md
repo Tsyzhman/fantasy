@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.115 - 2026-10-04
+
+- Redesign franchise scatter charts as compact plots with searchable names, exact values, metric sorting and profile selection on desktop and mobile (WI-047).
+- Preserve complete populations, CSV, calendar filters, formulas and bounded report caching; remove obsolete dense-label layout code.
+
 ## 0.3.114 - 2026-10-04
 
 - Reuse franchise metric groups and bounded, revision-aware report JSON without changing calculations or filters.
