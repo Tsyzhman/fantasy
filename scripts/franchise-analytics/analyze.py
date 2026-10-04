@@ -1,5 +1,6 @@
 """Pre-round features. @spec spec://modules/franchises/FEAT-005-franchise-analytics#time"""
 from research import ROOT,save,read_db,IDS
+from sources import read_squads
 import json,gzip,collections,datetime as dt,bisect,math,sys,statistics,hashlib
 import numpy as np
 import pandas as pd
@@ -112,6 +113,7 @@ def features():
  save('source-audit.json',{'stats_total':total,'stats_relevant':used,'stats_duplicates':duplicates,'stats_seasons':dict(seasons),'mapping_conflicts':badlinks,'invalid_forecasts':invalid,'ffo_duplicate_mappings':ffodup,'server_snapshots':snapmeta,'current_snapshots':[{k:r[k] for k in ['league_id','calculated_at','revision','players_count']} for r in currmeta],'rounds':round_meta,'features':len(df),'mapped_features':int(df.mapped.sum())})
  print('FEATURES',df.shape,'mapped',df.mapped.sum(),'form',df.form5.notna().sum(),'FO',df.fo.notna().sum(),'ALT',df.alt.notna().sum(),'FFO',df.ffo.notna().sum(),flush=True)
 def clean(obj):
+ if obj is pd.NA:return None
  if isinstance(obj,dict):return {k:clean(v) for k,v in obj.items()}
  if isinstance(obj,(list,tuple)):return [clean(v) for v in obj]
  if isinstance(obj,(np.integer,)):return int(obj)
@@ -130,15 +132,19 @@ def aggregate():
    d['pos_own'][pos]=weighted(pg.own,pg.own);d['pos_form'][pos]=weighted(pg.form5,pg.buy_weight)
   fields[(slug,rn)]=d
  selected=[];squads=[];keys=set();errors=[];transfer_checks=[]
- for path in (ROOT/'source/squads').glob('*.json'):
-  d=json.loads(path.read_text('utf-8'));key=(d['slug'],d['team'],d['round'])
+ for d in read_squads(ROOT):
+  key=(d['franchise'],d['slug'],d['team'],d['round'])
   if key in keys:raise ValueError(('duplicate squad',key))
   keys.add(key);current=[p for p in d['players'] if 'prev' not in p['class']];xi=[p for p in current if 'reserve' not in p['class']];cap=[p for p in current if 'is_captain' in p['class']]
+  if not current and d.get('lineup_missing'):
+   st=state.get((d['franchise'],d['slug'],d['round'],str(d['team'])),{})
+   squads.append({k:d[k] for k in ['franchise','manager','team','slug','round']}|{'n_xi':0,'n_buy':0,'source':d['url'],'personal_only':d.get('personal_only',False),'lineup_missing':True,'active':st.get('active'),'frozen':st.get('frozen')})
+   continue
   if len(current)!=15 or len(xi)!=11 or len(cap)!=1:errors.append({'key':key,'n':len(current),'xi':len(xi),'cap':len(cap)});continue
   field=fields[(d['slug'],d['round'])];byid={};count_buy=0
   for p in current:
    row=lookup.get((d['slug'],d['round'],p['id']),{}).copy()
-   row.update({'franchise':d['franchise'],'manager':d['manager'],'team':d['team'],'slug':d['slug'],'round':d['round'],'h2h_id':p['id'],'name':p['name'],'is_xi':'reserve' not in p['class'],'is_cap':'is_captain' in p['class'],'is_buy':'in' in p['class'] and d['round']>1,'source':d['url']})
+   row.update({'franchise':d['franchise'],'manager':d['manager'],'personal_only':d.get('personal_only',False),'team':d['team'],'slug':d['slug'],'round':d['round'],'h2h_id':p['id'],'name':p['name'],'is_xi':'reserve' not in p['class'],'is_cap':'is_captain' in p['class'],'is_buy':'in' in p['class'] and d['round']>1,'source':d['url']})
    for col in ['form5','form3','trend','xgi90','minutes5','delta']:
     base=field.get('buy_delta_bench' if col=='delta' else col+'_buy_bench');v=row.get(col);row[col+'_gap']=v-base if v is not None and base is not None else None
    if row.get('pos') and row.get('form5') is not None:
@@ -155,11 +161,14 @@ def aggregate():
   losses=[r[m+'_cap_loss'] for m in ['fo','alt','ffo']];r['triple_cap_disagree']=float(all(v>=2 for v in losses))*100 if all(pd.notna(v) for v in losses) else None
   r['buy_peak']=avg([100*float(x.get('trend',-999)>=2) for x in buys if pd.notna(x.get('trend'))]);r['buy_cold']=avg([100*float(x.get('form5_gap',999)<-1) for x in buys if pd.notna(x.get('form5_gap'))])
   st=state.get((d['franchise'],d['slug'],d['round'],str(d['team'])),{})
-  r.update({'active':st.get('active'),'frozen':st.get('frozen')})
+  r.update({'active':st.get('active'),'frozen':st.get('frozen'),'personal_only':d.get('personal_only',False),'lineup_missing':False})
   squads.append(r)
  s=pd.DataFrame(squads);z=pd.DataFrame(selected)
+ # DataFrames own the retained columns; release the per-player dictionaries before serialization.
+ del squads,selected,lookup,f
  # Direct XI benchmark for the observed franchise comparison cohort.
- s['own_cohort']=s.groupby(['slug','round']).own.transform('mean');s['own_cohort_gap']=s.own-s.own_cohort
+ cohort=s.drop_duplicates(['slug','round','team']).groupby(['slug','round']).own.mean()
+ s['own_cohort']=[cohort.loc[(row.slug,row.round)] for row in s.itertuples()];s['own_cohort_gap']=s.own-s.own_cohort
  # Price/position controls compare purchases with actual observed peer purchases.
  buy=z[z.is_buy].copy()
  for c in ['fo_pct','alt_pct','ffo_pct','price_pre','minutes5','form5','xgi90','delta','own']:

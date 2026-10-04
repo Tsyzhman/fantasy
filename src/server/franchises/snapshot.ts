@@ -8,9 +8,12 @@ import type { Snapshot } from "@/franchises/analytics";
 
 let cached: { path: string; mtime: number; value: Snapshot } | null = null;
 let loading: Promise<Snapshot> | null = null;
+export const MAX_SNAPSHOT_BYTES = 192 * 1024 * 1024;
+export const MAX_COMPRESSED_SNAPSHOT_BYTES = 64 * 1024 * 1024;
 export function validateSnapshot(value: Snapshot): Snapshot {
   if (
-    value.version !== 1 ||
+    ![1, 2].includes(value.version) ||
+    (value.version === 2 && value.personalHistory !== true) ||
     (value.xfoCaptainMultiplier !== undefined &&
       value.xfoCaptainMultiplier !== 1 &&
       value.xfoCaptainMultiplier !== 2) ||
@@ -26,15 +29,22 @@ export function validateSnapshot(value: Snapshot): Snapshot {
   )
     throw new Error("Unsupported franchise snapshot");
   if (
-    value.squads.length > 100000 ||
+    value.squads.length > 250000 ||
     value.purchases.length > 500000 ||
     value.rounds.length > 1000
   )
     throw new Error("Franchise snapshot exceeds bounds");
   const keys = new Set<string>();
+  const franchises = new Set(value.franchises.map((f) => f.id));
+  if (franchises.size !== value.franchises.length || franchises.size > 100)
+    throw new Error("Invalid franchise identities");
+  const rounds = new Set(value.rounds.map((r) => `${r.slug}:${r.round}`));
+  if (rounds.size !== value.rounds.length) throw new Error("Duplicate round");
   for (const row of value.squads) {
-    const key = `${row.slug}:${row.round}:${row.team}`;
+    const key = `${row.franchise}:${row.slug}:${row.round}:${row.team}`;
     if (keys.has(key)) throw new Error("Duplicate squad");
+    if (!franchises.has(row.franchise) || !rounds.has(`${row.slug}:${row.round}`))
+      throw new Error("Unknown squad scope");
     keys.add(key);
   }
   if (!Number.isFinite(Date.parse(value.generated)))
@@ -55,14 +65,14 @@ export async function loadSnapshot(): Promise<Snapshot> {
         where: { season: "2026/2027" },
       });
       if (
-        row.payload.length > 20 * 1024 * 1024 ||
+        row.payload.length > MAX_COMPRESSED_SNAPSHOT_BYTES ||
         createHash("sha256").update(row.payload).digest("hex") !== row.sha256
       )
         throw new Error("Snapshot integrity failed");
       const value = validateSnapshot(
         JSON.parse(
           gunzipSync(row.payload, {
-            maxOutputLength: 50 * 1024 * 1024,
+            maxOutputLength: MAX_SNAPSHOT_BYTES,
           }).toString("utf8"),
         ) as Snapshot,
       );
@@ -84,12 +94,12 @@ export async function loadSnapshot(): Promise<Snapshot> {
     return cached.value;
   if (loading) return loading;
   loading = (async () => {
-    if (info.size > 20 * 1024 * 1024)
-      throw new Error("Compressed snapshot exceeds 20 MB");
+    if (info.size > MAX_COMPRESSED_SNAPSHOT_BYTES)
+      throw new Error("Compressed snapshot exceeds 64 MB");
     const value = validateSnapshot(
       JSON.parse(
         gunzipSync(await readFile(path), {
-          maxOutputLength: 50 * 1024 * 1024,
+          maxOutputLength: MAX_SNAPSHOT_BYTES,
         }).toString("utf8"),
       ) as Snapshot,
     );

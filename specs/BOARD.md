@@ -23,6 +23,7 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-045](work/archive/2026/WI-045-franchise-calendar-report.md) | Complete franchise histories and calendar report | @tsyzhman | 2026-10-04 |
 | [WI-044](work/archive/2026/WI-044-fpl-active-roster-import.md) | Import FPL squads with provider positions | @tsyzhman | 2026-09-28 |
 | [WI-043](work/archive/2026/WI-043-production-browser-smoke.md) | Restore the full production browser smoke | @tsyzhman | 2026-09-28 |
 | [WI-042](work/archive/2026/WI-042-khl-update-status.md) | KHL update dates and latest refresh outcome | @tsyzhman | 2026-09-28 |

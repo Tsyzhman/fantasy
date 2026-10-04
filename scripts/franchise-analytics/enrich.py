@@ -6,7 +6,7 @@ def main():
  mgr=s.groupby(['franchise','manager','slug'])[metrics].mean().groupby(['franchise','manager']).mean().reset_index()
  for key in ['own_cohort_gap','cap_gap','buy_delta_gap']:mgr[key+'_score']=(len(mgr)-mgr[key].rank(method='average'))/(len(mgr)-1)*100
  mgr['style_score']=mgr.own_cohort_gap_score*.4+mgr.cap_gap_score*.3+mgr.buy_delta_gap_score*.3
- mgr['rank']=mgr.style_score.rank(method='min',ascending=False).astype(int)
+ mgr['rank']=mgr.style_score.rank(method='min',ascending=False).astype('Int64')
  for fr in d['franchises']:
   fid=fr['franchise'];g=buy[buy.franchise==fid];low=g[g.triple_model_low==1].drop_duplicates(['slug','round','h2h_id']);ps=fr['purchase_stats']
   ps['cheap_low_pct']=float((low.price_pre_peer_gap<=-1).mean()*100) if len(low) else None
@@ -23,7 +23,9 @@ def main():
   proofs=[]
   for x in fr['captain_examples']:
    xx=z[(z.franchise==fid)&(z.manager==x['manager'])&(z.slug==x['slug'])&(z['round']==x['round'])&z.is_xi]
-   cap=xx[xx.is_cap].iloc[0];pool=xx.dropna(subset=['fo','alt','ffo']).copy();pool['consensus']=pool[['fo','alt','ffo']].mean(axis=1)
+   cap=xx[xx.is_cap].iloc[0];pool=xx.dropna(subset=['fo','alt','ffo']).copy()
+   if pool.empty:continue
+   pool['consensus']=pool[['fo','alt','ffo']].mean(axis=1)
    candidate=pool.sort_values('consensus',ascending=False).iloc[0]
    p={**x,'own':cap.own,'form5':cap.form5,'alternative':candidate['name'],'alternative_form':candidate.form5,'alternative_own':candidate.own,'alternative_fo':candidate.fo,'alternative_alt':candidate.alt,'alternative_ffo':candidate.ffo}
    proofs.append(p)
@@ -36,7 +38,7 @@ def main():
  d['acquisition']={'from':min(times),'to':max(times),'cached_requests':len(times),'unique_urls':len(urls),'http_bytes':cache_bytes}
  d['freeze']={k:freeze[k] for k in ['events','summary','audit']}
  d['manager_ranking']=mgr.sort_values('rank').to_dict('records')
- d['checks']={'unique_squads':len(s.drop_duplicates(['slug','round','team'])),'all_xi_11':bool((s.n_xi==11).all()),'active_squads_per_franchise':{str(x['franchise']):x['n_active'] for x in d['franchises']},'missing_active_state':int(s.active.isna().sum()),'future_history':int((pd.to_datetime(z.last_history_date)>=(pd.to_datetime(z.cutoff)-pd.Timedelta(hours=3))).sum()),'duplicate_selections':int(z.duplicated(['slug','round','team','h2h_id']).sum()),'source_fnl_files':len(list((ROOT/'source/squads').glob('*fnl*'))),'freeze_verified':sum(x['board_verified'] for x in freeze['events'])}
+ d['checks']={'unique_squads':len(s.drop_duplicates(['franchise','slug','round','team'])),'all_xi_11':bool((s.loc[~s.lineup_missing,'n_xi']==11).all()),'missing_lineups':int(s.lineup_missing.sum()),'active_squads_per_franchise':{str(x['franchise']):x['n_active'] for x in d['franchises']},'missing_active_state':int((s.active.isna()&~s.personal_only).sum()),'future_history':int((pd.to_datetime(z.last_history_date)>=(pd.to_datetime(z.cutoff)-pd.Timedelta(hours=3))).sum()),'duplicate_selections':int(z.duplicated(['franchise','slug','round','team','h2h_id']).sum()),'source_fnl_files':len(list((ROOT/'source/squads').glob('*fnl*'))),'freeze_verified':sum(x['board_verified'] for x in freeze['events'])}
  save('report-data.json',clean(d));save('validation.json',clean({'counts':{k:d[k] for k in ['n_squads','n_decisions','n_buys','n_player_rounds']},'checks':d['checks'],'acquisition':d['acquisition'],'source_audit':d['audit']}))
  print('CHECKS',d['checks']);print('ACQUISITION',d['acquisition'])
 if __name__=='__main__':main()

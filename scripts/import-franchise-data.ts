@@ -13,7 +13,7 @@ import { createHash } from "node:crypto";
 import { gunzipSync } from "node:zlib";
 import { spawnSync } from "node:child_process";
 import { PrismaClient, type Prisma } from "@prisma/client";
-import { validateSnapshot } from "../src/server/franchises/snapshot";
+import { validateSnapshot, MAX_SNAPSHOT_BYTES, MAX_COMPRESSED_SNAPSHOT_BYTES } from "../src/server/franchises/snapshot";
 
 async function main() {
   for (const file of [".env.local", ".env"])
@@ -98,9 +98,11 @@ async function main() {
         );
     }
     const payload = await readFile(resolve(root, "snapshot.json.gz"));
+    if (payload.length > MAX_COMPRESSED_SNAPSHOT_BYTES)
+      throw new Error("Compressed snapshot exceeds bounds");
     const snapshot = validateSnapshot(
       JSON.parse(
-        gunzipSync(payload, { maxOutputLength: 50 * 1024 * 1024 }).toString(
+        gunzipSync(payload, { maxOutputLength: MAX_SNAPSHOT_BYTES }).toString(
           "utf8",
         ),
       ),
@@ -138,9 +140,11 @@ async function main() {
           update: data,
         });
       }
-    const files = (await readdir(resolve(root, "source/squads"))).filter((f) =>
+    const files = existsSync(resolve(root, "squad-index.json")) ? await json("squad-index.json") as string[] : (await readdir(resolve(root, "source/squads"))).filter((f) =>
       f.endsWith(".json"),
     );
+    if (files.some((f) => !/^[a-z0-9_-]+\.json$/.test(f)))
+      throw new Error("Invalid source file name");
     for (let start = 0; start < files.length; start += 50) {
       const rows = await Promise.all(
         files.slice(start, start + 50).map((f) => json("source/squads/" + f)),
@@ -190,7 +194,7 @@ async function main() {
     }
     // Publish only after every source row has been persisted. Readers retain the previous ready snapshot on failure.
     const data = {
-      version: 1,
+      version: snapshot.version,
       payload,
       sha256: createHash("sha256").update(payload).digest("hex"),
       generatedAt: new Date(snapshot.generated),
