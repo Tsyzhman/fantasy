@@ -38,7 +38,7 @@ status: active
 Существующий продуктовый канон: `specs/common/main.md`; архитектура и доступ: `specs/common/structure.md`, session auth. Доступ к аналитике одинаков для пользователей разных франшиз.
 
 ## Сценарии и UI {#ui}
-`/franchises` доступен из общей навигации рядом с другими модулями. Фильтры: чемпионаты, включительный диапазон календарных дат, франшиза. Общий обзор, профиль франшизы, менеджеры, xФО, заморозки. Charts use a compact scatter plot with a searchable directory of every franchise name and both exact metric values. The directory supports alphabetical and descending metric order, including explicit missing values. Selecting a point or directory row highlights the franchise and exposes its values and profile link. Search highlights matching points without changing the population or axis scale. Plot height does not grow with group count; mobile retains the plot above the directory. Coincident points remain individually selectable through the directory. Mouse, keyboard and touch selection are supported. Числовые ID остаются только внутренними ключами. Таблицы сортируются, единицы и знаменатели раскрыты. Светлая/тёмная темы и мобильный вид. Пустой диапазон не подменяется всем сезоном. Ссылка сохраняет выбранный диапазон.
+`/franchises` доступен из общей навигации рядом с другими модулями. Фильтры: чемпионаты, включительный диапазон календарных дат, франшиза. Общий обзор, профиль франшизы, менеджеры, xФО, заморозки. Charts show small (10 CSS px) abbreviated names beside every available point. English articles and conjunctions may be omitted, and long names shortened without changing canonical names or silently merging distinct labels. Full names remain in tooltips, selected details and an expandable searchable directory with both exact metric values. The directory supports alphabetical and descending metric order, including explicit missing values. Selecting a point or directory row highlights the franchise and exposes its values and profile link. Search highlights matching points without changing the population or axis scale. Plot height does not grow with group count; mobile retains a horizontally scrollable plot above the directory so labels keep their text size. Coincident points remain individually selectable through the directory. Mouse, keyboard and touch selection are supported. Числовые ID остаются только внутренними ключами. Таблицы сортируются, единицы и знаменатели раскрыты. Светлая/тёмная темы и мобильный вид. Пустой диапазон не подменяется всем сезоном. Ссылка сохраняет выбранный диапазон.
 
 Под фильтрами поясняется общая календарная отсечка по дате начала тура в Москве. Список «Какие чемпионаты вошли в расчёт» показывает число составов каждой выбранной лиги для текущей франшизы или всех франшиз; пустые лиги сохраняются с явным нулевым покрытием. Таблица xФО по чемпионатам объясняет отсутствие полного XI, не скрывая лигу.
 
@@ -72,6 +72,7 @@ GET `/api/franchises` валидирует сезон, лиги и диапаз�
 
 ## Точки ответственности {#traceability}
 - `src/app/franchises/`, `src/app/api/franchises/`: защищённый экран и API.
+- `src/franchises/compact-labels.ts`: bounded placement and unambiguous display abbreviations; tests in `compact-labels.test.ts`.
 - `src/franchises/analytics.ts`: фильтры, агрегация, рейтинги и гипотезы; контрактные проверки в `src/franchises/analytics.test.ts`.
 - `src/server/franchises/snapshot.ts`: валидация и единственный кэш снимка.
 - `scripts/franchise-analytics/`: сбор H2H, признаки до тура, xФО; `scripts/franchise-analytics/test_xfo.py` и workbook-fixture.
@@ -81,6 +82,7 @@ GET `/api/franchises` валидирует сезон, лиги и диапаз�
 Локальные отчёты WI-025/WI-027 — предшествующие артефакты. Используются существующие normalized core_data, архивные planning snapshots и исходные токены дизайна Fantasy.
 
 ## История {#changelog}
+- 2026-10-04: WI-048 — small abbreviated names restored beside points following user review.
 - 2026-10-04: WI-047 — compact charts with searchable names, exact values and selection on desktop and mobile; remove dense label leaders.
 - 2026-10-04: читаемые и выбираемые подписи графиков для расширенного набора 75 групп.
 - 2026-10-03: календарные интервалы, полная личная история менеджеров, 74 франшизы и виртуальная группа «шизы» без досок и заморозок.

@@ -1,9 +1,10 @@
 "use client";
 /** @spec spec://modules/franchises/FEAT-005-franchise-analytics#ui */
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Analytics, Summary } from "@/franchises/analytics";
 import { number } from "@/franchises/analytics";
 import styles from "./ui.module.css";
+import { compactLabels } from "@/franchises/compact-labels";
 
 type Row = Record<string, string | number | null>;
 type Column = { key: string; label: string; digits?: number; suffix?: string };
@@ -198,6 +199,17 @@ function Scatter({
   const [hover, setHover] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [sort, setSort] = useState("name");
+  const plotRef = useRef<HTMLDivElement>(null);
+  const [plotWidth, setPlotWidth] = useState(900);
+  useEffect(() => {
+    const node = plotRef.current;
+    if (!node) return;
+    const observer = new ResizeObserver(([entry]) =>
+      setPlotWidth(Math.max(720, Math.round(entry.contentRect.width))),
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
   const geometry = useMemo(() => {
     const valid = rows.filter(
       (r) => metric(r, x) !== null && metric(r, y) !== null,
@@ -218,11 +230,24 @@ function Scatter({
       hiY,
       points: valid.map((r) => ({
         r,
-        px: 80 + ((metric(r, x)! - loX) / (hiX - loX)) * 488,
-        py: 320 - ((metric(r, y)! - loY) / (hiY - loY)) * 290,
+        px: 56 + ((metric(r, x)! - loX) / (hiX - loX)) * (plotWidth - 80),
+        py: 350 - ((metric(r, y)! - loY) / (hiY - loY)) * 310,
       })),
     };
-  }, [rows, x, y]);
+  }, [rows, x, y, plotWidth]);
+  const labels = useMemo(
+    () =>
+      compactLabels(
+        geometry?.points.map((p) => ({
+          id: p.r.id,
+          name: p.r.name,
+          x: p.px,
+          y: p.py,
+        })) ?? [],
+        plotWidth,
+      ),
+    [geometry, plotWidth],
+  );
   const matches = rows
     .filter((r) =>
       r.name
@@ -244,113 +269,145 @@ function Scatter({
   const activePoint = geometry?.points.find((p) => p.r.id === active?.id);
   return (
     <div className={styles.comparison}>
-      <div className={styles.plotPanel}>
+      <div className={styles.plotPanel} ref={plotRef}>
         <div className={styles.plotCaption}>
           <span>{ylabel} ↑</span>
           <span>
             {geometry?.points.length ?? 0} из {rows.length} на графике
           </span>
         </div>
-        {geometry ? (
-          <svg
-            className={styles.scatter}
-            viewBox="0 0 600 360"
-            role="group"
-            aria-label={`${xlabel}; ${ylabel}`}
-          >
-            {Array.from({ length: 5 }, (_, i) => (
-              <g key={i}>
+        <div className={styles.plotViewport}>
+          {geometry ? (
+            <svg
+              className={styles.scatter}
+              viewBox={`0 0 ${plotWidth} 390`}
+              style={{ width: plotWidth, height: 390 }}
+              role="group"
+              aria-label={`${xlabel}; ${ylabel}`}
+            >
+              {Array.from({ length: 5 }, (_, i) => (
+                <g key={i}>
+                  <line
+                    x1="56"
+                    y1={350 - i * 77.5}
+                    x2={plotWidth - 24}
+                    y2={350 - i * 77.5}
+                    className={styles.gridLine}
+                  />
+                  <text x="46" y={354 - i * 77.5} textAnchor="end">
+                    {fmt(
+                      geometry.loY + ((geometry.hiY - geometry.loY) * i) / 4,
+                      geometry.hiY - geometry.loY < 2 ? 2 : 1,
+                    )}
+                  </text>
+                  <text
+                    x={56 + (i * (plotWidth - 80)) / 4}
+                    y="378"
+                    textAnchor="middle"
+                  >
+                    {fmt(
+                      geometry.loX + ((geometry.hiX - geometry.loX) * i) / 4,
+                      geometry.hiX - geometry.loX < 2 ? 2 : 1,
+                    )}
+                  </text>
+                </g>
+              ))}
+              {geometry.loY < 0 && geometry.hiY > 0 && (
                 <line
-                  x1="80"
-                  y1={320 - i * 72.5}
-                  x2="568"
-                  y2={320 - i * 72.5}
-                  className={styles.gridLine}
-                />
-                <text x="70" y={324 - i * 72.5} textAnchor="end">
-                  {fmt(
-                    geometry.loY + ((geometry.hiY - geometry.loY) * i) / 4,
-                    geometry.hiY - geometry.loY < 2 ? 2 : 1,
-                  )}
-                </text>
-                <text x={80 + i * 122} y="346" textAnchor="middle">
-                  {fmt(
-                    geometry.loX + ((geometry.hiX - geometry.loX) * i) / 4,
-                    geometry.hiX - geometry.loX < 2 ? 2 : 1,
-                  )}
-                </text>
-              </g>
-            ))}
-            {geometry.loY < 0 && geometry.hiY > 0 && (
-              <line
-                className={styles.zeroLine}
-                x1="80"
-                x2="568"
-                y1={320 + (geometry.loY / (geometry.hiY - geometry.loY)) * 290}
-                y2={320 + (geometry.loY / (geometry.hiY - geometry.loY)) * 290}
-              />
-            )}
-            {geometry.points.map(({ r, px, py }) => (
-              <g
-                key={r.id}
-                role="button"
-                tabIndex={0}
-                aria-label={`${r.name}: ${xlabel} ${fmt(metric(r, x), 2)}; ${ylabel} ${fmt(metric(r, y), 2)}`}
-                aria-pressed={selected === r.id}
-                className={styles.plotPoint}
-                style={{
-                  opacity:
-                    (active && active.id !== r.id) || !matchIds.has(r.id)
-                      ? 0.45
-                      : 1,
-                }}
-                onMouseEnter={() => setHover(r.id)}
-                onMouseLeave={() => setHover(null)}
-                onFocus={() => setHover(r.id)}
-                onBlur={() => setHover(null)}
-                onClick={() => {
-                  setSelected(r.id);
-                  setHover(null);
-                }}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" || e.key === " ") {
-                    e.preventDefault();
-                    setSelected(r.id);
+                  className={styles.zeroLine}
+                  x1="56"
+                  x2={plotWidth - 24}
+                  y1={
+                    350 + (geometry.loY / (geometry.hiY - geometry.loY)) * 310
                   }
-                }}
-              >
-                <circle cx={px} cy={py} r="12" fill="transparent" />
-                <circle cx={px} cy={py} r="5" className={styles.dot} />
-              </g>
-            ))}
-            {activePoint && (
-              <g pointerEvents="none" aria-hidden="true">
-                <line
-                  className={styles.crosshair}
-                  x1="80"
-                  x2={activePoint.px}
-                  y1={activePoint.py}
-                  y2={activePoint.py}
+                  y2={
+                    350 + (geometry.loY / (geometry.hiY - geometry.loY)) * 310
+                  }
                 />
-                <line
-                  className={styles.crosshair}
-                  x1={activePoint.px}
-                  x2={activePoint.px}
-                  y1={activePoint.py}
-                  y2="320"
-                />
-                <circle
-                  cx={activePoint.px}
-                  cy={activePoint.py}
-                  r="8"
-                  className={styles.activeDot}
-                />
-              </g>
-            )}
-          </svg>
-        ) : (
-          <p className={styles.emptyPlot}>Недостаточно данных для графика.</p>
-        )}
+              )}
+              {geometry.points.map(({ r, px, py }) => (
+                <g
+                  key={r.id}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${r.name}: ${xlabel} ${fmt(metric(r, x), 2)}; ${ylabel} ${fmt(metric(r, y), 2)}`}
+                  aria-pressed={selected === r.id}
+                  className={styles.plotPoint}
+                  style={{
+                    opacity:
+                      (active && active.id !== r.id) || !matchIds.has(r.id)
+                        ? 0.45
+                        : 1,
+                  }}
+                  onMouseEnter={() => setHover(r.id)}
+                  onMouseLeave={() => setHover(null)}
+                  onFocus={() => setHover(r.id)}
+                  onBlur={() => setHover(null)}
+                  onClick={() => {
+                    setSelected(r.id);
+                    setHover(null);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setSelected(r.id);
+                    }
+                  }}
+                >
+                  <title>{r.name}</title>
+                  <circle cx={px} cy={py} r="10" fill="transparent" />
+                  <circle cx={px} cy={py} r="3" className={styles.dot} />
+                  <line
+                    className={styles.labelLeader}
+                    x1={px}
+                    y1={py}
+                    x2={Math.max(
+                      labels.get(r.id)!.x,
+                      Math.min(
+                        px,
+                        labels.get(r.id)!.x + labels.get(r.id)!.width,
+                      ),
+                    )}
+                    y2={labels.get(r.id)!.y + 6}
+                  />
+                  <text
+                    className={styles.pointLabel}
+                    x={labels.get(r.id)!.x + 2}
+                    y={labels.get(r.id)!.y + 10}
+                  >
+                    {labels.get(r.id)!.text}
+                  </text>
+                </g>
+              ))}
+              {activePoint && (
+                <g pointerEvents="none" aria-hidden="true">
+                  <line
+                    className={styles.crosshair}
+                    x1="56"
+                    x2={activePoint.px}
+                    y1={activePoint.py}
+                    y2={activePoint.py}
+                  />
+                  <line
+                    className={styles.crosshair}
+                    x1={activePoint.px}
+                    x2={activePoint.px}
+                    y1={activePoint.py}
+                    y2="350"
+                  />
+                  <circle
+                    cx={activePoint.px}
+                    cy={activePoint.py}
+                    r="5"
+                    className={styles.activeDot}
+                  />
+                </g>
+              )}
+            </svg>
+          ) : (
+            <p className={styles.emptyPlot}>Недостаточно данных для графика.</p>
+          )}
+        </div>
         <div className={styles.axisCaption}>{xlabel} →</div>
         <div className={styles.plotDetail} aria-live="polite">
           {active ? (
@@ -384,10 +441,12 @@ function Scatter({
           )}
         </div>
         <p className={styles.plotHint}>
-          Все франшизы в одном масштабе. Поиск подсвечивает совпадения.
+          Сокращённые названия рядом с точками. Полное название — при наведении.
+          На узком экране график можно прокрутить вбок.
         </p>
       </div>
-      <div className={styles.plotDirectory}>
+      <details className={styles.plotDirectory}>
+        <summary>Полные названия, поиск и CSV</summary>
         <div className={styles.directoryTools}>
           <input
             type="search"
@@ -473,7 +532,7 @@ function Scatter({
           <br />
           «—» — нет данных; такая точка не строится.
         </p>
-      </div>
+      </details>
     </div>
   );
 }

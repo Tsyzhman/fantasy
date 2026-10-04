@@ -2,7 +2,7 @@
 
 ## 0.3.115 - 2026-10-04
 
-- Redesign franchise scatter charts as compact plots with searchable names, exact values, metric sorting and profile selection on desktop and mobile (WI-047).
+- Redesign franchise scatter charts with small abbreviated names beside every point, an expandable searchable directory, exact values, sorting and profile selection (WI-047/WI-048).
 - Preserve complete populations, CSV, calendar filters, formulas and bounded report caching; remove obsolete dense-label layout code.
 
 ## 0.3.114 - 2026-10-04

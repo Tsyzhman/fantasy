@@ -243,7 +243,7 @@
 }
 .comparison {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 320px;
+  grid-template-columns: minmax(0, 1fr);
   gap: 28px;
 }
 .plotPanel,
@@ -263,7 +263,7 @@
 .scatter {
   display: block;
   width: 100%;
-  max-height: 430px;
+
   overflow: visible;
 }
 .scatter text {
@@ -359,8 +359,8 @@
   margin-top: 12px;
 }
 .plotDirectory {
-  border-left: 1px solid var(--border);
-  padding-left: 24px;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
 }
 .directoryTools {
   display: grid;
@@ -463,12 +463,6 @@
     grid-template-columns: minmax(0, 1fr);
     gap: 20px;
   }
-  .plotDirectory {
-    border-left: 0;
-    padding-left: 0;
-    border-top: 1px solid var(--border);
-    padding-top: 18px;
-  }
   .directoryList {
     max-height: 230px;
   }
@@ -556,9 +550,7 @@
   .charts > .card {
     padding: 16px 10px;
   }
-  .scatter text {
-    font-size: 24px;
-  }
+
   .plotCaption {
     flex-direction: column;
     gap: 4px;
@@ -604,4 +596,30 @@
   .method {
     padding: 18px;
   }
+}
+
+.plotViewport {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+.scatter .pointLabel {
+  font-size: 10px;
+  fill: var(--text-primary);
+  paint-order: stroke;
+  stroke: var(--surface-1);
+  stroke-width: 2.5px;
+  stroke-linejoin: round;
+}
+.labelLeader {
+  stroke: var(--text-muted);
+  stroke-width: 0.6;
+  opacity: 0.5;
+}
+.plotDirectory summary {
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.plotDirectory[open] .directoryTools {
+  margin-top: 14px;
 }

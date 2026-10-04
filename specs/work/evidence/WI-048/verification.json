@@ -1,0 +1,200 @@
+{
+  "workItem": "WI-048",
+  "date": "2026-10-04",
+  "request": "Small abbreviated text beside the points, including removal of the/and and redundant words.",
+  "browser": {
+    "layouts": [
+      {
+        "width": 1440,
+        "theme": "light",
+        "chart": 0,
+        "count": 75,
+        "fonts": [
+          "10px"
+        ],
+        "overlaps": 0
+      },
+      {
+        "width": 1440,
+        "theme": "light",
+        "chart": 1,
+        "count": 75,
+        "fonts": [
+          "10px"
+        ],
+        "overlaps": 0
+      },
+      {
+        "width": 1440,
+        "theme": "dark",
+        "chart": 0,
+        "count": 75,
+        "fonts": [
+          "10px"
+        ],
+        "overlaps": 0
+      },
+      {
+        "width": 1440,
+        "theme": "dark",
+        "chart": 1,
+        "count": 75,
+        "fonts": [
+          "10px"
+        ],
+        "overlaps": 0
+      },
+      {
+        "width": 760,
+        "theme": "light",
+        "chart": 0,
+        "count": 75,
+        "fonts": [
+          "10px"
+        ],
+        "overlaps": 0
+      },
+      {
+        "width": 760,
+        "theme": "light",
+        "chart": 1,
+        "count": 75,
+        "fonts": [
+          "10px"
+        ],
+        "overlaps": 0
+      },
+      {
+        "width": 760,
+        "theme": "dark",
+        "chart": 0,
+        "count": 75,
+        "fonts": [
+          "10px"
+        ],
+        "overlaps": 0
+      },
+      {
+        "width": 760,
+        "theme": "dark",
+        "chart": 1,
+        "count": 75,
+        "fonts": [
+          "10px"
+        ],
+        "overlaps": 0
+      },
+      {
+        "width": 390,
+        "theme": "light",
+        "chart": 0,
+        "count": 75,
+        "fonts": [
+          "10px"
+        ],
+        "overlaps": 0
+      },
+      {
+        "width": 390,
+        "theme": "light",
+        "chart": 1,
+        "count": 75,
+        "fonts": [
+          "10px"
+        ],
+        "overlaps": 0
+      },
+      {
+        "width": 390,
+        "theme": "dark",
+        "chart": 0,
+        "count": 75,
+        "fonts": [
+          "10px"
+        ],
+        "overlaps": 0
+      },
+      {
+        "width": 390,
+        "theme": "dark",
+        "chart": 1,
+        "count": 75,
+        "fonts": [
+          "10px"
+        ],
+        "overlaps": 0
+      },
+      {
+        "width": 320,
+        "theme": "light",
+        "chart": 0,
+        "count": 75,
+        "fonts": [
+          "10px"
+        ],
+        "overlaps": 0
+      },
+      {
+        "width": 320,
+        "theme": "light",
+        "chart": 1,
+        "count": 75,
+        "fonts": [
+          "10px"
+        ],
+        "overlaps": 0
+      },
+      {
+        "width": 320,
+        "theme": "dark",
+        "chart": 0,
+        "count": 75,
+        "fonts": [
+          "10px"
+        ],
+        "overlaps": 0
+      },
+      {
+        "width": 320,
+        "theme": "dark",
+        "chart": 1,
+        "count": 75,
+        "fonts": [
+          "10px"
+        ],
+        "overlaps": 0
+      }
+    ],
+    "interactionRequests": 0
+  },
+  "memory": {
+    "before": 34884200,
+    "after": 34355764,
+    "iterations": 25
+  },
+  "checks": {
+    "targetedTests": 18,
+    "failed": 0,
+    "lintErrors": 0,
+    "lintWarnings": 70,
+    "typecheck": "passed",
+    "build": "passed"
+  },
+  "behavior": {
+    "labelFontCssPx": 10,
+    "plotHeightPx": 390,
+    "mobileMinPlotWidthPx": 720,
+    "mobileOverflow": "inside chart only; horizontal scrolling retains 10px labels",
+    "canonicalNamesUnchanged": true,
+    "serverApiAndCacheUnchanged": true,
+    "newDependencies": 0
+  },
+  "cleanup": {
+    "qaUserAndSessionRemoved": true,
+    "testDatabaseStopped": true,
+    "browserClosed": true,
+    "testAppStopped": true,
+    "temporarySnapshotAndPrivateStateRemoved": true,
+    "obsoleteWebpackBackupBytesRemoved": 82894819
+  }
+}
