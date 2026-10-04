@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.116 - 2026-10-04
+
+- Split purchase/form charts into stacked groups at horizontal H2h purchase delta 12 percentage points, preserving axes, labels, and missing-value access.
+
 ## 0.3.115 - 2026-10-04
 
 - Redesign franchise scatter charts with small abbreviated names beside every point, an expandable searchable directory, exact values, sorting and profile selection (WI-047/WI-048). Split the ownership/captain chart into stacked groups at 35% starting-lineup ownership (horizontal axis).

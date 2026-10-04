@@ -653,6 +653,30 @@ export function FranchiseAnalytics({
         : [],
     [data],
   );
+  const purchaseGroups = useMemo(
+    () =>
+      data
+        ? [
+            {
+              title: "Покупки и форма до тура · от 12 п.п.",
+              rows: data.franchises.filter(
+                (r) =>
+                  metric(r, "buy_delta") !== null &&
+                  metric(r, "buy_delta")! >= 12,
+              ),
+            },
+            {
+              title: "Покупки и форма до тура · ниже 12 п.п.",
+              rows: data.franchises.filter(
+                (r) =>
+                  metric(r, "buy_delta") !== null &&
+                  metric(r, "buy_delta")! < 12,
+              ),
+            },
+          ]
+        : [],
+    [data],
+  );
   const f = data?.franchises.find((f) => f.id === selected);
   const names = new Map(data?.franchises.map((f) => [f.franchise, f.name]));
   const shown = data ? (f ? [f] : data.franchises) : [];
@@ -925,17 +949,41 @@ export function FranchiseAnalytics({
                               ))}
                           </div>
                         )}
-                        <div className={styles.card}>
-                          <h3>Покупки и форма до тура</h3>
-                          <Scatter
-                            rows={data.franchises}
-                            x="buy_delta"
-                            y="buy_form_gap"
-                            xlabel="H2h-Δ покупки, п.п."
-                            ylabel="Δ формы к покупкам поля, очки"
-                            onSelect={select}
-                          />
-                        </div>
+                        {purchaseGroups.map((group) => (
+                          <div className={styles.card} key={group.title}>
+                            <h3>{group.title}</h3>
+                            <p className={styles.note}>
+                              Группа по H2h-Δ покупки (горизонтальная ось).
+                              Шкалы подстроены под её значения.
+                            </p>
+                            <Scatter
+                              rows={group.rows}
+                              x="buy_delta"
+                              y="buy_form_gap"
+                              xlabel="H2h-Δ покупки, п.п."
+                              ylabel="Δ формы к покупкам поля, очки"
+                              onSelect={select}
+                            />
+                          </div>
+                        ))}
+                        {data.franchises.some(
+                          (r) => metric(r, "buy_delta") === null,
+                        ) && (
+                          <div className={styles.note}>
+                            Нет оценки H2h-Δ покупки:{" "}
+                            {data.franchises
+                              .filter((r) => metric(r, "buy_delta") === null)
+                              .map((r) => (
+                                <button
+                                  key={r.id}
+                                  className={styles.textButton}
+                                  onClick={() => select(r.id)}
+                                >
+                                  {r.name};{" "}
+                                </button>
+                              ))}
+                          </div>
+                        )}
                       </div>
                     </Section>
                   )}
