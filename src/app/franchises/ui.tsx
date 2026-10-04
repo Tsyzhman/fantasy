@@ -195,6 +195,9 @@ function Scatter({
   ylabel: string;
   onSelect: (id: string) => void;
 }) {
+  const plotHeight = rows.length > 40 ? 490 : 390;
+  const plotBottom = plotHeight - 40;
+  const plotSpan = plotHeight - 80;
   const [selected, setSelected] = useState<string | null>(null);
   const [hover, setHover] = useState<string | null>(null);
   const [search, setSearch] = useState("");
@@ -236,34 +239,10 @@ function Scatter({
       points: valid.map((r) => ({
         r,
         px: 56 + ((metric(r, x)! - loX) / (hiX - loX)) * (plotWidth - 80),
-        py: 350 - ((metric(r, y)! - loY) / (hiY - loY)) * 310,
+        py: plotBottom - ((metric(r, y)! - loY) / (hiY - loY)) * plotSpan,
       })),
     };
-  }, [rows, x, y, plotWidth]);
-  const pointColors = useMemo(() => {
-    const assigned: { id: string; px: number; py: number; color: number }[] =
-      [];
-    for (const point of [...(geometry?.points ?? [])].sort((a, b) =>
-      a.r.id.localeCompare(b.r.id),
-    )) {
-      let color = 0,
-        best = -1;
-      for (let candidate = 0; candidate < 8; candidate++) {
-        const distance = Math.min(
-          Infinity,
-          ...assigned
-            .filter((p) => p.color === candidate)
-            .map((p) => (p.px - point.px) ** 2 + (p.py - point.py) ** 2),
-        );
-        if (distance > best) {
-          best = distance;
-          color = candidate;
-        }
-      }
-      assigned.push({ id: point.r.id, px: point.px, py: point.py, color });
-    }
-    return new Map(assigned.map((p) => [p.id, `var(--plot-color-${p.color})`]));
-  }, [geometry]);
+  }, [rows, x, y, plotWidth, plotBottom, plotSpan]);
   const labels = useMemo(() => {
     const context =
       typeof document === "undefined"
@@ -279,8 +258,63 @@ function Scatter({
       })) ?? [],
       plotWidth,
       context ? (text) => context.measureText(text).width : undefined,
+      plotHeight,
     );
-  }, [geometry, plotWidth]);
+  }, [geometry, plotWidth, plotHeight]);
+  const pointColors = useMemo(() => {
+    const points = geometry?.points ?? [];
+    const proximity = (
+      a: (typeof points)[number],
+      b: (typeof points)[number],
+    ) => {
+      const la = labels.get(a.r.id)!,
+        lb = labels.get(b.r.id)!;
+      const leftA = Math.min(a.px - 4, la.x),
+        rightA = Math.max(a.px + 4, la.x + la.width);
+      const leftB = Math.min(b.px - 4, lb.x),
+        rightB = Math.max(b.px + 4, lb.x + lb.width);
+      const topA = Math.min(a.py - 4, la.y),
+        bottomA = Math.max(a.py + 4, la.y + la.height);
+      const topB = Math.min(b.py - 4, lb.y),
+        bottomB = Math.max(b.py + 4, lb.y + lb.height);
+      return Math.hypot(
+        Math.max(leftA - rightB, leftB - rightA, 0),
+        Math.max(topA - bottomB, topB - bottomA, 0),
+      );
+    };
+    const assigned = new Map<string, number>();
+    const remaining = [...points];
+    while (remaining.length) {
+      remaining.sort((a, b) => {
+        const saturation = (p: typeof a) =>
+          new Set(
+            points
+              .filter((q) => assigned.has(q.r.id) && proximity(p, q) < 35)
+              .map((q) => assigned.get(q.r.id)),
+          ).size;
+        return saturation(b) - saturation(a) || a.r.id.localeCompare(b.r.id);
+      });
+      const point = remaining.shift()!;
+      let color = 0,
+        best = -1;
+      for (let candidate = 0; candidate < 8; candidate++) {
+        const distance = Math.min(
+          Infinity,
+          ...points
+            .filter((p) => assigned.get(p.r.id) === candidate)
+            .map((p) => proximity(point, p)),
+        );
+        if (distance > best) {
+          best = distance;
+          color = candidate;
+        }
+      }
+      assigned.set(point.r.id, color);
+    }
+    return new Map(
+      [...assigned].map(([id, color]) => [id, `var(--plot-color-${color})`]),
+    );
+  }, [geometry, labels]);
   const matches = rows
     .filter((r) =>
       r.name
@@ -313,8 +347,8 @@ function Scatter({
           {geometry ? (
             <svg
               className={styles.scatter}
-              viewBox={`0 0 ${plotWidth} 390`}
-              style={{ width: plotWidth, height: 390 }}
+              viewBox={`0 0 ${plotWidth} ${plotHeight}`}
+              style={{ width: plotWidth, height: plotHeight }}
               role="group"
               aria-label={`${xlabel}; ${ylabel}`}
             >
@@ -322,12 +356,16 @@ function Scatter({
                 <g key={i}>
                   <line
                     x1="56"
-                    y1={350 - i * 77.5}
+                    y1={plotBottom - (i * plotSpan) / 4}
                     x2={plotWidth - 24}
-                    y2={350 - i * 77.5}
+                    y2={plotBottom - (i * plotSpan) / 4}
                     className={styles.gridLine}
                   />
-                  <text x="46" y={354 - i * 77.5} textAnchor="end">
+                  <text
+                    x="46"
+                    y={plotBottom + 4 - (i * plotSpan) / 4}
+                    textAnchor="end"
+                  >
                     {fmt(
                       geometry.loY + ((geometry.hiY - geometry.loY) * i) / 4,
                       geometry.hiY - geometry.loY < 2 ? 2 : 1,
@@ -335,7 +373,7 @@ function Scatter({
                   </text>
                   <text
                     x={56 + (i * (plotWidth - 80)) / 4}
-                    y="378"
+                    y={plotHeight - 12}
                     textAnchor="middle"
                   >
                     {fmt(
@@ -351,10 +389,12 @@ function Scatter({
                   x1="56"
                   x2={plotWidth - 24}
                   y1={
-                    350 + (geometry.loY / (geometry.hiY - geometry.loY)) * 310
+                    plotBottom +
+                    (geometry.loY / (geometry.hiY - geometry.loY)) * plotSpan
                   }
                   y2={
-                    350 + (geometry.loY / (geometry.hiY - geometry.loY)) * 310
+                    plotBottom +
+                    (geometry.loY / (geometry.hiY - geometry.loY)) * plotSpan
                   }
                 />
               )}
@@ -427,7 +467,7 @@ function Scatter({
                     x1={activePoint.px}
                     x2={activePoint.px}
                     y1={activePoint.py}
-                    y2="350"
+                    y2={plotBottom}
                   />
                   <circle
                     cx={activePoint.px}

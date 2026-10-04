@@ -55,6 +55,7 @@ export function compactLabels(
   points: Point[],
   width: number,
   measure?: (text: string) => number,
+  height = 390,
 ): Map<string, Label> {
   const names = compactNames(points);
   const ordered = [...points].sort((a, b) => a.id.localeCompare(b.id));
@@ -76,9 +77,10 @@ export function compactLabels(
     const name = names.get(p.id)!;
     const words = name.split(/\s+/);
     return words.length > 1
-      ? words[0].length <= 10
-        ? words[0]
-        : words.map((w) => w[0]).join("")
+      ? `${words[0]} ${words
+          .slice(1)
+          .map((w) => w[0] + ".")
+          .join("")}`
       : name;
   });
   const candidates = ordered.map((p, index) => {
@@ -100,21 +102,15 @@ export function compactLabels(
             0,
           )) + 4;
       for (const gap of [6, 10, 14]) {
-        const positions = [
-          [p.x + gap, p.y - 6],
-          [p.x - w - gap, p.y - 6],
-          [p.x - w / 2, p.y - 12 - gap],
-          [p.x - w / 2, p.y + gap],
-          [p.x + gap, p.y - 12 - gap / 2],
-          [p.x - w - gap, p.y - 12 - gap / 2],
-          [p.x + gap, p.y + gap / 2],
-          [p.x - w - gap, p.y + gap / 2],
-        ];
+        const positions = [-24, -18, -12, -6, 0, 6, 12].flatMap((offset) => [
+          [p.x + gap, p.y + offset],
+          [p.x - w - gap, p.y + offset],
+        ]);
         for (const [x, y] of positions) {
           const box = {
             text,
             x: Math.max(6, Math.min(width - w - 6, x)),
-            y: Math.max(8, Math.min(370, y)),
+            y: Math.max(8, Math.min(height - 20, y)),
             width: w,
             height: 12,
           };
@@ -123,13 +119,13 @@ export function compactLabels(
             const d = distance(q, box);
             return (
               cost +
-              (d < 5 ? (5 - d) * 3000 : 0) +
-              (q !== p && d + 2 < ownDistance ? (ownDistance - d) * 2 : 0)
+              (d < 5 ? (5 - d) * 30000 : 0) +
+              (q !== p && d + 2 < ownDistance ? (ownDistance - d) * 100 : 0)
             );
           }, 0);
           result.push({
             ...box,
-            base: variant * 12 + ownDistance * 0.7 + pointPenalty,
+            base: variant * 12 + ownDistance * 8 + pointPenalty,
           });
         }
       }
@@ -195,12 +191,12 @@ export function compactLabels(
     return seed / 4294967296;
   };
   // Fixed budget and seed give repeatable layouts without a growing cache.
-  const iterations = Math.min(40000, ordered.length * 600);
+  const iterations = Math.min(80000, ordered.length * 1200);
   for (let step = 0; step < iterations; step++) {
     const i = Math.floor(random() * ordered.length),
       c = Math.floor(random() * candidates[i].length);
     const delta = localCost(i, c) - localCost(i, choices[i]);
-    const temperature = 1500 * (1 - step / iterations) ** 3 + 0.1;
+    const temperature = 10000 * (1 - step / iterations) ** 3 + 0.1;
     if (delta <= 0 || random() < Math.exp(-delta / temperature)) {
       choices[i] = c;
       currentCost += delta;
@@ -214,4 +210,3 @@ export function compactLabels(
   settle();
   return new Map(ordered.map((p, i) => [p.id, candidates[i][choices[i]]]));
 }
-

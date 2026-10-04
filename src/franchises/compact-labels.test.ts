@@ -87,3 +87,19 @@ test("joint layout is deterministic across input order and uses measured widths"
   assert.deepEqual(first, compactLabels([...points].reverse(), 960, measure));
   for (const b of first.values()) assert.equal(b.width, measure(b.text) + 4);
 });
+
+test("crowding never discards the distinguishing second word entirely", () => {
+  const names = ["Dark Horses", "Old Avengers", "Madison Avenue", "Red Army"];
+  const points = names.map((name, i) => ({
+    id: String(i),
+    name,
+    x: 300 + i * 8,
+    y: 150 + i * 4,
+  }));
+  const labels = compactLabels(points, 960, (text) => text.length * 5, 490);
+  for (const p of points) {
+    const text = labels.get(p.id)!.text;
+    const words = p.name.split(" ");
+    assert.ok(text === p.name || text === `${words[0]} ${words[1][0]}.`);
+  }
+});
