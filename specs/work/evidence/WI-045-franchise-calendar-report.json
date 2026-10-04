@@ -1,0 +1,523 @@
+{
+  "workItem": "WI-045",
+  "verifiedAt": "2026-10-04T16:39:41.333550+00:00",
+  "release": {
+    "version": "0.3.113",
+    "commit": "8ca6dd2a0908ddb072adc6cc8cc520af525d2d3b",
+    "tree": "7e0bfc1bcdae3e33311f7cae8b7962cf953328da",
+    "manifestMatches": true,
+    "deployment": {
+      "conclusion": "success",
+      "headSha": "8ca6dd2a0908ddb072adc6cc8cc520af525d2d3b",
+      "status": "completed",
+      "url": "https://github.com/Tsyzhman/fantasy/actions/runs/37155080819"
+    },
+    "url": "https://fantasy.tsyzhman.ru/franchises"
+  },
+  "checks": {
+    "github": {
+      "conclusion": "success",
+      "headSha": "8ca6dd2a0908ddb072adc6cc8cc520af525d2d3b",
+      "status": "completed",
+      "url": "https://github.com/Tsyzhman/fantasy/actions/runs/37155081937"
+    },
+    "projectTests": {
+      "passed": 1222,
+      "failed": 0,
+      "skipped": 0
+    },
+    "databaseIntegrationTests": {
+      "passed": 15,
+      "failed": 0
+    },
+    "pythonCollectorTests": {
+      "passed": 19,
+      "goldenXfoCases": 107
+    },
+    "lint": {
+      "errors": 0,
+      "existingWarnings": 221
+    },
+    "typecheck": "passed",
+    "productionBuild": "passed",
+    "productionAuditVulnerabilities": 0
+  },
+  "collection": {
+    "manifest": {
+      "groups": 75,
+      "regularFranchises": 74,
+      "virtualManagers": 24,
+      "virtualSquads": 1551,
+      "sourceSquads": 40078,
+      "snapshotSquads": 40429,
+      "purchases": 93145,
+      "activeRounds": 23429,
+      "reserveRounds": 12577,
+      "personalOnlyRounds": 4423,
+      "missingLineups": 157,
+      "rounds": 65,
+      "xfoComplete": 20469,
+      "duplicateSources": 0,
+      "duplicateObservations": 0,
+      "snapshotBytes": 10864436,
+      "snapshotSha256": "bb91bb1c178e9c59e87893ebe7e7d739a51bb7ec666415a2ec4626b0a0a89784",
+      "archiveBytes": 25380717,
+      "archiveSha256": "146ea60f2083fcfc77bea4385b0424fbb029253e97182a1c8b193f119671ec3a",
+      "archiveFiles": 40217,
+      "checks": {
+        "unique_squads": 40429,
+        "all_xi_11": true,
+        "missing_lineups": 157,
+        "active_squads_per_franchise": {
+          "243": 216,
+          "48": 390,
+          "478": 216,
+          "586": 126,
+          "570": 117,
+          "516": 180,
+          "22": 390,
+          "384": 186,
+          "567": 126,
+          "2": 390,
+          "28": 390,
+          "12": 222,
+          "148": 174,
+          "72": 216,
+          "236": 390,
+          "389": 192,
+          "282": 390,
+          "42": 258,
+          "510": 390,
+          "477": 390,
+          "517": 390,
+          "496": 123,
+          "61": 186,
+          "163": 132,
+          "474": 390,
+          "-1": 0,
+          "544": 222,
+          "87": 222,
+          "62": 168,
+          "439": 390,
+          "23": 390,
+          "487": 216,
+          "566": 132,
+          "41": 390,
+          "433": 390,
+          "57": 390,
+          "542": 275,
+          "10": 390,
+          "14": 390,
+          "294": 270,
+          "222": 390,
+          "375": 390,
+          "26": 390,
+          "25": 390,
+          "13": 390,
+          "150": 390,
+          "367": 270,
+          "486": 114,
+          "360": 390,
+          "20": 390,
+          "530": 390,
+          "110": 384,
+          "160": 234,
+          "432": 390,
+          "563": 186,
+          "227": 390,
+          "31": 390,
+          "441": 390,
+          "44": 390,
+          "5": 390,
+          "45": 390,
+          "364": 390,
+          "476": 258,
+          "503": 390,
+          "17": 390,
+          "56": 390,
+          "40": 390,
+          "223": 390,
+          "125": 390,
+          "19": 390,
+          "120": 258,
+          "65": 390,
+          "401": 390,
+          "18": 390,
+          "27": 390
+        },
+        "missing_active_state": 0,
+        "future_history": 0,
+        "duplicate_selections": 0,
+        "source_fnl_files": 0,
+        "freeze_verified": 927
+      },
+      "generated": "2026-10-03T20:21:01.061513+00:00",
+      "prepareSeconds": 14.6
+    },
+    "sourceAudit": {
+      "metadataFranchises": 75,
+      "virtualManagers": 24,
+      "forms": 8294,
+      "boardForms": 734,
+      "sourceFiles": 40078,
+      "lineupSizes": {
+        "11": 39921,
+        "0": 157
+      },
+      "issues": []
+    },
+    "snapshotAggregationProbe": {
+      "groups": 75,
+      "managers": 812,
+      "managerSquads": 40429,
+      "franchiseSquads": 37557,
+      "virtualManagers": 24,
+      "rawBytes": 95307125,
+      "compressedBytes": 10864436,
+      "aggregateMs": 802,
+      "totalMs": 1721,
+      "responseBytes": 8517060,
+      "reconciledManager": {
+        "name": "Fanton Maestro",
+        "franchise": 375,
+        "all": 45,
+        "active": 3,
+        "reserve": 41,
+        "personal": 1
+      },
+      "calendarRounds": [
+        "rfpl_2026:7",
+        "rfpl_2026:8",
+        "rfpl_2026:9",
+        "bundesliga_2026:2",
+        "bundesliga_2026:3",
+        "bundesliga_2026:4"
+      ],
+      "rssMB": 610,
+      "heapMB": 361,
+      "maxRssMB": 626
+    },
+    "import": {
+      "exitCode": 0,
+      "seconds": 175.5,
+      "commit": "53fa26fd50d4f39c81b802ea02f3cb65bfeccd0f"
+    },
+    "localPeakMemoryMB": {
+      "wrapper": 292.1,
+      "aggregate": 3311.9,
+      "enrich": 938.6,
+      "hypotheses": 445.1,
+      "export": 1562.3
+    }
+  },
+  "database": {
+    "sources": 40078,
+    "rounds": 65,
+    "groups": 75,
+    "snapshot": {
+      "version": 2,
+      "sha256": "011089afcc266d549674b4c843c7bee2100c8aaf6cb2fb3d76bc1c256fda8085",
+      "squads": 40429,
+      "generatedAt": "2026-10-04T15:59:37.992Z"
+    },
+    "keys": [
+      {
+        "duplicates": 0,
+        "mismatched_ids": 0
+      }
+    ]
+  },
+  "api": {
+    "status": 200,
+    "groups": 75,
+    "managers": 812,
+    "managerSquads": 40429,
+    "franchiseSquads": 37557,
+    "virtualManagers": 24,
+    "fullResponseMs": 3250,
+    "calendarResponseMs": 1196,
+    "calendarRounds": [
+      "bundesliga_2026:2",
+      "bundesliga_2026:3",
+      "bundesliga_2026:4",
+      "rfpl_2026:7",
+      "rfpl_2026:8",
+      "rfpl_2026:9"
+    ],
+    "emptyInterval": true,
+    "invalidFilters": {
+      "from=2026-02-30": 400,
+      "from=2026-10-04&to=2026-10-03": 400,
+      "from=1&to=50": 400,
+      "league=invalid": 400,
+      "season=2025/2026": 400
+    },
+    "anonymousStatus": 401,
+    "cacheControl": "private, no-store",
+    "reconciledManager": {
+      "name": "Fanton Maestro",
+      "franchise": 375,
+      "count": 45,
+      "activeRounds": 3,
+      "reserveRounds": 41,
+      "personalRounds": 1,
+      "missingLineups": 0
+    },
+    "release": {
+      "version": "0.3.113",
+      "commit": "8ca6dd2a0908ddb072adc6cc8cc520af525d2d3b"
+    },
+    "generated": "2026-10-04T15:59:37.992900+00:00"
+  },
+  "browser": {
+    "latestCharts": {
+      "chartPoints": 75,
+      "labelOverlaps": 0,
+      "labelHeightPx": 22,
+      "chartSelection": "шизы",
+      "url": "https://fantasy.tsyzhman.ru/franchises?franchise=-1"
+    },
+    "latestVirtualTablesThemesAndWidths": {
+      "virtualManagers": 24,
+      "filteredRows": 1,
+      "columns": [
+        "Франшиза / менеджер",
+        "Место по редкости",
+        "Редкость, 0–100",
+        "Владение основы",
+        "К общему полю, п.п.",
+        "Популярность капитана",
+        "H2h-Δ покупок",
+        "Δ формы, очки",
+        "На росте формы",
+        "Составов",
+        "Без состава"
+      ],
+      "download": "franchises.csv",
+      "virtualFreezeMessage": true,
+      "xfoHeadings": [
+        "Франшизы",
+        "шизы",
+        "Рейтинг франшиз по xФО XI",
+        "Менеджеры по xФО",
+        "xФО по чемпионатам",
+        "Примеры оценок футболистов"
+      ],
+      "widths": [
+        {
+          "width": 320,
+          "scrollWidth": 320
+        },
+        {
+          "width": 390,
+          "scrollWidth": 390
+        },
+        {
+          "width": 760,
+          "scrollWidth": 760
+        },
+        {
+          "width": 1440,
+          "scrollWidth": 1440
+        }
+      ]
+    },
+    "calendarValidationAndNavigation": {
+      "calendarRounds": [
+        "rfpl_2026:7",
+        "rfpl_2026:8",
+        "rfpl_2026:9",
+        "bundesliga_2026:2",
+        "bundesliga_2026:3",
+        "bundesliga_2026:4"
+      ],
+      "calendarUrl": "https://fantasy.tsyzhman.ru/franchises?from=2026-09-01&to=2026-09-30&completed=1&league=rfpl_2026&league=bundesliga_2026&franchise=375",
+      "invalidStatus": 400,
+      "error": "Начальная дата не может быть позже конечной.",
+      "emptyInterval": true,
+      "selectorOptions": 76,
+      "resetObservations": 40429,
+      "virtualXfoManagers": 24
+    },
+    "visualInspection": "Production graph labels and mobile dark screenshot inspected; all 75 graph labels readable, zero overlaps; light and dark views previously verified",
+    "temporaryBrowserClosed": true
+  },
+  "specSpace": {
+    "status": "current",
+    "diagnostics": [],
+    "fingerprint": "841904b534a338ef3f899a717007ea9909d1c6804f92d89305a69166643286b1",
+    "provenance": {
+      "commit": "8ca6dd2a0908ddb072adc6cc8cc520af525d2d3b",
+      "source": "git",
+      "observedAt": "2026-10-04T16:38:11.329Z",
+      "workingTree": {
+        "dirty": false,
+        "materialPaths": []
+      }
+    }
+  },
+  "operations": {
+    "beforeExpansion": {
+      "time": "2026-10-03T20:20:52.928141+00:00",
+      "memoryKB": {
+        "MemTotal": 12161744,
+        "MemAvailable": 5313224,
+        "SwapTotal": 0,
+        "SwapFree": 0
+      },
+      "containers": [
+        {
+          "name": "fantasy-scout-web",
+          "revision": "d4b7aa225f788f607aca316cf15a5effe9352883",
+          "restarts": 0,
+          "running": true,
+          "health": "healthy"
+        },
+        {
+          "name": "fantasy-scout-worker",
+          "revision": "d4b7aa225f788f607aca316cf15a5effe9352883",
+          "restarts": 0,
+          "running": true,
+          "health": "healthy"
+        }
+      ],
+      "stats": [
+        {
+          "BlockIO": "120MB / 12.3kB",
+          "CPUPerc": "0.00%",
+          "Container": "fantasy-scout-web",
+          "ID": "f38d8ed8d62c",
+          "MemPerc": "6.16%",
+          "MemUsage": "731.2MiB / 11.6GiB",
+          "Name": "fantasy-scout-web",
+          "NetIO": "3.29GB / 1.07GB",
+          "PIDs": "21"
+        },
+        {
+          "BlockIO": "2.83GB / 11.7GB",
+          "CPUPerc": "0.02%",
+          "Container": "fantasy-scout-worker",
+          "ID": "082ac4258ce3",
+          "MemPerc": "22.11%",
+          "MemUsage": "2.565GiB / 11.6GiB",
+          "Name": "fantasy-scout-worker",
+          "NetIO": "261GB / 72.7GB",
+          "PIDs": "22"
+        }
+      ],
+      "timer": "active",
+      "schedule": "NEXT                        LEFT          LAST                        PASSED       UNIT                     ACTIVATES\nSun 2026-10-04 00:47:00 MSK 1h 26min left Sat 2026-10-03 21:47:01 MSK 1h 33min ago fantasy-franchises.timer fantasy-franchises.service\n\n1 timers listed.",
+      "cacheKB": "87060\t/app/storage/franchises/source/http\n32876\t/app/storage/franchises/source/squads"
+    },
+    "final": {
+      "time": "2026-10-04T16:37:22.460651+00:00",
+      "memoryKB": {
+        "MemTotal": 12161744,
+        "MemAvailable": 5471324,
+        "SwapTotal": 0,
+        "SwapFree": 0
+      },
+      "containers": [
+        {
+          "name": "fantasy-scout-web",
+          "revision": "8ca6dd2a0908ddb072adc6cc8cc520af525d2d3b",
+          "restarts": 0,
+          "running": true,
+          "health": "healthy"
+        },
+        {
+          "name": "fantasy-scout-worker",
+          "revision": "8ca6dd2a0908ddb072adc6cc8cc520af525d2d3b",
+          "restarts": 0,
+          "running": true,
+          "health": "healthy"
+        }
+      ],
+      "stats": [
+        {
+          "BlockIO": "114MB / 12.3kB",
+          "CPUPerc": "0.00%",
+          "Container": "fantasy-scout-web",
+          "ID": "501967a7651d",
+          "MemPerc": "6.27%",
+          "MemUsage": "744.9MiB / 11.6GiB",
+          "Name": "fantasy-scout-web",
+          "NetIO": "644MB / 221MB",
+          "PIDs": "21"
+        },
+        {
+          "BlockIO": "5.86GB / 8.65GB",
+          "CPUPerc": "0.41%",
+          "Container": "fantasy-scout-worker",
+          "ID": "e51f4acdf002",
+          "MemPerc": "21.11%",
+          "MemUsage": "2.449GiB / 11.6GiB",
+          "Name": "fantasy-scout-worker",
+          "NetIO": "49.7GB / 14.4GB",
+          "PIDs": "21"
+        }
+      ],
+      "timer": "active",
+      "schedule": "NEXT                        LEFT         LAST                        PASSED    UNIT                     ACTIVATES\nSun 2026-10-04 21:47:00 MSK 2h 9min left Sun 2026-10-04 18:47:07 MSK 50min ago fantasy-franchises.timer fantasy-franchises.service\n\n1 timers listed.",
+      "cacheKB": "112580\t/app/storage/franchises/source/http\n162428\t/app/storage/franchises/source/squads"
+    },
+    "runtimeCleanup": {
+      "time": "2026-10-04T16:36:15.818325+00:00",
+      "service": "inactive",
+      "sharedLockFree": true,
+      "files": {
+        "locks": [],
+        "rollbackFiles": [
+          "rollback-WI-045/snapshot.json.gz",
+          "rollback-WI-045/meta.json"
+        ]
+      },
+      "snapshotFileSha256": "011089afcc266d549674b4c843c7bee2100c8aaf6cb2fb3d76bc1c256fda8085",
+      "temporaryUploadRemoved": true
+    },
+    "qaCleanup": {
+      "temporaryUsers": 0,
+      "temporarySessions": 0,
+      "temporaryAccounts": 0
+    },
+    "localCleanup": {
+      "time": "2026-10-04T16:37:52.5392144Z",
+      "activeTaskCollectors": 0,
+      "artifacts": [
+        {
+          "name": "WI-045-data",
+          "files": 75814,
+          "bytes": 602202630.0,
+          "removed": true
+        },
+        {
+          "name": "WI-045-lockfile",
+          "files": 4,
+          "bytes": 308958.0,
+          "removed": true
+        },
+        {
+          "name": "WI-045-source-check",
+          "files": 200,
+          "bytes": 1195924.0,
+          "removed": true
+        },
+        {
+          "name": "WI-045-franchise-data.tar.gz",
+          "files": 1,
+          "bytes": 25380717,
+          "removed": true
+        }
+      ],
+      "qaPrivateFilesRemain": false,
+      "qaBrowserStateRemains": false
+    },
+    "limits": {
+      "httpTtlSeconds": 1800,
+      "httpRetentionDays": 30,
+      "importerHeapMiB": 768,
+      "singleCollectorSharedLock": true
+    },
+    "retainedRollbackSnapshots": 1
+  }
+}
