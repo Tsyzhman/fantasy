@@ -235,6 +235,30 @@ function Scatter({
       })),
     };
   }, [rows, x, y, plotWidth]);
+  const pointColors = useMemo(() => {
+    const assigned: { id: string; px: number; py: number; color: number }[] =
+      [];
+    for (const point of [...(geometry?.points ?? [])].sort((a, b) =>
+      a.r.id.localeCompare(b.r.id),
+    )) {
+      let color = 0,
+        best = -1;
+      for (let candidate = 0; candidate < 8; candidate++) {
+        const distance = Math.min(
+          Infinity,
+          ...assigned
+            .filter((p) => p.color === candidate)
+            .map((p) => (p.px - point.px) ** 2 + (p.py - point.py) ** 2),
+        );
+        if (distance > best) {
+          best = distance;
+          color = candidate;
+        }
+      }
+      assigned.push({ id: point.r.id, px: point.px, py: point.py, color });
+    }
+    return new Map(assigned.map((p) => [p.id, `var(--plot-color-${p.color})`]));
+  }, [geometry]);
   const labels = useMemo(
     () =>
       compactLabels(
@@ -334,6 +358,7 @@ function Scatter({
                   aria-pressed={selected === r.id}
                   className={styles.plotPoint}
                   style={{
+                    color: pointColors.get(r.id),
                     opacity:
                       (active && active.id !== r.id) || !matchIds.has(r.id)
                         ? 0.45
@@ -356,20 +381,7 @@ function Scatter({
                 >
                   <title>{r.name}</title>
                   <circle cx={px} cy={py} r="10" fill="transparent" />
-                  <circle cx={px} cy={py} r="3" className={styles.dot} />
-                  <line
-                    className={styles.labelLeader}
-                    x1={px}
-                    y1={py}
-                    x2={Math.max(
-                      labels.get(r.id)!.x,
-                      Math.min(
-                        px,
-                        labels.get(r.id)!.x + labels.get(r.id)!.width,
-                      ),
-                    )}
-                    y2={labels.get(r.id)!.y + 6}
-                  />
+                  <circle cx={px} cy={py} r="3.5" className={styles.dot} />
                   <text
                     className={styles.pointLabel}
                     x={labels.get(r.id)!.x + 2}
@@ -380,7 +392,11 @@ function Scatter({
                 </g>
               ))}
               {activePoint && (
-                <g pointerEvents="none" aria-hidden="true">
+                <g
+                  pointerEvents="none"
+                  aria-hidden="true"
+                  style={{ color: pointColors.get(activePoint.r.id) }}
+                >
                   <line
                     className={styles.crosshair}
                     x1="56"
@@ -441,8 +457,8 @@ function Scatter({
           )}
         </div>
         <p className={styles.plotHint}>
-          Сокращённые названия рядом с точками. Полное название — при наведении.
-          На узком экране график можно прокрутить вбок.
+          Точка и её подпись одного цвета. Полное название — при наведении. На
+          узком экране график можно прокрутить вбок.
         </p>
       </div>
       <details className={styles.plotDirectory}>

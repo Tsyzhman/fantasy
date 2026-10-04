@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.117 - 2026-10-04
+
+- Replace franchise chart label connectors with matching point/text colors in both themes.
+
 ## 0.3.116 - 2026-10-04
 
 - Split purchase/form charts into stacked groups at horizontal H2h purchase delta 12 percentage points, preserving axes, labels, and missing-value access.

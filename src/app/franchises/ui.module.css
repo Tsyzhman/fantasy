@@ -283,7 +283,7 @@
   outline: none;
 }
 .dot {
-  fill: var(--accent-primary);
+  fill: currentColor;
   stroke: var(--surface-1);
   stroke-width: 1.5;
 }
@@ -292,7 +292,7 @@
   stroke-width: 3;
 }
 .activeDot {
-  fill: var(--accent-primary);
+  fill: currentColor;
   stroke: var(--text-primary);
   stroke-width: 2;
 }
@@ -604,17 +604,13 @@
 }
 .scatter .pointLabel {
   font-size: 10px;
-  fill: var(--text-primary);
+  fill: currentColor;
   paint-order: stroke;
   stroke: var(--surface-1);
   stroke-width: 2.5px;
   stroke-linejoin: round;
 }
-.labelLeader {
-  stroke: var(--text-muted);
-  stroke-width: 0.6;
-  opacity: 0.5;
-}
+
 .plotDirectory summary {
   cursor: pointer;
   font-size: 12px;
@@ -622,4 +618,26 @@
 }
 .plotDirectory[open] .directoryTools {
   margin-top: 14px;
+}
+
+/* Paired point/label colors: dark text in light mode, bright text in dark mode. */
+.scatter {
+  --plot-color-0: #1d4ed8;
+  --plot-color-1: #b91c1c;
+  --plot-color-2: #047857;
+  --plot-color-3: #7e22ce;
+  --plot-color-4: #a04b00;
+  --plot-color-5: #0e7490;
+  --plot-color-6: #be185d;
+  --plot-color-7: #526414;
+}
+:global([data-theme="dark"]) .scatter {
+  --plot-color-0: #93b4ff;
+  --plot-color-1: #ff9494;
+  --plot-color-2: #6ee7b7;
+  --plot-color-3: #d8a4ff;
+  --plot-color-4: #ffc078;
+  --plot-color-5: #67e8f9;
+  --plot-color-6: #f9a8d4;
+  --plot-color-7: #d1e580;
 }
