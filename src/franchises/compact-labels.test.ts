@@ -56,3 +56,21 @@ test("bounded layout keeps every label and never mutates chart coordinates", () 
       );
     }
 });
+
+test("dense labels stay close to their own point without moving data", () => {
+  const points = Array.from({ length: 30 }, (_, i) => ({
+    id: String(i),
+    name: `Team ${i}`,
+    x: 250 + (i % 5) * 3,
+    y: 150 + Math.floor(i / 5) * 3,
+  }));
+  const before = structuredClone(points);
+  const labels = compactLabels(points, 720);
+  for (const p of points) {
+    const b = labels.get(p.id)!;
+    const dx = Math.max(b.x - p.x, p.x - b.x - b.width, 0);
+    const dy = Math.max(b.y - p.y, p.y - b.y - b.height, 0);
+    assert.ok(Math.hypot(dx, dy) <= 19, `Detached label ${p.id}`);
+  }
+  assert.deepEqual(points, before);
+});

@@ -384,7 +384,16 @@ function Scatter({
                   <circle cx={px} cy={py} r="3.5" className={styles.dot} />
                   <text
                     className={styles.pointLabel}
-                    x={labels.get(r.id)!.x + 2}
+                    textAnchor={
+                      labels.get(r.id)!.x + labels.get(r.id)!.width <= px
+                        ? "end"
+                        : "start"
+                    }
+                    x={
+                      labels.get(r.id)!.x + labels.get(r.id)!.width <= px
+                        ? labels.get(r.id)!.x + labels.get(r.id)!.width - 2
+                        : labels.get(r.id)!.x + 2
+                    }
                     y={labels.get(r.id)!.y + 10}
                   >
                     {labels.get(r.id)!.text}

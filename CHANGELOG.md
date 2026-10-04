@@ -2,7 +2,7 @@
 
 ## 0.3.117 - 2026-10-04
 
-- Replace franchise chart label connectors with matching point/text colors in both themes.
+- Replace franchise chart label connectors with matching point/text colors in both themes; keep labels within the immediate point neighborhood.
 
 ## 0.3.116 - 2026-10-04
 

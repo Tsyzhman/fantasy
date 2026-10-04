@@ -81,7 +81,7 @@ export function compactLabels(
         0,
       ) + 4;
     const candidates: (Label & { cost: number })[] = [];
-    for (let radius = 8; radius <= 152; radius += 12) {
+    for (let radius = 6; radius <= 18; radius += 4) {
       for (let angle = 0; angle < 16; angle++) {
         const dx = Math.cos((angle * Math.PI) / 8),
           dy = Math.sin((angle * Math.PI) / 8);
