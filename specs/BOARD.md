@@ -6,7 +6,6 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
-| [WI-046](work/WI-046-runtime-resource-optimization.md) | Optimize runtime resources without changing product behavior | common/main, common/structure | @tsyzhman | 2026-10-04 | — |
 
 ## Backlog
 
@@ -24,6 +23,7 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-046](work/archive/2026/WI-046-runtime-resource-optimization.md) | Optimize runtime resources without changing product behavior | @tsyzhman | 2026-10-04 |
 | [WI-045](work/archive/2026/WI-045-franchise-calendar-report.md) | Complete franchise histories and calendar report | @tsyzhman | 2026-10-04 |
 | [WI-044](work/archive/2026/WI-044-fpl-active-roster-import.md) | Import FPL squads with provider positions | @tsyzhman | 2026-09-28 |
 | [WI-043](work/archive/2026/WI-043-production-browser-smoke.md) | Restore the full production browser smoke | @tsyzhman | 2026-09-28 |
