@@ -60,7 +60,8 @@ test('calendar corrections are atomic, idempotent, scoped, audited and protect v
   const disagreeing = structuredClone(clubs); disagreeing[0].fixtures[0].week = 6;
   assert.equal((await importSportsFantasyCalendar(db, contest.id, disagreeing, now)).deferred, 1);
   assert.equal((await db.khlMatchFantasyWeek.findFirstOrThrow({ where: { matchId: match.id, contestId: contest.id } })).weekId, target.id);
-  await db.khlFantasyWeek.update({ where: { id: target.id }, data: { verified: true } });
+  await db.khlFantasyWeek.update({ where: { id: target.id }, data: { verified: true,
+    startsAt: new Date('2026-10-05T00:00:00Z'), endsAt: new Date('2026-10-12T00:00:00Z'), timezone: 'Europe/Moscow' } });
   const moving = structuredClone(clubs); moving.forEach(c => { c.fixtures[0].week = 6; });
   assert.equal((await importSportsFantasyCalendar(db, contest.id, moving, now)).deferred, 1);
   assert.equal((await db.khlMatchFantasyWeek.findFirstOrThrow({ where: { matchId: match.id, contestId: contest.id } })).weekId, target.id);
