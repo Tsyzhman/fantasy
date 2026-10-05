@@ -1,0 +1,91 @@
+{
+  "checkedAt": "2026-10-05T08:50:04.616418+00:00",
+  "statsCount": 7952,
+  "statsHash": "782921b9b6a7d4eaabd83d8fc76442ca",
+  "fpCount": 4987,
+  "fpHash": "731f669ac7706d807671385ae92b241e",
+  "assignments": [
+    {
+      "id": "cmtsdonb103v5g2hgoqqb3e1m",
+      "date": "2026-10-05T14:00:00",
+      "home": "Металлург Мг",
+      "away": "Адмирал",
+      "week": "4"
+    },
+    {
+      "id": "cmtsdonba03veg2hgi5naaux9",
+      "date": "2026-10-05T15:00:00",
+      "home": "Лада",
+      "away": "Драконы",
+      "week": "4"
+    },
+    {
+      "id": "cmtsdonbt03vwg2hgjbbrwov7",
+      "date": "2026-10-05T16:30:00",
+      "home": "Динамо Мн",
+      "away": "Торпедо",
+      "week": "4"
+    },
+    {
+      "id": "cmtsdonc203w5g2hgvuchxutr",
+      "date": "2026-10-05T16:30:00",
+      "home": "ЦСКА",
+      "away": "Салават Юлаев",
+      "week": "4"
+    },
+    {
+      "id": "cmtsdonbk03vng2hgay3wteb5",
+      "date": "2026-10-05T16:30:00",
+      "home": "Ак Барс",
+      "away": "Локомотив",
+      "week": "4"
+    },
+    {
+      "id": "cmu10tcy507404infznidzpci",
+      "date": "2026-10-12T09:00:00",
+      "home": "Амур",
+      "away": "Лада",
+      "week": "5"
+    },
+    {
+      "id": "cmu1hoj8a01r19cabgagx835a",
+      "date": "2026-10-12T11:30:00",
+      "home": "Салават Юлаев",
+      "away": "Нефтехимик",
+      "week": "5"
+    },
+    {
+      "id": "cmu1hoj8o01ra9cab7o9yl2xl",
+      "date": "2026-10-12T14:30:00",
+      "home": "Барыс",
+      "away": "Сибирь",
+      "week": "5"
+    },
+    {
+      "id": "cmu1hoj9801rs9cab9shm447g",
+      "date": "2026-10-12T16:00:00",
+      "home": "Ак Барс",
+      "away": "ХК Сочи",
+      "week": "5"
+    },
+    {
+      "id": "cmu1hoj8y01rj9cabfqcq53z7",
+      "date": "2026-10-12T16:30:00",
+      "home": "Торпедо",
+      "away": "Металлург Мг",
+      "week": "5"
+    },
+    {
+      "id": "cmu1hoj9i01s19cab99vdrn74",
+      "date": "2026-10-12T16:30:00",
+      "home": "Драконы",
+      "away": "Динамо Мн",
+      "week": "5"
+    }
+  ],
+  "productionVersion": "0.3.117",
+  "productionCommit": "f6b608ab20d77b723038ed5fdec179fc2a0761f5",
+  "contestId": "cmtr4grkd00056htzwpdv4fwu",
+  "dateTimeZone": "UTC",
+  "contentHashAlgorithm": "md5(string_agg((to_jsonb(row)-'observedAt'-'availableAt'-'revision')::text, '' ORDER BY row.id))"
+}

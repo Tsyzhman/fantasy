@@ -20,6 +20,7 @@ import { importProtocolArchive } from "../src/server/khl/protocol-archive-import
 import { runKhlDailySync } from "../src/server/khl/daily-sync";
 import { refreshKhlOdds } from "../src/server/khl/odds-sync";
 import { importIdentityAudit } from "../src/server/khl/identity-audit";
+import { refreshKhlFantasyCalendar } from "../src/server/khl/fantasy-calendar";
 const db = new PrismaClient();
 async function main() {
   const [command, contestId, fromText, toText] = process.argv.slice(2);
@@ -30,6 +31,7 @@ async function main() {
     console.log(await importIdentityAudit(db, contestId, JSON.parse(await readFile(fromText, 'utf8')), !process.argv.includes('--apply'))); return;
   }
   if (command === "odds" && contestId) { console.log(await refreshKhlOdds(db, contestId, true)); return; }
+  if (command === "weeks" && contestId) { console.log(JSON.stringify(await refreshKhlFantasyCalendar(db, contestId))); return; }
   if (["daily", "hourly"].includes(command) && contestId) { const result = await runKhlDailySync(db, contestId); console.log(JSON.stringify(result)); if (result.status === "PARTIAL") process.exitCode = 2; return; }
   if (command === "prune") { console.log(await pruneKhl(db, new Date())); return; }
   if (command === "bootstrap" && contestId) {
@@ -76,7 +78,7 @@ async function main() {
     }
     throw new Error("HISTORY_BATCH_LIMIT");
   }
-  if (!["catalog", "calendar"].includes(command) || !contestId) throw new Error("Usage: status | prune | bootstrap metadata.json | catalog CONTEST | statistics CONTEST [--all] | calendar CONTEST FROM_ISO TO_ISO | baseline CONTEST WEEK");
+  if (!["catalog", "calendar"].includes(command) || !contestId) throw new Error("Usage: status | prune | bootstrap metadata.json | catalog CONTEST | statistics CONTEST [--all] | weeks CONTEST | calendar CONTEST FROM_ISO TO_ISO | baseline CONTEST WEEK");
   const contest = await db.khlContest.findUniqueOrThrow({ where: { id: contestId } });
   const provider = command === "catalog" ? "SPORTS_RU" : "KHL_MOBILE";
   if (command === "calendar") {

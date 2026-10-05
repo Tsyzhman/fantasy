@@ -18,7 +18,7 @@ test('KHL visible statistics include refresh status on every view and preserve i
  expect(result.headers()['cache-control']).toContain('no-store');
  const status = (await result.json()).data;
  expect(status.catalogUpdatedAt).toMatch(/^\d{4}-\d{2}-\d{2}T/);
- expect(status.lastAttempt?.sources.length ?? 0).toBeLessThanOrEqual(10);
+ expect(status.lastAttempt?.sources.length ?? 0).toBeLessThanOrEqual(11);
  expect(JSON.stringify(status)).not.toContain('"detail"');
  await page.clock.install();
  for (const view of ['squad','players','calendar']) {

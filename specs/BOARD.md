@@ -6,6 +6,7 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
+| [WI-049](work/WI-049-khl-calendar-reconciliation.md) | Reconcile KHL calendar weeks | khl/INFRA-001, INFRA-002 | @tsyzhman | 2026-10-05 | — |
 
 ## Backlog
 

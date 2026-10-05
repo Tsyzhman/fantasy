@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.118 - 2026-10-05
+
+- Reconcile KHL fantasy weeks against fresh Sports calendars from both clubs, correcting stale assignments while preserving verified boundaries and historical statistics.
+- Refresh club calendars in the existing hourly collector independently of cached player history; retain bounded correction evidence and invalidate affected week revisions.
+
 ## 0.3.117 - 2026-10-04
 
 - Replace franchise chart label connectors with matching point/text colors in both themes; keep labels within the immediate point neighborhood.
