@@ -1,5 +1,6 @@
 /** @spec spec://modules/khl/INFRA-001-khl-data-ingestion#sync-status */
 export type KhlSyncOutcome = "DONE" | "PARTIAL" | "PENDING";
+export const KHL_SYNC_SOURCE_LIMIT = 11;
 export type KhlSyncSource = { source: string; status: "DONE" | "FAILED" | "PENDING" };
 export type KhlSyncAttempt = { startedAt: string | null; completedAt: string; status: KhlSyncOutcome; sources: KhlSyncSource[] };
 export type KhlSyncStatus = {
@@ -22,7 +23,7 @@ function attempt(value: unknown, completedAt: unknown): KhlSyncAttempt | null {
   const row = record(value), time = date(completedAt);
   if (!time || !["DONE", "PARTIAL", "PENDING"].includes(String(row.status))) return null;
   const sources: KhlSyncSource[] = [];
-  if (Array.isArray(row.sources)) for (const value of row.sources.slice(0, 10)) {
+  if (Array.isArray(row.sources)) for (const value of row.sources.slice(0, KHL_SYNC_SOURCE_LIMIT)) {
     const source = record(value);
     if (typeof source.source !== "string" || !["DONE", "FAILED", "PENDING"].includes(String(source.status))) continue;
     sources.push({ source: source.source.slice(0, 120), status: source.status as KhlSyncSource["status"] });
@@ -47,7 +48,7 @@ export function khlRunningCursor(previous: KhlSyncStatus, startedAt: Date) {
 
 export function khlCompletedCursor(previous: KhlSyncStatus, startedAt: Date, completedAt: Date, results: { source: string; status: string; detail: unknown }[]) {
   const status: KhlSyncOutcome = results.some(r => r.status === "FAILED") ? "PARTIAL" : results.some(r => r.status === "PENDING") ? "PENDING" : "DONE";
-  return { schemaVersion: 2, startedAt: startedAt.toISOString(), status, lastSuccessAt: status === "DONE" ? completedAt.toISOString() : previous.lastSuccessAt, sources: results.slice(0, 10).map(r => ({ source: r.source.slice(0, 120), status: r.status, detail: (JSON.stringify(r.detail) ?? "").slice(0, 2000) })) };
+  return { schemaVersion: 2, startedAt: startedAt.toISOString(), status, lastSuccessAt: status === "DONE" ? completedAt.toISOString() : previous.lastSuccessAt, sources: results.slice(0, KHL_SYNC_SOURCE_LIMIT).map(r => ({ source: r.source.slice(0, 120), status: r.status, detail: (JSON.stringify(r.detail) ?? "").slice(0, 2000) })) };
 }
 
 const moscowTime = new Intl.DateTimeFormat("ru-RU", { timeZone: "Europe/Moscow", day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", second: "2-digit", hourCycle: "h23" });

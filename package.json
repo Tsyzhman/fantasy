@@ -1,6 +1,6 @@
 {
   "name": "fantasy-scout",
-  "version": "0.3.114",
+  "version": "0.3.119",
   "private": true,
   "engines": {
     "node": ">=20.9.0"
@@ -118,7 +118,8 @@
     "js-yaml": "4.3.2",
     "nanoid": "3.3.18",
     "postcss": "8.5.25",
-    "sharp": "0.35.4",
+    "sharp": "0.35.5",
+    "source-map-js": "1.2.2",
     "tmp": "^0.2.6",
     "uuid": "11.1.1"
   }

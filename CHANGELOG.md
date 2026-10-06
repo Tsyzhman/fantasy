@@ -1,5 +1,29 @@
 # Changelog
 
+## 0.3.119 - 2026-10-06
+
+- Align the production browser smoke with the bounded KHL source contract and the catalog snapshots actually displayed after history and view changes.
+- Verify explicit unavailable-forecast messages during publication while preserving formula, coverage, sorting and complete XLSX checks for available data.
+- Patch sharp to 0.35.5 and source-map-js to 1.2.2 to clear the production dependency audit failures.
+
+## 0.3.118 - 2026-10-05
+
+- Reconcile KHL fantasy weeks against fresh Sports calendars from both clubs, correcting stale assignments while preserving verified boundaries and historical statistics.
+- Refresh club calendars in the existing hourly collector independently of cached player history; retain bounded correction evidence and invalidate affected week revisions.
+
+## 0.3.117 - 2026-10-04
+
+- Replace franchise chart label connectors with matching point/text colors in both themes; keep labels within the immediate point neighborhood.
+
+## 0.3.116 - 2026-10-04
+
+- Split purchase/form charts into stacked groups at horizontal H2h purchase delta 12 percentage points, preserving axes, labels, and missing-value access.
+
+## 0.3.115 - 2026-10-04
+
+- Redesign franchise scatter charts with small abbreviated names beside every point, an expandable searchable directory, exact values, sorting and profile selection (WI-047/WI-048). Split the ownership/captain chart into stacked groups at 35% starting-lineup ownership (horizontal axis).
+- Preserve complete populations, CSV, calendar filters, formulas and bounded report caching; remove obsolete dense-label layout code.
+
 ## 0.3.114 - 2026-10-04
 
 - Reuse franchise metric groups and bounded, revision-aware report JSON without changing calculations or filters.

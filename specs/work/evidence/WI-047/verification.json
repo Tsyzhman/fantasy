@@ -1,0 +1,177 @@
+{
+  "workItem": "WI-047",
+  "date": "2026-10-04",
+  "version": "0.3.115",
+  "status": "verified-local-production-build",
+  "productionDeployed": false,
+  "baseCommit": "bf973a435b269a75912da6dbf9e024e639a6bbe6",
+  "snapshot": {
+    "sha256": "011089afcc266d549674b4c843c7bee2100c8aaf6cb2fb3d76bc1c256fda8085",
+    "generated": "2026-10-04T15:59:37.992900+00:00",
+    "groups": 75,
+    "squadObservations": 40429,
+    "duplicateSquads": 0
+  },
+  "before": {
+    "desktopChartHeightPx": 1923.375,
+    "mobileChartHidden": true
+  },
+  "after": {
+    "groups": 75,
+    "duplicateGroups": 0,
+    "memoryBefore": {
+      "Documents": 2,
+      "Nodes": 29989,
+      "JSHeapUsedSize": 15030872
+    },
+    "memoryAfter": {
+      "Documents": 2,
+      "Nodes": 29988,
+      "JSHeapUsedSize": 15070720
+    },
+    "chartInteractionRequests": 0,
+    "layouts": [
+      {
+        "width": 1440,
+        "theme": "light",
+        "overflow": false,
+        "chart": {
+          "x": 51,
+          "y": 190.9375,
+          "width": 990,
+          "height": 430
+        }
+      },
+      {
+        "width": 1440,
+        "theme": "dark",
+        "overflow": false,
+        "chart": {
+          "x": 51,
+          "y": 190.9375,
+          "width": 990,
+          "height": 430
+        }
+      },
+      {
+        "width": 760,
+        "theme": "light",
+        "overflow": false,
+        "chart": {
+          "x": 25,
+          "y": 38.875,
+          "width": 710,
+          "height": 426
+        }
+      },
+      {
+        "width": 760,
+        "theme": "dark",
+        "overflow": false,
+        "chart": {
+          "x": 25,
+          "y": 38.875,
+          "width": 710,
+          "height": 426
+        }
+      },
+      {
+        "width": 390,
+        "theme": "light",
+        "overflow": false,
+        "chart": {
+          "x": 25,
+          "y": 73.859375,
+          "width": 340,
+          "height": 204
+        }
+      },
+      {
+        "width": 390,
+        "theme": "dark",
+        "overflow": false,
+        "chart": {
+          "x": 25,
+          "y": 73.859375,
+          "width": 340,
+          "height": 204
+        }
+      },
+      {
+        "width": 320,
+        "theme": "light",
+        "overflow": false,
+        "chart": {
+          "x": 25,
+          "y": 73.828125,
+          "width": 270,
+          "height": 162
+        }
+      },
+      {
+        "width": 320,
+        "theme": "dark",
+        "overflow": false,
+        "chart": {
+          "x": 25,
+          "y": 73.828125,
+          "width": 270,
+          "height": 162
+        }
+      }
+    ],
+    "profileAndTabs": true
+  },
+  "edgeChecks": {
+    "csv": true,
+    "calendar": true,
+    "virtualGroup": true,
+    "empty": true,
+    "invalidStatus": 400,
+    "missingAndCoincident": true
+  },
+  "finalLayout": {
+    "allTicksContained": true,
+    "groups": 76,
+    "leagueURL": "http://localhost:3107/franchises?from=2026-09-01&to=2026-09-30&league=epl_2026"
+  },
+  "checks": {
+    "fullCheck": "passed",
+    "tests": 1225,
+    "passed": 1223,
+    "skipped": 2,
+    "failed": 0,
+    "lintErrors": 0,
+    "lintWarnings": 231,
+    "lintNote": "Includes existing Russian-only UI warnings and 10 additional untranslated-text warnings in the redesigned chart, consistent with this section; no errors.",
+    "typecheck": "passed",
+    "build": "passed",
+    "targetedAnalyticsAndCacheTests": 17
+  },
+  "invariants": {
+    "serverAndApiDiff": "none",
+    "analyticsFormulasDiff": "none",
+    "newDependencies": 0,
+    "obsoleteLabelHelperRemoved": true,
+    "csvEscapingAndObjectUrlRevocation": "shared with existing table exporter"
+  },
+  "resources": {
+    "browserHeapMeasurement": "GC-collected Chromium samples around 25 search/selection iterations; small variation does not prove long-term leak freedom.",
+    "nextCacheMiB": 972.6,
+    "cachePolicy": "Existing bounded API cache unchanged; no new cache or background work.",
+    "cleanup": {
+      "qaUsersRemaining": 0,
+      "qaSessionsRemoved": true,
+      "localAppStopped": true,
+      "localDatabaseStopped": true,
+      "browserClosed": true,
+      "temporarySnapshotAndPrivateStateRemoved": true,
+      "sourceDataPreserved": true
+    }
+  },
+  "research": [
+    "https://www.reddit.com/r/datavisualization/comments/172o6t8",
+    "https://stackoverflow.com/questions/68195130/responsive-recharts",
+    "https://recharts.github.io/en-US/guide/sizes/"
+  ]
+}

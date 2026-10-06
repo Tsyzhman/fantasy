@@ -73,11 +73,11 @@ test("interrupted refresh retains the latest completed error without appearing p
 test("status storage and public summaries stay bounded without accumulating run history", () => {
   const results = Array.from({ length: 100 }, () => ({ source: "x".repeat(500), status: "FAILED", detail: "y".repeat(5000) }));
   const cursor = khlCompletedCursor(good, first, finished, results);
-  assert.equal(cursor.sources.length, 10);
+  assert.equal(cursor.sources.length, 11);
   assert.ok(cursor.sources.every(s => s.source.length === 120 && s.detail.length === 2000));
   const state = khlSyncStatus({ cursor, completedAt: finished }, first);
   const running = khlRunningCursor(state, first);
-  assert.ok(JSON.stringify(running).length < 2500);
+  assert.ok(JSON.stringify(running).length < 2700);
   assert.ok(!JSON.stringify(running.previousAttempt).includes("previousAttempt"));
 });
 

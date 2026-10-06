@@ -1,10 +1,10 @@
 "use client";
 /** @spec spec://modules/franchises/FEAT-005-franchise-analytics#ui */
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Analytics, Summary } from "@/franchises/analytics";
 import { number } from "@/franchises/analytics";
-import { chartLabels } from "@/franchises/chart-labels";
 import styles from "./ui.module.css";
+import { compactLabels } from "@/franchises/compact-labels";
 
 type Row = Record<string, string | number | null>;
 type Column = { key: string; label: string; digits?: number; suffix?: string };
@@ -17,20 +17,30 @@ const fmt = (v: number | null | undefined, d = 1) =>
       });
 const metric = (r: Summary, key: string) => r.metrics[key] ?? null;
 const dateLabel = (value: string) => value.split("-").reverse().join(".");
-const palette = [
-  "#4777bb",
-  "#9267b5",
-  "#3c826b",
-  "#b45165",
-  "#ad7917",
-  "#2f8592",
-  "#9f578e",
-  "#6075a3",
-  "#658642",
-  "#b96943",
-  "#3a866a",
-  "#7374c2",
-];
+
+function downloadCsv(rows: Row[], columns: Column[]) {
+  const escape = (v: unknown) =>
+    '"' +
+    (typeof v === "string" && /^[=+@-]/.test(v)
+      ? "'" + v
+      : String(v ?? "")
+    ).replaceAll('"', '""') +
+    '"';
+  const csv =
+    "\ufeff" +
+    [
+      columns.map((c) => escape(c.label)).join(";"),
+      ...rows.map((r) => columns.map((c) => escape(r[c.key])).join(";")),
+    ].join("\r\n");
+  const url = URL.createObjectURL(
+    new Blob([csv], { type: "text/csv;charset=utf-8" }),
+  );
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "franchises.csv";
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 
 function Table({
   rows,
@@ -67,29 +77,7 @@ function Table({
           : String(x).localeCompare(String(y), "ru")) * (descending ? -1 : 1)
       );
     });
-  function download() {
-    const escape = (v: unknown) =>
-      '"' +
-      (typeof v === "string" && /^[=+@-]/.test(v)
-        ? "'" + v
-        : String(v ?? "")
-      ).replaceAll('"', '""') +
-      '"';
-    const csv =
-      "\ufeff" +
-      [
-        columns.map((c) => escape(c.label)).join(";"),
-        ...visible.map((r) => columns.map((c) => escape(r[c.key])).join(";")),
-      ].join("\r\n");
-    const url = URL.createObjectURL(
-      new Blob([csv], { type: "text/csv;charset=utf-8" }),
-    );
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "franchises.csv";
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }
+
   return (
     <div className={styles.tableBlock}>
       <div className={styles.tableTools}>
@@ -100,7 +88,10 @@ function Table({
           onChange={(e) => setSearch(e.target.value)}
         />
         <span>{visible.length} строк</span>
-        <button className="ui-button" onClick={download}>
+        <button
+          className="ui-button"
+          onClick={() => downloadCsv(visible, columns)}
+        >
           Скачать CSV
         </button>
       </div>
@@ -188,6 +179,7 @@ function Stats({
   );
 }
 
+/** @spec spec://modules/franchises/FEAT-005-franchise-analytics#ui */
 function Scatter({
   rows,
   x,
@@ -201,146 +193,421 @@ function Scatter({
   y: string;
   xlabel: string;
   ylabel: string;
-  onSelect: (s: string) => void;
+  onSelect: (id: string) => void;
 }) {
+  const plotHeight = rows.length > 40 ? 490 : 390;
+  const plotBottom = plotHeight - 40;
+  const plotSpan = plotHeight - 80;
+  const [selected, setSelected] = useState<string | null>(null);
   const [hover, setHover] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [sort, setSort] = useState("name");
+  const plotRef = useRef<HTMLDivElement>(null);
+  const [plotWidth, setPlotWidth] = useState(960);
+  useEffect(() => {
+    const node = plotRef.current;
+    if (!node) return;
+    const observer = new ResizeObserver(([entry]) =>
+      setPlotWidth(
+        Math.max(
+          rows.length > 40 ? 960 : 720,
+          Math.round(entry.contentRect.width),
+        ),
+      ),
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [rows.length]);
   const geometry = useMemo(() => {
     const valid = rows.filter(
       (r) => metric(r, x) !== null && metric(r, y) !== null,
     );
     if (!valid.length) return null;
-    const xs = valid.map((r) => metric(r, x)!),
-      ys = valid.map((r) => metric(r, y)!);
-    const dx = Math.max(0.1, Math.max(...xs) - Math.min(...xs)),
-      dy = Math.max(0.1, Math.max(...ys) - Math.min(...ys));
+    const xs = valid.map((r) => metric(r, x)!);
+    const ys = valid.map((r) => metric(r, y)!);
+    const dx = Math.max(0.1, Math.max(...xs) - Math.min(...xs));
+    const dy = Math.max(0.1, Math.max(...ys) - Math.min(...ys));
     const loX = Math.min(...xs) - dx * 0.13,
-      hiX = Math.max(...xs) + dx * 0.13,
-      loY = Math.min(...ys) - dy * 0.15,
+      hiX = Math.max(...xs) + dx * 0.13;
+    const loY = Math.min(...ys) - dy * 0.15,
       hiY = Math.max(...ys) + dy * 0.15;
-    const plotHeight = Math.max(290, valid.length * 14);
-    const bottom = 40 + plotHeight;
-    const points = valid.map((r, i) => ({
-      r,
-      i,
-      px: 62 + ((metric(r, x)! - loX) / (hiX - loX)) * 710,
-      py: bottom - ((metric(r, y)! - loY) / (hiY - loY)) * plotHeight,
-    }));
-    const labels = chartLabels(
-      points.map((p) => ({ id: p.r.id, name: p.r.name, x: p.px, y: p.py })),
-      { left: 63, right: 788, top: 31, bottom: bottom + 7 },
+    return {
+      loX,
+      hiX,
+      loY,
+      hiY,
+      points: valid.map((r) => ({
+        r,
+        px: 56 + ((metric(r, x)! - loX) / (hiX - loX)) * (plotWidth - 80),
+        py: plotBottom - ((metric(r, y)! - loY) / (hiY - loY)) * plotSpan,
+      })),
+    };
+  }, [rows, x, y, plotWidth, plotBottom, plotSpan]);
+  const labels = useMemo(() => {
+    const context =
+      typeof document === "undefined"
+        ? null
+        : document.createElement("canvas").getContext("2d");
+    if (context) context.font = "10px Arial";
+    return compactLabels(
+      geometry?.points.map((p) => ({
+        id: p.r.id,
+        name: p.r.name,
+        x: p.px,
+        y: p.py,
+      })) ?? [],
+      plotWidth,
+      context ? (text) => context.measureText(text).width : undefined,
+      plotHeight,
     );
-    return { valid, loX, hiX, loY, hiY, points, labels, plotHeight, bottom };
-  }, [rows, x, y]);
-  if (!geometry) return <p>Недостаточно данных для графика.</p>;
-  const { valid, loX, hiX, loY, hiY, points, labels, plotHeight, bottom } =
-    geometry;
+  }, [geometry, plotWidth, plotHeight]);
+  const pointColors = useMemo(() => {
+    const points = geometry?.points ?? [];
+    const proximity = (
+      a: (typeof points)[number],
+      b: (typeof points)[number],
+    ) => {
+      const la = labels.get(a.r.id)!,
+        lb = labels.get(b.r.id)!;
+      const leftA = Math.min(a.px - 4, la.x),
+        rightA = Math.max(a.px + 4, la.x + la.width);
+      const leftB = Math.min(b.px - 4, lb.x),
+        rightB = Math.max(b.px + 4, lb.x + lb.width);
+      const topA = Math.min(a.py - 4, la.y),
+        bottomA = Math.max(a.py + 4, la.y + la.height);
+      const topB = Math.min(b.py - 4, lb.y),
+        bottomB = Math.max(b.py + 4, lb.y + lb.height);
+      return Math.hypot(
+        Math.max(leftA - rightB, leftB - rightA, 0),
+        Math.max(topA - bottomB, topB - bottomA, 0),
+      );
+    };
+    const assigned = new Map<string, number>();
+    const remaining = [...points];
+    while (remaining.length) {
+      remaining.sort((a, b) => {
+        const saturation = (p: typeof a) =>
+          new Set(
+            points
+              .filter((q) => assigned.has(q.r.id) && proximity(p, q) < 35)
+              .map((q) => assigned.get(q.r.id)),
+          ).size;
+        return saturation(b) - saturation(a) || a.r.id.localeCompare(b.r.id);
+      });
+      const point = remaining.shift()!;
+      let color = 0,
+        best = -1;
+      for (let candidate = 0; candidate < 8; candidate++) {
+        const distance = Math.min(
+          Infinity,
+          ...points
+            .filter((p) => assigned.get(p.r.id) === candidate)
+            .map((p) => proximity(point, p)),
+        );
+        if (distance > best) {
+          best = distance;
+          color = candidate;
+        }
+      }
+      assigned.set(point.r.id, color);
+    }
+    return new Map(
+      [...assigned].map(([id, color]) => [id, `var(--plot-color-${color})`]),
+    );
+  }, [geometry, labels]);
+  const matches = rows
+    .filter((r) =>
+      r.name
+        .toLocaleLowerCase("ru")
+        .includes(search.trim().toLocaleLowerCase("ru")),
+    )
+    .sort((a, b) => {
+      if (sort === "name" || sort === "name:desc")
+        return a.name.localeCompare(b.name, "ru") * (sort === "name" ? 1 : -1);
+      const [key, direction] = sort.split(":");
+      const av = metric(a, key),
+        bv = metric(b, key);
+      if (av === null) return bv === null ? 0 : 1;
+      if (bv === null) return -1;
+      return (av - bv) * (direction === "asc" ? 1 : -1);
+    });
+  const matchIds = new Set(matches.map((r) => r.id));
+  const active = rows.find((r) => r.id === (hover ?? selected));
+  const activePoint = geometry?.points.find((p) => p.r.id === active?.id);
   return (
-    <>
-      <div className={styles.scatter}>
-        <svg
-          viewBox={`0 0 800 ${bottom + 60}`}
-          role="img"
-          aria-label={`${xlabel}; ${ylabel}`}
-        >
-          <text x="62" y="19">
-            {ylabel}
-          </text>
-          {Array.from({ length: 5 }, (_, i) => (
-            <g key={i}>
-              <line
-                x1={62 + i * 177.5}
-                y1="40"
-                x2={62 + i * 177.5}
-                y2={bottom}
-              />
-              <line
-                x1="62"
-                y1={bottom - (i * plotHeight) / 4}
-                x2="772"
-                y2={bottom - (i * plotHeight) / 4}
-              />
-              <text x={62 + i * 177.5} y={bottom + 22} textAnchor="middle">
-                {fmt(loX + ((hiX - loX) * i) / 4)}
-              </text>
-              <text
-                x="52"
-                y={bottom + 4 - (i * plotHeight) / 4}
-                textAnchor="end"
-              >
-                {fmt(loY + ((hiY - loY) * i) / 4)}
-              </text>
-            </g>
-          ))}
-          <text x="410" y={bottom + 52} textAnchor="middle">
-            {xlabel}
-          </text>
-          {points.map((p) => (
-            <a
-              key={p.r.id}
-              href={`#franchise-${p.r.id}`}
-              onClick={(e) => {
-                e.preventDefault();
-                onSelect(p.r.id);
-              }}
-              onMouseEnter={() => setHover(p.r.id)}
-              onMouseLeave={() => setHover(null)}
-              onFocus={() => setHover(p.r.id)}
-              onBlur={() => setHover(null)}
-              style={{ opacity: hover && hover !== p.r.id ? 0.28 : 1 }}
+    <div className={styles.comparison}>
+      <div className={styles.plotPanel} ref={plotRef}>
+        <div className={styles.plotCaption}>
+          <span>{ylabel} ↑</span>
+          <span>
+            {geometry?.points.length ?? 0} из {rows.length} на графике
+          </span>
+        </div>
+        <div className={styles.plotViewport}>
+          {geometry ? (
+            <svg
+              className={styles.scatter}
+              viewBox={`0 0 ${plotWidth} ${plotHeight}`}
+              style={{ width: plotWidth, height: plotHeight }}
+              role="group"
+              aria-label={`${xlabel}; ${ylabel}`}
             >
-              <title>
-                {p.r.name}: {fmt(metric(p.r, x), 2)}; {fmt(metric(p.r, y), 2)}
-              </title>
-              {Math.hypot(
-                p.px - labels.get(p.r.id)!.x,
-                p.py - labels.get(p.r.id)!.y,
-              ) > 25 && (
+              {Array.from({ length: 5 }, (_, i) => (
+                <g key={i}>
+                  <line
+                    x1="56"
+                    y1={plotBottom - (i * plotSpan) / 4}
+                    x2={plotWidth - 24}
+                    y2={plotBottom - (i * plotSpan) / 4}
+                    className={styles.gridLine}
+                  />
+                  <text
+                    x="46"
+                    y={plotBottom + 4 - (i * plotSpan) / 4}
+                    textAnchor="end"
+                  >
+                    {fmt(
+                      geometry.loY + ((geometry.hiY - geometry.loY) * i) / 4,
+                      geometry.hiY - geometry.loY < 2 ? 2 : 1,
+                    )}
+                  </text>
+                  <text
+                    x={56 + (i * (plotWidth - 80)) / 4}
+                    y={plotHeight - 12}
+                    textAnchor="middle"
+                  >
+                    {fmt(
+                      geometry.loX + ((geometry.hiX - geometry.loX) * i) / 4,
+                      geometry.hiX - geometry.loX < 2 ? 2 : 1,
+                    )}
+                  </text>
+                </g>
+              ))}
+              {geometry.loY < 0 && geometry.hiY > 0 && (
                 <line
-                  x1={p.px}
-                  y1={p.py}
-                  x2={labels.get(p.r.id)!.x + 2}
-                  y2={labels.get(p.r.id)!.y + 8}
-                  pointerEvents="none"
-                  style={{
-                    stroke: palette[p.i % palette.length],
-                    opacity: 0.5,
-                  }}
+                  className={styles.zeroLine}
+                  x1="56"
+                  x2={plotWidth - 24}
+                  y1={
+                    plotBottom +
+                    (geometry.loY / (geometry.hiY - geometry.loY)) * plotSpan
+                  }
+                  y2={
+                    plotBottom +
+                    (geometry.loY / (geometry.hiY - geometry.loY)) * plotSpan
+                  }
                 />
               )}
-              <circle
-                cx={p.px}
-                cy={p.py}
-                r={hover === p.r.id ? 7 : 5}
-                fill={palette[p.i % palette.length]}
-              />
-              <text
-                className={styles.plotLabel}
-                x={labels.get(p.r.id)!.x}
-                y={labels.get(p.r.id)!.y + 13}
-              >
-                {p.r.name}
-              </text>
-            </a>
+              {geometry.points.map(({ r, px, py }) => (
+                <g
+                  key={r.id}
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${r.name}: ${xlabel} ${fmt(metric(r, x), 2)}; ${ylabel} ${fmt(metric(r, y), 2)}`}
+                  aria-pressed={selected === r.id}
+                  className={styles.plotPoint}
+                  style={{
+                    color: pointColors.get(r.id),
+                    opacity:
+                      (active && active.id !== r.id) || !matchIds.has(r.id)
+                        ? 0.45
+                        : 1,
+                  }}
+                  onMouseEnter={() => setHover(r.id)}
+                  onMouseLeave={() => setHover(null)}
+                  onFocus={() => setHover(r.id)}
+                  onBlur={() => setHover(null)}
+                  onClick={() => {
+                    setSelected(r.id);
+                    setHover(null);
+                  }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      setSelected(r.id);
+                    }
+                  }}
+                >
+                  <title>{r.name}</title>
+                  <circle cx={px} cy={py} r="10" fill="transparent" />
+                  <circle cx={px} cy={py} r="3.5" className={styles.dot} />
+                  <text
+                    className={styles.pointLabel}
+                    textAnchor={
+                      labels.get(r.id)!.x + labels.get(r.id)!.width <= px
+                        ? "end"
+                        : "start"
+                    }
+                    x={
+                      labels.get(r.id)!.x + labels.get(r.id)!.width <= px
+                        ? labels.get(r.id)!.x + labels.get(r.id)!.width - 2
+                        : labels.get(r.id)!.x + 2
+                    }
+                    y={labels.get(r.id)!.y + 10}
+                  >
+                    {labels.get(r.id)!.text}
+                  </text>
+                </g>
+              ))}
+              {activePoint && (
+                <g
+                  pointerEvents="none"
+                  aria-hidden="true"
+                  style={{ color: pointColors.get(activePoint.r.id) }}
+                >
+                  <line
+                    className={styles.crosshair}
+                    x1="56"
+                    x2={activePoint.px}
+                    y1={activePoint.py}
+                    y2={activePoint.py}
+                  />
+                  <line
+                    className={styles.crosshair}
+                    x1={activePoint.px}
+                    x2={activePoint.px}
+                    y1={activePoint.py}
+                    y2={plotBottom}
+                  />
+                  <circle
+                    cx={activePoint.px}
+                    cy={activePoint.py}
+                    r="5"
+                    className={styles.activeDot}
+                  />
+                </g>
+              )}
+            </svg>
+          ) : (
+            <p className={styles.emptyPlot}>Недостаточно данных для графика.</p>
+          )}
+        </div>
+        <div className={styles.axisCaption}>{xlabel} →</div>
+        <div className={styles.plotDetail} aria-live="polite">
+          {active ? (
+            <>
+              <div>
+                <strong>{active.name}</strong>
+                <button
+                  className={styles.textButton}
+                  onClick={() => onSelect(active.id)}
+                >
+                  Открыть профиль →
+                </button>
+              </div>
+              <dl>
+                <div>
+                  <dt>{xlabel}</dt>
+                  <dd>{fmt(metric(active, x), 2)}</dd>
+                </div>
+                <div>
+                  <dt>{ylabel}</dt>
+                  <dd>{fmt(metric(active, y), 2)}</dd>
+                </div>
+              </dl>
+            </>
+          ) : (
+            <p>
+              Выберите точку или название в списке.
+              <br />
+              <span>Здесь появятся точные значения и переход в профиль.</span>
+            </p>
+          )}
+        </div>
+        <p className={styles.plotHint}>
+          Точка и её подпись одного цвета. Полное название — при наведении. На
+          узком экране график можно прокрутить вбок.
+        </p>
+      </div>
+      <details className={styles.plotDirectory}>
+        <summary>Полные названия, поиск и CSV</summary>
+        <div className={styles.directoryTools}>
+          <input
+            type="search"
+            aria-label={`Найти франшизу: ${xlabel}`}
+            placeholder="Найти франшизу…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+          <label>
+            Порядок
+            <select
+              aria-label={`Порядок франшиз: ${xlabel}`}
+              value={sort}
+              onChange={(e) => setSort(e.target.value)}
+            >
+              <option value="name">По названию</option>
+              <option value="name:desc">По названию Я–А</option>
+              <option value={x}>{xlabel} ↓</option>
+              <option value={`${x}:asc`}>{xlabel} ↑</option>
+              <option value={y}>{ylabel} ↓</option>
+              <option value={`${y}:asc`}>{ylabel} ↑</option>
+            </select>
+          </label>
+        </div>
+        <div className={styles.directoryCaption}>
+          <span>Франшизы · {matches.length}</span>
+          {selected && (
+            <button
+              onClick={() => {
+                setSelected(null);
+                setHover(null);
+              }}
+            >
+              Снять выделение
+            </button>
+          )}
+        </div>
+        <div
+          className={styles.directoryList}
+          aria-label={`Франшизы на графике: ${xlabel}`}
+        >
+          {matches.map((r) => (
+            <button
+              key={r.id}
+              className={styles.directoryRow}
+              aria-pressed={selected === r.id}
+              onClick={() => {
+                setSelected(r.id);
+                setHover(null);
+              }}
+            >
+              <span>{r.name}</span>
+              <small>
+                {fmt(metric(r, x), 2)} <span>/</span> {fmt(metric(r, y), 2)}
+              </small>
+            </button>
           ))}
-        </svg>
-      </div>
-      <div className={styles.mobilePlot}>
-        <Table
-          rows={valid.map((r) => ({
-            id: r.id,
-            name: r.name,
-            x: metric(r, x),
-            y: metric(r, y),
-          }))}
-          columns={[
-            { key: "name", label: "Франшиза" },
-            { key: "x", label: xlabel },
-            { key: "y", label: ylabel },
-          ]}
-          onSelect={onSelect}
-        />
-      </div>
-    </>
+          {!matches.length && (
+            <p className={styles.note}>Франшиза не найдена. Измените поиск.</p>
+          )}
+        </div>
+        <button
+          className={styles.textButton}
+          onClick={() =>
+            downloadCsv(
+              matches.map((r) => ({
+                name: r.name,
+                x: metric(r, x),
+                y: metric(r, y),
+              })),
+              [
+                { key: "name", label: "Франшиза" },
+                { key: "x", label: xlabel },
+                { key: "y", label: ylabel },
+              ],
+            )
+          }
+        >
+          Скачать CSV
+        </button>
+        <p className={styles.directoryKey}>
+          Значения: горизонталь / вертикаль.
+          <br />
+          «—» — нет данных; такая точка не строится.
+        </p>
+      </details>
+    </div>
   );
 }
 
@@ -440,6 +707,50 @@ export function FranchiseAnalytics({
     else q.delete("franchise");
     history.replaceState(null, "", "/franchises?" + q);
   }
+  const ownershipGroups = useMemo(
+    () =>
+      data
+        ? [
+            {
+              title: "Основной состав и капитан · владение от 35%",
+              rows: data.franchises.filter(
+                (r) => metric(r, "own") !== null && metric(r, "own")! >= 35,
+              ),
+            },
+            {
+              title: "Основной состав и капитан · владение ниже 35%",
+              rows: data.franchises.filter(
+                (r) => metric(r, "own") !== null && metric(r, "own")! < 35,
+              ),
+            },
+          ]
+        : [],
+    [data],
+  );
+  const purchaseGroups = useMemo(
+    () =>
+      data
+        ? [
+            {
+              title: "Покупки и форма до тура · от 12 п.п.",
+              rows: data.franchises.filter(
+                (r) =>
+                  metric(r, "buy_delta") !== null &&
+                  metric(r, "buy_delta")! >= 12,
+              ),
+            },
+            {
+              title: "Покупки и форма до тура · ниже 12 п.п.",
+              rows: data.franchises.filter(
+                (r) =>
+                  metric(r, "buy_delta") !== null &&
+                  metric(r, "buy_delta")! < 12,
+              ),
+            },
+          ]
+        : [],
+    [data],
+  );
   const f = data?.franchises.find((f) => f.id === selected);
   const names = new Map(data?.franchises.map((f) => [f.franchise, f.name]));
   const shown = data ? (f ? [f] : data.franchises) : [];
@@ -674,31 +985,79 @@ export function FranchiseAnalytics({
                   {!f && (
                     <Section
                       title="Каждая точка — франшиза"
-                      description="Названия стоят рядом с точками. Наведите курсор, чтобы выделить команду; нажмите для подробностей."
+                      description="Сравните стиль выбора всех франшиз. Найдите свою в списке и выделите её на графике."
                     >
                       <div className={styles.charts}>
-                        <div className={styles.card}>
-                          <h3>Основной состав и капитан</h3>
-                          <Scatter
-                            rows={data.franchises}
-                            x="own"
-                            y="cap"
-                            xlabel="Владение основы, %"
-                            ylabel="Популярность капитана, %"
-                            onSelect={select}
-                          />
-                        </div>
-                        <div className={styles.card}>
-                          <h3>Покупки и форма до тура</h3>
-                          <Scatter
-                            rows={data.franchises}
-                            x="buy_delta"
-                            y="buy_form_gap"
-                            xlabel="H2h-Δ покупки, п.п."
-                            ylabel="Δ формы к покупкам поля, очки"
-                            onSelect={select}
-                          />
-                        </div>
+                        {ownershipGroups.map((group) => (
+                          <div className={styles.card} key={group.title}>
+                            <h3>{group.title}</h3>
+                            <p className={styles.note}>
+                              Группа по владению основы (горизонтальная ось).
+                              Шкалы подстроены под её значения.
+                            </p>
+                            <Scatter
+                              rows={group.rows}
+                              x="own"
+                              y="cap"
+                              xlabel="Владение основы, %"
+                              ylabel="Популярность капитана, %"
+                              onSelect={select}
+                            />
+                          </div>
+                        ))}
+                        {data.franchises.some(
+                          (r) => metric(r, "own") === null,
+                        ) && (
+                          <div className={styles.note}>
+                            Нет оценки владения основы:{" "}
+                            {data.franchises
+                              .filter((r) => metric(r, "own") === null)
+                              .map((r) => (
+                                <button
+                                  key={r.id}
+                                  className={styles.textButton}
+                                  onClick={() => select(r.id)}
+                                >
+                                  {r.name};{" "}
+                                </button>
+                              ))}
+                          </div>
+                        )}
+                        {purchaseGroups.map((group) => (
+                          <div className={styles.card} key={group.title}>
+                            <h3>{group.title}</h3>
+                            <p className={styles.note}>
+                              Группа по H2h-Δ покупки (горизонтальная ось).
+                              Шкалы подстроены под её значения.
+                            </p>
+                            <Scatter
+                              rows={group.rows}
+                              x="buy_delta"
+                              y="buy_form_gap"
+                              xlabel="H2h-Δ покупки, п.п."
+                              ylabel="Δ формы к покупкам поля, очки"
+                              onSelect={select}
+                            />
+                          </div>
+                        ))}
+                        {data.franchises.some(
+                          (r) => metric(r, "buy_delta") === null,
+                        ) && (
+                          <div className={styles.note}>
+                            Нет оценки H2h-Δ покупки:{" "}
+                            {data.franchises
+                              .filter((r) => metric(r, "buy_delta") === null)
+                              .map((r) => (
+                                <button
+                                  key={r.id}
+                                  className={styles.textButton}
+                                  onClick={() => select(r.id)}
+                                >
+                                  {r.name};{" "}
+                                </button>
+                              ))}
+                          </div>
+                        )}
                       </div>
                     </Section>
                   )}

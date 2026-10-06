@@ -38,7 +38,7 @@ status: active
 Существующий продуктовый канон: `specs/common/main.md`; архитектура и доступ: `specs/common/structure.md`, session auth. Доступ к аналитике одинаков для пользователей разных франшиз.
 
 ## Сценарии и UI {#ui}
-`/franchises` доступен из общей навигации рядом с другими модулями. Фильтры: чемпионаты, включительный диапазон календарных дат, франшиза. Общий обзор, профиль франшизы, менеджеры, xФО, заморозки. Все названия франшиз остаются на графиках; плотные группы используют дополнительное место и линии к точкам, чтобы подписи не перекрывались и сохраняли переход в профиль. Числовые ID остаются только внутренними ключами. Таблицы сортируются, единицы и знаменатели раскрыты. Светлая/тёмная темы и мобильный вид. Пустой диапазон не подменяется всем сезоном. Ссылка сохраняет выбранный диапазон.
+`/franchises` доступен из общей навигации рядом с другими модулями. Фильтры: чемпионаты, включительный диапазон календарных дат, франшиза. Общий обзор, профиль франшизы, менеджеры, xФО, заморозки. The ownership/captain comparison is split into two vertically stacked plots: starting-lineup ownership (horizontal axis) at least 35% first, then below 35%. Each plot auto-scales its axes within the group and states this explicitly; horizontal ownership and vertical captain-popularity metrics are unchanged. Missing starting-lineup ownership is listed separately with profile links, never assigned to a numeric group. The purchase/form comparison is also split into two vertically stacked plots by horizontal `buy_delta`: at least 12 percentage points first, below 12 second. Both retain `buy_delta` on X and `buy_form_gap` on Y, with independent automatic ranges; missing `buy_delta` is listed separately with profile links. Charts show small (10 CSS px) abbreviated names beside every available point, without label connector lines. Label placement uses measured 10px Arial text bounds, nearby candidate positions, deterministic joint optimization with a fixed iteration budget, and unambiguous shorter name variants where necessary. Labels attach by their left or right edge, with horizontal gaps of 6–14 CSS pixels and bounded vertical offsets; the visible gap remains about 20px or less. Ambiguous proximity to another point is penalized. Shorter variants preserve the first word plus initials of subsequent words, never a generic first word alone; data points never move. Plots with over 40 rows retain a minimum width of 960px and a bounded height of 490px (390px for smaller groups), with horizontal scrolling to avoid squeezing dense labels. Unresolvable coincident clusters retain hover/selection and the full directory for disambiguation. Each point and label share a theme-aware color; a bounded eight-color palette is assigned using the combined point-and-label footprints, prioritizing nearby groups with the most occupied neighbor colors. Color is a local matching aid, not a metric or a permanent franchise identity. English articles and conjunctions may be omitted, and long names shortened without changing canonical names or silently merging distinct labels. Full names remain in tooltips, selected details and an expandable searchable directory with both exact metric values. The directory supports alphabetical and descending metric order, including explicit missing values. Selecting a point or directory row highlights the franchise and exposes its values and profile link. Search highlights matching points without changing the population or axis scale. Plot height uses only the two bounded sizes above; mobile retains a horizontally scrollable plot above the directory so labels keep their text size. Coincident points remain individually selectable through the directory. Mouse, keyboard and touch selection are supported. Числовые ID остаются только внутренними ключами. Таблицы сортируются, единицы и знаменатели раскрыты. Светлая/тёмная темы и мобильный вид. Пустой диапазон не подменяется всем сезоном. Ссылка сохраняет выбранный диапазон.
 
 Под фильтрами поясняется общая календарная отсечка по дате начала тура в Москве. Список «Какие чемпионаты вошли в расчёт» показывает число составов каждой выбранной лиги для текущей франшизы или всех франшиз; пустые лиги сохраняются с явным нулевым покрытием. Таблица xФО по чемпионатам объясняет отсутствие полного XI, не скрывая лигу.
 
@@ -72,8 +72,8 @@ GET `/api/franchises` валидирует сезон, лиги и диапаз�
 
 ## Точки ответственности {#traceability}
 - `src/app/franchises/`, `src/app/api/franchises/`: защищённый экран и API.
+- `src/franchises/compact-labels.ts`: bounded placement and unambiguous display abbreviations; tests in `src/franchises/compact-labels.test.ts`.
 - `src/franchises/analytics.ts`: фильтры, агрегация, рейтинги и гипотезы; контрактные проверки в `src/franchises/analytics.test.ts`.
-- `src/franchises/chart-labels.ts`: размещение подписей графиков; контрактные проверки плотных групп в `src/franchises/chart-labels.test.ts`.
 - `src/server/franchises/snapshot.ts`: валидация и единственный кэш снимка.
 - `scripts/franchise-analytics/`: сбор H2H, признаки до тура, xФО; `scripts/franchise-analytics/test_xfo.py` и workbook-fixture.
 - `scripts/import-franchise-data.ts`, Prisma migration и `ops/franchises-sync.sh`: сохранение/восстановление, атомарная публикация и служебное обновление.
@@ -82,6 +82,21 @@ GET `/api/franchises` валидирует сезон, лиги и диапаз�
 Локальные отчёты WI-025/WI-027 — предшествующие артефакты. Используются существующие normalized core_data, архивные planning snapshots и исходные токены дизайна Fantasy.
 
 ## История {#changelog}
+- 2026-10-04: PR #37 review — split the ownership/captain plot at 35% starting-lineup ownership (horizontal axis), with the higher group above the lower group.
+- 2026-10-04: WI-048 — small abbreviated names restored beside points following user review.
+- 2026-10-04: WI-047 — compact charts with searchable names, exact values and selection on desktop and mobile; remove dense label leaders.
 - 2026-10-04: читаемые и выбираемые подписи графиков для расширенного набора 75 групп.
 - 2026-10-03: календарные интервалы, полная личная история менеджеров, 74 франшизы и виртуальная группа «шизы» без досок и заморозок.
 - 2026-09-21: отдельный модуль, диапазон туров, 12 франшиз, формула xФО и границы покрытия.
+
+- 2026-10-04: Corrected the review split to use horizontal ownership, as requested; captain popularity remains the vertical coordinate.
+
+- 2026-10-04: Split purchase/form plots at horizontal H2h purchase delta 12 percentage points, higher group first.
+
+- 2026-10-04: Replace label connectors with matching point/text colors, separating nearby points with a theme-aware palette.
+
+- 2026-10-04: Bound label placement to the immediate point neighborhood after color-preview review.
+
+- 2026-10-04: Replace one-pass placement with measured, jointly optimized nearby labels and bounded deterministic search; dense plots retain a 960px minimum width.
+
+- 2026-10-04: Visual review — side-attached meaningful names, stronger point exclusion, footprint-aware neighbor colors, and 100px extra height for dense groups.

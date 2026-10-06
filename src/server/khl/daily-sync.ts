@@ -11,6 +11,7 @@ import { pruneKhl } from './retention';
 import { refreshKhlBirthDates } from './identity-sync';
 import { refreshKhlInjuries } from './injury-sync';
 import { readKhlSyncStatus } from './sync-status';
+import { refreshKhlFantasyCalendar } from './fantasy-calendar';
 import { khlRunningCursor, khlCompletedCursor } from '@/khl/sync-status';
 
 /** The production entrypoint holds flock across the entire cycle, including all batches.
@@ -68,6 +69,7 @@ export async function runKhlDailySync(db: PrismaClient, contestId: string) {
     if (last.failedProfiles) throw new Error(`CURRENT_PROFILES_FAILED:${last.failedProfiles}`);
     return { ...last, remaining: last.remaining ?? 1, deferred: 'HOURLY_BUDGET' };
   });
+  await step('Sports: календарь', () => refreshKhlFantasyCalendar(db, contestId));
   await step('КХЛ: текущие протоколы', async () => {
     let last: { accessError?: string; remaining?: number; deferredMatches?: number } | null = null;
     for (let batch = 0; batch < 12 && Date.now() < deadline; batch++) {

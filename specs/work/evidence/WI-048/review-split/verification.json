@@ -1,0 +1,85 @@
+{
+  "groups": [
+    64,
+    11
+  ],
+  "checks": [
+    {
+      "width": 1440,
+      "theme": "light",
+      "group": 0,
+      "labels": 64,
+      "overlaps": 0
+    },
+    {
+      "width": 1440,
+      "theme": "light",
+      "group": 1,
+      "labels": 11,
+      "overlaps": 0
+    },
+    {
+      "width": 1440,
+      "theme": "dark",
+      "group": 0,
+      "labels": 64,
+      "overlaps": 0
+    },
+    {
+      "width": 1440,
+      "theme": "dark",
+      "group": 1,
+      "labels": 11,
+      "overlaps": 0
+    },
+    {
+      "width": 390,
+      "theme": "light",
+      "group": 0,
+      "labels": 64,
+      "overlaps": 0
+    },
+    {
+      "width": 390,
+      "theme": "light",
+      "group": 1,
+      "labels": 11,
+      "overlaps": 0
+    },
+    {
+      "width": 390,
+      "theme": "dark",
+      "group": 0,
+      "labels": 64,
+      "overlaps": 0
+    },
+    {
+      "width": 390,
+      "theme": "dark",
+      "group": 1,
+      "labels": 11,
+      "overlaps": 0
+    }
+  ],
+  "boundary35": true,
+  "missingExcluded": true,
+  "date": "2026-10-04",
+  "kind": "one-step-review-correction",
+  "thresholdMetric": "cap",
+  "threshold": 35,
+  "order": [
+    "at least 35",
+    "below 35"
+  ],
+  "axes": {
+    "x": "own",
+    "y": "cap",
+    "scales": "automatic per group"
+  },
+  "typecheck": "passed",
+  "focusedLint": {
+    "errors": 0,
+    "warnings": 71
+  },
+  "resources": "Groups memoized by report data; only row references are retained. API, snapshot and report caches unchanged. QA app, browser and database stopped; temporary QA identity and private state removed."
+}

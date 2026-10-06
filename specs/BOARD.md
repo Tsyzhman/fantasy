@@ -6,6 +6,7 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
+| [WI-052](work/WI-052-github-smoke-main-alignment.md) | Restore scheduled production smoke on main | INFRA-001, FEAT-002 | @tsyzhman | 2026-10-06 | — |
 
 ## Backlog
 
@@ -23,6 +24,9 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-049](work/archive/2026/WI-049-khl-calendar-reconciliation.md) | Reconcile KHL calendar weeks | @tsyzhman | 2026-10-05 |
+| [WI-048](work/archive/2026/WI-048-franchise-compact-labels.md) | Small names beside franchise points | @tsyzhman | 2026-10-04 |
+| [WI-047](work/archive/2026/WI-047-franchise-charts-redesign.md) | Readable franchise comparison charts | @tsyzhman | 2026-10-04 |
 | [WI-046](work/archive/2026/WI-046-runtime-resource-optimization.md) | Optimize runtime resources without changing product behavior | @tsyzhman | 2026-10-04 |
 | [WI-045](work/archive/2026/WI-045-franchise-calendar-report.md) | Complete franchise histories and calendar report | @tsyzhman | 2026-10-04 |
 | [WI-044](work/archive/2026/WI-044-fpl-active-roster-import.md) | Import FPL squads with provider positions | @tsyzhman | 2026-09-28 |

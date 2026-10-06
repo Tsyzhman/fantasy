@@ -112,7 +112,17 @@ The KHL header reads the persisted, contest-scoped `KHL_DAILY / ALL_SOURCES` che
 
 Only a fully completed `DONE` cycle advances `lastSuccessAt`. `PARTIAL`, `PENDING`, an interrupted process, and a page refresh preserve that timestamp. Legacy records without a provable full success show an unknown full-success time; their catalog publication and last attempt times remain visible. Failed source names are visible, while raw errors, cookies and private transport details remain server-side.
 
-State is persisted before ingestion begins and after it ends. One checkpoint per contest holds at most ten source summaries and the previous completed attempt while running, without accumulating run history or creating another collector. Status reads use no application cache, trigger no provider requests, and poll at most once per minute while the page is visible, with one in-flight request and cancellation on unmount.
+State is persisted before ingestion begins and after it ends. One checkpoint per contest holds at most eleven source summaries, including the Sports calendar, and the previous completed attempt while running, without accumulating run history or creating another collector. Status reads use no application cache, trigger no provider requests, and poll at most once per minute while the page is visible, with one in-flight request and cancellation on unmount.
+
+<a name="fantasy-weeks"></a>
+
+## Sports fantasy-week reconciliation {#fantasy-weeks}
+
+The hourly cycle reads one identity-checked current Sports card per active club, independently of the player-history cache: at most 32 clubs, sequential requests, 20-second request timeout and 2 MiB per response. A leased job bounds the complete pass to two minutes. HTML is discarded after parsing; only normalized observations and correction evidence survive.
+
+Match identity requires the official season, Moscow date, both mapped clubs and home/away, with exactly one matching official match. A week assignment is created or corrected only when fresh observations from both clubs agree on the same positive provider week number. Missing, ambiguous, stale or disagreeing observations preserve the last-good assignment and remain visible as deferred. Existing verified week assignments are protected. Observed week numbers do not prove exact week boundaries: starts/ends/timezone and verified readiness are never inferred from weekdays or match times.
+
+Corrections are atomic and record the two source URLs, previous/new week and observation time. Both affected week revisions and the contest revision advance; stale transfer previews and projections must be re-read. Repeat observations do not grow assignments or correction revisions. Only obsolete week-conflict diagnostics for currently corroborated assignments are cleared; statistics, official FP and unrelated quarantine remain unchanged.
 
 <a name="operations"></a>
 
@@ -165,6 +175,8 @@ The initial loading is continued by the same fenced coordinator: `node scripts/k
 <a name="changelog"></a>
 
 ## Changelog {#changelog}
+
+- 2026-10-05: WI-049 — reconcile unverified fantasy-week assignments against both club calendars, independently of cached histories; preserve verified boundaries and record atomic correction evidence.
 
 - 2026-09-28: WI-042 — persist active/last-completed cycle status and a strict full-success timestamp; expose bounded source outcomes for the KHL header without new provider reads.
 

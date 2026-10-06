@@ -1,0 +1,654 @@
+{
+  "production": {
+    "version": "0.3.118",
+    "commit": "f2dd8fdfa6d270c799381cb1ed68e6b53fb97243",
+    "contestId": "cmtr4grkd00056htzwpdv4fwu",
+    "checkedAt": "2026-10-05T09:23:48.587228+00:00"
+  },
+  "checks": {
+    "focusedTests": {
+      "passed": 12,
+      "failed": 0
+    },
+    "ci": {
+      "url": "https://github.com/Tsyzhman/fantasy/actions/runs/37287416849",
+      "status": "success",
+      "unitPassed": 1236,
+      "databasePassed": 16,
+      "databaseSkipped": 0,
+      "lintErrors": 0,
+      "existingLintWarnings": 234,
+      "typecheck": "passed",
+      "build": "passed",
+      "audit": "passed",
+      "migrationDrift": "passed"
+    },
+    "deployment": {
+      "url": "https://github.com/Tsyzhman/fantasy/actions/runs/37288135101",
+      "status": "success"
+    },
+    "browser": {
+      "url": "https://github.com/Tsyzhman/fantasy/actions/runs/37289411672",
+      "status": "success",
+      "authPassed": 1,
+      "testsPassed": 6,
+      "devices": [
+        "desktop",
+        "tablet",
+        "mobile"
+      ]
+    },
+    "specSnapshot": {
+      "status": "current",
+      "diagnostics": [],
+      "fingerprint": "358cae0efa59a28b5e14e398fcf44ddff1d98226a702479b19f138218b369ea3"
+    }
+  },
+  "reconciliation": {
+    "first": {
+      "clubs": 22,
+      "agreed": 110,
+      "errors": [],
+      "changed": 15,
+      "cleared": 709,
+      "deferred": 0,
+      "unchanged": 95
+    },
+    "replay": {
+      "clubs": 22,
+      "agreed": 110,
+      "errors": [],
+      "changed": 0,
+      "cleared": 0,
+      "deferred": 0,
+      "unchanged": 110
+    },
+    "corrections": [
+      {
+        "id": "cmtsdonb103v5g2hgoqqb3e1m",
+        "date": "2026-10-05T14:00:00",
+        "home": "Металлург Мг",
+        "away": "Адмирал",
+        "previousWeek": "4",
+        "week": "5"
+      },
+      {
+        "id": "cmtsdonba03veg2hgi5naaux9",
+        "date": "2026-10-05T15:00:00",
+        "home": "Лада",
+        "away": "Драконы",
+        "previousWeek": "4",
+        "week": "5"
+      },
+      {
+        "id": "cmtsdonbk03vng2hgay3wteb5",
+        "date": "2026-10-05T16:30:00",
+        "home": "Ак Барс",
+        "away": "Локомотив",
+        "previousWeek": "4",
+        "week": "5"
+      },
+      {
+        "id": "cmtsdonbt03vwg2hgjbbrwov7",
+        "date": "2026-10-05T16:30:00",
+        "home": "Динамо Мн",
+        "away": "Торпедо",
+        "previousWeek": "4",
+        "week": "5"
+      },
+      {
+        "id": "cmtsdonc203w5g2hgvuchxutr",
+        "date": "2026-10-05T16:30:00",
+        "home": "ЦСКА",
+        "away": "Салават Юлаев",
+        "previousWeek": "4",
+        "week": "5"
+      },
+      {
+        "id": "cmu10tcy507404infznidzpci",
+        "date": "2026-10-12T09:00:00",
+        "home": "Амур",
+        "away": "Лада",
+        "previousWeek": "5",
+        "week": "6"
+      },
+      {
+        "id": "cmu1hoj8a01r19cabgagx835a",
+        "date": "2026-10-12T11:30:00",
+        "home": "Салават Юлаев",
+        "away": "Нефтехимик",
+        "previousWeek": "5",
+        "week": "6"
+      },
+      {
+        "id": "cmu1hoj8o01ra9cab7o9yl2xl",
+        "date": "2026-10-12T14:30:00",
+        "home": "Барыс",
+        "away": "Сибирь",
+        "previousWeek": "5",
+        "week": "6"
+      },
+      {
+        "id": "cmu1hoj9801rs9cab9shm447g",
+        "date": "2026-10-12T16:00:00",
+        "home": "Ак Барс",
+        "away": "ХК Сочи",
+        "previousWeek": "5",
+        "week": "6"
+      },
+      {
+        "id": "cmu1hoj8y01rj9cabfqcq53z7",
+        "date": "2026-10-12T16:30:00",
+        "home": "Торпедо",
+        "away": "Металлург Мг",
+        "previousWeek": "5",
+        "week": "6"
+      },
+      {
+        "id": "cmu1hoj9i01s19cab99vdrn74",
+        "date": "2026-10-12T16:30:00",
+        "home": "Драконы",
+        "away": "Динамо Мн",
+        "previousWeek": "5",
+        "week": "6"
+      },
+      {
+        "id": "cmub1dnr0004oke001bozh7nv",
+        "date": "2026-10-19T09:00:00",
+        "home": "Амур",
+        "away": "Барыс",
+        "previousWeek": "6",
+        "week": "7"
+      },
+      {
+        "id": "cmub3ite6004t96nqwu3b2r4g",
+        "date": "2026-10-19T09:30:00",
+        "home": "Адмирал",
+        "away": "Салават Юлаев",
+        "previousWeek": "6",
+        "week": "7"
+      },
+      {
+        "id": "cmubgdru4004q3dvnmk7i17xq",
+        "date": "2026-10-19T16:00:00",
+        "home": "Северсталь",
+        "away": "Торпедо",
+        "previousWeek": "6",
+        "week": "7"
+      },
+      {
+        "id": "cmubiizo7004sk8djbi31jo65",
+        "date": "2026-10-19T16:30:00",
+        "home": "ХК Сочи",
+        "away": "Драконы",
+        "previousWeek": "6",
+        "week": "7"
+      }
+    ],
+    "repeatCorrectionCountStable": true,
+    "repeatAffectedWeekRevisionsStable": true,
+    "globalContestRevisionNote": "Other live collectors advance the global contest revision concurrently. The database regression verifies that a no-change calendar import itself does not increment it."
+  },
+  "finalAudit": {
+    "checkedAt": "2026-10-05T09:23:48.587228+00:00",
+    "statsCount": 7952,
+    "statsHash": "782921b9b6a7d4eaabd83d8fc76442ca",
+    "fpCount": 4987,
+    "fpHash": "731f669ac7706d807671385ae92b241e",
+    "assignments": [
+      {
+        "id": "cmtsdonb103v5g2hgoqqb3e1m",
+        "date": "2026-10-05T14:00:00",
+        "home": "Металлург Мг",
+        "away": "Адмирал",
+        "week": "5",
+        "verified": false
+      },
+      {
+        "id": "cmtsdonba03veg2hgi5naaux9",
+        "date": "2026-10-05T15:00:00",
+        "home": "Лада",
+        "away": "Драконы",
+        "week": "5",
+        "verified": false
+      },
+      {
+        "id": "cmtsdonbk03vng2hgay3wteb5",
+        "date": "2026-10-05T16:30:00",
+        "home": "Ак Барс",
+        "away": "Локомотив",
+        "week": "5",
+        "verified": false
+      },
+      {
+        "id": "cmtsdonbt03vwg2hgjbbrwov7",
+        "date": "2026-10-05T16:30:00",
+        "home": "Динамо Мн",
+        "away": "Торпедо",
+        "week": "5",
+        "verified": false
+      },
+      {
+        "id": "cmtsdonc203w5g2hgvuchxutr",
+        "date": "2026-10-05T16:30:00",
+        "home": "ЦСКА",
+        "away": "Салават Юлаев",
+        "week": "5",
+        "verified": false
+      },
+      {
+        "id": "cmu10tcy507404infznidzpci",
+        "date": "2026-10-12T09:00:00",
+        "home": "Амур",
+        "away": "Лада",
+        "week": "6",
+        "verified": false
+      },
+      {
+        "id": "cmu1hoj8a01r19cabgagx835a",
+        "date": "2026-10-12T11:30:00",
+        "home": "Салават Юлаев",
+        "away": "Нефтехимик",
+        "week": "6",
+        "verified": false
+      },
+      {
+        "id": "cmu1hoj8o01ra9cab7o9yl2xl",
+        "date": "2026-10-12T14:30:00",
+        "home": "Барыс",
+        "away": "Сибирь",
+        "week": "6",
+        "verified": false
+      },
+      {
+        "id": "cmu1hoj9801rs9cab9shm447g",
+        "date": "2026-10-12T16:00:00",
+        "home": "Ак Барс",
+        "away": "ХК Сочи",
+        "week": "6",
+        "verified": false
+      },
+      {
+        "id": "cmu1hoj8y01rj9cabfqcq53z7",
+        "date": "2026-10-12T16:30:00",
+        "home": "Торпедо",
+        "away": "Металлург Мг",
+        "week": "6",
+        "verified": false
+      },
+      {
+        "id": "cmu1hoj9i01s19cab99vdrn74",
+        "date": "2026-10-12T16:30:00",
+        "home": "Драконы",
+        "away": "Динамо Мн",
+        "week": "6",
+        "verified": false
+      }
+    ],
+    "weeks": [
+      {
+        "week": "1",
+        "verified": false,
+        "revision": 1
+      },
+      {
+        "week": "2",
+        "verified": false,
+        "revision": 1
+      },
+      {
+        "week": "3",
+        "verified": false,
+        "revision": 1
+      },
+      {
+        "week": "4",
+        "verified": false,
+        "revision": 2
+      },
+      {
+        "week": "5",
+        "verified": false,
+        "revision": 2
+      },
+      {
+        "week": "6",
+        "verified": false,
+        "revision": 2
+      },
+      {
+        "week": "7",
+        "verified": false,
+        "revision": 2
+      },
+      {
+        "week": "8",
+        "verified": false,
+        "revision": 1
+      }
+    ],
+    "contestRevision": 64272,
+    "weekConflictWarnings": 0,
+    "calendarSource": {
+      "health": "HEALTHY",
+      "coverage": {
+        "clubs": 22,
+        "agreed": 110,
+        "errors": [],
+        "changed": 0,
+        "cleared": 0,
+        "deferred": 0,
+        "unchanged": 110
+      },
+      "lastSuccessAt": "2026-10-05T09:22:19.471"
+    },
+    "currentHistoryCoverage": {
+      "dnp": 2909,
+      "played": 4963,
+      "catalog": 700,
+      "changed": 0,
+      "imported": 0,
+      "profiles": 700,
+      "remaining": 0,
+      "failedProfiles": 0,
+      "quarantineCount": 58,
+      "incompleteProfiles": 0
+    },
+    "calendarAudit": [
+      {
+        "stream": "sports-week:cmtr4grkd00056htzwpdv4fwu:cmtsdonb103v5g2hgoqqb3e1m",
+        "sequence": 1,
+        "value": {
+          "sources": [
+            "https://www.sports.ru/fantasy/hockey/player/info/107/2193482.html",
+            "https://www.sports.ru/fantasy/hockey/player/info/107/2087107.html"
+          ],
+          "previousWeek": "4",
+          "providerWeekId": "5"
+        },
+        "observedAt": "2026-10-05T09:19:18.984"
+      },
+      {
+        "stream": "sports-week:cmtr4grkd00056htzwpdv4fwu:cmtsdonba03veg2hgi5naaux9",
+        "sequence": 1,
+        "value": {
+          "sources": [
+            "https://www.sports.ru/fantasy/hockey/player/info/107/2203137.html",
+            "https://www.sports.ru/fantasy/hockey/player/info/107/2133505.html"
+          ],
+          "previousWeek": "4",
+          "providerWeekId": "5"
+        },
+        "observedAt": "2026-10-05T09:19:18.984"
+      },
+      {
+        "stream": "sports-week:cmtr4grkd00056htzwpdv4fwu:cmtsdonbk03vng2hgay3wteb5",
+        "sequence": 1,
+        "value": {
+          "sources": [
+            "https://www.sports.ru/fantasy/hockey/player/info/107/2203231.html",
+            "https://www.sports.ru/fantasy/hockey/player/info/107/2203179.html"
+          ],
+          "previousWeek": "4",
+          "providerWeekId": "5"
+        },
+        "observedAt": "2026-10-05T09:19:18.984"
+      },
+      {
+        "stream": "sports-week:cmtr4grkd00056htzwpdv4fwu:cmtsdonbt03vwg2hgjbbrwov7",
+        "sequence": 1,
+        "value": {
+          "sources": [
+            "https://www.sports.ru/fantasy/hockey/player/info/107/2032764.html",
+            "https://www.sports.ru/fantasy/hockey/player/info/107/2203152.html"
+          ],
+          "previousWeek": "4",
+          "providerWeekId": "5"
+        },
+        "observedAt": "2026-10-05T09:19:18.984"
+      },
+      {
+        "stream": "sports-week:cmtr4grkd00056htzwpdv4fwu:cmtsdonc203w5g2hgvuchxutr",
+        "sequence": 1,
+        "value": {
+          "sources": [
+            "https://www.sports.ru/fantasy/hockey/player/info/107/2087118.html",
+            "https://www.sports.ru/fantasy/hockey/player/info/107/2086201.html"
+          ],
+          "previousWeek": "4",
+          "providerWeekId": "5"
+        },
+        "observedAt": "2026-10-05T09:19:18.984"
+      },
+      {
+        "stream": "sports-week:cmtr4grkd00056htzwpdv4fwu:cmu10tcy507404infznidzpci",
+        "sequence": 1,
+        "value": {
+          "sources": [
+            "https://www.sports.ru/fantasy/hockey/player/info/107/2200732.html",
+            "https://www.sports.ru/fantasy/hockey/player/info/107/2203137.html"
+          ],
+          "previousWeek": "5",
+          "providerWeekId": "6"
+        },
+        "observedAt": "2026-10-05T09:19:18.984"
+      },
+      {
+        "stream": "sports-week:cmtr4grkd00056htzwpdv4fwu:cmu1hoj8a01r19cabgagx835a",
+        "sequence": 1,
+        "value": {
+          "sources": [
+            "https://www.sports.ru/fantasy/hockey/player/info/107/2086201.html",
+            "https://www.sports.ru/fantasy/hockey/player/info/107/2158233.html"
+          ],
+          "previousWeek": "5",
+          "providerWeekId": "6"
+        },
+        "observedAt": "2026-10-05T09:19:18.984"
+      },
+      {
+        "stream": "sports-week:cmtr4grkd00056htzwpdv4fwu:cmu1hoj8o01ra9cab7o9yl2xl",
+        "sequence": 1,
+        "value": {
+          "sources": [
+            "https://www.sports.ru/fantasy/hockey/player/info/107/2020923.html",
+            "https://www.sports.ru/fantasy/hockey/player/info/107/2146258.html"
+          ],
+          "previousWeek": "5",
+          "providerWeekId": "6"
+        },
+        "observedAt": "2026-10-05T09:19:18.984"
+      },
+      {
+        "stream": "sports-week:cmtr4grkd00056htzwpdv4fwu:cmu1hoj8y01rj9cabfqcq53z7",
+        "sequence": 1,
+        "value": {
+          "sources": [
+            "https://www.sports.ru/fantasy/hockey/player/info/107/2203152.html",
+            "https://www.sports.ru/fantasy/hockey/player/info/107/2193482.html"
+          ],
+          "previousWeek": "5",
+          "providerWeekId": "6"
+        },
+        "observedAt": "2026-10-05T09:19:18.984"
+      },
+      {
+        "stream": "sports-week:cmtr4grkd00056htzwpdv4fwu:cmu1hoj9801rs9cab9shm447g",
+        "sequence": 1,
+        "value": {
+          "sources": [
+            "https://www.sports.ru/fantasy/hockey/player/info/107/2203231.html",
+            "https://www.sports.ru/fantasy/hockey/player/info/107/2203135.html"
+          ],
+          "previousWeek": "5",
+          "providerWeekId": "6"
+        },
+        "observedAt": "2026-10-05T09:19:18.984"
+      },
+      {
+        "stream": "sports-week:cmtr4grkd00056htzwpdv4fwu:cmu1hoj9i01s19cab99vdrn74",
+        "sequence": 1,
+        "value": {
+          "sources": [
+            "https://www.sports.ru/fantasy/hockey/player/info/107/2133505.html",
+            "https://www.sports.ru/fantasy/hockey/player/info/107/2032764.html"
+          ],
+          "previousWeek": "5",
+          "providerWeekId": "6"
+        },
+        "observedAt": "2026-10-05T09:19:18.984"
+      },
+      {
+        "stream": "sports-week:cmtr4grkd00056htzwpdv4fwu:cmub1dnr0004oke001bozh7nv",
+        "sequence": 1,
+        "value": {
+          "sources": [
+            "https://www.sports.ru/fantasy/hockey/player/info/107/2200732.html",
+            "https://www.sports.ru/fantasy/hockey/player/info/107/2020923.html"
+          ],
+          "previousWeek": "6",
+          "providerWeekId": "7"
+        },
+        "observedAt": "2026-10-05T09:19:18.984"
+      },
+      {
+        "stream": "sports-week:cmtr4grkd00056htzwpdv4fwu:cmub3ite6004t96nqwu3b2r4g",
+        "sequence": 1,
+        "value": {
+          "sources": [
+            "https://www.sports.ru/fantasy/hockey/player/info/107/2087107.html",
+            "https://www.sports.ru/fantasy/hockey/player/info/107/2086201.html"
+          ],
+          "previousWeek": "6",
+          "providerWeekId": "7"
+        },
+        "observedAt": "2026-10-05T09:19:18.984"
+      },
+      {
+        "stream": "sports-week:cmtr4grkd00056htzwpdv4fwu:cmubgdru4004q3dvnmk7i17xq",
+        "sequence": 1,
+        "value": {
+          "sources": [
+            "https://www.sports.ru/fantasy/hockey/player/info/107/2132549.html",
+            "https://www.sports.ru/fantasy/hockey/player/info/107/2203152.html"
+          ],
+          "previousWeek": "6",
+          "providerWeekId": "7"
+        },
+        "observedAt": "2026-10-05T09:19:18.984"
+      },
+      {
+        "stream": "sports-week:cmtr4grkd00056htzwpdv4fwu:cmubiizo7004sk8djbi31jo65",
+        "sequence": 1,
+        "value": {
+          "sources": [
+            "https://www.sports.ru/fantasy/hockey/player/info/107/2203135.html",
+            "https://www.sports.ru/fantasy/hockey/player/info/107/2133505.html"
+          ],
+          "previousWeek": "6",
+          "providerWeekId": "7"
+        },
+        "observedAt": "2026-10-05T09:19:18.984"
+      }
+    ],
+    "rawCache": {
+      "rows": 909,
+      "bytes": 13269924,
+      "expired": 0
+    },
+    "duplicates": {
+      "stats": 0,
+      "fp": 0,
+      "raw": 0,
+      "catalog": 0,
+      "activeJobs": 0
+    },
+    "activeJobs": null,
+    "daily": {
+      "completedAt": "2026-10-05T09:22:54.045",
+      "status": "PARTIAL",
+      "sources": [
+        {
+          "source": "Sports: каталог",
+          "status": "DONE"
+        },
+        {
+          "source": "Sports: идентичность игроков",
+          "status": "DONE"
+        },
+        {
+          "source": "KHL Mobile + Sports: текущая история",
+          "status": "DONE"
+        },
+        {
+          "source": "Sports: календарь",
+          "status": "DONE"
+        },
+        {
+          "source": "КХЛ: текущие протоколы",
+          "status": "DONE"
+        },
+        {
+          "source": "Sports: прошлый сезон",
+          "status": "FAILED"
+        },
+        {
+          "source": "КХЛ: архивные протоколы",
+          "status": "DONE"
+        },
+        {
+          "source": "Фонбет: линия КХЛ",
+          "status": "DONE"
+        },
+        {
+          "source": "КХЛ: травмированные",
+          "status": "DONE"
+        },
+        {
+          "source": "EP",
+          "status": "DONE"
+        },
+        {
+          "source": "Очистка",
+          "status": "DONE"
+        }
+      ]
+    }
+  },
+  "resources": {
+    "afterBrowser": {
+      "webMiB": 551,
+      "workerGiB": 1.148,
+      "postgresGiB": 1.382,
+      "hostAvailableMiB": 6444,
+      "availableDiskGiB": 70,
+      "restarts": {
+        "web": 0,
+        "worker": 0
+      },
+      "oomKilled": {
+        "web": false,
+        "worker": false
+      },
+      "health": {
+        "web": "healthy",
+        "worker": "healthy"
+      },
+      "timer": "active"
+    },
+    "collectorCleanup": "After the hourly cycle, docker top showed only the resident worker; no calendar CLI or HTTP child remained.",
+    "localBuildCache": {
+      "directories": 1,
+      "path": ".next",
+      "files": 4069,
+      "MiB": 1293.4
+    }
+  },
+  "remainingIssues": {
+    "archiveProfilesFailed": 16,
+    "archiveReason": "HISTORY_IDENTITY_INVALID",
+    "weekBoundariesVerified": 0,
+    "totalWeeks": 8,
+    "scope": "Archive identity and exact week-boundary/optimizer readiness work are outside WI-049."
+  }
+}

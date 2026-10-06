@@ -62,6 +62,8 @@ Isolated `src/khl/`, `src/server/khl/`, `src/components/khl/`, `src/app/machete/
 
 Матчевые протоколы КХЛ: одноразовый HTTP `scripts/khl-protocol-http.py` (зависимости `khl-http-requirements.txt`, без браузера), серверный таймер `ops/fantasy-khl-statistics.*` → `src/providers/khl-mobile/protocol*.ts` → `src/server/khl/protocol-import.ts`/`protocol-scheduler.ts` → агрегаты в `read-model.ts`. Базовый семидневный EP: `rolling-forecast.ts`; owning contracts INFRA-001#protocols, INFRA-002#protocol-aggregates, FEAT-003#rolling-beta.
 
+Sports fantasy weeks: `src/khl/fantasy-calendar.ts` resolves agreeing club observations; `src/server/khl/fantasy-calendar.ts` fetches bounded club calendars and atomically corrects assignments in the existing hourly cycle. Ownership: INFRA-001#fantasy-weeks; verified boundaries and readiness gates remain independent.
+
 Идентичность КХЛ: `sports-ru-hockey/identity.ts`, `khl-mobile/identity.ts`, `server/khl/identity-sync.ts` и проверенный операторский `identity-audit.ts`; клубные травмы `khl-mobile/injuries.ts` → `server/khl/injury-sync.ts`. Тот же ограниченный HTTP helper и часовой цикл, ownership INFRA-001#normalization/#runtime.
 
 <a name="release-transport"></a>
