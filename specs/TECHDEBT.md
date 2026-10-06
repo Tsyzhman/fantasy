@@ -4,6 +4,17 @@ Register of current engineering trade-offs and risks.
 
 ## Open
 
+### TD-009: Development tooling retains dependency advisories
+
+- Area: build and lint dependencies.
+- Related specs: `spec://common/structure#root`.
+- Introduced by: existing locked tooling; discovered in `WI-052`.
+- Current state: after patching the two production audit blockers, the full npm audit still reports nine development-only findings (seven high, two moderate) through braces and postcss-selector-parser in Tailwind/Next lint tooling. The production audit reports zero findings.
+- Risk: malicious glob or selector input can exhaust a development/build process; the current production audit does not include these development packages.
+- Trigger: build, lint or watcher processing specially crafted patterns/selectors, or making the complete development audit a required CI gate.
+- Mitigation: review a compatible patched upstream release or bounded compatibility replacement, then verify the full audit, CSS output and existing interface. The audit's proposed Tailwind major upgrade/Next lint downgrade is not applied as a routine CI repair.
+- Work: —; evidence in `specs/work/evidence/WI-052/verification.json`.
+
 ### TD-001: Доставка дедлайна идёт тиком в worker-процессе
 - Area: `deadline-reports`
 - Related specs: `spec://modules/telegram/INFRA-005-deadline-pipeline#decisions`

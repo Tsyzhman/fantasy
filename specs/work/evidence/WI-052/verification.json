@@ -54,7 +54,35 @@
     "note": "Observed during active browser checks; resource snapshots do not prove the absence of a memory leak."
   },
   "localWorkflowValidators": {"codex": "passed", "claude": "passed", "workItems": 52, "typedSpecs": 18},
-  "localValidation": {"focusedLint": "passed", "typecheck": "passed", "releaseVersion": "0.3.119", "versionVerification": "passed"},
+  "localValidation": {"focusedLint": "passed", "typecheck": "passed", "releaseVersion": "0.3.119", "versionVerification": "passed", "fullCheck": "passed", "unitTests": {"total": 1260, "passed": 1258, "failed": 0, "skipped": 2}, "lint": {"errors": 0, "warnings": 234}, "productionBuild": "passed", "includesUncommittedWorkItems": ["WI-050", "WI-051"]},
+  "dependencyAuditBaseline": {
+    "run": 37528096210,
+    "conclusion": "failure",
+    "highSeverity": 2,
+    "advisories": ["GHSA-wq5f-xc86-pv6w", "GHSA-68fv-2mgg-jv7q"],
+    "before": {"sharp": "0.35.4", "source-map-js": "1.2.1"},
+    "target": {"sharp": "0.35.5", "source-map-js": "1.2.2"}
+  },
+  "correctedBrowserSmoke": {
+    "run": 37528181539,
+    "revision": "8fe4adac233715f4ecb1f7fe7d366b01d94ddfda",
+    "conclusion": "success",
+    "passed": 28,
+    "skipped": 20,
+    "failed": 0,
+    "testRetries": 0
+  },
+  "dependencyVerification": {
+    "productionAuditFindings": 0,
+    "fullAudit": {"total": 9, "high": 7, "moderate": 2, "production": 0, "tracking": "TD-009"},
+    "nativeFormats": ["jpeg", "webp", "avif", "svg"],
+    "nativeResult": "passed",
+    "sourceMapRoundTrip": "passed",
+    "runtimeVersions": {"sharp": "0.35.5", "vips": "8.18.7", "rsvg": "2.63.2"},
+    "helperRssBytes": 72798208,
+    "preservedOptionalRuntimeEntries": ["@emnapi/core", "@emnapi/runtime"],
+    "unchangedNextVersion": "16.3.8"
+  },
   "applicationCodeChanges": false,
   "productionDeployment": false
 }
