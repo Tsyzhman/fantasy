@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.119 - 2026-10-06
+
+- Align the production browser smoke with the bounded KHL source contract and the catalog snapshots actually displayed after history and view changes.
+- Verify explicit unavailable-forecast messages during publication while preserving formula, coverage, sorting and complete XLSX checks for available data.
+
 ## 0.3.118 - 2026-10-05
 
 - Reconcile KHL fantasy weeks against fresh Sports calendars from both clubs, correcting stale assignments while preserving verified boundaries and historical statistics.

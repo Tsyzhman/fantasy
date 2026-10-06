@@ -6,6 +6,7 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
+| [WI-052](work/WI-052-github-smoke-main-alignment.md) | Restore scheduled production smoke on main | INFRA-001, FEAT-002 | @tsyzhman | 2026-10-06 | — |
 
 ## Backlog
 
