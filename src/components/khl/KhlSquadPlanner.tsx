@@ -15,6 +15,7 @@ export type KhlViewPreferences = { position?: KhlPosition | "ALL"; query?: strin
 type Props = { protocolNotice?: string; syncStatus?: KhlSyncStatus; contestId: string; season: string; players: KhlPlayer[]; weeks: KhlWeek[]; initialSquad: KhlSquad | null; initialPreferences?: KhlViewPreferences; tab: "squad" | "players" | "calendar" };
 import styles from "./KhlSquadPlanner.module.css";
 import { KhlSquadCard } from "./KhlSquadCard";
+import { PlatformTransferTrendsPanel } from "@/components/machete/PlatformTransferTrendsPanel";
 const control = styles.control;
 /** @spec spec://modules/khl/FEAT-002-khl-squad#cards */
 function KhlTimeStat({ value, games }: { value: Observation<number> | undefined; games: number }) {
@@ -160,6 +161,7 @@ export function KhlSquadPlanner({ contestId, season, players: initialPlayers, we
       setSaved(squad); setEntries(squad.entries); setBank(squad.bankUnits); setName(squad.name); setCapital(squad.capitalUnits ?? 20000);
       const url = new URL(window.location.href); url.searchParams.set("squadId", squad.id); url.searchParams.delete("new"); window.history.replaceState(null, "", url);
       setRefreshRevision(n => n + 1); setMessage(`Состав Sports загружен и сохранён: ${squad.entries.length}/17 игроков.`);
+      window.dispatchEvent(new CustomEvent("machete:squad-saved"));
     } catch (error) { setMessage(error instanceof Error ? error.message : "Ошибка импорта Sports"); }
     finally { setImporting(false); }
   }
@@ -172,6 +174,7 @@ export function KhlSquadPlanner({ contestId, season, players: initialPlayers, we
       setSaved({ ...data.data, capitalUnits: capital });
       const url = new URL(window.location.href); url.searchParams.set("squadId", data.data.id); window.history.replaceState(null, "", url);
       setMessage("Локальный вариант сохранён. На Sports.ru трансферы не выполнены.");
+      window.dispatchEvent(new CustomEvent("machete:squad-saved"));
     } catch (error) { setMessage(error instanceof Error ? error.message : "Ошибка сохранения"); }
     finally { setBusy(false); }
   }
@@ -189,6 +192,7 @@ export function KhlSquadPlanner({ contestId, season, players: initialPlayers, we
         const appliedBody = await applied.json(); if (!applied.ok) throw new Error(appliedBody.error?.message ?? "Ошибка сохранения сценария");
         const result = appliedBody.data.result;
         setEntries(result.entries); setBank(result.bankUnits); setSaved({ ...saved, entries: result.entries, bankUnits: result.bankUnits, revision: saved.revision + 1 });
+        window.dispatchEvent(new CustomEvent("machete:squad-saved"));
         setMessage(`Локальный сценарий сохранён. Изменение EP: ${formatKhlNumber(result.ep?.gain)}. ${result.violations.map(khlViolationText).join(", ")}. Внешние трансферы не выполнены.`);
       } catch (e) { setMessage(e instanceof Error ? e.message : "Ошибка сценария"); } finally { setBusy(false); }
       return;
@@ -204,6 +208,8 @@ export function KhlSquadPlanner({ contestId, season, players: initialPlayers, we
     <div className="flex flex-wrap items-center gap-3"><h1 className="text-2xl font-bold">Fantasy КХЛ · {season}</h1><span className={styles.notice}>Источники подключены частично</span><button className={control} disabled={statsBusy} onClick={() => { optimizer.cancel(); setRefreshRevision(n => n + 1); }}>Обновить статистику</button><span role="status">{statsBusy ? "Загружаются свежие показатели…" : statsMessage}</span></div>
     <nav aria-label="Разделы КХЛ" className={styles.tabs}>{([["squad", "Состав"], ["players", "Игроки"], ["calendar", "Календарь"]] as const).map(([key, label]) => <Link className={control} aria-current={activeTab === key ? "page" : undefined} key={key} href={`/machete/khl/${key}?contestId=${encodeURIComponent(contestId)}${saved ? `&squadId=${saved.id}` : ""}`} onClick={event => { event.preventDefault(); optimizer.cancel(); setActiveTab(key); setRefreshRevision(n => n + 1); const url = new URL(window.location.href); url.pathname = `/machete/khl/${key}`; window.history.replaceState(null, "", url); }}>{label}</Link>)}</nav>
     {syncStatus && <KhlSyncStatusPanel contestId={contestId} initialStatus={syncStatus}/>}
+    {/* @spec spec://modules/machete/FEAT-008-platform-transfer-trends#ui */}
+    {activeTab === "squad" && <PlatformTransferTrendsPanel contestId={contestId} module="khl" />}
     {protocolNotice && <p role="status" className={styles.notice}>{protocolNotice}</p>}
     <p className={styles.notice}>{players.some(p => p.ep.value !== null) ? "Доступен опубликованный EP. Модель и качество указаны в источниках карточки; beta-прогноз не подтверждает готовность xG-модели." : "Прогноз выбранного периода пока не готов."} Неизвестное обозначено «—». Внешнее выполнение трансферов отсутствует.</p>
     <label className="block">Период прогноза <select className={control} value={rolling ? "rolling" : "week"} onChange={e => { optimizer.cancel(); setRolling(e.target.value === "rolling"); }}><option value="rolling">Ближайшие 7 дней · оценка</option><option value="week">Официальная фэнтези-неделя</option></select></label>
@@ -260,7 +266,6 @@ export function KhlSquadPlanner({ contestId, season, players: initialPlayers, we
     <p role="status" aria-live="polite" className="text-sm">{message}</p>
   </section>;
 }
-
 
 
 

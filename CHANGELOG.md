@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.3.120 - 2026-10-07
+
+- Add per-league platform transfer summaries in football/FPL and KHL Squad, comparing each participant's latest saved plan with their latest eligible published-round squad.
+- Show the top five additions/removals, counts, percentages and comparable sample coverage, with explicit empty/error states and bounded read-only aggregation.
+- Correct both local workflow validators to honor explicit standalone mode while retaining managed receipt validation.
+- Include the verified production browser smoke and compatible dependency patches from 0.3.119.
+
 ## 0.3.119 - 2026-10-06
 
 - Align the production browser smoke with the bounded KHL source contract and the catalog snapshots actually displayed after history and view changes.

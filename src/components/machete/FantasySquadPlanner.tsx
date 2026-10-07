@@ -31,6 +31,7 @@ import {
 } from "@/components/machete/fantasy-squad-ui";
 import { ProjectionFormulaHoverCard } from "@/components/machete/ProjectionFormulaHoverCard";
 import { SportsTrendsPanel } from "@/components/machete/SportsTrendsPanel";
+import { PlatformTransferTrendsPanel } from "@/components/machete/PlatformTransferTrendsPanel";
 import { FantasyFixtureCalendar } from "@/components/machete/FantasyFixtureCalendar";
 import { parseFantasyFixtureCalendar, type FantasyFixtureCalendar as FixtureCalendarData } from "@/machete/squad-fixture-calendar";
 import { SortableTable, type SortDirection } from "@/components/sortable-table";
@@ -1914,6 +1915,7 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
       if (typeof payload.result.bankedFreeTransfers === "number") setOpeningFreeTransfers(payload.result.bankedFreeTransfers);
       setActiveSquadId(payload.result.squadId);
       setMessage(`FPL GW${payload.result.gameweek ?? ""} published squad imported: ${importedSelections.length} players.`);
+      window.dispatchEvent(new CustomEvent("machete:squad-saved"));
     } finally {
       setFplImportPending(false);
     }
@@ -2256,6 +2258,8 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
             </div>
 
             <div className="min-w-0 xl:sticky xl:top-16">
+              {/* @spec spec://modules/machete/FEAT-008-platform-transfer-trends#ui */}
+              <PlatformTransferTrendsPanel contestId={contestId} />
               <BookmakerFavoritesTable
                 rows={activeRoundBookmakerFavorites}
                 roundLabel={rounds[activeRoundOffset]?.label ?? null}

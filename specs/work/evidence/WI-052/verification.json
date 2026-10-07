@@ -1,6 +1,9 @@
 {
   "workItem": "WI-052",
-  "date": "2026-10-06",
+  "date": "2026-10-07",
+  "startedDate": "2026-10-06",
+  "timezone": "Europe/Moscow",
+  "result": "completed",
   "repository": "Tsyzhman/fantasy",
   "baseline": {
     "defaultBranch": "main",
@@ -82,6 +85,42 @@
     "helperRssBytes": 72798208,
     "preservedOptionalRuntimeEntries": ["@emnapi/core", "@emnapi/runtime"],
     "unchangedNextVersion": "16.3.8"
+  },
+  "finalCorrection": {
+    "revision": "dce62199397ad282648e8c5826c383fa925a767a",
+    "check": {"run": 37530109616, "conclusion": "success", "productionAuditFindings": 0, "databaseTests": {"passed": 16, "failed": 0}, "unitTests": {"passed": 1236, "failed": 0, "skipped": 0}, "lint": {"errors": 0, "warnings": 234}, "migrationDrift": "passed", "typecheck": "passed", "productionBuild": "passed"},
+    "browserSmoke": {"run": 37530107965, "scope": "all", "conclusion": "success", "authentication": "passed", "passed": 28, "failed": 0, "skipped": 20, "testRetries": 0},
+    "defaultBranchIntegration": "merged with explicit human authorization"
+  },
+  "mainIntegration": {
+    "revision": "4606fb1f1f3988ab6d2360cfc6ff5b74bf66d813",
+    "mergedAt": "2026-10-06T21:04:14Z",
+    "explicitUserAuthorization": true,
+    "pullRequests": {"37": "merged by included ancestry", "38": "merged"},
+    "testedTreeIdentity": "identical to dce62199397ad282648e8c5826c383fa925a767a",
+    "check": {"run": 37531199480, "conclusion": "success", "productionAuditFindings": 0, "databaseTests": {"passed": 16, "failed": 0}, "unitTests": {"passed": 1236, "failed": 0, "skipped": 0}, "lint": {"errors": 0, "warnings": 234}, "migrationDrift": "passed", "typecheck": "passed", "productionBuild": "passed"},
+    "browserSmoke": {"run": 37531233499, "scope": "all", "conclusion": "success", "authentication": "passed", "passed": 28, "failed": 0, "skipped": 20, "testRetries": 0},
+    "cancelledOldRevisionRun": 37531158068
+  },
+  "resourcesAfterVerification": {
+    "observedAt": "2026-10-06T21:12:35Z",
+    "rawCache": {"rows": 700, "bytes": 10157909, "expired": 0, "maximumBytes": 262144000},
+    "duplicates": {"stats": 0, "scores": 0, "catalog": 0, "raw": 0, "squads": 0, "squadEntries": 0, "activeJobs": 0},
+    "activeKhlJobs": 0,
+    "webMiB": 780.4,
+    "workerGiB": 2.151,
+    "postgresGiB": 1.202,
+    "health": {"web": "healthy", "worker": "healthy", "postgres": "healthy"},
+    "restarts": {"web": 0, "worker": 0, "postgres": 0},
+    "oomKilled": {"web": false, "worker": false, "postgres": false},
+    "workerChildren": 0,
+    "hostAvailableMiB": 5498,
+    "hostDiskAvailableMiB": 65707,
+    "localNextOutput": {"copies": 1, "files": 4078, "bytes": 1394070045},
+    "remainingTaskNodeProcesses": 0,
+    "localDiagnosticDownloadBytes": 16631726,
+    "temporaryArtifactCleanup": "rejected by automatic command policy; retained locally, no bypass attempted",
+    "note": "Other tasks' processes and build outputs are not changed. Resource snapshots do not prove the absence of a memory leak."
   },
   "applicationCodeChanges": false,
   "productionDeployment": false

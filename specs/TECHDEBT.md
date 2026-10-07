@@ -77,7 +77,16 @@ Register of current engineering trade-offs and risks.
 
 ## Resolved
 
-## Resolved
+### TD-008: Workflow checker treats standalone state as a Prist connection
+
+- Area: local `spec-driven-work` workflow validation.
+- Related specs: `spec://common/PROP-001-workflow-validation#root`.
+- Introduced by: existing skill script `d9abf51`; discovered while closing `WI-050`.
+- Current state: resolved on 2026-10-06 by WI-051. Both mirrored validators select the explicit mode, accept the local standalone receipt and preserve managed context checks. Both actual repository checks pass.
+- Risk: the false managed-connection failure is removed; malformed and contradictory declarations still fail.
+- Trigger: `node .agents/skills/spec-driven-work/scripts/check-workflow.mjs .` or the Claude mirror.
+- Mitigation: 19 direct contract tests, passing repository tests/lint/types, current specification snapshot and mirror parity.
+- Work: [WI-051](work/archive/2026/WI-051-workflow-validator-mode.md); [verification](work/evidence/WI-051/verification.json). Original failure evidence remains in WI-050.
 
 ### TD-007: Existing production dependencies block the CI audit
 

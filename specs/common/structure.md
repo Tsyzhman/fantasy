@@ -26,9 +26,11 @@ Contracts: `spec://modules/machete/FEAT-006-sports-popularity#root`, `spec://mod
 
 | Area | Responsibility | Primary code |
 |---|---|---|
+| Spec workflow tooling | PROP-001: explicit standalone/managed mode validation, mirrored client skills and contract fixtures | `.agents/skills/spec-driven-work/scripts/check-workflow.mjs`, `.claude/skills/spec-driven-work/scripts/check-workflow.mjs`, `src/lib/workflow-validator.test.ts` |
 | Machete UI | League, player, model, squad, and sync screens | `src/app/machete` |
 | Squad player card | FEAT-003: contact-sheet pitch/bench card and themed styles | `src/components/machete/FantasySquadPlanner.tsx`, `src/app/globals.css` |
 | Machete domain | Read models, scoring, Sports.ru mapping, squad planning | `src/machete` |
+| Platform transfer trends | FEAT-008: bounded readers of saved plans vs published round squads; aggregate API and shared football/KHL panel | `src/machete/platform-transfer-trends.ts`, `src/server/platform-transfer-trends.ts`, `src/app/api/machete/platform-transfers/`, `src/components/machete/PlatformTransferTrendsPanel.tsx` |
 | Rotation risk | FEAT-004: RR math and bounded normalized history reader | `src/machete/rotation-risk.ts`, `src/server/rotation-risk.ts` |
 | Global ranking strategy | FEAT-001/002: pure K/EP-loss math, bounded candidate search, provider context/cache, recommendation audit and UI | `src/machete/global-strategy*.ts`, `src/server/global-strategy*.ts`, `src/app/api/machete/squads/global-strategy`, `src/components/machete/GlobalStrategyPanel.tsx` |
 | Shared FotMob core | Normalized match, team, player, shot, and event tables | `src/core_data` |
