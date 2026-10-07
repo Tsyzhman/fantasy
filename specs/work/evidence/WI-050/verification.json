@@ -1,0 +1,105 @@
+{
+  "workItem": "WI-050",
+  "verifiedOn": "2026-10-06",
+  "scope": "local working tree; not deployed",
+  "before": "Squad had provider popularity but no aggregate of participants' saved plan changes.",
+  "after": "Top five additions and removals per football/Sports, FPL or KHL contest, versus one latest eligible published round, with counts, percentages and comparable/excluded coverage.",
+  "counting": {
+    "participantVariant": "latest updated variant, deterministic ID tie-break, one per active user",
+    "movement": "full-roster set difference; captain, bench, locks and slot order ignored",
+    "missingData": "exclude missing, incomplete, duplicate, malformed or stale pairs; never substitute an older round",
+    "percentageDenominator": "all complete comparable participants, including unchanged squads"
+  },
+  "checks": {
+    "pureContractTests": { "command": "npx tsx --test src/machete/platform-transfer-trends.test.ts", "passed": 5 },
+    "databaseAndApiTests": {
+      "command": "PLATFORM_TRANSFER_TEST_DATABASE=true DATABASE_URL=<isolated localhost test DB> npx tsx --test --test-concurrency=1 src/server/platform-transfer-trends.db-test.ts",
+      "postgresVersion": 16,
+      "migrationsApplied": 52,
+      "passed": 4,
+      "skipped": 0,
+      "coverage": ["same round/contest/provider/season", "current linked Sports profile/FPL entry", "101 users with 202 variants across cursor batches", "complete 17-player KHL baseline", "session auth", "KHL feature gate", "no personal identifiers", "private, no-store", "read-only repeat"],
+      "latestBatchDurationMs": 10,
+      "latestTestProcessRssMiB": 125,
+      "nonTestDatabaseGuard": "all four tests skipped with a non-test DATABASE_URL, even when the local test flag is set",
+      "ciIntegration": "guard also recognizes the existing isolated common CI database on localhost:55439; remote CI has not been run"
+    },
+    "repository": {
+      "command": "npm run check",
+      "exitCode": 0,
+      "tests": 1241,
+      "passed": 1239,
+      "failed": 0,
+      "existingSkipped": 2,
+      "lintErrors": 0,
+      "existingLintWarnings": 234,
+      "typecheck": "passed",
+      "productionBuild": "passed",
+      "postbuild": "standalone output sanitized",
+      "followup": "focused DB tests and ESLint passed after changing only the test database guard"
+    },
+    "auxiliaryWorkflowChecker": {
+      "command": "node .agents/skills/spec-driven-work/scripts/check-workflow.mjs .",
+      "exitCode": 1,
+      "passed": ["entrypoint", "mirrored skill parity", "all BOARD links and unique work IDs", "current specification snapshot"],
+      "failure": "state:connection-kit expects managed connection fields despite existing explicit standalone mode",
+      "configurationLastModified": "2026-09-06",
+      "introducedInThisChange": false,
+      "trackedAs": "TD-008"
+    },
+    "browser": {
+      "runner": "Playwright CLI, headless Microsoft Edge, dedicated wi050 session",
+      "data": "isolated PostgreSQL fixtures for actual football and KHL pages; route mocks for top-five, empty and failure presentation",
+      "widthsPx": [1440, 390, 320],
+      "themes": ["light", "dark"],
+      "topFiveEntriesVisible": 10,
+      "horizontalOverflow": false,
+      "emptyChanges": "two explicit No changes yet lists",
+      "noComparable": "explicit unavailable message, no stale ranks",
+      "httpFailure": "explicit retry alert, no stale ranks",
+      "saveEventRefresh": "passed",
+      "footballToKhlScope": "KHL labels and players replace the football panel",
+      "console": "one expected network 503 from intentional failure mock; no JavaScript runtime errors",
+      "screenshots": "output/playwright/WI-050/",
+      "logs": "output/WI-050/browser-check.log"
+    }
+  },
+  "resources": {
+    "stressCalls": 50,
+    "elapsedMs": 452,
+    "batchSize": 100,
+    "participantsInSample": 101,
+    "variantsInSample": 202,
+    "afterGcHeapGrowthBytes": 339496,
+    "beforeRssBytes": 112369664,
+    "afterRssBytes": 120250368,
+    "persistentRowsChanged": false,
+    "processGlobalCachesAdded": 0,
+    "backgroundCollectorsAdded": 0,
+    "pollingAdded": false,
+    "cleanup": {
+      "browserSession": "closed",
+      "nextServer": "stopped",
+      "postgres": "stopped",
+      "ports3008And55440Listening": 0,
+      "qaSessionTokenDeleted": true,
+      "temporaryDatabaseDirectory": "output/WI-050/postgres",
+      "temporaryDatabaseBytesRemaining": 75939838,
+      "temporaryDatabaseDeletion": "automatic approval review rejected recursive removal: blocked by policy; directory retained",
+      "unrelatedProcessesAndCaches": "preserved"
+    },
+    "limitation": "short local measurements are not proof of no long-term memory leak"
+  },
+  "specSnapshot": {
+    "command": "node .agents/skills/spec-driven-work/scripts/sync-spec-space.mjs snapshot --root .",
+    "status": "current",
+    "diagnostics": [],
+    "fingerprint": "10c6456ac931983189f254d782fb60b64ee65da341b8ab45d9ccdb59dcc6f31d",
+    "source": "working_tree",
+    "baseCommit": "03527d358e5577e76e285ce3ecd772f5f312b838"
+  },
+  "research": {
+    "communityContext": "https://www.reddit.com/r/FantasyPL/comments/1nlt6pi/",
+    "primaryTechnicalReference": "https://www.postgresql.org/docs/current/functions-json.html"
+  }
+}

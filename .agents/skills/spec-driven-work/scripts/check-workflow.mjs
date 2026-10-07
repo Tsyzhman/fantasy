@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 /* global process */
+/** @spec spec://common/PROP-001-workflow-validation#mode */
 
 import { createHash } from "node:crypto";
 import { readFile, readdir, stat } from "node:fs/promises";
@@ -35,8 +36,35 @@ const pass = (id, detail) => checks.push({ id, status: "passed", detail });
 const fail = (id, detail) => { checks.push({ id, status: "failed", detail }); errors.push(detail); };
 
 const connected = await exists(resolve(root, ".prist/connection.json"));
-const managedEntrypoint = await exists(resolve(root, "AGENTS.md")) && (await text("AGENTS.md")).includes("<!-- prist:begin -->");
-const managed = connected || managedEntrypoint || await exists(resolve(root, ".prist/workflow.json"));
+const entrypoint = await exists(resolve(root, "AGENTS.md")) ? await text("AGENTS.md") : "";
+const managedEntrypoint = entrypoint.includes("<!-- prist:begin -->");
+const declarations = [...entrypoint.matchAll(/\b(?:repository|project)\s+uses\s+[`"]?([a-z][a-z-]*)[`"]?\s+mode\b|\bworkflow\s+mode\s*:\s*[`"]?([a-z][a-z-]*)\b/gi)]
+  .map((match) => (match[1] ?? match[2]).toLowerCase());
+const entrypointModes = [...new Set(declarations)];
+const entrypointMode = entrypointModes[0];
+const workflowExists = await exists(resolve(root, ".prist/workflow.json"));
+let state;
+if (workflowExists) {
+  try {
+    const parsed = JSON.parse(await text(".prist/workflow.json"));
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) throw new Error("Invalid workflow object");
+    state = parsed;
+  } catch {
+    fail("state:workflow", ".prist/workflow.json must contain a valid JSON object");
+  }
+}
+const supportedModes = new Set(["standalone", "prist-managed"]);
+if ((state?.mode !== undefined && !supportedModes.has(state.mode))
+  || entrypointModes.some((mode) => !supportedModes.has(mode))) {
+  fail("state:mode", "The workflow declares an unsupported operational mode");
+} else if (entrypointModes.length > 1 || (state?.mode !== undefined && entrypointMode && state.mode !== entrypointMode)) {
+  fail("state:mode", "Workflow state and repository entrypoint must declare one consistent mode");
+}
+// Explicit declarations win; file presence is only a fallback for older receipts.
+const mode = state?.mode !== undefined ? state.mode : entrypointMode
+  ?? (connected || managedEntrypoint || workflowExists ? "prist-managed" : "standalone");
+const managed = mode === "prist-managed";
+const supportedStateShape = state && (state.schemaVersion === undefined || state.schemaVersion === "4");
 const required = managed ? ["AGENTS.md"] : [
   "AGENTS.md",
   "specs/protocols/BOOT.md",
@@ -82,15 +110,19 @@ if (await exists(resolve(root, "specs/BOARD.md"))) {
   }
 }
 
-if (managed) {
-  if (!await exists(resolve(root, ".prist/workflow.json"))) {
+if (mode === "standalone") {
+  if (!workflowExists || (supportedStateShape && state.status === "ready" && state.stateSource === "repository")) {
+    pass("state:standalone", "standalone repository workflow");
+  } else {
+    fail("state:standalone", "Standalone workflow requires a supported schema, repository state source and ready status");
+  }
+} else if (managed) {
+  if (!workflowExists) {
     fail("state:connection-kit", ".prist/workflow.json is required for a connected repository");
   } else {
     try {
-      const state = JSON.parse(await text(".prist/workflow.json"));
       const connection = connected ? JSON.parse(await text(".prist/connection.json")) : undefined;
       const expected = connection?.workflow ?? { bundleVersion: state.bundleVersion, stateSource: state.stateSource };
-      const supportedStateShape = state.schemaVersion === undefined || state.schemaVersion === "4";
       const matches = supportedStateShape
         && state.status === "connection_ready"
         && state.bundleVersion === expected?.bundleVersion
@@ -103,23 +135,23 @@ if (managed) {
       fail("state:connection-kit", ".prist workflow or connection state contains invalid JSON");
     }
   }
+}
 
-  const hasSpecSpace = await exists(resolve(root, "specs/SPEC-MAP.md"))
-    || await exists(resolve(root, "specs/common/main.md"))
-    || (await files("specs/common")).some((path) => /\/(?:PROP|FEAT|INFRA)-\d+.*\.md$/.test(`/${path}`))
-    || (await files("specs/modules")).some((path) => /\/(?:PROP|FEAT|INFRA)-\d+.*\.md$/.test(`/${path}`));
-  if (!hasSpecSpace) {
-    pass("spec-space:empty", "ready for first authored spec-space");
-  } else {
-    try {
-      const script = resolve(dirname(fileURLToPath(import.meta.url)), "sync-spec-space.mjs");
-      const { buildSnapshot } = await import(pathToFileURL(script).href);
-      const snapshot = await buildSnapshot(root);
-      if (snapshot.status === "current") pass("spec-space:current", `${snapshot.specs.length} typed specs`);
-      else fail("spec-space:current", `Spec snapshot partial: ${snapshot.diagnostics.join("; ")}`);
-    } catch (error) {
-      fail("spec-space:current", `Spec snapshot check failed: ${error instanceof Error ? error.message : String(error)}`);
-    }
+const hasSpecSpace = await exists(resolve(root, "specs/SPEC-MAP.md"))
+  || await exists(resolve(root, "specs/common/main.md"))
+  || (await files("specs/common")).some((path) => /\/(?:PROP|FEAT|INFRA)-\d+.*\.md$/.test(`/${path}`))
+  || (await files("specs/modules")).some((path) => /\/(?:PROP|FEAT|INFRA)-\d+.*\.md$/.test(`/${path}`));
+if (!hasSpecSpace) {
+  pass("spec-space:empty", "ready for first authored spec-space");
+} else {
+  try {
+    const script = resolve(dirname(fileURLToPath(import.meta.url)), "sync-spec-space.mjs");
+    const { buildSnapshot } = await import(pathToFileURL(script).href);
+    const snapshot = await buildSnapshot(root);
+    if (snapshot.status === "current") pass("spec-space:current", `${snapshot.specs.length} typed specs`);
+    else fail("spec-space:current", `Spec snapshot partial: ${snapshot.diagnostics.join("; ")}`);
+  } catch (error) {
+    fail("spec-space:current", `Spec snapshot check failed: ${error instanceof Error ? error.message : String(error)}`);
   }
 }
 

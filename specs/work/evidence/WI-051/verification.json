@@ -1,0 +1,58 @@
+{
+  "workItem": "WI-051",
+  "verifiedOn": "2026-10-06",
+  "scope": "project-local validator; no deployment or global configuration change",
+  "before": "The existence of .prist/workflow.json implied managed mode and rejected the repository's explicit standalone receipt.",
+  "after": "Explicit receipt/entrypoint modes select their own validation; conflicting or invalid declarations fail; legacy managed receipt checks remain available.",
+  "contract": "spec://common/PROP-001-workflow-validation#root",
+  "regression": {
+    "before": { "tests": 17, "passed": 6, "failed": 11 },
+    "after": { "tests": 19, "passed": 19, "failed": 0 },
+    "command": "npx tsx --test src/lib/workflow-validator.test.ts",
+    "coverage": ["both mirrored CLIs", "standalone receipt", "entrypoint-only standalone", "stale connection ignored", "local required files", "invalid status/source/schema", "unknown/conflicting modes", "malformed and non-object JSON", "matching and mismatched managed setup contexts", "legacy managed receipt", "missing managed receipt", "empty manifest", "malformed managed connection"],
+    "logs": [".tmp/WI-051-before-tests.log", ".tmp/WI-051-after-tests.log"]
+  },
+  "repository": {
+    "testsCommand": "npm test",
+    "tests": 1260,
+    "passed": 1258,
+    "failed": 0,
+    "existingSkipped": 2,
+    "elapsedMs": 28805.5596,
+    "lintCommand": "npx eslint --no-ignore .agents/skills/spec-driven-work/scripts/check-workflow.mjs .claude/skills/spec-driven-work/scripts/check-workflow.mjs src/lib/workflow-validator.test.ts",
+    "lintExitCode": 0,
+    "typecheckCommand": "npm run typecheck",
+    "typecheckExitCode": 0,
+    "productionBuild": "not rerun for a tooling-only change; application runtime code was not changed"
+  },
+  "actualValidators": {
+    "codex": { "command": "node .agents/skills/spec-driven-work/scripts/check-workflow.mjs .", "status": "passed", "exitCode": 0, "errors": [] },
+    "claude": { "command": "node .claude/skills/spec-driven-work/scripts/check-workflow.mjs .", "status": "passed", "exitCode": 0, "errors": [] },
+    "identicalSourceSha256": "b0b10e156ebe6b26c9ed755b87ddfee93b48383768afce31fb5b3ff579210c21",
+    "logs": [".tmp/WI-051-agents-profile-check.json", ".tmp/WI-051-claude-profile-check.json"]
+  },
+  "resources": {
+    "codexObservedPeakWorkingSetBytes": 331444224,
+    "claudeObservedPeakWorkingSetBytes": 330178560,
+    "profileMethod": "sampled OS process peak working set during each owned CLI run",
+    "bothOwnedProcessesExited": true,
+    "validatorProcessesRemaining": 0,
+    "fixtureDirectoriesRemaining": 0,
+    "childTimeoutMs": 15000,
+    "childOutputLimitBytes": 2097152,
+    "backgroundProcessesOrCollectorsAdded": 0,
+    "persistentCachesAdded": 0,
+    "duplicateBoardWorkIds": 0,
+    "unrelatedProcessesAndCaches": "preserved",
+    "limitation": "per-command observed peaks; no long-term leak claim"
+  },
+  "specSnapshot": {
+    "status": "current",
+    "diagnostics": [],
+    "fingerprint": "1bf985c24128bc570a31d50596cae2e51424fde730ad8bcfa1d465c6c1fae911",
+    "source": "working_tree",
+    "log": ".tmp/WI-051-spec-snapshot.json"
+  },
+  "technicalDebt": "TD-008 resolved",
+  "primaryTechnicalReferences": ["https://nodejs.org/api/test.html", "https://nodejs.org/api/child_process.html"]
+}

@@ -6,7 +6,7 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
-| [WI-052](work/WI-052-github-smoke-main-alignment.md) | Restore scheduled production smoke on main | INFRA-001, FEAT-002 | @tsyzhman | 2026-10-06 | — |
+| [WI-053](work/WI-053-platform-transfer-trends-release.md) | Release platform transfer trends and verified fixes | FEAT-008, PROP-001, structure | @tsyzhman | 2026-10-07 | — |
 
 ## Backlog
 
@@ -24,6 +24,9 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-052](work/archive/2026/WI-052-github-smoke-main-alignment.md) | Restore scheduled production smoke on main | @tsyzhman | 2026-10-07 |
+| [WI-051](work/archive/2026/WI-051-workflow-validator-mode.md) | Validate standalone workflow mode | @tsyzhman | 2026-10-06 |
+| [WI-050](work/archive/2026/WI-050-platform-transfer-trends.md) | Platform transfer trends in Squad | @tsyzhman | 2026-10-06 |
 | [WI-049](work/archive/2026/WI-049-khl-calendar-reconciliation.md) | Reconcile KHL calendar weeks | @tsyzhman | 2026-10-05 |
 | [WI-048](work/archive/2026/WI-048-franchise-compact-labels.md) | Small names beside franchise points | @tsyzhman | 2026-10-04 |
 | [WI-047](work/archive/2026/WI-047-franchise-charts-redesign.md) | Readable franchise comparison charts | @tsyzhman | 2026-10-04 |
