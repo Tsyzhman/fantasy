@@ -6,7 +6,7 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
-| [WI-054](work/WI-054-franchise-filters.md) | Working franchise date and league filters | FEAT-005 | @tsyzhman | 2026-10-08 | — |
+| [WI-055](work/WI-055-sports-transfer-limit.md) | Three Sports.ru transfers per round | FEAT-001 | @tsyzhman | 2026-10-08 | — |
 
 ## Backlog
 
@@ -24,6 +24,7 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-054](work/archive/2026/WI-054-franchise-filters.md) | Working franchise date and league filters | @tsyzhman | 2026-10-08 |
 | [WI-053](work/archive/2026/WI-053-platform-transfer-trends-release.md) | Release platform transfer trends and verified fixes | @tsyzhman | 2026-10-07 |
 | [WI-052](work/archive/2026/WI-052-github-smoke-main-alignment.md) | Restore scheduled production smoke on main | @tsyzhman | 2026-10-07 |
 | [WI-051](work/archive/2026/WI-051-workflow-validator-mode.md) | Validate standalone workflow mode | @tsyzhman | 2026-10-06 |

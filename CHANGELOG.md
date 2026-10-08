@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.122 - 2026-10-08
+
+- Correct Sports.ru squad planning to three transfers per round without accumulating unused transfers, including older cached pools, saved-plan rollover and legacy opening allowances.
+- Remove the incorrect accumulation claim from both transfer descriptions in Russian and English.
+- Keep FPL transfer banking and point costs covered by regression checks.
+
 ## 0.3.121 - 2026-10-08
 
 - Apply franchise calendar, league and completed-round filters automatically after a short pause, with immediate submit/retry, invalid-date feedback and cancellation of superseded requests.

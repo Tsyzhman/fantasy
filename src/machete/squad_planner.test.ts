@@ -22,6 +22,7 @@ import {
   compareFantasyPlannerPlayers,
   configuredFantasyProjectionEngine,
   fantasyPlannerPosition,
+  fantasyRulesForLeague,
   fantasyProviderRoundKey,
   fantasyPlayerPoolPreferenceGroups,
   fantasyPlannerSharedRowIdentity,
@@ -44,6 +45,7 @@ import {
   fantasyPlayerPoolCacheKey,
   defaultFantasySquadNameForUser,
   loadFantasySquadPlannerData,
+  loadSportsRuFantasySquadPlannerShellData,
   normalizeFantasySquadName,
   preferredArchivedSeason,
   projectFixtureFantasyPoints,
@@ -81,9 +83,65 @@ import type { PlayerFixtureProjection } from "./deterministic_fantasy_projection
 import type { ActiveScoringModel } from "@/lib/scoring";
 import { friendAlternativeFormulaDefaults } from "@/lib/scoring/formula-display";
 import { calculateFriendWindowMetrics, type SharedMachetePlayerRow } from "./shared_read_model";
-import { defaultFantasySquadRules, fantasyProviderPlaceholderPlayerId, type FantasyProviderPlaceholder } from "./squad_logic";
+import { defaultFantasySquadRules, fantasyProviderPlaceholderPlayerId, fantasyTransferBudget, sportsRuMaxBankedTransfers, type FantasyProviderPlaceholder } from "./squad_logic";
 import { expectedProjectionFormulaConfig, friendAltProjectionFormulaConfig } from "./projection-formula-config";
 import { positionEventPriorPer90 } from "./player-season-prior";
+import { parseFantasyPlayerPoolSnapshotMetadata } from "./fantasy-player-pool-snapshots";
+
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#transfer-rules */
+test("Sports.ru configured transfer allowance remains three for both default and contest rules", () => {
+  const league = {
+    leagueId: 47n,
+    season: "2026/2027",
+    name: "Premier League",
+    displayName: "England",
+    country: "England",
+    providerLeagueId: "47",
+    isCurrent: true,
+    updatedAt: new Date("2026-10-08T00:00:00Z")
+  };
+  for (const contest of [null, { budgetLimit: 100, squadSize: 15, maxPlayersPerTeam: 2, name: "Test contest" }]) {
+    assert.deepEqual(fantasyTransferBudget(fantasyRulesForLeague(league, contest)), {
+      perRound: 3, maxBanked: 3, paidPointCost: 0
+    });
+  }
+  assert.deepEqual(fantasyTransferBudget(fantasyRulesForLeague(league, null, "FPL")), {
+    perRound: 1, maxBanked: 5, paidPointCost: 4
+  });
+});
+
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#transfer-rules */
+test("Sports.ru snapshot readers replace legacy transfer banking without changing the stored snapshot", async () => {
+  const rules = Object.freeze({ ...defaultFantasySquadRules, transferLimitPerRound: 3, maxBankedTransfers: 6, paidTransferPointCost: 0 });
+  const metadata = Object.freeze({
+    version: 1,
+    readiness: {},
+    rules,
+    rounds: [],
+    bookmakerFavorites: [],
+    historySeasonOptions: ["2026/2027"],
+    priceStatus: {},
+    dataFreshness: { fotmobStatsAt: null, bookmakerOddsAt: null }
+  });
+  const parsed = parseFantasyPlayerPoolSnapshotMetadata(metadata);
+  const shell = await loadSportsRuFantasySquadPlannerShellData({
+    fantasyContest: { findFirst: async () => ({ id: "sports-contest" }) },
+    userScoringPreference: { findUnique: async () => null },
+    fantasyPlayerPoolSnapshot: { findFirst: async () => ({ id: "legacy-snapshot", metadata }) },
+    userFantasySquad: { findMany: async () => [] }
+  } as never, "user", {
+    leagueId: 47n, season: "2026/2027", name: "Premier League", displayName: "England",
+    country: "England", providerLeagueId: "47", isCurrent: true, updatedAt: new Date("2026-10-08T00:00:00Z")
+  }, null, {});
+  for (const result of [parsed, shell]) {
+    assert.ok(result);
+    assert.deepEqual(fantasyTransferBudget(result.rules), { perRound: 3, maxBanked: 3, paidPointCost: 0 });
+    assert.deepEqual(result.rules.positionLimits, rules.positionLimits);
+    assert.equal(result.rules.budgetLimit, rules.budgetLimit);
+  }
+  assert.equal(shell.playerPoolSnapshotId, "legacy-snapshot");
+  assert.equal(metadata.rules.maxBankedTransfers, 6);
+});
 
 test("Sports.ru price popularity takes precedence over the forecast fallback", () => {
   assert.equal(resolveFantasyPlannerOwnership({ selectedByPercent: 57.28 }, { selectedByPercent: 12 }), 57.28);
@@ -1380,6 +1438,7 @@ test("legacy squads expand to five linked planning rounds and saved round plans 
   }), 2);
 });
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#transfer-rules */
 test("saved five-round plans roll forward and keep only valid future variants", () => {
   const pool = rolloverPlayerPool();
   const base = rolloverSelections();
@@ -1403,7 +1462,11 @@ test("saved five-round plans roll forward and keep only valid future variants", 
     shift: 1,
     fallbackSelections: base,
     pool,
-    rules: defaultFantasySquadRules
+    rules: {
+      ...defaultFantasySquadRules,
+      transferLimitPerRound: 3,
+      maxBankedTransfers: sportsRuMaxBankedTransfers
+    }
   });
 
   assert.deepEqual(rolled[0].selections.map((selection) => selection.playerId), roundOne.map((selection) => selection.playerId));

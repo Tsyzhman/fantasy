@@ -70,6 +70,20 @@ Pure functions in `src/machete/global-strategy.ts` and `src/machete/global-strat
 
 `PATCH` of this route binds only the team of the associated profile in the selected season. `POST` maintains a compact recommendation audit: the server checks its own context and budget, and the sent forecast marks `CLIENT_EP_REPORTED`; This is not server-side verification of the forecast. The start and captain are selected separately for each round, the bench gives 0 EP until the auto-replacement model appears. Old pool snapshots are read by the regular UI and are sequentially rebuilt by workers in the absence of `providerIdentityVersion: 1`; incomplete mapping disables GLOBAL_AUTO until rebuilding.
 
+<a name="transfer-rules"></a>
+
+### Provider transfer rules {#transfer-rules}
+
+Every squad-planning strategy uses three Sports.ru transfers per round. Unused
+transfers do not carry forward. Round counters, suggestions, saved-plan rollover
+and legacy opening allowances use this cap. Reading an older Sports.ru pool
+snapshot applies the current transfer rule immediately without rebuilding its
+player data or mutating its stored metadata. Russian and English descriptions
+state three transfers per round without claiming accumulation.
+
+FPL retains its separate provider rules: one new free transfer per round,
+unused free transfers bank up to five, and extra transfers cost four points.
+
 <a name="errors"></a>
 
 ## 8. Errors and validation {#errors}
@@ -102,6 +116,7 @@ Points of responsibility with `@spec`: `src/server/global-strategy-providers.ts`
 
 ## 12. Changelog {#changelog}
 
+- 2026-10-08: WI-055 — correct Sports.ru to three transfers per round without accumulation, including older snapshot readers.
 - 2026-10-04: WI-046 — terminating full-pool refresh processes preserve serialized publication and release native working memory.
 
 - 2026-09-28: English documentation, repaired document references, and GitHub navigation anchors (WI-039).

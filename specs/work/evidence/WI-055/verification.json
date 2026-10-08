@@ -1,0 +1,39 @@
+{
+  "workItem": "WI-055",
+  "version": "0.3.122",
+  "before": {
+    "copy": "Sports.ru allows 3 transfers per round; unused transfers bank up to 6.",
+    "configuredMaxBankedTransfers": 6,
+    "regressionTests": { "tests": 3, "failed": 3, "log": ".tmp/WI-055-before-tests.log" }
+  },
+  "after": {
+    "ru": "В Sports.ru — 3 замены за тур.",
+    "en": "Sports.ru allows 3 transfers per round.",
+    "transferLimitPerRound": 3,
+    "maxBankedTransfers": 3,
+    "legacySnapshots": "Current Sports.ru transfer rules are applied by both snapshot readers without mutating stored metadata or rebuilding player data."
+  },
+  "localChecks": {
+    "tests": { "total": 149, "passed": 149, "failed": 0, "skipped": 0 },
+    "typecheck": "passed",
+    "focusedLint": { "errors": 0, "existingWarnings": 2 },
+    "workflow": "passed",
+    "specSnapshot": { "status": "current", "diagnostics": [], "fingerprint": "277c842017bf5f37785e49ed5d1422d6b83338abc68547cb23c890053b0f9462" }
+  },
+  "resourcesBefore": {
+    "observedAt": "2026-10-08T06:21:34Z",
+    "health": "all healthy, zero restarts and OOM",
+    "webMemory": "994.4 MiB",
+    "workerMemory": "1.241 GiB",
+    "postgresMemory": "1.238 GiB",
+    "availableHostMemoryMiB": 5942,
+    "runningCanaries": 0,
+    "releaseDirectories": 2,
+    "franchiseDuplicates": 0,
+    "duplicateActiveKhlJobs": 0,
+    "rawCache": { "rows": 750, "bytes": 10804740, "expired": 0 },
+    "franchiseSourceCacheKiB": { "http": 112624, "squads": 162428 },
+    "temporaryQaUsers": 0
+  },
+  "production": { "status": "pending" }
+}

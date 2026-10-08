@@ -20,6 +20,7 @@ import {
   availableTransfersByRound,
   fantasyTransferBudget,
   nextBankedTransfers,
+  openingAvailableTransfers,
   sportsRuMaxBankedTransfers,
   nextAlternativeFantasyPoints,
   nextFantasyPoints,
@@ -928,26 +929,49 @@ test("configured RPL transfer limit remains three regardless of forecast horizon
   assert.equal(fantasyTransferLimitForHorizon(5, 3), 3);
 });
 
-test("Sports.ru and FPL transfer budgets bank unused transfers across rounds", () => {
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#transfer-rules */
+test("Sports.ru grants three transfers each round while FPL banks unused transfers", () => {
   const sports = fantasyTransferBudget({ transferLimitPerRound: 3, maxBankedTransfers: sportsRuMaxBankedTransfers, paidTransferPointCost: 0 });
   const fpl = fantasyTransferBudget({ transferLimitPerRound: 1, maxBankedTransfers: 5, paidTransferPointCost: 4 });
-  assert.deepEqual(sports, { perRound: 3, maxBanked: 6, paidPointCost: 0 });
-  assert.equal(nextBankedTransfers(3, 0, sports), 6);
-  assert.equal(nextBankedTransfers(6, 1, sports), 6);
+  assert.deepEqual(sports, { perRound: 3, maxBanked: 3, paidPointCost: 0 });
+  assert.equal(openingAvailableTransfers(sports, 6), 3);
+  for (const used of [0, 1, 2, 3]) {
+    assert.equal(nextBankedTransfers(3, used, sports), 3);
+  }
   assert.equal(nextBankedTransfers(2, 0, fpl), 3);
   const baseline = [{ playerId: "a" }, { playerId: "b" }, { playerId: "c" }];
   const rows = availableTransfersByRound({
     baselineSelections: baseline,
     budget: sports,
-    openingAvailable: 3,
+    openingAvailable: 6,
     roundPlans: [
       { selections: [{ playerId: "a" }, { playerId: "b" }, { playerId: "d" }] },
-      { selections: [{ playerId: "a" }, { playerId: "b" }, { playerId: "d" }] }
+      { selections: [{ playerId: "a" }, { playerId: "b" }, { playerId: "d" }] },
+      { selections: [{ playerId: "e" }, { playerId: "f" }, { playerId: "g" }] },
+      { selections: [{ playerId: "e" }, { playerId: "f" }, { playerId: "g" }] }
     ]
   });
   assert.deepEqual(rows, [
     { used: 1, available: 3 },
-    { used: 0, available: 5 }
+    { used: 0, available: 3 },
+    { used: 3, available: 3 },
+    { used: 0, available: 3 }
+  ]);
+  assert.deepEqual(availableTransfersByRound({
+    baselineSelections: baseline,
+    budget: fpl,
+    openingAvailable: 5,
+    roundPlans: [
+      { selections: baseline },
+      { selections: [{ playerId: "a" }, { playerId: "b" }, { playerId: "d" }] },
+      { selections: [{ playerId: "e" }, { playerId: "f" }, { playerId: "g" }] },
+      { selections: [{ playerId: "e" }, { playerId: "f" }, { playerId: "g" }] }
+    ]
+  }), [
+    { used: 0, available: 5 },
+    { used: 1, available: 5 },
+    { used: 3, available: 5 },
+    { used: 0, available: 3 }
   ]);
 });
 
