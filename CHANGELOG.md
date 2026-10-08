@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.121 - 2026-10-08
+
+- Apply franchise calendar, league and completed-round filters automatically after a short pause, with immediate submit/retry, invalid-date feedback and cancellation of superseded requests.
+- Make all franchise league choices visible, add quick single-league selection and retain multi-league comparisons, all-league reset and URL/reload state.
+- Verify that bounded report-cache entries keep date/league populations and empty intervals separate.
+
 ## 0.3.120 - 2026-10-07
 
 - Add per-league platform transfer summaries in football/FPL and KHL Squad, comparing each participant's latest saved plan with their latest eligible published-round squad.

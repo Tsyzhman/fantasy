@@ -1,0 +1,275 @@
+{
+  "workItem": "WI-053",
+  "date": "2026-10-07",
+  "timezone": "Europe/Moscow",
+  "result": "completed",
+  "repository": "Tsyzhman/fantasy",
+  "baseline": {
+    "productionVersion": "0.3.118",
+    "productionRevision": "f2dd8fdfa6d270c799381cb1ed68e6b53fb97243",
+    "mainVersion": "0.3.119",
+    "mainRevision": "4606fb1f1f3988ab6d2360cfc6ff5b74bf66d813",
+    "unpublishedWork": [
+      "WI-050",
+      "WI-051"
+    ]
+  },
+  "release": {
+    "version": "0.3.120",
+    "revision": "ccb3653261a1e16f2d09f1ff7ffeffeaaf499931",
+    "tree": "0c3ea206046d2f1ffa421aae00b09749322c8ae4",
+    "archiveSha256": "d6e1976542c185bec10c21f4b63a1a33dcfa198a49b79a533654c74b8cc4c8d7",
+    "imageId": "sha256:bb32998091f9d288bd4bbdab62ced4cb67c9e0896afb37be80aa2b6bcbb8480c",
+    "directory": "/var/www/fantasy-scout-releases/20261007T071643Z-v0.3.120-ccb3653",
+    "pullRequest": "https://github.com/Tsyzhman/fantasy/pull/39",
+    "mergedAt": "2026-10-07T07:24:17Z",
+    "mainMergeRevision": "d9cbec7839bf45cb1c4bda078f7c3a86cb136dc9",
+    "mergeTreeIdenticalToDeployedTree": true,
+    "cleanCommittedOriginSourceVerification": "passed",
+    "consistentPackageAndLockVersions": true,
+    "sourceIncludesWorkItems": [
+      "WI-050",
+      "WI-051",
+      "WI-052"
+    ],
+    "specSnapshot": {
+      "status": "current",
+      "diagnostics": [],
+      "fingerprint": "1bf985c24128bc570a31d50596cae2e51424fde730ad8bcfa1d465c6c1fae911"
+    }
+  },
+  "checks": {
+    "finalWorkflowValidators": {
+      "codex": "passed",
+      "claude": "passed",
+      "workItems": 53,
+      "typedSpecs": 18,
+      "mirroredFiles": 13,
+      "errors": []
+    },
+    "candidate": {
+      "run": 37585497798,
+      "conclusion": "success",
+      "revision": "ccb3653261a1e16f2d09f1ff7ffeffeaaf499931"
+    },
+    "main": {
+      "run": 37587112450,
+      "conclusion": "success",
+      "revision": "d9cbec7839bf45cb1c4bda078f7c3a86cb136dc9",
+      "unitTests": {
+        "passed": 1260,
+        "failed": 0,
+        "skipped": 0
+      },
+      "databaseTests": {
+        "common": 11,
+        "betting": 2,
+        "khl": 7,
+        "passed": 20,
+        "failed": 0,
+        "skipped": 0
+      },
+      "productionAuditFindings": 0,
+      "lint": {
+        "errors": 0,
+        "warnings": 234
+      },
+      "typecheck": "passed",
+      "productionBuild": "passed"
+    },
+    "dependencyRuntime": {
+      "sharp": "0.35.5",
+      "vips": "8.18.7"
+    },
+    "remainingDevelopmentOnlyAuditDebt": "TD-009"
+  },
+  "deployment": {
+    "workflow": "deploy-production.yml",
+    "ref": "codex/platform-transfer-trends-release",
+    "run": 37585870107,
+    "conclusion": "success",
+    "canary": "passed",
+    "guardedWebAndWorkerPromotion": "passed",
+    "productionHealth": "ok",
+    "webRevisionMatches": true,
+    "workerRevisionMatches": true,
+    "manifestRevisionMatches": true,
+    "healthRevisionMatches": true,
+    "lastIdentityObservation": "2026-10-07T07:35:50Z",
+    "newMigrations": false,
+    "dataReset": false,
+    "fplVpnReconfigured": false,
+    "initialDispatch": {
+      "run": 37585509521,
+      "conclusion": "failure",
+      "stage": "release:verify-source",
+      "reason": "Workflow was dispatched on main while its checkout input selected the candidate revision; expected GITHUB_SHA and checked HEAD differed.",
+      "failedBeforePackagingOrServerMutation": true,
+      "correctedByDispatchingCandidateBranch": true
+    }
+  },
+  "productionBrowserSmoke": {
+    "run": 37587009915,
+    "revision": "ccb3653261a1e16f2d09f1ff7ffeffeaaf499931",
+    "scope": "all",
+    "conclusion": "success",
+    "authenticationPassed": 1,
+    "uiPassed": 28,
+    "uiFailed": 0,
+    "uiSkipped": 20,
+    "testRetries": 0,
+    "viewports": [
+      "desktop-chromium",
+      "tablet-chromium",
+      "mobile-chromium"
+    ],
+    "note": "The 20 production-inapplicable cases retain their existing skip guards."
+  },
+  "livePlatformTransferCheck": {
+    "result": "passed",
+    "source": "actual production records in selected Sports, FPL and KHL scopes",
+    "authenticatedResponse": 200,
+    "unauthenticatedResponse": 401,
+    "cacheControl": "private, no-store",
+    "checks": [
+      "bounded top five",
+      "finite percentages",
+      "participant count reconciliation",
+      "no participant identifiers",
+      "panel present in authenticated rendered Squad markup"
+    ],
+    "scopes": [
+      {
+        "provider": "SPORTS_RU",
+        "status": "READY",
+        "participants": 2,
+        "compared": 1,
+        "excluded": 1,
+        "buys": 0,
+        "sells": 0,
+        "elapsedMs": 447,
+        "panel": "present"
+      },
+      {
+        "provider": "FPL",
+        "status": "NO_COMPARABLE_SQUADS",
+        "participants": 0,
+        "compared": 0,
+        "excluded": 0,
+        "buys": 0,
+        "sells": 0,
+        "elapsedMs": 2588,
+        "panel": "present"
+      },
+      {
+        "provider": "KHL",
+        "status": "NO_BASELINE",
+        "participants": 2,
+        "compared": 0,
+        "excluded": 2,
+        "buys": 0,
+        "sells": 0,
+        "elapsedMs": 2139,
+        "panel": "present"
+      }
+    ],
+    "limitations": "This proves the truthful empty states and current limited sample, not populated rankings in every production league.",
+    "temporaryUser": {
+      "access": "unprivileged USER",
+      "noPasswordOrSavedPlans": true,
+      "remainingOwnedUsers": 0,
+      "remainingOwnedSessions": 0,
+      "cleanup": "passed"
+    },
+    "auxiliaryFirstAttempt": "A nonexistent KhlContest.createdAt field was used only by the ignored verification helper. Its owned fixture was removed; selection was corrected to id ordering without modifying application source."
+  },
+  "resources": {
+    "before": {
+      "observedAt": "2026-10-07T07:10:29Z",
+      "rawCache": {
+        "rows": 701,
+        "bytes": 10109634,
+        "expired": 0
+      },
+      "webMiB": 882.4,
+      "workerGiB": 2.16,
+      "postgresGiB": 1.043,
+      "hostAvailableMiB": 5551
+    },
+    "duringBrowserSmoke": {
+      "observedAt": "2026-10-07T07:25:33Z",
+      "rawCache": {
+        "rows": 700,
+        "bytes": 10086605,
+        "expired": 0
+      },
+      "webMiB": 850,
+      "workerGiB": 1.027,
+      "postgresGiB": 1.085,
+      "hostAvailableMiB": 6259
+    },
+    "afterBrowserSmoke": {
+      "observedAt": "2026-10-07T07:34:40Z",
+      "rawCache": {
+        "rows": 700,
+        "bytes": 10086605,
+        "expired": 0,
+        "maximumBytes": 262144000
+      },
+      "duplicates": {
+        "stats": 0,
+        "scores": 0,
+        "catalog": 0,
+        "raw": 0,
+        "squads": 0,
+        "squadEntries": 0,
+        "activeJobs": 0
+      },
+      "activeKhlJobs": 0,
+      "webMiB": 709.7,
+      "workerGiB": 1.076,
+      "postgresGiB": 1.121,
+      "health": {
+        "web": "healthy",
+        "worker": "healthy",
+        "postgres": "healthy"
+      },
+      "restarts": {
+        "web": 0,
+        "worker": 0,
+        "postgres": 0
+      },
+      "oomKilled": {
+        "web": false,
+        "worker": false,
+        "postgres": false
+      },
+      "workerChildren": 0,
+      "hostAvailableMiB": 6292,
+      "hostDiskAvailableMiB": 65693,
+      "remainingLocalReleaseHelperProcesses": 0
+    },
+    "artifactRetention": {
+      "observedAt": "2026-10-07T07:35:50Z",
+      "releaseDirectories": 2,
+      "retainedVersions": [
+        "0.3.118",
+        "0.3.120"
+      ],
+      "runningCanaries": 0,
+      "franchiseCollector": {
+        "activeState": "inactive",
+        "result": "success",
+        "exitStatus": 0
+      },
+      "dockerBuildCacheDisplay": {
+        "shared": "13.3GB",
+        "private": "1.061GB",
+        "total": "14.36GB"
+      },
+      "note": "Canonical bounded prune ran after deployment. Docker du includes image-shared layers; the total is not 1 GB. No global image/volume prune was performed."
+    },
+    "knownRetainedLocalDiagnostics": "Earlier WI-050/WI-052 cleanup attempts were rejected by automatic command policy and already reported; no retry or bypass was attempted.",
+    "note": "Before/during/after observations verify present bounds; they do not establish long-term absence of memory leaks."
+  }
+}

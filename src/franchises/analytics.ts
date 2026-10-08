@@ -141,10 +141,8 @@ export function parseFilters(
   };
   const from = read("from", "2026-07-01"),
     to = read("to", "2027-06-30");
-  if (from > to)
-    throw new Error(
-      "Начальная дата не может быть позже конечной.",
-    );
+  const rangeError = calendarRangeError(from, to);
+  if (rangeError) throw new Error(rangeError);
   const selected = [
     ...new Set(
       params
@@ -172,6 +170,13 @@ function validDate(value: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(value) &&
     Number.isFinite(Date.parse(value + "T00:00:00Z")) &&
     new Date(value + "T00:00:00Z").toISOString().slice(0, 10) === value;
+}
+
+/** @spec spec://modules/franchises/FEAT-005-franchise-analytics#api */
+export function calendarRangeError(from: string, to: string): string {
+  if (!validDate(from) || !validDate(to))
+    return "Укажите календарную дату в формате ГГГГ-ММ-ДД.";
+  return from > to ? "Начальная дата не может быть позже конечной." : "";
 }
 
 /** @spec spec://modules/franchises/FEAT-005-franchise-analytics#contracts */
