@@ -42,6 +42,8 @@ status: active
 
 Под фильтрами поясняется общая календарная отсечка по дате начала тура в Москве. Список «Какие чемпионаты вошли в расчёт» показывает число составов каждой выбранной лиги для текущей франшизы или всех франшиз; пустые лиги сохраняются с явным нулевым покрытием. Таблица xФО по чемпионатам объясняет отсутствие полного XI, не скрывая лигу.
 
+League choices remain visible in the filter form alongside the date controls. Users can choose one league quickly, combine several leagues with checkboxes, or restore all leagues. At least one league remains selected. Valid date, league and completion changes apply automatically after a short pause; the existing submit button applies immediately and retries the current request. Invalid or incomplete dates display an explanation and do not request a misleading report. Pending changes hide the previous report until the matching response arrives. Superseded requests and pending timers are cancelled; their results cannot replace the current selection. Applied filters remain in the URL together with the selected franchise and are restored on reload.
+
 ## Математика стиля {#style}
 Владение XI — среднее H2H-владения 11 игроков. Ориентир общего поля взвешен владением и позициями, относится к ростеру 15 игроков. Капитанский ориентир: sum(cap²)/sum(cap). Ориентир покупок — положительный прирост H2H-владения, не полный журнал трансферов. Форма — средние серверные очки последних 5 выходов (минимум 3), рост формы — последние 3 против предыдущих 3–7 с порогом +2. Усреднение: сначала состав/тур, затем лига, затем равный вес выбранных лиг. Рейтинг редкости: 40% ранг владения относительно сравниваемых франшиз +30% редкость капитана +30% низкий прирост владения покупок. Он не оценивает мастерство. Отсутствующие значения не равны нулю.
 
@@ -82,6 +84,7 @@ GET `/api/franchises` валидирует сезон, лиги и диапаз�
 Локальные отчёты WI-025/WI-027 — предшествующие артефакты. Используются существующие normalized core_data, архивные planning snapshots и исходные токены дизайна Fantasy.
 
 ## История {#changelog}
+- 2026-10-08: WI-054 — visible combined league selection and automatic calendar/completion filtering, retaining immediate submit/retry and URL restoration.
 - 2026-10-04: PR #37 review — split the ownership/captain plot at 35% starting-lineup ownership (horizontal axis), with the higher group above the lower group.
 - 2026-10-04: WI-048 — small abbreviated names restored beside points following user review.
 - 2026-10-04: WI-047 — compact charts with searchable names, exact values and selection on desktop and mobile; remove dense label leaders.

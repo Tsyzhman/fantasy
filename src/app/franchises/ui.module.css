@@ -66,30 +66,55 @@
   accent-color: var(--accent-primary);
 }
 .leagues {
-  position: relative;
-  align-self: center;
-}
-.leagues summary {
-  cursor: pointer;
-  padding: 10px;
-}
-.leagues > div {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  background: var(--surface-1);
-  padding: 20px;
+  flex-basis: 100%;
+  min-width: 0;
   border: 1px solid var(--border);
   border-radius: 16px;
-  z-index: 5;
-  width: 280px;
-  box-shadow: 0 10px 30px #0002;
+  padding: 12px 16px 16px;
 }
-.leagues label {
+.leagues legend {
+  padding: 0 6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+.leagueTools {
   display: flex;
-  flex-direction: row;
-  gap: 10px;
-  margin: 9px 0;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px 16px;
+  margin-bottom: 12px;
+}
+.leagueTools > span {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+.leagueTools select {
+  max-width: 100%;
+  font-size: 13px;
+}
+.leagueChoices {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 180px), 1fr));
+  gap: 8px;
+}
+.filters .leagueOption {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-1);
+  cursor: pointer;
+}
+.leagueOption:has(input:checked) {
+  border-color: var(--accent-primary);
+}
+.leagueOption input {
+  margin: 0;
+  padding: 0;
+  flex-shrink: 0;
 }
 .context {
   justify-content: space-between;
@@ -588,9 +613,11 @@
   .filters {
     gap: 10px;
   }
-  .leagues > div {
-    left: auto;
-    right: 0;
+  .leagues {
+    padding: 10px;
+  }
+  .leagueChoices {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .explanation,
   .method {

@@ -6,7 +6,7 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
-| [WI-053](work/WI-053-platform-transfer-trends-release.md) | Release platform transfer trends and verified fixes | FEAT-008, PROP-001, structure | @tsyzhman | 2026-10-07 | — |
+| [WI-054](work/WI-054-franchise-filters.md) | Working franchise date and league filters | FEAT-005 | @tsyzhman | 2026-10-08 | — |
 
 ## Backlog
 
@@ -24,6 +24,7 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-053](work/archive/2026/WI-053-platform-transfer-trends-release.md) | Release platform transfer trends and verified fixes | @tsyzhman | 2026-10-07 |
 | [WI-052](work/archive/2026/WI-052-github-smoke-main-alignment.md) | Restore scheduled production smoke on main | @tsyzhman | 2026-10-07 |
 | [WI-051](work/archive/2026/WI-051-workflow-validator-mode.md) | Validate standalone workflow mode | @tsyzhman | 2026-10-06 |
 | [WI-050](work/archive/2026/WI-050-platform-transfer-trends.md) | Platform transfer trends in Squad | @tsyzhman | 2026-10-06 |

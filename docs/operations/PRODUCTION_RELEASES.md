@@ -82,3 +82,12 @@ The 0.2.x release line prevents the same failure mode in four ways:
 - Combined KHL football-style contact sheet, local Arena opportunity ranking/multiple outcomes, retained FDR fix from 0.3.61.
 - Deploy [34156552775](https://github.com/Tsyzhman/fantasy/actions/runs/34156552775) success; production browser [34157185770](https://github.com/Tsyzhman/fantasy/actions/runs/34157185770) success (auth 1, UI 10).
 - No new migrations or data reset. 694 unique KHL catalog entries; ledger mismatches 0; web/worker healthy, restarts 0. Evidence: `specs/work/evidence/WI-011/`.
+
+## 0.3.120 — 2026-10-07
+
+- Release: `20261007T071643Z-v0.3.120-ccb3653`; runtime `ccb3653261a1e16f2d09f1ff7ffeffeaaf499931`, tree `0c3ea206046d2f1ffa421aae00b09749322c8ae4`.
+- Platform-only transfer summaries relative to the latest published round, standalone workflow-validator correction and the checked 0.3.119 GitHub/dependency fixes.
+- [PR #39](https://github.com/Tsyzhman/fantasy/pull/39) merged as `d9cbec7839bf45cb1c4bda078f7c3a86cb136dc9` with an identical tree. [Main Check 37587112450](https://github.com/Tsyzhman/fantasy/actions/runs/37587112450) passed 1,260 unit/contract and 20 database tests, production audit, lint, typecheck and build.
+- [Deploy 37585870107](https://github.com/Tsyzhman/fantasy/actions/runs/37585870107) passed canary and guarded web/worker promotion. Both image labels, public health and the current release manifest match the exact runtime revision.
+- [Production browser 37587009915](https://github.com/Tsyzhman/fantasy/actions/runs/37587009915) passed authentication and 28 desktop/tablet/mobile UI checks, with 20 expected production skips, zero failures/retries. Live aggregate checks returned truthful limited-sample/no-baseline states; no fake counts were inserted.
+- No migration, data reset or VPN rotation. Two releases retained, no running canaries, cache expired rows and seven duplicate checks zero; all containers healthy with zero restarts/OOM. Evidence: `specs/work/evidence/WI-053/verification.json`.

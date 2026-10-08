@@ -1,0 +1,285 @@
+{
+  "work": "WI-054",
+  "version": "0.3.121",
+  "requestedAt": "2026-10-08",
+  "reproduction": {
+    "results": [
+      {
+        "query": "",
+        "status": 200,
+        "elapsedMs": 2893,
+        "generated": "2026-10-08T03:58:54.949588+00:00",
+        "filters": {
+          "from": "2026-07-01",
+          "to": "2027-06-30",
+          "leagues": [],
+          "completed": false
+        },
+        "squads": 37557,
+        "rounds": 65,
+        "undated": 0,
+        "leagues": {
+          "rfpl_2026": "Россия",
+          "epl_2026": "Англия",
+          "championship_2026": "Чемпионшип",
+          "la_liga_2026": "Испания",
+          "bundesliga_2026": "Германия",
+          "france_2026": "Франция",
+          "seria_a_2026": "Италия",
+          "portugal_2026": "Португалия",
+          "eredivisie_2026": "Нидерланды",
+          "turkey_2026": "Турция",
+          "ucl_2026": "Лига чемпионов",
+          "liga_europa_2026": "Лига Европы"
+        }
+      },
+      {
+        "query": "from=2026-09-01&to=2026-09-30",
+        "status": 200,
+        "elapsedMs": 1045,
+        "generated": "2026-10-08T03:58:54.949588+00:00",
+        "filters": {
+          "from": "2026-09-01",
+          "to": "2026-09-30",
+          "leagues": [],
+          "completed": false
+        },
+        "squads": 20242,
+        "rounds": 35,
+        "undated": 0,
+        "leagues": {
+          "rfpl_2026": "Россия",
+          "epl_2026": "Англия",
+          "championship_2026": "Чемпионшип",
+          "la_liga_2026": "Испания",
+          "bundesliga_2026": "Германия",
+          "france_2026": "Франция",
+          "seria_a_2026": "Италия",
+          "portugal_2026": "Португалия",
+          "eredivisie_2026": "Нидерланды",
+          "turkey_2026": "Турция",
+          "ucl_2026": "Лига чемпионов",
+          "liga_europa_2026": "Лига Европы"
+        }
+      },
+      {
+        "query": "from=2027-06-01&to=2027-06-01",
+        "status": 200,
+        "elapsedMs": 54,
+        "generated": "2026-10-08T03:58:54.949588+00:00",
+        "filters": {
+          "from": "2027-06-01",
+          "to": "2027-06-01",
+          "leagues": [],
+          "completed": false
+        },
+        "squads": 0,
+        "rounds": 0,
+        "undated": 0,
+        "leagues": {
+          "rfpl_2026": "Россия",
+          "epl_2026": "Англия",
+          "championship_2026": "Чемпионшип",
+          "la_liga_2026": "Испания",
+          "bundesliga_2026": "Германия",
+          "france_2026": "Франция",
+          "seria_a_2026": "Италия",
+          "portugal_2026": "Португалия",
+          "eredivisie_2026": "Нидерланды",
+          "turkey_2026": "Турция",
+          "ucl_2026": "Лига чемпионов",
+          "liga_europa_2026": "Лига Европы"
+        }
+      }
+    ]
+  },
+  "beforeUI": [
+    {
+      "step": "change dates without submit",
+      "url": "https://fantasy.tsyzhman.ru/franchises",
+      "requests": [],
+      "value": "2026-09-01",
+      "button": true
+    },
+    {
+      "step": "submit September",
+      "status": 200,
+      "url": "https://fantasy.tsyzhman.ru/franchises?from=2026-09-01&to=2026-09-30&completed=0",
+      "filters": {
+        "from": "2026-09-01",
+        "to": "2026-09-30",
+        "leagues": [],
+        "completed": false
+      },
+      "squads": 20242,
+      "contextVisible": 1
+    },
+    {
+      "step": "open league menu",
+      "leagues": 13,
+      "lastVisible": true,
+      "firstVisible": true
+    }
+  ],
+  "preview": {
+    "result": "passed",
+    "checks": [
+      {
+        "singleLeague": {
+          "from": "2026-09-01",
+          "to": "2026-09-30",
+          "leagues": [
+            "epl_2026"
+          ],
+          "completed": false
+        },
+        "squads": 2250
+      },
+      {
+        "combinedLeagues": {
+          "from": "2026-09-01",
+          "to": "2026-09-30",
+          "leagues": [
+            "epl_2026",
+            "bundesliga_2026"
+          ],
+          "completed": false
+        },
+        "squads": 4134,
+        "automaticDates": {
+          "from": "2026-09-02",
+          "to": "2026-09-29",
+          "leagues": [
+            "epl_2026",
+            "bundesliga_2026"
+          ],
+          "completed": false
+        },
+        "rapidEditRequests": 1
+      },
+      {
+        "emptyRange": true,
+        "invalidRangeNoRequest": true,
+        "completionAutomatic": true,
+        "reloadRestored": true
+      },
+      {
+        "width": 1440,
+        "theme": "light",
+        "pageWidth": 1440,
+        "viewport": 1440,
+        "fieldsetWidth": 1384,
+        "overflow": false
+      },
+      {
+        "width": 1440,
+        "theme": "dark",
+        "pageWidth": 1440,
+        "viewport": 1440,
+        "fieldsetWidth": 1384,
+        "overflow": false
+      },
+      {
+        "width": 390,
+        "theme": "light",
+        "pageWidth": 390,
+        "viewport": 390,
+        "fieldsetWidth": 362,
+        "overflow": false
+      },
+      {
+        "width": 390,
+        "theme": "dark",
+        "pageWidth": 390,
+        "viewport": 390,
+        "fieldsetWidth": 362,
+        "overflow": false
+      },
+      {
+        "width": 320,
+        "theme": "light",
+        "pageWidth": 320,
+        "viewport": 320,
+        "fieldsetWidth": 292,
+        "overflow": false
+      },
+      {
+        "width": 320,
+        "theme": "dark",
+        "pageWidth": 320,
+        "viewport": 320,
+        "fieldsetWidth": 292,
+        "overflow": false
+      },
+      {
+        "supersededResponseIgnored": true,
+        "requestErrorHidesOldReport": true,
+        "immediateRetry": true,
+        "allLeaguesRestored": true
+      }
+    ]
+  },
+  "layout": [
+    {
+      "width": 1440,
+      "theme": "light",
+      "pageWidth": 1440,
+      "viewport": 1440,
+      "formHeight": 330.984375,
+      "choicesVisible": true
+    },
+    {
+      "width": 1440,
+      "theme": "dark",
+      "pageWidth": 1440,
+      "viewport": 1440,
+      "formHeight": 330.984375,
+      "choicesVisible": true
+    },
+    {
+      "width": 390,
+      "theme": "light",
+      "pageWidth": 390,
+      "viewport": 390,
+      "formHeight": 594.828125,
+      "choicesVisible": true
+    },
+    {
+      "width": 390,
+      "theme": "dark",
+      "pageWidth": 390,
+      "viewport": 390,
+      "formHeight": 594.828125,
+      "choicesVisible": true
+    },
+    {
+      "width": 320,
+      "theme": "light",
+      "pageWidth": 320,
+      "viewport": 320,
+      "formHeight": 592.359375,
+      "choicesVisible": true
+    },
+    {
+      "width": 320,
+      "theme": "dark",
+      "pageWidth": 320,
+      "viewport": 320,
+      "formHeight": 592.359375,
+      "choicesVisible": true
+    }
+  ],
+  "localCheck": {
+    "result": "passed",
+    "tests": 1261,
+    "passed": 1259,
+    "skipped": 2,
+    "failed": 0,
+    "lintErrors": 0,
+    "lintWarnings": 236,
+    "typecheck": "passed",
+    "build": "passed"
+  },
+  "resourcesBefore": "observed_at=2026-10-08T04:35:58Z\n/fantasy-scout-web health=healthy restarts=0 oom=false revision=ccb3653261a1e16f2d09f1ff7ffeffeaaf499931\n/fantasy-scout-worker health=healthy restarts=0 oom=false revision=ccb3653261a1e16f2d09f1ff7ffeffeaaf499931\n/fantasy-scout-postgres health=healthy restarts=0 oom=false revision=\nfantasy-scout-web memory=923.5MiB / 11.6GiB cpu=0.00% pids=21\nfantasy-scout-worker memory=2.183GiB / 11.6GiB cpu=0.14% pids=21\nfantasy-scout-postgres memory=863.8MiB / 11.6GiB cpu=5.53% pids=28\n               total        used        free      shared  buff/cache   available\nMem:           11876        5835        2572         237        3468        5490\nSwap:              0           0           0\nrunning_canaries=0\nrelease_directories=2\nResult=success\nExecMainStatus=0\nActiveState=inactive\nPID                 PPID                RSS                 COMMAND\n1081138             1081114             1910720             next-server (v\n112624\t/app/storage/franchises/source/http\n162428\t/app/storage/franchises/source/squads\nBEGIN\nSET\nsnapshot={\"season\" : \"2026/2027\", \"version\" : 2, \"squads\" : 40429, \"bytes\" : 11023262, \"generated\" : \"2026-10-08T03:58:54.949\"}\nduplicate_franchise_squads=0\nduplicate_franchise_rounds=0\nduplicate_franchise_states=0\nraw_cache={\"rows\" : 749, \"bytes\" : 10790599, \"expired\" : 0}\nduplicate_active_jobs=0\nowned_qa_users=1\nCOMMIT\n",
+  "productionAcceptance": "pending"
+}

@@ -54,3 +54,34 @@ test("failed renders are retryable and never poison other filters", () => {
     assert.equal(builds, 2);
   } finally { cache.clear(); }
 });
+
+test("cached calendar and league selections keep separate populations and empty ranges", () => {
+  const s = snapshot();
+  s.leagues = { a: "Англия", b: "Италия" };
+  s.franchises = [{ id: 1, name: "Франшиза" }];
+  s.rounds = [
+    { slug: "a", round: 1, date: "2026-09-01", cutoff: null, finished: true },
+    { slug: "a", round: 2, date: "2026-10-01", cutoff: null, finished: false },
+    { slug: "b", round: 1, date: "2026-09-01", cutoff: null, finished: true },
+  ];
+  s.squads = s.rounds.map((r, index) => ({
+    franchise: 1, manager: "Менеджер", team: String(index), slug: r.slug, round: r.round,
+    finished: r.finished, own: [10, 30, 90][index],
+  }));
+  const cache = new FranchiseReportCache();
+  const september = { ...filters, from: "2026-09-01", to: "2026-09-30" };
+  const england = { ...september, leagues: ["a"] };
+  const empty = { ...september, from: "2027-01-01", to: "2027-01-01" };
+  try {
+    for (const f of [filters, september, england, empty, england, september, filters]) {
+      const report = JSON.parse(cache.get(s, f));
+      const expected = aggregate(s, f);
+      assert.deepEqual(report, expected);
+    }
+    assert.equal(JSON.parse(cache.get(s, england)).squads, 1);
+    assert.equal(JSON.parse(cache.get(s, england)).franchises[0].metrics.own, 10);
+    assert.equal(JSON.parse(cache.get(s, empty)).squads, 0);
+    assert.equal(cache.metrics().entries, 4);
+    assert.ok(cache.metrics().bytes <= 24 * 1024 * 1024);
+  } finally { cache.clear(); }
+});

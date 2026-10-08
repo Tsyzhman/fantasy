@@ -2,7 +2,7 @@
 /** @spec spec://modules/franchises/FEAT-005-franchise-analytics#ui */
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Analytics, Summary } from "@/franchises/analytics";
-import { number } from "@/franchises/analytics";
+import { calendarRangeError, number } from "@/franchises/analytics";
 import styles from "./ui.module.css";
 import { compactLabels } from "@/franchises/compact-labels";
 
@@ -644,60 +644,74 @@ export function FranchiseAnalytics({
 }) {
   const initial = new URLSearchParams(initialQuery);
   const [data, setData] = useState<Analytics | null>(null);
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(true);
-  const [query, setQuery] = useState(initialQuery);
+  const [settled, setSettled] = useState<{
+    query: string;
+    requestId: number;
+    error: string;
+  } | null>(null);
   const [requestId, setRequestId] = useState(0);
+  const hasRequested = useRef(false);
+  const immediate = useRef(false);
   const [from, setFrom] = useState(initial.get("from") ?? "2026-07-01");
   const [to, setTo] = useState(initial.get("to") ?? "2027-06-30");
   const [leagues, setLeagues] = useState<string[]>(
-    initial
-      .getAll("league")
-      .flatMap((s) => s.split(","))
-      .filter(Boolean),
+    [...new Set(initial.getAll("league").flatMap((s) => s.split(",")).filter(Boolean))],
   );
   const [completed, setCompleted] = useState(initial.get("completed") === "1");
   const [selected, setSelected] = useState(initial.get("franchise") ?? "");
   const [tab, setTab] = useState("choices");
+  const dateError = calendarRangeError(from, to);
+  const query = useMemo(() => {
+    const q = new URLSearchParams({ from, to, completed: completed ? "1" : "0" });
+    leagues.forEach((league) => q.append("league", league));
+    return q.toString();
+  }, [from, to, completed, leagues]);
+  const matches = settled?.query === query && settled.requestId === requestId;
+  const error = matches ? settled.error : "";
+  const busy = !dateError && !matches;
   useEffect(() => {
+    if (dateError) return;
     const controller = new AbortController();
-    fetch("/api/franchises?" + query, {
-      signal: controller.signal,
-      cache: "no-store",
-    })
-      .then(async (r) => {
-        const v = await r.json();
-        if (!r.ok)
-          throw new Error(
-            typeof v.error === "string"
-              ? v.error
-              : (v.error?.message ?? "Не удалось загрузить аналитику."),
-          );
-        return v as Analytics;
+    const delay = !hasRequested.current || immediate.current ? 0 : 350;
+    immediate.current = false;
+    const timer = setTimeout(() => {
+      hasRequested.current = true;
+      const q = new URLSearchParams(query);
+      const franchise = new URLSearchParams(window.location.search).get("franchise");
+      if (franchise) q.set("franchise", franchise);
+      window.history.replaceState(null, "", "/franchises?" + q);
+      fetch("/api/franchises?" + query, {
+        signal: controller.signal,
+        cache: "no-store",
       })
-      .then((value) => {
-        if (!controller.signal.aborted) setData(value);
-      })
-      .catch((e) => {
-        if (!controller.signal.aborted) setError(e.message);
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setBusy(false);
-      });
-    return () => controller.abort();
-  }, [query, requestId]);
+        .then(async (r) => {
+          const v = await r.json();
+          if (!r.ok)
+            throw new Error(
+              typeof v.error === "string"
+                ? v.error
+                : (v.error?.message ?? "Не удалось загрузить аналитику."),
+            );
+          return v as Analytics;
+        })
+        .then((value) => {
+          if (!controller.signal.aborted) {
+            setData(value);
+            setSettled({ query, requestId, error: "" });
+          }
+        })
+        .catch((e) => {
+          if (!controller.signal.aborted)
+            setSettled({ query, requestId, error: e.message });
+        });
+    }, delay);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [query, requestId, dateError]);
   function apply() {
-    const q = new URLSearchParams({
-      from,
-      to,
-      completed: completed ? "1" : "0",
-    });
-    leagues.forEach((l) => q.append("league", l));
-    if (selected) q.set("franchise", selected);
-    history.replaceState(null, "", "/franchises?" + q);
-    setBusy(true);
-    setError("");
-    setQuery(q.toString());
+    immediate.current = true;
     setRequestId((v) => v + 1);
   }
   function select(value: string) {
@@ -788,6 +802,8 @@ export function FranchiseAnalytics({
           <input
             type="date"
             required
+            aria-invalid={Boolean(dateError)}
+            aria-describedby={dateError ? "franchise-filter-error" : "franchise-filter-note"}
             value={from}
             onChange={(e) => setFrom(e.target.value)}
           />
@@ -797,6 +813,8 @@ export function FranchiseAnalytics({
           <input
             type="date"
             required
+            aria-invalid={Boolean(dateError)}
+            aria-describedby={dateError ? "franchise-filter-error" : "franchise-filter-note"}
             value={to}
             onChange={(e) => setTo(e.target.value)}
           />
@@ -809,18 +827,39 @@ export function FranchiseAnalytics({
           />
           Только завершённые
         </label>
-        <button className="ui-button" type="submit" disabled={busy}>
-          Показать дистанцию
-        </button>
         {data && (
-          <details className={styles.leagues}>
-            <summary>Чемпионаты: {leagues.length || "все"}</summary>
-            <div>
+          <fieldset className={styles.leagues}>
+            <legend>Лиги команд</legend>
+            <div className={styles.leagueTools}>
+              <span>Выбрано {leagues.length || Object.keys(data.leagues).length} из {Object.keys(data.leagues).length}</span>
+              <select
+                aria-label="Выбрать одну лигу"
+                value={leagues.length === 1 ? leagues[0] : ""}
+                onChange={(e) => {
+                  if (e.target.value) setLeagues([e.target.value]);
+                }}
+              >
+                <option value="" disabled>Выбрать одну лигу…</option>
+                {Object.entries(data.leagues).map(([slug, name]) => (
+                  <option key={slug} value={slug}>{name}</option>
+                ))}
+              </select>
+              <button
+                type="button"
+                className="ui-button"
+                onClick={() => setLeagues([])}
+                disabled={!leagues.length}
+              >
+                Все лиги
+              </button>
+            </div>
+            <div className={styles.leagueChoices}>
               {Object.entries(data.leagues).map(([slug, name]) => (
-                <label key={slug}>
+                <label key={slug} className={styles.leagueOption}>
                   <input
                     type="checkbox"
                     checked={!leagues.length || leagues.includes(slug)}
+                    disabled={leagues.length === 1 && leagues[0] === slug}
                     onChange={(e) => {
                       const current = leagues.length
                         ? leagues
@@ -834,28 +873,25 @@ export function FranchiseAnalytics({
                   {name}
                 </label>
               ))}
-              <button
-                type="button"
-                className="ui-button"
-                onClick={() => setLeagues([])}
-              >
-                Все чемпионаты
-              </button>
             </div>
-          </details>
+          </fieldset>
         )}
+        <button className="ui-button" type="submit" disabled={Boolean(dateError)}>
+          Показать дистанцию
+        </button>
       </form>
-      <p className={styles.note}>
+      <p className={styles.note} id="franchise-filter-note">
+        Лиги и даты применяются автоматически. Можно выбрать несколько лиг; минимум одну. {" "}
         Общий календарный отрезок для всех чемпионатов. Обе даты включены. Тур
         входит целиком по дате первого матча в Москве.
       </p>
-      {error && (
-        <div role="alert" className={styles.error}>
-          {error}
+      {(dateError || error) && (
+        <div role="alert" className={styles.error} id="franchise-filter-error">
+          {dateError || error}
         </div>
       )}
       {busy && <p role="status">Считаем выбранную дистанцию…</p>}
-      {data && !busy && !error && (
+      {data && !busy && !error && !dateError && (
         <>
           <div className={styles.context}>
             <label>
