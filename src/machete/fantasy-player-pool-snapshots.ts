@@ -15,6 +15,7 @@ import { defaultFantasyHistorySettings, fantasyHistorySettingsKey } from "@/mach
 import { withoutRetiredFantasyForecasts } from "@/machete/retired-fantasy-forecasts";
 import { parseFantasyFixtureCalendar } from "@/machete/squad-fixture-calendar";
 import { toFantasyPlayerPoolListItem, type FantasyPlayerPoolListItem } from "@/machete/squad-player-dto";
+import { sportsRuTransferRules } from "@/machete/squad_logic";
 import {
   loadFantasySquadPlannerData,
   loadSportsRuAuthoritativeRosterContext,
@@ -372,6 +373,7 @@ async function loadFantasyStartingXiState(
   return buildFantasyStartingXiState(roster);
 }
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#transfer-rules */
 export function parseFantasyPlayerPoolSnapshotMetadata(value: unknown): FantasyPlayerPoolSnapshotMetadata | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const metadata = value as Partial<FantasyPlayerPoolSnapshotMetadata>;
@@ -379,7 +381,10 @@ export function parseFantasyPlayerPoolSnapshotMetadata(value: unknown): FantasyP
   if (!metadata.readiness || !metadata.rules || !Array.isArray(metadata.rounds)) return null;
   if (!Array.isArray(metadata.bookmakerFavorites) || !metadata.priceStatus || !Array.isArray(metadata.historySeasonOptions)) return null;
   if (!metadata.dataFreshness || typeof metadata.dataFreshness !== "object") return null;
-  return metadata as FantasyPlayerPoolSnapshotMetadata;
+  return {
+    ...(metadata as FantasyPlayerPoolSnapshotMetadata),
+    rules: sportsRuTransferRules(metadata.rules)
+  };
 }
 
 export function fantasyPlayerPoolSnapshotHasFixtureCalendar(value: unknown): boolean {

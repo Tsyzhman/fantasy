@@ -2097,9 +2097,10 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
               <I18nText en="FFO is published only for the current round, so these suggestions are ranked over 1 round." ru="FFO публикуется только на текущий тур, поэтому эти подсказки ранжированы на 1 тур." />
             </p>
           ) : null}
+          {/* @spec spec://modules/machete/FEAT-001-global-ranking-strategy#transfer-rules */}
           {usesUnpricedTransfers ? (
             <p className="mt-1.5 text-[10px] text-slate-500">
-              <I18nText en="Sports.ru allows 3 transfers per round; unused transfers bank up to 6." ru="В Sports.ru — 3 замены за тур, неиспользованные копятся до 6." />
+              <I18nText en="Sports.ru allows 3 transfers per round." ru="В Sports.ru — 3 замены за тур." />
             </p>
           ) : (
             <p className="mt-1.5 text-[10px] text-slate-500">
@@ -2297,6 +2298,7 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
               />
               <Metric label={<I18nText en="Budget" ru="Бюджет" />} value={`${formatNumber(summary.spent, 1)} / ${formatNumber(rules.budgetLimit, 1)}`} tone={summary.spent > rules.budgetLimit || summary.bank < 0 ? "bad" : "default"} />
               <Metric label={<I18nText en="Bank" ru="Банк" />} value={formatNumber(summary.bank, 1)} tone={summary.bank < 0 ? "bad" : "good"} />
+              {/* @spec spec://modules/machete/FEAT-001-global-ranking-strategy#transfer-rules */}
               <Metric
                 label={<I18nText en="Transfers" ru="Замены" />}
                 value={`${plannedTransferCount}/${transferLimit}`}
@@ -2304,10 +2306,10 @@ export function FantasySquadPlanner({ leagueId, season, provider, rules, rounds,
                 title={localizedText(
                   language,
                   usesUnpricedTransfers
-                    ? "Used / available this round. Sports.ru grants 3 per round and banks unused transfers up to 6."
+                    ? "Used / available this round. Sports.ru allows 3 transfers per round."
                     : "Used / available this round. FPL banks unused free transfers up to 5.",
                   usesUnpricedTransfers
-                    ? "Использовано / доступно в этом туре. В Sports.ru 3 замены за тур, неиспользованные копятся до 6."
+                    ? "Использовано / доступно в этом туре. В Sports.ru 3 замены за тур."
                     : "Использовано / доступно в этом туре. В FPL неиспользованные бесплатные трансферы копятся до 5."
                 )}
               />

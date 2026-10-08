@@ -469,7 +469,18 @@ export type FantasySquadSaveValidation =
     };
 
 export const transfersPerFantasyRound = 3;
-export const sportsRuMaxBankedTransfers = 6;
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#transfer-rules */
+export const sportsRuMaxBankedTransfers = transfersPerFantasyRound;
+
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#transfer-rules */
+export function sportsRuTransferRules(rules: FantasySquadRules): FantasySquadRules {
+  return {
+    ...rules,
+    transferLimitPerRound: transfersPerFantasyRound,
+    maxBankedTransfers: sportsRuMaxBankedTransfers,
+    paidTransferPointCost: 0
+  };
+}
 const fantasyOptimizerBudgetFrontierLimit = 32;
 const fantasyOptimizerTeamBudgetFrontierLimit = 8;
 

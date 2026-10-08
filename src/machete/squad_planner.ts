@@ -78,8 +78,7 @@ import {
   isFantasyProviderPlaceholderPlayerId,
   isFantasySquadPlayerId,
   parseFantasyProviderPlaceholders,
-  sportsRuMaxBankedTransfers,
-  transfersPerFantasyRound,
+  sportsRuTransferRules,
   normalizeFantasyHorizon,
   normalizeFantasyPosition,
   roundFantasyValue,
@@ -1874,6 +1873,7 @@ async function loadSportsRuFantasySquadSnapshotShellData(
   };
 }
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#transfer-rules */
 function fantasyPlayerPoolSnapshotShellMetadata(value: unknown): FantasyPlayerPoolSnapshotShellMetadata | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const metadata = value as Partial<FantasyPlayerPoolSnapshotShellMetadata>;
@@ -1881,7 +1881,10 @@ function fantasyPlayerPoolSnapshotShellMetadata(value: unknown): FantasyPlayerPo
   if (!Array.isArray(metadata.rounds) || !Array.isArray(metadata.bookmakerFavorites) || !Array.isArray(metadata.historySeasonOptions)) {
     return null;
   }
-  return metadata as FantasyPlayerPoolSnapshotShellMetadata;
+  return {
+    ...(metadata as FantasyPlayerPoolSnapshotShellMetadata),
+    rules: sportsRuTransferRules(metadata.rules)
+  };
 }
 
 async function loadLatestFoontasyForecastRevision(prisma: PrismaClient, league: SharedLeagueSeasonOption) {
@@ -2794,6 +2797,7 @@ export function uniqueFantasySquadName(existingNames: Iterable<string>, requeste
   return `${baseName.slice(0, maxFantasySquadNameLength - 14)} ${Date.now()}`;
 }
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#transfer-rules */
 export function fantasyRulesForLeague(
   league: SharedLeagueSeasonOption,
   contest: {
@@ -2823,16 +2827,13 @@ export function fantasyRulesForLeague(
     };
   }
   const configuredMaxPlayers = sportsRuMaxPlayersPerTeamForLeague(league.leagueId);
-  return {
+  return sportsRuTransferRules({
     ...defaultFantasySquadRules,
     budgetLimit: contest?.budgetLimit ?? 100,
     squadSize: contest?.squadSize ?? defaultFantasySquadRules.squadSize,
     maxPlayersPerTeam: contest?.maxPlayersPerTeam ?? configuredMaxPlayers,
-    transferLimitPerRound: transfersPerFantasyRound,
-    maxBankedTransfers: sportsRuMaxBankedTransfers,
-    paidTransferPointCost: 0,
     sourceLabel: contest ? `Sports.ru: ${contest.name}` : "Configured Sports.ru league rules"
-  };
+  });
 }
 
 export function friendAlternativeScoringModel(
