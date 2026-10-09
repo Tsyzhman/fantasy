@@ -1,15 +1,57 @@
 {
   "workItem": "WI-057",
   "version": "0.3.124",
-  "status": "checks-in-progress",
+  "status": "complete",
   "checks": [
-    { "name": "focused-regression", "status": "passed", "tests": 25, "failed": 0 },
-    { "name": "changed-file-eslint", "status": "passed" },
-    { "name": "typescript", "status": "passed", "command": "npx tsc --noEmit --incremental false" },
-    { "name": "workflow", "status": "passed", "errors": [] },
-    { "name": "spec-snapshot", "status": "current", "fingerprint": "75b7e111785a60baacffeb75b0b377a74f6c86fcf92ddbd7ef3cae03314ba204", "diagnostics": [] },
-    { "name": "version-policy", "status": "passed", "baseVersion": "0.3.123" }
+    {
+      "name": "focused-regression",
+      "status": "passed",
+      "tests": 25,
+      "failed": 0
+    },
+    {
+      "name": "changed-file-eslint",
+      "status": "passed"
+    },
+    {
+      "name": "typescript",
+      "status": "passed",
+      "command": "npx tsc --noEmit --incremental false"
+    },
+    {
+      "name": "workflow",
+      "status": "passed",
+      "errors": []
+    },
+    {
+      "name": "spec-snapshot",
+      "status": "current",
+      "fingerprint": "75b7e111785a60baacffeb75b0b377a74f6c86fcf92ddbd7ef3cae03314ba204",
+      "diagnostics": []
+    },
+    {
+      "name": "version-policy",
+      "status": "passed",
+      "baseVersion": "0.3.123"
+    },
+    {
+      "name": "github-check",
+      "status": "passed",
+      "url": "https://github.com/Tsyzhman/fantasy/actions/runs/37902728836",
+      "unitTests": 1276,
+      "databaseTests": 23,
+      "failed": 0
+    }
   ],
-  "production": null,
-  "messagesSentDuringCorrection": 0
+  "production": {
+    "releaseId": "20261009T081446Z-v0.3.124-a6cfbf0",
+    "deployRun": "37903299525",
+    "health": "ok",
+    "imageRevisionsVerified": true,
+    "manifestVerified": true,
+    "mergeCommit": "3bd8766098220cce19a8cc391df6d4d95a3eede8"
+  },
+  "messagesSentDuringCorrection": 0,
+  "sourceCommit": "a6cfbf0fc22adc3d67c8478b16a2959ac9bda4c4",
+  "sourceTree": "563ee59e564a6dc617a53b6969bb671c1bfd5b90"
 }

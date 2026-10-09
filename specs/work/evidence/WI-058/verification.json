@@ -1,0 +1,41 @@
+{
+  "workItem": "WI-058",
+  "version": "0.3.125",
+  "status": "verified-before-release",
+  "checks": [
+    {
+      "name": "focused-regressions",
+      "status": "passed",
+      "tests": 35,
+      "failed": 0
+    },
+    {
+      "name": "typescript",
+      "status": "passed"
+    },
+    {
+      "name": "changed-file-eslint",
+      "status": "passed"
+    },
+    {
+      "name": "version-policy",
+      "status": "passed",
+      "baseVersion": "0.3.124"
+    },
+    {
+      "name": "spec-snapshot",
+      "status": "current",
+      "fingerprint": "3467e1405f16f0b814a52eb3bb3886236e92929f45c38d27f280dc9523aa96c1",
+      "diagnostics": []
+    }
+  ],
+  "sourceDryRun": {
+    "readyAffectedScopes": 4,
+    "unmappedBefore": 11,
+    "unmappedAfter": 5,
+    "rssMiB": 171,
+    "backupScopes": 8
+  },
+  "production": null,
+  "messagesSent": 0
+}

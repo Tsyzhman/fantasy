@@ -1,0 +1,22 @@
+2026-10-09T08:28:00Z
+BEGIN
+SET
+outbox={ "SENT" : 10 }
+duplicate_delivery_keys=0
+duplicate_message_ids=0
+raw_cache={"rows" : 911, "bytes" : 13177981, "expired" : 0}
+blocker_roster|{"league" : "42", "season" : "2026/2027", "team" : "8634", "player" : "675088", "name" : "Rodri", "birth" : null, "active" : true, "lastSeen" : "2026-10-09T00:01:29.413"}
+blocker_roster|{"league" : "47", "season" : "2026/2027", "team" : "8456", "player" : "675088", "name" : "Rodri", "birth" : null, "active" : false, "lastSeen" : "2026-08-19T00:00:51.758"}
+blocker_roster|{"league" : "87", "season" : "2026/2027", "team" : "8634", "player" : "675088", "name" : "Rodri", "birth" : null, "active" : true, "lastSeen" : "2026-10-09T00:25:55.222"}
+blocker_roster|{"league" : "57", "season" : "2026/2027", "team" : "8674", "player" : "1419385", "name" : "Jorg Schreuders", "birth" : null, "active" : false, "lastSeen" : "2026-09-19T01:54:34.037"}
+blocker_roster|{"league" : "63", "season" : "2026/2027", "team" : "1068353", "player" : "1477508", "name" : "Makhmud Makhamadzhonov", "birth" : null, "active" : true, "lastSeen" : "2026-10-09T02:02:21.528"}
+blocker_roster|{"league" : "193", "season" : "2026/2027", "team" : "1068353", "player" : "1477508", "name" : "Makhmud Makhamadzhonov", "birth" : null, "active" : true, "lastSeen" : "2026-10-09T02:06:06.534"}
+COMMIT
+fantasy-scout-web 129.8MiB / 11.6GiB
+fantasy-scout-worker 1.091GiB / 11.6GiB
+fantasy-scout-postgres 1.113GiB / 11.6GiB
+               total        used        free      shared  buff/cache   available
+Mem:           11876        4710        1478         285        5687        6568
+Swap:              0           0           0
+/fantasy-scout-web health=healthy oom=false restarts=0 revision=a6cfbf0fc22adc3d67c8478b16a2959ac9bda4c4
+/fantasy-scout-worker health=healthy oom=false restarts=0 revision=a6cfbf0fc22adc3d67c8478b16a2959ac9bda4c4

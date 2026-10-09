@@ -47,6 +47,8 @@ Authorized API `https://platform-api.sorareinside.com`, the same one the site us
 ## Identity and data {#mapping}
 The existing `ProviderEntityMap` is used: provider `SORAREINSIDE`, providerSeason `GLOBAL`, types TEAM/PLAYER, source UUID → FotMob ID. There are no new columns or player copies. Primary automatic binding requires a unique strict match of the normalized name/full slug within the club, or a match of the full date of birth and the significant name token. One date of birth without name verification is not enough. If there are dates of birth, they must match. Teams are matched strictly by normalized name/explicit verified alias and country. Ambiguity, date contradiction, duplicate internal IDs and IDs outside the active roster block the command from being used. An existing ID is not replaced by a name search. Bindings are only preserved by apply, a unique upsert, without changing the already established mapping. For new mismatches, the operator can record the verified binding.
 
+Mapped Sports.ru prices checked within 48 hours may supply a full-name alias and birth date for the same canonical player and club. The price foreign key alone is insufficient: its MATCHED provider mapping must agree on player, contest and season. Conflicting birth dates or competing mapped club assignments are rejected. An existing inactive member may be restored only in the exact current league/season/club when a fresh mapped Sports.ru price, the published XI's full birth date and corroborated name agree, and there is no active membership in another club of that league/season. Missing roster rows, stale prices and transfer conflicts still block the whole XI. Revalidate that evidence and restore membership under the starting-XI transaction before validating the active XI; a failure rolls back membership, mappings, flags, metadata and refresh requests together. Keep the membership's source so normal roster refresh can deactivate it when corroboration disappears.
+
 <a name="apply"></a>
 
 ## Application and competition {#apply}
@@ -101,5 +103,6 @@ Existing probable-lineup sync, starting-xi-from-match, fantasy-player-pool-refre
 
 ## Changelog {#changelog}
 
+- 2026-10-09: Verified fresh Sports.ru full-name aliases and atomic corroborated restoration of inactive current-club members prevent valid XI rejection without guessing identities (WI-058).
 - 2026-09-28: English documentation, repaired document references, and GitHub navigation anchors (WI-039).
 - 2026-09-11: SorareInside import canon created.

@@ -581,7 +581,8 @@ export async function applyProbableLineupTeamPlan(
   plan: ProbableLineupTeamPlan,
   appliedAt = new Date(),
   onTeamsChanged?: StartingXiTeamsChangedListener,
-  beforeApply?: (tx: Prisma.TransactionClient) => Promise<void>
+  beforeApply?: (tx: Prisma.TransactionClient) => Promise<void>,
+  reconcileRoster?: (tx: Prisma.TransactionClient) => Promise<void>
 ): Promise<ProbableLineupApplyResult> {
   if (!plan.teamId || !plan.databaseTeamName || (plan.status !== "READY" && plan.status !== "UNCHANGED")) {
     throw new Error(`${plan.sourceLineup.teamName} is not eligible for probable-lineup application (${plan.status}).`);
@@ -610,6 +611,8 @@ export async function applyProbableLineupTeamPlan(
       return { result: { teamId, teamName, status: "UNCHANGED" as const, startersSet: 0, startersCleared: 0, otherTeamFlagsCleared: 0 }, changedTeamIds: [] as bigint[] };
     }
     if (plan.source === "SORAREINSIDE" && !(Date.parse(plan.sourceLineup.sourceKickoff ?? "") > Date.now())) throw new Error("SorareInside fixture has already started");
+
+    if (plan.source === "SORAREINSIDE") await reconcileRoster?.(tx);
 
     const rosterRows = await tx.teamPlayerSeason.findMany({
       where: { leagueId: plan.leagueId, season: plan.season, teamId },
