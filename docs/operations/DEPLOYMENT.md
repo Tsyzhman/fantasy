@@ -19,6 +19,9 @@ it replaces the single worker and switches only the Fantasy Scout upstream
 through a validated graceful Caddy reload. The prior web continues serving
 through the switch and a 30-second drain, followed by a graceful stop. Original
 static assets from both retained images remain available to existing tabs.
+The candidate's web-owned FPL and probable-lineup schedules wait for its
+release-specific activation file. The promoter activates them only after the
+old web stops, retaining their cadence without duplicate startup refreshes.
 
 Stopping the serving website to build, back up, rehearse migrations or start
 its replacement is prohibited by `AGENTS.md` and

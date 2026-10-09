@@ -201,6 +201,7 @@ probe_public_release() {
   audit
 }
 sleep() { [[ "$route" == 3001 ]]; audit; }
+activate_web_schedulers() { [[ "${states[web_old]}" == exited ]]; audit; }
 finish() {
   local code=$?
   trap - EXIT

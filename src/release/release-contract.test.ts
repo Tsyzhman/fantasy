@@ -119,6 +119,7 @@ test("production fantasy price sync is an exact, non-runtime operator job", () =
   assert.doesNotMatch(runner, /docker compose (up|down)/);
 });
 
+/** @spec spec://common/INFRA-006-continuous-deployment#migrations */
 test("server promoter verifies formula files, rehearses migrations, and checks exact runtime commit", () => {
   const promoter = source("scripts/deploy-production-docker.sh");
   const relayLauncher = promoter.slice(promoter.indexOf("start_fpl_relay()"), promoter.indexOf("wait_for_fpl_relay()"));
@@ -135,7 +136,7 @@ test("server promoter verifies formula files, rehearses migrations, and checks e
   assert.match(promoter, /run_canary "Post-migration"/);
   assert.match(promoter, /docker logs --tail 200 "\$canary"/);
   assert.match(promoter, /FPL_PRICE_SYNC_ENABLED=false/);
-  assert.match(promoter, /schema_migration_started/);
+  assert.match(promoter, /scripts\/check-online-migrations\.py/);
   assert.match(promoter, /status IN \('queued','running'\)/);
   assert.match(promoter, /p\.release\?\.commit===process\.argv\[1\]/);
   assert.match(promoter, /PRODUCTION_HISTORY\.tsv/);
@@ -147,7 +148,7 @@ test("server promoter verifies formula files, rehearses migrations, and checks e
   assert.match(relayLauncher, /--log-driver json-file/);
   assert.match(relayLauncher, /--log-opt max-size=20m/);
   assert.match(relayLauncher, /--log-opt max-file=5/);
-  assert.match(promoter, /type=volume,src=\$fpl_relay_volume,dst=\/run\/fpl-relay,readonly/);
+  assert.match(promoter, /type=volume,src=\$fpl_relay_candidate_volume,dst=\/run\/fpl-relay,readonly/);
   assert.doesNotMatch(promoter, /docker network connect/);
   assert.match(promoter, /fpl_relay_rollback="fantasy-scout-fpl-relay-rollback-pre-\$release"/);
   assert.match(promoter, /old_fpl_relay_renamed/);

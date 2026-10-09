@@ -325,6 +325,7 @@ for required_file in \
   scripts/production-rollout.sh \
   scripts/production-web-routing.py \
   scripts/check-online-migrations.py \
+  src/server/web-scheduler-activation.ts \
   scripts/fpl-vpn-relay.mjs \
   scripts/prune-production-artifacts.sh \
   src/app/api/machete/squads/formula-adaptations/route.ts \
@@ -626,6 +627,7 @@ old_current_target="$(readlink -f "$current_link")"
 # Extract original image assets, not an accumulated runtime asset cache.
 # Each release contains assets from precisely the current and previous images.
 mkdir "$target/runtime-static"
+chmod 755 "$target/runtime-static"
 previous_image="$(docker container inspect "$web" --format '{{.Config.Image}}')"
 docker create --name "$static_previous" --entrypoint true "$previous_image" >/dev/null
 docker cp "$static_previous:/app/.next/static/." "$target/runtime-static/"
@@ -634,17 +636,21 @@ docker create --name "$static_current" --entrypoint true "$image" >/dev/null
 docker cp "$static_current:/app/.next/static/." "$target/runtime-static/"
 docker container rm "$static_current" >/dev/null
 printf '%s\n%s\n' "$image" "$previous_image" > "$target/.release-static-images"
+: > "$target/.web-schedulers-active"
+chmod 644 "$target/.web-schedulers-active"
 
 docker create \
   --name "$web_candidate" \
   --restart unless-stopped \
   --env-file "$web_env" \
   -e INGESTION_WORKER_IN_PROCESS=false \
+  -e WEB_SCHEDULER_ACTIVATION_PATH=/run/fantasy-scout/web-schedulers-active \
   -e "FPL_RELAY_SOCKET_PATH=$fpl_relay_socket" \
   --network fantasy-scout_default \
   --mount type=volume,src=fantasy-scout_fantasy-scout-uploads,dst=/app/storage/uploads \
   --mount "type=volume,src=$fpl_relay_candidate_volume,dst=/run/fpl-relay,readonly" \
   --mount "type=bind,src=$target/runtime-static,dst=/app/.next/static,readonly" \
+  --mount "type=bind,src=$target/.web-schedulers-active,dst=/run/fantasy-scout/web-schedulers-active,readonly" \
   -p "127.0.0.1:$candidate_port:3000" \
   --log-driver json-file \
   --log-opt max-size=20m \
@@ -653,6 +659,7 @@ docker create \
 
 docker container start "$web_candidate" >/dev/null
 wait_for_release "$web_candidate" "$commit"
+docker exec "$web_candidate" node -e 'const fs=require("node:fs");fs.accessSync(process.env.WEB_SCHEDULER_ACTIVATION_PATH,fs.constants.R_OK);fs.accessSync("/app/.next/static",fs.constants.R_OK|fs.constants.X_OK)'
 
 create_production_worker() {
 docker create \
@@ -671,6 +678,11 @@ docker create \
   --log-opt max-size=20m \
   --log-opt max-file=5 \
   "$image" >/dev/null
+}
+
+activate_web_schedulers() {
+  printf '%s\n' "$commit" > "$target/.web-schedulers-active"
+  echo "WEB_SCHEDULERS_ACTIVATED=$commit"
 }
 
 promote_running_candidate

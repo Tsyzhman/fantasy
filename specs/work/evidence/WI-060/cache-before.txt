@@ -1,0 +1,12 @@
+Fri Oct  9 15:04:52 UTC 2026
+BEGIN
+SET
+outbox={ "PENDING" : 3, "SENT" : 10 }
+duplicate_delivery_keys=0
+duplicate_message_ids=0
+duplicate_mapping_keys=0
+duplicate_sorare_targets=0
+duplicate_refresh_keys=0
+duplicate_price_keys=0
+raw_cache={"rows" : 975, "bytes" : 14122744, "expired" : 0}
+COMMIT

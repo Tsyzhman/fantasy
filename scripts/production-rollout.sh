@@ -76,4 +76,5 @@ drain_previous_runtime() {
   sleep 30
   docker container stop -t 30 "$web_rollback" >/dev/null
   docker container stop -t 10 "$fpl_relay_rollback" >/dev/null
+  activate_web_schedulers
 }
