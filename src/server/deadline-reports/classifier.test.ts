@@ -116,9 +116,9 @@ test("report contains the tag, source, risks, plain schedule and popularity", ()
   assert.equal(partsCount, 1);
   const text = parts[0]!;
   assert.match(text, /^#Англия10 · Дедлайн сегодня 18:30 МСК/);
-  assert.match(text, /Состав Sports: опубликованный тур 9\./);
+  assert.match(text, /Состав Sports: 9 тур \(опубликованный\)\. Последние замены/);
   assert.ok(!text.includes("загружен"), "no data-age timestamps in the message");
-  assert.match(text, /⚠ Игрок А \(К\) — ALT 0 — проверьте игрока\./);
+  assert.match(text, /⚠ Игрок А \(К\) — ALT 0\./);
   assert.match(text, /Матчи тура\nArsenal - Liverpool\n/);
   assert.match(text, /Популярные продажи Sports \(топ-2\):/);
   assert.match(text, /1\. Бруну Фернандеш, Португалия — -4,7%/);
@@ -126,6 +126,70 @@ test("report contains the tag, source, risks, plain schedule and popularity", ()
   assert.match(text, /<a href="https:\/\/www\.sports\.ru/);
   assert.ok(!text.includes("Статистика"), "no freshness footer");
   assert.match(text, /Открыть состав ↗/);
+});
+
+/** @spec spec://modules/telegram/FEAT-007-deadline-assistant#message */
+test("the Russia example groups identical causes without repeating player degradation", () => {
+  const stale = { available: false, inXi: false, coveredFixtures: 0, stale: true, source: "SORAREINSIDE" };
+  const outside = { available: true, inXi: false, coveredFixtures: 1, stale: false, source: "SORAREINSIDE" };
+  const classified = classifyDeadlinePlayers({
+    players: [
+      player({ playerId: "1", name: "Хуссем Мрезиг", predictedXi: stale }),
+      player({ playerId: "2", name: "Мирлинд Даку", isCaptain: true, alt: null, predictedXi: outside }),
+      player({ playerId: "3", name: "Андрес Аларкон", isStarter: false, predictedXi: stale }),
+      player({ playerId: "4", name: "Александр Беляев", isStarter: false, alt: null, predictedXi: outside }),
+      player({ playerId: "5", name: "Александр Сандрачук", isStarter: false, predictedXi: stale }),
+      player({ playerId: "6", name: "Егор Любаков", isStarter: false, alt: null, predictedXi: outside })
+    ],
+    scheduleKnown: true,
+    scheduleComplete: true
+  });
+  const text = renderDeadlineReport(reportInput({
+    tag: "#Россия10",
+    deadlineAt: new Date("2026-10-09T16:30:00.000Z"),
+    squadSource: { kind: "SPORTS_PUBLISHED", tourLabel: "9 тур", note: "Последние замены на 10 тур могут отсутствовать." },
+    ...classified
+  })).parts[0]!;
+  assert.match(text, /^#Россия10 · Дедлайн сегодня 19:30 МСК/);
+  assert.ok(text.includes("Состав Sports: 9 тур (опубликованный). Последние замены на 10 тур могут отсутствовать."));
+  assert.ok(text.includes("Проверьте основу:\n? Хуссем Мрезиг — прогноз основы устарел.\n? Мирлинд Даку (К) — вне прогноза основы SorareInside; ALT недоступен."));
+  assert.ok(text.includes("Проверьте скамейку:\n? Андрес Аларкон, Александр Сандрачук — прогноз основы устарел.\n? Александр Беляев, Егор Любаков — вне прогноза основы SorareInside; ALT недоступен."));
+  assert.equal(text.split("\n").filter((line) => line.startsWith("? ")).length, 4);
+  for (const finding of classified.findings) assert.equal(text.split(finding.name).length - 1, 1);
+  assert.ok(!text.includes("Нет надёжных данных"));
+  assert.ok(!text.includes("Не хватает данных"));
+});
+
+/** @spec spec://modules/telegram/FEAT-007-deadline-assistant#message */
+test("grouped findings preserve lineup roles and partial coverage without duplicate summaries", () => {
+  const classified = classifyDeadlinePlayers({
+    players: [
+      player({ playerId: "1", name: "Капитан", isCaptain: true, fixtureCount: 0, alt: 0 }),
+      player({ playerId: "2", name: "Вице", isViceCaptain: true, fixtureCount: 0, alt: 0 }),
+      player({ playerId: "3", name: "Запасной", isStarter: false, fixtureCount: 0, alt: 0 }),
+      player({ playerId: "4", name: "Двойной тур", fixtureCount: 2, predictedXi: { available: true, inXi: false, coveredFixtures: 1, stale: false, source: "SORAREINSIDE" } })
+    ],
+    scheduleKnown: true,
+    scheduleComplete: true
+  });
+  const text = renderDeadlineReport(reportInput(classified)).parts.join("\n");
+  assert.ok(text.includes("⛔ Капитан (К), Вице (В) — нет матча в туре; ALT 0."));
+  assert.ok(text.includes("Проверьте скамейку:\n⛔ Запасной — нет матча в туре; ALT 0."));
+  assert.ok(text.includes("? Двойной тур — прогноз основы есть не для всех матчей."));
+  assert.equal(text.split("Двойной тур").length - 1, 1);
+  assert.ok(!text.includes("Не хватает данных"));
+});
+
+/** @spec spec://modules/telegram/FEAT-007-deadline-assistant#message */
+test("general degradation stays visible once and never implies a completed risk check", () => {
+  const text = renderDeadlineReport(reportInput({
+    findings: [],
+    degraded: ["опубликованный состав Sports не найден", "не сопоставлено игроков: 2", "не сопоставлено игроков: 2"]
+  })).parts.join("\n");
+  assert.ok(text.includes("Проверка неполная"));
+  assert.ok(text.includes("Не хватает данных: опубликованный состав Sports не найден; не сопоставлено игроков: 2"));
+  assert.equal(text.split("не сопоставлено игроков: 2").length - 1, 1);
+  assert.ok(!text.includes("Рисков не найдено"));
 });
 
 test("published buys and sells are included up to 10 with source; missing publication omits the block", () => {
@@ -190,7 +254,7 @@ test("missing kickoff no longer needs a fabricated time column", () => {
 });
 
 test("long reports split deterministically with the same tag and part numbers", () => {
-  const findings = Array.from({ length: 120 }, (_, index) => ({
+  const findings = Array.from({ length: 240 }, (_, index) => ({
     playerId: String(index),
     name: `Очень длинное имя игрока ${index}`,
     teamName: "Клуб",
@@ -207,4 +271,10 @@ test("long reports split deterministically with the same tag and part numbers", 
     assert.ok(part.length <= 4096, `part ${index} length ${part.length}`);
     assert.match(part, new RegExp(`^#Англия10 · Дедлайн сегодня 18:30 МСК · часть ${index + 1}/${first.partsCount}`));
   });
+  const playerIds = [...first.parts.join("\n").matchAll(/Очень длинное имя игрока (\d+)/g)].map((match) => match[1]);
+  assert.equal(playerIds.length, 240);
+  assert.equal(new Set(playerIds).size, 240);
+  const shorter = renderDeadlineReport(reportInput({ findings, maxLength: 512 }));
+  assert.ok(shorter.parts.every((part) => part.length <= 512));
+  assert.equal([...shorter.parts.join("\n").matchAll(/Очень длинное имя игрока (\d+)/g)].length, 240);
 });

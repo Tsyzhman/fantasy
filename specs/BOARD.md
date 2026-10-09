@@ -6,6 +6,7 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
+| [WI-056](work/WI-056-compact-deadline-findings.md) | Compact Telegram deadline findings | FEAT-007, INFRA-005 | @tsyzhman | 2026-10-09 | — |
 | [WI-055](work/WI-055-sports-transfer-limit.md) | Three Sports.ru transfers per round | FEAT-001 | @tsyzhman | 2026-10-08 | — |
 
 ## Backlog

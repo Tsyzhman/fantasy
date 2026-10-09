@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.123 - 2026-10-09
+
+- Compact Telegram deadline reports by grouping players with identical reasons within starters and bench, retaining captain and vice-captain labels and every distinct risk.
+- Shorten risk wording and combine the published squad source with its transfer caveat; remove repeated player degradation while retaining general missing-data warnings.
+- Keep grouped messages within Telegram limits without losing names, escaping, fixtures, popularity or the Squad link.
+
 ## 0.3.122 - 2026-10-08
 
 - Correct Sports.ru squad planning to three transfers per round without accumulating unused transfers, including older cached pools, saved-plan rollover and legacy opening allowances.
