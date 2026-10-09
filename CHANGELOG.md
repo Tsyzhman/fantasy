@@ -5,6 +5,7 @@
 - Resolve SorareInside full names against fresh, verified Sports.ru identity aliases and birth dates, rejecting contradictory provider bindings and club assignments.
 - Restore an existing inactive club member only when the published XI and a fresh mapped current-season Sports.ru price corroborate identity and club; revalidate and commit it atomically with the complete XI, mappings and refresh request.
 - Preserve saved IDs, partial-team rejection, transfer conflicts and normal roster deactivation; expose restored member IDs in the bounded sync report.
+- Retain corroborating Sports.ru price refresh scopes through operator-owned deployment configuration; add the independently verified Alejandro/Alex Pozo source UUID.
 
 ## 0.3.124 - 2026-10-09
 

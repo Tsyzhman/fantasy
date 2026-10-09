@@ -69,6 +69,8 @@ Only `lineup_players.starting_players`, exactly 11 unique players and one goalke
 ## Runtime and operations {#runtime}
 Worker starts one timer for the nearest :05 UTC (in Moscow it is also :05). Starting after a restart replenishes the condition. The default CLI is dry-run, `--apply` allows writing. Interprocess advisory lock does not allow simultaneous launch of scheduler/CLI. Feature flag `SORAREINSIDE_SYNC_ENABLED=true`; login and password only in the environment, without getting into Git/reports. Cookie authorization; requests are sequential, limited by timeout, size, number of windows/commands and total duration. Cookies are reused in the worker's memory; match and player data is not stored in the global cache.
 
+The worker's existing Sports.ru scheduler refreshes the configured corroborating price scopes. The immutable promoter reads optional operator-owned `/home/deploy/.config/fantasy-scout/sports-ru.env` (mode 600) for `SPORTS_RU_FANTASY_SYNC_ENABLED`, `SCOPES` and `INTERVAL_HOURS`; it preserves existing container settings when that file is absent. Price scopes required for ongoing inactive-member reconciliation must continue to refresh within the 48-hour evidence window.
+
 <a name="errors"></a>
 
 ## Errors and validation {#errors}

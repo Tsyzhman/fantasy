@@ -16,7 +16,7 @@ Published XI for the affected clubs is ingested after verified identity and rost
 
 ## Scope
 
-- In: authenticated source inspection, current roster and identity evidence, verified Sports.ru name aliases, corroborated restoration of an existing inactive roster member, importer repair, regression checks, dry-run/apply on production, release and memory/cache/duplicate verification.
+- In: authenticated source inspection, current roster and identity evidence, refreshing stale Sports.ru prerequisite data in France/Germany/UCL, verified Sports.ru name aliases, corroborated restoration of an existing inactive roster member, importer repair, regression checks, dry-run/apply on production, release and memory/cache/duplicate verification.
 - Out: guessing ambiguous names, accepting partial XI, silently replacing stored provider IDs, unrelated data imports, sending additional Telegram messages, or editing user squads.
 
 ## Acceptance

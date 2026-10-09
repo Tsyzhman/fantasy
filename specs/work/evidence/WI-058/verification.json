@@ -6,7 +6,7 @@
     {
       "name": "focused-regressions",
       "status": "passed",
-      "tests": 36,
+      "tests": 37,
       "failed": 0
     },
     {
@@ -25,16 +25,26 @@
     {
       "name": "spec-snapshot",
       "status": "current",
-      "fingerprint": "3467e1405f16f0b814a52eb3bb3886236e92929f45c38d27f280dc9523aa96c1",
+      "fingerprint": "ffde66ccf01f6442da9dac74c8dfb9dd0f34a26412d771c5267aa81f24622bd0",
       "diagnostics": []
+    },
+    {
+      "name": "deployment-runtime-contracts",
+      "status": "passed",
+      "tests": 22,
+      "failed": 0
     }
   ],
   "sourceDryRun": {
-    "readyAffectedScopes": 4,
+    "affectedScopes": 11,
+    "fullXiResolved": 11,
     "unmappedBefore": 11,
-    "unmappedAfter": 5,
-    "rssMiB": 171,
-    "backupScopes": 8
+    "unmappedAfter": 0,
+    "ready": 9,
+    "unchanged": 228,
+    "rssMiB": 188,
+    "backupScopes": 13,
+    "realSourceError": "Bodo/Glimt supplies only six starters"
   },
   "production": null,
   "messagesSent": 0,
@@ -43,5 +53,15 @@
     "status": "passed",
     "unitTests": 1282,
     "databaseTests": 25
+  },
+  "prerequisiteRefresh": {
+    "scopes": 3,
+    "succeeded": 3,
+    "failed": 0,
+    "unavailable": 0,
+    "prices": 2222,
+    "recurringScopesBefore": 4,
+    "recurringScopesAfter": 7,
+    "intervalHours": 6
   }
 }

@@ -20,7 +20,17 @@ Primary corroboration: [Rodri full name/date at Barcelona](https://www.fcbarcelo
 
 Old runtime at 08:34–08:36 UTC: 11 PLAYERS_UNMAPPED, 224 UNCHANGED, 2 READY. Corrected importer at 08:42–08:43 UTC: 5 PLAYERS_UNMAPPED, 224 UNCHANGED, 8 READY. Barcelona (both scopes), Groningen and Makhachkala all resolve 11 unique target IDs. The same guarded correction also resolves Málaga and Vitória de Guimarães.
 
-Five other teams remain rejected by their own missing roster or identity contradictions. Global source status remains PARTIAL; it is not labelled complete coverage. Both dry-runs retain the existing 5 missing forecasts, 19 absent team/match mappings and one source validation error. Dry-run RSS rose from 137 to 171 MiB; no provider responses enter a global cache.
+At that intermediate check, five other teams remained rejected by their own missing roster or identity contradictions. Dry-run RSS rose from 137 to 171 MiB; no provider responses enter a global cache.
+
+## Fresh prerequisite data and final source proof
+
+The Sports.ru worker was configured for Russia, Spain, Netherlands and Portugal only. France, Germany and UCL prices had not refreshed since September. Live Sports.ru still supplied all three scopes; a bounded manual refresh succeeded for all three (2222 current prices), without changing saved squads. In particular, Le Havre's Djibril Ouziad now has the source-confirmed date 2009-04-27 rather than the cached 2007 date. Fresh Latin full-name aliases also resolve the existing Sports-owned Shakhtar IDs without creating or merging players.
+
+Alejandro Pozo's source UUID was independently verified against [FotMob player 785855](https://www.fotmob.com/es/players/785855/alejandro-pozo): full date 1999-02-22 and current ADO membership. The reviewed seed still requires that date and active club; it does not overwrite an existing mapping.
+
+At 09:15–09:16 UTC, the corrected importer with fresh prices had zero PLAYERS_UNMAPPED, 9 READY and 228 UNCHANGED. Every one of the 11 originally rejected scopes resolves a full XI. The operator-owned Sports.ru configuration now covers seven scopes at six-hour intervals; the immutable promoter will apply that configuration to the worker.
+
+Global coverage remains PARTIAL: 5 nearest fixtures have no forecast, 19 have no team/match mapping, and Bodø/Glimt's published source payload has only six starters, verified directly at 09:30 UTC. The source error is a real incomplete XI, so the importer correctly preserves the previous flags. Final dry-run RSS was 188 MiB.
 
 ## Guarded correction
 
