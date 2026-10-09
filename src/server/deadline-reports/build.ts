@@ -11,6 +11,7 @@ import { classifyDeadlinePlayers, type DeadlinePlayerSignalInput } from "./class
 import { DEADLINE_DELIVERY_HOUR, moscowDateKey, moscowDateTimeToUtc } from "./config";
 import { renderDeadlineReport, type DeadlineFixtureLine, type DeadlinePopularitySection } from "./renderer";
 import { deadlineTag } from "./tags";
+import { deadlineXiSignal, type DeadlineXiFixture } from "./xi";
 
 /**
  * @spec spec://modules/telegram/INFRA-005-deadline-pipeline#pipeline
@@ -32,15 +33,6 @@ interface SquadBasePlayer {
   sourceName: string | null;
 }
 
-interface ProbableLineup {
-  source: string | null;
-  sourceKickoff: number | null;
-  observedAt: number | null;
-}
-
-const XI_STALE_MS = 2 * 60 * 60 * 1000;
-const FIXTURE_MATCH_TOLERANCE_MS = 6 * 60 * 60 * 1000;
-
 function numericPlayerId(value: string): bigint | null {
   if (!/^\d+$/.test(value)) return null;
   try {
@@ -48,23 +40,6 @@ function numericPlayerId(value: string): bigint | null {
   } catch {
     return null;
   }
-}
-
-function parseProbableLineup(metadata: unknown): ProbableLineup | null {
-  if (!metadata || typeof metadata !== "object") return null;
-  const lineup = (metadata as { probableLineup?: unknown }).probableLineup;
-  if (!lineup || typeof lineup !== "object") return null;
-  const record = lineup as { source?: unknown; sourceKickoff?: unknown; fetchedAt?: unknown; appliedAt?: unknown };
-  if (typeof record.source !== "string" || record.source !== "SORAREINSIDE") return null;
-  const kickoff = typeof record.sourceKickoff === "string" ? Date.parse(record.sourceKickoff) : Number.NaN;
-  const applied = typeof record.appliedAt === "string" ? Date.parse(record.appliedAt) : Number.NaN;
-  const fetched = typeof record.fetchedAt === "string" ? Date.parse(record.fetchedAt) : Number.NaN;
-  const observedAt = Number.isFinite(applied) ? applied : Number.isFinite(fetched) ? fetched : null;
-  return {
-    source: record.source,
-    sourceKickoff: Number.isFinite(kickoff) ? kickoff : null,
-    observedAt
-  };
 }
 
 /**
@@ -191,6 +166,11 @@ export async function buildCampaignReports(
         tag,
         fixturesByTeam,
         fixtureLines,
+        xiFixtures: fixtures.map((fixture) => ({
+          homeTeamId: fixture.homeTeamId == null ? null : String(fixture.homeTeamId),
+          awayTeamId: fixture.awayTeamId == null ? null : String(fixture.awayTeamId),
+          kickoffAt: fixture.kickoffAt
+        })),
         scheduleKnown,
         scheduleComplete,
         popularitySections,
@@ -227,6 +207,7 @@ async function buildOneReport(
     tag: string;
     fixturesByTeam: Map<string, number>;
     fixtureLines: DeadlineFixtureLine[];
+    xiFixtures: DeadlineXiFixture[];
     scheduleKnown: boolean;
     scheduleComplete: boolean;
     popularitySections: DeadlinePopularitySection[];
@@ -323,7 +304,7 @@ async function buildOneReport(
   const priceByPlayer = new Map(prices.map((row) => [String(row.playerId), row]));
   const poolByPlayer = new Map(pool.players.map((player) => [player.playerId, player]));
   const xiByPlayer = new Map(xiRows.map((row) => [String(row.playerId), row]));
-  const lineupByTeam = new Map(teamRows.map((row) => [String(row.teamId), parseProbableLineup(row.metadata)]));
+  const metadataByTeam = new Map(teamRows.map((row) => [String(row.teamId), row.metadata]));
 
   const signals: DeadlinePlayerSignalInput[] = sourcePlayers.map((player) => {
     const price = priceByPlayer.get(player.playerId);
@@ -331,10 +312,6 @@ async function buildOneReport(
     const xi = xiByPlayer.get(player.playerId);
     const teamId = price?.teamId != null ? String(price.teamId) : poolPlayer?.teamId ?? null;
     const fixtureCount = teamId != null ? input.fixturesByTeam.get(teamId) ?? 0 : null;
-    const lineup = teamId != null ? lineupByTeam.get(teamId) ?? null : null;
-    const coveredFixtures = lineup?.sourceKickoff != null
-      ? input.fixtureLines.filter((fixture) => fixture.kickoffAt && Math.abs(fixture.kickoffAt.getTime() - lineup.sourceKickoff!) <= FIXTURE_MATCH_TOLERANCE_MS).length
-      : 0;
     const rawAlt = altAllowed && poolPlayer && roundIndex >= 0 ? poolPlayer.alternativeRoundPoints?.[roundIndex] ?? null : null;
     const alt = rawAlt == null ? null : Math.round(rawAlt * 10) / 10;
     return {
@@ -348,13 +325,10 @@ async function buildOneReport(
       alt,
       altIsRoundedZero: rawAlt != null && rawAlt !== 0 && Math.round(rawAlt * 10) / 10 === 0,
       fixtureCount,
-      predictedXi: {
-        available: lineup != null && coveredFixtures > 0,
-        inXi: xi?.isStarter === true,
-        coveredFixtures,
-        stale: lineup?.observedAt == null || input.now.getTime() - lineup.observedAt > XI_STALE_MS,
-        source: lineup?.source ?? null
-      },
+      predictedXi: deadlineXiSignal({
+        metadata: teamId == null ? null : metadataByTeam.get(teamId),
+        teamId, fixtures: input.xiFixtures, now: input.now, inXi: xi?.isStarter === true
+      }),
       mappingComplete: teamId != null && poolPlayer != null
     };
   });

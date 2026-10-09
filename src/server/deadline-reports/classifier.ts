@@ -62,6 +62,7 @@ function unknownReason(cause: string): DeadlineFindingReason {
 function unknownCause(input: DeadlinePlayerSignalInput, scheduleKnown: boolean): string | null {
   if (!input.mappingComplete) return "неполный маппинг игрока";
   if (!scheduleKnown || input.fixtureCount == null) return "календарь тура неполон";
+  if (input.fixtureCount > 0 && !input.predictedXi.available) return "прогноз основы недоступен";
   if (input.predictedXi.stale) return "прогноз основы устарел";
   if (input.alt == null) return "ALT недоступен";
   return null;
@@ -83,7 +84,7 @@ export function classifyDeadlinePlayers(input: {
     if (input.scheduleComplete && player.fixtureCount === 0) {
       reasons.push({ code: "BLANK", text: BLANK_TEXT });
     }
-    if (player.predictedXi.available && !player.predictedXi.inXi && player.fixtureCount != null && player.fixtureCount > 0) {
+    if (player.predictedXi.available && !player.predictedXi.stale && !player.predictedXi.inXi && player.fixtureCount != null && player.fixtureCount > 0) {
       const coversRound = player.predictedXi.coveredFixtures >= player.fixtureCount;
       if (coversRound) {
         reasons.push({ code: "OUT_OF_XI", text: OUT_OF_XI_TEXT });

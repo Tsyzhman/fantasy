@@ -74,7 +74,7 @@ export function renderScheduleBlock(fixtures: DeadlineFixtureLine[]): string {
 function compactReason(reason: DeadlineFindingReason): string {
   switch (reason.code) {
     case "BLANK": return "нет матча в туре";
-    case "OUT_OF_XI": return "вне прогноза основы SorareInside";
+    case "OUT_OF_XI": return "вне основы по прогнозу";
     case "ALT_ZERO": return "ALT 0";
     case "PARTIAL_XI_COVERAGE": return "прогноз основы есть не для всех матчей";
     case "UNKNOWN_DATA": return reason.text.replace(/^Нет надёжных данных: /, "");
@@ -85,10 +85,15 @@ function renderFindings(title: string, findings: DeadlinePlayerFinding[], maxLin
   if (findings.length === 0) return null;
   const groups = new Map<string, DeadlinePlayerFinding[]>();
   for (const finding of findings) {
-    const key = JSON.stringify(finding.reasons.map((reason) => [reason.code, reason.text]));
+    const hasOutOfXi = finding.reasons.some((reason) => reason.code === "OUT_OF_XI");
+    const visible = hasOutOfXi ? {
+      ...finding,
+      reasons: finding.reasons.filter((reason) => !(reason.code === "UNKNOWN_DATA" && reason.text === "Нет надёжных данных: ALT недоступен"))
+    } : finding;
+    const key = JSON.stringify(visible.reasons.map((reason) => [reason.code, reason.text]));
     const group = groups.get(key);
-    if (group) group.push(finding);
-    else groups.set(key, [finding]);
+    if (group) group.push(visible);
+    else groups.set(key, [visible]);
   }
   const lines: string[] = [];
   for (const group of groups.values()) {
