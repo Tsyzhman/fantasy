@@ -1,0 +1,461 @@
+{
+  "kind": "result",
+  "at": "2026-10-09T18:54:51.812Z",
+  "results": [
+    {
+      "leagueId": 63,
+      "tournamentHru": "russia",
+      "startedAt": "2026-10-09T18:53:44.206Z",
+      "finishedAt": "2026-10-09T18:53:48.960Z",
+      "status": "SYNCED",
+      "seasonId": "75",
+      "prices": 509,
+      "deletedStalePrices": 0,
+      "teamReconciliation": {
+        "scanned": 492,
+        "correctedPrices": 0,
+        "refreshedSelections": 0,
+        "skippedManualTeamOverrides": 10
+      },
+      "mapping": {
+        "total": 17,
+        "matched": 0,
+        "manual": 0,
+        "excluded": 1,
+        "unmatched": 16,
+        "movedSelections": 0,
+        "refreshedSelections": 0,
+        "removedDuplicateSelections": 0
+      },
+      "schedule": {
+        "revision": "909314b4d8b6146e7b142ccd7d68971eeca8583f97a89492e3e9a450b72361f4",
+        "rounds": 30,
+        "fixtures": 240,
+        "matchedFixtures": 240,
+        "teamMappedFixtures": 0,
+        "unmatchedFixtures": 0
+      },
+      "databaseChanged": true
+    },
+    {
+      "leagueId": 47,
+      "tournamentHru": "england",
+      "startedAt": "2026-10-09T18:53:48.960Z",
+      "finishedAt": "2026-10-09T18:53:54.545Z",
+      "status": "SYNCED",
+      "seasonId": "81",
+      "prices": 686,
+      "deletedStalePrices": 0,
+      "teamReconciliation": {
+        "scanned": 665,
+        "correctedPrices": 0,
+        "refreshedSelections": 0,
+        "skippedManualTeamOverrides": 463
+      },
+      "mapping": {
+        "total": 21,
+        "matched": 0,
+        "manual": 0,
+        "excluded": 0,
+        "unmatched": 21,
+        "movedSelections": 0,
+        "refreshedSelections": 0,
+        "removedDuplicateSelections": 0
+      },
+      "schedule": {
+        "revision": "d808ae9ef9c23b430a31eb3bf0b25be5a378200a572bd8e2b34acc5887cc6bb0",
+        "rounds": 38,
+        "fixtures": 380,
+        "matchedFixtures": 380,
+        "teamMappedFixtures": 0,
+        "unmatchedFixtures": 0
+      },
+      "databaseChanged": true
+    },
+    {
+      "leagueId": 87,
+      "tournamentHru": "spain",
+      "startedAt": "2026-10-09T18:53:54.545Z",
+      "finishedAt": "2026-10-09T18:53:59.455Z",
+      "status": "SYNCED",
+      "seasonId": "80",
+      "prices": 733,
+      "deletedStalePrices": 0,
+      "teamReconciliation": {
+        "scanned": 730,
+        "correctedPrices": 0,
+        "refreshedSelections": 0,
+        "skippedManualTeamOverrides": 143
+      },
+      "mapping": {
+        "total": 3,
+        "matched": 0,
+        "manual": 0,
+        "excluded": 0,
+        "unmatched": 3,
+        "movedSelections": 0,
+        "refreshedSelections": 0,
+        "removedDuplicateSelections": 0
+      },
+      "schedule": {
+        "revision": "c17e317005287b34909960ccbd0950917750a547c18a843ee152374b4647ed5c",
+        "rounds": 38,
+        "fixtures": 380,
+        "matchedFixtures": 380,
+        "teamMappedFixtures": 0,
+        "unmatchedFixtures": 0
+      },
+      "databaseChanged": true
+    },
+    {
+      "leagueId": 54,
+      "tournamentHru": "germany",
+      "startedAt": "2026-10-09T18:53:59.456Z",
+      "finishedAt": "2026-10-09T18:54:04.652Z",
+      "status": "SYNCED",
+      "seasonId": "84",
+      "prices": 529,
+      "deletedStalePrices": 0,
+      "teamReconciliation": {
+        "scanned": 523,
+        "correctedPrices": 0,
+        "refreshedSelections": 0,
+        "skippedManualTeamOverrides": 3
+      },
+      "mapping": {
+        "total": 6,
+        "matched": 0,
+        "manual": 0,
+        "excluded": 0,
+        "unmatched": 6,
+        "movedSelections": 0,
+        "refreshedSelections": 0,
+        "removedDuplicateSelections": 0
+      },
+      "schedule": {
+        "revision": "ae0b0b56da59a7201814be09535aef1f0362d8f94210bd17575a571290b6f040",
+        "rounds": 34,
+        "fixtures": 306,
+        "matchedFixtures": 306,
+        "teamMappedFixtures": 0,
+        "unmatchedFixtures": 0
+      },
+      "databaseChanged": true
+    },
+    {
+      "leagueId": 55,
+      "tournamentHru": "italy",
+      "startedAt": "2026-10-09T18:54:04.652Z",
+      "finishedAt": "2026-10-09T18:54:09.726Z",
+      "status": "SYNCED",
+      "seasonId": "82",
+      "prices": 636,
+      "deletedStalePrices": 0,
+      "teamReconciliation": {
+        "scanned": 634,
+        "correctedPrices": 0,
+        "refreshedSelections": 0,
+        "skippedManualTeamOverrides": 3
+      },
+      "mapping": {
+        "total": 2,
+        "matched": 0,
+        "manual": 0,
+        "excluded": 0,
+        "unmatched": 2,
+        "movedSelections": 0,
+        "refreshedSelections": 0,
+        "removedDuplicateSelections": 0
+      },
+      "schedule": {
+        "revision": "3bda945b6393a6a8f9c6435aa83dadd7fab965cb2278394436078a2b25e8bb4d",
+        "rounds": 38,
+        "fixtures": 380,
+        "matchedFixtures": 380,
+        "teamMappedFixtures": 0,
+        "unmatchedFixtures": 0
+      },
+      "databaseChanged": true
+    },
+    {
+      "leagueId": 53,
+      "tournamentHru": "france",
+      "startedAt": "2026-10-09T18:54:09.727Z",
+      "finishedAt": "2026-10-09T18:54:13.453Z",
+      "status": "SYNCED",
+      "seasonId": "83",
+      "prices": 514,
+      "deletedStalePrices": 0,
+      "teamReconciliation": {
+        "scanned": 513,
+        "correctedPrices": 0,
+        "refreshedSelections": 0,
+        "skippedManualTeamOverrides": 20
+      },
+      "mapping": {
+        "total": 1,
+        "matched": 0,
+        "manual": 0,
+        "excluded": 0,
+        "unmatched": 1,
+        "movedSelections": 0,
+        "refreshedSelections": 0,
+        "removedDuplicateSelections": 0
+      },
+      "schedule": {
+        "revision": "f17cff774406fcb036bc133df393fba0b8b37e0028ef8cfdfb0ee08fede080ab",
+        "rounds": 34,
+        "fixtures": 306,
+        "matchedFixtures": 306,
+        "teamMappedFixtures": 0,
+        "unmatchedFixtures": 0
+      },
+      "databaseChanged": true
+    },
+    {
+      "leagueId": 61,
+      "tournamentHru": "portugal",
+      "startedAt": "2026-10-09T18:54:13.454Z",
+      "finishedAt": "2026-10-09T18:54:18.185Z",
+      "status": "SYNCED",
+      "seasonId": "77",
+      "prices": 628,
+      "deletedStalePrices": 0,
+      "teamReconciliation": {
+        "scanned": 624,
+        "correctedPrices": 0,
+        "refreshedSelections": 0,
+        "skippedManualTeamOverrides": 13
+      },
+      "mapping": {
+        "total": 4,
+        "matched": 0,
+        "manual": 0,
+        "excluded": 0,
+        "unmatched": 4,
+        "movedSelections": 0,
+        "refreshedSelections": 0,
+        "removedDuplicateSelections": 0
+      },
+      "schedule": {
+        "revision": "f0071b893e8f57656df3e90126a787206e7d091d1980d51a13385c34aa97fb26",
+        "rounds": 34,
+        "fixtures": 306,
+        "matchedFixtures": 306,
+        "teamMappedFixtures": 0,
+        "unmatchedFixtures": 0
+      },
+      "databaseChanged": true
+    },
+    {
+      "leagueId": 57,
+      "tournamentHru": "netherlands",
+      "startedAt": "2026-10-09T18:54:18.185Z",
+      "finishedAt": "2026-10-09T18:54:22.745Z",
+      "status": "SYNCED",
+      "seasonId": "76",
+      "prices": 611,
+      "deletedStalePrices": 0,
+      "teamReconciliation": {
+        "scanned": 610,
+        "correctedPrices": 0,
+        "refreshedSelections": 0,
+        "skippedManualTeamOverrides": 7
+      },
+      "mapping": {
+        "total": 1,
+        "matched": 0,
+        "manual": 0,
+        "excluded": 0,
+        "unmatched": 1,
+        "movedSelections": 0,
+        "refreshedSelections": 0,
+        "removedDuplicateSelections": 0
+      },
+      "schedule": {
+        "revision": "5034f293b328395b4d84f5d805c4a23a02fc21c485ad556bb05db44c7fbd2b8b",
+        "rounds": 34,
+        "fixtures": 306,
+        "matchedFixtures": 306,
+        "teamMappedFixtures": 0,
+        "unmatchedFixtures": 0
+      },
+      "databaseChanged": true
+    },
+    {
+      "leagueId": 71,
+      "tournamentHru": "turkey",
+      "startedAt": "2026-10-09T18:54:22.745Z",
+      "finishedAt": "2026-10-09T18:54:26.929Z",
+      "status": "SYNCED",
+      "seasonId": "79",
+      "prices": 563,
+      "deletedStalePrices": 0,
+      "teamReconciliation": {
+        "scanned": 563,
+        "correctedPrices": 0,
+        "refreshedSelections": 0,
+        "skippedManualTeamOverrides": 39
+      },
+      "mapping": {
+        "total": 0,
+        "matched": 0,
+        "manual": 0,
+        "excluded": 0,
+        "unmatched": 0,
+        "movedSelections": 0,
+        "refreshedSelections": 0,
+        "removedDuplicateSelections": 0
+      },
+      "schedule": {
+        "revision": "830988e6588b6a2d01a49dc6144b39e3eb916ecfe2f41c6fdbe2b90f5ce20df6",
+        "rounds": 34,
+        "fixtures": 306,
+        "matchedFixtures": 306,
+        "teamMappedFixtures": 0,
+        "unmatchedFixtures": 0
+      },
+      "databaseChanged": true
+    },
+    {
+      "leagueId": 48,
+      "tournamentHru": "championship",
+      "startedAt": "2026-10-09T18:54:26.929Z",
+      "finishedAt": "2026-10-09T18:54:33.237Z",
+      "status": "SYNCED",
+      "seasonId": "78",
+      "prices": 784,
+      "deletedStalePrices": 0,
+      "teamReconciliation": {
+        "scanned": 783,
+        "correctedPrices": 0,
+        "refreshedSelections": 0,
+        "skippedManualTeamOverrides": 23
+      },
+      "mapping": {
+        "total": 1,
+        "matched": 0,
+        "manual": 0,
+        "excluded": 0,
+        "unmatched": 1,
+        "movedSelections": 0,
+        "refreshedSelections": 0,
+        "removedDuplicateSelections": 0
+      },
+      "schedule": {
+        "revision": "72d95b3c2143e57e3e22e6428d49ee988fc76b597b97a3fde77398d0d5a58f5c",
+        "rounds": 46,
+        "fixtures": 552,
+        "matchedFixtures": 552,
+        "teamMappedFixtures": 0,
+        "unmatchedFixtures": 0
+      },
+      "databaseChanged": true
+    },
+    {
+      "leagueId": 42,
+      "tournamentHru": "champions-league",
+      "startedAt": "2026-10-09T18:54:33.237Z",
+      "finishedAt": "2026-10-09T18:54:42.536Z",
+      "status": "SYNCED",
+      "seasonId": "85",
+      "prices": 1179,
+      "deletedStalePrices": 0,
+      "teamReconciliation": {
+        "scanned": 1146,
+        "correctedPrices": 0,
+        "refreshedSelections": 0,
+        "skippedManualTeamOverrides": 105
+      },
+      "mapping": {
+        "total": 33,
+        "matched": 0,
+        "manual": 0,
+        "excluded": 1,
+        "unmatched": 32,
+        "movedSelections": 0,
+        "refreshedSelections": 0,
+        "removedDuplicateSelections": 0
+      },
+      "schedule": {
+        "revision": "e8c216182b867c4a5fabaf4c0dbba5ba38c07af9c10a521056d64b1bead60eec",
+        "rounds": 8,
+        "fixtures": 144,
+        "matchedFixtures": 144,
+        "teamMappedFixtures": 0,
+        "unmatchedFixtures": 0
+      },
+      "databaseChanged": true
+    },
+    {
+      "leagueId": 73,
+      "tournamentHru": "europa-league",
+      "startedAt": "2026-10-09T18:54:42.536Z",
+      "finishedAt": "2026-10-09T18:54:49.707Z",
+      "status": "SYNCED",
+      "seasonId": "86",
+      "prices": 1120,
+      "deletedStalePrices": 0,
+      "teamReconciliation": {
+        "scanned": 1116,
+        "correctedPrices": 0,
+        "refreshedSelections": 0,
+        "skippedManualTeamOverrides": 495
+      },
+      "mapping": {
+        "total": 4,
+        "matched": 0,
+        "manual": 0,
+        "excluded": 0,
+        "unmatched": 4,
+        "movedSelections": 0,
+        "refreshedSelections": 0,
+        "removedDuplicateSelections": 0
+      },
+      "schedule": {
+        "revision": "bfb24270fa8d8f089b718e4465a95caee246f9158442fc9fdca35fcf3b396b4f",
+        "rounds": 8,
+        "fixtures": 144,
+        "matchedFixtures": 144,
+        "teamMappedFixtures": 0,
+        "unmatchedFixtures": 0
+      },
+      "databaseChanged": true
+    },
+    {
+      "provider": "FPL",
+      "status": "SKIPPED",
+      "contestId": "cmsraor0d0002f8sym7tlpdws",
+      "snapshotKey": "2026-10-09-1201",
+      "prices": 667,
+      "mappedPlayers": 0,
+      "mappedTeams": 0,
+      "unmatchedPlayers": 0,
+      "unmatchedTeams": 0,
+      "payloadHash": "64e4b8e1b0b8f25057a9270408a7871d16de035474ce9f867587a89e41cc1e71",
+      "latestPublishedGameweek": 5,
+      "latestFinalizedGameweek": 5,
+      "scheduleFixtures": 380
+    }
+  ],
+  "before": {
+    "squads": 145,
+    "selections": 2162,
+    "fullHash": "18b42ca9b13be954a082ee9cce69bc298a5a9e0d92e705d2f82f6eb6006b5aad",
+    "structuralHash": "aab2e09aebbee3424cb2a5c40804426e957adf9e45cbb508ec523186c1cb2858"
+  },
+  "after": {
+    "squads": 145,
+    "selections": 2162,
+    "fullHash": "18b42ca9b13be954a082ee9cce69bc298a5a9e0d92e705d2f82f6eb6006b5aad",
+    "structuralHash": "aab2e09aebbee3424cb2a5c40804426e957adf9e45cbb508ec523186c1cb2858"
+  },
+  "structuralPreserved": true,
+  "memory": {
+    "rss": 345878528,
+    "heapTotal": 94601216,
+    "heapUsed": 56891472,
+    "external": 4658297,
+    "arrayBuffers": 297437
+  }
+}

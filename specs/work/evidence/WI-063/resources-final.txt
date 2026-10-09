@@ -1,0 +1,13 @@
+{"status":"ok","uptimeSeconds":1006,"release":{"version":"0.3.130","commit":"39e65c199a331751f9d7ce12d65d35810531da79"}}754
+/fantasy-scout-web fantasy-scout:20261009T184704Z-v0.3.130-39e65c1 sha256:1601d287ffcc72e849f5a4ae7872debaac76a818ced64e3142a0119493a275d0 restarts=0 oom=false status=running
+/fantasy-scout-worker fantasy-scout:20261009T184704Z-v0.3.130-39e65c1 sha256:1601d287ffcc72e849f5a4ae7872debaac76a818ced64e3142a0119493a275d0 restarts=0 oom=false status=running
+fantasy-scout-web 133.3MiB / 11.6GiB 0.02%
+fantasy-scout-worker 1.419GiB / 11.6GiB 0.53%
+fantasy-scout-postgres 1.074GiB / 11.6GiB 0.17%
+PID                 ELAPSED             RSS                 COMMAND
+1703462             16:44               1506912             next-server (v
+fantasy-scout-web Up 16 minutes (healthy) 127.0.0.1:3001->3000/tcp
+fantasy-scout-web-rollback-pre-20261009T184704Z-v0.3.130-39e65c1 Exited (143) 16 minutes ago
+               total        used        free      shared  buff/cache   available
+Mem:           11876        5072        2574         306        4230        6181
+Swap:              0           0           0

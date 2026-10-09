@@ -1,0 +1,389 @@
+{
+  "at": "2026-10-09T18:59:02.599Z",
+  "birthdays": [
+    {
+      "leagueId": "53",
+      "priceId": "cmstyooyt06kcc022w17wsixq",
+      "name": "Арсен Куасси",
+      "canonicalName": "Arsène Kouassi",
+      "playerId": "1640832",
+      "providerBirthday": "2004-01-02",
+      "canonicalBirthday": "2004-09-11",
+      "club": "Лорьян",
+      "disposition": "SOURCE_BIRTHDAY_DISCREPANCY_RETAINED_WITH_EXISTING_REVIEWED_IDENTITY"
+    },
+    {
+      "leagueId": "53",
+      "priceId": "cmstyopu6072yc022xxck92z1",
+      "name": "Ги-Ноэль Зоури",
+      "canonicalName": "Guy Zohouri",
+      "playerId": "1667648",
+      "providerBirthday": "2007-02-01",
+      "canonicalBirthday": "2007-02-10",
+      "club": "Гавр",
+      "disposition": "SOURCE_BIRTHDAY_DISCREPANCY_RETAINED_WITH_EXISTING_REVIEWED_IDENTITY"
+    },
+    {
+      "leagueId": "53",
+      "priceId": "cmstyopr3070yc022px0obmv2",
+      "name": "Ирон Гомис",
+      "canonicalName": "Iron Gomis",
+      "playerId": "1030945",
+      "providerBirthday": "1999-11-09",
+      "canonicalBirthday": "1999-11-08",
+      "club": "Труа",
+      "disposition": "SOURCE_BIRTHDAY_DISCREPANCY_RETAINED_WITH_EXISTING_REVIEWED_IDENTITY"
+    },
+    {
+      "leagueId": "53",
+      "priceId": "cmtlh5qib0ddh2o90gl2eogd4",
+      "name": "Омари Келлимен",
+      "canonicalName": "Omari Kellyman",
+      "playerId": "1315477",
+      "providerBirthday": "2005-09-15",
+      "canonicalBirthday": "2005-09-25",
+      "club": "Страсбур",
+      "disposition": "SOURCE_BIRTHDAY_DISCREPANCY_RETAINED_WITH_EXISTING_REVIEWED_IDENTITY"
+    },
+    {
+      "leagueId": "53",
+      "priceId": "cmstyoq1y077ec022zqo67d9d",
+      "name": "Райан Родин",
+      "canonicalName": "Ryan Rodin",
+      "playerId": "1692895",
+      "providerBirthday": "2006-03-02",
+      "canonicalBirthday": "2006-02-03",
+      "club": "Осер",
+      "disposition": "SOURCE_BIRTHDAY_DISCREPANCY_RETAINED_WITH_EXISTING_REVIEWED_IDENTITY"
+    },
+    {
+      "leagueId": "53",
+      "priceId": "cmtx01ifc02bammtauvjy1pj9",
+      "name": "Тьягу Силва",
+      "canonicalName": "Tiago Goncalves",
+      "playerId": "1793701",
+      "providerBirthday": "2007-10-18",
+      "canonicalBirthday": "2007-02-18",
+      "club": "Лион",
+      "disposition": "SOURCE_BIRTHDAY_DISCREPANCY_RETAINED_WITH_EXISTING_REVIEWED_IDENTITY"
+    },
+    {
+      "leagueId": "53",
+      "priceId": "cmstyopob06z4c022ppxr56oh",
+      "name": "Эдвин Куарши",
+      "canonicalName": "Edwin Quarshie",
+      "playerId": "956661",
+      "providerBirthday": "1995-10-25",
+      "canonicalBirthday": "1995-10-20",
+      "club": "Ле-Ман",
+      "disposition": "SOURCE_BIRTHDAY_DISCREPANCY_RETAINED_WITH_EXISTING_REVIEWED_IDENTITY"
+    },
+    {
+      "leagueId": "48",
+      "priceId": "cmt2qdy4b029od0ygshi6qld4",
+      "name": "Джек Хоуленд",
+      "canonicalName": "Jack Howland",
+      "playerId": "1798678",
+      "providerBirthday": "2006-08-08",
+      "canonicalBirthday": "2006-02-16",
+      "club": "Миллуолл",
+      "disposition": "SOURCE_BIRTHDAY_DISCREPANCY_RETAINED_WITH_EXISTING_REVIEWED_IDENTITY"
+    },
+    {
+      "leagueId": "48",
+      "priceId": "cmt2qdwwk028sd0ygicmcgul3",
+      "name": "Лео Пековер",
+      "canonicalName": "Leo Pecover",
+      "playerId": "1667837",
+      "providerBirthday": "2008-04-09",
+      "canonicalBirthday": "2008-08-07",
+      "club": "Бристоль Сити",
+      "disposition": "SOURCE_BIRTHDAY_DISCREPANCY_RETAINED_WITH_EXISTING_REVIEWED_IDENTITY"
+    },
+    {
+      "leagueId": "63",
+      "priceId": "cmrpa0dd800d2wy5c9wpkw6q6",
+      "name": "Максим Самородов",
+      "canonicalName": "Maxim Samorodov",
+      "playerId": "1241852",
+      "providerBirthday": "2001-05-09",
+      "canonicalBirthday": "2002-06-29",
+      "club": "Ахмат",
+      "disposition": "SOURCE_BIRTHDAY_DISCREPANCY_RETAINED_WITH_EXISTING_REVIEWED_IDENTITY"
+    },
+    {
+      "leagueId": "55",
+      "priceId": "cmt2ed81f031ayhanmqw001lc",
+      "name": "Лоренцо Берарди",
+      "canonicalName": "Lorenzo Berardi",
+      "playerId": "1803901",
+      "providerBirthday": "2006-04-05",
+      "canonicalBirthday": "2005-04-05",
+      "club": "Венеция",
+      "disposition": "SOURCE_BIRTHDAY_DISCREPANCY_RETAINED_WITH_EXISTING_REVIEWED_IDENTITY"
+    },
+    {
+      "leagueId": "55",
+      "priceId": "cmt2ecnn902guyhan9e7ik4u9",
+      "name": "Самуэле Биринделли",
+      "canonicalName": "Samuele Birindelli",
+      "playerId": "799497",
+      "providerBirthday": "1999-07-19",
+      "canonicalBirthday": "1999-08-19",
+      "club": "Монца",
+      "disposition": "SOURCE_BIRTHDAY_DISCREPANCY_RETAINED_WITH_EXISTING_REVIEWED_IDENTITY"
+    },
+    {
+      "leagueId": "57",
+      "priceId": "cmsxpvr4005czc9mb1cr7koww",
+      "name": "Габи Касхили",
+      "canonicalName": "Gabi Caschili",
+      "playerId": "1126874",
+      "providerBirthday": "2003-07-14",
+      "canonicalBirthday": "2003-06-14",
+      "club": "Телстар",
+      "disposition": "SOURCE_BIRTHDAY_DISCREPANCY_RETAINED_WITH_EXISTING_REVIEWED_IDENTITY"
+    },
+    {
+      "leagueId": "57",
+      "priceId": "cms99ukd7014ed2ewc765hx2t",
+      "name": "Кирайно Схакен",
+      "canonicalName": "Kirayno Schaken",
+      "playerId": "1858582",
+      "providerBirthday": "2009-06-18",
+      "canonicalBirthday": "2008-08-08",
+      "club": "Херенвен",
+      "disposition": "SOURCE_BIRTHDAY_DISCREPANCY_RETAINED_WITH_EXISTING_REVIEWED_IDENTITY"
+    },
+    {
+      "leagueId": "57",
+      "priceId": "cms99ukbu013kd2ewftaydqr1",
+      "name": "Шюрьяно Корнесион",
+      "canonicalName": "Shuryjano Cornecion",
+      "playerId": "1874113",
+      "providerBirthday": "2008-06-26",
+      "canonicalBirthday": "2008-06-28",
+      "club": "ПСВ",
+      "disposition": "SOURCE_BIRTHDAY_DISCREPANCY_RETAINED_WITH_EXISTING_REVIEWED_IDENTITY"
+    },
+    {
+      "leagueId": "47",
+      "priceId": "cmt2fs9ub0028ygslu7u1uz96",
+      "name": "Джордж Хеммингс",
+      "canonicalName": "George Hemmings",
+      "playerId": "1607333",
+      "providerBirthday": "2007-03-04",
+      "canonicalBirthday": "2007-04-03",
+      "club": "Астон Вилла",
+      "disposition": "SOURCE_BIRTHDAY_DISCREPANCY_RETAINED_WITH_EXISTING_REVIEWED_IDENTITY"
+    },
+    {
+      "leagueId": "47",
+      "priceId": "cmt2frt8v0016ygsl5j65xgfa",
+      "name": "Нобель Менди",
+      "canonicalName": "Nobel Mendy",
+      "playerId": "1428427",
+      "providerBirthday": "2004-09-03",
+      "canonicalBirthday": "2004-08-16",
+      "club": "Халл",
+      "disposition": "SOURCE_BIRTHDAY_DISCREPANCY_RETAINED_WITH_EXISTING_REVIEWED_IDENTITY"
+    },
+    {
+      "leagueId": "47",
+      "priceId": "cmtwlgvt50gx8b7a8zt8u2koj",
+      "name": "Эль-Хаджи Малик Диуф",
+      "canonicalName": "Malick Diouf",
+      "playerId": "1451265",
+      "providerBirthday": "2004-12-29",
+      "canonicalBirthday": "2004-12-28",
+      "club": "Брентфорд",
+      "disposition": "SOURCE_BIRTHDAY_DISCREPANCY_RETAINED_WITH_EXISTING_REVIEWED_IDENTITY"
+    },
+    {
+      "leagueId": "73",
+      "priceId": "cmtzhkt7z00lgyypwoosmf5js",
+      "name": "Данило Баия",
+      "canonicalName": "Danilo Ferreira",
+      "playerId": "1669657",
+      "providerBirthday": "1986-03-15",
+      "canonicalBirthday": "2004-07-10",
+      "club": "Торреенсе",
+      "disposition": "SOURCE_BIRTHDAY_DISCREPANCY_RETAINED_WITH_EXISTING_REVIEWED_IDENTITY"
+    },
+    {
+      "leagueId": "73",
+      "priceId": "cmtzhksqd005yyypwirx6hksl",
+      "name": "Кео Бутс",
+      "canonicalName": "Keo Boets",
+      "playerId": "1414500",
+      "providerBirthday": "2003-12-21",
+      "canonicalBirthday": "2003-10-21",
+      "club": "Юнион",
+      "disposition": "SOURCE_BIRTHDAY_DISCREPANCY_RETAINED_WITH_EXISTING_REVIEWED_IDENTITY"
+    },
+    {
+      "leagueId": "73",
+      "priceId": "cmtzhksqq006ayypwsag1mof5",
+      "name": "Мануэль Калафатис",
+      "canonicalName": "Manouel Kalafatis",
+      "playerId": "1606164",
+      "providerBirthday": "2005-03-23",
+      "canonicalBirthday": "2005-04-23",
+      "club": "ОФИ",
+      "disposition": "SOURCE_BIRTHDAY_DISCREPANCY_RETAINED_WITH_EXISTING_REVIEWED_IDENTITY"
+    },
+    {
+      "leagueId": "73",
+      "priceId": "cmtzhktz8017yyypwwmifauhm",
+      "name": "Стефан Пиргич",
+      "canonicalName": "Stefan Pirgić",
+      "playerId": "1621131",
+      "providerBirthday": "2003-02-08",
+      "canonicalBirthday": "2003-02-09",
+      "club": "Виктория Пльзень",
+      "disposition": "SOURCE_BIRTHDAY_DISCREPANCY_RETAINED_WITH_EXISTING_REVIEWED_IDENTITY"
+    },
+    {
+      "leagueId": "73",
+      "priceId": "cmtzhktbv00o8yypw8k6el446",
+      "name": "Тьягу Силва",
+      "canonicalName": "Tiago Goncalves",
+      "playerId": "1793701",
+      "providerBirthday": "2007-10-18",
+      "canonicalBirthday": "2007-02-18",
+      "club": "Лион",
+      "disposition": "SOURCE_BIRTHDAY_DISCREPANCY_RETAINED_WITH_EXISTING_REVIEWED_IDENTITY"
+    },
+    {
+      "leagueId": "73",
+      "priceId": "cmtzhktcu00p8yypw5q6ng276",
+      "name": "Фредерик Элькер",
+      "canonicalName": "Frederik Elkær",
+      "playerId": "1166287",
+      "providerBirthday": "2001-12-11",
+      "canonicalBirthday": "2001-12-08",
+      "club": "Лиллестрем",
+      "disposition": "SOURCE_BIRTHDAY_DISCREPANCY_RETAINED_WITH_EXISTING_REVIEWED_IDENTITY"
+    },
+    {
+      "leagueId": "73",
+      "priceId": "cmtzhktrr011cyypwczesvyau",
+      "name": "Энрик Льянсана",
+      "canonicalName": "Enric Llansana",
+      "playerId": "1033342",
+      "providerBirthday": "2001-04-12",
+      "canonicalBirthday": "2001-04-13",
+      "club": "Андерлехт",
+      "disposition": "SOURCE_BIRTHDAY_DISCREPANCY_RETAINED_WITH_EXISTING_REVIEWED_IDENTITY"
+    },
+    {
+      "leagueId": "87",
+      "priceId": "cmslfq5yg00f2tg4ndffh9oxj",
+      "name": "Пабло Бельда",
+      "canonicalName": "Pablo Felipe",
+      "playerId": "1693593",
+      "providerBirthday": "2005-10-10",
+      "canonicalBirthday": "2005-06-19",
+      "club": "Эльче",
+      "disposition": "SOURCE_BIRTHDAY_DISCREPANCY_RETAINED_WITH_EXISTING_REVIEWED_IDENTITY"
+    },
+    {
+      "leagueId": "42",
+      "priceId": "cmtmodvft0sw92o901bo0qyqt",
+      "name": "Джордж Хеммингс",
+      "canonicalName": "George Hemmings",
+      "playerId": "1607333",
+      "providerBirthday": "2007-03-04",
+      "canonicalBirthday": "2007-04-03",
+      "club": "Астон Вилла",
+      "disposition": "SOURCE_BIRTHDAY_DISCREPANCY_RETAINED_WITH_EXISTING_REVIEWED_IDENTITY"
+    },
+    {
+      "leagueId": "42",
+      "priceId": "cmtmodudg0s1l2o90bo8oemwb",
+      "name": "Светозар Маркович",
+      "canonicalName": "Svetozar Marković",
+      "playerId": "922722",
+      "providerBirthday": "2000-03-23",
+      "canonicalBirthday": "2000-03-24",
+      "club": "Слован Б",
+      "disposition": "SOURCE_BIRTHDAY_DISCREPANCY_RETAINED_WITH_EXISTING_REVIEWED_IDENTITY"
+    },
+    {
+      "leagueId": "42",
+      "priceId": "cmtmodvks0szx2o90fxv11c1z",
+      "name": "Шюрьяно Корнесион",
+      "canonicalName": "Shuryjano Cornecion",
+      "playerId": "1874113",
+      "providerBirthday": "2008-06-26",
+      "canonicalBirthday": "2008-06-28",
+      "club": "ПСВ",
+      "disposition": "SOURCE_BIRTHDAY_DISCREPANCY_RETAINED_WITH_EXISTING_REVIEWED_IDENTITY"
+    },
+    {
+      "leagueId": "42",
+      "priceId": "cmtmodvjy0sz92o9075vf52fn",
+      "name": "Эртугрул Йигит",
+      "canonicalName": "Ertugrul Yigit",
+      "playerId": "2130151",
+      "providerBirthday": "2009-01-08",
+      "canonicalBirthday": "2009-08-01",
+      "club": "Штутгарт",
+      "disposition": "SOURCE_BIRTHDAY_DISCREPANCY_RETAINED_WITH_EXISTING_REVIEWED_IDENTITY"
+    },
+    {
+      "leagueId": "71",
+      "priceId": "cmtwlhoa60llqb7a8v1g5ig2g",
+      "name": "Мухаммед Эмин Бекташ",
+      "canonicalName": "Muhammed Emin Bektash",
+      "playerId": "2130621",
+      "providerBirthday": "2006-07-01",
+      "canonicalBirthday": "2006-01-07",
+      "club": "Касымпаша",
+      "disposition": "SOURCE_BIRTHDAY_DISCREPANCY_RETAINED_WITH_EXISTING_REVIEWED_IDENTITY"
+    },
+    {
+      "leagueId": "54",
+      "priceId": "cmt2eass400lmyhanlhugnbqj",
+      "name": "Рейган Хески",
+      "canonicalName": "Reigan Heskey",
+      "playerId": "1665352",
+      "providerBirthday": "2008-01-18",
+      "canonicalBirthday": "2008-01-19",
+      "club": "Кельн",
+      "disposition": "SOURCE_BIRTHDAY_DISCREPANCY_RETAINED_WITH_EXISTING_REVIEWED_IDENTITY"
+    },
+    {
+      "leagueId": "54",
+      "priceId": "cmt2eazz500skyhanche6t05z",
+      "name": "Эммануэль Латте-Лат",
+      "canonicalName": "Emmanuel Latte Lath",
+      "playerId": "783585",
+      "providerBirthday": "1999-01-01",
+      "canonicalBirthday": "1999-01-02",
+      "club": "Унион Берлин",
+      "disposition": "SOURCE_BIRTHDAY_DISCREPANCY_RETAINED_WITH_EXISTING_REVIEWED_IDENTITY"
+    },
+    {
+      "leagueId": "54",
+      "priceId": "cmt2eaxi000pyyhanhalea4iw",
+      "name": "Эртугрул Йигит",
+      "canonicalName": "Ertugrul Yigit",
+      "playerId": "2130151",
+      "providerBirthday": "2009-01-08",
+      "canonicalBirthday": "2009-08-01",
+      "club": "Штутгарт",
+      "disposition": "SOURCE_BIRTHDAY_DISCREPANCY_RETAINED_WITH_EXISTING_REVIEWED_IDENTITY"
+    }
+  ],
+  "sourceBackedNames": [
+    {
+      "leagueId": "73",
+      "priceId": "cmtzhku6201dmyypw2jnk69b7",
+      "name": "Теос Казакайос",
+      "canonicalName": "Теос Казакайос",
+      "playerId": "8000000000075980",
+      "disposition": "Existing Sports-backed identity with exact Cyrillic display name; Latin-only identity scorer does not cover this source name"
+    }
+  ]
+}

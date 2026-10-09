@@ -1,0 +1,10 @@
+{
+  "workItem": "WI-063",
+  "at": "2026-10-09T19:38:16.4958597Z",
+  "scope": "Only owned WI-063 files directly in workspace .tmp",
+  "removedFiles": 49,
+  "removedBytes": 2565300.0,
+  "remainingOwnedFiles": 0,
+  "recoveryEvidencePreserved": true,
+  "unrelatedTemporaryFilesPreserved": true
+}

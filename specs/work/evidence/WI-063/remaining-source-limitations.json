@@ -1,0 +1,1723 @@
+{
+  "at": "2026-10-09T18:59:02.599Z",
+  "count": 91,
+  "uniqueStatIdentities": 83,
+  "rows": [
+    {
+      "leagueId": "53",
+      "contestId": "cmstyoorv06gcc0224q8dvuo9",
+      "priceId": "cmu6nhzbp0ec6zcz1904njg8y",
+      "providerPlayerId": "76520",
+      "name": "Фирмин Тетио",
+      "canonicalHint": "firmin thetiot",
+      "birthDate": "2009-05-23",
+      "club": "Ренн",
+      "price": 4,
+      "lastSeenAt": "2026-10-09T18:54:11.977Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "48",
+      "contestId": "cmslfqko70002ljd09jwlvplj",
+      "priceId": "cmt2qd7t801qid0ygmkxtg4uv",
+      "providerPlayerId": "69011",
+      "name": "Уильям Беррелл",
+      "canonicalHint": "william harvey burrell",
+      "birthDate": "2007-01-20",
+      "club": "Бирмингем",
+      "price": 4,
+      "lastSeenAt": "2026-10-09T18:54:30.534Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "63",
+      "contestId": "cmrpa0d2o0002wy5cb1jvnaor",
+      "priceId": "cmtr27p9l005j1adlyvb8lujd",
+      "providerPlayerId": "75281",
+      "name": "Андрей Полевой",
+      "canonicalHint": "andrey polevoy",
+      "birthDate": "2008-07-02",
+      "club": "Краснодар",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:53:47.197Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "63",
+      "contestId": "cmrpa0d2o0002wy5cb1jvnaor",
+      "priceId": "cmtr27nmv001a1adlh2t10sdc",
+      "providerPlayerId": "75284",
+      "name": "Арсений Абзалилов",
+      "canonicalHint": "arseni abzalilov",
+      "birthDate": "2004-03-22",
+      "club": "Крылья Советов",
+      "price": 4,
+      "lastSeenAt": "2026-10-09T18:53:46.596Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "63",
+      "contestId": "cmrpa0d2o0002wy5cb1jvnaor",
+      "priceId": "cmtr27n8r000b1adl5tez75cm",
+      "providerPlayerId": "75283",
+      "name": "Арсений Урбин",
+      "canonicalHint": "arseniy urbin",
+      "birthDate": "2009-01-25",
+      "club": "Краснодар",
+      "price": 4,
+      "lastSeenAt": "2026-10-09T18:53:46.199Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "63",
+      "contestId": "cmrpa0d2o0002wy5cb1jvnaor",
+      "priceId": "cmtr27plu005z1adl8c06b268",
+      "providerPlayerId": "75279",
+      "name": "Артем Дряхлов",
+      "canonicalHint": "artem dryakhlov",
+      "birthDate": "2008-05-08",
+      "club": "Краснодар",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:53:47.351Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "63",
+      "contestId": "cmrpa0d2o0002wy5cb1jvnaor",
+      "priceId": "cmtr27nvv001u1adlxa5hfyjo",
+      "providerPlayerId": "75277",
+      "name": "Богдан Кудзаву",
+      "canonicalHint": "bogdan selasi kudzawu",
+      "birthDate": "2008-01-07",
+      "club": "Краснодар",
+      "price": 4,
+      "lastSeenAt": "2026-10-09T18:53:46.616Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "63",
+      "contestId": "cmrpa0d2o0002wy5cb1jvnaor",
+      "priceId": "cmtr27pmd00671adlb0di1zr5",
+      "providerPlayerId": "75296",
+      "name": "Виктор Солопов",
+      "canonicalHint": "viktor solopov",
+      "birthDate": "2007-08-02",
+      "club": "Спартак",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:53:47.366Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "63",
+      "contestId": "cmrpa0d2o0002wy5cb1jvnaor",
+      "priceId": "cmtr27nxp002e1adl45l8jf7t",
+      "providerPlayerId": "75291",
+      "name": "Владислав Хухровский",
+      "canonicalHint": "vladislav khukhrovskiy",
+      "birthDate": "2006-08-17",
+      "club": "Ростов",
+      "price": 4,
+      "lastSeenAt": "2026-10-09T18:53:46.643Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "63",
+      "contestId": "cmrpa0d2o0002wy5cb1jvnaor",
+      "priceId": "cmtr27plc005w1adl8mzkjkgg",
+      "providerPlayerId": "75278",
+      "name": "Даниэль Амбарцумов",
+      "canonicalHint": "daniel hambardzumov",
+      "birthDate": "2008-03-07",
+      "club": "Краснодар",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:53:47.342Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "63",
+      "contestId": "cmrpa0d2o0002wy5cb1jvnaor",
+      "priceId": "cmtr27p9c005g1adlbbq2canp",
+      "providerPlayerId": "75294",
+      "name": "Денис Мушкарин",
+      "canonicalHint": "denis mushkarin",
+      "birthDate": "2005-04-25",
+      "club": "Родина",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:53:47.193Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "63",
+      "contestId": "cmrpa0d2o0002wy5cb1jvnaor",
+      "priceId": "cmtr27nx5002a1adloatrdgra",
+      "providerPlayerId": "75287",
+      "name": "Дмитрий Филиппов",
+      "canonicalHint": "dmitri filippov",
+      "birthDate": "2007-04-25",
+      "club": "Крылья Советов",
+      "price": 4,
+      "lastSeenAt": "2026-10-09T18:53:46.637Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "63",
+      "contestId": "cmrpa0d2o0002wy5cb1jvnaor",
+      "priceId": "cmtr27n7y00071adl8dzaycsj",
+      "providerPlayerId": "75298",
+      "name": "Максим Зайцев",
+      "canonicalHint": "maksim zaytsev 20080310",
+      "birthDate": "2008-03-10",
+      "club": "Зенит",
+      "price": 4,
+      "lastSeenAt": "2026-10-09T18:53:46.178Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "63",
+      "contestId": "cmrpa0d2o0002wy5cb1jvnaor",
+      "priceId": "cmtr27nvr001q1adljvw2kqlg",
+      "providerPlayerId": "75282",
+      "name": "Никита Закарлюка",
+      "canonicalHint": "nikita zakarlyuka",
+      "birthDate": "2008-09-18",
+      "club": "Краснодар",
+      "price": 4,
+      "lastSeenAt": "2026-10-09T18:53:46.614Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "63",
+      "contestId": "cmrpa0d2o0002wy5cb1jvnaor",
+      "priceId": "cmtr27pm800651adlnmc3ttuh",
+      "providerPlayerId": "75280",
+      "name": "Олег Семизаров",
+      "canonicalHint": "oleg semizarov 20080520",
+      "birthDate": "2008-05-20",
+      "club": "Краснодар",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:53:47.362Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [
+          {
+            "playerId": "2101969",
+            "teamId": "8705",
+            "playerName": "Karim Madrakhimov",
+            "teamName": "FC Rostov",
+            "position": "Attacker",
+            "confidence": 0.87,
+            "nameConfidence": 0,
+            "birthDateMatches": true,
+            "birthDateConflicts": false,
+            "reason": "weak name, position FWD/FWD, birth date"
+          }
+        ],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "63",
+      "contestId": "cmrpa0d2o0002wy5cb1jvnaor",
+      "priceId": "cmtr27pml00691adlwfx52gb3",
+      "providerPlayerId": "75275",
+      "name": "Тимофей Тимофеев",
+      "canonicalHint": "timofey timofeev",
+      "birthDate": "2010-05-13",
+      "club": "Балтика",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:53:47.369Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "63",
+      "contestId": "cmrpa0d2o0002wy5cb1jvnaor",
+      "priceId": "cmtr27pb1005n1adlt2cebl0n",
+      "providerPlayerId": "75285",
+      "name": "Шодибек Шарипов",
+      "canonicalHint": "shodibek sharipov",
+      "birthDate": "2005-02-14",
+      "club": "Крылья Советов",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:53:47.217Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "63",
+      "contestId": "cmrpa0d2o0002wy5cb1jvnaor",
+      "priceId": "cmtr27ny8002k1adl2pylw2m9",
+      "providerPlayerId": "75286",
+      "name": "Эмин Эскеров",
+      "canonicalHint": "emin eskerov",
+      "birthDate": "2007-01-01",
+      "club": "Крылья Советов",
+      "price": 4,
+      "lastSeenAt": "2026-10-09T18:53:46.647Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "55",
+      "contestId": "cmt2ecgzr029uyhansw56cc90",
+      "priceId": "cmt2ecvfb02osyhan1lsc468k",
+      "providerPlayerId": "71777",
+      "name": "Каликст Лигу",
+      "canonicalHint": "calixte paul ligue",
+      "birthDate": "2005-03-21",
+      "club": "Венеция",
+      "price": 4,
+      "lastSeenAt": "2026-10-09T18:54:07.598Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "55",
+      "contestId": "cmt2ecgzr029uyhansw56cc90",
+      "priceId": "cmtcpwkeffh6lx53yt3t2jdgg",
+      "providerPlayerId": "73645",
+      "name": "Маттео Плая",
+      "canonicalHint": "matteo giuseppe plaia",
+      "birthDate": "2006-03-29",
+      "club": "Аталанта",
+      "price": 4,
+      "lastSeenAt": "2026-10-09T18:54:07.621Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "61",
+      "contestId": "cms99uref01nxd2ewjki1z99e",
+      "priceId": "cmtghfyuiz06cyri85b3xxiwq",
+      "providerPlayerId": "73719",
+      "name": "Габриэл Кариока",
+      "canonicalHint": "gabriel da silva sinfronio",
+      "birthDate": "2006-05-05",
+      "club": "Алверка",
+      "price": 5,
+      "lastSeenAt": "2026-10-09T18:54:17.023Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "61",
+      "contestId": "cms99uref01nxd2ewjki1z99e",
+      "priceId": "cmtr2863q023v1adl0luhfhkd",
+      "providerPlayerId": "75373",
+      "name": "Каду Невес",
+      "canonicalHint": "carlos eduardo piekny neves",
+      "birthDate": "2003-03-25",
+      "club": "Санта-Клара",
+      "price": 4,
+      "lastSeenAt": "2026-10-09T18:54:15.807Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "61",
+      "contestId": "cms99uref01nxd2ewjki1z99e",
+      "priceId": "cmtr286h3024f1adlgo47wcep",
+      "providerPlayerId": "75368",
+      "name": "Натан Малака",
+      "canonicalHint": "nathan washington benvindo djompe malaca",
+      "birthDate": "2007-05-19",
+      "club": "Эштрела",
+      "price": 4,
+      "lastSeenAt": "2026-10-09T18:54:16.283Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "61",
+      "contestId": "cms99uref01nxd2ewjki1z99e",
+      "priceId": "cmtr2873p024t1adlei8aozsn",
+      "providerPlayerId": "75369",
+      "name": "Тиагу Пинту",
+      "canonicalHint": "tiago henrique botelho pinto",
+      "birthDate": "2006-02-24",
+      "club": "Эштрела",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:54:16.894Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "57",
+      "contestId": "cms99ujds00cgd2ewhh3ktccp",
+      "priceId": "cmu61sudapdslgoul0uq6abju",
+      "providerPlayerId": "67815",
+      "name": "Джерольдино Берграф",
+      "canonicalHint": "jerolldino armantrading",
+      "birthDate": "2006-07-05",
+      "club": "АЗ Алкмар",
+      "price": 5,
+      "lastSeenAt": "2026-10-09T18:54:21.723Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [
+          {
+            "playerId": "2130410",
+            "teamId": "8525",
+            "playerName": "Ismael Mouhoul",
+            "teamName": "Willem II",
+            "position": "Attacker",
+            "confidence": 0.87,
+            "nameConfidence": 0,
+            "birthDateMatches": true,
+            "birthDateConflicts": false,
+            "reason": "weak name, position FWD/FWD, birth date"
+          }
+        ],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "47",
+      "contestId": "legacy_be69d6464abbb1fa3b7bf837ebca6fd3",
+      "priceId": "cmt2fricx000cygsl6sm4e4k3",
+      "providerPlayerId": "72879",
+      "name": "Александер Борто",
+      "canonicalHint": "alexander borto",
+      "birthDate": "2003-11-06",
+      "club": "Фулхэм",
+      "price": 4,
+      "lastSeenAt": "2026-10-09T18:53:51.157Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "47",
+      "contestId": "legacy_be69d6464abbb1fa3b7bf837ebca6fd3",
+      "priceId": "cmt2frwih001iygslop7rahfr",
+      "providerPlayerId": "72913",
+      "name": "Арчи Лайтфут",
+      "canonicalHint": "archie lightfoot",
+      "birthDate": null,
+      "club": "Сандерленд",
+      "price": 4,
+      "lastSeenAt": "2026-10-09T18:53:51.783Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "47",
+      "contestId": "legacy_be69d6464abbb1fa3b7bf837ebca6fd3",
+      "priceId": "cmt2frwcx001gygslpk4mwkmx",
+      "providerPlayerId": "72919",
+      "name": "Бен Киндон",
+      "canonicalHint": "ben kindon",
+      "birthDate": "2007-03-13",
+      "club": "Сандерленд",
+      "price": 4,
+      "lastSeenAt": "2026-10-09T18:53:51.776Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "47",
+      "contestId": "legacy_be69d6464abbb1fa3b7bf837ebca6fd3",
+      "priceId": "cmtcpw8q1ff3xx53yullj3ck2",
+      "providerPlayerId": "73603",
+      "name": "Брэндон Пьеррик",
+      "canonicalHint": "brandon pierrick",
+      "birthDate": "2001-12-10",
+      "club": "Кристал Пэлас",
+      "price": 5,
+      "lastSeenAt": "2026-10-09T18:53:52.354Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "47",
+      "contestId": "legacy_be69d6464abbb1fa3b7bf837ebca6fd3",
+      "priceId": "cmt2frjdr000kygsljh9a15eo",
+      "providerPlayerId": "72886",
+      "name": "Даррил Омбанг",
+      "canonicalHint": "daryl ombang",
+      "birthDate": "2005-07-11",
+      "club": "Лидс",
+      "price": 4,
+      "lastSeenAt": "2026-10-09T18:53:51.209Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "47",
+      "contestId": "legacy_be69d6464abbb1fa3b7bf837ebca6fd3",
+      "priceId": "cmt2fsk710040ygsls5h7r1x7",
+      "providerPlayerId": "72904",
+      "name": "Джей Джей Габриэл",
+      "canonicalHint": "joseph junior andreou gabriel",
+      "birthDate": "2010-10-06",
+      "club": "Манчестер Юнайтед",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:53:52.613Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "47",
+      "contestId": "legacy_be69d6464abbb1fa3b7bf837ebca6fd3",
+      "priceId": "cmt2fsk15003wygslaljihi20",
+      "providerPlayerId": "72894",
+      "name": "Джош Абе",
+      "canonicalHint": "joshua abe",
+      "birthDate": "2010-07-17",
+      "club": "Ливерпуль",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:53:52.607Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "47",
+      "contestId": "legacy_be69d6464abbb1fa3b7bf837ebca6fd3",
+      "priceId": "cmt2fsl2i004cygsle79fd2cb",
+      "providerPlayerId": "72891",
+      "name": "Джош Сонни-Лэмби",
+      "canonicalHint": "joshua sonni lambie",
+      "birthDate": "2007-11-16",
+      "club": "Ливерпуль",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:53:52.652Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "47",
+      "contestId": "legacy_be69d6464abbb1fa3b7bf837ebca6fd3",
+      "priceId": "cmt2frjyv000oygslnvziaiml",
+      "providerPlayerId": "72927",
+      "name": "Дилан Томпсон",
+      "canonicalHint": "dylan thompson 20070909",
+      "birthDate": "2007-09-09",
+      "club": "Тоттенхэм",
+      "price": 4,
+      "lastSeenAt": "2026-10-09T18:53:51.224Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "47",
+      "contestId": "legacy_be69d6464abbb1fa3b7bf837ebca6fd3",
+      "priceId": "cmt2frxsr001wygsljprvt5q4",
+      "providerPlayerId": "72906",
+      "name": "Дилан Чарльтон",
+      "canonicalHint": "dylan charlton",
+      "birthDate": "2006-07-02",
+      "club": "Ньюкасл",
+      "price": 4,
+      "lastSeenAt": "2026-10-09T18:53:51.840Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "47",
+      "contestId": "legacy_be69d6464abbb1fa3b7bf837ebca6fd3",
+      "priceId": "cmt2frw3g001eygslvicfgrhx",
+      "providerPlayerId": "72873",
+      "name": "Кэлвин Диаките",
+      "canonicalHint": "calvin diakite",
+      "birthDate": "2009-04-07",
+      "club": "Челси",
+      "price": 4,
+      "lastSeenAt": "2026-10-09T18:53:51.763Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "47",
+      "contestId": "legacy_be69d6464abbb1fa3b7bf837ebca6fd3",
+      "priceId": "cmt2fsle7004gygsl6m9b6tqb",
+      "providerPlayerId": "72909",
+      "name": "Матеос Феррейра",
+      "canonicalHint": "matheos ferreira",
+      "birthDate": "2008-08-02",
+      "club": "Ньюкасл",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:53:52.663Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "47",
+      "contestId": "legacy_be69d6464abbb1fa3b7bf837ebca6fd3",
+      "priceId": "cmt2fsenv0036ygsl07wjr832",
+      "providerPlayerId": "72899",
+      "name": "Олли Пиклз",
+      "canonicalHint": "oliver pickles",
+      "birthDate": "2007-10-11",
+      "club": "Лидс",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:53:52.437Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "47",
+      "contestId": "legacy_be69d6464abbb1fa3b7bf837ebca6fd3",
+      "priceId": "cmt2frxa3001qygslqehude1w",
+      "providerPlayerId": "72870",
+      "name": "Питер Субулойе",
+      "canonicalHint": "olutayo peter gabriel subuloye",
+      "birthDate": "2007-12-18",
+      "club": "Челси",
+      "price": 4,
+      "lastSeenAt": "2026-10-09T18:53:51.818Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "47",
+      "contestId": "legacy_be69d6464abbb1fa3b7bf837ebca6fd3",
+      "priceId": "cmt2fsfqm003oygslcpj785ia",
+      "providerPlayerId": "72896",
+      "name": "Рис Чадвик",
+      "canonicalHint": "reece chadwick chaplin",
+      "birthDate": "2007-02-19",
+      "club": "Лидс",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:53:52.466Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "47",
+      "contestId": "legacy_be69d6464abbb1fa3b7bf837ebca6fd3",
+      "priceId": "cmt2frj5w000iygslsvnw2ae9",
+      "providerPlayerId": "72887",
+      "name": "Рори Махади",
+      "canonicalHint": "rory mahady",
+      "birthDate": "2006-08-16",
+      "club": "Лидс",
+      "price": 4,
+      "lastSeenAt": "2026-10-09T18:53:51.197Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "47",
+      "contestId": "legacy_be69d6464abbb1fa3b7bf837ebca6fd3",
+      "priceId": "cmt2frxds001sygsl48y0k00m",
+      "providerPlayerId": "72931",
+      "name": "Тайлер Тинги",
+      "canonicalHint": "tyler tingey",
+      "birthDate": "2008-09-11",
+      "club": "Тоттенхэм",
+      "price": 4,
+      "lastSeenAt": "2026-10-09T18:53:51.823Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "47",
+      "contestId": "legacy_be69d6464abbb1fa3b7bf837ebca6fd3",
+      "priceId": "cmt2fsl0n004aygsl91hxfxe1",
+      "providerPlayerId": "72922",
+      "name": "Феликс Скотт",
+      "canonicalHint": "felix scott",
+      "birthDate": "2007-12-17",
+      "club": "Сандерленд",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:53:52.649Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "47",
+      "contestId": "legacy_be69d6464abbb1fa3b7bf837ebca6fd3",
+      "priceId": "cmt2fsdze002yygsll6m3b9jv",
+      "providerPlayerId": "72898",
+      "name": "Фредди Лейн",
+      "canonicalHint": "freddie lane",
+      "birthDate": "2007-09-24",
+      "club": "Лидс",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:53:52.415Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "47",
+      "contestId": "legacy_be69d6464abbb1fa3b7bf837ebca6fd3",
+      "priceId": "cmt2fsd41002mygslxg1sc846",
+      "providerPlayerId": "72929",
+      "name": "Харри Бирн",
+      "canonicalHint": "harry byrne",
+      "birthDate": "2007-11-20",
+      "club": "Тоттенхэм",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:53:52.396Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "47",
+      "contestId": "legacy_be69d6464abbb1fa3b7bf837ebca6fd3",
+      "priceId": "cmt2fsdhy002qygslxbugkuy0",
+      "providerPlayerId": "72920",
+      "name": "Чарльз Динсдейл",
+      "canonicalHint": "charles richard dinsdale",
+      "birthDate": "2007-09-12",
+      "club": "Сандерленд",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:53:52.408Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "73",
+      "contestId": "cmtzhksis0002yypwmrvcl90b",
+      "priceId": "cmu3vmsdv0imdi2cx5u4zo8gy",
+      "providerPlayerId": "76610",
+      "name": "Брэндон Пьеррик",
+      "canonicalHint": "brandon pierrick",
+      "birthDate": "2001-12-10",
+      "club": "Кристал Пэлас",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:54:48.311Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "73",
+      "contestId": "cmtzhksis0002yypwmrvcl90b",
+      "priceId": "cmu3vmspx0in5i2cxrdbstpw3",
+      "providerPlayerId": "76589",
+      "name": "Мислав Чутук",
+      "canonicalHint": "mislav cutuk",
+      "birthDate": "2007-01-25",
+      "club": "Динамо Загреб",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:54:48.634Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "73",
+      "contestId": "cmtzhksis0002yypwmrvcl90b",
+      "priceId": "cmu3vmrcb0ijzi2cxkg7ks518",
+      "providerPlayerId": "76601",
+      "name": "Фирмин Тетио",
+      "canonicalHint": "firmin thetiot",
+      "birthDate": "2009-05-23",
+      "club": "Ренн",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:54:47.100Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "73",
+      "contestId": "cmtzhksis0002yypwmrvcl90b",
+      "priceId": "cmu3vmqnr0ij1i2cxcgndo52e",
+      "providerPlayerId": "76605",
+      "name": "Ширак Бадалян",
+      "canonicalHint": "shirak badalyan",
+      "birthDate": "2006-04-02",
+      "club": "Арарат-Армения",
+      "price": 4,
+      "lastSeenAt": "2026-10-09T18:54:46.129Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "87",
+      "contestId": "cmslfq5dr0002tg4np9x5a9ka",
+      "priceId": "cmsswh3hw005gc0222ig5tl8f",
+      "providerPlayerId": "70981",
+      "name": "Ибрагим Диарра",
+      "canonicalHint": "ibrahim diarra 20061212",
+      "birthDate": "2006-12-12",
+      "club": "Барселона",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:53:58.151Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "87",
+      "contestId": "cmslfq5dr0002tg4np9x5a9ka",
+      "priceId": "cmsswh2ju004mc022b04mo2g7",
+      "providerPlayerId": "70992",
+      "name": "Оскар Гонсалес",
+      "canonicalHint": "oscar gonzalez campos",
+      "birthDate": "2004-02-22",
+      "club": "Малага",
+      "price": 4,
+      "lastSeenAt": "2026-10-09T18:53:57.198Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "87",
+      "contestId": "cmslfq5dr0002tg4np9x5a9ka",
+      "priceId": "cmsswh1uh003wc02251axcyrp",
+      "providerPlayerId": "71004",
+      "name": "Яков Кинарейкин",
+      "canonicalHint": "yakiv kinareykin",
+      "birthDate": "2003-10-22",
+      "club": "Вильярреал",
+      "price": 4,
+      "lastSeenAt": "2026-10-09T18:53:56.691Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "42",
+      "contestId": "cmtmodtoh0rh32o900afvwz7a",
+      "priceId": "cmtmodvon0t2v2o90nskg1wts",
+      "providerPlayerId": "74670",
+      "name": "Абду Фанне-Драме",
+      "canonicalHint": "abdou fanne drame",
+      "birthDate": "2007-04-01",
+      "club": "ПСЖ",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:54:38.971Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "42",
+      "contestId": "cmtmodtoh0rh32o900afvwz7a",
+      "priceId": "cmtmodvh80sxb2o90par7w8o3",
+      "providerPlayerId": "74668",
+      "name": "Адам Аяри",
+      "canonicalHint": "adam ayari",
+      "birthDate": "2008-03-30",
+      "club": "ПСЖ",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:54:38.710Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [
+          {
+            "playerId": "1845220",
+            "teamId": "9789",
+            "playerName": "Roméo Ritter",
+            "teamName": "Borussia Dortmund",
+            "position": "CB",
+            "confidence": 0.72,
+            "nameConfidence": 0,
+            "birthDateMatches": true,
+            "birthDateConflicts": false,
+            "reason": "weak name, position MID/DEF, birth date"
+          }
+        ],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "42",
+      "contestId": "cmtmodtoh0rh32o900afvwz7a",
+      "priceId": "cmtmodumr0saf2o90ljebpbkq",
+      "providerPlayerId": "74935",
+      "name": "Адам Эль-Шаар",
+      "canonicalHint": "adam el chaar",
+      "birthDate": "2009-04-04",
+      "club": "Бавария",
+      "price": 4,
+      "lastSeenAt": "2026-10-09T18:54:37.868Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "42",
+      "contestId": "cmtmodtoh0rh32o900afvwz7a",
+      "priceId": "cmtmodvmr0t192o90flzmow8o",
+      "providerPlayerId": "74700",
+      "name": "Венкер Нзинга",
+      "canonicalHint": "vainqueur diyinu nzinga",
+      "birthDate": "2007-11-26",
+      "club": "ПСЖ",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:54:38.889Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "42",
+      "contestId": "cmtmodtoh0rh32o900afvwz7a",
+      "priceId": "cmtmodtvl0rnf2o90kfjlx2pa",
+      "providerPlayerId": "75019",
+      "name": "Давид Подар-Штюбе",
+      "canonicalHint": "david podar stiube",
+      "birthDate": "2010-05-31",
+      "club": "Бавария",
+      "price": 4,
+      "lastSeenAt": "2026-10-09T18:54:36.957Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "42",
+      "contestId": "cmtmodtoh0rh32o900afvwz7a",
+      "priceId": "cmtmodvw90t972o90j8oei5c5",
+      "providerPlayerId": "74730",
+      "name": "Джей Джей Габриэл",
+      "canonicalHint": "joseph junior andreou gabriel",
+      "birthDate": "2010-10-06",
+      "club": "Манчестер Юнайтед",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:54:39.369Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "42",
+      "contestId": "cmtmodtoh0rh32o900afvwz7a",
+      "priceId": "cmtmodujk0s7p2o90ml35917w",
+      "providerPlayerId": "74944",
+      "name": "Джейдан Камасон",
+      "canonicalHint": "jaydan kamason",
+      "birthDate": "2006-12-08",
+      "club": "Манчестер Юнайтед",
+      "price": 4,
+      "lastSeenAt": "2026-10-09T18:54:37.754Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "42",
+      "contestId": "cmtmodtoh0rh32o900afvwz7a",
+      "priceId": "cmtmodvgs0swz2o90kmx41u16",
+      "providerPlayerId": "74642",
+      "name": "Джош Абе",
+      "canonicalHint": "joshua abe",
+      "birthDate": "2010-07-17",
+      "club": "Ливерпуль",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:54:38.696Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "42",
+      "contestId": "cmtmodtoh0rh32o900afvwz7a",
+      "priceId": "cmtmoduet0s2x2o9009ex74ad",
+      "providerPlayerId": "74747",
+      "name": "Джош Огуннайке",
+      "canonicalHint": "oluwatoyosi joshua adewale ogunnaike",
+      "birthDate": "2008-04-04",
+      "club": "Арсенал",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:54:37.572Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [
+          {
+            "playerId": "1830647",
+            "teamId": "8342",
+            "playerName": "Samba Coulibaly",
+            "teamName": "Club Brugge",
+            "position": "CB",
+            "confidence": 0.87,
+            "nameConfidence": 0,
+            "birthDateMatches": true,
+            "birthDateConflicts": false,
+            "reason": "weak name, position DEF/DEF, birth date"
+          }
+        ],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "42",
+      "contestId": "cmtmodtoh0rh32o900afvwz7a",
+      "priceId": "cmtmodvxd0ta72o90hmnttnom",
+      "providerPlayerId": "74726",
+      "name": "Джош Сонни-Лэмби",
+      "canonicalHint": "joshua sonni lambie",
+      "birthDate": "2007-11-16",
+      "club": "Ливерпуль",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:54:39.421Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "42",
+      "contestId": "cmtmodtoh0rh32o900afvwz7a",
+      "priceId": "cmtmoduhz0s652o90a7w3coiz",
+      "providerPlayerId": "74962",
+      "name": "Дэн Армер",
+      "canonicalHint": "daniel james armer",
+      "birthDate": "2007-10-23",
+      "club": "Манчестер Юнайтед",
+      "price": 4,
+      "lastSeenAt": "2026-10-09T18:54:37.696Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "42",
+      "contestId": "cmtmodtoh0rh32o900afvwz7a",
+      "priceId": "cmtmodvww0t9r2o90ucp15w83",
+      "providerPlayerId": "74728",
+      "name": "Мамаду Мейте",
+      "canonicalHint": "mamadou meite 20090701",
+      "birthDate": "2009-07-01",
+      "club": "ПСЖ",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:54:39.403Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "42",
+      "contestId": "cmtmodtoh0rh32o900afvwz7a",
+      "priceId": "cmtmodvxa0ta52o90nvwe02eo",
+      "providerPlayerId": "74727",
+      "name": "Махамаду Сангаре",
+      "canonicalHint": "mahamadou sangare 20070306",
+      "birthDate": "2007-03-06",
+      "club": "Манчестер Сити",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:54:39.419Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "42",
+      "contestId": "cmtmodtoh0rh32o900afvwz7a",
+      "priceId": "cmtmodumj0sa92o90r4llddij",
+      "providerPlayerId": "74930",
+      "name": "Мэтти Хендерсон-Холл",
+      "canonicalHint": "matthew hendersson hall",
+      "birthDate": "2006-12-08",
+      "club": "Манчестер Сити",
+      "price": 4,
+      "lastSeenAt": "2026-10-09T18:54:37.861Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "42",
+      "contestId": "cmtmodtoh0rh32o900afvwz7a",
+      "priceId": "cmtmodvhg0sxh2o90414eoj99",
+      "providerPlayerId": "74646",
+      "name": "Ноа Беземе",
+      "canonicalHint": "noa bezeme",
+      "birthDate": "2007-06-28",
+      "club": "ПСЖ",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:54:38.716Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "42",
+      "contestId": "cmtmodtoh0rh32o900afvwz7a",
+      "priceId": "cmtmodvoe0t2n2o90dy3iduxi",
+      "providerPlayerId": "74612",
+      "name": "Олувасейи Уилсон",
+      "canonicalHint": "oluwaseyi wilson",
+      "birthDate": "2007-12-05",
+      "club": "Бавария",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:54:38.956Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "42",
+      "contestId": "cmtmodtoh0rh32o900afvwz7a",
+      "priceId": "cmtmodvhx0sxv2o90bqmko3qa",
+      "providerPlayerId": "74667",
+      "name": "Поль Бурден",
+      "canonicalHint": "paul bourdin",
+      "birthDate": "2009-01-14",
+      "club": "ПСЖ",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:54:38.731Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "42",
+      "contestId": "cmtmodtoh0rh32o900afvwz7a",
+      "priceId": "cmtmodvgv0sx12o90hy68kxbl",
+      "providerPlayerId": "74669",
+      "name": "Райан Або Эль Най",
+      "canonicalHint": "rayan abo el nay",
+      "birthDate": "2007-05-14",
+      "club": "ПСЖ",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:54:38.699Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "42",
+      "contestId": "cmtmodtoh0rh32o900afvwz7a",
+      "priceId": "cmtmodul30s952o90ahwus1qw",
+      "providerPlayerId": "74937",
+      "name": "Рафаэль Павлич",
+      "canonicalHint": "raphael pavlic",
+      "birthDate": "2008-02-08",
+      "club": "Бавария",
+      "price": 4,
+      "lastSeenAt": "2026-10-09T18:54:37.803Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "42",
+      "contestId": "cmtmodtoh0rh32o900afvwz7a",
+      "priceId": "cmtmoduhm0s5t2o905jnkn0l9",
+      "providerPlayerId": "74936",
+      "name": "Ричард Аджайи",
+      "canonicalHint": "richard ajayi oluwaseyi",
+      "birthDate": "2009-12-24",
+      "club": "Бавария",
+      "price": 4,
+      "lastSeenAt": "2026-10-09T18:54:37.684Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "42",
+      "contestId": "cmtmodtoh0rh32o900afvwz7a",
+      "priceId": "cmtmoduko0s8r2o90s1t55eq0",
+      "providerPlayerId": "74938",
+      "name": "Роко Миятович",
+      "canonicalHint": "roko mijatovic",
+      "birthDate": "2008-02-13",
+      "club": "Бавария",
+      "price": 4,
+      "lastSeenAt": "2026-10-09T18:54:37.789Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "42",
+      "contestId": "cmtmodtoh0rh32o900afvwz7a",
+      "priceId": "cmtmodvp80t3f2o90gr1uijkf",
+      "providerPlayerId": "74611",
+      "name": "Симон Шафф",
+      "canonicalHint": "simon schaff",
+      "birthDate": "2009-03-03",
+      "club": "Бавария",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:54:39.002Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "42",
+      "contestId": "cmtmodtoh0rh32o900afvwz7a",
+      "priceId": "cmtmoduel0s2p2o90cjpvlzal",
+      "providerPlayerId": "74808",
+      "name": "Скендер Нурай",
+      "canonicalHint": "skender nuraj",
+      "birthDate": "2010-02-26",
+      "club": "Бавария",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:54:37.564Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "42",
+      "contestId": "cmtmodtoh0rh32o900afvwz7a",
+      "priceId": "cmtmodvgl0swv2o90s9il4844",
+      "providerPlayerId": "74404",
+      "name": "Такато Ямамото",
+      "canonicalHint": "takato yamamoto",
+      "birthDate": "2007-08-24",
+      "club": "Боруссия Д",
+      "price": 5,
+      "lastSeenAt": "2026-10-09T18:54:38.690Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "42",
+      "contestId": "cmtmodtoh0rh32o900afvwz7a",
+      "priceId": "cmtmodud00s152o90gfpfoaa6",
+      "providerPlayerId": "74748",
+      "name": "Ти Джей Кэрролл",
+      "canonicalHint": "theodore carroll",
+      "birthDate": "2007-03-22",
+      "club": "Астон Вилла",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:54:37.508Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "42",
+      "contestId": "cmtmodtoh0rh32o900afvwz7a",
+      "priceId": "cmtmodvhn0sxn2o90lf4rf8zm",
+      "providerPlayerId": "74610",
+      "name": "Тим Биндер",
+      "canonicalHint": "tim binder 20070130",
+      "birthDate": "2007-01-30",
+      "club": "Бавария",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:54:38.722Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "42",
+      "contestId": "cmtmodtoh0rh32o900afvwz7a",
+      "priceId": "cmtmodvop0t2x2o9019quud9k",
+      "providerPlayerId": "74622",
+      "name": "Том Фауст",
+      "canonicalHint": "tom lasse faust",
+      "birthDate": "2008-05-21",
+      "club": "Боруссия Д",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:54:38.974Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "42",
+      "contestId": "cmtmodtoh0rh32o900afvwz7a",
+      "priceId": "cmtmodvn30t1h2o90g6kvvd01",
+      "providerPlayerId": "74613",
+      "name": "Хавьер Паркер",
+      "canonicalHint": "xavier tau parker",
+      "birthDate": "2010-05-09",
+      "club": "Манчестер Сити",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:54:38.898Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "42",
+      "contestId": "cmtmodtoh0rh32o900afvwz7a",
+      "priceId": "cmtmodvae0ss52o900sa1vyae",
+      "providerPlayerId": "74394",
+      "name": "Хесус Барриос",
+      "canonicalHint": "jesus barrios saborido",
+      "birthDate": "2006-05-23",
+      "club": "Атлетико",
+      "price": 5,
+      "lastSeenAt": "2026-10-09T18:54:38.503Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [
+          {
+            "playerId": "1692877",
+            "teamId": "9906",
+            "playerName": "jorge castillo",
+            "teamName": "Atlético Madrid",
+            "position": "Midfielder",
+            "confidence": 0.91,
+            "nameConfidence": 0,
+            "birthDateMatches": true,
+            "birthDateConflicts": false,
+            "reason": "weak name, position MID/MID, team, birth date"
+          }
+        ],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "42",
+      "contestId": "cmtmodtoh0rh32o900afvwz7a",
+      "priceId": "cmtmodvid0sy52o90grf7grxh",
+      "providerPlayerId": "74671",
+      "name": "Эдем Галлеб",
+      "canonicalHint": "edem ghalleb",
+      "birthDate": "2008-07-23",
+      "club": "ПСЖ",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:54:38.744Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "42",
+      "contestId": "cmtmodtoh0rh32o900afvwz7a",
+      "priceId": "cmtmodvjw0sz72o90jkfcg727",
+      "providerPlayerId": "74699",
+      "name": "Юнес Иддер",
+      "canonicalHint": "younes idder",
+      "birthDate": "2008-01-18",
+      "club": "ПСЖ",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:54:38.796Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "42",
+      "contestId": "cmtmodtoh0rh32o900afvwz7a",
+      "priceId": "cmtmodtum0rmj2o90zuncam7p",
+      "providerPlayerId": "75028",
+      "name": "Яков Кинарейкин",
+      "canonicalHint": "yakiv kinareykin",
+      "birthDate": "2003-10-22",
+      "club": "Вильярреал",
+      "price": 4,
+      "lastSeenAt": "2026-10-09T18:54:36.921Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "54",
+      "contestId": "cmt2ea6ja0002yhanu0xn9uei",
+      "priceId": "cmt2eawvw00peyhanbsd3m0zh",
+      "providerPlayerId": "73148",
+      "name": "Арне Вессельс",
+      "canonicalHint": "arne wessels",
+      "birthDate": "2005-11-04",
+      "club": "Боруссия Д",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:54:02.601Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [
+          {
+            "playerId": "1463271",
+            "teamId": "8722",
+            "playerName": "Jahmai Simpson-Pusey",
+            "teamName": "1. FC Köln",
+            "position": "CB",
+            "confidence": 0.72,
+            "nameConfidence": 0,
+            "birthDateMatches": true,
+            "birthDateConflicts": false,
+            "reason": "weak name, position MID/DEF, birth date"
+          }
+        ],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "54",
+      "contestId": "cmt2ea6ja0002yhanu0xn9uei",
+      "priceId": "cmt2eb24j00uoyhan4igfwnln",
+      "providerPlayerId": "73020",
+      "name": "Кейто Кумаширо",
+      "canonicalHint": "keito kumashiro",
+      "birthDate": "2007-10-25",
+      "club": "Айнтрахт Ф",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:54:03.008Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "54",
+      "contestId": "cmt2ea6ja0002yhanu0xn9uei",
+      "priceId": "cmt2eaxdx00puyhanrg7ohlyp",
+      "providerPlayerId": "73017",
+      "name": "Нико Иличевич",
+      "canonicalHint": "niko ilicevic",
+      "birthDate": "2010-10-30",
+      "club": "Айнтрахт Ф",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:54:02.625Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "54",
+      "contestId": "cmt2ea6ja0002yhanu0xn9uei",
+      "priceId": "cmt2ea9k1002yyhanfxrvmaqu",
+      "providerPlayerId": "73215",
+      "name": "Стефан Смаркалев",
+      "canonicalHint": "stefan smarkalev",
+      "birthDate": "2007-05-14",
+      "club": "Вердер",
+      "price": 4,
+      "lastSeenAt": "2026-10-09T18:54:01.378Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "54",
+      "contestId": "cmt2ea6ja0002yhanu0xn9uei",
+      "priceId": "cmt2eawbz00oyyhanxkk52e85",
+      "providerPlayerId": "73139",
+      "name": "Такато Ямамото",
+      "canonicalHint": "takato yamamoto",
+      "birthDate": "2007-08-24",
+      "club": "Боруссия Д",
+      "price": 5,
+      "lastSeenAt": "2026-10-09T18:54:02.584Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    },
+    {
+      "leagueId": "54",
+      "contestId": "cmt2ea6ja0002yhanu0xn9uei",
+      "priceId": "cmt2eaxyh00qgyhane2l8j171",
+      "providerPlayerId": "73147",
+      "name": "Том Фауст",
+      "canonicalHint": "tom lasse faust",
+      "birthDate": "2008-05-21",
+      "club": "Боруссия Д",
+      "price": 4.5,
+      "lastSeenAt": "2026-10-09T18:54:02.660Z",
+      "reason": "No independently verified canonical identity in the current 219 primary club rosters and reviewed catalog/profile candidates; do not infer a player from a different birthday or partial name",
+      "reviewedCandidates": {
+        "activeRoster": [],
+        "club": [],
+        "catalog": []
+      }
+    }
+  ]
+}
