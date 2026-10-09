@@ -1,0 +1,19 @@
+2026-10-09T09:33:01Z
+fantasy-scout-web 1.507GiB / 11.6GiB
+fantasy-scout-worker 1.611GiB / 11.6GiB
+fantasy-scout-postgres 1.259GiB / 11.6GiB
+/fantasy-scout-web status=running restarts=0 oom=false
+/fantasy-scout-worker status=running restarts=0 oom=false
+               total        used        free      shared  buff/cache   available
+Mem:           11876        6680         986         285        4209        4598
+Swap:              0           0           0
+inactive
+BEGIN
+SET
+outbox={ "PENDING" : 3, "SENT" : 10 }
+duplicate_delivery_keys=0
+duplicate_message_ids=0
+duplicate_mapping_keys=0
+duplicate_sorare_targets=0
+raw_cache={"rows" : 921, "bytes" : 13326906, "expired" : 0}
+COMMIT

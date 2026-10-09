@@ -16,7 +16,7 @@ Published XI for the affected clubs is ingested after verified identity and rost
 
 ## Scope
 
-- In: authenticated source inspection, current roster and identity evidence, refreshing stale Sports.ru prerequisite data in France/Germany/UCL, verified Sports.ru name aliases, corroborated restoration of an existing inactive roster member, importer repair, regression checks, dry-run/apply on production, release and memory/cache/duplicate verification.
+- In: authenticated source inspection, current roster and identity evidence, refreshing stale Sports.ru prerequisite data in France/Germany/UCL, a bounded price-write timeout for recurring refreshes, verified Sports.ru name aliases and operator-reviewed nickname bindings, corroborated restoration of an existing inactive roster member, importer repair, regression checks, dry-run/apply on production, release and memory/cache/duplicate verification.
 - Out: guessing ambiguous names, accepting partial XI, silently replacing stored provider IDs, unrelated data imports, sending additional Telegram messages, or editing user squads.
 
 ## Acceptance
@@ -26,6 +26,7 @@ Published XI for the affected clubs is ingested after verified identity and rost
 - [ ] Regression checks cover the correction and rejection of conflicting/ambiguous identity data.
 - [ ] Source dry-run and production apply prove full XI and fresh metadata for affected teams; repeat import does not create duplicate mappings or refresh requests.
 - [ ] Release identity, memory, cache expiry and duplicate checks are verified and recorded.
+- [ ] Corroborating price batches complete within their explicit bounded deadline, including Spain's reproduced startup timeout.
 
 ## Dependencies
 

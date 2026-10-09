@@ -41,6 +41,7 @@ export function sportsRuContestDisplayName(tournamentHru: string, parsedName: st
   return parsedName === "Фэнтези" ? `Sports.ru ${leagueName}` : parsedName;
 }
 
+/** @spec spec://modules/machete/INFRA-004-sorareinside-starters#runtime */
 export async function syncSportsRuFantasy(prisma: PrismaClient, input: SportsRuFantasySyncInput) {
   const sourceUrl = input.sourceUrl ?? `https://www.sports.ru/fantasy/football/${input.tournamentHru}/`;
   const minimumPlayers = positiveInteger(input.minimumPlayers, 100);
@@ -88,6 +89,8 @@ export async function syncSportsRuFantasy(prisma: PrismaClient, input: SportsRuF
     sportsRuMaxPlayersPerTeamForLeague(input.leagueId)
   );
   const contestName = sportsRuContestDisplayName(input.tournamentHru, parsed.contest.name, leagueSeason.league.name);
+  // A validated tournament contains hundreds of sequential price writes. Keep
+  // the batch atomic, with a finite allowance beyond Prisma's five-second default.
   const syncResult = await prisma.$transaction(async (tx) => {
     const existingContest = await tx.fantasyContest.findUnique({
       where: { provider_leagueId_season: { provider: "SPORTS_RU", leagueId: input.leagueId, season: input.season } },
@@ -194,7 +197,7 @@ export async function syncSportsRuFantasy(prisma: PrismaClient, input: SportsRuF
       await tx.fantasyPlayerPrice.deleteMany({ where: { id: { in: staleIds }, provider: "SPORTS_RU", contestId: contest.id } });
     }
     return { deletedStalePrices: staleRows.length, contestId: contest.id };
-  });
+  }, { timeout: 60_000 });
   const { deletedStalePrices, contestId } = syncResult;
 
   // Keep an accepted player identity, but move its fantasy row to the club

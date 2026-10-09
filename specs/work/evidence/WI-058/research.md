@@ -35,3 +35,17 @@ Global coverage remains PARTIAL: 5 nearest fixtures have no forecast, 19 have no
 ## Guarded correction
 
 Sports aliases require a fresh price (48h), a matching stored provider mapping, unique club/date evidence and compatible canonical birth date. A repair additionally requires an existing inactive membership, exact league/season/club, a full matching source date and corroborated name, and no active other-club membership. The actual apply rechecks evidence and membership inside the existing XI transaction. Whole-team validation and normal roster source/deactivation remain in place.
+
+## Production proof and new nickname discrepancy
+
+Release 0.3.125 applied all 11 originally rejected scopes. All 13 initial control scopes store 11 active starters, one goalkeeper and fresh SorareInside metadata. The first repeat retained those XI and created no extra queue requests.
+
+A newly published Fiorentina forecast contained Pedro Gonçalves, stored as Pote (875133) with no Sports.ru price row. [The primary Sporting profile](https://www.sporting.pt/pt/futebol/equipa-principal/plantel/pedro-antonio-pereira-goncalves) establishes the full name/nickname and 1998-06-28 birth date; [FotMob 875133](https://www.fotmob.com/players/875133/pote) confirms that date and current Fiorentina membership. The authenticated source slug/date agree. An operator-reviewed UUID was persisted through the existing full-XI applier, atomically with flags, metadata and refresh request. No player copy or birth-date rewrite was needed.
+
+The next complete importer pass has zero PLAYERS_UNMAPPED/APPLY_ERROR/MAPPING_CONFLICT. All 14 control fingerprints are unchanged. Two Galatasaray scopes legitimately applied a newer published forecast and added one new UUID; duplicate mappings and refresh keys remain zero.
+
+## Recurring price refresh timeout
+
+The 0.3.125 worker's first scheduled Spain refresh failed at 10:03:43 UTC: Prisma canceled the interactive price batch after 5151 ms against its implicit 5000 ms limit. This was a transaction deadline, not a bad tournament HRU or unavailable source. The last valid Spain snapshot was preserved.
+
+Internet/forum research preceded the correction: [Prisma ORM transaction options](https://www.prisma.io/docs/orm/v6/prisma-client/queries/transactions) document the five-second default and per-transaction timeout; the Stack Overflow P2028 discussion corroborates the symptom. The repository client supports that option. Bound only the validated price-write batch to 60 seconds, with HTTP outside the transaction and atomic rollback preserved; do not change the global Prisma defaults.

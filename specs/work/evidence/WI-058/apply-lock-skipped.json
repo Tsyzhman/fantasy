@@ -1,0 +1,11 @@
+{
+  "sourceCommit": "52ea68936241aa51f3ee4c36f4538fcf91b6b7cd",
+  "execution": "checked CLI bundle; skipped because the promoted worker held the shared importer lock",
+  "exitCode": 0,
+  "status": "ALREADY_RUNNING",
+  "startedAt": "2026-10-09T10:05:11.523Z",
+  "finishedAt": null,
+  "totals": {},
+  "rssMiB": null,
+  "teams": null
+}

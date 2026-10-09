@@ -26,6 +26,11 @@ authoritative row identity; the normalized name/team fallback is used only for
 legacy HTML or workbook rows without a provider ID, so same-name teammates are
 not collapsed.
 
+Provider HTTP and snapshot validation finish before the write transaction.
+The complete price batch has an explicit 60-second deadline; cancellation still
+rolls back all of its writes. The default five seconds is too short for a normal
+tournament under concurrent worker startup load.
+
 If Sports.ru returns no current season, fewer than the minimum number of
 players, GraphQL errors, or a network error, the operation fails closed. No
 existing price row is deleted or replaced. On 2026-07-15 the official England
@@ -45,7 +50,7 @@ SPORTS_RU_FANTASY_MINIMUM_MAPPED_PERCENT=98
 ```
 
 Scope syntax is `<FotMob league id>:<season>:<Sports.ru tournament HRU>`;
-multiple scopes are separated by `;`. The web process starts the first attempt
+multiple scopes are separated by `;`. The worker starts the first attempt
 after five seconds and repeats it every 6 hours. `UNAVAILABLE` and error results
 are structured warnings/errors and preserve the last valid snapshot.
 

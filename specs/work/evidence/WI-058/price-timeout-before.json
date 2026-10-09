@@ -1,0 +1,14 @@
+{
+  "tournamentHru": "spain",
+  "version": "0.3.125",
+  "season": "2026/2027",
+  "timestamp": "2026-10-09T10:03:43.278Z",
+  "leagueId": "87",
+  "preservation": "The complete transaction rolled back and retained the last valid Spain snapshot.",
+  "evidence": "Verified against the promoted worker log before changing the deadline.",
+  "errorName": "PrismaClientKnownRequestError",
+  "transactionLimitMs": 5000,
+  "elapsedMs": 5151,
+  "status": "ERROR",
+  "operation": "fantasyPlayerPrice.findUnique within validated price-write batch"
+}

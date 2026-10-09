@@ -69,7 +69,7 @@ Only `lineup_players.starting_players`, exactly 11 unique players and one goalke
 ## Runtime and operations {#runtime}
 Worker starts one timer for the nearest :05 UTC (in Moscow it is also :05). Starting after a restart replenishes the condition. The default CLI is dry-run, `--apply` allows writing. Interprocess advisory lock does not allow simultaneous launch of scheduler/CLI. Feature flag `SORAREINSIDE_SYNC_ENABLED=true`; login and password only in the environment, without getting into Git/reports. Cookie authorization; requests are sequential, limited by timeout, size, number of windows/commands and total duration. Cookies are reused in the worker's memory; match and player data is not stored in the global cache.
 
-The worker's existing Sports.ru scheduler refreshes the configured corroborating price scopes. The immutable promoter reads optional operator-owned `/home/deploy/.config/fantasy-scout/sports-ru.env` (mode 600) for `SPORTS_RU_FANTASY_SYNC_ENABLED`, `SCOPES` and `INTERVAL_HOURS`; it preserves existing container settings when that file is absent. Price scopes required for ongoing inactive-member reconciliation must continue to refresh within the 48-hour evidence window.
+The worker's existing Sports.ru scheduler refreshes the configured corroborating price scopes. The immutable promoter reads optional operator-owned `/home/deploy/.config/fantasy-scout/sports-ru.env` (mode 600) for `SPORTS_RU_FANTASY_SYNC_ENABLED`, `SCOPES` and `INTERVAL_HOURS`; it preserves existing container settings when that file is absent. Price scopes required for ongoing inactive-member reconciliation must continue to refresh within the 48-hour evidence window. The validated price batch has a bounded 60-second write transaction; provider HTTP completes before it begins, and timeout still rolls back the entire batch.
 
 <a name="errors"></a>
 
@@ -106,5 +106,6 @@ Existing probable-lineup sync, starting-xi-from-match, fantasy-player-pool-refre
 ## Changelog {#changelog}
 
 - 2026-10-09: Verified fresh Sports.ru full-name aliases and atomic corroborated restoration of inactive current-club members prevent valid XI rejection without guessing identities (WI-058).
+- 2026-10-09: Bound the corroborating Sports.ru price write batch to 60 seconds so startup load does not cancel a normal tournament at the default five seconds (WI-058).
 - 2026-09-28: English documentation, repaired document references, and GitHub navigation anchors (WI-039).
 - 2026-09-11: SorareInside import canon created.
