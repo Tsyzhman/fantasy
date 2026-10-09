@@ -16,11 +16,11 @@ Current football fantasy price lists, canonical identities, club rosters and use
 - Existing Sports price contract: `docs/integrations/SPORTS_RU_FANTASY_SYNC.md`
 - Deployment constraint: `spec://common/INFRA-006-continuous-deployment#root`
 
-The full audit reproduced missing contract details for identity letter folding, birth-date preservation, fresh unique catalog identity evidence, provider/canonical name search, provider position taxonomy and FPL price-backed virtual roster availability. Clarify those existing player-pool responsibilities without changing shared starter flags or removing interface capabilities.
+The full audit reproduced missing contract details for identity letter folding, birth-date preservation, fresh unique catalog identity evidence, durable explicit source-identity exclusions, provider/canonical name search, provider position taxonomy and FPL price-backed virtual roster availability. Clarify those existing player-pool responsibilities without changing shared starter flags or removing interface capabilities.
 
 ## Scope
 
-- In: inventory of all current available football contests, complete price/identity/roster/pool audit, exact primary-source identity checks for corrections, durable fixes through existing guarded mechanisms, narrowly scoped code corrections if a reproduced common cause warrants them, normal refresh persistence, real reader and cache/duplicate/memory verification.
+- In: inventory of all current available football contests, complete price/identity/roster/pool audit, exact primary-source identity checks for corrections, durable fixes through existing guarded mechanisms, canonical identity repair for the same selected provider card without changing the user's choice, narrowly scoped code corrections if a reproduced common cause warrants them, normal refresh persistence, real reader and cache/duplicate/memory verification.
 - Out: invented prices or identities, historical competitions, user lineup or transfer edits, Telegram delivery, weakening identity conflict checks, unrelated UI redesign.
 
 ## Acceptance

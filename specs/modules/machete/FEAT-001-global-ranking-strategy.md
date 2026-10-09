@@ -99,6 +99,11 @@ comes from the current provider price; no shared roster is activated and no
 statistics or starter status are invented. Reviewed European club aliases are
 explicit pairs, never a fuzzy cross-club match.
 
+An explicitly reviewed `EXCLUDED` price identity remains excluded during
+automatic mapping and normal price refresh, regardless of the recorded
+exclusion reason. An exact catalog or roster candidate cannot undo that
+decision; returning the card to mapping requires an explicit admin action.
+
 FPL automatic identity matching still requires one exact normalized full name
 inside the mapped current club. Compare FotMob position codes using the existing
 fantasy position groups; LW/RW may be FPL MID, while a goalkeeper/outfield
@@ -176,7 +181,7 @@ Points of responsibility with `@spec`: `src/server/global-strategy-providers.ts`
 
 ## 12. Changelog {#changelog}
 
-- 2026-10-09: WI-063 — preserve verified birth dates, require unique fresh name/date evidence for catalog identities, resolve reviewed European club aliases, search provider and canonical names, reconcile FPL position codes and include verified FPL price-backed virtual rosters without shared starter mutations.
+- 2026-10-09: WI-063 — preserve verified birth dates and explicitly reviewed exclusions, require unique fresh name/date evidence for catalog identities, resolve reviewed European club aliases, search provider and canonical names, reconcile FPL position codes and include verified FPL price-backed virtual rosters without shared starter mutations.
 - 2026-10-09: WI-059 — preserve the user's corrected two-player club cap in Championship, Netherlands, Portugal and Turkey, with current contest rules over stale snapshot metadata.
 - 2026-10-08: WI-055 — correct Sports.ru to three transfers per round without accumulation, including older snapshot readers.
 - 2026-10-04: WI-046 — terminating full-pool refresh processes preserve serialized publication and release native working memory.

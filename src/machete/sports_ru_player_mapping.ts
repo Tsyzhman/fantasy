@@ -569,7 +569,7 @@ export async function autoMapSportsRuFantasyPlayers(
 
   for (const price of orderedPrices) {
     const existing = mapsByPriceId.get(price.id);
-    if (existing?.matchedBy === manualTransferredOutMethod) {
+    if (existing?.status === "EXCLUDED" || existing?.matchedBy === manualTransferredOutMethod) {
       if (price.playerId || price.teamId) await clearPriceRosterMapping(prisma, price.id);
       excluded += 1;
       continue;

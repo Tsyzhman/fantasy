@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.130 - 2026-10-09
+
+- Preserve explicitly reviewed Sports.ru identity exclusions through normal refresh, including conflicting source cards; an exact automatic candidate cannot restore an excluded card.
+
 ## 0.3.129 - 2026-10-09
 
 - Preserve canonical player birthdays when roster or match payloads omit them; keep strong identity, birthday and uniqueness guards for price-backed catalog matches.
