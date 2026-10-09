@@ -377,6 +377,15 @@ if [[ -f "$sorare_env" ]]; then
 fi
 sed -i '/^SORAREINSIDE_/d' "$web_env"
 
+# @spec spec://modules/machete/INFRA-004-sorareinside-starters#runtime
+# Keep the corroborating price refresh scopes in operator-owned configuration.
+sports_ru_env="/home/deploy/.config/fantasy-scout/sports-ru.env"
+if [[ -f "$sports_ru_env" ]]; then
+  [[ "$(stat -c '%a' "$sports_ru_env")" == "600" ]] || { echo "Sports.ru config must be mode 600" >&2; exit 1; }
+  sed -i '/^SPORTS_RU_FANTASY_SYNC_/d' "$worker_env"
+  grep -E '^SPORTS_RU_FANTASY_SYNC_(ENABLED|SCOPES|INTERVAL_HOURS)=' "$sports_ru_env" >> "$worker_env"
+fi
+
 # @spec spec://modules/telegram/INFRA-005-deadline-pipeline#recovery
 # Operator-owned notification flags and secrets stay outside Git and release archives.
 notifications_env="/home/deploy/.config/fantasy-scout/notifications.env"

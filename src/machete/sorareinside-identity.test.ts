@@ -26,6 +26,13 @@ test("reviewed UUID does not confuse two players with the same birthday",()=> {
   assert.equal(resolveSourcePlayer(p,players).player?.id,983199n);
   assert.equal(resolveSourcePlayer(p,players.slice(1)).player,null);
 });
+test("verified Alejandro/Alex Pozo UUID still requires the correct date and active club membership",()=> {
+  const p={...source,id:"4340cca6-8053-4f3d-9990-0f5e5926240d",name:"Alejandro Pozo",slug:"alejandro-pozo-pozo",birthDate:"1999-02-22"};
+  const players=[{id:785855n,name:"Alex Pozo",birthDate:null}];
+  assert.equal(resolveSourcePlayer(p,players).reason,"REVIEWED_UUID");
+  assert.equal(resolveSourcePlayer({...p,birthDate:"1999-02-23"},players).player,null);
+  assert.equal(resolveSourcePlayer(p,[]).reason,"ID_NOT_IN_ACTIVE_ROSTER");
+});
 test("reviewed team aliases distinguish Celta from its reserve team",()=> {
   const teams=[{id:1n,name:"Celta Vigo",country:"ESP"}];
   const src={id:"s",name:"RC Celta",slug:"celta",country:"es",national:false};

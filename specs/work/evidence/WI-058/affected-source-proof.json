@@ -1,0 +1,90 @@
+[
+  {
+    "leagueId": "42",
+    "season": "2026/2027",
+    "teamId": "9728",
+    "team": "Shakhtar Donetsk",
+    "status": "READY",
+    "count": 11
+  },
+  {
+    "leagueId": "42",
+    "season": "2026/2027",
+    "teamId": "8634",
+    "team": "Barcelona",
+    "status": "READY",
+    "count": 11
+  },
+  {
+    "leagueId": "87",
+    "season": "2026/2027",
+    "teamId": "8634",
+    "team": "Barcelona",
+    "status": "READY",
+    "count": 11
+  },
+  {
+    "leagueId": "54",
+    "season": "2026/2027",
+    "teamId": "8226",
+    "team": "Hoffenheim",
+    "status": "UNCHANGED",
+    "count": 11
+  },
+  {
+    "leagueId": "57",
+    "season": "2026/2027",
+    "teamId": "10217",
+    "team": "ADO Den Haag",
+    "status": "READY",
+    "count": 11
+  },
+  {
+    "leagueId": "57",
+    "season": "2026/2027",
+    "teamId": "8674",
+    "team": "FC Groningen",
+    "status": "READY",
+    "count": 11
+  },
+  {
+    "leagueId": "63",
+    "season": "2026/2027",
+    "teamId": "1068353",
+    "team": "Dynamo Makhachkala",
+    "status": "READY",
+    "count": 11
+  },
+  {
+    "leagueId": "87",
+    "season": "2026/2027",
+    "teamId": "9864",
+    "team": "Málaga",
+    "status": "READY",
+    "count": 11
+  },
+  {
+    "leagueId": "53",
+    "season": "2026/2027",
+    "teamId": "9746",
+    "team": "Le Havre",
+    "status": "UNCHANGED",
+    "count": 11
+  },
+  {
+    "leagueId": "53",
+    "season": "2026/2027",
+    "teamId": "9941",
+    "team": "Toulouse",
+    "status": "READY",
+    "count": 11
+  },
+  {
+    "leagueId": "61",
+    "season": "2026/2027",
+    "teamId": "7844",
+    "team": "Vitória de Guimarães",
+    "status": "READY",
+    "count": 11
+  }
+]

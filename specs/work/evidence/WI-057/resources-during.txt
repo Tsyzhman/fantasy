@@ -1,0 +1,14 @@
+2026-10-09T08:12:16Z
+fantasy-scout-web 329.8MiB / 11.6GiB
+fantasy-scout-worker 1.713GiB / 11.6GiB
+fantasy-scout-postgres 1.181GiB / 11.6GiB
+               total        used        free      shared  buff/cache   available
+Mem:           11876        5511        2377         285        3987        5767
+Swap:              0           0           0
+Result=success
+ActiveState=inactive
+SubState=dead
+fantasy-scout-worker Up About an hour (healthy)
+fantasy-scout-web Up About an hour (healthy)
+fantasy-scout-fpl-relay Up About an hour
+fantasy-scout-postgres Up 7 weeks (healthy)

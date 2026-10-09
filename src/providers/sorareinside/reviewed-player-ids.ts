@@ -11,5 +11,7 @@ export const REVIEWED_SORARE_PLAYER_IDS: Record<string,{playerId:bigint;birthDat
   // Pedro Henrique Silva dos Santos = Pedrinho: https://www.cbf.com.br/futebol-brasileiro/atletas/campeonato-brasileiro/sub-17/2021/697315
   "dee3af09-4a4d-451a-8753-c328dd14dd93":{playerId:1458712n,birthDate:"2006-02-05"},
   // Faustino = Tino Anjorin: https://www.chelseafc.com/en/news/article/youth-cup-report--chelsea-millwall
-  "f8ce190b-e498-4367-8685-3603fab2643e":{playerId:983199n,birthDate:"2001-11-23"}
+  "f8ce190b-e498-4367-8685-3603fab2643e":{playerId:983199n,birthDate:"2001-11-23"},
+  // Alejandro Pozo Pozo = Alex Pozo: https://www.fotmob.com/es/players/785855/alejandro-pozo
+  "4340cca6-8053-4f3d-9990-0f5e5926240d":{playerId:785855n,birthDate:"1999-02-22"}
 };

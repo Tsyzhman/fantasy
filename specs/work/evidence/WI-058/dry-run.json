@@ -1,0 +1,1079 @@
+{
+  "status": "PARTIAL",
+  "startedAt": "2026-10-09T08:42:19.038Z",
+  "finishedAt": "2026-10-09T08:43:57.533Z",
+  "totals": {
+    "NO_PREDICTION_FOR_NEAREST_MATCH": 5,
+    "NO_MATCH_OR_TEAM_MAPPING": 19,
+    "PLAYERS_UNMAPPED": 5,
+    "READY": 8,
+    "SOURCE_ERROR": 1,
+    "UNCHANGED": 224
+  },
+  "rssMiB": 171,
+  "teams": [
+    {
+      "leagueId": "42",
+      "season": "2026/2027",
+      "teamId": "9728",
+      "team": "Shakhtar Donetsk",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "f983d70c-32ac-4cf3-be0b-621d641a9014",
+      "fixtureId": "cd55bb82-7352-43d0-a01f-324617228ed1",
+      "kickoff": "2026-10-14T19:00:00.000Z",
+      "lineupId": "7d5c7440-72da-4a22-b623-4cddafe95586",
+      "players": [
+        {
+          "sourceId": "7089e555-761d-4c95-a4ec-0f78c02b28e3",
+          "name": "Dmytro Riznyk",
+          "playerId": null,
+          "reason": "UNMAPPED"
+        },
+        {
+          "sourceId": "2af3b2c8-1472-4ab1-a6ab-cd612e496863",
+          "name": "Vinícius Tobias",
+          "playerId": null,
+          "reason": "UNMAPPED"
+        },
+        {
+          "sourceId": "189471b1-5f98-4765-a064-2450ad5fb380",
+          "name": "Valerii Bondar",
+          "playerId": null,
+          "reason": "UNMAPPED"
+        },
+        {
+          "sourceId": "f127576d-e062-4947-b36e-d411040d4628",
+          "name": "Mykola Matviienko",
+          "playerId": null,
+          "reason": "UNMAPPED"
+        },
+        {
+          "sourceId": "6da229e6-1d8d-4d25-b091-95ca5308de12",
+          "name": "Pedro Henrique",
+          "playerId": null,
+          "reason": "UNMAPPED"
+        },
+        {
+          "sourceId": "2299ccc2-fcea-49a8-b596-7781fc22dca6",
+          "name": "Oleh Ocheretko",
+          "playerId": null,
+          "reason": "UNMAPPED"
+        },
+        {
+          "sourceId": "d43c648d-ce43-4a1a-9691-79556d4f4e98",
+          "name": "Newerton",
+          "playerId": null,
+          "reason": "UNMAPPED"
+        },
+        {
+          "sourceId": "2cd82fd4-d93d-4532-bdbd-db0048c30785",
+          "name": "Marlon Gomes",
+          "playerId": null,
+          "reason": "UNMAPPED"
+        },
+        {
+          "sourceId": "7dc3963b-f0ab-45f6-bf35-20ed16802101",
+          "name": "Yehor Nazaryna",
+          "playerId": null,
+          "reason": "UNMAPPED"
+        },
+        {
+          "sourceId": "aecedc67-a97e-4c69-bfb4-77aea37f36ac",
+          "name": "Alisson Santana",
+          "playerId": null,
+          "reason": "UNMAPPED"
+        },
+        {
+          "sourceId": "5fc95543-ca02-4ff7-a148-d99bde7d5026",
+          "name": "Kauã Elias",
+          "playerId": null,
+          "reason": "UNMAPPED"
+        }
+      ]
+    },
+    {
+      "leagueId": "42",
+      "season": "2026/2027",
+      "teamId": "8634",
+      "team": "Barcelona",
+      "status": "READY",
+      "problems": [],
+      "sourceTeamId": "f115e8de-5e7a-44f6-a03f-1ec44cc02839",
+      "fixtureId": "2266522a-bfc1-457b-bb55-e7f4e916f2b4",
+      "kickoff": "2026-10-10T16:30:00.000Z",
+      "lineupId": "05ada52a-adb6-4889-ac50-1662a9686463",
+      "players": [
+        {
+          "sourceId": "d56f428c-750c-4ccb-9406-34b6560b06cc",
+          "name": "Joan García",
+          "playerId": "1167220",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "520b3204-dbf1-4791-999a-35255e69de50",
+          "name": "Xavi Espart",
+          "playerId": "1815149",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "35d50e4a-da41-43df-be9d-13b6f9955aed",
+          "name": "Gerard Martín",
+          "playerId": "1598982",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "9af31667-4013-4b22-84f5-35965ba20e53",
+          "name": "Pau Cubarsí",
+          "playerId": "1532137",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "c463c029-9eb3-4d60-a3c6-0dab3102db7d",
+          "name": "Eric García",
+          "playerId": "940573",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "891c1687-28a5-48a7-98ee-bc11dff57952",
+          "name": "Pedri",
+          "playerId": "1083323",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "0422fa5d-811b-4f2a-be98-fed4c72ee1bb",
+          "name": "Rodrigo",
+          "playerId": "675088",
+          "reason": "BIRTH_DATE_AND_NAME_IN_TEAM"
+        },
+        {
+          "sourceId": "66820bd1-7279-47c3-b8c5-896dce2d1fc4",
+          "name": "Karim Adeyemi",
+          "playerId": "959594",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "8e9fa211-05ab-4314-8782-5ee36abdcd92",
+          "name": "Fermín",
+          "playerId": "1404415",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "fb0c3bd5-8728-428c-bc14-cb1354cdfd4d",
+          "name": "Lamine Yamal",
+          "playerId": "1467236",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "f5708288-3096-41d5-9052-7d1dde3c2403",
+          "name": "Gabriel Jesus",
+          "playerId": "576165",
+          "reason": "EXACT_NAME_IN_TEAM"
+        }
+      ]
+    },
+    {
+      "leagueId": "87",
+      "season": "2026/2027",
+      "teamId": "8634",
+      "team": "Barcelona",
+      "status": "READY",
+      "problems": [],
+      "sourceTeamId": "f115e8de-5e7a-44f6-a03f-1ec44cc02839",
+      "fixtureId": "2266522a-bfc1-457b-bb55-e7f4e916f2b4",
+      "kickoff": "2026-10-10T16:30:00.000Z",
+      "lineupId": "05ada52a-adb6-4889-ac50-1662a9686463",
+      "players": [
+        {
+          "sourceId": "d56f428c-750c-4ccb-9406-34b6560b06cc",
+          "name": "Joan García",
+          "playerId": "1167220",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "520b3204-dbf1-4791-999a-35255e69de50",
+          "name": "Xavi Espart",
+          "playerId": "1815149",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "35d50e4a-da41-43df-be9d-13b6f9955aed",
+          "name": "Gerard Martín",
+          "playerId": "1598982",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "9af31667-4013-4b22-84f5-35965ba20e53",
+          "name": "Pau Cubarsí",
+          "playerId": "1532137",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "c463c029-9eb3-4d60-a3c6-0dab3102db7d",
+          "name": "Eric García",
+          "playerId": "940573",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "891c1687-28a5-48a7-98ee-bc11dff57952",
+          "name": "Pedri",
+          "playerId": "1083323",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "0422fa5d-811b-4f2a-be98-fed4c72ee1bb",
+          "name": "Rodrigo",
+          "playerId": "675088",
+          "reason": "BIRTH_DATE_AND_NAME_IN_TEAM"
+        },
+        {
+          "sourceId": "66820bd1-7279-47c3-b8c5-896dce2d1fc4",
+          "name": "Karim Adeyemi",
+          "playerId": "959594",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "8e9fa211-05ab-4314-8782-5ee36abdcd92",
+          "name": "Fermín",
+          "playerId": "1404415",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "fb0c3bd5-8728-428c-bc14-cb1354cdfd4d",
+          "name": "Lamine Yamal",
+          "playerId": "1467236",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "f5708288-3096-41d5-9052-7d1dde3c2403",
+          "name": "Gabriel Jesus",
+          "playerId": "576165",
+          "reason": "EXACT_NAME_IN_TEAM"
+        }
+      ]
+    },
+    {
+      "leagueId": "42",
+      "season": "2026/2027",
+      "teamId": "8402",
+      "team": "Bodø/Glimt",
+      "status": "SOURCE_ERROR",
+      "problems": [
+        "SorareInside: expected 11 unique starters with one goalkeeper first"
+      ],
+      "sourceTeamId": "4baa67bf-772c-4e9b-8714-fdf29e16dfc6",
+      "fixtureId": "508f1c50-7d1d-4ad9-82dd-db56e436bbd2",
+      "kickoff": "2026-10-10T14:00:00.000Z",
+      "lineupId": "a051cb2e-b241-400e-8315-5c1c0c61bb5d"
+    },
+    {
+      "leagueId": "42",
+      "season": "2026/2027",
+      "teamId": "9875",
+      "team": "Napoli",
+      "status": "READY",
+      "problems": [],
+      "sourceTeamId": "0d71830d-f717-4f5e-ba87-caacc6b79c74",
+      "fixtureId": "6ea02f7c-155e-4e38-a4df-8a2c3a40c0e2",
+      "kickoff": "2026-10-10T18:45:00.000Z",
+      "lineupId": "27bc308a-1338-4ab1-886b-a44e674341e8",
+      "players": [
+        {
+          "sourceId": "d802b550-9552-4070-87d2-e0d3a9913adc",
+          "name": "Alex Meret",
+          "playerId": "577912",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "690f1b57-7d3f-44e1-9073-0efea8628ccc",
+          "name": "Rafa Marín",
+          "playerId": "1313884",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "f672ff03-ede6-47f3-abbb-53e23c9cb48e",
+          "name": "Amir Rrahmani",
+          "playerId": "544693",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "71a286a0-9972-4a2a-abe0-0384ab91eecb",
+          "name": "Sam Beukema",
+          "playerId": "873573",
+          "reason": "EXACT_NAME_IN_TEAM"
+        },
+        {
+          "sourceId": "2db544b1-f97d-4730-9497-764fc7eff15c",
+          "name": "Leonardo Spinazzola",
+          "playerId": "215242",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "a707d038-5d2c-4b36-80c7-36767717228e",
+          "name": "Billy Gilmour",
+          "playerId": "942549",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "e1d1de4f-004b-4594-bc70-25a0233ef8e5",
+          "name": "Stanislav Lobotka",
+          "playerId": "308517",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "0e1d82dc-a2f9-45eb-a8de-72b17236f496",
+          "name": "Matteo Politano",
+          "playerId": "415539",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "221ef2c0-4b92-48b3-a969-19d303f93ae8",
+          "name": "David Neres",
+          "playerId": "793066",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "c188ea45-4c32-4626-b2c9-2f0c6dbbd879",
+          "name": "Kevin De Bruyne",
+          "playerId": "169200",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "d274e196-9ad4-45b6-8615-8e06156da423",
+          "name": "Rasmus Højlund",
+          "playerId": "1199272",
+          "reason": "PROVIDER_ID"
+        }
+      ]
+    },
+    {
+      "leagueId": "55",
+      "season": "2026/2027",
+      "teamId": "9875",
+      "team": "Napoli",
+      "status": "READY",
+      "problems": [],
+      "sourceTeamId": "0d71830d-f717-4f5e-ba87-caacc6b79c74",
+      "fixtureId": "6ea02f7c-155e-4e38-a4df-8a2c3a40c0e2",
+      "kickoff": "2026-10-10T18:45:00.000Z",
+      "lineupId": "27bc308a-1338-4ab1-886b-a44e674341e8",
+      "players": [
+        {
+          "sourceId": "d802b550-9552-4070-87d2-e0d3a9913adc",
+          "name": "Alex Meret",
+          "playerId": "577912",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "690f1b57-7d3f-44e1-9073-0efea8628ccc",
+          "name": "Rafa Marín",
+          "playerId": "1313884",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "f672ff03-ede6-47f3-abbb-53e23c9cb48e",
+          "name": "Amir Rrahmani",
+          "playerId": "544693",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "71a286a0-9972-4a2a-abe0-0384ab91eecb",
+          "name": "Sam Beukema",
+          "playerId": "873573",
+          "reason": "EXACT_NAME_IN_TEAM"
+        },
+        {
+          "sourceId": "2db544b1-f97d-4730-9497-764fc7eff15c",
+          "name": "Leonardo Spinazzola",
+          "playerId": "215242",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "a707d038-5d2c-4b36-80c7-36767717228e",
+          "name": "Billy Gilmour",
+          "playerId": "942549",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "e1d1de4f-004b-4594-bc70-25a0233ef8e5",
+          "name": "Stanislav Lobotka",
+          "playerId": "308517",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "0e1d82dc-a2f9-45eb-a8de-72b17236f496",
+          "name": "Matteo Politano",
+          "playerId": "415539",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "221ef2c0-4b92-48b3-a969-19d303f93ae8",
+          "name": "David Neres",
+          "playerId": "793066",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "c188ea45-4c32-4626-b2c9-2f0c6dbbd879",
+          "name": "Kevin De Bruyne",
+          "playerId": "169200",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "d274e196-9ad4-45b6-8615-8e06156da423",
+          "name": "Rasmus Højlund",
+          "playerId": "1199272",
+          "reason": "PROVIDER_ID"
+        }
+      ]
+    },
+    {
+      "leagueId": "54",
+      "season": "2026/2027",
+      "teamId": "8226",
+      "team": "Hoffenheim",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "aa3d3b98-d300-4a87-9780-e25712d302c6",
+      "fixtureId": "0e058dd3-df19-45d8-8ec9-72c7c1418a60",
+      "kickoff": "2026-10-10T13:30:00.000Z",
+      "lineupId": "e4ffb8ac-7361-42c0-bec3-485ccfea5f9f",
+      "players": [
+        {
+          "sourceId": "05acda07-2619-4f82-ba6b-b522272048e7",
+          "name": "Oliver Baumann",
+          "playerId": "178778",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "18f88da6-53ec-4ff7-ae77-a8a8f68b8baf",
+          "name": "Mats Rots",
+          "playerId": "1445416",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "9460e311-3059-4601-ae1b-9b424b115325",
+          "name": "Koki Machida",
+          "playerId": null,
+          "reason": "ID_NOT_IN_ACTIVE_ROSTER"
+        },
+        {
+          "sourceId": "b08b38b4-451a-4dfa-b2a2-f3d61f2cfb87",
+          "name": "Ozan Kabak",
+          "playerId": "845990",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "26476824-b9d5-4047-a9db-8a5b259b5b57",
+          "name": "Vladimír Coufal",
+          "playerId": "307317",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "f851207a-c047-49b5-bb63-5e2e9fb42f20",
+          "name": "Wouter Burger",
+          "playerId": "947884",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "4e1acb5a-2d28-4de8-972b-25bedcee4385",
+          "name": "Leon Avdullahu",
+          "playerId": "1478148",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "d57d876a-d67e-437b-9f8c-b91e641d6c49",
+          "name": "Bambasé Conté",
+          "playerId": "1338957",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "6b0a4e5b-dd13-4663-8387-4b00d53135fb",
+          "name": "Adam Daghim",
+          "playerId": "1353000",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "e9ddd0c0-3c26-4ee6-abed-6a0eb547f525",
+          "name": "Adam Hložek",
+          "playerId": "969870",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "0c72f6b2-ba7e-44db-8949-fd2d5d62173f",
+          "name": "Tim Lemperle",
+          "playerId": "1124825",
+          "reason": "PROVIDER_ID"
+        }
+      ]
+    },
+    {
+      "leagueId": "57",
+      "season": "2026/2027",
+      "teamId": "10217",
+      "team": "ADO Den Haag",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "60875b70-0baa-4569-8ff3-08dd06b452c3",
+      "fixtureId": "25b8bd03-60ce-4c0d-ac97-1f8072170ee7",
+      "kickoff": "2026-10-11T12:30:00.000Z",
+      "lineupId": "cb5077b0-6faa-47d2-ae71-6c76fc96cea4",
+      "players": [
+        {
+          "sourceId": "599a00ba-ff58-4f19-8d74-4567cbc1ec80",
+          "name": "Kilian Nikièma",
+          "playerId": "1313190",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "05d59111-6464-41c1-bfb3-bb14d92686c6",
+          "name": "Milan Hokke",
+          "playerId": "1553389",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "57cf7662-4c0a-49c6-9af0-102f4eeca552",
+          "name": "Jonas Jensen-Abbew",
+          "playerId": "1243931",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "ab485319-9fc5-4215-8d6f-7c4a4ea365ba",
+          "name": "Pascal Mulder",
+          "playerId": "1585703",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "76b14ca1-921d-4fee-83e8-e626b2cfa7fe",
+          "name": "Othniël Raterink",
+          "playerId": "1444577",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "c1ae8b10-18d1-4179-bbbd-d40841be4247",
+          "name": "Matěj Šín",
+          "playerId": "1335046",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "618ee19d-383e-40e4-b927-ebbbe0e0305d",
+          "name": "Juho Kilo",
+          "playerId": "1300344",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "1319fa77-b22d-4e39-a4d1-4f892e29bc22",
+          "name": "Jalen Hawkins",
+          "playerId": "1159196",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "2015ebd9-0600-4cf1-9da7-b8037e574122",
+          "name": "Evan Rottier",
+          "playerId": "1183486",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "4340cca6-8053-4f3d-9990-0f5e5926240d",
+          "name": "Alejandro Pozo",
+          "playerId": null,
+          "reason": "UNMAPPED"
+        },
+        {
+          "sourceId": "965c4035-dfa5-459d-af07-3efa9abad756",
+          "name": "Yannick Eduardo",
+          "playerId": "1554760",
+          "reason": "PROVIDER_ID"
+        }
+      ]
+    },
+    {
+      "leagueId": "57",
+      "season": "2026/2027",
+      "teamId": "8674",
+      "team": "FC Groningen",
+      "status": "READY",
+      "problems": [],
+      "sourceTeamId": "afb8de1c-bf07-43a9-bd1c-b7201deba1fd",
+      "fixtureId": "17f5464f-31d9-4e74-bb9f-ab56602109ef",
+      "kickoff": "2026-10-11T14:45:00.000Z",
+      "lineupId": "743455f7-08ca-456b-a375-0f98d385fce8",
+      "players": [
+        {
+          "sourceId": "91707a09-a099-4d8e-8499-56ed6e63d086",
+          "name": "Etienne Vaessen",
+          "playerId": "665170",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "c15581c4-c3e3-4f8a-8613-bd5fa3e7e248",
+          "name": "Wouter Prins",
+          "playerId": "1552425",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "dee48c05-ae93-4e70-98b6-fa9b3a8b0d32",
+          "name": "Hans Hateboer",
+          "playerId": "485047",
+          "reason": "EXACT_NAME_IN_TEAM"
+        },
+        {
+          "sourceId": "8236f6c3-5062-471c-87a4-48e0ab74e2e2",
+          "name": "Thijmen Blokzijl",
+          "playerId": "1256173",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "19e91008-bc44-42cf-aba3-b460fc8b86ee",
+          "name": "Jorg Schreuders",
+          "playerId": "1419385",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "e70e4acf-73c3-40e4-a4e2-1886cc8acb23",
+          "name": "Tika de Jonge",
+          "playerId": "1256176",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "d2b83552-4cb8-4e59-b7ff-8657a6c8c6e0",
+          "name": "Tygo Land",
+          "playerId": "1426704",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "778cfb32-6726-4020-8dc2-a56d7ad73d0e",
+          "name": "Pelle Clement",
+          "playerId": "637741",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "ffb6adcb-00a4-4049-8d23-c75a4ef82b15",
+          "name": "Thom van Bergen",
+          "playerId": "1412105",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "81826c36-1d84-40f8-9235-eda9330fbff1",
+          "name": "David van der Werff",
+          "playerId": "1695991",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "052a05ea-35f7-491e-bd2c-35e86dcfd5cd",
+          "name": "Brynjólfur Willumsson",
+          "playerId": "937032",
+          "reason": "PROVIDER_ID"
+        }
+      ],
+      "restoredRosterPlayerIds": [
+        "1419385"
+      ]
+    },
+    {
+      "leagueId": "63",
+      "season": "2026/2027",
+      "teamId": "1068353",
+      "team": "Dynamo Makhachkala",
+      "status": "READY",
+      "problems": [],
+      "sourceTeamId": "3a505107-b28d-4c23-a1a8-35128b5868b6",
+      "fixtureId": "0129cb63-9850-4159-8306-d9adc5c24ef4",
+      "kickoff": "2026-10-10T10:00:00.000Z",
+      "lineupId": "f5072587-b3c0-4111-8e4e-1985e790a5a5",
+      "players": [
+        {
+          "sourceId": "b83924e6-f2d8-45a7-a8cb-4641b0e5dbda",
+          "name": "Timur Magomedov",
+          "playerId": "1388244",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "ce46efca-28b8-4f3d-9bae-35e017ab6e10",
+          "name": "Temirkan Sundukov",
+          "playerId": "1109173",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "d238b99f-1c62-41a1-95b5-0d901e543561",
+          "name": "Mutalip Alibekov",
+          "playerId": "880036",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "ea032d7d-8bcc-4a96-aded-55e17684af7b",
+          "name": "Andrés Alarcón",
+          "playerId": "1470839",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "a83d102a-bc80-45a7-b88d-6fb117b6cf55",
+          "name": "Mahmudjon Maxamadjonov",
+          "playerId": "1477508",
+          "reason": "EXACT_NAME_IN_TEAM"
+        },
+        {
+          "sourceId": "404eaa67-b37b-4736-a32f-57345858a48f",
+          "name": "Egor Smelov",
+          "playerId": "1407775",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "2fbd51d7-b969-4351-8a2d-a8bcf2f13e19",
+          "name": "Marat Apshatsev",
+          "playerId": "1189174",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "4cfd665b-1256-447f-8f8a-87a7173cba9f",
+          "name": "Daniil Lesovoy",
+          "playerId": "832745",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "d1ec44a4-e4b4-44f3-a599-aec8ca450b2f",
+          "name": "Nikita Glushkov",
+          "playerId": "970498",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "e7dd37e7-4ab1-45ba-8e5a-753f6100ea69",
+          "name": "Houssem Mrezigue",
+          "playerId": "1230615",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "173e43b7-04d7-4730-80ee-2e6081c32eeb",
+          "name": "Gamid Agalarov",
+          "playerId": "952032",
+          "reason": "PROVIDER_ID"
+        }
+      ]
+    },
+    {
+      "leagueId": "87",
+      "season": "2026/2027",
+      "teamId": "9864",
+      "team": "Málaga",
+      "status": "READY",
+      "problems": [],
+      "sourceTeamId": "c807e159-c7e5-438f-ac41-56adbb89f3e5",
+      "fixtureId": "4c82bd7d-4b3e-4d93-93de-1a4ce3579ce4",
+      "kickoff": "2026-10-09T19:00:00.000Z",
+      "lineupId": "0330227c-bc8c-4585-8ba8-5b93ebffe5b1",
+      "players": [
+        {
+          "sourceId": "e713d6f3-f65b-40e3-a25f-2b052f7960a3",
+          "name": "Alfonso Herrero",
+          "playerId": "616538",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "8b354cfc-ea6e-4056-809c-75a3585c7679",
+          "name": "Rafita",
+          "playerId": "1717331",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "7020f5eb-a549-4603-adcd-bcc9b4140075",
+          "name": "Juan Berrocal",
+          "playerId": "873838",
+          "reason": "EXACT_NAME_IN_TEAM"
+        },
+        {
+          "sourceId": "d1f694a7-a444-4da1-ba9d-145c09d904b7",
+          "name": "Ángel Recio",
+          "playerId": "1260010",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "0bc14fec-58a1-4cca-a12c-5dbf7e555846",
+          "name": "Carlos Puga",
+          "playerId": "1668274",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "d90ce365-ff22-46ed-a351-86b293448385",
+          "name": "Dani Lorenzo",
+          "playerId": "1317624",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "fe03b364-a04f-445a-878c-8a9308012034",
+          "name": "Izan Merino",
+          "playerId": "1669619",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "947b2af3-b433-4de1-b7d9-f88022a020a2",
+          "name": "Carlos Dotor",
+          "playerId": "1209421",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "130ec620-a389-42b2-9ec5-1bc89cc97468",
+          "name": "Joaquín Muñoz",
+          "playerId": "951739",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "5c35b874-6d76-446b-8bf5-46fea29a0107",
+          "name": "Chupe",
+          "playerId": "1669622",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "d4fe66fd-5d77-483d-b8d0-2dd8ace3600a",
+          "name": "David Larrubia",
+          "playerId": "1108863",
+          "reason": "PROVIDER_ID"
+        }
+      ],
+      "restoredRosterPlayerIds": [
+        "1260010"
+      ]
+    },
+    {
+      "leagueId": "53",
+      "season": "2026/2027",
+      "teamId": "9746",
+      "team": "Le Havre",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "bb9fc7e9-eb8f-4d76-8a13-18d9a20d0592",
+      "fixtureId": "e27d16f7-7814-4e07-a0aa-638be775efe3",
+      "kickoff": "2026-10-10T15:15:00.000Z",
+      "lineupId": "1b780099-e81b-475f-b598-53fdbf70a350",
+      "players": [
+        {
+          "sourceId": "bf90014e-0e83-4e82-ab7a-52e465e57a32",
+          "name": "Gauthier Gallon",
+          "playerId": "348409",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "2468617a-e8ed-429f-92bf-132e66a04a17",
+          "name": "Junior Mwanga",
+          "playerId": "1362622",
+          "reason": "EXACT_NAME_IN_TEAM"
+        },
+        {
+          "sourceId": "5c8862fc-5af1-42f5-99bd-4e1b7fa8df1f",
+          "name": "Ahmed Touba",
+          "playerId": "792653",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "c1b4c52f-3406-47e8-8549-b50b4699ad96",
+          "name": "Ayumu Seko",
+          "playerId": "857120",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "4e947846-f8a8-4e4f-9d62-2343bf0b0061",
+          "name": "Enzo Koffi Vinette",
+          "playerId": "1816726",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "7830ef1d-c552-4a84-933b-8fa86d20b0cc",
+          "name": "Simon Ebonog",
+          "playerId": "1469758",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "4fdcf608-8dd6-4d1c-a761-b8ea249bf045",
+          "name": "Amir Richardson",
+          "playerId": "1255860",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "2d1112f1-764b-4cfb-8253-88db2b495c09",
+          "name": "Djibril Ouziad",
+          "playerId": null,
+          "reason": "BIRTH_DATE_CONFLICT"
+        },
+        {
+          "sourceId": "e4aa347e-c911-434d-86b8-88093a3862ed",
+          "name": "Mbwana Samatta",
+          "playerId": "437329",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "094bd975-932a-4d6c-ac58-c73325079fe3",
+          "name": "Joshua Maja",
+          "playerId": "791805",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "b0b7384a-c86b-4f0f-8935-21a35416d2fc",
+          "name": "Rassoul Ndiaye",
+          "playerId": "1073905",
+          "reason": "EXACT_NAME_IN_TEAM"
+        }
+      ]
+    },
+    {
+      "leagueId": "53",
+      "season": "2026/2027",
+      "teamId": "9941",
+      "team": "Toulouse",
+      "status": "PLAYERS_UNMAPPED",
+      "problems": [],
+      "sourceTeamId": "2a4c2142-75b3-4f51-9204-6f9502f69827",
+      "fixtureId": "b8e4c516-4f1a-4084-8eef-1de9bb2f42ce",
+      "kickoff": "2026-10-10T18:45:00.000Z",
+      "lineupId": "d77d4f84-ccf7-4941-92ef-e2681706451a",
+      "players": [
+        {
+          "sourceId": "8289c12e-a01c-4da5-97a9-3ceb0413ca1d",
+          "name": "Guillaume Restes",
+          "playerId": "1524210",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "7f8449d7-d171-4a1d-9122-53229c8c33f4",
+          "name": "Christ Tapé",
+          "playerId": "1666482",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "41c64896-afeb-4632-8a52-fa1aea0798a7",
+          "name": "Seny Koumbassa",
+          "playerId": "1791729",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "3823e9b4-1073-41d3-831d-4fce852a12f5",
+          "name": "Mark McKenzie",
+          "playerId": null,
+          "reason": "ID_NOT_IN_ACTIVE_ROSTER"
+        },
+        {
+          "sourceId": "ef6c27f2-8ba8-472f-a74a-42b679bbf62e",
+          "name": "Rafik Messali",
+          "playerId": "1640973",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "90208130-65e8-4662-b11a-5d62d038afea",
+          "name": "Cristian Cásseres Jr.",
+          "playerId": "845943",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "d91af7c2-ee26-47d0-9565-632a632d9aa7",
+          "name": "Niko Sigur",
+          "playerId": "1494508",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "2c564f3d-d354-4a8f-8c5c-4f73013383ee",
+          "name": "Ilyas Azizi",
+          "playerId": "1751857",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "681f9a50-8824-460c-978c-1f58fca3d351",
+          "name": "Thomas Jørgensen",
+          "playerId": "1481910",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "9b021ea1-3215-471e-b3f8-b01ccf6aaebc",
+          "name": "Santiago Hidalgo",
+          "playerId": "1362516",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "746eaf6d-6b88-4e49-9fa9-63034cd96e18",
+          "name": "Casper Tengstedt",
+          "playerId": "1102240",
+          "reason": "PROVIDER_ID"
+        }
+      ]
+    },
+    {
+      "leagueId": "61",
+      "season": "2026/2027",
+      "teamId": "7844",
+      "team": "Vitória de Guimarães",
+      "status": "READY",
+      "problems": [],
+      "sourceTeamId": "b9e429bc-e70e-4651-9f9c-109a518d1add",
+      "fixtureId": "dd7eecb4-6606-4ad2-ac44-eff37a2c744a",
+      "kickoff": "2026-10-11T17:00:00.000Z",
+      "lineupId": "8b272e95-9a4c-4578-a839-c726fa886e0d",
+      "players": [
+        {
+          "sourceId": "9a161494-e6a2-46c1-8972-4411811abd49",
+          "name": "Oliwier Zych",
+          "playerId": "1117055",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "b9c958c6-8f5c-45f2-92f9-d7e43e1e36dc",
+          "name": "João Mendes",
+          "playerId": "1285528",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "2f9ef21d-77c9-4f6d-a5e1-d827b1681975",
+          "name": "Thiago Balieiro",
+          "playerId": "1709721",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "5e89941d-a8b4-43fc-90a7-fc99a54273ba",
+          "name": "Toni Borevković",
+          "playerId": "861962",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "1c15197c-6da7-4636-ad81-77e15c8415f6",
+          "name": "T. Strata",
+          "playerId": "1463449",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "c4f5c258-636f-4fdc-93ca-5f88021dd935",
+          "name": "Beni",
+          "playerId": "1372284",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "cd77afe4-a6bb-4db5-aa02-40f0d627a340",
+          "name": "Lohann Doucet",
+          "playerId": "1327518",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "95a70e0c-3740-415a-a4ad-9aa443a063f6",
+          "name": "Oumar Camara",
+          "playerId": "1692879",
+          "reason": "EXACT_NAME_IN_TEAM"
+        },
+        {
+          "sourceId": "1d1eb61d-fa35-42bc-a601-59739aa75e78",
+          "name": "Alan",
+          "playerId": "892751",
+          "reason": "EXACT_NAME_IN_TEAM"
+        },
+        {
+          "sourceId": "4c8287d8-fd30-44e3-816f-3fc50c96f871",
+          "name": "Gustavo Silva",
+          "playerId": "1393510",
+          "reason": "PROVIDER_ID"
+        },
+        {
+          "sourceId": "4f26d6db-627c-4a0a-a5da-38aa23a7dd35",
+          "name": "Arnel Jakupovic",
+          "playerId": "766730",
+          "reason": "PROVIDER_ID"
+        }
+      ],
+      "restoredRosterPlayerIds": [
+        "1709721"
+      ]
+    }
+  ]
+}

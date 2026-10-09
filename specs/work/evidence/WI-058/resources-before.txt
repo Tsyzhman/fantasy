@@ -1,0 +1,14 @@
+2026-10-09T08:47:11Z
+fantasy-scout-web 374.6MiB / 11.6GiB
+fantasy-scout-worker 1.586GiB / 11.6GiB
+fantasy-scout-postgres 1.123GiB / 11.6GiB
+               total        used        free      shared  buff/cache   available
+Mem:           11876        5327         701         285        5847        5951
+Swap:              0           0           0
+BEGIN
+SET
+outbox={ "SENT" : 10 }
+duplicate_mapping_keys=0
+duplicate_sorare_targets=0
+raw_cache={"rows" : 911, "bytes" : 13177981, "expired" : 0}
+COMMIT

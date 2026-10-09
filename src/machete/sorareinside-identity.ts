@@ -5,7 +5,7 @@ import type { SourcePlayer, SourceTeam } from "../providers/sorareinside/client"
 import { SORARE_TEAM_ALIASES } from "../providers/sorareinside/team-aliases";
 import { REVIEWED_SORARE_PLAYER_IDS } from "../providers/sorareinside/reviewed-player-ids";
 
-export type IdentityPlayer = { id: bigint; name: string; birthDate: Date | null };
+export type IdentityPlayer = { id: bigint; name: string; birthDate: Date | null; aliases?: readonly string[] };
 export type IdentityTeam = { id: bigint; name: string; country: string | null };
 const COUNTRIES: Record<string,string> = { ENG:"gb-eng", SCO:"gb-sct", FRA:"fr", GER:"de", ESP:"es", ITA:"it", POR:"pt", NED:"nl", RUS:"ru", TUR:"tr", BEL:"be", AUT:"at", GRE:"gr", DEN:"dk", SUI:"ch", NOR:"no", CRO:"hr", CZE:"cz", CYP:"cy", ISR:"il", SRB:"rs", UKR:"ua", POL:"pl", SWE:"se" };
 
@@ -30,8 +30,13 @@ export function resolveSourcePlayer(source: SourcePlayer, roster: IdentityPlayer
     if (source.birthDate && player.birthDate && source.birthDate!==player.birthDate.toISOString().slice(0,10)) return {player:null,reason:"BIRTH_DATE_CONFLICT"};
     return {player,reason:savedId===undefined?"REVIEWED_UUID":"PROVIDER_ID"};
   }
+  return resolveSourcePlayerByName(source,roster);
+}
+
+export function resolveSourcePlayerByName(source: Pick<SourcePlayer,"name"|"slug"|"birthDate">, roster: IdentityPlayer[]): { player: IdentityPlayer | null; reason: string } {
   const names = [source.name,source.slug.replace(/-\d{4}-\d{2}-\d{2}$/,"").replaceAll("-"," ")].map(normalizeLineupIdentity);
-  const candidates=roster.filter(p=>names.includes(normalizeLineupIdentity(p.name)));
+  const playerNames=(p:IdentityPlayer)=>[p.name,...(p.aliases??[])].map(normalizeLineupIdentity);
+  const candidates=roster.filter(p=>playerNames(p).some(name=>names.includes(name)));
   const compatible=candidates.filter(p=>!source.birthDate || !p.birthDate || source.birthDate===p.birthDate.toISOString().slice(0,10));
   if (compatible.length===1) return {player:compatible[0],reason:"EXACT_NAME_IN_TEAM"};
   if(candidates.length>0) return {player:null,reason:compatible.length===0?"BIRTH_DATE_CONFLICT":"AMBIGUOUS"};
@@ -40,7 +45,7 @@ export function resolveSourcePlayer(source: SourcePlayer, roster: IdentityPlayer
   const ignored=new Set(["de","del","dos","da","van","der","den","di","the","junior"]);
   const tokens=new Set(names.flatMap(n=>n.split(" ")).filter(n=>n.length>=3&&!ignored.has(n)));
   const birthdayCandidates=roster.filter(p=>source.birthDate && p.birthDate?.toISOString().slice(0,10)===source.birthDate);
-  const corroborated=birthdayCandidates.filter(p=>normalizeLineupIdentity(p.name).split(" ").some(t=>tokens.has(t)));
+  const corroborated=birthdayCandidates.filter(p=>playerNames(p).some(name=>name.split(" ").some(t=>tokens.has(t))));
   if(corroborated.length===1) return {player:corroborated[0],reason:"BIRTH_DATE_AND_NAME_IN_TEAM"};
   if(corroborated.length>1) return {player:null,reason:"AMBIGUOUS"};
   return {player:null,reason:candidates.length>0 && compatible.length===0 ? "BIRTH_DATE_CONFLICT" : compatible.length>1 ? "AMBIGUOUS" : "UNMAPPED"};

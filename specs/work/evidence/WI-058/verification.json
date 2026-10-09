@@ -1,0 +1,67 @@
+{
+  "workItem": "WI-058",
+  "version": "0.3.125",
+  "status": "verified-before-release",
+  "checks": [
+    {
+      "name": "focused-regressions",
+      "status": "passed",
+      "tests": 37,
+      "failed": 0
+    },
+    {
+      "name": "typescript",
+      "status": "passed"
+    },
+    {
+      "name": "changed-file-eslint",
+      "status": "passed"
+    },
+    {
+      "name": "version-policy",
+      "status": "passed",
+      "baseVersion": "0.3.124"
+    },
+    {
+      "name": "spec-snapshot",
+      "status": "current",
+      "fingerprint": "ffde66ccf01f6442da9dac74c8dfb9dd0f34a26412d771c5267aa81f24622bd0",
+      "diagnostics": []
+    },
+    {
+      "name": "deployment-runtime-contracts",
+      "status": "passed",
+      "tests": 22,
+      "failed": 0
+    }
+  ],
+  "sourceDryRun": {
+    "affectedScopes": 11,
+    "fullXiResolved": 11,
+    "unmappedBefore": 11,
+    "unmappedAfter": 0,
+    "ready": 9,
+    "unchanged": 228,
+    "rssMiB": 188,
+    "backupScopes": 13,
+    "realSourceError": "Bodo/Glimt supplies only six starters"
+  },
+  "production": null,
+  "messagesSent": 0,
+  "initialCandidateCheck": {
+    "url": "https://github.com/Tsyzhman/fantasy/actions/runs/37907514109",
+    "status": "passed",
+    "unitTests": 1282,
+    "databaseTests": 25
+  },
+  "prerequisiteRefresh": {
+    "scopes": 3,
+    "succeeded": 3,
+    "failed": 0,
+    "unavailable": 0,
+    "prices": 2222,
+    "recurringScopesBefore": 4,
+    "recurringScopesAfter": 7,
+    "intervalHours": 6
+  }
+}
