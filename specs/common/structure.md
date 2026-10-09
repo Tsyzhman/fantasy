@@ -10,6 +10,8 @@
 
 ## Sports trends и Telegram deadline
 
+Sports.ru club limits and cached Squad rule reads: `src/machete/sports_ru_team_limits.ts`, `src/machete/squad_planner.ts`; ownership `spec://modules/machete/FEAT-001-global-ranking-strategy#club-limits`. Import defaults and current-season contest migrations share the explicit league-ID matrix.
+
 Contracts: `spec://modules/machete/FEAT-006-sports-popularity#root`, `spec://modules/telegram/FEAT-007-deadline-assistant#root`, `spec://modules/telegram/INFRA-005-deadline-pipeline#root`. Ownership: `src/providers/sports-ru-trends/` (feed/article HTTP и parser), `src/server/sports-trends/` (collector, ownership snapshots, scheduler), `src/machete/sports-trends.ts` (read view), `src/server/telegram/` (link service, webhook, bot API, rate limits), `src/server/deadline-reports/` (campaign planning, classifier, renderer, delivery) и `src/app/api/telegram/webhook/`. Флаги `SPORTS_TRENDS_SYNC_ENABLED`, `TELEGRAM_LINK_ENABLED`, `TELEGRAM_DEADLINE_ENABLED`, `TELEGRAM_SEND_ENABLED`, `TELEGRAM_PAID_BROADCAST_ENABLED` по умолчанию off. Existing Sports price/squad import, Sorare, scoring and session auth retain their ownership. See `docs/TELEGRAM_DEADLINE_PLAN.md`.
 
 ## Runtime

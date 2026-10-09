@@ -1,0 +1,7 @@
+2026-10-09T11:05:48Z
+release=/var/www/fantasy-scout-releases/20261009T110029Z-v0.3.126-2bd70d9
+0.3.126
+2bd70d9d930f414c9bc223bedf17385f0157dfc4
+58f445c0b2240950e13b362f695d6adca3fa7b3c
+/fantasy-scout-web image=fantasy-scout:20261009T110029Z-v0.3.126-2bd70d9 version=0.3.126 revision=2bd70d9d930f414c9bc223bedf17385f0157dfc4 health=healthy restarts=0 oom=false
+/fantasy-scout-worker image=fantasy-scout:20261009T110029Z-v0.3.126-2bd70d9 version=0.3.126 revision=2bd70d9d930f414c9bc223bedf17385f0157dfc4 health=healthy restarts=0 oom=false

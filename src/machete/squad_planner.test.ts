@@ -143,6 +143,27 @@ test("Sports.ru snapshot readers replace legacy transfer banking without changin
   assert.equal(metadata.rules.maxBankedTransfers, 6);
 });
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#club-limits */
+test("Sports.ru shell applies the current club limit to a frozen legacy pool snapshot", async () => {
+  for (const leagueId of [48n, 57n, 61n, 71n]) {
+    const rules = Object.freeze({ ...defaultFantasySquadRules, maxPlayersPerTeam: 2 });
+    const metadata = Object.freeze({ version: 1, readiness: {}, rules, rounds: [], bookmakerFavorites: [],
+      historySeasonOptions: ["2026/2027"], priceStatus: {}, dataFreshness: {} });
+    const shell = await loadSportsRuFantasySquadPlannerShellData({
+      fantasyContest: { findFirst: async () => ({ id: "sports-contest", maxPlayersPerTeam: 3 }) },
+      userScoringPreference: { findUnique: async () => null },
+      fantasyPlayerPoolSnapshot: { findFirst: async () => ({ id: "legacy-snapshot", metadata }) },
+      userFantasySquad: { findMany: async () => [] }
+    } as never, "user", {
+      leagueId, season: "2026/2027", name: "Test", displayName: "Test", country: "Test",
+      providerLeagueId: String(leagueId), isCurrent: true, updatedAt: new Date("2026-10-09")
+    }, null, {});
+    assert.equal(shell.rules.maxPlayersPerTeam, 3);
+    assert.equal(shell.playerPoolSnapshotId, "legacy-snapshot");
+    assert.equal(metadata.rules.maxPlayersPerTeam, 2);
+  }
+});
+
 test("Sports.ru price popularity takes precedence over the forecast fallback", () => {
   assert.equal(resolveFantasyPlannerOwnership({ selectedByPercent: 57.28 }, { selectedByPercent: 12 }), 57.28);
   assert.equal(resolveFantasyPlannerOwnership({ selectedByPercent: null }, { selectedByPercent: 12 }), 12);

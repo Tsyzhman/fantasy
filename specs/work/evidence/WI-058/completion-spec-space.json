@@ -1,0 +1,14 @@
+{
+  "status": "current",
+  "fingerprint": "05e4252a1327a4a6dd4a9853cc87e4e7383aa87b37c3a5ad8b9ea0d0b592da7f",
+  "provenance": {
+    "commit": "c075e83837bdcea55de1f858f9ce33449b20fa2d",
+    "source": "working_tree",
+    "observedAt": "2026-10-09T11:12:35.64Z",
+    "workingTree": {
+      "dirty": true,
+      "materialPaths": []
+    }
+  },
+  "diagnostics": []
+}

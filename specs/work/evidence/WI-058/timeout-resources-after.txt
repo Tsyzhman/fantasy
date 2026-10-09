@@ -1,0 +1,29 @@
+2026-10-09T11:06:59Z
+fantasy-scout-web 108MiB / 11.6GiB
+fantasy-scout-worker 1.737GiB / 11.6GiB
+fantasy-scout-postgres 814.1MiB / 11.6GiB
+/fantasy-scout-web status=healthy restarts=0 oom=false
+/fantasy-scout-worker status=healthy restarts=0 oom=false
+               total        used        free      shared  buff/cache   available
+Mem:           11876        5518         786         285        5571        5538
+Swap:              0           0           0
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/vda3       119G   65G   48G  58% /
+TYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE
+Images          72        43        50.58GB   5.881GB (11%)
+Containers      52        44        190.2MB   454.7kB (0%)
+Local Volumes   71        38        4.841GB   94.01MB (1%)
+Build Cache     397       0         28.46GB   934.1MB
+20261009T110029Z-v0.3.126-2bd70d9
+20261009T094307Z-v0.3.125-52ea689
+BEGIN
+SET
+outbox={ "PENDING" : 3, "SENT" : 10 }
+duplicate_delivery_keys=0
+duplicate_message_ids=0
+duplicate_mapping_keys=0
+duplicate_sorare_targets=0
+duplicate_refresh_keys=0
+duplicate_price_keys=0
+raw_cache={"rows" : 932, "bytes" : 13492148, "expired" : 0}
+COMMIT

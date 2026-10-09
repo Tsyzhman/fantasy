@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.127 - 2026-10-09
+
+- Restore three players per club in Sports.ru Turkey, Championship, Netherlands and Portugal; repair current-season contest limits and apply current rules when reading older Squad snapshots.
+
 ## 0.3.126 - 2026-10-09
 
 - Give validated Sports.ru price batches a bounded 60-second write transaction so ordinary tournament refreshes are not canceled by the five-second default under startup load.

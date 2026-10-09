@@ -49,3 +49,9 @@ The next complete importer pass has zero PLAYERS_UNMAPPED/APPLY_ERROR/MAPPING_CO
 The 0.3.125 worker's first scheduled Spain refresh failed at 10:03:43 UTC: Prisma canceled the interactive price batch after 5151 ms against its implicit 5000 ms limit. This was a transaction deadline, not a bad tournament HRU or unavailable source. The last valid Spain snapshot was preserved.
 
 Internet/forum research preceded the correction: [Prisma ORM transaction options](https://www.prisma.io/docs/orm/v6/prisma-client/queries/transactions) document the five-second default and per-transaction timeout; the Stack Overflow P2028 discussion corroborates the symptom. The repository client supports that option. Bound only the validated price-write batch to 60 seconds, with HTTP outside the transaction and atomic rollback preserved; do not change the global Prisma defaults.
+
+## Final recurring-refresh proof
+
+Release 0.3.126 completed all seven recurring Sports.ru scopes with 4,703 prices and no errors; Spain's 733 rows now refresh successfully. No saved selections moved/refreshed, duplicate selections removed or stale prices deleted. Public health, both OCI labels and the manifest match the deployed source commit/tree.
+
+The startup importer retained all 14 control fingerprints and refreshed their accepted source metadata; all have 11 active starters and one goalkeeper. Its three APPLIED scopes are newly published full XI for Elversberg, Genclerbirligi and Chelsea. Two new player UUIDs resolve by exact name in the active team (Noah Darvich and Rafael Luis). Mapping, reverse-target, refresh, price and message duplicate checks remain zero. Global source coverage remains PARTIAL with the same five missing forecasts, 19 absent team/match assignments and the six-player Bodo/Glimt source response.

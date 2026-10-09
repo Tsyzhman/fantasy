@@ -1,0 +1,58 @@
+{
+  "schemaVersion": "1",
+  "repository": "C:\\Users\\Nik\\Documents\\fantasy_export",
+  "status": "passed",
+  "checks": [
+    {
+      "id": "required:AGENTS.md",
+      "status": "passed",
+      "detail": "present"
+    },
+    {
+      "id": "required:specs/protocols/BOOT.md",
+      "status": "passed",
+      "detail": "present"
+    },
+    {
+      "id": "required:specs/SPEC-MAP.md",
+      "status": "passed",
+      "detail": "present"
+    },
+    {
+      "id": "required:specs/common/main.md",
+      "status": "passed",
+      "detail": "present"
+    },
+    {
+      "id": "required:specs/common/structure.md",
+      "status": "passed",
+      "detail": "present"
+    },
+    {
+      "id": "skill:file-parity",
+      "status": "passed",
+      "detail": "13 files"
+    },
+    {
+      "id": "entrypoint:claude-import",
+      "status": "passed",
+      "detail": "CLAUDE.md imports AGENTS.md"
+    },
+    {
+      "id": "board:unique",
+      "status": "passed",
+      "detail": "58 work items"
+    },
+    {
+      "id": "state:standalone",
+      "status": "passed",
+      "detail": "standalone repository workflow"
+    },
+    {
+      "id": "spec-space:current",
+      "status": "passed",
+      "detail": "18 typed specs"
+    }
+  ],
+  "errors": []
+}
