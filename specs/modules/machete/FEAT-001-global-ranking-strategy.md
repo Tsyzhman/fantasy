@@ -88,10 +88,13 @@ unused free transfers bank up to five, and extra transfers cost four points.
 
 ### Provider club limits {#club-limits}
 
+The user's corrected requirement is authoritative: club limits and transfer
+quotas are separate rules.
+
 Sports.ru Championship (48), Netherlands (57), Portugal (61) and Turkey (71)
-allow three players from one club; the fourth is rejected by manual selection,
+allow two players from one club; the third is rejected by manual selection,
 validation and automatic selection. Import defaults use the explicit league-ID
-matrix. Correct existing default-two contests only for Sports.ru 2026/2027 in
+matrix. Correct the erroneously raised default-three contests only for Sports.ru 2026/2027 in
 these four leagues, preserving other competitions and historical seasons.
 The Squad snapshot shell reads the current contest's club limit without
 rewriting cached player payloads or saved squads; stale snapshot metadata cannot
@@ -130,7 +133,7 @@ Points of responsibility with `@spec`: `src/server/global-strategy-providers.ts`
 
 ## 12. Changelog {#changelog}
 
-- 2026-10-09: WI-059 — three club players in Championship, Netherlands, Portugal and Turkey, with current contest rules over stale snapshot metadata.
+- 2026-10-09: WI-059 — preserve the user's corrected two-player club cap in Championship, Netherlands, Portugal and Turkey, with current contest rules over stale snapshot metadata.
 - 2026-10-08: WI-055 — correct Sports.ru to three transfers per round without accumulation, including older snapshot readers.
 - 2026-10-04: WI-046 — terminating full-pool refresh processes preserve serialized publication and release native working memory.
 

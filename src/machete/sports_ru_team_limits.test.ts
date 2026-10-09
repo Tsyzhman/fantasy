@@ -10,7 +10,7 @@ import { fantasyRulesForLeague } from "./squad_planner";
 import { canAddFantasyPlayer, defaultFantasySquadRules, selectionForPlayer, summarizeFantasySquad, type FantasyPlannerPlayer } from "./squad_logic";
 
 /** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#club-limits */
-test("four corrected Sports.ru leagues accept the third club player and reject the fourth", () => {
+test("four Sports.ru leagues accept the second club player and reject the third", () => {
   const pool = (["GK", "DEF", "MID", "FWD"] as const).map((position, index): FantasyPlannerPlayer => ({
     id: String(index + 1), playerId: String(index + 1), name: `Player ${index + 1}`, teamId: "10",
     teamName: "Test club", leagueName: "Test league", position, positionGroup: position,
@@ -22,10 +22,10 @@ test("four corrected Sports.ru leagues accept the third club player and reject t
     const league = { leagueId, season: "2026/2027", name: "Test league", displayName: "Test league",
       country: "Test", providerLeagueId: String(leagueId), isCurrent: true, updatedAt: new Date("2026-10-09") };
     const rules = { ...defaultFantasySquadRules, ...fantasyRulesForLeague(league, null) };
-    assert.equal(canAddFantasyPlayer(pool[2], pool, selections.slice(0, 2), rules), true, `${leagueId}: third`);
-    assert.equal(canAddFantasyPlayer(pool[3], pool, selections.slice(0, 3), rules), false, `${leagueId}: fourth`);
-    assert.equal(summarizeFantasySquad(pool, selections.slice(0, 3), rules, 1).violations.some(v => v.includes("3/2")), false);
-    assert.equal(summarizeFantasySquad(pool, selections, rules, 1).violations.some(v => v.includes("4/3")), true);
+    assert.equal(canAddFantasyPlayer(pool[1], pool, selections.slice(0, 1), rules), true, `${leagueId}: second`);
+    assert.equal(canAddFantasyPlayer(pool[2], pool, selections.slice(0, 2), rules), false, `${leagueId}: third`);
+    assert.equal(summarizeFantasySquad(pool, selections.slice(0, 2), rules, 1).violations.some(v => v.includes("2/2")), false);
+    assert.equal(summarizeFantasySquad(pool, selections.slice(0, 3), rules, 1).violations.some(v => v.includes("3/2")), true);
   }
 });
 
@@ -33,14 +33,14 @@ test("Sports.ru club limits are explicit for every supported competition", () =>
   assert.deepEqual(sportsRuMaxPlayersPerTeamByLeagueId, {
     "42": 3,
     "47": 3,
-    "48": 3,
+    "48": 2,
     "53": 3,
     "54": 3,
     "55": 3,
-    "57": 3,
-    "61": 3,
+    "57": 2,
+    "61": 2,
     "63": 3,
-    "71": 3,
+    "71": 2,
     "73": 3,
     "77": 2,
     "87": 3

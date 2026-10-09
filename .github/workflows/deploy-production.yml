@@ -79,6 +79,10 @@ jobs:
           python3 -m pip install beautifulsoup4==4.14.3
           python3 -m unittest discover -s scripts/franchise-analytics -p 'test_*.py'
 
+      # @spec spec://common/INFRA-006-continuous-deployment#acceptance
+      - name: Verify continuous deployment and rollback
+        run: python3 scripts/continuous-deployment.test.py
+
       - name: Package exact Git commit
         id: release
         shell: bash

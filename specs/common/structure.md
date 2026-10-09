@@ -74,6 +74,8 @@ Sports fantasy weeks: `src/khl/fantasy-calendar.ts` resolves agreeing club obser
 
 ## Release transport {#release-transport}
 
+Continuous rollout ownership: `spec://common/INFRA-006-continuous-deployment#root`, `scripts/deploy-production-docker.sh`, `scripts/production-web-routing.py`, `scripts/check-online-migrations.py` and the production relay adapter. Keep the serving web running until a verified candidate on the alternate loopback port receives traffic through a validated graceful Caddy reload. Builds, backups and migration rehearsals run without stopping the serving website.
+
 The immutable GitHub production promoter keeps its SSH channel alive every 15 seconds and terminates an unresponsive channel after four unanswered probes. Authentication, host verification, release ancestry/checksums and automatic rollback remain mandatory. Docker dependency downloads use a 60-second request timeout, three retries, and bounded 1–10 second retry delays; a failed download stops the candidate without replacing production. A disconnected promotion is inspected before retrying so that collectors, canaries and release processes are never duplicated.
 
 <a name="documentation"></a>
@@ -98,6 +100,8 @@ workflow copies are intentional matching client entry points.
 <a name="changelog"></a>
 
 ## Changelog {#changelog}
+
+- 2026-10-09: WI-060 — own the continuous production rollout, isolated Caddy upstream switch and compatible migration guard.
 
 - 2026-10-04: WI-046 — isolate the hourly full Squad refresh while preserving scheduler serialization and atomic READY publication.
 

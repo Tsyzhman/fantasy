@@ -1,0 +1,38 @@
+{
+  "workItem": "WI-059",
+  "version": "0.3.127",
+  "status": "superseded-by-user-correction",
+  "checks": {
+    "baseVersion": "0.3.126",
+    "versionPolicy": "passed",
+    "specFingerprint": "8b5dbc2cdb66d8ddf17277a7604a19e003954030348890f89b484fe042acf626",
+    "focusedTests": 134,
+    "typecheck": "passed",
+    "specStatus": "current",
+    "changedFileEslint": "passed",
+    "failed": 0
+  },
+  "baseline": {
+    "affectedContests": 4,
+    "cap": 2,
+    "storedSnapshotsWithOldCap": 12
+  },
+  "production": null,
+  "messagesSent": 0,
+  "candidateCheck": {
+    "url": "https://github.com/Tsyzhman/fantasy/actions/runs/37942778226",
+    "commit": "b7682f32c2597f9f457e36d727f91723790d7efc",
+    "dependencyAudit": "passed",
+    "tree": "75c6ca842d65e49c5b47744fda1c23f8162b496a",
+    "typecheck": "passed",
+    "status": "passed",
+    "tests": 1286,
+    "databaseTests": 25,
+    "build": "passed",
+    "lint": "passed"
+  },
+  "deploy": {
+    "status": "success",
+    "url": "https://github.com/Tsyzhman/fantasy/actions/runs/37943575468"
+  }
+}

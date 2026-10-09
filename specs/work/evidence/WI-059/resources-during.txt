@@ -1,0 +1,11 @@
+2026-10-09T14:28:13Z
+/var/www/fantasy-scout-releases/20261009T110029Z-v0.3.126-2bd70d9
+20261009T142552Z-v0.3.127-b7682f3
+fantasy-scout-web 554.2MiB / 11.6GiB
+fantasy-scout-worker 1.938GiB / 11.6GiB
+fantasy-scout-postgres 1.127GiB / 11.6GiB
+               total        used        free      shared  buff/cache   available
+Mem:           11876        7275         243         308        4357        3980
+Swap:              0           0           0
+/fantasy-scout-web health=healthy restarts=0 oom=false
+/fantasy-scout-worker health=healthy restarts=0 oom=false

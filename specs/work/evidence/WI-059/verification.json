@@ -1,21 +1,24 @@
 {
+  "correctedRequirement": "Two per club in league IDs 48, 57, 61, 71",
   "workItem": "WI-059",
-  "version": "0.3.127",
   "status": "verified-before-release",
-  "checks": {
-    "baseVersion": "0.3.126",
-    "versionPolicy": "passed",
-    "specFingerprint": "8b5dbc2cdb66d8ddf17277a7604a19e003954030348890f89b484fe042acf626",
-    "focusedTests": 134,
-    "typecheck": "passed",
-    "specStatus": "current",
-    "changedFileEslint": "passed",
-    "failed": 0
-  },
-  "baseline": {
+  "version": "0.3.128",
+  "liveCorrection": {
+    "before": 3,
     "affectedContests": 4,
-    "cap": 2,
-    "storedSnapshotsWithOldCap": 12
+    "noWebRestart": true,
+    "savedSquadsChanged": 0,
+    "readerVerified": 4,
+    "after": 2
+  },
+  "checks": {
+    "typecheck": "passed",
+    "changedFileEslint": "passed",
+    "failed": 0,
+    "focusedTests": 134,
+    "specStatus": "current",
+    "specFingerprint": "0f916cb96f07edebe33009c409e3454a091c925d6c086f1f0ff8a1676dc769f4",
+    "workflowStatus": "passed"
   },
   "production": null,
   "messagesSent": 0

@@ -1,0 +1,22 @@
+{
+  "production": null,
+  "workItem": "WI-060",
+  "version": "0.3.128",
+  "checks": {
+    "deploymentTests": 10,
+    "typecheck": "passed",
+    "rollbackScenarios": [
+      "unready-web",
+      "unready-worker",
+      "routing-failure",
+      "public-health-failure",
+      "termination-after-switch"
+    ],
+    "failed": 0,
+    "shellSyntax": "passed",
+    "specStatus": "current",
+    "specFingerprint": "0f916cb96f07edebe33009c409e3454a091c925d6c086f1f0ff8a1676dc769f4",
+    "workflowStatus": "passed"
+  },
+  "status": "verified-before-release"
+}

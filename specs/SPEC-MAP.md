@@ -6,6 +6,7 @@ Canon for Fantasy Scout. Work status lives in `BOARD.md`; this file is the catal
 
 | Document | Responsibility |
 |---|---|
+| [specs/common/INFRA-006-continuous-deployment.md](common/INFRA-006-continuous-deployment.md) | Active: verified second web version, graceful traffic switch, compatible online migrations and rollback |
 | [specs/common/PROP-001-workflow-validation.md](common/PROP-001-workflow-validation.md) | Active: explicit workflow modes, local validator contracts and mirrored-client parity |
 | [specs/modules/machete/FEAT-008-platform-transfer-trends.md](modules/machete/FEAT-008-platform-transfer-trends.md) | Active: platform-only squad changes against the latest published round, per league |
 | [specs/modules/franchises/FEAT-005-franchise-analytics.md](modules/franchises/FEAT-005-franchise-analytics.md) | Active: franchise analytics, calendar ranges, complete personal histories, freezes and xFP |

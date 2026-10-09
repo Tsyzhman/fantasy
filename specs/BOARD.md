@@ -6,7 +6,8 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
-| [WI-059](work/WI-059-four-league-club-limits.md) | Three club players in four Sports.ru leagues | FEAT-001 | @tsyzhman | 2026-10-09 | — |
+| [WI-060](work/WI-060-continuous-production-deployment.md) | Continuous production deployment | INFRA-006 | @tsyzhman | 2026-10-09 | — |
+| [WI-059](work/WI-059-four-league-club-limits.md) | Preserve two club players in four Sports.ru leagues | FEAT-001 | @tsyzhman | 2026-10-09 | — |
 | [WI-056](work/WI-056-compact-deadline-findings.md) | Compact Telegram deadline findings | FEAT-007, INFRA-005 | @tsyzhman | 2026-10-09 | — |
 | [WI-055](work/WI-055-sports-transfer-limit.md) | Three Sports.ru transfers per round | FEAT-001 | @tsyzhman | 2026-10-08 | — |
 

@@ -1,8 +1,13 @@
 # Changelog
 
+## 0.3.128 - 2026-10-09
+
+- Preserve the correct two-player club cap in Sports.ru Turkey, Championship, Netherlands and Portugal; reject the third player and read current contest rules through older Squad snapshots.
+- Keep the serving website running while preparing a second version; switch traffic through a checked graceful Caddy reload, retain prior static assets and refuse migrations without exact reviewed online compatibility.
+
 ## 0.3.127 - 2026-10-09
 
-- Restore three players per club in Sports.ru Turkey, Championship, Netherlands and Portugal; repair current-season contest limits and apply current rules when reading older Squad snapshots.
+- Temporarily raised the club limit in Sports.ru Turkey, Championship, Netherlands and Portugal to three; corrected back to two in 0.3.128. Apply current contest rules when reading older Squad snapshots.
 
 ## 0.3.126 - 2026-10-09
 

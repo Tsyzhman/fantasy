@@ -41,9 +41,9 @@ previous-season prices must not be relabelled as current real data.
 ## Scheduled Sync
 
 Club limits use the shared explicit CoreLeague-ID matrix. Championship (48),
-Netherlands (57), Portugal (61) and Turkey (71) allow three players per club.
+Netherlands (57), Portugal (61) and Turkey (71) allow two players per club.
 The Squad snapshot shell uses the current contest limit even when its cached
-metadata still contains the former two-player rule.
+metadata contains a different rule.
 
 ```bash
 SPORTS_RU_FANTASY_SYNC_ENABLED=true

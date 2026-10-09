@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# @spec spec://common/INFRA-006-continuous-deployment#root
 set -Eeuo pipefail
 
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
@@ -22,13 +23,15 @@ worker="fantasy-scout-worker"
 postgres="fantasy-scout-postgres"
 fpl_relay="fantasy-scout-fpl-relay"
 fpl_vpn_container="${FPL_VPN_CONTAINER_NAME:-sharovik-vpn}"
-fpl_relay_volume="fantasy-scout-fpl-relay"
 fpl_relay_candidate_volume="fantasy-scout-fpl-relay-candidate-$release"
 fpl_relay_socket="/run/fpl-relay/fpl.sock"
 image="fantasy-scout:$release"
 target="$release_root/$release"
 expected_archive="/tmp/fantasy-scout-release-$release.tar.gz"
 canary="fantasy-scout-canary-$release"
+web_candidate="fantasy-scout-web-candidate-$release"
+static_current="fantasy-scout-static-current-$release"
+static_previous="fantasy-scout-static-previous-$release"
 web_rollback="fantasy-scout-web-rollback-pre-$release"
 worker_rollback="fantasy-scout-worker-rollback-pre-$release"
 fpl_relay_candidate="fantasy-scout-fpl-relay-candidate-$release"
@@ -46,10 +49,15 @@ image_created=0
 setup_image_created=0
 rehearsal_created=0
 rehearsal_db=""
-schema_migration_started=0
 schema_migration_attempted=0
-migration_stopped=0
 old_current_target=""
+candidate_web_promoted=0
+candidate_relay_promoted=0
+new_worker_created=0
+traffic_switched=0
+old_port=""
+candidate_port=""
+old_commit=""
 
 validate_inputs() {
   [[ "$release" =~ ^[0-9]{8}T[0-9]{6}Z-v[0-9]+\.[0-9]+\.[0-9]+-[0-9a-f]{7,40}$ ]] || {
@@ -208,43 +216,54 @@ wait_for_fpl_relay() {
   return 1
 }
 
-production_schema_migration_applied() {
-  local migration finished
-  for migration in "${pending_migrations[@]}"; do
-    if ! finished="$(
-      docker exec "$postgres" psql -U fantasy_app -d fantasy_scout -Atc \
-        "SELECT CASE WHEN finished_at IS NOT NULL AND rolled_back_at IS NULL THEN 1 ELSE 0 END FROM \"_prisma_migrations\" WHERE migration_name = '$migration'"
-    )"; then
-      return 2
+wait_for_release() {
+  local name="$1" expected_commit="$2"
+  for attempt in $(seq 1 40); do
+    if docker exec "$name" node -e \
+      "fetch('http://127.0.0.1:3000/api/health').then(async r=>{const p=await r.json();process.exit(r.ok&&p.release?.commit===process.argv[1]?0:1)}).catch(()=>process.exit(1))" \
+      "$expected_commit" >/dev/null 2>&1
+    then
+      echo "READY_CONTAINER=$name commit=$expected_commit"
+      return 0
     fi
-    [[ "$finished" == "1" ]] && return 0
+    sleep 2
   done
+  echo "Container did not become healthy with the requested commit: $name" >&2
   return 1
 }
 
-rollback_swap() {
-  set +e
-  docker container rm -f "$web" "$worker" >/dev/null 2>&1 || true
-  docker container rm -f "$fpl_relay" >/dev/null 2>&1 || true
-  docker volume rm "$fpl_relay_volume" >/dev/null 2>&1 || true
-  if (( old_web_renamed == 1 )) && container_exists "$web_rollback"; then
-    docker container rename "$web_rollback" "$web"
-    docker container start "$web" >/dev/null
-  fi
-  if (( old_worker_renamed == 1 )) && container_exists "$worker_rollback"; then
-    docker container rename "$worker_rollback" "$worker"
-    docker container start "$worker" >/dev/null
-  fi
-  if (( old_fpl_relay_renamed == 1 )) && container_exists "$fpl_relay_rollback"; then
-    docker container rename "$fpl_relay_rollback" "$fpl_relay"
-    docker container start "$fpl_relay" >/dev/null
-  fi
+switch_web_traffic() {
+  sudo -n python3 "$target/scripts/production-web-routing.py" --from-port "$1" --to-port "$2"
+}
+
+probe_public_release() {
+  local expected_commit="$1"
+  curl -fsS --connect-timeout 3 --max-time 10 \
+    --resolve fantasy.tsyzhman.ru:443:127.0.0.1 https://fantasy.tsyzhman.ru/api/health \
+    | python3 -c 'import json,sys; p=json.load(sys.stdin); sys.exit(0 if p.get("status")=="ok" and p.get("release",{}).get("commit")==sys.argv[1] else 1)' "$expected_commit"
 }
 
 cleanup() {
   exit_code=$?
+  trap '' HUP INT TERM
   set +e
+  if (( exit_code != 0 )) && [[ "$phase" == "swap" ]]; then
+    if ! rollback_swap; then
+      echo "Traffic rollback needs recovery; both web versions and release artifacts were retained." >&2
+      rm -f -- "$web_env" "$worker_env" "$rehearsal_env" "$build_log"
+      exit "$exit_code"
+    fi
+    if [[ -n "$old_current_target" ]] && [[ "$(readlink -f "$current_link" 2>/dev/null || true)" == "$target" ]]; then
+      rollback_link="/var/www/.fantasy-scout-current-rollback-$release"
+      ln -s "$old_current_target" "$rollback_link"
+      mv -Tf "$rollback_link" "$current_link"
+    fi
+  fi
   docker container rm -f "$canary" >/dev/null 2>&1 || true
+  docker container rm -f "$static_current" "$static_previous" >/dev/null 2>&1 || true
+  if (( exit_code != 0 )); then
+    docker container rm -f "$web_candidate" >/dev/null 2>&1 || true
+  fi
   if container_exists "$fpl_relay_candidate"; then
     docker container rm -f "$fpl_relay_candidate" >/dev/null 2>&1 || true
     docker volume rm "$fpl_relay_candidate_volume" >/dev/null 2>&1 || true
@@ -259,32 +278,8 @@ cleanup() {
     if [[ "$phase" == "deployed" ]]; then
       exit "$exit_code"
     fi
-    if (( schema_migration_attempted == 1 && schema_migration_started == 0 )); then
-      migration_state=1
-      production_schema_migration_applied || migration_state=$?
-      if (( migration_state == 0 || migration_state == 2 )); then
-        schema_migration_started=1
-      fi
-    fi
-    if (( schema_migration_started == 1 )); then
-      echo "Production schema migration started; old runtime remains stopped for manual recovery." >&2
-    elif (( migration_stopped == 1 )); then
-      docker container start "$worker" "$web" >/dev/null 2>&1 || true
-    fi
-    if [[ "$phase" == "swap" ]]; then
-      if (( schema_migration_started == 0 )); then
-        rollback_swap
-        if [[ -n "$old_current_target" ]] \
-          && [[ "$(readlink -f "$current_link" 2>/dev/null || true)" == "$target" ]]
-        then
-          rollback_link="/var/www/.fantasy-scout-current-rollback-$release"
-          ln -s "$old_current_target" "$rollback_link"
-          mv -Tf "$rollback_link" "$current_link"
-        fi
-      else
-        docker container rm -f "$web" "$worker" "$fpl_relay" >/dev/null 2>&1 || true
-        echo "Refusing automatic container rollback after a production schema migration." >&2
-      fi
+    if (( schema_migration_attempted == 1 )); then
+      echo "Only reviewed online migrations were attempted; serving old runtime was preserved. Inspect migration state before retrying." >&2
     fi
     if (( image_created == 1 )); then
       docker image rm "$image" >/dev/null 2>&1 || true
@@ -304,8 +299,14 @@ cleanup() {
   exit "$exit_code"
 }
 trap cleanup EXIT
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 143' TERM
 
 validate_inputs
+
+exec 7>/home/deploy/.cache/fantasy-production-deploy.lock
+flock -n 7 || { echo "Another production promotion is active." >&2; exit 1; }
 
 actual_sha="$(sha256sum "$archive" | awk '{print $1}')"
 [[ "$actual_sha" == "$expected_sha" ]] || {
@@ -321,6 +322,9 @@ for required_file in \
   Dockerfile \
   package.json \
   scripts/deploy-production-docker.sh \
+  scripts/production-rollout.sh \
+  scripts/production-web-routing.py \
+  scripts/check-online-migrations.py \
   scripts/fpl-vpn-relay.mjs \
   scripts/prune-production-artifacts.sh \
   src/app/api/machete/squads/formula-adaptations/route.ts \
@@ -333,6 +337,8 @@ do
     exit 1
   }
 done
+
+source "$target/scripts/production-rollout.sh"
 [[ ! -e "$target/.git" ]] || {
   echo "Release archive unexpectedly contains .git." >&2
   exit 1
@@ -424,6 +430,17 @@ for migration in "${expected_migrations[@]}"; do
   fi
 done
 
+# A migration without exact reviewed compatibility must never trigger downtime.
+python3 "$target/scripts/check-online-migrations.py" "$target/prisma/migrations" "${pending_migrations[@]}"
+old_port="$(python3 "$target/scripts/production-web-routing.py" --current-port)"
+published_port="$(docker container inspect "$web" --format '{{range (index .NetworkSettings.Ports "3000/tcp")}}{{.HostPort}}{{end}}')"
+[[ "$published_port" == "$old_port" ]] || { echo "Serving web port disagrees with Caddy." >&2; exit 1; }
+published_host="$(docker container inspect "$web" --format '{{range (index .NetworkSettings.Ports "3000/tcp")}}{{.HostIp}}{{end}}')"
+[[ "$published_host" == "127.0.0.1" ]] || { echo "Serving web must use a bounded loopback binding." >&2; exit 1; }
+if [[ "$old_port" == "3000" ]]; then candidate_port=3001; else candidate_port=3000; fi
+old_commit="$(cat "$current_link/.release-commit")"
+probe_public_release "$old_commit"
+
 run_docker_build "Runtime" \
   --target runtime \
   --build-arg "APP_RELEASE_VERSION=$version" \
@@ -472,9 +489,6 @@ if (( ${#pending_migrations[@]} > 0 )); then
     echo "Refusing migration while $active_jobs_before_migration ingestion job(s) are active." >&2
     exit 1
   }
-
-  migration_stopped=1
-  docker container stop -t 30 "$worker" "$web" >/dev/null
 
   backup_root="/var/backups/fantasy-scout"
   backup_path="$backup_root/pre-${release}-migration.dump"
@@ -551,7 +565,6 @@ PY
     --env-file "$web_env" \
     --network fantasy-scout_default \
     "$setup_image" npm run prisma:migrate:deploy
-  schema_migration_started=1
   setup_image_created=0
   docker image rm "$setup_image" >/dev/null
 
@@ -566,6 +579,7 @@ PY
     }
   done
   echo "Applied production migrations: ${#applied_migrations[@]}"
+  probe_public_release "$old_commit"
 fi
 
 if (( ${#pending_migrations[@]} > 0 )); then
@@ -581,8 +595,7 @@ active_jobs="$(
   exit 1
 }
 
-if (( migration_stopped == 0 )); then
-  for active in "$web" "$worker"; do
+for active in "$web" "$worker"; do
     [[ "$(docker container inspect "$active" --format '{{.State.Status}}')" == "running" ]] || {
       echo "Active container is not running: $active" >&2
       exit 1
@@ -591,8 +604,7 @@ if (( migration_stopped == 0 )); then
       echo "Active container is not healthy: $active" >&2
       exit 1
     }
-  done
-fi
+done
 old_current_target="$(readlink -f "$current_link")"
 [[ "$old_current_target" == "$release_root/"* && -d "$old_current_target" ]] || {
   echo "Current release target is invalid: $old_current_target" >&2
@@ -611,42 +623,38 @@ old_current_target="$(readlink -f "$current_link")"
   exit 1
 }
 
-phase="swap"
-docker container stop -t 30 "$worker" "$web" >/dev/null 2>&1 || true
-docker container rename "$web" "$web_rollback"
-old_web_renamed=1
-docker container rename "$worker" "$worker_rollback"
-old_worker_renamed=1
-if container_exists "$fpl_relay"; then
-  docker container stop -t 10 "$fpl_relay" >/dev/null 2>&1 || true
-  docker container rename "$fpl_relay" "$fpl_relay_rollback"
-  old_fpl_relay_renamed=1
-fi
-docker container rm -f "$fpl_relay_candidate" >/dev/null
-docker volume rm "$fpl_relay_candidate_volume" >/dev/null
-docker volume rm "$fpl_relay_volume" >/dev/null 2>&1 || true
-start_fpl_relay "$fpl_relay" "$fpl_relay_volume" unless-stopped
-wait_for_fpl_relay "$fpl_relay_volume" 100000 || {
-  docker logs --tail 40 "$fpl_relay" >&2 || true
-  echo "Promoted FPL VPN relay failed its official bootstrap probe." >&2
-  exit 1
-}
+# Extract original image assets, not an accumulated runtime asset cache.
+# Each release contains assets from precisely the current and previous images.
+mkdir "$target/runtime-static"
+previous_image="$(docker container inspect "$web" --format '{{.Config.Image}}')"
+docker create --name "$static_previous" --entrypoint true "$previous_image" >/dev/null
+docker cp "$static_previous:/app/.next/static/." "$target/runtime-static/"
+docker container rm "$static_previous" >/dev/null
+docker create --name "$static_current" --entrypoint true "$image" >/dev/null
+docker cp "$static_current:/app/.next/static/." "$target/runtime-static/"
+docker container rm "$static_current" >/dev/null
+printf '%s\n%s\n' "$image" "$previous_image" > "$target/.release-static-images"
 
 docker create \
-  --name "$web" \
+  --name "$web_candidate" \
   --restart unless-stopped \
   --env-file "$web_env" \
   -e INGESTION_WORKER_IN_PROCESS=false \
   -e "FPL_RELAY_SOCKET_PATH=$fpl_relay_socket" \
   --network fantasy-scout_default \
   --mount type=volume,src=fantasy-scout_fantasy-scout-uploads,dst=/app/storage/uploads \
-  --mount "type=volume,src=$fpl_relay_volume,dst=/run/fpl-relay,readonly" \
-  -p 127.0.0.1:3000:3000 \
+  --mount "type=volume,src=$fpl_relay_candidate_volume,dst=/run/fpl-relay,readonly" \
+  --mount "type=bind,src=$target/runtime-static,dst=/app/.next/static,readonly" \
+  -p "127.0.0.1:$candidate_port:3000" \
   --log-driver json-file \
   --log-opt max-size=20m \
   --log-opt max-file=5 \
   "$image" >/dev/null
 
+docker container start "$web_candidate" >/dev/null
+wait_for_release "$web_candidate" "$commit"
+
+create_production_worker() {
 docker create \
   --name "$worker" \
   --restart unless-stopped \
@@ -658,44 +666,20 @@ docker create \
   --network fantasy-scout_default \
   --mount type=volume,src=fantasy-scout_fantasy-scout-uploads,dst=/app/storage/uploads \
   --mount type=volume,src=fantasy-scout-franchises,dst=/app/storage/franchises \
-  --mount "type=volume,src=$fpl_relay_volume,dst=/run/fpl-relay,readonly" \
+  --mount "type=volume,src=$fpl_relay_candidate_volume,dst=/run/fpl-relay,readonly" \
   --log-driver json-file \
   --log-opt max-size=20m \
   --log-opt max-file=5 \
   "$image" >/dev/null
+}
 
-docker container start "$web" "$worker" >/dev/null
-production_healthy=0
-for attempt in $(seq 1 40); do
-  if docker exec "$web" node -e \
-    "fetch('http://127.0.0.1:3000/api/health').then(async r=>{const p=await r.json();process.exit(r.ok&&p.release?.commit===process.argv[1]?0:1)}).catch(()=>process.exit(1))" \
-    "$commit" \
-    && docker exec "$worker" node -e \
-      "fetch('http://127.0.0.1:3000/api/health').then(async r=>{const p=await r.json();process.exit(r.ok&&p.release?.commit===process.argv[1]?0:1)}).catch(()=>process.exit(1))" \
-      "$commit"
-  then
-    production_healthy=1
-    break
-  fi
-  sleep 2
-done
-[[ "$production_healthy" -eq 1 ]] || {
-  echo "New production containers did not become healthy with the requested commit." >&2
-  exit 1
-}
-[[ "$(docker container inspect "$web" --format '{{.RestartCount}}')" == "0" ]] || {
-  echo "New web container restarted during promotion." >&2
-  exit 1
-}
-[[ "$(docker container inspect "$worker" --format '{{.RestartCount}}')" == "0" ]] || {
-  echo "New worker container restarted during promotion." >&2
-  exit 1
-}
+promote_running_candidate
 
 link_tmp="/var/www/.fantasy-scout-current-$release"
 ln -s "$target" "$link_tmp"
 mv -Tf "$link_tmp" "$current_link"
 phase="deployed"
+drain_previous_runtime
 
 # Timer follows the immutable current-release symlink; one service and flock
 # prevent overlapping full source refreshes. Forecast/odds cadence stays in worker.

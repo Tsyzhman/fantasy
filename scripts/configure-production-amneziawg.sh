@@ -302,6 +302,16 @@ done < <(docker volume ls --filter label=com.fantasy-scout.role=fpl-vpn-config -
 }
 
 app_image="$(docker container inspect "$web_container" --format '{{.Config.Image}}')"
+
+# @spec spec://common/INFRA-006-continuous-deployment#runtime
+# Continuous releases use an isolated socket volume for each relay generation.
+mounted_relay_volume="$(docker container inspect "$web_container" --format '{{range .Mounts}}{{if eq .Destination "/run/fpl-relay"}}{{.Name}}{{end}}{{end}}')"
+if [[ "$mounted_relay_volume" == "fantasy-scout-fpl-relay" || "$mounted_relay_volume" =~ ^fantasy-scout-fpl-relay-candidate-[0-9]{8}T[0-9]{6}Z-v[0-9]+\.[0-9]+\.[0-9]+-[0-9a-f]{7,40}$ ]]; then
+  relay_volume="$mounted_relay_volume"
+else
+  echo "Web relay volume is outside the bounded production volume names." >&2
+  exit 1
+fi
 docker image inspect "$app_image" >/dev/null
 configured_timeout="$({ docker container inspect "$web_container" --format '{{range .Config.Env}}{{println .}}{{end}}' || true; } \
   | awk -F= '$1 == "FPL_PRICE_SYNC_TIMEOUT_MS" {print $2}' | tail -n 1)"

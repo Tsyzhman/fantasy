@@ -85,6 +85,19 @@ for service in web worker fpl-relay; do
   done
 done
 
+# @spec spec://common/INFRA-006-continuous-deployment#recovery
+# Keep socket volumes mounted by either retained generation. Remove only unused
+# exact project relay generations, never database or upload volumes.
+while IFS= read -r relay_volume; do
+  [[ "$relay_volume" == "fantasy-scout-fpl-relay" || "$relay_volume" =~ ^fantasy-scout-fpl-relay-candidate-[0-9]{8}T[0-9]{6}Z-v[0-9]+\.[0-9]+\.[0-9]+-[0-9a-f]{7,40}$ ]] || continue
+  if [[ -n "$(docker container ls -aq --filter "volume=$relay_volume")" ]]; then
+    echo "KEEP_RELAY_VOLUME=$relay_volume"
+  else
+    echo "REMOVE_RELAY_VOLUME=$relay_volume"
+    if [[ "$mode" == "apply" ]]; then docker volume rm "$relay_volume" >/dev/null; fi
+  fi
+done < <(docker volume ls --format '{{.Name}}')
+
 declare -A protected_releases=()
 protected_releases["$(basename -- "$current_target")"]=1
 
