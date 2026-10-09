@@ -1,7 +1,7 @@
 {
   "workItem": "WI-058",
-  "version": "0.3.125",
-  "status": "verified-before-release",
+  "version": "0.3.126",
+  "status": "verified-awaiting-price-timeout-release",
   "checks": [
     {
       "name": "focused-regressions",
@@ -46,7 +46,32 @@
     "backupScopes": 13,
     "realSourceError": "Bodo/Glimt supplies only six starters"
   },
-  "production": null,
+  "production": {
+    "repeatTotals": {
+      "NO_MATCH_OR_TEAM_MAPPING": 19,
+      "NO_PREDICTION_FOR_NEAREST_MATCH": 5,
+      "UNCHANGED": 235,
+      "APPLIED": 2,
+      "SOURCE_ERROR": 1
+    },
+    "deploy": "https://github.com/Tsyzhman/fantasy/actions/runs/37912544049",
+    "duplicateSorareTargets": 0,
+    "fullActiveXi": 14,
+    "tree": "6493880f410a9a44ea76bd6510de2a8f9450ef5a",
+    "originallyRejectedScopes": 11,
+    "resolvedOriginallyRejectedScopes": 11,
+    "commit": "52ea68936241aa51f3ee4c36f4538fcf91b6b7cd",
+    "duplicateRefreshKeys": 0,
+    "goalkeeperCountPerXi": 1,
+    "controlScopes": 14,
+    "restarts": 0,
+    "oom": false,
+    "release": "20261009T094307Z-v0.3.125-52ea689",
+    "repeatApplyExplanation": "Two Galatasaray scopes applied a newly published XI; all 14 control fingerprints were unchanged.",
+    "duplicateMappingKeys": 0,
+    "version": "0.3.125",
+    "expiredRawCacheRows": 0
+  },
   "messagesSent": 0,
   "initialCandidateCheck": {
     "url": "https://github.com/Tsyzhman/fantasy/actions/runs/37907514109",
@@ -63,5 +88,30 @@
     "recurringScopesBefore": 4,
     "recurringScopesAfter": 7,
     "intervalHours": 6
+  },
+  "finalCandidateCheck": {
+    "url": "https://github.com/Tsyzhman/fantasy/actions/runs/37911885297",
+    "status": "passed",
+    "commit": "52ea68936241aa51f3ee4c36f4538fcf91b6b7cd",
+    "tree": "6493880f410a9a44ea76bd6510de2a8f9450ef5a",
+    "databaseTests": 25,
+    "unitTests": 1284
+  },
+  "priceTimeout": {
+    "specFingerprint": "05e4252a1327a4a6dd4a9853cc87e4e7383aa87b37c3a5ad8b9ea0d0b592da7f",
+    "typecheck": "passed",
+    "changedFileEslint": "passed",
+    "workflowValidation": "passed",
+    "focusedTests": 22,
+    "newLimitMs": 60000,
+    "versionPolicy": {
+      "status": "passed",
+      "baseVersion": "0.3.125"
+    },
+    "observedElapsedMs": 5151,
+    "failed": 0,
+    "production": null,
+    "status": "verified-locally-awaiting-production",
+    "previousLimitMs": 5000
   }
 }

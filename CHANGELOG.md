@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.126 - 2026-10-09
+
+- Give validated Sports.ru price batches a bounded 60-second write transaction so ordinary tournament refreshes are not canceled by the five-second default under startup load.
+
 ## 0.3.125 - 2026-10-09
 
 - Resolve SorareInside full names against fresh, verified Sports.ru identity aliases and birth dates, rejecting contradictory provider bindings and club assignments.
