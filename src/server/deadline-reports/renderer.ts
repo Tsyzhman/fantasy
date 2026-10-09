@@ -1,4 +1,4 @@
-import { findingMarker, findingRoleSuffix, splitFindingsByLineup, type DeadlinePlayerFinding } from "./classifier";
+import { findingMarker, findingRoleSuffix, splitFindingsByLineup, type DeadlineFindingReason, type DeadlinePlayerFinding } from "./classifier";
 import { moscowShortDate, moscowTimeLabel } from "./config";
 
 /**
@@ -71,13 +71,54 @@ export function renderScheduleBlock(fixtures: DeadlineFixtureLine[]): string {
   return `Матчи тура\n${lines.join("\n")}`;
 }
 
-function renderFindings(title: string, findings: DeadlinePlayerFinding[]): string | null {
+function compactReason(reason: DeadlineFindingReason): string {
+  switch (reason.code) {
+    case "BLANK": return "нет матча в туре";
+    case "OUT_OF_XI": return "вне прогноза основы SorareInside";
+    case "ALT_ZERO": return "ALT 0";
+    case "PARTIAL_XI_COVERAGE": return "прогноз основы есть не для всех матчей";
+    case "UNKNOWN_DATA": return reason.text.replace(/^Нет надёжных данных: /, "");
+  }
+}
+
+function renderFindings(title: string, findings: DeadlinePlayerFinding[], maxLineLength: number): string | null {
   if (findings.length === 0) return null;
-  const lines = findings.map((finding) => {
-    const reasons = finding.reasons.map((reason) => reason.text).join("; ");
-    return `${findingMarker(finding)} ${escapeHtml(finding.name)}${findingRoleSuffix(finding)} — ${escapeHtml(reasons)}.`;
-  });
+  const groups = new Map<string, DeadlinePlayerFinding[]>();
+  for (const finding of findings) {
+    const key = JSON.stringify(finding.reasons.map((reason) => [reason.code, reason.text]));
+    const group = groups.get(key);
+    if (group) group.push(finding);
+    else groups.set(key, [finding]);
+  }
+  const lines: string[] = [];
+  for (const group of groups.values()) {
+    const first = group[0]!;
+    const prefix = `${findingMarker(first)} `;
+    const suffix = ` — ${escapeHtml(first.reasons.map(compactReason).join("; "))}.`;
+    let names: string[] = [];
+    for (const finding of group) {
+      const name = `${escapeHtml(finding.name)}${findingRoleSuffix(finding)}`;
+      if (names.length > 0 && prefix.length + [...names, name].join(", ").length + suffix.length > maxLineLength) {
+        lines.push(`${prefix}${names.join(", ")}${suffix}`);
+        names = [];
+      }
+      names.push(name);
+    }
+    lines.push(`${prefix}${names.join(", ")}${suffix}`);
+  }
   return `${title}\n${lines.join("\n")}`;
+}
+
+function additionalDegradedNotes(input: DeadlineReportInput): string[] {
+  const shown = new Set<string>();
+  for (const finding of input.findings) {
+    for (const reason of finding.reasons) {
+      if (reason.code === "UNKNOWN_DATA" || reason.code === "PARTIAL_XI_COVERAGE") {
+        shown.add(`${finding.name}: ${reason.text.replace(/^Нет надёжных данных: /, "")}`);
+      }
+    }
+  }
+  return [...new Set(input.degraded)].filter((note) => !shown.has(note));
 }
 
 const POPULARITY_LABELS: Record<DeadlinePopularityKind, string> = {
@@ -109,24 +150,29 @@ export function renderDeadlineReport(input: DeadlineReportInput): RenderedDeadli
     : "Дедлайн уточняется";
   const header = `${input.tag} · ${deadlineLabel}`;
   const sections: string[] = [];
+  const maxLength = input.maxLength ?? TELEGRAM_MESSAGE_LIMIT;
+  const maxLineLength = maxLength - header.length - 32;
 
   if (input.squadSource.kind === "SPORTS_PUBLISHED") {
     const tourLabel = input.squadSource.tourLabel;
     const sourceLabel = tourLabel
       ? /тур/i.test(tourLabel)
-        ? `опубликованный состав, ${escapeHtml(tourLabel)}`
-        : `опубликованный тур ${escapeHtml(tourLabel)}`
+        ? `${escapeHtml(tourLabel)} (опубликованный)`
+        : `${escapeHtml(tourLabel)} тур (опубликованный)`
       : "опубликованный состав";
-    sections.push(`Состав Sports: ${sourceLabel}.` + (input.squadSource.note ? `\n${escapeHtml(input.squadSource.note)}` : ""));
+    sections.push(`Состав Sports: ${sourceLabel}.` + (input.squadSource.note ? ` ${escapeHtml(input.squadSource.note)}` : ""));
   } else {
     sections.push(`Состав Scout: сохранённый план${input.squadSource.tourLabel ? ` тура ${escapeHtml(input.squadSource.tourLabel)}` : ""}. Не подтверждён Sports.`);
   }
 
   const { starters, bench } = splitFindingsByLineup(input.findings);
-  sections.push(renderFindings("Проверьте основу:", starters) ?? "Проверьте основу:\nРисков не найдено по доступным данным.");
-  const benchBlock = renderFindings("Проверьте скамейку:", bench);
+  const degradedNotes = additionalDegradedNotes(input);
+  sections.push(renderFindings("Проверьте основу:", starters, maxLineLength) ?? (degradedNotes.length > 0
+    ? "Проверьте основу:\nПроверка неполная — см. причины ниже."
+    : "Проверьте основу:\nРисков не найдено по доступным данным."));
+  const benchBlock = renderFindings("Проверьте скамейку:", bench, maxLineLength);
   if (benchBlock) sections.push(benchBlock);
-  if (input.degraded.length > 0) sections.push(`Нет надёжных данных: ${escapeHtml(input.degraded.slice(0, 8).join("; "))}${input.degraded.length > 8 ? "…" : ""}`);
+  if (degradedNotes.length > 0) sections.push(`Не хватает данных: ${escapeHtml(degradedNotes.slice(0, 8).join("; "))}${degradedNotes.length > 8 ? "…" : ""}`);
 
   sections.push(renderScheduleBlock(input.fixtures));
 
@@ -138,7 +184,6 @@ export function renderDeadlineReport(input: DeadlineReportInput): RenderedDeadli
   const squadUrl = safeUrl(input.squadUrl);
   if (squadUrl) sections.push(`<a href="${escapeHtml(squadUrl)}">Открыть состав ↗</a>`);
 
-  const maxLength = input.maxLength ?? TELEGRAM_MESSAGE_LIMIT;
   const whole = `${header}\n${sections.join("\n\n")}`;
   if (whole.length <= maxLength) return { parts: [whole], partsCount: 1 };
 

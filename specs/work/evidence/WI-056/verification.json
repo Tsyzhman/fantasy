@@ -1,0 +1,52 @@
+{
+  "workItem": "WI-056",
+  "version": "0.3.123",
+  "preview": "User-supplied Russia example, without fetching or sending data",
+  "before": {
+    "characters": 1329,
+    "affectedPlayerLines": 6,
+    "repeatedDegradation": true
+  },
+  "after": {
+    "characters": 851,
+    "affectedPlayerLines": 4,
+    "repeatedDegradation": false,
+    "affectedPlayers": 6,
+    "eachPlayerOccurrences": [
+      {
+        "name": "Хуссем Мрезиг",
+        "count": 1
+      },
+      {
+        "name": "Мирлинд Даку",
+        "count": 1
+      },
+      {
+        "name": "Андрес Аларкон",
+        "count": 1
+      },
+      {
+        "name": "Александр Беляев",
+        "count": 1
+      },
+      {
+        "name": "Александр Сандрачук",
+        "count": 1
+      },
+      {
+        "name": "Егор Любаков",
+        "count": 1
+      }
+    ]
+  },
+  "reductionPercent": 36,
+  "localChecks": {
+    "focusedTests": {
+      "passed": 14,
+      "failed": 0
+    },
+    "typecheck": "passed",
+    "focusedLint": "passed",
+    "releaseVersion": "passed"
+  }
+}

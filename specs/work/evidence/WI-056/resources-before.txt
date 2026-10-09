@@ -1,0 +1,25 @@
+observed_at=2026-10-09T06:40:48Z
+{"status":"ok","uptimeSeconds":86788,"release":{"version":"0.3.122","commit":"5581d71ef814055dbbbf50c26f08b9ee9057d6f7"}}
+/fantasy-scout-web health=healthy restarts=0 oom=false revision=5581d71ef814055dbbbf50c26f08b9ee9057d6f7
+/fantasy-scout-worker health=healthy restarts=0 oom=false revision=5581d71ef814055dbbbf50c26f08b9ee9057d6f7
+/fantasy-scout-postgres health=healthy restarts=0 oom=false revision=
+fantasy-scout-web memory=882.8MiB / 11.6GiB cpu=0.00% pids=21
+fantasy-scout-worker memory=2.274GiB / 11.6GiB cpu=30.11% pids=21
+fantasy-scout-postgres memory=968.1MiB / 11.6GiB cpu=16.84% pids=27
+               total        used        free      shared  buff/cache   available
+Mem:           11876        6392        1384         285        4099        4886
+Swap:              0           0           0
+running_canaries=0
+release_directories=2
+PID                 PPID                RSS                 COMMAND
+159247              159208              2082680             next-server (v
+112628	/app/storage/franchises/source/http
+162428	/app/storage/franchises/source/squads
+BEGIN
+SET
+duplicate_outbox_keys=0
+duplicate_sent_message_ids=0
+outbox_states={ "SENT" : 5 }
+raw_cache={"rows" : 890, "bytes" : 12869452, "expired" : 0}
+duplicate_active_jobs=0
+COMMIT
