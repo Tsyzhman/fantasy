@@ -603,6 +603,34 @@ test("Sports.ru resync keeps a verified transferred-out price excluded", async (
   assert.equal(result.unmatched, 0);
 });
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#player-identity */
+test("Sports.ru resync preserves an explicit source-identity exclusion despite an exact roster candidate", async () => {
+  const cleared: unknown[] = [];
+  const storedPrice = {
+    ...price("kian fitz jim", "MID"), id: "conflicting-source-price",
+    leagueId: 57n, season: "2026/2027", playerId: 1218556n, teamId: 8593n,
+    teamName: "Ajax"
+  };
+  const prisma = {
+    fantasyPlayerPrice: {
+      findMany: async () => [storedPrice],
+      update: async ({data}: {data: unknown}) => { cleared.push(data); return storedPrice; }
+    },
+    teamPlayerSeason: { findMany: async () => [roster("Kian Fitz Jim", "MID", {name: "Ajax"}, 1218556n)] },
+    providerEntityMap: { upsert: async () => { throw new Error("An explicitly excluded source identity must not be rematched"); }, findMany: async () => [{
+      providerEntityId: storedPrice.id, internalEntityId: null,
+      status: "EXCLUDED", matchedBy: "MANUAL_SOURCE_IDENTITY_CONFLICT"
+    }] },
+    corePlayer: { findMany: async () => [] },
+    leagueSeasonTeam: { findMany: async () => [{teamId: 8593n, team: {name: "Ajax"}}] }
+  } as unknown as PrismaClient;
+  const result = await autoMapSportsRuFantasyPlayers(prisma, {leagueId: 57n, season: "2026/2027"});
+  assert.deepEqual(cleared, [{playerId: null, teamId: null}]);
+  assert.equal(result.excluded, 1);
+  assert.equal(result.matched, 0);
+  assert.equal(result.unmatched, 0);
+});
+
 test("sports ru mapping recognizes transliterated Sports.ru team names", () => {
   const result = scoreSportsRuCandidate(
     { ...price("nikita bocharov", "GK"), teamName: "Ростов" },

@@ -1,0 +1,199 @@
+{
+  "workItem": "WI-063",
+  "status": "COMPLETE",
+  "at": "2026-10-09T19:12:34.546Z",
+  "scope": {
+    "season": "2026/2027",
+    "contests": 13,
+    "prices": 9159,
+    "canonicalPlayersChecked": 36927,
+    "rosterRowsChecked": 11362,
+    "primaryTeamRosters": 219,
+    "primaryRosterMembers": 6371,
+    "primaryProfileRequests": 7353,
+    "uniquePrimaryProfiles": 7353,
+    "availablePrimaryProfiles": 7351,
+    "unavailablePrimaryProfiles": [
+      {
+        "id": "2130513",
+        "error": "TypeError: Cannot read properties of null (reading 'id')"
+      },
+      {
+        "id": "1682162",
+        "error": "TypeError: Cannot read properties of null (reading 'id')"
+      }
+    ]
+  },
+  "before": {
+    "mapped": 8672,
+    "unresolved": 486,
+    "excluded": 1
+  },
+  "after": {
+    "mapped": 9066,
+    "sportsMapped": 8399,
+    "fplMapped": 667,
+    "unresolved": 91,
+    "excluded": 2,
+    "mappedButInvisible": 0
+  },
+  "repairs": {
+    "restoredPreviouslyMissingCards": 395,
+    "correctedWrongCanonicalBindings": 13,
+    "correctedStaleManualClubLocks": 24,
+    "canonicalBirthdaysRestored": 7189,
+    "officialBirthdayCorrections": 1,
+    "correctedSavedCanonicalReferences": 7,
+    "removedSavedSelections": 0
+  },
+  "checks": {
+    "ci": {
+      "run": 37975157987,
+      "unitPassed": 1301,
+      "unitFailed": 0,
+      "databaseIntegrationPassed": 25,
+      "lintErrors": 0,
+      "existingLintWarnings": 236,
+      "typecheck": "passed",
+      "build": "passed",
+      "migrationDrift": "passed",
+      "dependencyAudit": "passed",
+      "evidence": "ci-receipt.json"
+    },
+    "local": {
+      "functionalSuitePassed": 1298,
+      "performanceThresholdFailedUnderConcurrentLintAndTypecheck": 1,
+      "platformSkipped": 2,
+      "isolatedPerformanceRecheck": "passed under 6.1 seconds"
+    },
+    "normalRefresh": {
+      "sportsSynced": 12,
+      "deletedSourceRows": 0,
+      "fpl": "Idempotent SKIPPED on final release; real normal SYNCED import of all 667 players and 20 teams is recorded in normal-refresh-full-fpl-summary.json",
+      "exclusionPreserved": true,
+      "providerChoicesPreserved": true,
+      "evidence": "normal-refresh-final-summary.json",
+      "fullFplImportEvidence": "normal-refresh-full-fpl-summary.json"
+    },
+    "publication": {
+      "sequential": true,
+      "scopes": 12,
+      "snapshots": 12,
+      "sportsPlayers": 8399,
+      "failed": 0,
+      "evidence": "pool-publication-final-summary.json"
+    },
+    "realReaders": {
+      "contests": 13,
+      "mappedPrices": 9066,
+      "errors": 0,
+      "completeSnapshotSetChecked": true,
+      "fplSourcePricesAndRolesAgree": true,
+      "evidence": "readers-final.jsonl",
+      "special": [
+        {
+          "leagueId": "53",
+          "playerId": "1575945",
+          "query": "oso",
+          "matches": 1,
+          "searchMatches": true,
+          "name": "Хоакин Мартинес Гауна",
+          "canonicalName": "Oso",
+          "price": 5.5,
+          "teamId": "9848"
+        },
+        {
+          "leagueId": "54",
+          "playerId": "186557",
+          "query": "ronnow",
+          "matches": 1,
+          "searchMatches": true,
+          "name": "Фредерик Реннов",
+          "canonicalName": "Frederik Rønnow",
+          "price": 4.5,
+          "teamId": "8149"
+        },
+        {
+          "leagueId": "61",
+          "playerId": "892751",
+          "query": "аланзиньо",
+          "matches": 1,
+          "searchMatches": true,
+          "name": "Аланзиньо",
+          "canonicalName": "Alan",
+          "price": 7,
+          "teamId": "7844"
+        }
+      ]
+    },
+    "savedSquads": {
+      "count": 145,
+      "selections": 2162,
+      "providerCardChoicesPreserved": true,
+      "fullHashAfterIntentionalIdentityRepair": "18b42ca9b13be954a082ee9cce69bc298a5a9e0d92e705d2f82f6eb6006b5aad",
+      "unchangedDuringRefreshAndPublication": true,
+      "sharedRosterHashUnchangedDuringPublication": true
+    },
+    "rules": {
+      "turkey": 2,
+      "championship": 2,
+      "netherlands": 2,
+      "portugal": 2
+    },
+    "cache": {
+      "retainedReadyRevisionsPerContest": 3,
+      "duplicates": 0,
+      "orphanPoolRows": 0,
+      "pendingRefreshRequests": 0,
+      "rawExpiredRows": 0,
+      "rawCompressedBytes": "14726613",
+      "telegramSent": 10,
+      "telegramAgentDelivery": "none during WI-063",
+      "evidence": "cache-audit-final.json"
+    },
+    "resources": {
+      "temporaryPublisherPeakRssBytes": 1903190016,
+      "temporaryChildrenExited": true,
+      "servingRestarts": 0,
+      "oomKilled": false,
+      "caddyPidBeforeAndAfter": 754,
+      "hostAvailableMb": 6181,
+      "webMemoryMiB": 133.3,
+      "workerMemoryGiB": 1.419,
+      "postgresMemoryGiB": 1.074,
+      "evidence": "resources-final.txt"
+    },
+    "temporaryCleanup": {
+      "removedFiles": 49,
+      "remainingOwnedFiles": 0,
+      "evidence": "temporary-cleanup.json"
+    }
+  },
+  "deployment": {
+    "version": "0.3.130",
+    "commit": "39e65c199a331751f9d7ce12d65d35810531da79",
+    "image": "sha256:1601d287ffcc72e849f5a4ae7872debaac76a818ced64e3142a0119493a275d0",
+    "release": "20261009T184704Z-v0.3.130-39e65c1",
+    "run": 37975152424,
+    "health": "ok",
+    "servingPort": 3001,
+    "oldServingReleaseRetainedForRollback": true,
+    "continuousPromotion": true,
+    "evidence": "deploy-receipt.json"
+  },
+  "sourceLimitations": {
+    "unmappedCurrentCards": 91,
+    "retainedProviderBirthdayDiscrepancies": 34,
+    "unavailableProfiles": 2,
+    "sourceBackedCyrillicNameScorerLimitations": 1,
+    "evidence": [
+      "remaining-source-limitations.json",
+      "retained-source-fact-discrepancies.json"
+    ]
+  },
+  "specSnapshot": {
+    "status": "current",
+    "fingerprint": "8b821b8f450f6ee164bcd6cd7ba6f953f32394f2027f34c8cc7a0a45e23f689a",
+    "diagnostics": []
+  }
+}

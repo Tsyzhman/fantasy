@@ -4,6 +4,8 @@ import { Prisma, type PrismaClient } from "@prisma/client";
 
 import { prisma as defaultPrisma } from "@/lib/db";
 import { normalizeName } from "@/lib/text";
+import { normalizeFantasyPlayerIdentityName } from "@/machete/player-identity";
+import { normalizeFantasyPosition } from "@/machete/squad_logic";
 import {
   FPL_BOOTSTRAP_URL,
   FPL_LEAGUE_ID,
@@ -28,7 +30,7 @@ import { replaceFantasyProviderSchedule } from "./fantasy-provider-schedule";
 
 const FPL_LOCK_KEY = "fantasy-scout:fpl:price-sync";
 const FPL_JOB_TYPE = "FPL_PRICE_SYNC";
-const FPL_PRICE_SYNC_FORMAT_VERSION = "provider-schedule-ownership-v4";
+const FPL_PRICE_SYNC_FORMAT_VERSION = "provider-schedule-ownership-identity-v5";
 
 export type FplPriceSyncResult = {
   status: "SYNCED" | "SKIPPED";
@@ -351,6 +353,7 @@ type FplMapping = {
   status: string;
 };
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#player-identity */
 async function resolveFplMappings(tx: Prisma.TransactionClient, contestId: string, bootstrap: FplBootstrap, rows: readonly FplPriceRow[]) {
   const providerPlayerIds = rows.map((row) => row.providerPlayerId);
   const providerTeamIds = bootstrap.teams.map((team) => String(team.id));
@@ -380,7 +383,7 @@ async function resolveFplMappings(tx: Prisma.TransactionClient, contestId: strin
   }
   const playerIdsByName = new Map<string, bigint[]>();
   for (const player of corePlayers) {
-    const key = normalizeName(player.name);
+    const key = normalizeFantasyPlayerIdentityName(player.name);
     const ids = playerIdsByName.get(key) ?? [];
     ids.push(player.id);
     playerIdsByName.set(key, ids);
@@ -430,7 +433,7 @@ async function resolveFplMappings(tx: Prisma.TransactionClient, contestId: strin
   for (const row of rows) {
     const map = existing.get(`PLAYER:${row.providerPlayerId}:PLAYER`);
     const existingInternalId = map?.status === "MATCHED" ? validBigInt(map.internalEntityId) : null;
-    const exactNameCandidates = playerIdsByName.get(normalizeName(row.fullName)) ?? [];
+    const exactNameCandidates = playerIdsByName.get(normalizeFantasyPlayerIdentityName(row.fullName)) ?? [];
     const exactRosterCandidates = exactNameCandidates.filter((playerId) => {
       const roster = rosterByPlayerId.get(String(playerId)) ?? [];
       const mappedTeam = teams.get(row.providerTeamId)?.internalId;
@@ -478,8 +481,10 @@ function fplPriceUpdate(row: FplPriceRow, teamName: string, teamId: bigint | nul
 
 function positionMatches(position: string | null, fplPosition: string) {
   if (!position) return false;
-  const normalized = position.trim().toUpperCase();
-  return normalized === fplPosition || (fplPosition === "GK" && ["GKP", "GOALKEEPER"].includes(normalized)) || (fplPosition === "FWD" && ["FW", "FORWARD"].includes(normalized));
+  const primaryCode = position.split(/[,;|]+/)[0]?.trim().toUpperCase() ?? "";
+  if (fplPosition === "MID" && ["LW", "RW"].includes(primaryCode)) return true;
+  const group = primaryCode === "GKP" ? "GK" : normalizeFantasyPosition(position);
+  return group !== "UNK" && group === normalizeFantasyPosition(fplPosition);
 }
 
 function hashFplSnapshot(bootstrap: FplBootstrap, fixtures: readonly FplFixture[]) {

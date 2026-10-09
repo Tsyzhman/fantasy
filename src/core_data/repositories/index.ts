@@ -112,16 +112,21 @@ export class CoreTeamRepository {
   }
 }
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#player-identity */
 export class CorePlayerRepository {
   constructor(private readonly prisma: PrismaRepositoryClient) {}
 
   async upsert(player: PlayerData) {
+    const data = playerData(player);
+    const { birthDate, ...observedWithoutBirthDate } = data;
     return this.prisma.corePlayer.upsert({
       where: { id: player.id },
-      update: playerData(player),
+      // Rosters and match payloads omit birthdays. Absence is not a correction
+      // of an identity fact already verified from the player's own profile.
+      update: birthDate ? data : observedWithoutBirthDate,
       create: {
         id: player.id,
-        ...playerData(player)
+        ...data
       }
     });
   }

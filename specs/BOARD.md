@@ -27,6 +27,7 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-063](work/archive/2026/WI-063-all-league-player-pool-audit.md) | Audit and repair all current football player pools | @tsyzhman | 2026-10-09 |
 | [WI-061](work/archive/2026/WI-061-alanzinho-portugal-mapping.md) | Restore Alanzinho in Portugal | @tsyzhman | 2026-10-09 |
 | [WI-058](work/archive/2026/WI-058-sorareinside-intake.md) | Repair rejected SorareInside XI ingestion | @tsyzhman | 2026-10-09 |
 | [WI-057](work/archive/2026/WI-057-deadline-forecast-freshness.md) | Verified forecasts in concise deadline reports | @tsyzhman | 2026-10-09 |

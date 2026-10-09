@@ -4,7 +4,24 @@ import test from "node:test";
 import type { PrismaClient } from "@prisma/client";
 
 import { OFFICIAL_TRANSFER_ROSTER_SOURCE } from "./models";
-import { CoreSeasonRosterRepository, CoreTeamRepository } from "./repositories";
+import { CorePlayerRepository, CoreSeasonRosterRepository, CoreTeamRepository } from "./repositories";
+
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#player-identity */
+test("a roster without a birthday preserves the verified player birthday through repeated imports", async () => {
+  const verified = new Date("2003-07-09T00:00:00.000Z");
+  let stored: Record<string, unknown> = { id: 1575945n, name: "Oso", birthDate: verified };
+  const prisma = { corePlayer: { upsert: async (input: { update: Record<string, unknown> }) => {
+    stored = { ...stored, ...input.update };return stored;
+  } } } as unknown as PrismaClient;
+  const repo = new CorePlayerRepository(prisma);
+  for (let round = 0; round < 2; round++) await repo.upsert({
+    id:1575945n,name:"Oso",birthDate:null,country:"ESP",rawRef:"1575945"
+  });
+  assert.equal(stored.birthDate, verified);
+  const corrected = new Date("2003-07-10T00:00:00.000Z");
+  await repo.upsert({id:1575945n,name:"Oso",birthDate:corrected,country:"ESP",rawRef:"1575945"});
+  assert.equal(stored.birthDate, corrected);
+});
 
 test("core team repository does not overwrite a named team with a FotMob placeholder", async () => {
   const upserts: unknown[] = [];

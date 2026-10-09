@@ -725,7 +725,7 @@ test("player-pool controls use two desktop rows and the search targets only play
   assert.match(squadPlannerSource, /toolbar={\(/);
   assert.match(squadPlannerSource, /mb-3 flex min-w-0 flex-wrap items-start gap-2 xl:flex-nowrap/);
   assert.match(squadPlannerSource, /placeholder=\{localizedText\(language, "Name", "Имя"\)\}/);
-  assert.match(squadPlannerSource, /player\.name\.toLowerCase\(\)\.includes\(normalizedQuery\)/);
+  assert.match(squadPlannerSource, /fantasyPlayerMatchesNameQuery\(player\.name, player\.fotmobName, normalizedQuery\)/);
   assert.doesNotMatch(squadPlannerSource, /`\$\{player\.name\} \$\{player\.teamName\}/);
   assert.match(squadPlannerSource, /grid-cols-2 gap-2 lg:grid-cols-5/);
   assert.match(squadPlannerSource, /en="Fits" ru="Проходит"/);

@@ -4,6 +4,7 @@ import { normalizeSportsRuPlayerName } from "@/lib/providers/sports-ru-fantasy";
 import { normalizeName } from "@/lib/text";
 
 import { normalizeFantasyPosition, type FantasyPositionGroup } from "./squad_logic";
+import { normalizeFantasyPlayerIdentityName } from "./player-identity";
 
 type SportsRuPriceLike = {
   id: string;
@@ -12,6 +13,8 @@ type SportsRuPriceLike = {
   teamName: string;
   fotmobPlayerName?: string | null;
   providerBirthDate?: Date | null;
+  providerStatPlayerId?: string | null;
+  lastSeenAt?: Date | null;
   position: string | null;
   price: number;
 };
@@ -431,7 +434,13 @@ const sportsRuTeamNamePairs = [
 // Reviewed against active UCL 2026/27 team identities, not fuzzy club matching.
 const europeanSportsTeamNames = [
   ["Буде-Глимт", "Bodø/Glimt"], ["Брюгге", "Club Brugge"],
-  ["Сабах", "Sabah FK"], ["Шахтер", "Shakhtar Donetsk"], ["Славия", "Slavia Prague"]
+  ["Сабах", "Sabah FK"], ["Шахтер", "Shakhtar Donetsk"], ["Славия", "Slavia Prague"],
+  ["ОФИ", "OFI Crete"], ["Ред Булл", "Salzburg"], ["Ференцварош", "Ferencváros"],
+  ["Виктория Пльзень", "Viktoria Plzeň"], ["Спарта Прага", "Sparta Prague"],
+  ["Юнион", "Union St.Gilloise"], ["Ягеллония", "Jagiellonia Białystok"],
+  ["Андерлехт", "Anderlecht"], ["Штурм", "Sturm Graz"], ["Лех", "Lech Poznań"],
+  ["Селтик", "Celtic"], ["Арарат-Армения", "Ararat Armenia"], ["Олимпиакос", "Olympiacos"],
+  ["Целе", "NK Celje"], ["Омония", "Omonia Nicosia"], ["Лиллестрем", "Lillestrøm"]
 ] as const;
 const sportsRuCanonicalTeamNames = new Map<string, string>();
 for (const [sportsName, fotmobName] of [...sportsRuTeamNamePairs, ...europeanSportsTeamNames]) {
@@ -440,6 +449,7 @@ for (const [sportsName, fotmobName] of [...sportsRuTeamNamePairs, ...europeanSpo
   sportsRuCanonicalTeamNames.set(canonicalName, canonicalName);
 }
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#player-identity */
 export async function autoMapSportsRuFantasyPlayers(
   prisma: PrismaClient,
   input: {
@@ -506,6 +516,22 @@ export async function autoMapSportsRuFantasyPlayers(
       return team ? [[price.id, team] as const] : [];
     })
   );
+  const catalogBirthDates = [...new Map(prices
+    .filter(price => catalogIdentityEvidenceIsFresh(price))
+    .map(price => [dateOnly(price.providerBirthDate!), price.providerBirthDate!] as const)).values()];
+  // Price-backed availability need not wait for FotMob's current roster. Search
+  // only observed birthdays, then require a strong canonical Latin name too.
+  const catalogPlayers = catalogBirthDates.length > 0 ? await prisma.corePlayer.findMany({
+    where: { source: "fotmob", birthDate: { in: catalogBirthDates } },
+    select: { id: true, name: true, birthDate: true }
+  }) : [];
+  const catalogByDate = new Map<string, typeof catalogPlayers>();
+  for (const player of catalogPlayers) {
+    if (!player.birthDate) continue;
+    const date = dateOnly(player.birthDate);
+    catalogByDate.set(date, [...(catalogByDate.get(date) ?? []), player]);
+  }
+  const catalogById = new Map(catalogPlayers.map(player => [String(player.id), player]));
   const claimedPlayerIds = new Set(existingClaims.flatMap((row) => row.playerId ? [String(row.playerId)] : []));
   let matched = 0;
   let manual = 0;
@@ -521,10 +547,18 @@ export async function autoMapSportsRuFantasyPlayers(
     removedDuplicateSelections += result.removedDuplicateSelections;
   }
 
-  const candidatesByPriceId = new Map(prices.map((price) => [
-    price.id,
-    buildSportsRuMappingCandidates(price, roster, authoritativeTeamByPriceId.get(price.id)?.teamId ?? null)
-  ]));
+  const candidatesByPriceId = new Map(prices.map((price) => {
+    const team = authoritativeTeamByPriceId.get(price.id) ?? null;
+    const active = buildSportsRuMappingCandidates(price, roster, team?.teamId ?? null);
+    const catalog = buildSportsRuCatalogCandidates(price,
+      price.providerBirthDate ? catalogByDate.get(dateOnly(price.providerBirthDate)) ?? [] : [], team);
+    const unique = new Map<string, SportsRuPlayerMappingCandidate>();
+    for (const candidate of [...active, ...catalog]) {
+      const prior = unique.get(candidate.playerId);
+      if (!prior || candidate.confidence > prior.confidence) unique.set(candidate.playerId, candidate);
+    }
+    return [price.id, [...unique.values()].sort((a,b) => b.confidence-a.confidence)] as const;
+  }));
   const orderedPrices = [...prices].sort((left, right) => {
     const leftManual = isManualMapping(mapsByPriceId.get(left.id)?.matchedBy) ? 1 : 0;
     const rightManual = isManualMapping(mapsByPriceId.get(right.id)?.matchedBy) ? 1 : 0;
@@ -535,7 +569,7 @@ export async function autoMapSportsRuFantasyPlayers(
 
   for (const price of orderedPrices) {
     const existing = mapsByPriceId.get(price.id);
-    if (existing?.matchedBy === manualTransferredOutMethod) {
+    if (existing?.status === "EXCLUDED" || existing?.matchedBy === manualTransferredOutMethod) {
       if (price.playerId || price.teamId) await clearPriceRosterMapping(prisma, price.id);
       excluded += 1;
       continue;
@@ -608,8 +642,13 @@ export async function autoMapSportsRuFantasyPlayers(
     const best = candidates[0] ?? null;
     const second = candidates[1] ?? null;
     const confident = isSafeAutomaticSportsRuCandidate(best, second);
-    const baseRosterEntry = confident ? rosterByPlayerId.get(best.playerId) ?? null : null;
     const authoritativeTeam = authoritativeTeamByPriceId.get(price.id) ?? null;
+    const catalogPlayer = confident ? catalogById.get(best.playerId) ?? null : null;
+    const activeRosterEntry = confident ? rosterByPlayerId.get(best.playerId) ?? null : null;
+    const baseRosterEntry = activeRosterEntry ?? (catalogPlayer && authoritativeTeam ? {
+      playerId: catalogPlayer.id, teamId: authoritativeTeam.teamId, position: price.position,
+      player: catalogPlayer, team: authoritativeTeam.team
+    } : null);
     const matchedRosterEntry = baseRosterEntry && authoritativeTeam
       ? {
           ...baseRosterEntry,
@@ -632,7 +671,7 @@ export async function autoMapSportsRuFantasyPlayers(
         contestId: input.contestId ?? undefined,
         internalEntityId: matchedRosterEntry ? String(matchedRosterEntry.playerId) : null,
         confidence: best?.confidence ?? 0,
-        matchedBy: matchedRosterEntry ? "AUTO_NAME_POSITION" : null,
+        matchedBy: matchedRosterEntry ? activeRosterEntry ? "AUTO_NAME_POSITION" : "AUTO_CANONICAL_BIRTH_DATE" : null,
         status: matchedRosterEntry ? "MATCHED" : "UNMATCHED"
       },
       create: {
@@ -644,7 +683,7 @@ export async function autoMapSportsRuFantasyPlayers(
         internalEntityType: internalPlayerEntityType,
         internalEntityId: matchedRosterEntry ? String(matchedRosterEntry.playerId) : null,
         confidence: best?.confidence ?? 0,
-        matchedBy: matchedRosterEntry ? "AUTO_NAME_POSITION" : null,
+        matchedBy: matchedRosterEntry ? activeRosterEntry ? "AUTO_NAME_POSITION" : "AUTO_CANONICAL_BIRTH_DATE" : null,
         status: matchedRosterEntry ? "MATCHED" : "UNMATCHED"
       }
     });
@@ -1069,14 +1108,42 @@ export function buildSportsRuMappingCandidates(
     .sort((left, right) => right.confidence - left.confidence || left.playerName.localeCompare(right.playerName));
 }
 
+function catalogIdentityEvidenceIsFresh(price: SportsRuPriceLike, now = new Date()) {
+  const age = price.lastSeenAt ? now.getTime() - price.lastSeenAt.getTime() : Infinity;
+  return Boolean(price.providerStatPlayerId && price.providerBirthDate
+    && price.providerBirthDate.getUTCFullYear() >= 1900 && price.providerBirthDate < now
+    && age >= -300_000 && age <= 48 * 60 * 60 * 1000
+    && normalizeFantasyPlayerIdentityName(price.fotmobPlayerName ?? "").split(" ").filter(Boolean).length >= 2);
+}
+
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#player-identity */
+export function buildSportsRuCatalogCandidates(
+  price: SportsRuPriceLike,
+  players: ReadonlyArray<RosterEntry["player"] & { id: bigint }>,
+  team: ActiveSeasonTeam | null,
+  now = new Date()
+) {
+  if (!team || !catalogIdentityEvidenceIsFresh(price, now)) return [];
+  const hint = normalizeFantasyPlayerIdentityName(price.fotmobPlayerName ?? "");
+  const candidates = buildSportsRuMappingCandidates(price, players
+    .filter(player => player.birthDate && dateOnly(player.birthDate) === dateOnly(price.providerBirthDate!)
+      && scoreNameMatch(hint, normalizeFantasyPlayerIdentityName(player.name)) >= autoNameConfidenceThreshold)
+    .map(player => ({ playerId: player.id, teamId: team.teamId, position: price.position, player, team: team.team })),
+  team.teamId);
+  // Resolve catalog ambiguity before removing identities claimed by another
+  // price; a claimed duplicate must not make its namesake look unique.
+  return candidates.length === 1 ? candidates : [];
+}
+
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#player-identity */
 export function scoreSportsRuCandidate(
   price: SportsRuPriceLike,
   entry: RosterEntry,
   authoritativeTeamId: bigint | null = null
 ) {
   const sportsName = normalizedSportsRuName(price.playerName, price.normalizedName);
-  const fotmobHintName = normalizeName(price.fotmobPlayerName ?? "");
-  const fotmobName = normalizeName(entry.player.name);
+  const fotmobHintName = normalizeFantasyPlayerIdentityName(price.fotmobPlayerName ?? "");
+  const fotmobName = normalizeFantasyPlayerIdentityName(entry.player.name);
   const sportsNameScore = scoreNameMatch(sportsName, fotmobName);
   const fotmobHintScore = scoreNameMatch(fotmobHintName, fotmobName);
   const birthDateMatches = Boolean(

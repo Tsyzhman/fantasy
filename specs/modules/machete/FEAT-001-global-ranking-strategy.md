@@ -70,6 +70,54 @@ Pure functions in `src/machete/global-strategy.ts` and `src/machete/global-strat
 
 `PATCH` of this route binds only the team of the associated profile in the selected season. `POST` maintains a compact recommendation audit: the server checks its own context and budget, and the sent forecast marks `CLIENT_EP_REPORTED`; This is not server-side verification of the forecast. The start and captain are selected separately for each round, the bench gives 0 EP until the auto-replacement model appears. Old pool snapshots are read by the regular UI and are sequentially rebuilt by workers in the absence of `providerIdentityVersion: 1`; incomplete mapping disables GLOBAL_AUTO until rebuilding.
 
+<a name="player-identity"></a>
+
+### Player identity and availability {#player-identity}
+
+Provider/core player-name comparison folds non-decomposing Latin letters using
+their CLDR Latin-ASCII equivalents (including ø/o, ł/l, æ/ae and ß/ss), before
+the existing accent and punctuation normalization. Display names and source
+identities are preserved. Name folding never relaxes uniqueness, birth-date,
+club or existing manual mapping conflict checks.
+
+The existing player-name search checks both the provider display name and
+canonical FotMob name, including public nicknames such as Oso. Accent/Latin
+letter folding applies to search while preserving Cyrillic letters and the
+display names. The search field, filters and export selection retain their flow.
+
+Shared canonical player imports preserve an established birthday when a roster
+or match payload does not contain one. A supplied non-null birthday remains an
+explicit observation; a newly created player may still have an unknown birthday.
+
+An unmapped Sports price observed within 48 hours may resolve against the
+canonical FotMob catalog when its current club resolves uniquely, its source
+stat identity supplies a canonical Latin name with at least two tokens, and
+both the complete birthday and a strong name comparison agree. Existing
+uniqueness and competing-price checks still apply. Missing or contradictory
+birthdays and stale observations cannot authorize this fallback. Availability
+comes from the current provider price; no shared roster is activated and no
+statistics or starter status are invented. Reviewed European club aliases are
+explicit pairs, never a fuzzy cross-club match.
+
+An explicitly reviewed `EXCLUDED` price identity remains excluded during
+automatic mapping and normal price refresh, regardless of the recorded
+exclusion reason. An exact catalog or roster candidate cannot undo that
+decision; returning the card to mapping requires an explicit admin action.
+
+FPL automatic identity matching still requires one exact normalized full name
+inside the mapped current club. Compare FotMob position codes using the existing
+fantasy position groups; LW/RW may be FPL MID, while a goalkeeper/outfield
+contradiction and unknown roles remain rejected. Successful mapping changes
+invalidate the price import's format-based idempotency key.
+
+Every fresh FPL price with an agreeing MATCHED provider player map, canonical
+player and club may supply a virtual current roster row to the planner, including
+when the shared FotMob membership is inactive or absent. Price foreign keys
+alone cannot authorize an override. Apply provider positions and current clubs
+for that pool without activating shared memberships or replacing their starter
+flags. Existing provider rules, saved selections and source-limited forecasts
+retain their behavior.
+
 <a name="transfer-rules"></a>
 
 ### Provider transfer rules {#transfer-rules}
@@ -133,6 +181,7 @@ Points of responsibility with `@spec`: `src/server/global-strategy-providers.ts`
 
 ## 12. Changelog {#changelog}
 
+- 2026-10-09: WI-063 — preserve verified birth dates and explicitly reviewed exclusions, require unique fresh name/date evidence for catalog identities, resolve reviewed European club aliases, search provider and canonical names, reconcile FPL position codes and include verified FPL price-backed virtual rosters without shared starter mutations.
 - 2026-10-09: WI-059 — preserve the user's corrected two-player club cap in Championship, Netherlands, Portugal and Turkey, with current contest rules over stale snapshot metadata.
 - 2026-10-08: WI-055 — correct Sports.ru to three transfers per round without accumulation, including older snapshot readers.
 - 2026-10-04: WI-046 — terminating full-pool refresh processes preserve serialized publication and release native working memory.

@@ -1,0 +1,31 @@
+{
+  "kind": "result",
+  "at": "2026-10-09T18:57:41.296Z",
+  "scopes": 12,
+  "snapshots": 12,
+  "players": 8399,
+  "failures": [],
+  "before": {
+    "squads": 145,
+    "selections": 2162,
+    "fullSquadHash": "18b42ca9b13be954a082ee9cce69bc298a5a9e0d92e705d2f82f6eb6006b5aad",
+    "rosterRows": 11362,
+    "rosterStateHash": "9172f31724ed14c61e206bf71af368d7a0f78519124233a1ccaaa04565bdb786"
+  },
+  "after": {
+    "squads": 145,
+    "selections": 2162,
+    "fullSquadHash": "18b42ca9b13be954a082ee9cce69bc298a5a9e0d92e705d2f82f6eb6006b5aad",
+    "rosterRows": 11362,
+    "rosterStateHash": "9172f31724ed14c61e206bf71af368d7a0f78519124233a1ccaaa04565bdb786"
+  },
+  "savedSquadsPreserved": true,
+  "sharedRostersPreserved": true,
+  "memory": {
+    "rss": 1903190016,
+    "heapTotal": 442351616,
+    "heapUsed": 376554752,
+    "external": 3399258,
+    "arrayBuffers": 65677
+  }
+}
