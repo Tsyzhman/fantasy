@@ -1,0 +1,48 @@
+{
+  "workItem": "WI-063",
+  "status": "IN_PROGRESS",
+  "scope": {
+    "season": "2026/2027",
+    "contests": 13,
+    "prices": 9159,
+    "primaryProfiles": 6882,
+    "extraProfiles": 42
+  },
+  "checks": {
+    "focused": {
+      "passed": 125,
+      "failed": 0
+    },
+    "full": {
+      "passed": 1298,
+      "skipped": 2,
+      "failed": 0
+    },
+    "lint": {
+      "errors": 0,
+      "existingWarnings": 236
+    },
+    "typecheck": "passed",
+    "normalSourceRefresh": {
+      "repairedMappings": 50,
+      "squads": 145,
+      "selections": 2162,
+      "structuralPreserved": true
+    },
+    "oso": {
+      "corePlayerId": "1575945",
+      "sportsPlayerId": "73835",
+      "clubId": "9848",
+      "price": 5.5,
+      "realSnapshotMatches": 1,
+      "realBaseMatches": 1
+    }
+  },
+  "deployment": "pending",
+  "remaining": [
+    "verified identity corrections and stale manual club locks",
+    "canonical date backfill after protected ingestion release",
+    "normal refresh persistence and all-league publication",
+    "full reader, duplicate/cache/memory audit"
+  ]
+}

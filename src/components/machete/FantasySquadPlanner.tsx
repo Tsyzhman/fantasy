@@ -46,6 +46,7 @@ import type {
 import { formatAlternativeScore, formatCompactScore, formatDate, formatDateTime, formatNumber, formatScore } from "@/lib/format";
 import { cn } from "@/lib/cn";
 import { compactPlayerDisplayName } from "@/lib/players/display-name";
+import { fantasyPlayerMatchesNameQuery } from "@/machete/player-identity";
 import { compareFantasyPositions, fantasyPositionOrder, fantasyPositionRank, isFantasyPositionSortKey } from "@/lib/players/fantasy-position-order";
 import {
   betaSessionHasMilestone,
@@ -2991,10 +2992,11 @@ function normalizedPlayerPoolNameQuery(value: string) {
   return value.trim().toLowerCase();
 }
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#player-identity */
 export function filterPlayerPoolByNameQuery(players: FantasyPlannerPlayer[], query: string) {
   const normalizedQuery = normalizedPlayerPoolNameQuery(query);
   if (!normalizedQuery) return players;
-  return players.filter((player) => player.name.toLowerCase().includes(normalizedQuery));
+  return players.filter((player) => fantasyPlayerMatchesNameQuery(player.name, player.fotmobName, normalizedQuery));
 }
 
 function PlayerPoolNameSearch({ language, value, onChange }: {

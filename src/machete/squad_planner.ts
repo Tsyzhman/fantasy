@@ -1073,21 +1073,7 @@ export async function loadFantasySquadPlannerData(
         })
       : Promise.resolve([])
   ]);
-  const rosterRows = isFpl
-    ? fotmobRosterRows.map((row) => ({
-        leagueId: row.leagueId,
-        season: row.season,
-        teamId: row.teamId,
-        playerId: row.playerId,
-        position: row.position,
-        age: row.age,
-        nationality: row.nationality,
-        photoUrl: row.photoUrl,
-        isStarter: isFpl && !starterStatusKnown ? null : row.isStarter,
-        player: { name: row.player.name },
-        team: { name: row.team.name }
-      }))
-    : applySportsRuRosterOverrides(
+  const rosterRows = applySportsRuRosterOverrides(
     fotmobRosterRows.map((row) => ({
       leagueId: row.leagueId,
       season: row.season,
@@ -2183,9 +2169,10 @@ export function savedFantasySquadPlayersCount(fallbackCount: number, filters: un
   })).size;
 }
 
-async function loadFplRosterPriceContext(
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#player-identity */
+export async function loadFplRosterPriceContext(
   prisma: PrismaClient,
-  league: Pick<SharedLeagueSeasonOption, "leagueId" | "season">,
+  league: Pick<SharedLeagueSeasonOption, "leagueId" | "season" | "name" | "country">,
   contestId: string | null,
   requestedPlayerIds?: bigint[]
 ) {
@@ -2200,6 +2187,8 @@ async function loadFplRosterPriceContext(
         },
         select: {
           id: true,
+          leagueId: true,
+          season: true,
           playerId: true,
           providerPlayerId: true,
           teamId: true,
@@ -2212,15 +2201,37 @@ async function loadFplRosterPriceContext(
           sourceRowIndex: true,
           price: true,
           selectedByPercent: true,
-          lastSeenAt: true
+          lastSeenAt: true,
+          player: { select: { id: true, name: true, country: true } },
+          team: { select: { id: true, name: true } }
         },
         orderBy: { lastSeenAt: "desc" }
       })
     : [];
+  const maps = priceRows.length > 0 ? await prisma.providerEntityMap.findMany({
+    where: {
+      provider: FPL_PROVIDER,
+      providerSeason: FPL_SEASON,
+      contestId: contestId!,
+      providerEntityType: "PLAYER",
+      providerEntityId: { in: priceRows.flatMap((row) => row.providerPlayerId ? [row.providerPlayerId] : []) },
+      internalEntityType: "PLAYER",
+      internalEntityId: { not: null },
+      status: "MATCHED"
+    },
+    select: { providerEntityId: true, internalEntityId: true }
+  }) : [];
+  const byProviderId = new Map(maps.map((map) => [map.providerEntityId, map.internalEntityId]));
+  const priceMaps = priceRows.flatMap((row) => {
+    const internalEntityId = row.providerPlayerId ? byProviderId.get(row.providerPlayerId) : null;
+    return row.playerId && internalEntityId === String(row.playerId)
+      ? [{ providerEntityId: row.id, internalEntityId }]
+      : [];
+  });
   return {
     priceRows,
-    priceMaps: priceRows.map((row) => ({ providerEntityId: row.id, internalEntityId: row.playerId ? String(row.playerId) : null })),
-    rosterOverrides: [] as SharedRosterOverride[]
+    priceMaps,
+    rosterOverrides: sportsRuAuthoritativeRosterOverrides(priceRows, priceMaps, league, requestedPlayerIds)
   };
 }
 

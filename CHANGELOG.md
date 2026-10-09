@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.129 - 2026-10-09
+
+- Preserve canonical player birthdays when roster or match payloads omit them; keep strong identity, birthday and uniqueness guards for price-backed catalog matches.
+- Retain non-decomposing Latin letters in player identity matching, resolve reviewed Europa League club aliases and search both provider and canonical player names.
+- Match FPL position codes through fantasy role groups and include verified current-price players even without an active shared roster, preserving shared starter flags and saved selections.
+
 ## 0.3.128 - 2026-10-09
 
 - Preserve the correct two-player club cap in Sports.ru Turkey, Championship, Netherlands and Portugal; reject the third player and read current contest rules through older Squad snapshots.
