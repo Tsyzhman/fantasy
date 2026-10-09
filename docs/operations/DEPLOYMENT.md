@@ -13,8 +13,21 @@ npm run release:verify-source
 The `Deploy Production` GitHub Actions workflow is the canonical promoter. It
 packages `git archive HEAD`, verifies the archive checksum, builds an
 immutable Docker image with the exact version and commit labels, runs a
-database-backed canary with schedulers disabled, and swaps both web and worker
-with automatic rollback.
+database-backed canary with schedulers disabled, and starts a second web version
+on the alternate loopback port (3000/3001). After its exact revision is healthy,
+it replaces the single worker and switches only the Fantasy Scout upstream
+through a validated graceful Caddy reload. The prior web continues serving
+through the switch and a 30-second drain, followed by a graceful stop. Original
+static assets from both retained images remain available to existing tabs.
+The candidate's web-owned FPL and probable-lineup schedules wait for its
+release-specific activation file. The promoter activates them only after the
+old web stops, retaining their cadence without duplicate startup refreshes.
+
+Stopping the serving website to build, back up, rehearse migrations or start
+its replacement is prohibited by `AGENTS.md` and
+`spec://common/INFRA-006-continuous-deployment#root`. Keep the previous version
+until public health confirms the candidate; failed promotion restores its
+upstream and worker. Never restart Caddy or use `docker compose down` to deploy.
 
 The workflow rejects a ref that does not contain current `main`. Once the
 current production release has a `.release-commit` manifest, it also rejects a
@@ -24,7 +37,7 @@ workflow has been removed.
 Verify the exact running revision after every deployment:
 
 ```bash
-curl -fsS http://127.0.0.1:3000/api/health
+curl -fsS https://fantasy.tsyzhman.ru/api/health
 docker image inspect "$(docker container inspect fantasy-scout-web --format '{{.Config.Image}}')" \
   --format '{{index .Config.Labels "org.opencontainers.image.revision"}}'
 cat /var/www/fantasy-scout-current/.release-commit
@@ -325,14 +338,18 @@ explicit temporary price exception are documented in
 
 The workflow runs checks, archives the exact committed tree, retains that
 archive for 30 days, builds and canary-tests the Docker image, and performs the
-guarded web/worker swap. If the release contains unapplied Prisma migrations,
-the server promoter first checks that ingestion is idle, writes and verifies a
+continuous web/worker promotion. If the release contains unapplied Prisma migrations,
+each must have a reviewed `deployment.json` declaring `mode: online` and the
+exact `sqlSha256` of `migration.sql`, confirming compatibility with both runtime
+versions. Untagged or changed migration SQL aborts without stopping production.
+The server promoter checks that ingestion is idle, writes and verifies a
 custom-format backup under `/var/backups/fantasy-scout/`, restores that backup
 into a temporary database, runs `prisma migrate deploy` there, and only then
-applies the same migration set to production. The migration backup is retained
-for operator recovery. A Docker image rollback cannot undo an applied database
-migration, so a failed post-migration promotion is a database incident rather
-than an automatic schema rollback.
+applies the same compatible migration set to production. The current web stays
+running during backup, restore and rehearsal. Breaking changes require separate
+expand/contract releases. The migration backup is retained for operator
+recovery. Runtime rollback restores the compatible old binary and never undoes
+an applied database migration.
 
 For an existing production database that was created before Prisma migrations,
 baseline the initial migration once on the server before enabling non-dry-run

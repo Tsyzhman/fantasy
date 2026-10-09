@@ -10,6 +10,8 @@
 
 ## Sports trends и Telegram deadline
 
+Sports.ru club limits and cached Squad rule reads: `src/machete/sports_ru_team_limits.ts`, `src/machete/squad_planner.ts`; ownership `spec://modules/machete/FEAT-001-global-ranking-strategy#club-limits`. Import defaults and current-season contest migrations share the explicit league-ID matrix.
+
 Contracts: `spec://modules/machete/FEAT-006-sports-popularity#root`, `spec://modules/telegram/FEAT-007-deadline-assistant#root`, `spec://modules/telegram/INFRA-005-deadline-pipeline#root`. Ownership: `src/providers/sports-ru-trends/` (feed/article HTTP и parser), `src/server/sports-trends/` (collector, ownership snapshots, scheduler), `src/machete/sports-trends.ts` (read view), `src/server/telegram/` (link service, webhook, bot API, rate limits), `src/server/deadline-reports/` (campaign planning, classifier, renderer, delivery) и `src/app/api/telegram/webhook/`. Флаги `SPORTS_TRENDS_SYNC_ENABLED`, `TELEGRAM_LINK_ENABLED`, `TELEGRAM_DEADLINE_ENABLED`, `TELEGRAM_SEND_ENABLED`, `TELEGRAM_PAID_BROADCAST_ENABLED` по умолчанию off. Existing Sports price/squad import, Sorare, scoring and session auth retain their ownership. See `docs/TELEGRAM_DEADLINE_PLAN.md`.
 
 ## Runtime
@@ -72,6 +74,8 @@ Sports fantasy weeks: `src/khl/fantasy-calendar.ts` resolves agreeing club obser
 
 ## Release transport {#release-transport}
 
+Continuous rollout ownership: `spec://common/INFRA-006-continuous-deployment#root`, `scripts/deploy-production-docker.sh`, `scripts/production-rollout.sh`, `scripts/production-web-routing.py`, `scripts/check-online-migrations.py`, `src/server/web-scheduler-activation.ts`, its instrumentation boundary and the production relay adapter. Keep the serving web running until a verified candidate on the alternate loopback port receives traffic through a validated graceful Caddy reload. Builds, backups and migration rehearsals run without stopping the serving website. Candidate web schedules activate only after the old web stops.
+
 The immutable GitHub production promoter keeps its SSH channel alive every 15 seconds and terminates an unresponsive channel after four unanswered probes. Authentication, host verification, release ancestry/checksums and automatic rollback remain mandatory. Docker dependency downloads use a 60-second request timeout, three retries, and bounded 1–10 second retry delays; a failed download stops the candidate without replacing production. A disconnected promotion is inspected before retrying so that collectors, canaries and release processes are never duplicated.
 
 <a name="documentation"></a>
@@ -96,6 +100,8 @@ workflow copies are intentional matching client entry points.
 <a name="changelog"></a>
 
 ## Changelog {#changelog}
+
+- 2026-10-09: WI-060 — own the continuous production rollout, isolated Caddy upstream switch and compatible migration guard.
 
 - 2026-10-04: WI-046 — isolate the hourly full Squad refresh while preserving scheduler serialization and atomic READY publication.
 

@@ -1,3 +1,4 @@
+/** @spec spec://common/INFRA-006-continuous-deployment#runtime */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
@@ -49,15 +50,16 @@ test("instrumentation and production promotion enforce one owner per scheduler",
   assert.match(instrumentationSource, /if \(plan\.fpl\)/);
   assert.match(instrumentationSource, /if \(plan\.probableLineups\)/);
 
-  const productionStart = deploymentSource.indexOf('phase="swap"');
-  const webStart = deploymentSource.indexOf('--name "$web"', productionStart);
-  const workerStart = deploymentSource.indexOf('--name "$worker"', webStart);
-  const productionEnd = deploymentSource.indexOf('docker container start "$web" "$worker"', workerStart);
-  assert.ok(productionStart >= 0 && webStart > productionStart && workerStart > webStart && productionEnd > workerStart);
+  const webStart = deploymentSource.indexOf('--name "$web_candidate"');
+  const workerStart = deploymentSource.indexOf('create_production_worker()', webStart);
+  const productionEnd = deploymentSource.indexOf('\npromote_running_candidate\n', workerStart);
+  assert.ok(webStart >= 0 && workerStart > webStart && productionEnd > workerStart);
 
   const webCreate = deploymentSource.slice(webStart, workerStart);
   const workerCreate = deploymentSource.slice(workerStart, productionEnd);
   assert.match(webCreate, /-e INGESTION_WORKER_IN_PROCESS=false/);
+  assert.match(webCreate, /WEB_SCHEDULER_ACTIVATION_PATH=\/run\/fantasy-scout\/web-schedulers-active/);
+  assert.match(instrumentationSource, /startWebSchedulersWhenActivated\(async/);
   assert.match(workerCreate, /-e INGESTION_WORKER_IN_PROCESS=true/);
   assert.match(workerCreate, /-e FPL_PRICE_SYNC_ENABLED=false/);
   assert.match(workerCreate, /-e PROBABLE_LINEUP_SYNC_ENABLED=false/);

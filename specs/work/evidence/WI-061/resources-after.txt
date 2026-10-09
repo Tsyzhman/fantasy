@@ -1,0 +1,19 @@
+2026-10-09T15:24:53Z
+fantasy-scout-web 434.5MiB / 11.6GiB 0.00%
+fantasy-scout-worker 1.751GiB / 11.6GiB 0.30%
+fantasy-scout-postgres 1.076GiB / 11.6GiB 1.58%
+               total        used        free      shared  buff/cache   available
+Mem:           11876        5651        1721         306        4503        5606
+Swap:              0           0           0
+/fantasy-scout-web running=true health=healthy restarts=0 oom=false
+/fantasy-scout-worker running=true health=healthy restarts=0 oom=false
+BEGIN
+SET
+price_duplicates=0
+alanzinho_maps=1
+refresh_duplicates=0
+{"league_id":48,"max_players_per_team":2}
+{"league_id":57,"max_players_per_team":2}
+{"league_id":61,"max_players_per_team":2}
+{"league_id":71,"max_players_per_team":2}
+COMMIT

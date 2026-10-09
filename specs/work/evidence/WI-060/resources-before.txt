@@ -1,0 +1,18 @@
+Fri Oct  9 14:54:17 UTC 2026
+fantasy-scout-web 421.4MiB / 11.6GiB
+fantasy-scout-worker 1.445GiB / 11.6GiB
+fantasy-scout-postgres 1.023GiB / 11.6GiB
+               total        used        free      shared  buff/cache   available
+Mem:           11876        5391         852         306        5633        5866
+Swap:              0           0           0
+Filesystem      Size  Used Avail Use% Mounted on
+/dev/vda3       119G   69G   44G  62% /
+BEGIN
+SET
+48|2
+57|2
+61|2
+71|2
+active_jobs=0
+duplicate_refresh_keys=0
+COMMIT

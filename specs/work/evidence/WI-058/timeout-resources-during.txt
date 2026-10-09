@@ -1,0 +1,10 @@
+2026-10-09T11:01:49Z
+/var/www/fantasy-scout-releases/20261009T094307Z-v0.3.125-52ea689
+20261009T110029Z-v0.3.126-2bd70d9
+fantasy-scout-web 743.1MiB / 11.6GiB
+fantasy-scout-worker 1.683GiB / 11.6GiB
+fantasy-scout-postgres 729.4MiB / 11.6GiB
+               total        used        free      shared  buff/cache   available
+Mem:           11876        6191        2411         285        3273        5086
+Swap:              0           0           0
+runc            runc --log /var/lib/docker/buildkit/executor/runc-log.json --log-format json run --bundle /var/lib/docker/buildkit/executor/o5v563wd4j578s3y0tzqvs4sl --keep o5v563wd4j578s3y0tzqvs4sl

@@ -1735,7 +1735,7 @@ async function loadSportsRuFantasySquadSnapshotShellData(
   userId: string,
   league: SharedLeagueSeasonOption,
   squadId: string | null | undefined,
-  contest: { id: string },
+  contest: { id: string; maxPlayersPerTeam: number },
   historySettings: FantasyHistorySettings | undefined
 ): Promise<FantasySquadPlannerData | null> {
   const requestedHistory = historySettings ?? defaultFantasyHistorySettings;
@@ -1776,7 +1776,7 @@ async function loadSportsRuFantasySquadSnapshotShellData(
     orderBy: [{ calculatedAt: "desc" }, { createdAt: "desc" }],
     select: { id: true, metadata: true }
   });
-  const metadata = fantasyPlayerPoolSnapshotShellMetadata(snapshot?.metadata);
+  const metadata = fantasyPlayerPoolSnapshotShellMetadata(snapshot?.metadata, contest.maxPlayersPerTeam);
   if (!snapshot || !metadata) return null;
 
   const savedSquads = await prisma.userFantasySquad.findMany({
@@ -1873,8 +1873,11 @@ async function loadSportsRuFantasySquadSnapshotShellData(
   };
 }
 
-/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#transfer-rules */
-function fantasyPlayerPoolSnapshotShellMetadata(value: unknown): FantasyPlayerPoolSnapshotShellMetadata | null {
+/**
+ * @spec spec://modules/machete/FEAT-001-global-ranking-strategy#transfer-rules
+ * @spec spec://modules/machete/FEAT-001-global-ranking-strategy#club-limits
+ */
+function fantasyPlayerPoolSnapshotShellMetadata(value: unknown, currentClubLimit?: number): FantasyPlayerPoolSnapshotShellMetadata | null {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
   const metadata = value as Partial<FantasyPlayerPoolSnapshotShellMetadata>;
   if (metadata.version !== 1 || !metadata.readiness || !metadata.rules || !metadata.priceStatus || !metadata.dataFreshness) return null;
@@ -1883,7 +1886,10 @@ function fantasyPlayerPoolSnapshotShellMetadata(value: unknown): FantasyPlayerPo
   }
   return {
     ...(metadata as FantasyPlayerPoolSnapshotShellMetadata),
-    rules: sportsRuTransferRules(metadata.rules)
+    rules: sportsRuTransferRules({
+      ...metadata.rules,
+      maxPlayersPerTeam: currentClubLimit ?? metadata.rules.maxPlayersPerTeam
+    })
   };
 }
 

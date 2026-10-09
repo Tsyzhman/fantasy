@@ -63,13 +63,19 @@ export async function register() {
     startIngestionWorkerLoop();
   }
 
-  if (plan.fpl) {
-    const { startFplPriceSyncScheduler } = await import("./server/fpl-price-sync-scheduler");
-    startFplPriceSyncScheduler();
-  }
-
-  if (plan.probableLineups) {
-    const { startProbableLineupScheduler } = await import("./server/probable-lineup-scheduler");
-    startProbableLineupScheduler();
+  // @spec spec://common/INFRA-006-continuous-deployment#runtime
+  if (plan.fpl || plan.probableLineups) {
+    const { startWebSchedulersWhenActivated } = await import("./server/web-scheduler-activation");
+    startWebSchedulersWhenActivated(async () => {
+      console.info("Web schedules activated.", { commit: process.env.APP_RELEASE_COMMIT, fpl: plan.fpl, probableLineups: plan.probableLineups });
+      if (plan.fpl) {
+        const { startFplPriceSyncScheduler } = await import("./server/fpl-price-sync-scheduler");
+        startFplPriceSyncScheduler();
+      }
+      if (plan.probableLineups) {
+        const { startProbableLineupScheduler } = await import("./server/probable-lineup-scheduler");
+        startProbableLineupScheduler();
+      }
+    }, { onError: (error) => console.error("Web scheduler activation failed.", error) });
   }
 }

@@ -33,6 +33,18 @@ Preserve existing UI/UX workflows during technical changes. Tell the user
 explicitly if the selected backend or API cannot support the existing interface.
 Removing or simplifying user capabilities requires a direct user request.
 
+## Production availability
+
+Never stop or replace the serving production web version to build, back up,
+rehearse migrations or start a release. First start a second version on the
+alternate loopback port, verify its exact revision and health, then gracefully
+switch traffic through Caddy. Keep the old version available for rollback and
+request draining. Migrations must be reviewed for compatibility with both
+versions; refuse an unsafe deployment while production remains running.
+Follow `spec://common/INFRA-006-continuous-deployment#root` and the canonical
+`scripts/deploy-production-docker.sh` promoter. Do not use `docker compose down`,
+stop-and-recreate, direct live-file replacement or a Caddy restart for rollout.
+
 ## Traceability
 
 New or substantially changed specification-owned code receives an up-to-date

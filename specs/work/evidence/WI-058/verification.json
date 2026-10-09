@@ -1,7 +1,7 @@
 {
   "workItem": "WI-058",
   "version": "0.3.126",
-  "status": "verified-awaiting-price-timeout-release",
+  "status": "complete",
   "checks": [
     {
       "name": "focused-regressions",
@@ -47,6 +47,120 @@
     "realSourceError": "Bodo/Glimt supplies only six starters"
   },
   "production": {
+    "duplicateMappingKeys": 0,
+    "mergeCommit": "c075e83837bdcea55de1f858f9ce33449b20fa2d",
+    "unchangedControlFingerprints": 14,
+    "sourceFetchedAt": "2026-10-09T11:04:40.901Z",
+    "release": "20261009T110029Z-v0.3.126-2bd70d9",
+    "duplicateSorareTargets": 0,
+    "fullActiveXi": 14,
+    "duplicateDeliveryKeys": 0,
+    "commit": "2bd70d9d930f414c9bc223bedf17385f0157dfc4",
+    "imageRevisionsVerified": true,
+    "deploy": "https://github.com/Tsyzhman/fantasy/actions/runs/37920735721",
+    "controlScopes": 14,
+    "expiredRawCacheRows": 0,
+    "retainedReleases": 2,
+    "totalSorareMappings": 3018,
+    "restarts": 0,
+    "repeatTotals": {
+      "NO_PREDICTION_FOR_NEAREST_MATCH": 5,
+      "NO_MATCH_OR_TEAM_MAPPING": 19,
+      "UNCHANGED": 234,
+      "SOURCE_ERROR": 1,
+      "APPLIED": 3
+    },
+    "rawCacheRows": 932,
+    "duplicatePriceKeys": 0,
+    "publicHealth": "ok",
+    "manifestVerified": true,
+    "oom": false,
+    "sourceRssMiB": 1116,
+    "goalkeeperCountPerXi": 1,
+    "newMappingExplanation": "Noah Darvich and Rafael Luis resolved by exact name in their active teams while three newly published full XI were applied to Elversberg, Genclerbirligi and Chelsea.",
+    "workerMemoryMiB": 1779,
+    "hostAvailableMiB": 5538,
+    "runningCanaries": 0,
+    "tree": "58f445c0b2240950e13b362f695d6adca3fa7b3c",
+    "version": "0.3.126",
+    "duplicateMessageIds": 0,
+    "duplicateRefreshKeys": 0,
+    "rawCacheBytes": 13492148
+  },
+  "messagesSent": 0,
+  "initialCandidateCheck": {
+    "url": "https://github.com/Tsyzhman/fantasy/actions/runs/37907514109",
+    "status": "passed",
+    "unitTests": 1282,
+    "databaseTests": 25
+  },
+  "prerequisiteRefresh": {
+    "scopes": 3,
+    "succeeded": 3,
+    "failed": 0,
+    "unavailable": 0,
+    "prices": 2222,
+    "recurringScopesBefore": 4,
+    "recurringScopesAfter": 7,
+    "intervalHours": 6
+  },
+  "finalCandidateCheck": {
+    "commit": "2bd70d9d930f414c9bc223bedf17385f0157dfc4",
+    "url": "https://github.com/Tsyzhman/fantasy/actions/runs/37920132489",
+    "tree": "58f445c0b2240950e13b362f695d6adca3fa7b3c",
+    "typecheck": "passed",
+    "lint": "passed",
+    "dependencyAudit": "passed",
+    "databaseTests": 25,
+    "status": "passed",
+    "unitTests": 1284,
+    "build": "passed"
+  },
+  "priceTimeout": {
+    "specFingerprint": "05e4252a1327a4a6dd4a9853cc87e4e7383aa87b37c3a5ad8b9ea0d0b592da7f",
+    "typecheck": "passed",
+    "changedFileEslint": "passed",
+    "workflowValidation": "passed",
+    "focusedTests": 22,
+    "newLimitMs": 60000,
+    "versionPolicy": {
+      "status": "passed",
+      "baseVersion": "0.3.125"
+    },
+    "observedElapsedMs": 5151,
+    "failed": 0,
+    "production": {
+      "refreshedSavedSelections": 0,
+      "recurringScopes": 7,
+      "removedDuplicateSelections": 0,
+      "changedSavedSelections": 0,
+      "evidence": "timeout-scheduler.json; timeout-prices-after.json",
+      "prices": 4703,
+      "succeeded": 7,
+      "failed": 0,
+      "spainPrices": 733,
+      "deletedStalePrices": 0
+    },
+    "status": "verified-in-production",
+    "previousLimitMs": 5000,
+    "candidateCheck": {
+      "commit": "2bd70d9d930f414c9bc223bedf17385f0157dfc4",
+      "url": "https://github.com/Tsyzhman/fantasy/actions/runs/37920132489",
+      "tree": "58f445c0b2240950e13b362f695d6adca3fa7b3c",
+      "typecheck": "passed",
+      "lint": "passed",
+      "dependencyAudit": "passed",
+      "databaseTests": 25,
+      "status": "passed",
+      "unitTests": 1284,
+      "build": "passed"
+    },
+    "deploy": {
+      "url": "https://github.com/Tsyzhman/fantasy/actions/runs/37920735721",
+      "status": "passed"
+    }
+  },
+  "intakeProductionPass": {
     "repeatTotals": {
       "NO_MATCH_OR_TEAM_MAPPING": 19,
       "NO_PREDICTION_FOR_NEAREST_MATCH": 5,
@@ -72,24 +186,9 @@
     "version": "0.3.125",
     "expiredRawCacheRows": 0
   },
-  "messagesSent": 0,
-  "initialCandidateCheck": {
-    "url": "https://github.com/Tsyzhman/fantasy/actions/runs/37907514109",
-    "status": "passed",
-    "unitTests": 1282,
-    "databaseTests": 25
-  },
-  "prerequisiteRefresh": {
-    "scopes": 3,
-    "succeeded": 3,
-    "failed": 0,
-    "unavailable": 0,
-    "prices": 2222,
-    "recurringScopesBefore": 4,
-    "recurringScopesAfter": 7,
-    "intervalHours": 6
-  },
-  "finalCandidateCheck": {
+  "review": [],
+  "techDebt": [],
+  "intakeCandidateCheck": {
     "url": "https://github.com/Tsyzhman/fantasy/actions/runs/37911885297",
     "status": "passed",
     "commit": "52ea68936241aa51f3ee4c36f4538fcf91b6b7cd",
@@ -97,21 +196,24 @@
     "databaseTests": 25,
     "unitTests": 1284
   },
-  "priceTimeout": {
-    "specFingerprint": "05e4252a1327a4a6dd4a9853cc87e4e7383aa87b37c3a5ad8b9ea0d0b592da7f",
-    "typecheck": "passed",
-    "changedFileEslint": "passed",
-    "workflowValidation": "passed",
-    "focusedTests": 22,
-    "newLimitMs": 60000,
-    "versionPolicy": {
+  "completion": {
+    "archive": "specs/work/archive/2026/WI-058-sorareinside-intake.md",
+    "workflow": {
       "status": "passed",
-      "baseVersion": "0.3.125"
+      "errors": []
     },
-    "observedElapsedMs": 5151,
-    "failed": 0,
-    "production": null,
-    "status": "verified-locally-awaiting-production",
-    "previousLimitMs": 5000
+    "board": "Done",
+    "tempCleanup": {
+      "recoverySnapshotsRetained": true,
+      "files": 49
+    },
+    "bookkeeping": "Final deployment evidence and WI archive are local; release code and specs are committed and merged.",
+    "specSpace": {
+      "status": "current",
+      "fingerprint": "05e4252a1327a4a6dd4a9853cc87e4e7383aa87b37c3a5ad8b9ea0d0b592da7f",
+      "diagnostics": [],
+      "materialWorkingTreePaths": [],
+      "commit": "c075e83837bdcea55de1f858f9ce33449b20fa2d"
+    }
   }
 }

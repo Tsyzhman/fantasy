@@ -1,0 +1,154 @@
+{
+  "version": "0.3.126",
+  "checkedAt": "2026-10-09T11:07:49.1109889Z",
+  "successes": 7,
+  "errors": 0,
+  "prices": 4703.0,
+  "scopes": [
+    {
+      "leagueId": "63",
+      "season": "2026/2027",
+      "tournamentHru": "russia",
+      "prices": 509,
+      "timestamp": "2026-10-09T11:04:53.842Z",
+      "mapping": {
+        "total": 21,
+        "matched": 0,
+        "manual": 0,
+        "excluded": 1,
+        "unmatched": 20,
+        "movedSelections": 0,
+        "refreshedSelections": 0,
+        "removedDuplicateSelections": 0
+      },
+      "deletedStalePrices": 0
+    },
+    {
+      "leagueId": "87",
+      "season": "2026/2027",
+      "tournamentHru": "spain",
+      "prices": 733,
+      "timestamp": "2026-10-09T11:05:02.39Z",
+      "mapping": {
+        "total": 22,
+        "matched": 0,
+        "manual": 0,
+        "excluded": 0,
+        "unmatched": 22,
+        "movedSelections": 0,
+        "refreshedSelections": 0,
+        "removedDuplicateSelections": 0
+      },
+      "deletedStalePrices": 0
+    },
+    {
+      "leagueId": "57",
+      "season": "2026/2027",
+      "tournamentHru": "netherlands",
+      "prices": 611,
+      "timestamp": "2026-10-09T11:05:09.759Z",
+      "mapping": {
+        "total": 10,
+        "matched": 0,
+        "manual": 0,
+        "excluded": 0,
+        "unmatched": 10,
+        "movedSelections": 0,
+        "refreshedSelections": 0,
+        "removedDuplicateSelections": 0
+      },
+      "deletedStalePrices": 0
+    },
+    {
+      "leagueId": "61",
+      "season": "2026/2027",
+      "tournamentHru": "portugal",
+      "prices": 628,
+      "timestamp": "2026-10-09T11:05:15.888Z",
+      "mapping": {
+        "total": 13,
+        "matched": 0,
+        "manual": 0,
+        "excluded": 0,
+        "unmatched": 13,
+        "movedSelections": 0,
+        "refreshedSelections": 0,
+        "removedDuplicateSelections": 0
+      },
+      "deletedStalePrices": 0
+    },
+    {
+      "leagueId": "53",
+      "season": "2026/2027",
+      "tournamentHru": "france",
+      "prices": 514,
+      "timestamp": "2026-10-09T11:05:21.145Z",
+      "mapping": {
+        "total": 18,
+        "matched": 0,
+        "manual": 0,
+        "excluded": 0,
+        "unmatched": 18,
+        "movedSelections": 0,
+        "refreshedSelections": 0,
+        "removedDuplicateSelections": 0
+      },
+      "deletedStalePrices": 0
+    },
+    {
+      "leagueId": "54",
+      "season": "2026/2027",
+      "tournamentHru": "germany",
+      "prices": 529,
+      "timestamp": "2026-10-09T11:05:26.173Z",
+      "mapping": {
+        "total": 16,
+        "matched": 0,
+        "manual": 0,
+        "excluded": 0,
+        "unmatched": 16,
+        "movedSelections": 0,
+        "refreshedSelections": 0,
+        "removedDuplicateSelections": 0
+      },
+      "deletedStalePrices": 0
+    },
+    {
+      "leagueId": "42",
+      "season": "2026/2027",
+      "tournamentHru": "champions-league",
+      "prices": 1179,
+      "timestamp": "2026-10-09T11:05:45.886Z",
+      "mapping": {
+        "total": 149,
+        "matched": 0,
+        "manual": 0,
+        "excluded": 0,
+        "unmatched": 149,
+        "movedSelections": 0,
+        "refreshedSelections": 0,
+        "removedDuplicateSelections": 0
+      },
+      "deletedStalePrices": 0
+    }
+  ],
+  "source": [
+    {
+      "level": "info",
+      "scope": "sorareinside:scheduler",
+      "message": "SorareInside sync finished",
+      "timestamp": "2026-10-09T11:06:51.472Z",
+      "status": "PARTIAL",
+      "totals": {
+        "NO_PREDICTION_FOR_NEAREST_MATCH": 5,
+        "NO_MATCH_OR_TEAM_MAPPING": 19,
+        "UNCHANGED": 234,
+        "SOURCE_ERROR": 1,
+        "APPLIED": 3
+      },
+      "startedAt": "2026-10-09T11:04:40.901Z",
+      "finishedAt": "2026-10-09T11:06:51.471Z",
+      "rssMiB": 1116
+    }
+  ]
+}

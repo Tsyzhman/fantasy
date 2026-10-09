@@ -6,7 +6,8 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
-| [WI-058](work/WI-058-sorareinside-intake.md) | Repair rejected SorareInside XI ingestion | INFRA-004 | @tsyzhman | 2026-10-09 | — |
+| [WI-060](work/WI-060-continuous-production-deployment.md) | Continuous production deployment | INFRA-006 | @tsyzhman | 2026-10-09 | — |
+| [WI-059](work/WI-059-four-league-club-limits.md) | Preserve two club players in four Sports.ru leagues | FEAT-001 | @tsyzhman | 2026-10-09 | — |
 | [WI-056](work/WI-056-compact-deadline-findings.md) | Compact Telegram deadline findings | FEAT-007, INFRA-005 | @tsyzhman | 2026-10-09 | — |
 | [WI-055](work/WI-055-sports-transfer-limit.md) | Three Sports.ru transfers per round | FEAT-001 | @tsyzhman | 2026-10-08 | — |
 
@@ -26,6 +27,8 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-061](work/archive/2026/WI-061-alanzinho-portugal-mapping.md) | Restore Alanzinho in Portugal | @tsyzhman | 2026-10-09 |
+| [WI-058](work/archive/2026/WI-058-sorareinside-intake.md) | Repair rejected SorareInside XI ingestion | @tsyzhman | 2026-10-09 |
 | [WI-057](work/archive/2026/WI-057-deadline-forecast-freshness.md) | Verified forecasts in concise deadline reports | @tsyzhman | 2026-10-09 |
 | [WI-054](work/archive/2026/WI-054-franchise-filters.md) | Working franchise date and league filters | @tsyzhman | 2026-10-08 |
 | [WI-053](work/archive/2026/WI-053-platform-transfer-trends-release.md) | Release platform transfer trends and verified fixes | @tsyzhman | 2026-10-07 |

@@ -1,6 +1,6 @@
 /**
  * Explicit Sports.ru club limits keyed by CoreLeague id.
- * @spec spec://modules/machete/FEAT-003-squad-player-card#root
+ * @spec spec://modules/machete/FEAT-001-global-ranking-strategy#club-limits
  */
 export const sportsRuMaxPlayersPerTeamByLeagueId = {
   "42": 3,

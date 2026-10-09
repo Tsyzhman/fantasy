@@ -1,0 +1,8 @@
+{
+  "status": "ok",
+  "uptimeSeconds": 69,
+  "release": {
+    "version": "0.3.126",
+    "commit": "2bd70d9d930f414c9bc223bedf17385f0157dfc4"
+  }
+}

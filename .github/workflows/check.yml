@@ -104,3 +104,7 @@ jobs:
 
       - name: Run checks
         run: npm run check
+
+      # @spec spec://common/INFRA-006-continuous-deployment#acceptance
+      - name: Verify continuous deployment and rollback
+        run: python3 scripts/continuous-deployment.test.py

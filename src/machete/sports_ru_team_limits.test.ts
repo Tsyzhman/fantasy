@@ -7,6 +7,27 @@ import {
   sportsRuMaxPlayersPerTeamForLeague
 } from "./sports_ru_team_limits";
 import { fantasyRulesForLeague } from "./squad_planner";
+import { canAddFantasyPlayer, defaultFantasySquadRules, selectionForPlayer, summarizeFantasySquad, type FantasyPlannerPlayer } from "./squad_logic";
+
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#club-limits */
+test("four Sports.ru leagues accept the second club player and reject the third", () => {
+  const pool = (["GK", "DEF", "MID", "FWD"] as const).map((position, index): FantasyPlannerPlayer => ({
+    id: String(index + 1), playerId: String(index + 1), name: `Player ${index + 1}`, teamId: "10",
+    teamName: "Test club", leagueName: "Test league", position, positionGroup: position,
+    price: 5, priceSource: "SPORTS_RU", predictedFp: 2, valueScore: 1,
+    roundPoints: [2], fixtures: [], fixtureDifficulties: []
+  }));
+  const selections = pool.map((player, index) => selectionForPlayer(player, index));
+  for (const leagueId of [48n, 57n, 61n, 71n]) {
+    const league = { leagueId, season: "2026/2027", name: "Test league", displayName: "Test league",
+      country: "Test", providerLeagueId: String(leagueId), isCurrent: true, updatedAt: new Date("2026-10-09") };
+    const rules = { ...defaultFantasySquadRules, ...fantasyRulesForLeague(league, null) };
+    assert.equal(canAddFantasyPlayer(pool[1], pool, selections.slice(0, 1), rules), true, `${leagueId}: second`);
+    assert.equal(canAddFantasyPlayer(pool[2], pool, selections.slice(0, 2), rules), false, `${leagueId}: third`);
+    assert.equal(summarizeFantasySquad(pool, selections.slice(0, 2), rules, 1).violations.some(v => v.includes("2/2")), false);
+    assert.equal(summarizeFantasySquad(pool, selections.slice(0, 3), rules, 1).violations.some(v => v.includes("3/2")), true);
+  }
+});
 
 test("Sports.ru club limits are explicit for every supported competition", () => {
   assert.deepEqual(sportsRuMaxPlayersPerTeamByLeagueId, {

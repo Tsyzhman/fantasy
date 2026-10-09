@@ -1,7 +1,11 @@
 # Docker production runbook
 
-This deployment mode runs the app and PostgreSQL in one Docker Compose project.
-The app process also runs the in-process ingestion worker loop. App containers
+The canonical production promoter runs separate web and scheduler worker
+containers on the existing Docker network with PostgreSQL. The serving web
+remains running while a second version is built and verified on the alternate
+loopback port. Caddy switches traffic with a validated graceful reload; only
+one worker runs at a time. Follow `spec://common/INFRA-006-continuous-deployment#root`
+and [Deployment](DEPLOYMENT.md). App containers
 connect to PostgreSQL through the Compose service name `postgres`, not through
 host `localhost`.
 
@@ -73,7 +77,9 @@ The verified pre-beta32 custom-format backup is
 50,259,500 bytes, SHA-256
 `38431add328d9e5920dab81d59248a8a7116c2660f540fdcf0e600e85632f4d5`.
 
-The normal release sequence is:
+The following stop-and-replace sequence is historical and prohibited for new
+deployments. The current sequence is governed by
+`spec://common/INFRA-006-continuous-deployment#runtime`:
 
 1. copy the previous immutable release to a new unique release directory and
    replace only the verified files;
