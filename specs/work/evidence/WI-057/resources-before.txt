@@ -1,0 +1,18 @@
+2026-10-09T08:02:12Z
+BEGIN
+SET
+outbox={ "SENT" : 10 }
+duplicate_delivery_keys=0
+duplicate_message_ids=0
+duplicate_active_jobs=0
+raw_cache={"rows" : 900, "bytes" : 13017220, "expired" : 0}
+stage_jobs={ "SUCCEEDED" : 15, "QUEUED" : 27 }
+COMMIT
+fantasy-scout-web 258.2MiB / 11.6GiB
+fantasy-scout-worker 1.609GiB / 11.6GiB
+fantasy-scout-postgres 1.11GiB / 11.6GiB
+               total        used        free      shared  buff/cache   available
+Mem:           11876        5318        2654         285        3902        5960
+Swap:              0           0           0
+/fantasy-scout-web health=healthy oom=false restarts=0
+/fantasy-scout-worker health=healthy oom=false restarts=0

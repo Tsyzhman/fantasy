@@ -219,8 +219,21 @@ const STAGE_MAX_ATTEMPTS = 5;
 
 /**
  * @spec spec://modules/telegram/INFRA-005-deadline-pipeline#data
+ * @spec spec://modules/telegram/INFRA-005-deadline-pipeline#recovery
  */
 export async function claimDueStageJob(prisma: PrismaClient, now: Date): Promise<ClaimedStageJob | null> {
+  // Recover bounded abandoned leases before checking refresh dependencies.
+  await prisma.$executeRaw`
+    UPDATE "deadline_stage_jobs"
+    SET "status" = CASE WHEN "attempts" < ${STAGE_MAX_ATTEMPTS} THEN 'QUEUED' ELSE 'FAILED' END,
+        "next_attempt_at" = ${now}, "lease_token" = NULL, "lease_until" = NULL,
+        "last_error" = 'STAGE_LEASE_EXPIRED', "updated_at" = ${now}
+    WHERE "id" IN (
+      SELECT "id" FROM "deadline_stage_jobs"
+      WHERE "status" = 'RUNNING' AND "lease_until" < ${now}
+      LIMIT 500 FOR UPDATE SKIP LOCKED
+    )
+  `;
   const token = randomUUID();
   const leaseUntil = new Date(now.getTime() + STAGE_LEASE_MS);
   const rows = await prisma.$queryRaw<RawClaimedStageJob[]>`
@@ -233,9 +246,15 @@ export async function claimDueStageJob(prisma: PrismaClient, now: Date): Promise
         "started_at" = COALESCE("started_at", ${now}),
         "updated_at" = ${now}
     WHERE "id" = (
-      SELECT "id" FROM "deadline_stage_jobs"
-      WHERE "status" = 'QUEUED' AND "next_attempt_at" <= ${now} AND "due_at" <= ${now} AND "attempts" < ${STAGE_MAX_ATTEMPTS}
-      ORDER BY "due_at" ASC
+      SELECT queued."id" FROM "deadline_stage_jobs" queued
+      WHERE queued."status" = 'QUEUED' AND queued."next_attempt_at" <= ${now} AND queued."due_at" <= ${now} AND queued."attempts" < ${STAGE_MAX_ATTEMPTS}
+        AND (queued."stage" <> 'BUILD_REPORTS' OR NOT EXISTS (
+          SELECT 1 FROM "deadline_stage_jobs" refresh
+          WHERE refresh."campaign_id" = queued."campaign_id" AND refresh."input_version" = queued."input_version"
+            AND refresh."stage" = 'DATA_REFRESH'
+            AND (refresh."status" = 'RUNNING' OR (refresh."status" = 'QUEUED' AND refresh."attempts" < ${STAGE_MAX_ATTEMPTS}))
+        ))
+      ORDER BY queued."due_at" ASC
       LIMIT 1
       FOR UPDATE SKIP LOCKED
     )
@@ -312,9 +331,21 @@ export async function executeDueStageJobs(prisma: PrismaClient, options: { now?:
         summary.succeeded += 1;
       } else if (job.stage === "DATA_REFRESH") {
         const { runSportsRuFantasySyncNow } = await import("@/server/sports-ru-fantasy-sync-scheduler");
-        const syncResult = scope ? await runSportsRuFantasySyncNow("manual", [scope]) : null;
+        const { runSorareInsideSyncNow } = await import("@/server/sorareinside-scheduler");
+        const xiThreshold = campaign.reportDate ? dueAt(campaign.reportDate, DEADLINE_REFRESH_HOUR, DEADLINE_REFRESH_MINUTE) : now;
+        const [syncResult, xi] = await Promise.all([
+          scope ? runSportsRuFantasySyncNow("manual", [scope]) : Promise.resolve(null),
+          runSorareInsideSyncNow({ notBefore: xiThreshold })
+        ]);
         const ownership = await captureSportsOwnershipSnapshots(prisma, { contestIds: [campaign.contestId], now: () => now });
-        const degraded = scope == null || syncResult == null;
+        const sync = syncResult?.started === true && syncResult.failed === 0 && syncResult.unavailable === 0 && syncResult.succeeded > 0;
+        const xiCoverage = contest && xi ? xi.byScope[`${contest.leagueId}:${contest.season}`] ?? {} : {};
+        const xiCount = Object.values(xiCoverage).reduce((total, count) => total + count, 0);
+        const xiReady = xi != null && Date.parse(xi.startedAt) >= xiThreshold.getTime() && xiCount > 0 &&
+          (xiCoverage.APPLIED ?? 0) + (xiCoverage.UNCHANGED ?? 0) === xiCount;
+        const degraded = !sync || !xiReady;
+        const result = { ownership, sync, xi: xi ? { status: xi.status, startedAt: xi.startedAt, finishedAt: xi.finishedAt ?? null, coverage: xiCoverage } : null };
+        const retryInMs = xi?.status === "ALREADY_RUNNING" && job.attempts < STAGE_MAX_ATTEMPTS && cutoff && now < cutoff ? 5 * 60 * 1000 : null;
         await prisma.deadlineDataSnapshot.upsert({
           where: { campaignId_inputVersion_dataset: { campaignId: campaign.id, inputVersion: job.inputVersion, dataset: "DATA_REFRESH" } },
           create: {
@@ -322,12 +353,13 @@ export async function executeDueStageJobs(prisma: PrismaClient, options: { now?:
             inputVersion: job.inputVersion,
             dataset: "DATA_REFRESH",
             status: degraded ? "DEGRADED" : "READY",
-            coverage: { sync: scope != null, ownership } as unknown as Prisma.InputJsonValue,
+            coverage: result as unknown as Prisma.InputJsonValue,
             freshness: { at: now.toISOString() }
           },
-          update: { status: degraded ? "DEGRADED" : "READY", coverage: { sync: scope != null, ownership } as unknown as Prisma.InputJsonValue, freshness: { at: now.toISOString() }, capturedAt: now }
+          update: { status: degraded ? "DEGRADED" : "READY", coverage: result as unknown as Prisma.InputJsonValue, freshness: { at: now.toISOString() }, capturedAt: now }
         });
-        await finishStageJob(prisma, job, { status: degraded ? "DEGRADED" : "SUCCEEDED", result: { ownership, sync: scope != null }, error: degraded ? "SPORTS_SYNC_DEGRADED" : null }, now);
+        await finishStageJob(prisma, job, { status: degraded ? "DEGRADED" : "SUCCEEDED", result,
+          error: degraded ? !sync ? "SPORTS_SYNC_DEGRADED" : "XI_REFRESH_DEGRADED" : null, retryInMs }, now);
         if (degraded) summary.degraded += 1;
         else summary.succeeded += 1;
       } else if (job.stage === "BUILD_REPORTS") {

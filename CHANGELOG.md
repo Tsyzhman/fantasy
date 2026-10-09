@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.124 - 2026-10-09
+
+- Refresh SorareInside explicitly after 08:10 before deadline report builds, sharing concurrent imports and keeping only a bounded coverage summary.
+- Distinguish missing forecasts from stale forecasts, reject stale or unrelated XI evidence, and prevent report builds from overtaking an unfinished refresh, with bounded abandoned-lease recovery.
+- Show «вне основы по прогнозу» without a missing-ALT detail for that signal, while preserving other reasons, raw diagnostics, roles and grouping.
+
 ## 0.3.123 - 2026-10-09
 
 - Compact Telegram deadline reports by grouping players with identical reasons within starters and bench, retaining captain and vice-captain labels and every distinct risk.

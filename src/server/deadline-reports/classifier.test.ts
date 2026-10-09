@@ -69,6 +69,21 @@ test("missing ALT, mapping or a stale forecast produce an explicit unknown cause
   assert.match(unmapped.findings[0]?.reasons[0]?.text ?? "", /маппинг/);
 });
 
+/** @spec spec://modules/telegram/FEAT-007-deadline-assistant#signals */
+test("an absent forecast is unavailable, while a stale forecast cannot establish out-of-XI", () => {
+  const unavailable = classifyDeadlinePlayers({
+    players: [player({ predictedXi: { available: false, inXi: false, coveredFixtures: 0, stale: true, source: null } })],
+    scheduleKnown: true, scheduleComplete: true
+  });
+  assert.equal(unavailable.findings[0]?.reasons[0]?.text, "Нет надёжных данных: прогноз основы недоступен");
+  const stale = classifyDeadlinePlayers({
+    players: [player({ predictedXi: { available: true, inXi: false, coveredFixtures: 1, stale: true, source: "SORAREINSIDE" } })],
+    scheduleKnown: true, scheduleComplete: true
+  });
+  assert.deepEqual(stale.findings[0]?.reasons.map((reason) => reason.code), ["UNKNOWN_DATA"]);
+  assert.match(stale.findings[0]!.reasons[0]!.text, /устарел/);
+});
+
 test("one player keeps several distinct reasons and the bench split follows the squad", () => {
   const result = classifyDeadlinePlayers({
     players: [player({ isStarter: false, isCaptain: true, fixtureCount: 0, alt: 0 })],
@@ -152,12 +167,36 @@ test("the Russia example groups identical causes without repeating player degrad
   })).parts[0]!;
   assert.match(text, /^#Россия10 · Дедлайн сегодня 19:30 МСК/);
   assert.ok(text.includes("Состав Sports: 9 тур (опубликованный). Последние замены на 10 тур могут отсутствовать."));
-  assert.ok(text.includes("Проверьте основу:\n? Хуссем Мрезиг — прогноз основы устарел.\n? Мирлинд Даку (К) — вне прогноза основы SorareInside; ALT недоступен."));
-  assert.ok(text.includes("Проверьте скамейку:\n? Андрес Аларкон, Александр Сандрачук — прогноз основы устарел.\n? Александр Беляев, Егор Любаков — вне прогноза основы SorareInside; ALT недоступен."));
-  assert.equal(text.split("\n").filter((line) => line.startsWith("? ")).length, 4);
+  assert.ok(text.includes("Проверьте основу:\n? Хуссем Мрезиг — прогноз основы недоступен.\n⚠ Мирлинд Даку (К) — вне основы по прогнозу."));
+  assert.ok(text.includes("Проверьте скамейку:\n? Андрес Аларкон, Александр Сандрачук — прогноз основы недоступен.\n⚠ Александр Беляев, Егор Любаков — вне основы по прогнозу."));
+  assert.equal(text.split("\n").filter((line) => /^[?⚠] /.test(line)).length, 4);
   for (const finding of classified.findings) assert.equal(text.split(finding.name).length - 1, 1);
   assert.ok(!text.includes("Нет надёжных данных"));
   assert.ok(!text.includes("Не хватает данных"));
+  assert.ok(!text.includes("ALT недоступен"));
+  assert.ok(classified.findings.some((finding) => finding.reasons.some((reason) => reason.text.includes("ALT недоступен"))));
+});
+
+/** @spec spec://modules/telegram/FEAT-007-deadline-assistant#message */
+test("out-of-XI groups by visible reasons and hides only missing ALT", () => {
+  const outside = { available: true, inXi: false, coveredFixtures: 1, stale: false, source: "SORAREINSIDE" };
+  const classified = classifyDeadlinePlayers({
+    players: [
+      player({ name: "Капитан", isCaptain: true, predictedXi: outside }),
+      player({ playerId: "2", name: "Вице", isViceCaptain: true, alt: null, predictedXi: outside }),
+      player({ playerId: "3", name: "Без ALT", alt: null }),
+      player({ playerId: "4", name: "Ноль", alt: 0, predictedXi: outside }),
+      player({ playerId: "5", name: "Не сопоставлен", mappingComplete: false, predictedXi: outside })
+    ], scheduleKnown: true, scheduleComplete: true
+  });
+  const before = JSON.stringify(classified);
+  const text = renderDeadlineReport(reportInput(classified)).parts[0]!;
+  assert.ok(text.includes("⚠ Капитан (К), Вице (В) — вне основы по прогнозу."));
+  assert.ok(text.includes("? Без ALT — ALT недоступен."));
+  assert.ok(text.includes("⚠ Ноль — вне основы по прогнозу; ALT 0."));
+  assert.ok(text.includes("? Не сопоставлен — вне основы по прогнозу; неполный маппинг игрока."));
+  assert.equal(JSON.stringify(classified), before, "presentation must preserve raw diagnostics");
+  assert.equal(text.split("Вице").length - 1, 1);
 });
 
 /** @spec spec://modules/telegram/FEAT-007-deadline-assistant#message */
