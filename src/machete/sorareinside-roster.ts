@@ -1,7 +1,7 @@
 /** @spec spec://modules/machete/INFRA-004-sorareinside-starters#mapping */
 import type { Prisma, PrismaClient } from '@prisma/client';
 import type { SourcePlayer } from '../providers/sorareinside/client';
-import { resolveSourcePlayer, type IdentityPlayer } from './sorareinside-identity';
+import { resolveSourcePlayerByName, type IdentityPlayer } from './sorareinside-identity';
 
 const MAX_PRICE_AGE_MS = 48 * 60 * 60_000;
 const priceSelect = { id: true, provider: true, contestId: true, leagueId: true, season: true,
@@ -54,7 +54,8 @@ export async function loadSorareRosterEvidence(db: PrismaClient, scopes: Array<{
 
 export function sorareRosterIdentity(player: IdentityPlayer, evidence: readonly SorareRosterEvidence[]): IdentityPlayer {
   const rows = evidence.filter(row => row.playerId === player.id);
-  if (rows.length === 0 || (player.birthDate && rows.some(row => day(row.providerBirthDate) !== day(player.birthDate!)))) return player;
+  if (rows.length === 0 || new Set(rows.map(row => day(row.providerBirthDate))).size !== 1
+    || (player.birthDate && rows.some(row => day(row.providerBirthDate) !== day(player.birthDate!)))) return player;
   return { ...player, birthDate: player.birthDate ?? rows[0].providerBirthDate,
     aliases: [...new Set(rows.map(row => row.fotmobPlayerName))] };
 }
@@ -68,7 +69,7 @@ export function corroboratedSorareRosterRepair(source: SourcePlayer, member: Sor
   const identity = sorareRosterIdentity(member.player, rows);
   if (identity.birthDate && day(identity.birthDate) !== source.birthDate) return null;
   // Recheck the name independently even when a saved source UUID exists.
-  if (resolveSourcePlayer(source, [identity]).player?.id !== member.player.id) return null;
+  if (resolveSourcePlayerByName(source, [identity]).player?.id !== member.player.id) return null;
   return { source, evidence: rows[0] };
 }
 
@@ -77,7 +78,8 @@ export async function restoreSorareRosterMembers(tx: Prisma.TransactionClient, s
   if (repairs.length === 0) return;
   const now = new Date();
   const ids = repairs.map(repair => repair.evidence.playerId);
-  const prices = await tx.fantasyPlayerPrice.findMany({ where: { id: { in: repairs.map(repair => repair.evidence.id) } }, select: priceSelect });
+  const prices = await tx.fantasyPlayerPrice.findMany({ where: { provider: 'SPORTS_RU', season: scope.season,
+    playerId: { in: ids }, lastSeenAt: { gte: new Date(now.getTime() - MAX_PRICE_AGE_MS) } }, select: priceSelect });
   const maps = await tx.providerEntityMap.findMany({ where: { provider: 'SPORTS_RU', providerEntityType: 'FANTASY_PLAYER_PRICE',
     internalEntityType: 'PLAYER', providerEntityId: { in: prices.map(row => row.id) } }, select: mappingSelect });
   const evidence = verifiedSorareRosterEvidence(prices, maps, now);

@@ -38,7 +38,7 @@ async function fixture() {
       players: targetPlayerIds.map(id => ({ name: `Player ${id}`, fullName: null, providerCode: null, shirtNumber: null })) },
     status: 'READY', playerResolutions: [], currentStarterIds: ids.filter((_, i) => i !== 1), targetPlayerIds, startersToSet: 1, startersToClear: 1, problems: [] };
   const cleanup = async () => {
-    await db.providerEntityMap.deleteMany({ where: { OR: [{ providerEntityId: price.id }, { providerEntityId: repair.source.id }] } });
+    await db.providerEntityMap.deleteMany({ where: { OR: [{ contestId: contest.id }, { providerEntityId: repair.source.id }] } });
     await db.fantasyPlayerPoolRefreshRequest.deleteMany({ where: { leagueId: scope.leagueId, season: scope.season } });
     await db.coreLeague.delete({ where: { id: scope.leagueId } });
     await db.coreTeam.delete({ where: { id: scope.teamId } });
@@ -75,6 +75,15 @@ test('PostgreSQL: stale evidence and a failure after writing flags/metadata/queu
     await assert.rejects(applyProbableLineupTeamPlan(db, f.plan, new Date(), undefined, f.persist,
       tx => restoreSorareRosterMembers(tx, f.scope, [f.repair])), /corroboration changed/);
     await db.fantasyPlayerPrice.update({ where: { id: f.price.id }, data: { lastSeenAt: new Date() } });
+    const conflict = await db.fantasyPlayerPrice.create({ data: { ...f.scope, contestId: f.price.contestId, playerId: f.ids[1],
+      playerName: 'Jorg Schreuders', normalizedName: 'jorg schreuders', fotmobPlayerName: 'jorg schreuders',
+      providerBirthDate: new Date('2004-09-10'), price: 5, lastSeenAt: new Date() } });
+    await db.providerEntityMap.create({ data: { provider: 'SPORTS_RU', contestId: f.price.contestId, providerSeason: f.scope.season,
+      providerEntityType: 'FANTASY_PLAYER_PRICE', providerEntityId: conflict.id, internalEntityType: 'PLAYER', internalEntityId: String(f.ids[1]), status: 'MATCHED' } });
+    await assert.rejects(applyProbableLineupTeamPlan(db, f.plan, new Date(), undefined, f.persist,
+      tx => restoreSorareRosterMembers(tx, f.scope, [f.repair])), /corroboration changed/);
+    await db.providerEntityMap.deleteMany({ where: { providerEntityId: conflict.id } });
+    await db.fantasyPlayerPrice.delete({ where: { id: conflict.id } });
     await assert.rejects(applyProbableLineupTeamPlan(db, f.plan, new Date(), async (change, tx) => {
       await enqueueCurrentXiTeamsSnapshotRefresh(tx, change); throw new Error('rollback after queue');
     }, f.persist, tx => restoreSorareRosterMembers(tx, f.scope, [f.repair])), /rollback after queue/);

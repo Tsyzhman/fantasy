@@ -30,6 +30,10 @@ export function resolveSourcePlayer(source: SourcePlayer, roster: IdentityPlayer
     if (source.birthDate && player.birthDate && source.birthDate!==player.birthDate.toISOString().slice(0,10)) return {player:null,reason:"BIRTH_DATE_CONFLICT"};
     return {player,reason:savedId===undefined?"REVIEWED_UUID":"PROVIDER_ID"};
   }
+  return resolveSourcePlayerByName(source,roster);
+}
+
+export function resolveSourcePlayerByName(source: Pick<SourcePlayer,"name"|"slug"|"birthDate">, roster: IdentityPlayer[]): { player: IdentityPlayer | null; reason: string } {
   const names = [source.name,source.slug.replace(/-\d{4}-\d{2}-\d{2}$/,"").replaceAll("-"," ")].map(normalizeLineupIdentity);
   const playerNames=(p:IdentityPlayer)=>[p.name,...(p.aliases??[])].map(normalizeLineupIdentity);
   const candidates=roster.filter(p=>playerNames(p).some(name=>names.includes(name)));

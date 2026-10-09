@@ -69,3 +69,11 @@ test('inactive Groningen member needs corroborated name, full date, exact scope 
   assert.equal(corroboratedSorareRosterRepair({ ...source, name: 'Someone Else', slug: 'someone-else' }, member, scope, verified(), false), null);
   assert.equal(resolveSourcePlayer(source, [], 1419385n).reason, 'ID_NOT_IN_ACTIVE_ROSTER');
 });
+
+test('a reviewed UUID cannot bypass independent name corroboration for an inactive member', () => {
+  const row = { ...verified()[0], playerId: 983199n, fotmobPlayerName: 'Tino Anjorin', providerBirthDate: new Date('2001-11-23') };
+  const inactive = { ...member, player: { id: 983199n, name: 'Tino Anjorin', birthDate: null } };
+  const changed = { ...source, id: 'f8ce190b-e498-4367-8685-3603fab2643e', name: 'Someone Else', slug: 'someone-else', birthDate: '2001-11-23' };
+  assert.equal(resolveSourcePlayer(changed, [sorareRosterIdentity(inactive.player, [row])]).reason, 'REVIEWED_UUID');
+  assert.equal(corroboratedSorareRosterRepair(changed, inactive, scope, [row], false), null);
+});

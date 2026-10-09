@@ -6,7 +6,7 @@
     {
       "name": "focused-regressions",
       "status": "passed",
-      "tests": 35,
+      "tests": 36,
       "failed": 0
     },
     {
@@ -37,5 +37,11 @@
     "backupScopes": 8
   },
   "production": null,
-  "messagesSent": 0
+  "messagesSent": 0,
+  "initialCandidateCheck": {
+    "url": "https://github.com/Tsyzhman/fantasy/actions/runs/37907514109",
+    "status": "passed",
+    "unitTests": 1282,
+    "databaseTests": 25
+  }
 }
