@@ -76,7 +76,7 @@ test('PostgreSQL: stale evidence and a failure after writing flags/metadata/queu
       tx => restoreSorareRosterMembers(tx, f.scope, [f.repair])), /corroboration changed/);
     await db.fantasyPlayerPrice.update({ where: { id: f.price.id }, data: { lastSeenAt: new Date() } });
     const conflict = await db.fantasyPlayerPrice.create({ data: { ...f.scope, contestId: f.price.contestId, playerId: f.ids[1],
-      playerName: 'Jorg Schreuders', normalizedName: 'jorg schreuders', fotmobPlayerName: 'jorg schreuders',
+      playerName: 'Jorg Schreuders alternative entry', normalizedName: 'jorg schreuders alternative entry', fotmobPlayerName: 'jorg schreuders',
       providerBirthDate: new Date('2004-09-10'), price: 5, lastSeenAt: new Date() } });
     await db.providerEntityMap.create({ data: { provider: 'SPORTS_RU', contestId: f.price.contestId, providerSeason: f.scope.season,
       providerEntityType: 'FANTASY_PLAYER_PRICE', providerEntityId: conflict.id, internalEntityType: 'PLAYER', internalEntityId: String(f.ids[1]), status: 'MATCHED' } });
