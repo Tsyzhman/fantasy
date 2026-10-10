@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.136 - 2026-10-10
+
+- Read Home source freshness using only persisted league and season keys; keep provider routing fields out of generated database queries and verify actual receipts in an isolated database.
+
 ## 0.3.135 - 2026-10-10
 
 - Exclude operational health probes from the user-traffic SLO denominator while preserving the one-percent failure threshold and separate source-quality checks.

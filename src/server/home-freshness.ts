@@ -4,7 +4,7 @@ import { loadActiveFantasySourceScopes, activeFantasyScope } from "./fantasy-sou
 export async function loadHomeSourceFreshness(db: PrismaClient, userId: string) {
   const active = await loadActiveFantasySourceScopes(db);
   const selected = await db.userFantasySquad.findMany({ where: { userId }, orderBy: { updatedAt: "desc" }, take: 4, select: { leagueId: true, season: true } });
-  const scopes = [...new Map([...selected, ...active].map(scope => [`${scope.leagueId}:${scope.season}`, scope])).values()].slice(0, 4);
+  const scopes = [...new Map([...selected, ...active].map(({ leagueId, season }) => [`${leagueId}:${season}`, { leagueId, season }])).values()].slice(0, 4);
   return Promise.all(scopes.map(async scope => {
     const [league, prices, stats, lineups, forecast] = await Promise.all([
       db.leagueSeason.findUnique({ where: { leagueId_season: scope }, include: { league: true } }),
