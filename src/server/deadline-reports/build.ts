@@ -197,6 +197,7 @@ function datePartsFromKey(dateKey: string): { year: number; month: number; day: 
   return { year: year ?? 2000, month: month ?? 1, day: day ?? 1 };
 }
 
+/** @spec spec://modules/telegram/FEAT-007-deadline-assistant#message */
 async function buildOneReport(
   prisma: PrismaClient,
   input: {
@@ -316,7 +317,9 @@ async function buildOneReport(
     const alt = rawAlt == null ? null : Math.round(rawAlt * 10) / 10;
     return {
       playerId: player.playerId,
-      name: poolPlayer?.name ?? price?.playerName ?? player.sourceName ?? player.playerId,
+      name: player.playerId.startsWith("provider-placeholder:SPORTS_RU:")
+        ? "затычка"
+        : poolPlayer?.name ?? price?.playerName ?? player.sourceName ?? player.playerId,
       teamId,
       teamName: poolPlayer?.teamName ?? price?.teamName ?? null,
       isStarter: player.isStarter,

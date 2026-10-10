@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.131 - 2026-10-10
+
+- Display imported Sports.ru placeholders as `затычка` in Telegram deadline reports while preserving their IDs, lineup roles and explicit mapping limitations.
+
 ## 0.3.130 - 2026-10-09
 
 - Preserve explicitly reviewed Sports.ru identity exclusions through normal refresh, including conflicting source cards; an exact automatic candidate cannot restore an excluded card.
