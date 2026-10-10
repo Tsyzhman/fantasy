@@ -84,6 +84,7 @@ jobs:
         run: |
           python3 scripts/continuous-deployment.test.py
           python3 scripts/resolve-ci-image-identities.test.py
+          node --test scripts/strip-server-action-key.test.mjs
 
       - name: Package exact Git commit
         id: release
@@ -115,20 +116,20 @@ jobs:
         id: images
         shell: bash
         env:
-          NEXT_SERVER_ACTIONS_ENCRYPTION_KEY: ${{ secrets.NEXT_SERVER_ACTIONS_ENCRYPTION_KEY }}
+          NEXT_SERVER_ACTIONS_ID_SALT: ${{ secrets.NEXT_SERVER_ACTIONS_ID_SALT }}
           RELEASE: ${{ steps.release.outputs.release }}
           COMMIT: ${{ steps.release.outputs.commit }}
           VERSION: ${{ steps.release.outputs.version }}
         run: |
           set -euo pipefail
-          : "${NEXT_SERVER_ACTIONS_ENCRYPTION_KEY:?Stable server-action key is required}"
+          : "${NEXT_SERVER_ACTIONS_ID_SALT:?Stable server-action ID salt is required}"
           builder="fantasy-ci-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
           echo "FANTASY_CI_BUILDER=$builder" >> "$GITHUB_ENV"
           docker buildx create --name "$builder" --driver docker-container --use
           for target in runtime setup; do
             docker buildx build --builder "$builder" --load --provenance=false \
               --platform linux/amd64 --target "$target" \
-              --secret id=server_actions_key,env=NEXT_SERVER_ACTIONS_ENCRYPTION_KEY \
+              --secret id=server_actions_id_salt,env=NEXT_SERVER_ACTIONS_ID_SALT \
               --build-arg "APP_RELEASE_COMMIT=$COMMIT" --build-arg "APP_RELEASE_VERSION=$VERSION" \
               --tag "fantasy-scout-ci:${COMMIT}-${target}" .
           done

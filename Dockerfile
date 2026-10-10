@@ -24,9 +24,11 @@ ENV APP_RELEASE_COMMIT="${APP_RELEASE_COMMIT}"
 LABEL org.opencontainers.image.revision="${APP_RELEASE_COMMIT}" org.opencontainers.image.version="${APP_RELEASE_VERSION}"
 
 COPY . .
-RUN --mount=type=secret,id=server_actions_key,required=true \
-  export NEXT_SERVER_ACTIONS_ENCRYPTION_KEY="$(cat /run/secrets/server_actions_key)" \
-  && ./node_modules/.bin/prisma generate && npm run build
+# Strip compiler material within the build layer, before any image can retain it.
+RUN --mount=type=secret,id=server_actions_id_salt,required=true \
+  export NEXT_SERVER_ACTIONS_ENCRYPTION_KEY="$(cat /run/secrets/server_actions_id_salt)" \
+  && ./node_modules/.bin/prisma generate && npm run build \
+  && node scripts/strip-server-action-key.mjs
 RUN ./node_modules/.bin/esbuild scripts/khl-runner.ts --bundle --platform=node --external:@prisma/client --outfile=/app/khl-runner.cjs
 RUN ./node_modules/.bin/esbuild scripts/sync-sorareinside.ts --bundle --platform=node --external:@prisma/client --outfile=/app/sync-sorareinside.cjs
 RUN ./node_modules/.bin/esbuild scripts/import-franchise-data.ts --bundle --platform=node --external:@prisma/client --outfile=/app/franchises.cjs

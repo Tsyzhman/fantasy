@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.134 - 2026-10-10
+
+- Keep Server Action encryption exclusively in private runtime configuration; retain compiler IDs and reject secret material in published image build output.
+- Extend lock waiting only for reviewed concurrent index migrations and preserve short waits for ordinary schema changes.
+
 ## 0.3.133 - 2026-10-10
 
 - Keep the mobile column chooser inside the viewport with bounded scrolling, an explicit close button and Escape support.

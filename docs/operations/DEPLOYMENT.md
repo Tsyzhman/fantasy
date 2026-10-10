@@ -4,7 +4,7 @@ The only production promoter is [Deploy Production](../../.github/workflows/depl
 
 ## Prepare and verify
 
-Run `npm run check`, isolated database integration checks, `python3 scripts/continuous-deployment.test.py` and source/version verifiers. CI uses `.nvmrc` and `npm ci`; Docker uses digest-pinned Node 24 LTS. CI builds runtime/setup images with exact commit/version labels and the stable production server-action key supplied through BuildKit. It retains the source archive, compressed images and checksummed image manifest, then removes its temporary builder. The VPS only verifies and loads those images.
+Run `npm run check`, isolated database integration checks, `python3 scripts/continuous-deployment.test.py`, `node --test scripts/strip-server-action-key.test.mjs` and source/version verifiers. CI uses `.nvmrc` and `npm ci`; Docker uses digest-pinned Node 24 LTS. CI builds runtime/setup images with exact commit/version labels and a stable `NEXT_SERVER_ACTIONS_ID_SALT` supplied through BuildKit. The build removes that compiler salt from manifests/caches in the same layer and rejects residual salt. The separate active encryption key stays on the host and is injected only into runtime containers. CI retains the sanitized source/image archives and checksummed image manifest, then removes its temporary builder. The VPS only verifies and loads those images.
 
 Run the workflow with `dry_run=true` first. Commit/tree/version, source checksum, exact runtime/setup image IDs and image checksum identify the reviewable release. Promote the same verified ref with `dry_run=false`. Releases are serialized; history rollback is rejected.
 
@@ -18,7 +18,9 @@ Never stop the serving web to build/back up/rehearse, restart Caddy for rollout,
 
 ## Credentials and budgets
 
-`fantasy_app` is the web/worker CRUD identity. Protected mode-600 host files under `/home/deploy/.config/fantasy-scout/`: `database-migration.env` owns migrations/rehearsals, `database-operator.env` owns recovery, `server-actions.key` preserves the current action key. Migration/operator credentials are absent from runtime containers. Initial restriction uses reviewed `scripts/configure-production-database-roles.py` after isolated permission probes; `--verify-only` repeats read/rollback/negative checks.
+`fantasy_app` is the web/worker CRUD identity. Protected mode-600 host files under `/home/deploy/.config/fantasy-scout/`: `database-migration.env` owns migrations/rehearsals, `database-operator.env` owns recovery, `server-actions.key` supplies the private active encryption key, and `server-actions-id-salt.key` preserves the compiler IDs. The active encryption key is absent from GitHub and all image layers. Migration/operator credentials are absent from runtime containers. Initial restriction uses reviewed `scripts/configure-production-database-roles.py` after isolated permission probes; `--verify-only` repeats read/rollback/negative checks.
+
+Reviewed single concurrent index migrations receive a bounded 30-second lock wait through a derived private URL; ordinary/mixed DDL retains five seconds, and all statements retain 120 seconds. Recover an interrupted concurrent build only after verifying its exact invalid index definition: drop that index concurrently, resolve that migration as rolled back, and retry through the canonical promoter.
 
 Web/worker run as uid 1000 with dropped capabilities/no-new-privileges. Budgets: web 2 GiB/2 CPUs/128 PIDs (1 GiB V8), worker 4 GiB/3 CPUs/256 PIDs (2 GiB V8), PostgreSQL 2 GiB/2 CPUs/256 PIDs and relay 128 MiB/0.5 CPU/64 PIDs. Apply PostgreSQL limits online after checking peak and full-import rehearsal. Check simultaneous web generations, external memory and OOM/restarts; idle memory does not establish capacity.
 

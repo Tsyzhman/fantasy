@@ -45,6 +45,7 @@ fpl_relay_rollback="fantasy-scout-fpl-relay-rollback-pre-$release"
 web_env="$(mktemp)"
 worker_env="$(mktemp)"
 rehearsal_env="$(mktemp)"
+migration_run_env="$(mktemp)"
 migration_env="/home/deploy/.config/fantasy-scout/database-migration.env"
 phase="prepare"
 old_web_renamed=0
@@ -252,7 +253,7 @@ cleanup() {
   if (( exit_code != 0 )) && [[ "$phase" == "swap" ]]; then
     if ! rollback_swap; then
       echo "Traffic rollback needs recovery; both web versions and release artifacts were retained." >&2
-      rm -f -- "$web_env" "$worker_env" "$rehearsal_env"
+      rm -f -- "$web_env" "$worker_env" "$rehearsal_env" "$migration_run_env"
       exit "$exit_code"
     fi
     if [[ -n "$old_current_target" ]] && [[ "$(readlink -f "$current_link" 2>/dev/null || true)" == "$target" ]]; then
@@ -274,7 +275,7 @@ cleanup() {
     docker exec "$postgres" psql -U fantasy_operator -d postgres -v ON_ERROR_STOP=1 \
       -c "DROP DATABASE IF EXISTS \"$rehearsal_db\" WITH (FORCE)" >/dev/null 2>&1 || true
   fi
-  rm -f -- "$web_env" "$worker_env" "$rehearsal_env"
+  rm -f -- "$web_env" "$worker_env" "$rehearsal_env" "$migration_run_env"
 
   if (( exit_code != 0 )); then
     if [[ "$phase" == "deployed" ]]; then
@@ -377,6 +378,21 @@ docker container inspect "$web" --format '{{range .Config.Env}}{{println .}}{{en
 docker container inspect "$worker" --format '{{range .Config.Env}}{{println .}}{{end}}' \
   | grep -vE '^APP_RELEASE_(COMMIT|VERSION)=' > "$worker_env"
 chmod 600 "$web_env" "$worker_env"
+python3 - "$web_env" "$worker_env" <<'PY'
+import base64
+import os
+from pathlib import Path
+import sys
+key_path = Path('/home/deploy/.config/fantasy-scout/server-actions.key')
+assert key_path.is_file() and key_path.stat().st_mode & 0o777 == 0o600
+key = key_path.read_text(encoding='utf-8').strip()
+assert len(base64.b64decode(key, validate=True)) == 32
+for filename in sys.argv[1:]:
+    path = Path(filename)
+    lines = [line for line in path.read_text().splitlines() if not line.startswith('NEXT_SERVER_ACTIONS_ENCRYPTION_KEY=')]
+    path.write_text('\n'.join(lines) + '\nNEXT_SERVER_ACTIONS_ENCRYPTION_KEY=' + key + '\n')
+    os.chmod(path, 0o600)
+PY
 [[ -f "$migration_env" && "$(stat -c '%a' "$migration_env")" == "600" ]] || {
   echo "Protected migration identity is required; do not use runtime credentials for DDL." >&2; exit 1;
 }
@@ -447,6 +463,7 @@ done
 
 # A migration without exact reviewed compatibility must never trigger downtime.
 python3 "$target/scripts/check-online-migrations.py" "$target/prisma/migrations" "${pending_migrations[@]}"
+python3 "$target/scripts/prepare-online-migration-env.py" "$target/prisma/migrations" "$migration_env" "$migration_run_env" "${pending_migrations[@]}"
 old_port="$(python3 "$target/scripts/production-web-routing.py" --current-port)"
 published_port="$(docker container inspect "$web" --format '{{range (index .NetworkSettings.Ports "3000/tcp")}}{{.HostPort}}{{end}}')"
 [[ "$published_port" == "$old_port" ]] || { echo "Serving web port disagrees with Caddy." >&2; exit 1; }
@@ -545,7 +562,7 @@ if (( ${#pending_migrations[@]} > 0 )); then
     -U fantasy_migrator -d "$rehearsal_db" --no-owner --no-acl --exit-on-error \
     < "$backup_path"
 
-  python3 - "$migration_env" "$rehearsal_env" "$rehearsal_db" <<'PY'
+  python3 - "$migration_run_env" "$rehearsal_env" "$rehearsal_db" <<'PY'
 import sys
 from urllib.parse import urlsplit, urlunsplit
 
@@ -590,7 +607,7 @@ PY
 
   schema_migration_attempted=1
   docker run --rm --name "fantasy-scout-migration-$release" \
-    --env-file "$migration_env" \
+    --env-file "$migration_run_env" \
     --network fantasy-scout_default \
     "$setup_image" npm run prisma:migrate:deploy
   setup_image_created=0
