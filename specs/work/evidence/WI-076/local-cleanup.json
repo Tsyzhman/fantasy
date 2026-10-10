@@ -1,0 +1,10 @@
+{
+  "previewProcessRunning": false,
+  "monitorProcessRunning": false,
+  "generatedDirectories": [".next", ".tmp"],
+  "cleanupStatus": "blocked_by_automatic_approval_policy",
+  "details": "Both resolved-path guarded cleanup and an exact LiteralPath cleanup were rejected before execution. Generated files were retained; no alternative deletion mechanism used.",
+  "localNodeProcessesIncludingPreexisting": 23,
+  "localNodeWorkingSetBytesIncludingPreexisting": 1878859776,
+  "otherProjectsAndOriginalWorkingTreeCachesTouched": false
+}

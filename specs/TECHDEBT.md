@@ -4,6 +4,17 @@ Register of current engineering trade-offs and risks.
 
 ## Open
 
+### TD-010: Franchise aggregation exceeds the shared worker memory limit
+
+- Area: franchise batch analytics / production worker.
+- Related specs: `spec://modules/franchises/FEAT-005-franchise-analytics#data`, `spec://common/INFRA-006-continuous-deployment#root`.
+- Introduced by: observed on production 0.3.137 during WI-076 verification; not introduced by the design release.
+- Current state: the scheduled 2026-10-10 collection reached FEATURES (53003, 48), then the kernel killed Python PID 956548 at 19:09:09 MSK within the old worker memory cgroup. The collector exited 1 and retained the previous published snapshot. The promoter correctly waited for its lock before switching production.
+- Risk: scheduled franchise refreshes can fail while the last successful snapshot remains served.
+- Trigger: aggregation of the full current dataset alongside the worker's other processes within its 4 GiB limit.
+- Mitigation: profile and bound aggregation peak memory, or isolate the collector with an explicit resource budget; verify full collection and atomic publication under concurrent worker load. Do not silently raise the limit or delete source data.
+- Work: —; evidence in `specs/work/evidence/WI-076/production-verification.json`.
+
 ### TD-009: Development tooling retains dependency advisories
 
 - Area: build and lint dependencies.
