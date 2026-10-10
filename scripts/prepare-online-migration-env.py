@@ -16,6 +16,7 @@ def prepare(root, names, source, target):
     concurrent_only = bool(names)
     for name in names:
         sql = (root / name / "migration.sql").read_text(encoding="utf-8")
+        sql = re.sub(r"/\*[\s\S]*?\*/", "", sql)
         sql = re.sub(r"--[^\n]*", "", sql).strip()
         concurrent_only &= bool(re.fullmatch(r'CREATE INDEX CONCURRENTLY IF NOT EXISTS\s+[^;]+;', sql, re.IGNORECASE))
     line = source.read_text(encoding="utf-8").strip()

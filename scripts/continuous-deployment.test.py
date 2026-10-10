@@ -125,7 +125,7 @@ class MigrationTests(unittest.TestCase):
             root = Path(directory)
             source, target = root / "source.env", root / "derived.env"
             source.write_text("DATABASE_URL=postgresql://fantasy_migrator:fixture@postgres/db?schema=public&options=old\n")
-            statements = {"index": 'CREATE INDEX CONCURRENTLY IF NOT EXISTS "safe" ON "table" ("id");',
+            statements = {"index": '/* @spec spec://common/INFRA-006-continuous-deployment#migrations */\n-- reviewed online index\nCREATE INDEX CONCURRENTLY IF NOT EXISTS "safe" ON "table" ("id");',
                           "column": 'ALTER TABLE "table" ADD COLUMN "new" TEXT;'}
             for name, sql in statements.items():
                 path = root / name
