@@ -131,7 +131,8 @@ test("server promoter verifies formula files, rehearses migrations, and checks e
   assert.match(promoter, /docker load --input "\$images_archive"/);
   assert.doesNotMatch(promoter, /docker build/);
   assert.match(promoter, /Runtime digest mismatch/);
-  assert.match(promoter, /--env-file "\$migration_env"/);
+  assert.match(promoter, /prepare-online-migration-env\.py" "\$target\/prisma\/migrations" "\$migration_env" "\$migration_run_env"/);
+  assert.match(promoter, /--env-file "\$migration_run_env"/);
   assert.match(promoter, /migration_in_list/);
   assert.doesNotMatch(promoter, /cat "\$backup_path" \| docker exec/);
   assert.match(promoter, /run_canary "Pre-migration"/);
