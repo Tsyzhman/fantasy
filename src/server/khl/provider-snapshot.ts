@@ -11,7 +11,7 @@ export async function recordProviderSnapshot(db: PrismaClient, input: { userId: 
     const source = await tx.khlSourceContract.findUnique({ where: { provider: "SPORTS_RU_TEAM" } });
     if (source?.permissionStatus !== "VERIFIED" || !source.verifiedAt) throw new Error("PROVIDER_ADAPTER_UNVERIFIED");
     const rows = await tx.khlFantasyPlayer.findMany({ where: { contestId: input.contestId, id: { in: input.entries } } });
-    if (rows.length !== 17 || validateRoster(rows.map(playerDto), Number.MAX_SAFE_INTEGER).length) throw new Error("PROVIDER_ROSTER_INVALID");
+    if (rows.length !== 17 || validateRoster(rows.map(row => playerDto(row)), Number.MAX_SAFE_INTEGER).length) throw new Error("PROVIDER_ROSTER_INVALID");
     const hash = contentHash(input);
     return tx.khlProviderSquadSnapshot.upsert({ where: { userId_contestId_providerEntryId_hash: { userId: input.userId, contestId: input.contestId, providerEntryId: input.providerEntryId, hash } }, create: { ...input, hash }, update: {} });
   });

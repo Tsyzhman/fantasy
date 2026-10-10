@@ -1,0 +1,13 @@
+✔ 100 concurrent failed records retain all failures (682.7344ms)
+✔ 100 concurrent attempts admit five password checks and reject 95 (16462.3092ms)
+✔ concurrent first setup is permanent after the last administrator is disabled (2127.6062ms)
+✔ identical official payload applies a new exact mapping, then skips without duplicates (1698.8076ms)
+✔ ten parallel publications create one complete ownership snapshot (1764.7063ms)
+ℹ tests 5
+ℹ suites 0
+ℹ pass 5
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 23541.2118

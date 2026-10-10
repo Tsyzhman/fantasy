@@ -8,16 +8,17 @@ export const KHL_READINESS = {
   coverage: { xg: null, detailedStats: null, odds: null },
   features: { localDrafts: true, verifiedTransfers: false, forecasts: false }
 };
-export function playerDto(p: KhlFantasyPlayer): KhlPlayer {
-  const fact = <T>(value: T | null): Observation<T> => ({ value, quality: value === null ? "UNKNOWN" : "FACT", source: "SPORTS_RU", asOf: p.observedAt.toISOString() });
+export function playerDto(p: KhlFantasyPlayer, catalogCheckedAt?: Date | null): KhlPlayer {
+  const asOf = catalogCheckedAt && catalogCheckedAt > p.observedAt ? catalogCheckedAt : p.observedAt;
+  const fact = <T>(value: T | null): Observation<T> => ({ value, quality: value === null ? "UNKNOWN" : "FACT", source: "SPORTS_RU", asOf: asOf.toISOString() });
   return { id: p.id, contestId: p.contestId, playerId: p.playerId, name: p.name, clubId: p.clubId, clubName: p.clubName, position: p.position as KhlPosition,
     price: fact(p.currentPriceUnits), priceRevision: p.priceRevision, priceDelta: p.priceDelta, providerLock: fact(p.providerLock),
     goals: unknown("Нет протокола"), assists: unknown("Нет протокола"), shotsOnGoal: unknown("Нет протокола"), pimMinutes: unknown("Нет протокола"), plusMinus: unknown("Нет протокола"),
     injury: unknown("Нет актуального подтверждения травмы"), attackZoneSeconds: unknown("Нет времени в атаке в протоколах"), toiSeconds: unknown("Нет протокола"), ppToiSeconds: unknown("Нет протокола"), pkToiSeconds: unknown("Нет протокола"),
     officialFp: unknown("История не импортирована"), ep: unknown("Прогноз не готов"), ixg: unknown("В протоколах нет готового индивидуального xG; отдельный источник пока не подключён"), saves: unknown("Нет протокола"), goalsAgainst: unknown("Нет протокола"), fixtures: [] };
 }
-export function envelope(contest: { id: string; seasonId: string; revision: number; publishedAt: Date | null }, data: unknown) {
-  return { apiVersion: 1, scope: { sport: "ICE_HOCKEY", contestId: contest.id, seasonId: contest.seasonId }, asOf: contest.publishedAt?.toISOString() ?? null, dataRevision: contest.revision, readiness: KHL_READINESS, sources: ["SPORTS_RU"], data };
+export function envelope(contest: { id: string; seasonId: string; revision: number; publishedAt: Date | null; catalogCheckedAt?: Date | null }, data: unknown) {
+  return { apiVersion: 1, scope: { sport: "ICE_HOCKEY", contestId: contest.id, seasonId: contest.seasonId }, asOf: contest.catalogCheckedAt?.toISOString() ?? contest.publishedAt?.toISOString() ?? null, dataRevision: contest.revision, readiness: KHL_READINESS, sources: ["SPORTS_RU"], data };
 }
 
 /** @spec spec://modules/khl/INFRA-002-khl-storage-and-api#protocol-aggregates
@@ -51,7 +52,7 @@ export async function hydratePlayers(db: Prisma.TransactionClient, rows: KhlFant
   const totalMap = new Map(seasonTotals.map(s => [s.playerId, s]));
   const scoreMap = new Map(scores.map(p => [p.id, p.officialScores]));
   return rows.map(row => {
-    const dto = playerDto(row), detail = row.playerId ? detailMap.get(row.playerId) : undefined;
+    const dto = playerDto(row, contest.catalogCheckedAt), detail = row.playerId ? detailMap.get(row.playerId) : undefined;
     const official = scoreMap.get(row.id) ?? [];
     const total = row.playerId ? totalMap.get(row.playerId) : undefined;
     if (total) dto.seasonStats = { games: total._count._all, asOf: total._max.observedAt?.toISOString() ?? null, totals: Object.fromEntries(seasonStatFields.map(f => [f, { value: total._sum[f], knownGames: total._count[f] }])) as NonNullable<KhlPlayer["seasonStats"]>["totals"] };

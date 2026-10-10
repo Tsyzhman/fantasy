@@ -1,4 +1,5 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
+import { createHash } from "node:crypto";
 import { randomUUID } from "node:crypto";
 import { fantasyProviderRoundKey } from "@/machete/squad_planner";
 import { captureSportsOwnershipSnapshots } from "@/server/sports-trends/ownership";
@@ -51,6 +52,17 @@ function dueAt(reportDate: string, hour: number, minute: number): Date {
   return moscowDateTimeToUtc({ year: year ?? 2000, month: month ?? 1, day: day ?? 1, hour, minute });
 }
 
+/** @spec spec://modules/telegram/INFRA-005-deadline-pipeline#pipeline */
+export async function deadlinePlanningVersion(prisma: PrismaClient) {
+  const contestIds = (await contestsWithEnabledSubscriptions(prisma)).sort();
+  const scopes = await prisma.fantasyContest.findMany({
+    where: { id: { in: contestIds } }, orderBy: { id: "asc" },
+    select: { id: true, scheduleRevision: true, rules: true,
+      providerRounds: { orderBy: { ordinal: "asc" }, select: { providerRoundId: true, deadlineAt: true } } }
+  });
+  return createHash("sha256").update(JSON.stringify(scopes)).digest("hex");
+}
+
 /**
  * @spec spec://modules/telegram/INFRA-005-deadline-pipeline#deadlines
  */
@@ -84,6 +96,11 @@ export async function planDeadlineCampaigns(
         where: { contestId_season_providerRoundId: { contestId, season: contest.season, providerRoundId: round.providerRoundId } }
       });
       if (existing && ["BUILT", "DELIVERING", "DONE"].includes(existing.status)) {
+        if (existing.deadlineAt?.getTime() === round.deadlineAt?.getTime()
+          && existing.scheduleVersion === (contest.scheduleRevision ?? null)) {
+          summary.skipped += 1;
+          continue;
+        }
         await prisma.deadlineCampaign.update({
           where: { id: existing.id },
           data: { deadlineAt: round.deadlineAt, scheduleVersion: contest.scheduleRevision ?? null }
@@ -128,7 +145,17 @@ export async function planDeadlineCampaigns(
       }
       const reportDate = deadlineAt ? moscowDateKey(deadlineAt) : null;
       const roundKey = fantasyProviderRoundKey(contest.provider, round.ordinal, round.providerRoundId);
-      const campaign = await prisma.deadlineCampaign.upsert({
+      const unchanged = existing
+        && existing.deadlineAt?.getTime() === deadlineAt?.getTime()
+        && existing.scheduleVersion === (contest.scheduleRevision ?? null)
+        && existing.status === status && existing.isEarlyDeadline === isEarlyDeadline
+        && existing.blockedReason === blockedReason && existing.reportDate === reportDate
+        && existing.roundKey === roundKey;
+      const campaignInputChanged = existing && !unchanged
+        && (existing.deadlineAt?.getTime() !== deadlineAt?.getTime()
+          || existing.scheduleVersion !== (contest.scheduleRevision ?? null)
+          || existing.reportDate !== reportDate);
+      const campaign = unchanged ? existing : await prisma.deadlineCampaign.upsert({
         where: { contestId_season_providerRoundId: { contestId, season: contest.season, providerRoundId: round.providerRoundId } },
         create: {
           provider: contest.provider,
@@ -153,7 +180,11 @@ export async function planDeadlineCampaigns(
           scheduleVersion: contest.scheduleRevision ?? null,
           status,
           isEarlyDeadline,
-          blockedReason
+          blockedReason,
+          reportDate,
+          roundKey,
+          roundLabel: `Тур ${round.ordinal}`,
+          ...(campaignInputChanged ? { inputVersion: { increment: 1 } } : {})
         }
       });
       if (status === "BLOCKED") {
@@ -173,6 +204,11 @@ export async function planDeadlineCampaigns(
           { stage: "BUILD_REPORTS", dueAt: dueAt(reportDate, DEADLINE_BUILD_HOUR, DEADLINE_BUILD_MINUTE - 35) }
         ];
         for (const stage of stages) {
+          const existingStage = await prisma.deadlineStageJob.findUnique({
+            where: { campaignId_stage_inputVersion_shardKey: { campaignId: campaign.id, stage: stage.stage,
+              inputVersion: campaign.inputVersion, shardKey: "" } }, select: { dueAt: true }
+          });
+          if (existingStage?.dueAt.getTime() === stage.dueAt.getTime()) continue;
           await prisma.deadlineStageJob.upsert({
             where: { campaignId_stage_inputVersion_shardKey: { campaignId: campaign.id, stage: stage.stage, inputVersion: campaign.inputVersion, shardKey: "" } },
             create: {
@@ -188,7 +224,8 @@ export async function planDeadlineCampaigns(
           });
         }
       }
-      if (existing) summary.updated += 1;
+      if (unchanged) summary.skipped += 1;
+      else if (existing) summary.updated += 1;
       else summary.created += 1;
       summary.details.push({ contestId, providerRoundId: round.providerRoundId, status });
     }

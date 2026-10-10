@@ -1,0 +1,5 @@
+{
+  "compatibility": "Additive nullable metadata and concurrent indexes. Old web/worker ignore the new columns and indexes. No destructive changes.",
+  "sqlSha256": "2799abf69196cd15f733498a4bcf227fa800dbacc6110335e1794579b504205a",
+  "mode": "online"
+}

@@ -6,6 +6,7 @@ import { summarizeHockeyHistory } from "@/khl/history-projection";
 import { contentHash } from "@/khl/repositories/revisions";
 import { seasonStatFields, type KhlHistoricalStats, type KhlPosition } from "@/khl/contracts";
 import { validateProtocolArchive } from "@/khl/protocol-archive";
+import { fetchSportsBirthDate } from "@/providers/sports-ru-hockey/identity";
 
 export async function importHistoricalSeason(db: PrismaClient, input: { playerId: string; providerSeasonId: string; aggregates: KhlHistoricalStats; observedAt: Date; protocolOnly?: boolean }) {
   const { aggregates, observedAt } = input;
@@ -65,12 +66,14 @@ export async function refreshHistoricalSeason(db: PrismaClient, contestId: strin
     try {
       const source = await fetchSource(contest.providerContestId, player.providerPlayerId);
       const current = parseHockeyHistory(source.html, { tagId: player.providerTagId ?? "", season: contest.season.seasonKey, position: player.position as KhlPosition });
+      const tagProfile = current.tagId === null ? { tagId: player.providerTagId ?? "", ...(await fetchSportsBirthDate(player.providerTagId ?? "")) } : undefined;
       const providerSeasonId = hockeyHistorySeasonId(source.html, seasonKey);
       let games = 0;
       if (providerSeasonId) {
         const archive = await fetchSource(contest.providerContestId, player.providerPlayerId, undefined, providerSeasonId);
         if (hockeyHistorySeasonId(archive.html, seasonKey) !== providerSeasonId || !archive.html.includes(`value="${providerSeasonId}" selected`)) throw new Error("HISTORY_ARCHIVE_SEASON_MISMATCH");
-        const profile = parseHockeyHistory(archive.html, { tagId: player.providerTagId ?? "", season: seasonKey, position: player.position as KhlPosition, historyOnly: true });
+        const profile = parseHockeyHistory(archive.html, { tagId: player.providerTagId ?? "", season: seasonKey, position: player.position as KhlPosition,
+          historyOnly: true, verifiedArchiveIdentity: { current, currentUrl: source.url, archiveUrl: archive.url, providerSeasonId, tagProfile } });
         if (profile.name !== current.name) throw new Error("HISTORY_ARCHIVE_IDENTITY_MISMATCH");
         const aggregates = summarizeHockeyHistory(profile.rows.map(r => ({ ...r, participationStatus: r.toiSeconds === null ? "UNKNOWN" : r.toiSeconds > 0 ? "PLAYED" : "DNP" })), seasonKey, archive.url);
         games = aggregates.games;

@@ -27,7 +27,9 @@ test("catalog refresh keeps unchanged observations bounded and publishes correct
     await refreshKhlCatalogs();
     const second = await prisma.khlContest.findUniqueOrThrow({ where: { id: contest.id } });
     assert.equal(second.revision, first.revision);
-    assert.ok(second.publishedAt! > first.publishedAt!);
+    assert.equal(second.publishedAt?.getTime(), first.publishedAt?.getTime());
+    assert.ok(second.catalogCheckedAt! > first.catalogCheckedAt!);
+    assert.equal((await prisma.khlFantasyPlayer.findFirstOrThrow({ where: { contestId: contest.id } })).observedAt.getTime(), first.publishedAt!.getTime());
     assert.equal(await prisma.khlObservationReceipt.count({ where: receiptWhere }), 694);
     payload.players[0].price = "600";
     await refreshKhlCatalogs();

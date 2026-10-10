@@ -40,3 +40,18 @@ test('identity, season and provider column drift fail closed',()=>{
  assert.throws(()=>parseHockeyHistory(html,{...expected,season:'2025\/2026'}),/IDENTITY|SEASON/);
  assert.throws(()=>parseHockeyHistory(html.replace('МИН','MIN'),expected),/COLUMNS/);
 });
+
+test('blank archive headers require the same provider route, verified current tag and selected season',()=>{
+ const currentHtml=fixture('blank-current'), archive=fixture('blank-archive');
+ const tagId=/\/tags\/(\d+)\//.exec(currentHtml)![1];
+ const current=parseHockeyHistory(currentHtml,{tagId,season:'2026/2027',position:'F'});
+ const currentUrl='https://www.sports.ru/fantasy/hockey/player/info/107/2152421.html';
+ const verifiedArchiveIdentity={current,currentUrl,archiveUrl:currentUrl+'?s=1317639',providerSeasonId:'1317639'};
+ const expected={tagId,season:'2025/2026',position:'F' as const,historyOnly:true,verifiedArchiveIdentity};
+ const result=parseHockeyHistory(archive,expected);
+ assert.equal(result.tagId,tagId);assert.equal(result.name,current.name);assert.ok(result.rows.length>0);
+ assert.throws(()=>parseHockeyHistory(archive,{...expected,verifiedArchiveIdentity:undefined}),/IDENTITY/);
+ assert.throws(()=>parseHockeyHistory(archive,{...expected,verifiedArchiveIdentity:{...verifiedArchiveIdentity,archiveUrl:currentUrl.replace('2152421','123')+'?s=1317639'}}),/IDENTITY/);
+ assert.throws(()=>parseHockeyHistory(archive,{...expected,tagId:'123'}),/IDENTITY/);
+ assert.throws(()=>parseHockeyHistory(archive.replace('<b></b>','<b>Другой игрок</b>'),expected),/IDENTITY/);
+});
