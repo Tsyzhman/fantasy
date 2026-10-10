@@ -22,6 +22,8 @@ Never stop the serving web to build/back up/rehearse, restart Caddy for rollout,
 
 Web/worker run as uid 1000 with dropped capabilities/no-new-privileges. Budgets: web 2 GiB/2 CPUs/128 PIDs (1 GiB V8), worker 4 GiB/3 CPUs/256 PIDs (2 GiB V8), PostgreSQL 2 GiB/2 CPUs/256 PIDs and relay 128 MiB/0.5 CPU/64 PIDs. Apply PostgreSQL limits online after checking peak and full-import rehearsal. Check simultaneous web generations, external memory and OOM/restarts; idle memory does not establish capacity.
 
+If the legacy runtime is PostgreSQL's bootstrap OID 10, the role adapter preserves that immutable superuser as the protected `fantasy_operator` and creates a limited runtime login with the same credentials. Existing old-generation connections retain their original role until draining; verify the new web/worker connections and absence of the temporary transition login after promotion. `configure-production-postgres.py` applies the database budget, redacted slow/temp-file logging and migration timeouts online, without a database restart.
+
 ## Verify the running release
 
 ```bash

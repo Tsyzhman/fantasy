@@ -8,7 +8,7 @@ import os
 from pathlib import Path
 import secrets
 import subprocess
-from urllib.parse import quote, urlsplit, urlunsplit
+from urllib.parse import unquote, urlsplit, urlunsplit
 
 
 def execute(container, user, database, sql, password=None, tcp=False, check=True):
@@ -51,17 +51,17 @@ def protected_url(path, runtime_url, username):
 def verify(container, database, runtime_url, operator_url):
     runtime = urlsplit(runtime_url)
     operator = urlsplit(operator_url)
-    execute(container, "fantasy_operator", database, "SELECT 1;", operator.password, tcp=True)
+    execute(container, "fantasy_operator", database, "SELECT 1;", unquote(operator.password), tcp=True)
     attrs = execute(container, "fantasy_app", database,
                     "SELECT rolsuper, rolcreatedb, rolcreaterole, rolreplication, rolbypassrls FROM pg_roles WHERE rolname=current_user;",
-                    runtime.password, tcp=True).stdout.strip()
+                    unquote(runtime.password), tcp=True).stdout.strip()
     if attrs != "f|f|f|f|f":
         raise RuntimeError("Runtime role attributes are not restricted")
     execute(container, "fantasy_app", database, '''BEGIN;
 INSERT INTO "AuthRateLimit" (id,action,"subjectHash") VALUES ('audit-role-probe','ROLE_PROBE','audit-role-probe');
 UPDATE "AuthRateLimit" SET "failedCount"=1 WHERE id='audit-role-probe';
 SELECT "failedCount" FROM "AuthRateLimit" WHERE id='audit-role-probe';
-DELETE FROM "AuthRateLimit" WHERE id='audit-role-probe'; ROLLBACK;''', runtime.password, tcp=True)
+DELETE FROM "AuthRateLimit" WHERE id='audit-role-probe'; ROLLBACK;''', unquote(runtime.password), tcp=True)
     probes = {
         "create_table": 'CREATE TABLE public.audit_forbidden (id int)',
         "create_database": 'CREATE DATABASE audit_forbidden',
@@ -72,12 +72,43 @@ DELETE FROM "AuthRateLimit" WHERE id='audit-role-probe'; ROLLBACK;''', runtime.p
     }
     for name, sql in probes.items():
         result = execute(container, "fantasy_app", database,
-                         "\\set VERBOSITY sqlstate\n" + sql + ";", runtime.password, tcp=True, check=False)
+                         "\\set VERBOSITY sqlstate\n" + sql + ";", unquote(runtime.password), tcp=True, check=False)
         if result.returncode == 0 or "42501" not in result.stderr:
             raise RuntimeError(f"Expected permission denial for {name}")
     print(json.dumps({"runtime": "fantasy_app", "attributes": [False] * 5,
                       "crud": "passed and rolled back", "negativePermissions": list(probes),
                       "operatorTcpLogin": "passed", "credentials": "protected host files only"}))
+
+
+def apply_roles(container, database, runtime_url, operator_url, migration_url):
+    state = execute(container, "fantasy_app", database,
+                    "SELECT oid=10 FROM pg_roles WHERE rolname='fantasy_app'; SELECT count(*) FROM pg_roles WHERE rolname='fantasy_operator';").stdout.strip().splitlines()
+    bootstrap = state[0] == "t"
+    exists = state[1] == "1"
+    transition = "fantasy_role_transition"
+    sql = Path(__file__).with_name("runtime-database-roles.sql").read_text()
+    def literal(value):
+        return "'" + unquote(value).replace("'", "''") + "'"
+    prefix = "\\set operator_password " + literal(urlsplit(operator_url).password) + "\n"
+    prefix += "\\set migration_password " + literal(urlsplit(migration_url).password) + "\n"
+    prefix += "\\set runtime_password " + literal(urlsplit(runtime_url).password) + "\n"
+    if bootstrap:
+        # PostgreSQL 16 forbids demoting OID 10. A short separate session renames
+        # it to the protected operator and creates the same runtime login anew.
+        transition_password = secrets.token_hex(32)
+        prepare = "BEGIN; SELECT 'CREATE ROLE fantasy_role_transition LOGIN SUPERUSER' WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname='fantasy_role_transition') \\gexec\n"
+        prepare += "ALTER ROLE fantasy_role_transition LOGIN SUPERUSER PASSWORD '" + transition_password + "'; COMMIT;"
+        execute(container, "fantasy_app", database, prepare)
+        try:
+            execute(container, transition, database, prefix + sql, transition_password, tcp=True)
+        finally:
+            # On rollback the original bootstrap remains available. On success
+            # the renamed operator has already received its protected password.
+            cleanup_user = "fantasy_operator" if execute(container, "fantasy_app", database,
+                "SELECT count(*) FROM pg_roles WHERE rolname='fantasy_operator';").stdout.strip() == "1" else "fantasy_app"
+            execute(container, cleanup_user, database, "DROP ROLE IF EXISTS fantasy_role_transition;")
+    else:
+        execute(container, "fantasy_operator" if exists else "fantasy_app", database, prefix + sql)
 
 
 def main():
@@ -97,13 +128,8 @@ def main():
     operator_url = protected_url(args.config_dir / "database-operator.env", runtime_url, "fantasy_operator")
     migration_url = protected_url(args.config_dir / "database-migration.env", runtime_url, "fantasy_migrator")
     if not args.verify_only:
-        exists = execute(args.container, "fantasy_app", args.database,
-                         "SELECT count(*) FROM pg_roles WHERE rolname='fantasy_operator';").stdout.strip() == "1"
-        sql = Path(__file__).with_name("runtime-database-roles.sql").read_text()
-        prefix = "\\set operator_password '" + urlsplit(operator_url).password + "'\n"
-        prefix += "\\set migration_password '" + urlsplit(migration_url).password + "'\n"
-        execute(args.container, "fantasy_operator" if exists else "fantasy_app", args.database, prefix + sql)
-    execute(args.container, "fantasy_migrator", args.database, "SELECT 1;", urlsplit(migration_url).password, tcp=True)
+        apply_roles(args.container, args.database, runtime_url, operator_url, migration_url)
+    execute(args.container, "fantasy_migrator", args.database, "SELECT 1;", unquote(urlsplit(migration_url).password), tcp=True)
     verify(args.container, args.database, runtime_url, operator_url)
 
 

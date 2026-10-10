@@ -4,6 +4,9 @@ Direct permission probes in a disposable CI PostgreSQL service, never production
 """
 import importlib.util
 import os
+import json
+import subprocess
+import time
 from pathlib import Path
 import unittest
 
@@ -27,8 +30,11 @@ class RoleTests(unittest.TestCase):
 CREATE TABLE "_prisma_migrations" (migration_name text);
 CREATE TYPE public.audit_enum AS ENUM ('A','B');''')
             sql = Path(__file__).with_name("runtime-database-roles.sql").read_text()
-            prefix = "\\set operator_password 'isolated-operator-only'\n\\set migration_password 'isolated-migration-only'\n"
-            run("fantasy_app", database, prefix + sql)
+            prefix = "\\set operator_password 'isolated-operator-only'\n\\set migration_password 'isolated-migration-only'\n\\set runtime_password 'isolated-runtime-only'\n"
+            roles.apply_roles(container, database,
+                              f"postgresql://fantasy_app:isolated-runtime-only@localhost/{database}",
+                              f"postgresql://fantasy_operator:isolated-operator-only@localhost/{database}",
+                              f"postgresql://fantasy_migrator:isolated-migration-only@localhost/{database}")
             roles.verify(container, database,
                          f"postgresql://fantasy_app:isolated-runtime-only@localhost/{database}",
                          f"postgresql://fantasy_operator:isolated-operator-only@localhost/{database}")
@@ -43,6 +49,42 @@ CREATE TYPE public.audit_enum AS ENUM ('A','B');''')
         finally:
             run(admin, "postgres", f'DROP DATABASE "{database}" WITH (FORCE);')
             run(admin, "postgres", "DROP ROLE IF EXISTS fantasy_migrator, fantasy_operator, fantasy_app;")
+
+    def test_actual_bootstrap_oid_is_preserved_as_protected_operator(self):
+        service = os.environ["TEST_POSTGRES_CONTAINER"]
+        self.assertNotEqual(service, "fantasy-scout-postgres")
+        image = json.loads(subprocess.check_output(["docker", "inspect", service]))[0]["Image"]
+        container = "fantasy-audit-bootstrap-" + str(os.getpid())
+        database = "fantasy_roles_test_ci"
+        subprocess.run(["docker", "run", "-d", "--name", container, "--label", "purpose=audit-regression",
+                        "--memory", "512m", "--cpus", "1", "--pids-limit", "128",
+                        "--tmpfs", "/var/lib/postgresql/data:size=128m",
+                        "-e", "POSTGRES_USER=fantasy_app", "-e", "POSTGRES_PASSWORD=isolated-runtime-only",
+                        "-e", "POSTGRES_DB=" + database, image], check=True, capture_output=True)
+        run = lambda user, db, sql: roles.execute(container, user, db, sql)
+        try:
+            for _ in range(30):
+                if subprocess.run(["docker", "exec", container, "pg_isready", "-U", "fantasy_app"], capture_output=True).returncode == 0:
+                    break
+                time.sleep(1)
+            self.assertEqual(run("fantasy_app", database, "SELECT oid FROM pg_roles WHERE rolname=current_user;").stdout.strip(), "10")
+            run("fantasy_app", database, '''CREATE TABLE "AuthRateLimit" (id text primary key, action text, "subjectHash" text, "failedCount" int default 0);
+CREATE TABLE "_prisma_migrations" (migration_name text);
+CREATE TYPE public.audit_enum AS ENUM ('A','B');''')
+            runtime_url = f"postgresql://fantasy_app:isolated-runtime-only@localhost/{database}"
+            operator_url = f"postgresql://fantasy_operator:isolated-operator-only@localhost/{database}"
+            migration_url = f"postgresql://fantasy_migrator:isolated-migration-only@localhost/{database}"
+            roles.apply_roles(container, database, runtime_url, operator_url, migration_url)
+            roles.verify(container, database, runtime_url, operator_url)
+            self.assertEqual(run("fantasy_app", database, "SELECT oid=10 FROM pg_roles WHERE rolname='fantasy_operator'; SELECT count(*) FROM pg_roles WHERE rolname='fantasy_role_transition';").stdout.strip(), "t\n0")
+            run("fantasy_migrator", database, "CREATE TABLE public.audit_future (id serial primary key, value audit_enum);")
+            run("fantasy_app", database, "BEGIN; INSERT INTO public.audit_future(value) VALUES ('A'); ROLLBACK;")
+            roles.apply_roles(container, database, runtime_url, operator_url, migration_url)
+            roles.verify(container, database, runtime_url, operator_url)
+        finally:
+            details = json.loads(subprocess.check_output(["docker", "inspect", container]))[0]
+            self.assertEqual(details["Config"]["Labels"].get("purpose"), "audit-regression")
+            subprocess.run(["docker", "rm", "-f", container], check=True, capture_output=True)
 
 
 if __name__ == "__main__":

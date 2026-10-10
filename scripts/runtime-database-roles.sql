@@ -3,6 +3,11 @@
 BEGIN;
 SET LOCAL lock_timeout = '2s';
 SET LOCAL statement_timeout = '30s';
+-- OID 10 is PostgreSQL's immutable bootstrap superuser; preserve it as operator.
+SELECT 'ALTER ROLE fantasy_app RENAME TO fantasy_operator'
+WHERE EXISTS (SELECT FROM pg_roles WHERE rolname='fantasy_app' AND oid=10) \gexec
+SELECT format('CREATE ROLE fantasy_app LOGIN NOSUPERUSER NOCREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS PASSWORD %L', :'runtime_password')
+WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname='fantasy_app') \gexec
 SELECT 'CREATE ROLE fantasy_operator LOGIN SUPERUSER'
 WHERE NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'fantasy_operator') \gexec
 SELECT 'CREATE ROLE fantasy_migrator LOGIN NOSUPERUSER CREATEDB NOCREATEROLE NOREPLICATION NOBYPASSRLS'
@@ -13,23 +18,23 @@ SELECT format('ALTER DATABASE %I OWNER TO fantasy_migrator', current_database())
 -- The init user may also own the three system databases. Remove that ownership.
 SELECT format('ALTER DATABASE %I OWNER TO fantasy_operator', datname)
 FROM pg_database WHERE datname IN ('postgres', 'template0', 'template1')
-AND datdba = (SELECT oid FROM pg_roles WHERE rolname = 'fantasy_app') \gexec
+AND datdba IN (SELECT oid FROM pg_roles WHERE rolname IN ('fantasy_app','fantasy_operator')) \gexec
 ALTER SCHEMA public OWNER TO fantasy_migrator;
 SELECT format('ALTER %s %I.%I OWNER TO fantasy_migrator',
  CASE relkind WHEN 'S' THEN 'SEQUENCE' WHEN 'v' THEN 'VIEW' WHEN 'm' THEN 'MATERIALIZED VIEW' ELSE 'TABLE' END, n.nspname, c.relname)
 FROM pg_class c JOIN pg_namespace n ON n.oid = c.relnamespace
 WHERE n.nspname = 'public' AND c.relkind IN ('r','p','S','v','m','f')
-AND c.relowner = (SELECT oid FROM pg_roles WHERE rolname = 'fantasy_app')
+AND c.relowner IN (SELECT oid FROM pg_roles WHERE rolname IN ('fantasy_app','fantasy_operator'))
 ORDER BY CASE WHEN c.relkind = 'S' THEN 1 ELSE 0 END, c.oid \gexec
 SELECT format('ALTER TYPE %I.%I OWNER TO fantasy_migrator', n.nspname, t.typname)
 FROM pg_type t JOIN pg_namespace n ON n.oid = t.typnamespace
 WHERE n.nspname = 'public' AND t.typtype IN ('e','d')
-AND t.typowner = (SELECT oid FROM pg_roles WHERE rolname = 'fantasy_app') \gexec
+AND t.typowner IN (SELECT oid FROM pg_roles WHERE rolname IN ('fantasy_app','fantasy_operator')) \gexec
 SELECT format('ALTER %s %I.%I(%s) OWNER TO fantasy_migrator',
  CASE p.prokind WHEN 'p' THEN 'PROCEDURE' ELSE 'FUNCTION' END,
  n.nspname, p.proname, pg_get_function_identity_arguments(p.oid))
 FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
-WHERE n.nspname = 'public' AND p.proowner = (SELECT oid FROM pg_roles WHERE rolname = 'fantasy_app') \gexec
+WHERE n.nspname = 'public' AND p.proowner IN (SELECT oid FROM pg_roles WHERE rolname IN ('fantasy_app','fantasy_operator')) \gexec
 REVOKE CREATE ON SCHEMA public FROM PUBLIC, fantasy_app;
 SELECT format('REVOKE ALL ON DATABASE %I FROM fantasy_app', current_database()) \gexec
 SELECT format('REVOKE CREATE, TEMPORARY ON DATABASE %I FROM PUBLIC', current_database()) \gexec

@@ -66,6 +66,8 @@ Use two running web generations and a graceful upstream reload rather than rebui
 
 Pending migrations must carry a reviewed `deployment.json` with `mode: online` and the exact `sqlSha256` of `migration.sql`. This explicitly asserts compatibility with the currently serving and candidate binaries, including rollback to the old binary. An absent, mismatched or unsupported declaration aborts promotion without stopping the website.
 
+PostgreSQL 16's bootstrap OID 10 cannot lose SUPERUSER. If it has the legacy runtime name, a short separate administrative session atomically renames it to `fantasy_operator`, creates the limited `fantasy_app` with unchanged credentials, and transfers application ownership. Remove the temporary transition login on success or rollback. Existing connections retain their original role until the old generations drain; after promotion only the protected operator owns OID 10. Each concurrent index uses one migration statement; the migration role has five-second lock and 120-second statement timeouts.
+
 Keep custom-format backup verification and restore/apply rehearsal, but perform them while production serves traffic. Apply only the reviewed compatible migration set, with bounded database lock/statement timeouts in its SQL; check the old serving version afterward. Breaking schema changes require an expand/contract sequence across separate releases. A normal deployment must never silently fall back to a stop-and-replace path. Applied migrations are not undone by runtime rollback.
 
 <a name="contracts"></a>
