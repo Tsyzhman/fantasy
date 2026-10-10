@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.137 - 2026-10-10
+
+- Share bounded SQL diagnostics and the single sampling timer across independent server bundle copies, so web requests appear in process reports.
+
 ## 0.3.136 - 2026-10-10
 
 - Read Home source freshness using only persisted league and season keys; keep provider routing fields out of generated database queries and verify actual receipts in an isolated database.

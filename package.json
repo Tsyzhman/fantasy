@@ -1,6 +1,6 @@
 {
   "name": "fantasy-scout",
-  "version": "0.3.136",
+  "version": "0.3.137",
   "private": true,
   "engines": {
     "node": ">=24.11.0 <25"
