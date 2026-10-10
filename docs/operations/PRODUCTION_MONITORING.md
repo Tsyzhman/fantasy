@@ -6,6 +6,8 @@ The scheduled monitor checks public application health/login, client critical er
 
 The host access-audit timer produces an hourly snapshot and `rolling-slo-audit.json` for the preceding 24 hours, with the existing <1% eligible 5xx threshold and minimum 20 requests. The 24-hour check also requires an exact 1440-minute window, fresh generation, retained start and recent coverage end. Truncated/missing log history cannot pass. Synthetic monitor/browser-canary traffic and expected source-health failures stay excluded from user-traffic metrics.
 
+Exclude the exact `/api/health`, `/api/health/fpl`, `/api/health/data-quality` and `/api/health/fantasy-prices` paths from both the numerator and denominator. Their availability/quality results are checked separately. Frequent successful health probes must never dilute a real user-traffic breach.
+
 `beta-access-audit.json` preserves fixed beta-start evidence and is never relabeled as a complete window after logs expire. A separate beta acceptance run can enable `MONITOR_FIXED_WINDOW_ENABLED=true` with exact start/minimum observed span; those strict checks remain. Ordinary operations use the rolling SLO. Review JSON results, not only the workflow exit status.
 
 ## Correlation and resources

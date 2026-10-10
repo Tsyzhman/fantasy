@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.135 - 2026-10-10
+
+- Exclude operational health probes from the user-traffic SLO denominator while preserving the one-percent failure threshold and separate source-quality checks.
+
 ## 0.3.134 - 2026-10-10
 
 - Keep Server Action encryption exclusively in private runtime configuration; retain compiler IDs and reject secret material in published image build output.

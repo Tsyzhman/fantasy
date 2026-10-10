@@ -29,6 +29,8 @@ common_arguments=(
 	--log-pattern '/var/log/caddy/fantasy-access*.log*'
 	--max-5xx-rate-percent 1
 	--min-requests 20
+	--exclude-path /api/health
+	--exclude-path /api/health/fpl
 	--exclude-path /api/health/data-quality
 	--exclude-path /api/health/fantasy-prices
 	--exclude-user-agent-prefix fantasy-scout-production-monitor/1.0
