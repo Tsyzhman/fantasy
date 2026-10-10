@@ -1977,7 +1977,7 @@ export function FantasySquadPlanner({ userId, leagueId, season, provider, rules,
         </div>
       ) : null}
       <div className={cn("flex flex-col gap-4 transition-opacity", leagueNavigationPending && "pointer-events-none select-none opacity-[0.35]")}>
-      <div ref={plannerTabsRef} className="sticky top-14 z-30 order-1 -mx-1 rounded border border-slate-200 bg-white/95 p-1 shadow-sm backdrop-blur xl:hidden">
+      <div ref={plannerTabsRef} className="sticky top-[60px] z-30 order-1 -mx-1 rounded border border-slate-200 bg-white p-1 shadow-sm xl:hidden">
         <SegmentedControl value={mobileTab} onChange={setMobileTab} options={mobileTabs} className="w-full justify-between border-0 bg-transparent p-0 [&>button]:min-h-12 [&>button]:flex-1" size="sm" />
       </div>
       <section className="contents">

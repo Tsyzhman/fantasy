@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.138 - 2026-10-10
+
+- Adopt Midnight Scout / Pressbox with semantic green accents, opaque surfaces, compact overview and restrained navigation.
+- Add persisted system/light/dark themes and independent comfortable/compact table density.
+- Replace the Cloudline design instruction with the supplied football statistics design system while preserving workflows.
+
 ## 0.3.137 - 2026-10-10
 
 - Share bounded SQL diagnostics and the single sampling timer across independent server bundle copies, so web requests appear in process reports.

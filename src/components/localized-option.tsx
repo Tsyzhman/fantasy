@@ -45,7 +45,8 @@ function subscribeToLanguage(callback: () => void) {
 
 function getLanguageSnapshot(): Language {
   if (typeof window === "undefined") return defaultLanguage;
-  const stored = window.localStorage.getItem("fantasy-language");
+  let stored: string | null = null;
+  try { stored = window.localStorage.getItem("fantasy-language"); } catch {}
   return stored === "ru" || stored === "en" ? stored : defaultLanguage;
 }
 

@@ -22,15 +22,22 @@ const jetbrainsMono = JetBrains_Mono({
   variable: "--font-jetbrains-mono"
 });
 
+/** @spec spec://common/PROP-002-editorial-sport-design#preferences */
 const earlyPreferenceScript = `
+var theme;
+try { theme = localStorage.getItem("fantasy-theme"); } catch (error) {}
 try {
-  var theme = localStorage.getItem("fantasy-theme");
   if (theme !== "dark" && theme !== "light") {
     theme = window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
   }
   document.documentElement.dataset.theme = theme;
   document.documentElement.style.colorScheme = theme;
 
+} catch (error) {}
+try {
+  document.documentElement.dataset.density = localStorage.getItem("fantasy-density") === "compact" ? "compact" : "comfortable";
+} catch (error) {}
+try {
   var language = localStorage.getItem("fantasy-language");
   if (language === "ru" || language === "en") {
     document.documentElement.dataset.language = language;

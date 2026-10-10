@@ -1,0 +1,274 @@
+
+> fantasy-scout@0.3.138 lint
+> eslint .
+
+
+C:\Users\Nik\.codex\worktrees\editorial-sport-design\fantasy_export\src\app\betting\ui.tsx
+   50:5     warning  React Hook useEffect has a missing dependency: 'slip'. Either include it or remove the dependency array                                   react-hooks/exhaustive-deps
+   50:6     warning  React Hook useEffect has a complex expression in the dependency array. Extract it to a separate variable so it can be statically checked  react-hooks/exhaustive-deps
+   72:116   warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+   72:155   warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+   75:18    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+   77:18    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+   79:41    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+   79:291   warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+   80:98    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+   82:30    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+   84:300   warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+   84:399   warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+   85:61    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+   89:65    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+   91:57    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+   92:53    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+   93:530   warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+   95:53    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  103:51    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  104:17    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  105:80    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  105:170   warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  105:513   warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  112:131   warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  113:31    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  116:75    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  117:38    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  119:68    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  120:72    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  120:93    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  120:165   warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  123:58    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  123:92    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  124:79    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  124:219   warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  124:345   warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  124:366   warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  124:954   warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  125:373   warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  125:404   warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  125:674   warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  126:39    warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  127:282   warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  127:644   warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  127:1064  warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  127:1451  warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  127:1559  warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  127:1708  warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  127:2176  warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+  127:2481  warning  Visible text should use I18nText/localizedText or an explicit localized helper                                                            i18n/no-unlocalized-jsx-text
+
+C:\Users\Nik\.codex\worktrees\editorial-sport-design\fantasy_export\src\app\franchises\ui.tsx
+    85:11  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   142:36  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   482:45  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   494:18  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   510:16  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   513:21  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   517:40  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   523:18  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   528:13  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   540:41  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   556:14  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   582:40  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   604:44  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   606:17  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   778:42  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   780:12  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   827:13  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   836:17  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   842:43  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   879:83  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   883:61  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   884:96  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   893:33  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   904:34  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   914:28  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   919:40  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   924:40  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   925:61  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   931:24  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   936:22  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   959:40  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   978:42  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1023:23  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1030:56  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1047:56  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1065:56  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1082:56  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1102:26  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1102:44  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1107:26  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1107:49  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1115:23  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1131:21  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1172:21  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1214:21  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1239:21  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1254:23  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1284:65  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1293:26  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1295:32  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1299:24  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1310:24  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1317:21  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1359:21  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1413:23  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1451:21  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1483:40  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1489:21  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1525:28  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1560:28  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1572:22  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1574:21  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1575:20  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1582:21  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1583:20  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1591:21  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1592:20  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1601:20  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1607:21  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1608:20  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1616:20  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1624:20  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1636:20  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  1642:20  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+
+C:\Users\Nik\.codex\worktrees\editorial-sport-design\fantasy_export\src\app\machete\khl\[view]\page.tsx
+  20:143  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+
+C:\Users\Nik\.codex\worktrees\editorial-sport-design\fantasy_export\src\components\beta\BetaTelemetryReporter.tsx
+  105:11  warning  Do not use `window.location.assign()` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+C:\Users\Nik\.codex\worktrees\editorial-sport-design\fantasy_export\src\components\beta\BetaTestStart.tsx
+  38:7  warning  Do not use `window.location.assign()` to navigate to internal Next.js pages. Use `redirect()` in the render phase, or `useRouter().push()` in Client Components' event handlers instead. See: https://nextjs.org/docs/messages/no-location-assign-relative-destination  @next/next/no-location-assign-relative-destination
+
+C:\Users\Nik\.codex\worktrees\editorial-sport-design\fantasy_export\src\components\khl\KhlDataPanels.tsx
+  10:104   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  10:149   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  20:19    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  35:270   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  35:339   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  38:91    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  39:199   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  39:636   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  39:710   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  39:844   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  39:862   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  39:1140  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  42:969   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  43:191   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+
+C:\Users\Nik\.codex\worktrees\editorial-sport-design\fantasy_export\src\components\khl\KhlForecastBreakdown.tsx
+   8:21   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+   9:21   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  12:39   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  13:56   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  13:119  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  14:105  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  15:148  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  15:195  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  17:65   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  19:28   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  20:32   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  23:193  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  23:328  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  23:387  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  23:547  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  25:104  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  26:10   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  26:77   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  26:225  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  27:106  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  29:50   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  30:10   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  31:10   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  32:10   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  33:10   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+
+C:\Users\Nik\.codex\worktrees\editorial-sport-design\fantasy_export\src\components\khl\KhlSquadCard.tsx
+  30:12   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  31:12   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  32:35   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  33:37   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  38:14   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  38:168  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+
+C:\Users\Nik\.codex\worktrees\editorial-sport-design\fantasy_export\src\components\khl\KhlSquadPlanner.tsx
+   22:93    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  208:91    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  208:150   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  208:307   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  214:252   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  215:30    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  215:217   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  215:272   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  216:73    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  216:237   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  220:110   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  221:32    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  221:57    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  222:190   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  222:221   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  222:482   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  222:513   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  223:161   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  226:10    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  226:112   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  228:36    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  236:258   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  239:51    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  240:92    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  240:851   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  243:150   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  243:242   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  244:73    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  244:215   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  244:779   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  245:295   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  254:90    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  256:30    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  256:202   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  256:266   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  256:325   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  257:58    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  257:153   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  258:30    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  260:51    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  260:311   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  260:391   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  260:435   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  260:476   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  260:1055  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  260:1165  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  261:97    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  261:138   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  261:303   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  263:95    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  265:67    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+
+C:\Users\Nik\.codex\worktrees\editorial-sport-design\fantasy_export\src\components\khl\KhlSyncStatusPanel.tsx
+  41:19   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  42:35   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  43:8    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  44:8    warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  45:30   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  45:234  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  47:133  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  48:91   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+  49:38   warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+
+C:\Users\Nik\.codex\worktrees\editorial-sport-design\fantasy_export\src\components\machete\FantasySquadPlanner.tsx
+  1235:6  warning  React Hook useEffect has a missing dependency: 'setSelections'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\Nik\.codex\worktrees\editorial-sport-design\fantasy_export\src\components\machete\FranchiseSquadPreview.tsx
+  142:13  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\Nik\.codex\worktrees\editorial-sport-design\fantasy_export\src\components\machete\PlayerPool.tsx
+  1401:5  warning  Using `<img>` could result in slower LCP and higher bandwidth. Consider using `<Image />` from `next/image` or a custom image loader to automatically optimize images. This may incur additional usage or cost from your provider. See: https://nextjs.org/docs/messages/no-img-element  @next/next/no-img-element
+
+C:\Users\Nik\.codex\worktrees\editorial-sport-design\fantasy_export\src\components\telegram-settings.tsx
+  144:6  warning  React Hook useEffect has a missing dependency: 'challenge'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\Nik\.codex\worktrees\editorial-sport-design\fantasy_export\src\components\theme-toggle.tsx
+  27:28  warning  Visible text should use I18nText/localizedText or an explicit localized helper  i18n/no-unlocalized-jsx-text
+
+✖ 237 problems (0 errors, 237 warnings)
+

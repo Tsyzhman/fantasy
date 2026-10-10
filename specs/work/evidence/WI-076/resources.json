@@ -1,0 +1,18 @@
+{
+  "before": {
+    "webMiB": 221,
+    "workerGiB": 1.1,
+    "hostAvailableMiB": 6307,
+    "webCount": 1,
+    "workerCount": 1
+  },
+  "during": {
+    "webMiB": 224.3,
+    "workerGiB": 1.158,
+    "releaseDirectoryMiB": 96,
+    "dockerBuildCacheBytes": 0,
+    "localNodeCountIncludingPreexisting": 27,
+    "localNodeWorkingSetMiBIncludingBuild": 2541
+  },
+  "notes": "No production cache deletion or scheduler duplication. Local isolated dependency install and preview only; previous process ownership preserved."
+}

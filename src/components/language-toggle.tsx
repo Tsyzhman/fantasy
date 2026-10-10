@@ -18,7 +18,7 @@ export function LanguageToggle() {
   function toggleLanguage() {
     const next = language === "ru" ? "en" : "ru";
     applyLanguage(next);
-    window.localStorage.setItem("fantasy-language", next);
+    try { window.localStorage.setItem("fantasy-language", next); } catch {}
     window.dispatchEvent(new Event(languageChangeEvent));
   }
 
@@ -49,7 +49,8 @@ function subscribeToLanguage(callback: () => void) {
 }
 
 function getLanguageSnapshot(): Language {
-  const stored = window.localStorage.getItem("fantasy-language");
+  let stored: string | null = null;
+  try { stored = window.localStorage.getItem("fantasy-language"); } catch {}
   return stored === "ru" || stored === "en" ? stored : defaultLanguage;
 }
 

@@ -28,6 +28,8 @@ Contracts: `spec://modules/machete/FEAT-006-sports-popularity#root`, `spec://mod
 
 ## Modules and code ownership
 
+Shared visual system: `src/app/globals.css`, `src/components/app-header.tsx`, theme/density controls and early preferences in `src/app/layout.tsx` follow `spec://common/PROP-002-editorial-sport-design#root`. The canonical user-supplied instruction is `docs/design/DESIGN.md`.
+
 | Area | Responsibility | Primary code |
 |---|---|---|
 | Spec workflow tooling | PROP-001: explicit standalone/managed mode validation, mirrored client skills and contract fixtures | `.agents/skills/spec-driven-work/scripts/check-workflow.mjs`, `.claude/skills/spec-driven-work/scripts/check-workflow.mjs`, `src/lib/workflow-validator.test.ts` |

@@ -54,21 +54,22 @@ const modes = [
   }
 ];
 
+/** @spec spec://common/PROP-002-editorial-sport-design#contracts */
 export default async function HomePage() {
   const user = process.env.NEXT_PHASE === "phase-production-build" ? null : await getCurrentUser();
   const dashboard = user ? await loadHomeDashboard(user.id).catch(() => null) : null;
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-7xl flex-col px-4 pb-10 pt-24 sm:px-6 lg:px-8 2xl:max-w-[1600px] 3xl:max-w-[1760px]">
+    <main className="mx-auto flex min-h-screen max-w-[1440px] flex-col px-4 pb-8 pt-6 sm:px-6">
       <section className="grid items-end gap-6 lg:grid-cols-12">
         <div className="lg:col-span-7">
           <p className="kicker">
             <I18nText en="Today" ru="Сегодня" />
           </p>
-          <h1 className="mt-3 max-w-[14ch] text-[clamp(32px,5vw,56px)] font-bold leading-[1.04] tracking-[-0.04em] text-ink">
+          <h1 className="mt-2 text-[clamp(24px,3vw,32px)] font-bold leading-tight tracking-tight text-ink">
             <I18nText en="Fantasy Scout" ru="Fantasy Scout" />
           </h1>
-          <p className="mt-4 max-w-[56ch] text-[clamp(16px,1.6vw,19px)] leading-6 text-slate-600">
+          <p className="mt-2 max-w-[56ch] text-sm leading-6 text-slate-600">
             <I18nText
               en="Your latest squad, fresh prices, watched players and active workspaces in one place."
               ru="Последний состав, свежие цены, избранное и рабочие режимы в одном месте."
@@ -87,7 +88,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+      <section className="overview-metrics mt-6 grid grid-cols-2 md:grid-cols-4">
         <MetricCard icon={<Users className="h-5 w-5" />} labelEn="Squad players" labelRu="Игроки состава" value={dashboard?.squad ? String(dashboard.squad.playersCount) : "0"} />
         <MetricCard icon={<CalendarDays className="h-5 w-5" />} labelEn="Next fixtures" labelRu="Ближайшие матчи" value={dashboard?.squad ? String(dashboard.squad.nextRound.fixtureCount) : "0"} />
         <MetricCard icon={<Eye className="h-5 w-5" />} labelEn="Saved views" labelRu="Сохраненные виды" value={String(dashboard?.savedViewsCount ?? 0)} />
@@ -384,14 +385,14 @@ async function loadNextRound(leagueId: bigint, season: string, teamIds: bigint[]
 
 function MetricCard({ icon, labelEn, labelRu, value }: { icon: React.ReactNode; labelEn: string; labelRu: string; value: string }) {
   return (
-    <div className="ui-card p-4">
+    <div className="min-w-0">
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm font-semibold text-slate-600">
           <I18nText en={labelEn} ru={labelRu} />
         </p>
-        <span className="inline-flex h-9 w-9 items-center justify-center rounded bg-brand-50 text-brand-700">{icon}</span>
+        <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center text-slate-500">{icon}</span>
       </div>
-      <p className="mt-4 text-3xl font-bold text-ink">{value}</p>
+      <p className="mt-2 text-[28px] font-bold text-ink num-tabular">{value}</p>
     </div>
   );
 }
