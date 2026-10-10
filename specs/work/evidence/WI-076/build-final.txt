@@ -1,0 +1,164 @@
+
+> fantasy-scout@0.3.138 prebuild
+> npm run extension:build
+
+
+> fantasy-scout@0.3.138 extension:build
+> node scripts/build-browser-extension.mjs
+
+Built chromium extension 0.1.0: public/downloads/fantasy-sports-transfer-chromium.zip
+Built firefox extension 0.1.0: public/downloads/fantasy-sports-transfer-firefox.zip
+
+> fantasy-scout@0.3.138 build
+> next build --webpack
+
+▲ Next.js 16.3.8 (webpack)
+✓ Running next.config.mjs took 27ms
+- Experiments (use with caution):
+  · serverActions
+
+  Creating an optimized production build ...
+✓ Compiled successfully in 9.7s
+  Running TypeScript ...
+  Finished TypeScript in 4.7s ...
+  Collecting page data using 15 workers ...
+  Generating static pages using 15 workers (0/20) ...
+  Generating static pages using 15 workers (5/20) 
+  Generating static pages using 15 workers (10/20) 
+  Generating static pages using 15 workers (15/20) 
+✓ Generating static pages using 15 workers (20/20) in 1327ms
+  Finalizing page optimization ...
+  Collecting build traces ...
+
+Route (app)
+┌ ƒ /
+├ ƒ /_not-found
+├ ƒ /admin
+├ ƒ /admin/beta-test
+├ ƒ /admin/franchise-squads
+├ ƒ /admin/ingestion
+├ ƒ /admin/leagues
+├ ƒ /admin/leagues/[leagueId]
+├ ƒ /admin/leagues/[leagueId]/teams/[teamId]
+├ ƒ /admin/models
+├ ƒ /admin/models/machete
+├ ƒ /admin/users
+├ ƒ /api/admin/beta-test/report
+├ ƒ /api/admin/fantasy-sources/foontasy/start
+├ ƒ /api/admin/fantasy-sources/fpl/start
+├ ƒ /api/admin/fantasy-sources/prices/start
+├ ƒ /api/admin/fantasy-sources/probable-lineups/[source]/start
+├ ƒ /api/admin/imports/[importId]/publish
+├ ƒ /api/admin/ingestion/cancel
+├ ƒ /api/admin/ingestion/incremental-update/start
+├ ƒ /api/admin/ingestion/initial-backfill/start
+├ ƒ /api/admin/ingestion/status
+├ ƒ /api/admin/teams/[teamId]/upload
+├ ƒ /api/admin/telegram/webhook
+├ ƒ /api/auth/logout
+├ ƒ /api/baltika/fixtures
+├ ƒ /api/baltika/fixtures/[fixtureId]
+├ ƒ /api/baltika/leagues/[leagueId]/bulk-upload
+├ ƒ /api/baltika/leagues/[leagueId]/sync-sports-schedule
+├ ƒ /api/baltika/teams/[teamId]/team-stats/upload
+├ ƒ /api/beta/telemetry
+├ ƒ /api/betting
+├ ƒ /api/browser-extension/sports-squad
+├ ƒ /api/client-errors
+├ ƒ /api/cron/data-quality
+├ ƒ /api/cron/ingestion/daily
+├ ƒ /api/cron/retention/league-seasons
+├ ƒ /api/franchises
+├ ƒ /api/health
+├ ƒ /api/health/client-errors
+├ ƒ /api/health/data-quality
+├ ƒ /api/health/fantasy-prices
+├ ƒ /api/health/fpl
+├ ƒ /api/machete/fantasy-prices/import-sheet
+├ ƒ /api/machete/fpl/chips
+├ ƒ /api/machete/fpl/squad
+├ ƒ /api/machete/franchise-squads
+├ ƒ /api/machete/khl/[...path]
+├ ƒ /api/machete/leagues
+├ ƒ /api/machete/leagues/[leagueId]/calculate-scores
+├ ƒ /api/machete/leagues/[leagueId]/export-starting-xi
+├ ƒ /api/machete/leagues/[leagueId]/run-entity-matching
+├ ƒ /api/machete/leagues/[leagueId]/sync-fixtures
+├ ƒ /api/machete/leagues/[leagueId]/sync-full
+├ ƒ /api/machete/leagues/[leagueId]/sync-metadata
+├ ƒ /api/machete/leagues/[leagueId]/sync-player-stats
+├ ƒ /api/machete/leagues/[leagueId]/sync-teams
+├ ƒ /api/machete/platform-transfers
+├ ƒ /api/machete/player-photos/[playerId]
+├ ƒ /api/machete/players/export-table
+├ ƒ /api/machete/sports-ru-player-mappings
+├ ƒ /api/machete/sports-trends
+├ ƒ /api/machete/squads
+├ ƒ /api/machete/squads/export
+├ ƒ /api/machete/squads/export-table
+├ ƒ /api/machete/squads/formula-adaptations
+├ ƒ /api/machete/squads/global-strategy
+├ ƒ /api/machete/squads/import-fpl
+├ ƒ /api/machete/squads/import-sports-ru
+├ ƒ /api/machete/squads/projection-details
+├ ƒ /api/machete/squads/snapshot
+├ ƒ /api/machete/sync-all
+├ ƒ /api/machete/sync-jobs
+├ ƒ /api/machete/sync-status
+├ ƒ /api/machete/team-player-seasons/starter
+├ ƒ /api/machete/teams/[teamId]/sync
+├ ƒ /api/mixerr/leagues/[leagueId]/sync-shots
+├ ƒ /api/players
+├ ƒ /api/players/[snapshotId]
+├ ƒ /api/players/[snapshotId]/shot-map
+├ ƒ /api/profile/telegram
+├ ƒ /api/profile/telegram/confirm
+├ ƒ /api/profile/telegram/link-code
+├ ƒ /api/profile/telegram/link-session
+├ ƒ /api/profile/telegram/subscriptions
+├ ƒ /api/shot-map/compare
+├ ƒ /api/teams/[teamId]/shot-map/against
+├ ƒ /api/teams/[teamId]/shot-map/for
+├ ƒ /api/telegram/webhook
+├ ƒ /api/user/external-profiles/fpl
+├ ƒ /api/user/external-profiles/sports-ru
+├ ƒ /api/user/saved-views
+├ ƒ /api/user/squad-table-columns
+├ ƒ /api/user/watchlist
+├ ƒ /baltika/leagues
+├ ƒ /baltika/leagues/[leagueId]
+├ ƒ /baltika/leagues/[leagueId]/schedule
+├ ƒ /baltika/leagues/[leagueId]/teams/[teamId]
+├ ƒ /baltika/models
+├ ƒ /baltika/players
+├ ƒ /beta-test
+├ ƒ /betting
+├ ƒ /compare
+├ ƒ /franchises
+├ ƒ /login
+├ ƒ /machete
+├ ƒ /machete/fpl/squad
+├ ƒ /machete/franchise-squads
+├ ƒ /machete/khl/[view]
+├ ƒ /machete/leagues
+├ ƒ /machete/leagues/[leagueId]
+├ ƒ /machete/leagues/[leagueId]/teams/[teamId]
+├ ƒ /machete/models
+├ ƒ /machete/players
+├ ƒ /machete/squad
+├ ƒ /machete/sync-jobs
+├ ƒ /mixerr
+├ ƒ /players
+├ ƒ /profile
+└ ƒ /setup
+
+
+ƒ Proxy (Middleware)
+
+ƒ  (Dynamic)  server-rendered on demand
+
+
+> fantasy-scout@0.3.138 postbuild
+> tsx scripts/sanitize-standalone-output.ts
+
+Standalone output contains no local state or generated QA artifacts.

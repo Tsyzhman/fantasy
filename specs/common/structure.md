@@ -28,7 +28,7 @@ Contracts: `spec://modules/machete/FEAT-006-sports-popularity#root`, `spec://mod
 
 ## Modules and code ownership
 
-Shared visual system: `src/app/globals.css`, `src/components/app-header.tsx`, theme/density controls and early preferences in `src/app/layout.tsx` follow `spec://common/PROP-002-editorial-sport-design#root`. The canonical user-supplied instruction is `docs/design/DESIGN.md`.
+Shared visual system: `src/app/globals.css`, `src/components/app-header.tsx`, theme/density controls and early preferences in `src/app/layout.tsx` follow `spec://common/PROP-002-editorial-sport-design#root`. The module styles in `src/app/franchises/ui.module.css`, `src/app/betting/ui.module.css` and `src/components/khl/KhlSquadPlanner.module.css` share its surface, typography and density tokens. The canonical user-supplied instruction is `docs/design/DESIGN.md`.
 
 | Area | Responsibility | Primary code |
 |---|---|---|

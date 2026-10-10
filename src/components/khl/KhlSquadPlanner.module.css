@@ -1,3 +1,4 @@
+/* @spec spec://common/PROP-002-editorial-sport-design#contracts */
 /* @spec spec://modules/khl/FEAT-002-khl-squad#layout */
 .planner { color: var(--text-primary); }
 .control { min-height: 44px; max-width: 100%; border: 1px solid var(--border); border-radius: var(--radius-xs); background: var(--surface-1); color: var(--text-primary); padding: 8px 12px; font-size: 13px; }
@@ -12,7 +13,7 @@
 .catalog { max-width: 100%; }
 .catalog table { background: var(--surface-1); }
 .catalog thead { background: var(--surface-2); }
-.catalog th, .catalog td { padding: 8px; border-bottom: 1px solid var(--border); font-size: 12px; }
+.catalog th, .catalog td { height: var(--table-row-height); padding: 6px 10px; border-bottom: 1px solid var(--border); font-size: var(--table-font-size); }
 .catalog td { font-variant-numeric: tabular-nums; }
 .catalog th:first-child, .catalog td:first-child { position: sticky; left: 0; z-index: 1; background: var(--surface-1); min-width: 110px; }
 .catalog th:first-child { background: var(--surface-2); }
@@ -55,11 +56,11 @@
 @media (min-width: 1280px) {
   .workspace { grid-template-columns: minmax(410px, .85fr) minmax(0, 1.15fr); gap: 20px; padding: 16px; }
   .catalog { align-self: start; }
-  .rink { position: relative; gap: 10px; padding: 12px 8px; border: 1px solid #487996; border-radius: 18px; background: repeating-linear-gradient(0deg, #183a51 0px, #183a51 70px, #1a4058 70px, #1a4058 140px); overflow: hidden; }
+  .rink { position: relative; gap: 10px; padding: 12px 8px; border: 1px solid var(--border-strong); border-radius:var(--radius-lg); background: var(--bg-sunken); overflow: hidden; }
   .rink::before { content: ""; position: absolute; top: 50%; left: 8px; right: 8px; height: 3px; background: #cf596d80; box-shadow: 0 -130px #82b6da60, 0 130px #82b6da60; pointer-events: none; }
   .rink::after { content: ""; position: absolute; top: calc(50% - 38px); left: calc(50% - 38px); width: 76px; height: 76px; border: 1px solid #ffffff35; border-radius: 50%; pointer-events: none; }
   .group { position: relative; z-index: 1; }
-  .group h2 { text-align: center; color: #d6e8f2; font-size: 10px; margin-bottom: 5px; }
+  .group h2 { text-align: center; color: var(--text-secondary); font-size: 10px; margin-bottom: 5px; }
   .slots { flex-direction: row; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 5px; }
   .card, .empty { flex: 0 0 calc((100% - 25px) / 6); max-width: 82px; }
   .card { display: block; padding: 0; text-align: center; }
