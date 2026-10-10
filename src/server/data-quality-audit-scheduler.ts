@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db";
 import { createLogger } from "@/lib/logger";
 import { runFantasyDataQualityAudit } from "@/machete/data_quality_audit";
 import { readDataQualityAuditScheduleConfig } from "@/machete/data_quality_schedule";
+import { loadActiveFantasySourceScopes } from "./fantasy-source-registry";
 
 const DEFAULT_AUDIT_TIME = "10:00";
 const DEFAULT_TIME_ZONE = "Europe/Moscow";
@@ -22,12 +23,7 @@ export function startDataQualityAuditScheduler() {
 
   try {
     const config = readDataQualityAuditScheduleConfig();
-    if (config.scopes.length === 0) {
-      logger.warn("Scheduled data-quality audit is not configured.", {
-        requiredEnvironment: "DATA_QUALITY_AUDIT_SCOPES"
-      });
-      return;
-    }
+    void config;
   } catch (error) {
     logger.error("Scheduled data-quality audit configuration is invalid.", { error });
     return;
@@ -63,7 +59,8 @@ async function runScheduledAudit(state: SchedulerState, scheduledFor: string) {
 
   try {
     const config = readDataQualityAuditScheduleConfig();
-    if (config.scopes.length === 0) throw new Error("DATA_QUALITY_AUDIT_SCOPES is empty.");
+    config.scopes = await loadActiveFantasySourceScopes(prisma);
+    if (config.scopes.length === 0) throw new Error("No active fantasy source scopes.");
 
     for (const scope of config.scopes) {
       logger.info("Running scheduled fantasy data-quality audit.", { scheduledFor, ...scope });

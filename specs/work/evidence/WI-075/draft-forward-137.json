@@ -1,0 +1,52 @@
+{
+  "beforeVersion": "0.3.132",
+  "afterVersion": "0.3.137",
+  "equal": true,
+  "entries": 1,
+  "sha256": "db0adacd556c2f04cb9956726466209902462a55ec59087a022fd71682d1abff",
+  "horizon": 5,
+  "activeRoundOffset": 1,
+  "transferBaselineCount": 15,
+  "rounds": [
+    {
+      "offset": 0,
+      "linked": false,
+      "players": 15,
+      "captains": [
+        "1248665"
+      ]
+    },
+    {
+      "offset": 1,
+      "linked": false,
+      "players": 15,
+      "captains": [
+        "812816"
+      ]
+    },
+    {
+      "offset": 2,
+      "linked": true,
+      "players": 15,
+      "captains": [
+        "812816"
+      ]
+    },
+    {
+      "offset": 3,
+      "linked": true,
+      "players": 15,
+      "captains": [
+        "812816"
+      ]
+    },
+    {
+      "offset": 4,
+      "linked": true,
+      "players": 15,
+      "captains": [
+        "812816"
+      ]
+    }
+  ]
+}

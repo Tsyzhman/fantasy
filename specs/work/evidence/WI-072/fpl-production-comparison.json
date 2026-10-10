@@ -1,0 +1,43 @@
+{
+  "baseline": "verified pre-134 backup before automatic FPL refresh",
+  "beforeRows": 667,
+  "beforeMapped": 589,
+  "afterRows": 667,
+  "afterMapped": 667,
+  "officialColumns": [
+    "id",
+    "contest_id",
+    "provider",
+    "provider_event_id",
+    "provider_player_id",
+    "gameweek",
+    "league_id",
+    "season",
+    "points",
+    "breakdown",
+    "status"
+  ],
+  "beforeOfficialSha256": "d9c4f46be7cb1d7bbee01a93a8798f7e4a12a94495fb223f99bede1f1e38950d",
+  "afterOfficialSha256": "d9c4f46be7cb1d7bbee01a93a8798f7e4a12a94495fb223f99bede1f1e38950d",
+  "columnChanges": {
+    "id": 0,
+    "contest_id": 0,
+    "provider": 0,
+    "provider_event_id": 0,
+    "provider_player_id": 0,
+    "gameweek": 0,
+    "league_id": 0,
+    "season": 0,
+    "player_id": 78,
+    "match_id": 0,
+    "points": 0,
+    "breakdown": 0,
+    "status": 0,
+    "source_url": 0,
+    "fetched_at": 667,
+    "created_at": 0,
+    "updated_at": 667
+  },
+  "officialValuesExactlyUnchanged": true,
+  "note": "Normal refresh changed receipt timestamps; those are accounted separately."
+}

@@ -1,0 +1,1 @@
+{"runtime": "fantasy_app", "attributes": [false, false, false, false, false], "crud": "passed and rolled back", "negativePermissions": ["create_table", "create_database", "create_role", "truncate", "migration_write", "admin_membership"], "operatorTcpLogin": "passed", "credentials": "protected host files only"}

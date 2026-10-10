@@ -22,6 +22,7 @@ def load(name, filename):
 
 routing = load("production_web_routing", "production-web-routing.py")
 migrations = load("online_migrations", "check-online-migrations.py")
+migration_environment = load("migration_environment", "prepare-online-migration-env.py")
 CONFIG = '''(shared) {
     header X-Trace "literal } brace"
 }
@@ -42,6 +43,14 @@ fantasy.tsyzhman.ru {
 
 
 class RoutingTests(unittest.TestCase):
+    def test_observability_is_scoped_and_idempotent(self):
+        traced = routing.render_observability(CONFIG)
+        self.assertEqual(routing.current_port(traced), 3000)
+        self.assertEqual(routing.render_observability(traced), traced)
+        start, end = routing.site_bounds(traced)
+        self.assertIn('log_append request_id {http.request.uuid}', traced[start:end])
+        self.assertNotIn('log_append', traced[:start] + traced[end:])
+
     def test_switch_preserves_other_sites_monitoring_and_reverse_switch(self):
         switched = routing.render_upstream(CONFIG, 3000, 3001)
         self.assertEqual(routing.current_port(switched), 3001)
@@ -110,6 +119,31 @@ class RoutingTests(unittest.TestCase):
 
 
 class MigrationTests(unittest.TestCase):
+    def test_longer_timeout_is_exclusive_to_reviewed_single_concurrent_indexes(self):
+        from urllib.parse import parse_qs, urlsplit
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            source, target = root / "source.env", root / "derived.env"
+            source.write_text("DATABASE_URL=postgresql://fantasy_migrator:fixture@postgres/db?schema=public&options=old\n")
+            statements = {"index": '/* @spec spec://common/INFRA-006-continuous-deployment#migrations */\n-- reviewed online index\nCREATE INDEX CONCURRENTLY IF NOT EXISTS "safe" ON "table" ("id");',
+                          "plain_index": '-- @spec spec://common/INFRA-006-continuous-deployment#migrations\nCREATE INDEX CONCURRENTLY "plain" ON "table" ("id");',
+                          "column": 'ALTER TABLE "table" ADD COLUMN "new" TEXT;'}
+            for name, sql in statements.items():
+                path = root / name
+                path.mkdir()
+                (path / "migration.sql").write_bytes(sql.encode())
+                (path / "deployment.json").write_text(json.dumps({"mode": "online", "sqlSha256": hashlib.sha256(sql.encode()).hexdigest()}))
+            for names, seconds in [(["index"], 30), (["plain_index"], 30), (["column"], 5), (["index", "column"], 5), ([], 5)]:
+                self.assertEqual(migration_environment.prepare(root, names, source, target), seconds)
+                url = urlsplit(target.read_text().strip().split("=", 1)[1])
+                self.assertEqual(url.username, "fantasy_migrator")
+                self.assertEqual(url.password, "fixture")
+                self.assertEqual(parse_qs(url.query)["schema"], ["public"])
+                self.assertEqual(parse_qs(url.query)["options"], [f"-c lock_timeout={seconds}s -c statement_timeout=120s"])
+            (root / "index/migration.sql").write_text("DROP TABLE unsafe;")
+            with self.assertRaises(ValueError):
+                migration_environment.prepare(root, ["index"], source, target)
+
     def test_only_exact_reviewed_online_sql_passes(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)

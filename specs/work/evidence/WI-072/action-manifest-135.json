@@ -1,0 +1,25 @@
+{
+  "commit": "e78a6a16e4685011ace1d13beeafb71aab8ec26a",
+  "node": "v24.21.0",
+  "uid": "1000",
+  "privateKeyEqualsRuntime": true,
+  "privateKeyDiffersFromCompilerSalt": true,
+  "activeEncryptionKeyInImageEnvironment": false,
+  "manifestEncryptionKeyEmpty": true,
+  "actionIds": [
+    "403e95e344966d980a439ef8d158cded1f1a9f2e74",
+    "405c1e7faacd3c4debce5da95b9b76ebbe9c6e49da",
+    "4060e020a1054bf8950cd145e2fc3a2b139005ed5f",
+    "40648b922517feca7cae30a9e2c08ccffdd53bf65e",
+    "4065b98977a3afd8d19d1493b7651a0313d630967c",
+    "40a13cdd07281d4973be96f73323489e2f3fc38238",
+    "40b7d2c6425a7ade0c8c5d4ff3ff550f0ec7714a71",
+    "40c28e6661bb7a841a682f47b7efe62ec96e6a4a06",
+    "40da07dcc07c8da2bd553d42c7f652935c23f57aaa",
+    "40e23a799eb541d98198ef671aeae5b0fe1243f3c0"
+  ],
+  "protectedFileModes": {
+    "server-actions.key": "0o600",
+    "server-actions-id-salt.key": "0o600"
+  }
+}

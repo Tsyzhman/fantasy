@@ -7,6 +7,13 @@ const scope = { leagueId: 47n, season: "2026/2027", tournamentHru: "england" };
 const thresholds = { maximumAgeHours: 7, minimumPlayers: 100, minimumMappedPercent: 98 };
 const now = new Date("2026-07-15T12:00:00.000Z");
 
+test("only explicit reviewed exclusions leave the mapping denominator; missing mappings still fail", () => {
+  const input = { scope, lastSyncedAt: now, priceCount: 110, mappedCount: 100, excludedCount: 10 };
+  assert.equal(evaluateSportsRuFantasyPriceHealth(input, thresholds, now).healthy, true);
+  assert.equal(evaluateSportsRuFantasyPriceHealth({ ...input, excludedCount: 0 }, thresholds, now).healthy, false);
+  assert.equal(evaluateSportsRuFantasyPriceHealth({ ...input, excludedCount: 11 }, thresholds, now).healthy, false);
+});
+
 test("Sports.ru price health passes only a fresh, complete and mapped snapshot", () => {
   const result = evaluateSportsRuFantasyPriceHealth(
     { scope, lastSyncedAt: new Date("2026-07-15T06:00:00.000Z"), priceCount: 629, mappedCount: 620 },

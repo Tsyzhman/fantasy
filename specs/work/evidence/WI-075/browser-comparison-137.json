@@ -1,0 +1,83 @@
+{
+  "method": "Single cold authenticated desktop navigation followed by 391x844 viewport; not a touch-device performance distribution; repeated registered observers produced identical records, deduplicated by exact start/duration",
+  "beforeVersion": "0.3.131",
+  "afterVersion": "0.3.137",
+  "before": {
+    "encodedJsBytes": 269405,
+    "transferJsBytes": 275405,
+    "longTasks": [
+      {
+        "start": 2192.5999999046326,
+        "duration": 51
+      }
+    ],
+    "navigation": [
+      {
+        "domContentLoaded": 279.89999997615814,
+        "load": 592.0999999046326,
+        "encodedBodySize": 39905
+      }
+    ],
+    "horizontalOverflowPx": 0
+  },
+  "after": {
+    "encodedJsBytes": 271660,
+    "transferJsBytes": 277660,
+    "longTasks": [
+      {
+        "start": 421.10000002384186,
+        "duration": 70
+      },
+      {
+        "start": 998.8999999761581,
+        "duration": 77
+      },
+      {
+        "start": 1124.6000000238419,
+        "duration": 60
+      },
+      {
+        "start": 1325.7999999523163,
+        "duration": 55
+      },
+      {
+        "start": 1616.2999999523163,
+        "duration": 52
+      },
+      {
+        "start": 1759.1000000238419,
+        "duration": 53
+      },
+      {
+        "start": 1913.6000000238419,
+        "duration": 52
+      },
+      {
+        "start": 2056.6999999284744,
+        "duration": 53
+      },
+      {
+        "start": 2211.899999976158,
+        "duration": 55
+      },
+      {
+        "start": 2324.600000023842,
+        "duration": 78
+      },
+      {
+        "start": 2843,
+        "duration": 85
+      }
+    ],
+    "navigation": [
+      {
+        "domContentLoaded": 409,
+        "load": 678.8999999761581,
+        "encodedBodySize": 40174
+      }
+    ],
+    "horizontalOverflowPx": 0,
+    "rawLongTaskRecords": 22,
+    "observerDuplicateRecords": 11
+  }
+}

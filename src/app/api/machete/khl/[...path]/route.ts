@@ -144,7 +144,7 @@ const mutate = withApiHandler(async (request: Request, context: Context) => {
       const baselineIds = existing?.baseline && existing.baseline.userId === auth.user.id && existing.baseline.contestId === contestId ? existing.baseline.entries as string[] : null;
       const baselinePlayers = baselineIds ? await tx.khlFantasyPlayer.findMany({ where: { contestId, id: { in: baselineIds } } }) : [];
       const capital = baselineIds && baselinePlayers.length === 17 && baselinePlayers.every(p => p.currentPriceUnits !== null) ? existing!.baseline!.bankUnits + baselinePlayers.reduce((n, p) => n + p.currentPriceUnits!, 0) : 20000;
-      const violations = validateRoster(players.map(playerDto), capital, body.mode === "COMPLETE");
+      const violations = validateRoster(players.map(player => playerDto(player)), capital, body.mode === "COMPLETE");
       if (body.mode === "DRAFT" && violations.some(code => code.startsWith("POSITION_") || code === "ROSTER_SIZE" || code === "DUPLICATE_PLAYER" || code === "CONTEST_MISMATCH")) throw apiError("INVALID_ROSTER", "Превышено число мест позиции", 422);
       if (body.mode === "COMPLETE" && (violations.length || bankUnits === null || players.some(p => p.currentPriceUnits === null) || players.reduce((n, p) => n + (p.currentPriceUnits ?? 0), 0) + bankUnits !== capital)) throw apiError("INVALID_ROSTER", violations.join(", ") || "Проверьте банк и бюджет", 422);
       if (squadId) {

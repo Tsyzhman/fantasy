@@ -6,6 +6,7 @@ import {
   type SportsRuFantasySyncScope
 } from "@/machete/sports_ru_fantasy_config";
 import { syncSportsRuFantasy } from "@/machete/sports_ru_fantasy_sync";
+import { loadActiveFantasySourceScopes } from "./fantasy-source-registry";
 
 const logger = createLogger("sports-ru-fantasy:scheduler");
 const POST_FOTMOB_BUSY_WAIT_MS = 5_000;
@@ -23,11 +24,8 @@ const globalForScheduler = globalThis as unknown as {
 
 export function startSportsRuFantasySyncScheduler() {
   if (process.env.SPORTS_RU_FANTASY_SYNC_ENABLED === "false") return;
-  const scopes = parseSportsRuFantasySyncScopes(process.env.SPORTS_RU_FANTASY_SYNC_SCOPES ?? "");
-  if (scopes.length === 0) {
-    logger.warn("Scheduled Sports.ru fantasy sync is not configured.", { requiredEnvironment: "SPORTS_RU_FANTASY_SYNC_SCOPES" });
-    return;
-  }
+  // Validate operator configuration, but derive scheduled coverage from the shared registry.
+  parseSportsRuFantasySyncScopes(process.env.SPORTS_RU_FANTASY_SYNC_SCOPES ?? "");
 
   const state = sportsRuFantasySchedulerState();
   if (state.started) return;
@@ -72,7 +70,7 @@ export async function runSportsRuFantasySyncNow(
   try {
     const scopes = requestedScopes
       ? [...requestedScopes]
-      : parseSportsRuFantasySyncScopes(process.env.SPORTS_RU_FANTASY_SYNC_SCOPES ?? "");
+      : await loadActiveFantasySourceScopes(prisma);
     for (const scope of scopes) {
       try {
         const result = await syncSportsRuFantasy(prisma, scope);

@@ -27,6 +27,17 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-067](work/archive/2026/WI-067-auth-correctness.md) | Atomic sign-in limits and one-time bootstrap | @tsyzhman | 2026-10-10 |
+| [WI-068](work/archive/2026/WI-068-fpl-mapping-reconciliation.md) | Reconcile official FPL scores after mapping changes | @tsyzhman | 2026-10-10 |
+| [WI-069](work/archive/2026/WI-069-sports-ownership-idempotency.md) | Publish one complete Sports ownership snapshot | @tsyzhman | 2026-10-10 |
+| [WI-070](work/archive/2026/WI-070-deadline-planning-writes.md) | Stop unchanged deadline campaign writes | @tsyzhman | 2026-10-10 |
+| [WI-071](work/archive/2026/WI-071-khl-ingestion-retention.md) | Bound KHL writes and repair archive identity | @tsyzhman | 2026-10-10 |
+| [WI-072](work/archive/2026/WI-072-production-runtime.md) | Release a reproducible bounded production runtime | @tsyzhman | 2026-10-10 |
+| [WI-073](work/archive/2026/WI-073-source-freshness.md) | Align source scopes, quality checks and visible freshness | @tsyzhman | 2026-10-10 |
+| [WI-074](work/archive/2026/WI-074-franchise-computation.md) | Bound franchise computation outside the web event loop | @tsyzhman | 2026-10-10 |
+| [WI-075](work/archive/2026/WI-075-planner-accessibility.md) | Preserve planner behavior with mobile analytics and accessible modules | @tsyzhman | 2026-10-10 |
+| [WI-066](work/archive/2026/WI-066-production-project-audit.md) | Audit production deployment and project quality | @tsyzhman | 2026-10-10 |
+| [WI-064](work/archive/2026/WI-064-sports-placeholder-telegram-release.md) | Release readable Sports.ru placeholders in Telegram | @tsyzhman | 2026-10-10 |
 | [WI-063](work/archive/2026/WI-063-all-league-player-pool-audit.md) | Audit and repair all current football player pools | @tsyzhman | 2026-10-09 |
 | [WI-061](work/archive/2026/WI-061-alanzinho-portugal-mapping.md) | Restore Alanzinho in Portugal | @tsyzhman | 2026-10-09 |
 | [WI-058](work/archive/2026/WI-058-sorareinside-intake.md) | Repair rejected SorareInside XI ingestion | @tsyzhman | 2026-10-09 |

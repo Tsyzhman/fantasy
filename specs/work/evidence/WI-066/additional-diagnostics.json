@@ -1,0 +1,23 @@
+{
+  "captured_at_utc": "2026-10-10T08:10:12.384775+00:00",
+  "franchise_snapshot_size": {
+    "code": 0,
+    "stdout": "BEGIN\nSET\n[{\"season\":\"2026/2027\",\"version\":2,\"squads\":45234,\"generated_at\":\"2026-10-10T07:08:20.404\",\"compressed_bytes\":12548402}]\nROLLBACK\n",
+    "stderr": ""
+  },
+  "khl_daily_summary": {
+    "code": 0,
+    "stdout": "BEGIN\nSET\n{\"status\": \"PARTIAL\", \"sources\": [{\"detail\": \"{\\\"updatedAt\\\":\\\"2026-10-10T07:21:49.334Z\\\",\\\"cached\\\":true}\", \"source\": \"Sports: каталог\", \"status\": \"DONE\"}, {\"detail\": \"{\\\"imported\\\":0,\\\"remaining\\\":0,\\\"errors\\\":[]}\", \"source\": \"Sports: идентичность игроков\", \"status\": \"DONE\"}, {\"detail\": \"{\\\"dnp\\\":3352,\\\"played\\\":5696,\\\"catalog\\\":700,\\\"changed\\\":0,\\\"imported\\\":4,\\\"profiles\\\":700,\\\"remaining\\\":0,\\\"failedProfiles\\\":0,\\\"quarantineCount\\\":105,\\\"incompleteProfiles\\\":0}\", \"source\": \"KHL Mobile + Sports: текущая история\", \"status\": \"DONE\"}, {\"detail\": \"{\\\"clubs\\\":22,\\\"agreed\\\":110,\\\"errors\\\":[],\\\"changed\\\":0,\\\"cleared\\\":0,\\\"deferred\\\":0,\\\"unchanged\\\":110}\", \"source\": \"Sports: календарь\", \"status\": \"DONE\"}, {\"detail\": \"{\\\"errors\\\":[],\\\"imported\\\":2,\\\"remaining\\\":0,\\\"accessError\\\":null,\\\"deferredMatches\\\":0}\", \"source\": \"КХЛ: текущие протоколы\", \"status\": \"DONE\"}, {\"detail\": \"\\\"ARCHIVE_PROFILES_FAILED:16:2193096:HISTORY_IDENTITY_INVALID;2086201:HISTORY_IDENTITY_INVALID;2193482:HISTORY_IDENTITY_INVALID;2086189:HISTORY_IDENTITY_INVALID;2172944:HISTORY_IDENTITY_INVALID\\\"\", \"source\": \"Sports: прошлый сезон\", \"status\": \"FAILED\"}, {\"detail\": \"{\\\"remaining\\\":0,\\\"cached\\\":true}\", \"source\": \"КХЛ: архивные протоколы\", \"status\": \"DONE\"}, {\"detail\": \"{\\\"id\\\":\\\"cmv22im7102gygvw5db4znt5n\\\",\\\"status\\\":\\\"DONE\\\"}\", \"source\": \"Фонбет: линия КХЛ\", \"status\": \"DONE\"}, {\"detail\": \"{\\\"clubs\\\":22,\\\"listed\\\":41,\\\"matched\\\":35,\\\"unlinked\\\":[\\\"24801\\\",\\\"16019\\\",\\\"43446\\\",\\\"21257\\\",\\\"45425\\\",\\\"16478\\\"]}\", \"source\": \"КХЛ: травмированные\", \"status\": \"DONE\"}, {\"detail\": \"{\\\"id\\\":\\\"cmv22iqge02pngvw537ki57nl\\\",\\\"contestId\\\":\\\"cmtr4grkd00056htzwpdv4fwu\\\",\\\"modelVersion\\\":\\\"khl-opponent-explained-beta-v4\\\",\\\"rulesVersion\\\":\\\"provider-official-fp\\\",\\\"inputHash\\\":\\\"a0b11879d3b0657bdbc9f57895413b3773ab537e68c655ad9d409676fc15f479\\\",\\\"dataRevision\\\":80022,\\\"asOf\\\":\\\"2026-10-10T07:23:45.921Z\\\",\\\"horizonEnd\\\":\\\"2026-10-17T07:23:45.921Z\\\",\\\"status\\\":\\\"PUBLISHED\\\",\\\"quality\\\":\\\"BETA_BASELINE\\\",\\\"diagnostics\\\":{\\\"horizon\\\":\\\"NEXT_7_DAYS\\\",\\\"xgReady\\\":false,\\\"warnings\\\":[\\\"BETA_UNCALIBRATED\\\",\\\"XG_UNAVAILABLE\\\"],\\\"fittedModel\\\":false,\\\"participation\\\":\\\"Empirical appearances with previous-season prior; not probability of starting\\\",\\\"historicalPlayers\\\":552}}\", \"source\": \"EP\", \"status\": \"DONE\"}, {\"detail\": \"{\\\"raw\\\":0,\\\"availability\\\":0,\\\"availabilityRevisions\\\":0,\\\"previews\\\":0,\\\"receipts\\\":0,\\\"jobs\\\":1}\", \"source\": \"Очистка\", \"status\": \"DONE\"}], \"startedAt\": \"2026-10-10T07:22:00.537Z\", \"lastSuccessAt\": null, \"schemaVersion\": 2}\nROLLBACK\n",
+    "stderr": ""
+  },
+  "fpl_null_scores_with_current_mapping": {
+    "code": 0,
+    "stdout": "BEGIN\nSET\n78\nROLLBACK\n",
+    "stderr": ""
+  },
+  "franchise_manager_count": {
+    "code": 0,
+    "stdout": "BEGIN\nSET\n811\nROLLBACK\n",
+    "stderr": ""
+  }
+}

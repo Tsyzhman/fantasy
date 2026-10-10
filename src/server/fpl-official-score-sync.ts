@@ -3,6 +3,7 @@ import { createHash } from "node:crypto";
 import { Prisma, type PrismaClient } from "@prisma/client";
 
 import { prisma as defaultPrisma } from "@/lib/db";
+import { reconcileFplScoreMappings } from "./fpl-score-reconciliation";
 import {
   FPL_EVENT_LIVE_URL,
   FPL_LEAGUE_ID,
@@ -63,7 +64,17 @@ export async function syncFplOfficialScores(
     });
     if (!contest) throw new Error("FPL contest does not exist; synchronize FPL prices before official scores.");
 
-    const idempotencyKey = `${options.gameweek}:${payloadHash}`;
+    const providerPlayerIds = live.elements.map((row) => row.providerPlayerId);
+    const priceRows = await tx.fantasyPlayerPrice.findMany({
+      where: { contestId: contest.id, provider: FPL_PROVIDER, providerPlayerId: { in: providerPlayerIds } },
+      select: { providerPlayerId: true, playerId: true, position: true },
+      orderBy: { providerPlayerId: "asc" }
+    });
+    const mappingHash = createHash("sha256").update(JSON.stringify(priceRows.map((row) =>
+      [row.providerPlayerId, row.playerId?.toString() ?? null, row.position]))).digest("hex");
+    // Mapping changes are inputs even when the official payload is unchanged.
+    const idempotencyKey = `${options.gameweek}:${payloadHash}:mapping:${mappingHash}`;
+    await reconcileFplScoreMappings(tx, { contestId: contest.id });
     const existingRun = await tx.fantasyProviderSyncRun.findUnique({
       where: { provider_contestId_idempotencyKey: { provider: FPL_PROVIDER, contestId: contest.id, idempotencyKey } },
       select: { status: true }
@@ -74,8 +85,8 @@ export async function syncFplOfficialScores(
         contestId: contest.id,
         gameweek: options.gameweek,
         rows: live.elements.length,
-        mappedRows: 0,
-        unmatchedRows: 0,
+        mappedRows: priceRows.filter((row) => row.playerId && row.position).length,
+        unmatchedRows: live.elements.length - priceRows.filter((row) => row.playerId && row.position).length,
         payloadHash
       };
     }
@@ -99,11 +110,6 @@ export async function syncFplOfficialScores(
       select: { id: true }
     });
 
-    const providerPlayerIds = live.elements.map((row) => row.providerPlayerId);
-    const priceRows = await tx.fantasyPlayerPrice.findMany({
-      where: { contestId: contest.id, provider: FPL_PROVIDER, providerPlayerId: { in: providerPlayerIds } },
-      select: { providerPlayerId: true, playerId: true, position: true }
-    });
     const mappedByProviderId = new Map(priceRows.flatMap((row) => row.providerPlayerId ? [[row.providerPlayerId, row] as const] : []));
     let mappedRows = 0;
     for (const element of live.elements) {

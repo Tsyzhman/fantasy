@@ -32,13 +32,13 @@ export async function runKhlDailySync(db: PrismaClient, contestId: string) {
   await step('Sports: каталог', async () => {
     const freshness = startedAt.getTime() - 60000;
     let c = await db.khlContest.findUniqueOrThrow({ where: { id: contestId } });
-    if (c.publishedAt && c.publishedAt.getTime() >= freshness) return { updatedAt: c.publishedAt, cached: true };
+    if (c.catalogCheckedAt && c.catalogCheckedAt.getTime() >= freshness) return { updatedAt: c.catalogCheckedAt, cached: true };
     await refreshKhlCatalogs(contestId);
     // The resident worker can own the catalogue lease during deployment/startup.
     // Wait for that publication, rather than reporting a false source failure.
     for (let attempt = 0; attempt < 15; attempt++) {
       c = await db.khlContest.findUniqueOrThrow({ where: { id: contestId } });
-      if (c.publishedAt && c.publishedAt.getTime() >= freshness) return { updatedAt: c.publishedAt };
+      if (c.catalogCheckedAt && c.catalogCheckedAt.getTime() >= freshness) return { updatedAt: c.catalogCheckedAt };
       const busy = await db.khlSyncJob.count({ where: { provider: 'SPORTS_RU', scope: contestId, jobType: 'CATALOG', status: { in: ['PENDING', 'RUNNING'] } } });
       if (!busy) break;
       await new Promise(resolve => setTimeout(resolve, 2000));

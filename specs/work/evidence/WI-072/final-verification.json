@@ -1,0 +1,114 @@
+{
+  "status": "23 requested code fixes released and verified; retained source-quality limitations listed explicitly",
+  "version": "0.3.137",
+  "releasedCommit": "7d3f96ef8b7a6efe6ecf5442e061ea2c06fda980",
+  "deploy": {
+    "url": "https://github.com/Tsyzhman/fantasy/actions/runs/38057193543",
+    "conclusion": "success",
+    "trafficSwitchedAt": "2026-10-10T14:01:22.636Z",
+    "ports": "3000 -> 3001",
+    "drainSeconds": 30
+  },
+  "check": {
+    "url": "https://github.com/Tsyzhman/fantasy/actions/runs/38057195514",
+    "conclusion": "success",
+    "unit": {
+      "tests": 1319,
+      "pass": 1319,
+      "fail": 0,
+      "skip": 0
+    },
+    "databaseIntegrationGroups": [
+      20,
+      3,
+      2,
+      7
+    ],
+    "databaseIntegrationTotal": 32,
+    "lint": {
+      "errors": 0,
+      "warnings": 236
+    },
+    "types": "passed",
+    "build": "passed",
+    "rolesRegressionTests": 2,
+    "continuousDeploymentTests": 12,
+    "imageBindingTests": 3,
+    "serverActionKeyTests": 4
+  },
+  "runtime": {
+    "node": "v24.21.0",
+    "loadedRuntimeImageId": "sha256:b0c66b773173bc7361a35faa8db4d257a809a10571858a8be301426b6ee02816",
+    "ciRuntimeConfigId": "sha256:f40891ffc5e3ae00864e2036b14e0f7584a6b64e4f2d01e2e9b615d6a9a1bfb3",
+    "imagesArchiveSha256": "bede6ada0bf74cb1697e4529a77e8895ba88b2edc040dee56ec7a266487549e1"
+  },
+  "minimumObservationSeconds": 1926.588267,
+  "webSqlFingerprintsObserved": 110,
+  "allNewRuntimeOomRestartsZero": true,
+  "rollingSlo": {
+    "status": "ok",
+    "generatedAt": "2026-10-10T14:17:13.826Z",
+    "logCoverageStart": "2026-09-30T08:17:17.865Z",
+    "logCoverageEnd": "2026-10-10T14:17:10.229Z",
+    "retentionCoversWindowStart": true,
+    "windowMinutes": 1440.0,
+    "cutoff": "2026-10-09T14:17:13.826Z",
+    "thresholds": {
+      "minimumRequests": 20,
+      "maximumServerErrorRatePercentExclusive": 1.0
+    },
+    "filesRead": 11,
+    "invalidLines": 0,
+    "excludedPaths": [
+      "/api/health",
+      "/api/health/data-quality",
+      "/api/health/fantasy-prices",
+      "/api/health/fpl"
+    ],
+    "excludedUserAgentPrefixes": [
+      "fantasy-scout-production-monitor/1.0",
+      "fantasy-production-browser-smoke/"
+    ],
+    "excludedRequests": 5460,
+    "excludedUserAgentRequests": 1364,
+    "requests": 4432,
+    "firstObservedAt": "2026-10-09T14:17:29.612Z",
+    "lastObservedAt": "2026-10-10T14:16:57.535Z",
+    "observedSpanMinutes": 1439.465,
+    "clientErrors": 150,
+    "serverErrors": 40,
+    "serverErrorRatePercent": 0.903,
+    "statusCounts": {
+      "0": 6,
+      "200": 4195,
+      "304": 4,
+      "307": 36,
+      "308": 1,
+      "400": 4,
+      "401": 1,
+      "404": 145,
+      "502": 40
+    },
+    "durationMs": {
+      "p50": 23.339,
+      "p75": 60.121,
+      "p95": 244.077,
+      "max": 23676.148
+    }
+  },
+  "sourceWarnings": {
+    "fantasyPricesHealth": 503,
+    "dataQualityHealth": 503,
+    "khlHourlyExitStatus": 2,
+    "khlHourlyStatus": "PARTIAL",
+    "currentRowsDeferred": 18,
+    "protocolMatchesDeferred": 1,
+    "currentProfileFailures": 0,
+    "currentProfileRemaining": 0,
+    "archivePool": 700,
+    "archiveChanges": 0,
+    "archiveErrors": 0
+  },
+  "f02": "explicitly excluded; existing pre-release backup/rehearsal retained",
+  "evidenceSafety": "See evidence-safety.json and cleanup-result.json"
+}

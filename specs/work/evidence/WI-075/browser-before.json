@@ -1,0 +1,147 @@
+{
+  "release": "0.3.131",
+  "commit": "74a5f00f162b1d22a6bc7344ee6630e0c354a595",
+  "environment": "single read-only cold navigation, Edge desktop at 391px; no production load test",
+  "url": "/machete/squad",
+  "viewport": {
+    "width": 391,
+    "height": 844
+  },
+  "navigation": [
+    {
+      "domContentLoaded": 279.89999997615814,
+      "load": 592.0999999046326,
+      "encodedBodySize": 39905
+    }
+  ],
+  "js": [
+    {
+      "path": "/_next/static/chunks/webpack-ba741ad05e3dc29e.js",
+      "encodedBytes": 1868,
+      "transferBytes": 2168,
+      "duration": 90.80000007152557
+    },
+    {
+      "path": "/_next/static/chunks/4bd1b696-93bf506b236d6248.js",
+      "encodedBytes": 63300,
+      "transferBytes": 63600,
+      "duration": 129.39999997615814
+    },
+    {
+      "path": "/_next/static/chunks/3794-4e3500efc893e566.js",
+      "encodedBytes": 65710,
+      "transferBytes": 66010,
+      "duration": 129.20000004768372
+    },
+    {
+      "path": "/_next/static/chunks/main-app-0a4eb1d02004e6aa.js",
+      "encodedBytes": 470,
+      "transferBytes": 770,
+      "duration": 75
+    },
+    {
+      "path": "/_next/static/chunks/app/global-error-840b71de999043a5.js",
+      "encodedBytes": 1323,
+      "transferBytes": 1623,
+      "duration": 91.60000002384186
+    },
+    {
+      "path": "/_next/static/chunks/app/machete/layout-a76d6791aacf3aa9.js",
+      "encodedBytes": 2719,
+      "transferBytes": 3019,
+      "duration": 91.5
+    },
+    {
+      "path": "/_next/static/chunks/8500-f4d7bfbe7500f274.js",
+      "encodedBytes": 3554,
+      "transferBytes": 3854,
+      "duration": 64.10000002384186
+    },
+    {
+      "path": "/_next/static/chunks/2785-32290b413e58b1b3.js",
+      "encodedBytes": 6849,
+      "transferBytes": 7149,
+      "duration": 68.40000009536743
+    },
+    {
+      "path": "/_next/static/chunks/621-43b42c4b04dffc53.js",
+      "encodedBytes": 4112,
+      "transferBytes": 4412,
+      "duration": 174.80000007152557
+    },
+    {
+      "path": "/_next/static/chunks/app/layout-aa6494ef08909fb6.js",
+      "encodedBytes": 6905,
+      "transferBytes": 7205,
+      "duration": 190.89999997615814
+    },
+    {
+      "path": "/_next/static/chunks/app/error-0f62d1bc73028b9f.js",
+      "encodedBytes": 1910,
+      "transferBytes": 2210,
+      "duration": 173.89999997615814
+    },
+    {
+      "path": "/_next/static/chunks/8437-e1cbba6829c02174.js",
+      "encodedBytes": 5489,
+      "transferBytes": 5789,
+      "duration": 175.09999990463257
+    },
+    {
+      "path": "/_next/static/chunks/app/page-6a0f9625373a169a.js",
+      "encodedBytes": 235,
+      "transferBytes": 535,
+      "duration": 160.80000007152557
+    },
+    {
+      "path": "/_next/static/chunks/1445-a0e1ae3df2e79bd3.js",
+      "encodedBytes": 2738,
+      "transferBytes": 3038,
+      "duration": 173.5
+    },
+    {
+      "path": "/_next/static/chunks/7386-d63f5f2a83e5604e.js",
+      "encodedBytes": 3919,
+      "transferBytes": 4219,
+      "duration": 176.80000007152557
+    },
+    {
+      "path": "/_next/static/chunks/9623-5accdd98f0a7445c.js",
+      "encodedBytes": 15239,
+      "transferBytes": 15539,
+      "duration": 190.70000004768372
+    },
+    {
+      "path": "/_next/static/chunks/4296-f62f19185cf6c723.js",
+      "encodedBytes": 4130,
+      "transferBytes": 4430,
+      "duration": 189.69999992847443
+    },
+    {
+      "path": "/_next/static/chunks/4451-ac70b0acc76525cd.js",
+      "encodedBytes": 78022,
+      "transferBytes": 78322,
+      "duration": 225.79999995231628
+    },
+    {
+      "path": "/_next/static/chunks/app/machete/squad/page-c4f5bb98319e9ad7.js",
+      "encodedBytes": 159,
+      "transferBytes": 459,
+      "duration": 160
+    },
+    {
+      "path": "/_next/static/chunks/fantasy-transfer-suggestions.e0b599706be3453d.js",
+      "encodedBytes": 754,
+      "transferBytes": 1054,
+      "duration": -16.40000009536743
+    }
+  ],
+  "longTasks": [
+    {
+      "start": 2192.5999999046326,
+      "duration": 51
+    }
+  ],
+  "overflow": 0,
+  "separators": []
+}

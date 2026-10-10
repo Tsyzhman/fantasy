@@ -1,5 +1,45 @@
 # Changelog
 
+## 0.3.137 - 2026-10-10
+
+- Share bounded SQL diagnostics and the single sampling timer across independent server bundle copies, so web requests appear in process reports.
+- Enforce the planner draft's 64 KiB quota in encoded bytes, including Unicode content.
+- Reuse one Prisma client and query listener per production process across independent bundles, preserving the configured connection budget.
+
+## 0.3.136 - 2026-10-10
+
+- Read Home source freshness using only persisted league and season keys; keep provider routing fields out of generated database queries and verify actual receipts in an isolated database.
+
+## 0.3.135 - 2026-10-10
+
+- Exclude operational health probes from the user-traffic SLO denominator while preserving the one-percent failure threshold and separate source-quality checks.
+
+## 0.3.134 - 2026-10-10
+
+- Keep Server Action encryption exclusively in private runtime configuration; retain compiler IDs and reject secret material in published image build output.
+- Extend lock waiting only for reviewed concurrent index migrations and preserve short waits for ordinary schema changes.
+
+## 0.3.133 - 2026-10-10
+
+- Keep the mobile column chooser inside the viewport with bounded scrolling, an explicit close button and Escape support.
+- Remove migration rehearsal databases through the protected operator, including active restored-copy connections, while retaining restricted migrator and application permissions.
+- Wait for the final TCP PostgreSQL server in the bootstrap-role regression, excluding the entrypoint's temporary initialization server.
+
+## 0.3.132 - 2026-10-10
+
+- Preserve every concurrent login failure, close first-admin setup permanently, validate internal redirects and retain bounded expired-session cleanup.
+- Reconcile late FPL mappings without changing official points; serialize complete ownership snapshots and stop rewriting unchanged deadline plans and KHL catalogs.
+- Verify archived KHL identities through exact provider routes and public numeric tags; separate bounded hourly retention from synchronization.
+- Share active source scopes across refresh/quality checks and show source receipt freshness, archive integrity and reviewed identity exclusions explicitly.
+- Keep exact franchise ranks with sorted metrics and move snapshot parsing, report calculation and serialization to a bounded disposable worker.
+- Restore selected mobile analytics and explanations, add keyboard column resizing and preserve bounded tab-local squad drafts across releases; split pool, explanations and forecast responsibilities.
+- Pin Node 24 LTS and frozen dependency installs, deploy verified CI-built images as a non-root bounded runtime, separate migration/operator database credentials and correlate bounded runtime, SQL and rolling SLO diagnostics.
+- Keep existing pre-release backup and migration restore rehearsal. F02 backup/PITR expansion is excluded from this release.
+
+## 0.3.131 - 2026-10-10
+
+- Display imported Sports.ru placeholders as `затычка` in Telegram deadline reports while preserving their IDs, lineup roles and explicit mapping limitations.
+
 ## 0.3.130 - 2026-10-09
 
 - Preserve explicitly reviewed Sports.ru identity exclusions through normal refresh, including conflicting source cards; an exact automatic candidate cannot restore an excluded card.

@@ -7,12 +7,9 @@ import { importCatalog } from "./catalog-sync";
 import { enqueueKhl } from "./jobs";
 import { runNextKhl } from "./coordinator";
 import { lockValidLease } from "./lease";
-import { pruneKhl } from "./retention";
+import { startKhlRetentionScheduler } from "./retention";
 import { startKhlHistoryScheduler } from "./history-scheduler";
 
-// Only fingerprints survive a cycle, never player payloads. The publication
-// timestamp fences this optimization against another importer changing data.
-const seen = new Map<string, { hash: string; publishedAt: number }>();
 let started = false;
 
 export async function refreshKhlCatalogs(contestId?: string) {
@@ -28,31 +25,27 @@ export async function refreshKhlCatalogs(contestId?: string) {
       if (parsed.quarantined.length) throw new Error(`CATALOG_QUARANTINE:${parsed.quarantined.length}`);
       if (signal.aborted) throw new Error("LEASE_LOST");
       const hash = contentHash([...parsed.rows].sort((a, b) => a.providerPlayerId.localeCompare(b.providerPlayerId)));
-      const cached = seen.get(contest.id);
       const lease = { id: job.id, token: job.leaseToken };
-      const refreshed = cached?.hash === hash && await prisma.$transaction(async tx => {
+      const refreshed = await prisma.$transaction(async tx => {
         await lockValidLease(tx, lease);
         await tx.$queryRaw`SELECT id FROM khl_contests WHERE id = ${contest.id} FOR UPDATE`;
         const current = await tx.khlContest.findUniqueOrThrow({ where: { id: contest.id } });
-        if (!current.catalogComplete || current.publishedAt?.getTime() !== cached.publishedAt || current.publishedAt > observedAt) return false;
-        await tx.khlFantasyPlayer.updateMany({ where: { contestId: contest.id, active: true }, data: { observedAt } });
-        await tx.khlContest.update({ where: { id: contest.id }, data: { publishedAt: observedAt } });
+        if (!current.catalogComplete || current.catalogHash !== hash || (current.catalogCheckedAt && current.catalogCheckedAt > observedAt)) return false;
+        await tx.khlContest.update({ where: { id: contest.id }, data: { catalogCheckedAt: observedAt } });
         return true;
       });
       if (!refreshed) await importCatalog(prisma, contest.id, parsed.rows, randomUUID(), observedAt, true, lease);
-      seen.set(contest.id, { hash, publishedAt: observedAt.getTime() });
       return { fingerprint: hash, players: parsed.rows.length, unchanged: Boolean(refreshed) };
     } }, queued.id);
     if (result?.status !== "DONE" && result) console.warn("KHL catalog sync", result);
   }
-  for (const id of seen.keys()) if (!contests.some(c => c.id === id)) seen.delete(id);
-  await pruneKhl(prisma, new Date());
 }
 
 export function startKhlCatalogScheduler() {
   if (started || process.env.KHL_SYNC_ENABLED !== "true") return;
   started = true;
   startKhlHistoryScheduler();
+  startKhlRetentionScheduler();
   async function tick() {
     try { await refreshKhlCatalogs(); }
     catch (error) { console.error("KHL catalog scheduler failed", error); }

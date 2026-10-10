@@ -1,0 +1,77 @@
+{
+  "server": {
+    "temporaryContainerCount": 0,
+    "observerProcessesRemaining": 0,
+    "productionWebCount": 1,
+    "productionWorkerCount": 1,
+    "retainedReleases": [
+      "20261010T125442Z-v0.3.135-e78a6a1",
+      "20261010T135147Z-v0.3.137-7d3f96e"
+    ],
+    "current": "20261010T135147Z-v0.3.137-7d3f96e",
+    "protectedFilesModes": {
+      "server-actions.key": "0o600",
+      "server-actions-id-salt.key": "0o600",
+      "database-migration.env": "0o600",
+      "database-operator.env": "0o600"
+    },
+    "sharedBuilderPruned": false,
+    "freeDiskBytes": 34104209408,
+    "privateAuditDirectoryRemoved": true
+  },
+  "ownedContainerCleanup": {
+    "at": "2026-10-10T14:18:15.075189+00:00",
+    "containersRemoved": [
+      {
+        "name": "fantasy-scout-audit-stage",
+        "id": "5274bf5d72dd"
+      },
+      {
+        "name": "fantasy-scout-audit-stage-rollback",
+        "id": "40a59ac1d4d5"
+      },
+      {
+        "name": "fantasy-scout-audit-db",
+        "id": "5f117d7ccf9d"
+      }
+    ],
+    "unusedOwnedImagesRemoved": [
+      "sha256:c2bcbb9b21eb44d5b717a8736503bb6f12d64a70495e6815491c6ff069234ec7"
+    ],
+    "cancelledArchivesRemoved": [
+      {
+        "name": "fantasy-scout-images-20261010T134129Z-v0.3.137-9a3b818.tar.gz",
+        "bytes": 142832640
+      },
+      {
+        "name": "fantasy-scout-images-20261010T132335Z-v0.3.136-67dc6e8.tar.gz",
+        "bytes": 669511680
+      }
+    ],
+    "freeBeforeBytes": 31881916416,
+    "freeAfterBytes": 34106155008,
+    "sharedBuilderPruned": false,
+    "productionStopped": false
+  },
+  "qaSessionCleanup": {
+    "preferencesMatchOriginal": true,
+    "restoredPreferenceFields": 2,
+    "restorationGuard": "Exact known audit column selection and empty widths; compare-and-set only owned user",
+    "ownedSessionRemoved": 1,
+    "otherSessionsChanged": 0,
+    "at": "2026-10-10T14:21:33.072411+00:00"
+  },
+  "local": {
+    "privateQaFilesRemoved": false,
+    "privateQaFileCountRetained": 10,
+    "qaTokensRevoked": true,
+    "privateQaStateIgnoredByGit": true,
+    "cacheRemoved": false,
+    "cacheBytes": 394733832,
+    "cacheWithinOwnWorktree": true,
+    "browserContextsClosed": true,
+    "sshTunnelsClosed": true,
+    "automaticReview": "Local removal rejected twice with blocked by policy; no detailed reason supplied; no bypass attempted"
+  },
+  "originalCheckoutModified": false
+}

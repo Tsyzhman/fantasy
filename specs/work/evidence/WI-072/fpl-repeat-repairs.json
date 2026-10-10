@@ -1,0 +1,20 @@
+[
+  {
+    "repairPass": 1,
+    "exitCode": 0,
+    "result": {
+      "contestId": "cmsraor0d0002f8sym7tlpdws",
+      "changed": 0,
+      "officialValuesUnchanged": true
+    }
+  },
+  {
+    "repairPass": 2,
+    "exitCode": 0,
+    "result": {
+      "contestId": "cmsraor0d0002f8sym7tlpdws",
+      "changed": 0,
+      "officialValuesUnchanged": true
+    }
+  }
+]

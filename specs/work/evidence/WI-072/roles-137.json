@@ -1,0 +1,23 @@
+{
+  "version": "0.3.137",
+  "commit": "7d3f96ef8b7a6efe6ecf5442e061ea2c06fda980",
+  "runtime": "fantasy_app",
+  "attributes": [
+    false,
+    false,
+    false,
+    false,
+    false
+  ],
+  "crud": "passed and rolled back",
+  "negativePermissions": [
+    "create_table",
+    "create_database",
+    "create_role",
+    "truncate",
+    "migration_write",
+    "admin_membership"
+  ],
+  "operatorTcpLogin": "passed",
+  "credentials": "protected host files only"
+}

@@ -34,6 +34,12 @@ Contracts: `spec://modules/machete/FEAT-006-sports-popularity#root`, `spec://mod
 | Machete UI | League, player, model, squad, and sync screens | `src/app/machete` |
 | Squad player card | FEAT-003: contact-sheet pitch/bench card and themed styles | `src/components/machete/FantasySquadPlanner.tsx`, `src/app/globals.css` |
 | Machete domain | Read models, scoring, Sports.ru mapping, squad planning | `src/machete` |
+| Squad pool and explanations | FEAT-001: virtual desktop pool, paginated touch cards, selected metrics, accessible widths and forecast explanations | `src/components/machete/PlayerPool.tsx`, `ColumnResizeHandle.tsx`, `planner-explanations.tsx` |
+| Squad commands, data and drafts | FEAT-001/INFRA-006: captain/selection/round transitions, bounded saved-view and export requests, tab draft lifecycle | `src/components/machete/planner-squad-commands.ts`, `planner-data.ts`, `planner-draft.ts`, `use-planner-draft.ts` |
+| Squad projection and team strength | FEAT-001: pure forecast arithmetic and normalized team-strength inputs; public planner exports remain compatible | `src/machete/squad-projection.ts`, `src/machete/squad-team-strength.ts` |
+| Source scope and freshness | FEAT-001: shared active contest registry and receipt-based home/source health | `src/server/fantasy-source-registry.ts`, `src/server/home-freshness.ts` |
+| Runtime diagnostics and credentials | INFRA-006: shared process database pool and bounded SQL observability, protected migration/operator roles, CI image delivery | `src/lib/db.ts`, `src/server/runtime-diagnostics.ts`, `scripts/configure-production-database-roles.py`, `scripts/runtime-database-roles.sql`, `.github/workflows/deploy-production.yml` |
+| Franchise report worker | FEAT-005: one disposable thread for snapshot parsing/validation/aggregation/serialization; bounded async report cache | `src/server/franchises/report-worker.ts`, `scripts/franchise-report-worker.ts` |
 | Platform transfer trends | FEAT-008: bounded readers of saved plans vs published round squads; aggregate API and shared football/KHL panel | `src/machete/platform-transfer-trends.ts`, `src/server/platform-transfer-trends.ts`, `src/app/api/machete/platform-transfers/`, `src/components/machete/PlatformTransferTrendsPanel.tsx` |
 | Rotation risk | FEAT-004: RR math and bounded normalized history reader | `src/machete/rotation-risk.ts`, `src/server/rotation-risk.ts` |
 | Global ranking strategy | FEAT-001/002: pure K/EP-loss math, bounded candidate search, provider context/cache, recommendation audit and UI | `src/machete/global-strategy*.ts`, `src/server/global-strategy*.ts`, `src/app/api/machete/squads/global-strategy`, `src/components/machete/GlobalStrategyPanel.tsx` |
@@ -44,6 +50,7 @@ Contracts: `spec://modules/machete/FEAT-006-sports-popularity#root`, `spec://mod
 | Admin | Users, leagues, ingestion controls, franchise squads | `src/app/admin` |
 | HTTP API | Auth, imports, ingestion, squads, shot maps, cron | `src/app/api` |
 | Auth and shared lib | Sessions, Prisma client, request parsing, helpers | `src/lib` |
+| Session authentication | FEAT-009: atomic login, durable bootstrap, trusted returns and bounded expired-session cleanup | `src/lib/auth*.ts`, `src/app/login/`, `src/app/setup/`, `scripts/recover-admin.ts` |
 | Ingestion jobs | Backfill, incremental update, worker loop | `scripts/ingestion-runner.ts`, `src/app/api/admin/ingestion` |
 | SorareInside starters | INFRA-004: ближайший матч, UUID-маппинг и hourly :05 | `src/providers/sorareinside/`, `src/machete/sorareinside-sync.ts`, `src/server/sorareinside-scheduler.ts`, `scripts/sync-sorareinside.ts` |
 | Sports trends | FEAT-006: лента/статьи Sports, до 15 игроков, ownership и дельта | `src/providers/sports-ru-trends/`, `src/server/sports-trends/`, `src/machete/sports-trends.ts` |
@@ -76,7 +83,7 @@ Sports fantasy weeks: `src/khl/fantasy-calendar.ts` resolves agreeing club obser
 
 ## Release transport {#release-transport}
 
-Continuous rollout ownership: `spec://common/INFRA-006-continuous-deployment#root`, `scripts/deploy-production-docker.sh`, `scripts/production-rollout.sh`, `scripts/production-web-routing.py`, `scripts/check-online-migrations.py`, `src/server/web-scheduler-activation.ts`, its instrumentation boundary and the production relay adapter. Keep the serving web running until a verified candidate on the alternate loopback port receives traffic through a validated graceful Caddy reload. Builds, backups and migration rehearsals run without stopping the serving website. Candidate web schedules activate only after the old web stops.
+Continuous rollout ownership: `spec://common/INFRA-006-continuous-deployment#root`, `scripts/deploy-production-docker.sh`, `scripts/production-rollout.sh`, `scripts/production-web-routing.py`, `scripts/check-online-migrations.py`, `scripts/prepare-online-migration-env.py`, `scripts/strip-server-action-key.mjs` and its direct regression test, `src/server/web-scheduler-activation.ts`, its instrumentation boundary and the production relay adapter. Keep the serving web running until a verified candidate on the alternate loopback port receives traffic through a validated graceful Caddy reload. Builds, backups and migration rehearsals run without stopping the serving website. Candidate web schedules activate only after the old web stops.
 
 The immutable GitHub production promoter keeps its SSH channel alive every 15 seconds and terminates an unresponsive channel after four unanswered probes. Authentication, host verification, release ancestry/checksums and automatic rollback remain mandatory. Docker dependency downloads use a 60-second request timeout, three retries, and bounded 1–10 second retry delays; a failed download stops the candidate without replacing production. A disconnected promotion is inspected before retrying so that collectors, canaries and release processes are never duplicated.
 

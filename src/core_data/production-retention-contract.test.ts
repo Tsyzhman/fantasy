@@ -20,7 +20,7 @@ test("production deploy automatically applies bounded retention after promotion"
 test("production retention keeps current plus one rollback release by default", () => {
   assert.match(retentionScript, /keep_recent="\$\{FANTASY_RELEASE_KEEP_RECENT:-2\}"/);
   assert.match(retentionScript, /KEEP_ROLLBACK=/);
-  assert.match(retentionScript, /docker builder prune --force --max-used-space "\$build_cache_limit"/);
+  assert.doesNotMatch(retentionScript, /docker builder prune/);
 });
 
 test("production forecast working sets run in a disposable child process", () => {

@@ -10,6 +10,7 @@ import { formatDate, formatNumber } from "@/lib/format";
 import { compactPlayerDisplayName } from "@/lib/players/display-name";
 import { compactTeamDisplayName, providerTeamShortName } from "@/lib/teams/display";
 import { macheteLeagueDisplayName } from "@/lib/leagues/display";
+import { loadHomeSourceFreshness, sourceAgeStatus } from "@/server/home-freshness";
 
 export const dynamic = "force-dynamic";
 
@@ -266,11 +267,7 @@ async function loadHomeDashboard(userId: string) {
       orderBy: { lastSeenAt: "desc" },
       take: 5
     }),
-    prisma.leagueSeason.findMany({
-      include: { league: true },
-      orderBy: { updatedAt: "desc" },
-      take: 4
-    }),
+    loadHomeSourceFreshness(prisma, userId),
     prisma.userSavedView.count({ where: { userId } }),
     prisma.userWatchlistPlayer.count({ where: { userId } })
   ]);
@@ -316,11 +313,11 @@ async function loadHomeDashboard(userId: string) {
       leagueId: String(league.leagueId),
       season: league.season,
       isCurrent: league.isCurrent,
-      updatedAt: league.updatedAt,
+      sources: league.sources,
       name: macheteLeagueDisplayName({
         id: String(league.leagueId),
-        name: league.name ?? league.league.name,
-        country: league.country ?? league.league.country,
+        name: league.name,
+        country: league.country ?? null,
         providerLeagueId: String(league.leagueId)
       }),
       href: `/machete/leagues/${league.leagueId}?${new URLSearchParams({ season: league.season }).toString()}`
@@ -429,17 +426,24 @@ function PriceRow({ price }: { price: { playerName: string; teamName: string; po
   );
 }
 
-function FreshnessRow({ league }: { league: { name: string; season: string; isCurrent: boolean; updatedAt: Date; href: string } }) {
+function FreshnessRow({ league }: { league: { name: string; season: string; isCurrent: boolean; sources: Record<"prices" | "stats" | "lineups" | "forecast", Date | null>; href: string } }) {
   return (
-    <Link href={league.href} className="flex items-center justify-between gap-3 rounded border border-slate-100 px-3 py-2 text-sm hover:bg-slate-50">
+    <Link href={league.href} className="block rounded border border-slate-100 px-3 py-2 text-sm hover:bg-slate-50">
       <span className="min-w-0">
         <span className="block truncate font-semibold text-ink">{league.name}</span>
         <span className="block truncate text-xs text-slate-500">
           {league.season}
-          {league.isCurrent ? " · current" : ""}
+          {league.isCurrent ? <I18nText en=" · active" ru=" · активный" /> : <I18nText en=" · archive" ru=" · архив" />}
         </span>
       </span>
-      <span className="shrink-0 text-xs text-slate-500">{formatDate(league.updatedAt)}</span>
+      <span className="mt-2 grid grid-cols-2 gap-1 text-[11px] text-slate-500">
+        {([ ["prices", "Prices", "Цены", 7], ["stats", "Statistics", "Статистика", 26], ["lineups", "Lineups", "Составы", 26], ["forecast", "Forecast", "Прогноз", 6] ] as const).map(([key, en, ru, maxAge]) => {
+          const date = league.sources[key], status = sourceAgeStatus(date, maxAge);
+          return <span key={key} className={status === "FRESH" || !league.isCurrent ? "" : "text-amber-700"}>
+            <I18nText en={en} ru={ru} />: {date ? <>{league.isCurrent && status === "STALE" ? <I18nText en="stale · " ru="устарело · " /> : null}{formatDate(date)}</> : <I18nText en="no data" ru="нет данных" />}
+          </span>;
+        })}
+      </span>
     </Link>
   );
 }

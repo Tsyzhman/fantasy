@@ -6,6 +6,7 @@ import { summarizeHockeyHistory } from "@/khl/history-projection";
 import { contentHash } from "@/khl/repositories/revisions";
 import { seasonStatFields, type KhlHistoricalStats, type KhlPosition } from "@/khl/contracts";
 import { validateProtocolArchive } from "@/khl/protocol-archive";
+import { fetchSportsBirthDate } from "@/providers/sports-ru-hockey/identity";
 
 export async function importHistoricalSeason(db: PrismaClient, input: { playerId: string; providerSeasonId: string; aggregates: KhlHistoricalStats; observedAt: Date; protocolOnly?: boolean }) {
   const { aggregates, observedAt } = input;
@@ -51,26 +52,31 @@ export async function importHistoricalSeason(db: PrismaClient, input: { playerId
   });
 }
 
-export async function refreshHistoricalSeason(db: PrismaClient, contestId: string, fetchSource = fetchHockeyHistory) {
+export async function refreshHistoricalSeason(db: PrismaClient, contestId: string, fetchSource = fetchHockeyHistory,
+  options: { providerPlayerIds?: string[]; retrySelected?: boolean } = {}) {
   const contest = await db.khlContest.findUniqueOrThrow({ where: { id: contestId }, include: { season: true } });
   const seasonKey = previousHockeySeason(contest.season.seasonKey), jobType = `PREVIOUS:${seasonKey}`;
   const pool = await db.khlFantasyPlayer.findMany({ where: { contestId, active: true, playerId: { not: null } }, orderBy: { id: "asc" }, take: 1001 });
   if (pool.length > 1000) throw new Error("HISTORY_POOL_LIMIT");
+  const selected = options.providerPlayerIds;
+  if (selected && (selected.length > 20 || new Set(selected).size !== selected.length || selected.some(id => !pool.some(player => player.providerPlayerId === id)))) throw new Error("HISTORY_RETRY_SCOPE_INVALID");
   const checks = await db.khlProviderCheckpoint.findMany({ where: { provider: "SPORTS_RU_ARCHIVE", jobType, scope: { in: pool.map(p => p.id) } }, take: 1000 });
   const done = new Set(checks.filter(c => Date.now() - c.completedAt.getTime() < ((c.cursor as { error?: string }).error ? 3600000 : 7 * 86400000)).map(c => c.scope));
-  const due = pool.filter(p => !done.has(p.id));
+  const due = pool.filter(p => (!selected || selected.includes(p.providerPlayerId)) && (options.retrySelected || !done.has(p.id)));
   const deferredErrors = checks.flatMap(c => { const error = (c.cursor as { error?: string }).error; return error && done.has(c.scope) ? [{ player: pool.find(p => p.id === c.scope)!.providerPlayerId, message: error }] : []; });
   let imported = 0, absent = 0, changed = 0; const errors: { player: string; message: string }[] = [];
   for (const player of due.slice(0, 20)) {
     try {
       const source = await fetchSource(contest.providerContestId, player.providerPlayerId);
       const current = parseHockeyHistory(source.html, { tagId: player.providerTagId ?? "", season: contest.season.seasonKey, position: player.position as KhlPosition });
+      const tagProfile = current.tagId === null ? { tagId: player.providerTagId ?? "", ...(await fetchSportsBirthDate(player.providerTagId ?? "")) } : undefined;
       const providerSeasonId = hockeyHistorySeasonId(source.html, seasonKey);
       let games = 0;
       if (providerSeasonId) {
         const archive = await fetchSource(contest.providerContestId, player.providerPlayerId, undefined, providerSeasonId);
         if (hockeyHistorySeasonId(archive.html, seasonKey) !== providerSeasonId || !archive.html.includes(`value="${providerSeasonId}" selected`)) throw new Error("HISTORY_ARCHIVE_SEASON_MISMATCH");
-        const profile = parseHockeyHistory(archive.html, { tagId: player.providerTagId ?? "", season: seasonKey, position: player.position as KhlPosition, historyOnly: true });
+        const profile = parseHockeyHistory(archive.html, { tagId: player.providerTagId ?? "", season: seasonKey, position: player.position as KhlPosition,
+          historyOnly: true, verifiedArchiveIdentity: { current, currentUrl: source.url, archiveUrl: archive.url, providerSeasonId, tagProfile } });
         if (profile.name !== current.name) throw new Error("HISTORY_ARCHIVE_IDENTITY_MISMATCH");
         const aggregates = summarizeHockeyHistory(profile.rows.map(r => ({ ...r, participationStatus: r.toiSeconds === null ? "UNKNOWN" : r.toiSeconds > 0 ? "PLAYED" : "DNP" })), seasonKey, archive.url);
         games = aggregates.games;

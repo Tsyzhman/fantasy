@@ -209,8 +209,23 @@ export async function requireApiAdmin(): Promise<ApiAdminAuth> {
   return auth;
 }
 
+/** @spec spec://common/FEAT-009-session-authentication#redirects */
 export function isSafeRedirectPath(value: string | null | undefined): value is string {
-  return Boolean(value && value.startsWith("/") && !value.startsWith("//"));
+  if (!value || !value.startsWith("/") || value.startsWith("//")) return false;
+  const trustedOrigin = "https://fantasy.internal";
+  try {
+    let decoded = value;
+    for (let depth = 0; depth < 5; depth += 1) {
+      if (/[\\\u0000-\u001f\u007f]/u.test(decoded) || !decoded.startsWith("/") || decoded.startsWith("//")) return false;
+      if (new URL(decoded, trustedOrigin).origin !== trustedOrigin) return false;
+      const next = decodeURIComponent(decoded);
+      if (next === decoded) return true;
+      decoded = next;
+    }
+    return false;
+  } catch {
+    return false;
+  }
 }
 
 function hashSessionToken(token: string) {

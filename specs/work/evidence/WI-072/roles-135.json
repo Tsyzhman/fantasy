@@ -1,0 +1,45 @@
+[
+  {
+    "runtime": "fantasy_app",
+    "attributes": [
+      false,
+      false,
+      false,
+      false,
+      false
+    ],
+    "crud": "passed and rolled back",
+    "negativePermissions": [
+      "create_table",
+      "create_database",
+      "create_role",
+      "truncate",
+      "migration_write",
+      "admin_membership"
+    ],
+    "operatorTcpLogin": "passed",
+    "credentials": "protected host files only"
+  },
+  {
+    "connections": [
+      {
+        "usename": "fantasy_app",
+        "state": "active",
+        "connections": 1
+      },
+      {
+        "usename": "fantasy_app",
+        "state": "idle",
+        "connections": 16
+      }
+    ],
+    "runtimeObjectOwnership": 0,
+    "ownershipTableNames": [
+      "sports_ru_fantasy_contests",
+      "sports_ru_squad_snapshots",
+      "sports_trend_sources",
+      "sports_trend_snapshots",
+      "sports_trend_entries"
+    ]
+  }
+]

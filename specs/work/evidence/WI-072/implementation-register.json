@@ -1,0 +1,161 @@
+{
+  "status": "23 requested findings implemented, direct checks passed, production 0.3.137 verified",
+  "excluded": [
+    "F02"
+  ],
+  "findings": [
+    {
+      "id": "F01",
+      "change": "Limited CRUD runtime role, separate migrator/operator",
+      "files": "scripts/configure-production-database-roles.py; scripts/runtime-database-roles.sql",
+      "verification": "scripts/runtime-database-roles.test.py"
+    },
+    {
+      "id": "F03",
+      "change": "Late FPL mapping reconciliation preserving official fields",
+      "files": "src/server/fpl-score-reconciliation.ts; scripts/reconcile-fpl-score-mappings.ts",
+      "verification": "database integration suite"
+    },
+    {
+      "id": "F04",
+      "change": "Atomic sorted advisory login-limit locks",
+      "files": "src/lib/auth-rate-limit.ts; src/lib/auth.ts",
+      "verification": "src/lib/auth-concurrency.db-test.ts; src/lib/auth-rate-limit.test.ts"
+    },
+    {
+      "id": "F05",
+      "change": "Digest-pinned Node 24 LTS and frozen dependencies",
+      "files": "Dockerfile; .nvmrc; package.json",
+      "verification": "CI build and runtime Node version probe"
+    },
+    {
+      "id": "F06",
+      "change": "Bounded decoded internal redirect validation",
+      "files": "src/lib/auth.ts",
+      "verification": "src/lib/auth.test.ts"
+    },
+    {
+      "id": "F07",
+      "change": "Durable first-admin closure and operator recovery",
+      "files": "src/lib/auth-bootstrap.ts; src/lib/auth.ts; scripts/recover-admin.ts",
+      "verification": "src/lib/auth-concurrency.db-test.ts"
+    },
+    {
+      "id": "F08",
+      "change": "Measured non-root memory/CPU/PID and privilege budgets",
+      "files": "scripts/deploy-production-docker.sh; Dockerfile; scripts/configure-production-postgres.py; src/lib/db.ts",
+      "verification": "production cgroup observations and full import; src/lib/db-bundles.test.ts"
+    },
+    {
+      "id": "F09",
+      "change": "Semantic deadline-plan fingerprints preserving five-second delivery",
+      "files": "src/server/deadline-reports",
+      "verification": "synthetic unchanged-tick regression and production update deltas"
+    },
+    {
+      "id": "F10",
+      "change": "Hash unchanged KHL catalog and record one checkedAt",
+      "files": "src/server/khl/catalog-sync.ts; prisma/migrations/20261010101000_khl_catalog_checkpoint",
+      "verification": "isolated KHL database integration and production deltas"
+    },
+    {
+      "id": "F11",
+      "change": "Independent hourly bounded KHL retention with concurrent indexes",
+      "files": "src/server/khl/retention.ts; prisma/migrations",
+      "verification": "isolated KHL integration and production valid-index/TTL checks"
+    },
+    {
+      "id": "F12",
+      "change": "Shared active Sports source registry, explicit archive/exclusion diagnostics",
+      "files": "src/server/fantasy-source-registry.ts; src/app/api/health/fantasy-prices/route.ts",
+      "verification": "registry/health regressions and actual twelve-scope health"
+    },
+    {
+      "id": "F13",
+      "change": "Exact archived KHL identity and selected idempotent repair",
+      "files": "src/providers/khl-mobile/identity.ts; scripts/repair-khl-archive-identities.ts",
+      "verification": "provider identity fixtures and sixteen exact production profiles"
+    },
+    {
+      "id": "F14",
+      "change": "Serialize complete Sports ownership publication",
+      "files": "src/server/sports-trends",
+      "verification": "src/server/sports-trends/ownership.db-test.ts"
+    },
+    {
+      "id": "F15",
+      "change": "Stable action IDs, private runtime encryption, deploymentId and bounded drafts",
+      "files": "next.config.mjs; src/components/machete/use-planner-draft.ts; scripts/strip-server-action-key.mjs",
+      "verification": "old forms/static assets and forward/rollback browser drafts"
+    },
+    {
+      "id": "F16",
+      "change": "Checksummed CI-built exact runtime/setup image identities",
+      "files": "Dockerfile; .github/workflows/deploy-production.yml; scripts/resolve-ci-image-identities.py",
+      "verification": "scripts/resolve-ci-image-identities.test.py and production image binding"
+    },
+    {
+      "id": "F17",
+      "change": "Only owned temporary CI builder and unused project artifacts removed",
+      "files": "scripts/deploy-production-docker.sh; .github/workflows/deploy-production.yml",
+      "verification": "release contract checks and bounded before/after inventory"
+    },
+    {
+      "id": "F18",
+      "change": "Correlated bounded request/process/SQL diagnostics and truthful rolling SLO",
+      "files": "src/server/runtime-diagnostics.ts; src/instrumentation.ts; ops/monitoring",
+      "verification": "src/server/runtime-diagnostics.test.ts; src/server/runtime-diagnostics-bundles.test.ts; src/monitoring/access-log-audit.test.ts; live minute diagnostics"
+    },
+    {
+      "id": "F19",
+      "change": "Exact sorted ranks, bounded disposable report worker/cache",
+      "files": "src/franchises/analytics.ts; src/server/franchises/report-worker.ts; src/server/franchises/report-cache.ts",
+      "verification": "rank/cache regressions, synthetic benchmark and actual full report"
+    },
+    {
+      "id": "F20",
+      "change": "Selected mobile analytics with explanations and usable viewport chooser",
+      "files": "src/components/machete/PlayerPool.tsx",
+      "verification": "src/components/machete/fantasy-squad-ui.test.ts; real touch browser"
+    },
+    {
+      "id": "F21",
+      "change": "Focus/ARIA and keyboard width controls",
+      "files": "src/components/machete/ColumnResizeHandle.tsx",
+      "verification": "src/components/machete/planner-draft.test.ts; real keyboard browser"
+    },
+    {
+      "id": "F22",
+      "change": "Per-source receipts and real source age on Home",
+      "files": "src/server/home-freshness.ts; src/app/page.tsx",
+      "verification": "src/server/home-freshness.db-test.ts; src/server/fantasy-source-registry.test.ts; authenticated production Home"
+    },
+    {
+      "id": "F23",
+      "change": "Preserve formula/command behavior through planner module split",
+      "files": "src/components/machete; src/machete",
+      "verification": "eighty moved AST equivalences and full unit suite"
+    },
+    {
+      "id": "F24",
+      "change": "Current operational runbooks and bounded expired-session cleanup",
+      "files": "docs/operations; src/server/session-retention.ts",
+      "verification": "src/lib/session-retention.db-test.ts; active/expired production counts"
+    }
+  ],
+  "releasedCommit": "7d3f96ef8b7a6efe6ecf5442e061ea2c06fda980",
+  "finalEvidence": "final-verification.json",
+  "limitations": {
+    "fantasyPricesHealth": 503,
+    "dataQualityHealth": 503,
+    "khlHourlyExitStatus": 2,
+    "khlHourlyStatus": "PARTIAL",
+    "currentRowsDeferred": 18,
+    "protocolMatchesDeferred": 1,
+    "currentProfileFailures": 0,
+    "currentProfileRemaining": 0,
+    "archivePool": 700,
+    "archiveChanges": 0,
+    "archiveErrors": 0
+  }
+}

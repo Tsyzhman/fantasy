@@ -1,0 +1,42 @@
+{
+  "workItem": "WI-066",
+  "completedAtUtc": "2026-10-10T08:21:33.6092882Z",
+  "report": "specs/work/evidence/WI-066/report.ru.md",
+  "findingCount": 24,
+  "codeLinksChecked": 31,
+  "evidenceLinksChecked": 29,
+  "brokenLinks": 0,
+  "focusedTests": {
+    "passed": 16,
+    "failed": 0
+  },
+  "workflow": {
+    "checks": 10,
+    "status": "passed",
+    "errors": 0
+  },
+  "codeOrProductionChangedByAudit": false,
+  "activeRelease": "0.3.131 / 74a5f00f162b1d22a6bc7344ee6630e0c354a595",
+  "domainHealth": {
+    "dataQuality": 503,
+    "fpl": 503,
+    "basic": 200,
+    "fantasyPrices": 503
+  },
+  "finalResourceSnapshot": "2026-10-10T11:10:12.370236+03:00",
+  "artifactInventoryBeforeThisManifest": {
+    "bytes": 309922.0,
+    "files": 25
+  },
+  "existingLocalNodeProcesses": {
+    "count": 11,
+    "workingSetMiB": 761.6,
+    "note": "No persistent audit server or helper was started. Existing processes were preserved."
+  },
+  "cleanup": {
+    "productionCachesPruned": false,
+    "viewportReset": true,
+    "userTabPreserved": true,
+    "temporaryLoginTabClosed": true
+  }
+}

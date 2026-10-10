@@ -1,4 +1,3 @@
-import { UserRole } from "@prisma/client";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
@@ -6,7 +5,8 @@ import { DatabaseSetupNotice } from "@/components/database-setup-notice";
 import { I18nText } from "@/components/i18n-text";
 import { PublicPreferenceBar } from "@/components/public-preference-bar";
 import { createUserSession, getCurrentUser, isSafeRedirectPath, normalizeEmail, verifyPassword } from "@/lib/auth";
-import { authRateLimitBuckets, checkAuthRateLimits, clearAuthRateLimits, getClientIpFromHeaders, recordFailedAuthAttempt } from "@/lib/auth-rate-limit";
+import { authRateLimitBuckets, getClientIpFromHeaders, runLimitedAuthAttempt } from "@/lib/auth-rate-limit";
+import { isAdminBootstrapRequired } from "@/lib/auth-bootstrap";
 import { isDatabaseConfigured, prisma } from "@/lib/db";
 
 type PageProps = {
@@ -18,18 +18,12 @@ type PageProps = {
 
 export const dynamic = "force-dynamic";
 
+/** @spec spec://common/FEAT-009-session-authentication#root */
 export default async function LoginPage({ searchParams }: PageProps) {
   if (!isDatabaseConfigured()) return <DatabaseSetupNotice />;
 
   const resolvedSearchParams = (await searchParams) ?? {};
-  const adminWithPasswordCount = await prisma.user.count({
-    where: {
-      role: UserRole.ADMIN,
-      isActive: true,
-      passwordHash: { not: null }
-    }
-  });
-  if (adminWithPasswordCount === 0) redirect("/setup");
+  if (await isAdminBootstrapRequired(prisma)) redirect("/setup");
 
   const currentUser = await getCurrentUser();
   const requestedNextPath = resolvedSearchParams.next;
@@ -82,6 +76,7 @@ export default async function LoginPage({ searchParams }: PageProps) {
   );
 }
 
+/** @spec spec://common/FEAT-009-session-authentication#attempts */
 async function loginAction(formData: FormData) {
   "use server";
 
@@ -93,23 +88,18 @@ async function loginAction(formData: FormData) {
   const errorPath = `/login?error=invalid&next=${encodeURIComponent(nextPath)}`;
   const headerStore = await headers();
   const rateLimitBuckets = authRateLimitBuckets({ action: "login", email, clientIp: getClientIpFromHeaders(headerStore) });
-  const rateLimit = await checkAuthRateLimits(prisma, rateLimitBuckets);
-  if (!rateLimit.allowed) {
+  const attempt = await runLimitedAuthAttempt(prisma, rateLimitBuckets, async (tx) => {
+    const user = await tx.user.findUnique({ where: { email } });
+    const success = Boolean(user?.isActive && await verifyPassword(password, user.passwordHash));
+    if (success && user) await tx.user.update({ where: { id: user.id }, data: { lastLoginAt: new Date() } });
+    return { success, value: user };
+  });
+  if (!attempt.allowed) {
     redirect(`/login?error=rate_limited&next=${encodeURIComponent(nextPath)}`);
   }
 
-  const user = await prisma.user.findUnique({ where: { email } });
-  if (!user || !user.isActive || !(await verifyPassword(password, user.passwordHash))) {
-    await recordFailedAuthAttempt(prisma, rateLimitBuckets);
-    redirect(errorPath);
-  }
-
-  await clearAuthRateLimits(prisma, rateLimitBuckets);
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { lastLoginAt: new Date() }
-  });
-  await createUserSession(user.id);
+  if (!attempt.success || !attempt.value) redirect(errorPath);
+  await createUserSession(attempt.value.id);
   redirect(nextPath);
 }
 

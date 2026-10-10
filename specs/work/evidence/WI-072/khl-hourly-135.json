@@ -1,0 +1,312 @@
+{
+  "at": "2026-10-10T13:23:32.096457+00:00",
+  "unit": 0,
+  "structuredResult": [
+    {
+      "source": "Sports: \u043a\u0430\u0442\u0430\u043b\u043e\u0433",
+      "status": "DONE",
+      "detail": {
+        "updatedAt": "2026-10-10T13:21:43.906Z",
+        "cached": true
+      }
+    },
+    {
+      "source": "Sports: \u0438\u0434\u0435\u043d\u0442\u0438\u0447\u043d\u043e\u0441\u0442\u044c \u0438\u0433\u0440\u043e\u043a\u043e\u0432",
+      "status": "DONE",
+      "detail": {
+        "imported": 0,
+        "remaining": 0,
+        "errors": []
+      }
+    },
+    {
+      "source": "Sports: \u0442\u0435\u043a\u0443\u0449\u0430\u044f \u0438\u0441\u0442\u043e\u0440\u0438\u044f",
+      "batch": 1,
+      "dnp": 3378,
+      "played": 5734,
+      "catalog": 700,
+      "changed": 0,
+      "imported": 0,
+      "profiles": 700,
+      "remaining": 0,
+      "failedProfiles": 0,
+      "quarantineCount": 105,
+      "incompleteProfiles": 0
+    },
+    {
+      "source": "KHL Mobile + Sports: \u0442\u0435\u043a\u0443\u0449\u0430\u044f \u0438\u0441\u0442\u043e\u0440\u0438\u044f",
+      "status": "DONE",
+      "detail": {
+        "dnp": 3378,
+        "played": 5734,
+        "catalog": 700,
+        "changed": 0,
+        "imported": 0,
+        "profiles": 700,
+        "remaining": 0,
+        "failedProfiles": 0,
+        "quarantineCount": 105,
+        "incompleteProfiles": 0
+      }
+    },
+    {
+      "source": "Sports: \u043a\u0430\u043b\u0435\u043d\u0434\u0430\u0440\u044c",
+      "status": "DONE",
+      "detail": {
+        "clubs": 22,
+        "agreed": 109,
+        "errors": [],
+        "changed": 0,
+        "cleared": 0,
+        "deferred": 0,
+        "unchanged": 109
+      }
+    },
+    {
+      "source": "\u041a\u0425\u041b: \u0442\u0435\u043a\u0443\u0449\u0438\u0435 \u043f\u0440\u043e\u0442\u043e\u043a\u043e\u043b\u044b",
+      "status": "DONE",
+      "detail": {
+        "errors": [],
+        "imported": 1,
+        "remaining": 0,
+        "accessError": null,
+        "deferredMatches": 0
+      }
+    },
+    {
+      "source": "Sports: \u043f\u0440\u043e\u0448\u043b\u044b\u0439 \u0441\u0435\u0437\u043e\u043d",
+      "status": "DONE",
+      "detail": {
+        "seasonKey": "2025/2026",
+        "pool": 700,
+        "imported": 0,
+        "absent": 0,
+        "changed": 0,
+        "errors": [],
+        "deferredErrors": [],
+        "remaining": 0
+      }
+    },
+    {
+      "source": "\u041a\u0425\u041b: \u0430\u0440\u0445\u0438\u0432\u043d\u044b\u0435 \u043f\u0440\u043e\u0442\u043e\u043a\u043e\u043b\u044b",
+      "status": "DONE",
+      "detail": {
+        "remaining": 0,
+        "cached": true
+      }
+    },
+    {
+      "source": "\u0424\u043e\u043d\u0431\u0435\u0442: \u043b\u0438\u043d\u0438\u044f \u041a\u0425\u041b",
+      "status": "DONE",
+      "detail": {
+        "id": "cmv2fbz2b01c1izrmjig1zv9h",
+        "status": "DONE"
+      }
+    },
+    {
+      "source": "\u041a\u0425\u041b: \u0442\u0440\u0430\u0432\u043c\u0438\u0440\u043e\u0432\u0430\u043d\u043d\u044b\u0435",
+      "status": "DONE",
+      "detail": {
+        "clubs": 22,
+        "listed": 41,
+        "matched": 35,
+        "unlinked": [
+          "24801",
+          "16019",
+          "43446",
+          "21257",
+          "45425",
+          "16478"
+        ]
+      }
+    },
+    {
+      "source": "EP",
+      "status": "DONE",
+      "detail": {
+        "id": "cmv2fc3ek01kaizrm5u47dmxa",
+        "contestId": "cmtr4grkd00056htzwpdv4fwu",
+        "modelVersion": "khl-opponent-explained-beta-v4",
+        "rulesVersion": "provider-official-fp",
+        "inputHash": "d25f33cc6bcb911fca19dabe9461b893731aa8945d3d1d3b3a9a9e1a1aeefd6a",
+        "dataRevision": 80984,
+        "asOf": "2026-10-10T13:22:31.270Z",
+        "horizonEnd": "2026-10-17T13:22:31.270Z",
+        "status": "PUBLISHED",
+        "quality": "BETA_BASELINE",
+        "diagnostics": {
+          "horizon": "NEXT_7_DAYS",
+          "xgReady": false,
+          "warnings": [
+            "BETA_UNCALIBRATED",
+            "XG_UNAVAILABLE"
+          ],
+          "fittedModel": false,
+          "participation": "Empirical appearances with previous-season prior; not probability of starting",
+          "historicalPlayers": 561
+        }
+      }
+    },
+    {
+      "source": "\u041e\u0447\u0438\u0441\u0442\u043a\u0430",
+      "status": "DONE",
+      "detail": {
+        "raw": 0,
+        "availability": 0,
+        "availabilityRevisions": 0,
+        "previews": 0,
+        "receipts": 0,
+        "jobs": 40
+      }
+    },
+    {
+      "status": "DONE",
+      "startedAt": "2026-10-10T13:22:00.532Z",
+      "results": [
+        {
+          "source": "Sports: \u043a\u0430\u0442\u0430\u043b\u043e\u0433",
+          "status": "DONE",
+          "detail": {
+            "updatedAt": "2026-10-10T13:21:43.906Z",
+            "cached": true
+          }
+        },
+        {
+          "source": "Sports: \u0438\u0434\u0435\u043d\u0442\u0438\u0447\u043d\u043e\u0441\u0442\u044c \u0438\u0433\u0440\u043e\u043a\u043e\u0432",
+          "status": "DONE",
+          "detail": {
+            "imported": 0,
+            "remaining": 0,
+            "errors": []
+          }
+        },
+        {
+          "source": "KHL Mobile + Sports: \u0442\u0435\u043a\u0443\u0449\u0430\u044f \u0438\u0441\u0442\u043e\u0440\u0438\u044f",
+          "status": "DONE",
+          "detail": {
+            "dnp": 3378,
+            "played": 5734,
+            "catalog": 700,
+            "changed": 0,
+            "imported": 0,
+            "profiles": 700,
+            "remaining": 0,
+            "failedProfiles": 0,
+            "quarantineCount": 105,
+            "incompleteProfiles": 0
+          }
+        },
+        {
+          "source": "Sports: \u043a\u0430\u043b\u0435\u043d\u0434\u0430\u0440\u044c",
+          "status": "DONE",
+          "detail": {
+            "clubs": 22,
+            "agreed": 109,
+            "errors": [],
+            "changed": 0,
+            "cleared": 0,
+            "deferred": 0,
+            "unchanged": 109
+          }
+        },
+        {
+          "source": "\u041a\u0425\u041b: \u0442\u0435\u043a\u0443\u0449\u0438\u0435 \u043f\u0440\u043e\u0442\u043e\u043a\u043e\u043b\u044b",
+          "status": "DONE",
+          "detail": {
+            "errors": [],
+            "imported": 1,
+            "remaining": 0,
+            "accessError": null,
+            "deferredMatches": 0
+          }
+        },
+        {
+          "source": "Sports: \u043f\u0440\u043e\u0448\u043b\u044b\u0439 \u0441\u0435\u0437\u043e\u043d",
+          "status": "DONE",
+          "detail": {
+            "seasonKey": "2025/2026",
+            "pool": 700,
+            "imported": 0,
+            "absent": 0,
+            "changed": 0,
+            "errors": [],
+            "deferredErrors": [],
+            "remaining": 0
+          }
+        },
+        {
+          "source": "\u041a\u0425\u041b: \u0430\u0440\u0445\u0438\u0432\u043d\u044b\u0435 \u043f\u0440\u043e\u0442\u043e\u043a\u043e\u043b\u044b",
+          "status": "DONE",
+          "detail": {
+            "remaining": 0,
+            "cached": true
+          }
+        },
+        {
+          "source": "\u0424\u043e\u043d\u0431\u0435\u0442: \u043b\u0438\u043d\u0438\u044f \u041a\u0425\u041b",
+          "status": "DONE",
+          "detail": {
+            "id": "cmv2fbz2b01c1izrmjig1zv9h",
+            "status": "DONE"
+          }
+        },
+        {
+          "source": "\u041a\u0425\u041b: \u0442\u0440\u0430\u0432\u043c\u0438\u0440\u043e\u0432\u0430\u043d\u043d\u044b\u0435",
+          "status": "DONE",
+          "detail": {
+            "clubs": 22,
+            "listed": 41,
+            "matched": 35,
+            "unlinked": [
+              "24801",
+              "16019",
+              "43446",
+              "21257",
+              "45425",
+              "16478"
+            ]
+          }
+        },
+        {
+          "source": "EP",
+          "status": "DONE",
+          "detail": {
+            "id": "cmv2fc3ek01kaizrm5u47dmxa",
+            "contestId": "cmtr4grkd00056htzwpdv4fwu",
+            "modelVersion": "khl-opponent-explained-beta-v4",
+            "rulesVersion": "provider-official-fp",
+            "inputHash": "d25f33cc6bcb911fca19dabe9461b893731aa8945d3d1d3b3a9a9e1a1aeefd6a",
+            "dataRevision": 80984,
+            "asOf": "2026-10-10T13:22:31.270Z",
+            "horizonEnd": "2026-10-17T13:22:31.270Z",
+            "status": "PUBLISHED",
+            "quality": "BETA_BASELINE",
+            "diagnostics": {
+              "horizon": "NEXT_7_DAYS",
+              "xgReady": false,
+              "warnings": [
+                "BETA_UNCALIBRATED",
+                "XG_UNAVAILABLE"
+              ],
+              "fittedModel": false,
+              "participation": "Empirical appearances with previous-season prior; not probability of starting",
+              "historicalPlayers": 561
+            }
+          }
+        },
+        {
+          "source": "\u041e\u0447\u0438\u0441\u0442\u043a\u0430",
+          "status": "DONE",
+          "detail": {
+            "raw": 0,
+            "availability": 0,
+            "availabilityRevisions": 0,
+            "previews": 0,
+            "receipts": 0,
+            "jobs": 40
+          }
+        }
+      ]
+    }
+  ]
+}

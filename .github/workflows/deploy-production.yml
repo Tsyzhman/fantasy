@@ -34,7 +34,7 @@ concurrency:
 jobs:
   package-and-deploy:
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     environment: production
 
     steps:
@@ -69,7 +69,7 @@ jobs:
         run: npm run release:verify-version -- --base origin/main
 
       - name: Run checks before packaging
-        run: npm run check
+        run: npm run test && npm run lint && npm run typecheck
 
       - name: Verify browser-free KHL HTTP transport
         run: python3 scripts/khl-protocol-http.test.py
@@ -81,7 +81,10 @@ jobs:
 
       # @spec spec://common/INFRA-006-continuous-deployment#acceptance
       - name: Verify continuous deployment and rollback
-        run: python3 scripts/continuous-deployment.test.py
+        run: |
+          python3 scripts/continuous-deployment.test.py
+          python3 scripts/resolve-ci-image-identities.test.py
+          node --test scripts/strip-server-action-key.test.mjs
 
       - name: Package exact Git commit
         id: release
@@ -108,7 +111,51 @@ jobs:
             echo "release=$release"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Retain immutable release archive
+      # @spec spec://common/INFRA-006-continuous-deployment#runtime
+      - name: Build immutable Linux runtime and migration images in CI
+        id: images
+        shell: bash
+        env:
+          NEXT_SERVER_ACTIONS_ID_SALT: ${{ secrets.NEXT_SERVER_ACTIONS_ID_SALT }}
+          RELEASE: ${{ steps.release.outputs.release }}
+          COMMIT: ${{ steps.release.outputs.commit }}
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          set -euo pipefail
+          : "${NEXT_SERVER_ACTIONS_ID_SALT:?Stable server-action ID salt is required}"
+          builder="fantasy-ci-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+          echo "FANTASY_CI_BUILDER=$builder" >> "$GITHUB_ENV"
+          docker buildx create --name "$builder" --driver docker-container --use
+          for target in runtime setup; do
+            docker buildx build --builder "$builder" --load --provenance=false \
+              --platform linux/amd64 --target "$target" \
+              --secret id=server_actions_id_salt,env=NEXT_SERVER_ACTIONS_ID_SALT \
+              --build-arg "APP_RELEASE_COMMIT=$COMMIT" --build-arg "APP_RELEASE_VERSION=$VERSION" \
+              --tag "fantasy-scout-ci:${COMMIT}-${target}" .
+          done
+          runtime_id="$(docker image inspect "fantasy-scout-ci:${COMMIT}-runtime" --format '{{.Id}}')"
+          setup_id="$(docker image inspect "fantasy-scout-ci:${COMMIT}-setup" --format '{{.Id}}')"
+          docker run --rm --network none --entrypoint node "$runtime_id" \
+            -e 'if(process.getuid()===0||!process.version.startsWith("v24."))process.exit(1);console.log(JSON.stringify({node:process.version,uid:process.getuid()}))'
+          images_archive="$RUNNER_TEMP/fantasy-scout-images-${RELEASE}.tar.gz"
+          docker save "fantasy-scout-ci:${COMMIT}-runtime" "fantasy-scout-ci:${COMMIT}-setup" | gzip -1 > "$images_archive"
+          images_sha="$(sha256sum "$images_archive" | awk '{print $1}')"
+          manifest="$RUNNER_TEMP/fantasy-scout-images-${RELEASE}.json"
+          printf '{"commit":"%s","runtimeImageId":"%s","setupImageId":"%s","archiveSha256":"%s"}\n' \
+            "$COMMIT" "$runtime_id" "$setup_id" "$images_sha" > "$manifest"
+          {
+            echo "archive=$images_archive"
+            echo "sha256=$images_sha"
+            echo "runtime_id=$runtime_id"
+            echo "setup_id=$setup_id"
+            echo "manifest=$manifest"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Remove only this CI build cache
+        if: always() && env.FANTASY_CI_BUILDER != ''
+        run: docker buildx rm --force "$FANTASY_CI_BUILDER"
+
+      - name: Retain immutable release archive and image manifest
         continue-on-error: true
         uses: actions/upload-artifact@v6
         with:
@@ -116,6 +163,8 @@ jobs:
           path: |
             ${{ steps.release.outputs.archive }}
             ${{ steps.release.outputs.checksum_file }}
+            ${{ steps.images.outputs.archive }}
+            ${{ steps.images.outputs.manifest }}
           if-no-files-found: error
           retention-days: 14
 
@@ -245,6 +294,7 @@ jobs:
           DEPLOY_PORT: ${{ secrets.DEPLOY_PORT }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           LOCAL_ARCHIVE: ${{ steps.release.outputs.archive }}
+          IMAGES_ARCHIVE: ${{ steps.images.outputs.archive }}
           RELEASE: ${{ steps.release.outputs.release }}
         run: |
           set -euo pipefail
@@ -252,6 +302,9 @@ jobs:
           scp -i ~/.ssh/deploy_key -P "$DEPLOY_PORT" \
             "$LOCAL_ARCHIVE" \
             "$DEPLOY_USER@$DEPLOY_HOST:/tmp/fantasy-scout-release-${RELEASE}.tar.gz"
+          scp -i ~/.ssh/deploy_key -P "$DEPLOY_PORT" \
+            "$IMAGES_ARCHIVE" \
+            "$DEPLOY_USER@$DEPLOY_HOST:/tmp/fantasy-scout-images-${RELEASE}.tar.gz"
 
       - name: Promote Docker release
         if: inputs.dry_run == 'false'
@@ -264,13 +317,16 @@ jobs:
           RELEASE_COMMIT: ${{ steps.release.outputs.commit }}
           RELEASE_TREE: ${{ steps.release.outputs.tree }}
           RELEASE_VERSION: ${{ steps.release.outputs.version }}
+          IMAGES_SHA256: ${{ steps.images.outputs.sha256 }}
+          RUNTIME_IMAGE_ID: ${{ steps.images.outputs.runtime_id }}
+          SETUP_IMAGE_ID: ${{ steps.images.outputs.setup_id }}
         run: |
           set -euo pipefail
           DEPLOY_PORT="${DEPLOY_PORT:-22}"
           remote_archive="/tmp/fantasy-scout-release-${RELEASE}.tar.gz"
           ssh -o ServerAliveInterval=15 -o ServerAliveCountMax=4 \
             -i ~/.ssh/deploy_key -p "$DEPLOY_PORT" "$DEPLOY_USER@$DEPLOY_HOST" \
-            "bash -s -- '$remote_archive' '$RELEASE_CHECKSUM' '$RELEASE' '$RELEASE_COMMIT' '$RELEASE_TREE' '$RELEASE_VERSION'" \
+            "bash -s -- '$remote_archive' '$RELEASE_CHECKSUM' '$RELEASE' '$RELEASE_COMMIT' '$RELEASE_TREE' '$RELEASE_VERSION' '/tmp/fantasy-scout-images-${RELEASE}.tar.gz' '$IMAGES_SHA256' '$RUNTIME_IMAGE_ID' '$SETUP_IMAGE_ID'" \
             < scripts/deploy-production-docker.sh
 
       - name: Verify exact production revision

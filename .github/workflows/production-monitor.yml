@@ -33,5 +33,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MONITOR_BASE_URL: https://fantasy.tsyzhman.ru
           MONITOR_FIXED_WINDOW_EXPECTED_START: ${{ vars.MONITOR_FIXED_WINDOW_EXPECTED_START }}
+          MONITOR_FIXED_WINDOW_ENABLED: ${{ vars.MONITOR_FIXED_WINDOW_ENABLED || 'false' }}
           MONITOR_FIXED_WINDOW_MIN_OBSERVED_SPAN_MINUTES: ${{ vars.MONITOR_FIXED_WINDOW_MIN_OBSERVED_SPAN_MINUTES }}
         run: node scripts/production-monitor.mjs

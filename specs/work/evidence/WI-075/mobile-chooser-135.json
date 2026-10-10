@@ -1,0 +1,26 @@
+{
+  "panel": {
+    "x": 15,
+    "y": 60,
+    "width": 361,
+    "height": 769
+  },
+  "ffo": {
+    "x": 38.5,
+    "y": 661.25,
+    "width": 15,
+    "height": 15
+  },
+  "rr": {
+    "x": 38.5,
+    "y": 980,
+    "width": 15,
+    "height": 15
+  },
+  "viewport": {
+    "width": 391,
+    "height": 844
+  },
+  "ffoSelected": true,
+  "rrSelected": true
+}

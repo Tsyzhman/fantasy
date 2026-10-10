@@ -66,7 +66,7 @@ export async function refreshOfficialArchive(db: PrismaClient, contestId: string
     if (due.length > 10) return { remaining: due.length - 10, imported: Math.min(10, due.length) };
     const players = new Map<string, { matchId: string; row: KhlProtocolRow }[]>();
     for (const m of calendar) {
-      const raw = await db.khlRawPayload.findFirstOrThrow({ where: { provider, scope: scopePrefix + m.officialMatchId }, orderBy: { expiresAt: 'desc' } });
+      const raw = await db.khlRawPayload.findFirstOrThrow({ where: { provider, scope: scopePrefix + m.officialMatchId, expiresAt: { gt: new Date() } }, orderBy: { expiresAt: 'desc' } });
       const parsed = parseKhlProtocol(gunzipSync(raw.compressed, { maxOutputLength: 5 * 1024 * 1024 }).toString('utf8'), m.officialMatchId, officialSeasonId);
       for (const row of parsed.rows) { const list = players.get(row.officialPlayerId) ?? []; list.push({ matchId: m.officialMatchId, row }); players.set(row.officialPlayerId, list); }
     }

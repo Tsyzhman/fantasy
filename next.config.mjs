@@ -1,6 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   output: "standalone",
+  deploymentId: process.env.APP_RELEASE_COMMIT && process.env.APP_RELEASE_COMMIT !== "unknown" ? process.env.APP_RELEASE_COMMIT : undefined,
   outputFileTracingExcludes: {
     "/*": [
       "./.codex-tmp/**/*",

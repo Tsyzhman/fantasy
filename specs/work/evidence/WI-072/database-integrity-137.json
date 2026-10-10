@@ -1,0 +1,268 @@
+{
+  "migrationApplied": 61,
+  "migrationUnfinished": 0,
+  "retentionIndexCount": 5,
+  "invalidRetentionIndexes": 0,
+  "ownershipDuplicateBuckets": 0,
+  "ownershipLatest": [
+    {
+      "id": "cmv2fwneh1fb8ys4o4luubzl6",
+      "contest_id": "cmtzhksis0002yypwmrvcl90b",
+      "population_scope": "ALL_MANAGERS",
+      "section_key": "GK",
+      "source_entry_count": 6,
+      "observed_at": "2026-10-10T13:38:32.408",
+      "entries": 6
+    },
+    {
+      "id": "cmv2gs4in0a8u5vugcf6bx371",
+      "contest_id": "cmsraor0d0002f8sym7tlpdws",
+      "population_scope": "ALL_MANAGERS",
+      "section_key": "",
+      "source_entry_count": 15,
+      "observed_at": "2026-10-10T14:00:00",
+      "entries": 15
+    },
+    {
+      "id": "cmv2fv2551dx7ys4o7uxsrvd1",
+      "contest_id": "cmtmodtoh0rh32o900afvwz7a",
+      "population_scope": "ALL_MANAGERS",
+      "section_key": "GK",
+      "source_entry_count": 5,
+      "observed_at": "2026-10-10T13:37:18.199",
+      "entries": 5
+    },
+    {
+      "id": "cmv2gs4dv0a335vug2j47j4kv",
+      "contest_id": "cmrpa0d2o0002wy5cb1jvnaor",
+      "population_scope": "ALL_MANAGERS",
+      "section_key": "",
+      "source_entry_count": 15,
+      "observed_at": "2026-10-10T14:00:00",
+      "entries": 15
+    },
+    {
+      "id": "cmv2fwnet1fbwys4o5yv47wz9",
+      "contest_id": "cmtzhksis0002yypwmrvcl90b",
+      "population_scope": "ALL_MANAGERS",
+      "section_key": "FWD",
+      "source_entry_count": 5,
+      "observed_at": "2026-10-10T13:38:32.408",
+      "entries": 5
+    },
+    {
+      "id": "cmv2gs4fp0a4z5vug2z1uk4qm",
+      "contest_id": "cms99uref01nxd2ewjki1z99e",
+      "population_scope": "ALL_MANAGERS",
+      "section_key": "",
+      "source_entry_count": 15,
+      "observed_at": "2026-10-10T14:00:00",
+      "entries": 15
+    },
+    {
+      "id": "cmv2gs4ev0a3z5vug7z15lgib",
+      "contest_id": "cms99ujds00cgd2ewhh3ktccp",
+      "population_scope": "ALL_MANAGERS",
+      "section_key": "",
+      "source_entry_count": 15,
+      "observed_at": "2026-10-10T14:00:00",
+      "entries": 15
+    },
+    {
+      "id": "cmv2grmpx09ed5vugkvcgv859",
+      "contest_id": "cmrpa0d2o0002wy5cb1jvnaor",
+      "population_scope": "TOP_1000_MANAGERS",
+      "section_key": "",
+      "source_entry_count": 10,
+      "observed_at": "2026-10-10T14:02:37.865",
+      "entries": 10
+    },
+    {
+      "id": "cmv2gs4jd0a9t5vuguxfcxq6p",
+      "contest_id": "cmstyoorv06gcc0224q8dvuo9",
+      "population_scope": "ALL_MANAGERS",
+      "section_key": "",
+      "source_entry_count": 15,
+      "observed_at": "2026-10-10T14:00:00",
+      "entries": 15
+    },
+    {
+      "id": "cmv2fwnem1fbgys4o2kyolibp",
+      "contest_id": "cmtzhksis0002yypwmrvcl90b",
+      "population_scope": "ALL_MANAGERS",
+      "section_key": "DEF",
+      "source_entry_count": 7,
+      "observed_at": "2026-10-10T13:38:32.408",
+      "entries": 7
+    },
+    {
+      "id": "cmv2fv2581dxeys4obduube2d",
+      "contest_id": "cmtmodtoh0rh32o900afvwz7a",
+      "population_scope": "ALL_MANAGERS",
+      "section_key": "DEF",
+      "source_entry_count": 5,
+      "observed_at": "2026-10-10T13:37:18.199",
+      "entries": 5
+    },
+    {
+      "id": "cmv2fvjsm1f7jys4o04adwfm0",
+      "contest_id": "legacy_be69d6464abbb1fa3b7bf837ebca6fd3",
+      "population_scope": "ALL_MANAGERS",
+      "section_key": "MID",
+      "source_entry_count": 5,
+      "observed_at": "2026-10-10T13:37:41.065",
+      "entries": 5
+    },
+    {
+      "id": "cmv2gs4ld0ace5vugp8nxu63b",
+      "contest_id": "cmtmodtoh0rh32o900afvwz7a",
+      "population_scope": "ALL_MANAGERS",
+      "section_key": "",
+      "source_entry_count": 15,
+      "observed_at": "2026-10-10T14:00:00",
+      "entries": 15
+    },
+    {
+      "id": "cmv2gs4n00aec5vugxr3g84uu",
+      "contest_id": "legacy_be69d6464abbb1fa3b7bf837ebca6fd3",
+      "population_scope": "ALL_MANAGERS",
+      "section_key": "",
+      "source_entry_count": 15,
+      "observed_at": "2026-10-10T14:00:00",
+      "entries": 15
+    },
+    {
+      "id": "cmv2gs4he0a6w5vugbx4dyx3j",
+      "contest_id": "cmslfqko70002ljd09jwlvplj",
+      "population_scope": "ALL_MANAGERS",
+      "section_key": "",
+      "source_entry_count": 15,
+      "observed_at": "2026-10-10T14:00:00",
+      "entries": 15
+    },
+    {
+      "id": "cmv2gs4k10aat5vug61esy0tv",
+      "contest_id": "cmt2ea6ja0002yhanu0xn9uei",
+      "population_scope": "ALL_MANAGERS",
+      "section_key": "",
+      "source_entry_count": 15,
+      "observed_at": "2026-10-10T14:00:00",
+      "entries": 15
+    },
+    {
+      "id": "cmv2gs4kn0abs5vug81a9odk1",
+      "contest_id": "cmt2ecgzr029uyhansw56cc90",
+      "population_scope": "ALL_MANAGERS",
+      "section_key": "",
+      "source_entry_count": 15,
+      "observed_at": "2026-10-10T14:00:00",
+      "entries": 15
+    },
+    {
+      "id": "cmv2fvjsi1f7cys4o1mqqorri",
+      "contest_id": "legacy_be69d6464abbb1fa3b7bf837ebca6fd3",
+      "population_scope": "ALL_MANAGERS",
+      "section_key": "DEF",
+      "source_entry_count": 5,
+      "observed_at": "2026-10-10T13:37:41.065",
+      "entries": 5
+    },
+    {
+      "id": "cmv2fvjsq1f7qys4o0foy08bh",
+      "contest_id": "legacy_be69d6464abbb1fa3b7bf837ebca6fd3",
+      "population_scope": "ALL_MANAGERS",
+      "section_key": "FWD",
+      "source_entry_count": 5,
+      "observed_at": "2026-10-10T13:37:41.065",
+      "entries": 5
+    },
+    {
+      "id": "cmv2gs4gk0a5y5vug9el0urjp",
+      "contest_id": "cmslfq5dr0002tg4np9x5a9ka",
+      "population_scope": "ALL_MANAGERS",
+      "section_key": "",
+      "source_entry_count": 15,
+      "observed_at": "2026-10-10T14:00:00",
+      "entries": 15
+    },
+    {
+      "id": "cmv2gs4i10a7v5vug26mpsqsx",
+      "contest_id": "cmslfr2jm0002lbgfot39jatx",
+      "population_scope": "ALL_MANAGERS",
+      "section_key": "",
+      "source_entry_count": 15,
+      "observed_at": "2026-10-10T14:00:00",
+      "entries": 15
+    },
+    {
+      "id": "cmv2fv2vs1dy0ys4o5i2dv9pd",
+      "contest_id": "cmtmodtoh0rh32o900afvwz7a",
+      "population_scope": "TOP_1000_MANAGERS",
+      "section_key": "",
+      "source_entry_count": 15,
+      "observed_at": "2026-10-10T13:37:19.151",
+      "entries": 15
+    },
+    {
+      "id": "cmv2fvjsd1f73ys4oyhn4b5mp",
+      "contest_id": "legacy_be69d6464abbb1fa3b7bf837ebca6fd3",
+      "population_scope": "ALL_MANAGERS",
+      "section_key": "GK",
+      "source_entry_count": 7,
+      "observed_at": "2026-10-10T13:37:41.065",
+      "entries": 7
+    },
+    {
+      "id": "cmv2fv25e1dxsys4ovlicjalr",
+      "contest_id": "cmtmodtoh0rh32o900afvwz7a",
+      "population_scope": "ALL_MANAGERS",
+      "section_key": "FWD",
+      "source_entry_count": 5,
+      "observed_at": "2026-10-10T13:37:18.199",
+      "entries": 5
+    },
+    {
+      "id": "cmv2fv25c1dxlys4o69rch8h5",
+      "contest_id": "cmtmodtoh0rh32o900afvwz7a",
+      "population_scope": "ALL_MANAGERS",
+      "section_key": "MID",
+      "source_entry_count": 5,
+      "observed_at": "2026-10-10T13:37:18.199",
+      "entries": 5
+    },
+    {
+      "id": "cmv2fwneq1fbpys4oxcino9he",
+      "contest_id": "cmtzhksis0002yypwmrvcl90b",
+      "population_scope": "ALL_MANAGERS",
+      "section_key": "MID",
+      "source_entry_count": 5,
+      "observed_at": "2026-10-10T13:38:32.408",
+      "entries": 5
+    },
+    {
+      "id": "cmv2gs4m80add5vugjzdlr3tg",
+      "contest_id": "cmtzhksis0002yypwmrvcl90b",
+      "population_scope": "ALL_MANAGERS",
+      "section_key": "",
+      "source_entry_count": 15,
+      "observed_at": "2026-10-10T14:00:00",
+      "entries": 15
+    }
+  ],
+  "ownershipIncompleteLatest": 0,
+  "runtimeOwnedObjects": 0,
+  "runtimeConnections": [
+    {
+      "state": "active",
+      "count": 1
+    },
+    {
+      "state": "idle",
+      "count": 28
+    }
+  ],
+  "expiredSessions": 0,
+  "activeSessions": 73,
+  "at": "2026-10-10T14:21:34.662104+00:00",
+  "commit": "7d3f96ef8b7a6efe6ecf5442e061ea2c06fda980"
+}
