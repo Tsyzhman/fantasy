@@ -29,6 +29,10 @@ Product boundaries: `specs/common/main.md`; mutual contracts and exact links are
 
 ## Scope {#scope}
 
+An unchanged complete catalog payload stores one contest-level `catalogCheckedAt` checkpoint and its persisted hash. It does not rewrite individual player receipts or `publishedAt`; that timestamp remains the last content publication. Successful unchanged checks may refresh displayed source age while preserving actual revisions. Persisted hash/checkpoint survives worker restart.
+
+Archived Sports identities require the same exact contest/player URL, the selected published provider season ID and either an exact numeric current tag or a verified public numeric-tag redirect to the same canonical profile. Completely blank archive headers may inherit that verified current identity; partial/conflicting headers fail closed. Historical D/F changes remain historical; goalkeeper/skater conflicts remain errors. The WI-071 repair is restricted to the 16 independently revalidated public provider IDs, preserves raw evidence/provenance and rejects unknown IDs.
+
 Regular downloads, HTML parsing, normalization, storage and forecasting are performed without LLM. Data retrieval does not run on every user request. Each adapter returns a typed result, quality, provider IDs, source URL, watch and fetch time, parserVersion and hash; publishing a read model is atomic.
 
 <a name="providers"></a>

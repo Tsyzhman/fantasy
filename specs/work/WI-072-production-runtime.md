@@ -24,8 +24,8 @@ Release a reproducible bounded production runtime. Audit findings: F01, F05, F08
 
 ## Acceptance
 
-- [ ] Revalidate the findings against the current code and production state.
-- [ ] Implement every listed F-ID, preserving existing user capabilities and bounded caches.
+- [x] Revalidate the findings against the current code and production state.
+- [x] Implement every listed F-ID, preserving existing user capabilities and bounded caches.
 - [ ] Pass direct regression checks and save before/after evidence.
 - [ ] Verify the exact released revision and corresponding production behavior.
 - [ ] Record cache, duplicates, memory, review and any real remaining limitation.

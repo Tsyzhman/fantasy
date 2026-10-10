@@ -58,11 +58,15 @@ The user enables the mode instead of balanced/reliable/upside. The UI shows the 
 
 ## 6. Data and state {#data}
 
+Sports price synchronization, provider snapshots and data-quality audits share the active source registry. Active scope follows the current season and explicit tournament calendar, not metadata updatedAt or stale environment scope lists. Retained finished tournaments remain visible as archives with integrity/count diagnostics and no ongoing freshness SLA. Only existing explicitly reviewed identity exclusions affect the eligible price-mapping denominator; unresolved players remain failures under unchanged thresholds. The home page uses active/user-selected leagues and separate successful price, statistics, lineup-change and forecast-calculation timestamps; missing/stale facts remain visible.
+
 Context: N, rank, team and leader points, T/R, ER for no more than 6 completed rounds, ownership of the same provider/tournament/season. GlobalContestStrategyState, UserGlobalStrategyState and GlobalStrategyRecommendation models. The setting is GLOBAL_AUTO in existing JSON filters.
 
 <a name="contracts"></a>
 
 ## 7. Contracts {#contracts}
+
+The desktop pool remains virtualized and touch pool remains paginated at 18 players. Column selection and its existing persisted preferences are also available on touch screens; expanded mobile analytics use the selected metrics, including FFO and rotation risk, with touch/keyboard explanations. Confidence percentages have a visible data-quality label. Resize separators are focusable and support arrows, Shift acceleration, Home/End bounds and Enter reset, with current/min/max ARIA values; pointer resize and double-click reset remain. Pool rendering, forecast explanations, projection arithmetic and team-strength inputs have separate responsibility modules while preserving planner public exports and recommendations.
 
 Production full Squad pool refreshes run in a terminating child process so native database working memory is released after each cycle. The scheduler keeps full and incremental work serialized until that child exits; parent shutdown terminates its child. Refresh hours, bootstrap-only-missing behavior, atomic READY publication, retained revisions, complete player data and request-time loading remain unchanged. Development without the production bundle keeps the same in-process implementation.
 

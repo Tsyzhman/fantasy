@@ -27,10 +27,10 @@ test("Docker runtime carries the same version and commit in env and OCI labels",
 test("Docker dependency builds include local packages and cannot download an unpinned Prisma CLI", () => {
   const dockerfile = source("Dockerfile");
   const vendorCopyIndex = dockerfile.indexOf("COPY vendor ./vendor");
-  const installIndex = dockerfile.indexOf("RUN npm install --no-audit --no-fund");
+  const installIndex = dockerfile.indexOf("RUN npm ci --no-audit --no-fund");
 
   assert.ok(vendorCopyIndex >= 0 && vendorCopyIndex < installIndex);
-  assert.match(dockerfile, /RUN \.\/node_modules\/\.bin\/prisma generate && npm run build/);
+  assert.match(dockerfile, /\.\/node_modules\/\.bin\/prisma generate && npm run build/);
   assert.doesNotMatch(dockerfile, /RUN npx prisma generate/);
 });
 
@@ -128,8 +128,10 @@ test("server promoter verifies formula files, rehearses migrations, and checks e
   assert.match(promoter, /Verified production backup/);
   assert.match(promoter, /Migration rehearsal did not apply the complete migration set/);
   assert.match(promoter, /npm run prisma:migrate:deploy/);
-  assert.match(promoter, /run_docker_build "Runtime"/);
-  assert.match(promoter, /run_docker_build "Migration setup"/);
+  assert.match(promoter, /docker load --input "\$images_archive"/);
+  assert.doesNotMatch(promoter, /docker build/);
+  assert.match(promoter, /Runtime digest mismatch/);
+  assert.match(promoter, /--env-file "\$migration_env"/);
   assert.match(promoter, /migration_in_list/);
   assert.doesNotMatch(promoter, /cat "\$backup_path" \| docker exec/);
   assert.match(promoter, /run_canary "Pre-migration"/);

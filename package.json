@@ -1,9 +1,9 @@
 {
   "name": "fantasy-scout",
-  "version": "0.3.131",
+  "version": "0.3.132",
   "private": true,
   "engines": {
-    "node": ">=20.9.0"
+    "node": ">=24.11.0 <25"
   },
   "scripts": {
     "dev": "next dev",

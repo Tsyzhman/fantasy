@@ -181,6 +181,8 @@ Additive tables khl_* and string internal IDs; shared User contains feedback lin
 
 ## Runtime and operations {#runtime}
 
+Retention runs separately once an hour, initially after one minute, rather than after each catalog check. Each pass uses short transactions, an exclusive advisory lock, 2-second lock and 10-second statement timeouts, at most 2,000 rows per batch and 40 batches. Indexed predicates cover revision timestamps, terminal jobs and expiring previews/availability. Logical readers exclude expired raw values immediately; raw duplicate lookup and the 250 MiB budget count only unexpired payloads. Physical raw deletion follows the existing seven-day TTL and revisions the existing 30-day retention. An exact expired key may be replaced without a global delete in the ingestion path.
+
 Next API and Prisma transactions; flags are disabled by default; imports are run explicitly.
 
 <a name="data"></a>

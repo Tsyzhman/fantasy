@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.3.132 - 2026-10-10
+
+- Preserve every concurrent login failure, close first-admin setup permanently, validate internal redirects and retain bounded expired-session cleanup.
+- Reconcile late FPL mappings without changing official points; serialize complete ownership snapshots and stop rewriting unchanged deadline plans and KHL catalogs.
+- Verify archived KHL identities through exact provider routes and public numeric tags; separate bounded hourly retention from synchronization.
+- Share active source scopes across refresh/quality checks and show source receipt freshness, archive integrity and reviewed identity exclusions explicitly.
+- Keep exact franchise ranks with sorted metrics and move snapshot parsing, report calculation and serialization to a bounded disposable worker.
+- Restore selected mobile analytics and explanations, add keyboard column resizing and preserve bounded tab-local squad drafts across releases; split pool, explanations and forecast responsibilities.
+- Pin Node 24 LTS and frozen dependency installs, deploy verified CI-built images as a non-root bounded runtime, separate migration/operator database credentials and correlate bounded runtime, SQL and rolling SLO diagnostics.
+- Keep existing pre-release backup and migration restore rehearsal. F02 backup/PITR expansion is excluded from this release.
+
 ## 0.3.131 - 2026-10-10
 
 - Display imported Sports.ru placeholders as `затычка` in Telegram deadline reports while preserving their IDs, lineup roles and explicit mapping limitations.

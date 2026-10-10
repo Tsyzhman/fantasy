@@ -52,14 +52,17 @@ export async function importHistoricalSeason(db: PrismaClient, input: { playerId
   });
 }
 
-export async function refreshHistoricalSeason(db: PrismaClient, contestId: string, fetchSource = fetchHockeyHistory) {
+export async function refreshHistoricalSeason(db: PrismaClient, contestId: string, fetchSource = fetchHockeyHistory,
+  options: { providerPlayerIds?: string[]; retrySelected?: boolean } = {}) {
   const contest = await db.khlContest.findUniqueOrThrow({ where: { id: contestId }, include: { season: true } });
   const seasonKey = previousHockeySeason(contest.season.seasonKey), jobType = `PREVIOUS:${seasonKey}`;
   const pool = await db.khlFantasyPlayer.findMany({ where: { contestId, active: true, playerId: { not: null } }, orderBy: { id: "asc" }, take: 1001 });
   if (pool.length > 1000) throw new Error("HISTORY_POOL_LIMIT");
+  const selected = options.providerPlayerIds;
+  if (selected && (selected.length > 20 || new Set(selected).size !== selected.length || selected.some(id => !pool.some(player => player.providerPlayerId === id)))) throw new Error("HISTORY_RETRY_SCOPE_INVALID");
   const checks = await db.khlProviderCheckpoint.findMany({ where: { provider: "SPORTS_RU_ARCHIVE", jobType, scope: { in: pool.map(p => p.id) } }, take: 1000 });
   const done = new Set(checks.filter(c => Date.now() - c.completedAt.getTime() < ((c.cursor as { error?: string }).error ? 3600000 : 7 * 86400000)).map(c => c.scope));
-  const due = pool.filter(p => !done.has(p.id));
+  const due = pool.filter(p => (!selected || selected.includes(p.providerPlayerId)) && (options.retrySelected || !done.has(p.id)));
   const deferredErrors = checks.flatMap(c => { const error = (c.cursor as { error?: string }).error; return error && done.has(c.scope) ? [{ player: pool.find(p => p.id === c.scope)!.providerPlayerId, message: error }] : []; });
   let imported = 0, absent = 0, changed = 0; const errors: { player: string; message: string }[] = [];
   for (const player of due.slice(0, 20)) {

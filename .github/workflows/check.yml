@@ -72,10 +72,12 @@ jobs:
         run: |
           mapfile -t integration_tests < <(git ls-files 'src/**/*.db-test.ts')
           common_tests=()
+          auth_tests=()
           betting_tests=()
           khl_tests=()
           for test_file in "${integration_tests[@]}"; do
             case "$test_file" in
+              src/lib/auth-concurrency.db-test.ts) auth_tests+=("$test_file") ;;
               src/betting/*) betting_tests+=("$test_file") ;;
               src/khl/*|src/server/khl/*) khl_tests+=("$test_file") ;;
               *) common_tests+=("$test_file") ;;
@@ -99,11 +101,17 @@ jobs:
           }
 
           run_database_tests fantasy_scout_test_ci common_tests false
+          run_database_tests fantasy_auth_test_ci auth_tests false
           run_database_tests fantasy_betting_test_ci betting_tests false
           run_database_tests khl_test_ci khl_tests true
 
       - name: Run checks
         run: npm run check
+
+      - name: Verify restricted runtime database permissions
+        run: python3 scripts/runtime-database-roles.test.py
+        env:
+          TEST_POSTGRES_CONTAINER: ${{ job.services.postgres.id }}
 
       # @spec spec://common/INFRA-006-continuous-deployment#acceptance
       - name: Verify continuous deployment and rollback

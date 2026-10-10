@@ -57,6 +57,26 @@ def current_port(source):
     return int(upstream_match(source)[1].group(1))
 
 
+def render_observability(source):
+    start, end = site_bounds(source)
+    block = source[start:end]
+    marker = "# fantasy-tracing:start"
+    if marker in block:
+        return source
+    opening = source.index("{", start) + 1
+    trace = '''
+    # fantasy-tracing:start
+    request_header X-Request-ID {http.request.uuid}
+    header X-Request-ID {http.request.uuid}
+    log_append request_id {http.request.uuid}
+    log_append upstream_host {rp.upstream.host}
+    log_append upstream_duration_ms {rp.upstream.duration_ms}
+    log_append release_commit {http.response.header.X-Release-Commit}
+    # fantasy-tracing:end
+'''
+    return source[:opening] + trace + source[opening:]
+
+
 def render_upstream(source, old_port, new_port):
     if old_port not in (3000, 3001) or new_port not in (3000, 3001) or old_port == new_port:
         raise ValueError("Traffic must switch between the two allowed ports")
@@ -88,11 +108,15 @@ def caddy_command(arguments):
                    stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
 
 
-def switch_upstream(path, old_port, new_port, run=caddy_command):
+def switch_upstream(path, old_port, new_port, run=caddy_command, observability=False):
     if path.is_symlink() or not path.is_file():
         raise ValueError("Caddyfile must be a regular file")
     original, original_stat = path.read_bytes(), path.stat()
-    replacement = render_upstream(original.decode("utf-8"), old_port, new_port).encode("utf-8")
+    source = original.decode("utf-8")
+    replacement = render_upstream(source, old_port, new_port)
+    if observability:
+        replacement = render_observability(replacement)
+    replacement = replacement.encode("utf-8")
     candidate = write_candidate(path, replacement, original_stat)
     try:
         run(["validate", "--config", str(candidate), "--adapter", "caddyfile"])
@@ -117,6 +141,7 @@ def main():
     parser.add_argument("--current-port", action="store_true")
     parser.add_argument("--from-port", type=int, choices=(3000, 3001))
     parser.add_argument("--to-port", type=int, choices=(3000, 3001))
+    parser.add_argument("--observability", action="store_true")
     args = parser.parse_args()
     path = Path("/etc/caddy/Caddyfile")
     if args.current_port:
@@ -127,7 +152,7 @@ def main():
     import fcntl
     with open("/var/lock/fantasy-scout-web-routing.lock", "a", encoding="utf-8") as lock:
         fcntl.flock(lock, fcntl.LOCK_EX)
-        switch_upstream(path, args.from_port, args.to_port)
+        switch_upstream(path, args.from_port, args.to_port, observability=args.observability)
     print(f"TRAFFIC_SWITCH={args.from_port}->{args.to_port}")
 
 

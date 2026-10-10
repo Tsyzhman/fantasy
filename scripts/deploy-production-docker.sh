@@ -4,8 +4,8 @@ set -Eeuo pipefail
 
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
 
-if [[ $# -ne 6 ]]; then
-  echo "Usage: $0 ARCHIVE SHA256 RELEASE COMMIT TREE VERSION" >&2
+if [[ $# -ne 10 ]]; then
+  echo "Usage: $0 ARCHIVE SHA256 RELEASE COMMIT TREE VERSION IMAGES_ARCHIVE IMAGES_SHA256 RUNTIME_IMAGE_ID SETUP_IMAGE_ID" >&2
   exit 2
 fi
 
@@ -15,6 +15,12 @@ release="$3"
 commit="$4"
 tree="$5"
 version="$6"
+images_archive="$7"
+images_sha="$8"
+runtime_image_id="$9"
+setup_image_id="${10}"
+web_limits=(--memory 2g --memory-swap 2g --cpus 2 --pids-limit 128 --cap-drop ALL --security-opt no-new-privileges:true)
+worker_limits=(--memory 4g --memory-swap 4g --cpus 3 --pids-limit 256 --cap-drop ALL --security-opt no-new-privileges:true)
 
 release_root="/var/www/fantasy-scout-releases"
 current_link="/var/www/fantasy-scout-current"
@@ -39,7 +45,7 @@ fpl_relay_rollback="fantasy-scout-fpl-relay-rollback-pre-$release"
 web_env="$(mktemp)"
 worker_env="$(mktemp)"
 rehearsal_env="$(mktemp)"
-build_log="$(mktemp)"
+migration_env="/home/deploy/.config/fantasy-scout/database-migration.env"
 phase="prepare"
 old_web_renamed=0
 old_worker_renamed=0
@@ -60,6 +66,8 @@ candidate_port=""
 old_commit=""
 
 validate_inputs() {
+  [[ "$images_archive" == "/tmp/fantasy-scout-images-$release.tar.gz" && -f "$images_archive" ]] || { echo "Bounded CI image archive is required." >&2; exit 2; }
+  [[ "$images_sha" =~ ^[0-9a-f]{64}$ && "$runtime_image_id" =~ ^sha256:[0-9a-f]{64}$ && "$setup_image_id" =~ ^sha256:[0-9a-f]{64}$ ]] || { echo "Exact image/checksum digests are required." >&2; exit 2; }
   [[ "$release" =~ ^[0-9]{8}T[0-9]{6}Z-v[0-9]+\.[0-9]+\.[0-9]+-[0-9a-f]{7,40}$ ]] || {
     echo "Invalid release name: $release" >&2
     exit 2
@@ -112,23 +120,11 @@ migration_in_list() {
   return 1
 }
 
-run_docker_build() {
-  local label="$1"
-  shift
-
-  if ! docker build "$@" >"$build_log" 2>&1; then
-    tail -n 120 "$build_log" >&2 || true
-    echo "$label Docker build failed." >&2
-    return 1
-  fi
-  : > "$build_log"
-  echo "$label Docker build completed." >&2
-}
-
 run_canary() {
   local stage="$1"
 
   docker run -d \
+    "${web_limits[@]}" \
     --name "$canary" \
     --env-file "$web_env" \
     -e INGESTION_WORKER_IN_PROCESS=false \
@@ -165,6 +161,9 @@ run_canary() {
     echo "$stage release canary did not become healthy with the requested commit." >&2
     return 1
   }
+  if [[ "$stage" == "Post-migration" || "$stage" == "No-migration" ]]; then
+    docker exec "$canary" node scripts/production-canary.cjs
+  fi
   docker container rm -f "$canary" >/dev/null
 }
 
@@ -174,7 +173,10 @@ start_fpl_relay() {
   local restart_policy="${3:-no}"
 
   docker volume create "$volume" >/dev/null
+  docker run --rm --network none --user 0 --cap-drop ALL --cap-add CHOWN \
+    --mount "type=volume,src=$volume,dst=/relay" --entrypoint chown "$image" 1000:1000 /relay
   docker run -d \
+    --memory 128m --memory-swap 128m --cpus 0.5 --pids-limit 64 \
     --name "$name" \
     --restart "$restart_policy" \
     --network "container:$fpl_vpn_container" \
@@ -233,7 +235,7 @@ wait_for_release() {
 }
 
 switch_web_traffic() {
-  sudo -n python3 "$target/scripts/production-web-routing.py" --from-port "$1" --to-port "$2"
+  sudo -n python3 "$target/scripts/production-web-routing.py" --from-port "$1" --to-port "$2" --observability
 }
 
 probe_public_release() {
@@ -250,7 +252,7 @@ cleanup() {
   if (( exit_code != 0 )) && [[ "$phase" == "swap" ]]; then
     if ! rollback_swap; then
       echo "Traffic rollback needs recovery; both web versions and release artifacts were retained." >&2
-      rm -f -- "$web_env" "$worker_env" "$rehearsal_env" "$build_log"
+      rm -f -- "$web_env" "$worker_env" "$rehearsal_env"
       exit "$exit_code"
     fi
     if [[ -n "$old_current_target" ]] && [[ "$(readlink -f "$current_link" 2>/dev/null || true)" == "$target" ]]; then
@@ -269,10 +271,10 @@ cleanup() {
     docker volume rm "$fpl_relay_candidate_volume" >/dev/null 2>&1 || true
   fi
   if (( rehearsal_created == 1 )) && [[ -n "$rehearsal_db" ]]; then
-    docker exec "$postgres" psql -U fantasy_app -d postgres -v ON_ERROR_STOP=1 \
+    docker exec "$postgres" psql -U fantasy_migrator -d postgres -v ON_ERROR_STOP=1 \
       -c "DROP DATABASE IF EXISTS \"$rehearsal_db\" WITH (FORCE)" >/dev/null 2>&1 || true
   fi
-  rm -f -- "$web_env" "$worker_env" "$rehearsal_env" "$build_log"
+  rm -f -- "$web_env" "$worker_env" "$rehearsal_env"
 
   if (( exit_code != 0 )); then
     if [[ "$phase" == "deployed" ]]; then
@@ -294,7 +296,7 @@ cleanup() {
     if (( setup_image_created == 1 )); then
       docker image rm "$setup_image" >/dev/null 2>&1 || true
     fi
-    rm -f -- "$archive"
+    rm -f -- "$archive" "$images_archive"
   fi
   exit "$exit_code"
 }
@@ -373,6 +375,16 @@ docker container inspect "$web" --format '{{range .Config.Env}}{{println .}}{{en
 docker container inspect "$worker" --format '{{range .Config.Env}}{{println .}}{{end}}' \
   | grep -vE '^APP_RELEASE_(COMMIT|VERSION)=' > "$worker_env"
 chmod 600 "$web_env" "$worker_env"
+[[ -f "$migration_env" && "$(stat -c '%a' "$migration_env")" == "600" ]] || {
+  echo "Protected migration identity is required; do not use runtime credentials for DDL." >&2; exit 1;
+}
+python3 - "$migration_env" <<'PY'
+import sys
+from urllib.parse import urlsplit
+lines = open(sys.argv[1], encoding="utf-8").read().splitlines()
+assert len(lines) == 1 and lines[0].startswith("DATABASE_URL=")
+assert urlsplit(lines[0].split("=", 1)[1]).username == "fantasy_migrator"
+PY
 
 # @spec spec://modules/machete/INFRA-004-sorareinside-starters#runtime
 # Keep account credentials out of release archives and the public web runtime.
@@ -442,16 +454,15 @@ if [[ "$old_port" == "3000" ]]; then candidate_port=3001; else candidate_port=30
 old_commit="$(cat "$current_link/.release-commit")"
 probe_public_release "$old_commit"
 
-run_docker_build "Runtime" \
-  --target runtime \
-  --build-arg "APP_RELEASE_VERSION=$version" \
-  --build-arg "APP_RELEASE_COMMIT=$commit" \
-  --label "org.opencontainers.image.source=https://github.com/Tsyzhman/fantasy" \
-  --label "org.opencontainers.image.revision=$commit" \
-  --label "org.opencontainers.image.version=$version" \
-  --tag "$image" \
-  "$target"
+[[ "$(sha256sum "$images_archive" | awk '{print $1}')" == "$images_sha" ]] || { echo "CI image archive checksum mismatch." >&2; exit 1; }
+docker load --input "$images_archive" >/dev/null
+docker image inspect "$runtime_image_id" >/dev/null
+docker image inspect "$setup_image_id" >/dev/null
+docker tag "$runtime_image_id" "$image"
+setup_image="$image-setup"
+docker tag "$setup_image_id" "$setup_image"
 image_created=1
+setup_image_created=1
 
 image_commit="$(docker image inspect "$image" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')"
 image_version="$(docker image inspect "$image" --format '{{index .Config.Labels "org.opencontainers.image.version"}}')"
@@ -459,6 +470,16 @@ image_version="$(docker image inspect "$image" --format '{{index .Config.Labels 
   echo "Built image release labels do not match the requested source." >&2
   exit 1
 }
+[[ "$(docker image inspect "$image" --format '{{.Id}}')" == "$runtime_image_id" ]] || { echo "Runtime digest mismatch." >&2; exit 1; }
+[[ "$(docker image inspect "$setup_image" --format '{{index .Config.Labels "org.opencontainers.image.revision"}}')" == "$commit" ]] || { echo "Migration artifact revision mismatch." >&2; exit 1; }
+printf '%s\n' "$runtime_image_id" > "$target/.release-runtime-image-id"
+printf '%s\n' "$setup_image_id" > "$target/.release-setup-image-id"
+printf '%s\n' "$images_sha" > "$target/.release-images-sha256"
+docker image rm "fantasy-scout-ci:${commit}-runtime" "fantasy-scout-ci:${commit}-setup" >/dev/null
+docker run --rm --network none --user 0 --cap-drop ALL --cap-add CHOWN --cap-add DAC_OVERRIDE \
+  --mount type=volume,src=fantasy-scout_fantasy-scout-uploads,dst=/app/storage/uploads \
+  --mount type=volume,src=fantasy-scout-franchises,dst=/app/storage/franchises \
+  --entrypoint chown "$image" -R 1000:1000 /app/storage/uploads /app/storage/franchises
 
 start_fpl_relay "$fpl_relay_candidate" "$fpl_relay_candidate_volume"
 wait_for_fpl_relay "$fpl_relay_candidate_volume" 100000 || {
@@ -505,22 +526,17 @@ if (( ${#pending_migrations[@]} > 0 )); then
   backup_sha="$(sha256sum "$backup_path" | awk '{print $1}')"
   echo "Verified production backup: $backup_path ($backup_sha)"
 
-  setup_image="$image-setup"
-  run_docker_build "Migration setup" \
-    --target setup \
-    --tag "$setup_image" \
-    "$target"
   setup_image_created=1
 
   rehearsal_db="fantasy_scout_migration_${release//[^a-zA-Z0-9]/_}"
-  docker exec "$postgres" psql -U fantasy_app -d postgres -v ON_ERROR_STOP=1 \
+  docker exec "$postgres" psql -U fantasy_migrator -d postgres -v ON_ERROR_STOP=1 \
     -c "CREATE DATABASE \"$rehearsal_db\""
   rehearsal_created=1
   docker exec -i "$postgres" pg_restore \
-    -U fantasy_app -d "$rehearsal_db" --no-owner --no-acl --exit-on-error \
+    -U fantasy_migrator -d "$rehearsal_db" --no-owner --no-acl --exit-on-error \
     < "$backup_path"
 
-  python3 - "$web_env" "$rehearsal_env" "$rehearsal_db" <<'PY'
+  python3 - "$migration_env" "$rehearsal_env" "$rehearsal_db" <<'PY'
 import sys
 from urllib.parse import urlsplit, urlunsplit
 
@@ -549,21 +565,21 @@ PY
     --network fantasy-scout_default \
     "$setup_image" npm run prisma:migrate:deploy
   rehearsal_applied="$(
-    docker exec "$postgres" psql -U fantasy_app -d "$rehearsal_db" -Atc \
+    docker exec "$postgres" psql -U fantasy_migrator -d "$rehearsal_db" -Atc \
       'SELECT count(*) FROM "_prisma_migrations" WHERE finished_at IS NOT NULL AND rolled_back_at IS NULL'
   )"
   [[ "$rehearsal_applied" == "${#expected_migrations[@]}" ]] || {
     echo "Migration rehearsal did not apply the complete migration set: $rehearsal_applied/${#expected_migrations[@]}" >&2
     exit 1
   }
-  docker exec "$postgres" psql -U fantasy_app -d postgres -v ON_ERROR_STOP=1 \
+  docker exec "$postgres" psql -U fantasy_migrator -d postgres -v ON_ERROR_STOP=1 \
     -c "DROP DATABASE IF EXISTS \"$rehearsal_db\" WITH (FORCE)" >/dev/null
   rehearsal_created=0
   rehearsal_db=""
 
   schema_migration_attempted=1
   docker run --rm --name "fantasy-scout-migration-$release" \
-    --env-file "$web_env" \
+    --env-file "$migration_env" \
     --network fantasy-scout_default \
     "$setup_image" npm run prisma:migrate:deploy
   setup_image_created=0
@@ -585,6 +601,8 @@ fi
 
 if (( ${#pending_migrations[@]} > 0 )); then
   run_canary "Post-migration"
+else
+  run_canary "No-migration"
 fi
 
 active_jobs="$(
@@ -641,8 +659,10 @@ chmod 644 "$target/.web-schedulers-active"
 
 docker create \
   --name "$web_candidate" \
+  "${web_limits[@]}" \
   --restart unless-stopped \
   --env-file "$web_env" \
+  -e NODE_OPTIONS=--max-old-space-size=1024 \
   -e INGESTION_WORKER_IN_PROCESS=false \
   -e WEB_SCHEDULER_ACTIVATION_PATH=/run/fantasy-scout/web-schedulers-active \
   -e "FPL_RELAY_SOCKET_PATH=$fpl_relay_socket" \
@@ -664,6 +684,7 @@ docker exec "$web_candidate" node -e 'const fs=require("node:fs");fs.accessSync(
 create_production_worker() {
 docker create \
   --name "$worker" \
+  "${worker_limits[@]}" \
   --restart unless-stopped \
   --env-file "$worker_env" \
   -e INGESTION_WORKER_IN_PROCESS=true \
@@ -712,8 +733,8 @@ printf '%s\t%s\t%s\t%s\t%s\t%s\n' \
   >> "$release_root/PRODUCTION_HISTORY.tsv"
 
 # Retention is part of a successful promotion, not a separate operator task.
-# Keep the active release plus exactly one stopped rollback and bound BuildKit
-# cache growth after every production image build.
+# Keep the active release plus exactly one stopped rollback. CI owns its builder;
+# host-wide build cache belongs to the other applications and is never pruned.
 "$target/scripts/prune-production-artifacts.sh" --apply
 
 printf 'DEPLOYED_RELEASE=%s\n' "$release"

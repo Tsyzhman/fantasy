@@ -42,6 +42,14 @@ fantasy.tsyzhman.ru {
 
 
 class RoutingTests(unittest.TestCase):
+    def test_observability_is_scoped_and_idempotent(self):
+        traced = routing.render_observability(CONFIG)
+        self.assertEqual(routing.current_port(traced), 3000)
+        self.assertEqual(routing.render_observability(traced), traced)
+        start, end = routing.site_bounds(traced)
+        self.assertIn('log_append request_id {http.request.uuid}', traced[start:end])
+        self.assertNotIn('log_append', traced[:start] + traced[end:])
+
     def test_switch_preserves_other_sites_monitoring_and_reverse_switch(self):
         switched = routing.render_upstream(CONFIG, 3000, 3001)
         self.assertEqual(routing.current_port(switched), 3001)

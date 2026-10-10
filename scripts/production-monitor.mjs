@@ -37,6 +37,12 @@ const checks = await Promise.all([
       fingerprint: String(status)
     })
   }),
+  ...["fantasy-prices", "fpl"].map(source => checkJsonEndpoint({
+    name: `${source} source health`, path: `/api/health/${source}`, severity: "warning",
+    evaluate: ({ status, body }) => ({ ok: status === 200 && (body?.healthy === true || body?.status === "ok"),
+      detail: `HTTP ${status}; status=${stringValue(body?.status)}; reasons=${JSON.stringify(body?.results ?? body?.reason ?? [])}`,
+      fingerprint: `${status}:${Boolean(body?.healthy)}:${stringValue(body?.status)}` }),
+  })),
   checkJsonEndpoint({
     name: "Client critical errors",
     path: "/api/health/client-errors",
@@ -91,6 +97,22 @@ const checks = await Promise.all([
     }
   }),
   checkJsonEndpoint({
+    name: "Rolling 24-hour server SLO",
+    path: "/_monitor/rolling-slo-audit.json",
+    severity: "warning",
+    evaluate: ({ status, body }) => {
+      const generated = Date.parse(stringValue(body?.generatedAt));
+      const cutoff = Date.parse(stringValue(body?.cutoff));
+      const coverageEnd = Date.parse(stringValue(body?.logCoverageEnd));
+      const fresh = Number.isFinite(generated) && Math.abs(now.getTime() - generated) <= 90 * 60000;
+      const exactWindow = numberValue(body?.windowMinutes) === 1440 && Number.isFinite(cutoff) && Math.abs(generated - cutoff - 86400000) <= 1000;
+      const coverage = body?.retentionCoversWindowStart === true && Number.isFinite(coverageEnd) && generated - coverageEnd <= 90 * 60000;
+      const ok = status === 200 && body?.status === "ok" && fresh && exactWindow && coverage;
+      return { ok, detail: `HTTP ${status}; status=${stringValue(body?.status)}; fresh=${fresh}; window-24h=${exactWindow}; retention-covers-start=${body?.retentionCoversWindowStart === true}; coverage=${coverage}; requests=${numberValue(body?.requests)}; 5xx=${numberValue(body?.serverErrors)} (${numberValue(body?.serverErrorRatePercent)}%)`,
+        fingerprint: `${status}:${stringValue(body?.status)}:${fresh}:${exactWindow}:${coverage}:${numberValue(body?.serverErrorRatePercent)}` };
+    }
+  }),
+  ...(process.env.MONITOR_FIXED_WINDOW_ENABLED === "true" ? [checkJsonEndpoint({
     name: "Retained beta error-rate window",
     path: "/_monitor/beta-access-audit.json",
     severity: "warning",
@@ -123,7 +145,7 @@ const checks = await Promise.all([
         fingerprint: `${status}:${auditStatus}:${fresh}:${windowMode}:${windowStart}:${retentionCoversWindowStart}:${expectedFixedWindowStart}:${minimumFixedWindowObservedSpan.raw}:${observedSpanMinutes}:${numberValue(body?.serverErrorRatePercent)}`
       };
     }
-  })
+  })] : [])
 ]);
 
 const criticalFailures = checks.filter((check) => !check.ok && check.severity === "critical");

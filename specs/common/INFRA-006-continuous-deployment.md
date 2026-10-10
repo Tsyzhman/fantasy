@@ -47,11 +47,13 @@ Use two running web generations and a graceful upstream reload rather than rebui
 
 ## Runtime and traffic {#runtime}
 
-- `scripts/deploy-production-docker.sh` builds an exact release while the active web and worker continue running.
+- CI builds runtime and migration images from the frozen lockfile on a digest-pinned Node 24 LTS base. The promoter loads the checksum-verified image archive and verifies both exact image IDs and release labels. Production never builds application images.
+- Web and worker run as uid 1000 with all capabilities dropped and no-new-privileges. Web: 2 GiB, 2 CPUs, 128 PIDs and 1 GiB V8 old heap; worker: 4 GiB, 3 CPUs, 256 PIDs and 2 GiB V8 old heap. PostgreSQL has a separately measured 2 GiB/2 CPU/256 PID budget, applied online; relay has 128 MiB/0.5 CPU/64 PIDs. Validate full imports and simultaneous web versions against these budgets.
 - Web versions alternate between `127.0.0.1:3000` and `127.0.0.1:3001`. A candidate has schedulers disabled, uses the same database/session configuration and uploads, and passes health with the requested commit before promotion.
 - `scripts/production-web-routing.py` changes only the `fantasy.tsyzhman.ru` upstream in `/etc/caddy/Caddyfile`. It checks the expected old port, validates the complete candidate configuration and reloads Caddy gracefully. It never restarts Caddy or edits another site's routing. A failed reload restores the original file.
 - The old web remains running through the switch and a 30-second drain, then receives a graceful stop with a further 30-second timeout. Public health must confirm the exact candidate commit before finalizing the current-release symlink.
 - Candidate and prior image static assets are combined from their original images, bounded to those two releases. Existing browser tabs can still fetch prior hashed JS/CSS after the old process stops. Authentication storage and secrets are retained; deployment does not revoke sessions.
+- The stable server-action encryption key is a protected production CI secret and host file. BuildKit receives it as a secret mount. `deploymentId` is the exact release commit. Existing action IDs and authenticated forms are checked across rollout and rollback. Unsaved Squad plans persist in tab sessionStorage, scoped by account/provider/league/season/squad, with a 24-hour TTL, 64 KiB per entry and eight-entry limit; saved baselines must match before restoration. Captains, locks, round links and transfer state survive refresh.
 - Exactly one scheduler worker runs at a time. Only after the candidate web is healthy, the old worker stops and the new worker starts. Relay identities and volumes follow the actual mounted socket volume; collector locks and active-ingestion checks remain mandatory.
 - Web-owned FPL and probable-lineup schedules retain their cadence. A release-specific read-only activation file defers their startup in the candidate until the old web has stopped after draining; its content must match the candidate commit. HTTP readiness does not wait for activation. The pending timer is unreferenced and ends after activation or cancellation, preventing duplicate web schedules during preparation and draining.
 
@@ -59,6 +61,8 @@ Use two running web generations and a graceful upstream reload rather than rebui
 <a name="data"></a>
 
 ## Data and compatible migrations {#data}
+
+`fantasy_app` retains only schema usage, table SELECT/INSERT/UPDATE/DELETE and sequence usage. It has no ownership, superuser, CREATEDB, CREATEROLE, replication, BYPASSRLS, TRUNCATE or migration-journal write privileges. `fantasy_migrator` owns application schema objects, applies migrations and creates the disposable rehearsal database; its protected host credential is never copied to web/worker. `fantasy_operator` is the protected administrative/recovery identity. Default privileges of the migration owner grant runtime access to future tables. Ownership/attribute changes are transactional with short lock timeouts, preceded by isolated positive/negative probes; existing application credentials and sessions remain valid.
 
 Pending migrations must carry a reviewed `deployment.json` with `mode: online` and the exact `sqlSha256` of `migration.sql`. This explicitly asserts compatibility with the currently serving and candidate binaries, including rollback to the old binary. An absent, mismatched or unsupported declaration aborts promotion without stopping the website.
 
@@ -68,7 +72,7 @@ Keep custom-format backup verification and restore/apply rehearsal, but perform 
 
 ## Contracts and entry points {#contracts}
 
-`Deploy Production` packages the exact Git tree and invokes the promoter with archive path, SHA-256, release name, commit, tree and version. Internal `/api/health` checks include the requested commit; public health confirms the upstream actually changed. The routing helper accepts only the expected old and alternate port, rejecting unknown/ambiguous sites and concurrent configuration changes. Release manifests and `PRODUCTION_HISTORY.tsv` identify the resulting runtime.
+`Deploy Production` packages the exact Git tree and invokes the promoter with source archive path/SHA-256, release/commit/tree/version, image archive path/SHA-256 and exact runtime/setup image IDs. Internal `/api/health` checks include the requested commit; public health confirms the upstream actually changed. After compatible migrations, a bounded authenticated canary checks Squad SSR, the materialized player-pool route and its progressive API fallback; its ephemeral session is deleted. The routing helper accepts only the expected old and alternate port, rejecting unknown/ambiguous sites and concurrent configuration changes. Release manifests and `PRODUCTION_HISTORY.tsv` identify the resulting runtime.
 
 <a name="recovery"></a>
 
@@ -79,6 +83,8 @@ Keep the prior web, worker and relay until the candidate has passed internal and
 <a name="observability"></a>
 
 ## Verification and observability {#observability}
+
+Caddy assigns a request UUID and records it with upstream and release commit; application errors include the same ID, PID and commit. Every minute, bounded process diagnostics record CPU, RSS/heap/external memory and event-loop delay. SQL is represented by at most 128 hashed fingerprints and top 20 summaries in a five-minute window, without parameter values. PostgreSQL slow-query/temporary-file logging is bounded and redacts bind parameters; runtime diagnostics report actual interval deltas for temp files, never cumulative counters as a short-window result. The operational SLO is a rolling 24 hours with retained start/end coverage and unchanged <1% 5xx threshold. Fixed beta evidence remains a separate historical artifact and an explicit beta acceptance mode.
 
 Release manifests, image labels, internal health and public health agree on version/commit. Each rollout records candidate readiness, traffic switch, drain and rollback decisions. Verify public responses repeatedly during a real promotion, including an old static asset after switching. Check failed migrations, duplicate workers/jobs/deliveries, memory, OOM/restarts, release count and temporary containers/volumes after completion.
 
@@ -108,3 +114,4 @@ Unready candidates and unsafe migrations preserve the serving version. Routing v
 ## Change history {#changelog}
 
 - 2026-10-09: WI-060 — prohibit direct production replacement and require a verified second web version with graceful traffic switch and compatible online migrations.
+- 2026-10-10: WI-072 — least-privilege database identities, Node 24, CI image artifacts, resource budgets, domain canary, stable actions/drafts and bounded correlated diagnostics. F02 is explicitly excluded: existing pre-release backup/rehearsal remains; no new offsite schedule/PITR.

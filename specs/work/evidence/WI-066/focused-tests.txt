@@ -1,0 +1,24 @@
+✔ auth rate-limit buckets include normalized email and client IP (1.6509ms)
+✔ client IP parser prefers the first x-forwarded-for address (14.8009ms)
+✔ auth helpers fail softly when DATABASE_URL is missing (21.1954ms)
+✔ expiring promise cache coalesces concurrent loaders (2.178ms)
+✔ expiring promise cache reloads expired values and removes rejections (0.7388ms)
+✔ expiring promise cache enforces a bounded entry count (0.4612ms)
+✔ expiring promise cache evicts the least recently used value by byte budget (0.5118ms)
+✔ expiring promise cache reports hit, miss, build, byte and entry metrics (0.3179ms)
+✔ report cache preserves the complete JSON and invalidates immediately on snapshot replacement (1.606ms)
+✔ report cache bounds retained strings and expires them while idle (52.8056ms)
+✔ failed renders are retryable and never poison other filters (0.52ms)
+✔ cached calendar and league selections keep separate populations and empty ranges (5.5214ms)
+✔ candidate web defers its schedules until its exact commit is activated, then starts once (1.0962ms)
+✔ missing activation file keeps candidate schedules idle until the file appears (0.2506ms)
+✔ cancelling an idle candidate clears its timer and prevents late activation (0.2545ms)
+✔ web without a rollout activation file retains immediate schedule startup (0.1883ms)
+ℹ tests 16
+ℹ suites 0
+ℹ pass 16
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 455.8566

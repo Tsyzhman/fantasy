@@ -5,6 +5,7 @@ analyzer="${FANTASY_ACCESS_ANALYZER:-/usr/local/lib/fantasy-scout/analyze-caddy-
 monitor_directory="${FANTASY_MONITOR_DIRECTORY:-/var/lib/fantasy-scout-monitor}"
 window_start_file="$monitor_directory/beta-access-window-start"
 rolling_output="$monitor_directory/access-audit.json"
+slo_output="$monitor_directory/rolling-slo-audit.json"
 fixed_output="$monitor_directory/beta-access-audit.json"
 
 if [[ ! -e "$window_start_file" ]]; then
@@ -43,6 +44,12 @@ rolling_status=$?
 
 /usr/bin/python3 "$analyzer" \
 	"${common_arguments[@]}" \
+	--since-minutes 1440 \
+	--output "$slo_output"
+slo_status=$?
+
+/usr/bin/python3 "$analyzer" \
+	"${common_arguments[@]}" \
 	--window-start "$window_start" \
 	--output "$fixed_output"
 fixed_status=$?
@@ -54,4 +61,5 @@ set -e
 if [[ $fixed_status -ne 0 && $fixed_status -ne 3 ]]; then
 	exit "$fixed_status"
 fi
+if [[ $slo_status -ne 0 ]]; then exit "$slo_status"; fi
 exit "$rolling_status"

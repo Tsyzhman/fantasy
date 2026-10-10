@@ -1,0 +1,17 @@
+{
+  "openRedirect": {
+    "input": "/\\audit.invalid",
+    "accepted": true,
+    "resolvedOrigin": "https://audit.invalid"
+  },
+  "concurrentFailures": {
+    "attempts": 10,
+    "storedFailedCount": 1,
+    "lockedUntil": null
+  },
+  "sequentialControl": {
+    "attempts": 10,
+    "storedFailedCount": 10,
+    "locked": true
+  }
+}

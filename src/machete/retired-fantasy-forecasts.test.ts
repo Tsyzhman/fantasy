@@ -70,7 +70,8 @@ test("saved player filters keep the surviving criteria when retired criteria are
 });
 
 test("planner and shared history no longer load adaptation models, features, shots or breakdown caches", () => {
-  const planner = readFileSync(new URL("./squad_planner.ts", import.meta.url), "utf8");
+  const planner = ["squad_planner.ts", "squad-team-strength.ts", "squad-projection.ts"]
+    .map(file => readFileSync(new URL(file, import.meta.url), "utf8")).join("\n");
   const history = readFileSync(new URL("./shared_read_model.ts", import.meta.url), "utf8");
   assert.doesNotMatch(planner, /formula_adaptations|FormulaAdaptation|formulaAdaptation/);
   assert.doesNotMatch(history, /formula_adaptations|FormulaAdaptation|formulaAdaptation/);

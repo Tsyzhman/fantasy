@@ -17,7 +17,7 @@ export function parseHockeyHistory(html: string, expected: { tagId: string; seas
   const profile = root.querySelectorAll(".profile-table tr");
   const clubLink = profile[0]?.querySelector("a");
   let club = clubLink?.text.trim(), clubSlug = clubLink ? slug(clubLink.getAttribute("href") ?? "") : null;
-  let position = ({ "Вратарь": "G", "Защитник": "D", "Нападающий": "F" } as const)[profile[1]?.querySelector("td")?.text.trim() as "Вратарь"];
+  let position: KhlPosition | undefined = ({ "Вратарь": "G", "Защитник": "D", "Нападающий": "F" } as const)[profile[1]?.querySelector("td")?.text.trim() as "Вратарь"];
   let name = root.querySelector("h1")?.text.trim();
   let verifiedArchive = false;
   const identity = expected.verifiedArchiveIdentity;

@@ -14,7 +14,6 @@ fi
 release_root_input="${FANTASY_RELEASE_ROOT:-/var/www/fantasy-scout-releases}"
 current_link="${FANTASY_CURRENT_LINK:-/var/www/fantasy-scout-current}"
 keep_recent="${FANTASY_RELEASE_KEEP_RECENT:-2}"
-build_cache_limit="${FANTASY_BUILD_CACHE_LIMIT:-1GB}"
 
 if [[ ! "$keep_recent" =~ ^[1-9][0-9]*$ ]]; then
   echo "FANTASY_RELEASE_KEEP_RECENT must be a positive integer." >&2
@@ -162,11 +161,9 @@ while IFS= read -r image_ref; do
   fi
 done < <(docker image ls fantasy-scout --format '{{.Repository}}:{{.Tag}}' | sort -u)
 
-if [[ "$mode" == "apply" ]]; then
-  docker builder prune --force --max-used-space "$build_cache_limit"
-else
-  echo "PRUNE_BUILD_CACHE=max-used-space:$build_cache_limit"
-fi
+# Images are built in a dedicated ephemeral CI builder. The host's default
+# builder belongs to all applications and must never be pruned by this project.
+echo "BUILD_CACHE=CI_OWNED; HOST_DEFAULT_BUILDER=UNCHANGED"
 
 echo "RELEASE_COUNT=$(find "$release_root" -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')"
 docker system df

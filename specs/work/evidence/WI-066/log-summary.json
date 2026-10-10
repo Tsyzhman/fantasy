@@ -1,0 +1,83 @@
+{
+  "fantasy-scout-web": [
+    {
+      "count": 1,
+      "line": "\u2a2f Error: The destination stream closed early."
+    }
+  ],
+  "fantasy-scout-worker": [
+    {
+      "count": 2,
+      "line": "prisma:error "
+    },
+    {
+      "count": 2,
+      "line": "Unique constraint failed on the fields: (`contest_id`,`category`,`population_scope`,`section_key`,`observed_at`)"
+    },
+    {
+      "count": 1,
+      "line": "{\"level\":\"info\",\"scope\":\"deadline-reports:scheduler\",\"message\":\"Deadline report tick finished.\",\"timestamp\":\"2026-10-10T07:28:42.322Z\",\"trigger\":\"interval\",\"summary\":{\"campaigns\":{\"created\":0,\"updated\":24,\"blocked\":1,\"skipped\":0,\"details\":[{\"contestId\":\"cmtmodtoh0rh32o900afvwz7a\",\"providerRoundId\":\"2754\",\"status\":\"ACTIVE\"},{\"contestId\":\"cmtmodtoh0rh32o900afvwz7a\",\"providerRoundId\":\"2755\",\"status\":\"ACTIVE\"},{\"contestId\":\"legacy_be69d6464abbb1fa3b7bf837ebca6fd3\",\"providerRoundId\":\"2505\",\"status\":\"ACTIVE\"},{\"contestId\":\"legacy_be69d6464abbb1fa3b7bf837ebca6fd3\",\"providerRoundId\":\"2506\",\"status\":\"ACTIVE\"},{\"contestId\":\"cmslfqko70002ljd09jwlvplj\",\"providerRoundId\":\"2390\",\"status\":\"ACTIVE\"},{\"conte"
+    },
+    {
+      "count": 1,
+      "line": "{\"level\":\"info\",\"scope\":\"deadline-reports:scheduler\",\"message\":\"Deadline report tick finished.\",\"timestamp\":\"2026-10-10T07:28:47.658Z\",\"trigger\":\"interval\",\"summary\":{\"campaigns\":{\"created\":0,\"updated\":24,\"blocked\":1,\"skipped\":0,\"details\":[{\"contestId\":\"cmtmodtoh0rh32o900afvwz7a\",\"providerRoundId\":\"2754\",\"status\":\"ACTIVE\"},{\"contestId\":\"cmtmodtoh0rh32o900afvwz7a\",\"providerRoundId\":\"2755\",\"status\":\"ACTIVE\"},{\"contestId\":\"legacy_be69d6464abbb1fa3b7bf837ebca6fd3\",\"providerRoundId\":\"2505\",\"status\":\"ACTIVE\"},{\"contestId\":\"legacy_be69d6464abbb1fa3b7bf837ebca6fd3\",\"providerRoundId\":\"2506\",\"status\":\"ACTIVE\"},{\"contestId\":\"cmslfqko70002ljd09jwlvplj\",\"providerRoundId\":\"2390\",\"status\":\"ACTIVE\"},{\"conte"
+    },
+    {
+      "count": 1,
+      "line": "{\"level\":\"info\",\"scope\":\"deadline-reports:scheduler\",\"message\":\"Deadline report tick finished.\",\"timestamp\":\"2026-10-10T07:28:53.025Z\",\"trigger\":\"interval\",\"summary\":{\"campaigns\":{\"created\":0,\"updated\":24,\"blocked\":1,\"skipped\":0,\"details\":[{\"contestId\":\"cmtmodtoh0rh32o900afvwz7a\",\"providerRoundId\":\"2754\",\"status\":\"ACTIVE\"},{\"contestId\":\"cmtmodtoh0rh32o900afvwz7a\",\"providerRoundId\":\"2755\",\"status\":\"ACTIVE\"},{\"contestId\":\"legacy_be69d6464abbb1fa3b7bf837ebca6fd3\",\"providerRoundId\":\"2505\",\"status\":\"ACTIVE\"},{\"contestId\":\"legacy_be69d6464abbb1fa3b7bf837ebca6fd3\",\"providerRoundId\":\"2506\",\"status\":\"ACTIVE\"},{\"contestId\":\"cmslfqko70002ljd09jwlvplj\",\"providerRoundId\":\"2390\",\"status\":\"ACTIVE\"},{\"conte"
+    },
+    {
+      "count": 1,
+      "line": "{\"level\":\"info\",\"scope\":\"deadline-reports:scheduler\",\"message\":\"Deadline report tick finished.\",\"timestamp\":\"2026-10-10T07:28:58.304Z\",\"trigger\":\"interval\",\"summary\":{\"campaigns\":{\"created\":0,\"updated\":24,\"blocked\":1,\"skipped\":0,\"details\":[{\"contestId\":\"cmtmodtoh0rh32o900afvwz7a\",\"providerRoundId\":\"2754\",\"status\":\"ACTIVE\"},{\"contestId\":\"cmtmodtoh0rh32o900afvwz7a\",\"providerRoundId\":\"2755\",\"status\":\"ACTIVE\"},{\"contestId\":\"legacy_be69d6464abbb1fa3b7bf837ebca6fd3\",\"providerRoundId\":\"2505\",\"status\":\"ACTIVE\"},{\"contestId\":\"legacy_be69d6464abbb1fa3b7bf837ebca6fd3\",\"providerRoundId\":\"2506\",\"status\":\"ACTIVE\"},{\"contestId\":\"cmslfqko70002ljd09jwlvplj\",\"providerRoundId\":\"2390\",\"status\":\"ACTIVE\"},{\"conte"
+    },
+    {
+      "count": 1,
+      "line": "{\"level\":\"info\",\"scope\":\"deadline-reports:scheduler\",\"message\":\"Deadline report tick finished.\",\"timestamp\":\"2026-10-10T07:29:03.648Z\",\"trigger\":\"interval\",\"summary\":{\"campaigns\":{\"created\":0,\"updated\":24,\"blocked\":1,\"skipped\":0,\"details\":[{\"contestId\":\"cmtmodtoh0rh32o900afvwz7a\",\"providerRoundId\":\"2754\",\"status\":\"ACTIVE\"},{\"contestId\":\"cmtmodtoh0rh32o900afvwz7a\",\"providerRoundId\":\"2755\",\"status\":\"ACTIVE\"},{\"contestId\":\"legacy_be69d6464abbb1fa3b7bf837ebca6fd3\",\"providerRoundId\":\"2505\",\"status\":\"ACTIVE\"},{\"contestId\":\"legacy_be69d6464abbb1fa3b7bf837ebca6fd3\",\"providerRoundId\":\"2506\",\"status\":\"ACTIVE\"},{\"contestId\":\"cmslfqko70002ljd09jwlvplj\",\"providerRoundId\":\"2390\",\"status\":\"ACTIVE\"},{\"conte"
+    },
+    {
+      "count": 1,
+      "line": "{\"level\":\"info\",\"scope\":\"deadline-reports:scheduler\",\"message\":\"Deadline report tick finished.\",\"timestamp\":\"2026-10-10T07:29:09.224Z\",\"trigger\":\"interval\",\"summary\":{\"campaigns\":{\"created\":0,\"updated\":24,\"blocked\":1,\"skipped\":0,\"details\":[{\"contestId\":\"cmtmodtoh0rh32o900afvwz7a\",\"providerRoundId\":\"2754\",\"status\":\"ACTIVE\"},{\"contestId\":\"cmtmodtoh0rh32o900afvwz7a\",\"providerRoundId\":\"2755\",\"status\":\"ACTIVE\"},{\"contestId\":\"legacy_be69d6464abbb1fa3b7bf837ebca6fd3\",\"providerRoundId\":\"2505\",\"status\":\"ACTIVE\"},{\"contestId\":\"legacy_be69d6464abbb1fa3b7bf837ebca6fd3\",\"providerRoundId\":\"2506\",\"status\":\"ACTIVE\"},{\"contestId\":\"cmslfqko70002ljd09jwlvplj\",\"providerRoundId\":\"2390\",\"status\":\"ACTIVE\"},{\"conte"
+    },
+    {
+      "count": 1,
+      "line": "{\"level\":\"info\",\"scope\":\"deadline-reports:scheduler\",\"message\":\"Deadline report tick finished.\",\"timestamp\":\"2026-10-10T07:29:14.486Z\",\"trigger\":\"interval\",\"summary\":{\"campaigns\":{\"created\":0,\"updated\":24,\"blocked\":1,\"skipped\":0,\"details\":[{\"contestId\":\"cmtmodtoh0rh32o900afvwz7a\",\"providerRoundId\":\"2754\",\"status\":\"ACTIVE\"},{\"contestId\":\"cmtmodtoh0rh32o900afvwz7a\",\"providerRoundId\":\"2755\",\"status\":\"ACTIVE\"},{\"contestId\":\"legacy_be69d6464abbb1fa3b7bf837ebca6fd3\",\"providerRoundId\":\"2505\",\"status\":\"ACTIVE\"},{\"contestId\":\"legacy_be69d6464abbb1fa3b7bf837ebca6fd3\",\"providerRoundId\":\"2506\",\"status\":\"ACTIVE\"},{\"contestId\":\"cmslfqko70002ljd09jwlvplj\",\"providerRoundId\":\"2390\",\"status\":\"ACTIVE\"},{\"conte"
+    },
+    {
+      "count": 1,
+      "line": "{\"level\":\"info\",\"scope\":\"deadline-reports:scheduler\",\"message\":\"Deadline report tick finished.\",\"timestamp\":\"2026-10-10T07:29:19.802Z\",\"trigger\":\"interval\",\"summary\":{\"campaigns\":{\"created\":0,\"updated\":24,\"blocked\":1,\"skipped\":0,\"details\":[{\"contestId\":\"cmtmodtoh0rh32o900afvwz7a\",\"providerRoundId\":\"2754\",\"status\":\"ACTIVE\"},{\"contestId\":\"cmtmodtoh0rh32o900afvwz7a\",\"providerRoundId\":\"2755\",\"status\":\"ACTIVE\"},{\"contestId\":\"legacy_be69d6464abbb1fa3b7bf837ebca6fd3\",\"providerRoundId\":\"2505\",\"status\":\"ACTIVE\"},{\"contestId\":\"legacy_be69d6464abbb1fa3b7bf837ebca6fd3\",\"providerRoundId\":\"2506\",\"status\":\"ACTIVE\"},{\"contestId\":\"cmslfqko70002ljd09jwlvplj\",\"providerRoundId\":\"2390\",\"status\":\"ACTIVE\"},{\"conte"
+    },
+    {
+      "count": 1,
+      "line": "{\"level\":\"info\",\"scope\":\"deadline-reports:scheduler\",\"message\":\"Deadline report tick finished.\",\"timestamp\":\"2026-10-10T07:29:25.099Z\",\"trigger\":\"interval\",\"summary\":{\"campaigns\":{\"created\":0,\"updated\":24,\"blocked\":1,\"skipped\":0,\"details\":[{\"contestId\":\"cmtmodtoh0rh32o900afvwz7a\",\"providerRoundId\":\"2754\",\"status\":\"ACTIVE\"},{\"contestId\":\"cmtmodtoh0rh32o900afvwz7a\",\"providerRoundId\":\"2755\",\"status\":\"ACTIVE\"},{\"contestId\":\"legacy_be69d6464abbb1fa3b7bf837ebca6fd3\",\"providerRoundId\":\"2505\",\"status\":\"ACTIVE\"},{\"contestId\":\"legacy_be69d6464abbb1fa3b7bf837ebca6fd3\",\"providerRoundId\":\"2506\",\"status\":\"ACTIVE\"},{\"contestId\":\"cmslfqko70002ljd09jwlvplj\",\"providerRoundId\":\"2390\",\"status\":\"ACTIVE\"},{\"conte"
+    },
+    {
+      "count": 1,
+      "line": "{\"level\":\"info\",\"scope\":\"deadline-reports:scheduler\",\"message\":\"Deadline report tick finished.\",\"timestamp\":\"2026-10-10T07:29:30.402Z\",\"trigger\":\"interval\",\"summary\":{\"campaigns\":{\"created\":0,\"updated\":24,\"blocked\":1,\"skipped\":0,\"details\":[{\"contestId\":\"cmtmodtoh0rh32o900afvwz7a\",\"providerRoundId\":\"2754\",\"status\":\"ACTIVE\"},{\"contestId\":\"cmtmodtoh0rh32o900afvwz7a\",\"providerRoundId\":\"2755\",\"status\":\"ACTIVE\"},{\"contestId\":\"legacy_be69d6464abbb1fa3b7bf837ebca6fd3\",\"providerRoundId\":\"2505\",\"status\":\"ACTIVE\"},{\"contestId\":\"legacy_be69d6464abbb1fa3b7bf837ebca6fd3\",\"providerRoundId\":\"2506\",\"status\":\"ACTIVE\"},{\"contestId\":\"cmslfqko70002ljd09jwlvplj\",\"providerRoundId\":\"2390\",\"status\":\"ACTIVE\"},{\"conte"
+    },
+    {
+      "count": 1,
+      "line": "{\"level\":\"info\",\"scope\":\"deadline-reports:scheduler\",\"message\":\"Deadline report tick finished.\",\"timestamp\":\"2026-10-10T07:29:35.711Z\",\"trigger\":\"interval\",\"summary\":{\"campaigns\":{\"created\":0,\"updated\":24,\"blocked\":1,\"skipped\":0,\"details\":[{\"contestId\":\"cmtmodtoh0rh32o900afvwz7a\",\"providerRoundId\":\"2754\",\"status\":\"ACTIVE\"},{\"contestId\":\"cmtmodtoh0rh32o900afvwz7a\",\"providerRoundId\":\"2755\",\"status\":\"ACTIVE\"},{\"contestId\":\"legacy_be69d6464abbb1fa3b7bf837ebca6fd3\",\"providerRoundId\":\"2505\",\"status\":\"ACTIVE\"},{\"contestId\":\"legacy_be69d6464abbb1fa3b7bf837ebca6fd3\",\"providerRoundId\":\"2506\",\"status\":\"ACTIVE\"},{\"contestId\":\"cmslfqko70002ljd09jwlvplj\",\"providerRoundId\":\"2390\",\"status\":\"ACTIVE\"},{\"conte"
+    },
+    {
+      "count": 1,
+      "line": "{\"level\":\"info\",\"scope\":\"deadline-reports:scheduler\",\"message\":\"Deadline report tick finished.\",\"timestamp\":\"2026-10-10T07:29:41.065Z\",\"trigger\":\"interval\",\"summary\":{\"campaigns\":{\"created\":0,\"updated\":24,\"blocked\":1,\"skipped\":0,\"details\":[{\"contestId\":\"cmtmodtoh0rh32o900afvwz7a\",\"providerRoundId\":\"2754\",\"status\":\"ACTIVE\"},{\"contestId\":\"cmtmodtoh0rh32o900afvwz7a\",\"providerRoundId\":\"2755\",\"status\":\"ACTIVE\"},{\"contestId\":\"legacy_be69d6464abbb1fa3b7bf837ebca6fd3\",\"providerRoundId\":\"2505\",\"status\":\"ACTIVE\"},{\"contestId\":\"legacy_be69d6464abbb1fa3b7bf837ebca6fd3\",\"providerRoundId\":\"2506\",\"status\":\"ACTIVE\"},{\"contestId\":\"cmslfqko70002ljd09jwlvplj\",\"providerRoundId\":\"2390\",\"status\":\"ACTIVE\"},{\"conte"
+    },
+    {
+      "count": 1,
+      "line": "{\"level\":\"info\",\"scope\":\"deadline-reports:scheduler\",\"message\":\"Deadline report tick finished.\",\"timestamp\":\"2026-10-10T07:29:46.451Z\",\"trigger\":\"interval\",\"summary\":{\"campaigns\":{\"created\":0,\"updated\":24,\"blocked\":1,\"skipped\":0,\"details\":[{\"contestId\":\"cmtmodtoh0rh32o900afvwz7a\",\"providerRoundId\":\"2754\",\"status\":\"ACTIVE\"},{\"contestId\":\"cmtmodtoh0rh32o900afvwz7a\",\"providerRoundId\":\"2755\",\"status\":\"ACTIVE\"},{\"contestId\":\"legacy_be69d6464abbb1fa3b7bf837ebca6fd3\",\"providerRoundId\":\"2505\",\"status\":\"ACTIVE\"},{\"contestId\":\"legacy_be69d6464abbb1fa3b7bf837ebca6fd3\",\"providerRoundId\":\"2506\",\"status\":\"ACTIVE\"},{\"contestId\":\"cmslfqko70002ljd09jwlvplj\",\"providerRoundId\":\"2390\",\"status\":\"ACTIVE\"},{\"conte"
+    },
+    {
+      "count": 1,
+      "line": "{\"level\":\"info\",\"scope\":\"deadline-reports:scheduler\",\"message\":\"Deadline report tick finished.\",\"timestamp\":\"2026-10-10T07:29:51.891Z\",\"trigger\":\"interval\",\"summary\":{\"campaigns\":{\"created\":0,\"updated\":24,\"blocked\":1,\"skipped\":0,\"details\":[{\"contestId\":\"cmtmodtoh0rh32o900afvwz7a\",\"providerRoundId\":\"2754\",\"status\":\"ACTIVE\"},{\"contestId\":\"cmtmodtoh0rh32o900afvwz7a\",\"providerRoundId\":\"2755\",\"status\":\"ACTIVE\"},{\"contestId\":\"legacy_be69d6464abbb1fa3b7bf837ebca6fd3\",\"providerRoundId\":\"2505\",\"status\":\"ACTIVE\"},{\"contestId\":\"legacy_be69d6464abbb1fa3b7bf837ebca6fd3\",\"providerRoundId\":\"2506\",\"status\":\"ACTIVE\"},{\"contestId\":\"cmslfqko70002ljd09jwlvplj\",\"providerRoundId\":\"2390\",\"status\":\"ACTIVE\"},{\"conte"
+    },
+    {
+      "count": 1,
+      "line": "{\"level\":\"info\",\"scope\":\"deadline-reports:scheduler\",\"message\":\"Deadline report tick finished.\",\"timestamp\":\"2026-10-10T07:29:57.261Z\",\"trigger\":\"interval\",\"summary\":{\"campaigns\":{\"created\":0,\"updated\":24,\"blocked\":1,\"skipped\":0,\"details\":[{\"contestId\":\"cmtmodtoh0rh32o900afvwz7a\",\"providerRoundId\":\"2754\",\"status\":\"ACTIVE\"},{\"contestId\":\"cmtmodtoh0rh32o900afvwz7a\",\"providerRoundId\":\"2755\",\"status\":\"ACTIVE\"},{\"contestId\":\"legacy_be69d6464abbb1fa3b7bf837ebca6fd3\",\"providerRoundId\":\"2505\",\"status\":\"ACTIVE\"},{\"contestId\":\"legacy_be69d6464abbb1fa3b7bf837ebca6fd3\",\"providerRoundId\":\"2506\",\"status\":\"ACTIVE\"},{\"contestId\":\"cmslfqko70002ljd09jwlvplj\",\"providerRoundId\":\"2390\",\"status\":\"ACTIVE\"},{\"conte"
+    },
+    {
+      "count": 1,
+      "line": "{\"level\":\"info\",\"scope\":\"sports-ru-squads:scheduler\",\"message\":\"Sports.ru squad snapshot sync finished.\",\"timestamp\":\"2026-10-10T07:29:58.445Z\",\"trigger\":\"interval\",\"profiles\":17,\"scopes\":7,\"scheduled\":119,\"stored\":0,\"retried\":0,\"unavailable\":0,\"skipped\":119,\"failed\":0,\"failedScopes\":0}"
+    }
+  ],
+  "monitor_files": []
+}

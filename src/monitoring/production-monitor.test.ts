@@ -142,12 +142,27 @@ test("production monitor requires exact fixed start, minimum span, and retention
   }
 });
 
+test("operational monitoring warns on truncated 24-hour retention while keeping historical beta mode separate", async () => {
+  const requests: CapturedRequest[] = [];
+  const server = createMonitorServer({ dataHealthy: true, appHealthy: true, rollingRetentionCoversStart: false, fixedAuditStatus: "breach", requests });
+  const origin = await listen(server);
+  try {
+    const result = await runMonitor(origin, { MONITOR_FIXED_WINDOW_ENABLED: "false" });
+    assert.equal(result.code, 0, result.stderr);
+    const report = JSON.parse(result.stdout);
+    assert.equal(report.warnings, 1);
+    assert.equal(report.checks.find((check: { name: string }) => check.name === "Rolling 24-hour server SLO").ok, false);
+    assert.ok(!requests.some(request => request.path === "/_monitor/beta-access-audit.json"));
+  } finally { server.close(); }
+});
+
 function createMonitorServer(input: {
   dataHealthy: boolean;
   appHealthy: boolean;
   requests: CapturedRequest[];
   githubIssueListFailures?: number;
   fixedAuditStatus?: "ok" | "insufficient_data" | "breach";
+  rollingRetentionCoversStart?: boolean;
   fixedWindowStart?: string;
   fixedObservedSpanMinutes?: number;
   fixedRetentionCoversStart?: boolean;
@@ -163,6 +178,13 @@ function createMonitorServer(input: {
       return json(response, input.appHealthy ? 200 : 503, { status: input.appHealthy ? "ok" : "error" });
     }
     if (path === "/login") return text(response, 200, "login");
+    if (path === "/api/health/fpl" || path === "/api/health/fantasy-prices") return json(response, 200, { healthy: true, status: "ok" });
+    if (path === "/_monitor/rolling-slo-audit.json") {
+      const generated = new Date();
+      return json(response, 200, { status: "ok", generatedAt: generated.toISOString(), windowMinutes: 1440,
+        cutoff: new Date(generated.getTime() - 86400000).toISOString(), logCoverageEnd: generated.toISOString(),
+        retentionCoversWindowStart: input.rollingRetentionCoversStart ?? true, requests: 200, serverErrors: 0, serverErrorRatePercent: 0 });
+    }
     if (path === "/api/health/client-errors") {
       const total = input.clientErrorCount ?? 0;
       return json(response, total === 0 ? 200 : 503, {
@@ -232,6 +254,7 @@ function runMonitor(origin: string, monitorEnvironment: Record<string, string> =
         MONITOR_TIMEOUT_MS: "2000",
         MONITOR_GITHUB_RETRY_BASE_MS: "1",
         MONITOR_FIXED_WINDOW_EXPECTED_START: "2026-07-17T10:29:00.000Z",
+        MONITOR_FIXED_WINDOW_ENABLED: "true",
         MONITOR_FIXED_WINDOW_MIN_OBSERVED_SPAN_MINUTES: "1440",
         ...monitorEnvironment
       },

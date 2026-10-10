@@ -1,7 +1,21 @@
 import { schedulerRuntimePlan } from "./server/scheduler-runtime-role";
+import type { Instrumentation } from "next";
+import { createHash } from "node:crypto";
+
+/** @spec spec://common/INFRA-006-continuous-deployment#observability */
+export const onRequestError: Instrumentation.onRequestError = (error, request, context) => {
+  const message = error instanceof Error ? error.message : String(error);
+  const detail = error && typeof error === "object" ? error as { digest?: string; code?: string; name?: string } : {};
+  console.error(JSON.stringify({ scope: "request-error", timestamp: new Date().toISOString(), pid: process.pid,
+    commit: process.env.APP_RELEASE_COMMIT, requestId: request.headers["x-request-id"], method: request.method,
+    route: context.routePath, routeType: context.routeType, errorName: detail.name, code: detail.code, digest: detail.digest,
+    errorFingerprint: createHash("sha256").update(message).digest("hex").slice(0, 16) }));
+};
 
 export async function register() {
   if (process.env.NEXT_RUNTIME !== "nodejs") return;
+  const { startRuntimeDiagnostics } = await import("./server/runtime-diagnostics");
+  startRuntimeDiagnostics();
 
   if (process.env.FANTASY_MODEL_FORECAST_CHILD === "true") {
     let exitCode = 1;
@@ -21,6 +35,8 @@ export async function register() {
   const plan = schedulerRuntimePlan();
 
   if (plan.worker) {
+    const { startSessionRetention } = await import("./server/session-retention");
+    startSessionRetention();
     // @spec spec://modules/machete/INFRA-004-sorareinside-starters#runtime
     const { startSorareInsideScheduler } = await import("./server/sorareinside-scheduler");
     startSorareInsideScheduler();

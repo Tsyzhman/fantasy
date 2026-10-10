@@ -1,0 +1,35 @@
+{
+  "code": 0,
+  "stdout": "BEGIN\nSET\n{\"receipts_count\" : 1185197, \"oldest\" : \"2026-09-10T08:34:50.188\", \"newest\" : \"2026-10-10T07:55:35.525\", \"older_30_days\" : 0, \"last_day\" : 60336}\n[{\"jobType\":\"CATALOG\",\"status\":\"DONE\",\"count\":56683,\"min\":\"2026-09-10T07:56:28.769\",\"max\":\"2026-10-10T07:55:48.482\"}, \n {\"jobType\":\"ODDS\",\"status\":\"DONE\",\"count\":15181,\"min\":\"2026-09-14T09:05:09.946\",\"max\":\"2026-10-10T07:55:35.941\"}, \n {\"jobType\":\"HISTORY\",\"status\":\"DONE\",\"count\":7003,\"min\":\"2026-09-10T07:56:25.401\",\"max\":\"2026-10-10T07:23:01.604\"}, \n {\"jobType\":\"PROTOCOLS\",\"status\":\"DONE\",\"count\":3120,\"min\":\"2026-09-20T16:11:20.234\",\"max\":\"2026-10-10T07:23:29.304\"}, \n {\"jobType\":\"HISTORY\",\"status\":\"FAILED\",\"count\":953,\"min\":\"2026-09-10T13:37:15.145\",\"max\":\"2026-09-20T17:22:01.256\"}, \n {\"jobType\":\"WEEKS\",\"status\":\"DONE\",\"count\":117,\"min\":\"2026-10-05T09:19:19.82\",\"max\":\"2026-10-10T07:23:14.368\"}, \n {\"jobType\":\"CATALOG\",\"status\":\"FAILED\",\"count\":61,\"min\":\"2026-09-27T08:43:29.224\",\"max\":\"2026-10-08T03:40:26.159\"}, \n {\"jobType\":\"ODDS\",\"status\":\"FAILED\",\"count\":9,\"min\":\"2026-09-22T06:28:44.385\",\"max\":\"2026-09-22T06:58:19.928\"}, \n {\"jobType\":\"PROTOCOLS\",\"status\":\"FAILED\",\"count\":9,\"min\":\"2026-09-11T10:39:37.913\",\"max\":\"2026-09-20T17:17:59.364\"}, \n {\"jobType\":\"WEEKS\",\"status\":\"FAILED\",\"count\":2,\"min\":\"2026-10-08T01:22:35.575\",\"max\":\"2026-10-08T02:22:31.606\"}]\n{\"sessions\" : 243, \"expired\" : 171}\n[{\"schemaname\":\"public\",\"relname\":\"match_player_stats\",\"seq_scan\":25939,\"seq_tup_read\":4112979580,\"idx_scan\":102214820,\"n_live_tup\":500046,\"n_tup_ins\":57785,\"n_tup_upd\":0,\"n_tup_del\":0}, \n {\"schemaname\":\"public\",\"relname\":\"khl_sync_jobs\",\"seq_scan\":63529,\"seq_tup_read\":2920098715,\"idx_scan\":1047621,\"n_live_tup\":83138,\"n_tup_ins\":91456,\"n_tup_upd\":183795,\"n_tup_del\":8318}, \n {\"schemaname\":\"public\",\"relname\":\"players\",\"seq_scan\":56624,\"seq_tup_read\":2049796598,\"idx_scan\":11751571,\"n_live_tup\":36979,\"n_tup_ins\":2071,\"n_tup_upd\":2440988,\"n_tup_del\":0}, \n {\"schemaname\":\"public\",\"relname\":\"khl_observation_revisions\",\"seq_scan\":31128,\"seq_tup_read\":1303831457,\"idx_scan\":6906,\"n_live_tup\":58265,\"n_tup_ins\":59639,\"n_tup_upd\":0,\"n_tup_del\":0}, \n {\"schemaname\":\"public\",\"relname\":\"fantasy_points\",\"seq_scan\":5294,\"seq_tup_read\":1298359795,\"idx_scan\":743282,\"n_live_tup\":500086,\"n_tup_ins\":57745,\"n_tup_upd\":0,\"n_tup_del\":0}, \n {\"schemaname\":\"public\",\"relname\":\"matches\",\"seq_scan\":54957,\"seq_tup_read\":1161200137,\"idx_scan\":296696239,\"n_live_tup\":21525,\"n_tup_ins\":697,\"n_tup_upd\":720542,\"n_tup_del\":0}, \n {\"schemaname\":\"public\",\"relname\":\"team_player_seasons\",\"seq_scan\":8619,\"seq_tup_read\":1016611006,\"idx_scan\":5722337,\"n_live_tup\":124531,\"n_tup_ins\":17875,\"n_tup_upd\":2400319,\"n_tup_del\":0}, \n {\"schemaname\":\"public\",\"relname\":\"khl_player_match_stats\",\"seq_scan\":114129,\"seq_tup_read\":660795798,\"idx_scan\":608935,\"n_live_tup\":9175,\"n_tup_ins\":9175,\"n_tup_upd\":383277,\"n_tup_del\":0}, \n {\"schemaname\":\"public\",\"relname\":\"match_team_stats\",\"seq_scan\":19409,\"seq_tup_read\":530356152,\"idx_scan\":13635519,\"n_live_tup\":28345,\"n_tup_ins\":3035,\"n_tup_upd\":80515,\"n_tup_del\":0}, \n {\"schemaname\":\"public\",\"relname\":\"khl_availability_observations\",\"seq_scan\":77741,\"seq_tup_read\":466147803,\"idx_scan\":774,\"n_live_tup\":14062,\"n_tup_ins\":14062,\"n_tup_upd\":0,\"n_tup_del\":0}]\n[{\"status\":\"completed\",\"count\":132}, \n {\"status\":\"failed\",\"count\":7}, \n {\"status\":\"cancelled\",\"count\":2}, \n {\"status\":\"completed_with_errors\",\"count\":5}]\n[{\"applied\":false,\"rolled_back\":true,\"count\":1}, \n {\"applied\":true,\"rolled_back\":false,\"count\":54}]\nROLLBACK\n",
+  "stderr": "",
+  "cron_summary": [
+    {
+      "source": [
+        "crontab",
+        "-l"
+      ],
+      "code": 0,
+      "backup_related_lines": 0
+    },
+    {
+      "source": [
+        "sudo",
+        "-n",
+        "crontab",
+        "-l"
+      ],
+      "code": 1,
+      "backup_related_lines": 0
+    }
+  ],
+  "cron_files": [
+    {
+      "file": ".placeholder",
+      "backup_related": false
+    },
+    {
+      "file": "e2scrub_all",
+      "backup_related": false
+    }
+  ]
+}

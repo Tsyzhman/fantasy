@@ -3,6 +3,8 @@ import { prisma } from "@/lib/db";
 import { hashPassword, normalizeEmail } from "@/lib/auth";
 
 async function main() {
+  const [role] = await prisma.$queryRaw<Array<{ privileged: boolean }>>`SELECT rolsuper AS privileged FROM pg_roles WHERE rolname = current_user`;
+  if (!role?.privileged) throw new Error("OPERATOR_IDENTITY_REQUIRED");
   const email = process.argv[2] ? normalizeEmail(process.argv[2]) : "";
   if (!email || process.stdin.isTTY) throw new Error("Usage: privileged operator pipes a password to recover-admin.ts <existing-email>.");
   let password = "";

@@ -1,0 +1,58 @@
+{
+  "sourcePath": "src/franchises/analytics.ts",
+  "synthetic": true,
+  "node": "v24.11.1",
+  "capturedAt": "2026-10-10T08:09:49.752Z",
+  "samples": [
+    {
+      "count": 250,
+      "timingsMs": [
+        6.92,
+        6.45,
+        6.07
+      ],
+      "medianMs": 6.45,
+      "fullScanComparisons": 437500
+    },
+    {
+      "count": 500,
+      "timingsMs": [
+        24.38,
+        24.56,
+        25.89
+      ],
+      "medianMs": 24.56,
+      "fullScanComparisons": 1750000
+    },
+    {
+      "count": 1000,
+      "timingsMs": [
+        97.74,
+        101.47,
+        105.32
+      ],
+      "medianMs": 101.47,
+      "fullScanComparisons": 7000000
+    },
+    {
+      "count": 2000,
+      "timingsMs": [
+        384.15,
+        393.63,
+        392.32
+      ],
+      "medianMs": 392.32,
+      "fullScanComparisons": 28000000
+    },
+    {
+      "count": 3000,
+      "timingsMs": [
+        852.7,
+        844.1,
+        861.4
+      ],
+      "medianMs": 852.7,
+      "fullScanComparisons": 63000000
+    }
+  ]
+}

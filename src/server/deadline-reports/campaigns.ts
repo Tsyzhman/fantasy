@@ -187,6 +187,9 @@ export async function planDeadlineCampaigns(
           ...(campaignInputChanged ? { inputVersion: { increment: 1 } } : {})
         }
       });
+      if (campaignInputChanged) {
+        await prisma.deadlineStageJob.updateMany({ where: { campaignId: campaign.id, inputVersion: { not: campaign.inputVersion }, status: { in: ["QUEUED", "FAILED"] } }, data: { status: "CANCELLED" } });
+      }
       if (status === "BLOCKED") {
         await prisma.deadlineStageJob.updateMany({ where: { campaignId: campaign.id, status: { in: ["QUEUED", "FAILED"] } }, data: { status: "CANCELLED" } });
         summary.blocked += 1;
