@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.3.133 - 2026-10-10
+
+- Keep the mobile column chooser inside the viewport with bounded scrolling, an explicit close button and Escape support.
+- Remove migration rehearsal databases through the protected operator, including active restored-copy connections, while retaining restricted migrator and application permissions.
+- Wait for the final TCP PostgreSQL server in the bootstrap-role regression, excluding the entrypoint's temporary initialization server.
+
 ## 0.3.132 - 2026-10-10
 
 - Preserve every concurrent login failure, close first-admin setup permanently, validate internal redirects and retain bounded expired-session cleanup.

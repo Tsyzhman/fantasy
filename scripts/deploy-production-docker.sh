@@ -271,7 +271,7 @@ cleanup() {
     docker volume rm "$fpl_relay_candidate_volume" >/dev/null 2>&1 || true
   fi
   if (( rehearsal_created == 1 )) && [[ -n "$rehearsal_db" ]]; then
-    docker exec "$postgres" psql -U fantasy_migrator -d postgres -v ON_ERROR_STOP=1 \
+    docker exec "$postgres" psql -U fantasy_operator -d postgres -v ON_ERROR_STOP=1 \
       -c "DROP DATABASE IF EXISTS \"$rehearsal_db\" WITH (FORCE)" >/dev/null 2>&1 || true
   fi
   rm -f -- "$web_env" "$worker_env" "$rehearsal_env"
@@ -581,7 +581,9 @@ PY
     echo "Migration rehearsal did not apply the complete migration set: $rehearsal_applied/${#expected_migrations[@]}" >&2
     exit 1
   }
-  docker exec "$postgres" psql -U fantasy_migrator -d postgres -v ON_ERROR_STOP=1 \
+  # The protected operator can terminate restored-copy autovacuum/runtime sessions.
+  # Do not grant cluster-wide signalling or superuser rights to the migrator.
+  docker exec "$postgres" psql -U fantasy_operator -d postgres -v ON_ERROR_STOP=1 \
     -c "DROP DATABASE IF EXISTS \"$rehearsal_db\" WITH (FORCE)" >/dev/null
   rehearsal_created=0
   rehearsal_db=""

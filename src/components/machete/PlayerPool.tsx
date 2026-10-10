@@ -343,13 +343,18 @@ export function CustomizablePlayerPoolTable({
         <div className="grid min-w-0 flex-[1_1_34rem] grid-cols-2 gap-2 lg:grid-cols-5">
           {toolbar}
         </div>
-        <details className="relative shrink-0">
+        <details className="relative shrink-0 open:z-50" onKeyDown={event => {
+          if (event.key === "Escape") {
+            event.currentTarget.open = false;
+            event.currentTarget.querySelector("summary")?.focus();
+          }
+        }}>
           <summary className="inline-flex cursor-pointer list-none items-center gap-2 whitespace-nowrap rounded border border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 hover:bg-slate-50 [&::-webkit-details-marker]:hidden">
             <Columns3 className="h-4 w-4" />
             <I18nText en="Columns" ru="Столбцы" />
             <span className="text-slate-400">{visibleColumns.length}</span>
           </summary>
-          <div className="absolute right-0 z-30 mt-2 w-[min(42rem,calc(100vw-2rem))] rounded border border-slate-200 bg-white p-4 shadow-elev">
+          <div className="fixed inset-x-4 top-16 z-50 max-h-[calc(100dvh-5rem)] overflow-y-auto rounded border border-slate-200 bg-white p-4 shadow-elev xl:absolute xl:inset-x-auto xl:right-0 xl:top-auto xl:mt-2 xl:max-h-[75vh] xl:w-[min(42rem,calc(100vw-2rem))]">
             <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
               <div>
                 <p className="text-sm font-bold text-ink"><I18nText en="Player table columns" ru="Столбцы таблицы игроков" /></p>
@@ -361,6 +366,13 @@ export function CustomizablePlayerPoolTable({
                 {saveState === "saved" ? <I18nText en="Saved" ru="Сохранено" /> : null}
                 {saveState === "error" ? <I18nText en="Not saved" ru="Не сохранено" /> : null}
               </span>
+              <button type="button" className="rounded border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50" onClick={event => {
+                const details = event.currentTarget.closest("details");
+                if (details) {
+                  details.open = false;
+                  details.querySelector("summary")?.focus();
+                }
+              }}><I18nText en="Close" ru="Закрыть" /></button>
             </div>
             <div className="mt-3 flex flex-wrap gap-2">
               <button type="button" onClick={() => setVisibleColumnKeys(columns.map((column) => column.key))} className="rounded border border-slate-200 px-2 py-1 text-xs font-semibold text-slate-700 hover:bg-slate-50"><I18nText en="Select all" ru="Выбрать все" /></button>

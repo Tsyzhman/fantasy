@@ -41,6 +41,28 @@ CREATE TYPE public.audit_enum AS ENUM ('A','B');''')
             run("fantasy_migrator", database, "CREATE TABLE public.audit_future (id serial primary key, value audit_enum);")
             run("fantasy_app", database, "BEGIN; INSERT INTO public.audit_future(value) VALUES ('A'); ROLLBACK;")
             self.assertEqual(run("fantasy_app", database, "SELECT count(*) FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace WHERE n.nspname='public' AND c.relowner=(SELECT oid FROM pg_roles WHERE rolname=current_user);").stdout.strip(), "0")
+            clone = "fantasy_roles_drop_probe_ci"
+            run("fantasy_migrator", "postgres", f'CREATE DATABASE "{clone}";')
+            client = subprocess.Popen(["docker", "exec", container, "psql", "-X", "-U", "fantasy_app", "-d", clone,
+                                       "-c", "SELECT pg_sleep(30);"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            try:
+                for _ in range(30):
+                    active = run(admin, "postgres", f"SELECT count(*) FROM pg_stat_activity WHERE datname='{clone}' AND usename='fantasy_app';")
+                    if active.stdout.strip() == "1":
+                        break
+                    time.sleep(0.1)
+                else:
+                    self.fail("Isolated runtime connection did not start")
+                denied = roles.execute(container, "fantasy_migrator", "postgres",
+                                       f'\\set VERBOSITY sqlstate\nDROP DATABASE "{clone}" WITH (FORCE);', check=False)
+                self.assertNotEqual(denied.returncode, 0)
+                self.assertIn("42501", denied.stderr)
+                run("fantasy_operator", "postgres", f'DROP DATABASE "{clone}" WITH (FORCE);')
+                client.communicate(timeout=10)
+                self.assertEqual(run("fantasy_app", database, "SELECT 1;").stdout.strip(), "1")
+            finally:
+                run(admin, "postgres", f'DROP DATABASE IF EXISTS "{clone}" WITH (FORCE);')
+                client.communicate(timeout=10)
             # Reapplying uses the protected operator and preserves the same runtime password.
             run("fantasy_operator", database, prefix + sql)
             roles.verify(container, database,
@@ -63,10 +85,16 @@ CREATE TYPE public.audit_enum AS ENUM ('A','B');''')
                         "-e", "POSTGRES_DB=" + database, image], check=True, capture_output=True)
         run = lambda user, db, sql: roles.execute(container, user, db, sql)
         try:
+            # The entrypoint's initialization server only accepts Unix sockets.
+            # Wait for the final TCP server and the requested database instead.
             for _ in range(30):
-                if subprocess.run(["docker", "exec", container, "pg_isready", "-U", "fantasy_app"], capture_output=True).returncode == 0:
+                ready = roles.execute(container, "fantasy_app", database, "SELECT 1;",
+                                      "isolated-runtime-only", tcp=True, check=False)
+                if ready.returncode == 0 and ready.stdout.strip() == "1":
                     break
                 time.sleep(1)
+            else:
+                self.fail("Isolated bootstrap PostgreSQL did not become ready over TCP")
             self.assertEqual(run("fantasy_app", database, "SELECT oid FROM pg_roles WHERE rolname=current_user;").stdout.strip(), "10")
             run("fantasy_app", database, '''CREATE TABLE "AuthRateLimit" (id text primary key, action text, "subjectHash" text, "failedCount" int default 0);
 CREATE TABLE "_prisma_migrations" (migration_name text);
