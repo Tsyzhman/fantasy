@@ -1,0 +1,21 @@
+fantasy-scout-worker	Up 2 minutes (healthy)	fantasy-scout:20261010T071043Z-v0.3.131-74a5f00
+fantasy-scout-web	Up 2 minutes (healthy)	fantasy-scout:20261010T071043Z-v0.3.131-74a5f00
+fantasy-scout-fpl-relay	Up 3 minutes	fantasy-scout:20261010T071043Z-v0.3.131-74a5f00
+fantasy-scout-worker-rollback-pre-20261010T071043Z-v0.3.131-74a5f00	Exited (143) 2 minutes ago	fantasy-scout:20261009T184704Z-v0.3.130-39e65c1
+fantasy-scout-web-rollback-pre-20261010T071043Z-v0.3.131-74a5f00	Exited (143) 2 minutes ago	fantasy-scout:20261009T184704Z-v0.3.130-39e65c1
+fantasy-scout-fpl-relay-rollback-pre-20261010T071043Z-v0.3.131-74a5f00	Exited (0) 2 minutes ago	fantasy-scout:20261009T184704Z-v0.3.130-39e65c1
+fantasy-scout-postgres	Up 7 weeks (healthy)	16bc17c64a57
+fantasy-scout-web	144.9MiB / 11.6GiB	28
+fantasy-scout-worker	1.358GiB / 11.6GiB	42
+20261010T071043Z-v0.3.131-74a5f00
+20261009T184704Z-v0.3.130-39e65c1
+TYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE
+Images          76        43        61.94GB   6.441GB (10%)
+Containers      52        44        190.5MB   749.6kB (0%)
+Local Volumes   72        39        5.025GB   94.01MB (1%)
+Build Cache     503       0         40.4GB    939.6MB
+               total        used        free      shared  buff/cache   available
+Mem:           11876        5026        1256         306        5593        6231
+Swap:              0           0           0
+20261010T071043Z-v0.3.131-74a5f00
+20261009T184704Z-v0.3.130-39e65c1

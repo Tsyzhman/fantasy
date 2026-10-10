@@ -6,7 +6,6 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
-| [WI-064](work/WI-064-sports-placeholder-telegram-release.md) | Release readable Sports.ru placeholders in Telegram | FEAT-007, INFRA-006 | @tsyzhman | 2026-10-10 | — |
 | [WI-060](work/WI-060-continuous-production-deployment.md) | Continuous production deployment | INFRA-006 | @tsyzhman | 2026-10-09 | — |
 | [WI-059](work/WI-059-four-league-club-limits.md) | Preserve two club players in four Sports.ru leagues | FEAT-001 | @tsyzhman | 2026-10-09 | — |
 | [WI-056](work/WI-056-compact-deadline-findings.md) | Compact Telegram deadline findings | FEAT-007, INFRA-005 | @tsyzhman | 2026-10-09 | — |
@@ -28,6 +27,7 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-064](work/archive/2026/WI-064-sports-placeholder-telegram-release.md) | Release readable Sports.ru placeholders in Telegram | @tsyzhman | 2026-10-10 |
 | [WI-063](work/archive/2026/WI-063-all-league-player-pool-audit.md) | Audit and repair all current football player pools | @tsyzhman | 2026-10-09 |
 | [WI-061](work/archive/2026/WI-061-alanzinho-portugal-mapping.md) | Restore Alanzinho in Portugal | @tsyzhman | 2026-10-09 |
 | [WI-058](work/archive/2026/WI-058-sorareinside-intake.md) | Repair rejected SorareInside XI ingestion | @tsyzhman | 2026-10-09 |
