@@ -126,13 +126,14 @@ class MigrationTests(unittest.TestCase):
             source, target = root / "source.env", root / "derived.env"
             source.write_text("DATABASE_URL=postgresql://fantasy_migrator:fixture@postgres/db?schema=public&options=old\n")
             statements = {"index": '/* @spec spec://common/INFRA-006-continuous-deployment#migrations */\n-- reviewed online index\nCREATE INDEX CONCURRENTLY IF NOT EXISTS "safe" ON "table" ("id");',
+                          "plain_index": '-- @spec spec://common/INFRA-006-continuous-deployment#migrations\nCREATE INDEX CONCURRENTLY "plain" ON "table" ("id");',
                           "column": 'ALTER TABLE "table" ADD COLUMN "new" TEXT;'}
             for name, sql in statements.items():
                 path = root / name
                 path.mkdir()
-                (path / "migration.sql").write_text(sql)
+                (path / "migration.sql").write_bytes(sql.encode())
                 (path / "deployment.json").write_text(json.dumps({"mode": "online", "sqlSha256": hashlib.sha256(sql.encode()).hexdigest()}))
-            for names, seconds in [(["index"], 30), (["column"], 5), (["index", "column"], 5), ([], 5)]:
+            for names, seconds in [(["index"], 30), (["plain_index"], 30), (["column"], 5), (["index", "column"], 5), ([], 5)]:
                 self.assertEqual(migration_environment.prepare(root, names, source, target), seconds)
                 url = urlsplit(target.read_text().strip().split("=", 1)[1])
                 self.assertEqual(url.username, "fantasy_migrator")

@@ -18,7 +18,7 @@ def prepare(root, names, source, target):
         sql = (root / name / "migration.sql").read_text(encoding="utf-8")
         sql = re.sub(r"/\*[\s\S]*?\*/", "", sql)
         sql = re.sub(r"--[^\n]*", "", sql).strip()
-        concurrent_only &= bool(re.fullmatch(r'CREATE INDEX CONCURRENTLY IF NOT EXISTS\s+[^;]+;', sql, re.IGNORECASE))
+        concurrent_only &= bool(re.fullmatch(r'CREATE(?:\s+UNIQUE)?\s+INDEX\s+CONCURRENTLY(?:\s+IF\s+NOT\s+EXISTS)?\s+[^;]+;', sql, re.IGNORECASE))
     line = source.read_text(encoding="utf-8").strip()
     if not line.startswith("DATABASE_URL=") or "\n" in line:
         raise ValueError("Invalid protected migration environment")
