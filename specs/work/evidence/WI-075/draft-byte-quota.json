@@ -1,0 +1,7 @@
+{
+  "quotaBytes": 65536,
+  "before": "Unicode draft below character-count limit exceeded encoded-byte limit and was accepted",
+  "after": "parse rejects and writer stores no entry",
+  "tests": "src/components/machete/planner-draft.test.ts",
+  "retention": "24 hours; eight entries; account/provider/league/season/squad scope; baseline match required"
+}

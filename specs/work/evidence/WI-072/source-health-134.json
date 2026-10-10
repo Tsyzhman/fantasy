@@ -1,0 +1,535 @@
+{
+  "fantasy-prices": {
+    "status": 503,
+    "body": {
+      "status": "error",
+      "healthy": false,
+      "thresholds": {
+        "maximumAgeHours": 7,
+        "minimumPlayers": 100,
+        "minimumMappedPercent": 98
+      },
+      "source": "DATABASE_CONTESTS",
+      "configDrift": {
+        "configured": [
+          "63:2026/2027:russia",
+          "47:2026/2027:england",
+          "87:2026/2027:spain",
+          "54:2026/2027:germany",
+          "55:2026/2027:italy",
+          "53:2026/2027:france",
+          "61:2026/2027:portugal",
+          "57:2026/2027:netherlands",
+          "71:2026/2027:turkey",
+          "48:2026/2027:championship",
+          "42:2026/2027:champions-league",
+          "73:2026/2027:europa-league"
+        ],
+        "observed": [
+          "73:2026/2027:europa-league",
+          "42:2026/2027:champions-league",
+          "48:2026/2027:championship",
+          "71:2026/2027:turkey",
+          "57:2026/2027:netherlands",
+          "61:2026/2027:portugal",
+          "53:2026/2027:france",
+          "55:2026/2027:italy",
+          "54:2026/2027:germany",
+          "87:2026/2027:spain",
+          "47:2026/2027:england",
+          "63:2026/2027:russia"
+        ],
+        "missingInDatabase": [],
+        "notConfigured": [],
+        "tournamentMismatch": []
+      },
+      "legacyConfiguredScopes": [
+        "63:2026/2027:russia",
+        "87:2026/2027:spain",
+        "57:2026/2027:netherlands",
+        "61:2026/2027:portugal"
+      ],
+      "archives": [
+        {
+          "leagueId": "77",
+          "season": "2026",
+          "state": "ARCHIVE",
+          "freshness": "NOT_APPLICABLE",
+          "lastSuccessfulReceipt": "2026-08-14T12:06:25.012Z",
+          "integrity": {
+            "healthy": true,
+            "priceCount": 1246,
+            "mappedCount": 200,
+            "unmappedCount": 1046,
+            "invalidPriceCount": 0,
+            "mismatchedScopeCount": 0
+          }
+        }
+      ],
+      "results": [
+        {
+          "leagueId": "63",
+          "season": "2026/2027",
+          "tournamentHru": "russia",
+          "healthy": false,
+          "lastSyncedAt": "2026-10-10T12:40:37.331Z",
+          "ageHours": 0.133,
+          "priceCount": 509,
+          "mappedCount": 492,
+          "excludedCount": 1,
+          "eligibleCount": 508,
+          "mappedPercent": 96.85,
+          "scheduleOwner": "fantasy-source-registry",
+          "intervalHours": 6,
+          "exclusions": [
+            {
+              "providerEntityId": "cmrpa0d53002cwy5cwewfhor2",
+              "matchedBy": "MANUAL_TRANSFERRED_OUT"
+            }
+          ]
+        },
+        {
+          "leagueId": "47",
+          "season": "2026/2027",
+          "tournamentHru": "england",
+          "healthy": false,
+          "lastSyncedAt": "2026-10-10T12:40:43.472Z",
+          "ageHours": 0.132,
+          "priceCount": 686,
+          "mappedCount": 665,
+          "excludedCount": 0,
+          "eligibleCount": 686,
+          "mappedPercent": 96.939,
+          "scheduleOwner": "fantasy-source-registry",
+          "intervalHours": 6,
+          "exclusions": []
+        },
+        {
+          "leagueId": "87",
+          "season": "2026/2027",
+          "tournamentHru": "spain",
+          "healthy": true,
+          "lastSyncedAt": "2026-10-10T12:40:49.433Z",
+          "ageHours": 0.13,
+          "priceCount": 733,
+          "mappedCount": 730,
+          "excludedCount": 0,
+          "eligibleCount": 733,
+          "mappedPercent": 99.591,
+          "scheduleOwner": "fantasy-source-registry",
+          "intervalHours": 6,
+          "exclusions": []
+        },
+        {
+          "leagueId": "54",
+          "season": "2026/2027",
+          "tournamentHru": "germany",
+          "healthy": true,
+          "lastSyncedAt": "2026-10-10T12:40:54.394Z",
+          "ageHours": 0.129,
+          "priceCount": 529,
+          "mappedCount": 523,
+          "excludedCount": 0,
+          "eligibleCount": 529,
+          "mappedPercent": 98.866,
+          "scheduleOwner": "fantasy-source-registry",
+          "intervalHours": 6,
+          "exclusions": []
+        },
+        {
+          "leagueId": "55",
+          "season": "2026/2027",
+          "tournamentHru": "italy",
+          "healthy": true,
+          "lastSyncedAt": "2026-10-10T12:40:58.862Z",
+          "ageHours": 0.127,
+          "priceCount": 638,
+          "mappedCount": 635,
+          "excludedCount": 0,
+          "eligibleCount": 638,
+          "mappedPercent": 99.53,
+          "scheduleOwner": "fantasy-source-registry",
+          "intervalHours": 6,
+          "exclusions": []
+        },
+        {
+          "leagueId": "53",
+          "season": "2026/2027",
+          "tournamentHru": "france",
+          "healthy": true,
+          "lastSyncedAt": "2026-10-10T12:41:04.694Z",
+          "ageHours": 0.126,
+          "priceCount": 514,
+          "mappedCount": 513,
+          "excludedCount": 0,
+          "eligibleCount": 514,
+          "mappedPercent": 99.805,
+          "scheduleOwner": "fantasy-source-registry",
+          "intervalHours": 6,
+          "exclusions": []
+        },
+        {
+          "leagueId": "61",
+          "season": "2026/2027",
+          "tournamentHru": "portugal",
+          "healthy": true,
+          "lastSyncedAt": "2026-10-10T12:41:09.805Z",
+          "ageHours": 0.124,
+          "priceCount": 628,
+          "mappedCount": 624,
+          "excludedCount": 0,
+          "eligibleCount": 628,
+          "mappedPercent": 99.363,
+          "scheduleOwner": "fantasy-source-registry",
+          "intervalHours": 6,
+          "exclusions": []
+        },
+        {
+          "leagueId": "57",
+          "season": "2026/2027",
+          "tournamentHru": "netherlands",
+          "healthy": true,
+          "lastSyncedAt": "2026-10-10T12:41:17.125Z",
+          "ageHours": 0.122,
+          "priceCount": 612,
+          "mappedCount": 610,
+          "excludedCount": 0,
+          "eligibleCount": 612,
+          "mappedPercent": 99.673,
+          "scheduleOwner": "fantasy-source-registry",
+          "intervalHours": 6,
+          "exclusions": []
+        },
+        {
+          "leagueId": "71",
+          "season": "2026/2027",
+          "tournamentHru": "turkey",
+          "healthy": true,
+          "lastSyncedAt": "2026-10-10T12:41:22.245Z",
+          "ageHours": 0.121,
+          "priceCount": 563,
+          "mappedCount": 563,
+          "excludedCount": 0,
+          "eligibleCount": 563,
+          "mappedPercent": 100,
+          "scheduleOwner": "fantasy-source-registry",
+          "intervalHours": 6,
+          "exclusions": []
+        },
+        {
+          "leagueId": "48",
+          "season": "2026/2027",
+          "tournamentHru": "championship",
+          "healthy": true,
+          "lastSyncedAt": "2026-10-10T12:41:27.733Z",
+          "ageHours": 0.119,
+          "priceCount": 784,
+          "mappedCount": 783,
+          "excludedCount": 0,
+          "eligibleCount": 784,
+          "mappedPercent": 99.872,
+          "scheduleOwner": "fantasy-source-registry",
+          "intervalHours": 6,
+          "exclusions": []
+        },
+        {
+          "leagueId": "42",
+          "season": "2026/2027",
+          "tournamentHru": "champions-league",
+          "healthy": false,
+          "lastSyncedAt": "2026-10-10T12:41:37.570Z",
+          "ageHours": 0.117,
+          "priceCount": 1179,
+          "mappedCount": 1146,
+          "excludedCount": 1,
+          "eligibleCount": 1178,
+          "mappedPercent": 97.284,
+          "scheduleOwner": "fantasy-source-registry",
+          "intervalHours": 6,
+          "exclusions": [
+            {
+              "providerEntityId": "cmtmodvo60t2f2o90k66o50u3",
+              "matchedBy": "MANUAL_SOURCE_IDENTITY_CONFLICT"
+            }
+          ]
+        },
+        {
+          "leagueId": "73",
+          "season": "2026/2027",
+          "tournamentHru": "europa-league",
+          "healthy": true,
+          "lastSyncedAt": "2026-10-10T12:41:48.600Z",
+          "ageHours": 0.114,
+          "priceCount": 1120,
+          "mappedCount": 1116,
+          "excludedCount": 0,
+          "eligibleCount": 1120,
+          "mappedPercent": 99.643,
+          "scheduleOwner": "fantasy-source-registry",
+          "intervalHours": 6,
+          "exclusions": []
+        }
+      ]
+    }
+  },
+  "data-quality": {
+    "status": 503,
+    "body": {
+      "status": "error",
+      "healthy": false,
+      "results": [
+        {
+          "leagueId": "63",
+          "season": "2026/2027",
+          "healthy": false,
+          "maximumRunAgeHours": 26,
+          "ageHours": 5.81,
+          "latestRun": {
+            "id": "cmv21o4gdi47xzbzhbrnabnwj",
+            "status": "COMPLETED",
+            "gatePassed": false,
+            "forecastCoverage": 91.619,
+            "playerDataCoverage": 91.619,
+            "matchDataCoverage": 100,
+            "statRowCoverage": 99.939,
+            "promotionLatencyCoverage": 100,
+            "startedAt": "2026-10-10T07:00:00.014Z",
+            "completedAt": "2026-10-10T07:00:02.328Z"
+          }
+        },
+        {
+          "leagueId": "47",
+          "season": "2026/2027",
+          "healthy": false,
+          "maximumRunAgeHours": 26,
+          "ageHours": 1949.808,
+          "latestRun": {
+            "id": "cmrub08m201kfqmcnc7xcv2f6",
+            "status": "COMPLETED",
+            "gatePassed": false,
+            "forecastCoverage": 98.382,
+            "playerDataCoverage": 98.382,
+            "matchDataCoverage": 0,
+            "statRowCoverage": 0,
+            "promotionLatencyCoverage": 0,
+            "startedAt": "2026-07-21T07:00:05.403Z",
+            "completedAt": "2026-07-21T07:00:08.466Z"
+          }
+        },
+        {
+          "leagueId": "87",
+          "season": "2026/2027",
+          "healthy": false,
+          "maximumRunAgeHours": 26,
+          "ageHours": null,
+          "latestRun": null
+        },
+        {
+          "leagueId": "54",
+          "season": "2026/2027",
+          "healthy": false,
+          "maximumRunAgeHours": 26,
+          "ageHours": null,
+          "latestRun": null
+        },
+        {
+          "leagueId": "55",
+          "season": "2026/2027",
+          "healthy": false,
+          "maximumRunAgeHours": 26,
+          "ageHours": null,
+          "latestRun": null
+        },
+        {
+          "leagueId": "53",
+          "season": "2026/2027",
+          "healthy": false,
+          "maximumRunAgeHours": 26,
+          "ageHours": null,
+          "latestRun": null
+        },
+        {
+          "leagueId": "61",
+          "season": "2026/2027",
+          "healthy": false,
+          "maximumRunAgeHours": 26,
+          "ageHours": null,
+          "latestRun": null
+        },
+        {
+          "leagueId": "57",
+          "season": "2026/2027",
+          "healthy": false,
+          "maximumRunAgeHours": 26,
+          "ageHours": null,
+          "latestRun": null
+        },
+        {
+          "leagueId": "71",
+          "season": "2026/2027",
+          "healthy": false,
+          "maximumRunAgeHours": 26,
+          "ageHours": null,
+          "latestRun": null
+        },
+        {
+          "leagueId": "48",
+          "season": "2026/2027",
+          "healthy": false,
+          "maximumRunAgeHours": 26,
+          "ageHours": null,
+          "latestRun": null
+        },
+        {
+          "leagueId": "42",
+          "season": "2026/2027",
+          "healthy": false,
+          "maximumRunAgeHours": 26,
+          "ageHours": null,
+          "latestRun": null
+        },
+        {
+          "leagueId": "73",
+          "season": "2026/2027",
+          "healthy": false,
+          "maximumRunAgeHours": 26,
+          "ageHours": null,
+          "latestRun": null
+        }
+      ],
+      "plannerDefaults": [
+        {
+          "leagueId": "63",
+          "healthy": false,
+          "reason": "NO_FORECAST_READY_SEASON",
+          "scope": null,
+          "configured": false,
+          "readiness": null
+        },
+        {
+          "leagueId": "47",
+          "healthy": false,
+          "reason": "NO_FORECAST_READY_SEASON",
+          "scope": null,
+          "configured": false,
+          "readiness": null
+        },
+        {
+          "leagueId": "87",
+          "healthy": false,
+          "reason": "NO_FORECAST_READY_SEASON",
+          "scope": null,
+          "configured": false,
+          "readiness": null
+        },
+        {
+          "leagueId": "54",
+          "healthy": false,
+          "reason": "NO_FORECAST_READY_SEASON",
+          "scope": null,
+          "configured": false,
+          "readiness": null
+        },
+        {
+          "leagueId": "55",
+          "healthy": false,
+          "reason": "NO_FORECAST_READY_SEASON",
+          "scope": null,
+          "configured": false,
+          "readiness": null
+        },
+        {
+          "leagueId": "53",
+          "healthy": false,
+          "reason": "NO_FORECAST_READY_SEASON",
+          "scope": null,
+          "configured": false,
+          "readiness": null
+        },
+        {
+          "leagueId": "61",
+          "healthy": false,
+          "reason": "NO_FORECAST_READY_SEASON",
+          "scope": null,
+          "configured": false,
+          "readiness": null
+        },
+        {
+          "leagueId": "57",
+          "healthy": false,
+          "reason": "NO_FORECAST_READY_SEASON",
+          "scope": null,
+          "configured": false,
+          "readiness": null
+        },
+        {
+          "leagueId": "71",
+          "healthy": false,
+          "reason": "NO_FORECAST_READY_SEASON",
+          "scope": null,
+          "configured": false,
+          "readiness": null
+        },
+        {
+          "leagueId": "48",
+          "healthy": false,
+          "reason": "NO_FORECAST_READY_SEASON",
+          "scope": null,
+          "configured": false,
+          "readiness": null
+        },
+        {
+          "leagueId": "42",
+          "healthy": false,
+          "reason": "NO_FORECAST_READY_SEASON",
+          "scope": null,
+          "configured": false,
+          "readiness": null
+        },
+        {
+          "leagueId": "73",
+          "healthy": false,
+          "reason": "NO_FORECAST_READY_SEASON",
+          "scope": null,
+          "configured": false,
+          "readiness": null
+        }
+      ]
+    }
+  },
+  "fpl": {
+    "status": 200,
+    "body": {
+      "status": "ok",
+      "provider": "FPL",
+      "leagueId": "47",
+      "season": "2026/2027",
+      "healthy": true,
+      "fresh": true,
+      "complete": true,
+      "minimumMappedPercent": 99,
+      "maxSnapshotAgeMinutes": 735,
+      "contestId": "cmsraor0d0002f8sym7tlpdws",
+      "sourceUrl": "https://fantasy.premierleague.com/api/bootstrap-static/",
+      "scoreStatus": "READY",
+      "lastSyncedAt": "2026-10-10T12:41:07.262Z",
+      "snapshot": {
+        "snapshotKey": "2026-10-10-1201",
+        "fetchedAt": "2026-10-10T12:41:07.872Z",
+        "ageMinutes": 7.503533333333333,
+        "payloadHash": "7a82550d252088cbb14f89fcdf2496777358775a5a3a22a23777570addabea2f"
+      },
+      "counts": {
+        "prices": 667,
+        "mappedPlayers": 667,
+        "mappedPercent": 100,
+        "matchedEntities": 687,
+        "unmatchedEntities": 0,
+        "latestOfficialGameweek": 5,
+        "officialScoreRows": 667,
+        "mappedOfficialScoreRows": 667,
+        "officialScoreMappedPercent": 100
+      }
+    }
+  }
+}

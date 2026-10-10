@@ -6,15 +6,6 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
-| [WI-067](work/WI-067-auth-correctness.md) | Atomic sign-in limits and one-time bootstrap (F04, F06, F07) | FEAT-009-session-authentication | @tsyzhman | 2026-10-10 | — |
-| [WI-068](work/WI-068-fpl-mapping-reconciliation.md) | Reconcile official FPL scores after mapping changes (F03) | FEAT-001-global-ranking-strategy | @tsyzhman | 2026-10-10 | — |
-| [WI-069](work/WI-069-sports-ownership-idempotency.md) | Publish one complete Sports ownership snapshot (F14) | FEAT-006-sports-popularity | @tsyzhman | 2026-10-10 | — |
-| [WI-070](work/WI-070-deadline-planning-writes.md) | Stop unchanged deadline campaign writes (F09) | INFRA-005-deadline-pipeline | @tsyzhman | 2026-10-10 | — |
-| [WI-071](work/WI-071-khl-ingestion-retention.md) | Bound KHL writes and repair archive identity (F10, F11, F13) | INFRA-001-khl-data-ingestion | @tsyzhman | 2026-10-10 | — |
-| [WI-072](work/WI-072-production-runtime.md) | Release a reproducible bounded production runtime (F01, F05, F08, F15, F16, F17, F18, F24) | INFRA-006-continuous-deployment | @tsyzhman | 2026-10-10 | — |
-| [WI-073](work/WI-073-source-freshness.md) | Align source scopes, quality checks and visible freshness (F12, F22) | FEAT-001-global-ranking-strategy | @tsyzhman | 2026-10-10 | — |
-| [WI-074](work/WI-074-franchise-computation.md) | Bound franchise computation outside the web event loop (F19) | FEAT-005-franchise-analytics | @tsyzhman | 2026-10-10 | — |
-| [WI-075](work/WI-075-planner-accessibility.md) | Preserve planner behavior with mobile analytics and accessible modules (F20, F21, F23) | FEAT-001-global-ranking-strategy | @tsyzhman | 2026-10-10 | — |
 | [WI-060](work/WI-060-continuous-production-deployment.md) | Continuous production deployment | INFRA-006 | @tsyzhman | 2026-10-09 | — |
 | [WI-059](work/WI-059-four-league-club-limits.md) | Preserve two club players in four Sports.ru leagues | FEAT-001 | @tsyzhman | 2026-10-09 | — |
 | [WI-056](work/WI-056-compact-deadline-findings.md) | Compact Telegram deadline findings | FEAT-007, INFRA-005 | @tsyzhman | 2026-10-09 | — |
@@ -36,6 +27,15 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-067](work/archive/2026/WI-067-auth-correctness.md) | Atomic sign-in limits and one-time bootstrap | @tsyzhman | 2026-10-10 |
+| [WI-068](work/archive/2026/WI-068-fpl-mapping-reconciliation.md) | Reconcile official FPL scores after mapping changes | @tsyzhman | 2026-10-10 |
+| [WI-069](work/archive/2026/WI-069-sports-ownership-idempotency.md) | Publish one complete Sports ownership snapshot | @tsyzhman | 2026-10-10 |
+| [WI-070](work/archive/2026/WI-070-deadline-planning-writes.md) | Stop unchanged deadline campaign writes | @tsyzhman | 2026-10-10 |
+| [WI-071](work/archive/2026/WI-071-khl-ingestion-retention.md) | Bound KHL writes and repair archive identity | @tsyzhman | 2026-10-10 |
+| [WI-072](work/archive/2026/WI-072-production-runtime.md) | Release a reproducible bounded production runtime | @tsyzhman | 2026-10-10 |
+| [WI-073](work/archive/2026/WI-073-source-freshness.md) | Align source scopes, quality checks and visible freshness | @tsyzhman | 2026-10-10 |
+| [WI-074](work/archive/2026/WI-074-franchise-computation.md) | Bound franchise computation outside the web event loop | @tsyzhman | 2026-10-10 |
+| [WI-075](work/archive/2026/WI-075-planner-accessibility.md) | Preserve planner behavior with mobile analytics and accessible modules | @tsyzhman | 2026-10-10 |
 | [WI-066](work/archive/2026/WI-066-production-project-audit.md) | Audit production deployment and project quality | @tsyzhman | 2026-10-10 |
 | [WI-064](work/archive/2026/WI-064-sports-placeholder-telegram-release.md) | Release readable Sports.ru placeholders in Telegram | @tsyzhman | 2026-10-10 |
 | [WI-063](work/archive/2026/WI-063-all-league-player-pool-audit.md) | Audit and repair all current football player pools | @tsyzhman | 2026-10-09 |

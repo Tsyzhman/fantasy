@@ -1,0 +1,31 @@
+{
+  "touch": true,
+  "overflow": 0,
+  "selectedColumns": [
+    "FP",
+    "FP/price",
+    "5R FP",
+    "FFO",
+    "FFO/price",
+    "5R FFO",
+    "Alt",
+    "Alt/price",
+    "Alt 5R",
+    "Fixtures",
+    "RR %"
+  ],
+  "openDetails": [
+    {
+      "summary": "Analytics · Data quality 76%",
+      "text": "Analytics · Data quality 76%\nRR %\n21%\n\nRR — next-match rotation risk. Baseline, not a calibrated probability.\nRR = 0.15 R50 + 0.20 R20 + 0.25 R10 + 0.25 R5 + 0.15 Rrest\nR50: 5/44 = 11.4%\nR20: 4/20 = 20.0%\nR10: 4/10 = 40.0%\nR5: 1/5 = 20.0%\nRest days: 23; Rrest: 0.\nIncomplete windows use the actual known history.\nAbsences and unknown roles do not count as bench. History is limited to loaded lineups.\n\nFP\n5.5\nFP/price\n0.524\n5R FP\n27.7\nFFO/price\n0.499\n5R FFO\n24.01\nAlt\n4.9\nAlt/price\n0.467\nAlt 5R\n24.7\nFixtures\nA Lokomotiv Moscow H Baltika A Rodina H C"
+    },
+    {
+      "summary": "RR %\n21%",
+      "text": "RR %\n21%\n\nRR — next-match rotation risk. Baseline, not a calibrated probability.\nRR = 0.15 R50 + 0.20 R20 + 0.25 R10 + 0.25 R5 + 0.15 Rrest\nR50: 5/44 = 11.4%\nR20: 4/20 = 20.0%\nR10: 4/10 = 40.0%\nR5: 1/5 = 20.0%\nRest days: 23; Rrest: 0.\nIncomplete windows use the actual known history.\nAbsences and unknown roles do not count as bench. History is limited to loaded lineups."
+    },
+    {
+      "summary": "FFO\n5.24",
+      "text": "FFO\n5.24\n\nFFO: 5.24 FP."
+    }
+  ]
+}

@@ -1,0 +1,12 @@
+{
+  "before": {
+    "independentProductionBundleClients": 2,
+    "queryListeners": 2
+  },
+  "after": {
+    "independentProductionBundleClients": 1,
+    "queryListeners": 1
+  },
+  "tests": "src/lib/db-bundles.test.ts; source transpiled into two independent module instances in a shared production process",
+  "configuredPoolBudget": "one client per process; DATABASE_URL connection_limit unchanged"
+}
