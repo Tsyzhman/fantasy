@@ -115,4 +115,6 @@ jobs:
 
       # @spec spec://common/INFRA-006-continuous-deployment#acceptance
       - name: Verify continuous deployment and rollback
-        run: python3 scripts/continuous-deployment.test.py
+        run: |
+          python3 scripts/continuous-deployment.test.py
+          python3 scripts/resolve-ci-image-identities.test.py

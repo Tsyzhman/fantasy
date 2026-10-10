@@ -328,6 +328,7 @@ for required_file in \
   scripts/production-web-routing.py \
   scripts/check-online-migrations.py \
   scripts/configure-production-postgres.py \
+  scripts/resolve-ci-image-identities.py \
   src/server/web-scheduler-activation.ts \
   scripts/fpl-vpn-relay.mjs \
   scripts/prune-production-artifacts.sh \
@@ -457,6 +458,13 @@ probe_public_release "$old_commit"
 
 [[ "$(sha256sum "$images_archive" | awk '{print $1}')" == "$images_sha" ]] || { echo "CI image archive checksum mismatch." >&2; exit 1; }
 docker load --input "$images_archive" >/dev/null
+printf '%s\n' "$runtime_image_id" > "$target/.release-ci-runtime-image-id"
+printf '%s\n' "$setup_image_id" > "$target/.release-ci-setup-image-id"
+resolved_image_ids="$(python3 "$target/scripts/resolve-ci-image-identities.py" "$images_archive" "$commit" "$runtime_image_id" "$setup_image_id")"
+mapfile -t loaded_image_ids <<< "$resolved_image_ids"
+[[ ${#loaded_image_ids[@]} == 2 ]] || { echo "Expected exactly two verified loaded identities." >&2; exit 1; }
+runtime_image_id="${loaded_image_ids[0]}"
+setup_image_id="${loaded_image_ids[1]}"
 docker image inspect "$runtime_image_id" >/dev/null
 docker image inspect "$setup_image_id" >/dev/null
 docker tag "$runtime_image_id" "$image"
