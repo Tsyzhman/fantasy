@@ -731,7 +731,7 @@ test("player-pool controls use two desktop rows and the search targets only play
   assert.doesNotMatch(squadPlannerSource, /`\$\{player\.name\} \$\{player\.teamName\}/);
   assert.match(squadPlannerSource, /grid-cols-2 gap-2 lg:grid-cols-5/);
   assert.match(squadPlannerSource, /en="Fits" ru="Проходит"/);
-  assert.match(squadPlannerSource, /<details className="relative shrink-0">[\s\S]*?<I18nText en="Columns" ru="Столбцы"/);
+  assert.match(squadPlannerSource, /<details className="relative shrink-0(?: [^"]*)?"[\s\S]*?<I18nText en="Columns" ru="Столбцы"/);
   assert.match(squadPlannerSource, /compactViewport === false \? <div className="col-span-full min-w-0 max-w-full/);
 });
 
