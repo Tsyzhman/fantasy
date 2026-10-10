@@ -1,3 +1,4 @@
+/** @spec spec://common/INFRA-006-continuous-deployment#runtime */
 import { PrismaClient } from "@prisma/client";
 
 import { hasDatabaseUrl, isDatabaseConfigured } from "@/lib/database-url";
@@ -17,8 +18,7 @@ export const prisma =
   globalForPrisma.prisma ??
   createPrismaClient();
 
-if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
-}
+// Production instrumentation and route bundles must share the same pool too.
+globalForPrisma.prisma = prisma;
 
 export { hasDatabaseUrl, isDatabaseConfigured };

@@ -4,6 +4,7 @@
 
 - Share bounded SQL diagnostics and the single sampling timer across independent server bundle copies, so web requests appear in process reports.
 - Enforce the planner draft's 64 KiB quota in encoded bytes, including Unicode content.
+- Reuse one Prisma client and query listener per production process across independent bundles, preserving the configured connection budget.
 
 ## 0.3.136 - 2026-10-10
 
