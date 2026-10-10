@@ -327,6 +327,7 @@ for required_file in \
   scripts/production-rollout.sh \
   scripts/production-web-routing.py \
   scripts/check-online-migrations.py \
+  scripts/configure-production-postgres.py \
   src/server/web-scheduler-activation.ts \
   scripts/fpl-vpn-relay.mjs \
   scripts/prune-production-artifacts.sh \
@@ -706,6 +707,10 @@ activate_web_schedulers() {
   echo "WEB_SCHEDULERS_ACTIVATED=$commit"
 }
 
+# The operator identity is separate from the runtime. Reload diagnostics and
+# apply the measured database budget online while both web versions are healthy.
+python3 "$target/scripts/configure-production-postgres.py"
+
 promote_running_candidate
 
 link_tmp="/var/www/.fantasy-scout-current-$release"
@@ -718,8 +723,16 @@ drain_previous_runtime
 # prevent overlapping full source refreshes. Forecast/odds cadence stays in worker.
 sudo install -m 0644 "$target/ops/fantasy-khl-statistics.service" /etc/systemd/system/fantasy-khl-statistics.service
 sudo install -m 0644 "$target/ops/fantasy-khl-statistics.timer" /etc/systemd/system/fantasy-khl-statistics.timer
+sudo install -m 0755 "$target/ops/monitoring/analyze_caddy_access_log.py" /usr/local/lib/fantasy-scout/analyze-caddy-access-log.py
+sudo install -m 0755 "$target/ops/monitoring/run-caddy-access-audits.sh" /usr/local/lib/fantasy-scout/run-caddy-access-audits.sh
+sudo install -m 0644 "$target/ops/systemd/fantasy-access-audit.service" /etc/systemd/system/fantasy-access-audit.service
+sudo install -m 0644 "$target/ops/systemd/fantasy-access-audit.timer" /etc/systemd/system/fantasy-access-audit.timer
 sudo systemctl daemon-reload
 sudo systemctl enable --now fantasy-khl-statistics.timer
+sudo systemctl enable --now fantasy-access-audit.timer
+if ! sudo systemctl start fantasy-access-audit.service; then
+  echo "ACCESS_AUDIT_WARNING: inspect the truthful rolling SLO snapshot; release remains healthy." >&2
+fi
 
 previous_release="$(basename "$(docker container inspect "$web_rollback" --format '{{.Config.Image}}')")"
 image_id="$(docker image inspect "$image" --format '{{.Id}}')"
