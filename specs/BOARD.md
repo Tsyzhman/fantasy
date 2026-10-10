@@ -27,6 +27,7 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-064](work/archive/2026/WI-064-sports-placeholder-telegram-release.md) | Release readable Sports.ru placeholders in Telegram | @tsyzhman | 2026-10-10 |
 | [WI-063](work/archive/2026/WI-063-all-league-player-pool-audit.md) | Audit and repair all current football player pools | @tsyzhman | 2026-10-09 |
 | [WI-061](work/archive/2026/WI-061-alanzinho-portugal-mapping.md) | Restore Alanzinho in Portugal | @tsyzhman | 2026-10-09 |
 | [WI-058](work/archive/2026/WI-058-sorareinside-intake.md) | Repair rejected SorareInside XI ingestion | @tsyzhman | 2026-10-09 |
