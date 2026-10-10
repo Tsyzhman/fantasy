@@ -3,6 +3,7 @@
 ## 0.3.137 - 2026-10-10
 
 - Share bounded SQL diagnostics and the single sampling timer across independent server bundle copies, so web requests appear in process reports.
+- Enforce the planner draft's 64 KiB quota in encoded bytes, including Unicode content.
 
 ## 0.3.136 - 2026-10-10
 

@@ -3,7 +3,7 @@ import type { FantasySquadRoundPlan } from "@/machete/squad_logic";
 export type PlannerDraft = { version: 1; updatedAt: number; baseline: string; roundPlans: FantasySquadRoundPlan[]; horizon: number; activeRoundOffset: number; transferBaselinePlayerIds: string[]; openingFreeTransfers: number | null };
 export const draftPrefix = "fantasy-planner-draft:";
 export function parsePlannerDraft(raw: string | null, baseline: string, now = Date.now()): PlannerDraft | null {
-  if (!raw || raw.length > 65536) return null;
+  if (!raw || raw.length > 65536 || new TextEncoder().encode(raw).byteLength > 65536) return null;
   try {
     const value = JSON.parse(raw) as PlannerDraft;
     if (value.version !== 1 || value.baseline !== baseline || !Number.isFinite(value.updatedAt) || value.updatedAt > now || now - value.updatedAt > 86400000
@@ -22,7 +22,7 @@ export function parsePlannerDraft(raw: string | null, baseline: string, now = Da
 }
 export function writePlannerDraft(storage: Storage, key: string, value: PlannerDraft | null) {
   if (!value) { storage.removeItem(key); return; }
-  const raw = JSON.stringify(value); if (raw.length > 65536) return;
+  const raw = JSON.stringify(value); if (raw.length > 65536 || new TextEncoder().encode(raw).byteLength > 65536) return;
   const keys = Array.from({ length: storage.length }, (_, index) => storage.key(index)).filter((key): key is string => Boolean(key?.startsWith(draftPrefix)));
   for (const existing of keys) {
     try { const draft = JSON.parse(storage.getItem(existing)!); if (Date.now() - draft.updatedAt > 86400000) storage.removeItem(existing); } catch { storage.removeItem(existing); }

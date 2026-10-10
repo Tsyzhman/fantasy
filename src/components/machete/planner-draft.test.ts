@@ -30,6 +30,15 @@ test("draft retention keeps at most eight entries without touching other session
   assert.equal(storage.length, 9); assert.equal(storage.getItem("unrelated"), "preserved");
   assert.equal(storage.getItem(draftPrefix + "0"), null);
 });
+test("draft quota uses encoded bytes for Unicode as well as ASCII", () => {
+  const storage = new MemoryStorage(), value = { ...draft(), baseline: "Ж".repeat(33000) };
+  const raw = JSON.stringify(value);
+  assert.ok(raw.length < 65536);
+  assert.ok(new TextEncoder().encode(raw).byteLength > 65536);
+  assert.equal(parsePlannerDraft(raw, value.baseline) === null, true);
+  writePlannerDraft(storage, draftPrefix + "unicode", value);
+  assert.equal(storage.length, 0);
+});
 test("keyboard resize honors bounds and accelerated steps without handling unrelated keys", () => {
   assert.equal(keyboardColumnWidth(72, "ArrowRight"), 80);
   assert.equal(keyboardColumnWidth(72, "ArrowLeft", true), 40);

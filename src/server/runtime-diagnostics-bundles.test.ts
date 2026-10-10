@@ -18,12 +18,12 @@ test("independent server bundle copies share SQL summaries and start one process
     setInterval: () => { timers++; return { unref() {} }; }
   });
   const load = () => {
-    const module = { exports: {} };
+    const loadedModule = { exports: {} };
     const loadDependency = (id: string) => id === "node:perf_hooks"
       ? { monitorEventLoopDelay: () => { monitors++; return { enable() {} }; } }
       : require(id);
-    runInContext(`(function(exports, require, module) { ${compiled}\n })`, context)(module.exports, loadDependency, module);
-    return module.exports as typeof Diagnostics;
+    runInContext(`(function(exports, require, module) { ${compiled}\n })`, context)(loadedModule.exports, loadDependency, loadedModule);
+    return loadedModule.exports as typeof Diagnostics;
   };
   const route = load(), instrumentation = load();
   route.recordSqlQuery("SELECT 'private-query-fixture'", 7);
