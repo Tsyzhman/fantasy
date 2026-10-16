@@ -126,12 +126,16 @@ retain their behavior.
 
 ### Provider transfer rules {#transfer-rules}
 
-Every squad-planning strategy uses three Sports.ru transfers per round. Unused
-transfers do not carry forward. Round counters, suggestions, saved-plan rollover
-and legacy opening allowances use this cap. Reading an older Sports.ru pool
+Every squad-planning strategy uses three Sports.ru transfers per round, except
+Championship 2026/2027 provider tour `2391` (11th tour, deadline
+2026-10-16T19:00:00Z), which allows six. Match this exception by provider tour
+identity and deadline, independently of the local ordinal. Other tours retain
+three; unused exceptional transfers do not carry forward. Round counters,
+suggestions, save validation, saved-plan rollover and legacy opening allowances
+use the allowance of the corresponding tour. Reading an older Sports.ru pool
 snapshot applies the current transfer rule immediately without rebuilding its
 player data or mutating its stored metadata. Russian and English descriptions
-state three transfers per round without claiming accumulation.
+state the active tour allowance without claiming accumulation.
 
 FPL retains its separate provider rules: one new free transfer per round,
 unused free transfers bank up to five, and extra transfers cost four points.
@@ -184,6 +188,8 @@ Points of responsibility with `@spec`: `src/server/global-strategy-providers.ts`
 <a name="changelog"></a>
 
 ## 12. Changelog {#changelog}
+
+- 2026-10-16: WI-077 — allow six transfers only in Championship provider tour 2391, including cached readers, UI and save validation; retain three in all other Sports.ru tours.
 
 - 2026-10-09: WI-063 — preserve verified birth dates and explicitly reviewed exclusions, require unique fresh name/date evidence for catalog identities, resolve reviewed European club aliases, search provider and canonical names, reconcile FPL position codes and include verified FPL price-backed virtual rosters without shared starter mutations.
 - 2026-10-09: WI-059 — preserve the user's corrected two-player club cap in Championship, Netherlands, Portugal and Turkey, with current contest rules over stale snapshot metadata.

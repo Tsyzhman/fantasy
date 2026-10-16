@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.139 - 2026-10-16
+
+- Allow six transfers only for Sports.ru Championship tour 2391 (16 October), including cached rules, suggestions, UI counters and save validation. Other tours retain three without banking.
+
 ## 0.3.138 - 2026-10-10
 
 - Adopt Midnight Scout / Pressbox with semantic green accents, opaque surfaces, compact overview and restrained navigation.

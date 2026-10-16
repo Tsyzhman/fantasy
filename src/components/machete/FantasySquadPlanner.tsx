@@ -2112,7 +2112,7 @@ export function FantasySquadPlanner({ userId, leagueId, season, provider, rules,
           {/* @spec spec://modules/machete/FEAT-001-global-ranking-strategy#transfer-rules */}
           {usesUnpricedTransfers ? (
             <p className="mt-1.5 text-[10px] text-slate-500">
-              <I18nText en="Sports.ru allows 3 transfers per round." ru="В Sports.ru — 3 замены за тур." />
+              <I18nText en={`Sports.ru allows ${transferLimit} transfers in this round.`} ru={`В Sports.ru в этом туре доступно замен: ${transferLimit}.`} />
             </p>
           ) : (
             <p className="mt-1.5 text-[10px] text-slate-500">
@@ -2318,10 +2318,10 @@ export function FantasySquadPlanner({ userId, leagueId, season, provider, rules,
                 title={localizedText(
                   language,
                   usesUnpricedTransfers
-                    ? "Used / available this round. Sports.ru allows 3 transfers per round."
+                    ? `Used / available this round. Sports.ru allows ${transferLimit} transfers in this round.`
                     : "Used / available this round. FPL banks unused free transfers up to 5.",
                   usesUnpricedTransfers
-                    ? "Использовано / доступно в этом туре. В Sports.ru 3 замены за тур."
+                    ? `Использовано / доступно в этом туре. В Sports.ru доступно замен: ${transferLimit}.`
                     : "Использовано / доступно в этом туре. В FPL неиспользованные бесплатные трансферы копятся до 5."
                 )}
               />

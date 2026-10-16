@@ -954,7 +954,7 @@ export async function loadFantasySquadPlannerData(
   );
   const rosterPlayerCount = rosterRows.length;
   const savedSquad = (squadId ? savedSquads.find((squad) => squad.id === squadId) : null) ?? savedSquads[0] ?? null;
-  const rules = fantasyRulesForLeague(league, scopedContest ?? null, provider);
+  const rules = fantasyRulesForLeague(league, scopedContest ?? null, provider, roundsAndFixtures.rounds);
   const prices = priceLookup(priceRows, priceMaps);
   const foontasyByPlayerId = new Map(foontasyRows.flatMap((row) => row.playerId ? [[String(row.playerId), row] as const] : []));
   const modelForecastByPlayerHorizon = new Map(modelForecastRows.map((row) => [`${row.playerId}:${row.horizon}`, row] as const));
@@ -1504,7 +1504,7 @@ export async function loadSportsRuFantasySquadPlannerShellData(
       : Promise.resolve({ playerIds: [], priorityPlayerIds: [], priorityPlayers: 0 })
   ]);
 
-  const rules = fantasyRulesForLeague(league, contest, "SPORTS_RU");
+  const rules = fantasyRulesForLeague(league, contest, "SPORTS_RU", roundsAndFixtures.rounds);
   const placeholderPlayers = fantasyProviderPlaceholdersFromFilters(savedSquad?.filters, "SPORTS_RU").map((placeholder) =>
     fantasyProviderPlaceholderPlannerPlayer(placeholder, league.displayName, roundsAndFixtures.rounds.length || 5)
   );
@@ -1738,7 +1738,7 @@ function fantasyPlayerPoolSnapshotShellMetadata(value: unknown, currentClubLimit
     rules: sportsRuTransferRules({
       ...metadata.rules,
       maxPlayersPerTeam: currentClubLimit ?? metadata.rules.maxPlayersPerTeam
-    })
+    }, metadata.rounds)
   };
 }
 
@@ -2569,6 +2569,7 @@ export function fantasySquadRoundShift(storedRoundIds: string[], currentRoundIds
   return currentRoundNumber - storedRoundNumber;
 }
 
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#transfer-rules */
 export function rolloverFantasySquadRoundPlans(input: {
   plans: FantasySquadRoundPlan[];
   shift: number;
@@ -2597,6 +2598,7 @@ export function rolloverFantasySquadRoundPlans(input: {
   let availableTransfers = budget.perRound;
 
   for (let roundOffset = 1; roundOffset < rolled.length; roundOffset += 1) {
+    availableTransfers = budget.byRound?.[roundOffset] ?? availableTransfers;
     const sourceIndex = roundOffset + shift;
     if (sourceIndex >= plans.length) {
       rolled[roundOffset].selections = rolled[roundOffset - 1].selections.map((selection) => ({ ...selection }));
@@ -2686,7 +2688,8 @@ export function fantasyRulesForLeague(
     maxPlayersPerTeam: number;
     name: string;
   } | null,
-  provider = "SPORTS_RU"
+  provider = "SPORTS_RU",
+  rounds: FantasyRoundProjection[] = []
 ): FantasySquadRules {
   if (provider === FPL_PROVIDER) {
     return {
@@ -2713,7 +2716,7 @@ export function fantasyRulesForLeague(
     squadSize: contest?.squadSize ?? defaultFantasySquadRules.squadSize,
     maxPlayersPerTeam: contest?.maxPlayersPerTeam ?? configuredMaxPlayers,
     sourceLabel: contest ? `Sports.ru: ${contest.name}` : "Configured Sports.ru league rules"
-  });
+  }, league.leagueId === 48n && league.season === "2026/2027" ? rounds : []);
 }
 
 export function friendAlternativeScoringModel(
