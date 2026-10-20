@@ -2716,7 +2716,7 @@ export function fantasyRulesForLeague(
     squadSize: contest?.squadSize ?? defaultFantasySquadRules.squadSize,
     maxPlayersPerTeam: contest?.maxPlayersPerTeam ?? configuredMaxPlayers,
     sourceLabel: contest ? `Sports.ru: ${contest.name}` : "Configured Sports.ru league rules"
-  }, league.leagueId === 48n && league.season === "2026/2027" ? rounds : []);
+  }, (league.leagueId === 48n || league.leagueId === 42n) && league.season === "2026/2027" ? rounds : []);
 }
 
 export function friendAlternativeScoringModel(

@@ -480,10 +480,12 @@ export function sportsRuTransferRules(
   rounds: ReadonlyArray<Pick<FantasyRoundProjection, "id" | "startsAt">> = []
 ): FantasySquadRules {
   // Sports.ru tour IDs are globally unique. The local ordinal can differ when a
-  // postponed/missing tour is absent, so it must not identify this exception.
+  // postponed/missing tour is absent, so it must not identify these exceptions.
   const exceptionalRound = rounds.findIndex((round) =>
-    /^sports-ru:tour:\d+:2391$/.test(round.id) &&
-    Date.parse(round.startsAt ?? "") === Date.UTC(2026, 9, 16, 19)
+    (/^sports-ru:tour:\d+:2391$/.test(round.id) &&
+      Date.parse(round.startsAt ?? "") === Date.UTC(2026, 9, 16, 19)) ||
+    (/^sports-ru:tour:\d+:2755$/.test(round.id) &&
+      Date.parse(round.startsAt ?? "") === Date.UTC(2026, 9, 20, 16, 45))
   );
   return {
     ...rules,

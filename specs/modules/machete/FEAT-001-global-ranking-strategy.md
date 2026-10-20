@@ -128,8 +128,9 @@ retain their behavior.
 
 Every squad-planning strategy uses three Sports.ru transfers per round, except
 Championship 2026/2027 provider tour `2391` (11th tour, deadline
-2026-10-16T19:00:00Z), which allows six. Match this exception by provider tour
-identity and deadline, independently of the local ordinal. Other tours retain
+2026-10-16T19:00:00Z) and Champions League 2026/2027 provider tour `2755`
+(third tour, deadline 2026-10-20T16:45:00Z), which each allow six. Match these
+exceptions by provider tour identity and deadline, independently of the local ordinal. Other tours retain
 three; unused exceptional transfers do not carry forward. Round counters,
 suggestions, save validation, saved-plan rollover and legacy opening allowances
 use the allowance of the corresponding tour. Reading an older Sports.ru pool
@@ -189,6 +190,7 @@ Points of responsibility with `@spec`: `src/server/global-strategy-providers.ts`
 
 ## 12. Changelog {#changelog}
 
+- 2026-10-20: WI-078 — allow six transfers only in Champions League provider tour 2755; subsequent tours retain three without banking.
 - 2026-10-16: WI-077 — allow six transfers only in Championship provider tour 2391, including cached readers, UI and save validation; retain three in all other Sports.ru tours.
 
 - 2026-10-09: WI-063 — preserve verified birth dates and explicitly reviewed exclusions, require unique fresh name/date evidence for catalog identities, resolve reviewed European club aliases, search provider and canonical names, reconcile FPL position codes and include verified FPL price-backed virtual rosters without shared starter mutations.

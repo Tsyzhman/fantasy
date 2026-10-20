@@ -1521,14 +1521,20 @@ test("rollover retains a six-transfer exceptional future plan but rejects four i
   assert.equal(rolled[2].linkedToPrevious, true);
 });
 
-/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#transfer-rules */
-test("live and frozen cached Championship pools apply the exact tour exception without rebuilding metadata", async () => {
-  const league = { leagueId: 48n, season: "2026/2027", name: "Championship", displayName: "Championship",
-    country: "England", providerLeagueId: "48", isCurrent: true, updatedAt: new Date("2026-10-16T00:00:00Z") };
-  const rounds = [
+for (const { leagueId, name, rounds } of [
+  { leagueId: 48n, name: "Championship", rounds: [
     { id: "sports-ru:tour:10:2391", label: "11 тур", startsAt: "2026-10-16T19:00:00.000Z", fixtureCount: 13 },
     { id: "sports-ru:tour:11:2392", label: "12 тур", startsAt: "2026-10-23T19:00:00.000Z", fixtureCount: 12 }
-  ];
+  ] },
+  { leagueId: 42n, name: "Champions League", rounds: [
+    { id: "sports-ru:tour:2:2755", label: "3 тур", startsAt: "2026-10-20T16:45:00.000Z", fixtureCount: 18 },
+    { id: "sports-ru:tour:3:2756", label: "4 тур", startsAt: "2026-11-03T17:45:00.000Z", fixtureCount: 18 }
+  ] }
+]) {
+/** @spec spec://modules/machete/FEAT-001-global-ranking-strategy#transfer-rules */
+test(`live and frozen cached ${name} pools apply the exact tour exception without rebuilding metadata`, async () => {
+  const league = { leagueId, season: "2026/2027", name, displayName: name,
+    country: null, providerLeagueId: String(leagueId), isCurrent: true, updatedAt: new Date("2026-10-20T00:00:00Z") };
   const storedRules = Object.freeze({ ...defaultFantasySquadRules, transferLimitPerRound: 3, maxBankedTransfers: 3 });
   const metadata = Object.freeze({ version: 1, readiness: {}, rules: storedRules, rounds,
     bookmakerFavorites: [], historySeasonOptions: ["2026/2027"], priceStatus: {}, dataFreshness: {} });
@@ -1550,6 +1556,7 @@ test("live and frozen cached Championship pools apply the exact tour exception w
   }
   assert.deepEqual(fantasyTransferBudget(fantasyRulesForLeague(league, null, "FPL", rounds)), { perRound: 1, maxBanked: 5, paidPointCost: 4 });
 });
+}
 
 test("round rollover resolves exact stored rounds, numeric gaps, and legacy filters safely", () => {
   assert.equal(fantasySquadRoundShift(["round:12", "round:13", "round:14"], ["round:13", "round:14"]), 1);
