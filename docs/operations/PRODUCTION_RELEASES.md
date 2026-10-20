@@ -106,3 +106,11 @@ The 0.2.x release line prevents the same failure mode in four ways:
 - New Telegram reports display Sports.ru import placeholders as `затычка`, preserving their identities, lineup roles and mapping warnings.
 - [Candidate Check](https://github.com/Tsyzhman/fantasy/actions/runs/38033286179) passed 1,301 tests; [Deploy Production](https://github.com/Tsyzhman/fantasy/actions/runs/38033292827) passed continuous promotion and exact revision verification. Public health, web/worker image labels and the manifest agree.
 - 82 availability observations recorded no errors; the prior static asset remains accessible. One healthy web/worker, zero restarts/OOM, zero delivery/report/job duplicate keys, no running canary and two retained releases/images. Reclaimable build cache remains 939.6 MB after canonical pruning; host memory available is 6,231 MiB. Evidence: `specs/work/evidence/WI-064/verification.json`.
+
+## 0.3.140 — 2026-10-20
+
+- Release: `20261020T080801Z-v0.3.140-1f1ad3b`; runtime `1f1ad3bb1b8fb710d9abcdfd424847e88ddffff8`, tree `bc1cee3c084ef2146bf3cc4beecb8e2c70f8acb1`.
+- Champions League provider tour 2755 alone permits six transfers; subsequent tours retain three without banking. Existing cached metadata applies the exception on read.
+- The operator-supplied plain WireGuard profile restored the unavailable VPN prerequisite through the guarded adapter; FPL and Telegram read-only probes pass. Profile keys remain outside Git.
+- [Deploy Production](https://github.com/Tsyzhman/fantasy/actions/runs/39390875234) passed 1327 tests, five VPN-validator checks, lint, typecheck, Linux image builds, canaries and graceful promotion with no migrations. Public health, both images and manifests match; 289 health observations and the previous static asset returned HTTP 200.
+- Saved squads/player rows and the original pool metadata have unchanged checksums; sampled data/job duplicates are zero. One healthy web/worker, zero final restarts/OOM, two retained releases and no task archives/probe containers remain. Evidence: `specs/work/evidence/WI-078/verification.json`. Optional local build-cache removal was rejected by automatic approval policy; 430 MB remains in the isolated worktree.

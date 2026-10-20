@@ -1,0 +1,12 @@
+fantasy-scout-web|157MiB / 2GiB|15
+fantasy-scout-worker|1.06GiB / 4GiB|34
+fantasy-scout-postgres|910.1MiB / 2GiB|22
+sharovik-vpn|35.69MiB / 11.6GiB|33
+fantasy-scout-fpl-relay|31.93MiB / 128MiB|11
+               total        used        free      shared  buff/cache   available
+Mem:           11876        4723        3367         314        3785        6526
+Swap:              0           0           0
+fantasy-scout-worker|Up 4 minutes (healthy)
+fantasy-scout-web|Up 4 minutes (healthy)
+fantasy-scout-fpl-relay|Up 4 minutes
+fantasy-scout-postgres|Up 2 months (healthy)

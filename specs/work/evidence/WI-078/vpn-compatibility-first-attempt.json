@@ -1,0 +1,6 @@
+{
+  "source": "operator-supplied Nik_server.conf",
+  "compatibility": "WireGuard headers 1/2/3/4, obfuscation disabled",
+  "configSha256": "7b920c458d52c651feb59bbd03b4c6562a490375faba24996fe300b9cb729b5d",
+  "exitCode": 1
+}

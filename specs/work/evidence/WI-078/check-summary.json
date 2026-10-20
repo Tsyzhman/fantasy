@@ -1,0 +1,15 @@
+{
+  "version": "0.3.140",
+  "sourceCommit": "2be8e395dc1044dc99985750b2f89fad03618342",
+  "localCheck": "passed",
+  "testPass": 1325,
+  "testSkip": 2,
+  "testFail": 0,
+  "focusedPass": 193,
+  "lintErrors": 0,
+  "existingLintWarnings": 236,
+  "typecheck": "passed",
+  "productionBuild": "passed",
+  "workflow": "passed",
+  "deployRun": "https://github.com/Tsyzhman/fantasy/actions/runs/39387080230"
+}

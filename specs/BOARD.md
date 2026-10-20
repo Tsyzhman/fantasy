@@ -6,7 +6,6 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
-| [WI-078](work/WI-078-ucl-round-three-transfers.md) | Six transfers only in Champions League round three | FEAT-001 | @tsyzhman | 2026-10-20 | — |
 | [WI-060](work/WI-060-continuous-production-deployment.md) | Continuous production deployment | INFRA-006 | @tsyzhman | 2026-10-09 | — |
 | [WI-059](work/WI-059-four-league-club-limits.md) | Preserve two club players in four Sports.ru leagues | FEAT-001 | @tsyzhman | 2026-10-09 | — |
 | [WI-056](work/WI-056-compact-deadline-findings.md) | Compact Telegram deadline findings | FEAT-007, INFRA-005 | @tsyzhman | 2026-10-09 | — |
@@ -28,6 +27,7 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-078](work/archive/2026/WI-078-ucl-round-three-transfers.md) | Six transfers only in Champions League round three | @tsyzhman | 2026-10-20 |
 | [WI-077](work/archive/2026/WI-077-championship-round-transfer-limit.md) | Six transfers in Championship round eleven | @tsyzhman | 2026-10-16 |
 | [WI-076](work/archive/2026/WI-076-editorial-sport-design.md) | Adopt Midnight Scout and Pressbox | @tsyzhman | 2026-10-10 |
 | [WI-067](work/archive/2026/WI-067-auth-correctness.md) | Atomic sign-in limits and one-time bootstrap | @tsyzhman | 2026-10-10 |

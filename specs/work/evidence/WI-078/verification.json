@@ -1,0 +1,145 @@
+{
+  "verifiedAt": "2026-10-20T08:22:07.795Z",
+  "version": "0.3.140",
+  "commit": "1f1ad3bb1b8fb710d9abcdfd424847e88ddffff8",
+  "tree": "bc1cee3c084ef2146bf3cc4beecb8e2c70f8acb1",
+  "release": "20261020T080801Z-v0.3.140-1f1ad3b",
+  "image": "sha256:2e782bf6e5d33a51fe19943c947786185483f80400ed8eb3c427ad118f32846c",
+  "ci": {
+    "url": "https://github.com/Tsyzhman/fantasy/actions/runs/39390875234",
+    "conclusion": "success",
+    "tests": 1327,
+    "failures": 0,
+    "skips": 0,
+    "vpnValidationTests": 5,
+    "lintErrors": 0,
+    "existingLintWarnings": 236,
+    "typecheck": "passed",
+    "linuxBuild": "passed"
+  },
+  "local": {
+    "checkCommit": "2be8e395dc1044dc99985750b2f89fad03618342",
+    "testsPassed": 1325,
+    "platformSkips": 2,
+    "focusedTestsPassed": 193,
+    "vpnValidationTests": 5
+  },
+  "quota": {
+    "leagueId": 42,
+    "season": "2026/2027",
+    "providerTourId": "2755",
+    "label": "3 тур",
+    "deadline": "2026-10-20T16:45:00Z",
+    "before": 3,
+    "after": 6,
+    "followingRounds": [
+      3,
+      3,
+      3,
+      3,
+      3
+    ],
+    "banking": false,
+    "renderedPages": [
+      {
+        "leagueId": 42,
+        "status": 200,
+        "perRound": 3,
+        "byRound": [
+          6,
+          3,
+          3,
+          3,
+          3,
+          3
+        ]
+      },
+      {
+        "leagueId": 48,
+        "status": 200,
+        "perRound": 3,
+        "byRound": [
+          6,
+          3,
+          3,
+          3,
+          3,
+          3,
+          3,
+          3,
+          3,
+          3
+        ]
+      },
+      {
+        "leagueId": 47,
+        "status": 200,
+        "perRound": 3
+      }
+    ]
+  },
+  "data": {
+    "savedSquads": 148,
+    "savedSquadDigest": "0a789c738123b2ba51da38cf2306d89d",
+    "savedSquadsUnchanged": true,
+    "savedPlayerRows": 2207,
+    "savedPlayerDigest": "e95498ad8f64f1d8b4b98b6735f56e2e",
+    "savedPlayersUnchanged": true,
+    "cachedPoolId": "ebd2fd08-05b9-498c-ae1a-47c59f5b06d6",
+    "cachedMetadataUnchanged": true,
+    "cachedMetadataDigest": "9f0e668cb4bfda86c587eb36db162da3",
+    "duplicateSquadPlayers": 0,
+    "duplicateRunningJobs": 0,
+    "migrations": 0
+  },
+  "vpn": {
+    "source": "operator-supplied Nik_server.conf",
+    "compatibility": "plain WireGuard; original protocol fields",
+    "configSha256": "d1e4b0d9877b64c3e06c9000fd8256e6e1695ea4c8a425049754305d05a24f30",
+    "exitCode": 0,
+    "deploymentSecretUpdated": true,
+    "fpl": {
+      "status": 200,
+      "bytes": 1785108,
+      "ms": 559
+    },
+    "telegramReadOnly": {
+      "telegramProbe": "getMe-read-only",
+      "status": 200,
+      "ok": true,
+      "ms": 239
+    },
+    "profileLocallyExcludedFromGit": true
+  },
+  "rollout": {
+    "observations": 289,
+    "errors": 0,
+    "start": "2026-10-20T07:32:19.285Z",
+    "end": "2026-10-20T08:20:48.162Z",
+    "maxResponseMs": 303,
+    "oldStaticAsset": {
+      "oldStaticAsset": "/_next/static/chunks/4bd1b696-93bf506b236d6248.js?dpl=df9f214a0ded3849308ef94cbf997ce1f6938961",
+      "status": 200,
+      "bytes": 201055
+    },
+    "webCount": 1,
+    "workerCount": 1,
+    "rollbackReleasesRetained": 1,
+    "finalRestartCount": 0,
+    "finalOomKilled": false
+  },
+  "resources": {
+    "settled": "fantasy-scout-web|157MiB / 2GiB|15\nfantasy-scout-worker|1.06GiB / 4GiB|34\nfantasy-scout-postgres|910.1MiB / 2GiB|22\nsharovik-vpn|35.69MiB / 11.6GiB|33\nfantasy-scout-fpl-relay|31.93MiB / 128MiB|11\n               total        used        free      shared  buff/cache   available\nMem:           11876        4723        3367         314        3785        6526\nSwap:              0           0           0\nfantasy-scout-worker|Up 4 minutes (healthy)\nfantasy-scout-web|Up 4 minutes (healthy)\nfantasy-scout-fpl-relay|Up 4 minutes\nfantasy-scout-postgres|Up 2 months (healthy)",
+    "failedReleaseArchivesRemovedBytes": 875573474,
+    "taskServerArchivesRemaining": 0,
+    "taskProbeContainersRemaining": 0,
+    "observationHelperStopped": true,
+    "hostBuildCacheBytes": 0,
+    "localBuildCache": {
+      "path": "C:/Users/Nik/.codex/worktrees/ucl-round3/fantasy_export/.next",
+      "bytes": 429703368,
+      "retained": true,
+      "reason": "Automatic approval review rejected recursive deletion: blocked by policy"
+    }
+  }
+}

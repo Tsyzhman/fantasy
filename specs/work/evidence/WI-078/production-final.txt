@@ -1,0 +1,40 @@
+2026-10-20T08:20:05Z
+{"status":"ok","uptimeSeconds":149,"release":{"version":"0.3.140","commit":"1f1ad3bb1b8fb710d9abcdfd424847e88ddffff8"}}
+RELEASE_COMMIT=1f1ad3bb1b8fb710d9abcdfd424847e88ddffff8
+RELEASE_TREE=bc1cee3c084ef2146bf3cc4beecb8e2c70f8acb1
+RELEASE_VERSION=0.3.140
+/fantasy-scout-web|running|healthy|0|false
+/fantasy-scout-worker|running|healthy|0|false
+/fantasy-scout-postgres|running|healthy|0|false
+WEB_IMAGE=sha256:2e782bf6e5d33a51fe19943c947786185483f80400ed8eb3c427ad118f32846c|1f1ad3bb1b8fb710d9abcdfd424847e88ddffff8|0.3.140
+WORKER_IMAGE=sha256:2e782bf6e5d33a51fe19943c947786185483f80400ed8eb3c427ad118f32846c|1f1ad3bb1b8fb710d9abcdfd424847e88ddffff8|0.3.140
+fantasy-scout-web|157MiB / 2GiB|15
+fantasy-scout-worker|1.916GiB / 4GiB|32
+fantasy-scout-postgres|888.5MiB / 2GiB|22
+sharovik-vpn|35.64MiB / 11.6GiB|33
+fantasy-scout-fpl-relay|33.38MiB / 128MiB|11
+               total        used        free      shared  buff/cache   available
+Mem:           11876        5612        2543         313        3720        5637
+Swap:              0           0           0
+BEGIN
+{"savedSquads" : 148, "digest" : "0a789c738123b2ba51da38cf2306d89d"}
+{"squadPlayers" : 2207, "digest" : "e95498ad8f64f1d8b4b98b6735f56e2e"}
+{"duplicateSquadPlayers" : 0}
+{"duplicateRunningJobs" : 0}
+{"poolId" : "ebd2fd08-05b9-498c-ae1a-47c59f5b06d6", "metadataDigest" : "9f0e668cb4bfda86c587eb36db162da3", "transferRules" : null}
+COMMIT
+RUNNING_PROJECT_CONTAINERS
+fantasy-scout-worker|Up 2 minutes (healthy)
+fantasy-scout-web|Up 2 minutes (healthy)
+fantasy-scout-fpl-relay|Up 2 minutes
+fantasy-scout-postgres|Up 2 months (healthy)
+PROJECT_RELEASE_DIRECTORIES
+20261020T080801Z-v0.3.140-1f1ad3b
+20261016T162337Z-v0.3.139-df9f214
+TASK_TEMPORARY_ARCHIVES
+TASK_PROBE_CONTAINERS
+DOCKER_CACHE
+Images|58|23.7GB|7.979GB (33%)
+Containers|47|192.5MB|86.02kB (0%)
+Local Volumes|73|5.787GB|160.9MB (2%)
+Build Cache|0|0B|0B

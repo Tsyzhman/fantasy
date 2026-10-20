@@ -1,0 +1,15 @@
+2026-10-20T07:34:03Z
+fantasy-scout-worker|Up 3 days (healthy)
+fantasy-scout-web|Up 3 days (healthy)
+fantasy-scout-fpl-relay|Up 3 days
+fantasy-scout-postgres|Up 2 months (healthy)
+fantasy-scout-web|946.1MiB / 2GiB|15
+fantasy-scout-worker|1.312GiB / 4GiB|16
+fantasy-scout-postgres|1.506GiB / 2GiB|43
+               total        used        free      shared  buff/cache   available
+Mem:           11876        5685        2148         317        4041        5560
+Swap:              0           0           0
+Images|58|23.7GB|7.979GB (33%)
+Containers|47|192.6MB|106.5kB (0%)
+Local Volumes|73|5.761GB|160.9MB (2%)
+Build Cache|0|0B|0B

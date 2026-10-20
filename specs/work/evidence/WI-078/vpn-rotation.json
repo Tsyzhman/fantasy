@@ -1,0 +1,7 @@
+{
+  "source": "operator-supplied Nik_server.conf",
+  "compatibility": "plain WireGuard; original protocol fields",
+  "configSha256": "d1e4b0d9877b64c3e06c9000fd8256e6e1695ea4c8a425049754305d05a24f30",
+  "exitCode": 0,
+  "deploymentSecretUpdated": true
+}

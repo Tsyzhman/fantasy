@@ -1,0 +1,2 @@
+{"probe":"telegram-dns","addresses":[{"address":"149.154.166.110","family":4},{"address":"2001:67c:4e8:f004::9","family":6}]}
+{"probe":"telegram-connectivity","status":302,"bytes":145,"ms":263}

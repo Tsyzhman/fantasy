@@ -1,0 +1,5 @@
+/tmp/fantasy-scout-release-20261020T073422Z-v0.3.140-2be8e39.tar.gz: OK
+/tmp/fantasy-scout-images-20261020T073422Z-v0.3.140-2be8e39.tar.gz: OK
+/tmp/fantasy-scout-release-20261020T073422Z-v0.3.140-2be8e39.tar.gz|23530101 bytes
+/tmp/fantasy-scout-images-20261020T073422Z-v0.3.140-2be8e39.tar.gz|852043373 bytes
+FAILED_RELEASE_TEMPORARY_BYTES_REMOVED=875573474

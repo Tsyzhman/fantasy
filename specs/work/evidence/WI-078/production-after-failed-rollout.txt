@@ -1,0 +1,20 @@
+2026-10-20T07:54:06Z
+{"status":"ok","uptimeSeconds":313987,"release":{"version":"0.3.139","commit":"df9f214a0ded3849308ef94cbf997ce1f6938961"}}
+/fantasy-scout-web|running|healthy|0|false
+/fantasy-scout-worker|running|healthy|0|true
+/fantasy-scout-postgres|running|healthy|0|false
+fantasy-scout-web|946.5MiB / 2GiB|15
+fantasy-scout-worker|1.318GiB / 4GiB|16
+fantasy-scout-postgres|952.6MiB / 2GiB|37
+               total        used        free      shared  buff/cache   available
+Mem:           11876        5732        2176         317        3967        5514
+Swap:              0           0           0
+BEGIN
+{"savedSquads" : 148, "digest" : "0a789c738123b2ba51da38cf2306d89d"}
+{"squadPlayers" : 2207, "digest" : "e95498ad8f64f1d8b4b98b6735f56e2e"}
+{"duplicateSquadPlayers" : 0}
+{"duplicateRunningJobs" : 0}
+{"poolId" : "ebd2fd08-05b9-498c-ae1a-47c59f5b06d6", "metadataDigest" : "9f0e668cb4bfda86c587eb36db162da3", "transferRules" : null}
+COMMIT
+fantasy-scout-images-20261020T073422Z-v0.3.140-2be8e39.tar.gz|852043373 bytes
+fantasy-scout-release-20261020T073422Z-v0.3.140-2be8e39.tar.gz|23530101 bytes
