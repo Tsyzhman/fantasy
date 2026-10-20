@@ -3,6 +3,7 @@
 ## 0.3.140 - 2026-10-20
 
 - Allow six transfers only for Sports.ru Champions League tour 2755 (third tour, 20 October). Subsequent tours retain three without carrying unused transfers forward, including cached planner data.
+- Accept operator-supplied plain WireGuard profiles in the guarded production VPN adapter while preserving complete AmneziaWG validation, rejected executable hooks and the official FPL probe before switching.
 
 ## 0.3.139 - 2026-10-16
 

@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+# @spec spec://common/INFRA-006-continuous-deployment#runtime
 set -Eeuo pipefail
 
 PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
@@ -99,7 +100,10 @@ validate_config() {
     }
     END {
       if (interfaces != 1 || peers != 1) exit 20
-      split("PrivateKey Address Jc Jmin Jmax S1 S2 S3 S4 H1 H2 H3 H4", required_interface, " ")
+      split("Jc Jmin Jmax S1 S2 S3 S4 H1 H2 H3 H4", obfuscation_keys, " ")
+      for (key in obfuscation_keys) if (interface_keys[obfuscation_keys[key]] > 0) has_obfuscation = 1
+      required = has_obfuscation ? "PrivateKey Address Jc Jmin Jmax S1 S2 S3 S4 H1 H2 H3 H4" : "PrivateKey Address"
+      split(required, required_interface, " ")
       for (key in required_interface) if (interface_keys[required_interface[key]] != 1) exit 21
       split("PublicKey PresharedKey Endpoint AllowedIPs PersistentKeepalive", required_peer, " ")
       for (key in required_peer) if (peer_keys[required_peer[key]] != 1) exit 22

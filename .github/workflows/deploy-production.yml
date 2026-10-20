@@ -83,6 +83,7 @@ jobs:
       - name: Verify continuous deployment and rollback
         run: |
           python3 scripts/continuous-deployment.test.py
+          python3 scripts/configure-production-amneziawg.test.py
           python3 scripts/resolve-ci-image-identities.test.py
           node --test scripts/strip-server-action-key.test.mjs
 

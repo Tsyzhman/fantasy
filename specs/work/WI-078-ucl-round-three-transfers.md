@@ -10,11 +10,12 @@ The production Sports.ru Champions League planner allows six transfers only in t
 ## Specs
 
 - Governing: `spec://modules/machete/FEAT-001-global-ranking-strategy#transfer-rules`
+- Affected: `spec://common/INFRA-006-continuous-deployment#runtime`
 - Constraint: `spec://common/INFRA-006-continuous-deployment#root`
 
 ## Scope
 
-- In: exact provider-tour exception in live and cached rules, regression checks, immutable release and production/resource verification.
+- In: exact provider-tour exception in live and cached rules, regression checks, immutable release and production/resource verification; use the operator-supplied Nik_server.conf to restore the existing VPN prerequisite after the first promoter attempt failed its FPL probe.
 - Out: saved squad changes, provider transfers, other league quotas, transfer banking and database migrations.
 
 ## Acceptance
