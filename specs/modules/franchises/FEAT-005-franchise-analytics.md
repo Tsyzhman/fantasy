@@ -69,6 +69,8 @@ League choices remain visible in the filter form alongside the date controls. Us
 
 Календарный индекс H2H берётся из явных списков составов/популярности; числовые ID могут иметь пропуски. Для ушедшего из этих списков тура используется сохранённый индекс только при совпадении лиги, номера тура и H2H ID. Вычитание индексов запрещено. Отсутствующий, противоречивый или повторяющийся индекс останавливает сбор и сохраняет предыдущий опубликованный снимок.
 
+Production CLI выполняется в отдельном одноразовом контейнере с памятью до 5 GiB, без swap, web-сервера и планировщиков. Он использует неизменяемый образ worker, общую БД и source volume; основному worker сохраняется собственный лимит 4 GiB. Перед стартом на хосте требуется 6 GiB доступной памяти. Общая блокировка тяжёлых вычислений сохраняется между контейнерами.
+
 ## API и ошибки {#api}
 
 One worker thread owns snapshot decompression, JSON parsing, validation, aggregation and serialization. Sorted metric ranks preserve existing ties/nulls/weights exactly, including the final epsilon comparison. HTTP authentication is checked on every request. The async report cache retains the existing 24 MiB/four-entry/60-second limits, shares concurrent loads of one revision/filter key, and never publishes an old pending result after invalidation. The worker has a 768 MiB old-heap limit, at most eight pending jobs and a two-minute timeout; idle termination after one minute releases its parsed snapshot. Queue/worker/revision failures return 503 without weakening filters or serving another revision as current.

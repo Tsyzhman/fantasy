@@ -68,6 +68,8 @@ On the Linux production worker, full player-pool refreshes, isolated model forec
 
 Franchise source recovery reads at most 100 identities and 25 missing squad payloads per batch. Existing source files do not trigger JSON payload reads. Preserve the previous ready snapshot on failure and verify old collector processes are absent before removing stale collection markers.
 
+The franchise CLI runs in one disposable container named `fantasy-scout-franchises-job`, using the exact worker image digest, database network and persistent franchise source volume. It starts no web server or schedulers and publishes no ports. Its 5 GiB RAM/no-swap, two-CPU and 128-PID caps do not share the long-lived worker's 4 GiB cgroup. Startup requires at least 6 GiB available host memory, including 1 GiB headroom. It retains the host collector/deploy exclusion and the same kernel calculation lock across containers. A private temporary environment file is removed on every launcher exit; `docker run --rm` removes the job container after completion. User data and rollback web generations are unaffected.
+
 An operator may resume a verified interrupted acquisition with `FRANCHISE_RESUME_AFTER=<timezone-qualified timestamp>` no older than three hours. Only H2H responses and squad records acquired since that checkpoint, together with settled valid lineups, may be reused beyond the normal HTTP TTL. Database statistics/forecast exports are always refreshed. The regular timer does not set this override. The exact known H2H blank historical-lineup template remains missing data, never a zero XI, and is retried on later normal collections; malformed/error pages still abort publication.
 
 <a name="migrations"></a>

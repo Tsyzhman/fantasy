@@ -3,6 +3,7 @@
 ## 0.3.144 - 2026-10-21
 
 - Match historical franchise planning forecasts by league and exact UTC deadline, deduplicate equivalent provider round aliases and retain missing forecasts when no exact scope exists.
+- Run the franchise CLI in a disposable resource-limited container using the exact worker image and shared calculation lock, with a separate memory budget and host-headroom check.
 
 ## 0.3.143 - 2026-10-21
 
