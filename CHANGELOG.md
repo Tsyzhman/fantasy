@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.144 - 2026-10-21
+
+- Match historical franchise planning forecasts by league and exact UTC deadline, deduplicate equivalent provider round aliases and retain missing forecasts when no exact scope exists.
+
 ## 0.3.143 - 2026-10-21
 
 - Resolve franchise calendar IDs from explicit H2H selectors and matching persisted round identities, preserving gaps in source IDs and rejecting unverified or duplicate indexes.

@@ -10,6 +10,7 @@ Production franchise collection, full player-pool refreshes and isolated model r
 ## Specs
 
 - Governing: `spec://modules/franchises/FEAT-005-franchise-analytics#data`
+- Governing: `spec://modules/franchises/FEAT-005-franchise-analytics#time`
 - Governing: `spec://common/INFRA-006-continuous-deployment#heavy-jobs`
 - Affected: `spec://common/INFRA-006-continuous-deployment#heavy-jobs`
 - Affected: `spec://modules/franchises/FEAT-005-franchise-analytics#data`
@@ -45,3 +46,5 @@ Follow-up: the first full collection exposed one verified blank historical EPL l
 Release 0.3.142 (`bf438b5603411d0da2ccdd88b15b050b10156cd9`, successful run `39573657599`) fixed the blank lineup and resumed all 54,162 squad sources with fresh database exports. It then exposed an older calendar bug: inferred Championship rounds 1–5 were shifted by one because source index 9420 is absent. The published October 10 snapshot was retained. Maximum sampled worker memory was 2,236 MiB with no OOM/restarts. The temporary systemd resume override was removed; no stale collector processes or markers remain.
 
 The next pass removes calendar-ID arithmetic. Live roster/popularity selectors supply current indexes, persisted matching round/tour metadata supplies older indexes. The source explicitly confirms RPL round 12 as index 9290. A full board-identity rehearsal precedes the next immutable release and recovery attempt.
+
+Release 0.3.143 (`6da22c0c23a85066f847750a3ecbd69807cbf37f`, successful run `39580169981`) passed 1,329 Node tests, 22 Python tests and the full real-data board rehearsal (87 rounds, 49,915 states, 1,320 freeze episodes, no ambiguous scopes). Its full acquisition finished with fresh database exports at 13:10 MSK and verified all boards. Feature calculation then found an older forecast join bug: H2H Championship round 10 starts October 16, while stored Sports round-number aliases include both October 13 and October 16. The previous snapshot was retained; sampled memory peaked at 2,068 MiB with zero OOM/restarts. The next pass joins planning forecasts by exact UTC deadline, tests alias conflicts and runs all remaining stages against the completed acquisition before an operator-verified bundle import.

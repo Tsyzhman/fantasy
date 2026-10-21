@@ -32,6 +32,8 @@ Contracts: `spec://modules/machete/FEAT-006-sports-popularity#root`, `spec://mod
 
 `src/server/heavy-job-process.ts`, the pool/model schedulers and `ops/franchises-sync.sh` own the shared Linux calculation exclusion under `spec://common/INFRA-006-continuous-deployment#heavy-jobs`. `src/server/franchises/restore-sources.ts` owns bounded missing-file restoration under `spec://modules/franchises/FEAT-005-franchise-analytics#data`. The canonical contracts preserve cadence and publication while preventing concurrent heavy working sets.
 
+`scripts/franchise-analytics/forecast_sources.py` owns exact UTC-deadline matching, pre-deadline selection and duplicate-alias validation for planning snapshots under `spec://modules/franchises/FEAT-005-franchise-analytics#time`.
+
 ## Modules and code ownership
 
 Shared visual system: `src/app/globals.css`, `src/components/app-header.tsx`, theme/density controls and early preferences in `src/app/layout.tsx` follow `spec://common/PROP-002-editorial-sport-design#root`. The module styles in `src/app/franchises/ui.module.css`, `src/app/betting/ui.module.css` and `src/components/khl/KhlSquadPlanner.module.css` share its surface, typography and density tokens. The canonical user-supplied instruction is `docs/design/DESIGN.md`.
