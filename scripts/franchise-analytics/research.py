@@ -5,11 +5,12 @@ os.environ['OPENBLAS_NUM_THREADS']='1'
 import sys,pathlib,json,gzip,hashlib,time,urllib.request,urllib.parse,subprocess,re,concurrent.futures,shlex,datetime
 from bs4 import BeautifulSoup
 from database import postgres_environment
-from sources import registry, profile_path, profile_name, board_user_id, personal_teams, squad_sources, write_cache
+from sources import registry, profile_path, profile_name, board_user_id, personal_teams, squad_sources, write_cache, resume_after, acquired_since, reusable_squad, require_lineup
 sys.stdout.reconfigure(encoding='utf-8')
 ROOT=pathlib.Path(os.environ.get('FRANCHISE_DATA_DIR',str(pathlib.Path.cwd()/'storage/franchises'))).resolve()
 CACHE=ROOT/'source'/'http';CACHE.mkdir(parents=True,exist_ok=True)
 BASE='https://fantasy-h2h.ru'
+RESUME_AFTER=resume_after(os.environ.get('FRANCHISE_RESUME_AFTER'))
 REGISTRY=registry()
 IDS=REGISTRY['franchises']
 LEAGUES={'rfpl_2026':63,'portugal_2026':61,'eredivisie_2026':57,'championship_2026':48,'turkey_2026':71,'la_liga_2026':87,'epl_2026':47,'seria_a_2026':55,'france_2026':53,'bundesliga_2026':54,'ucl_2026':42,'liga_europa_2026':73,'fnl_2026':None,'khl_2026':None,'nhl_2026':None}
@@ -21,8 +22,10 @@ def get(url,params=None):
  parsed=urllib.parse.urlsplit(url)
  if parsed.scheme!='https' or parsed.hostname!='fantasy-h2h.ru' or parsed.username or parsed.password:raise ValueError('Unexpected H2H URL')
  key=hashlib.sha256(url.encode()).hexdigest();p=CACHE/(key+'.json.gz')
- if p.exists() and (os.environ.get('FRANCHISE_USE_CACHE')=='1' or time.time()-p.stat().st_mtime<1800):
-  try:return json.loads(gzip.decompress(p.read_bytes()))['body']
+ if p.exists() and (os.environ.get('FRANCHISE_USE_CACHE')=='1' or time.time()-p.stat().st_mtime<1800 or RESUME_AFTER is not None):
+  try:
+   cached=json.loads(gzip.decompress(p.read_bytes()))
+   if os.environ.get('FRANCHISE_USE_CACHE')=='1' or time.time()-p.stat().st_mtime<1800 or acquired_since(cached.get('fetchedAt'),RESUME_AFTER):return cached['body']
   except (OSError,ValueError,EOFError):p.unlink(missing_ok=True)
  for i in range(5):
   try:
@@ -52,7 +55,7 @@ def pool(fn,jobs,workers=4):
   fs={e.submit(fn,j):j for j in jobs}
   for n,f in enumerate(concurrent.futures.as_completed(fs),1):
    try:out.append(f.result())
-   except Exception as ex:print('ERROR',fs[f],str(ex),flush=True);raise
+   except Exception as ex:print('ERROR',str(fs[f])[:500],str(ex)[:500],flush=True);raise
    if n%40==0:print('progress',n,'/',len(jobs),flush=True)
  return out
 def db(name,query):
@@ -193,11 +196,12 @@ def squads():
   source,lg,r=job;member=source['memberships'][0];key=f"{lg['slug']}-{source['team']}-{r['round']}";dest=ROOT/'source'/'squads'/(key+'.json');dest.parent.mkdir(exist_ok=True)
   if dest.exists():
    previous=json.loads(dest.read_text('utf-8'))
-   if os.environ.get('FRANCHISE_USE_CACHE')=='1' or previous.get('collected_finished'):
+   if reusable_squad(previous,RESUME_AFTER,os.environ.get('FRANCHISE_USE_CACHE')=='1'):
     previous.update(member);previous['memberships']=source['memberships'];previous['lineup_missing']=not any('prev' not in p['class'] for p in previous['players']);dest.write_text(json.dumps(previous,ensure_ascii=False,separators=(',',':')),encoding='utf-8');return
   url=f"/analytics/fantasy_team_tour_data/{source['team']}/{r['tour']}/{lg['cid']}/"
   s=soup(get(url,{'ajax':1}));pl=[]
-  if not s.select_one('.team_roster.football'):raise ValueError('Unexpected fantasy lineup response')
+  try:require_lineup(s,r['tour'])
+  except ValueError as ex:raise ValueError(f'{ex}: {url}') from ex
   for x in s.select('li[data-player_id]'):
    name=x.select_one('.uname');score=x.select_one('.score_wrapper > .score')
    value=score.get_text(' ',strip=True) if score else None
@@ -205,7 +209,7 @@ def squads():
    pl.append({'id':x['data-player_id'],'sports_id':x.get('data-sport_player_internal_id'),'name':name.get_text(' ',strip=True) if name else '', 'class':x.get('class',[]),'club':x.get('title'),'score':value})
   d={**member,'memberships':source['memberships'],'slug':lg['slug'],'cid':lg['cid'],'league_id':lg['league_id'],'team':source['team'],'round':r['round'],'url':BASE+url,'players':pl,'summary':s.get_text(' ',strip=True)[:280]}
   d['lineup_missing']=not any('prev' not in p['class'] for p in pl)
-  d['collected_finished']=settled(r)
+  d['collected_finished']=settled(r) and not d['lineup_missing']
   d['fetched_at']=time.strftime('%Y-%m-%dT%H:%M:%SZ',time.gmtime())
   dest.write_text(json.dumps(d,ensure_ascii=False,separators=(',',':')),encoding='utf-8')
  pool(one,jobs)

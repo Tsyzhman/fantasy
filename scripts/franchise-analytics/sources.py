@@ -10,8 +10,48 @@ import os
 import tempfile
 import threading
 import time
+import datetime
 
 _cache_write_lock = threading.Lock()
+
+
+def resume_after(value, now=None):
+    """An operator may resume only the last three hours of an interrupted acquisition."""
+    if not value:
+        return None
+    cutoff = datetime.datetime.fromisoformat(value.replace('Z', '+00:00'))
+    now = now or datetime.datetime.now(datetime.timezone.utc)
+    if cutoff.tzinfo is None or cutoff > now or now - cutoff > datetime.timedelta(hours=3):
+        raise ValueError('Franchise resume checkpoint must be within the last three hours and include a timezone')
+    return cutoff
+
+
+def acquired_since(value, cutoff):
+    if not value or cutoff is None:
+        return False
+    try:
+        fetched = datetime.datetime.fromisoformat(value.replace('Z', '+00:00'))
+        return fetched.tzinfo is not None and fetched >= cutoff
+    except (ValueError, TypeError):
+        return False
+
+
+def reusable_squad(value, cutoff=None, offline=False):
+    has_xi = any('prev' not in player.get('class', []) for player in value.get('players', []))
+    return offline or acquired_since(value.get('fetched_at'), cutoff) or (value.get('collected_finished') and has_xi)
+
+
+def require_lineup(document, tour):
+    roster = document.select_one('.team_roster')
+    if roster and 'football' in roster.get('class', []):
+        return roster
+    empty = document.select_one('.tour_data')
+    if (roster and roster.get('class') == ['team_roster'] and empty is not None
+            and empty.get('data-uid') == f'_{tour}'
+            and empty.get('data-url') == 'https://sports.ru/fantasy/football///'
+            and not document.select('li[data-player_id]')):
+        return roster
+    raise ValueError('Unexpected fantasy lineup response')
 
 
 def profile_name(title):

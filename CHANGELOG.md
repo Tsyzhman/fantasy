@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.142 - 2026-10-21
+
+- Recognize the verified H2H empty historical-lineup template as unavailable data, retain missing-XI semantics and retry it on later collections.
+- Allow an operator to resume sources from an interrupted acquisition within three hours while always refreshing database statistics and forecasts.
+
 ## 0.3.141 - 2026-10-21
 
 - Serialize franchise collection, full player-pool refreshes and isolated model recalculation with one crash-released process lock. Preserve refresh cadence and move franchise starts to minute 10.

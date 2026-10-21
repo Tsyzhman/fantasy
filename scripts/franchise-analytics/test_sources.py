@@ -3,10 +3,34 @@ import unittest
 import tempfile
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
-from sources import personal_teams, profile_path, profile_name, board_user_id, fixture_round, registry, squad_sources, memberships, write_cache
+from sources import personal_teams, profile_path, profile_name, board_user_id, fixture_round, registry, squad_sources, memberships, write_cache, require_lineup, resume_after, acquired_since, reusable_squad
+import datetime
+import json
 
 
 class SourceTests(unittest.TestCase):
+    def test_h2h_blank_historical_lineup_is_missing_and_not_a_zero_xi(self):
+        from bs4 import BeautifulSoup
+        blank = '<div class="tour_data" data-url="https://sports.ru/fantasy/football///" data-uid="_7482"><div class="team_roster"></div></div>'
+        self.assertIsNotNone(require_lineup(BeautifulSoup(blank, 'html.parser'), 7482))
+        fixture = json.loads((Path(__file__).with_name('fixtures') / 'h2h-empty-lineup.json').read_text('utf-8'))
+        self.assertIsNotNone(require_lineup(BeautifulSoup(fixture['html'], 'html.parser'), 7482))
+        for bad in [blank.replace('_7482', '_999'), blank.replace('football///', 'football/epl/123/'), blank.replace('class="team_roster"', 'class="team_roster basketball"'), '<div>Upstream error</div>', blank.replace('</div></div>', '<li data-player_id="1"></li></div></div>')]:
+            with self.assertRaises(ValueError):require_lineup(BeautifulSoup(bad, 'html.parser'), 7482)
+        self.assertIsNotNone(require_lineup(BeautifulSoup('<div class="team_roster football"></div>', 'html.parser'), 7482))
+
+    def test_missing_lineups_are_retried_and_only_recent_acquisition_sources_resume(self):
+        now = datetime.datetime(2026, 10, 21, 9, 0, tzinfo=datetime.timezone.utc)
+        cutoff = resume_after('2026-10-21T08:08:16Z', now)
+        self.assertFalse(reusable_squad({'collected_finished': True, 'players': []}))
+        self.assertTrue(reusable_squad({'collected_finished': True, 'players': [{'class': []}]}))
+        self.assertTrue(reusable_squad({'fetched_at': '2026-10-21T08:30:00Z', 'players': []}, cutoff))
+        self.assertFalse(reusable_squad({'fetched_at': '2026-10-10T08:30:00Z', 'players': []}, cutoff))
+        self.assertTrue(acquired_since('2026-10-21T08:20:00Z', cutoff))
+        self.assertFalse(acquired_since('invalid', cutoff))
+        for value in ['2026-10-10T08:08:16Z', '2026-10-21T10:00:00Z', '2026-10-21T08:08:16', 'invalid']:
+            with self.assertRaises(ValueError):resume_after(value, now)
+
     def test_board_participants_can_resolve_history_without_an_h2h_profile(self):
         from bs4 import BeautifulSoup
         row = BeautifulSoup('<tr data-player_id="745718"><td class="uname"><span class="user_info_control" data-url_key="1053381646/347"></span></td></tr>', 'html.parser')

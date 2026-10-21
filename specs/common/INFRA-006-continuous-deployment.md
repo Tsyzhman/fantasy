@@ -68,6 +68,8 @@ On the Linux production worker, full player-pool refreshes, isolated model forec
 
 Franchise source recovery reads at most 100 identities and 25 missing squad payloads per batch. Existing source files do not trigger JSON payload reads. Preserve the previous ready snapshot on failure and verify old collector processes are absent before removing stale collection markers.
 
+An operator may resume a verified interrupted acquisition with `FRANCHISE_RESUME_AFTER=<timezone-qualified timestamp>` no older than three hours. Only H2H responses and squad records acquired since that checkpoint, together with settled valid lineups, may be reused beyond the normal HTTP TTL. Database statistics/forecast exports are always refreshed. The regular timer does not set this override. The exact known H2H blank historical-lineup template remains missing data, never a zero XI, and is retried on later normal collections; malformed/error pages still abort publication.
+
 <a name="migrations"></a>
 <a name="data"></a>
 
@@ -125,6 +127,8 @@ Unready candidates and unsafe migrations preserve the serving version. Routing v
 <a name="changelog"></a>
 
 ## Change history {#changelog}
+
+- 2026-10-21: WI-079: bound operator source resume to a verified three-hour acquisition checkpoint, refresh database exports, and keep known absent historical lineups explicit and retryable.
 
 - 2026-10-21: WI-079: serialize heavy worker calculations and bound franchise source recovery; retain refresh cadence.
 
