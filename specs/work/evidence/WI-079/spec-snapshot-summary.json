@@ -1,0 +1,31 @@
+{
+  "status": "current",
+  "diagnostics": [],
+  "fingerprint": "d07b56fcf11df6caabd9d417f204e1292cb088009b3c12a4d8390f80f634ff0a",
+  "provenance": {
+    "commit": "1f1ad3bb1b8fb710d9abcdfd424847e88ddffff8",
+    "source": "working_tree",
+    "observedAt": "2026-10-21T07:48:50.456Z",
+    "workingTree": {
+      "dirty": true,
+      "materialPaths": [
+        "Dockerfile",
+        "ops/franchises-sync.sh",
+        "package-lock.json",
+        "package.json",
+        "scripts/deploy-production-docker.sh",
+        "scripts/import-franchise-data.ts",
+        "specs/common/INFRA-006-continuous-deployment.md",
+        "specs/common/structure.md",
+        "specs/modules/franchises/FEAT-005-franchise-analytics.md",
+        "src/core_data/production-retention-contract.test.ts",
+        "src/server/fantasy-model-forecast-scheduler.ts",
+        "src/server/fantasy-player-pool-snapshot-scheduler.ts",
+        "src/server/franchises/restore-sources.test.ts",
+        "src/server/franchises/restore-sources.ts",
+        "src/server/heavy-job-process.test.ts",
+        "src/server/heavy-job-process.ts"
+      ]
+    }
+  }
+}

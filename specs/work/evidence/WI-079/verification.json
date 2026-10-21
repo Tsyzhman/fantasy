@@ -1,0 +1,143 @@
+{
+  "local_units": {
+    "tests": 1329,
+    "passed": 1326,
+    "skipped": 3,
+    "failed": 0
+  },
+  "linux_flock_ipc_sigkill": "passed",
+  "source_restore_regression": "passed",
+  "lint": {
+    "errors": 0,
+    "warnings": 236
+  },
+  "typecheck": "passed after using the existing current-schema dependency tree",
+  "production_build": "passed",
+  "rollout_regression_tests": 12,
+  "workflow_validator": "passed",
+  "deployment": {
+    "run_id": 39564766149,
+    "commit": "0880d401519052841b7be8d0b217f83f60d46aff",
+    "version": "0.3.141",
+    "status": "success"
+  },
+  "source_template_fix": {
+    "python_tests": 21,
+    "actual_fixture": "scripts/franchise-analytics/fixtures/h2h-empty-lineup.json",
+    "resume_after": "2026-10-21T08:08:16Z",
+    "database_exports": "always refreshed"
+  },
+  "deployment_followup": {
+    "run_id": 39573657599,
+    "commit": "bf438b5603411d0da2ccdd88b15b050b10156cd9",
+    "version": "0.3.142",
+    "status": "success"
+  },
+  "calendar_fix": {
+    "python_tests": 22,
+    "production_rehearsal": {
+      "leagues": 12,
+      "rounds": 87,
+      "states": 49915,
+      "events": 1320,
+      "board_verified": 1319,
+      "audit": []
+    },
+    "changed_calendar_rounds": 5,
+    "commit": "6da22c0c23a85066f847750a3ecbd69807cbf37f",
+    "run_id": 39580169981,
+    "version": "0.3.143",
+    "status": "deployed"
+  },
+  "forecast_scope_and_isolation": {
+    "commit": "703edd62f45e514bbff003221b9fe7d7cd8ee7d0",
+    "version": "0.3.144",
+    "run_id": 39585036533,
+    "python_tests": 27,
+    "rollout_tests": 12,
+    "feature_rows": 62651,
+    "aggregate_squads": 54639,
+    "aggregate_player_decisions": 815880,
+    "aggregate_buys": 132977,
+    "aggregate_errors": 0,
+    "failed_shared_worker_aggregate": {
+      "oom_kill": 1,
+      "main_worker_survived": true
+    },
+    "isolated_job": {
+      "memory_limit_gib": 5,
+      "host_available_minimum_gib": 6,
+      "max_aggregate_child_rss_kib": 4689364,
+      "oom_kill": 0,
+      "samples": 106,
+      "sampled_job_peak_bytes": 4151758848,
+      "max_child_rss_kib": 4689364,
+      "host_minimum_available_bytes": 2629410816,
+      "worker_peak_bytes": 1282088960,
+      "final": {
+        "commit": "703edd62f45e514bbff003221b9fe7d7cd8ee7d0",
+        "phase": "complete",
+        "utc": "2026-10-21T10:40:00.990263+00:00",
+        "max_child_rss_kib": 4689364,
+        "memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\n",
+        "bundle": "/app/storage/franchises/.wi079-f722a05"
+      },
+      "configuration": {
+        "same_worker_image": true,
+        "memory_limit": 5368709120,
+        "memory_swap_limit": 5368709120,
+        "nano_cpus": 2000000000,
+        "ports": {
+          "3000/tcp": null
+        },
+        "mounts": [
+          {
+            "type": "volume",
+            "destination": "/app/storage/franchises",
+            "rw": true
+          },
+          {
+            "type": "bind",
+            "destination": "/opt/wi079-candidate",
+            "rw": false
+          }
+        ]
+      }
+    },
+    "status": "published_and_deployed_and_verified",
+    "snapshot_uncompressed_bytes": 133348723,
+    "export_complete_xfo": 27477,
+    "export_known_players": 549767,
+    "snapshot_sha256": "a59ecee27820d092cf769c8ebd07fc5a71b2486b234715926210730552e096ab",
+    "generated_utc": "2026-10-21T10:36:02.838416+00:00",
+    "published_utc": "2026-10-21T10:40:00.990263+00:00",
+    "compressed_bytes": 15791411,
+    "production_launcher_smoke": "passed",
+    "availability": {
+      "samples": 246,
+      "non_200": 0,
+      "first_utc": "2026-10-21T10:31:25.342510+00:00",
+      "last_utc": "2026-10-21T10:52:11.650078+00:00",
+      "last_revision": "703edd62f45e514bbff003221b9fe7d7cd8ee7d0",
+      "maximum_response_ms": 404
+    },
+    "cleanup": "complete",
+    "legacy_empty_completion_flags_corrected": 30,
+    "source_duplicates": 0,
+    "future_history": 0,
+    "duplicate_selections": 0,
+    "missing_active_state": 0
+  },
+  "work_item_status": "complete",
+  "final_production": {
+    "version": "0.3.144",
+    "commit": "703edd62f45e514bbff003221b9fe7d7cd8ee7d0",
+    "workflow_run": 39585036533,
+    "status": "success",
+    "healthy_web_worker": true,
+    "restarts": 0,
+    "oom": false,
+    "timer_next_msk": "2026-10-21 15:10",
+    "running_scheduler_workers": 1
+  }
+}

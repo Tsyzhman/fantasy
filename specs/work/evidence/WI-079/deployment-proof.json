@@ -1,0 +1,21 @@
+{
+  "runId": 39564766149,
+  "jobId": 119104303138,
+  "conclusion": "success",
+  "version": "0.3.141",
+  "commit": "0880d401519052841b7be8d0b217f83f60d46aff",
+  "lines": [
+    "2026-10-21T07:51:52.8791622Z ✔ heavy jobs retain child IPC, wait for one another and release the lock after SIGKILL (262.346787ms)",
+    "2026-10-21T07:52:02.4823399Z ℹ tests 1329",
+    "2026-10-21T07:52:02.4825375Z ℹ pass 1329",
+    "2026-10-21T07:52:02.4825884Z ℹ fail 0",
+    "2026-10-21T07:52:02.4826856Z ℹ skipped 0",
+    "2026-10-21T07:52:53.1045788Z ℹ tests 4",
+    "2026-10-21T07:52:53.1046643Z ℹ pass 4",
+    "2026-10-21T07:52:53.1046952Z ℹ fail 0",
+    "2026-10-21T07:52:53.1047627Z ℹ skipped 0",
+    "2026-10-21T08:05:51.2621353Z DEPLOYED_RELEASE=20261021T075253Z-v0.3.141-0880d40",
+    "2026-10-21T08:05:51.2622106Z DEPLOYED_VERSION=0.3.141",
+    "2026-10-21T08:05:51.2624358Z DEPLOYED_COMMIT=0880d401519052841b7be8d0b217f83f60d46aff"
+  ]
+}

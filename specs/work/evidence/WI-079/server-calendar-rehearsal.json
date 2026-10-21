@@ -1,0 +1,66 @@
+{
+  "captured_utc": "2026-10-21T09:54:58.381071+00:00",
+  "health": {
+    "code": 0,
+    "stdout": "{\"status\":\"ok\",\"uptimeSeconds\":2479,\"release\":{\"version\":\"0.3.142\",\"commit\":\"bf438b5603411d0da2ccdd88b15b050b10156cd9\"}}",
+    "stderr": ""
+  },
+  "memory": {
+    "code": 0,
+    "stdout": "total        used        free      shared  buff/cache   available\nMem:           11876        5134        1924         313        4818        6116\nSwap:              0           0           0",
+    "stderr": ""
+  },
+  "stats": {
+    "code": 0,
+    "stdout": "fantasy-scout-worker 1.495GiB / 4GiB 29.69%\nfantasy-scout-web 158.5MiB / 2GiB 16.62%\nfantasy-scout-postgres 1.183GiB / 2GiB 0.50%",
+    "stderr": ""
+  },
+  "processes": {
+    "code": 0,
+    "stdout": "PID                 PPID                ELAPSED             RSS                 COMMAND\n3673815             3673791             2477                1296464             next-server (v\n3768603             3673791             372                 916                 timeout --signal=TERM --kill-after=5 600 flock --exclusive --no-fork /app/storage/franchises/.heavy-job.lock /opt/franchises/bin/python -\n3768609             3768603             372                 261244              /opt/franchises/bin/python -",
+    "stderr": ""
+  },
+  "service": {
+    "code": 0,
+    "stdout": "Result=exit-code\nExecMainStartTimestamp=Wed 2026-10-21 12:15:18 MSK\nExecMainExitTimestamp=Wed 2026-10-21 12:22:11 MSK\nExecMainStatus=1\nActiveState=failed\nSubState=failed",
+    "stderr": ""
+  },
+  "timer": {
+    "code": 0,
+    "stdout": "NEXT                        LEFT          LAST                        PASSED    UNIT                     ACTIVATES\nWed 2026-10-21 15:10:00 MSK 2h 14min left Wed 2026-10-21 12:14:21 MSK 40min ago fantasy-franchises.timer fantasy-franchises.service\n\n1 timers listed.",
+    "stderr": ""
+  },
+  "storage": {
+    "code": 0,
+    "stdout": "247M\tstorage/franchises/source/http\n872M\tstorage/franchises\n0\nlow 0\nhigh 0\nmax 0\noom 0\noom_kill 0",
+    "stderr": ""
+  },
+  "snapshot": {
+    "code": 0,
+    "stdout": "{\"season\":\"2026/2027\",\"version\":2,\"generated_at\":\"2026-10-10T07:08:20.404\",\"squads\":45234,\"compressed_bytes\":12548402,\"sha256\":\"15e70d1ee84fc642bde721cee20552c814915a3adc48c40bcc5ed259b0e414ab\"}",
+    "stderr": ""
+  },
+  "duplicates": {
+    "code": 0,
+    "stdout": "{\"squads\" : 0, \"rounds\" : 0, \"snapshots\" : 0}",
+    "stderr": ""
+  },
+  "containers": [
+    {
+      "name": "fantasy-scout-worker",
+      "image": "sha256:1268c5ba601a649b9f6b71cd6f0724cd9e58ce5b12c8e545c2e288058ed1c22f",
+      "status": "running",
+      "health": "healthy",
+      "restarts": 0,
+      "oom": false
+    },
+    {
+      "name": "fantasy-scout-web",
+      "image": "sha256:1268c5ba601a649b9f6b71cd6f0724cd9e58ce5b12c8e545c2e288058ed1c22f",
+      "status": "running",
+      "health": "healthy",
+      "restarts": 0,
+      "oom": false
+    }
+  ]
+}

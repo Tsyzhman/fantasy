@@ -1,0 +1,4 @@
+{"operation": {"commit": "703edd62f45e514bbff003221b9fe7d7cd8ee7d0", "phase": "complete", "utc": "2026-10-21T10:40:00.990263+00:00", "max_child_rss_kib": 4689364, "memory_events": "low 0\nhigh 0\nmax 0\noom 0\noom_kill 0\n", "bundle": "/app/storage/franchises/.wi079-f722a05"}, "temporary_bundle_removed": true, "temporary_code_removed": true, "snapshot_sha256": "a59ecee27820d092cf769c8ebd07fc5a71b2486b234715926210730552e096ab", "canonical_sources_preserved": true}
+
+
+{"temporary_environment_files": 0, "temporary_source_directories": 0, "job_container_count": 0}
