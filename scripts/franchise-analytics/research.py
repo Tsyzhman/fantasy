@@ -5,7 +5,7 @@ os.environ['OPENBLAS_NUM_THREADS']='1'
 import sys,pathlib,json,gzip,hashlib,time,urllib.request,urllib.parse,subprocess,re,concurrent.futures,shlex,datetime
 from bs4 import BeautifulSoup
 from database import postgres_environment
-from sources import registry, profile_path, profile_name, board_user_id, personal_teams, squad_sources, write_cache, resume_after, acquired_since, reusable_squad, require_lineup
+from sources import registry, profile_path, profile_name, board_user_id, personal_teams, squad_sources, write_cache, resume_after, acquired_since, reusable_squad, require_lineup, calendar_rounds
 sys.stdout.reconfigure(encoding='utf-8')
 ROOT=pathlib.Path(os.environ.get('FRANCHISE_DATA_DIR',str(pathlib.Path.cwd()/'storage/franchises'))).resolve()
 CACHE=ROOT/'source'/'http';CACHE.mkdir(parents=True,exist_ok=True)
@@ -144,23 +144,30 @@ def franchises():
  print('Franchises',[(f['id'],f['name'],len(f['forms'])) for f in fr]);print('forms',len(forms),'teams',sum(len(f['teams']) for f in forms))
 def metadata():
  forms=json.loads((ROOT/'franchise-teams.json').read_text('utf-8'));slugs=sorted({next(k for k in LEAGUES if f['slug'].startswith(k)) for f in forms})
+ db('round-metadata',"SELECT json_build_object('slug',slug,'round',round,'index',payload->'index','tour',payload->'tour') FROM franchise_h2h_rounds WHERE season='2026/2027'")
+ history={}
+ for rd in read_db('round-metadata'):history.setdefault(rd['slug'],{})[rd['round']]=rd
  def one(slug):
   s=soup(get('/analytics/fantasy_teams_list/'+slug,{'filter[tours_numbers]':'1;50'}))
-  rounds={int(re.search(r'\d+',x.text)[0]):{'round':int(re.search(r'\d+',x.text)[0]),'index':int(x['value'])} for x in s.select('select[name="filter[roster_stat][index]"] option')}
-  for th in s.select('th[data-field^="tour_score_"]'):
-   rn=int(re.search(r'\d+',th.text)[0]);
-   if rn not in rounds:
-    last=max(rounds);rounds[rn]={'round':rn,'index':rounds[last]['index']-(last-rn),'index_inferred':True}
-   rounds[rn]['tour']=int(th['data-field'].split('_')[-1])
+  popularity=soup(get('/analytics/fantasy_team_players/'+slug,{'ajax':1}))
+  rounds=calendar_rounds(s,popularity,history.get(slug,{}))
   cid=int(s.select_one('input[name="filter[tournament_id]"]')['value'])
-  for rn,r in rounds.items():
+  for r in rounds:
    ss=soup(get('/analytics/competition_tour_shedule/'+str(r['index']),{'ajax':1}))
    r['matches']=[]
    for x in ss.select('tr.match'):
     link=x.select_one('[href*="/football/match/"]');match=re.search(r'/football/match/(\d+)',link['href']) if link else None
     r['matches'].append({'date':x.select_one('.date').get_text(' ',strip=True),'finished':'is_finished' in x.get('class',[]),'text':x.get_text(' ',strip=True),'sports_match_id':match[1] if match else None})
-  return {'slug':slug,'league_id':LEAGUES[slug],'cid':cid,'rounds':list(sorted(rounds.values(),key=lambda r:r['round']))}
- m=pool(one,slugs);save('leagues.json',m);print([(x['slug'],len(x['rounds'])) for x in m])
+  return {'slug':slug,'league_id':LEAGUES[slug],'cid':cid,'rounds':rounds}
+ m=pool(one,slugs)
+ previous=ROOT/'leagues.json'
+ old={(l['slug'],r['round']):r['index'] for l in json.loads(previous.read_text('utf-8')) for r in l['rounds']} if previous.exists() else {}
+ for league in m:
+  for rd in league['rounds']:
+   if (league['slug'],rd['round']) in old and old[(league['slug'],rd['round'])]!=rd['index']:
+    (ROOT/'source'/f"players-{league['slug']}-{rd['round']}.complete").unlink(missing_ok=True)
+    print('Calendar index corrected; refresh player pool',league['slug'],rd['round'],old[(league['slug'],rd['round'])],rd['index'],flush=True)
+ save('leagues.json',m);print([(x['slug'],len(x['rounds'])) for x in m])
 def players():
  meta=json.loads((ROOT/'leagues.json').read_text('utf-8'))
  def one(job):

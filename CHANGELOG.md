@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.3.143 - 2026-10-21
+
+- Resolve franchise calendar IDs from explicit H2H selectors and matching persisted round identities, preserving gaps in source IDs and rejecting unverified or duplicate indexes.
+
 ## 0.3.142 - 2026-10-21
 
 - Recognize the verified H2H empty historical-lineup template as unavailable data, retain missing-XI semantics and retry it on later collections.

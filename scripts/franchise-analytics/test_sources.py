@@ -3,12 +3,29 @@ import unittest
 import tempfile
 from pathlib import Path
 from concurrent.futures import ThreadPoolExecutor
-from sources import personal_teams, profile_path, profile_name, board_user_id, fixture_round, registry, squad_sources, memberships, write_cache, require_lineup, resume_after, acquired_since, reusable_squad
+from sources import personal_teams, profile_path, profile_name, board_user_id, fixture_round, registry, squad_sources, memberships, write_cache, require_lineup, resume_after, acquired_since, reusable_squad, calendar_rounds
 import datetime
 import json
 
 
 class SourceTests(unittest.TestCase):
+    def test_calendar_uses_explicit_indexes_across_gaps_and_archived_rounds(self):
+        from bs4 import BeautifulSoup
+        document = BeautifulSoup('''<select name="filter[roster_stat][index]">
+        <option value="9421">тур 10</option><option value="9419">тур 9</option>
+        </select><th data-field="tour_score_7517">Тур 5</th>
+        <th data-field="tour_score_7520">Тур 6</th><th data-field="tour_score_7550">Тур 9</th>
+        <th data-field="tour_score_7555">Тур 10</th>''', 'html.parser')
+        popularity = BeautifulSoup('<select name="filter[popularity_index]"><option value="9416">Популярность за 6-й тур</option></select>', 'html.parser')
+        history = {5: {'index': 9415, 'tour': 7517}}
+        rounds = calendar_rounds(document, popularity, history)
+        self.assertEqual([(r['round'], r['index']) for r in rounds], [(5, 9415), (6, 9416), (9, 9419), (10, 9421)])
+        self.assertEqual([r['index_source'] for r in rounds], ['archive', 'live', 'live', 'live'])
+        for bad in [{}, {5: {'index': 9415, 'tour': 999}}, {5: {'index': 9416, 'tour': 7517}}]:
+            with self.assertRaises(ValueError):calendar_rounds(document, popularity, bad)
+        conflict = BeautifulSoup('<select name="filter[popularity_index]"><option value="999">тур 9</option></select>', 'html.parser')
+        with self.assertRaisesRegex(ValueError, 'Conflicting live'):calendar_rounds(document, conflict, history)
+
     def test_h2h_blank_historical_lineup_is_missing_and_not_a_zero_xi(self):
         from bs4 import BeautifulSoup
         blank = '<div class="tour_data" data-url="https://sports.ru/fantasy/football///" data-uid="_7482"><div class="team_roster"></div></div>'

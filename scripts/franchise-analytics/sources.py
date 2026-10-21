@@ -15,6 +15,39 @@ import datetime
 _cache_write_lock = threading.Lock()
 
 
+def calendar_rounds(document, popularity, history):
+    """Use explicit live indexes or the same archived round/tour identity, never ID arithmetic."""
+    indexes = {}
+    for page, selector in [(document, 'select[name="filter[roster_stat][index]"] option'),
+                           (popularity, 'select[name="filter[popularity_index]"] option')]:
+        for option in page.select(selector):
+            number = re.search(r'\d+', option.get_text(' ', strip=True))
+            if number is None:
+                raise ValueError('Missing calendar round number')
+            rn, index = int(number[0]), int(option['value'])
+            if rn <= 0 or index <= 0 or (rn in indexes and indexes[rn] != index):
+                raise ValueError('Conflicting live calendar index')
+            indexes[rn] = index
+    rounds = {}
+    for header in document.select('th[data-field^="tour_score_"]'):
+        rn = int(re.search(r'\d+', header.get_text(' ', strip=True))[0])
+        tour = int(header['data-field'].split('_')[-1])
+        index = indexes.get(rn)
+        source = 'live'
+        if index is None:
+            archived = history.get(rn, {})
+            if archived.get('tour') != tour or type(archived.get('index')) is not int or archived['index'] <= 0:
+                raise ValueError(f'No verified calendar index for round {rn}, tour {tour}')
+            index, source = archived['index'], 'archive'
+        value = {'round': rn, 'index': index, 'tour': tour, 'index_source': source}
+        if rn in rounds and rounds[rn] != value:
+            raise ValueError('Conflicting calendar round identity')
+        rounds[rn] = value
+    if not rounds or len({r['index'] for r in rounds.values()}) != len(rounds):
+        raise ValueError('Missing or duplicate calendar indexes')
+    return sorted(rounds.values(), key=lambda r: r['round'])
+
+
 def resume_after(value, now=None):
     """An operator may resume only the last three hours of an interrupted acquisition."""
     if not value:

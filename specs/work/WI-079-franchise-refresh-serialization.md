@@ -18,7 +18,7 @@ Production franchise collection, full player-pool refreshes and isolated model r
 
 ## Scope
 
-- In: shared process-lifetime heavy-job exclusion, bounded source restoration, collector timing, explicit empty H2H lineup handling, bounded interrupted-source resume, focused regression checks, immutable production rollout, guarded stale-lock recovery, one complete collection and published-reader/resource verification.
+- In: shared process-lifetime heavy-job exclusion, bounded source restoration, collector timing, explicit empty H2H lineup handling, bounded interrupted-source resume, verified calendar indexes, focused regression checks, immutable production rollout, guarded stale-lock recovery, one complete collection and published-reader/resource verification.
 - Out: changing fantasy formulas, reports, user workflows, reducing refresh cadence, unrelated working-tree changes or hosted applications.
 
 ## Acceptance
@@ -29,6 +29,7 @@ Production franchise collection, full player-pool refreshes and isolated model r
 - [x] Preserve three-hour collection and hourly pool cadence; validate checks and immutable deployment provenance while the serving web stays available.
 - [ ] A verified empty H2H lineup remains missing, is retried later, and malformed/error pages still fail; resume never reuses old database exports.
 - [ ] Remove only verified stale collection markers, finish collection, and verify the fresh published snapshot through the production reader.
+- [ ] Use explicit source or matching archived calendar IDs, including gaps; reject absent/conflicting identities without weakening board checks.
 - [ ] Check cache bounds, source/snapshot duplicates, memory/OOM/restarts and temporary-process cleanup.
 
 ## Result
@@ -40,3 +41,7 @@ The stale markers for PIDs 25789/25807 were removed only after process/revision/
 Next: follow `fantasy-franchises.service` and `specs/work/evidence/WI-079/resources-during.jsonl` (sampler is running through an SSH exec session), then run the deployed report reader, final duplicate/cache/resource/provenance checks, archive this WI and close its board row. Recovery must not be repeated while the service is active.
 
 Follow-up: the first full collection exposed one verified blank historical EPL lineup. The previous snapshot remains published. A narrowly validated missing-lineup parser and a source-only resume checkpoint are being verified under the same atomic recovery outcome.
+
+Release 0.3.142 (`bf438b5603411d0da2ccdd88b15b050b10156cd9`, successful run `39573657599`) fixed the blank lineup and resumed all 54,162 squad sources with fresh database exports. It then exposed an older calendar bug: inferred Championship rounds 1–5 were shifted by one because source index 9420 is absent. The published October 10 snapshot was retained. Maximum sampled worker memory was 2,236 MiB with no OOM/restarts. The temporary systemd resume override was removed; no stale collector processes or markers remain.
+
+The next pass removes calendar-ID arithmetic. Live roster/popularity selectors supply current indexes, persisted matching round/tour metadata supplies older indexes. The source explicitly confirms RPL round 12 as index 9290. A full board-identity rehearsal precedes the next immutable release and recovery attempt.

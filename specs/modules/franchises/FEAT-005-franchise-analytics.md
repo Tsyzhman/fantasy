@@ -65,6 +65,8 @@ League choices remain visible in the filter form alongside the date controls. Us
 
 В production сбор проходит через общую блокировку тяжёлых заданий `spec://common/INFRA-006-continuous-deployment#heavy-jobs`: полный пересчёт пула, модель и сбор франшиз выполняются последовательно. Таймер сохраняет период три часа и запускается в :10 MSK. Восстановление запрашивает JSON только для отсутствующих файлов и ограничивает размер пакетов; уже сохранённые источники не загружаются целиком в память.
 
+Календарный индекс H2H берётся из явных списков составов/популярности; числовые ID могут иметь пропуски. Для ушедшего из этих списков тура используется сохранённый индекс только при совпадении лиги, номера тура и H2H ID. Вычитание индексов запрещено. Отсутствующий, противоречивый или повторяющийся индекс останавливает сбор и сохраняет предыдущий опубликованный снимок.
+
 ## API и ошибки {#api}
 
 One worker thread owns snapshot decompression, JSON parsing, validation, aggregation and serialization. Sorted metric ranks preserve existing ties/nulls/weights exactly, including the final epsilon comparison. HTTP authentication is checked on every request. The async report cache retains the existing 24 MiB/four-entry/60-second limits, shares concurrent loads of one revision/filter key, and never publishes an old pending result after invalidation. The worker has a 768 MiB old-heap limit, at most eight pending jobs and a two-minute timeout; idle termination after one minute releases its parsed snapshot. Queue/worker/revision failures return 503 without weakening filters or serving another revision as current.
