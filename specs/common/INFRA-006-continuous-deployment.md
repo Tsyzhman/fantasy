@@ -60,6 +60,14 @@ Use two running web generations and a graceful upstream reload rather than rebui
 - The operator-owned VPN adapter accepts a complete AmneziaWG profile or a plain WireGuard profile. Plain profiles retain their protocol fields without adding obfuscation settings; partial AmneziaWG settings and executable configuration hooks are rejected. The new tunnel must pass the official FPL bootstrap probe before replacing the old VPN and relay; the serving web remains running.
 - Web-owned FPL and probable-lineup schedules retain their cadence. A release-specific read-only activation file defers their startup in the candidate until the old web has stopped after draining; its content must match the candidate commit. HTTP readiness does not wait for activation. The pending timer is unreferenced and ends after activation or cancellation, preventing duplicate web schedules during preparation and draining.
 
+<a name="heavy-jobs"></a>
+
+## Heavy background jobs {#heavy-jobs}
+
+On the Linux production worker, full player-pool refreshes, isolated model forecast recalculation and the three-hour franchise collector share one process-lifetime exclusive `flock` at `/app/storage/franchises/.heavy-job.lock`. Calculation children retain their PID, Node IPC and signals. Waiting jobs remain outside Node and cannot retain a calculation working set. Exit or forced termination releases the kernel lock; the lock file itself is retained. Existing per-scheduler coalescing, hourly pool slots, six-hour model cadence, source/deployment exclusion and atomic publication remain in place. The collector starts every three hours at minute 10; the shared lock also protects delayed or long-running cycles. Operator collection uses `ops/franchises-sync.sh`. A configured `FANTASY_HEAVY_JOB_LOCK_PATH` identifies the same lock for all three entry points. Local non-Linux launches retain their existing behavior.
+
+Franchise source recovery reads at most 100 identities and 25 missing squad payloads per batch. Existing source files do not trigger JSON payload reads. Preserve the previous ready snapshot on failure and verify old collector processes are absent before removing stale collection markers.
+
 <a name="migrations"></a>
 <a name="data"></a>
 
@@ -117,6 +125,8 @@ Unready candidates and unsafe migrations preserve the serving version. Routing v
 <a name="changelog"></a>
 
 ## Change history {#changelog}
+
+- 2026-10-21: WI-079: serialize heavy worker calculations and bound franchise source recovery; retain refresh cadence.
 
 - 2026-10-20: WI-078 — accept an operator-supplied plain WireGuard profile in the existing guarded VPN rotation without weakening its API probe or configuration allowlist.
 - 2026-10-09: WI-060 — prohibit direct production replacement and require a verified second web version with graceful traffic switch and compatible online migrations.

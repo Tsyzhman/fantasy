@@ -3,7 +3,6 @@ import {
   readFile,
   readdir,
   mkdir,
-  writeFile,
   open,
   unlink,
 } from "node:fs/promises";
@@ -14,6 +13,7 @@ import { gunzipSync } from "node:zlib";
 import { spawnSync } from "node:child_process";
 import { PrismaClient, type Prisma } from "@prisma/client";
 import { validateSnapshot, MAX_SNAPSHOT_BYTES, MAX_COMPRESSED_SNAPSHOT_BYTES } from "../src/server/franchises/snapshot";
+import { restoreFranchiseSources } from "../src/server/franchises/restore-sources";
 
 async function main() {
   for (const file of [".env.local", ".env"])
@@ -34,49 +34,7 @@ async function main() {
   try {
     if (process.argv.includes("--restore") || process.argv.includes("--sync")) {
       // Resume completed H2H rounds from our database after replacing a container or cache.
-      const rounds = await db.franchiseH2hRound.findMany({
-        where: { season: "2026/2027" },
-      });
-      for (const r of rounds) {
-        const value = r.payload as {
-          players: unknown;
-          collected_finished?: boolean;
-        };
-        const file = resolve(root, `source/players-${r.slug}-${r.round}.json`);
-        if (!existsSync(file)) {
-          await writeFile(file, JSON.stringify(value.players));
-          if (value.collected_finished)
-            await writeFile(file.replace(/\.json$/, ".complete"), "complete");
-        }
-      }
-      let cursor: string | undefined;
-      let restored = 0;
-      for (;;) {
-        const rows = await db.franchiseH2hSquad.findMany({
-          where: { season: "2026/2027" },
-          orderBy: { id: "asc" },
-          take: 100,
-          ...(cursor ? { cursor: { id: cursor }, skip: 1 } : {}),
-        });
-        if (!rows.length) break;
-        for (const r of rows) {
-          const file = resolve(
-            root,
-            `source/squads/${r.slug}-${r.team}-${r.round}.json`,
-          );
-          if (!existsSync(file)) {
-            await writeFile(file, JSON.stringify(r.payload));
-            restored++;
-          }
-        }
-        cursor = rows.at(-1)!.id;
-      }
-      console.log(
-        JSON.stringify({
-          restoredSquads: restored,
-          storedRounds: rounds.length,
-        }),
-      );
+      console.log(JSON.stringify(await restoreFranchiseSources(db, root)));
       if (!process.argv.includes("--sync")) return;
       const python =
         process.env.FRANCHISE_PYTHON ??

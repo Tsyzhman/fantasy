@@ -4,7 +4,7 @@
 
 ## Обновление
 
-После миграций: `npm run franchises:sync`. В production-образе: `node scripts/franchises.cjs --sync` в worker. Python: `/opt/franchises/bin/python`, локально можно задать `FRANCHISE_PYTHON`. Установить локальные зависимости из `requirements.txt`. PostgreSQL CLI `psql` должен быть в PATH; используется тот же `DATABASE_URL`, чтение футбольных таблиц выполняется read-only.
+После миграций: `npm run franchises:sync`. На production-хосте: `bash /var/www/fantasy-scout-current/ops/franchises-sync.sh` или штатный systemd service. Общая kernel-блокировка исключает пересечение с полным пересчётом пула и модели; таймер запускает сбор раз в три часа в :10 MSK. Python: `/opt/franchises/bin/python`, локально можно задать `FRANCHISE_PYTHON`. Установить локальные зависимости из `requirements.txt`. PostgreSQL CLI `psql` должен быть в PATH; используется тот же `DATABASE_URL`, чтение футбольных таблиц выполняется read-only.
 
 Порядок: восстановление отсутствующих завершённых составов/пулов из нашей БД → обновление H2H → чтение существующей статистики/прогнозов → расчёт признаков с отсечкой до тура → xФО → сохранение исходных H2H-записей → атомарная публикация готового снимка. Никаких запросов к ИИ.
 

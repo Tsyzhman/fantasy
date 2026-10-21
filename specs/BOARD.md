@@ -6,6 +6,7 @@
 
 | Work | Title | Specs | Owner | Started | Blocker |
 |---|---|---|---|---|---|
+| [WI-079](work/WI-079-franchise-refresh-serialization.md) | Serialize heavy refreshes and restore franchise updates | FEAT-005, INFRA-006 | @tsyzhman | 2026-10-21 | — |
 | [WI-078](work/WI-078-ucl-round-three-transfers.md) | Six transfers only in Champions League round three | FEAT-001 | @tsyzhman | 2026-10-20 | — |
 | [WI-060](work/WI-060-continuous-production-deployment.md) | Continuous production deployment | INFRA-006 | @tsyzhman | 2026-10-09 | — |
 | [WI-059](work/WI-059-four-league-club-limits.md) | Preserve two club players in four Sports.ru leagues | FEAT-001 | @tsyzhman | 2026-10-09 | — |

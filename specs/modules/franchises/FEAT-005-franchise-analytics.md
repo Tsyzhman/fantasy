@@ -63,6 +63,8 @@ League choices remain visible in the filter form alongside the date controls. Us
 ## Данные и обновление {#data}
 Повторно используемый Python-сборщик читает публичный H2H и БД, не использует LLM. Подготовка тяжёлых признаков выполняется пакетно, браузер получает агрегаты. Составы, пулы владения и доски сохраняются в `franchise_h2h_squads`, `franchise_h2h_rounds`, `franchise_h2h_states`. Готовый снимок хранится в PostgreSQL в `franchise_analytics_snapshots`; файловый источник допускается только через явную настройку для локального анализа. Версионированный компактный снимок содержит показатели составов по турам, покрытие, события замен и ссылки на источники. Публикация снимка атомарна; ошибка сохраняет предыдущий валидный снимок. Завершённые составы и пулы восстанавливаются из БД при отсутствии локального кэша. CLI `franchises:sync` выполняет весь цикл; готовый systemd-таймер обновляет данные раз в 3 часа после отдельного включения оператором. Дата сбора видна. Ключи составов/игроков/туров уникальны. HTTP-кэш ограничен сроком, текущие туры обновляются. Память ограничена одним актуальным снимком и одним процессом сбора; запрос посетителя не запускает полный парсинг сайта.
 
+В production сбор проходит через общую блокировку тяжёлых заданий `spec://common/INFRA-006-continuous-deployment#heavy-jobs`: полный пересчёт пула, модель и сбор франшиз выполняются последовательно. Таймер сохраняет период три часа и запускается в :10 MSK. Восстановление запрашивает JSON только для отсутствующих файлов и ограничивает размер пакетов; уже сохранённые источники не загружаются целиком в память.
+
 ## API и ошибки {#api}
 
 One worker thread owns snapshot decompression, JSON parsing, validation, aggregation and serialization. Sorted metric ranks preserve existing ties/nulls/weights exactly, including the final epsilon comparison. HTTP authentication is checked on every request. The async report cache retains the existing 24 MiB/four-entry/60-second limits, shares concurrent loads of one revision/filter key, and never publishes an old pending result after invalidation. The worker has a 768 MiB old-heap limit, at most eight pending jobs and a two-minute timeout; idle termination after one minute releases its parsed snapshot. Queue/worker/revision failures return 503 without weakening filters or serving another revision as current.
@@ -86,6 +88,8 @@ GET `/api/franchises` валидирует сезон, лиги и диапаз�
 Локальные отчёты WI-025/WI-027 — предшествующие артефакты. Используются существующие normalized core_data, архивные planning snapshots и исходные токены дизайна Fantasy.
 
 ## История {#changelog}
+
+- 2026-10-21: WI-079 — serialize memory-heavy worker jobs and restore only missing franchise payloads; retain collection cadence.
 - 2026-10-08: WI-054 — visible combined league selection and automatic calendar/completion filtering, retaining immediate submit/retry and URL restoration.
 - 2026-10-04: PR #37 review — split the ownership/captain plot at 35% starting-lineup ownership (horizontal axis), with the higher group above the lower group.
 - 2026-10-04: WI-048 — small abbreviated names restored beside points following user review.

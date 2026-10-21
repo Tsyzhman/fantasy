@@ -78,7 +78,7 @@ ENV KHL_PROTOCOL_TRANSPORT=rest
 ENV NODE_OPTIONS=--max-old-space-size=2048
 
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends ca-certificates openssl python3 postgresql-client \
+  && apt-get install -y --no-install-recommends ca-certificates openssl python3 postgresql-client util-linux \
   && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /app/.next/standalone ./

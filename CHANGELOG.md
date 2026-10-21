@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.141 - 2026-10-21
+
+- Serialize franchise collection, full player-pool refreshes and isolated model recalculation with one crash-released process lock. Preserve refresh cadence and move franchise starts to minute 10.
+- Restore only absent franchise source payloads in bounded pages, reducing collector memory before publication.
+
 ## 0.3.140 - 2026-10-20
 
 - Allow six transfers only for Sports.ru Champions League tour 2755 (third tour, 20 October). Subsequent tours retain three without carrying unused transfers forward, including cached planner data.

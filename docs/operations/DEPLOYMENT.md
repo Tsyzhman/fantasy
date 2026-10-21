@@ -37,7 +37,7 @@ docker stats --no-stream fantasy-scout-web fantasy-scout-worker fantasy-scout-po
 
 Public/internal health, source manifest and OCI revision must agree. `PRODUCTION_HISTORY.tsv` and [Production releases](PRODUCTION_RELEASES.md) record verified releases; no historical beta is described as current. Check domain canary, old tabs/actions/drafts, provider health, duplicate jobs/deliveries and retention. Keep real coverage failures visible.
 
-Franchise collection uses the existing three-hour timer, shared collector/deploy lock and worker `scripts/franchises.cjs`; KHL full statistics uses its daily timer/lock. Inspect service status/journals rather than starting duplicate collectors. Quality, price and snapshot schedulers share active scopes; manual commands retain domain checks.
+Franchise collection starts every three hours at minute 10 MSK. Run it through `bash /var/www/fantasy-scout-current/ops/franchises-sync.sh` or its systemd service. Collection, full player-pool refreshes and isolated forecast recalculation share one process-lifetime kernel flock; delayed cycles wait without overlapping. The host collector/deploy lock still protects worker handoff. KHL full statistics uses its daily timer/lock. Inspect service status/journals before recovery; verify old collector PIDs are absent before removing stale `.sync.lock` or `.collection.lock` markers. Quality, price and snapshot schedulers share active scopes; manual commands retain domain checks.
 
 Operator recovery pipes a new password to `scripts/recover-admin.cjs <existing-email>` in a one-off container with the protected operator env, never through public setup or a command-line password. It restores an existing administrator and records completion; setup stays closed.
 

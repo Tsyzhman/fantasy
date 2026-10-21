@@ -750,12 +750,15 @@ drain_previous_runtime
 # prevent overlapping full source refreshes. Forecast/odds cadence stays in worker.
 sudo install -m 0644 "$target/ops/fantasy-khl-statistics.service" /etc/systemd/system/fantasy-khl-statistics.service
 sudo install -m 0644 "$target/ops/fantasy-khl-statistics.timer" /etc/systemd/system/fantasy-khl-statistics.timer
+sudo install -m 0644 "$target/ops/fantasy-franchises.service" /etc/systemd/system/fantasy-franchises.service
+sudo install -m 0644 "$target/ops/fantasy-franchises.timer" /etc/systemd/system/fantasy-franchises.timer
 sudo install -m 0755 "$target/ops/monitoring/analyze_caddy_access_log.py" /usr/local/lib/fantasy-scout/analyze-caddy-access-log.py
 sudo install -m 0755 "$target/ops/monitoring/run-caddy-access-audits.sh" /usr/local/lib/fantasy-scout/run-caddy-access-audits.sh
 sudo install -m 0644 "$target/ops/systemd/fantasy-access-audit.service" /etc/systemd/system/fantasy-access-audit.service
 sudo install -m 0644 "$target/ops/systemd/fantasy-access-audit.timer" /etc/systemd/system/fantasy-access-audit.timer
 sudo systemctl daemon-reload
 sudo systemctl enable --now fantasy-khl-statistics.timer
+sudo systemctl enable --now fantasy-franchises.timer
 sudo systemctl enable --now fantasy-access-audit.timer
 if ! sudo systemctl start fantasy-access-audit.service; then
   echo "ACCESS_AUDIT_WARNING: inspect the truthful rolling SLO snapshot; release remains healthy." >&2

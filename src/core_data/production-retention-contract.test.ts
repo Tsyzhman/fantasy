@@ -1,3 +1,4 @@
+/** @spec spec://common/INFRA-006-continuous-deployment#heavy-jobs */
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
@@ -28,7 +29,7 @@ test("production forecast working sets run in a disposable child process", () =>
   assert.ok(workerCreateIndex >= 0, "worker container creation must remain explicit");
   const workerCreateBlock = deployScript.slice(workerCreateIndex, deployScript.indexOf("docker container start", workerCreateIndex));
   assert.doesNotMatch(workerCreateBlock, /--expose-gc/);
-  assert.match(forecastScheduler, /spawn\(process\.execPath, \["--expose-gc", standaloneServerPath\]/);
+  assert.match(forecastScheduler, /spawnHeavyJob\(\["--expose-gc", standaloneServerPath\]/);
   assert.match(instrumentation, /FANTASY_MODEL_FORECAST_CHILD === "true"/);
   assert.match(instrumentation, /process\.exit\(exitCode\)/);
 });

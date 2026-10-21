@@ -26,6 +26,12 @@ Contracts: `spec://modules/machete/FEAT-006-sports-popularity#root`, `spec://mod
 - Production packaging through Docker and the scripts in `docs/operations/DEPLOYMENT.md` / `docs/operations/DOCKER_PRODUCTION.md`.
 - Hourly full Squad pool refreshes use the bundled `scripts/refresh-fantasy-player-pool-snapshots.ts` child process. The existing scheduler holds its full/incremental exclusion until child exit; a stopped parent terminates the child. Atomic READY publication and the prior ready revision on failure are preserved. Child exit releases native database/allocator memory; incremental queue polling stays in the worker.
 
+<a name="heavy-jobs"></a>
+
+## Heavy background jobs {#heavy-jobs}
+
+`src/server/heavy-job-process.ts`, the pool/model schedulers and `ops/franchises-sync.sh` own the shared Linux calculation exclusion under `spec://common/INFRA-006-continuous-deployment#heavy-jobs`. `src/server/franchises/restore-sources.ts` owns bounded missing-file restoration under `spec://modules/franchises/FEAT-005-franchise-analytics#data`. The canonical contracts preserve cadence and publication while preventing concurrent heavy working sets.
+
 ## Modules and code ownership
 
 Shared visual system: `src/app/globals.css`, `src/components/app-header.tsx`, theme/density controls and early preferences in `src/app/layout.tsx` follow `spec://common/PROP-002-editorial-sport-design#root`. The module styles in `src/app/franchises/ui.module.css`, `src/app/betting/ui.module.css` and `src/components/khl/KhlSquadPlanner.module.css` share its surface, typography and density tokens. The canonical user-supplied instruction is `docs/design/DESIGN.md`.
@@ -120,3 +126,5 @@ workflow copies are intentional matching client entry points.
 
 - 2026-09-28: English documentation and topic-based document ownership; local
   artifacts and credentials excluded from Git (WI-039).
+
+- 2026-10-21: WI-079 — serialize memory-heavy worker jobs and restore only missing franchise payloads; retain collection cadence.
