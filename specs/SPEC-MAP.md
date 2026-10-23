@@ -14,7 +14,7 @@ Canon for Fantasy Scout. Work status lives in `BOARD.md`; this file is the catal
 | [specs/modules/machete/FEAT-006-sports-popularity.md](modules/machete/FEAT-006-sports-popularity.md) | Active: Sports popularity ratings, ownership and transfers |
 | [specs/modules/telegram/FEAT-007-deadline-assistant.md](modules/telegram/FEAT-007-deadline-assistant.md) | Active: Telegram linking, subscriptions and deadline reports |
 | [specs/modules/telegram/INFRA-005-deadline-pipeline.md](modules/telegram/INFRA-005-deadline-pipeline.md) | Active: deadline campaigns, freshness and delivery |
-| [specs/modules/machete/INFRA-004-sorareinside-starters.md](modules/machete/INFRA-004-sorareinside-starters.md) | Active: SorareInside starters, nearest future match, UUID mapping, hourly refresh at :05 |
+| [specs/modules/machete/INFRA-004-sorareinside-starters.md](modules/machete/INFRA-004-sorareinside-starters.md) | Active: SorareInside starters, nearest future match, exact-UUID sparse schedule hydration, hourly refresh at :05 |
 | [specs/modules/betting/FEAT-001-virtual-league.md](modules/betting/FEAT-001-virtual-league.md) | Active: virtual league, line, coins, algorithms and calculation |
 | [specs/common/main.md](common/main.md) | Product purpose, audience, modes, and boundaries |
 | [specs/common/FEAT-009-session-authentication.md](common/FEAT-009-session-authentication.md) | Active: atomic sign-in limits, one-time setup, internal redirects and session retention |

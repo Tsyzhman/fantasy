@@ -1,0 +1,47 @@
+✔ nearest fixture is selected across windows before checking prediction availability (8.8285ms)
+✔ past, playing, postponed and cancelled games never supply next XI (0.1986ms)
+✔ identical duplicates collapse; conflicting and simultaneous games fail closed (0.4347ms)
+✔ only eleven starters belonging to selected fixture are accepted, alternatives ignored (1.7625ms)
+✔ invalid payloads and malformed IDs cannot create requests or clear flags (0.1981ms)
+✔ HTTP errors do not leak response secrets and sessions reuse cookies (321.9029ms)
+✖ scheduled lineup clubs without country reuse exact UUID metadata from complete windows (468.5934ms)
+✔ sparse scheduled clubs cannot borrow country by name, conflicting identity or malformed country (1870.0088ms)
+✖ missing country in full windows and conflicting UUID metadata still abort complete schedule (779.5477ms)
+ℹ tests 9
+ℹ suites 0
+ℹ pass 7
+ℹ fail 2
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4177.3321
+
+✖ failing tests:
+
+test at src\providers\sorareinside\client.test.ts:2:5982
+✖ scheduled lineup clubs without country reuse exact UUID metadata from complete windows (468.5934ms)
+  Error: SorareInside: invalid object
+      at object (C:\Users\Nik\.codex\worktrees\production-lineups\fantasy_export\src\providers\sorareinside\client.ts:13:74)
+      at parseTeam (C:\Users\Nik\.codex\worktrees\production-lineups\fantasy_export\src\providers\sorareinside\client.ts:37:92)
+      at <anonymous> (C:\Users\Nik\.codex\worktrees\production-lineups\fantasy_export\src\providers\sorareinside\client.ts:45:71)
+      at Array.map (<anonymous>)
+      at <anonymous> (C:\Users\Nik\.codex\worktrees\production-lineups\fantasy_export\src\providers\sorareinside\client.ts:40:129)
+      at Array.flatMap (<anonymous>)
+      at <anonymous> (C:\Users\Nik\.codex\worktrees\production-lineups\fantasy_export\src\providers\sorareinside\client.ts:40:74)
+      at Array.flatMap (<anonymous>)
+      at parseGames (C:\Users\Nik\.codex\worktrees\production-lineups\fantasy_export\src\providers\sorareinside\client.ts:40:22)
+      at SorareInsideClient.schedule (C:\Users\Nik\.codex\worktrees\production-lineups\fantasy_export\src\providers\sorareinside\client.ts:122:19)
+
+test at src\providers\sorareinside\client.test.ts:2:6982
+✖ missing country in full windows and conflicting UUID metadata still abort complete schedule (779.5477ms)
+  AssertionError [ERR_ASSERTION]: Missing expected rejection.
+      at async TestContext.<anonymous> (C:\Users\Nik\.codex\worktrees\production-lineups\fantasy_export\src\providers\sorareinside\client.test.ts:91:3)
+      at async Test.run (node:internal/test_runner/test:1113:7)
+      at async Test.processPendingSubtests (node:internal/test_runner/test:788:7) {
+    generatedMessage: false,
+    code: 'ERR_ASSERTION',
+    actual: undefined,
+    expected: /conflicting/,
+    operator: 'rejects',
+    diff: 'simple'
+  }

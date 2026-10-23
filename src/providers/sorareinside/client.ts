@@ -32,17 +32,25 @@ export type NextTeamGame = { team: SourceTeam; opponent: SourceTeam; game: Sourc
 export type SourcePlayer = { id: string; name: string; slug: string; birthDate: string | null; position: string; index: number };
 export type SourceLineup = { id: string; gameId: string; teamId: string; updatedAt: string; formation: string; players: SourcePlayer[] };
 
-function parseTeam(input: unknown): SourceTeam {
+function parseTeam(input: unknown, knownTeams?: ReadonlyMap<string, SourceTeam>): SourceTeam {
   const t = object(input);
-  return { id: sourceId(t.id), name: string(t.name), slug: string(t.slug), country: string(object(t.country).code).toLowerCase(), national: String(t.id).startsWith("NationalTeam:") };
+  const identity = { id: sourceId(t.id), name: string(t.name), slug: string(t.slug), national: String(t.id).startsWith("NationalTeam:") };
+  if (t.country == null && knownTeams) {
+    const known = knownTeams.get(identity.id);
+    if (!known || known.name !== identity.name || known.slug !== identity.slug || known.national !== identity.national) {
+      throw new Error("SorareInside: scheduled club has no matching complete country metadata");
+    }
+    return { ...identity, country: known.country };
+  }
+  return { ...identity, country: string(object(t.country).code).toLowerCase() };
 }
-export function parseGames(input: unknown): SourceGame[] {
+export function parseGames(input: unknown, knownTeams?: ReadonlyMap<string, SourceTeam>): SourceGame[] {
   return list(input).flatMap(region => list(object(region).competitions).flatMap(competition => list(object(competition).games).map(value => {
     const g = object(value);
     const status = string(g.statusTyped);
     if (!["scheduled", "playing", "played", "cancelled", "postponed", "suspended", "interrupted"].includes(status)) throw new Error(`SorareInside: unknown match status ${status.slice(0,30)}`);
     const lineupId = (value: unknown) => value == null ? null : object(value).is_published === true ? sourceId(object(value).id) : null;
-    return { id: sourceId(g.id), kickoff: date(g.date), status, home: parseTeam(g.homeTeam), away: parseTeam(g.awayTeam), homeLineup: lineupId(g.homeTeamLineup), awayLineup: lineupId(g.awayTeamLineup) };
+    return { id: sourceId(g.id), kickoff: date(g.date), status, home: parseTeam(g.homeTeam, knownTeams), away: parseTeam(g.awayTeam, knownTeams), homeLineup: lineupId(g.homeTeamLineup), awayLineup: lineupId(g.awayTeamLineup) };
   })));
 }
 
@@ -119,7 +127,17 @@ export class SorareInsideClient {
     if (!selected.length || selected.length>10 || !selected.some(w=>Date.parse(w.start)<=now.getTime())) throw new Error("SorareInside: incomplete gameweek coverage");
     const games: SourceGame[] = [];
     for (const week of selected) games.push(...parseGames(await this.get(`/games?gameweekSlug=${encodeURIComponent(week.slug)}&onlyUserPlayersTeams=false&includeGamesStats=false`)));
-    games.push(...parseGames(await this.get("/games?scheduledLineups=true&onlyUserPlayersTeams=false&includeGamesStats=false")));
+    // The scheduled-lineups projection omits club country. Hydrate only from
+    // this cycle's complete windows, by UUID and corroborated club identity.
+    const teams = new Map<string, SourceTeam>();
+    for (const game of games) for (const team of [game.home, game.away]) {
+      const known = teams.get(team.id);
+      if (known && (known.name !== team.name || known.slug !== team.slug || known.country !== team.country || known.national !== team.national)) {
+        throw new Error("SorareInside: conflicting complete club metadata");
+      }
+      teams.set(team.id, team);
+    }
+    games.push(...parseGames(await this.get("/games?scheduledLineups=true&onlyUserPlayersTeams=false&includeGamesStats=false"), teams));
     if (!games.length || games.length>10000) throw new Error("SorareInside: invalid schedule size");
     return games;
   }

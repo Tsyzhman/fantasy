@@ -441,6 +441,14 @@ for runtime_env in "$web_env" "$worker_env"; do
   printf '%s\n' 'KHL_ENABLED=true' 'KHL_SYNC_ENABLED=true' 'KHL_CATALOG_CONTEST_IDS=107' 'KHL_FORECASTS_ENABLED=false' 'KHL_STATS_SYNC_ENABLED=true' 'KHL_DAILY_STATS_ENABLED=true' >> "$runtime_env"
 done
 
+# @spec spec://common/INFRA-006-continuous-deployment#runtime
+# Do not inherit repeated Docker overrides from every prior generation. Keys
+# supplied explicitly at container creation must occur only in those overrides.
+python3 "$target/scripts/normalize-production-env.py" "$web_env" --drop \
+  NODE_OPTIONS INGESTION_WORKER_IN_PROCESS WEB_SCHEDULER_ACTIVATION_PATH FPL_RELAY_SOCKET_PATH
+python3 "$target/scripts/normalize-production-env.py" "$worker_env" --drop \
+  INGESTION_WORKER_IN_PROCESS FPL_PRICE_SYNC_ENABLED PROBABLE_LINEUP_SYNC_ENABLED FPL_RELAY_SOCKET_PATH
+
 docker container inspect "$fpl_vpn_container" >/dev/null 2>&1 || {
   echo "FPL VPN container is missing: $fpl_vpn_container" >&2
   exit 1

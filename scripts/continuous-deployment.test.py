@@ -23,6 +23,7 @@ def load(name, filename):
 routing = load("production_web_routing", "production-web-routing.py")
 migrations = load("online_migrations", "check-online-migrations.py")
 migration_environment = load("migration_environment", "prepare-online-migration-env.py")
+runtime_environment = load("runtime_environment", "normalize-production-env.py")
 CONFIG = '''(shared) {
     header X-Trace "literal } brace"
 }
@@ -40,6 +41,21 @@ fantasy.tsyzhman.ru {
     }
 }
 '''
+
+
+class RuntimeEnvironmentTests(unittest.TestCase):
+    def test_many_generations_preserve_last_values_without_accumulating_overrides(self):
+        source = ["DATABASE_URL=private=a#b", "FLAG=old", "FLAG=new", "EMPTY=", "NODE_OPTIONS=old"]
+        for _ in range(100):
+            source = runtime_environment.normalize_environment(source, {"NODE_OPTIONS"}).splitlines()
+            source.extend(["NODE_OPTIONS=current", "FLAG=new"])
+        result = runtime_environment.normalize_environment(source, {"NODE_OPTIONS"})
+        self.assertEqual(result, "DATABASE_URL=private=a#b\nFLAG=new\nEMPTY=\n")
+
+    def test_invalid_entries_fail_without_exposing_private_values(self):
+        for entry in ["private-value", "BAD KEY=private-value", "KEY=private-value\nINJECTED=true", "KEY=private-value\0"]:
+            with self.assertRaisesRegex(ValueError, "^Invalid production environment entry$"):
+                runtime_environment.normalize_environment([entry])
 
 
 class RoutingTests(unittest.TestCase):

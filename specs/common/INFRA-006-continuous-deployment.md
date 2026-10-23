@@ -57,6 +57,7 @@ Use two running web generations and a graceful upstream reload rather than rebui
 - Candidate and prior image static assets are combined from their original images, bounded to those two releases. Existing browser tabs can still fetch prior hashed JS/CSS after the old process stops. Authentication storage and secrets are retained; deployment does not revoke sessions.
 - A stable compiler ID salt is supplied through a BuildKit secret mount. In the same build layer, strip the salt from both Node action manifests, remove private build caches and scan all build output for residual salt before publishing any runtime/setup image. The active AES-256 encryption key is a separate mode-600 host file, injected into private runtime environments only; it never enters CI or a release artifact. Next 16.3.8 uses that runtime environment in preference to the cleared manifest. Current actions are unbound module-level functions: verify all existing IDs and old forms when rotating the runtime key. Closure-capturing or bound actions require an explicit compatibility review. `deploymentId` is the exact release commit. Unsaved Squad plans persist in tab sessionStorage, scoped by account/provider/league/season/squad, with a 24-hour TTL, 64 KiB per entry and eight-entry limit; saved baselines must match before restoration. Captains, locks, round links and transfer state survive refresh.
 - Exactly one scheduler worker runs at a time. Only after the candidate web is healthy, the old worker stops and the new worker starts. Relay identities and volumes follow the actual mounted socket volume; collector locks and active-ingestion checks remain mandatory.
+- Normalize inherited runtime environment keys to one effective final value before creating the next generation. Remove keys supplied by explicit runtime-role overrides from the inherited files, preserving private values and preventing duplicate growth across releases.
 - The operator-owned VPN adapter accepts a complete AmneziaWG profile or a plain WireGuard profile. Plain profiles retain their protocol fields without adding obfuscation settings; partial AmneziaWG settings and executable configuration hooks are rejected. The new tunnel must pass the official FPL bootstrap probe before replacing the old VPN and relay; the serving web remains running.
 - Web-owned FPL and probable-lineup schedules retain their cadence. A release-specific read-only activation file defers their startup in the candidate until the old web has stopped after draining; its content must match the candidate commit. HTTP readiness does not wait for activation. The pending timer is unreferenced and ends after activation or cancellation, preventing duplicate web schedules during preparation and draining.
 
@@ -129,6 +130,8 @@ Unready candidates and unsafe migrations preserve the serving version. Routing v
 <a name="changelog"></a>
 
 ## Change history {#changelog}
+
+- 2026-10-23: WI-080 — normalize inherited runtime environment and exclude explicit role overrides so repeated promotions do not accumulate duplicate configuration.
 
 - 2026-10-21: WI-079: bound operator source resume to a verified three-hour acquisition checkpoint, refresh database exports, and keep known absent historical lineups explicit and retryable.
 

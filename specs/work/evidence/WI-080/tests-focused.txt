@@ -1,0 +1,40 @@
+✔ initial exact club-roster match becomes an ID match even after display-name changes (2.7408ms)
+✔ an ID missing from the active club never falls back to a same-name player (0.1011ms)
+✔ ambiguous names and conflicting birthdays are blocked (0.2786ms)
+✔ birthday supports abbreviated names but cannot map an unrelated same-birthday player (0.2006ms)
+✔ reviewed UUID does not confuse two players with the same birthday (0.1416ms)
+✔ verified Alejandro/Alex Pozo UUID still requires the correct date and active club membership (0.1156ms)
+✔ reviewed team aliases distinguish Celta from its reserve team (0.4231ms)
+✔ other sources respect upcoming SorareInside predictions only while fixture is future (0.1661ms)
+✔ a price foreign key needs the matching provider, contest, season and player binding (2.3272ms)
+✔ stale, future and undated identity evidence is rejected (0.1586ms)
+✔ competing club or birth-date assignments contribute no identity alias (0.2031ms)
+✔ Rodri resolves through his verified full name and date, without a nickname guess (1.0084ms)
+✔ Makhachkala transliteration resolves by the verified source slug (0.4431ms)
+✔ inactive Groningen member needs corroborated name, full date, exact scope and no competing club (0.3339ms)
+✔ a reviewed UUID cannot bypass independent name corroboration for an inactive member (0.2332ms)
+✔ nearest fixture is selected across windows before checking prediction availability (10.755ms)
+✔ past, playing, postponed and cancelled games never supply next XI (0.2584ms)
+✔ identical duplicates collapse; conflicting and simultaneous games fail closed (0.5047ms)
+✔ only eleven starters belonging to selected fixture are accepted, alternatives ignored (2.2783ms)
+✔ invalid payloads and malformed IDs cannot create requests or clear flags (0.279ms)
+✔ HTTP errors do not leak response secrets and sessions reuse cookies (316.8452ms)
+✔ scheduled lineup clubs without country reuse exact UUID metadata from complete windows (472.0566ms)
+✔ sparse scheduled clubs cannot borrow country by name, conflicting identity or malformed country (1871.1899ms)
+✔ missing country in full windows and conflicting UUID metadata still abort complete schedule (625.4932ms)
+✔ schedule runs at :05 every hour, including midnight rollover (3.3099ms)
+✔ five campaigns join one refresh and reuse its completed morning summary (45.5393ms)
+✔ campaigns waiting for an older hourly run start only one refresh after 08:10 (0.3495ms)
+✔ failed and already-running refreshes are not reused as successful freshness (1.1107ms)
+✔ candidate web defers its schedules until its exact commit is activated, then starts once (0.9488ms)
+✔ missing activation file keeps candidate schedules idle until the file appears (0.1694ms)
+✔ cancelling an idle candidate clears its timer and prevents late activation (0.1677ms)
+✔ web without a rollout activation file retains immediate schedule startup (0.1159ms)
+ℹ tests 32
+ℹ suites 0
+ℹ pass 32
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 3611.3778
