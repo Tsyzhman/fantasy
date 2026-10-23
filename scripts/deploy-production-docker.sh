@@ -333,6 +333,7 @@ for required_file in \
   src/server/web-scheduler-activation.ts \
   scripts/fpl-vpn-relay.mjs \
   scripts/prune-production-artifacts.sh \
+  scripts/prune-production-backups.py \
   src/app/api/machete/squads/formula-adaptations/route.ts \
   src/components/machete/FormulaAdaptationHoverCard.tsx \
   src/machete/formula-adaptation-models.generated.json \
@@ -548,15 +549,18 @@ if (( ${#pending_migrations[@]} > 0 )); then
 
   backup_root="/var/backups/fantasy-scout"
   backup_path="$backup_root/pre-${release}-migration.dump"
+  backup_partial="${backup_path}.partial"
   mkdir -p "$backup_root"
   umask 077
   docker exec "$postgres" pg_dump -U fantasy_app -d fantasy_scout \
-    --format=custom --no-owner --no-acl > "$backup_path"
-  [[ -s "$backup_path" ]] || {
-    echo "Production database backup is empty: $backup_path" >&2
+    --format=custom --no-owner --no-acl > "$backup_partial"
+  [[ -s "$backup_partial" ]] || {
+    echo "Production database backup is empty: $backup_partial" >&2
     exit 1
   }
-  docker exec -i "$postgres" pg_restore --list < "$backup_path" >/dev/null
+  docker exec -i "$postgres" pg_restore --file=/dev/null --no-owner --no-acl \
+    --exit-on-error < "$backup_partial"
+  mv -- "$backup_partial" "$backup_path"
   backup_sha="$(sha256sum "$backup_path" | awk '{print $1}')"
   echo "Verified production backup: $backup_path ($backup_sha)"
 

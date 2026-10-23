@@ -97,6 +97,8 @@ Sports fantasy weeks: `src/khl/fantasy-calendar.ts` resolves agreeing club obser
 
 `scripts/normalize-production-env.py` owns private inherited-environment normalization and bounded role overrides under `spec://common/INFRA-006-continuous-deployment#runtime`.
 
+`scripts/prune-production-artifacts.sh` owns release/image/relay retention; `scripts/prune-production-backups.py` owns verification and single full-dump retention under `spec://common/INFRA-006-continuous-deployment#recovery`. Installed scheduled copies include both files and run under the production deployment lock. Host-wide unused build-cache deletion is an explicit operator option.
+
 Continuous rollout ownership: `spec://common/INFRA-006-continuous-deployment#root`, `scripts/deploy-production-docker.sh`, `scripts/production-rollout.sh`, `scripts/production-web-routing.py`, `scripts/check-online-migrations.py`, `scripts/prepare-online-migration-env.py`, `scripts/strip-server-action-key.mjs` and its direct regression test, `src/server/web-scheduler-activation.ts`, its instrumentation boundary and the production relay adapter. Keep the serving web running until a verified candidate on the alternate loopback port receives traffic through a validated graceful Caddy reload. Builds, backups and migration rehearsals run without stopping the serving website. Candidate web schedules activate only after the old web stops.
 
 The immutable GitHub production promoter keeps its SSH channel alive every 15 seconds and terminates an unresponsive channel after four unanswered probes. Authentication, host verification, release ancestry/checksums and automatic rollback remain mandatory. Docker dependency downloads use a 60-second request timeout, three retries, and bounded 1–10 second retry delays; a failed download stops the candidate without replacing production. A disconnected promotion is inspected before retrying so that collectors, canaries and release processes are never duplicated.
@@ -123,6 +125,8 @@ workflow copies are intentional matching client entry points.
 <a name="changelog"></a>
 
 ## Changelog {#changelog}
+
+- 2026-10-23: WI-081 — map bounded full-backup verification and installed artifact maintenance.
 
 - 2026-10-09: WI-060 — own the continuous production rollout, isolated Caddy upstream switch and compatible migration guard.
 

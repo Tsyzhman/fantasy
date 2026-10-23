@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.3.146 - 2026-10-23
+
+- Retain one fully verified production database dump, publish new backups atomically and preserve the current release plus one rollback.
+- Add explicit complete host build-cache cleanup and repair the installed scheduled maintenance policy under the deployment lock.
+
 ## 0.3.145 - 2026-10-23
 
 - Restore SorareInside lineup cycles when scheduled matches omit club country, using exact same-cycle club identity metadata while preserving strict schedule and XI validation.

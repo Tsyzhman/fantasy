@@ -1,0 +1,27 @@
+{
+  "status": "current",
+  "commit": "57228edcd4afde31e3daeb236549c08bab5157d2",
+  "source": "working_tree",
+  "fingerprint": "9a93eeb6a0e3d8f9a52abda3e0a070a09dac45e85e5db15aea619d9107e5140c",
+  "diagnostics": [],
+  "provenance": {
+    "commit": "57228edcd4afde31e3daeb236549c08bab5157d2",
+    "source": "working_tree",
+    "observedAt": "2026-10-23T11:28:09.962Z",
+    "workingTree": {
+      "dirty": true,
+      "materialPaths": [
+        "package-lock.json",
+        "package.json",
+        "scripts/continuous-deployment.test.py",
+        "scripts/deploy-production-docker.sh",
+        "scripts/prune-production-artifacts.sh",
+        "scripts/prune-production-backups.py",
+        "scripts/verify-release-source.mjs",
+        "specs/common/INFRA-006-continuous-deployment.md",
+        "specs/common/structure.md",
+        "specs/SPEC-MAP.md"
+      ]
+    }
+  }
+}

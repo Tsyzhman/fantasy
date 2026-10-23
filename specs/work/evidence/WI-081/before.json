@@ -1,0 +1,718 @@
+{
+  "at": 1792754651.2786686,
+  "current": "/var/www/fantasy-scout-releases/20261023T103559Z-v0.3.145-32fcc3d",
+  "projectImages": [
+    {
+      "Containers": "3",
+      "CreatedAt": "2026-10-23 13:37:56 +0300 MSK",
+      "CreatedSince": "46 minutes ago",
+      "Digest": "<none>",
+      "ID": "c328651b36be",
+      "Repository": "fantasy-scout",
+      "SharedSize": "N/A",
+      "Size": "1.9GB",
+      "Tag": "20261023T103559Z-v0.3.145-32fcc3d",
+      "UniqueSize": "N/A"
+    },
+    {
+      "Containers": "3",
+      "CreatedAt": "2026-10-21 13:34:50 +0300 MSK",
+      "CreatedSince": "2 days ago",
+      "Digest": "<none>",
+      "ID": "a081211f5d27",
+      "Repository": "fantasy-scout",
+      "SharedSize": "N/A",
+      "Size": "1.9GB",
+      "Tag": "20261021T103252Z-v0.3.144-703edd6",
+      "UniqueSize": "N/A"
+    }
+  ],
+  "containers": [
+    {
+      "name": "/fantasy-scout-worker",
+      "id": "0915ef20ff920d0e78380635f39809dbcacad1cf09eea3257e7e6465b62887e4",
+      "image": "sha256:c328651b36be5472240e03519389ac0efe23034b4d4c0e3c2c8210c6d1a2f136",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/fantasy-scout-web",
+      "id": "3a44352ccbe5ca0315c793be5062fdb1234d70a26fffd53bd6227108189ea26f",
+      "image": "sha256:c328651b36be5472240e03519389ac0efe23034b4d4c0e3c2c8210c6d1a2f136",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/fantasy-scout-fpl-relay",
+      "id": "db1b86b4792ba5b1865ee78610725827b64611266d53060f78f8160a9d2caec5",
+      "image": "sha256:c328651b36be5472240e03519389ac0efe23034b4d4c0e3c2c8210c6d1a2f136",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/germany-web",
+      "id": "c19a3eaa998dedd33739b7420a35eac99ee793c7ec00f3a8ce12d25fed76c9a7",
+      "image": "sha256:ac8f351cda0007bc5abc1475b3fcc3d092cc3727f7dd60bc48331647768b6f29",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/fantasy-scout-worker-rollback-pre-20261023T103559Z-v0.3.145-32fcc3d",
+      "id": "839fd248c9f180159d2026785c590c6bc05693de920ba128f9ba720271ec2f41",
+      "image": "sha256:a081211f5d271f0fac8652a1a7dab131a1e15a6949e1ab48d0b5378518318155",
+      "status": "exited",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/fantasy-scout-web-rollback-pre-20261023T103559Z-v0.3.145-32fcc3d",
+      "id": "398cfbe80e4cea43471d5aaafdaa8b35aaa7bed68e50cce549ace210a38675e6",
+      "image": "sha256:a081211f5d271f0fac8652a1a7dab131a1e15a6949e1ab48d0b5378518318155",
+      "status": "exited",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/fantasy-scout-fpl-relay-rollback-pre-20261023T103559Z-v0.3.145-32fcc3d",
+      "id": "91ee18b32df8e4718f6a043b096f38ee05f9761c573ce9ebfc1a4b2f0b44b5a4",
+      "image": "sha256:a081211f5d271f0fac8652a1a7dab131a1e15a6949e1ab48d0b5378518318155",
+      "status": "exited",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/sharovik-vpn",
+      "id": "1cf120c49e7925c3dee2f54ca44bd95dcb588f57767fd97bec074d9a6bc235dc",
+      "image": "sha256:cac6c54caf5d749267386629cd827fc711524092156cd8097c8f464797a903be",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/kaya-web",
+      "id": "6d3d7bfbc25d860ed4aacff30fcdbdd72416813f916a8d43cbf35592aa00a66c",
+      "image": "sha256:9a55856c6c08f9e9fd4bdec07c9834cbff8a523715bb830e4a9682d083f243a6",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/istanbul-app-1",
+      "id": "28b4f94412b0166446a4862d7910e30dff7f647c46752e906b41cb356dcbd1b9",
+      "image": "sha256:2ab2c54c6ee32123c59b7ca7a05ded316e8ad76add7df7da5179468c158a6165",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/istymate-api-1",
+      "id": "f094016fd6ccd81f86eacf15cfbde80b1e26b5283769d79f37bbf11f6af18242",
+      "image": "sha256:b2a609dfdf189ed434dadfaf1666b3dc26997fd36682a9bd021a904a3fdaa668",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/istymate-worker-1",
+      "id": "441b8ba73313c2a63f7b40575618dfff5c7c1fe9a3ee76bd9ee26987ecea68fe",
+      "image": "sha256:b2a609dfdf189ed434dadfaf1666b3dc26997fd36682a9bd021a904a3fdaa668",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/istatus-web",
+      "id": "1e5317c481c0bf780c3f29af331a3bfcb126ae93a63a15f550615debb5eafe09",
+      "image": "sha256:73363b62e6cb1efe4af4b6c6d11edf01684aa0e2181af3a1a09d8832da08ff19",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/istymate-postgres-1",
+      "id": "9e40285d48e6b6b63077fbb378fdfd0da87912eb7dec1d87d80aab7b6f4426ec",
+      "image": "sha256:ccc6e83d6e35e931dc7c5def2022729d5a6c370318d099181995567ff1fb4d6b",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/istymate-redis-1",
+      "id": "5222f8691c7315e3f6ae3e2b5ab4b6414b53522e1e36bcb3a4d3cf96bf2f33d4",
+      "image": "sha256:71da9275c5f3fcb97d0fa0c8c5b36cc995327265420f17a04bfd544f458059f7",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/opencode-tinyauth",
+      "id": "f7eee832a2d7c80f05e161ee467bd38292b5ef7db5cbf2ca5656075a482cec42",
+      "image": "sha256:a1bde189951900f84a60f133c26a1ec7a3264073ec7875b548f4fbadb7f5f735",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/istanbul-postgres-1",
+      "id": "b976ba422df1b2052adca79cf22a1254965d7908bcde80117deb08fd8025cc58",
+      "image": "sha256:472efd9a66f2b2f1a5aeb18b28de74332e6ef88c2b93a1a5d812fb6db67a5f60",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/opencode-vpn",
+      "id": "8edfcf6934bf8c4dafad1ed5f5d2db4aceab4ead32a2cc8c9ae8e44fb50d269c",
+      "image": "sha256:78ca1bc9f3b563b0944fd6b1126522ee631e7b44d540b91fc435ba7062ef08b2",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/library-web",
+      "id": "1cb114a2cfadafa9917498dcbdd2abbfc21e377d22bbeb669e1a863451e4b349",
+      "image": "sha256:1a6ff5151dc1c19d298f6aa4abe90b744ec4e2eff9eea24e245ab0d3749a4962",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/library-worker",
+      "id": "9d8d3c3eb0f00c171fbafabf14aa576628e10d88f56e6a334750904d93dc93e0",
+      "image": "sha256:25fa045b0a549cb8492e2160b318e6f9181bbdaccf81616c5fe86a43f16efd72",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/copy-widget-web",
+      "id": "9c5982d028f75d20f61e4a535cbe94a05b930d8faf1859ee3918ccb7dd580a5e",
+      "image": "sha256:f5b129bc551c831b3a126dfaf9865d1058c5ae73b5c79f8a785adb5c49a998c8",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/copy-widget-postgres",
+      "id": "35c8be651ea5f6088dbc4b96c014135309107945222747e1440db0e2b9c08694",
+      "image": "sha256:16bc17c64a573ef34162af9298258d1aec548232985b33ed7b1eac33ba35c229",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/session-kaiten-audit-web",
+      "id": "f61bcdeb0e791385e7764c30220910a9c718b79a857ab2e1477d62dd0d22c5a2",
+      "image": "sha256:1675f0630d3952fe73f0adea41203948020c56b6e5bb15c81e5125e1dffd595f",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/hysteria-gateway",
+      "id": "1d399ad68599f59bce3c81240c699be5639f79405eec0b8a87e07d76869d5926",
+      "image": "sha256:da0e2331395c9025a85fa58892772b4cdbe5f2e530e93defeec3968175d06c6d",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/sipuni-blacklist-app-1",
+      "id": "e8a3f1c7f9fc5be66239305518fdd44aa05223fc697b7b7a5e6b946807c3fc6a",
+      "image": "sha256:ae569253257e0eab4154f1a23d5d8f260f236d01ff60c83a4201e31282ddb29e",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/fantasy-scout-postgres",
+      "id": "325e03666369215bd5b68c527a4b9b70421237c1b8f78b0040df6d94e571230f",
+      "image": "sha256:16bc17c64a573ef34162af9298258d1aec548232985b33ed7b1eac33ba35c229",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/quality-control-web",
+      "id": "1644aba15d1e0758cf5e60033fbbbf754d8a02d734dc27c9d20efa617499c93d",
+      "image": "sha256:903fa68bf41adc6b0f005137c91470141cda5590a438ddee0b838cedd25c9e7b",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/advanced-analytics-web",
+      "id": "a341ef1c4979db4ffffda2e7b6bb8862b1a5a85f229d69a8a0db6876e93ddc7c",
+      "image": "sha256:dab75c8a4a7d9c3626a54ed603c1b5ff25ad6e96c6554494587d448959a436b7",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/kpi-dashboards-web",
+      "id": "9dc73b7d59ca7fd2a7e6f549962c9300699181e82667bdcf28b1b36c72ab1c7a",
+      "image": "sha256:49888cb5081af78c179cc7bfebcd9c203d86373700dd8edeac238c1d2d321ddc",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/payments-web",
+      "id": "5c5265ebf9be52a32c71fecd41c1bb750932d4670cf5b5bd0df882f092384c3f",
+      "image": "sha256:37f9df8b523f976384d8878a069e194a2514077760d4a41319d90dbb96820735",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/local-time-web",
+      "id": "73c757208a02bed05bc534ef5e9596b8f84b8d1255a599813035156a8ceebe1b",
+      "image": "sha256:916a52e32b407c1649f65bd2e4c87bf1ae21a83d941b043d5529170f74f296de",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/department-settings-web",
+      "id": "19c1b6286811078d15da96818c95e3ca0caf8fa7807a3a1c5f4de19b386030aa",
+      "image": "sha256:4754eb4748900f9998e925872de8219b64c146895478c384be13a59c5b1fdcc0",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/duplicate-control-web",
+      "id": "c18e199ff99e84a724f96d1f2d2f0a34ffff4c5a470009bcf72a1a92b272baf6",
+      "image": "sha256:4c08d3d9179db31414beee5a440bc5525f7c648acbbbb8daf3313af730ab7396",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/bulk-field-change-web",
+      "id": "a4aa02b26c3ab7e02eb0abee486f115706540d54e64b8399b62cab2f059c9fdf",
+      "image": "sha256:3ce1c92ada1cb4ff17455bce7f2e81fa61869960d4a4e3656a6f7db22df100c0",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/task-result-required-web",
+      "id": "070c139b096b5886117c3917442721495b91d0c376017a537e96b4f545be1b63",
+      "image": "sha256:06e495d08d70807c9455e5109fd6d2b8e1d560aedf99d153aa68f3adf342a76a",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/field-grouping-web",
+      "id": "cac8cb519bd7fd94b0b79b815eb0cc9d22de58884683bdeb5c357e150221b592",
+      "image": "sha256:bef1ac669e95e308590e4503b97e52568033b52cf26392695bf1f0ec125443c7",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/status-descriptions-web",
+      "id": "aded323ef5b883ee8e0e7bd8e4015e298f91466d9a4da46f65ac14ab90e6da98",
+      "image": "sha256:c364d098b9d765ab2f4557d4cf5907e5b6dd39d7baeaf8e051c3ba23e16a7510",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/move-forward-web",
+      "id": "55279d29bd00e6699e3a730df2c5c68596d857f6d460f1f64e3749cd857e5185",
+      "image": "sha256:4d99d65d8992d74f49bb5fd8af3f4dbd6309d96ce0925002b23ef6270c0cf1ea",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/calculator-web",
+      "id": "188b8be8764663731693d5641735063883c6269cc0fc37899764a2c2e2ce688f",
+      "image": "sha256:593706676de07939ce21072ff3bc53b5122ae7f38e589a30832e2904db0d9bbf",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/take-request-web",
+      "id": "ce9ba3388ebd3fe54dccb5856e297089807feacea542bc1b7a6d94dd5421dccf",
+      "image": "sha256:cf3a2be65640b8594b9a547d92089478ce40dc32e522ec491c980fd8f1851cc9",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/distribution-web",
+      "id": "3193e0f9d7ff23ffc30536bd49fc30327fbae4f249c086728de49566d7a9e132",
+      "image": "sha256:8f2d0bbaa891c1727206b72cc827bbc12919136619165d4cdc08d3e7f3be24a8",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/required-next-step-web",
+      "id": "8d38857af65e36a767c787def7593dc11929862211fffc02f80453a3047cdc48",
+      "image": "sha256:4c529bd8edf2c18ed7fbf33390afd0e8d9e33c8cd661a09bb2eb5921522b6c48",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/launchers-web",
+      "id": "bac53139b57c98107ed78e79d9bcf7e051e3e5f7ead1f19b9a8407cfb9cdb309",
+      "image": "sha256:953b040b7afe46ef7ae2ac1f57c1f566174f6f156d95e46e22dd5b1b8a355ee6",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/fast-fields-web",
+      "id": "83e5f5f0159128c0abce27af43de75a7077b4b97f4d75fc3b0673728330eeb45",
+      "image": "sha256:242f18c095ef01e9f06882c3e0437546c84a14a0583dc7aecbe666c71f214346",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/interface-pack-web",
+      "id": "420aadcb1de5fe4ed9f9a99c4888979fbf6e8e3cdd368055a7af70ec67d25aaf",
+      "image": "sha256:f61e902b8e6e4f09952c4dfc56fb351d29b7a1458cf4f16d09701117fd3f214b",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/tech-help-support-bot",
+      "id": "48a60d9bcfad7c2302e34d0f3188a99544a1e965e0e16d729e452be886f714f1",
+      "image": "sha256:ee92c6d3fb94daffce97132bd957ad509d86631472441ecc56deb9fadbe621d3",
+      "status": "running",
+      "restartCount": 2,
+      "oom": false
+    },
+    {
+      "name": "/tech-help-vpn",
+      "id": "bc9b5d3051fd6fde7f1b970635062cac523c8ee277311a4743e02a0c3517905a",
+      "image": "sha256:da0e2331395c9025a85fa58892772b4cdbe5f2e530e93defeec3968175d06c6d",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/tech-help-postgres",
+      "id": "847acfd2c48f9d26557f4aed29144f238f4d406d50fc8b9ba772536f484cab68",
+      "image": "sha256:16bc17c64a573ef34162af9298258d1aec548232985b33ed7b1eac33ba35c229",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    }
+  ],
+  "rootUsage": {
+    "/var/backups/fantasy-scout": "2919981056\t/var/backups/fantasy-scout",
+    "/home/deploy/fantasy-backups": "87793664\t/home/deploy/fantasy-backups",
+    "/home/deploy/fantasy-research": "546263040\t/home/deploy/fantasy-research",
+    "/var/www/fantasy-scout-releases": "109064192\t/var/www/fantasy-scout-releases",
+    "/var/www/fantasy-scout": "17457152\t/var/www/fantasy-scout"
+  },
+  "dockerDisk": "TYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE\nImages          59        40        23.93GB   7.979GB (33%)\nContainers      48        45        192.5MB   106.5kB (0%)\nLocal Volumes   74        39        5.9GB     160.9MB (2%)\nBuild Cache     23        0         227.6MB   227.6MB",
+  "disk": "Filesystem        1B-blocks        Used   Available Use% Mounted on\n/dev/vda3      126753218560 44697333760 75602255872  38% /",
+  "memory": "total        used        free      shared  buff/cache   available\nMem:           11876        5730        2135         312        4010        5520\nSwap:              0           0           0",
+  "cacheDirectories": "",
+  "projectServices": "",
+  "archiveInventory": {
+    "count": 11673,
+    "bytes": 3538895565,
+    "archiveFiles": [
+      {
+        "path": "/var/backups/fantasy-scout/pre-20260907T102720Z-v0.3.58-a23d3a0-migration.dump",
+        "bytes": 109073250,
+        "mtime": 1788777058.4743156
+      },
+      {
+        "path": "/var/backups/fantasy-scout/uefa-md1-20260908-prices-before.json",
+        "bytes": 828350,
+        "mtime": 1788857666.0
+      },
+      {
+        "path": "/var/backups/fantasy-scout/pre-20260921T155858Z-v0.3.84-0d2e823-migration.dump",
+        "bytes": 210273538,
+        "mtime": 1790006622.5265741
+      },
+      {
+        "path": "/var/backups/fantasy-scout/pre-20260911T103306Z-v0.3.67-dd49fb0-migration.dump",
+        "bytes": 122477285,
+        "mtime": 1789123012.3392742
+      },
+      {
+        "path": "/var/backups/fantasy-scout/pre-20261010T112916Z-v0.3.132-a69d45d-migration.dump",
+        "bytes": 326022256,
+        "mtime": 1791632397.5964897
+      },
+      {
+        "path": "/var/backups/fantasy-scout/betting-before-user-reset-20260907-v0359.dump",
+        "bytes": 583373,
+        "mtime": 1788779396.0373056
+      },
+      {
+        "path": "/var/backups/fantasy-scout/pre-20261009T142552Z-v0.3.127-b7682f3-migration.dump",
+        "bytes": 315433244,
+        "mtime": 1791556248.4212291
+      },
+      {
+        "path": "/var/backups/fantasy-scout/uefa-md1-20260908-before.json",
+        "bytes": 730907,
+        "mtime": 1788857431.0
+      },
+      {
+        "path": "/var/backups/fantasy-scout/pre-20260916T152502Z-v0.3.75-5719460-migration.dump",
+        "bytes": 180705164,
+        "mtime": 1789572603.4251456
+      },
+      {
+        "path": "/var/backups/fantasy-scout/pre-20260908T154729Z-v0.3.66-92f3731-migration.dump",
+        "bytes": 114333068,
+        "mtime": 1788882718.1545186
+      },
+      {
+        "path": "/var/backups/fantasy-scout/betting-before-user-reset-20260907-v0359.dump.list",
+        "bytes": 3220,
+        "mtime": 1788779396.1213071
+      },
+      {
+        "path": "/var/backups/fantasy-scout/pre-20260907T094424Z-v0.3.57-d9abf51-migration.dump",
+        "bytes": 107945118,
+        "mtime": 1788774474.5428946
+      },
+      {
+        "path": "/var/backups/fantasy-scout/pre-20261009T153717Z-v0.3.128-c24772b-migration.dump",
+        "bytes": 315477604,
+        "mtime": 1791560546.532215
+      },
+      {
+        "path": "/var/backups/fantasy-scout/pre-20261010T115253Z-v0.3.133-4bda63b-migration.dump",
+        "bytes": 325946862,
+        "mtime": 1791633794.122415
+      },
+      {
+        "path": "/var/backups/fantasy-scout/wi015-ffo-mappings-before.json",
+        "bytes": 44848,
+        "mtime": 1788867057.0
+      },
+      {
+        "path": "/var/backups/fantasy-scout/pre-20260913T194921Z-v0.3.71-7e07bae-migration.dump",
+        "bytes": 139021462,
+        "mtime": 1789329185.6200953
+      },
+      {
+        "path": "/var/backups/fantasy-scout/wi013-ucl-mapping-20260908.json",
+        "bytes": 159476,
+        "mtime": 1788856122.0
+      },
+      {
+        "path": "/var/backups/fantasy-scout/pre-20260831T094816Z-v0.3.50-3450941-migration.dump",
+        "bytes": 89321080,
+        "mtime": 1788169901.857355
+      },
+      {
+        "path": "/var/backups/fantasy-scout/pre-20261010T122845Z-v0.3.134-377e362-migration.dump",
+        "bytes": 325160285,
+        "mtime": 1791635871.436661
+      },
+      {
+        "path": "/var/backups/fantasy-scout/pre-20260925T082846Z-v0.3.86-e14f27c-migration.dump",
+        "bytes": 235617103,
+        "mtime": 1790325201.5043304
+      },
+      {
+        "path": "/var/backups/fantasy-scout/mapping-backups/sports-ru-spain-championship-turkey-2026-08-17T15-15-32-290Z.json",
+        "bytes": 70939,
+        "mtime": 1786979732.289801
+      },
+      {
+        "path": "/var/backups/fantasy-scout/starter-flags/current-starter-flags-20260820T033701Z.csv",
+        "bytes": 145529,
+        "mtime": 1787197021.1108165
+      },
+      {
+        "path": "/var/backups/fantasy-scout/starter-flags/sorareinside-gw7-20260820T070724Z.csv",
+        "bytes": 120856,
+        "mtime": 1787198847.352329
+      },
+      {
+        "path": "/var/backups/fantasy-scout/starter-flags/sorareinside-gw7-relaxed-20260820T071955Z.csv",
+        "bytes": 120856,
+        "mtime": 1787199598.0580866
+      },
+      {
+        "path": "/var/backups/fantasy-scout/sports-ru-mapping/sports-ru-nl-pt-2026-27-2026-07-31T20-44-39-563Z.json",
+        "bytes": 250335,
+        "mtime": 1785530679.5688164
+      },
+      {
+        "path": "/home/deploy/fantasy-backups/pre-starter-backfill-20260809T085922Z.dump",
+        "bytes": 2970293,
+        "mtime": 1786265963.0
+      },
+      {
+        "path": "/home/deploy/fantasy-backups/pre-v0.3.14-20260809T0732Z-tables.dump",
+        "bytes": 4258229,
+        "mtime": 1786260868.8625817
+      },
+      {
+        "path": "/home/deploy/fantasy-backups/pre-sports-deep-map-v2-20260809T095331Z.dump",
+        "bytes": 1383738,
+        "mtime": 1786269214.0
+      },
+      {
+        "path": "/home/deploy/fantasy-backups/pre-v0.3.15-deep-map-20260809T0844Z-tables.dump",
+        "bytes": 4339732,
+        "mtime": 1786265176.2010965
+      },
+      {
+        "path": "/home/deploy/fantasy-backups/pre-partial-starters-v0317-20260809T095821Z.dump",
+        "bytes": 2979294,
+        "mtime": 1786269503.0
+      },
+      {
+        "path": "/home/deploy/fantasy-backups/sports-ru-player-mapping-20260814T030252Z/post-release-live-audit.sha256",
+        "bytes": 166,
+        "mtime": 1786678052.9073918
+      },
+      {
+        "path": "/home/deploy/fantasy-backups/sports-ru-player-mapping-20260814T030252Z/sports-ru-all-current-before-final-2026-08-14T03-03-34-516Z.json",
+        "bytes": 13898339,
+        "mtime": 1786676614.8679228
+      },
+      {
+        "path": "/home/deploy/fantasy-backups/sports-ru-player-mapping-20260814T030252Z/live-audit-final-verified.json",
+        "bytes": 2448,
+        "mtime": 1786676901.2533817
+      },
+      {
+        "path": "/home/deploy/fantasy-backups/sports-ru-player-mapping-20260814T030252Z/live-audit-final-verified.err",
+        "bytes": 0,
+        "mtime": 1786676876.6009114
+      },
+      {
+        "path": "/home/deploy/fantasy-backups/sports-ru-player-mapping-20260814T030252Z/final-artifacts.sha256",
+        "bytes": 675,
+        "mtime": 1786677030.4798481
+      },
+      {
+        "path": "/home/deploy/fantasy-backups/sports-ru-player-mapping-20260814T030252Z/live-audit-final.err",
+        "bytes": 0,
+        "mtime": 1786676679.0811458
+      },
+      {
+        "path": "/home/deploy/fantasy-backups/sports-ru-player-mapping-20260814T030252Z/postgres-before.dump",
+        "bytes": 57847496,
+        "mtime": 1786676583.1073182
+      },
+      {
+        "path": "/home/deploy/fantasy-backups/sports-ru-player-mapping-20260814T030252Z/post-release-live-audit.json",
+        "bytes": 2448,
+        "mtime": 1786677973.5978749
+      },
+      {
+        "path": "/home/deploy/fantasy-backups/sports-ru-player-mapping-20260814T030252Z/postgres-before.sha256",
+        "bytes": 158,
+        "mtime": 1786676583.5113258
+      },
+      {
+        "path": "/home/deploy/fantasy-backups/sports-ru-player-mapping-20260814T030252Z/live-audit-final.json",
+        "bytes": 2434,
+        "mtime": 1786676767.8948383
+      },
+      {
+        "path": "/home/deploy/fantasy-backups/sports-ru-player-mapping-20260814T030252Z/post-release-live-audit.err",
+        "bytes": 0,
+        "mtime": 1786677885.3121865
+      },
+      {
+        "path": "/home/deploy/fantasy-backups/sports-ru-player-mapping-20260814T030252Z/postgres-before.list",
+        "bytes": 44208,
+        "mtime": 1786676583.2313206
+      },
+      {
+        "path": "/home/deploy/fantasy-backups/sports-ru-player-mapping-20260814T030252Z/apply.log",
+        "bytes": 17024,
+        "mtime": 1786676620.4280288
+      },
+      {
+        "path": "/home/deploy/fantasy-research/2024_25_archive.tar",
+        "bytes": 266752000,
+        "mtime": 1785134781.8308136
+      },
+      {
+        "path": "/home/deploy/fantasy-research/db-season-fix-20260727/SHA256SUMS",
+        "bytes": 715,
+        "mtime": 1785132516.6634574
+      },
+      {
+        "path": "/home/deploy/fantasy-research/db-season-fix-20260727/ingestion_checkpoints.csv.gz",
+        "bytes": 987,
+        "mtime": 1785132516.6554573
+      },
+      {
+        "path": "/home/deploy/fantasy-research/db-season-fix-20260727/matches.csv.gz",
+        "bytes": 82320,
+        "mtime": 1785100618.2084782
+      },
+      {
+        "path": "/home/deploy/fantasy-research/db-season-fix-20260727/league_season_teams.csv.gz",
+        "bytes": 43202,
+        "mtime": 1785132488.982927
+      },
+      {
+        "path": "/home/deploy/fantasy-research/db-season-fix-20260727/league_seasons.csv.gz",
+        "bytes": 1209,
+        "mtime": 1785132449.6341732
+      },
+      {
+        "path": "/home/deploy/fantasy-research/db-season-fix-20260727/team_player_seasons.csv.gz",
+        "bytes": 710845,
+        "mtime": 1785132516.5674555
+      },
+      {
+        "path": "/var/www/fantasy-scout-releases/20261023T103559Z-v0.3.145-32fcc3d/specs/work/evidence/WI-020/pre-import-backup.zip",
+        "bytes": 522309,
+        "mtime": 1792751587.0
+      },
+      {
+        "path": "/var/www/fantasy-scout-releases/20261023T103559Z-v0.3.145-32fcc3d/specs/work/evidence/WI-003/additional_inputs.zip",
+        "bytes": 772047,
+        "mtime": 1792751587.0
+      },
+      {
+        "path": "/var/www/fantasy-scout-releases/20261023T103559Z-v0.3.145-32fcc3d/specs/work/evidence/WI-002/inputs.zip",
+        "bytes": 1692622,
+        "mtime": 1792751587.0
+      },
+      {
+        "path": "/var/www/fantasy-scout-releases/20261021T103252Z-v0.3.144-703edd6/specs/work/evidence/WI-020/pre-import-backup.zip",
+        "bytes": 522309,
+        "mtime": 1792578524.0
+      },
+      {
+        "path": "/var/www/fantasy-scout-releases/20261021T103252Z-v0.3.144-703edd6/specs/work/evidence/WI-003/additional_inputs.zip",
+        "bytes": 772047,
+        "mtime": 1792578524.0
+      },
+      {
+        "path": "/var/www/fantasy-scout-releases/20261021T103252Z-v0.3.144-703edd6/specs/work/evidence/WI-002/inputs.zip",
+        "bytes": 1692622,
+        "mtime": 1792578524.0
+      }
+    ]
+  },
+  "researchSourceFiles": {
+    "count": 11617,
+    "bytes": 257717641
+  }
+}

@@ -98,6 +98,8 @@ Keep custom-format backup verification and restore/apply rehearsal, but perform 
 
 Keep the prior web, worker and relay until the candidate has passed internal and public health. If promotion fails, restore the old Caddy upstream before deleting the candidate, restore canonical container names and restart only the old worker. The old web must remain available. Retain the current and one stopped rollback release; remove only unused project relay volumes and bounded candidate/extraction containers. Never prune another application's resources.
 
+Retain exactly one completed full PostgreSQL custom-format dump in `/var/backups/fantasy-scout`. Write new dumps to `.partial`, verify the entire archive by rendering it to `/dev/null`, then atomically publish the completed filename. Cleanup verifies the newest full dump again before deleting older dump files; invalid or changing archives abort deletion. Temporary partial dumps are never treated as backups. Scheduled artifact cleanup uses the same host lock as production promotion and the current checked-in cleanup implementation, including its backup helper. Application/session/source caches and persistent volumes are preserved. Production builds run in disposable CI builders. Host-wide unused build-cache deletion requires the explicit operator option `--prune-host-build-cache`; it removes build cache only, with no image, container, network or volume prune.
+
 <a name="observability"></a>
 
 ## Verification and observability {#observability}
@@ -130,6 +132,8 @@ Unready candidates and unsafe migrations preserve the serving version. Routing v
 <a name="changelog"></a>
 
 ## Change history {#changelog}
+
+- 2026-10-23: WI-081 — retain one verified full dump, publish backups atomically, share the deployment lock for scheduled cleanup and support explicit complete host build-cache removal.
 
 - 2026-10-23: WI-080 — normalize inherited runtime environment and exclude explicit role overrides so repeated promotions do not accumulate duplicate configuration.
 

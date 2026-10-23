@@ -24,6 +24,7 @@ routing = load("production_web_routing", "production-web-routing.py")
 migrations = load("online_migrations", "check-online-migrations.py")
 migration_environment = load("migration_environment", "prepare-online-migration-env.py")
 runtime_environment = load("runtime_environment", "normalize-production-env.py")
+backups = load("production_backups", "prune-production-backups.py")
 CONFIG = '''(shared) {
     header X-Trace "literal } brace"
 }
@@ -41,6 +42,65 @@ fantasy.tsyzhman.ru {
     }
 }
 '''
+
+
+class BackupRetentionTests(unittest.TestCase):
+    """@spec spec://common/INFRA-006-continuous-deployment#recovery"""
+
+    def test_only_latest_full_dump_remains_after_full_verification(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            old = root / 'pre-20261010T122845Z-v0.3.134-377e362-migration.dump'
+            fresh = root / 'snapshot-20261023T113000Z-v0.3.145-32fcc3d.dump'
+            partial_export = root / 'betting-before-reset.dump'
+            incomplete = root / 'snapshot-new.dump.partial'
+            for index, path in enumerate([old, fresh, partial_export, incomplete]):
+                path.write_bytes(b'archive')
+                os.utime(path, ns=(index + 1, index + 1))
+            sidecar = Path(str(old) + '.list')
+            sidecar.write_text('old contents')
+            verified = []
+            dry = backups.prune_backups(root, False, verified.append)
+            self.assertEqual(dry['keep'], str(fresh))
+            self.assertTrue(old.exists())
+            result = backups.prune_backups(root, True, verified.append)
+            self.assertEqual(verified, [fresh, fresh])
+            self.assertEqual(list(root.glob('*.dump')), [fresh])
+            self.assertFalse(sidecar.exists())
+            self.assertTrue(incomplete.exists())
+            self.assertGreater(result['removedBytes'], 0)
+
+    def test_invalid_newest_dump_does_not_delete_any_backup(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            for day in ['10', '23']:
+                (root / f'pre-202610{day}T122845Z-v0.3.134-377e362-migration.dump').write_bytes(b'archive')
+            def invalid(_):
+                raise ValueError('invalid archive')
+            with self.assertRaisesRegex(ValueError, 'invalid archive'):
+                backups.prune_backups(root, True, invalid)
+            self.assertEqual(len(list(root.glob('*.dump'))), 2)
+
+    def test_changing_or_indirect_archives_abort_deletion(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            fresh = root / 'snapshot-20261023T113000Z-v0.3.145-32fcc3d.dump'
+            fresh.write_bytes(b'archive')
+            with self.assertRaisesRegex(ValueError, 'changed during verification'):
+                backups.prune_backups(root, True, lambda path: path.write_bytes(b'changed!'))
+            self.assertTrue(fresh.exists())
+            # Existing path segments resolving through a symlink are rejected.
+            with self.assertRaisesRegex(ValueError, 'indirect backup root'):
+                backups.prune_backups(root / '..' / root.name, True, lambda _: None)
+
+    def test_partial_table_dump_alone_is_never_selected_as_full_backup(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory).resolve()
+            partial_export = root / 'betting-before-reset.dump'
+            partial_export.write_bytes(b'archive')
+            with self.assertRaisesRegex(ValueError, 'No completed full database dump'):
+                backups.prune_backups(root, True, lambda _: None)
+            self.assertTrue(partial_export.exists())
 
 
 class RuntimeEnvironmentTests(unittest.TestCase):
