@@ -1,0 +1,626 @@
+{
+  "at": 1792755215.851622,
+  "current": "/var/www/fantasy-scout-releases/20261023T103559Z-v0.3.145-32fcc3d",
+  "releases": [
+    "20261021T103252Z-v0.3.144-703edd6",
+    "20261023T103559Z-v0.3.145-32fcc3d"
+  ],
+  "backups": [
+    {
+      "path": "/var/backups/fantasy-scout/snapshot-20261023T112441Z-v0.3.145-32fcc3d.dump",
+      "bytes": 379894669,
+      "mode": "0o600"
+    }
+  ],
+  "database": {
+    "queue": 0,
+    "duplicatePoolPlayers": 0,
+    "orphanPoolPlayers": 0,
+    "duplicatePrices": 0,
+    "failedMigrations": 0,
+    "savedSquads": 149,
+    "savedSelections": 2222,
+    "maxReadyRevisions": 3,
+    "databaseConnections": 36
+  },
+  "runtime": [
+    {
+      "name": "fantasy-scout-worker",
+      "id": "0915ef20ff920d0e78380635f39809dbcacad1cf09eea3257e7e6465b62887e4",
+      "image": "sha256:c328651b36be5472240e03519389ac0efe23034b4d4c0e3c2c8210c6d1a2f136",
+      "status": "running",
+      "health": "healthy",
+      "restarts": 0,
+      "oom": false,
+      "duplicateEnvironmentKeys": {},
+      "bindPathsExist": true
+    },
+    {
+      "name": "fantasy-scout-web",
+      "id": "3a44352ccbe5ca0315c793be5062fdb1234d70a26fffd53bd6227108189ea26f",
+      "image": "sha256:c328651b36be5472240e03519389ac0efe23034b4d4c0e3c2c8210c6d1a2f136",
+      "status": "running",
+      "health": "healthy",
+      "restarts": 0,
+      "oom": false,
+      "duplicateEnvironmentKeys": {},
+      "bindPathsExist": true
+    },
+    {
+      "name": "fantasy-scout-fpl-relay",
+      "id": "db1b86b4792ba5b1865ee78610725827b64611266d53060f78f8160a9d2caec5",
+      "image": "sha256:c328651b36be5472240e03519389ac0efe23034b4d4c0e3c2c8210c6d1a2f136",
+      "status": "running",
+      "health": null,
+      "restarts": 0,
+      "oom": false,
+      "duplicateEnvironmentKeys": {},
+      "bindPathsExist": true
+    },
+    {
+      "name": "fantasy-scout-worker-rollback-pre-20261023T103559Z-v0.3.145-32fcc3d",
+      "id": "839fd248c9f180159d2026785c590c6bc05693de920ba128f9ba720271ec2f41",
+      "image": "sha256:a081211f5d271f0fac8652a1a7dab131a1e15a6949e1ab48d0b5378518318155",
+      "status": "exited",
+      "health": "unhealthy",
+      "restarts": 0,
+      "oom": false,
+      "duplicateEnvironmentKeys": {
+        "INGESTION_WORKER_IN_PROCESS": 89,
+        "FPL_RELAY_SOCKET_PATH": 119,
+        "FPL_PRICE_SYNC_ENABLED": 88,
+        "PROBABLE_LINEUP_SYNC_ENABLED": 88
+      },
+      "bindPathsExist": true
+    },
+    {
+      "name": "fantasy-scout-web-rollback-pre-20261023T103559Z-v0.3.145-32fcc3d",
+      "id": "398cfbe80e4cea43471d5aaafdaa8b35aaa7bed68e50cce549ace210a38675e6",
+      "image": "sha256:a081211f5d271f0fac8652a1a7dab131a1e15a6949e1ab48d0b5378518318155",
+      "status": "exited",
+      "health": "unhealthy",
+      "restarts": 0,
+      "oom": false,
+      "duplicateEnvironmentKeys": {
+        "INGESTION_WORKER_IN_PROCESS": 89,
+        "FPL_RELAY_SOCKET_PATH": 119,
+        "WEB_SCHEDULER_ACTIVATION_PATH": 14,
+        "NODE_OPTIONS": 10
+      },
+      "bindPathsExist": true
+    },
+    {
+      "name": "fantasy-scout-fpl-relay-rollback-pre-20261023T103559Z-v0.3.145-32fcc3d",
+      "id": "91ee18b32df8e4718f6a043b096f38ee05f9761c573ce9ebfc1a4b2f0b44b5a4",
+      "image": "sha256:a081211f5d271f0fac8652a1a7dab131a1e15a6949e1ab48d0b5378518318155",
+      "status": "exited",
+      "health": null,
+      "restarts": 0,
+      "oom": false,
+      "duplicateEnvironmentKeys": {},
+      "bindPathsExist": true
+    },
+    {
+      "name": "fantasy-scout-postgres",
+      "id": "325e03666369215bd5b68c527a4b9b70421237c1b8f78b0040df6d94e571230f",
+      "image": "sha256:16bc17c64a573ef34162af9298258d1aec548232985b33ed7b1eac33ba35c229",
+      "status": "running",
+      "health": "healthy",
+      "restarts": 0,
+      "oom": false,
+      "duplicateEnvironmentKeys": {},
+      "bindPathsExist": true
+    }
+  ],
+  "health": [
+    {
+      "status": "ok",
+      "uptimeSeconds": 1909,
+      "release": {
+        "version": "0.3.145",
+        "commit": "32fcc3d109cac657f48f7834c892abd04e42c4ae"
+      }
+    },
+    {
+      "status": "ok",
+      "uptimeSeconds": 1910,
+      "release": {
+        "version": "0.3.145",
+        "commit": "32fcc3d109cac657f48f7834c892abd04e42c4ae"
+      }
+    },
+    {
+      "status": "ok",
+      "uptimeSeconds": 1910,
+      "release": {
+        "version": "0.3.145",
+        "commit": "32fcc3d109cac657f48f7834c892abd04e42c4ae"
+      }
+    },
+    {
+      "status": "ok",
+      "uptimeSeconds": 1910,
+      "release": {
+        "version": "0.3.145",
+        "commit": "32fcc3d109cac657f48f7834c892abd04e42c4ae"
+      }
+    },
+    {
+      "status": "ok",
+      "uptimeSeconds": 1910,
+      "release": {
+        "version": "0.3.145",
+        "commit": "32fcc3d109cac657f48f7834c892abd04e42c4ae"
+      }
+    }
+  ],
+  "dockerDisk": "TYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE\nImages          59        40        23.93GB   7.979GB (33%)\nContainers      48        45        192.5MB   106.5kB (0%)\nLocal Volumes   74        39        5.9GB     160.9MB (2%)\nBuild Cache     0         0         0B        0B",
+  "disk": "Filesystem        1B-blocks        Used   Available Use% Mounted on\n/dev/vda3      126753218560 41779728384 78519861248  35% /",
+  "memory": "total        used        free      shared  buff/cache   available\nMem:           11876        5758        1446         315        4671        5489\nSwap:              0           0           0",
+  "processMemory": "fantasy-scout-web|274.1MiB / 2GiB|0.42%\nfantasy-scout-worker|1.789GiB / 4GiB|18.49%\nfantasy-scout-postgres|1.342GiB / 2GiB|0.73%\nfantasy-scout-fpl-relay|34.23MiB / 128MiB|0.10%",
+  "caddyPid": "754",
+  "cron": "# fantasy-scout-artifact-retention\n15 4 * * 0 /usr/bin/flock -n /home/deploy/.cache/fantasy-production-deploy.lock /var/www/fantasy-scout-maintenance/prune-production-artifacts.sh --apply --prune-host-build-cache 2>&1 | /usr/bin/logger -t fantasy-scout-prune\n30 4 * * 0 /usr/bin/flock -n /home/deploy/bin/safe-docker-prune.lock /home/deploy/bin/safe-docker-prune.sh 2>&1 | /usr/bin/logger -t safe-docker-prune",
+  "researchFiles": 11617,
+  "allContainers": [
+    {
+      "name": "/fantasy-scout-worker",
+      "id": "0915ef20ff920d0e78380635f39809dbcacad1cf09eea3257e7e6465b62887e4",
+      "image": "sha256:c328651b36be5472240e03519389ac0efe23034b4d4c0e3c2c8210c6d1a2f136",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/fantasy-scout-web",
+      "id": "3a44352ccbe5ca0315c793be5062fdb1234d70a26fffd53bd6227108189ea26f",
+      "image": "sha256:c328651b36be5472240e03519389ac0efe23034b4d4c0e3c2c8210c6d1a2f136",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/fantasy-scout-fpl-relay",
+      "id": "db1b86b4792ba5b1865ee78610725827b64611266d53060f78f8160a9d2caec5",
+      "image": "sha256:c328651b36be5472240e03519389ac0efe23034b4d4c0e3c2c8210c6d1a2f136",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/germany-web",
+      "id": "c19a3eaa998dedd33739b7420a35eac99ee793c7ec00f3a8ce12d25fed76c9a7",
+      "image": "sha256:ac8f351cda0007bc5abc1475b3fcc3d092cc3727f7dd60bc48331647768b6f29",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/fantasy-scout-worker-rollback-pre-20261023T103559Z-v0.3.145-32fcc3d",
+      "id": "839fd248c9f180159d2026785c590c6bc05693de920ba128f9ba720271ec2f41",
+      "image": "sha256:a081211f5d271f0fac8652a1a7dab131a1e15a6949e1ab48d0b5378518318155",
+      "status": "exited",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/fantasy-scout-web-rollback-pre-20261023T103559Z-v0.3.145-32fcc3d",
+      "id": "398cfbe80e4cea43471d5aaafdaa8b35aaa7bed68e50cce549ace210a38675e6",
+      "image": "sha256:a081211f5d271f0fac8652a1a7dab131a1e15a6949e1ab48d0b5378518318155",
+      "status": "exited",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/fantasy-scout-fpl-relay-rollback-pre-20261023T103559Z-v0.3.145-32fcc3d",
+      "id": "91ee18b32df8e4718f6a043b096f38ee05f9761c573ce9ebfc1a4b2f0b44b5a4",
+      "image": "sha256:a081211f5d271f0fac8652a1a7dab131a1e15a6949e1ab48d0b5378518318155",
+      "status": "exited",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/sharovik-vpn",
+      "id": "1cf120c49e7925c3dee2f54ca44bd95dcb588f57767fd97bec074d9a6bc235dc",
+      "image": "sha256:cac6c54caf5d749267386629cd827fc711524092156cd8097c8f464797a903be",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/kaya-web",
+      "id": "6d3d7bfbc25d860ed4aacff30fcdbdd72416813f916a8d43cbf35592aa00a66c",
+      "image": "sha256:9a55856c6c08f9e9fd4bdec07c9834cbff8a523715bb830e4a9682d083f243a6",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/istanbul-app-1",
+      "id": "28b4f94412b0166446a4862d7910e30dff7f647c46752e906b41cb356dcbd1b9",
+      "image": "sha256:2ab2c54c6ee32123c59b7ca7a05ded316e8ad76add7df7da5179468c158a6165",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/istymate-api-1",
+      "id": "f094016fd6ccd81f86eacf15cfbde80b1e26b5283769d79f37bbf11f6af18242",
+      "image": "sha256:b2a609dfdf189ed434dadfaf1666b3dc26997fd36682a9bd021a904a3fdaa668",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/istymate-worker-1",
+      "id": "441b8ba73313c2a63f7b40575618dfff5c7c1fe9a3ee76bd9ee26987ecea68fe",
+      "image": "sha256:b2a609dfdf189ed434dadfaf1666b3dc26997fd36682a9bd021a904a3fdaa668",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/istatus-web",
+      "id": "1e5317c481c0bf780c3f29af331a3bfcb126ae93a63a15f550615debb5eafe09",
+      "image": "sha256:73363b62e6cb1efe4af4b6c6d11edf01684aa0e2181af3a1a09d8832da08ff19",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/istymate-postgres-1",
+      "id": "9e40285d48e6b6b63077fbb378fdfd0da87912eb7dec1d87d80aab7b6f4426ec",
+      "image": "sha256:ccc6e83d6e35e931dc7c5def2022729d5a6c370318d099181995567ff1fb4d6b",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/istymate-redis-1",
+      "id": "5222f8691c7315e3f6ae3e2b5ab4b6414b53522e1e36bcb3a4d3cf96bf2f33d4",
+      "image": "sha256:71da9275c5f3fcb97d0fa0c8c5b36cc995327265420f17a04bfd544f458059f7",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/opencode-tinyauth",
+      "id": "f7eee832a2d7c80f05e161ee467bd38292b5ef7db5cbf2ca5656075a482cec42",
+      "image": "sha256:a1bde189951900f84a60f133c26a1ec7a3264073ec7875b548f4fbadb7f5f735",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/istanbul-postgres-1",
+      "id": "b976ba422df1b2052adca79cf22a1254965d7908bcde80117deb08fd8025cc58",
+      "image": "sha256:472efd9a66f2b2f1a5aeb18b28de74332e6ef88c2b93a1a5d812fb6db67a5f60",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/opencode-vpn",
+      "id": "8edfcf6934bf8c4dafad1ed5f5d2db4aceab4ead32a2cc8c9ae8e44fb50d269c",
+      "image": "sha256:78ca1bc9f3b563b0944fd6b1126522ee631e7b44d540b91fc435ba7062ef08b2",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/library-web",
+      "id": "1cb114a2cfadafa9917498dcbdd2abbfc21e377d22bbeb669e1a863451e4b349",
+      "image": "sha256:1a6ff5151dc1c19d298f6aa4abe90b744ec4e2eff9eea24e245ab0d3749a4962",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/library-worker",
+      "id": "9d8d3c3eb0f00c171fbafabf14aa576628e10d88f56e6a334750904d93dc93e0",
+      "image": "sha256:25fa045b0a549cb8492e2160b318e6f9181bbdaccf81616c5fe86a43f16efd72",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/copy-widget-web",
+      "id": "9c5982d028f75d20f61e4a535cbe94a05b930d8faf1859ee3918ccb7dd580a5e",
+      "image": "sha256:f5b129bc551c831b3a126dfaf9865d1058c5ae73b5c79f8a785adb5c49a998c8",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/copy-widget-postgres",
+      "id": "35c8be651ea5f6088dbc4b96c014135309107945222747e1440db0e2b9c08694",
+      "image": "sha256:16bc17c64a573ef34162af9298258d1aec548232985b33ed7b1eac33ba35c229",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/session-kaiten-audit-web",
+      "id": "f61bcdeb0e791385e7764c30220910a9c718b79a857ab2e1477d62dd0d22c5a2",
+      "image": "sha256:1675f0630d3952fe73f0adea41203948020c56b6e5bb15c81e5125e1dffd595f",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/hysteria-gateway",
+      "id": "1d399ad68599f59bce3c81240c699be5639f79405eec0b8a87e07d76869d5926",
+      "image": "sha256:da0e2331395c9025a85fa58892772b4cdbe5f2e530e93defeec3968175d06c6d",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/sipuni-blacklist-app-1",
+      "id": "e8a3f1c7f9fc5be66239305518fdd44aa05223fc697b7b7a5e6b946807c3fc6a",
+      "image": "sha256:ae569253257e0eab4154f1a23d5d8f260f236d01ff60c83a4201e31282ddb29e",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/fantasy-scout-postgres",
+      "id": "325e03666369215bd5b68c527a4b9b70421237c1b8f78b0040df6d94e571230f",
+      "image": "sha256:16bc17c64a573ef34162af9298258d1aec548232985b33ed7b1eac33ba35c229",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/quality-control-web",
+      "id": "1644aba15d1e0758cf5e60033fbbbf754d8a02d734dc27c9d20efa617499c93d",
+      "image": "sha256:903fa68bf41adc6b0f005137c91470141cda5590a438ddee0b838cedd25c9e7b",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/advanced-analytics-web",
+      "id": "a341ef1c4979db4ffffda2e7b6bb8862b1a5a85f229d69a8a0db6876e93ddc7c",
+      "image": "sha256:dab75c8a4a7d9c3626a54ed603c1b5ff25ad6e96c6554494587d448959a436b7",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/kpi-dashboards-web",
+      "id": "9dc73b7d59ca7fd2a7e6f549962c9300699181e82667bdcf28b1b36c72ab1c7a",
+      "image": "sha256:49888cb5081af78c179cc7bfebcd9c203d86373700dd8edeac238c1d2d321ddc",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/payments-web",
+      "id": "5c5265ebf9be52a32c71fecd41c1bb750932d4670cf5b5bd0df882f092384c3f",
+      "image": "sha256:37f9df8b523f976384d8878a069e194a2514077760d4a41319d90dbb96820735",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/local-time-web",
+      "id": "73c757208a02bed05bc534ef5e9596b8f84b8d1255a599813035156a8ceebe1b",
+      "image": "sha256:916a52e32b407c1649f65bd2e4c87bf1ae21a83d941b043d5529170f74f296de",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/department-settings-web",
+      "id": "19c1b6286811078d15da96818c95e3ca0caf8fa7807a3a1c5f4de19b386030aa",
+      "image": "sha256:4754eb4748900f9998e925872de8219b64c146895478c384be13a59c5b1fdcc0",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/duplicate-control-web",
+      "id": "c18e199ff99e84a724f96d1f2d2f0a34ffff4c5a470009bcf72a1a92b272baf6",
+      "image": "sha256:4c08d3d9179db31414beee5a440bc5525f7c648acbbbb8daf3313af730ab7396",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/bulk-field-change-web",
+      "id": "a4aa02b26c3ab7e02eb0abee486f115706540d54e64b8399b62cab2f059c9fdf",
+      "image": "sha256:3ce1c92ada1cb4ff17455bce7f2e81fa61869960d4a4e3656a6f7db22df100c0",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/task-result-required-web",
+      "id": "070c139b096b5886117c3917442721495b91d0c376017a537e96b4f545be1b63",
+      "image": "sha256:06e495d08d70807c9455e5109fd6d2b8e1d560aedf99d153aa68f3adf342a76a",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/field-grouping-web",
+      "id": "cac8cb519bd7fd94b0b79b815eb0cc9d22de58884683bdeb5c357e150221b592",
+      "image": "sha256:bef1ac669e95e308590e4503b97e52568033b52cf26392695bf1f0ec125443c7",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/status-descriptions-web",
+      "id": "aded323ef5b883ee8e0e7bd8e4015e298f91466d9a4da46f65ac14ab90e6da98",
+      "image": "sha256:c364d098b9d765ab2f4557d4cf5907e5b6dd39d7baeaf8e051c3ba23e16a7510",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/move-forward-web",
+      "id": "55279d29bd00e6699e3a730df2c5c68596d857f6d460f1f64e3749cd857e5185",
+      "image": "sha256:4d99d65d8992d74f49bb5fd8af3f4dbd6309d96ce0925002b23ef6270c0cf1ea",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/calculator-web",
+      "id": "188b8be8764663731693d5641735063883c6269cc0fc37899764a2c2e2ce688f",
+      "image": "sha256:593706676de07939ce21072ff3bc53b5122ae7f38e589a30832e2904db0d9bbf",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/take-request-web",
+      "id": "ce9ba3388ebd3fe54dccb5856e297089807feacea542bc1b7a6d94dd5421dccf",
+      "image": "sha256:cf3a2be65640b8594b9a547d92089478ce40dc32e522ec491c980fd8f1851cc9",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/distribution-web",
+      "id": "3193e0f9d7ff23ffc30536bd49fc30327fbae4f249c086728de49566d7a9e132",
+      "image": "sha256:8f2d0bbaa891c1727206b72cc827bbc12919136619165d4cdc08d3e7f3be24a8",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/required-next-step-web",
+      "id": "8d38857af65e36a767c787def7593dc11929862211fffc02f80453a3047cdc48",
+      "image": "sha256:4c529bd8edf2c18ed7fbf33390afd0e8d9e33c8cd661a09bb2eb5921522b6c48",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/launchers-web",
+      "id": "bac53139b57c98107ed78e79d9bcf7e051e3e5f7ead1f19b9a8407cfb9cdb309",
+      "image": "sha256:953b040b7afe46ef7ae2ac1f57c1f566174f6f156d95e46e22dd5b1b8a355ee6",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/fast-fields-web",
+      "id": "83e5f5f0159128c0abce27af43de75a7077b4b97f4d75fc3b0673728330eeb45",
+      "image": "sha256:242f18c095ef01e9f06882c3e0437546c84a14a0583dc7aecbe666c71f214346",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/interface-pack-web",
+      "id": "420aadcb1de5fe4ed9f9a99c4888979fbf6e8e3cdd368055a7af70ec67d25aaf",
+      "image": "sha256:f61e902b8e6e4f09952c4dfc56fb351d29b7a1458cf4f16d09701117fd3f214b",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/tech-help-support-bot",
+      "id": "48a60d9bcfad7c2302e34d0f3188a99544a1e965e0e16d729e452be886f714f1",
+      "image": "sha256:ee92c6d3fb94daffce97132bd957ad509d86631472441ecc56deb9fadbe621d3",
+      "status": "running",
+      "restartCount": 2,
+      "oom": false
+    },
+    {
+      "name": "/tech-help-vpn",
+      "id": "bc9b5d3051fd6fde7f1b970635062cac523c8ee277311a4743e02a0c3517905a",
+      "image": "sha256:da0e2331395c9025a85fa58892772b4cdbe5f2e530e93defeec3968175d06c6d",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    },
+    {
+      "name": "/tech-help-postgres",
+      "id": "847acfd2c48f9d26557f4aed29144f238f4d406d50fc8b9ba772536f484cab68",
+      "image": "sha256:16bc17c64a573ef34162af9298258d1aec548232985b33ed7b1eac33ba35c229",
+      "status": "running",
+      "restartCount": 0,
+      "oom": false
+    }
+  ],
+  "allVolumeNames": [
+    "0be5174352828780dfaf55d0a820c30dbd76a69b6dbf9c28161d04771906999f",
+    "1c1e7cde91aa73fcaa805f1d894dd57340c37f354914f41076388f5fa270ea28",
+    "1e1c04ebf49134ffd66d0e31fd8fcbd314c802e860a5c103d5ff0164b565d8ce",
+    "3b1ede28c731f143d90558a3d70c0186288f864adb4e815b440107b6864abf81",
+    "4a814d3af39a3a3d263a83f5a0ba7ce997bb8de24e6bab322ef3b907f42fd173",
+    "7a8a76a2b6f8d87ae47edc98755fb8466c2ed0a00708844255e9f3ba226c88a0",
+    "8a50af00f4811f1f6231db0b6ef9e7b05226889140921c4821456b907a2186ac",
+    "8c3ec750112b7a89989913c0bc79119a819e8826b190b083fde49867964ee65d",
+    "010a44671060b372cf60c9bba251847db3633c3ab8c4c6791ecf9de17466045b",
+    "64efec93f9413a1bdeb3a0421f923d2311d7cda8352f2e6bf31ec785ac83d97f",
+    "84c5832c3d0f7055c29de21c7a0da5cd065dd0c1250459caacfd3b51a5bbc44b",
+    "660bec7a08a6a3e95d55407f71bd61720dcebe1a89fa405b1770d4afd18fbc67",
+    "2186f554ff910802810165927988b384669852a8029a54003671354ed6fbba1b",
+    "8449b9f2e46ce4838d23591a233287e9811005d265da0e662505e64eaf47e400",
+    "99013a064bc62437172a22246fafb6965bca4f908a6be6ae4a1e88d23858c18e",
+    "360466efc2981c09a104908128adf025ba53e9e46cc57d20a0c5fd263c8731c1",
+    "797207f1a211341978e72542ddeb87ce34d41b8d7dba05c70b12e10af1d3b478",
+    "advanced_analytics-var",
+    "af20e4361e9f3855f8c43b461e410f4bac98d359649706e3a6cf60b55889342e",
+    "b31e05b26879631e00bb12ed0b186c2393995f2df19fe3ef97be32d8f034256d",
+    "b406736c391767a87f39f821bd1e4acdb4291ccccf899c56d3b80040db41ca6d",
+    "bb998e190394b27aa01f98b9871087d9a72233284101cbe55704485529bec7a8",
+    "bulk_field_change-var",
+    "c0e0b15eb6eaaa1c2e1e5ee209a2c3e0a70bbd43c48d1a2bc27e5a1f61e5b798",
+    "calculator-var",
+    "chezaquest_preview_pg",
+    "chezaquest_preview_redis",
+    "copy-widget-postgres",
+    "copy-widget-var",
+    "d3670ca1b104b3bf9f9b1726ca2a2827343798a10b0f331ea787331464682e91",
+    "dc02db5c79f6c2e994c3e210863c0bc151ee61f930d9c932069f603c927fa94d",
+    "de1d8857b86267312125f16a268a73c310b7ae9217aeead4bd8e196b67893fa1",
+    "de302a4b7c8ce6cc4141f5826d6c6667b40985ad7c60f0e28803dc2649eb548e",
+    "department_settings-var",
+    "distribution-var",
+    "duplicate_control-var",
+    "e03f1f379bbae414bb3d1e768a849b45680f035ec2af4c6ab5a76a3992326d00",
+    "f8a500d0172a9e71de175efc7656a3d017630a19c8e1d72a00637d5431bbdd39",
+    "f8b5f2c13152bb72fe2e0d2b3b4527e10be02713dbee193bce66fca366a9a502",
+    "f353d33b8b18f63aa0c3cda23c24752eccb57736366e4c72657b6ef0bbe906cc",
+    "fantasy-scout-fpl-relay-candidate-20261021T103252Z-v0.3.144-703edd6",
+    "fantasy-scout-fpl-relay-candidate-20261023T103559Z-v0.3.145-32fcc3d",
+    "fantasy-scout-franchises",
+    "fantasy-scout_fantasy-scout-postgres",
+    "fantasy-scout_fantasy-scout-uploads",
+    "fantasy-ucl-h2h-postgres-data",
+    "fast_fields-var",
+    "fb65024768e02d701649f81bc75ff607ae9749ade152b1740ec6e53d3caa55d4",
+    "fbb1a4fad0ca8c49398717dd95cabacbc2b962cced9b213af8f97af426bb66f9",
+    "field_grouping-var",
+    "germany-data",
+    "interface_pack-var",
+    "istatus-data",
+    "istymate_server_pg",
+    "istymate_server_redis",
+    "kaya-backups",
+    "kaya-data",
+    "kpi_dashboards-var",
+    "launchers-var",
+    "library-data",
+    "local_time-var",
+    "move_forward-var",
+    "opencode_tinyauth-data",
+    "payments-var",
+    "quality_control-var",
+    "required_next_step-var",
+    "sharovik-vpn-config-20261020T080412Z-3899020",
+    "sipuni-blacklist_blacklist-backups",
+    "sipuni-blacklist_blacklist-data",
+    "status_descriptions-var",
+    "take_request-var",
+    "task_result_required-var",
+    "tech-help-bot-logs",
+    "tech-help-postgres-data"
+  ]
+}

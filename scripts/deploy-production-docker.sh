@@ -56,6 +56,7 @@ image_created=0
 setup_image_created=0
 rehearsal_created=0
 rehearsal_db=""
+backup_partial=""
 schema_migration_attempted=0
 old_current_target=""
 candidate_web_promoted=0
@@ -250,6 +251,9 @@ cleanup() {
   exit_code=$?
   trap '' HUP INT TERM
   set +e
+  if [[ -n "$backup_partial" && "$backup_partial" == "/var/backups/fantasy-scout/pre-${release}-migration.dump.partial" ]]; then
+    rm -f -- "$backup_partial"
+  fi
   if (( exit_code != 0 )) && [[ "$phase" == "swap" ]]; then
     if ! rollback_swap; then
       echo "Traffic rollback needs recovery; both web versions and release artifacts were retained." >&2

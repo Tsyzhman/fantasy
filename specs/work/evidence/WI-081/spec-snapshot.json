@@ -1,26 +1,18 @@
 {
   "status": "current",
-  "commit": "57228edcd4afde31e3daeb236549c08bab5157d2",
+  "commit": "4dc5e5a84150008ad267e3630003d28241758a12",
   "source": "working_tree",
-  "fingerprint": "9a93eeb6a0e3d8f9a52abda3e0a070a09dac45e85e5db15aea619d9107e5140c",
+  "fingerprint": "94b5b1d857d0139b2b960b96c4ef98a658a13b62f5ff0c087e5a3a3cf8958406",
   "diagnostics": [],
   "provenance": {
-    "commit": "57228edcd4afde31e3daeb236549c08bab5157d2",
+    "commit": "4dc5e5a84150008ad267e3630003d28241758a12",
     "source": "working_tree",
-    "observedAt": "2026-10-23T11:28:09.962Z",
+    "observedAt": "2026-10-23T11:36:33.075Z",
     "workingTree": {
       "dirty": true,
       "materialPaths": [
-        "package-lock.json",
-        "package.json",
-        "scripts/continuous-deployment.test.py",
         "scripts/deploy-production-docker.sh",
-        "scripts/prune-production-artifacts.sh",
-        "scripts/prune-production-backups.py",
-        "scripts/verify-release-source.mjs",
-        "specs/common/INFRA-006-continuous-deployment.md",
-        "specs/common/structure.md",
-        "specs/SPEC-MAP.md"
+        "src/core_data/production-retention-contract.test.ts"
       ]
     }
   }
