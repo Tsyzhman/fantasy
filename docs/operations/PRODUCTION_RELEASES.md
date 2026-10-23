@@ -106,3 +106,13 @@ The 0.2.x release line prevents the same failure mode in four ways:
 - New Telegram reports display Sports.ru import placeholders as `затычка`, preserving their identities, lineup roles and mapping warnings.
 - [Candidate Check](https://github.com/Tsyzhman/fantasy/actions/runs/38033286179) passed 1,301 tests; [Deploy Production](https://github.com/Tsyzhman/fantasy/actions/runs/38033292827) passed continuous promotion and exact revision verification. Public health, web/worker image labels and the manifest agree.
 - 82 availability observations recorded no errors; the prior static asset remains accessible. One healthy web/worker, zero restarts/OOM, zero delivery/report/job duplicate keys, no running canary and two retained releases/images. Reclaimable build cache remains 939.6 MB after canonical pruning; host memory available is 6,231 MiB. Evidence: `specs/work/evidence/WI-064/verification.json`.
+
+
+## 0.3.145 — 2026-10-23
+
+- Release: `20261023T103559Z-v0.3.145-32fcc3d`; runtime `32fcc3d109cac657f48f7834c892abd04e42c4ae`, tree `d3f7c6eb3e01fa9d24b00da7236f2358ed3e6970`.
+- Restore sparse SorareInside schedule parsing, preserve XI provenance during roster imports, normalize inherited runtime configuration and patch Next.js to 16.4.2.
+- [Check 39939922888](https://github.com/Tsyzhman/fantasy/actions/runs/39939922888) passed 1,332 unit and 32 database tests, dependency audit, migration drift, lint/typecheck/build and rollout checks.
+- [Artifact run 39939918757](https://github.com/Tsyzhman/fantasy/actions/runs/39939918757) built the exact immutable images, then was cancelled during a stalled transfer before promoter startup. The same digest-verified artifact was delivered through local SSH and promoted by the exact committed canonical script, exit 0. Public/web/worker/manifest revisions agree. No production build, migration, data reset or VPN rotation.
+- Initial import: 135 applied and 92 unchanged team/competition XIs; following automatic cycle: 227 unchanged. Twelve real authenticated pool readers verify 8,458 published players, 7,374 roster flags and current source revisions with zero discrepancies. Thirty-five source/identity coverage gaps remain explicit.
+- Sixty-seven promotion and 600 preparation health observations have zero failures; all ten prior action IDs and the prior CSS hash remain available. Caddy PID remains 754. Saved squads/selections retain exact hashes, duplicate rows/configuration and OOM/restarts are zero, queue is empty, two releases and three READY revisions per scope remain. Temporary transport artifacts were removed. Evidence: `specs/work/evidence/WI-080/verification.json`.

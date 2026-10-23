@@ -1,0 +1,44 @@
+REVIEWED_ONLINE_MIGRATIONS=0
+MIGRATION_LOCK_TIMEOUT_SECONDS=5
+Waiting for any active KHL statistics collection before replacing containers.
+{"domainCanary":"/machete/squad","status":200,"bytes":334780,"commit":"32fcc3d109cac657f48f7834c892abd04e42c4ae"}
+{"domainCanary":"/api/machete/squads/snapshot","status":200,"bytes":174,"commit":"32fcc3d109cac657f48f7834c892abd04e42c4ae"}
+{"domainCanary":"/api/machete/squads","status":200,"bytes":42550,"commit":"32fcc3d109cac657f48f7834c892abd04e42c4ae"}
+READY_CONTAINER=fantasy-scout-web-candidate-20261023T103559Z-v0.3.145-32fcc3d commit=32fcc3d109cac657f48f7834c892abd04e42c4ae
+{"postgresBudget": {"memoryBytes": 2147483648, "cpus": 2, "pids": 256}, "logging": {"log_min_duration_statement": "500", "log_parameter_max_length": "0", "log_parameter_max_length_on_error": "0", "log_temp_files": "10240"}, "migrationTimeouts": {"lockSeconds": 5, "statementSeconds": 120}, "restart": false, "dockerLogRetention": {"Type": "json-file", "Config": {"max-file": "5", "max-size": "20m"}}}
+READY_CONTAINER=fantasy-scout-worker commit=32fcc3d109cac657f48f7834c892abd04e42c4ae
+TRAFFIC_SWITCH=3000->3001
+Traffic verified; draining the previous web for 30 seconds.
+WEB_SCHEDULERS_ACTIVATED=32fcc3d109cac657f48f7834c892abd04e42c4ae
+MODE=apply
+RELEASE_ROOT=/var/www/fantasy-scout-releases
+CURRENT_RELEASE=/var/www/fantasy-scout-releases/20261023T103559Z-v0.3.145-32fcc3d
+KEEP_ROLLBACK=fantasy-scout-web-rollback-pre-20261023T103559Z-v0.3.145-32fcc3d
+REMOVE_ROLLBACK=fantasy-scout-web-rollback-pre-20261021T103252Z-v0.3.144-703edd6|state=exited
+KEEP_ROLLBACK=fantasy-scout-worker-rollback-pre-20261023T103559Z-v0.3.145-32fcc3d
+REMOVE_ROLLBACK=fantasy-scout-worker-rollback-pre-20261021T103252Z-v0.3.144-703edd6|state=exited
+KEEP_ROLLBACK=fantasy-scout-fpl-relay-rollback-pre-20261023T103559Z-v0.3.145-32fcc3d
+REMOVE_ROLLBACK=fantasy-scout-fpl-relay-rollback-pre-20261021T103252Z-v0.3.144-703edd6|state=exited
+REMOVE_RELAY_VOLUME=fantasy-scout-fpl-relay-candidate-20261021T095408Z-v0.3.143-6da22c0
+KEEP_RELAY_VOLUME=fantasy-scout-fpl-relay-candidate-20261021T103252Z-v0.3.144-703edd6
+KEEP_RELAY_VOLUME=fantasy-scout-fpl-relay-candidate-20261023T103559Z-v0.3.145-32fcc3d
+REMOVE_RELEASE=20261021T095408Z-v0.3.143-6da22c0|size=51M
+KEEP_RELEASE=20261021T103252Z-v0.3.144-703edd6
+KEEP_RELEASE=20261023T103559Z-v0.3.145-32fcc3d
+REMOVE_IMAGE=fantasy-scout:20261021T095408Z-v0.3.143-6da22c0
+KEEP_IMAGE=fantasy-scout:20261021T103252Z-v0.3.144-703edd6
+KEEP_IMAGE=fantasy-scout:20261023T103559Z-v0.3.145-32fcc3d
+REMOVE_IMAGE=fantasy-scout:20261023T103559Z-v0.3.145-32fcc3d-setup
+BUILD_CACHE=CI_OWNED; HOST_DEFAULT_BUILDER=UNCHANGED
+RELEASE_COUNT=2
+TYPE            TOTAL     ACTIVE    SIZE      RECLAIMABLE
+Images          59        40        23.93GB   7.979GB (33%)
+Containers      48        45        192.5MB   106.5kB (0%)
+Local Volumes   74        39        5.637GB   160.9MB (2%)
+Build Cache     23        0         227.6MB   227.6MB
+DEPLOYED_RELEASE=20261023T103559Z-v0.3.145-32fcc3d
+DEPLOYED_VERSION=0.3.145
+DEPLOYED_COMMIT=32fcc3d109cac657f48f7834c892abd04e42c4ae
+DEPLOYED_TREE=d3f7c6eb3e01fa9d24b00da7236f2358ed3e6970
+DEPLOYED_IMAGE=sha256:c328651b36be5472240e03519389ac0efe23034b4d4c0e3c2c8210c6d1a2f136
+PREVIOUS_IMAGE=fantasy-scout:20261021T103252Z-v0.3.144-703edd6

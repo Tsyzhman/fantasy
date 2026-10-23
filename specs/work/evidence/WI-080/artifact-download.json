@@ -1,0 +1,15 @@
+{
+  "artifactId": 12494923752,
+  "ciRun": 39939918757,
+  "commit": "32fcc3d109cac657f48f7834c892abd04e42c4ae",
+  "zipBytes": 882693338,
+  "artifactDigest": "sha256:6d3e089713f1bdb54a91a847791966536eca960e5a408eac8078fecfc154f3f5",
+  "digestVerified": true,
+  "downloadSeconds": 337.07,
+  "files": [
+    "fantasy-scout-images-20261023T103559Z-v0.3.145-32fcc3d.json",
+    "fantasy-scout-images-20261023T103559Z-v0.3.145-32fcc3d.tar.gz",
+    "fantasy-scout-release-20261023T103559Z-v0.3.145-32fcc3d.tar.gz",
+    "fantasy-scout-release-20261023T103559Z-v0.3.145-32fcc3d.tar.gz.sha256"
+  ]
+}

@@ -1,0 +1,9 @@
+{
+  "samples": 600,
+  "errors": [],
+  "targetCommit": "22616f73ce353cddf11da832fa237f34efc250a4",
+  "targetStableSamples": 0,
+  "oldAsset": "/_next/static/css/a9583c885784b10f.css?dpl=703edd62f45e514bbff003221b9fe7d7cd8ee7d0",
+  "originalAssetSha256": "bac26bac5f36e14ddc565c2b20847df622970bda63d5baaae6f48c920a47d80c",
+  "assetFailures": []
+}
