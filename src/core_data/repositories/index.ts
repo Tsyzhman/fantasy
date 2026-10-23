@@ -171,30 +171,27 @@ export class CoreSeasonRosterRepository {
     });
   }
 
+  /** @spec spec://modules/machete/INFRA-004-sorareinside-starters#apply */
   async upsertSeasonTeams(rows: LeagueSeasonTeamData[]) {
     await ensureCoreTeamPlaceholders(this.prisma, rows.map((row) => row.teamId));
 
     const now = new Date();
     for (const row of rows) {
-      await this.prisma.leagueSeasonTeam.upsert({
-        where: {
-          leagueId_season_teamId: {
-            leagueId: row.leagueId,
-            season: row.season,
-            teamId: row.teamId
-          }
-        },
-        update: {
-          active: row.active,
-          lastSeenAt: now,
-          metadata: jsonValue(row.metadata)
-        },
-        create: {
-          ...leagueSeasonTeamData(row),
-          firstSeenAt: now,
-          lastSeenAt: now
-        }
-      });
+      // Merge in PostgreSQL against the current row. Reading and replacing the
+      // JSON in JavaScript can erase a concurrent starting-XI publication.
+      const metadata = JSON.stringify(jsonValue(row.metadata));
+      await this.prisma.$executeRaw`
+        INSERT INTO league_season_teams AS current_team
+          (league_id, season, team_id, source, active, first_seen_at, last_seen_at, metadata, updated_at)
+        VALUES (${row.leagueId}, ${row.season}, ${row.teamId}, ${FOTMOB_SOURCE}, ${row.active}, ${now}, ${now},
+          CASE WHEN jsonb_typeof(${metadata}::jsonb) = 'object' THEN ${metadata}::jsonb - 'probableLineup' ELSE '{}'::jsonb END, ${now})
+        ON CONFLICT (league_id, season, team_id) DO UPDATE SET
+          active = EXCLUDED.active,
+          last_seen_at = EXCLUDED.last_seen_at,
+          updated_at = EXCLUDED.updated_at,
+          metadata = (CASE WHEN jsonb_typeof(current_team.metadata) = 'object' THEN current_team.metadata ELSE '{}'::jsonb END)
+            || EXCLUDED.metadata
+      `;
     }
   }
 
@@ -580,17 +577,6 @@ function leagueSeasonData(row: LeagueSeasonData) {
     providerSeason: row.providerSeason,
     name: row.name,
     country: row.country,
-    metadata: jsonValue(row.metadata)
-  };
-}
-
-function leagueSeasonTeamData(row: LeagueSeasonTeamData) {
-  return {
-    leagueId: row.leagueId,
-    season: row.season,
-    teamId: row.teamId,
-    source: FOTMOB_SOURCE,
-    active: row.active,
     metadata: jsonValue(row.metadata)
   };
 }

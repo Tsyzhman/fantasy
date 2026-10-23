@@ -6,6 +6,7 @@ import { PrismaClient } from '@prisma/client';
 import { applyProbableLineupTeamPlan, type ProbableLineupTeamPlan } from './probable-lineup-sync';
 import { enqueueCurrentXiTeamsSnapshotRefresh } from './fantasy-player-pool-refresh-queue';
 import { loadSorareRosterEvidence, restoreSorareRosterMembers, type SorareRosterRepair } from './sorareinside-roster';
+import { CoreSeasonRosterRepository } from '../core_data/repositories';
 
 const db = new PrismaClient();
 const skip = !(process.env.CI === 'true' && process.env.DATABASE_URL?.includes('127.0.0.1:55439/fantasy_scout_test_ci'));
@@ -62,6 +63,14 @@ test('PostgreSQL: complete XI restores a corroborated inactive member atomically
     const starters = await db.teamPlayerSeason.findMany({ where: { ...f.scope, isStarter: true } });
     assert.equal(starters.length, 11);
     assert.equal(starters.every(row => row.active), true);
+    const beforeRosterRefresh = await db.leagueSeasonTeam.findUniqueOrThrow({ where: { leagueId_season_teamId: f.scope } });
+    const repository = new CoreSeasonRosterRepository(db);
+    for (const logo of ['first.svg', 'current.svg']) await repository.upsertSeasonTeams([{
+      ...f.scope, active: true, metadata: { logo_url: logo, short_name: 'CLB', probableLineup: { source: 'fotmob' } }
+    }]);
+    const afterRosterRefresh = await db.leagueSeasonTeam.findUniqueOrThrow({ where: { leagueId_season_teamId: f.scope } });
+    assert.deepEqual(afterRosterRefresh.metadata, { ...(beforeRosterRefresh.metadata as object), logo_url: 'current.svg', short_name: 'CLB' });
+    assert.equal(afterRosterRefresh.startingXiChangedAt?.toISOString(), beforeRosterRefresh.startingXiChangedAt?.toISOString());
     assert.equal((await apply()).status, 'UNCHANGED');
     assert.equal(await db.fantasyPlayerPoolRefreshRequest.count({ where: { leagueId: f.scope.leagueId, season: f.scope.season } }), 1);
     assert.equal(await db.providerEntityMap.count({ where: { providerEntityId: f.repair.source.id } }), 1);

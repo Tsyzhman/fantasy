@@ -56,6 +56,8 @@ Mapped Sports.ru prices checked within 48 hours may supply a full-name alias and
 ## Application and competition {#apply}
 Only `lineup_players.starting_players`, exactly 11 unique players and one goalkeeper; not alternate_players and not the total start percentage. Game_id, team.id, is_published and future date are checked immediately before recording. In one transaction, under the existing starting-xi lock, the checkboxes are changed and a CURRENT_XI snapshot update request is written. An existing framework application implementation is used. Metadata stores match ID, kickoff, lineup ID, check time, source and fingerprint, including the case of permanent checkmarks. As long as the prediction is for a future match, other automated sources will not overwrite it. Manually setting the base retains the same scenario; the next import applies the current forecast according to the schedule.
 
+Ordinary club-roster refreshes atomically merge their metadata into the current database row and never replace the `probableLineup` field. Logo/short-name updates preserve the forecast's source, selected fixture, check time and fingerprint, including when a lineup publication happens concurrently.
+
 <a name="data"></a>
 
 ## Data and state {#data}

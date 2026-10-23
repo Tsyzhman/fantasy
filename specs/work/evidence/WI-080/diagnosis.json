@@ -1,0 +1,164 @@
+{
+  "failure": "SorareInside schedule fails globally when sparse scheduledLineups club metadata lacks country",
+  "productionVersion": "0.3.144",
+  "dryRun": {
+    "status": "PARTIAL",
+    "startedAt": "2026-10-23T10:14:36.356Z",
+    "finishedAt": "2026-10-23T10:16:15.734Z",
+    "apply": false,
+    "totals": {
+      "NO_MATCH_OR_TEAM_MAPPING": 24,
+      "SOURCE_ERROR": 2,
+      "READY": 140,
+      "UNCHANGED": 87,
+      "PLAYERS_UNMAPPED": 9
+    },
+    "rssMiB": 219
+  },
+  "remainingSourceIssues": [
+    {
+      "leagueId": "42",
+      "season": "2026/2027",
+      "teamId": "8478",
+      "team": "Viking",
+      "status": "SOURCE_ERROR",
+      "problems": [
+        "SorareInside: expected 11 unique starters with one goalkeeper first"
+      ],
+      "sourceTeamId": "1d79081b-38e3-4fd4-8c87-9bfb6d89ba7c",
+      "fixtureId": "b081e6ef-8253-4db1-98cc-6a9723eab57c",
+      "kickoff": "2026-10-25T13:30:00.000Z",
+      "lineupId": "c068bf17-dafb-4f1b-9327-b1b3d066fa41"
+    },
+    {
+      "leagueId": "42",
+      "season": "2026/2027",
+      "teamId": "8402",
+      "team": "Bod\u00f8/Glimt",
+      "status": "SOURCE_ERROR",
+      "problems": [
+        "SorareInside: expected 11 unique starters with one goalkeeper first"
+      ],
+      "sourceTeamId": "4baa67bf-772c-4e9b-8714-fdf29e16dfc6",
+      "fixtureId": "23ac7bc0-48f0-4fb7-b52d-ee1a40675613",
+      "kickoff": "2026-10-24T14:00:00.000Z",
+      "lineupId": "58995b7e-fb40-4303-812e-6cd6e785ff4f"
+    }
+  ],
+  "remainingIdentityIssues": [
+    {
+      "team": "Sunderland",
+      "leagueId": "73",
+      "unresolvedPlayers": [
+        {
+          "sourceId": "2df9a9f3-c00f-41c2-a87c-94484494967a",
+          "name": "Tymur Tutierov",
+          "playerId": null,
+          "reason": "UNMAPPED"
+        }
+      ]
+    },
+    {
+      "team": "Sunderland",
+      "leagueId": "47",
+      "unresolvedPlayers": [
+        {
+          "sourceId": "2df9a9f3-c00f-41c2-a87c-94484494967a",
+          "name": "Tymur Tutierov",
+          "playerId": null,
+          "reason": "UNMAPPED"
+        }
+      ]
+    },
+    {
+      "team": "Monza",
+      "leagueId": "55",
+      "unresolvedPlayers": [
+        {
+          "sourceId": "433dce04-fb95-4e5b-ac23-be947c9266c6",
+          "name": "Samuele Birindelli",
+          "playerId": null,
+          "reason": "BIRTH_DATE_CONFLICT"
+        }
+      ]
+    },
+    {
+      "team": "Lorient",
+      "leagueId": "53",
+      "unresolvedPlayers": [
+        {
+          "sourceId": "db7a7683-b766-4926-a420-db7e31dc0191",
+          "name": "Ars\u00e8ne Kouassi",
+          "playerId": null,
+          "reason": "BIRTH_DATE_CONFLICT"
+        }
+      ]
+    },
+    {
+      "team": "Union Berlin",
+      "leagueId": "54",
+      "unresolvedPlayers": [
+        {
+          "sourceId": "54be3a13-3f0f-4872-b000-a1f1d0e810b2",
+          "name": "Emmanuel Latte Lath",
+          "playerId": null,
+          "reason": "BIRTH_DATE_CONFLICT"
+        }
+      ]
+    },
+    {
+      "team": "FK Akhmat",
+      "leagueId": "63",
+      "unresolvedPlayers": [
+        {
+          "sourceId": "3bc265ca-e6c0-47c2-889d-564430a5dd3a",
+          "name": "Maksim Samorodov",
+          "playerId": null,
+          "reason": "BIRTH_DATE_CONFLICT"
+        }
+      ]
+    },
+    {
+      "team": "Spartak Moscow",
+      "leagueId": "63",
+      "unresolvedPlayers": [
+        {
+          "sourceId": "ec3a018b-3fcd-48d4-ab8b-5cbb9caed921",
+          "name": "Marquinhos",
+          "playerId": null,
+          "reason": "BIRTH_DATE_CONFLICT"
+        }
+      ]
+    },
+    {
+      "team": "Estrela da Amadora",
+      "leagueId": "61",
+      "unresolvedPlayers": [
+        {
+          "sourceId": "d06164fb-a206-43b6-9828-66aa341d4caa",
+          "name": "Santiago Serra",
+          "playerId": null,
+          "reason": "BIRTH_DATE_CONFLICT"
+        }
+      ]
+    },
+    {
+      "team": "Levante",
+      "leagueId": "87",
+      "unresolvedPlayers": [
+        {
+          "sourceId": "4a8749ff-503f-47c1-87bb-d0000122fa7b",
+          "name": "Nacho P\u00e9rez",
+          "playerId": null,
+          "reason": "BIRTH_DATE_CONFLICT"
+        }
+      ]
+    }
+  ],
+  "references": [
+    "https://docs.docker.com/engine/containers/run/",
+    "https://status.sorareinside.com/",
+    "https://sorare.com/de/help/a/21527337682973/how-does-lineup-prediction-work",
+    "https://www.reddit.com/r/Sorare/comments/1f9bim8/"
+  ]
+}
