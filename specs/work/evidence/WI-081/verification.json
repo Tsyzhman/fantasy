@@ -1,0 +1,29 @@
+{
+  "databaseBackupCount": 1,
+  "databaseBackupBytes": 379894669,
+  "releaseCount": 2,
+  "removedOldBackupBytes": 2917393912,
+  "removedLegacyBytes": 376372126,
+  "measuredDiskFreedBytes": 2917605376,
+  "healthSamplesDuringCleanup": 8,
+  "allCleanupHealthSamples200": true,
+  "allContainerIdsPreserved": true,
+  "buildCacheBytes": 0,
+  "databaseDuplicates": {
+    "queue": 0,
+    "duplicatePoolPlayers": 0,
+    "orphanPoolPlayers": 0,
+    "duplicatePrices": 0,
+    "failedMigrations": 0,
+    "savedSquads": 149,
+    "savedSelections": 2222,
+    "maxReadyRevisions": 3,
+    "databaseConnections": 36
+  },
+  "servingRelease": {
+    "version": "0.3.145",
+    "commit": "32fcc3d109cac657f48f7834c892abd04e42c4ae"
+  },
+  "reviews": [],
+  "technicalDebt": []
+}
