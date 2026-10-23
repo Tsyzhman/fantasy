@@ -1,0 +1,15 @@
+{
+  "observedAt": "2026-10-23T10:10:00Z",
+  "source": "https://platform-api.sorareinside.com",
+  "method": "Authorized bounded read; response/account bodies were not retained",
+  "gameweekGames": [271, 70, 297, 87],
+  "gameweekClubsMissingCountry": 0,
+  "scheduledLineupGames": 2,
+  "scheduledLineupClubsMissingCountry": 4,
+  "scheduledLineupFixtures": [
+    {"id": "3685991b-10f0-4c5e-b087-519fb27ecf91", "kickoff": "2026-11-05T20:00:00Z", "clubs": ["az-alkmaar", "juventus-torino"]},
+    {"id": "f63f05c1-d2e0-485a-b901-f2f7f1580a09", "kickoff": "2026-11-08T15:45:00Z", "clubs": ["az-alkmaar", "groningen-groningen"]}
+  ],
+  "failureBefore": "SorareInside: invalid object",
+  "effect": "Schedule fails before any team can be applied, despite valid current gameweek responses"
+}

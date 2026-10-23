@@ -1,0 +1,3 @@
+CI 39946668128: database integration passed; unit suite rejected the old static assertion forbidding every host builder prune.
+The requested contract now permits it only with the explicit operator option and apply mode.
+Updated the owning contract test and added all four opt-in/mode combinations on Linux.

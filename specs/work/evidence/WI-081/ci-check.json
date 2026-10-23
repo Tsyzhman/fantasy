@@ -1,0 +1,155 @@
+{
+  "conclusion": "success",
+  "headSha": "4b578dfbdfe5eda37493ff4261f245324312593c",
+  "jobs": [
+    {
+      "completedAt": "2026-10-23T11:41:51Z",
+      "conclusion": "success",
+      "databaseId": 120392953915,
+      "name": "check",
+      "startedAt": "2026-10-23T11:36:47Z",
+      "status": "completed",
+      "steps": [
+        {
+          "completedAt": "2026-10-23T11:36:48Z",
+          "conclusion": "success",
+          "name": "Set up job",
+          "number": 1,
+          "startedAt": "2026-10-23T11:36:48Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-23T11:37:09Z",
+          "conclusion": "success",
+          "name": "Initialize containers",
+          "number": 2,
+          "startedAt": "2026-10-23T11:36:48Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-23T11:37:10Z",
+          "conclusion": "success",
+          "name": "Checkout",
+          "number": 3,
+          "startedAt": "2026-10-23T11:37:09Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-23T11:37:13Z",
+          "conclusion": "success",
+          "name": "Setup Node.js",
+          "number": 4,
+          "startedAt": "2026-10-23T11:37:10Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-23T11:37:14Z",
+          "conclusion": "success",
+          "name": "Verify release version bump",
+          "number": 5,
+          "startedAt": "2026-10-23T11:37:13Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-23T11:37:33Z",
+          "conclusion": "success",
+          "name": "Install dependencies",
+          "number": 6,
+          "startedAt": "2026-10-23T11:37:14Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-23T11:37:35Z",
+          "conclusion": "success",
+          "name": "Generate Prisma client",
+          "number": 7,
+          "startedAt": "2026-10-23T11:37:33Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-23T11:37:36Z",
+          "conclusion": "success",
+          "name": "Audit production dependencies",
+          "number": 8,
+          "startedAt": "2026-10-23T11:37:35Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-23T11:37:38Z",
+          "conclusion": "success",
+          "name": "Check Prisma migration drift",
+          "number": 9,
+          "startedAt": "2026-10-23T11:37:36Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-23T11:38:11Z",
+          "conclusion": "success",
+          "name": "Run database integration tests",
+          "number": 10,
+          "startedAt": "2026-10-23T11:37:38Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-23T11:41:40Z",
+          "conclusion": "success",
+          "name": "Run checks",
+          "number": 11,
+          "startedAt": "2026-10-23T11:38:11Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-23T11:41:47Z",
+          "conclusion": "success",
+          "name": "Verify restricted runtime database permissions",
+          "number": 12,
+          "startedAt": "2026-10-23T11:41:40Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-23T11:41:47Z",
+          "conclusion": "success",
+          "name": "Verify continuous deployment and rollback",
+          "number": 13,
+          "startedAt": "2026-10-23T11:41:47Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-23T11:41:49Z",
+          "conclusion": "success",
+          "name": "Post Setup Node.js",
+          "number": 24,
+          "startedAt": "2026-10-23T11:41:47Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-23T11:41:49Z",
+          "conclusion": "success",
+          "name": "Post Checkout",
+          "number": 25,
+          "startedAt": "2026-10-23T11:41:49Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-23T11:41:50Z",
+          "conclusion": "success",
+          "name": "Stop containers",
+          "number": 26,
+          "startedAt": "2026-10-23T11:41:49Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-10-23T11:41:50Z",
+          "conclusion": "success",
+          "name": "Complete job",
+          "number": 27,
+          "startedAt": "2026-10-23T11:41:50Z",
+          "status": "completed"
+        }
+      ],
+      "url": "https://github.com/Tsyzhman/fantasy/actions/runs/39947294152/job/120392953915"
+    }
+  ],
+  "status": "completed",
+  "url": "https://github.com/Tsyzhman/fantasy/actions/runs/39947294152"
+}

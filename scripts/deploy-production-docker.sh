@@ -56,6 +56,7 @@ image_created=0
 setup_image_created=0
 rehearsal_created=0
 rehearsal_db=""
+backup_partial=""
 schema_migration_attempted=0
 old_current_target=""
 candidate_web_promoted=0
@@ -250,6 +251,9 @@ cleanup() {
   exit_code=$?
   trap '' HUP INT TERM
   set +e
+  if [[ -n "$backup_partial" && "$backup_partial" == "/var/backups/fantasy-scout/pre-${release}-migration.dump.partial" ]]; then
+    rm -f -- "$backup_partial"
+  fi
   if (( exit_code != 0 )) && [[ "$phase" == "swap" ]]; then
     if ! rollback_swap; then
       echo "Traffic rollback needs recovery; both web versions and release artifacts were retained." >&2
@@ -333,6 +337,7 @@ for required_file in \
   src/server/web-scheduler-activation.ts \
   scripts/fpl-vpn-relay.mjs \
   scripts/prune-production-artifacts.sh \
+  scripts/prune-production-backups.py \
   src/app/api/machete/squads/formula-adaptations/route.ts \
   src/components/machete/FormulaAdaptationHoverCard.tsx \
   src/machete/formula-adaptation-models.generated.json \
@@ -441,6 +446,14 @@ for runtime_env in "$web_env" "$worker_env"; do
   printf '%s\n' 'KHL_ENABLED=true' 'KHL_SYNC_ENABLED=true' 'KHL_CATALOG_CONTEST_IDS=107' 'KHL_FORECASTS_ENABLED=false' 'KHL_STATS_SYNC_ENABLED=true' 'KHL_DAILY_STATS_ENABLED=true' >> "$runtime_env"
 done
 
+# @spec spec://common/INFRA-006-continuous-deployment#runtime
+# Do not inherit repeated Docker overrides from every prior generation. Keys
+# supplied explicitly at container creation must occur only in those overrides.
+python3 "$target/scripts/normalize-production-env.py" "$web_env" --drop \
+  NODE_OPTIONS INGESTION_WORKER_IN_PROCESS WEB_SCHEDULER_ACTIVATION_PATH FPL_RELAY_SOCKET_PATH
+python3 "$target/scripts/normalize-production-env.py" "$worker_env" --drop \
+  INGESTION_WORKER_IN_PROCESS FPL_PRICE_SYNC_ENABLED PROBABLE_LINEUP_SYNC_ENABLED FPL_RELAY_SOCKET_PATH
+
 docker container inspect "$fpl_vpn_container" >/dev/null 2>&1 || {
   echo "FPL VPN container is missing: $fpl_vpn_container" >&2
   exit 1
@@ -540,15 +553,18 @@ if (( ${#pending_migrations[@]} > 0 )); then
 
   backup_root="/var/backups/fantasy-scout"
   backup_path="$backup_root/pre-${release}-migration.dump"
+  backup_partial="${backup_path}.partial"
   mkdir -p "$backup_root"
   umask 077
   docker exec "$postgres" pg_dump -U fantasy_app -d fantasy_scout \
-    --format=custom --no-owner --no-acl > "$backup_path"
-  [[ -s "$backup_path" ]] || {
-    echo "Production database backup is empty: $backup_path" >&2
+    --format=custom --no-owner --no-acl > "$backup_partial"
+  [[ -s "$backup_partial" ]] || {
+    echo "Production database backup is empty: $backup_partial" >&2
     exit 1
   }
-  docker exec -i "$postgres" pg_restore --list < "$backup_path" >/dev/null
+  docker exec -i "$postgres" pg_restore --file=/dev/null --no-owner --no-acl \
+    --exit-on-error < "$backup_partial"
+  mv -- "$backup_partial" "$backup_path"
   backup_sha="$(sha256sum "$backup_path" | awk '{print $1}')"
   echo "Verified production backup: $backup_path ($backup_sha)"
 

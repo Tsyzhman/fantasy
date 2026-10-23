@@ -1,0 +1,26 @@
+[
+  {
+    "mode": "dry-run",
+    "enabled": "0",
+    "passed": true,
+    "output": "BUILD_CACHE=CI_OWNED; HOST_DEFAULT_BUILDER=UNCHANGED"
+  },
+  {
+    "mode": "apply",
+    "enabled": "0",
+    "passed": true,
+    "output": "BUILD_CACHE=CI_OWNED; HOST_DEFAULT_BUILDER=UNCHANGED"
+  },
+  {
+    "mode": "dry-run",
+    "enabled": "1",
+    "passed": true,
+    "output": "PRUNE_HOST_BUILD_CACHE=all-unused"
+  },
+  {
+    "mode": "apply",
+    "enabled": "1",
+    "passed": true,
+    "output": "DOCKER_CALL:builder prune --all --force"
+  }
+]

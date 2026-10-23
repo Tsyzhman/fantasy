@@ -1,0 +1,23 @@
+{
+  "ciCheck": 39939922888,
+  "ciArtifactRun": 39939918757,
+  "artifactId": 12494923752,
+  "release": "20261023T103559Z-v0.3.145-32fcc3d",
+  "commit": "32fcc3d109cac657f48f7834c892abd04e42c4ae",
+  "tree": "d3f7c6eb3e01fa9d24b00da7236f2358ed3e6970",
+  "version": "0.3.145",
+  "oldCommit": "703edd62f45e514bbff003221b9fe7d7cd8ee7d0",
+  "sourceSha256": "3f5b9f8c14274de15c6f750e19c34a59eb46535369065f57dffe2cfae29a866c",
+  "imagesSha256": "39c320439d786402e306c6827686d7a578f008672be8fd3ca9e014050166330c",
+  "runtimeImageId": "sha256:9d269b4d0987eb7dfb41a998f9a0e5ac1c5ce2dc8200d203b89b3b7eb7e9c0ac",
+  "setupImageId": "sha256:8aee45b258b94061c38557f6da770db7a85d931da6f9d84a474c4e51703ef6ca",
+  "transport": "Verified GitHub artifact through local SSH; original workflow cancelled during stalled transfer before promoter start",
+  "preflight": {
+    "sourceChecksumVerified": true,
+    "imagesChecksumVerified": true,
+    "deploymentLockIdle": true,
+    "previousRevisionVerified": true
+  },
+  "promoterSha256": "ee57af015ce53410c2ceff6b3f172385d4bd541083dfdfd9d0f9ceeeae7949ca",
+  "promoterExit": 0
+}

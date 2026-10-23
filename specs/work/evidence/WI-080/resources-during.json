@@ -1,0 +1,7 @@
+{
+  "observedAt": "2026-10-23T10:38:03.654842+00:00",
+  "memory": "               total        used        free      shared  buff/cache   available\nMem:           11876        6273        1954         310        3648        4979\nSwap:              0           0           0\n",
+  "resources": "fantasy-scout-web|982.4MiB / 2GiB|1.28%|15\nfantasy-scout-worker|1.783GiB / 4GiB|76.53%|17\nfantasy-scout-postgres|1.453GiB / 2GiB|43.17%|37\nfantasy-scout-fpl-relay|42.36MiB / 128MiB|0.07%|11\n",
+  "projectContainers": "fantasy-scout-worker|Up 2 days (healthy)\nfantasy-scout-web|Up 2 days (healthy)\nfantasy-scout-fpl-relay|Up 2 days\nfantasy-scout-worker-rollback-pre-20261021T103252Z-v0.3.144-703edd6|Exited (143) 2 days ago\nfantasy-scout-web-rollback-pre-20261021T103252Z-v0.3.144-703edd6|Exited (143) 2 days ago\nfantasy-scout-fpl-relay-rollback-pre-20261021T103252Z-v0.3.144-703edd6|Exited (0) 2 days ago\nfantasy-scout-postgres|Up 2 months (healthy)\n",
+  "caddyPid": "754\n"
+}

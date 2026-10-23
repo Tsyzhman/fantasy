@@ -1,0 +1,82 @@
+{
+  "status": "completed",
+  "workItem": "WI-080",
+  "version": "0.3.145",
+  "commit": "32fcc3d109cac657f48f7834c892abd04e42c4ae",
+  "tree": "d3f7c6eb3e01fa9d24b00da7236f2358ed3e6970",
+  "ci": {
+    "run": 39939922888,
+    "unitTests": 1332,
+    "databaseTests": 32,
+    "rolloutTests": 14,
+    "productionDependencyVulnerabilities": 0
+  },
+  "deployment": {
+    "promoterExit": 0,
+    "transport": "Verified GitHub artifact through local SSH; original workflow cancelled during stalled transfer before promoter start",
+    "publicChecks": 67,
+    "preparationChecks": 600,
+    "publicFailures": 0,
+    "oldAssetUnchanged": true,
+    "caddyPidBefore": 754,
+    "caddyPidAfter": 754,
+    "retainedReleases": 2
+  },
+  "sourceCycles": [
+    {
+      "status": "PARTIAL",
+      "startedAt": "2026-10-23T11:01:51.634Z",
+      "finishedAt": "2026-10-23T11:04:35.515Z",
+      "totals": {
+        "NO_MATCH_OR_TEAM_MAPPING": 24,
+        "SOURCE_ERROR": 2,
+        "APPLIED": 135,
+        "UNCHANGED": 92,
+        "PLAYERS_UNMAPPED": 9
+      }
+    },
+    {
+      "status": "PARTIAL",
+      "startedAt": "2026-10-23T11:05:00.005Z",
+      "finishedAt": "2026-10-23T11:06:43.695Z",
+      "totals": {
+        "NO_MATCH_OR_TEAM_MAPPING": 24,
+        "SOURCE_ERROR": 2,
+        "UNCHANGED": 227,
+        "PLAYERS_UNMAPPED": 9
+      }
+    }
+  ],
+  "publishedData": {
+    "scopes": 12,
+    "players": 8458,
+    "comparedFlags": 7374,
+    "apiPlayers": 852,
+    "freshTeamScopes": 227,
+    "queue": 0,
+    "errors": 0
+  },
+  "savedData": {
+    "squads": 149,
+    "selections": 2222,
+    "exactHashesPreserved": true
+  },
+  "resources": {
+    "activeEnvironmentDuplicates": 0,
+    "oom": 0,
+    "restarts": 0,
+    "maxReadyRevisions": 3,
+    "memory": "fantasy-scout-web|145.3MiB / 2GiB|0.55%|15\nfantasy-scout-worker|1.72GiB / 4GiB|1.21%|16\nfantasy-scout-postgres|965.4MiB / 2GiB|0.25%|36\nfantasy-scout-fpl-relay|32.49MiB / 128MiB|0.24%|11\n",
+    "temporaryBytesRemoved": 1769324901
+  },
+  "coverageComplete": false,
+  "remainingCoverage": {
+    "noMatchOrTeamMapping": 24,
+    "playerIdentityConflicts": 9,
+    "malformedSourceXis": 2
+  },
+  "remainingHealthFailures": [
+    "/api/health/fantasy-prices",
+    "/api/health/data-quality"
+  ]
+}

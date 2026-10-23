@@ -1,0 +1,29 @@
+{
+  "removed": [
+    {
+      "path": "C:\\Users\\Nik\\.codex\\worktrees\\production-lineups\\fantasy_export\\.tmp\\WI-081\\pr-body.md",
+      "bytes": 1860
+    },
+    {
+      "path": "C:\\Users\\Nik\\.codex\\worktrees\\production-lineups\\fantasy_export\\scripts\\__pycache__\\check-online-migrations.cpython-314.pyc",
+      "bytes": 2799
+    },
+    {
+      "path": "C:\\Users\\Nik\\.codex\\worktrees\\production-lineups\\fantasy_export\\scripts\\__pycache__\\normalize-production-env.cpython-314.pyc",
+      "bytes": 2778
+    },
+    {
+      "path": "C:\\Users\\Nik\\.codex\\worktrees\\production-lineups\\fantasy_export\\scripts\\__pycache__\\prepare-online-migration-env.cpython-314.pyc",
+      "bytes": 3876
+    },
+    {
+      "path": "C:\\Users\\Nik\\.codex\\worktrees\\production-lineups\\fantasy_export\\scripts\\__pycache__\\production-web-routing.cpython-314.pyc",
+      "bytes": 9320
+    },
+    {
+      "path": "C:\\Users\\Nik\\.codex\\worktrees\\production-lineups\\fantasy_export\\scripts\\__pycache__\\prune-production-backups.cpython-314.pyc",
+      "bytes": 5588
+    }
+  ],
+  "removedBytes": 26221
+}

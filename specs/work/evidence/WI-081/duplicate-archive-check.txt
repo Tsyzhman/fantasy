@@ -1,0 +1,19 @@
+{"archive": "/home/deploy/fantasy-research/2024_25_archive.tar", "bytes": 266752000, "matchedFiles": 11617, "matchedBytes": 257717641, "allMembersIdentical": true}
+DEPLOY_BACKUP_NAMES
+Caddyfile-before-wipe-four-20260901-105011
+fantasy-scout-starting-xi-20260904-163716.sql.gz
+germany-before-ui-20261022.tar.gz
+handover-Caddyfile-20260910-143006
+handover-auth-Caddyfile-20260910-143429
+handover-html-20260910-144922.html
+handover-html-20260910-145431.html
+handover-html-20260911-144911.html
+istatus-before-54b7127-20260819-164633.tgz
+istatus-before-finite-digest-20261012T070702Z.tgz
+istatus-data-before-finite-digest-20261012T070702Z.db
+istatus-finite-digest-20261012T070702Z.tgz
+library-data-20260824-192510.tgz
+session-kaiten-audit-config-before-20260717-164115.tgz
+tech-help-20260603-115958.tgz
+tsyzhman-resume-20260927-115312.tgz
+tsyzhman-resume-20260927-120855.tgz

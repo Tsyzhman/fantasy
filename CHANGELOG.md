@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.3.146 - 2026-10-23
+
+- Retain one fully verified production database dump, publish new backups atomically and preserve the current release plus one rollback.
+- Add explicit complete host build-cache cleanup and repair the installed scheduled maintenance policy under the deployment lock.
+
+## 0.3.145 - 2026-10-23
+
+- Restore SorareInside lineup cycles when scheduled matches omit club country, using exact same-cycle club identity metadata while preserving strict schedule and XI validation.
+- Preserve applied lineup provenance and protection when ordinary FotMob roster refreshes update club metadata.
+- Normalize inherited production environment variables and prevent runtime overrides from accumulating duplicates across deployments.
+- Upgrade Next.js and its ESLint configuration to 16.4.2 after the mandatory dependency audit rejected the previously pinned runtime.
+
 ## 0.3.144 - 2026-10-21
 
 - Match historical franchise planning forecasts by league and exact UTC deadline, deduplicate equivalent provider round aliases and retain missing forecasts when no exact scope exists.

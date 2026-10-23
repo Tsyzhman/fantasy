@@ -28,6 +28,8 @@
 
 | Work | Title | Owner | Date |
 |---|---|---|---|
+| [WI-081](work/archive/2026/WI-081-production-artifact-retention.md) | Keep one production backup and clear build caches | @tsyzhman | 2026-10-23 |
+| [WI-080](work/archive/2026/WI-080-production-lineup-recovery.md) | Restore production lineup updates | @tsyzhman | 2026-10-23 |
 | [WI-079](work/archive/2026/WI-079-franchise-refresh-serialization.md) | Serialize heavy refreshes and restore franchise updates | @tsyzhman | 2026-10-21 |
 | [WI-077](work/archive/2026/WI-077-championship-round-transfer-limit.md) | Six transfers in Championship round eleven | @tsyzhman | 2026-10-16 |
 | [WI-076](work/archive/2026/WI-076-editorial-sport-design.md) | Adopt Midnight Scout and Pressbox | @tsyzhman | 2026-10-10 |

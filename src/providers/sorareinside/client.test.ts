@@ -47,3 +47,46 @@ test("HTTP errors do not leak response secrets and sessions reuse cookies",async
   });
   await client.get('/gameweeks');await assert.rejects(client.get('/gameweeks'),/^Error: SorareInside HTTP 503$/);assert.equal(logins,1);
 });
+
+const apiTeam = (n: number) => ({ id: `Club:${id(n)}`, name: `Team ${n}`, slug: `team-${n}`, country: { code: "gb-eng" } });
+const apiGame = (n: number, kickoff: string) => ({
+  id: `Game:${id(n)}`, date: kickoff, statusTyped: "scheduled", homeTeam: apiTeam(1), awayTeam: apiTeam(2),
+  homeTeamLineup: { id: id(n + 100), is_published: true }, awayTeamLineup: null
+});
+const apiRegions = (games: unknown[]) => [{ competitions: [{ games }] }];
+function scheduleClient(scheduled: unknown[], windows: unknown[] = [apiGame(3, "2026-09-13T12:00:00Z")]) {
+  return new SorareInsideClient({ email: "test", password: "secret" }, async (url) => {
+    const path = new URL(String(url));
+    const body = path.pathname === "/auth/login" ? {} : path.pathname === "/gameweeks"
+      ? [{ slug: "current", startDate: "2026-09-10T12:00:00Z", endDate: "2026-09-15T12:00:00Z" }]
+      : apiRegions(path.searchParams.has("scheduledLineups") ? scheduled : windows);
+    return new Response(JSON.stringify(body), { headers: { "set-cookie": "token=test; HttpOnly" } });
+  });
+}
+
+test("scheduled lineup clubs without country reuse exact UUID metadata from complete windows", async () => {
+  const sparse = { ...apiGame(4, "2026-09-12T12:00:00Z"), homeTeam: { ...apiTeam(1), country: undefined }, awayTeam: { ...apiTeam(2), country: undefined } };
+  const games = await scheduleClient([sparse]).schedule(now);
+  const selected = nearestTeamGames(games, now).get(id(1))!;
+  assert.equal(selected.game.id, id(4));
+  assert.equal(selected.team.country, "gb-eng");
+  assert.equal(selected.lineupId, id(104));
+});
+
+test("sparse scheduled clubs cannot borrow country by name, conflicting identity or malformed country", async () => {
+  for (const homeTeam of [
+    { ...apiTeam(99), country: undefined },
+    { ...apiTeam(1), slug: "another-club", country: undefined },
+    { ...apiTeam(1), name: "Another club", country: undefined },
+    { ...apiTeam(1), country: [] }
+  ]) {
+    await assert.rejects(scheduleClient([{ ...apiGame(4, "2026-09-12T12:00:00Z"), homeTeam }]).schedule(now));
+  }
+});
+
+test("missing country in full windows and conflicting UUID metadata still abort complete schedule", async () => {
+  const first = apiGame(3, "2026-09-13T12:00:00Z");
+  await assert.rejects(scheduleClient([], [{ ...first, homeTeam: { ...apiTeam(1), country: undefined } }]).schedule(now));
+  const conflicting = { ...apiGame(5, "2026-09-14T12:00:00Z"), homeTeam: { ...apiTeam(1), country: { code: "fr" } } };
+  await assert.rejects(scheduleClient([], [first, conflicting]).schedule(now), /conflicting/);
+});

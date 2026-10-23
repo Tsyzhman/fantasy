@@ -1,0 +1,5 @@
+START_SNAPSHOT=/var/backups/fantasy-scout/snapshot-20261023T112441Z-v0.3.145-32fcc3d.dump
+e5a58b0ebf34cddfab80953ce8ae97aca83f532dfb5ebdf3bf7baf1fd416bac9  /var/backups/fantasy-scout/snapshot-20261023T112441Z-v0.3.145-32fcc3d.dump
+VERIFIED_BYTES=379894669
+FULL_ARCHIVE_READ=PASS
+{"status":"ok","uptimeSeconds":1457,"release":{"version":"0.3.145","commit":"32fcc3d109cac657f48f7834c892abd04e42c4ae"}}

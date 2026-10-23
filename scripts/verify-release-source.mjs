@@ -28,6 +28,7 @@ const requiredTrackedFiles = [
   "scripts/export-formula-adaptation-models.py",
   "scripts/fpl-vpn-relay.mjs",
   "scripts/prune-production-artifacts.sh",
+  "scripts/prune-production-backups.py",
   "scripts/verify-release-source.mjs",
   "scripts/verify-release-version.mjs",
   "src/app/api/machete/squads/formula-adaptations/route.ts",

@@ -1,0 +1,15 @@
+{
+  "observedAt": "2026-10-23T11:10:09.916528+00:00",
+  "removedFiles": 20,
+  "reclaimedBytes": 1769324901,
+  "retainedLinks": [
+    {
+      "path": "C:\\Users\\Nik\\.codex\\worktrees\\production-lineups\\fantasy_export\\.tmp\\WI-080\\shared-dependencies",
+      "reason": "Shared dependency link; not traversed or modified"
+    }
+  ],
+  "sharedDependenciesPreserved": true,
+  "remainingEntries": [
+    "shared-dependencies"
+  ]
+}
