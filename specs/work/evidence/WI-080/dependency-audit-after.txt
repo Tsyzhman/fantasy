@@ -1,0 +1,26 @@
+
+> fantasy-scout@0.3.145 audit:prod
+> npm audit --omit=dev --audit-level=moderate --json
+
+{
+  "auditReportVersion": 2,
+  "vulnerabilities": {},
+  "metadata": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "dependencies": {
+      "prod": 143,
+      "dev": 408,
+      "optional": 94,
+      "peer": 16,
+      "peerOptional": 0,
+      "total": 593
+    }
+  }
+}

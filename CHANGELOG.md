@@ -5,6 +5,7 @@
 - Restore SorareInside lineup cycles when scheduled matches omit club country, using exact same-cycle club identity metadata while preserving strict schedule and XI validation.
 - Preserve applied lineup provenance and protection when ordinary FotMob roster refreshes update club metadata.
 - Normalize inherited production environment variables and prevent runtime overrides from accumulating duplicates across deployments.
+- Upgrade Next.js and its ESLint configuration to 16.4.2 after the mandatory dependency audit rejected the previously pinned runtime.
 
 ## 0.3.144 - 2026-10-21
 
