@@ -45,7 +45,7 @@ test('KHL visible statistics include refresh status on every view and preserve i
  */
 test('KHL visible statistics survive partial matches and history switches',async({page},testInfo)=>{
  test.skip(process.env.KHL_PRODUCTION_SMOKE!=='true','Explicit production statistics check');
- test.setTimeout(180000);
+ test.setTimeout(240000);
  await page.goto('/machete/khl/players');
  const poolCount=Number((await page.locator('caption').innerText()).match(/Каталог · (\d+)/)?.[1]);
  expect(poolCount).toBeGreaterThan(50);
@@ -211,7 +211,8 @@ async function refreshStatistics(page: Page, historyWindow: 5 | 10 | 20 = 5, upd
    });
    if(attempt===0 && update) await update();
    else await refresh.click();
-   expect((await response).status()).toBe(200);
+   const catalogResponse=await response;
+   expect(catalogResponse.status()).toBe(200);
    await expect(refresh).toBeEnabled({timeout:30000});
    const players=(await Promise.all(pages)).flat();
    const message=await status.innerText();
@@ -223,9 +224,27 @@ async function refreshStatistics(page: Page, historyWindow: 5 | 10 | 20 = 5, upd
    // A published revision may change between catalog pages. Exercise the UI's
    // explicit retry; unrelated errors and persistent conflicts still fail.
    expect(message).toBe('Каталог изменился во время загрузки. Повторите выбор окна.');
+   if(attempt<2) {
+    const contestId=new URL(catalogResponse.url()).searchParams.get('contestId');
+    expect(contestId).toBeTruthy();
+    await waitForKhlPublication(page,contestId!);
+   }
   } finally {
    page.off('response',capture);
   }
  }
  throw new Error('KHL catalog changed during all three bounded refresh attempts.');
+}
+
+/** @spec spec://modules/khl/INFRA-001-khl-data-ingestion#sync-status */
+async function waitForKhlPublication(page: Page, contestId: string) {
+ // The hourly importer legitimately publishes revisions throughout its cycle.
+ // Wait for that reported cycle to end instead of spending every retry on it.
+ await expect.poll(async()=>{
+  const result=await page.request.get(`/api/machete/khl/sync-status?contestId=${encodeURIComponent(contestId)}`);
+  expect(result.status()).toBe(200);
+  const status=(await result.json()).data;
+  expect(status.interrupted,'An interrupted import must not be hidden by retries').toBe(false);
+  return status.runningSince;
+ },{timeout:120000,intervals:[1000,2000,5000],message:'KHL publication must finish before retrying the complete catalog'}).toBeNull();
 }
